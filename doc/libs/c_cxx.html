@@ -30,8 +30,13 @@ inside NCBI users at:
               <li><a href="#ref_SettingLOG">Setting <tt>LOG</tt></a>
               <li><a href="#ref_SettingREG">Setting <tt>REG</tt></a>
               <li><a href="#ref_SettingLOCK">Setting MT-Locking</a>
+              <li><a href="#ref_CONNECT_Init_Cxx">Convenience call <tt>CONNECT_Init()</tt>
          </ul>
          <li> <a href="#ref_CToolkitDiag">C Toolkit diagnostics redirection</a>
+         <li> <a href="#ref_ConnectC"><tt>CONNECT</tt> Library in C Code</a>
+         <ul>
+              <li><a href="#ref_CONNECT_Init_C">Convenience call <tt>CONNECT_Init()</tt>
+         </ul>
     </ul>
 </ul>
 </ol>
@@ -121,21 +126,23 @@ one for C and another one for C++ application.
 
 <p>
 In a C program <a href="../lxr/source/include/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>
-module can be used with calls to <a href="../lxr/ident?i=CORE_SetREG"><b><i>CORE_SetREG()</i></b></a>,
+with calls to <a href="../lxr/ident?i=CORE_SetREG"><b><i>CORE_SetREG()</i></b></a>,
 <a href="../lxr/ident?i=CORE_SetLOG"><b><i>CORE_SetLOG()</i></b></a>, and
 <a href="../lxr/ident?i=CORE_SetLOCK"><b><i>CORE_SetLOCK()</i></b></a>
 can be used to set up the registry, the logger, and
 the MT-lock, correspondingly. There are even more convenience routines concerning
-<tt>CORE_LOG</tt>, like <a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE()</i></b></a>,
+<i>CORE logger</i>, like <a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE()</i></b></a>,
 <a href="../lxr/ident?i=CORE_SetLOGFILE_NAME"><b><i>CORE_SetLOGFILE_NAME()</i></b></a>,
 which facilitate redirecting logging messages to either a C stream (<tt>FILE*</tt>) or a named file.
 
 <p>
-In a C++ program, yet another additional step is necessary of converting <i>native</i> C++ objects
+In a C++ program, yet another additional step is necessary of converting <i>native</i> C++ objects,
 by calls declared in
 <a href="../lxr/source/include/connect/ncbi_core_cxx.hpp"><b><i>connect/ncbi_core_cxx.hpp</i></b></a>
-as described later in this section, so that the C++ objects could be used
-where types <tt>LOG</tt>, <tt>REG</tt> or <tt>MT_LOCK</tt> are expected.
+and as described later in this section, into their C equivalents, so that the C++ objects could be used
+where types <a href="../lxr/ident?i=LOG"><tt>LOG</tt></a>, <a href="../lxr/ident?i=REG"><tt>REG</tt></a>
+or <a href="../lxr/ident?i=MT_LOCK"><tt>MT_LOCK</tt></a> are expected.
+
 
 <a name="ref_LOG"></a><h3><tt>LOG</tt> and <tt>CNcbiDiag</tt></h3>
 
@@ -149,14 +156,12 @@ On the other hand, the interface defined in
 <a href="../lxr/source/include/connect/ncbi_core_cxx.hpp"><b><i>connect/ncbi_core_cxx.hpp</i></b></a>
 provides the following C++ function to convert a logging stream of the NCBI C++ Toolkit into a <tt>LOG</tt> object:
 <pre>
-<tt>LOG</tt> <a href="../lxr/ident?i=LOG_cxx2c"><b><i>LOG_cxx2c</i></b></a>&nbsp;<tt>(void)</tt>
+LOG <a href="../lxr/ident?i=LOG_cxx2c"><b><i>LOG_cxx2c</i></b></a>&nbsp;(void)
 </pre>
-which creates the <b><i>LOG</i></b> object on top of the corresponding C++ objects <b><i>CNcbiDiag</i></b>,
+which creates the <b><i>LOG</i></b> object on top of the corresponding C++ <b><i>CNcbiDiag</i></b> object,
 and then both C and C++ objects could be manipulated interchangeably, causing exactly the same effect on the underlying
-logger. An example could be seen in the test program
-<a href="../lxr/source/src/connect/test/test_ncbi_conn_stream.cpp"><tt>test_ncbi_conn_stream.cpp</tt></a>.
-Then, the returned C handle <b><i>LOG</i></b> can be subsequently used as a <i>CORE</i> logger by means of
-<b><i>CORE_SetLOG()</i></b>.
+logger. Then, the returned C handle <b><i>LOG</i></b> can be subsequently used as a <i>CORE C logger</i> by means of
+<b><i>CORE_SetLOG()</i></b>, like in the following nested calls: <tt>CORE_SetLOG(LOG_cxx2c());</tt>
 
 <p>
 <hr>
@@ -168,10 +173,10 @@ Then, the returned C handle <b><i>LOG</i></b> can be subsequently used as a <i>C
 declares the following C++ function to bind C <tt>REG</tt> object to <b><i>CNcbiRegistry</b></i>
 used in C++ programs built with the use of the NCBI C++ Toolkit:
 <pre>
-<tt>REG</tt> <a href="../lxr/ident?i=REG_cxx2c"><b><i>REG_cxx2c</i></b></a>&nbsp;<tt>(CNcbiRegistry* reg, bool pass_ownership = false)</tt>
+REG <a href="../lxr/ident?i=REG_cxx2c"><b><i>REG_cxx2c</i></b></a>&nbsp;<tt>(CNcbiRegistry* reg, bool pass_ownership = false)</tt>
 </pre>
 <p>
-Similarly to <i>CORE LOG</i> setting, the returned handle can be later used
+Similarly to <i>CORE C logger</i> setting, the returned handle can be later used
 with <a href="../lxr/ident?i=CORE_SetREG"><b><i>CORE_SetREG()</i></b></a>
 declared in <a href="../lxr/source/include/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>
 to set up the global registry object (<i>CORE C registry</i>).
@@ -184,15 +189,15 @@ to set up the global registry object (<i>CORE C registry</i>).
 
 There is a function
 <pre>
-<tt>MT_LOCK</tt> <a href="../lxr/ident?i=MT_LOCK_cxx2c"><b><i>MT_LOCK_cxx2c</i></b></a>&nbsp;<tt>(CRWLock* lock, bool pass_ownership = false)</tt>
+MT_LOCK <a href="../lxr/ident?i=MT_LOCK_cxx2c"><b><i>MT_LOCK_cxx2c</i></b></a>&nbsp;<tt>(CRWLock* lock, bool pass_ownership = false)</tt>
 </pre>
 declared in <a href="../lxr/source/include/connect/ncbi_core_cxx.hpp"><b><i>connect/ncbi_core_cxx.hpp</i></b></a>,
 which converts an object of class <b><i>CRWLock</i></b> into a C object <b><i>MT_LOCK</i></b>. The latter can
 be used as an argument to <a href="../lxr/ident?i=CORE_SetLOCK"><b><i>CORE_SetLOCK()</i></b></a> for
-setting the global CORE lock, used by a low level code, written in C. Note that passing 0 as the lock pointer
+setting the global <i>CORE C MT-lock</i>, used by a low level code, written in C. Note that passing 0 as the lock pointer
 will effectively create a new internal <tt>CRWLock</tt> object, which will then be converted into <tt>MT_LOCK</tt> and
-returned. This object is destroyed then the corresponding <tt>MT_LOCK</tt> is asked to do so.
-If the pointer to <tt>CRWLock</tt> is passed non NULL then the second argument can specify whether
+returned. This object gets automatically destroyed when the corresponding <tt>MT_LOCK</tt> is asked to do so.
+If the pointer to <tt>CRWLock</tt> is passed non <tt>NULL</tt> then the second argument can specify whether
 resulting <tt>MT_LOCK</tt> acquires the ownership of the lock, thus is able to delete the lock when destructing itself.
 
 <p>
@@ -200,14 +205,6 @@ resulting <tt>MT_LOCK</tt> acquires the ownership of the lock, thus is able to d
 
 
 <a name="ref_ConnectCxx"></a><h3><tt>CONNECT</tt> Library in C++ Code</h3>
-
-There is <a href="../lxr/source/src/connect/test/test_ncbi_conn_stream.cpp">an example</a> of how to properly setup
-<i>CORE logger</i> and <i>CORE ragistry</i> in order for them to use the same data both in C and C++ parts
-of both the library and the remaining code of the application.
-
-<p>
-Another good source of information is a working application examples found in
-<a href="../lxr/source/src/app/id1_fetch"><b><i>src/app/id1_fetch</i></b></a>.
 
 <a name="ref_SettingLOG"></a><h4>Setting <tt>LOG</tt></h4>
 
@@ -253,6 +250,42 @@ Note that the use of this call is extremely important in a multi-threaded enviro
 <hr>
 
 
+<a name="ref_CONNECT_Init_Cxx"></a><h4>Convenience call <tt>CONNECT_Init()</tt></h4>
+
+Header file <tt>&lt;<a href="../lxr/source/include/connect/ncbi_core_cxx.hpp">connect/ncbi_core_cxx.hpp</a>&gt;</tt>
+provides convenience call, which sets all shared <tt>CONNECT</tt>-related resources discussed above for an application
+program written within the C++ Toolkit framework (or linked solely against the libraries contained in the
+toolkit):
+<pre>
+void <a href="../lxr/ident?i=CONNECT_Init"><b>CONNECT_Init</b></a>(<a href="../lxr/ident?i=CNcbiRegistry">CNcbiRegistry</a>* reg = NULL);
+</pre>
+The call takes only one argument, an optional pointer to a registry, which is used by the application, and
+should also be considered by the <tt>CONNECT</tt> library.
+No registry will be used if <tt>NULL</tt> gets passed. The ownership of the registry is passed along.
+This fact should be noted by an application doing extensive use of <tt>CONNECT</tt> stuff in static classes,
+i.e. prior to or after main(), because the registry can get deleted before <tt>CONNECT</tt> library stops
+using it. The call also ties <i>CORE C logger</i> to <a href="../lxr/ident?i=CNcbiDiag"><b><i>CNcbiDiag</i></b></a>,
+and privately creates <i>CORE C MT-lock</i> object (on top of <a href="../lxr/ident?i=CRWLock"><b><i>CRWLock</i></b></a>)
+for internal synchronization inside the library.
+
+<p>
+An example on how to use this call could be found in the test program
+<a href="../lxr/source/src/connect/test/test_ncbi_conn_stream.cpp"><tt>test_ncbi_conn_stream.cpp</tt></a>.
+It shows how to properly setup <i>CORE C logger</i>, <i>CORE C registry</i> and <i>CORE C MT-lock</i> in order
+for them to use the same data both in C and C++ parts of both the library and the remaining code of the application.
+
+<p>
+Another good source of information is working application examples found in
+<a href="../lxr/source/src/app/id1_fetch"><b><i>src/app/id1_fetch</i></b></a>.
+
+<p>
+<u>Note</u> from the examples that the convenience routine does not change logging levels or disable/enable
+certain logging properties. If this is desired, the application still has to use separate calls.
+
+<p>
+<hr>
+
+
 <a name="ref_CToolkitDiag"></a><h3>C Toolkit diagnostics redirection</h3>
 
 In a C/C++ program linked against both NCBI C++ and NCBI C
@@ -269,6 +302,78 @@ void <a href="../lxr/ident?i=SetupCToolkitErrPost">SetupCToolkitErrPost</a>(void
 which is put in a specially designated directory
 <a href="../lxr/source/include/ctools"><b><i>ctools</i></b></a>
 providing back links to the C Toolkit from the C++ Toolkit.
+
+<p>
+<hr>
+
+
+<a name="ref_ConnectC"></a><h3><tt>CONNECT</tt> Library in C Code</h3>
+
+<tt>CONNECT</tt> library in C Toolkit has a header
+<tt>&lt;<a href="../../C_DOC/lxr/source/connect/ncbi_core_c.h">connect/ncbi_core_c.h</a>&gt;</tt>,
+which serves exactly the same purposes that does <tt>&lt;connect/ncbi_core_cxx.hpp&gt;</tt>
+described previously. It defines an API to convert native Toolkit objects, like logger, registry, and MT-lock
+into their abstract equivalents, <a href="../../C_DOC/lxr/ident?i=LOG"><tt>LOG</tt></a>,
+<a href="../../C_DOC/lxr/ident?i=REG"><tt>REG</tt></a>, and
+<a href="../../C_DOC/lxr/ident?i=MT_LOCK"><tt>MT_LOCK</tt></a>,
+respectively, which defined in
+<tt>&lt;<a href="../../C_DOC/lxr/source/connect/ncbi_core.h">connect/ncbi_core.h</a>&gt;</tt>,
+and subsequently can used by <tt>CONNECT</tt> library as <i>CORE C</i> objects.
+
+<p>
+Briefly, the calls are:
+<ul>
+<li><pre>
+LOG <a href="../../C_DOC/lxr/ident?i=LOG_c2c"><i><b>LOG_c2c</b></i></a>&nbsp;(void);
+</pre>
+Create a logger <tt>LOG</tt> with all messages sent to it rerouted via the error logging facility
+used by the C Toolkit.
+<p>
+<li><pre>
+REG <a href="../../C_DOC/lxr/ident?i=REG_c2c"><i><b>REG_c2c</b></i></a>&nbsp;(const char* conf_file);
+</pre>
+Build a registry object <tt>REG</tt> from a named file <tt>conf_file</tt>.
+Passing <tt>NULL</tt> as an argument causes the default Toolkit registry file to be searched for and used.
+<p>
+<li><pre>
+MT_LOCK <a href="../../C_DOC/lxr/ident?i=MT_LOCK_c2c"><i><b>MT_LOCK_c2c</b></i></a>&nbsp;(<a href="../../C_DOC/lxr/ident?i=TNlmRWLock"><b><i>TNlmRWlock</i></b></a> lock, int/*bool*/ pass_ownership);
+</pre>
+Build an <tt>MT_LOCK</tt> object on top of <tt>TNlmRWLock</tt> handle. Note that passing <tt>NULL</tt> effectively
+creates an internal handle, which is used as an underlying object. Ownership of the original handle can be passed
+to the resulting <tt>MT_LOCK</tt> by setting the second argument to a non-zero value. The internally created handle
+always has its ownership passed along.
+</ul>
+
+Exactly the same way as described in previous section, all objects, resulting
+from the above functions, can be used to set up <i>CORE C logger</i>, <i>CORE C registry</i>, and
+<i>CORE MT-lock</i> of <tt>CONNECT</tt> library using the API defined in
+<tt>&lt;<a href="../../C_DOC/lxr/source/connect/ncbi_util.h">connect/ncbi_util.h</a>&gt;</tt>:
+<b><i><a href="../../C_DOC/lxr/ident?i=CORE_SetLOG">CORE_SetLOG</a>()</i></b>,
+<b><i><a href="../../C_DOC/lxr/ident?i=CORE_SetREG">CORE_SetREG</a>()</i></b>, and
+<b><i><a href="../../C_DOC/lxr/ident?i=CORE_SetLOCK">CORE_SetLOCK</a>()</i></b>, respectively.
+
+
+<a name="ref_CONNECT_Init_C"></a><h4>Convenience call <tt>CONNECT_Init()</tt></h4>
+
+As an alternative to using per-object settings shown in the previous paragraph, the following
+"all-in-one" call is provided:
+<pre>
+void <a href="../../C_DOC/lxr/ident?i=CONNECT_Init"><b><i>CONNECT_Init</i></b></a>(const char* conf_file);
+</pre>
+This sets <i>CORE C logger</i> to go via Toolkit default logging facility, causes
+<i>CORE C registry</i> to be loaded from the named file (or from the Toolkit's default
+file if <tt>conf_file</tt> passed <tt>NULL</tt>), and creates <i>CORE C MT-lock</i> on top
+of internally created <b><i>TNlmRWLock</i></b> handle, the ownership of which is passed
+to the <tt>MT_LOCK</tt>.
+
+<p>
+<u>Note</u> again that properties of logging facility is not affected by this call, i.e.
+the selection of what gets logged, how, and where, should be controlled by using native C Toolkit's
+mechanisms defined in 
+<tt>&lt;<a href="../../C_DOC/lxr/source/corelib/ncbierr.h">ncbierr.h</a>&gt;</tt>.
+
+<p>
+<hr>
 
 <p>
 
