@@ -133,6 +133,9 @@ public:
     void   SetStartModelId(size_t model_id) {
         m_model_id = model_id - 1;
     }
+    size_t GetLastModelId(void) const {
+        return m_model_id;
+    }
 
     void Run(THits* hits);
   
@@ -203,6 +206,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2004/06/21 17:45:05  kapustin
+ * Add CSplign::GetLastModelId()
+ *
  * Revision 1.11  2004/06/03 19:27:04  kapustin
  * Add CSplign::GetIdentity()
  *
