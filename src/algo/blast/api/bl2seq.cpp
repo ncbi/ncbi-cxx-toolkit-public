@@ -269,7 +269,7 @@ CBl2Seq::ScanDB()
             m_OptsHandle->GetOptions().GetHitSaveOpts(),
             mi_clsQueryInfo->num_queries, FALSE);
                   
-    BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgramType(),
+    Blast_RunFullSearch(m_OptsHandle->GetOptions().GetProgramType(),
                        mi_clsQueries, mi_clsQueryInfo, 
                        mi_pSeqSrc, mi_pScoreBlock, 
                        m_OptsHandle->GetOptions().GetScoringOpts(),
@@ -279,7 +279,7 @@ CBl2Seq::ScanDB()
                        m_OptsHandle->GetOptions().GetHitSaveOpts(),
                        m_OptsHandle->GetOptions().GetEffLenOpts(),
                        NULL, m_OptsHandle->GetOptions().GetDbOpts(),
-                       hsp_stream, mi_pDiagnostics, &mi_pResults);
+                       hsp_stream, NULL, mi_pDiagnostics, &mi_pResults);
     hsp_stream = BlastHSPStreamFree(hsp_stream);
 }
 
@@ -354,6 +354,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.65  2004/12/21 17:18:04  dondosha
+ * BLAST_SearchEngine renamed to Blast_RunFullSearch
+ *
  * Revision 1.64  2004/11/17 20:26:33  camacho
  * Use new BlastSeqSrc initialization function names and check for initialization errors
  *
