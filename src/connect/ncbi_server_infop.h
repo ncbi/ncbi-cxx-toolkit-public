@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/11/25 22:12:06  lavr
+ * Replaced g_SERV_LocalServerDefault -> SERV_SetLocalServerDefault()
+ *
  * Revision 6.1  2001/11/16 20:25:53  lavr
  * +g_SERV_LocalServerDefault as a private global parameter
  *
@@ -44,7 +47,7 @@ extern "C" {
 #endif
 
 
-extern int/*bool*/ g_SERV_LocalServerDefault;
+int/*bool*/ SERV_SetLocalServerDefault(int/*bool*/ onoff);
 
 
 #ifdef __cplusplus
