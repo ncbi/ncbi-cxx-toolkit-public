@@ -284,8 +284,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PostOverrideArg
 
 /* Set user header (discard previously set header, if any).
  * Reset the old header (if any) if "header" == NULL.
+ * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
-extern NCBI_XCONNECT_EXPORT void ConnNetInfo_SetUserHeader
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetUserHeader
 (SConnNetInfo* info,
  const char*   header
  );
@@ -639,6 +640,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2003/08/25 14:48:50  lavr
+ * ConnNetInfo_SetUserHeader():  to return completion status
+ *
  * Revision 6.31  2003/05/29 17:56:53  lavr
  * More (clarified) comments for URL_Connect()
  *
