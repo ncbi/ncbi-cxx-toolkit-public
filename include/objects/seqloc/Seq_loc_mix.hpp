@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2002/09/12 21:15:11  kans
+ * added IsPartialLeft and IsPartialRight
+ *
  * Revision 1.10  2002/06/07 11:47:38  clausen
  * Added relate function comment
  *
@@ -97,6 +100,10 @@ public:
     //   TSeqPos GetLength(const CSeq_loc_mix&, CScope*)
     //
 
+    // check left (5') or right (3') end of location for e_Lim fuzz
+    bool IsPartialLeft  (void) const;
+    bool IsPartialRight (void) const;
+        
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc_mix(const CSeq_loc_mix&);

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2002/09/12 21:16:14  kans
+ * added IsPartialLeft and IsPartialRight
+ *
  * Revision 1.10  2002/06/07 11:54:34  clausen
  * Added related functions comment
  *
@@ -112,6 +115,10 @@ public:
     typedef CRange<TSeqPos> TRange;
     TRange GetTotalRange(void) const;
 
+    // check left (5') or right (3') end of location for e_Lim fuzz
+    bool IsPartialLeft  (void) const;
+    bool IsPartialRight (void) const;
+        
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc(const CSeq_loc&);

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/09/12 21:19:02  kans
+ * added IsPartialLeft and IsPartialRight
+ *
  * Revision 6.7  2002/06/06 20:51:51  clausen
  * Moved GetLength to objects/util/sequence.cpp
  *
@@ -63,6 +66,8 @@
  */
 
 #include <objects/seqloc/Seq_loc_mix.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_point.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -88,6 +93,19 @@ CSeq_loc_mix::~CSeq_loc_mix(void)
 #  endif
 #endif
 }
+
+bool CSeq_loc_mix::IsPartialLeft (void) const
+
+{
+    return Get ().front ()->IsPartialLeft ();
+}
+
+bool CSeq_loc_mix::IsPartialRight (void) const
+
+{
+    return Get ().back ()->IsPartialRight ();
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE

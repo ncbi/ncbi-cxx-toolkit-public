@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/09/12 21:19:02  kans
+ * added IsPartialLeft and IsPartialRight
+ *
  * Revision 6.13  2002/06/06 20:35:28  clausen
  * Moved methods using object manager to objects/util
  *
@@ -262,6 +265,53 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
     }
 }
 
+bool CSeq_loc::IsPartialLeft (void) const
+
+{
+    switch (Which ()) {
+
+        case CSeq_loc::e_Null :
+            return true;
+
+        case CSeq_loc::e_Int :
+            return GetInt ().IsPartialLeft ();
+
+        case CSeq_loc::e_Pnt :
+            return GetPnt ().IsPartialLeft ();
+
+        case CSeq_loc::e_Mix :
+            return GetMix ().IsPartialLeft ();
+
+        default :
+            break;
+    }
+
+    return false;
+}
+
+bool CSeq_loc::IsPartialRight (void) const
+
+{
+    switch (Which ()) {
+
+        case CSeq_loc::e_Null :
+            return true;
+
+        case CSeq_loc::e_Int :
+            return GetInt ().IsPartialRight ();
+
+        case CSeq_loc::e_Pnt :
+            return GetPnt ().IsPartialRight ();
+
+        case CSeq_loc::e_Mix :
+            return GetMix ().IsPartialRight ();
+
+        default :
+            break;
+    }
+
+    return false;
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::
