@@ -1547,31 +1547,25 @@ static EIO_Status s_SelectStallsafe(size_t                n,
         /* all sockets are not ready for the requested events */
         for (i = j; i < n; i++) {
             /* try to find an immediately readable socket */
-            if (polls[i].event == eIO_Write  &&  polls[i].revent == eIO_Read) {
-                ESwitch    save_r_on_w;
-                SSOCK_Poll poll;
-
+            if (polls[i].event != eIO_Write)
+                continue;
+            while (polls[i].revent == eIO_Read) {
                 assert(polls[i].sock &&
                        polls[i].sock->type != eSOCK_Datagram &&
                        (polls[i].sock->r_on_w == eOn ||
                         (polls[i].sock->r_on_w == eDefault
                          && s_ReadOnWrite == eOn)));
+
                 /* try upread as mush as possible data into internal buffer */
                 s_Recv(polls[i].sock, 0, 0/*infinite*/, 1/*peek*/);
 
-                /* then poll about write-only w/o upread */
-                save_r_on_w = polls[i].sock->r_on_w;
-                polls[i].sock->r_on_w = eOff;
-                poll.sock   = polls[i].sock;
-                poll.event  = eIO_Write;
-                poll.revent = eIO_Open;
-                status = s_Select(1, &poll, timeout);
-                polls[i].sock->r_on_w = save_r_on_w;
-                if (status == eIO_Success  &&  poll.revent == eIO_Write) {
-                    polls[i].revent = eIO_Write/*poll.revent*/;
-                    break; /*can write now!*/
-                }
+                /* then poll if writeable */
+                polls[i].revent = eIO_Open;
+                if ((status = s_Select(1, &polls[i], timeout)) != eIO_Success)
+                    break;
             }
+            if (status != eIO_Success  ||  polls[i].revent == eIO_Write)
+                break; /*error or can write now!*/
         }
     }
 
@@ -1588,7 +1582,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
     if ( n_ready )
         *n_ready = j;
 
-    return j ? eIO_Success : eIO_Timeout;
+    return j ? eIO_Success : (status == eIO_Success ? eIO_Timeout : status);
 }
 
 
@@ -2954,6 +2948,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.84  2003/02/20 17:52:30  lavr
+ * Resolve dead-lock condition in s_SelectStallsafe()
+ *
  * Revision 6.83  2003/02/04 22:03:54  lavr
  * Workaround for ENOTCONN in shutdown() on Linux; few more fixes
  *
