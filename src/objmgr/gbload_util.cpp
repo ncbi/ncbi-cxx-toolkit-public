@@ -121,13 +121,14 @@ CMutexPool::SetSize(int size)
   m_size=size;
   m_Locks = new CMutex[m_size];
   spread  = new int[m_size];
+  for(int i=0;i<m_size;++i) spread[i]=0;
 }
 
 CMutexPool::~CMutexPool(void)
 {
   if(m_Locks) delete [] m_Locks;
   if(spread)  {
-    for(int i=0;i<m_size;++i) GBLOG_POST("PoolMutex " << i << " used "<< spread[i] << "times");
+    for(int i=0;i<m_size;++i) GBLOG_POST("PoolMutex " << i << " used "<< spread[i] << " times");
     delete [] spread;
   }
 }
@@ -140,6 +141,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/04/04 01:35:35  kimelman
+* more MT tests
+*
 * Revision 1.6  2002/04/02 16:02:30  kimelman
 * MT testing
 *

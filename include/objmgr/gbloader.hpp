@@ -48,7 +48,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-#if !defined(_NDEBUG) && defined(DEBUG_SYNC)
+#if !defined(NDEBUG) //&& defined(DEBUG_SYNC)
 #define GBLOG_POST(x) LOG_POST(CThread::GetSelf() << ":: " << x)
 #else
 #define GBLOG_POST(x)
@@ -111,15 +111,15 @@ public:
   template<class A> void Lock  (A* a)
     {
       int x = Select(a);
-      GBLOG_POST("PoolLock  ("<< x <<") tried");
+      //GBLOG_POST("PoolLock  ("<< x <<") tried");
       spread[x]++;
       GetMutex(x).Lock();
-      GBLOG_POST("PoolLock  ("<< x <<") locked");
+      //GBLOG_POST("PoolLock  ("<< x <<") locked");
     }
   template<class A> void Unlock(A* a)
     {
       int x = Select(a);
-      GBLOG_POST("PoolUnlock("<< x <<") unlocked");
+      //GBLOG_POST("PoolUnlock("<< x <<") unlocked");
       GetMutex(x).Unlock();
     }
 
@@ -192,13 +192,13 @@ private:
     ~MyMutex(void) {};
     void Lock(const string& loc)
       {
-        GBLOG_POST("MyLock  tried  at "  << loc);
+        //GBLOG_POST("MyLock  tried  at "  << loc);
         m_.Lock();
-        GBLOG_POST("MyLock  locked");
+        //GBLOG_POST("MyLock  locked");
       }
     void Unlock(void)
       {
-        GBLOG_POST("MyLock unlocked");
+        //GBLOG_POST("MyLock unlocked");
         m_.Unlock();
       }
   };
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.11  2002/04/04 01:35:33  kimelman
+ * more MT tests
+ *
  * Revision 1.10  2002/04/02 16:02:28  kimelman
  * MT testing
  *

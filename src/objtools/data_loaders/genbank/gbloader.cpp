@@ -171,9 +171,10 @@ CGBDataLoader::DropTSE(const CSeq_entry *sep)
     }
   STSEinfo *tse = it->second;
   if(m_SlowTraverseMode>0) m_Pool.Lock(tse);
+  _VERIFY(tse);
+  STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
   
   m_Tse2TseInfo.erase(it);
-  _VERIFY(tse);
   x_DropTSEinfo(tse);
   if(m_SlowTraverseMode>0) m_Pool.Unlock(tse);
   m_LookupMutex.Unlock();
@@ -361,11 +362,12 @@ CGBDataLoader::GC(void)
       while(tse_to_drop && i-->0)
         tse_to_drop = tse_to_drop->next;
       _VERIFY(tse_to_drop);
-      const CSeq_entry *sep=tse_to_drop->m_upload.m_tse;
       bool do_call_drop = true;
       if(m_SlowTraverseMode>0) m_Pool.Lock(tse_to_drop);
+      const CSeq_entry *sep=tse_to_drop->m_upload.m_tse;
       if(!sep && tse_to_drop->m_upload.m_mode != CTSEUpload::eNone)
         {
+          GBLOG_POST("X_GC:: drop nonexistent tse " << tse_to_drop);
           x_DropTSEinfo(tse_to_drop);
           do_call_drop = false;
         }
@@ -464,7 +466,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
           tse->key.reset((*srp)->Dup());
           m_Sr2TseInfo[CCmpTSE(tse->key.get())] = tse;
           m_TseCount++;
-          //GBLOG_POST( "x_GetRecords-newTSE(" << tse << ") mode=" << (tse->m_upload.m_mode));
+          GBLOG_POST( "x_GetRecords-newTSE(" << tse << ") ");
         }
       
       bool use_global_lock=true;
@@ -499,14 +501,15 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
             { // switch to local lock mode
               m_SlowTraverseMode++;
               use_global_lock=false;
-              m_LookupMutex.Unlock();
               if(!use_local_lock)
                 {
                   m_Pool.Lock(tse);
                   use_local_lock=true;
                 }
+              m_LookupMutex.Unlock();
             }
           _VERIFY(use_local_lock);
+          _VERIFY(!use_global_lock);
           new_tse = new_tse ||
             x_GetData(tse,
                       *srp,
@@ -515,25 +518,28 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
                       blob_mask
                       );
         }
+      if(new_tse)
+       {
+         STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,0,m_Tse2TseInfo.size());
+         m_Tse2TseInfo[tse->m_upload.m_tse]=tse;
+         STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
+         new_tse=false;
+       }
+
       if(use_local_lock) m_Pool.Unlock(tse);
+      // _VERIFY(!new_tse || !use_global_lock);
       if(!use_global_lock)
         { // uploaded some data
           m_LookupMutex.Lock("x_GetRecords - back_to_global");
           m_SlowTraverseMode--;
-          if(new_tse)
-            {
-              STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,0,m_Tse2TseInfo.size());
-              m_Tse2TseInfo[tse->m_upload.m_tse]=tse;
-              STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
-            }
+         // if(new_tse)
+         //   {
+         //     STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,0,m_Tse2TseInfo.size());
+         //     m_Tse2TseInfo[tse->m_upload.m_tse]=tse;
+         //     STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
+         //   }
           m_LookupMutex.Unlock();
           return false; // restrart traverse to make sure seqrefs list are the same we started from
-        }
-      if(new_tse)
-        {
-          STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,0,m_Tse2TseInfo.size());
-          m_Tse2TseInfo[tse->m_upload.m_tse]=tse;
-          STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
         }
     } // iterate seqrefs
   m_LookupMutex.Unlock();
@@ -721,6 +727,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/04/04 01:35:35  kimelman
+* more MT tests
+*
 * Revision 1.21  2002/04/02 17:27:00  gouriano
 * bugfix: skip test for yet unregistered data
 *

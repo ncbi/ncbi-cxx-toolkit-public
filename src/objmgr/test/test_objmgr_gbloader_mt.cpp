@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/04/04 01:35:38  kimelman
+* more MT tests
+*
 * Revision 1.3  2002/04/02 17:24:54  gouriano
 * skip useless test passes
 *
@@ -132,9 +135,9 @@ void* CTestThread::Main(void)
 
     CScope *s;
     switch(m_mode&3) {
-    case 2: s =  &*m_Scope; break;
+    case 0: s =  &*m_Scope; break;
     case 1: s =  &scope1;   break;
-    case 0: s =  &scope2;   break;
+    case 2: s =  &scope2;   break;
     default:
       throw runtime_error("unexpected mode");
     }
@@ -154,7 +157,8 @@ void* CTestThread::Main(void)
       }
       GBLOG_POST(" gi=" << gi << " OK");
     }
-    s->ResetHistory();
+    if(m_mode&3 < 2 && i%3==0)
+      s->ResetHistory();
   }
   return 0;
 }
@@ -173,7 +177,7 @@ public:
 };
 
 const unsigned c_TestFrom = 1;
-const unsigned c_TestTo   = 21;
+const unsigned c_TestTo   = 101;
 const unsigned c_GI_count = c_TestTo - c_TestFrom;
 
 int CTestApplication::Test(const int test_mode,const int thread_count)
@@ -185,7 +189,7 @@ int CTestApplication::Test(const int test_mode,const int thread_count)
   
   // CRef< CGBDataLoader> pLoader = new CGBDataLoader;
   // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
-  pOm->RegisterDataLoader(*new CGBDataLoader("ID", new CId1Reader(thread_count),c_GI_count/10),
+  pOm->RegisterDataLoader(*new CGBDataLoader("ID", new CId1Reader(thread_count),1+2*thread_count),
                           CObjectManager::eDefault);
   
   CRef<CScope> scope = new CScope(*pOm);
@@ -222,10 +226,10 @@ int CTestApplication::Run()
   
   for(int thr=tc-1,i=0 ; thr >= 0 ; --thr)
     for(int global_om=(thr>0?0:1);global_om<=1; ++global_om)
-      for(int global_scope=(thr>0?0:2);global_scope<=2 ; ++global_scope)
+      for(int global_scope=(thr==0?1:(global_om==0?1:0));global_scope<=2 ; ++global_scope)
         {
           int mode = (global_om<<2) + global_scope ;
-          LOG_POST("Test(" << i << ") # threads = " << thr );
+          LOG_POST("Test(" << i << ") # threads = " << thr+1 );
           time_t start=time(0);
           Test(mode,thr+1);
           timing[thr][global_om][global_scope] = time(0)-start ;
@@ -235,10 +239,10 @@ int CTestApplication::Run()
   
   for(int thr=tc-1 ; thr >= 0 ; --thr)
     for(int global_om=(thr>0?0:1);global_om<=1 ; ++global_om)
-      for(int global_scope=(thr>0?0:2);global_scope<=2 ; ++global_scope)
+      for(int global_scope=(thr==0?2:(global_om==0?1:2));global_scope<=2 ; ++global_scope)
         {
           LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local") <<
-                   ", scope=" << (global_scope==0?"auto":(global_scope==1?"per thread":"global")) <<
+                   ", scope=" << (global_scope==2?"auto":(global_scope==1?"per thread":"global")) <<
                    " ==>> " << timing[thr][global_om][global_scope] << " sec");
         }
   

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/04/04 01:35:37  kimelman
+* more MT tests
+*
 * Revision 1.12  2002/04/02 16:02:33  kimelman
 * MT testing
 *
@@ -78,6 +81,7 @@
 #include <objects/objmgr1/scope.hpp>
 #include <objects/objmgr1/gbloader.hpp>
 #include <objects/objmgr1/reader_id1.hpp>
+#include <objects/objmgr1/seq_vector.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>
@@ -103,8 +107,8 @@ public:
 
 int CTestApplication::Run()
 {
-    NcbiCout << "      Reading Data    =============================="
-             << NcbiEndl;
+    time_t start=time(0);
+    NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
 
     CRef< CObjectManager> pOm = new CObjectManager;
 
@@ -117,26 +121,32 @@ int CTestApplication::Run()
     for (int i = 1;  i < 500;  i++) {
         CScope scope(*pOm);
         scope.AddDefaults();
-        
+        int gi = i; //  + 18565551 - 2  ; 
         CSeq_id x;
-        x.SetGi(i);
+        x.SetGi(gi);
         CObjectOStreamAsn oos(NcbiCout);
         CBioseq_Handle h = scope.GetBioseqHandle(x);
         if ( !h ) {
-            LOG_POST("Gi (" << i << "):: not found in ID");
+            LOG_POST("Gi (" << gi << "):: not found in ID");
         } else {
-          scope.ResetHistory();
+//          scope.ResetHistory();
           iterate (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
             //oos << **it;
             //NcbiCout << NcbiEndl;
             ;
           }
-          LOG_POST("Gi (" << i << "):: OK");
+          CSeqVector v = h.GetSeqVector();
+          LOG_POST("Vector size = " << v.size());
+          string vs = "";
+          for (int cc = 0; cc < v.size(); cc++)
+              vs += v[cc];
+          LOG_POST("Data: " << NStr::PrintableString(vs.substr(0, 40)));
+          LOG_POST("Gi (" << gi << "):: OK");
         }
     }
 
     NcbiCout << "==================================================" << NcbiEndl;
-    NcbiCout << "Test completed" << NcbiEndl;
+    NcbiCout << "Test completed (" << (time(0)-start) << " sec ) " << NcbiEndl;
     return 0;
 }
 
