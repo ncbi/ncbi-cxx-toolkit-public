@@ -177,6 +177,7 @@ if test -n "$mail_list_full" ; then
    for loc in $mail_list_full ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
       {
+        echo "To: $mailto"
         echo "Subject: [C++ CHECK] $subject"
         echo
         echo "$subject"; echo
@@ -191,6 +192,7 @@ if test -n "$mail_list"  -a  -s "$error_res" ; then
    for loc in $mail_list ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
       {
+        echo "To: $mailto"
         echo "Subject: [C++ ERRORS]  $subject"
         echo
         echo "$subject"; echo
@@ -203,6 +205,7 @@ fi
 if test -n "$watch_list" ; then
    if test -n "$err_list"  -o  "$debug" = "yes" ; then
       {
+        echo "To: $watch_list"
         echo "Subject: [C++ WATCH] $signature"
         echo
         echo "$err_list"
