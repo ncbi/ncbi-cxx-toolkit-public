@@ -101,20 +101,29 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 #define EMPTY_TEMPLATE template<>
 #endif
 
-// Sun WorkShop fails to call destructors for objects created in
+// Sun WorkShop < 5.3 fails to call destructors for objects created in
 // for-loop initializers; this macro prevents trouble with iterators
 // that contain CRefs by advancing them to the end, avoiding
 // "deletion of referenced CObject" errors.
+// (The nested ifs are to work around a bug in KCC's preprocessor -- sigh)
 #ifdef NCBI_COMPILER_WORKSHOP
-#define BREAK(it) while (it) { ++(it); }  break
+# if NCBI_COMPILER_VERSION < 530
+#  define BREAK(it) while (it) { ++(it); }  break
+# else
+#  define BREAK(it) break
+# endif
 #else
-#define BREAK(it) break
+# define BREAK(it) break
 #endif
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2002/04/18 18:51:07  ucko
+ * WorkShop 5.3 fixed the problem with for-loop initializers;
+ * conditionalize the special definition of BREAK accordingly.
+ *
  * Revision 1.26  2002/04/11 20:39:19  ivanov
  * CVS log moved to end of the file
  *
