@@ -341,13 +341,15 @@ void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
                                                                  version));
             
             if ( writer.get() ) {
-                CWriterByteSourceReader proxy(&stream, writer.get());
-                
-                CObjectIStreamAsnBinary obj_stream(proxy);
-                
-                CStreamDelayBufferGuard guard(obj_stream);
-                
-                CId1Reader::x_ReadBlob(id1_reply, obj_stream);
+                {{
+                    CWriterByteSourceReader proxy(&stream, writer.get());
+                    
+                    CObjectIStreamAsnBinary obj_stream(proxy);
+                    
+                    CStreamDelayBufferGuard guard(obj_stream);
+                    
+                    CId1Reader::x_ReadBlob(id1_reply, obj_stream);
+                }}
 
                 writer.reset();
                 // everything is fine
@@ -582,6 +584,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.13  2003/10/24 15:36:46  vasilche
+ * Fixed incorrect order of objects' destruction - IWriter before object stream.
+ *
  * Revision 1.12  2003/10/24 13:27:40  vasilche
  * Cached ID1 reader made more safe. Process errors and exceptions correctly.
  * Cleaned statistics printing methods.
