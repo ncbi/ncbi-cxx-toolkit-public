@@ -927,7 +927,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             {
                 generalStyle2 = generalStyle1;
                 backboneStyle2 = NULL;
-                atomStyle2.isHighlighted = GlobalMessenger()->IsHighlighted(molecule, info1->residue->id);
+                atomStyle2.isHighlighted = GlobalMessenger()->IsHighlighted(molecule, info2->residue->id);
                 bondStyle->end2.atomCap = true;
                 isSpecial = true;
             }
@@ -995,7 +995,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         if (bond->order == Bond::eVirtual) {
             if (backboneStyle1->type != StyleSettings::eTrace || atomStyle1.style == eNotDisplayed)
                 bondStyle->end1.style = eNotDisplayed;
-            if (backboneStyle2->type != StyleSettings::eTrace || atomStyle1.style == eNotDisplayed)
+            if (backboneStyle2->type != StyleSettings::eTrace || atomStyle2.style == eNotDisplayed)
                 bondStyle->end2.style = eNotDisplayed;
             if (atomStyle1.style == eNotDisplayed || atomStyle2.style == eNotDisplayed)
                 bondStyle->midCap = true;
@@ -1655,6 +1655,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2004/05/28 19:10:28  thiessen
+* fix typos
+*
 * Revision 1.83  2004/05/27 13:40:50  thiessen
 * more cleanup ; use residue rather than global style for disulfides
 *
