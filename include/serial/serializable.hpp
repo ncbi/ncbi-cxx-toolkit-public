@@ -55,7 +55,7 @@ public:
         eAsString
     };
 
-    class CProxy {
+    class NCBI_XSERIAL_EXPORT CProxy {
     public:
         CProxy(const CSerializable& obj, EOutputType output_type)
             : m_Obj(obj), m_OutputType(output_type) { }
@@ -63,7 +63,8 @@ public:
     private:
         const CSerializable& m_Obj;
         EOutputType          m_OutputType;
-        friend CNcbiOstream& operator << (CNcbiOstream& out,
+        friend NCBI_XSERIAL_EXPORT
+        CNcbiOstream& operator << (CNcbiOstream& out,
                                           const CProxy& src);
     };
 
@@ -103,6 +104,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/01/20 14:58:47  dicuccio
+* FIxed use of export specifiers - located before return type of function
+*
 * Revision 1.7  2004/01/16 22:10:40  ucko
 * Tweak to use a proxy class to avoid clashing with new support for
 * feeding CSerialObject to streams.

@@ -325,19 +325,19 @@ bool SerialEquals(const C& object1, const C& object2)
 //
 
 // Formatting
-CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_AsnText(CNcbiIos& io);
-CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_AsnBinary(CNcbiIos& io);
-CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_Xml(CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_AsnText(CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_AsnBinary(CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_Xml(CNcbiIos& io);
 
 // Class member assignment verification
-CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_VerifyDefault(CNcbiIos& io);
-CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_VerifyNo(CNcbiIos& io);
-CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_VerifyYes(CNcbiIos& io);
-CNcbiIos& NCBI_XSERIAL_EXPORT MSerial_VerifyDefValue(CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyDefault(CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyNo(CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyYes(CNcbiIos& io);
+NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyDefValue(CNcbiIos& io);
 
 // Input/output
-CNcbiOstream& NCBI_XSERIAL_EXPORT operator<< (CNcbiOstream& str, const CSerialObject& obj);
-CNcbiIstream& NCBI_XSERIAL_EXPORT operator>> (CNcbiIstream& str, CSerialObject& obj);
+NCBI_XSERIAL_EXPORT CNcbiOstream& operator<< (CNcbiOstream& str, const CSerialObject& obj);
+NCBI_XSERIAL_EXPORT CNcbiIstream& operator>> (CNcbiIstream& str, CSerialObject& obj);
 
 
 
@@ -424,6 +424,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/01/20 14:58:46  dicuccio
+* FIxed use of export specifiers - located before return type of function
+*
 * Revision 1.27  2004/01/16 21:50:41  gouriano
 * added export specifiers to i/o manipulators
 *
