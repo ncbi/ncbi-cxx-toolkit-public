@@ -300,7 +300,7 @@ CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
                                    const string blob_column[],
                                    bool is_text) :
     m_TableName(table_name), m_KeyColName(key_col_name),
-    m_NumColName(num_col_name), m_Desc(table_name)
+    m_NumColName(num_col_name), m_Desc(table_name), m_RowNum(0)
 {
     m_Con= 0;
     m_Cmd= 0;
@@ -343,6 +343,7 @@ bool CSimpleBlobStore::Init(CDB_Connection* con)
 {
     m_Con= con;
     m_ImageNum= 0;
+    m_RowNum= 0;
     if(m_Key.IsNULL() || (m_nofDataCols < 1)) return false;
     m_Cmd= m_Con->LangCmd(m_sCMD, 2);
     m_Cmd->SetParam("@key", &m_Key);
