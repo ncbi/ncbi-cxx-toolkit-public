@@ -193,7 +193,6 @@ private:
   CAlnVec* m_AV;  //current aln vector
   int** m_Matrix;  //matrix used to compute the midline
   static const char m_PSymbol[m_PMatrixSize+1]; //Amino acid symbol
-  static const int m_Blosum62[m_PMatrixSize][m_PMatrixSize];  //BLOSUM62 matrix
   int m_AlignOption;  //Display options
   static const string color[m_NumColor];
   AlignType m_AlignType;  //alignment type, used for displaying blast info
@@ -252,6 +251,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.14  2003/12/11 22:28:16  jianye
+*get rid of m_Blosum62
+*
 *Revision 1.13  2003/12/01 23:15:56  jianye
 *Added showing CDR product
 *
