@@ -53,17 +53,20 @@ public:
     };
   typedef CGBDataLoader::SLeveledMutex TLMutex;
 
+private:
+  TLMutex      *m_Locks;
+  const char   *m_Loc;
+  EState        m_orig;
+  EState        m_current;
+  int           m_select;
+
+public:
+
   CGBLGuard(TLMutex& lm,EState orig,const char *loc="",int select=-1); // just accept start position
   CGBLGuard(TLMutex& lm,const char *loc=""); // assume orig=eNone, switch to e.Main in constructor
   CGBLGuard(CGBLGuard &g,const char *loc);   // inherit state from g1 - for SubGuards
 
   ~CGBLGuard();
-  void Switch(EState newstate);
-  template<class A> void Switch(EState newstate,A *a)
-  {
-    Select(m_Locks->m_Pool.Select(a));
-    Switch(newstate);
-  }
   template<class A> void Lock(A *a)   { Switch(eBoth,a); }
   template<class A> void Unlock(A *a) { Switch(eMain,a); }
   void Lock()   { Switch(eMain);};
@@ -71,17 +74,24 @@ public:
   void Local()  { Switch(eLocal);};
   
 private:
-  TLMutex      *m_Locks;
-  const char   *m_Loc;
-  EState        m_orig;
-  EState        m_current;
-  int           m_select;
   
+#if defined (_REENTRANT)
   void MLock();
   void MUnlock();
   void PLock();
   void PUnlock();
   void Select(int s);
+
+  template<class A> void Switch(EState newstate,A *a)
+  {
+    Select(m_Locks->m_Pool.Select(a));
+    Switch(newstate);
+  }
+  void Switch(EState newstate);
+#else
+  void Switch(EState newstate) {}
+  template<class A> void Switch(EState newstate,A *a) {}
+#endif
 };
 
 END_SCOPE(objects)
@@ -92,6 +102,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.3  2003/03/01 22:26:56  kimelman
+ * performance fixes
+ *
  * Revision 1.2  2002/07/22 23:10:04  kimelman
  * make sunWS happy
  *

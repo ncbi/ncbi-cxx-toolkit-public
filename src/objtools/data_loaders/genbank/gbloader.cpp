@@ -396,10 +396,14 @@ CGBDataLoader::x_DropTSEinfo(STSEinfo *tse)
 void
 CGBDataLoader::GC(void)
 {
-    GBLOG_POST( "X_GC " << m_TseCount << "," << m_TseGC_Threshhold << "," << m_InvokeGC);
+    // GBLOG_POST( "X_GC " << m_TseCount << "," << m_TseGC_Threshhold << "," << m_InvokeGC);
     // dirty read - but that ok for garbage collector
-    if(m_TseCount<m_TseGC_Threshhold) return;
-    if(!m_InvokeGC) return ;
+    if(!m_InvokeGC || m_TseCount==0) return ;
+    if(m_TseCount < m_TseGC_Threshhold) {
+      if(m_TseCount < 0.5*m_TseGC_Threshhold)
+        m_TseGC_Threshhold = (m_TseCount + 3*m_TseGC_Threshhold)/4;
+      return;
+    }
     GBLOG_POST( "X_GC " << m_TseCount);
     //GetDataSource()->x_CleanupUnusedEntries();
 
@@ -407,41 +411,28 @@ CGBDataLoader::GC(void)
     x_Check(0);
 
     unsigned skip=0;
+    unsigned skip_max = (int)(0.1*m_TseCount + 1); /* scan 10% of least recently used pile before giving up */
     STSEinfo *cur_tse = m_UseListHead;
-    while ( cur_tse && skip<m_TseCount &&
-            skip<0.6*m_TseGC_Threshhold &&
-            m_TseCount > 0.9*m_TseGC_Threshhold ) {
+    while (cur_tse && skip<skip_max) {
         STSEinfo *tse_to_drop = cur_tse;
         cur_tse = cur_tse->next;
         ++skip;
         // fast checks
-        if (tse_to_drop->locked) {
-            continue;
-        }
-        if (tse_to_drop->tseinfop && tse_to_drop->tseinfop->CounterLocked()) {
-            continue;
-        }
+        if (tse_to_drop->locked) continue;
+        if (tse_to_drop->tseinfop && tse_to_drop->tseinfop->CounterLocked()) continue;
 
         const CSeq_entry *sep = tse_to_drop->m_upload.m_tse;
-        bool do_call_drop = true;
-        if ( !sep && tse_to_drop->m_upload.m_mode != CTSEUpload::eNone ) {
-            g.Lock(tse_to_drop);
-            GBLOG_POST("X_GC:: drop nonexistent tse " << tse_to_drop);
-            x_DropTSEinfo(tse_to_drop);
-            do_call_drop = false;
-            g.Unlock(tse_to_drop);
-            --skip;
+        if ( !sep ) {
+            if (tse_to_drop->m_upload.m_mode != CTSEUpload::eNone) {
+                g.Lock(tse_to_drop);
+                GBLOG_POST("X_GC:: drop nonexistent tse " << tse_to_drop);
+                x_DropTSEinfo(tse_to_drop);
+                g.Unlock(tse_to_drop);
+                --skip;
+            }
             continue;
         }
-
-        if(m_Tse2TseInfo.find(sep) == m_Tse2TseInfo.end()) {
-            continue;
-        }
-
-        if( !do_call_drop ) {
-            ++skip;
-            continue;
-        }
+        if(m_Tse2TseInfo.find(sep) == m_Tse2TseInfo.end()) continue;
         
 #ifdef DEBUG_SYNC
         char b[100];
@@ -449,11 +440,17 @@ CGBDataLoader::GC(void)
 #endif
         CConstRef<CSeq_entry> se(sep);
         g.Unlock();
-        if ( GetDataSource()->DropTSE(*se) )
+        if(GetDataSource()->DropTSE(*se) ) {
+            skip--;
             m_InvokeGC=false;
-        else
-            ++skip;
+        }
         g.Lock();
+    }
+    if(m_InvokeGC) { // nothing has been cleaned up
+      assert(m_TseGC_Threshhold<=m_TseCount); // GC entrance condition
+      m_TseGC_Threshhold = m_TseCount+2; // do not even try until next load
+    } else if(m_TseCount < 0.5*m_TseGC_Threshhold) {
+      m_TseGC_Threshhold = (m_TseCount + m_TseGC_Threshhold)/2;
     }
 }
 
@@ -607,7 +604,6 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
         }
         g.Lock();
         g.Lock(tse);
-        tse->locked--;
         x_UpdateDropList(tse);
         if(new_tse) {
             x_Check(0);
@@ -616,6 +612,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
             m_Tse2TseInfo[tse->m_upload.m_tse]=tse; // insert
             new_tse=false;
         }
+        tse->locked--;
         x_Check(tse);
     } // iterate seqrefs
     return global_mutex_was_released;
@@ -838,6 +835,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2003/03/01 22:27:57  kimelman
+* performance fixes
+*
 * Revision 1.49  2003/02/27 21:58:26  vasilche
 * Fixed performance of Object Manager's garbage collector.
 *

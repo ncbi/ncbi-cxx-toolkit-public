@@ -105,17 +105,30 @@ private:
   time_t m_RefreshTime;
 };
 
+
 class NCBI_XOBJMGR_EXPORT CMutexPool
 {
+#if defined(_REENTRANT)
   int         m_size;
   CMutex     *m_Locks;
   int        *spread;
+#else
+  static CMutex sm_Lock;
+#endif
 public:
+#if defined(_REENTRANT)
   CMutexPool();
   ~CMutexPool(void);
   void SetSize(int size);
   CMutex& GetMutex(int x) { int y=x%m_size; spread[y]++; return m_Locks[y]; }
   template<class A> int  Select(A *a) { return (((unsigned long) a)/sizeof(A)) % m_size ; }
+#else
+  CMutexPool() {};
+  ~CMutexPool(void) {};
+  void SetSize(int size) {};
+  CMutex& GetMutex(int x) { return sm_Lock; }
+  template<class A> int  Select(A *a) { return 0;}
+#endif
 };
 
 
@@ -220,6 +233,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.28  2003/03/01 22:26:07  kimelman
+ * performance fixes
+ *
  * Revision 1.27  2002/12/26 20:51:35  dicuccio
  * Added Win32 export specifier
  *

@@ -237,13 +237,11 @@ streambuf *CPubseqReader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned con)
     return new CStrStreamBuf(ss.release());
 
   {
-    auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_get_gi_history", 2));
+    auto_ptr<CDB_RPCCmd> cmd(m_Pool[con]->RPC("id_gi_class", 1));
     CDB_Int giIn(gi);
-    CDB_TinyInt revIn(0);
     cmd->SetParam("@gi", &giIn);
-    cmd->SetParam("@rev", &revIn);
     cmd->Send();
-    CDB_Int giOut;
+    CDB_Int giOut(gi);
     CDB_Int satOut;
     CDB_Int satKeyOut;
     bool  done=false;
@@ -254,34 +252,24 @@ streambuf *CPubseqReader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned con)
       if (result.get() == 0  ||  result->ResultType() != eDB_RowResult)
         continue;
 
-      while(result->Fetch())
-      {
-        for(unsigned pos = 0; pos < result->NofItems(); ++pos)
+      if(result->Fetch())
         {
-          string name = result->ItemName(pos);
-          if (name == "gi")
-            result->GetItem(&giOut);
-          else if(name == "sat")
-            result->GetItem(&satOut);
-          else if(name == "sat_key")
-            result->GetItem(&satKeyOut);
-          else
-            result->SkipItem();
-        }
-        if(giOut.Value() == gi && !done)
-          {
-            CPubseqSeqref pubseqRef;
-            pubseqRef.m_Gi.Value() = giOut.Value();
-            pubseqRef.m_Sat.Value() = satOut.Value();
-            pubseqRef.m_SatKey.Value() = satKeyOut.Value();
-            pubseqRef.m_Flag.Value() = 0;
-            *ss << pubseqRef;
-            done=true;
-          }
+          result->GetItem(&satOut);
+          result->SkipItem();
+          result->GetItem(&satKeyOut);
+
+          CPubseqSeqref pubseqRef;
+          pubseqRef.m_Gi.Value() = giOut.Value();
+          pubseqRef.m_Sat.Value() = satOut.Value();
+          pubseqRef.m_SatKey.Value() = satKeyOut.Value();
+          pubseqRef.m_Flag.Value() = 0;
+          *ss << pubseqRef;
+          done=true;
       }
+      while(result->Fetch());
     }
   }
-
+  
   return new CStrStreamBuf(ss.release());
 }
 
@@ -446,6 +434,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.20  2003/03/01 22:26:56  kimelman
+* performance fixes
+*
 * Revision 1.19  2003/01/18 08:42:25  kimelman
 * 1.added SNP retrieval per M.DiCuccio request; 2.avoid gi relookup
 *

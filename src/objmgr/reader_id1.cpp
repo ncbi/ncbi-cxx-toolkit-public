@@ -24,6 +24,7 @@
 
 #include <corelib/ncbistre.hpp>
 #include <objects/objmgr/reader_id1.hpp>
+#include <objects/id1/id1__.hpp>
 
 #include <serial/enumvalues.hpp>
 #include <serial/iterator.hpp>
@@ -53,78 +54,59 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
 streambuf *CId1Reader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
 {
   CConn_ServiceStream *server = m_Pool[conn % m_Pool.size()];
-  {
-    CID1server_request id1_request;
-    id1_request.SetGetgi().Assign(seqId);
-    CObjectOStreamAsnBinary server_output(*server);
-    server_output << id1_request;
-    server_output.Flush();
-  }
-
   auto_ptr<CObjectIStream> server_input(CObjectIStream::Open(eSerial_AsnBinary, *server, false));
-  CID1server_back id1_reply;
-  *server_input >> id1_reply;
-
+  CID1server_request id1_request;
+  CID1server_back    id1_reply;
   int gi = 0;
-  if(id1_reply.IsGotgi())
-     gi = id1_reply.GetGotgi();
+  
+  if(seqId.IsGi())
+    gi = seqId.GetGi();
   else
     {
-      LOG_POST("SeqId is not found");
-      seqId.WriteAsFasta(cout);
-    }
+      id1_request.SetGetgi().Assign(seqId);
+      {
+        CObjectOStreamAsnBinary server_output(*server);
+        server_output << id1_request;
+        server_output.Flush();
+      }
+      *server_input >> id1_reply;
 
+      if(id1_reply.IsGotgi())
+        gi = id1_reply.GetGotgi();
+      else
+        {
+          LOG_POST("SeqId is not found");
+          seqId.WriteAsFasta(cout);
+        }
+    }
+  
   auto_ptr<strstream> ss(new strstream);
 
   if(gi == 0)
     return new CStrStreamBuf(ss.release());
 
   {
-    CID1server_request id1_request1;
-    id1_request1.SetGetgirev(gi);
-    CObjectOStreamAsnBinary server_output(*server);
-    server_output << id1_request1;
-    server_output.Flush();
-  }
-  
-  *server_input >> id1_reply;
-  
-  for(CTypeConstIterator<CSeq_hist_rec> it = ConstBegin(id1_reply); it;  ++it)
-  {
-    int number = 0;
-    string dbname;
-    int lgi = 0;
-    
-    iterate(CSeq_hist_rec::TIds, it2, it->GetIds())
+    CID1server_maxcomplex blob;
+    blob.SetGi(gi);
+    id1_request.SetGetblobinfo(blob);
     {
-      if((*it2)->IsGi())
-      {
-        lgi = (*it2)->GetGi();
-      }
-      else if((*it2)->IsGeneral())
-      {
-        dbname = (*it2)->GetGeneral().GetDb();
-        const CObject_id& tag = (*it2)->GetGeneral().GetTag();
-        if(tag.IsStr())
-        {
-          number = NStr::StringToInt(tag.GetStr());
-        }
-        else
-        {
-          number = (tag.GetId());
-        }
-      }
+      CObjectOStreamAsnBinary server_output(*server);
+      server_output << id1_request;
+      server_output.Flush();
     }
-    if(gi!=lgi) continue;
-    CId1Seqref id1Seqref;
-    id1Seqref.Gi() = gi;
-    id1Seqref.Sat() = dbname;
-    id1Seqref.SatKey() = number;
-    id1Seqref.Flag() = 0;
-    *ss << id1Seqref;
-    break; // mk - get only the first one
+    id1_request.Reset(); 
   }
-  
+  *server_input >> id1_reply;
+
+  if(id1_reply.IsGotblobinfo())
+    {
+      CId1Seqref id1Seqref;
+      id1Seqref.Gi()     = gi;
+      id1Seqref.Sat()    = id1_reply.GetGotblobinfo().GetSat();
+      id1Seqref.SatKey() = id1_reply.GetGotblobinfo().GetSat_key();
+      id1Seqref.Flag() = 0;
+      *ss << id1Seqref;
+    }
   return new CStrStreamBuf(ss.release());
 }
 
@@ -168,11 +150,14 @@ struct CId1StreamBuf : public streambuf
 CId1StreamBuf::CId1StreamBuf(CId1Seqref &id1Seqref, CConn_ServiceStream *server) :
 m_Id1Seqref(id1Seqref)
 {
-  
   CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
+  char buf[5];
+  sprintf(buf,"%d",m_Id1Seqref.Sat());
+  string sat(buf);
+  
   params->SetGi(m_Id1Seqref.Gi());
   params->SetEnt(m_Id1Seqref.SatKey());
-  params->SetSat(m_Id1Seqref.Sat());
+  params->SetSat(sat);
   
   CID1server_request id1_request;
   id1_request.SetGetsefromgi(*params);
@@ -353,6 +338,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.27  2003/03/01 22:26:56  kimelman
+* performance fixes
+*
 * Revision 1.26  2003/02/04 18:53:36  dicuccio
 * Include file clean-up
 *

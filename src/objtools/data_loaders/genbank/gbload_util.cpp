@@ -108,6 +108,7 @@ CTimer::NeedCalibration()
 // MutexPool
 //
 
+#if defined(_REENTRANT)
 CMutexPool::CMutexPool()
 {
   m_size =0;
@@ -133,6 +134,7 @@ CMutexPool::~CMutexPool(void)
     delete [] spread;
   }
 }
+#endif
 
 /* =========================================================================== */
 // CGBLGuard 
@@ -160,6 +162,7 @@ CGBLGuard::~CGBLGuard()
   Switch(m_orig);
 }
 
+#if defined(_REENTRANT)
 void CGBLGuard::Select(int s)
 {
   if(m_current==eMain) m_select=s;
@@ -266,12 +269,16 @@ void CGBLGuard::Switch(EState newstate)
     }
   runtime_error("CGBLGuard::Switch - state desynchronized");
 }
+#endif // if(_REENTRANT)	
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/03/01 22:26:56  kimelman
+* performance fixes
+*
 * Revision 1.11  2003/02/05 17:59:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *

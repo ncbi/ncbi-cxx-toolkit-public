@@ -57,18 +57,18 @@ public:
   virtual char* printTSE(char*,int) const;
 
   CIntStreamable::TInt &Gi() { return m_Gi.Value(); };
-  string &Sat() { return m_Sat.Value(); };
+  CIntStreamable::TInt &Sat() { return m_Sat.Value(); };
   CIntStreamable::TInt &SatKey() { return m_SatKey.Value(); };
   
   const CIntStreamable::TInt  Gi()     const { return m_Gi.Value(); };
-  const string               &Sat()    const { return m_Sat.Value(); };
+  const CIntStreamable::TInt  Sat()    const { return m_Sat.Value(); };
   const CIntStreamable::TInt  SatKey() const { return m_SatKey.Value(); };
 
 private:
   friend class CId1Reader;
   streambuf *x_BlobStreamBuf(int start, int stop, const CBlobClass &cl, unsigned conn);
   CIntStreamable m_Gi;
-  CStringStreamable m_Sat;
+  CIntStreamable m_Sat;
   CIntStreamable m_SatKey;
   CId1Reader *m_Reader;
 };
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.12  2003/03/01 22:26:07  kimelman
+* performance fixes
+*
 * Revision 1.11  2003/02/04 16:02:22  dicuccio
 * Moved headers unecessarily included here into the .cpp file
 *
