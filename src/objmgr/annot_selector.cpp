@@ -152,6 +152,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_LimitObjectType = sel.m_LimitObjectType;
         m_IdResolving = sel.m_IdResolving;
         m_LimitObject = sel.m_LimitObject;
+        m_LimitTSE_Lock = sel.m_LimitTSE_Lock;
         m_MaxSize = sel.m_MaxSize;
         m_IncludeAnnotsNames = sel.m_IncludeAnnotsNames;
         m_ExcludeAnnotsNames = sel.m_ExcludeAnnotsNames;
@@ -174,6 +175,7 @@ SAnnotSelector& SAnnotSelector::SetLimitNone(void)
 {
     m_LimitObjectType = eLimit_None;
     m_LimitObject.Reset();
+    m_LimitTSE_Lock.Reset();
     return *this;
 }
 
@@ -187,6 +189,7 @@ SAnnotSelector::SetLimitTSE(const CSeq_entry_Handle& limit)
     const CTSE_Info& info = limit.x_GetInfo().GetTSE_Info();
     m_LimitObjectType = eLimit_TSE_Info;
     m_LimitObject.Reset(&info);
+    m_LimitTSE_Lock = limit.GetTSE_Lock();
     return *this;
 }
 
@@ -200,6 +203,7 @@ SAnnotSelector::SetLimitSeqEntry(const CSeq_entry_Handle& limit)
     const CSeq_entry_Info& info = limit.x_GetInfo();
     m_LimitObjectType = eLimit_Seq_entry_Info;
     m_LimitObject.Reset(&info);
+    m_LimitTSE_Lock = limit.GetTSE_Lock();
     return *this;
 }
 
@@ -213,6 +217,7 @@ SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot_Handle& limit)
     const CSeq_annot_Info& info = limit.x_GetInfo();
     m_LimitObjectType = eLimit_Seq_annot_Info;
     m_LimitObject.Reset(&info);
+    m_LimitTSE_Lock = limit.GetTSE_Lock();
     return *this;
 }
 
@@ -225,6 +230,7 @@ SAnnotSelector::SetLimitTSE(const CSeq_entry* limit)
     
     m_LimitObjectType = eLimit_TSE;
     m_LimitObject.Reset(limit);
+    m_LimitTSE_Lock.Reset();
     return *this;
 }
 
@@ -237,6 +243,7 @@ SAnnotSelector::SetLimitSeqEntry(const CSeq_entry* limit)
     
     m_LimitObjectType = eLimit_Seq_entry;
     m_LimitObject.Reset(limit);
+    m_LimitTSE_Lock.Reset();
     return *this;
 }
 
@@ -249,6 +256,7 @@ SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot* limit)
     
     m_LimitObjectType = eLimit_Seq_annot;
     m_LimitObject.Reset(limit);
+    m_LimitTSE_Lock.Reset();
     return *this;
 }
 
@@ -591,6 +599,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/08/05 18:24:05  vasilche
+* Added TSE_Lock field.
+*
 * Revision 1.12  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *
