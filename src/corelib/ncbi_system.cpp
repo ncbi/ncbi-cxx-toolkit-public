@@ -30,6 +30,9 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/07/02 18:45:14  ivanov
+* Added #include <sys/resource.h> and extern "C" to handlers
+*
 * Revision 1.1  2001/07/02 16:45:35  ivanov
 * Initialization
 *
@@ -45,6 +48,7 @@
 #ifdef NCBI_OS_UNIX
 #define USE_SETHEAPLIMIT
 #define USE_SETCPULIMIT
+#include <sys/resource.h>
 #include <sys/times.h>
 #include <limits.h>
 #endif
@@ -81,7 +85,8 @@ static void*      s_ReserveMemory    = 0;
 
 /* Routine to be called at the exit from application
  */
-static void s_ExitHandler()
+
+extern "C" static void s_ExitHandler()
 {
     CFastMutexGuard LOCK(s_ExitHandler_Mutex);
 
@@ -95,7 +100,7 @@ static void s_ExitHandler()
     case eEC_Memory:
         {
             ERR_POST("Memory heap limit attained in allocating memory " \
-                     "with operator new (" << s_HeapLimit << " byte)");
+                     "with operator new (" << s_HeapLimit << " bytes)");
             break;
         }
 
@@ -180,7 +185,7 @@ bool Ncbi_SetHeapLimit(size_t max_heap_size)
 
     // Set new heap limit
     CFastMutexGuard LOCK(s_ExitHandler_Mutex);
-    struct rlimit rl;
+    rlimit rl;
     if ( max_heap_size ) {
         set_new_handler(s_NewHandler);
         rl.rlim_cur = rl.rlim_max = max_heap_size;
@@ -216,7 +221,7 @@ bool Ncbi_SetHeapLimit(size_t max_heap_size) {
 
 #ifdef USE_SETCPULIMIT
 
-static void s_SignalHandler(int sig)
+extern "C" static void s_SignalHandler(int sig)
 {
     if ( sig == SIGXCPU ) {
         s_ExitCode = eEC_Cpu;
