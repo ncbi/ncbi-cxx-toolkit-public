@@ -1083,13 +1083,30 @@ public:
                                                 service, queue_name,
                                                 rebalance_time, 
                                                 rebalance_requests);
+
+                const string& services_list = conf.GetString(m_DriverName,
+                                                "sevices_lis",
+                                                 CConfig::eErr_NoThrow, "");
+                vector<string> services;
+                NStr::Tokenize(services_list, ",", services);
+                for(vector<string>::const_iterator it = services.begin();
+                                                   it != services.end(); ++it) {
+                    string host, sport;
+                    if (NStr::SplitInTwo(*it,":",host,sport)) {
+                        try {
+                            unsigned int port = NStr::StringToUInt(sport);
+                            static_cast<CNetScheduleClient_LB*>(drv)->
+                                                  AddServiceAddress(host,port);
+                        } catch(CStringException&) {}
+                    }
+                }
             } else { // non lb client
                 const string& host = 
                     conf.GetString(m_DriverName, 
                                   "host", CConfig::eErr_Throw, "");
                 unsigned int port = conf.GetInt(m_DriverName,
                                                "port",
-                                               CConfig::eErr_Throw, 9001);
+                                               CConfig::eErr_Throw, 9100);
 
                 drv = new CNetScheduleClient(host, port, 
                                              client_name, queue_name);
@@ -1123,6 +1140,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/04/01 16:42:59  didenko
+ * Added reading services_list parameter from ini file when LB client is
+ * created by PluginManager
+ *
  * Revision 1.19  2005/03/28 14:21:30  didenko
  * Fixed bug that caused an infinit loop in WaitForJob method
  *
