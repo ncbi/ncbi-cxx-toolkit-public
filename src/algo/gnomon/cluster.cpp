@@ -239,17 +239,17 @@ int AlignVec::CdsLen() const
     return len;
 }
 
-static istream& InputError(istream& s, ios::pos_type pos)
+static istream& InputError(istream& s, CT_POS_TYPE pos)
 {
     s.clear();
     s.seekg(pos);
-    s.setstate(ios::failbit);
+    s.setstate(NcbiFailbit);
     return s;
 }
 
 istream& operator>>(istream& s, AlignVec& a)
 {
-    ios::pos_type pos = s.tellg();
+    CT_POS_TYPE pos = s.tellg();
 
     string strandname;
     int strand;
@@ -308,7 +308,7 @@ istream& operator>>(istream& s, AlignVec& a)
     a.SetCdsLimits(cds_limits);
     a.SetFullCds(full_cds);
     a.Insert(IPair(start,stop));
-    ios::pos_type lastpos = s.tellg();
+    CT_POS_TYPE lastpos = s.tellg();
     while(s >> start) 
     {
         if(!(s >> stop)) return InputError(s,pos);
@@ -441,7 +441,7 @@ void Cluster::Init(int first, int second, int t)
 
 istream& operator>>(istream& s, Cluster& c)
 {
-    ios::pos_type pos = s.tellg();
+    CT_POS_TYPE pos = s.tellg();
 
     string cluster;
     s >> cluster;
@@ -519,7 +519,7 @@ void CClusterSet::Init(string cnt)
 
 istream& operator>>(istream& s, CClusterSet& cls)
 {
-    ios::pos_type pos = s.tellg();
+    CT_POS_TYPE pos = s.tellg();
 
     string contig;
     s >> contig;
@@ -559,6 +559,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/28 17:29:05  ucko
+ * Use macros from ncbistre.hpp for portability.
+ *
  * Revision 1.5  2004/07/28 12:33:18  dicuccio
  * Sync with Sasha's working tree
  *
