@@ -1117,12 +1117,15 @@ void CSeq_loc::SetPartialLeft (bool val)
     switch ( Which() ) {
         case CSeq_loc::e_Int:
             SetInt().SetPartialLeft(val);
+            break;
 
         case CSeq_loc::e_Pnt:
             SetPnt().SetPartialLeft(val);
+            break;
 
         case CSeq_loc::e_Mix :
             SetMix().SetPartialLeft(val);
+            break;
 
         default :
             break;
@@ -1139,12 +1142,15 @@ void CSeq_loc::SetPartialRight(bool val)
     switch ( Which() ) {
         case CSeq_loc::e_Int:
             SetInt().SetPartialRight(val);
+            break;
 
         case CSeq_loc::e_Pnt:
             SetPnt().SetPartialRight(val);
+            break;
 
         case CSeq_loc::e_Mix:
             SetMix().SetPartialRight(val);
+            break;
 
         default :
             break;
@@ -1546,6 +1552,10 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.44  2004/09/12 19:31:10  dicuccio
+ * Added missink 'break' statements inside of switch in SetPartialRight() /
+ * SetPartialLeft() - avoid erroneous fall-through
+ *
  * Revision 6.43  2004/09/01 15:33:44  grichenk
  * Check strand in GetStart and GetEnd. Circular length argument
  * made optional.
