@@ -64,6 +64,9 @@ public:
     class IDataSource* CreateDsFrom(const string& drivers,
 				    CNcbiRegistry* reg = 0);
 
+    // Destroy datasource object
+    void DestroyDs(const string& driver_name);
+
 protected:
 
     // Prohibit explicit construction and destruction
@@ -85,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/02/10 17:21:09  kholodov
+ * Added: DestroyDs() method
+ *
  * Revision 1.2  2002/04/29 19:13:14  kholodov
  * Modified: using C_DriverMgr as parent class of CDriverManager
  *

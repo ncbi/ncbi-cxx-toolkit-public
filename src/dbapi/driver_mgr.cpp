@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.9  2003/02/10 17:19:27  kholodov
+* Added: DestroyDs() method
+*
 * Revision 1.8  2002/09/23 18:35:24  kholodov
 * Added: GetErrorInfo() and GetErrorAsEx() methods.
 *
@@ -156,6 +159,14 @@ IDataSource* CDriverManager::RegisterDs(const string& driver_name,
     IDataSource *ds = new CDataSource(ctx);
     m_ds_list[driver_name] = ds;
     return ds;
+}
+
+void CDriverManager::DestroyDs(const string& driver_name)
+{
+    map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
+    if (i_ds != m_ds_list.end()) {
+        m_ds_list.erase(i_ds);
+    }
 }
 
 END_NCBI_SCOPE
