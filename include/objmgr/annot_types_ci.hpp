@@ -53,9 +53,10 @@ class CTSE_Info;
 class CSeq_loc;
 class CSeqMap_CI;
 class CAnnotObject_Info;
+class CFeat_Less;
+class CAnnotObject_Less;
 
-
-class CAnnotObject_Ref
+class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
 {
 public:
     CAnnotObject_Ref(void);
@@ -79,10 +80,23 @@ public:
     void SetMappedProd(CSeq_loc& loc);
 
 private:
+    friend class CFeat_Less;
+    friend class CAnnotObject_Less;
+
     CConstRef<CAnnotObject_Info> m_Object;
     CRef<CSeq_loc>          m_MappedLoc;  // master sequence coordinates
     CRef<CSeq_loc>          m_MappedProd; // master sequence coordinates
     bool                    m_Partial;    // Partial flag (same as in features)
+};
+
+
+class NCBI_XOBJMGR_EXPORT CFeat_Less
+{
+public:
+    // Compare CRef-s: if at least one is NULL, compare as pointers,
+    // otherwise call non-inline x_CompareAnnot() method
+    bool operator ()(const CAnnotObject_Ref& x,
+                     const CAnnotObject_Ref& y) const;
 };
 
 
@@ -93,9 +107,6 @@ public:
     // otherwise call non-inline x_CompareAnnot() method
     bool operator ()(const CAnnotObject_Ref& x,
                      const CAnnotObject_Ref& y) const;
-private:
-    // Compare annot objects
-    bool x_CompareAnnot(const CAnnotObject_Ref& x, const CAnnotObject_Ref& y) const;
 };
 
 
@@ -147,63 +158,15 @@ protected:
     const CAnnotObject_Ref& Get(void) const;
 
 private:
-    struct SConvertionRec : public CObject {
-        // Locations to search: must contain a single id. Locations
-        // on this seq will be converted to locations on the master seq.
-        auto_ptr<CHandleRangeMap>   m_Location;
-        // Shift to the master sequence position:
-        //   master_pos = annotation_pos + m_RefShift
-        TSignedSeqPos               m_RefShift;
-        // Min/max position allowed for features (to fit the map segment)
-        // The positions are in the referenced sequence coordinates.
-        TSeqPos                     m_RefMin;
-        TSeqPos                     m_RefMax;
-        ENa_strand                  m_Strand;
-        // Convert references to this id
-        CSeq_id_Handle              m_MasterId;
-        // Master/segment flag. Do not convert references if this flag is set.
-        bool                        m_Master;
-    };
-    typedef list< CRef<SConvertionRec> >      TIdConvList;
-    typedef map<CSeq_id_Handle, TIdConvList>  TConvMap;
-    typedef set<CAnnotObject_Ref, CAnnotObject_Less> TAnnotSet;
-    typedef map<CRef<CSeq_loc>, CRef<CSeq_loc> > TSeqLocMap;
-    typedef vector<CAnnotObject_Ref> TAnnotSet2;
+    typedef vector<CAnnotObject_Ref> TAnnotSet;
 
-
-    void x_Initialize2(const CHandleRangeMap& master_loc);
-    enum ESearchResult {
-        eSearch_None,
-        eSearch_Sorted,
-        eSearch_Unsorted
-    };
-    void x_SearchMain2(CHandleRangeMap loc);
-    void x_SearchLocation2(const CSeqMap_CI& seg,
-                           CHandleRangeMap::const_iterator master_loc);
-    void x_SearchLocation2(const CSeqMap_CI& segment,
-                           const CSeq_id& master_id,
-                           CHandleRange::const_iterator master_seg);
+    void x_Initialize(const CHandleRangeMap& master_loc);
+    void x_SearchMain(CHandleRangeMap loc);
+    void x_SearchLocation(const CSeqMap_CI& seg,
+                          CHandleRangeMap::const_iterator master_loc);
     
-    // Initialize the iterator
-    void x_Initialize(CHandleRangeMap& master_loc);
     // Release all locked resources TSE etc
     void x_ReleaseAll(void);
-    // Search the location for annotations, add all to the annot-set,
-    // lock all TSEs found. Do nothing with the convertions map.
-    // Return "true" only if annotations were found on the location.
-    void x_SearchLocation(CHandleRangeMap& loc);
-    // Process the location, resolve references, add information
-    // to the convertions map, search for annotations on references.
-    // The master location needs to be mapped too, since iterations are made
-    // over the map.
-    // Return "true" only if annotations were found on referenced sequences.
-    void x_ResolveReferences(const CSeq_id_Handle& master_idh, // master id
-                             const CSeq_id_Handle& ref_idh,    // ref. id
-                             TSeqPos rmin, TSeqPos rmax,// ref. interval
-                             ENa_strand strand,         // ref. strand
-                             TSignedSeqPos shift);      // shift to master
-    // Convert an annotation to the master location coordinates
-    CAnnotObject_Ref x_ConvertAnnotToMaster(const CAnnotObject_Info& annot_obj) const;
     // Convert seq-loc to the master location coordinates, return ePartial
     // if any location was adjusted (used as Partial flag for features),
     // eMapped if a location was recalculated but not truncated, eNone
@@ -213,24 +176,14 @@ private:
         eConverted_Mapped,
         eConverted_Partial
     };
-    EConverted x_ConvertLocToMaster(const CSeq_loc& src,
-                                    CRef<CSeq_loc>& dest) const;
-    EConverted x_ConvertLocToMaster2(const CSeqMap_CI& seg,
-                                     const CSeq_id_Handle& master_id,
-                                     CHandleRange::const_iterator master_seg,
-                                     const SAnnotObject_Index& index,
-                                     CRef<CSeq_loc>& mapped);
 
     SAnnotSelector               m_Selector;
-    // Map of all convertions from references to the master location
-    TConvMap                     m_ConvMap;
     // Set of all the annotations found
     TAnnotSet                    m_AnnotSet;
-    TAnnotSet2                   m_AnnotSet2;
     // TSE set to keep all the TSEs locked
     TTSESet                      m_TSESet;
     // Current annotation
-    TAnnotSet2::const_iterator   m_CurAnnot;
+    TAnnotSet::const_iterator    m_CurAnnot;
     mutable CRef<CScope>         m_Scope;
     // If non-zero, search annotations in the "native" TSE only
     CTSE_Lock                    m_NativeTSE;
@@ -241,14 +194,6 @@ private:
     // Overlap type for CAnnot_CI
     CAnnot_CI::EOverlapType      m_OverlapType;
 };
-
-
-inline
-bool CAnnotObject_Less::operator ()(const CAnnotObject_Ref& x,
-                                    const CAnnotObject_Ref& y) const
-{
-    return x_CompareAnnot(x, y);
-}
 
 
 inline
@@ -335,7 +280,7 @@ void CAnnotObject_Ref::SetMappedProd(CSeq_loc& loc)
 inline
 bool CAnnotTypes_CI::IsValid(void) const
 {
-    return m_CurAnnot != m_AnnotSet2.end();
+    return m_CurAnnot != m_AnnotSet.end();
 }
 
 
@@ -367,6 +312,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/02/24 21:35:21  vasilche
+* Reduce checks in CAnnotObject_Ref comparison.
+* Fixed compilation errors on MS Windows.
+* Removed obsolete file src/objects/objmgr/annot_object.hpp.
+*
 * Revision 1.28  2003/02/24 18:57:20  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

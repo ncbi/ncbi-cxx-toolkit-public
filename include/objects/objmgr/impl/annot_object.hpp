@@ -87,6 +87,7 @@ public:
 
     bool IsFeat(void) const;
     const CSeq_feat& GetFeat(void) const;
+    const CSeq_feat* GetFeatFast(void) const; // unchecked & unsafe
 
     bool IsAlign(void) const;
     const CSeq_align& GetAlign(void) const;
@@ -257,6 +258,12 @@ const CSeq_feat& CAnnotObject_Info::GetFeat(void) const
 }
 
 inline
+const CSeq_feat* CAnnotObject_Info::GetFeatFast(void) const
+{
+    return static_cast<const CSeq_feat*>(m_Object.GetPointerOrNull());
+}
+
+inline
 bool CAnnotObject_Info::IsAlign(void) const
 {
     return m_Choice == CSeq_annot::C_Data::e_Align;
@@ -359,6 +366,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/02/24 21:35:22  vasilche
+* Reduce checks in CAnnotObject_Ref comparison.
+* Fixed compilation errors on MS Windows.
+* Removed obsolete file src/objects/objmgr/annot_object.hpp.
+*
 * Revision 1.1  2003/02/24 18:57:21  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

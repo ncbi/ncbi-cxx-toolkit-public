@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects)
 const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
 {
     if (!m_MappedFeat) {
-        if ( m_MappedLoc  ||  m_MappedProd ) {
+        if ( bool(m_MappedLoc)  ||  bool(m_MappedProd) ) {
             CSeq_feat& dst = *new CSeq_feat;
             m_MappedFeat = &dst;
             CSeq_feat& src = const_cast<CSeq_feat&>(*m_Feat);
@@ -126,6 +126,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/02/24 21:35:22  vasilche
+* Reduce checks in CAnnotObject_Ref comparison.
+* Fixed compilation errors on MS Windows.
+* Removed obsolete file src/objects/objmgr/annot_object.hpp.
+*
 * Revision 1.15  2003/02/24 18:57:22  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.
