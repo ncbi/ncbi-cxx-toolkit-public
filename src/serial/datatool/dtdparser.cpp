@@ -566,54 +566,59 @@ void DTDParser::ModuleType(CDataTypeModule& module, const DTDElement& node)
 
 AutoPtr<CDataType> DTDParser::Type(
     const DTDElement& node, DTDElement::EOccurrence occ,
-    bool in_elem, bool ignoreAttrib)
+    bool fromInside, bool ignoreAttrib)
 {
-    AutoPtr<CDataType> type(x_Type(node, occ, in_elem, ignoreAttrib));
+    AutoPtr<CDataType> type(x_Type(node, occ, fromInside, ignoreAttrib));
     return type;
 }
 
 
 CDataType* DTDParser::x_Type(
     const DTDElement& node, DTDElement::EOccurrence occ,
-    bool in_elem, bool ignoreAttrib)
+    bool fromInside, bool ignoreAttrib)
 {
     CDataType* type;
 
 // if the node contains single embedded element - prune it
-    if (!in_elem && !node.HasAttributes()) {
+    if (!fromInside && !node.HasAttributes()) {
         const list<string>& refs = node.GetContent();
         if (refs.size() == 1) {
             string refName = refs.front();
             if (m_MapElement[refName].IsEmbedded() &&
                 (node.GetOccurrence(refName) == DTDElement::eOne)) {
-                return x_Type(m_MapElement[refName],occ,in_elem);
+                return x_Type(m_MapElement[refName],occ,fromInside);
             }
         }
     }
-    if ((node.GetType() != DTDElement::eSequence) &&
-        (node.GetType() != DTDElement::eChoice) &&
-        node.HasAttributes() &&
-        !ignoreAttrib)
-    {
-        if (in_elem) {
+
+    bool uniseq = (occ == DTDElement::eOneOrMore ||
+                   occ == DTDElement::eZeroOrMore);
+    bool cont = (node.GetType() == DTDElement::eSequence ||
+                 node.GetType() == DTDElement::eChoice);
+    bool attrib = !ignoreAttrib && node.HasAttributes();
+    bool ref = fromInside && !node.IsEmbedded();
+
+    if ((cont && uniseq && (attrib || node.IsEmbedded())) || (!cont && attrib)) {
+        if (ref) {
             type = new CReferenceDataType(node.GetName());
         } else {
-            type = AttribNode(node);
+            type = CompositeNode(node, occ);
+            uniseq = false;
         }
     } else {
         switch (node.GetType()) {
         case DTDElement::eSequence:
-            if (in_elem && !node.IsEmbedded()) {
+            if (ref) {
                 type = new CReferenceDataType(node.GetName());
             } else {
-                type = TypesBlock(new CDataSequenceType(), node);
+                type = TypesBlock(new CDataSequenceType(),node,ignoreAttrib);
             }
             break;
         case DTDElement::eChoice:
-            if (in_elem && !node.IsEmbedded()) {
+            if (ref) {
                 type = new CReferenceDataType(node.GetName());
             } else {
-                type = TypesBlock(new CChoiceDataType(), node);
+                type = TypesBlock(new CChoiceDataType(),node,ignoreAttrib);
             }
             break;
         case DTDElement::eString:
@@ -623,36 +628,35 @@ CDataType* DTDParser::x_Type(
             type = new CStringStoreDataType();  // ????
             break;
         case DTDElement::eEmpty:
-            type = new CNullDataType();  // ????
+            type = new CNullDataType();
             break;
         default:
             _ASSERT(0);
             break;
         }
     }
-    if ((occ == DTDElement::eOneOrMore) ||
-        (occ == DTDElement::eZeroOrMore)) {
+    if (uniseq) {
         type = new CUniSequenceDataType(type);
     }
     return type;
 }
 
 CDataType* DTDParser::TypesBlock(
-    CDataMemberContainerType* containerType,const DTDElement& node)
+    CDataMemberContainerType* containerType,const DTDElement& node,
+    bool ignoreAttrib)
 {
     AutoPtr<CDataMemberContainerType> container(containerType);
 
-    if (node.HasAttributes()) {
-        AutoPtr<CDataMember> member(new CDataMember("Attlist", AttribBlock(node)));
-        member->SetNoPrefix();
-        member->SetAttlist();
-        container->AddMember(member);
+    if (!ignoreAttrib) {
+        AddAttributes(container, node);
     }
-
     const list<string>& refs = node.GetContent();
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
         DTDElement& refNode = m_MapElement[*i];
         DTDElement::EOccurrence occ = node.GetOccurrence(*i);
+        if (refNode.IsEmbedded()) {
+            occ = refNode.GetOccurrence();
+        }
         AutoPtr<CDataType> type(Type(refNode, occ, true));
         AutoPtr<CDataMember> member(new CDataMember(refNode.GetName(), type));
         if ((occ == DTDElement::eZeroOrOne) ||
@@ -668,31 +672,46 @@ CDataType* DTDParser::TypesBlock(
     return container.release();
 }
 
-CDataType* DTDParser::AttribNode(const DTDElement& node)
+CDataType* DTDParser::CompositeNode(
+    const DTDElement& node, DTDElement::EOccurrence occ)
 {
-// node with attributes becomes a sequence
     AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());
 
-// attribute block
-    AutoPtr<CDataMember> attMember(new CDataMember("Attlist", AttribBlock(node)));
-    attMember->SetNoPrefix();
-    attMember->SetAttlist();
-    container->AddMember(attMember);
+    AddAttributes(container, node);
+    bool uniseq =
+        (occ == DTDElement::eOneOrMore || occ == DTDElement::eZeroOrMore);
 
-// the rest of the node
     AutoPtr<CDataType> type(Type(node, DTDElement::eOne, false, true));
-    AutoPtr<CDataMember> member(new CDataMember(node.GetName(), type));
+    AutoPtr<CDataMember> member(new CDataMember(node.GetName(),
+        uniseq ? (AutoPtr<CDataType>(new CUniSequenceDataType(type))) : type));
+//    AutoPtr<CDataType> type(Type(node, occ, false, true));
+//    AutoPtr<CDataMember> member(new CDataMember(node.GetName(), type));
+
+
     member->SetNoPrefix();
     member->SetNotag();
-    member->SetSimpleType();
+    if (!uniseq) {
+        member->SetSimpleType();
+    }
     container->AddMember(member);
 
     return container.release();
 }
 
+void DTDParser::AddAttributes(
+    AutoPtr<CDataMemberContainerType>& container, const DTDElement& node)
+{
+    if (node.HasAttributes()) {
+        AutoPtr<CDataMember> member(
+            new CDataMember("Attlist", AttribBlock(node)));
+        member->SetNoPrefix();
+        member->SetAttlist();
+        container->AddMember(member);
+    }
+}
+
 CDataType* DTDParser::AttribBlock(const DTDElement& node)
 {
-// attribute storage is sequence
     AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());
     const list<DTDAttribute>& att = node.GetAttributes();
     for (list<DTDAttribute>::const_iterator i= att.begin();
@@ -909,6 +928,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2002/11/26 22:00:29  gouriano
+ * added unnamed lists of sequences (or choices) as container elements
+ *
  * Revision 1.5  2002/11/19 19:48:28  gouriano
  * added support of XML attributes of choice variants
  *

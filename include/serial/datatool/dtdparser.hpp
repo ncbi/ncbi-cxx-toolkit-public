@@ -93,13 +93,16 @@ protected:
     void ModuleType(CDataTypeModule& module, const DTDElement& node);
     AutoPtr<CDataType> Type(const DTDElement& node,
                             DTDElement::EOccurrence occ,
-                            bool in_elem, bool ignoreAttrib=false);
+                            bool fromInside, bool ignoreAttrib=false);
     CDataType* x_Type(const DTDElement& node,
                       DTDElement::EOccurrence occ,
-                      bool in_elem, bool ignoreAttrib=false);
+                      bool fromInside, bool ignoreAttrib=false);
     CDataType* TypesBlock(CDataMemberContainerType* containerType,
-                          const DTDElement& node);
-    CDataType* AttribNode(const DTDElement& node);
+                          const DTDElement& node, bool ignoreAttrib=false);
+    CDataType* CompositeNode(const DTDElement& node,
+                             DTDElement::EOccurrence occ);
+    void AddAttributes(AutoPtr<CDataMemberContainerType>& container,
+                       const DTDElement& node);
     CDataType* AttribBlock(const DTDElement& node);
     CDataType* x_AttribType(const DTDAttribute& att);
     CDataType* EnumeratedBlock(const DTDAttribute& att,
@@ -125,6 +128,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2002/11/26 21:59:37  gouriano
+ * added unnamed lists of sequences (or choices) as container elements
+ *
  * Revision 1.4  2002/11/14 21:07:10  gouriano
  * added support of XML attribute lists
  *
