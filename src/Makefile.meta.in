@@ -111,7 +111,7 @@ fi
 
 CHECK_BRA = \
 +if test -f "$(check_run)"; then \
-  $(check_run) $(builddir) $(MAKE) $(MFLAGS) IS_CHECK=Y
+  $(check_run) $(builddir) $(top_srcdir) $(MAKE) $(MFLAGS) IS_CHECK=Y
 CHECK_KET = ||  exit 7 ; \
 fi
 
