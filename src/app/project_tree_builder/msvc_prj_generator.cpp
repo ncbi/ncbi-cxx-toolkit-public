@@ -55,6 +55,11 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
         }
 
     }
+    if (project_configs.empty()) {
+        LOG_POST(Info << "WARNING: Project " << project_context.ProjectId()
+                      << "skipped: all configurations are disabled");
+        return;
+    }
     
     {{
         // Attributes:
@@ -588,6 +593,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/08/20 13:35:46  gouriano
+ * Added warning when all project configurations are disabled
+ *
  * Revision 1.35  2004/06/10 15:16:46  gorelenk
  * Changed macrodefines to be comply with GCC 3.4.0 .
  *
