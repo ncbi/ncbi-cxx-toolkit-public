@@ -47,6 +47,7 @@ extern "C" {
 #define DISPATCHER_CFGPATH      "/var/etc/lbsmd/"
 #define DISPATCHER_CFGFILE      "servrc.cfg"
 #define DISP_PROTOCOL_VERSION   "1.0"
+#define DISPD_MESSAGE_FILE      ".dispd.msg"
 
 typedef unsigned int ticket_t;
 
@@ -59,6 +60,9 @@ typedef unsigned int ticket_t;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2004/08/02 16:52:42  lavr
+ * +DISPD_MESSAGE_FILE
+ *
  * Revision 6.8  2003/08/11 19:06:23  lavr
  * +HTTP_DISP_MESSAGE
  *
