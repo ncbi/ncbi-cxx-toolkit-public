@@ -244,8 +244,10 @@ typedef struct BlastHitSavingOptions {
    Int4 cutoff_score; /**< The (raw) score cut-off threshold */
    double percent_identity; /**< The percent identity cut-off threshold */
 
-   Int4 hitlist_size;/**< Maximal number of database sequences to save hits 
-                        for */
+   Int4 hitlist_size;/**< Maximal number of database sequences to return
+                        results for */
+   Int4 prelim_hitlist_size; /**< Maximal number of database sequences to 
+                               save hits after preliminary alignment */
    Int4 hsp_num_max; /**< Maximal number of HSPs to save for one database 
                         sequence */
    Int4 total_hsp_limit; /**< Maximal total number of HSPs to keep */
