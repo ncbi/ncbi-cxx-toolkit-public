@@ -289,11 +289,9 @@ Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist,
  * @param matrix The scoring matrix [in]
  * @param q_off The offset of a word in query [in]
  * @param s_off The offset of a word in subject [in]
- * @param cutoff The minimal score the ungapped alignment must reach [in]
  * @param X The drop-off parameter for the ungapped extension [in]
  * @param ungapped_data The ungapped extension information [out]
- * @return TRUE if ungapped alignment score is below cutoff, indicating that 
- *         this HSP should be deleted.
+ * @return Status: 0 on success, -1 if memory allocation failed.
  */
 static Int2
 s_NuclUngappedExtend(BLAST_SequenceBlk* query, 

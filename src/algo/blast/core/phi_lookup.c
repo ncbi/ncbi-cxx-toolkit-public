@@ -235,7 +235,7 @@ s_InitDNAPattern(patternSearchItems *patternSearch)
 
 /** Expands pattern.
  * @param inputPatternMasked Masked input pattern [in]
- * @Param inputPattern Input pattern [in]
+ * @param inputPattern Input pattern [in]
  * @param length Length of inputPattern [in]
  * @param maxLength Limit on how long inputPattern can get [in]
  * @return the final length of the pattern or -1 if too long.
@@ -326,6 +326,9 @@ s_PackPattern(Uint1 *inputPattern, Int4 length)
  * the array patternSearch->match_maskL. Also packs 
  * patternSearch->bitPatternByLetter.
  * @param numPlaces Number of positions in inputPattern [in]
+ * @param inputPattern Input pattern [in]
+ * @param patternSearch The structure containing pattern search 
+ *                      information. [in] [out]
  */
 static void 
 s_PackLongPattern(Int4 numPlaces, Uint1 *inputPattern, patternSearchItems *patternSearch)
@@ -435,7 +438,7 @@ s_PackVeryLongPattern(Int4 *inputPatternMasked, Int4 numPlacesInPattern, pattern
  * @param is_dna boolean describing whether the strings are DNA or protein [in]
  * @param sbp Scoring block with statistical parameters [in]
  * @param pattern_info The initialized structure [out]
- * @error_msg Error message, if any.
+ * @param error_msg Error message, if any.
  */
 static Int4 
 s_InitPattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp, 

@@ -122,7 +122,7 @@ const int kBlastHSPStream_Eof = 1;
  * upon creation of the implementation of the BlastHSPStream interface 
  * @param hsp_stream The BlastHSPStream object [in]
  * @param name Name of the method to invoke on hsp_stream [in]
- * @param arg Arbitrary argument passed to the method name [in]
+ * @param hsp_list HSP list to work with [in] [out]
  * @return kBlastHSPStream_Error on NULL hsp_stream or NULL method pointer 
  * (i.e.: unimplemented or uninitialized method on the BlastHSPStream 
  * interface) or return value of the implementation.

@@ -25,7 +25,12 @@
  */
 
 /** @file blast_lookup.c
- * @todo FIXME needs file description
+ * Functions interacting with the standard BLAST lookup table.
+ * Lookup table consists of a backbone hash table and an overflow array. Each
+ * backbone entry is an array of 4 integers. The first is number of offsets in
+ * the query, corresponding to this index. If number of offsets is <= 3, then
+ * they are all placed in the backbone, otherwise all offsets are stored in the 
+ * overflow array. 
  */
 
 #include <algo/blast/core/blast_def.h>
@@ -41,8 +46,11 @@ static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
+/** Structure containing information needed for adding neighboring words. 
+ * @todo FIXME: add comments for all structure fields.
+ */
 typedef struct NeighborInfo {
-    BlastLookupTable *lookup;
+    BlastLookupTable *lookup; /**< Lookup table */
     Uint1 *query_word;
     Uint1 *subject_word;
     Int4 alphabet_size;
@@ -54,6 +62,9 @@ typedef struct NeighborInfo {
     Int4 query_bias;
 } NeighborInfo;
 
+/** Add neighboring words to the lookup table.
+ * @todo FIXME: add more detailed description and document parameters.
+ */
 static void AddWordHits( BlastLookupTable *lookup,
 			 Int4** matrix,
 			 Uint1* query,
@@ -61,15 +72,26 @@ static void AddWordHits( BlastLookupTable *lookup,
 			 Int4 query_bias,
                          Int4 *row_max);
 
+/** Add neighboring words to the lookup table using NeighborInfo structure.
+ * @todo FIXME: add more detailed description and document parameters.
+ */
 static void _AddWordHits(NeighborInfo *info, 
                          Int4 score, 
                          Int4 current_pos);
 
+/** Add neighboring words to the lookup table in case of a position-specific 
+ * matrix.
+ * @todo FIXME: add more detailed description and document parameters.
+ */
 static void AddPSSMWordHits( BlastLookupTable *lookup,
 			 Int4** matrix,
 			 Int4 query_bias,
                          Int4 *row_max);
 
+/** Add neighboring words to the lookup table in case of a position-specific 
+ * matrix, using NeighborInfo structure.
+ * @todo FIXME: add more detailed description and document parameters.
+ */
 static void _AddPSSMWordHits(NeighborInfo *info, 
                          Int4 score, 
                          Int4 current_pos);
@@ -1026,11 +1048,11 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
    return total_hits;
 }
 
-/* Description in na_lookup.h */
+/* Description in blast_lookup.h */
 Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
        const BLAST_SequenceBlk* subject, Int4 start_offset,
-       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits, 
-       Int4* end_offset)
+       Uint4* NCBI_RESTRICT q_offsets, Uint4* NCBI_RESTRICT s_offsets, 
+       Int4 max_hits, Int4* end_offset)
 {
    Uint1* s;
    Uint1* abs_start,* s_end;

@@ -35,7 +35,7 @@
  *        BLAST_GapAlignSetUp
  *        BLAST_ComputeTraceback
  *            if ( RPS BLAST ) 
- *                BLAST_RPSTraceback
+ *                s_RPSTraceback
  *                    for ( all HSP lists )
  *                        Blast_TracebackFromHSPList
  *            else if ( composition based statistics )
@@ -326,7 +326,7 @@ Blast_HSPUpdateWithTraceback(BlastGapAlignStruct* gap_align, BlastHSP* hsp,
 /** Calculates number of identities and alignment lengths of an HSP and 
  * determines whether this HSP should be kept or deleted. The num_ident
  * field of the BlastHSP structure is filled here.
- * @program_number Type of BLAST program [in]
+ * @param program_number Type of BLAST program [in]
  * @param hsp An HSP structure [in] [out]
  * @param query Query sequence [in]
  * @param subject Subject sequence [in]
@@ -924,9 +924,6 @@ s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info,
  *
  * @param program_number Type of the BLAST program [in]
  * @param hsp_stream A stream for reading HSP lists [in]
- * @param concat_db The concatentation of all RPS DB sequences. 
- *                  The sequence data itself is not needed, 
- *                  only its size [in]
  * @param seq_src Source of RPS database consensus sequences; needed only
  *                to calculate number of identities in alignments [in]
  * @param query The original query sequence [in]
@@ -937,7 +934,6 @@ s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info,
  * @param ext_params Gapped extension parameters [in]
  * @param hit_params Parameters for saving hits. Can change if not a 
                      database search [in]
- * @param db_options Options containing database genetic code string [in]
  * @param rps_info Extra information about RPS database. [in]
  * @param results Results structure containing all HSPs, with added
  *                traceback information. [out]

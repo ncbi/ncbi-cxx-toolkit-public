@@ -3104,7 +3104,6 @@ BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
  * @param subject Subject sequence [in]
  * @param gap_align Gapped alignment structure [in]
  * @param score_params Scoring parameters [in]
- * @param ext_params Gapped extension parameters [in]
  * @param hit_params Hit saving parameters [in]
  * @param init_hitlist Initial hit list obtained by ungapped alignment [in]
  * @param gapped_stats Gapped extension stats [in]
@@ -3936,7 +3935,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
 
 /** Returns length of a pattern in a PHI BLAST search, saved in the gapped
  * alignment structure.
- * @param The gapped alignment structure [in]
+ * @param gap_align The gapped alignment structure [in]
  * @return Pattern length
  */
 static Int4 

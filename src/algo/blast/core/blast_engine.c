@@ -497,7 +497,8 @@ s_FillReturnCutoffsInfo(BlastRawCutoffs* return_cutoffs,
  * @param seq_src Sequence source information, with callbacks to get 
  *             sequences, their lengths, etc. [in]
  * @param lookup_wrap Lookup table, already constructed. [in]
- * @param word_options options for initial word finding. [in]
+ * @param word_params Parameters for initial word finding and ungapped 
+ *                    extension. [in]
  * @param ext_options options for gapped extension. [in]
  * @param hit_options options for saving hits. [in]
  * @param query The query sequence block [in]

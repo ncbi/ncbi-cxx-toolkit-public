@@ -128,6 +128,7 @@ void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp)
  * function calculates number of identities and checks if the percent identity
  * criterion is satisfied.
  * @param hsp HSP to update [in] [out]
+ * @param gapped Is this a gapped search? [in]
  * @param cutoff_score Cutoff score for saving the HSP [in]
  * @param score New score [in]
  * @param query_start Start of query sequence [in]

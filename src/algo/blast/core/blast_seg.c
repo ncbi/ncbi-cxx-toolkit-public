@@ -2141,7 +2141,7 @@ s_MergeSegs(SSequence* seq, SSeg* segs)
  * @param segs internal representation [in]
  * @param offset fixed value to add to offsets [in]
  * @param seg_locs the new BLAST specific representation [out]
- * @param returns zero on success.
+ * @return 0 on success, -1 if memory allocation failed.
  */
 static Int2 
 s_SegsToBlastSeqLoc(SSeg* segs, Int4 offset, BlastSeqLoc** seg_locs)
@@ -2157,7 +2157,14 @@ s_SegsToBlastSeqLoc(SSeg* segs, Int4 offset, BlastSeqLoc** seg_locs)
       } else {
          last_slp = BlastSeqLocNew(&last_slp, left, right);
       }
+      /* Check that allocation succeeded. */
+      if (!last_slp)
+          break;
    }
+   /* If not all segs have been processed, it means that memory allocation 
+      failed, hence return error status. */
+   if (segs)
+       return -1;
 
    return 0;
 }

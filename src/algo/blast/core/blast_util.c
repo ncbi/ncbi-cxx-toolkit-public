@@ -227,7 +227,9 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program)
 	return 0;
 }
 
+/** Value of the 'X' aminoacid residue in NCBIstdaa encoding. */
 #define X_STDAA 21
+
 /** Translate 3 nucleotides into an amino acid
  * MUST have 'X' as unknown amino acid
  * @param codon 3 values in ncbi4na code
@@ -805,8 +807,8 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk,
    return 0;
 }
 
-/*	Gets the translation array for a given genetic code.  
- *	This array is optimized for the NCBI2na alphabet.
+/** Gets the translation array for a given genetic code.  
+ * This array is optimized for the NCBI2na alphabet.
  * The reverse complement can also be spcified.
  * @param genetic_code Genetic code string in ncbistdaa encoding [in]
  * @param reverse_complement Get translation table for the reverse strand? [in]

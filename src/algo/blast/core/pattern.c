@@ -245,11 +245,12 @@ s_BitwiseOr(Int4 *a, Int4 *b, patternSearchItems *patternSearch)
 
 /** Do a word-by-word bit-wise or of a and b and put the result in
  * result.
+ * @param result Resulting value [out]
  * @param a First array [in]
  * @param b Second array [in]
  * @param patternSearch Carries variables that keep track of search 
  *                      parameters. [in]
- * @return 1 if there are any non-zero words
+ * @return 1 if there are any non-zero words, otherwise 0.
  */
 static Int4 
 s_BitwiseAnd(Int4 *result, Int4 *a, Int4 *b, patternSearchItems *patternSearch)
