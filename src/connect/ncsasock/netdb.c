@@ -14,6 +14,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.1  1999/11/17 20:52:50  kans
+* changes to allow compilation under c++
+*
 * Revision 6.0  1997/08/25 18:37:31  madden
 * Revision changed to 6.0
 *
@@ -310,7 +313,7 @@ gethostbyaddr(ip_addr *addrP,int len,int type)
 /* New gethostbyname and gethostbyaddr contributed by Doug Corarito */
 
  struct hostent *
- gethostbyname(char *name)
+ gethostbyname(const char *name)
  {
   Boolean done;
   int i;
@@ -329,9 +332,9 @@ gethostbyaddr(ip_addr *addrP,int len,int type)
    macHost.addr[i] = 0;
   done = false;
 #ifdef __MACTCP__
-   rsult = StrToAddr(name,&macHost,proc,(char *) &done);
+   rsult = StrToAddr((char*) name,&macHost,proc,(char *) &done);
 #else
-   rsult = StrToAddr(name,&macHost,(ResultProcPtr) DNRDone,(char *) &done);
+   rsult = StrToAddr((char*) name,&macHost,(ResultProcPtr) DNRDone,(char *) &done);
 #endif
   if (rsult == cacheFault)
   {

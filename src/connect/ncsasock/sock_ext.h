@@ -139,7 +139,7 @@ int s_clearerr(SocketPtr sp);
 typedef unsigned long ip_addr;
 #endif /* DONT_DEFINE_INET */
 
-struct hostent *gethostbyname(char *name);
+struct hostent *gethostbyname(const char *name);
 struct hostent *gethostbyaddr(ip_addr *addrP,Int4 len,Int4 type);
 #ifndef DONT_DEFINE_INET
 char *inet_ntoa(ip_addr inaddr);

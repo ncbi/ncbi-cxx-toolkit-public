@@ -21,6 +21,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.1  1999/11/17 20:52:50  kans
+* changes to allow compilation under c++
+*
 * Revision 6.0  1997/08/25 18:37:33  madden
 * Revision changed to 6.0
 *
@@ -76,7 +79,7 @@ struct	protoent {
 	Int4	p_proto;	/* protocol # */
 };
 
-struct hostent	*gethostbyname(), *gethostbyaddr(), *gethostent();
+struct hostent	*gethostbyname(const char *name), *gethostbyaddr(), *gethostent();
 struct netent	*getnetbyname(), *getnetbyaddr(), *getnetent();
 struct servent	*getservbyname(char *name, char *proto), *getservbyport(), *getservent();
 struct protoent	*getprotobyname(), *getprotobynumber(), *getprotoent();

@@ -21,6 +21,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.1  1999/11/17 20:52:50  kans
+* changes to allow compilation under c++
+*
 * Revision 6.0  1997/08/25 18:37:17  madden
 * Revision changed to 6.0
 *
@@ -34,18 +37,9 @@
 
 /* External definitions for functions in inet(3) */
 
-#ifdef __STDC__
 extern unsigned long inet_addr(const char *);
 extern char *inet_ntoa(struct in_addr);
 extern struct in_addr inet_makeaddr(int , int);
 extern unsigned long inet_network(const char *);
 extern unsigned long inet_lnaof(struct in_addr);
 extern unsigned long inet_netof(struct in_addr);
-#else
-extern unsigned long inet_addr();
-extern char *inet_ntoa();
-extern struct in_addr inet_makeaddr();
-extern unsigned long inet_network();
-extern unsigned long inet_lnaof();
-extern unsigned long inet_netof();
-#endif
