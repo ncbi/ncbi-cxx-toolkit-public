@@ -3,3 +3,4 @@ configure.lineno
 stamp-h.in
 *Debug*
 *Release*
+Makefile

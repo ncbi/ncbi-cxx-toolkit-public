@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.227 2003/10/20 20:56:25 ucko Exp $
+#  $Id: configure.ac,v 1.228 2003/10/20 21:49:14 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3742,7 +3742,7 @@ AC_CONFIG_HEADER(${ncbiconf}:config.h.in)
 ##
 ## Configure makefiles, shell scripts, etc.
 ##
-AC_CONFIG_FILES($configurables)
+AC_CONFIG_FILES($configurables $srcdir/Makefile:Makefile.in)
 
 AC_CONFIG_COMMANDS([default], [
 status_dir="$SAVE_status_dir"
@@ -3847,6 +3847,7 @@ Tools / flags / paths:  $builddir/Makefile.mk
 Configuration  header:  $ncbiconf
 
 To build everything:  cd $builddir && make all_r
+or simply run make in the current directory
 $build_proj
 ******* CONFIGURATION SUCCESSFUL *******
 EOCONF
