@@ -1,6 +1,6 @@
 # $Id$
 
-APP = ftds8_lang
+APP = ftds_lang
 SRC = ftds_lang
 
 LIB  = dbapi_driver_ftds dbapi_driver xncbi

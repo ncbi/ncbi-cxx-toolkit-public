@@ -1,6 +1,6 @@
 # $Id$
 
-APP = ftds8_sp_who
+APP = ftds_sp_who
 SRC = ftds_sp_who
 
 LIB  = dbapi_driver_ftds dbapi_driver xncbi
