@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2001/05/15 17:33:53  thiessen
+* log window stays hidden when closed
+*
 * Revision 1.37  2001/05/15 14:57:54  thiessen
 * add cn3d_tools; bring up log window when threading starts
 *
@@ -262,7 +265,6 @@ wxFrame * GlobalTopWindow(void) { return topWindow; }
 class MsgFrame;
 
 static MsgFrame *logFrame = NULL;
-static wxTextCtrl *logText = NULL;
 
 class MsgFrame : public wxFrame
 {
@@ -271,7 +273,25 @@ public:
         const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize) :
         wxFrame(topWindow, wxID_HIGHEST + 5, title, pos, size, wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT) { }
     ~MsgFrame(void) { logFrame = NULL; logText = NULL; }
+    wxTextCtrl *logText;
+private:
+    void OnCloseWindow(wxCloseEvent& event);
+    DECLARE_EVENT_TABLE()
 };
+
+BEGIN_EVENT_TABLE(MsgFrame, wxFrame)
+    EVT_CLOSE(MsgFrame::OnCloseWindow)
+END_EVENT_TABLE()
+
+void MsgFrame::OnCloseWindow(wxCloseEvent& event)
+{
+    if (event.CanVeto()) {
+        Show(false);
+        event.Veto();
+    } else {
+        Destroy();
+    }
+}
 
 void DisplayDiagnostic(const SDiagMessage& diagMsg)
 {
@@ -288,18 +308,20 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
         if (!logFrame) {
             logFrame = new MsgFrame("Cn3D++ Message Log", wxPoint(500, 0), wxSize(500, 500));
             logFrame->SetSizeHints(150, 100);
-            logText = new wxTextCtrl(logFrame, -1, "",
+            logFrame->logText = new wxTextCtrl(logFrame, -1, "",
                 wxPoint(0,0), wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
         }
         // seems to be some upper limit on size, at least under MSW - so delete top of log if too big
-        if (logText->GetLastPosition() > 30000) logText->Clear();
-        *logText << wxString(errMsg.data(), errMsg.size());
-        logFrame->Show(true);
+        if (logFrame->logText->GetLastPosition() > 30000) logFrame->logText->Clear();
+        *(logFrame->logText) << wxString(errMsg.data(), errMsg.size());
     }
 }
 
 void RaiseLogWindow(void)
 {
+    logFrame->logText->ShowPosition(logFrame->logText->GetLastPosition());
+    logFrame->Show(true);
+    if (logFrame->IsIconized()) logFrame->Maximize(false);
     logFrame->Raise();
 }
 
@@ -381,6 +403,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU(       MID_REFIT_ALL,                      Cn3DMainFrame::OnAlignStructures)
     EVT_MENU_RANGE( MID_SECSTRUC,   MID_WIREFRAME,      Cn3DMainFrame::OnSetStyle)
     EVT_MENU_RANGE( MID_QLOW,       MID_QHIGH,          Cn3DMainFrame::OnSetQuality)
+    EVT_MENU_RANGE( MID_SHOW_LOG,   MID_SHOW_SEQ_V,     Cn3DMainFrame::OnShowWindow)
 END_EVENT_TABLE()
 
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
@@ -389,6 +412,9 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 {
     topWindow = this;
     SetSizeHints(150, 150); // min size
+
+    TESTMSG("Welcome to Cn3D++! (built " << __DATE__ << ')');
+    RaiseLogWindow();
 
     // File menu
     wxMenuBar *menuBar = new wxMenuBar;
@@ -443,6 +469,12 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_QHIGH, "&High");
     menuBar->Append(menu, "&Quality");
 
+    // Window menu
+    menu = new wxMenu;
+    menu->Append(MID_SHOW_SEQ_V, "Show &Sequence Viewer");
+    menu->Append(MID_SHOW_LOG, "Show Message &Log");
+    menuBar->Append(menu, "&Window");
+
     SetMenuBar(menuBar);
 
     // Make a GLCanvas
@@ -457,8 +489,19 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
 {
     if (logFrame) {
         logFrame->Destroy();
-        logText = NULL;
         logFrame = NULL;
+    }
+}
+
+void Cn3DMainFrame::OnShowWindow(wxCommandEvent& event)
+{
+    switch (event.GetId()) {
+        case MID_SHOW_LOG:
+            RaiseLogWindow();
+            break;
+        case MID_SHOW_SEQ_V:
+            GlobalMessenger()->PostRedrawAllSequenceViewers();
+            break;
     }
 }
 

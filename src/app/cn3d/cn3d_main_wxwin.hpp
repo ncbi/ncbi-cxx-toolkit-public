@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/05/15 17:33:58  thiessen
+* log window stays hidden when closed
+*
 * Revision 1.22  2001/05/11 02:10:04  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -218,11 +221,16 @@ public:
         // Quality menu
             MID_QLOW,
             MID_QMED,
-            MID_QHIGH
+            MID_QHIGH,
+        // Window menu
+            MID_SHOW_LOG,
+            MID_SHOW_SEQ_V
     };
 
     void OnExit(wxCommandEvent& event);
     void OnCloseWindow(wxCloseEvent& event);
+
+    void OnShowWindow(wxCommandEvent& event);
 
     void OnOpen(wxCommandEvent& event);
     void OnSave(wxCommandEvent& event);
