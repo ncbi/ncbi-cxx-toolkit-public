@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.59 2002/04/21 03:38:07 vakatov Exp $
+#  $Id: configure.ac,v 1.60 2002/04/23 15:15:15 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -402,9 +402,9 @@ esac
 changequote(, )dnl
 
 set $CC
-x_CC="`which $1  2>/dev/null`"
+x_CC="`type $1 | sed 's/.* \([^ ]*\)$/\1/'`"
 if test ! -x "$x_CC" ; then
-  x_CC="`type $1 | sed 's/.* \([^ ]*\)$/\1/'`"
+  x_CC="`which $1  2>/dev/null`"
 fi
 
 if test -x "$x_CC" ; then
@@ -416,9 +416,9 @@ CC_PATH="`dirname $x_CC`"
 x_CC=
 
 set $CXX
-x_CXX="`which $1  2>/dev/null`"
+x_CXX="`type $1 | sed 's/.* \([^ ]*\)$/\1/'`"
 if test ! -x "$x_CXX" ; then
-  x_CXX="`type $1 | sed 's/.* \([^ ]*\)$/\1/'`"
+  x_CXX="`which $1  2>/dev/null`"
 fi
 
 if test -x "$x_CXX" ; then
