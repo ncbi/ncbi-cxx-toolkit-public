@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS7_INCLUDE FTDS7_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS7_INCLUDE FTDS7_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial bdb dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -902,6 +902,9 @@ Optional Packages:
  --without-fastcgi       do not use Fast-CGI library
  --with-fastcgi=VERSION  use Fast-CGI installation in \$NCBI/fcgi-VERSION
  --with-fastcgi=DIR      use Fast-CGI installation in DIR
+ --without-bdb           do not use Berkeley DB library
+ --with-bdb=VERSION      use DB installation in \$NCBI/BerkeleyDB-VERSION
+ --with-bdb=DIR          use Berkeley DB installation in DIR
  --without-sp            do not use SP libraries
  --without-orbacus       do not use ORBacus CORBA libraries
  --with-orbacus=DIR      use ORBacus installation in DIR
@@ -1029,8 +1032,11 @@ else
     exit 1
 fi
 cache_file=config.cache
-# reconfigure.sh expects it to exist; unconditionally clobber
-# command-line setting.
+# reconfigure.sh expects config.cache to exist; unconditionally clobber
+# any command-line setting.
+if test -z "$CONFIG_SITE" -a -r $srcdir/config.site; then
+    CONFIG_SITE=$srcdir/config.site
+fi
 exec 5>config.log
 cat >&5 <<_ACEOF
 This file contains any messages produced by compilers while
@@ -1666,6 +1672,24 @@ if test "${with_fastcgi3+set}" = set; then
 
 fi;
 
+# Check whether --with-bdb or --without-bdb was given.
+if test "${with_bdb+set}" = set; then
+  withval="$with_bdb"
+
+fi;
+
+# Check whether --with-bdb or --without-bdb was given.
+if test "${with_bdb+set}" = set; then
+  withval="$with_bdb"
+
+fi;
+
+# Check whether --with-bdb or --without-bdb was given.
+if test "${with_bdb+set}" = set; then
+  withval="$with_bdb"
+
+fi;
+
 # Check whether --with-sp or --without-sp was given.
 if test "${with_sp+set}" = set; then
   withval="$with_sp"
@@ -1755,7 +1779,7 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds mysql orbacus fltk opengl \
+sybase-new ftds mysql orbacus fltk opengl bdb \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -1791,6 +1815,7 @@ echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >
       | [A-Z]*=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
+      | --with-bdb=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -3414,6 +3439,7 @@ echo "$as_me: error: \"Do not know how to build MT-safe with compiler $CXX $comp
    mt_sfx="MT"
    WithFeatures="$WithFeatures MT"
 else
+   MT_FLAG=
    THREAD_LIBS=
    mt_sfx=""
 fi
@@ -9824,6 +9850,89 @@ _ACEOF
 fi
 
 
+## Berkeley DB library
+if test "$with_bdb" != "no" ; then
+   case "$with_bdb" in
+      yes | "" ) : ${BERKELEYDB_PATH:="$NCBI/BerkeleyDB"}     ;;
+      */*      ) BERKELEYDB_PATH=$with_bdb                    ;;
+      *        ) BERKELEYDB_PATH=$NCBI/BerkeleyDB-${with_bdb} ;;
+   esac
+   BERKELEYDB_INCLUDE="-I$BERKELEYDB_PATH/include"
+   for d in "${release_debug}${bit64_sfx}" "lib${bit64_sfx}" lib; do
+      BERKELEYDB_LIBPATH=${BERKELEYDB_PATH}/$d
+      test -d ${BERKELEYDB_LIBPATH}  &&  break
+   done
+   BERKELEYDB_LIBS="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"
+   if test -f "${BERKELEYDB_LIBPATH}/libdb-static.a"; then
+      BERKELEYDB_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb-static"
+   else
+      BERKELEYDB_STATIC_LIBS=${BERKELEYDB_LIBS}
+   fi
+   echo "$as_me:$LINENO: checking for Berkeley DB libraries in $BERKELEYDB_PATH" >&5
+echo $ECHO_N "checking for Berkeley DB libraries in $BERKELEYDB_PATH... $ECHO_C" >&6
+if test "${ncbi_cv_lib_berkeley_db+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$BERKELEYDB_INCLUDE $orig_CPPFLAGS"
+       LIBS="$BERKELEYDB_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <db.h>
+int
+main ()
+{
+ DB* dbp;  db_create(&dbp, NULL, 0);  dbp->app_private = 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_berkeley_db=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_berkeley_db=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_berkeley_db" >&5
+echo "${ECHO_T}$ncbi_cv_lib_berkeley_db" >&6
+   if test "$ncbi_cv_lib_berkeley_db" = "no"; then
+      with_bdb="no"
+   fi
+fi
+if test "$with_bdb" = "no" ; then
+   BERKELEYDB_PATH="No_BerkeleyDB"
+   BERKELEYDB_INCLUDE=
+   BERKELEYDB_LIBS=
+   WithoutPackages="$WithoutPackages BerkeleyDB"
+else
+   WithPackages="$WithPackages BerkeleyDB"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BERKELEY_DB 1
+_ACEOF
+
+fi
+
+
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
    NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
@@ -12368,6 +12477,31 @@ if test "$with_objects" = "yes"  -a  -n "$serial" ; then
 else
    WithoutProjects="$WithoutProjects objects"
    objects=
+fi
+
+
+## `bdb' projects
+
+if test "$with_bdb" = "no" ; then
+   NoConfProjects="$NoConfProjects bdb"
+fi
+
+if test ! -f ${srcdir}/src/bdb/Makefile.in  -o  ! -d ${srcdir}/include/bdb
+then
+   if test "$with_bdb" = "yes" ; then
+      { { echo "$as_me:$LINENO: error: \"--with-bdb:  BDB sources are missing\"" >&5
+echo "$as_me: error: \"--with-bdb:  BDB sources are missing\"" >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+   with_bdb="no"
+fi
+
+if test "$with_bdb" = "no" ; then
+   WithoutProjects="$WithoutProjects bdb"
+   bdb=
+else
+   WithProjects="$WithProjects bdb"
+   bdb="bdb"
 fi
 
 
@@ -17079,6 +17213,10 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
+
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -17817,6 +17955,7 @@ s,@OPT_GROUPS@,$OPT_GROUPS,;t t
 s,@local_lbsm@,$local_lbsm,;t t
 s,@daemons@,$daemons,;t t
 s,@serial@,$serial,;t t
+s,@bdb@,$bdb,;t t
 s,@dbapi@,$dbapi,;t t
 s,@objects@,$objects,;t t
 s,@ctools@,$ctools,;t t
@@ -17860,6 +17999,9 @@ s,@SYBASE_DLLS@,$SYBASE_DLLS,;t t
 s,@SYBASE_DBLIBS@,$SYBASE_DBLIBS,;t t
 s,@MYSQL_INCLUDE@,$MYSQL_INCLUDE,;t t
 s,@MYSQL_LIBS@,$MYSQL_LIBS,;t t
+s,@BERKELEYDB_INCLUDE@,$BERKELEYDB_INCLUDE,;t t
+s,@BERKELEYDB_STATIC_LIBS@,$BERKELEYDB_STATIC_LIBS,;t t
+s,@BERKELEYDB_LIBS@,$BERKELEYDB_LIBS,;t t
 s,@NCBI_C_INCLUDE@,$NCBI_C_INCLUDE,;t t
 s,@NCBI_C_LIBPATH@,$NCBI_C_LIBPATH,;t t
 s,@OPENGL_INCLUDE@,$OPENGL_INCLUDE,;t t

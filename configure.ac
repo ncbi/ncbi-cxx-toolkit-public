@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.184 2003/04/25 01:28:06 ucko Exp $
+#  $Id: configure.ac,v 1.185 2003/04/29 19:47:42 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -50,8 +50,11 @@ else
     exit 1
 fi
 cache_file=config.cache
-# reconfigure.sh expects it to exist; unconditionally clobber
-# command-line setting.
+# reconfigure.sh expects config.cache to exist; unconditionally clobber
+# any command-line setting.
+if test -z "$CONFIG_SITE" -a -r $srcdir/config.site; then
+    CONFIG_SITE=$srcdir/config.site
+fi
 AC_DIVERT_POP
 
 AC_INIT([ncbi-tools++],[0.0],[cpp-core@ncbi.nlm.nih.gov])
@@ -165,6 +168,12 @@ AC_ARG_WITH(fastcgi2,
    [ --with-fastcgi=VERSION  use Fast-CGI installation in \$NCBI/fcgi-VERSION])
 AC_ARG_WITH(fastcgi3,
    [ --with-fastcgi=DIR      use Fast-CGI installation in DIR])
+AC_ARG_WITH(bdb,
+   [ --without-bdb           do not use Berkeley DB library])
+AC_ARG_WITH(bdb,
+   [ --with-bdb=VERSION      use DB installation in \$NCBI/BerkeleyDB-VERSION])
+AC_ARG_WITH(bdb,
+   [ --with-bdb=DIR          use Berkeley DB installation in DIR])
 AC_ARG_WITH(sp,
    [ --without-sp            do not use SP libraries])
 AC_ARG_WITH(orbacus,
@@ -203,7 +212,7 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds mysql orbacus fltk opengl \
+sybase-new ftds mysql orbacus fltk opengl bdb \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
@@ -239,6 +248,7 @@ for x_arg in "$@" ; do
       | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
+      | --with-bdb=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -526,6 +536,7 @@ if test "$with_mt" = "yes" ; then
    mt_sfx="MT"
    WithFeatures="$WithFeatures MT"
 else
+   MT_FLAG=
    THREAD_LIBS=
    mt_sfx=""
 fi
@@ -2209,6 +2220,48 @@ else
 fi
 
 
+## Berkeley DB library
+if test "$with_bdb" != "no" ; then
+   case "$with_bdb" in
+      yes | "" ) : ${BERKELEYDB_PATH:="$NCBI/BerkeleyDB"}     ;;
+      */*      ) BERKELEYDB_PATH=$with_bdb                    ;;
+      *        ) BERKELEYDB_PATH=$NCBI/BerkeleyDB-${with_bdb} ;;
+   esac
+   BERKELEYDB_INCLUDE="-I$BERKELEYDB_PATH/include"
+   for d in "${release_debug}${bit64_sfx}" "lib${bit64_sfx}" lib; do
+      BERKELEYDB_LIBPATH=${BERKELEYDB_PATH}/$d
+      test -d ${BERKELEYDB_LIBPATH}  &&  break
+   done
+   BERKELEYDB_LIBS="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"
+   if test -f "${BERKELEYDB_LIBPATH}/libdb-static.a"; then
+      BERKELEYDB_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb-static"
+   else
+      BERKELEYDB_STATIC_LIBS=${BERKELEYDB_LIBS}
+   fi
+   AC_CACHE_CHECK([for Berkeley DB libraries in $BERKELEYDB_PATH],
+      ncbi_cv_lib_berkeley_db,
+      [CPPFLAGS="$BERKELEYDB_INCLUDE $orig_CPPFLAGS"
+       LIBS="$BERKELEYDB_LIBS $orig_LIBS"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[#include <db.h>]],
+          [[ DB* dbp;  db_create(&dbp, NULL, 0);  dbp->app_private = 0; ]])],
+          [ncbi_cv_lib_berkeley_db=yes], [ncbi_cv_lib_berkeley_db=no])])
+   if test "$ncbi_cv_lib_berkeley_db" = "no"; then
+      with_bdb="no"
+   fi
+fi
+if test "$with_bdb" = "no" ; then
+   BERKELEYDB_PATH="No_BerkeleyDB"
+   BERKELEYDB_INCLUDE=
+   BERKELEYDB_LIBS=
+   WithoutPackages="$WithoutPackages BerkeleyDB"
+else
+   WithPackages="$WithPackages BerkeleyDB"
+   AC_DEFINE(HAVE_BERKELEY_DB, 1,
+             [Define to 1 if Berkeley DB libraries are available.])
+fi
+
+
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
    NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
@@ -2859,6 +2912,29 @@ else
 fi
 
 
+## `bdb' projects
+
+if test "$with_bdb" = "no" ; then
+   NoConfProjects="$NoConfProjects bdb"
+fi
+
+if test ! -f ${srcdir}/src/bdb/Makefile.in  -o  ! -d ${srcdir}/include/bdb
+then
+   if test "$with_bdb" = "yes" ; then
+      AC_MSG_ERROR(["--with-bdb:  BDB sources are missing"])
+   fi
+   with_bdb="no"
+fi
+
+if test "$with_bdb" = "no" ; then
+   WithoutProjects="$WithoutProjects bdb"
+   bdb=
+else
+   WithProjects="$WithProjects bdb"
+   bdb="bdb"
+fi
+
+
 ## `dbapi' projects
 
 if test "$with_dbapi" = "no" ; then
@@ -3220,6 +3296,7 @@ AC_SUBST(OPT_GROUPS)
 AC_SUBST(local_lbsm)
 AC_SUBST(daemons)
 AC_SUBST(serial)
+AC_SUBST(bdb)
 AC_SUBST(dbapi)
 AC_SUBST(objects)
 AC_SUBST(ctools)
@@ -3266,6 +3343,9 @@ AC_SUBST(SYBASE_DLLS)
 AC_SUBST(SYBASE_DBLIBS)
 AC_SUBST(MYSQL_INCLUDE)
 AC_SUBST(MYSQL_LIBS)
+AC_SUBST(BERKELEYDB_INCLUDE)
+AC_SUBST(BERKELEYDB_STATIC_LIBS)
+AC_SUBST(BERKELEYDB_LIBS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(OPENGL_INCLUDE)

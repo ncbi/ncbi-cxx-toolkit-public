@@ -12,6 +12,9 @@
 /* Define to 1 if you have the `atoll' function. */
 #undef HAVE_ATOLL
 
+/* Define to 1 if Berkeley DB libraries are available. */
+#undef HAVE_BERKELEY_DB
+
 /* Define to 1 if the preprocessor supports GNU-style variadic macros. */
 #undef HAVE_CPP_GNU_VARARGS
 
