@@ -183,10 +183,11 @@ case "$host:$compiler" in
         echo "64-bit flags are for sparc-sun-solaris2.7 only:  $WS64_CFLAGS"
         exit 1
       fi
-      compiler_extra="_64"
-      no_internal="yes"
+      bit64_sfx="64"
+      compiler_extra="_$bit64_sfx"
    else
-      compiler_extra="_32"
+      bit64_sfx=""
+      compiler_extra=""
    fi
    CFLAGS="$WS64_CFLAGS"
    CXXFLAGS="+w +w2 $WS64_CFLAGS"
@@ -760,12 +761,16 @@ if test "$with_sybase" != "no" ; then
    SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
    SYBASE_INCLUDE="-I$SYBASE_PATH/include"
    SYBASE_LIBLIST="-lblk -lct -lcs -ltcl -lcomn -lintl"
+   changequote(<<, >>)dnl
    if test "$with_mt" = "yes" ; then
-      changequote(<<, >>)dnl
       SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z]*\)/\1_r/g'`
-      changequote([, ])dnl
    fi
-   SYBASE_LIBS="-L$SYBASE_PATH/lib -R/export/home/sybase/clients/current/lib:$SYBASE_PATH/lib $SYBASE_LIBLIST"
+   if test -n "$bit64_sfx" ; then
+      SYBASE_INCLUDE="$SYBASE_INCLUDE -DSYB_LP64"
+      SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z]*\)/\1'${bit64_sfx}'/g'`
+   fi
+   changequote([, ])dnl
+   SYBASE_LIBS="-L$SYBASE_PATH/lib${bit64_sfx} -R/export/home/sybase/clients/current/lib${bit64_sfx}:$SYBASE_PATH/lib${bit64_sfx} $SYBASE_LIBLIST"
    CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
    LIBS="$SYBASE_LIBS $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
@@ -784,14 +789,14 @@ AC_MSG_RESULT([$SYBASE_PATH])
 
 
 ## NCBI C Toolkit
-AC_MSG_CHECKING(if NCBI C toolkit is available)
+AC_MSG_CHECKING(if NCBI C Toolkit is available)
 if test "$with_ncbi_c" != "no" ; then
    NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
-   NCBI_C_INCLUDE="-I$NCBI_C_PATH/include"
+   NCBI_C_INCLUDE="-I$NCBI_C_PATH/include${bit64_sfx}"
    if test "$with_debug" = "no" ; then
-     NCBI_C_LIBPATH="$NCBI_C_PATH/lib"
+     NCBI_C_LIBPATH="$NCBI_C_PATH/lib${bit64_sfx}"
    else
-     NCBI_C_LIBPATH="$NCBI_C_PATH/altlib"
+     NCBI_C_LIBPATH="$NCBI_C_PATH/altlib${bit64_sfx}"
    fi
    if test "$with_mt" = "yes" ; then
      NCBI_C_LIBPATH="$NCBI_C_LIBPATH $NCBI_C_LIBPATH/ncbithr.o"
@@ -874,6 +879,9 @@ else
       if test "$compiler" = "GCC" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}GNU"
       fi
+      if test -n "$bit64_sfx" ; then
+         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}64"
+      fi
       if test "$with_mt" = "yes" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}mt"
       fi
@@ -914,7 +922,7 @@ AC_MSG_CHECKING(if NCBI PubMed libraries are available)
 if test "$with_ncbi_c" = "no" ; then
    with_pubmed="no"
 elif test "$with_pubmed" != "no" ; then
-   NCBI_PM_PATH=${NCBI_PM_PATH:="/net/neptune/pubmed1/Cvs5"}
+   NCBI_PM_PATH=${NCBI_PM_PATH:="/net/neptune/pubmed1/Cvs${bit64_sfx}"}
    CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi $NCBI_C_INCLUDE $orig_CPPFLAGS"
    LIBS="-L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
    AC_TRY_LINK(
