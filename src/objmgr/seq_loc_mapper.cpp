@@ -474,7 +474,7 @@ void CSeq_loc_Mapper::x_PushMappedRange(const CSeq_id_Handle& id,
                                         const TRange&         range,
                                         const TRangeFuzz&     fuzz)
 {
-    bool reverse = IsReverse(ENa_strand(strand_idx));
+    bool reverse = (strand_idx > 0) && IsReverse(ENa_strand(strand_idx - 1));
     switch ( m_MergeFlag ) {
     case eMergeContained:
     case eMergeAll:
@@ -2017,6 +2017,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/03/01 17:33:36  grichenk
+* Fixed strand indexing.
+*
 * Revision 1.37  2005/02/10 22:14:16  grichenk
 * Do not add gap to mix when bond point B is not set.
 *
