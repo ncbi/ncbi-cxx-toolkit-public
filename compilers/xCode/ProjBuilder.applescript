@@ -553,8 +553,9 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		set theScript to theScript & "fi" & ret
 		
 		-- Create share directory
-		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share ; then" & ret
+		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share/gbench ; then" & ret
 		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share" & ret
+		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share/gbench" & ret
 		set theScript to theScript & "fi" & ret
 		
 		-- Create executables directory
@@ -565,14 +566,15 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/plugins/algo/executables/* " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
 		
 		-- copy png images
-		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/* " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share" & ret
+		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/* " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/share/gbench" & ret
 		
 		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/plugins/algo/executables " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
 		
-		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/gbench/patterns/ " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc/patterns" & ret
-		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/gbench/news.ini " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
-		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/gbench/gbench.ini " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
-		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/gbench/algo_urls " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
+		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/res/etc/* " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
+		--set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/gbench/patterns/ " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc/patterns" & ret
+		--set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/gbench/news.ini " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
+		--set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/gbench/gbench.ini " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
+		--set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/gbench/algo_urls " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
 		
 		return theScript
 	end x_CopyGBENCHResourses
@@ -582,6 +584,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/11/12 16:51:34  lebedev
+ * New location of resources for GBench
+ *
  * Revision 1.17  2004/11/04 12:37:37  lebedev
  * Datatool phase twicked: ignore underscopes in asn files names
  *
