@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.15 2001/10/19 01:00:37 vakatov Exp $
+#  $Id: configure.ac,v 1.16 2001/10/25 00:11:40 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1489,6 +1489,43 @@ else
 fi
 
 
+## Free TDS libraries
+AC_MSG_CHECKING(if FreeTDS libraries are available)
+if test "$with_ftds" != "no" ; then
+   FTDS_PATH=${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
+   FTDS_LIBS=${FTDS_LIBS:="-lsybdb -ltds"}
+   FTDS_LIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_LIBS"
+   FTDS_INCLUDE="-I$FTDS_PATH/include"
+
+   CPPFLAGS="$FTDS_INCLUDE $orig_CPPFLAGS"
+   LIBS="$FTDS_LIBS $NETWORK_LIBS $orig_LIBS"
+   AC_TRY_LINK(
+      [
+       #include <sybdb.h>
+       #include <tds.h>
+      ],
+      [
+       LOGINREC*  x_login     = 0;
+       DBPROCESS* x_dbproc    = dbopen(x_login, (char*) "SRV_NAME");
+       TDSLOGIN*  x_tds_login = 0;
+       TDSSOCKET* x_sock      = tds_connect(x_tds_login);
+      ],
+      [AC_DEFINE_UNQUOTED(HAVE_LIBFTDS, 1)],
+      [with_ftds="no"]
+   )
+fi
+if test "$with_ftds" = "no" ; then
+   FTDS_PATH=
+   FTDS_INCLUDE=
+   FTDS_LIBS=
+   WithoutPackages="$WithoutPackages FreeTDS"
+   AC_MSG_RESULT([no])
+else
+   WithPackages="$WithPackages FreeTDS"
+   AC_MSG_RESULT([$FTDS_PATH])
+fi
+
+
 ## NCBI C Toolkit
 AC_MSG_CHECKING(if NCBI C Toolkit is available)
 if test "$with_ncbi_c" != "no" ; then
@@ -2230,6 +2267,8 @@ AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)
 AC_SUBST(SYBASE_DLLS)
 AC_SUBST(SYBASE_DBLIBS)
+AC_SUBST(FTDS_INCLUDE)
+AC_SUBST(FTDS_LIBS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(WXWIN_INCLUDE)
