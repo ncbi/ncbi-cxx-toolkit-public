@@ -354,6 +354,13 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
             *m_Current));
         refs.push_back(ref);
     }
+
+    // add seq-submit citation
+    if (m_Current->GetSubmitBlock() != NULL) {
+        CBioseqContext::TRef ref(new CReferenceItem(*m_Current->GetSubmitBlock(),
+            *m_Current));
+        refs.push_back(ref);
+    }
 }
 
 
@@ -1581,6 +1588,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2005/02/07 14:59:46  shomrat
+* Added submission reference
+*
 * Revision 1.38  2005/02/02 19:35:35  shomrat
 * Added barcode comment
 *
