@@ -29,7 +29,6 @@
 #ifndef AA_UNGAPPED__H
 #define AA_UNGAPPED__H
 
-#include <ncbi.h>
 #include <blast_def.h>
 #include <aa_lookup.h>
 #include <blast_extend.h>

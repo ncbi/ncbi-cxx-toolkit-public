@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.18  2003/07/24 20:49:36  camacho
+* Remove unnecessary #include
+*
 * Revision 1.17  2003/06/26 21:30:10  dondosha
 * Removed const from an integral type function parameters
 *
@@ -164,10 +167,9 @@ $Revision$
 extern "C" {
 #endif
 
-#include <ncbi.h>
+#include <blast_def.h>
 #include <blast_options.h>
 #include <blastkar.h>
-#include <blast_def.h>
 #include <mb_lookup.h>
 #include <aa_lookup.h>
 #include <na_lookup.h>

@@ -26,7 +26,6 @@
 
 */
 
-#include <ncbi.h>
 #include <blast_def.h>
 #ifndef UTIL__H
 #define UTIL__H
