@@ -38,7 +38,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
 #include <memory>
-#include "ncbidbg_p.hpp"
+#include <assert.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -121,7 +121,7 @@ CSafeStaticGuard::~CSafeStaticGuard(void)
     if (--sm_RefCount > 0) {
         return;
     }
-    CORE_ASSERT(sm_RefCount == 0);
+    assert(sm_RefCount == 0);
 
     // Call Cleanup() for all variables registered
     while ( !sm_Stack->empty() ) {
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/04/11 20:00:45  ivanov
+ * Returned standard assert() vice CORE_ASSERT()
+ *
  * Revision 1.4  2002/04/10 18:39:10  ivanov
  * Changed assert() to CORE_ASSERT()
  *

@@ -37,17 +37,15 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbithr.hpp>
 
+#include <assert.h>
 
 BEGIN_NCBI_SCOPE
 
 
 #if defined(_DEBUG)
 
-#  define CORE_ASSERT(expression) \
-    if ( !(expression) ) Abort();
-
 // 'simple' verify
-#  define xncbi_Verify(expression) CORE_ASSERT(expression)
+#  define xncbi_Verify(expression) assert(expression)
 
 // Abort execution (by default), or throw exception (if explicitly specified
 // by calling xncbi_SetValidateAction(eValidate_Throw)) if
@@ -61,13 +59,11 @@ BEGIN_NCBI_SCOPE
             } \
         } \
         else { \
-            CORE_ASSERT(expression) \
+            assert(expression); \
         } \
     } while (0)
 
 #else // _DEBUG
-
-#  define CORE_ASSERT(expr) ((void)0)
 
 // 'simple' verify - just evaluate the expression
 #  define xncbi_Verify(expression) ((void)(expression))
@@ -88,6 +84,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/04/11 20:00:45  ivanov
+ * Returned standard assert() vice CORE_ASSERT()
+ *
  * Revision 1.5  2002/04/10 18:32:04  ivanov
  * Fixed typo
  *

@@ -46,6 +46,7 @@
 #include <corelib/ncbi_limits.h>
 #include <algorithm>
 #include <memory>
+#include <assert.h>
 
 #include "ncbidbg_p.hpp"
 
@@ -109,13 +110,13 @@ CTlsBase::~CTlsBase(void)
         m_Key = 0;
         return;
     }
-    CORE_ASSERT(0);
+    assert(0);
 #elif defined(NCBI_POSIX_THREADS)
     if (pthread_key_delete(m_Key) == 0) {
         m_Key = 0;
         return;
     }
-    CORE_ASSERT(0);
+    assert(0);
 #else
     m_Key = 0;
     return;
@@ -149,7 +150,7 @@ void s_TlsSetValue(TTlsKey& key, void* data, const char* err_message)
     xncbi_Validate(pthread_setspecific(key, data) == 0, err_message);
 #else
     key = data;
-    CORE_ASSERT(err_message);  // to get rid of the "unused variable" warning
+    assert(err_message);  // to get rid of the "unused variable" warning
 #endif
 }
 
@@ -282,7 +283,7 @@ CExitThreadException::~CExitThreadException(void)
 
     if ( !tmp_in_wrapper ) {
         // Something is wrong - terminate the thread
-        CORE_ASSERT(((void)("CThread::Exit() -- cannot exit thread"), 0));
+        assert(((void)("CThread::Exit() -- cannot exit thread"), 0));
 #if defined(NCBI_WIN32_THREADS)
         ExitThread(0);
 #elif defined(NCBI_POSIX_THREADS)
@@ -609,7 +610,7 @@ CMutex::~CMutex(void)
     if (m_Owner == CThread::GetSelf()) {
         m_Mtx.Unlock();
     }
-    CORE_ASSERT(m_Owner == kThreadID_None  ||  m_Owner == CThread::GetSelf());
+    assert(m_Owner == kThreadID_None  ||  m_Owner == CThread::GetSelf());
 
     return;
 }
@@ -724,7 +725,7 @@ CRWLock::~CRWLock(void)
 
     }
 
-    CORE_ASSERT(m_Count >= 0  ||  m_Owner == self_id);
+    assert(m_Count >= 0  ||  m_Owner == self_id);
     return;
 }
 
@@ -832,7 +833,7 @@ void CRWLock::WriteLock(void)
         // Unlocked or RW-locked by another thread
 
         // Look in readers - must not be there
-        CORE_ASSERT(find(m_Readers.begin(), m_Readers.end(), self_id)
+        assert(find(m_Readers.begin(), m_Readers.end(), self_id)
                     == m_Readers.end());
 
 #if defined(NCBI_WIN32_THREADS)
@@ -883,7 +884,7 @@ void CRWLock::WriteLock(void)
     }
 
     // No readers allowed
-    CORE_ASSERT(m_Readers.begin() == m_Readers.end());
+    assert(m_Readers.begin() == m_Readers.end());
 }
 
 
@@ -973,7 +974,7 @@ bool CRWLock::TryWriteLock(void)
     }
 
     // No readers allowed
-    CORE_ASSERT(m_Readers.begin() == m_Readers.end());
+    assert(m_Readers.begin() == m_Readers.end());
 
     return true;
 }
@@ -1054,7 +1055,7 @@ void CRWLock::Unlock(void)
         // Check if the unlocking thread is in the owners list
         list<CThread::TID>::iterator found =
             find(m_Readers.begin(), m_Readers.end(), self_id);
-        CORE_ASSERT(found != m_Readers.end());
+        assert(found != m_Readers.end());
         m_Readers.erase(found);
 #endif
     }
@@ -1126,7 +1127,7 @@ CSemaphore::CSemaphore(unsigned int init_count, unsigned int max_count)
 CSemaphore::~CSemaphore(void)
 {
 #if defined(NCBI_POSIX_THREADS)
-    CORE_ASSERT(m_Sem->wait_count == 0);
+    assert(m_Sem->wait_count == 0);
     xncbi_Verify(pthread_mutex_destroy(&m_Sem->mutex) == 0);
     xncbi_Verify(pthread_cond_destroy (&m_Sem->cond)  == 0);
 
@@ -1231,7 +1232,7 @@ void CSemaphore::Post(unsigned int count)
                        "CSemaphore::Post() -- would result in counter > MAX_UINT");
         xncbi_Validate(m_Sem->count + count <= m_Sem->max_count,
                        "CSemaphore::Post() -- attempt to exceed max_count");
-        CORE_ASSERT(0);
+        assert(0);
     }
 
     // Signal some (or all) of the threads waiting on this semaphore
@@ -1283,6 +1284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/04/11 20:00:45  ivanov
+ * Returned standard assert() vice CORE_ASSERT()
+ *
  * Revision 1.15  2002/04/10 18:39:10  ivanov
  * Changed assert() to CORE_ASSERT()
  *

@@ -39,7 +39,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
-#include "../ncbidbg_p.hpp"
+#include <assert.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -55,7 +55,7 @@ void s_Verify(bool expr)
     }
 }
 #else
-#define s_Verify( expr ) CORE_ASSERT( expr )
+#define s_Verify( expr ) assert( expr )
 #endif
 
 
@@ -112,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2002/04/11 20:00:46  ivanov
+ * Returned standard assert() vice CORE_ASSERT()
+ *
  * Revision 6.3  2002/04/10 18:38:51  ivanov
  * Moved CVS log to end of file. Changed assert() to CORE_ASSERT()
  *
