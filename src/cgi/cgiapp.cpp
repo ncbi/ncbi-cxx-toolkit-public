@@ -261,6 +261,7 @@ CCgiApplication::CCgiApplication(void)
    m_Iteration(0),
    m_RequestFlags(0)
 {
+    SetStdioFlags(fBinaryCin | fBinaryCout);
     DisableArgDescriptions();
     RegisterDiagFactory("stderr", new CStderrDiagFactory);
     RegisterDiagFactory("asbody", new CAsBodyDiagFactory(this));
@@ -742,6 +743,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.57  2004/09/25 17:59:22  vakatov
+* Standard I/O streams to work in binary mode (to override MS-Win default
+* that opens these in text mode)
+*
 * Revision 1.56  2004/09/07 19:14:09  vakatov
 * Better structurize (and use) CGI exceptions to distinguish between user-
 * and server- errors
