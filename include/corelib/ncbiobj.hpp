@@ -422,6 +422,18 @@ public:
             return m_Ptr != 0;
         }
 
+    /// Swaps the pointer with another reference
+    ///
+    /// @sa
+    ///   Swap(CRef<C>&)
+    inline
+    void Swap(CRef<C>& ref)
+        {
+            TObjectType* ptr = m_Ptr;
+            m_Ptr = ref.m_Ptr;
+            ref.m_Ptr = ptr;
+        }
+
     /// Reset reference object.
     ///
     /// This sets the pointer to object to null, and removes reference
@@ -863,6 +875,18 @@ public:
     bool NotNull(void) const THROWS_NONE
         {
             return m_Ptr != 0;
+        }
+
+    /// Swaps the pointer with another reference
+    ///
+    /// @sa
+    ///   Swap(ConstRef<C>&)
+    inline
+    void Swap(CConstRef<C>& ref)
+        {
+            TObjectType* ptr = m_Ptr;
+            m_Ptr = ref.m_Ptr;
+            ref.m_Ptr = ptr;
         }
 
     /// Reset reference object.
@@ -1432,10 +1456,32 @@ private:
 
 END_NCBI_SCOPE
 
+BEGIN_STD_SCOPE
+
+template<class C>
+inline
+void swap(NCBI_NS_NCBI::CRef<C>& ref1, NCBI_NS_NCBI::CRef<C>& ref2)
+{
+    ref1.Swap(ref2);
+}
+
+
+template<class C>
+inline
+void swap(NCBI_NS_NCBI::CConstRef<C>& ref1, NCBI_NS_NCBI::CConstRef<C>& ref2)
+{
+    ref1.Swap(ref2);
+}
+
+END_STD_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2005/03/03 18:45:02  didenko
+ * Added Swap method and std::swap functions for
+ * CRef and CConstRef classes
+ *
  * Revision 1.59  2005/01/24 17:04:23  vasilche
  * Safe boolean operators.
  *
