@@ -37,6 +37,7 @@ BEGIN_NCBI_SCOPE
 CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                                   (const string&            output_dir,
                                    const list<SConfigInfo>& configs,
+                                   bool                     dll_build,
                                    const string&            project_dir,
                                    const string&            tree_root,
                                    const string&            subtree_to_build,
@@ -44,6 +45,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
 :m_Name          ("-CONFIGURE-"),
  m_OutputDir     (output_dir),
  m_Configs       (configs),
+ m_DllBuild      (dll_build),
  m_ProjectDir    (project_dir),
  m_TreeRoot      (tree_root),
  m_SubtreeToBuild(subtree_to_build),
@@ -180,8 +182,12 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
-    ofs << "%PTB_PATH%\\project_tree_builder.exe"
-        << " -logfile out.log"
+    ofs << "%PTB_PATH%\\project_tree_builder.exe";
+
+    if ( m_DllBuild )
+        ofs << " -dll";
+
+    ofs << " -logfile out.log"
         << " -conffile %PTB_PATH%\\..\\..\\..\\project_tree_builder.ini "
         << "%TREE_ROOT%" << " " << m_SubtreeToBuild << " " << "%SLN_PATH%" ;
 
@@ -195,6 +201,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/03/10 21:27:26  gorelenk
+ * Changed CMsvcConfigureProjectGenerator constructor and
+ * CreateProjectFileItem member-function implementation.
+ *
  * Revision 1.7  2004/03/02 23:31:45  gorelenk
  * Changed implementation of
  * CMsvcConfigureProjectGenerator::CreateProjectFileItem .
