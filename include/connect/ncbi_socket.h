@@ -570,7 +570,7 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  * eIO_ReadPlain   -- read as many as "size" bytes and return (eIO_Success);
  *                    if no data are readily available then wait at most
  *                    read timeout and return (eIO_Timeout) if no data still
- *                    could not be get; eIO_Success if some data were obtained.
+ *                    could be got; eIO_Success if some data were obtained.
  * eIO_ReadPeek    -- same as "eIO_ReadPlain" but do not extract the data from
  *                    the socket (so that the next read operation will see the
  *                    data again), with one important exception noted below.
@@ -958,6 +958,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.49  2004/03/23 02:26:55  lavr
+ * Typo fix
+ *
  * Revision 6.48  2003/11/25 15:07:12  lavr
  * SOCK_Status() to accept eIO_Open
  *
