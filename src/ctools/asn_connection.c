@@ -30,7 +30,6 @@
  *
  */
 
-#include <connect/ncbi_service_connector.h>
 #include <ctools/asn_connection.h>
 #include "../connect/ncbi_priv.h"
 
@@ -171,6 +170,9 @@ CONN CreateAsnConn_Service(const char*     service,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2004/11/23 16:15:29  lavr
+ * -<connect/ncbi_service_connector.h> now included from <ctools/asn_connectionh>
+ *
  * Revision 1.7  2004/03/23 02:29:19  lavr
  * Remove redundant inits in I/O callbacks
  *
