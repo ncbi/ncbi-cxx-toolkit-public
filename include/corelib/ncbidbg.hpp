@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/04/22 14:18:18  vasilche
+* Added _TRACE_THROW() macro which can be configured to make coredump at some point fo throwing exception.
+*
 * Revision 1.11  1999/03/15 16:08:09  vakatov
 * Fixed "{...}" macros to "do {...} while(0)" lest it to mess up with "if"s
 *
@@ -91,12 +94,23 @@ BEGIN_NCBI_SCOPE
 
 #  define _VERIFY(expr) _ASSERT(expr)
 
+extern int TraceThrow(void);
+
+#  define _TRACE_THROW() do { \
+    { \
+        NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Trace); \
+        _diag_ << _FILE_LINE << "trace"; \
+    } \
+    TraceThrow(); \
+} while(0)
+
 #else  /* _DEBUG */
 
 #  define _TRACE(message)  ((void)0)
 #  define _TROUBLE
 #  define _ASSERT(expr) ((void)0)
 #  define _VERIFY(expr) ((void)(expr))
+#  define _TRACE_THROW() ((void)0)
 
 #endif  /* else!_DEBUG */
 
