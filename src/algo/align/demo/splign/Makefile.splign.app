@@ -9,7 +9,7 @@ APP = splign
 SRC = subjmixer splign seq_loader splign_app util \
       hf_hit hf_hitparser
 
-LIB = xalgoalign tables $(OBJMGR_LIBS:%=%-static)
+LIB = xalgoalign tables $(OBJMGR_LIBS:dbapi_driver=dbapi_driver-static)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
