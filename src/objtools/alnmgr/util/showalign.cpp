@@ -184,9 +184,7 @@ CDisplaySeqalign::CDisplaySeqalign(CSeq_align_set& seqalign, list <SeqlocInfo*>&
   temp['*']['*'] = 1;
  
   m_Matrix = temp;
-  //set config file
-  m_ConfigFile = new CNcbiIfstream(".ncbirc");
-  m_Reg = new CNcbiRegistry(*m_ConfigFile);
+ 
 }
 
 //Destructor
@@ -195,8 +193,10 @@ CDisplaySeqalign::~CDisplaySeqalign(){
     delete [] m_Matrix[i];
   }
   delete [] m_Matrix;
-  delete m_ConfigFile;
-  delete m_Reg;
+  if(m_AlignOption & eHtml){
+    delete m_ConfigFile;
+    delete m_Reg;
+  }
 
 }
 
@@ -842,6 +842,9 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
  
   setDbGi(); //for whether to add get sequence feature
   if(m_AlignOption & eHtml){
+    //set config file
+    m_ConfigFile = new CNcbiIfstream(".ncbirc");
+    m_Reg = new CNcbiRegistry(*m_ConfigFile);
     out<<"<script src=\"blastResult.js\"></script>";
   }
    //get sequence 
@@ -852,7 +855,10 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
 
   //begin to display
   int num_align = 0;
-  string toolUrl= m_Reg->Get(m_BlastType, "TOOL_URL");
+  string toolUrl = NcbiEmptyString;
+  if(m_AlignOption & eHtml){
+    toolUrl = m_Reg->Get(m_BlastType, "TOOL_URL");
+  }
   if(!(m_AlignOption&eMultiAlign)){//pairwise alignment
 
     list<alnInfo*> avList;  
@@ -879,7 +885,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
 	    alnvecInfo->alnVec = avRef;
 	    avList.push_back(alnvecInfo);
 	    int gi = GetGiForSeqIdList(handle.GetBioseq().GetId());
-	    if(!(toolUrl == NcbiEmptyString || (gi > 0 && toolUrl.find("dumpgnl.cgi") != string::npos))){ //need to construct segs for dumpgnl
+	    if((m_AlignOption & eHtml) && !(toolUrl == NcbiEmptyString || (gi > 0 && toolUrl.find("dumpgnl.cgi") != string::npos))){ //need to construct segs for dumpgnl
 	      string idString = avRef->GetSeqId(1).GetSeqIdString();
 	      if(m_Segs.count(idString) > 0){ //already has seg, concatenate
 		m_Segs[idString] += "," + NStr::IntToString(avRef->GetSeqStart(1)) + "-" + NStr::IntToString(avRef->GetSeqStop(1));
