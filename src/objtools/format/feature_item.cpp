@@ -73,6 +73,8 @@ BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
 
 
+// -- static functions
+
 const CGb_qual* s_GetQual(const CSeq_feat& feat, const string& qual)
 {
     ITERATE(CSeq_feat::TQual, it, feat.GetQual()) {
@@ -328,6 +330,24 @@ static bool s_SkipFeature(const CSeq_feat& feat, CFFContext& ctx)
     return false;
 }
 
+
+// -- FeatureHeader
+
+CFeatHeaderItem::CFeatHeaderItem(CFFContext& ctx) : CFlatItem(ctx)
+{
+    x_GatherInfo(ctx);
+}
+
+
+void CFeatHeaderItem::x_GatherInfo(CFFContext& ctx)
+{
+    if ( ctx.IsFormatFTable() ) {
+        m_Id.Reset(ctx.GetPrimaryId());
+    }
+}
+
+
+// -- FeatureItem
 
 string CFeatureItem::GetKey(void) const
 {
@@ -905,7 +925,7 @@ void CFeatureItem::x_AddProteinQuals(CBioseq_Handle& prot) const
              prot_tech != CMolInfo::eTech_concept_trans_a ) {
             if ( !GetTechString(prot_tech).empty() ) {
                 x_AddQual(eFQ_prot_method, 
-                    new CFlatStringQVal("Method: " + GetTechString(prot_tech), "; "));
+                    new CFlatStringQVal("Method: " + GetTechString(prot_tech)));
             }
         }
     }
@@ -1477,7 +1497,7 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals) const
             // XXX -- each of these should really get its own class
             // (to verify correct syntax)
             x_AddQual(slot, new CFlatStringQVal((*it)->GetVal(),
-                kEmptyStr, CFlatQual::eUnquoted));
+                CFlatQual::eUnquoted));
             break;
         case eFQ_label:
             x_AddQual(slot, new CFlatLabelQVal((*it)->GetVal()));
@@ -1623,7 +1643,8 @@ void CFeatureItem::x_FormatNoteQuals(void) const
     }
 #undef DO_NOTE
 
-    string notestr, delim;
+    string notestr;
+    const string* suffix = &kEmptyStr;
 
     CFlatFeature::TQuals::const_iterator last = qvec.end();
     CFlatFeature::TQuals::const_iterator end = last--;
@@ -1633,8 +1654,9 @@ void CFeatureItem::x_FormatNoteQuals(void) const
         if ( NStr::EndsWith(note, ".")  &&  !NStr::EndsWith(note, "...") ) {
             note.erase(note.length() - 1);
         }
-        JoinNoRedund(notestr, note, delim);
-        delim = (*it)->GetSuffix();
+        const string& prefix = *suffix + (*it)->GetPrefix();
+        JoinNoRedund(notestr, prefix, note);
+        suffix = &(*it)->GetSuffix();
     }
 
     if ( !notestr.empty() ) {
@@ -2028,25 +2050,28 @@ void CSourceFeatureItem::x_FormatNoteQuals() const
     }
 #undef DO_NOTE
 
-    string notestr, delim;
+    string notestr;
+    const string* suffix = &kEmptyStr;
 
     if ( GetSource().CanGetGenome()  &&  
         GetSource().GetGenome() == CBioSource::eGenome_extrachrom ) {
+        static const string kEOL = "\n";
         notestr += "extrachromosomal";
-        delim = "\n";
+        suffix = &kEOL;
     }
 
     CFlatFeature::TQuals::const_iterator last = qvec.end();
     CFlatFeature::TQuals::const_iterator end = last--;
-    for ( CFlatFeature::TQuals::const_iterator it = qvec.begin(); it != end; ++it ) {
+    CFlatFeature::TQuals::const_iterator it = qvec.begin();
+    for ( ; it != end; ++it ) {
         string note = (*it)->GetValue();
         if ( NStr::EndsWith(note, ".")  &&  !NStr::EndsWith(note, "...") ) {
             note.erase(note.length() - 1);
         }
-        JoinNoRedund(notestr, note, delim);
-        delim = (*it)->GetSuffix();
+        const string& prefix = *suffix + (*it)->GetPrefix();
+        JoinNoRedund(notestr, prefix, note);
+        suffix = &(*it)->GetSuffix();
     }
-
     if ( !notestr.empty() ) {
         CRef<CFlatQual> note(new CFlatQual("note", notestr));
         m_FF->SetQuals().push_back(note);
@@ -2098,6 +2123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/03/18 15:37:57  shomrat
+* Fixes to note qual formatting
+*
 * Revision 1.11  2004/03/10 21:30:18  shomrat
 * + product tRNA qual; limit Seq-is types for product ids
 *
