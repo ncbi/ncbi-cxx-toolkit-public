@@ -49,14 +49,16 @@ bool CSeqMap_CI_SegmentInfo::x_Move(bool minusStrand, CScope* scope)
     size_t index = m_Index;
     const CSeqMap::CSegment& old_seg = seqMap.x_GetSegment(index);
     if ( !minusStrand ) {
-        if ( old_seg.m_Position >= m_LevelRangeEnd )
+        if ( old_seg.m_Position > m_LevelRangeEnd ||
+             index == seqMap.x_GetSegmentsCount() )
             return false;
         m_Index = ++index;
         seqMap.x_GetSegmentLength(index, scope); // Update length of segment
         return seqMap.x_GetSegmentPosition(index, scope) < m_LevelRangeEnd;
     }
     else {
-        if ( old_seg.m_Position + old_seg.m_Length <= m_LevelRangePos )
+        if ( old_seg.m_Position + old_seg.m_Length < m_LevelRangePos ||
+             index == 0 )
             return false;
         m_Index = --index;
         return old_seg.m_Position > m_LevelRangePos;
@@ -398,6 +400,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/02/11 19:26:18  vasilche
+* Fixed CSeqMap_CI with ending NULL segment.
+*
 * Revision 1.6  2003/02/05 17:59:17  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *
