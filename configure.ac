@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.7 2001/10/04 23:13:31 vakatov Exp $
+#  $Id: configure.ac,v 1.8 2001/10/09 17:36:18 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -188,7 +188,7 @@ for x_arg in "$@" ; do
    case "$x_arg" in
       --with-extra-action= | --exec-prefix= \
       | --cache-file= | --build= | --host= | --target= | --with-runpath= )
-      AC_MSG_ERROR(["  $x_arg:  requires value\;  use --help to show usage"])
+      AC_MSG_ERROR(["  $x_arg:  requires value;  use --help to show usage"])
       ;;
 
       --with-extra-action=* | --exec-prefix=* | --with-projects=* \
@@ -198,7 +198,7 @@ for x_arg in "$@" ; do
       ;;
 
       * )
-      AC_MSG_ERROR(["  $x_arg:  unknown option\;  use --help to show usage"])
+      AC_MSG_ERROR(["  $x_arg:  unknown option;  use --help to show usage"])
       ;;
    esac
 done
