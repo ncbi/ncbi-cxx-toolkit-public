@@ -30,21 +30,13 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <vector>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <corelib/ncbimisc.hpp>
-
-#include <connect/ncbi_socket.hpp>
-#include <connect/ncbi_types.h>
-#include <connect/services/netschedule_client.hpp>
-#include <connect/services/netcache_client.hpp>
 #include <connect/services/grid_worker_app.hpp>
 
+#include <vector>
 
 
 USING_NCBI_SCOPE;
@@ -104,7 +96,7 @@ public:
         //
         for (int i = 0; i < 5; ++i) {
             if (context.GetShutdownLevel() 
-                != CNetScheduleClient::eShutdownImmidiate) {
+                == CNetScheduleClient::eShutdownImmidiate) {
                 return 1;
             }
             SleepMicroSec(3000);
@@ -164,6 +156,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/25 16:28:48  didenko
+ * Cosmetics
+ *
  * Revision 1.4  2005/03/24 17:48:51  kuznets
  * Minor cleanup...
  *
