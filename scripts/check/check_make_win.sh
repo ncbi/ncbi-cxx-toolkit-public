@@ -401,16 +401,17 @@ for x_row in $x_tests; do
             done
          done
       fi
+   done # for build_tree in x_build_trees
 
-      # Generate extension for tests output file
-      if test "$x_test" != "$x_test_prev" ; then 
-         x_cnt=1
-         x_test_out="out"
-      else
-         x_cnt=`expr $x_cnt + 1`
-         x_test_out="out$x_cnt"
-      fi
-      x_test_prev="$x_test"
+   # Generate extension for tests output file
+   if test "$x_test" != "$x_test_prev" ; then 
+      x_cnt=1
+      x_test_out="out"
+   else
+      x_cnt=`expr $x_cnt + 1`
+      x_test_out="out$x_cnt"
+   fi
+   x_test_prev="$x_test"
 
 #//////////////////////////////////////////////////////////////////////////
 
@@ -429,7 +430,6 @@ EOF
 
 #//////////////////////////////////////////////////////////////////////////
 
-   done # for build_tree in x_build_trees
 done # for x_row in x_tests
 
 
