@@ -66,8 +66,8 @@ public:
     // destructor
     ~CDate(void);
 
-    void  Assign (const CTime& time, EPrecision prec = ePrecision_second);
-    CTime AsCTime(CTime::ETimeZone tz = CTime::eLocal) const;
+    void  SetToTime(const CTime& time, EPrecision prec = ePrecision_second);
+    CTime AsCTime  (CTime::ETimeZone tz = CTime::eLocal) const;
 
     enum ECompare {
         eCompare_before = -1,
@@ -128,12 +128,12 @@ CDate::CDate(void)
 
 inline CDate::CDate(const CTime& time, CDate::EPrecision prec)
 {
-    Assign(time, prec);
+    SetToTime(time, prec);
 }
 
 inline CDate::CDate(time_t time, CDate::EPrecision prec)
 {
-    Assign(time, prec);
+    SetToTime(time, prec);
 }
 
 
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2002/12/09 17:30:10  ucko
+ * Rename Assign to SetToTime to avoid shadowing CSerialObject; propagate tz
+ *
  * Revision 1.6  2002/12/06 20:03:15  ucko
  * Support conversion to/from CTime and from time_t
  *

@@ -53,12 +53,12 @@ CDate::~CDate(void)
 }
 
 
-void CDate::Assign(const CTime& time, CDate::EPrecision prec)
+void CDate::SetToTime(const CTime& time, CDate::EPrecision prec)
 {
     switch (Which()) {
     case e_not_set:
     case e_Std:
-        SetStd().Assign(time, prec);
+        SetStd().SetToTime(time, prec);
         break;
     case e_Str:
         SetStr(time.AsString());
@@ -70,7 +70,7 @@ CTime CDate::AsCTime(CTime::ETimeZone tz) const
 {
     switch (Which()) {
     case e_Std:
-        return GetStd().AsCTime();
+        return GetStd().AsCTime(tz);
     case e_Str:
         return CTime(GetStr()); // attempt to parse
     default:
@@ -119,6 +119,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.5  2002/12/09 17:30:11  ucko
+ * Rename Assign to SetToTime to avoid shadowing CSerialObject; propagate tz
+ *
  * Revision 6.4  2002/12/06 20:03:16  ucko
  * Support conversion to/from CTime and from time_t
  *

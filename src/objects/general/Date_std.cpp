@@ -54,7 +54,7 @@ CDate_std::~CDate_std(void)
 }
 
 
-void CDate_std::Assign(const CTime& time, CDate::EPrecision prec)
+void CDate_std::SetToTime(const CTime& time, CDate::EPrecision prec)
 {
     switch (prec) {
     case CDate::ePrecision_second:
@@ -323,6 +323,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.4  2002/12/09 17:30:11  ucko
+ * Rename Assign to SetToTime to avoid shadowing CSerialObject; propagate tz
+ *
  * Revision 6.3  2002/12/06 20:03:16  ucko
  * Support conversion to/from CTime and from time_t
  *
