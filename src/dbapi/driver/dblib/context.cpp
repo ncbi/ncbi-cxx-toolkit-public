@@ -253,9 +253,9 @@ unsigned int CDBLibContext::NofConnections(const string& srv_name) const
 bool CDBLibContext::IsAbleTo(ECapability cpb) const
 {
     switch(cpb) {
-    case fBcp:
-    case fReturnITDescriptors:
-    case fReturnComputeResults:
+    case eBcp:
+    case eReturnITDescriptors:
+    case eReturnComputeResults:
         return true;
     default:
         break;
@@ -505,6 +505,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2002/12/20 17:56:33  soussov
+ * renames the members of ECapability enum
+ *
  * Revision 1.19  2002/09/19 20:05:43  vasilche
  * Safe initialization of static mutexes
  *

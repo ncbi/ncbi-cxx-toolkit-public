@@ -362,7 +362,7 @@ protected:
                             bool* is_null = 0) = 0;
 
     // Get a descriptor for text/image column (for SendData).
-    // Return NULL if this result does not (or cannot) have img/text descriptor.
+    // Return NULL if this result doesn't (or can't) have img/text descriptor.
     // NOTE: you need to call ReadItem (maybe even with buffer_size == 0)
     //       before calling this method!
     virtual I_ITDescriptor* GetImageOrTextDescriptor() = 0;
@@ -392,13 +392,7 @@ public:
         fPasswordEncrypted = 0x2
         // all driver-specific mode flags > 0x100
     };
-    typedef int TConnectionMode;
-
-    enum ECapability {
-        fBcp,
-        fReturnITDescriptors,
-        fReturnComputeResults
-    };
+    typedef int TConnectionMode;  // holds a binary OR of "EConnectionMode"
 
     // Set login and connection timeouts.
     // NOTE:  if "nof_secs" is zero or is "too big" (depends on the underlying
@@ -440,7 +434,13 @@ public:
     // Remove `per-connection' mess. handler "h" and all above it in the stack.
     virtual void PopDefConnMsgHandler(CDB_UserHandler* h);
 
-    virtual bool IsAbleTo(ECapability cpb) const= 0;
+    // Report if the driver supports this functionality
+    enum ECapability {
+        eBcp,
+        eReturnITDescriptors,
+        eReturnComputeResults
+    };
+    virtual bool IsAbleTo(ECapability cpb) const = 0;
 
     virtual ~I_DriverContext();
 
@@ -571,6 +571,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/12/20 17:52:47  soussov
+ * renames the members of ECapability enum
+ *
  * Revision 1.14  2002/04/09 22:33:12  vakatov
  * Identation
  *
