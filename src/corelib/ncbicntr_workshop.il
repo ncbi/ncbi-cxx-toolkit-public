@@ -1,6 +1,6 @@
 ! -*- asm -*-
 
-! $Id: ncbicntr_workshop.il,v 1.2 2002/05/24 14:18:20 ucko Exp $
+! $Id: ncbicntr_workshop.il,v 1.3 2003/06/27 17:28:08 ucko Exp $
 	
 !! for SPARC v9s
 ! in:  intended new value (%o0), address (%o1), required old value (%o2)
@@ -9,12 +9,18 @@
 	cas [%o1], %o2, %o0
 .end
 
+.inline NCBICORE_asm_casx, 24
+	casx [%o1], %o2, %o0
+.end
+
+
 !! for older SPARCs
 ! in:  new value (%o0), address (%o1)
 ! out: original value at address
 .inline NCBICORE_asm_swap, 8
 	swap [%o1], %o0
 .end
+
 
 !! for Intel x86s
 ! in:  address ((%esp)), delta (4(%esp))
@@ -24,4 +30,12 @@
 	movl  4(%esp), %eax
 	lock
 	xaddl    %eax, (%edx)
+.end
+
+! in:  new value ((%esp)), location (4(%esp))
+! out: old value (%eax)
+.inline NCBICORE_asm_xchg, 8
+	movl   (%esp), %eax
+	movl  4(%esp), %edx
+	xchg     %eax, (%edx)
 .end

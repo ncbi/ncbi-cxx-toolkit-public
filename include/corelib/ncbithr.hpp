@@ -29,7 +29,7 @@
  * Author:  Denis Vakatov, Aleksey Grichenko
  *
  * File Description:
- *   Multi-threading -- classes and features.
+ *   Multi-threading -- classes, functions, and features.
  *
  *   TLS:
  *      CTlsBase         -- TLS implementation (base class for CTls<>)
@@ -52,6 +52,9 @@
  *
  *   SEMAPHORE:
  *      CSemaphore       -- application-wide semaphore
+ *
+ *   MISC:
+ *      SwapPointers     -- atomic pointer swap operation
  *
  */
 
@@ -273,6 +276,13 @@ private:
 };
 
 
+/// Set *location to new_value, and return its immediately previous contents.
+void* SwapPointers(void * volatile * location, void* new_value);
+
+/// Out-of-line implementation; defined and used ifdef NCBI_SLOW_ATOMIC_SWAP.
+void* x_SwapPointers(void * volatile * location, void* new_value);
+
+
 /* @} */
 
 
@@ -342,6 +352,106 @@ CThread::TID CThread::GetSelf(void)
 const CThread::TID kThreadID_None = 0xFFFFFFFF;
 
 
+// Sigh... this is a big mess because WorkShop's handling of inline
+// asm is awkward and a lot of platforms supply compare-and-swap but
+// no suitable unconditional swap.  It also doesn't help that standard
+// interfaces are typically for integral types.
+#if !defined(NCBI_COMPILER_WORKSHOP)  ||  defined(NCBI_COUNTER_IMPLEMENTATION)
+#  if defined(NCBI_COMPILER_WORKSHOP)  &&  !defined(NCBI_NO_THREADS)
+#    ifdef __sparcv9
+extern "C"
+void* NCBICORE_asm_casx(void* new_value, void** location, void* old_value);
+#    elif defined(__i386)
+extern "C"
+void* NCBICORE_asm_xchg(void* new_value, void** location);
+#    endif
+#  else
+inline
+#  endif
+void* SwapPointers(void * volatile * location, void* new_value)
+{
+    void** nv_loc = const_cast<void**>(location);
+#  ifdef NCBI_NO_THREADS
+    void* old_value = *nv_loc;
+    *nv_loc = new_value;
+    return old_value;
+#  elif defined(NCBI_COMPILER_COMPAQ)
+    return reinterpret_cast<void*>
+        (__ATOMIC_EXCH_QUAD(nv_loc, reinterpret_cast<long>(new_value)));
+#  elif defined(NCBI_OS_IRIX)
+    return reinterpret_cast<void*>
+        (test_and_set(reinterpret_cast<unsigned long*>(nv_loc),
+                      reinterpret_cast<unsigned long>(new_value)));
+#  elif defined(NCBI_OS_AIX)
+    boolean_t swapped   = FALSE;
+    void*     old_value = *nv_loc;
+    while (swapped == FALSE) {
+        swapped = compare_and_swap(reinterpret_cast<atomic_p>(nv_loc),
+                                   reinterpret_cast<int*>(&old_value),
+                                   reinterpret_cast<int>(new_value));
+    }
+#  elif defined(NCBI_OS_DARWIN)
+    Boolean swapped = FALSE;
+    while (swapped == FALSE) {
+        swapped = CompareAndSwap(reinterpret_cast<UInt32>(*nv_loc),
+                                 reinterpret_cast<UInt32>(new_value),
+                                 reinterpret_cast<UInt32*>(nv_loc));
+    }
+#  elif defined(NCBI_OS_MAC)
+    Boolean swapped = FALSE;
+    while (swapped == FALSE) {
+        swapped = OTCompareAndSwapPtr(*nv_loc, new_value, nv_loc);
+    }
+#  elif defined(NCBI_OS_MSWIN)
+    // InterlockedExchangePointer would be better, but older SDK versions
+    // don't declare it. :-/
+    return reinterpret_cast<void*>
+        (InterlockedExchange(reinterpret_cast<LPLONG>(nv_loc),
+                             reinterpret_cast<LONG>(new_value)));
+#  elif defined(NCBI_COUNTER_ASM_OK)
+#    ifdef __i386
+    void* old_value;
+#      ifdef NCBI_COMPILER_WORKSHOP
+    old_value = NCBICORE_asm_xchg(new_value, nv_loc);
+#      else
+    asm volatile("xchg %0, %1" : "+m" (*nv_loc), "=r" (old_value)
+        : "1" (new_value), "m" (*nv_loc));
+#      endif
+    return old_value;
+#    elif defined(__sparcv9)
+    void* old_value = *nv_loc;
+    void* tmp       = new_value;
+    while (tmp != old_value) {
+#      ifdef NCBI_COMPILER_WORKSHOP
+        tmp = NCBICORE_asm_casx(tmp, nv_loc, old_value);
+#      else
+        asm volatile("casx [%3], %2, %1" : "+m" (*nv_loc), "+r" (tmp)
+                     : "r" (old_value), "r" (nv_loc));
+#      endif
+    }
+    return old_value;
+#    elif defined(__sparc)
+    void* old_value;
+#      ifdef NCBI_COMPILER_WORKSHOP
+    old_value = reinterpret_cast<void*>
+        (NCBICORE_asm_swap(reinterpret_cast<TNCBIAtomicValue>(new_value),
+                           reinterpret_cast<TNCBIAtomicValue*>(nv_loc)));
+#      else
+    asm volatile("swap [%2], %1" : "+m" (*nv_loc), "=r" (old_value)
+        : "r" (nv_loc), "1" (new_value));
+#      endif
+    return old_value;
+#    else
+#      define NCBI_SLOW_ATOMIC_SWAP
+    return x_SwapPointers(location, new_value);
+#    endif
+#  else
+#    define NCBI_SLOW_ATOMIC_SWAP
+    return x_SwapPointers(location, new_value);
+#  endif
+}
+#endif
+
 
 END_NCBI_SCOPE
 
@@ -350,6 +460,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/06/27 17:27:44  ucko
+ * +SwapPointers
+ *
  * Revision 1.18  2003/05/08 20:50:08  grichenk
  * Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
  *
