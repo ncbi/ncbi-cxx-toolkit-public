@@ -30,13 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2000/11/27 18:19:30  vasilche
-* Datatool now conforms CNcbiApplication requirements.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -61,7 +54,7 @@ private:
     bool GenerateCode(void);
 
     void LoadDefinitions(CFileSet& fileSet,
-                         const string& modulesDir,
+                         const list <string>& modulesPath,
                          const string& names);
 
     CCodeGenerator generator;
@@ -70,5 +63,18 @@ private:
 //#include <serial/datatool/datatool.inl>
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.2  2002/08/06 17:03:47  ucko
+* Let -opm take a comma-delimited list; move relevant CVS logs to end.
+*
+* Revision 1.1  2000/11/27 18:19:30  vasilche
+* Datatool now conforms CNcbiApplication requirements.
+*
+* ===========================================================================
+*/
 
 #endif  /* DATATOOL__HPP */

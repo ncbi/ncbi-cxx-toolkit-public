@@ -27,143 +27,6 @@
 *
 * File Description:
 *   main datatool file: argument processing and task manager
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.52  2001/12/13 19:32:41  juran
-* Make main()'s argv of type (const char*), for use with jTools.
-*
-* Revision 1.51  2001/10/17 18:19:52  grichenk
-* Updated to use CObjectOStreamXml::GetFileXXX
-*
-* Revision 1.50  2001/04/16 17:53:45  kholodov
-* Added: Option -dn to specify the DTD file name in XML header
-*
-* Revision 1.49  2000/12/26 22:24:53  vasilche
-* Updated for new behaviour of CNcbiArgs.
-*
-* Revision 1.48  2000/12/12 17:57:06  vasilche
-* Avoid using of new C++ keywords ('or' in this case).
-*
-* Revision 1.47  2000/12/12 14:28:17  vasilche
-* Changed the way arguments are processed.
-*
-* Revision 1.46  2000/11/27 18:19:47  vasilche
-* Datatool now conforms CNcbiApplication requirements.
-*
-* Revision 1.45  2000/11/20 17:26:32  vasilche
-* Fixed warnings on 64 bit platforms.
-* Updated names of config variables.
-*
-* Revision 1.44  2000/11/08 17:50:18  vasilche
-* Fixed compilation error on MSVC.
-*
-* Revision 1.43  2000/11/08 17:02:51  vasilche
-* Added generation of modular DTD files.
-*
-* Revision 1.42  2000/11/01 20:38:59  vasilche
-* OPTIONAL and DEFAULT are not permitted in CHOICE.
-* Fixed code generation for DEFAULT.
-*
-* Revision 1.41  2000/09/29 16:18:28  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* Revision 1.40  2000/09/26 17:38:26  vasilche
-* Fixed incomplete choiceptr implementation.
-* Removed temporary comments.
-*
-* Revision 1.39  2000/09/18 20:00:28  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.38  2000/09/18 13:53:00  vasilche
-* Fixed '.files' extension.
-*
-* Revision 1.37  2000/09/01 13:16:27  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.36  2000/08/25 15:59:20  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.35  2000/07/10 17:32:00  vasilche
-* Macro arguments made more clear.
-* All old ASN stuff moved to serialasn.hpp.
-* Changed prefix of enum info functions to GetTypeInfo_enum_.
-*
-* Revision 1.34  2000/06/16 16:31:39  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.33  2000/05/24 20:09:29  vasilche
-* Implemented DTD generation.
-*
-* Revision 1.32  2000/04/28 16:58:16  vasilche
-* Added classes CByteSource and CByteSourceReader for generic reading.
-* Added delayed reading of choice variants.
-*
-* Revision 1.31  2000/04/13 17:30:37  vasilche
-* Avoid INTERNAL COMPILER ERROR on MSVC.
-* Problem is in "static inline" function which cannot be expanded inline.
-*
-* Revision 1.30  2000/04/13 14:50:36  vasilche
-* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
-*
-* Revision 1.29  2000/04/12 15:36:51  vasilche
-* Added -on <namespace> argument to datatool.
-* Removed unnecessary namespace specifications in generated files.
-*
-* Revision 1.28  2000/04/07 19:26:28  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.27  2000/03/10 17:59:31  vasilche
-* Fixed error reporting.
-*
-* Revision 1.26  2000/02/01 21:48:01  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.25  2000/01/06 16:13:43  vasilche
-* Updated help messages.
-*
-* Revision 1.24  1999/12/30 21:33:39  vasilche
-* Changed arguments - more structured.
-* Added intelligence in detection of source directories.
-*
-* Revision 1.23  1999/12/28 18:55:58  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.22  1999/12/21 17:18:35  vasilche
-* Added CDelayedFostream class which rewrites file only if contents is changed.
-*
-* Revision 1.21  1999/12/20 21:00:18  vasilche
-* Added generation of sources in different directories.
-*
-* Revision 1.20  1999/12/01 17:36:26  vasilche
-* Fixed CHOICE processing.
-*
-* Revision 1.19  1999/11/15 20:01:34  vasilche
-* Fixed GCC error
-*
-* Revision 1.18  1999/11/15 19:36:16  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -309,7 +172,7 @@ bool CDataTool::ProcessModules(void)
 {
     const CArgs& args = GetArgs();
 
-    string modulesDir;
+    list<string> modulesPath;
 
     if ( const CArgValue& oR = args["oR"] ) {
         // NCBI directory tree
@@ -317,16 +180,18 @@ bool CDataTool::ProcessModules(void)
         generator.SetHPPDir(Path(rootDir, "include"));
         string srcDir = Path(rootDir, "src");
         generator.SetCPPDir(srcDir);
-        modulesDir = srcDir;
+        modulesPath.push_back(srcDir);
         generator.SetFileNamePrefixSource(eFileName_FromSourceFileName);
         generator.SetDefaultNamespace("NCBI_NS_NCBI::objects");
     }
     
-    if ( const CArgValue& opm = args["opm"] )
-        modulesDir = opm.AsString();
+    if ( const CArgValue& opm = args["opm"] ) {
+        modulesPath.clear();
+        NStr::Split(opm.AsString(), ",", modulesPath);
+    }
     
     LoadDefinitions(generator.GetMainModules(),
-                    modulesDir, args["m"].AsString());
+                    modulesPath, args["m"].AsString());
 
     if ( const CArgValue& f = args["f"] ) {
         generator.GetMainModules().PrintASN(f.AsOutputFile());
@@ -343,7 +208,7 @@ bool CDataTool::ProcessModules(void)
     }
     
     LoadDefinitions(generator.GetImportModules(),
-                    modulesDir, args["M"].AsString());
+                    modulesPath, args["M"].AsString());
 
     if ( !generator.Check() ) {
         if ( !args["i"] ) { // ignored
@@ -526,25 +391,15 @@ bool CDataTool::GenerateCode(void)
 
 
 void CDataTool::LoadDefinitions(CFileSet& fileSet,
-                                const string& modulesDir,
+                                const list<string>& modulesPath,
                                 const string& nameList)
 {
     list<string> names;
-    {
-        SIZE_TYPE pos = 0;
-        SIZE_TYPE next = nameList.find(' ');
-        while ( next != NPOS ) {
-            names.push_back(nameList.substr(pos, next - pos));
-            pos = next + 1;
-            next = nameList.find(' ', pos);
-        }
-        names.push_back(nameList.substr(pos));
-    }
-
+    NStr::Split(nameList, " ", names);
     iterate ( list<string>, fi, names ) {
         const string& name = *fi;
         if ( !name.empty() ) {
-            SourceFile fName(name, modulesDir);
+            SourceFile fName(name, modulesPath);
             ASNLexer lexer(fName);
             ASNParser parser(lexer);
             fileSet.AddFile(parser.Modules(name));
@@ -559,3 +414,146 @@ int main(int argc, const char* argv[])
     USING_NCBI_SCOPE;
     return CDataTool().AppMain(argc, argv, 0, eDS_Default, 0, "datatool");
 }
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.53  2002/08/06 17:03:48  ucko
+* Let -opm take a comma-delimited list; move relevant CVS logs to end.
+*
+* Revision 1.52  2001/12/13 19:32:41  juran
+* Make main()'s argv of type (const char*), for use with jTools.
+*
+* Revision 1.51  2001/10/17 18:19:52  grichenk
+* Updated to use CObjectOStreamXml::GetFileXXX
+*
+* Revision 1.50  2001/04/16 17:53:45  kholodov
+* Added: Option -dn to specify the DTD file name in XML header
+*
+* Revision 1.49  2000/12/26 22:24:53  vasilche
+* Updated for new behaviour of CNcbiArgs.
+*
+* Revision 1.48  2000/12/12 17:57:06  vasilche
+* Avoid using of new C++ keywords ('or' in this case).
+*
+* Revision 1.47  2000/12/12 14:28:17  vasilche
+* Changed the way arguments are processed.
+*
+* Revision 1.46  2000/11/27 18:19:47  vasilche
+* Datatool now conforms CNcbiApplication requirements.
+*
+* Revision 1.45  2000/11/20 17:26:32  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
+* Revision 1.44  2000/11/08 17:50:18  vasilche
+* Fixed compilation error on MSVC.
+*
+* Revision 1.43  2000/11/08 17:02:51  vasilche
+* Added generation of modular DTD files.
+*
+* Revision 1.42  2000/11/01 20:38:59  vasilche
+* OPTIONAL and DEFAULT are not permitted in CHOICE.
+* Fixed code generation for DEFAULT.
+*
+* Revision 1.41  2000/09/29 16:18:28  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
+* Revision 1.40  2000/09/26 17:38:26  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
+* Revision 1.39  2000/09/18 20:00:28  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.38  2000/09/18 13:53:00  vasilche
+* Fixed '.files' extension.
+*
+* Revision 1.37  2000/09/01 13:16:27  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
+* Revision 1.36  2000/08/25 15:59:20  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.35  2000/07/10 17:32:00  vasilche
+* Macro arguments made more clear.
+* All old ASN stuff moved to serialasn.hpp.
+* Changed prefix of enum info functions to GetTypeInfo_enum_.
+*
+* Revision 1.34  2000/06/16 16:31:39  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* Revision 1.33  2000/05/24 20:09:29  vasilche
+* Implemented DTD generation.
+*
+* Revision 1.32  2000/04/28 16:58:16  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
+* Revision 1.31  2000/04/13 17:30:37  vasilche
+* Avoid INTERNAL COMPILER ERROR on MSVC.
+* Problem is in "static inline" function which cannot be expanded inline.
+*
+* Revision 1.30  2000/04/13 14:50:36  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
+* Revision 1.29  2000/04/12 15:36:51  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
+* Revision 1.28  2000/04/07 19:26:28  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.27  2000/03/10 17:59:31  vasilche
+* Fixed error reporting.
+*
+* Revision 1.26  2000/02/01 21:48:01  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.25  2000/01/06 16:13:43  vasilche
+* Updated help messages.
+*
+* Revision 1.24  1999/12/30 21:33:39  vasilche
+* Changed arguments - more structured.
+* Added intelligence in detection of source directories.
+*
+* Revision 1.23  1999/12/28 18:55:58  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
+* Revision 1.22  1999/12/21 17:18:35  vasilche
+* Added CDelayedFostream class which rewrites file only if contents is changed.
+*
+* Revision 1.21  1999/12/20 21:00:18  vasilche
+* Added generation of sources in different directories.
+*
+* Revision 1.20  1999/12/01 17:36:26  vasilche
+* Fixed CHOICE processing.
+*
+* Revision 1.19  1999/11/15 20:01:34  vasilche
+* Fixed GCC error
+*
+* Revision 1.18  1999/11/15 19:36:16  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/
