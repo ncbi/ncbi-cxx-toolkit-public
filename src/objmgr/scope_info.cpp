@@ -99,6 +99,11 @@ void CDataSource_ScopeInfo::Reset(void)
 /////////////////////////////////////////////////////////////////////////////
 
 
+CBioseq_ScopeInfo::~CBioseq_ScopeInfo(void)
+{
+}
+
+
 CBioseq_ScopeInfo::CBioseq_ScopeInfo(CScope* scope)
     : m_Scope(scope)
 {
@@ -181,6 +186,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/06/19 19:31:23  vasilche
+* Added missing CBioseq_ScopeInfo destructor.
+*
 * Revision 1.2  2003/06/19 19:08:55  vasilche
 * Added explicit constructor/destructor.
 *
