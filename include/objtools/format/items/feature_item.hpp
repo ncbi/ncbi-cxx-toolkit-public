@@ -112,9 +112,7 @@ protected:
 
     // constructor
     CFeatureItemBase(const CSeq_feat& feat, CFFContext& ctx,
-                     const CSeq_loc* loc = 0)
-        : CFlatItem(ctx), m_Feat(&feat), m_Loc(loc)
-    {}
+                     const CSeq_loc* loc = 0);
 
     virtual void x_AddQuals   (CFFContext& ctx) const = 0;
     virtual void x_FormatQuals(void) const = 0;
@@ -279,6 +277,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/25 20:27:52  shomrat
+* moved constructor body to .cpp file
+*
 * Revision 1.7  2004/03/18 15:27:25  shomrat
 * + GetId for ftable format
 *
