@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/08/27 17:44:14  grichenk
+* Added separator output to object copier
+*
 * Revision 1.6  2001/05/17 15:07:06  lavr
 * Typos corrected
 *
@@ -93,7 +96,9 @@ void CObjectStreamCopier::Copy(const CObjectTypeInfo& objectType)
     Out().WriteFileHeader(type);
 
     CopyObject(type);
-    
+
+    Separator(Out());
+
     Out().EndOfWrite();
     In().EndOfRead();
     END_OBJECT_2FRAMES();
@@ -107,6 +112,8 @@ void CObjectStreamCopier::Copy(TTypeInfo type, ENoFileHeader)
 
     CopyObject(type);
     
+    Separator(Out());
+
     Out().EndOfWrite();
     In().EndOfRead();
     END_OBJECT_2FRAMES();
