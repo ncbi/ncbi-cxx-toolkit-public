@@ -83,7 +83,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 
-#include <cstdio>
+#include <stdio.h>
 
 // generated classes
 
@@ -1381,6 +1381,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2002/10/10 23:55:06  ucko
+ * Replace <cstdio>, which does not exist on all our platforms, with good
+ * old <stdio.h>.
+ *
  * Revision 1.17  2002/10/10 20:56:12  hurwitz
  * fixed ugly code
  *
