@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/03/29 15:50:27  vasilche
+* Added const version of CRef - CConstRef.
+* CRef and CConstRef now accept classes inherited from CObject.
+*
 * Revision 1.4  2000/03/10 14:18:37  vasilche
 * Added CRef<>::GetPointerOrNull() method similar to std::auto_ptr<>.get()
 *
@@ -70,7 +74,7 @@ class CObject
 private:
     // special flag in counter meaning that object is not allocated in heap
     enum {
-        eDoNotDelete = 0x80000000u
+        eDoNotDelete = int(0x80000000u)
     };
 
 public:
@@ -107,13 +111,13 @@ public:
         }
 
     inline
-    void AddReference(void) THROWS_NONE
+    void AddReference(void) const THROWS_NONE
         {
             ++m_Counter;
         }
 
     inline
-    void RemoveReference(void)
+    void RemoveReference(void) const
         {
             if ( unsigned(m_Counter-- & ~eDoNotDelete) <= 1 ) {
                 RemoveLastReference();
@@ -121,57 +125,64 @@ public:
         }
 
     // remove reference without deleting object
-    void ReleaseReference(void) THROWS((runtime_error));
+    void ReleaseReference(void) const THROWS((runtime_error));
+
+    static const CTypeInfo* GetTypeInfo(void);
 
 private:
-    void RemoveLastReference(void);
+    void RemoveLastReference(void) const;
 
-    unsigned m_Counter;
+    mutable unsigned m_Counter;
 };
 
-template<class C>
-class CRef {
+class CRefBase {
 public:
-    typedef C TObjectType;
+    typedef const CObject TObjectType;
 
-    inline
-    CRef(void) THROWS_NONE
+    // constructor
+    CRefBase(void) THROWS_NONE
         : m_Ptr(0)
         {
         }
-    CRef(TObjectType* ptr) THROWS_NONE
+    CRefBase(TObjectType* ptr) THROWS_NONE
         : m_Ptr(ptr)
         {
             if ( ptr )
                 ptr->AddReference();
         }
-    CRef(const CRef<C>& ref) THROWS_NONE
-        {
-            TObjectType* ptr = m_Ptr = ref.m_Ptr;
-            if ( ptr )
-                ptr->AddReference();
-        }
-    ~CRef(void)
+    // destructor
+    ~CRefBase(void)
         {
             TObjectType* ptr = m_Ptr;
             if ( ptr )
                 ptr->RemoveReference();
         }
     
-    // check whether reference in not null
-    inline
+    // test
+    bool Empty(void) const THROWS_NONE
+        {
+            return m_Ptr == 0;
+        }
+    bool NotEmpty(void) const THROWS_NONE
+        {
+            return m_Ptr != 0;
+        }
     operator bool(void) THROWS_NONE
         {
-            return m_Ptr != 0;
+            return NotEmpty();
         }
-    inline
     operator bool(void) const THROWS_NONE
         {
-            return m_Ptr != 0;
+            return NotEmpty();
+        }
+    bool operator!(void) const THROWS_NONE
+        {
+            return Empty();
         }
 
-    inline
-    void Reset(TObjectType* newPtr = 0)
+protected:
+    // assign
+    void x_Reset(TObjectType* newPtr)
         {
             TObjectType* oldPtr = m_Ptr;
             if ( newPtr != oldPtr ) {
@@ -183,61 +194,296 @@ public:
             }
         }
 
-    // get object reference
-    inline
-    const TObjectType* GetPointerOrNull(void) const THROWS_NONE
+    // getters
+    TObjectType* x_GetPointerOrNull(void) const THROWS_NONE
         {
             return m_Ptr;
         }
-    inline
-    TObjectType* GetPointerOrNull(void) THROWS_NONE
-        {
-            return m_Ptr;
-        }
-    inline
-    const TObjectType& operator*(void) const THROWS((CNullPointerError))
-        {
-            const TObjectType* ptr = m_Ptr;
-            if ( !ptr )
-                throw CNullPointerError();
-            return *ptr;
-        }
-    inline
-    TObjectType& operator*(void) THROWS((CNullPointerError))
+    TObjectType* x_GetPointer(void) const THROWS((CNullPointerError))
         {
             TObjectType* ptr = m_Ptr;
-            if ( !ptr )
-                throw CNullPointerError();
-            return *ptr;
-        }
-    inline
-    const TObjectType* operator->(void) const THROWS((CNullPointerError))
-        {
-            const TObjectType* ptr = m_Ptr;
             if ( !ptr )
                 throw CNullPointerError();
             return ptr;
         }
-    inline
-    TObjectType* operator->(void) THROWS((CNullPointerError))
+    TObjectType& x_GetObject(void) const THROWS((CNullPointerError))
+        {
+            return *x_GetPointer();
+        }
+
+    // release
+    TObjectType* x_ReleaseOrNull(void) THROWS_NONE
+        {
+            TObjectType* ptr = m_Ptr;
+            if ( ptr )
+                ptr->ReleaseReference();
+            return ptr;
+        }
+    TObjectType* x_Release(void) THROWS((CNullPointerError))
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
                 throw CNullPointerError();
+            ptr->ReleaseReference();
             return ptr;
         }
 
-    inline
-    TObjectType* Release(void) THROWS((CNullPointerError))
+public:
+    CRefBase& operator=(const CRefBase& ref)
         {
-            TObjectType* ptr = m_Ptr;
-            if ( !ptr )
-                throw CNullPointerError();
-            return ptr->ReleaseReference();
+            x_Reset(ref.x_GetPointerOrNull());
+            return *this;
         }
 
 private:
     TObjectType* m_Ptr;
+};
+
+template<class C>
+class CRef : public CRefBase {
+    typedef CRefBase CParent;
+public:
+    typedef C TObjectType;
+
+    inline
+    CRef(void) THROWS_NONE
+        {
+        }
+    CRef(TObjectType* ptr) THROWS_NONE
+        : CParent(ptr)
+        {
+        }
+    CRef(const CRef<C>& ref) THROWS_NONE
+        : CParent(ref.GetPointerOrNull())
+        {
+        }
+    
+    // test
+    operator bool(void) THROWS_NONE
+        {
+            return NotEmpty();
+        }
+    operator bool(void) const THROWS_NONE
+        {
+            return NotEmpty();
+        }
+
+    // reset
+    inline
+    void Reset(TObjectType* ptr = 0)
+        {
+            x_Reset(ptr);
+        }
+
+    // getters
+    inline
+    const TObjectType* GetPointerOrNull(void) const THROWS_NONE
+        {
+            return static_cast<const TObjectType*>(x_GetPointerOrNull());
+        }
+    inline
+    TObjectType* GetPointerOrNull(void) THROWS_NONE
+        {
+            return const_cast<TObjectType*>(static_cast<const TObjectType*>(x_GetPointerOrNull()));
+        }
+    inline
+    const TObjectType* GetPointer(void) const THROWS((CNullPointerError))
+        {
+            return static_cast<const TObjectType*>(x_GetPointer());
+        }
+    inline
+    TObjectType* GetPointer(void) THROWS((CNullPointerError))
+        {
+            return const_cast<TObjectType*>(static_cast<const TObjectType*>(x_GetPointer()));
+        }
+    inline
+    const TObjectType& GetObject(void) const THROWS((CNullPointerError))
+        {
+            return *GetPointer();
+        }
+    inline
+    TObjectType& GetObject(void) THROWS((CNullPointerError))
+        {
+            return *GetPointer();
+        }
+    inline
+    const TObjectType& operator*(void) const THROWS((CNullPointerError))
+        {
+            return GetObject();
+        }
+    inline
+    TObjectType& operator*(void) THROWS((CNullPointerError))
+        {
+            return GetObject();
+        }
+    inline
+    const TObjectType* operator->(void) const THROWS((CNullPointerError))
+        {
+            return GetPointer();
+        }
+    inline
+    TObjectType* operator->(void) THROWS((CNullPointerError))
+        {
+            return GetPointer();
+        }
+
+    // release
+    inline
+    TObjectType* ReleaseOrNull(void) THROWS_NONE
+        {
+            return const_cast<TObjectType*>(static_cast<const TObjectType*>(x_ReleaseOrNull()));
+        }
+    inline
+    TObjectType* Release(void) THROWS((CNullPointerError))
+        {
+            return const_cast<TObjectType*>(static_cast<const TObjectType*>(x_Release()));
+        }
+
+    // assign
+    CRef<C>& operator=(const CRef<C>& ref)
+        {
+            x_Reset(ref.GetPointerOrNull());
+            return *this;
+        }
+};
+
+template<class C>
+class CConstRef : public CRefBase {
+    typedef CRefBase CParent;
+public:
+    typedef const C TObjectType;
+
+    // constructors
+    inline
+    CConstRef(void) THROWS_NONE
+        {
+        }
+    CConstRef(TObjectType* ptr) THROWS_NONE
+        : CParent(ptr)
+        {
+        }
+    CConstRef(const CConstRef<C>& ref) THROWS_NONE
+        : CParent(ref.GetPointerOrNull())
+        {
+        }
+    CConstRef(const CRef<C>& ref) THROWS_NONE
+        : CParent(ref.GetPointerOrNull())
+        {
+        }
+
+    // test
+    operator bool(void) THROWS_NONE
+        {
+            return NotEmpty();
+        }
+    operator bool(void) const THROWS_NONE
+        {
+            return NotEmpty();
+        }
+
+    // reset
+    inline
+    void Reset(TObjectType* ptr = 0)
+        {
+            x_Reset(ptr);
+        }
+    
+    // getters
+    inline
+    TObjectType* GetPointerOrNull(void) const THROWS_NONE
+        {
+            return static_cast<TObjectType*>(x_GetPointerOrNull());
+        }
+    inline
+    TObjectType* GetPointer(void) const THROWS((CNullPointerError))
+        {
+            return static_cast<TObjectType*>(x_GetPointer());
+        }
+    inline
+    TObjectType& GetObject(void) const THROWS((CNullPointerError))
+        {
+            return *GetPointer();
+        }
+    inline
+    TObjectType& operator*(void) const THROWS((CNullPointerError))
+        {
+            return GetObject();
+        }
+    inline
+    TObjectType* operator->(void) const THROWS((CNullPointerError))
+        {
+            return GetPointer();
+        }
+
+    // release
+    inline
+    TObjectType* ReleaseOrNull(void) THROWS_NONE
+        {
+            return static_cast<TObjectType*>(x_ReleaseOrNull());
+        }
+    inline
+    TObjectType* Release(void) THROWS((CNullPointerError))
+        {
+            return static_cast<TObjectType*>(x_Release());
+        }
+
+    // assign
+    CConstRef<C>& operator=(const CConstRef<C>& ref)
+        {
+            Reset(ref.GetPointerOrNull());
+            return *this;
+        }
+    CConstRef<C>& operator=(const CRef<C>& ref)
+        {
+            Reset(ref.GetPointerOrNull());
+            return *this;
+        }
+};
+
+template<typename T>
+class CObjectFor : public CObject
+{
+public:
+    typedef T TObjectType;
+
+protected:
+    CObjectFor(void)
+        : CObject(eCanDelete)
+        {
+        }
+
+public:
+    // can be allocated only in heap via New();
+    static CObjectFor<T>* New(void)
+        {
+            return new CObjectFor<T>();
+        }
+
+    T& GetData(void)
+        {
+            return m_Data;
+        }
+    const T& GetData(void) const
+        {
+            return m_Data;
+        }
+    operator T& (void)
+        {
+            return GetData();
+        }
+    operator const T& (void) const
+        {
+            return GetData();
+        }
+
+    T& operator=(const T& data)
+        {
+            m_Data = data;
+            return *this;
+        }
+
+private:
+    T m_Data;
 };
 
 END_NCBI_SCOPE

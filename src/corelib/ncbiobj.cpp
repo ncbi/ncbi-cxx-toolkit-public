@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/03/29 15:50:41  vasilche
+* Added const version of CRef - CConstRef.
+* CRef and CConstRef now accept classes inherited from CObject.
+*
 * Revision 1.3  2000/03/08 17:47:30  vasilche
 * Simplified error check.
 *
@@ -71,12 +75,12 @@ CObject::~CObject(void)
         throw runtime_error("delete referenced CObject object");
 }
 
-void CObject::RemoveLastReference(void)
+void CObject::RemoveLastReference(void) const
 {
     switch ( m_Counter ) {
     case 0:
         // last reference removed
-        delete this;
+        delete const_cast<CObject*>(this);
         break;
     case eDoNotDelete:
         // last reference to static object removed -> do nothing
@@ -87,7 +91,7 @@ void CObject::RemoveLastReference(void)
     }
 }
 
-void CObject::ReleaseReference(void)
+void CObject::ReleaseReference(void) const
     THROWS((runtime_error))
 {
     if ( m_Counter == 1 ) {

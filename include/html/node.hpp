@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/03/29 15:50:38  vasilche
+* Added const version of CRef - CConstRef.
+* CRef and CConstRef now accept classes inherited from CObject.
+*
 * Revision 1.15  2000/03/07 15:40:37  vasilche
 * Added AppendChild(CNodeRef&)
 *
@@ -100,7 +104,7 @@ typedef CRef<CNCBINode> CNodeRef;
 
 // base class for a graph node
 
-class CNCBINode
+class CNCBINode : public CObject
 {
 public:
     friend class CRef<CNCBINode>;
@@ -214,7 +218,6 @@ public:
     void SetOptionalAttribute(const char* name, bool set);
 
 protected:
-    int m_RefCount;
     TChildrenMember m_Children;  // Child nodes.
 
     string m_Name; // node name
@@ -232,11 +235,6 @@ private:
     // return attributes map (create if needed)
     TAttributes& GetAttributes(void);
     void DoAppendChild(CNCBINode* child);
-
-    void AddReference(void);
-    void RemoveReference(void);
-    void BadReference(void);
-    void Destroy(void);
 };
 
 // inline functions are defined here:

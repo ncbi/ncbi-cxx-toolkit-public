@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/03/29 15:50:43  vasilche
+* Added const version of CRef - CConstRef.
+* CRef and CConstRef now accept classes inherited from CObject.
+*
 * Revision 1.17  2000/03/07 15:26:13  vasilche
 * Removed second definition of CRef.
 *
@@ -96,45 +100,22 @@
 BEGIN_NCBI_SCOPE
 
 CNCBINode::CNCBINode(void)
-    : m_RefCount(0)
+    : CObject(eCanDelete)
 {
 }
 
 CNCBINode::CNCBINode(const string& name)
-    : m_RefCount(0), m_Name(name)
+    : CObject(eCanDelete), m_Name(name)
 {
 }
 
 CNCBINode::CNCBINode(const char* name)
-    : m_RefCount(0), m_Name(name)
+    : CObject(eCanDelete), m_Name(name)
 {
 }
 
 CNCBINode::~CNCBINode(void)
 {
-    if ( m_RefCount != 0 ) {
-        THROW1_TRACE(runtime_error,
-                     "~CNCBINode(" + m_Name + "): refCount = " +
-                     NStr::IntToString(m_RefCount));
-    }
-}
-
-void CNCBINode::Destroy(void)
-{
-    if ( m_RefCount < 0 ) {
-        THROW1_TRACE(runtime_error,
-                     "CNCBINode::Destroy(" + m_Name + "): refCount = " +
-                     NStr::IntToString(m_RefCount));
-    }
-    delete this;
-}
-
-void CNCBINode::BadReference(void)
-{
-    if ( m_RefCount <= 0 ) {
-        THROW1_TRACE(runtime_error,
-                     "CNCBINode::BadRef: Reference count was negative");
-    }
 }
 
 // append a child

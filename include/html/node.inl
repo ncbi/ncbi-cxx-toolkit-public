@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/03/29 15:50:39  vasilche
+* Added const version of CRef - CConstRef.
+* CRef and CConstRef now accept classes inherited from CObject.
+*
 * Revision 1.8  2000/03/07 15:40:37  vasilche
 * Added AppendChild(CNodeRef&)
 *
@@ -63,20 +67,6 @@
 *
 * ===========================================================================
 */
-
-inline
-void CNCBINode::AddReference(void)
-{
-    if ( m_RefCount++ <= 0 )
-        BadReference();
-}
-
-inline
-void CNCBINode::RemoveReference(void)
-{
-    if ( --m_RefCount <= 0 )
-        Destroy();
-}
 
 inline
 const string& CNCBINode::GetName(void) const
