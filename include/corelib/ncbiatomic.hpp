@@ -106,38 +106,35 @@ void* SwapPointers(void * volatile * location, void* new_value)
 #  elif defined(NCBI_OS_AIX)
     boolean_t swapped   = FALSE;
     void*     old_value;
+    NCBI_SCHED_INIT();
     while (swapped == FALSE) {
         old_value = *location;
         swapped = compare_and_swap(reinterpret_cast<atomic_p>(nv_loc),
                                    reinterpret_cast<int*>(&old_value),
                                    reinterpret_cast<int>(new_value));
-#    ifdef HAVE_SCHED_YIELD
-        sched_yield();
-#    endif
+        NCBI_SCHED_YIELD();
     }
     return old_value;
 #  elif defined(NCBI_OS_DARWIN)
     bool  swapped = false;
     void* old_value;
+    NCBI_SCHED_INIT();
     while (swapped == false) {
         old_value = *location;
         swapped = CompareAndSwap(reinterpret_cast<UInt32>(old_value),
                                  reinterpret_cast<UInt32>(new_value),
                                  reinterpret_cast<UInt32*>(nv_loc));
-#    ifdef HAVE_SCHED_YIELD
-        sched_yield();
-#    endif
+        NCBI_SCHED_YIELD();
     }
     return old_value;
 #  elif defined(NCBI_OS_MAC)
     Boolean swapped = FALSE;
     void*   old_value;
+    NCBI_SCHED_INIT();
     while (swapped == FALSE) {
         old_value = *location;
         swapped = OTCompareAndSwapPtr(*location, new_value, nv_loc);
-#    ifdef HAVE_SCHED_YIELD
-        sched_yield();
-#    endif
+        NCBI_SCHED_YIELD();
     }
     return old_value;
 #  elif defined(NCBI_OS_MSWIN)
@@ -153,14 +150,21 @@ void* SwapPointers(void * volatile * location, void* new_value)
     old_value = NCBICORE_asm_xchg(new_value, nv_loc);
 #      else
     asm volatile("xchg %0, %1" : "+m" (*nv_loc), "=r" (old_value)
-        : "1" (new_value), "m" (*nv_loc));
+                 : "1" (new_value), "m" (*nv_loc));
 #      endif
     return old_value;
 #    elif defined(__sparcv9)
     void* old_value;
-    for (;;) {
-        void* tmp = new_value;
+    NCBI_SCHED_INIT();
+    for ( ;; ) {
+        // repeatedly try to swap values
         old_value = *location;
+        if ( old_value == new_value ) {
+            // The new & old values are the same - we can assume them swapped.
+            // Anyway, the following logic will not work in this case.
+            break;
+        }
+        void* tmp = new_value;
 #      ifdef NCBI_COMPILER_WORKSHOP
         tmp = NCBICORE_asm_casx(tmp, nv_loc, old_value);
 #      else
@@ -168,12 +172,10 @@ void* SwapPointers(void * volatile * location, void* new_value)
                      : "r" (old_value), "r" (nv_loc));
 #      endif
         if (tmp == old_value) {
+            // swap was successful
             break;
-        } else {
-#    ifdef HAVE_SCHED_YIELD
-            sched_yield();
-#    endif
         }
+        NCBI_SCHED_YIELD();
     }
     return old_value;
 #    elif defined(__sparc)
@@ -184,7 +186,7 @@ void* SwapPointers(void * volatile * location, void* new_value)
                            reinterpret_cast<TNCBIAtomicValue*>(nv_loc)));
 #      else
     asm volatile("swap [%2], %1" : "+m" (*nv_loc), "=r" (old_value)
-        : "r" (nv_loc), "1" (new_value));
+                 : "r" (nv_loc), "1" (new_value));
 #      endif
     return old_value;
 #    else
@@ -208,6 +210,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/19 16:50:57  vasilche
+ * Use spin counter before sched_yield().
+ * Check if new_value == old_value before cacx - logic doesn't work in this case.
+ *
  * Revision 1.8  2004/02/18 23:27:56  ucko
  * Fix logic errors, and call sched_yield() between tries rather than spinning.
  *
