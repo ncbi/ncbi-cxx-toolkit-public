@@ -19,6 +19,7 @@ export DYLD_BIND_AT_LAUNCH
 PLUGINS='algo_align algo_basic ncbi_init net_blast algo_stdio algo_validator doc_basic doc_table view_align view_graphic view_sequence view_table view_text view_validator'
 BINS='gbench-bin gbench_plugin_scan'
 LIBS='gui_core xgbplugin'
+OPT_LIBS='bdb lds lds_admin xobjread'
 
 
 Usage()
@@ -168,6 +169,15 @@ CopyFiles()
         fi
     done
 
+    for x in $OPT_LIBS; do
+        src_file=$src_dir/lib/lib$x.so
+        if [ -f $src_file ]; then
+	    echo copying: lib$x.so
+            rm -f $target_dir/lib/lib$x.so
+            DoCopy $src_file $target_dir/lib/
+        fi
+    done
+
     for x in $PLUGINS; do
         echo copying plugin: $x
         rm -f $target_dir/plugins/libgui_$x.so
@@ -182,6 +192,7 @@ CopyFiles()
             DoCopy $x $target_dir/lib/
         fi
     done
+
 }
 
 
