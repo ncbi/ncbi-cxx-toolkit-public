@@ -275,6 +275,18 @@ void CLocusItem::x_SetTopology(CFFContext& ctx)
 
 void CLocusItem::x_SetDivision(CFFContext& ctx)
 {
+    // contig style (old genome_view flag) forces CON division
+    if ( ctx.DoContigStyle() ) {
+        m_Division = "CON";
+        return;
+    }
+    // "genome view" forces CON division
+    if ( (ctx.IsSegmented()  &&  !ctx.HasParts())  ||
+         (ctx.IsDelta()  &&  !ctx.IsDeltaLitOnly()) ) {
+        m_Division = "CON";
+        return;
+    }
+
     const CBioseq_Handle& bsh = ctx.GetHandle();
     const CBioSource* bsrc = 0;
 
@@ -524,6 +536,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/13 14:23:08  shomrat
+* force CON division for contig style and genome view
+*
 * Revision 1.3  2004/02/11 22:55:12  shomrat
 * use IsFormatEMBL method
 *
