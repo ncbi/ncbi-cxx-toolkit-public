@@ -28,56 +28,11 @@
  * File Description:
  *   Push an arbitrary block of data back to a C++ input stream.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.8  2002/02/06 14:38:23  ucko
- * Split up conditional test for GCC 2.x to work around KCC preprocessor lossage.
- *
- * Revision 1.7  2002/02/05 16:05:43  lavr
- * List of included header files revised
- *
- * Revision 1.6  2002/02/04 20:22:34  lavr
- * Stream positioning added; more assert()'s to check standard compliance
- *
- * Revision 1.5  2002/01/28 20:26:39  lavr
- * Completely redesigned
- *
- * Revision 1.4  2001/12/17 22:18:21  ucko
- * Overload xsgetn unconditionally.
- *
- * Revision 1.3  2001/12/13 17:21:27  vakatov
- * [GCC, NCBI_COMPILER_VERSION > 2.95.X]  Use pubsync() rather than sync()
- *
- * Revision 1.2  2001/12/09 06:31:52  vakatov
- * UTIL_StreamPushback() to return VOID rather than STREAMBUF*.
- * Got rid of a warning;  added comments;  use _ASSERT(), not assert().
- *
- * Revision 1.1  2001/12/07 22:59:36  lavr
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistd.hpp>
 #include <util/stream_pushback.hpp>
 #include <string.h>
-
-
-#ifdef NCBI_COMPILER_GCC
-#  if NCBI_COMPILER_VERSION < 300
-#    define NO_PUBSYNC
-#  endif
-#endif
-
-#ifdef NO_PUBSYNC
-#  define PUBSYNC    sync
-#  define PUBSEEKOFF seekoff
-#  define PUBSEEKPOS seekpos
-#else
-#  define PUBSYNC    pubsync
-#  define PUBSEEKOFF pubseekoff
-#  define PUBSEEKPOS pubseekpos
-#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -373,3 +328,38 @@ extern void UTIL_StreamPushback(istream&      is,
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 1.9  2002/08/16 17:56:44  lavr
+ * PUBSYNC, PUBSEEK* moved to <corelib/ncbistre.hpp>
+ *
+ * Revision 1.8  2002/02/06 14:38:23  ucko
+ * Split up conditional test for GCC2.x to work around KCC preprocessor lossage
+ *
+ * Revision 1.7  2002/02/05 16:05:43  lavr
+ * List of included header files revised
+ *
+ * Revision 1.6  2002/02/04 20:22:34  lavr
+ * Stream positioning added; more assert()'s to check standard compliance
+ *
+ * Revision 1.5  2002/01/28 20:26:39  lavr
+ * Completely redesigned
+ *
+ * Revision 1.4  2001/12/17 22:18:21  ucko
+ * Overload xsgetn unconditionally.
+ *
+ * Revision 1.3  2001/12/13 17:21:27  vakatov
+ * [GCC, NCBI_COMPILER_VERSION > 2.95.X]  Use pubsync() rather than sync()
+ *
+ * Revision 1.2  2001/12/09 06:31:52  vakatov
+ * UTIL_StreamPushback() to return VOID rather than STREAMBUF*.
+ * Got rid of a warning;  added comments;  use _ASSERT(), not assert().
+ *
+ * Revision 1.1  2001/12/07 22:59:36  lavr
+ * Initial revision
+ *
+ * ===========================================================================
+*/
