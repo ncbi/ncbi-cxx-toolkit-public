@@ -36,9 +36,7 @@
 #include <corelib/ncbireg.hpp>
 
 #if defined(NCBI_OS_MSWIN)
-# if defined(_MSC_VER)  &&  (_MSC_VER < 1310)
-#    include <winsock2.h>
-# endif
+#  include <winsock2.h>
 #elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #  ifdef NCBI_COMPILER_MW_MSL
@@ -183,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/18 14:58:25  gorelenk
+ * Roll-back to inclusion of winsock2.h on MSVC
+ *
  * Revision 1.7  2004/05/17 23:01:23  gorelenk
  * Fixed condition of include of winsock2.h
  *
