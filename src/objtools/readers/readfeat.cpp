@@ -1054,7 +1054,8 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSe
         CSeq_point& point = loc->SetPnt();
         point.SetPoint(start);
         point.SetStrand(strand);
-        point.SetId().Assign (CSeq_id (seqid));
+        CSeq_id seq_id(seqid);
+        point.SetId().Assign (seq_id);
         mix->Set().push_back(loc);
     } else {
         // interval
@@ -1063,7 +1064,8 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSe
         ival.SetFrom(start);
         ival.SetTo(stop);
         ival.SetStrand(strand);
-        ival.SetId().Assign (CSeq_id (seqid));
+        CSeq_id seq_id(seqid);
+        ival.SetId().Assign (seq_id);
         mix->Set().push_back(loc);
     }
 
