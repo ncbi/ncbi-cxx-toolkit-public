@@ -155,7 +155,7 @@ public:
     /// @param cmd
     ///   Command name to execute.
     /// @param args
-    ///   Vector of string arguments for the command.
+    ///   Vector of string arguments for the command (argv[0] excluded).
     /// @param create_flags
     ///   Specifies the options to be applied when creating the pipe.
     /// @sa
@@ -180,7 +180,7 @@ public:
     /// @param cmd
     ///   Command name to execute.
     /// @param args
-    ///   Vector of string arguments for command.
+    ///   Vector of string arguments for the command (argv[0] excluded).
     /// @param create_flags
     ///   Specifies options to be applied when creating the pipe.
     /// @return 
@@ -371,6 +371,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/03/17 18:01:08  lavr
+ * Clarify about argv[0] not being part of args
+ *
  * Revision 1.21  2004/08/19 12:43:30  dicuccio
  * Dropped unnecessary export specifier
  *
