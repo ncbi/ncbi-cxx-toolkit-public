@@ -25,7 +25,7 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:  Test program for CRequestThrottle class
+ * File Description:  Test program for CRequestRateControl class
  *
  */
 
@@ -33,7 +33,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <util/request_throttler.hpp>
+#include <util/request_control.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -70,22 +70,22 @@ int CTest::Run(void)
 {
     {{
         // Forbid zero requests per any time
-        CRequestThrottler mgr(0, CTimeSpan(0,0), CTimeSpan(1,0),
-                              CRequestThrottler::eErrCode);
+        CRequestRateControl mgr(0, CTimeSpan(0,0), CTimeSpan(1,0),
+                                CRequestRateControl::eErrCode);
         assert( !mgr.Approve() );
     }}
     {{
         // Allow only 1 request per any period of time
-        CRequestThrottler mgr(1, CTimeSpan(0,0), CTimeSpan(0,0),
-                              CRequestThrottler::eErrCode);
+        CRequestRateControl mgr(1, CTimeSpan(0,0), CTimeSpan(0,0),
+                                CRequestRateControl::eErrCode);
         assert( mgr.Approve() );
         assert( !mgr.Approve() );
 
     }}
     {{
         // Allow any number of requests with frequency 1 request per second
-        CRequestThrottler mgr(1, CTimeSpan(0,0), CTimeSpan(1,0),
-                              CRequestThrottler::eErrCode);
+        CRequestRateControl mgr(1, CTimeSpan(0,0), CTimeSpan(1,0),
+                                CRequestRateControl::eErrCode);
         assert( mgr.Approve() );
         assert( !mgr.Approve() );
         SLEEP(1);
@@ -93,8 +93,8 @@ int CTest::Run(void)
     }}
     {{
         // Allow 2 request per second with any frequency
-        CRequestThrottler mgr(2, CTimeSpan(1,0), CTimeSpan(0,0),
-                              CRequestThrottler::eErrCode);
+        CRequestRateControl mgr(2, CTimeSpan(1,0), CTimeSpan(0,0),
+                                CRequestRateControl::eErrCode);
         assert( mgr.Approve() );
         assert( mgr.Approve() );
         assert( !mgr.Approve() );
@@ -105,8 +105,8 @@ int CTest::Run(void)
     }}
     {{
         // Allow 2 request per 3 seconds with frequency 1 request per second
-        CRequestThrottler mgr(2, CTimeSpan(3,0), CTimeSpan(1,0),
-                              CRequestThrottler::eErrCode);
+        CRequestRateControl mgr(2, CTimeSpan(3,0), CTimeSpan(1,0),
+                                CRequestRateControl::eErrCode);
         assert( mgr.Approve() );
         assert( !mgr.Approve() );
         SLEEP(1);
@@ -123,8 +123,8 @@ int CTest::Run(void)
     {{
         // Allow any number of requests with frequency 1 request per second
         // with auto sleep beetween requests.
-        CRequestThrottler mgr(1, CTimeSpan(0,0), CTimeSpan(1,0),
-                              CRequestThrottler::eSleep);
+        CRequestRateControl mgr(1, CTimeSpan(0,0), CTimeSpan(1,0),
+                                CRequestRateControl::eSleep);
         CStopWatch sw(true);
         assert( mgr.Approve() );
         assert( mgr.Approve() );
@@ -135,8 +135,8 @@ int CTest::Run(void)
     {{
         // Allow 2 request per 3 seconds with frequency 1 request per second
         // with auto sleep beetween requests.
-        CRequestThrottler mgr(2, CTimeSpan(3,0), CTimeSpan(1,0),
-                              CRequestThrottler::eSleep);
+        CRequestRateControl mgr(2, CTimeSpan(3,0), CTimeSpan(1,0),
+                                CRequestRateControl::eSleep);
         CStopWatch sw(true);
         // sleep 0
         assert( mgr.Approve() );
@@ -178,6 +178,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/02 18:58:38  ivanov
+ * Renaming:
+ *    file test_request_throttler.cpp -> test_request_control.cpp
+ *    class CRequestThrottler -> CRequestRateControl
+ *
  * Revision 1.1  2005/03/02 13:53:06  ivanov
  * Initial revision
  *
