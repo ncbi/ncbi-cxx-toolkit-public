@@ -6,5 +6,4 @@ LIB_PROJ = dblib
 
 srcdir = @srcdir@
 
-include @srcdir@/../Makefile.conf
 include @builddir@/Makefile.meta
