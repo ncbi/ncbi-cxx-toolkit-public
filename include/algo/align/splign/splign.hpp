@@ -85,7 +85,11 @@ public:
     void   SetMinExonIdentity(double idty);
     double GetMinExonIdentity(void) const;
 
-    void Run(size_t* model_id, vector<CHit>* hits);
+    void   SetStartModelId(size_t model_id) {
+        m_model_id = model_id - 1;
+    }
+
+    void Run(vector<CHit>* hits);
 
     // a segment can represent an exon or an unaligning piece of mRna (a gap)
     struct SSegment {
@@ -170,6 +174,7 @@ protected:
     vector<SSegment> m_segments;
   
     // all compartments
+    size_t       m_model_id;
     vector<SAlignedCompartment> m_result;
 
     SAlignedCompartment x_RunOnCompartment( vector<CHit>* hits,
@@ -186,6 +191,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/04/26 15:38:25  kapustin
+ * Add model_id as a class member
+ *
  * Revision 1.5  2004/04/23 14:36:24  kapustin
  * Initial revision
  *
