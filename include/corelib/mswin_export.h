@@ -1502,6 +1502,7 @@
 
 #define NCBI_TEST_MT_EXPORT
 #define NCBI_XALNUTIL_EXPORT
+#define NCBI_XALNTOOL_EXPORT
 
 
 
@@ -1510,6 +1511,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.72  2004/05/03 19:41:02  gorelenk
+ * Added NCBI_XALNTOOL_EXPORT to static-only libraries section.
+ *
  * Revision 1.71  2004/05/03 13:25:32  dicuccio
  * Corrected export specifier
  *
