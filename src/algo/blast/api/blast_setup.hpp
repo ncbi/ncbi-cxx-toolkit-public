@@ -138,13 +138,6 @@ BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev,
                     const int nucl_length, const short frame, Uint1* translation);
 #endif
 
-/** Retrieves the requested genetic code in Ncbistdaa format. 
- * @param genetic_code numeric identifier for genetic code requested [in]
- */
-NCBI_XBLAST_EXPORT
-AutoPtr<Uint1, ArrayDeleter<Uint1> >
-FindGeneticCode(int genetic_code);
-
 /** Returns the path (including a trailing path separator) to the location
  * where the matrix can be found.
  * @param matrix_name matrix to search for
@@ -183,6 +176,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2004/08/11 14:24:50  camacho
+* Move FindGeneticCode
+*
 * Revision 1.24  2004/08/11 11:56:48  ivanov
 * Added export specifier NCBI_XBLAST_EXPORT
 *

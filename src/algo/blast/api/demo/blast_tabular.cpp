@@ -42,7 +42,6 @@ static char const rcsid[] = "$Id$";
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/sequence.hpp>
 #include "blast_tabular.hpp"
-#include "../blast_setup.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -262,6 +261,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/08/11 14:24:50  camacho
+* Move FindGeneticCode
+*
 * Revision 1.4  2004/08/04 22:03:36  dondosha
 * Memset GetSeqArg structure in all cases, to prevent FUM error
 *

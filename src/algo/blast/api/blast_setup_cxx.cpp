@@ -35,10 +35,6 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/metareg.hpp>
 
-#include <objects/seq/seqport_util.hpp>
-#include <objects/seqfeat/Genetic_code_table.hpp>
-#include <objects/seq/NCBIstdaa.hpp>
-
 #include "blast_setup.hpp"
 
 
@@ -190,32 +186,6 @@ BLASTGetTranslation(const Uint1* seq, const Uint1* seq_rev,
     return;
 }
 #endif
-
-AutoPtr<Uint1, ArrayDeleter<Uint1> >
-FindGeneticCode(int genetic_code)
-{
-    Uint1* retval = NULL;
-    CSeq_data gc_ncbieaa(CGen_code_table::GetNcbieaa(genetic_code),
-            CSeq_data::e_Ncbieaa);
-    CSeq_data gc_ncbistdaa;
-
-    TSeqPos nconv = CSeqportUtil::Convert(gc_ncbieaa, &gc_ncbistdaa,
-            CSeq_data::e_Ncbistdaa);
-
-    ASSERT(gc_ncbistdaa.IsNcbistdaa());
-    ASSERT(nconv == gc_ncbistdaa.GetNcbistdaa().Get().size());
-
-    try {
-        retval = new Uint1[nconv];
-    } catch (const bad_alloc&) {
-        return NULL;
-    }
-
-    for (unsigned int i = 0; i < nconv; i++)
-        retval[i] = gc_ncbistdaa.GetNcbistdaa().Get()[i];
-
-    return retval;
-}
 
 string
 FindMatrixPath(const char* matrix_name, bool is_prot)
@@ -447,6 +417,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.72  2004/08/11 14:24:50  camacho
+ * Move FindGeneticCode
+ *
  * Revision 1.71  2004/08/02 13:28:28  camacho
  * Minor
  *

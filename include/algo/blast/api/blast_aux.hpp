@@ -88,6 +88,13 @@ void BlastMaskLocDNAToProtein(BlastMaskLoc** mask,
  */
 void BlastMaskLocProteinToDNA(BlastMaskLoc** mask, TSeqLocVector &slp);
 
+/** Retrieves the requested genetic code in Ncbistdaa format. 
+ * @param genetic_code numeric identifier for genetic code requested [in]
+ * @return NULL if memory allocation failure, otherwise genetic code string.
+ */
+NCBI_XBLAST_EXPORT
+AutoPtr<Uint1, ArrayDeleter<Uint1> >
+FindGeneticCode(int genetic_code);
 
 /** Declares class to handle deallocating of the structure using the appropriate
  * function
@@ -158,6 +165,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2004/08/11 14:24:20  camacho
+* Move FindGeneticCode
+*
 * Revision 1.38  2004/08/04 20:09:48  camacho
 * + class wrappers for PSIMatrix and PSIDiagnosticsResponse
 *

@@ -34,6 +34,9 @@
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objects/seq/NCBIstdaa.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 
 /** @addtogroup AlgoBlast
@@ -351,6 +354,32 @@ CSeqLoc2BlastMaskLoc(const CSeq_loc* slp, int index)
     return mask;
 }
 
+AutoPtr<Uint1, ArrayDeleter<Uint1> >
+FindGeneticCode(int genetic_code)
+{
+    Uint1* retval = NULL;
+    CSeq_data gc_ncbieaa(CGen_code_table::GetNcbieaa(genetic_code),
+            CSeq_data::e_Ncbieaa);
+    CSeq_data gc_ncbistdaa;
+
+    TSeqPos nconv = CSeqportUtil::Convert(gc_ncbieaa, &gc_ncbistdaa,
+            CSeq_data::e_Ncbistdaa);
+
+    ASSERT(gc_ncbistdaa.IsNcbistdaa());
+    ASSERT(nconv == gc_ncbistdaa.GetNcbistdaa().Get().size());
+
+    try {
+        retval = new Uint1[nconv];
+    } catch (const bad_alloc&) {
+        return NULL;
+    }
+
+    for (unsigned int i = 0; i < nconv; i++)
+        retval[i] = gc_ncbistdaa.GetNcbistdaa().Get()[i];
+
+    return retval;
+}
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -361,6 +390,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.45  2004/08/11 14:24:50  camacho
+ * Move FindGeneticCode
+ *
  * Revision 1.44  2004/08/04 20:10:33  camacho
  * + class wrappers for PSIMatrix and PSIDiagnosticsResponse, implemented DebugDump for CBlastScoreBlk
  *
