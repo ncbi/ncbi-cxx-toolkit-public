@@ -182,7 +182,10 @@ esac
 if test ! -d "$builddir"  ||  test ! -f "$builddir/../inc/ncbiconf.h" ; then
   Usage "Pre-built NCBI C++ toolkit is not found in:  \"$builddir\""
 fi
-builddir=`(cd "${builddir}" ; pwd)`
+case "$builddir" in
+    /*) ;; # already absolute, no need to change
+    *)  builddir=`(cd "${builddir}" && pwd)` ;;
+esac
 
 src=`sed -ne 's:^top_srcdir *= *\([^ ]*\):\1/src:p' < $builddir/Makefile.mk \
      | head -1`
