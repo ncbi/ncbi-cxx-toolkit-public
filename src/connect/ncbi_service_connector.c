@@ -28,134 +28,6 @@
  * File Description:
  *   Implementation of CONNECTOR to a named service
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.39  2002/06/10 19:51:43  lavr
- * Wrong assertion removed from FIREWALL open case
- *
- * Revision 6.38  2002/05/07 15:31:47  lavr
- * +#include <stdio.h>: noticed by J.Kans
- *
- * Revision 6.37  2002/05/06 19:17:33  lavr
- * Take advantage of SERV_ServiceName()
- *
- * Revision 6.36  2002/04/26 16:28:51  lavr
- * SSERVICE_Params: reset added for use in open/close pairs
- * No checks for CONN_DEFAULT_TIMEOUT: now real timeouts always go from CONN
- *
- * Revision 6.35  2002/03/30 03:34:32  lavr
- * BUGFIX: Memory leak from SERV_ITER in usused connector
- *
- * Revision 6.34  2002/03/22 22:18:28  lavr
- * Remove uuu->conn (contained in uuu->meta.list); honor timeout on open
- *
- * Revision 6.33  2002/03/22 19:52:18  lavr
- * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
- *
- * Revision 6.32  2002/03/19 22:14:53  lavr
- * Proper indentation of nested preprocessor directives
- *
- * Revision 6.31  2002/03/11 22:00:22  lavr
- * Support encoding in MIME content type for server data
- *
- * Revision 6.30  2001/12/04 15:56:47  lavr
- * Use strdup() instead of explicit strcpy(malloc(...), ...)
- *
- * Revision 6.29  2001/10/26 21:17:59  lavr
- * 'service=name' now always precedes other params in connects to DISPD/NCBID
- *
- * Revision 6.28  2001/09/28 20:51:31  lavr
- * Comments revised; parameter (and SHttpConnector's) names adjusted
- * Retry logic moved entirely into s_Adjust()
- *
- * Revision 6.27  2001/09/24 20:29:36  lavr
- * +SSERVICE_Extra* parameter in constructor; store and use of this parameter
- *
- * Revision 6.26  2001/09/10 21:21:20  lavr
- * Support for temporary switching into firewall mode as per dispatcher request
- *
- * Revision 6.25  2001/07/26 15:12:17  lavr
- * while(1) -> for(;;)
- *
- * Revision 6.24  2001/06/05 14:11:29  lavr
- * SERV_MIME_UNDEFINED split into 2 (typed) constants:
- * SERV_MIME_TYPE_UNDEFINED and SERV_MIME_SUBTYPE_UNDEFINED
- *
- * Revision 6.23  2001/06/04 17:02:17  lavr
- * Insert MIME type/subtype in Content-Type for servers,
- * which have this feature configured
- *
- * Revision 6.22  2001/05/30 18:46:38  lavr
- * Always call dispatcher in header-parsing callback (to see err.msg. if any)
- *
- * Revision 6.21  2001/05/23 21:53:19  lavr
- * Do not close dispatcher in Open; leave it as it is
- *
- * Revision 6.20  2001/05/17 15:03:07  lavr
- * Typos corrected
- *
- * Revision 6.19  2001/05/11 15:32:05  lavr
- * Minor patch in code of 'fallback to STATELESS'
- *
- * Revision 6.18  2001/05/08 20:27:05  lavr
- * Patches in re-try code
- *
- * Revision 6.17  2001/05/03 16:37:09  lavr
- * Flow control fixed in s_Open for firewall connection
- *
- * Revision 6.16  2001/04/26 20:20:57  lavr
- * Default tags are explicitly used to differ from a Web browser
- *
- * Revision 6.15  2001/04/25 15:49:54  lavr
- * Memory leaks in Open (when unsuccessful) fixed
- *
- * Revision 6.14  2001/04/24 21:36:50  lavr
- * More structured code to re-try abrupted connection/mapping attempts
- *
- * Revision 6.13  2001/03/07 23:01:07  lavr
- * fSERV_Any used instead of 0 in SERVICE_CreateConnector
- *
- * Revision 6.12  2001/03/06 23:55:37  lavr
- * SOCK_gethostaddr -> SOCK_gethostbyname
- *
- * Revision 6.11  2001/03/02 20:10:07  lavr
- * Typo fixed
- *
- * Revision 6.10  2001/03/01 00:32:15  lavr
- * FIX: Empty update does not generate parse error
- *
- * Revision 6.9  2001/02/09 17:35:45  lavr
- * Modified: fSERV_StatelessOnly overrides info->stateless
- * Bug fixed: free(type) -> free(name)
- *
- * Revision 6.8  2001/01/25 17:04:43  lavr
- * Reversed:: DESTROY method calls free() to delete connector structure
- *
- * Revision 6.7  2001/01/23 23:09:19  lavr
- * Flags added to 'Ex' constructor
- *
- * Revision 6.6  2001/01/11 16:38:18  lavr
- * free(connector) removed from s_Destroy function
- * (now always called from outside, in METACONN_Remove)
- *
- * Revision 6.5  2001/01/08 22:39:40  lavr
- * Further development of service-mapping protocol: stateless/stateful
- * is now separated from firewall/direct mode (see also in few more files)
- *
- * Revision 6.4  2001/01/03 22:35:53  lavr
- * Next working revision (bugfixes and protocol changes)
- *
- * Revision 6.3  2000/12/29 18:05:12  lavr
- * First working revision.
- *
- * Revision 6.2  2000/10/20 17:34:39  lavr
- * Partially working service connector (service mapping works)
- * Checkin for backup purposes
- *
- * Revision 6.1  2000/10/07 22:14:07  lavr
- * Initial revision, placeholder mostly
- *
- * ==========================================================================
  */
 
 #include "ncbi_comm.h"
@@ -620,7 +492,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                 CONN_SetTimeout(c, eIO_ReadWrite, timeout);
                 CONN_SetTimeout(c, eIO_Close,     timeout);
                 /* This dummy read triggers parse header callback */
-                CONN_Read(c, 0, 0, &n, eIO_Plain);
+                CONN_Read(c, 0, 0, &n, eIO_ReadPlain);
                 CONN_Close(c);
             }
             if (!uuu->host)
@@ -861,3 +733,138 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     /* Done */
     return ccc;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.40  2002/08/07 16:33:33  lavr
+ * Changed EIO_ReadMethod enums accordingly; log moved to end
+ *
+ * Revision 6.39  2002/06/10 19:51:43  lavr
+ * Wrong assertion removed from FIREWALL open case
+ *
+ * Revision 6.38  2002/05/07 15:31:47  lavr
+ * +#include <stdio.h>: noticed by J.Kans
+ *
+ * Revision 6.37  2002/05/06 19:17:33  lavr
+ * Take advantage of SERV_ServiceName()
+ *
+ * Revision 6.36  2002/04/26 16:28:51  lavr
+ * SSERVICE_Params: reset added for use in open/close pairs
+ * No checks for CONN_DEFAULT_TIMEOUT: now real timeouts always go from CONN
+ *
+ * Revision 6.35  2002/03/30 03:34:32  lavr
+ * BUGFIX: Memory leak from SERV_ITER in usused connector
+ *
+ * Revision 6.34  2002/03/22 22:18:28  lavr
+ * Remove uuu->conn (contained in uuu->meta.list); honor timeout on open
+ *
+ * Revision 6.33  2002/03/22 19:52:18  lavr
+ * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
+ *
+ * Revision 6.32  2002/03/19 22:14:53  lavr
+ * Proper indentation of nested preprocessor directives
+ *
+ * Revision 6.31  2002/03/11 22:00:22  lavr
+ * Support encoding in MIME content type for server data
+ *
+ * Revision 6.30  2001/12/04 15:56:47  lavr
+ * Use strdup() instead of explicit strcpy(malloc(...), ...)
+ *
+ * Revision 6.29  2001/10/26 21:17:59  lavr
+ * 'service=name' now always precedes other params in connects to DISPD/NCBID
+ *
+ * Revision 6.28  2001/09/28 20:51:31  lavr
+ * Comments revised; parameter (and SHttpConnector's) names adjusted
+ * Retry logic moved entirely into s_Adjust()
+ *
+ * Revision 6.27  2001/09/24 20:29:36  lavr
+ * +SSERVICE_Extra* parameter in constructor; store and use of this parameter
+ *
+ * Revision 6.26  2001/09/10 21:21:20  lavr
+ * Support for temporary switching into firewall mode as per dispatcher request
+ *
+ * Revision 6.25  2001/07/26 15:12:17  lavr
+ * while(1) -> for(;;)
+ *
+ * Revision 6.24  2001/06/05 14:11:29  lavr
+ * SERV_MIME_UNDEFINED split into 2 (typed) constants:
+ * SERV_MIME_TYPE_UNDEFINED and SERV_MIME_SUBTYPE_UNDEFINED
+ *
+ * Revision 6.23  2001/06/04 17:02:17  lavr
+ * Insert MIME type/subtype in Content-Type for servers,
+ * which have this feature configured
+ *
+ * Revision 6.22  2001/05/30 18:46:38  lavr
+ * Always call dispatcher in header-parsing callback (to see err.msg. if any)
+ *
+ * Revision 6.21  2001/05/23 21:53:19  lavr
+ * Do not close dispatcher in Open; leave it as it is
+ *
+ * Revision 6.20  2001/05/17 15:03:07  lavr
+ * Typos corrected
+ *
+ * Revision 6.19  2001/05/11 15:32:05  lavr
+ * Minor patch in code of 'fallback to STATELESS'
+ *
+ * Revision 6.18  2001/05/08 20:27:05  lavr
+ * Patches in re-try code
+ *
+ * Revision 6.17  2001/05/03 16:37:09  lavr
+ * Flow control fixed in s_Open for firewall connection
+ *
+ * Revision 6.16  2001/04/26 20:20:57  lavr
+ * Default tags are explicitly used to differ from a Web browser
+ *
+ * Revision 6.15  2001/04/25 15:49:54  lavr
+ * Memory leaks in Open (when unsuccessful) fixed
+ *
+ * Revision 6.14  2001/04/24 21:36:50  lavr
+ * More structured code to re-try abrupted connection/mapping attempts
+ *
+ * Revision 6.13  2001/03/07 23:01:07  lavr
+ * fSERV_Any used instead of 0 in SERVICE_CreateConnector
+ *
+ * Revision 6.12  2001/03/06 23:55:37  lavr
+ * SOCK_gethostaddr -> SOCK_gethostbyname
+ *
+ * Revision 6.11  2001/03/02 20:10:07  lavr
+ * Typo fixed
+ *
+ * Revision 6.10  2001/03/01 00:32:15  lavr
+ * FIX: Empty update does not generate parse error
+ *
+ * Revision 6.9  2001/02/09 17:35:45  lavr
+ * Modified: fSERV_StatelessOnly overrides info->stateless
+ * Bug fixed: free(type) -> free(name)
+ *
+ * Revision 6.8  2001/01/25 17:04:43  lavr
+ * Reversed:: DESTROY method calls free() to delete connector structure
+ *
+ * Revision 6.7  2001/01/23 23:09:19  lavr
+ * Flags added to 'Ex' constructor
+ *
+ * Revision 6.6  2001/01/11 16:38:18  lavr
+ * free(connector) removed from s_Destroy function
+ * (now always called from outside, in METACONN_Remove)
+ *
+ * Revision 6.5  2001/01/08 22:39:40  lavr
+ * Further development of service-mapping protocol: stateless/stateful
+ * is now separated from firewall/direct mode (see also in few more files)
+ *
+ * Revision 6.4  2001/01/03 22:35:53  lavr
+ * Next working revision (bugfixes and protocol changes)
+ *
+ * Revision 6.3  2000/12/29 18:05:12  lavr
+ * First working revision.
+ *
+ * Revision 6.2  2000/10/20 17:34:39  lavr
+ * Partially working service connector (service mapping works)
+ * Checkin for backup purposes
+ *
+ * Revision 6.1  2000/10/07 22:14:07  lavr
+ * Initial revision, placeholder mostly
+ *
+ * ==========================================================================
+ */

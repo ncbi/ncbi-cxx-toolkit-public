@@ -29,120 +29,6 @@
  *   Auxiliary API, mostly CONN-, URL-, and MIME-related
  *   (see in "ncbi_connutil.h" for more details).
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.34  2002/05/06 19:12:57  lavr
- * -ConnNetInfo_Print(); +ConnNetInfo_Log()
- * Addition: *_StripToPattern() now can strip until EOF (or error)
- *
- * Revision 6.33  2002/04/26 16:31:41  lavr
- * Add more space between functions to separate them better
- *
- * Revision 6.32  2002/04/13 06:36:36  lavr
- * Fix for empty path parsing in HTTP URL
- *
- * Revision 6.31  2002/03/19 22:13:09  lavr
- * Minor tweak in recognizing "infinite" (and part) as a special timeout
- *
- * Revision 6.30  2002/03/11 21:53:18  lavr
- * Recognize ALL in CONN_DEBUG_PRINTOUT; bugfix for '//' in proxy adjustement
- *
- * Revision 6.29  2002/02/20 19:12:17  lavr
- * Swapped eENCOD_Url and eENCOD_None; eENCOD_Unknown introduced
- *
- * Revision 6.28  2002/02/08 22:22:17  lavr
- * BUGFIX: sizeof(info) -> sizeof(*info) in ConnNetInfo_Create()
- *
- * Revision 6.27  2002/01/30 20:14:48  lavr
- * URL_Connect(): Print error code in some failure messages
- *
- * Revision 6.26  2002/01/28 20:21:46  lavr
- * Do not store "" as a user_header
- *
- * Revision 6.25  2001/12/30 19:40:32  lavr
- * +ConnNetInfo_ParseURL()
- * Added recordkeeping of service name for which the info was created
- *
- * Revision 6.24  2001/12/04 15:56:28  lavr
- * Use strdup() instead of explicit strcpy(malloc(...), ...)
- *
- * Revision 6.23  2001/09/24 20:27:00  lavr
- * Message corrected: "Adjusted path too long"
- *
- * Revision 6.22  2001/09/10 21:14:58  lavr
- * Added functions: StringToHostPort()
- *                  HostPortToString()
- *
- * Revision 6.21  2001/05/31 21:30:57  vakatov
- * MIME_ParseContentTypeEx() -- a more accurate parsing
- *
- * Revision 6.20  2001/05/29 21:15:43  vakatov
- * + eMIME_Plain
- *
- * Revision 6.19  2001/04/24 21:29:43  lavr
- * Special text value "infinite" accepted as infinite timeout from environment
- *
- * Revision 6.18  2001/03/26 18:37:09  lavr
- * #include <ctype.h> not used, removed
- *
- * Revision 6.17  2001/03/02 20:08:05  lavr
- * Typo fixed
- *
- * Revision 6.16  2001/01/25 16:58:33  lavr
- * ConnNetInfo_SetUserHeader now used throughout to set/reset http_user_header
- *
- * Revision 6.15  2001/01/23 23:06:18  lavr
- * SConnNetInfo.debug_printout converted from boolean to enum
- * BUF_StripToPattern() introduced
- *
- * Revision 6.14  2001/01/12 00:01:27  lavr
- * CONN_PROXY_HOST was forgotten to init in ConnNetInfo_Create
- *
- * Revision 6.13  2001/01/11 23:07:08  lavr
- * ConnNetInfo_Print() prints user-header 'as is'; pretty-printing undone
- *
- * Revision 6.12  2001/01/08 23:46:27  lavr
- * REQUEST_METHOD -> REQ_METHOD to be consistent with SConnNetInfo
- *
- * Revision 6.11  2001/01/08 22:35:56  lavr
- * Client-Mode removed; replaced by 2 separate boolean fields:
- * stateless and firewall
- *
- * Revision 6.10  2000/12/29 17:54:11  lavr
- * NCBID stuff removed; ConnNetInfo_SetUserHeader added;
- * modifications to ConnNetInfo_Print output.
- *
- * Revision 6.9  2000/11/07 23:23:18  vakatov
- * In-sync with the C Toolkit "connutil.c:R6.15", "connutil.h:R6.13"
- * (with "eMIME_Dispatch" added).
- *
- * Revision 6.8  2000/10/20 17:08:40  lavr
- * All keys capitalized for registry access
- * Search for some keywords made case insensitive
- *
- * Revision 6.7  2000/10/11 22:29:44  lavr
- * Forgotten blank added after {GET|POST} request in URL_Connect
- *
- * Revision 6.6  2000/10/05 22:35:24  lavr
- * SConnNetInfo modified to contain 'client_mode' instead of just
- * 'firewall' boolean
- *
- * Revision 6.5  2000/09/27 19:37:40  lavr
- * ncbi_ansi_ext.h included
- *
- * Revision 6.4  2000/09/26 22:01:33  lavr
- * Registry entries changed, HTTP request method added
- *
- * Revision 6.3  2000/04/21 19:42:35  vakatov
- * Several minor typo/bugs fixed
- *
- * Revision 6.2  2000/03/29 16:36:09  vakatov
- * MIME_ParseContentType() -- a fix
- *
- * Revision 6.1  2000/03/24 22:53:34  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include "ncbi_priv.h"
@@ -753,7 +639,7 @@ static EIO_Status s_StripToPattern
     if ( !pattern ) {
         /* read/discard until EOF */
         do {
-            status= read_func(source, buffer, buffer_size, &n_read, eIO_Plain);
+            status= read_func(source,buffer,buffer_size,&n_read,eIO_ReadPlain);
             if ( buf )
                 BUF_Write(buf, buffer, n_read);
             if ( n_discarded )
@@ -765,7 +651,7 @@ static EIO_Status s_StripToPattern
         size_t n_peeked, n_stored, x_discarded;
         assert(n_read < pattern_size);
         status = read_func(source, buffer + n_read, buffer_size - n_read,
-                           &n_peeked, eIO_Peek);
+                           &n_peeked, eIO_ReadPeek);
         if ( !n_peeked ) {
             assert(status != eIO_Success);
             break; /*error*/
@@ -788,7 +674,7 @@ static EIO_Status s_StripToPattern
                 size_t x_read = b - buffer + pattern_size;
                 assert( memcmp(b, pattern, pattern_size) == 0 );
                 status = read_func(source, buffer + n_read, x_read - n_read,
-                                   &x_discarded, eIO_Plain);
+                                   &x_discarded, eIO_ReadPlain);
                 assert(status == eIO_Success);
                 assert(x_discarded == x_read - n_read);
                 if ( buf )
@@ -801,7 +687,7 @@ static EIO_Status s_StripToPattern
 
         /* pattern not found yet */
         status = read_func(source, buffer + n_read, n_peeked,
-                           &x_discarded, eIO_Plain);
+                           &x_discarded, eIO_ReadPlain);
         assert(status == eIO_Success);
         assert(x_discarded == n_peeked);
         if ( buf )
@@ -874,7 +760,7 @@ static EIO_Status s_BUF_Read
  size_t*        n_read,
  EIO_ReadMethod how)
 {
-    size_t read = (how == eIO_Peek
+    size_t read = (how == eIO_ReadPeek
                    ? BUF_Peek((BUF)source, dest, size)
                    : BUF_Read((BUF)source, dest, size));
     if (n_read)
@@ -1284,3 +1170,124 @@ extern size_t HostPortToString(unsigned int   host,
     buf[n] = 0;
     return n;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.35  2002/08/07 16:32:47  lavr
+ * Changed EIO_ReadMethod enums accordingly; log moved to end
+ *
+ * Revision 6.34  2002/05/06 19:12:57  lavr
+ * -ConnNetInfo_Print(); +ConnNetInfo_Log()
+ * Addition: *_StripToPattern() now can strip until EOF (or error)
+ *
+ * Revision 6.33  2002/04/26 16:31:41  lavr
+ * Add more space between functions to separate them better
+ *
+ * Revision 6.32  2002/04/13 06:36:36  lavr
+ * Fix for empty path parsing in HTTP URL
+ *
+ * Revision 6.31  2002/03/19 22:13:09  lavr
+ * Minor tweak in recognizing "infinite" (and part) as a special timeout
+ *
+ * Revision 6.30  2002/03/11 21:53:18  lavr
+ * Recognize ALL in CONN_DEBUG_PRINTOUT; bugfix for '//' in proxy adjustement
+ *
+ * Revision 6.29  2002/02/20 19:12:17  lavr
+ * Swapped eENCOD_Url and eENCOD_None; eENCOD_Unknown introduced
+ *
+ * Revision 6.28  2002/02/08 22:22:17  lavr
+ * BUGFIX: sizeof(info) -> sizeof(*info) in ConnNetInfo_Create()
+ *
+ * Revision 6.27  2002/01/30 20:14:48  lavr
+ * URL_Connect(): Print error code in some failure messages
+ *
+ * Revision 6.26  2002/01/28 20:21:46  lavr
+ * Do not store "" as a user_header
+ *
+ * Revision 6.25  2001/12/30 19:40:32  lavr
+ * +ConnNetInfo_ParseURL()
+ * Added recordkeeping of service name for which the info was created
+ *
+ * Revision 6.24  2001/12/04 15:56:28  lavr
+ * Use strdup() instead of explicit strcpy(malloc(...), ...)
+ *
+ * Revision 6.23  2001/09/24 20:27:00  lavr
+ * Message corrected: "Adjusted path too long"
+ *
+ * Revision 6.22  2001/09/10 21:14:58  lavr
+ * Added functions: StringToHostPort()
+ *                  HostPortToString()
+ *
+ * Revision 6.21  2001/05/31 21:30:57  vakatov
+ * MIME_ParseContentTypeEx() -- a more accurate parsing
+ *
+ * Revision 6.20  2001/05/29 21:15:43  vakatov
+ * + eMIME_Plain
+ *
+ * Revision 6.19  2001/04/24 21:29:43  lavr
+ * Special text value "infinite" accepted as infinite timeout from environment
+ *
+ * Revision 6.18  2001/03/26 18:37:09  lavr
+ * #include <ctype.h> not used, removed
+ *
+ * Revision 6.17  2001/03/02 20:08:05  lavr
+ * Typo fixed
+ *
+ * Revision 6.16  2001/01/25 16:58:33  lavr
+ * ConnNetInfo_SetUserHeader now used throughout to set/reset http_user_header
+ *
+ * Revision 6.15  2001/01/23 23:06:18  lavr
+ * SConnNetInfo.debug_printout converted from boolean to enum
+ * BUF_StripToPattern() introduced
+ *
+ * Revision 6.14  2001/01/12 00:01:27  lavr
+ * CONN_PROXY_HOST was forgotten to init in ConnNetInfo_Create
+ *
+ * Revision 6.13  2001/01/11 23:07:08  lavr
+ * ConnNetInfo_Print() prints user-header 'as is'; pretty-printing undone
+ *
+ * Revision 6.12  2001/01/08 23:46:27  lavr
+ * REQUEST_METHOD -> REQ_METHOD to be consistent with SConnNetInfo
+ *
+ * Revision 6.11  2001/01/08 22:35:56  lavr
+ * Client-Mode removed; replaced by 2 separate boolean fields:
+ * stateless and firewall
+ *
+ * Revision 6.10  2000/12/29 17:54:11  lavr
+ * NCBID stuff removed; ConnNetInfo_SetUserHeader added;
+ * modifications to ConnNetInfo_Print output.
+ *
+ * Revision 6.9  2000/11/07 23:23:18  vakatov
+ * In-sync with the C Toolkit "connutil.c:R6.15", "connutil.h:R6.13"
+ * (with "eMIME_Dispatch" added).
+ *
+ * Revision 6.8  2000/10/20 17:08:40  lavr
+ * All keys capitalized for registry access
+ * Search for some keywords made case insensitive
+ *
+ * Revision 6.7  2000/10/11 22:29:44  lavr
+ * Forgotten blank added after {GET|POST} request in URL_Connect
+ *
+ * Revision 6.6  2000/10/05 22:35:24  lavr
+ * SConnNetInfo modified to contain 'client_mode' instead of just
+ * 'firewall' boolean
+ *
+ * Revision 6.5  2000/09/27 19:37:40  lavr
+ * ncbi_ansi_ext.h included
+ *
+ * Revision 6.4  2000/09/26 22:01:33  lavr
+ * Registry entries changed, HTTP request method added
+ *
+ * Revision 6.3  2000/04/21 19:42:35  vakatov
+ * Several minor typo/bugs fixed
+ *
+ * Revision 6.2  2000/03/29 16:36:09  vakatov
+ * MIME_ParseContentType() -- a fix
+ *
+ * Revision 6.1  2000/03/24 22:53:34  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */

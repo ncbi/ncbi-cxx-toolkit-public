@@ -28,42 +28,6 @@
  * File Description:
  *    Send mail
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.11  2002/02/11 20:36:44  lavr
- * Use "ncbi_config.h"
- *
- * Revision 6.10  2001/07/13 20:15:12  lavr
- * Write lock then unlock when using not MT-safe s_ComposeFrom()
- *
- * Revision 6.9  2001/05/18 20:41:43  lavr
- * Beautifying: change log corrected
- *
- * Revision 6.8  2001/05/18 19:52:24  lavr
- * Tricks in macros to keep Sun C compiler silent from warnings (details below)
- *
- * Revision 6.7  2001/03/26 18:39:24  lavr
- * Casting to (unsigned char) instead of (int) for ctype char.class macros
- *
- * Revision 6.6  2001/03/06 04:32:00  lavr
- * Better custom header processing
- *
- * Revision 6.5  2001/03/02 20:09:06  lavr
- * Typo fixed
- *
- * Revision 6.4  2001/03/01 00:30:23  lavr
- * Toolkit configuration moved to ncbi_sendmail_.c
- *
- * Revision 6.3  2001/02/28 21:11:47  lavr
- * Bugfix: buffer overrun
- *
- * Revision 6.2  2001/02/28 17:48:53  lavr
- * Some fixes; larger intermediate buffer for message body
- *
- * Revision 6.1  2001/02/28 00:52:26  lavr
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include "ncbi_config.h"
@@ -121,7 +85,7 @@ static int s_SockRead(SOCK sock, char* reply, size_t reply_len)
         size_t m = 0;
         char buf[4];
 
-        if (SOCK_Read(sock, buf, 4, &m, eIO_Persist) != eIO_Success)
+        if (SOCK_Read(sock, buf, 4, &m, eIO_ReadPersist) != eIO_Success)
             return SMTP_READERR;
         if (m != 4)
             return SMTP_REPLYERR;
@@ -138,7 +102,7 @@ static int s_SockRead(SOCK sock, char* reply, size_t reply_len)
 
         do {
             m = 0;
-            if (SOCK_Read(sock, buf, 1, &m, eIO_Plain) != eIO_Success || !m)
+            if (SOCK_Read(sock,buf,1,&m,eIO_ReadPlain) != eIO_Success  ||  !m)
                 return SMTP_READERR;
 
             if (buf[0] != '\r' && n < reply_len)
@@ -476,3 +440,46 @@ const char* CORE_SendMailEx(const char*          to,
 #undef SENDMAIL_READ_RESPONSE
 #undef SENDMAIL_RETURN2
 #undef SENDMAIL_RETURN
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.12  2002/08/07 16:33:15  lavr
+ * Changed EIO_ReadMethod enums accordingly; log moved to end
+ *
+ * Revision 6.11  2002/02/11 20:36:44  lavr
+ * Use "ncbi_config.h"
+ *
+ * Revision 6.10  2001/07/13 20:15:12  lavr
+ * Write lock then unlock when using not MT-safe s_ComposeFrom()
+ *
+ * Revision 6.9  2001/05/18 20:41:43  lavr
+ * Beautifying: change log corrected
+ *
+ * Revision 6.8  2001/05/18 19:52:24  lavr
+ * Tricks in macros to keep Sun C compiler silent from warnings (details below)
+ *
+ * Revision 6.7  2001/03/26 18:39:24  lavr
+ * Casting to (unsigned char) instead of (int) for ctype char.class macros
+ *
+ * Revision 6.6  2001/03/06 04:32:00  lavr
+ * Better custom header processing
+ *
+ * Revision 6.5  2001/03/02 20:09:06  lavr
+ * Typo fixed
+ *
+ * Revision 6.4  2001/03/01 00:30:23  lavr
+ * Toolkit configuration moved to ncbi_sendmail_.c
+ *
+ * Revision 6.3  2001/02/28 21:11:47  lavr
+ * Bugfix: buffer overrun
+ *
+ * Revision 6.2  2001/02/28 17:48:53  lavr
+ * Some fixes; larger intermediate buffer for message body
+ *
+ * Revision 6.1  2001/02/28 00:52:26  lavr
+ * Initial revision
+ *
+ * ===========================================================================
+ */

@@ -31,106 +31,6 @@
  *   See in "ncbi_connector.h" for the detailed specification of the underlying
  *   connector("CONNECTOR", "SConnectorTag") methods and structures.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.30  2002/07/25 20:20:43  lavr
- * Do not report header read error on {0, 0} timeout
- *
- * Revision 6.29  2002/07/25 13:59:35  lavr
- * More diagnostic messages added
- *
- * Revision 6.28  2002/06/19 18:08:02  lavr
- * Fixed some wrong assumptions on use of s_PreRead(); more comments added
- *
- * Revision 6.27  2002/06/10 19:51:20  lavr
- * Small prettifying
- *
- * Revision 6.26  2002/05/06 19:13:48  lavr
- * Output to stderr replaced with calls to logger
- *
- * Revision 6.25  2002/04/26 16:36:56  lavr
- * Added setting of default timeout in meta-connector's setup routine
- * Remove all checks for CONN_DEFAULT_TIMEOUT: now supplied good from CONN
- *
- * Revision 6.24  2002/04/22 19:31:33  lavr
- * Reading/waiting redesigned to be more robust in case of network errors
- *
- * Revision 6.23  2002/03/22 19:52:16  lavr
- * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
- *
- * Revision 6.22  2002/02/11 20:36:44  lavr
- * Use "ncbi_config.h"
- *
- * Revision 6.21  2002/02/05 22:04:12  lavr
- * Included header files rearranged
- *
- * Revision 6.20  2001/12/31 14:53:46  lavr
- * #include <connect/ncbi_ansi_ext.h> for Mac to be happy (noted by J.Kans)
- *
- * Revision 6.19  2001/12/30 20:00:00  lavr
- * Redirect on non-empty location only
- *
- * Revision 6.18  2001/12/30 19:41:07  lavr
- * Process error codes 301 and 302 (document moved) and reissue HTTP request
- *
- * Revision 6.17  2001/09/28 20:48:23  lavr
- * Comments revised; parameter (and SHttpConnector's) names adjusted
- * Retry logic moved entirely into s_Adjust()
- *
- * Revision 6.16  2001/09/10 21:15:56  lavr
- * Readability issue: FParseHTTPHdr -> FParseHTTPHeader
- *
- * Revision 6.15  2001/05/23 21:52:44  lavr
- * +fHCC_NoUpread
- *
- * Revision 6.14  2001/05/17 15:02:51  lavr
- * Typos corrected
- *
- * Revision 6.13  2001/05/08 20:26:27  lavr
- * Patches in re-try code
- *
- * Revision 6.12  2001/04/26 20:21:34  lavr
- * Reorganized and and made slightly more effective
- *
- * Revision 6.11  2001/04/24 21:41:47  lavr
- * Reorganized code to allow reconnects in case of broken connections at
- * stage of connection, sending data and receiving HTTP header. Added
- * code to pull incoming data from connection while sending - stall protection.
- *
- * Revision 6.10  2001/03/02 20:08:47  lavr
- * Typo fixed
- *
- * Revision 6.9  2001/01/25 16:53:24  lavr
- * New flag for HTTP_CreateConnectorEx: fHCC_DropUnread
- *
- * Revision 6.8  2001/01/23 23:11:20  lavr
- * Status virtual method implemented
- *
- * Revision 6.7  2001/01/11 16:38:17  lavr
- * free(connector) removed from s_Destroy function
- * (now always called from outside, in METACONN_Remove)
- *
- * Revision 6.6  2001/01/03 22:32:43  lavr
- * Redundant calls to 'adjust_info' removed
- *
- * Revision 6.5  2000/12/29 17:57:16  lavr
- * Adapted for use of new connector structure;
- * parse header callback added; some internal functions renamed.
- *
- * Revision 6.4  2000/11/15 18:52:02  vakatov
- * Call SOCK_Shutdown() after the HTTP request is sent.
- * Use SOCK_Status() instead of SOCK_Eof().
- *
- * Revision 6.3  2000/10/12 21:43:14  vakatov
- * Minor cosmetic fix...
- *
- * Revision 6.2  2000/09/26 22:02:57  lavr
- * HTTP request method added
- *
- * Revision 6.1  2000/04/21 19:41:01  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include "ncbi_config.h"
@@ -513,7 +413,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
     assert(uuu->sock);
     /* just read, with no URL-decoding */
     if (!(uuu->flags & fHCC_UrlDecodeInput))
-        return SOCK_Read(uuu->sock, buf, size, n_read, eIO_Plain);
+        return SOCK_Read(uuu->sock, buf, size, n_read, eIO_ReadPlain);
 
     /* read and URL-decode */
     {{
@@ -523,7 +423,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
         void*      peek_buf  = malloc(peek_size);
 
         /* peek the data */
-        status= SOCK_Read(uuu->sock, peek_buf, peek_size, &n_peeked, eIO_Peek);
+        status= SOCK_Read(uuu->sock,peek_buf,peek_size,&n_peeked,eIO_ReadPeek);
         if (status != eIO_Success) {
             *n_read = 0;
             free(peek_buf);
@@ -534,7 +434,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
         if (URL_Decode(peek_buf, n_peeked, &n_decoded, buf, size, n_read)) {
             if (n_decoded) {
                 size_t x_read;
-                SOCK_Read(uuu->sock, peek_buf, n_decoded, &x_read, eIO_Plain);
+                SOCK_Read(uuu->sock,peek_buf,n_decoded,&x_read,eIO_ReadPlain);
                 assert(x_read == n_decoded);
                 status = eIO_Success;
             } else if (SOCK_Status(uuu->sock, eIO_Read) == eIO_Closed)
@@ -940,3 +840,110 @@ extern CONNECTOR HTTP_CreateConnectorEx
 
     return ccc;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.31  2002/08/07 16:33:04  lavr
+ * Changed EIO_ReadMethod enums accordingly; log moved to end
+ *
+ * Revision 6.30  2002/07/25 20:20:43  lavr
+ * Do not report header read error on {0, 0} timeout
+ *
+ * Revision 6.29  2002/07/25 13:59:35  lavr
+ * More diagnostic messages added
+ *
+ * Revision 6.28  2002/06/19 18:08:02  lavr
+ * Fixed some wrong assumptions on use of s_PreRead(); more comments added
+ *
+ * Revision 6.27  2002/06/10 19:51:20  lavr
+ * Small prettifying
+ *
+ * Revision 6.26  2002/05/06 19:13:48  lavr
+ * Output to stderr replaced with calls to logger
+ *
+ * Revision 6.25  2002/04/26 16:36:56  lavr
+ * Added setting of default timeout in meta-connector's setup routine
+ * Remove all checks for CONN_DEFAULT_TIMEOUT: now supplied good from CONN
+ *
+ * Revision 6.24  2002/04/22 19:31:33  lavr
+ * Reading/waiting redesigned to be more robust in case of network errors
+ *
+ * Revision 6.23  2002/03/22 19:52:16  lavr
+ * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
+ *
+ * Revision 6.22  2002/02/11 20:36:44  lavr
+ * Use "ncbi_config.h"
+ *
+ * Revision 6.21  2002/02/05 22:04:12  lavr
+ * Included header files rearranged
+ *
+ * Revision 6.20  2001/12/31 14:53:46  lavr
+ * #include <connect/ncbi_ansi_ext.h> for Mac to be happy (noted by J.Kans)
+ *
+ * Revision 6.19  2001/12/30 20:00:00  lavr
+ * Redirect on non-empty location only
+ *
+ * Revision 6.18  2001/12/30 19:41:07  lavr
+ * Process error codes 301 and 302 (document moved) and reissue HTTP request
+ *
+ * Revision 6.17  2001/09/28 20:48:23  lavr
+ * Comments revised; parameter (and SHttpConnector's) names adjusted
+ * Retry logic moved entirely into s_Adjust()
+ *
+ * Revision 6.16  2001/09/10 21:15:56  lavr
+ * Readability issue: FParseHTTPHdr -> FParseHTTPHeader
+ *
+ * Revision 6.15  2001/05/23 21:52:44  lavr
+ * +fHCC_NoUpread
+ *
+ * Revision 6.14  2001/05/17 15:02:51  lavr
+ * Typos corrected
+ *
+ * Revision 6.13  2001/05/08 20:26:27  lavr
+ * Patches in re-try code
+ *
+ * Revision 6.12  2001/04/26 20:21:34  lavr
+ * Reorganized and and made slightly more effective
+ *
+ * Revision 6.11  2001/04/24 21:41:47  lavr
+ * Reorganized code to allow reconnects in case of broken connections at
+ * stage of connection, sending data and receiving HTTP header. Added
+ * code to pull incoming data from connection while sending - stall protection.
+ *
+ * Revision 6.10  2001/03/02 20:08:47  lavr
+ * Typo fixed
+ *
+ * Revision 6.9  2001/01/25 16:53:24  lavr
+ * New flag for HTTP_CreateConnectorEx: fHCC_DropUnread
+ *
+ * Revision 6.8  2001/01/23 23:11:20  lavr
+ * Status virtual method implemented
+ *
+ * Revision 6.7  2001/01/11 16:38:17  lavr
+ * free(connector) removed from s_Destroy function
+ * (now always called from outside, in METACONN_Remove)
+ *
+ * Revision 6.6  2001/01/03 22:32:43  lavr
+ * Redundant calls to 'adjust_info' removed
+ *
+ * Revision 6.5  2000/12/29 17:57:16  lavr
+ * Adapted for use of new connector structure;
+ * parse header callback added; some internal functions renamed.
+ *
+ * Revision 6.4  2000/11/15 18:52:02  vakatov
+ * Call SOCK_Shutdown() after the HTTP request is sent.
+ * Use SOCK_Status() instead of SOCK_Eof().
+ *
+ * Revision 6.3  2000/10/12 21:43:14  vakatov
+ * Minor cosmetic fix...
+ *
+ * Revision 6.2  2000/09/26 22:02:57  lavr
+ * HTTP request method added
+ *
+ * Revision 6.1  2000/04/21 19:41:01  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */

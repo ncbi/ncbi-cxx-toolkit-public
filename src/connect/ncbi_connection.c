@@ -29,99 +29,6 @@
  *   Generic API to open and handle connection to an abstract service.
  *   For more detail, see in "ncbi_connection.h".
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.24  2002/04/26 16:30:26  lavr
- * Checks for CONN_DEFAULT_TIMEOUT and use of default_timeout of meta-connector
- *
- * Revision 6.23  2002/04/24 21:18:04  lavr
- * Beautifying: pup open check before buffer check in CONN_Wait()
- *
- * Revision 6.22  2002/04/22 19:30:01  lavr
- * Do not put trace message on polling wait (tmo={0,0})
- * More effective CONN_Read w/o repeatitive checkings for eIO_ReadPersist
- *
- * Revision 6.21  2002/03/22 22:17:01  lavr
- * Better check when formally timed out but technically polled in CONN_Wait()
- *
- * Revision 6.20  2002/02/05 22:04:12  lavr
- * Included header files rearranged
- *
- * Revision 6.19  2002/01/30 20:10:56  lavr
- * Remove *n_read = 0 assignment in s_CONN_Read; replace it with assert()
- *
- * Revision 6.18  2001/08/20 20:13:15  vakatov
- * CONN_ReInit() -- Check connection handle for NULL (it was missed in R6.17)
- *
- * Revision 6.17  2001/08/20 20:00:43  vakatov
- * CONN_SetTimeout() to return "EIO_Status".
- * CONN_***() -- Check connection handle for NULL.
- *
- * Revision 6.16  2001/07/10 15:08:35  lavr
- * Edit for style
- *
- * Revision 6.15  2001/06/29 21:06:46  lavr
- * BUGFIX: CONN_LOG now checks for non-NULL get_type virtual function
- *
- * Revision 6.14  2001/06/28 22:00:48  lavr
- * Added function: CONN_SetCallback
- * Added callback: eCONN_OnClose
- *
- * Revision 6.13  2001/06/07 17:54:36  lavr
- * Modified exit branch in s_CONN_Read()
- *
- * Revision 6.12  2001/05/30 19:42:44  vakatov
- * s_CONN_Read() -- do not issue warning if requested zero bytes
- * (by A.Lavrentiev)
- *
- * Revision 6.11  2001/04/24 21:29:04  lavr
- * CONN_DEFAULT_TIMEOUT is used everywhere when timeout is not set explicitly
- *
- * Revision 6.10  2001/02/26 22:52:44  kans
- * Initialize x_read in s_CONN_Read
- *
- * Revision 6.9  2001/02/26 16:32:01  kans
- * Including string.h instead of cstring
- *
- * Revision 6.8  2001/02/25 21:41:50  kans
- * Include <cstring> on Mac to get memset
- *
- * Revision 6.7  2001/02/09 17:34:18  lavr
- * CONN_GetType added; severities of some messages changed
- *
- * Revision 6.6  2001/01/25 16:55:48  lavr
- * CONN_ReInit bugs fixed
- *
- * Revision 6.5  2001/01/23 23:10:53  lavr
- * Typo corrected in description of connection structure
- *
- * Revision 6.4  2001/01/12 23:51:38  lavr
- * Message logging modified for use LOG facility only
- *
- * Revision 6.3  2001/01/03 22:29:59  lavr
- * CONN_Status implemented
- *
- * Revision 6.2  2000/12/29 17:52:59  lavr
- * Adapted to use new connector structure; modified to have
- * Internal tri-state {Unusable | Open | Closed }.
- *
- * Revision 6.1  2000/03/24 22:53:34  vakatov
- * Initial revision
- *
- * Revision 6.4  1999/11/01 16:14:23  vakatov
- * s_CONN_Read() -- milder error levels when hitting EOF
- *
- * Revision 6.3  1999/04/05 15:32:53  vakatov
- * CONN_Wait():  be more mild and discrete about the posted error severity
- *
- * Revision 6.1  1999/04/01 21:48:09  vakatov
- * Fixed for the change in spec:  "n_written/n_read" args in
- * CONN_Write/Read to be non-NULL and "*n_written / *n_read" := 0
- *
- * Revision 6.0  1999/03/25 23:04:57  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include "ncbi_priv.h"
@@ -617,11 +524,11 @@ extern EIO_Status CONN_Read
 
     *n_read = 0;
     switch (how) {
-    case eIO_Plain:
+    case eIO_ReadPlain:
         return s_CONN_Read(conn, buf, size, n_read, 0/*no peek*/);
-    case eIO_Peek:
+    case eIO_ReadPeek:
         return s_CONN_Read(conn, buf, size, n_read, 1/*peek*/);
-    case eIO_Persist:
+    case eIO_ReadPersist:
         return s_CONN_ReadPersist(conn, buf, size, n_read);
     }
     return eIO_Unknown;
@@ -758,3 +665,103 @@ extern EIO_Status CONN_WaitAsync
     return status;
 }
 #endif /* IMPLEMENTED__CONN_WaitAsync */
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.25  2002/08/07 16:32:32  lavr
+ * Changed EIO_ReadMethod enums accordingly; log moved to end
+ *
+ * Revision 6.24  2002/04/26 16:30:26  lavr
+ * Checks for CONN_DEFAULT_TIMEOUT and use of default_timeout of meta-connector
+ *
+ * Revision 6.23  2002/04/24 21:18:04  lavr
+ * Beautifying: pup open check before buffer check in CONN_Wait()
+ *
+ * Revision 6.22  2002/04/22 19:30:01  lavr
+ * Do not put trace message on polling wait (tmo={0,0})
+ * More effective CONN_Read w/o repeatitive checkings for eIO_ReadPersist
+ *
+ * Revision 6.21  2002/03/22 22:17:01  lavr
+ * Better check when formally timed out but technically polled in CONN_Wait()
+ *
+ * Revision 6.20  2002/02/05 22:04:12  lavr
+ * Included header files rearranged
+ *
+ * Revision 6.19  2002/01/30 20:10:56  lavr
+ * Remove *n_read = 0 assignment in s_CONN_Read; replace it with assert()
+ *
+ * Revision 6.18  2001/08/20 20:13:15  vakatov
+ * CONN_ReInit() -- Check connection handle for NULL (it was missed in R6.17)
+ *
+ * Revision 6.17  2001/08/20 20:00:43  vakatov
+ * CONN_SetTimeout() to return "EIO_Status".
+ * CONN_***() -- Check connection handle for NULL.
+ *
+ * Revision 6.16  2001/07/10 15:08:35  lavr
+ * Edit for style
+ *
+ * Revision 6.15  2001/06/29 21:06:46  lavr
+ * BUGFIX: CONN_LOG now checks for non-NULL get_type virtual function
+ *
+ * Revision 6.14  2001/06/28 22:00:48  lavr
+ * Added function: CONN_SetCallback
+ * Added callback: eCONN_OnClose
+ *
+ * Revision 6.13  2001/06/07 17:54:36  lavr
+ * Modified exit branch in s_CONN_Read()
+ *
+ * Revision 6.12  2001/05/30 19:42:44  vakatov
+ * s_CONN_Read() -- do not issue warning if requested zero bytes
+ * (by A.Lavrentiev)
+ *
+ * Revision 6.11  2001/04/24 21:29:04  lavr
+ * CONN_DEFAULT_TIMEOUT is used everywhere when timeout is not set explicitly
+ *
+ * Revision 6.10  2001/02/26 22:52:44  kans
+ * Initialize x_read in s_CONN_Read
+ *
+ * Revision 6.9  2001/02/26 16:32:01  kans
+ * Including string.h instead of cstring
+ *
+ * Revision 6.8  2001/02/25 21:41:50  kans
+ * Include <cstring> on Mac to get memset
+ *
+ * Revision 6.7  2001/02/09 17:34:18  lavr
+ * CONN_GetType added; severities of some messages changed
+ *
+ * Revision 6.6  2001/01/25 16:55:48  lavr
+ * CONN_ReInit bugs fixed
+ *
+ * Revision 6.5  2001/01/23 23:10:53  lavr
+ * Typo corrected in description of connection structure
+ *
+ * Revision 6.4  2001/01/12 23:51:38  lavr
+ * Message logging modified for use LOG facility only
+ *
+ * Revision 6.3  2001/01/03 22:29:59  lavr
+ * CONN_Status implemented
+ *
+ * Revision 6.2  2000/12/29 17:52:59  lavr
+ * Adapted to use new connector structure; modified to have
+ * Internal tri-state {Unusable | Open | Closed }.
+ *
+ * Revision 6.1  2000/03/24 22:53:34  vakatov
+ * Initial revision
+ *
+ * Revision 6.4  1999/11/01 16:14:23  vakatov
+ * s_CONN_Read() -- milder error levels when hitting EOF
+ *
+ * Revision 6.3  1999/04/05 15:32:53  vakatov
+ * CONN_Wait():  be more mild and discrete about the posted error severity
+ *
+ * Revision 6.1  1999/04/01 21:48:09  vakatov
+ * Fixed for the change in spec:  "n_written/n_read" args in
+ * CONN_Write/Read to be non-NULL and "*n_written / *n_read" := 0
+ *
+ * Revision 6.0  1999/03/25 23:04:57  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */
