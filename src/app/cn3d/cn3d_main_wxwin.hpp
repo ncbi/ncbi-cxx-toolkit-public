@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/05/11 02:10:04  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.21  2001/03/22 00:32:36  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -171,9 +174,7 @@ class Cn3DGLCanvas;
 class Cn3DMainFrame: public wxFrame
 {
 public:
-    Cn3DMainFrame(
-        wxFrame *parent, const wxString& title,
-        const wxPoint& pos, const wxSize& size, long style = wxDEFAULT_FRAME_STYLE);
+    Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
     ~Cn3DMainFrame();
 
     // public data
@@ -240,10 +241,8 @@ private:
 class Cn3DGLCanvas: public wxGLCanvas
 {
 public:
-    Cn3DGLCanvas(
-        wxWindow *parent, const wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition,
-        const wxSize& size = wxDefaultSize, long style = 0, const wxString& name = "Cn3DGLCanvas",
-        int *gl_attrib = NULL);
+    Cn3DGLCanvas(wxWindow *parent,
+        const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize);
     ~Cn3DGLCanvas(void);
 
     // public data

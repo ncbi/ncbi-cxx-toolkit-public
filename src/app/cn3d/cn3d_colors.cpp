@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/05/11 02:10:41  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.6  2001/05/09 17:15:06  thiessen
 * add automatic block removal upon demotion
 *
@@ -71,9 +74,9 @@ Colors::Colors(void)
 {
     // default colors
     colors[eHighlight].Set(1, 1, 0);
-    colors[eUnalignedInUpdate].Set(1, .8, .8);
+    colors[eMergeFail].Set(1, .8, .8);
     colors[eGeometryViolation].Set(.6, 1, .6);
-    colors[eRealignBlock].Set(.8, .8, .8);
+    colors[eMarkBlock].Set(.8, .8, .8);
 
     colors[eHelix].Set(.1, .9, .1);
     colors[eStrand].Set(.9, .7, .2);

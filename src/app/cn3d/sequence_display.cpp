@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/05/11 02:10:42  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.16  2001/05/09 17:15:06  thiessen
 * add automatic block removal upon demotion
 *
@@ -154,7 +157,7 @@ bool DisplayRowFromSequence::GetCharacterTraitsAt(
 	int column, BlockMultipleAlignment::eUnalignedJustification justification,
     char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const
 {
-    if (column >= sequence->sequenceString.size())
+    if (column >= sequence->Length())
         return false;
 
     *character = tolower(sequence->sequenceString[column]);
@@ -176,7 +179,7 @@ bool DisplayRowFromSequence::GetSequenceAndIndexAt(
     int column, BlockMultipleAlignment::eUnalignedJustification justification,
     const Sequence **sequenceHandle, int *index) const
 {
-    if (column >= sequence->sequenceString.size())
+    if (column >= sequence->Length())
         return false;
 
     *sequenceHandle = sequence;
@@ -186,7 +189,7 @@ bool DisplayRowFromSequence::GetSequenceAndIndexAt(
 
 void DisplayRowFromSequence::SelectedRange(int from, int to, BlockMultipleAlignment::eUnalignedJustification justification) const
 {
-    int len = sequence->sequenceString.size();
+    int len = sequence->Length();
 
     // skip if selected outside range
     if (from < 0 && to < 0) return;
@@ -395,7 +398,7 @@ void SequenceDisplay::MouseOver(int column, int row) const
             else if (column < 0) {
                 sequence = displayRow->GetSequence();
                 if (sequence) {
-                    idLoc.Printf("length %i", sequence->sequenceString.size());
+                    idLoc.Printf("length %i", sequence->Length());
                     status = sequence->description.c_str();
                 }
             }
@@ -455,9 +458,9 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
         SequenceViewerWindow *sequenceWindow = dynamic_cast<SequenceViewerWindow*>(*viewerWindow);
         if (sequenceWindow && row >= 0) {
 
-            if (sequenceWindow->DoRealignBlock()) {
-                if (alignment->SetRealignBlock(column)) {
-                    sequenceWindow->RealignBlockOff();
+            if (sequenceWindow->DoMarkBlock()) {
+                if (alignment->MarkBlock(column)) {
+                    sequenceWindow->MarkBlockOff();
                     GlobalMessenger()->PostRedrawSequenceViewer(sequenceWindow->sequenceViewer);
                 }
                 return false;

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/11 02:10:42  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.15  2001/03/30 14:43:41  thiessen
 * show threader scores in status line; misc UI tweaks
 *
@@ -247,7 +250,7 @@ bool Messenger::IsHighlighted(const Molecule *molecule, int residueID) const
 
 bool Messenger::IsHighlighted(const Sequence *sequence, int seqIndex) const
 {
-    if (seqIndex < 0 || seqIndex >= sequence->sequenceString.size()) {
+    if (seqIndex < 0 || seqIndex >= sequence->Length()) {
         ERR_POST(Error << "Messenger::IsHighlighted() - seqIndex out of range");
         return false;
     }
@@ -278,8 +281,8 @@ void Messenger::RedrawMoleculesOfSameSequence(const Sequence *sequence)
 void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
 {
     if (seqIndexFrom < 0 || seqIndexTo < 0 || seqIndexFrom > seqIndexTo ||
-        seqIndexFrom >= sequence->sequenceString.size() ||
-        seqIndexTo >= sequence->sequenceString.size()) {
+        seqIndexFrom >= sequence->Length() ||
+        seqIndexTo >= sequence->Length()) {
         ERR_POST(Error << "Messenger::AddHighlights() - seqIndex out of range");
         return;
     }
@@ -289,7 +292,7 @@ void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int se
         if (SAME_SEQUENCE(sequence, sh->first)) break;
     }
     if (sh == she) {
-        sequenceHighlights[sequence].resize(sequence->sequenceString.size());
+        sequenceHighlights[sequence].resize(sequence->Length());
         sh = sequenceHighlights.find(sequence);
     }
 
@@ -302,8 +305,8 @@ void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int se
 void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
 {
     if (seqIndexFrom < 0 || seqIndexTo < 0 || seqIndexFrom > seqIndexTo ||
-        seqIndexFrom >= sequence->sequenceString.size() ||
-        seqIndexTo >= sequence->sequenceString.size()) {
+        seqIndexFrom >= sequence->Length() ||
+        seqIndexTo >= sequence->Length()) {
         ERR_POST(Error << "Messenger::RemoveHighlights() - seqIndex out of range");
         return;
     }
@@ -317,9 +320,9 @@ void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int
         for (i=seqIndexFrom; i<=seqIndexTo; i++) sh->second[i] = false;
 
         // remove sequence from store if no highlights left
-        for (i=0; i<sequence->sequenceString.size(); i++)
+        for (i=0; i<sequence->Length(); i++)
             if (sh->second[i] == true) break;
-        if (i == sequence->sequenceString.size())
+        if (i == sequence->Length())
             sequenceHighlights.erase(sh);
 
         PostRedrawAllSequenceViewers();

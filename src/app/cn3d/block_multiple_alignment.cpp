@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/05/11 02:10:41  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.17  2001/05/09 17:15:06  thiessen
 * add automatic block removal upon demotion
 *
@@ -135,8 +138,15 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     // must actually copy the list
     BlockMultipleAlignment *copy = new BlockMultipleAlignment(new SequenceList(*sequences), alignmentManager);
     BlockList::const_iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++)
-        copy->blocks.push_back((*b)->Clone(copy));
+    for (b=blocks.begin(); b!=be; b++) {
+        Block *newBlock = (*b)->Clone(copy);
+        copy->blocks.push_back(newBlock);
+        if ((*b)->IsAligned()) {
+            MarkBlockMap::const_iterator r = markBlocks.find(*b);
+            if (r != markBlocks.end())
+                copy->markBlocks[newBlock] = true;
+        }
+    }
     copy->UpdateBlockMapAndColors();
     copy->rowDoubles = rowDoubles;
     copy->rowStrings = rowStrings;
@@ -211,7 +221,7 @@ UnalignedBlock * BlockMultipleAlignment::
         if (rightBlock)
             to = rightBlock->GetRangeOfRow(row)->from - 1;
         else
-            to = (*s)->sequenceString.size() - 1;
+            to = (*s)->Length() - 1;
 
         newBlock->SetRangeOfRow(row, from, to);
 
@@ -323,9 +333,9 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
     if (!(*isHighlighted)) {
 
         // check for block flagged for realignment
-        if (realignBlocks.find(blockMap[alignmentColumn].block) != realignBlocks.end()) {
+        if (markBlocks.find(blockMap[alignmentColumn].block) != markBlocks.end()) {
             *drawBackground = true;
-            *cellBackgroundColor = GlobalColors()->Get(Colors::eRealignBlock);
+            *cellBackgroundColor = GlobalColors()->Get(Colors::eMarkBlock);
         }
 
         // check for geometry violations
@@ -336,10 +346,50 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
 
         // check for unmergeable alignment
         const BlockMultipleAlignment *referenceAlignment = alignmentManager->GetCurrentMultipleAlignment();
-        if (row == 0 && seqIndex >= 0 && !isAligned && referenceAlignment != this &&
-            referenceAlignment->GetMaster() == sequence && referenceAlignment->IsAligned(row, seqIndex)) {
-            *drawBackground = true;
-            *cellBackgroundColor = GlobalColors()->Get(Colors::eUnalignedInUpdate);
+        if (referenceAlignment != this && seqIndex >= 0 && GetMaster() == referenceAlignment->GetMaster()) {
+            bool unmergeable = false;
+            const Block *block = blockMap[alignmentColumn].block;
+
+            // case where master residues are aligned in multiple but not in this one
+            if (row == 0 && !isAligned && referenceAlignment->IsAligned(row, seqIndex))
+                unmergeable = true;
+
+            // block boundaries in this inside aligned block of multiple
+            else if (isAligned) {
+                const Block::Range *range = block->GetRangeOfRow(row);
+                bool
+                    isLeftEdge = (seqIndex == range->from),
+                    isRightEdge = (seqIndex == range->to);
+                if (isLeftEdge || isRightEdge) {
+
+                    // get corresponding block of multiple
+                    const Block::Range *masterRange = block->GetRangeOfRow(0);
+                    int masterIndex = masterRange->from + seqIndex - range->from;
+                    const Block *multipleBlock = referenceAlignment->GetBlock(0, masterIndex);
+                    masterRange = multipleBlock->GetRangeOfRow(0);
+
+                    if (multipleBlock->IsAligned() &&
+                        ((isLeftEdge && masterIndex > masterRange->from) ||
+                         (isRightEdge && masterIndex < masterRange->to)))
+                        unmergeable = true;
+                }
+            }
+
+            // check for inserts relative to the multiple
+            else if (row > 0 && !isAligned) {
+                const Block
+                    *blockBefore = GetBlockBefore(block),
+                    *blockAfter = GetBlockAfter(block);
+                if (blockBefore && blockBefore->IsAligned() && blockAfter && blockAfter->IsAligned() &&
+                    referenceAlignment->GetBlock(0, blockBefore->GetRangeOfRow(0)->to) ==
+                    referenceAlignment->GetBlock(0, blockAfter->GetRangeOfRow(0)->from))
+                    unmergeable = true;
+            }
+
+            if (unmergeable) {
+                *drawBackground = true;
+                *cellBackgroundColor = GlobalColors()->Get(Colors::eMergeFail);
+            }
         }
     }
 
@@ -461,7 +511,7 @@ bool BlockMultipleAlignment::IsAligned(int row, int seqIndex) const
 const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
 {
     // make sure we're in range for this sequence
-    if (seqIndex < 0 || seqIndex >= sequences->at(row)->sequenceString.size()) {
+    if (seqIndex < 0 || seqIndex >= sequences->at(row)->Length()) {
         ERR_POST(Error << "BlockMultipleAlignment::GetBlock() - seqIndex out of range");
         return NULL;
     }
@@ -1154,7 +1204,7 @@ bool BlockMultipleAlignment::ExtractRows(
             UngappedAlignedBlock *ABlock = dynamic_cast<UngappedAlignedBlock*>(*b);
 
             // only copy blocks that aren't flagged to be realigned
-            if (ABlock && realignBlocks.find(ABlock) == realignBlocks.end()) {
+            if (ABlock && markBlocks.find(ABlock) == markBlocks.end()) {
                 UngappedAlignedBlock *newABlock = new UngappedAlignedBlock(newAlignment);
                 const Block::Range *range = ABlock->GetRangeOfRow(0);
                 newABlock->SetRangeOfRow(0, range->from, range->to);
@@ -1283,7 +1333,7 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
                 nextRange = nextBlock ? nextBlock->GetRangeOfRow(NRows() + i - nNewRows) : NULL;
                 from = prevRange ? prevRange->to + 1 : 0;
                 to = nextRange ? nextRange->from - 1 :
-                        GetSequenceOfRow(NRows() + i - nNewRows)->sequenceString.size() - 1;
+                        GetSequenceOfRow(NRows() + i - nNewRows)->Length() - 1;
                 thisUBlock->SetRangeOfRow(NRows() + i - nNewRows, from , to);
                 width = to - from + 1;
                 if (width > thisUBlock->width) thisUBlock->width = width;
@@ -1308,7 +1358,7 @@ void BlockMultipleAlignment::ShowGeometryViolations(const GeometryViolationsForR
     geometryViolations.clear();
     geometryViolations.resize(NRows());
     for (int row=0; row<NRows(); row++) {
-        geometryViolations[row].resize(GetSequenceOfRow(row)->sequenceString.size(), false);
+        geometryViolations[row].resize(GetSequenceOfRow(row)->Length(), false);
         IntervalList::const_iterator i, ie = violations[row].end();
         for (i=violations[row].begin(); i!=ie; i++)
             for (int l=i->first; l<=i->second; l++)
@@ -1365,14 +1415,21 @@ CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment 
     return seqAlign;
 }
 
-bool BlockMultipleAlignment::SetRealignBlock(int column)
+bool BlockMultipleAlignment::MarkBlock(int column)
 {
     if (column >= 0 && column < blockMap.size() && blockMap[column].block->IsAligned()) {
         TESTMSG("marked block for realignment");
-        realignBlocks[blockMap[column].block] = true;
+        markBlocks[blockMap[column].block] = true;
         return true;
     }
     return false;
+}
+
+bool BlockMultipleAlignment::ClearMarks(void)
+{
+    if (markBlocks.size() == 0) return false;
+    markBlocks.clear();
+    return true;
 }
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/05/11 02:10:04  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.13  2001/05/09 17:14:51  thiessen
 * add automatic block removal upon demotion
 *
@@ -225,7 +228,8 @@ public:
 
     // flag an aligned block for realignment - block will be removed upon ExtractRows; returns true if
     // column is in fact an aligned block
-    bool SetRealignBlock(int column);
+    bool MarkBlock(int column);
+    bool ClearMarks(void);  // remove all block flags
 
     // this function does two things: it extracts from a multiple alignment all slave rows marked for
     // removal (removeSlaves[i] == true); and for each slave removed, creates a new BlockMultipleAlignment
@@ -261,8 +265,8 @@ private:
     BlockMap blockMap;
 
     // to flag blocks for realignment
-    typedef std::map < const Block * , bool > RealignBlockMap;
-    RealignBlockMap realignBlocks;
+    typedef std::map < const Block * , bool > MarkBlockMap;
+    MarkBlockMap markBlocks;
 
     bool CheckAlignedBlock(const Block *newBlock) const;
     UnalignedBlock * CreateNewUnalignedBlockBetween(const Block *left, const Block *right);

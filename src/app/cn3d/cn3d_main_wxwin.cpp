@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/05/11 02:10:41  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.34  2001/05/02 13:46:28  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -228,6 +231,10 @@ std::string
     programDir,     // directory where Cn3D executable lives
     dataDir;        // 'data' directory with external data files
 
+// top-level window (the main structure window)
+static wxFrame *topWindow = NULL;
+wxFrame * GlobalTopWindow(void) { return topWindow; }
+
 
 // Set the NCBI diagnostic streams to go to this method, which then pastes them
 // into a wxWindow. This log window can be closed anytime, but will be hidden,
@@ -242,10 +249,9 @@ static wxTextCtrl *logText = NULL;
 class MsgFrame : public wxFrame
 {
 public:
-    MsgFrame(wxWindow* parent, wxWindowID id, const wxString& title,
-        const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize,
-        long style = wxDEFAULT_FRAME_STYLE, const wxString& name = "frame") :
-        wxFrame(parent, id, title, pos, size, style, name) { }
+    MsgFrame(const wxString& title,
+        const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize) :
+        wxFrame(topWindow, wxID_HIGHEST + 5, title, pos, size, wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT) { }
     ~MsgFrame(void) { logFrame = NULL; logText = NULL; }
 };
 
@@ -262,8 +268,7 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
 		delete dlg;
     } else {
         if (!logFrame) {
-            logFrame = new MsgFrame(NULL, -1, "Cn3D++ Message Log",
-                wxPoint(500, 0), wxSize(500, 500), wxDEFAULT_FRAME_STYLE);
+            logFrame = new MsgFrame("Cn3D++ Message Log", wxPoint(500, 0), wxSize(500, 500));
             logFrame->SetSizeHints(150, 100);
             logText = new wxTextCtrl(logFrame, -1, "",
                 wxPoint(0,0), wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
@@ -289,9 +294,9 @@ bool Cn3DApp::OnInit(void)
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info); // report all messages
 
-    // create the main frame window and messenger
-    structureWindow = new Cn3DMainFrame(NULL, "Cn3D++",
-        wxPoint(0,0), wxSize(500,500), wxDEFAULT_FRAME_STYLE);
+    // create the main frame window
+    structureWindow = new Cn3DMainFrame("Cn3D++", wxPoint(0,0), wxSize(500,500));
+    SetTopWindow(structureWindow);
 
     // set up working directories
     workingDir = userDir = wxGetCwd().c_str();
@@ -347,11 +352,11 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE( MID_QLOW,       MID_QHIGH,          Cn3DMainFrame::OnSetQuality)
 END_EVENT_TABLE()
 
-Cn3DMainFrame::Cn3DMainFrame(
-    wxFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long style) :
-    wxFrame(parent, -1, title, pos, size, style | wxTHICK_FRAME),
+Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
+    wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
     glCanvas(NULL)
 {
+    topWindow = this;
     SetSizeHints(150, 150); // min size
 
     // File menu
@@ -410,16 +415,7 @@ Cn3DMainFrame::Cn3DMainFrame(
     SetMenuBar(menuBar);
 
     // Make a GLCanvas
-#ifdef __WXMSW__
-    int *gl_attrib = NULL;
-#else
-    int gl_attrib[20] = {
-        GLX_RGBA, GLX_RED_SIZE, 1, GLX_GREEN_SIZE, 1,
-        GLX_BLUE_SIZE, 1, GLX_DEPTH_SIZE, 1,
-        GLX_DOUBLEBUFFER, None };
-#endif
-    glCanvas = new Cn3DGLCanvas(
-        this, -1, wxPoint(0, 0), wxSize(400, 400), wxSUNKEN_BORDER, "Cn3DGLCanvas", gl_attrib);
+    glCanvas = new Cn3DGLCanvas(this, wxPoint(0, 0), wxSize(400, 400));
     glCanvas->SetCurrent();
 
     GlobalMessenger()->AddStructureWindow(this);
@@ -662,6 +658,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         return;
     }
 
+    SetTitle(wxFileNameFromPath(filename) + " - Cn3D++");
     glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);
     glCanvas->Refresh(false);
 }
@@ -716,10 +713,8 @@ BEGIN_EVENT_TABLE(Cn3DGLCanvas, wxGLCanvas)
     EVT_ERASE_BACKGROUND    (Cn3DGLCanvas::OnEraseBackground)
 END_EVENT_TABLE()
 
-Cn3DGLCanvas::Cn3DGLCanvas(
-    wxWindow *parent, wxWindowID id,
-    const wxPoint& pos, const wxSize& size, long style, const wxString& name, int *gl_attrib) :
-    wxGLCanvas(parent, id, pos, size, style, name, gl_attrib),
+Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, const wxPoint& pos, const wxSize& size) :
+    wxGLCanvas(parent, -1, pos, size, wxSUNKEN_BORDER),
     structureSet(NULL)
 {
     renderer = new OpenGLRenderer;

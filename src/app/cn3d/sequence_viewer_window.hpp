@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/05/11 02:10:04  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.8  2001/05/09 17:14:52  thiessen
 * add automatic block removal upon demotion
 *
@@ -98,7 +101,8 @@ private:
         MID_SHOW_UPDATES,
         MID_REALIGN_ROW,
         MID_REALIGN_ROWS,
-        MID_REALIGN_BLOCK
+        MID_MARK_BLOCK,
+        MID_CLEAR_MARKS
     };
 
     void OnShowHideRows(wxCommandEvent& event);
@@ -108,7 +112,7 @@ private:
     void OnRealign(wxCommandEvent& event);
     void OnSort(wxCommandEvent& event);
     void OnScoreThreader(wxCommandEvent& event);
-    void OnRealignBlock(wxCommandEvent& event);
+    void OnMarkBlock(wxCommandEvent& event);
 
     // called before an operation (e.g., alignment editor enable) that requires
     // all rows of an alignment to be visible; 'false' return should abort that operation
@@ -128,9 +132,9 @@ private:
         menuBar->Check(MID_REALIGN_ROW, false);
         SetCursor(wxNullCursor);
     }
-    void RealignBlockOff(void)
+    void MarkBlockOff(void)
     {
-        menuBar->Check(MID_REALIGN_BLOCK, false);
+        menuBar->Check(MID_MARK_BLOCK, false);
         SetCursor(wxNullCursor);
     }
 
@@ -146,13 +150,13 @@ public:
 
     bool DoDeleteRow(void) const { return menuBar->IsChecked(MID_DELETE_ROW); }
     bool DoRealignRow(void) const { return menuBar->IsChecked(MID_REALIGN_ROW); }
-    bool DoRealignBlock(void) const { return menuBar->IsChecked(MID_REALIGN_BLOCK); }
+    bool DoMarkBlock(void) const { return menuBar->IsChecked(MID_MARK_BLOCK); }
 
     void CancelDerivedSpecialModes(void)
     {
         if (DoDeleteRow()) DeleteRowOff();
         if (DoRealignRow()) RealignRowOff();
-        if (DoRealignBlock()) RealignBlockOff();
+        if (DoMarkBlock()) MarkBlockOff();
     }
 };
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/05/11 02:10:42  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.11  2001/04/18 15:46:54  thiessen
 * show description, length, and PDB numbering in status line
 *
@@ -81,9 +84,12 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
+wxFrame * GlobalTopWindow(void);    // from cn3d_main_wxwin
+
 ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
         const char* title, const wxPoint& pos, const wxSize& size) :
-    wxFrame(NULL, -1, title, pos, size),
+    wxFrame(GlobalTopWindow(), wxID_HIGHEST + 10, title, pos, size,
+        wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT),
     viewerWidget(NULL), viewer(parentViewer)
 {
     if (!parentViewer) ERR_POST(Error << "ViewerWindowBase::ViewerWindowBase() - got NULL pointer");

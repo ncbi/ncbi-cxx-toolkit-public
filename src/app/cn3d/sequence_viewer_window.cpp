@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/05/11 02:10:42  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.13  2001/05/09 17:15:07  thiessen
 * add automatic block removal upon demotion
 *
@@ -105,7 +108,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_REALIGN_ROW, MID_REALIGN_ROWS,   SequenceViewerWindow::OnRealign)
     EVT_MENU_RANGE(MID_SORT_IDENT, MID_SORT_THREADER,   SequenceViewerWindow::OnSort)
     EVT_MENU      (MID_SCORE_THREADER,                  SequenceViewerWindow::OnScoreThreader)
-    EVT_MENU      (MID_REALIGN_BLOCK,                   SequenceViewerWindow::OnRealignBlock)
+    EVT_MENU_RANGE(MID_MARK_BLOCK, MID_CLEAR_MARKS,     SequenceViewerWindow::OnMarkBlock)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
@@ -130,7 +133,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     updateMenu->Append(MID_REALIGN_ROW, "Realign &Individual Rows", "", true);
     updateMenu->Append(MID_REALIGN_ROWS, "Realign Rows from &List");
     updateMenu->AppendSeparator();
-    updateMenu->Append(MID_REALIGN_BLOCK, "Mark &Block", "", true);
+    updateMenu->Append(MID_MARK_BLOCK, "Mark &Block", "", true);
+    updateMenu->Append(MID_CLEAR_MARKS, "&Clear Marks");
     menuBar->Append(updateMenu, "&Update");
 
     EnableDerivedEditorMenuItems(false);
@@ -167,14 +171,15 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         menuBar->Enable(MID_MOVE_ROW, enabled);             // can only move row when editor is on
         menuBar->Enable(MID_REALIGN_ROW, enabled);          // can only realign rows when editor is on
         menuBar->Enable(MID_REALIGN_ROWS, enabled);         // can only realign rows when editor is on
-        menuBar->Enable(MID_REALIGN_BLOCK, enabled);
+        menuBar->Enable(MID_MARK_BLOCK, enabled);
+        menuBar->Enable(MID_CLEAR_MARKS, enabled);
     }
 }
 
 void SequenceViewerWindow::OnDeleteRow(wxCommandEvent& event)
 {
     if (DoRealignRow()) RealignRowOff();
-    if (DoRealignBlock()) RealignBlockOff();
+    if (DoMarkBlock()) MarkBlockOff();
     CancelBaseSpecialModes();
     if (DoDeleteRow())
         SetCursor(*wxCROSS_CURSOR);
@@ -295,7 +300,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     // setup one-at-a-time row realignment
     if (event.GetId() == MID_REALIGN_ROW) {
         if (DoDeleteRow()) DeleteRowOff();
-        if (DoRealignBlock()) RealignBlockOff();
+        if (DoMarkBlock()) MarkBlockOff();
         CancelBaseSpecialModes();
         if (DoRealignRow())
             SetCursor(*wxCROSS_CURSOR);
@@ -376,15 +381,23 @@ void SequenceViewerWindow::OnScoreThreader(wxCommandEvent& event)
     }
 }
 
-void SequenceViewerWindow::OnRealignBlock(wxCommandEvent& event)
+void SequenceViewerWindow::OnMarkBlock(wxCommandEvent& event)
 {
-    if (DoDeleteRow()) DeleteRowOff();
-    if (DoRealignRow()) RealignRowOff();
-    CancelBaseSpecialModes();
-    if (DoRealignBlock())
-        SetCursor(*wxCROSS_CURSOR);
-    else
-        RealignBlockOff();
+    switch (event.GetId()) {
+        case MID_MARK_BLOCK:
+            if (DoDeleteRow()) DeleteRowOff();
+            if (DoRealignRow()) RealignRowOff();
+            CancelBaseSpecialModes();
+            if (DoMarkBlock())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                MarkBlockOff();
+            break;
+        case MID_CLEAR_MARKS:
+            if (sequenceViewer->GetCurrentAlignments()->front()->ClearMarks())
+                GlobalMessenger()->PostRedrawSequenceViewer(sequenceViewer);
+            break;
+    }
 }
 
 END_SCOPE(Cn3D)

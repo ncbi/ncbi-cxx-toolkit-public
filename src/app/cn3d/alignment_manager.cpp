@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2001/05/11 02:10:41  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.56  2001/05/03 14:39:14  thiessen
 * put ViewableAlignment in its own (non-wx) header
 *
@@ -692,10 +695,23 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
     ViewerBase::AlignmentList updatesToKeep;
     ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
     for (u=currentUpdates->begin(); u!=ue; u++) {
-        if (updatesToMerge.find(*u) != updatesToMerge.end() && multiple->MergeAlignment(*u))
-            nSuccessfulMerges += (*u)->NRows() - 1;
-        else
-            updatesToKeep.push_back((*u)->Clone());
+        bool mergeOK = false;
+        if (updatesToMerge.find(*u) != updatesToMerge.end()) {
+            mergeOK = multiple->MergeAlignment(*u);
+            if (mergeOK) nSuccessfulMerges += (*u)->NRows() - 1;
+        }
+        if (!mergeOK) {
+            BlockMultipleAlignment *keep =(*u)->Clone();
+            for (int i=0; i<keep->NRows(); i++) {
+                std::string status = keep->GetRowStatusLine(i);
+                if (status.size() > 0)
+                    status += "; merge failed!";
+                else
+                    status = "Merge failed!";
+                keep->SetRowStatusLine(i, status);
+            }
+            updatesToKeep.push_back(keep);
+        }
     }
 
     updateViewer->ReplaceAlignments(updatesToKeep);

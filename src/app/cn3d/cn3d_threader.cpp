@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/05/11 02:10:42  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.13  2001/04/13 18:50:54  thiessen
 * fix for when threader returns fewer than requested results
 *
@@ -271,7 +274,7 @@ void Threader::CreateBioseq(const Sequence *sequence)
     bioseq->seq_data_type = Seq_code_ncbieaa;
     bioseq->repr = Seq_repr_raw;
 
-    bioseq->length = sequence->sequenceString.size();
+    bioseq->length = sequence->Length();
     bioseq->seq_data = BSNew(bioseq->length);
     BSWrite(bioseq->seq_data, const_cast<char*>(sequence->sequenceString.c_str()), bioseq->length);
 
@@ -338,9 +341,9 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
     // right extension - trim to available residues
     corDef->sll.comx[alignedBlocks->size() - 1] = corDef->sll.comn[alignedBlocks->size() - 1] + EXTENSION_MAX;
     if (corDef->sll.rfpt[alignedBlocks->size() - 1] + corDef->sll.comx[alignedBlocks->size() - 1] >=
-            multiple->GetMaster()->sequenceString.size())
+            multiple->GetMaster()->Length())
         corDef->sll.comx[alignedBlocks->size() - 1] =
-            multiple->GetMaster()->sequenceString.size() - corDef->sll.rfpt[alignedBlocks->size() - 1] - 1;
+            multiple->GetMaster()->Length() - corDef->sll.rfpt[alignedBlocks->size() - 1] - 1;
 
     // extensions into unaligned areas between blocks
     const Block::Range *prevRange;
@@ -371,11 +374,11 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
         pairwiseABlocks(pairwise->GetUngappedAlignedBlocks());
 
     // query has # constraints = # blocks in multiple alignment
-    Qry_Seq *qrySeq = NewQrySeq(slaveSeq->sequenceString.size(), multipleABlocks->size());
+    Qry_Seq *qrySeq = NewQrySeq(slaveSeq->Length(), multipleABlocks->size());
 
     // fill in residue numbers
     int i;
-    for (i=0; i<slaveSeq->sequenceString.size(); i++)
+    for (i=0; i<slaveSeq->Length(); i++)
         qrySeq->sq[i] = LookupResidueNumber(slaveSeq->sequenceString[i]);
 
     // if a block in the multiple is contained in the pairwise (looking at master coords),
@@ -829,7 +832,7 @@ Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
     // work-around to allow PSSM-only threading when master has no structure (or only C-alphas)
     Fld_Mtf *fldMtf;
     if (!mol || mol->parentSet->isAlphaOnly) {
-        fldMtf = NewFldMtf(masterSequence->sequenceString.size(), 0, 0);
+        fldMtf = NewFldMtf(masterSequence->Length(), 0, 0);
         contacts[masterSequence] = fldMtf;
         return fldMtf;
     }
@@ -1062,11 +1065,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
                     if (masterMultiple->MergeAlignment(newAlignment)) {
                         delete newAlignment; // if merge is successful, we can delete this alignment;
                         (*nRowsAddedToMultiple)++;
-                    } else {                 // otherwise indicate merge failure in status
-                        std::string newStatus = newAlignment->GetRowStatusLine(0);
-                        newStatus += "; merge failed!";
-                        newAlignment->SetRowStatusLine(0, newStatus);
-                        newAlignment->SetRowStatusLine(1, newStatus);
+                    } else {                 // otherwise keep it
                         newAlignments->push_back(newAlignment);
                     }
                 }
@@ -1161,7 +1160,7 @@ static double CalculateContactScore(const BlockMultipleAlignment *multiple,
         if (seqIndex1 < 0) continue;
 
         // peptides are only counted if both contributing master residues are aligned
-        if (fldMtf->rpc.p2[i] >= multiple->GetMaster()->sequenceString.size() - 1 ||
+        if (fldMtf->rpc.p2[i] >= multiple->GetMaster()->Length() - 1 ||
             !multiple->IsAligned(0, fldMtf->rpc.p2[i]) ||
             !multiple->IsAligned(0, fldMtf->rpc.p2[i] + 1)) continue;
 
@@ -1208,8 +1207,8 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
 
         // get sequence's residue numbers
         const Sequence *seq = multiple->GetSequenceOfRow(row);
-        residueNumbers.resize(seq->sequenceString.size());
-        for (int i=0; i<seq->sequenceString.size(); i++)
+        residueNumbers.resize(seq->Length());
+        for (int i=0; i<seq->Length(); i++)
             residueNumbers[i] = LookupResidueNumber(seq->sequenceString[i]);
 
         // sum score types (weightPSSM already built into seqMtf & rcxPtl)

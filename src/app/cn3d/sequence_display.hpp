@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/05/11 02:10:04  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.10  2001/05/03 14:38:32  thiessen
 * put ViewableAlignment in its own (non-wx) header
 *
@@ -141,7 +144,7 @@ public:
 
     DisplayRowFromSequence(const Sequence *s) : sequence(s) { }
 
-    int Width(void) const { return sequence->sequenceString.size(); }
+    int Width(void) const { return sequence->Length(); }
 
     DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const
         { return new DisplayRowFromSequence(sequence); }

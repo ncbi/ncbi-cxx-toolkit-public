@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/05/11 02:10:04  thiessen
+* add better merge fail indicators; tweaks to windowing/taskbar
+*
 * Revision 1.5  2001/05/09 17:14:52  thiessen
 * add automatic block removal upon demotion
 *
@@ -70,9 +73,9 @@ public:
     enum eColor {
         // sequence viewer colors
         eHighlight = 0,
-        eUnalignedInUpdate,
+        eMergeFail,
         eGeometryViolation,
-        eRealignBlock,
+        eMarkBlock,
 
         // secondary structures
         eHelix,
