@@ -146,7 +146,7 @@ void CTest::x_TestPathes()
     m_Diags.push_back(&p4);
     m_Diags.push_back(&p5);
 
-    NcbiCout << "Testing file pathes" << NcbiEndl;
+    NcbiCout << "Testing file paths" << NcbiEndl;
     {
         int expects[] = { 1, 1, 1, 1, 0 };
         x_TestString( "/corelib", expects );
@@ -370,6 +370,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/15 15:05:34  dicuccio
+ * Fixed typo: pathes -> paths
+ *
  * Revision 1.2  2004/12/13 14:40:28  kuznets
  * Test for severity filtering
  *

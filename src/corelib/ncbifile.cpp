@@ -514,7 +514,7 @@ string CDirEntry::CreateRelativePath( const string& path_from,
                       dir_to_parts.front(), 
                       DIR_PARTS_CMP_MODE) != 0) {
         NCBI_THROW(CFileException, eRelativePath, 
-                   "roots of input pathes are different");
+                   "roots of input paths are different");
     }
 
     size_t min_parts = min(dir_from_parts.size(), dir_to_parts.size());
@@ -2330,6 +2330,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2005/03/15 15:05:33  dicuccio
+ * Fixed typo: pathes -> paths
+ *
  * Revision 1.87  2005/02/23 19:18:53  ivanov
  * CMemoryFileSegment: added mapped file name and error explanation
  * to exception diagnostic message
