@@ -32,7 +32,8 @@
  *
  *   NOTE:
  *     1) needs HTML template file "cgi_sample.html" in curr. dir to run,
- *     2) on most systems, you must make sure the executable's extension
+ *     2) needs configuration file "cgi_sample.ini",
+ *     3) on most systems, you must make sure the executable's extension
  *        is '.cgi'.
  *
  */
@@ -136,7 +137,9 @@ int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
 
 int main(int argc, const char* argv[])
 {
-    int result = CSampleCgiApplication().AppMain(argc, argv, 0, eDS_Default);
+    int result = 
+        CSampleCgiApplication().AppMain(argc, argv, 0, eDS_Default, 
+                                                         "cgi_sample.ini");
     _TRACE("back to normal diags");
     return result;
 }
@@ -145,6 +148,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/11/19 16:24:46  kuznets
+ * Added FastCGI configuration
+ *
  * Revision 1.5  2004/08/04 14:45:22  vakatov
  * In Init() -- don't forget to call CCgiApplication::Init()
  *
