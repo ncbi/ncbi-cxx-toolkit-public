@@ -79,7 +79,7 @@ public:
         eStrandMinus   = 2,
         eStrandAny     = eStrandPlus | eStrandMinus,
         eCircularStart = eStrandPlus,  // first part of a circular location
-        eCircularEnd   = eStrandMinus, // second part of a circular location
+        eCircularEnd   = eStrandMinus  // second part of a circular location
     };
     typedef unsigned int TTotalRangeFlags;
 
@@ -187,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.20  2004/08/17 19:05:14  vasilche
+ * Removed redundant comma.
+ *
  * Revision 1.19  2004/08/16 18:00:40  grichenk
  * Added detection of circular locations, improved annotation
  * indexing by strand.
