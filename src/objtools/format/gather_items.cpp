@@ -945,15 +945,21 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
         if ( cfg.HideIntronFeatures() ) {
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron);
         }
+        if ( cfg.HideMiscFeatures() ) {
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_misc_feature);
+        }
     }}
-    sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
-    if ( GetStrand(ctx.GetLocation(), &ctx.GetScope()) == eNa_strand_minus ) {
-        sel.SetSortOrder(SAnnotSelector::eSortOrder_Reverse);  // sort in reverse biological order
-    } else {
-        sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
+    // only for non-user selector
+    if (ctx.GetAnnotSelector() == NULL) {
+        sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
+        if ( GetStrand(ctx.GetLocation(), &ctx.GetScope()) == eNa_strand_minus ) {
+            sel.SetSortOrder(SAnnotSelector::eSortOrder_Reverse);  // sort in reverse biological order
+        } else {
+            sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
+        }
+        sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
+        sel.SetResolveTSE();
     }
-    sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
-    sel.SetResolveTSE();
 }
 
 
@@ -1123,10 +1129,10 @@ void CFlatGatherer::x_GatherFeatures(void) const
 
     SAnnotSelector sel;
     const SAnnotSelector* selp = ctx.GetAnnotSelector();
-    if ( selp == 0 ) {
-        s_SetSelection(sel, ctx);
+    if (selp == NULL) {
         selp = &sel;
     }
+    s_SetSelection(sel, ctx);
 
     // optionally map gene from genomic onto cDNA
     if ( ctx.IsInGPS()  &&  cfg.CopyGeneToCDNA()  &&
@@ -1332,6 +1338,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2004/09/01 19:57:08  shomrat
+* Apply flags to user defined AnnotSelector
+*
 * Revision 1.26  2004/08/30 13:43:05  shomrat
 *  supress duplicate features;fixed mapping from prot to nuc
 *
