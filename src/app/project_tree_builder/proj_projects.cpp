@@ -84,7 +84,7 @@ CProjectsLstFileFilter::CProjectsLstFileFilter(const string& root_src_dir,
         if ( !project_path.empty() ) {
             SLstElement elt;
             elt.m_Path      = project_path;
-            elt.m_Recursive = strline.find("$") != NPOS;
+            elt.m_Recursive = strline.find("$") == NPOS;
             m_LstFileContents.push_back(elt);
         }
     }
@@ -134,6 +134,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/27 18:09:14  gorelenk
+ * Changed implementation of CProjectsLstFileFilter::CmpLstElementWithPath.
+ *
  * Revision 1.3  2004/02/26 21:27:43  gorelenk
  * Removed all older class implementations. Added implementations of classes:
  * CProjectDummyFilter, CProjectOneNodeFilter and CProjectsLstFileFilter.
