@@ -377,9 +377,31 @@ void CStreamUtils::Pushback(CNcbiIstream&       is,
 }
 
 
-static streamsize s_Readsome(CNcbiIstream& is,
-                             CT_CHAR_TYPE* buf,
-                             streamsize    buf_size)
+static inline streamsize s_Readsome(CNcbiIstream& is,
+                                    CT_CHAR_TYPE* buf,
+                                    streamsize    buf_size)
+{
+#ifdef NCBI_COMPILER_WORKSHOP
+    /* Rogue Wave does not always return correct value from is.readsome() :-/
+     * In particular, when streambuf::showmanyc() returns 1 followed by
+     * a failed read() [which implements extraction from the stream], which
+     * encounters the EOF, the readsome() will blindly return 1, and in
+     * general, always exactly the number of bytes showmanyc() reported,
+     * regardless of actually extracted by subsequent read operation.  Bug!
+     * NOTE that showmanyc() does not guarantee the number of bytes that can
+     * be read, but returns a best guess estimate [C++ Standard, footnote 275].
+     */
+    is.readsome(buf, buf_size);
+    return is.gcount();
+#else
+    return is.readsome(buf, buf_size);
+#endif
+}
+
+
+static streamsize s_DoReadsome(CNcbiIstream& is,
+                               CT_CHAR_TYPE* buf,
+                               streamsize    buf_size)
 {
     _ASSERT(buf  &&  buf_size);
 #ifdef NCBI_NO_READSOME
@@ -391,9 +413,9 @@ static streamsize s_Readsome(CNcbiIstream& is,
 #  endif /*NCBI_COMPILER_VERSION*/
 #elif defined(NCBI_COMPILER_MSVC)
     /* MSVC's readsome() is buggy [causes 1 byte reads] and is thus avoided.
-     * Now when we have worked around he issue by implementing fastopen()
+     * Now when we have worked around the issue by implementing fastopen()
      * in CNcbiFstreams and thus making them fully buffered, we can go back
-     * the use of readsome() in MSVC... */
+     * to the use of readsome() in MSVC... */
     //#  define NCBI_NO_READSOME 1
 #elif defined(NCBI_COMPILER_MIPSPRO)
     /* MIPSPro does not comply with the standard and always checks for EOF
@@ -421,17 +443,17 @@ static streamsize s_Readsome(CNcbiIstream& is,
     return count;
 #else
     // Try to read data
-    streamsize n = is.readsome(buf, buf_size);
+    streamsize n = s_Readsome(is, buf, buf_size);
     if (n != 0  ||  !is.good())
         return n;
-    // No data found in the buffer, try to read from the real source
+    // No buffered data found, try to read from the real source [still good]
     is.read(buf, 1);
     if ( !is.good() )
         return 0;
     if (buf_size == 1)
         return 1; // do not need more data
     // Read more data (up to "buf_size" bytes)
-    return is.readsome(buf + 1, buf_size - 1) + 1;
+    return s_Readsome(is, buf + 1, buf_size - 1) + 1;
 #endif /*NCBI_NO_READSOME*/
 }
 
@@ -446,7 +468,7 @@ streamsize CStreamUtils::Readsome(CNcbiIstream& is,
     if (sb)
         sb->MIPSPRO_ReadsomeBegin();
 #  endif /*NCBI_COMPILER_MIPSPRO*/
-    streamsize result = s_Readsome(is, buf, buf_size);
+    streamsize result = s_DoReadsome(is, buf, buf_size);
 #  ifdef NCBI_COMPILER_MIPSPRO
     if (sb)
         sb->MIPSPRO_ReadsomeEnd();
@@ -461,6 +483,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.36  2003/12/30 17:28:39  lavr
+ * Work around buggy implementation of istream::readsome() in Rogue Wave STL
+ *
  * Revision 1.35  2003/12/29 15:18:40  lavr
  * Modified CStreamUtils::Readsome() to avoid blocking on GCC2.95
  *
