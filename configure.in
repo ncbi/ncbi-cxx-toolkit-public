@@ -241,7 +241,7 @@ if test "$with_dll" = "yes" ; then
       LINKDLL="$CXX -shared -o"
       ;;
     WorkShop5 )
-      LINKDLL="$CXX -G -h \$@ -o"
+      LINKDLL="$CXX $WS64_CFLAGS -G -h \$@ -o"
       ;;
     * )
       if test -z "$LINKDLL" ; then
