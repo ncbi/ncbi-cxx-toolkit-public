@@ -34,10 +34,10 @@ case "$CC_version" in
  "CC: WorkShop Compilers 5"* )
     NCBI_COMPILER="WorkShop5"
     ;;
- "CC: Sun WorkShop 6 update 1 C\+\+ 5.2"* )
+ "CC: Sun WorkShop 6 update 1 C++ 5.2"* )
     NCBI_COMPILER="WorkShop52"
     ;;
- "CC: Sun WorkShop 6 update 2 C\+\+ 5.3"* )
+ "CC: Sun WorkShop 6 update 2 C++ 5.3"* )
     NCBI_COMPILER="WorkShop53"
     ;;
  "CC: Sun WorkShop 6"* )
