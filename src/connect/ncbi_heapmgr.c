@@ -110,6 +110,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/07/03 20:24:03  lavr
+ * Added function: HEAP_Copy()
+ *
  * Revision 6.10  2001/06/25 15:32:41  lavr
  * Typo fixed
  *
@@ -154,6 +157,7 @@ struct SHEAP_tag {
     TNCBI_Size    size;
     TNCBI_Size    chunk;
     FHEAP_Expand  expand;
+    int/*bool*/   copy;
 };
 
 
@@ -194,10 +198,11 @@ HEAP HEAP_Create(char* base, TNCBI_Size size,
     if (size < (TNCBI_Size) HEAP_ALIGN(sizeof(*b) + 1))
         CORE_LOGF(eLOG_Warning, ("Heap Create: Heap is too small (%u, %u)",
                                  (unsigned) size, (unsigned) sizeof(*b)));
-    heap->base = base;
-    heap->size = size;
-    heap->chunk = chunk;
+    heap->base   = base;
+    heap->size   = size;
+    heap->chunk  = chunk;
     heap->expand = expand;
+    heap->copy   = 0;
     b = (SHEAP_Block*) heap->base;
     b->flag = HEAP_FREE | HEAP_LAST;
     b->size = size;
@@ -228,9 +233,10 @@ HEAP HEAP_Attach(char* base)
         if (HEAP_ISLAST(b))
             break;
     }
-    heap->base = base;
-    heap->chunk = 0;
+    heap->base   = base;
+    heap->chunk  = 0;
     heap->expand = 0;
+    heap->copy   = 0;
     return heap;
 }
 
@@ -464,17 +470,40 @@ SHEAP_Block* HEAP_Walk(HEAP heap, const SHEAP_Block* p)
 }
 
 
+HEAP HEAP_Copy(HEAP heap)
+{
+    HEAP newheap;
+    char* buf;
+
+    if (!heap ||
+        !(buf = (char*) malloc(HEAP_ALIGN(heap->size) + sizeof(*newheap))))
+        return 0;
+    memcpy(buf, heap->base, heap->size);
+    newheap = (HEAP) (buf + HEAP_ALIGN(heap->size));
+    newheap->base   = buf;
+    newheap->size   = heap->size;
+    newheap->chunk  = 0;
+    newheap->expand = 0;
+    newheap->copy   = 1;
+    return newheap;
+}
+
+
 void HEAP_Detach(HEAP heap)
 {
-    if (heap)
-        free(heap);
+    if (heap) {
+        if (heap->copy)
+            free(heap->base);
+        else
+            free(heap);
+    }
 }
 
 
 void HEAP_Destroy(HEAP heap)
 {
     if (heap) {
-        if (!heap->chunk) {
+        if (!heap->chunk && !heap->copy) {
             CORE_LOG(eLOG_Warning, "Heap Destroy: Heap is read-only");
             return;
         }

@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/07/03 20:23:46  lavr
+ * Added function: HEAP_Copy()
+ *
  * Revision 6.8  2001/06/19 20:16:19  lavr
  * Added #include <connect/ncbi_types.h>
  *
@@ -128,12 +131,19 @@ SHEAP_Block* HEAP_Walk
  );
 
 
-/* Detach from the heap (previously attached to by HEAP_Attach).
+/* Make a snapshot of a given heap. Returne a read-only heap
+ * (like one after HEAP_Attach), which must be freed by a call to
+ * either HEAP_Detach or HEAP_Destroy when no longer needed.
+ */
+HEAP HEAP_Copy(HEAP orig);
+
+
+/* Detach heap (previously attached by HEAP_Attach).
  */
 void HEAP_Detach(HEAP heap);
 
 
-/* Destroy heap.
+/* Destroy heap (previously created by HEAP_Create).
  */
 void HEAP_Destroy(HEAP heap);
 
