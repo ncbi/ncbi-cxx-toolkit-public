@@ -47,7 +47,9 @@
 
 BEGIN_NCBI_SCOPE
 
-class CDiagCompileInfo;
+
+class CDiagCompileInfo;  // Forward declaration
+
 
 class CConn_Streambuf : public CConn_StreambufBase
 {
@@ -94,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2004/10/01 18:55:56  lavr
+ * Formatting
+ *
  * Revision 6.32  2004/09/22 13:32:17  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()

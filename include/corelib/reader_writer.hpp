@@ -120,10 +120,12 @@ public:
 END_NCBI_SCOPE
 
 
-
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/10/01 18:55:38  lavr
+ * Formatting
+ *
  * Revision 1.12  2004/05/17 15:48:24  lavr
  * Comments slightly rearranged
  *
