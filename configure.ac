@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.237 2003/11/25 16:04:15 ucko Exp $
+#  $Id: configure.ac,v 1.238 2003/11/25 18:20:45 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1767,6 +1767,24 @@ AC_CHECK_FUNCS(getloadavg)
 AC_C_CONST
 AC_TYPE_SIZE_T
 
+### Check for C standard types and sizes
+AC_C_BIGENDIAN
+AC_C_CHAR_UNSIGNED
+AC_CHECK_SIZEOF(void*)
+AC_CHECK_SIZEOF(char)
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(__int64)
+AC_CHECK_SIZEOF(float)
+AC_CHECK_SIZEOF(double)
+AC_CHECK_SIZEOF(long double)
+AC_CHECK_SIZEOF(size_t)
+NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
+AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $NCBI_PLATFORM_BITS,
+                   [Define to the architecture size.])
+
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
    [AC_DEFINE(HAVE_SIN_LEN, 1,
       [Define to 1 if `sin_len' is a member of `struct sockaddr_in'.])],
@@ -2880,7 +2898,7 @@ if test "$with_geo" != "no" ; then
    NCBI_GEO_PATH=${NCBI_GEO_PATH:="$NCBI/geo/BUILD"}
    NCBI_GEO_INCLUDE=${NCBI_GEO_INCLUDE:="$NCBI_GEO_PATH/include"}
    if test -z "$NCBI_GEO_LIBPATH" ; then
-      NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${compiler_pfx}${release_debug}${bit64_sfx}"
+      NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${release_debug}${bit64_sfx}"
    fi
    AC_MSG_CHECKING([for NCBI GEO directories in $NCBI_GEO_PATH])
    if test ! -d "${NCBI_GEO_LIBPATH}"  -o  ! -d "${NCBI_GEO_INCLUDE}" ; then
@@ -2900,21 +2918,20 @@ else
    NCBI_GEO_INCLUDE="-I${NCBI_GEO_INCLUDE}"
    LIBGEODB="-lgeodb"
 
-   AC_MSG_CHECKING(for the NCBI GEO DB library)
-   AC_DEFINE(HAVE_LIBGEODB, 1,
-             [Define to 1 if NCBI GEO DB library is available.])
+   # We have to be careful here, since GEO uses our libxncbi...
+   AC_CACHE_CHECK([for the NCBI GEO DB library], ncbi_cv_lib_geodb,
+     [CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE -I$srcdir/include $orig_CPPFLAGS"
+      LIBS="$NCBI_GEO_LIBPATH $LIBGEODB $NCBI_SSS_LIBPATH $LIBSSSDB $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM(
+         [[#define FORWARDING_NCBICONF_H
+           #include <geo_api.hpp>]],
+         [[GEO_API::Pattern* p; if (p->isValid()) p->bind(1, "x", true, "y"); ]])],
+         [ncbi_cv_lib_geodb=yes], [ncbi_cv_lib_geodb=no])])
 
-#     Cannot check it -- because GEO headers include C++ Toolkit headers!
-#
-#     CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
-#     LIBS="$NCBI_GEO_LIBPATH $LIBGEODB $NCBI_SSS_LIBPATH $LIBSSSDB $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
-#     AC_LINK_IFELSE([AC_LANG_PROGRAM(
-#        [[#include <geo_api.hpp>]],
-#        [[ (void) GEO_API::Submitter::contributors(); ]])],
-#        [AC_DEFINE(HAVE_LIBGEODB, 1)],
-#        [with_geo="no" ; LIBGEODB="" ]
-#     )
-   AC_MSG_RESULT([$with_geo])
+   if test "$ncbi_cv_lib_geodb" = yes; then
+      AC_DEFINE(HAVE_LIBGEODB, 1,
+                [Define to 1 if NCBI GEO DB library is available.])
+   fi
 fi
 
 if test "$with_geo" != "no" ; then
@@ -3475,29 +3492,6 @@ if test -n "$with_check"  -a  "$with_check" != "no" ; then
    fi
    WithFeatures="$WithFeatures check"
 fi
-
-
-
-### Check for C standard types and sizes
-### --------------------------------------------
-
-AC_C_BIGENDIAN
-AC_C_CHAR_UNSIGNED
-AC_CHECK_SIZEOF(void*)
-AC_CHECK_SIZEOF(char)
-AC_CHECK_SIZEOF(short)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-AC_CHECK_SIZEOF(long long)
-AC_CHECK_SIZEOF(__int64)
-AC_CHECK_SIZEOF(float)
-AC_CHECK_SIZEOF(double)
-AC_CHECK_SIZEOF(long double)
-AC_CHECK_SIZEOF(size_t)
-NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
-AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $NCBI_PLATFORM_BITS,
-                   [Define to the architecture size.])
-
 
 
 ### Cleanup
