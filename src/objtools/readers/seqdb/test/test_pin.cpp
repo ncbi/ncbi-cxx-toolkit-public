@@ -418,6 +418,194 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-dyn]";
         
+//         if (s == "-xlate3") {
+//             string dbname("prot_dbs");
+//             string acc("AAK53449");
+            
+//             if ((! args.empty()) && ((*args.begin())[0] != '-')) {
+//                 dbname = *args.begin();
+//                 args.pop_front();
+//             }
+            
+//             CSeqDB db(dbname, 'p');
+            
+//             vector<Uint4> oids;
+//             Uint4 oid(0), gi(0);
+            
+//             db.AccessionToOids(acc, oids);
+            
+//             if (! oids.empty()) {
+//                 db.OidToGi(oid = oids[0], gi);
+                
+//                 if (oids.size() > 1) {
+//                     cout << "Multiple oids were returned ..." << endl;
+//                 }
+//             }
+            
+//             cout << "Acc [" << acc << "] is oid " << oid << ", which is gi " << gi << endl;
+//         } else desc += " [-dyn]";
+        
+        if (s == "-xlate2") {
+            string dbname("prot_dbs");
+            
+            if ((! args.empty()) && ((*args.begin())[0] != '-')) {
+                dbname = *args.begin();
+                args.pop_front();
+            }
+            
+            CSeqDB db(dbname, 'p');
+            
+            cout << "Num oids: " << db.GetNumSeqs() << endl;
+            
+            Uint4 pig(2201), oid(0), gi(0), pg2(0), oid2(0), len(0);
+            bool b1, b2, b3, b4;
+            
+            b1  = db.PigToOid(pig, oid);
+            b2  = db.OidToPig(oid, pg2);
+            len = db.GetSeqLength(oid);
+            
+            b3  = db.OidToGi(oid, gi);
+            b4  = db.GiToOid(gi, oid2);
+            
+            cout << "PIG: " << pig
+                 << ", OID: " << oid
+                 << ", length " << len
+                 << ", pig2 = " << pg2
+                 << ", gi   = " << gi
+                 << ", oid2 = " << oid2
+                 << endl;
+            
+            cout << "Dumping deflines:" << endl;
+            {
+                auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText, cout));
+                *os << *db.GetHdr(oid);
+            }
+            cout << "Done dumping deflines:" << endl;
+            
+            assert(b1);
+            assert(b2);
+            assert(pig == pg2);
+            //assert(db.GetSeqLength(oid) == 87);
+            
+            assert(oid2 == oid);
+            
+            return 0;
+            
+            cout << "PIG translations worked, trying bulk mode:" << endl;
+            
+            //Uint4 numseqs(db.GetNumSeqs());
+            
+            Uint4 i = 0;
+            
+            for(i = 0; i<10000; i++) {
+                Uint4 OID = 0;
+                
+                if (db.PigToOid(i, OID)) {
+                    cout << "pig " << i << " is oid " << OID << endl;
+                } else {
+                    cout << "For pig " << i << ", translation failed." << endl;
+                }
+            }
+            
+//             Uint4 shout_at = 0;
+            
+//             for(; i<numseqs; i++) {
+//                 Uint4 pig = 0;
+                
+//                 if (i > shout_at) {
+//                     shout_at = ((i * 4) / 3);
+                    
+//                     cout << "Computed translation for " << i << " sequences." << endl;
+//                 }
+                
+//                 if (db.OidToPig(i, pig)) {
+//                     cout << "OID " << i << " is pig " << pig << endl;
+//                 } else {
+//                     cout << "For oid " << i << " translation failed." << endl;
+//                 }
+//             }
+            
+            cout << "Translations tested up to " << i << endl;
+            
+            return 0;
+
+        } else desc += " [-xlate2]";
+        
+        if (s == "-xlate") {
+            string dbname("nr pataa env_nr");
+            
+            if ((! args.empty()) && ((*args.begin())[0] != '-')) {
+                dbname = *args.begin();
+                args.pop_front();
+            }
+            
+            CSeqDB db(dbname, 'p');
+            
+            cout << "Num oids: " << db.GetNumSeqs() << endl;
+            
+            Uint4 pig = 2201, oid(0), pg2(0), len(0);
+            bool b1, b2;
+            
+            b1  = db.PigToOid(pig, oid);
+            b2  = db.OidToPig(oid, pg2);
+            len = db.GetSeqLength(oid);
+            
+            cout << "PIG: " << pig
+                 << ", OID: " << oid
+                 << ", length " << len
+                 << ", pig2 = " << pg2 << endl;
+            
+            cout << "Dumping deflines:" << endl;
+            {
+                auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText, cout));
+                *os << *db.GetHdr(oid);
+            }
+            cout << "Done dumping deflines:" << endl;
+            
+            assert(b1);
+            assert(b2);
+            assert(pig == pg2);
+            //assert(db.GetSeqLength(oid) == 87);
+            
+            cout << "PIG translations worked, trying bulk mode:" << endl;
+            
+            //Uint4 numseqs(db.GetNumSeqs());
+            
+            Uint4 i = 0;
+            
+            for(i = 0; i<10000; i++) {
+                Uint4 OID = 0;
+                
+                if (db.PigToOid(i, OID)) {
+                    cout << "pig " << i << " is oid " << OID << endl;
+                } else {
+                    cout << "For pig " << i << ", translation failed." << endl;
+                }
+            }
+            
+//             Uint4 shout_at = 0;
+            
+//             for(; i<numseqs; i++) {
+//                 Uint4 pig = 0;
+                
+//                 if (i > shout_at) {
+//                     shout_at = ((i * 4) / 3);
+                    
+//                     cout << "Computed translation for " << i << " sequences." << endl;
+//                 }
+                
+//                 if (db.OidToPig(i, pig)) {
+//                     cout << "OID " << i << " is pig " << pig << endl;
+//                 } else {
+//                     cout << "For oid " << i << " translation failed." << endl;
+//                 }
+//             }
+            
+            cout << "Translations tested up to " << i << endl;
+            
+            return 0;
+        } else desc += " [-xlate]";
+        
         if (s == "-atlas") {
             {
                 cerr << "Going to construct?" << endl;
@@ -1826,6 +2014,10 @@ int test2(void)
 
 int main(int argc, char ** argv)
 {
+    CSeq_id superosity("there be none as yet");
+    CSeq_id superosity2("gi|129295");
+    //CSeq_id superosity3("third|time|is|being|the|charm");  Okay, THIS one fails.
+    
     int rc = 0;
     
     try {
