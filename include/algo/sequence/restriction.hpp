@@ -68,10 +68,10 @@ public:
     vector<int>&       SetMinusCuts(void);
     const vector<int>& GetMinusCuts(void) const;
 private:
-    int m_start;
-    int m_end;
-    vector<int> m_plus_cuts;
-    vector<int> m_minus_cuts;
+    int m_Start;
+    int m_End;
+    vector<int> m_PlusCuts;
+    vector<int> m_MinusCuts;
 };
 
 
@@ -82,64 +82,64 @@ private:
 inline
 CRSite::CRSite(int start, int end)
 {
-    m_start = start;
-    m_end = end;
+    m_Start = start;
+    m_End = end;
 }
 
 
 inline
 vector<int>& CRSite::SetPlusCuts(void)
 {
-    return m_plus_cuts;
+    return m_PlusCuts;
 }
 
 
 inline
 const vector<int>& CRSite::GetPlusCuts(void) const
 {
-    return m_plus_cuts;
+    return m_PlusCuts;
 }
 
 
 inline
 vector<int>& CRSite::SetMinusCuts(void)
 {
-    return m_minus_cuts;
+    return m_MinusCuts;
 }
 
 
 inline
 const vector<int>& CRSite::GetMinusCuts(void) const
 {
-    return m_minus_cuts;
+    return m_MinusCuts;
 }
 
 
 inline
 void CRSite::SetStart(int pos)
 {
-    m_start = pos;
+    m_Start = pos;
 }
 
 
 inline
 int CRSite::GetStart(void) const
 {
-    return m_start;
+    return m_Start;
 }
 
 
 inline
 void CRSite::SetEnd(int pos)
 {
-    m_end = pos;
+    m_End = pos;
 }
 
 
 inline
 int CRSite::GetEnd(void) const
 {
-    return m_end;
+    return m_End;
 }
 
 
@@ -171,17 +171,17 @@ public:
 
     // compare
     bool operator==(const CRSpec& rhs) const {
-        return m_seq == rhs.m_seq 
-            && m_plus_cuts == rhs.m_plus_cuts
-            && m_minus_cuts == rhs.m_minus_cuts;
+        return m_Seq == rhs.m_Seq 
+            && m_PlusCuts == rhs.m_PlusCuts
+            && m_MinusCuts == rhs.m_MinusCuts;
     }
 
     // reset everything
     void Reset(void);
 private:
-    string m_seq;
-    vector<int> m_plus_cuts;
-    vector<int> m_minus_cuts;
+    string m_Seq;
+    vector<int> m_PlusCuts;
+    vector<int> m_MinusCuts;
 };
 
 
@@ -193,49 +193,49 @@ private:
 inline
 void CRSpec::SetSeq(const string& s)
 {
-    m_seq = s;
+    m_Seq = s;
 }
 
 
 inline
 string& CRSpec::SetSeq(void)
 {
-    return m_seq;
+    return m_Seq;
 }
 
 
 inline
 const string& CRSpec::GetSeq(void) const
 {
-    return m_seq;
+    return m_Seq;
 }
 
 
 inline
 vector<int>& CRSpec::SetPlusCuts(void)
 {
-    return m_plus_cuts;
+    return m_PlusCuts;
 }
 
 
 inline
 const vector<int>& CRSpec::GetPlusCuts(void) const
 {
-    return m_plus_cuts;
+    return m_PlusCuts;
 }
 
 
 inline
 vector<int>& CRSpec::SetMinusCuts(void)
 {
-    return m_minus_cuts;
+    return m_MinusCuts;
 }
 
 
 inline
 const vector<int>& CRSpec::GetMinusCuts(void) const
 {
-    return m_minus_cuts;
+    return m_MinusCuts;
 }
 
 
@@ -260,8 +260,8 @@ public:
     // reset everything
     void Reset(void);
 private:
-    string m_name;
-    vector<CRSpec> m_specs;
+    string m_Name;
+    vector<CRSpec> m_Specs;
 };
 
 
@@ -272,35 +272,35 @@ private:
 inline
 void CREnzyme::SetName(const string& s)
 {
-    m_name = s;
+    m_Name = s;
 }
 
 
 inline
 string& CREnzyme::SetName(void)
 {
-    return m_name;
+    return m_Name;
 }
 
 
 inline
 const string& CREnzyme::GetName(void) const
 {
-    return m_name;
+    return m_Name;
 }
 
 
 inline
 vector<CRSpec>& CREnzyme::SetSpecs(void)
 {
-    return m_specs;
+    return m_Specs;
 }
 
 
 inline
 const vector<CRSpec>& CREnzyme::GetSpecs(void) const
 {
-    return m_specs;
+    return m_Specs;
 }
 
 
@@ -314,18 +314,27 @@ const vector<CRSpec>& CREnzyme::GetSpecs(void) const
 class CREnzResult : public CObject
 {
 public:
+    CREnzResult(const string& enzyme_name) : m_EnzymeName(enzyme_name) {}
     CREnzResult(const string& enzyme_name,
                 const vector<CRSite>& definite_sites,
                 const vector<CRSite>& possible_sites);
     // member access functions
-    const string& GetEnzymeName(void) const {return m_enzyme_name;}
-    const vector<CRSite>& GetDefiniteSites(void) const {return m_definite_sites;}
-    const vector<CRSite>& GetPossibleSites(void) const {return m_possible_sites;}
+    const string& GetEnzymeName(void) const {return m_EnzymeName;}
+    vector<CRSite>& SetDefiniteSites(void) {return m_DefiniteSites;}
+    const vector<CRSite>& GetDefiniteSites(void) const
+    {
+        return m_DefiniteSites;
+    }
+    vector<CRSite>& SetPossibleSites(void) {return m_PossibleSites;}
+    const vector<CRSite>& GetPossibleSites(void) const
+    {
+        return m_PossibleSites;
+    }
 
 private:
-    string m_enzyme_name;
-    vector<CRSite> m_definite_sites;
-    vector<CRSite> m_possible_sites;
+    string m_EnzymeName;
+    vector<CRSite> m_DefiniteSites;
+    vector<CRSite> m_PossibleSites;
 };
 
 
@@ -338,9 +347,9 @@ CREnzResult::CREnzResult(const string& enzyme_name,
                          const vector<CRSite>& definite_sites,
                          const vector<CRSite>& possible_sites)
 {
-    m_enzyme_name = enzyme_name;
-    m_definite_sites = definite_sites;
-    m_possible_sites = possible_sites;
+    m_EnzymeName = enzyme_name;
+    m_DefiniteSites = definite_sites;
+    m_PossibleSites = possible_sites;
 }
 
 
@@ -540,6 +549,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/08/17 19:25:30  jcherry
+ * Changed member variable names to follow convention
+ *
  * Revision 1.6  2003/08/15 16:57:17  jcherry
  * For consecutive enzymes with identical specificities, reuse
  * search results.  This saves a bunch of time.

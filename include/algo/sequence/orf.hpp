@@ -44,12 +44,12 @@ class COrf
 {
 public:
     COrf(TSeqPos from, TSeqPos to, ENa_strand strand) :
-        m_from(from), m_to(to), m_strand(strand) {}
+        m_From(from), m_To(to), m_Strand(strand) {}
 
     /// Member access functions.
-    TSeqPos GetFrom(void) const {return m_from;}
-    TSeqPos GetTo(void) const {return m_to;}
-    ENa_strand GetStrand(void) const {return m_strand;}
+    TSeqPos GetFrom(void) const {return m_From;}
+    TSeqPos GetTo(void) const {return m_To;}
+    ENa_strand GetStrand(void) const {return m_Strand;}
 
     /// Find all ORFs in both orientations that
     /// are at least min_length_bp long.
@@ -158,9 +158,9 @@ public:
         }
     }
 private:
-    TSeqPos m_from;
-    TSeqPos m_to;
-    ENa_strand m_strand;
+    TSeqPos m_From;
+    TSeqPos m_To;
+    ENa_strand m_Strand;
 };
 
 
@@ -171,6 +171,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/17 19:25:30  jcherry
+ * Changed member variable names to follow convention
+ *
  * Revision 1.3  2003/08/15 12:17:38  dicuccio
  * COmpilation fixes for MSVC
  *

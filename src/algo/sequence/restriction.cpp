@@ -37,16 +37,16 @@ BEGIN_NCBI_SCOPE
 
 void CREnzyme::Reset(void)
 {
-    m_name.erase();
-    m_specs.clear();
+    m_Name.erase();
+    m_Specs.clear();
 }
 
 
 void CRSpec::Reset(void)
 {
-    m_seq.erase();
-    m_plus_cuts.clear();
-    m_minus_cuts.clear();
+    m_Seq.erase();
+    m_PlusCuts.clear();
+    m_MinusCuts.clear();
 }
 
 END_NCBI_SCOPE
@@ -55,6 +55,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/17 19:25:30  jcherry
+ * Changed member variable names to follow convention
+ *
  * Revision 1.1  2003/08/12 18:52:58  jcherry
  * Initial version
  *
