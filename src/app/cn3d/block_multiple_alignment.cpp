@@ -1103,7 +1103,7 @@ bool BlockMultipleAlignment::OptimizeBlock(int row, int alignmentIndex, eUnalign
     // scan all possible block positions, find max information content
     range = block->GetRangeOfRow(row);
     int bestSeqIndexStart = range->from;
-    float score, maxScore;
+    float score, maxScore = kMin_Float;
     for (int seqIndexStart = range->from - maxShiftRight; seqIndexStart <= range->from + maxShiftLeft; ++seqIndexStart) {
 
         // calculate block's info content given each position of this row
@@ -1966,6 +1966,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2005/03/07 11:47:00  thiessen
+* fix workshop warnings
+*
 * Revision 1.65  2005/01/28 21:31:02  thiessen
 * don't add block if validation fails
 *

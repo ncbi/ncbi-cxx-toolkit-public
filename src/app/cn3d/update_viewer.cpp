@@ -986,7 +986,7 @@ static BlockMultipleAlignment * GetAlignmentByBestNeighbor(
         new BlockMultipleAlignment(seqs, importSeq->parentSet->alignmentManager);
 
     // create maximally sized blocks
-    int masterStart, importStart, importLoc, slaveLoc, masterLoc, len;
+    int masterStart=-1, importStart, importLoc, slaveLoc, masterLoc, len=0;
     for (importStart=-1, importLoc=0; importLoc<=importSeq->Length(); ++importLoc) {
 
         // map import -> slave -> master
@@ -1165,6 +1165,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2005/03/07 11:47:00  thiessen
+* fix workshop warnings
+*
 * Revision 1.77  2004/10/04 17:48:56  thiessen
 * fix bug after trying to fetch w/ invalid seq id
 *
