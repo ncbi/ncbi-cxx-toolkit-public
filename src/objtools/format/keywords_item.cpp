@@ -39,7 +39,7 @@
 #include <objects/seqblock/EMBL_block.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objmgr/seqdesc_ci.hpp>
-
+#include <util/static_set.hpp>
 #include <algorithm>
 
 #include <objtools/format/formatter.hpp>
@@ -67,22 +67,74 @@ void CKeywordsItem::Format
 }
 
 
-const list<string>& CKeywordsItem::GetKeywords(void) const 
-{ 
-    return m_Keywords; 
-}
-
-
 /***************************************************************************/
 /*                                  PRIVATE                                */
 /***************************************************************************/
 
 
 enum ETechFlags {
-    eEST = 1<<0,
-    eSTS = 1<<1,
-    eGSS = 1<<2
+    e_not_set,
+    eEST,
+    eSTS,
+    eGSS
 };
+
+
+// EST keywords
+static const string sc_EST[] = {
+  "EST", "EST (expressed sequence tag)", "EST PROTO((expressed sequence tag)",
+  "EST(expressed sequence tag)", "TSR", "UK putts", "expressed sequence tag",
+  "partial cDNA sequence", "putatively transcribed partial sequence",
+  "transcribed sequence fragment"
+};
+static const CStaticArraySet<string> sc_EST_kw(sc_EST, sizeof(sc_EST));
+
+
+// GSS keywords
+static const string sc_GSS[] = {
+  "GSS", "trapped exon"
+};
+static const CStaticArraySet<string> sc_GSS_kw(sc_GSS, sizeof(sc_GSS));
+
+// STS keywords
+static const string sc_STS[] = {
+  "STS", "STS (sequence tagged site)", "STS sequence", 
+  "STS(sequence tagged site)", "sequence tagged site"
+};
+static const CStaticArraySet<string> sc_STS_kw(sc_STS, sizeof(sc_STS));
+
+
+static bool s_CheckSpecialKeyword(const string& keyword, ETechFlags tech)
+{
+    if (tech == eEST) {
+        if (sc_STS_kw.find(keyword) != sc_EST_kw.end()) {
+            return false;
+        }
+        if (sc_GSS_kw.find(keyword) != sc_GSS_kw.end()) {
+            return false;
+        }
+    }
+    
+    if (tech == eSTS) {
+        if (sc_EST_kw.find(keyword) != sc_EST_kw.end()) {
+            return false;
+        }
+        if (sc_GSS_kw.find(keyword) != sc_GSS_kw.end()) {
+            return false;
+        }
+    }
+    
+    if (tech == eGSS) {
+        if (sc_EST_kw.find(keyword) != sc_EST_kw.end()) {
+            return false;
+        }
+        if (sc_STS_kw.find(keyword) != sc_GSS_kw.end()) {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 
 void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
@@ -94,20 +146,20 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     }
     
     // add keywords based on mol-info
-    Uint4 flags = 0;
+    ETechFlags tech = e_not_set;
     switch ( ctx.GetTech() ) {
     case CMolInfo::eTech_est:
-        flags |= eEST;
+        tech = eEST;
         x_AddKeyword("EST");
         break;
         
     case CMolInfo::eTech_sts:
-        flags |= eSTS;
+        tech = eSTS;
         x_AddKeyword("STS");
         break;
         
     case CMolInfo::eTech_survey:
-        flags |= eGSS;
+        tech = eGSS;
         x_AddKeyword("GSS");
         break;
         
@@ -151,47 +203,41 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     }
     
     for (CSeqdesc_CI it(ctx.GetHandle());  it;  ++it) {
-        const list<string>* keywords = 0;
+        const list<string>* keywords = NULL;
         
         switch (it->Which()) {
             
         case CSeqdesc::e_Pir:
-            if ( it->GetPir().CanGetKeywords() ) {
-                keywords = &(it->GetPir().GetKeywords());
-            }
+            keywords = &(it->GetPir().GetKeywords());
             break;
             
         case CSeqdesc::e_Genbank:
-            if (it->GetGenbank().CanGetKeywords()) {
-                keywords = &(it->GetGenbank().GetKeywords());
-            }
+            keywords = &(it->GetGenbank().GetKeywords());
             break;
             
         case CSeqdesc::e_Sp:
-            if (it->GetSp().CanGetKeywords()) {
-                keywords = &(it->GetSp().GetKeywords());
-            }
+            keywords = &(it->GetSp().GetKeywords());
             break;
             
         case CSeqdesc::e_Embl:
-            if (it->GetEmbl().CanGetKeywords()) {
-                keywords = &(it->GetEmbl().GetKeywords());
-            }
+            keywords = &(it->GetEmbl().GetKeywords());
             break;
             
         case CSeqdesc::e_Prf:
-            if (it->GetPrf().CanGetKeywords()) {
-                keywords = &(it->GetPrf().GetKeywords());
-            }
+            keywords = &(it->GetPrf().GetKeywords());
             break;
             
         default:
+            keywords = NULL;
             break;
         }
         
-        if ( keywords ) {
-            ITERATE ( list<string>, kwd, *keywords ) {
-                if ( x_CheckSpecialKeyword(*kwd, flags) ) {
+        if (keywords != NULL) {
+            if (!IsSetObject()) {
+                x_SetObject(*it);
+            }
+            ITERATE (list<string>, kwd, *keywords) {
+                if (s_CheckSpecialKeyword(*kwd, tech)) {
                     x_AddKeyword(*kwd);
                 }
             }
@@ -201,71 +247,16 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
 
 
 // Add a keyword to the list 
-void CKeywordsItem::x_AddKeyword(const string& keyword, Uint4 flags)
+void CKeywordsItem::x_AddKeyword(const string& keyword)
 {
-    if (find(m_Keywords.begin(), m_Keywords.end(), keyword) == m_Keywords.end()) {
-        m_Keywords.push_back(keyword);
+    ITERATE (TKeywords, it, m_Keywords) {
+        if (NStr::EqualNocase(keyword, *it)) {
+            return;
+        }
     }
+    m_Keywords.push_back(keyword);
 }
 
-
-// EST keywords
-static const string s_EST_kw[] = {
-  "EST", "EST PROTO((expressed sequence tag)", "expressed sequence tag",
-  "EST (expressed sequence tag)", "EST(expressed sequence tag)",
-  "partial cDNA sequence", "transcribed sequence fragment", "TSR",
-  "putatively transcribed partial sequence", "UK putts"
-};
-static const string* s_EST_kw_end = s_EST_kw + 
-    sizeof(s_EST_kw) / sizeof(string);
-
-// GSS keywords
-static const string s_GSS_kw[] = {
-  "GSS", "trapped exon"
-};
-static const string* s_GSS_kw_end = s_GSS_kw + 
-    sizeof(s_GSS_kw) / sizeof(string);
-
-// STS keywords
-static const string s_STS_kw[] = {
-  "STS", "STS(sequence tagged site)", "STS (sequence tagged site)",
-  "STS sequence", "sequence tagged site"
-};
-static const string* s_STS_kw_end = s_STS_kw + 
-    sizeof(s_STS_kw) / sizeof(string);
-
-
-bool CKeywordsItem::x_CheckSpecialKeyword(const string& keyword, Uint4 flags) const
-{
-    if ( flags & eEST ) {
-        if ( find(s_STS_kw, s_STS_kw_end, keyword) != s_STS_kw_end ) {
-            return false;
-        }
-        if ( find(s_GSS_kw, s_GSS_kw_end, keyword) != s_GSS_kw_end ) {
-            return false;
-        }
-    }
-    
-    if ( flags & eSTS ) {
-        if ( find(s_EST_kw, s_EST_kw_end, keyword) != s_EST_kw_end ) {
-            return false;
-        }
-        if ( find(s_GSS_kw, s_GSS_kw_end, keyword) != s_GSS_kw_end ) {
-            return false;
-        }
-    }
-    
-    if ( flags & eGSS ) {
-        if ( find(s_EST_kw, s_EST_kw_end, keyword) != s_EST_kw_end ) {
-            return false;
-        }
-        if ( find(s_STS_kw, s_STS_kw_end, keyword) != s_STS_kw_end ) {
-            return false;
-        }
-    }
-    
-    return true;
-}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -275,6 +266,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/10/05 15:53:14  shomrat
+* Add only unique keywords (case insensitive test)
+*
 * Revision 1.7  2004/09/01 19:58:02  shomrat
 * Add BARCODE
 *
