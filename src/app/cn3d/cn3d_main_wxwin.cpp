@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2001/10/11 14:18:57  thiessen
+* make MultiTextDialog non-modal
+*
 * Revision 1.92  2001/10/09 18:57:05  thiessen
 * add CDD references editing dialog
 *
@@ -393,7 +396,6 @@
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/show_hide_dialog.hpp"
 #include "cn3d/cn3d_tools.hpp"
-#include "cn3d/multitext_dialog.hpp"
 #include "cn3d/cdd_annot_dialog.hpp"
 #include "cn3d/preferences_dialog.hpp"
 #include "cn3d/cdd_ref_dialog.hpp"
@@ -616,10 +618,7 @@ Cn3DApp::Cn3DApp() : wxApp()
     SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
 
 #ifdef TEST_WXGLAPP
-    if (InitGLVisual(NULL))
-        TESTMSG("InitGLVisual succeeded");
-    else
-        ERR_POST(Fatal << "InitGLVisual failed");
+    if (!InitGLVisual(NULL)) ERR_POST(Fatal << "InitGLVisual failed");
 #else
     // try to force all windows to use best (TrueColor) visuals
     SetUseBestVisual(true);
@@ -684,7 +683,8 @@ void Cn3DApp::InitRegistry(void)
 
 bool Cn3DApp::OnInit(void)
 {
-    TESTMSG("Welcome to Cn3D++! (built " << __DATE__ << ')');
+    TESTMSG("Welcome to Cn3D++! (built " << __DATE__
+        << " with wxWindows " << wxVERSION_NUM_DOT_STRING << ')');
 
     // set up working directories
     workingDir = userDir = wxGetCwd().c_str();
@@ -809,7 +809,8 @@ static void SetupFavoritesMenu(wxMenu *favoritesMenu)
 
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
-    glCanvas(NULL), structureLimit(UNLIMITED_STRUCTURES), cddAnnotateDialog(NULL)
+    glCanvas(NULL), structureLimit(UNLIMITED_STRUCTURES),
+    cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL)
 {
     topWindow = this;
     GlobalMessenger()->AddStructureWindow(this);
@@ -1196,15 +1197,23 @@ void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
 
 void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 {
-    if (cddAnnotateDialog) {
-        cddAnnotateDialog->Destroy();
-        cddAnnotateDialog = NULL;
-    }
     GlobalMessenger()->RemoveStructureWindow(this); // don't bother with any redraws since we're exiting
     GlobalMessenger()->SequenceWindowsSave();       // save any edited alignment and updates first
     SaveDialog(false);                              // give structure window a chance to save data
     SaveFavorites();
+
+    if (cddAnnotateDialog) cddAnnotateDialog->Destroy();
+    if (cddDescriptionDialog) cddDescriptionDialog->Destroy();
+    if (cddNotesDialog) cddNotesDialog->Destroy();
     Destroy();
+}
+
+void Cn3DMainFrame::DialogTextChanged(const MultiTextDialog *changed)
+{
+    if (!changed || !glCanvas->structureSet) return;
+
+    if (changed == cddNotesDialog || changed == cddDescriptionDialog)
+        glCanvas->structureSet->CDDDataChanged();
 }
 
 void Cn3DMainFrame::OnPreferences(wxCommandEvent& event)
@@ -1246,28 +1255,24 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
                 ERR_POST(Error << "Error saving CDD name");
             break;
         }
-        case MID_EDIT_CDD_DESCR: {
-            wxString newDescription = wxGetTextFromUser("Enter or edit the CDD description text:",
-                "CDD Description", glCanvas->structureSet->GetCDDDescription().c_str(),
-                this, -1, -1, false);
-            if (newDescription.size() > 0 &&
-                !glCanvas->structureSet->SetCDDDescription(newDescription.c_str()))
-                ERR_POST(Error << "Error saving CDD description");
-            break;
-        }
-        case MID_EDIT_CDD_NOTES: {
-            StructureSet::TextLines lines;
-            if (!glCanvas->structureSet->GetCDDNotes(&lines)) break;
-            MultiTextDialog dialog(lines,
-                this, -1, "CDD Notes", wxDefaultPosition, wxSize(500, 400));
-            int retval = dialog.ShowModal();
-            if (retval == wxOK) {
-                dialog.GetLines(&lines);
-                if (!glCanvas->structureSet->SetCDDNotes(lines))
-                    ERR_POST(Error << "Error saving CDD notes");
+        case MID_EDIT_CDD_DESCR:
+            if (!cddDescriptionDialog) {
+                StructureSet::TextLines line(1);
+                line[0] = glCanvas->structureSet->GetCDDDescription().c_str();
+                cddDescriptionDialog = new MultiTextDialog(this, line,
+                    this, -1, "CDD Description", wxDefaultPosition, wxSize(400, 200));
             }
+            cddDescriptionDialog->Show(true);
             break;
-        }
+        case MID_EDIT_CDD_NOTES:
+            if (!cddNotesDialog) {
+                StructureSet::TextLines lines;
+                if (!glCanvas->structureSet->GetCDDNotes(&lines)) break;
+                cddNotesDialog = new MultiTextDialog(this, lines,
+                    this, -1, "CDD Notes", wxDefaultPosition, wxSize(500, 400));
+            }
+            cddNotesDialog->Show(true);
+            break;
         case MID_EDIT_CDD_REFERENCES: {
             CDDRefDialog dialog(glCanvas->structureSet, this, -1, "CDD References");
             dialog.ShowModal();
@@ -1516,6 +1521,20 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 
     // force a save of any edits to alignment and updates first
     GlobalMessenger()->SequenceWindowsSave();
+
+    // save stuff from cdd annotation dialogs
+    if (cddNotesDialog) {
+        StructureSet::TextLines lines;
+        cddNotesDialog->GetLines(&lines);
+        if (!glCanvas->structureSet->SetCDDNotes(lines))
+            ERR_POST(Error << "Error saving CDD notes");
+    }
+    if (cddDescriptionDialog) {
+        string line;
+        cddDescriptionDialog->GetLine(&line);
+        if (!glCanvas->structureSet->SetCDDDescription(line))
+            ERR_POST(Error << "Error saving CDD description");
+    }
 
     wxString outputFilename = wxFileSelector(
         "Choose a filename for output", userDir.c_str(), "",

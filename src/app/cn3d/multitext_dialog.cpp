@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/10/11 14:18:57  thiessen
+* make MultiTextDialog non-modal
+*
 * Revision 1.2  2001/08/06 20:22:00  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -52,59 +55,70 @@ BEGIN_SCOPE(Cn3D)
 BEGIN_EVENT_TABLE(MultiTextDialog, wxDialog)
     EVT_CLOSE       (       MultiTextDialog::OnCloseWindow)
     EVT_BUTTON      (-1,    MultiTextDialog::OnButton)
+    EVT_TEXT        (-1,    MultiTextDialog::OnTextChange)
 END_EVENT_TABLE()
 
-MultiTextDialog::MultiTextDialog(const TextLines& initialText,
-    wxWindow* parent, wxWindowID id, const wxString& title,
-    const wxPoint& pos, const wxSize& size) :
-    wxDialog(parent, id, title, pos, size, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner, const TextLines& initialText,
+        wxWindow* parent, wxWindowID id, const wxString& title,
+        const wxPoint& pos, const wxSize& size) :
+    wxDialog(parent, id, title, pos, size, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
+    myOwner(owner)
 {
     textCtrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxHSCROLL);
-    bOK = new wxButton(this, -1, "OK");
-    bCancel = new wxButton(this, -1, "Cancel");
+    bDone = new wxButton(this, -1, "Done");
 
     wxLayoutConstraints *c = new wxLayoutConstraints;
     c->bottom.SameAs    (this, wxBottom, 10);
-    c->right.SameAs     (this, wxCentreX, 10);
+    c->centreX.SameAs   (this, wxCentreX, 10);
     c->width.AsIs       ();
     c->height.AsIs      ();
-    bOK->SetConstraints(c);
-
-    c = new wxLayoutConstraints;
-    c->bottom.SameAs    (this, wxBottom, 10);
-    c->left.SameAs      (this, wxCentreX, 10);
-    c->width.AsIs       ();
-    c->height.AsIs      ();
-    bCancel->SetConstraints(c);
+    bDone->SetConstraints(c);
 
     c = new wxLayoutConstraints;
     c->top.SameAs       (this, wxTop);
     c->left.SameAs      (this, wxLeft);
     c->right.SameAs     (this, wxRight);
-    c->bottom.SameAs    (bOK, wxTop, 10);
+    c->bottom.SameAs    (bDone, wxTop, 10);
     textCtrl->SetConstraints(c);
 
     SetSizeHints(200, 150);
     SetAutoLayout(true);
     Layout();
 
-    // set initial text
-    for (int i=0; i<initialText.size(); i++)
-        *textCtrl << initialText[i].c_str() << '\n';
+    // set initial text - if single line, break up into smaller lines, otherwise leave as-is
+    if (initialText.size() == 1) {
+        int i, j;
+        for (i=j=0; i<initialText[0].size(); i++, j++) {
+            if (j > 60 && initialText[0][i] == ' ') {
+                *textCtrl << '\n';
+                j = 0;
+            } else
+                *textCtrl << initialText[0][i];
+        }
+    } else {
+        for (int i=0; i<initialText.size(); i++)
+            *textCtrl << initialText[i].c_str() << '\n';
+    }
 }
 
-// same as hitting cancel
 void MultiTextDialog::OnCloseWindow(wxCloseEvent& event)
 {
-    EndModal(wxCANCEL);
+    if (event.CanVeto()) {
+        event.Veto();
+        Show(false);
+    } else {
+        Destroy();
+    }
 }
 
 void MultiTextDialog::OnButton(wxCommandEvent& event)
 {
-    if (event.GetEventObject() == bOK)
-        EndModal(wxOK);
-    else if (event.GetEventObject() == bCancel)
-        EndModal(wxCANCEL);
+    if (event.GetEventObject() == bDone) Show(false);
+}
+
+void MultiTextDialog::OnTextChange(wxCommandEvent& event)
+{
+    if (myOwner) myOwner->DialogTextChanged(this);
 }
 
 bool MultiTextDialog::GetLines(TextLines *lines) const
@@ -115,6 +129,19 @@ bool MultiTextDialog::GetLines(TextLines *lines) const
         // don't append empty last line
         if (i < textCtrl->GetNumberOfLines() - 1 || textCtrl->GetLineText(i).size() > 0)
             lines->push_back(textCtrl->GetLineText(i).c_str());
+    return true;
+}
+
+bool MultiTextDialog::GetLine(std::string *singleString) const
+{
+    singleString->erase();
+    for (int i=0; i<textCtrl->GetNumberOfLines(); i++) {
+        // don't append empty last line
+        if (i < textCtrl->GetNumberOfLines() - 1 || textCtrl->GetLineText(i).size() > 0) {
+            if (i > 0) singleString->append(1, ' ');
+            singleString->append(textCtrl->GetLineText(i).Strip(wxString::both).c_str());
+        }
+    }
     return true;
 }
 

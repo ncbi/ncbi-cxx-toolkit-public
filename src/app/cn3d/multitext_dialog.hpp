@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/10/11 14:18:20  thiessen
+* make MultiTextDialog non-modal
+*
 * Revision 1.2  2001/08/06 20:22:48  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -58,25 +61,44 @@
 
 BEGIN_SCOPE(Cn3D)
 
+class MultiTextDialog;
+
+// so the owner can receive notification that dialog text has changed
+
+class MultiTextDialogOwner
+{
+public:
+    virtual void DialogTextChanged(const MultiTextDialog *changed) = 0;
+};
+
+
+// this is intended to be used as a non-modal dialog; it hides itself when the window
+// is closed or "Done" button is pressed, but still resides in memory so information
+// can be retrieved from it later (until the dialog is actually destroyed, of course)
+
 class MultiTextDialog : public wxDialog
 {
 public:
     typedef std::vector < std::string > TextLines;
 
-    MultiTextDialog(const TextLines& initialText,
+    MultiTextDialog(MultiTextDialogOwner *owner, const TextLines& initialText,
         wxWindow* parent, wxWindowID id, const wxString& title,
         const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize);
 
     bool GetLines(TextLines *lines) const;
+    bool GetLine(std::string *singleString) const;  // collapse all lines to single string
 
 private:
+    MultiTextDialogOwner *myOwner;
+
     // GUI elements
     wxTextCtrl *textCtrl;
-    wxButton *bOK, *bCancel;
+    wxButton *bDone;
 
     // event callbacks
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
+    void OnTextChange(wxCommandEvent& event);
 
     DECLARE_EVENT_TABLE()
 };

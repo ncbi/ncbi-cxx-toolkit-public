@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2001/10/11 14:18:20  thiessen
+* make MultiTextDialog non-modal
+*
 * Revision 1.46  2001/10/09 18:57:27  thiessen
 * add CDD references editing dialog
 *
@@ -223,6 +226,8 @@
 #undef TEST_WXGLAPP
 #endif
 
+#include "cn3d/multitext_dialog.hpp"
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -260,10 +265,11 @@ private:
 };
 
 
-class CDDAnnotateDialog;
 class Cn3DGLCanvas;
+class CDDAnnotateDialog;
+class MultiTextDialog;
 
-class Cn3DMainFrame: public wxFrame
+class Cn3DMainFrame: public wxFrame, public MultiTextDialogOwner
 {
 public:
     Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
@@ -275,6 +281,7 @@ public:
     // public methods
     void LoadFile(const char *filename);
     bool SaveDialog(bool canCancel);
+    void DialogTextChanged(const MultiTextDialog *changed);
 
     enum {
         // File menu
@@ -359,8 +366,9 @@ public:
 
 private:
 
-    // CDDAnnotateDialog is owned by this object
+    // non-modal dialogs owned by this object
     CDDAnnotateDialog *cddAnnotateDialog;
+    MultiTextDialog *cddDescriptionDialog, *cddNotesDialog;
 
     void OnExit(wxCommandEvent& event);
     void OnCloseWindow(wxCloseEvent& event);
