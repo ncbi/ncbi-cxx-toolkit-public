@@ -161,7 +161,7 @@ void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet,
 	    return;
 	}
 
-	Peaks = new CMSPeak(MSHITSIZE);
+	Peaks = new CMSPeak(MyRequest.GetHitlistlen());
 	Peaks->Read(*Spectrum, MyRequest.GetMsmstol());
 	if(Spectrum->CanGetName()) Peaks->SetName() = Spectrum->GetName();
 	if(Spectrum->CanGetNumber())
@@ -723,6 +723,9 @@ CSearch::~CSearch()
 
 /*
   $Log$
+  Revision 1.5  2003/11/10 22:24:12  lewisg
+  allow hitlist size to vary
+
   Revision 1.4  2003/10/24 21:28:41  lewisg
   add omssa, xomssa, omssacl to win32 build, including dll
 

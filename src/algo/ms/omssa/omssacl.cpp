@@ -110,6 +110,9 @@ void COMSSA::Init()
     argDesc->AddDefaultKey("w2", "window2", 
 			   "double charge window",
 			   CArgDescriptions::eInteger, "14");
+    argDesc->AddDefaultKey("hl", "hitlist", 
+			   "number of hits kept for spectrum",
+			   CArgDescriptions::eInteger, "25");
 
     SetupArgDescriptions(argDesc.release());
 
@@ -174,6 +177,7 @@ int COMSSA::Run()
     Request.SetVariable().push_back(eMSMod_moxy);
     Request.SetDb(args["d"].AsString());
     Request.SetCull(args["c"].AsInteger());
+    Request.SetHitlistlen(args["hl"].AsInteger());
     if(args["x"].AsInteger() != 0) 
 	Request.SetTaxids().push_back(args["x"].AsInteger());
 
@@ -240,6 +244,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.4  2003/11/10 22:24:12  lewisg
+  allow hitlist size to vary
+
   Revision 1.3  2003/10/27 20:10:55  lewisg
   demo program to read out omssa results
 
