@@ -52,7 +52,7 @@ public:
     CRStream(IReader*       r,
              streamsize     buf_size = CRWStreambuf::kDefaultBufferSize,
              CT_CHAR_TYPE*  buf = 0) :
-        m_Sb(r, 0, buf_size, buf)
+        CNcbiIstream(0), m_Sb(r, 0, buf_size, buf)
     {
         init(&m_Sb);
     }
@@ -64,13 +64,13 @@ private:
 
 /// Writer-based stream
 
-class CRStream : public CNcbiOstream
+class CWStream : public CNcbiOstream
 {
 public:
-    CRStream(IWriter*       w,
+    CWStream(IWriter*       w,
              streamsize     buf_size = CRWStreambuf::kDefaultBufferSize,
              CT_CHAR_TYPE*  buf = 0) :
-        m_Sb(0, w, buf_size, buf)
+        CNcbiOstream(0), m_Sb(0, w, buf_size, buf)
     {
         init(&m_Sb);
     }
@@ -85,10 +85,10 @@ private:
 class CRWStream : public CNcbiIostream
 {
 public:
-    CRStream(IReaderWriter* rw,
-             streamsize     buf_size = CRWStreambuf::kDefaultBufferSize,
-             CT_CHAR_TYPE*  buf = 0) :
-        m_Sb(rw, buf_size, buf)
+    CRWStream(IReaderWriter* rw,
+              streamsize     buf_size = CRWStreambuf::kDefaultBufferSize,
+              CT_CHAR_TYPE*  buf = 0) :
+        CNcbiIostream(0), m_Sb(rw, buf_size, buf)
     {
         init(&m_Sb);
     }
@@ -106,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/22 19:15:15  lavr
+ * Explicit calls for iostream constructors added
+ *
  * Revision 1.1  2003/10/22 18:14:31  lavr
  * Initial revision
  *
