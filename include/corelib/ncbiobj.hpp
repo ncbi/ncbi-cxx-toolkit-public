@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/12/15 19:18:36  vakatov
+* Added assignment operator for CRef<> and CConstRef<>
+*
 * Revision 1.16  2000/12/15 15:36:29  vasilche
 * Added header corelib/ncbistr.hpp for all string utility functions.
 * Optimized string utility functions.
@@ -318,6 +321,11 @@ public:
             Reset(ref.m_Ptr);
             return *this;
         }
+    CRef<C>& operator=(TObjectType* ptr)
+        {
+            Reset(ptr);
+            return *this;
+        }
 
     // getters
     inline
@@ -378,6 +386,7 @@ public:
 private:
     TObjectType* m_Ptr;
 };
+
 
 template<class C>
 class CConstRef {
@@ -495,6 +504,11 @@ public:
     CConstRef<C>& operator=(const CRef<C>& ref)
         {
             Reset(ref.GetPointerOrNull());
+            return *this;
+        }
+    CConstRef<C>& operator=(TObjectType* ptr)
+        {
+            Reset(ptr);
             return *this;
         }
 
