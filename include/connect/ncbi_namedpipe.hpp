@@ -70,15 +70,17 @@ class CNamedPipeHandle;
 ///
 /// Define base class for interprocess communication via named pipes.
 ///
-/// NOTES: - On some platforms pipe can be accessed over the network;
-///        - Interprocess pipe always opens in byte/binary mode.
+/// NOTES: 
+///    - On some platforms pipe can be accessed over the network;
+///    - Interprocess pipe always opens in byte/binary mode.
 /// 
 /// For MS Windows the pipe name must have the following form: 
 ///
-///    \\<machine_name>\pipe\<pipename>,
+//     \\<machine_name>\pipe\<pipe_name>,       (correct syntax)
+///    \\\\< machine_name>\\pipe\\< pipe_name>, (doxygen)
 ///
-///    where <machine_name> is a network name of the PC and can be "." for
-///    access to the pipe on the same machine. The <pipename> part of the
+///    where "machine_name" is a network name of the PC and can be "." for
+///    access to the pipe on the same machine. The "pipe_name" part of the
 ///    name can include any character other than a backslash, including
 ///    numbers and special characters. The entire pipe name string can be up
 ///    to 256 characters long. Pipe names are not case sensitive. 
@@ -103,24 +105,33 @@ public:
     ~CNamedPipe(void);
 
     /// Close pipe connection.
+    ///
+    /// The pipe handle goes invalid after this function call, regardless
+    /// of whether the call was successful or not.
     EIO_Status Close(void);
     
     /// Read data from the pipe.
     ///
-    /// Return in the "read" the number of bytes actually read, which may be
+    /// Always return eIO_Success if some data were read (regardless of pipe
+    /// conditions that may include EOF/error).
+    //  Return other (error) code only if no data at all could be obtained.
+    /// Return in the "n_read" the number of bytes actually read, which may be
     /// less than requested "count" if an error occurs or if the end of
     /// the pipe file stream is encountered before reaching count.
-    EIO_Status Read(void* buf, size_t count, size_t* read = 0);
+    EIO_Status Read(void* buf, size_t count, size_t* n_read = 0);
 
     /// Writes data to the pipe.
     ///
-    /// Returns  in the "written" the number of bytes actually written,
-    /// which may be less than  "count" if an error occurs or times out.
-    /// NOTE: On MS Windows client/server do not must to write into a pipe
-    ///       at a heat a data block with size more than size of pipe's
-    ///       buffer specified on the server side using
-    ///       CNamedPipeServer::Create().Such data block will be never written.
-    EIO_Status Write(const void* buf, size_t count, size_t* written = 0);
+    /// Return eIO_Success if some data were written.
+    /// Return other (error) code only if no data at all could be written.
+    /// Return in the n_written" the number of bytes actually written,
+    /// which may be less than "count" if an error occurs or times out.
+    /// NOTE:
+    ///    On MS Windows client/server do not must to write into a pipe
+    ///    at a heat a data block with size more than size of pipe's
+    ///    buffer specified on the server side using
+    ///    CNamedPipeServer::Create().Such data block will be never written.
+    EIO_Status Write(const void* buf, size_t count, size_t* n_written = 0);
 
     /// Return (for the specified "direction"):
     ///   eIO_Closed     -- if the pipe is closed;
@@ -133,15 +144,17 @@ public:
     /// Specify timeout for the pipe I/O (see Open|Read|Write functions).
     ///
     /// If "timeout" is NULL then set the timeout to be infinite.
-    /// NOTE: By default, initially all timeouts are infinite;
-    /// NOTE: kDefaultTimeout has no effect.
+    /// NOTE: 
+    ///    - By default, initially all timeouts are infinite;
+    ///    - kDefaultTimeout has no effect.
     EIO_Status SetTimeout(EIO_Event event, const STimeout* timeout);
 
     /// Get the pipe I/O timeout (or NULL, if the timeout is infinite).
     ///
-    /// NOTE: The returned timeout is guaranteed to be pointing to a valid
-    ///       (and correct) structure in memory at least until the pipe is
-    ///       closed or SetTimeout() is called for this pipe.
+    /// NOTE: 
+    ///    The returned timeout is guaranteed to be pointing to a valid
+    ///    (and correct) structure in memory at least until the pipe is
+    ///    closed or SetTimeout() is called for this pipe.
     const STimeout* GetTimeout(EIO_Event event) const;
 
     bool IsClientSide(void) const;
@@ -152,10 +165,6 @@ protected:
     CNamedPipeHandle* m_PipeHandle;        ///< os-specific handle
     bool              m_IsClientSide;      ///< client/server-side pipe
     size_t            m_Bufsize;           ///< IO buffer size
-
-    /// Last IO status
-    EIO_Status        m_ReadStatus;        ///< read status
-    EIO_Status        m_WriteStatus;       ///< write status
 
     /// Timeouts
     STimeout*         m_OpenTimeout;       ///< eIO_Open
@@ -233,11 +242,12 @@ public:
     /// Constructor.
     ///
     /// This constructor just calls Create().
-    /// NOTE: Timeout from the argument becomes new timeout for a listening.
-    /// NOTE: The "bufsize" specify a maxium size of data block that can be
-    ///       transmitted through the pipe. The actual buffer size reserved
-    ///       for each end of the named pipe is the specified size rounded
-    ///       up to the next allocation boundary.
+    /// NOTES:
+    ///   - Timeout from the argument becomes new timeout for a listening;
+    ///   - The "bufsize" specify a maxium size of data block that can be
+    ///     transmitted through the pipe. The actual buffer size reserved
+    ///     for each end of the named pipe is the specified size rounded
+    ///     up to the next allocation boundary.
     CNamedPipeServer
         (const string&   pipename,
          const STimeout* timeout  = kDefaultTimeout,
@@ -300,11 +310,20 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/08/28 15:57:29  ivanov
+ * Comments changes
+ *
  * Revision 1.4  2003/08/25 14:47:27  lavr
  * Employ new k..Timeout constants
  *
  * Revision 1.3  2003/08/20 19:01:05  ivanov
  * Fixed cvs log
+ *
+ * Revision 1.2 2003/08/20 16:49:19;  ivanov
+ * - #include <corelib/ncbiobj.hpp>
+ *
+ * Revision 1.1  2003/08/20 19:01:05  ivanov
+ * Initial revision
  *
  * ===========================================================================
  */
