@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/01/12 07:33:28  vakatov
+ * Get rid of unused variables (in CATCH())
+ *
  * Revision 6.1  2002/01/10 19:38:00  clausen
  * Added GetLabel
  *
@@ -317,7 +320,7 @@ void CPub::GetLabel
                 if (!unique) {
                     try {
                         cit.resize(cit.find_last_of('|'));
-                    }catch (const length_error& le) {};
+                    } catch(length_error&) {}
                 }   
                 *label += cit;
             }
@@ -382,13 +385,13 @@ void CPub::GetLabel
     if (title && !titleunique) {
         try {
             titleunique = &title->GetTitle();
-        }catch(runtime_error& re) {};
+        } catch(runtime_error&) {}
     }
     
     if (title && !title2) {
         try {
             title2 = &title->GetTitle();
-        }catch(runtime_error& re) {};
+        } catch(runtime_error&) {}
     }
     
     if (title2) {
