@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/04/03 18:08:54  grichenk
+* Converted eCounterNotInHeap to TCounter(eCounterNotInHeap)
+*
 * Revision 1.14  2001/03/26 21:22:52  vakatov
 * Minor cosmetics
 *
@@ -169,7 +172,7 @@ void CObject::operator delete[](void* ptr)
 void CObject::InitCounter(void)
 {
     if ( m_Counter != eCounterNew ) {
-        m_Counter = eCounterNotInHeap;
+        m_Counter = TCounter(eCounterNotInHeap);
     }
     else {
         // m_Counter == eCounterNew -> possibly in heap
@@ -182,7 +185,7 @@ void CObject::InitCounter(void)
 
         // surely not in heap
         if ( inStack )
-            m_Counter = eCounterNotInHeap;
+            m_Counter = TCounter(eCounterNotInHeap);
         else
             m_Counter = eCounterInHeap;
     }
@@ -254,7 +257,7 @@ void CObject::RemoveLastReference(void) const
     }
     else if ( counter == TCounter(eCounterNotInHeap + eCounterStep) ) {
         // last reference to non heap object -> do nothing
-        m_Counter = eCounterNotInHeap;
+        m_Counter = TCounter(eCounterNotInHeap);
     }
     else {
         _ASSERT(!ObjectStateValid(counter));
@@ -296,7 +299,7 @@ void CObject::DoNotDeleteThisObject(void)
         CFastMutexGuard LOCK(sm_ObjectMutex);
         is_valid = ObjectStateValid(m_Counter);
         if (is_valid  &&  !ObjectStateReferenced(m_Counter)) {
-            m_Counter = eCounterNotInHeap;
+            m_Counter = TCounter(eCounterNotInHeap);
             return;
         }
     }}
