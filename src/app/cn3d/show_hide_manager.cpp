@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/06/21 14:40:15  thiessen
+* fix show/hide of nucleotides
+*
 * Revision 1.16  2001/10/08 14:18:33  thiessen
 * fix show/hide dialog under wxGTK
 *
@@ -419,7 +422,12 @@ void ShowHideManager::ShowAlignedDomains(const StructureSet *set)
         ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
         for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
 
-            if (!m->second->IsProtein()) continue;  // leave all non-protein visible
+            if (m->second->IsNucleotide()) {        // hide all nucleotides
+                Show(m->second, false);
+                continue;
+            }
+            if (!m->second->IsProtein()) continue;  // but leave all hets/solvents visible
+
             if (!set->alignmentManager->IsInAlignment(m->second->sequence)) {
                 Show(m->second, false);
                 continue;
@@ -448,7 +456,12 @@ void ShowHideManager::PrivateShowResidues(const StructureSet *set, bool showAlig
     for (o=set->objects.begin(); o!=oe; o++) {
         ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
         for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
-            if (!m->second->IsProtein()) continue;  // leave all non-protein visible
+
+            if (m->second->IsNucleotide()) {        // hide all nucleotides
+                Show(m->second, false);
+                continue;
+            }
+            if (!m->second->IsProtein()) continue;  // but leave all hets/solvents visible
 
             if (!set->alignmentManager->IsInAlignment(m->second->sequence)) {
                 if (showAligned) Show(m->second, false);
