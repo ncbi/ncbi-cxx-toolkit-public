@@ -10,8 +10,8 @@
 
 
 ## Path to the compiler
-CXX="icc"
-CC="$CXX"
+CC="icc"
+CXX="icpc"
 
 $CXX -V -help >/dev/null 2>&1
 if test "$?" -ne 0 ; then
@@ -21,15 +21,12 @@ ERROR:  cannot find Intel C++ compiler ($CXX)
 HINT:  if you are at NCBI, try to specify the following:
  Linux:
    sh, bash:
-      IA32ROOT="/opt/intel/compiler50/ia32"; export IA32ROOT
-      PATH="\$IA32ROOT/bin:\$PATH"; export PATH
-      LD_LIBRARY_PATH="\$IA32ROOT/lib:\$LD_LIBRARY_PATH"; export LD_LIBRARY_PATH
-      INTEL_FLEXLM_LICENSE="/opt/intel/licenses"; export INTEL_FLEXLM_LICENSE
+      PATH="/opt/intel/compiler60/ia32/bin:\$PATH"
+      LD_LIBRARY_PATH="/opt/intel/compiler60/ia32/lib:\$LD_LIBRARY_PATH"
+      export PATH LD_LIBRARY_PATH
    tcsh:
-      setenv IA32ROOT /opt/intel/compiler50/ia32
-      setenv PATH \$IA32ROOT/bin:\$PATH
-      setenv LD_LIBRARY_PATH \$IA32ROOT/lib:\$LD_LIBRARY_PATH
-      setenv INTEL_FLEXLM_LICENSE /opt/intel/licenses
+      setenv PATH /opt/intel/compiler60/ia32/bin:\$PATH
+      setenv LD_LIBRARY_PATH /opt/intel/compiler60/ia32/lib:\$LD_LIBRARY_PATH
 
 EOF
     exit 1
