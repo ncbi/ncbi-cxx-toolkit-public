@@ -234,6 +234,7 @@ Cn3DApp::Cn3DApp() : wxGLApp()
 
     // C++ object verification
     CSerialObject::SetVerifyDataGlobal(eSerialVerifyData_Always);
+    CObjectIStream::SetVerifyDataGlobal(eSerialVerifyData_Always);
     CObjectOStream::SetVerifyDataGlobal(eSerialVerifyData_Always);
 
     if (!InitGLVisual(NULL))
@@ -622,6 +623,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/01/28 19:27:54  thiessen
+* add input asn stream verification
+*
 * Revision 1.14  2004/01/17 02:11:27  thiessen
 * mac fix
 *
