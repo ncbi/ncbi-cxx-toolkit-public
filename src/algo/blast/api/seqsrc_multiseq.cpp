@@ -420,6 +420,7 @@ MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
     if (error_wrap && error_wrap->choice == BLAST_SEQSRC_MESSAGE)
         error_msg = (Blast_Message*) error_wrap->ptr;
     if (error_msg && error_msg->code < CBlastException::eMaxErrCode) {
+        seq_src = BlastSeqSrcFree(seq_src);
         throw CBlastException(__FILE__, __LINE__, 0,
                               (CBlastException::EErrCode) error_msg->code,
                               error_msg->message);
@@ -437,6 +438,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/03/23 21:48:34  camacho
+ * Avoid memory leak in exceptional conditions
+ *
  * Revision 1.9  2004/03/23 18:25:33  dondosha
  * Use auto_ptr and operator new to make sure SMultiSeqSrcNewArgs structure is deleted when no longer needed
  *
