@@ -578,42 +578,40 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
                                    current context */
        kbp = kbp_ptr[index];
 
-      if (eff_len_options->searchsp_eff) {
-         effective_search_space = eff_len_options->searchsp_eff;
-      } else {
-         if ( (query_length = BLAST_GetQueryLength(query_info, index)) <= 0) {
-             continue;
-         }
-         /* Use the correct Karlin block. For blastn, two identical Karlin
-            blocks are allocated for each sequence (one per strand), but we
-            only need one of them.
-         */
-         if (program_number != blast_type_blastn &&
-             scoring_options->gapped_calculation) {
+       if ( (query_length = BLAST_GetQueryLength(query_info, index)) > 0) {
+          /* Use the correct Karlin block. For blastn, two identical Karlin
+             blocks are allocated for each sequence (one per strand), but we
+             only need one of them.
+          */
+          if (program_number != blast_type_blastn &&
+              scoring_options->gapped_calculation) {
              BLAST_ComputeLengthAdjustment(kbp->K, kbp->logK,
                                            alpha/kbp->Lambda, beta,
                                            query_length, db_length,
                                            db_num_seqs, &length_adjustment);
-         } else {
+          } else {
              BLAST_ComputeLengthAdjustment(kbp->K, kbp->logK, 1/kbp->H, 0,
                                            query_length, db_length,
                                            db_num_seqs, &length_adjustment);
-         }        
-     
-         effective_search_space =
-             (query_length - length_adjustment) * 
-             (db_length - db_num_seqs*length_adjustment);
+          }        
+          /* If overriding search space value is provided in options, 
+             do not calculate it. */
+          if (eff_len_options->searchsp_eff) {
+             effective_search_space = eff_len_options->searchsp_eff;
+          } else {
+             effective_search_space =
+                (query_length - length_adjustment) * 
+                (db_length - db_num_seqs*length_adjustment);
 
-         /* For translated RPS blast, the DB size is left unchanged
-            and the query size is divided by 3 (for conversion to 
-            a protein sequence) and multiplied by 6 (for 6 frames) */
-
-         if (program_number == blast_type_rpstblastn)
-            effective_search_space *= (Int8)(NUM_FRAMES / CODON_LENGTH);
-      }
-      query_info->eff_searchsp_array[index] = effective_search_space;
-      query_info->length_adjustments[index] = length_adjustment;
-
+             /* For translated RPS blast, the DB size is left unchanged
+                and the query size is divided by 3 (for conversion to 
+                a protein sequence) and multiplied by 6 (for 6 frames) */
+             if (program_number == blast_type_rpstblastn)
+                effective_search_space *= (Int8)(NUM_FRAMES / CODON_LENGTH);
+          }
+       }
+       query_info->eff_searchsp_array[index] = effective_search_space;
+       query_info->length_adjustments[index] = length_adjustment;
    }
 
    return 0;
