@@ -55,9 +55,8 @@ void CSeq_annot::AddName(const string &name)
 {
     //NB: this used list::remove_if(), which is not portable to Windows
     NON_CONST_ITERATE (TDesc::Tdata, iter, SetDesc().Set()) {
-        if ((*iter)->IsName()) {
+        while ( (*iter)->IsName()  &&  iter != SetDesc().Set().end() ) {
             iter = SetDesc().Set().erase(iter);
-            --iter;
         }
     }
 
@@ -92,6 +91,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/05/07 17:30:01  dicuccio
+* Fix potential coredump in CSeq_annot::AddName()
+*
 * Revision 1.2  2003/05/07 13:08:09  dicuccio
 * Alternate implementation of SetTitle() - work-around for MSVC's broken
 * implementation of list::remove_if()
