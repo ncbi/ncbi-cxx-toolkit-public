@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.170 2003/03/03 16:25:12 ucko Exp $
+#  $Id: configure.ac,v 1.171 2003/03/08 22:58:06 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -786,7 +786,11 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         esac
         ;;
       ICC )
-        DEF_FAST_FLAGS="-O3 -axW -ip"
+        if test "$with_mt" = "yes"; then
+           DEF_FAST_FLAGS="-O3 -ip"
+        else
+           DEF_FAST_FLAGS="-O3 -axW -ip"
+        fi
         ;;
       MIPSpro* )
         DEF_FAST_FLAGS="-O3 -Ofast"

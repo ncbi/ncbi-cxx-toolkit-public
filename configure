@@ -3655,7 +3655,11 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         esac
         ;;
       ICC )
-        DEF_FAST_FLAGS="-O3 -axW -ip"
+        if test "$with_mt" = "yes"; then
+           DEF_FAST_FLAGS="-O3 -ip"
+        else
+           DEF_FAST_FLAGS="-O3 -axW -ip"
+        fi
         ;;
       MIPSpro* )
         DEF_FAST_FLAGS="-O3 -Ofast"
