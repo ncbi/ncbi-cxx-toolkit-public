@@ -35,6 +35,8 @@
 #include <corelib/ncbistd.hpp>
 #include <list>
 #include <stack>
+#include <queue>
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 
@@ -69,7 +71,7 @@ public:
 
     CTreeNode(const TTreeType& tree);
     CTreeNode& operator =(const TTreeType& tree);
-
+  
     /// Get node's parent
     ///
     /// @return parent to the current node, NULL if it is a top
@@ -416,7 +418,78 @@ Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
     return func;
 }
 
+/// Breadth-first tree traversal algorithm.
+///
+/// Takes tree and visitor function and calls function for every 
+/// node in the tree in breadth-first order. Functor is evaluated
+/// at each node only once.
+///
+/// Functor should have the next prototype:
+/// ETreeTraverseCode Func(TreeNode& node)
+///    where node is a reference to the visited node 
+/// @sa ETreeTraverseCode
+///
+template<class TTreeNode, class Fun>
+Fun TreeBreadthFirstTraverse(TTreeNode& tree_node, Fun func)
+{
 
+  ETreeTraverseCode stop_scan;
+
+  stop_scan = func(tree_node);
+  switch(stop_scan) {
+    case eTreeTraverseStop:
+    case eTreeTraverseStepOver:
+      return func;
+     case eTreeTraverse:
+      break;
+  } 
+
+  if(stop_scan)
+    return func;
+
+  TTreeNode* tr = &tree_node;
+  
+  typedef typename TTreeNode::TNodeList_I TTreeNodeIterator;
+
+  TTreeNodeIterator it = tr->SubNodeBegin();
+  TTreeNodeIterator it_end = tr->SubNodeEnd();
+
+  if(it == it_end)
+    return func;
+
+  queue<TTreeNodeIterator> tree_queue;
+
+  while(it != it_end) 
+    tree_queue.push(it++);
+ 
+  while(!tree_queue.empty()) {
+
+    it = tree_queue.front(); // get oldest node on queue
+    tr = *it;
+    tree_queue.pop(); // take oldest node off
+    stop_scan = eTreeTraverse;
+    if(tr) {
+      stop_scan = func(*tr);
+      switch(stop_scan) {
+        case eTreeTraverseStop:
+	  return func;
+        case eTreeTraverse:
+        case eTreeTraverseStepOver:
+	  break;
+      } // end switch
+    } // end if
+    // add children (if any) of node to queue
+    if(stop_scan != eTreeTraverseStepOver && !tr->IsLeaf()) { 
+      it = tr->SubNodeBegin();
+      it_end = tr->SubNodeEnd();
+      while(it != it_end)
+	tree_queue.push(it++);
+    } // end if
+
+  } // end while
+
+  return func;
+}
 
 
 
@@ -728,6 +801,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/06/15 13:01:14  ckenny
+ * added breadth-first traversal algo
+ *
  * Revision 1.33  2004/04/26 14:47:51  ucko
  * Qualify dependent names with "this->" as needed (by GCC 3.4).
  *
