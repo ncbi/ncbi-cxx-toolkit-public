@@ -37,6 +37,10 @@ while [ $time -lt $timeout ]; do
 done
 
 # Time out, kill the process
+echo
+echo "Maximum execution time of $1 seconds is exceeded
+echo
+
 kill $pid > /dev/null 2>&1
 sleep $sleep_time
 kill -9 $pid > /dev/null 2>&1
