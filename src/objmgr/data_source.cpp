@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/03/28 14:02:31  grichenk
+* Added scope history checks to CDataSource::x_FindBestTSE()
+*
 * Revision 1.26  2002/03/22 17:24:12  gouriano
 * loader-related fix in DropTSE()
 *
@@ -179,7 +182,8 @@ CSeq_entry* CDataSource::GetTopEntry(void)
 }
 
 
-CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle) const
+CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
+                                      const CScope::TRequestHistory& history) const
 {
     CMutexGuard guard(sm_DataSource_Mutex);
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
@@ -192,13 +196,28 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle) const
         // There is only one TSE, no matter live or dead
         return *tse_set->second.begin();
     }
+    CTSE_Info* from_history = 0;
     iterate(TTSESet, tse, tse_set->second) {
+        // Check history
+        CScope::TRequestHistory::const_iterator hst = history.find(*tse);
+        if (hst != history.end()) {
+            if ( from_history ) {
+                throw runtime_error(
+                    "CDataSource::x_FindBestTSE() -- multiple history matches");
+            }
+            from_history = *tse;
+        }
         // Find live TSEs
         if ( !(*tse)->m_Dead ) {
             // Make sure there is only one live TSE
             live.insert(*tse);
         }
     }
+    // History is always the best choice
+    if (from_history)
+        return from_history;
+
+    // Check live
     if (live.size() == 1) {
         // There is only one live TSE -- ok to use it
         return *live.begin();
@@ -225,7 +244,7 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle) const
 
 CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
 {
-    CSeqMatch_Info info = BestResolve(id);
+    CSeqMatch_Info info = BestResolve(id, scope.m_History);
     if ( !info )
         return CBioseq_Handle();
     CSeq_id_Handle idh = info.m_Handle;
@@ -418,7 +437,7 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
     CSeq_entry* entry = handle.m_Entry;
     CBioseq_Handle rhandle = handle; // resolved handle for local use
     if ( !entry ) {
-        CTSE_Info* info = x_FindBestTSE(rhandle.GetKey());
+        CTSE_Info* info = x_FindBestTSE(rhandle.GetKey(), scope.m_History);
         if ( !info )
             return false;
         entry = info->m_BioseqMap[rhandle.GetKey()]->m_Entry;
@@ -1118,7 +1137,7 @@ without the sequence but with references to the id and all dead TSEs
 (with references and without the sequence), referenced by the history.
 */
     CMutexGuard guard(sm_DataSource_Mutex);
-    x_ResolveLocationHandles(loc);
+    x_ResolveLocationHandles(loc, history);
     iterate(CHandleRangeMap::TLocMap, hit, loc.GetMap()) {
         // Search for each seq-id handle from loc in the indexes
         TTSEMap::const_iterator tse_it = m_TSE_ref.find(hit->first);
@@ -1178,11 +1197,12 @@ without the sequence but with references to the id and all dead TSEs
 }
 
 
-void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc) const
+void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc,
+                                           const CScope::TRequestHistory& history) const
 {
     CHandleRangeMap tmp(GetIdMapper());
     iterate ( CHandleRangeMap::TLocMap, it, loc.GetMap() ) {
-        CTSE_Info* tse_info = x_FindBestTSE(it->first);
+        CTSE_Info* tse_info = x_FindBestTSE(it->first, history);
         if (tse_info != 0) {
             TBioseqMap::const_iterator info =
                 tse_info->m_BioseqMap.find(it->first);
@@ -1470,7 +1490,8 @@ void CDataSource::x_UpdateTSEStatus(CSeq_entry& tse, bool dead)
 }
 
 
-CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id)
+CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id,
+                                        const CScope::TRequestHistory& history)
 {
     if ( m_Loader ) {
         // Send request to the loader
@@ -1482,7 +1503,7 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id)
     }
     CSeq_id_Handle idh = GetIdMapper().GetHandle(id, true);
     CMutexGuard guard(sm_DataSource_Mutex);
-    CTSE_Info* tse = x_FindBestTSE(idh);
+    CTSE_Info* tse = x_FindBestTSE(idh, history);
     if (tse) {
         return (CSeqMatch_Info(idh, *tse, *this));
     }

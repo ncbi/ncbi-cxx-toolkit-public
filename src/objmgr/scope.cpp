@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/03/28 14:02:31  grichenk
+* Added scope history checks to CDataSource::x_FindBestTSE()
+*
 * Revision 1.15  2002/03/27 18:45:44  gouriano
 * three functions made public
 *
@@ -239,7 +242,7 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
 {
     set<CSeqMatch_Info> bm_set;
     iterate (set<CDataSource*>, it, m_setDataSrc) {
-        CSeqMatch_Info info = (*it)->BestResolve(id);
+        CSeqMatch_Info info = (*it)->BestResolve(id, m_History);
         if ( info )
             bm_set.insert(info);
     }

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/03/28 14:02:31  grichenk
+* Added scope history checks to CDataSource::x_FindBestTSE()
+*
 * Revision 1.16  2002/03/20 04:50:13  kimelman
 * GB loader added
 *
@@ -206,7 +209,8 @@ public:
                         TTSESet& tse_set,
                         const CScope::TRequestHistory& history) const;
 
-    CSeqMatch_Info BestResolve(const CSeq_id& id);
+    CSeqMatch_Info BestResolve(const CSeq_id& id,
+        const CScope::TRequestHistory& history);
 
     string GetName(void) const;
 
@@ -220,7 +224,8 @@ private:
     // The best bioseq is the bioseq from the live TSE or from the
     // only one TSE containing the ID (no matter live or dead).
     // If no matches were found, return 0.
-    CTSE_Info* x_FindBestTSE(CSeq_id_Handle handle) const;
+    CTSE_Info* x_FindBestTSE(CSeq_id_Handle handle,
+        const CScope::TRequestHistory& history) const;
 
     // Create CSeqMap for a bioseq
     void x_CreateSeqMap(const CBioseq& seq);
@@ -261,7 +266,8 @@ private:
 
     // Replace initial handle range map with the new one, containing duplicate
     // range sets for each synonym of each handle
-    void x_ResolveLocationHandles(CHandleRangeMap& loc) const;
+    void x_ResolveLocationHandles(CHandleRangeMap& loc,
+        const CScope::TRequestHistory& history) const;
 
     static CMutex sm_DataSource_Mutex;
 
