@@ -866,6 +866,15 @@
 #endif
 
 /*
+ * Export specifier for library ncbi_xloader_trace
+ */
+#ifdef NCBI_XLOADER_TRACE_EXPORTS
+#  define NCBI_XLOADER_TRACE_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_TRACE_EXPORT     __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library ncbi_xloader_genbank
  */
 #ifdef NCBI_XLOADER_GENBANK_EXPORTS
@@ -1447,6 +1456,7 @@
 #  define NCBI_XLOADER_GENBANK_EXPORT
 #  define NCBI_XLOADER_LDS_EXPORT
 #  define NCBI_XLOADER_TABLE_EXPORT
+#  define NCBI_XLOADER_TRACE_EXPORT
 #  define NCBI_XNCBI_EXPORT
 #  define NCBI_XOBJMANIP_EXPORT
 #  define NCBI_XOBJMGR_EXPORT
@@ -1478,6 +1488,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.68  2004/03/25 14:19:42  dicuccio
+ * Added export specifier for TRACE data loader library
+ *
  * Revision 1.67  2004/03/18 15:34:17  gorelenk
  * Export define for library xalnutil ( NCBI_XALNUTIL_EXPORT ) moved
  * to static libraries section .
