@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/07/25 19:11:11  grichenk
+ * Equals() and Assign() re-declared as protected
+ *
  * Revision 1.4  2001/07/16 16:22:45  grichenk
  * Added CSerialUserOp class to create Assign() and Equals() methods for
  * user-defind classes.
@@ -78,7 +81,8 @@ public:
     void Parentize(void);
     CSeq_entry* GetParentEntry(void) const;
 
-    // From CAssignableObject
+protected:
+    // From CSerialUserOp
     virtual void Assign(const CSerialUserOp& source);
     virtual bool Equals(const CSerialUserOp& object) const;
 private:
