@@ -716,8 +716,11 @@ CDB_ITDescriptor::~CDB_ITDescriptor()
 CDB_ResultProcessor::CDB_ResultProcessor(CDB_Connection* c)
 {
     m_Con = c;
-    if ( m_Con )
+    if ( m_Con ) {
         m_Prev = m_Con->SetResultProcessor(this);
+        if(m_Prev) m_Prev->Acquire((CDB_BaseEnt**)(&m_Prev));
+        m_Con->Acquire((CDB_BaseEnt**)(&m_Con));
+    }
 }
 
 void CDB_ResultProcessor::ProcessResult(CDB_Result& res)
@@ -728,8 +731,15 @@ void CDB_ResultProcessor::ProcessResult(CDB_Result& res)
 
 CDB_ResultProcessor::~CDB_ResultProcessor()
 {
-    if ( m_Con )
+    if ( m_Con ) {
         m_Con->SetResultProcessor(m_Prev);
+        if(m_Prev) m_Con->Acquire((CDB_BaseEnt**)(&m_Prev->m_Con));
+        else m_Con->Release();
+    }
+    else if(m_Prev) m_Prev->m_Con= 0;
+   
+    if(m_Prev) m_Prev->Release();
+        
 }
 
 
@@ -740,6 +750,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/06/08 18:17:42  soussov
+ * adds code which protects result processor from hung pointers to connection and/or other processor
+ *
  * Revision 1.8  2004/05/17 21:11:38  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
