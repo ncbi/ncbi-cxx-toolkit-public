@@ -1282,7 +1282,7 @@ static EIO_Status s_Send(SOCK        sock,
                          size_t      size,
                          size_t*     n_written)
 {
-    int         x_errno;
+    int x_errno;
 
     *n_written = 0;
 
@@ -2062,6 +2062,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.71  2002/12/04 21:01:05  lavr
+ * -CORE_LOG[F]_SYS_ERRNO()
+ *
  * Revision 6.70  2002/12/04 16:55:02  lavr
  * Implement logging on connect and close
  *
