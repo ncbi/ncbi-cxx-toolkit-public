@@ -416,11 +416,11 @@ void CObjectIStreamXml::SkipQDecl(void)
         string value;
         ReadAttributeValue(value);
         if (tagName == "encoding") {
-            if (value == "UTF-8") {
+            if (NStr::CompareNocase(value.c_str(),"UTF-8") == 0) {
                 m_Encoding = eEncoding_UTF8;
-            } else if (value == "ISO-8859-1") {
+            } else if (NStr::CompareNocase(value.c_str(),"ISO-8859-1") == 0) {
                 m_Encoding = eEncoding_ISO8859_1;
-            } else if (value == "Windows-1252") {
+            } else if (NStr::CompareNocase(value.c_str(),"Windows-1252") == 0) {
                 m_Encoding = eEncoding_Windows_1252;
             } else {
                 ThrowError(fFormatError, "unknown encoding: " + value);
@@ -2072,6 +2072,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2004/06/18 18:17:12  gouriano
+* Use case-insensitive comparison to identify character encoding
+*
 * Revision 1.62  2004/06/08 20:22:32  gouriano
 * Moved several functions out of VIRTUAL_MID_LEVEL_IO condition:
 * there is no need for them to be there
