@@ -179,7 +179,7 @@ bool CSearch::CompareLaddersTop(CLadder& BLadder,
 #ifdef CHECKGI
 bool CheckGi(int gi)
 {
-    if(/*gi == 6325234 ||*/ gi == 6322848){
+    if(/*gi == 6325234 || gi == 6322848 */ gi == 6325234 || gi == 1709159 || gi == 1039454 || gi == 2132152){
 	ERR_POST(Info << "test seq");
 	return true;
     }
@@ -258,7 +258,8 @@ void CSearch::UpdateWithNewPep(int Missed,
 			       int DeltaMass[][MAXMOD],
 			       int Masses[],
 			       int EndMasses[],
-        int ModEnum[][MAXMOD])
+                               int ModEnum[][MAXMOD],
+                               int IsFixed[][MAXMOD])
 {
     // iterate over missed cleavages
     int iMissed;
@@ -295,6 +296,9 @@ void CSearch::UpdateWithNewPep(int Missed,
 	    ModEnum[iMissed][iMod] = 
 		ModEnum[Missed-1][iMod - NumMod[iMissed]];
 
+	    IsFixed[iMissed][iMod] = 
+		IsFixed[Missed-1][iMod - NumMod[iMissed]];       
+
 	}
 				
 	// update old masses
@@ -318,7 +322,9 @@ void CSearch::CreateModCombinations(int Missed,
 				    int NumMod[],
 				    int DeltaMass[][MAXMOD],
 				    unsigned NumMassAndMask[],
-				    int MaxModPerPep)
+				    int MaxModPerPep,
+                    int IsFixed[][MAXMOD]
+                    )
 {
     // need to iterate thru combinations that have iMod.
     // i.e. iMod = 3 and NumMod=5
@@ -350,29 +356,45 @@ void CSearch::CreateModCombinations(int Missed,
 	MassAndMask[iMissed][iModCount].Mass = 
 	    Masses[iMissed] + EndMasses[iMissed];
 	MassAndMask[iMissed][iModCount].Mask = 0;
+    int NumVariable(NumMod[iMissed]);  // number of variable mods
+    int NumFixed;
+    // add in fixed mods
+    for(iMod = 0; iMod < NumMod[iMissed]; iMod++) {
+        if(IsFixed[iMissed][iMod]) {
+            MassAndMask[iMissed][iModCount].Mass += DeltaMass[iMissed][iMod];
+            MassAndMask[iMissed][iModCount].Mask |= 1 << iMod;
+            NumVariable--;
+        }
+    }
 	iModCount++;
+    NumFixed = NumMod[iMissed] - NumVariable;
 		
 	// go thru number of mods allowed
-	for(iMod = 0; iMod < NumMod[iMissed] && iModCount < MaxModPerPep; iMod++) {
+	for(iMod = 0; iMod < NumVariable && iModCount < MaxModPerPep; iMod++) {
 		    
 	    // initialize ModIndex that points to mod sites
-	    InitModIndex(ModIndex, iMod);
+
+        // todo: ModIndex must always include fixed mods
+
+	    InitModIndex(ModIndex, iMod, NumMod[iMissed], IsFixed[iMissed]);
 	    do {
-			
-		// calculate mass
-		MassOfMask = Masses[iMissed] + EndMasses[iMissed];
-		for(iiMod = 0; iiMod <= iMod; iiMod++ ) 
-		    MassOfMask += DeltaMass[iMissed][ModIndex[iiMod]];
-		// make bool mask
-		Mask = MakeBoolMask(ModIndex, iMod);
-		// put mass and mask into storage
-		MassAndMask[iMissed][iModCount].Mass = MassOfMask;
-		MassAndMask[iMissed][iModCount].Mask = Mask;
-		// keep track of the  number of ladders
-		iModCount++;
+    			
+    		// calculate mass
+    		MassOfMask = MassAndMask[iMissed][0].Mass;
+    		for(iiMod = 0; iiMod <= iMod; iiMod++ ) 
+    		    MassOfMask += DeltaMass[iMissed][ModIndex[iiMod + NumFixed]];
+    		// make bool mask
+    		Mask = MakeBoolMask(ModIndex, iMod + NumFixed);
+    		// put mass and mask into storage
+    		MassAndMask[iMissed][iModCount].Mass = MassOfMask;
+    		MassAndMask[iMissed][iModCount].Mask = Mask;
+    		// keep track of the  number of ladders
+    		iModCount++;
+
+// todo: calcmodindex must ignore fixed mods
 
 	    } while(iModCount < MaxModPerPep &&
-		    CalcModIndex(ModIndex, iMod, NumMod[iMissed]));
+		    CalcModIndex(ModIndex, iMod, NumMod[iMissed], NumFixed, IsFixed[iMissed]));
 	} // iMod
 
 	// sort mask and mass by mass
@@ -446,6 +468,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	int DeltaMass[MAXMISSEDCLEAVE][MAXMOD];
 	// the modification type (used for saving for output)
 	int ModEnum[MAXMISSEDCLEAVE][MAXMOD];
+	// track fixed mods
+	int IsFixed[MAXMISSEDCLEAVE][MAXMOD];
 	// the number of modified sites + 1 unmodified
 	int NumMod[MAXMISSEDCLEAVE];
 
@@ -535,6 +559,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 
 		DeltaMass[iMissed][0] = 0;
 		ModEnum[iMissed][0] = 0;
+        IsFixed[iMissed][0] = 0;
 		Site[iMissed][0] = (const char *)-1;
 	    }
 	    PepStart[Missed - 1] = (const char *)Sequence;
@@ -552,6 +577,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 		Site[Missed - 1][0] = (const char *)-1;
 		DeltaMass[Missed - 1][0] = 0;
         ModEnum[Missed - 1][0] = 0;
+        IsFixed[Missed - 1][0] = 0;
 
 #ifdef CHECKGI
 {
@@ -561,7 +587,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 			    header = 0;
 			    readdb_get_header(rdfp, iSearch, &header, &sip, &blastdefline);
 			    bestid = SeqIdFindBest(sip, SEQID_GI);
-			    if(CheckGi(bestid->data.intvalue) && (PepStart[iMissed] - (const char *)Sequence) == 182)
+			    if(CheckGi(bestid->data.intvalue) && ((PepStart[iMissed] - (const char *)Sequence) == 0 ||
+                   (PepStart[iMissed] - (const char *)Sequence) == 355))
 				cerr << "hello" << endl;
 			    //			int testgi = bestid->data.intvalue;
 			    MemFree(blastdefline);
@@ -582,15 +609,16 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 				       Site[Missed - 1],
 				       DeltaMass[Missed - 1],
 				       IntMassArray,
-                       ModEnum[Missed - 1]);
+                       ModEnum[Missed - 1],
+                       IsFixed[Missed - 1]);
 			
 
 		UpdateWithNewPep(Missed, PepStart, PepEnd, NumMod, Site,
-				 DeltaMass, Masses, EndMasses, ModEnum);
+				 DeltaMass, Masses, EndMasses, ModEnum, IsFixed);
 	
 		CreateModCombinations(Missed, PepStart, MassAndMask, Masses,
 				      EndMasses, NumMod, DeltaMass, NumMassAndMask,
-				      MaxModPerPep);
+				      MaxModPerPep, IsFixed);
 
 
 		int OldMass;  // keeps the old peptide mass for comparison
@@ -738,7 +766,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 									  Site[iMissed],
 									  ModEnum[iMissed],
 									  NumMod[iMissed],
-									  PepStart[iMissed]
+									  PepStart[iMissed],
+                                      IsFixed[iMissed]
 									  );
 				    }
 				}
@@ -758,14 +787,16 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
                 NumModCount = 0;
     			for(iMod = 0; iMod < NumMod[iMissed + 1]; iMod++) {
                     // throw away the c term peptide mods as we have a new c terminus
-                    if(ModEnum[iMissed + 1][iMod] != eModCP  && 
-                       ModEnum[iMissed + 1][iMod] != eModCPAA) {
+                    if(ModTypes[ModEnum[iMissed + 1][iMod]] != eModCP  && 
+                       ModTypes[ModEnum[iMissed + 1][iMod]] != eModCPAA) {
         			    DeltaMass[iMissed][NumModCount] = 
         				DeltaMass[iMissed + 1][iMod];
         			    Site[iMissed][NumModCount] = 
         				Site[iMissed + 1][iMod];
         			    ModEnum[iMissed][NumModCount] = 
         				ModEnum[iMissed + 1][iMod];
+        			    IsFixed[iMissed][NumModCount] = 
+        				IsFixed[iMissed + 1][iMod];
                         NumModCount++;
                     }
     			}
@@ -787,7 +818,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	SetResult(PeakSet, MyResponse, MyRequest.GetSettings().GetCutlo(), 
 		  MyRequest.GetSettings().GetCuthi(),
 		  MyRequest.GetSettings().GetCutinc(),
-		  MyRequest.GetSettings().GetTophitnum());
+		  MyRequest.GetSettings().GetTophitnum(),
+          MyRequest.GetSettings().GetCutoff());
 	
     } catch (NCBI_NS_STD::exception& e) {
 	ERR_POST(Info << "Exception caught in CSearch::Search: " << e.what());
@@ -806,6 +838,8 @@ void CSearch::AddModsToHit(CMSHits *Hit, CMSHit *MSHit)
 {
 	int i;
 	for (i = 0; i < MSHit->GetNumModInfo(); i++) {
+        // screen out fixed mods
+        if(MSHit->GetModInfo(i).GetIsFixed() == 1) continue;
 		CRef< CMSModHit > ModHit(new CMSModHit);
 		ModHit->SetSite() = MSHit->GetModInfo(i).GetSite();
 		ModHit->SetModtype() = MSHit->GetModInfo(i).GetModEnum() ;
@@ -849,7 +883,7 @@ void CSearch::MakeModString(string& seqstring, string& modseqstring, CMSHit *MSH
 
 void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 			double ThreshStart, double ThreshEnd,
-			double ThreshInc, int Tophitnum)
+			double ThreshInc, int Tophitnum, double Evalcutoff)
 {
     CMSPeak* Peaks;
     TPeakSet::iterator iPeakSet;
@@ -917,7 +951,9 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 	for(iScoreList = ScoreList.begin(), iSearch = 0;
 	    iScoreList != ScoreList.end();
 	    iScoreList++, iSearch++) {
-	    
+
+        double Score = iScoreList->first;
+        if(Score > Evalcutoff) continue;
 	    CMSHits * Hit;
 	    CMSPepHit * Pephit;
 			
@@ -945,7 +981,6 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 		else {
 		    Hit = new CMSHits;
 		    Hit->SetPepstring(seqstring);
-		    double Score = iScoreList->first;
 		    Hit->SetEvalue(Score);
 		    Hit->SetPvalue(Score/Peaks->
 				   GetPeptidesExamined(MSHit->
@@ -1196,6 +1231,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.30  2004/11/22 23:10:36  lewisg
+add evalue cutoff, fix fixed mods
+
 Revision 1.29  2004/11/17 23:42:11  lewisg
 add cterm pep mods, fix prob for tophitnum
 

@@ -105,14 +105,16 @@ void CMSHit::RecordModInfo(unsigned ModMask,
 						   const char **Site,
 						   int *ModEnum,
 						   int NumMod,
-						   const char *PepStart
+						   const char *PepStart,
+                           int *IsFixed
 						   )
 {
 	int i, j(0);
 	for(i = 0; i < NumMod; i++) {
 		if(ModMask & (1 << i)) {
 			SetModInfo(j).SetModEnum() = ModEnum[i];
-			SetModInfo(j).SetSite() = Site[i] - PepStart ;
+			SetModInfo(j).SetSite() = Site[i] - PepStart;
+            SetModInfo(j).SetIsFixed() = IsFixed[i];
 			j++;
 		}
 	}
@@ -129,7 +131,8 @@ void CMSHit::RecordMatches(CLadder& BLadder,
 						   const char **Site,
 						   int *ModEnum,
 						   int NumMod,
-						   const char *PepStart
+						   const char *PepStart,
+                           int *IsFixed
 						   )
 {
     // create hitlist.  note that this is deleted in the copy operator
@@ -161,7 +164,8 @@ void CMSHit::RecordMatches(CLadder& BLadder,
 				  Site,
 				  ModEnum,
 				  NumMod,
-				  PepStart
+				  PepStart,
+                  IsFixed
 				  );
 }
 

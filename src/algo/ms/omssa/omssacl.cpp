@@ -230,6 +230,9 @@ void COMSSA::Init()
     argDesc->AddDefaultKey("hs", "minspectra", 
 			   "the minimum number of m/z values a spectrum must have to be searched",
 			   CArgDescriptions::eInteger, "4");
+    argDesc->AddDefaultKey("he", "evalcut", 
+			   "the maximum evalue allowed in the hit list",
+			   CArgDescriptions::eDouble, "1");
     argDesc->AddDefaultKey("mf", "fixedmod", 
 			   "comma delimited (no spaces) list of id numbers for fixed modifications",
 			   CArgDescriptions::eString,
@@ -378,6 +381,7 @@ int COMSSA::Run()
 	Request.SetSettings().SetTophitnum(args["ht"].AsInteger());
 	Request.SetSettings().SetMinhit(args["hm"].AsInteger());
 	Request.SetSettings().SetMinspectra(args["hs"].AsInteger());
+	Request.SetSettings().SetCutoff(args["he"].AsDouble());
 	Request.SetSettings().SetMaxmods(args["mm"].AsInteger());
 
 	if(args["x"].AsString() != "0") {
@@ -490,6 +494,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.21  2004/11/22 23:10:36  lewisg
+  add evalue cutoff, fix fixed mods
+
   Revision 1.20  2004/11/01 22:04:12  lewisg
   c-term mods
 

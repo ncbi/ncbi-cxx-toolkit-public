@@ -196,7 +196,8 @@ public:
 			    const char **Site,
 			    int *DeltaMass,
 			    const int *IntCalcMass,  // array of int AA masses
-                int *ModEnum     // the mod type at each site
+                int *ModEnum,     // the mod type at each site
+                int *IsFixed
 		    );
 
     ///
@@ -226,13 +227,15 @@ public:
 			      const char **Site,  // list of mod sites
 			      int *DeltaMass, // mass of mod
 			      const char *iPepStart, // position in protein
-                  int *ModEnum   // enum of mod
-                   ); 
+                  int *ModEnum,   // enum of mod
+                  int *IsFixed,
+                  bool setfixed
+                  ); 
 
     ///
     /// looks for amino acid specific ptms
     ///
-    void CheckAAMods(EMSModType ModType,  // the type of mod
+    void CheckAAMods(EMSModType ModType, // the type of mod
 		     CMSMod &VariableMods, // list of mods to look for
 		     int& NumMod, // number of mods applied to peptide
 		     char SeqChar,  // the amino acid
@@ -240,7 +243,9 @@ public:
 		     const char **Site,  // list of mod sites
 		     int *DeltaMass, // mass of mod
 		     const char *iPepStart,  // position in protein
-             int *ModEnum   // enum of mod
+             int *ModEnum,   // enum of mod
+             int *IsFixed,
+             bool setfixed
              );
 
 ///
@@ -251,7 +256,7 @@ public:
 				   int& NumMod, char SeqChar, int MaxNumMod,
 				   const char **Site,
 				   int *DeltaMass, const char *iPepStart,
-                   int *ModEnum );
+                   int *ModEnum, int *IsFixed );
 
 protected:
     int ProtonMass; // mass of the proton
@@ -295,7 +300,7 @@ inline
 void CCleave::CheckAAMods(EMSModType ModType, CMSMod &VariableMods, int& NumMod,
 			 char SeqChar, int MaxNumMod, const char **Site,
 			 int *DeltaMass, const char *iPepStart,
-        int *ModEnum)
+        int *ModEnum, int *IsFixed, bool setfixed)
 {
     // iterator thru mods
     CMSSearchSettings::TVariable::const_iterator iMods;
@@ -308,6 +313,8 @@ void CCleave::CheckAAMods(EMSModType ModType, CMSMod &VariableMods, int& NumMod,
 		Site[NumMod] = iPepStart;
 		DeltaMass[NumMod] = ModMass[*iMods];
         ModEnum[NumMod] = *iMods;
+        if(setfixed) IsFixed[NumMod] = 1;
+        else IsFixed[NumMod] = 0;
 		NumMod++; 
 	    }
 	}
@@ -320,7 +327,7 @@ void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
 				   int& NumMod, int MaxNumMod,
 				   const char **Site,
 				   int *DeltaMass, const char *iPepStart,
-        int *ModEnum )
+        int *ModEnum, int *IsFixed, bool setfixed)
 {
     // iterator thru mods
     CMSSearchSettings::TVariable::const_iterator iMods;
@@ -331,6 +338,8 @@ void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
 	    Site[NumMod] = iPepStart;
 	    DeltaMass[NumMod] = ModMass[*iMods];
         ModEnum[NumMod] = *iMods;
+        if(setfixed) IsFixed[NumMod] = 1;
+        else IsFixed[NumMod] = 0;
 	    NumMod++; 
 	}
     }
@@ -342,18 +351,16 @@ void CCleave::CheckMods(EMSModType NonSpecific, EMSModType Specific,
                         int& NumMod, char SeqChar, int MaxNumMod,
                         const char **Site,
                         int *DeltaMass, const char *iPepStart,
-                        int *ModEnum )
+                        int *ModEnum, int *IsFixed)
 {
     // check non-specific mods
     CheckNonSpecificMods(NonSpecific, VariableMods, NumMod, MaxNumMod, Site,
-                 DeltaMass, iPepStart, ModEnum);
-    // todo: treat n-term fixed mods as true fixed mods
+                 DeltaMass, iPepStart, ModEnum, IsFixed, false);
     CheckNonSpecificMods(NonSpecific, FixedMods, NumMod, MaxNumMod, Site,
-                 DeltaMass, iPepStart, ModEnum);
-
+                 DeltaMass, iPepStart, ModEnum, IsFixed, true);
     // check specific mods
     CheckAAMods(Specific, VariableMods, NumMod, SeqChar, MaxNumMod,
-            Site, DeltaMass, iPepStart, ModEnum);
+            Site, DeltaMass, iPepStart, ModEnum, IsFixed, false);
 }
 
 
@@ -500,6 +507,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.14  2004/11/22 23:10:36  lewisg
+  add evalue cutoff, fix fixed mods
+
   Revision 1.13  2004/11/17 23:42:11  lewisg
   add cterm pep mods, fix prob for tophitnum
 

@@ -122,10 +122,11 @@ public:
 		       CLadder& Y2Ladder, CMSPeak *Peaks,
 		       TMassPeak *MassPeak);
 
-    void InitModIndex(int *ModIndex, int& iMod);
-    unsigned MakeBoolMask(int *ModIndex, int& iMod);
+    void InitModIndex(int *ModIndex, int& iMod, int NumMod, int *IsFixed);
+    unsigned MakeBoolMask(int *ModIndex, int iMod);
     void MakeBoolMap(bool *ModMask, int *ModIndex, int& iMod, int& NumMod);
-    bool CalcModIndex(int *ModIndex, int& iMod, int& NumMod);
+    bool CalcModIndex(int *ModIndex, int& iMod, int& NumMod, int NumFixed,
+                      int *IsFixed);
     unsigned MakeIntFromBoolMap(bool *ModMask,  int& NumMod);
     ReadDBFILEPtr Getrdfp(void) { return rdfp; }
     int Getnumseq(void) { return numseq; }
@@ -156,13 +157,15 @@ public:
     void SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 		   double ThreshStart, double ThreshEnd,
 		   double ThreshInc, 
-		   int Tophitnum // the number of top hits where at least one has to match
+		   int Tophitnum, // the number of top hits where at least one has to match
+           double Evalcutoff  // max eval to allow
 		   );
     // calculate the evalues of the top hits and sort
     void CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks,
 		   bool NewScore,
 		   int Tophitnum // the number of top hits where at least one has to match
 		   );
+
     // update sites and masses for new peptide
     void UpdateWithNewPep(int Missed,
 			  const char *PepStart[],
@@ -172,8 +175,9 @@ public:
 			  int DeltaMass[][MAXMOD],
 			  int Masses[],
 			  int EndMasses[],
-            int ModEnum[][MAXMOD]
-            );
+            int ModEnum[][MAXMOD],
+            int IsFixed[][MAXMOD]);
+
     // create the various combinations of mods
     void CreateModCombinations(int Missed,
 			       const char *PepStart[],
@@ -183,7 +187,8 @@ public:
 			       int NumMod[],
 			       int DeltaMass[][MAXMOD],
 			       unsigned NumMassAndMask[],
-			       int MaxModPerPep // max number of mods per peptide
+			       int MaxModPerPep, // max number of mods per peptide
+                   int IsFixed[][MAXMOD]
 			       );
 
 private:
@@ -199,11 +204,24 @@ private:
 
 // ModIndex contains the positions of the modified sites (aka set bits).
 // InitModIndex points ModIndex to all of the lower sites.
-inline void CSearch::InitModIndex(int *ModIndex, int& iMod)
+inline void CSearch::InitModIndex(int *ModIndex, int& iMod, int NumMod,
+int *IsFixed)
 {
     // pack all the mods to the first possible sites
-    int j;
-    for(j = 0; j <= iMod; j++) ModIndex[j] = j;
+    int j(0), i, NumFixed;
+    for(i = 0; i < NumMod; i++) {
+        if(IsFixed[i] == 1) {
+            ModIndex[j] = i;
+            j++;
+        }
+    }
+    NumFixed = j;
+    for(i = 0; i < NumMod && j - NumFixed <= iMod; i++) {
+        if(IsFixed[i] != 1) {
+            ModIndex[j] = i;
+            j++;
+        }
+    }
 }
 
 // makes a bool map where each bit represents a site that can be modified
@@ -212,15 +230,15 @@ inline void CSearch::MakeBoolMap(bool *ModMask, int *ModIndex, int& iMod, int& N
 {
     int j;
     // zero out mask
-    for(j = 0; j < NumMod - 1; j++)
+    for(j = 0; j < NumMod; j++)
 	ModMask[j] = false;
     // mask at the possible sites according to the index
-    for(j = 0; j < iMod; j++) 
+    for(j = 0; j <= iMod; j++) 
 	ModMask[ModIndex[j]] = true;
 }
 
 // makes a bool mask  where each bit represents a site that can be modified
-inline unsigned CSearch::MakeBoolMask(int *ModIndex, int& iMod)
+inline unsigned CSearch::MakeBoolMask(int *ModIndex, int iMod)
 {
     int j(0);
     unsigned retval(0);
@@ -234,22 +252,29 @@ inline unsigned CSearch::MakeBoolMask(int *ModIndex, int& iMod)
 inline unsigned CSearch::MakeIntFromBoolMap(bool *ModMask,  int& NumMod)
 {
     int j, retval(0);
-    for(j = 0; j < NumMod - 1; j++)
+    for(j = 0; j < NumMod; j++)
 	if(ModMask[j]) retval |= 1 << j;
     return retval;
 }
 
 // CalcModIndex moves the set bits through all possible sites.  
 // site position is given by ModIndex
-inline bool CSearch::CalcModIndex(int *ModIndex, int& iMod, int& NumMod)
+inline bool CSearch::CalcModIndex(int *ModIndex, int& iMod, int& NumMod,
+int NumFixed, int *IsFixed)
 {
-    int j;
+    int j, oldindex, highest;
     // iterate over indices
-    for(j = iMod; j >= 0; j--) {
-	if(ModIndex[j] < NumMod - (iMod - j) - 1) {
-	    ModIndex[j]++;
-	    return true;
-	}
+    highest = NumMod - 1; // NumMod - (iMod - (j - NumFixed)) - 1
+    for(j = iMod + NumFixed; j >= NumFixed; j--) {
+    	if(ModIndex[j] < highest) {
+            oldindex = ModIndex[j];
+    	    do {
+                ModIndex[j]++;
+            } while (IsFixed[ModIndex[j]] == 1 && ModIndex[j] < highest);
+    	    if(IsFixed[ModIndex[j]] != 1 && ModIndex[j] <= highest) return true;
+            ModIndex[j] = oldindex;
+            highest = oldindex - 1;
+    	}
     }
     return false;
 }
@@ -265,6 +290,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.17  2004/11/22 23:10:36  lewisg
+  add evalue cutoff, fix fixed mods
+
   Revision 1.16  2004/09/29 19:43:09  lewisg
   allow setting of ions
 

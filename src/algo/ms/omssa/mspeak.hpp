@@ -102,11 +102,16 @@ public:
 	const int GetSite(void) const;
 	int& SetSite(void);
 
+	const int GetIsFixed(void) const;
+	int& SetIsFixed(void);
+
 private:
 	// the mod type
 	int ModEnum;
 	// the position in the peptide
 	int Site;
+    // is it fixed
+    int IsFixed;
 };
 
 
@@ -134,6 +139,19 @@ inline
 int& CMSModInfo::SetSite(void)
 {
 	return Site;
+}
+
+
+inline
+const int CMSModInfo::GetIsFixed(void) const
+{
+	return IsFixed;
+}
+
+inline
+int& CMSModInfo::SetIsFixed(void)
+{
+	return IsFixed;
 }
 
 
@@ -193,7 +211,8 @@ public:
 					   const char **Site,
 					   int *ModEnum,
 					   int NumMod,
-					   const char *PepStart
+					   const char *PepStart,
+                       int *IsFixed
 						);
 
 
@@ -213,7 +232,8 @@ public:
 							   const char **Site,
 							   int *DeltaMass,
 							   int NumMod,
-							   const char *PepStart
+							   const char *PepStart,
+                               int *IsFixed
 							   );
 
 
@@ -905,6 +925,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.19  2004/11/22 23:10:36  lewisg
+  add evalue cutoff, fix fixed mods
+
   Revision 1.18  2004/10/20 22:24:48  lewisg
   neutral mass bugfix, concatenate result and response
 

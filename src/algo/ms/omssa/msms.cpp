@@ -114,18 +114,19 @@ bool CCleave::CalcAndCut(const char *SeqStart,
 			  const char **Site,
 			  int *DeltaMass,
 			  const int *IntCalcMass,  // array of int AA masses
-              int *ModEnum       // the mod type at each site
+              int *ModEnum,       // the mod type at each site
+              int *IsFixed
 			  )
 {
     char SeqChar(**PepStart);
 
     // n terminus protein
     if(*PepStart == SeqStart) CheckMods(eModN, eModNAA, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-    				 DeltaMass, *PepStart, ModEnum);
+    				 DeltaMass, *PepStart, ModEnum, IsFixed);
 
     // n terminus peptide
     CheckMods(eModNP, eModNPAA, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-    				 DeltaMass, *PepStart, ModEnum);
+    				 DeltaMass, *PepStart, ModEnum, IsFixed);
 
 
     // iterate through sequence
@@ -135,7 +136,9 @@ bool CCleave::CalcAndCut(const char *SeqStart,
     
     	// check for mods that are type AA only
     	CheckAAMods(eModAA, VariableMods, NumMod, SeqChar, MaxNumMod, Site,
-    		    DeltaMass, *PepStart, ModEnum);
+    		    DeltaMass, *PepStart, ModEnum, IsFixed, false);
+//    	CheckAAMods(eModAA, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
+//    		    DeltaMass, *PepStart, ModEnum, IsFixed, true);
     
     
     	CalcMass(SeqChar, Masses, IntCalcMass);
@@ -144,7 +147,7 @@ bool CCleave::CalcAndCut(const char *SeqStart,
     	if(CheckCleave(SeqChar, *PepStart)) { 
             // check c term peptide mods
             CheckMods(eModCP, eModCPAA, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-    				 DeltaMass, *PepStart, ModEnum);
+    				 DeltaMass, *PepStart, ModEnum, IsFixed);
     	    EndMass(EndMasses);
     	    return false;
     	}
@@ -156,10 +159,10 @@ bool CCleave::CalcAndCut(const char *SeqStart,
 
     // check c term peptide mods
     CheckMods(eModCP, eModCPAA, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-             DeltaMass, *PepStart, ModEnum);
+             DeltaMass, *PepStart, ModEnum, IsFixed);
     // check c term protein mods
     CheckMods(eModC, eModCAA, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-             DeltaMass, *PepStart, ModEnum);
+             DeltaMass, *PepStart, ModEnum, IsFixed);
 
     EndMass(EndMasses);
     return true;  // end of sequence
@@ -504,6 +507,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.14  2004/11/22 23:10:36  lewisg
+  add evalue cutoff, fix fixed mods
+
   Revision 1.13  2004/11/17 23:42:11  lewisg
   add cterm pep mods, fix prob for tophitnum
 
