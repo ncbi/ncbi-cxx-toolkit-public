@@ -160,7 +160,7 @@ CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 
     m_AlnMixSequences->Add(*dsp, flags);
 
-    m_AlnMixMatches->Add(*dsp);
+    m_AlnMixMatches->Add(*dsp, flags);
 }
 
 
@@ -280,6 +280,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.122  2005/03/08 16:21:41  todorov
+* Added CAlnMix::EAddFlags to m_AlnMixMatches->Add
+*
 * Revision 1.121  2005/03/08 00:02:50  todorov
 * Provide CScope when calling the CAlnMixSequences constructor, in case CScope
 * was provided in CAlnMix.
