@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2002/10/15 22:04:09  thiessen
+* fix geom vltns bug
+*
 * Revision 1.49  2002/10/13 22:58:08  thiessen
 * add redo ability to editor
 *
@@ -319,10 +322,7 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
 void UpdateViewer::ReplaceAlignments(const AlignmentList& alignmentList)
 {
     // empty out the current alignment list and display (but not the undo stacks!)
-    AlignmentList::const_iterator a, ae = GetCurrentAlignments().end();
-    for (a=GetCurrentAlignments().begin(); a!=ae; a++) delete *a;
-    GetCurrentAlignments().clear();
-
+    DELETE_ALL_AND_CLEAR(GetCurrentAlignments(), AlignmentList);
     GetCurrentDisplay()->Empty();
 
     AddAlignments(alignmentList);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/10/15 22:04:09  thiessen
+* fix geom vltns bug
+*
 * Revision 1.37  2002/10/13 22:58:08  thiessen
 * add redo ability to editor
 *
@@ -434,7 +437,7 @@ void ViewerWindowBase::OnJustification(wxCommandEvent& event)
 void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
 {
     const ViewerBase::AlignmentList& alignments = viewer->GetCurrentAlignments();
-    if (alignments.size() > 0) return;
+    if (alignments.size() == 0) return;
 
     Threader::GeometryViolationsForRow violations;
     ViewerBase::AlignmentList::const_iterator a, ae = alignments.end();
