@@ -764,7 +764,7 @@ BLAST_ScoreSetAmbigRes(BlastScoreBlk* sbp, char ambiguous_res)
  * @return zero on success.
 */
 
-static Int2 BlastScoreBlkMatCreate(BlastScoreBlk* sbp)
+Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp)
 {
 
 	Int2	index1, index2, degen;
@@ -874,13 +874,6 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
         for (index1 = 0; index1 < sbp->alphabet_size; index1++)
             for (index2 = 0; index2 < sbp->alphabet_size; index2++)
                 matrix[index1][index2] = BLAST_SCORE_MIN;
-    } else {
-        /* Fill-in all the defaults ambiguity and normal codes */
-        status=BlastScoreBlkMatCreate(sbp); 
-        if(status != 0)
-	{
-        	return status;
-	}
     }
     
     /* Read the residue names for the second alphabet */
@@ -1084,6 +1077,13 @@ BLAST_ScoreBlkMatFill(BlastScoreBlk* sbp, char* matrix_path)
 {
     Int2 status = 0;
     
+    /* For nucleotide case we first create a default matrix, based on the 
+       match and mismatch scores. */
+    if (sbp->alphabet_code == BLASTNA_SEQ_CODE) {
+       if ( (status=BlastScoreBlkNuclMatrixCreate(sbp)) != 0)
+          return status;
+    }
+
     if (sbp->read_in_matrix) {
         if (matrix_path && *matrix_path != NULLB) {
 
@@ -1115,10 +1115,6 @@ BLAST_ScoreBlkMatFill(BlastScoreBlk* sbp, char* matrix_path)
                 return status;
             }
         }
-    } else {
-       /* Nucleotide BLAST only! */
-       if ( (status=BlastScoreBlkMatCreate(sbp)) != 0)
-          return status;
     }
 
     if ( (status=BlastScoreBlkMaxScoreSet(sbp)) != 0)
@@ -3598,6 +3594,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.89  2004/08/03 20:12:57  dondosha
+ * Renamed BlastScoreBlkMatCreate to BlastScoreBlkNuclMatrixCreate and made it public
+ *
  * Revision 1.88  2004/07/16 14:00:20  camacho
  * documentation fixes
  *

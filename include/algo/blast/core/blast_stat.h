@@ -519,6 +519,17 @@ Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp);
 void
 Blast_FillResidueProbability(const Uint1* sequence, Int4 length, double * resProb);
 
+/** Fill in the matrix for blastn using the penaly and rewards
+ * The query sequence alphabet is blastna, the subject sequence
+ * is ncbi2na.  The alphabet blastna is defined in blast_stat.h
+ * and the first four elements of blastna are identical to ncbi2na.
+ * if sbp->matrix==NULL, it is allocated.
+ * @param sbp the BlastScoreBlk on which reward, penalty, and matrix will be set
+ [in|out]
+ * @return zero on success.
+*/
+Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp);
+
 #ifdef __cplusplus
 }
 #endif
