@@ -447,7 +447,7 @@ void CBDB_Cache::Open(const char* cache_path,
     try {
         m_Env->JoinEnv(cache_path, CBDB_Env::eThreaded);
         if (!m_Env->IsTransactional()) {
-            LOG_POST(Info << 
+            LOG_POST(Warning << 
                      "LC: Warning: Joined non-transactional environment ");
         }
     } 
@@ -2007,6 +2007,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/01/07 18:58:10  vasilche
+ * Make message about joining to non-transactional environment a warning.
+ *
  * Revision 1.38  2003/12/30 16:29:12  kuznets
  * Fixed a bug in overflow file naming.
  *
