@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CFindPattern {
+class NCBI_XALGOSEQ_EXPORT CFindPattern {
 public:
     /// Find non-overlapping matches of regular expression in sequence.
     static void Find(const string& seq, const string& pattern,
@@ -67,6 +67,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/12/16 20:10:16  jcherry
+ * Added export specifier
+ *
  * Revision 1.9  2003/12/16 18:02:21  jcherry
  * Moved find_pattern to algo/sequence
  *
