@@ -6,7 +6,7 @@
 #
 
 cd $(dirname $(echo $0 | sed 's%\\%/%g'))
-ROOT="$(echo $PWD | sed 's%//\([a-zA-Z]\)/%\1:\\%' | sed 's%/src/objects%%')"
+ROOT="$(echo $PWD | sed 's%/cygdrive/\([a-zA-Z]\)/%\1:\\%' | sed 's%//\([a-zA-Z]\)/%\1:\\%' | sed 's%/src/objects%%')"
 TOOL="$ROOT/compilers/msvc_prj/serial/datatool/DebugMT/datatool"
 
 OBJECTS="$ROOT/src/objects"
