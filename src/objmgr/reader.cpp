@@ -42,18 +42,14 @@ istream & operator >> (istream &is, CStreamable &obj)
 void CIntStreamable::Save(ostream &os) const
 {
   for(int i=0;i<sizeof(m_Value) ; ++i)
-    os << static_cast<char>((m_Value>>(8*i)) & 0xff) ;
+    os.put(static_cast<char>((m_Value>>(8*i)) & 0xff));
 }
 
 void CIntStreamable::Restore(istream &is)
 {
   m_Value=0;
   for(int i=0;i<sizeof(m_Value) ; ++i)
-    {
-      unsigned char x;
-      is >> x;
-      m_Value += static_cast<TInt>(x)<<(8*i);
-    }
+    m_Value += static_cast<TInt>(is.get())<<(8*i);
 }
 
 void CStringStreamable::Save(ostream &os) const
@@ -132,6 +128,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2002/03/27 18:06:08  kimelman
+* stream.read/write instead of << >>
+*
 * Revision 1.3  2002/03/21 19:14:54  kimelman
 * GB related bugfixes
 *
