@@ -38,6 +38,7 @@ Contents: Functions needed for formatting of BLAST results
 #define __BLAST_FORMAT__
 
 #include <corelib/ncbistd.hpp>
+#include <objtools/alnmgr/util/showalign.hpp>
 
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/core/blast_options.h>
@@ -46,6 +47,9 @@ Contents: Functions needed for formatting of BLAST results
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
+
+typedef list<objects::CDisplaySeqalign::SeqlocInfo> TSeqLocInfo; 
+typedef vector<TSeqLocInfo> TSeqLocInfoVector;
 
 #define BLAST_NUM_DESCRIPTIONS 500
 #define BLAST_NUM_ALIGNMENTS 250

@@ -37,7 +37,6 @@
 #include <corelib/ddumpable.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
-#include <objtools/alnmgr/util/showalign.hpp>
 
 #include <algo/blast/api/blast_types.hpp>
 // NewBlast includes
@@ -63,9 +62,6 @@ BEGIN_SCOPE(blast)
 NCBI_XBLAST_EXPORT
 BlastMask*
 CSeqLoc2BlastMask(const objects::CSeq_loc *slp, int index);
-
-TSeqLocInfoVector
-BlastMask2CSeqLoc(BlastMask* mask, TSeqLocVector & slp, EProgram program);
 
 void BlastMaskDNAToProtein(BlastMask** mask, TSeqLocVector & slp);
 
@@ -135,6 +131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/08/20 14:45:26  dondosha
+* All references to CDisplaySeqalign moved to blast_format.hpp
+*
 * Revision 1.18  2003/08/19 22:11:49  dondosha
 * Major types definitions moved to blast_types.h
 *

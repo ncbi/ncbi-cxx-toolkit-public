@@ -36,7 +36,6 @@
 #include <corelib/ncbistd.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
-#include <objtools/alnmgr/util/showalign.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -67,8 +66,6 @@ struct SSeqLoc {
 };
 typedef vector<SSeqLoc>   TSeqLocVector;
 typedef vector< CRef<objects::CSeq_align_set> > TSeqAlignVector;
-typedef list<objects::CDisplaySeqalign::SeqlocInfo> TSeqLocInfo; 
-typedef vector<TSeqLocInfo> TSeqLocInfoVector;
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -77,6 +74,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/20 14:45:26  dondosha
+* All references to CDisplaySeqalign moved to blast_format.hpp
+*
 * Revision 1.1  2003/08/19 22:10:10  dondosha
 * Special types definitions for use in BLAST
 *
