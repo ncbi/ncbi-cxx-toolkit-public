@@ -388,7 +388,15 @@ I_DriverContext* ODBC_CreateContext(map<string,string>* attr = 0)
         use_dsn= (*attr)["use_dsn"] == "true";
     }
 
-    return new CODBCContext(version, use_dsn);
+    CODBCContext* cntx=  new CODBCContext(version, use_dsn);
+    if(cntx && attr) {
+      string page_size= (*attr)["packet"];
+      if(!page_size.empty()) {
+	SQLUINTEGER s= atoi(page_size.c_str());
+	cntx->ODBC_SetPacketSize(s);
+      }
+    }
+    return cntx;
 }
 
 void DBAPI_RegisterDriver_ODBC(I_DriverMgr& mgr)
@@ -411,6 +419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/04/01 21:51:17  soussov
+ * new attribute 'packet=XXX' (where XXX is a packet size) added to ODBC_CreateContext
+ *
  * Revision 1.3  2002/07/03 21:48:50  soussov
  * adds DSN support if needed
  *
