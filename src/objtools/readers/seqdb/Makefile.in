@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("SEQDB" project)
+#################################
+
+LIB_PROJ = seqdb
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
