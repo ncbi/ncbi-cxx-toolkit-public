@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/05/17 17:59:03  vakatov
+ * TEST_UTIL_Log::  Set "errno" to zero before testing LOG_WRITE_ERRNO()
+ *
  * Revision 6.4  2000/06/23 19:35:51  vakatov
  * Test the logging of binary data
  *
@@ -345,6 +348,7 @@ static void TEST_UTIL_Log(void)
   }}
 
   /* logging with errno */
+  errno = 0;
   LOG_WRITE_ERRNO(x_log, eLOG_Warning, 0);  
   LOG_WRITE_ERRNO(x_log, eLOG_Error, "");
   LOG_WRITE_ERRNO(x_log, eLOG_Critical, "OKAY");
