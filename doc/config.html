@@ -45,7 +45,8 @@
          <li> <a href="#ref_Optional">
          Optional projects</a>
          <li> <a href="#ref_Misc">
-         Miscellaneous: <i>--without-exe, --without-execopy</i></a>
+         Miscellaneous: <i>--without-exe, --without-execopy,
+	 --with-lib-rebuilds(=ask)</i></a>
          <li> <a href="#ref_Wrappers">
          Compiler-specific <b><i>configure</i></b> wrappers
          (<i>compilers/*.sh</i>) </a>
@@ -1082,13 +1083,19 @@ using the following <b><i>configure</i></b> flags:
 <p>
 <br>
 <a name="ref_Misc"></a>
-<h4>Miscellaneous: <i>--without-exe, --without-execopy</i></h4>
+<h4>Miscellaneous: <i>--without-exe, --without-execopy, --with-lib-rebuilds(=ask)</i></h4>
 
 <ul>
   <li> <i><b>--without-exe</b></i> --
 		  do not build the executables enlisted in the <i>APP_PROJ</i>
   <li> <i><b>--without-execopy</b></i> --
 		  do not copy (yet build) the executables enlisted in the <i>APP_PROJ</i>
+  <li> <i><b>--with-lib-rebuilds</b></i> --
+          When building an application, attempt to rebuild all of the
+          libraries it uses in case they are out of date.
+  <li> <i><b>--with-lib-rebuilds=ask</b></i> --
+          As above, but prompt before any needed rebuilds.  (Do not
+          prompt for libraries that are up-to-date.)
 </ul>
 
 

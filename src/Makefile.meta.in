@@ -91,6 +91,8 @@ purge:
 	@$(LIBP_BRA) purge $(LIBP_KET)
 	@$(APPP_BRA) purge $(APPP_KET)
 
+libs:
+	@$(LIBP_BRA) all   $(LIBP_KET)
 
 ### Recursive build -- in the [SUB_PROJ] directories
 

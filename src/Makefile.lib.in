@@ -43,6 +43,7 @@ $(XLIB): $(XLIBOBJ)
 	@$(RANLIB) $(XLIB)
 	$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
+	echo $(srcdir) `pwd` $(TMPL) > $(libdir)/$(XLIBDEP)
 	$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
 
 

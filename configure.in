@@ -86,6 +86,10 @@ AC_ARG_WITH(execopy,
    [ --without-execopy       do not copy built executables to the BIN area])
 AC_ARG_WITH(bincopy,
    [ --without-bincopy       no check if libs or apps need to be copied to BIN])
+AC_ARG_WITH(lib-rebuilds,
+   [ --with-lib-rebuilds     ensure that apps use up-to-date libraries])
+AC_ARG_WITH(lib-rebuilds2,
+   [ --with-lib-rebuilds=ask ask whether to update each app's libraries])dnl'
 
 ## NCBI packages
 AC_ARG_WITH(ncbi-c,
@@ -137,7 +141,7 @@ AC_ARG_WITH(manuals,
 #### Check the passed arguments against the list of available ones
 x_with_list="\
 debug optimization dll static runpath mt 64 \
-exe autodep suffix hostspec execopy bincopy \
+exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 local-lbsm serial objects app ctools gui internal"
 
@@ -1946,6 +1950,12 @@ else
    APP_NOBUILD=
 fi
 
+IF_REBUILDING_LIBS="#"
+IF_REBUILDING_CONDITIONALLY="#"
+case "$with_lib_rebuilds" in
+  yes) IF_REBUILDING_LIBS="" ;;
+  ask) IF_REBUILDING_CONDITIONALLY="" ;;
+esac
 
 
 ### Check for C standard types and sizes
@@ -2103,6 +2113,8 @@ AC_SUBST(NCBI_C_ncbi)
 AC_SUBST(BINCOPY)
 AC_SUBST(APP_NOCOPY)
 AC_SUBST(APP_NOBUILD)
+AC_SUBST(IF_REBUILDING_LIBS)
+AC_SUBST(IF_REBUILDING_CONDITIONALLY)
 AC_SUBST(CC_FILTER)
 AC_SUBST(CXX_FILTER)
 
