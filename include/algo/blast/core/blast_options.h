@@ -44,7 +44,6 @@ Detailed Contents:
 
 #include <blast_def.h>
 #include <blast_message.h>
-#include <objloc.h>
 
 
 #ifdef __cplusplus

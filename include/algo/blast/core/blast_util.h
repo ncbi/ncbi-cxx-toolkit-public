@@ -43,7 +43,6 @@ Detailed Contents:
 extern "C" {
 #endif
 
-#include <readdb.h>
 #include <blast_def.h>
 
 /** Different types of sequence encodings for sequence retrieval from the 
@@ -55,6 +54,7 @@ extern "C" {
 #define NCBI2NA_ENCODING 3
 #define ERROR_ENCODING 255
 
+#if 0
 /** Retrieve a sequence from the BLAST database
  * @param db BLAST database [in]
  * @param seq_ptr Pointer to sequence buffer [out]
@@ -64,6 +64,7 @@ extern "C" {
 void
 MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr PNTR seq_ptr,
                      Int4 oid, Uint1 encoding);
+#endif
 
 /** Deallocate memory only for the sequence in the sequence block */
 Int2 BlastSequenceBlkClean(BLAST_SequenceBlkPtr seq_blk);

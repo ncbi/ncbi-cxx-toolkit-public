@@ -43,7 +43,6 @@ Contents: Structures and functions prototypes used for BLAST gapped extension
 #include <blast_extend.h>
 #include <gapxdrop.h>
 #include <mbalign.h>
-#include <readdb.h>
 
 #ifdef __cplusplus
 extern "C" {
