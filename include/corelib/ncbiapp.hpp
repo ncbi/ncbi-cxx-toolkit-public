@@ -223,7 +223,7 @@ public:
     ///   The CArgs object containing parsed cmd.-line arguments.
     /// @sa
     ///   SetArgDescriptions().
-    const CArgs& GetArgs(void) const;
+    virtual const CArgs& GetArgs(void) const;
 
     /// Get the application's cached environment.
     const CNcbiEnvironment& GetEnvironment(void) const;
@@ -330,11 +330,10 @@ protected:
     /// Call from the Init() method. The passed "arg_desc" will be owned
     /// by this class, and it will be deleted by ~CNcbiApplication(),
     /// or if SetupArgDescriptions() is called again.
-    void SetupArgDescriptions(CArgDescriptions* arg_desc);
+    virtual void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
     /// Get argument descriptions (set by SetupArgDescriptions)
-    const CArgDescriptions* GetArgDescriptions(void) const 
-                                            { return m_ArgDesc.get(); }
+    const CArgDescriptions* GetArgDescriptions(void) const;
 
     /// Setup the application diagnostic stream.
     /// @return
@@ -483,52 +482,53 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 
-inline const CNcbiArguments& CNcbiApplication::GetArguments(void) const {
+inline const CNcbiArguments& CNcbiApplication::GetArguments(void) const
+{
     return *m_Arguments;
 }
 
-inline const CArgs& CNcbiApplication::GetArgs(void) const {
-    if ( !m_Args.get() ) {
-        NCBI_THROW(CAppException, eUnsetArgs,
-                   "Command-line argument description is not found");
-    }
-    return *m_Args;
-}
-
-inline const CNcbiEnvironment& CNcbiApplication::GetEnvironment(void) const {
+inline const CNcbiEnvironment& CNcbiApplication::GetEnvironment(void) const
+{
     return *m_Environ;
 }
 
-inline CNcbiEnvironment& CNcbiApplication::SetEnvironment(void) {
+inline CNcbiEnvironment& CNcbiApplication::SetEnvironment(void)
+{
     return *m_Environ;
 }
 
-inline const CNcbiRegistry& CNcbiApplication::GetConfig(void) const {
+inline const CNcbiRegistry& CNcbiApplication::GetConfig(void) const
+{
     return *m_Config;
 }
 
-inline CNcbiRegistry& CNcbiApplication::GetConfig(void) {
+inline CNcbiRegistry& CNcbiApplication::GetConfig(void)
+{
     return *m_Config;
 }
 
-inline
-const string& CNcbiApplication::GetProgramDisplayName(void) const {
+inline const string& CNcbiApplication::GetProgramDisplayName(void) const
+{
     return m_ProgramDisplayName;
 }
 
-inline
-const string& CNcbiApplication::GetProgramExecutablePath(EFollowLinks
-                                                         follow_links)
-    const
+inline const string&
+CNcbiApplication::GetProgramExecutablePath(EFollowLinks follow_links) const
 {
     return follow_links == eFollowLinks ? m_RealExePath : m_ExePath;
 }
 
-inline
-const string& CNcbiApplication::GetLogFileName(void) const
+
+inline const CArgDescriptions* CNcbiApplication::GetArgDescriptions(void) const
+{
+    return m_ArgDesc.get();
+}
+
+inline const string& CNcbiApplication::GetLogFileName(void) const
 {
     return m_LogFileName;
 }
+
 
 END_NCBI_SCOPE
 
@@ -537,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/03/10 18:01:16  vakatov
+ * Made SetupArgDescriptions() and GetArgs() virtual.
+ *
  * Revision 1.49  2004/12/20 16:44:01  ucko
  * Take advantage of the fact that CNcbiRegistry is now a CObject, and
  * generalize x_HonorStandardSettings to accept any IRegistry.
