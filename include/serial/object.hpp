@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/05/04 16:23:10  vasilche
+* Updated CTypesIterator and CTypesConstInterator interface.
+*
 * Revision 1.4  2000/03/29 15:55:20  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -123,11 +126,7 @@ public:
         }
 
     // get pointer to object
-    TObjectPtr GetObjectPtr(void)
-        {
-            return m_ObjectPtr;
-        }
-    TConstObjectPtr GetObjectPtr(void) const
+    TObjectPtr GetObjectPtr(void) const
         {
             return m_ObjectPtr;
         }

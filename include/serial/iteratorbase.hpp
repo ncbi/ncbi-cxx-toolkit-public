@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/05/04 16:23:09  vasilche
+* Updated CTypesIterator and CTypesConstInterator interface.
+*
 * Revision 1.1  2000/04/10 21:01:38  vasilche
 * Fixed Erase for map/set.
 * Added iteratorbase.hpp header for basic internal classes.
@@ -131,7 +134,7 @@ public:
         }
     TObjectPtr GetParentPtr(void) const
         {
-            return const_cast<TObjectPtr>(m_Parent.GetObjectPtr());
+            return m_Parent.GetObjectPtr();
         }
 
     const CChildIndex& GetIndex(void) const

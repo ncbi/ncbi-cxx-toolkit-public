@@ -135,6 +135,40 @@ int CTestSerial::Run(void)
         }
 
         {
+            CTypesIterator i;
+            Type<CSerialObject>::AddTo(i);
+            Type<CSerialObject2>::AddTo(i);
+            for ( i = Begin(write); i; ++i ) {
+                CSerialObject* obj = Type<CSerialObject>::Get(i);
+                if ( obj ) {
+                    NcbiCerr <<"CObject: @ "<<NStr::PtrToString(obj)<<NcbiEndl;
+                }
+                else {
+                    NcbiCerr <<"CObject2: @ "<<
+                        NStr::PtrToString(Type<CSerialObject2>::Get(i))<<
+                        NcbiEndl;
+                }
+            }
+        }
+
+        {
+            CTypesConstIterator i;
+            Type<CSerialObject>::AddTo(i);
+            Type<CSerialObject2>::AddTo(i);
+            for ( i = ConstBegin(write); i; ++i ) {
+                const CSerialObject* obj = Type<CSerialObject>::Get(i);
+                if ( obj ) {
+                    NcbiCerr <<"CObject: @ "<<NStr::PtrToString(obj)<<NcbiEndl;
+                }
+                else {
+                    NcbiCerr <<"CObject2: @ "<<
+                        NStr::PtrToString(Type<CSerialObject2>::Get(i))<<
+                        NcbiEndl;
+                }
+            }
+        }
+
+        {
             {
                 auto_ptr<CObjectOStream> out(CObjectOStream::Open("test.asno",
                                                                   eSerial_AsnText));

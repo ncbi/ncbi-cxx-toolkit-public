@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/05/04 16:23:12  vasilche
+* Updated CTypesIterator and CTypesConstInterator interface.
+*
 * Revision 1.3  2000/04/10 21:01:48  vasilche
 * Fixed Erase for map/set.
 * Added iteratorbase.hpp header for basic internal classes.
@@ -188,17 +191,20 @@ template class CTypeIteratorBase<CTreeIterator>;
 template class CTypeIteratorBase<CTreeConstIterator>;
 
 template<class Iterator>
-bool CTypesIterator<Iterator>::CanSelect(TTypeInfo info) const
+bool CTypesIteratorBase<Iterator>::CanSelect(TTypeInfo info) const
 {
+    m_MatchType = 0;
     iterate ( TTypeList, i, GetTypeList() ) {
-        if ( info->IsType(*i) )
+        if ( info->IsType(*i) ) {
+            m_MatchType = *i;
             return true;
+        }
     }
     return false;
 }
 
 template<class Iterator>
-bool CTypesIterator<Iterator>::CanEnter(TTypeInfo info) const
+bool CTypesIteratorBase<Iterator>::CanEnter(TTypeInfo info) const
 {
     if ( !CParent::CanEnter(info) )
         return false;
@@ -209,7 +215,7 @@ bool CTypesIterator<Iterator>::CanEnter(TTypeInfo info) const
     return false;
 }
 
-template class CTypesIterator<CTreeIterator>;
-template class CTypesIterator<CTreeConstIterator>;
+template class CTypesIteratorBase<CTreeIterator>;
+template class CTypesIteratorBase<CTreeConstIterator>;
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/05/04 16:23:09  vasilche
+* Updated CTypesIterator and CTypesConstInterator interface.
+*
 * Revision 1.4  2000/04/10 21:01:38  vasilche
 * Fixed Erase for map/set.
 * Added iteratorbase.hpp header for basic internal classes.
@@ -398,27 +401,27 @@ public:
 typedef CTypeIterator<CObject> CObjectsIterator;
 typedef CTypeConstIterator<CObject> CObjectsConstIterator;
 
-template<class Iterator = CTreeIterator>
-class CTypesIterator : public Iterator
+template<class Iterator>
+class CTypesIteratorBase : public Iterator
 {
     typedef Iterator CParent;
-protected:
+public:
     typedef typename CParent::TObjectInfo TObjectInfo;
     typedef list<TTypeInfo> TTypeList;
 
-    CTypesIterator(void)
+    CTypesIteratorBase(void)
         {
         }
-    CTypesIterator(TTypeInfo type)
+    CTypesIteratorBase(TTypeInfo type)
         {
             m_TypeList.push_back(type);
         }
-    CTypesIterator(TTypeInfo type1, TTypeInfo type2)
+    CTypesIteratorBase(TTypeInfo type1, TTypeInfo type2)
         {
             m_TypeList.push_back(type1);
             m_TypeList.push_back(type2);
         }
-    CTypesIterator(const TTypeList& typeList)
+    CTypesIteratorBase(const TTypeList& typeList)
         : m_TypeList(typeList)
         {
         }
@@ -428,16 +431,29 @@ protected:
             return m_TypeList;
         }
 
-    CTypesIterator<Iterator>& AddType(TTypeInfo type)
+    CTypesIteratorBase<Iterator>& AddType(TTypeInfo type)
         {
             m_TypeList.push_back(type);
             return *this;
         }
 
-    CTypesIterator<Iterator>& operator=(const TObjectInfo& root)
+    CTypesIteratorBase<Iterator>& operator=(const TObjectInfo& root)
         {
             Begin(root);
             return *this;
+        }
+
+    typename TObjectInfo::TObjectPtr GetFoundPtr(void) const
+        {
+            return Get().GetObjectPtr();
+        }
+    TTypeInfo GetFoundType(void) const
+        {
+            return Get().GetTypeInfo();
+        }
+    TTypeInfo GetMatchType(void) const
+        {
+            return m_MatchType;
         }
 
 protected:
@@ -446,9 +462,11 @@ protected:
 
 private:
     TTypeList m_TypeList;
+    mutable TTypeInfo m_MatchType;
 };
 
-typedef CTypesIterator<CTreeConstIterator> CTypesConstIterator;
+typedef CTypesIteratorBase<CTreeIterator> CTypesIterator;
+typedef CTypesIteratorBase<CTreeConstIterator> CTypesConstIterator;
 
 template<class C>
 inline
@@ -470,6 +488,44 @@ pair<TConstObjectPtr, TTypeInfo> ConstBegin(const C& obj)
 {
     return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetTypeInfo());
 }
+
+template<class C>
+class Type
+{
+public:
+    static TTypeInfo GetTypeInfo(void)
+        {
+            return C::GetTypeInfo();
+        }
+    static void AddTo(CTypesIterator& i)
+        {
+            i.AddType(GetTypeInfo());
+        }
+    static void AddTo(CTypesConstIterator& i)
+        {
+            i.AddType(GetTypeInfo());
+        }
+    static bool Match(const CTypesIterator& i)
+        {
+            return i.GetMatchType() == GetTypeInfo();
+        }
+    static bool Match(const CTypesConstIterator& i)
+        {
+            return i.GetMatchType() == GetTypeInfo();
+        }
+    static C* Get(const CTypesIterator& i)
+        {
+            if ( !Match(i) )
+                return 0;
+            return static_cast<C*>(i.GetFoundPtr());
+        }
+    static const C* Get(const CTypesConstIterator& i)
+        {
+            if ( !Match(i) )
+                return 0;
+            return static_cast<const C*>(i.GetFoundPtr());
+        }
+};
 
 //#include <serial/iterator.inl>
 
