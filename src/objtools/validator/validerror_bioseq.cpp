@@ -108,6 +108,9 @@ BEGIN_SCOPE(validator)
 using namespace sequence;
 using namespace feature;
 
+// Maximum number of adjacent Ns in a Seq_lit
+const size_t CValidError_bioseq::scm_AdjacentNsThreshold = 80;
+
 
 // =============================================================================
 //                                     Public
@@ -1545,6 +1548,16 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
 
+    // Get CMolInfo and tech used for validating technique and gap positioning
+    const CMolInfo* mi = 0;
+    CSeqdesc_CI mi_desc(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_Molinfo);
+    if ( mi_desc ) {
+        mi = &(mi_desc->GetMolinfo());
+    }
+    CMolInfo::TTech tech = 
+        mi != 0 ? mi->GetTech() : CMolInfo::eTech_unknown;
+
+
     if (!inst.IsSetExt()  ||  !inst.GetExt().IsDelta()  ||
         inst.GetExt().GetDelta().Get().empty()) {
         PostErr(eDiag_Error, eErr_SEQ_INST_SeqDataLenWrong,
@@ -1567,13 +1580,13 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             // The C toolkit code checks for valid alphabet here
             // The C++ object serializaton will not load if invalid alphabet
             // so no check needed here
-
-            len += (**sg).GetLiteral().GetLength();
+            const CSeq_literal& lit = (*sg)->GetLiteral();
+            len += lit.GetLength();
             // Check for invalid residues
-            if (!(**sg).GetLiteral().IsSetSeq_data()) {
+            if ( !lit.CanGetSeq_data() ) {
                 break;
             }
-            const CSeq_data& data = (**sg).GetLiteral().GetSeq_data();
+            const CSeq_data& data = lit.GetSeq_data();
             vector<TSeqPos> badIdx;
             CSeqportUtil::Validate(data, &badIdx);
             const string* ss = 0;
@@ -1609,6 +1622,17 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                         NStr::IntToString(*it), seq);
                 }
             }
+            
+            // Count adjacent Ns in Seq-lit for htgs_1 and htgs_2
+            if ( tech == CMolInfo::eTech_htgs_1  ||  
+                 tech == CMolInfo::eTech_htgs_2 ) {
+                size_t adjacent_ns = x_CountAdjacentNs(lit);
+                if ( adjacent_ns > scm_AdjacentNsThreshold ) {
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqLit,
+                        "Run of " + NStr::UIntToString(adjacent_ns) + 
+                        " Ns in delta chain", seq);
+                }
+            }
             break;
         }
         default:
@@ -1628,10 +1652,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             "]", seq);
     }
 
-    // Get CMolInfo and tech used for validating technique and gap positioning
-    CTypeConstIterator<CMolInfo> mi(ConstBegin(seq.GetDescr()));
-    int tech = mi  &&  mi->IsSetTech() ? mi->GetTech() : 0;
-
+    
     // Validate technique
     if ( mi  &&  !m_Imp.IsNT()  &&  !m_Imp.IsNC()  &&  !m_Imp.IsGPS() ) {
         if (tech != CMolInfo::eTech_unknown   &&
@@ -3159,6 +3180,38 @@ bool CValidError_bioseq::x_IsActiveFin(const CBioseq& seq) const
 }
 
 
+size_t CValidError_bioseq::x_CountAdjacentNs(const CSeq_literal& lit)
+{
+    if ( !lit.CanGetSeq_data() ) {
+        return 0;
+    }
+
+    const CSeq_data& lit_data = lit.GetSeq_data();
+    CSeq_data data;
+    CSeqportUtil::Convert(lit_data, &data, CSeq_data::e_Iupacna);
+
+    if ( !data.GetIupacna().CanGet() ) {
+        return 0;
+    }
+
+    size_t count = 0;
+    size_t max = 0;
+    ITERATE(CIUPACna::Tdata, res, data.GetIupacna().Get() ) {
+        if ( *res == 'N' ) {
+            ++count;
+            if ( count > max ) {
+                max = count;
+            }
+        }
+        else {
+            count = 0;
+        }
+    }
+
+    return max;
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -3168,6 +3221,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2003/08/06 15:06:08  shomrat
+* Added test for adjacent Ns in Seq-literal
+*
 * Revision 1.43  2003/07/24 20:16:18  vasilche
 * Fixed typedefs for dbxref: list<CRef<CDbtag>> -> vector<CRef<CDbtag>>
 *

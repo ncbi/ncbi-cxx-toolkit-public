@@ -84,6 +84,7 @@ class CGene_ref;
 class CCdregion;
 class CRNA_ref;
 class CImp_feat;
+class CSeq_literal;
 
 
 BEGIN_SCOPE(validator)
@@ -135,6 +136,7 @@ enum EErrType {
     eErr_SEQ_INST_HistAssemblyMissing,
     eErr_SEQ_INST_TerminalNs,
     eErr_SEQ_INST_UnexpectedIdentifierChange,
+    eErr_SEQ_INST_InternalNsInSeqLit,
 
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
@@ -611,6 +613,7 @@ public:
     void ValidateHistory(const CBioseq& seq);
 
 private:
+    static const size_t scm_AdjacentNsThreshold; // = 80
     
     void ValidateSeqLen(const CBioseq& seq);
     void ValidateSegRef(const CBioseq& seq);
@@ -676,7 +679,8 @@ private:
     bool x_IsActiveFin(const CBioseq& seq) const;
 
     const CBioseq* GetNucGivenProt(const CBioseq& prot);
-    
+
+    size_t x_CountAdjacentNs(const CSeq_literal& lit);
 };
 
 
@@ -876,6 +880,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2003/08/06 15:05:42  shomrat
+* Added test for adjacent Ns in Seq-literal
+*
 * Revision 1.36  2003/07/24 20:16:18  vasilche
 * Fixed typedefs for dbxref: list<CRef<CDbtag>> -> vector<CRef<CDbtag>>
 *
