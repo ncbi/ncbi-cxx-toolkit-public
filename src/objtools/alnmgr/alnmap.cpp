@@ -501,100 +501,76 @@ TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
 }
 
 
-TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
+const CAlnMap::TNumseg& CAlnMap::x_GetSeqLeftSeg(TNumrow row) const
 {
-    if (IsPositiveStrand(row)) {
-        TNumseg& seg = m_SeqLeftSegs[row];
-        if (seg < 0) {
-            TSignedSeqPos start;
-            while (++seg < m_NumSegs) {
-                if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
-                    return start;
-                }
+    TNumseg& seg = m_SeqLeftSegs[row];
+    if (seg < 0) {
+        while (++seg < m_NumSegs) {
+            if (m_Starts[seg * m_NumRows + row] >= 0) {
+                return seg;
             }
-            seg = -1; // not found; reset
-        } else {
-            return m_Starts[seg * m_NumRows + row];
         }
     } else {
-        TNumseg& seg = m_SeqRightSegs[row];
-        if (seg < 0) {
-            TSignedSeqPos start;
-            seg = m_NumSegs;
-            while (seg--) {
-                if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
-                    return start;
-                }
-            }
-            seg = -1; // not found; reset
-        } else {
-            return m_Starts[seg * m_NumRows + row];
-        }
+        return seg;
     }
-    return -1;
+    seg = -1;
+    string err_msg = "CAlnVec::x_GetSeqLeftSeg(): "
+        "Invalid Dense-seg: Row " + NStr::IntToString(row) +
+        " contains gaps only.";
+    NCBI_THROW(CAlnException, eInvalidDenseg, err_msg);
 }
+    
 
-
-TSignedSeqPos CAlnMap::GetSeqStop(TNumrow row) const
+const CAlnMap::TNumseg& CAlnMap::x_GetSeqRightSeg(TNumrow row) const
 {
-    if (IsPositiveStrand(row)) {
-        TNumseg& seg = m_SeqRightSegs[row];
-        if (seg < 0) {
-            TSignedSeqPos start;
-            seg = m_NumSegs;
-            while (seg--) {
-                if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
-                    return start + x_GetLen(row, seg) - 1;
-                }
+    TNumseg& seg = m_SeqRightSegs[row];
+    if (seg < 0) {
+        seg = m_NumSegs;
+        while (seg--) {
+            if (m_Starts[seg * m_NumRows + row] >= 0) {
+                return seg;
             }
-            seg = -1; // not found; reset
-        } else {
-            return m_Starts[seg * m_NumRows + row] + x_GetLen(row, seg) - 1;
         }
     } else {
-        TNumseg& seg = m_SeqLeftSegs[row];
-        if (seg < 0) {
-            TSignedSeqPos start;
-            seg = -1;
-            while (++seg < m_NumSegs) {
-                if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
-                    return start + x_GetLen(row, seg) - 1;
-                }
-            }
-            seg = -1; // not found; reset
-        } else {
-            return m_Starts[seg * m_NumRows + row] + x_GetLen(row, seg) - 1;
-        }
+        return seg;
     }
-    return -1;
+    seg = -1;
+    string err_msg = "CAlnVec::x_GetSeqRightSeg(): "
+        "Invalid Dense-seg: Row " + NStr::IntToString(row) +
+        " contains gaps only.";
+    NCBI_THROW(CAlnException, eInvalidDenseg, err_msg);
 }
-
+    
 
 TSignedSeqPos CAlnMap::GetSeqAlnStart(TNumrow row) const
 {
-    int seg = -1;
-    
-    while (++seg < GetNumSegs()) {
-        if (GetStart(row, seg) >= 0
-            &&  ( !IsSetAnchor()  ||  GetStart(m_Anchor, seg) >= 0)) {
-            return GetAlnStart(seg);
+    if (IsSetAnchor()) {
+        TNumseg seg = -1;
+        while (++seg < m_AlnSegIdx.size()) {
+            if (m_Starts[m_AlnSegIdx[seg] * m_NumRows + row] >= 0) {
+                return GetAlnStart(seg);
+            }
         }
+        return -1;
+    } else {
+        return GetAlnStart(x_GetSeqLeftSeg(row));
     }
-    return -1;
 }
 
 
 TSignedSeqPos CAlnMap::GetSeqAlnStop(TNumrow row) const
 {
-    int seg = GetNumSegs();
-    
-    while (seg--) {
-        if (GetStart(row, seg) >= 0
-            &&  ( !IsSetAnchor()  ||  GetStart(m_Anchor, seg) >= 0)) {
-            return GetAlnStop(seg);
+    if (IsSetAnchor()) {
+        TNumseg seg = m_AlnSegIdx.size();
+        while (seg--) {
+            if (m_Starts[m_AlnSegIdx[seg] * m_NumRows + row] >= 0) {
+                return GetAlnStop(seg);
+            }
         }
+        return -1;
+    } else {
+        return GetAlnStop(x_GetSeqRightSeg(row));
     }
-    return -1;
 }
 
 
@@ -911,6 +887,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2003/09/18 23:05:18  todorov
+* Optimized GetSeqAln{Start,Stop}
+*
 * Revision 1.39  2003/09/17 16:26:35  todorov
 * Fixed GetSeqPosFromSeqPos
 *

@@ -128,9 +128,9 @@ public:
     TSignedSeqPos GetSeqAlnStart(TNumrow row) const; //aln coords, strand ignored
     TSignedSeqPos GetSeqAlnStop (TNumrow row) const;
     TSignedRange  GetSeqAlnRange(TNumrow row) const;
-    TSignedSeqPos GetSeqStart   (TNumrow row) const; //seq coords, with strand
-    TSignedSeqPos GetSeqStop    (TNumrow row) const;  
-    TSignedRange  GetSeqRange   (TNumrow row) const;
+    TSeqPos       GetSeqStart   (TNumrow row) const; //seq coords, with strand
+    TSeqPos       GetSeqStop    (TNumrow row) const;  
+    TRange        GetSeqRange   (TNumrow row) const;
 
     // Segment info
     TSignedSeqPos GetStart  (TNumrow row, TNumseg seg, int offset = 0) const;
@@ -310,6 +310,8 @@ protected:
     TSignedSeqPos     x_GetRawStart     (TNumrow row, TNumseg seg) const;
     TSignedSeqPos     x_GetRawStop      (TNumrow row, TNumseg seg) const;
     TSeqPos           x_GetLen          (TNumrow row, TNumseg seg) const;
+    const TNumseg&    x_GetSeqLeftSeg   (TNumrow row)              const;
+    const TNumseg&    x_GetSeqRightSeg  (TNumrow row)              const;
 
     bool x_SkipType               (TSegTypeFlags type,
                                    TGetChunkFlags flags) const;
@@ -569,9 +571,28 @@ CAlnMap::GetRange(TNumrow row, TNumseg seg, int offset) const
 
 
 inline
-CAlnMap::TSignedRange CAlnMap::GetSeqRange(TNumrow row) const
+TSeqPos CAlnMap::GetSeqStart(TNumrow row) const
 {
-    return TSignedRange(GetSeqStart(row), GetSeqStop(row));
+    return 
+        m_Starts[(IsPositiveStrand(row) ?
+                  x_GetSeqLeftSeg(row) :
+                  x_GetSeqRightSeg(row)) * m_NumRows + row];
+}
+
+
+inline
+TSeqPos CAlnMap::GetSeqStop(TNumrow row) const
+{
+    const TNumseg& seg = IsPositiveStrand(row) ?
+        x_GetSeqRightSeg(row) : x_GetSeqLeftSeg(row);
+    return m_Starts[seg * m_NumRows + row] + x_GetLen(row, seg) - 1;
+}
+
+
+inline
+CAlnMap::TRange CAlnMap::GetSeqRange(TNumrow row) const
+{
+    return TRange(GetSeqStart(row), GetSeqStop(row));
 }
 
 
@@ -631,6 +652,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/09/18 23:05:11  todorov
+* Optimized GetSeqAln{Start,Stop}
+*
 * Revision 1.29  2003/09/09 19:42:37  dicuccio
 * Fixed thinko in GetWidth() - properly order ternary operator
 *
