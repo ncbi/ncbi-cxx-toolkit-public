@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 
 // Detect all compartments over a hit set
-class CCompartmentFinder {
+class NCBI_XALGOALIGN_EXPORT CCompartmentFinder {
 
 public:
 
@@ -86,7 +86,7 @@ public:
     void OrderCompartments(void);
 
     // single compartment representation
-    class CCompartment {
+    class NCBI_XALGOALIGN_EXPORT CCompartment {
 
     public:
         
@@ -241,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/28 17:38:22  jcherry
+ * Added export specifiers
+ *
  * Revision 1.2  2004/12/06 22:11:24  kapustin
  * File header update
  *
