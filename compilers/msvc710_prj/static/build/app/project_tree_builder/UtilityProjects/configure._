@@ -1,0 +1,1 @@
+%_THE_PATH%\project_tree_builder.exe -logfile out.log -conffile %_THE_PATH%\..\..\project_tree_builder.ini E:\Users\gorelenk\c++\ src\app\project_tree_builder\ E:\Users\gorelenk\c++\compilers\msvc7_prj\app\project_tree_builder\project_tree_builder.sln
