@@ -1098,6 +1098,21 @@ BlastResults* BLAST_ResultsFree(BlastResults* results)
    return NULL;
 }
 
+static void BlastHitListPurge(BlastHitList* hit_list)
+{
+   Int4 index, hsplist_count;
+   
+   hsplist_count = hit_list->hsplist_count;
+   for (index = 0; index < hsplist_count && 
+           hit_list->hsplist_array[index]->hspcnt > 0; ++index);
+   
+   hit_list->hsplist_count = index;
+   /* Free all empty HSP lists */
+   for ( ; index < hsplist_count; ++index) {
+      BlastHSPListFree(hit_list->hsplist_array[index]);
+   }
+}
+
 Int2 BLAST_SortResults(BlastResults* results)
 {
    Int4 index;
@@ -1109,6 +1124,7 @@ Int2 BLAST_SortResults(BlastResults* results)
          qsort(hit_list->hsplist_array, hit_list->hsplist_count, 
                   sizeof(BlastHSPList*), evalue_compare_hsp_lists);
       }
+      BlastHitListPurge(hit_list);
    }
    return 0;
 }
