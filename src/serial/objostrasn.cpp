@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/05/09 19:04:56  vasilche
+* Fixed bug in storing float point number to text ASN.1 format.
+*
 * Revision 1.36  2000/04/28 16:58:13  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -290,7 +293,7 @@ void CObjectOStreamAsn::WriteDouble(double data)
     else
         characteristic = 8 + int(ceil(-thelog));
     
-    double mantissa = data * pow(double(10), characteristic);
+    double mantissa = floor(data * pow(double(10), characteristic) + 0.5);
     int ic = -characteristic; /* reverse direction */
     
     long im;
