@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/01/25 17:05:32  lavr
+ * Bugfix in SERV_OpenEx: op was not initted to 0
+ *
  * Revision 6.10  2001/01/08 23:47:29  lavr
  * (unsigned char) conversion in isspace
  *
@@ -127,8 +130,9 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
     strcpy((char *)iter->service, service);
     iter->type = type;
     iter->preferred_host = preferred_host;
-    iter->skip = 0;
     iter->n_skip = iter->n_max_skip = 0;
+    iter->skip = 0;
+    iter->op = 0;
     iter->data = 0;
 
     for (i = 0; i < n_skip; i++) {
