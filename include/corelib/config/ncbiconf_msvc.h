@@ -70,4 +70,8 @@
 #define HAVE_LIBPNG      1
 #define HAVE_LIBGIF      1
 
-typedef long ssize_t;
+#ifdef _WIN64
+typedef __int64 ssize_t;
+#else
+typedef   int   ssize_t;
+#endif
