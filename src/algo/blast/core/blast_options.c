@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.35  2003/07/22 15:32:55  dondosha
+ * Removed dependence on readdb API
+ *
  * Revision 1.34  2003/07/21 20:31:47  dondosha
  * Added BlastDatabaseParameters structure with genetic code string
  *
@@ -225,7 +228,6 @@
 
 static char const rcsid[] = "$Id$";
 
-#include <readdb.h>
 #include <blast_options.h>
 #include <blast_gapalign.h>
 #include <blast_filter.h>
@@ -720,24 +722,8 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptionsPtr options,
       return 0;
    }
 
-   /* User provided values if set, otherwise use real ones. */
-   if (dbseq_num == 0) {
-      if (database) {
-         ReadDBFILEPtr rdfp = readdb_new_ex(database, is_protein, FALSE);
-         if (rdfp == NULL)
-            return 2;
-         readdb_get_totals_ex(rdfp, &options->db_length,
-                              &dbseq_num, TRUE);
-         rdfp = readdb_destruct(rdfp);
-      }	else {
-         dbseq_num = 1;
-      }
-   }
-
-   options->dbseq_num = dbseq_num;
-
-   if (db_length)
-      options->db_length = db_length;
+   options->dbseq_num = MAX(dbseq_num, 1);
+   options->db_length = MAX(db_length, 1);
 
    return 0;
 }
