@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2004/01/08 17:40:53  gouriano
+* Added encoding Windows-1252.
+* Corrected reading of containers.
+* Made it possible to read a choice variant, which is am empty container.
+*
 * Revision 1.50  2003/11/26 19:59:40  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid
@@ -504,12 +509,9 @@ CLightString CObjectIStreamXml::ReadName(char c)
     const char* ptr = m_Input.GetCurrentPos();
 
     // check end of tag name
-    if ( IsWhiteSpace(c) ) {
-        // whitespace -> attributes may follow
-        m_Input.SkipChars(i + 1);
-    }
-    else {
-        m_Input.SkipChars(i);
+    m_Input.SkipChars(i);
+    if (c == '\n' || c == '\r') {
+        m_Input.SkipEndOfLine(c);
     }
     m_LastTag = CLightString(ptr+iColon, i-iColon);
     if (iColon > 1) {
@@ -590,6 +592,8 @@ void CObjectIStreamXml::SkipQDecl(void)
                 m_Encoding = eEncoding_UTF8;
             } else if (value == "ISO-8859-1") {
                 m_Encoding = eEncoding_ISO8859_1;
+            } else if (value == "Windows-1252") {
+                m_Encoding = eEncoding_Windows_1252;
             } else {
                 ThrowError(fFormatError, "unknown encoding: " + value);
             }
@@ -1381,9 +1385,12 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
                 tagName = RejectedName();
             }
             UndoClassMember();
-            return (tagName == classType->GetName()) ||
-                (classType->GetItems().FindDeep(tagName) != kInvalidMember) ||
-                HasAnyContent(classType);
+
+            if (classType->GetName().empty()) {
+                return classType->GetItems().FindDeep(tagName) != kInvalidMember ||
+                    HasAnyContent(classType);
+            }
+            return tagName == classType->GetName();
         }
     }
     return true;
@@ -1675,6 +1682,8 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
             }
             if (m_Attlist && !SelfClosedTag()) {
                 m_Attlist = false;
+                if ( NextTagIsClosing() )
+                    return kInvalidMember;
                 if (!NextIsTag()) {
                     TMemberIndex ind = first+1;
                     if (classType->GetMemberInfo(ind)->GetId().HasNotag()) {
@@ -1808,8 +1817,13 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
             }
         }
         m_Attlist = false;
-        if ( NextTagIsClosing() )
-            return kInvalidMember;
+        if ( NextTagIsClosing() ) {
+            TMemberIndex ind = choiceType->GetVariants().FindEmpty();
+            if (ind != kInvalidMember) {
+                TopFrame().SetNotag();
+            }
+            return ind;
+        }
         tagName = ReadName(BeginOpeningTag());
     } else {
         tagName = RejectedName();
