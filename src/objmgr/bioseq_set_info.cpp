@@ -185,7 +185,7 @@ void CBioseq_set_Info::x_DoUpdateObject(void)
         CBioseq_set::TSeq_set::const_iterator it2 = seq_set.begin();
         NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
             (*it)->x_UpdateObject();
-            _ASSERT((*it2) == &(*it)->x_GetObject());
+            _ASSERT(it2->GetPointer() == &(*it)->x_GetObject());
             ++it2;
         }
     }
@@ -217,9 +217,9 @@ void CBioseq_set_Info::x_SetObject(const CBioseq_set_Info& info)
     if ( info.IsSetSeq_set() ) {
         _ASSERT(m_Object->GetSeq_set().size() == info.m_Seq_set.size());
         ITERATE ( TSeq_set, it, info.m_Seq_set ) {
-            CRef<CSeq_entry_Info> info(new CSeq_entry_Info(**it));
-            m_Seq_set.push_back(info);
-            x_AttachEntry(info);
+            CRef<CSeq_entry_Info> info2(new CSeq_entry_Info(**it));
+            m_Seq_set.push_back(info2);
+            x_AttachEntry(info2);
         }
     }
     if ( info.IsSetAnnot() ) {
@@ -409,6 +409,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/24 20:05:17  vasilche
+ * Fixed compilation error on Sun.
+ *
  * Revision 1.3  2004/03/24 18:57:35  vasilche
  * Added include <algorithm> for find().
  *
