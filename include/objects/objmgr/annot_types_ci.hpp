@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/04/22 20:06:15  grichenk
+* Minor changes in private interface
+*
 * Revision 1.11  2002/04/17 21:11:58  grichenk
 * Fixed annotations loading
 * Set "partial" flag in features if necessary
@@ -78,6 +81,7 @@
 
 #include <objects/objmgr1/bioseq_handle.hpp>
 #include <objects/objmgr1/annot_ci.hpp>
+#include <objects/seqloc/Na_strand.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <set>
 #include <memory>
@@ -145,6 +149,7 @@ private:
         // sequence coordinates.
         int                         m_RefMin;
         int                         m_RefMax;
+        ENa_strand                  m_Strand;
         // Convert references to this id
         CSeq_id_Handle              m_MasterId;
         // Master/segment flag. Do not convert references if this flag is set.
@@ -166,10 +171,11 @@ private:
     void x_ResolveReferences(CSeq_id_Handle master_idh, // master id
                              CSeq_id_Handle ref_idh,    // ref. id
                              int rmin, int rmax,        // ref. interval
+                             ENa_strand strand,         // ref. strand
                              int shift,                 // shift to master
                              bool resolve);
     // Convert an annotation to the master location coordinates
-    CAnnotObject* x_ConvertAnnotToMaster(CAnnotObject& annot_obj) const;
+    CAnnotObject* x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const;
     // Convert seq-loc to the master location coordinates, return true
     // if any location was adjusted (used as Partial flag for features)
     bool x_ConvertLocToMaster(CSeq_loc& loc) const;

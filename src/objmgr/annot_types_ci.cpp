@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/04/22 20:06:17  grichenk
+* Minor changes in private interface
+*
 * Revision 1.14  2002/04/17 21:11:59  grichenk
 * Fixed annotations loading
 * Set "partial" flag in features if necessary
@@ -154,6 +157,7 @@ void CAnnotTypes_CI::x_Initialize(const CSeq_loc& loc, EResolveMethod resolve)
             x_ResolveReferences(id_it->first,             // master id
                 id_it->first,                             // id to resolve
                 rit->first.GetFrom(), rit->first.GetTo(), // ref. interval
+                rit->second,                              // strand
                 0, resolve == eResolve_All);              // no shift
         }
     }
@@ -266,6 +270,7 @@ const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
 void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
                                          CSeq_id_Handle ref_idh,
                                          int rmin, int rmax,
+                                         ENa_strand strand,
                                          int shift,
                                          bool resolve)
 {
@@ -313,6 +318,7 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
             int rshift = shift + seg.GetPosition() - seg.m_RefPos;
             x_ResolveReferences(master_idh, seg.m_RefSeq,
                                 seg_min - rshift, seg_max - rshift,
+                                strand, //### THIS IS INCORRECT!!!
                                 rshift,
                                 resolve);
         }
@@ -321,7 +327,7 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
 
 
 CAnnotObject*
-CAnnotTypes_CI::x_ConvertAnnotToMaster(CAnnotObject& annot_obj) const
+CAnnotTypes_CI::x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const
 {
     if ( m_AnnotCopy )
         // Already have converted version
