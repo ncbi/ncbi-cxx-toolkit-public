@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2001/09/24 20:22:31  lavr
+ * TSERV_Flags changed from 'int' to 'unsigned int'
+ *
  * Revision 6.26  2001/09/19 15:57:27  lavr
  * Server descriptor flag "L=" documented more precisely
  *
@@ -153,7 +156,7 @@ typedef enum {
     fSERV_Regular = 0x0,
     fSERV_Blast   = 0x1
 } ESERV_Flags;
-typedef int TSERV_Flags;
+typedef unsigned int TSERV_Flags;
 
 #define SERV_DEFAULT_FLAG           fSERV_Regular
 #define SERV_MIME_TYPE_UNDEFINED    ((EMIME_Type)(-1))
