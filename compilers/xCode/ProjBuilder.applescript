@@ -164,7 +164,13 @@ script ProjBuilder
 			
 			set filePath to f --"/" & x_Replace(f, ":", "/") -- f will contain something like "users:vlad:c++:src:corelib:ncbicore.cpp"
 			set fileName to x_FileNameFromPath(f)
-			set fileRef to {isa:"PBXFileReference", |name|:fileName, |path|:filePath, |sourceTree|:"<absolute>"}
+			if fileName ends with ".c" then
+				set fileType to "sourcecode.c.c"
+			else
+				set fileType to "sourcecode.cpp.cpp"
+			end if
+			
+			set fileRef to {isa:"PBXFileReference", |lastKnownFileType|:fileType, |name|:fileName, |path|:filePath, |sourceTree|:"<absolute>"}
 			set fileBuild to {isa:"PBXBuildFile", |fileRef|:nameRef}
 			
 			addPair(fileRef, nameRef)
@@ -224,19 +230,6 @@ script ProjBuilder
 			addPair(aScriptPhase, scriptPhaseName)
 		end try -- Create a GBENCH Resources
 		
-		
-		(* copy bunble *.dylib to *.so  (temporary workaround) *)
-		-- Looks like it's fixed already. No need to copy any more!
-		(*try -- are we building a loadable module?
-			set tmp to bundle of target_info
-			set fullLibName to "lib" & tgName
-			set scriptPhaseName to "SCRIPTPHASE__" & (name of target_info)
-			set shellScript to "cp " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/plugins/" & fullLibName & ".dylib " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/plugins/" & fullLibName & ".so"
-			set aScriptPhase to {isa:"PBXShellScriptBuildPhase", |files|:{}, |inputPaths|:{}, |outputPaths|:{}, |shellPath|:"/bin/sh", |shellScript|:shellScript}
-			
-			copy scriptPhaseName to the end of |buildPhases| of aTarget
-			addPair(aScriptPhase, scriptPhaseName)
-		end try*)
 		
 		-- add to main object list
 		addPair(aTarget, targetName)
@@ -531,6 +524,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/08 18:43:47  lebedev
+ * Set the required lastKnownFileType for source files
+ *
  * Revision 1.5  2004/07/07 18:34:26  lebedev
  * Datatool script build phase clean-up
  *
