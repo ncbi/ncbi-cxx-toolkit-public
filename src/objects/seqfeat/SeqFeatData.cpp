@@ -141,7 +141,24 @@ CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
         case e_Gene:       m_Subtype = eSubtype_gene;     break;
         case e_Org:        m_Subtype = eSubtype_org;      break;
         case e_Cdregion:   m_Subtype = eSubtype_cdregion; break;
-        case e_Prot:       m_Subtype = eSubtype_prot;     break;
+        case e_Prot:
+            switch (GetProt().GetProcessed()) {
+            case CProt_ref::eProcessed_preprotein:
+                m_Subtype = eSubtype_preprotein;
+                break;
+            case CProt_ref::eProcessed_mature:
+                m_Subtype = eSubtype_mat_peptide_aa;
+                break;
+            case CProt_ref::eProcessed_signal_peptide:
+                m_Subtype = eSubtype_sig_peptide_aa;
+                break;
+            case CProt_ref::eProcessed_transit_peptide:
+                m_Subtype = eSubtype_transit_peptide_aa;
+                break;
+            default:
+                m_Subtype = eSubtype_prot;
+                break;
+            }
         case e_Rna:
             switch (GetRna().GetType()) {
             case CRNA_ref::eType_premsg: m_Subtype = eSubtype_preRNA;   break;
@@ -335,6 +352,7 @@ CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
             else if (key == "site_ref") {
                 m_Subtype = eSubtype_site_ref;
             }
+#if 0
             else if (key == "preprotein") {
                 m_Subtype = eSubtype_preprotein;
             }
@@ -347,6 +365,7 @@ CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
             else if (key == "transit_peptide_aa") {
                 m_Subtype = eSubtype_transit_peptide_aa;
             }
+#endif
             else {
                 m_Subtype = eSubtype_imp;
             }
@@ -433,6 +452,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.6  2003/05/19 17:35:56  ucko
+* GetSubtype: properly honor Prot-ref.processed, and ignore bogus
+* imports with corresponding names.
+*
 * Revision 6.5  2003/04/19 16:38:45  dicuccio
 * Remove compiler warning about nested comments
 *
