@@ -38,8 +38,8 @@
 #include <corelib/ncbiapp.hpp>
 
 #if defined(NCBI_OS_DARWIN)
-#define __NOEXTENSIONS__
-#include <Carbon/Carbon.h>
+#  define __NOEXTENSIONS__
+#  include <Carbon/Carbon.h>
 #endif
 
 BEGIN_NCBI_SCOPE
@@ -55,10 +55,13 @@ static const char* s_ArgVersion = "-version";
 
 
 static void s_DiagToStdlog_Cleanup(void* data)
-{  // SetupDiag(eDS_ToStdlog)
-    CNcbiOfstream* os_log = static_cast<CNcbiOfstream*>(data);
+{
+    // SetupDiag(eDS_ToStdlog)
+    CNcbiOfstream* os_log = static_cast<CNcbiOfstream*> (data);
     delete os_log;
 }
+
+
 
 ///////////////////////////////////////////////////////
 // CNcbiApplication
@@ -79,12 +82,11 @@ CNcbiApplication::CNcbiApplication(void)
     m_HideArgs = 0;
     m_StdioFlags = 0;
     m_CinBuffer = 0;
-    m_ProgramDisplayName = "";
 
     // Register the app. instance
     if ( m_Instance ) {
-        NCBI_THROW(CAppException,eSecond,
-            "Second instance of CNcbiApplication is prohibited");
+        NCBI_THROW(CAppException, eSecond,
+                   "Second instance of CNcbiApplication is prohibited");
     }
     m_Instance = this;
 
@@ -159,6 +161,71 @@ SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool close_diag)
 }
 
 
+#if defined(NCBI_OS_DARWIN)
+static void s_MacArgMunging(CNcbiApplication&   app,
+                            int*                argcPtr,  
+                            const char* const** argvPtr,
+                            const string&       exepath)
+{
+
+    // Sometimes on Mac there will be an argument -psn which 
+    // will be followed by the Process Serial Number, e.g. -psn_0_13107201
+    // this is in situations where the application could have no other
+    // arguments like when it is double clicked.
+    // This will mess up argument processing later, so get rid of it.
+    static const char* s_ArgMacPsn = "-psn_"; 
+    
+    if (*argcPtr == 2  && 
+        NStr::strncmp((*argvPtr)[1], s_ArgMacPsn, strlen(s_ArgMacPsn)) == 0) {
+        --*argcPtr;
+    }
+    
+    if (*argcPtr > 1)
+        return;
+
+    // Have no arguments from the operating system -- so use the '.args' file
+
+    // Open the args file.
+    string exedir;
+    CDir::SplitPath(exepath, &exedir);
+    string args_fname = exedir + app.GetProgramDisplayName() + ".args";
+    CNcbiIfstream in(args_fname.c_str());
+        
+    if ( !in.good() ) {
+        ERR_POST("Mac arguments file not found: " << args_fname);
+        return;
+    }
+
+    vector<string> v;
+            
+    // remember or fake the executable name.
+    if (*argcPtr > 0) {
+        v.push_back((*argvPtr)[0]); // preserve the original argv[0].
+    } else {
+        v.push_back(exepath);
+    }
+    
+    // grab the rest of the arguments from the file.
+    // arguments are separated by whitespace. Can be on 
+    // more than one line.
+    string arg;
+    while (in >> arg) {
+        v.push_back(arg);
+    }
+            
+    // stash them away in the standard argc and argv places.
+    *argcPtr = v.size();
+
+    char** argv =  new char*[v.size()]; 
+    int c = 0;
+    ITERATE(vector<string>, vp, v) { 
+        argv[c++] = strdup(vp->c_str());
+    }
+    *argvPtr = argv;
+}
+#endif  /* NCBI_OS_DARWIN */
+
+
 int CNcbiApplication::AppMain
 (int                argc,
  const char* const* argv,
@@ -185,11 +252,14 @@ int CNcbiApplication::AppMain
     }
     SetProgramDisplayName(appname);
     
-    // make sure we have something as our 'real' executable's name.
+    // Make sure we have something as our 'real' executable's name.
     // though if it does not contain a full path it won't be much use.
-    if (exepath.empty()) {
-        LOG_POST(Warning << "Warning: Could not determine this application's file name and location.  Using \""
-            << appname << "\" instead.\n  Please fix FindProgramExecutablePath() on this platform.");
+    if ( exepath.empty() ) {
+        ERR_POST(Warning
+                 << "Warning:  Could not determine this application's "
+                 "file name and location.  Using \""
+                 << appname << "\" instead.\n"
+                 "Please fix FindProgramExecutablePath() on this platform.");
         exepath = appname;
     }
     
@@ -197,7 +267,7 @@ int CNcbiApplication::AppMain
     // We do not know standard way of passing arguments to C++ program on Mac,
     // so we will read arguments from special file having extension ".args"
     // and name equal to display name of program (name argument of AppMain).
-    MacArgMunging(&argc, &argv, exepath);
+    s_MacArgMunging(*this, &argc, &argv, exepath);
 #endif
 
     // Check command line for presence special arguments
@@ -231,14 +301,14 @@ int CNcbiApplication::AppMain
                 diag = eDS_ToStdlog;
                 is_diag_setup = true;
 
-            // Configuration file
+                // Configuration file
             } else if ( NStr::strcmp(argv[i], s_ArgCfgFile) == 0 ) {
                 if ( !argv[i++] ) {
                     continue;
                 }
                 conf = argv[i];
 
-            // Version
+                // Version
             } else if ( NStr::strcmp(argv[i], s_ArgVersion) == 0 ) {
                 if ( !argv[i++] ) {
                     continue;
@@ -247,7 +317,7 @@ int CNcbiApplication::AppMain
                 LOG_POST(appname + ": " + GetVersion().Print());
                 return 0;
 
-            // Save real argument
+                // Save real argument
             } else {
                 v[real_arg_index++] = argv[i];
             }
@@ -287,16 +357,15 @@ int CNcbiApplication::AppMain
     // Setup for diagnostics
     try {
         if ( !is_diag_setup  &&  !SetupDiag(diag) ) {
-            ERR_POST(
-                "Application diagnostic stream's setup failed");
+            ERR_POST("Application diagnostic stream's setup failed");
         }
     } catch (CException& e) {
-        NCBI_RETHROW(e,CAppException, eSetupDiag,
-            "Application diagnostic stream's setup failed");
+        NCBI_RETHROW(e, CAppException, eSetupDiag,
+                     "Application diagnostic stream's setup failed");
     } catch (exception& e) {
         NCBI_THROW(CAppException, eSetupDiag,
-            string("Application diagnostic stream's setup failed") +
-            string(": ") + e.what());
+                   "Application diagnostic stream's setup failed: " +
+                   string(e.what()));
     }
 
     // Load registry from the config file
@@ -306,12 +375,11 @@ int CNcbiApplication::AppMain
             LoadConfig(*m_Config, &x_conf);
         }
     } catch (CException& e) {
-        NCBI_RETHROW(e,CAppException, eLoadConfig,
-            "Registry data cannot be loaded");
+        NCBI_RETHROW(e, CAppException, eLoadConfig,
+                     "Registry data cannot be loaded");
     } catch (exception& e) {
         NCBI_THROW(CAppException, eLoadConfig,
-            string("Registry data cannot be loaded") +
-            string(": ") + e.what());
+                   "Registry data cannot be loaded:  " + string(e.what()));
     }
 
     // Setup some debugging features
@@ -331,7 +399,7 @@ int CNcbiApplication::AppMain
     string msg_file = m_Config->Get("DEBUG", DIAG_MESSAGE_FILE);
     if ( !msg_file.empty() ) {
         CDiagErrCodeInfo* info = new CDiagErrCodeInfo();
-        if ( !info  ||  !info->Read(msg_file) ) {
+        if (!info  ||  !info->Read(msg_file)) {
             if ( info ) {
                 delete info;
             }
@@ -351,37 +419,41 @@ int CNcbiApplication::AppMain
         try {
             Init();
             // If the app still has no arg description - provide default one
-            if (!m_DisableArgDesc && !m_ArgDesc.get()) {
+            if (!m_DisableArgDesc  &&  !m_ArgDesc.get()) {
                 auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-                arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                    "This program has no mandatory arguments");
+                arg_desc->SetUsageContext
+                    (GetArguments().GetProgramBasename(),
+                     "This program has no mandatory arguments");
                 SetupArgDescriptions(arg_desc.release());
             }
         }
-        catch (CArgHelpException&) {
-            if (!m_DisableArgDesc) {
+        catch (CArgHelpException& ) {
+            if ( !m_DisableArgDesc ) {
                 if ((m_HideArgs & fHideHelp) != 0)
-                {
-                    if (m_ArgDesc->Exist("h")) {
-                        m_ArgDesc->Delete("h");
+                    {
+                        if (m_ArgDesc->Exist("h")) {
+                            m_ArgDesc->Delete("h");
+                        }
                     }
+                if ((m_HideArgs & fHideLogfile) == 0  &&
+                    !m_ArgDesc->Exist(s_ArgLogFile + 1)) {
+                    m_ArgDesc->AddOptionalKey
+                        (s_ArgLogFile+1, "File_Name",
+                         "File to which the program log should be redirected",
+                         CArgDescriptions::eOutputFile);
                 }
-                if ((m_HideArgs & fHideLogfile) == 0 &&
-                    !m_ArgDesc->Exist(s_ArgLogFile+1)) {
-                    m_ArgDesc->AddOptionalKey( s_ArgLogFile+1, "File_Name",
-                        "File to which the program log should be redirected",
-                        CArgDescriptions::eOutputFile);
+                if ((m_HideArgs & fHideConffile) == 0  &&
+                    !m_ArgDesc->Exist(s_ArgCfgFile + 1)) {
+                    m_ArgDesc->AddOptionalKey
+                        (s_ArgCfgFile + 1, "File_Name",
+                         "Program's configuration (registry) data file",
+                         CArgDescriptions::eInputFile);
                 }
-                if ((m_HideArgs & fHideConffile) == 0 &&
-                    !m_ArgDesc->Exist(s_ArgCfgFile+1)) {
-                    m_ArgDesc->AddOptionalKey( s_ArgCfgFile+1, "File_Name",
-                        "Program's configuration (registry) data file",
-                        CArgDescriptions::eInputFile);
-                }
-                if ((m_HideArgs & fHideVersion) == 0 &&
-                    !m_ArgDesc->Exist(s_ArgVersion+1)) {
-                    m_ArgDesc->AddFlag( s_ArgVersion+1,
-                        "Print version number;  ignore other arguments");
+                if ((m_HideArgs & fHideVersion) == 0  &&
+                    !m_ArgDesc->Exist(s_ArgVersion + 1)) {
+                    m_ArgDesc->AddFlag
+                        (s_ArgVersion + 1,
+                         "Print version number;  ignore other arguments");
                 }
             }
             // Print USAGE
@@ -391,16 +463,14 @@ int CNcbiApplication::AppMain
             exit_code = 0;
         }
         catch (CArgException& e) {
-            NCBI_RETHROW_SAME(e,"Application's initialization failed");
+            NCBI_RETHROW_SAME(e, "Application's initialization failed");
         }
         catch (CException& e) {
-            NCBI_REPORT_EXCEPTION(
-                "Application's initialization failed",e);
+            NCBI_REPORT_EXCEPTION("Application's initialization failed", e);
             exit_code = -2;
         }
         catch (exception& e) {
-            ERR_POST("Application's initialization failed"
-                << ": " << e.what());
+            ERR_POST("Application's initialization failed: " << e.what());
             exit_code = -2;
         }
 
@@ -410,16 +480,14 @@ int CNcbiApplication::AppMain
                 exit_code = Run();
             }
             catch (CArgException& e) {
-                NCBI_RETHROW_SAME(e,"Application's execution failed");
+                NCBI_RETHROW_SAME(e, "Application's execution failed");
             }
             catch (CException& e) {
-                NCBI_REPORT_EXCEPTION(
-                    "Application's execution failed",e);
+                NCBI_REPORT_EXCEPTION("Application's execution failed", e);
                 exit_code = -3;
             }
             catch (exception& e) {
-                ERR_POST("Application's execution failed"
-                    << ": " << e.what());
+                ERR_POST("Application's execution failed: " << e.what());
                 exit_code = -3;
             }
         }
@@ -429,15 +497,13 @@ int CNcbiApplication::AppMain
             Exit();
         }
         catch (CArgException& e) {
-            NCBI_RETHROW_SAME(e,"Application's cleanup failed");
+            NCBI_RETHROW_SAME(e, "Application's cleanup failed");
         }
         catch (CException& e) {
-            NCBI_REPORT_EXCEPTION(
-                "Application's cleanup failed",e);
+            NCBI_REPORT_EXCEPTION("Application's cleanup failed", e);
         }
         catch (exception& e) {
-            ERR_POST("Application's cleanup failed"
-                << ": " << e.what());
+            ERR_POST("Application's cleanup failed: "<< e.what());
         }
     }
     catch (CArgException& e) {
@@ -447,7 +513,7 @@ int CNcbiApplication::AppMain
         if ( m_ArgDesc.get() ) {
             LOG_POST(m_ArgDesc->PrintUsage(str) << string(72, '='));
         }
-        NCBI_REPORT_EXCEPTION("",e);
+        NCBI_REPORT_EXCEPTION("", e);
         exit_code = -1;
     }
 
@@ -456,14 +522,12 @@ int CNcbiApplication::AppMain
 }
 
 
-// Set program version
 void CNcbiApplication::SetVersion(const CVersionInfo& version)
 {
     m_Version.reset(new CVersionInfo(version));
 }
 
 
-// Get program version
 CVersionInfo CNcbiApplication::GetVersion(void)
 {
     return *m_Version;
@@ -561,7 +625,8 @@ static bool s_LoadConfig(CNcbiRegistry& reg, const string& conf)
         return false;
     }
 
-    _TRACE("CNcbiApplication::LoadConfig() -- reading registry file: " <<conf);
+    _TRACE("CNcbiApplication::LoadConfig() -- reading registry file: "
+           << conf);
     reg.Read(is);
     return true;
 }
@@ -575,7 +640,7 @@ static bool s_LoadConfigTryPath(CNcbiRegistry& reg, const string& path,
         return s_LoadConfig(reg, path + conf);
     }
 
-    // try to derive conf.file name from the application name (for empty"conf")
+    // try derive conf.file name from the application name (for empty "conf")
     string fileName = basename;
 
     for (;;) {
@@ -625,8 +690,8 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
         // do load
         x_conf = NStr::TruncateSpaces(x_conf);
         if ( !s_LoadConfig(reg, x_conf) ) {
-            NCBI_THROW(CAppException,eNoRegistry,
-                "Registry file cannot be opened");
+            NCBI_THROW(CAppException, eNoRegistry,
+                       "Registry file cannot be opened");
         }
         return true;
     }
@@ -641,8 +706,8 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
     char* ptr = getenv("NCBI");
     if (ptr  &&
         s_LoadConfigTryPath(reg, CDirEntry::AddTrailingPathSeparator(ptr),
-                            cnf, basename) ) {
-            return true;
+                            cnf, basename)) {
+        return true;
     }
     // home directory
     if ( s_LoadConfigTryPath(reg, CDir::GetHome(), cnf, basename) ) {
@@ -685,9 +750,9 @@ void CNcbiApplication::SetStdioFlags(TStdioSetupFlags stdio_flags)
 void CNcbiApplication::x_SetupStdio(void)
 {
     if ((m_StdioFlags & fDefault_SyncWithStdio) == 0) {
-        // SUN WorkShop STL stream library has significant performance loss when
-        // sync_with_stdio is true (default)
-        // So we turn off sync_with_stdio here:
+        // SUN WorkShop STL stream library has significant performance loss
+        // when sync_with_stdio is true (default),
+        // so we turn off sync_with_stdio here.
         IOS_BASE::sync_with_stdio(false);
     }
 
@@ -704,19 +769,15 @@ void CNcbiApplication::x_SetupStdio(void)
 }
 
 
-// Application name suitable for display or as a basename for other files.
-// can be set by the user when calling AppMain().
-void CNcbiApplication::SetProgramDisplayName(const string& appname)
+void CNcbiApplication::SetProgramDisplayName(const string& app_name)
 {
-    m_ProgramDisplayName = appname;
+    m_ProgramDisplayName = app_name;
 }
 
 
-// Find out the path and name of the executable file this app is running from.
-// Will be accesible by: GetArguments.GetProgramName().
-string CNcbiApplication::FindProgramExecutablePath(
-     int argc, 
-     const char* const* argv)
+string CNcbiApplication::FindProgramExecutablePath
+(int              /*argc*/, 
+ const char* const* argv)
 {
     string ret_val;
 #if defined (NCBI_OS_DARWIN)  &&  defined (NCBI_COMPILER_METROWERKS)
@@ -728,11 +789,11 @@ string CNcbiApplication::FindProgramExecutablePath(
     FSRef               fsRef;
     char                filePath[1024];
     
-    err = GetCurrentProcess (&psn);
+    err = GetCurrentProcess(&psn);
     if (err == noErr) {
-        err = GetProcessBundleLocation (&psn, &fsRef);
+        err = GetProcessBundleLocation(&psn, &fsRef);
         if (err == noErr) {
-            err = FSRefMakePath (&fsRef, (UInt8 *) filePath, sizeof(filePath));
+            err = FSRefMakePath(&fsRef, (UInt8*) filePath, sizeof(filePath));
         }
     }    
     ret_val = filePath;
@@ -750,82 +811,12 @@ string CNcbiApplication::FindProgramExecutablePath(
         ret_val.find_first_of(".") == 0) {
         ret_val = CDir::GetCwd() + CDirEntry::GetPathSeparator() + ret_val;
     }
-
 #else
-
-#error "platform unrecognized"
-
+#  error "Platform unrecognized"
 #endif
+
     return ret_val;
-
 }
-
-#if defined (NCBI_OS_DARWIN)
-
-void  CNcbiApplication::MacArgMunging(
-    int *argcPtr,  
-    const char* const ** argvPtr,
-    const string& exepath
-)
-{
-
-    // Sometimes on Mac there will be an argument -psn which 
-    // will be followed by the Process Serial Number, e.g. -psn_0_13107201
-    // this is in situations where the application could have no other arguments
-    // like when it is double clicked.
-    // This will mess up argument processing later, so get rid of it.
-    static const char* s_ArgMacPsn = "-psn_"; 
-    
-    if (*argcPtr == 2 && 
-        NStr::strncmp((*argvPtr)[1], s_ArgMacPsn, strlen(s_ArgMacPsn)) == 0) {
-        --*argcPtr;
-    }
-    
-    // we have no arguments from the operating system.
-    if (*argcPtr <= 1) {
-    
-        // Open the args file.
-        string  exedir;
-        CDir::SplitPath(exepath, &exedir);
-        string argsName = exedir + GetProgramDisplayName() + ".args";
-        CNcbiIfstream in(argsName.c_str());
-        
-        if ( in ) {
-            vector<string> v;
-            
-            // remember or fake the executable name.
-            if (*argcPtr > 0)
-                v.push_back((*argvPtr)[0]); // preserve the original argv[0].
-            else
-                v.push_back(exepath);
-                
-            // grab the rest of the arguments from the file.
-            // arguments are separated by whitespace. Can be on 
-            // more than one line.
-            string arg;
-            while (in >> arg) {
-                v.push_back(arg);
-            }
-            
-            // stash them away in the standard argc and argv places.
-            *argcPtr = v.size();
-
-            char ** argv =  new char*[v.size()]; 
-            int c = 0;
-            vector<string>::iterator vp; 
-            for (vp = v.begin(); vp < v.end(); ++vp) {
-                argv[c++] = strdup((*vp).c_str());
-            }
-            *argvPtr = argv;
-        }
-        else {
-            ERR_POST("Mac arguments file not found: " << argsName);
-        }
-    }
-
-}
-
-#endif
 
 
 END_NCBI_SCOPE
@@ -834,12 +825,17 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2003/06/23 18:02:31  vakatov
+ * CNcbiApplication::MacArgMunging() moved from header to the source file.
+ * Heed warnings, formally reformat the code and comments.
+ *
  * Revision 1.60  2003/06/18 20:41:23  ucko
  * FindProgramExecutablePath: conditionalize the Darwin-specific code on
  * Metrowerks, since no executable linked against Carbon can run remotely. :-/
  *
  * Revision 1.59  2003/06/16 13:52:27  rsmith
- * Add ProgramDisplayName member. Program name becomes real executable full path. Handle Mac special arg handling better.
+ * Add ProgramDisplayName member. Program name becomes real executable full
+ * path. Handle Mac special arg handling better.
  *
  * Revision 1.58  2003/04/07 21:22:54  gouriano
  * correct App exit codes when CException was catched
@@ -848,10 +844,12 @@ END_NCBI_SCOPE
  * added optional adjustment of stdio streams
  *
  * Revision 1.56  2003/03/14 21:01:06  kans
- * commented out include Processes because Mac OS 10.2 libraries give an undefined symbol error
+ * commented out include Processes because Mac OS 10.2 libraries give an
+ * undefined symbol error
  *
  * Revision 1.55  2003/03/14 20:35:24  rsmith
- * Comment out previous changes for Mac OSX since on 10.2 the header files do not compile properly.
+ * Comment out previous changes for Mac OSX since on 10.2 the header files
+ * do not compile properly.
  *
  * Revision 1.54  2003/03/13 22:16:11  rsmith
  * on Metrowerks, Mac OSX, always use ncbi.args as the file name for arguments.
@@ -896,15 +894,17 @@ END_NCBI_SCOPE
  * exceptions replaced by CNcbiException-type ones
  *
  * Revision 1.41  2002/07/10 16:20:13  ivanov
- * Changes related with renaming SetDiagFixedStrPostLevel()->SetDiagFixedPostLevel()
+ * Changes related with renaming
+ * SetDiagFixedStrPostLevel()->SetDiagFixedPostLevel()
  *
  * Revision 1.40  2002/07/09 16:36:52  ivanov
  * s_SetFixedDiagPostLevel() moved to ncbidiag.cpp
  * and renamed to SetDiagFixedStrPostLevel()
  *
  * Revision 1.39  2002/07/02 18:31:38  ivanov
- * Added assignment the value of diagnostic post level from environment variable
- * and config file if set. Disable to change it from application in this case.
+ * Added assignment the value of diagnostic post level from environment
+ * variable and config file if set. Disable to change it from application
+ * in this case.
  *
  * Revision 1.38  2002/06/19 16:57:56  ivanov
  * Added new default command line parameters "-logfile <file>" and
