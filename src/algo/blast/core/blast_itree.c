@@ -633,10 +633,10 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
                 nodes[mid_index].midptr = old_index;
             }
             else {
-                old_region_start = old_hsp->subject.offset; 
-                old_region_end =  old_hsp->subject.end;
                 Int4 mid_index2 = s_IntervalRootNodeInit(tree, tree->s_min,
                                                          tree->s_max);
+                old_region_start = old_hsp->subject.offset; 
+                old_region_end =  old_hsp->subject.end;
                 nodes = tree->nodes;
                 nodes[mid_index].midptr = mid_index2;
     
