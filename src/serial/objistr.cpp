@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2001/07/25 19:14:25  grichenk
+* Implemented functions for reading/writing parent classes
+*
 * Revision 1.81  2001/07/17 14:52:48  kholodov
 * Fixed: replaced int argument by size_t in CheckVisibleChar() and
 * ReplaceVisibleChar to avoid truncation in 64 bit mode.
@@ -772,11 +775,6 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStream::ReadPointer("<<declaredType->GetName()<<")");
     TObjectPtr objectPtr;
-    if ( !m_Objects ) {
-        objectPtr = declaredType->Create();
-        ReadObject(objectPtr, declaredType);
-        return make_pair(objectPtr, declaredType);
-    }
     TTypeInfo objectType;
     switch ( ReadPointerType() ) {
     case eNullPointer:

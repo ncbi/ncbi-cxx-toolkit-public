@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/07/25 19:14:24  grichenk
+* Implemented functions for reading/writing parent classes
+*
 * Revision 1.20  2001/05/22 13:44:47  grichenk
 * CMemberInfoFunctions::GetWithSetFlagMember() -- do not change SetFlag
 *
@@ -837,45 +840,58 @@ void CMemberInfoFunctions::CopyMissingHookedMember(CObjectStreamCopier& stream,
 }
 
 void CMemberInfoFunctions::ReadParentClass(CObjectIStream& in,
-                                           const CMemberInfo* /*memberInfo*/,
-                                           TObjectPtr /*objectPtr*/)
+                                           const CMemberInfo* memberInfo,
+                                           TObjectPtr objectPtr)
 {
-    in.ThrowError(in.eFormatError, "cannot read parent class");
+    _ASSERT(!memberInfo->CanBeDelayed());
+    _ASSERT(!memberInfo->HaveSetFlag());
+    in.ReadObject(memberInfo->GetItemPtr(objectPtr),
+                  memberInfo->GetTypeInfo());
 }
 
-void CMemberInfoFunctions::ReadMissingParentClass(CObjectIStream& /*in*/,
-                                                  const CMemberInfo* /*memberInfo*/,
+void CMemberInfoFunctions::ReadMissingParentClass(CObjectIStream& in,
+                                                  const CMemberInfo* memberInfo,
                                                   TObjectPtr /*objectPtr*/)
 {
+    _ASSERT(!memberInfo->Optional());
+    in.ExpectedMember(memberInfo);
 }
 
-void CMemberInfoFunctions::WriteParentClass(CObjectOStream& /*out*/,
-                                            const CMemberInfo* /*memberInfo*/,
-                                            TConstObjectPtr /*objectPtr*/)
+void CMemberInfoFunctions::WriteParentClass(CObjectOStream& out,
+                                            const CMemberInfo* memberInfo,
+                                            TConstObjectPtr objectPtr)
 {
+    _ASSERT(!memberInfo->CanBeDelayed());
+    _ASSERT(!memberInfo->Optional());
+    out.WriteClassMember(memberInfo->GetId(),
+                         memberInfo->GetTypeInfo(),
+                         memberInfo->GetItemPtr(objectPtr));
 }
 
 void CMemberInfoFunctions::CopyParentClass(CObjectStreamCopier& copier,
-                                           const CMemberInfo* /*memberInfo*/)
+                                           const CMemberInfo* memberInfo)
 {
-    copier.ThrowError(CObjectIStream::eFormatError,
-                      "cannot copy parent class");
+    copier.CopyObject(memberInfo->GetTypeInfo());
 }
 
-void CMemberInfoFunctions::CopyMissingParentClass(CObjectStreamCopier& /*copier*/,
-                                                  const CMemberInfo* /*memberInfo*/)
+void CMemberInfoFunctions::CopyMissingParentClass(CObjectStreamCopier& copier,
+                                                  const CMemberInfo* memberInfo)
 {
+    _ASSERT(!memberInfo->Optional());
+    copier.ExpectedMember(memberInfo);
 }
 
 void CMemberInfoFunctions::SkipParentClass(CObjectIStream& in,
-                                           const CMemberInfo* /*memberInfo*/)
+                                           const CMemberInfo* memberInfo)
 {
-    in.ThrowError(in.eFormatError, "cannot skip parent class");
+    in.SkipObject(memberInfo->GetTypeInfo());
 }
 
-void CMemberInfoFunctions::SkipMissingParentClass(CObjectIStream& /*in*/,
-                                                  const CMemberInfo* /*memberInfo*/)
+void CMemberInfoFunctions::SkipMissingParentClass(CObjectIStream& in,
+                                                  const CMemberInfo* memberInfo)
 {
+    _ASSERT(!memberInfo->Optional());
+    in.ExpectedMember(memberInfo);
 }
 
 
