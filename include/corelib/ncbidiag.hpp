@@ -252,6 +252,17 @@ extern void SetDiagPostPrefix(const char* prefix);
 extern void PushDiagPostPrefix(const char* prefix);
 extern void PopDiagPostPrefix(void);
 
+// Auxiliary class for work with prefixes. Automaticaly removes the passed parameter 
+// from the list of prefixes at destruction of a object of this class. 
+class CDiagAutoPrefix
+{
+public:
+    CDiagAutoPrefix(const string& prefix);
+    CDiagAutoPrefix(const char* prefix);
+    ~CDiagAutoPrefix(void);
+};
+
+
 // Do not post messages which severity is less than "min_sev"
 // Return previous post-level.
 // This function have effect only if:
@@ -527,6 +538,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.49  2002/08/16 15:02:50  ivanov
+ * Added class CDiagAutoPrefix
+ *
  * Revision 1.48  2002/08/01 18:48:07  ivanov
  * Added stuff to store and output error verbose messages for error codes
  *

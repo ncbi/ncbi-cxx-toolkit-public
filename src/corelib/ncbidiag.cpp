@@ -379,6 +379,24 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
 }
 
 
+///////////////////////////////////////////////////////
+//  CDiagAutoPrefix::
+
+CDiagAutoPrefix::CDiagAutoPrefix(const string& prefix)
+{
+    PushDiagPostPrefix(prefix.c_str());
+}
+
+CDiagAutoPrefix::CDiagAutoPrefix(const char* prefix)
+{
+    PushDiagPostPrefix(prefix);
+}
+
+CDiagAutoPrefix::~CDiagAutoPrefix(void)
+{
+    PopDiagPostPrefix();
+}
+
 
 ///////////////////////////////////////////////////////
 //  EXTERN
@@ -1012,6 +1030,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.64  2002/08/16 15:02:11  ivanov
+ * Added class CDiagAutoPrefix
+ *
  * Revision 1.63  2002/08/01 18:47:43  ivanov
  * Added stuff to store and output error verbose messages for error codes
  *
