@@ -40,8 +40,11 @@
 * -------  ----------  -----------------------------------------------------
 *
 * $Log$
+* Revision 1.4  2003/09/10 21:35:20  dondosha
+* Removed Nlm_ prefix from math functions
+*
 * Revision 1.3  2003/08/25 22:30:24  dondosha
-* Added LnGammaInt definition and Nlm_Factorial prototype
+* Added LnGammaInt definition and Factorial prototype
 *
 * Revision 1.2  2003/08/11 14:57:16  dondosha
 * Added algo/blast/core path to all #included headers
@@ -65,7 +68,7 @@
 * Adopted for 32-bit MS-Windows DLLs
 *
  * Revision 5.1  1996/06/20  14:08:00  madden
- * Changed int to Int4, double to Nlm_FloatHi
+ * Changed int to Int4, double to FloatHi
  *
  * Revision 5.0  1996/05/28  13:18:57  ostell
  * Set to revision 5.0
@@ -91,40 +94,31 @@ extern "C" {
 #endif
 
 /* log(x+1) for all x > -1 */
-extern double Nlm_Log1p (double);
+extern double Log1p (double);
 
 /* exp(x)-1 for all x */
-extern double Nlm_Expm1 (double);
+extern double Expm1 (double);
 
 /* Factorial function */
-extern double Nlm_Factorial(Int4 n);
+extern double Factorial(Int4 n);
 
 /* Logarithm of the factorial Fn */
-extern double Nlm_LnFactorial (double x);
+extern double LnFactorial (double x);
 
 /* log(gamma(n)), integral n */
-extern double Nlm_LnGammaInt (Int4);
+extern double LnGammaInt (Int4);
 
 /* Romberg numerical integrator */
-extern double Nlm_RombergIntegrate (double (*f) (double, void*), void* fargs, double p, double q, double eps, Int4 epsit, Int4 itmin);
+extern double RombergIntegrate (double (*f) (double, void*), void* fargs, double p, double q, double eps, Int4 epsit, Int4 itmin);
 
 /* Greatest common divisor */
-extern long Nlm_Gcd (long, long);
+extern long Gcd (long, long);
 
 /* Nearest integer */
-extern long Nlm_Nint (double);
+extern long Nint (double);
 
 /* Integral power of x */
-extern double Nlm_Powi (double x, Int4 n);
-
-#define Log1p	Nlm_Log1p
-#define Expm1	Nlm_Expm1
-#define LnFactorial	Nlm_LnFactorial
-#define RombergIntegrate	Nlm_RombergIntegrate
-#define Gcd	Nlm_Gcd
-#define Nint	Nlm_Nint
-#define Powi	Nlm_Powi
-#define LnGammaInt Nlm_LnGammaInt
+extern double Powi (double x, Int4 n);
 
 /* Error codes for the CTX_NCBIMATH context */
 #define ERR_NCBIMATH_INVAL	1 /* invalid parameter */
