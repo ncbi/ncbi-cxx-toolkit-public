@@ -183,18 +183,21 @@ int test1(int argc, char ** argv)
         args.push_front(string(argv[--argc]));
     }
     
-    bool use_mm        = true;
-    bool deletions     = true;
-    Int8 num_display   = -1;
-    Int4 num_itera     = 1;
-    bool look_seq      = false;
-    bool show_bioseq   = false;
-    bool show_fasta    = false;
-    bool get_bioseq    = false;
-    bool show_progress = true;
-    bool approx        = true;
-    bool accel_thread  = false;
-    bool accel_inline  = false;
+    bool  use_mm        = true;
+    bool  deletions     = true;
+    Int8  num_display   = -1;
+    Int4  num_itera     = 1;
+    bool  look_seq      = false;
+    bool  show_bioseq   = false;
+    bool  show_fasta    = false;
+    bool  get_bioseq    = false;
+    bool  show_progress = true;
+    bool  approx        = true;
+    bool  accel_thread  = false;
+    bool  accel_inline  = false;
+    Uint4 membound      = 0;
+    Uint4 slicesize     = 0;
+    bool  defer_ret     = false;
     
     string dbname("nr");
     char seqtype = kSeqTypeProt;
@@ -1304,7 +1307,12 @@ int test1(int argc, char ** argv)
         if (s == "-mm") {
             use_mm = true;
             continue;
-        }
+        } else desc += " [-mm]";
+        
+        if (s == "-defer-ret") {
+            defer_ret = true;
+            continue;
+        } else desc += " [-defer-ret]";
         
         if (s == "-nt") {
             dbname = "nt";
@@ -1313,7 +1321,7 @@ int test1(int argc, char ** argv)
             continue;
         } else desc += " [-nt]";
         
-        if (s == "-nt,est,gss") {
+        if ((s == "-nt,est,gss") || (s == "-nt,gss,est") || (s == "-est,gss,nt")) {
             dbname = "nt est gss";
             seqtype = 'n';
             continue;
@@ -1439,6 +1447,32 @@ int test1(int argc, char ** argv)
             continue;
         } else desc += " [-show-fasta]";
         
+        if (s == "-membound") {
+            if (args.size() < 2) {
+                cerr << "Error: -membound requires two arguments." << endl;
+                failed = true;
+            }
+            
+            string s2 = *args.begin();
+            args.pop_front();
+            
+            string s3 = *args.begin();
+            args.pop_front();
+            
+            int s2_num = atoi(s2.c_str());
+            int s3_num = atoi(s3.c_str());
+            
+            if (s2_num > 0) {
+                membound = s2_num;
+            }
+            
+            if (s3_num > 0) {
+                slicesize = s3_num;
+            }
+            
+            continue;
+        } else desc += " [-membound]";
+        
         if (s == "-num") {
             if (args.empty()) {
                 cerr << "Error: -num requires an argument." << endl;
@@ -1535,6 +1569,11 @@ int test1(int argc, char ** argv)
             
             CSeqDB dbi(dbname, seqtype, 0, 0, use_mm);
             
+            if (membound) {
+                cout << "Setting memory bound at " << membound << endl;
+                dbi.SetMemoryBound(membound, slicesize);
+            }
+            
             if (show_progress)
                 cout << "at line " << __LINE__ << endl;
             
@@ -1625,10 +1664,18 @@ int test1(int argc, char ** argv)
                 
                 //cout << "[" << i << "]" << endl;
                 
-                //Int4 seqlen = dbi.GetSequence(i, & buffer1[ii]);
-		const char * seqbuf = 0;
-                Int4 seqlen = dbi.GetSequence(i, & seqbuf);
-                const char * bufdata = seqbuf;
+                const char * bufdata = 0;
+                const char * seqbuf = 0;
+                
+                Int4 seqlen = 0;
+                
+                if (defer_ret) {
+                    seqlen = dbi.GetSequence(i, & buffer1[ii]);
+                    bufdata = buffer1[ii];
+                } else {
+                    seqlen = dbi.GetSequence(i, & seqbuf);
+                    bufdata = seqbuf;
+                }
                 
                 if (look_seq) {
                     int qstride = 100;
@@ -1636,8 +1683,11 @@ int test1(int argc, char ** argv)
                         qsum += Int8(bufdata[q]) & 0xFF;
                     }
                 }
-                dbi.RetSequence(& seqbuf);
-		
+                
+                if (! defer_ret) {
+                    dbi.RetSequence(& seqbuf);
+		}
+                
                 if (show_progress) {
                     if (i >= report_at) {
                         double t = dbl_time() - cstart;
