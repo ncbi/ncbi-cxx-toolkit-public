@@ -73,15 +73,7 @@ using namespace validator;
 //
 //  Demo application
 //
-/*
-template<class T>
-void display_object(const T& obj)
-{
-    auto_ptr<CObjectOStream> os (CObjectOStream::Open(eSerial_AsnText, cout));
-    *os << obj;
-    cout << endl;
-}
-*/
+
 
 class CTest_validatorApplication : public CNcbiApplication, CReadClassMemberHook
 {
@@ -101,8 +93,9 @@ private:
 
     CObjectIStream* OpenFile(const CArgs& args);
 
-    CValidError* ProcessSeqEntry(void);
-    CValidError* ProcessSeqSubmit(void);
+    auto_ptr<CValidError> ProcessSeqEntry(void);
+    auto_ptr<CValidError> ProcessSeqSubmit(void);
+    auto_ptr<CValidError> ProcessSeqAnnot(void);
     void ProcessReleaseFile(const CArgs& args);
     CRef<CSeq_entry> ReadSeqEntry(void);
     unsigned int PrintValidError(const CValidError& errors, const CArgs& args);
@@ -205,10 +198,14 @@ int CTest_validatorApplication::Run(void)
             NCBI_THROW(CException, eUnknown,
                 "Conflict: '-s' flag is specified but file is not Seq-submit");
         } 
-        if ( args["s"]  ||  header == "Seq-submit" ) {   // Seq-submit
-            eval.Reset(ProcessSeqSubmit());
-        } else {                    // default: Seq-entry
-            eval.Reset(ProcessSeqEntry());
+        if ( args["s"]  ||  header == "Seq-submit" ) {  // Seq-submit
+            eval.Reset(ProcessSeqSubmit().release());
+        } else if ( header == "Seq-entry" ) {           // Seq-entry
+            eval.Reset(ProcessSeqEntry().release());
+        } else if ( header == "Seq-annot" ) {           // Seq-annot
+            eval.Reset(ProcessSeqAnnot().release());
+        } else {
+            NCBI_THROW(CException, eUnknown, "Unhandaled type " + header);
         }
     }
 
@@ -233,7 +230,8 @@ void CTest_validatorApplication::ReadClassMember
             i >> *se;
             
             // Validate Seq-entry
-            auto_ptr<CValidError> eval(new CValidError(*m_ObjMgr, *se, m_Options));
+            CValidator validator(*m_ObjMgr);
+            auto_ptr<CValidError> eval = validator.Validate(*se, 0, m_Options);
             PrintValidError(*eval, GetArgs());
             
         } catch (exception e) {
@@ -272,27 +270,41 @@ CRef<CSeq_entry> CTest_validatorApplication::ReadSeqEntry(void)
 }
 
 
-CValidError* CTest_validatorApplication::ProcessSeqEntry(void)
+auto_ptr<CValidError> CTest_validatorApplication::ProcessSeqEntry(void)
 {
     // Get seq-entry to validate
     CRef<CSeq_entry> se(ReadSeqEntry());
 
-    // Validate Seq-entry 
-    return new CValidError(*m_ObjMgr, *se, m_Options);
+    // Validate Seq-entry
+    CValidator validator(*m_ObjMgr);
+    return validator.Validate(*se, 0, m_Options);
 }
 
 
-CValidError* CTest_validatorApplication::ProcessSeqSubmit(void)
+auto_ptr<CValidError> CTest_validatorApplication::ProcessSeqSubmit(void)
 {
     CRef<CSeq_submit> ss(new CSeq_submit);
     
-    // Get seq-entry to validate
+    // Get seq-submit to validate
     m_In->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
 
-    // Validae Seq-entry
-    return new CValidError(*m_ObjMgr, *ss, m_Options);
+    // Validae Seq-submit
+    CValidator validator(*m_ObjMgr);
+    return validator.Validate(*ss, 0, m_Options);
 }
 
+
+auto_ptr<CValidError> CTest_validatorApplication::ProcessSeqAnnot(void)
+{
+    CRef<CSeq_annot> sa(new CSeq_annot);
+    
+    // Get seq-annot to validate
+    m_In->Read(ObjectInfo(*sa), CObjectIStream::eNoFileHeader);
+
+    // Validae Seq-annot
+    CValidator validator(*m_ObjMgr);
+    return validator.Validate(*sa, 0, m_Options);
+}
 
 
 void CTest_validatorApplication::Setup(const CArgs& args)
@@ -322,18 +334,18 @@ void CTest_validatorApplication::SetupValidatorOptions(const CArgs& args)
     // Set validator options
     m_Options = 0;
 
-    m_Options |= args["nonascii"] ? CValidError::eVal_non_ascii :   0;
-    m_Options |= args["context"]  ? CValidError::eVal_no_context :  0;
-    m_Options |= args["align"]    ? CValidError::eVal_val_align :   0;
-    m_Options |= args["exon"]     ? CValidError::eVal_val_exons :   0;
-    m_Options |= args["splice"]   ? CValidError::eVal_splice_err :  0;
-    m_Options |= args["ovlpep"]   ? CValidError::eVal_ovl_pep_err : 0;
-    m_Options |= args["taxid"]    ? CValidError::eVal_need_taxid :  0;
-    m_Options |= args["isojta"]   ? CValidError::eVal_need_isojta : 0;
+    m_Options |= args["nonascii"] ? CValidator::eVal_non_ascii   : 0;
+    m_Options |= args["context"]  ? CValidator::eVal_no_context  : 0;
+    m_Options |= args["align"]    ? CValidator::eVal_val_align   : 0;
+    m_Options |= args["exon"]     ? CValidator::eVal_val_exons   : 0;
+    m_Options |= args["splice"]   ? CValidator::eVal_splice_err  : 0;
+    m_Options |= args["ovlpep"]   ? CValidator::eVal_ovl_pep_err : 0;
+    m_Options |= args["taxid"]    ? CValidator::eVal_need_taxid  : 0;
+    m_Options |= args["isojta"]   ? CValidator::eVal_need_isojta : 0;
 
     // !!!  DEBUG {
     // For testing only. Should be removed in the future
-    m_Options |= args["debug"].HasValue() ? CValidError::eVal_perf_bottlenecks : 0;
+    m_Options |= args["debug"].HasValue() ? CValidator::eVal_perf_bottlenecks : 0;
     // }
 }
 
@@ -420,6 +432,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2003/03/20 18:58:22  shomrat
+ * Added support for validation of standalone Seq-annot files
+ *
  * Revision 1.14  2003/03/10 18:13:14  shomrat
  * Print extended statistics
  *
