@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/12/19 19:15:27  thiessen
+* cosmetic fixes
+*
 * Revision 1.6  2002/12/19 18:52:41  thiessen
 * add structure summary
 *
@@ -201,10 +204,10 @@ CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame,
 
     // summarize structures
     if (structureSet->objects.size() > 0) {
-        *tDescr << "Structure summary:";
+        *tDescr << "Structure summary:\n";
         StructureSet::ObjectList::const_iterator o, oe = structureSet->objects.end();
         for (o=structureSet->objects.begin(); o!=oe; o++) {
-            *tDescr << "\n\nPDB " << (*o)->pdbID.c_str() << " (MMDB " << (*o)->mmdbID << ")\n";
+            *tDescr << "\nPDB " << (*o)->pdbID.c_str() << " (MMDB " << (*o)->mmdbID << ")\n";
 
             // make lists of biopolymer chains and heterogens
             typedef std::list < std::string > ChainList;
@@ -259,6 +262,7 @@ CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame,
                         descr = h->first.c_str();
                     *tDescr << descr;
                 }
+                *tDescr << '\n';
             }
         }
     }
