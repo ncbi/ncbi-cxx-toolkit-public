@@ -69,6 +69,9 @@ extern "C" {
 #define BLAST_VARWORD_NUCL 0  /**< blastn with variable wordsize */
 #define BLAST_VARWORD_MEGABLAST 1 /**< megablast with variable wordsize */
 
+/** Default matrix name: BLOSUM62 */
+#define BLAST_DEFAULT_MATRIX "BLOSUM62"
+
 /** Protein gap costs are the defaults for the BLOSUM62 scoring matrix.
  * More gap costs are listed in BLASTOptionSetGapParams 
  */
@@ -552,6 +555,15 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 */
 NCBI_XBLAST_EXPORT
 Int2 BlastScoringOptionsDup(BlastScoringOptions* *new_opt, const BlastScoringOptions* old_opt);
+
+/** Resets matrix name option. Automatically converts the name to upper case.
+ * @param opts Options structure to update. [in] [out]
+ * @param matrix_name New matrix name. If NULL, old matrix name is left 
+ *                    as is. [in]
+ */
+Int2 BlastScoringOptionsSetMatrix(BlastScoringOptions* opts,
+                                  const char* matrix_name);
+
 
 /** Deallocate memory for BlastEffectiveLengthsOptions*. 
  * @param options Structure to free [in]
