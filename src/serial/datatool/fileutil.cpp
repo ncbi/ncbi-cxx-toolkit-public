@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/08/16 13:19:26  grichenk
+* Removed extra-defines for MAC, rearranged code for MAC paths
+*
 * Revision 1.20  2001/08/15 20:26:32  juran
 * Correctly assemble Mac pathnames.  (Omit duplicate ':'.)
 * IsLocalPath(): A Mac pathname beginning with ':' is relative.
@@ -220,8 +223,6 @@ DestinationFile::~DestinationFile(void)
 #  define ALL_SEPARATOR_CHARS DIR_SEPARATOR_CHAR
 #endif
 
-#define MAC_FILING_SYNTAX (DIR_SEPARATOR_CHAR == ':')
-
 inline
 bool IsDiskSeparator(char c)
 {
@@ -258,9 +259,14 @@ bool IsLocalPath(const string& path)
     if ( path.empty() )
         return false;
 
+#ifdef NCBI_OS_MAC
+    if (path.find(DIR_SEPARATOR_CHAR) != NPOS  &&
+        path[0] != DIR_SEPARATOR_CHAR)
+        return false;
+#else
     if ( IsDirSeparator(path[0]) )
-        return MAC_FILING_SYNTAX ? true : false;
-
+        return false;
+#endif
     SIZE_TYPE pos;
 #ifdef PARENT_DIR
     SIZE_TYPE parentDirLength = strlen(PARENT_DIR);
@@ -332,17 +338,15 @@ string DirName(const string& path)
 string GetStdPath(const string& path)
 {
     string stdpath = path;
-    // If we're using Mac filing syntax,
-    if (MAC_FILING_SYNTAX) {
-        // and the pathname begins with a separator character (a colon),
-        if (stdpath[0] == ':') {
-            // then omit the leading separator.
-            // e.g. ":objects:general:general.asn" -> "objects/general/general.asn"
-            stdpath = stdpath.substr(1);
-        } else {
-            // FIXME:  How do we translate an absolute pathname?
-        }
+#ifdef NCBI_OS_MAC
+    // Exlude leading ':' on Mac
+    if ( IsDirSeparator(stdpath[0]) ) {
+        stdpath = path.substr(1);
     }
+    else {
+        // FIXME:  How do we translate an absolute pathname?
+    }
+#endif
     // Replace each native separator character with the 'standard' one.
     for (int i = 0; i < stdpath.size(); i++) {
         if ( IsDirSeparator(stdpath[i]) )
@@ -350,6 +354,7 @@ string GetStdPath(const string& path)
     }
     return stdpath;
 }
+
 
 class SSubString
 {
