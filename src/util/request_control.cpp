@@ -26,13 +26,14 @@
  * Authors:  Denis Vakatov, Vladimir Ivanov
  *
  * File Description:
+ *   Test for request test control classes.
  *
  */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbi_system.hpp>
-#include <util/request_throttler.hpp>
+#include <util/request_control.hpp>
 
 
 /** @addtogroup UTIL
@@ -43,7 +44,7 @@
 BEGIN_NCBI_SCOPE
 
 
-CRequestThrottler::CRequestThrottler(
+CRequestRateControl::CRequestRateControl(
     unsigned int    num_requests_allowed,
     CTimeSpan       per_period,
     CTimeSpan       min_time_between_requests,
@@ -54,7 +55,7 @@ CRequestThrottler::CRequestThrottler(
 }
 
 
-void CRequestThrottler::Reset(
+void CRequestRateControl::Reset(
     unsigned int    num_requests_allowed,
     CTimeSpan       per_period,
     CTimeSpan       min_time_between_requests,
@@ -71,7 +72,7 @@ void CRequestThrottler::Reset(
 }
 
 
-bool CRequestThrottler::Approve(EThrottleAction action)
+bool CRequestRateControl::Approve(EThrottleAction action)
 {
     // Get current time
     CTime now(CTime::eCurrent, CTime::eGmt);
@@ -94,8 +95,8 @@ bool CRequestThrottler::Approve(EThrottleAction action)
                     return false;
                 case eException:
                     NCBI_THROW(
-                        CRequestThrottlerException, eNumRequestsMax, 
-                        "CRequestThrottler::Approve(): "
+                        CRequestRateControlException, eNumRequestsMax, 
+                        "CRequestRateControl::Approve(): "
                         "Maximum number of requests exceeded"
                     );
                 case eDefault: ;
@@ -116,9 +117,9 @@ bool CRequestThrottler::Approve(EThrottleAction action)
                     return false;
                 case eException:
                     NCBI_THROW(
-                        CRequestThrottlerException,
+                        CRequestRateControlException,
                         eNumRequestsPerPeriod, 
-                        "CRequestThrottler::Approve(): "
+                        "CRequestRateControl::Approve(): "
                         "Maximum number of requests per period exceeded"
                     );
                 case eDefault: ;
@@ -144,9 +145,9 @@ bool CRequestThrottler::Approve(EThrottleAction action)
                     return false;
                 case eException:
                     NCBI_THROW(
-                        CRequestThrottlerException,
+                        CRequestRateControlException,
                         eMinTimeBetweenRequests, 
-                        "CRequestThrottler::Approve(): The time "
+                        "CRequestRateControl::Approve(): The time "
                         "between two consecutive requests is too short"
                     );
                 case eDefault: ;
@@ -182,13 +183,13 @@ bool CRequestThrottler::Approve(EThrottleAction action)
 }
 
 
-void CRequestThrottler::x_AddToTimeLine(const CTime& time)
+void CRequestRateControl::x_AddToTimeLine(const CTime& time)
 {
     m_TimeLine.push_back(TTime(new CTime(time)));
 }
 
 
-void CRequestThrottler::x_CleanTimeLine(CTime& now)
+void CRequestRateControl::x_CleanTimeLine(CTime& now)
 {
     // Find first non expired item
     TTimeLine::iterator current;
@@ -211,6 +212,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/02 18:58:01  ivanov
+ * Renaming:
+ *    file request_throttler.cpp -> request_control.cpp
+ *    class CRequestThrottler -> CRequestRateControl
+ *
  * Revision 1.2  2005/03/02 15:52:11  ivanov
  * + CRequestThrottler::Reset()
  *
