@@ -45,6 +45,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/04/23 22:20:26  vakatov
+ * BUF_PeekAt() -- special case for "data" == NULL
+ *
  * Revision 6.4  2001/04/23 18:07:19  vakatov
  * + BUF_PeekAt()
  *
@@ -117,8 +120,8 @@ extern size_t BUF_Peek(BUF buf, void* data, size_t size);
 /* Copy up to "size" bytes stored in "buf" (starting at position "pos")
  * to "data".
  * Return the # of copied bytes (can be less than "size").
- * Return zero and do nothing if:  "buf" is NULL, or "data" is NULL,
- * or "pos" >= BUF_Size(buf).
+ * Return zero and do nothing if "buf" is NULL or "pos" >= BUF_Size(buf).
+ * Do nothing and return min(BUF_Size(buf)-pos, size) if "data" is NULL.
  */
 extern size_t BUF_PeekAt(BUF buf, size_t pos, void* data, size_t size);
 

@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/04/23 22:20:27  vakatov
+ * BUF_PeekAt() -- special case for "data" == NULL
+ *
  * Revision 6.6  2001/04/23 18:07:21  vakatov
  * + BUF_PeekAt()
  *
@@ -217,8 +220,17 @@ extern size_t BUF_PeekAt(BUF buf, size_t pos, void* data, size_t size)
   size_t     n_extra_skip = 0;
   SBufChunk* pChunk;
 
-  if (!data  ||  !size  ||  !buf  ||  !buf->list)
+  if (!size  ||  !buf  ||  !buf->list)
     return 0;
+
+  /* special treatment for NULL data buffer */
+  if ( !data ) {
+    size_t buf_size = BUF_Size(buf);
+    if (buf_size <= pos)
+        return 0;
+    buf_size -= pos;
+    return buf_size < size ? buf_size : size;
+  }
 
   /* skip "pos" bytes */
   for (pChunk = buf->list;  pChunk;  pChunk = pChunk->next) {
