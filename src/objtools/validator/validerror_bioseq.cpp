@@ -112,6 +112,7 @@
 #include <objmgr/seq_feat_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -3907,6 +3908,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.96  2005/03/15 20:09:29  dicuccio
+* +algorithm for binary_search
+*
 * Revision 1.95  2005/03/14 18:19:02  grichenk
 * Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
 * SAnnotSelector.
