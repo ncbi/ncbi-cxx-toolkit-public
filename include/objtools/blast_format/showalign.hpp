@@ -42,7 +42,8 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objtools/readers/getfeature.hpp>
 
-BEGIN_NCBI_SCOPE BEGIN_SCOPE(objects)
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
 /**
  * Example:
@@ -212,7 +213,7 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
     ///number of bases or amino acids per line
     ///@param len: length desired
     ///
-    void SetLineLen(int len) {
+    void SetLineLen(size_t len) {
         m_LineLen = len;
     }
 
@@ -301,9 +302,9 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
 private:
     
     ///internal insert information
+    ///aln_start. insert right after this position
     struct SInsertInformation {
-        int aln_start;               // aln coords. insert right after this
-                                    // position
+        int aln_start;              
         int seq_start;
         int insert_len;
     };
@@ -332,11 +333,12 @@ private:
 
     /// reference to seqalign set
     CConstRef < CSeq_align_set > m_SeqalignSetRef; 
-                                                    // for displaying
-    list < SeqlocInfo * >* m_Seqloc; // display character option for list of
-                                    // seqloc 
-    list < FeatureInfo * >* m_QueryFeature;  // external feature such as phiblast
-                                            // pattern
+    
+    /// display character option for list of seqloc         
+    list < SeqlocInfo * >* m_Seqloc; 
+
+    /// external feature such as phiblast
+    list < FeatureInfo * >* m_QueryFeature; 
     CScope & m_Scope;
     CAlnVec *m_AV;                  // current aln vector
     int **m_Matrix;                 // matrix used to compute the midline
@@ -346,7 +348,7 @@ private:
     int m_NumAlignToShow;           // number of alignment to display
     SeqLocCharOption m_SeqLocChar;  // character for seqloc display
     SeqLocColorOption m_SeqLocColor; // clolor for seqloc display
-    int m_LineLen;                  // number of sequence character per line
+    size_t m_LineLen;                  // number of sequence character per line
     bool m_IsDbNa;
     bool m_IsDbGi;
     string m_DbName;
@@ -379,6 +381,7 @@ private:
 
     /// display sequence for one row
     ///@param sequence: the sequence for that row
+    ///@param id: seqid
     ///@param start: seqalign coodinate
     ///@param len: length desired
     ///@param frame: for tranlated alignment
@@ -402,10 +405,10 @@ private:
     ///@param bdl: blast defline structure
     ///@param first_gi: the first gi in redundant sequence
     ///@param gi: the actual gi
-    //@param out: output stream
+    ///@param out: output stream
     ///
-    void x_AddLinkout(const CBioseq & cbsp, const CBlast_def_line & bdl,
-                      int first_gi, int gi, CNcbiOstream & out) const;
+    void x_AddLinkout(const CBioseq& cbsp, const CBlast_def_line& bdl,
+                      int first_gi, int gi, CNcbiOstream& out) const;
 
     ///get url to sequence record
     ///@param ids: id list
@@ -427,7 +430,7 @@ private:
     ///@param scope: scope to fectch sequence
     ///@param choice: which feature to get
     ///@param row: current row number
-    ///@sequence: the sequence string
+    ///@param sequence: the sequence string
     ///
     void x_GetFeatureInfo(list < SAlnFeatureInfo * >&feature, CScope & scope,
                           CSeqFeatData::E_Choice choice, int row,
@@ -478,12 +481,12 @@ private:
     ///set feature info
     ///@param feat_info: feature to fill in
     ///@param seqloc: feature for this seqloc
-    ///@aln_from: from coodinate
+    ///@param aln_from: from coodinate
     ///@param aln_to: to coordinate
     ///@param aln_stop: the stop position for whole alignment
     ///@param pattern_char: the pattern character to show
     ///@param pattern_id: the pattern id to show
-    ///@alternative_feat_str: use this as feature string instead
+    ///@param alternative_feat_str: use this as feature string instead
     ///
     void x_SetFeatureInfo(SAlnFeatureInfo* feat_info, const CSeq_loc& seqloc,
                           int aln_from, int aln_to, int aln_stop,
@@ -510,7 +513,7 @@ private:
 
     ///display alnvec list
     ///@param out: output stream
-    ///@av_list: alnvec list
+    ///@param av_list: alnvec list
     ///
     void x_DisplayAlnvecList(CNcbiOstream& out, list < SAlnInfo * >& av_list);
 
@@ -525,8 +528,8 @@ private:
     void x_FillLocList(list<SAlnSeqlocInfo*>& loc_list) const;
 
     ///get external query feature info such as phi blast pattern
-    ///@param row: row number
-    ///@param: aln_stop: the stop position for the whole alignment
+    ///@param row_num: row number
+    ///@param aln_stop: the stop position for the whole alignment
     ///
     list<SAlnFeatureInfo*>* x_GetQueryFeatureList(int row_num, 
                                                  int aln_stop) const;
@@ -547,6 +550,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.26  2005/03/02 18:21:17  jianye
+*some style fix
+*
 *Revision 1.25  2005/02/22 15:59:16  jianye
 *some style change
 *

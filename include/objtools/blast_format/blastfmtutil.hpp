@@ -42,48 +42,58 @@
 #include  <objmgr/bioseq_handle.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
+/**setting up scope*/
 BEGIN_NCBI_SCOPE
 USING_SCOPE (objects);
 
 
-/** This class contains misc functions for displaying BLAST results. */
- 
 ///blast related url
+///entrez
 const string kEntrezUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entre\
 z/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>";
 
+///trace db
 const string kTraceUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Traces\
 /trace.cgi?cmd=retrieve&dopt=fasta&val=%s\">";
 
+///unigene
 const string kUnigeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entr\
 ez/query.fcgi?db=unigene&cmd=search&term=%d[Nucleotide+UID]\"><img border=0 h\
 eight=16 width=16 src=\"/blast/images/U.gif\" alt=\"UniGene info\"></a>";
 
+///structure
 const string kStructureUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/St\
 ructure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_RID=%s\
 &blast_view=%s&hsp=0&taxname=%s&client=blast\"><img border=0 height=16 width=\
 16 src=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Re\
 lated structures\"></a>";
 
+///structure overview
 const string kStructure_Overview = "<a href=\"http://www.ncbi.nlm.nih.\
 gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_\
 RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
 
+///Geo
 const string kGeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
 query.fcgi?db=geo&term=%d[gi]\"><img border=0 height=16 width=16 src=\"/blast\
 /images/E.gif\" alt=\"Geo\"></a>";
 
+///Gene
 const string kGeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
 query.fcgi?db=gene&cmd=search&term=%d[%s]\"><img border=0 height=16 width=16 \
 src=\"/blast/images/G.gif\" alt=\"Gene info\"></a>";
 
+///Sub-sequence
 const string kEntrezSubseqUrl = "<a href=\"http://www.ncbi.nlm.nih.\
 gov/entrez/viewer.fcgi?val=%d&db=%s&from=%d&to=%d&view=gbwithparts\">";
 
+///Bl2seq 
 const string kBl2seqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/\
 blast/bl2seq/wblast2.cgi?PROGRAM=tblastx&WORD=3&RID=%s&ONE=%s&TWO=%s\">Get \
 TBLASTX alignments</a>";
 
+
+/** This class contains misc functions for displaying BLAST results. */
 
 class CBlastFormatUtil 
 {
@@ -92,8 +102,8 @@ public:
    
     ///Error info structure
     struct SBlastError {
-        EDiagSev level;
-        string message;
+        EDiagSev level;   
+        string message;  
     };
 
     ///Blast database info
@@ -140,7 +150,7 @@ public:
 
     ///Print out blast database information
     ///@param dbinfo_list: database info list
-    ///@param: line_len: length of each line desired
+    ///@param line_length: length of each line desired
     ///@param out: stream to ouput
     ///
     static void PrintDbReport(list<SDbInfo>& dbinfo_list, size_t line_length, 
@@ -150,7 +160,7 @@ public:
     ///@param lambda
     ///@param k
     ///@param h
-    ///@param: line_len: length of each line desired
+    ///@param line_len: length of each line desired
     ///@param out: stream to ouput
     ///@param gapped: gapped alignment?
     ///@param c
@@ -160,9 +170,10 @@ public:
                                   bool gapped, float c = 0.0);
     
     ///Print out blast query info
-    ///@param: line_len: length of each line desired
+    ///@param cbs: bioseq of interest
+    ///@param line_len: length of each line desired
     ///@param out: stream to ouput
-    ///@param: use user's id
+    ///@param believe_query: use user id or not
     ///@param html: in html format or not
     ///
     static void AcknowledgeBlastQuery(CBioseq& cbs, size_t line_len,
@@ -181,7 +192,7 @@ public:
     ///@param bits: place to extract the bit score to
     ///@param evalue: place to extract the e value to
     ///@param sum_n: place to extract the sum_n to
-    ///@param sum_n: place to extract the num_ident to
+    ///@param num_ident: place to extract the num_ident to
     ///@param use_this_gi: place to extract use_this_gi to
     ///
     static void GetAlnScores(const CSeq_align& aln,
@@ -227,6 +238,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.10  2005/03/02 18:21:17  jianye
+some style fix
+
 Revision 1.9  2005/02/23 16:28:55  jianye
 num_ident addition to getalnscore
 
