@@ -153,7 +153,7 @@ void s_SetService(string & service, string & /*program*/, const CArgs & args)
 }
 
 
-extern bool ncbi::trace_blast_api;
+extern bool trace_blast_api;
 
 int CRemote_blastApplication::Run(void)
 {
@@ -236,6 +236,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/16 19:41:03  vasilche
+ * Namespace qualifier is invalid in extern declaration
+ *
  * Revision 1.2  2004/02/18 16:53:19  bealer
  * - Adapt source from blast_client to Remote Blast API.
  *
