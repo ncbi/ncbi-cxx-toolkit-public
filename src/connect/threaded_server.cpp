@@ -81,7 +81,7 @@ void CThreadedServer::Run(void)
                     pool.WaitForRoom();
                     LSOCK_Create(m_Port, 5, &lsock);
                 }
-            } catch (CBlockingQueue<CRef<CStdRequest> >::CException) {
+            } catch (CBlockingQueueException) {
                 _ASSERT(!m_TemporarilyStopListening);
                 ProcessOverflow(sock);
             }            
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.6  2002/09/13 15:16:25  ucko
+* Update for new CBlockingQueue exception setup.
+*
 * Revision 6.5  2002/08/20 19:23:44  ucko
 * Check return status from LSOCK_Create() in CThreadedServer::Run().
 * Move CVS log to end of file.
