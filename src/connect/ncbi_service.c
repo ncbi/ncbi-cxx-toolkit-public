@@ -41,13 +41,13 @@
 #define SERV_SERVICE_NAME "SERVICE_NAME"
 
 
-char* SERV_ServiceName(const char* service)
+static char* s_ServiceName(const char* service, size_t depth)
 {
     char *s, *p;
     char key[128];
     char srv[128];
 
-    if (!service || !*service ||
+    if (++depth > 8 || !service || !*service ||
         sizeof(DEF_CONN_REG_SECTION) + sizeof(SERV_SERVICE_NAME) +
         strlen(service) >= sizeof(key))
         return 0/*failure*/;
@@ -71,7 +71,13 @@ char* SERV_ServiceName(const char* service)
         strncpy0(srv, p, sizeof(srv) - 1);
 
     /* No cycle detection in service name redefinition */
-    return SERV_ServiceName(srv);
+    return s_ServiceName(srv, depth);
+}
+
+
+char* SERV_ServiceName(const char* service)
+{
+    return s_ServiceName(service, 0);
 }
 
 
@@ -112,7 +118,7 @@ static SERV_ITER s_Open(const char* service, TSERV_Type type,
                         const SSERV_Info* const skip[], size_t n_skip,
                         SSERV_Info** info, HOST_INFO* host_info, int external)
 {
-    const char* s = SERV_ServiceName(service);
+    const char* s = s_ServiceName(service, 0);
     const SSERV_VTable* op;
     SERV_ITER iter;
     
@@ -468,6 +474,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.51  2004/03/23 02:28:21  lavr
+ * Limit service name resolution recursion by 8
+ *
  * Revision 6.50  2004/01/30 14:37:26  lavr
  * Client revision made independent of CVS revisions
  *
