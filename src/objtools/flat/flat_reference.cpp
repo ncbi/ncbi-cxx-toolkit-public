@@ -319,8 +319,10 @@ void CFlatReference::x_Init(const CPub& pub, const CFlatContext& ctx)
 
 void CFlatReference::x_Init(const CCit_gen& gen, const CFlatContext& ctx)
 {
-    if (gen.IsSetCit()  &&  NStr::CompareNocase(gen.GetCit(), "unpublished")) {
+    if (gen.IsSetCit()
+        &&  !NStr::CompareNocase(gen.GetCit(), "unpublished") ) {
         m_Category = eUnpublished;
+        m_Journal  = "Unpublished";
     }
     if (gen.IsSetAuthors()) {
         x_AddAuthors(gen.GetAuthors());
@@ -643,6 +645,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/12/02 19:22:17  ucko
+* Properly detect unpublished references, and give them a pseudo-journal
+* of Unpublished.
+*
 * Revision 1.9  2003/06/02 16:06:42  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
