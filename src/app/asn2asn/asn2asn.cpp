@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/01/23 00:12:02  vakatov
+* Added comments and usage directions
+*
 * Revision 1.35  2000/12/24 00:14:16  vakatov
 * Minor fix due to the changed NCBIARGS API
 *
@@ -480,14 +483,30 @@ void CReadSeqSetHook::ReadClassMember(CObjectIStream& in,
 {
     CInc inc(m_Level);
     if ( m_Level == 1 ) {
-        for ( CIStreamContainer i(in, member); i; ++i ) {
+        // (do not have to read member open/close tag, it's done by this time)
+
+        // Read each element separately to a local TSeqEntry,
+        // process it somehow, and... not store it in the container.
+        for ( CIStreamContainerIterator i(in, member); i; ++i ) {
             TSeqEntry entry;
             entry.DoNotDeleteThisObject();
             i >> entry;
             SeqEntryProcess(entry);
         }
+
+        // MemberIterators are DANGEROUS!  -- do not use the following
+        // unless...
+
+        // The same trick can be done with CIStreamClassMember -- to traverse
+        // through the class members rather than container elements.
+        // CObjectInfo object = member;
+        // for ( CIStreamClassMemberIterator i(in, object); i; ++i ) {
+        //    // CObjectTypeInfo::CMemberIterator nextMember = *i;
+        //    in.ReadObject(object.GetMember(*i));
+        // }
     }
     else {
+        // standard read
         in.ReadClassMember(member);
     }
 }
@@ -510,20 +529,39 @@ void CWriteSeqEntryHook::WriteObject(CObjectOStream& out,
 void CWriteSeqSetHook::WriteClassMember(CObjectOStream& out,
                                         const CConstObjectInfo::CMemberIterator& member)
 {
+    // keep track of the level of write recursion
     CInc inc(m_Level);
+
+    // just for fun -- do the hook only on the first level of write recursion,
     if ( m_Level == 1 ) {
+        // provide opening and closing(automagic, in destr) tags for the member
         COStreamClassMember m(out, member);
+
+        // out.WriteObject(*member);  or, with just the same effect:
+
+        // provide opening and closing(automagic) tags for the container
         COStreamContainer o(out, member);
 
         typedef CBioseq_set::TSeq_set TSeq_set;
+        // const TSeq_set& cnt = *Type<TSeq_set>::Get(*member);
+        // but as soon as we know for sure that it *is* TSeq_set, so:
         const TSeq_set& cnt = *Type<TSeq_set>::GetUnchecked(*member);
 
+        // write elem-by-elem
         for ( TSeq_set::const_iterator i = cnt.begin(); i != cnt.end(); ++i ) {
             const TSeqEntry& entry = **i;
+            // COStreamContainer is smart enough to automagically put
+            // open/close tags for each element written
             o << entry;
+
+            // here, we could e.g. write each elem twice:
+            // o << entry;  o << entry;
+            // we cannot change the element content as everything is const in
+            // the write hooks.
         }
     }
     else {
+        // on all other levels -- use standard write func for this member
         out.WriteClassMember(member);
     }
 }
