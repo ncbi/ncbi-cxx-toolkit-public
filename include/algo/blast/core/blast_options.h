@@ -475,7 +475,11 @@ typedef struct PSIBlastOptions {
 
     /** If set to TRUE, use the best alignment when multiple HSPs are found 
      * in a query-subject alignment (i.e.: HSP with the lowest e-value), else
-     * use all HSPs in a query-subject alignment. */
+     * use all HSPs in a query-subject alignment. This option does not apply to
+     * the PSSM engine, it applies to the processing of pairwise sequence
+     * alignments to build a multiple sequence alignment structure 
+     * @sa CPsiBlastInputData (to be implemented)
+     */
     Boolean use_best_alignment;
 
     /* The following are advanced options, provided for NCBI's structure 
