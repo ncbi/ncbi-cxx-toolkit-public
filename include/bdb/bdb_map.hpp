@@ -507,9 +507,10 @@ void db_map_base<K, T>::open(const char* fname,
                              CBDB_RawFile::EOpenMode db_mode,
                              unsigned int cache_size)
 {
-    if (cache_size) 
+    if (cache_size)
         m_Dbf.SetCacheSize(cache_size);
     m_Dbf.Open(fname, db_mode);
+    m_Dbf.SetLegacyStringsCheck(true);
 }
 
 template<class K, class T>
@@ -602,6 +603,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/11 17:59:05  kuznets
+ * Set legacy strings checking by default
+ *
  * Revision 1.9  2004/02/04 17:04:58  kuznets
  * Make use of LString type in map objects to handle non-ASCIIZ strings
  *
