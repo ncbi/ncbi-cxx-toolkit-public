@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/11/09 18:14:40  vasilche
+* Fixed nonstandard behaviour of 'for' statement on MS VC.
+*
 * Revision 1.22  2000/11/03 01:12:44  thiessen
 * fix memory problem with alignment cloning
 *
@@ -492,7 +495,8 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
     }
 
     if (prevRow < 0 || sequence != sequences->at(prevRow)) {
-        for (int row=0; row<NRows(); row++) if (sequences->at(row) == sequence) break;
+		int row;
+        for (row=0; row<NRows(); row++) if (sequences->at(row) == sequence) break;
         if (row == NRows()) {
             ERR_POST(Error << "BlockMultipleAlignment::GetRowForSequence() - can't find given Sequence");
             return -1;

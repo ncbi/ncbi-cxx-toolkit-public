@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/11/09 18:14:43  vasilche
+* Fixed nonstandard behaviour of 'for' statement on MS VC.
+*
 * Revision 1.27  2000/11/08 17:02:50  vasilche
 * Added generation of modular DTD files.
 *
@@ -148,10 +151,6 @@
 #include <typeinfo>
 
 BEGIN_NCBI_SCOPE
-
-#if defined(HAVE_WINDOWS_H) && !defined(for)
-# define for if(0);else for
-#endif
 
 class CAnyTypeClassInfo : public CClassTypeInfo
 {

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/11/09 18:14:37  vasilche
+* Fixed nonstandard behaviour of 'for' statement on MS VC.
+*
 * Revision 1.18  2000/07/03 18:41:16  vasilche
 * Added prefix to NCBI_EAT_SEMICOLON generated typedef to avoid possible name conflict.
 *
@@ -146,6 +149,11 @@ namespace NCBI_NS_NCBI { /* the fake one */ }
 #if !defined(NCBI_EAT_SEMICOLON)
 #  define NCBI_EAT_SEMICOLON(UniqueName) \
 typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
+#endif
+
+// fix nonstandard 'for' statement behaviour on MSVC
+#if defined(NCBI_OS_MSWIN) && !defined(for)
+# define for if(0);else for
 #endif
 
 #endif /* NCBISTL__HPP */
