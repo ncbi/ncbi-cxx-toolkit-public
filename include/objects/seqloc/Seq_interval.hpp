@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2003/01/24 20:12:18  vasilche
+ * Reverted CSeq_interval::GetLength() fix for negative strands.
+ *
  * Revision 1.10  2002/12/26 12:43:42  dicuccio
  * Added Win32 export specifiers
  *
@@ -124,12 +127,7 @@ CSeq_interval::CSeq_interval(void)
 inline
 TSeqPos CSeq_interval::GetLength(void) const
 {
-    if (GetTo() >= GetFrom()) {
-	    return ((GetTo() - GetFrom()) + 1);
-    }
-    else {
-	    return ((GetFrom() - GetTo()) + 1);
-    }
+    return ((GetTo() - GetFrom()) + 1);
 }
 
 /////////////////// end of CSeq_interval inline methods
