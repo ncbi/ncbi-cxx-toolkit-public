@@ -1,4 +1,4 @@
-/*  $Id: newick.lpp,v 1.3 2004/02/12 02:30:35 ucko Exp $
+/*  $Id: newick.lpp,v 1.4 2004/05/25 14:42:45 jcherry Exp $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -41,6 +41,7 @@
 
 
 %{
+#include <ncbi_pch.hpp>
 #include <string.h>
 #include <util/stream_utils.hpp>
 #include <algo/phy_tree/phy_node.hpp>
@@ -123,6 +124,9 @@ void newick_flex_reset(void)
 /*
  * ===========================================================================
  * $Log: newick.lpp,v $
+ * Revision 1.4  2004/05/25 14:42:45  jcherry
+ * #include <ncbi_pch.hpp>
+ *
  * Revision 1.3  2004/02/12 02:30:35  ucko
  * More portability fixes for newick parser.
  *
