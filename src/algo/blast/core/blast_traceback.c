@@ -40,6 +40,7 @@ Detailed Contents:
 #include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/link_hsps.h>
+#include <algo/blast/core/blast_setup.h>
 
 static char const rcsid[] = "$Id$";
 
@@ -979,7 +980,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
         program_number == blast_type_psitblastn) {
         hsp_list->hspcnt = BlastHSPArrayPurge(hsp_array, hsp_list->hspcnt);
         
-        if (hit_options->do_sum_stats == TRUE) {
+        if (hit_params->do_sum_stats == TRUE) {
            BLAST_LinkHsps(program_number, hsp_list, query_info, subject_blk,
                          sbp, hit_params, score_options->gapped_calculation);
         } else if (hit_options->phi_align) {
@@ -1063,10 +1064,11 @@ BlastPruneExtraHits(BlastHSPResults* results, Int4 hitlist_size)
 
 Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-        const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
+        const BlastSeqSrc* seq_src, BlastGapAlignStruct* gap_align,
         const BlastScoringOptions* score_options,
         const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
+        BlastEffectiveLengthsParameters* eff_len_params,
         const BlastDatabaseOptions* db_options,
         const PSIBlastOptions* psi_options)
 {
@@ -1078,7 +1080,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
    Uint1 encoding;
    GetSeqArg seq_arg;
    
-   if (!results || !query_info || !bssp) {
+   if (!results || !query_info || !seq_src) {
       return 0;
    }
    
@@ -1106,8 +1108,19 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
             seq_arg.oid = hsp_list->oid;
             seq_arg.encoding = encoding;
             BlastSequenceBlkClean(seq_arg.seq);
-            if (BLASTSeqSrcGetSequence(bssp, (void*) &seq_arg) < 0)
+            if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
                 continue;
+
+            if (BLASTSeqSrcGetTotLen(seq_src) == 0) {
+               /* This is not a database search, so effective search spaces
+                  need to be recalculated based on this subject sequence 
+                  length */
+               if ((status = BLAST_OneSubjectUpdateParameters(program_number, 
+                                seq_arg.seq->length, score_options, 
+                                query_info, sbp, ext_params, hit_params, 
+                                NULL, eff_len_params)) != 0)
+                  return status;
+            }
 
             BlastHSPListGetTraceback(program_number, hsp_list, query, 
                seq_arg.seq, query_info, gap_align, sbp, score_options, 
@@ -1117,8 +1130,9 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
    }
 
    /* Re-sort the hit lists according to their best e-values, because
-      they could have changed */
-   BLAST_SortResults(results);
+      they could have changed. Only do this for a database search. */
+   if (BLASTSeqSrcGetTotLen(seq_src) > 0)
+      BLAST_SortResults(results);
 
    /* Eliminate extra hits from results, if preliminary hit list size is larger
       than the final hit list size */
