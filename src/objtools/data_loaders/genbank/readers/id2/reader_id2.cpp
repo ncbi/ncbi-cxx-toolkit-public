@@ -516,10 +516,8 @@ void CId2Reader::LoadBlobs(CReaderRequestResult& result,
 
 
 void CId2Reader::LoadBlob(CReaderRequestResult& result,
-                          CLoadLockBlob_ids& /*blobs*/,
-                          CLoadInfoBlob_ids::const_iterator blob_iter)
+                          const TBlob_id& blob_id)
 {
-    const CBlob_id& blob_id = blob_iter->first;
     CLoadLockBlob blob(result, blob_id);
     if ( !blob.IsLoaded() ) {
         CID2_Request req;
@@ -859,14 +857,26 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
                                 CLoadLockSeq_ids& ids,
                                 const CID2_Reply_Get_Seq_id& reply)
 {
-    if ( !(errors & fError_no_data) && !reply.GetSeq_id().empty() ) {
-        ids.AddSeq_id(**reply.GetSeq_id().begin());
-    }
-    if ( reply.IsSetEnd_of_reply() ) {
+    if ( errors & fError_no_data ) {
+        // no Seq-ids
         ids.SetLoaded();
+        return;
     }
-    else {
-        result.SetLoaded(ids);
+    switch ( reply.GetRequest().GetSeq_id_type() ) {
+    case CID2_Request_Get_Seq_id::eSeq_id_type_all:
+        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+            ids.AddSeq_id(**it);
+        }
+        if ( reply.IsSetEnd_of_reply() ) {
+            ids.SetLoaded();
+        }
+        else {
+            result.SetLoaded(ids);
+        }
+        break;
+    default:
+        // ???
+        break;
     }
 }
 
@@ -875,16 +885,32 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
                                 TErrorFlags errors,
                                 const CID2_Reply_Get_Blob_Id& reply)
 {
-    CLoadLockBlob_ids ids(result,CSeq_id_Handle::GetHandle(reply.GetSeq_id()));
+    const CSeq_id& seq_id = reply.GetSeq_id();
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(seq_id);
+    CLoadLockBlob_ids ids(result, idh);
     if ( !(errors & fError_no_data) ) {
         CBlob_id blob_id = GetBlob_id(reply.GetBlob_id());
         TBlobContentsMask mask = 0;
-        if ( blob_id.GetSubSat() == CID2_Blob_Id::eSub_sat_main ) {
-            mask |= fBlobHasAllLocal;
-        }
-        else {
-            mask |= fBlobHasExtAnnot;
-        }
+        {{ // TODO: temporary logic, this info should be returned by server
+            if ( blob_id.GetSubSat() == CID2_Blob_Id::eSub_sat_main ) {
+                mask |= fBlobHasAllLocal;
+            }
+            else {
+                if ( seq_id.IsGeneral() ) {
+                    const CObject_id& obj_id = seq_id.GetGeneral().GetTag();
+                    if ( obj_id.IsId() &&
+                         obj_id.GetId() == blob_id.GetSatKey() ) {
+                        mask |= fBlobHasAllLocal;
+                    }
+                    else {
+                        mask |= fBlobHasExtAnnot;
+                    }
+                }
+                else {
+                    mask |= fBlobHasExtAnnot;
+                }
+            }
+        }}
         ids.AddBlob_id(blob_id, mask);
     }
     if ( reply.IsSetEnd_of_reply() ) {
@@ -951,7 +977,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
     }
 
     if ( (errors & fError_no_data) ) {
-        blob->SetSuppressionLevel(CTSE_Info::eSuppression_withdrawn);
+        blob->SetBlobState(CTSE_Info::fState_no_data);
         blob.SetLoaded();
         return;
     }
