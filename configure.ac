@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.18 2001/10/26 21:14:21 vakatov Exp $
+#  $Id: configure.ac,v 1.19 2001/10/27 23:03:25 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -151,6 +151,8 @@ AC_ARG_WITH(serial,
    [ --without-serial        do not build the serialization library and tools])
 AC_ARG_WITH(objects,
    [ --with-objects          generate/build serializeable objects from ASNs])
+AC_ARG_WITH(objects,
+   [ --without-dbapi         do not build NCBI portable database APIs])
 AC_ARG_WITH(app,
    [ --with-app              build standalone applications like ID1_FETCH])
 AC_ARG_WITH(ctools,
@@ -170,7 +172,7 @@ x_with_list="\
 debug optimization dll static runpath mt 64 \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-ftds orbacus local-lbsm serial objects app ctools gui internal"
+ftds orbacus local-lbsm serial objects dbapi app ctools gui internal"
 
 changequote(, )dnl
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -2024,6 +2026,29 @@ else
 fi
 
 
+## `dbapi' projects
+
+if test "$with_dbapi" = "no" ; then
+   NoConfProjects="$NoConfProjects dbapi"
+fi
+
+if test ! -f ${srcdir}/src/dbapi/Makefile.in  -o  \
+        ! -d ${srcdir}/include/dbapi ; then
+   if test "$with_dbapi" = "yes" ; then
+      AC_MSG_ERROR(["--with-dbapi:  DBAPI sources are missing"])
+   fi
+   with_dbapi="no"
+fi
+
+if test "$with_dbapi" = "no" ; then
+   WithoutProjects="$WithoutProjects dbapi"
+   dbapi=
+else
+   WithProjects="$WithProjects dbapi"
+   dbapi="dbapi"
+fi
+
+
 ## `app' projects
 
 if test "$with_app" = "no" ; then
@@ -2254,6 +2279,7 @@ AC_SUBST(OPT_GROUPS)
 AC_SUBST(local_lbsm)
 AC_SUBST(serial)
 AC_SUBST(objects)
+AC_SUBST(dbapi)
 AC_SUBST(app)
 
 AC_SUBST(script_shell)

@@ -13,9 +13,9 @@ include ./Makefile.mk
 
 MANDATORY_PROJ  = corelib connect util cgi html hello
 
-OPTIONAL_PROJ   = @serial@ @objects@ @app@ \
+OPTIONAL_PROJ   = @serial@ @objects@ @dbapi@ @app@ \
    $(OPT_GROUPS)
-X_OPTIONAL_PROJ =  serial   objects   app   cddalignview \
+X_OPTIONAL_PROJ =  serial   objects   dbapi   app  \
    ctools gui internal
 
 SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
