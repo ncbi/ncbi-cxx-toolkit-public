@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/10/11 19:57:17  lavr
+ * Add tests for ConnNetInfo_*UserHeader() routines
+ *
  * Revision 6.8  2002/03/22 19:46:51  lavr
  * Test_assert.h made last among the include files
  *
@@ -267,6 +270,31 @@ static void TEST_MIME(void)
 }
 
 
+static void TEST_ConnNetInfo(void)
+{
+    SConnNetInfo* net_info = ConnNetInfo_Create(0);
+
+    assert(net_info);
+    printf("HTTP User Header:\n\"%s\"\n",
+           net_info->http_user_header ? net_info->http_user_header : "<NONE>");
+    ConnNetInfo_AppendUserHeader(net_info,
+                                 "My-Tag1: Value1\r\n"
+                                 "My-Tag2: Value2\r\n"
+                                 "My-Tag3: Value3\r\n");
+    printf("HTTP User Header after append:\n\"%s\"\n",
+           net_info->http_user_header ? net_info->http_user_header : "<NONE>");
+    ConnNetInfo_OverrideUserHeader(net_info,
+                                   "My-TAG1:    \t  \r\n"
+                                   "My-TaG2: Value 2.1\r\n"
+                                   "My-Tag4: Value 4\r\n");
+    printf("HTTP User Header after override:\n\"%s\"\n",
+           net_info->http_user_header ? net_info->http_user_header : "<NONE>");
+    ConnNetInfo_SetUserHeader(net_info, 0);
+    printf("HTTP User Header after set:\n\"%s\"\n",
+           net_info->http_user_header ? net_info->http_user_header : "<NONE>");
+}
+
+
 
 /***********************************************************************
  *  MAIN
@@ -279,6 +307,7 @@ int main(void)
 
     TEST_URL_Encoding();
     TEST_MIME();
+    TEST_ConnNetInfo();
 
     CORE_SetLOG(0);
     return 0;
