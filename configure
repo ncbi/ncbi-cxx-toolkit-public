@@ -10055,7 +10055,11 @@ if test "$with_ncbi_c" = "no" ; then
 fi
 
 if test "$with_pubmed" != "no" ; then
-   NCBI_PM_PATH=${NCBI_PM_PATH:="$NCBI/pubmed"}${bit64_sfx}
+   case "$NCBI_PM_PATH" in
+      "" )          NCBI_PM_PATH=$NCBI/pubmed${bit64_sfx} ;;
+      *$bit64_sfx ) ;;
+      * )           NCBI_PM_PATH=${NCBI_PM_PATH}${bit64_sfx} ;;
+   esac
 
    echo "$as_me:$LINENO: checking for NCBI PubMed libraries in $NCBI_PM_PATH" >&5
 echo $ECHO_N "checking for NCBI PubMed libraries in $NCBI_PM_PATH... $ECHO_C" >&6
