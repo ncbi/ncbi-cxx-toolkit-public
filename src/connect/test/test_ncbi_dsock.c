@@ -35,15 +35,20 @@
 #include <connect/ncbi_socket.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <time.h>
+#ifdef NCBI_OS_UNIX
+#  include <unistd.h>
+#endif /*NCBI_OS_UNIX*/
 /* This header must go last */
 #include "test_assert.h"
+
 
 #define DEFAULT_PORT 55555
 
 
 static int s_Usage(const char* prog)
 {
-    CORE_LOGF(eLOG_Error, ("Usage:\n%s {client|server} [port]", prog));
+    CORE_LOGF(eLOG_Error, ("Usage:\n%s {client|server} [port [seed]]", prog));
     return 1;
 }
 
@@ -68,7 +73,21 @@ static int s_Server(int x_port)
     CORE_LOGF(eLOG_Note, ("[Server]  Opening DSOCK on port %hu", port));
 
     if ((status = DSOCK_Create(port, &server)) != eIO_Success) {
-        CORE_LOGF(eLOG_Error, ("[Server]  Error creating server DSOCK: %s",
+        CORE_LOGF(eLOG_Error, ("[Server]  Error creating DSOCK: %s",
+                               IO_StatusStr(status)));
+        return 1;
+    }
+
+    if ((status = DSOCK_WaitMsg(server, 0/*infinite*/)) != eIO_Success) {
+        CORE_LOGF(eLOG_Error, ("[Server]  Error waiting on DSOCK: %s",
+                               IO_StatusStr(status)));
+        return 1;
+    }
+
+    timeout.sec  = 0;
+    timeout.usec = 0;
+    if ((status= SOCK_SetTimeout(server, eIO_Read, &timeout)) != eIO_Success) {
+        CORE_LOGF(eLOG_Error, ("[Server]  Error setting zero read tmo: %s",
                                IO_StatusStr(status)));
         return 1;
     }
@@ -102,6 +121,7 @@ static int s_Server(int x_port)
         }
         len += n;
     } while (len < msgsize);
+    assert(SOCK_Read(server, 0, 1, &n, eIO_ReadPlain) == eIO_Closed);
 
     CORE_LOG(eLOG_Note, "[Server]  Bouncing the message to sender");
 
@@ -129,17 +149,18 @@ static int s_Server(int x_port)
 
     if ((status = DSOCK_SendMsg(server, addr, peerport, "--Reply--", 9))
         != eIO_Success) {
-        CORE_LOGF(eLOG_Error, ("[Server]  Error sending reply: %s",
+        CORE_LOGF(eLOG_Error, ("[Server]  Error sending to DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
 
     if ((status = SOCK_Close(server)) != eIO_Success) {
-        CORE_LOGF(eLOG_Error, ("[Server]  Error closing socket: %s",
+        CORE_LOGF(eLOG_Error, ("[Server]  Error closing DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
 
+    CORE_LOG(eLOG_Note, "[Server]  Completed successfully");
     return 0;
 }
 
@@ -162,7 +183,7 @@ static int s_Client(int x_port)
     CORE_LOGF(eLOG_Note, ("[Client]  Opening DSOCK on port %hu", port));
 
     if ((status = DSOCK_Create(0, &client)) != eIO_Success) {
-        CORE_LOGF(eLOG_Error, ("[Client]  Error creating server DSOCK: %s",
+        CORE_LOGF(eLOG_Error, ("[Client]  Error creating DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
@@ -181,7 +202,7 @@ static int s_Client(int x_port)
 
     if ((status = DSOCK_SendMsg(client, "127.0.0.1", port, buf, msgsize))
         != eIO_Success) {
-        CORE_LOGF(eLOG_Error, ("[Client]  Error sending message: %s",
+        CORE_LOGF(eLOG_Error, ("[Client]  Error sending to DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
@@ -197,19 +218,20 @@ static int s_Client(int x_port)
     if ((status = DSOCK_RecvMsg(client, 0, &buf[msgsize],
                                 msgsize + 9, &n, 0, 0))
         != eIO_Success) {
-        CORE_LOGF(eLOG_Error, ("[Client]  Error receiving message: %s",
+        CORE_LOGF(eLOG_Error, ("[Client]  Error reading from DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
 
     if (n != msgsize + 9) {
-        CORE_LOGF(eLOG_Error, ("[Client]  Received wrong size message: %lu",
+        CORE_LOGF(eLOG_Error, ("[Client]  Received message of wrong size: %lu",
                                (unsigned long) n));
         return 1;
     } else {
         CORE_LOGF(eLOG_Note, ("[Client]  Received message back, %lu bytes",
                               (unsigned long) n));
     }
+    assert(SOCK_Read(client, 0, 1, &n, eIO_ReadPlain) == eIO_Closed);
 
     for (n = 0; n < msgsize; n++) {
         if (buf[n] != buf[msgsize + n])
@@ -217,7 +239,7 @@ static int s_Client(int x_port)
     }
 
     if (n < msgsize) {
-        CORE_LOGF(eLOG_Error, ("[Client]  Bounced message corrupted, off %lu",
+        CORE_LOGF(eLOG_Error, ("[Client]  Bounced message corrupted, off=%lu",
                                (unsigned long) n));
         return 1;
     }
@@ -231,28 +253,44 @@ static int s_Client(int x_port)
     free(buf);
 
     if ((status = SOCK_Close(client)) != eIO_Success) {
-        CORE_LOGF(eLOG_Error, ("[Client]  Error closing socket: %s",
+        CORE_LOGF(eLOG_Error, ("[Client]  Error closing DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
     }
 
+    CORE_LOG(eLOG_Note, "[Client]  Completed successfully");
     return 0;
 }
 
 
 int main(int argc, const char* argv[])
 {
-    const char* env = getenv("CONN_DEBUG_PRINTOUT");
+    unsigned long seed;
+    const char*   env = getenv("CONN_DEBUG_PRINTOUT");
 
     CORE_SetLOGFILE(stderr, 0/*false*/);
+    CORE_SetLOGFormatFlags
+        (fLOG_None | fLOG_Level | fLOG_OmitNoteLevel | fLOG_DateTime );
 
-    if (argc < 2 || argc > 3)
+    if (argc < 2 || argc > 4)
         return s_Usage(argv[0]);
 
-    /* srand(time() + getpid()); */
+    if (argc <= 3) {
+#ifdef NCBI_OS_UNIX
+        seed = (unsigned long) time(0) + (unsigned long) getpid();
+#else
+        seed = (unsigned long) time(0);
+#endif /*NCBI_OS_UNIX*/
+    } else
+        sscanf(argv[3], "%lu", &seed);
+    CORE_LOGF(eLOG_Note, ("Random SEED = %lu", seed));
+    srand(seed);
 
-    if (env && (strcasecmp(env, "1") == 0    || strcasecmp(env, "yes") == 0 ||
-                strcasecmp(env, "some") == 0 || strcasecmp(env, "data") == 0)){
+    if (env && (strcasecmp(env, "1") == 0    ||
+                strcasecmp(env, "yes") == 0  ||
+                strcasecmp(env, "true") == 0 ||
+                strcasecmp(env, "some") == 0 ||
+                strcasecmp(env, "data") == 0)){
         SOCK_SetDataLoggingAPI(eOn);
     }
 
@@ -269,6 +307,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2003/01/17 01:26:44  lavr
+ * Test improved/extended
+ *
  * Revision 6.1  2003/01/16 16:33:06  lavr
  * Initial revision
  *
