@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2001/07/02 13:05:22  golikov
+ * +debug
+ *
  * Revision 1.6  2001/06/13 21:04:37  vakatov
  * Formal improvements and general beautifications of the CGI lib sources.
  *
@@ -162,7 +165,8 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
             if ( !GetConfig().Get("FastCGI", "Debug").empty() ) {
                 m_Context->PutMsg
                     ("FastCGI: " + NStr::IntToString(iteration + 1) +
-                     " iteration of " + NStr::IntToString(iterations));
+                     " iteration of " + NStr::IntToString(iterations) +
+		     ", pid " + NStr::IntToString(getpid()));
             }
 
             // call ProcessRequest()
