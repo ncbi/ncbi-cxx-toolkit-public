@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2003/05/15 17:44:38  gouriano
+* added GetStreamOffset method
+*
 * Revision 1.81  2003/05/13 20:13:29  vasilche
 * Catch errors while closing broken CObjectOStream.
 *
@@ -561,6 +564,11 @@ void CObjectOStream::UnendedFrame(void)
 string CObjectOStream::GetStackTrace(void) const
 {
     return GetStackTraceASN();
+}
+
+size_t CObjectOStream::GetStreamOffset(void) const
+{
+    return m_Output.GetStreamOffset();
 }
 
 void CObjectOStream::ThrowError1(const char* file, int line, 

@@ -262,6 +262,7 @@ public:
     bool InGoodState(void);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const = 0;
+    size_t GetStreamOffset(void) const;
 
     enum EFlags {
         fFlagNone                = 0,
@@ -497,6 +498,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2003/05/15 17:45:25  gouriano
+* added GetStreamOffset method
+*
 * Revision 1.73  2003/04/29 18:29:06  gouriano
 * object data member initialization verification
 *

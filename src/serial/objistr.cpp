@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.105  2003/05/15 17:44:38  gouriano
+* added GetStreamOffset method
+*
 * Revision 1.104  2003/05/05 20:09:10  gouriano
 * fixed "skipping" an object
 *
@@ -610,6 +613,11 @@ void CObjectIStream::UnendedFrame(void)
 string CObjectIStream::GetStackTrace(void) const
 {
     return GetStackTraceASN();
+}
+
+size_t CObjectIStream::GetStreamOffset(void) const
+{
+    return m_Input.GetStreamOffset();
 }
 
 void CObjectIStream::ThrowError1(const char* file, int line, 

@@ -308,6 +308,7 @@ public:
     bool InGoodState(void);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const = 0;
+    size_t GetStreamOffset(void) const;
 
     void ThrowError1(const char* file, int line,
                      TFailFlags fail, const char* message);
@@ -556,6 +557,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2003/05/15 17:45:25  gouriano
+* added GetStreamOffset method
+*
 * Revision 1.81  2003/04/15 16:18:20  siyan
 * Added doxygen support
 *
