@@ -49,12 +49,16 @@ class   CBDB_RawFile;
 
 /// BDB transaction object.
 ///
+/// @note
+///   Transaction is aborted upon the desctruction of a non-commited
+///   transaction object.
 
 class NCBI_BDB_EXPORT CBDB_Transaction
 {
 public:
     CBDB_Transaction(CBDB_Env& env);
 
+    /// Non-commited transaction is aborted upon the destruction
     ~CBDB_Transaction();
         
     /// Commit transaction
@@ -113,6 +117,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/06/21 18:41:04  kuznets
+ * Change in comments
+ *
  * Revision 1.2  2003/12/29 17:07:13  kuznets
  * GetTxn() - relaxed function visibility restriction to public
  *
