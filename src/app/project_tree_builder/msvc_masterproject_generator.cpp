@@ -86,7 +86,8 @@ CMsvcMasterProjectGenerator::SaveProject()
 
 string CMsvcMasterProjectGenerator::GetPath() const
 {
-    string project_path = CDirEntry::ConcatPath(m_ProjectDir, "_HIERARCHICAL_VIEW_");
+    string project_path = 
+        CDirEntry::ConcatPath(m_ProjectDir, "_HIERARCHICAL_VIEW_");
     project_path += MSVC_PROJECT_FILE_EXT;
     return project_path;
 }
@@ -207,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/13 20:39:51  gorelenk
+ * Minor cosmetic changes.
+ *
  * Revision 1.12  2004/02/12 23:15:29  gorelenk
  * Implemented utility projects creation and configure re-build of the app.
  *

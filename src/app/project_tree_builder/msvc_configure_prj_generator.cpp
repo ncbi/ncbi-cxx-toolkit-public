@@ -65,13 +65,13 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
 
     string tree_root_par = "$(ProjectDir)" + 
                            CDirEntry::AddTrailingPathSeparator
-                                 (CDirEntry::CreateRelativePath(m_ProjectDir, 
+                                 (CDirEntry::CreateRelativePath(m_ProjectDir,
                                                                 tree_root));
     string sln_path_par  = "$(SolutionPath)";
 
-    m_CustomBuildCommand += "set PTB_PATH="  + ptb_path_par + "\n";
+    m_CustomBuildCommand += "set PTB_PATH="  + ptb_path_par  + "\n";
     m_CustomBuildCommand += "set TREE_ROOT=" + tree_root_par + "\n";
-    m_CustomBuildCommand += "set SLN_PATH="  + sln_path_par + "\n";
+    m_CustomBuildCommand += "set SLN_PATH="  + sln_path_par  + "\n";
     //
 
     // Rebuild command for project_tree_builder.sln
@@ -100,21 +100,13 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     
     m_CustomBuildCommand += project_tree_builder_sln_path + "\n";
 
-    //m_CustomBuildCommand += "set _THE_PATH=" + m_OutputDir + "$(ConfigurationName)\n";
+    // Make *.bat file from source file of this custom build.
+    // This file ( see CreateProjectFileItem below )
+    // will use defines PTB_PATH, TREE_ROOT and SLN_PATH mentioned above
     m_CustomBuildCommand += "cd $(InputDir)\n";
     m_CustomBuildCommand += "copy /Y $(InputFileName) $(InputName).bat\n";
     m_CustomBuildCommand += "call $(InputName).bat\n";
     m_CustomBuildCommand += "del /Q $(InputName).bat\n";
-
-
-//
-//    @echo on
-//    set _THE_PATH=E:\Users\gorelenk\c++\compilers\msvc7_prj\bin\$(ConfigurationName)
-//    cd $(InputDir)
-//    copy /Y $(InputFileName) $(InputName).bat
-//    call $(InputDir)$(InputName).bat
-//    del /Q $(InputName).bat
-
 }
 
 
@@ -182,7 +174,8 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
     if ( !project_dir.Exists() ) {
         CDir(dir).CreatePath();
     }
-
+    
+    // Prototype of command line for launch project_tree_builder (See above)
     CNcbiOfstream  ofs(file_path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
@@ -202,6 +195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/13 20:39:51  gorelenk
+ * Minor cosmetic changes.
+ *
  * Revision 1.4  2004/02/13 17:09:16  gorelenk
  * Changed custom build command generation.
  *

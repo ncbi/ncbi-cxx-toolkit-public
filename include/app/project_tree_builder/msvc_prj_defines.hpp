@@ -46,7 +46,8 @@
 
 
 /// MSVC 7.10 solution defines
-#define MSVC_SOLUTION_HEADER_LINE   "Microsoft Visual Studio Solution File, Format Version 8.00"
+#define MSVC_SOLUTION_HEADER_LINE   \
+                "Microsoft Visual Studio Solution File, Format Version 8.00"
 #define MSVC_SOLUTION_ROOT_GUID     "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
 
 #define MSVC_DEFAULT_LIBS_TAG       "DefaultLibs"
@@ -58,6 +59,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/13 20:42:14  gorelenk
+ * Minor cosmetic changes.
+ *
  * Revision 1.4  2004/02/06 23:15:40  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.

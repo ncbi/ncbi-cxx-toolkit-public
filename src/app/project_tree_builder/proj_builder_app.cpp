@@ -126,7 +126,9 @@ int CProjBulderApp::Run(void)
 
     // Configure 
     CMsvcConfigure configure;
-    configure(GetSite(), GetRegSettings().m_ConfigInfo, GetProjectTreeInfo().m_Root);
+    configure(GetSite(), 
+              GetRegSettings().m_ConfigInfo, 
+              GetProjectTreeInfo().m_Root);
 
     // Build projects tree
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
@@ -284,7 +286,8 @@ void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs) const
 const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
 {
     if ( !m_MsvcRegSettings.get() ) {
-        m_MsvcRegSettings = auto_ptr<CMsvc7RegSettings>(new CMsvc7RegSettings());
+        m_MsvcRegSettings = 
+            auto_ptr<CMsvc7RegSettings>(new CMsvc7RegSettings());
     
         m_MsvcRegSettings->m_Version = 
             GetConfig().GetString("msvc7", "Version", "7.10");
@@ -457,6 +460,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/02/13 20:39:52  gorelenk
+ * Minor cosmetic changes.
+ *
  * Revision 1.19  2004/02/13 17:52:42  gorelenk
  * Added command line parametrs path normalization.
  *

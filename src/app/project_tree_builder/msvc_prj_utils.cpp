@@ -80,6 +80,7 @@ void SaveToXmlFile  (const string&               file_path,
 void PromoteIfDifferent(const string& present_path, 
                         const string& candidate_path)
 {
+    // Open both files
     CNcbiIfstream ifs_present(present_path.c_str(), 
                               IOS_BASE::in | IOS_BASE::binary);
     if ( !ifs_present ) {
@@ -108,6 +109,7 @@ void PromoteIfDifferent(const string& present_path,
         return;
     }
 
+    // Load both to memory
     typedef AutoPtr<char, ArrayDeleter<char> > TAutoArray;
     TAutoArray buf_present = TAutoArray(new char [file_length_present]);
     TAutoArray buf_new     = TAutoArray(new char [file_length_new]);
@@ -118,6 +120,7 @@ void PromoteIfDifferent(const string& present_path,
     ifs_present.close();
     ifs_new.close();
 
+    // If candidate file is not the same as present file it'll be a new file
     if (memcmp(buf_present.get(), buf_new.get(), file_length_present) != 0) {
         CDirEntry(present_path).Remove();
         CDirEntry(candidate_path).Rename(present_path);
@@ -324,7 +327,8 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
         custom_build->SetAttlist().SetDescription(build_info.m_Description);
         custom_build->SetAttlist().SetCommandLine(build_info.m_CommandLine);
         custom_build->SetAttlist().SetOutputs(build_info.m_Outputs);
-        custom_build->SetAttlist().SetAdditionalDependencies(build_info.m_AdditionalDependencies);
+        custom_build->SetAttlist().SetAdditionalDependencies
+                                      (build_info.m_AdditionalDependencies);
         file_config->SetTool(*custom_build);
 
         file->SetFileConfiguration().push_back(file_config);
@@ -440,6 +444,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/02/13 20:39:51  gorelenk
+ * Minor cosmetic changes.
+ *
  * Revision 1.13  2004/02/12 23:15:29  gorelenk
  * Implemented utility projects creation and configure re-build of the app.
  *
