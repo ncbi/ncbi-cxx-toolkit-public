@@ -65,13 +65,14 @@ void CClassTypeStrings::AddMember(const string& name,
                                   const string& defaultValue,
                                   bool delayed, int tag,
                                   bool noPrefix, bool attlist, bool noTag,
-                                  bool simple,const CDataType* dataType)
+                                  bool simple,const CDataType* dataType,
+                                  bool nonempty)
 {
     m_Members.push_back(SMemberInfo(name, type,
                                     pointerType,
                                     optional, defaultValue,
                                     delayed, tag, noPrefix,attlist,noTag,
-                                    simple,dataType));
+                                    simple,dataType,nonempty));
 }
 
 CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
@@ -80,13 +81,13 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
                                             bool opt, const string& defValue,
                                             bool del, int tag, bool noPrefx,
                                             bool attlst, bool noTg, bool simpl,
-                                            const CDataType* dataTp)
+                                            const CDataType* dataTp, bool nEmpty)
     : externalName(name), cName(Identifier(name)),
       mName("m_"+cName), tName('T'+cName),
       type(t), ptrType(pType),
       optional(opt), delayed(del), memberTag(tag),
       defaultValue(defValue), noPrefix(noPrefx), attlist(attlst), noTag(noTg),
-      simple(simpl),dataType(dataTp)
+      simple(simpl),dataType(dataTp),nonEmpty(nEmpty)
 {
     if ( cName.empty() ) {
         mName = "m_data";
@@ -988,6 +989,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "->SetDelayBuffer(MEMBER_PTR("DELAY_PREFIX<<
                     i->cName<<"))";
             }
+            if (i->nonEmpty) {
+                methods << "->SetNonEmpty()";
+            }
             if (i->noPrefix) {
                 methods << "->SetNoPrefix()";
             }
@@ -1219,6 +1223,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2003/06/24 20:55:42  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.57  2003/06/03 15:06:46  gouriano
 * corrected generation of conversion operator for implicit members
 *

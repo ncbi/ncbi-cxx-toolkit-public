@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2003/06/24 20:57:36  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.68  2003/05/14 14:33:02  gouriano
 * added using "setflag" for implicit members
 *
@@ -372,6 +375,12 @@ CClassTypeInfo* CClassTypeInfo::SetImplicit(void)
     return this;
 }
 
+bool CClassTypeInfo::IsImplicitNonEmpty(void) const
+{
+    _ASSERT(Implicit());
+    return GetImplicitMember()->NonEmpty();
+}
+
 void CClassTypeInfo::AddSubClass(const CMemberId& id,
                                  const CTypeRef& type)
 {
@@ -492,7 +501,7 @@ void CClassTypeInfo::AssignMemberDefault(TObjectPtr object,
     AssignMemberDefault(object, GetMemberInfo(index));
 }
 
-inline
+
 const CMemberInfo* CClassTypeInfo::GetImplicitMember(void) const
 {
     _ASSERT(GetMembers().FirstIndex() == GetMembers().LastIndex());
@@ -592,9 +601,10 @@ void CClassTypeInfo::WriteImplicitMember(CObjectOStream& out,
         if (memberInfo->Optional()) {
             return;
         }
-        if (out.GetVerifyData()) {
+        if (out.GetVerifyData() && (memberInfo->NonEmpty() ||
+            memberInfo->GetTypeInfo()->GetTypeFamily() != eTypeFamilyContainer)) {
             out.ThrowError(CObjectOStream::fUnassigned,
-                string("Unassigned member: ")+memberInfo->GetId().GetName());
+                string("Unassigned member: ")+classType->GetName());
         }
     }
     out.WriteNamedType(classType,

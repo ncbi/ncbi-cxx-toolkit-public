@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2003/06/24 20:55:42  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.47  2003/06/16 14:41:05  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -355,7 +358,7 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
                 isOptional = GetParentType()->GetDataMember()->Optional();
                 parent_hasNotag = GetParentType()->GetDataMember()->Notag();
             } else {
-                isOptional = uniType->IsOptional();
+                isOptional = !uniType->IsNonEmpty();
             }
         }
         if (hasNotag && GetMembers().size()==1) {
@@ -638,7 +641,7 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
                         optional, defaultCode, delayed,
                         (*i)->GetType()->GetTag(),
                         (*i)->NoPrefix(), (*i)->Attlist(), (*i)->Notag(),
-                        (*i)->SimpleType(),(*i)->GetType());
+                        (*i)->SimpleType(),(*i)->GetType(),false);
         (*i)->GetType()->SetTypeStr(&(*code));
     }
     SetTypeStr(&(*code));

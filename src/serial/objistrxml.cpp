@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/06/24 20:57:36  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.41  2003/05/22 20:10:02  gouriano
 * added UTF8 strings
 *
@@ -1013,12 +1016,20 @@ bool CObjectIStreamXml::NextIsTag(void)
     return SkipWSAndComments() == '<';
 }
 
-inline
 bool CObjectIStreamXml::NextTagIsClosing(void)
 {
     BeginData();
     return SkipWSAndComments() == '<' && m_Input.PeekChar(1) == '/';
 }
+
+bool CObjectIStreamXml::ThisTagIsSelfClosed(void)
+{
+    if (InsideOpeningTag()) {
+        return EndOpeningTagSelfClosed();
+    }
+    return false;
+}
+
 
 void CObjectIStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
 {
@@ -1089,7 +1100,7 @@ void CObjectIStreamXml::SkipContainer(const CContainerTypeInfo* containerType)
 
 bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
 {
-    if (NextTagIsClosing()) {
+    if (ThisTagIsSelfClosed() || NextTagIsClosing()) {
         m_LastPrimitive.erase();
         return false;
     }
@@ -1155,6 +1166,7 @@ void CObjectIStreamXml::EndArrayElement(void)
 void CObjectIStreamXml::ReadContainerContents(const CContainerTypeInfo* cType,
                                               TObjectPtr containerPtr)
 {
+    int count = 0;
     TTypeInfo elementType = cType->GetElementType();
     if ( !WillHaveName(elementType) ) {
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
@@ -1165,6 +1177,7 @@ void CObjectIStreamXml::ReadContainerContents(const CContainerTypeInfo* cType,
                 cType->AddElement(containerPtr, *this);
             } while (!m_RejectedTag.empty());
             EndArrayElement();
+            ++count;
         }
 
         END_OBJECT_FRAME();
@@ -1172,6 +1185,17 @@ void CObjectIStreamXml::ReadContainerContents(const CContainerTypeInfo* cType,
     else {
         while ( HasMoreElements(elementType) ) {
             cType->AddElement(containerPtr, *this);
+            ++count;
+        }
+    }
+    if (count == 0) {
+        const TFrame& frame = FetchFrameFromTop(0);
+        if (frame.GetFrameType() == CObjectStackFrame::eFrameNamed) {
+            const CClassTypeInfo* clType =
+                dynamic_cast<const CClassTypeInfo*>(frame.GetTypeInfo());
+            if (clType && clType->Implicit() && clType->IsImplicitNonEmpty()) {
+                ThrowError(fFormatError, "container is empty");
+            }
         }
     }
 }

@@ -97,6 +97,7 @@ protected:
     bool HasAttlist(void);
     bool NextIsTag(void);
     bool NextTagIsClosing(void);
+    bool ThisTagIsSelfClosed(void);
     void OpenTag(const string& e);
     void CloseTag(const string& e);
     void OpenStackTag(size_t level);
@@ -233,6 +234,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/06/24 20:54:13  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.25  2003/05/22 20:08:41  gouriano
 * added UTF8 strings
 *

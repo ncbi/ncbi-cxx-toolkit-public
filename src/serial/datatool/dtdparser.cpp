@@ -708,7 +708,7 @@ CDataType* DTDParser::x_Type(
     }
     if (uniseq) {
         CUniSequenceDataType* uniType = new CUniSequenceDataType(type);
-        uniType->SetOptional( occ == DTDElement::eZeroOrMore);
+        uniType->SetNonEmpty( occ == DTDElement::eOneOrMore);
         type = uniType;
     }
     return type;
@@ -999,6 +999,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.13  2003/06/24 20:55:42  gouriano
+ * corrected code generation and serialization of non-empty unnamed containers (XML)
+ *
  * Revision 1.12  2003/06/16 14:41:05  gouriano
  * added possibility to convert DTD to XML schema
  *

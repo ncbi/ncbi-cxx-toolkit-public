@@ -66,12 +66,13 @@ public:
         bool noTag;
         bool simple;
         const CDataType* dataType;
+        bool nonEmpty;
         SMemberInfo(const string& name, const AutoPtr<CTypeStrings>& type,
                     const string& pointerType,
                     bool optional, const string& defaultValue,
                     bool delayed, int tag,
                     bool noPrefx, bool attlst, bool noTg, bool simpl,
-                    const CDataType* dataTp);
+                    const CDataType* dataTp, bool nEmpty);
     };
     typedef list<SMemberInfo> TMembers;
 
@@ -98,12 +99,12 @@ public:
                    bool optional, const string& defaultValue,
                    bool delayed, int tag,
                    bool noPrefix, bool attlist, bool noTag, bool simple,
-                   const CDataType* dataType);
-    void AddMember(const AutoPtr<CTypeStrings>& type, int tag)
+                   const CDataType* dataType, bool nonEmpty);
+    void AddMember(const AutoPtr<CTypeStrings>& type, int tag, bool nonEmpty)
         {
             AddMember(NcbiEmptyString, type, NcbiEmptyString,
                       false, NcbiEmptyString, false, tag,
-                      false,false,false,false,0);
+                      false,false,false,false,0,nonEmpty);
         }
 
     string GetCType(const CNamespace& ns) const;
@@ -197,6 +198,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/06/24 20:53:39  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.19  2003/04/29 18:29:33  gouriano
 * object data member initialization verification
 *

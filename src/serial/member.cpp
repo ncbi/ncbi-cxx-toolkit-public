@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/06/24 20:57:36  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.28  2003/05/06 16:23:42  gouriano
 * write unassigned mandatory member when assignment verification is off
 *
@@ -260,7 +263,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const CMemberId& id, TPointerOffsetType offset,
                          const CTypeRef& type)
     : CParent(id, offset, type),
-      m_ClassType(classType), m_Optional(false), m_Default(0),
+      m_ClassType(classType), m_Optional(false), m_NonEmpty(false), m_Default(0),
       m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
       m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
@@ -283,7 +286,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const CMemberId& id, TPointerOffsetType offset,
                          TTypeInfo type)
     : CParent(id, offset, type),
-      m_ClassType(classType), m_Optional(false), m_Default(0),
+      m_ClassType(classType), m_Optional(false), m_NonEmpty(false), m_Default(0),
       m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
       m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
@@ -306,7 +309,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const char* id, TPointerOffsetType offset,
                          const CTypeRef& type)
     : CParent(id, offset, type),
-      m_ClassType(classType), m_Optional(false), m_Default(0),
+      m_ClassType(classType), m_Optional(false), m_NonEmpty(false), m_Default(0),
       m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
       m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
@@ -329,7 +332,7 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const char* id, TPointerOffsetType offset,
                          TTypeInfo type)
     : CParent(id, offset, type),
-      m_ClassType(classType), m_Optional(false), m_Default(0),
+      m_ClassType(classType), m_Optional(false), m_NonEmpty(false), m_Default(0),
       m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
       m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
@@ -373,6 +376,12 @@ CMemberInfo* CMemberInfo::SetOptional(void)
 {
     m_Optional = true;
     UpdateFunctions();
+    return this;
+}
+
+CMemberInfo* CMemberInfo::SetNonEmpty(void)
+{
+    m_NonEmpty = true;
     return this;
 }
 

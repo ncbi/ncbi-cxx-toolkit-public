@@ -45,6 +45,12 @@ bool CMemberInfo::Optional(void) const
 }
 
 inline
+bool CMemberInfo::NonEmpty(void) const
+{
+    return m_NonEmpty;
+}
+
+inline
 TConstObjectPtr CMemberInfo::GetDefault(void) const
 {
     return m_Default;
@@ -194,6 +200,9 @@ void CMemberInfo::DefaultSkipMissingMember(CObjectIStream& stream) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/06/24 20:54:13  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.17  2003/04/29 18:29:06  gouriano
 * object data member initialization verification
 *

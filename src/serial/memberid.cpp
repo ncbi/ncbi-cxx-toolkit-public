@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/06/24 20:57:36  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.15  2002/11/14 20:57:50  gouriano
 * added Attlist and Notag flags
 *
@@ -189,6 +192,5 @@ bool CMemberId::HasNotag(void) const
 {
     return m_Notag;
 }
-
 
 END_NCBI_SCOPE

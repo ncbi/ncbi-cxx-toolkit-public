@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/06/24 20:53:39  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.7  2003/06/16 14:40:15  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -107,18 +110,18 @@ public:
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     const char* GetASNKeyword(void) const;
 
-    bool IsOptional(void) const
+    bool IsNonEmpty(void) const
         {
-            return m_Optional;
+            return m_NonEmpty;
         }
-    void SetOptional(bool optional)
+    void SetNonEmpty(bool nonEmpty)
         {
-            m_Optional = optional;
+            m_NonEmpty = nonEmpty;
         }
 
 private:
     AutoPtr<CDataType> m_ElementType;
-    bool m_Optional;
+    bool m_NonEmpty;
 };
 
 class CUniSetDataType : public CUniSequenceDataType {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2003/06/24 20:55:42  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.72  2003/06/16 14:41:05  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -657,7 +660,13 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(GlobalName(),
                                                           ClassName()));
     AutoPtr<CTypeStrings> dType = GetFullCType();
-    code->AddMember(dType, GetTag());
+    bool nonempty = false;
+    const CUniSequenceDataType* uniseq =
+        dynamic_cast<const CUniSequenceDataType*>(this);
+    if (uniseq) {
+        nonempty = uniseq->IsNonEmpty();
+    }
+    code->AddMember(dType, GetTag(), nonempty);
     SetParentClassTo(*code);
     return AutoPtr<CTypeStrings>(code.release());
 }

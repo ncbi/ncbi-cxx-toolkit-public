@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2003/06/24 20:57:36  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.55  2003/05/22 20:10:02  gouriano
 * added UTF8 strings
 *
@@ -865,7 +868,14 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
                 EndArrayElement();
             } while ( cType->NextElement(i) );
         } else {
-           ThrowError(fInvalidData, "container is empty");
+            const TFrame& frame = FetchFrameFromTop(1);
+            if (frame.GetFrameType() == CObjectStackFrame::eFrameNamed) {
+                const CClassTypeInfo* clType =
+                    dynamic_cast<const CClassTypeInfo*>(frame.GetTypeInfo());
+                if (clType && clType->Implicit() && clType->IsImplicitNonEmpty()) {
+                    ThrowError(fInvalidData, "container is empty");
+                }
+            }
         }
 
         END_OBJECT_FRAME();

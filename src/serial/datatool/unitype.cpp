@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/06/24 20:55:42  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.26  2003/06/16 14:41:05  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -142,7 +145,7 @@ BEGIN_NCBI_SCOPE
 CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
 {
     SetElementType(element);
-    m_Optional = true;
+    m_NonEmpty = false;
 }
 
 const char* CUniSequenceDataType::GetASNKeyword(void) const

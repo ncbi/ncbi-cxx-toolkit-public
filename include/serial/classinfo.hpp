@@ -99,6 +99,7 @@ public:
 
     bool Implicit(void) const;
     CClassTypeInfo* SetImplicit(void);
+    bool IsImplicitNonEmpty(void) const;
 
     void AddSubClass(const CMemberId& id, const CTypeRef& type);
     void AddSubClass(const char* id, TTypeInfoGetter getter);
@@ -186,6 +187,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/06/24 20:54:13  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.43  2003/04/29 18:29:06  gouriano
 * object data member initialization verification
 *

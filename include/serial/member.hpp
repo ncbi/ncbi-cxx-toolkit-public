@@ -88,6 +88,9 @@ public:
     CMemberInfo* SetAttlist(void);
     CMemberInfo* SetNotag(void);
 
+    bool NonEmpty(void) const;
+    CMemberInfo* SetNonEmpty(void);
+
     TConstObjectPtr GetDefault(void) const;
     CMemberInfo* SetDefault(TConstObjectPtr def);
 
@@ -164,6 +167,7 @@ private:
     const CClassTypeInfoBase* m_ClassType;
     // is optional
     bool m_Optional;
+    bool m_NonEmpty;
     // default value
     TConstObjectPtr m_Default;
     // offset of 'SET' flag inside object
@@ -208,6 +212,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/06/24 20:54:13  gouriano
+* corrected code generation and serialization of non-empty unnamed containers (XML)
+*
 * Revision 1.27  2003/04/29 18:29:06  gouriano
 * object data member initialization verification
 *
