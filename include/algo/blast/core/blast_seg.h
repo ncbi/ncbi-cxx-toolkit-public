@@ -41,17 +41,6 @@
 extern "C" {
 #endif
 
-/*--------------------------------------------------------------(structs)---*/
-
-typedef struct Alpha
-  {
-   Int4 alphabet;
-   Int4 alphasize;
-   double lnalphasize;
-   Int4* alphaindex;
-   unsigned char* alphaflag;
-   char* alphachar;
-  } Alpha;
 
 typedef struct SegParameters
   {
@@ -63,7 +52,9 @@ typedef struct SegParameters
    Boolean overlaps;	/* merge overlapping pieces if TRUE. */
    Int4 maxtrim;
    Int4 maxbogus;
+/*
    Alpha* palpha;
+*/
   } SegParameters;
 
 SegParameters* SegParametersNewAa (void);
