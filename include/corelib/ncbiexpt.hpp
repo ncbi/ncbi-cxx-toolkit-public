@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/10/04 16:20:56  vasilche
+* Added full set of macros THROW*_TRACE
+*
 * Revision 1.15  1999/09/27 16:23:20  vasilche
 * Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
 * so that they will be much easier for compilers to eat.
@@ -115,9 +118,21 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 // Macro to trace the exceptions being thrown(for the -D_DEBUG mode only):
 //   RETHROW_TRACE
+// The following macros accept objects of types:
+//      std::string, char*, const char* and std::exception
 //   THROW0_TRACE
 //   THROW1_TRACE
 //   THROW_TRACE
+// The following macros accept objects of any printable type (any type which
+//      allow output to std::ostream via operator <<):
+//      int, double, complex etc.
+//   THROW0p_TRACE
+//   THROW1p_TRACE
+//   THROWp_TRACE
+// The following macros accept objects of any type:
+//   THROW0np_TRACE
+//   THROW1np_TRACE
+//   THROWnp_TRACE
 
 #if defined(_DEBUG)
 
@@ -132,34 +147,49 @@ extern void DoThrowTraceAbort(void);
 
 void DoDbgPrint(const char* file, int line, const char* message);
 void DoDbgPrint(const char* file, int line, const string& message);
+void DoDbgPrint(const char* file, int line, const char* msg1, const char* msg2);
 
+template<typename T>
 inline
-const exception& DbgPrint(const char* file, int line,
-                          const exception& e, const char* )
+const T& DbgPrint(const char* file, int line, const T& e, const char* e_str)
 {
-    DoDbgPrint(file, line, e.what());
+    DoDbgPrint(file, line, e_str, e.what());
     return e;
 }
 
 inline
-const char* DbgPrint(const char* file, int line,
-                     const char* e, const char* )
+const char* DbgPrint(const char* file, int line, const char* e, const char* )
 {
     DoDbgPrint(file, line, e);
     return e;
 }
 
 inline
-const string& DbgPrint(const char* file, int line,
-                       const string& e, const char* )
+char* DbgPrint(const char* file, int line, char* e, const char* )
+{
+    DoDbgPrint(file, line, e);
+    return e;
+}
+
+inline
+const string& DbgPrint(const char* file, int line, const string& e, const char* )
 {
     DoDbgPrint(file, line, e);
     return e;
 }
 
 template<typename T>
-const T& DbgPrint(const char* file, int line,
-                  const T& e, const char* e_str)
+inline
+const T& DbgPrintP(const char* file, int line, const T& e, const char* e_str)
+{
+    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << e_str << ": " << e;
+    DoThrowTraceAbort();
+    return e;
+}
+
+template<typename T>
+inline
+const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
 {
     DoDbgPrint(file, line, e_str);
     return e;
@@ -173,32 +203,75 @@ const T& DbgPrint(const char* file, int line,
 } while(0)
 
 // Example:  THROW0_TRACE("Throw just a string");
-// Example:  THROW0_TRACE(123);
-#  define THROW0_TRACE(exception_value) \
-    throw DbgPrint(__FILE__, __LINE__, \
-        exception_value, #exception_value)
+// Example:  THROW0_TRACE(runtime_error("message"));
+#  define THROW0_TRACE(exception_object) \
+    throw NCBI_NS_NCBI::DbgPrint(__FILE__, __LINE__, \
+        exception_object, #exception_object)
+
+// Example:  THROW0p_TRACE(123);
+// Example:  THROW0p_TRACE(complex(1,2));
+#  define THROW0p_TRACE(exception_object) \
+    throw NCBI_NS_NCBI::DbgPrintP(__FILE__, __LINE__, \
+        exception_object, #exception_object)
+
+// Example:  THROW0np_TRACE(vector<char>());
+#  define THROW0np_TRACE(exception_object) \
+    throw NCBI_NS_NCBI::DbgPrintNP(__FILE__, __LINE__, \
+        exception_object, #exception_object)
 
 // Example:  THROW1_TRACE(runtime_error, "Something is weird...");
 #  define THROW1_TRACE(exception_class, exception_arg) \
-    throw DbgPrint(__FILE__, __LINE__, \
-        exception_class(exception_arg), #exception_class "(" #exception_arg ")")
+    throw NCBI_NS_NCBI::DbgPrint(__FILE__, __LINE__, \
+        exception_class(exception_arg), #exception_class)
+
+// Example:  THROW1p_TRACE(int, 32);
+#  define THROW1p_TRACE(exception_class, exception_arg) \
+    throw NCBI_NS_NCBI::DbgPrintP(__FILE__, __LINE__, \
+        exception_class(exception_arg), #exception_class)
+
+// Example:  THROW1np_TRACE(CUserClass, "argument");
+#  define THROW1np_TRACE(exception_class, exception_arg) \
+    throw NCBI_NS_NCBI::DbgPrintNP(__FILE__, __LINE__, \
+        exception_class(exception_arg), #exception_class)
 
 // Example:  THROW_TRACE(bad_alloc, ());
 // Example:  THROW_TRACE(runtime_error, ("Something is weird..."));
 // Example:  THROW_TRACE(CParseException, ("Some parse error", 123));
 #  define THROW_TRACE(exception_class, exception_args) \
-    throw DbgPrint(__FILE__, __LINE__, \
-        exception_class exception_args, #exception_class #exception_args)
+    throw NCBI_NS_NCBI::DbgPrint(__FILE__, __LINE__, \
+        exception_class exception_args, #exception_class)
+
+// Example:  THROWp_TRACE(complex, (2, 3));
+#  define THROWp_TRACE(exception_class, exception_args) \
+    throw NCBI_NS_NCBI::DbgPrintP(__FILE__, __LINE__, \
+        exception_class exception_args, #exception_class)
+
+// Example:  THROWnp_TRACE(CUserClass, (arg1, arg2));
+#  define THROWnp_TRACE(exception_class, exception_args) \
+    throw NCBI_NS_NCBI::DbgPrintNP(__FILE__, __LINE__, \
+        exception_class exception_args, #exception_class)
 
 #else  /* _DEBUG */
 
 #  define RETHROW_TRACE \
     throw
-#  define THROW0_TRACE(exception_class) \
-    throw exception_class
+#  define THROW0_TRACE(exception_object) \
+    throw exception_object
+#  define THROW0p_TRACE(exception_object) \
+    throw exception_object
+#  define THROW0np_TRACE(exception_object) \
+    throw exception_object
 #  define THROW1_TRACE(exception_class, exception_arg) \
     throw exception_class(exception_arg)
+#  define THROW1p_TRACE(exception_class, exception_arg) \
+    throw exception_class(exception_arg)
+#  define THROW1np_TRACE(exception_class, exception_arg) \
+    throw exception_class(exception_arg)
 #  define THROW_TRACE(exception_class, exception_args) \
+    throw exception_class exception_args
+#  define THROWp_TRACE(exception_class, exception_args) \
+    throw exception_class exception_args
+#  define THROWnp_TRACE(exception_class, exception_args) \
     throw exception_class exception_args
 
 #endif  /* else!_DEBUG */

@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  1999/10/04 16:21:06  vasilche
+* Added full set of macros THROW*_TRACE
+*
 * Revision 1.51  1999/09/29 18:21:58  vakatov
 * + TestException_Features() -- to test how the thrown object is handled
 *
@@ -599,7 +602,7 @@ static void TestException_Aux(void)
         NcbiCerr << "TEST CErrnoException ---> " << e.what() << NcbiEndl;
     }
     try {
-        throw CParseException("Failed parsing(at pos. 123)", 123);
+        THROW_TRACE(CParseException, ("Failed parsing(at pos. 123)", 123));
     }
     STD_CATCH ("TEST CParseException ---> ");
 }
@@ -708,6 +711,33 @@ static void TestUtilities(void)
     NcbiCout << "TestUtilities finished" << NcbiEndl;
 }
 
+static void TestThrowTrace(void)
+{
+    NcbiCerr << "The following lines should be equal pairs:" << NcbiEndl;
+    try {
+        THROW1_TRACE(runtime_error, "Message");
+    }
+    catch (...) {
+        CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace, eDPF_Trace) <<
+            "runtime_error: Message";
+    }
+    string mess = "ERROR";
+    try {
+        THROW1_TRACE(runtime_error, mess);
+    }
+    catch (...) {
+        CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace, eDPF_Trace) <<
+            "runtime_error: ERROR";
+    }
+    int i = 123;
+    try {
+        THROW0p_TRACE(i);
+    }
+    catch (...) {
+        CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace, eDPF_Trace) <<
+            "i: 123";
+    }
+}
 
 
 /////////////////////////////////
@@ -730,7 +760,7 @@ int CTestApplication::Run(void)
     TestIostream();
     TestRegistry();
     TestUtilities();
-
+    TestThrowTrace();
     return 0;
 }
 

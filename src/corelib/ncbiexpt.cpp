@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/10/04 16:21:04  vasilche
+* Added full set of macros THROW*_TRACE
+*
 * Revision 1.10  1999/09/27 16:23:24  vasilche
 * Changed implementation of debugging macros (_TRACE, _THROW*, _ASSERT etc),
 * so that they will be much easier for compilers to eat.
@@ -106,6 +109,12 @@ void DoDbgPrint(const char* file, int line, const char* message)
 void DoDbgPrint(const char* file, int line, const string& message)
 {
     CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << message;
+    DoThrowTraceAbort();
+}
+
+void DoDbgPrint(const char* file, int line, const char* msg1, const char* msg2)
+{
+    CNcbiDiag(file, line, eDiag_Trace, eDPF_Trace) << msg1 << ": " << msg2;
     DoThrowTraceAbort();
 }
 
