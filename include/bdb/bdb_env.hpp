@@ -53,6 +53,10 @@ BEGIN_NCBI_SCOPE
 class NCBI_BDB_EXPORT CBDB_Env
 {
 public:
+    enum EEnvOptions {
+        eThreaded = (1 << 0)  ///< corresponds to DB_THREAD 
+    };
+public:
     CBDB_Env();
 
     /// Construct CBDB_Env taking ownership of external DB_ENV. 
@@ -92,8 +96,12 @@ public:
 
     /// Join the existing environment
     ///
-    /// @param db_home destination directory for the database
-    void JoinEnv(const char* db_home);
+    /// @param 
+    ///    db_home destination directory for the database
+    /// @param 
+    ///    opt environment options (see EEnvOptions)
+    /// @sa EEnvOptions
+    void JoinEnv(const char* db_home, unsigned int opt = 0);
 
     /// Return underlying DB_ENV structure pointer for low level access.
     DB_ENV* GetEnv() { return m_Env; }
@@ -130,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/12/29 18:44:55  kuznets
+ * JoinEnv() added parameter to specify environment options (thread safety, etc)
+ *
  * Revision 1.10  2003/12/29 16:15:26  kuznets
  * +OpenErrFile
  *
