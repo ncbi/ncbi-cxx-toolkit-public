@@ -57,6 +57,14 @@ typedef enum {
     eBlastTypeUndefined
 } EBlastProgramType;
 
+extern const int kDustLevel;  /**< Level parameter used by dust. */
+extern const int kDustWindow; /**< Window parameter used by dust. */
+extern const int kDustLinker; /**< Parameter used by dust to link together close low-complexity segments. */
+
+extern const int kSegWindow;  /**< Window that SEG examines at once. */
+extern const double kSegLocut;   /**< Locut parameter for SEG. */
+extern const double kSegHicut;   /**< Hicut parameter for SEG. */
+
 /** Codons are always of length 3 */
 #ifndef CODON_LENGTH
 #define CODON_LENGTH 3
