@@ -146,7 +146,7 @@ void
 CBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
     //LOG_POST("CBlastDbDataLoader::DebugDump\n");
-    ddc.SetFrame("CGBLoader");
+    ddc.SetFrame("CBlastDbDataLoader");
     // CObject::DebugDump( ddc, depth);
     DebugDumpValue(ddc,"m_dbname", m_dbname);
     DebugDumpValue(ddc,"m_dbtype", m_dbtype);
@@ -236,6 +236,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.18  2004/11/29 20:44:28  camacho
+ * Correct class name in DebugDump
+ *
  * Revision 1.17  2004/11/16 15:51:37  jianye
  * delete asnconvertor.hpp include
  *
