@@ -5,7 +5,8 @@
 
 SRC_CXX = ncbi_socket_cxx ncbi_core_cxx        \
           ncbi_conn_streambuf ncbi_conn_stream \
-          email_diag_handler threaded_server
+          email_diag_handler threaded_server   \
+		  ncbi_namedpipe ncbi_namedpipe_connector
 
 SRC     = $(SRC_CXX)
 
