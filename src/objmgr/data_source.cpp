@@ -210,7 +210,7 @@ CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
     // just return the bioseq as-is.
     // the handle must be resolved to this data source
     _ASSERT(handle.m_DataSource == this);
-    return &handle.m_Entry->GetSeq();
+    return CBioseq_Handle::TBioseqCore(&handle.m_Entry->GetSeq());
 /*
     const CBioseq* seq = &GetBioseq(handle);
 
@@ -271,7 +271,7 @@ CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
         inst_core.SetHist(*hist);
     }
 
-    return seq_core;
+    return CBioseq_Handle::TBioseqCore(seq_core);
 */
 }
 
@@ -1966,6 +1966,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2002/11/08 21:03:30  ucko
+* CConstRef<> now requires an explicit constructor.
+*
 * Revision 1.68  2002/11/04 21:29:12  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *

@@ -382,7 +382,7 @@ void CObjectManager::x_ReleaseDataSource(CDataSource* pSource)
 CConstRef<CBioseq> CObjectManager::GetBioseq(const CSeq_id& id)
 {
     CScope* pScope = *(m_setScope.begin());
-    return &((pScope->GetBioseqHandle(id)).GetBioseq());
+    return CConstRef<CBioseq>(&((pScope->GetBioseqHandle(id)).GetBioseq()));
 }
 
 
@@ -420,6 +420,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/11/08 21:07:15  ucko
+* CConstRef<> now requires an explicit constructor.
+*
 * Revision 1.16  2002/11/04 21:29:12  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
