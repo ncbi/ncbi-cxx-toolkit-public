@@ -34,6 +34,7 @@
  *
  */
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbidiag.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/serialbase.hpp>
 
@@ -56,10 +57,11 @@ class NCBI_VALIDATOR_EXPORT CValidErrItem : public CObject
 {
 public:
     // constructor
-    CValidErrItem(EDiagSev             sev,
-                  unsigned int         ei,
-                  const string&        msg,
-                  const CSerialObject& obj);
+    CValidErrItem(EDiagSev             sev,    // severity
+                  unsigned int         ec,     // error code
+                  const string&        msg,    // message
+                  const CSerialObject& obj);   // offending object
+
     // destructor
     ~CValidErrItem(void);
 
@@ -69,15 +71,16 @@ public:
     const string&           GetMsg      (void) const;
     const string&           GetErrCode  (void) const;
     const string&           GetVerbose  (void) const;
-    const CConstObjectInfo& GetObject   (void) const;
+    const CSerialObject&    GetObject   (void) const;
 
 private:
+    typedef CConstRef<CSerialObject>    TObject;
     // member data values
-    EDiagSev         m_Severity;   // severity level
-    unsigned int     m_ErrIndex;   // error code index
-    string           m_Message;    // specific error message
-    CConstObjectInfo m_Object;     // type plus offending object
-
+    EDiagSev      m_Severity;   // severity level
+    unsigned int  m_ErrIndex;   // error code index
+    string        m_Message;    // specific error message
+    TObject       m_Object;     // offending object
+    
     // internal string arrays
     static const string sm_Terse [];
     static const string sm_Verbose [];
@@ -90,34 +93,37 @@ public:
     // constructors
     CValidError(void);
     
-    void AddValidErrItem(const CValidErrItem* item);
+    void AddValidErrItem(EDiagSev             sev,   // severity
+                         unsigned int         ec,    // error code
+                         const string&        msg,   // specific error message
+                         const CSerialObject& obj);  // offending object
 
     // Statistics
     SIZE_TYPE TotalSize(void)    const;
     SIZE_TYPE Size(EDiagSev sev) const;
-    SIZE_TYPE InfoSize(void)     const;
-    SIZE_TYPE WarningSize(void)  const;
-    SIZE_TYPE ErrorSize(void)    const;
+
+    SIZE_TYPE InfoSize    (void) const;
+    SIZE_TYPE WarningSize (void) const;
+    SIZE_TYPE ErrorSize   (void) const;
     SIZE_TYPE CriticalSize(void) const;
-    SIZE_TYPE FatalSize(void)    const;
+    SIZE_TYPE FatalSize   (void) const;
 
     // destructor
     ~CValidError(void);
 
 private:
+    friend class CValidError_CI;
+
     typedef vector < CConstRef < CValidErrItem > > TErrs;
+    typedef map<EDiagSev, SIZE_TYPE>               TSevStats;
 
     // Prohibit copy constructor & assignment operator
     CValidError(const CValidError&);
     CValidError& operator= (const CValidError&);
 
-    // Error list
-    TErrs m_ErrItems;
-
-    // statistics
-    map<EDiagSev, SIZE_TYPE>     m_Stats;
-
-    friend class CValidError_CI;
+    // data
+    TErrs       m_ErrItems;  // Error list
+    TSevStats   m_Stats;     // severity statistics
 };
 
 
@@ -315,6 +321,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/06/25 14:54:27  shomrat
+* minor changes to CValidErrItem and CValidError APIs
+*
 * Revision 1.13  2003/05/15 00:23:01  ucko
 * auto_ptr<> -> CConstRef<> in return type of CValidator::Validate, per
 * the actual current definitions in validator.cpp...
