@@ -203,7 +203,7 @@ An unencoded CHTMLText node: &lt;br> testing BR &lt;br>
 The page classes can be thought of as generalized containers for heterogeneous collections of 
 other HTML objects. They define the following subtree in the C++ Toolkit class hierarchy: 
 
-<ul><li> <a href="#basicpage"><i>CHTMLBasicPage</i></a>
+<ul><li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLBasicPage.html"><i>CHTMLBasicPage</i></a>
     <ul><li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLPage.html"><i>CHTMLPage</i></a>
 	<ul><li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CPmFrontPage.html"><i>CPmFrontPage</i></a>
 	    <li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CPmDocSumPage.html"><i>CPmDocSumPage</i></a>
@@ -213,77 +213,48 @@ other HTML objects. They define the following subtree in the C++ Toolkit class h
 
 In addition to the data members inherited
 from <a href="#node"><i>CNCBINode</i></a>, three new private data members are defined in the
-<a name = "basicpage"><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLBasicPage.html">
-CHTMLBasicPage</a> class.
+<i>CHTMLBasicPage</i> class.
 
 <ol>
  <li> <i>m_CgiApplication</i> - a pointer to the <i>CCgiApplication</i>
- <li> <i>m_Style</i> - an integer flag indicating subcomponents to turn on/off
- <li> <i>m_TagMap</i> (see discussion)
+ <li> <i>m_Style</i> - an integer flag indicating subcomponents to turn on/off when printing the page
+ <li> <i>m_TagMap</i> (see discussion below)
 </ul>
 
-<i>m_TagMap</i> is a <i>TTagMap</i> variable, which is defined as:
+In effect, <i>m_TagMap</i> is used to map strings to <i>CNCBINode</i> subcomponents of the page --
+some of which may not have actually been inserted yet. Specifically, <i>m_TagMap</i> is defined as a
+<i>TTagMap</i> variable, which has the following type definition:
 <pre>
     typedef map&lt;string, BaseTagMapper*> TTagMap;
 </pre>
 
-The member function <i>MapTag(string& s)</i> returns a pointer to the <i>CNCBINode</i> associated
-with tag string <i>s</i> via <i>m_TagMap</i>.
+<a href ="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BaseTagMapper">
+<i>BaseTagMapper</i></a> is the base class for a set of functor-like structs which have a single data
+member and a single member function, <i>MapTag()</i>, which returns a  pointer to a <i>CNCBINode</i>.
+In the simplest case, the <i>BaseTagMapper</i> is an instance of 
+<a href ="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ReadyTagMapper">
+<i>ReadyTagMapper</i></a> with a data member named <i>m_Node</i>, that is a 
+<a href="cref.html#cref"><i>CRef</i></a> pointer to a
+<i>CNCBINode</i>. In this case the <i>MapTag()</i> function simply returns <i>&*m_Node</i>. <p>
 
-<p>
+Several different types of tagmappers are derived from the base class in 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/html/nodemap.hpp">
+nodemap.hpp</a>. Each of these subclasses specializes a different type of data member, which
+may be a pointer to a free function, a pointer to a member function, or a pointer to an 
+object, as in the case of the <i>ReadyTagMapper</i>. The action taken by the tagmapper's
+<i>MapTag()</i> method in order to return the HTML node object is implemented accordingly.<p>
 
- 
-where <i>BaseTagMapper</i> is a functor-like object which implements <i>CNCBINode* MapTag()</i>
-for the page class. In effect, <i>m_TagMap</i> is used to map tagged strings to
-<i>CNCBINode</i> HTML subcomponents.  Two member functions, <i>MapTag()</i> and
-<i>AddTagMap()</i> provide for access and modification of <i>m_TagMap</i>.<p>
+The member function <i>CHTMLBasicPage::MapTag(str)</i> provides an interface to the tagmappers
+installed in <i>m_TagMap</i>, and is used to access the node associated with a particular
+string <i>str</i>. <i>CHTMLBasicPage::MapTag()</i> in turn calls the installed tagmapper's
+<i>MapTag()</i> member function, which finally returns a pointer to the <i>CNCBINode</i>.<p>
 
-<i>AddTagMap(const string& s, CNCBIObject* n)</i> simply sets <i>m_TagMap[s] = n</i>, while
-<i>AddTagMap(const string& s, BaseTagMapper* f)</i> installs <i>f</i> as a callback function
-to be associated with <i>m_TagMap[s]</i>
+A second member function, <i>AddTagMap(str, obj)</i> provides for the insertion of new tag strings
+and their associated tagmappers to <i>m_TagMap</i>. Depending on the type of object specified
+as the second argument, the overloaded helper function 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CreateTagMapper"> 
+<i>CreateTagMapper</i></a> is used to install the appropriate type of tagmapper. 
 
-<i>MapTag(str)</i>
-returns the <i>CNCBINode</i> associated with the string <i>str</i>
-
-CNCBINode* BaseTagMapper::
-
-<pre>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual CNCBINode* MapTag(const string& tagname);    // finds and replaces text with a node    
-
-    CNodeRef MapTagAll(const string& tagname, const TMode& mode);
-</pre>
 
 
 <a name="tag"> <h3>
