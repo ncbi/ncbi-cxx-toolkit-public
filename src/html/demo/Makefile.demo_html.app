@@ -1,11 +1,6 @@
-#################################
 # $Id$
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
-#################################
 
-# Build test CoreLib application "htmldemo"
-#################################
-
-APP = htmldemo
-SRC = htmldemo
+APP = demo_html
+SRC = demo_html
 LIB = xhtml xcgi xncbi
