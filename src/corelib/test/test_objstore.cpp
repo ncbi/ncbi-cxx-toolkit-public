@@ -82,6 +82,8 @@ static void TestCReverseDataStore(void)
     assert(!has);
 }
 
+BEGIN_NCBI_SCOPE;
+
 /// @internal
 struct ITest
 {
@@ -91,14 +93,18 @@ struct ITest
     virtual int GetA() const = 0;
 };
 
+NCBI_DECLARE_INTERFACE_VERSION(ITest,  "itest", 1, 1, 0);
+
+END_NCBI_SCOPE;
+
 void TestPluginManagerStore()
 {
-    CPluginManager<ITest>* pm = CPluginManagerStore::CPMMaker<ITest>::Get();
+//    string pm_name = CInterfaceVersion<ITest>::GetName();
+    
+    CPluginManager<ITest>* pm = ncbi::CPluginManagerStore::CPMMaker<ITest>::Get();
     assert(pm);
 
 }
-
-NCBI_DECLARE_INTERFACE_VERSION(ITest,  "itest", 1, 1, 0);
 
 
 /////////////////////////////////
@@ -140,6 +146,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/08/05 18:41:26  kuznets
+ * test case for plugin manager put to ncbi namespace(GCC compilation fix)
+ *
  * Revision 1.2  2004/08/05 18:15:11  kuznets
  * +test for plugin manager store
  *
