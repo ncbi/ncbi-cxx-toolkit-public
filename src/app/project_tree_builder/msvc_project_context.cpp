@@ -193,6 +193,7 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     }
 
     //Leave only unique dirs and join them to string
+    add_include_dirs_list.sort();
     add_include_dirs_list.unique();
     return NStr::Join(add_include_dirs_list, ", ");
 }
@@ -265,6 +266,7 @@ void CMsvcPrjProjectContext::CreateLibsList(list<string>* libs_list) const
              components.end(), back_inserter(*libs_list));
 
     }
+    libs_list->sort();
     libs_list->unique();
 }
 
@@ -693,6 +695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/02/23 20:58:41  gorelenk
+ * Fixed double properties apperience in generated MSVC projects.
+ *
  * Revision 1.13  2004/02/23 20:42:57  gorelenk
  * Added support of MSVC ResourceCompiler tool.
  *

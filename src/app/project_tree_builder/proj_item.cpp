@@ -714,6 +714,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     list<string> adj_depends(depends);
     copy(added_depends.begin(), 
          added_depends.end(), back_inserter(adj_depends));
+    adj_depends.sort();
     adj_depends.unique();
 
     PLibExclude pred(excluded_depends);
@@ -1421,6 +1422,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/02/23 20:58:41  gorelenk
+ * Fixed double properties apperience in generated MSVC projects.
+ *
  * Revision 1.16  2004/02/20 22:53:59  gorelenk
  * Added analysis of ASN projects depends.
  *
