@@ -71,8 +71,11 @@ public:
     CPluginManager_DllResolver* operator()(void)
     {
         CPluginManager_DllResolver* resolver =
-            new CPluginManager_DllResolver(
-            CInterfaceVersion<I_DriverContext>::GetName());
+            new CPluginManager_DllResolver
+            (CInterfaceVersion<I_DriverContext>::GetName(), 
+             kEmptyStr,
+             CVersionInfo::kAny,
+             CDll::eNoAutoUnload);
         resolver->SetDllNamePrefix("ncbi");
         return resolver;
     }
@@ -92,6 +95,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/03/03 19:06:49  ssikorsk
+ * Do not unload database drivers with the PluginManager
+ *
  * Revision 1.14  2005/03/01 16:24:44  ssikorsk
  * Restored the "GetDriver" method
  *
