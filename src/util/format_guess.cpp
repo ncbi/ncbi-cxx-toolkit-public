@@ -125,6 +125,16 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
 
     }}
 
+    // check for binary ASN.1 - the presence of any non-printing characters
+    // can confirm this
+    unsigned int i = 0;
+    {{
+        for (i = 0;  i < count;  ++i) {
+            if ( !isgraph(buf[i])  &&  !isspace(buf[i]) ) {
+                return eBinaryASN;
+            }
+        }
+    }}
     
     unsigned ATGC_content = 0;
     unsigned amino_acid_content = 0;
@@ -132,7 +142,6 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
 
     unsigned alpha_content = 0;
 
-    unsigned int i = 0;
     if (buf[0] == '>') { // FASTA ?
         for (; (!isLineEnd(buf[i])) && i < count; ++i) {
             // skip the first line (presumed this is free-text information)
@@ -199,10 +208,6 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
         }
     }
 
-    if (a_content < 0.87) {
-        return eBinaryASN;
-    } 
-
     // Signature check
     if (buf[1] == 0x80) {
         if (buf[0] == 0x30 || buf[0] == 0x31) {
@@ -212,7 +217,6 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
             return eBinaryASN;
         }
     }
-
 
     input.close();
     return format;
@@ -224,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/03/01 15:49:54  dicuccio
+ * Added explicit check for binary ASN
+ *
  * Revision 1.10  2003/12/02 20:16:09  kuznets
  * Improved ASN binary recognition by checking ASN specific signatures
  *
