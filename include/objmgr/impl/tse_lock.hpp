@@ -68,9 +68,9 @@ public:
             return *this;
         }
     
-    operator bool(void) const
+    operator const CTSE_Info*(void) const
         {
-            return m_Info;
+            return GetPointerOrNull();
         }
     bool operator!(void) const
         {
