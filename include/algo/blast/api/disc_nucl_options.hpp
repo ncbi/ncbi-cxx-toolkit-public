@@ -61,20 +61,28 @@ public:
     ~CDiscNucleotideOptionsHandle() {}
 
     /******************* Lookup table options ***********************/
+    /// Returns TemplateLength
     unsigned char GetTemplateLength() const { 
         return m_Opts->GetMBTemplateLength();
     }
+    /// Sets TemplateLength
+    /// @param length TemplateLength [in]
     void SetTemplateLength(unsigned char length) {
         m_Opts->SetMBTemplateLength(length);
     }
 
+    /// Returns TemplateType
     unsigned char GetTemplateType() const { 
         return m_Opts->GetMBTemplateType();
     }
+    /// Sets TemplateType
+    /// @param type TemplateType [in]
     void SetTemplateType(unsigned char type) {
         m_Opts->SetMBTemplateType(type);
     }
 
+    /// Sets WordSize
+    /// @param ws WordSize [in]
     void SetWordSize(short ws) { 
         if (ws == 11 || ws == 12) {
             m_Opts->SetWordSize(ws); 
@@ -84,18 +92,24 @@ public:
         }
     }
 
-    // Unavailable for discontiguous megablast, throws a CBlastException
+    /// NOTE: Unavailable for discontiguous megablast, throws a CBlastException
     void SetTraditionalBlastnDefaults();
 
 protected:
 
+    /// Sets MBLookupTableDefaults
     void SetMBLookupTableDefaults();
+    /// Sets MBInitialWordOptionsDefaults
     void SetMBInitialWordOptionsDefaults();
+    /// Sets MBGappedExtensionDefaults
     void SetMBGappedExtensionDefaults();
+    /// Sets MBScoringOptionsDefaults
     void SetMBScoringOptionsDefaults();
 
 private:
+    /// Disallow copy constructor
     CDiscNucleotideOptionsHandle(const CDiscNucleotideOptionsHandle& rhs);
+    /// Disallow assignment operator
     CDiscNucleotideOptionsHandle& operator=(const CDiscNucleotideOptionsHandle& rhs);
 };
 
@@ -109,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/06/08 22:41:04  camacho
+ * Add missing doxygen comments
+ *
  * Revision 1.8  2004/05/04 13:09:20  camacho
  * Made copy-ctor & assignment operator private
  *
@@ -119,6 +136,8 @@ END_NCBI_SCOPE
  * Move to doxygen group AlgoBlast
  *
  * Revision 1.5  2004/03/17 21:48:30  dondosha
+    /// Sets MBInitialWordOptionsDefaults
+    /// @param x MBInitialWordOptionsDefaults [in]
  * Added custom SetMBInitialWordOptionsDefaults and SetMBGappedExtensionDefaults methods
  *
  * Revision 1.4  2004/01/20 15:19:25  camacho

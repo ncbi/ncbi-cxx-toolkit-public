@@ -59,32 +59,50 @@ public:
     ~CTBlastnOptionsHandle() {}
 
     /************************ Scoring options ************************/
-    // is this needed or can we use a sentinel for the frame shift penalty?
+    /// Returns OutOfFrameMode
+    /// @todo is this needed or can we use a sentinel for the frame shift penalty?
     bool GetOutOfFrameMode() const { return m_Opts->GetOutOfFrameMode(); }
+    /// Sets OutOfFrameMode
+    /// @param m OutOfFrameMode [in]
     void SetOutOfFrameMode(bool m = true) { m_Opts->SetOutOfFrameMode(m); }
 
+    /// Returns FrameShiftPenalty
     int GetFrameShiftPenalty() const { return m_Opts->GetFrameShiftPenalty(); }
+    /// Sets FrameShiftPenalty
+    /// @param p FrameShiftPenalty [in]
     void SetFrameShiftPenalty(int p) { m_Opts->SetFrameShiftPenalty(p); }
 
+    /// Returns LongestIntronLength
     int GetLongestIntronLength() const { return m_Opts->GetLongestIntronLength(); }
+    /// Sets LongestIntronLength
+    /// @param l LongestIntronLength [in]
     void SetLongestIntronLength(int l) { m_Opts->SetLongestIntronLength(l); }
 
     /******************* Subject sequence options *******************/
+    /// Returns DbGeneticCode
     int GetDbGeneticCode() const {
         return m_Opts->GetDbGeneticCode();
     }
+    /// Sets DbGeneticCode
+    /// @param gc DbGeneticCode [in]
     void SetDbGeneticCode(int gc) {
         m_Opts->SetDbGeneticCode(gc);
     }
 
 protected:
+    /// Sets LookupTableDefaults for tblastn options
     void SetLookupTableDefaults();
+    /// Sets ScoringOptionsDefaults for tblastn options
     void SetScoringOptionsDefaults();
+    /// Sets HitSavingOptionsDefaults for tblastn options
     void SetHitSavingOptionsDefaults();
+    /// Sets SubjectSequenceOptionsDefaults for tblastn options
     void SetSubjectSequenceOptionsDefaults();
 
 private:
+    /// Disallow copy constructor
     CTBlastnOptionsHandle(const CTBlastnOptionsHandle& rhs);
+    /// Disallow assignment operator
     CTBlastnOptionsHandle& operator=(const CTBlastnOptionsHandle& rhs);
 };
 
@@ -98,6 +116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/06/08 22:41:04  camacho
+ * Add missing doxygen comments
+ *
  * Revision 1.8  2004/05/04 13:09:20  camacho
  * Made copy-ctor & assignment operator private
  *
@@ -117,6 +138,8 @@ END_NCBI_SCOPE
  * Added windows export specifiers
  *
  * Revision 1.2  2003/12/03 16:34:58  dondosha
+    /// Sets DbGeneticCode
+    /// @param x DbGeneticCode [in]
  * SetDbGeneticCode now fills both integer and string option
  *
  * Revision 1.1  2003/11/26 18:22:18  camacho

@@ -59,48 +59,77 @@ public:
     ~CBlastRPSOptionsHandle() {}
 
     /******************* Lookup table options ***********************/
+    /// Returns WordThreshold
     int GetWordThreshold() const { return m_Opts->GetWordThreshold(); }
+    /// Returns WordSize
     short GetWordSize() const { return m_Opts->GetWordSize(); }
 
     /******************* Initial word options ***********************/
+    /// Returns WindowSize
     int GetWindowSize() const { return m_Opts->GetWindowSize(); }
+    /// Sets WindowSize
+    /// @param ws WindowSize [in]
     void SetWindowSize(int ws) { m_Opts->SetWindowSize(ws); }
 
+    /// Returns XDropoff
     double GetXDropoff() const { return m_Opts->GetXDropoff(); } 
+    /// Sets XDropoff
+    /// @param x XDropoff [in]
     void SetXDropoff(double x) { m_Opts->SetXDropoff(x); }
 
     /******************* Gapped extension options *******************/
+    /// Returns GapXDropoffFinal
     double GetGapXDropoffFinal() const { 
         return m_Opts->GetGapXDropoffFinal(); 
     }
+    /// Sets GapXDropoffFinal
+    /// @param x GapXDropoffFinal [in]
     void SetGapXDropoffFinal(double x) { m_Opts->SetGapXDropoffFinal(x); }
 
     /************************ Scoring options ************************/
+    /// Returns GapOpeningCost
     int GetGapOpeningCost() const { return m_Opts->GetGapOpeningCost(); }
+    /// Returns GapExtensionCost
     int GetGapExtensionCost() const { return m_Opts->GetGapExtensionCost(); }
 
+    /// Returns EffectiveSearchSpace
     Int8 GetEffectiveSearchSpace() const { 
         return m_Opts->GetEffectiveSearchSpace(); 
     }
+    /// Sets EffectiveSearchSpace
+    /// @param eff EffectiveSearchSpace [in]
     void SetEffectiveSearchSpace(Int8 eff) {
         m_Opts->SetEffectiveSearchSpace(eff);
     }
 
+    /// Returns UseRealDbSize
     bool GetUseRealDbSize() const { return m_Opts->GetUseRealDbSize(); }
+    /// Sets UseRealDbSize
+    /// @param u UseRealDbSize [in]
     void SetUseRealDbSize(bool u = true) { m_Opts->SetUseRealDbSize(u); }
 
 protected:
+    /// Overrides LookupTableDefaults for RPS-BLAST options
     virtual void SetLookupTableDefaults();
+    /// Overrides QueryOptionDefaults for RPS-BLAST options
     virtual void SetQueryOptionDefaults();
+    /// Overrides InitialWordOptionsDefaults for RPS-BLAST options
     virtual void SetInitialWordOptionsDefaults();
+    /// Overrides GappedExtensionDefaults for RPS-BLAST options
     virtual void SetGappedExtensionDefaults();
+    /// Overrides ScoringOptionsDefaults for RPS-BLAST options
     virtual void SetScoringOptionsDefaults();
+    /// Overrides HitSavingOptionsDefaults for RPS-BLAST options
     virtual void SetHitSavingOptionsDefaults();
+    /// Overrides EffectiveLengthsOptionsDefaults for RPS-BLAST options
     virtual void SetEffectiveLengthsOptionsDefaults();
+    /// Overrides SubjectSequenceOptionsDefaults for RPS-BLAST options
     virtual void SetSubjectSequenceOptionsDefaults(); 
 
 private:
+    /// Disallow copy constructor
     CBlastRPSOptionsHandle(const CBlastRPSOptionsHandle& rhs);
+    /// Disallow assignment operator
     CBlastRPSOptionsHandle& operator=(const CBlastRPSOptionsHandle& rhs);
 };
 
@@ -114,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/06/08 22:41:04  camacho
+ * Add missing doxygen comments
+ *
  * Revision 1.5  2004/05/04 13:09:20  camacho
  * Made copy-ctor & assignment operator private
  *

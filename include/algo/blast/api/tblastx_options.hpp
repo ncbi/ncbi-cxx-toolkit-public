@@ -62,38 +62,55 @@ public:
     ~CTBlastxOptionsHandle() {}
 
     /******************* Query setup options ************************/
+    /// Returns StrandOption
     objects::ENa_strand GetStrandOption() const { 
         return m_Opts->GetStrandOption();
     }
+    /// Sets StrandOption
+    /// @param strand StrandOption [in]
     void SetStrandOption(objects::ENa_strand strand) {
         m_Opts->SetStrandOption(strand);
     }
 
     /******************* Subject sequence options *******************/
+    /// Returns DbGeneticCode
     int GetDbGeneticCode() const {
         return m_Opts->GetDbGeneticCode();
     }
+    /// Sets DbGeneticCode
+    /// @param gc DbGeneticCode [in]
     void SetDbGeneticCode(int gc) {
         m_Opts->SetDbGeneticCode(gc);
     }
 
+    /// Returns QueryGeneticCode
     int GetQueryGeneticCode() const {
         return m_Opts->GetQueryGeneticCode();
     }
+    /// Sets QueryGeneticCode
+    /// @param gc QueryGeneticCode [in]
     void SetQueryGeneticCode(int gc) {
         m_Opts->SetQueryGeneticCode(gc);
     }
 
 protected:
+    /// Overrides LookupTableDefaults for tblastx options
     void SetLookupTableDefaults();
+    /// Overrides QueryOptionDefaults for tblastx options
     void SetQueryOptionDefaults();
+    /// Overrides GappedExtensionDefaults for tblastx options
     void SetGappedExtensionDefaults();
+    /// Overrides ScoringOptionsDefaults for tblastx options
     void SetScoringOptionsDefaults();
+    /// Overrides HitSavingOptionsDefaults for tblastx options
     void SetHitSavingOptionsDefaults();
+    /// Overrides SubjectSequenceOptionsDefaults for tblastx options
     void SetSubjectSequenceOptionsDefaults();
 
 private:
+    /// Disallow copy constructor
     CTBlastxOptionsHandle(const CTBlastxOptionsHandle& rhs);
+    /// Disallow assignment operator
     CTBlastxOptionsHandle& operator=(const CTBlastxOptionsHandle& rhs);
 };
 
@@ -107,6 +124,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/06/08 22:41:04  camacho
+ * Add missing doxygen comments
+ *
  * Revision 1.7  2004/05/04 13:09:20  camacho
  * Made copy-ctor & assignment operator private
  *
@@ -123,6 +143,8 @@ END_NCBI_SCOPE
  * Added windows export specifiers
  *
  * Revision 1.2  2003/12/03 16:34:59  dondosha
+    /// Sets DbGeneticCode
+    /// @param x DbGeneticCode [in]
  * SetDbGeneticCode now fills both integer and string option
  *
  * Revision 1.1  2003/11/26 18:22:18  camacho

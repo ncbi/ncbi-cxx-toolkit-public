@@ -59,17 +59,26 @@ public:
     ~CPSIBlastOptionsHandle() {}
     
     /******************* PSI options ***********************/
+    /// Returns InclusionThreshold
     double GetInclusionThreshold() const { return m_Opts->GetInclusionThreshold(); }
+    /// Sets InclusionThreshold
+    /// @param incthr InclusionThreshold [in]
     void SetInclusionThreshold(double incthr) { m_Opts->SetInclusionThreshold(incthr); }
     
+    /// Returns PseudoCount
     short GetPseudoCount() const { return m_Opts->GetPseudoCount(); }
-    void SetPseudoCount(short ws) { m_Opts->SetPseudoCount(ws); }
+    /// Sets PseudoCount
+    /// @param p PseudoCount [in]
+    void SetPseudoCount(short p) { m_Opts->SetPseudoCount(ws); }
     
 protected:
+    /// Sets PSIBlastDefaults
     void SetPSIBlastDefaults();
     
 private:
+    /// Disallow copy constructor
     CPSIBlastOptionsHandle(const CPSIBlastOptionsHandle& rhs);
+    /// Disallow assignment operator
     CPSIBlastOptionsHandle& operator=(const CPSIBlastOptionsHandle& rhs);
 };
 
@@ -83,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/06/08 22:41:04  camacho
+ * Add missing doxygen comments
+ *
  * Revision 1.1  2004/05/17 18:54:09  bealer
  * - Add PSI-Blast support.
  *

@@ -61,32 +61,50 @@ public:
     ~CBlastxOptionsHandle() {}
 
     /******************* Query setup options ************************/
+    /// Returns StrandOption
     objects::ENa_strand GetStrandOption() const { 
         return m_Opts->GetStrandOption();
     }
+    /// Sets StrandOption
+    /// @param strand StrandOption [in]
     void SetStrandOption(objects::ENa_strand strand) {
         m_Opts->SetStrandOption(strand);
     }
 
+    /// Returns QueryGeneticCode
     int GetQueryGeneticCode() const { return m_Opts->GetQueryGeneticCode(); }
+    /// Sets QueryGeneticCode
+    /// @param gc QueryGeneticCode [in]
     void SetQueryGeneticCode(int gc) { m_Opts->SetQueryGeneticCode(gc); }
 
     /************************ Scoring options ************************/
-    // is this needed or can we use a sentinel for the frame shift penalty?
+    /// Returns OutOfFrameMode
+    /// @todo is this needed or can we use a sentinel for the frame shift penalty?
     bool GetOutOfFrameMode() const { return m_Opts->GetOutOfFrameMode(); }
+    /// Sets OutOfFrameMode
+    /// @param m OutOfFrameMode [in]
     void SetOutOfFrameMode(bool m = true) { m_Opts->SetOutOfFrameMode(m); }
 
+    /// Returns FrameShiftPenalty
     int GetFrameShiftPenalty() const { return m_Opts->GetFrameShiftPenalty(); }
+    /// Sets FrameShiftPenalty
+    /// @param p FrameShiftPenalty [in]
     void SetFrameShiftPenalty(int p) { m_Opts->SetFrameShiftPenalty(p); }
 
 protected:
+    /// Overrides LookupTableDefaults for blastx options
     void SetLookupTableDefaults();
+    /// Overrides QueryOptionDefaults for blastx options
     void SetQueryOptionDefaults();
+    /// Overrides ScoringOptionsDefaults for blastx options
     void SetScoringOptionsDefaults();
+    /// Overrides HitSavingOptionsDefaults for blastx options
     void SetHitSavingOptionsDefaults();
 
 private:
+    /// Disallow copy constructor
     CBlastxOptionsHandle(const CBlastxOptionsHandle& rhs);
+    /// Disallow assignment operator
     CBlastxOptionsHandle& operator=(const CBlastxOptionsHandle& rhs);
 };
 
@@ -100,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/06/08 22:41:04  camacho
+ * Add missing doxygen comments
+ *
  * Revision 1.6  2004/05/04 13:09:20  camacho
  * Made copy-ctor & assignment operator private
  *

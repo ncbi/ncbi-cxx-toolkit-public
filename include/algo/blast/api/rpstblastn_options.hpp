@@ -59,18 +59,24 @@ public:
     ~CRPSTBlastnOptionsHandle() {}
 
     /******************* Subject sequence options *******************/
+    /// Returns DbGeneticCode
     int GetDbGeneticCode() const {
         return m_Opts->GetDbGeneticCode();
     }
+    /// Sets DbGeneticCode
+    /// @param gc DbGeneticCode [in]
     void SetDbGeneticCode(int gc) {
         m_Opts->SetDbGeneticCode(gc);
     }
 
 protected:
+    /// Overrides SubjectSequenceOptionsDefaults for RPS-TBLASTN options
     void SetSubjectSequenceOptionsDefaults();
 
 private:
+    /// Disallow copy constructor
     CRPSTBlastnOptionsHandle(const CRPSTBlastnOptionsHandle& rhs);
+    /// Disallow assignment operator
     CRPSTBlastnOptionsHandle& operator=(const CRPSTBlastnOptionsHandle& rhs);
 };
 
@@ -83,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * =======================================================================
  * $Log$
+ * Revision 1.4  2004/06/08 22:41:04  camacho
+ * Add missing doxygen comments
+ *
  * Revision 1.3  2004/05/04 13:09:20  camacho
  * Made copy-ctor & assignment operator private
  *
