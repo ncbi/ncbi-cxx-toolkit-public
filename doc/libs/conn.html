@@ -546,8 +546,8 @@ such wrapping would have been made by the dispatching facility as well.
 <p>
 The last parameter of the extended constructor is the network info,
 described in the previous section, devoted to HTTP connector.
-Service connector uses all fields of this structure, and the following
-assumptions apply:
+Service connector uses all fields of this structure, except
+<tt>http_user_header</tt> and the following assumptions apply:
 <ul>
 <li><tt>path</tt> specifies the dispatcher program (defaulted to <tt>dispd.cgi</tt>);
 <li><tt>args</tt> specifies parameters for the requested service, this is service-specific, no defaults;
@@ -563,6 +563,7 @@ the name of the service).
 the service. Instead, either a connection to a proxy firewall daemon (running
 at the NCBI site) is used to pass the data in stream mode, or data get relayed
 via dispatcher if stateless server is used (firewalling this doesn't involve dispatching, which is always done via HTTP directly).
+<li><tt>http_user_header</tt> completely ignored.
 </ul>
 
 <p>
