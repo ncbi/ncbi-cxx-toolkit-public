@@ -118,12 +118,11 @@
 			execute(oShell, "cvs checkout -d temp internal/c++/include/corelib/config/ncbiconf_msvc_site.h");
 			execute(oShell, "copy /Y temp\\*.* " + oTree.IncludeConfig);
 			RemoveTempFolder(oShell, oFso, oTree);
-			
+		
 			var include_dir = "include/" + oTask.ProjectName;
 			var src_dir     = "src/"     + oTask.ProjectName;
 			CheckoutSubDir(oShell, oTree, include_dir);
 			CheckoutSubDir(oShell, oTree, src_dir);
-			
 		}
 		// Project will require pre-built C++ Toolkit		
 		function AdjustProject(oShell, oTree, oTask)
@@ -146,20 +145,66 @@
 			file.WriteLine("INCLUDE = " + EscapeBackSlashes(oTask.ToolkitPath + "\\include"));
 			file.WriteLine("LIBPATH = ");
 
+////////////////  - the whole DLLs' set:
 			file.WriteLine("LIB     = \\");
-			file.WriteLine("        dbapi_driver_odbc.lib     \\");
-			file.WriteLine("        ncbi_core.lib             \\"); 
-			file.WriteLine("        ncbi_dbapi.lib            \\");
-			file.WriteLine("        ncbi_dbapi_driver.lib     \\");
-			file.WriteLine("        ncbi_general.lib          \\");
-			file.WriteLine("        ncbi_pub.lib              \\");
-			file.WriteLine("        ncbi_seq.lib              \\");
-			file.WriteLine("        ncbi_seqext.lib           \\");
-			file.WriteLine("        ncbi_web.lib              \\");
-			file.WriteLine("        ncbi_xloader_genbank.lib  \\");
-			file.WriteLine("        ncbi_xreader.lib          \\");
-			file.WriteLine("        ncbi_xreader_id1.lib      \\");
-			file.WriteLine("        ncbi_xreader_pubseqos.lib"); 
+			file.WriteLine("        algo_align.lib              \\");            
+			file.WriteLine("        algo_basic.lib              \\");            
+			file.WriteLine("        algo_cn3d.lib               \\");             
+			file.WriteLine("        algo_external.lib           \\");         
+			file.WriteLine("        algo_gnomon.lib             \\");           
+			file.WriteLine("        algo_init.lib               \\");             
+			file.WriteLine("        algo_linkout.lib            \\");          
+			file.WriteLine("        algo_phylo.lib              \\");            
+			file.WriteLine("        algo_validator.lib          \\");        
+			file.WriteLine("        dbapi_driver_ctlib.lib      \\");    
+			file.WriteLine("        dbapi_driver_dblib.lib      \\");    
+			file.WriteLine("        dbapi_driver_msdblib.lib    \\");  
+			file.WriteLine("        dbapi_driver_mysql.lib      \\");    
+			file.WriteLine("        dbapi_driver_odbc.lib       \\");     
+			file.WriteLine("        dload_basic.lib             \\");           
+			file.WriteLine("        dload_table.lib             \\");           
+			file.WriteLine("        gui_config.lib              \\");            
+			file.WriteLine("        gui_core.lib                \\");              
+			file.WriteLine("        gui_dialogs.lib             \\");           
+			file.WriteLine("        gui_graph.lib               \\");             
+			file.WriteLine("        gui_utils.lib               \\");             
+			file.WriteLine("        gui_widgets.lib             \\");           
+			file.WriteLine("        gui_widgets_aln.lib         \\");       
+			file.WriteLine("        gui_widgets_misc.lib        \\");      
+			file.WriteLine("        gui_widgets_seq.lib         \\");       
+			file.WriteLine("        ncbi_algo.lib               \\");             
+			file.WriteLine("        ncbi_algo_ms.lib            \\");          
+			file.WriteLine("        ncbi_bdb.lib                \\");              
+			file.WriteLine("        ncbi_core.lib               \\");             
+			file.WriteLine("        ncbi_dbapi.lib              \\");            
+			file.WriteLine("        ncbi_dbapi_driver.lib       \\");     
+			file.WriteLine("        ncbi_general.lib            \\");          
+			file.WriteLine("        ncbi_image.lib              \\");            
+			file.WriteLine("        ncbi_lds.lib                \\");              
+			file.WriteLine("        ncbi_misc.lib               \\");             
+			file.WriteLine("        ncbi_mmdb.lib               \\");             
+			file.WriteLine("        ncbi_pub.lib                \\");              
+			file.WriteLine("        ncbi_seq.lib                \\");              
+			file.WriteLine("        ncbi_seqext.lib             \\");           
+			file.WriteLine("        ncbi_sqlite.lib             \\");           
+			file.WriteLine("        ncbi_validator.lib          \\");        
+			file.WriteLine("        ncbi_web.lib                \\");              
+			file.WriteLine("        ncbi_xloader_cdd.lib        \\");      
+			file.WriteLine("        ncbi_xloader_genbank.lib    \\");  
+			file.WriteLine("        ncbi_xloader_lds.lib        \\");      
+			file.WriteLine("        ncbi_xloader_table.lib      \\");    
+			file.WriteLine("        ncbi_xloader_trace.lib      \\");    
+			file.WriteLine("        ncbi_xreader.lib            \\");          
+			file.WriteLine("        ncbi_xreader_id1.lib        \\");      
+			file.WriteLine("        ncbi_xreader_pubseqos.lib   \\"); 
+			file.WriteLine("        view_align.lib              \\");            
+			file.WriteLine("        view_graphic.lib            \\");          
+			file.WriteLine("        view_phylotree.lib          \\");        
+			file.WriteLine("        view_table.lib              \\");            
+			file.WriteLine("        view_taxplot.lib            \\");          
+			file.WriteLine("        view_text.lib               \\");             
+			file.WriteLine("        view_validator.lib");
+////////////////					
 
 			file.WriteLine("CONFS   = DebugDLL ReleaseDLL");
 			file.WriteLine("[CXX_Toolkit.debug.DebugDLL]");
