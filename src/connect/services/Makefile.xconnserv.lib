@@ -1,6 +1,6 @@
 # $Id$
 
-SRC     = netschedule_client netcache_client netcache_client_lb \
+SRC     = netschedule_client netcache_client netcache_client_lb\
           netservice_client
 
 LIB     = xconnserv
