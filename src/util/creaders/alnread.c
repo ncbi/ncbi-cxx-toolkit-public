@@ -2086,6 +2086,7 @@ static EBool s_SkippableNexusComment (char *str)
         ||  s_StringNICmp (str, "dimensions ", 11) == 0
         ||  s_StringNICmp (str, "dimensions ", 11) == 0
         ||  s_StringNICmp (str, "options ", 8) == 0
+        ||  s_StringNICmp (str, "begin characters", 16) == 0
         ||  s_StringNICmp (str, "begin data", 10) == 0) {
         return eTrue;
     } else {
@@ -2967,6 +2968,7 @@ s_ReadAlignFileRaw
     int              len;
     TIntLinkPtr      new_offset;
     EBool            in_taxa_comment;
+    EBool            in_bracketed_comment = eFalse;
 
     if (readfunc == NULL  ||  sequence_info == NULL) {
         return NULL;
@@ -3026,6 +3028,16 @@ s_ReadAlignFileRaw
             } else if (strncmp (tmp, "begin taxa;", 11) == 0) {
                 tmp [0] = 0;
                 in_taxa_comment = eTrue;
+            }
+
+            if (in_bracketed_comment) {
+                if (strchr (tmp, ']') != NULL) {
+                    in_bracketed_comment = eFalse;
+                }
+                tmp [0] = 0;
+            } else if (tmp [0] == '[' && strchr (tmp, ']') == NULL) {
+                in_bracketed_comment = eTrue;
+                tmp [0] = 0;
             }
 
             s_RemoveCommentFromLine (tmp);
@@ -3324,6 +3336,7 @@ static void s_ProcessAlignRawFileByBlockOffsets (SAlignRawFilePtr afrp)
     TIntLinkPtr   offset_ptr;
     TLineInfoPtr  lip;
     EBool         first_block = eTrue;
+    EBool         in_taxa_comment = eFalse;
  
     if (afrp == NULL) {
         return;
@@ -3333,7 +3346,15 @@ static void s_ProcessAlignRawFileByBlockOffsets (SAlignRawFilePtr afrp)
     offset_ptr = afrp->offset_list;
     lip = afrp->line_list;
     while (lip != NULL  &&  offset_ptr != NULL
-           &&  ! s_FoundStopLine (lip->data)) {
+           &&  (in_taxa_comment  ||  ! s_FoundStopLine (lip->data))) {
+        if (in_taxa_comment) {
+            if (strncmp (lip->data, "end;", 4) == 0) {
+                in_taxa_comment = eFalse;
+            } 
+        } else if (lip->data != NULL
+            &&  strncmp (lip->data, "begin taxa;", 11) == 0) {
+            in_taxa_comment = eTrue;
+        }
         if (line_counter == offset_ptr->ival) {
             s_RemoveCommentsFromBlock (lip, afrp->block_size);
             s_ProcessBlockLines (afrp, lip, afrp->block_size, first_block);
@@ -5151,6 +5172,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/04 19:15:07  bollin
+ * file reading now skips over multi-line bracketed comments
+ *
  * Revision 1.5  2004/03/04 16:29:32  bollin
  * added skip of taxa comment for PAUP format alignment files
  *
