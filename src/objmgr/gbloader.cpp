@@ -91,29 +91,55 @@ struct CGBDataLoader::SSeqrefs
 // GBLoader Public interface 
 // 
 
+const char* GB_ENV_VAR = "GENBANK_LOADER_METHOD";
+const char* DEFAULT_DRIVERS_ORDER = "PUBSEQ:ID1";
+const string DRV_PUBSEQOS = "PUBSEQOS";
+const string DRV_ID1 = "ID1";
+
+// Create driver specified in "env"
+CReader* s_CreateReader(string env)
+{
+#if defined(HAVE_LIBDL) && defined(HAVE_PUBSEQ_OS)
+    if (env == DRV_PUBSEQOS) {
+        try {
+            return new CPubseqReader;
+        }
+        catch(exception& e) {
+            GBLOG_POST("CPubseqReader is not available ::" << e.what());
+            return 0;
+        }
+        catch(...) {
+            LOG_POST("CPubseqReader:: unable to init ");
+            return 0;
+        }
+    }
+#endif
+    if (env == DRV_ID1) {
+        return new CId1Reader;
+    }
+    return 0;
+}
+
+
 CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
                              int gc_threshold)
   : CDataLoader(loader_name),
     m_Driver(driver)
 {
     GBLOG_POST( "CGBDataLoader");
-  
-#if defined(HAVE_LIBDL) && defined(HAVE_PUBSEQ_OS)
-    if(!m_Driver) {
-        try {
-            m_Driver= new CPubseqReader;
-        }
-        catch(exception& e) {
-            GBLOG_POST("CPubseqReader is not available ::" << e.what());
-            m_Driver=0;
-        }
-        catch(...) {
-            LOG_POST("CPubseqReader:: unable to init ");
-            m_Driver=0;
-        }
+    const char* env = ::getenv(GB_ENV_VAR);
+    if (!env) {
+        env = DEFAULT_DRIVERS_ORDER; // default drivers' order
     }
-#endif
-    if(!m_Driver) m_Driver=new CId1Reader;
+    list<string> drivers;
+    NStr::Split(env, ":", drivers);
+    for (list<string>::iterator drv = drivers.begin();
+        drv != drivers.end()  &&  !m_Driver; ++drv) {
+        m_Driver = s_CreateReader(*drv);
+    }
+    if(!m_Driver) {
+        throw runtime_error("Could not create driver: " + string(env));
+    }
   
     m_UseListHead = m_UseListTail = 0;
   
@@ -784,6 +810,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2003/04/18 17:38:01  grichenk
+* Use GENBANK_LOADER_METHOD env. variable to specify GB readers.
+* Default is "PUBSEQOS:ID1".
+*
 * Revision 1.58  2003/04/15 16:32:29  dicuccio
 * Added include for I_DriverContext from DBAPI library - avoids concerning
 * warning about deletion of unknwon type.
