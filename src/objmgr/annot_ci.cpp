@@ -61,7 +61,7 @@ CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
 
 CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
                      const SAnnotSelector& sel)
-    : CAnnotTypes_CI(sel.GetAnnotType(),
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
                      scope, loc,
                      SAnnotSelector(sel)
                      .SetNoMapping(true)
@@ -75,7 +75,7 @@ CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
 CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
                      TSeqPos start, TSeqPos stop,
                      const SAnnotSelector& sel)
-    : CAnnotTypes_CI(sel.GetAnnotType(),
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
                      bioseq, start, stop,
                      SAnnotSelector(sel)
                      .SetNoMapping(true)
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/10/06 15:10:53  grichenk
+* Fixed type(s) selection.
+*
 * Revision 1.34  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

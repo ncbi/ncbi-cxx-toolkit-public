@@ -532,19 +532,25 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatSubtype(TFeatSubtype subtype)
 
 SAnnotSelector& SAnnotSelector::CheckAnnotType(TAnnotType type)
 {
-    if (GetAnnotType() == CSeq_annot::C_Data::e_not_set) {
-        SetAnnotType(type);
+    if ( type == CSeq_annot::C_Data::e_Ftable ) {
+        // Remove all non-feature types from the list
+        if (m_AnnotTypesSet.size() > 0) {
+            CAnnotType_Index::TIndexRange range =
+                CAnnotType_Index::GetAnnotTypeRange(type);
+            for (size_t i = 0; i < range.first; ++i) {
+                m_AnnotTypesSet[i] = false;
+            }
+            for (size_t i = range.second; i < m_AnnotTypesSet.size(); ++i) {
+                m_AnnotTypesSet[i] = false;
+            }
+        }
+        else {
+            SetAnnotType(type);
+        }
     }
-    _ASSERT(GetAnnotType() == type);
-    if (m_AnnotTypesSet.size() > 0) {
-        CAnnotType_Index::TIndexRange range =
-            CAnnotType_Index::GetAnnotTypeRange(type);
-        for (size_t i = 0; i < range.first; ++i) {
-            m_AnnotTypesSet[i] = false;
-        }
-        for (size_t i = range.second; i < m_AnnotTypesSet.size(); ++i) {
-            m_AnnotTypesSet[i] = false;
-        }
+    else if ( type != CSeq_annot::C_Data::e_not_set ) {
+        // Force the type
+        SetAnnotType(type);
     }
     return *this;
 }
@@ -612,6 +618,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/10/06 15:10:53  grichenk
+* Fixed type(s) selection.
+*
 * Revision 1.15  2004/09/27 14:35:46  grichenk
 * +Flag for handling unresolved IDs (search/ignore/fail)
 * +Selector method for external annotations search
