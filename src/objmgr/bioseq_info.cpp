@@ -76,9 +76,11 @@ CBioseq_Info::~CBioseq_Info(void)
 
 CBioseq_Info& CBioseq_Info::operator= (const CBioseq_Info& info)
 {
-    m_Entry.Reset(const_cast<CBioseq_Info&>(info).m_Entry);
-    ITERATE ( TSynonyms, it, info.m_Synonyms ) {
-        m_Synonyms.insert(*it);
+    if (this != &info) {
+        m_Entry.Reset(const_cast<CBioseq_Info&>(info).m_Entry);
+        ITERATE ( TSynonyms, it, info.m_Synonyms ) {
+            m_Synonyms.insert(*it);
+        }
     }
     return *this;
 }
@@ -112,6 +114,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/03/14 19:10:41  grichenk
+* + SAnnotSelector::EIdResolving; fixed operator=() for several classes
+*
 * Revision 1.8  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *

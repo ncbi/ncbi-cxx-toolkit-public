@@ -373,7 +373,9 @@ void CTSE_Lock::Set(const CRef<CTSE_Info>& tse)
 inline
 CTSE_Lock& CTSE_Lock::operator=(const CTSE_Lock& lock)
 {
-    Set(lock.m_TSE);
+    if (this != &lock) {
+        Set(lock.m_TSE);
+    }
     return *this;
 }
 
@@ -419,6 +421,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/03/14 19:10:39  grichenk
+* + SAnnotSelector::EIdResolving; fixed operator=() for several classes
+*
 * Revision 1.23  2003/03/12 20:09:31  grichenk
 * Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
 *

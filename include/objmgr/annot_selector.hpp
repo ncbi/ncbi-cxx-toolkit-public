@@ -73,6 +73,11 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
         eLimit_Entry,
         eLimit_Annot
     };
+    enum EIdResolving {
+        eLoadedOnly,       // Resolve only ids already loaded into the scope
+        eIgnoreUnresolved, // Ignore unresolved ids (default)
+        eFailUnresolved    // Throw exception for unresolved ids
+    };
 
     SAnnotSelector(TAnnotChoice annot = CSeq_annot::C_Data::e_not_set,
                    TFeatChoice  feat  = CSeqFeatData::e_not_set,
@@ -83,7 +88,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
           m_OverlapType(eOverlap_Intervals),
           m_ResolveMethod(eResolve_TSE),
           m_SortOrder(eSortOrder_Normal),
-          m_CombineMethod(eCombine_None)
+          m_CombineMethod(eCombine_None),
+          m_IdResolving(eIgnoreUnresolved)
     {
     }
 
@@ -95,7 +101,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
           m_OverlapType(eOverlap_Intervals),
           m_ResolveMethod(eResolve_TSE),
           m_SortOrder(eSortOrder_Normal),
-          m_CombineMethod(eCombine_None)
+          m_CombineMethod(eCombine_None),
+          m_IdResolving(eIgnoreUnresolved)
     {
     }
     
@@ -197,6 +204,18 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
             m_LimitObject.Reset(annot);
             return *this;
         }
+    SAnnotSelector& SetIdResolvingLoaded(void)
+        {
+            m_IdResolving = eLoadedOnly;
+        }
+    SAnnotSelector& SetIdResolvingIgnore(void)
+        {
+            m_IdResolving = eIgnoreUnresolved;
+        }
+    SAnnotSelector& SetIdResolvingFail(void)
+        {
+            m_IdResolving = eFailUnresolved;
+        }
 
 protected:
     TAnnotChoice          m_AnnotChoice;  // Annotation type
@@ -207,6 +226,7 @@ protected:
     ESortOrder            m_SortOrder;
     ECombineMethod        m_CombineMethod;
     ELimitObject          m_LimitObjectType;
+    EIdResolving          m_IdResolving;
     CConstRef<CObject>    m_LimitObject;
 };
 
@@ -217,6 +237,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/03/14 19:10:33  grichenk
+* + SAnnotSelector::EIdResolving; fixed operator=() for several classes
+*
 * Revision 1.4  2003/03/10 16:55:16  vasilche
 * Cleaned SAnnotSelector structure.
 * Added shortcut when features are limited to one TSE.

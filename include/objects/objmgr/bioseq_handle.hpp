@@ -202,11 +202,13 @@ CBioseq_Handle::CBioseq_Handle(const CBioseq_Handle& h)
 inline
 CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
 {
-    m_Value = h.m_Value;
-    m_Scope = h.m_Scope;
-    m_Bioseq_Info = h.m_Bioseq_Info;
-    if ( m_Bioseq_Info )
-        m_TSE_Lock.Set(*m_Bioseq_Info->m_TSE_Info);
+    if (&h != this) {
+        m_Value = h.m_Value;
+        m_Scope = h.m_Scope;
+        m_Bioseq_Info = h.m_Bioseq_Info;
+        if ( m_Bioseq_Info )
+            m_TSE_Lock.Set(*m_Bioseq_Info->m_TSE_Info);
+    }
     return *this;
 }
 
@@ -274,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/03/14 19:10:33  grichenk
+* + SAnnotSelector::EIdResolving; fixed operator=() for several classes
+*
 * Revision 1.31  2003/03/12 20:09:30  grichenk
 * Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
 *

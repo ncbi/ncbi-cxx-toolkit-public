@@ -85,9 +85,11 @@ CDesc_CI::~CDesc_CI(void)
 
 CDesc_CI& CDesc_CI::operator= (const CDesc_CI& iter)
 {
-    m_Handle = iter.m_Handle;
-    m_NextEntry = iter.m_NextEntry;
-    m_Current = iter.m_Current;
+    if (this != &iter) {
+        m_Handle = iter.m_Handle;
+        m_NextEntry = iter.m_NextEntry;
+        m_Current = iter.m_Current;
+    }
     return *this;
 }
 
@@ -146,6 +148,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/03/14 19:10:41  grichenk
+* + SAnnotSelector::EIdResolving; fixed operator=() for several classes
+*
 * Revision 1.7  2003/03/13 13:02:36  dicuccio
 * Added #include for annot_object.hpp - fixes obtuse error for Win32 builds
 *

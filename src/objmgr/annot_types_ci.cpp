@@ -244,12 +244,14 @@ CAnnotTypes_CI::~CAnnotTypes_CI(void)
 
 CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 {
-    static_cast<SAnnotSelector&>(*this) = it;
-    m_Scope = it.m_Scope;
-    m_AnnotSet = it.m_AnnotSet;
-    m_CurAnnot = m_AnnotSet.begin()+(it.m_CurAnnot - it.m_AnnotSet.begin());
-    // Copy TSE list, set TSE locks
-    m_TSESet = it.m_TSESet;
+    if (this != &it) {
+        static_cast<SAnnotSelector&>(*this) = it;
+        m_Scope = it.m_Scope;
+        m_AnnotSet = it.m_AnnotSet;
+        m_CurAnnot = m_AnnotSet.begin()+(it.m_CurAnnot - it.m_AnnotSet.begin());
+        // Copy TSE list, set TSE locks
+        m_TSESet = it.m_TSESet;
+    }
     return *this;
 }
 
@@ -612,15 +614,16 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
     x_Search(master_loc, 0);
     if ( m_ResolveMethod != eResolve_None ) {
         ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
+            //### Check for eLoadedOnly
             CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first);
             if ( !bh ) {
+                if (m_IdResolving == eFailUnresolved) {
+                    // resolve by Seq-id only
+                    THROW1_TRACE(runtime_error,
+                                 "CAnnotTypes_CI::x_Initialize -- "
+                                 "Cannot resolve master id");
+                }
                 continue; // Do not crash - just skip unresolvable IDs
-/*
-                // resolve by Seq-id only
-                THROW1_TRACE(runtime_error,
-                             "CAnnotTypes_CI::x_Initialize -- "
-                             "Cannot resolve master id");
-*/
             }
 
             CHandleRange::TRange idrange = idit->second.GetOverlappingRange();
@@ -737,6 +740,11 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
         }
 
         const CSynonymsSet* syns = m_Scope->x_GetSynonyms(idit->first);
+        if ( !syns  &&  m_IdResolving == eFailUnresolved ) {
+            THROW1_TRACE(runtime_error,
+                         "CAnnotTypes_CI::x_Search -- "
+                         "Cannot find id synonyms");
+        }
         if ( !syns  ||  syns->find(idit->first) == syns->end() ) {
             x_Search(idit->first, idit->second, cvt);
         }
@@ -803,6 +811,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2003/03/14 19:10:41  grichenk
+* + SAnnotSelector::EIdResolving; fixed operator=() for several classes
+*
 * Revision 1.55  2003/03/13 21:49:58  vasilche
 * Fixed mapping of Mix location.
 *

@@ -68,7 +68,9 @@ CHandleRangeMap::~CHandleRangeMap(void)
 
 CHandleRangeMap& CHandleRangeMap::operator= (const CHandleRangeMap& rmap)
 {
-    m_LocMap = rmap.m_LocMap;
+    if (this != &rmap) {
+        m_LocMap = rmap.m_LocMap;
+    }
     return *this;
 }
 
@@ -239,6 +241,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/03/14 19:10:41  grichenk
+* + SAnnotSelector::EIdResolving; fixed operator=() for several classes
+*
 * Revision 1.13  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *

@@ -63,7 +63,9 @@ CHandleRange::~CHandleRange(void)
 
 CHandleRange& CHandleRange::operator=(const CHandleRange& hr)
 {
-    m_Ranges = hr.m_Ranges;
+    if (this != &hr) {
+        m_Ranges = hr.m_Ranges;
+    }
     return *this;
 }
 
@@ -176,6 +178,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/03/14 19:10:41  grichenk
+* + SAnnotSelector::EIdResolving; fixed operator=() for several classes
+*
 * Revision 1.15  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *

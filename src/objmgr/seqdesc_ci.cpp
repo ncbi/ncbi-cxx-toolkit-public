@@ -82,11 +82,13 @@ CSeqdesc_CI::~CSeqdesc_CI(void)
 
 CSeqdesc_CI& CSeqdesc_CI::operator= (const CSeqdesc_CI& iter)
 {
-    m_Current  = iter.m_Current;
-    m_Outer    = iter.m_Outer;
-    m_Inner    = iter.m_Inner;
-    m_InnerEnd = iter.m_InnerEnd;
-    m_Choice   = iter.m_Choice;
+    if (this != &iter) {
+        m_Current  = iter.m_Current;
+        m_Outer    = iter.m_Outer;
+        m_Inner    = iter.m_Inner;
+        m_InnerEnd = iter.m_InnerEnd;
+        m_Choice   = iter.m_Choice;
+    }
     return *this;
 }
 
@@ -140,6 +142,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/03/14 19:10:41  grichenk
+* + SAnnotSelector::EIdResolving; fixed operator=() for several classes
+*
 * Revision 1.7  2003/03/13 13:02:36  dicuccio
 * Added #include for annot_object.hpp - fixes obtuse error for Win32 builds
 *

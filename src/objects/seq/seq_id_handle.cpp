@@ -71,11 +71,13 @@ CSeq_id_Handle::~CSeq_id_Handle(void)
 
 CSeq_id_Handle& CSeq_id_Handle::operator= (const CSeq_id_Handle& handle)
 {
-    Reset();
-    m_Mapper = handle.m_Mapper;
-    m_Value = handle.m_Value;
-    if ( m_Mapper )
-        m_Mapper->AddHandleReference(*this);
+    if (&handle != this) {
+        Reset();
+        m_Mapper = handle.m_Mapper;
+        m_Value = handle.m_Value;
+        if ( m_Mapper )
+            m_Mapper->AddHandleReference(*this);
+    }
     return *this;
 }
 
@@ -137,6 +139,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/03/14 19:10:41  grichenk
+* + SAnnotSelector::EIdResolving; fixed operator=() for several classes
+*
 * Revision 1.9  2002/12/26 20:55:18  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *
