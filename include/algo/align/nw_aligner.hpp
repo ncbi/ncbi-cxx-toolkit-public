@@ -43,7 +43,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <objects/seqalign/Seq_align.hpp>
-#include <algo/algo_exception.hpp>
+#include <algo/align/align_exception.hpp>
 #include <vector>
 #include <string>
 
@@ -216,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/06/17 14:49:38  dicuccio
+ * Fix-up after move to algo/align
+ *
  * Revision 1.21  2003/06/02 14:04:25  kapustin
  * Progress indication-related updates
  *
