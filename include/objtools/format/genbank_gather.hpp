@@ -30,8 +30,6 @@
 *          Mati Shomrat
 *
 * File Description:
-*   new (early 2003) flat-file generator -- base class for items
-*   (which roughly correspond to blocks/paragraphs in the C version)
 *
 */
 #include <corelib/ncbistd.hpp>
@@ -67,6 +65,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/01/14 15:55:08  shomrat
+* *** empty log message ***
+*
 * Revision 1.1  2003/12/17 19:53:18  shomrat
 * Initial revision (adapted from flat lib)
 *
