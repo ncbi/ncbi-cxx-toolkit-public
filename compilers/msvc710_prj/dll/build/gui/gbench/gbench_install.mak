@@ -31,6 +31,7 @@ CORELIBS = \
         $(GBENCH)\bin\ncbi_xreader_id1.dll \
         $(GBENCH)\bin\ncbi_xreader_pubseqos.dll \
         $(GBENCH)\bin\ncbi_xloader_table.dll \
+        $(GBENCH)\bin\ncbi_xloader_trace.dll \
         $(GBENCH)\bin\gui_config.dll \
         $(GBENCH)\bin\gui_core.dll \
         $(GBENCH)\bin\gui_dialogs.dll \
@@ -40,8 +41,6 @@ CORELIBS = \
         $(GBENCH)\bin\gui_widgets_aln.dll \
         $(GBENCH)\bin\gui_widgets_misc.dll \
         $(GBENCH)\bin\gui_widgets_seq.dll
-        
-aaa=        $(GBENCH)\bin\ncbi_xloader_trace.dll
 
 all : dirs \
     $(COREFILES) \
