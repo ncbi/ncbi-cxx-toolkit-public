@@ -764,7 +764,14 @@ to the "generic" ones
   <tr>
 	 <td><b>SYBASE_PATH</b></td>
 	 <td><i>/netopt/Sybase/clients/current</i></td>
-	 <td>Path to Sybase package (but see note below)</td>
+	 <td>Path to Sybase package
+	 (but see <a name="ref_Sybase_NOTE">note</a> below)</td>
+  </tr>
+
+  <tr>
+	 <td><b>FTDS_PATH</b></td>
+	 <td><i>/netopt/Sybase/clients-mssql/current</i></td>
+	 <td>Path to FreeTDS package</td>
   </tr>
 
   <tr>
@@ -818,6 +825,7 @@ to the "generic" ones
 </table>
 
 <p>
+<a name="ref_Sybase_NOTE"></a>
 <b>Note:</b> It is also possible to make <b><i>configure</i></b> look
 elsewhere for Sybase by means of <b><i>--with-sybase-local[=DIR]</i></b>.
 If you specify a directory, it will override <b>SYBASE_PATH</b>;
@@ -899,6 +907,20 @@ to use in the generated makefiles:
        <b>-l</b>sybdb[64]
 		</i></td>
 	 <td>link with Sybase DB Lib API</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>FTDS_INCLUDE</b></i></td>
+	 <td><i><b>-I</b></i>$FTDS_PATH<i>/include</i></td>
+	 <td><i>#include</i> FreeTDS headers</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>FTDS_LIBS</b></i></td>
+	 <td><i><b>-L</b></i>$FTDS_PATH<i>/lib <br>
+       <b>-l</b>sybdb <b>-l</b>tds
+		</i></td>
+	 <td>link with the FreeTDS API</td>
   </tr>
 
   <tr>
@@ -1025,6 +1047,7 @@ flags:
 
 <ul>
   <li> <i><b>--without-sybase</b></i> (Sybase) </li>
+  <li> <i><b>--without-ftds</b></i> (FreeTDS) </li>
   <li> <i><b>--without-fastcgi</b></i> (Fast-CGI) </li>
   <li> <i><b>--without-wxwin</b></i> (wxWindows) </li>
   <li> <i><b>--without-ncbi-c</b></i> (NCBI C Toolkit) </li>
@@ -1182,6 +1205,7 @@ MIPSpro 7.3, GCC/Cygwin-NT, KCC, and MSVC++ compilers:
     <li> <i><b>WorkShop52.sh</b></i> {32|64} [build_dir] [--configure-flags]
     <li> <i><b>MIPSpro73.sh</b></i> {32|64} [build_dir] [--configure-flags]
     <li> <i><b>KCC.sh</b></i> {32|64} [build_dir] [--configure-flags]
+    <li> <i><b>ICC.sh</b></i> [build_dir] [--configure-flags]
     <li> <i><b>gcc_nt.bash</b></i> [--configure-flags]
     <li> <i><b>msvc_nt.bash</b></i> [--configure-flags]
   </ul>
