@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  1999/12/30 22:11:17  vakatov
+* CCgiCookie::GetExpDate() -- use a more standard time string format.
+* CCgiCookie::CCgiCookie() -- check the validity of passed cookie attributes
+*
 * Revision 1.34  1999/11/22 19:07:47  vakatov
 * CCgiRequest::CCgiRequest() -- check for the NULL "query_string"
 *
@@ -137,9 +141,6 @@
 * Added destructor to CCgiCookies:: class
 * + Save the works on CCgiRequest:: class in a "compilable" state
 *
-* Revision 1.5  1998/11/19 23:53:30  vakatov
-* Bug/typo fixed
-*
 * Revision 1.4  1998/11/19 23:41:12  vakatov
 * Tested version of "CCgiCookie::" and "CCgiCookies::"
 *
@@ -152,7 +153,6 @@
 *
 * Revision 1.1  1998/11/18 21:47:53  vakatov
 * Draft version of CCgiCookie::
-*
 * ==========================================================================
 */
 
@@ -194,10 +194,10 @@ CCgiCookie::CCgiCookie(const string& name,   const string& value,
     if ( name.empty() )
         throw invalid_argument("Empty cookie name");
     x_CheckField(name, " ;,=");
-    m_Name   = name;
-    m_Domain = domain;
-    m_Path   = path;
+    m_Name = name;
 
+    SetDomain(domain);
+    SetPath(path);
     SetValue(value);
     m_Expires = kZeroTime;
     m_Secure = false;
@@ -229,8 +229,9 @@ string CCgiCookie::GetExpDate(void) const
     if ( s_ZeroTime(m_Expires) )
         return NcbiEmptyString;
 
-    char str[25];
-    if ( !::strftime(str, sizeof(str), "%a %b %d %H:%M:%S %Y", &m_Expires) )
+    char str[30];
+    if ( !::strftime(str, sizeof(str),
+                     "%a, %d-%b-%Y %H:%M:%S GMT", &m_Expires) )
         throw runtime_error("CCgiCookie::GetExpDate() -- strftime() failed");
     return string(str);
 }
