@@ -211,7 +211,9 @@ public:
         if (dbf.seq_id.IsEmpty())
             return;
 
-        CSeq_id seq_id_db((const char*)dbf.seq_id);
+        const char* str_id = dbf.seq_id;
+        
+        CSeq_id seq_id_db(str_id);
         if (seq_id_db.Which() == CSeq_id::e_not_set) {
             seq_id_db.SetLocal().SetStr((const char*)dbf.seq_id);
             if (seq_id_db.Which() == CSeq_id::e_not_set) {
@@ -356,6 +358,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/07/14 19:48:04  kuznets
+ * Minor changes to improve debugging
+ *
  * Revision 1.7  2003/07/10 20:09:53  kuznets
  * Implemented GetObjectDescr query. Searches both objects and annotations.
  *
