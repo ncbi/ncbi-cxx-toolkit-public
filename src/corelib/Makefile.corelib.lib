@@ -1,15 +1,10 @@
-#################################
 # $Id$
-# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
-#################################
 
 # Build library "XNCBI"
 #################################
 
-CPPFLAGS = ${ORIG_CPPFLAGS} -I$(NCBI)/ver0.0/ncbi/include
-
 LIBOBJ = ncbidiag ncbiexpt ncbistre ncbicgi ncbiapp ncbireg ncbicgir ncbires ncbistd asnio
 LIB    = xncbi
 
-
-
+CPPFLAGS = $(ORIG_CPPFLAGS) \
+  -I$(NCBI_C_INCLUDE)

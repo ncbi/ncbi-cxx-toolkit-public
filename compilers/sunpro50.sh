@@ -6,6 +6,9 @@
 # By Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #############################################################################
 
+USR_BUILD_DIR="$1"
+DEF_BUILD_DIR="."
+
 set -a
 
 CPATH="/netopt/SUNWspro6/bin"
@@ -18,11 +21,10 @@ AR="$CXX -xar -o"
 RANLIB=":"
 LDFLAGS="-xildoff -g"
 
-PM_SRC_PATH="/net/neptune/pubmed/Cvs"
-PM_LIB_PATH=""
-NCBI_C_INCLUDE="/netopt/ncbi_tools/ver0.0/ncbi/include"
-NCBI_C_LIB_PATH="/netopt/ncbi_tools/ver0.0/ncbi/altlib"
+PM_PATH="/net/neptune/pubmed1/Cvs5"
+NCBI_C_INCLUDE="$NCBI/ver0.0/ncbi/include"
+NCBI_C_LIB="$NCBI/ver0.0/ncbi/altlib"
 
 KeepStateTarget=".KEEP_STATE:"
 
-sh configure --exec_prefix=.
+sh configure --exec_prefix=${USR_BUILD_DIR:=$DEF_BUILD_DIR}

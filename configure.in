@@ -120,6 +120,14 @@ AC_PROG_RANLIB
 AC_CHECK_PROG(AR, ar, ar cru, ErrorCannotFind_AR) 
 
 
+#### Paths to another packages
+
+PM_PATH=${PM_PATH:=No_PmPath}
+
+NCBI_C_INCLUDE=${NCBI_C_INCLUDE:=No_NcbiCInclude}
+NCBI_C_LIB=${NCBI_C_LIB:=No_NcbiCLib}
+
+
 #### Turn on compilation warnings and adjust
 #### some compiler-specific flags and features
 
@@ -148,6 +156,7 @@ elif test "$CXX" = "cl.exe /TP" ; then
    make_shell=""
 fi
 changequote([, ])dnl
+
 
 
 ### ------------------------------------------------------------------
@@ -282,10 +291,9 @@ AC_SUBST(f_outlib)
 AC_SUBST(f_libpath)
 AC_SUBST(f_outexe)
 
-AC_SUBST(PM_SRC_PATH)
-AC_SUBST(PM_LIB_PATH)
+AC_SUBST(PM_PATH)
 AC_SUBST(NCBI_C_INCLUDE)
-AC_SUBST(NCBI_C_LIB_PATH)
+AC_SUBST(NCBI_C_LIB)
 
 AC_SUBST(KeepStateTarget)
 
@@ -314,6 +322,7 @@ ${configurables},
 builddir="$SAVE_builddir"
 exec_prefix="$SAVE_exec_prefix"
 x_configurables="$SAVE_x_configurables"
+ncbiconf="$SAVE_ncbiconf"
 
 echo "$x_configurables" | while read x_file ; do
    mv "$x_file" "$x_file.tmp"
@@ -331,9 +340,13 @@ mv config.status config.cache config.log "$status_dir"/
 
 echo "Configuration completed."
 echo ""
+echo "Tools / flags / paths:  $builddir/Makefile.mk"
+echo "Preprocessor defines:   $ncbiconf"
+echo ""
 echo "To build everything:  cd $builddir ; make all_r",
 
 SAVE_builddir="$builddir"
 SAVE_exec_prefix="$exec_prefix"
 SAVE_x_configurables="$x_configurables"
+SAVE_ncbiconf="$ncbiconf"
 )

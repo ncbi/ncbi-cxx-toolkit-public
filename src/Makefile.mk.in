@@ -83,17 +83,16 @@ LIBS     = @LIBS@
 
 #################################
 # Optional variables that may be needed to build some projects
+# (see in "configure.in" for the pre-set defaults)
 #
 
-# Path to PubMed sources (/net/neptune/pubmed/Cvs)
-PM_SRC_PATH = @PM_SRC_PATH@
-# Path to precompiled PubMed libs(???)
-PM_LIB_PATH = @PM_LIB_PATH@
+# Path to the root of PubMed tree -- sources, headers and precompiled libs
+PM_PATH = @PM_PATH@
 
-# Path to the NCBI C toolkit headers (/netopt/ncbi_tools/ver0.0/ncbi/include)
+# Path to the NCBI C toolkit headers
 NCBI_C_INCLUDE = @NCBI_C_INCLUDE@
-# Path to precomp. NCBI C toolkit libs(/netopt/ncbi_tools/ver0.0/ncbi/altlib)
-NCBI_C_LIB_PATH = @NCBI_C_LIB_PATH@
+# Path to the precompiled NCBI C toolkit libs
+NCBI_C_LIB = @NCBI_C_LIB@
 
 
 #################################

@@ -11,12 +11,13 @@
 
 
 USR_BUILD_DIR="$1"
-DEF_BUILD_DIR="egc"
+DEF_BUILD_DIR="egcs"
 
 set -a
 
-NCBI_C_INCLUDE=""
-NCBI_C_LIB=""
+PM_PATH=""
+NCBI_C_INCLUDE="//s/ncbi/include"
+NCBI_C_LIB="//s/ncbi/foo_lib"
 
 CONF_exe_ext=".exe"
 

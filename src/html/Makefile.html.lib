@@ -1,13 +1,10 @@
-#################################
 # $Id$
-#################################
 
 # Build library "XHTML"
 #################################
 
-CPPFLAGS = ${ORIG_CPPFLAGS} -I$(NCBI)/ver0.0/ncbi/include
-
 LIBOBJ = node html htmlhelper page nodemap pager selection components querypages asnwrite linkbar
-
 LIB    = xhtml
 
+CPPFLAGS = $(ORIG_CPPFLAGS) \
+  -I$(NCBI_C_INCLUDE)
