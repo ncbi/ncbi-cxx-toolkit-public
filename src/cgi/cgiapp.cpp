@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/05/06 23:16:45  vakatov
+* <fcgibuf.hpp> became a local header file.
+* Use #HAVE_LIBFASTCGI(from <ncbiconf.h>) rather than cmd.-line #FAST_CGI.
+*
 * Revision 1.7  1999/05/06 20:33:42  pubmed
 * CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
 *
@@ -54,7 +58,6 @@
 * Revision 1.1  1999/04/27 14:50:03  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
-*
 * ===========================================================================
 */
 
@@ -64,10 +67,12 @@
 #include <corelib/cgiapp.hpp>
 #include <corelib/cgictx.hpp>
 
-#if defined(FAST_CGI)
+#if defined(HAVE_LIBFASTCGI)
+// 3rd-party headers
 # include <fcgiapp.h>
-# include <corelib/fcgibuf.hpp>
-#endif
+// local headers
+# include <fcgibuf.hpp>
+#endif /* HAVE_LIBFASTCGI */
 
 BEGIN_NCBI_SCOPE
 
@@ -83,7 +88,7 @@ CCgiApplication* CCgiApplication::Instance(void)
 
 int CCgiApplication::Run(void)
 {
-#if defined(FAST_CGI)
+#if defined(HAVE_LIBFASTCGI)
     if ( !FCGX_IsCGI() ) {
         int iterations;
         {
@@ -157,7 +162,7 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
         return 0;
     }
     else
-#endif
+#endif /* HAVE_LIBFASTCGI */
         {
             _TRACE("CCgiApplication::Run: calling ProcessRequest");
             CCgiContext ctx(m_Argc, m_Argv, *this);
