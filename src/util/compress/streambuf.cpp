@@ -131,6 +131,9 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
 
     // Finish
     CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
+    if ( sp->m_LastStatus == CP::eStatus_EndOfData ) {
+        return;
+    }
     CT_CHAR_TYPE* buf = sp->m_OutBuf;
     unsigned long out_size = sp->m_OutBufSize, out_avail = 0;
 
@@ -197,7 +200,8 @@ int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
             out_size = sp->m_OutBuf + sp->m_OutBufSize - egptr();
         }
         sp->m_LastStatus = sp->m_Processor->Flush(buf, out_size, &out_avail);
-        if ( sp->m_LastStatus == CP::eStatus_Error ) {
+        if ( sp->m_LastStatus == CP::eStatus_Error  ||
+             sp->m_LastStatus == CP::eStatus_EndOfData ) {
            break;
         }
         if ( dir == CCompressionStream::eRead ) {
@@ -269,6 +273,10 @@ bool CCompressionStreambuf::ProcessStreamWrite()
     const streamsize count     = pptr() - pbase();
     unsigned long    in_avail  = count;
 
+    // End of stream has been detected
+    if ( m_Writer->m_LastStatus == CP::eStatus_EndOfData ) {
+        return false;
+    }
     // Loop until no data is left
     while ( in_avail ) {
         // Process next data piece
@@ -277,8 +285,9 @@ bool CCompressionStreambuf::ProcessStreamWrite()
             in_buf + count - in_avail, in_avail,
             m_Writer->m_OutBuf, m_Writer->m_OutBufSize,
             &in_avail, &out_avail);
-        if ( m_Writer->m_LastStatus != CP::eStatus_Success ) {
-            return false;
+        if ( m_Writer->m_LastStatus != CP::eStatus_Success  &&
+             m_Writer->m_LastStatus != CP::eStatus_EndOfData ) {
+           return false;
         }
         // Write the data to the underlying stream
         if ( out_avail  &&
@@ -298,6 +307,10 @@ bool CCompressionStreambuf::ProcessStreamRead()
     unsigned long in_len, in_avail, out_size, out_avail;
     streamsize    n_read;
 
+    // End of stream has been detected
+    if ( m_Reader->m_LastStatus == CP::eStatus_EndOfData ) {
+        return false;
+    }
     // Put data into the compressor until there is something
     // in the output buffer
     do {
@@ -325,7 +338,8 @@ bool CCompressionStreambuf::ProcessStreamRead()
             m_Reader->m_LastStatus = m_Reader->m_Processor->Process(
 				m_Reader->m_Begin, in_len, egptr(), out_size,
 				&in_avail, &out_avail);
-            if ( m_Reader->m_LastStatus != CP::eStatus_Success ) {
+            if ( m_Reader->m_LastStatus != CP::eStatus_Success  &&
+                 m_Reader->m_LastStatus != CP::eStatus_EndOfData ) {
                 return false;
             }
             m_Reader->m_LastOutAvail = out_avail;
@@ -436,6 +450,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/07/15 15:52:50  ivanov
+ * Added correct handling end of stream state.
+ *
  * Revision 1.6  2003/06/17 15:47:31  ivanov
  * The second Compression API redesign. Rewritten CCompressionStreambuf to use
  * I/O stream processors of class CCompressionStreamProcessor.
