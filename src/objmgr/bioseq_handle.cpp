@@ -57,6 +57,7 @@
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seqdesc.hpp>
 
 #include <algorithm>
 
@@ -771,7 +772,7 @@ bool CBioseq_EditHandle::AddSeqdesc(CSeqdesc& d) const
 }
 
 
-bool CBioseq_EditHandle::RemoveSeqdesc(const CSeqdesc& d) const
+CRef<CSeqdesc> CBioseq_EditHandle::RemoveSeqdesc(const CSeqdesc& d) const
 {
     return x_GetInfo().RemoveSeqdesc(d);
 }
@@ -883,6 +884,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2005/02/28 15:23:05  grichenk
+* RemoveDesc() returns CRef<CSeqdesc>
+*
 * Revision 1.87  2005/02/22 15:16:41  grichenk
 * Added optional depth and limit to ContainsSegment()
 *

@@ -124,7 +124,7 @@ public:
     void ResetDescr(void);
     void SetDescr(TDescr& v);
     bool AddSeqdesc(CSeqdesc& d);
-    bool RemoveSeqdesc(const CSeqdesc& d);
+    CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& d);
     void AddDescr(CSeq_entry_Info& src);
 
     // low level access for CSeqdesc_CI in case sequence is split
@@ -268,6 +268,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/02/28 15:23:05  grichenk
+* RemoveDesc() returns CRef<CSeqdesc>
+*
 * Revision 1.17  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

@@ -84,7 +84,7 @@ public:
     void SetDescr(TDescr& v);
     void ResetDescr(void);
     bool AddSeqdesc(CSeqdesc& d);
-    bool RemoveSeqdesc(const CSeqdesc& d);
+    CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& d);
     void AddSeq_descr(const TDescr& v);
 
     virtual bool x_IsSetDescr(void) const = 0;
@@ -216,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2005/02/28 15:23:05  grichenk
+ * RemoveDesc() returns CRef<CSeqdesc>
+ *
  * Revision 1.6  2004/10/07 14:03:32  vasilche
  * Use shared among TSEs CTSE_Split_Info.
  * Use typedefs and methods for TSE and DataSource locking.

@@ -45,6 +45,7 @@
 #include <objmgr/impl/bioseq_info.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seqdesc.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -277,7 +278,7 @@ bool CSeq_entry_EditHandle::AddSeqdesc(CSeqdesc& v) const
 }
 
 
-bool CSeq_entry_EditHandle::RemoveSeqdesc(const CSeqdesc& v) const
+CRef<CSeqdesc> CSeq_entry_EditHandle::RemoveSeqdesc(const CSeqdesc& v) const
 {
     return x_GetInfo().RemoveSeqdesc(v);
 }
@@ -495,6 +496,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/02/28 15:23:05  grichenk
+* RemoveDesc() returns CRef<CSeqdesc>
+*
 * Revision 1.15  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

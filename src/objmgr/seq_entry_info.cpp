@@ -46,6 +46,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Seqdesc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -504,7 +505,7 @@ bool CSeq_entry_Info::AddSeqdesc(CSeqdesc& d)
 }
 
 
-bool CSeq_entry_Info::RemoveSeqdesc(const CSeqdesc& d)
+CRef<CSeqdesc> CSeq_entry_Info::RemoveSeqdesc(const CSeqdesc& d)
 {
     x_Update(fNeedUpdate_descr);
     return m_Contents->RemoveSeqdesc(d);
@@ -586,6 +587,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/02/28 15:23:05  grichenk
+ * RemoveDesc() returns CRef<CSeqdesc>
+ *
  * Revision 1.21  2005/01/12 17:16:14  vasilche
  * Avoid performance warning on MSVC.
  *

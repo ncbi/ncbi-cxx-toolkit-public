@@ -464,7 +464,7 @@ public:
     void SetDescr(TDescr& v) const;
     TDescr& SetDescr(void) const;
     bool AddSeqdesc(CSeqdesc& d) const;
-    bool RemoveSeqdesc(const CSeqdesc& d) const;
+    CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& d) const;
     void AddSeq_descr(const TDescr& v) const;
     // inst
     void SetInst(TInst& v) const;
@@ -709,6 +709,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2005/02/28 15:23:05  grichenk
+* RemoveDesc() returns CRef<CSeqdesc>
+*
 * Revision 1.77  2005/02/22 15:16:41  grichenk
 * Added optional depth and limit to ContainsSegment()
 *

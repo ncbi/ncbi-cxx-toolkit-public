@@ -248,7 +248,7 @@ public:
     void ResetDescr(void) const;
     void SetDescr(TDescr& v) const;
     bool AddDesc(CSeqdesc& v) const;
-    bool RemoveDesc(CSeqdesc& v) const;
+    CRef<CSeqdesc> RemoveDesc(CSeqdesc& v) const;
     void AddAllDescr(CSeq_descr& v) const;
 
     /// Create new empty seq-entry
@@ -525,6 +525,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/02/28 15:23:05  grichenk
+* RemoveDesc() returns CRef<CSeqdesc>
+*
 * Revision 1.15  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *

@@ -219,7 +219,7 @@ public:
     void SetDescr(TDescr& v) const;
     void ResetDescr(void) const;
     bool AddSeqdesc(CSeqdesc& v) const;
-    bool RemoveSeqdesc(const CSeqdesc& v) const;
+    CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& v) const;
     void AddDescr(const CSeq_entry_EditHandle& src_entry) const;
 
     typedef CBioseq_EditHandle TSeq;
@@ -570,6 +570,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/02/28 15:23:05  grichenk
+* RemoveDesc() returns CRef<CSeqdesc>
+*
 * Revision 1.18  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *

@@ -246,23 +246,25 @@ bool CBioseq_Base_Info::AddSeqdesc(CSeqdesc& d)
 }
 
 
-bool CBioseq_Base_Info::RemoveSeqdesc(const CSeqdesc& d)
+CRef<CSeqdesc> CBioseq_Base_Info::RemoveSeqdesc(const CSeqdesc& d)
 {
     x_Update(fNeedUpdate_descr);
     if ( !IsSetDescr() ) {
-        return false;
+        return CRef<CSeqdesc>(0);
     }
     TDescr::Tdata& s = x_SetDescr().Set();
     NON_CONST_ITERATE ( TDescr::Tdata, it, s ) {
         if ( it->GetPointer() == &d ) {
+            // Lock the object to prevent destruction
+            CRef<CSeqdesc> desc_nc = *it;
             s.erase(it);
             if ( s.empty() ) {
                 ResetDescr();
             }
-            return true;
+            return desc_nc;
         }
     }
-    return false;
+    return CRef<CSeqdesc>(0);
 }
 
 
@@ -434,6 +436,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/02/28 15:23:05  grichenk
+* RemoveDesc() returns CRef<CSeqdesc>
+*
 * Revision 1.7  2004/10/07 14:03:32  vasilche
 * Use shared among TSEs CTSE_Split_Info.
 * Use typedefs and methods for TSE and DataSource locking.

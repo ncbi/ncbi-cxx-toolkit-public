@@ -108,15 +108,15 @@ bool CTSE_Handle::Blob_IsSuppressedTemp(void) const
 
 bool CTSE_Handle::Blob_IsSuppressedPerm(void) const
 {
-    return x_GetTSE_Info().GetBlobState() &
-        CBioseq_Handle::fState_suppress_perm;
+    return (x_GetTSE_Info().GetBlobState() &
+        CBioseq_Handle::fState_suppress_perm) != 0;
 }
 
 
 bool CTSE_Handle::Blob_IsDead(void) const
 {
-    return x_GetTSE_Info().GetBlobState() &
-        CBioseq_Handle::fState_dead;
+    return (x_GetTSE_Info().GetBlobState() &
+        CBioseq_Handle::fState_dead) != 0;
 }
 
 
