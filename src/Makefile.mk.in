@@ -52,10 +52,12 @@ COPY     = cp -p
 BINCOPY  = @BINCOPY@
 TOUCH    = touch
 BINTOUCH = $(TOUCH)
-LN_S	 = @LN_S@
+LN_S	   = @LN_S@
 
 CC_FILTER  = @CC_FILTER@
 CXX_FILTER = @CXX_FILTER@
+
+CHECK_ARG = @CHECK_ARG@
 
 
 ### Configurable compiler/librarian/linker binaries and options
@@ -148,6 +150,8 @@ FAST_CXXFLAGS = @FAST_CXXFLAGS@
 COMPILER = @COMPILER@
 OSTYPE   = @OSTYPE@
 
+### Configuration summary
+signature = @signature@
 
 ### Do not use any default suffix rules
 .SUFFIXES:
@@ -173,7 +177,7 @@ DL_LIBS      = @DL_LIBS@
 
 #################################
 # Optional variables that may be needed to build some projects
-# (see in "configure.in" for the pre-set defaults)
+# (see in "configure.ac" for the pre-set defaults)
 #
 
 # --with-local-lbsm:  --->  src/connect/Makefile.[x]connect.lib
