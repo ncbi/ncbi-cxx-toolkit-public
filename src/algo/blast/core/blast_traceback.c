@@ -111,52 +111,37 @@ s_BlastCheckHSPInclusion(BlastHSP* *hsp_array, Int4 hspcnt,
    return;
 }
 
-/* Window size used to scan HSP for highest score region, where gapped
- * extension starts. 
- */
-#define HSP_MAX_WINDOW 11
-
-/** Function to check that the highest scoring region in an HSP still gives a 
- * positive score. This value was originally calcualted by 
- * BlastGetStartForGappedAlignment but it may have changed due to the 
- * introduction of ambiguity characters. Such a change can lead to 'strange' 
- * results from ALIGN. 
- * @param hsp An HSP structure [in]
- * @param query Query sequence buffer [in]
- * @param subject Subject sequence buffer [in]
- * @param sbp Scoring block containing matrix [in]
- * @return TRUE if region aroung starting offsets gives a positive score
-*/
 Boolean
-BLAST_CheckStartForGappedAlignment (BlastHSP* hsp, Uint1* query, 
-                                    Uint1* subject, const BlastScoreBlk* sbp)
+BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp, const Uint1* query, 
+                                   const Uint1* subject, const BlastScoreBlk* sbp)
 {
-   Int4 index1, score, start, end, width;
-   Uint1* query_var,* subject_var;
-   Boolean positionBased = (sbp->posMatrix != NULL);
-   
-   width = MIN((hsp->query.gapped_start-hsp->query.offset), HSP_MAX_WINDOW/2);
-   start = hsp->query.gapped_start - width;
-   end = MIN(hsp->query.end, hsp->query.gapped_start + width);
-   /* Assures that the start of subject is above zero. */
-   if ((hsp->subject.gapped_start + start - hsp->query.gapped_start) < 0)
-      start -= hsp->subject.gapped_start + (start - hsp->query.gapped_start);
-   query_var = query + start;
-   subject_var = subject + hsp->subject.gapped_start + 
-      (start - hsp->query.gapped_start);
-   score=0;
-   for (index1=start; index1<end; index1++)
-      {
-         if (!positionBased)
-	    score += sbp->matrix[*query_var][*subject_var];
-         else
-	    score += sbp->posMatrix[index1][*subject_var];
-         query_var++; subject_var++;
-      }
-   if (score <= 0)
-      return FALSE;
-   
-   return TRUE;
+    Int4 index, score, start, end, width;
+    Uint1* query_var,* subject_var;
+    Boolean positionBased = (sbp->posMatrix != NULL);
+    
+    width = MIN((hsp->query.gapped_start-hsp->query.offset), HSP_MAX_WINDOW/2);
+    start = hsp->query.gapped_start - width;
+    end = MIN(hsp->query.end, hsp->query.gapped_start + width);
+    /* Assures that the start of subject is above zero. */
+    if ((hsp->subject.gapped_start + start - hsp->query.gapped_start) < 0) {
+        start -= hsp->subject.gapped_start + (start - hsp->query.gapped_start);
+    }
+    query_var = ((Uint1*) query) + start;
+    subject_var = ((Uint1*) subject) + hsp->subject.gapped_start + 
+        (start - hsp->query.gapped_start);
+    score=0;
+    for (index = start; index < end; index++) {
+        if (!positionBased)
+            score += sbp->matrix[*query_var][*subject_var];
+        else
+            score += sbp->posMatrix[index][*subject_var];
+        query_var++; subject_var++;
+    }
+    if (score <= 0) {
+        return FALSE;
+    }
+    
+    return TRUE;
 }
 
 static Int4 

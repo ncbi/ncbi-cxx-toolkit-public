@@ -61,11 +61,16 @@ Int2
 BLAST_TracebackToGapEditBlock(Int4* S, Int4 M, Int4 N, Int4 start1,
                                Int4 start2, GapEditBlock** edit_block);
 
+/** Window size used to scan HSP for highest score region, where gapped
+ * extension starts. 
+ */
+#define HSP_MAX_WINDOW 11
+
 /** Function to check that the highest scoring region in an HSP still gives a 
  * positive score. This value was originally calcualted by 
- * GetStartForGappedAlignment but it may have changed due to the introduction 
- * of ambiguity characters. Such a change can lead to 'strange' results from 
- * ALIGN. 
+ * BlastGetStartForGappedAlignment but it may have changed due to the 
+ * introduction of ambiguity characters. Such a change can lead to 'strange' 
+ * results from ALIGN. 
  * @param hsp An HSP structure [in]
  * @param query Query sequence buffer [in]
  * @param subject Subject sequence buffer [in]
@@ -73,8 +78,10 @@ BLAST_TracebackToGapEditBlock(Int4* S, Int4 M, Int4 N, Int4 start1,
  * @return TRUE if region aroung starting offsets gives a positive score
 */
 Boolean
-BLAST_CheckStartForGappedAlignment (BlastHSP* hsp, Uint1* query, 
-                                    Uint1* subject, const BlastScoreBlk* sbp);
+BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp, 
+                                   const Uint1* query, 
+                                   const Uint1* subject, 
+                                   const BlastScoreBlk* sbp);
 
 
 
@@ -88,6 +95,9 @@ BLAST_CheckStartForGappedAlignment (BlastHSP* hsp, Uint1* query,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/11/26 15:16:56  camacho
+ * Moved common definition to private header
+ *
  * Revision 1.2  2004/11/24 15:41:24  camacho
  * Renamed *_pri.h to *_priv.h; moved BLAST_CheckStartForGappedAlignment to private header
  *

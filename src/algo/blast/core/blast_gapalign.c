@@ -2867,11 +2867,6 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
     return best_score;
 }
 
-/** Size of a window in which to look for best starting points for 
- * gapped alignment.
- */
-#define HSP_MAX_WINDOW 11
-
 Int4 
 BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
    const BlastScoreBlk* sbp, Uint4 q_start, Uint4 q_length, 
