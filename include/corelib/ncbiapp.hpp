@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Vsevolod Sandomirskiy, Denis Vakatov
+ * Authors:  Denis Vakatov, Vsevolod Sandomirskiy
  *
  * File Description:
  *   CNcbiApplication -- a generic NCBI application class
@@ -36,13 +36,15 @@
 #include <corelib/ncbistd.hpp>
 #include <memory>
 
-// Avoid name clash with the NCBI C Toolkit
+
+// Avoid preprocessor name clash with the NCBI C Toolkit
 #if !defined(NCBI_OS_UNIX)  ||  defined(HAVE_NCBI_C)
 #  if defined(GetArgs)
 #    undef GetArgs
 #  endif
 #  define GetArgs GetArgs
 #endif
+
 
 
 BEGIN_NCBI_SCOPE
@@ -76,6 +78,8 @@ public:
     NCBI_EXCEPTION_DEFAULT(CAppException,CCoreException);
 };
 
+
+
 ///////////////////////////////////////////////////////
 // CNcbiApplication
 //
@@ -102,8 +106,10 @@ enum EAppDiagStream {
 };
 
 
+
 // Basic (abstract) NCBI application class
-class CNcbiApplication {
+class CNcbiApplication
+{
 public:
     // Singleton method
     static CNcbiApplication* Instance(void);
@@ -184,23 +190,23 @@ protected:
     virtual bool SetupDiag_AppSpecific(void);
 
     // Default method to try load (add to "reg") from the config.file.
-    // If "conf" arg (as passed to the class constructor)
+    // If "conf" arg (as passed to AppMain()):
     //   NULL      -- dont even try to load registry from any file at all;
-    //   non-empty -- if "conf" contain path then try to load from the 
-    //                conf.file of name "conf" only (!). Else - see NOTE. 
-    //                TIP:  if the path is not full-qualified then:
-    //                     if it starts from "../" or "./" -- look in the
-    //                     working dir.
-    //   empty     -- compose the conf.file name from the application name
+    //   non-empty -- if "conf" contains a path, then try to load from the 
+    //                conf.file of name "conf" (only!). Else - see NOTE. 
+    //                TIP: if the path is not fully qualified then:
+    //                     if it starts from "../" or "./" -- look starting
+    //                     from the current working dir.
+    //   empty     -- compose conf.file name from the application name
     //                plus ".ini". If it does not match an existing
-    //                file then try to strip file extensions, e.g., for
+    //                file, then try to strip file extensions, e.g. for
     //                "my_app.cgi.exe" -- try subsequently:
     //                    "my_app.cgi.exe.ini", "my_app.cgi.ini", "my_app.ini".
     // NOTE:
     // If "conf" arg is empty or non-empty, but without path, then config file
-    // will be seek in next order:
+    // will be sought for in the following order:
     //   - in the current work directory;
-    //   - in the dir, defined by environment variable "NCBI";
+    //   - in the dir defined by environment variable "NCBI";
     //   - in the user home directory;
     //   - in the program dir.
     //
@@ -211,6 +217,7 @@ protected:
 
     // Get home dir for current user
     string GetHomeDir(void);
+
 private:
     static CNcbiApplication*   m_Instance;   // current app.instance
     auto_ptr<CNcbiEnvironment> m_Environ;    // cached application environment
@@ -234,7 +241,7 @@ inline const CNcbiArguments& CNcbiApplication::GetArguments(void) const {
 inline const CArgs& CNcbiApplication::GetArgs(void) const {
     if ( !m_Args.get() ) {
         NCBI_THROW(CAppException,eUnsetArgs,
-            "Command-line argument description is not found");
+                   "Command-line argument description is not found");
     }
     return *m_Args;
 }
@@ -258,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2002/10/28 22:36:15  vakatov
+ * Fixes in some comments
+ *
  * Revision 1.25  2002/08/08 18:38:16  gouriano
  * added HideStdArgs function
  *
