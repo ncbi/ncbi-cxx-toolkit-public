@@ -34,7 +34,7 @@ XAPP = $(APP)@exe_ext@
 XOBJ = $(SOURCES:=@obj_ext@)
 XOBJ2 = $(OBJ:=@obj_ext@)
 XLIB = $(runpath) @f_libpath@$(libdir) $(LIB:%=@lib_l_pre@%@lib_l_ext@)
-XLIBDEP = $(LIB:%=$(libdir)/.%.dep)
+XLIBDEP = $(LIB:%=$(status_dir)/.%.dep)
 
 ASK_REBUILD = \
     base=`echo $$l | sed -e 's,.*/\.\([^.]*\)\.dep$$,\1,'`; \
@@ -52,17 +52,20 @@ SKIP_REBUILD = true
 @IF_REBUILDING_LIBS@ SKIP_REBUILD = false
 @IF_REBUILDING_CONDITIONALLY@ SKIP_REBUILD = ($(ASK_REBUILD))
 
-$(XAPP)::
+$(XAPP):: $(XOBJ) $(XLIBDEP)
 	@for l in $(XLIBDEP) /dev/null ; do \
 	   read srcdir builddir tmpl < "$$l" ; \
 	   test -z "$$builddir" || $(SKIP_REBUILD) || \
 	   (cd "$$builddir" && $(MAKE) $(MFLAGS) libs srcdir="$$srcdir") ; \
 	done
-
-$(XAPP):: $(XOBJ) $(XLIBDEP)
 	$(LINK) $(LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP)
 	@$(STRIP) $(XAPP)
 	$(BINCOPY) $(XAPP) $(bindir)/$(XAPP)
+
+
+### Temporary measure to smooth .*.dep move
+$(status_dir)/.%.dep: $(libdir)/.%.dep
+	@mv $< $@
 
 
 ### Standard targets(non-recursive)

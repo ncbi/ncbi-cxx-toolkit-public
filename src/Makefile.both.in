@@ -67,12 +67,14 @@ $(XLIB): $(XLIBOBJ)
 	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
 	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
-	@$(BINCOPY) $(XLIBDEP) $(libdir)
-	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
+	@$(BINCOPY) $(XLIBDEP) $(status_dir)
+	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP)
 	@if [ -d $(libdir) -a -w $(libdir) ]; then \
-	    cd $(libdir) && \
-	    $(RM) $(XLIBLINK) $(XLIBDEPLINK) && \
-	    $(LN_S) $(XLIB) $(XLIBLINK) && \
+	    cd $(libdir) && $(RM) $(XLIBLINK) && $(LN_S) $(XLIB) $(XLIBLINK); \
+	fi
+	@if [ -d $(status_dir) -a -w $(status_dir) ]; then \
+	    cd $(status_dir) && \
+	    $(RM) $(XLIBDEPLINK) && \
 	    $(LN_S) $(XLIBDEP) $(XLIBDEPLINK); \
 	fi
 
@@ -91,8 +93,8 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	@echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP)
 	@$(TOUCH) -r $(XDLL) $(XDLLDEP)
 	$(BINCOPY) $(XDLL) $(libdir)
-	@$(BINCOPY) $(XDLLDEP) $(libdir)
-	@$(BINTOUCH) -r $(libdir)/$(XDLL) $(libdir)/$(XDLLDEP)
+	@$(BINCOPY) $(XDLLDEP) $(status_dir)
+	@$(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
 
 
 ### Standard targets
@@ -110,5 +112,5 @@ clean:
 
 purge: clean
 	-$(RM) $(libdir)/$(XLIB) $(libdir)/$(XDLL) $(libdir)/$(XLIBLINK) \
-		$(libdir)/$(XLIBDEP) $(libdir)/$(XDLLDEP) \
-		$(libdir)/$(XLIBDEPLINK)
+		$(status_dir)/$(XLIBDEP) $(status_dir)/$(XDLLDEP) \
+		$(status_dir)/$(XLIBDEPLINK)
