@@ -756,19 +756,31 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
         start_i = starts2.lower_bound(start2);
         if (start_i != starts2.end()) {
 
-            // check for overlap below
+            // check below
             if (start_i->first > start2) {
                 if (start_i != starts2.begin()) {
                     start_i--;
+                    // there should not be an overlap
                     if (start_i->first + start_i->second->m_Len > start2) {
                         return false;
-                    } else {
-                        start_i++;
                     }
+                    // no overlap, check for consistency
+                    if (match->m_StrandsDiffer) {
+                        if (start_i->second->m_StartIts[seq1]->first <
+                            start1 + len) {
+                            return false;
+                        }
+                    } else {
+                        if (start_i->second->m_StartIts[seq1]->first + 
+                            start_i->second->m_Len > start1) {
+                            return false;
+                        }
+                    }
+                    start_i++;
                 }
             }
         
-            // check for overlap above
+            // check the overlap for consistency
             while (start_i != starts2.end()  &&  
                    start_i->first < start2 + len) {
                 if (start_i->second->m_StartIts[seq1]->first != start1 + 
@@ -778,6 +790,19 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
                     return false;
                 }
                 start_i++;
+            }
+
+            // check above for consistency
+            if (match->m_StrandsDiffer) {
+                if (start_i->second->m_StartIts[seq1]->first + 
+                    start_i->second->m_Len > start1) {
+                    return false;
+                }
+            } else {
+                if (start_i->second->m_StartIts[seq1]->first < 
+                    start1 + len) {
+                    return false;
+                }
             }
         }
 
@@ -791,8 +816,9 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
             CAlnMixSegment::TStartIterators::iterator it;
             TSeqPos tmp_start =
                 match->m_StrandsDiffer ? start2 + len : start2;
-            while (start_i != starts1.end()  &&  
+            while (start_i != starts1.end()  &&
                    start_i->first < start1 + len) {
+
                 CAlnMixSegment::TStartIterators& its = 
                     start_i->second->m_StartIts;
 
@@ -801,17 +827,17 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
                 }
 
                 if ((it = its.find(seq2)) != its.end()) {
-                    if (it->second->second != tmp_start) {
+                    if (it->second->first != tmp_start) {
                         // found an inconsistent prev match
                         return false;
                     }
                 }
 
-                start_i++;
-                
                 if ( !match->m_StrandsDiffer ) {
                     tmp_start += start_i->second->m_Len;
                 }
+
+                start_i++;
             }
         }
     }
@@ -1077,6 +1103,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2002/12/30 20:55:47  todorov
+* Added range fitting validation to x_SecondRowFits
+*
 * Revision 1.11  2002/12/30 18:08:39  todorov
 * 1) Initialized extra rows' m_StartIt
 * 2) Fixed a bug in x_SecondRowFits
