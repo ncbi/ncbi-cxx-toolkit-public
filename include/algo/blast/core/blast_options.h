@@ -159,6 +159,8 @@ typedef struct BlastInitialWordOptions {
                          extension */
 } BlastInitialWordOptions, *BlastInitialWordOptionsPtr;
 
+#define UNGAPPED_CUTOFF_EVALUE 0.05
+
 /** Parameter block that contains a pointer to BlastInitialWordOptions
  * and parsed values for those options that require it 
  * (in this case x_dropoff).
@@ -386,13 +388,15 @@ BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters);
  * @param ext_params Extension parameters (containing gap trigger value) [in]
  * @param sbp Statistical (Karlin-Altschul) information [in]
  * @param query_info Query information [in]
+ * @param avglen Average length of the subject sequence [in]
  * @param parameters Resulting parameters [out]
 */
 Int2
 BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options, 
    BlastHitSavingOptionsPtr hit_options, 
    BlastExtensionParametersPtr ext_params, BLAST_ScoreBlkPtr sbp, 
-   BlastQueryInfoPtr query_info, BlastInitialWordParametersPtr *parameters);
+   BlastQueryInfoPtr query_info, FloatHi avglen, 
+   BlastInitialWordParametersPtr *parameters);
 
 /** Deallocate memory for BlastExtensionOptions. */
 BlastExtensionOptionsPtr
