@@ -327,15 +327,14 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
                 break;
             }
         } else {
-            size_t i, n;
+            size_t i;
             for (i = 0; i < sizeof(k_FlagTag)/sizeof(k_FlagTag[0]); i++) {
-                n = strlen(k_FlagTag[i]);
-                if (strncasecmp(str, k_FlagTag[i], n) == 0)
+                size_t n = strlen(k_FlagTag[i]);
+                if (strncasecmp(str, k_FlagTag[i], n) == 0) {
+                    info->flag = (ESERV_Flags) i;
+                    str += n;
                     break;
-            }
-            if (i < sizeof(k_FlagTag)/sizeof(k_FlagTag[0])) {
-                info->flag = (ESERV_Flags) i;
-                str += n;
+                }
             }
         }
         if (*str && !isspace((unsigned char)(*str)))
@@ -833,6 +832,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2003/03/07 22:21:31  lavr
+ * Heed 'uninitted use' (false) warning by moving lines around
+ *
  * Revision 6.46  2003/02/28 14:48:38  lavr
  * String type match for size_t and int in few expressions
  *
