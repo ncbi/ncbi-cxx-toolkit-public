@@ -86,8 +86,9 @@ tds_ctx_get_parent(TDSCONTEXT *ctx)
 
 int tds_swap_bytes(unsigned char *buf, int bytes)
 {
-unsigned char tmp;
-int i;
+  unsigned char tmp;
+ 
+  int i;
 
 	/* if (bytes % 2) { return 0 }; */
 	for (i=0;i<bytes/2;i++) {
@@ -98,6 +99,44 @@ int i;
 	return bytes;
 }
 
+#ifdef NCBI_FTDS
+void tds_swap_2bytes(unsigned char *buf)
+{
+  unsigned char t= buf[0];
+  buf[0]= buf[1];
+  buf[1]= t;
+}
+
+void tds_swap_4bytes(unsigned char *buf)
+{
+  unsigned char t= buf[0];
+  buf[0]= buf[3];
+  buf[3]= t;
+  t= buf[1];
+  buf[1]= buf[2];
+  buf[2]= t;
+}
+
+void tds_swap_8bytes(unsigned char *buf)
+{
+  unsigned char t= buf[0];
+  buf[0]= buf[7];
+  buf[7]= t;
+
+  t= buf[1];
+  buf[1]= buf[6];
+  buf[6]= t;
+
+  t= buf[2];
+  buf[2]= buf[5];
+  buf[5]= t;
+  
+  t= buf[3];
+  buf[3]= buf[4];
+  buf[4]= t;
+
+}
+#endif
 /* ============================== tdsdump_off() ==============================
  *
  * Def:  temporarily turn off logging.  Note- 

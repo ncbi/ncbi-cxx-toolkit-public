@@ -43,6 +43,12 @@ static void *no_unused_tdsutil_h_warn[]={rcsid_tdsutil_h, no_unused_tdsutil_h_wa
 
 #define MAXPATH 256
 
+#ifdef NCBI_FTDS
+void tds_swap_2bytes(unsigned char *buf);
+void tds_swap_4bytes(unsigned char *buf);
+void tds_swap_8bytes(unsigned char *buf);
+#endif
+
 TDS_SMALLINT tds_get_smallint(TDSSOCKET *tds);
 unsigned char tds_get_byte(TDSSOCKET *tds);
 unsigned char tds_peek(TDSSOCKET *tds);

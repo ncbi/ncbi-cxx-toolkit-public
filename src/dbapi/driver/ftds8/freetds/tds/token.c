@@ -1718,11 +1718,48 @@ int tds_get_token_size(int marker)
 			return 0;
 	}
 }
+
 void tds_swap_datatype(int coltype, unsigned char *buf)
 {
 TDS_NUMERIC *num;
 
 	switch(coltype) {
+#ifdef NCBI_FTDS
+		case SYBINT2:
+			tds_swap_2bytes(buf); break;
+		case SYBINT4:
+			tds_swap_4bytes(buf); break;
+		case SYBINT8:
+			tds_swap_8bytes(buf); break;
+		case SYBREAL:
+			tds_swap_4bytes(buf); break;
+		case SYBFLT8:
+			tds_swap_8bytes(buf); break;
+		case SYBMONEY4:
+			tds_swap_4bytes(buf); break;
+		case SYBMONEY:
+			tds_swap_4bytes(buf);
+			tds_swap_4bytes(&buf[4]); break;
+		case SYBDATETIME4:
+			tds_swap_2bytes(buf);
+			tds_swap_2bytes(&buf[2]); break;
+		case SYBDATETIME:
+			tds_swap_4bytes(buf);
+			tds_swap_4bytes(&buf[4]); break;
+		case SYBNUMERIC:
+		case SYBDECIMAL:
+			num = (TDS_NUMERIC *) buf;
+            /* swap the sign */
+            num->array[0] = (num->array[0] == 0) ? 1 : 0;
+            /* swap the data */
+            tds_swap_bytes(&(num->array[1]),
+                           g__numeric_bytes_per_prec[num->precision] - 1); break;
+
+        case SYBUNIQUE:
+			tds_swap_4bytes(buf);
+			tds_swap_2bytes(&buf[4]); 
+			tds_swap_2bytes(&buf[6]); break;
+#else
 		case SYBINT2:
 			tds_swap_bytes(buf,2); break;
 		case SYBINT4:
@@ -1757,6 +1794,7 @@ TDS_NUMERIC *num;
 			tds_swap_bytes(buf,4);
 			tds_swap_bytes(&buf[4],2); 
 			tds_swap_bytes(&buf[6],2); break;
+#endif
 
 	}
 }
