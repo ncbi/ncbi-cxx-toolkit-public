@@ -577,6 +577,8 @@ void CFeatureItem::x_AddQuals(CFFContext& ctx) const
     CSeqFeatData::ESubtype subtype = data.GetSubtype();
 
     bool pseudo = m_Feat->CanGetPseudo() ? m_Feat->GetPseudo() : false;
+    bool had_prot_desc = false;
+    string precursor_comment;
 
     // add various common qualifiers...
 
@@ -591,10 +593,7 @@ void CFeatureItem::x_AddQuals(CFFContext& ctx) const
             }
         }
     }
-    // comment
-    if (m_Feat->IsSetComment()) {
-        x_AddQual(eFQ_seqfeat_note, new CFlatStringQVal(m_Feat->GetComment()));
-    }
+    
     // dbxref
     if (m_Feat->IsSetDbxref()) {
         x_AddQual(eFQ_db_xref, new CFlatXrefQVal(m_Feat->GetDbxref(), &m_Quals));
@@ -667,13 +666,13 @@ void CFeatureItem::x_AddQuals(CFFContext& ctx) const
         x_AddGeneQuals(*m_Feat, scope);
         break;
     case CSeqFeatData::e_Cdregion:
-        x_AddCdregionQuals(*m_Feat, ctx, pseudo);
+        x_AddCdregionQuals(*m_Feat, ctx, pseudo, had_prot_desc);
         break;
     case CSeqFeatData::e_Rna:
         x_AddRnaQuals(*m_Feat, ctx, pseudo);
         break;
     case CSeqFeatData::e_Prot:
-        x_AddProtQuals(*m_Feat, ctx, pseudo);
+        x_AddProtQuals(*m_Feat, ctx, pseudo, had_prot_desc, precursor_comment);
         break;
     case CSeqFeatData::e_Region:
         x_AddRegionQuals(*m_Feat, ctx);
@@ -741,7 +740,17 @@ void CFeatureItem::x_AddQuals(CFFContext& ctx) const
             x_AddQual(eFQ_pseudo, new CFlatBoolQVal(true));
         }
     }
-    
+    // comment
+    if (m_Feat->IsSetComment()) {
+        string comment = m_Feat->GetComment();
+        if ( had_prot_desc  &&  NStr::EndsWith(m_Feat->GetComment(), ".") ) {
+            comment.erase(comment.length() - 1);
+        }
+        if ( precursor_comment != comment ) {
+            x_AddQual(eFQ_seqfeat_note, new CFlatStringQVal(comment));
+        }
+    }
+
     // now go through gbqual list
     if (m_Feat->IsSetQual()) {
         x_ImportQuals(m_Feat->GetQual());
@@ -937,7 +946,7 @@ void CFeatureItem::x_AddGeneQuals(const CSeq_feat& gene, CScope& scope) const
 void CFeatureItem::x_AddCdregionQuals
 (const CSeq_feat& cds,
  CFFContext& ctx,
- bool& pseudo) const
+ bool& pseudo, bool& had_prot_desc) const
 {
     CScope& scope = ctx.GetScope();
     
@@ -991,6 +1000,7 @@ void CFeatureItem::x_AddCdregionQuals
                     }
                     if ( pref->CanGetDesc() ) {
                         x_AddQual(eFQ_prot_desc, new CFlatStringQVal(pref->GetDesc()));
+                        had_prot_desc = true;
                     }
                     if ( !pref->GetActivity().empty() ) {
                         x_AddQual(eFQ_prot_activity,
@@ -1082,29 +1092,29 @@ static const string s_ValidExceptionText[] = {
 
 
 static const string s_ValidRefSeqExceptionText[] = {
-  "RNA editing",
-  "reasons given in citation",
-  "ribosomal slippage",
-  "ribosome slippage",
-  "trans splicing",
-  "trans-splicing",
-  "alternative processing",
-  "alternate processing",
-  "artificial frameshift",
-  "non-consensus splice site",
-  "nonconsensus splice site",
-  "rearrangement required for product",
-  "modified codon recognition",
-  "alternative start codon",
-  "unclassified transcription discrepancy",
-  "unclassified translation discrepancy"
+    "RNA editing",
+    "alternate processing",
+    "alternative processing",
+    "alternative start codon",
+    "artificial frameshift",
+    "modified codon recognition",
+    "non-consensus splice site",
+    "nonconsensus splice site",
+    "rearrangement required for product",
+    "reasons given in citation",
+    "ribosomal slippage",
+    "ribosome slippage",
+    "trans splicing",
+    "trans-splicing",
+    "unclassified transcription discrepancy",
+    "unclassified translation discrepancy"
 };
 
 
 static bool s_IsValidExceptionText(const string& text)
 {
     CStaticArraySet<string> legal_text(s_ValidExceptionText,
-        sizeof(s_ValidExceptionText) / sizeof(string));
+        sizeof(s_ValidExceptionText));
     return legal_text.find(text) != legal_text.end();
 }
 
@@ -1112,7 +1122,7 @@ static bool s_IsValidExceptionText(const string& text)
 static bool s_IsValidRefSeqExceptionText(const string& text)
 {
     CStaticArraySet<string> legal_refseq_text(s_ValidRefSeqExceptionText,
-        sizeof(s_ValidRefSeqExceptionText) / sizeof(string));
+        sizeof(s_ValidRefSeqExceptionText));
     return legal_refseq_text.find(text) != legal_refseq_text.end();
 }
 
@@ -1246,14 +1256,22 @@ void CFeatureItem::x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier s
     }
     x_AddQual(slot, new CFlatSeqIdQVal(*best));
 
-    // all other ids are printed as db_xref
     ITERATE (CBioseq::TId, it, ids) {
         const CSeq_id& id = **it;
         if ( &id == best  &&  !id.IsGi() ) {
             // we've already done 'best'. 
             continue;
         }
-        x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(id, id.IsGi()));
+        if ( id.IsGeneral() ) {
+            const CDbtag& dbt = id.GetGeneral();
+            if ( dbt.GetType() != CDbtag::eDbtagType_PID ) {
+                if ( ids.size() == 1 ) {
+                    x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(id, id.IsGi()));
+                }
+            }
+        } else {
+            x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(id, id.IsGi()));
+        }
     }
 }
 
@@ -1436,8 +1454,11 @@ void CFeatureItem::x_AddQuals(const CCdregion& cds) const
     // translation table
     if ( cds.CanGetCode() ) {
         int gcode = cds.GetCode().GetId();
-        if ( gcode > 1 ) {
-            x_AddQual(eFQ_transl_table, new CFlatIntQVal(gcode));
+        if ( gcode > 0  &&  gcode != 255 ) {
+            // show code 1 only in GBSeq format.
+            if ( ctx.IsFormatGBSeq()  ||  gcode > 1 ) {
+                x_AddQual(eFQ_transl_table, new CFlatIntQVal(gcode));
+            }
         }
     }
 
@@ -1473,7 +1494,9 @@ void CFeatureItem::x_AddQuals(const CCdregion& cds) const
 void CFeatureItem::x_AddProtQuals
 (const CSeq_feat& feat,
  CFFContext& ctx, 
- bool pseudo) const
+ bool& pseudo,
+ bool& had_prot_desc,
+ string& precursor_comment) const
 {
     const CProt_ref& pref = feat.GetData().GetProt();
     CProt_ref::TProcessed processed = pref.GetProcessed();
@@ -1490,6 +1513,7 @@ void CFeatureItem::x_AddProtQuals
         if ( pref.CanGetDesc()  &&  !pref.GetDesc().empty() ) {
             if ( !ctx.IsProt() ) {
                 x_AddQual(eFQ_prot_desc, new CFlatStringQVal(pref.GetDesc()));
+                had_prot_desc = true;
             } else {
                 x_AddQual(eFQ_prot_name, new CFlatStringQVal(pref.GetDesc()));
             }
@@ -1517,7 +1541,15 @@ void CFeatureItem::x_AddProtQuals
         }
     } else { // protein feature on subpeptide bioseq
         x_AddQual(eFQ_derived_from, new CFlatSeqLocQVal(m_Feat->GetLocation()));
-        // !!!  check precursor_comment
+        // check precursor_comment
+        CConstRef<CSeq_feat> prot = 
+            GetBestOverlappingFeat(m_Feat->GetProduct(),
+                                   CSeqFeatData::e_Prot,
+                                   eOverlap_Simple,
+                                   ctx.GetScope());
+        if ( (bool)prot  &&  prot->CanGetComment() ) {
+            precursor_comment = prot->GetComment();
+        }
     }
     if ( !pseudo  &&  ctx.ShowPeptides() ) {
         if ( processed == CProt_ref::eProcessed_mature          ||
@@ -2750,6 +2782,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/04/13 16:46:39  shomrat
+* Changes due to GBSeq format
+*
 * Revision 1.17  2004/04/12 16:17:27  vasilche
 * Fixed '=' <-> '==' typo.
 *
