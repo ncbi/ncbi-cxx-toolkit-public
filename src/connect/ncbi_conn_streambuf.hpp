@@ -47,7 +47,7 @@
 #      define HAVE_BUGGY_IOS_CALLBACKS 1
 #    endif
 #  endif
-#  define CConn_StreambufBase streambuf
+#  define CConn_StreambufBase CNcbiStreambuf
 #endif/*NCBI_COMPILER_MIPSPRO*/
 
 
@@ -71,14 +71,14 @@ protected:
     virtual int         sync(void);
 
     // this method is declared here to be disabled (exception) at run-time
-    virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
+    virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
 private:
     CONN                m_Conn;      // underlying connection handle
 
     CT_CHAR_TYPE*       m_Buf;       // of size  2 * m_BufSize
-    CT_CHAR_TYPE*       m_WriteBuf;  // m_Buf
-    CT_CHAR_TYPE*       m_ReadBuf;   // m_Buf + m_BufSize
+    CT_CHAR_TYPE*       m_ReadBuf;   // m_Buf
+    CT_CHAR_TYPE*       m_WriteBuf;  // m_Buf + m_BufSize
     streamsize          m_BufSize;   // of m_WriteBuf, m_ReadBuf
 
     bool                m_Tie;       // always flush before reading
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2003/10/22 18:15:34  lavr
+ * CConn_Streambuf base class changed into CNcbiStreambuf
+ *
  * Revision 6.23  2003/09/23 21:06:07  lavr
  * Rearranged included headers
  *
