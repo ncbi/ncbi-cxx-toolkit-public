@@ -34,13 +34,13 @@
 #define ALGO_BLAST_API___BLAST_TYPE__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objmgr/scope.hpp>
-#include <objects/seqalign/Seq_align_set.hpp>
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
+    class CScope;
     class CSeq_loc;
+    class CSeq_align_set;
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
@@ -76,6 +76,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/08/25 17:21:12  camacho
+* Use forward declarations whenever possible
+*
 * Revision 1.3  2003/08/21 12:12:37  dicuccio
 * Changed constructors of SSeqLoc to take pointers insted of CConstRef<>/CRef<>.
 * Added constructors to take C++ references
