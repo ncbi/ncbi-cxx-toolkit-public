@@ -466,20 +466,19 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
     "SEQ_ALIGN_DensegLenStart",
-    "SEQ_ALIGN_StartLessthanZero",
     "SEQ_ALIGN_StartMorethanBiolen",
-    "SEQ_ALIGN_EndLessthanZero",
     "SEQ_ALIGN_EndMorethanBiolen",
-    "SEQ_ALIGN_LenLessthanZero",
     "SEQ_ALIGN_LenMorethanBiolen",
     "SEQ_ALIGN_SumLenStart",
-    "SEQ_ALIGN_AlignDimSeqIdNotMatch",
-    "SEQ_ALIGN_SegsDimSeqIdNotMatch",
+    "SEQ_ALIGN_SegsDimMismatch",
+    "SEQ_ALIGN_SegsNumsegMismatch",
+    "SEQ_ALIGN_SegsStartsMismatch",
+    "SEQ_ALIGN_SegsPresentMismatch",
+    "SEQ_ALIGN_SegsPresentStartsMismatch",
+    "SEQ_ALIGN_SegsPresentStrandsMismatch",
     "SEQ_ALIGN_FastaLike",
-    "SEQ_ALIGN_NullSegs",
     "SEQ_ALIGN_SegmentGap",
-    "SEQ_ALIGN_SegsDimOne",
-    "SEQ_ALIGN_AlignDimOne",
+    "SEQ_ALIGN_SegsInvalidDim",
     "SEQ_ALIGN_Segtype",
     "SEQ_ALIGN_BlastAligns",
 
@@ -987,10 +986,10 @@ suppresses duplicate features, so use of Graphic view is recommended.",
 but no accession. This is probably an error in parsing of a submission.",
 //  SEQ_FEAT_RnaProductMismatch
 "The RNA feature product type does not correspond to the RNA feature type. \
- These need to be consistent.",
+These need to be consistent.",
 //  SEQ_FEAT_DifferntIdTypesInSeqLoc
-"All ids in a single seq-loc which refer to the same bioseq should be of the"
-"same id type",
+"All ids in a single seq-loc which refer to the same bioseq should be of the \
+same id type",
 
 /* SEQ_ALIGN */
 
@@ -1003,19 +1002,10 @@ error.",
 //  SEQ_ALIGN_DensegLenStart
 "Please contact the sequence database for further help with this \
 error.",
-//  SEQ_ALIGN_StartLessthanZero
-"Please contact the sequence database for further help with this \
-error.",
 //  SEQ_ALIGN_StartMorethanBiolen
 "Please contact the sequence database for further help with this \
 error.",
-//  SEQ_ALIGN_EndLessthanZero
-"Please contact the sequence database for further help with this \
-error.",
 //  SEQ_ALIGN_EndMorethanBiolen
-"Please contact the sequence database for further help with this \
-error.",
-//  SEQ_ALIGN_LenLessthanZero
 "Please contact the sequence database for further help with this \
 error.",
 //  SEQ_ALIGN_LenMorethanBiolen
@@ -1024,25 +1014,31 @@ error.",
 //  SEQ_ALIGN_SumLenStart
 "Please contact the sequence database for further help with this \
 error.",
-//  SEQ_ALIGN_AlignDimSeqIdNotMatch
+//  SEQ_ALIGN_SegsDimMismatch
 "Please contact the sequence database for further help with this \
 error.",
-//  SEQ_ALIGN_SegsDimSeqIdNotMatch
+//  SEQ_ALIGN_SegsNumsegMismatch
+"Please contact the sequence database for further help with this \
+error.",
+//  SEQ_ALIGN_SegsStartsMismatch
+"Please contact the sequence database for further help with this \
+error.",
+//  SEQ_ALIGN_SegsPresentMismatch
+"Please contact the sequence database for further help with this \
+error.",
+//  SEQ_ALIGN_SegsPresentStartsMismatch
+"Please contact the sequence database for further help with this \
+error.",
+//  SEQ_ALIGN_SegsPresentStrandsMismatch
 "Please contact the sequence database for further help with this \
 error.",
 //  SEQ_ALIGN_FastaLike
 "Please contact the sequence database for further help with this \
 error.",
-//  SEQ_ALIGN_NullSegs
-"Please contact the sequence database for further help with this \
-error.",
 //  SEQ_ALIGN_SegmentGap
 "Please contact the sequence database for further help with this \
 error.",
-//  SEQ_ALIGN_SegsDimOne
-"Please contact the sequence database for further help with this \
-error.",
-//  SEQ_ALIGN_AlignDimOne
+//  SEQ_ALIGN_SegsInvalidDim
 "Please contact the sequence database for further help with this \
 error.",
 //  SEQ_ALIGN_Segtype
@@ -1111,6 +1107,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/04/29 14:56:08  shomrat
+* Changes to SeqAlign related validation
+*
 * Revision 1.20  2003/04/15 14:55:37  shomrat
 * Implemented a progress callback mechanism
 *
