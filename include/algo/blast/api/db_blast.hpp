@@ -63,12 +63,12 @@ public:
 
     /// Contructor, creating default options for a given program
     CDbBlast(const TSeqLocVector& queries, 
-             BlastSeqSrc* bssp, EProgram p, RPSInfo* rps_info=0,
-             BlastHSPStream* hsp_stream=0, bool mt=false);
+             BlastSeqSrc* seq_src, EProgram p, RPSInfo* rps_info=0,
+             BlastHSPStream* hsp_stream=0, int num_threads=1);
     /// Constructor using a prebuilt options handle
-    CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp, 
+    CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
              CBlastOptionsHandle& opts, RPSInfo* rps_info=0,
-             BlastHSPStream* hsp_stream=0, bool mt=false);
+             BlastHSPStream* hsp_stream=0, int num_threads=1);
 
     virtual ~CDbBlast();
 
@@ -83,18 +83,19 @@ public:
 
     /// Perform BLAST search
     virtual TSeqAlignVector Run();
-    /// Run BLAST search without traceback
+    /// Run BLAST search, without converting results to Seq-align form.
     virtual void PartialRun();
     /// Perform the main part of the search setup
-    virtual int SetupSearch();
-    /// Run the search engine; assumes that main setup has already been 
-    /// performed
-    virtual void RunSearchEngine();
-    /// Run the preliminary stage of the search engine; assumes that both 
-    /// main and additional gapped alignment setup have already been performed.
+    virtual void SetupSearch();
+    /// Run the RPS BLAST search engine; assumes that main setup has already 
+    /// been performed. Combines preliminary and traceback stages of RPS search.
+    virtual void RunRPSSearch();
+    /// Run the preliminary stage of the search engine; assumes that main
+    /// setup has already been performed.
     virtual void RunPreliminarySearch();
-    /// Run only the traceback stage of the BLAST search
-    virtual TSeqAlignVector RunTraceback(); 
+    /// Run only the traceback stage of the BLAST search, filling the internal
+    /// results structure.
+    virtual void RunTraceback(); 
     
     /// Remove extra results if a limit is provided on total number of HSPs
     void TrimBlastHSPResults();
@@ -150,15 +151,15 @@ private:
 
     /************ Internal data structures (m_i = internal members)**********/
     LookupTableWrap*    m_ipLookupTable;   ///< Lookup table, one for all queries
-    ListNode*           m_ipLookupSegments;/**< Intervals for which lookup 
+    ListNode*           m_ipLookupSegments; /**< Intervals for which lookup 
                                               table is created: complement of
                                               filtered regions */
     BlastMaskLoc*       m_ipFilteredRegions;///< Filtered regions
-    bool                m_ibLocalResults; /**< Are results saved locally or
+    bool                m_ibLocalResults;   /**< Are results saved locally or
                                              streamed out to the client of 
                                              this class? */
-    bool                m_ibMultiThreaded; /**< Is this a multi-threaded 
-                                              search? */
+    int                 m_iNumThreads;      /**< How many threads are used in 
+                                               the preliminary stage? */
 };
 
 inline void
@@ -276,6 +277,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/09/07 17:59:12  dondosha
+* CDbBlast class changed to support multi-threaded search
+*
 * Revision 1.22  2004/07/06 15:47:11  dondosha
 * Made changes in preparation for implementation of multi-threaded search; added doxygen comments
 *

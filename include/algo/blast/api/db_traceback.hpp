@@ -57,7 +57,7 @@ public:
     void PartialRun(); 
 
 protected:    
-    int SetupSearch();
+    void SetupSearch();
     void RunSearchEngine();
     void x_ResetQueryDs();
 private:
@@ -83,6 +83,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/09/07 17:59:12  dondosha
+* CDbBlast class changed to support multi-threaded search
+*
 * Revision 1.8  2004/07/06 15:47:26  dondosha
 * Added doxygen comment
 *

@@ -1652,8 +1652,7 @@ public:
     friend class CBl2Seq;
     friend class CDbBlast;
     friend class CDbBlastTraceback;
-    // Uncomment next line when multi-threaded search files are added
-    //friend class CDbBlastPrelim;
+    friend class CDbBlastPrelim;
 
     // Tabular formatting thread needs to calculate parameters structures
     // and hence needs access to individual options structures.
@@ -2432,6 +2431,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2004/09/07 17:59:12  dondosha
+* CDbBlast class changed to support multi-threaded search
+*
 * Revision 1.73  2004/08/30 16:53:23  dondosha
 * Added E in front of enum names ESeedExtensionMethod and ESeedContainerType
 *

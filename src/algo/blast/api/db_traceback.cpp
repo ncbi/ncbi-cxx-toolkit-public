@@ -64,7 +64,7 @@ CDbBlastTraceback::CDbBlastTraceback(const TSeqLocVector& queries,
     m_ipHspStream = hsp_stream;
 }
 
-int CDbBlastTraceback::SetupSearch()
+void CDbBlastTraceback::SetupSearch()
 {
     int status = 0;
     EBlastProgramType x_eProgram = 
@@ -100,14 +100,18 @@ int CDbBlastTraceback::SetupSearch()
         if (blast_message)
             GetErrorMessage().push_back(blast_message);
 
-        BLAST_GapAlignSetUp(x_eProgram, GetSeqSrc(), 
-            GetOptions().GetScoringOpts(), GetOptions().GetEffLenOpts(), 
-            GetOptions().GetExtnOpts(), GetOptions().GetHitSaveOpts(),
-            m_iclsQueryInfo, m_ipScoreBlock, &m_ipScoringParams,
-            &m_ipExtParams, &m_ipHitParams, &m_ipEffLenParams, &m_ipGapAlign);
-
+        status = 
+            BLAST_GapAlignSetUp(x_eProgram, GetSeqSrc(), 
+                GetOptions().GetScoringOpts(), GetOptions().GetEffLenOpts(), 
+                GetOptions().GetExtnOpts(), GetOptions().GetHitSaveOpts(),
+                m_iclsQueryInfo, m_ipScoreBlock, &m_ipScoringParams,
+                &m_ipExtParams, &m_ipHitParams, &m_ipEffLenParams, 
+                &m_ipGapAlign);
+        if (status) {
+            NCBI_THROW(CBlastException, eInternal, 
+                       "Setup for gapped alignment failed");
+        }
     }
-    return status;
 }
 
 void
@@ -157,6 +161,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2004/09/07 17:59:30  dondosha
+ * CDbBlast class changed to support multi-threaded search
+ *
  * Revision 1.14  2004/07/06 15:48:40  dondosha
  * Use EBlastProgramType enumeration type instead of EProgram when calling C code
  *
