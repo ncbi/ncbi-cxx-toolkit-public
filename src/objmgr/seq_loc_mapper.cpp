@@ -258,6 +258,13 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq)
       m_Dst_width(0)
 {
     CConstRef<CSeq_id> dst_id = target_seq.GetSeqId();
+    if ( !dst_id ) {
+        // Bioseq handle has no id, try to get one.
+        CConstRef<CSynonymsSet> syns = target_seq.GetSynonyms();
+        if ( !syns->empty() ) {
+            dst_id = syns->GetSeq_id_Handle(syns->begin()).GetSeqId();
+        }
+    }
     x_Initialize(target_seq.GetSeqMap(),
         dst_id.GetPointerOrNull());
     // Ignore seq-map destination ranges, map whole sequence to itself,
@@ -389,12 +396,27 @@ void CSeq_loc_Mapper::PreserveDestinationLocs(void)
                     TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
             }
             if (dst_start < dst_stop) {
-                CRef<CMappingRange> cvt(new CMappingRange(
-                    id_it->first, dst_start, dst_stop - dst_start + 1,
-                    ENa_strand(str_idx),
-                    id_it->first, dst_start, ENa_strand(str_idx)));
-                m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
-                    TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
+                if (m_Scope) {
+                    CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(id_it->first);
+                    ITERATE(CSynonymsSet, syn_it, *syns) {
+                        CRef<CMappingRange> cvt(new CMappingRange(
+                            CSynonymsSet::GetSeq_id_Handle(syn_it),
+                            dst_start, dst_stop - dst_start + 1,
+                            ENa_strand(str_idx),
+                            id_it->first, dst_start, ENa_strand(str_idx)));
+                        m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
+                            TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
+                    }
+                }
+                else {
+                    CRef<CMappingRange> cvt(new CMappingRange(
+                        id_it->first, dst_start, dst_stop - dst_start + 1,
+                        ENa_strand(str_idx),
+                        id_it->first, dst_start, ENa_strand(str_idx)));
+                    m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
+                        TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
+                }
+
             }
         }
     }
@@ -1813,6 +1835,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/08/06 15:28:16  grichenk
+* Changed PreserveDestinationLocs() to map all synonyms to the target seq-id.
+*
 * Revision 1.20  2004/05/26 14:29:20  grichenk
 * Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
 * fixed strands handling, improved performance.

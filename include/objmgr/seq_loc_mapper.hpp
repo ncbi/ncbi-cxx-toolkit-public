@@ -162,12 +162,13 @@ public:
     CSeq_loc_Mapper& SetGapRemove(void);
 
     // Create target-to-target mapping to avoid truncation of ranges
-    // already on the target sequence(s).
+    // already on the target sequence(s). This includes mapping
+    // of each synonym to the same target ID if a scope is available.
     void PreserveDestinationLocs(void);
 
     // Keep ranges which can not be mapped. Does not affect truncation
     // of partially mapped ranges. By default nonmapping ranges are
-    // truncated.
+    // converted to NULL.
     void KeepNonmappingRanges(void);
     void TruncateNonmappingRanges(void);
 
@@ -423,6 +424,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/08/06 15:28:16  grichenk
+* Changed PreserveDestinationLocs() to map all synonyms to the target seq-id.
+*
 * Revision 1.14  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *
