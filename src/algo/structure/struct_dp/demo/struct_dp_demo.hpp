@@ -55,6 +55,9 @@ END_SCOPE(struct_dp)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/06/18 19:10:17  thiessen
+* fix lf issues
+*
 * Revision 1.1  2003/06/18 16:54:29  thiessen
 * initial checkin; working global block aligner and demo app
 *
