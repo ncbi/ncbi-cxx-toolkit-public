@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/06/16 20:01:20  vasilche
+* Avoid use of unexpected_exception() which is unimplemented on Mac.
+*
 * Revision 1.44  2000/06/16 16:31:06  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -530,6 +533,8 @@ public:
 		ByteBlock(CObjectIStream& in);
 		~ByteBlock(void);
 
+        void End(void);
+
         CObjectIStream& GetStream(void) const;
 
 		size_t Read(void* dst, size_t length, bool forceLength = false);
@@ -543,6 +548,7 @@ public:
 	private:
         CObjectIStream& m_Stream;
 		bool m_KnownLength;
+        bool m_Ended;
 		size_t m_Length;
 
 		friend class CObjectIStream;
@@ -556,6 +562,8 @@ public:
         AsnIo(CObjectIStream& in, const string& rootTypeName);
         ~AsnIo(void);
 
+        void End(void);
+
         CObjectIStream& GetStream(void) const;
 
         size_t Read(char* data, size_t length);
@@ -566,6 +574,7 @@ public:
 
     private:
         CObjectIStream& m_Stream;
+        bool m_Ended;
         string m_RootTypeName;
         asnio* m_AsnIo;
 
@@ -660,6 +669,11 @@ public:
 	virtual size_t ReadBytes(ByteBlock& block, char* buffer, size_t count) = 0;
 	virtual void EndBytes(const ByteBlock& block);
 
+    // report error about unended block
+    void Unended(const string& msg);
+    // report error about unended object stack frame
+    virtual void UnendedFrame(void);
+
 protected:
     // low level readers
     typedef pair<TObjectPtr,TTypeInfo> TReadObjectInfo;
@@ -701,8 +715,6 @@ protected:
     virtual void SkipFloat(void);
     virtual void SkipDouble(void);
     virtual void SkipCString(void);
-
-    virtual void UnendedFrame(void);
 
     const TReadObjectInfo& GetRegisteredObject(TObjectIndex index) const;
     void RegisterObject(TObjectPtr object, TTypeInfo typeInfo);

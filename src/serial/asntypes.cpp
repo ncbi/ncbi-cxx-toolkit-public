@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/06/16 20:01:25  vasilche
+* Avoid use of unexpected_exception() which is unimplemented on Mac.
+*
 * Revision 1.41  2000/06/16 16:31:17  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -649,6 +652,7 @@ void COctetStringTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
     while ( (count = block.Read(buffer, sizeof(buffer))) != 0 ) {
         BSWrite(bs, buffer, count);
     }
+    block.End();
 }
 
 void COctetStringTypeInfo::SkipData(CObjectIStream& in) const
@@ -742,12 +746,13 @@ void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
     CObjectIStream::AsnIo io(in, GetName());
     if ( (Get(object) = m_ReadProc(io, 0)) == 0 )
-        THROW1_TRACE(runtime_error, "read fault");
+        in.ThrowError(in.eFail, "read fault");
+    io.End();
 }
 
-void COldAsnTypeInfo::SkipData(CObjectIStream& /*in*/) const
+void COldAsnTypeInfo::SkipData(CObjectIStream& in) const
 {
-    THROW1_TRACE(runtime_error, "cannot skip COldAsnTypeInfo");
+    in.ThrowError(in.eFail, "cannot skip COldAsnTypeInfo");
 }
 
 END_NCBI_SCOPE

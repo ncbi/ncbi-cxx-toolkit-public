@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/06/16 20:01:26  vasilche
+* Avoid use of unexpected_exception() which is unimplemented on Mac.
+*
 * Revision 1.14  2000/06/01 19:07:05  vasilche
 * Added parsing of XML data.
 *
@@ -115,7 +118,7 @@ CIStreamBuffer::CIStreamBuffer(void)
     : m_BufferOffset(0),
       m_BufferSize(KInitialBufferSize), m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer),
-      m_Line(1),
+      m_Line(1), m_Fail(false),
       m_CollectPos(0)
 {
 }
@@ -128,6 +131,7 @@ CIStreamBuffer::~CIStreamBuffer(void)
 void CIStreamBuffer::Open(const CRef<CByteSourceReader>& reader)
 {
     m_Input = reader;
+    m_Fail = false;
 }
 
 void CIStreamBuffer::Close(void)
@@ -137,6 +141,7 @@ void CIStreamBuffer::Close(void)
     m_CurrentPos = m_Buffer;
     m_DataEndPos = m_Buffer;
     m_Line = 1;
+    m_Fail = false;
 }
 
 void CIStreamBuffer::StartSubSource(void)
@@ -318,9 +323,11 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
                              m_CollectPos<=m_CurrentPos));
                     return pos;
                 }
+                m_Fail = true;
                 THROW0_TRACE(CSerialEofException());
             }
             else {
+                m_Fail = true;
                 THROW1_TRACE(CSerialIOException, "read fault");
             }
         }
@@ -453,8 +460,10 @@ int CIStreamBuffer::GetInt(void)
         sign = false;
         break;
     }
-    if ( c < '0' || c > '9' )
+    if ( c < '0' || c > '9' ) {
+        m_Fail = true;
         THROW1_TRACE(runtime_error, "bad number");
+    }
 
     int n = c - '0';
     for ( ;; ) {
@@ -477,8 +486,10 @@ unsigned CIStreamBuffer::GetUInt(void)
     char c = GetChar();
     if ( c == '+' )
         c = GetChar();
-    if ( c < '0' || c > '9' )
+    if ( c < '0' || c > '9' ) {
+        m_Fail = true;
         THROW1_TRACE(runtime_error, "bad number");
+    }
 
     unsigned n = c - '0';
     for ( ;; ) {
@@ -515,8 +526,10 @@ long CIStreamBuffer::GetLong(void)
         sign = false;
         break;
     }
-    if ( c < '0' || c > '9' )
+    if ( c < '0' || c > '9' ) {
+        m_Fail = true;
         THROW1_TRACE(runtime_error, "bad number");
+    }
 
     long n = c - '0';
     for ( ;; ) {
@@ -544,8 +557,10 @@ unsigned long CIStreamBuffer::GetULong(void)
     char c = GetChar();
     if ( c == '+' )
         c = GetChar();
-    if ( c < '0' || c > '9' )
+    if ( c < '0' || c > '9' ) {
+        m_Fail = true;
         THROW1_TRACE(runtime_error, "bad number");
+    }
 
     unsigned long n = c - '0';
     for ( ;; ) {

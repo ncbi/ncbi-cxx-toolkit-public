@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/06/16 20:01:30  vasilche
+* Avoid use of unexpected_exception() which is unimplemented on Mac.
+*
 * Revision 1.20  2000/05/24 20:09:29  vasilche
 * Implemented DTD generation.
 *
@@ -283,7 +286,7 @@ CDataType* CDataTypeModule::ExternalResolve(const string& typeName,
         THROW1_TRACE(CTypeNotFound, "not exported type: " + typeName);
     }
 
-    THROW1_TRACE(CTypeNotFound, "undefined type: " + typeName);
+    throw CTypeNotFound("undefined type: " + typeName);
 }
 
 CDataType* CDataTypeModule::Resolve(const string& typeName) const
@@ -294,7 +297,7 @@ CDataType* CDataTypeModule::Resolve(const string& typeName) const
     TImportsByName::const_iterator i = m_ImportedTypes.find(typeName);
     if ( i != m_ImportedTypes.end() )
         return GetModuleContainer().InternalResolve(i->second, typeName);
-    THROW1_TRACE(CTypeNotFound, "undefined type: " + typeName);
+    throw CTypeNotFound("undefined type: " + typeName);
 }
 
 string CDataTypeModule::GetFileNamePrefix(void) const

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/06/16 20:01:20  vasilche
+* Avoid use of unexpected_exception() which is unimplemented on Mac.
+*
 * Revision 1.11  2000/06/16 19:24:22  vasilche
 * Updated MSVC project.
 * Fixed error on MSVC with static const class member.
@@ -163,7 +166,7 @@ public:
 
     bool HaveSetFlag(void) const
         {
-            return m_SetFlagOffset != eNoOffset;
+            return m_SetFlagOffset != TOffset(eNoOffset);
         }
     TOffset GetSetFlagOffset(void) const
         {
@@ -191,7 +194,7 @@ public:
 
     bool CanBeDelayed(void) const
         {
-            return m_DelayOffset != eNoOffset;
+            return m_DelayOffset != TOffset(eNoOffset);
         }
     CMemberInfo* SetDelayBuffer(CDelayBuffer* buffer)
         {

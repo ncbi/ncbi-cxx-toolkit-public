@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/06/16 20:01:21  vasilche
+* Avoid use of unexpected_exception() which is unimplemented on Mac.
+*
 * Revision 1.42  2000/06/16 16:31:08  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -1279,6 +1282,7 @@ protected:
                     o.insert(o.end(), buffer, buffer + count);
                 }
             }
+            block.End();
         }
     virtual void SkipData(CObjectIStream& in) const
         {

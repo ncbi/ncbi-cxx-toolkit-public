@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/06/16 20:01:20  vasilche
+* Avoid use of unexpected_exception() which is unimplemented on Mac.
+*
 * Revision 1.5  2000/05/24 20:08:13  vasilche
 * Implemented XML dump.
 *
@@ -63,20 +66,6 @@ inline
 size_t CObjectIStream::ByteBlock::GetExpectedLength(void) const
 {
     return m_Length;
-}
-
-inline
-CObjectIStream::ByteBlock::ByteBlock(CObjectIStream& in)
-    : m_Stream(in), m_KnownLength(false), m_Length(1)
-{
-    in.BeginBytes(*this);
-}
-
-inline
-CObjectIStream::ByteBlock::~ByteBlock(void)
-{
-    if ( GetStream().InGoodState() )
-        GetStream().EndBytes(*this);
 }
 
 inline

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2000/06/16 20:01:26  vasilche
+* Avoid use of unexpected_exception() which is unimplemented on Mac.
+*
 * Revision 1.55  2000/06/16 18:04:11  thiessen
 * avoid uncaught_exception() unimplemented on Mac/CodeWarrior
 *
@@ -396,24 +399,28 @@ bool CObjectIStream::InGoodState(void)
         // fail flag already set
         return false;
     }
-#ifndef NCBI_OS_MAC    // uncaught_exception() unimplemented in CodeWarrior!
-    else if ( uncaught_exception() ) {
-        // exception thrown without setting fail flag
+    else if ( m_Input.fail() ) {
+        // IO exception thrown without setting fail flag
+        ERR_POST("CObjectIStream: read error");
         SetFailFlags(eFail);
+        m_Input.ResetFail();
         return false;
     }
-#endif
     else {
         // ok
-        _TRACE("CanClose: "<<GetStackTrace());
         return true;
     }
 }
 
-void CObjectIStream::UnendedFrame(void)
+void CObjectIStream::Unended(const string& msg)
 {
     if ( InGoodState() )
-        ThrowError(eFail, "internal error: unended object stack frame");
+        ThrowError(eFail, msg);
+}
+
+void CObjectIStream::UnendedFrame(void)
+{
+    Unended("internal error: unended object stack frame");
 }
 
 static
@@ -994,6 +1001,27 @@ void CObjectIStream::ReadChoice(CObjectChoiceReader& reader,
 }
 #endif
 
+CObjectIStream::ByteBlock::ByteBlock(CObjectIStream& in)
+    : m_Stream(in), m_KnownLength(false), m_Ended(false), m_Length(1)
+{
+    in.BeginBytes(*this);
+}
+
+CObjectIStream::ByteBlock::~ByteBlock(void)
+{
+    if ( !m_Ended )
+        GetStream().Unended("byte block not fully read");
+}
+
+void CObjectIStream::ByteBlock::End(void)
+{
+    _ASSERT(!m_Ended);
+    if ( m_Length == 0 ) {
+        GetStream().EndBytes(*this);
+        m_Ended = true;
+    }
+}
+
 size_t CObjectIStream::ByteBlock::Read(void* dst, size_t needLength,
                                        bool forceLength)
 {
@@ -1176,19 +1204,27 @@ extern "C" {
 }
 
 CObjectIStream::AsnIo::AsnIo(CObjectIStream& in, const string& rootTypeName)
-    : m_Stream(in),
+    : m_Stream(in), m_Ended(false),
       m_RootTypeName(rootTypeName), m_Count(0)
 {
     m_AsnIo = AsnIoNew(in.GetAsnFlags() | ASNIO_IN, 0, this, ReadAsn, 0);
     in.AsnOpen(*this);
 }
 
-CObjectIStream::AsnIo::~AsnIo(void)
+void CObjectIStream::AsnIo::End(void)
 {
+    _ASSERT(!m_Ended);
     if ( GetStream().InGoodState() ) {
         AsnIoClose(*this);
         GetStream().AsnClose(*this);
+        m_Ended = true;
     }
+}
+
+CObjectIStream::AsnIo::~AsnIo(void)
+{
+    if ( !m_Ended )
+        GetStream().Unended("AsnIo read error");
 }
 
 unsigned CObjectIStream::GetAsnFlags(void)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/06/16 20:01:30  vasilche
+* Avoid use of unexpected_exception() which is unimplemented on Mac.
+*
 * Revision 1.21  2000/05/24 20:09:29  vasilche
 * Implemented DTD generation.
 *
@@ -175,8 +178,8 @@ CDataType* CFileModules::ExternalResolve(const string& moduleName,
     TModulesByName::const_iterator mi = m_ModulesByName.find(moduleName);
     if ( mi == m_ModulesByName.end() ) {
         // no such module
-        THROW1_TRACE(CModuleNotFound, "module not found: " + moduleName +
-                     " for type " + typeName);
+        throw CModuleNotFound("module not found: " + moduleName +
+                              " for type " + typeName);
     }
     return mi->second->ExternalResolve(typeName, allowInternal);
 }

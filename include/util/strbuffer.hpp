@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/06/16 20:01:21  vasilche
+* Avoid use of unexpected_exception() which is unimplemented on Mac.
+*
 * Revision 1.13  2000/06/16 16:31:08  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -109,6 +112,15 @@ public:
     CIStreamBuffer(void)
         THROWS1((bad_alloc));
     ~CIStreamBuffer(void);
+
+    bool fail(void) const
+        {
+            return m_Fail;
+        }
+    void ResetFail(void)
+        {
+            m_Fail = false;
+        }
 
     void Open(const CRef<CByteSourceReader>& reader);
     void Close(void);
@@ -234,6 +246,8 @@ private:
     char* m_CurrentPos;       // current char position in buffer
     char* m_DataEndPos;       // end of valid content in buffer
     size_t m_Line;            // current line counter
+
+    bool m_Fail;
 
     char* m_CollectPos;
     CRef<CSubSourceCollector> m_Collector;
