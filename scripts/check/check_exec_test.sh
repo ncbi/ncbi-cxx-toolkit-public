@@ -42,6 +42,7 @@ if [ "X$1" = "X-stdin" ]; then
   cat - > $0.stdin.$$
   shift
   $@ < $0.stdin.$$ &
+  sleep 1 # Reduce the chance of removing the file before it's read....
   rm $0.stdin.$$ > /dev/null 2>&1
 else
   "$@" &
