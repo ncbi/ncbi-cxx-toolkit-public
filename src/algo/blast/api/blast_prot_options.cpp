@@ -114,7 +114,6 @@ CBlastProteinOptionsHandle::SetHitSavingOptionsDefaults()
     SetPrelimHitlistSize(550);
     SetEvalueThreshold(BLAST_EXPECT_VALUE);
     SetPercentIdentity(0);
-    m_Opts->SetSumStatisticsMode(false);
     // set some default here, allow INT4MAX to mean infinity
     SetMaxNumHspPerSequence(0); 
     // this is never used... altough it could be calculated
@@ -152,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/06/22 16:27:19  dondosha
+ * Do not set sum statistics mode to false: it is decided automatically in the engine
+ *
  * Revision 1.10  2004/06/08 15:20:23  dondosha
  * Skip traceback option has been moved to the traceback extension method enum
  *
