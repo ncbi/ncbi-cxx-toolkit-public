@@ -373,7 +373,7 @@ public:
     // General use validation methods
     void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj);
     void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj);
-    void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq* seq,
+    void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq,
         const string& prefix, const CSerialObject& obj);
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
     void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj,
@@ -708,8 +708,6 @@ private:
     bool x_IsMicroRNA(const CBioseq& seq) const;
     bool x_IsDeltaLitOnly(const CSeq_inst& inst) const;
 
-    const CBioseq* GetNucGivenProt(const CBioseq& prot);
-
     size_t x_CountAdjacentNs(const CSeq_literal& lit);
 
     // data
@@ -929,6 +927,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2004/04/23 16:26:35  shomrat
+* Use sequence::GetNucleotideParent() instead of GetNucGivenProt()
+*
 * Revision 1.60  2004/03/25 18:32:26  shomrat
 * + ValidatemRNABioseqContext()
 *
