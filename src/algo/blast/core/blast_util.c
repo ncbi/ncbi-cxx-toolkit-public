@@ -641,14 +641,14 @@ Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number)
          frame = 1;
       else
          frame = -1;
-   } else if (prog_number == eBlastTypeBlastp ||
+   } else if (prog_number == eBlastTypeBlastp   ||
               prog_number == eBlastTypeRpsBlast ||
-              prog_number == eBlastTypeTblastn ||
-              prog_number == eBlastTypeRpsTblastn) { 
+              prog_number == eBlastTypeTblastn) {
       /* Query and subject are protein, no frame. */
       frame = 0;
-   } else if (prog_number == eBlastTypeBlastx || 
-              prog_number == eBlastTypeTblastx) {
+   } else if (prog_number == eBlastTypeBlastx  ||
+              prog_number == eBlastTypeTblastx ||
+              prog_number == eBlastTypeRpsTblastn) {
       context_number = context_number % NUM_FRAMES;
 	  switch (context_number) {
 	  case 0: frame = 1; break;
