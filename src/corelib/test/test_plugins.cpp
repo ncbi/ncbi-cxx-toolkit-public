@@ -35,6 +35,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <corelib/ncbireg.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -197,13 +198,87 @@ static void s_TEST_PluginManager(void)
     }
 }
 
+/// @internal
+class CParamTreePrintFunc
+{
+public:
+    CParamTreePrintFunc()
+     : m_Level(0)
+    {}
+
+    ETreeTraverseCode 
+        operator()(const TPluginManagerParamTree::TParent& tr, int delta) 
+    {
+        m_Level += delta;
+        if (delta >= 0) { 
+            PrintLevelMargin();
+
+            const TPluginManagerParamTree::TParent* pt = tr.GetParent();
+
+            const string& node_id = tr.GetValue().id;
+            const string& node_v = tr.GetValue().value;
+
+            NcbiCout << node_id << (node_v.empty() ? "":" = ") << node_v 
+                     //<< " (" << (pt ? pt->GetValue().id : "") << ")"
+                     << NcbiEndl;
+        }
+
+        return eTreeTraverse;
+    }
+
+    void PrintLevelMargin()
+    {
+        for (int i = 0; i < m_Level; ++i) {
+            NcbiCout << "  ";
+        }
+    }
+private:
+    int            m_Level;
+};
+
+
+
+static
+void s_TestRegConvert()
+{
+    CNcbiRegistry reg;
+
+    // create test registry
+
+    reg.Set("PARENT", ".SubNode",  "Section2, Section1");
+    reg.Set("PARENT", "p1",  "1");
+    reg.Set("PARENT", "p2",  "blah");
+
+//    reg.Set("Section1", ".NodeName", "XXX");
+//    reg.Set("Section1", ".SubNode",  "Section2");
+    reg.Set("Section1", "s1A",  "ugh");
+    reg.Set("Section1", "s1B",  "33");
+
+//    reg.Set("Section2", ".NodeName", "AAA");
+    reg.Set("Section2", "s2A",  "eee");
+    reg.Set("Section2", "s2B",  "boo");
+
+    reg.Set("XXX", "s1A",  "duh");
+    reg.Set("XXX", "s1B",  "777");
+
+    TPluginManagerParamTree* tr = PluginManager_ConvertRegToTree(reg);
+    TPluginManagerParamTree::TParent* ptr = tr;
+
+
+    CParamTreePrintFunc func;
+    TreeDepthFirstTraverse(*ptr, func);
+    
+
+    delete tr;
+}
 
 
 
 ////////////////////////////////
-// Test application
-//
-
+/// Test application
+///
+/// @internal
+///
 class CTest : public CNcbiApplication
 {
 public:
@@ -216,7 +291,7 @@ void CTest::Init(void)
 {
     SetDiagPostLevel(eDiag_Warning);
     auto_ptr<CArgDescriptions> d(new CArgDescriptions);
-    d->SetUsageContext("test_dll", "DLL accessory class");
+    d->SetUsageContext("test_plugin", "DLL accessory class");
     SetupArgDescriptions(d.release());
 }
 
@@ -226,6 +301,8 @@ int CTest::Run(void)
     cout << "Run test" << endl << endl;
 
     s_TEST_PluginManager();
+
+    s_TestRegConvert();
 
     cout << endl;
     cout << "TEST execution completed successfully!" << endl << endl;
@@ -246,6 +323,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/29 13:15:34  kuznets
+ * + test for registry converter
+ *
  * Revision 1.4  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
