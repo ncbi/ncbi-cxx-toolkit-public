@@ -32,12 +32,11 @@
 */
 
 #include <BlastOption.hpp>
+#include <BlastSetup.hpp>
 
 // NewBlast includes
 #include <blast_extend.h>
 #include <blast_gapalign.h>
-
-#include <string>
 
 BEGIN_NCBI_SCOPE
 
@@ -73,7 +72,6 @@ CBlastOption::CBlastOption(EProgram prog_name) THROWS((CBlastException))
         NCBI_THROW(CBlastException, eBadParameter, 
                 "Effective length options error");
 
-    // Blast database settings: should all belong in readdb module
     if ( (st = BlastDatabaseOptionsNew(&m_DbOpts)))
         NCBI_THROW(CBlastException, eBadParameter, "Db options error");
 
@@ -358,6 +356,13 @@ CBlastOption::SetTblastn()
 
     // Blast database options
     m_DbOpts->genetic_code = BLAST_GENETIC_CODE;
+
+    // this is needed to avoid using MemFree when the BlastDatabaseOptions
+    // structure is deallocated
+    unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
+    m_DbOpts->gen_code_string = (Uint1Ptr) Malloc(sizeof(Uint1)*GENCODE_STRLEN);
+    MemCpy(m_DbOpts->gen_code_string, gc, GENCODE_STRLEN);
+    delete gc;
 }
 
 void 
@@ -407,6 +412,13 @@ CBlastOption::SetTblastx()
 
     // Blast database options
     m_DbOpts->genetic_code = BLAST_GENETIC_CODE;
+
+    // this is needed to avoid using MemFree when the BlastDatabaseOptions
+    // structure is deallocated
+    unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
+    m_DbOpts->gen_code_string = (Uint1Ptr)Malloc(sizeof(Uint1)*GENCODE_STRLEN);
+    MemCpy(m_DbOpts->gen_code_string, gc, GENCODE_STRLEN);
+    delete gc;
 }
 
 bool
@@ -460,6 +472,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/07/23 21:29:37  camacho
+* Update BlastDatabaseOptions
+*
 * Revision 1.2  2003/07/15 19:22:04  camacho
 * Fix setting of scan step in blastn
 *

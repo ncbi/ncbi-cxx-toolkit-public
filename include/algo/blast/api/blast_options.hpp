@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 /// @todo Constants used to initialize default values (word size, evalue
 /// threshold, ...) should be defined in this module when the C NewBlast is
 /// deprecated
+#define GENCODE_STRLEN 64
 
 /// Encapsulates all blast input parameters
 class CBlastOption : public CObject
@@ -115,8 +116,8 @@ public:
     ENa_strand GetStrandOption() const;
     void SetStrandOption(ENa_strand s);
 
-    int GetGeneticCode() const;
-    void SetGeneticCode(int gc);
+    int GetQueryGeneticCode() const;
+    void SetQueryGeneticCode(int gc);
 
     /******************* Initial word options ***********************/
     int GetWindowSize() const;
@@ -233,7 +234,12 @@ public:
     bool GetUseRealDbSize() const;
     void SetUseRealDbSize(bool u = true);
 
-    /// @todo Blast database options not implemented
+    int GetDbGeneticCode() const;
+    void SetDbGeneticCode(int gc);
+
+    const unsigned char* GetDbGeneticCodeStr() const;
+    void SetDbGeneticCodeStr(const unsigned char* gc_str);
+
     /// @todo PSI-Blast options could go on their own subclass?
 
     /// Allows to dump a snapshot of the object
@@ -506,13 +512,13 @@ CBlastOption::SetLCaseMask(vector< CConstRef<CSeq_loc> >& sl_vector)
 }
 
 inline int
-CBlastOption::GetGeneticCode() const
+CBlastOption::GetQueryGeneticCode() const
 {
     return m_QueryOpts->genetic_code;
 }
 
 inline void
-CBlastOption::SetGeneticCode(int gc)
+CBlastOption::SetQueryGeneticCode(int gc)
 {
     m_QueryOpts->genetic_code = gc;
 }
@@ -938,12 +944,43 @@ CBlastOption::SetUseRealDbSize(bool u)
     m_EffLenOpts->use_real_db_size = u;
 }
 
+inline int 
+CBlastOption::GetDbGeneticCode() const
+{
+    return m_DbOpts->genetic_code;
+}
+
+inline void 
+CBlastOption::SetDbGeneticCode(int gc)
+{
+    m_DbOpts->genetic_code = gc;
+}
+
+inline const unsigned char* 
+CBlastOption::GetDbGeneticCodeStr() const
+{
+    return m_DbOpts->gen_code_string;
+}
+
+inline void 
+CBlastOption::SetDbGeneticCodeStr(const unsigned char* gc_str)
+{
+    if (!gc_str)
+        return;
+
+    m_DbOpts->gen_code_string = (Uint1Ptr) MemFree(m_DbOpts->gen_code_string);
+    MemCpy(m_DbOpts->gen_code_string, gc_str, GENCODE_STRLEN);
+}
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/07/23 21:29:37  camacho
+* Update BlastDatabaseOptions
+*
 * Revision 1.3  2003/07/16 19:51:12  camacho
 * Removed logic of default setting from mutator member functions
 *
