@@ -66,14 +66,14 @@ USING_SCOPE(blast);
 class NCBI_XBLAST_EXPORT CBlastTabularFormatThread : public CThread 
 {
 public:
-    CBlastTabularFormatThread(const CDbBlast& blaster, 
+    CBlastTabularFormatThread(const CDbBlast* blaster, 
         const TSeqLocVector& query_v, CNcbiOstream& ostream);
     ~CBlastTabularFormatThread();
 protected:
     virtual void* Main(void);
     virtual void OnExit(void);
 private:
-    EProgram m_Program; /**< Type of BLAST program */
+    EBlastProgramType m_Program; /**< Type of BLAST program */
     BlastHSPStream* m_pHspStream; /**< Source of the BLAST results */
     BLAST_SequenceBlk* m_pQuery; /**< Query sequence */
     TSeqLocVector m_QueryVec; /**< Source of query sequences identifiers */
@@ -100,6 +100,9 @@ private:
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/07/06 15:54:20  dondosha
+* Use EBlastProgramType enumeration type for program
+*
 * Revision 1.1  2004/06/15 18:51:16  dondosha
 * Implementation of a thread producing on-the-fly output from a BLAST search
 *
