@@ -347,6 +347,9 @@ CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
                       TSeqLocFlags flags = 0);
 
 
+NCBI_XOBJUTIL_EXPORT
+CSeq_loc* SeqLocRevCmp(const CSeq_loc& loc, CScope* scope = 0);
+
 // Get the encoding CDS feature of a given protein sequence.
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope);
@@ -630,6 +633,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.38  2004/02/19 17:59:40  shomrat
+* Added function to reverse a location
+*
 * Revision 1.37  2004/02/05 19:41:10  shomrat
 * Convenience functions for popular overlapping types
 *
