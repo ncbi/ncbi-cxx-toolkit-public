@@ -176,8 +176,8 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
         
         // no need to map if doing the entire bioseq
         if ( source->IsWhole()  ||
-             source->GetStart(kInvalidSeqPos) == 0  &&
-             source->GetEnd(kInvalidSeqPos) == m_Handle.GetInst_Length() - 1) {
+             source->GetStart() == 0  &&
+             source->GetEnd() == m_Handle.GetInst_Length() - 1) {
             source.Reset();
         }
         _ASSERT(!source  ||  source->IsInt());
@@ -586,6 +586,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/09/01 15:33:44  grichenk
+* Check strand in GetStart and GetEnd. Circular length argument
+* made optional.
+*
 * Revision 1.21  2004/08/25 15:03:56  grichenk
 * Removed duplicate methods from CSeqMap
 *

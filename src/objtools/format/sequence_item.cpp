@@ -102,7 +102,7 @@ void CSequenceItem::x_GatherInfo(CBioseqContext& ctx)
     x_SetObject(*ctx.GetHandle().GetCompleteBioseq());
 
     const CSeq_loc& loc = ctx.GetLocation();
-    TSeqPos offset = loc.GetStart(kInvalidSeqPos);
+    TSeqPos offset = loc.GetStart();
     TSeqPos start = m_From + offset;
     TSeqPos end   = min(m_To + offset, ctx.GetHandle().GetInst_Length() - 1);
     
@@ -132,6 +132,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/09/01 15:33:44  grichenk
+* Check strand in GetStart and GetEnd. Circular length argument
+* made optional.
+*
 * Revision 1.7  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -77,6 +77,10 @@ public:
     void AddIntervals(const CPacked_seqint& ivals);
     void AddIntervals(const Tdata& ivals);
 
+    bool IsReverseStrand(void) const;
+    TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
+    TSeqPos GetEnd(TSeqPos circular_length = kInvalidSeqPos) const;
+
 private:
     // Prihibit copy constructor & assignment operator
     CPacked_seqint(const CPacked_seqint&);
@@ -104,6 +108,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/09/01 15:33:44  grichenk
+ * Check strand in GetStart and GetEnd. Circular length argument
+ * made optional.
+ *
  * Revision 1.7  2004/08/19 13:05:20  dicuccio
  * Added include for ENa_strand.  Use typedef instead of ENa_strand
  *

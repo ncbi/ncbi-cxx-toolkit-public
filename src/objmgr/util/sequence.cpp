@@ -2000,10 +2000,10 @@ int TestForOverlap(const CSeq_loc& loc1,
     case eOverlap_Simple:
         {
             if (circular_len != kInvalidSeqPos) {
-                TSeqPos from1 = loc1.GetStart(circular_len);
-                TSeqPos from2 = loc2.GetStart(circular_len);
-                TSeqPos to1 = loc1.GetEnd(circular_len);
-                TSeqPos to2 = loc2.GetEnd(circular_len);
+                TSeqPos from1 = loc1.GetStart();
+                TSeqPos from2 = loc2.GetStart();
+                TSeqPos to1 = loc1.GetEnd();
+                TSeqPos to2 = loc2.GetEnd();
                 if (from1 > to1) {
                     if (from2 > to2) {
                         // Both locations are circular and must intersect at 0
@@ -2054,10 +2054,10 @@ int TestForOverlap(const CSeq_loc& loc1,
     case eOverlap_Contained:
         {
             if (circular_len != kInvalidSeqPos) {
-                TSeqPos from1 = loc1.GetStart(circular_len);
-                TSeqPos from2 = loc2.GetStart(circular_len);
-                TSeqPos to1 = loc1.GetEnd(circular_len);
-                TSeqPos to2 = loc2.GetEnd(circular_len);
+                TSeqPos from1 = loc1.GetStart();
+                TSeqPos from2 = loc2.GetStart();
+                TSeqPos to1 = loc1.GetEnd();
+                TSeqPos to2 = loc2.GetEnd();
                 if (from1 > to1) {
                     if (from2 > to2) {
                         return (from1 <= from2  &&  to1 >= to2) ?
@@ -2086,10 +2086,10 @@ int TestForOverlap(const CSeq_loc& loc1,
     case eOverlap_Contains:
         {
             if (circular_len != kInvalidSeqPos) {
-                TSeqPos from1 = loc1.GetStart(circular_len);
-                TSeqPos from2 = loc2.GetStart(circular_len);
-                TSeqPos to1 = loc1.GetEnd(circular_len);
-                TSeqPos to2 = loc2.GetEnd(circular_len);
+                TSeqPos from1 = loc1.GetStart();
+                TSeqPos from2 = loc2.GetStart();
+                TSeqPos to1 = loc1.GetEnd();
+                TSeqPos to2 = loc2.GetEnd();
                 if (from1 > to1) {
                     if (from2 > to2) {
                         return (from2 <= from1  &&  to2 >= to1) ?
@@ -4134,6 +4134,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.88  2004/09/01 15:33:44  grichenk
+* Check strand in GetStart and GetEnd. Circular length argument
+* made optional.
+*
 * Revision 1.87  2004/08/26 18:26:27  grichenk
 * Added check for circular sequence in x_GetBestOverlappingFeat()
 *

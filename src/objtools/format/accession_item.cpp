@@ -119,8 +119,8 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
     if ( !ctx.GetLocation().IsWhole() ) {
         // specific region is set
         const CSeq_loc& loc = ctx.GetLocation();
-        m_Region.SetFrom(loc.GetStart(kInvalidSeqPos) + 1);
-        m_Region.SetTo(loc.GetEnd(kInvalidSeqPos) + 1);
+        m_Region.SetFrom(loc.GetStart() + 1);
+        m_Region.SetTo(loc.GetEnd() + 1);
         m_IsSetRegion = true;
     }
 }
@@ -134,6 +134,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/09/01 15:33:44  grichenk
+* Check strand in GetStart and GetEnd. Circular length argument
+* made optional.
+*
 * Revision 1.5  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -95,11 +95,17 @@ public:
     TRange GetTotalRange(void) const;
     void InvalidateTotalRangeCache(void);
  
+    // Return true if all ranges have reverse strand
+    bool IsReverseStrand(void) const;
+
+    // Return start and stop positions of the seq-loc.
+    // End may be less than Start for circular sequences.
+    TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
+    TSeqPos GetEnd(TSeqPos circular_length = kInvalidSeqPos) const;
+
     // Special case for circular sequences. No ID is checked for
     // circular locations. If the sequence is not circular
-    // (seq_len == kInvalidSeqPos) all functions work like GetTotalRange()
-    TSeqPos GetStart(TSeqPos seq_len) const;
-    TSeqPos GetEnd(TSeqPos seq_len) const;
+    // (seq_len == kInvalidSeqPos) the function works like GetTotalRange()
     TSeqPos GetCircularLength(TSeqPos seq_len) const;
 
     // Appends a label suitable for display (e.g., error messages)
@@ -440,6 +446,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/09/01 15:33:44  grichenk
+ * Check strand in GetStart and GetEnd. Circular length argument
+ * made optional.
+ *
  * Revision 1.37  2004/05/06 16:54:41  shomrat
  * Added methods to set partial left and right
  *

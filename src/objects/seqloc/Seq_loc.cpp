@@ -495,11 +495,52 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
 }
 
 
-TSeqPos CSeq_loc::GetStart(TSeqPos seq_len) const
+bool CSeq_loc::IsReverseStrand(void) const
 {
-    if (seq_len == kInvalidSeqPos) {
-        return GetTotalRange().GetFrom();
+    switch ( Which() ) {
+    case CSeq_loc::e_not_set:
+    case CSeq_loc::e_Null:
+    case CSeq_loc::e_Empty:
+    case CSeq_loc::e_Whole:
+        {
+            return false;
+        }
+    case CSeq_loc::e_Int:
+        {
+            return GetInt().IsSetStrand() && IsReverse(GetInt().GetStrand());
+        }
+    case CSeq_loc::e_Pnt:
+        {
+            return GetPnt().IsSetStrand() && IsReverse(GetPnt().GetStrand());
+        }
+    case CSeq_loc::e_Packed_int:
+        {
+            return GetPacked_int().IsReverseStrand();
+        }
+    case CSeq_loc::e_Packed_pnt:
+        {
+            return GetPacked_pnt().IsSetStrand()
+                && IsReverse(GetPacked_pnt().GetStrand());
+        }
+    case CSeq_loc::e_Mix:
+        {
+            return GetMix().IsReverseStrand();
+        }
+    case CSeq_loc::e_Equiv:
+    case CSeq_loc::e_Bond:
+    case CSeq_loc::e_Feat:
+    default:
+        {
+            NCBI_THROW(CException, eUnknown,
+                       "CSeq_loc::IsReverse -- "
+                       "unsupported location type");
+        }
     }
+}
+
+
+TSeqPos CSeq_loc::GetStart(TSeqPos /*circular_length*/) const
+{
     switch ( Which() ) {
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
@@ -521,15 +562,15 @@ TSeqPos CSeq_loc::GetStart(TSeqPos seq_len) const
         }
     case CSeq_loc::e_Packed_int:
         {
-            return (*GetPacked_int().Get().begin())->GetFrom();
+            return GetPacked_int().GetStart();
         }
     case CSeq_loc::e_Packed_pnt:
         {
-            return *GetPacked_pnt().GetPoints().begin();
+            return GetPacked_pnt().GetStart();
         }
     case CSeq_loc::e_Mix:
         {
-            return (*GetMix().Get().begin())->GetStart(seq_len);
+            return GetMix().GetStart();
         }
     case CSeq_loc::e_Equiv:
     case CSeq_loc::e_Bond:
@@ -544,11 +585,8 @@ TSeqPos CSeq_loc::GetStart(TSeqPos seq_len) const
 }
 
 
-TSeqPos CSeq_loc::GetEnd(TSeqPos seq_len) const
+TSeqPos CSeq_loc::GetEnd(TSeqPos /*circular_length*/) const
 {
-    if (seq_len == kInvalidSeqPos) {
-        return GetTotalRange().GetTo();
-    }
     switch ( Which() ) {
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
@@ -570,15 +608,15 @@ TSeqPos CSeq_loc::GetEnd(TSeqPos seq_len) const
         }
     case CSeq_loc::e_Packed_int:
         {
-            return (*GetPacked_int().Get().rbegin())->GetTo();
+            return GetPacked_int().GetEnd();
         }
     case CSeq_loc::e_Packed_pnt:
         {
-            return *GetPacked_pnt().GetPoints().rbegin();
+            return GetPacked_pnt().GetEnd();
         }
     case CSeq_loc::e_Mix:
         {
-            return (*GetMix().Get().rbegin())->GetEnd(seq_len);
+            return GetMix().GetEnd();
         }
     case CSeq_loc::e_Equiv:
     case CSeq_loc::e_Bond:
@@ -586,7 +624,7 @@ TSeqPos CSeq_loc::GetEnd(TSeqPos seq_len) const
     default:
         {
             NCBI_THROW(CException, eUnknown,
-                       "CSeq_loc::GetEnd -- "
+                       "CSeq_loc::GetStart -- "
                        "unsupported location type");
         }
     }
@@ -598,8 +636,8 @@ TSeqPos CSeq_loc::GetCircularLength(TSeqPos seq_len) const
     if (seq_len == kInvalidSeqPos) {
         return GetTotalRange().GetLength();
     }
-    TSeqPos start = GetStart(seq_len);
-    TSeqPos stop = GetEnd(seq_len);
+    TSeqPos start = GetStart();
+    TSeqPos stop = GetEnd();
     return start > stop ? seq_len - start + stop + 1 : stop - start + 1;
 }
 
@@ -1508,6 +1546,10 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.43  2004/09/01 15:33:44  grichenk
+ * Check strand in GetStart and GetEnd. Circular length argument
+ * made optional.
+ *
  * Revision 6.42  2004/05/19 17:26:25  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *

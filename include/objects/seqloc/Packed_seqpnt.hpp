@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2004/09/01 15:33:44  grichenk
+ * Check strand in GetStart and GetEnd. Circular length argument
+ * made optional.
+ *
  * Revision 1.5  2004/01/28 17:15:09  shomrat
  * Added methods to ease the construction of objects
  *
@@ -89,6 +93,9 @@ public:
     void AddPoint(TSeqPos point);
     void AddPoints(const TPoints& points);
     
+    TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
+    TSeqPos GetEnd(TSeqPos circular_length = kInvalidSeqPos) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CPacked_seqpnt(const CPacked_seqpnt& value);

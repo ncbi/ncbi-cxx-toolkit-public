@@ -84,6 +84,36 @@ void CSeq_loc_mix::SetPartialRight(bool val)
 }
 
 
+bool CSeq_loc_mix::IsReverseStrand(void) const
+{
+    bool res = Get().front()->IsReverseStrand();
+    ITERATE(CSeq_loc_mix::Tdata, li, Get()) {
+        if (res != (*li)->IsReverseStrand()) {
+            return false;
+        }
+    }
+    return res;
+}
+
+
+TSeqPos CSeq_loc_mix::GetStart(TSeqPos /*circular_length*/) const
+{
+    if ( IsReverseStrand() ) {
+        return Get().back()->GetStart();
+    }
+    return Get().front()->GetStart();
+}
+
+
+TSeqPos CSeq_loc_mix::GetEnd(TSeqPos /*circular_length*/) const
+{
+    if ( IsReverseStrand() ) {
+        return Get().front()->GetStart();
+    }
+    return Get().back()->GetStart();
+}
+
+
 void CSeq_loc_mix::AddSeqLoc(const CSeq_loc& other)
 {
     if ( !other.IsMix() ) {
@@ -144,6 +174,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.13  2004/09/01 15:33:44  grichenk
+ * Check strand in GetStart and GetEnd. Circular length argument
+ * made optional.
+ *
  * Revision 6.12  2004/05/19 17:26:25  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *

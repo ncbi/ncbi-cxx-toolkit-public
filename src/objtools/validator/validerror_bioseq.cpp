@@ -2457,8 +2457,8 @@ void CValidError_bioseq::x_ValidateAbuttingCDSGroup
 
         if ( minus ) {
         } else {
-            TSeqPos secend = second_loc.GetEnd(kInvalidSeqPos);
-            TSeqPos firstart = first_loc.GetStart(kInvalidSeqPos);
+            TSeqPos secend = second_loc.GetEnd();
+            TSeqPos firstart = first_loc.GetStart();
             if ( secend + 1 != firstart ) {
                 const string& first_name = s_FeatName(*first);
                 const string& second_name = s_FeatName(*second);
@@ -3762,6 +3762,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.85  2004/09/01 15:33:44  grichenk
+* Check strand in GetStart and GetEnd. Circular length argument
+* made optional.
+*
 * Revision 1.84  2004/08/09 14:55:40  shomrat
 * Added title validation
 *

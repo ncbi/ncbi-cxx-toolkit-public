@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2004/09/01 15:33:44  grichenk
+ * Check strand in GetStart and GetEnd. Circular length argument
+ * made optional.
+ *
  * Revision 6.5  2004/05/19 17:26:25  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
@@ -68,6 +72,24 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // destructor
 CPacked_seqpnt::~CPacked_seqpnt(void)
 {
+}
+
+
+TSeqPos CPacked_seqpnt::GetStart(TSeqPos /*circular_length*/) const
+{
+    if (IsSetStrand()  &&  IsReverse(GetStrand())) {
+        return GetPoints().back();
+    }
+    return GetPoints().front();
+}
+
+
+TSeqPos CPacked_seqpnt::GetEnd(TSeqPos /*circular_length*/) const
+{
+    if (IsSetStrand()  &&  IsReverse(GetStrand())) {
+        return GetPoints().front();
+    }
+    return GetPoints().back();
 }
 
 

@@ -66,11 +66,47 @@ CPacked_seqint::~CPacked_seqint(void)
 // length calculator
 TSeqPos CPacked_seqint::GetLength(void) const
 {
-	TSeqPos length = 0;
-        ITERATE ( Tdata, i, Get() ) {
-                length += (**i).GetLength();
+    TSeqPos length = 0;
+    ITERATE ( Tdata, i, Get() ) {
+            length += (**i).GetLength();
+    }
+    return length;
+}
+
+
+bool CPacked_seqint::IsReverseStrand(void) const
+{
+    bool rev = Get().front()->IsSetStrand()
+        &&  IsReverse(Get().front()->GetStrand());
+    ITERATE(Tdata, i, Get()) {
+        if ( (*i)->IsSetStrand() ) {
+            if ( rev != IsReverse((*i)->GetStrand()) ) {
+                return false;
+            }
         }
-	return length;
+        if ( rev ) {
+            return false; // at least one strand is not set (not reverse)
+        }
+    }
+    return rev;
+}
+
+
+TSeqPos CPacked_seqint::GetStart(TSeqPos /*circular_length*/) const
+{
+    if ( IsReverseStrand() ) {
+        return Get().back()->GetFrom();
+    }
+    return Get().front()->GetFrom();
+}
+
+
+TSeqPos CPacked_seqint::GetEnd(TSeqPos /*circular_length*/) const
+{
+    if ( IsReverseStrand() ) {
+        return Get().front()->GetTo();
+    }
+    return Get().back()->GetTo();
 }
 
 
@@ -117,6 +153,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.7  2004/09/01 15:33:44  grichenk
+ * Check strand in GetStart and GetEnd. Circular length argument
+ * made optional.
+ *
  * Revision 6.6  2004/05/19 17:26:25  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *

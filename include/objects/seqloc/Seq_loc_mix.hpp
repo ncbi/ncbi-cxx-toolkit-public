@@ -84,6 +84,10 @@ public:
     void AddInterval(const CSeq_id& id, TSeqPos from, TSeqPos to,
                      ENa_strand strand = eNa_strand_unknown);
         
+    bool IsReverseStrand(void) const;
+    TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
+    TSeqPos GetEnd(TSeqPos circular_length = kInvalidSeqPos) const;
+
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc_mix(const CSeq_loc_mix&);
@@ -106,6 +110,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2004/09/01 15:33:44  grichenk
+ * Check strand in GetStart and GetEnd. Circular length argument
+ * made optional.
+ *
  * Revision 1.16  2004/08/19 13:05:36  dicuccio
  * Added missing predeclaration for CSeq_id
  *
