@@ -1,26 +1,11 @@
 #!/bin/sh
 
-module=$1
-shift
-
-if test "$module" = ""; then
-    echo "Usage: $0 [module]"
-    exit 1
-fi
-
-if test -f "$module.module"; then
-    :
-else
-    echo "File $module.module not found"
-    exit 1
-fi
-
+# detect root directory
 p="`pwd`"
 mp=
-
 while true; do
-    d=`basename "$p"`
-    p=`dirname "$p"`
+    d="`basename \"$p\"`"
+    p="`dirname \"$p\"`"
     if test -d "$p/src" && test -d "$p/include" && test -f "$p/configure.in" &&
         test -f "$p/src/Makefile.module"; then
         break
@@ -35,12 +20,66 @@ while true; do
         exit 1
     fi
 done
+# here $p is root directory, $mp is module path so $p/src/$mp is current dir
 
-DATATOOL=`ls -Ltr $p/*/bin/datatool $p/bin/datatool 2>/dev/null 2>/dev/null | tail -1`
+# define function which will get variable value from file
+# Synopsis: getvar <var_name> <file_name>
+getvar () {
+    grep "^[ 	]*$1[ 	]*=" "$2" | head -1 |
+        sed "s/^[ 	]*$1[ 	]*=[ 	]*//" | sed "s/[ 	]*$//"
+}
 
-case `uname` in
+# detect command arguments
+case "$1" in
+    *.asn) module="`basename \"$1\" .asn`"; asn="$1";;
+    *.module) module="`basename \"$1\" .module`";;
+    '') echo "Usage: $0 [module]"; exit 1;;
+    *) module="$1";;
+esac
+shift
+
+if test -f "$module.module"; then
+    if test -z "$asn"; then
+        asn="`getvar MODULE_ASN \"$module.module\"`"
+    fi
+    imports="`getvar MODULE_IMPORT \"$module.module\"`"
+else
+    echo "File $module.module not found. Using defaults..."
+fi
+if test -z "$asn"; then
+    asn="$module.asn"
+fi
+
+# now $asn is source ASN.1 file $module.module is module description file
+# check files
+if test -f "$asn"; then
+    :
+else
+    echo "Source file $asn not found."
+    exit 1
+fi
+
+# detect datatool program path
+if test -n "$NCBI_DATATOOL_PATH"; then
+    # NCBI_DATATOOL_PATH variable is set
+    if test -x "$NCBI_DATATOOL_PATH/datatool"; then
+        datatool="$NCBI_DATATOOL_PATH/datatool"
+    else
+        echo "$datatool not found"
+        exit 1
+    fi
+elif test -x "$NCBI/c++/Release/bin/datatool"; then
+    datatool="$NCBI/c++/Release/bin/datatool"
+else
+    datatool=datatool
+fi
+
+# detect make command
+case "`uname`" in
     SunOS) make=make;;
     *) make=gmake;;
 esac
 
-$make -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "top_srcdir=$p" "DATATOOL=$DATATOOL" "$@"
+# run command
+echo $make -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "top_srcdir=$p" "DATATOOL=$datatool" "$@"
+$make -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "top_srcdir=$p" "DATATOOL=$datatool" "$@"
