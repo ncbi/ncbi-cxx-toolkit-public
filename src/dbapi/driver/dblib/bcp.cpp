@@ -395,22 +395,33 @@ bool CDBL_BCPInCmd::SendRow()
 
 bool CDBL_BCPInCmd::Cancel()
 {
-    DBINT outrow = bcp_done(m_Cmd);
-    return outrow == 0;
+    if(m_WasSent) {
+	DBINT outrow = bcp_done(m_Cmd);
+	m_WasSent= false;
+	return outrow == 0;
+    }
+    return true;
 }
 
 
 bool CDBL_BCPInCmd::CompleteBatch()
 {
-    CS_INT outrow = bcp_batch(m_Cmd);
-    return outrow != -1;
+    if(m_WasSent) {
+	CS_INT outrow = bcp_batch(m_Cmd);
+	return outrow != -1;
+    }
+    return false;
 }
 
 
 bool CDBL_BCPInCmd::CompleteBCP()
 {
-    DBINT outrow = bcp_done(m_Cmd);
-    return outrow != -1;
+    if(m_WasSent) {
+	DBINT outrow = bcp_done(m_Cmd);
+	m_WasSent= false;
+	return outrow != -1;
+    }
+    return false;
 }
 
 
@@ -442,6 +453,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/03/04 19:07:21  soussov
+ * fixed bug in m_WasSent flag setting
+ *
  * Revision 1.6  2002/01/08 18:10:18  sapojnik
  * Syabse to MSSQL name translations moved to interface_p.hpp
  *

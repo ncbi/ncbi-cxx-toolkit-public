@@ -390,22 +390,33 @@ bool CTDS_BCPInCmd::SendRow()
 
 bool CTDS_BCPInCmd::Cancel()
 {
-    DBINT outrow = bcp_done(m_Cmd);
-    return outrow == 0;
+    if(m_WasSent) {
+	DBINT outrow = bcp_done(m_Cmd);
+	m_WasSent= false;
+	return outrow == 0;
+    }
+    return true;
 }
 
 
 bool CTDS_BCPInCmd::CompleteBatch()
 {
-    CS_INT outrow = bcp_batch(m_Cmd);
-    return outrow != -1;
+    if(m_WasSent) {
+	CS_INT outrow = bcp_batch(m_Cmd);
+	return outrow != -1;
+    }
+    return false;
 }
 
 
 bool CTDS_BCPInCmd::CompleteBCP()
 {
-    DBINT outrow = bcp_done(m_Cmd);
-    return outrow != -1;
+    if(m_WasSent) {
+	DBINT outrow = bcp_done(m_Cmd);
+	m_WasSent= false;
+	return outrow != -1;
+    }
+    return false;
 }
 
 
@@ -437,6 +448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/03/04 19:09:27  soussov
+ * fixed bug in m_WasSent flag setting
+ *
  * Revision 1.2  2001/11/06 18:00:02  lavr
  * Formatted uniformly as the rest of the library
  *
