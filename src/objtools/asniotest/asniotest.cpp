@@ -577,7 +577,7 @@ BEGIN_TEST_FUNCTION(HTTPLoad)
     // get protein structure 1AL1 (mmdb ID 220) from mmdbsrv
     CNcbi_mime_asn1 mime;
     if (!GetAsnDataViaHTTP("www.ncbi.nlm.nih.gov", "/Structure/mmdb/mmdbsrv.cgi",
-            "uid=%1AL1&form=6&db=t&save=Save&dopt=j&Complexity=Cn3D%20Subset", &mime, &err, true))
+            "uid=1AL1&form=6&db=t&save=Save&dopt=j&Complexity=Cn3D%20Subset", &mime, &err, true))
         ADD_ERR_RETURN("HTTP asn data load failed: " << err);
 
     if (!mime.IsStrucseq() || mime.GetStrucseq().GetStructure().GetId().size() == 0 ||
@@ -670,6 +670,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/09/22 13:27:47  thiessen
+* fix typo in URL
+*
 * Revision 1.17  2004/09/22 13:12:47  thiessen
 * add HTTP asn load test
 *
