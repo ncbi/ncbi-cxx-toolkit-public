@@ -186,6 +186,9 @@ void CSeqDBOIDList::x_OrFileBits(const string   & mask_fname,
         
         volmask.ReadSwapped(lease, 0, & num_oids, locked);
         
+        // This is the index of the last oid, not the count of oids...
+        num_oids++;
+        
         Uint4 file_length = (Uint4) volmask.GetFileLength();
         
         // Cast forces signed/unsigned conversion.
