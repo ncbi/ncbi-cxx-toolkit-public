@@ -303,8 +303,6 @@ CBlastOption::GetProgram() const
     return m_Program;
 }
 
-EProgram BLASTGetEProgram(Uint1 prog);
-
 inline void
 CBlastOption::SetProgram(EProgram p)
 {
@@ -1004,6 +1002,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/09/03 19:35:51  camacho
+* Removed unneeded prototype
+*
 * Revision 1.20  2003/08/28 22:32:53  camacho
 * Correct typo
 *
