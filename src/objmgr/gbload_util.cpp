@@ -32,6 +32,7 @@
 #include <corelib/ncbistd.hpp>
 #include "handle_range.hpp"
 #include <objects/objmgr/gbloader.hpp>
+#include "gbload_util.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -133,14 +134,148 @@ CMutexPool::~CMutexPool(void)
   }
 }
 
-/*=========================================================================== */
-// CTSEUpload
+/* =========================================================================== */
+// CGBLGuard 
 //
+CGBLGuard::CGBLGuard(TLMutex& lm,EState orig,const char *loc,int select)
+  : m_Locks(&lm),m_Loc(loc),m_orig(orig),m_current(orig),m_select(select)
+{
+}
+
+CGBLGuard::CGBLGuard(TLMutex &lm,const char *loc) // assume orig=eNone, switch to e.Main in constructor
+  : m_Locks(&lm),m_Loc(loc),m_orig(eNone),m_current(eNone),m_select(-1)
+{
+  Switch(eMain);
+}
+
+CGBLGuard::CGBLGuard(CGBLGuard &g,const char *loc)
+  : m_Locks(g.m_Locks),m_Loc(g.m_Loc),m_orig(g.m_current),m_current(g.m_current),m_select(g.m_select)
+{
+  if(loc) m_Loc = loc;
+  _VERIFY(m_Locks);
+}
+
+CGBLGuard::~CGBLGuard()
+{
+  Switch(m_orig);
+}
+
+void CGBLGuard::Select(int s)
+{
+  if(m_current==eMain) m_select=s;
+  _VERIFY(m_select==s);
+}
+
+//#define LOCK_POST(x) GBLOG_POST(x) 
+#define LOCK_POST(x) 
+void CGBLGuard::MLock()
+{
+  LOCK_POST(&m_Locks << ":: MainLock tried   @ " << m_Loc);
+  m_Locks->m_Lookup.Lock();
+  LOCK_POST(&m_Locks << ":: MainLock locked  @ " << m_Loc);
+}
+
+void CGBLGuard::MUnlock()
+{
+  LOCK_POST(&m_Locks << ":: MainLock unlocked@ " << m_Loc);
+  m_Locks->m_Lookup.Unlock();
+}
+
+void CGBLGuard::PLock()
+{
+  _VERIFY(m_select>=0);
+  LOCK_POST(&m_Locks << ":: Pool["<< setw(2) << m_select << "] tried   @ " << m_Loc);
+  m_Locks->m_Pool.GetMutex(m_select).Lock();
+  LOCK_POST(&m_Locks << ":: Pool["<< setw(2) << m_select << "] locked  @ " << m_Loc);
+}
+
+void CGBLGuard::PUnlock()
+{
+  _VERIFY(m_select>=0);
+   LOCK_POST(&m_Locks << ":: Pool["<< setw(2) << m_select << "] unlocked@ " << m_Loc);
+  m_Locks->m_Pool.GetMutex(m_select).Unlock();
+}
+
+void CGBLGuard::Switch(EState newstate)
+{
+  if(newstate==m_current) return;
+  switch(newstate)
+    {
+    case eNone:
+      if(m_current!=eMain) Switch(eMain);
+      _ASSERT(m_current==eMain);
+      //LOCK_POST(&m_Locks << ":: switch 'main' to 'none'");
+      MUnlock();
+      m_current=eNone;
+      return;
+      
+    case eBoth:
+      if(m_current!=eMain) Switch(eMain);
+      _ASSERT(m_current==eMain);
+      //LOCK_POST(&m_Locks << ":: switch 'main' to 'both'");
+      if(m_Locks->m_SlowTraverseMode>0) PLock();
+      m_current=eBoth;
+      return;
+      
+    case eLocal:
+      if(m_current!=eBoth) Switch(eBoth);
+      _ASSERT(m_current==eBoth);
+      //LOCK_POST(&m_Locks << ":: switch 'both' to 'local'");
+      if(m_Locks->m_SlowTraverseMode==0) PLock();
+      try {
+        m_Locks->m_SlowTraverseMode++;
+        MUnlock();
+      } catch(...) {
+        m_Locks->m_SlowTraverseMode--;
+        if(m_Locks->m_SlowTraverseMode==0) PUnlock();
+        throw;
+      }
+      m_current=eLocal;
+      return;
+    case eMain:
+      switch(m_current)
+        {
+        case eNone:
+          m_select=-1;
+          //LOCK_POST(&m_Locks << ":: switch 'none' to 'main'");
+          MLock();
+          m_current=eMain;
+          return;
+        case eBoth:
+          //LOCK_POST(&m_Locks << ":: switch 'both' to 'main'");
+          if(m_Locks->m_SlowTraverseMode>0) PUnlock();
+          m_select=-1;
+          m_current=eMain;
+          return;
+        case eLocal:
+          //LOCK_POST(&m_Locks << ":: switch 'local' to 'none2main'");
+          PUnlock();
+          m_current=eNoneToMain;
+        case eNoneToMain:
+          //LOCK_POST(&m_Locks << ":: switch 'none2main' to 'main'");
+          MLock();
+          m_Locks->m_SlowTraverseMode--;
+          m_select=-1;
+          m_current=eMain;
+          return;
+        default:
+          break;
+      }
+    default:
+      break;
+    }
+  runtime_error("CGBLGuard::Switch - state desynchronized");
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/07/22 22:53:24  kimelman
+* exception handling fixed: 2level mutexing moved to Guard class + added
+* handling of confidential data.
+*
 * Revision 1.9  2002/05/06 03:28:47  vakatov
 * OM/OM1 renaming
 *

@@ -39,6 +39,7 @@
 #include <objects/objmgr/reader_id1.hpp>
 #include <objects/objmgr/reader_pubseq.hpp>
 #include <objects/objmgr/gbloader.hpp>
+#include "gbload_util.hpp"
 #include <bitset>
 #include <set>
 #include <vector>
@@ -51,7 +52,6 @@ BEGIN_SCOPE(objects)
 //   GBLoader sub classes 
 //
 
-
 struct CGBDataLoader::STSEinfo
 {
   typedef set<TSeq_id_Key>  TSeqids;
@@ -61,11 +61,13 @@ struct CGBDataLoader::STSEinfo
   STSEinfo         *prev;
   bitset<eLast>     mode;
   auto_ptr<CSeqref> key;
+  int               locked;
+  CTSE_Info        *tseinfop;
   
   TSeqids           m_SeqIds;
   CTSEUpload        m_upload;
   
-  STSEinfo() : next(0), prev(0), key(0),m_SeqIds(),m_upload()
+  STSEinfo() : next(0), prev(0), key(0),locked(0),tseinfop(0),m_SeqIds(),m_upload()
     {
       //GBLOG_POST("new tse(" << (void*)this << ")");
     }
@@ -130,8 +132,8 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
   m_UseListHead = m_UseListTail = 0;
   
   size_t i = m_Driver->GetParallelLevel();
-  m_Pool.SetSize(i<=0?10:i);
-  m_SlowTraverseMode=0;
+  m_Locks.m_Pool.SetSize(i<=0?10:i);
+  m_Locks.m_SlowTraverseMode=0;
   
   m_TseCount=0;
   m_TseGC_Threshhold=gc_threshold;
@@ -158,31 +160,33 @@ bool
 CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
                           TTSESet* tse_set)
 {
-  /*
-    SeqLoc -> CHandleRangeMap ->
-    foreach(CBioseq from Map)
-    {
-      if(!present) {
-        get SSeqrefs
-      }
-      foreach(CSeqref) {
-        if(!contain the requested type of data) continue
-        forech(get_list_of_subtrees to upload for given choice and range)
-         {
-           CBlob_I it = CSeqref.getBlobs(range.min,range.max,choice,subtree_id);
-         }
-      }
-  */
   GC();
 
   bool unreleased_mutex_run;
+  int count=0;
+  
   char s[100];
+#ifdef DEBUG_SYNC
+  memset(s,0,sizeof(s));
   {
     strstream ss(s,sizeof(s));
-    ss << "GetRecords " << choice ;
+    const char *x;
+    switch(choice)
+      {
+      case eBlob:        x="eBlob";       break;
+      case eBioseq:      x="eBioseq";     break;
+      case eCore:        x="eCore";       break;
+      case eBioseqCore:  x="eBioseqCore"; break;
+      case eSequence:    x="eSequence";   break;
+      case eFeatures:    x="eFeatures";   break;
+      case eGraph:       x="eGraph";      break;
+      case eAll:         x="eAll";        break;
+      default:           x="???"; 
+      }
+    ss << "GetRecords(" << x <<")";
   }
-  int count=0;
-  m_LookupMutex.Lock(s);
+#endif
+  CGBLGuard g(m_Locks,s);
   do
     {
       unreleased_mutex_run=true;
@@ -197,30 +201,23 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice,
     }
   while (unreleased_mutex_run!=true);
   //GBLOG_POST( "GetRecords-end" );
-  m_LookupMutex.Unlock();
   return true;
 }
 
 bool
 CGBDataLoader::DropTSE(const CSeq_entry *sep)
 {
-  m_LookupMutex.Lock("drop_tse");
+  CGBLGuard g(m_Locks,"drop_tse");
   TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(sep);
-  if (it == m_Tse2TseInfo.end())
-    {
-      // oops - apprently already done;
-      m_LookupMutex.Unlock();
-      return true;
-    }
+  if (it == m_Tse2TseInfo.end()) // oops - apprently already done;
+    return true;
   STSEinfo *tse = it->second;
-  if(m_SlowTraverseMode>0) m_Pool.Lock(tse);
+  g.Lock(tse);
   _VERIFY(tse);
   x_Check(tse);
   
   m_Tse2TseInfo.erase(it);
   x_DropTSEinfo(tse);
-  if(m_SlowTraverseMode>0) m_Pool.Unlock(tse);
-  m_LookupMutex.Unlock();
   return true;
 }
 
@@ -232,7 +229,8 @@ CGBDataLoader::x_Check(STSEinfo *me)
   STSEinfo *tse2 = m_UseListHead, *t1=0;
   while(tse2) { c++; if(tse2==me) tse_found = true; t1=tse2; tse2=tse2->next; }
   _VERIFY(t1 == m_UseListTail);
-  _VERIFY(c  == m_TseCount);
+  _VERIFY(m_Sr2TseInfo.size() == m_TseCount);
+  _VERIFY(c  <= m_TseCount);
   _VERIFY(m_Tse2TseInfo.size() <= m_TseCount);
   if(me)
    {
@@ -251,8 +249,14 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_s
   bool         conflict=false;
   
   GBLOG_POST( "ResolveConflict" );
-  do m_LookupMutex.Lock("ResolveConflict");
-  while (!x_ResolveHandle(sih,sr));
+  CGBLGuard g(m_Locks,"ResolveConflict");
+  {
+    int cnt = 20;
+    while (!x_ResolveHandle(sih,sr) && cnt>0)
+      cnt --;
+    if(cnt==0)
+      return 0;
+  }
   iterate(TTSESet, sit, tse_set)
     {
       CTSE_Info *ti = *sit;
@@ -262,8 +266,8 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_s
       STSEinfo *tse = it->second;
       
       x_Check(tse);
-      
-      if(m_SlowTraverseMode>0) m_Pool.Lock(tse);
+
+      g.Lock(tse);
 
       if(tse->mode.test(STSEinfo::eDead) && !ti->m_Dead)
         ti->m_Dead=true;
@@ -283,14 +287,11 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_s
               //_VERIFY(ti->m_Dead || best->m_Dead);
             }
         }
-      if(m_SlowTraverseMode>0) m_Pool.Unlock(tse);
+      g.Unlock(tse);
     }
 
   if(best && !conflict)
-    {
-      m_LookupMutex.Unlock();
-      return best;
-    }
+    return best;
   
   // try harder
   
@@ -315,7 +316,6 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_s
         }
     }
   if(conflict) best=0;
-  m_LookupMutex.Unlock();
   return best;
 }
 
@@ -394,9 +394,8 @@ CGBDataLoader::GC(void)
   GBLOG_POST( "X_GC " << m_TseCount);
   //GetDataSource()->x_CleanupUnusedEntries();
 
-//#if 0
   unsigned skip=0;
-  m_LookupMutex.Lock("GC");
+  CGBLGuard g(m_Locks,"GC");
   x_Check(0);
   while(skip<m_TseCount && skip<0.6*m_TseGC_Threshhold && m_TseCount > 0.9*m_TseGC_Threshhold)
     {
@@ -406,9 +405,14 @@ CGBDataLoader::GC(void)
         tse_to_drop = tse_to_drop->next;
       _VERIFY(tse_to_drop);
       bool do_call_drop = true;
-      if(m_SlowTraverseMode>0) m_Pool.Lock(tse_to_drop);
+      g.Lock(tse_to_drop);
       const CSeq_entry *sep=tse_to_drop->m_upload.m_tse;
-      if(!sep && tse_to_drop->m_upload.m_mode != CTSEUpload::eNone)
+      if (tse_to_drop->locked)
+        {
+          skip++;
+          do_call_drop = false;
+        }
+      else if(!sep && tse_to_drop->m_upload.m_mode != CTSEUpload::eNone)
         {
           GBLOG_POST("X_GC:: drop nonexistent tse " << tse_to_drop);
           x_DropTSEinfo(tse_to_drop);
@@ -419,23 +423,27 @@ CGBDataLoader::GC(void)
 	  skip++;
           do_call_drop = false;
         }
-      if(m_SlowTraverseMode>0) m_Pool.Unlock(tse_to_drop);
+      else if (tse_to_drop->tseinfop->CounterLocked())
+        {
+          skip++;
+          do_call_drop = false;
+        }
+      g.Unlock(tse_to_drop);
       if(!do_call_drop) 
         continue ;
-          
-      //char b[100];
-      // GBLOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE(b,sizeof(b)) << ")");
+      
+#ifdef DEBUG_SYNC
+      char b[100];
+      GBLOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE(b,sizeof(b)) << ")");
+#endif
       CConstRef<CSeq_entry> se = sep;
-      m_LookupMutex.Unlock();
+      g.Unlock();
       if(GetDataSource()->DropTSE(*se))
         m_InvokeGC=false;
       else
         skip++;
-      m_LookupMutex.Lock("GC lock again");
-   }
-//#endif
-  m_LookupMutex.Unlock();
-  //GBLOG_POST( "X_GC " << m_TseCount);
+      g.Lock();
+    }
 }
 
 
@@ -510,16 +518,15 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
           m_TseCount++;
           GBLOG_POST( "x_GetRecords-newTSE(" << tse << ") ");
         }
-      
-      bool use_global_lock=true;
-      bool use_local_lock=m_SlowTraverseMode>0;
-      if(use_local_lock) m_Pool.Lock(tse);
+
+      CGBLGuard g(m_Locks,CGBLGuard::eMain,"x_GetRecords");
+      g.Lock(tse);
+      tse->locked++;
       {{ // make sure we have reverse reference to handle
         STSEinfo::TSeqids &sid = tse->m_SeqIds;
         if (sid.find(sih) == sid.end())
           sid.insert(sih);
       }}
-      x_UpdateDropList(tse);
       bool new_tse=false;
       
       iterate (CHandleRange::TRanges, lrange , hrange.GetRanges())
@@ -539,22 +546,11 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
 
           //GBLOG_POST( "x_GetRecords-range_1" );
           // need update
-          if(use_global_lock)
-            { // switch to local lock mode
-              m_SlowTraverseMode++;
-              global_mutex_was_released=true;
-              use_global_lock=false;
-              if(!use_local_lock)
-                {
-                  m_Pool.Lock(tse);
-                  use_local_lock=true;
-                }
-              m_LookupMutex.Unlock();
-            }
-          _VERIFY(use_local_lock);
-          _VERIFY(!use_global_lock);
-          
-          for(int try_cnt=2;try_cnt-->0;)
+          g.Local();
+          global_mutex_was_released=true;
+
+          int try_cnt=2;
+          while(try_cnt-->0)
             {
               try
                 {
@@ -570,31 +566,45 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
                 }
               catch(const CIOException &e)
                 {
-                  LOG_POST("ID conneciton failed: Reconnecting....");
+                  LOG_POST("ID conneciton failed: Reconnecting...." << e.what());
                 }
-              catch (exception& e)
+              catch(const CDB_Exception &e)
                 {
-                  ERR_POST(e.what());
+                  LOG_POST("ID conneciton failed: Reconnecting...." << e.what());
+                }
+              catch (...)
+                {
+                  LOG_POST(CThread::GetSelf() << ":: Data request failed....");
+                  g.Lock();
+                  g.Lock(tse);
+                  tse->locked--;
+                  x_UpdateDropList(tse); // move up as just checked
+                  throw;
                 }
             }
+          if(try_cnt<0)
+            {
+              LOG_POST("CGBLoader:GetData: Data Request failed :: exceeded maximum attempts count");
+              g.Lock();
+              g.Lock(tse);
+              tse->locked--;
+              x_UpdateDropList(tse); // move up as just checked
+              throw runtime_error("CGBLoader:GetData: Multiple attempts to retrieve data failed");
+            }
         }
+      g.Lock();
+      g.Lock(tse);
+      tse->locked--;
+      x_UpdateDropList(tse);
       if(new_tse)
        {
          x_Check(0);
          _VERIFY(tse->m_upload.m_tse);
          _ASSERT(m_Tse2TseInfo.find(tse->m_upload.m_tse) == m_Tse2TseInfo.end());
          m_Tse2TseInfo[tse->m_upload.m_tse]=tse; // insert
-         x_Check(tse);
          new_tse=false;
        }
-
-      if(use_local_lock) m_Pool.Unlock(tse);
-      // _VERIFY(!new_tse || !use_global_lock);
-      if(!use_global_lock)
-        { // uploaded some data
-          m_LookupMutex.Lock("x_GetRecords - back_to_global");
-          m_SlowTraverseMode--;
-        }
+      x_Check(tse);
     } // iterate seqrefs
   return global_mutex_was_released;
 }
@@ -605,25 +615,14 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   sr=0;
   TSeqId2Seqrefs::iterator bsit = m_Bs2Sr.find(h);
   if (bsit == m_Bs2Sr.end() )
-    {
-      sr = new SSeqrefs() ;
-      m_Bs2Sr[h]=sr;
-    }
+    sr = m_Bs2Sr[h] = new SSeqrefs();
   else
     sr = bsit->second;
 
-  bool local_lock=m_SlowTraverseMode>0;
-  if(local_lock) m_Pool.Lock(sr);
-  if(!sr->m_Timer.NeedRefresh(m_Timer))
-    {
-      if(local_lock) m_Pool.Unlock(sr);
-      return true;
-    }
-  // update required
-  m_SlowTraverseMode++;
-  if(!local_lock) m_Pool.Lock(sr);
-  m_LookupMutex.Unlock();
-
+  CGBLGuard g(m_Locks,CGBLGuard::eMain,"x_ResolveHandle");
+  g.Lock(sr);
+  if(!sr->m_Timer.NeedRefresh(m_Timer)) return true;
+  g.Local();
   //GBLOG_POST( "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) );
   
   
@@ -632,40 +631,45 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   int try_cnt=2;
   while(try_cnt-->0)
     {
-      bool calibrating = m_Timer.NeedCalibration();
+      class CTimerGuard
+      {
+        CTimer *t;
+        bool    calibrating;
+      public:
+        CTimerGuard(CTimer& x) : t(&x) { calibrating=t->NeedCalibration(); if(calibrating) t->Start(); }
+        ~CTimerGuard() { if(calibrating) t->Stop(); }
+      };
+      CTimerGuard tg(m_Timer);
       try
         {
-          if(calibrating) m_Timer.Start();
-          for(CIStream srs(m_Driver->SeqrefStreamBuf(*x_GetSeqId(h),m_Pool.Select(sr)));! srs.Eof();)
+          for(CIStream srs(m_Driver->SeqrefStreamBuf(*x_GetSeqId(h),m_Locks.m_Pool.Select(sr)));! srs.Eof();)
             {
               CSeqref *seqRef = m_Driver->RetrieveSeqref(srs);
               if(!sr->m_Sr) sr->m_Sr = new SSeqrefs::TSeqrefs();
               sr->m_Sr->push_back(seqRef);
             }
-          if(calibrating) m_Timer.Stop();
           break;
         }
       catch(const CIOException &e)
         {
+          LOG_POST(e.what());
           LOG_POST("ID conneciton failed: Reconnecting....");
         }
-      catch (exception& e)
+      catch(const CDB_Exception &e)
         {
-          ERR_POST(e.what());
+          LOG_POST(e.what());
+          LOG_POST("ID conneciton failed: Reconnecting....");
         }
-      if(calibrating) m_Timer.Stop();
     }
-  sr->m_Timer.Reset(m_Timer);
   if(try_cnt<0)
     {
       sr->m_Sr=osr;
       osr=0;
+      throw runtime_error("Network trouble - failed to connect to NCBI ID services");
     }
-  m_Pool.Unlock(sr);
-
-  m_LookupMutex.Lock("ResolveHandle");
-  m_SlowTraverseMode--;
-  local_lock=m_SlowTraverseMode>0;
+  sr->m_Timer.Reset(m_Timer);
+  
+  g.Lock(); // will unlock everything and lock lookupMutex again 
   
   GBLOG_POST( "ResolveHandle(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) );
   if(sr->m_Sr)
@@ -698,11 +702,11 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
               
               // update TSE info 
               STSEinfo *tse = tsep->second;
-              if(local_lock) m_Pool.Lock(tse);
+              g.Lock(tse);
               bool mark_dead  = tse->mode.test(STSEinfo::eDead);
               if(mark_dead) tse->mode.set(STSEinfo::eDead);
               tse->m_SeqIds.erase(h); // drop h as refewrenced seqid
-              if(local_lock) m_Pool.Unlock(tse);
+              g.Unlock(tse);
               if(mark_dead && tse->m_upload.m_tse)
                 { // inform data_source :: make sure to avoid deadlocks
                   GetDataSource()->x_UpdateTSEStatus(*(tse->m_upload.m_tse),true);
@@ -749,10 +753,10 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
       CBlobClass cl;
       int count=0;
       cl.Value() = blob_mask;
-      for(CIStream bs(srp->BlobStreamBuf(from, to, cl,m_Pool.Select(tse))); ! bs.Eof();count++ )
+      for(CIStream bs(srp->BlobStreamBuf(from, to, cl,m_Locks.m_Pool.Select(tse))); ! bs.Eof();count++ )
         {
           auto_ptr<CBlob> blob(srp->RetrieveBlob(bs));
-          //GBLOG_POST( "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")");
+          GBLOG_POST( "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")");
           m_InvokeGC=true;
           if (blob->Class()==0)
             {
@@ -762,7 +766,7 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
                   tse_up->m_mode   = CTSEUpload::eDone;
                   GBLOG_POST( "GetBlob(" << s << ") " << "- whole blob retrieved");
                   new_tse=true;
-                  GetDataSource()->AddTSE(*(tse_up->m_tse), tse_set);
+                  tse->tseinfop=GetDataSource()->AddTSE(*(tse_up->m_tse), tse_set);
                 }
               else
                 {
@@ -784,7 +788,7 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
         {
           tse_up->m_mode = CTSEUpload::eDone;
           // TODO log message
-          LOG_POST("ERROR: can not retrive blob : " << s);
+          LOG_POST("ERROR: can not retrive sequence  : " << srp->print(s,sizeof(s)));
         }
       
       //GBLOG_POST( "GetData-after:: " << from << to <<  endl;
@@ -813,6 +817,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2002/07/22 22:53:24  kimelman
+* exception handling fixed: 2level mutexing moved to Guard class + added
+* handling of confidential data.
+*
 * Revision 1.38  2002/06/04 17:18:33  kimelman
 * memory cleanup :  new/delete/Cref rearrangements
 *

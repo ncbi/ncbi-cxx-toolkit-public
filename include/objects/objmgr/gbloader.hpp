@@ -55,7 +55,7 @@ BEGIN_SCOPE(objects)
 
 #if !defined(NDEBUG) && defined(DEBUG_SYNC)
 #  if defined(_REENTRANT)
-#    define GBLOG_POST(x) LOG_POST(CThread::GetSelf() << ":: " << x)
+#    define GBLOG_POST(x) LOG_POST(setw(3) << CThread::GetSelf() << ":: " << x)
 #  else
 #    define GBLOG_POST(x) LOG_POST("0:: " << x)
 #  endif 
@@ -71,9 +71,6 @@ BEGIN_SCOPE(objects)
 // GBDataLoader
 //
 
-class CMultiLock;
-class CTSEUpload;
-class CMutexPool;
 class CHandleRange;
 
 class CTimer
@@ -110,36 +107,17 @@ private:
 
 class CMutexPool
 {
+  int         m_size;
+  CMutex     *m_Locks;
+  int        *spread;
 public:
   CMutexPool();
   ~CMutexPool(void);
   void SetSize(int size);
-
   CMutex& GetMutex(int x) { return m_Locks[x%m_size]; }
-  
   template<class A> int  Select(A *a) { return (((unsigned long) a)/sizeof(A)) % m_size ; }
-  template<class A> CMutex& GetMutex(A *a) { return GetMutex(Select(a)); }
-
-  template<class A> void Lock  (A* a)
-    {
-      int x = Select(a);
-      //GBLOG_POST("PoolLock  ("<< x <<") tried");
-      spread[x]++;
-      GetMutex(x).Lock();
-      //GBLOG_POST("PoolLock  ("<< x <<") locked");
-    }
-  template<class A> void Unlock(A* a)
-    {
-      int x = Select(a);
-      //GBLOG_POST("PoolUnlock("<< x <<") unlocked");
-      GetMutex(x).Unlock();
-    }
-
-private:
-  int             m_size;
-  CMutex         *m_Locks;
-  int            *spread;
 };
+
 
 class CTSEUpload {
 public:
@@ -152,6 +130,13 @@ public:
 class CGBDataLoader : public CDataLoader
 {
 public:
+  struct SLeveledMutex
+  {
+    unsigned        m_SlowTraverseMode;
+    CMutex          m_Lookup;
+    CMutexPool      m_Pool;
+  };
+
   CGBDataLoader(const string& loader_name="GENBANK",CReader *driver=0,int gc_threshold=100);
   virtual ~CGBDataLoader(void);
   
@@ -193,36 +178,13 @@ private:
   CReader        *m_Driver;
   TSr2TSEinfo     m_Sr2TseInfo;
   TTse2TSEinfo    m_Tse2TseInfo;
-
+  
   TSeqId2Seqrefs  m_Bs2Sr;
   
   CTimer          m_Timer;
-
-  class MyMutex {
-  private:
-    CMutex   m_;
-  public:
-    MyMutex(void) : m_() {};
-    ~MyMutex(void) {};
-    void Lock(const string& loc)
-      {
-        if(loc.size()) {
-          //GBLOG_POST("MyLock  tried  at "  << loc);
-        }
-        m_.Lock();
-        //GBLOG_POST("MyLock  locked");
-      }
-    void Unlock(void)
-      {
-        //GBLOG_POST("MyLock unlocked");
-        m_.Unlock();
-      }
-  };
-
-  unsigned        m_SlowTraverseMode;
-  MyMutex         m_LookupMutex;
-  CMutexPool      m_Pool;
-
+  
+  SLeveledMutex   m_Locks;
+  
   STSEinfo       *m_UseListHead;
   STSEinfo       *m_UseListTail;
   unsigned        m_TseCount;
@@ -258,6 +220,10 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.25  2002/07/22 22:53:20  kimelman
+ * exception handling fixed: 2level mutexing moved to Guard class + added
+ * handling of confidential data.
+ *
  * Revision 1.24  2002/07/19 18:36:14  lebedev
  * NCBI_OS_MAC: include path changed for types.h
  *
