@@ -145,7 +145,7 @@ CSageDataLoader::CSageDataLoader(const string& input_file,
         }
 
         CSeq_id_Handle handle = CSeq_id_Handle::GetHandle(*id);
-        m_Ids[handle] = string(data[0]);
+        m_Ids.insert(TIdMap::value_type(handle, data[0]));
         _TRACE("  id = " << data[0]);
     }
 
@@ -172,8 +172,8 @@ void CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
     //
     // now, find out if this ID is in our list of ids
     //
-    TIdMap::iterator id_iter = m_Ids.lower_bound(idh);
-    if (id_iter == m_Ids.end()) {
+    pair<TIdMap::iterator, TIdMap::iterator> id_iter = m_Ids.equal_range(idh);
+    if (id_iter.first == id_iter.second) {
         return;
     }
 
@@ -181,10 +181,20 @@ void CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
     // okay, this ID is correct, so load all features with this id
     //
 
-    CSQLiteTable::TIterator row_iter =
-        m_Table->Begin("select * from TableData "
-                       "where " + acc_col +
-                       " = '" + id_iter->second + "'");
+    string sql("select * from TableData where " + acc_col +
+               " in (");
+    string tmp;
+    for ( ;  id_iter.first != id_iter.second;  ++id_iter.first) {
+        TIdMap::iterator iter = id_iter.first;
+
+        if ( !tmp.empty() ) {
+            tmp += ", ";
+        }
+        tmp += "'" + iter->second + "'";
+    }
+    sql += tmp + ")";
+
+    CSQLiteTable::TIterator row_iter = m_Table->Begin(sql);
 
     CRef<CSeq_annot> annot(new CSeq_annot());
     vector<string> data;
@@ -286,6 +296,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/13 21:01:03  dicuccio
+ * Altered to support finding multiple accession strings matching a single handle
+ *
  * Revision 1.2  2003/10/30 21:43:08  jcherry
  * Fixed typo
  *
