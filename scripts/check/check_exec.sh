@@ -28,20 +28,16 @@ script_dir=`dirname $0`
 script_dir=`(cd "$script_dir"; pwd)`
 
 # Run command
-sleep 1  &&  "$@"  &
+sleep 1  &&  "$@" &
 pid=$!
+trap 'kill $pid' 1 2 15
 
-# Execution time-guard
-( sleep $timeout  &&  kill $pid ) >/dev/null 2>&1 &
-guard_pid=$!
-trap 'kill $guard_pid $pid' 1 2 15
+# Execute time-guard
+$script_dir/check_exec_guard.sh $timeout $pid &
 
 # Wait ending of execution
 wait $pid
-exit=$?
-
-# Terminate the time-guard, test terminated himself
-kill $guard_pid >/dev/null 2>&1
+status=$?
 
 # Return test exit code
-exit $exit
+exit $status
