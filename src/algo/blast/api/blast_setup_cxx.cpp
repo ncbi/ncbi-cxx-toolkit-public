@@ -48,8 +48,8 @@
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
 
-#include <algo/blast/api/blast_setup.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include "blast_setup.hpp"
 
 // NewBlast includes
 #include <algo/blast/core/blast_util.h>
@@ -367,6 +367,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/09/03 19:36:27  camacho
+* Fix include path for blast_setup.hpp
+*
 * Revision 1.18  2003/08/28 22:42:54  camacho
 * Change BLASTGetSequence signature
 *

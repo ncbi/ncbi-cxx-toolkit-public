@@ -32,7 +32,7 @@
 */
 
 #include <algo/blast/api/blast_option.hpp>
-#include <algo/blast/api/blast_setup.hpp>
+#include "blast_setup.hpp"
 
 // NewBlast includes
 #include <algo/blast/core/blast_extend.h>
@@ -493,6 +493,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/09/03 19:36:27  camacho
+* Fix include path for blast_setup.hpp
+*
 * Revision 1.17  2003/09/03 18:45:34  camacho
 * Fixed small memory leak, removed unneeded function
 *
