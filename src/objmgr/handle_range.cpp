@@ -50,9 +50,8 @@ CHandleRange::CHandleRange(void)
     : m_IsCircular(false),
       m_IsSingleStrand(true)
 {
-    m_TotalRanges.resize(2);
-    m_TotalRanges[0] = TRange::GetEmpty();
-    m_TotalRanges[1] = TRange::GetEmpty();
+    m_TotalRanges_plus = TRange::GetEmpty();
+    m_TotalRanges_minus = TRange::GetEmpty();
 }
 
 
@@ -71,7 +70,8 @@ CHandleRange& CHandleRange::operator=(const CHandleRange& hr)
 {
     if (this != &hr) {
         m_Ranges = hr.m_Ranges;
-        m_TotalRanges = hr.m_TotalRanges;
+        m_TotalRanges_plus = hr.m_TotalRanges_plus;
+        m_TotalRanges_minus = hr.m_TotalRanges_minus;
         m_IsCircular = hr.m_IsCircular;
         m_IsSingleStrand = hr.m_IsSingleStrand;
     }
@@ -86,19 +86,19 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand)
             // Different strands, the location can not be circular
             m_IsCircular = false;
             // Reorganize total ranges by strand
-            TRange total_range = m_TotalRanges[0];
-            total_range += m_TotalRanges[1];
+            TRange total_range = m_TotalRanges_plus;
+            total_range += m_TotalRanges_minus;
             if ( x_IncludesPlus(m_Ranges.front().second) ) {
-                m_TotalRanges[0] = total_range;
+                m_TotalRanges_plus = total_range;
             }
             else {
-                m_TotalRanges[0] = TRange::GetEmpty();
+                m_TotalRanges_plus = TRange::GetEmpty();
             }
             if ( x_IncludesMinus(m_Ranges.front().second) ) {
-                m_TotalRanges[1] = total_range;
+                m_TotalRanges_minus = total_range;
             }
             else {
-                m_TotalRanges[1] = TRange::GetEmpty();
+                m_TotalRanges_minus = TRange::GetEmpty();
             }
             m_IsSingleStrand = false;
         }
@@ -116,8 +116,8 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand)
                 // Reorganize total ranges. Everything already collected
                 // goes to the first part, all new ranges will go to the
                 // second part.
-                m_TotalRanges[0] += m_TotalRanges[1];
-                m_TotalRanges[1] = TRange::GetEmpty();
+                m_TotalRanges_plus += m_TotalRanges_minus;
+                m_TotalRanges_minus = TRange::GetEmpty();
             }
         }
     }
@@ -125,15 +125,15 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand)
     if ( !m_IsCircular ) {
         // Regular location
         if ( x_IncludesPlus(strand) ) {
-            m_TotalRanges[0] += range;
+            m_TotalRanges_plus += range;
         }
         if ( x_IncludesMinus(strand) ) {
-            m_TotalRanges[1] += range;
+            m_TotalRanges_minus += range;
         }
     }
     else {
         // Circular location, second part
-        m_TotalRanges[1] += range;
+        m_TotalRanges_minus += range;
     }
 }
 
@@ -160,8 +160,8 @@ bool CHandleRange::x_IntersectingStrands(ENa_strand str1, ENa_strand str2)
 
 bool CHandleRange::IntersectingWith(const CHandleRange& hr) const
 {
-    if (!m_TotalRanges[0].IntersectingWith(hr.m_TotalRanges[0])
-        &&  !m_TotalRanges[1].IntersectingWith(hr.m_TotalRanges[1])) {
+    if (!m_TotalRanges_plus.IntersectingWith(hr.m_TotalRanges_plus)
+        &&  !m_TotalRanges_minus.IntersectingWith(hr.m_TotalRanges_minus)) {
         return false;
     }
     ITERATE(TRanges, it1, m_Ranges) {
@@ -203,20 +203,20 @@ void CHandleRange::MergeRange(TRange range, ENa_strand /*strand*/)
 TSeqPos CHandleRange::GetLeft(void) const
 {
     if ( !m_IsCircular ) {
-        return min(m_TotalRanges[0].GetFrom(), m_TotalRanges[1].GetFrom());
+        return min(m_TotalRanges_plus.GetFrom(), m_TotalRanges_minus.GetFrom());
     }
     return IsReverse(m_Ranges.front().second) ?
-        m_TotalRanges[1].GetFrom() : m_TotalRanges[0].GetFrom();
+        m_TotalRanges_minus.GetFrom() : m_TotalRanges_plus.GetFrom();
 }
 
 
 TSeqPos CHandleRange::GetRight(void) const
 {
     if ( !m_IsCircular ) {
-        return max(m_TotalRanges[0].GetTo(), m_TotalRanges[1].GetTo());
+        return max(m_TotalRanges_plus.GetTo(), m_TotalRanges_minus.GetTo());
     }
     return IsReverse(m_Ranges.front().second) ?
-        m_TotalRanges[0].GetTo() : m_TotalRanges[1].GetTo();
+        m_TotalRanges_plus.GetTo() : m_TotalRanges_minus.GetTo();
 }
 
 
@@ -224,33 +224,54 @@ CHandleRange::TRange
 CHandleRange::GetOverlappingRange(TTotalRangeFlags flags) const
 {
     TOpenRange ret = TOpenRange::GetEmpty();
-    if (flags & eStrandPlus) {   // == eCircularStart
-        ret += m_TotalRanges[0];
-        if ( m_IsCircular ) {
-            // Adjust start/stop to include cut point
-            if ( !IsReverse(m_Ranges.front().second) ) {
-                // Include end
-                ret.SetTo(TRange::GetWholeTo());
-            }
-            else {
-                // Include start
-                ret.SetFrom(TRange::GetWholeFrom());
-            }
+    if (m_IsCircular) {
+        ETotalRangeFlags circular_strand =
+            IsReverse(m_Ranges.front().second) ?
+            eStrandMinus : eStrandPlus;
+        if (flags & circular_strand) {
+            ret = TOpenRange::GetWhole();
         }
+        return ret;
+    }
+    if (flags & eStrandPlus) {   // == eCircularStart
+        ret += m_TotalRanges_plus;
     }
     if (flags & eStrandMinus) {  // == eCircularEnd
-        ret += m_TotalRanges[1];
-        if ( m_IsCircular ) {
-            // Adjust start/stop to include cut point
-            if ( !IsReverse(m_Ranges.front().second) ) {
-                // Include end
-                ret.SetFrom(TRange::GetWholeFrom());
-            }
-            else {
-                // Include start
-                ret.SetTo(TRange::GetWholeTo());
-            }
-        }
+        ret += m_TotalRanges_minus;
+    }
+    return ret;
+}
+
+
+CHandleRange::TRange CHandleRange::GetCircularStart(void) const
+{
+    _ASSERT(m_IsCircular);
+    TOpenRange ret = m_TotalRanges_plus;
+    // Adjust start/stop to include cut point
+    if ( !IsReverse(m_Ranges.front().second) ) {
+        // Include end
+        ret.SetTo(TRange::GetWholeTo());
+    }
+    else {
+        // Include start
+        ret.SetFrom(TRange::GetWholeFrom());
+    }
+    return ret;
+}
+
+
+CHandleRange::TRange CHandleRange::GetCircularEnd(void) const
+{
+    _ASSERT(m_IsCircular);
+    TOpenRange ret = m_TotalRanges_minus;
+    // Adjust start/stop to include cut point
+    if ( !IsReverse(m_Ranges.front().second) ) {
+        // Include end
+        ret.SetFrom(TRange::GetWholeFrom());
+    }
+    else {
+        // Include start
+        ret.SetTo(TRange::GetWholeTo());
     }
     return ret;
 }
@@ -296,6 +317,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/12/08 16:39:37  grichenk
+* Optimized total ranges in CHandleRange
+*
 * Revision 1.24  2004/11/05 19:29:28  grichenk
 * Fixed sorting of circular features
 *

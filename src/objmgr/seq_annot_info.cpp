@@ -333,14 +333,12 @@ CSeq_annot_Info::x_MapAnnotObjects(CTSE_Info& tse,
                     annotRef.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
                     annotRef.m_HandleRange->GetData() = hr;
                     if ( hr.IsCircular() ) {
-                        key.m_Range = hr.GetOverlappingRange(
-                            CHandleRange::eCircularStart);
+                        key.m_Range = hr.GetCircularStart();
                         tse.x_MapAnnotObject(index,
                                              key,
                                              annotRef,
                                              m_ObjectInfos);
-                        key.m_Range = hr.GetOverlappingRange(
-                            CHandleRange::eCircularEnd);
+                        key.m_Range = hr.GetCircularEnd();
                         tse.x_MapAnnotObject(index,
                                              key,
                                              annotRef,
@@ -510,6 +508,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/12/08 16:39:37  grichenk
+ * Optimized total ranges in CHandleRange
+ *
  * Revision 1.24  2004/09/30 15:04:09  grichenk
  * Removed splitting of total ranges by strand
  *

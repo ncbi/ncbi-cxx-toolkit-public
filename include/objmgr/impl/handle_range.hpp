@@ -78,8 +78,6 @@ public:
         eStrandPlus    = 1,
         eStrandMinus   = 2,
         eStrandAny     = eStrandPlus | eStrandMinus,
-        eCircularStart = eStrandPlus,  // first part of a circular location
-        eCircularEnd   = eStrandMinus  // second part of a circular location
     };
     typedef unsigned int TTotalRangeFlags;
 
@@ -90,6 +88,9 @@ public:
     // Leftmost and rightmost points of the total range ragardless of strand
     TSeqPos GetLeft(void) const;
     TSeqPos GetRight(void) const;
+    // Ranges for circular locations
+    TRange GetCircularStart(void) const;
+    TRange GetCircularEnd(void) const;
 
     // Get the range including all ranges in the list which (with any strand)
     // filter the list through 'range' argument
@@ -110,7 +111,8 @@ private:
     static bool x_IntersectingStrands(ENa_strand str1, ENa_strand str2);
 
     TRanges        m_Ranges;
-    vector<TRange> m_TotalRanges; // for plus and minus strands
+    TRange         m_TotalRanges_plus;
+    TRange         m_TotalRanges_minus;
     bool           m_IsCircular;
     bool           m_IsSingleStrand;
 
@@ -187,10 +189,10 @@ CHandleRange::TTotalRangeFlags CHandleRange::GetStrandsFlag(void) const
         return ret;
     }
     if ( !m_IsCircular ) {
-        if ( !m_TotalRanges[0].Empty() ) {
+        if ( !m_TotalRanges_plus.Empty() ) {
             ret |= eStrandPlus;
         }
-        if ( !m_TotalRanges[1].Empty() ) {
+        if ( !m_TotalRanges_minus.Empty() ) {
             ret |= eStrandMinus;
         }
     }
@@ -212,6 +214,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.24  2004/12/08 16:39:37  grichenk
+ * Optimized total ranges in CHandleRange
+ *
  * Revision 1.23  2004/11/05 19:29:28  grichenk
  * Fixed sorting of circular features
  *
