@@ -36,9 +36,7 @@
 #include <objects/general/User_field.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 
-#include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/item_ostream.hpp>
-#include <objtools/format/flat_expt.hpp>
 #include <objtools/format/items/locus_item.hpp>
 #include <objtools/format/items/defline_item.hpp>
 #include <objtools/format/items/accession_item.hpp>
@@ -200,6 +198,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/18 15:42:12  shomrat
+* Remove redundant include directives
+*
 * Revision 1.7  2004/03/12 16:58:43  shomrat
 * Filtering moved to gather_items
 *
