@@ -202,7 +202,7 @@ void MakeIDX( istream* inp_istr, const size_t file_index, ostream* out_ostr )
 {
   istream * inp = inp_istr? inp_istr: &cin;
   ostream * out = out_ostr? out_ostr: &cout;
-  inp->unsetf(ios_base::skipws);
+  inp->unsetf(IOS_BASE::skipws);
   char c0 = '\n', c;
   while(inp->good()) {
     c = inp->get();
@@ -222,6 +222,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/12/10 01:16:57  ucko
+ * ios_base -> IOS_BASE for portability to GCC 2.95.
+ *
  * Revision 1.5  2003/11/20 17:58:21  kapustin
  * Make the code msvc6.0-friendly
  *
