@@ -314,6 +314,7 @@ public:
     ///   Severity level. 
     /// @return
     ///   Return TRUE if severity level known; FALSE, otherwise.
+    NCBI_XNCBI_EXPORT
     static bool StrToSeverityLevel(const char* str_sev, EDiagSev& sev);
 
     /// Set file name to post.
@@ -927,6 +928,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.74  2004/08/17 14:34:08  dicuccio
+ * Export StrToSeverityLevel
+ *
  * Revision 1.73  2004/06/15 14:12:42  vasilche
  * Fixed order of commands in LOGPOST_ONCE to reduce number of messages.
  *
