@@ -18,7 +18,7 @@ OPTIONAL_PROJ   = @serial@ @dbapi@ @objects@ @ctools@ @app@ @algo@ \
 X_OPTIONAL_PROJ =  serial dbapi objects ctools app algo \
    internal
 CHECK_SUB_PROJ = @check@
-POTENTIAL_SUB_PROJ = @gui@
+EXPENDABLE_SUB_PROJ = @gui@
 
 SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ) $(CHECK_SUB_PROJ)
 include ./Makefile.meta
