@@ -72,7 +72,7 @@ public:
 </pre><font color = black>
 
 Given this definition, one might then define a <i>neighborhood</i> using a single <i>CPerson</i>.
-Assuming a function <i>FullerBrush(CPerson&)</i> must now be applied to each person in the
+Assuming a function <i>FullerBrushMan(CPerson&)</i> must now be applied to each person in the
 neighborhood, this could be implemented using a <i>CTypeIterator</i> as follows:
 
 <font color = "#000080"> <pre>
@@ -81,7 +81,7 @@ CPerson neighborhood("Moe", "123 Main St",
                                 new CPerson("Curly", "131 Main St", 0)));
 
 for (CTypeIterator&lt;CPerson&gt; house = Begin(neighborhood); house; ++house ) {
-    FullerBrush(*house);
+    FullerBrushMan(*house);
 }
 </pre><font color = black>
 
@@ -111,13 +111,13 @@ specified type. <p>
 
 In the above example, the data members visited by the iterator were of the same type as
 the object itself. This is not necessary however, as the aggregate object's type
-information is derived from the <i>Begin(ObjectName)</i> expresssion, while the type to
-be visited is defined by <i>ObjectType.</i> 
-All <i>CObject</i>s defined in the NCBI C++ Toolkit have a <i>GetTypeInfo()</i> member
-function that is used in the implementation of <i>Begin(ObjectName)</i>. In order to
-implement the <i>Begin()</i> member function for a class derived from <i>CObject</i>, you
-will need to include some explicit type information in one of your implementation
-files. For the CPerson example above, the required information is:
+information is derived from the <i>Begin(ObjectName)</i> expresssion, while the type to be
+visited is defined by <i>ObjectType.</i> All <i>CObject</i>s defined in the NCBI C++
+Toolkit have a <i>GetTypeInfo()</i> member function that is used in the implementation of
+<i>Begin(ObjectName)</i>. In order to implement the <i>Begin()</i> member function for a
+new class you have derived from <i>CObject</i>, you will need to include some explicit
+type information in one of your implementation files. For the CPerson example above, the
+required information is:
 
 <font color = "#000080"> <pre>
 BEGIN_CLASS_INFO(CPerson)
@@ -156,6 +156,8 @@ has additional embedded objects which also contain <i>string</i>s, all of these 
 members will also be visited by the above iterator. In summary, given a hierarchical
 structured object containing data elements of a given type at different layers, the
 NCBI C++ Toolkit iterators effectively generate a "flat" list of these elements. 
+The <i>CStdTypeConstIterator</i> is identical to the <i>CStdTypeIterator</i> but is
+designed to operate on <i>const</i> elements.
 Further examples of using the <i>CTypeIterator</i> and <i>CStdTypeIterator</i> 
 are given in <a href="ctypeiter_cpp.html"><i>ctypeiter.cpp</i></a>. 
 
