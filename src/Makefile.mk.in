@@ -25,9 +25,11 @@ builddir    = @builddir@
 status_dir  = @status_dir@
 
 
-### Paths
+### Other paths
+### includedir0 is reserved; user makefiles should only use includedir.
 
-includedir  = $(top_srcdir)/include
+includedir0 = $(top_srcdir)/include
+includedir  = $(includedir0)
 incdir      = $(build_root)/inc
 libdir      = $(build_root)/lib
 bindir      = $(build_root)/bin
@@ -41,7 +43,7 @@ OPT_GROUPS = @OPT_GROUPS@
 
 ### Header dirs to include
 
-STD_INCLUDE = -I$(incdir) -I$(includedir) $(OPT_GROUPS:%=-I$(includedir)/%)
+STD_INCLUDE = -I$(incdir) -I$(includedir0) $(OPT_GROUPS:%=-I$(includedir0)/%)
 
 
 ### Auxiliary commands, filters
