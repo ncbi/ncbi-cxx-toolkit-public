@@ -157,7 +157,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     }
 
     // update input buffer with data just read
-    x_GPos += n_read;
+    x_GPos += CT_OFF_TYPE(n_read);
     setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read);
 
     return CT_TO_INT_TYPE(*m_ReadBuf);
@@ -199,7 +199,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
                                         &x_read, eIO_ReadPlain);
         if (!(x_read /= sizeof(CT_CHAR_TYPE)))
             break;
-        x_GPos += x_read;
+        x_GPos += CT_OFF_TYPE(x_read);
         // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
         if (x_buf == m_ReadBuf) {
             size_t xx_read = x_read;
@@ -301,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.49  2004/10/27 14:17:46  ucko
+ * underflow, xsgetn: Cast size_t to CT_OFF_TYPE before adding to CT_POS_TYPE.
+ *
  * Revision 6.48  2004/10/26 20:31:33  lavr
  * Track both Put(formerly only) and Get(newly added) stream positions
  *
