@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE 
 BEGIN_SCOPE(objects)
 
-class CAlnGraphic{
+class NCBI_XALNTOOL_EXPORT CAlnGraphic{
 public:
     //view options
     enum ViewOption {
@@ -146,6 +146,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.2  2004/05/03 15:10:04  jianye
+*Added export symbol
+*
 *Revision 1.1  2004/04/30 15:44:15  jianye
 *Initial checkin
 *
