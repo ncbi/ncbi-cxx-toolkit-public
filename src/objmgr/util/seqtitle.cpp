@@ -226,9 +226,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     } else if (title.empty()  &&  is_nm  &&  source.NotEmpty()) {
         unsigned int         genes = 0, cdregions = 0, prots = 0;
         CConstRef<CSeq_feat> gene(0),   cdregion(0);
-        CSeq_loc everywhere;
-        everywhere.SetWhole().Assign(*hnd.GetSeqId());
-        for (CFeat_CI it(hnd.GetScope(), everywhere, CSeqFeatData::e_not_set);
+        for (CFeat_CI it(hnd, 0, 0, CSeqFeatData::e_not_set);
              it;  ++it) {
             switch (it->GetData().Which()) {
             case CSeqFeatData::e_Gene:
@@ -816,6 +814,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2002/12/24 16:11:29  ucko
+* Simplify slightly now that CFeat_CI takes a const handle.
+*
 * Revision 1.12  2002/12/20 21:47:07  ucko
 * Add an argument of type CFeat_CI::EFeat_Location to
 * s_FindLongestFeature, and use it for coding regions in s_TitleFromProtein.
