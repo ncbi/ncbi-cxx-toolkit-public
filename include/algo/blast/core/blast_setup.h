@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.13  2003/06/06 20:36:12  dondosha
+* Removed unneeded arguments from BLAST_GetTranslatedSeqLoc
+*
 * Revision 1.12  2003/06/06 17:51:28  dondosha
 * Comments fixes for doxygen
 *
@@ -211,14 +214,9 @@ BLAST_GetQuerySeqLoc(FILE *infp, Boolean query_is_na,
  * @param query_slp List of nucleotide query SeqLocs [in]
  * @param protein_slp_head Pointer to start of the list of translated 
  *                         SeqLocs [out]
- * @param full_dna_length Total nucleotide length of all query 
- *                        sequences [out]
- * @param frame_info_ptr Array of frame values for all translated 
- *                       SeqLocs [out]
  */
 Int2 BLAST_GetTranslatedSeqLoc(SeqLocPtr query_slp, 
-        SeqLocPtr PNTR protein_slp_head, Int4Ptr full_dna_length, 
-        Int4Ptr PNTR frame_info_ptr);
+        SeqLocPtr PNTR protein_slp_head);
 
 /** Set up the subject sequence block in case of two sequences BLAST.
  * @param file_name File with the subject sequence FASTA [in]
