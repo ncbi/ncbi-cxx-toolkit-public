@@ -508,6 +508,11 @@ void CBDB_File::SetCmp(DB* db)
 DBC* CBDB_File::CreateCursor() const
 {
     DBC* cursor;
+
+    if (!m_DB) {
+        BDB_THROW(eInvalidValue, "Cannot create cursor for unopen file.");
+    }
+
     int ret = m_DB->cursor(m_DB,
                            0,        // DB_TXN*
                            &cursor,
@@ -618,6 +623,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/07/16 13:33:33  kuznets
+ * Added error condition if cursor is created on unopen file.
+ *
  * Revision 1.12  2003/07/09 14:29:24  kuznets
  * Added support of files with duplicate access keys. (DB_DUP mode)
  *
