@@ -27,31 +27,12 @@
 *
 * File Description:
 *   Weights for protein sequences
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2002/05/06 03:39:13  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.4  2002/05/03 21:28:20  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.3  2002/04/09 20:58:09  ucko
-* Look for "processed active peptide" in addition to "mature chain";
-* SWISS-PROT changed their labels.
-*
-* Revision 1.2  2002/03/21 18:57:31  ucko
-* Fix check for initial Met.
-*
-* Revision 1.1  2002/03/06 22:08:40  ucko
-* Add code to calculate protein weights.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <objects/objmgr_old/scopes.hpp>
-#include <objects/objmgr_old/seqvector.hpp>
+#include <objects/objmgr/bioseq_handle.hpp>
+#include <objects/objmgr/feat_ci.hpp>
+#include <objects/objmgr/seq_vector.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
@@ -78,10 +59,10 @@ static const int kNumS[] =
 {0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 static const int kNumSe[] =
 {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0};
-static const int kMaxRes = sizeof(kNumC) / sizeof(*kNumC) - 1;
+static const size_t kMaxRes = sizeof(kNumC) / sizeof(*kNumC) - 1;
 
 
-double GetProteinWeight(CSeq_vector& v, TSeqPos start, TSeqPos end)
+double GetProteinWeight(CSeqVector& v, TSeqPos start, TSeqPos end)
     THROWS((CBadResidueException))
 {
     v.SetCoding(CSeq_data::e_Ncbistdaa);
@@ -97,7 +78,7 @@ double GetProteinWeight(CSeq_vector& v, TSeqPos start, TSeqPos end)
     TSeqPos c = 0, h = 2, n = 0, o = 1, s = 0, se = 0;
 
     for (TSeqPos i = start;  i <= end;  i++) {
-        CSeq_vector::TResidue res = v[i];
+        CSeqVector::TResidue res = v[i];
         if ( res >= kMaxRes  ||  !kNumC[res] ) {
             THROW1_TRACE(CBadResidueException,
                          "GetProteinWeight: bad residue");
@@ -114,27 +95,25 @@ double GetProteinWeight(CSeq_vector& v, TSeqPos start, TSeqPos end)
 }
 
 
-void GetProteinWeights(CScope* scope, const CBioseqHandle& handle,
-                       TWeights& weights)
+void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights)
 {
-    CScope::TBioseqCore core = scope->GetBioseqCore(handle);
+    CBioseq_Handle::TBioseqCore core = handle.GetBioseqCore();
     if (core->GetInst().GetMol() != CSeq_inst::eMol_aa) {
-        // Sigh.  WS5.3 is stupid.
-        static const char* s_Error = "GetMolecularWeights requires a protein!";
-        THROW0_TRACE(s_Error);
+        THROW1_TRACE(runtime_error, "GetMolecularWeights requires a protein!");
     }
     weights.clear();
 
     set<CConstRef<CSeq_loc> > locations;
-    CSeq_vector v = scope->GetSequence(handle);
+    CSeqVector v = handle.GetSeqVector();
     CSeq_loc* whole = new CSeq_loc;
-    whole->SetWhole(*core->GetId().front());
+    whole->SetWhole(*handle.GetSeqId());
 
     CConstRef<CSeq_feat> signal;
 
     // Look for explicit markers: ideally cleavage products (mature
     // peptides), but possibly just signal peptides
-    for (CFeat_CI feat = scope->BeginFeat(*whole, CSeqFeatData::e_not_set);
+    for (CFeat_CI feat(handle, 0, 0, CSeqFeatData::e_not_set,
+                       CFeat_CI::eResolve_All);
          feat;  ++feat) {
         bool is_mature = false, is_signal = false;
         const CSeqFeatData& data = feat->GetData();
@@ -204,3 +183,27 @@ void GetProteinWeights(CScope* scope, const CBioseqHandle& handle,
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.6  2002/05/06 16:11:49  ucko
+* Update for new OM; move CVS log to end.
+*
+* Revision 1.5  2002/05/06 03:39:13  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.4  2002/05/03 21:28:20  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.3  2002/04/09 20:58:09  ucko
+* Look for "processed active peptide" in addition to "mature chain";
+* SWISS-PROT changed their labels.
+*
+* Revision 1.2  2002/03/21 18:57:31  ucko
+* Fix check for initial Met.
+*
+* Revision 1.1  2002/03/06 22:08:40  ucko
+* Add code to calculate protein weights.
+* ===========================================================================
+*/

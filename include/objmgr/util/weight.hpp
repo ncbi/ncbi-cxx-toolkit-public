@@ -30,19 +30,6 @@
 *
 * File Description:
 *   Molecular weights for protein sequences
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2002/05/03 21:28:05  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.2  2002/04/19 17:50:03  ucko
-* Add forward declaration for CBioseqHandle.
-*
-* Revision 1.1  2002/03/06 22:08:39  ucko
-* Add code to calculate protein weights.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -51,10 +38,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CBioseqHandle;
-class CScope;
+class CBioseq_Handle;
 class CSeq_loc;
-class CSeq_vector;
+class CSeqVector;
 
 
 class CBadResidueException : public runtime_error
@@ -65,7 +51,7 @@ public:
 
 // Handles the standard 20 amino acids and Sec; treats Asx as Asp and
 // Glx as Glu; throws CBadResidueException on anything else.
-double GetProteinWeight(CSeq_vector& v, TSeqPos start = 0,
+double GetProteinWeight(CSeqVector& v, TSeqPos start = 0,
                         TSeqPos end = numeric_limits<TSeqPos>::max())
     THROWS((CBadResidueException));
 
@@ -76,10 +62,26 @@ typedef map<CConstRef<CSeq_loc>, double> TWeights;
 // - Annotated cleavage products (mature peptides)
 // - What's left after removing the first signal peptide found
 // - The entire sequence (skipping a leading methionine if present)
-void GetProteinWeights(CScope* scope, const CBioseqHandle& handle,
-                       TWeights& weights);
+void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.4  2002/05/06 16:11:55  ucko
+* Update for new OM; move CVS log to end.
+*
+* Revision 1.3  2002/05/03 21:28:05  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.2  2002/04/19 17:50:03  ucko
+* Add forward declaration for CBioseqHandle.
+*
+* Revision 1.1  2002/03/06 22:08:39  ucko
+* Add code to calculate protein weights.
+* ===========================================================================
+*/
 
 #endif  /* WEIGHT__HPP */
