@@ -161,6 +161,7 @@ property xobjread : {name:"xobjread", path:"objtools:readers"}
 property xobjedit : {name:"xobjedit", path:"objtools:edit"}
 property seqdb : {name:"seqdb", path:"objtools:readers:seqdb"}
 property xformat : {name:"xformat", path:"objtools:format"}
+property xblastformat : {name:"xblastformat", path:"objtools:blast_format"}
 property xobjsimple : {name:"xobjsimple", path:"objtools:simple"}
 
 
@@ -261,7 +262,7 @@ property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, 
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general", req:true}
 property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, taxon1, seqsplit, seqtest, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", req:true}
 property ncbi_mmdb : {name:"ncbi_mmdb", libs:{cdd, cn3d, ncbimime, mmdb1, mmdb2, mmdb3}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq", req:true}
-property ncbi_seqext : {name:"ncbi_seqext", libs:{xflat, xalnmgr, xalnutil, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, seqdb, id1, id1cli, id2, id2cli, id2_split, xobjedit}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver", req:true}
+property ncbi_seqext : {name:"ncbi_seqext", libs:{xflat, xalnmgr, xalnutil, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, xblastformat, seqdb, id1, id1cli, id2, id2cli, id2_split, xobjedit}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver", req:true}
 property ncbi_sqlite : {name:"ncbi_sqlite", libs:{xsqlite}, dep:"ncbi_core", req:true}
 property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext", req:true}
 property ncbi_web : {name:"ncbi_web", libs:{xhtml, xcgi}, dep:"ncbi_core", req:true}
@@ -398,6 +399,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/02/15 12:45:04  lebedev
+ * xblastformat added to ncbi_seqext
+ *
  * Revision 1.42  2005/02/08 12:54:42  lebedev
  * Added gui_config dependency to phylogenetic widget and view
  *
