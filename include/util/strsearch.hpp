@@ -115,6 +115,7 @@ public:
     // Prime the FSM.
     // After finishing adding all the words to the FSM it needs to be 
     // primed to enable usage.
+    bool IsPrimed(void) const { return m_Primed; }
     void Prime(void);
     
     // Retreive the FSM's initial state.
@@ -421,6 +422,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2002/11/13 19:12:23  shomrat
+* Add prime checking
+*
 * Revision 1.5  2002/11/12 15:38:56  ucko
 * Since sm_FailState was constant anyway, made it into a (singleton)
 * enum element so it won't end up as an undefined symbol on Darwin.
