@@ -278,7 +278,7 @@ public:
     // Interface to be used by the CValidError class
 
     // Constructor & Destructor
-    CValidError_imp(CObjectManager&, TErrs&, unsigned int options = 0);
+    CValidError_imp(CObjectManager&, CValidError*, unsigned int options = 0);
     virtual ~CValidError_imp(void);
 
     // Validation methods
@@ -396,12 +396,13 @@ private:
     bool HasTitle(const CTitle& title);
     bool HasIsoJTA(const CTitle& title);
 
-    CObjectManager* const m_ObjMgr;
-    CRef<CScope> m_Scope;
-    CConstRef<CSeq_entry> m_TSE;
+
+    CObjectManager* const   m_ObjMgr;
+    CRef<CScope>            m_Scope;
+    CConstRef<CSeq_entry>   m_TSE;
 
     // error repoitory
-    TErrs*              m_Errors;
+    CValidError*       m_ErrRepository;
 
     // flags derived from options parameter
     bool m_NonASCII;                // User sets if Non ASCII char found
@@ -739,6 +740,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/02/24 20:16:41  shomrat
+* Holds refernce to the CValidError object, and not the internal TErrs
+*
 * Revision 1.14  2003/02/14 21:46:20  shomrat
 * Added methods to check Bioseqs with no MolInfo
 *
