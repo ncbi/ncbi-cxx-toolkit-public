@@ -36,7 +36,7 @@ fi
 #### Substitute new $(builddir)
 
 files="\
-Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl\
+Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl \
 Makefile.lib Makefile.dll Makefile.app Makefile.rules_with_autodep"
 
 for f in $files ; do
