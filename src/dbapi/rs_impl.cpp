@@ -174,9 +174,10 @@ bool CResultSet::Next()
                 case eDB_Image:
                     ((CDB_Image*)m_data[i].GetNonNullData())->Truncate();
                     break;
+                default:
+                    break;
                 }
             }
-
             
             m_rs->GetItem(m_data[i].GetNonNullData());
         }
@@ -383,6 +384,9 @@ void CResultSet::CheckIdx(unsigned int idx)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.36  2004/09/28 00:01:22  vakatov
+* Warning fix:  CResultSet::Next() -- rightfully unhandled variants in switch()
+*
 * Revision 1.35  2004/07/21 19:27:27  kholodov
 * Fixed: incorrect amount of rows in resulset reported
 *
