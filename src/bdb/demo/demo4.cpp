@@ -90,7 +90,7 @@ void PrintBLOB_Table()
         else {
             ret = lob.GetData(buffer, sizeof(buffer));
             assert(ret == eBDB_Ok);
-            for (int i = 0; i < size / sizeof(buffer[0]); ++i) {
+            for (unsigned int i = 0; i < size / sizeof(buffer[0]); ++i) {
                 cout << buffer[i] << " ";
             }
             cout << endl;
@@ -111,7 +111,7 @@ void PrintBLOB_Table()
 
     if (ret == eBDB_Ok) {
         unsigned size = lob.LobSize();
-        for (int i = 0; i < size / sizeof(buffer[0]); ++i) {
+        for (unsigned int i = 0; i < size / sizeof(buffer[0]); ++i) {
             cout << buffer[i] << " ";
         }
         cout << endl;        
@@ -175,6 +175,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/27 18:07:12  kuznets
+ * Fixed compilation warnings
+ *
  * Revision 1.2  2003/05/02 16:23:14  kuznets
  * Cosmetic fixes
  *

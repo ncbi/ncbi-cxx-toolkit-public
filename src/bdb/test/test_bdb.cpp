@@ -93,8 +93,8 @@ void ValidateRecord(const TestDBF1& dbf1, unsigned int id)
 
     assert(s == string(buf));
     assert(id_key == id);
-    assert(idata1 == 400 + id);
-    assert(i21 == id + 3);
+    assert(idata1 == (int)(400 + id));
+    assert(i21 == (int)(id + 3));
 }
 
 
@@ -135,11 +135,11 @@ void ValidateRecord(const TestDBF2& dbf2, unsigned i)
     sprintf(buf, s_StrKeyTempl, i, i);
     string s = (const char*)dbf2.str_key;
     assert(s == string(buf));
-    assert(dbf2.idata == 400+i);
+    assert(dbf2.idata == (int)(400+i));
     sprintf(buf, s_TestStrTempl, i);
     s = (const char*)dbf2.str;
     assert(s == string(buf));
-    assert((int)dbf2.i2 == (i+3));
+    assert((int)dbf2.i2 == (int)(i+3));
 }
 
 
@@ -188,7 +188,7 @@ static void s_TEST_BDB_IdTable_Fill(void)
         dbf1.str = buf;
         dbf1.i2.Set(i+3);
         int i2 = dbf1.i2;
-        assert (i2 == i+3);
+        assert (i2 == (int)(i+3));
 
         assert(!dbf1.idata.IsNull());
 
@@ -653,6 +653,7 @@ static void s_TEST_BDB_BLOB_File(void)
             cout << "BLobData:" << buf << endl;
             assert(0);
         }
+        cout << "Lob len=" << len << endl;
         tdata = test_data2;
     }
 
@@ -749,7 +750,7 @@ static void s_TEST_BDB_StrTable_Fill(void)
         dbf.str = buf;
         dbf.i2.Set(i+3);
         int i2 = dbf.i2;
-        assert (i2 == i+3);
+        assert (i2 == (int)(i+3));
         EBDB_ErrCode err = dbf.Insert();
         assert(err == eBDB_Ok);
     }
@@ -858,6 +859,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/05/27 18:05:08  kuznets
+ * Fixed compilation warnings
+ *
  * Revision 1.7  2003/05/08 13:44:04  kuznets
  * Minor test improvements
  *
