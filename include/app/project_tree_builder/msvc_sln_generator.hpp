@@ -54,7 +54,9 @@ public:
     
     void AddProject(const CProjItem& project);
     
-    void AddUtilityProject(const string& full_path);
+    void AddUtilityProject (const string& full_path);
+
+    void AddBuildAllProject(const string& full_path);
 
     void SaveSolution(const string& file_path);
     
@@ -63,10 +65,14 @@ private:
 
     string m_SolutionDir;
 
-    /// Basename / GUID
+
+    // Basename / GUID
     typedef pair<string, string> TUtilityProject;
+    // Utility projects
     list<TUtilityProject> m_UtilityProjects;
 
+    // BuildAll utility project
+    TUtilityProject m_BuildAllProject; 
 
     class CPrjContext
     {
@@ -88,15 +94,18 @@ private:
         void Clear(void);
         void SetFrom(const CPrjContext& project_context);
     };
-
+    // Real projects
     typedef map<CProjKey, CPrjContext> TProjects;
     TProjects m_Projects;
 
-    //Writers:
+    // Writers:
     void WriteProjectAndSection(CNcbiOfstream&     ofs, 
                                 const CPrjContext& project);
     
     void WriteUtilityProject   (const TUtilityProject& project, 
+                                CNcbiOfstream& ofs);
+
+    void WriteBuildAllProject  (const TUtilityProject& project, 
                                 CNcbiOfstream& ofs);
 
     void WriteProjectConfigurations(CNcbiOfstream&     ofs, 
@@ -118,6 +127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/25 19:45:38  gorelenk
+ * +BuildAll utility project.
+ *
  * Revision 1.9  2004/02/20 22:54:46  gorelenk
  * Added analysis of ASN projects depends.
  *

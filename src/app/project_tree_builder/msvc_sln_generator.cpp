@@ -54,7 +54,8 @@ CMsvcSolutionGenerator::~CMsvcSolutionGenerator(void)
 void 
 CMsvcSolutionGenerator::AddProject(const CProjItem& project)
 {
-    m_Projects[CProjKey(project.m_ProjType, project.m_ID)] = CPrjContext(project);
+    m_Projects[CProjKey(project.m_ProjType, 
+                        project.m_ID)] = CPrjContext(project);
 }
 
 
@@ -63,6 +64,13 @@ CMsvcSolutionGenerator::AddUtilityProject(const string& full_path)
 {
     m_UtilityProjects.push_back(TUtilityProject(full_path, 
                                                 GenerateSlnGUID()));
+}
+
+
+void 
+CMsvcSolutionGenerator::AddBuildAllProject(const string& full_path)
+{
+    m_BuildAllProject = TUtilityProject(full_path, GenerateSlnGUID());
 }
 
 
@@ -85,6 +93,11 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     ITERATE(list<TUtilityProject>, p, m_UtilityProjects) {
         const TUtilityProject& utl_prj = *p;
         WriteUtilityProject(utl_prj, ofs);
+    }
+    // BuildAll project
+    if ( !m_BuildAllProject.first.empty() &&
+        !m_BuildAllProject.second.empty() ) {
+        WriteBuildAllProject(m_BuildAllProject, ofs);
     }
 
     // Projects from the projects tree
@@ -114,7 +127,11 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
         const TUtilityProject& utl_prj = *p;
         WriteUtilityProjectConfiguration(utl_prj, ofs);
     }
-
+    // BuildAll project
+    if ( !m_BuildAllProject.first.empty() &&
+        !m_BuildAllProject.second.empty() ) {
+        WriteUtilityProjectConfiguration(m_BuildAllProject, ofs);
+    }
     // Projects from tree
     ITERATE(TProjects, p, m_Projects) {
         
@@ -249,7 +266,7 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
 
 void 
 CMsvcSolutionGenerator::WriteUtilityProject(const TUtilityProject& project,
-                                            CNcbiOfstream& ofs)
+                                            CNcbiOfstream&         ofs)
 {
     ofs << "Project(\"" 
         << MSVC_SOLUTION_ROOT_GUID
@@ -271,6 +288,40 @@ CMsvcSolutionGenerator::WriteUtilityProject(const TUtilityProject& project,
     ofs << "EndProject" << endl;
 }
 
+
+void 
+CMsvcSolutionGenerator::WriteBuildAllProject(const TUtilityProject& project, 
+                                             CNcbiOfstream&         ofs)
+{
+    ofs << "Project(\"" 
+        << MSVC_SOLUTION_ROOT_GUID 
+        << "\") = \"" 
+        << CDirEntry(project.first).GetBase() //basename 
+        << "\", \"";
+
+    ofs << CDirEntry::CreateRelativePath(m_SolutionDir, 
+                                         project.first)
+        << "\", \"";
+
+    ofs << project.second // m_GUID 
+        << "\"" 
+        << endl;
+
+    ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
+    
+    ITERATE(TProjects, p, m_Projects) {
+        const CProjKey&    id    = p->first;
+        const CPrjContext& prj_i = p->second;
+
+        ofs << '\t' << '\t' 
+            << prj_i.m_GUID 
+            << " = " 
+            << prj_i.m_GUID << endl;
+    }
+
+    ofs << '\t' << "EndProjectSection" << endl;
+    ofs << "EndProject" << endl;
+}
 
 
 void 
@@ -342,6 +393,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/02/25 19:45:00  gorelenk
+ * +BuildAll utility project.
+ *
  * Revision 1.14  2004/02/24 23:26:17  gorelenk
  * Changed implementation  of member-function WriteProjectConfigurations
  * of class CMsvcSolutionGenerator.
