@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/03/22 19:48:56  lavr
+ * Removed <stdio.h>: included from ncbi_util.h or ncbi_priv.h
+ *
  * Revision 6.8  2002/02/05 21:45:55  lavr
  * Included header files rearranged
  *
@@ -59,7 +62,6 @@
 
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_util.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 

@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/03/22 19:48:58  lavr
+ * Removed <stdio.h>: included from ncbi_util.h or ncbi_priv.h
+ *
  * Revision 6.5  2001/03/07 20:49:29  lavr
  * Forgotten #include <string.h> added
  *
@@ -50,7 +53,6 @@
 
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_sendmail.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>

@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/03/22 19:48:57  lavr
+ * Removed <stdio.h>: included from ncbi_util.h or ncbi_priv.h
+ *
  * Revision 6.10  2002/02/20 20:56:49  lavr
  * Added missing calls to free(server_info)
  *
@@ -66,7 +69,6 @@
 
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_service.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 
