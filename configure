@@ -21465,7 +21465,7 @@ if test "$with_xerces" != no; then
    else
       in_path=''
    fi
-   : ${XERCES_LIBPATH_=-L$XERCES_LIBPATH ${CONF_f_runpath}$XERCES_LIBPATH}
+   XERCES_LIBPATH_="-L$XERCES_LIBPATH ${CONF_f_runpath}$XERCES_LIBPATH"
    XERCES_LIBS="$XERCES_LIBPATH_ -lxerces-c"
    echo "$as_me:$LINENO: checking for Xerces-C++$in_path" >&5
 echo $ECHO_N "checking for Xerces-C++$in_path... $ECHO_C" >&6
@@ -21570,7 +21570,7 @@ if test "$with_xalan" != no; then
    else
       in_path=''
    fi
-   : ${XALAN_LIBPATH_=-L$XALAN_LIBPATH ${CONF_f_runpath}$XALAN_LIBPATH}
+   XALAN_LIBPATH_="-L$XALAN_LIBPATH ${CONF_f_runpath}$XALAN_LIBPATH"
    XALAN_LIBS="$XALAN_LIBPATH_ -lxalan-c -lxalanMsg"
    echo "$as_me:$LINENO: checking for Xalan-C++$in_path" >&5
 echo $ECHO_N "checking for Xalan-C++$in_path... $ECHO_C" >&6

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.361 2005/04/04 13:58:09 ucko Exp $
+#  $Id: configure.ac,v 1.362 2005/04/04 19:36:52 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3788,7 +3788,7 @@ if test "$with_xerces" != no; then
    else
       in_path=''
    fi
-   : ${XERCES_LIBPATH_=-L$XERCES_LIBPATH ${CONF_f_runpath}$XERCES_LIBPATH}
+   XERCES_LIBPATH_="-L$XERCES_LIBPATH ${CONF_f_runpath}$XERCES_LIBPATH"
    XERCES_LIBS="$XERCES_LIBPATH_ -lxerces-c"
    AC_CACHE_CHECK([for Xerces-C++$in_path], ncbi_cv_lib_xerces_c,
       [CPPFLAGS="$XERCES_INCLUDE $orig_CPPFLAGS"
@@ -3840,7 +3840,7 @@ if test "$with_xalan" != no; then
    else
       in_path=''
    fi
-   : ${XALAN_LIBPATH_=-L$XALAN_LIBPATH ${CONF_f_runpath}$XALAN_LIBPATH}
+   XALAN_LIBPATH_="-L$XALAN_LIBPATH ${CONF_f_runpath}$XALAN_LIBPATH"
    XALAN_LIBS="$XALAN_LIBPATH_ -lxalan-c -lxalanMsg"
    AC_CACHE_CHECK([for Xalan-C++$in_path], ncbi_cv_lib_xalan_c,
       [CPPFLAGS="$XALAN_INCLUDE $XERCES_INCLUDE $orig_CPPFLAGS"
