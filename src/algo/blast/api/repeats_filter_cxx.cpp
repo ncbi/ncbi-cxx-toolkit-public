@@ -39,7 +39,6 @@
 static char const rcsid[] = "$Id$";
 
 #include <ncbi_pch.hpp>
-#include <ctools/asn_converter.hpp>
 #include <serial/iterator.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -223,6 +222,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.2  2004/06/15 20:08:03  ucko
+ *  Drop inclusion of unused ctools header.
+ *
  *  Revision 1.1  2004/06/15 19:09:22  dondosha
  *  Repeats filtering code, moved from internal/blast/SplitDB/blastd
  *
