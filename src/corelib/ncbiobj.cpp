@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/11/01 21:20:55  vasilche
+* Fixed missing new[] and delete[] on MSVC.
+*
 * Revision 1.10  2000/11/01 20:37:16  vasilche
 * Fixed detection of heap objects.
 * Removed ECanDelete enum and related constructors.
@@ -104,7 +107,11 @@ void* CObject::operator new(size_t size)
 
 void* CObject::operator new[](size_t size)
 {
+#ifdef HAVE_WINDOWS_H
+    void* ptr = ::operator new(size);
+#else
     void* ptr = ::operator new[](size);
+#endif
     memset(ptr, 0, size);
     return ptr;
 }
@@ -119,7 +126,11 @@ void CObject::operator delete(void* ptr)
 
 void CObject::operator delete[](void* ptr)
 {
+#ifdef HAVE_WINDOWS_H
+    ::operator delete(ptr);
+#else
     ::operator delete[](ptr);
+#endif
 }
 #endif
 
