@@ -33,6 +33,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/10/27 19:51:53  vakatov
+* + #include <ncbistre.hpp>
+* It was not really necessary to #include all this stuff to here,
+* but this should force people to use CNcbiXXX stream wrappers
+*
 * Revision 1.4  1998/10/21 19:24:43  vakatov
 * Moved all STL-related code to "ncbistl.hpp"
 * Import NCBI typedefs and limits from "ncbitype.h"
@@ -42,5 +47,6 @@
 
 #include <ncbitype.h>
 #include <ncbistl.hpp>
+#include <ncbistre.hpp>
 
 #endif /* NCBISTD__HPP */
