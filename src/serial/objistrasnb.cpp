@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/03/07 14:41:34  vasilche
+* Removed default argument.
+*
 * Revision 1.26  2000/03/07 14:06:23  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -194,7 +197,7 @@ CObjectIStreamAsnBinary::~CObjectIStreamAsnBinary(void)
 }
 
 inline
-TByte CObjectIStreamAsnBinary::PeekTagByte(size_t index = 0)
+TByte CObjectIStreamAsnBinary::PeekTagByte(size_t index)
 {
 #if CHECK_STREAM_INTEGRITY
     if ( m_CurrentTagState != eTagStart )
