@@ -87,15 +87,20 @@ PreprocessorDefinitions=
 [UsePch]
 UsePch         = TRUE
 
+algo           = ncbi_pch.hpp
+app            = ncbi_pch.hpp
 bdb            = ncbi_pch.hpp
 cgi            = ncbi_pch.hpp
 connect        = ncbi_pch.hpp
 corelib        = ncbi_pch.hpp
 ctools         = ncbi_pch.hpp
 dbapi          = ncbi_pch.hpp
+gui            = ncbi_pch.hpp
 html           = ncbi_pch.hpp
 misc           = ncbi_pch.hpp
 objects        = ncbi_pch.hpp
+objmgr         = ncbi_pch.hpp
+objtools       = ncbi_pch.hpp
 serial         = ncbi_pch.hpp
 sqlite         = ncbi_pch.hpp
 util           = ncbi_pch.hpp
