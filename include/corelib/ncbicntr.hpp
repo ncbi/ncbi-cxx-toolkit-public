@@ -43,6 +43,11 @@
 extern "C" {
 #  include <sched.h>
 }
+#  define NCBI_SCHED_INIT() int spin_counter = 0
+#  define NCBI_SCHED_YIELD() if ( !(++spin_counter & 3) ) sched_yield()
+#else
+#  define NCBI_SCHED_INIT()
+#  define NCBI_SCHED_YIELD()
 #endif
 
 #ifdef NCBI_COMPILER_GCC
@@ -246,10 +251,9 @@ CAtomicCounter::TValue CAtomicCounter::Get(void) const THROWS_NONE
 {
 #ifdef NCBI_COUNTER_RESERVED_VALUE
     TValue value = m_Value;
+    NCBI_SCHED_INIT();
     while (value == NCBI_COUNTER_RESERVED_VALUE) {
-#  ifdef HAVE_SCHED_YIELD
-        sched_yield(); // Be polite
-#  endif
+        NCBI_SCHED_YIELD();
         value = m_Value;
     }
     return value;
@@ -295,9 +299,9 @@ THROWS_NONE
     TValue result;
     TValue* nv_value_p = const_cast<TValue*>(value_p);
 #  ifdef __sparcv9
-    TValue old_value;
+    NCBI_SCHED_INIT();
     for (;;) {
-        old_value = *value_p;
+        TValue old_value = *value_p;
         result = old_value + delta;
         // Atomic compare-and-swap: if *value_p == old_value, swap it
         // with result; otherwise, just put the current value in result.
@@ -310,13 +314,12 @@ THROWS_NONE
         if (result == old_value) { // We win
             break;
         }
-#    ifdef HAVE_SCHED_YIELD
-        sched_yield();
-#    endif
+        NCBI_SCHED_YIELD();
     }
     result += delta;
 #  elif defined(__sparc)
     result = NCBI_COUNTER_RESERVED_VALUE;
+    NCBI_SCHED_INIT();
     for (;;) {
 #    ifdef NCBI_COMPILER_WORKSHOP
         result = NCBICORE_asm_swap(result, nv_value_p);
@@ -327,12 +330,10 @@ THROWS_NONE
         if (result != NCBI_COUNTER_RESERVED_VALUE) {
             break;
         }
-#    ifdef HAVE_SCHED_YIELD
-        sched_yield();
-#    endif
+        NCBI_SCHED_YIELD();
     }
     result += delta;
-    *nv_value_p = result;
+    *value_p = result;
 #  elif defined(__i386)
     // Yay CISC. ;-)
 #    ifdef NCBI_COMPILER_WORKSHOP
@@ -364,6 +365,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/02/19 16:46:21  vasilche
+* Added spin counter before calling sched_yield().
+* Use volatile version of pointer for assignment in x_Add().
+*
 * Revision 1.21  2004/02/18 23:28:46  ucko
 * Clean up after previous (mislogged) commit, and honor volatility better.
 *
