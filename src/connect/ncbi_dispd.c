@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2001/04/24 21:35:46  lavr
+ * Treatment of new bonus coefficient for local servers
+ *
  * Revision 6.15  2001/03/21 21:24:11  lavr
  * Type match (int) for %n in scanf
  *
@@ -94,6 +97,12 @@
 #include <string.h>
 
 
+/* Lower bound of up-to-date/out-of-date ratio */
+#define SERV_DISPD_STALE_RATIO_OK  0.8
+/* Default rate increase if svc runs locally */
+#define SERV_DISPD_LOCAL_SVC_BONUS 1.2
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -102,71 +111,79 @@ extern "C" {
     static int/*bool*/ s_Update(SERV_ITER iter, const char *text);
     static void s_Close(SERV_ITER iter);
 
-    static const SSERV_VTable s_op = { s_GetNextInfo, s_Update, s_Close };
+    static const SSERV_VTable s_op = {
+        s_GetNextInfo, s_Update, 0, s_Close, "DISPD"
+    };
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
 
-typedef struct SDISPD_DataTag {
+typedef struct {
+    SSERV_Info* info;
+    double      status;
+} SDISPD_Node;
+
+
+typedef struct {
     SConnNetInfo* net_info;
-    SSERV_Info**  s_info;
-    size_t        n_info;
-    size_t        n_max_info;
+    SDISPD_Node*  s_node;
+    size_t        n_node;
+    size_t        n_max_node;
 } SDISPD_Data;
 
 
-static void s_FreeData(SDISPD_Data *data)
+static void s_FreeData(SDISPD_Data* data)
 {
     if (!data)
         return;
 
-    ConnNetInfo_Destroy(data->net_info);
-
-    if (data->s_info) {
+    if (data->s_node) {
         size_t i;
-
-        for (i = 0; i < data->n_info; i++)
-            free(data->s_info[i]);
-        free(data->s_info);
+        
+        for (i = 0; i < data->n_node; i++)
+            free(data->s_node[i].info);
+        free(data->s_node);
     }
+
+    ConnNetInfo_Destroy(data->net_info);
 
     free(data);
 }
 
 
-static int/*bool*/ s_AddServerInfo(SDISPD_Data *data, SSERV_Info *info)
+static int/*bool*/ s_AddServerInfo(SDISPD_Data* data, SSERV_Info* info)
 {
     size_t i;
 
     /* First check that the new server info is updating existing one */
-    for (i = 0; i < data->n_info; i++) {
-        if (SERV_EqualInfo(data->s_info[i], info)) {
+    for (i = 0; i < data->n_node; i++) {
+        if (SERV_EqualInfo(data->s_node[i].info, info)) {
             /* Replace older version */
-            free(data->s_info[i]);
-            data->s_info[i] = info;
+            free(data->s_node[i].info);
+            data->s_node[i].info = info;
             return 1;
         }
     }
 
     /* Next, add new service to the list */
-    if (data->n_info == data->n_max_info) {
-        size_t n = data->n_max_info + 10;
-        SSERV_Info** temp;
+    if (data->n_node == data->n_max_node) {
+        size_t n = data->n_max_node + 10;
+        SDISPD_Node* temp;
 
-        if (data->s_info)
-            temp = (SSERV_Info**) realloc(data->s_info, sizeof(*temp) * n);
+        if (data->s_node)
+            temp = (SDISPD_Node*) realloc(data->s_node, sizeof(*temp) * n);
         else
-            temp = (SSERV_Info**) malloc(sizeof(*temp) * n);
+            temp = (SDISPD_Node*) malloc(sizeof(*temp) * n);
         if (!temp)
             return 0;
-
-        data->s_info = temp;
-        data->n_max_info = n;
+        
+        data->s_node = temp;
+        data->n_max_node = n;
     }
 
-    data->s_info[data->n_info++] = info;
+    data->s_node[data->n_node++].info = info;
     return 1;
 }
 
@@ -251,32 +268,30 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         return 0/*failed*/;
     if (CONN_Create(c, &conn) != eIO_Success)
         return 0/*failed*/;
-    CONN_SetTimeout(conn, eIO_Open, &net_info->timeout);
-    CONN_SetTimeout(conn, eIO_ReadWrite, &net_info->timeout);
-    CONN_SetTimeout(conn, eIO_Close, &net_info->timeout);
     /* This dummy read will send all the HTTP data, we'll get a callback */
     CONN_Read(conn, 0, 0, &buflen, eIO_Plain);
     CONN_Close(conn);
-    return ((SDISPD_Data*) iter->data)->n_info != 0;
+    return ((SDISPD_Data*) iter->data)->n_node != 0;
 }
 
 
-static int/*bool*/ s_Update(SERV_ITER iter, const char *text)
+static int/*bool*/ s_Update(SERV_ITER iter, const char* text)
 {
     static const char server_info[] = "Server-Info-";
-    SDISPD_Data* data = (SDISPD_Data *)iter->data;
-    char *buf = (char *)malloc(strlen(text) + 1);
+    SDISPD_Data* data = (SDISPD_Data*) iter->data;
+    char* buf = (char*) malloc(strlen(text) + 1);
     time_t t = time(0);
-    char *b = buf, *c;
-    SSERV_Info *info;
+    char* b = buf;
     int n = -1;
+    char* c;
 
     if (!buf)
         return 0;
     strcpy(buf, text);
     for (b = buf; (c = strchr(b, '\n')) != 0; b = c + 1) {
+        SSERV_Info* info;
         unsigned d1;
-        char *p;
+        char* p;
         int d2;
 
         *c = '\0';
@@ -327,14 +342,14 @@ static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
     time_t t = time(0);
     size_t i = 0;
 
-    while (i < data->n_info) {
-        SSERV_Info* info = data->s_info[i];
+    while (i < data->n_node) {
+        SSERV_Info* info = data->s_node[i].info;
 
         total += info->rate;
         if (info->time < t) {
-            if (i < --data->n_info)
-                memmove(data->s_info + i, data->s_info + i + 1,
-                        (data->n_info - i)*sizeof(*data->s_info));
+            if (i < --data->n_node)
+                memmove(data->s_node + i, data->s_node + i + 1,
+                        (data->n_node - i)*sizeof(*data->s_node));
             free(info);
         } else {
             status += info->rate;
@@ -347,44 +362,49 @@ static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
 
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
 {
-    SDISPD_Data *data = (SDISPD_Data *)iter->data;
-    unsigned int local_host;
-    double status, point;
-    SSERV_Info* info = 0;
+    SDISPD_Data* data = (SDISPD_Data*) iter->data;
+    double total = 0.0, point = -1.0;
+    SSERV_Info* info;
+    double status;
     size_t i;
-
+    
     if (!data)
         return 0;
     
     if (s_IsUpdateNeeded(data) && !s_Resolve(iter))
         return 0;
-    assert(data->n_info != 0);
-    local_host = SOCK_gethostbyname(data->net_info->client_host);
+    assert(data->n_node != 0);
     
-    status = 0.0;
-    for (i = 0; i < data->n_info; i++) {
-        if (data->s_info[i]->host == local_host)
-            status += SERV_DISPD_LOCAL_SVC_BONUS*data->s_info[i]->rate;
-        else
-            status += data->s_info[i]->rate;
+    for (i = 0; i < data->n_node; i++) {
+        info = data->s_node[i].info;
+        status = info->rate;
+        if (info->host == iter->preferred_host) {
+            if (info->coef <= 0.0) {
+                status *=SERV_DISPD_LOCAL_SVC_BONUS;
+                if (info->coef < 0.0)
+                    point = total;      /* Choose this local server */
+            } else
+                status *= info->coef;
+        }
+        total                 += status;
+        data->s_node[i].status = total;
+        if (point >= 0.0)
+            break;                      /* Local server has been chosen */
     }
     
-    point = (status * rand()) / (double)RAND_MAX;
-    status = 0.0;
-    for (i = 0; i < data->n_info; i++) {
-        if (data->s_info[i]->host == local_host)
-            status += SERV_DISPD_LOCAL_SVC_BONUS*data->s_info[i]->rate;
-        else
-            status += data->s_info[i]->rate;
-        if (point < status)
+    if (point < 0.0)
+        point = (total * rand()) / (double) RAND_MAX;
+    for (i = 0; i < data->n_node; i++) {
+        if (point < data->s_node[i].status)
             break;
     }
-    assert(i < data->n_info);
+    assert(i < data->n_node);
     
-    info = data->s_info[i];
-    if (i < --data->n_info) {
-        memmove(data->s_info + i, data->s_info + i + 1,
-                (data->n_info - i)*sizeof(*data->s_info));
+    info = data->s_node[i].info;
+    info->rate = data->s_node[i].status - (i ? data->s_node[i-1].status : 0.0);
+    if (i < --data->n_node) {
+        memmove(data->s_node + i, data->s_node + i + 1,
+                (data->n_node - i)*sizeof(*data->s_node));
     }
     
     return info;
@@ -394,7 +414,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
 static void s_Close(SERV_ITER iter)
 {
     if (iter->data) {
-        s_FreeData((SDISPD_Data *)iter->data);
+        s_FreeData((SDISPD_Data*) iter->data);
         iter->data = 0;
     }
 }
@@ -414,8 +434,8 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
     data->net_info = ConnNetInfo_Clone(net_info);
     if (iter->type & fSERV_StatelessOnly)
         data->net_info->stateless = 1/*true*/;
-    data->n_info = data->n_max_info = 0;
-    data->s_info = 0;
+    data->n_node = data->n_max_node = 0;
+    data->s_node = 0;
     iter->data = data;
 
     if (!s_Resolve(iter)) {
