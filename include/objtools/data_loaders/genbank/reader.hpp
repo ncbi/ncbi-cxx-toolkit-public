@@ -74,13 +74,12 @@ private:
 class CIStream : public istream
 {
 public:
-  CIStream(streambuf *sb) : istream(sb) {}
+  CIStream(streambuf *sb) : istream(sb) { setf(0, ios_base::skipws); };
 
   bool Eof();
   static size_t CIStream::Read(istream &is, char* buffer, size_t bufferLength);
 
   istream *m_sb;
-
 };
 
 class CBlobDescr : public CStringStreamable
@@ -112,6 +111,7 @@ private:
 class CSeqref : public CStreamable
 {
 public:
+  
   virtual void       Save(ostream &os) const { m_Flag.Save(os); }
   virtual void       Restore(istream &is) { m_Flag.Restore(is); }
   virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl) = 0;
@@ -134,6 +134,7 @@ private:
 class CReader
 {
 public:
+  
   virtual ~CReader() {}
   virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId) = 0;
   virtual CSeqref *RetrieveSeqref(istream &is) = 0;
@@ -156,6 +157,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2002/03/22 18:49:23  kimelman
+* stream fix: WS skipping in binary stream
+*
 * Revision 1.4  2002/03/21 19:14:52  kimelman
 * GB related bugfixes
 *
