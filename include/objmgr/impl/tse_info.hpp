@@ -221,6 +221,8 @@ public:
     typedef set<CAnnotName>                                  TNames;
     typedef map<CSeq_id_Handle, TNames>                      TSeqIdToNames;
 
+    typedef vector<CSeq_id_Handle>                           TBioseqsIds;
+
     // find bioseq with exactly the same id
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
     CConstRef<CBioseq_Info> FindBioseq(const CSeq_id_Handle& id) const;
@@ -230,8 +232,11 @@ public:
     CConstRef<CBioseq_Info> FindMatchingBioseq(const CSeq_id_Handle& id) const;
     SSeqMatch_TSE GetSeqMatch(const CSeq_id_Handle& id) const;
 
-    const TBioseqs& GetBioseqsMap(void) const;
+    // fill ids with all Bioseqs Seq-ids from this TSE
+    // the result will be sorted and contain no duplicates
+    void GetBioseqsIds(TBioseqsIds& ids) const;
 
+    void UpdateAnnotIndex(const CSeq_id_Handle& id) const;
     void UpdateAnnotIndex(void) const;
     void UpdateAnnotIndex(const CTSE_Info_Object& object) const;
     void UpdateAnnotIndex(void);
@@ -246,7 +251,7 @@ public:
     virtual void x_SetDirtyAnnotIndexNoParent(void);
     virtual void x_ResetDirtyAnnotIndexNoParent(void);
 
-    void x_GetRecords(const CSeq_id_Handle& id, bool bioseq);
+    void x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const;
     void x_LoadChunk(TChunkId chunk_id) const;
     void x_LoadChunks(const TChunkIds& chunk_ids) const;
 
@@ -540,13 +545,6 @@ inline
 CTSE_Info::TAnnotLock& CTSE_Info::GetAnnotLock(void) const
 {
     return m_AnnotLock;
-}
-
-
-inline
-const CTSE_Info::TBioseqs& CTSE_Info::GetBioseqsMap(void) const
-{
-    return m_Bioseqs;
 }
 
 

@@ -1233,8 +1233,7 @@ bool CAnnot_Collector::x_SearchTSE(const CTSE_Handle&    tseh,
     const CTSE_Info& tse = tseh.x_GetTSE_Info();
     bool found = false;
 
-    const_cast<CTSE_Info&>(tse).x_GetRecords(id, false);
-    tse.UpdateAnnotIndex();
+    tse.UpdateAnnotIndex(id);
     CTSE_Info::TAnnotLockReadGuard guard(tse.GetAnnotLock());
 
     if (cvt) {
@@ -1866,6 +1865,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2005/03/15 19:14:27  vasilche
+* Correctly update and check  bioseq ids in split blobs.
+*
 * Revision 1.51  2005/03/07 16:19:05  vasilche
 * Added lost ampersand.
 *

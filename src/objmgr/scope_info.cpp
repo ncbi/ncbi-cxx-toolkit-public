@@ -51,19 +51,26 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+static bool s_GetScopeAutoReleaseEnabled(void)
+{
+    static int sx_Value = -1;
+    int value = sx_Value;
+    if ( value < 0 ) {
+        value = GetConfigFlag("OBJMGR", "SCOPE_AUTORELEASE", true);
+        sx_Value = value;
+    }
+    return value != 0;
+}
+
+
 static unsigned s_GetScopeAutoReleaseSize(void)
 {
     static unsigned sx_Value = kMax_UInt;
     unsigned value = sx_Value;
     if ( value == kMax_UInt ) {
-        if ( GetConfigFlag("OBJMGR", "SCOPE_AUTORELEASE", true) ) {
-            value = GetConfigInt("OBJMGR", "SCOPE_AUTORELEASE_SIZE", 10);
-            if ( value == kMax_UInt ) {
-                --value;
-            }
-        }
-        else {
-            value = 0;
+        value = GetConfigInt("OBJMGR", "SCOPE_AUTORELEASE_SIZE", 10);
+        if ( value == kMax_UInt ) {
+            --value;
         }
         sx_Value = value;
     }
@@ -79,7 +86,7 @@ CDataSource_ScopeInfo::CDataSource_ScopeInfo(CScope_Impl& scope,
                                              CDataSource& ds)
     : m_Scope(&scope),
       m_DataSource(&ds),
-      m_CanBeUnloaded(s_GetScopeAutoReleaseSize() &&
+      m_CanBeUnloaded(s_GetScopeAutoReleaseEnabled() &&
                       ds.GetDataLoader() &&
                       ds.GetDataLoader()->CanGetBlobById()),
       m_NextTSEIndex(0),
@@ -609,10 +616,7 @@ CTSE_ScopeInfo::SUnloadedInfo::SUnloadedInfo(const CTSE_Lock& tse_lock)
     _ASSERT(m_Loader);
     _ASSERT(m_BlobId);
     // copy all bioseq ids
-    ITERATE ( CTSE_Info::TBioseqs, it, tse_lock->GetBioseqsMap() ) {
-        m_BioseqsIds.push_back(it->first);
-    }
-    sort(m_BioseqsIds.begin(), m_BioseqsIds.end());
+    tse_lock->GetBioseqsIds(m_BioseqsIds);
 }
 
 
@@ -1071,6 +1075,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/03/15 19:14:27  vasilche
+* Correctly update and check  bioseq ids in split blobs.
+*
 * Revision 1.14  2005/03/14 18:17:15  grichenk
 * Added CScope::RemoveFromHistory(), CScope::RemoveTopLevelSeqEntry() and
 * CScope::RemoveDataLoader(). Added requested seq-id information to

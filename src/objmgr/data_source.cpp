@@ -619,8 +619,7 @@ CDataSource::x_GetRecords(const CSeq_id_Handle& idh,
         CDataLoader::TTSE_LockSet tse_set2 = m_Loader->GetRecords(idh, choice);
         ITERATE ( CDataLoader::TTSE_LockSet, it, tse_set2 ) {
             tse_set.AddLock(*it);
-            CTSE_Info& tse_info = const_cast<CTSE_Info&>(**it);
-            tse_info.x_GetRecords(idh, choice == CDataLoader::eBioseqCore);
+            (*it)->x_GetRecords(idh, choice == CDataLoader::eBioseqCore);
         }
     }
     return tse_set;
@@ -647,9 +646,8 @@ CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids)
         }
         ITERATE ( CDataLoader::TTSE_LockSet, tse_it, tse_set ) {
             load_locks.AddLock(*tse_it);
-            CTSE_Info& tse_info = const_cast<CTSE_Info&>(**tse_it);
             ITERATE ( TSeq_idSet, id_it2, ids ) {
-                tse_info.x_GetRecords(*id_it2, false);
+                (*tse_it)->x_GetRecords(*id_it2, false);
             }
         }
     }
@@ -697,7 +695,7 @@ CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
     {{
         TSeq_idSet& dst = ret[tse];
         ITERATE ( TSeq_idSet, id_it, ids ) {
-            const_cast<CTSE_Info&>(*tse).x_GetRecords(*id_it, false);
+            tse->x_GetRecords(*id_it, false);
             dst.insert(*id_it);
         }
     }}
@@ -709,9 +707,8 @@ CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
             m_Loader->GetExternalRecords(bioseq);
         ITERATE ( CDataLoader::TTSE_LockSet, tse_it, tse_set2 ) {
             load_locks.AddLock(*tse_it);
-            CTSE_Info& tse_info = const_cast<CTSE_Info&>(**tse_it);
             ITERATE ( TSeq_idSet, id_it, ids ) {
-                tse_info.x_GetRecords(*id_it, false);
+                (*tse_it)->x_GetRecords(*id_it, false);
             }
         }
     }

@@ -168,19 +168,32 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
 
 /////////////////////////////////////////////////////////////////////////////
 // loading methods
-bool CTSE_Chunk_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq)
+
+void CTSE_Chunk_Info::GetBioseqsIds(TBioseqIds& ids) const
+{
+    ids.insert(ids.end(), m_BioseqIds.begin(), m_BioseqIds.end());
+}
+
+
+bool CTSE_Chunk_Info::ContainsBioseq(const CSeq_id_Handle& id) const
+{
+    return binary_search(m_BioseqIds.begin(), m_BioseqIds.end(), id);
+}
+
+
+bool CTSE_Chunk_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 {
     if ( IsLoaded() ) {
         return true;
     }
-    if ( binary_search(m_BioseqIds.begin(), m_BioseqIds.end(), id) ) {
+    if ( ContainsBioseq(id) ) {
         // contains Bioseq -> always load
         Load();
         return true;
     }
     if ( !bioseq ) {
         // we are requested to index annotations
-        x_EnableAnnotIndex();
+        const_cast<CTSE_Chunk_Info*>(this)->x_EnableAnnotIndex();
     }
     return false;
 }
@@ -469,6 +482,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/03/15 19:14:27  vasilche
+* Correctly update and check  bioseq ids in split blobs.
+*
 * Revision 1.20  2004/12/22 15:56:27  vasilche
 * Use SAnnotObjectsIndex.
 *

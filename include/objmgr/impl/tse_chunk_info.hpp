@@ -177,7 +177,13 @@ protected:
     bool x_Attached(void) const;
 
     // return true if chunk is loaded
-    bool x_GetRecords(const CSeq_id_Handle& id, bool bioseq);
+    bool x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const;
+
+    // append ids with all Bioseqs Seq-ids from this Split-Info
+    void GetBioseqsIds(TBioseqIds& ids) const;
+
+    // biose lookup
+    bool ContainsBioseq(const CSeq_id_Handle& id) const;
 
     // annot index maintainance
     void x_EnableAnnotIndex(void);
@@ -241,6 +247,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/03/15 19:14:27  vasilche
+* Correctly update and check  bioseq ids in split blobs.
+*
 * Revision 1.14  2004/12/22 15:56:27  vasilche
 * Use SAnnotObjectsIndex.
 *

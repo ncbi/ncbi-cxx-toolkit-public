@@ -44,7 +44,7 @@
 #include <objmgr/impl/handle_range.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/objmgr_exception.hpp>
-
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -389,9 +389,38 @@ void CTSE_Info::x_DoUpdate(TNeedUpdateFlags flags)
 }
 
 
+void CTSE_Info::GetBioseqsIds(TBioseqsIds& ids) const
+{
+    {{
+        CDataSource::TMainLock::TReadLockGuard guard
+            (GetDataSource().m_DSMainLock);
+        ITERATE ( TBioseqs, it, m_Bioseqs ) {
+            ids.push_back(it->first);
+        }
+    }}
+    if ( m_Split ) {
+        m_Split->GetBioseqsIds(ids);
+        // after adding split bioseq Seq-ids the result may contain
+        // duplicates and need to be sorted
+        sort(ids.begin(), ids.end());
+        ids.erase(unique(ids.begin(), ids.end()), ids.end());
+    }
+}
+
+
 bool CTSE_Info::ContainsBioseq(const CSeq_id_Handle& id) const
 {
-    return m_Bioseqs.find(id) != m_Bioseqs.end();
+    {{
+        CDataSource::TMainLock::TReadLockGuard guard
+            (GetDataSource().m_DSMainLock);
+        if ( m_Bioseqs.find(id) != m_Bioseqs.end() ) {
+            return true;
+        }
+    }}
+    if ( m_Split && m_Split->ContainsBioseq(id) ) {
+        return true;
+    }
+    return false;
 }
 
 
@@ -418,10 +447,15 @@ bool CTSE_Info::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
 CConstRef<CBioseq_Info> CTSE_Info::FindBioseq(const CSeq_id_Handle& id) const
 {
     CConstRef<CBioseq_Info> ret;
-    TBioseqs::const_iterator it = m_Bioseqs.find(id);
-    if ( it != m_Bioseqs.end() ) {
-        ret = it->second;
-    }
+    x_GetRecords(id, true);
+    {{
+        CDataSource::TMainLock::TReadLockGuard guard
+            (GetDataSource().m_DSMainLock);
+        TBioseqs::const_iterator it = m_Bioseqs.find(id);
+        if ( it != m_Bioseqs.end() ) {
+            ret = it->second;
+        }
+    }}
     return ret;
 }
 
@@ -436,20 +470,18 @@ CTSE_Info::FindMatchingBioseq(const CSeq_id_Handle& id) const
 SSeqMatch_TSE CTSE_Info::GetSeqMatch(const CSeq_id_Handle& id) const
 {
     SSeqMatch_TSE ret;
-    TBioseqs::const_iterator it = m_Bioseqs.find(id);
-    if ( it != m_Bioseqs.end() ) {
-        ret.m_Seq_id = it->first;
-        ret.m_Bioseq = it->second;
+    ret.m_Bioseq = FindBioseq(id);
+    if ( ret.m_Bioseq ) {
+        ret.m_Seq_id = id;
     }
     else if ( id.HaveMatchingHandles() ) {
         CSeq_id_Handle::TMatches ids;
         id.GetMatchingHandles(ids);
         ITERATE ( CSeq_id_Handle::TMatches, match_it, ids ) {
             if ( *match_it != id ) {
-                it = m_Bioseqs.find(*match_it);
-                if ( it != m_Bioseqs.end() ) {
-                    ret.m_Seq_id = it->first;
-                    ret.m_Bioseq = it->second;
+                ret.m_Bioseq = FindBioseq(*match_it);
+                if ( ret.m_Bioseq ) {
+                    ret.m_Seq_id = *match_it;
                     break;
                 }
             }
@@ -459,7 +491,7 @@ SSeqMatch_TSE CTSE_Info::GetSeqMatch(const CSeq_id_Handle& id) const
 }
 
 
-void CTSE_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq)
+void CTSE_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 {
     if ( m_Split ) {
         m_Split->x_GetRecords(id, bioseq);
@@ -469,13 +501,13 @@ void CTSE_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq)
 
 void CTSE_Info::x_LoadChunk(TChunkId chunk_id) const
 {
-    const_cast<CTSE_Split_Info&>(*m_Split).x_LoadChunk(chunk_id);
+    m_Split->x_LoadChunk(chunk_id);
 }
 
 
 void CTSE_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
 {
-    const_cast<CTSE_Split_Info&>(*m_Split).x_LoadChunks(chunk_ids);
+    m_Split->x_LoadChunks(chunk_ids);
 }
 
 
@@ -551,6 +583,13 @@ void CTSE_Info::x_ResetDirtyAnnotIndexNoParent(void)
     if ( HasDataSource() ) {
         GetDataSource().x_ResetDirtyAnnotIndex(*this);
     }
+}
+
+
+void CTSE_Info::UpdateAnnotIndex(const CSeq_id_Handle& id) const
+{
+    x_GetRecords(id, false);
+    const_cast<CTSE_Info*>(this)->UpdateAnnotIndex();
 }
 
 

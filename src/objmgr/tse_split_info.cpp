@@ -157,6 +157,17 @@ CTSE_Chunk_Info& CTSE_Split_Info::GetChunk(TChunkId chunk_id)
 }
 
 
+const CTSE_Chunk_Info& CTSE_Split_Info::GetChunk(TChunkId chunk_id) const
+{
+    TChunks::const_iterator iter = m_Chunks.find(chunk_id);
+    if ( iter == m_Chunks.end() ) {
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   "invalid chunk id: "+NStr::IntToString(chunk_id));
+    }
+    return *iter->second;
+}
+
+
 CTSE_Chunk_Info& CTSE_Split_Info::GetSkeletonChunk(void)
 {
     TChunks::iterator iter = m_Chunks.find(0);
@@ -280,8 +291,8 @@ void CTSE_Split_Info::x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk)
 }
 
 
-// load requests
-void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq)
+CTSE_Split_Info::TSeqIdToChunks::const_iterator
+CTSE_Split_Info::x_FindChunk(const CSeq_id_Handle& id) const
 {
     if ( !m_SeqIdToChunksSorted ) {
         CFastMutexGuard guard(m_SeqIdToChunksMutex);
@@ -290,22 +301,48 @@ void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq)
             m_SeqIdToChunksSorted = true;
         }
     }
-    pair<CSeq_id_Handle, TChunkId> key(id, -1);
-    for ( TSeqIdToChunks::iterator iter =
-              lower_bound(m_SeqIdToChunks.begin(), m_SeqIdToChunks.end(), key);
+    return lower_bound(m_SeqIdToChunks.begin(),
+                       m_SeqIdToChunks.end(),
+                       pair<CSeq_id_Handle, TChunkId>(id, -1));
+}
+
+// load requests
+void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
+{
+    for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
           iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
         GetChunk(iter->second).x_GetRecords(id, bioseq);
     }
 }
 
 
-void CTSE_Split_Info::x_LoadChunk(TChunkId chunk_id)
+void CTSE_Split_Info::GetBioseqsIds(TBioseqsIds& ids) const
+{
+    ITERATE ( TChunks, it, m_Chunks ) {
+        it->second->GetBioseqsIds(ids);
+    }
+}
+
+
+bool CTSE_Split_Info::ContainsBioseq(const CSeq_id_Handle& id) const
+{
+    for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
+          iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
+        if ( GetChunk(iter->second).ContainsBioseq(id) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CTSE_Split_Info::x_LoadChunk(TChunkId chunk_id) const
 {
     GetChunk(chunk_id).Load();
 }
 
 
-void CTSE_Split_Info::x_LoadChunks(const TChunkIds& chunk_ids)
+void CTSE_Split_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
 {
     ITERATE ( TChunkIds, it, chunk_ids ) {
         x_LoadChunk(*it);

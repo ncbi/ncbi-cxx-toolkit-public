@@ -72,6 +72,7 @@ public:
     typedef CTSE_Chunk_Info::TSequence              TSequence;
     typedef CTSE_Chunk_Info::TAssembly              TAssembly;
     typedef CTSE_Chunk_Info::TLocationSet           TLocationSet;
+    typedef vector<CSeq_id_Handle>                  TBioseqsIds;
 
     CTSE_Split_Info(void);
     ~CTSE_Split_Info(void);
@@ -91,6 +92,7 @@ public:
     // chunk connection
     void AddChunk(CTSE_Chunk_Info& chunk_info);
     CTSE_Chunk_Info& GetChunk(TChunkId chunk_id);
+    const CTSE_Chunk_Info& GetChunk(TChunkId chunk_id) const;
     CTSE_Chunk_Info& GetSkeletonChunk(void);
 
     // get attach points from CTSE_Info
@@ -121,11 +123,17 @@ public:
     void x_SetContainedId(const TBioseqId& id, TChunkId chunk_id);
 
     void x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk);
+    
+    // append ids with all Bioseqs Seq-ids from this Split-Info
+    void GetBioseqsIds(TBioseqsIds& ids) const;
+
+    // bioseq lookup
+    bool ContainsBioseq(const CSeq_id_Handle& id) const;
 
     // loading requests
-    void x_GetRecords(const CSeq_id_Handle& id, bool bioseq);
-    void x_LoadChunk(TChunkId chunk_id);
-    void x_LoadChunks(const TChunkIds& chunk_ids);
+    void x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const;
+    void x_LoadChunk(TChunkId chunk_id) const;
+    void x_LoadChunks(const TChunkIds& chunk_ids) const;
 
     // loading results
     void x_LoadDescr(const TPlace& place, const CSeq_descr& descr);
@@ -148,6 +156,9 @@ public:
                         const TPlace& place,
                         const TAssembly& assembly);
 
+protected:
+    TSeqIdToChunks::const_iterator x_FindChunk(const CSeq_id_Handle& id) const;
+
 private:
     // identification of the blob
     CRef<CDataLoader>      m_DataLoader;
@@ -164,9 +175,9 @@ private:
 
     // loading
     CInitMutexPool         m_MutexPool;
-    CFastMutex             m_SeqIdToChunksMutex;
-    bool                   m_SeqIdToChunksSorted;
-    TSeqIdToChunks         m_SeqIdToChunks;
+    mutable CFastMutex     m_SeqIdToChunksMutex;
+    mutable bool           m_SeqIdToChunksSorted;
+    mutable TSeqIdToChunks m_SeqIdToChunks;
 
 private:
     CTSE_Split_Info(const CTSE_Split_Info&);
