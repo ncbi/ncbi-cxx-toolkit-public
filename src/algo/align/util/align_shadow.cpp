@@ -43,7 +43,7 @@
 #include <numeric>
 
 BEGIN_NCBI_SCOPE
-//USING_SCOPE(AlgoAlignUtil);
+USING_SCOPE(AlgoAlignUtil);
 USING_SCOPE(objects);
 
 
@@ -582,6 +582,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.5  2004/12/22 21:33:22  kapustin
+ * Uncomment AlgoAlignUtil scope
+ *
  * Revision 1.4  2004/12/22 21:26:18  kapustin
  * Move friend template definition to the header. Declare explicit specialization.
  *
