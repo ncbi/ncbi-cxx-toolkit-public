@@ -157,7 +157,8 @@ CPssmEngine::x_ErrorCodeToString(int error_code)
         break;
 
     default:
-        retval = "Unknown error code";
+        retval = "Unknown error code returned from PSSM engine: " + 
+            NStr::IntToString(error_code);
     }
 
     return retval;
@@ -420,6 +421,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2005/03/08 17:00:49  camacho
+ * Added unknown error code value to error message in case of PSSM engine failure
+ *
  * Revision 1.30  2005/02/22 22:50:23  camacho
  * + impala_scaling_factor, first cut
  *
