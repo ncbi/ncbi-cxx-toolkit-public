@@ -87,22 +87,20 @@ Int2 BlastNumber2Program(Uint1 number, CharPtr *program);
  * @param buffer start of sequence [in]
  * @param length query sequence length [in]
  * @param context context number [in]
- * @param frame frame information [in]
  * @param seq_blk SequenceBlk to be allocated and filled in [out]
  * @param buffer_allocated Is the buffer allocated? If yes, 'sequence_start' is
  *        the start of the sequence, otherwise it is 'sequence'. [in]
 */
 Int2
 BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
-	const Int4Ptr frame, BLAST_SequenceBlkPtr *seq_blk, 
-        Boolean buffer_allocated);
+	BLAST_SequenceBlkPtr *seq_blk, Boolean buffer_allocated);
 
 /** Allocate and initialize the query information structure.
  * @param program_number Type of BLAST program [in]
  * @param num_queries Number of query sequences [in]
  * @param query_info_ptr The initialized structure [out]
  */
-Int2 BLAST_QueryInfoInit(const Uint1 program_number, 
+Int2 BLAST_QueryInfoInit(Uint1 program_number, 
         Int4 num_queries, BlastQueryInfoPtr *query_info_ptr);
 
 /** GetTranslation to get the translation of the nucl. sequence in the
@@ -227,6 +225,18 @@ Int4 BLAST_GetQueryLength(BlastQueryInfoPtr query_info, Int4 context);
 
 /** Deallocate memory for query information structure */
 BlastQueryInfoPtr BlastQueryInfoFree(BlastQueryInfoPtr query_info);
+
+Int2 BLAST_PackDNA(Uint1Ptr buffer, Int4 length, Uint1 encoding, 
+                   Uint1Ptr PNTR packed_seq);
+
+/** Initialize the mixed-frame sequence for out-of-frame gapped extension.
+ * @param query_blk Sequence block containing the concatenated frames of the 
+ *                  query. The mixed-frame sequence is saved here. [in] [out]
+ * @param query_info Query information structure containing offsets into the* 
+ *                   concatenated sequence. [in]
+ */
+Int2 BLAST_InitDNAPSeq(BLAST_SequenceBlkPtr query_blk, 
+                       BlastQueryInfoPtr query_info);
 
 #ifdef __cplusplus
 }
