@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.9  2003/07/31 14:31:41  camacho
+ * Replaced Char for char
+ *
  * Revision 1.8  2003/07/31 00:32:37  camacho
  * Eliminated Ptr notation
  *
@@ -88,7 +91,7 @@ Blast_MessageFree(Blast_Message* blast_msg)
 
 Int2 
 Blast_MessageWrite(Blast_Message* *blast_msg, Int4 severity, Int4 code,
-	Int4 subcode, const Char *message)
+	Int4 subcode, const char *message)
 {
 	if (blast_msg == NULL)
 		return 1;

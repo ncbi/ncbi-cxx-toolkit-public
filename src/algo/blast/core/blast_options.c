@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.50  2003/07/31 14:31:41  camacho
+ * Replaced Char for char
+ *
  * Revision 1.49  2003/07/31 14:19:28  camacho
  * Replaced FloatHi for double
  *
@@ -223,7 +226,7 @@
  * Use BlastKarlinkGapBlkFill, PrintMatrixMessage, and PrintAllowedValuesMessage
  *
  * Revision 1.15  2003/02/26 15:42:50  madden
- * const CharPtr becomes const Char *, add BlastExtensionOptionsValidate
+ * const charPtr becomes const char *, add BlastExtensionOptionsValidate
  *
  * Revision 1.14  2003/02/14 16:30:19  dondosha
  * Get rid of a compiler warning for type mismatch
@@ -696,7 +699,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 		{
 			if (status == 1)
 			{
-				Char* buffer;
+				char* buffer;
 				Int4 code=2;
 				Int4 subcode=1;
 
@@ -708,7 +711,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 			}
 			else if (status == 2)
 			{
-				Char* buffer;
+				char* buffer;
 				Int4 code=2;
 				Int4 subcode=1;
 

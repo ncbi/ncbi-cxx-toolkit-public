@@ -9,7 +9,7 @@ void * MemDup (const void *orig, size_t size)
 		return NULL;
 
 	if ((copy = malloc (size)) == NULL)
-		abort();
+		return NULL;
 
 	memcpy(copy, orig, size);
 		return copy;
@@ -90,7 +90,7 @@ ListNode* ListNodeAddPointer (ListNode** head, Int2 choice,
 *      if str == NULL, does not add a ListNode
 *
 *****************************************************************************/
-ListNode* ListNodeCopyStr (ListNode** head, Int2 choice, Char* str)
+ListNode* ListNodeCopyStr (ListNode** head, Int2 choice, char* str)
 {
 	ListNode* newnode;
 

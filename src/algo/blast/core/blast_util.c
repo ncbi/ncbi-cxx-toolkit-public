@@ -113,7 +113,7 @@ BLAST_SequenceBlk* BlastSequenceBlkFree(BLAST_SequenceBlk* seq_blk)
    return NULL;
 }
 
-Int2 BlastProgram2Number(const Char *program, Uint1 *number)
+Int2 BlastProgram2Number(const char *program, Uint1 *number)
 {
 	*number = blast_type_undefined;
 	if (program == NULL)
@@ -135,7 +135,7 @@ Int2 BlastProgram2Number(const Char *program, Uint1 *number)
 	return 0;
 }
 
-Int2 BlastNumber2Program(Uint1 number, Char* *program)
+Int2 BlastNumber2Program(Uint1 number, char* *program)
 {
 
 	if (program == NULL)

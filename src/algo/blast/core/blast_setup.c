@@ -52,7 +52,7 @@ BlastScoreBlkGappedFill(BLAST_ScoreBlk* sbp,
 
 	if (program == blast_type_blastn)
 	{
-      Char buffer[50];
+      char buffer[50];
      
       if (scoring_options->matrix_path && 
           *scoring_options->matrix_path != NULLB)
@@ -271,7 +271,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
                   return status;
          }
             
-         if ((status=BlastScoreBlkFill(sbp, (Char*) buffer, 
+         if ((status=BlastScoreBlkFill(sbp, (char*) buffer, 
                                        query_length, context)))
             return status;
       }

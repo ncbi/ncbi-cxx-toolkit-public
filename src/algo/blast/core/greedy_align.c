@@ -410,7 +410,7 @@ Int4 BLAST_GreedyAlign(const Uint1* s1, Int4 len1,
     
     Int4 x, cur_max, b_diag = 0, best_diag = INT4_MAX/2;
     Int4* max_row_free = gamp->max_row_free;
-    Char nlower = 0, nupper = 0;
+    char nlower = 0, nupper = 0;
     MBSpace* space = gamp->space;
     Int4 max_len = len2;
  
@@ -626,7 +626,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* s1, Int4 len1,
     Int4 *lower, *upper;
     
     Int4 x, cur_max, b_diag = 0, best_diag = INT4_MAX/2;
-    Char nlower = 0, nupper = 0;
+    char nlower = 0, nupper = 0;
     MBSpace* space = gamp->space;
     Int4 stop_condition;
     Int4 max_d;

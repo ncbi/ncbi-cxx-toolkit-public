@@ -34,6 +34,9 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 
 /* $Revision$ 
 * $Log$
+* Revision 1.12  2003/07/31 14:31:37  camacho
+* Replaced Char for char
+*
 * Revision 1.11  2003/07/31 14:19:18  camacho
 * Replaced FloatHi for double
 *
@@ -426,7 +429,7 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	BLAST_KarlinBlk* 	kbp_ideal;	/* Ideal values (for query with average database composition). */
 	Int2 number_of_contexts;	/* Used by sfp and kbp, how large are these*/
 	Int2		matid;		/* id number of matrix. */
-	Char* 	name;		/* name of matrix. */
+	char* 	name;		/* name of matrix. */
 	Uint1* 	ambiguous_res;	/* Array of ambiguous res. (e.g, 'X', 'N')*/
 	Int2		ambig_size,	/* size of array above. */
 			ambig_occupy;	/* How many occupied? */
@@ -443,7 +446,7 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 /* Used for communicating between BLAST and other applications. */
 typedef struct BLAST_Matrix {
     Boolean is_prot;	/* Matrix is for proteins */
-    Char* name;		/* Name of Matrix (i.e., BLOSUM62). */
+    char* name;		/* Name of Matrix (i.e., BLOSUM62). */
     /* Position-specific BLAST rows and columns are different, otherwise they are the
     alphabet length. */
     Int4	rows,		/* query length + 1 for PSSM. */
@@ -470,10 +473,10 @@ BLAST_ScoreBlk* BLAST_ScoreBlkNew (Uint1 alphabet, Int2 number_of_contexts);
 
 BLAST_ScoreBlk* BLAST_ScoreBlkDestruct (BLAST_ScoreBlk* sbp);
 
-Int2 BlastScoreSetAmbigRes (BLAST_ScoreBlk* sbp, Char ambiguous_res);
+Int2 BlastScoreSetAmbigRes (BLAST_ScoreBlk* sbp, char ambiguous_res);
 
 
-Int2 BlastScoreBlkFill (BLAST_ScoreBlk* sbp, Char* string, Int4 length, Int2 context_number);
+Int2 BlastScoreBlkFill (BLAST_ScoreBlk* sbp, char* string, Int4 length, Int2 context_number);
  
 /** This function fills in the BLAST_ScoreBlk structure.  
  * Tasks are:
@@ -482,7 +485,7 @@ Int2 BlastScoreBlkFill (BLAST_ScoreBlk* sbp, Char* string, Int4 length, Int2 con
  * @param sbp Scoring block [in] [out]
  * @param matrix_path Full path to the matrix in the directory structure [in]
 */
-Int2 BlastScoreBlkMatFill (BLAST_ScoreBlk* sbp, Char* matrix);
+Int2 BlastScoreBlkMatFill (BLAST_ScoreBlk* sbp, char* matrix);
 BLAST_ScorePtr* BlastScoreBlkMatCreateEx(BLAST_ScorePtr* matrix,BLAST_Score penalty, BLAST_Score reward);
  
 Int2 BlastScoreBlkMatRead (BLAST_ScoreBlk* sbp, FILE *fp);
@@ -495,7 +498,7 @@ BLAST_ResComp* BlastResCompNew (BLAST_ScoreBlk* sbp);
 
 BLAST_ResComp* BlastResCompDestruct (BLAST_ResComp* rcp);
 
-Int2 BlastResCompStr (BLAST_ScoreBlk* sbp, BLAST_ResComp* rcp, Char* str, Int4 length);
+Int2 BlastResCompStr (BLAST_ScoreBlk* sbp, BLAST_ResComp* rcp, char* str, Int4 length);
 
 /* 
 Produces a Karlin Block, and parameters, with standard protein frequencies.
@@ -515,9 +518,9 @@ BLAST_KarlinBlk* BlastKarlinBlkDestruct (BLAST_KarlinBlk*);
 
 Int2 BlastKarlinBlkCalc (BLAST_KarlinBlk* kbp, BLAST_ScoreFreq* sfp);
 
-Int2 BlastKarlinBlkGappedCalc (BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Char* matrix_name, Blast_Message** error_return);
+Int2 BlastKarlinBlkGappedCalc (BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, char* matrix_name, Blast_Message** error_return);
 
-Int2 BlastKarlinBlkGappedCalcEx (BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, Char* matrix_name, Blast_Message** error_return);
+Int2 BlastKarlinBlkGappedCalcEx (BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name, Blast_Message** error_return);
 
 
 /*
@@ -528,16 +531,16 @@ Int2 BlastKarlinBlkGappedCalcEx (BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_e
                         1 if matrix not found
                         2 if matrix found, but open, extend etc. values not supported.
 */
-Int2 BlastKarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, Char* matrix_name);
+Int2 BlastKarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name);
 
 /* Prints a messages about the allowed matrices, BlastKarlinkGapBlkFill should return 1 before this is called. */
-Char* PrintMatrixMessage(const Char *matrix);
+char* PrintMatrixMessage(const char *matrix);
 
 /* Prints a messages about the allowed open etc values for the given matrix, 
 BlastKarlinkGapBlkFill should return 2 before this is called. */
-Char* PrintAllowedValuesMessage(const Char *matrix, Int4 gap_open, Int4 gap_extend, Int4 decline_align);
+char* PrintAllowedValuesMessage(const char *matrix, Int4 gap_open, Int4 gap_extend, Int4 decline_align);
 
-Int2 BlastKarlinReportAllowedValues(const Char *matrix_name, Blast_Message** error_return);
+Int2 BlastKarlinReportAllowedValues(const char *matrix_name, Blast_Message** error_return);
 
 
 double BlastKarlinLHtoK (BLAST_ScoreFreq* sfp, double lambda, double H);
@@ -581,7 +584,7 @@ double BlastUnevenGapSumE (BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double 
 double BlastLargeGapSumE (BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
 
 /* Used to produce random sequences. */
-Char*  BlastRepresentativeResidues (Int2 length);
+char*  BlastRepresentativeResidues (Int2 length);
 
 Int2 BlastResFreqNormalize (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, double norm);
 
@@ -590,7 +593,7 @@ void BlastResFreqFree (BLAST_ResFreq* rfp);
 
 BLAST_ResFreq* BlastResFreqDestruct (BLAST_ResFreq* rfp);
 
-Int2 BlastResFreqString (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, Char* string, Int4 length);
+Int2 BlastResFreqString (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, char* string, Int4 length);
 
 Int2 BlastResFreqStdComp (BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp);
 
@@ -606,7 +609,7 @@ BLAST_Matrix* BLAST_MatrixDestruct (BLAST_Matrix* blast_matrix);
 
 BLAST_Matrix* BLAST_MatrixFill (BLAST_ScoreBlk* sbp);
 
-BLAST_Matrix* BLAST_MatrixFetch (Char* matrix_name);
+BLAST_Matrix* BLAST_MatrixFetch (char* matrix_name);
 
 
 Int2 BlastGetStdAlphabet (Uint1 alphabet_code, Uint1* residues, Uint4 residues_size);
@@ -629,16 +632,16 @@ are not required should be set to NULL.  The Int2 return value is the length of 
 arrays.
 */
 
-Int2 BlastKarlinGetMatrixValues (Char* matrix, Int4** open, Int4** extension, double** lambda, double** K, double** H, Int4** pref_flags);
+Int2 BlastKarlinGetMatrixValues (char* matrix, Int4** open, Int4** extension, double** lambda, double** K, double** H, Int4** pref_flags);
 
-Int2 BlastKarlinGetMatrixValuesEx (Char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, Int4** pref_flags);
+Int2 BlastKarlinGetMatrixValuesEx (char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, Int4** pref_flags);
 
-Int2 BlastKarlinGetMatrixValuesEx2 (Char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags);
+Int2 BlastKarlinGetMatrixValuesEx2 (char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags);
 
-void getAlphaBeta (Char* matrixName, double *alpha,
+void getAlphaBeta (char* matrixName, double *alpha,
 double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend);
 
-Int2 BlastKarlinGetDefaultMatrixValues (Char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H);
+Int2 BlastKarlinGetDefaultMatrixValues (char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H);
 
 Int4** BlastMatrixToTxMatrix (BLAST_Matrix* matrix);
 Int4** TxMatrixDestruct (Int4** txmatrix); 

@@ -307,11 +307,11 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
  * @param linker sets linker for dust. [out]
 */
 static Int2
-parse_dust_options(const Char *ptr, Int4* level, Int4* window,
+parse_dust_options(const char *ptr, Int4* level, Int4* window,
 	Int4* cutoff, Int4* linker)
 
 {
-	Char buffer[BLASTOPTIONS_BUFFER_SIZE];
+	char buffer[BLASTOPTIONS_BUFFER_SIZE];
 	Int4 arg, index, index1, window_pri=-1, linker_pri=-1, level_pri=-1, cutoff_pri=-1;
 	long	tmplong;
 
@@ -374,10 +374,10 @@ parse_dust_options(const Char *ptr, Int4* level, Int4* window,
  * @param hicut returns "hicut" for seg. [out]
 */
 static Int2
-parse_seg_options(const Char *ptr, Int4* window, double* locut, double* hicut)
+parse_seg_options(const char *ptr, Int4* window, double* locut, double* hicut)
 
 {
-	Char buffer[BLASTOPTIONS_BUFFER_SIZE];
+	char buffer[BLASTOPTIONS_BUFFER_SIZE];
 	Int4 arg, index, index1; 
 	long	tmplong;
 	double	tmpdouble;
@@ -433,10 +433,10 @@ parse_seg_options(const Char *ptr, Int4* window, double* locut, double* hicut)
  * @param linker returns linker [out]
 */
 static Int2
-parse_cc_options(const Char *ptr, Int4* window, double* cutoff, Int4* linker)
+parse_cc_options(const char *ptr, Int4* window, double* cutoff, Int4* linker)
 
 {
-	Char buffer[BLASTOPTIONS_BUFFER_SIZE];
+	char buffer[BLASTOPTIONS_BUFFER_SIZE];
 	Int4 arg, index, index1;
 	long	tmplong;
 	double	tmpdouble;
@@ -493,12 +493,12 @@ parse_cc_options(const Char *ptr, Int4* window, double* cutoff, Int4* linker)
  * @param instructions filtering commands [in] 
  * @param buffer filled with filtering commands for one algorithm. [out]
 */
-static const Char *
-BlastSetUp_load_options_to_buffer(const Char *instructions, Char* buffer)
+static const char *
+BlastSetUp_load_options_to_buffer(const char *instructions, char* buffer)
 {
 	Boolean not_started=TRUE;
-	Char* buffer_ptr;
-	const Char *ptr;
+	char* buffer_ptr;
+	const char *ptr;
 	Int4 index;
 
 	ptr = instructions;
@@ -544,12 +544,12 @@ BlastSetUp_load_options_to_buffer(const Char *instructions, Char* buffer)
 
 Int2
 BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length, 
-   Int4 offset, Char* instructions, Boolean *mask_at_hash, 
+   Int4 offset, char* instructions, Boolean *mask_at_hash, 
    BlastSeqLoc* *seqloc_retval)
 {
 	Boolean do_default=FALSE, do_seg=FALSE, do_dust=FALSE; 
-	Char* buffer=NULL;
-   const Char *ptr;
+	char* buffer=NULL;
+   const char *ptr;
 	Int2 seqloc_num;
 	Int2 status=0;		/* return value. */
 	Int4 window_dust, level_dust, minwin_dust, linker_dust;
@@ -569,7 +569,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length,
 	Boolean do_repeats=FALSE; 	/* screen for orgn. specific repeats. */
 	Boolean do_vecscreen=FALSE;	/* screen for vector contamination. */
 	Boolean myslp_allocated;
-	Char* repeat_database=NULL,* vs_database=NULL,* error_msg;
+	char* repeat_database=NULL,* vs_database=NULL,* error_msg;
 	SeqLocPtr repeat_slp=NULL, vs_slp=NULL;
 	SeqAlignPtr seqalign;
 	SeqLocPtr myslp, seqloc_var, seqloc_tmp;
@@ -599,7 +599,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length,
 	}
 	else
 	{
-		buffer = (Char*) calloc(strlen(instructions), sizeof(Char));
+		buffer = (char*) calloc(strlen(instructions), sizeof(char));
 		ptr = instructions;
 		/* allow old-style filters when m cannot be followed by the ';' */
 		if (*ptr == 'm' && ptr[1] == ' ')

@@ -71,9 +71,12 @@ extern "C" {
 
 #ifndef NCBI_C_TOOLKIT
 typedef Uint1 Boolean;
-typedef Boolean* BooleanPtr;
+#ifndef TRUE
 #define TRUE 1
+#endif
+#ifndef FALSE
 #define FALSE 0
+#endif
 #endif
 
 #ifndef ASSERT

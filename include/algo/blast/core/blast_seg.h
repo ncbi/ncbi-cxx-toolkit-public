@@ -67,7 +67,7 @@ typedef struct Alpha
    double lnalphasize;
    Int4* alphaindex;
    unsigned char* alphaflag;
-   Char* alphachar;
+   char* alphachar;
   } Alpha;
 
 typedef struct SegParameters
@@ -86,7 +86,7 @@ typedef struct SegParameters
 typedef struct Sequence
   {
    struct Sequence* parent;
-   Char* seq;
+   char* seq;
    Alpha* palpha;
    Int4 start;
    Int4 length;

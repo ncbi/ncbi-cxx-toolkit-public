@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.24  2003/07/31 14:31:41  camacho
+ * Replaced Char for char
+ *
  * Revision 1.23  2003/07/31 14:19:28  camacho
  * Replaced FloatHi for double
  *
@@ -235,7 +238,7 @@ typedef double array_of_8[8];
 /* Used to temporarily store matrix values for retrieval. */
 
 typedef struct MatrixInfo {
-	Char*		name;			/* name of matrix (e.g., BLOSUM90). */
+	char*		name;			/* name of matrix (e.g., BLOSUM90). */
 	array_of_8 	*values;		/* The values (below). */
 	Int4		*prefs;			/* Preferences for display. */
 	Int4		max_number_values;	/* number of values (e.g., BLOSUM90_VALUES_MAX). */
@@ -803,7 +806,7 @@ BLAST_ScoreBlkDestruct(BLAST_ScoreBlk* sbp)
 	Convert from ncbieaa to sbp->alphabet_code (i.e., ncbistdaa) first.
 */
 Int2
-BlastScoreSetAmbigRes(BLAST_ScoreBlk* sbp, Char ambiguous_res)
+BlastScoreSetAmbigRes(BLAST_ScoreBlk* sbp, char ambiguous_res)
 
 {
 	Int2 index;
@@ -1055,7 +1058,7 @@ static Int2 BlastScoreBlkMatCreate(BLAST_ScoreBlk* sbp)
 }
 
 Int2
-BlastScoreBlkMatFill(BLAST_ScoreBlk* sbp, Char* matrix_path)
+BlastScoreBlkMatFill(BLAST_ScoreBlk* sbp, char* matrix_path)
 {
     Int2 status = 0;
     FILE *fp = NULL;
@@ -1093,7 +1096,7 @@ BlastScoreBlkMatFill(BLAST_ScoreBlk* sbp, Char* matrix_path)
 */
 
 Int2
-BlastScoreBlkFill(BLAST_ScoreBlk* sbp, Char* query, Int4 query_length, Int2 context_number)
+BlastScoreBlkFill(BLAST_ScoreBlk* sbp, char* query, Int4 query_length, Int2 context_number)
 {
 	BLAST_ResFreq* rfp,* stdrfp;
 	Int2 retval=0;
@@ -1212,15 +1215,15 @@ BlastKarlinBlkDestruct(BLAST_KarlinBlk* kbp)
 Int2
 BlastScoreBlkMatRead(BLAST_ScoreBlk* sbp, FILE *fp)
 {
-    Char	buf[512+3];
-    Char	temp[512];
-    Char*	cp,* lp;
-    Char		ch;
+    char	buf[512+3];
+    char	temp[512];
+    char*	cp,* lp;
+    char		ch;
     BLAST_ScorePtr*	matrix;
     BLAST_ScorePtr	m;
     BLAST_Score	score;
     Uint4	a1cnt = 0, a2cnt = 0;
-    Char    a1chars[BLAST_MAX_ALPHABET], a2chars[BLAST_MAX_ALPHABET];
+    char    a1chars[BLAST_MAX_ALPHABET], a2chars[BLAST_MAX_ALPHABET];
     long	lineno = 0;
     double	xscore;
     register int	index1, index2;
@@ -1267,7 +1270,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlk* sbp, FILE *fp)
         }
         if ((cp = strchr(buf, COMMENT_CHR)) != NULL)
             *cp = NULLB;
-        lp = (Char*)strtok(buf, TOKSTR);
+        lp = (char*)strtok(buf, TOKSTR);
         if (lp == NULL) /* skip blank lines */
             continue;
         while (lp != NULL) {
@@ -1279,7 +1282,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlk* sbp, FILE *fp)
               ch = *lp;
            }
             a2chars[a2cnt++] = ch;
-            lp = (Char*)strtok(NULL, TOKSTR);
+            lp = (char*)strtok(NULL, TOKSTR);
         }
         
         break;	/* Exit loop after reading one line. */
@@ -1305,10 +1308,10 @@ BlastScoreBlkMatRead(BLAST_ScoreBlk* sbp, FILE *fp)
         }
         if ((cp = strchr(buf, COMMENT_CHR)) != NULL)
             *cp = NULLB;
-        if ((lp = (Char*)strtok(buf, TOKSTR)) == NULL)
+        if ((lp = (char*)strtok(buf, TOKSTR)) == NULL)
             continue;
         ch = *lp;
-        cp = (Char*) lp;
+        cp = (char*) lp;
         if ((cp = strtok(NULL, TOKSTR)) == NULL) {
 #ifdef THREADS_IMPLEMENTED
             NlmMutexUnlock(read_matrix_mutex); 
@@ -1539,9 +1542,9 @@ BlastResCompDestruct(BLAST_ResComp* rcp)
 	Store the composition of a (query) string.  
 */
 Int2
-BlastResCompStr(BLAST_ScoreBlk* sbp, BLAST_ResComp* rcp, Char* str, Int4 length)
+BlastResCompStr(BLAST_ScoreBlk* sbp, BLAST_ResComp* rcp, char* str, Int4 length)
 {
-	Char*	lp,* lpmax;
+	char*	lp,* lpmax;
 	Int2 index;
         Uint1 mask;
 
@@ -1691,7 +1694,7 @@ BlastScoreFreqCalc(BLAST_ScoreBlk* sbp, BLAST_ScoreFreq* sfp, BLAST_ResFreq* rfp
 }
 
 typedef struct BLAST_LetterProb {
-		Char	ch;
+		char	ch;
 		double	p;
 	} BLAST_LetterProb;
 
@@ -1914,11 +1917,11 @@ BlastResFreqStdComp(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp)
 	return 0;
 }
 
-Char* 
+char* 
 BlastRepresentativeResidues(Int2 length)
 
 {
-	Char* buffer,* ptr;
+	char* buffer,* ptr;
 	Int2 index, total;
 	Int4 number;
 	total=0;
@@ -1928,7 +1931,7 @@ BlastRepresentativeResidues(Int2 length)
 		total += (Int2) STD_AMINO_ACID_FREQS[index].p;
 	}
 
-	buffer = (Char*) calloc((length+1), sizeof(Char));
+	buffer = (char*) calloc((length+1), sizeof(char));
 
 	ptr = buffer;
 	for (index=0; index<(int)DIM(STD_AMINO_ACID_FREQS); index++) 
@@ -1946,7 +1949,7 @@ BlastRepresentativeResidues(Int2 length)
 }
 
 Int2
-BlastResFreqString(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, Char* string, Int4 length)
+BlastResFreqString(BLAST_ScoreBlk* sbp, BLAST_ResFreq* rfp, char* string, Int4 length)
 {
 	BLAST_ResComp* rcp;
 	
@@ -2039,7 +2042,7 @@ MatrixInfoDestruct(MatrixInfo* matrix_info)
 */
 
 static MatrixInfo*
-MatrixInfoNew(Char* name, array_of_8 *values, Int4* prefs, Int4 max_number)
+MatrixInfoNew(char* name, array_of_8 *values, Int4* prefs, Int4 max_number)
 
 {
 	MatrixInfo* matrix_info;
@@ -2116,7 +2119,7 @@ BlastLoadMatrixValues (void)
 }
 /*
 Int2
-BlastKarlinGetMatrixValues(Char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H)
+BlastKarlinGetMatrixValues(char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H)
 	
 Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
 the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
@@ -2125,7 +2128,7 @@ arrays.
 */
 
 Int2
-BlastKarlinGetMatrixValues(Char* matrix, Int4** open, Int4** extension, double** lambda, double** K, double** H, Int4** pref_flags)
+BlastKarlinGetMatrixValues(char* matrix, Int4** open, Int4** extension, double** lambda, double** K, double** H, Int4** pref_flags)
 
 {
 	return BlastKarlinGetMatrixValuesEx2(matrix, open, extension, NULL, lambda, K, H, NULL, NULL, pref_flags);
@@ -2134,7 +2137,7 @@ BlastKarlinGetMatrixValues(Char* matrix, Int4** open, Int4** extension, double**
 
 /*
 Int2
-BlastKarlinGetMatrixValuesEx(Char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H)
+BlastKarlinGetMatrixValuesEx(char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H)
 	
 Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
 the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
@@ -2143,7 +2146,7 @@ arrays.
 */
 
 Int2
-BlastKarlinGetMatrixValuesEx(Char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, Int4** pref_flags)
+BlastKarlinGetMatrixValuesEx(char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, Int4** pref_flags)
 
 {
 	return BlastKarlinGetMatrixValuesEx2(matrix, open, extension, decline_align, lambda, K, H, NULL, NULL, pref_flags);
@@ -2152,7 +2155,7 @@ BlastKarlinGetMatrixValuesEx(Char* matrix, Int4** open, Int4** extension, Int4**
 
 /*
 Int2
-BlastKarlinGetMatrixValuesEx2(Char* matrix, Int4* open, Int4* extension, Int4* decline_align, double* lambda, double* K, double* H)
+BlastKarlinGetMatrixValuesEx2(char* matrix, Int4* open, Int4* extension, Int4* decline_align, double* lambda, double* K, double* H)
 	
 Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
 the given matrix.  Also obtains arrays of Lambda, K, and H.  Any of these fields that
@@ -2161,7 +2164,7 @@ arrays.
 */
 
 Int2
-BlastKarlinGetMatrixValuesEx2(Char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags)
+BlastKarlinGetMatrixValuesEx2(char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags)
 
 {
 	array_of_8 *values;
@@ -2242,7 +2245,7 @@ BlastKarlinGetMatrixValuesEx2(Char* matrix, Int4** open, Int4** extension, Int4*
 
 /*Extract the alpha and beta settings for this matrixName, and these
   gap open and gap extension costs*/
-void getAlphaBeta(Char* matrixName, double *alpha,
+void getAlphaBeta(char* matrixName, double *alpha,
 double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
 {
    Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
@@ -2293,7 +2296,7 @@ double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend)
  */
 
 Int2
-BlastKarlinGetDefaultMatrixValues(Char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H) {
+BlastKarlinGetDefaultMatrixValues(char* matrix, Int4* open, Int4* extension, double* lambda, double* K, double* H) {
     Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
     double* Lambda_arr,* Kappa_arr,* H_arr;
     Int4 i,n;
@@ -2340,7 +2343,7 @@ BlastKarlinGetDefaultMatrixValues(Char* matrix, Int4* open, Int4* extension, dou
 */
 
 Int2
-BlastKarlinBlkGappedCalc(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Char* matrix_name, Blast_Message** error_return)
+BlastKarlinBlkGappedCalc(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, char* matrix_name, Blast_Message** error_return)
 
 {
 
@@ -2356,10 +2359,10 @@ BlastKarlinBlkGappedCalc(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, C
 */
 
 Int2
-BlastKarlinBlkGappedCalcEx(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, Char* matrix_name, Blast_Message** error_return)
+BlastKarlinBlkGappedCalcEx(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name, Blast_Message** error_return)
 
 {
-	Char buffer[256];
+	char buffer[256];
 	Int2 status = BlastKarlinkGapBlkFill(kbp, gap_open, gap_extend, decline_align, matrix_name);
 
 	if (status && error_return)
@@ -2407,7 +2410,7 @@ BlastKarlinBlkGappedCalcEx(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend,
 			2 if matrix found, but open, extend etc. values not supported.
 */
 Int2
-BlastKarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, Char* matrix_name)
+BlastKarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name)
 {
 	Boolean found_matrix=FALSE, found_values=FALSE;
 	array_of_8 *values;
@@ -2475,11 +2478,11 @@ BlastKarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int
 	return status;
 }
 
-Char*
-PrintMatrixMessage(const Char *matrix_name)
+char*
+PrintMatrixMessage(const char *matrix_name)
 {
-	Char* buffer=calloc(1024, sizeof(Char));
-	Char* ptr;
+	char* buffer=calloc(1024, sizeof(char));
+	char* ptr;
 	MatrixInfo* matrix_info;
         ListNode* vnp,* head;
 
@@ -2502,17 +2505,17 @@ PrintMatrixMessage(const Char *matrix_name)
 	return buffer;
 }
 
-Char*
-PrintAllowedValuesMessage(const Char *matrix_name, Int4 gap_open, Int4 gap_extend, Int4 decline_align) 
+char*
+PrintAllowedValuesMessage(const char *matrix_name, Int4 gap_open, Int4 gap_extend, Int4 decline_align) 
 {
 	array_of_8 *values;
 	Boolean found_matrix=FALSE;
-	Char* buffer,* ptr;
+	char* buffer,* ptr;
 	Int4 index, max_number_values=0;
 	MatrixInfo* matrix_info;
 	ListNode* vnp,* head;
 
-	ptr = buffer = calloc(2048, sizeof(Char));
+	ptr = buffer = calloc(2048, sizeof(char));
 
         if (decline_align == INT2_MAX)
               sprintf(ptr, "Gap existence and extension values of %ld and %ld not supported for %s\nsupported values are:\n", 
@@ -2556,12 +2559,12 @@ PrintAllowedValuesMessage(const Char *matrix_name, Int4 gap_open, Int4 gap_exten
 	
 
 Int2
-BlastKarlinReportAllowedValues(const Char *matrix_name, 
+BlastKarlinReportAllowedValues(const char *matrix_name, 
    Blast_Message** error_return)
 {
 	array_of_8 *values;
 	Boolean found_matrix=FALSE;
-	Char buffer[256];
+	char buffer[256];
 	Int4 index, max_number_values=0;
 	MatrixInfo* matrix_info;
 	ListNode* vnp,* head;
@@ -2783,7 +2786,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
 	if (P0 == NULL)
 		return -1.;
 #else
-	memset((Char*)P0, 0, DIMOFP0*sizeof(P0[0]));
+	memset((char*)P0, 0, DIMOFP0*sizeof(P0[0]));
 #endif
 
 	Sum = 0.;

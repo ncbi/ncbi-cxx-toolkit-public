@@ -675,11 +675,11 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
  * Turns array into a heap with respect to a given comparison function.
  */
 static void
-heapify (Char* base0, Char* base, Char* lim, Char* last, size_t width, int (*compar )(const void*, const void* ))
+heapify (char* base0, char* base, char* lim, char* last, size_t width, int (*compar )(const void*, const void* ))
 {
    size_t i;
    char   ch;
-   Char* left_son,* large_son;
+   char* left_son,* large_son;
    
    left_son = base0 + 2*(base-base0) + width;
    while (base <= lim) {
@@ -709,9 +709,9 @@ heapify (Char* base0, Char* base, Char* lim, Char* last, size_t width, int (*com
 static void CreateHeap (void* b, size_t nel, size_t width, 
    int (*compar )(const void*, const void* ))   
 {
-   Char*    base = (Char*)b;
+   char*    base = (char*)b;
    size_t i;
-   Char*    base0 = (Char*)base,* lim,* basef;
+   char*    base0 = (char*)base,* lim,* basef;
    
    if (nel < 2)
       return;
@@ -800,9 +800,9 @@ static void InsertBlastHSPListInHeap(BlastHitList* hit_list,
       BlastHSPListFree(hit_list->hsplist_array[0]);
       hit_list->hsplist_array[0] = hsp_list;
       if (hit_list->hsplist_count >= 2) {
-         heapify((Char*)hit_list->hsplist_array, (Char*)hit_list->hsplist_array, 
-                 (Char*)&hit_list->hsplist_array[(hit_list->hsplist_count-1)/2],
-                 (Char*)&hit_list->hsplist_array[hit_list->hsplist_count-1],
+         heapify((char*)hit_list->hsplist_array, (char*)hit_list->hsplist_array, 
+                 (char*)&hit_list->hsplist_array[(hit_list->hsplist_count-1)/2],
+                 (char*)&hit_list->hsplist_array[hit_list->hsplist_count-1],
                  sizeof(BlastHSPList*), evalue_compare_hsp_lists);
       }
       hit_list->worst_evalue = 

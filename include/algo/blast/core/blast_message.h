@@ -52,7 +52,7 @@ typedef struct Blast_Message {
 	Int4 severity;		/**< severity code (0, 1, 2, 3) */
 	Int4 code;		/**< major code for error. */
 	Int4 subcode;		/**< minor code for this error. */
-	Char* message;	/**< User message to be saved. */
+	char* message;	/**< User message to be saved. */
 } Blast_Message;
 
 /** Deallocates message memory.
@@ -71,7 +71,7 @@ Blast_Message* Blast_MessageFree(Blast_Message* blast_msg);
 */
 
 Int2 Blast_MessageWrite(Blast_Message* *blast_msg, Int4 severity, Int4 code,
-        Int4 subcode, const Char *message);
+        Int4 subcode, const char *message);
 
 
 /** Print a message with ErrPostEx

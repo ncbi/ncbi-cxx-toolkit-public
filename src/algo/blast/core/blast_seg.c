@@ -55,7 +55,7 @@ static Sequence* SeqNew(void)
      }
 
    seq->parent = (Sequence*) NULL;
-   seq->seq = (Char*) NULL;
+   seq->seq = (char*) NULL;
    seq->palpha = (Alpha*) NULL;
    seq->start = seq->length = 0;
    seq->bogus = seq->punctuation = FALSE;
@@ -145,7 +145,7 @@ static void compon(Sequence* win)
 {
 	Int4* comp;
 	Int4 letter;
-	Char* seq,* seqmax;
+	char* seq,* seqmax;
         Int4* alphaindex;
         unsigned char* alphaflag;
         Int4 alphasize;
@@ -220,7 +220,7 @@ static Sequence* openwin(Sequence* parent, Int4 start, Int4 length)
    win->start = start;
    win->length = length;
 #if 0                                                    /* Hi Warren! */
-   win->seq = (Char*) calloc(length + 1, sizeof(Char));
+   win->seq = (char*) calloc(length + 1, sizeof(char));
    memcpy(win->seq, (parent->seq)+start, length);
    win->seq[length] = '\0';
 #else
@@ -789,7 +789,7 @@ static Alpha* AA20alpha_std (void)
    Alpha* palpha;
    Int4* alphaindex;
    unsigned char* alphaflag;
-   Char* alphachar;
+   char* alphachar;
    Uint1 c, i;
 
    palpha = (Alpha*) calloc(1, sizeof(Alpha));
@@ -800,7 +800,7 @@ static Alpha* AA20alpha_std (void)
 
    alphaindex = (Int4*) calloc(CHAR_SET , sizeof(Int4));
    alphaflag = (unsigned char*) calloc(CHAR_SET , sizeof(char));
-   alphachar = (Char*) calloc(palpha->alphasize , sizeof(Char));
+   alphachar = (char*) calloc(palpha->alphasize , sizeof(char));
 
    for (c=0, i=0; c<128; c++)
      {
@@ -898,7 +898,7 @@ static Alpha* AlphaCopy (Alpha* palpha)
 
    pbeta->alphaindex = (Int4*) calloc(CHAR_SET , sizeof(Int4));
    pbeta->alphaflag = (unsigned char*) calloc(CHAR_SET , sizeof(char));
-   pbeta->alphachar = (Char*) calloc(palpha->alphasize , sizeof(Char));
+   pbeta->alphachar = (char*) calloc(palpha->alphasize , sizeof(char));
 
    for (i=0; i<CHAR_SET; i++)
      {
@@ -941,7 +941,7 @@ Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
    /* make an old-style genwin sequence window object */
     
    seqwin = SeqNew();
-   seqwin->seq = (Char*) sequence;
+   seqwin->seq = (char*) sequence;
    seqwin->length = length;
    seqwin->palpha = AlphaCopy(sparamsp->palpha);
    

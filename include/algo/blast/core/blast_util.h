@@ -81,13 +81,13 @@ BLAST_SequenceBlk* BlastSequenceBlkFree(BLAST_SequenceBlk* seq_blk);
  * @param program string name of program [in]
  * @param number number of program [out]
 */
-Int2 BlastProgram2Number(const Char *program, Uint1 *number);
+Int2 BlastProgram2Number(const char *program, Uint1 *number);
 
 /** Return string name for program given a number.  Return is zero on success.
  * @param number number of program [in]
  * @param program string name of program (memory should be deallocated by called) [out]
 */
-Int2 BlastNumber2Program(Uint1 number, Char* *program);
+Int2 BlastNumber2Program(Uint1 number, char* *program);
 
 /** Allocates memory for *sequence_blk and then populates it.
  * @param buffer start of sequence [in]
@@ -111,8 +111,8 @@ Int2 BLAST_QueryInfoInit(Uint1 program_number,
 
 /** GetTranslation to get the translation of the nucl. sequence in the
  * appropriate frame and with the appropriate GeneticCode.
- * The function return an allocated Char*, the caller must delete this.
- * The first and last spaces of this Char* contain NULLB's.
+ * The function return an allocated char*, the caller must delete this.
+ * The first and last spaces of this char* contain NULLB's.
  * @param query_seq Forward strand of the nucleotide sequence [in]
  * @param query_seq_rev Reverse strand of the nucleotide sequence [in]
  * @param nt_length Length of the nucleotide sequence [in]

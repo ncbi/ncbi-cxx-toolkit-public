@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.20  2003/07/31 14:31:37  camacho
+* Replaced Char for char
+*
 * Revision 1.19  2003/07/31 00:32:35  camacho
 * Eliminated Ptr notation
 *
@@ -110,7 +113,7 @@ $Revision$
 * Added query information block to output arguments of BlastSetUp_Main
 *
 * Revision 1.18  2003/02/26 15:42:19  madden
-* const CharPtr becomes const Char *
+* const charPtr becomes const char *
 *
 * Revision 1.17  2003/02/25 20:03:02  madden
 * Remove BlastSetUp_Concatenate and BlastSetUp_Standard

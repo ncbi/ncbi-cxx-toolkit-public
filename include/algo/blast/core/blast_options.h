@@ -152,7 +152,7 @@ typedef struct LookupTableOptions {
 
 /** Options required for setting up the query sequence */
 typedef struct QuerySetUpOptions {
-   Char* filter_string; /**< Parseable string that determines the filtering
+   char* filter_string; /**< Parseable string that determines the filtering
                              options */
    BlastMask* lcase_mask; /**< Lower case masked locations on the query */
    Uint1 strand_option; /**< In blastn: which strand to search: 1 = forward;
@@ -275,9 +275,9 @@ typedef struct BlastHitSavingParameters {
  *  and for evaluating alignments. 
  */
 typedef struct BlastScoringOptions {
-   Char* matrix;   /**< Name of the matrix containing all scores: needed for
+   char* matrix;   /**< Name of the matrix containing all scores: needed for
                         finding neighboring words */
-   Char* matrix_path; /**< Directory path to where matrices are stored. */
+   char* matrix_path; /**< Directory path to where matrices are stored. */
    Int2 reward;      /**< Reward for a match */
    Int2 penalty;     /**< Penalty for a mismatch */
    Boolean gapped_calculation; /**< Will a gapped extension be performed? */
@@ -319,7 +319,7 @@ typedef struct PSIBlastOptions {
    Boolean smith_waterman;  /**< PSI-BLAST */
    Boolean discontinuous;   /**< PSI-BLAST */
    Boolean isPatternSearch; /**< PHI-BLAST */
-   Char* phi_pattern;    /**< PHI-BLAST */
+   char* phi_pattern;    /**< PHI-BLAST */
    Int4 max_num_patterns; /**< PHI-BLAST */
    Boolean is_rps_blast;    /**< RPS-BLAST */
 } PSIBlastOptions;
@@ -335,12 +335,12 @@ typedef struct BlastDatabaseOptions {
                                  tblast[nx] only */
 #if 0
    /* CC: Not needed, was copied from OldBlast */
-   Char* database; /**< Name of the database */
+   char* database; /**< Name of the database */
                              tblast[nx] only */
-   Char* gifile;   /**< File to get a gi list from: REMOVE? */
+   char* gifile;   /**< File to get a gi list from: REMOVE? */
    ListNode* gilist; /**< A list of gis this database should be restricted to:
                          REMOVE? */
-   Char* entrez_query;/**< An Entrez query to get a OID list from: REMOVE? */
+   char* entrez_query;/**< An Entrez query to get a OID list from: REMOVE? */
    Int4 first_db_seq; /**< The first ordinal id number (OID) to search */
    Int4 final_db_seq; /**< The last OID to search */
 #endif
