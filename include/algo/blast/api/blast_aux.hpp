@@ -54,12 +54,11 @@ BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
 struct SSeqLoc {
-    CConstRef<CSeq_loc>     m_Seqloc;
-    mutable CRef<CScope>    m_Scope;
+    CConstRef<CSeq_loc>     seqloc;
+    mutable CRef<CScope>    scope;
 
-    SSeqLoc() : m_Seqloc(), m_Scope() {}
-    SSeqLoc(CConstRef<CSeq_loc> sl, CRef<CScope> s) 
-        : m_Seqloc(sl), m_Scope(s) {}
+    SSeqLoc() : seqloc(), scope() {}
+    SSeqLoc(CConstRef<CSeq_loc> sl, CRef<CScope> s) : seqloc(sl), scope(s) {}
 };
 typedef vector<SSeqLoc>   TSeqLocVector;
 
@@ -143,6 +142,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/08/18 22:17:52  camacho
+* Renaming of SSeqLoc members
+*
 * Revision 1.14  2003/08/18 20:58:56  camacho
 * Added blast namespace, removed *__.hpp includes
 *

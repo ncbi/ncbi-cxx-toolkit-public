@@ -231,13 +231,13 @@ CBl2Seq::x_SetupQueryInfo()
     // sequence block structure.
     unsigned int ctx_index = 0;      // index into context_offsets array
     ITERATE(TSeqLocVector, itr, m_tQueries) {
-        TSeqPos length = sequence::GetLength(*itr->m_Seqloc, itr->m_Scope);
+        TSeqPos length = sequence::GetLength(*itr->seqloc, itr->scope);
         _ASSERT(length != numeric_limits<TSeqPos>::max());
 
         // Unless the strand option is set to single strand, the actual
         // CSeq_locs dictacte which strand to examine during the search
         ENa_strand strand_opt = m_pOptions->GetStrandOption();
-        ENa_strand strand = sequence::GetStrand(*itr->m_Seqloc, itr->m_Scope);
+        ENa_strand strand = sequence::GetStrand(*itr->seqloc, itr->scope);
         if (strand_opt == eNa_strand_minus || strand_opt == eNa_strand_plus) {
             strand = strand_opt;
         }
@@ -352,8 +352,8 @@ CBl2Seq::x_SetupQueries()
 
             // Get both strands of the original nucleotide sequence with
             // sentinels
-            na_buffer = BLASTGetSequence(*itr->m_Seqloc, encoding, na_length, 
-                                         itr->m_Scope, eNa_strand_both, true);
+            na_buffer = BLASTGetSequence(*itr->seqloc, encoding, na_length, 
+                                         itr->scope, eNa_strand_both, true);
 
             // Populate the sequence buffer
             Uint1* gc = 
@@ -376,15 +376,15 @@ CBl2Seq::x_SetupQueries()
             // Unless the strand option is set to single strand, the actual
             // CSeq_locs dictacte which strand to examine during the search
             ENa_strand strand_opt = m_pOptions->GetStrandOption();
-            ENa_strand strand = sequence::GetStrand(*itr->m_Seqloc,
-                                                    itr->m_Scope);
+            ENa_strand strand = sequence::GetStrand(*itr->seqloc,
+                                                    itr->scope);
             if (strand_opt == eNa_strand_minus || 
                 strand_opt == eNa_strand_plus) {
                 strand = strand_opt;
             }
             int sbuflen = 0;
-            Uint1* seqbuf = BLASTGetSequence(*itr->m_Seqloc, encoding, sbuflen,
-                                           itr->m_Scope, strand, true);
+            Uint1* seqbuf = BLASTGetSequence(*itr->seqloc, encoding, sbuflen,
+                                           itr->scope, strand, true);
             int index = (strand == eNa_strand_minus) ? ctx_index + 1 :
                 ctx_index;
             int offset = mi_clsQueryInfo->context_offsets[index];
@@ -394,8 +394,8 @@ CBl2Seq::x_SetupQueries()
         } else {
 
             int sbuflen = 0;
-            Uint1* seqbuf = BLASTGetSequence(*itr->m_Seqloc, encoding, sbuflen,
-                                             itr->m_Scope, eNa_strand_unknown, 
+            Uint1* seqbuf = BLASTGetSequence(*itr->seqloc, encoding, sbuflen,
+                                             itr->scope, eNa_strand_unknown, 
                                              true);
             int offset = mi_clsQueryInfo->context_offsets[ctx_index];
             memcpy(&buf[offset], seqbuf, sbuflen);
@@ -463,7 +463,7 @@ CBl2Seq::x_SetupSubjects()
         BLAST_SequenceBlk* subj = (BLAST_SequenceBlk*) 
             calloc(1, sizeof(BLAST_SequenceBlk));
 
-        buf = BLASTGetSequence(*itr->m_Seqloc, encoding, buflen, itr->m_Scope, 
+        buf = BLASTGetSequence(*itr->seqloc, encoding, buflen, itr->scope, 
                 strand, false);
 
         if (subj_is_na) {
@@ -476,8 +476,8 @@ CBl2Seq::x_SetupSubjects()
                 true : false;
 
             // Retrieve the sequence with ambiguities
-            buf = BLASTGetSequence(*itr->m_Seqloc, encoding, buflen,
-                                   itr->m_Scope, strand, use_sentinels);
+            buf = BLASTGetSequence(*itr->seqloc, encoding, buflen,
+                                   itr->scope, strand, use_sentinels);
             subj->sequence_start = buf;
             subj->length = use_sentinels ? buflen - 2 : buflen;
             subj->sequence_start_allocated = TRUE;
@@ -490,7 +490,7 @@ CBl2Seq::x_SetupSubjects()
         dblength += subj->length;
         mi_vSubjects.push_back(subj);
         mi_iMaxSubjLength = MAX(mi_iMaxSubjLength, 
-                sequence::GetLength(*itr->m_Seqloc, itr->m_Scope));
+                sequence::GetLength(*itr->seqloc, itr->scope));
     }
     m_pOptions->SetDbSeqNum(mi_vSubjects.size());
     m_pOptions->SetDbLength(dblength);
@@ -565,8 +565,8 @@ CBl2Seq::x_Results2SeqAlign()
 
     vector< CConstRef<CSeq_id> > query_vector;
     ITERATE(TSeqLocVector, itr, m_tQueries) {
-        CConstRef<CSeq_id> query_id(&sequence::GetId(*itr->m_Seqloc,
-                                                     itr->m_Scope));
+        CConstRef<CSeq_id> query_id(&sequence::GetId(*itr->seqloc,
+                                                     itr->scope));
         query_vector.push_back(query_id);
     }
 
@@ -605,6 +605,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2003/08/18 22:17:36  camacho
+ * Renaming of SSeqLoc members
+ *
  * Revision 1.19  2003/08/18 20:58:57  camacho
  * Added blast namespace, removed *__.hpp includes
  *

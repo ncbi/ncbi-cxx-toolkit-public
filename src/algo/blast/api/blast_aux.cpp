@@ -321,8 +321,8 @@ void BlastMaskDNAToProtein(BlastMask** mask_ptr,
       return;
 
    for (mask_loc = *mask_ptr; mask_loc; mask_loc = mask_loc->next) {
-      dna_length = sequence::GetLength(*slp[mask_loc->index].m_Seqloc, 
-                                       slp[mask_loc->index].m_Scope);
+      dna_length = sequence::GetLength(*slp[mask_loc->index].seqloc, 
+                                       slp[mask_loc->index].scope);
       /* Reproduce this mask for all 6 frames, with translated 
          coordinates */
       for (context = 0; context < NUM_FRAMES; ++context) {
@@ -380,8 +380,8 @@ void BlastMaskProteinToDNA(BlastMask** mask_ptr, TSeqLocVector &slp)
 
    for (mask_loc = *mask_ptr; mask_loc; mask_loc = mask_loc->next) {
       dna_length = 
-         sequence::GetLength(*slp[mask_loc->index/NUM_FRAMES].m_Seqloc, 
-                             slp[mask_loc->index/NUM_FRAMES].m_Scope);
+         sequence::GetLength(*slp[mask_loc->index/NUM_FRAMES].seqloc, 
+                             slp[mask_loc->index/NUM_FRAMES].scope);
       frame = BLAST_ContextToFrame(blast_type_blastx, 
                                    mask_loc->index % NUM_FRAMES);
       

@@ -39,6 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+USING_SCOPE(blast);
 
 int
 BLAST_SetUpQuery(CBlastOption::EProgram program_number, 
@@ -52,6 +53,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/08/18 22:17:52  camacho
+* Renaming of SSeqLoc members
+*
 * Revision 1.4  2003/08/18 20:58:56  camacho
 * Added blast namespace, removed *__.hpp includes
 *

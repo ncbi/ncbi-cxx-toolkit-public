@@ -650,11 +650,11 @@ BLAST_Results2CSeqAlign(const BlastResults* results,
     CConstRef<CSeq_id> query_id;
 
     if (!bssp) {
-        subject_id.Reset(&sequence::GetId(*subject->m_Seqloc, 
-                                          subject->m_Scope));
+        subject_id.Reset(&sequence::GetId(*subject->seqloc, 
+                                          subject->scope));
         if (!is_gapped)
            subject_length = 
-              sequence::GetLength(*subject->m_Seqloc, subject->m_Scope);
+              sequence::GetLength(*subject->seqloc, subject->scope);
     }
 
     // Process each query's hit list
@@ -663,11 +663,11 @@ BLAST_Results2CSeqAlign(const BlastResults* results,
        BlastHitList* hit_list = results->hitlist_array[query_index];
        if (!hit_list)
           continue;
-       query_id.Reset(&sequence::GetId(*query[query_index].m_Seqloc, 
-                                  query[query_index].m_Scope));
+       query_id.Reset(&sequence::GetId(*query[query_index].seqloc, 
+                                  query[query_index].scope));
        if (!is_gapped)
-          query_length = sequence::GetLength(*query[query_index].m_Seqloc, 
-                                             query[query_index].m_Scope);
+          query_length = sequence::GetLength(*query[query_index].seqloc, 
+                                             query[query_index].scope);
        
        for (subject_index = 0; subject_index < hit_list->hsplist_count;
             ++subject_index) {
@@ -720,6 +720,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/08/18 22:17:36  camacho
+* Renaming of SSeqLoc members
+*
 * Revision 1.13  2003/08/18 20:58:57  camacho
 * Added blast namespace, removed *__.hpp includes
 *
