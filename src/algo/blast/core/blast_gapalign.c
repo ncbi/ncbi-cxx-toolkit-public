@@ -642,6 +642,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
         score_array_size = 2 * num_extra_cells;
     }
     else {
+        num_extra_cells = 0;
         state_struct = s_GapGetState(&gap_align->state_struct, N + 3);
         score_array_size = N + 3;
     }
@@ -843,35 +844,30 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
             edit_script_row[b_index] = script;
         }
   
-        if (first_b_index == b_size) {
-            a_index++;
+        if (first_b_index == b_size)
             break;
+
+        if (last_b_index + num_extra_cells + 3 >= 
+                         score_array_size + score_array_origin) {
+            BlastGapDP *new_array;
+            score_array_size = 2 * score_array_size;
+            new_array = (BlastGapDP *)malloc(score_array_size * 
+                                             sizeof(BlastGapDP));
+            memcpy(new_array,
+                   score_array + (first_b_index - score_array_origin),
+                   (last_b_index - first_b_index + 1) * sizeof(BlastGapDP));
+            sfree(score_array);
+            score_array = new_array;
+            score_array_origin = first_b_index;
         }
 
         if (last_b_index < b_size - 1) {
             b_size = last_b_index + 1;
         }
         else {
-            while (1) {
+            while (score_gap_row >= (best_score - x_dropoff) && b_size <= N) {
 
                 Int4 s_index = b_size - score_array_origin;
-
-                if (s_index + 2 >= score_array_size) {
-                    BlastGapDP *new_array;
-                    score_array_size = 2 * score_array_size;
-                    new_array = (BlastGapDP *)malloc(score_array_size * 
-                                                     sizeof(BlastGapDP));
-                    memcpy(new_array,
-                           score_array + (first_b_index - score_array_origin),
-                           (b_size - first_b_index + 1) * sizeof(BlastGapDP));
-                    sfree(score_array);
-                    score_array = new_array;
-                    score_array_origin = first_b_index;
-                    s_index = b_size - score_array_origin;
-                }
-
-                if (score_gap_row < (best_score - x_dropoff) || b_size > N)
-                    break;
 
                 score_array[s_index].best = score_gap_row;
                 score_array[s_index].best_gap = score_gap_row - gap_open_extend;
@@ -886,7 +882,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
         /* update the memory allocator to reflect the exact number
            of traceback cells this row needed */
 
-        state_struct->used += b_size - orig_b_index + 1;
+        state_struct->used += MAX(b_index, b_size) - orig_b_index + 1;
 
         if (b_size <= N) {
             Int4 s_index = b_size - score_array_origin;
@@ -1051,6 +1047,7 @@ s_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
         score_array_size = 2 * num_extra_cells;
     }
     else {
+        num_extra_cells = 0;
         score_array_size = N + 3;
     }
 
@@ -1204,6 +1201,23 @@ s_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
         if (first_b_index == b_size)
             break;
 
+        /* enlarge the window for score data if necessary. If the
+           window expands, move its origin to first_b_index */
+
+        if (last_b_index + num_extra_cells + 3 >= 
+                         score_array_size + score_array_origin) {
+            BlastGapDP *new_array;
+            score_array_size = 2 * score_array_size;
+            new_array = (BlastGapDP *)malloc(score_array_size * 
+                                             sizeof(BlastGapDP));
+            memcpy(new_array,
+                   score_array + (first_b_index - score_array_origin),
+                   (last_b_index - first_b_index + 1) * sizeof(BlastGapDP));
+            sfree(score_array);
+            score_array = new_array;
+            score_array_origin = first_b_index;
+        }
+
         if (last_b_index < b_size - 1) {
             /* This row failed the X-dropoff test earlier than
                the last row did; just shorten the loop bounds
@@ -1217,35 +1231,13 @@ s_SemiGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                the X dropoff test fails or we run out of letters in B. 
                The next inner loop will have larger bounds */
 
-            while (1) {
+            while (score_gap_row >= (best_score - x_dropoff) && b_size <= N) {
 
                 /* convert the current B offset into an offset
                    suitable for the current array of auxiliary
-                   structures. If the offset exceeds the currently
-                   allocated auxiliary array size, increase the
-                   size and move the array origin 
-                 
-                   This check must always happen, since b_size
-                   always increases by at least 1 */
+                   structures. */
 
                 Int4 s_index = b_size - score_array_origin;
-
-                if (s_index + 2 >= score_array_size) {
-                    BlastGapDP *new_array;
-                    score_array_size = 2 * score_array_size;
-                    new_array = (BlastGapDP *)malloc(score_array_size * 
-                                                     sizeof(BlastGapDP));
-                    memcpy(new_array,
-                           score_array + (first_b_index - score_array_origin),
-                           (b_size - first_b_index + 1) * sizeof(BlastGapDP));
-                    sfree(score_array);
-                    score_array = new_array;
-                    score_array_origin = first_b_index;
-                    s_index = b_size - score_array_origin;
-                }
-
-                if (score_gap_row < (best_score - x_dropoff) || b_size > N)
-                    break;
 
                 score_array[s_index].best = score_gap_row;
                 score_array[s_index].best_gap = score_gap_row - gap_open_extend;
@@ -1306,11 +1298,14 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
    BlastGapAlignStruct* gap_align, const BlastScoringParameters* score_params,
    Int4 query_offset, Boolean reversed)
 {
-    BlastGapSmallDP* score_array;      /* sequence pointers and indices */
-    Int4 i, increment; 
+    Int4 i, increment;          /* sequence pointers and indices */
     Int4 a_index;
     Int4 b_index, b_size, first_b_index, last_b_index;
   
+    BlastGapSmallDP* score_array;
+    Int4 score_array_size;
+    Int4 score_array_origin;
+
     Int4 gap_open;              /* alignment penalty variables */
     Int4 gap_extend;
     Int4 gap_open_extend;
@@ -1336,9 +1331,11 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
     GapStateArrayStruct* state_struct;
     Uint1** edit_script;
     Uint1* edit_script_row;
+    Int4 *edit_start_offset;
+    Int4 edit_script_num_rows;
     Int4 orig_b_index;
     Int1 script, next_script;
-    Int4 *edit_start_offset;
+    Int4 num_extra_cells;
 
     /* do initialization and sanity-checking */
 
@@ -1370,24 +1367,41 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
        MxN. To save on memory, each row of the array is allocated
        separately. edit_script[i] points to the storage reserved
        for row i, and edit_start_offset[i] gives the offset into
-       the B sequence corresponding to element 0 of edit_script[i] */
+       the B sequence corresponding to element 0 of edit_script[i] 
+       
+       Also make the number of edit script rows grow dynamically */
 
-    edit_script = (Uint1**) malloc(sizeof(Uint1*)*(M+1));
-    edit_start_offset = (Int4*) malloc(sizeof(Int4)*(M+1));
+    edit_script_num_rows = 100;
+    edit_script = (Uint1**) malloc(sizeof(Uint1*) * edit_script_num_rows);
+    edit_start_offset = (Int4*) malloc(sizeof(Int4) * edit_script_num_rows);
 
-    /* allocate storage for the first row of the traceback array */
+    /* allocate storage for the first row of the traceback
+       array. Because row elements correspond to gaps in A,
+       the alignment can only go x_dropoff/gap_extend positions
+       at most before failing the X dropoff criterion */
 
-    state_struct = s_GapGetState(&gap_align->state_struct, N + 5);
+    if (gap_extend > 0) {
+        num_extra_cells = CODON_LENGTH * (x_dropoff / gap_extend + 5);
+        state_struct = s_GapGetState(&gap_align->state_struct, 
+                                   num_extra_cells);
+        score_array_size = 3 * num_extra_cells;
+    }
+    else {
+        num_extra_cells = 0;
+        state_struct = s_GapGetState(&gap_align->state_struct, N + 5);
+        score_array_size = N + 5;
+    }
+
     edit_script[0] = state_struct->state_array;
     edit_start_offset[0] = 0;
     edit_script_row = state_struct->state_array;
 
-    /* Allocate and fill in the auxiliary 
-       bookeeping structures (one struct
-       per letter of B) */
+    score_array_size = MAX(CODON_LENGTH * 100, score_array_size);
+    score_array_origin = 0;
 
-    score_array = (BlastGapSmallDP*)calloc((N + 4), sizeof(BlastGapSmallDP));
     score = -gap_open_extend;
+    score_array = (BlastGapSmallDP*)malloc(score_array_size * 
+                                           sizeof(BlastGapSmallDP));
     score_array[0].best = 0;
     score_array[0].best_gap = -gap_open_extend;
   
@@ -1412,10 +1426,10 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
     /* The inner loop below examines letters of B from 
        index 'first_b_index' to 'b_size' */
 
+    score_array[i].best = MININT;
+    score_array[i].best_gap = MININT;
     b_size = i - 2;
     state_struct->used = b_size + 1;
-    score_array[b_size].best = MININT;
-    score_array[b_size].best_gap = MININT;
 
     best_score = 0;
     first_b_index = 0;
@@ -1434,10 +1448,30 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
            allocating memory for the row, then pointing to it.
            It is not necessary to allocate space for offsets less
            than first_b_index (since the inner loop will never 
-           look at them) */
+           look at them). 
 
-        state_struct = s_GapGetState(&gap_align->state_struct, 
-                                    N + 5 - first_b_index);
+           It is unknown at this point how far to the right the 
+           current traceback row will extend; all that's known for
+           sure is that the previous row fails the X-dropoff test
+           after b_size cells, and that the current row can go at
+           most num_extra_cells beyond that before failing the test */
+
+        if (gap_extend > 0)
+            state_struct = s_GapGetState(&gap_align->state_struct, 
+                           b_size - first_b_index + num_extra_cells);
+        else
+            state_struct = s_GapGetState(&gap_align->state_struct, 
+                                        N + 5 - first_b_index);
+
+        if (a_index == edit_script_num_rows) {
+            edit_script_num_rows = edit_script_num_rows * 2;
+            edit_script = (Uint1 **)realloc(edit_script, 
+                                            edit_script_num_rows *
+                                            sizeof(Uint1 *));
+            edit_start_offset = (Int4 *)realloc(edit_start_offset, 
+                                                edit_script_num_rows *
+                                                sizeof(Int4));
+        }
 
         edit_script[a_index] = state_struct->state_array + 
                                 state_struct->used + 1;
@@ -1477,6 +1511,12 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
 
         while (b_index < b_size) {
 
+            /* convert the current B offset into an offset
+               suitable for the current array of auxiliary
+               structures */
+
+            Int4 s_index = b_index - score_array_origin;
+
             /* FRAME 0 */
 
             score = MAX(score_other_frame1, score_other_frame2) - shift_penalty;
@@ -1498,9 +1538,9 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
             }
             score += matrix_row[ B[ b_index * increment ] ];
 
-            score_other_frame1 = MAX(score_col1, score_array[b_index].best);
-            score_col1 = score_array[b_index].best;
-            score_gap_col = score_array[b_index].best_gap;
+            score_other_frame1 = MAX(score_col1, score_array[s_index].best);
+            score_col1 = score_array[s_index].best;
+            score_gap_col = score_array[s_index].best_gap;
 
             if (score < MAX(score_gap_col, score_row1)) {
                 if (score_gap_col > score_row1) {
@@ -1516,12 +1556,12 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     if (first_b_index == b_index) 
                         first_b_index = b_index + 1;
                     else
-                        score_array[b_index].best = MININT;
+                        score_array[s_index].best = MININT;
                 }
                 else {
-                    last_b_index = b_index + 1;
-                    score_array[b_index].best = score;
-                    score_array[b_index].best_gap = score_gap_col - gap_extend;
+                    last_b_index = b_index;
+                    score_array[s_index].best = score;
+                    score_array[s_index].best_gap = score_gap_col - gap_extend;
                     score_row1 -= gap_extend;
                 }
             }
@@ -1530,11 +1570,11 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     if (first_b_index == b_index) 
                         first_b_index = b_index + 1;
                     else
-                        score_array[b_index].best = MININT;
+                        score_array[s_index].best = MININT;
                 }
                 else {
-                    last_b_index = b_index + 1;
-                    score_array[b_index].best = score;
+                    last_b_index = b_index;
+                    score_array[s_index].best = score;
                     if (score > best_score) {
                         best_score = score;
                         *a_offset = a_index;
@@ -1550,17 +1590,17 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
 
                     score_gap_col -= gap_extend;
                     if (score < score_gap_col) {
-                        score_array[b_index].best_gap = score_gap_col;
+                        score_array[s_index].best_gap = score_gap_col;
                         script |= SCRIPT_EXTEND_GAP_A;
                     }
                     else {
-                        score_array[b_index].best_gap = score;
+                        score_array[s_index].best_gap = score;
                     }
                 }
             }
 
-            edit_script_row[b_index] = script;
-            if (++b_index >= b_size) {
+            edit_script_row[b_index++] = script;
+            if (b_index >= b_size) {
                 score = score_row1;
                 score_row1 = score_row2;
                 score_row2 = score_row3;
@@ -1570,6 +1610,7 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
 
             /* FRAME 1 */
 
+            s_index++;
             score = MAX(score_other_frame1, score_other_frame2) - shift_penalty;
             score = MAX(score, score_col2);
             if (score == score_col2) {
@@ -1588,9 +1629,9 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     script = SCRIPT_NEXT_PLUS_TWO_FRAMES;
             }
             score += matrix_row[ B[ b_index * increment ] ];
-            score_other_frame2 = MAX(score_col2, score_array[b_index].best);
-            score_col2 = score_array[b_index].best;
-            score_gap_col = score_array[b_index].best_gap;
+            score_other_frame2 = MAX(score_col2, score_array[s_index].best);
+            score_col2 = score_array[s_index].best;
+            score_gap_col = score_array[s_index].best_gap;
 
             if (score < MAX(score_gap_col, score_row2)) {
                 score = MAX(score_gap_col, score_row2);
@@ -1598,7 +1639,7 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     if (first_b_index == b_index) 
                         first_b_index = b_index + 1;
                     else
-                        score_array[b_index].best = MININT;
+                        score_array[s_index].best = MININT;
                 }
                 else {
                     if (score == score_gap_col)
@@ -1606,9 +1647,9 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     else 
                         script = SCRIPT_OOF_OPEN_GAP | SCRIPT_GAP_IN_B;
 
-                    last_b_index = b_index + 1;
-                    score_array[b_index].best = score;
-                    score_array[b_index].best_gap = score_gap_col - gap_extend;
+                    last_b_index = b_index;
+                    score_array[s_index].best = score;
+                    score_array[s_index].best_gap = score_gap_col - gap_extend;
                     score_row2 -= gap_extend;
                 }
             }
@@ -1617,11 +1658,11 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     if (first_b_index == b_index) 
                         first_b_index = b_index + 1;
                     else
-                        score_array[b_index].best = MININT;
+                        score_array[s_index].best = MININT;
                 }
                 else {
-                    last_b_index = b_index + 1;
-                    score_array[b_index].best = score;
+                    last_b_index = b_index;
+                    score_array[s_index].best = score;
                     if (score > best_score) {
                         best_score = score;
                         *a_offset = a_index;
@@ -1636,17 +1677,16 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
 
                     score_gap_col -= gap_extend;
                     if (score < score_gap_col) {
-                        score_array[b_index].best_gap = score_gap_col;
+                        score_array[s_index].best_gap = score_gap_col;
                         script |= SCRIPT_EXTEND_GAP_A;
                     }
                     else {
-                        score_array[b_index].best_gap = score;
+                        score_array[s_index].best_gap = score;
                     }
                 }
             }
 
-            edit_script_row[b_index] = script;
-            ++b_index;
+            edit_script_row[b_index++] = script;
             if (b_index >= b_size) {
                 score = score_row2;
                 score_row2 = score_row1;
@@ -1657,6 +1697,7 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
 
             /* FRAME 2 */
 
+            s_index++;
             score = MAX(score_other_frame1, score_other_frame2) - shift_penalty;
             score = MAX(score, score_col3);
             if (score == score_col3) {
@@ -1676,9 +1717,9 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
             }
             score += matrix_row[ B[ b_index * increment ] ];
             score_other_frame1 = score_other_frame2;
-            score_other_frame2 = MAX(score_col3, score_array[b_index].best);
-            score_col3 = score_array[b_index].best;
-            score_gap_col = score_array[b_index].best_gap;
+            score_other_frame2 = MAX(score_col3, score_array[s_index].best);
+            score_col3 = score_array[s_index].best;
+            score_gap_col = score_array[s_index].best_gap;
 
             if (score < MAX(score_gap_col, score_row3)) {
                 score = MAX(score_gap_col, score_row3);
@@ -1686,7 +1727,7 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     if (first_b_index == b_index) 
                         first_b_index = b_index + 1;
                     else
-                        score_array[b_index].best = MININT;
+                        score_array[s_index].best = MININT;
                 }
                 else {
                     if (score == score_gap_col)
@@ -1694,9 +1735,9 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     else 
                         script = SCRIPT_OOF_OPEN_GAP | SCRIPT_GAP_IN_B;
 
-                    last_b_index = b_index + 1;
-                    score_array[b_index].best = score;
-                    score_array[b_index].best_gap = score_gap_col - gap_extend;
+                    last_b_index = b_index;
+                    score_array[s_index].best = score;
+                    score_array[s_index].best_gap = score_gap_col - gap_extend;
                     score_row3 -= gap_extend;
                 }
             }
@@ -1705,11 +1746,11 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     if (first_b_index == b_index) 
                         first_b_index = b_index + 1;
                     else
-                        score_array[b_index].best = MININT;
+                        score_array[s_index].best = MININT;
                 }
                 else {
-                    last_b_index = b_index + 1;
-                    score_array[b_index].best = score;
+                    last_b_index = b_index;
+                    score_array[s_index].best = score;
                     if (score > best_score) {
                         best_score = score;
                         *a_offset = a_index;
@@ -1724,16 +1765,15 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
 
                     score_gap_col -= gap_extend;
                     if (score < score_gap_col) {
-                        score_array[b_index].best_gap = score_gap_col;
+                        score_array[s_index].best_gap = score_gap_col;
                         script |= SCRIPT_EXTEND_GAP_A;
                     }
                     else {
-                        score_array[b_index].best_gap = score;
+                        score_array[s_index].best_gap = score;
                     }
                 }
             }
-            edit_script_row[b_index] = script;
-            b_index++;
+            edit_script_row[b_index++] = script;
         }
   
         /* Finish aligning if the best scores for all positions
@@ -1743,12 +1783,30 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
         if (first_b_index == b_size)
             break;
 
-        if (last_b_index < b_size) {
+        /* Enlarge the window for score data, if necessary. If the
+           window must be enlarged, move the window origin to
+           first_b_index */
+
+        if (last_b_index + num_extra_cells + 5 >= 
+                         score_array_size + score_array_origin) {
+            BlastGapSmallDP *new_array;
+            score_array_size = 2 * score_array_size;
+            new_array = (BlastGapSmallDP *)malloc(score_array_size * 
+                                             sizeof(BlastGapSmallDP));
+            memcpy(new_array,
+                score_array + (first_b_index - score_array_origin),
+                (last_b_index - first_b_index + 1) * sizeof(BlastGapSmallDP));
+            sfree(score_array);
+            score_array = new_array;
+            score_array_origin = first_b_index;
+        }
+
+        if (last_b_index < b_size - 1) {
             /* This row failed the X-dropoff test earlier than
                the last row did; just shorten the loop bounds
                before doing the next row */
 
-            b_size = last_b_index;
+            b_size = last_b_index + 1;
         }
         else {
             /* The inner loop finished without failing the X-dropoff
@@ -1759,44 +1817,49 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
                Keep initializing extra structures until the X dropoff
                test fails in all frames for this row */
 
-            score = MAX(score_row1, MAX(score_row2, score_row3));
-            last_b_index = b_size + (score - (best_score - x_dropoff)) /
-                                                    gap_extend;
-            last_b_index = MIN(last_b_index, N + 2);
+            score = MAX(score_row1, score_row2);
+            score = MAX(score, score_row3);
+            while (score >= (best_score - x_dropoff) && b_size < N + 1) {
 
-            while (b_size < last_b_index) {
-                score_array[b_size].best = score_row1;
-                score_array[b_size].best_gap = score_row1 - gap_open_extend;
+                Int4 s_index = b_size - score_array_origin;
+
+                score_array[s_index].best = score_row1;
+                score_array[s_index].best_gap = score_row1 - gap_open_extend;
                 score_row1 -= gap_extend;
-                edit_script_row[b_size] = SCRIPT_OOF_OPEN_GAP | SCRIPT_GAP_IN_B;
-                if (++b_size > last_b_index)
-                    break;
+                edit_script_row[b_size] = SCRIPT_OOF_OPEN_GAP | 
+                                          SCRIPT_GAP_IN_B;
 
-                score_array[b_size].best = score_row2;
-                score_array[b_size].best_gap = score_row2 - gap_open_extend;
+                score_array[s_index+1].best = score_row2;
+                score_array[s_index+1].best_gap = score_row2 - gap_open_extend;
                 score_row2 -= gap_extend;
-                edit_script_row[b_size] = SCRIPT_OOF_OPEN_GAP | SCRIPT_GAP_IN_B;
-                if (++b_size > last_b_index)
-                    break;
+                edit_script_row[b_size+1] = SCRIPT_OOF_OPEN_GAP | 
+                                            SCRIPT_GAP_IN_B;
 
-                score_array[b_size].best = score_row3;
-                score_array[b_size].best_gap = score_row3 - gap_open_extend;
+                score_array[s_index+2].best = score_row3;
+                score_array[s_index+2].best_gap = score_row3 - gap_open_extend;
                 score_row3 -= gap_extend;
-                edit_script_row[b_size] = SCRIPT_OOF_OPEN_GAP | SCRIPT_GAP_IN_B;
-                if (++b_size > last_b_index)
-                    break;
+                edit_script_row[b_size+2] = SCRIPT_OOF_OPEN_GAP | 
+                                            SCRIPT_GAP_IN_B;
+                b_size += 3;
+                score -= gap_extend;
             }
         }
 
+        /* update the memory allocator to reflect the exact number
+           of traceback cells this row needed */
+
+        b_size = MIN(b_size, N + 1);
+        state_struct->used += MAX(b_index, b_size) - orig_b_index + 1;
+
         /* chop off the best score in each frame */
+
         last_b_index = MIN(b_size + 4, N + 3);
         while (b_size < last_b_index) {
-            score_array[b_size].best = MININT;
-            score_array[b_size].best_gap = MININT;
+            Int4 s_index = b_size - score_array_origin;
+            score_array[s_index].best = MININT;
+            score_array[s_index].best_gap = MININT;
             b_size++;
         }
-
-        state_struct->used += MAX(b_index, b_size) - orig_b_index + 1;
     }
 
     a_index = *a_offset;
@@ -1872,8 +1935,7 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
    const BlastScoringParameters* score_params,
    Int4 query_offset, Boolean reversed)
 {
-    BlastGapSmallDP* score_array; /* sequence pointers and indices */
-    Int4 i, increment; 
+    Int4 i, increment;          /* sequence pointers and indices */
     Int4 a_index;
     Int4 b_index, b_size, first_b_index, last_b_index;
   
@@ -1883,6 +1945,11 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
     Int4 shift_penalty;
     Int4 x_dropoff;
   
+    BlastGapSmallDP* score_array;
+    Int4 score_array_size;
+    Int4 score_array_origin;
+    Int4 num_extra_cells;
+
     Int4** matrix = NULL;       /* pointers to the score matrix */
     Int4** pssm = NULL;
     Int4* matrix_row = NULL;
@@ -1926,12 +1993,27 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
     if(N <= 0 || M <= 0) 
         return 0;
   
-    /* Allocate and fill in the auxiliary 
-       bookeeping structures (one struct
-       per letter of B) */
+    /* Allocate and fill in the auxiliary bookeeping structures.
+       Since A and B could be very large, maintain a window
+       of auxiliary structures only large enough to contain to current
+       set of DP computations. The initial window size is determined
+       by the number of cells needed to fail the x-dropoff test */
 
-    score_array = (BlastGapSmallDP*)calloc((N + 5), sizeof(BlastGapSmallDP));
+    if (gap_extend > 0) {
+        num_extra_cells = CODON_LENGTH * (x_dropoff / gap_extend + 5);
+        score_array_size = 3 * num_extra_cells;
+    }
+    else {
+        num_extra_cells = 0;
+        score_array_size = N + 5;
+    }
+
+    score_array_size = MAX(CODON_LENGTH*100, score_array_size);
+    score_array_origin = 0;
+
     score = -gap_open_extend;
+    score_array = (BlastGapSmallDP*)malloc(score_array_size *
+                                           sizeof(BlastGapSmallDP));
     score_array[0].best = 0;
     score_array[0].best_gap = -gap_open_extend;
   
@@ -1951,8 +2033,8 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
        index 'first_b_index' to 'b_size' */
 
     b_size = i - 2;
-    score_array[b_size].best = MININT;
-    score_array[b_size].best_gap = MININT;
+    score_array[i].best = MININT;
+    score_array[i].best_gap = MININT;
 
     best_score = 0;
     first_b_index = 0;
@@ -1966,10 +2048,6 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
     }
   
     for (a_index = 1; a_index <= M; a_index++) {
-
-        /* XXX Why is this here? */
-        score_array[2].best = MININT;
-        score_array[2].best_gap = MININT;
 
         /* pick out the row of the score matrix 
            appropriate for A[a_index] */
@@ -2000,15 +2078,21 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
 
         while (b_index < b_size) {
 
+            /* convert the current B offset into an offset
+               suitable for the current array of auxiliary
+               structures */
+
+            Int4 s_index = b_index - score_array_origin;
+
             /* FRAME 0 */
 
             /* Pick the best score among all frames */
             score = MAX(score_other_frame1, score_other_frame2) - shift_penalty;
             score = MAX(score, score_col1) + 
                                 matrix_row[ B[ b_index * increment ] ];
-            score_other_frame1 = MAX(score_col1, score_array[b_index].best);
-            score_col1 = score_array[b_index].best;
-            score_gap_col = score_array[b_index].best_gap;
+            score_other_frame1 = MAX(score_col1, score_array[s_index].best);
+            score_col1 = score_array[s_index].best;
+            score_gap_col = score_array[s_index].best_gap;
 
             /* Use the row and column scores if they improve
                the score overall */
@@ -2030,13 +2114,13 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     if (first_b_index == b_index) 
                         first_b_index = b_index + 1;
                     else
-                        score_array[b_index].best = MININT;
+                        score_array[s_index].best = MININT;
                 }
                 else {
                     /* update the row and column running scores */
-                    last_b_index = b_index + 1;
-                    score_array[b_index].best = score;
-                    score_array[b_index].best_gap = score_gap_col - gap_extend;
+                    last_b_index = b_index;
+                    score_array[s_index].best = score;
+                    score_array[s_index].best_gap = score_gap_col - gap_extend;
                     score_row1 -= gap_extend;
                 }
             }
@@ -2049,15 +2133,15 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     if (first_b_index == b_index) 
                         first_b_index = b_index + 1;
                     else
-                        score_array[b_index].best = MININT;
+                        score_array[s_index].best = MININT;
                 }
                 else {
                     /* The current best score exceeds the
                        row and column scores, and thus may
                        improve on the current optimal score */
 
-                    last_b_index = b_index + 1;
-                    score_array[b_index].best = score;
+                    last_b_index = b_index;
+                    score_array[s_index].best = score;
                     if (score > best_score) {
                         best_score = score;
                         *a_offset = a_index;
@@ -2070,7 +2154,7 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     score -= gap_open_extend;
                     score_row1 -= gap_extend;
                     score_row1 = MAX(score, score_row1);
-                    score_array[b_index].best_gap = MAX(score, 
+                    score_array[s_index].best_gap = MAX(score, 
                                                   score_gap_col - gap_extend);
                 }
             }
@@ -2093,12 +2177,13 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                same as the preceeding code. The only real difference
                is the updating of the other_frame best scores */
 
+            s_index++;
             score = MAX(score_other_frame1, score_other_frame2) - shift_penalty;
             score = MAX(score, score_col2) + 
                                 matrix_row[ B[ b_index * increment ] ];
-            score_other_frame2 = MAX(score_col2, score_array[b_index].best);
-            score_col2 = score_array[b_index].best;
-            score_gap_col = score_array[b_index].best_gap;
+            score_other_frame2 = MAX(score_col2, score_array[s_index].best);
+            score_col2 = score_array[s_index].best;
+            score_gap_col = score_array[s_index].best_gap;
 
             if (score < MAX(score_gap_col, score_row2)) {
                 score = MAX(score_gap_col, score_row2);
@@ -2106,12 +2191,12 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     if (first_b_index == b_index) 
                         first_b_index = b_index + 1;
                     else
-                        score_array[b_index].best = MININT;
+                        score_array[s_index].best = MININT;
                 }
                 else {
-                    last_b_index = b_index + 1;
-                    score_array[b_index].best = score;
-                    score_array[b_index].best_gap = score_gap_col - gap_extend;
+                    last_b_index = b_index;
+                    score_array[s_index].best = score;
+                    score_array[s_index].best_gap = score_gap_col - gap_extend;
                     score_row2 -= gap_extend;
                 }
             }
@@ -2120,11 +2205,11 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     if (first_b_index == b_index) 
                         first_b_index = b_index + 1;
                     else
-                        score_array[b_index].best = MININT;
+                        score_array[s_index].best = MININT;
                 }
                 else {
-                    last_b_index = b_index + 1;
-                    score_array[b_index].best = score;
+                    last_b_index = b_index;
+                    score_array[s_index].best = score;
                     if (score > best_score) {
                         best_score = score;
                         *a_offset = a_index;
@@ -2133,7 +2218,7 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     score -= gap_open_extend;
                     score_row2 -= gap_extend;
                     score_row2 = MAX(score, score_row2);
-                    score_array[b_index].best_gap = MAX(score, 
+                    score_array[s_index].best_gap = MAX(score, 
                                                   score_gap_col - gap_extend);
                 }
             }
@@ -2148,13 +2233,14 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
 
             /* FRAME 2 */
 
+            s_index++;
             score = MAX(score_other_frame1, score_other_frame2) - shift_penalty;
             score = MAX(score, score_col3) + 
                                 matrix_row[ B[ b_index * increment ] ];
             score_other_frame1 = score_other_frame2;
-            score_other_frame2 = MAX(score_col3, score_array[b_index].best);
-            score_col3 = score_array[b_index].best;
-            score_gap_col = score_array[b_index].best_gap;
+            score_other_frame2 = MAX(score_col3, score_array[s_index].best);
+            score_col3 = score_array[s_index].best;
+            score_gap_col = score_array[s_index].best_gap;
 
             if (score < MAX(score_gap_col, score_row3)) {
                 score = MAX(score_gap_col, score_row3);
@@ -2162,12 +2248,12 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     if (first_b_index == b_index) 
                         first_b_index = b_index + 1;
                     else
-                        score_array[b_index].best = MININT;
+                        score_array[s_index].best = MININT;
                 }
                 else {
-                    last_b_index = b_index + 1;
-                    score_array[b_index].best = score;
-                    score_array[b_index].best_gap = score_gap_col - gap_extend;
+                    last_b_index = b_index;
+                    score_array[s_index].best = score;
+                    score_array[s_index].best_gap = score_gap_col - gap_extend;
                     score_row3 -= gap_extend;
                 }
             }
@@ -2176,11 +2262,11 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     if (first_b_index == b_index) 
                         first_b_index = b_index + 1;
                     else
-                        score_array[b_index].best = MININT;
+                        score_array[s_index].best = MININT;
                 }
                 else {
-                    last_b_index = b_index + 1;
-                    score_array[b_index].best = score;
+                    last_b_index = b_index;
+                    score_array[s_index].best = score;
                     if (score > best_score) {
                         best_score = score;
                         *a_offset = a_index;
@@ -2189,7 +2275,7 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                     score -= gap_open_extend;
                     score_row3 -= gap_extend;
                     score_row3 = MAX(score, score_row3);
-                    score_array[b_index].best_gap = MAX(score, 
+                    score_array[s_index].best_gap = MAX(score, 
                                                   score_gap_col - gap_extend);
                 }
             }
@@ -2203,12 +2289,30 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
         if (first_b_index == b_size)
             break;
 
-        if (last_b_index < b_size) {
+        /* Enlarge the window for score data, if necessary. If the
+           window must be enlarged, move the window origin to
+           first_b_index */
+
+        if (b_size + num_extra_cells + 5 >=
+                         score_array_size + score_array_origin) {
+            BlastGapSmallDP *new_array;
+            score_array_size = 2 * score_array_size;
+            new_array = (BlastGapSmallDP *)malloc(score_array_size * 
+                                             sizeof(BlastGapSmallDP));
+            memcpy(new_array,
+                score_array + (first_b_index - score_array_origin),
+                (b_size - first_b_index + 1) * sizeof(BlastGapSmallDP));
+            sfree(score_array);
+            score_array = new_array;
+            score_array_origin = first_b_index;
+        }
+
+        if (last_b_index < b_size - 1) {
             /* This row failed the X-dropoff test earlier than
                the last row did; just shorten the loop bounds
                before doing the next row */
 
-            b_size = last_b_index;
+            b_size = last_b_index + 1;
         }
         else {
             /* The inner loop finished without failing the X-dropoff
@@ -2219,37 +2323,36 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
                Keep initializing extra structures until the X dropoff
                test fails in all frames for this row */
 
-            score = MAX(score_row1, MAX(score_row2, score_row3));
-            last_b_index = b_size + (score - (best_score - x_dropoff)) /
-                                                    gap_extend;
-            last_b_index = MIN(last_b_index, N+2);
+            score = MAX(score_row1, score_row2);
+            score = MAX(score, score_row3);
+            while (score >= (best_score - x_dropoff) && b_size < N + 1) {
 
-            while (b_size < last_b_index) {
-                score_array[b_size].best = score_row1;
-                score_array[b_size].best_gap = score_row1 - gap_open_extend;
+                Int4 s_index = b_size - score_array_origin;
+
+                score_array[s_index].best = score_row1;
+                score_array[s_index].best_gap = score_row1 - gap_open_extend;
                 score_row1 -= gap_extend;
-                if (++b_size > last_b_index)
-                    break;
 
-                score_array[b_size].best = score_row2;
-                score_array[b_size].best_gap = score_row2 - gap_open_extend;
+                score_array[s_index+1].best = score_row2;
+                score_array[s_index+1].best_gap = score_row2 - gap_open_extend;
                 score_row2 -= gap_extend;
-                if (++b_size > last_b_index)
-                    break;
 
-                score_array[b_size].best = score_row3;
-                score_array[b_size].best_gap = score_row3 - gap_open_extend;
+                score_array[s_index+2].best = score_row3;
+                score_array[s_index+2].best_gap = score_row3 - gap_open_extend;
                 score_row3 -= gap_extend;
-                if (++b_size > last_b_index)
-                    break;
+
+                b_size += 3;
+                score -= gap_extend;
             }
         }
 
         /* chop off the best score in each frame */
+        b_size = MIN(b_size, N + 1);
         last_b_index = MIN(b_size + 4, N + 3);
         while (b_size < last_b_index) {
-            score_array[b_size].best = MININT;
-            score_array[b_size].best_gap = MININT;
+            Int4 s_index = b_size - score_array_origin;
+            score_array[s_index].best = MININT;
+            score_array[s_index].best_gap = MININT;
             b_size++;
         }
     }
@@ -2731,6 +2834,7 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
     BlastGapSmallDP* score_array;
     Int4 score_array_size;
     Int4 score_array_origin;
+    Int4 num_extra_cells;
 
     Int4 gap_open;              /* alignment penalty variables */
     Int4 gap_extend;
@@ -2773,10 +2877,14 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
        set of DP computations. The initial window size is determined
        by the number of cells needed to fail the x-dropoff test */
 
-    if (gap_extend > 0)
-        score_array_size = 2 * (x_dropoff / gap_extend + 3);
-    else
+    if (gap_extend > 0) {
+        num_extra_cells = x_dropoff / gap_extend + 3;
+        score_array_size = 2 * num_extra_cells;
+    }
+    else {
+        num_extra_cells = 0;
         score_array_size = N + 3;
+    }
 
     score = -gap_open_extend;
     score_array_size = MAX(100, score_array_size);
@@ -2900,6 +3008,20 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
         if (first_b_index == b_size)
             break;
 
+        if (last_b_index + num_extra_cells + 3 >=
+                         score_array_size + score_array_origin) {
+            BlastGapSmallDP *new_array;
+            score_array_size = 2 * score_array_size;
+            new_array = (BlastGapSmallDP *)malloc(score_array_size * 
+                                             sizeof(BlastGapSmallDP));
+            memcpy(new_array,
+                 score_array + (first_b_index - score_array_origin),
+                 (last_b_index - first_b_index + 1) * sizeof(BlastGapSmallDP));
+            sfree(score_array);
+            score_array = new_array;
+            score_array_origin = first_b_index;
+        }
+
         if (last_b_index < b_size - 1) {
             /* This row failed the X-dropoff test earlier than
                the last row did; just shorten the loop bounds
@@ -2913,36 +3035,13 @@ s_BlastAlignPackedNucl(Uint1* B, Uint1* A, Int4 N, Int4 M,
                the X dropoff test fails or we run out of letters in B. 
                The next inner loop will have larger bounds */
 
-            while (1) {
+            while (score_gap_row >= (best_score - x_dropoff) && b_size <= N) {
 
                 /* convert the current B offset into an offset
                    suitable for the current array of auxiliary
-                   structures. If the offset exceeds the currently
-                   allocated auxiliary array size, increase the
-                   size and move the array origin 
-                 
-                   This check must always happen, since b_size
-                   always increases by at least 1 */
+                   structures. */
 
                 Int4 s_index = b_size - score_array_origin;
-
-                if (s_index + 2 >= score_array_size) {
-                    BlastGapSmallDP *new_array;
-                    score_array_size = 2 * score_array_size;
-                    new_array = (BlastGapSmallDP *)malloc(score_array_size * 
-                                                     sizeof(BlastGapSmallDP));
-                    memcpy(new_array,
-                           score_array + (first_b_index - score_array_origin),
-                           (b_size - first_b_index + 1) * 
-                                        sizeof(BlastGapSmallDP));
-                    sfree(score_array);
-                    score_array = new_array;
-                    score_array_origin = first_b_index;
-                    s_index = b_size - score_array_origin;
-                }
-
-                if (score_gap_row < (best_score - x_dropoff) || b_size > N)
-                    break;
 
                 score_array[s_index].best = score_gap_row;
                 score_array[s_index].best_gap = score_gap_row - gap_open_extend;
@@ -3500,19 +3599,13 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
       }
    }
    
-   if (found_start == FALSE) {	/* Start never found */
+   if (found_start == FALSE) {  /* impossible for in-frame */
       gap_align->query_start = init_hsp->q_off;
       gap_align->subject_start = init_hsp->s_off;
    }
-   
-   if (found_end == FALSE) {
-      gap_align->query_stop = init_hsp->q_off - 1;
-      gap_align->subject_stop = init_hsp->s_off - 1;
-      
-      if(score_options->is_ooframe) {  /* Do we really need this ??? */
-         gap_align->query_stop++;
-         gap_align->subject_stop++;
-      }
+   if (found_end == FALSE) {    /* impossible for out-of-frame */
+      gap_align->query_stop = q_length;
+      gap_align->subject_stop = s_length;
    }
    
    gap_align->score = score_right+score_left;
