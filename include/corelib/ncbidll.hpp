@@ -233,6 +233,7 @@ public:
     TEntryPoint GetEntryPoint(const string& name);
 
     /// Get the name of the DLL file 
+    NCBI_XNCBI_EXPORT
     const string& GetName() const { return m_Name; }
 
 private:
@@ -282,7 +283,7 @@ private:
 /// stored in the internal list (provided by GetResolvedEntries method).
 /// All DLL libraries are unloaded upon resolver's destruction
 ///
-class NCBI_XNCBI_EXPORT CDllResolver
+class CDllResolver
 {
 public:
     /// DLL resolution descriptor.
@@ -299,7 +300,7 @@ public:
         }
     };
 
-    /// Container, keeps list of all resolved entry points
+    /// Container, keeps list of all resolved entry points.
     typedef vector<SResolvedEntry>  TEntries;
 
 
@@ -307,16 +308,16 @@ public:
     ///
     /// @param entry_point_name
     ///   Name of the DLL entry point.
-    CDllResolver(const string& entry_point_name);
+    NCBI_XNCBI_EXPORT CDllResolver(const string& entry_point_name);
 
     /// Constructor.
     ///
     /// @param entry_point_names
     ///   List of alternative DLL entry points.
-    CDllResolver(const vector<string>& entry_point_names); 
+    NCBI_XNCBI_EXPORT CDllResolver(const vector<string>& entry_point_names); 
 
     
-    ~CDllResolver();
+    NCBI_XNCBI_EXPORT ~CDllResolver();
 
     /// Try to load DLL from the specified file and resolve the entry point.
     ///
@@ -329,6 +330,7 @@ public:
     ///   TRUE if DLL is succesfully loaded and entry point resolved.
     /// @sa
     ///   GetResolvedEntries
+    NCBI_XNCBI_EXPORT
     bool TryCandidate(const string& file_name);
 
     /// Try to resolve file candidates.
@@ -366,19 +368,21 @@ public:
     }
 
     /// Get all resolved entry points.
+    NCBI_XNCBI_EXPORT 
     const TEntries& GetResolvedEntries() const 
     { 
         return m_ResolvedEntries; 
     }
 
     /// Get all resolved entry points.
+    NCBI_XNCBI_EXPORT
     TEntries& GetResolvedEntries() 
     { 
         return m_ResolvedEntries; 
     }
 
     /// Unload all resolved DLLs.
-    void Unload();
+    NCBI_XNCBI_EXPORT void Unload();
 
 private:
     CDllResolver(const CDllResolver&);
@@ -399,6 +403,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/11/19 16:49:26  ivanov
+ * Specify NCBI_XNCBI_EXPORT for each method in the CDll and CDllResolver.
+ * In the MSVC, templates cannot be used with functions declared with
+ * __declspec (dllimport) or __declspec (dllexport).
+ *
  * Revision 1.19  2003/11/19 15:42:01  kuznets
  * Using new entry point structure (union) in CDllResolver
  *
