@@ -1,4 +1,4 @@
---$Revision: 1.23 $ 
+--$Revision: 1.24 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -104,7 +104,8 @@ Gene-commentary ::= SEQUENCE {
         property  (16) , -- used to display tag/value pair
 	                 -- for this type label is used as property tag, text is used as property value, 
 	                 -- other fields are not used.
-        reference (17), -- used for generifs and other references             
+        reference (17), -- currently not used             
+        generif (18), -- to include generif in the main blob             
         comment (254) ,
         other (255) } ,
     heading VisibleString OPTIONAL ,      -- appears above text 
