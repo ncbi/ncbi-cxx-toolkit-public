@@ -190,7 +190,7 @@ where
 <i>SDiagMessage</i></a> is a simple struct defined in <i>ncbidiag.hpp</i> whose data
 members' values are obtained from the <i>CNcbiDiag</i> object. The transfer of data values
 occurs at the time that the callback is invoked. See also the discussion in
-the Reference Manual on <a href="../libs/err_msg.html#ref_Message"> message posting</a>
+the Reference Manual on <a href="../libs/err_msg.html#ref_Message"> <i>Message posting</i></a>
 for a more technical discussion.
 
 <a name="errpost"><h3>The ERR_POST macro</h3>
@@ -216,16 +216,15 @@ ERR_POST(Warning << "...print double: " << ddd); </pre>
 	 <pre>
 "somefile.cpp", line 222: Warning:  ...print double: 123.345 </pre>
 
-<a name="trace"><h3>The _TRACE macro</h3> The <i>_TRACE(message)</i> macro is a debugging tool
-that allows the user to insert trace statements that will only be posted if the
-code was
-<a href="../libs/err_msg.html#ref_Assert"> compiled in <i>debug mode</i> </a>,
-and provided that the tracing has been turned on.  If <i>DIAG_TRACE</i> is defined as an enviroment variable, or as an entry in the [DEBUG]
-section of your configuration file (<i>*.ini</i>), the initial state of tracing is
-<b><I>on</i></b>. By default, if no such variable or registry entry is defined, tracing is
-<b><I>off</i></b>.
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagTrace">
-SetDiagTrace</a> (EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on/off.<p>
+<a name="trace"><h3>The _TRACE macro</h3> The <i>_TRACE(message)</i> macro is a debugging tool that
+allows the user to insert trace statements that will only be posted if the code was <a
+href="../libs/err_msg.html#ref_Assert"> compiled in <i>debug mode</i> </a>, and provided that the
+tracing has been turned on.  If <i>DIAG_TRACE</i> is defined as an enviroment variable, or as an
+entry in the [DEBUG] section of your configuration file (<i>*.ini</i>), the initial state of tracing
+is <b><I>on</i></b>. By default, if no such variable or registry entry is defined, tracing is
+<b><I>off</i></b>.  <i><a
+href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetDiagTrace"> SetDiagTrace</a>
+(EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on/off.<p>
 
 Just like <i>ERR_POST</i>, the <i> _TRACE</i> macro takes a message, and
 the message will be posted only if tracing has been enabled. For example:
@@ -288,7 +287,7 @@ Installed Handler "diag.cpp", line 45: Critical: This is a test message
 <br>
 
   </body>
-<a href="iterators.html"> <i> previous</i> </a>
+<a href="applic.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="../index.html"> <i> up </i> </a>
 &nbsp;&nbsp;&nbsp;

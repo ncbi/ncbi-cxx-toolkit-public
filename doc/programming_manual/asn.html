@@ -93,7 +93,7 @@ XML data file containing an object of type
 
 In <i>main()</i>, we begin by initializing the diagnostic stream to write errors to a local
 file called <i> xml2asn.log</i>. (Exception handling, program tracing, and error logging are
-described in the <a href="diag.html"> Diagnostic Streams </a> section).<p>
+described in the <a href="diag.html"> <i>Diagnostic Streams</i> </a> section).<p>
 
 An instance of the <i>CTestAsn</i> class is then created, and its member function
 <i>AppMain()</i> is invoked. This function in turn calls <i>CTestAsn::Run()</i>.  The first
@@ -125,21 +125,18 @@ stream. The object stream classes that will actually be instantiated by this app
 are descendants of these base classes.
 <p>
 
-Finally, a variable for the object type that will be generated from the input stream (in this
-case a <a href="../docxx/CBiostruc.html">
-<i> CBiostruc</i></a>) is defined, and the <i>CObject[I/O]Stream</i> operators "<<" and
-">>" are used to read and write the serialized data to and from the object. (Note that it is
-<i> not </i> possible to simply "pass the data through", from the input stream to the output
-stream, using a construct like:<i> *inObject >> *outObject</i>). The <i>CObject[I/O]Stream</i>s
-know nothing about the structure of the specific object - they have knowledge only of the
-serialization format (text ASN, binary ASN, XML, etc.). In contrast, the 
-<a href="../docxx/CBiostruc.html">
-<i>CBiostruc</i></a> knows
-nothing about I/O and serialization formats, but it contains explicit type information about
-itself.  Thus, the <i>CObject[I/O]Stream</i>s can apply their specialized serialization methods to
-the data members of 
-<i>CBiostruc</i> using the <a href="typeinfo.html">type information</a> associated with that object's
-class.
+Finally, a variable for the object type that will be generated from the input stream (in this case a
+<a href="../docxx/CBiostruc.html"> <i> CBiostruc</i></a>) is defined, and the
+<i>CObject[I/O]Stream</i> operators "<<" and ">>" are used to read and write the serialized data to
+and from the object. (Note that it is <i> not </i> possible to simply "pass the data through", from
+the input stream to the output stream, using a construct like:<i> *inObject >> *outObject</i>). The
+<i>CObject[I/O]Stream</i>s know nothing about the structure of the specific object - they have
+knowledge only of the serialization format (text ASN, binary ASN, XML, etc.). In contrast, the <a
+href="../docxx/CBiostruc.html"> <i>CBiostruc</i></a> knows nothing about I/O and serialization
+formats, but it contains explicit type information about itself.  Thus, the
+<i>CObject[I/O]Stream</i>s can apply their specialized serialization methods to the data members of
+<i>CBiostruc</i> using the <a href="typeinfo.html#ctypeinfo"><i>type information</i></a> associated with
+that object's class.
 
 <a name="includes">
 <h3>Determining Which Header Files to Include </h3>
