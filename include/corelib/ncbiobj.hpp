@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/02/21 21:16:08  grichenk
+* CRef:: Release, Reset -- reset m_Ptr BEFORE removing the reference
+*
 * Revision 1.18  2000/12/26 17:25:38  vasilche
 * CRef<> returns non const object.
 *
@@ -279,8 +282,8 @@ public:
         {
             TObjectType* ptr = m_Ptr;
             if ( ptr ) {
-                CRefBase<C>::RemoveReference(ptr);
                 m_Ptr = 0;
+                CRefBase<C>::RemoveReference(ptr);
             }
         }
     inline
@@ -288,11 +291,11 @@ public:
         {
             TObjectType* oldPtr = m_Ptr;
             if ( newPtr != oldPtr ) {
-                if ( oldPtr )
-                    CRefBase<C>::RemoveReference(oldPtr);
                 if ( newPtr )
                     CRefBase<C>::AddReference(newPtr);
                 m_Ptr = newPtr;
+                if ( oldPtr )
+                    CRefBase<C>::RemoveReference(oldPtr);
             }
         }
 
@@ -303,8 +306,8 @@ public:
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
                 return 0;
-            CRefBase<C>::ReleaseReference(ptr);
             m_Ptr = 0;
+            CRefBase<C>::ReleaseReference(ptr);
             return ptr;
         }
     inline
@@ -313,8 +316,8 @@ public:
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
                 throw CNullPointerError();
-            CRefBase<C>::ReleaseReference(ptr);
             m_Ptr = 0;
+            CRefBase<C>::ReleaseReference(ptr);
             return ptr;
         }
 
@@ -444,8 +447,8 @@ public:
         {
             TObjectType* ptr = m_Ptr;
             if ( ptr ) {
-                CRefBase<C>::RemoveReference(ptr);
                 m_Ptr = 0;
+                CRefBase<C>::RemoveReference(ptr);
             }
         }
     inline
@@ -453,11 +456,11 @@ public:
         {
             TObjectType* oldPtr = m_Ptr;
             if ( newPtr != oldPtr ) {
-                if ( oldPtr )
-                    CRefBase<C>::RemoveReference(oldPtr);
                 if ( newPtr )
                     CRefBase<C>::AddReference(newPtr);
                 m_Ptr = newPtr;
+                if ( oldPtr )
+                    CRefBase<C>::RemoveReference(oldPtr);
             }
         }
 
@@ -468,8 +471,8 @@ public:
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
                 return 0;
-            CRefBase<C>::ReleaseReference(ptr);
             m_Ptr = 0;
+            CRefBase<C>::ReleaseReference(ptr);
             return ptr;
         }
     inline
@@ -478,8 +481,8 @@ public:
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
                 throw CNullPointerError();
-            CRefBase<C>::ReleaseReference(ptr);
             m_Ptr = 0;
+            CRefBase<C>::ReleaseReference(ptr);
             return ptr;
         }
 
