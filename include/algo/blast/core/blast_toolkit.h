@@ -1,5 +1,5 @@
-#ifndef _NCBI_CONFIG__H
-#define _NCBI_CONFIG__H
+#ifndef _BLAST_TOOLKIT__H
+#define _BLAST_TOOLKIT__H
 
 /* C++ toolkit */
 #include <corelib/ncbitype.h>
