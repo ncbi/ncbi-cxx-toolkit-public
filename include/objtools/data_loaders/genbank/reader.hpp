@@ -95,10 +95,14 @@ public:
     // -1 - never
     virtual int GetConst(const string& const_name) const;
 
-    enum {
-        kSNP_Sat = 15,
-        kTRACE_Sat = 28,
+    enum ESatellite {
+        eSatellite_SNP = 15,
+        eSatellite_TRACE = 28,
+        eSatellite_TRACE_ASSM = 29,
+        eSatellite_TR_ASSM_CH = 30
+    };
 
+    enum {
         kSNP_EntryId = 0,
         kSNP_ChunkId = 0
     };
@@ -126,6 +130,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.38  2004/02/18 13:59:57  dicuccio
+* Added additional satellites
+*
 * Revision 1.37  2004/01/22 20:10:33  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.
