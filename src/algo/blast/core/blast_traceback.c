@@ -410,10 +410,18 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
 
    Boolean keep = TRUE;
    Int4 align_length = 0;
-   double scale_factor = score_params->scale_factor;
+   double scale_factor = 1.0;
    BlastScoringOptions *score_options = score_params->options;
    BlastHitSavingOptions *hit_options = hit_params->options;
    
+   /* For RPS BLAST only, we'll need to divide Lambda by the scaling factor
+      for the e-value calculations, because scores are scaled; for PSI-BLAST
+      Lambda is already divided by scaling factor, so there is no need to do 
+      it again. In all other programs, scaling factor is 1 anyway. */
+   if (program_number == blast_type_rpsblast ||
+       program_number == blast_type_rpstblastn)
+      scale_factor = score_params->scale_factor;
+
    /* Calculate alignment length and number of identical letters. 
       Do not get the number of identities if the query is not available */
    if (query != NULL) {
@@ -476,7 +484,8 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
       }
 
       /* remove any scaling of the calculated score */
-      hsp->score = (Int4) ((hsp->score+(0.5*scale_factor)) / scale_factor);
+      hsp->score = (Int4) ((hsp->score+(0.5*score_params->scale_factor)) / 
+			   score_params->scale_factor);
    }
 
    return keep;
