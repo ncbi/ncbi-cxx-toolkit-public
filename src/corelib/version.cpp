@@ -68,7 +68,6 @@ string CVersionInfo::Print(void) const
     if ( !m_Name.empty() ) {
         os << " (" << m_Name << ")";
     }
-    os << '\0';
     return CNcbiOstrstreamToString(os);
 }
 
@@ -148,6 +147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/11/19 21:46:59  vasilche
+ * Removed extra '\0' from version info.
+ *
  * Revision 1.5  2003/11/17 19:51:17  kuznets
  * + IsBetterVersion service function
  *
