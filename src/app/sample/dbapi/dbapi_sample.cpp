@@ -70,7 +70,7 @@ void CDbapiTest::Init()
 #ifdef WIN32
    argList->AddDefaultKey("s", "string",
                            "Server name",
-                           CArgDescriptions::eString, "MSSQL2");
+                           CArgDescriptions::eString, "MS_DEV1");
 
    argList->AddDefaultKey("d", "string",
                            "Driver <ctlib|dblib|ftds|odbc>",
@@ -170,21 +170,39 @@ int CDbapiTest::Run()
         exit(0);
         // Test section end
 */    
-        IStatement *stmt = conn->CreateStatement();
+        IStatement *stmt = conn->GetStatement();
+        string sql;
+        // Begin transaction
 
-        string sql = "select int_val, fl_val, date_val, str_val \
-from SelectSample ";
-        NcbiCout << endl << "Testing simple select..." << endl
-                 << sql << endl;
-
-        conn->MsgToEx(true);
-
+        sql = "begin transaction";
+        stmt->ExecuteUpdate(sql);
+#if 0
+        // Get trancount
+        sql = "select @@trancount";
+        IResultSet *tc = stmt->ExecuteQuery(sql);
+        while(tc->Next()) {
+            NcbiCout << "Begin transaction, count: " << tc->GetVariant(1).GetString();
+        }
+#endif
         try {
+
+
+            sql = "select int_val, fl_val, date_val, str_val \
+                    from SelectSample ";
+            NcbiCout << endl << "Testing simple select..." << endl
+                    << sql << endl;
+
+            conn->MsgToEx(true);
+
             stmt->Execute(sql);
     
+        // Below is an example of using auto_ptr to avoid resource wasting
+        // in case of multiple resultsets, statements, etc.
+        // NOTE: Use it with caution, when the wrapped parent object
+        // goes out of scope, all child objects are destroyed.
             while( stmt->HasMoreResults() ) {
                 if( stmt->HasRows() ) {   
-                    IResultSet *rs = stmt->GetResultSet();
+                    auto_ptr<IResultSet> rs(stmt->GetResultSet());
 
                     const IResultSetMetaData* rsMeta = rs->GetMetaData();
 
@@ -227,11 +245,9 @@ from SelectSample ";
                     } 
                     // Use Close() to free database resources and leave DBAPI framwork intact
                     // All closed DBAPI objects become invalid.
-                    rs->Close();
-                    
-                    // Delete object to get rid of it completely. All child objects will be also deleted
-                    delete rs;
-                }
+                    //rs->Close();
+                    NcbiCout << "Rows : " << stmt->GetRowCount() << endl;
+               }
             }
         }
         catch(CDB_Exception& e) {
@@ -239,7 +255,8 @@ from SelectSample ";
             NcbiCout << conn->GetErrorInfo();
         } 
 
-        NcbiCout << "Rows : " << stmt->GetRowCount() << endl;
+
+        stmt->PurgeResults();
 
         conn->MsgToEx(false);
 /*
@@ -298,6 +315,10 @@ from SelectSample ";
         exit(1);
         //delete stmt;
 */
+
+        //delete stmt;
+        //stmt = conn->GetStatement();
+
         // Testing bulk insert w/o BLOBs
         NcbiCout << endl << "Creating BulkSample table..." << endl;
         sql = "if exists( select * from sysobjects \
@@ -323,7 +344,7 @@ end";
         try {
             //Initialize table using bulk insert
             NcbiCout << "Initializing BulkSample table..." << endl;
-            IBulkInsert *bi = conn->CreateBulkInsert("BulkSample", 4);
+            IBulkInsert *bi = conn->GetBulkInsert("BulkSample", 4);
             CVariant b1(eDB_Int);
             CVariant b2(eDB_Int);
             CVariant b3(eDB_TinyInt);
@@ -374,27 +395,35 @@ begin \
   return @id \
 end";
         //  raiserror('Raise Error test output', 1, 1) 
-
         stmt->ExecuteUpdate(sql);
-        stmt->ExecuteUpdate("print 'test'");
+#if 0
+        // commit transaction
+        sql = "commit transaction";
+        stmt->ExecuteUpdate(sql);
+
+        sql = "select @@trancount";
+        tc = stmt->ExecuteQuery(sql);
+        while(tc->Next()) {
+            NcbiCout << "Transaction committed, count: " << tc->GetVariant(1).GetString();
+        }
+
+#endif
+        /*stmt->ExecuteUpdate("print 'test'");*/
+
 
         float f = 2.999f;
 
         // call stored procedure
         NcbiCout << endl << "Calling stored procedure..." << endl;
         
-        ICallableStatement *cstmt = conn->PrepareCall("SampleProc", 3);
+        ICallableStatement *cstmt = conn->GetCallableStatement("SampleProc", 3);
         cstmt->SetParam(CVariant(5), "@id");
         cstmt->SetParam(CVariant::Float(&f), "@f");
         cstmt->SetOutputParam(CVariant(eDB_Int), "@o");
         cstmt->Execute(); 
     
-        // Below is an example of using auto_ptr to avoid resource wasting
-        // in case of multiple resultsets, statements, etc.
-        // NOTE: Use it with caution, when the wrapped parent object
-        // goes out of scope, all child objects are destroyed.
         while(cstmt->HasMoreResults()) {
-            auto_ptr<IResultSet> rs(cstmt->GetResultSet());
+            IResultSet *rs = cstmt->GetResultSet();
 
             //NcbiCout << "Row count: " << cstmt->GetRowCount() << endl;
 
@@ -430,12 +459,17 @@ end";
                 }
                 break;
             }
-        }
+            // Delete object to get rid of it completely. All child objects will be also deleted
+            // There is no need to close object before deleting. All objects close automatically
+            // when deleted.
+            delete rs;
+         }
         NcbiCout << "Status : " << cstmt->GetReturnStatus() << endl;
         NcbiCout << endl << ds->GetErrorInfo() << endl;
 
-       
+        cstmt->Close();
         delete cstmt;
+        cstmt = conn->GetCallableStatement("SampleProc", 3);
 
         // call stored procedure using language call
         NcbiCout << endl << "Calling stored procedure using language call..." << endl;
@@ -507,6 +541,7 @@ end";
                       server,
                       "DBAPI_Sample");
 
+        //conn->ForceSingle(true);
 
         stmt = conn->CreateStatement();
 
@@ -516,7 +551,7 @@ end";
         vector<char> blob;
 
  
-        NcbiCout << "Retrieve BLOBs using streams" << endl;
+        NcbiCout << "Retrieve BLOBs using streams and reader" << endl;
 
         stmt->ExecuteUpdate("set textsize 2000000");
     
@@ -532,18 +567,22 @@ from SelectSample where int_val = 1");
                              << endl;
                     istream& in1 = rs->GetBlobIStream();
                     int c = 0; 
-                    NcbiCout << "Reading first blob..." << endl;
+                    NcbiCout << "Reading first blob with stream..." << endl;
                     for( ;(c = in1.get()) != CT_EOF; ++size ) {
                         blob.push_back(c);
                     }
-                    istream& in2 = rs->GetBlobIStream();
-                    NcbiCout << "Reading second blob..." << endl;
-                    
-                    for( ;(c = in2.get()) != CT_EOF; ++size ) { 
-                        blob.push_back(c);
+                    IReader *ir = rs->GetBlobReader();
+                    NcbiCout << "Reading second blob with reader..." << endl;
+                    char rBuf[1000];
+                    size_t bRead = 0;
+                    while( ir->Read(rBuf, 999, &bRead) != eRW_Eof ) {
+                        rBuf[bRead] = '\0';
+                        for( int i = 0; rBuf[i] != '\0'; ++i ) { 
+                            blob.push_back(rBuf[i]);
+                        }
                     }
                 } 
-                NcbiCout << "Bytes read: " << size << endl;
+                NcbiCout << "Bytes read: " << blob.size() << endl;
             }
         }
 
@@ -563,6 +602,7 @@ end";
 	id int null, \
 	blob text null, unique (id))";
         stmt->ExecuteUpdate(sql);
+        delete stmt;
 
         // Write BLOB several times
         const int COUNT = 5;
@@ -592,22 +632,38 @@ end";
         }
         bi->Complete();
 
-        
+        delete bi;
 
-        NcbiCout << "Writing BLOB using cursor..." << endl;
+        NcbiCout << "Writing BLOB using cursor and streams..." << endl;
 
         ICursor *blobCur = conn->CreateCursor("test", 
            "select id, blob from BlobSample for update of blob");
     
         IResultSet *blobRs = blobCur->Open();
         while(blobRs->Next()) {
-                NcbiCout << "Writing BLOB " << ++cnt << endl;
+                NcbiCout << "Writing BLOB " << blobRs->GetVariant(1).GetInt4() << endl;
                 ostream& out = blobCur->GetBlobOStream(2, blob.size(), eDisableLog);
                 out.write(buf, blob.size());
                 out.flush();
         }
      
-        blobCur->Close();
+        //blobCur->Close();
+        delete blobCur;
+
+        NcbiCout << "Writing BLOB using cursor and writer..." << endl;
+
+        blobCur = conn->CreateCursor("test", 
+           "select id, blob from BlobSample for update of blob");
+    
+        blobRs = blobCur->Open();
+        while(blobRs->Next()) {
+                NcbiCout << "Writing BLOB " << blobRs->GetVariant(1).GetInt4() << endl;
+                IWriter *wr = blobCur->GetBlobWriter(2, blob.size(), eDisableLog);
+                wr->Write(buf, blob.size());
+        }
+     
+        //blobCur->Close();
+        delete blobCur;
 
 #ifndef WIN32 // Not supported by ODBC driver
         NcbiCout << "Writing BLOB using resultset..." << endl;
@@ -633,23 +689,10 @@ end";
 
 #endif
 
-#if 0
-        while( stmt->HasMoreResults() ) {
-            if( stmt->HasRows() ) {
-                IResultSet *rs = stmt->GetResultSet();
-                while(rs->Next()) {
-                    ostream& out = rs->GetBlobOStream(blob.size());
-                    vector<char>::iterator i = blob.begin();
-                    for( ; i != blob.end(); ++i )
-                        out << *i;
-                    out.flush();
-                }
-            }
-        }
-#endif
         delete buf;
 
         // check if Blob is there
+        stmt = conn->CreateStatement();
         NcbiCout << "Checking BLOB size..." << endl;
         stmt->Execute("select 'Written blob size' as size, datalength(blob) \
 from BlobSample where id = 1");
@@ -664,6 +707,20 @@ from BlobSample where id = 1");
             }
         }
 
+        // Reading text blobs
+        NcbiCout << "Reading text BLOB..." << endl;
+        IResultSet *brs = stmt->ExecuteQuery("select id, blob from BlobSample");
+        brs->BindBlobToVariant(true);
+        char bbuf[1024];
+        while(brs->Next()) {
+            NcbiCout << brs->GetVariant(1).GetString() << "  ";
+            const CVariant &v = brs->GetVariant(2);
+            v.Read(bbuf, v.GetBlobSize());
+            bbuf[v.GetBlobSize()] = '\0';
+            NcbiCout << bbuf << endl;
+
+        }
+
         // Cursor test (remove blob)
         NcbiCout << "Cursor test, removing blobs" << endl;
 
@@ -675,7 +732,14 @@ from BlobSample where id = 1");
             cur->Update("BlobSample", "update BlobSample set blob = ' '");
         }
      
-        cur->Close();
+        //cur->Close();
+        delete cur;
+
+        // ExecuteUpdate rowcount test
+        NcbiCout << "Rowcount test..." << endl;
+        sql = "update BlobSample set blob ='deleted'";
+        stmt->ExecuteUpdate(sql);
+        NcbiCout << "Rows updated: " << stmt->GetRowCount() << endl;
 
         // drop BlobSample table
         NcbiCout << "Deleting BlobSample table..." << endl;
@@ -711,6 +775,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/07/21 16:17:59  kholodov
+* Added: IReader/IWriter sample code
+*
 * Revision 1.12  2004/05/21 21:41:41  gorelenk
 * Added PCH ncbi_pch.hpp
 *
