@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/05/21 16:12:04  vasilche
+* Correct index argument to ThrowUnassigned() to match index of GetItemInfo().
+*
 * Revision 1.8  2003/05/21 16:01:52  vasilche
 * Avoid failed assert while generating exception message.
 *
@@ -177,6 +180,8 @@ void CSerialObject::ThrowUnassigned(TMemberIndex index) const
         s << type->GetModuleName() << "::" << type->GetName() << ".";
         const CClassTypeInfoBase* classtype =
             dynamic_cast<const CClassTypeInfoBase*>(type);
+        // offset index as the argument is zero based but items are 1 based
+        index += classtype->GetItems().FirstIndex();
         if ( classtype &&
              index >= classtype->GetItems().FirstIndex() &&
              index <= classtype->GetItems().LastIndex() ) {
