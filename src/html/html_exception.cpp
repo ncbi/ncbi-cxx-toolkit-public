@@ -38,7 +38,7 @@ BEGIN_NCBI_SCOPE
 void CHTMLException::AddTraceInfo(const string& node_name)
 {
     string name = node_name.empty() ? "?" : node_name;
-    m_Trace.push_back(name);
+    m_Trace.push_front(name);
 }
 
 
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/03 19:42:42  ivanov
+ * Changed order of trace names in ReportExtra()
+ *
  * Revision 1.2  2003/12/23 18:08:08  ivanov
  * Added forgotten const for dynamic_cast conversion
  *
