@@ -76,7 +76,7 @@ public:
     /// @param value
     ///   Cache value
 
-    virtual Store(int key1, int key2, const vector<int>& value) = 0;
+    virtual void Store(int key1, int key2, const vector<int>& value) = 0;
 
     /// Get number of elements (not size in bytes!) in the cache entry
     /// @return
@@ -110,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/10/15 19:31:04  kuznets
+ * Minor fix
+ *
  * Revision 1.2  2003/10/15 18:56:43  kuznets
  * Minor comment change
  *
