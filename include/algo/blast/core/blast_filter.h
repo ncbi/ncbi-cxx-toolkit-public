@@ -44,6 +44,7 @@ extern "C" {
 #endif
 
 #include <algo/blast/core/blast_def.h>
+#include <algo/blast/core/blast_message.h>
 
 /** Create and initialize a new sequence interval.
  * @param from Start of the interval [in]
@@ -57,6 +58,13 @@ BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc);
 
 /** Deallocate memory for a list of BlastMaskLoc structures */
 BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc);
+
+/** Allocate memory for a BlastMaskLoc.
+ * @param index which context (i.e., strand) [in]
+ * @param loc_list List of locations on that strand [in]
+ * @return Pointer to the allocated BlastMaskLoc structure.
+*/
+BlastMaskLoc* BlastMaskLocNew(Int4 index, BlastSeqLoc *loc_list);
 
 /** Go through all mask locations in one sequence, 
  * combine any that overlap. Deallocate the memory for the locations that 
@@ -98,14 +106,37 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
  * @param mask_at_hash If TRUE masking is done while making the lookup table
  *                     only. [out] 
  * @param seqloc_retval Resulting locations for filtered region. [out]
- * @param no_lookup If lookup table is not needed, and filter string contains
- *                  'mask at hash only' option, then do not perform any 
- *                  filtering. [in]
 */
 Int2
 BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length, 
-   Int4 offset, char* instructions, Boolean *mask_at_hash, 
-   BlastSeqLoc* *seqloc_retval, Boolean no_lookup);
+   Int4 offset, char* instructions, Boolean *mask_at_hash, BlastSeqLoc* *seqloc_retval);
+
+
+/** Does preparation for filtering and then calls BlastSetUp_Filter
+ * @param query_blk sequence to be filtered [in]
+ * @param query_info info on sequence to be filtered [in]
+ * @param program_number one of blastn,blastp,blastx,etc. [in]
+ * @param filter_string instructions for filtering [in]
+ * @param filter_out Resulting locations for filtered region. [out]
+ * @param mask_at_hash If TRUE masking is done while making the lookup table
+ *                     only. [out] 
+ * @param blast_message message that needs to be sent back to user.
+*/
+Int2
+BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info,
+    Uint1 program_number, char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash,
+    Blast_Message* *blast_message);
+
+
+/** Masks the sequence given a BlastMaskLoc
+ * @param query_blk sequence to be filtered [in]
+ * @param query_info info on sequence to be filtered [in]
+ * @param filter_maskloc Locations to filter [in]
+ * @param program_number one of blastn,blastp,blastx,etc. [in]
+*/
+Int2
+BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info,
+    BlastMaskLoc *filter_maskloc, Uint1 program_number);
 
 
 #ifdef __cplusplus
