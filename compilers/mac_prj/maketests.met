@@ -136,14 +136,23 @@ on SetProjectData()
 	AddProject(datatoolData)
 	AddSimpleProject("test_ncbitime", corelib, {"C++"})
 	AddSimpleProject("test_ncbi_limits", corelib, {"C++"})
-	AddSimpleProject("test_ncbi_core", connect, {"C"})
-	AddSimpleProject("test_ncbi_buffer", connect, {"C"})
-	AddSimpleProject("test_ncbi_socket", connect, {"C", "sockets"})
-	AddSimpleProject("test_ncbi_heapmgr", connect, {"C"})
-	AddSimpleProject("test_ncbi_connutil_hit", connect, {"C", "sockets"})
-	AddSimpleProject("test_ncbi_connutil_misc", connect, {"C"})
-	AddSimpleProject("socket_io_bouncer", connect, {"C", "sockets"})
-	AddSimpleProject("test_ncbi_file_connector", connect, {"C"})
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_core", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_buffer", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_socket", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_heapmgr", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_connutil_hit", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_connutil_misc", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("socket_io_bouncer", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_file_connector", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+
 	--AddSimpleProject("test_sock_connutil_misc", connect, {"C++", "sockets"})
 	--AddSimpleProject("test_http_connutil_misc", connect, {"C", "sockets"})
 	--AddSimpleProject("test_srv_connutil_misc", connect, {"C", "sockets"})
@@ -166,22 +175,35 @@ on SetProjectData()
 		{"corelib"}))
 	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("id1_fetch_simple", "app:id1_fetch", ¬
 		{"C++", "sockets"}), commonObjLibs), {"object_id1", "connect"}))
-	AddSimpleProject("http_connector_hit", connect, {"C"})
-	AddSimpleProject("test_ncbi_http_connector", connect, {"C"})
-	AddSimpleProject("test_ncbi_socket_connector", connect, {"C"})
-	AddSimpleProject("test_fw", connect, {"C"})
-	AddSimpleProject("test_ncbi_service_connector", connect, {"C"})
-	AddSimpleProject("test_ncbi_sendmail", connect, {"C"})
-	AddSimpleProject("test_ncbi_disp", connect, {"C"})
-	AddSimpleProject("test_ncbi_http_get", connect, {"C"})
-	AddSimpleProject("test_conn_stream_pushback", connect, {"C++"})
+	AddProject(DataPlusLibs(SimpleProjectData("http_connector_hit", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_http_connector", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_socket_connector", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_fw", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_service_connector", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_sendmail", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_disp", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_http_get", connect, ¬
+		{"C", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_conn_stream_pushback", connect, ¬
+		{"C++", "sockets"}), {"corelib"}))
 	AddSimpleProject("test_ncbistr", corelib, {"C++"})
-	AddSimpleProject("test_ncbiutil", corelib, {"C++"})
 	AddSimpleProject("test_ncbifile", corelib, {"C++"})
-	AddSimpleProject("test_seqport", "objects:seq:test", {"C++"})
-	AddSimpleProject("test_utf8", util, {"C++"})
-	AddSimpleProject("test_resize_iter", util, {"C++"})
-	AddSimpleProject("test_fstream_pushback", util, {"C++"})
+	AddSimpleProject("test_ncbiutil", corelib, {"C++"})
+	AddProject(DataPlusLibs(SimpleProjectData("test_seqport", "objects:seq:test", ¬
+		{"C++", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_utf8", util, ¬
+		{"C++", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_resize_iter", util, ¬
+		{"C++", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(SimpleProjectData("test_fstream_pushback", util, ¬
+		{"C++", "sockets"}), {"corelib"}))
 	
 end SetProjectData
 
