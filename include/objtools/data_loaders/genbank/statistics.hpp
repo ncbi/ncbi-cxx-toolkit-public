@@ -1,5 +1,5 @@
-#ifndef READERS__ID1__STATISTICS__HPP_INCLUDED
-#define READERS__ID1__STATISTICS__HPP_INCLUDED
+#ifndef GENBANK__STATISTICS__HPP_INCLUDED
+#define GENBANK__STATISTICS__HPP_INCLUDED
 
 /*  $Id$
 * ===========================================================================
@@ -30,12 +30,13 @@
 *
 */
 
-#define ID1_COLLECT_STATS 1
-#ifdef ID1_COLLECT_STATS
+#define GB_COLLECT_STATS 1
+#ifdef GB_COLLECT_STATS
 
 #include <corelib/ncbitime.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
 
 struct STimeStatistics
@@ -67,8 +68,9 @@ struct STimeSizeStatistics : public STimeStatistics
 };
 
 
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif
 
-#endif//READERS__ID1__STATISTICS__HPP_INCLUDED
+#endif //GENBANK__STATISTICS__HPP_INCLUDED

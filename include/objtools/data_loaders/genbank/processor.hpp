@@ -37,6 +37,7 @@
 BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
+class CStopWatch;
 
 BEGIN_SCOPE(objects)
 
@@ -46,6 +47,7 @@ class CReadDispatcher;
 class CWriter;
 class CID2_Reply_Data;
 class CLoadLockBlob;
+struct STimeSizeStatistics;
 
 class NCBI_XREADER_EXPORT CProcessor : public CObject 
 {
@@ -118,6 +120,19 @@ protected:
     CProcessor(CReadDispatcher& dispatcher);
 
     CReadDispatcher* m_Dispatcher;
+
+    static int CollectStatistics(void); // 0 - no stats, >1 - verbose
+    static void LogStat(const char* type,
+                        const string& blob_id,
+                        STimeSizeStatistics& stat,
+                        CStopWatch& sw,
+                        size_t size,
+                        CReaderRequestResult& result);
+
+private:
+    void PrintStatistics(void) const;
+    static void PrintStat(const char* type,
+                          STimeSizeStatistics& stat);
 };
 
 

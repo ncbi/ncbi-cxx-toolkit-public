@@ -38,6 +38,9 @@
 #include <objtools/data_loaders/genbank/processor.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CStopWatch;
+
 BEGIN_SCOPE(objects)
 
 class CBlob_id;
@@ -50,6 +53,7 @@ class CReaderRequestResult;
 class CLoadLockBlob_ids;
 class CLoadLockBlob;
 class CReadDispatcherCommand;
+struct STimeStatistics;
 
 class NCBI_XREADER_EXPORT CReadDispatcher : public CObject
 {
@@ -118,6 +122,15 @@ public:
     void Process(CReadDispatcherCommand& command);
     
 private:
+    static int CollectStatistics(void); // 0 - no stats, >1 - verbose
+    void PrintStatistics(void) const;
+
+    static void PrintStat(const char* type,
+                          const char* what,
+                          const STimeStatistics& stat);
+    static void LogStat(CReadDispatcherCommand& command,
+                        CStopWatch& sw);
+
     typedef map< TLevel,       CRef<CReader> >    TReaders;
     typedef map< TLevel,       CRef<CWriter> >    TWriters;
     typedef map< CProcessor::EType, CRef<CProcessor> > TProcessors;

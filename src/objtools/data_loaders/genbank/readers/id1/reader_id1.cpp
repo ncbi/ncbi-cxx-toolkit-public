@@ -44,8 +44,6 @@
 
 #include <corelib/ncbimtx.hpp>
 
-#include <objtools/data_loaders/genbank/readers/id1/statistics.hpp>
-
 #include <corelib/plugin_manager_impl.hpp>
 
 #include <objects/general/Dbtag.hpp>
@@ -90,35 +88,6 @@ static void SetRandomFail(CConn_ServiceStream& stream)
 #endif
 
 
-#ifdef ID1_COLLECT_STATS
-static STimeStatistics resolve_id;
-static STimeStatistics resolve_gi;
-static STimeStatistics resolve_ver;
-
-static STimeSizeStatistics main_read;
-static STimeSizeStatistics snp_read;
-static STimeSizeStatistics snp_parse;
-#endif
-
-int CId1Reader::CollectStatistics(void)
-{
-#ifdef ID1_COLLECT_STATS
-    static int s_Value = -1;
-    int value = s_Value;
-    if ( value < 0 ) {
-        value = GetConfigInt("GENBANK", "ID1_STATS");
-        if ( value < 0 ) {
-            value = 0;
-        }
-        s_Value = value;
-    }
-    return value;
-#else
-    return 0;
-#endif
-}
-
-
 static int GetDebugLevel(void)
 {
     static int s_Value = -1;
@@ -150,47 +119,6 @@ CId1Reader::CId1Reader(int max_connections)
 
 CId1Reader::~CId1Reader()
 {
-#ifdef ID1_COLLECT_STATS
-    if ( CollectStatistics() ) {
-        PrintStatistics();
-    }
-#endif
-}
-
-
-void CId1Reader::PrintStat(const char* type,
-                           const char* what,
-                           const STimeStatistics& stat)
-{
-#ifdef ID1_COLLECT_STATS
-    if ( !stat.count ) {
-        return;
-    }
-    LOG_POST(type <<' '<<stat.count<<' '<<what<<" in "<<
-             setiosflags(ios::fixed)<<
-             setprecision(3)<<
-             (stat.time)<<" s "<<
-             (stat.time*1000/stat.count)<<" ms/one");
-#endif
-}
-
-
-void CId1Reader::PrintStat(const char* type,
-                           const STimeSizeStatistics& stat)
-{
-#ifdef ID1_COLLECT_STATS
-    if ( !stat.count ) {
-        return;
-    }
-    LOG_POST(type<<' '<<stat.count<<" blobs "<<
-             setiosflags(ios::fixed)<<
-             setprecision(2)<<
-             (stat.size/1024)<<" kB in "<<
-             setprecision(3)<<
-             (stat.time)<<" s "<<
-             setprecision(2)<<
-             (stat.size/stat.time/1024)<<" kB/s");
-#endif
 }
 
 
@@ -199,97 +127,6 @@ static string ToString(const CID1server_maxcomplex& maxplex)
     CNcbiOstrstream str;
     str << "TSE("<<maxplex.GetSat()<<','<<maxplex.GetEnt()<<')';
     return CNcbiOstrstreamToString(str);
-}
-
-
-void CId1Reader::LogIdStat(const char* type,
-                           const char* kind,
-                           const string& name,
-                           STimeStatistics& stat,
-                           CStopWatch& sw)
-{
-#ifdef ID1_COLLECT_STATS
-    double time = sw.Restart();
-    stat.add(time);
-    if ( CollectStatistics() <= 1 ) {
-        return;
-    }
-    LOG_POST(type<<' '<<kind<<' '<<name<<" in "<<
-             setiosflags(ios::fixed)<<
-             setprecision(3)<<
-             (time*1000)<<" ms");
-#endif
-}
-
-
-void CId1Reader::LogStat(const char* type,
-                         const string& blob_id,
-                         STimeSizeStatistics& stat,
-                         CStopWatch& sw,
-                         size_t size)
-{
-#ifdef ID1_COLLECT_STATS
-    double time = sw.Restart();
-    stat.add(time, size);
-    if ( CollectStatistics() <= 1 ) {
-        return;
-    }
-    LOG_POST(type<<' '<<blob_id<<' '<<
-             setiosflags(ios::fixed)<<
-             setprecision(2)<<
-             (size/1024)<<" kB in "<<
-             setprecision(3)<<
-             (time*1000)<<" ms "<<
-             setprecision(2)<<
-             (size/1024/time)<<" kB/s");
-#endif
-}
-
-
-void CId1Reader::LogStat(const char* type,
-                         const CBlob_id& blob_id,
-                         STimeSizeStatistics& stat,
-                         CStopWatch& sw,
-                         size_t size)
-{
-#ifdef ID1_COLLECT_STATS
-    LogStat(type, blob_id.ToString(), stat, sw, size);
-#endif
-}
-
-
-void CId1Reader::PrintStatistics(void) const
-{
-#ifdef ID1_COLLECT_STATS
-    PrintStat("ID1 resolution: resolved", "ids", resolve_id);
-    PrintStat("ID1 resolution: resolved", "gis", resolve_gi);
-    PrintStat("ID1 resolution: resolved", "vers", resolve_ver);
-    PrintStat("ID1 non-SNP: loaded", main_read);
-    PrintStat("ID1 SNP: loaded", snp_read);
-    PrintStat("ID1 SNP: parsed", snp_parse);
-/*
-    if ( snp_parse.count ) {
-        LOG_POST("ID1 SNP decompression: "<<
-                 setiosflags(ios::fixed)<<
-                 setprecision(2)<<
-                 (snp_compressed/1024)<<" kB -> "<<
-                 (snp_uncompressed/1024)<<" kB, compession ratio: "<<
-                 setprecision(1)<<
-                 (snp_uncompressed/snp_compressed));
-        double snp_parse_time = snp_time - snp_total_read_time;
-        LOG_POST("ID1 SNP times: decompression : "<<
-                 setiosflags(ios::fixed)<<
-                 setprecision(3)<<
-                 (snp_decompression_time)<<" s, total read time: "<<
-                 (snp_total_read_time)<<" s, parse time: "<<
-                 (snp_parse_time)<<" s");
-    }
-    PrintBlobStat("ID1 total: loaded",
-                  main_blob_count + snp_blob_count,
-                  main_bytes + snp_compressed,
-                  main_time + snp_time);
-*/
-#endif
 }
 
 
@@ -748,48 +585,12 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
 void CId1Reader::x_ResolveId(CID1server_back& reply,
                              const CID1server_request& request)
 {
-#ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics()>0);
-#endif
-
     {{
         CConn conn(this);
         x_SendRequest(conn, request);
         x_ReceiveReply(conn, reply);
         conn.Release();
     }}
-
-#ifdef ID1_COLLECT_STATS
-    if ( CollectStatistics() ) {
-        if ( request.Which() == CID1server_request::e_Getgi ) {
-            LogIdStat("CId1Reader: resolved",
-                      "id", request.GetGetgi().AsFastaString(),
-                      resolve_id, sw);
-        }
-        else if ( request.Which() == CID1server_request::e_Getblobinfo ) {
-            const CID1server_maxcomplex& req = request.GetGetblobinfo();
-            if ( req.IsSetSat() ) {
-                LogIdStat("CId1Reader: resolved",
-                          "blob version", ToString(req),
-                          resolve_ver, sw);
-            }
-            else {
-                LogIdStat("CId1Reader: resolved",
-                          "gi", NStr::IntToString(req.GetGi()),
-                          resolve_gi, sw);
-            }
-        }
-        else if ( request.Which() == CID1server_request::e_Getseqidsfromgi ) {
-            CID1server_request::TGetseqidsfromgi req = request.GetGetseqidsfromgi();
-            LogIdStat("CId1Reader: get ids for",
-                      "gi", NStr::IntToString(req),
-                      resolve_gi, sw);
-        }
-        else {
-            LogIdStat("CId1Reader: resolved", "id", "?", resolve_id, sw);
-        }
-    }
-#endif
 }
 
 
@@ -797,10 +598,6 @@ void CId1Reader::GetBlob(CReaderRequestResult& result,
                          const TBlobId& blob_id,
                          TChunkId chunk_id)
 {
-#ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics()>0);
-#endif
-
     CConn conn(this);
     {{
         CID1server_request request;
@@ -817,12 +614,6 @@ void CId1Reader::GetBlob(CReaderRequestResult& result,
     m_Dispatcher->GetProcessor(processor_type)
         .ProcessStream(result, blob_id, chunk_id, *x_GetConnection(conn));
     conn.Release();
-
-#ifdef ID1_COLLECT_STATS
-    if ( CollectStatistics() ) {
-        LogStat("CId1Reader: read blob", blob_id, main_read, sw, 0);
-    }
-#endif
 }
 
 

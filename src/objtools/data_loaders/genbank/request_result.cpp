@@ -393,7 +393,9 @@ void CLoadLockBlob::SetBlobVersion(TBlobVersion version)
 CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
     : m_Level(0),
       m_Cached(false),
-      m_RequestedId(requested_id)
+      m_RequestedId(requested_id),
+      m_RecursiveTime(0),
+      m_RecursiveSize(0)
 {
 }
 

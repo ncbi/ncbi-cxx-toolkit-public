@@ -243,7 +243,8 @@ public:
     static void x_FixDataFormat(const CID2_Reply_Data& data);
     static CObjectIStream* x_OpenDataStream(const CID2_Reply_Data& data);
     static void x_ReadData(const CID2_Reply_Data& data,
-                           const CObjectInfo& object);
+                           const CObjectInfo& object,
+                           size_t& data_size);
     static void DumpDataAsText(const CID2_Reply_Data& data,
                                CNcbiOstream& out);
 };

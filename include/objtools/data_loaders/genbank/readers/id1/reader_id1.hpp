@@ -38,8 +38,6 @@ class CConn_ServiceStream;
 class CByteSourceReader;
 class CObjectIStream;
 class CStopWatch;
-struct STimeStatistics;
-struct STimeSizeStatistics;
 
 BEGIN_SCOPE(objects)
 
@@ -95,31 +93,6 @@ protected:
 
     CConn_ServiceStream* x_GetConnection(TConn conn);
     CConn_ServiceStream* x_NewConnection(TConn conn);
-
-    static int CollectStatistics(void); // 0 - no stats, >1 - verbose
-    void PrintStatistics(void) const;
-
-    static void PrintStat(const char* type,
-                          const char* what,
-                          const STimeStatistics& stat);
-    static void PrintStat(const char* type,
-                          const STimeSizeStatistics& stat);
-
-    static void LogIdStat(const char* type,
-                          const char* kind,
-                          const string& name,
-                          STimeStatistics& stat,
-                          CStopWatch& sw);
-    static void LogStat(const char* type,
-                        const CBlob_id& blob_id,
-                        STimeSizeStatistics& stat,
-                        CStopWatch& sw,
-                        size_t size);
-    static void LogStat(const char* type,
-                        const string& blob_id,
-                        STimeSizeStatistics& stat,
-                        CStopWatch& sw,
-                        size_t size);
 
     void x_ResolveId(CID1server_back& id1_reply,
                      const CID1server_request& id1_request);

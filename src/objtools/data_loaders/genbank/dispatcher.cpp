@@ -33,9 +33,11 @@
 #include <objtools/data_loaders/genbank/writer.hpp>
 #include <objtools/data_loaders/genbank/processor.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/statistics.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+#include <corelib/ncbi_config_value.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -43,6 +45,65 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 // CReadDispatcher
 /////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef GB_COLLECT_STATS
+
+static STimeStatistics s_Stat_StringSeq_ids;
+static STimeStatistics s_Stat_Seq_idSeq_ids;
+static STimeStatistics s_Stat_Seq_idGi;
+static STimeStatistics s_Stat_Seq_idBlob_ids;
+static STimeStatistics s_Stat_LoadBlobs;
+
+static STimeStatistics* s_TimeStat[] = {
+    &s_Stat_LoadBlobs,
+    &s_Stat_StringSeq_ids,
+    &s_Stat_Seq_idSeq_ids,
+    &s_Stat_Seq_idGi,
+    &s_Stat_Seq_idBlob_ids,
+    &s_Stat_LoadBlobs,
+    &s_Stat_LoadBlobs,
+    &s_Stat_LoadBlobs,
+    &s_Stat_LoadBlobs,
+    &s_Stat_LoadBlobs,
+    &s_Stat_LoadBlobs
+};
+
+static char* s_StatName[] = {
+    "unknown",
+    "string seq-ids",
+    "seq-ids",
+    "gi",
+    "blob ids",
+    "blob version",
+    "blobs",
+    "string blobs",
+    "seq-id blobs",
+    "blob",
+    "chunk"
+};
+
+#endif
+
+
+inline
+int CReadDispatcher::CollectStatistics(void)
+{
+#ifdef GB_COLLECT_STATS
+    static int s_Value = -1;
+    int value = s_Value;
+    if ( value < 0 ) {
+        value = GetConfigInt("GENBANK", "READER_STATS");
+        if ( value < 0 ) {
+            value = 0;
+        }
+        s_Value = value;
+    }
+    return value;
+#else
+    return 0;
+#endif
+}
 
 
 CReadDispatcher::CReadDispatcher(void)
@@ -53,6 +114,11 @@ CReadDispatcher::CReadDispatcher(void)
 
 CReadDispatcher::~CReadDispatcher(void)
 {
+#ifdef GB_COLLECT_STATS
+    if ( CollectStatistics() ) {
+        PrintStatistics();
+    }
+#endif
 }
 
 
@@ -125,7 +191,8 @@ class CReadDispatcherCommand
 {
 public:
     CReadDispatcherCommand(CReaderRequestResult& result)
-        : m_Result(result)
+        : m_StatIdx(0),
+          m_Result(result)
         {
         }
     
@@ -145,6 +212,11 @@ public:
             return m_Result;
         }
 
+      int GetStatIdx(void) { return m_StatIdx; }
+
+protected:
+    int m_StatIdx;
+
 private:
     CReaderRequestResult& m_Result;
 };
@@ -161,6 +233,7 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Lock(result, key)
             {
+                m_StatIdx = 1;
             }
 
         bool IsDone(void)
@@ -192,6 +265,7 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Lock(result, key)
             {
+                m_StatIdx = 2;
             }
 
         bool IsDone(void)
@@ -223,6 +297,7 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Lock(result, key)
             {
+                m_StatIdx = 3;
             }
 
         bool IsDone(void)
@@ -254,6 +329,7 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Lock(result, key)
             {
+                m_StatIdx = 4;
             }
 
         bool IsDone(void)
@@ -285,6 +361,7 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Lock(result, key)
             {
+                m_StatIdx = 5;
             }
 
         bool IsDone(void)
@@ -354,6 +431,7 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Ids(ids), m_Mask(mask)
             {
+                m_StatIdx = 6;
             }
 
         bool IsDone(void)
@@ -386,6 +464,7 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Ids(result, key), m_Mask(mask)
             {
+                m_StatIdx = 7;
             }
 
         bool IsDone(void)
@@ -420,6 +499,7 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Ids(result, key), m_Mask(mask)
             {
+                m_StatIdx = 8;
             }
 
         bool IsDone(void)
@@ -453,6 +533,7 @@ namespace {
             : CReadDispatcherCommand(result),
               m_Key(key), m_Lock(result, key)
             {
+                m_StatIdx = 9;
             }
 
         bool IsDone(void)
@@ -489,6 +570,7 @@ namespace {
               m_ChunkId(chunk_id),
               m_ChunkInfo(m_Lock->GetSplitInfo().GetChunk(chunk_id))
             {
+                m_StatIdx = 10;
             }
 
         bool IsDone(void)
@@ -530,9 +612,15 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
         do {
             ++retry_count;
             try {
+#ifdef GB_COLLECT_STATS
+                CStopWatch sw(CollectStatistics() > 0);
+#endif
                 if ( !command.Execute(reader) ) {
                     retry_count = kMax_Int;
                 }
+#ifdef GB_COLLECT_STATS
+                LogStat(command, sw);
+#endif
             }
             catch ( CLoaderException& exc ) {
                 if ( exc.GetErrCode() == exc.eNoConnection ) {
@@ -694,6 +782,60 @@ void CReadDispatcher::SetAndSaveBlobVersion(CReaderRequestResult& result,
     if( writer ) {
         writer->SaveBlobVersion(result, blob_id, version);
     }
+}
+
+
+void CReadDispatcher::PrintStat(const char* type,
+                                const char* what,
+                                const STimeStatistics& stat)
+{
+#ifdef GB_COLLECT_STATS
+    if ( !stat.count ) {
+        return;
+    }
+    LOG_POST("Dispatcher: " << type << ' ' <<
+             stat.count << ' ' << what << " in " <<
+             setiosflags(ios::fixed) <<
+             setprecision(3) <<
+             (stat.time) << " s (" <<
+             (stat.time*1000/stat.count) << " ms/one)");
+#endif
+}
+
+
+void CReadDispatcher::LogStat(CReadDispatcherCommand& command,
+                              CStopWatch& sw)
+{
+#ifdef GB_COLLECT_STATS
+    double time = sw.Restart();
+    double rec_time = command.GetResult().GetRecursiveTime();
+    time -= rec_time;
+    command.GetResult().AddRecursiveTime(time);
+    STimeStatistics& stat = *s_TimeStat[command.GetStatIdx()];
+    stat.add(time);
+    if ( CollectStatistics() <= 1 ) {
+        return;
+    }
+    const CSeq_id_Handle& idh = command.GetResult().GetRequestedId();
+    string id = idh ? (" for " + idh.AsString()) : "";
+    LOG_POST((rec_time > 0 ? "+" : "") <<
+             "Dispatcher: read " <<
+             s_StatName[command.GetStatIdx()] <<
+             id << " in " <<
+             setprecision(3) << (time*1000) << " ms");
+#endif
+}
+
+
+void CReadDispatcher::PrintStatistics(void) const
+{
+#ifdef GB_COLLECT_STATS
+    PrintStat("resolved", "string ids", s_Stat_StringSeq_ids);
+    PrintStat("resolved", "seq-ids", s_Stat_Seq_idSeq_ids);
+    PrintStat("resolved", "gi", s_Stat_Seq_idGi);
+    PrintStat("resolved", "blob ids", s_Stat_Seq_idBlob_ids);
+    PrintStat("loaded", "blobs", s_Stat_LoadBlobs);
+#endif
 }
 
 
