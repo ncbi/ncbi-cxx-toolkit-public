@@ -588,7 +588,7 @@ public:
     inline
     TObjectType& operator*(void)
         {
-            return GetObject();
+            return *GetNonNullPointer();
         }
 
     /// Reference operator.
@@ -598,7 +598,7 @@ public:
     inline
     TObjectType* operator->(void)
         {
-            return GetPointer();
+            return GetNonNullPointer();
         }
 
     /// Dereference operator returning pointer.
@@ -608,7 +608,7 @@ public:
     inline
     operator TObjectType*(void)
         {
-            return GetPointer();
+            return GetPointerOrNull();
         }
 
     // Const getters.
@@ -676,7 +676,7 @@ public:
     inline
     const TObjectType& operator*(void) const
         {
-            return GetObject();
+            return *GetNonNullPointer();
         }
 
     /// Reference operator -- constant version.
@@ -686,7 +686,7 @@ public:
     inline
     const TObjectType* operator->(void) const
         {
-            return GetPointer();
+            return GetNonNullPointer();
         }
 
     /// Dereference operator returning pointer -- constant version.
@@ -696,7 +696,7 @@ public:
     inline
     operator const TObjectType*(void) const
         {
-            return GetPointer();
+            return GetPointerOrNull();
         }
 
 private:
@@ -1041,7 +1041,7 @@ public:
     inline
     TObjectType& operator*(void) const
         {
-            return GetObject();
+            return *GetNonNullPointer();
         }
 
     /// Reference operator.
@@ -1051,7 +1051,7 @@ public:
     inline
     TObjectType* operator->(void) const
         {
-            return GetPointer();
+            return GetNonNullPointer();
         }
 
     /// Dereference operator returning pointer.
@@ -1061,7 +1061,7 @@ public:
     inline
     operator TObjectType*(void) const
         {
-            return GetPointer();
+            return GetPointerOrNull();
         }
 
 private:
@@ -1080,20 +1080,23 @@ private:
 
 /// Template operator < function for CRef objects.
 template<class T>
+inline
 bool operator< (const CRef<T>& r1, const CRef<T>& r2)
 {
-    return r1.GetPointer() < r2.GetPointer();
+    return r1.GetPointerOrNull() < r2.GetPointerOrNull();
 }
 
 /// Template operator > function for CRef objects.
 template<class T>
+inline
 bool operator> (const CRef<T>& r1, const CRef<T>& r2)
 {
-    return r1.GetPointer() > r2.GetPointer();
+    return r1.GetPointerOrNull() > r2.GetPointerOrNull();
 }
 
 /// Template operator == function for CRef objects -- rhs is null.
 template<class T>
+inline
 bool operator== (const CRef<T>& r1, ENull /*null*/)
 {
     return r1.IsNull();
@@ -1101,6 +1104,7 @@ bool operator== (const CRef<T>& r1, ENull /*null*/)
 
 /// Template operator == function for CRef objects -- lhs is null.
 template<class T>
+inline
 bool operator== (ENull /*null*/, const CRef<T>& r1)
 {
     return r1.IsNull();
@@ -1108,6 +1112,7 @@ bool operator== (ENull /*null*/, const CRef<T>& r1)
 
 /// Template operator != function for CRef objects -- rhs is null.
 template<class T>
+inline
 bool operator!= (const CRef<T>& r1, ENull /*null*/)
 {
     return !r1.IsNull();
@@ -1115,6 +1120,7 @@ bool operator!= (const CRef<T>& r1, ENull /*null*/)
 
 /// Template operator != function for CRef objects -- lhs is null.
 template<class T>
+inline
 bool operator!= (ENull /*null*/, const CRef<T>& r1)
 {
     return !r1.IsNull();
@@ -1122,20 +1128,23 @@ bool operator!= (ENull /*null*/, const CRef<T>& r1)
 
 /// Template operator < function for CConstRef objects.
 template<class T>
+inline
 bool operator< (const CConstRef<T>& r1, const CConstRef<T>& r2)
 {
-    return r1.GetPointer() < r2.GetPointer();
+    return r1.GetPointerOrNull() < r2.GetPointerOrNull();
 }
 
 /// Template operator > function for CConstRef objects.
 template<class T>
+inline
 bool operator> (const CConstRef<T>& r1, const CConstRef<T>& r2)
 {
-    return r1.GetPointer() > r2.GetPointer();
+    return r1.GetPointerOrNull() > r2.GetPointerOrNull();
 }
 
 /// Template operator == function for CConstRef objects -- rhs is null.
 template<class T>
+inline
 bool operator== (const CConstRef<T>& r1, ENull /*null*/)
 {
     return r1.IsNull();
@@ -1143,6 +1152,7 @@ bool operator== (const CConstRef<T>& r1, ENull /*null*/)
 
 /// Template operator == function for CConstRef objects -- lhs is null.
 template<class T>
+inline
 bool operator== (ENull /*null*/, const CConstRef<T>& r1)
 {
     return r1.IsNull();
@@ -1150,6 +1160,7 @@ bool operator== (ENull /*null*/, const CConstRef<T>& r1)
 
 /// Template operator != function for CConstRef objects -- rhs is null.
 template<class T>
+inline
 bool operator!= (const CConstRef<T>& r1, ENull /*null*/)
 {
     return !r1.IsNull();
@@ -1157,6 +1168,7 @@ bool operator!= (const CConstRef<T>& r1, ENull /*null*/)
 
 /// Template operator != function for CConstRef objects -- lhs is null.
 template<class T>
+inline
 bool operator!= (ENull /*null*/, const CConstRef<T>& r1)
 {
     return !r1.IsNull();
@@ -1164,58 +1176,84 @@ bool operator!= (ENull /*null*/, const CConstRef<T>& r1)
 
 /// Template operator == function for CRef objects.
 template<class T>
+inline
 bool operator== (const CRef<T>& r1, const CRef<T>& r2)
 {
-    return r1.GetPointer() == r2.GetPointer();
+    return r1.GetPointerOrNull() == r2.GetPointerOrNull();
 }
 
 /// Template operator == function for CConstRef objects.
 template<class T>
+inline
 bool operator== (const CConstRef<T>& r1, const CConstRef<T>& r2)
 {
-    return r1.GetPointer() == r2.GetPointer();
+    return r1.GetPointerOrNull() == r2.GetPointerOrNull();
 }
 
 /// Template operator == function for CConstRef and CRef objects.
 template<class T>
+inline
 bool operator== (const CConstRef<T>& r1, const CRef<T>& r2)
 {
-    return r1.GetPointer() == r2.GetPointer();
+    return r1.GetPointerOrNull() == r2.GetPointerOrNull();
 }
 
 /// Template operator == function for CRef and CConstRef objects.
 template<class T>
+inline
 bool operator== (const CRef<T>& r1, const CConstRef<T>& r2)
 {
-    return r1.GetPointer() == r2.GetPointer();
+    return r1.GetPointerOrNull() == r2.GetPointerOrNull();
 }
 
 /// Template operator == function for CRef and CRef objects.
 template<class T>
+inline
 bool operator!= (const CRef<T>& r1, const CRef<T>& r2)
 {
-    return r1.GetPointer() != r2.GetPointer();
+    return r1.GetPointerOrNull() != r2.GetPointerOrNull();
 }
 
 /// Template operator != function for CConstRef objects.
 template<class T>
+inline
 bool operator!= (const CConstRef<T>& r1, const CConstRef<T>& r2)
 {
-    return r1.GetPointer() != r2.GetPointer();
+    return r1.GetPointerOrNull() != r2.GetPointerOrNull();
 }
 
 /// Template operator != function for CConstRef and CRef objects.
 template<class T>
+inline
 bool operator!= (const CConstRef<T>& r1, const CRef<T>& r2)
 {
-    return r1.GetPointer() != r2.GetPointer();
+    return r1.GetPointerOrNull() != r2.GetPointerOrNull();
 }
 
 /// Template operator != function for CRef and CConstRef objects.
 template<class T>
+inline
 bool operator!= (const CRef<T>& r1, const CConstRef<T>& r2)
 {
-    return r1.GetPointer() != r2.GetPointer();
+    return r1.GetPointerOrNull() != r2.GetPointerOrNull();
+}
+
+
+/// Template function for conversion of object pointer to CRef
+template<class C>
+inline
+CRef<C> Ref(C* object)
+{
+    return CRef<C>(object);
+}
+
+
+/// Template function for conversion of const object pointer to CConstRef
+template<class C>
+inline
+CConstRef<C> ConstRef(const C* object)
+{
+    return CConstRef<C>(object);
 }
 
 
@@ -1293,6 +1331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2003/09/17 17:57:38  vasilche
+ * Added Ref() and ConstRef() templated functions for getting CRef<> objects.
+ *
  * Revision 1.50  2003/09/17 15:20:45  vasilche
  * Moved atomic counter swap functions to separate file.
  * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.
