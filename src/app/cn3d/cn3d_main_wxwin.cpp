@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.170  2002/11/22 19:54:29  thiessen
+* fixes for wxMac/OSX
+*
 * Revision 1.169  2002/11/21 17:48:12  thiessen
 * fix yet another user style bug
 *
@@ -654,12 +657,6 @@
 
 #include <ncbienv.h>
 
-#if 0 //def __WXMAC__
-#include <wx/filename.h>
-#include "MoreCarbonAccessors.h"
-wxString wxMacFSSpec2MacFilename(const FSSpec *); // in wxwin/src/common/filefn.cpp
-#endif
-
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -808,7 +805,7 @@ void RaiseLogWindow(void)
 {
     if (!logFrame) {
         logFrame = new MsgFrame("Cn3D Message Log", wxPoint(500, 0), wxSize(500, 500));
-#if 0 //def __WXMAC__
+#ifdef __WXMAC__
         // make empty menu for this window
         wxMenuBar *menuBar = new wxMenuBar;
         logFrame->SetMenuBar(menuBar);
@@ -984,7 +981,7 @@ bool Cn3DApp::OnInit(void)
 
     // set data dir, and register the path in C toolkit registry (mainly for BLAST code)
 #ifdef __WXMAC__
-    dataDir = programDir + "../Cn3D/data/";
+    dataDir = programDir + "../Resources/data/";
 #else
     dataDir = programDir + "data" + wxFILE_SEP_PATH;
 #endif
@@ -1057,53 +1054,14 @@ void Cn3DApp::OnIdle(wxIdleEvent& event)
     wxApp::OnIdle(event);
 }
 
-#if 0 //def __WXMAC__
+#ifdef __WXMAC__
 // special handler for open file apple event
-short Cn3DApp::MacHandleAEODoc(const WXAPPLEEVENTREF event, WXAPPLEEVENTREF reply)
+void Cn3DApp::MacOpenFile(const wxString& filename)
 {
-    // borrowed from HandleAEOpenDoc() in vibwndws.c
-    register OSErr stat;
-    register long i;
-    AEDescList list;
-    AEKeyword keywd;
-    DescType dtype;
-    FSSpec fss;
-    long count;
-    Size size;
-    wxString filename;
-
-    stat = AEGetParamDesc ((const AEDesc *) event, keyDirectObject, typeAEList, &list);
-    if ( stat ) return ( stat );
-
-    stat = AEGetAttributePtr ((const AEDesc *) event, keyMissedKeywordAttr, typeWildCard, &dtype, 0, 0, &size );
-    if ( stat != errAEDescNotFound ) {
-        AEDisposeDesc( &list );
-        return ( stat? stat : errAEEventNotHandled );
-    }
-
-    // try to extract a file name to open
-    AECountItems ( &list, &count );
-    for ( i = 1; i <= count; i++ ) {
-        stat = AEGetNthPtr (&list, i, typeFSS, &keywd, &dtype, (Ptr) &fss, sizeof (fss), &size);
-        if ( !stat ) {
-            filename = wxMacFSSpec2MacFilename(&fss);
-            break;
-        }
-    }
-    AEDisposeDesc(&list);
-
-    // actually open the file
     if (filename.size() > 0) {
         TESTMSG("apple open event file: " << filename);
         structureWindow->LoadFile(filename);
     }
-
-    // borrowed from wxApp::MacHandleAEODoc
-    ProcessSerialNumber PSN ;
-    PSN.highLongOfPSN = 0 ;
-    PSN.lowLongOfPSN = kCurrentProcess ;
-    SetFrontProcess( &PSN ) ;
-    return noErr ;
 }
 #endif
 
@@ -1468,14 +1426,9 @@ void Cn3DMainFrame::OnHelp(wxCommandEvent& event)
             wxConfig::Set(helpConfig);
             helpController->UseConfig(wxConfig::Get());
 #ifdef __WXMAC__
-            path = wxString(GetProgramDir().c_str()) + "../Cn3D/cn3d_commands.htb";
+            path = wxString(GetProgramDir().c_str()) + "../Resources/cn3d_commands.htb";
 #else
             path = wxString(GetProgramDir().c_str()) + "cn3d_commands.htb";
-#endif
-#if 0 //def __WXMAC__
-            // convert to UNIX style pathname
-            for (size_t i=0; i<path.size(); i++)
-                if (path[i] == ':') path[i] = '/';
 #endif
             if (!helpController->AddBook(path))
                 ERR_POST(Error << "Can't load help book at " << path.c_str());
@@ -2282,7 +2235,7 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
     if (!outputFilename.IsEmpty()) {
         glCanvas->structureSet->SaveASNData(outputFilename.c_str(), (outputFilename.Right(4) == ".val"));
 
-#if 0 //def __WXMAC__
+#ifdef __WXMAC__
         // set mac file type and creator
         wxFileName wxfn(outputFilename);
         if (wxfn.FileExists())
@@ -2349,14 +2302,14 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(double fontScale)
     std::string nativeFont;
     if (!RegistryGetString(REG_OPENGL_FONT_SECTION, REG_FONT_NATIVE_FONT_INFO, &nativeFont))
     {
-        ERR_POST(Error << "Cn3DGLCanvas::SetGLFont() - error getting font info from registry");
+        ERR_POST(Error << "Cn3DGLCanvas::SetGLFontFromRegistry() - error getting font info from registry");
         return;
     }
 
     // create new font - assignment uses object reference to copy
     wxNativeFontInfo fontInfo;
     if (!fontInfo.FromString(nativeFont.c_str())) {
-        ERR_POST(Error << "Cn3DGLCanvas::SetGLFont() - can't set wxNativeFontInfo");
+        ERR_POST(Error << "Cn3DGLCanvas::SetGLFontFromRegistry() - can't set wxNativeFontInfo fron native font string");
         return;
     }
 #if wxVERSION >= 2304
@@ -2365,7 +2318,7 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(double fontScale)
 #endif
     auto_ptr<wxFont> newFont(wxFont::New(fontInfo));
     if (!newFont.get() || !newFont->Ok()) {
-        ERR_POST(Error << "Cn3DGLCanvas::SetGLFont() - can't get font from wxNativeFontInfo");
+        ERR_POST(Error << "Cn3DGLCanvas::SetGLFontFromRegistry() - can't get wxFont from wxNativeFontInfo");
         return;
     }
     font = *newFont;    // copy font

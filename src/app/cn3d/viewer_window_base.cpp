@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/11/22 19:54:29  thiessen
+* fixes for wxMac/OSX
+*
 * Revision 1.40  2002/10/18 17:31:10  thiessen
 * fix for gcc
 *
@@ -210,7 +213,12 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos,
     editMenu = new wxMenu;
     editMenu->Append(MID_ENABLE_EDIT, "&Enable Editor", "", true);
     editMenu->Append(MID_UNDO, "Undo\tCtrl-Z");
+#ifndef __WXMAC__
     editMenu->Append(MID_REDO, "Redo\tShift-Ctrl-Z");
+#else
+    // mac commands apparently don't recognize shift?
+    editMenu->Append(MID_REDO, "Redo");
+#endif
     editMenu->AppendSeparator();
     editMenu->Append(MID_SPLIT_BLOCK, "&Split Block", "", true);
     editMenu->Append(MID_MERGE_BLOCKS, "&Merge Blocks", "", true);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2002/11/22 19:54:29  thiessen
+* fixes for wxMac/OSX
+*
 * Revision 1.68  2002/11/18 15:02:40  thiessen
 * set flags on style shortcut menus
 *
@@ -308,8 +311,8 @@ public:
 
 private:
     void InitRegistry(void);
-#if 0 //def __WXMAC__
-    short MacHandleAEODoc(const WXAPPLEEVENTREF event, WXAPPLEEVENTREF reply);
+#ifdef __WXMAC__
+    void MacOpenFile(const wxString& fileName);
 #endif
 
     // used for processing display updates when system is idle

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2002/11/22 19:54:29  thiessen
+* fixes for wxMac/OSX
+*
 * Revision 1.52  2002/11/19 21:19:44  thiessen
 * more const changes for objects; fix user vs default style bug
 *
@@ -197,13 +200,10 @@
 #elif defined(__WXGTK__)
 #include <unistd.h>
 
-#elif 0 //defined(__WXMAC__)
-#include <Files.h>      // stuff for sending URL apple event
-#include <Processes.h>
-#include <AppleEvents.h>
-#include <Gestalt.h>
-#include <Navigation.h>
-#include <Folders.h>
+#elif defined(__WXMAC__)
+// full paths needed to void having to add -I/Developer/Headers/FlatCarbon to all modules...
+#include "/Developer/Headers/FlatCarbon/Types.h"
+#include "/Developer/Headers/FlatCarbon/InternetConfig.h"
 #endif
 
 #include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
@@ -578,156 +578,27 @@ static bool MSWin_OpenDocument(const char* doc_name)
 }
 #endif
 
-#if 0 //def __WXMAC__
-// code borrowed from vibutils.c
-Nlm_Boolean Nlm_LaunchAppEx (Nlm_CharPtr fileName, Nlm_VoidPtr serialNumPtr, Nlm_CharPtr sig)
+#ifdef __WXMAC__
+OSStatus MacLaunchURL(ConstStr255Param urlStr)
 {
-  OSErr                   err;
-  FSSpec                  fsspec;
-  long                    gval;
-  LaunchParamBlockRec     myLaunchParams;
-  Nlm_Boolean             okay = FALSE;
-  unsigned char           pathname [256];
-  ProcessSerialNumberPtr  psnp;
-  Nlm_CharPtr             ptr;
-  Nlm_Boolean             rsult;
-  OSType                  theSignature;
-  ProcessSerialNumber     psn;
-  ProcessInfoRec          pir;
-  Nlm_Boolean             found;
-  DTPBRec                 dtpb;
-  short                   ioDTRefNum;
-  long                    dirID;
-  short                   vRefNum;
-  long                    ioAPPLParID;
+    OSStatus err;
+    ICInstance inst;
+    SInt32 startSel;
+    SInt32 endSel;
 
-  rsult = FALSE;
-  if (Gestalt (gestaltSystemVersion, &gval) == noErr && (short) gval >= 7 * 256) {
-    if (fileName != NULL && fileName [0] != '\0') {
-      if (Nlm_StringChr (fileName, DIRDELIMCHR) != NULL) {
-        Nlm_StringNCpy_0((Nlm_CharPtr)pathname, fileName, sizeof(pathname));
-      } else {
-        Nlm_ProgramPath ((Nlm_CharPtr) pathname, sizeof (pathname));
-        ptr = Nlm_StringRChr ((Nlm_CharPtr) pathname, DIRDELIMCHR);
-        if (ptr != NULL) {
-          *ptr = '\0';
-        }
-        Nlm_FileBuildPath ((Nlm_CharPtr) pathname, NULL, fileName);
-      }
-      Nlm_CtoPstr ((Nlm_CharPtr) pathname);
-      err = FSMakeFSSpec (0, 0, pathname, &(fsspec));
-      okay = (Nlm_Boolean) (err == noErr);
-    } else if (sig != NULL && sig [0] != '\0') {
-      theSignature = *(OSType*) sig;
-      psn.highLongOfPSN = 0;
-      psn.lowLongOfPSN = kNoProcess;
-      found = FALSE;
-      while (GetNextProcess (&psn) != noErr) {
-        if (GetProcessInformation (&psn, &pir) != noErr) {
-          if (pir.processSignature == theSignature) {
-            found = TRUE;
-          }
-        }
-      }
-      if (found) return TRUE; /* no need to launch if already running */
-      if (! found) {
-        err = FindFolder (kOnSystemDisk, kTemporaryFolderType,
-                          kCreateFolder, &vRefNum, &dirID);
+    err = ICStart(&inst, 'Cn3D');
+    if (err == noErr) {
+#if !TARGET_CARBON
+        err = ICFindConfigFile(inst, 0, nil);
+#endif
         if (err == noErr) {
-          memset (&dtpb, 0, sizeof (DTPBRec));
-          dtpb.ioNamePtr = NULL;
-          dtpb.ioVRefNum = vRefNum;
-          err = PBDTGetPath (&dtpb);
-          if (err == noErr) {
-            ioDTRefNum = dtpb.ioDTRefNum;
-            if (ioDTRefNum != 0) {
-              memset (&dtpb, 0, sizeof (DTPBRec));
-              dtpb.ioDTRefNum = ioDTRefNum;
-              dtpb.ioFileCreator = theSignature;
-              dtpb.ioNamePtr = (StringPtr) pathname;
-              dtpb.ioIndex = 0;
-              memset (&pathname, 0, sizeof (pathname));
-              err = PBDTGetAPPL (&dtpb, FALSE);
-              if (err == noErr) {
-                ioAPPLParID = dtpb.ioAPPLParID;
-                if (pathname [0] != '\0') {
-                  err = FSMakeFSSpec (vRefNum, ioAPPLParID,
-                                      (ConstStr255Param) pathname, &fsspec);
-                  okay = (Nlm_Boolean) (err == noErr);
-                }
-              }
-            }
-          }
+            startSel = 0;
+            endSel = StrLen(urlStr);
+            err = ICLaunchURL(inst, "\p", urlStr, endSel, &startSel, &endSel);
         }
-      }
+        ICStop(inst);
     }
-    if (okay) {
-      myLaunchParams.launchBlockID = extendedBlock;
-      myLaunchParams.launchEPBLength = extendedBlockLen;
-      myLaunchParams.launchFileFlags = 0;
-      myLaunchParams.launchControlFlags = launchContinue + launchNoFileFlags;
-      myLaunchParams.launchAppParameters = NULL;
-      myLaunchParams.launchAppSpec = &fsspec;
-      rsult = (Nlm_Boolean) (LaunchApplication (&myLaunchParams) == noErr);
-      if (serialNumPtr != NULL) {
-        psnp = (ProcessSerialNumberPtr) serialNumPtr;
-        *psnp = myLaunchParams.launchProcessSN;
-      }
-      SetFrontProcess (&myLaunchParams.launchProcessSN);
-    }
-  }
-  return rsult;
-}
-
-void Nlm_SendURLAppleEvent (Nlm_CharPtr urlString, Nlm_CharPtr sig, Nlm_CharPtr prog)
-{
-  long gval;
-  OSErr theErr = noErr;
-  AEAddressDesc theAddress;
-  AEDesc urlEvent;
-  AppleEvent theEvent;
-  AppleEvent theReply;
-  OSType theSignature;
-  ProcessSerialNumber  psn;
-  Nlm_Boolean  okay = FALSE;
-
-  if (Gestalt (gestaltSystemVersion, &gval) == noErr && (short) gval >= 7 * 256) {
-    theSignature = 'RSML';
-    if (sig != NULL && sig [0] != '\0') {
-      theSignature = *(OSType*) sig;
-    }
-    if (prog != NULL && prog [0] != '\0') {
-      if (Nlm_LaunchAppEx (prog, (Nlm_VoidPtr) &psn, NULL)) {
-        theErr = AECreateDesc(typeProcessSerialNumber, (Ptr)&psn,
-                              sizeof(psn), &theAddress);
-        okay = (Nlm_Boolean) (theErr == noErr);
-      }
-    } else if (sig != NULL && sig [0] != '\0') {
-      if (Nlm_LaunchAppEx (prog, NULL, sig)) {
-        theSignature = *(OSType*) sig;
-        theErr = AECreateDesc(typeApplSignature, (Ptr)&theSignature,
-                              sizeof(theSignature), &theAddress);
-        okay = (Nlm_Boolean) (theErr == noErr);
-      }
-    }
-    if (okay) {
-      theErr = AECreateAppleEvent('WWW!', 'OURL', &theAddress,
-                                  kAutoGenerateReturnID, kAnyTransactionID, &theEvent);
-      if (theErr == noErr) {
-        theErr = AECreateDesc(typeChar, urlString, Nlm_StringLen (urlString), &urlEvent);
-        if (theErr == noErr) {
-          theErr = AEPutParamDesc(&theEvent, keyDirectObject, &urlEvent);
-          if (theErr == noErr) {
-            AESend (&theEvent, &theReply, kAEWaitReply, kAEHighPriority, 500, NULL, NULL);
-            AEDisposeDesc(&theReply);
-          }
-          AEDisposeDesc(&urlEvent);
-        }
-        AEDisposeDesc(&theEvent);
-      }
-      AEDisposeDesc(&theAddress);
-    }
-  }
+    return err;
 }
 #endif
 
@@ -751,8 +622,8 @@ void LaunchWebPage(const char *url)
     TESTMSG("launching browser: " << command);
     system(command.c_str());
 
-#elif 0 //defined(__WXMAC__)
-    Nlm_SendURLAppleEvent (url, "MOSS", NULL);
+#elif defined(__WXMAC__)
+    MacLaunchURL(url);
 #endif
 }
 
