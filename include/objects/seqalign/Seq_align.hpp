@@ -81,7 +81,7 @@ public:
     void Reverse(void);
 
     /// Swap the position of two rows in the alignment
-    /// NOTE: currently *only* works for dense-seg
+    /// NOTE: currently *only* works for dense-seg & disc
     void SwapRows(TDim row1, TDim row2);
 
     // Create a Dense-seg from a Std-seg
@@ -138,6 +138,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/05/05 19:16:25  johnson
+* Added SwapRows method for 'disc' seq-align / seq-align-set
+*
 * Revision 1.12  2004/04/27 19:17:13  johnson
 * Added GetNamedScore helper function
 *

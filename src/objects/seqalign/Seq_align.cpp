@@ -39,6 +39,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -311,6 +312,9 @@ void CSeq_align::SwapRows(TDim row1, TDim row2)
     switch (GetSegs().Which()) {
     case C_Segs::e_Denseg:
         SetSegs().SetDenseg().SwapRows(row1, row2);
+        break;
+    case C_Segs::e_Disc:
+        SetSegs().SetDisc().SwapRows(row1, row2);
         break;
     default:
         NCBI_THROW(CSeqalignException, eUnsupported,
@@ -609,6 +613,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/05/05 19:16:25  johnson
+* Added SwapRows method for 'disc' seq-align / seq-align-set
+*
 * Revision 1.14  2004/04/27 19:17:13  johnson
 * Added GetNamedScore helper function
 *
