@@ -82,4 +82,17 @@ for f in $files ; do
       exit 3
    fi
 done
+
+
+#### Relocate GBench
+
+gbench_dir=$bld_tree/bin/.gbench/bin
+gbench_move=$gbench_dir/move-gbench.sh
+
+if [ -x $gbench_move ]; then
+   echo GBench relocation started...
+   echo $gbench_move $gbench_dir
+   $gbench_move $gbench_dir
+fi
+
 echo "Done."
