@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/04/18 20:35:10  gouriano
+* correction in comment
+*
 * Revision 1.12  2002/04/11 12:07:28  grichenk
 * Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
 *
@@ -130,7 +133,7 @@ public:
     virtual TBioseqCore GetBioseqCore(void) const;
 
     // Get sequence map. References to the whole bioseqs may have
-    // length of 0 unless GetSequence() has been called for the handle.
+    // length of 0 unless GetSeqVector() has been called for the handle.
     virtual const CSeqMap& GetSeqMap(void) const;
     // Get sequence map with resolved multi-level references.
     // The resulting map should contain regions of literals, gaps
