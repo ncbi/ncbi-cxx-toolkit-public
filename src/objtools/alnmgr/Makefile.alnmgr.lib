@@ -5,4 +5,4 @@
 ASN_DEP = seq
 
 LIB = xalnmgr
-SRC = alnmap alnvec alnmix
+SRC = alnmap alnvec alnmix alnvwr
