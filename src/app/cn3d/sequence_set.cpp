@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/05/25 01:38:16  thiessen
+* minor fixes for compiling on SGI
+*
 * Revision 1.26  2001/05/24 13:32:32  thiessen
 * further tweaks for GTK
 *
@@ -112,9 +115,13 @@
 * ===========================================================================
 */
 
-#ifdef __WXMSW__
+#if defined(__WXMSW__)
 #include <windows.h>
 #include <shellapi.h>   // for ShellExecute, needed to launch browser
+
+#elif defined(__WXGTK__)
+#include <unistd.h>
+
 #endif
 
 #include <objects/seqloc/Seq_id.hpp>

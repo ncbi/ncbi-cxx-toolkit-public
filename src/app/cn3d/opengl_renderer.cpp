@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/05/25 01:38:16  thiessen
+* minor fixes for compiling on SGI
+*
 * Revision 1.35  2001/05/22 19:09:31  thiessen
 * many minor fixes to compile/run on Solaris/GTK
 *
@@ -166,7 +169,7 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-static const double PI = acos(-1);
+static const double PI = acos(-1.0);
 static inline double DegreesToRad(double deg) { return deg*PI/180.0; }
 static inline double RadToDegrees(double rad) { return rad*180.0/PI; }
 

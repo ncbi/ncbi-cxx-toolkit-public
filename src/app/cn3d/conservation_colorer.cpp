@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/05/25 01:38:16  thiessen
+* minor fixes for compiling on SGI
+*
 * Revision 1.11  2001/05/22 22:37:13  thiessen
 * check data registry path
 *
@@ -279,7 +282,7 @@ void ConservationColorer::CalculateConservationColors(void)
             pe = profile.end();
             float& information = informationContents[profileColumn];
             for (p=profile.begin(); p!=pe; p++) {
-                static const float ln2 = (float) log(2), threshhold = 0.0001f;
+                static const float ln2 = (float) log(2.0), threshhold = 0.0001f;
                 float expFreq = StandardProbabilities[p->first];
                 if (expFreq > threshhold) {
                     float obsFreq = 1.0f * p->second / nRows,
