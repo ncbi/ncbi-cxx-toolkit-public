@@ -182,7 +182,6 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id)
             _ASSERT(bsi);
             bh = CBioseq_Handle(match.GetIdHandle(), *this, *bsi);
         }
-        m_Cache[id] = bh;
     }
     return bh;
 }
@@ -554,6 +553,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2003/04/15 14:21:52  vasilche
+* Removed unnecessary assignment.
+*
 * Revision 1.59  2003/04/14 21:32:18  grichenk
 * Avoid passing CScope as an argument to CDataSource methods
 *
