@@ -424,6 +424,10 @@ CThread::~CThread(void)
 extern "C" {
     typedef TWrapperRes (*FSystemWrapper)(TWrapperArg);
 }
+#elif defined(NCBI_WIN32_THREADS)
+extern "C" {
+    typedef TWrapperRes (WINAPI *FSystemWrapper)(TWrapperArg);
+}
 #endif
 
 
@@ -451,11 +455,13 @@ bool CThread::Run(TRunMode flags)
         m_Handle = NULL;
     }
     else {
-        xncbi_Validate(DuplicateHandle(GetCurrentProcess(), thread_handle,
+        // duplicate handle to adjust security attributes
+        HANDLE oldHandle = m_Handle;
+        xncbi_Validate(DuplicateHandle(GetCurrentProcess(), oldHandle,
                                        GetCurrentProcess(), &m_Handle,
                                        0, FALSE, DUPLICATE_SAME_ACCESS),
                        "CThread::Run() -- error getting thread handle");
-        xncbi_Validate(CloseHandle(thread_handle),
+        xncbi_Validate(CloseHandle(oldHandle),
                        "CThread::Run() -- error closing thread handle");
     }
 #elif defined(NCBI_POSIX_THREADS)
@@ -638,6 +644,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2002/09/30 16:53:28  vasilche
+ * Fix typedef on Windows.
+ *
  * Revision 1.21  2002/09/30 16:32:29  vasilche
  * Fixed bug with self referenced CThread.
  * Added bound running flag to CThread.
