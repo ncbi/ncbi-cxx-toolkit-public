@@ -4,7 +4,7 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: C++Tests,v 1.1 2001/08/03 18:34:23 juran Exp $
+	$Id: maketests.met,v 1.13 2001/09/28 18:15:18 juran Exp $
 	
    ================================================================================ *)
 
@@ -63,8 +63,8 @@ on SimpleProjectData(projName, section, features)
 	if projName contains infix then
 		set offst to (offset of infix in projName)
 		set pre to characters 1 through (offst - 1) of projName as string
-		set post to characters (offst + (count characters of infix)) Â
-			through (count characters of projName) Â
+		set post to characters (offst + (count characters of infix)) ¬
+			through (count characters of projName) ¬
 			of projName as string
 		set projName to pre & post
 	end if
@@ -72,7 +72,7 @@ on SimpleProjectData(projName, section, features)
 		set projName to characters 1 through 18 of projName as string
 	end if
 	
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
 		if features does not contain "C" and features does not contain "C++" then
 			error "Project " & projName & "'s default language (a feature) must be C or C++."
@@ -86,8 +86,8 @@ on SimpleProjectData(projName, section, features)
 			set myLibs to {section}
 			set myPath to section & ":test:"
 		end if
-		return {name:projName, features:myFeatures, rsrcs:{}, settings:Â
-			{Prefix File:"", ppcProject:{}}, projLibs:myLibs, fileData:Â
+		return {name:projName, features:myFeatures, rsrcs:{}, settings:¬
+			{Prefix File:"", ppcProject:{}}, projLibs:myLibs, fileData:¬
 			{{projPath:myPath, fileList:myFileList}}}
 		
 	end tell
@@ -100,7 +100,7 @@ on AddSimpleProject(projName, section, features)
 end AddSimpleProject
 
 on SetProjectData()
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
 		set corelib to "corelib"
 		set connect to "connect"
@@ -110,24 +110,24 @@ on SetProjectData()
 		-- datatool
 		set myName to "datatool"
 		set myFeatures to {"C++"}
-		set mySettings to Â
+		set mySettings to ¬
 			{Prefix File:"", ppcProject:{}}
 		set myRsrcs to {}
 		set myLibs to {"corelib", "serial", "util"}
-		set myFiles to Â
-			{{projPath:"serial:datatool:", fileList:{"datatool", "type", "namespace", "statictype", Â
-				"enumtype", "reftype", "unitype", "blocktype", "choicetype", "typestr", "ptrstr", Â
-				"stdstr", "classstr", "enumstr", "stlstr", "choicestr", "choiceptrstr", "value", Â
-				"mcontainer", "module", "moduleset", "generate", "filecode", "code", "fileutil", Â
+		set myFiles to ¬
+			{{projPath:"serial:datatool:", fileList:{"datatool", "type", "namespace", "statictype", ¬
+				"enumtype", "reftype", "unitype", "blocktype", "choicetype", "typestr", "ptrstr", ¬
+				"stdstr", "classstr", "enumstr", "stlstr", "choicestr", "choiceptrstr", "value", ¬
+				"mcontainer", "module", "moduleset", "generate", "filecode", "code", "fileutil", ¬
 				"alexer", "aparser", "parser", "lexer", "exceptions", "comments", "srcutil"}}}
-		set datatoolData to Â
-			{name:myName, features:myFeatures, settings:mySettings, rsrcs:myRsrcs, projLibs:Â
+		set datatoolData to ¬
+			{name:myName, features:myFeatures, settings:mySettings, rsrcs:myRsrcs, projLibs:¬
 				myLibs, fileData:myFiles}
 		
-		set commonObjLibs to {Â
-			"corelib", "serial", "util", Â
-			"object_seqset", "object_seq", "object_seqres", Â
-			"object_seqloc", "object_seqalign", "object_seqfeat", "object_seqblock", "object_pub", Â
+		set commonObjLibs to {¬
+			"corelib", "serial", "util", ¬
+			"object_seqset", "object_seq", "object_seqres", ¬
+			"object_seqloc", "object_seqalign", "object_seqfeat", "object_seqblock", "object_pub", ¬
 			"object_medline", "object_biblio", "object_general"}
 		
 	end tell
@@ -147,24 +147,24 @@ on SetProjectData()
 	--AddSimpleProject("test_sock_connutil_misc", connect, {"C++", "sockets"})
 	--AddSimpleProject("test_http_connutil_misc", connect, {"C", "sockets"})
 	--AddSimpleProject("test_srv_connutil_misc", connect, {"C", "sockets"})
-	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_conn_stream", connect, Â
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_conn_stream", connect, ¬
 		{"C++", "sockets"}), {"corelib"}))
-	AddProject(DataPlusLibs(DataPlusSources(SimpleProjectData("testserial", serial, {"C++"}), Â
-		{"serialobject", "serialobject_Base", "cppwebenv"}), Â
+	AddProject(DataPlusLibs(DataPlusSources(SimpleProjectData("testserial", serial, {"C++"}), ¬
+		{"serialobject", "serialobject_Base", "cppwebenv"}), ¬
 		{"corelib", "util"}))
-	AddProject(DataPlusLibs(SimpleProjectData("asn2asn", "objects:asn2asn", {"C++"}), Â
+	AddProject(DataPlusLibs(SimpleProjectData("asn2asn", "objects:asn2asn", {"C++"}), ¬
 		commonObjLibs))
-	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("testmedline", "objects:testmedline", Â
-		{"C++"}), commonObjLibs), Â
-		{"object_ncbimime", "object_mmdb1", "object_mmdb2", "object_mmdb3", Â
+	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("testmedline", "objects:testmedline", ¬
+		{"C++"}), commonObjLibs), ¬
+		{"object_ncbimime", "object_mmdb1", "object_mmdb2", "object_mmdb3", ¬
 			"object_medlars"}))
 	(*
-		AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("testobjmgr", "objects:objmgr:test", Â
+		AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("testobjmgr", "objects:objmgr:test", ¬
 			{"C++"}), commonObjLibs), {"objmgr"}))
 		*)
-	AddProject(DataPlusLibs(SimpleProjectData("testrangemap", util, {"C++"}), Â
+	AddProject(DataPlusLibs(SimpleProjectData("testrangemap", util, {"C++"}), ¬
 		{"corelib"}))
-	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("id1_fetch", "app:id1_fetch", Â
+	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("id1_fetch", "app:id1_fetch", ¬
 		{"C++", "sockets"}), commonObjLibs), {"object_id1", "connect"}))
 	
 end SetProjectData
@@ -351,33 +351,33 @@ on SetGlobals()
 end SetGlobals
 
 on SetDebugSettings(shouldDebug)
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
 		if shouldDebug then
 			(* ===== Panel PPC Global Optimizer =====  *)
-			Set Preferences of panel "PPC Global Optimizer" to Â
+			Set Preferences of panel "PPC Global Optimizer" to ¬
 				{Optimize For:code_Speed, Level:0}
 			(* ===== Panel PPC Linker ===== *)
-			Set Preferences of panel "PPC Linker" to Â
-				{Generate SYM File:true Â
+			Set Preferences of panel "PPC Linker" to ¬
+				{Generate SYM File:true ¬
 					, Suppress Warnings:false}
 			(* ===== Panel C/C++ Language =====  *)
-			Set Preferences of panel "C/C++ Compiler" to Â
-				{Inlining:inline_none Â
+			Set Preferences of panel "C/C++ Compiler" to ¬
+				{Inlining:inline_none ¬
 					, AutoInlining:false}
 			
 		else
 			(* ==== optimized/release settings ==== *)
 			(* ===== Panel PPC Global Optimizer =====  *)
-			Set Preferences of panel "PPC Global Optimizer" to Â
+			Set Preferences of panel "PPC Global Optimizer" to ¬
 				{Optimize For:code_Speed, Level:4}
 			(* ===== Panel PPC Linker ===== *)
-			Set Preferences of panel "PPC Linker" to Â
-				{Generate SYM File:false Â
+			Set Preferences of panel "PPC Linker" to ¬
+				{Generate SYM File:false ¬
 					, Suppress Warnings:true}
 			(* ===== Panel C/C++ Language =====  *)
-			Set Preferences of panel "C/C++ Compiler" to Â
-				{Inlining:inline_smart Â
+			Set Preferences of panel "C/C++ Compiler" to ¬
+				{Inlining:inline_smart ¬
 					, AutoInlining:true}
 		end if
 		
@@ -385,7 +385,7 @@ on SetDebugSettings(shouldDebug)
 end SetDebugSettings
 
 on SetPreferences()
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
 		(* ===== Section "Target" ===== *)
 		
@@ -394,7 +394,7 @@ on SetPreferences()
 		
 		-- Panel "PPC Target"
 		if pLinkExecutables then
-			Set Preferences of panel "PPC Project" to Â
+			Set Preferences of panel "PPC Project" to ¬
 				{Project Type:standard application, SIZE Flags:22720, File Creator:"NCBI", File Type:"APPL", Preferred Size:8000, Minimum Size:5000, Stack Size:64}
 		else
 			Set Preferences of panel "PPC Project" to {Project Type:library}
@@ -402,76 +402,76 @@ on SetPreferences()
 		(* ===== Section "Language Settings" ===== *)
 		
 		-- Panel "C/C++ Language"
-		Set Preferences of panel "C/C++ Compiler" to Â
-			{Activate CPlusPlus:false Â
-				, ARM Conformance:false Â
-				, Exception Handling:true Â
-				, RTTI:true Â
-				, Pool Strings:true Â
-				, Dont Reuse Strings:false Â
-				, Require Function Prototypes:true Â
-				, ANSI Strict:false Â
-				, ANSI Keywords Only:false Â
-				, Expand Trigraph Sequences:false Â
-				, MPW Newlines:false Â
-				, MPW Pointer Type Rules:false Â
+		Set Preferences of panel "C/C++ Compiler" to ¬
+			{Activate CPlusPlus:false ¬
+				, ARM Conformance:false ¬
+				, Exception Handling:true ¬
+				, RTTI:true ¬
+				, Pool Strings:true ¬
+				, Dont Reuse Strings:false ¬
+				, Require Function Prototypes:true ¬
+				, ANSI Strict:false ¬
+				, ANSI Keywords Only:false ¬
+				, Expand Trigraph Sequences:false ¬
+				, MPW Newlines:false ¬
+				, MPW Pointer Type Rules:false ¬
 				, Enums Always Ints:false}
 		
 		-- Panel "C/C++ Warnings"
-		Set Preferences of panel "C/C++ Warnings" to Â
-			{Treat Warnings As Errors:false Â
-				, Illegal Pragmas:true Â
-				, Empty Declarations:true Â
-				, Possible Errors:true Â
-				, Unused Variables:true Â
-				, Unused Arguments:false Â
-				, Extra Commas:true Â
-				, Extended Error Checking:true Â
-				, Hidden Virtual Functions:true Â
-				, Implicit Arithmetic Conversions:false Â
-				, NonInlined Functions:false Â
+		Set Preferences of panel "C/C++ Warnings" to ¬
+			{Treat Warnings As Errors:false ¬
+				, Illegal Pragmas:true ¬
+				, Empty Declarations:true ¬
+				, Possible Errors:true ¬
+				, Unused Variables:true ¬
+				, Unused Arguments:false ¬
+				, Extra Commas:true ¬
+				, Extended Error Checking:true ¬
+				, Hidden Virtual Functions:true ¬
+				, Implicit Arithmetic Conversions:false ¬
+				, NonInlined Functions:false ¬
 				, Inconsistent Class Struct:true}
 		
 		(* ===== Section "Code Generation" ===== *)
 		
 		-- Panel "PPC Processor"
-		Set Preferences of panel "PPC CodeGen" to Â
-			{Struct Alignment:Align_PPC Â
-				, Make Strings ReadOnly:true Â
-				, Store Data in TOC:true Â
-				, Use FMADD Instructions:false Â
-				, Use Profiler:false Â
-				, Traceback Tables:TB_Inline Â
-				, Schedule:false Â
+		Set Preferences of panel "PPC CodeGen" to ¬
+			{Struct Alignment:Align_PPC ¬
+				, Make Strings ReadOnly:true ¬
+				, Store Data in TOC:true ¬
+				, Use FMADD Instructions:false ¬
+				, Use Profiler:false ¬
+				, Traceback Tables:TB_Inline ¬
+				, Schedule:false ¬
 				, Peephole Optimizer:true}
 		
 		(* ===== Section "Linker" ===== *)
 		
 		-- Panel "PPC Linker"
-		Set Preferences of panel "PPC Linker" to Â
-			{Generate SYM File:true Â
-				, Full Path In Sym Files:true Â
-				, Generate Link Map:false Â
-				, Link Mode:fast Â
-				, Initialization Name:Â
-				"", Main Name:Â
-				"__start", Termination Name:""} Â
+		Set Preferences of panel "PPC Linker" to ¬
+			{Generate SYM File:true ¬
+				, Full Path In Sym Files:true ¬
+				, Generate Link Map:false ¬
+				, Link Mode:fast ¬
+				, Initialization Name:¬
+				"", Main Name:¬
+				"__start", Termination Name:""} ¬
 				
 		-- Panel "PPC PEF"
-		Set Preferences of panel "PPC PEF" to Â
-			{Export Symbols:none Â
-				, Old Definition:0 Â
-				, Old Implementation:0 Â
-				, Current Version:0 Â
-				, Code Sorting:nosort Â
-				, Share Data Section:false Â
-				, Expand Uninitialized Data:false Â
+		Set Preferences of panel "PPC PEF" to ¬
+			{Export Symbols:none ¬
+				, Old Definition:0 ¬
+				, Old Implementation:0 ¬
+				, Current Version:0 ¬
+				, Code Sorting:nosort ¬
+				, Share Data Section:false ¬
+				, Expand Uninitialized Data:false ¬
 				, Fragment Name:""}
 		
 		(* ===== Section "Debugger" ===== *)
 		
 		-- Panel "Debugger Settings"
-		Set Preferences of panel "Debugger Target" to Â
+		Set Preferences of panel "Debugger Target" to ¬
 			{Log System Messages:false}
 		
 		my SetPaths1()
@@ -480,7 +480,7 @@ on SetPreferences()
 end SetPreferences
 
 on SetPaths1()
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
 		(* ===== Panel Access Paths ===== *)
 		-- We need to be able to move the default system compiler folder to the end of the list
@@ -494,12 +494,12 @@ on SetPaths1()
 end SetPaths1
 
 on SetPaths2()
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
 		-- Add recursive include dir AFTER source dirs to avoid major performance hit
 		set pathsToAdd to {}
 		-- gDistribRoot & "link:macmet:", 
-		repeat with i in {gDistribRoot, Â
+		repeat with i in {gDistribRoot, ¬
 			gLibsDir, gIncludeDir}
 			copy {name:i, recursive:false, origin:absolute} to end of pathsToAdd
 		end repeat
@@ -514,8 +514,8 @@ on SetPaths2()
 		end if
 		
 		-- After we have added all paths, reinsert compiler default at end of list
-		set dirsToAdd to {Â
-			":MacOS Support:", Â
+		set dirsToAdd to {¬
+			":MacOS Support:", ¬
 			":MSL:"}
 		if gOpenGLpresent then
 			copy gOpenGLdir to end of dirsToAdd
@@ -531,28 +531,28 @@ on SetPaths2()
 end SetPaths2
 
 on SetWeakLink(libName)
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
-		set the weak link of Â
-			every target file of target (count targets of project document 1) of project document 1 Â
-			whose path ends with ":" & libName Â
+		set the weak link of ¬
+			every target file of target (count targets of project document 1) of project document 1 ¬
+			whose path ends with ":" & libName ¬
 			to true
 		
 	end tell
 end SetWeakLink
 
 on AddBlueLibs()
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
-		set libsToAdd to {Â
-			gMSLPPCLibs & "MSL C.PPC.Lib", Â
-			gMSLPPCLibs & "MSL C++.PPC.Lib", Â
-			gMSLPPCLibs & "MSL SIOUX.PPC.Lib", Â
-			gMWCWfolder & "MacOS Support:Libraries:Runtime:Runtime PPC:MSL RuntimePPC.Lib", Â
-			gStubLibs & "InterfaceLib", Â
-			gStubLibs & "AppearanceLib", Â
-			gStubLibs & "NavigationLib", Â
-			gStubLibs & "MathLib", Â
+		set libsToAdd to {¬
+			gMSLPPCLibs & "MSL C.PPC.Lib", ¬
+			gMSLPPCLibs & "MSL C++.PPC.Lib", ¬
+			gMSLPPCLibs & "MSL SIOUX.PPC.Lib", ¬
+			gMWCWfolder & "MacOS Support:Libraries:Runtime:Runtime PPC:MSL RuntimePPC.Lib", ¬
+			gStubLibs & "InterfaceLib", ¬
+			gStubLibs & "AppearanceLib", ¬
+			gStubLibs & "NavigationLib", ¬
+			gStubLibs & "MathLib", ¬
 			gPPCLibs & "CarbonAccessors.o"}
 		
 		Add Files libsToAdd
@@ -564,13 +564,13 @@ on AddBlueLibs()
 end AddBlueLibs
 
 on AddCarbonLibs()
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
-		set libsToAdd to {Â
-			gMSLPPCLibs & "MSL C.Carbon.Lib", Â
-			gMSLPPCLibs & "MSL C++.PPC.Lib", Â
-			gMSLPPCLibs & "MSL SIOUX.Carbon.Lib", Â
-			gMWCWfolder & "MacOS Support:Libraries:Runtime:Runtime PPC:MSL RuntimePPC.Lib", Â
+		set libsToAdd to {¬
+			gMSLPPCLibs & "MSL C.Carbon.Lib", ¬
+			gMSLPPCLibs & "MSL C++.PPC.Lib", ¬
+			gMSLPPCLibs & "MSL SIOUX.Carbon.Lib", ¬
+			gMWCWfolder & "MacOS Support:Libraries:Runtime:Runtime PPC:MSL RuntimePPC.Lib", ¬
 			gStubLibs & "CarbonLib"}
 		
 		Add Files libsToAdd
@@ -579,19 +579,19 @@ on AddCarbonLibs()
 end AddCarbonLibs
 
 on AddFeatures(features, flags)
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
 		if features contains "BNDL" then
 			Set Preferences of panel "Output Flags" to {Has Bundle:true}
 		end if
 		
 		if features contains "sockets" and flags does not contain "Carbon" then
-			set libsToAdd to {Â
-				gStubLibs & "ThreadsLib", Â
-				gStubLibs & "OpenTransportLib", Â
-				gStubLibs & "OpenTptInternetLib", Â
-				gStubLibs & "InternetConfigLib", Â
-				gPPCLibs & "OpenTptInetPPC.o", Â
+			set libsToAdd to {¬
+				gStubLibs & "ThreadsLib", ¬
+				gStubLibs & "OpenTransportLib", ¬
+				gStubLibs & "OpenTptInternetLib", ¬
+				gStubLibs & "InternetConfigLib", ¬
+				gPPCLibs & "OpenTptInetPPC.o", ¬
 				gPPCLibs & "OpenTransportAppPPC.o"}
 			
 			Add Files libsToAdd
@@ -608,7 +608,7 @@ on AddFeatures(features, flags)
 end AddFeatures
 
 on SetupTarget(proj, flags)
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
 		-- initialize variables
 		set projRsrcs to {}
@@ -675,7 +675,7 @@ on SetupTarget(proj, flags)
 		repeat with i in sysPaths
 			copy {name:i, recursive:true, origin:absolute} to end of pathsToAdd
 		end repeat
-		if (count pathsToAdd) > 0 then Â
+		if (count pathsToAdd) > 0 then ¬
 			Set Preferences of panel "Access Paths" to {System Paths:pathsToAdd}
 		
 		-- Set the appropriate prefix file.
@@ -706,7 +706,7 @@ on SetupTarget(proj, flags)
 		-- Add source files.
 		repeat with group in projFileData
 			set projPath to projPath of group
-			Set Preferences of panel "Access Paths" to Â
+			Set Preferences of panel "Access Paths" to ¬
 				{User Paths:{{name:gSourceDir & projPath, origin:absolute}}}
 			set fileList to group's fileList
 			set filesToAdd to {}
@@ -718,7 +718,7 @@ on SetupTarget(proj, flags)
 		end repeat
 		
 		if flags contains "debug" then
-			set the debug of every target file of target (count targets of project document 1) Â
+			set the debug of every target file of target (count targets of project document 1) ¬
 				of project document 1 to true
 			my SetDebugSettings(true)
 		else
@@ -774,7 +774,7 @@ on CreateFolders()
 end CreateFolders
 
 on CreateProject(proj)
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
 		-- This statement doesn't work, because AppleScript is broken.
 		if proj is {} then return
@@ -829,7 +829,7 @@ on CreateAllProjects()
 end CreateAllProjects
 
 on BuildProject(projName)
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		open (gProjectsDir & projName & pProjectFileExtension)
 		repeat with i from 2 to (count targets of project document 1)
 			set the current target of project document 1 to target i of project document 1
@@ -887,7 +887,7 @@ with timeout of 60000 seconds
 	CreateFolders()
 	CopyHeaders()
 	
-	tell application "CodeWarrior IDE 4.1.0.3" to activate
+	tell application "CodeWarrior IDE 4.2.5" to activate
 	
 	CreateAllProjects()
 	
