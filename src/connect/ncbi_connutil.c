@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/01/12 00:01:27  lavr
+ * CONN_PROXY_HOST was forgotten to init in ConnNetInfo_Create
+ *
  * Revision 6.13  2001/01/11 23:07:08  lavr
  * ConnNetInfo_Print() prints user-header 'as is'; pretty-printing undone
  *
@@ -218,8 +221,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     }
 
     /* non-transparent CERN-like firewall proxy server? */
-    REG_VALUE(REG_CONN_HTTP_PROXY_HOST, info->http_proxy_host,
-              DEF_CONN_HTTP_PROXY_HOST);
+    REG_VALUE(REG_CONN_PROXY_HOST, info->proxy_host, DEF_CONN_PROXY_HOST);
 
     /* turn on debug printout? */
     REG_VALUE(REG_CONN_DEBUG_PRINTOUT, str, DEF_CONN_DEBUG_PRINTOUT);
