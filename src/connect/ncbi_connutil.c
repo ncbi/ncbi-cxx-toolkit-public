@@ -756,14 +756,14 @@ extern SOCK URL_Connect
  const STimeout* rw_timeout,
  const char*     user_hdr,
  int/*bool*/     encode_args,
- ESwitch         data_logging)
+ ESwitch         log)
 {
     static const char *X_REQ_R; /* "POST "/"GET " */
     static const char  X_REQ_Q[] = "?";
     static const char  X_REQ_E[] = " HTTP/1.0\r\n";
 
     SOCK  sock;
-    char  buffer[128];
+    char  buffer[80];
     char* x_args = 0;
     EIO_Status st;
 
@@ -786,7 +786,8 @@ extern SOCK URL_Connect
         X_REQ_R = "GET ";
         break;
     default:
-        CORE_LOG(eLOG_Error, "[URL_Connect]  Unrecognized request method");
+        CORE_LOGF(eLOG_Error, ("[URL_Connect]  Unrecognized request method"
+                               " (%d)", (int) req_method));
         assert(0);
         return 0/*error*/;
     }
@@ -797,13 +798,12 @@ extern SOCK URL_Connect
     }
 
     /* connect to HTTPD */
-    if ((st = SOCK_Create(host, port, c_timeout, &sock)) != eIO_Success) {
+    if ((st= SOCK_CreateEx(host, port, c_timeout, &sock, log) != eIO_Success)){
         CORE_LOGF(eLOG_Error,
                   ("[URL_Connect]  Socket connect to %s:%hu failed: %s", host,
-                   port, st==eIO_Success? strerror(errno) : IO_StatusStr(st)));
+                   port, st==eIO_Unknown? strerror(errno) : IO_StatusStr(st)));
         return 0/*error*/;
     }
-    SOCK_SetDataLogging(sock, data_logging);
 
     /* setup i/o timeout for the connection */
     if (SOCK_SetTimeout(sock, eIO_ReadWrite, rw_timeout) != eIO_Success) {
@@ -1458,6 +1458,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2002/12/04 16:50:47  lavr
+ * Use SOCK_CreateEx() in URL_Connect()
+ *
  * Revision 6.44  2002/11/19 19:19:57  lavr
  * +ConnNetInfo_ExtendUserHeader()
  *
