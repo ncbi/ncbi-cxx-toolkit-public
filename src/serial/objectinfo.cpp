@@ -209,6 +209,36 @@ void CObjectInfo::SetPrimitiveValueChar(char value)
     GetPrimitiveTypeInfo()->SetValueChar(GetObjectPtr(), value);
 }
 
+void CObjectInfo::SetPrimitiveValueInt4(Int4 value)
+{
+    GetPrimitiveTypeInfo()->SetValueInt4(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueUint4(Uint4 value)
+{
+    GetPrimitiveTypeInfo()->SetValueUint4(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueInt8(Int8 value)
+{
+    GetPrimitiveTypeInfo()->SetValueInt8(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueUint8(Uint8 value)
+{
+    GetPrimitiveTypeInfo()->SetValueUint8(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueInt(int value)
+{
+    GetPrimitiveTypeInfo()->SetValueInt(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueUInt(unsigned int value)
+{
+    GetPrimitiveTypeInfo()->SetValueUInt(GetObjectPtr(), value);
+}
+
 void CObjectInfo::SetPrimitiveValueLong(long value)
 {
     GetPrimitiveTypeInfo()->SetValueLong(GetObjectPtr(), value);
@@ -353,6 +383,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/07/27 15:01:14  ucko
+* Restore (and define) removed SetPrimitiveValueInt variants.
+*
 * Revision 1.8  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

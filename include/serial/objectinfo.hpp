@@ -301,6 +301,12 @@ public:
     void SetPrimitiveValueBool(bool value);
     void SetPrimitiveValueChar(char value);
 
+    void SetPrimitiveValueInt4(Int4 value);
+    void SetPrimitiveValueUint4(Uint4 value);
+    void SetPrimitiveValueInt8(Int8 value);
+    void SetPrimitiveValueUint8(Uint8 value);
+    void SetPrimitiveValueInt(int value);
+    void SetPrimitiveValueUInt(unsigned value);
     void SetPrimitiveValueLong(long value);
     void SetPrimitiveValueULong(unsigned long value);
 
@@ -342,6 +348,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/07/27 15:00:57  ucko
+* Restore (and define) removed SetPrimitiveValueInt variants.
+*
 * Revision 1.9  2004/04/30 13:29:09  gouriano
 * Remove obsolete function declarations
 *
