@@ -1,4 +1,4 @@
---$Revision: 6.2 $
+--$Revision: 6.3 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -352,6 +352,15 @@ OrgMod ::= SEQUENCE {
         nat-host (21) ,		-- natural host of this specimen
 	sub-species (22) ,
         specimen-voucher (23) ,
+	authority (24) ,
+	forma (25) ,
+	forma-specialis (26) ,
+	ecotype (27) ,
+	synonym (28) ,
+	anamorph (29) ,
+	teleomorph (30) ,
+	breed (31) ,
+	old-lineage (253) ,
         old-name (254) ,
         other (255) } ,         -- ASN5: old-name (254) will be added to next spec
     subname VisibleString ,
@@ -416,7 +425,13 @@ BioSource ::= SEQUENCE {
         insertion-seq (11) ,
 	cyanelle (12) ,
 	proviral (13) ,
-	virion (14) } DEFAULT unknown ,
+	virion (14) ,
+	nucleomorph (15) ,
+	apicoplast (16) ,
+	leucoplast (17) ,
+	proplastid (18) ,
+	endogenous-virus (19)
+	 } DEFAULT unknown ,
                                        -- 4 more genome values coming
                                        -- nucleomorph (15)
                                        -- apicoplast (16)
@@ -458,6 +473,9 @@ SubSource ::= SEQUENCE {
         transposon-name (20) ,
         insertion-seq-name (21) ,
         plastid-name (22) ,
+	county (23) ,
+	segment (24) ,
+	endogenous-virus-name (25) ,
         other (255) } ,
     name VisibleString ,
     attrib VisibleString OPTIONAL }    -- attribution/source of this name

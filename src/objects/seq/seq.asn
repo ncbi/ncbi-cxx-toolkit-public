@@ -1,4 +1,4 @@
---$Revision: 6.1 $
+--$Revision: 6.2 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -98,6 +98,7 @@ MolInfo ::= SEQUENCE {
         peptide (8) ,
         other-genetic (9) ,      -- other genetic material
         genomic-mRNA (10) ,      -- reported a mix of genomic and cdna sequence
+	cRNA (11) ,              -- viral RNA genome copy intermediate
         other (255) } DEFAULT unknown ,
     tech INTEGER {
         unknown (0) ,
@@ -117,6 +118,9 @@ MolInfo ::= SEQUENCE {
         htgs-1 (14) ,           -- unordered High Throughput sequence contig
         htgs-2 (15) ,           -- ordered High Throughput sequence contig
         htgs-3 (16) ,           -- finished High Throughput sequence
+	fli-cdna (17) ,         -- full length insert cDNA
+	htgs-0 (18) ,           -- single genomic reads for coordination
+	htc (19) ,              -- high throughput cDNA
         other (255) }           -- use Source.techexp
                DEFAULT unknown ,
     techexp VisibleString OPTIONAL ,   -- explanation if tech not enough
@@ -221,10 +225,12 @@ Pubdesc ::= SEQUENCE {              -- how sequence presented in pub
     seq-raw StringStore OPTIONAL ,  -- original sequence from paper
     align-group INTEGER OPTIONAL ,  -- this seq aligned with others in paper
     comment VisibleString OPTIONAL, -- any comment on this pub in context
-	reftype INTEGER {               -- type of reference in a GenBank record
-		seq (0) ,                   -- refers to sequence
-		sites (1) ,                 -- refers to unspecified features
-		feats (2) } DEFAULT seq }   -- refers to specified features
+	reftype INTEGER {           -- type of reference in a GenBank record
+		seq (0) ,               -- refers to sequence
+		sites (1) ,             -- refers to unspecified features
+		feats (2) ,             -- refers to specified features
+		no-target (3) }         -- nothing specified (EMBL)
+		DEFAULT seq }
 
 Heterogen ::= VisibleString       -- cofactor, prosthetic group, inibitor, etc
 

@@ -1,4 +1,4 @@
---$Revision: 6.0 $
+--$Revision: 6.1 $
 --**********************************************************************
 --
 --  NCBI Sequence Collections
@@ -40,6 +40,8 @@ Bioseq-set ::= SEQUENCE {      -- just a collection
         mut-set (13) ,              -- set of mutations
         pop-set (14) ,              -- population study
         phy-set (15) ,              -- phylogenetic study
+	eco-set (16) ,              -- ecological sample study
+        gen-prod-set (17) ,         -- genomic products, chrom+mRNa+protein  
         other (255) } DEFAULT not-set ,
     release VisibleString OPTIONAL ,
     date Date OPTIONAL ,
