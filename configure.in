@@ -592,13 +592,13 @@ if test "$with_fastcgi" != "no" ; then
    FASTCGI_PATH=${FASTCGI_PATH:="$NCBI"}
    FASTCGI_INCLUDE="-I$FASTCGI_PATH/include"
    if test "$with_debug" = "no" ; then
-      FASTCGI_LIBS="-L$FASTCGI_PATH/lib -lfcgi"
+      FASTCGI_LIBS="-L$FASTCGI_PATH/lib -lfcgi $NETWORK_LIBS"
    else
-      FASTCGI_LIBS="-L$FASTCGI_PATH/altlib -lfcgi"
+      FASTCGI_LIBS="-L$FASTCGI_PATH/altlib -lfcgi $NETWORK_LIBS"
    fi
    FASTCGI_OBJS="fcgibuf"
    CPPFLAGS="$FASTCGI_INCLUDE $orig_CPPFLAGS"
-   LIBS="$FASTCGI_LIBS $NETWORK_LIBS $orig_LIBS"
+   LIBS="$FASTCGI_LIBS $orig_LIBS"
    AC_TRY_LINK(
       [#include <fcgiapp.h>],
       [ (void) FCGX_IsCGI(); ],
