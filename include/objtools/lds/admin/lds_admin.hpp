@@ -50,7 +50,7 @@ public:
 
     /// Create the database. If the LDS database already exists all data will
     /// be cleaned up.
-    void Create() { m_lds_db.Create(); }
+    void Create();
 
     /// Recursive scanning of directories in LDS database
     enum ERecurse {
@@ -103,6 +103,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/10/09 18:11:27  kuznets
+ * Create() reimplemented.
+ *
  * Revision 1.5  2003/10/06 20:15:47  kuznets
  * Added support for sub directories and option to disable CRC32 for files
  *
