@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/02/01 00:41:21  thiessen
+* tweaks
+*
 * Revision 1.34  2002/01/24 20:08:16  thiessen
 * fix local id problem
 *
@@ -442,7 +445,7 @@ bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
                     if (residue->alphaID != Residue::NO_ALPHA_ID) {
                         AtomPntr ap(id, res, residue->alphaID);
                         const AtomCoord *atom =
-                            atomSet->GetAtom(ap, parentSet->showHideManager->OverlayConfEnsembles());
+                            atomSet->GetAtom(ap, parentSet->showHideManager->OverlayConfEnsembles(), true);
                         if (atom) {
                             if (!alphaPos) {
                                 alphaPos = &(atom->site);

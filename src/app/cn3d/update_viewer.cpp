@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/02/01 00:41:21  thiessen
+* tweaks
+*
 * Revision 1.24  2002/01/24 20:07:57  thiessen
 * read multiple FAST sequences
 *
@@ -376,7 +379,7 @@ void UpdateViewer::ImportSequence(void)
     static const wxString choiceStrings[] = { "From a FASTA File", "Network via GI/Accession" };
     enum choiceValues { FROM_FASTA=0, FROM_GI, N_CHOICES };
     int importFrom = wxGetSingleChoiceIndex(
-        "From what source would you like to import a sequence?", "Select Import Source",
+        "From what source would you like to import sequences?", "Select Import Source",
         N_CHOICES, choiceStrings, *viewerWindow);
     if (importFrom < 0) return;     // cancelled
 
