@@ -1110,7 +1110,6 @@ static void s_TEST_db_multimap(void)
 
 static void s_TEST_ICache(void)
 {
-return;
     cout << "======== ICache test." << endl;
 
     vector<int> data;
@@ -1127,13 +1126,11 @@ return;
     bdb_cache.Open(".", "bcache", CBDB_Cache::eNoLock);
 
     bdb_cache.Store("test_key1", 1, "", dp, data.size() * sizeof(int));
-cout << "1" << endl;    
 
     vector<int> data2;
 
     size_t sz = bdb_cache.GetSize("test_key1", 1, "");
     assert(sz);
-cout << "2" << endl;    
 
     sz = sz / sizeof(int);
     assert(sz == data.size());
@@ -1301,6 +1298,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/11/26 13:09:44  kuznets
+ * Re-enables icache test
+ *
  * Revision 1.28  2003/11/25 19:58:37  kuznets
  * Temporary disabled ICache test (fails on Solaris)
  *
