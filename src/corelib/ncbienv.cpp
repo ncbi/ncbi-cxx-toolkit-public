@@ -108,7 +108,7 @@ void CNcbiEnvironment::Set(const string& name, const string& value)
     }
 
     if (putenv(str) != 0) {
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW(CErrnoTemplExceptionEx<CCoreException>, eErrno,
                    "failed to set environment variable " + name);
     }
 
@@ -268,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/01/06 20:17:41  dicuccio
+ * Use CCoreException instead of CException in Set()
+ *
  * Revision 1.9  2004/01/06 18:17:49  dicuccio
  * Added APIs for setting environment variables
  *
