@@ -938,16 +938,18 @@ void CReferenceItem::x_CleanData(void)
 //
 // Genbank Format Specific
 
+// these must be in "ASCIIbetical" order; beware of the fact that
+// closing quotes sort after spaces.
 static const string sc_RemarkText[] = {
   "full automatic",
-  "full staff_review",
   "full staff_entry",
-  "simple staff_review",
-  "simple staff_entry",
+  "full staff_review",
   "simple automatic",
+  "simple staff_entry",
+  "simple staff_review",
   "unannotated automatic",
-  "unannotated staff_review",
-  "unannotated staff_entry"
+  "unannotated staff_entry",
+  "unannotated staff_review"
 };
 static const CStaticArraySet<string> sc_Remarks(sc_RemarkText, sizeof(sc_RemarkText));
 
@@ -1167,6 +1169,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/05/15 13:22:45  ucko
+* Sort sc_RemarkText, and note the requirement.
+*
 * Revision 1.14  2004/05/14 13:15:25  shomrat
 * Fixed use of CStaticArraySet
 *
