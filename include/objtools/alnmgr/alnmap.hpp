@@ -92,7 +92,10 @@ public:
         fSeqOnly             = fSkipAllGaps | fSkipInserts,
         fInsertsOnly         = fSkipAllGaps | fSkipAlnSeq,
         fAlnSegsOnly         = fSkipInserts | fSkipUnalignedGaps,
-        fDoNotTruncate       = 0x0200
+
+        // preserve the wholeness of the segments when intersecting
+        // with the given range instead of truncating them
+        fDoNotTruncateSegs   = 0x0200
     };
     typedef int TGetChunkFlags; // binary OR of EGetChunkFlags
 
@@ -659,6 +662,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2004/01/21 20:59:42  todorov
+* fDoNotTruncate -> fDoNotTruncateSegs; +comments
+*
 * Revision 1.32  2004/01/21 20:53:44  todorov
 * EGetChunkFlags += fDoNotTruncate
 *
