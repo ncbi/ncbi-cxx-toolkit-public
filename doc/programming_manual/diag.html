@@ -3,15 +3,167 @@
   <head>
     <title>Diagnostic Streams</title>
   </head>
-  <meta http-equiv="refresh" content="5; 
-	 url=http:../libs/err_msg.html">
-
   <body bgcolor = white>
     <h1>Diagnostic Streams</h1>
+<ul>
+ <li><a href="#severity">  Severity levels </a>
+ <li><a href="#PostFlags"> Post Flags</a>
+ <li><a href="#setStream"> Defining the output stream</a>
+ <li><a href="#buffering"> The message buffer </a> 
+ <li><a href="#callback">  FDiagHandler functions</a>
+ <li><a href="#errpost">  The ERR_POST macro </a>
+ <li><a href="#example">  Example of using the <i>CNcbiDiag</i> class</a>
+</a>
+</ul>
+The
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbidiag.hpp">
+<i> CNcbiDiag </i></a> class implements the functionality of an output stream enhanced with
+error posting mechanisms similar to those found in the NCBI C Toolkit.  A <i> CNcbiDiag </i> object
+has the look and feel of an output stream; its member functions and friends include output
+operators and format manipulators. A <i>CNcbiDiag</i> object is not itself a stream, but serves as an
+interface to a stream which allows multiple threads to write to the same output. Each
+instance of <i>CNcbiDiag</i> includes the following private data members:
 
-	 This page has not been created yet. <p>
-		You are being referred to a
-	 relevant section in the Reference Manual.  
+<ul>
+<li> a buffer to store (a single)  message text 
+<li> a severity level
+<li> a set of post flags
+</ul>
+
+Limiting each instance of <i>CNcbiDiag</i> to the storage and handling of a single message
+ensures that multiple threads writing to the same stream will not have interleaving message
+texts.  
+
+<a name="severity"> <h3> Severity levels </h3>
+
+Each <i>CNcbiDiag</i> instance has its own severity level, which is compared to a global
+severity level to determine whether or not its message should be posted. The global severity
+level is stored as a static class data member, and six levels of severity are defined:
+
+<ul>
+ <li><i> eDiag_Info </i>
+ <li><i> eDiag_Warning </i>
+ <li><i> eDiag_Error </i>
+ <li><i> eDiag_Critical </i>
+ <li><i> eDiag_Fatal </i>
+ <li><i> eDiag_Trace </i>
+</ul>
+
+The default is to post only those messages whose severity level exceeds the
+<i>eDiag_Warning</i> level (<i>eDiag_Error, eDiag_Critical</i>, and <i>eDiag_Fatal</i>). The
+global severity level for posting messages can be reset using <i>
+SetDiagPostLevel()</i>. A parallel function, <i>SetDiagDieLevel()</i>, defines the severity
+level at which execution will abort. <p>
+
+Tracing is considered to be a special, debug-oriented feature, and therefore messages with
+severity level <i>eDiag_Trace</i> are not affected by these global post/die
+levels. <i>SetDiagTrace()</i> is used to turn tracing on or off.  By default, the tracing is
+off -- unless you assign the environment variable $DIAG_TRACE to an arbitrary non-empty string or,
+alternatively, define a DIAG_TRACE entry in the [DEBUG] section of your registry.<p>
+
+<a name="sevman">
+The <i>CNcbiDiag</i> class also has class-specific <i>manipulators</i> to control
+the message severity level:
+	 <ul>
+		<li> <i>diag << Info;</i> -- set severity level to <i>eDiag_Info</i>
+		<li> <i>diag << Warning;</i> -- set severity level to <i>eDiag_Warning</i>
+		<li> <i>diag << Error;</i> -- set severity level to <i>eDiag_Error</i> [default]
+		<li> <i>diag << Fatal;</i> -- set severity level to <i>eDiag_Fatal</i>
+		<li> <i>diag << Trace;</i> -- set severity level to <i>eDiag_Trace</i>
+	 </ul>
+
+<a name="PostFlags"> <h3> Post Flags</h3>
+
+The post flags define additional information that will appear along with the message body. The
+standard format of a message is: 
+
+<center><pre> 
+&lt;file&gt;, line &lt;line&gt;:&lt;severity&gt;: [&lt;prefix&gt;] &lt;message body&gt; 
+</pre></center>
+
+where the <i> file, line, severity</i> and <i>prefix</i> fields are displayed (or not)
+depending on the post flags associated with the <i>CNcbiDiag</i>.  Specifically,
+<i>EDiagPostFlag</i> is defined as an enumerated type in <i>ncbidiag.hpp</i>, with each of the
+enumerated values specifying that one or more of these fields should be displayed.  A global
+set of post flags, <i>eDPF_Default</i>, defines a default message format displaying only the
+severity level and the message body. This can be over-ridden inside the constructor for a
+specific instance of <i>CNcbiDiag</i>, or globally, using <i>SetDiagPostFlag()</i> on a
+selected flag.
+
+<a name="setStream"><h3> Defining the output stream</h3>
+
+All <i>CNcbiDiag</i> objects are associated with a single globally defined output stream. The
+default is to post messages to <i>cerr</i>, but the stream destination can be reset at any time
+using <i>SetDiagStream()</i>.  This function can be called numerous times, thus allowing
+different sections of the executable to write to different files. At any given instant however,
+all <i>CNcbiDiag</i> objects will be associated with the same global output stream.  Because
+the messages are completely buffered, each message will appear on whatever stream is active at
+the time the message actually completes.  <p>
+
+<a name="buffering"> <h3> The message buffer </h3> 
+
+The <i>CNcbiDiag</i> message buffer is initialized when the class is first instantiated.
+Additional information can then be appended to the message using the overloaded stream operator
+<i><<</i>. Messages can then be terminated explicitly using <i>CNcbiDiag's</i> stream
+manipulator <i>Endm</i>, or implicitly, when the <i>CNcbiDiag</i> object exits scope.  
+<p>
+
+Implicit message termination also occurs as a side effect of applying one of the
+<a href="#sevman"> severity level manipulators</a>.  Whenever the severity level is changed,
+<i>CNcbiDiag</i> also automatically executes the following two <i>manipulators</i>:
+	 <ul>
+		<li> <i>Endm</i> -- the message is complete and to be	flushed
+		<li> <i>Reset</i> -- discard the contents of current message buffer
+	 </ul>
+
+When the message controlled by an instance of <i>CNcbiDiag</i> is complete, <i>CNcbiDiag</i>
+calls a global callback function (of type <i>FDiagHandler</i>) and passes the message (along
+with its severity level) as the function arguments. The default callback function posts errors
+to the currently designated output stream, with the action (continue or abort) determined by
+the severity level of the message.
+<p>
+
+<a name="callback"> <h3> FDiagHandler functions</h3>
+
+Alternatively, a user-installed callback function of type <i>FDiagHandler</i> can be installed 
+using <i>SetDiagHandler()</i>. The signature of the callback function is given by the typedef:
+
+<center><pre>
+typedef void (*FDiagHandler)(const SDiagMessage& mess);
+</pre></center>
+
+where <i>SDiagMessage</i> is a simple struct defined in <i>ncbidiag.hpp</i> whose data
+members' values are obtained from the <i>CNcbiDiag</i> object. The transfer of data values
+occurs at the time that the callback is invoked. See also the discussion in
+the Reference Manual on <a href="../libs/err_msg.html#ref_Message"> message posting</a>
+for a more technical discussion.
+
+<a name="errpost"><h3>The ERR_POST macro</h3>
+
+An <i>ERR_POST(message)</i> macro is also available for routine error posting.  This macro
+implicitly creates a temporary <i>CNcbiDiag</i> object and puts the passed "message" into it
+with a default severity of <i>eDiag_Trace</i>. A <a href="#sevman"> severity level manipulator</a>
+can then be applied if desired, to modify the new message's severity level. For example:
+
+	 <pre>
+long lll = 345;
+ERR_POST("My ERR_POST message, print long: " << lll); </pre>
+	 would write to the diagnostic stream something like:
+	 <pre>
+"somefile.cpp", line 111: Error:  My ERR_POST message, print long: 345 </pre>
+
+	 and:
+
+	 <pre>
+double ddd = 123.345;
+ERR_POST(Warning << "...print double: " << ddd); </pre>
+	 would write to the diagnostic stream something like:
+	 <pre>
+"somefile.cpp", line 222: Warning:  ...print double: 123.345 </pre>
+
+<a name="example"> <h3> <a href="diag_cpp.html"> Example of using the <i>CNcbiDiag</i> class</h3></a>
+
+
 
   </body>
 </html>
