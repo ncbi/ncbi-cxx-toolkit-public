@@ -22,6 +22,7 @@ builddir = @builddir@
 
 @make_shell@
 
+RWL = @top_srcdir@/scripts/run_with_lock.sh
 
 ### One-level build -- [USR_PROJ] makefiles
 
@@ -40,7 +41,7 @@ if test ! -z "$(USR_PROJ)"  ||  test ! -z "@UNIX_USR_PROJ@" \
       else \
          x_mfile="$(srcdir)/Makefile.$$i" ; \
       fi ; \
-      $(MAKE) -f "$$x_mfile" builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)
+      $(RWL) -base "make_$$i" $(MAKE) -f "$$x_mfile" builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)
 USRP_KET = || $(NOTK_BRA) exit 1 $(NOTK_KET) ; \
    done ; \
 fi
@@ -52,8 +53,8 @@ if test ! -z "$(LIB_PROJ)"  ||  test ! -z "@UNIX_LIB_PROJ@" \
    expendable=false ; \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
-     if $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS) requirements ; then \
-        $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
+     if $(MAKE) -q -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS) requirements ; then \
+        $(RWL) -base "make_$$i" $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
 LIBP_KET = || $(NOTK_BRA) exit 2 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
@@ -69,8 +70,8 @@ if test ! -z "$(APP_PROJ)"  ||  test ! -z "@UNIX_APP_PROJ@" \
    expendable=false ; \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
-     if $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS) requirements ; then \
-        $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS)
+     if $(MAKE) -q -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS) requirements ; then \
+        $(RWL) -base "make_$$i" $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS)
 APPP_KET = || $(NOTK_BRA) exit 3 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
@@ -104,7 +105,7 @@ if test ! -z "$(SUB_PROJ)"  ||  test ! -z "@UNIX_SUB_PROJ@" \
     for i in $$x_subproj ; do \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
         ( if test -d $$i ; then \
-          cd $$i  &&  $(MAKE) $(MFLAGS)
+          cd $$i  &&  $(RWL) $(MAKE) $(MFLAGS)
 
 SUB_KET = || $(NOTK_BRA) exit 4 $(NOTK_KET) ; \
         else \
