@@ -3122,12 +3122,25 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       hsp1 = NULL;
       for (index1=0; index1<hsp_list->hspcnt; index1++)
       {
-         delete_hsp = FALSE;
-         hsp1 = hsp_list->hsp_array[index1];
-
-         if (hsp1->context != context)
-            continue;
-         /* Check with the helper array whether further
+          BlastContextInfo *cinfo1 = 0, *cinfo2 = 0;
+          
+          delete_hsp = FALSE;
+          hsp1 = hsp_list->hsp_array[index1];
+          
+          cinfo1 = & query_info->contexts[hsp1->context];
+          cinfo2 = & query_info->contexts[context];
+          
+          /* If the HSPs are from different queries, skip. */
+          
+          if (cinfo1->query_index != cinfo2->query_index)
+              continue;
+          
+          /* If not both positive or both negative strands, skip. */
+          
+          if (SIGN(cinfo1->frame) != SIGN(cinfo2->frame))
+              continue;
+          
+          /* Check with the helper array whether further
             tests are warranted.  Having only two ints
             in the helper array speeds up access. */
          if (helper[index1].left <= next_offset &&
