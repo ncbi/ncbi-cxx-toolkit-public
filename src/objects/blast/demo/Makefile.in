@@ -1,4 +1,4 @@
-APP_PROJ = blastcli
+EXPENDABLE_APP_PROJ = blastcli
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
