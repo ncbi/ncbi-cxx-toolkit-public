@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/01/10 16:51:52  ivanov
+* Changed LoadConfig() -- new method to search the config file
+*
 * Revision 1.19  2002/01/07 16:58:21  vakatov
 * CNcbiApplication::GetArgs() -- a clearer error message
 *
@@ -214,21 +217,31 @@ protected:
     // Default method to try load (add to "reg") from the config.file.
     // If "conf" arg (as passed to the class constructor)
     //   NULL      -- dont even try to load registry from any file at all;
-    //   non-empty -- try to load from the conf.file of name "conf" only(!)
+    //   non-empty -- if "conf" contain path then try to load from the 
+    //                conf.file of name "conf" only (!). Else - see NOTE. 
     //                TIP:  if the path is not full-qualified then:
     //                     if it starts from "../" or "./" -- look in the
-    //                     working dir, else look in the program dir.
+    //                     working dir.
     //   empty     -- compose the conf.file name from the application name
     //                plus ".ini". If it does not match an existing
     //                file then try to strip file extensions, e.g., for
     //                "my_app.cgi.exe" -- try subsequently:
     //                    "my_app.cgi.exe.ini", "my_app.cgi.ini", "my_app.ini".
+    // NOTE:
+    // If "conf" arg is empty or non-empty, but without path, then config file
+    // will be seek in next order:
+    //   - in the current work directory;
+    //   - in the dir, defined by environment variable "NCBI";
+    //   - in the user home directory;
+    //   - in the program dir.
+    //
     // Throw an exception if "conf" is non-empty, and cannot open file. 
     // Throw an exception if file exists, but contains some invalid entries.
     // Return TRUE only if the file was non-NULL, found and successfully read.
     virtual bool LoadConfig(CNcbiRegistry& reg, const string* conf);
 
-
+    // Get home dir for current user
+    string GetHomeDir(void);
 private:
     static CNcbiApplication*   m_Instance;   // current app.instance
     auto_ptr<CNcbiEnvironment> m_Environ;    // cached application environment

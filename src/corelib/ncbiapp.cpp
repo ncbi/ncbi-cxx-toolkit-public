@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/01/10 16:52:20  ivanov
+* Changed LoadConfig() -- new method to search the config file
+*
 * Revision 1.33  2001/08/20 14:58:10  vakatov
 * Get rid of some compilation warnings
 *
@@ -142,6 +145,8 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbifile.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -507,45 +512,60 @@ static bool s_LoadConfig(CNcbiRegistry& reg, const string& conf)
 }
 
 
-// detect if the "path" is relative -- used by CNcbiApplication::LoadConfig()
-static bool s_IsAbsolutePath(const string& path)
+// for the exclusive use by CNcbiApplication::LoadConfig()
+static bool s_LoadConfigTryPath(CNcbiRegistry& reg, const string& path, 
+                                const string& conf, const string& basename)
 {
-    if (path[0] == '/'  ||  path[0] == '\\')
-        return true;
-    if (path.find_first_of(":") != NPOS)
-        return true;
-    if (path[0] != '.')
-        return false;
-    if (path[1] == '/'  ||  path[1] == '\\')
-        return true;
-    return (path[1] == '.'  &&  (path[2] == '/'  ||  path[2] == '\\'));
+    if ( !conf.empty() ) {
+        return s_LoadConfig(reg, path + conf);
+    }
+
+    // try to derive conf.file name from the application name (for empty"conf")
+    string fileName = basename;
+
+    for (;;) {
+        // try the next variant -- with added ".ini" file extension
+        fileName += ".ini";
+        
+        // current directory
+        if ( s_LoadConfig(reg, path + fileName) )
+            return true;  // success!
+
+        // strip ".ini" file extension (the one added above) 
+        _ASSERT( fileName.length() > 4 );
+        fileName.resize(fileName.length() - 4);
+
+        // strip next file extension, if any left
+        SIZE_TYPE dot_pos = fileName.find_last_of(".");
+        if ( dot_pos == NPOS ) {
+            break;
+        }
+        fileName.resize(dot_pos);
+    }
+    return false;
 }
 
 
 bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
 {
-    // dont load at all
+    // don't load at all
     if ( !conf ) {
         return false;
     }
 
-    // load from the specified file name only
-    if ( !conf->empty() ) {
-        string x_conf;
-        // detect if it is a relative path
-        if ( s_IsAbsolutePath(*conf) ) {
-            // absolute path
-            x_conf = *conf;
-        } else {
-            // path relative to the program location
-            SIZE_TYPE base_pos =
-                m_Arguments->GetProgramName().find_last_of("/\\:");
-            if (base_pos != NPOS) {
-                x_conf = m_Arguments->GetProgramName().substr(0, base_pos+1);
-            }
-            x_conf += *conf; 
-        }
+    string x_conf;
+    string cnf = CDirEntry::ConvertToOSPath(*conf);
 
+    // load from the specified file name only (with path)
+    if (cnf.find_first_of("/\\:") != NPOS) {
+        // detect if it is a absolute path
+        if ( CDirEntry::IsAbsolutePath(cnf) ) {
+            // absolute path
+            x_conf = cnf;
+        } else {
+            // path is relative to the program location
+            x_conf = CDirEntry::ConcatPath(m_Arguments->GetProgramDirname(), cnf);
+        }
         // do load
         x_conf = NStr::TruncateSpaces(x_conf);
         if ( !s_LoadConfig(reg, x_conf) ) {
@@ -555,34 +575,35 @@ CNcbiApplication::LoadConfig() -- cannot open registry file: " + x_conf);
         return true;
     }
 
-    // try to derive conf.file name from the application name (in the same dir)
-    string    fileName = NStr::TruncateSpaces(m_Arguments->GetProgramName());
-    SIZE_TYPE base_pos = fileName.find_last_of("/\\:");
-    if (base_pos == NPOS)
-      base_pos = 0;
-    base_pos++;
+    string basename = m_Arguments->GetProgramBasename();
 
-    for (;;) {
-        // try the next variant -- with added ".ini" file extension
-        fileName += ".ini";
-        if ( s_LoadConfig(reg, fileName) )
-            return true;  // success!
-
-        // strip ".ini" file extension (the one added above) 
-        _ASSERT( fileName.length() > 4 );
-        fileName.resize(fileName.length() - 4);
-
-        // strip next file extension, if any left
-        SIZE_TYPE dot_pos = fileName.find_last_of(".");
-        if (dot_pos == NPOS  ||  dot_pos <= base_pos) {
-          ERR_POST(Warning <<
-                   "CNcbiApplication::LoadConfig() -- cannot find registry "
-                   "file for application: " << fileName);
-          break;
-        }
-
-        fileName.resize(dot_pos);
+    // current (working) directory
+    if ( s_LoadConfigTryPath(reg, kEmptyStr, cnf, basename) ) {
+        return true;
     }
+    // path from environment variable "NCBI"
+    char *ptr = 0;
+    if ( ptr = getenv("NCBI") ) {
+        if ( s_LoadConfigTryPath(reg, CDirEntry::AddTrailingPathSeparator(ptr), 
+                                 cnf, basename) ) {
+            return true;
+        }
+    }
+    // home directory
+    if ( s_LoadConfigTryPath(reg, CDir::GetHome(), cnf, basename) ) {
+        return true;
+    }
+    // program directory
+    string dirname = m_Arguments->GetProgramDirname();
+    if (!dirname.empty()  &&
+        s_LoadConfigTryPath(reg, dirname, cnf, basename)) {
+        return true;
+    }
+
+    ERR_POST(Warning << 
+             "CNcbiApplication::LoadConfig() -- cannot find registry "
+             "file for application: " << m_Arguments->GetProgramBasename());
+
     return false;
 }
 
