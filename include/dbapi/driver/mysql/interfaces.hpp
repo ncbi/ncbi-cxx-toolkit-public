@@ -35,6 +35,12 @@
 
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/util/parameters.hpp>
+
+#if defined(_WIN32) || defined(_WIN64)
+# include <windows.h>
+# include <winsock.h>
+#endif
+
 #include <mysql.h>
 
 BEGIN_NCBI_SCOPE
@@ -240,6 +246,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/02/26 17:03:28  kuznets
+ * Fixed to compile on windows. Added #include <windows.h> (Required by MySQL manual)
+ *
  * Revision 1.3  2003/01/06 20:23:06  vakatov
  * Formally reformatted to closer meet the C++ Toolkit / DBAPI style
  *
