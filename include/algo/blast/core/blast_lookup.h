@@ -47,22 +47,17 @@ extern "C" {
 #if 0
 /*The 64 bit versions are disabled for now.*/
 
-#if defined(LONG_BIT) && LONG_BIT==64
-
 #define PV_ARRAY_TYPE Uint8     /**< The pv_array 'native' type. */
 #define PV_ARRAY_BYTES 8        /**< number of BYTES in 'native' type. */
 #define PV_ARRAY_BTS 6          /**< bits-to-shift from lookup_index to pv_array index. */
 #define PV_ARRAY_MASK 63        /**< amount to mask off. */
 
-#else
 #endif
 
 #define PV_ARRAY_TYPE Uint4     /**< The pv_array 'native' type. */
 #define PV_ARRAY_BYTES 4        /**< number of BYTES in 'native' type. */
 #define PV_ARRAY_BTS 5          /**< bits-to-shift from lookup_index to pv_array index. */
 #define PV_ARRAY_MASK 31        /**< amount to mask off. */
-
-/*#endif*/
 
 /** Set the bit at position 'index' in the PV 
  *  array bitfield within 'lookup'
