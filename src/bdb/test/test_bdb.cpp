@@ -187,6 +187,9 @@ static void s_TEST_BDB_IdTable_Fill(void)
 
     dbf1.SetEnv(env);
 
+    dbf1.SetPageSize(32 * 1024);
+    dbf1.SetCacheSize(5 * (1024 * 1024));
+
     dbf1.Open(s_TestFileName, CBDB_File::eCreate);
     assert(dbf1.idata.IsNull());
 
@@ -1174,6 +1177,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/10/15 18:14:33  kuznets
+ * Changed test to work with alternative page size and larger cache.
+ *
  * Revision 1.20  2003/09/29 16:54:58  kuznets
  * Reverting unnecessary commit
  *
