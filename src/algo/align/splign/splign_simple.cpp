@@ -79,7 +79,7 @@ public:
             m_Handle1.GetSeqId()->GetSeqIdString(true) == id) {
             sv = &m_SeqVector1;
         } else if (m_Handle2.IsSynonym(seqId)  ||
-                   m_Handle1.GetSeqId()->GetSeqIdString(true) == id) {
+                   m_Handle2.GetSeqId()->GetSeqIdString(true) == id) {
             sv = &m_SeqVector2;
         } else {
             NCBI_THROW(CAlgoAlignException, eInternal,
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.8  2004/07/07 21:40:12  kapustin
+* Fix a typo in CSplignObjMgrAccessor::Load
+*
 * Revision 1.7  2004/06/29 20:51:52  kapustin
 * Use CRef to access CObject-derived members
 *
