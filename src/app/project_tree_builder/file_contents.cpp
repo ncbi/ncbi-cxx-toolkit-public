@@ -164,6 +164,7 @@ static bool s_WillContinue(const string& line)
 static void s_StripContinueStr(string* str)
 {
     str->erase(str->length() -1, 1); // delete last '\'
+    *str += " ";
 }
 
 
@@ -257,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/03/08 15:21:49  gouriano
+ * Fixed handling line continuation mark
+ *
  * Revision 1.16  2005/01/31 16:37:38  gouriano
  * Keep track of subproject types and propagate it down the project tree
  *
