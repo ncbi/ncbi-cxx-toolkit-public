@@ -33,6 +33,10 @@
 #ifndef DBAPI_UNIT_TEST_H
 #define DBAPI_UNIT_TEST_H
 
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiargs.hpp>
+#include <corelib/ncbienv.hpp>
+
 #include <cppunit/extensions/HelperMacros.h>
 
 BEGIN_NCBI_SCOPE
@@ -90,6 +94,17 @@ private:
     const string m_TableName;
 };
 
+class CUnitTestApp : public CNcbiApplication
+{
+public:
+    virtual ~CUnitTestApp(void);
+
+private:
+    virtual void Init(void);
+    virtual int  Run(void);
+    virtual void Exit(void);
+};
+
 END_NCBI_SCOPE
 
 #endif  // DBAPI_UNIT_TEST_H
@@ -97,6 +112,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/02/15 16:06:24  ssikorsk
+ * Added driver and server parameters to the test-suite (handled via CNcbiApplication)
+ *
  * Revision 1.2  2005/02/11 16:12:02  ssikorsk
  * Improved GetRowCount test
  *
@@ -106,7 +124,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.1  2005/02/03 16:06:46  ssikorsk
  * Added: initial version of a cppunit test for the DBAPI
- *
  *
  * ===========================================================================
  */

@@ -42,10 +42,17 @@
 
 BEGIN_NCBI_SCOPE
 
+///////////////////////////////////////////////////////////////////////////////
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION( CDBAPIUnitTest );
 
+///////////////////////////////////////////////////////////////////////////////
+string DriverName;
+string ServerName;
+string UserName;
+string UserPassword;
 
+///////////////////////////////////////////////////////////////////////////////
 CTestTransaction::CTestTransaction(
     IConnection& conn,
     ETransBehavior tb
@@ -83,11 +90,11 @@ void
 CDBAPIUnitTest::setUp()
 {
     if ( m_DS == NULL ) {
-        m_DS = m_DM.CreateDs( "ftds" );
+        m_DS = m_DM.CreateDs( DriverName );
     }
     m_Stmt.release();
     m_Conn.reset( m_DS->CreateConnection() );
-    m_Conn->Connect( "anyone", "allowed", "MS_DEV1", "DBAPI_Sample" );
+    m_Conn->Connect( UserName, UserPassword, ServerName, "DBAPI_Sample" );
     m_Stmt.reset( m_Conn->CreateStatement() );
 
     // Create a test table ...
@@ -100,7 +107,6 @@ CDBAPIUnitTest::setUp()
     // Create the table
     m_Stmt->ExecuteUpdate(sql);
 }
-
 
 void
 CDBAPIUnitTest::tearDown()
@@ -124,10 +130,10 @@ CDBAPIUnitTest::CheckGetRowCount(int row_count, ETransBehavior tb)
     // Transaction ...
     CTestTransaction transaction(*m_Conn, tb);
     string sql;
-    sql  = " INSERT INTO " + m_TableName + "(int_val) VALUES(1) \n";
+    sql  = " INSERT INTO " + m_TableName + "(int_val) VALUES( 1 ) \n";
 
     // Insert row_count records into the table ...
-    for ( size_t i = 0; i < row_count; ++i ) {
+    for ( int i = 0; i < row_count; ++i ) {
         m_Stmt->ExecuteUpdate(sql);
         int nRows = m_Stmt->GetRowCount();
         CPPUNIT_ASSERT_EQUAL( nRows, 1 );
@@ -185,33 +191,101 @@ CDBAPIUnitTest::CheckGetRowCount(int row_count, ETransBehavior tb)
 
 }
 
-END_NCBI_SCOPE
-
-
-int
-main(int argc, char* argv[])
+///////////////////////////////////////////////////////////////////////////////
+CUnitTestApp::~CUnitTestApp(void)
 {
-  // Get the top level suite from the registry
-  CPPUNIT_NS::Test *suite = CPPUNIT_NS::TestFactoryRegistry::getRegistry().makeTest();
-
-  // Adds the test to the list of test to run
-  CPPUNIT_NS::TextUi::TestRunner runner;
-  runner.addTest( suite );
-
-  // Change the default outputter to a compiler error format outputter
-  runner.setOutputter( new CPPUNIT_NS::CompilerOutputter( &runner.result(),
-                                                       std::cerr ) );
-  // Run the test.
-  bool wasSucessful = runner.run();
-
-  // Return error code 1 if the one of test failed.
-  return wasSucessful ? 0 : 1;
+    return ;
 }
 
+void
+CUnitTestApp::Init(void)
+{
+    // Create command-line argument descriptions class
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    // Specify USAGE context
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "dbapi_unit_test");
+
+    // Describe the expected command-line arguments
+#if defined(NCBI_OS_MSWIN)
+#define DEF_SERVER    "MS_DEV1"
+#define DEF_DRIVER    "ftds"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "msdblib", "odbc", "gateway"
+#else
+#define DEF_SERVER    "STRAUSS"
+#define DEF_DRIVER    "ctlib"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "gateway"
+#endif
+
+    arg_desc->AddDefaultKey("S", "server",
+                            "Name of the SQL server to connect to",
+                            CArgDescriptions::eString, DEF_SERVER);
+
+    arg_desc->AddDefaultKey("d", "driver",
+                            "Name of the DBAPI driver to use",
+                            CArgDescriptions::eString,
+                            DEF_DRIVER);
+    arg_desc->SetConstraint("d", &(*new CArgAllow_Strings, ALL_DRIVERS));
+
+    arg_desc->AddDefaultKey("U", "username",
+                            "User name",
+                            CArgDescriptions::eString, "anyone");
+
+    arg_desc->AddDefaultKey("P", "password",
+                            "Password",
+                            CArgDescriptions::eString, "allowed");
+
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(arg_desc.release());
+}
+
+int
+CUnitTestApp::Run(void)
+{
+    const CArgs& args = GetArgs();
+
+    // Get command-line arguments ...
+    DriverName      = args["d"].AsString();
+    ServerName      = args["S"].AsString();
+    UserName        = args["U"].AsString();
+    UserPassword    = args["P"].AsString();
+
+    // Get the top level suite from the registry
+    CPPUNIT_NS::Test *suite = CPPUNIT_NS::TestFactoryRegistry::getRegistry().makeTest();
+
+    // Adds the test to the list of test to run
+    CPPUNIT_NS::TextUi::TestRunner runner;
+    runner.addTest( suite );
+
+    // Change the default outputter to a compiler error format outputter
+    runner.setOutputter( new CPPUNIT_NS::CompilerOutputter( &runner.result(),   std::cerr ) );
+    // Run the test.
+    bool wasSucessful = runner.run();
+
+    // Return error code 1 if the one of test failed.
+    return wasSucessful ? 0 : 1;
+}
+
+void
+CUnitTestApp::Exit(void)
+{
+    return ;
+}
+
+END_NCBI_SCOPE
+
+int main(int argc, const char* argv[])
+{
+    return ncbi::CUnitTestApp().AppMain(argc, argv);
+}
 
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/02/15 16:06:24  ssikorsk
+ * Added driver and server parameters to the test-suite (handled via CNcbiApplication)
+ *
  * Revision 1.2  2005/02/11 16:12:02  ssikorsk
  * Improved GetRowCount test
  *
@@ -221,7 +295,6 @@ main(int argc, char* argv[])
  *
  * Revision 1.1  2005/02/03 16:06:46  ssikorsk
  * Added: initial version of a cppunit test for the DBAPI
- *
  *
  * ===========================================================================
  */
