@@ -144,12 +144,6 @@ protected:
             if (!m_CursorFile->IsAttached()) {
                 m_CursorFile->Attach(*m_ParentFile);
             }
-/*
-            if (!m_CursorFile->IsOpen()) {
-                m_CursorFile->Open(m_ParentFile->GetFileName().c_str(), 
-                                   open_mode);
-            }
-*/
             m_Cur = new CBDB_FileCursor(*m_CursorFile);
             m_Cur->SetCondition(cursor_condition);
         }
@@ -387,6 +381,9 @@ public:
     const_iterator find(const K& key) const;
 
     size_t  size() const;
+    void clear();
+
+    void erase(const K& key);
 
 protected:
     mutable File       m_Dbf;
@@ -543,6 +540,20 @@ size_t db_map_base<K, T>::size() const
     return m_Dbf.CountRecs();
 }
 
+template<class K, class T>
+void db_map_base<K, T>::clear()
+{
+    m_Dbf.Truncate();
+}
+
+template<class K, class T>
+void db_map_base<K, T>::erase(const K& key)
+{
+    m_Dbf.key = key;
+    m_Dbf.Delete();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  db_map
@@ -592,6 +603,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/23 20:22:50  kuznets
+ * Implemened:  clean(), erase()
+ *
  * Revision 1.4  2003/07/23 18:09:51  kuznets
  * + "cache size" parameter for bdb_map bdb_multimap
  *
