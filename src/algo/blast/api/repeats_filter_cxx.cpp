@@ -144,8 +144,12 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
         }
         query_length = sequence::GetLength(*query[query_index].seqloc, 
                                            query[query_index].scope);
+ 
+        // Get the previous mask locations
         loc_list = CSeqLoc2BlastSeqLoc(query[query_index].mask);
-        last_loc = NULL;
+        // Find the last location in the list
+        for (last_loc = loc_list; last_loc && last_loc->next; 
+             last_loc = last_loc->next);
         
         /* Find all HSP intervals in query */
         for (hit_index = 0; hit_index < hit_list->hsplist_count; ++hit_index) {
@@ -164,21 +168,29 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
                     left = query_length - hsp->query.end;
                     right = query_length - hsp->query.offset - 1;
                 }
+                // If this is the first mask, create a new BlastSeqLoc, 
+                // otherwise append to the end of the list.
                 if (!last_loc)
                     loc_list = last_loc = BlastSeqLocNew(NULL, left, right);
                 else
                     last_loc = BlastSeqLocNew(&last_loc, left, right);
             }
         }
-        /* Make the intervals unique */
+        // Make the intervals unique
         CombineMaskLocations(loc_list, &ordered_loc_list, MASK_LINK_VALUE);
 
-        BlastSeqLocFree(loc_list);
+        // Free the list of locations that's no longer needed.
+        loc_list = BlastSeqLocFree(loc_list);
+
         /* Create a CSeq_loc with these locations and fill it for the 
            respective query */
-        query[query_index].mask.Reset(s_BlastSeqLoc2CSeqloc(query[query_index],
-                                                          ordered_loc_list));
-        BlastSeqLocFree(ordered_loc_list);
+        CRef<CSeq_loc> filter_seqloc(s_BlastSeqLoc2CSeqloc(query[query_index],
+                                                           ordered_loc_list));
+
+        // Free the combined mask list in the BlastSeqLoc form.
+        ordered_loc_list = BlastSeqLocFree(ordered_loc_list);
+
+        query[query_index].mask.Reset(filter_seqloc);
     }
 }
 
@@ -239,12 +251,29 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
     opts.SetGapExtensionCost(1);
     opts.SetFilterString("F");
 
+    // Remove any lower case masks, because they should not be used for the 
+    // repeat locations search.
+    vector< CConstRef<CSeq_loc> > lcase_mask_v;
+    lcase_mask_v.reserve(query.size());
+    
+    for (unsigned int index = 0; index < query.size(); ++index) {
+        lcase_mask_v.push_back(query[index].mask);
+        query[index].mask.Reset(NULL);
+    }
+
     CDbBlast blaster(query, seq_src, opts);
     blaster.PartialRun();
 
     seq_src = BlastSeqSrcFree(seq_src);
     sfree(dbname);
 
+    // Restore the lower case masks
+    for (unsigned int index = 0; index < query.size(); ++index) {
+        query[index].mask.Reset(lcase_mask_v[index]);
+    }
+
+    // Extract the repeat locations and combine them with the previously 
+    // existing mask in queries.
     s_FillMaskLocFromBlastHSPResults(query, blaster.GetResults());
 }
 
@@ -254,6 +283,9 @@ FindRepeatFilterLoc(TSeqLocVector& query, char* repeats_filter_string)
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.13  2005/01/24 15:45:30  dondosha
+ *  If lower case mask present, remove it for the repeats search, then combine repeats and lower case locations
+ *
  *  Revision 1.12  2005/01/10 13:37:14  madden
  *  Call to SetSeedExtensionMethod removed as it has been removed
  *
