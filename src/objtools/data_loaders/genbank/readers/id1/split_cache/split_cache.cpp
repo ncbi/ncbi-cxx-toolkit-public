@@ -317,6 +317,7 @@ void CSplitCacheApp::SetupCache(void)
         cache->SetTimeStampPolicy(flags, blob_age*24*60*60);
         cache->SetReadUpdateLimit(1000);
         cache->SetVersionRetention(ICache::eKeepAll);
+        cache->SetWriteSync(CBDB_Cache::eWriteNoSync);
 
         cache->Open(cache_dir.c_str(), "blobs");
 
@@ -344,6 +345,8 @@ void CSplitCacheApp::SetupCache(void)
             ICache::fCheckExpirationAlways;
         cache->SetTimeStampPolicy(flags, id_age*24*60*60);
         cache->SetVersionRetention(ICache::eKeepAll);
+        cache->SetWriteSync(CBDB_Cache::eWriteNoSync);
+        cache->SetPageSize(CBDB_Cache::eSmall);
         
         cache->Open(cache_dir.c_str(), "ids");
     }}
@@ -587,9 +590,15 @@ void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
             if ( GetBioseqHandle(bh, idh) ) {
                 LINE("Processing referenced sequences:");
                 CLevelGuard level(m_RecursionLevel);
-                for ( CSeqMap_CI it = bh.GetSeqMap().BeginResolved
-                          (m_Scope, 0, CSeqMap::fFindRef); it; ++it ) {
-                    ProcessSeqId(*it.GetRefSeqid().GetSeqId());
+                set<CSeq_id_Handle> ids;
+                // collect referenced sequences
+                for ( CSeqMap_CI it(bh.GetSeqMap().BeginResolved(m_Scope, 0, CSeqMap::fFindRef)); it; ++it ) {
+                    ids.insert(it.GetRefSeqid());
+                }
+                bh = CBioseq_Handle();
+                m_Scope->ResetHistory();
+                ITERATE ( set<CSeq_id_Handle>, it, ids ) {
+                    ProcessSeqId(*it->GetSeqId());
                 }
             }
         }
@@ -800,6 +809,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/09/07 14:28:36  vasilche
+* Reset scope history before processing segments.
+*
 * Revision 1.28  2004/09/01 19:07:29  vasilche
 * By default do not join small chunks.
 *
