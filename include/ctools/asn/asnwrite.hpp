@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/02/18 18:42:14  vasilche
+* Added autoflushing.
+*
 * Revision 1.1  1999/01/28 15:11:06  vasilche
 * Added new class CAsnWriteNode for displaying ASN.1 structure in HTML page.
 *
@@ -53,9 +56,10 @@ public:
 
     AsnIoPtr GetOut(void);
 
+    virtual void CreateSubNodes(void);
+
 private:
     // ASN.1 communication interface
-    Int2 Write(CharPtr buffer, Uint2 size);
     static Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
 
     // cached ASN.1 communication interface pointer
