@@ -326,6 +326,10 @@ public:
     /// String matchers used for substring search
     typedef vector<CBoyerMooreMatcher*> TStringMatcherVector;
 
+    /// If argument is a db field corresponding vector element 
+    /// contains the field pointer
+    typedef vector<const CBDB_Field*>  TFieldVector;
+
 public:
     CScannerFunctorArgN(CQueryExecEnv& env)
      : CScannerFunctor(env)
@@ -338,14 +342,21 @@ public:
                     const string& search_value,
                     unsigned int arg_idx)
     {
+        CBoyerMooreMatcher* matcher = GetMatcher(search_value, arg_idx);
+        CBDB_File::TUnifiedFieldIndex fidx = BDB_find_field(dbf, *matcher);
+        
+        return (fidx != 0);
+    }
+
+    CBoyerMooreMatcher* GetMatcher(const string& search_value, 
+                                   unsigned int  arg_idx)
+    {
         CBoyerMooreMatcher* matcher = m_MatcherVector[arg_idx];
         if (!matcher) {
             m_MatcherVector[arg_idx] = matcher = 
                 s_MakeNewMatcher(search_value);
         }
-        CBDB_File::TUnifiedFieldIndex fidx = BDB_find_field(dbf, *matcher);
-        
-        return (fidx != 0);
+        return matcher;
     }
 
     /// Extract function arguments from the parsing tree
@@ -376,6 +387,8 @@ public:
                 SyncArgValue(i, str_pool);
 
                 fld.ToString(*m_ArgValueVector[i]);
+
+                m_FieldVector[i] = &fld;
 
                 continue;
             }
@@ -414,6 +427,12 @@ public:
         return m_ArgVector[idx];
     }
 
+    const CBDB_Field* GetArgField(unsigned int idx) const
+    {
+        _ASSERT(idx < m_FieldVector.size());
+        return m_FieldVector[idx];
+    }
+
 private:
 
     /// Syncronously resize all arguments vectors
@@ -425,6 +444,7 @@ private:
             m_ArgVector.push_back(0);
             m_ArgValueVector.push_back(0);
             m_MatcherVector.push_back(0);
+            m_FieldVector.push_back(0);
         }
     }
 
@@ -442,6 +462,7 @@ protected:
     TArgVector            m_ArgVector;
     TArgValueVector       m_ArgValueVector;
     TStringMatcherVector  m_MatcherVector;
+    TFieldVector          m_FieldVector;
 };
 
 
@@ -479,6 +500,37 @@ public:
 
         const string* arg0 = GetArg(0);
         const string* arg1 = GetArg(1);
+
+        const CBDB_Field* fld0 = GetArgField(0);
+        const CBDB_Field* fld1 = GetArgField(1);
+
+        // here we check two cases: 
+        //   field = "value"
+        //   "value" == field
+
+        if (fld0 != 0 && fld1 == 0) {
+            CBoyerMooreMatcher* matcher = GetMatcher(*arg1, 0);
+            int pos = matcher->Search(*arg0);
+            if (pos == -1) { // not found
+                qnode.SetValue("0");
+            } else {
+                qnode.SetValue("1");
+            }
+            return;
+        }
+
+        if (fld0 == 0 && fld1 != 0) {
+            CBoyerMooreMatcher* matcher = GetMatcher(*arg0, 0);
+            int pos = matcher->Search(*arg1);
+            if (pos == -1) { // not found
+                qnode.SetValue("0");
+            } else {
+                qnode.SetValue("1");
+            }
+            return;
+        }
+
+        // Plain equal
 
         if (*arg0 == *arg1) {
             qnode.SetValue("1");
@@ -877,6 +929,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/03/17 16:35:42  kuznets
+ * EQ functor improved to enable substring searches
+ *
  * Revision 1.8  2004/03/11 22:27:49  ucko
  * Pull the bodies of CScannerFunctorArgN::~CScannerFunctorArgN and
  * CScannerEvaluateFunc::operator() out of line so that they can call
