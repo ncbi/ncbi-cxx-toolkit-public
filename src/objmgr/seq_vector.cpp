@@ -419,6 +419,7 @@ void CSeqVector::x_FillCache(TSeqPos pos, TSeqPos end) const
             break;
         }
         case CSeqMap::eSeqGap:
+            x_GetCoding(CSeq_data::e_not_set);
             fill(dst, dst+count, GetGapChar());
             break;
         default:
@@ -536,10 +537,35 @@ CSeqVector::TCoding CSeqVector::x_GetCoding(TCoding dataCoding) const
     if ( m_SequenceType == eType_not_set )
         x_UpdateSequenceType(dataCoding);
 
-    TCoding coding = x_UpdateCoding();
-    if ( (coding & kTypeUnknown) || coding == CSeq_data::e_not_set )
-        coding = dataCoding;
-    return coding;
+    TCoding coding = m_Coding;
+    if ( coding & kTypeUnknown ) {
+        TCoding newCoding = CSeq_data::e_not_set;
+        switch ( GetSequenceType() ) {
+        case eType_aa:
+            switch ( coding & ~kTypeUnknown ) {
+            case CBioseq_Handle::eCoding_Iupac:
+                newCoding = CSeq_data::e_Iupacaa;
+                break;
+            case CBioseq_Handle::eCoding_Ncbi:
+                newCoding = CSeq_data::e_Ncbistdaa;
+                break;
+            }
+            break;
+        case eType_na:
+            switch ( coding & ~kTypeUnknown ) {
+            case CBioseq_Handle::eCoding_Iupac:
+                newCoding = CSeq_data::e_Iupacna;
+                break;
+            case CBioseq_Handle::eCoding_Ncbi:
+                newCoding = CSeq_data::e_Ncbi4na;
+                break;
+            }
+            break;
+        }
+        coding = const_cast<CSeqVector*>(this)->m_Coding = newCoding;
+    }
+
+    return coding != CSeq_data::e_not_set? coding: dataCoding;
 }
 
 
@@ -665,6 +691,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/02/07 16:28:05  vasilche
+* Fixed delayed seq vector coding setting.
+*
 * Revision 1.44  2003/02/06 19:05:28  vasilche
 * Fixed old cache data copying.
 * Delayed sequence type (protein/dna) resolution.
