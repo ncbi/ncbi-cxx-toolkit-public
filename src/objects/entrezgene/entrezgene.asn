@@ -1,4 +1,4 @@
---$Revision: 1.10 $ 
+--$Revision: 1.11 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -40,6 +40,7 @@ Entrezgene ::= SEQUENCE {
         snoRNA  (5) ,
         protein-coding (6) ,
         pseudo  (7) ,
+        transposon  (8) ,
         other (255) } ,
     source BioSource , 
     gene Gene-ref ,                     -- for locus-tag see note 3
