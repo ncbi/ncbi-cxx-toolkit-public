@@ -218,36 +218,10 @@ get_sequences()
 //	==========================================================================
 
 static void
-setp(list<CRef<CBlast4_parameter> >& l, string n, bool x)
-{
-	CRef<CBlast4_value> v(new CBlast4_value);
-	v->SetBoolean(x);
-
-	CRef<CBlast4_parameter> p(new CBlast4_parameter);
-	p->SetName(n);
-	p->SetValue(*v);
-
-	l.push_back(p);
-}
-
-static void
 setp(list<CRef<CBlast4_parameter> >& l, string n, int x)
 {
 	CRef<CBlast4_value> v(new CBlast4_value);
 	v->SetInteger(x);
-
-	CRef<CBlast4_parameter> p(new CBlast4_parameter);
-	p->SetName(n);
-	p->SetValue(*v);
-
-	l.push_back(p);
-}
-
-static void
-setp(list<CRef<CBlast4_parameter> >& l, string n, double x)
-{
-	CRef<CBlast4_value> v(new CBlast4_value);
-	v->SetReal(x);
 
 	CRef<CBlast4_parameter> p(new CBlast4_parameter);
 	p->SetName(n);
@@ -277,34 +251,6 @@ setp(list<CRef<CBlast4_parameter> >& l, string n, const char* x)
 
 static void
 setp(list<CRef<CBlast4_parameter> >& l, string n,
-	CRef<CBlast4_matrix> x)
-{
-	CRef<CBlast4_value> v(new CBlast4_value);
-	v->SetMatrix(*x);
-
-	CRef<CBlast4_parameter> p(new CBlast4_parameter);
-	p->SetName(n);
-	p->SetValue(*v);
-
-	l.push_back(p);
-}
-
-static void
-setp(list<CRef<CBlast4_parameter> >& l, string n,
-	EBlast4_strand_type x)
-{
-	CRef<CBlast4_value> v(new CBlast4_value);
-	v->SetStrand_type(x);
-
-	CRef<CBlast4_parameter> p(new CBlast4_parameter);
-	p->SetName(n);
-	p->SetValue(*v);
-
-	l.push_back(p);
-}
-
-static void
-setp(list<CRef<CBlast4_parameter> >& l, string n,
 	CRef<CBlast4_cutoff> x)
 {
 	CRef<CBlast4_value> v(new CBlast4_value);
@@ -326,8 +272,6 @@ finish_params()
 
     CRef<CBlast4_cutoff> cutoff(new CBlast4_cutoff);
     cutoff->SetE_value(10);
-
-	list<CRef<CBlast4_parameter> >& l = q->SetParams();
 
 	CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetFinish_params(*q);
