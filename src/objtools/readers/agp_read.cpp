@@ -97,13 +97,24 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
         fields.clear();
         NStr::Tokenize(line, "\t", fields);
 
+        // Number of fields can be 9 or 8, but 8 is valid
+        // only if field[4] == "N".
         if (fields.size() != 9) {
-            NCBI_THROW2(CObjReaderParseException, eFormat,
-                        string("error at line ") + 
-                        NStr::IntToString(line_num) + ": found " +
-                        NStr::IntToString(fields.size()) +
-                        " columns; there should be 9",
-                        is.tellg() - CT_POS_TYPE(0));
+            if (fields.size() >= 5 && fields[4] != "N") {
+                NCBI_THROW2(CObjReaderParseException, eFormat,
+                            string("error at line ") + 
+                            NStr::IntToString(line_num) + ": found " +
+                            NStr::IntToString(fields.size()) +
+                            " columns; there should be 9",
+                            is.tellg() - CT_POS_TYPE(0));
+            } else if (fields.size() != 8) {
+                NCBI_THROW2(CObjReaderParseException, eFormat,
+                            string("error at line ") + 
+                            NStr::IntToString(line_num) + ": found " +
+                            NStr::IntToString(fields.size()) +
+                            " columns; there should be 8 or 9",
+                            is.tellg() - CT_POS_TYPE(0));
+            }
         }
 
         if (fields[0] != current_object || !bioseq) {
@@ -207,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.6  2004/05/25 20:49:58  jcherry
+ * Let the last column of an "N" line be missing, not just empty
+ *
  * Revision 1.5  2004/05/21 21:42:55  gorelenk
  * Added PCH ncbi_pch.hpp
  *
