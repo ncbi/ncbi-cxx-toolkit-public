@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.58 2002/04/16 22:26:54 vakatov Exp $
+#  $Id: configure.ac,v 1.59 2002/04/21 03:38:07 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1029,41 +1029,43 @@ changequote(, )dnl
 if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" ; then
       with_optimization=${with_optimization:="yes"}
-      CFLAGS=`  echo $CFLAGS    | sed 's/^-g[0-9]*//g; s/[ 	]-g[0-9]*//g'`
-      CXXFLAGS=`echo $CXXFLAGS  | sed 's/^-g[0-9]*//g; s/[ 	]-g[0-9]*//g'`
-      LDFLAGS=` echo $LDFLAGS   | sed 's/^-g[0-9]*//g; s/[ 	]-g[0-9]*//g'`
+      CFLAGS=`  echo " $CFLAGS"   | sed 's/[ 	]\-\<g[0-9]*\>//g'`
+      CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[ 	]\-\<g[0-9]*\>//g'`
+      LDFLAGS=` echo " $LDFLAGS"  | sed 's/[ 	]\-\<g[0-9]*\>//g'`
    else
       with_optimization=${with_optimization:="no"}
-      if echo "$CFLAGS"   |grep -v >/dev/null '\<-g[0-9]*\>' ; then
+      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]\-\<g[0-9]*\>' ; then
          CFLAGS="$CFLAGS -g"     ; fi
-      if echo "$CXXFLAGS" |grep -v >/dev/null '\<-g[0-9]*\>' ; then
+      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]\-\<g[0-9]*\>' ; then
          CXXFLAGS="$CXXFLAGS -g" ; fi
       if test "$with_optimization" = "no" ; then
          CPPFLAGS="-D_DEBUG $CPPFLAGS" ; fi
-      if echo "$LDFLAGS"  |grep -v >/dev/null '\<-g[0-9]*\>' ;
+      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]\-\<g[0-9]*\>' ;
          then LDFLAGS="$LDFLAGS -g" ; fi
       STRIP=":"
    fi
 
+   NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]\-\<O[0-9]*\>//g'`
+   NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[ 	]\-\<O[0-9]*\>//g'`
    if test "$with_optimization" = "no" ; then
-      CFLAGS=`  echo $CFLAGS    | sed 's/^-O[0-9]*//g; s/[ 	]-O[0-9]*//g'`
-      CXXFLAGS=`echo $CXXFLAGS  | sed 's/^-O[0-9]*//g; s/[ 	]-O[0-9]*//g'`
-      LDFLAGS=` echo $LDFLAGS   | sed 's/^-O[0-9]*//g; s/[ 	]-O[0-9]*//g'`
+      CFLAGS="$NOPT_CFLAGS"
+      CXXFLAGS="$NOPT_CXXFLAGS"
+      LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]\-\<O[0-9]*\>//g'`
       FAST_CFLAGS="$CFLAGS" 
       FAST_CXXFLAGS="$CXXFLAGS" 
    else
-      FAST_CFLAGS="`  echo $CFLAGS   | sed 's/^-O[0-9]*//g; s/[ 	]-O[0-9]*//g'` $FAST_CFLAGS"
-      FAST_CXXFLAGS="`echo $CXXFLAGS | sed 's/^-O[0-9]*//g; s/[ 	]-O[0-9]*//g'` $FAST_CXXFLAGS"
-      if echo "$CFLAGS"   |grep -v >/dev/null '\<-O[0-9]*\>' ; then
+      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]\-\<O[0-9]*\>' ; then
          CFLAGS="$CFLAGS -O" ; fi
-      if echo "$CXXFLAGS" |grep -v >/dev/null '\<-O[0-9]*\>' ; then
+      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]\-\<O[0-9]*\>' ; then
          CXXFLAGS="$CXXFLAGS -O" ; fi
       CPPFLAGS="-DNDEBUG $CPPFLAGS"
-      if echo "$LDFLAGS"  |grep -v >/dev/null '\<-O[0-9]*\>' ; then
+      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]\-\<O[0-9]*\>' ; then
          LDFLAGS="$LDFLAGS -O" ; fi
+      FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
+      FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
    fi
 
-   if test "$with_debug" = "no"  &&  test "$with_optimization" = "no" ; then
+   if test "$with_debug" = "no"  -a  "$with_optimization" = "no" ; then
       CPPFLAGS="-DNDEBUG $CPPFLAGS"
    fi
 fi
@@ -1621,7 +1623,7 @@ if test -n "$SYBASE_DBLIBS" ; then
 fi
 
 
-## Free TDS libraries
+## FreeTDS libraries
 AC_MSG_CHECKING(if FreeTDS libraries are available)
 if test "$with_ftds" != "no" ; then
    FTDS_PATH=${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
@@ -2267,7 +2269,7 @@ if test "$with_internal" = "yes" ; then
      reason="$reason${sep}Sybase"
      sep=", "
    fi
-   if test "$with_ncbi_C" = "no"; then
+   if test "$with_ncbi_c" = "no"; then
      reason="$reason${sep}C-Toolkit"
      sep=", "
    fi
