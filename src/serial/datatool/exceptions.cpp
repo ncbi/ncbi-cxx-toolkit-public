@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/06/16 12:03:49  dicuccio
+* throw -> THROWS()
+*
 * Revision 1.8  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -106,7 +109,7 @@ void CResolvedTypeSet::Add(const CAmbiguiousTypes& types)
     }
 }
 
-CDataType* CResolvedTypeSet::GetType(void) const throw(CDatatoolException)
+CDataType* CResolvedTypeSet::GetType(void) const THROWS(CDatatoolException)
 {
     if ( m_Types.empty() ) {
         string msg = "type not found: ";
