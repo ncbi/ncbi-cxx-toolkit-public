@@ -42,6 +42,7 @@ static char const rcsid[] = "$Id$";
 #include <aa_lookup.h>
 #include <na_lookup.h>
 #include <mb_lookup.h>
+#include <blast_util.h> /* for READDB_UNPACK_BASE macros */
 
 #define MIN_INIT_HITLIST_SIZE 100
 
