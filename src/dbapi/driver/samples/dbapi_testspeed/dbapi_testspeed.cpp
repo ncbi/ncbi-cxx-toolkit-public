@@ -157,7 +157,7 @@ int main (int argc, char* argv[])
   p= getParam('t', argc, argv);
   if(p) { table_name = p; };
 
-  p= getParam('i', argc, argv);
+  p= getParam('m', argc, argv);
   if(p) {
     switch(*p) {
       case 'r': readItems  = true; break;
@@ -241,14 +241,14 @@ int main (int argc, char* argv[])
     delete set_cmd;
 
 
-    cout<< "driver " << driver_name
-        << ", rows " << row_count
-        << ", cols " << col_count
-        << ", blob size " << blob_size << "\n";
+    cout<< "driver " << driver_name;
 
     // Create table, insert data
     if(!selectOnly) {
       CreateTable(con, table_name); // Deletes the pre-existing table, if present
+      cout<< ", rows " << row_count
+          << ", cols " << col_count
+          << ", blob size " << blob_size << "\n";
 
       if(col_count>4) {
         // "Bulk copy in" command
@@ -377,6 +377,9 @@ int main (int argc, char* argv[])
       }
       timeElapsed = timer.Elapsed();
       cout << "inserting timeElapsed=" << NStr::DoubleToString(timeElapsed, 2) << "\n";
+    }
+    else{
+      cout << "\n";
     }
 
     if(!writeOnly) {
