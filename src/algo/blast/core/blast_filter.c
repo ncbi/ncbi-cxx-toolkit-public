@@ -544,7 +544,7 @@ BlastSetUp_load_options_to_buffer(const char *instructions, char* buffer)
 Int2
 BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length, 
    Int4 offset, char* instructions, Boolean *mask_at_hash, 
-   BlastSeqLoc* *seqloc_retval)
+   BlastSeqLoc* *seqloc_retval, Boolean no_lookup)
 {
 	Boolean do_default=FALSE, do_seg=FALSE, do_dust=FALSE; 
 	char* buffer=NULL;
@@ -579,9 +579,14 @@ BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length,
 	cutoff_cc = CC_CUTOFF;
 #endif
 
+   if (!seqloc_retval) 
+      return -1;
+
 	/* FALSE is the default right now. */
 	if (mask_at_hash)
-		*mask_at_hash = FALSE;
+      *mask_at_hash = FALSE;
+   
+   *seqloc_retval = NULL;
 
 	if (instructions == NULL || strcasecmp(instructions, "F") == 0)
 		return status;
@@ -690,6 +695,18 @@ BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length,
 		}
 	        sfree(buffer);
 	}
+
+   /* If lookup table is not created and masking is supposed to be done for 
+      lookup table only, then no filtering is needed */
+   if (*mask_at_hash && no_lookup) {
+      do_default = do_seg = do_dust = FALSE;
+#ifdef CC_FILTER_ALLOWED    
+      do_coil_coil = FALSE;
+#endif
+#ifdef TEMP_BLAST_OPTIONS     
+      do_vecscreen = do_repeats = FALSE;
+#endif
+   }
 
 	seqloc_num = 0;
 	if (program_number != blast_type_blastn)
