@@ -446,6 +446,7 @@ CDB_Object* CDB_Image::Clone() const
 
 size_t CDB_Text::Append(const void* buff, size_t nof_bytes)
 {
+    if(!buff) return 0;
     return CDB_Stream::Append
         (buff, nof_bytes ? nof_bytes : strlen((const char*) buff));
 }
@@ -809,6 +810,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/07/19 15:31:43  soussov
+ * add check for NULL pointer in CDB_Text::Append
+ *
  * Revision 1.8  2002/05/16 21:29:38  soussov
  * AssignValue methods added
  *
