@@ -32,6 +32,11 @@
 *   Flat-File enumerations (flags / styles / modes ...)
 *   
 */
+#include <corelib/ncbistd.hpp>
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
 
 enum EFormat {
     // formatting styles
@@ -60,7 +65,7 @@ enum EStyle {
     eStyle_Contig   // just an index of segments -- no actual sequence
 };
 
-enum EFlags {
+enum EFlatFileFlags {
     fProduceHTML          = 0x1,
     fShowContigFeatures   = 0x2, // not just source features
     fShowContigSources    = 0x4, // not just focus
@@ -91,11 +96,12 @@ enum EFlags {
     fOldFeatsOrder        = 0x8000000
 };
 
-enum EFilterFlags {
-    // determines which Bioseqs in an entry to skip
-    fSkipNone        = 0x0,
-    fSkipNucleotides = 0x1,
-    fSkipProteins    = 0x2
+
+enum EView {
+    // determines which Bioseqs in an entry to view
+    fViewNucleotides  = 0x1,
+    fViewProteins     = 0x2,
+    fViewAll          = (fViewNucleotides | fViewNucleotides)
 };
 
 
@@ -103,15 +109,20 @@ enum EFilterFlags {
 typedef EFormat         TFormat;
 typedef EMode           TMode;
 typedef EStyle          TStyle;
-typedef unsigned int    TFlags;       // binary OR of "EFlags"
-typedef EFilterFlags    TFilter;
+typedef unsigned int    TFlatFileFlags; // binary OR of "EFlatFileFlags"
+typedef EView           TView;
 
 
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/31 17:12:58  shomrat
+* Added missing scope; name changes to prevent conflicts
+*
 * Revision 1.5  2004/03/25 20:30:17  shomrat
 * new flag fOldFeatsOrder
 *
