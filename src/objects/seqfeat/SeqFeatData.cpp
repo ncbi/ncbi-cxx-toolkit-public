@@ -482,6 +482,7 @@ START_SUBTYPE(preprotein)
 END_SUBTYPE
 
 START_SUBTYPE(mat_peptide_aa)
+    ADD_QUAL(EC_number);
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
@@ -1894,6 +1895,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.15  2004/08/19 18:00:13  shomrat
+* Add EC_number as legal qual for mat_peptide_aa
+*
 * Revision 6.14  2004/08/19 14:56:28  shomrat
 * Added qualifiers old_locus_tag and compare
 *
