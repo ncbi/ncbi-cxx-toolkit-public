@@ -277,8 +277,7 @@ CDbBlast::x_ResetQueryDs()
     m_iclsQueryInfo.Reset(NULL);
     m_ipScoreBlock = BlastScoreBlkFree(m_ipScoreBlock);
     m_ipLookupTable = LookupTableWrapFree(m_ipLookupTable);
-    m_ipLookupSegments = ListNodeFreeData(m_ipLookupSegments);
-
+    m_ipLookupSegments = BlastSeqLocFree(m_ipLookupSegments);
     m_ipFilteredRegions = BlastMaskLocFree(m_ipFilteredRegions);
 }
 
@@ -656,6 +655,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.40  2004/09/13 12:46:07  madden
+ * Replace call to ListNodeFreeData with BlastSeqLocFree
+ *
  * Revision 1.39  2004/09/07 19:56:02  dondosha
  * return statement not needed after exception is thrown
  *

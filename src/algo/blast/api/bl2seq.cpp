@@ -153,7 +153,7 @@ CBl2Seq::x_ResetQueryDs()
     mi_clsQueryInfo.Reset(NULL);
     mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
     mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);
-    mi_pLookupSegments = ListNodeFreeData(mi_pLookupSegments);
+    mi_pLookupSegments = BlastSeqLocFree(mi_pLookupSegments);
     // TODO: should clean filtered regions?
 }
 
@@ -339,6 +339,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.62  2004/09/13 12:46:07  madden
+ * Replace call to ListNodeFreeData with BlastSeqLocFree
+ *
  * Revision 1.61  2004/07/19 14:58:47  dondosha
  * Renamed multiseq_src to seqsrc_multiseq, seqdb_src to seqsrc_seqdb
  *
