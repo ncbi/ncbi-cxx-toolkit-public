@@ -1,11 +1,20 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.79 [en] (Windows NT 5.0; U) [Netscape]">
 <!--#set var="TITLE" value="NCBI DBAPI User-Layer Docs" -->
 <!--#set var="DOCROOT" value=".." -->
 <!--#include virtual="../ssi/header.shtml" -->
 <!--<B><FONT FACE="Arial" SIZE=4><P>DBAPI Interface Overview.</P></B></FONT><P>&nbsp;</P>-->
+</head>
+<body>
 
-<h1>NCBI DBAPI User-Layer Reference</h1>
+<h1>
+NCBI DBAPI User-Layer Reference</h1>
 
-<h2>Contents</h2>
+<h2>
+Contents</h2>
 
 <ul>
 <li>
@@ -48,9 +57,7 @@
 <a href="#ref_BulkInsert">Using bulk insert</a></li>
 </ul>
 
-<hr>
-
-<a NAME="ref_ObjHierarchy"></a>
+<hr><a NAME="ref_ObjHierarchy"></a>
 <h3>
 Object hierarchy</h3>
 <img SRC="dbapi_user.gif" height=464 width=681>
@@ -59,169 +66,183 @@ Object hierarchy</h3>
 <h3>
 Includes</h3>
 For most purposes it is sufficient to include one file in the user source
-file: <span class="ncbi_file">dbapi.hpp</span>.
-<blockquote><pre class="ncbi_code">#include &lt;dbapi/dbapi.hpp></pre></blockquote>
+file:&nbsp;<span class="ncbi_file">dbapi.hpp</span>.
+<blockquote>
+<pre class="ncbi_code">#include &lt;dbapi/dbapi.hpp></pre>
+</blockquote>
 For static linkage the following include file is also necessary:
-<blockquote><pre class="ncbi_code">#include &lt;dbapi/driver/drivers.hpp></pre></blockquote>
+<blockquote>
+<pre class="ncbi_code">#include &lt;dbapi/driver/drivers.hpp></pre>
+</blockquote>
 <a NAME="ref_Objects"></a>
-
-<h3>Objects</h3>
+<h3>
+Objects</h3>
 All objects are returned by pointers to their respective interfaces. The
 null (0) value is valid, meaning that no object was returned.
 <br><a NAME="ref_ObjLifeCycle"></a>
-
-<h3>Object Life Cycle</h3>
+<h3>
+Object Life Cycle</h3>
 In general, any child object is valid only in the scope of its parent object.
 This is because most of the objects share the same internal structures.
 There is no need to delete every object explicitly, as all created objects
 will be deleted upon program exit. Specifically, all objects are derived
-from the static CDriverManager object, and will be destroyed when CDriverManager
-is destroyed. Thus it is recommended to reuse the objects such as <a href="../docxx/IStatement.html" class="ncbi_class">IStatement</a>, <a href="../docxx/ICallableStatement.html" class="ncbi_class">ICallableStatement</a> or
-delete them explicitly, if otherwise is not possible.
+from the static CDriverManager object, and will be destroyed when CDriverManager&nbsp;
+is destroyed. It is possible to delete any object from the framework and
+it is deleted along with all derived objects. For example, when a <tt><a href="../docxx/IConnection.html">IConnection</a></tt>
+object is deleted, all derived&nbsp; <tt><a href="../docxx/IStatement.html">IStatement,</a><a href="../docxx/ICallableStatement.html">ICallableStatement</a></tt>&nbsp;
+and <tt><a href="../docxx/IResultSet.html">IResultSet</a></tt> objects
+will be deleted too.
+<br>For each object a <tt>Close()</tt> method is provided. It disposes
+of internal resources, required for the proper library cleanup, but leaves
+the framework intact. After calling <tt>Close()</tt> the object becomes
+invalid. This method may be necessary when the database cleanup and framework
+cleanup are performed in different places in the code.
 <br><a NAME="ref_CVariant"></a>
-
-<h3>CVariant type</h3>
-The <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a> type is used
-to represent any database data type (except BLOBs). It is an object, not
-a pointer, so it behaves like a primitive C++ type. Basic comparison operators
-are supported <font face="Courier New">(==, !=, &lt; </font>) for identical
-internal types. If types are not identical, <a href="../docxx/CVariantException.html" class="ncbi_class">CVariantException</a>
-is thrown. <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a> has a
-set of getters to extract a value of a particular type, e.g. <span class="ncbi_func">GetInt4(),
-GetByte(), GetString()</span>, etc. If <span class="ncbi_func">GetString()</span> is called for
-a different type, like <span class="ncbi_type">DateTime</span> or <span class="ncbi_type">integer</span> it tries to
-convert it to a string. It it doesn't succeed, <a href="../docxx/CVariantException.html"class="ncbi_class" >CVariantException</a>
+<h3>
+CVariant type</h3>
+The <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a> type
+is used to represent any database data type (except BLOBs). It is an object,
+not a pointer, so it behaves like a primitive C++ type. Basic comparison
+operators are supported <font face="Courier New">(==, !=, &lt; </font>)
+for identical internal types. If types are not identical, <a href="../docxx/CVariantException.html" class="ncbi_class">CVariantException</a>
+is thrown. <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a>
+has a set of getters to extract a value of a particular type, e.g.&nbsp;<span class="ncbi_func">GetInt4(),
+GetByte(), GetString()</span>, etc. If&nbsp;<span class="ncbi_func">GetString()</span>
+is called for a different type, like&nbsp;<span class="ncbi_type">DateTime</span>
+or&nbsp;<span class="ncbi_type">integer</span> it tries to convert it to
+a string. It it doesn't succeed, <a href="../docxx/CVariantException.html" class="ncbi_class">CVariantException</a>
 is thrown.
 <br>There is a set of factory methods (static functions) for creating <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a>
-objects of a particular type, such as <span class="ncbi_func">CVariant::BigInt()</span>,
-<span class="ncbi_func">CVariant::SmallDateTime()</span>, <span class="ncbi_func">CVariant::VarBinary()</span>
+objects of a particular type, such as&nbsp;<span class="ncbi_func">CVariant::BigInt()</span>,<span class="ncbi_func">CVariant::SmallDateTime()</span>,&nbsp;<span class="ncbi_func">CVariant::VarBinary()</span>
 etc. For more details please see the comments in <a href="lxr/source/include/dbapi/variant.hpp">variant.hpp</a>
 file.
 <br><a NAME="ref_ChooseDriver"></a>
 <h3>
 Choosing the driver</h3>
 There are several drivers for working with different SQL servers on different
-platforms. The ones presently implemented are "<span class="ncbi_lib">ctlib</span>" (Sybase),
-"<span class="ncbi_lib">dblib</span>"(MS SQL, Sybase), "<span class="ncbi_lib">ftds</span>" (MS SQLcross platform). For
-static linkage these drivers should be registered manually; for dynamic
-linkage this is not necessary. The <a href="../docxx/CDriverManager.html" class="ncbi_class">CDriverManager</a>
+platforms. The ones presently implemented are "<span class="ncbi_lib">ctlib</span>"
+(Sybase), "<span class="ncbi_lib">dblib</span>"(MS SQL, Sybase), "<span class="ncbi_lib">ftds</span>"
+(MS SQLcross platform). For static linkage these drivers should be registered
+manually; for dynamic linkage this is not necessary. The <a href="../docxx/CDriverManager.html" class="ncbi_class">CDriverManager</a>
 object maintains all registered drivers.
 <blockquote>
-<pre class="ncbi_code">
-CDriverManager &amp;dm = CDriverManager::GetInstance();
+<pre class="ncbi_code">CDriverManager &amp;dm = CDriverManager::GetInstance();
 DBAPI_RegisterDriver_CTLIB(dm);
-DBAPI_RegisterDriver_DBLIB(dm);
-</pre>
+DBAPI_RegisterDriver_DBLIB(dm);</pre>
 </blockquote>
-
 <a NAME="ref_SrcCnxns"></a>
 <h3>
 Data Source and Connections</h3>
-The <a href="../docxx/IDataSource.html" class="ncbi_class">IDataSource</a> interface
-defines the database platform. To create an object implementing this interface,
-use the method <span class="ncbi_func">CreateDs(const string&amp; driver)</span>. An <a href="../docxx/IDataSource.html" class="ncbi_class">IDataSource</a>
+The <a href="../docxx/IDataSource.html" class="ncbi_class">IDataSource</a>
+interface defines the database platform. To create an object implementing
+this interface, use the method&nbsp;<span class="ncbi_func">CreateDs(const
+string&amp; driver)</span>. An <a href="../docxx/IDataSource.html" class="ncbi_class">IDataSource</a>
 can create objects represented by an <a href="../docxx/IConnection.html" class="ncbi_class">IConnection</a>
 interface, which is responsible for the connection to the database. It
-is highly recommended to specify the database name as an argument to the
-<span class="ncbi_func">CreateConnction()</span>
-method, or use the <span class="ncbi_func">SetDatabase()</span> method of a <a href="../docxx/CConnection.html"class="ncbi_class" >CConneciton</a>
+is highly recommended to specify the database name as an argument to the<span class="ncbi_func">CreateConnction()</span>
+method, or use the&nbsp;<span class="ncbi_func">SetDatabase()</span> method
+of a <a href="../docxx/CConnection.html" class="ncbi_class">CConneciton</a>
 object instead of using a reqular SQL statement. In the later case, the
 library won't be able to track the current database.
 <blockquote>
-<pre class="ncbi_code">
-IDataSource *ds = dm.CreateDs("ctlib");
+<pre class="ncbi_code">IDataSource *ds = dm.CreateDs("ctlib");
 IConnection *conn = ds->CreateConnection();
 conn->Connect("user", "password", "server", "database");
-IStatement *stmt = conn->CreateStatement();
-</pre>
+IStatement *stmt = conn->CreateStatement();</pre>
 </blockquote>
-
-Every additional call to <span class="ncbi_func"><a href="../docxx/IConnection.html">IConnection</a>::CreateStatement()</span>
+Every additional call to&nbsp;<span class="ncbi_func"><a href="../docxx/IConnection.html">IConnection</a>::CreateStatement()</span>
 results in cloning the connection for each statement. These connections
-inherit the same default database, which was specified in the <span class="ncbi_func">Connect()</span>
-or <span class="ncbi_func">SetDatabase()</span> method. Thus if the default database was changed
-by calling <span class="ncbi_func">SetDatabase()</span>, all subsequent cloned connections created
-by <span class="ncbi_func">CreateStatement()</span> will inherit this particular default database.
+inherit the same default database, which was specified in the&nbsp;<span class="ncbi_func">Connect()</span>
+or&nbsp;<span class="ncbi_func">SetDatabase()</span> method. Thus if the
+default database was changed by calling&nbsp;<span class="ncbi_func">SetDatabase()</span>,
+all subsequent cloned connections created by&nbsp;<span class="ncbi_func">CreateStatement()</span>
+will inherit this particular default database.
 <br><a NAME="ref_MainLoop"></a>
 <h3>
 Main loop</h3>
 The library simulates the main result-retrieving loop of the Sybase client
-library by using the <span class="ncbi_func"><a href="../docxx/IStatement.html">IStatement</a>::HasMoreResults()</span>
+library by using the&nbsp;<span class="ncbi_func"><a href="../docxx/IStatement.html">IStatement</a>::HasMoreResults()</span>
 method:
 <blockquote>
-<pre class="ncbi_code">
-stmt->Execute("select à");
+<pre class="ncbi_code">stmt->Execute("select &agrave;");
 while( stmt->HasMoreResults() ) {
-    if( stmt->HasRows() ) {
-        IResultSet *rs = stmt->GetResultset();
+&nbsp;&nbsp;&nbsp; if( stmt->HasRows() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IResultSet *rs = stmt->GetResultset();
 
-        // Retrieve results, if any
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Retrieve results, if any
 
-        while( rs->Next() ) {
-            int col1 = rs->GetVariant(1).GetInt4();
-            ...
-        }
-    }
-}
-</pre>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while( rs->Next() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int col1 = rs->GetVariant(1).GetInt4();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; }
+}</pre>
 </blockquote>
-
 This method should be called until it returns false, which means that no
 more results is available. It returns as soon as a result is ready. The
-type of the result can be obtained by calling the <span class="ncbi_func"><a href="../docxx/IResultSet.html">IResultSet</a>::GetResultType()</span>
-method. Supported result types are <span class="ncbi_var">eDB_RowResult, eDB_ParamResult,
-eDB_ComputeResult, eDB_StatusResult, eDB_CursorResult</span>. The method
-<span class="ncbi_func"><a href="../docxx/IStatement.html">IStatement</a>::GetRowCount()</span>
+type of the result can be obtained by calling the&nbsp;<span class="ncbi_func"><a href="../docxx/IResultSet.html">IResultSet</a>::GetResultType()</span>
+method. Supported result types are&nbsp;<span class="ncbi_var">eDB_RowResult,
+eDB_ParamResult, eDB_ComputeResult, eDB_StatusResult, eDB_CursorResult</span>.
+The method<span class="ncbi_func"><a href="../docxx/IStatement.html">IStatement</a>::GetRowCount()</span>
 returns the number of updated or deleted rows.
-<p>The <span class="ncbi_func"><a href="../docxx/IStatement.html">IStatement</a>::ExecuteUpdate()</span>
+<p>The&nbsp;<span class="ncbi_func"><a href="../docxx/IStatement.html">IStatement</a>::ExecuteUpdate()</span>
 method is used for SQL statements that do not return rows:
 <blockquote>
-<pre class="ncbi_code">
-stmt->ExecuteUpdate("update...");
-int rows = stmt->GetRowCount();
-</pre>
+<pre class="ncbi_code">stmt->ExecuteUpdate("update...");
+int rows = stmt->GetRowCount();</pre>
 </blockquote>
-
-The method <span class="ncbi_func"><a href="../docxx/IStatement.html">IStatement</a>::GetResultSet()</span>
-returns an <a href="../docxx/IResultSet.html"class="ncbi_class">IResultSet</a> object.
-The method <span class="ncbi_func"><a href="../docxx/IResultSet.html">IResultSet</a>::Next()</span>
+The method&nbsp;<span class="ncbi_func"><a href="../docxx/IStatement.html">IStatement</a>::GetResultSet()</span>
+returns an <a href="../docxx/IResultSet.html" class="ncbi_class">IResultSet</a>
+object. The method&nbsp;<span class="ncbi_func"><a href="../docxx/IResultSet.html">IResultSet</a>::Next()</span>
 actually does fetch, so it should be always called first. It returns false
 when no more fetch data is available. All column data, except Image and
 Text is represented by a single <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a>
-object. The method <span class="ncbi_func"><a href="../docxx/IResultSet.html">IResultSet</a>::GetVariant()</span>
-takes one parameter û column number. Column numbers start with 1.
+object. The method&nbsp;<span class="ncbi_func"><a href="../docxx/IResultSet.html">IResultSet</a>::GetVariant()</span>
+takes one parameter &ucirc; column number. Column numbers start with 1.
 <br>&nbsp;
 <p><a NAME="ref_IOParams"></a>
 <h3>
 Input and Output Parameters</h3>
-The method <span class="ncbi_func"><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::SetParam(const CVariant&amp; v, const string&amp; name)</span> is used to pass parameters
+The method&nbsp;<span class="ncbi_func"><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::SetParam(const
+CVariant&amp; v, const string&amp; name)</span> is used to pass parameters
 to stored procedures and dynamic SQL statements. To ensure the correct
-parameter type it is recommended to use <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a>
-type factories (static methods) to create a <a href="../docxx/CVariant.html"class="ncbi_class">CVariant</a>
-of the required internal type. Here are a few examples: <span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::Int4(Int4 *p)</span>, <span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::TinyInt(UInt1 *p)</span>,
-<span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::VarChar(const char *p, size_t
-len )</span> etc.
-<p>There are also corresponding constructors, like <span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::CVariant(Int4 v)</span>, <span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::CVariant(const string&amp;
-s), ...</span>, but the user must ensure the proper type conversion in the
-arguments, and not all internal types can be created using constructors.
-<br>Output parameters are set by the <span class="ncbi_func"><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::SetOutputParam(const CVariant&amp; v, const string&amp; name)</span> method, where the first argument
-is a null <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a> of a particular
-type, e.g. <span class="ncbi_ccode">SetOutputParam(CVariant(eDB_SmallInt),"@arg")</span>.
-<br>
-
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; dbapi_user.html parameter type it is recommended
+to use <tt><a href="../docxx/CVariant.html">CVariant</a></tt> type factories
+(static methods) to create a <tt><a href="../docxx/CVariant.html">CVariant</a></tt>
+of the required internal type. Here are a few examples: <tt><a href="../docxx/CVariant.html">CVariant</a>::Int4(Int4
+*p), <a href="../docxx/CVariant.html">CVariant</a>::TinyInt(UInt1 *p),</tt>
+<br><tt><a href="../docxx/CVariant.html">CVariant</a>::VarChar(const char
+*p, size_t len )</tt> etc.
+<p>There are also corresponding constructors, like <tt><a href="../docxx/CVariant.html">CVariant</a>::CVariant(Int4
+v), <a href="../docxx/CVariant.html">CVariant</a>::CVariant(const string&amp;
+s), ...</tt>, but the user must ensure the proper type conversion in the
+======= parameter type it is recommended to use <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a>
+type factories (static methods) to create a <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a>
+of the required internal type. Here are a few examples:&nbsp;<span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::Int4(Int4
+*p)</span>,&nbsp;<span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::TinyInt(UInt1
+*p)</span>,<span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::VarChar(const
+char *p, size_t len )</span> etc.
+<p>There are also corresponding constructors, like&nbsp;<span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::CVariant(Int4
+v)</span>,&nbsp;<span class="ncbi_func"><a href="../docxx/CVariant.html">CVariant</a>::CVariant(const
+string&amp; s), ...</span>, but the user must ensure the proper type conversion
+in the >>>>>>> 1.11 arguments, and not all internal types can be created
+using constructors.
+<br>Output parameters are set by the&nbsp;<span class="ncbi_func"><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::SetOutputParam(const
+CVariant&amp; v, const string&amp; name)</span> method, where the first
+argument is a null <a href="../docxx/CVariant.html" class="ncbi_class">CVariant</a>
+of a particular type, e.g.&nbsp;<span class="ncbi_ccode">SetOutputParam(CVariant(eDB_SmallInt),"@arg")</span>.
 <p><a NAME="ref_StoredProcs"></a>
 <h3>
 Stored Procedures</h3>
-The <a href="../docxx/ICallableStatement.html"class="ncbi_class" >ICallableStatement</a>
+The <a href="../docxx/ICallableStatement.html" class="ncbi_class">ICallableStatement</a>
 object is used for calling stored procedures. Fist get the object itself
-by calling <span class="ncbi_func"><a href="../docxx/IConnection.html">IConnection</a>::PrepareCall()</span>.
-Then set any parameters. If the parameter name is empty, the calls to <span class="ncbi_func">SetParam()</span>
+by calling&nbsp;<span class="ncbi_func"><a href="../docxx/IConnection.html">IConnection</a>::PrepareCall()</span>.
+Then set any parameters. If the parameter name is empty, the calls to&nbsp;<span class="ncbi_func">SetParam()</span>
 should be in the exact order of the actual parameters. Retrieve all results
-in the main loop. Get the status of the stored procedure using the <span class="ncbi_func"><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::GetReturnStatus()</span>
+in the main loop. Get the status of the stored procedure using the&nbsp;<span class="ncbi_func"><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::GetReturnStatus()</span>
 method.
 <blockquote>
-<pre class="ncbi_code">
-ICallableStatement *cstmt = conn->PrepareCall("ProcName");
+<pre class="ncbi_code">ICallableStatement *cstmt = conn->PrepareCall("ProcName");
 Uint1 byte = 1;
 cstmt->SetParam(CVariant("test"), "@test_input");
 cstmt->SetParam(CVariant::TinyInt(&amp;byte), "@byte");
@@ -230,161 +251,156 @@ cstmt->SetOutputParam(CVariant(eDB_Int), "@result");
 cstmt->Execute();
 
 while(cstmt->HasMoreResults()) {
-    if( cstmt->HasRows() ) {
-        IResultSet *rs = cstmt->GetResultSet();
-        switch( rs->GetResultType() ) {
-            case eDB_RowResult:
-                  while(rs->Next()) {
+&nbsp;&nbsp;&nbsp; if( cstmt->HasRows() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IResultSet *rs = cstmt->GetResultSet();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; switch( rs->GetResultType() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case eDB_RowResult:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(rs->Next()) {
 
-                  // retrieve row results
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // retrieve row results
 
-                  }
-                  break;
-            case eDB_ParamResult:
-                  while(rs->Next()) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; case eDB_ParamResult:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while(rs->Next()) {
 
-                  // Retrieve parameter row
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Retrieve parameter row
 
-                  }
-                  break;
-        }
-    }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp; }
 }
 
 // Get status
-int status = cstmt->GetReturnStatus();
-</pre>
+int status = cstmt->GetReturnStatus();</pre>
 </blockquote>
-
-It is also possible to use <span class="ncbi_class">IStatement</span> interface to call stored
-procedures using standard SQL language call. The difference from <span class="ncbi_class">ICallableStatement</span>
-is that there is no <span class="ncbi_func">SetOutputParam()</span> call. The output parameter
-is passed as regular <span class="ncbi_func">SetParam()</span> call with the <em>non null</em>
-<span class="ncbi_class">CVariant</span> argument. There is no <span class="ncbi_func">GetReturnStatus()</span> call
-in <span class="ncbi_class">IStatement</span>, so use the result type filter to get it.
-
+It is also possible to use&nbsp;<span class="ncbi_class"><tt><a href="../docxx/IStatement.html">IStatement</span></a></tt>
+interface to call stored procedures using standard SQL language call. The
+difference from&nbsp;<span class="ncbi_class"><tt><a href="../docxx/ICallableStatement.html">ICallableStatement</span></a></tt>
+is that there is no&nbsp;<span class="ncbi_func"><tt>SetOutputParam()</span></tt>
+call. The output parameter is passed as regular&nbsp;<span class="ncbi_func"><tt>SetParam()</span></tt>
+call with <i>non null<span class="ncbi_class"></i><tt><a href="../docxx/CVariant.html">CVariant</span></a></tt>
+argument. There is no&nbsp;<span class="ncbi_func"><tt>GetReturnStatus()</span></tt>
+call in&nbsp;<span class="ncbi_class"><tt><a href="../docxx/IStatement.html">IStatement</span></a></tt>,
+so use the result type filter to get it.
 <blockquote>
-<pre class="ncbi_code">
-sql = "exec SampleProc @id, @f, @o output";
+<pre class="ncbi_code">sql = "exec SampleProc @id, @f, @o output";
 stmt->SetParam(CVariant(5), "@id");
 stmt->SetParam(CVariant::Float(&amp;f), "@f");
 stmt->SetParam(CVariant(5), "@o");
 stmt->Execute(sql);
- 
+&nbsp;
 while(stmt->HasMoreResults()) {
-    IResultSet *rs = stmt->GetResultSet();
-           
-    if( rs == 0 )
-        continue;
-           
-    switch( rs->GetResultType() ) {
-    case eDB_ParamResult:
-        while( rs->Next() ) {
-            NcbiCout &lt;&lt; "Output param: "
-                     &lt;&lt; rs->GetVariant(1).GetInt4()
-                     &lt;&lt; endl;
-            }
-            break;
-    case eDB_StatusResult:
-        while( rs->Next() ) {
-            NcbiCout &lt;&lt; "Return status: "
-            &lt;&lt; rs->GetVariant(1).GetInt4()
-            &lt;&lt; endl;
-        }
-        break;
-    case eDB_RowResult:
-        while( rs->Next() ) {
-            if( rs->GetVariant(1).GetInt4() == 2121 ) {
-                NcbiCout &lt;&lt; rs->GetVariant(2).GetString() &lt;&lt; "|"
-                         &lt;&lt; rs->GetVariant(3).GetString() &lt;&lt; "|"
-                         &lt;&lt; rs->GetVariant(4).GetString() &lt;&lt; "|"
-                         &lt;&lt; rs->GetVariant(5).GetString() &lt;&lt; "|"
-                         &lt;&lt; rs->GetVariant(6).GetString() &lt;&lt; "|"
-                         &lt;&lt; rs->GetVariant(7).GetString() &lt;&lt; "|"
-                         &lt;&lt; endl;
-             } else {
-                NcbiCout &lt;&lt; rs->GetVariant(1).GetInt4() &lt;&lt; "|"
-                         &lt;&lt; rs->GetVariant(2).GetFloat() &lt;&lt; "|"
-                         &lt;&lt; rs->GetVariant("date_val").GetString() &lt;&lt; "|"
-                         &lt;&lt; endl;
-             }
-        }
-        break;
-    }
+&nbsp;&nbsp;&nbsp; IResultSet *rs = stmt->GetResultSet();
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; if( rs == 0 )
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; continue;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; switch( rs->GetResultType() ) {
+&nbsp;&nbsp;&nbsp; case eDB_ParamResult:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while( rs->Next() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NcbiCout &lt;&lt; "Output param: "
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; rs->GetVariant(1).GetInt4()
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; endl;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+&nbsp;&nbsp;&nbsp; case eDB_StatusResult:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while( rs->Next() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NcbiCout &lt;&lt; "Return status: "
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; rs->GetVariant(1).GetInt4()
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; endl;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+&nbsp;&nbsp;&nbsp; case eDB_RowResult:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while( rs->Next() ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if( rs->GetVariant(1).GetInt4() == 2121 ) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NcbiCout &lt;&lt; rs->GetVariant(2).GetString() &lt;&lt; "|"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; rs->GetVariant(3).GetString() &lt;&lt; "|"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; rs->GetVariant(4).GetString() &lt;&lt; "|"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; rs->GetVariant(5).GetString() &lt;&lt; "|"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; rs->GetVariant(6).GetString() &lt;&lt; "|"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; rs->GetVariant(7).GetString() &lt;&lt; "|"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; endl;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; } else {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NcbiCout &lt;&lt; rs->GetVariant(1).GetInt4() &lt;&lt; "|"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; rs->GetVariant(2).GetFloat() &lt;&lt; "|"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; rs->GetVariant("date_val").GetString() &lt;&lt; "|"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; endl;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; break;
+&nbsp;&nbsp;&nbsp; }
 }
 
-stmt->ClearParamList();
-</pre>
+stmt->ClearParamList();</pre>
 </blockquote>
-
 <a NAME="ref_Cursors"></a>
-
-
-<h3>Cursors</h3>
+<br>&nbsp;
+<h3>
+Cursors</h3>
 The library currently supports basic cursor features such as setting parameters
 and cursor update and delete operations.
 <blockquote>
-<pre class="ncbi_code">
-ICursor *cur = conn->CreateCursor("table_cur",
-                                  "select ... for update of ...");
+<pre class="ncbi_code">ICursor *cur = conn->CreateCursor("table_cur",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "select ... for update of ...");
 IResultSet *rs = cur->Open();
 while(rs->Next()) {
-    cur->Update(table, sql_statement_for_update);
+&nbsp;&nbsp;&nbsp; cur->Update(table, sql_statement_for_update);
 }
-cur->Close();
-</pre>
+cur->Close();</pre>
 </blockquote>
 <a NAME="ref_Blobs"></a>
-
-<h3>Updating BLOBs using cursors</h3>
+<h3>
+Updating BLOBs using cursors</h3>
 It is recommended to update BLOBs using cursors, because this is the only
 way to work with ODBC driver and no additional connection is open.
 <blockquote>
-<pre class="ncbi_code">
-ICursor *blobCur = conn->CreateCursor("test", "select id, blob from BlobSample for update of blob");
+<pre class="ncbi_code">ICursor *blobCur = conn->CreateCursor("test", "select id, blob from BlobSample for update of blob");
 
 IResultSet *blobRs = blobCur->Open();
 while(blobRs->Next()) {
-    ostream&amp; out = blobCur->GetBlobOStream(2, blob.size());
-    out.write(buf, blob.size());
-    out.flush();
-}
-</pre>
+&nbsp;&nbsp;&nbsp; ostream&amp; out = blobCur->GetBlobOStream(2, blob.size());
+&nbsp;&nbsp;&nbsp; out.write(buf, blob.size());
+&nbsp;&nbsp;&nbsp; out.flush();
+}</pre>
 </blockquote>
-
-<p>Note that GetBlobOStream() takes the column number as the first argument
-and this call is invalid untill the cursor is open.
-<a NAME="ref_BulkInsert"></a>
-
-<h3>Using bulk insert</h3>
+Note that <tt>GetBlobOStream()</tt> takes the column number as the first
+argument and this call is invalid untill the cursor is open.
+<br><a NAME="ref_BulkInsert"></a>
+<h3>
+Using bulk insert</h3>
 Bulk insert is useful when it is necessary to insert big amounts of data.
-The <span class="ncbi_func">IConnection::CreateBulkInsert()</span> takes two parameters, the
-table name and number of columns. The <span class="ncbi_func">CVariant::Truncate(size_t len)</span>
-method truncates the internal buffer of CDB_Text and CDB_Image object from
-the right. If no paramter specified, it erases the whole buffer.
-
-<blockquote>
-<pre class="ncbi_code">
-NcbiCout &lt;&lt; "Initializing BlobSample table..." &lt;&lt; endl;
-string im = ......;
-IBulkInsert *bi = conn->CreateBulkInsert("BlobSample", 2);
-CVariant col1 = CVariant(eDB_Int);
-CVariant col2 = CVariant(eDB_Text);
-bi->Bind(1, &amp;col1);
-bi->Bind(2, &amp;col2);
-for(int i = 0; i &lt; ROWCOUNT; ++i ) {
-    string im = "BLOB data " + NStr::IntToString(i);
-    col1 = i;
-    col2.Truncate();
-    col2.Append(im.c_str(), im.size());
-    bi->AddRow();
-}
-bi->Complete();
-</pre>
-</blockquote>
-
-<br>
-<!--#include virtual="../ssi/navlinks.shtml" --><!-- Begin footer content -->
+The&nbsp;<span class="ncbi_func">IConnection::CreateBulkInsert()</span>
+takes two parameters, the table name and number of columns. The&nbsp;<span class="ncbi_func">CVariant::Truncate(size_t
+len)</span> method truncates the internal buffer of CDB_Text and CDB_Image
+object from the end of the buffer. If no paramter specified, it erases
+the whole buffer.
+<p><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NcbiCout &lt;&lt; "Initializing
+BlobSample table..." &lt;&lt; endl;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string im = ......;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IBulkInsert *bi = conn->CreateBulkInsert("BlobSample",
+2);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CVariant col1 = CVariant(eDB_Int);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CVariant col2 = CVariant(eDB_Text);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bi->Bind(1, &amp;col1);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bi->Bind(2, &amp;col2);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for(int i = 0; i &lt;
+ROWCOUNT; ++i ) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+string im = "BLOB data " + NStr::IntToString(i);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+col1 = i;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+col2.Truncate();</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+col2.Append(im.c_str(), im.size());</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+bi->AddRow();</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; bi->Complete();</tt>
+<br><tt></tt>&nbsp;<tt></tt>
+<p><!--#include virtual="../ssi/navlinks.shtml" --><!-- Begin footer content -->
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <tr>
 <td ALIGN=LEFT>
@@ -394,7 +410,10 @@ bi->Complete();
 
 <td><!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> --></td>
 
-<td ALIGN=RIGHT><span class="ncbi_cvs_date">$Date$</span></td>
+<td ALIGN=RIGHT><span class="ncbi_cvs_date">$Date: 2002/12/04 21:35:02
+$</span></td>
 </tr>
 </table>
 <!--#include virtual="../ssi/footer.shtml" -->
+</body>
+</html>
