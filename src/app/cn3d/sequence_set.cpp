@@ -425,12 +425,11 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
         oss << identifier->pdbID.c_str();
         if (identifier->pdbChain != ' ')
             oss << (char) identifier->pdbChain;
-        oss << "%5BACCN%5D";
     } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-        oss << identifier->gi << "%5BUID%5D";
+        oss << identifier->gi;
     } else if (identifier->accession.size() > 0) {
         if (identifier->accession == "query" || identifier->accession == "consensus") return;
-        oss << identifier->accession.c_str() << "%5BACCN%5D";
+        oss << identifier->accession.c_str();
     }
     oss << '\0';
     LaunchWebPage(oss.str());
@@ -615,6 +614,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2003/11/20 22:08:49  thiessen
+* update Entrez url
+*
 * Revision 1.60  2003/09/03 18:14:01  thiessen
 * hopefully fix Seq-id issues
 *

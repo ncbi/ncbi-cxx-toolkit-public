@@ -307,15 +307,14 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
                     uids[row] = sequence->identifier->pdbID;
                     if (sequence->identifier->pdbChain != ' ')
                         uids[row] += (char) sequence->identifier->pdbChain;
-                    uids[row] += "%5BACCN%5D";
                 }
             } else if (sequence->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
                 CNcbiOstrstream uidoss;
-                uidoss << sequence->identifier->gi << "%5BUID%5D" << '\0';
+                uidoss << sequence->identifier->gi << '\0';
                 uids[row] = uidoss.str();
                 delete uidoss.str();
             } else if (sequence->identifier->accession.size() > 0) {
-                uids[row] = sequence->identifier->accession + "%5BACCN%5D";
+                uids[row] = sequence->identifier->accession;
             }
         }
     }
@@ -536,6 +535,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/11/20 22:08:50  thiessen
+* update Entrez url
+*
 * Revision 1.62  2003/10/13 14:16:31  thiessen
 * add -n option to not show alignment window
 *
