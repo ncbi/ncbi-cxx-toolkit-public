@@ -448,13 +448,13 @@ string NStr::DoubleToString(double value)
 
 // A maximal double precision used in the double to string conversion
 #if defined(NCBI_OS_MSWIN)
-const SIZE_TYPE kMaxDoublePrecision = 200;
+const unsigned int kMaxDoublePrecision = 200;
 #else
-const SIZE_TYPE kMaxDoublePrecision = 308;
+const unsigned int kMaxDoublePrecision = 308;
 #endif
 // A maximal size of a double value in a string form.
 // Exponent size + sign + dot + ending '\0' + max.precision
-const SIZE_TYPE kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
+const unsigned int kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
 
 
 string NStr::DoubleToString(double value, unsigned int precision)
@@ -471,12 +471,11 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
                                char* buf, SIZE_TYPE buf_size)
 {
     char buffer[kMaxDoubleStringSize];
-    if ( precision > kMaxDoublePrecision ) {
+    if (precision > kMaxDoublePrecision) {
         precision = kMaxDoublePrecision;
     }
-    int x_precision = precision;
-    SIZE_TYPE n = ::sprintf(buffer, "%.*f", x_precision, value);
-    SIZE_TYPE n_copy = min(n, buf_size);
+    int n = ::sprintf(buffer, "%.*f", (int) precision, value);
+    SIZE_TYPE n_copy = min((SIZE_TYPE) n, buf_size);
     memcpy(buf, buffer, n_copy);
     return n_copy;
 }
@@ -944,6 +943,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2003/02/21 21:20:01  vakatov
+ * Fixed some types, did some casts to avoid compilation warnings in 64-bit
+ *
  * Revision 1.74  2003/02/20 18:41:28  dicuccio
  * Added NStr::StringToPtr()
  *
