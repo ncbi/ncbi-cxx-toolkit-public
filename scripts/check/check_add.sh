@@ -46,7 +46,7 @@ if test ! -f "$x_srcdir/Makefile.$x_test.app";  then
 fi
 
 # Get app name
-x_app=`grep '^ *APP' "$x_srcdir/Makefile.$x_test.app"`
+x_app=`grep '^ *APP[ =]' "$x_srcdir/Makefile.$x_test.app"`
 x_app=`echo "$x_app" | sed -e 's/^.*=//' -e 's/^ *//'`
 
 x_tpath=`echo "$x_srcdir/$x_test" | sed 's%^.*/src/%%'`
@@ -94,6 +94,7 @@ fi
 # Write data about current test into the list file
 for x_cmd in $x_run; do
     x_cmd=`echo "$x_cmd" | sed -e 's/%gj_s4%/ /g' | sed -e 's/^ *//' | sed -e 's/\"/\\\\"/g'`
+
     echo "$x_srcdir_rel$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_files$x_delim$x_timeout$x_delim$x_requires" >> $x_out
 done
 
