@@ -49,7 +49,7 @@ class CID2S_Split_Info;
 class CID2S_Chunk;
 class CID2S_Chunk_Id;
 
-class CSplitBlob
+class NCBI_ID2_SPLIT_EXPORT CSplitBlob
 {
 public:
     CSplitBlob(void);
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/08/04 14:48:49  vasilche
+* Added exports for MSVC. Added joining of very small chunks with skeleton.
+*
 * Revision 1.5  2004/01/22 20:10:39  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.

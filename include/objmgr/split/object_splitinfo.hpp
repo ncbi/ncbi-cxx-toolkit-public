@@ -100,9 +100,12 @@ public:
     CAnnotObject_SplitInfo(const CSeq_graph& obj, double ratio);
 
     EAnnotPriority GetPriority(void) const;
+    EAnnotPriority CalcPriority(void) const;
 
     int         m_ObjectType;
     CConstRef<CObject> m_Object;
+
+    EAnnotPriority m_Priority;
 
     CSize       m_Size;
     CSeqsRange  m_Location;
@@ -197,7 +200,8 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CSeq_annot_SplitInfo& info)
 class CSeq_descr_SplitInfo : public CObject
 {
 public:
-    CSeq_descr_SplitInfo(int gi, const CSeq_descr& descr,
+    CSeq_descr_SplitInfo(int gi, TSeqPos seq_length,
+                         const CSeq_descr& descr,
                          const SSplitterParams& params);
 
     EAnnotPriority GetPriority(void) const;
@@ -205,6 +209,8 @@ public:
     int GetGi(void) const;
 
     CConstRef<CSeq_descr> m_Descr;
+
+    EAnnotPriority m_Priority;
 
     CSize       m_Size;
     CSeqsRange  m_Location;
@@ -216,7 +222,8 @@ class CSeq_data_SplitInfo : public CObject
 public:
     typedef CRange<TSeqPos> TRange;
     void SetSeq_data(int gi, const TRange& range, TSeqPos seq_length,
-                     const CSeq_data& data, const SSplitterParams& params);
+                     const CSeq_data& data,
+                     const SSplitterParams& params);
 
     EAnnotPriority GetPriority(void) const;
 
@@ -269,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/08/04 14:48:49  vasilche
+* Added exports for MSVC. Added joining of very small chunks with skeleton.
+*
 * Revision 1.7  2004/07/12 15:05:32  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

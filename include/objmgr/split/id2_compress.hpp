@@ -45,7 +45,7 @@ BEGIN_SCOPE(objects)
 
 struct SSplitterParams;
 
-class CId2Compressor
+class NCBI_ID2_SPLIT_EXPORT CId2Compressor
 {
 public:
     static void Compress(const SSplitterParams& params,
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/08/04 14:48:49  vasilche
+* Added exports for MSVC. Added joining of very small chunks with skeleton.
+*
 * Revision 1.1  2003/12/30 16:06:14  vasilche
 * Compression methods moved to separate header: id2_compress.hpp.
 *

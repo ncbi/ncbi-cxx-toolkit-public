@@ -63,6 +63,10 @@ class CSeq_annot;
 class CSeq_feat;
 class CSeq_align;
 class CSeq_graph;
+class CSeq_data;
+class CSeq_literal;
+class CDelta_seq;
+class CDelta_ext;
 class CID2S_Split_Info;
 class CID2S_Chunk_Id;
 class CID2S_Chunk;
@@ -78,6 +82,7 @@ class CAnnotObject_SplitInfo;
 class CLocObjects_SplitInfo;
 class CSeq_annot_SplitInfo;
 class CBioseq_SplitInfo;
+class CHandleRangeMap;
 
 struct SAnnotPiece;
 struct SIdAnnotPieces;
@@ -94,6 +99,7 @@ public:
     typedef map<int, SChunkInfo> TChunks;
     typedef map<CID2S_Chunk_Id, CRef<CID2S_Chunk> > TID2Chunks;
     typedef vector< CRef<CAnnotPieces> > TPieces;
+    typedef CSeqsRange::TRange TRange;
 
     bool Split(const CSeq_entry& entry);
 
@@ -108,9 +114,11 @@ public:
     void CopySkeleton(CBioseq_set& dst, const CBioseq_set& src);
     void CopySkeleton(CBioseq& dst, const CBioseq& src);
 
-    bool CopyDescr(CBioseq_SplitInfo& bioseq_info, int gi,
+    bool CopyDescr(CBioseq_SplitInfo& bioseq_info,
+                   int gi, TSeqPos seq_length,
                    const CSeq_descr& descr);
-    bool CopySequence(CBioseq_SplitInfo& bioseq_info, int gi,
+    bool CopySequence(CBioseq_SplitInfo& bioseq_info,
+                      int gi, TSeqPos seq_length,
                       CSeq_inst& dst, const CSeq_inst& src);
     bool CopyAnnot(CBioseq_SplitInfo& bioseq_info, const CSeq_annot& annot);
 
@@ -129,12 +137,20 @@ public:
     static size_t CountAnnotObjects(const CID2S_Chunk& chunk);
     static size_t CountAnnotObjects(const TID2Chunks& chunks);
 
+    TSeqPos GetLength(const CSeq_data& src) const;
+    TSeqPos GetLength(const CDelta_seq& src) const;
+    TSeqPos GetLength(const CDelta_ext& src) const;
+    TSeqPos GetLength(const CSeq_ext& src) const;
+    TSeqPos GetLength(const CSeq_inst& src) const;
+
     TSeqPos GetGiLength(int gi) const;
-    void MakeLoc(CID2_Seq_loc& loc, const CSeqsRange& range) const;
-    void MakeLoc(CID2_Seq_loc& loc,
-                 int gi, const CSeqsRange::TRange& range) const;
+    bool IsWholeGi(int gi, const TRange& range) const;
+
+    void MakeLoc(CID2_Seq_loc& loc, const CHandleRangeMap& ranges) const;
+    void MakeLoc(CID2_Seq_loc& loc, const CSeqsRange& ranges) const;
+    void MakeLoc(CID2_Seq_loc& loc, int gi, const TRange& range) const;
     CRef<CID2_Seq_loc> MakeLoc(const CSeqsRange& range) const;
-    CRef<CID2_Seq_loc> MakeLoc(int gi, const CSeqsRange::TRange& range) const;
+    CRef<CID2_Seq_loc> MakeLoc(int gi, const TRange& range) const;
 
     typedef list< CRef<CID2_Id_Range> > TIdRanges;
     void AddIdRange(TIdRanges& info, int start, int end);
@@ -183,6 +199,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/08/04 14:48:49  vasilche
+* Added exports for MSVC. Added joining of very small chunks with skeleton.
+*
 * Revision 1.9  2004/07/12 16:55:47  vasilche
 * Fixed split info for descriptions and Seq-data to load them properly.
 *

@@ -40,7 +40,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-struct SSplitterParams
+struct NCBI_ID2_SPLIT_EXPORT SSplitterParams
 {
     SSplitterParams(void);
 
@@ -69,6 +69,7 @@ struct SSplitterParams
     bool         m_DisableSplitDescriptions;
     bool         m_DisableSplitSequence;
     bool         m_DisableSplitAnnotations;
+    bool         m_JoinSmallChunks;
 };
 
 
@@ -78,6 +79,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/08/04 14:48:49  vasilche
+* Added exports for MSVC. Added joining of very small chunks with skeleton.
+*
 * Revision 1.7  2004/06/15 14:05:49  vasilche
 * Added splitting of sequence.
 *

@@ -69,6 +69,8 @@ struct SChunkInfo
     typedef vector<CSeq_data_SplitInfo> TSeq_data;
     typedef map<int, TSeq_data> TChunkSeq_data;
 
+    void Add(const SChunkInfo& info);
+
     void Add(const CSeq_descr_SplitInfo& info);
     void Add(const CSeq_annot_SplitInfo& info);
     void Add(TAnnotObjects& objs,
@@ -93,6 +95,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/08/04 14:48:49  vasilche
+* Added exports for MSVC. Added joining of very small chunks with skeleton.
+*
 * Revision 1.5  2004/06/30 20:56:32  vasilche
 * Added splitting of Seqdesr objects (disabled yet).
 *

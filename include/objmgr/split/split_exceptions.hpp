@@ -41,7 +41,7 @@ BEGIN_SCOPE(objects)
 
 
 // root class for all object manager exceptions
-class CSplitException : public CException
+class NCBI_ID2_SPLIT_EXPORT CSplitException : public CException
 {
 public:
     enum EErrCode {

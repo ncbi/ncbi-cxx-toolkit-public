@@ -45,7 +45,7 @@ BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 
-class CBlobSplitter
+class NCBI_ID2_SPLIT_EXPORT CBlobSplitter
 {
 public:
     CBlobSplitter(const SSplitterParams& params)
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/08/04 14:48:49  vasilche
+* Added exports for MSVC. Added joining of very small chunks with skeleton.
+*
 * Revision 1.5  2004/01/07 17:36:19  vasilche
 * Moved id2_split headers to include/objmgr/split.
 * Fixed include path to genbank.
