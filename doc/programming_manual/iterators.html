@@ -73,8 +73,8 @@ public:
 
     static const CTypeInfo* GetTypeInfo(void);
 
-    string m_name, m_address;
-    CPerson *m_next_door;
+    string m_Name, m_Addr;
+    CPerson *m_NextDoor;
 };
 </pre><font color = black>
 
@@ -325,12 +325,12 @@ implement the <i>GetTypeInfo()</i> methods for the classes, and are described in
   class CA
   {
   public:
-      CA() : my_data(0) {};
-      CA(int n) : my_data(n) {};
+      CA() : m_Data(0) {};
+      CA(int n) : m_Data(n) {};
 
       static const CTypeInfo* GetTypeInfo(void);
 
-      int my_data;
+      int m_Data;
   };
 <font color=red>
   // Define a class containing an auto_ptr to the target class </font>
@@ -386,7 +386,7 @@ implement the <i>GetTypeInfo()</i> methods for the classes, and are described in
 <font color=blue>
   BEGIN_CLASS_INFO(CA)</font>
   {
-      ADD_STD_MEMBER(my_data);
+      ADD_STD_MEMBER(m_Data);
       ADD_SUB_CLASS(CC);
   }
   END_CLASS_INFO
@@ -440,18 +440,18 @@ implement the <i>GetTypeInfo()</i> methods for the classes, and are described in
       cout << "Iterating over CA objects in x" << endl << endl;
   
       for (CTypeIterator&lt;CA> i = Begin(x); i; ++i)
-          cout << (*i).my_data << endl;
+          cout << (*i).m_Data << endl;
   
       cout << "Iterating over CC objects in x" << endl << endl;
   
       for (CTypeIterator&lt;CC> i = Begin(x); i; ++i)
-          cout << (*i).my_data << endl;
+          cout << (*i).m_Data << endl;
   
       cout << "Iterating over CObjects in x" << endl << endl;
 
       for (CObjectIterator i = Begin(x); i; ++i) {
           const CD *tmp = dynamic_cast&lt;const CD*>(&*i);
-          cout << tmp->m_c->my_data << endl;
+          cout << tmp->m_c->m_Data << endl;
       }
       return 0;
   }

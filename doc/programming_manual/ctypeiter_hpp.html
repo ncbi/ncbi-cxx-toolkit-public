@@ -21,37 +21,37 @@ class CPerson
 { 
 <font color = "blue">public:</font>
     CPerson(void)
-      : m_name(0), m_addr(0), m_next_door(0)
+      : m_Name(0), m_Addr(0), m_NextDoor(0)
       {}
 
     CPerson(string n, string s, CPerson* p)
-      : m_name(n), m_addr(s), m_next_door(p)
+      : m_Name(n), m_Addr(s), m_NextDoor(p)
       {}
 
     virtual ~CPerson(void) {}
 
     static const CTypeInfo* GetTypeInfo(void);
 
-    string m_name, m_addr;
-    CPerson *m_next_door;
+    string m_Name, m_Addr;
+    CPerson *m_NextDoor;
 };
 
 class CDistrict
 { 
 <font color = "blue">public:</font>
-    CDistrict(void) : m_number(0) {}
-    CDistrict(int n) : m_number(n) {}
+    CDistrict(void) : m_Number(0) {}
+    CDistrict(int n) : m_Number(n) {}
     virtual ~CDistrict(void) {}
 
     static const CTypeInfo* GetTypeInfo(void);
 
-    int m_number;
+    int m_Number;
 
-    void AddBlock (const CPerson& p) { m_blocks.push_back(p); }
-    list&lt;CPerson>& GetBlocks() { return m_blocks; }
+    void AddBlock (const CPerson& p) { m_Blocks.push_back(p); }
+    list&lt;CPerson>& GetBlocks() { return m_Blocks; }
 
 <font color = "blue">private:</font>
-    list&lt;CPerson> m_blocks;
+    list&lt;CPerson> m_Blocks;
 };
 <font color = "green">
 #endif /* CTYPEITER_HPP */

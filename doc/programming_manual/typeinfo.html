@@ -9,7 +9,7 @@
     <h1> Class Type Information </h1>
 
   	      <ul>
-	        <li><a href="#introduction"> <i>Introduction</i></a> 
+	        <li><a href="#introduction"> Introduction</a> 
 	        <li>The <a href="#ctypeinfo"> <i>CTypeInfo</i></a> class
 	        <li>The <a href="#cobjinfo"> <i>CObjectInfo</i> and <i>CConstObjectInfo</i></a> classes
 	        <li>The <a href="#objstrs"> <i>CObject[IO]Stream</i></a> classes
@@ -21,20 +21,20 @@
 Type information about an object is necessary in three contexts:
 <ol>
 
- <li> when reading, writing, and processing serialized data, where information about an encoded
+ <li> when reading, writing, and processing serialized data, where information about an
  object's internal structure is needed;
 
- <li> when reading from a flat (non-serialized) data file, where data members' external aliases
-must be used to locate the corresponding class data members;
+ <li> when reading from a flat (non-serialized) data file, where data members' 
+<a href="#alias"> external aliases</a> must be used to locate the corresponding class data members;
 
  <li> when using a generalized <a href="iterators.html"> object type iterator</a> to traverse the data
 members of a structured object.  
 </ol>
 
 The usage of type information to process serialized data is described in the sections on <a
-href="asn.html"> Processing serial data</a> and <a href="traverse.html"> Traversing a serialized
-data structure</a>. C++ object type iterators are described in <a href="iterators.html"> The NCBI
-C++ Toolkit Iterators</a> section.<p>
+href="asn.html"> "Processing serial data"</a> and <a href="traverse.html"> "Traversing a serialized
+data structure"</a>. C++ object type iterators are described in <a href="iterators.html"> "The NCBI
+C++ Toolkit Iterators"</a> section.<p>
 
 The type information for a class is stored outside any instances of that class, in a statically
 created <i>CTypeInfo</i> object. The <i>CTypeInfo</i> object is then accessed by all instances
@@ -101,7 +101,7 @@ these categories.
 
 This is the base class for all type information storage and mechanisms. The class contains a single
 data member, <i>m_Name</i>, which stores the internal symbolic name for the object. A large number
-of member functions - many of which are pure virtual functions at this level - provide access to
+of member functions (many of which are pure virtual functions at this level),  provide access to
 information about data members, class types, subclass types, superclass types, and size of the
 object being described.  For example, <i>CTypeInfo::EndOf(object)</i> adds the value returned by
 <i>CTypeInfo::GetSize()</i>, to the address of <i>object</i>, thus providing the address where the
@@ -116,7 +116,7 @@ These subclasses contain additional data members and member functions, such as
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddMember"> <i>AddMember()</i></a> and
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddSubClass"> <i>AddSubClass()</i></a>,
 which accomodate the different features required for different data types. The <a href="#macros"> macros</a> described
-below provide interfaces to these <i>CTypeInfo</i> subclasses and their methods for adding class type information.
+below provide user-friendly interfaces to these <i>CTypeInfo</i> subclasses and their methods for adding class type information.
 <p>
 
 Type information is often needed when the object itself has been passed anonymously, or as a pointer
@@ -125,13 +125,13 @@ directly, as the object's exact type is unknown. Using a <i>&lt;static_cast&gt;<
 enable the member function is also unsafe, as it may open the door to incorrectly associating an
 object's pointer with the wrong type information.  For these reasons, the <i>CTypeInfo</i> class is
 intended for internal usage only, and it is the <a href="#cobjinfo"> <i>CObjectInfo</i></a> class
-which provides the user interface to object type information.
+that provides a more safe and friendly user interface to object type information.
 
 <a name="cobjinfo"> <h3> The 
 <a href="../docxx/CObjectInfo.html"> <i>CObjectInfo</i></a> and
 <a href="../docxx/CConstObjectInfo.html"> <i>CConstObjectInfo</i></a> classes </h3>
 
-Let us suppose that we would like to have a generic function which can populate an object 
+Let us suppose that we would like to have a generic function, which can populate an object 
 using data read from a flat file. For example, we might like to have:
 
 <center><pre>bool LoadObject (CObject& myObj, CNcbiIStream& is); </pre></center>
@@ -167,11 +167,8 @@ The <i>CObjectInfo</i> object (<i>info</i>) will contain pointers to <i>myObj</i
          is >> myName >> myValue;
 
          MemberIdx = info.FindMember(RemoveDelimiter(myName, ':'));
-
          if (MemberIdx == kInvalidMember) {
-
             // generate an error message and exit
-
          }
 
 	 info.GetClassMember(MemberIdx)->SetPrimitiveValueString (myValue);
@@ -190,7 +187,7 @@ base class from which the <i>CObjectInfo</i> class is derived, and should be use
 <a href="../docxx/CObjectOStream"> <i>CObjectOStream</i></a> classes</h3>
 
 The reading and writing of serializable data objects is also discussed in the chapter on <a
-href="asn.html#example1"> Processing serial data</a>, where the program <a
+href="asn.html#example1"> "Processing serial data"</a>, where the program <a
 href="xml2asn_cpp.html"><i>xml2asn.cpp</i></a> demonstrates the usage of both <i>CObjectIStream</i>
 and <i>CObjectOStream</i>. Here, we review these objects briefly with respect to how type
 information can be used in combination with I/O streams to handle serialized data.<p>
@@ -200,14 +197,15 @@ Each of the <i>Open()</i> statements in <a href="xml2asn_cpp.html"><i>xml2asn.cp
 <i>ESerialDataFormat</i></a>, e.g.:
 
 <font color = "#000080"><pre>
-  auto_ptr<CObjectIStream> xml_in(CObjectIStream::Open("1001.xml", eSerial_Xml));
+  auto_ptr&lt;CObjectIStream> xml_in(CObjectIStream::Open("1001.xml", eSerial_Xml));
 </pre></font>
 
 This statement causes a <a href="../docxx/CObjectIStreamXml.html"> <i>CObjectIStreamXml</i></a>
 object (a subclass of <i>CObjectIStream</i>) to be opened on the file named "1001.xml". No
 information is yet provided as to what <i>type</i> of object(s) may be encoded in the file - only
-the format of the data is currently known. Similarly, the two statements which create
-output streams specify only that the output formats will be ASN.1 text and ASN.1 binary. <p>
+the format of the data is currently specified. Similarly, the two statements in <a
+href="xml2asn_cpp.html"><i>xml2asn.cpp</i></a> that create output streams specify only that the
+output formats will be ASN.1 text and ASN.1 binary. <p>
 
 It is not until the input and output operators are applied to these streams, in conjunction with the 
 <i>CBiostruc bs</i>, that the object-specific type information comes into play. The statement
@@ -221,7 +219,7 @@ template&lt;typename T> CObjectIStream& Read(CObjectIStream& in, T& object)
 </pre></font>
 This, in turn, accesses the class type information associated with the object, <i>bs</i>. Here,
 <i>GetTypeRef()</i> is ensured to return the correct type information. Similarly, the output
-operators, when applied to the <i>CObjectOstream</i> object in conjunction with the <i>biostruc
+operators, when applied to the <i>CObjectOstream</i> object in conjunction with the <i>CBiostruc
 bs</i>, will invoke the <i>Write()</i> template function:
 
 <font color = "#000080"><pre>
@@ -238,7 +236,7 @@ while the <i>CObject[IO]Stream</i> subclasses specialize the data serialization 
 <a name="macros"><h3> The <i>BEGIN_*_INFO</i> pre-processor macros</h3>
 
 All of the automatically generated classes in the <i>include/objects</i> directory of the C++ tree have the
-static <i>GetTypeInfo()</i> member function defined. Accordingly, all of the resulting objects can 
+static <i>GetTypeInfo()</i> member function defined. Accordingly, all instances of these classes can 
 be used with the ASN.1 and XML input and output object streams described above. In order to apply 
 these object streams to user-defined classes however, it is also necessary to implement the 
 static <i>GetTypeInfo()</i> member function for these objects. Note that even if your user-defined 
@@ -274,6 +272,7 @@ Most of these macros take two <i>string</i> arguments:
 <li> the internal C++ symbolic class name. 
 </ul>
 
+<a name="alias">
 The external alias is required for serializable objects whose external name differs from the
 internal C++ class name. For example, the external object names specified in the ASN.1 modules (in
 <i>src/objects</i>) are prefixed with the letter "C" in the corresponding C++ class names (e.g.,
@@ -333,9 +332,9 @@ in the chapter on iterators) can be implemented as:
 <font color = "#000080"> <pre>
 BEGIN_NAMED_CLASS_INFO("CPerson", CPerson)
 {
-    ADD_NAMED_STD_MEMBER("m_name", m_name);
-    ADD_NAMED_STD_MEMBER("m_addr", m_addr);
-    ADD_NAMED_MEMBER("m_next_door", m_next_door, POINTER, (CLASS, (CPerson)));
+    ADD_NAMED_STD_MEMBER("m_Name", m_Name);
+    ADD_NAMED_STD_MEMBER("m_Addr", m_Addr);
+    ADD_NAMED_MEMBER("m_NextDoor", m_NextDoor, POINTER, (CLASS, (CPerson)));
 }
 END_CLASS_INFO
 </pre><font color = black>
@@ -345,15 +344,15 @@ or, equivalently, as:
 <font color = "#000080"> <pre>
 BEGIN_CLASS_INFO(CPerson)
 {
-    ADD_STD_MEMBER(m_name);
-    ADD_STD_MEMBER(m_addr);
-    ADD_MEMBER(m_next_door, POINTER, (CLASS, (CPerson)));
+    ADD_STD_MEMBER(m_Name);
+    ADD_STD_MEMBER(m_Addr);
+    ADD_MEMBER(m_NextDoor, POINTER, (CLASS, (CPerson)));
 }
 END_CLASS_INFO
 </pre><font color = black>
 
-Here, the <i>CPerson</i> class has two <i>string</i> data members, <i>m_name</i> and
-<i>m_addr</i>, as well as a pointer to an object of the same type (<i>CPerson*</i>).
+Here, the <i>CPerson</i> class has two <i>string</i> data members, <i>m_Name</i> and
+<i>m_Addr</i>, as well as a pointer to an object of the same type (<i>CPerson*</i>).
 All built-in C++ types such as <i>int, float, string</i> etc., use the <i>ADD_NAMED_STD_MEMBER</i>
 or <i>ADD_STD_MEMBER</i> macros. These and other macros used to add members are defined in 
 <a href="#addm"> Table 2</a>. <p>
@@ -408,9 +407,15 @@ BEGIN_DERIVED_CLASS_INFO(CA, CBase)
   // ... data members in CA not inherited from CBase
 }
 END_DERIVED_CLASS_INFO
+
+BEGIN_DERIVED_CLASS_INFO(CB, CBase)
+{
+  // ... data members in CB not inherited from CBase
+}
+END_DERIVED_CLASS_INFO
 </pre></font>
 
-<font color=red> NOTE:</font> The type information for classes derived from <i>CObject</i> does
+<font color=red> NOTE:</font> The type information for classes derived directly from <i>CObject</i> does
 <i>not</i> however, follow this protocol. In this special case, although the class is derived
 from <i>CObject</i>, you should <i>not</i> use the <i>DERIVED_CLASS</i> macros to implement
 <i>GetTypeInfo()</i>, but instead use the usual <i>BEGIN_CLASS_INFO</i> macro. <i>CObject</i>'s
@@ -425,11 +430,11 @@ href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CObjectGetTy
 <i>BEGIN_CHOICE_INFO(ClassName)</i></a><br>
 
 install <i>GetTypeInfo()</i> for C++ <i>choice</i> objects, which are implemented as C++ classes.
-See <a href="choice.html"> Choice objects in the C++ Toolkit</a> for a description of 
-C++ <i>choice</i> objects. Each choice variant occurs as a data member in the class, and
-the macros used to add choice variants 
-(<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_NAMED_CHOICE_VARIANT">
-<i>ADD_NAMED_*_CHOICE_VARIANT</i></a> and
+See <a href="choice.html"> "Choice objects in the C++ Toolkit"</a> for a description of 
+C++ <i>choice</i> objects. Each of the choice variants occurs as a data member in the class, and
+the macros used to add choice variants (<a
+href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_NAMED_CHOICE_VARIANT"><i>ADD_NAMED_*_CHOICE_VARIANT</i></a>
+and
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_CHOICE_VARIANT">
 <i>ADD_*_CHOICE_VARIANT</i></a>)
 are used similarly to those which add data members to classes (see discussion of the 
@@ -514,25 +519,38 @@ implemented.<p>
 
 These macros also implement the type information functions for C++ enumerations --but in this case,
 the enumeration is defined outside the scope where the macro is applied, so a <i>context</i>
-argument is required.  The 4 arguments to the macro are:
+argument is required.  The 3 arguments to the macro are:
 
-<ol><li> <i>EnumAlias</i> - the external alias for the enum object
-    <li> <i>CppContext</i> - the internal class name or namespace where the enumeration is defined
-    <li> <i>EnumName</i> - the internal C++ name for the enum object
+<ol><li> <i>CppContext</i> - the internal class name or namespace where the enumeration is defined
+    <li> <i>EnumName</i> - the internal C++ name for the <i>enum</i> object
     <li> <i>IsInteger</i> - a Boolean value of <i>true</i> or <i>false</i> indicating whether or not 
     the enumeration includes arbitrary integer values or only those specified in the enumeration.
 
 </ol>
 The enumeration's definition may be internal to some class or occur in a different namespace. 
 The <i>CppContext</i> argument specifies the class name or namespace, postfixed with the scope
-operator (::). 
+operator (::). For example, if <i>EMyEnum</i> is itself defined in <i>CMyClass</i>, then we would use 
+the following macros in the <i>*.cpp</i> file:
+<font color = "#000080"> <pre>
+BEGIN_ENUM_IN_INFO(CMyClass::, EMyEnum, false)
+{
+	ADD_ENUM_VALUE("zero", eZero);
+	ADD_ENUM_VALUE("one", eOne);
+	ADD_ENUM_VALUE("two", eTwo);
+	ADD_ENUM_VALUE("ten", eTen);
+}
+END_ENUM_IN_INFO
+</pre></font>
+
+<p><center>ADD_ENUM_IN_MEMBER (m_MyEnumVal, OtherClassName::, EMyEnum);</center><p>
+
 <p>
 
 </ul>
 
 Again, when using the above macros to install type information, the corresponding class definitions
 <i>must</i> include a declaration of the static class member function <i>GetTypeInfo()</i> in the
-class's public section. The <i>DECLARE_INTERNAL_TYPE_INFO()</i> macro is provided To ensure that 
+class's public section. The <i>DECLARE_INTERNAL_TYPE_INFO()</i> macro is provided to ensure that 
 the declaration of this method is correct.
 Similarly, the <i>DECLARE_INTERNAL_ENUM_INFO</i> and
 <i>DECLARE_ENUM_INFO</i> macros should be used in the header files where enumerations are
@@ -541,13 +559,13 @@ declare the type information functions for C-style structs and choice nodes.
 <p>
 <a name="addm"><h4> The <i>ADD_*_</i> pre-processor macros</h4> 
 
-Information about class data members, subclasses, and choice options is added to the
+Information about class data members, subclasses, and choice variants is added to the
 <i>GetTypeInfo()</i> functions using the <i>ADD_*</i> macros listed in Table 2. As with the
 <i>BEGIN_*_INFO</i> macros, each of these has both a "named" and an "unnamed" implementation. The
 arguments to all of the ADD_NAMED_* macros begin with the external alias and internal C++ names of
-the data member, subclass, or option to be added. <p>
+the data member, subclass, or choice variant to be added. <p>
 
-For the ADD_* macros which take only two arguments (an alias and a name), the <i>type</i> of member or
+For the ADD_* macros that take only two arguments (an alias and a name), the <i>type</i> of member or
 subclass being added is either a built-in type or is defined by the name argument. When adding
 a <i>CRef</i> data member to a class or choice object however, the class referenced by the
 <i>CRef</i> must be made explicit with the <i>RefClass</i> argument, which is the internal C++ class
@@ -564,15 +582,19 @@ or, equivalently:
 
 <p><center>ADD_NAMED_ENUM_MEMBER ("m_MyEnumVal", m_MyEnumVal, EMyEnum);</center><p>
 
-Here, <i>EMyEnum</i> is defined in the same namespace and scope as <i>MyClass</i>. Alternatively,
+or, to define a "custom" (non-default) external alias:
+
+<p><center>ADD_NAMED_ENUM_MEMBER ("m_CustomAlias", m_MyEnumVal, EMyEnum);</center><p>
+
+Here, <i>EMyEnum</i> is defined in the same namespace and scope as <i>CMyClass</i>. Alternatively,
 if the enumeration is defined in a different class or namespace (and therefore, not within the same
 scope), then the ADD_ENUM_IN_MEMBER macro must be used:
 
-<p><center>ADD_ENUM_IN_MEMBER (m_MyEnumVal, OtherClassName::, EMyEnum);</center><p>
+<p><center>ADD_ENUM_IN_MEMBER (m_MyEnumVal, COtherClassName::, EMyEnum);</center><p>
 
-In this example, <i>EMyEnum</i> is defined in a class named <i>OtherClassName</i>. The
-<i>CppContext</i> argument (<i>OtherClassName::</i>) acts as a scope operator, and can also be used
-to specify an alternative namespace. The ADD_NAMED_ENUM_CHOICE_VARIANT and
+In this example, <i>EMyEnum</i> is defined in a class named <i>COtherClassName</i>. The
+<i>CppContext</i> argument (defined here as <i>COtherClassName::</i>) acts as a scope operator, and
+can also be used to specify an alternative namespace. The ADD_NAMED_ENUM_CHOICE_VARIANT and
 ADD_NAMED_ENUM_IN_CHOICE_VARIANT macros are used similarly to provide information about enumerated
 choice options.
 <p>
@@ -635,7 +657,7 @@ These macros are more open-ended and allow for more complex specifications. We
 have already seen one example of using a macro of this type, in the implementation of the
 <i>GetTypeInfo()</i> method for <i>CPerson</i>:<p>
 
-<center> ADD_MEMBER(m_next_door, POINTER, (CLASS, (CPerson))); </center><p>
+<center> ADD_MEMBER(m_NextDoor, POINTER, (CLASS, (CPerson))); </center><p>
 
 The <i>ADD_MEMBER</i> and <i>ADD_CHOICE_VARIANT</i>  macros always take at least two arguments: 
 <ol>
@@ -645,7 +667,7 @@ The <i>ADD_MEMBER</i> and <i>ADD_CHOICE_VARIANT</i>  macros always take at least
 
 Depending on the (second) <i>TypeMacro</i> argument, additional arguments may or may
 not be needed.  In this case, the <i>TypeMacro</i> is <i>POINTER</i>, which <i>does</i>
-require additional arguments. The <i>TypeMacroArgs</i> here specify that <i>m_next_door</i>
+require additional arguments. The <i>TypeMacroArgs</i> here specify that <i>m_NextDoor</i>
 is a pointer to a <i>class</i> object whose C++ name is <i>CPerson</i>.<p>
 
 More generally, the remaining arguments depend on the value of <i>TypeMacro</i>, as these
@@ -687,17 +709,18 @@ The <i>ADD_MEMBER</i> macro generates a call to the corresponding <i>ADD_NAMED_M
 </pre></font>
 Some examples of using the ADD_MEMBER macro are:
 <font color = "#000080"> <pre>
-   ADD_MEMBER(m_X, STL_auto_ptr, (CLASS, (ClassName)));
-   ADD_MEMBER(m_X, STL_CHAR_vector, (char))
-   ADD_MEMBER(m_X, STL_vector, (STD, (int))
-   ADD_MEMBER(m_X, STL_list, (CLASS, (ClassName))
-   ADD_MEMBER(m_X, STL_list, (POINTER, (CLASS, (ClassName)))
-   ADD_MEMBER(m_X, STL_map, (STD, (long), STD, (string)));
+   ADD_MEMBER(m_X);
+   ADD_MEMBER(m_A, STL_auto_ptr, (CLASS, (ClassName)));
+   ADD_MEMBER(m_B, STL_CHAR_vector, (char));
+   ADD_MEMBER(m_C, STL_vector, (STD, (int)));
+   ADD_MEMBER(m_D, STL_list, (CLASS, (ClassName)));
+   ADD_MEMBER(m_E, STL_list, (POINTER, (CLASS, (ClassName))));
+   ADD_MEMBER(m_F, STL_map, (STD, (long), STD, (string)));
 </pre></font>
 
 Similarly, the <i>ADD_CHOICE_VARIANT</i> macro generates a call to the corresponding <i>ADD_NAMED_CHOICE_VARIANT</i> macro.
 A more complete description of <i>choice</i> objects can be found in <a href="choice.html">
-Choice objects in the C++ Toolkit</a>. Similar sets of <i>ADD_*</i> macros are defined for C-style <i>ASN_CHOICE</i> and 
+"Choice objects in the C++ Toolkit"</a>. Similar sets of <i>ADD_*</i> macros are defined for C-style <i>ASN_CHOICE</i> and 
 and <i>ASN_STRUCT</i> elements, in 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/serialasn.hpp">
 <i>include/serialasn.hpp</i></a>.
