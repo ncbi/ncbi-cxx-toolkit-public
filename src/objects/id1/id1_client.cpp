@@ -92,7 +92,8 @@ CRef<CSeq_entry> CID1Client::FetchEntry(const CSeq_id& id, int max_complexity)
 CRef<CSeq_entry> CID1Client::FetchEntry(const string& id_string,
                                         int max_complexity)
 {
-    return FetchEntry(CSeq_id(id_string), max_complexity);
+    CSeq_id id(id_string);
+    return FetchEntry(id, max_complexity);
 }
 
 
@@ -110,6 +111,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/05/20 18:44:57  ucko
+* Don't attempt to pass temporary Seq-ids, even by const reference, as
+* that technically requires a public copy constructor.
+*
 * Revision 1.3  2004/05/20 18:23:21  jcherry
 * Added a simplified interface for retrieving entries
 *
