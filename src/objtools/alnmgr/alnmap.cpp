@@ -488,7 +488,7 @@ TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
 TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
 {
     TNumseg seg;
-    TSeqPos start;
+    TSignedSeqPos start;
     
     if (IsPositiveStrand(row)) {
         seg = -1;
@@ -512,7 +512,7 @@ TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
 TSignedSeqPos CAlnMap::GetSeqStop(TNumrow row) const
 {
     TNumseg seg;
-    TSeqPos start;
+    TSignedSeqPos start;
 
     if (IsPositiveStrand(row)) {
         seg = m_NumSegs;
@@ -869,6 +869,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2003/06/09 17:47:26  todorov
+* local var start type fixed in GetSeqStart,GetSeqStop
+*
 * Revision 1.32  2003/06/05 21:14:15  todorov
 * Type fixed
 *
