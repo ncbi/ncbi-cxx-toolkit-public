@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.4 2004/07/15 11:23:44 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.5 2004/08/13 12:28:22 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -151,7 +151,9 @@ PC-Count ::= SEQUENCE {
     atom-chiral-undef        INTEGER,  -- Total count of Undefined (SP3) Chiral Atoms
     bond-chiral              INTEGER,  -- Total count of (SP2) Chiral Bonds
     bond-chiral-def          INTEGER,  -- Total count of (SP2) Defined Chiral Bonds
-    bond-chiral-undef        INTEGER   -- Total count of (SP2) Undefined Chiral Bonds
+    bond-chiral-undef        INTEGER,  -- Total count of (SP2) Undefined Chiral Bonds
+
+    isotope-atom             INTEGER   -- Total count of Atoms with Isotopic Information
 }
 
 
@@ -662,6 +664,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.5  2004/08/13 12:28:22  bolton
+-- Added count of the number of atoms with isotopic information.
+--
 -- Revision 1.4  2004/07/15 11:23:44  bolton
 -- Swapped the ordering of the Import/Export lines to be ASN.1 compliant.
 --
@@ -714,4 +719,5 @@ END
 -- structural information.
 --
 -- ===========================================================================
+
 
