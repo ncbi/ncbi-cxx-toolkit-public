@@ -52,7 +52,8 @@ CNCBINode* StaticTagMapper::MapTag(CNCBINode*, const string&) const
 }
 
 
-StaticTagMapperByName::StaticTagMapperByName(CNCBINode* (*function)(const string& name))
+StaticTagMapperByName::StaticTagMapperByName(
+    CNCBINode* (*function)(const string& name))
     : m_Function(function)
 {
     return;
@@ -62,6 +63,36 @@ StaticTagMapperByName::StaticTagMapperByName(CNCBINode* (*function)(const string
 CNCBINode* StaticTagMapperByName::MapTag(CNCBINode*, const string& name) const
 {
     return (*m_Function)(name);
+}
+
+
+StaticTagMapperByData::StaticTagMapperByData(
+    CNCBINode* (*function)(void* data), void* data)
+    : m_Function(function), m_Data(data)
+{
+    return;
+}
+
+
+CNCBINode* StaticTagMapperByData::MapTag(CNCBINode*,
+                                         const string& /*name*/) const
+{
+    return (*m_Function)(m_Data);
+}
+
+
+StaticTagMapperByDataAndName::StaticTagMapperByDataAndName(
+    CNCBINode* (*function)(void* data, const string& name), void* data)
+    : m_Function(function), m_Data(data)
+{
+    return;
+}
+
+
+CNCBINode* StaticTagMapperByDataAndName::MapTag(CNCBINode*,
+                                                const string& name) const
+{
+    return (*m_Function)(m_Data, name);
 }
 
 
@@ -84,6 +115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/02 14:14:45  ivanov
+ * Added TagMapper to functons and class methods which used a data parameter
+ *
  * Revision 1.8  2003/11/03 17:03:08  ivanov
  * Some formal code rearrangement. Move log to end.
  *

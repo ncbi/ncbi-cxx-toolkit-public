@@ -32,7 +32,8 @@
 
 
 template<class C>
-inline StaticTagMapperByNode<C>::StaticTagMapperByNode(CNCBINode* (*function)(C* node))
+StaticTagMapperByNode<C>::StaticTagMapperByNode(
+    CNCBINode* (*function)(C* node))
     : m_Function(function)
 {
     return;
@@ -40,14 +41,16 @@ inline StaticTagMapperByNode<C>::StaticTagMapperByNode(CNCBINode* (*function)(C*
 
 
 template<class C>
-CNCBINode* StaticTagMapperByNode<C>::MapTag(CNCBINode* _this, const string&) const
+CNCBINode* StaticTagMapperByNode<C>::MapTag(
+    CNCBINode* _this, const string&) const
 {
     return m_Function(dynamic_cast<C*>(_this));
 }
 
 
 template<class C>
-inline StaticTagMapperByNodeAndName<C>::StaticTagMapperByNodeAndName(CNCBINode* (*function)(C* node, const string& name))
+StaticTagMapperByNodeAndName<C>::StaticTagMapperByNodeAndName(
+    CNCBINode* (*function)(C* node, const string& name))
     : m_Function(function)
 {
     return;
@@ -55,14 +58,49 @@ inline StaticTagMapperByNodeAndName<C>::StaticTagMapperByNodeAndName(CNCBINode* 
 
 
 template<class C>
-CNCBINode* StaticTagMapperByNodeAndName<C>::MapTag(CNCBINode* _this, const string&) const
+CNCBINode* StaticTagMapperByNodeAndName<C>::MapTag(
+    CNCBINode* _this, const string& name) const
 {
     return m_Function(dynamic_cast<C*>(_this), name);
 }
 
 
+template<class C, typename T>
+StaticTagMapperByNodeAndData<C,T>::StaticTagMapperByNodeAndData(
+    CNCBINode* (*function)(C* node, T data), T data)
+    : m_Function(function), m_Data(data)
+{
+    return;
+}
+
+
+template<class C, typename T>
+CNCBINode* StaticTagMapperByNodeAndData<C,T>::MapTag(
+    CNCBINode* _this, const string&) const
+{
+    return m_Function(dynamic_cast<C*>(_this), m_Data);
+}
+
+
+template<class C, typename T>
+StaticTagMapperByNodeAndDataAndName<C,T>::StaticTagMapperByNodeAndDataAndName(
+    CNCBINode* (*function)(C* node, T data, const string &name), T data)
+    : m_Function(function), m_Data(data)
+{
+    return;
+}
+
+
+template<class C, typename T>
+CNCBINode* StaticTagMapperByNodeAndDataAndName<C,T>::MapTag(
+    CNCBINode* _this, const string& name) const
+{
+    return m_Function(dynamic_cast<C*>(_this), m_Data, name);
+}
+
+
 template<class C>
-inline TagMapper<C>::TagMapper(CNCBINode* (C::*method)(void))
+TagMapper<C>::TagMapper(CNCBINode* (C::*method)(void))
     : m_Method(method)
 {
     return;
@@ -77,23 +115,62 @@ CNCBINode* TagMapper<C>::MapTag(CNCBINode* _this, const string&) const
 
 
 template<class C>
-inline TagMapperByName<C>::TagMapperByName(CNCBINode* (C::*method)(const string& name))
-    : m_Method(method)
+TagMapperByName<C>::TagMapperByName(
+    CNCBINode* (C::*method)(const string& name)
+    ) : m_Method(method)
 {
     return;
 }
 
 
 template<class C>
-CNCBINode* TagMapperByName<C>::MapTag(CNCBINode* _this, const string& name) const
+CNCBINode* TagMapperByName<C>::MapTag(
+    CNCBINode* _this, const string& name) const
 {
     return (dynamic_cast<C*>(_this)->*m_Method)(name);
+}
+
+
+template<class C, typename T>
+TagMapperByData<C,T>::TagMapperByData(
+    CNCBINode* (C::*method)(T data), T data)
+    : m_Method(method), m_Data(data)
+{
+    return;
+}
+
+
+template<class C, typename T>
+CNCBINode* TagMapperByData<C,T>::MapTag(
+    CNCBINode* _this, const string&) const
+{
+    return (dynamic_cast<C*>(_this)->*m_Method)(m_Data);
+}
+
+
+template<class C, typename T>
+TagMapperByDataAndName<C,T>::TagMapperByDataAndName(
+    CNCBINode* (C::*method)(T data, const string& name), T data)
+    : m_Method(method), m_Data(data)
+{
+    return;
+}
+
+
+template<class C, typename T>
+CNCBINode* TagMapperByDataAndName<C,T>::MapTag(
+    CNCBINode* _this, const string& name) const
+{
+    return (dynamic_cast<C*>(_this)->*m_Method)(m_Data, name);
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/02 14:14:15  ivanov
+ * Added TagMapper to functons and class methods which used a data parameter
+ *
  * Revision 1.8  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *
