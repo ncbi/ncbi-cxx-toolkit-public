@@ -10,7 +10,7 @@ LIBOBJ = \
 	variant choice choiceptr \
 	objistr objostr objcopy iterator \
 	serial serialasn delaybuf \
-	exception strbuffer objhook objlist objstack bytesrc \
+	exception objhook objlist objstack \
 	$(serial_ws50_rtti_kludge) \
 	objostrasn objistrasn objostrasnb objistrasnb objostrxml objistrxml
 

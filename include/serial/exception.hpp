@@ -32,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/01/05 20:10:34  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.5  2000/10/03 17:22:31  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -88,22 +92,6 @@ class CSerialFormatException : public CSerialException
 public:
     CSerialFormatException(const string& msg) THROWS_NONE;
     ~CSerialFormatException(void) THROWS_NONE;
-};
-
-// this exception is thrown when IO error occured in serialization
-class CSerialIOException : public CSerialException
-{
-public:
-    CSerialIOException(const string& msg) THROWS_NONE;
-    ~CSerialIOException(void) THROWS_NONE;
-};
-
-// this exception is thrown when unexpected end of file found
-class CSerialEofException : public CSerialIOException
-{
-public:
-    CSerialEofException(void) THROWS_NONE;
-    ~CSerialEofException(void) THROWS_NONE;
 };
 
 class CInvalidChoiceSelection : public runtime_error

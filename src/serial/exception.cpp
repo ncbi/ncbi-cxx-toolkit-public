@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/01/05 20:10:50  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.4  2000/07/05 13:20:22  vasilche
 * Fixed bug on 64 bit compilers.
 *
@@ -59,24 +63,6 @@ CSerialException::CSerialException(const string& msg) THROWS_NONE
 }
 
 CSerialException::~CSerialException(void) THROWS_NONE
-{
-}
-
-CSerialIOException::CSerialIOException(const string& msg) THROWS_NONE
-    : CSerialException(msg)
-{
-}
-
-CSerialIOException::~CSerialIOException(void) THROWS_NONE
-{
-}
-
-CSerialEofException::CSerialEofException(void) THROWS_NONE
-    : CSerialIOException("end of file")
-{
-}
-
-CSerialEofException::~CSerialEofException(void) THROWS_NONE
 {
 }
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/01/05 20:10:34  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.5  2000/12/15 15:37:59  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -60,7 +64,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
-#include <serial/lightstr.hpp>
+#include <util/lightstr.hpp>
 #include <list>
 #include <map>
 #include <memory>

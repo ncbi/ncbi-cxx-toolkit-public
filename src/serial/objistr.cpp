@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2001/01/05 20:10:50  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.73  2001/01/05 13:57:31  vasilche
 * Fixed overloaded method ambiguity on Mac.
 *
@@ -324,7 +328,7 @@
 #include <serial/continfo.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
-#include <serial/bytesrc.hpp>
+#include <util/bytesrc.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/objistrimpl.hpp>
 #include <serial/objectinfo.hpp>

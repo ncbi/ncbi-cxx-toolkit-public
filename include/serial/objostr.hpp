@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2001/01/05 20:10:36  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.56  2000/12/26 22:23:45  vasilche
 * Fixed errors of compilation on Mac.
 *
@@ -261,7 +265,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/strbuffer.hpp>
+#include <util/strbuffer.hpp>
 #include <serial/objstack.hpp>
 #include <serial/hookdatakey.hpp>
 #include <serial/objhook.hpp>

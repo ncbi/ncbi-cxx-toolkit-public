@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2001/01/05 20:10:51  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.58  2000/12/26 22:24:13  vasilche
 * Fixed errors of compilation on Mac.
 *
@@ -273,7 +277,7 @@
 #include <serial/typeinfo.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
-#include <serial/bytesrc.hpp>
+#include <util/bytesrc.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>

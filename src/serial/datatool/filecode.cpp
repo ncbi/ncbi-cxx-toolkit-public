@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/01/05 20:10:57  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.25  2000/11/22 16:26:29  vasilche
 * Added generation/checking of checksum to user files.
 *
@@ -132,7 +136,7 @@
 #include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/namespace.hpp>
 #include <serial/datatool/module.hpp>
-#include <serial/datatool/checksum.hpp>
+#include <util/checksum.hpp>
 #include <typeinfo>
 
 BEGIN_NCBI_SCOPE

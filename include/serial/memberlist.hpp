@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/01/05 20:10:35  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.18  2000/10/03 17:22:33  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -119,7 +123,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <serial/lightstr.hpp>
+#include <util/lightstr.hpp>
 #include <serial/memberid.hpp>
 #include <serial/item.hpp>
 #include <vector>

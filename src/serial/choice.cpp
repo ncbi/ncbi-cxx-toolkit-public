@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/01/05 20:10:50  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.24  2000/10/20 15:51:37  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -150,7 +154,6 @@
 #include <serial/objistr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/variant.hpp>
-#include <serial/bytesrc.hpp>
 #include <serial/delaybuf.hpp>
 
 BEGIN_NCBI_SCOPE

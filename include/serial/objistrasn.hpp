@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2001/01/05 20:10:35  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.46  2000/12/15 21:28:47  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -241,7 +245,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objistr.hpp>
-#include <serial/lightstr.hpp>
+#include <util/lightstr.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/01/05 20:10:50  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.5  2000/09/18 20:00:21  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -61,7 +65,7 @@
 #include <serial/delaybuf.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
-#include <serial/bytesrc.hpp>
+#include <util/bytesrc.hpp>
 #include <serial/item.hpp>
 #include <serial/stdtypes.hpp>
 

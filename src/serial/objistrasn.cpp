@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2001/01/05 20:10:51  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.64  2001/01/03 15:22:26  vasilche
 * Fixed limited buffer size for REAL data in ASN.1 binary format.
 * Fixed processing non ASCII symbols in ASN.1 text format.
@@ -498,7 +502,7 @@ void CObjectIStreamAsn::SkipComments(void)
             }
         }
     }
-    catch ( CSerialEofException& /* ignored */ ) {
+    catch ( CEofException& /* ignored */ ) {
         return;
     }
 }
@@ -782,7 +786,7 @@ void CObjectIStreamAsn::ReadString(string& s)
             }
         }
     }
-    catch ( CSerialEofException& ) {
+    catch ( CEofException& ) {
         UnendedString(startLine);
         throw;
     }
@@ -932,7 +936,7 @@ void CObjectIStreamAsn::SkipString(void)
             }
         }
     }
-    catch ( CSerialEofException& ) {
+    catch ( CEofException& ) {
         UnendedString(startLine);
         throw;
     }

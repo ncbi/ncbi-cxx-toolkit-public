@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/01/05 20:10:34  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
 * Revision 1.2  2000/10/13 16:28:30  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -51,7 +55,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <serial/weakmap.hpp>
+#include <util/weakmap.hpp>
 
 BEGIN_NCBI_SCOPE
 
