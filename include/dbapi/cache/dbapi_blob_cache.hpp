@@ -262,13 +262,6 @@ void NCBI_DBAPI_EXPORT NCBI_EntryPoint_DBAPI_BlobCache(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method);
 
-inline 
-void NCBI_DBAPI_EXPORT NCBI_EntryPoint_ICache(
-     CPluginManager<ICache>::TDriverInfoList&   info_list,
-     CPluginManager<ICache>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_DBAPI_BlobCache(info_list, method);
-}
 
 inline 
 void NCBI_DBAPI_EXPORT NCBI_EntryPoint_ICache_ncbi_dbapi(
@@ -289,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/07/29 16:45:11  kuznets
+ * Removed conflicting entry point
+ *
  * Revision 1.6  2004/07/27 14:04:30  kuznets
  * +IsOpen
  *
