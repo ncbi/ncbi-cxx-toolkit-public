@@ -2178,7 +2178,8 @@ BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
       would do after gapped alignment, and exit if none are found. 
       Only attempt to extend initial HSPs whose scores are already above 
       gap trigger */
-   if (init_hsp_array[0]->ungapped_data->score < cutoff_score) {
+   if (init_hsp_array[0]->ungapped_data && 
+       init_hsp_array[0]->ungapped_data->score < cutoff_score) {
       for (index=0; index<init_hitlist->total; index++) {
          init_hsp = init_hsp_array[index];
          if (init_hsp->ungapped_data && 
