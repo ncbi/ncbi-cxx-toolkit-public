@@ -28,65 +28,11 @@
  * File Description:
  *   CONN-based C++ stream buffer
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.16  2002/02/05 22:04:12  lavr
- * Included header files rearranged
- *
- * Revision 6.15  2002/02/05 16:05:26  lavr
- * List of included header files revised
- *
- * Revision 6.14  2002/02/04 20:19:55  lavr
- * +xsgetn() for MIPSPro compiler (buggy version supplied with std.library)
- * More assert()'s inserted into the code to check standard compliance
- *
- * Revision 6.13  2002/01/30 20:09:00  lavr
- * Define xsgetn() for WorkShop compiler also; few patches in underflow();
- * sync() properly redesigned (now standard-conformant)
- *
- * Revision 6.12  2002/01/28 20:20:18  lavr
- * Use auto_ptr only in constructor; satisfy "usual backup cond" in xsgetn()
- *
- * Revision 6.11  2001/12/07 22:58:44  lavr
- * More comments added
- *
- * Revision 6.10  2001/05/29 19:35:21  grichenk
- * Fixed non-blocking stream reading for GCC
- *
- * Revision 6.9  2001/05/17 15:02:50  lavr
- * Typos corrected
- *
- * Revision 6.8  2001/05/14 16:47:45  lavr
- * streambuf::xsgetn commented out as it badly interferes
- * with truly-blocking stream reading via istream::read.
- *
- * Revision 6.7  2001/05/11 20:40:48  lavr
- * Workaround of compiler warning about comparison of streamsize and size_t
- *
- * Revision 6.6  2001/05/11 14:04:07  grichenk
- * +CConn_Streambuf::xsgetn(), +CConn_Streambuf::showmanyc()
- *
- * Revision 6.5  2001/03/26 18:36:39  lavr
- * CT_EQ_INT_TYPE used throughout to compare CT_INT_TYPE values
- *
- * Revision 6.4  2001/03/24 00:34:40  lavr
- * Accurate conversions between CT_CHAR_TYPE and CT_INT_TYPE
- * (BUGFIX: promotion of (signed char)255 to int caused EOF (-1) gets returned)
- *
- * Revision 6.3  2001/01/12 23:49:20  lavr
- * Timeout and GetCONN method added
- *
- * Revision 6.2  2001/01/11 23:04:06  lavr
- * Bugfixes; tie is now done at streambuf level, not in iostream
- *
- * Revision 6.1  2001/01/09 23:34:51  vakatov
- * Initial revision (draft, not tested in run-time)
- *
- * ===========================================================================
  */
 
 
 #include "ncbi_conn_streambuf.hpp"
+#include <connect/ncbi_conn_exception.hpp>
 #include <corelib/ncbistd.hpp>
 #include <memory>
 
@@ -96,7 +42,7 @@ BEGIN_NCBI_SCOPE
 
 CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                                  streamsize buf_size, bool tie)
-    : m_Buf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie)
+    : m_Buf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie), m_Dying(false)
 {
     if ( !connector ) {
         x_CheckThrow(eIO_Unknown, "CConn_Streambuf(): NULL connector");
@@ -124,6 +70,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
 
 CConn_Streambuf::~CConn_Streambuf(void)
 {
+    m_Dying = true;
     sync();
     if (CONN_Close(m_Conn) != eIO_Success) {
         _TRACE("CConn_Streambuf::~CConn_Streambuf(): CONN_Close() failed");
@@ -140,6 +87,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         // send buffer
         size_t n_write = pptr() - pbase();
         if ( !n_write ) {
+            _ASSERT(c == CT_EOF);
             return CT_NOT_EOF(CT_EOF);
         }
 
@@ -147,7 +95,8 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
             (CONN_Write(m_Conn, m_WriteBuf,
                         n_write*sizeof(CT_CHAR_TYPE), &n_written),
              "overflow(): CONN_Write() failed");
-        _ASSERT(n_written);
+        if ( !n_written )
+            return CT_EOF;
 
         // update buffer content (get rid of the sent data)
         if ((n_written /= sizeof(CT_CHAR_TYPE)) != n_write) {
@@ -167,12 +116,9 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         x_CheckThrow
             (CONN_Write(m_Conn, &b, sizeof(b), &n_written),
              "overflow(): CONN_Write(1) failed");
-        _ASSERT(n_written == sizeof(b));
-
-        return c;
-    } else if (CONN_Flush(m_Conn) != eIO_Success) {
+        return n_written == sizeof(b) ? c : CT_EOF;
+    } else if (CONN_Flush(m_Conn) != eIO_Success)
         return CT_EOF;
-    }
 
     return CT_NOT_EOF(CT_EOF);
 }
@@ -291,7 +237,7 @@ int CConn_Streambuf::sync(void)
 streambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
                                    streamsize    /*buf_size*/)
 {
-    THROW1_TRACE(runtime_error, "CConn_Streambuf::setbuf() not allowed");
+    THROW1_TRACE(CConn_Exception, "CConn_Streambuf::setbuf() not allowed");
     return this;
 }
 
@@ -299,11 +245,77 @@ streambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 void CConn_Streambuf::x_CheckThrow(EIO_Status status, const string& msg)
 {
     if (status != eIO_Success) {
-        THROW1_TRACE(runtime_error,
-                     "CConn_Streambuf::" + msg +
-                     " (" + IO_StatusStr(status) + ")");
+        string message("CConn_Streambuf::" + msg +
+                       " (" + IO_StatusStr(status) + ")");
+        if (m_Dying)
+            ERR_POST(message);
+        else
+            THROW1_TRACE(CConn_Exception, message);
     }
 }
 
 
 END_NCBI_SCOPE
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.17  2002/06/06 19:03:25  lavr
+ * Take advantage of CConn_Exception class and do not throw from destructor
+ * Some housekeeping: log moved to the end
+ *
+ * Revision 6.16  2002/02/05 22:04:12  lavr
+ * Included header files rearranged
+ *
+ * Revision 6.15  2002/02/05 16:05:26  lavr
+ * List of included header files revised
+ *
+ * Revision 6.14  2002/02/04 20:19:55  lavr
+ * +xsgetn() for MIPSPro compiler (buggy version supplied with std.library)
+ * More assert()'s inserted into the code to check standard compliance
+ *
+ * Revision 6.13  2002/01/30 20:09:00  lavr
+ * Define xsgetn() for WorkShop compiler also; few patches in underflow();
+ * sync() properly redesigned (now standard-conformant)
+ *
+ * Revision 6.12  2002/01/28 20:20:18  lavr
+ * Use auto_ptr only in constructor; satisfy "usual backup cond" in xsgetn()
+ *
+ * Revision 6.11  2001/12/07 22:58:44  lavr
+ * More comments added
+ *
+ * Revision 6.10  2001/05/29 19:35:21  grichenk
+ * Fixed non-blocking stream reading for GCC
+ *
+ * Revision 6.9  2001/05/17 15:02:50  lavr
+ * Typos corrected
+ *
+ * Revision 6.8  2001/05/14 16:47:45  lavr
+ * streambuf::xsgetn commented out as it badly interferes
+ * with truly-blocking stream reading via istream::read.
+ *
+ * Revision 6.7  2001/05/11 20:40:48  lavr
+ * Workaround of compiler warning about comparison of streamsize and size_t
+ *
+ * Revision 6.6  2001/05/11 14:04:07  grichenk
+ * +CConn_Streambuf::xsgetn(), +CConn_Streambuf::showmanyc()
+ *
+ * Revision 6.5  2001/03/26 18:36:39  lavr
+ * CT_EQ_INT_TYPE used throughout to compare CT_INT_TYPE values
+ *
+ * Revision 6.4  2001/03/24 00:34:40  lavr
+ * Accurate conversions between CT_CHAR_TYPE and CT_INT_TYPE
+ * (BUGFIX: promotion of (signed char)255 to int caused EOF (-1) gets returned)
+ *
+ * Revision 6.3  2001/01/12 23:49:20  lavr
+ * Timeout and GetCONN method added
+ *
+ * Revision 6.2  2001/01/11 23:04:06  lavr
+ * Bugfixes; tie is now done at streambuf level, not in iostream
+ *
+ * Revision 6.1  2001/01/09 23:34:51  vakatov
+ * Initial revision (draft, not tested in run-time)
+ *
+ * ===========================================================================
+ */
