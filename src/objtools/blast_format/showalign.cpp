@@ -433,7 +433,7 @@ static int s_getFrame (int start, ENa_strand strand, const CSeq_id& id, CScope& 
   if (strand == eNa_strand_plus) {
     frame = (start % 3) + 1;
   } else if (strand == eNa_strand_minus) {
-    frame = -((sp.GetBioseqHandle(id).GetBioseqLength() - start - 1) % 3 + 1);
+    frame = -(((int)sp.GetBioseqHandle(id).GetBioseqLength() - start - 1) % 3 + 1);
    
   }
   return frame;
@@ -1987,7 +1987,7 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out, list<alnInfo*>& av
     }
 
     //output dynamic feature lines
-    if(m_AlignOption&eShowBlastInfo && !(m_AlignOption&eMultiAlign) && (m_AlignOption&eDynamicFeature) && m_AV->GetBioseqHandle(1).GetBioseqLength() >= k_GetDynamicFeatureSeqLength){ 
+    if(m_AlignOption&eShowBlastInfo && !(m_AlignOption&eMultiAlign) && (m_AlignOption&eDynamicFeature) && (int)m_AV->GetBioseqHandle(1).GetBioseqLength() >= k_GetDynamicFeatureSeqLength){ 
         if(m_DynamicFeature){
             x_PrintDynamicFeatures(out);
         } 
@@ -2204,6 +2204,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.49  2004/11/04 21:06:09  jianye
+*fixed sign warning
+*
 *Revision 1.48  2004/11/01 19:33:09  grichenk
 *Removed deprecated methods
 *
