@@ -1205,6 +1205,23 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
+AC_MSG_CHECKING(which way the stack grows)
+AC_TRY_RUN(
+    [int f(int* p)
+     {
+         int i;
+         return &i < p;
+     }
+     int main(int argc, char** argv)
+     {
+         return f(&argc);
+     }],
+     [AC_DEFINE(STACK_GROWS_UP)
+      stack_dir=up],
+     [test $? -eq 1 && AC_DEFINE(STACK_GROWS_DOWN)
+      stack_dir=down],
+     [stack_dir="unknown (cross-compiling)"])
+AC_MSG_RESULT($stack_dir)
 
 ### Check for the availability of other packages
 ### --------------------------------------------

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/08/20 15:59:43  ucko
+* Test more accurately whether CObjects were created on the stack.
+*
 * Revision 1.16  2001/05/17 15:04:59  lavr
 * Typos corrected
 *
@@ -183,13 +186,21 @@ void CObject::InitCounter(void)
         const char* stackObjectPtr = &stackObject;
         const char* objectPtr = reinterpret_cast<const char*>(this);
         bool inStack =
+#ifdef STACK_GROWS_UP
+            (objectPtr < stackObjectPtr) &&
+#else
             (objectPtr < stackObjectPtr + STACK_THRESHOLD) &&
+#endif
+#ifdef STACK_GROWS_DOWN
+            (objectPtr > stackObjectPtr);
+#else
             (objectPtr > stackObjectPtr - STACK_THRESHOLD);
+#endif
 
         // surely not in heap
         if ( inStack )
             m_Counter = TCounter(eCounterNotInHeap);
-        else
+        else // what about static allocation?
             m_Counter = eCounterInHeap;
     }
 }

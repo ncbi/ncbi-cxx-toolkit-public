@@ -22,6 +22,7 @@
 #define NCBI_USE_THROW_SPEC      1
 #define HAVE_NO_AUTO_PTR         1
 #define HAVE_NO_MINMAX_TEMPLATE  1
+#define STACK_GROWS_DOWN         1
 
 #define SIZEOF___INT64      8
 #define SIZEOF_CHAR         1

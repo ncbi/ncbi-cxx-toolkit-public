@@ -71,6 +71,10 @@
 /* "min"/"max" templates are not implemented in <algorithm> */
 #undef HAVE_NO_MINMAX_TEMPLATE
 
+/* Stack direction */
+#undef STACK_GROWS_UP
+#undef STACK_GROWS_DOWN
+
 /* SYBASE libraries are available */
 #undef HAVE_LIBSYBASE
 

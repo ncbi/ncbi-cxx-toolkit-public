@@ -17,6 +17,7 @@
 #define HOST_OS      "MacOS"
 
 #define NCBI_USE_THROW_SPEC 1
+#define STACK_GROWS_DOWN    1
 
 #define SIZEOF_CHAR         1
 #define SIZEOF_DOUBLE       8

@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.mac,v 1.6 2001/07/24 23:31:50 vakatov Exp $
+/* $Id: ncbiconf.mac,v 1.7 2001/08/20 15:59:42 ucko Exp $
  * By Jonathan Kans, NCBI (kans@ncbi.nlm.nih.gov)
  *
  * NOTE:  Unlike its UNIX counterpart, this configuration header
@@ -17,6 +17,7 @@
 #define HOST_OS      "MacOS"
 
 #define NCBI_USE_THROW_SPEC 1
+#define STACK_GROWS_DOWN    1
 
 #define SIZEOF_CHAR         1
 #define SIZEOF_DOUBLE       8
