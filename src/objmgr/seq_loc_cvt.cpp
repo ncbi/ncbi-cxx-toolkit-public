@@ -1264,18 +1264,22 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
         if (cvt->ConvertInterval(src)) {
             CRef<CSeq_interval> mapped = cvt->GetDstInterval();
             if ( revert_order ) {
-                if (bool(last_int) && cvt->GetSrc_to() >= last_to - 1) {
-                    last_int->ResetFuzz_from();
-                    mapped->ResetFuzz_to();
+                if (bool(last_int) && cvt->GetSrc_to() == last_to - 1) {
+                    last_int->SetPartialRight(false);
+                    mapped->SetPartialLeft(false);
+                    //last_int->ResetFuzz_from();
+                    //mapped->ResetFuzz_to();
                 }
-                last_to = max(cvt->GetSrc_from(), src.GetFrom());
+                last_to = cvt->GetSrc_from();
             }
             else {
-                if (bool(last_int) && cvt->GetSrc_from() <= last_to + 1) {
-                    last_int->ResetFuzz_to();
-                    mapped->ResetFuzz_from();
+                if (bool(last_int) && cvt->GetSrc_from() == last_to + 1) {
+                    last_int->SetPartialRight(false);
+                    mapped->SetPartialLeft(false);
+                    //last_int->ResetFuzz_to();
+                    //mapped->ResetFuzz_from();
                 }
-                last_to = min(cvt->GetSrc_to(), src.GetTo());
+                last_to = cvt->GetSrc_to();
             }
             last_int = mapped;
             ints.push_back(mapped);
@@ -1580,6 +1584,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2004/10/28 15:33:49  grichenk
+* Fixed fuzzes.
+*
 * Revision 1.46  2004/10/27 21:53:59  grichenk
 * Remove fuzz from parts of a completely mapped interval
 *

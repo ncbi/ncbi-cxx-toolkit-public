@@ -1351,12 +1351,12 @@ bool CSeq_loc_Mapper::x_MapNextRange(const TRange& src_rg,
         left = cvt.m_Src_from;
         if ( !reverse ) {
             // Partial if there's gap between left and last_src_to
-            partial_left = left > *last_src_to + 1;
+            partial_left = left != *last_src_to + 1;
         }
         else {
             // Partial if there's gap between left and next cvt. right end
             partial_left = (cvt_idx == mappings.size() - 1)  ||
-                (mappings[cvt_idx + 1]->m_Src_to + 1 < left);
+                (mappings[cvt_idx + 1]->m_Src_to + 1 != left);
         }
     }
     if (right > cvt.m_Src_to) {
@@ -1364,11 +1364,11 @@ bool CSeq_loc_Mapper::x_MapNextRange(const TRange& src_rg,
         if ( !reverse ) {
             // Partial if there's gap between right and next cvt. left end
             partial_right = (cvt_idx == mappings.size() - 1)  ||
-                (mappings[cvt_idx + 1]->m_Src_from > right + 1);
+                (mappings[cvt_idx + 1]->m_Src_from != right + 1);
         }
         else {
-            // Partial if there's gap between left and last_src_to
-            partial_right = left > *last_src_to + 1;
+            // Partial if there's gap between right and last_src_to
+            partial_right = right + 1 != *last_src_to;
         }
     }
     if (right < left) {
@@ -2015,6 +2015,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/10/28 15:33:49  grichenk
+* Fixed fuzzes.
+*
 * Revision 1.29  2004/10/27 20:01:04  grichenk
 * Fixed mapping: strands, circular locations, fuzz.
 *
