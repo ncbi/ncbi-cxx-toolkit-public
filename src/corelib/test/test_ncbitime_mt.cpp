@@ -172,9 +172,11 @@ static void s_TestFormats(void)
         "YMD   h:sm",
         "yDM   h:ms",
         "yMD   h:ms",
+        "D B Y h:m:s",
+        "D b Y h:m:s",
         "smhyMD",
         "y||||M++++D   h===ms",
-        "   yM[][D   h:,.,.b,bms  ",
+        "   yM[][D   h:,.,.,ms  ",
         "\tkkkMy++D   h:ms\n",
         0
     };
@@ -420,6 +422,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2002/10/18 13:25:15  ivanov
+ * Fixed typo in the time formats list
+ *
  * Revision 6.5  2002/09/19 20:05:43  vasilche
  * Safe initialization of static mutexes
  *
