@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2000/04/19 18:36:44  vakatov
+* Test NStr::Compare() for non-zero "pos"
+*
 * Revision 1.59  2000/04/17 04:16:25  vakatov
 * Added tests for NStr::Compare() and NStr::ToLower/ToUpper()
 *
@@ -934,6 +937,10 @@ static void TestUtilities(void)
              rec->n_nocase_res);
     }
 
+    _ASSERT(NStr::Compare("0123", 0, 2, "12") <  0);
+    _ASSERT(NStr::Compare("0123", 1, 2, "12") == 0);
+    _ASSERT(NStr::Compare("0123", 2, 2, "12") >  0);
+    _ASSERT(NStr::Compare("0123", 3, 2,  "3") == 0);
 
     NcbiCout << NcbiEndl << "NStr::ToLower/ToUpper() tests..." << NcbiEndl;
 
