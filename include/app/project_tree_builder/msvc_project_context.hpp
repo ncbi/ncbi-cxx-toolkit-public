@@ -95,10 +95,7 @@ public:
     {
         return m_SourcesDirsAbs;
     }
-    const string& IncludeDirsRoot(void) const
-    {
-        return GetApp().GetProjectTreeInfo().m_Include;
-    }
+
     const list<string>& IncludeDirsAbs(void) const
     {
         return m_IncludeDirsAbs;
@@ -513,6 +510,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/03/05 18:10:17  gorelenk
+ * Removed member-function IncludeDirsRoot()
+ * from class CMsvcPrjProjectContext.
+ *
  * Revision 1.11  2004/02/24 20:50:03  gorelenk
  * Added declaration of member-function IsConfigEnabled
  * to class CMsvcPrjProjectContext.
