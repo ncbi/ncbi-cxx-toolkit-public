@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2001/03/26 16:52:19  vakatov
+ * Fixed a minor warning
+ *
  * Revision 6.16  2000/12/24 00:13:00  vakatov
  * Radically revamped NCBIARGS.
  * Introduced optional key and posit. args without default value.
@@ -495,7 +498,7 @@ void CArgTestApplication::Init(void)
             m_TestNo = 0;
         }
 
-        if (m_TestNo < 0  ||  m_TestNo > max_test) {
+        if (m_TestNo > max_test) {
             m_TestNo = 0;
         }
     }
