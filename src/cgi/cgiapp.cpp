@@ -435,13 +435,14 @@ CCgiStatistics* CCgiApplication::CreateStat()
     return new CCgiStatistics(*this);
 }
 
+
 void CCgiApplication::x_AddLBCookie()
 {
     const CNcbiRegistry& reg = GetConfig();
 
     string cookie_name =
         GetConfig().GetString("CGI-LB", "Name", kEmptyStr,
-                               CNcbiRegistry::eReturn);
+                              CNcbiRegistry::eReturn);
 
     if ( cookie_name.empty() ) return;
 
@@ -449,7 +450,7 @@ void CCgiApplication::x_AddLBCookie()
                                CNcbiRegistry::eReturn);
 
     string domain = reg.GetString("CGI-LB", "Domain", "ncbi.nlm.nih.gov",
-                               CNcbiRegistry::eReturn);
+                                  CNcbiRegistry::eReturn);
 
     if ( domain.empty() ) {
         ERR_POST("CGI-LB: 'Domain' not specified.");
@@ -460,15 +461,16 @@ void CCgiApplication::x_AddLBCookie()
     }
 
     string path = reg.GetString("CGI-LB", "Path", kEmptyStr,
-                               CNcbiRegistry::eReturn);
+                                CNcbiRegistry::eReturn);
 
     bool secure = reg.GetBool("CGI-LB", "Secure", false,
-                               CNcbiRegistry::eErrPost);
+                              CNcbiRegistry::eErrPost);
 
     string host = reg.GetString("CGI-LB", "Host", kEmptyStr,
-                               CNcbiRegistry::eReturn);
+                                CNcbiRegistry::eReturn);
 
     if ( host.empty() ) {
+#if 0
         unsigned int ip_addr = SOCK_gethostbyname(0);
         char buf[100];
         int res = SOCK_ntoa(ip_addr, buf, sizeof(buf));
@@ -476,8 +478,11 @@ void CCgiApplication::x_AddLBCookie()
             host = buf;
         }
         else {
-            ERR_POST("CCgiApp::x_AddLBCookie SOCK_ntoa error:" << res);
+            ERR_POST("CCgiApp::x_AddLBCookie -- SOCK_ntoa error:" << res);
         }
+#else
+        ERR_POST("CCgiApp::x_AddLBCookie -- Host address undefined");
+#endif
     }
     CCgiCookie cookie(cookie_name, host, domain, path);
     if (life_span > 0) {
@@ -489,6 +494,7 @@ void CCgiApplication::x_AddLBCookie()
 
     GetContext().GetResponse().Cookies().Add(cookie);
 }
+
 
 
 ///////////////////////////////////////////////////////
@@ -666,6 +672,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2003/02/19 20:52:33  vakatov
+* Temporarily disable auto-detection of host address
+*
 * Revision 1.36  2003/02/19 17:51:46  kuznets
 * Added generation of load balancing cookie
 *
