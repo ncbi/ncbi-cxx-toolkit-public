@@ -1,4 +1,4 @@
---$Revision: 3.1 $
+--$Revision: 3.2 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -346,7 +346,8 @@ NCBIstdaa ::= OCTET STRING    -- codes 0-25, 1 per byte
 
 Annot-id ::= CHOICE {
     local Object-id ,
-    ncbi INTEGER }
+    ncbi INTEGER ,
+    general Dbtag }
     
 Annot-descr ::= SET OF Annotdesc
 
@@ -358,7 +359,16 @@ Annotdesc ::= CHOICE {
     user User-object ,           -- user defined object
     create-date Date ,           -- date entry first created/released
     update-date Date ,           -- date of last update
-    src Seq-id }                 -- source sequence from which annot came
+    src Seq-id ,                 -- source sequence from which annot came
+    align Align-def }            -- definition of the SeqAligns
+
+Align-def ::= SEQUENCE {
+    align-type INTEGER {         -- class of align Seq-annot
+      ref (1) ,                  -- set of alignments to the same sequence
+      alt (2) ,                  -- set of alternate alignments of the same seqs
+      blocks (3) ,               -- set of aligned blocks in the same seqs
+      other (255) } ,
+    ids SET OF Seq-id OPTIONAL } -- used for the one ref seqid for now
 
 Seq-annot ::= SEQUENCE {
     id SET OF Annot-id OPTIONAL ,
@@ -376,7 +386,9 @@ Seq-annot ::= SEQUENCE {
     data CHOICE {
         ftable SET OF Seq-feat ,
         align SET OF Seq-align ,
-        graph SET OF Seq-graph } }
+        graph SET OF Seq-graph ,
+        ids SET OF Seq-id ,        -- used for communication between tools
+        locs SET OF Seq-loc } }    -- used for communication between tools
 
 END
 
