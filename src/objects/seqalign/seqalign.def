@@ -1,6 +1,8 @@
 [Dense-diag]
 starts.E._type = TSeqPos
 len._type      = TSeqPos
+; for consistency with Dense-seg.ids
+ids._type      = vector
 
 [Dense-seg]
 ; may contain occurrences of -1
