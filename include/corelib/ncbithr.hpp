@@ -1,5 +1,5 @@
-#ifndef NCBITHR__HPP
-#define NCBITHR__HPP
+#ifndef CORELIB___NCBITHR__HPP
+#define CORELIB___NCBITHR__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,35 +28,37 @@
  *
  * Author:  Denis Vakatov, Aleksey Grichenko
  *
- * File Description:
- *   Multi-threading -- classes, functions, and features.
- *
- *   TLS:
- *      CTlsBase         -- TLS implementation (base class for CTls<>)
- *      CTls<>           -- thread local storage template
- *
- *   THREAD:
- *      CThread          -- thread wrapper class
- *
- *   MUTEX:
- *      CMutex           -- mutex that allows nesting (with runtime checks)
- *      CAutoMutex       -- guarantee mutex release
- *      CMutexGuard      -- acquire mutex, then guarantee for its release
- *
- *   RW-LOCK:
- *      CInternalRWLock  -- platform-dependent RW-lock structure (fwd-decl)
- *      CRWLock          -- Read/Write lock related  data and methods
- *      CAutoRW          -- guarantee RW-lock release
- *      CReadLockGuard   -- acquire R-lock, then guarantee for its release
- *      CWriteLockGuard  -- acquire W-lock, then guarantee for its release
- *
- *   SEMAPHORE:
- *      CSemaphore       -- application-wide semaphore
- *
- *   MISC:
- *      SwapPointers     -- atomic pointer swap operation
  *
  */
+
+/// @file ncbithr.hpp
+/// Multi-threading -- classes, functions, and features.
+///
+///   TLS:
+///   -   CTlsBase         -- TLS implementation (base class for CTls<>)
+///   -   CTls<>           -- thread local storage template
+///
+///   THREAD:
+///   -   CThread          -- thread wrapper class
+///
+///   MUTEX:
+///   -   CMutex           -- mutex that allows nesting (with runtime checks)
+///   -   CAutoMutex       -- guarantee mutex release
+///   -   CMutexGuard      -- acquire mutex, then guarantee for its release
+///
+///   RW-LOCK:
+///   -   CInternalRWLock  -- platform-dependent RW-lock structure (fwd-decl)
+///   -   CRWLock          -- Read/Write lock related  data and methods
+///   -   CAutoRW          -- guarantee RW-lock release
+///   -   CReadLockGuard   -- acquire R-lock, then guarantee for its release
+///   -   CWriteLockGuard  -- acquire W-lock, then guarantee for its release
+///
+///   SEMAPHORE:
+///   -   CSemaphore       -- application-wide semaphore
+///
+///   MISC:
+///   -   SwapPointers     -- atomic pointer swap operation
+
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbithr_conf.hpp>
@@ -78,18 +80,14 @@
 
 BEGIN_NCBI_SCOPE
 
-/////////////////////////////////////////////////////////////////////////////
-//
-//  CTlsBase::
-//
-//  CTls<>::
-//
-//    Thread local storage
-//
-//  Store thread-specific data.
-//
 
-// only to serve as a base class for CTls<>
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CTlBase --
+///
+/// Base class for CTls<> for storing thread-specific data.
+
 class NCBI_XNCBI_EXPORT CTlsBase : public CObject
 {
     friend class CRef<CTlsBase>;
@@ -99,62 +97,102 @@ public:
     typedef void (*FCleanupBase)(void* value, void* cleanup_data);
 
 protected:
-    // All other methods are described just below, in CTls<> class declaration
+    /// Constructor.
     CTlsBase(void);
 
-    // Cleanup data, delete TLS key
+    /// Destructor.
+    ///
+    /// Cleanup data and delete TLS key.
     ~CTlsBase(void);
 
+    /// Helper method to get stored thread data. 
     void* x_GetValue(void) const;
+
+    /// Helper method to set thread data. 
     void x_SetValue(void* value, FCleanupBase cleanup=0, void* cleanup_data=0);
+
+    /// Helper method to reset thread data. 
     void x_Reset(void);
+
+    /// Helper method to discard thread data. 
     void x_Discard(void);
 
 private:
-    TTlsKey m_Key;
-    bool    m_Initialized;
+    TTlsKey m_Key;              ///< 
+    bool    m_Initialized;      ///< Indicates if thread data initialized.
 
-    // Internal structure to store all three pointers in the same TLS
+    /// Internal structure to store all three pointers in the same TLS.
     struct STlsData {
-        void*        m_Value;
+        void*        m_Value;       
         FCleanupBase m_CleanupFunc;
         void*        m_CleanupData;
     };
+
+    /// Helper method to get the STlsData* 
     STlsData* x_GetTlsData(void) const;
 };
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CTls --
+///
+/// Define template class for thread local storage.
 
 template <class TValue>
 class CTls : public CTlsBase
 {
 public:
-    // Get the pointer previously stored by SetValue().
-    // Return 0 if no value has been stored, or if Reset() was last called.
+    /// Get the pointer previously stored by SetValue().
+    ///
+    /// Return 0 if no value has been stored, or if Reset() was last called.
+    /// @sa
+    ///   SetValue()
     TValue* GetValue(void) const
     {
         return reinterpret_cast<TValue*> (x_GetValue());
     }
 
-    // Cleanup previously stored value, store the new value.
-    // The "cleanup" function and "cleanup_data" will be used to
-    // destroy the new "value" in the next call to SetValue() or Reset().
-    // Do not cleanup if the new value is equal to the old one.
+    /// Define cleanup function type, FCleanup.
     typedef void (*FCleanup)(TValue* value, void* cleanup_data);
+
+    /// Set value.
+    ///
+    /// Cleanup previously stored value, and set the new value.
+    /// The "cleanup" function and "cleanup_data" will be used to
+    /// destroy the new "value" in the next call to SetValue() or Reset().
+    /// Do not cleanup if the new value is equal to the old one.
+    /// @param value
+    ///   New value to set.
+    /// @param cleanup
+    ///   Cleanup function.
+    ///   Do not cleanup if default of 0 is specified or if new value is the
+    ///   same as old value.
+    /// @param cleanup_data
+    ///   One of the parameters to the cleanup function.
+    /// @sa
+    ///   GetValue()
     void SetValue(TValue* value, FCleanup cleanup = 0, void* cleanup_data = 0)
     {
         x_SetValue(value,
                    reinterpret_cast<FCleanupBase> (cleanup), cleanup_data);
     }
 
-    // Reset TLS to its initial value (as it was before the first call
-    // to SetValue()). Do cleanup if the cleanup function was specified
-    // in the previous call to SetValue().
-    // NOTE:  Reset() will always be called automatically on the thread
-    //        termination, or when the TLS is destroyed.
+    /// Reset thread local storage.
+    ///
+    /// Reset thread local storage to its initial value (as it was before the
+    /// first call to SetValue()). Do cleanup if the cleanup function was
+    /// specified in the previous call to SetValue().
+    ///
+    /// Reset() will always be called automatically on the thread termination,
+    /// or when the TLS is destroyed.
     void Reset(void) { x_Reset(); }
 
-    // Schedule the TLS to be destroyed
-    // (as soon as there are no CRef to it left).
+    /// Discard thread local storage.
+    ///
+    /// Schedule the TLS to be destroyed as soon as there are no CRef to it
+    /// left.
     void Discard(void) { x_Discard(); }
 };
 
@@ -170,7 +208,15 @@ public:
 //  calls user-provided Main() function. The thread then can be detached
 //  or joined. In any case, explicit destruction of the thread is prohibited.
 //
-
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CThread --
+///
+/// Thread wrapper class.
+///
+///  Base class for user-defined threads. Creates the new thread, then
+///  calls user-provided Main() function. The thread then can be detached
+///  or joined. In any case, explicit destruction of the thread is prohibited.
 
 class NCBI_XNCBI_EXPORT CThread : public CObject
 {
@@ -178,22 +224,32 @@ class NCBI_XNCBI_EXPORT CThread : public CObject
     friend class CTlsBase;
 
 public:
-    // Must be allocated in the heap (only!).
+    /// Constructor.
+    ///
+    /// Must be allocated in the heap only!.
     CThread(void);
 
-    // bitwise OR'd flags for thread creation passed to Run()
+    /// Which mode should the thread run in.
     enum ERunMode {
-        fRunDefault  = 0x00,    // default
-        fRunDetached = 0x01,    // run the thread detached (non-joinable)
-// these two may not be supported (and will be ignored) on some platforms
-        fRunBound    = 0x10,    // run thread in a 1:1 thread:LPW mode
-        fRunUnbound  = 0x20,    // run thread in a N:1 thread:LPW mode
-        fRunAllowST  = 0x100    // allow threads to run in single thread builds
+        fRunDefault  = 0x00,    ///< Default mode
+        fRunDetached = 0x01,    ///< Run the thread detached (non-joinable)
+        fRunBound    = 0x10,    ///< Run thread in a 1:1 thread:LPW mode
+                                ///< - may not be supported and will be
+                                ///< ignored on some platforms
+        fRunUnbound  = 0x20,    //< Run thread in a N:1 thread:LPW mode
+                                ///< - may not be supported and will be
+                                ///< ignored on some platforms
+        fRunAllowST  = 0x100    ///< Allow threads to run in single thread
+                                ///< builds
     };
-    typedef int TRunMode;  // binary OR of "ERunMode"
 
-    // Run the thread:
-    // create new thread, initialize it, and call user-provided Main() method.
+    /// Bitwise OR'd flags for thread creation passed to Run().
+    typedef int TRunMode;
+
+    /// Run the thread.
+    ///
+    /// Create a new thread, initialize it, and call user-provided Main()
+    /// method.
     bool Run(TRunMode flags = fRunDefault);
 
     // Inform the thread that user does not need to wait for its termination.
@@ -471,6 +527,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/09/03 14:47:09  siyan
+ * Added documentation.
+ *
  * Revision 1.20  2003/07/31 19:29:03  ucko
  * SwapPointers: fix for Mac OS (classic and X) and AIX.
  *
