@@ -131,14 +131,6 @@ public:
     /// Returns true if this object needs default values set.
     void DoneDefaults() { m_Opts->DoneDefaults(); }
     
-    /******************* Lookup table options ***********************/
-
-    /// Returns AlphabetSize
-    int GetAlphabetSize() const { return m_Opts->GetAlphabetSize(); }
-    /// Sets AlphabetSize
-    /// @param asz AlphabetSize [in]
-    void SetAlphabetSize(int asz) { m_Opts->SetAlphabetSize(asz); }
-
     /******************* Query setup options ************************/
     /// Returns FilterString
     const char* GetFilterString() const { return m_Opts->GetFilterString(); }
@@ -256,6 +248,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/01/10 13:31:24  madden
+ * Removal of [GS]etAlphabetSize
+ *
  * Revision 1.15  2004/06/09 15:11:52  bealer
  * - Document locality parameter of factory class.
  *
