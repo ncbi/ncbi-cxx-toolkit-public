@@ -140,8 +140,8 @@ typedef struct {
     EMIME_SubType       mime_s; /*     subtype,                              */
     EMIME_Encoding      mime_e; /*         and encoding for content-type     */
     ESERV_Flags           flag; /* algorithm flag for the server             */
-    unsigned short      quorum; /* quorum required to override this entry    */
     unsigned char reserved[14]; /* zeroed reserved area - do not use!        */
+    unsigned short      quorum; /* quorum required to override this entry    */
     USERV_Info               u; /* server type-specific data/params          */
 } SSERV_Info;
 
@@ -358,6 +358,9 @@ int/*bool*/ SERV_EqualInfo(const SSERV_Info* info1, const SSERV_Info* info2);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2002/09/17 15:39:07  lavr
+ * SSERV_Info::quorum moved past the reserved area
+ *
  * Revision 6.32  2002/09/16 14:59:04  lavr
  * Rename SSERV_DnsInfo to follow naming convention for other Info's
  *

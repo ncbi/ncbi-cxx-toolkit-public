@@ -443,8 +443,8 @@ SSERV_Info* SERV_CreateNcbidInfo
         info->mime_s       = SERV_MIME_SUBTYPE_UNDEFINED;
         info->mime_e       = eENCOD_None;
         info->flag         = SERV_DEFAULT_FLAG;
-        info->quorum       = 0;
         memset(&info->reserved, 0, sizeof(info->reserved));
+        info->quorum       = 0;
         info->u.ncbid.args = (TNCBI_Size) sizeof(info->u.ncbid);
         if (strcmp(args, "''") == 0) /* special case */
             args = 0;
@@ -507,8 +507,8 @@ SSERV_Info* SERV_CreateStandaloneInfo
         info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
         info->mime_e = eENCOD_None;
         info->flag   = SERV_DEFAULT_FLAG;
-        info->quorum = 0;
         memset(&info->reserved, 0, sizeof(info->reserved));
+        info->quorum = 0;
         memset(&info->u.standalone, 0, sizeof(info->u.standalone));
     }
     return info;
@@ -620,8 +620,8 @@ SSERV_Info* SERV_CreateHttpInfo
         info->mime_s      = SERV_MIME_SUBTYPE_UNDEFINED;
         info->mime_e      = eENCOD_None;
         info->flag        = SERV_DEFAULT_FLAG;
-        info->quorum      = 0;
         memset(&info->reserved, 0, sizeof(info->reserved));
+        info->quorum      = 0;
         info->u.http.path = (TNCBI_Size) sizeof(info->u.http);
         info->u.http.args = (TNCBI_Size) (info->u.http.path +
                                           strlen(path ? path : "")+1);
@@ -688,8 +688,8 @@ SSERV_Info* SERV_CreateFirewallInfo(unsigned int host, unsigned short port,
         info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
         info->mime_e = eENCOD_None;
         info->flag   = SERV_DEFAULT_FLAG;
-        info->quorum = 0;
         memset(&info->reserved, 0, sizeof(info->reserved));
+        info->quorum = 0;
         info->u.firewall.type = type;
     }
     return info;
@@ -746,8 +746,8 @@ SSERV_Info* SERV_CreateDnsInfo(unsigned int host)
         info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
         info->mime_e = eENCOD_None;
         info->flag   = SERV_DEFAULT_FLAG;
-        info->quorum = 0;
         memset(&info->reserved, 0, sizeof(info->reserved));
+        info->quorum = 0;
         memset(&info->u.dns.pad, 0, sizeof(info->u.dns.pad));
     }
     return info;
@@ -839,6 +839,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2002/09/17 15:39:33  lavr
+ * SSERV_Info::quorum moved past the reserved area
+ *
  * Revision 6.39  2002/09/04 15:09:47  lavr
  * Handle quorum field in SSERV_Info::, log moved to end
  *
