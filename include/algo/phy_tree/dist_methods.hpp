@@ -38,6 +38,15 @@
 #include <util/math/matrix.hpp>
 #include <algo/phy_tree/phy_node.hpp>
 
+// these are for conversion to CBioTreeContainer
+#include <objects/biotree/BioTreeContainer.hpp>
+#include <objects/biotree/FeatureDescr.hpp>
+#include <objects/biotree/Node.hpp>
+#include <objects/biotree/NodeSet.hpp>
+#include <objects/biotree/NodeFeature.hpp>
+#include <objects/biotree/NodeFeatureSet.hpp>
+#include <objects/biotree/FeatureDictSet.hpp>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -85,6 +94,9 @@ public:
                              EFastMePar ntype = eBalanced);
 };
 
+/// Conversion from TPhyTreeNode to CBioTreeContainer
+CRef<objects::CBioTreeContainer>
+MakeBioTreeContainer(const TPhyTreeNode *tree);
 
 END_NCBI_SCOPE
 
@@ -93,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/01 19:44:53  jcherry
+ * Added function for making CBioTreeContainer from TPhyTreeNode
+ *
  * Revision 1.5  2004/02/19 16:43:46  jcherry
  * Temporarily disable one form of Divergence() method
  *

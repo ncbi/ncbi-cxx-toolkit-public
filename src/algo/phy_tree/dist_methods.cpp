@@ -37,6 +37,8 @@
 
 #include "fastme/graph.h"
 
+#include <objects/biotree/FeatureDescr.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -350,12 +352,82 @@ void CDistMethods::Divergence(const CAlignment& aln, TMatrix& result)
 }
 #endif
 
+
+/// Recursive function for adding TPhyTreeNodes to BioTreeContainer
+static void s_AddNodeToBtc(CRef<CBioTreeContainer> btc,
+                           const TPhyTreeNode* ptn,
+                           int parent_uid, int& next_uid)
+{
+    const int label_fid = 0;
+    const int dist_fid = 1;
+
+    CRef<CNode> node;
+    CRef<CNodeFeature> node_feature;
+    int my_uid = next_uid++;
+
+    // first do this node
+    node = new CNode;
+    node->SetId(my_uid);
+    node->SetParent(parent_uid);
+    if (ptn->GetValue().GetLabel() != "") {
+        node_feature = new CNodeFeature;
+        node_feature->SetFeatureid(label_fid);
+        node_feature->SetValue(ptn->GetValue().GetLabel());
+        node->SetFeatures().Set().push_back(node_feature);
+    }
+    if (ptn->GetValue().IsSetDist()) {
+        node_feature = new CNodeFeature;
+        node_feature->SetFeatureid(dist_fid);
+        node_feature->SetValue
+            (NStr::DoubleToString(ptn->GetValue().GetDist()));
+        node->SetFeatures().Set().push_back(node_feature);
+    }
+
+    btc->SetNodes().Set().push_back(node);
+
+    // now do its children
+    for (TPhyTreeNode::TNodeList_CI it = ptn->SubNodeBegin();
+         it != ptn->SubNodeEnd();  ++it) {
+        s_AddNodeToBtc(btc, *it, my_uid, next_uid);
+    }
+}
+
+
+/// Conversion from TPhyTreeNode to CBioTreeContainer
+CRef<CBioTreeContainer> MakeBioTreeContainer(const TPhyTreeNode *tree)
+{
+    const int label_fid = 0;
+    const int dist_fid = 1;
+
+    CRef<CBioTreeContainer> btc(new CBioTreeContainer);
+    CRef<CFeatureDescr> fdescr;
+
+    fdescr = new CFeatureDescr();
+    fdescr->SetId(label_fid);
+    fdescr->SetName("label");
+    btc->SetFdict().Set().push_back(fdescr);
+    
+    fdescr = new CFeatureDescr();
+    fdescr->SetId(dist_fid);
+    fdescr->SetName("dist");
+    btc->SetFdict().Set().push_back(fdescr);
+
+    int next_uid = 0;
+    s_AddNodeToBtc(btc, tree, -1, next_uid);
+    // unset parent id of root node
+    btc->SetNodes().Set().front()->ResetParent();
+    return btc;
+}
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/07/01 19:44:53  jcherry
+ * Added function for making CBioTreeContainer from TPhyTreeNode
+ *
  * Revision 1.8  2004/05/21 21:41:03  gorelenk
  * Added PCH ncbi_pch.hpp
  *
