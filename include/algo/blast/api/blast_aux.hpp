@@ -45,16 +45,16 @@
 #include <blast_filter.h>       // Needed for BlastMask & BlastSeqLoc
 #include <blast_util.h>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-BEGIN_NCBI_SCOPE
 
 /** Converts a CSeq_loc into a BlastMaskPtr structure used in NewBlast
  * @param sl CSeq_loc to convert [in]
  * @param index Number of frame/query number? this CSeq_loc applies to [in]
  * @return Linked list of BlastMask structures
  */
+NCBI_XBLAST_EXPORT
 BlastMask*
 BLASTSeqLoc2BlastMask(const CSeq_loc& sl, int index);
 
@@ -125,6 +125,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/08/11 13:58:51  dicuccio
+* Added export specifiers.  Fixed problem with unimplemented private copy ctor
+* (truly make unimplemented)
+*
 * Revision 1.5  2003/08/01 17:40:56  dondosha
 * Use renamed functions and structures from local blastkar.h
 *

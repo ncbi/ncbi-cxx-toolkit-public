@@ -45,7 +45,7 @@
 #include <blast_hits.h>
 #include <gapinfo.h>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 #ifndef BLAST_SMALL_GAPS
@@ -73,10 +73,17 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
         const BlastScoringOptions* score_options, 
         const BlastScoreBlk* sbp);
 
+
+END_NCBI_SCOPE
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/08/11 13:58:51  dicuccio
+* Added export specifiers.  Fixed problem with unimplemented private copy ctor
+* (truly make unimplemented)
+*
 * Revision 1.6  2003/08/08 19:42:14  dicuccio
 * Compilation fixes: #include file relocation; fixed use of 'list' and 'vector'
 * as variable names

@@ -38,12 +38,12 @@
 
 #include <algo/blast/api/blast_option.hpp>
 
+BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-BEGIN_NCBI_SCOPE
 
 /// Runs the BLAST algorithm between 2 sequences.
-class CBl2Seq : public CObject
+class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
 {
 public:
     typedef vector< CConstRef<CSeq_loc> >   TSeqLocVector;
@@ -219,6 +219,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/08/11 13:58:51  dicuccio
+* Added export specifiers.  Fixed problem with unimplemented private copy ctor
+* (truly make unimplemented)
+*
 * Revision 1.7  2003/08/08 19:42:14  dicuccio
 * Compilation fixes: #include file relocation; fixed use of 'list' and 'vector'
 * as variable names

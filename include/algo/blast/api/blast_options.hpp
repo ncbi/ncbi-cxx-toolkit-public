@@ -38,10 +38,9 @@
 
 #include <objects/seqloc/Seq_loc.hpp>
 
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
-
 BEGIN_NCBI_SCOPE
+USING_SCOPE(ncbi::objects);
+
 
 /// @todo Constants used to initialize default values (word size, evalue
 /// threshold, ...) should be defined in this module when the C NewBlast is
@@ -49,7 +48,7 @@ BEGIN_NCBI_SCOPE
 #define GENCODE_STRLEN 64
 
 /// Encapsulates all blast input parameters
-class CBlastOption : public CObject
+class NCBI_XBLAST_EXPORT CBlastOption : public CObject
 {
 public:
 
@@ -298,7 +297,7 @@ protected:
 
 private:
     /// Prohibit copy c-tor 
-    CBlastOption(const CBlastOption& bo) { operator=(bo); }
+    CBlastOption(const CBlastOption& bo);
     /// Prohibit assignment operator
     CBlastOption& operator=(const CBlastOption& bo);
 };
@@ -999,6 +998,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/08/11 13:58:51  dicuccio
+* Added export specifiers.  Fixed problem with unimplemented private copy ctor
+* (truly make unimplemented)
+*
 * Revision 1.10  2003/08/08 19:42:14  dicuccio
 * Compilation fixes: #include file relocation; fixed use of 'list' and 'vector'
 * as variable names

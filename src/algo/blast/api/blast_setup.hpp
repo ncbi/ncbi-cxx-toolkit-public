@@ -36,10 +36,9 @@
 #include <objmgr/scope.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-BEGIN_NCBI_SCOPE
 
 /** Retrieves a sequence using the object manager
  * @param sl seqloc of the sequence to obtain [in]
@@ -85,6 +84,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/08/11 13:58:51  dicuccio
+* Added export specifiers.  Fixed problem with unimplemented private copy ctor
+* (truly make unimplemented)
+*
 * Revision 1.4  2003/08/01 22:35:02  camacho
 * Added function to get matrix path (fixme)
 *
