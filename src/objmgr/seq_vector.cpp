@@ -101,7 +101,18 @@ CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos) const
     if ( !m_Iterator.get() ) {
         m_Iterator.reset(new CSeqVector_CI(*this, pos));
     }
-    m_Iterator->SetPos(pos);
+    else {
+        TSeqPos old_pos = m_Iterator->GetPos();
+        if (old_pos+1 == pos) {
+            ++(*m_Iterator);
+        }
+        else if (old_pos-1 == pos) {
+            --(*m_Iterator);
+        }
+        else if (old_pos != pos) {
+            m_Iterator->SetPos(pos);
+        }
+    }
     return **m_Iterator;
 }
 
@@ -157,10 +168,6 @@ CSeqVector::TResidue CSeqVector::x_GetGapChar(TCoding coding) const
                      "Can not indicate gap using the selected coding");
     }
 }
-
-
-static const TSeqPos kCacheSize = 16384;
-static const TSeqPos kCacheKeep = kCacheSize / 16;
 
 
 DEFINE_STATIC_FAST_MUTEX(s_ConvertTableMutex);
@@ -377,8 +384,10 @@ CSeqVector::ESequenceType CSeqVector::GetSequenceType(void) const
 
 void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
 {
-    CSeqVector_CI it(*this, start);
-    it.GetSeqData(start, stop, buffer);
+    if ( !m_Iterator.get() ) {
+        m_Iterator.reset(new CSeqVector_CI(*this, start));
+    }
+    m_Iterator->GetSeqData(start, stop, buffer);
 }
 
 
@@ -388,6 +397,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2003/06/17 20:35:39  grichenk
+* CSeqVector_CI-related improvements
+*
 * Revision 1.55  2003/06/13 17:22:28  grichenk
 * Check if seq-map is not null before using it
 *
