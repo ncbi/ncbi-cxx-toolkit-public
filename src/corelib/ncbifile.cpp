@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/09/19 16:22:18  ucko
+ * S_IFDOOR is nonportable; make sure it exists before using it.
+ * Fix type of second argument to CTmpStream's constructor (caught by gcc 3).
+ *
  * Revision 1.1  2001/09/19 13:06:09  ivanov
  * Initial revision
  *
@@ -350,9 +354,11 @@ CDirEntry::EType CDirEntry::GetType(void) const
     if ( (st.st_mode & S_IFSOCK) == S_IFSOCK ) {
         return eSocket;
     }
+#ifdef S_IFDOOR /* only Solaris seems to have this */
     if ( (st.st_mode & S_IFDOOR) == S_IFDOOR ) {
         return eDoor;
     }
+#endif
     if ( (st.st_mode & S_IFBLK)  == S_IFBLK ) {
         return eBlockSpecial;
     }
@@ -438,7 +444,7 @@ string CFile::GetTmpNameExt(const string& dir, const string& prefix)
 class CTmpStream : public fstream
 {
 public:
-    CTmpStream(const char *s, int mode) : fstream(s, mode) 
+    CTmpStream(const char *s, IOS_BASE::openmode mode) : fstream(s, mode) 
     {
         m_FileName = s; 
     }
