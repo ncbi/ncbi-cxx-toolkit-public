@@ -41,7 +41,7 @@
 
 /* Revision 6.100 */
 #define SERV_CLIENT_REVISION_MAJOR  6
-#define SERV_CLIENT_REVISION_MINOR  100
+#define SERV_CLIENT_REVISION_MINOR  101
 
 
 /** @addtogroup ServiceSupport
@@ -199,6 +199,9 @@ extern NCBI_XCONNECT_EXPORT void DISP_SetMessageHook(FDISP_MessageHook);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2004/06/14 16:36:13  lavr
+ * Client minor version number incremented
+ *
  * Revision 6.32  2004/01/30 14:37:33  lavr
  * Client revision made independent of CVS revisions
  *
