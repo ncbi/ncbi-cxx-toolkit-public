@@ -47,6 +47,11 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+enum ESeqLocExtremes {
+    eExtreme_Biological,
+    eExtreme_Positional
+};
+
 
 inline
 bool IsForward(ENa_strand s)
@@ -98,6 +103,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/02/18 14:58:34  shomrat
+* + ESeqLocExtremes
+*
 * Revision 1.5  2004/08/16 17:59:26  grichenk
 * Added IsForward()
 *
