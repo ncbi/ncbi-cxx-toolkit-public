@@ -62,7 +62,7 @@ CONN CConn_IOStream::GetCONN() const
 
 CConn_IOStream::~CConn_IOStream(void)
 {
-#ifndef HAVE_IOS_XALLOC
+#if !defined(HAVE_IOS_XALLOC) || defined(HAVE_BUGGY_IOS_CALLBACKS)
     streambuf* sb = rdbuf();
     delete sb;
     if (sb != m_CSb)
@@ -225,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/04/14 21:08:15  lavr
+ * Take advantage of HAVE_BUGGY_IOS_CALLBACKS
+ *
  * Revision 6.17  2003/04/11 17:57:29  lavr
  * Take advantage of HAVE_IOS_XALLOC
  *

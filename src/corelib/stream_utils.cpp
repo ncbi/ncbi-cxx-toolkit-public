@@ -83,7 +83,7 @@ private:
     streamsize          m_BufSize;
     void*               m_DelPtr;
 
-#ifdef HAVE_IOS_XALLOC
+#if defined(HAVE_IOS_XALLOC) && !defined(HAVE_BUGGY_IOS_CALLBACKS)
     int                 m_Index;
     static void         x_Callback(IOS_BASE::event, IOS_BASE&, int);
 #endif
@@ -95,7 +95,7 @@ private:
 const streamsize CPushback_Streambuf::k_MinBufSize = 4096;
 
 
-#ifdef HAVE_IOS_XALLOC
+#if defined(HAVE_IOS_XALLOC) && !defined(HAVE_BUGGY_IOS_CALLBACKS)
 void CPushback_Streambuf::x_Callback(IOS_BASE::event event,
                                      IOS_BASE&       ios,
                                      int             index)
@@ -104,11 +104,8 @@ void CPushback_Streambuf::x_Callback(IOS_BASE::event event,
         return;
 
     streambuf* sb = static_cast<streambuf*> (ios.pword(index));
-    if (!sb)
-        return;
-
-    ios.pword(index) = 0;
-    delete sb;
+    if (sb)
+        delete sb;
 }
 #endif
 
@@ -122,7 +119,7 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
     setp(0, 0); // unbuffered output at this level of streambuf's hierarchy
     setg(m_Buf, m_Buf, m_Buf + m_BufSize);
     m_Sb = m_Is.rdbuf(this);
-#ifdef HAVE_IOS_XALLOC
+#if defined(HAVE_IOS_XALLOC) && !defined(HAVE_BUGGY_IOS_CALLBACKS)
     try {
         m_Index             = m_Is.xalloc();
         m_Is.pword(m_Index) = this;
@@ -136,7 +133,9 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
 CPushback_Streambuf::~CPushback_Streambuf()
 {
     delete[] (CT_CHAR_TYPE*) m_DelPtr;
-#ifdef HAVE_IOS_XALLOC
+    if (m_Sb)
+        m_Is.rdbuf(m_Sb);
+#if defined(HAVE_IOS_XALLOC) && !defined(HAVE_BUGGY_IOS_CALLBACKS)
     m_Is.pword(m_Index) = 0;
 #else
     if (dynamic_cast<CPushback_Streambuf*> (m_Sb))
@@ -427,6 +426,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.23  2003/04/14 21:08:39  lavr
+ * Take advantage of HAVE_BUGGY_IOS_CALLBACKS
+ *
  * Revision 1.22  2003/04/11 17:57:52  lavr
  * Take advantage of HAVE_IOS_XALLOC
  *
