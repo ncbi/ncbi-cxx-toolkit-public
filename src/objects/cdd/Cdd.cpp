@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/06/19 20:29:43  hurwitz
+ * added more support functions for cdd access
+ *
  * Revision 1.3  2002/06/10 21:05:05  hurwitz
  * added access function to parent field
  *
@@ -51,6 +54,17 @@
 // standard includes
 
 // generated includes
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiargs.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbienv.hpp>
+#include <corelib/ncbistre.hpp>
+#include <serial/serial.hpp>
+#include <serial/objistrasn.hpp>
+#include <serial/objistrasnb.hpp>
+#include <serial/objostrasn.hpp>
+#include <serial/objostrasnb.hpp>
+#include <serial/iterator.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/cdd/Cdd.hpp>
 #include <objects/cdd/Cdd_descr_set.hpp>
@@ -58,8 +72,14 @@
 #include <objects/cdd/Cdd_id_set.hpp>
 #include <objects/cdd/Cdd_id.hpp>
 #include <objects/cdd/Feature_evidence.hpp>
+#include <objects/cdd/Global_id.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -68,12 +88,16 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
+#include <objects/seqblock/PDB_block.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include <objects/cdd/Global_id.hpp>
 #include <objects/mmdb1/Biostruc_annot_set.hpp>
 #include <objects/mmdb1/Biostruc_id.hpp>
 #include <objects/mmdb1/Mmdb_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
+#include <../src/internal/structure/CDTree/cdt_read_write_asn.hpp>
 
 // generated classes
 
@@ -199,6 +223,94 @@ bool CCdd::IsNoEvidenceFor(list<int>& MmdbIds,
 }
 
 
+string CCdd::GetDefline(int SeqIndex) {
+//-------------------------------------------------------------------------
+// get a description for the SeqIndex sequence
+//-------------------------------------------------------------------------
+  list< CRef< CSeq_entry > >::const_iterator  i;
+  list< CRef< CSeqdesc > >::const_iterator  j;
+  int  SeqCount;
+  string  Description;
+
+  if (IsSetSequences()) {
+    if (GetSequences().IsSet()) {
+      // count to the SeqIndex sequence
+      SeqCount = 0;
+      for (i=GetSequences().GetSet().GetSeq_set().begin();
+           i!=GetSequences().GetSet().GetSeq_set().end(); i++) {
+        if (SeqCount == SeqIndex) {
+          if ((*i)->IsSeq()) {
+            if ((*i)->GetSeq().IsSetDescr()) {
+              // look through the sequence descriptions
+              for (j=(*i)->GetSeq().GetDescr().Get().begin();
+                   j!=(*i)->GetSeq().GetDescr().Get().end(); j++) {
+                // if there's a title, return that description
+                if ((*j)->IsTitle()) {
+                  return((*j)->GetTitle());
+                }
+                // if there's a pdb description, return it
+                if ((*j)->IsPdb()) {
+                  if ((*j)->GetPdb().GetCompound().size() > 0) {
+                    return((*j)->GetPdb().GetCompound().front());
+                  }
+                }
+              }
+            }
+          }
+        }
+        SeqCount++;
+        if (SeqCount > SeqIndex) break;
+      }
+    }
+  }
+  return(Description);
+}
+
+
+string CCdd::GetSpecies(int SeqIndex) {
+//-------------------------------------------------------------------------
+// get the species of the SeqIndex sequence
+//-------------------------------------------------------------------------
+  list< CRef< CSeq_entry > >::const_iterator  i;
+  list< CRef< CSeqdesc > >::const_iterator  j;
+  int  SeqCount;
+  string  Description;
+
+  if (IsSetSequences()) {
+    if (GetSequences().IsSet()) {
+      // count to the SeqIndex sequence
+      SeqCount = 0;
+      for (i=GetSequences().GetSet().GetSeq_set().begin();
+           i!=GetSequences().GetSet().GetSeq_set().end(); i++) {
+        if (SeqCount == SeqIndex) {
+          if ((*i)->IsSeq()) {
+            if ((*i)->GetSeq().IsSetDescr()) {
+              // look through the sequence descriptions
+              for (j=(*i)->GetSeq().GetDescr().Get().begin();
+                   j!=(*i)->GetSeq().GetDescr().Get().end(); j++) {
+                // if there's an organism identifier
+                if ((*j)->IsSource()) {
+                  // retrieve common or formal name
+                  if ((*j)->GetSource().GetOrg().IsSetCommon()) {
+                    return((*j)->GetSource().GetOrg().GetCommon());
+                  }
+                  if ((*j)->GetSource().GetOrg().IsSetTaxname()) {
+                    return((*j)->GetSource().GetOrg().GetTaxname());
+                  }
+                }
+              }
+            }
+          }
+        }
+        SeqCount++;
+        if (SeqCount > SeqIndex) break;
+      }
+    }
+  }
+  return(Description);
+}
+
+
 bool CCdd::GetMmdbId(int SeqIndex, int& id) {
 //-------------------------------------------------------------------------
 // get mmdb-id from sequence list
@@ -206,15 +318,15 @@ bool CCdd::GetMmdbId(int SeqIndex, int& id) {
   list< CRef< CSeq_entry > >::const_iterator  i;
   list< CRef< CSeq_annot > >::const_iterator  j;
   list< CRef< CSeq_id > >::const_iterator k;
-  int  Count;
+  int  SeqCount;
 
   if (IsSetSequences()) {
     if (GetSequences().IsSet()) {
-      Count = 0;
+      SeqCount = 0;
       // look through each sequence in set for SeqIndex sequence
       for (i=GetSequences().GetSet().GetSeq_set().begin();
            i!=GetSequences().GetSet().GetSeq_set().end(); i++) {
-        if (Count == SeqIndex) {
+        if (SeqCount == SeqIndex) {
           if ((*i)->IsSeq()) {
             // look through each seq-annot
             if ((*i)->GetSeq().IsSetAnnot()) {
@@ -236,7 +348,8 @@ bool CCdd::GetMmdbId(int SeqIndex, int& id) {
             }
           }
         }
-        Count++;
+        SeqCount++;
+        if (SeqCount > SeqIndex) break;
       }
     }
   }
@@ -268,18 +381,19 @@ void CCdd::EraseSequence(int SeqIndex) {
 // erase a sequence from the set of sequences
 //-------------------------------------------------------------------------
   list< CRef< CSeq_entry > >::iterator  i;
-  int  Count;
+  int  SeqCount;
 
   if (IsSetSequences()) {
     if (GetSequences().IsSet()) {
-      Count = 0;
+      SeqCount = 0;
       for (i=SetSequences().SetSet().SetSeq_set().begin();
            i!=SetSequences().SetSet().SetSeq_set().end(); i++) {
-        if (Count == SeqIndex) {
+        if (SeqCount == SeqIndex) {
           SetSequences().SetSet().SetSeq_set().erase(i);
           return;
         }
-        Count++;
+        SeqCount++;
+        if (SeqCount > SeqIndex) break;
       }
     }
   }
@@ -366,21 +480,22 @@ bool CCdd::EraseRow(int RowIndex) {
 //-------------------------------------------------------------------------
   list< CRef< CSeq_annot > >::iterator i;
   list< CRef< CSeq_align > >::iterator j;
-  int  Count;
+  int  RowCount;
 
   if (RowIndex == 0) return(false);
 
   if (IsSetSeqannot()) {
     i = SetSeqannot().begin();
     if ((*i)->GetData().IsAlign()) {
-      Count = 1;
+      RowCount = 1;
       for (j= (*i)->SetData().SetAlign().begin();
            j!= (*i)->SetData().SetAlign().end(); j++) {
-        if (Count == RowIndex) {
+        if (RowCount == RowIndex) {
           (*i)->SetData().SetAlign().erase(j);
           return(true);
         }
-        Count++;
+        RowCount++;
+        if (RowCount > RowIndex) break;
       }
     }
   }
@@ -529,7 +644,6 @@ int CCdd::GetSeqPosition(TDendiag* pDenDiagSet, int Position, bool OnMasterRow) 
   list< unsigned int >::iterator  k;
   int  Start, Len, OtherStart;
 
-  // find from and to in old-master
   for (i=pDenDiagSet->begin(); i!=pDenDiagSet->end(); i++) {
     k = (*i)->SetStarts().begin();
     Len = (*i)->GetLen();
@@ -611,6 +725,23 @@ bool CCdd::GetDenDiag(int Row, bool First, CRef<CDense_diag>& DenDiag) {
 }
 
 
+int CCdd::GetSeqIndex(CRef<CSeq_id>& SeqID) {
+//-------------------------------------------------------------------------
+//  get the sequence index with given SeqID
+//-------------------------------------------------------------------------
+  int  i, NumSequences = GetNumSequences();
+  CRef<CSeq_id> TrialSeqID;
+
+  for (i=0; i<NumSequences; i++) {
+    GetSeqID(i, TrialSeqID);
+    if (SeqIdsMatch(SeqID, TrialSeqID)) {
+      return(i);
+    }
+  }
+  return(-1);
+}
+
+
 bool CCdd::GetSeqID(int SeqIndex, CRef<CSeq_id>& SeqID) {
 //-------------------------------------------------------------------------
 // get a SeqID from a list of sequences.
@@ -655,6 +786,7 @@ bool CCdd::GetSeqID(int SeqIndex, CRef<CSeq_id>& SeqID) {
           }
         }
         SeqCount++;
+        if (SeqCount > SeqIndex) break;
       }
     }
   }
@@ -751,6 +883,78 @@ int CCdd::GetUpperBound(int Row) {
     i++;
   }
   return(*i + DenDiag->GetLen());
+}
+
+
+void CCdd::ConvertSequences(std::deque< CRef < CSeq_data > >& ConvertedSequences) {
+//------------------------------------------------------------------------------
+// convert seq-data to common format (ncbieaa: extended ASCII 1 letter aa code)
+//------------------------------------------------------------------------------
+  list< CRef< CSeq_entry > >::const_iterator  i;
+  CSeqportUtil  Conversion;
+  CRef< CSeq_data >  ConvertedSeqData;
+  string err;
+
+  ConvertedSequences.clear();
+
+  if (IsSetSequences()) {
+    if (GetSequences().IsSet()) {
+      // for each of the sequences
+      for (i=GetSequences().GetSet().GetSeq_set().begin();
+           i!=GetSequences().GetSet().GetSeq_set().end(); i++) {
+        if ((*i)->IsSeq()) {
+          // if the sequence is present
+          if ((*i)->GetSeq().GetInst().IsSetSeq_data()) {
+            // convert sequence to ncbieaa (extended ASCII 1 letter aa code)
+            if (((*i)->GetSeq().GetInst().GetSeq_data().IsIupacaa())  ||
+                ((*i)->GetSeq().GetInst().GetSeq_data().IsNcbistdaa())) {
+              Conversion.Convert((*i)->GetSeq().GetInst().GetSeq_data(),
+                                 ConvertedSeqData, CSeq_data::e_Ncbieaa);
+              ConvertedSequences.push_back(ConvertedSeqData);
+            }
+            // if it's already ncbieaa make a copy of it
+            else if ((*i)->GetSeq().GetInst().GetSeq_data().IsNcbieaa()) {
+              ConvertedSeqData = CopyASNObject((*i)->GetSeq().GetInst().GetSeq_data(), &err);
+              ConvertedSequences.push_back(ConvertedSeqData);
+            }
+            else {
+              throw runtime_error("Requested conversion not implemented");
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+int CCdd::GetPSSMLength() {
+//-------------------------------------------------------------------------
+// get number of residues in the master sequence, from the first
+// aligned residue to the last aligned residue
+//-------------------------------------------------------------------------
+  return(GetUpperBound(0) - GetLowerBound(0) + 1);
+}
+
+
+int CCdd::GetAlignmentLength() {
+//-------------------------------------------------------------------------
+// get total number of aligned residues
+// TDendiag = list< CRef< CDense_diag > >
+//-------------------------------------------------------------------------
+  TDendiag*  pDenDiagSet;
+  list< CRef< CDense_diag > >::iterator  i;
+  int  Len=0;
+
+  // get den-diags for master row
+  if (SetDenDiagSet(0, pDenDiagSet)) {
+    // for each den-diag
+    for (i=pDenDiagSet->begin(); i!=pDenDiagSet->end(); i++) {
+      // sum lengths of aligned blocks
+      Len += (*i)->GetLen();
+    }
+  }
+  return(Len);
 }
 
 

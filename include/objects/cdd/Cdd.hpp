@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/06/19 20:28:58  hurwitz
+ * added more support functions for cdd access
+ *
  * Revision 1.2  2002/06/10 21:04:28  hurwitz
  * added access function to parent field
  *
@@ -54,6 +57,7 @@
 #include <list>
 #include <deque>
 #include <objects/cdd/Cdd_.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/cdd/Feature_evidence.hpp>
@@ -86,36 +90,48 @@ public:
       SetAccession(Accession, 1);
     }
     void   SetParentAccession(string Parent, int Version);   // set accession and version of parent
-    string GetLongDescription();                    // long description of CD
-    string GetCurationStatus();                     // curation status of CD
-    string GetUpdateDate();                         // last update date of CD
-    int  GetNumRows();                              // number of rows in CD
-    int  GetNumSequences();                         // number of sequences in CD
-    bool GetGI(int Row, int& GI);                   // get GI of Row
-    bool GetPDB(int Row, const CPDB_seq_id*& pPDB); // get PDB ID of Row
-    int  GetLowerBound(int Row);                    // get Row lower alignment bound
-    int  GetUpperBound(int Row);                    // get Row upper alignment bound
-    bool ReMaster(int Row);                         // make Row the new master
-    bool GetSeqID(int Pair, int DenDiagRow, CRef<CSeq_id>& SeqID);  // get SeqID from alignment
-    bool GetSeqID(int SeqIndex, CRef<CSeq_id>& SeqID);              // get SeqID from sequence list
-    bool GetMmdbId(int SeqIndex, int& id);          // get mmdb-id from sequence list
-    bool EraseRows(std::deque<int>& KeepRows);      // erase rows from alignment
-    bool EraseRow(int RowIndex);                    // erase a row from alignment
-    void EraseSequences();                          // erase sequences not in alignment
-    void EraseSequence(int SeqIndex);               // erase a sequence from the set of seqs
-    bool SeqIdsMatch(CRef<CSeq_id>& ID1, CRef<CSeq_id>& ID2);  // see if ID's match
-    bool IsAMatchFor(CRef<CSeq_id>& ID);            // see if ID matches any ID in alignment
-    void EraseStructureEvidence();                  // scan structure-evidence, erase missing biostruc-ids
+    string GetLongDescription();                      // long description of CD
+    string GetCurationStatus();                       // curation status of CD
+    string GetUpdateDate();                           // last update date of CD
+    int    GetNumRows();                              // number of rows in CD
+    int    GetNumSequences();                         // number of sequences in CD
+    int    GetAlignmentLength();                      // total number aligned residues
+    int    GetPSSMLength();                           // number of residues in master, from first to last aligned residue
+    bool   GetGI(int Row, int& GI);                   // get GI of Row
+    bool   GetPDB(int Row, const CPDB_seq_id*& pPDB); // get PDB ID of Row
+    int    GetLowerBound(int Row);                    // get Row lower alignment bound
+    int    GetUpperBound(int Row);                    // get Row upper alignment bound
+    bool   ReMaster(int Row);                         // make Row the new master
+    bool   GetSeqID(int SeqIndex, CRef<CSeq_id>& SeqID);               // get SeqID from sequence list
+    bool   GetSeqID(int Pair, int DenDiagRow, CRef<CSeq_id>& SeqID);   // get SeqID from alignment
+    bool   GetSeqIDFromAlignment(int RowIndex, CRef<CSeq_id>& SeqID) { // get SeqID from alignment
+      int  Pair = (RowIndex <= 1) ? 0 : RowIndex-1;
+      int  DenDiagRow = (RowIndex == 0) ? 0 : 1;
+      return(GetSeqID(Pair, DenDiagRow, SeqID));
+    }
+    int    GetSeqIndex(CRef<CSeq_id>& SeqID);         // get index into sequence list
+    bool   GetMmdbId(int SeqIndex, int& id);          // get mmdb-id from sequence list
+    bool   EraseRows(std::deque<int>& KeepRows);      // erase rows from alignment
+    bool   EraseRow(int RowIndex);                    // erase a row from alignment
+    void   EraseSequences();                          // erase sequences not in alignment
+    void   EraseSequence(int SeqIndex);               // erase a sequence from the set of seqs
+    bool   SeqIdsMatch(CRef<CSeq_id>& ID1, CRef<CSeq_id>& ID2);  // see if ID's match
+    bool   IsAMatchFor(CRef<CSeq_id>& ID);            // see if ID matches any ID in alignment
+    void   EraseStructureEvidence();                  // scan structure-evidence, erase missing biostruc-ids
+    string GetDefline(int SeqIndex);                  // get description from sequence list
+    string GetSpecies(int SeqIndex);                  // get species from sequence list
+    // convert sequences to ncbieaa (extended ASCII 1 letter aa code)
+    void ConvertSequences(std::deque< CRef< CSeq_data > >& ConvertedSequences);
+    // get dense-diag info for one row
+    bool GetDenDiagSet(int Row, const TDendiag*& pDenDiagSet);
+    // get corresponding location on other row
+    int  GetSeqPosition(TDendiag* pDenDiagSet, int Position, bool OnMasterRow);
 
 private:
     // get dense-diag info for one row
     bool SetDenDiagSet(int Row, TDendiag*& pDenDiagSet);
-    // get dense-diag info for one row that's ok to change
-    bool GetDenDiagSet(int Row, const TDendiag*& pDenDiagSet);
     // get either the first or last dense-diag of Row
     bool GetDenDiag(int Row, bool First, CRef<CDense_diag>& DenDiag);
-    // get corresponding location other row
-    int  GetSeqPosition(TDendiag* pDenDiagSet, int Position, bool OnMasterRow);
     // for erasing biostruc-ids that are no longer valid, from structure-evidence
     bool IsNoEvidenceFor(list<int>& MmdbIds, list< CRef< CFeature_evidence > >::iterator& FeatureIterator);
     list< CRef< CFeature_evidence > >& GetFeatureSet(list<int>& MmdbIds);
