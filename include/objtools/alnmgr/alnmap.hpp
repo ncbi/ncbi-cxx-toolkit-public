@@ -66,6 +66,8 @@ public:
     typedef CRange<TSeqPos>       TRange;
     typedef CRange<TSignedSeqPos> TSignedRange;
     typedef CDense_seg::TNumseg   TNumseg;
+    typedef list<TSeqPos>         TSeqPosList;
+
 
     enum EGetChunkFlags {
         fAllChunks           = 0x0000,
@@ -322,8 +324,8 @@ protected:
     const CDense_seg::TScores&      m_Scores;
     TNumrow                         m_Anchor;
     vector<TNumseg>                 m_AlnSegIdx;
-    mutable vector<TNumseg>         m_SeqStartSegs;
-    mutable vector<TNumseg>         m_SeqStopSegs;
+    mutable vector<TNumseg>         m_SeqLeftSegs;
+    mutable vector<TNumseg>         m_SeqRightSegs;
     CDense_seg::TStarts             m_AlnStarts;
     vector<CNumSegWithOffset>       m_NumSegWithOffsets;
     mutable vector<TSegTypeFlags> * m_RawSegTypes;
@@ -608,6 +610,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/07/17 22:46:56  todorov
+* name change +TSeqPosList
+*
 * Revision 1.23  2003/07/08 20:26:28  todorov
 * Created seq end segments cache
 *
