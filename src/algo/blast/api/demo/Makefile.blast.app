@@ -8,5 +8,6 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
-LIBS = $(ORIG_LIBS) $(NCBI_C_LIBPATH) -lblastapi -lncbitool -lncbiobj $(NCBI_C_ncbi)
+LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(NCBI_C_LIBPATH) -lblastapi -lncbitool \
+       -lncbiobj $(NCBI_C_ncbi) $(ORIG_LIBS)
 
