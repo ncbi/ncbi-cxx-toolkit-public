@@ -68,7 +68,23 @@ string CSeqFeatData::GetKey(EVocabulary vocab) const
         case e_Biosrc:
             return "source";
         case e_Prot:
-            return "Protein";
+            switch (GetProt().GetProcessed()) {
+            case CProt_ref::eProcessed_preprotein:
+                return "proprotein";
+                break;
+            case CProt_ref::eProcessed_mature:
+                return "mat_peptide";
+                break;
+            case CProt_ref::eProcessed_signal_peptide:
+                return "sig_peptide";
+                break;
+            case CProt_ref::eProcessed_transit_peptide:
+                return "transit_peptide";
+                break;
+            default:
+                return "Protein";
+                break;
+            }
         case e_Site: // Is this correct, or are these encoded as Imp?
             switch (GetSite()) {
             case CSeqFeatData::eSite_binding:
@@ -112,7 +128,7 @@ string CSeqFeatData::GetKey(EVocabulary vocab) const
         case CRNA_ref::eType_rRNA:    return "rRNA";
         case CRNA_ref::eType_snRNA:   return "snRNA";
         case CRNA_ref::eType_scRNA:   return "scRNA";
-        case CRNA_ref::eType_snoRNA:  return "sno_RNA"; // ok for GenBank?
+        case CRNA_ref::eType_snoRNA:  return "snoRNA"; // ok for GenBank?
         case CRNA_ref::eType_other:
             // return GetRna().GetExt().GetName();
             return genbank ? "misc_RNA" : "RNA";
@@ -349,6 +365,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.11  2004/03/10 21:33:43  shomrat
+* Fixed key for genbank vocabulary
+*
 * Revision 6.10  2003/10/24 17:14:28  shomrat
 * added gap, operaon and oriT subtypes
 *
