@@ -18222,6 +18222,7 @@ _ACEOF
 
 
 ### OEChem
+: ${OECHEM_PATH=$NCBI/oechem}
 if test "$with_oechem" != "no"; then
     case "$with_oechem" in
        yes | "" ) ;;

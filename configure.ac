@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.277 2004/03/12 18:51:41 ucko Exp $
+#  $Id: configure.ac,v 1.278 2004/03/12 19:13:11 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3243,6 +3243,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
 
 
 ### OEChem
+: ${OECHEM_PATH=$NCBI/oechem}
 NCBI_CHECK_THIRD_PARTY_LIB(oechem,
  AC_LANG_PROGRAM([#include <oechem.h>],
     [OEChem::OEMol mol; OEChem::OEConfBase* c = mol.GetActive();]),
