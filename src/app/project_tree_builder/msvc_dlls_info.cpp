@@ -259,6 +259,14 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
         string abs_path = 
             CDirEntry::ConcatPath(lib_context.ProjectDir(), rel_path);
         abs_path = CDirEntry::NormalizePath(abs_path);
+
+        // Register DLL source files as belongs to lib
+        // With .ext 
+        GetApp().GetDllFilesDistr().RegisterSource
+            (abs_path,
+             CProjKey(CProjKey::eDll, dll->m_ID),
+             CProjKey(CProjKey::eLib, lib.m_ID) );
+
         string dir;
         string base;
         CDirEntry::SplitPath(abs_path, &dir, &base);
@@ -268,9 +276,22 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
             CDirEntry::CreateRelativePath(dll->m_SourcesBaseDir, 
                                           abs_source_path);
         dll->m_Sources.push_back(new_rel_path);
+
     }
     dll->m_Sources.sort();
     dll->m_Sources.unique();
+
+    // Header files - also register them
+    ITERATE(list<string>, p, collector.HeaderFiles()) {
+        const string& rel_path = *p;
+        string abs_path = 
+            CDirEntry::ConcatPath(lib_context.ProjectDir(), rel_path);
+        abs_path = CDirEntry::NormalizePath(abs_path);
+        GetApp().GetDllFilesDistr().RegisterHeader
+            (abs_path,
+             CProjKey(CProjKey::eDll, dll->m_ID),
+             CProjKey(CProjKey::eLib, lib.m_ID) );
+    }
 
     // Depends
     ITERATE(list<CProjKey>, p, lib.m_Depends) {
@@ -500,6 +521,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/05/19 14:24:32  gorelenk
+ * Changed s_AddProjItemToDll - added code for registration of DLLs source
+ * files.
+ *
  * Revision 1.13  2004/04/20 14:14:24  gorelenk
  * Changed implementation of CMsvcDllsInfo::GetDllsList and
  * CMsvcDllsInfo::GetDllInfo .
