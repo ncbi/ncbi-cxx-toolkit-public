@@ -84,6 +84,7 @@
 #include <bdb/bdb_blobcache.hpp>
 
 #include "blob_splitter.hpp"
+#include "id2_compress.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -368,13 +369,12 @@ public:
             m_Data.SetData_type(data_type);
             m_Data.SetData_format(eSerial_AsnBinary);
             m_Data.SetData_compression(m_Params.m_Compression);
-            m_Data.SetData().push_back(new vector<char>());
 
             m_OStream.reset();
             size_t size = m_MStream->pcount();
             const char* data = m_MStream->str();
             m_MStream->freeze(false);
-            m_Params.Compress(*m_Data.SetData().front(), data, size);
+            CId2Compressor::Compress(m_Params, m_Data.SetData(), data, size);
             m_MStream.reset();
         }
 
@@ -668,6 +668,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/12/30 16:06:15  vasilche
+* Compression methods moved to separate header: id2_compress.hpp.
+*
 * Revision 1.9  2003/12/03 19:30:45  kuznets
 * Misprint fixed
 *

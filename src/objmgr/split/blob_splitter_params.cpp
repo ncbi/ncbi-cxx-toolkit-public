@@ -32,6 +32,7 @@
 */
 
 #include "blob_splitter_params.hpp"
+#include "id2_compress.hpp"
 
 #include <objmgr/objmgr_exception.hpp>
 #include <util/compress/zlib.hpp>
@@ -40,34 +41,66 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-void SSplitterParams::Compress(vector<char>& dst,
-                               const char* data, size_t size) const
+static const size_t kChunkSize = 32*1024;
+
+
+void CId2Compressor::Compress(const SSplitterParams& params,
+                              list<vector<char>*>& dst,
+                              const char* data, size_t size)
 {
-    switch ( m_Compression ) {
-    case eCompression_none:
-        dst.resize(size);
-        memcpy(&dst[0], data, size);
+    vector<char>* vec;
+    dst.push_back(vec = new vector<char>);
+    CompressHeader(params, *vec, size);
+    while ( size ) {
+        size_t chunk_size = min(size, kChunkSize);
+        CompressChunk(params, *vec, data, chunk_size);
+        data += chunk_size;
+        size -= chunk_size;
+        if ( size ) { // another vector<char> for next chunk
+            dst.push_back(vec = new vector<char>);
+        }
+    }
+    CompressFooter(params, *vec, size);
+}
+
+
+void CId2Compressor::Compress(const SSplitterParams& params,
+                              vector<char>& dst,
+                              const char* data, size_t size)
+{
+    CompressHeader(params, dst, size);
+    CompressChunk(params, dst, data, size);
+    CompressFooter(params, dst, size);
+}
+
+
+void CId2Compressor::CompressChunk(const SSplitterParams& params,
+                                   vector<char>& dst,
+                                   const char* data, size_t size)
+{
+    switch ( params.m_Compression ) {
+    case SSplitterParams::eCompression_none:
+        sx_Append(dst, data, size);
         break;
-    case eCompression_nlm_zip:
+    case SSplitterParams::eCompression_nlm_zip:
     {{
+        size_t pos = dst.size();
         CZipCompression compr(CCompression::eLevel_Default);
-        dst.resize(size_t(double(size)*1.01) + 32);
+        dst.resize(pos + 32 + size_t(double(size)*1.01));
         unsigned real_size = 0;
         if ( !compr.CompressBuffer(data, size,
-                                   &dst[12], dst.size(), &real_size) ) {
+                                   &dst[pos+8], dst.size()-(pos+8),
+                                   &real_size) ) {
             NCBI_THROW(CLoaderException, eCompressionError,
                 "zip compression failed");
         }
-        for ( size_t i = 0; i < 4; ++i ) {
-            dst[i] = "ZIP"[i];
-        }
         for ( size_t i = 0, s = real_size; i < 4; ++i, s <<= 8 ) {
-            dst[i+4] = char(s >> 24);
+            dst[pos+i] = char(s >> 24);
         }
         for ( size_t i = 0, s = size; i < 4; ++i, s <<= 8 ) {
-            dst[i+8] = char(s >> 24);
+            dst[pos+4+i] = char(s >> 24);
         }
-        dst.resize(12+real_size);
+        dst.resize(pos+8+real_size);
         break;
     }}
     default:
@@ -77,12 +110,48 @@ void SSplitterParams::Compress(vector<char>& dst,
 }
 
 
+void CId2Compressor::CompressHeader(const SSplitterParams& params,
+                                    vector<char>& dst,
+                                    size_t)
+{
+    switch ( params.m_Compression ) {
+    case SSplitterParams::eCompression_none:
+        break;
+    case SSplitterParams::eCompression_nlm_zip:
+        sx_Append(dst, "ZIP", 4);
+        break;
+    default:
+        NCBI_THROW(CLoaderException, eCompressionError,
+            "compression method is not implemented");
+    }
+}
+
+
+void CId2Compressor::CompressFooter(const SSplitterParams& ,
+                                    vector<char>& ,
+                                    size_t)
+{
+}
+
+
+void CId2Compressor::sx_Append(vector<char>& dst,
+                               const char* data, size_t size)
+{
+    size_t pos = dst.size();
+    dst.resize(pos + size);
+    memcpy(&dst[pos], data, size);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/12/30 16:06:14  vasilche
+* Compression methods moved to separate header: id2_compress.hpp.
+*
 * Revision 1.5  2003/12/18 21:15:57  vasilche
 * Fixed size_t <-> unsigned incompatibility.
 *

@@ -1,3 +1,6 @@
+#ifndef NCBI_OBJMGR_SPLIT_ID2_COMPRESS__HPP
+#define NCBI_OBJMGR_SPLIT_ID2_COMPRESS__HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -31,54 +34,39 @@
 * ===========================================================================
 */
 
-#include "asn_sizer.hpp"
 
-#include <serial/objostr.hpp>
+#include <corelib/ncbistd.hpp>
 
-#include "id2_compress.hpp"
+#include <vector>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+struct SSplitterParams;
 
-CAsnSizer::CAsnSizer(void)
+class CId2Compressor
 {
-}
+public:
+    static void Compress(const SSplitterParams& params,
+                         list<vector<char>*>& dst,
+                         const char* data, size_t size);
+    static void Compress(const SSplitterParams& params,
+                         vector<char>& dst,
+                         const char* data, size_t size);
 
-
-CAsnSizer::~CAsnSizer(void)
-{
-}
-
-
-CObjectOStream& CAsnSizer::OpenDataStream(void)
-{
-    m_AsnData.clear();
-    m_CompressedData.clear();
-    m_OStream.reset();
-    m_MStream.reset(new CNcbiOstrstream);
-    m_OStream.reset(CObjectOStream::Open(eSerial_AsnBinary, *m_MStream));
-    return *m_OStream;
-}
-
-
-void CAsnSizer::CloseDataStream(void)
-{
-    m_OStream.reset();
-    size_t size = m_MStream->pcount();
-    const char* data = m_MStream->str();
-    m_MStream->freeze(false);
-    m_AsnData.assign(data, data+size);
-    m_MStream.reset();
-}
-
-
-size_t CAsnSizer::GetCompressedSize(const SSplitterParams& params)
-{
-    CId2Compressor::Compress(params, m_CompressedData,
-                             GetAsnData(), GetAsnSize());
-    return GetCompressedSize();
-}
+    static void CompressHeader(const SSplitterParams& params,
+                               vector<char>& dst,
+                               size_t size);
+    static void CompressFooter(const SSplitterParams& params,
+                               vector<char>& dst,
+                               size_t size);
+    static void CompressChunk(const SSplitterParams& params,
+                              vector<char>& dst,
+                              const char* data, size_t size);
+    static void sx_Append(vector<char>& dst,
+                          const char* data, size_t size);
+};
 
 
 END_SCOPE(objects)
@@ -87,14 +75,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  2003/12/30 16:06:13  vasilche
+* Revision 1.1  2003/12/30 16:06:14  vasilche
 * Compression methods moved to separate header: id2_compress.hpp.
 *
-* Revision 1.2  2003/11/26 23:04:56  vasilche
-* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
-*
-* Revision 1.1  2003/11/12 16:18:24  vasilche
-* First implementation of ID2 blob splitter withing cache.
 *
 * ===========================================================================
 */
+#endif//NCBI_OBJMGR_SPLIT_ID2_COMPRESS__HPP

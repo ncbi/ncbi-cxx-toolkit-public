@@ -36,14 +36,8 @@
 
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
-
-#include <vector>
 
 BEGIN_NCBI_SCOPE
-
-class CObjectOStream;
-
 BEGIN_SCOPE(objects)
 
 struct SSplitterParams
@@ -73,8 +67,6 @@ struct SSplitterParams
             m_MaxChunkSize = size_t(double(size) * 1.2);
         }
 
-    void Compress(vector<char>& dst, const char* data, size_t size) const;
-
     // parameters
     size_t       m_ChunkSize;
     size_t       m_MinChunkSize;
@@ -89,6 +81,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/12/30 16:06:14  vasilche
+* Compression methods moved to separate header: id2_compress.hpp.
+*
 * Revision 1.4  2003/12/18 21:15:35  vasilche
 * Fixed long -> double conversion warning.
 *
