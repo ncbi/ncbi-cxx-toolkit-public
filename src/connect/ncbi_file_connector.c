@@ -61,31 +61,31 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-    static const char* s_VT_GetType(CONNECTOR       connector);
-    static EIO_Status  s_VT_Open   (CONNECTOR       connector,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Wait   (CONNECTOR       connector,
-                                    EIO_Event       event,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Write  (CONNECTOR       connector,
-                                    const void*     buf,
-                                    size_t          size,
-                                    size_t*         n_written,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Flush  (CONNECTOR       connector,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Read   (CONNECTOR       connector,
-                                    void*           buf,
-                                    size_t          size,
-                                    size_t*         n_read,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Status (CONNECTOR       connector,
-                                    EIO_Event       dir);
-    static EIO_Status  s_VT_Close  (CONNECTOR       connector,
-                                    const STimeout* timeout);
-    static void        s_Setup     (SMetaConnector* meta,
-                                    CONNECTOR       connector);
-    static void        s_Destroy   (CONNECTOR       connector);
+    static const char* s_VT_GetType (CONNECTOR       connector);
+    static EIO_Status  s_VT_Open    (CONNECTOR       connector,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Wait    (CONNECTOR       connector,
+                                     EIO_Event       event,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Write   (CONNECTOR       connector,
+                                     const void*     buf,
+                                     size_t          size,
+                                     size_t*         n_written,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Flush   (CONNECTOR       connector,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Read    (CONNECTOR       connector,
+                                     void*           buf,
+                                     size_t          size,
+                                     size_t*         n_read,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Status  (CONNECTOR       connector,
+                                     EIO_Event       dir);
+    static EIO_Status  s_VT_Close   (CONNECTOR       connector,
+                                     const STimeout* timeout);
+    static void        s_Setup      (SMetaConnector* meta,
+                                     CONNECTOR       connector);
+    static void        s_Destroy    (CONNECTOR       connector);
 #  ifdef IMPLEMENTED__CONN_WaitAsync
     static EIO_Status s_VT_WaitAsync(void*                   connector,
                                      FConnectorAsyncHandler  func,
@@ -317,6 +317,9 @@ extern CONNECTOR FILE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2003/05/14 03:55:53  lavr
+ * Slight VT table reformatting
+ *
  * Revision 6.10  2002/10/28 15:46:20  lavr
  * Use "ncbi_ansi_ext.h" privately
  *
