@@ -336,10 +336,13 @@ streamsize CStreamUtils::Readsome(istream&      is,
                                   CT_CHAR_TYPE* buf,
                                   streamsize    buf_size)
 {
-#ifdef NCBI_COMPILER_GCC
+#if defined(NCBI_COMPILER_GCC)
 #  if NCBI_COMPILER_VERSION < 300
 #    define NCBI_NO_READSOME 1
 #  endif
+#elif defined(NCBI_COMPILER_MSVC)
+    /* MSVC's readsome() is buggy [causes 1 byte reads] and is thus avoided */
+#  define NCBI_NO_READSOME 1
 #endif
 
 #ifdef NCBI_NO_READSOME
@@ -375,6 +378,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2003/03/27 16:50:14  lavr
+ * #define NCBI_NO_READSOME for MSVC to prevent 1-byte at a time file input
+ * caused by lame unbuffered implementation of basic_filebuf, that defines
+ * showmanyc() to return 0 and doing byte-by-byte file input via fgetc()
+ *
  * Revision 1.17  2003/03/25 22:14:03  lavr
  * CStreamUtils::Readsome(): Return not only on EOF but on any !good()
  *
