@@ -272,7 +272,7 @@
  *  @ingroup DBAPI
  */
 
-/** @defgroup DbInterfaces Database Server Public Interfaces
+/** @defgroup DbPubInterfaces Database Server Public Interfaces
  *  @ingroup DBAPI
  */
 
