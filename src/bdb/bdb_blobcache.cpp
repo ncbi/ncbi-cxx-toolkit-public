@@ -451,23 +451,35 @@ void CBDB_Cache::Open(const char* cache_path,
     }
 
     m_Env = new CBDB_Env();
-    try {
-        m_Env->JoinEnv(cache_path, CBDB_Env::eThreaded);
-        if (!m_Env->IsTransactional()) {
-            LOG_POST(Warning << 
-                     "LC: Warning: Joined non-transactional environment ");
+
+    // Check if bdb env. files are in place and try to join
+    CDir dir(m_Path);
+    CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
+    if (fl.empty()) {
+        if (cache_ram_size) {
+            m_Env->SetCacheSize(cache_ram_size);
         }
-    } 
-    catch (CBDB_Exception&)
-    {
         m_Env->OpenWithTrans(cache_path);
+    } else {
+        if (cache_ram_size) {
+            m_Env->SetCacheSize(cache_ram_size);
+        }
+
+        try {
+            m_Env->JoinEnv(cache_path, CBDB_Env::eThreaded);
+            if (!m_Env->IsTransactional()) {
+                LOG_POST(Warning << 
+                         "LC: Warning: Joined non-transactional environment ");
+            }
+        } 
+        catch (CBDB_Exception&)
+        {
+            m_Env->OpenWithTrans(cache_path);
+        }
     }
 
     m_Env->SetDirectDB(true);
     m_Env->SetDirectLog(true);
-    if (cache_ram_size) {
-        m_Env->SetCacheSize(cache_ram_size);
-    }
 
     m_CacheDB = new SCacheDB();
     m_CacheAttrDB = new SCache_AttrDB();
@@ -1185,6 +1197,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2004/05/25 18:43:51  kuznets
+ * Fixed bug in setting cache RAM size, added additional protection when joining
+ * existing environment.
+ *
  * Revision 1.53  2004/05/24 18:03:03  kuznets
  * CBDB_Cache::Open added parameter to specify RAM cache size
  *
