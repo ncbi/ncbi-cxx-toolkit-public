@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/02/01 16:53:29  vakatov
+* CCgiRequest::x_Init() -- parse "$QUERY_STRING"(or cmd.-line arg) even
+* in the case of "POST" method, in order to catch possible "ACTION" args.
+*
 * Revision 1.36  2000/01/20 17:52:07  vakatov
 * Two CCgiRequest:: constructors:  one using raw "argc", "argv", "envp",
 * and another using auxiliary classes "CNcbiArguments" and "CNcbiEnvironment".
@@ -878,8 +882,9 @@ CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
         // parse query from the POST content
         s_ParsePostQuery(GetProperty(eCgi_ContentType), str, m_Entries);
     }
-    else if ( query_string ) {
-        // parse "$QUERY_STRING"(or cmd.-line arg)
+
+    // parse "$QUERY_STRING"(or cmd.-line arg)
+    if ( query_string ) {
         s_ParseQuery(*query_string, m_Entries, m_Indexes,
                      (flags & fIndexesNotEntries) == 0);
     }
