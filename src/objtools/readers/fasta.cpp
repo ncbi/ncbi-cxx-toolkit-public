@@ -267,7 +267,7 @@ static void s_GuessMol(CSeq_inst::EMol& mol, const string& data,
     }
 
     if (mol == CSeq_inst::eMol_not_set  &&  !(flags & fReadFasta_ForceType)) {
-        switch (CFormatGuess::SequenceType(data.c_str(), data.size())) {
+        switch (CFormatGuess::SequenceType(data.data(), data.size())) {
         case CFormatGuess::eNucleotide:  mol = CSeq_inst::eMol_na;  return;
         case CFormatGuess::eProtein:     mol = CSeq_inst::eMol_aa;  return;
         default:                         break;
@@ -367,11 +367,17 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
         } else if (line[0] == '#'  ||  line[0] == '!') {
             continue; // comment
         } else if (!(flags & fReadFasta_NoSeqData)) {
+            // These don't change, but the calls may be relatively expensive,
+            // esp. with ref-counted implementations.
+            SIZE_TYPE   line_size = line.size();
+            const char* line_data = line.data();
             // actual data; may contain embedded junk
-            CSeq_inst& inst = seq->SetInst();
-            string residues;
-            for (SIZE_TYPE i = 0;  i < line.size();  ++i) {
-                char c = line[i];
+            CSeq_inst&  inst      = seq->SetInst();
+            string      residues(line_size + 1, '\0');
+            char*       res_data  = const_cast<char*>(residues.data());
+            SIZE_TYPE   res_count = 0;
+            for (SIZE_TYPE i = 0;  i < line_size;  ++i) {
+                char c = line_data[i];
                 if (isalpha(c)) {
                     if (lowercase) {
                         bool is_lc = islower(c) ? true : false;
@@ -384,7 +390,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                         was_lc = is_lc;
                         ++pos;
                     }
-                    residues += (char)toupper(c);
+                    res_data[res_count++] = toupper(c);
                 } else if (c == '-'  &&  (flags & fReadFasta_ParseGaps)) {
                     CDelta_ext::Tdata& d = inst.SetExt().SetDelta().Set();
                     if (inst.GetRepr() == CSeq_inst::eRepr_raw) {
@@ -396,22 +402,32 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                             inst.ResetSeq_data();
                         }
                     }
-                    if ( !residues.empty() ) {
+                    if ( res_count ) {
+                        residues.resize(res_count);
                         if (inst.GetMol() == CSeq_inst::eMol_not_set) {
                             s_GuessMol(inst.SetMol(), residues, flags, in);
                         }
                         CSeq_data& data = s_LastData(inst);
                         if (inst.GetMol() == CSeq_inst::eMol_aa) {
-                            data.SetIupacaa().Set() += residues;
+                            if (data.IsIupacaa()) {
+                                data.SetIupacaa().Set() += residues;
+                            } else {
+                                data.SetIupacaa().Set(residues);
+                            }
                         } else {
-                            data.SetIupacna().Set() += residues;
-                        }                        
+                            if (data.IsIupacna()) {
+                                data.SetIupacna().Set() += residues;
+                            } else {
+                                data.SetIupacna().Set(residues);
+                            }
+                        }
                     }
                     {{
                         CRef<CDelta_seq> gap(new CDelta_seq);
                         gap->SetLoc().SetNull();
                         d.push_back(gap);
                     }}
+                    res_count = 0;
                 } else if (c == ';') {
                     continue; // skip rest of line
                 }
@@ -422,6 +438,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
             }
             
             // Add the accumulated data...
+            residues.resize(res_count);
             {{
                 CSeq_data& data = s_LastData(inst);
                 if (inst.GetMol() == CSeq_inst::eMol_aa) {
@@ -506,6 +523,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/08/25 21:30:09  ucko
+* ReadFasta: tweak a bit to improve performance, and fix some bugs in
+* parsing gaps.
+*
 * Revision 1.7  2003/08/11 14:39:54  ucko
 * Populate "lowercase" with Packed_seqints rather than general Seq_loc_mixes.
 *
