@@ -215,7 +215,7 @@ int CDBL_RPCCmd::RowCount() const
 }
 
 
-void CDBL_RPCCmd::SetRecompile(bool recompile = true)
+void CDBL_RPCCmd::SetRecompile(bool recompile)
 {
     m_Recompile = recompile;
 }
@@ -368,6 +368,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/22 16:28:02  lavr
+ * Default argument values removed
+ * (mistakenly left while moving code from header files)
+ *
  * Revision 1.1  2001/10/22 15:19:56  lavr
  * This is a major revamp (by Anton Lavrentiev, with help from Vladimir
  * Soussov and Denis Vakatov) of the DBAPI "driver" libs originally

@@ -134,7 +134,7 @@ CDB_Result* CDBL_CursorCmd::Open()
 }
 
 
-bool CDBL_CursorCmd::Update(const string& table_name, const string& upd_query)
+bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
 {
     if (!m_IsOpen)
         return false;
@@ -427,6 +427,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/22 16:28:01  lavr
+ * Default argument values removed
+ * (mistakenly left while moving code from header files)
+ *
  * Revision 1.1  2001/10/22 15:19:55  lavr
  * This is a major revamp (by Anton Lavrentiev, with help from Vladimir
  * Soussov and Denis Vakatov) of the DBAPI "driver" libs originally

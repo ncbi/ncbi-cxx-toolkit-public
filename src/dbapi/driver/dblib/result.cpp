@@ -608,7 +608,7 @@ size_t CDBL_BlobResult::ItemMaxSize(unsigned int item_num) const
 }
 
 
-EDB_Type CDBL_BlobResult::ItemDataType(unsigned int item_num) const
+EDB_Type CDBL_BlobResult::ItemDataType(unsigned int) const
 {
     return m_ColFmt.data_type;
 }
@@ -1100,19 +1100,19 @@ unsigned int CDBL_StatusResult::NofItems() const
 }
 
 
-const char* CDBL_StatusResult::ItemName(unsigned int item_num) const
+const char* CDBL_StatusResult::ItemName(unsigned int) const
 {
     return 0;
 }
 
 
-size_t CDBL_StatusResult::ItemMaxSize(unsigned int item_num) const
+size_t CDBL_StatusResult::ItemMaxSize(unsigned int) const
 {
     return sizeof(DBINT);
 }
 
 
-EDB_Type CDBL_StatusResult::ItemDataType(unsigned int item_num) const
+EDB_Type CDBL_StatusResult::ItemDataType(unsigned int) const
 {
     return eDB_Int;
 }
@@ -1398,6 +1398,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/22 16:28:01  lavr
+ * Default argument values removed
+ * (mistakenly left while moving code from header files)
+ *
  * Revision 1.1  2001/10/22 15:19:55  lavr
  * This is a major revamp (by Anton Lavrentiev, with help from Vladimir
  * Soussov and Denis Vakatov) of the DBAPI "driver" libs originally

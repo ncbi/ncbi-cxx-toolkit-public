@@ -85,7 +85,7 @@ CDB_BCPInCmd* CDBL_Connection::BCPIn(const string& tab_name,
 CDB_CursorCmd* CDBL_Connection::Cursor(const string& cursor_name,
                                        const string& query,
                                        unsigned int nof_params,
-                                       unsigned int batch_size)
+                                       unsigned int)
 {
     CDBL_CursorCmd* ccmd = new CDBL_CursorCmd(this, m_Link, cursor_name,
                                               query, nof_params);
@@ -124,14 +124,14 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
 }
 
 
-bool CDBL_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img,
-                               bool log_it = true){
+bool CDBL_Connection::SendData(I_ITDescriptor& desc,
+                               CDB_Image& img, bool log_it){
     return x_SendData(desc, dynamic_cast<CDB_Stream&> (img), log_it);
 }
 
 
-bool CDBL_Connection::SendData(I_ITDescriptor& desc, CDB_Text&  txt,
-                               bool log_it = true) {
+bool CDBL_Connection::SendData(I_ITDescriptor& desc,
+                               CDB_Text&  txt, bool log_it) {
     return x_SendData(desc, dynamic_cast<CDB_Stream&> (txt), log_it);
 }
 
@@ -375,6 +375,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/22 16:28:01  lavr
+ * Default argument values removed
+ * (mistakenly left while moving code from header files)
+ *
  * Revision 1.1  2001/10/22 15:19:55  lavr
  * This is a major revamp (by Anton Lavrentiev, with help from Vladimir
  * Soussov and Denis Vakatov) of the DBAPI "driver" libs originally
