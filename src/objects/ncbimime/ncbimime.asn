@@ -1,4 +1,4 @@
---$Revision: 6.6 $
+--$Revision: 6.7 $
 --****************************************************************
 --
 --  NCBI MIME type (chemical/ncbi-asn1-ascii and chemical/ncbi-asn1-binary)
@@ -10,7 +10,8 @@ NCBI-Mime DEFINITIONS ::=
 BEGIN
 
 EXPORTS Ncbi-mime-asn1;
-IMPORTS Biostruc, Biostruc-annot-set FROM MMDB
+IMPORTS Biostruc, Biostruc-id, Biostruc-annot-set FROM MMDB
+    Cdd FROM NCBI-Cdd
 	Seq-entry FROM NCBI-Seqset
 	Seq-annot FROM NCBI-Sequence
     Medline-entry FROM NCBI-Medline
@@ -18,11 +19,34 @@ IMPORTS Biostruc, Biostruc-annot-set FROM MMDB
 
 Ncbi-mime-asn1 ::= CHOICE {
 	entrez	Entrez-general,			-- just a structure
-	alignstruc	Biostruc-align,	-- structures & sequences & alignments
+    alignstruc  Biostruc-align,     -- structures & sequences & alignments
 	alignseq	Biostruc-align-seq,	-- sequence alignment
-	strucseq    Biostruc-seq,	-- structure & sequences
-	strucseqs   Biostruc-seqs	-- structure & sequences & alignments
+    strucseq    Biostruc-seq,       -- structure & sequences
+    strucseqs   Biostruc-seqs,      -- structure & sequences & alignments
+    general     Biostruc-seqs-aligns-cdd    -- all-purpose "grab bag"
 	-- others may be added here in the future
+}
+
+-- generic bundle of sequence and alignment info
+Bundle-seqs-aligns ::= SEQUENCE {
+    sequences SET OF Seq-entry OPTIONAL,        -- sequences
+    seqaligns SET OF Seq-annot OPTIONAL,        -- sequence alignments
+    strucaligns Biostruc-annot-set OPTIONAL     -- structure alignments
+}
+
+Biostruc-or-id ::= CHOICE {
+    biostruc Biostruc,
+    id Biostruc-id
+}
+
+Biostruc-seqs-aligns-cdd ::= SEQUENCE {
+    seq-align-data CHOICE {
+        bundle Bundle-seqs-aligns,          -- either seqs + alignments
+        cdd Cdd                             -- or CDD (which contains these)
+    },
+    structures SET OF Biostruc-or-id OPTIONAL,          -- structures
+    style-dictionary Cn3d-style-dictionary OPTIONAL,    -- Cn3D stuff
+	user-annotations Cn3d-user-annotations OPTIONAL
 }
 
 Biostruc-align ::= SEQUENCE {
