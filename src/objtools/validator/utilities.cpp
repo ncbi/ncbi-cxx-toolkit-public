@@ -1089,6 +1089,11 @@ list< CRef< CSeq_id > > GetSeqIdsForGI(int gi)
     //return CID1Client().AskGetseqidsfromgi(gi);
 }
 
+bool IsResidue(unsigned char res)
+{
+    return (res < 250);
+}
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)
@@ -1099,6 +1104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/03/28 16:25:56  shomrat
+* Added IsResidue
+*
 * Revision 1.8  2003/03/24 14:41:39  shomrat
 * Removed direct calls to ID1, temporary implementation for GetGIForSeqId and getSeqIdsForGI
 *

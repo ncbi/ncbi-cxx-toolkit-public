@@ -180,6 +180,7 @@ bool IsBlankString(const string& str);
 bool IsBlankStringList(const list< string >& str_list);
 int GetGIForSeqId(const CSeq_id& id);
 list< CRef< CSeq_id > > GetSeqIdsForGI(int gi);
+bool IsResidue(unsigned char res);
 
 
 // =============================================================================
@@ -217,6 +218,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/03/28 16:25:40  shomrat
+* Added IsResidue
+*
 * Revision 1.7  2003/03/21 16:19:01  shomrat
 * Added GetGiForSeqId and GetSeqIdsForGI
 *
