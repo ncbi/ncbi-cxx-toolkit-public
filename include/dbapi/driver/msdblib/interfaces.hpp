@@ -44,7 +44,7 @@
 #define DBNTWIN32                   /* must be defined before sqlfront.h */
 #include <sqlfront.h>               /* must be after windows.h */
 # if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
-typedef const LPBYTE	LPCBYTE;    /* MSVC7 headers lucks typedef for LPCBYTE */
+typedef const BYTE *LPCBYTE;    /* MSVC7 headers lucks typedef for LPCBYTE */
 # endif
 #include <sqldb.h>
 
@@ -663,6 +663,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/07/06 14:26:48  gorelenk
+ * Changed typedef for LPCBYTE to be consistent with Platform SDK headers
+ *
  * Revision 1.6  2004/05/18 19:22:08  gorelenk
  * Conditionaly added typedef for LPCBYTE missed in MSVC7 headers .
  *
