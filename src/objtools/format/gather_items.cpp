@@ -921,7 +921,6 @@ bool s_FeatEndsOnBioseq(const CSeq_feat& feat, const CBioseq_Handle& seq)
 }
 
 
-
 void CFlatGatherer::x_GatherFeaturesOnLocation
 (const CSeq_loc& loc,
  SAnnotSelector& sel,
@@ -936,7 +935,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
              !s_FeatEndsOnBioseq(it->GetOriginalFeature(), ctx.GetHandle()) ) {
             continue;
         }
-        
+    
         out << new CFeatureItem(*it, ctx);
 
         // Add more features depending on user preferences
@@ -1130,7 +1129,10 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
     }
 
     CBioseq_Handle  prot = ctx.GetScope().GetBioseqHandle(feat.GetProduct());
-    
+    if ( !prot ) {
+        return;
+    }
+        
     CFeat_CI prev;
     bool first = true;
     // explore mat_peptides, sites, etc.
@@ -1201,6 +1203,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/03/30 20:31:09  shomrat
+* Bug fix
+*
 * Revision 1.12  2004/03/26 17:24:55  shomrat
 * Changes to comment gathering
 *
