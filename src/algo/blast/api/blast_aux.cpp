@@ -296,7 +296,6 @@ CSeqLoc2BlastMaskLoc(const CSeq_loc &slp, int index)
     return mask;
 }
 
-#define NUM_FRAMES 6
 void BlastMaskLocDNAToProtein(BlastMaskLoc** mask_ptr, const CSeq_loc &seqloc, 
                            CScope* scope)
 {
