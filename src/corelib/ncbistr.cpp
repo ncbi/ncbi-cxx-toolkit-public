@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/17 21:50:45  sandomir
+* CNCBINode fixed in Resource; case insensitive string comparison predicate added
+*
 * Revision 1.2  1998/12/15 17:36:33  vasilche
 * Fixed "double colon" bug in multithreaded version of headers.
 *
@@ -101,6 +104,26 @@ string DoubleToString(double value)
     char buffer[64];
     snprintf(buffer, sizeof(buffer), "%g", value);
     return buffer;
+}
+
+// predicates
+
+// case-insensitive string comparison
+// operator() meaning is the same as operator<
+bool PNocase::operator() ( const string& x, const string& y ) const
+{
+  string::const_iterator p = x.begin();
+  string::const_iterator q = y.begin();
+  
+  while( p!= x.end() && q != y.end() && toupper(*p) == toupper(*q) ) {
+    ++p; ++q;
+  }
+  
+  if( p == x.end() ) {
+    return q != y.end();
+  }
+  
+  return toupper(*p) < toupper(*q);
 }
 
 END_NCBI_SCOPE

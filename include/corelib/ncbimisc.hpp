@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1998/12/17 21:50:43  sandomir
+* CNCBINode fixed in Resource; case insensitive string comparison predicate added
+*
 * Revision 1.10  1998/12/15 17:38:16  vasilche
 * Added conversion functions string <> int.
 *
@@ -68,6 +71,22 @@ extern double StringToDouble(const string& str);
 extern string IntToString(int value);
 extern string UIntToString(unsigned int value);
 extern string DoubleToString(double value);
+
+// predicates
+
+// case-insensitive string comparison
+struct PNocase
+{
+  bool operator() ( const string&, const string& ) const;
+};
+
+// algorithms
+
+template<class Pred>
+bool AStrEquiv( const string& x, const string& y, Pred pr )
+{  
+  return !( pr( x, y ) || pr( y, x ) );
+}
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

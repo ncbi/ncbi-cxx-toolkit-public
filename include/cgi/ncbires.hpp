@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/17 21:50:43  sandomir
+* CNCBINode fixed in Resource; case insensitive string comparison predicate added
+*
 * Revision 1.7  1998/12/17 17:25:02  sandomir
 * minor changes in Report
 *
@@ -73,7 +76,7 @@ class CNcbiDatabaseInfo;
 class CNcbiCommand;
 
 class CNcbiResPresentation;
-class CNcbiNode;
+class CNCBINode;
 
 class CHTML_a;
 
@@ -121,7 +124,7 @@ public:
 
   virtual ~CNcbiResPresentation() {}
 
-  virtual CNcbiNode* GetLogo( void ) const { return 0; }
+  virtual CNCBINode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
   virtual CHTML_a* GetLink( void ) const { return 0; }
 };
@@ -139,7 +142,7 @@ public:
 
   virtual CNcbiCommand* Clone( void ) const = 0;
 
-  virtual CNcbiNode* GetLogo( void ) const { return 0; }
+  virtual CNCBINode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
   virtual CHTML_a* GetLink( void ) const { return 0; }
 
@@ -248,7 +251,7 @@ public:
 
   virtual ~CNcbiDbFilterReport() {}
 
-  virtual CNcbiNode* CreateView( const CCgiRequest& request ) const = 0;
+  virtual CNCBINode* CreateView( const CCgiRequest& request ) const = 0;
 };
 
 //
@@ -261,7 +264,7 @@ public:
 
   virtual ~CNcbiDbPresentation() {}
 
-  virtual CNcbiNode* GetLogo( void ) const { return 0; }
+  virtual CNCBINode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
   virtual CHTML_a* GetLink( void ) const { return 0; }
 };
@@ -309,11 +312,11 @@ public:
 
   virtual CNcbiDataObjectReport* Clone( void ) const = 0;
 
-  virtual CNcbiNode* GetLogo( void ) const { return 0; }
+  virtual CNCBINode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
   virtual CHTML_a* GetLink( void ) const { return 0; }
 
-  virtual CNcbiNode* CreateView( const CCgiRequest& request ) const = 0;
+  virtual CNCBINode* CreateView( const CCgiRequest& request ) const = 0;
 
   virtual bool IsRequested( const CCgiRequest& request ) const;
 

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/17 21:50:44  sandomir
+* CNCBINode fixed in Resource; case insensitive string comparison predicate added
+*
 * Revision 1.5  1998/12/17 17:25:02  sandomir
 * minor changes in Report
 *
@@ -106,7 +109,7 @@ bool CNcbiCommand::IsRequested( const CCgiRequest& request ) const
                                           CNcbiCommand::GetEntry() );
 
   for( TCgiEntriesI itEntr = it.first; itEntr != it.second; itEntr++ ) {
-    if( value == itEntr->second ) {
+    if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
       return true;
     } // if
   } // for
@@ -143,7 +146,7 @@ bool CNcbiDataObjectReport::IsRequested( const CCgiRequest& request ) const
                                           CNcbiDataObjectReport::GetEntry() );
 
   for( TCgiEntriesI itEntr = it.first; itEntr != it.second; itEntr++ ) {
-    if( value == itEntr->second ) {
+    if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
       return true;
     } // if
   } // for
