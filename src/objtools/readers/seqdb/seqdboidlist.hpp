@@ -76,6 +76,8 @@ public:
     ///   The CSeqDBAtlas object.
     /// @param volumes
     ///   The set of database volumes.
+    /// @param locked
+    ///   The lock holder object for this thread.
     CSeqDBOIDList(CSeqDBAtlas        & atlas,
                   const CSeqDBVolSet & volumes,
                   CSeqDBLockHold     & locked);
@@ -169,7 +171,7 @@ private:
     /// @param filename
     ///   The name of the mask file to use.
     /// @param locked
-    ///   The lock hold object for this thread.
+    ///   The lock holder object for this thread.
     void x_Setup(const string   & filename,
                  CSeqDBLockHold & locked);
     
@@ -191,7 +193,7 @@ private:
     /// @param volset
     ///   The set of volumes to build an oid mask for.
     /// @param locked
-    ///   The lock hold object for this thread.
+    ///   The lock holder object for this thread.
     void x_Setup(const CSeqDBVolSet & volset,
                  CSeqDBLockHold     & locked);
     
@@ -207,7 +209,7 @@ private:
     /// @param oid_start
     ///   The volume's starting oid.
     /// @param locked
-    ///   The lock hold object for this thread.
+    ///   The lock holder object for this thread.
     void x_OrMaskBits(const string   & mask_fname,
                       Uint4            oid_start,
                       CSeqDBLockHold & locked);
@@ -227,7 +229,7 @@ private:
     /// @param oid_end
     ///   The volume's ending oid.
     /// @param locked
-    ///   The lock hold object for this thread.
+    ///   The lock holder object for this thread.
     void x_OrGiFileBits(const string    & gilist_fname,
                         const CSeqDBVol * volp,
                         Uint4             oid_start,
@@ -249,7 +251,7 @@ private:
     /// @param gis
     ///   A vector to return the gis in.
     /// @param locked
-    ///   The lock hold object for this thread.
+    ///   The lock holder object for this thread.
     void x_ReadBinaryGiList(CSeqDBRawFile  & gilist,
                             CSeqDBMemLease & lease,
                             Uint4            num_gis,
@@ -268,7 +270,7 @@ private:
     /// @param gis
     ///   A vector to return the gis in.
     /// @param locked
-    ///   The lock hold object for this thread.
+    ///   The lock holder object for this thread.
     void x_ReadTextGiList(CSeqDBRawFile  & gilist,
                           CSeqDBMemLease & lease,
                           vector<Uint4>  & gis,
