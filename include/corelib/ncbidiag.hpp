@@ -143,10 +143,11 @@ enum EDiagPostFlag {
     /// Set all flags for using with __FILE__ and __LINE__.
     eDPF_Trace              = 0x1F,
 
-    /// Print the posted message only;  without severity, location, prefix, etc.
+    /// Print the posted message only; without severity, location, prefix, etc.
     eDPF_Log                = 0x0,
 
-    /// Ignore all other flags, use global flags.
+    /// Use global default flags (merge with).
+    /// @sa SetDiagPostFlag(), UnsetDiagPostFlag(), IsSetDiagPostFlag()
     eDPF_Default            = 0x8000
 };
 
@@ -200,9 +201,9 @@ public:
 
     /// Constructor -- includes file and line# information.
     NCBI_XNCBI_EXPORT
-    CNcbiDiag(const char*  file,    ///< File to write diag. messages
-              size_t       line,    ///< Line number
-              EDiagSev     sev          = eDiag_Error,  ///< Severity level
+    CNcbiDiag(const char*    file,    ///< File to write diag. messages
+              size_t         line,    ///< Line number
+              EDiagSev       sev          = eDiag_Error,  ///< Severity level
               TDiagPostFlags post_flags = eDPF_Default  ///< What info.
              );
 
@@ -303,12 +304,14 @@ public:
     int GetErrorSubCode(void) const;
 
     /// Get post flags for the current message.
-    TDiagPostFlags GetPostFlags   (void) const;
+    /// If the post flags have "eDPF_Default" set, then in the returned flags
+    /// it will be reset and substituted by current default flags.
+    TDiagPostFlags GetPostFlags(void) const;
 
     /// Display fatal error message.
     NCBI_XNCBI_EXPORT
     static void DiagFatal(const char* file, size_t line,
-                             const char* message);
+                          const char* message);
     /// Display trouble error message.
     NCBI_XNCBI_EXPORT
     static void DiagTrouble(const char* file, size_t line);
@@ -316,7 +319,7 @@ public:
     /// Assert specfied expression and report results.
     NCBI_XNCBI_EXPORT
     static void DiagAssert(const char* file, size_t line,
-                             const char* expression);
+                           const char* expression);
 
     /// Display validation message.
     NCBI_XNCBI_EXPORT
@@ -352,16 +355,18 @@ private:
 /// @param flag
 ///   Flag to check
 /// @param flags
-///   If eDPF_Default is set for "flags" then use the current global flags as
-///   specified by SetDiagPostFlag()/UnsetDiagPostFlag().
+///   If eDPF_Default is set for "flags" then use the current global flags on
+///   its place (merged with other flags from "flags").
 /// @return
 ///   "TRUE" if the specified "flag" is set in global "flags" that describes
 ///   the post settings.
+/// @sa SetDiagPostFlag(), UnsetDiagPostFlag()
 inline bool IsSetDiagPostFlag(EDiagPostFlag  flag, 
                               TDiagPostFlags flags = eDPF_Default);
 
-/// Set all global post flags to "flags".
-///
+/// Set global post flags to "flags".
+/// If "flags" have flag eDPF_Default set, it will be replaced by the
+/// current global post flags.
 /// @return
 ///   Previously set flags
 NCBI_XNCBI_EXPORT
@@ -369,7 +374,7 @@ extern TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags);
 
 /// Set the specified flag (globally).
 NCBI_XNCBI_EXPORT
-extern void SetDiagPostFlag  (EDiagPostFlag flag);
+extern void SetDiagPostFlag(EDiagPostFlag flag);
 
 /// Unset the specified flag (globally).
 NCBI_XNCBI_EXPORT
@@ -385,7 +390,7 @@ extern void PushDiagPostPrefix(const char* prefix);
 
 /// Pop a string from the list of message prefixes.
 NCBI_XNCBI_EXPORT
-extern void PopDiagPostPrefix (void);
+extern void PopDiagPostPrefix(void);
 
 
 
@@ -864,6 +869,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.61  2003/11/06 21:40:34  vakatov
+ * A somewhat more natural handling of the 'eDPF_Default' flag -- replace
+ * it by the current global flags, then merge these with other flags (if any)
+ *
  * Revision 1.60  2003/08/01 14:16:27  siyan
  * Fixed error in CDiagFactory documentation.
  *

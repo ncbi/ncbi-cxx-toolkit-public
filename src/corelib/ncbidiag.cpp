@@ -418,6 +418,10 @@ extern TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags)
     CMutexGuard LOCK(s_DiagMutex);
 
     TDiagPostFlags prev_flags = CDiagBuffer::sm_PostFlags;
+    if (flags & eDPF_Default) {
+        flags |= prev_flags;
+        flags &= ~eDPF_Default;
+    }
     CDiagBuffer::sm_PostFlags = flags;
     return prev_flags;
 }
@@ -1105,6 +1109,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.77  2003/11/06 21:40:56  vakatov
+ * A somewhat more natural handling of the 'eDPF_Default' flag -- replace
+ * it by the current global flags, then merge these with other flags (if any)
+ *
  * Revision 1.76  2003/10/31 19:38:53  lavr
  * No '\0' in exception reporting
  *

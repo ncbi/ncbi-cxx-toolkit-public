@@ -206,7 +206,9 @@ inline int CNcbiDiag::GetErrorSubCode(void) const {
 }
 
 inline TDiagPostFlags CNcbiDiag::GetPostFlags(void) const {
-    return m_PostFlags;
+    return (m_PostFlags & eDPF_Default) ?
+        (m_PostFlags | CDiagBuffer::sm_PostFlags) & ~eDPF_Default :
+        m_PostFlags;
 }
 
 
@@ -325,7 +327,7 @@ bool CDiagBuffer::GetTraceEnabled(void) {
 inline
 bool IsSetDiagPostFlag(EDiagPostFlag flag, TDiagPostFlags flags) {
     if (flags & eDPF_Default)
-        flags = CDiagBuffer::sm_PostFlags;
+        flags |= CDiagBuffer::sm_PostFlags;
     return (flags & flag) != 0;
 }
 
@@ -423,6 +425,10 @@ bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2003/11/06 21:40:34  vakatov
+ * A somewhat more natural handling of the 'eDPF_Default' flag -- replace
+ * it by the current global flags, then merge these with other flags (if any)
+ *
  * Revision 1.36  2003/04/25 20:53:16  lavr
  * Introduce draft version of IgnoreDiagDieLevel()
  * Clear error code/subcode from Endm() and Reset() manipulators
