@@ -1851,13 +1851,12 @@ _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
     SFreqRatios* freq_ratios = NULL;    /* only needed when there are not
                                            residue frequencies for a given 
                                            column */
-    Blast_KarlinBlk* kbp_ideal = Blast_KarlinBlkIdealCalc(sbp);
-    double ideal_lambda = kbp_ideal->Lambda;
-    kbp_ideal = Blast_KarlinBlkDestruct(kbp_ideal);
+    double ideal_lambda = 0.0;
 
     if ( !internal_pssm || !sbp || !std_probs )
         return PSIERR_BADPARAM;
 
+    ideal_lambda = sbp->kbp_ideal->Lambda;
     freq_ratios = _PSIMatrixFrequencyRatiosNew(sbp->name);
 
     /* Each column is a position in the query */
@@ -2358,6 +2357,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/11/23 21:48:21  camacho
+ * Removed local initialization of ideal Karlin-Altschul parameters
+ *
  * Revision 1.36  2004/11/22 14:38:48  camacho
  * + option to set % identity threshold to PSSM engine
  *

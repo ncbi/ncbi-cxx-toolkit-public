@@ -304,9 +304,7 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
         }
     }
 
-    /*********************************************************************/
-    // MUST INITIALIZE THIS: should be moved to setup code
-    retval->kbp_ideal = Blast_KarlinBlkIdealCalc(retval);
+    ASSERT(retval->kbp_ideal);
 
     return retval;
 }
@@ -522,6 +520,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2004/11/23 21:48:44  camacho
+ * Removed local initialization of ideal Karlin-Altschul parameters
+ *
  * Revision 1.21  2004/11/22 14:38:57  camacho
  * + option to set % identity threshold to PSSM engine
  *
