@@ -278,27 +278,6 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
                 }
             }
 
-            // Search <BODY> tag
-            pos = NStr::FindNoCase(str, "<body", pos);
-            if ( pos == NPOS) {
-                break;
-            }
-            pos = str.find(">", pos);
-            if ( pos == NPOS) {
-                break;
-            }
-            for (int t = CHTMLPopupMenu::ePMFirst; t <= CHTMLPopupMenu::ePMLast; t++ ) {
-                CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
-                TPopupMenus::const_iterator info = m_PopupMenus.find(type);
-                if ( info != m_PopupMenus.end() ) {
-                    if ( CHTMLPopupMenu::GetCodeBodyTagHandler(type) != kEmptyStr ) {
-                        string script = " "+CHTMLPopupMenu::GetCodeBodyTagHandler(type) + "=\"" +
-                                        CHTMLPopupMenu::GetCodeBodyTagAction(type) + "\"" ;
-                        str.insert(pos, script);
-                    }
-                }
-            }
-
             // Search </BODY> tag
             pos = NStr::FindNoCase(str, "/body", 0, NPOS, NStr::eLast);
             if ( pos == NPOS) {
@@ -417,6 +396,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2003/12/02 14:26:35  ivanov
+ * Removed obsolete functions GetCodeBodyTag[Handler|Action]().
+ *
  * Revision 1.39  2003/11/03 17:03:08  ivanov
  * Some formal code rearrangement. Move log to end.
  *

@@ -399,30 +399,15 @@ string CHTMLPopupMenu::GetCodeBody(EType type, bool use_dynamic_menu)
 }
 
 
-string CHTMLPopupMenu::GetCodeBodyTagHandler(EType type)
-{
-    if ( type == eKurdin ) {
-        return "onClick";
-    }
-    return kEmptyStr;
-}
-
-
-string CHTMLPopupMenu::GetCodeBodyTagAction(EType type)
-{
-    if ( type == eKurdin ) {
-        return "PopUpMenu2_Stop()";
-    }
-    return kEmptyStr;
-}
-
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/12/02 14:27:06  ivanov
+ * Removed obsolete functions GetCodeBodyTag[Handler|Action]().
+ *
  * Revision 1.20  2003/11/03 17:03:08  ivanov
  * Some formal code rearrangement. Move log to end.
  *
