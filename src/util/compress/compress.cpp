@@ -71,7 +71,7 @@ bool CCompression::x_CompressFile(const string&     src_file,
         return false;
     }
     char* buffer;
-    CNcbiIfstream is(src_file.c_str());
+    CNcbiIfstream is(src_file.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if ( !is.good() ) {
         return false;
     }
@@ -101,7 +101,7 @@ bool CCompression::x_DecompressFile(CCompressionFile& src_file,
         return false;
     }
     char* buffer;
-    CNcbiOfstream os(dst_file.c_str());
+    CNcbiOfstream os(dst_file.c_str(), IOS_BASE::out | IOS_BASE::binary);
     if ( !os.good() ) {
         return false;
     }
@@ -165,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/08/04 18:42:45  ivanov
+ * Use binary mode to open file streams in the x_[De]compressFile.
+ *
  * Revision 1.7  2004/05/17 21:07:25  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
