@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-/* This incomplete type is the only handle to the Blast Sequence Source ADT */
+/** This incomplete type is the only handle to the Blast Sequence Source ADT */
 typedef struct BlastSeqSrc* BlastSeqSrcPtr;
 
 /** Function pointer typedef to create a new BlastSeqSrc structure.
