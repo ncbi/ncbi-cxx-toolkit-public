@@ -366,7 +366,9 @@ int CSeqVecBench::Run(void)
         string buf;
         for ( TSeqPos start = 0, size = vec.size();
               start < size;  start += chunk_size ) {
-            TSeqPos count = min(chunk_size, size - start);
+            TSeqPos count = size - start;
+            if ( chunk_size < count )
+                count = chunk_size;
             vec.GetSeqData(start, start + count, buf);
             for (size_t j = 0;  j < buf.size();  ++j, ++counter) {
                 mask ^= buf[j];
@@ -386,7 +388,9 @@ int CSeqVecBench::Run(void)
         string buf;
         for ( TSeqPos start = 0, size = vec.size();
               start < size;  start += chunk_size ) {
-            TSeqPos count = min(chunk_size, size - start);
+            TSeqPos count = size - start;
+            if ( chunk_size < count )
+                count = chunk_size;
             vec.GetSeqData(start, start + count, buf);
             ITERATE(string, iter, buf) {
                 mask ^= *iter;
@@ -419,6 +423,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/09/07 21:22:54  vasilche
+ * Fixed for missing min(unsigned, unsigned) on Windows.
+ *
  * Revision 1.4  2004/09/07 14:25:48  vasilche
  * Test for "block" fetching with GetSeqData().
  *
