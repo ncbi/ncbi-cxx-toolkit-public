@@ -214,8 +214,8 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
         }
 
         // check for PSSM change
-        TRACEMSG("checking for PSSM changes... " << originalPSSM << ' ' << currentPSSM);
         const BLAST_Matrix *originalPSSM = originalMultiple->GetPSSM(), *currentPSSM = multiple->GetPSSM();
+        TRACEMSG("checking for PSSM changes... " << originalPSSM << ' ' << currentPSSM);
         if (originalPSSM->rows != currentPSSM->rows ||
             originalPSSM->columns != currentPSSM->columns ||
             originalPSSM->karlinK != currentPSSM->karlinK)
@@ -942,6 +942,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2003/09/22 16:17:29  thiessen
+* fix typo
+*
 * Revision 1.86  2003/09/22 16:15:28  thiessen
 * better diagnostic messages for change checks
 *
