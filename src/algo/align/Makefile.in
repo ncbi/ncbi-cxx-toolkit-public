@@ -3,7 +3,7 @@
 # Meta-makefile (algo/align)
 #################################
 
-SUB_PROJ = nw splign
+SUB_PROJ = nw splign util
 
 REQUIRES = objects
 
