@@ -174,7 +174,7 @@ CPrelimBlastThread::~CPrelimBlastThread()
 /// method.
 void* CPrelimBlastThread::Main(void) 
 {
-    intptr_t status = m_iBlaster->Run();
+    long status = m_iBlaster->Run();
     return (void*) status;
 }
 
@@ -671,6 +671,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.55  2005/01/28 21:39:37  ucko
+ * CPrelimBlastThread::Main: use long rather than intptr_t, which isn't
+ * as widely available as one might like.
+ *
  * Revision 1.54  2005/01/28 14:32:38  coulouri
  * use intptr_t when casting to void pointer
  *
