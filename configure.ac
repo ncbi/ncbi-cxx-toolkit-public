@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.22 2001/12/04 19:47:26 ucko Exp $
+#  $Id: configure.ac,v 1.23 2001/12/06 19:51:56 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -403,9 +403,9 @@ changequote([, ])dnl
 with_mt=${with_mt:="no"}
 if test "$with_mt" = "yes" ; then
    case "$host_os:$compiler" in
-    solaris*:WorkShop*      )  MT_FLAG=${MT_FLAG:="-mt"} ;;
-    *:KCC                   )  MT_FLAG=${MT_FLAG:="--thread_safe"} ;;
-    *:GCC | irix*:MIPSpro73 )  ;;
+    solaris*:WorkShop*              )  MT_FLAG=${MT_FLAG:="-mt"} ;;
+    *:KCC                           )  MT_FLAG=${MT_FLAG:="--thread_safe"} ;;
+    *:GCC | *:ICC | irix*:MIPSpro73 )  ;;
     * )   AC_MSG_ERROR(["Do not know how to build MT-safe with compiler $CXX $compiler_ver"]) ;;
    esac
    CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT"

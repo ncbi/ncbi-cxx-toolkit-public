@@ -2644,9 +2644,9 @@ compiler_root=`echo $CXX | sed -ne 's:\(.*\)[/\\]bin[/\\].*:\1:p'`
 with_mt=${with_mt:="no"}
 if test "$with_mt" = "yes" ; then
    case "$host_os:$compiler" in
-    solaris*:WorkShop*      )  MT_FLAG=${MT_FLAG:="-mt"} ;;
-    *:KCC                   )  MT_FLAG=${MT_FLAG:="--thread_safe"} ;;
-    *:GCC | irix*:MIPSpro73 )  ;;
+    solaris*:WorkShop*              )  MT_FLAG=${MT_FLAG:="-mt"} ;;
+    *:KCC                           )  MT_FLAG=${MT_FLAG:="--thread_safe"} ;;
+    *:GCC | *:ICC | irix*:MIPSpro73 )  ;;
     * )   { { echo "$as_me:2650: error: \"Do not know how to build MT-safe with compiler $CXX $compiler_ver\"" >&5
 echo "$as_me: error: \"Do not know how to build MT-safe with compiler $CXX $compiler_ver\"" >&2;}
    { (exit 1); exit 1; }; } ;;
