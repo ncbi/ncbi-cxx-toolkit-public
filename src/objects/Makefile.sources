@@ -1,8 +1,6 @@
 include $(builddir)/Makefile.mk
 
-NCBI_DATATOOL_PATH = $(bindir)
-
 all all_r:
-	cd $(srcdir) && $(MAKE) all_files
+	cd $(srcdir) && NCBI_DATATOOL_PATH=$(bindir) $(MAKE) all_files
 
 clean clean_r purge purge_r:
