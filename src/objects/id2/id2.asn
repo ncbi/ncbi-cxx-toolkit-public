@@ -1,4 +1,4 @@
---$Revision: 1.13 $
+--$Revision: 1.14 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -302,7 +302,7 @@ ID2-Reply-Get-Blob-Id ::= SEQUENCE {
         seq-id          Seq-id,
 
         -- result
-        blob-id         ID2-Blob-Id,
+        blob-id         ID2-Blob-Id OPTIONAL,
 
         -- version of split data
         -- (0 for non split)
