@@ -53,6 +53,8 @@ static MyTZDLS MyReadLocation()
 	MachineLocation loc;
 	ReadLocation(&loc);
 	long tz = loc.u.gmtDelta & 0x00ffffff;
+   	/** Propogate sign bit from bit 23 to bit 31 if West of UTC. (Sign-extend the GMT correction) **/
+	if ((tz & 0x00800000) != 0) tz |= 0xFF000000;
 	bool dls = (loc.u.dlsDelta != 0);
 	MyTZDLS tzdls = {tz, dls};
 	return tzdls;
@@ -438,7 +440,21 @@ string CTime::AsString(const string& fmt) const
     return str;
 }
 
-
+#if defined (NCBI_OS_MAC)
+// Mac OS 9 does not correctly support daylight savings flag.
+time_t CTime::GetTimeT(void) const
+{
+    struct tm t;
+    t.tm_sec   = Second() + (int) (IsGmtTime() ? +TimeZone() : 0);
+    t.tm_min   = Minute();
+    t.tm_hour  = Hour();
+    t.tm_mday  = Day();
+    t.tm_mon   = Month()-1;
+    t.tm_year  = Year()-1900;
+    t.tm_isdst = -1;	
+	return mktime(&t);
+}
+#else
 time_t CTime::GetTimeT(void) const
 {
     // MT-Safe protect
@@ -499,7 +515,7 @@ time_t CTime::GetTimeT(void) const
     return timer;
 #endif
 }
-
+#endif
 
 TDBTimeU CTime::GetTimeDBU(void) const
 {
@@ -1143,6 +1159,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2002/07/23 19:51:17  lebedev
+ * NCBI_OS_MAC: GetTimeT fix
+ *
  * Revision 1.23  2002/07/15 18:17:25  gouriano
  * renamed CNcbiException and its descendents
  *
