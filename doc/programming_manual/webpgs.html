@@ -29,6 +29,9 @@ The <a href="#htmnode"><span class="ncbi_class">CHTMLNode</span> </a>class</li>
 The <a href="#htmdualnode"><span class="ncbi_class">CHTMLDualNode</span> </a>class</li>
 
 <li>
+The <a href="#htmpopupmenu"><span class="ncbi_class">CHTMLPopupMenu</span> </a>class</li>
+
+<li>
 Using the HTML classes with a <a href="#cgiapp" class="ncbi_class">CCgiApplication</a>
 object</li>
 
@@ -692,7 +695,108 @@ whereas:
 </pre></blockquote>
 will generate:
 <blockquote><pre class="ncbi_output">\n TEXT \n</pre></blockquote>
+<p><br>
 
+
+<a NAME="htmpopupmenu"></a>
+<h3>The <a href="../docxx/CHTMLDualNode.html" class="ncbi_class">CHTMLPopupMenu</a> class</h3>
+<span class="ncbi_class">CHTMLPopupMenu</span> is a class for support JavaScript-based popup menu's in the HTML framework. It is derived directly from the <span class="ncbi_class">CNCBINode</span> class,
+The HTML pages using it can be viewed only in browsers with supporting JavaScript version 1.2 (or higher) and <span class="ncbi_term">CSS</span> (Cascading Style Sheets).
+<p><span class="ncbi_class">CHTMLPopupMenu</span> support two popup menu types (<span class="ncbi_type">CHTMLPopupMenu::EType</span>):
+<ul>
+<li><span class="ncbi_var">eSmith</span> - developed by Gary Smith;
+<li><span class="ncbi_var">eKurdin</span> - developed by <a href="mailto:kurdin@ncbi.nlm.nih.gov" class="ncbi_url">Sergey Kurdin</a>.</li>
+</ul>
+We use slightly modified Smith's menu <a href="../lxr/source/src/html/ncbi_menu_dnd.js">ncbi_menu_dnd.js</a>. This version have the following differences from the original:
+<ul>  
+<li>Added support for dynamic menu (all menues use one container);</li>
+<li>Added automatic menu adjustment in the browser window;</li>
+<li>Turned off dragging possibility;</li>
+<li>Fixed some errors.</li>
+</ul>
+You can download it <a href="http://www.ncbi.nlm.nih.gov/corehtml/jscript/ncbi_menu_dnd.js">here</a>.
+The original version and full documentation can be found at <a href="http://developer.netscape.com/viewsource/smith_menu/smith_menu.html" class="ncbi_url">http://developer.netscape.com/viewsource/smith_menu/smith_menu.htm</a>.
+<p>
+The type of menu can be specified by second argument of <span class="ncbi_class">CHTMLPopupMenu</span> constructor:
+<blockquote><pre class="ncbi_code">
+CHTMLPopupMenu(const string& name, EType type = eSmith);
+</pre></blockquote>
+By default, the "old" (Smith's) popup menu will be used. The first argument of constructor defines name of the menu. Each menu <em>must</em> use unique name, because this name will be as name of JavaScript variable.
+<p>
+To add items into menu class <span class="ncbi_class">CHTMLPopupMenu</span> have method <a href="../lxr/ident?i=AddItem" class="ncbi_func">AddItem()</a>.
+It's two first parameters are more useful and define item's title and action to be performed on click. The action must be any valid javascript code or just URL. In latter case it must begin with "http://" string. 
+<p>
+You can change menu style using menu attributes.
+
+Each attribute have effect only for specified menu type (<span class="ncbi_type">CHTMLPopupMenu::EType</span>), otherwise it will be ignored.
+<p>
+To attach popup menu to a HTML node a method
+<a href="../lxr/ident?i=AttachPopupMenu" class="ncbi_func">CHTMLNode::AttachPopupMenu()</a> can be used.
+This method works with both menu types.
+<p>
+By default, menu use javascript libraries from the <a href="../lxr/ident?i=kJSMenuDefaultURL_Smith">NCBI site</a>. But this behaviour can be changed using method 
+<a href="../lxr/ident?i=EnablePopupMenu" class="ncbi_func">EnablePopupMenu()</a> of classes <span class="ncbi_class">CHTML_html</span> and <span class="ncbi_class">CHTMLPage</span>. This method also forcibly enabled using popup menues on the HTML page. If we wish to use default javascript libraries than we can skip call of this function. In this case menues will be enabled automagicaly (for each type separately) if they are used on page. 
+<p>
+
+An example of popup menu usage should help to make these concepts more clear. The following code creates HTML page with two different menues:
+
+<blockquote><pre class="ncbi_code">
+// Create HTML page skeleton with HEAD and BODY
+CHTML_html* html = new CHTML_html;
+CHTML_head* head = new CHTML_head;
+CHTML_body* body = new CHTML_body;
+
+html->AppendChild(head); 
+html->AppendChild(body); 
+
+// Create one menu (Smith's menu by default)
+CHTMLPopupMenu* m1 = new CHTMLPopupMenu("Menu1");
+
+m1->AddItem("Red"  , "document.bgColor='red'");
+m1->AddItem("White" , "document.bgColor='white'");
+m1->AddSeparator();
+m1->AddItem("Green", "document.bgColor='green'");
+m1->SetAttribute(eHTML_PM_fontColor, "black");
+m1->SetAttribute(eHTML_PM_fontColorHilite, "yellow");
+
+// We can add menu to the BODY only!
+body->AppendChild(m1);
+
+// Create another menu
+CHTMLPopupMenu* m2 = new CHTMLPopupMenu("Menu2",CHTMLPopupMenu::eKurdin);
+
+m2->AddItem("NCBI", "http://ncbi.nlm.nih.gov");
+m2->AddItem("Netscape", "http://www.netscape.com");
+m2->AddItem("Microsoft", "top.location='http://www.microsoft.com'");
+m2->SetAttribute(eHTML_PM_titleColor, "yellow");
+m2->SetAttribute(eHTML_PM_alignV, "top");
+
+body->AppendChild(m2);
+
+// Add menus call
+CHTML_a* anchor1 = new CHTML_a("#","Smith's Menu");
+anchor1->AttachPopupMenu(m1, eHTML_EH_Click);
+
+CHTML_a* anchor2 = new CHTML_a("#","Kurdin's Menu");
+anchor2->AttachPopupMenu(m2);
+
+body->AppendChild(anchor1);
+body->AppendChild(new CHTML_p(""));
+body->AppendChild(anchor2);
+
+// Enable using popup menus (we can skip call this function)
+//html->EnablePopupMenu(CHTMLPopupMenu::eSmith);
+//html->EnablePopupMenu(CHTMLPopupMenu::eKurdin);
+    
+// Print page in the HTML format
+html->Print(cout);
+
+</pre></blockquote>
+
+<p>
+<span class="ncbi_note">Note:</span> We must add menues to a BODY only, otherwise menu not will work.
+<p>
+Using the code above you should get popup menues like menues in our <a href="html_jspopupmenu.html">example</a>.
 <p><br>
 
 
@@ -985,6 +1089,9 @@ on the NCBI <a href="#tagmap">Page</a> classes.
 
 <li>
 <a href="#CHTMLText" class="ncbi_class">CHTMLText</a></li>
+
+<li>
+<a href="#CHTMLPopupMenu" class="ncbi_class">CHTMLPopupMenu</a></li>
 
 <li>
 <a href="#CPager" class="ncbi_class">CPager</a></li>
@@ -1344,7 +1451,8 @@ in a single statement.</dd>
 <p>Use <span class="ncbi_ccode"><a href="../lxr/search?string=InsertAt" class="ncbi_func">InsertAt</a>(row, col, contents)</span> to add <span class="ncbi_var">contents</span> to table cell <span class="ncbi_var">row, col</span>.
 To add contents to the next available cell, use <span class="ncbi_ccode">AppendChild (new <a href="#CHTML_tc" class="ncbi_class">CHTML_tc</a>(tag, contents))</span>, where <span class="ncbi_var">tag</span> is type <span class="ncbi_type">char*</span> and
 <span class="ncbi_var">contents</span>
-is type <span class="ncbi_type">char*, string</span> or <span class="ncbi_type">CNCBINode*</span>. .
+is type <span class="ncbi_type">char*, string</span> or <span class="ncbi_type">CNCBINode*</span>.
+<p>
 
 <dt>
 <a NAME="CHTML_tc"></a>
@@ -1418,9 +1526,7 @@ names (<span class="ncbi_type">strings</span>) to the HTML subcomponents embedde
 Two constructors are defined. The first takes no arguments, and the other,
 takes a pointer to a <a href="cgi.html#ccgiapp" class="ncbi_class">CCgiApplication</a>
 and a <span class="ncbi_var">style</span> (<span class="ncbi_type">int</span>) argument.</dd>
-
-<br> 
-<p> 
+ 
 <dt>
 <a NAME="CHTMLComment"></a>
 <a href="../docxx/CHTMLComment.html" class="ncbi_class">CHTMLComment</a></dt>
@@ -1436,8 +1542,6 @@ constructor then uses
 or <a href="../lxr/ident?i=AppendChild" class="ncbi_func">AppendChild()</a>, depending
 on the type of argument, to append the argument to the comment node.</dd>
 
-<br> 
-<p> 
 <dt>
 <a NAME="CHTMLElement"></a>
 <a href="../docxx/CHTMLElement.html" class="ncbi_class">CHTMLElement</a></dt>
@@ -1455,8 +1559,6 @@ CHTML_basefont, CHTML_dl, CHTML_font, CHTML_form, CHTML_option, CHTML_select,
 CHTML_table, CHTML_tc, CHTML_textarea</span>, and
 <span class="ncbi_class">CHTMLListElement</span>.</dd>
 
-<br> 
-<p> 
 <dt>
 <a NAME="CHTMLListElement"></a>
 <a href="../docxx/CHTMLListElement.html" class="ncbi_class">CHTMLListElement</a></dt>
@@ -1525,8 +1627,6 @@ displayed verbatim by a browser (may require encoding). The constructor
 takes two arguments: the text to be inserted (<span class="ncbi_type">char*</span> or <span class="ncbi_type">string</span>)
 and a Boolean (default <span class="ncbi_value">false</span>) indicating that the output <em>should</em> be encoded. See also <a href="CHTMLText" class="ncbi_class">CHTMLText</a>.</dd>
 
-<br> 
-<p> 
 <dt>
 <a NAME="CHTMLTagNode"></a>
 <a href="../docxx/CHTMLTagNode.html" class="ncbi_class">CHTMLTagNode</a></dt>
@@ -1585,6 +1685,19 @@ in the text. The constructor takes a single argument - the text itself
 <a href="CHTMLPlainText" class="ncbi_class">CHTMLPlainText</a>
 should be used to insert text that does not embed any <span class="ncbi_term">tagnodes</span> and
 requires further encoding.</dd>
+
+<dt>
+<a NAME="CHTMLPopupMenu"></a>
+<a href="../docxx/CHTMLPopupMenu.html" class="ncbi_class">CHTMLPopupMenu</a>
+</dt>
+
+<dd>
+Derived from <a href="#CNCBINode" class="ncbi_class">CNCBINode</a>; defined in
+<a href="../lxr/ident?i=CHTMLPopupMenu" class="ncbi_file">jsmenu.hpp</a>
+- A class for support JavaScript-based popup menu's in the HTML framework.
+The pages using this libraries can be viewed only in browsers that support JavaScript
+version 1.2 (or higher) and CSS.
+</dd>
 
 <dt>
 <a NAME="CLinkBar"></a>
@@ -1669,8 +1782,6 @@ contains pointers to a <a href="#CPageList" class="ncbi_class">CPageList</a> and
 Derived from <a href="#CHTML_table" class="ncbi_class">CHTML_table</a>; defined in
 <a href="../lxr/ident?i=CPagerView" class="ncbi_file">pager.hpp</a>.</dd>
 
-<br> 
-<p> 
 <dt>
 <a NAME="CPmDocSumPage"></a>
 <a href="../docxx/CPmDocSumPage.html" class="ncbi_class">CPmDocSumPage</a>
@@ -1679,9 +1790,7 @@ Derived from <a href="#CHTML_table" class="ncbi_class">CHTML_table</a>; defined 
 <dd>
 Derived from <a href="#CHTMLPage" class="ncbi_class">CHTMLPage</a>; defined in
 <a href="../lxr/ident?i=CPmDocSumPage" class="ncbi_file">querypages.hpp</a>.</dd>
-
-<br> 
-<p> 
+ 
 <dt>
 <a NAME="CPmFrontPage"></a>
 <a href="../docxx/CPmFrontPage.html" class="ncbi_class">CPmFrontPage</a>
@@ -1691,8 +1800,6 @@ Derived from <a href="#CHTMLPage" class="ncbi_class">CHTMLPage</a>; defined in
 Derived from <a href="#CHTMLPage" class="ncbi_class">CHTMLPage</a>; defined in
 <a href="../lxr/ident?i=CPmFrontPage" class="ncbi_file">querypages.hpp</a>.</dd>
 
-<br> 
-<p> 
 <dt>
 <a NAME="CQueryBox"></a>
 <a href="../docxx/CQueryBox.html" class="ncbi_class">CQueryBox</a>
@@ -1722,11 +1829,12 @@ of a <a href="cgi.html#ccgireq" class="ncbi_class">CCgiRequest</a> object.</dd>
 
 <dd>
 Derived from <a href="#CNCBINode" class="ncbi_class">CNCBINode</a>; defined in
-<a href="../lxr/ident?i=CSmallPagerBox" class="ncbi_filemponents.hpp</a>.
+<a href="../lxr/ident?i=CSmallPagerBox" class="ncbi_file">components.hpp</a>.
 A minimal paging component that displays the number of results from the
 query and the current page being viewed. Has background color and width
 attributes and contains a pointer to a <a href="#CPageList" class="ncbi_class">CPageList</a>.
 See also <a href="#CPagerBox" class="ncbi_class">CPagerBox</a> and <a href="#CPager" class="ncbi_class">CPager</a>.</dd>
+
 
 <br> 
 <p>&nbsp;</dl>
