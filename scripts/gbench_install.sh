@@ -198,7 +198,7 @@ CopyFiles()
         DoCopy $src_dir/lib/libgui_$x.so $target_dir/plugins/
     done
 
-    for x in $src_dir/lib/libdbapi*.so; do
+    for x in $src_dir/lib/lib*dbapi*.so; do
         if [ -f $x ]; then
             f=`basename $x`
             echo copying DB interface: $f
