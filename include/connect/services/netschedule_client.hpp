@@ -268,9 +268,12 @@ void CNetSchedule_GenerateJobKey(string*        key,
                                   const string&  host, 
                                   unsigned short port);
 
+/// @internal
+#define NETSCHEDULE_JOBMASK "JSID_01_%u_%s_%u"
+
 
 /// @internal
-const unsigned int kNetScheduleMaxDataSize = 1024;
+const unsigned int kNetScheduleMaxDataSize = 512;
 
 /* @} */
 
@@ -281,6 +284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/02/22 16:14:00  kuznets
+ * Reduced size of input data
+ *
  * Revision 1.3  2005/02/10 20:00:54  kuznets
  * +GetJob(), +PutResult()
  *
