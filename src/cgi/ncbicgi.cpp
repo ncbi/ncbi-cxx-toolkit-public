@@ -586,95 +586,110 @@ static void s_ParseQuery(const string& str,
 }
 
 
+static string s_FindAttribute(const string& str, const string& name,
+                              SIZE_TYPE start, SIZE_TYPE end,
+                              bool required)
+{
+    SIZE_TYPE att_pos = str.find("; " + name + "=\"", start);
+    if (att_pos == NPOS  ||  att_pos >= end) {
+        if (required) {
+            NCBI_THROW2(CParseException, eErr,
+                        "s_FindAttribute: missing " + name + " in "
+                        + str.substr(start, end - start),
+                        start);
+        } else {
+            return kEmptyStr;
+        }
+    }
+    SIZE_TYPE att_start = att_pos + name.size() + 4;
+    SIZE_TYPE att_end   = str.find('\"', att_start);
+    if (att_end == NPOS  ||  att_end >= end) {
+        NCBI_THROW2(CParseException, eErr,
+                    "s_FindAttribute: malformatted " + name + " in "
+                    + str.substr(att_pos, end - att_pos),
+                    att_start);
+    }
+    return str.substr(att_start, att_end - att_start);
+}
+
+
 static void s_ParseMultipartEntries(const string& boundary,
                                     const string& str,
                                     TCgiEntries&  entries)
 {
-    // some constants in string
-    const string s_NameStart("Content-Disposition: form-data; name=\"");
-    const string s_FilenameStart("; filename=\"");
+    const string s_Me("s_ParseMultipartEntries");
     const string s_Eol(HTTP_EOL);
+    const SIZE_TYPE eol_size = s_Eol.size();
 
     SIZE_TYPE pos = 0;
-    SIZE_TYPE partStart = 0;
-    bool last_line = false;
-    string name, filename;
-    for ( ;; ) {
-        SIZE_TYPE eol = str.find(s_Eol, pos);
-        if (eol == NPOS) {
-            eol = str.size();
-            last_line = true;
-        }
-        if (eol == pos + boundary.size() + 2  &&
-            NStr::Compare(str, pos, boundary.size(), boundary) == 0  &&
-            str[eol-1] == '-'  &&  str[eol-2] == '-') {
-            // last boundary
-            if (partStart == NPOS) {
-                s_AddEntry(entries, name, kEmptyStr, filename);
-            }
-            if (partStart != 0) {
-                SIZE_TYPE partEnd = pos - s_Eol.size();
-                s_AddEntry(entries, name,
-                           str.substr(partStart, partEnd - partStart),
-                           filename);
-            }
+    SIZE_TYPE boundary_size = boundary.size();
+    SIZE_TYPE tail_size = boundary_size + eol_size + 2;
+    SIZE_TYPE str_size = str.size();
+
+    if (str.compare(0, boundary_size + eol_size, boundary + s_Eol) != 0) {
+        if (str == boundary + "--") {
+            // potential corner case: no actual data
             return;
         }
-        if (last_line) {
-            NCBI_THROW2(CParseException,eErr,
-                        "CCgiRequest::ParseMultipartQuery(\"" +
-                        boundary + "\"): unexpected eof: " +
-                        str.substr(pos), 0);
+        NCBI_THROW2(CParseException, eErr,
+                    s_Me + ": input does not start with boundary line "
+                    + boundary,
+                    0);
+    } else if (str.compare(str_size - tail_size, tail_size,
+                           s_Eol + boundary + "--") != 0) {
+        NCBI_THROW2(CParseException, eErr,
+                    s_Me + ": input does not end with trailing boundary "
+                    + boundary + "--",
+                    str_size - tail_size);
+    }
+
+    pos += boundary_size + eol_size;
+    while (pos < str_size) {
+        SIZE_TYPE next_boundary = str.find(s_Eol + boundary, pos);
+        _ASSERT(next_boundary != NPOS);
+        string name, filename;
+        bool found = false;
+        for (;;) {
+            SIZE_TYPE bol_pos = pos, eol_pos = str.find(s_Eol, pos);
+            _ASSERT(eol_pos != NPOS);
+            if (pos == eol_pos) {
+                // blank -- end of headers
+                pos += eol_size;
+                break;
+            }
+            pos = str.find(':', bol_pos);
+            if (pos == NPOS  ||  pos >= eol_pos) {
+                NCBI_THROW2(CParseException, eErr,
+                            s_Me + ": no colon in header "
+                            + str.substr(bol_pos, eol_pos - bol_pos),
+                            bol_pos);
+            }
+            if (NStr::CompareNocase(str, bol_pos, pos - bol_pos,
+                                    "Content-Disposition") != 0) {
+                ERR_POST(Warning << s_Me << ": ignoring unrecognized header "
+                         + str.substr(bol_pos, eol_pos - bol_pos));
+                pos = eol_pos + eol_size;
+                continue;
+            }
+            if (NStr::CompareNocase(str, pos, 13, ": form-data; ") != 0) {
+                NCBI_THROW2(CParseException, eErr,
+                            s_Me + ": bad Content-Disposition header "
+                            + str.substr(bol_pos, eol_pos - bol_pos),
+                            pos);
+            }
+            pos += 11;
+            name     = s_FindAttribute(str, "name",     pos, eol_pos, true);
+            filename = s_FindAttribute(str, "filename", pos, eol_pos, false);
+            found = true;
+            pos = eol_pos + eol_size;
         }
-        if (eol == pos + boundary.size()  &&
-            NStr::Compare(str, pos, boundary.size(), boundary) == 0) {
-            // boundary
-            if (partStart == NPOS) {
-                s_AddEntry(entries, name, kEmptyStr, filename);
-            }
-            else if (partStart != 0) {
-                SIZE_TYPE partEnd = pos - s_Eol.size();
-                s_AddEntry(entries,
-                           name, str.substr(partStart, partEnd - partStart),
-                           filename);
-            }
-            partStart = NPOS;
-            name = kEmptyStr;
+        if (!found) {
+            NCBI_THROW2(CParseException, eErr,
+                        s_Me + ": missing Content-Disposition header", pos);
         }
-        else if (partStart == NPOS) {
-            // in header
-            if (pos + s_NameStart.size() <= eol  &&
-                NStr::Compare(str, pos, s_NameStart.size(), s_NameStart) ==0) {
-                SIZE_TYPE nameStart = pos + s_NameStart.size();
-                SIZE_TYPE nameEnd   = str.find('\"', nameStart);
-                if (nameEnd == NPOS) {
-                    NCBI_THROW2(CParseException,eErr,"\
-CCgiRequest::ParseMultipartQuery(\"" + boundary + "\"): bad name header " +
-                                          str.substr(pos), 0);
-                }
-                // new name
-                name = str.substr(nameStart, nameEnd - nameStart);
-                filename.erase();
-                SIZE_TYPE filenameStart = str.find(s_FilenameStart, nameEnd);
-                if (filenameStart != NPOS  &&  filenameStart < eol) {
-                    filenameStart += s_FilenameStart.size();
-                    SIZE_TYPE filenameEnd = str.find('\"', filenameStart);
-                    if (filenameEnd != NPOS  &&  filenameEnd < eol) {
-                        filename = str.substr(filenameStart,
-                                              filenameEnd - filenameStart);
-                    }
-                }
-            }
-            else if (eol == pos) {
-                // end of header
-                partStart = eol + s_Eol.size();
-            }
-            else {
-                _TRACE("unknown header: \"" <<
-                       str.substr(pos, eol - pos) << '"' );
-            }
-        }
-        pos = eol + s_Eol.size();
+        s_AddEntry(entries, name, str.substr(pos, next_boundary - pos),
+                   filename);
+        pos = next_boundary + 2*eol_size + boundary_size; 
     }
 }
 
@@ -1116,6 +1131,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.61  2002/07/18 21:15:24  ucko
+* Rewrite multipart/form-data parser; the old line-by-line approach was
+* somewhat clumsy and inefficient.
+*
 * Revision 1.60  2002/07/18 20:18:09  lebedev
 * NCBI_OS_MAC: STDIN_FILENO define added
 *
