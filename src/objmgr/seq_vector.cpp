@@ -338,7 +338,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos)
             // need to convert if both plus or both minus.
             if ( m_PlusStrand != m_SelRange->second.second ) {
                 CSeq_data* tmp = new CSeq_data;
-                CSeqportUtil::Complement(*out, tmp);
+                CSeqportUtil::ReverseComplement(*out, tmp);
                 out.Reset(tmp);
             }
             switch ( out->Which() ) {
@@ -435,6 +435,9 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos)
             //out.Release();
         }
     }
+    if ( m_PlusStrand != m_SelRange->second.second ) {
+        return m_CachedData[m_CachedData.length() - (pos - m_CachedPos) - 1];
+    }
     return m_CachedData[pos - m_CachedPos];
 }
 
@@ -442,9 +445,17 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos)
 void CSeqVector::x_GetCacheForInterval(TSeqPos& start, TSeqPos stop, string& buffer)
 {
     (*this)[start];
+    TSeqPos sstart = start;
+    TSeqPos sstop = stop;
+    // Convert position to destination strand
+    if ( !m_PlusStrand ) {
+        TSeqPos seq_size = size();
+        sstop = seq_size - start;
+        sstart = seq_size - stop;
+    }
     // Recalculate position from visible area to the whole sequence
-    TSeqPos vstart = start + m_OrgTo - m_CurTo;
-    TSeqPos vstop = stop + m_OrgTo - m_CurTo;
+    TSeqPos vstart = sstart + m_OrgTo - m_CurTo;
+    TSeqPos vstop = sstop + m_OrgTo - m_CurTo;
 
     // Coordinates relative to the cache
     TSeqPos cache_start = 0;
@@ -466,11 +477,13 @@ void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
     TSeqPos seq_size = size();
     if (stop > seq_size)
         stop = seq_size;
+/*
     // Convert position to destination strand
     if ( !m_PlusStrand ) {
-        start = seq_size - start - 1;
-        stop = seq_size - stop - 1;
+        stop = seq_size - start - 1;
+        start = seq_size - stop - 1;
     }
+*/
 
     buffer = "";
     while (start < stop) {
@@ -517,6 +530,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/09/09 21:38:37  grichenk
+* Fixed problem with GetSeqData() for minus strand
+*
 * Revision 1.27  2002/09/03 21:27:01  grichenk
 * Replaced bool arguments in CSeqVector constructor and getters
 * with enums.
