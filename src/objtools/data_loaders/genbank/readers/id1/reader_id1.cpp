@@ -172,9 +172,11 @@ CId1BlobSource::CId1BlobSource(const CId1Seqref& seqId, TConn conn)
     enum {
         kNoExtFeat = 1<<4
     };
-    params->SetMaxplex(skip_extfeat?
-                       eEntry_complexities_entry | kNoExtFeat:
-                       eEntry_complexities_entry);
+    EEntry_complexities maxplex = eEntry_complexities_entry;
+    if ( skip_extfeat ) {
+        maxplex = EEntry_complexities(maxplex | kNoExtFeat);
+    }
+    params->SetMaxplex(maxplex);
     params->SetGi(seqId.Gi());
     params->SetEnt(seqId.SatKey());
     params->SetSat(NStr::IntToString(seqId.Sat()));
@@ -417,6 +419,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.42  2003/08/19 18:34:40  vasilche
+ * Fixed warning about enum conversion.
+ *
  * Revision 1.41  2003/08/14 20:05:19  vasilche
  * Simple SNP features are stored as table internally.
  * They are recreated when needed using CFeat_CI.
