@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.24 2002/01/07 19:56:14 vakatov Exp $
+#  $Id: configure.ac,v 1.25 2002/01/15 21:46:04 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -504,6 +504,13 @@ case "$host_os:$compiler" in
    make_shell=""
    ;;
 esac
+
+
+#### Set makefile variables for platform-specific includes
+changequote(, )dnl
+COMPILER=`echo $ncbi_compiler | tr '[A-Z]' '[a-z]'`
+OSTYPE=`echo $host_os | sed -e 's/[0-9.]*$//; y/A-Z/a-z/'`
+changequote([, ])dnl
 
 
 #### Check if the compiler matches one of supported compilers on this platform
@@ -2423,6 +2430,9 @@ AC_SUBST(UNIX_SUB_PROJ)
 AC_SUBST(compiler)
 AC_SUBST(compiler_root)
 AC_SUBST(compiler_version)
+
+AC_SUBST(COMPILER)
+AC_SUBST(OSTYPE)
 
 
 #############################################################################

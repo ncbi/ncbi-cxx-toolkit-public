@@ -139,6 +139,10 @@ LDFLAGS_DLL  = $(LDFLAGS)
 CFAST = @CFAST@
 CXXFAST = @CXXFAST@
 
+# For platform-specific includes
+COMPILER = @COMPILER@
+OSTYPE   = @OSTYPE@
+
 
 ### Do not use any default suffix rules
 .SUFFIXES:
