@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/02/22 15:06:53  gouriano
+* Corrected GetXmlString method for strings: removed quotes
+*
 * Revision 1.23  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -215,7 +218,14 @@ EMPTY_TEMPLATE
 string CDataValueTmpl<string>::GetXmlString(void) const
 {
     CNcbiOstrstream buffer;
-    PrintASN( buffer, 0);
+//    PrintASN( buffer, 0);
+    ITERATE ( string, i, GetValue() ) {
+        char c = *i;
+        if ( c == '"' )
+            buffer << "\"\"";
+        else
+            buffer << c;
+    }
     return CNcbiOstrstreamToString(buffer);
 }
 
