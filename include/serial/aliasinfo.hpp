@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/06/07 13:59:30  gouriano
+* Corrected reading of class aliases (set proper Create() function)
+*
 * Revision 1.6  2004/04/30 13:28:39  gouriano
 * Remove obsolete function declarations
 *
@@ -85,6 +88,11 @@ public:
     void SetDataOffset(TPointerOffsetType offset);
     TObjectPtr GetDataPtr(TObjectPtr objectPtr) const;
     TConstObjectPtr GetDataPtr(TConstObjectPtr objectPtr) const;
+
+    void SetCreateFunction(TTypeCreate func)
+        {
+            CParent::SetCreateFunction(func);
+        }
 
 protected:
     static TObjectPtr GetDataPointer(const CPointerTypeInfo* objectType,
