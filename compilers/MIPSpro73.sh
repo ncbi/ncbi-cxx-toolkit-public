@@ -40,6 +40,6 @@ CXX="CC"
 
 
 ## Configure
-export CC CXX CXXCPP NCBI_COMPILER
+export CC CXX NCBI_COMPILER
 
 ${CONFIG_SHELL-/bin/sh} `dirname $0`/../configure $HELP $EXEC_PREFIX $ARCH "$@"
