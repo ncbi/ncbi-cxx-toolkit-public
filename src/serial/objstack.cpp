@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/07/02 18:07:29  gouriano
+* check for stack depth in GetStackTraceASN (not to abort when stack is empty)
+*
 * Revision 1.13  2003/05/22 15:59:04  gouriano
 * corrected message in GetFrameInfo
 *
@@ -114,6 +117,9 @@ void CObjectStack::ClearStack(void)
 
 string CObjectStack::GetStackTraceASN(void) const
 {
+    if (!GetStackDepth()) {
+        return "stack is empty";
+    }
     _ASSERT(FetchFrameFromBottom(0).m_FrameType == TFrame::eFrameNamed);
     _ASSERT(FetchFrameFromBottom(0).m_TypeInfo);
     string stack = FetchFrameFromBottom(0).m_TypeInfo->GetName();
