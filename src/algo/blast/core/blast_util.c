@@ -914,8 +914,8 @@ Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
       seq = mixed_seq;
       for (index = 0; index < NUM_FRAMES; index += CODON_LENGTH) {
          for (i = 0; i <= nucl_length; ++i) {
-            context = i % 3;
-            offset = i / 3;
+            context = i % CODON_LENGTH;
+            offset = i / CODON_LENGTH;
             *seq++ = translation_buffer[frame_offsets[index+context]+offset];
          }
       }
