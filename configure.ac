@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.100 2002/06/24 04:15:54 vakatov Exp $
+#  $Id: configure.ac,v 1.101 2002/06/24 15:54:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -883,7 +883,7 @@ case "$compiler" in
         # XXX -- there's a distinction between shared libraries (dylibs)
         # and loadable objects (bundles).
         # See <http://fink.sourceforge.net/doc/porting/shared.php>.
-        LINK_DLL="$CXX $ARCH_CFLAGS -dynamiclib -o"
+        LINK_DLL="$CXX $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -o"
         ;;
       * )
         LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"
