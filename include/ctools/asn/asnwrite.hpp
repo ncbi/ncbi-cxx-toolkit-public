@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/05/15 23:00:56  vakatov
+* Moved "asnio" and "asnwrite" modules to the (new) library
+* "xasn"(project "asn")
+*
 * Revision 1.4  1999/04/14 17:26:49  vasilche
 * Fixed warning about mixing pointers to "C" and "C++" functions.
 *
@@ -46,7 +50,6 @@
 *
 * Revision 1.1  1999/01/28 15:11:06  vasilche
 * Added new class CAsnWriteNode for displaying ASN.1 structure in HTML page.
-*
 * ===========================================================================
 */
 
@@ -76,7 +79,7 @@ private:
     AsnIoPtr m_Out;
 };
 
-#include <html/asnwrite.inl>
+#include <asn/asnwrite.inl>
 
 END_NCBI_SCOPE
 

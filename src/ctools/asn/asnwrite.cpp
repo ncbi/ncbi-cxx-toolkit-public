@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/05/15 23:00:59  vakatov
+* Moved "asnio" and "asnwrite" modules to the (new) library
+* "xasn"(project "asn")
+*
 * Revision 1.4  1999/04/15 21:59:58  vakatov
 * [MSVC++]  Added "LIBCALLBACK" to the WriteAsn() proto
 *
@@ -43,12 +47,11 @@
 *
 * Revision 1.1  1999/01/28 15:11:09  vasilche
 * Added new class CAsnWriteNode for displaying ASN.1 structure in HTML page.
-*
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <html/asnwrite.hpp>
+#include <asn/asnwrite.hpp>
 
 BEGIN_NCBI_SCOPE
 

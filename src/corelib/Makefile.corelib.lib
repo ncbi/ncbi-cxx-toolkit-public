@@ -3,8 +3,5 @@
 # Build library "XNCBI"
 #################################
 
-LIBOBJ = ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbistd asnio
+LIBOBJ = ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbistd
 LIB    = xncbi
-
-CPPFLAGS = $(ORIG_CPPFLAGS) \
-  -I$(NCBI_C_INCLUDE)

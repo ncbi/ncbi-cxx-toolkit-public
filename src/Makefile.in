@@ -3,5 +3,5 @@
 # Master(top-level) makefile
 #################################
 
-SUB_PROJ = corelib cgi html history comm webenv query myncbi
+SUB_PROJ = corelib cgi asn html history comm webenv query myncbi
 include @builddir@/Makefile.meta

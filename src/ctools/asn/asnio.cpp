@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/05/15 23:00:59  vakatov
+* Moved "asnio" and "asnwrite" modules to the (new) library
+* "xasn"(project "asn")
+*
 * Revision 1.5  1999/04/16 17:45:33  vakatov
 * [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
 *
@@ -46,13 +50,11 @@
 * Assed AsnMemoryRead & AsnMemoryWrite.
 * Pager now may return NULL for some components if it contains only one
 * page.
-*
-*
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/asnio.hpp>
+#include <asn/asnio.hpp>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
