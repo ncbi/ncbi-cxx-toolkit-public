@@ -245,22 +245,22 @@ CBlastDatabaseOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) cons
 
 
 BlastMask*
-CSeqLoc2BlastMask(const CSeq_loc *slp, int index)
+CSeqLoc2BlastMask(const CSeq_loc &slp, int index)
 {
-    if (slp->IsNull())
+    if (slp.IsNull())
         return NULL;
 
-    _ASSERT(slp->IsInt() || slp->IsPacked_int());
+    _ASSERT(slp.IsInt() || slp.IsPacked_int());
 
     BlastSeqLoc* bsl = NULL,* curr = NULL,* tail = NULL;
     BlastMask* mask = NULL;
 
-    if (slp->IsInt()) {
+    if (slp.IsInt()) {
         bsl = 
-            BlastSeqLocNew(slp->GetInt().GetFrom(), slp->GetInt().GetTo());
-    } else if (slp->IsPacked_int()) {
+            BlastSeqLocNew(slp.GetInt().GetFrom(), slp.GetInt().GetTo());
+    } else if (slp.IsPacked_int()) {
         ITERATE(list< CRef<CSeq_interval> >, itr, 
-                slp->GetPacked_int().Get()) {
+                slp.GetPacked_int().Get()) {
             curr = BlastSeqLocNew((*itr)->GetFrom(), (*itr)->GetTo());
             if (!bsl) {
                 bsl = tail = curr;
@@ -278,10 +278,9 @@ CSeqLoc2BlastMask(const CSeq_loc *slp, int index)
     return mask;
 }
 
-
 #define NUM_FRAMES 6
-void BlastMaskDNAToProtein(BlastMask** mask_ptr, 
-         TSeqLocVector &slp)
+void BlastMaskDNAToProtein(BlastMask** mask_ptr, const CSeq_loc &seqloc, 
+                           CScope* scope)
 {
    BlastMask* last_mask = NULL,* head_mask = NULL,* mask_loc; 
    Int4 dna_length;
@@ -294,47 +293,46 @@ void BlastMaskDNAToProtein(BlastMask** mask_ptr,
    if (!mask_ptr)
       return;
 
-   for (mask_loc = *mask_ptr; mask_loc; mask_loc = mask_loc->next) {
-      dna_length = sequence::GetLength(*slp[mask_loc->index].seqloc, 
-                                       slp[mask_loc->index].scope);
-      /* Reproduce this mask for all 6 frames, with translated 
-         coordinates */
-      for (context = 0; context < NUM_FRAMES; ++context) {
-         if (!last_mask) {
-            head_mask = last_mask = (BlastMask *) calloc(1, sizeof(BlastMask));
-         } else {
-            last_mask->next = (BlastMask *) calloc(1, sizeof(BlastMask));
-            last_mask = last_mask->next;
-         }
-         
-         last_mask->index = NUM_FRAMES * mask_loc->index + context;
-         prot_loc_last = prot_loc_head = NULL;
-         
-         frame = BLAST_ContextToFrame(blast_type_blastx, context);
+   mask_loc = *mask_ptr;
 
-         for (dna_loc = mask_loc->loc_list; dna_loc; 
-              dna_loc = dna_loc->next) {
-            dip = (DoubleInt*) dna_loc->ptr;
-            if (frame < 0) {
+   dna_length = sequence::GetLength(seqloc, scope);
+   /* Reproduce this mask for all 6 frames, with translated 
+      coordinates */
+   for (context = 0; context < NUM_FRAMES; ++context) {
+       if (!last_mask) {
+           head_mask = last_mask = (BlastMask *) calloc(1, sizeof(BlastMask));
+       } else {
+           last_mask->next = (BlastMask *) calloc(1, sizeof(BlastMask));
+           last_mask = last_mask->next;
+       }
+         
+       last_mask->index = NUM_FRAMES * mask_loc->index + context;
+       prot_loc_last = prot_loc_head = NULL;
+       
+       frame = BLAST_ContextToFrame(blast_type_blastx, context);
+       
+       for (dna_loc = mask_loc->loc_list; dna_loc; 
+            dna_loc = dna_loc->next) {
+           dip = (DoubleInt*) dna_loc->ptr;
+           if (frame < 0) {
                from = (dna_length + frame - dip->i2)/CODON_LENGTH;
                to = (dna_length + frame - dip->i1)/CODON_LENGTH;
-            } else {
+           } else {
                from = (dip->i1 - frame + 1)/CODON_LENGTH;
                to = (dip->i2 - frame + 1)/CODON_LENGTH;
-            }
-            if (!prot_loc_last) {
+           }
+           if (!prot_loc_last) {
                prot_loc_head = prot_loc_last = BlastSeqLocNew(from, to);
-            } else { 
+           } else { 
                prot_loc_last->next = BlastSeqLocNew(from, to);
                prot_loc_last = prot_loc_last->next; 
-            }
-         }
-         last_mask->loc_list = prot_loc_head;
-      }
+           }
+       }
+       last_mask->loc_list = prot_loc_head;
    }
 
    /* Free the mask with nucleotide coordinates */
-   BlastMaskFree(*mask_ptr);
+   BlastMaskFree(mask_loc);
    /* Return the new mask with protein coordinates */
    *mask_ptr = head_mask;
 }
