@@ -165,7 +165,7 @@ case "\$method" in
    clean )
       # For all build trees
       for build_tree in \$build_trees; do
-          rm -rf \$build_dir/\$build_tree/check > /dev/null 2>&1
+         rm -rf \$build_dir/\$build_tree/check > /dev/null 2>&1
       done
       rm -f \$res_journal \$res_log \$res_list \$res_concat \$res_concat.* \$res_concat_err > /dev/null 2>&1
       rm -f \$res_script > /dev/null 2>&1
@@ -193,33 +193,53 @@ case "\$method" in
          for cfg in \$cfgs; do
             x_tests=\`grep "\[\$dir/\$cfg/" \$res_log\`
             if [ -n "\$x_tests" ]; then  
-           ( 
-           grep "\[\$dir/\$cfg/" \$res_log > \$res_script.\${dir}_\${cfg}.log
-           cat \$res_script.\${dir}_\${cfg}.log
-           x_files=\`grep "/\$dir/check/\$cfg/" \$res_journal | sed -e 's/ /%gj_s4%/g'\`
-           for x_file in \$x_files; do
+            ( 
+            grep "\[\$dir/\$cfg/" \$res_log > \$res_script.\${dir}_\${cfg}.log
+            cat \$res_script.\${dir}_\${cfg}.log
+            x_files=\`grep "/\$dir/check/\$cfg/" \$res_journal | sed -e 's/ /%gj_s4%/g'\`
+            for x_file in \$x_files; do
+               x_file=\`echo "\$x_file" | sed -e 's/%gj_s4%/ /g'\`
+               echo 
+               echo 
+               cat \$x_file
+            done
+            ) >> \$res_script.\${dir}_\${cfg}.out
+            fi
+
+            x_tests=\`grep "\[\$dir/\$cfg/" \$res_log| grep 'ERR \['\`
+            if [ -n "\$x_tests" ]; then  
+            ( 
+            grep "\[\$dir/\$cfg/" \$res_log | grep 'ERR \['
+            x_files=\`grep "/\$dir/check/\$cfg/" \$res_journal | sed -e 's/ /%gj_s4%/g'\`
+            for x_file in $x_files; do
               x_file=\`echo "\$x_file" | sed -e 's/%gj_s4%/ /g'\`
-              echo 
-              echo 
-              cat \$x_file
-           done
-           ) >> \$res_script.\${dir}_\${cfg}.out
+              x_code=\`grep -c '@@@ EXIT CODE:' \$x_file\`
+              test \$x_code -ne 0 || continue
+              x_good=\`grep -c '@@@ EXIT CODE: 0' \$x_file\`
+              if test \$x_good -ne 1 ; then
+                 echo 
+                 echo 
+                 cat \$x_file
+              fi
+            done
+            ) >> \$res_script.\${dir}_\${cfg}.out_err
             fi
          done
       done
       exit 0
       ;;
+
 #----------------------------------------------------------
    concat_err )
       rm -f "\$res_concat_err"
       ( 
-      cat \$res_log | grep 'ERR \['
+      grep 'ERR \[' \$res_log
       x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
       for x_file in \$x_files; do
          x_file=\`echo "\$x_file" | sed -e 's/%gj_s4%/ /g'\`
-         x_code=\`cat \$x_file | grep -c '@@@ EXIT CODE:'\`
+         x_code=\`grep -c '@@@ EXIT CODE:' \$x_file\`
          test \$x_code -ne 0 || continue
-         x_good=\`cat \$x_file | grep -c '@@@ EXIT CODE: 0'\`
+         x_good=\`grep -c '@@@ EXIT CODE: 0' \$x_file\`
          if test \$x_good -ne 1 ; then
             echo 
             echo 
