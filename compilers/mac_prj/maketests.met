@@ -568,11 +568,6 @@ on SetPaths2()
 		if not pUsingCPlusPlus then
 			copy {name:gDistribRoot & "link:macmet:", recursive:true, origin:absolute} to end of pathsToAdd
 		end if
-		if pUsingCPlusPlus then
-			if gCDistribPresent then
-				copy {name:gCDistribRoot, recursive:true, origin:absolute} to end of pathsToAdd
-			end if
-		end if
 		Set Preferences of panel "Access Paths" to {User Paths:pathsToAdd}
 		
 		set pathsToAdd to {{name:gIncludeDir, recursive:true, origin:absolute}}
@@ -758,6 +753,13 @@ on SetupTarget(proj, flags)
 		if (count pathsToAdd) > 0 then ¬
 			Set Preferences of panel "Access Paths" to {System Paths:pathsToAdd}
 		
+		-- Add C toolkit path at end.
+		if pUsingCPlusPlus then
+			if gCDistribPresent then
+				copy {name:gCDistribRoot, recursive:true, origin:absolute} to end of pathsToAdd
+			end if
+		end if
+
 		-- Set the appropriate prefix file.
 		set prefixFile to Prefix File of projSettings
 		if prefixFile is "" then
