@@ -7,6 +7,7 @@
 #################################
 
 EXPENDABLE_SUB_PROJ = cgi_redirect
+MSVC_PROJ           = third_party_dll_install
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
