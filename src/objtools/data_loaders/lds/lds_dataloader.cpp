@@ -41,9 +41,13 @@
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/data_source.hpp>
-
+#include <corelib/plugin_manager.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 
 BEGIN_NCBI_SCOPE
+
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader,  "omdataloader", 1, 1, 0);
+
 BEGIN_SCOPE(objects)
 
 
@@ -290,6 +294,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/12/16 20:49:18  vasilche
+ * Fixed compile errors - added missing includes and declarations.
+ *
  * Revision 1.12  2003/12/16 17:55:22  kuznets
  * Added plugin entry point
  *

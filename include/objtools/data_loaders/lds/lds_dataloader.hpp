@@ -68,8 +68,11 @@ public:
     
     virtual void DropTSE(const CTSE_Info& tse_info);
 
+    void SetDatabase(CLDS_Database& lds_db,
+                     const string&  dl_name);
+
 private:
-    CLDS_Database&      m_LDS_db;        // Reference on the LDS database 
+    CLDS_Database*      m_LDS_db;        // Reference on the LDS database 
     CLDS_Set            m_LoadedObjects; // Set of already loaded objects
     bool                m_OwnDatabase;   // "TRUE" if datalaoder owns m_LDS_db
 };
@@ -82,6 +85,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/12/16 20:49:17  vasilche
+ * Fixed compile errors - added missing includes and declarations.
+ *
  * Revision 1.8  2003/12/16 20:17:25  kuznets
  * Added empty constructor prototype
  *
