@@ -33,7 +33,49 @@
 
 #include <corelib/ncbiobj.hpp>
 
-#define STACK_THRESHOLD (16*1024)
+
+// There was a long and bootless discussion:
+// is it possible to determine whether the object has been created
+// on the stack or on the heap.
+// Correct answer is "it is impossible"
+// Still, we try to... (we know it is not 100% bulletproof)
+//
+// Attempts include:
+//
+// 1. operator new puts a pointer to newly allocated memory in the list.
+//    Object constructor scans the list, if it finds itself there -
+//    yes, it has been created on the heap. (If it does not find itself
+//    there, it still may have been created on the heap).
+//    This method requires thread synchronization.
+//
+// 2. operator new puts a special mask (eCounterNew two times) in the
+//    newly allocated memory. Object constructor looks for this mask,
+//    if it finds it there - yes, it has been created on the heap.
+//
+// 3. operator new puts a special mask (single eCounterNew) in the
+//    newly allocated memory. Object constructor looks for this mask,
+//    if it finds it there, it also compares addresses of a variable
+//    on the stack and itself (also using STACK_THRESHOLD). If these two
+//    are "far enough from each other" - yes, the object is on the heap.
+//
+// From these three methods, the first one seems to be most reliable,
+// but also most slow.
+// Method #2 is hopefully reliable enough
+// Method #3 is unreliable at all (we saw this)
+//
+
+
+#define USE_HEAPOBJ_LIST  0
+#if USE_HEAPOBJ_LIST
+    #include <corelib/ncbi_safe_static.hpp>
+    #include <list>
+    #include <algorithm>
+#else
+    #define USE_COMPLEX_MASK  1
+    #if !USE_COMPLEX_MASK
+        #define STACK_THRESHOLD (16*1024)
+    #endif
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -68,14 +110,30 @@ const char* CNullPointerError::what() const
 
 
 CFastMutex CObject::sm_ObjectMutex;
-
+#if USE_HEAPOBJ_LIST
+static CSafeStaticPtr< list<const void*> > s_heap_obj;
+#endif
 
 // CObject local new operator to mark allocation in heap
 void* CObject::operator new(size_t size)
 {
     _ASSERT(size >= sizeof(CObject));
     void* ptr = ::operator new(size);
+
+#if USE_HEAPOBJ_LIST
+    {{
+        CFastMutexGuard LOCK(sm_ObjectMutex);
+        s_heap_obj->push_front(ptr);
+    }}
+#else// USE_HEAPOBJ_LIST
     memset(ptr, 0, size);
+#if USE_COMPLEX_MASK
+    TCounter* ttt = &(static_cast<CObject*>(ptr)->m_Counter);
+    if (size >= 2*sizeof(TCounter)) {
+        *(++ttt) = eCounterNew;
+    }
+#endif// USE_COMPLEX_MASK
+#endif// USE_HEAPOBJ_LIST
     static_cast<CObject*>(ptr)->m_Counter = eCounterNew;
     return ptr;
 }
@@ -121,11 +179,29 @@ void CObject::InitCounter(void)
         m_Counter = TCounter(eCounterNotInHeap);
     }
     else {
+        bool inStack = true;
+#if USE_HEAPOBJ_LIST
+        const void* ptr = dynamic_cast<const void*>(this);
+        {{
+            CFastMutexGuard LOCK(sm_ObjectMutex);
+            list<const void*>::iterator i =
+                find( s_heap_obj->begin(), s_heap_obj->end(), ptr);
+            inStack = (i == s_heap_obj->end());
+            if (!inStack) {
+                s_heap_obj->erase(i);
+            }
+        }}
+#else // USE_HEAPOBJ_LIST
+#if USE_COMPLEX_MASK
+        TCounter* ttt = &m_Counter;
+        ++ttt;
+        inStack = (*ttt != eCounterNew);
+#else// USE_COMPLEX_MASK
         // m_Counter == eCounterNew -> possibly in heap
         char stackObject;
         const char* stackObjectPtr = &stackObject;
         const char* objectPtr = reinterpret_cast<const char*>(this);
-        bool inStack =
+        inStack =
 #ifdef STACK_GROWS_UP
             (objectPtr < stackObjectPtr) &&
 #else
@@ -136,6 +212,8 @@ void CObject::InitCounter(void)
 #else
             (objectPtr > stackObjectPtr - STACK_THRESHOLD);
 #endif
+#endif USE_COMPLEX_MASK
+#endif // USE_HEAPOBJ_LIST
 
         // surely not in heap
         if ( inStack )
@@ -290,6 +368,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2002/05/10 19:42:31  gouriano
+ * object on stack vs on heap - do it more accurately
+ *
  * Revision 1.19  2002/04/11 21:08:03  ivanov
  * CVS log moved to end of the file
  *
