@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/06/05 14:28:43  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.18  2002/05/17 19:10:27  thiessen
 * preliminary range restriction for BLAST/PSSM
 *
@@ -148,6 +151,11 @@ public:
     // allows the derived class to set up special mouse/cursor modes, e.g. for delete row
     virtual void CancelDerivedSpecialModesExcept(int id) { }
 
+    // override to set customized window title
+    virtual void SetWindowTitle(void) = 0;
+
+protected:
+
     // menu callbacks
     void OnTitleView(wxCommandEvent& event);
     void OnEditMenu(wxCommandEvent& event);
@@ -190,10 +198,8 @@ public:
         START_VIEWER_WINDOW_DERIVED_MID
     };
 
-protected:
-
     // can't instantiate base class
-    ViewerWindowBase(ViewerBase *parentViewer, const char* title,
+    ViewerWindowBase(ViewerBase *parentViewer,
         const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize);
     virtual ~ViewerWindowBase(void);
 

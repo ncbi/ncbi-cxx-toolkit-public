@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.142  2002/06/05 14:28:38  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.141  2002/06/04 12:48:55  thiessen
 * tweaks for release ; fill out help menu
 *
@@ -604,7 +607,7 @@ IMPLEMENT_APP(Cn3D::Cn3DApp)
 BEGIN_SCOPE(Cn3D)
 
 // global strings for various directories - will include trailing path separator character
-std::string
+static std::string
     workingDir,     // current working directory
     userDir,        // directory of latest user-selected file
     programDir,     // directory where Cn3D executable lives
@@ -617,6 +620,21 @@ const std::string& GetProgramDir(void) { return programDir; }
 const std::string& GetDataDir(void) { return dataDir; }
 const std::string& GetWorkingFilename(void) { return currentFile; }
 const std::string& GetPrefsDir(void) { return prefsDir; }
+
+// global working title
+static std::string workingTitle;
+const std::string& GetWorkingTitle(void) { return workingTitle; }
+static void SetWorkingTitle(StructureSet *sSet)
+{
+    if (sSet->IsCDD() && sSet->GetCDDName().size() > 0)
+        workingTitle = sSet->GetCDDName();
+    else if (sSet->objects.size() > 0) {
+        workingTitle = sSet->objects.front()->pdbID;
+        if (sSet->objects.size() > 1)
+            workingTitle += " neighbors";
+    } else
+        workingTitle = GetWorkingFilename();
+}
 
 // top-level window (the main structure window)
 static wxFrame *topWindow = NULL;
@@ -1351,6 +1369,11 @@ void Cn3DMainFrame::OnExit(wxCommandEvent& event)
     Destroy();
 }
 
+void Cn3DMainFrame::SetWindowTitle(void)
+{
+    SetTitle(wxString(GetWorkingTitle().c_str()) + " - Cn3D 4.0");
+}
+
 void Cn3DMainFrame::OnHelp(wxCommandEvent& event)
 {
     if (event.GetId() == MID_HELP_COMMANDS) {
@@ -1759,8 +1782,12 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
         case MID_EDIT_CDD_NAME: {
             wxString newName = wxGetTextFromUser("Enter or edit the CDD name:",
                 "CDD Name", glCanvas->structureSet->GetCDDName().c_str(), this, -1, -1, false);
-            if (newName.size() > 0 && !glCanvas->structureSet->SetCDDName(newName.c_str()))
-                ERR_POST(Error << "Error saving CDD name");
+            if (newName.size() > 0) {
+                if (!glCanvas->structureSet->SetCDDName(newName.c_str()))
+                    ERR_POST(Error << "Error saving CDD name");
+                SetWorkingTitle(glCanvas->structureSet);
+                GlobalMessenger()->SetAllWindowTitles();
+            }
             break;
         }
 
@@ -2052,7 +2079,9 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         return;
     }
 
-    SetTitle(wxString(currentFile.c_str()) + " - Cn3D 4.0");
+    SetWorkingTitle(glCanvas->structureSet);
+    GlobalMessenger()->SetAllWindowTitles();
+
     menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());
     glCanvas->structureSet->SetCenter();
     glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);
@@ -2105,8 +2134,6 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
         else
             userDir = workingDir + wxPathOnly(outputFilename).c_str() + wxFILE_SEP_PATH;
         currentFile = wxFileNameFromPath(outputFilename);
-        SetTitle(wxString(currentFile.c_str()) + " - Cn3D 4.0");
-        GlobalMessenger()->SetSequenceViewerTitles(currentFile);
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/06/05 14:28:40  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.15  2002/05/17 19:10:27  thiessen
 * preliminary range restriction for BLAST/PSSM
 *
@@ -100,6 +103,7 @@ public:
     bool RequestEditorEnable(bool enable);
     void EnableDerivedEditorMenuItems(bool enabled);
     void TurnOnEditor(void);
+    void SetWindowTitle(void);
 
 private:
     SequenceViewer *sequenceViewer;

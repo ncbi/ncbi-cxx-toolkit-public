@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/06/05 14:28:41  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.36  2002/06/04 12:48:56  thiessen
 * tweaks for release ; fill out help menu
 *
@@ -850,12 +853,6 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
     displayStack.back()->Empty();
     AddAlignments(copy);
     (*viewerWindow)->ScrollToColumn(displayStack.back()->GetStartingColumn());
-}
-
-void UpdateViewer::SetWindowTitle(const std::string& title) const
-{
-    if (*viewerWindow)
-        (*viewerWindow)->SetTitle(wxString(title.c_str()) + " - Update Viewer");
 }
 
 // comparison function: if CompareRows(a, b) == true, then row a moves up

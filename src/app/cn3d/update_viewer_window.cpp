@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/06/05 14:28:41  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.41  2002/05/22 17:17:10  thiessen
 * progress on BLAST interface ; change custom spin ctrl implementation
 *
@@ -194,11 +197,11 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
-    ViewerWindowBase(thisUpdateViewer,
-        wxString(GetWorkingFilename().c_str()) + " - Update Viewer",
-        wxPoint(0,50), wxSize(1000,300)),
+    ViewerWindowBase(thisUpdateViewer, wxPoint(0,50), wxSize(1000,300)),
     updateViewer(thisUpdateViewer)
 {
+    SetWindowTitle();
+
     // Edit menu
     editMenu->AppendSeparator();
     wxMenu *subMenu = new wxMenu;
@@ -259,6 +262,11 @@ void UpdateViewerWindow::OnCloseWindow(wxCloseEvent& event)
         GlobalMessenger()->UnPostRedrawSequenceViewer(viewer);  // don't try to redraw after destroyed!
     }
     Destroy();
+}
+
+void UpdateViewerWindow::SetWindowTitle(void)
+{
+    SetTitle(wxString(GetWorkingTitle().c_str()) + " - Update Viewer");
 }
 
 void UpdateViewerWindow::EnableDerivedEditorMenuItems(bool enabled)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/06/05 14:28:39  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.16  2002/04/09 23:59:10  thiessen
 * add cdd annotations read-only option
 *
@@ -106,7 +109,8 @@ extern const std::string& GetDataDir(void);     // 'data' directory with externa
 extern const std::string& GetWorkingFilename(void); // name of current working file
 extern const std::string& GetPrefsDir(void);    // application preferences directory
 
-// bring the log window forward (implemented in cn3d_main_wxwin.cpp)
+// get working document title; bring the log window forward (implemented in cn3d_main_wxwin.cpp)
+extern const std::string& GetWorkingTitle(void);
 extern void RaiseLogWindow(void);
 
 // launch web browser on given URL (implemented in sequence_set.cpp)

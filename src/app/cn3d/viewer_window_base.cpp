@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/06/05 14:28:42  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.31  2002/05/26 21:59:16  thiessen
 * tweaks for new window styles
 *
@@ -147,9 +150,8 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
-        const char* title, const wxPoint& pos, const wxSize& size) :
-    wxFrame(GlobalTopWindow(), wxID_HIGHEST + 10, title, pos, size,
+ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos, const wxSize& size) :
+    wxFrame(GlobalTopWindow(), wxID_HIGHEST + 10, "", pos, size,
         wxDEFAULT_FRAME_STYLE
 #if defined(__WXMSW__) && wxVERSION_NUMBER >= 2302
             | wxFRAME_TOOL_WINDOW

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/06/05 14:28:42  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.10  2002/02/05 18:53:26  thiessen
 * scroll to residue in sequence windows when selected in structure window
 *
@@ -110,9 +113,6 @@ public:
     // to be notified of font change
     void NewFont(void);
 
-    // override to set customized window title
-    virtual void SetWindowTitle(const std::string& title) const = 0;
-
     // make residue visible, if present
     void MakeResidueVisible(const Molecule *molecule, int seqIndex);
 
@@ -148,6 +148,9 @@ public:
 
     SequenceDisplay * GetCurrentDisplay(void) const
         { return ((displayStack.size() > 0) ? displayStack.back() : NULL); }
+
+    // set customized window title
+    void SetWindowTitle(void) const;
 };
 
 END_SCOPE(Cn3D)

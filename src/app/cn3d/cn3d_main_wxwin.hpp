@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2002/06/05 14:28:39  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.61  2002/06/04 12:48:55  thiessen
 * tweaks for release ; fill out help menu
 *
@@ -330,6 +333,7 @@ public:
     // public methods
     void LoadFile(const char *filename);
     bool SaveDialog(bool canCancel);
+    void SetWindowTitle(void);
     void DialogTextChanged(const MultiTextDialog *changed);
     void DialogDestroyed(const MultiTextDialog *destroyed);
 

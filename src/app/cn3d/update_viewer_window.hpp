@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/06/05 14:28:41  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.24  2002/05/17 19:10:27  thiessen
 * preliminary range restriction for BLAST/PSSM
 *
@@ -134,6 +137,8 @@ public:
     // 'canCancel' tells whether or not a 'cancel' button is even displayed - thus
     // if 'canCancel' is false, the function will always return true.
     bool SaveDialog(bool canCancel);
+
+    void SetWindowTitle(void);
 
 private:
     UpdateViewer *updateViewer;

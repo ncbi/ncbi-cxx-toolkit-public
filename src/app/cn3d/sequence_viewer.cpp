@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2002/06/05 14:28:40  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.50  2002/04/22 18:01:55  thiessen
 * add default extension for alignment export
 *
@@ -316,12 +319,6 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 
     // forbid alignment export
     sequenceWindow->EnableExport(false);
-}
-
-void SequenceViewer::SetWindowTitle(const std::string& title) const
-{
-    if (*viewerWindow)
-        (*viewerWindow)->SetTitle(wxString(title.c_str()) + " - Sequence/Alignment Viewer");
 }
 
 void SequenceViewer::TurnOnEditor(void)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/06/05 14:28:42  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.12  2002/02/05 18:53:26  thiessen
 * scroll to residue in sequence windows when selected in structure window
 *
@@ -107,6 +110,12 @@ void ViewerBase::DestroyGUI(void)
         (*viewerWindow)->KillWindow();
         GUIDestroyed();
     }
+}
+
+void ViewerBase::SetWindowTitle(void) const
+{
+    if (*viewerWindow)
+        (*viewerWindow)->SetWindowTitle();
 }
 
 void ViewerBase::InitStacks(const AlignmentList *alignments, SequenceDisplay *display)

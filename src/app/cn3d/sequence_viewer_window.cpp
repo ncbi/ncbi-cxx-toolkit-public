@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/06/05 14:28:40  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.30  2002/05/17 19:10:27  thiessen
 * preliminary range restriction for BLAST/PSSM
 *
@@ -165,11 +168,11 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
-    ViewerWindowBase(parentSequenceViewer,
-        wxString(GetWorkingFilename().c_str()) + " - Sequence/Alignment Viewer",
-        wxPoint(0,500), wxSize(1000,200)),
+    ViewerWindowBase(parentSequenceViewer, wxPoint(0,500), wxSize(1000,200)),
     sequenceViewer(parentSequenceViewer)
 {
+    SetWindowTitle();
+
     viewMenu->Append(MID_SHOW_HIDE_ROWS, "Show/Hide &Rows");
     viewMenu->Append(MID_SCORE_THREADER, "Show PSSM+Contact &Scores");
     wxMenu *subMenu = new wxMenu;
@@ -220,6 +223,11 @@ void SequenceViewerWindow::OnCloseWindow(wxCloseEvent& event)
         GlobalMessenger()->UnPostRedrawSequenceViewer(viewer);  // don't try to redraw after destroyed!
     }
     Destroy();
+}
+
+void SequenceViewerWindow::SetWindowTitle(void)
+{
+    SetTitle(wxString(GetWorkingTitle().c_str()) + " - Sequence/Alignment Viewer");
 }
 
 void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)

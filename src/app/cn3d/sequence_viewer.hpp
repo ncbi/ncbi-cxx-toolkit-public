@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/06/05 14:28:40  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.25  2002/04/22 14:27:28  thiessen
 * add alignment export
 *
@@ -105,9 +108,6 @@ public:
     // functions to save edited data
     void SaveDialog(void);
     void SaveAlignment(void);
-
-    // set window title
-    void SetWindowTitle(const std::string& title) const;
 
     // export current alignment
     void ExportAlignment(bool asFASTA, bool asTEXT, bool asHTML);

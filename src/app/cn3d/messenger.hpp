@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/06/05 14:28:39  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.19  2002/02/05 18:53:25  thiessen
 * scroll to residue in sequence windows when selected in structure window
 *
@@ -231,8 +234,8 @@ public:
     void RemoveStructureWindow(const Cn3DMainFrame *structureWindow);
     void RemoveSequenceViewer(const ViewerBase *sequenceViewer);
 
-    // set filename in window titles
-    void SetSequenceViewerTitles(const std::string& title) const;
+    // set window titles
+    void SetAllWindowTitles(void) const;
 };
 
 END_SCOPE(Cn3D)

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/06/05 14:28:39  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.27  2002/03/04 15:52:13  thiessen
 * hide sequence windows instead of destroying ; add perspective/orthographic projection choice
 *
@@ -520,11 +523,12 @@ CBiostruc_annot_set * Messenger::CreateBiostrucAnnotSetForHighlightsOnSingleObje
     return bas.Release();
 }
 
-void Messenger::SetSequenceViewerTitles(const std::string& title) const
+void Messenger::SetAllWindowTitles(void) const
 {
     SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
     for (q=sequenceViewers.begin(); q!=qe; q++)
-        (*q)->SetWindowTitle(title);
+        (*q)->SetWindowTitle();
+    structureWindow->SetWindowTitle();
 }
 
 END_SCOPE(Cn3D)

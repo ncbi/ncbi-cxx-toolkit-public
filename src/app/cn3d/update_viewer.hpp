@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/06/05 14:28:41  thiessen
+* reorganize handling of window titles
+*
 * Revision 1.13  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -129,9 +132,6 @@ public:
     // run BLAST on given pairwise alignment - if BLAST is successful, then alignment will be
     // replaced with the result, otherwise the alignment is left unchanged
     void BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFromMultiple);
-
-    // set window title
-    void SetWindowTitle(const std::string& title) const;
 
     // save pending structures
     void SavePendingStructures(void);
