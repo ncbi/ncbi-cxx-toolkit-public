@@ -31,7 +31,7 @@
  */
 
 /// @file page.hpp 
-/// Common pager with 2 views.
+/// Common pager with 3 views.
 
 
 #include <corelib/ncbistd.hpp>
@@ -57,9 +57,10 @@ class NCBI_XHTML_EXPORT CPager : public CNCBINode
 
 public:
     enum EPagerView {
-	    eImage,
+        eImage,
 	    eButtons,
-        eTabs
+        eTabs,
+        eJavaLess
     };
 
     CPager(const CCgiRequest& request,
@@ -117,8 +118,13 @@ public:
     static const string KParam_NextPages;
     // Beginning of names of image buttons for specific page
     static const string KParam_Page;
-    // Page number inputed by user in text field (for 2nd view)
+    // Page number inputed by user in text field (for 2nd and 3rd view)
     static const string KParam_InputPage;
+    // Name cmd and button for next page
+    static const string KParam_NextPage;
+    // Name cmd and button for previous page
+    static const string KParam_PrevPage;
+    static const string KParam_GoToPage;
 
 private:
     // Pager parameters
@@ -140,6 +146,7 @@ private:
 
     friend class CPagerView;
     friend class CPagerViewButtons;
+    friend class CPagerViewJavaLess;
 };
 
 
@@ -181,6 +188,20 @@ private:
     string        m_jssuffix;
 };
 
+// Third view for CPager with buttons and without Java:
+// Prev Page (button) Next Page (button) Current (input) GoTo Page (button)
+
+class NCBI_XHTML_EXPORT CPagerViewJavaLess : public CHTML_table
+{
+public:
+    CPagerViewJavaLess(const CPager& pager, const string& js_suffix);
+    virtual void CreateSubNodes(void);
+
+private:
+    const CPager& m_Pager;
+    string        m_jssuffix;
+};
+
 
 END_NCBI_SCOPE
 
@@ -191,6 +212,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/10/21 22:21:41  yasmax
+ * Added javaless pager view for queryd
+ *
  * Revision 1.16  2004/07/19 17:58:40  golikov
  * GetPages fixed
  *

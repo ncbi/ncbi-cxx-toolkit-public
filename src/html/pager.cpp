@@ -44,7 +44,9 @@ const string CPager::KParam_Page          = "page ";
 const string CPager::KParam_PreviousPages = "previous pages";
 const string CPager::KParam_NextPages     = "next pages";
 const string CPager::KParam_InputPage     = "inputpage";
-
+const string CPager::KParam_NextPage      = "Next Page";
+const string CPager::KParam_PrevPage      = "Prev Page";
+const string CPager::KParam_GoToPage      = "GoTo Page";
 
 CPager::CPager(const CCgiRequest& request,
                int pageBlockSize,
@@ -288,6 +290,8 @@ CNCBINode* CPager::GetPagerView(const string& imgDir,
         case eButtons:
         case eTabs:
             return new CPagerViewButtons(*this, js_suffix);
+        case eJavaLess:
+            return new CPagerViewJavaLess(*this, js_suffix);
         default:
             break;
     }
@@ -472,12 +476,49 @@ void CPagerViewButtons::CreateSubNodes()
 }
 
 
+CPagerViewJavaLess::CPagerViewJavaLess(const CPager& pager, const string& js_suffix)
+    : m_Pager(pager), m_jssuffix(js_suffix)
+{
+}
+
+void CPagerViewJavaLess::CreateSubNodes()
+{
+    int item_count = m_Pager.m_ItemCount;
+    // container
+    this->SetCellPadding(0)->SetCellSpacing(0)->SetWidth("100%");
+
+    if(item_count > 20) {
+        this->InsertNextCell(m_Pager.GetPageInfo())
+            ->SetWidth("20%")->SetAlign("Right");
+    
+        this->InsertNextCell(
+            new CHTML_submit("cmd", CPager::KParam_PrevPage))
+            ->SetWidth("20%")->SetAlign("Right");
+
+        this->InsertNextCell(new CHTML_submit("cmd", CPager::KParam_NextPage))
+            ->SetWidth("20%")->SetAlign("Right");
+
+        string page_no = "1";
+        if( m_Pager.m_DisplayPage * 20 < (item_count + 20)) {
+            page_no = NStr::IntToString(m_Pager.m_DisplayPage+1,false);
+        }
+        
+        this->InsertNextCell((
+             new CHTML_text(CPager::KParam_InputPage + m_jssuffix, 6, page_no))
+             ->AppendChild(new CHTML_submit("cmd", CPager::KParam_GoToPage)))
+             ->SetWidth("20%")->SetAlign("Right");
+    }                    
+}
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/10/21 22:22:24  yasmax
+ * Added javaless pager view for queryd
+ *
  * Revision 1.43  2004/09/01 21:41:46  ucko
  * #include <stdio.h> for sprintf() calls introduced in previous commit
  * (which had no log for some reason, but enabled locale-dependent
