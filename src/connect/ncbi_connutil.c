@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2001/09/24 20:27:00  lavr
+ * Message corrected: "Adjusted path too long"
+ *
  * Revision 6.22  2001/09/10 21:14:58  lavr
  * Added functions: StringToHostPort()
  *                  HostPortToString()
@@ -313,7 +316,7 @@ extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
 
     if (strlen(info->host) + strlen(info->path) + 16 > sizeof(info->path)) {
         CORE_LOG(eLOG_Error,
-                 "[ConnNetInfo_AdjustForHttpProxy]  Too long adjusted path");
+                 "[ConnNetInfo_AdjustForHttpProxy]  Adjusted path too long");
         assert(0);
         return 0/*false*/;
     }
