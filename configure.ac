@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.355 2005/03/10 16:11:45 ucko Exp $
+#  $Id: configure.ac,v 1.356 2005/03/17 16:09:30 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2805,8 +2805,13 @@ if test "$with_bdb" != "no" ; then
    esac
    : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
    if test -z "${BERKELEYDB_LIBPATH}"; then
-      for d in "${release_debug}${bit64_sfx}" "lib${bit64_sfx}" lib; do
-         BERKELEYDB_LIBPATH=${BERKELEYDB_PATH}/$d
+      for d in "${compiler_vpfx}${release_debug}${bit64_sfx}" \
+               "${compiler_pfx}${release_debug}${bit64_sfx}" \
+               "${release_debug}${bit64_sfx}" "lib${bit64_sfx}" lib; do
+         for sfx in "$bit64_sfx$mt_sfx" "$bit64_sfx" "$mt_sfx" ""; do
+            BERKELEYDB_LIBPATH=${BERKELEYDB_PATH}/$d$sfx
+            test -d ${BERKELEYDB_LIBPATH}  &&  break
+         done
          test -d ${BERKELEYDB_LIBPATH}  &&  break
       done
    fi
