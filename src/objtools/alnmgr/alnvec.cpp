@@ -239,21 +239,23 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
     // loop through all segments
     for (seg = 0, pos = row, aln_pos = 0, anchor_pos = m_Anchor;
          seg < m_NumSegs;
-         ++seg, pos += m_NumRows, anchor_pos += m_NumRows, aln_pos += len) {
+         ++seg, pos += m_NumRows, anchor_pos += m_NumRows) {
         
+        start = m_Starts[pos];
         len = m_Lens[seg];
-        
-        if ((start = m_Starts[pos]) >= 0) {
-            
-            stop = start + len - 1;
-            
-            if (anchored  &&  m_Starts[anchor_pos] < 0) {
+
+        if (anchored  &&  m_Starts[anchor_pos] < 0) {
+            if (start >= 0) {
                 // record the insert if requested
                 if (record_inserts) {
                     insert_starts->push_back(start);
-                    insert_lens->push_back(stop);
+                    insert_lens->push_back(start + len - 1);
                 }
-            } else {
+            }
+        } else {
+            if (start >= 0) {
+                stop = start + len - 1;
+
                 // add regular sequence to buffer
                 GetSeqString(buff, row, start, stop);
                 buffer += buff;
@@ -315,24 +317,23 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                     }
                     scrn_rgt_seq_pos = plus ? stop : start;
                 }
-            }
-            
-        } else {
-            
-            // add appropriate number of gap/end chars
-            char* ch_buff = new char[len+1];
-            char fill_ch;
-            
-            if (seg < left_seg  ||  seg > right_seg  &&  right_seg > 0) {
-                fill_ch = GetEndChar();
             } else {
-                fill_ch = GetGapChar(row);
+                // add appropriate number of gap/end chars
+                char* ch_buff = new char[len+1];
+                char fill_ch;
+                
+                if (seg < left_seg  ||  seg > right_seg  &&  right_seg > 0) {
+                    fill_ch = GetEndChar();
+                } else {
+                    fill_ch = GetGapChar(row);
+                }
+                
+                memset(ch_buff, fill_ch, len);
+                ch_buff[len] = 0;
+                buffer += ch_buff;
+                delete[] ch_buff;
             }
-            
-            memset(ch_buff, fill_ch, len);
-            ch_buff[len] = 0;
-            buffer += ch_buff;
-            delete[] ch_buff;
+            aln_pos += len;
         }
 
     }
@@ -790,6 +791,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2003/07/18 22:12:51  todorov
+* Fixed an anchor bug in GetWholeAlnSeqString
+*
 * Revision 1.32  2003/07/17 22:45:56  todorov
 * +GetWholeAlnSeqString
 *
