@@ -146,18 +146,32 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
     // "spread" unaligned residues between aligned blocks, for PSSM construction
     CddDegapSeqAlign(seqAlign);
 
-    Seq_Mtf *seqMtf = CddDenDiagCposComp2KBP(
-        multiple->GetMaster()->parentSet->GetOrCreateBioseq(multiple->GetMaster()),
-        -1, // use CddDenDiagCposComp2's empirical info-based pseudocount values
-        seqAlign,
-        NULL,
-        NULL,
-        weightPSSM,
-        SCALING_FACTOR,
-        NULL,
-        karlinBlock
-    );
-    TRACEMSG("created Seq_Mtf (PSSM)");
+    Seq_Mtf *seqMtf = NULL;
+	for (int i=11; i>=1; i--) {
+        // first try auto-determined pseudocount (-1); if fails, find higest <= 10 that works
+        int pseudocount = (i == 11) ? -1 : i;
+        seqMtf = CddDenDiagCposComp2KBP(
+            multiple->GetMaster()->parentSet->GetOrCreateBioseq(multiple->GetMaster()),
+            pseudocount,
+            seqAlign,
+            NULL,
+            NULL,
+            weightPSSM,
+            SCALING_FACTOR,
+            NULL,
+            karlinBlock
+        );
+        if (seqMtf)
+            break;
+        else
+            WARNINGMSG("Cannot use " << ((pseudocount == -1) ? "(empirical) " : "")
+                << "pseudocount of " << pseudocount);
+    }
+
+    if (seqMtf)
+        TRACEMSG("created Seq_Mtf (PSSM)");
+    else
+        ERRORMSG("Cannot find any pseudocount that yields an acceptable PSSM!");
 
     SeqAlignSetFree(seqAlign);
 	return seqMtf;
@@ -1216,6 +1230,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/04/14 18:13:58  thiessen
+* retry pseudocounts until matrix is constructed okay
+*
 * Revision 1.35  2003/02/03 19:20:03  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
