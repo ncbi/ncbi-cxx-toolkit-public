@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2002/11/27 16:56:20  ucko
+* Use [...] instead of .at(...) for G++ 2.x compatibility.
+*
 * Revision 1.6  2002/11/25 15:32:06  kholodov
 * Modified: using STL vector istead of CDynamicArray.
 *
@@ -114,19 +117,19 @@ unsigned int CResultSetMetaData::GetTotalColumns() const
 inline
 EDB_Type CResultSetMetaData::GetType(unsigned int idx) const 
 {
-  return m_colInfo.at(idx-1).m_type;
+  return m_colInfo[idx-1].m_type;
 }
 
 inline
 int CResultSetMetaData::GetMaxSize(unsigned int idx) const 
 {
-  return m_colInfo.at(idx-1).m_maxSize;
+  return m_colInfo[idx-1].m_maxSize;
 }
 
 inline
 string CResultSetMetaData::GetName(unsigned int idx) const 
 {
-  return m_colInfo.at(idx-1).m_name;
+  return m_colInfo[idx-1].m_name;
 }
 //====================================================================
 
