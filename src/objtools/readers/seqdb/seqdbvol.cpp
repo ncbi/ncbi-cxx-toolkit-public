@@ -219,15 +219,18 @@ s_SeqDBMapNA2ToNA4(const char   * buf2bit,
     static vector<Uint1> expanded = s_SeqDBMapNA2ToNA4Setup();
     
     int estimated_length = (base_length + 1)/2;
-    buf4bit.reserve(estimated_length);
+    int bytes = 0;
+    
+    buf4bit.resize(estimated_length);
     
     int inp_chars = base_length/4;
     
     for(int i=0; i<inp_chars; i++) {
         Uint4 inp_char = (buf2bit[i] & 0xFF);
         
-        buf4bit.push_back(expanded[ (inp_char*2)     ]);
-        buf4bit.push_back(expanded[ (inp_char*2) + 1 ]);
+        buf4bit[bytes]   = expanded[ (inp_char*2)     ];
+        buf4bit[bytes+1] = expanded[ (inp_char*2) + 1 ];
+        bytes += 2;
     }
     
     int bases_remain = base_length - (inp_chars*4);
@@ -237,12 +240,14 @@ s_SeqDBMapNA2ToNA4(const char   * buf2bit,
         Uint1 remainder_mask = (0xFF << (8 - remainder_bits)) & 0xFF;
         Uint4 last_masked = buf2bit[inp_chars] & remainder_mask;
         
-        buf4bit.push_back(expanded[ (last_masked*2) ]);
+        buf4bit[bytes++] = expanded[ (last_masked*2) ];
         
         if (bases_remain > 2) {
-            buf4bit.push_back(expanded[ (last_masked*2)+1 ]);
+            buf4bit[bytes ++] = expanded[ (last_masked*2)+1 ];
         }
     }
+    
+    buf4bit.resize(bytes);
     
     _ASSERT(estimated_length == (int)buf4bit.size());
 }
