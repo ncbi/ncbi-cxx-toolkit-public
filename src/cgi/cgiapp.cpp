@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/05/17 00:26:18  vakatov
+* Use double-quote rather than angle-brackets for the private headers
+*
 * Revision 1.10  1999/05/14 19:21:53  pubmed
 * myncbi - initial version; minor changes in CgiContext, history, query
 *
@@ -74,7 +77,7 @@
 // 3rd-party headers
 # include <fcgiapp.h>
 // local headers
-# include <fcgibuf.hpp>
+# include "fcgibuf.hpp"
 #endif /* HAVE_LIBFASTCGI */
 
 BEGIN_NCBI_SCOPE

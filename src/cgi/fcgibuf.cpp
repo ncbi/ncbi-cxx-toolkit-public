@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/05/17 00:26:18  vakatov
+* Use double-quote rather than angle-brackets for the private headers
+*
 * Revision 1.4  1999/05/06 23:18:10  vakatov
 * <fcgibuf.hpp> became a local header file.
 *
@@ -57,7 +60,7 @@
 // 3rd-party headers
 #include <fcgiapp.h>
 // local headers
-#include <fcgibuf.hpp>
+#include "fcgibuf.hpp"
 // C++ headers
 #include <algorithm>
 
