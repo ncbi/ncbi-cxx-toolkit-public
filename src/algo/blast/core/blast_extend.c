@@ -43,6 +43,16 @@ Contents: Functions to initialize structures used for BLAST extension
 
 #define MIN_INIT_HITLIST_SIZE 100
 
+static Int2 BlastnExtendInitialHit(BLAST_SequenceBlkPtr query, 
+				   BLAST_SequenceBlkPtr subject,
+				   BlastInitialWordParametersPtr word_params, 
+				   Int4Ptr PNTR matrix,
+				   BLAST_ExtendWordPtr ewp,
+				   Int4 q_off,
+				   Int4 s_start,
+				   Int4 s_off,
+				   BlastInitHitListPtr init_hitlist);
+
 /* Description in blast_extend.h */
 BlastInitHitListPtr BLAST_InitHitListNew(void)
 {
@@ -714,7 +724,7 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
 
 	 if (left + right >= extra_bases) {
 	    /* Check if this diagonal has already been explored. */
-	    BlastnExtendInitIalhit(query, subject, word_params, matrix, ewp,
+	    BlastnExtendInitialHit(query, subject, word_params, matrix, ewp,
                q_offsets[i], s_offsets[i] - reduced_word_length - left, 
                s_offsets[i], init_hitlist);
          }
