@@ -215,13 +215,10 @@ void CReferenceItem::x_GatherInfo(CFFContext& ctx)
 }
 
 
-void CReferenceItem::Rearrange
-(vector<CRef<CReferenceItem> >& refs,
- CFFContext& ctx)
+void CReferenceItem::Rearrange(TReferences& refs, CFFContext& ctx)
 {
     {{
-        LessEqual l(false, ctx.IsRefSeq());
-        sort(refs.begin(), refs.end(), l);
+        sort(refs.begin(), refs.end(), LessEqual(false, ctx.IsRefSeq()));
     }}
 
     {{
@@ -234,13 +231,12 @@ void CReferenceItem::Rearrange
 
     {{
         // re-sort, take serial number into consideration.
-        LessEqual l(true, ctx.IsRefSeq());
-        sort(refs.begin(), refs.end(), l);
+        sort(refs.begin(), refs.end(), LessEqual(true, ctx.IsRefSeq()));
     }}
     
     // assign final serial numbers
     size_t size = refs.size();
-    for ( size_t i = 0;  i < size;  ++i ) {
+    for ( size_t i = 0;  i < size; ++i ) {
         refs[i]->m_Serial = i + 1;
     }
 }
@@ -354,7 +350,6 @@ void CReferenceItem::Format
 }
 
 
-/*
 bool CReferenceItem::Matches(const CPub_set& ps) const
 {
     // compare IDs
@@ -368,25 +363,24 @@ bool CReferenceItem::Matches(const CPub_set& ps) const
     for (it = ps;  it;  ++it) {
         if (CType<CCit_gen>::Match(it)) {
             const CCit_gen& gen = *CType<CCit_gen>::Get(it);
-            if ((gen.IsSetMuid()  &&  HasMUID(gen.GetMuid()))
-                / * ||  gen.GetSerial_number() == m_Serial * /) {
+            if ( gen.IsSetMuid()  &&  gen.GetMuid() == GetMUID() ) {
                 return true;
             }
         } else if (CType<CMedlineUID>::Match(it)) {
-            if (HasMUID(CType<CMedlineUID>::Get(it)->Get())) {
+            if ( CType<CMedlineUID>::Get(it)->Get() == GetMUID() ) {
                 return true;
             }
         } else if (CType<CMedline_entry>::Match(it)) {
-            if (HasMUID(CType<CMedline_entry>::Get(it)->GetUid())) {
+            if ( CType<CMedline_entry>::Get(it)->GetUid() == GetMUID() ) {
                 return true;
             }
         } else if (CType<CPub>::Match(it)) {
             const CPub& pub = *CType<CPub>::Get(it);
-            if (pub.IsMuid()  &&  HasMUID(pub.GetMuid())) {
+            if ( pub.IsMuid()  &&  pub.GetMuid() == GetMUID() ) {
                 return true;
             }
         } else if (CType<CPubMedId>::Match(it)) {
-            if (HasPMID(CType<CPubMedId>::Get(it)->Get())) {
+            if ( CType<CPubMedId>::Get(it)->Get() == GetPMID() ) {
                 return true;
             }
         }
@@ -394,7 +388,7 @@ bool CReferenceItem::Matches(const CPub_set& ps) const
 
     return false;
 }
-*/
+
  
 
 void CReferenceItem::x_Init(const CPub& pub, CFFContext& ctx)
@@ -1032,6 +1026,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/11 17:00:46  shomrat
+* minor changes to Matches method
+*
 * Revision 1.2  2003/12/18 17:43:36  shomrat
 * context.hpp moved
 *
