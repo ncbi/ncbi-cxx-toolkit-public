@@ -468,12 +468,22 @@ static void s_TEST_Dir(void)
     CDir::TEntries contents2 = dir.GetEntries(masks);
     assert(contents.size() == contents2.size());
 
+    vector<string> files;
+    vector<string> paths;
+    paths.push_back(".");
+
+    FindFiles(files, paths.begin(), paths.end(), 
+                     masks.begin(), masks.end());
+
+
     for (unsigned int i = 0; i < contents.size(); ++i) {
         const CDirEntry& entry1 = *contents[i];
         const CDirEntry& entry2 = *contents2[i];
         string ep1 = entry1.GetPath();
         string ep2 = entry2.GetPath();
+        const string& f = files[i];
         assert(ep1 == ep2);
+        assert(ep1 == f);
     }
 
 
@@ -666,6 +676,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/11/05 16:27:45  kuznets
+ * + test for FindFile
+ *
  * Revision 1.28  2003/11/05 15:38:14  kuznets
  * Added test for new GetEntries()
  *
