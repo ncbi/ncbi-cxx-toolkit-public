@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/04/30 14:30:44  grichenk
+* Added eResolve_TSE flag in CAnnot_Types_CI, made it default
+*
 * Revision 1.16  2002/04/23 15:18:33  grichenk
 * Fixed: missing features on segments and packed-int convertions
 *
@@ -161,7 +164,8 @@ void CAnnotTypes_CI::x_Initialize(const CSeq_loc& loc, EResolveMethod resolve)
                 id_it->first,                             // id to resolve
                 rit->first.GetFrom(), rit->first.GetTo(), // ref. interval
                 rit->second,                              // strand
-                0, resolve == eResolve_All);              // no shift
+                0,                                        // no shift
+                resolve);
         }
     }
     m_CurAnnot = m_AnnotSet.begin();
@@ -216,25 +220,6 @@ CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 }
 
 
-void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
-{
-    // Search all possible TSEs
-    TTSESet entries;
-    m_Scope->x_PopulateTSESet(loc, m_Selector.m_AnnotChoice, entries);
-    non_const_iterate(TTSESet, tse_it, entries) {
-        if (bool(m_NativeTSE)  &&  *tse_it != m_NativeTSE)
-            continue;
-        if ( m_TSESet.insert(*tse_it).second ) {
-            (*tse_it)->Lock();
-        }
-        CAnnot_CI annot_it(**tse_it, loc, m_Selector);
-        for ( ; annot_it; annot_it++ ) {
-            m_AnnotSet.insert(&(*annot_it));
-        }
-    }
-}
-
-
 bool CAnnotTypes_CI::IsValid(void) const
 {
     return m_CurAnnot != m_AnnotSet.end();
@@ -267,12 +252,31 @@ const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
 }
 
 
+void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
+{
+    // Search all possible TSEs
+    TTSESet entries;
+    m_Scope->x_PopulateTSESet(loc, m_Selector.m_AnnotChoice, entries);
+    non_const_iterate(TTSESet, tse_it, entries) {
+        if (bool(m_NativeTSE)  &&  *tse_it != m_NativeTSE)
+            continue;
+        if ( m_TSESet.insert(*tse_it).second ) {
+            (*tse_it)->Lock();
+        }
+        CAnnot_CI annot_it(**tse_it, loc, m_Selector);
+        for ( ; annot_it; annot_it++ ) {
+            m_AnnotSet.insert(&(*annot_it));
+        }
+    }
+}
+
+
 void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
                                          CSeq_id_Handle ref_idh,
                                          int rmin, int rmax,
                                          ENa_strand strand,
                                          int shift,
-                                         bool resolve)
+                                         EResolveMethod resolve)
 {
     // Create a new entry in the convertions map
     CRef<SConvertionRec> rec = new SConvertionRec;
@@ -291,7 +295,7 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
     m_ConvMap[ref_idh].push_back(rec);
     // Search for annotations
     x_SearchLocation(*rec->m_Location);
-    if ( !resolve )
+    if (resolve == eResolve_None)
         return;
     // Resolve references for a segmented bioseq, get features for
     // the segments.
@@ -307,6 +311,17 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
         if (rmax < seg.GetPosition())
             break; // No more intersecting segments
         if (seg.GetType() == CSeqMap::eSeqRef) {
+            // Check for valid TSE
+            if (resolve == eResolve_TSE) {
+                CBioseq_Handle check_seq = m_Scope->GetBioseqHandle(
+                        m_Scope->x_GetIdMapper().GetSeq_id(seg.m_RefSeq));
+                // The referenced sequence must be in the same TSE as the master one
+                CBioseq_Handle master_seq = m_Scope->GetBioseqHandle(
+                        m_Scope->x_GetIdMapper().GetSeq_id(master_idh));
+                if (&master_seq.GetTopLevelSeqEntry() != &check_seq.GetTopLevelSeqEntry()) {
+                    continue;
+                }
+            }
             // Resolve the reference
             // Adjust the interval
             int seg_min = seg.GetPosition();

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/04/30 14:30:41  grichenk
+* Added eResolve_TSE flag in CAnnot_Types_CI, made it default
+*
 * Revision 1.7  2002/04/17 20:57:49  grichenk
 * Added full type for "resolve" argument
 *
@@ -75,11 +78,11 @@ public:
     // Search all TSEs in all datasources
     CAlign_CI(CScope& scope, const CSeq_loc& loc,
               CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_None);
+              CAnnotTypes_CI::eResolve_TSE);
     // Search only in TSE, containing the bioseq
     CAlign_CI(CBioseq_Handle& bioseq, int start, int stop,
               CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_None);
+              CAnnotTypes_CI::eResolve_TSE);
     CAlign_CI(const CAlign_CI& iter);
     virtual ~CAlign_CI(void);
 

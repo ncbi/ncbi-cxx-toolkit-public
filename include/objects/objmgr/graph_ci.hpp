@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/04/30 14:30:42  grichenk
+* Added eResolve_TSE flag in CAnnot_Types_CI, made it default
+*
 * Revision 1.7  2002/04/17 20:57:50  grichenk
 * Added full type for "resolve" argument
 *
@@ -74,11 +77,11 @@ public:
     // Search all TSEs in all datasources
     CGraph_CI(CScope& scope, const CSeq_loc& loc,
               CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_None);
+              CAnnotTypes_CI::eResolve_TSE);
     // Search only in TSE, containing the bioseq
     CGraph_CI(CBioseq_Handle& bioseq, int start, int stop,
               CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_None);
+              CAnnotTypes_CI::eResolve_TSE);
     CGraph_CI(const CGraph_CI& iter);
     virtual ~CGraph_CI(void);
     CGraph_CI& operator= (const CGraph_CI& iter);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/04/30 14:30:42  grichenk
+* Added eResolve_TSE flag in CAnnot_Types_CI, made it default
+*
 * Revision 1.8  2002/04/17 20:57:50  grichenk
 * Added full type for "resolve" argument
 *
@@ -75,21 +78,23 @@ class CFeat_CI : public CAnnotTypes_CI
 {
 public:
     CFeat_CI(void);
-    // Search all TSEs in all datasources. By default do not search
-    // sequence segments (for constructed sequences). Use
-    // CFeat_CI::eResolve_All flag to search features on all referenced
-    // sequences.
+    // Search all TSEs in all datasources. By default search sequence segments
+    // (for constructed sequences) only if the referenced sequence is in the
+    // same TSE as the master one. Use CFeat_CI::eResolve_All flag to search
+    // features on all referenced sequences or CFeat_CI::eResolve_None to
+    // disable references resolving.
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc,
              SAnnotSelector::TFeatChoice feat_choice,
              CAnnotTypes_CI::EResolveMethod resolve =
-             CAnnotTypes_CI::eResolve_None);
+             CAnnotTypes_CI::eResolve_TSE);
     // Search only in TSE, containing the bioseq. If both start & stop are 0,
-    // the whole bioseq is searched.
+    // the whole bioseq is searched. References are resolved depending on the
+    // "resolve" flag (see above).
     CFeat_CI(CBioseq_Handle& bioseq,
              int start, int stop,
              SAnnotSelector::TFeatChoice feat_choice,
-                   EResolveMethod resolve = eResolve_None);
+                   EResolveMethod resolve = eResolve_TSE);
     CFeat_CI(const CFeat_CI& iter);
     virtual ~CFeat_CI(void);
     CFeat_CI& operator= (const CFeat_CI& iter);

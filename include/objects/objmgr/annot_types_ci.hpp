@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/04/30 14:30:41  grichenk
+* Added eResolve_TSE flag in CAnnot_Types_CI, made it default
+*
 * Revision 1.12  2002/04/22 20:06:15  grichenk
 * Minor changes in private interface
 *
@@ -102,19 +105,20 @@ class CAnnotTypes_CI
 public:
     // Flag to indicate references resolution method
     enum EResolveMethod {
-        eResolve_None,
-        eResolve_All
+        eResolve_None, // Do not search annotations on segments
+        eResolve_TSE,  // Search annotations only on sequences in the same TSE
+        eResolve_All   // Search annotations for all referenced sequences
     };
 
     CAnnotTypes_CI(void);
-    // Search all TSEs in all datasources, by default do not get
-    // annotations defined for segmented bioseq parts.
+    // Search all TSEs in all datasources, by default get annotations defined
+    // on segments in the same TSE (eResolve_TSE method).
     CAnnotTypes_CI(CScope& scope,
                    const CSeq_loc& loc,
                    SAnnotSelector selector,
                    EResolveMethod resolve);
-    // Search only in TSE, containing the bioseq, by default do not get
-    // annotations defined for segmented bioseq parts.
+    // Search only in TSE, containing the bioseq, by default get annotations
+    // defined on segments in the same TSE (eResolve_TSE method).
     CAnnotTypes_CI(CBioseq_Handle& bioseq,
                    int start, int stop,
                    SAnnotSelector selector,
@@ -173,7 +177,7 @@ private:
                              int rmin, int rmax,        // ref. interval
                              ENa_strand strand,         // ref. strand
                              int shift,                 // shift to master
-                             bool resolve);
+                             EResolveMethod resolve);
     // Convert an annotation to the master location coordinates
     CAnnotObject* x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const;
     // Convert seq-loc to the master location coordinates, return true
