@@ -34,15 +34,11 @@
 #include "find_pattern.hpp"
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 
 
-// find all occurences of a pattern (regular expression) in a sequence
-void CFindPattern::Find(const CSeqVector& vec, const string& pattern,
+// Find all occurences of a pattern (regular expression) in a sequence.
+void CFindPattern::Find(const string& seq, const string& pattern,
                        vector<TSeqPos>& starts, vector<TSeqPos>& ends) {
-
-    string seq;
-    vec.GetSeqData( (TSeqPos) 0, vec.size(), seq );
 
     // do a case-insensitive r.e. search for "all" (non-overlapping) occurences
     // note that it's somewhat ambiguous what this means
@@ -68,6 +64,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/12/15 20:16:09  jcherry
+ * Changed CFindPattern::Find to take a string rather than a CSeqVector
+ *
  * Revision 1.5  2003/12/15 19:51:07  jcherry
  * CRegexp::GetMatch now takes a string&, not a char*
  *

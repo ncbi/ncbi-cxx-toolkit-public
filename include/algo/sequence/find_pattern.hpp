@@ -33,7 +33,6 @@
 #define GUI_CORE_ALGO_BASIC___FIND_PATTERN__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objmgr/seq_vector.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -41,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 class CFindPattern {
 public:
-    static void Find(const objects::CSeqVector& vec, const string& pattern,
+    static void Find(const string& seq, const string& pattern,
                      vector<TSeqPos>& starts, vector<TSeqPos>& ends);
 };
 
@@ -52,6 +51,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/12/15 20:16:09  jcherry
+ * Changed CFindPattern::Find to take a string rather than a CSeqVector
+ *
  * Revision 1.6  2003/12/15 19:51:07  jcherry
  * CRegexp::GetMatch now takes a string&, not a char*
  *
