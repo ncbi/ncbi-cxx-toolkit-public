@@ -639,37 +639,15 @@ extern void Abort(void)
 #endif
 }
 
-extern void SuppressDiagPopupMessages(void)
-{
-#if defined(NCBI_OS_MSWIN)
-    // Check environment variable for silent abort app at error
-    const char* value = getenv("DIAG_SILENT_ABORT");
-    if (!value  || !(*value == 'Y'  ||  *value == 'y')) {
-        return;
-    }
-
-    // Windows GPF errors
-    SetErrorMode(SEM_NOGPFAULTERRORBOX);
-
-    // Runtime library
-    _set_error_mode(_OUT_TO_STDERR);
-
-    // Debug library
-    _CrtSetReportFile(_CRT_WARN,   stderr);
-    _CrtSetReportMode(_CRT_WARN,   _CRTDBG_MODE_FILE);
-    _CrtSetReportFile(_CRT_ERROR,  stderr);
-    _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_FILE);
-    _CrtSetReportFile(_CRT_ASSERT, stderr);
-    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
-#endif
-}
-
 
 END_NCBI_SCOPE
 
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.48  2002/04/16 18:48:42  ivanov
+ * SuppressDiagPopupMessages() moved to "test/test_assert.h"
+ *
  * Revision 1.47  2002/04/11 19:58:34  ivanov
  * Added function SuppressDiagPopupMessages()
  *
