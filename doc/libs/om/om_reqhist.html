@@ -93,7 +93,19 @@ the history of requests:
   <li>if one of the selected entries is mentioned in the history,
     it is selected again;</li>
   <li>if more than one entry is found in the history, an exception is being thrown -
-    The Scope is unable to decide which one s better;</li>
+    The Scope is unable to decide which one is better;
+	<blockquote>
+    Using the same Scope, ask for BioseqHandles of sequences gi = 552054,156076,156077.
+    Object Manager throws an exception saying "Multiple history matches".
+    What is going on? The matter of fact is that seq.entry 552054 is the more recent
+    version of seq.entry 156076 and has
+<a href="http://www.ncbi.nlm.nih.gov/entrez/sutils/girevhist.cgi?val=156076">replaced</a> it.
+    Both seq.entries (552054 and 156076) are defined as sets, both contain sequence 156077 -
+    contain it as Seq-data, not as a reference. Now, when one asks for seq.156077,
+	Object Manager sees two entries in the request history, which refer to it,
+    and is unable to make the choice.
+	</blockquote>
+  </li>
   <li>if none of selected entries is found in the history, the Scope looks
     for "live" (more recent) entries. If more than entry is marked as "live" -
 	the Scope consults with Data Loader (which in turn contacts the database)
