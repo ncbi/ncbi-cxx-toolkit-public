@@ -907,9 +907,11 @@ int GetPartialTranslation(const Uint1* nucl_seq,
    Uint1* nucl_seq_rev = NULL;
    Int4 length;
    
-   if ((*translation_buffer_ptr = translation_buffer = 
+   if ((translation_buffer = 
         (Uint1*) malloc(2*(nucl_length+1)+1)) == NULL)
       return -1;
+   if (translation_buffer_ptr)
+      *translation_buffer_ptr = translation_buffer;
 
    if (frame < 0) {
       /* First produce the reverse strand of the nucleotide sequence */
@@ -939,7 +941,8 @@ int GetPartialTranslation(const Uint1* nucl_seq,
       }
 
       *mixed_seq_ptr = (Uint1*) malloc(2*(nucl_length+1));
-
+      if (protein_length)
+         *protein_length = 2*nucl_length - 1;
       for (index = 0, seq = *mixed_seq_ptr; index <= nucl_length; 
            ++index, ++seq) {
          *seq = translation_buffer[frame_offsets[index%3]+(index/3)];
@@ -947,6 +950,8 @@ int GetPartialTranslation(const Uint1* nucl_seq,
    }
 
    sfree(nucl_seq_rev);
+   if (!translation_buffer_ptr)
+      sfree(translation_buffer);
 
    return 0;
 }

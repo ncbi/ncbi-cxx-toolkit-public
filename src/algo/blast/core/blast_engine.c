@@ -104,10 +104,10 @@ static void TranslateHSPsToDNAPCoord(Uint1 program,
                subject_frame - 1;
          } else {
             init_hsp->s_off = (init_hsp->s_off * CODON_LENGTH) + 
-               subject_length - subject_frame - 1;
+               subject_length - subject_frame;
             init_hsp->ungapped_data->s_start = 
                (init_hsp->ungapped_data->s_start * CODON_LENGTH) + 
-               subject_length - subject_frame - 1;
+               subject_length - subject_frame;
          }
       }
    }
