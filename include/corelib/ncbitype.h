@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/03/11 16:32:02  vakatov
+* BigScalar --> Ncbi_BigScalar
+*
 * Revision 1.3  1998/11/06 22:42:39  vakatov
 * Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
 * API to namespace "ncbi::" and to use it by default, respectively
@@ -118,7 +121,7 @@ typedef unsigned INT8_TYPE Uint8;
 #  define BIG_SIZE SIZEOF_VOIDP
 #endif
 
-typedef BIG_TYPE BigScalar;
+typedef BIG_TYPE Ncbi_BigScalar;
 
 
 /* Integer limits
