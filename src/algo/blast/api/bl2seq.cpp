@@ -169,7 +169,7 @@ CBl2Seq::x_ResetSubjectDs()
 }
 
 TSeqAlignVector
-CBl2Seq::Run()
+CBl2Seq::Run() THROWS((CBlastException))
 {
     //m_OptsHandle->GetOptions().DebugDumpText(cerr, "m_OptsHandle", 1);
     SetupSearch();
@@ -315,6 +315,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.42  2004/02/13 21:21:30  camacho
+ * Add throws clause to Run method
+ *
  * Revision 1.41  2004/02/13 19:32:55  camacho
  * Removed unnecessary #defines
  *

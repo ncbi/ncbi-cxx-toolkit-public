@@ -106,7 +106,7 @@ public:
     ///       {Results for query i and subject M (discontinuous Seq-align)} ]
     /// Discontinuous Seq-aligns are used to allow grouping of multiple HSPs
     /// that correspond to that query-subject alignment.
-    virtual TSeqAlignVector Run();
+    virtual TSeqAlignVector Run() THROWS((CBlastException));
 
     /// Retrieves regions filtered on the query/queries
     //const TSeqLocVector& GetFilteredQueryRegions() const;
@@ -256,6 +256,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2004/02/13 21:21:44  camacho
+* Add throws clause to Run method
+*
 * Revision 1.27  2003/12/09 13:41:22  camacho
 * Added comment to Run method
 *
