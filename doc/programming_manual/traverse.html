@@ -40,14 +40,14 @@ the <a href="../docxx/HIER.html">class hierarchy </a>of the <i>Doc++</i>
 browser and follow a link to the class. For example, a synopsis of the
 <i><a href="../docxx/CBiostruc.html">CBiostruc</a></i>
 class is readily available. From this page, you can also access the relevant
-source files archived by the <i>LXR</i> browser, by following the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CBiostruc">Locate
+source files archived by the <i>LXR</i> browser, by following the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CBiostruc">Locate
 CBiostruc</a></i> link. Alternatively, you may want to access the <i>LXR</i>
-engine directly by using the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CBiostruc">Identifier
+engine directly by using the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CBiostruc">Identifier
 search</a></i> tool.
 <p>Because we wish to determine which headers to include, the synopsis
-displayed by the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CBiostruc">Identifier
+displayed by the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CBiostruc">Identifier
 search </a></i>tool is most useful. There we find a single header file,
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc.hpp">Biostruc.hpp</a>,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/objects/mmdb1/Biostruc.hpp">Biostruc.hpp</a>,
 </i>listed
 as defining the class. Accordingly, this is the header file we must include.
 The <i>CBiostruc</i> class inherits from the <i>CBiostruc_Base</i> class
@@ -138,12 +138,12 @@ which are accessed using <i>bs.GetXxx()</i>. The information needed to
 write each of these functions - the data member types and member function
 signatures - is contained in the respective header files. For example,
 looking at
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc_.hpp#L65">Biostruc_.hpp</a></i>,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/objects/mmdb1/Biostruc_.hpp#L65">Biostruc_.hpp</a></i>,
 we learn that the structure's descriptor list can be accessed using <i>GetDescr()</i>,
 and that the type returned is a list of pointers to descriptors:</font>
 <pre><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp; typedef list&lt; CRef&lt;CBiostruc_descr> > TDescr;
 &nbsp;&nbsp;&nbsp;&nbsp; const TDescr&amp; GetDescr(void) const;</font></pre>
-<font color="#000000">Consulting the base class for <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc_descr_.hpp#L62">CBiostruc_desc</a></i>
+<font color="#000000">Consulting the base class for <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/objects/mmdb1/Biostruc_descr_.hpp#L62">CBiostruc_desc</a></i>
 in turn, we learn that this class has a <i>choice state</i> defining the
 type of value stored there as well as the method that should be used to
 access that value. This leads to an implementation of <i><a href="traverse_cpp.html#visitDscr">Visit(CBiostruc::TDescr

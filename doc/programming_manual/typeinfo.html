@@ -97,7 +97,7 @@ methods to access and/or modify the object itself or members of that object.</li
 The C++ Toolkit stores the type information outside any instances of that
 type, in a statically created <i>CTypeInfo</i> object. For <i>class</i>
 objects, this <i>CTypeInfo</i> object can be accessed by all <i>instances</i>
-of the class via a static <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=GetTypeInfo">GetTypeInfo()</a></i>
+of the class via a static <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=GetTypeInfo">GetTypeInfo()</a></i>
 class method. Similarly, for primitive types and other constructs that
 have no way of associating methods with them <i>per se</i>, a static globally
 defined <i>GetTypeInfoXxx()</i> function is used to access a static <i>CTypeInfo</i>
@@ -105,7 +105,7 @@ object. (The <i>Xxx</i> suffix is used here to indicate that a globally
 unique name is generated for the function).
 <p>All of the automatically generated classes and constructs defined in
 the C++ Toolkit's
-<b><i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/">objects/</a></i></b>directory
+<b><i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/objects/">objects/</a></i></b>directory
 already have static <i>GetTypeInfo()</i> functions implemented for them.
 In order to make type information about
 <i>user-defined</i> classes and
@@ -220,7 +220,7 @@ reference to any particular instance of <i>CBioseq</i> - one might use:
 class interface is
 <i>GetTypeFamily()</i>, which returns an enumerated
 value indicating the <i>type family</i> for the object of interest. Five
-type families are defined by the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ETypeFamily">ETypeFamily</a></i>
+type families are defined by the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=ETypeFamily">ETypeFamily</a></i>
 enumeration:
 <pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ETypeFamily GetTypeFamily(void) const;
 
@@ -304,9 +304,9 @@ in the <i>CObjectTypeInfo</i> interface for these purposes:
 <i>CObjectTypeInfo GetPointedType(void) const;</i></li>
 </ul>
 </ul>
-The two additional enumerations referred to here, <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=EContainerType">EContainerType</a></i>
-and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=EPrimitiveValueType">EPrimitiveValueType</a></i>,
-are defined, along with <i>ETypeFamily</i>, in <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/serialdef.hpp">include/serial/serialdef.hpp</a></i>.
+The two additional enumerations referred to here, <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=EContainerType">EContainerType</a></i>
+and <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=EPrimitiveValueType">EPrimitiveValueType</a></i>,
+are defined, along with <i>ETypeFamily</i>, in <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/serial/serialdef.hpp">include/serial/serialdef.hpp</a></i>.
 <p>Different iterator classes are used for iterating over class data members
 versus choice variant types. Thus, if the object of interest is a C++ <i>class</i>
 object, then access to the type information for its members can be gained

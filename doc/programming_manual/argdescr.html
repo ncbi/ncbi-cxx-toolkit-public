@@ -311,7 +311,7 @@ Position-independent arguments that <b>must</b> be present in the command
 line.</dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddKey">AddKey(key,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddKey">AddKey(key,
 synopsis, comment, value_type, flags)</a></i></dd>
 
 <br>&nbsp;
@@ -324,7 +324,7 @@ synopsis, comment, value_type, flags)</a></i></dd>
 Position-independent arguments that are <b>optional</b>.</dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddKey">AddOptionalKey(key,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddKey">AddOptionalKey(key,
 synopsis, comment, value_type, flags)</a></i></dd>
 
 <dd>
@@ -332,7 +332,7 @@ A default value can be specified in the argument's description to cover
 those cases where the argument does not occur in the command line.</dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddKey">AddDefaultKey(key,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddKey">AddDefaultKey(key,
 synopsis, comment, value_type, default_value, flags)</a></i></dd>
 
 <br>&nbsp;
@@ -345,7 +345,7 @@ Position-independent boolean (without value) arguments. These arguments
 are <i>always</i> optional.</dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddFlag">AddFlag(flag,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddFlag">AddFlag(flag,
 comment, set_value)</a></i></dd>
 
 <br>&nbsp;
@@ -364,7 +364,7 @@ defines the order in which these arguments should appear on the command
 line.</dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddPlain">AddPositional(key,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddPlain">AddPositional(key,
 comment, value_type, flags)</a></i></dd>
 
 <br>&nbsp;
@@ -380,11 +380,11 @@ object using <i>Add[Optional|Default]Positional()</i> defines the order
 in which these arguments should appear on the command line.</dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddPlain">AddOptionalPositional(key,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddPlain">AddOptionalPositional(key,
 comment, value_type, flags)</a></i></dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddPlain">AddDefaultPositional(key,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddPlain">AddDefaultPositional(key,
 comment, value_type, default_value, flags)</a></i></dd>
 
 <br>&nbsp;
@@ -407,7 +407,7 @@ arguments to expect using <font color="#3333FF">n_mandatory</font> and
 <font color="#3333FF">n_optional</font> parameters:</dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddExtra">AddExtra(n_mandatory,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddExtra">AddExtra(n_mandatory,
 n_optional, comment, type, flags)</a></i></dd>
 </dl>
 Any of the registered descriptions can be tested for existance and/or deleted
@@ -428,7 +428,7 @@ integer value is acceptable, but floating point and non-numerical values
 are not. The <i>EType</i> enumeration quantifies the allowed types and
 is defined as:
 <br><a NAME="ref_EType"></a>
-<br>&nbsp;<font color="#008080">&nbsp; enum <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CArgDescriptions">EType</a>
+<br>&nbsp;<font color="#008080">&nbsp; enum <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=CArgDescriptions">EType</a>
 {</font>
 <br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eString
 = 0,&nbsp;&nbsp;&nbsp; // an arbitrary string</font>
@@ -650,9 +650,9 @@ method.</li>
 Code examples</h3>
 A simple application program, <i><a href="applic_cpp.html">applic.cpp</a></i>
 demonstrates the usage of these classes for argument processing. See also
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/test/test_ncbiargs.cpp">test_ncbiargs.cpp</a></i>
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/corelib/test/test_ncbiargs.cpp">test_ncbiargs.cpp</a></i>
 (especially <i>main(),</i> <i>s_InitTest0() </i>and<i> s_RunTest0() </i>there),
-and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
+and <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 for more examples.
 <p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up</a></i>&nbsp;
 <i><a href="registry.html">next&nbsp;</a></i>

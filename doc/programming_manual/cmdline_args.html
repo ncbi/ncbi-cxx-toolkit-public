@@ -245,7 +245,7 @@ Position-independent argument that <b>must</b> be specified in the command
 line.</dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddKey">AddKey(key,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddKey">AddKey(key,
 synopsis, comment, value_type, flags)</a></i></dd>
 
 <br>&nbsp;
@@ -259,7 +259,7 @@ Position-independent argument that can be specified in the command line.
 They have default value for the case they are not specified by user.</dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddKey">AddOptionalKey(key,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddKey">AddOptionalKey(key,
 synopsis, comment, value_type, flags, default_value)</a></i></dd>
 
 <br>&nbsp;
@@ -272,7 +272,7 @@ synopsis, comment, value_type, flags, default_value)</a></i></dd>
 Position-independent boolean (without value) argument. Always optional.</dd>
 
 <dd>
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddFlag">AddFlag(flag,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddFlag">AddFlag(flag,
 comment)</a></i></dd>
 
 <br>&nbsp;
@@ -309,9 +309,9 @@ named descriptions, but share a single "unnamed" description.</dd>
 
 <p><br>Descriptions for <i>named</i> positional arguments are specified
 using
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddPlain">AddPlain()</a></i>,
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddPlain">AddPlain()</a></i>,
 whose arguments are identical to the <i>AddOptionalKey()</i> method, less
-the <i>synopsis</i> argument. Finally, the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddExtra">AddExtra()</a></i>
+the <i>synopsis</i> argument. Finally, the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=AddExtra">AddExtra()</a></i>
 method is used to define a single description for a set of "extra" unnamed
 positional arguments of uniform type.
 <p>Any of the registered descriptions can be tested for existance and/or
@@ -366,7 +366,7 @@ parameters as <i>n = 1</i> and <i>f = 0.0</i>.
 is equal to the number of <i>named</i> positional descriptions that were
 registered using <i>AddPlain()</i>, thus making them untagged mandatory
 arguments. It is possible to modify this default behavior however, by using
-the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetConstraint">SetConstraint()</a></i>
+the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=SetConstraint">SetConstraint()</a></i>
 method. This method takes two arguments, an <i>EConstraint policy</i>,
 and an <i>unsigned int</i> value (<i>N</i>), and constrains the <i>total</i>
 number of (named and unnamed) positional arguments, <i>M</i>, as follows:
@@ -532,8 +532,8 @@ public:
 Code examples</h1>
 A simple application program, <i><a href="applic_cpp.html">applic.cpp</a></i>
 demonstrates the usage of these classes for argument processing. See also
-<i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/test/test_ncbiargs.cpp">test_ncbiargs.cpp</a></i>,
-and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
+<i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/corelib/test/test_ncbiargs.cpp">test_ncbiargs.cpp</a></i>,
+and <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 for more examples.
 <p><a href="applic.html"><i>Previous</i>&nbsp;</a>&nbsp;&nbsp; <i><a href="../index.html">Up
 </a><a href="diag.html">Next&nbsp;</a></i>

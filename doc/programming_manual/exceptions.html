@@ -4,7 +4,7 @@
     <title>Exception handling in the NCBI C++ Toolkit</title>
   </head>
   <body bgcolor = white>
-  <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbiexpt.hpp">
+  <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/corelib/ncbiexpt.hpp">
     <h1> Exception handling </a> in the NCBI C++ Toolkit </h1>
 
 <ul>
@@ -134,9 +134,9 @@ macro is:
 </pre>
 
 From the <i>throw()</i> statement here, we see that the object actually being thrown by this macro
-is the value returned by <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=DbgPrint">DbgPrint</a>().
+is the value returned by <a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=DbgPrint">DbgPrint</a>().
 <i>DbgPrint()</i> in turn calls 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=DbgPrint"><i>DoDbgPrint</i></a>().
+<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=DbgPrint"><i>DoDbgPrint</i></a>().
 The latter is an overloaded function that simply creates a diagnostic stream and writes the file name,
 line number, and the exception's <i>what()</i> message to that stream. The exception object
 (which is of type <i>class_name</i>) is then the value returned by <i>DbgPrint</i>.<p>
@@ -190,7 +190,7 @@ discussion of <a href="../libs/err_msg.html#ref_Exception"><i>Exception handling
 
 It is also possible to specify that execution should abort immediately when an exception occurs. By
 default, this feature is not activated, but the 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetThrowTraceAbort">
+<a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=SetThrowTraceAbort">
 <i>SetThrowTraceAbort()</i> </a> function can be used to activate it. Alternatively, you can turn it
 on for the entire application by setting either the $ABORT_ON_THROW environment variable, or 
 the application's registry ABORT_ON_THROW  entry (in the [DEBUG] section) to an arbitrary non-empty value.

@@ -29,8 +29,8 @@ Toolkit</a></li>
 <a NAME="intro"></a>Introduction</h3>
 All of the ASN.1 data types defined in the C Toolkit have been re-implemented
 in the C++ Toolkit as serializable objects. Header files for these classes
-can be found in the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/">include/objects</a></i>
-directories, and their implementations are located in the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/">src/objects</a></i>
+can be found in the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/objects/">include/objects</a></i>
+directories, and their implementations are located in the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/objects/">src/objects</a></i>
 directories.&nbsp; and
 <p>The implementation of these classes as serializable objects has a number
 of implications. It must be possible to use expressions like: <i>instream
@@ -53,9 +53,9 @@ Information</i> </a>for a general discussion).
 <h3>
 <a NAME="locate"></a>Locating and browsing serializable objects in the
 C++ Toolkit</h3>
-The top level of the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/">include/objects</a></i>
+The top level of the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/objects/">include/objects</a></i>
 subtree is a set of subdirectories, where each subdirectory includes the
-public header files for a separately compiled library. Similarly, the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/">src/objects</a></i>
+public header files for a separately compiled library. Similarly, the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/objects/">src/objects</a></i>
 subtree includes a set of subtrees containing the source files for these
 libraries. Finally, your<i> build/objects</i> directory will contain a
 corresponding set of build subtrees where these libraries are actually
@@ -77,7 +77,7 @@ flag when running the <i>configure</i> script.
 area, using the source browsers to locate the objects you are particularly
 interested in. For example, if you are seeking the new class definition
 for the <i>Bioseq struct</i> defined in the C Toolkit, you can search for
-the <i>CBioseq</i> class, using either the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident/">LXR</a></i>
+the <i>CBioseq</i> class, using either the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident/">LXR</a></i>
 identifier search tool, or the <i>DOC++</i>&nbsp; <a href="http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/docxx/HIER.html">class
 hierarchy</a> browser. Starting with the name of the data object as it
 appears in the ASN.1 module, two simple rules apply in deriving the new
@@ -208,8 +208,8 @@ const;</font></tt></b>
 <br><tt><font color="#666666">&nbsp;&nbsp;&nbsp; // implementation goes
 here</font></tt>
 <br><tt><font color="#666666">}</font></tt>
-<p>These files are in the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/seq">include/objects/seq</a></i>
-and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/seq">src/objects/seq
+<p>These files are in the <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/include/objects/seq">include/objects/seq</a></i>
+and <i><a href="http://www.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source/src/objects/seq">src/objects/seq
 </a></i>subdirectories,
 respectively. Once you have made the modifications to the files, you need
 to recompile the <i>seq</i> library,<i> libseq.a</i>, i.e.:
