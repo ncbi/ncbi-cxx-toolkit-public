@@ -420,13 +420,22 @@ private:
 class NCBI_XOBJUTIL_EXPORT CCdregion_translate
 {
 public:
+
     // translation coding region into ncbieaa protein sequence
     static void TranslateCdregion (string& prot,
                                    const CBioseq_Handle& bsh,
                                    const CSeq_loc& loc,
                                    const CCdregion& cdr,
                                    bool include_stop = true,
-                                   bool remove_trailing_X = false);
+                                   bool remove_trailing_X = false,
+                                   bool* alt_start = 0);
+
+    static void TranslateCdregion(string& prot,
+                                  const CSeq_feat& cds,
+                                  CScope& scope,
+                                  bool include_stop = true,
+                                  bool remove_trailing_X = false,
+                                  bool* alt_start = 0);
 
     // return iupac sequence letters under feature location
     static void ReadSequenceByLocation (string& seq,
@@ -633,6 +642,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.39  2004/03/01 18:22:07  shomrat
+* Added alternative start flag to TranslateCdregion
+*
 * Revision 1.38  2004/02/19 17:59:40  shomrat
 * Added function to reverse a location
 *
