@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/04/09 17:49:46  grichenk
+* Fixed signed/unsigned warnings
+*
 * Revision 1.9  2002/03/22 21:51:04  grichenk
 * Added indexing textseq-id without accession
 *
@@ -1530,7 +1533,7 @@ CSeq_id_Mapper::~CSeq_id_Mapper(void)
         keep_tree->DropKeysRange(0, numeric_limits<TSeq_id_Key>().max());
     }
 //### This is for debugging only
-    for (int i = 0; i < kKeyUsageTableSize; i++) {
+    for (size_t i = 0; i < kKeyUsageTableSize; i++) {
         _ASSERT(m_KeyUsageTable[i] == 0);
     }
 //###
@@ -1540,7 +1543,7 @@ CSeq_id_Mapper::~CSeq_id_Mapper(void)
 CSeq_id_Mapper::CSeq_id_Mapper(void)
     : m_NextKey(0)
 {
-    for (int i = 0; i < kKeyUsageTableSize; i++)
+    for (size_t i = 0; i < kKeyUsageTableSize; i++)
         m_KeyUsageTable[i] = 0;
 // same order as in seq-id definition, see seqloc.asn
     m_IdMap[CSeq_id::e_Local] = CRef<CSeq_id_Which_Tree>
@@ -1673,7 +1676,7 @@ void CSeq_id_Mapper::ReleaseHandleReference(const CSeq_id_Handle& handle)
             it->second->DropKeysRange(seg*kKeyUsageTableSegmentSize,
                 (seg+1)*kKeyUsageTableSegmentSize-1);
         }
-        for (int i = 0; i < kKeyUsageTableSegmentSize; i++) {
+        for (size_t i = 0; i < kKeyUsageTableSegmentSize; i++) {
             TKeyToIdMap::iterator ref = m_KeyMap.find(i);
             if (ref != m_KeyMap.end()) {
                 m_KeyMap.erase(ref);
@@ -1696,7 +1699,7 @@ TSeq_id_Key CSeq_id_Mapper::GetNextKey(void)
     if (m_KeyUsageTable[m_NextKey / kKeyUsageTableSegmentSize] == 0)
         return m_NextKey; // free segment, start using it
     // Find the first free segment
-    for (int i = 0; i < kKeyUsageTableSize; i++) {
+    for (size_t i = 0; i < kKeyUsageTableSize; i++) {
         if (m_KeyUsageTable[i] == 0) {
             m_NextKey = i*kKeyUsageTableSegmentSize;
             return m_NextKey;
