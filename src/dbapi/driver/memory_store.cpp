@@ -316,7 +316,7 @@ size_t CMemStore::Truncate(size_t size)
     TSize nof_bytes = (TSize) size;
 
     if (nof_bytes >= m_Size) {
-        for ( ;  m_Current != NULL;  m_Last = m_Current) {
+        for ( ;  m_Last != NULL;  m_Last = m_Current) {
             m_Current = m_Last->prev;
             delete m_Last->body;
             delete m_Last;
@@ -540,6 +540,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/10/28 19:37:08  soussov
+ * fixes memory leak in CMemStore::Truncate
+ *
  * Revision 1.6  2002/09/13 18:43:18  soussov
  * fixes compiler warnings
  *
