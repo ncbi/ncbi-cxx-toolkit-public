@@ -57,15 +57,17 @@ class CDiagBuffer
 
     // Flags
     friend bool IsSetDiagPostFlag(EDiagPostFlag flag, TDiagPostFlags flags);
-    NCBI_XNCBI_EXPORT friend TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags);
+    NCBI_XNCBI_EXPORT
+    friend TDiagPostFlags         SetDiagPostAllFlags(TDiagPostFlags flags);
     NCBI_XNCBI_EXPORT friend void SetDiagPostFlag(EDiagPostFlag flag);
     NCBI_XNCBI_EXPORT friend void UnsetDiagPostFlag(EDiagPostFlag flag);
-    NCBI_XNCBI_EXPORT friend TDiagPostFlags SetDiagTraceAllFlags(TDiagPostFlags flags);
+    NCBI_XNCBI_EXPORT
+    friend TDiagPostFlags         SetDiagTraceAllFlags(TDiagPostFlags flags);
     NCBI_XNCBI_EXPORT friend void SetDiagTraceFlag(EDiagPostFlag flag);
     NCBI_XNCBI_EXPORT friend void UnsetDiagTraceFlag(EDiagPostFlag flag);
     NCBI_XNCBI_EXPORT friend void SetDiagPostPrefix(const char* prefix);
     NCBI_XNCBI_EXPORT friend void PushDiagPostPrefix(const char* prefix);
-    NCBI_XNCBI_EXPORT friend void PopDiagPostPrefix();
+    NCBI_XNCBI_EXPORT friend void PopDiagPostPrefix(void);
 
     //
     friend class CNcbiDiag;
@@ -73,26 +75,35 @@ class CDiagBuffer
     friend const CNcbiDiag& Endm(const CNcbiDiag& diag);
 
     // Severity
-    NCBI_XNCBI_EXPORT friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
-    NCBI_XNCBI_EXPORT friend void SetDiagFixedPostLevel(EDiagSev post_sev);
-    NCBI_XNCBI_EXPORT friend bool DisableDiagPostLevelChange(bool disable_change);
-    NCBI_XNCBI_EXPORT friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
-    NCBI_XNCBI_EXPORT friend void IgnoreDiagDieLevel(bool ignore,
-                                                     EDiagSev* prev_sev);
+    NCBI_XNCBI_EXPORT
+    friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
+    NCBI_XNCBI_EXPORT
+    friend void SetDiagFixedPostLevel(EDiagSev post_sev);
+    NCBI_XNCBI_EXPORT
+    friend bool DisableDiagPostLevelChange(bool disable_change);
+    NCBI_XNCBI_EXPORT
+    friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
+    NCBI_XNCBI_EXPORT
+    friend void IgnoreDiagDieLevel(bool ignore, EDiagSev* prev_sev);
 
     // Others
-    NCBI_XNCBI_EXPORT friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
+    NCBI_XNCBI_EXPORT
+    friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
     NCBI_XNCBI_EXPORT friend bool IsDiagStream(const CNcbiOstream* os);
 
     // Handler
-    NCBI_XNCBI_EXPORT friend void SetDiagHandler(CDiagHandler* handler, bool can_delete);
+    NCBI_XNCBI_EXPORT friend void
+    SetDiagHandler(CDiagHandler* handler, bool can_delete);
     NCBI_XNCBI_EXPORT friend CDiagHandler* GetDiagHandler(bool take_ownership);
     NCBI_XNCBI_EXPORT friend bool IsSetDiagHandler(void);
 
     // Error code information
-    NCBI_XNCBI_EXPORT friend void SetDiagErrCodeInfo(CDiagErrCodeInfo* info, bool can_delete);
-    NCBI_XNCBI_EXPORT friend CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership);
-    NCBI_XNCBI_EXPORT friend bool IsSetDiagErrCodeInfo(void);
+    NCBI_XNCBI_EXPORT
+    friend void SetDiagErrCodeInfo(CDiagErrCodeInfo* info, bool can_delete);
+    NCBI_XNCBI_EXPORT
+    friend CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership);
+    NCBI_XNCBI_EXPORT
+    friend bool IsSetDiagErrCodeInfo(void);
 
 private:
     friend class CDiagRestorer;
@@ -124,10 +135,12 @@ private:
             (*m_Stream) << x;
     }
 
-    NCBI_XNCBI_EXPORT void Flush  (void);
-                      void Reset  (const CNcbiDiag& diag);   // reset content of the diag.message
-                      void EndMess(const CNcbiDiag& diag);   // output current diag. message
-    NCBI_XNCBI_EXPORT bool SetDiag(const CNcbiDiag& diag);
+    NCBI_XNCBI_EXPORT
+    void Flush  (void);
+    void Reset  (const CNcbiDiag& diag);   // reset content of the diag.message
+    void EndMess(const CNcbiDiag& diag);   // output current diag. message
+    NCBI_XNCBI_EXPORT
+    bool SetDiag(const CNcbiDiag& diag);
 
     // flush & detach the current user
     void Detach(const CNcbiDiag* diag);
@@ -166,10 +179,11 @@ private:
 
     // Error codes info
     static CDiagErrCodeInfo* sm_ErrCodeInfo;
-    static bool          sm_CanDeleteErrCodeInfo;
+    static bool              sm_CanDeleteErrCodeInfo;
 };
 
 extern CDiagBuffer& GetDiagBuffer(void);
+
 
 
 ///////////////////////////////////////////////////////
@@ -430,6 +444,9 @@ bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/03/18 23:03:35  vakatov
+ * Cosmetics
+ *
  * Revision 1.40  2004/03/18 22:49:32  vakatov
  * SetDiagFixedPostLevel() -- get rid of extraneous and breaking 'const' in arg
  *
@@ -500,7 +517,7 @@ bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
  * Revamped previous revision (prefix and error codes)
  *
  * Revision 1.20  2001/06/13 20:51:52  ivanov
- * + PushDiagPostPrefix(), PopPushDiagPostPrefix() - stack post prefix messages.
+ * + PushDiagPostPrefix(),PopPushDiagPostPrefix() - stack post prefix messages.
  * + ERR_POST_EX, LOG_POST_EX - macros for posting with error codes.
  * + ErrCode(code[,subcode]) - CNcbiDiag error code manipulator.
  * + eDPF_ErrCode, eDPF_ErrSubCode - new post flags.
