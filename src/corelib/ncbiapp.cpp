@@ -37,13 +37,10 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbiapp.hpp>
 
-/* take this out for now, since #include <Processes.h> doesn' work on Mac OS 10.2 */
-/*
-#if defined(NCBI_OS_MAC) || (defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS))
-#include <Processes.h>
-#include <Files.h>
+#if defined(NCBI_OS_DARWIN)
+#define __NOEXTENSIONS__
+#include <Carbon/Carbon.h>
 #endif
-*/
 
 BEGIN_NCBI_SCOPE
 
@@ -82,6 +79,7 @@ CNcbiApplication::CNcbiApplication(void)
     m_HideArgs = 0;
     m_StdioFlags = 0;
     m_CinBuffer = 0;
+    m_ProgramDisplayName = "";
 
     // Register the app. instance
     if ( m_Instance ) {
@@ -171,89 +169,35 @@ int CNcbiApplication::AppMain
 {
     x_SetupStdio();
 
-    // Get program name
+    // Get program executable's name & path.
+    string exepath = FindProgramExecutablePath(argc, argv);
+    
+    // Get program display name
     string appname = name;
     if (appname.empty()) {
-#if defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS)
-#if 0 /* take all of this out since #include <Processs.h> above doesn't work on OX 10.2 !? */
-    /* But this IS how we should get the app name on Mac OS. */
-    /* probably should stick this code away in a routine localized by OS */
-        OSErr               err;
-        ProcessSerialNumber psn;
-        FSRef               fsRef;
-        char                filePath[1024];
-        
-        err = GetCurrentProcess (&psn);
-        if (err == noErr) {
-            err = GetProcessBundleLocation (&psn, &fsRef);
-            if (err == noErr) {
-                err = FSRefMakePath (&fsRef, (UInt8 *) filePath, 1024);
-            }
-        }        
-        if (err == noErr)
-        {
-            char    *extp;
-            /* strip .app extension */
-            if (NULL != (extp = strrchr(filePath, '.'))) {
-                if (strcmp(extp, ".app") == 0) {
-                    *extp = '\0';
-                }
-            }
-            appname = filePath;
-        }
-        else
-#endif /* 0 */
-            appname = "ncbi";
-
-#else
-        if (argc > 0  &&  argv[0] != NULL  &&  *argv[0] != '\0') {
-            appname = argv[0];
+        if (!exepath.empty()) {
+            CDirEntry::SplitPath(exepath, NULL, &appname);
+        } else if (argc > 0  &&  argv[0] != NULL  &&  *argv[0] != '\0') {
+            CDirEntry::SplitPath(argv[0], NULL, &appname);
         } else {
             appname = "ncbi";
         }
-#endif
     }
-
+    SetProgramDisplayName(appname);
+    
+    // make sure we have something as our 'real' executable's name.
+    // though if it does not contain a full path it won't be much use.
+    if (exepath.empty()) {
+        LOG_POST(Warning << "Warning: Could not determine this application's file name and location.  Using \""
+            << appname << "\" instead.\n  Please fix FindProgramExecutablePath() on this platform.");
+        exepath = appname;
+    }
+    
+#if defined(NCBI_OS_DARWIN)
     // We do not know standard way of passing arguments to C++ program on Mac,
     // so we will read arguments from special file having extension ".args"
-    // and name equal to name of program (name argument of AppMain).
-#if defined(NCBI_OS_MAC) || (defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS))
-#  define MAX_ARGC 256
-#  define MAX_ARG_LEN 1024
-    if (argc <= 1) {
-#if defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS)
-        string argsName = "../../../ncbi.args";
-#else
-        string argsName = appname + ".args";
-#endif
-
-        CNcbiIfstream in(argsName.c_str());
-        if ( in ) {
-            int c = 1;
-            const char** v = new const char*[MAX_ARGC];
-            v[0] = strdup(appname.c_str()); // program name
-            char arg[MAX_ARG_LEN];
-            while (in.getline(arg, sizeof(arg))  ||  in.gcount()) {
-                if ( in.eof() ) {
-                    ERR_POST(Warning << argsName << ", line " << c << ": " <<
-                             "unfinished last line");
-                } else if ( in.fail() ) {
-                    ERR_POST(Fatal << argsName << ", line " << c << ": " <<
-                             "too long argument: " << arg);
-                }
-                if (c >= MAX_ARGC) {
-                    ERR_POST(Fatal << argsName << ", line " << c << ": " <<
-                             "too many arguments");
-                }
-                v[c++] = strdup(arg);
-            }
-            argc = c;
-            argv = v;
-        }
-        else {
-            ERR_POST(argsName << ": file not found");
-        }
-    }
+    // and name equal to display name of program (name argument of AppMain).
+    MacArgMunging(&argc, &argv, exepath);
 #endif
 
     // Check command line for presence special arguments
@@ -317,7 +261,7 @@ int CNcbiApplication::AppMain
     }
 
     // Reset command-line args and application name
-    m_Arguments->Reset(argc, argv, appname);
+    m_Arguments->Reset(argc, argv, exepath);
 
     // Reset application environment
     m_Environ->Reset(envp);
@@ -760,12 +704,136 @@ void CNcbiApplication::x_SetupStdio(void)
 }
 
 
+// Application name suitable for display or as a basename for other files.
+// can be set by the user when calling AppMain().
+void CNcbiApplication::SetProgramDisplayName(const string& appname)
+{
+    m_ProgramDisplayName = appname;
+}
+
+
+// Find out the path and name of the executable file this app is running from.
+// Will be accesible by: GetArguments.GetProgramName().
+string CNcbiApplication::FindProgramExecutablePath(
+     int argc, 
+     const char* const* argv)
+{
+    string ret_val;
+#if defined(NCBI_OS_UNIX)  &&  ! defined(NCBI_OS_DARWIN)
+    // TO BE IMPLEMENTED!!
+    ret_val = argv[0];
+
+#elif defined (NCBI_OS_DARWIN)
+    OSErr               err;
+    ProcessSerialNumber psn;
+    FSRef               fsRef;
+    char                filePath[1024];
+    
+    err = GetCurrentProcess (&psn);
+    if (err == noErr) {
+        err = GetProcessBundleLocation (&psn, &fsRef);
+        if (err == noErr) {
+            err = FSRefMakePath (&fsRef, (UInt8 *) filePath, sizeof(filePath));
+        }
+    }    
+    ret_val = filePath;
+    
+#elif defined (NCBI_OS_MSWIN)
+    // TO BE IMPLEMENTED ! ??
+    ret_val = argv[0];
+
+    // determine if we are working with a relative path
+    if (ret_val.find_first_of("\\/") == string::npos  ||
+        ret_val.find_first_of(".") == 0) {
+        ret_val = CDir::GetCwd() + CDirEntry::GetPathSeparator() + ret_val;
+    }
+
+#else
+
+#error "platform unrecognized"
+
+#endif
+    return ret_val;
+
+}
+
+#if defined (NCBI_OS_DARWIN)
+
+void  CNcbiApplication::MacArgMunging(
+    int *argcPtr,  
+    const char* const ** argvPtr,
+    const string& exepath
+)
+{
+
+    // Sometimes on Mac there will be an argument -psn which 
+    // will be followed by the Process Serial Number, e.g. -psn_0_13107201
+    // this is in situations where the application could have no other arguments
+    // like when it is double clicked.
+    // This will mess up argument processing later, so get rid of it.
+    static const char* s_ArgMacPsn = "-psn_"; 
+    
+    if (*argcPtr == 2 && 
+        NStr::strncmp((*argvPtr)[1], s_ArgMacPsn, strlen(s_ArgMacPsn)) == 0) {
+        --*argcPtr;
+    }
+    
+    // we have no arguments from the operating system.
+    if (*argcPtr <= 1) {
+    
+        // Open the args file.
+        string  exedir;
+        CDir::SplitPath(exepath, &exedir);
+        string argsName = exedir + GetProgramDisplayName() + ".args";
+        CNcbiIfstream in(argsName.c_str());
+        
+        if ( in ) {
+            vector<string> v;
+            
+            // remember or fake the executable name.
+            if (*argcPtr > 0)
+                v.push_back((*argvPtr)[0]); // preserve the original argv[0].
+            else
+                v.push_back(exepath);
+                
+            // grab the rest of the arguments from the file.
+            // arguments are separated by whitespace. Can be on 
+            // more than one line.
+            string arg;
+            while (in >> arg) {
+                v.push_back(arg);
+            }
+            
+            // stash them away in the standard argc and argv places.
+            *argcPtr = v.size();
+
+            char ** argv =  new char*[v.size()]; 
+            int c = 0;
+            vector<string>::iterator vp; 
+            for (vp = v.begin(); vp < v.end(); ++vp) {
+                argv[c++] = strdup((*vp).c_str());
+            }
+            *argvPtr = argv;
+        }
+        else {
+            ERR_POST("Mac arguments file not found: " << argsName);
+        }
+    }
+
+}
+
+#endif
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2003/06/16 13:52:27  rsmith
+ * Add ProgramDisplayName member. Program name becomes real executable full path. Handle Mac special arg handling better.
+ *
  * Revision 1.58  2003/04/07 21:22:54  gouriano
  * correct App exit codes when CException was catched
  *

@@ -167,7 +167,12 @@ public:
     // Return total # of bytes written to "os".
     SIZE_TYPE FlushDiag(CNcbiOstream* os, bool close_diag = false);
 
-
+    // The name of this application, suitable for displaying
+    // or for using as the base name for other files.
+    // Will be the 'name' argument of AppMain if given.
+    // Otherwise will be taken from the actual name of the application file or argv[0].
+    string  GetProgramDisplayName(void) const;
+    
 protected:
     // By default ArgDescriptions are enabled (i.e. required)
     void DisableArgDescriptions(void);
@@ -240,6 +245,21 @@ protected:
 
     // Get home dir for current user
     string GetHomeDir(void);
+    
+    void    SetProgramDisplayName(const string& appname);    
+
+    // Find out the path and name of the executable file this app is running from.
+    // Will be accesible by: GetArguments.GetProgramName().
+    string  FindProgramExecutablePath(int argc, const char* const* argv);
+    
+#if defined(NCBI_OS_DARWIN)
+    void    MacArgMunging
+    (
+        int *argcPtr,  
+        const char* const ** argvPtr,
+        const string& exepath
+    );
+#endif
 
 private:
     void x_SetupStdio(void);
@@ -256,6 +276,7 @@ private:
     THideStdArgs               m_HideArgs;
     TStdioSetupFlags           m_StdioFlags;
     char*                      m_CinBuffer;
+    string                     m_ProgramDisplayName; // app's basename, suitable for display.
 };
 
 
@@ -288,6 +309,9 @@ inline CNcbiRegistry& CNcbiApplication::GetConfig(void) {
     return *m_Config;
 }
 
+inline string  CNcbiApplication::GetProgramDisplayName(void) const {
+    return m_ProgramDisplayName;
+}
 
 END_NCBI_SCOPE
 
@@ -295,6 +319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/06/16 13:52:27  rsmith
+ * Add ProgramDisplayName member. Program name becomes real executable full path. Handle Mac special arg handling better.
+ *
  * Revision 1.31  2003/06/05 18:14:34  lavr
  * SetStdioFlags(): comment from impl not to call twice or not from ctor
  *
