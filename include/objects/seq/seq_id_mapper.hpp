@@ -122,11 +122,6 @@ protected:
 typedef set<CSeq_id_Handle>                     TSeq_id_HandleSet;
 
 
-const size_t kKeyUsageTableSegmentSize = 65536;
-const size_t kKeyUsageTableSize =
-    numeric_limits<TSeq_id_Key>().max() / kKeyUsageTableSegmentSize;
-
-
 class NCBI_XOBJMGR_EXPORT CSeq_id_Mapper : public CObject
 {
 public:
@@ -189,6 +184,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/03/10 16:31:29  vasilche
+* Moved implementation constant to .cpp file.
+*
 * Revision 1.13  2003/02/25 14:48:06  vasilche
 * Added Win32 export modifier to object manager classes.
 *

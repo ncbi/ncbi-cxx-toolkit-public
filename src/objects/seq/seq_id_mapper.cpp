@@ -46,6 +46,11 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+static const size_t kKeyUsageTableSegmentSize = 65536;
+static const size_t kKeyUsageTableSize =
+    numeric_limits<TSeq_id_Key>().max() / kKeyUsageTableSegmentSize;
+
+
 /////////////////////////////////////////////////////////////////////////////
 // to make map<string, something> case-insensitive
 
@@ -1791,6 +1796,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/03/10 16:31:30  vasilche
+* Moved implementation constant to .cpp file.
+*
 * Revision 1.28  2003/02/21 14:33:51  grichenk
 * Display warning but don't crash on uninitialized seq-ids.
 *
