@@ -275,7 +275,7 @@ void CBDB_FileDumperApp::Dump(const CArgs& args,
     if (dump_lob_storage) {
         // Create and configure the simple LOB dumper
         // (We dont need config for that)
-        db_blob_file = new CBDB_BLobFile;
+        db_blob_file.reset(new CBDB_BLobFile);
         dump_file = db_blob_file.get();        
         dump_file->SetFieldOwnership(true);
         
@@ -289,10 +289,10 @@ void CBDB_FileDumperApp::Dump(const CArgs& args,
         dump_lob_storage = parser.IsBlobStorage();
 
         if (dump_lob_storage) {
-            db_blob_file = new CBDB_BLobFile;
+            db_blob_file.reset(new CBDB_BLobFile);
             dump_file = db_blob_file.get();
         } else {
-            db_file = new CBDB_File;
+            db_file.reset(new CBDB_File);
             dump_file = db_file.get();
         }
         dump_file->SetFieldOwnership(true);
@@ -373,11 +373,12 @@ void CBDB_FileDumperApp::Dump(const CArgs& args,
 
         fdump.Dump(NcbiCout, cur);
 
-        return;
-    }
+    } else {
 
-    fdump.Dump(NcbiCout, *dump_file);
+        fdump.Dump(NcbiCout, *dump_file);
+    }
     
+    NcbiCout << "Dumped records: " << fdump.GetRecordsDumped() << NcbiEndl;
 }        
 
 
@@ -423,6 +424,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/06/24 11:12:51  kuznets
+ * Use reset to assign auto_ptr
+ *
  * Revision 1.5  2004/06/23 18:37:13  kuznets
  * Code cleanup, added BLOB dumping without config file
  *
