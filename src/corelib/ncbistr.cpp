@@ -1179,6 +1179,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
     enum EScore { // worst to best
         eForced,
         ePunct,
+        eComma,
         eSpace,
         eNewline
     };
@@ -1217,7 +1218,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                     score = ePunct;
                 } else if (score_pos < len - 1) {
                     // Prefer breaking *after* most types of punctuation.
-                    score = ePunct;
+                    score = ((c == ',') ? eComma : ePunct);
                     ++score_pos;
                 }
             }
@@ -1532,6 +1533,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.113  2004/08/24 15:23:14  shomrat
+ * comma has higher priority over other punctuaution chars
+ *
  * Revision 1.112  2004/07/20 18:44:39  ucko
  * Split, Tokenize: yield no elements for empty strings.
  *
