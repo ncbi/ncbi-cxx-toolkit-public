@@ -128,8 +128,8 @@ void CMsvcConfigure::WriteNcbiconfMsvcSite(const string& full_path) const
     if ( !ofs )
 	    NCBI_THROW(CProjBulderAppException, eFileCreation, full_path);
 
-    ofs << "#ifndef NCBI_CONF_MSVC_SITE_HEADER" << endl;
-    ofs << "#define NCBI_CONF_MSVC_SITE_HEADER" << endl;
+    ofs << "#ifndef CORELIB_CONFIG___NCBICONF_MSVC_SITE__H" << endl;
+    ofs << "#define CORELIB_CONFIG___NCBICONF_MSVC_SITE__H" << endl;
     ofs << endl;
     ofs << endl;
 
@@ -174,7 +174,7 @@ void CMsvcConfigure::WriteNcbiconfMsvcSite(const string& full_path) const
         ofs << "#define " << p->first << " " << p->second << endl;
     }
     ofs << endl;
-    ofs << "#endif // NCBI_CONF_MSVC_SITE_HEADER" << endl;
+    ofs << "#endif // CORELIB_CONFIG___NCBICONF_MSVC_SITE__H" << endl;
 }
 
 
@@ -183,6 +183,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/07 15:22:17  gorelenk
+ * Changed implementation of CMsvcConfigure::WriteNcbiconfMsvcSite .
+ *
  * Revision 1.5  2004/04/19 15:41:50  gorelenk
  * Static helper function s_LibOk changed to function IsLibOk.
  *
