@@ -59,7 +59,10 @@ void SaveToXmlFile  (const string&               file_path,
     // Create dir if no such dir...
     string dir;
     CDirEntry::SplitPath(file_path, &dir);
-    CDir(dir).CreatePath();
+    CDir project_dir(dir);
+    if ( !project_dir.Exists() ) {
+        CDir(dir).CreatePath();
+    }
 
     CNcbiOfstream  ofs(file_path.c_str(), 
                        IOS_BASE::out | IOS_BASE::trunc );
@@ -73,6 +76,73 @@ void SaveToXmlFile  (const string&               file_path,
     xs << project;
 }
 
+
+void PromoteIfDifferent(const string& present_path, 
+                        const string& candidate_path)
+{
+    CNcbiIfstream ifs_present(present_path.c_str(), 
+                              IOS_BASE::in | IOS_BASE::binary);
+    if ( !ifs_present ) {
+        NCBI_THROW(CProjBulderAppException, eFileOpen, present_path);
+    }
+
+    ifs_present.seekg(0, ios::end);
+    size_t file_length_present = ifs_present.tellg();
+    ifs_present.seekg(0, ios::beg);
+
+    CNcbiIfstream ifs_new (candidate_path.c_str(), 
+                              IOS_BASE::in | IOS_BASE::binary);
+    if ( !ifs_new ) {
+        NCBI_THROW(CProjBulderAppException, eFileOpen, candidate_path);
+    }
+
+    ifs_new.seekg(0, ios::end);
+    size_t file_length_new = ifs_new.tellg();
+    ifs_new.seekg(0, ios::beg);
+
+    if (file_length_present != file_length_new) {
+        ifs_present.close();
+        ifs_new.close();
+        CDirEntry(present_path).Remove();
+        CDirEntry(candidate_path).Rename(present_path);
+        return;
+    }
+
+    typedef AutoPtr<char, ArrayDeleter<char> > TAutoArray;
+    TAutoArray buf_present = TAutoArray(new char [file_length_present]);
+    TAutoArray buf_new     = TAutoArray(new char [file_length_new]);
+
+    ifs_present.read(buf_present.get(), file_length_present);
+    ifs_new.read    (buf_new.get(),     file_length_new);
+
+    ifs_present.close();
+    ifs_new.close();
+
+    if (memcmp(buf_present.get(), buf_new.get(), file_length_present) != 0) {
+        CDirEntry(present_path).Remove();
+        CDirEntry(candidate_path).Rename(present_path);
+        return;
+    } else {
+        CDirEntry(candidate_path).Remove();
+    }
+}
+
+
+void SaveIfNewer    (const string&               file_path, 
+                     const CVisualStudioProject& project)
+{
+    // If no such file then simple write it
+    if ( !CDirEntry(file_path).Exists() ) {
+        SaveToXmlFile(file_path, project);
+        return;
+    }
+
+
+    // Save new file to tmp path.
+    string candidate_file_path = file_path + ".candidate";
+    SaveToXmlFile(candidate_file_path, project);
+    PromoteIfDifferent(file_path, candidate_file_path);
+}
 
 //-----------------------------------------------------------------------------
 class CGuidGenerator
@@ -278,6 +348,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/02/10 18:09:12  gorelenk
+ * Added definitions of functions SaveIfNewer and PromoteIfDifferent
+ * - support for file overwriting only if it was changed.
+ *
  * Revision 1.10  2004/02/06 23:14:59  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.

@@ -2,20 +2,11 @@
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_project_context.hpp>
 
-#include "Platforms.hpp"
-#include "Platform.hpp"
-#include "Configurations.hpp"
-#include "Configuration.hpp"
-#include "Tool.hpp"
-#include "File.hpp"
-#include "Files.hpp"
-#include "Filter.hpp"
 
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
 
 #include <algorithm>
-
 
 BEGIN_NCBI_SCOPE
 
@@ -499,7 +490,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
                                                 project_context.ProjectName());
     project_path += MSVC_PROJECT_FILE_EXT;
 
-    SaveToXmlFile(project_path, xmlprj);
+    SaveIfNewer(project_path, xmlprj);
 
     return true;
 
@@ -553,6 +544,7 @@ void CreateDatatoolCustomBuildInfo(const CProjItem&             prj,
     //build_info->m_AdditionalDependencies = tool_exe_location;
 }
 
+
 struct PSourcesExclude
 {
     PSourcesExclude(const list<string>& excluded_sources)
@@ -568,9 +560,8 @@ struct PSourcesExclude
         return m_ExcludedSources.find(src_base) != m_ExcludedSources.end();
     }
 
-    set<string> m_ExcludedSources;
 private:
-    PSourcesExclude();
+    set<string> m_ExcludedSources;
 };
 
 
@@ -737,6 +728,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/02/10 18:09:12  gorelenk
+ * Added definitions of functions SaveIfNewer and PromoteIfDifferent
+ * - support for file overwriting only if it was changed.
+ *
  * Revision 1.13  2004/02/06 23:14:59  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.
