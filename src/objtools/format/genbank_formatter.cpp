@@ -35,6 +35,9 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Author.hpp>
+#include <objects/biblio/Cit_book.hpp>
+#include <objects/biblio/Title.hpp>
+#include <objects/biblio/Imprint.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -375,23 +378,7 @@ void CGenbankFormatter::x_Title
  const CReferenceItem& ref,
  CFFContext& ctx) const
 {
-    string title;
-
-    switch ( ref.GetCategory() ) {
-    case CReferenceItem::eSubmission:
-        title = "Direct Submission";
-        break;
-
-    case CReferenceItem::ePublished:
-        title = ref.GetTitle();
-        break;
-
-    case CReferenceItem::eUnpublished:
-        break;
-
-    default:
-        break;
-    }
+    string title = ref.GetTitle();
 
     if ( NStr::EndsWith(title, ".") ) {
         title.erase(title.length() - 1);
@@ -401,41 +388,128 @@ void CGenbankFormatter::x_Title
 }
 
 
+static size_t s_NumAuthors(const CCit_book::TAuthors& authors)
+{
+    if ( authors.CanGetNames() ) {
+        const CAuth_list::C_Names& names = authors.GetNames();
+        switch ( names.Which() ) {
+        case CAuth_list::C_Names::e_Std:
+            return names.GetStd().size();
+        case CAuth_list::C_Names::e_Ml:
+            return names.GetMl().size();
+        case CAuth_list::C_Names::e_Str:
+            return names.GetStr().size();
+        default:
+            break;
+        }
+    }
+
+    return 0;
+}
+
+
 void CGenbankFormatter::x_Journal
 (list<string>& l,
  const CReferenceItem& ref,
  CFFContext& ctx) const
 {
     string journal;
-
-    if ( ref.GetCategory() == CReferenceItem::eSubmission ) {
-        journal = "Submitted ";
-        if ( ref.GetDate() != 0 ) {
-            journal += '(';
-            DateToString(*ref.GetDate(), journal, true);
-            journal += ") ";
+    if ( ref.GetBook() == 0 ) {  // not from a book
+        
+        
+        if ( ref.GetCategory() == CReferenceItem::eSubmission ) {
+            journal = "Submitted ";
+            if ( ref.GetDate() != 0 ) {
+                journal += '(';
+                DateToString(*ref.GetDate(), journal, true);
+                journal += ") ";
+            }
+            journal += ref.GetJournal();
+        } else {
+            journal = ref.GetJournal();
+            if ( !ref.GetVolume().empty() ) {
+                journal += " " + ref.GetVolume();
+            }
+            if ( !ref.GetIssue().empty() ) {
+                journal += " (" + ref.GetIssue() + ')';
+            }
+            if ( !ref.GetPages().empty() ) {
+                journal += ", " + ref.GetPages();
+            }
+            if ( ref.GetDate() != 0 ) {
+                ref.GetDate()->GetDate(&journal, " (%Y)");
+            }
         }
-        journal += ref.GetJournal();
+        
+        if ( journal.empty() ) {
+            journal = "Unpublished";
+        }
+        
+        
     } else {
-        journal = ref.GetJournal();
-        if ( !ref.GetVolume().empty() ) {
-            journal += " " + ref.GetVolume();
-        }
-        if ( !ref.GetIssue().empty() ) {
-            journal += " (" + ref.GetIssue() + ')';
-        }
-        if ( !ref.GetPages().empty() ) {
-            journal += ", " + ref.GetPages();
-        }
-        if ( ref.GetDate() != 0 ) {
-            journal += " (";
-            ref.GetDate()->GetDate(&journal, "%Y");
-            journal += ')';
-        }
-    }
+        while ( true ) {
+            const CCit_book& book = *ref.GetBook();
+            _ASSERT(book.CanGetImp()  &&  book.CanGetTitle());
+            
+            string year;
 
-    if ( journal.empty() ) {
-        journal = "Unpublished";
+            if ( ref.GetDate() != 0 ) {
+                ref.GetDate()->GetDate(&year, "(%Y)");
+            }
+            
+            if ( ref.GetCategory() == CReferenceItem::eUnpublished ) {
+                journal = "Unpublished " + year;
+                break;
+            }
+            
+            string title = book.GetTitle().GetTitle();
+            if ( title.length() < 3 ) {
+                journal = ".";
+                break;
+            }
+
+            CNcbiOstrstream jour;
+            jour << "(in) ";
+            if ( book.CanGetAuthors() ) {
+                const CCit_book::TAuthors& auth = book.GetAuthors();
+                jour << CReferenceItem::GetAuthString(&auth);
+                size_t num_auth = s_NumAuthors(auth);
+                jour << ((num_auth == 1) ? " (Ed.);" : " (Eds.);") << endl;
+            }
+            jour << NStr::ToUpper(title);
+            if ( !ref.GetVolume().empty()  &&  ref.GetVolume() != "0" ) {
+                jour << " " << ref.GetVolume();
+            }
+
+            if ( !ref.GetIssue().empty() ) {
+                jour << " " << ref.GetIssue();
+            }
+
+            if ( !ref.GetPages().empty() ) {
+                jour << ": " << ref.GetPages();
+            }
+
+            jour << ';' << endl;
+
+            const CCit_book::TImp& imp = book.GetImp();
+            if ( imp.CanGetPub() ) {
+                string affil;
+                CReferenceItem::FormatAffil(imp.GetPub(), affil);
+                if ( !affil.empty() ) {
+                    jour << affil << ' ';
+                }
+            }
+
+            jour << year;
+
+            if ( imp.CanGetPrepub()  &&
+                 imp.GetPrepub() == CImprint::ePrepub_in_press ) {
+                jour << " In press";
+            }
+
+            journal = CNcbiOstrstreamToString(jour);
+            break;
+        }
     }
 
     Wrap(l, "JOURNAL", journal, eSubp);
@@ -733,6 +807,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/18 15:40:28  shomrat
+* Fixes to COMMENT formatting
+*
 * Revision 1.8  2004/03/10 21:29:01  shomrat
 * Fix VERSION formatting when empty
 *
