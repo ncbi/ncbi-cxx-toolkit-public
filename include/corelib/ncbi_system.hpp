@@ -36,73 +36,106 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
 
-#ifdef NCBI_OS_UNIX
-#include <sys/types.h>
-#elif defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
 #endif
+
 
 BEGIN_NCBI_SCOPE
 
 
-// Code for program exit hamndler
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Process limits
+///
+/// If, during the program execution, the process exceed any from limits
+/// (see ELimitsExitCodeMemory) then:
+///   1) Dump info about current program's state to log-stream.
+///      - if defined print handler "handler", then it will be used.
+///      - if defined "parameter", it will be passed into print handler;
+///   2) Terminate the program.
+/// One joint print handler for all limit types is used.
 
+
+/// Code for program's exit handler.
 enum ELimitsExitCode {
-    eLEC_None,    // normal exit
-    eLEC_Memory,  // memory limit
-    eLEC_Cpu      // CPU usage limit
+    eLEC_None,    ///< Normal exit.
+    eLEC_Memory,  ///< Memory limit.
+    eLEC_Cpu      ///< CPU usage limit.
 };
 
-
-// Parameter's type for limit's print handler
+/// Type of parameter for print handler.
 typedef void* TLimitsPrintParameter;
 
-// Type of handler for print dump info after generating any limitation event
+/// Type of handler for printing a dump information after generating
+/// any limitation event.
 typedef void (*TLimitsPrintHandler)(ELimitsExitCode, size_t, CTime&, TLimitsPrintParameter);
 
 
-/* [UNIX only] 
- * Set the limit for the size of dynamic memory(heap) allocated by the process.
- *
- * If, during the program execution, the heap size exceeds "max_heap_size"
- * in any `operator new' (but not malloc, etc.!), then:
- *  1) dump info about current program state to log-stream.
- *     if defined print handler "handler", then it will be used for write dump.
- *     if defined "parameter", it will be carried to print handler;
- *  2) terminate the program.
- *
- * NOTE:  "max_heap_size" == 0 will lift off the heap restrictions.
- */
+/// [UNIX only]  Set memory limit.
+///
+/// Set the limit for the size of dynamic memory (heap) allocated
+/// by the process. 
+/// 
+/// @param max_heap_size
+///   The maximal amount of dynamic memory can be allocated by the process
+///   in any `operator new' (but not malloc, etc.!).
+///   The 0 value lift off the heap restrictions.
+/// @param handler
+///   Pointer to a print handler used for dump output.
+///   Use default handler if passed as NULL.
+/// @param parameter
+///   Parameter carried into the print handler. Can be passed as NULL.
+/// @return 
+///   Completion status.
+NCBI_XNCBI_EXPORT
 extern bool SetHeapLimit(size_t max_heap_size, 
                          TLimitsPrintHandler handler = 0, 
                          TLimitsPrintParameter parameter = 0);
 
 
-/* [UNIX only] 
- * Set the limit for the CPU time that can be consumed by this process.
- *
- * If current process consumes more than "max_cpu_time" seconds of CPU time:
- *  1) dump info about current program state to log-stream.
- *     if defined print handler "handler", then it will be used for write dump.
- *     if defined "parameter", it will be carried to print handler;
- *  2) terminate the program.
- *
- * NOTE:  "max_cpu_time" == 0 will lift off the CPU time restrictions.
- */
+/// [UNIX only]  Set CPU usage limit.
+///
+/// Set the limit for the CPU time that can be consumed by current process.
+/// 
+/// @param max_cpu_time
+///   The maximal amount of seconds of CPU time can be consumed by the process.
+///   The 0 value lift off the CPU time restrictions.
+/// @param handler
+///   Pointer to a print handler used for dump output.
+///   Use default handler if passed as NULL.
+/// @param parameter
+///   Parameter carried into the print handler. Can be passed as NULL.
+/// @return 
+///   Completion status.
+NCBI_XNCBI_EXPORT
 extern bool SetCpuTimeLimit(size_t max_cpu_time,
                             TLimitsPrintHandler handler = 0, 
                             TLimitsPrintParameter parameter = 0);
 
-/* [UNIX & Windows]
- * Return number of active CPUs (never less than 1).
- */
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// System information
+///
+
+/// [UNIX & Windows]  Return number of active CPUs (never less than 1).
 NCBI_XNCBI_EXPORT
 extern unsigned int GetCpuCount(void);
 
 
-/* [UNIX & Windows]
- * Sleep specified number of microseconds/millisecond/seconds
- */
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Sleep
+///
+/// Suspend execution for a time.
+///
+/// Sleep for at least the specified number of microsec/millisec/seconds.
+/// Time slice restrictions are imposed by platform/OS.
+/// On UNIX the sleep can be interrupted by a signal.
+
+/// [UNIX & Windows]
+
 NCBI_XNCBI_EXPORT
 extern void SleepSec(unsigned long sec);
 
@@ -112,84 +145,6 @@ extern void SleepMilliSec(unsigned long ml_sec);
 NCBI_XNCBI_EXPORT
 extern void SleepMicroSec(unsigned long mc_sec);
 
-/// Process identifier
-#ifdef NCBI_OS_UNIX
-typedef pid_t TPid;
-#elif defined(NCBI_OS_MSWIN)
-typedef DWORD TPid;
-#else
-typedef int TPid;
-#endif
-
-NCBI_XNCBI_EXPORT
-extern TPid GetPID(void);
-
-class NCBI_XNCBI_EXPORT CPIDGuardException
-    : EXCEPTION_VIRTUAL_BASE public CException
-{
-public:
-    enum EErrCode {
-        eStillRunning, ///< The process listed in the file is still around.
-        eCouldntOpen   ///< Unable to open the PID file for writing
-    };
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eStillRunning: return "eStillRunning";
-        case eCouldntOpen:  return "eCouldntOpen";
-        default:            return CException::GetErrCodeString();
-        }
-    }
-
-    /// Constructor.
-    CPIDGuardException(const char* file, int line,
-                       const CException* prev_exception, EErrCode err_code,
-                       const string& message, TPid pid = 0)
-        throw()
-        : CException(file, line, prev_exception, CException::eInvalid,
-                     message),
-          m_PID(pid)
-        NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CPIDGuardException, CException);
-
-public: // lost by N_E_D_I
-    virtual void ReportExtra(ostream& out) const
-        { out << "pid " << m_PID; }
-    TPid GetPID(void) const throw() { return m_PID; }
-
-protected:
-    void x_Assign(const CPIDGuardException& src)
-        { CException::x_Assign(src);  m_PID = src.m_PID; }
-
-private:
-    TPid m_PID;
-};
-
-class NCBI_XNCBI_EXPORT CPIDGuard
-{
-public:
-    /// If "filename" contains no path, make it relative to "dir"
-    /// (which defaults to /tmp on Unix and %HOME% on Windows).
-    /// If the file already exists and identifies a live process,
-    /// throws CPIDGuardException.
-    CPIDGuard(const string& filename, const string& dir = kEmptyStr);
-
-    ~CPIDGuard() { Release(); }
-
-    /// Returns non-zero if there was a stale file.
-    TPid GetOldPID(void) { return m_OldPID; }
-
-    /// Removes the file.
-    void Release(void);
-
-    /// @param pid the new process ID to store (defaults to the
-    /// current PID); useful when the real work occurs in a child
-    /// process that outlives the parent.
-    void UpdatePID(TPid pid = 0);
-
-private:
-    string m_Path;
-    TPid   m_OldPID;
-};
 
 END_NCBI_SCOPE
 
@@ -197,6 +152,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/09/25 16:52:47  ivanov
+ * CPIDGuard class moved to ncbi_process.hpp
+ *
  * Revision 1.13  2003/09/23 21:13:44  ucko
  * +CPIDGuard::UpdatePID
  *
