@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/01/25 20:21:18  thiessen
+* fix ostrstream memory leaks
+*
 * Revision 1.16  2001/01/09 21:45:00  thiessen
 * always use pdbID as title if known
 *
@@ -333,6 +336,7 @@ std::string Sequence::GetTitle(void) const
     else
         oss << '?';
     oss << '\0';
+    auto_ptr<char> chars(oss.str());    // frees memory upon function return
     return std::string(oss.str());
 }
 

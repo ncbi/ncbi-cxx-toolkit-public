@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2001/01/25 20:21:18  thiessen
+* fix ostrstream memory leaks
+*
 * Revision 1.44  2001/01/18 19:37:28  thiessen
 * save structure (re)alignments to asn output
 *
@@ -407,6 +410,7 @@ static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
         std::string host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
         TESTMSG("Trying to load Biostruc via " << host << path << '?' << args.str());
         CConn_HttpStream httpStream(host, path, args.str());
+        delete args.str();
 
         // load Biostruc from this stream
         CObjectIStreamAsnBinary asnStream(httpStream);
@@ -489,6 +493,7 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
                 ERR_POST(Warning << "Failed to read Biostruc from " << biostrucFile.str()
                     << "\nreason: " << err);
             }
+            delete biostrucFile.str();
 
             // ... else try network
             if (!gotBiostruc) {
@@ -906,6 +911,7 @@ void StructureObject::RealignStructure(int nCoords,
         << " with master " << multiple->GetSequenceOfRow(0)->GetTitle()
         << ", as computed by Cn3D" << '\0';
     feature->SetName(std::string(oss.str()));
+    delete oss.str();
     feature->SetType(CBiostruc_feature::eType_alignment);
     CRef<CBiostruc_feature::C_Location> location(new CBiostruc_feature::C_Location());
     feature->SetLocation(location);

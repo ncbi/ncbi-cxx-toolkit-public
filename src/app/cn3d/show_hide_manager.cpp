@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/01/25 20:21:18  thiessen
+* fix ostrstream memory leaks
+*
 * Revision 1.6  2000/12/29 19:23:39  thiessen
 * save row order
 *
@@ -125,6 +128,7 @@ public:
         if (m->pdbChain != ' ') oss << '_' << (char) m->pdbChain;
         oss << " d" << labelNum << '\0';
         label = oss.str();
+        delete oss.str();
     }
     bool IsVisible(const ShowHideManager *shm) const
     {
