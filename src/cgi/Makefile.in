@@ -7,7 +7,7 @@
 #################################
 
 LIB_PROJ = cgi fcgi
-SUB_PROJ = demo test
+SUB_PROJ = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
