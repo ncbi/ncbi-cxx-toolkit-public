@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.16  2004/03/01 16:21:55  kholodov
+* Fixed: double deletion in calling subsequently CResultset::Close() and delete
+*
 * Revision 1.15  2004/02/26 18:52:34  kholodov
 * Added: more trace messages
 *
@@ -280,12 +283,14 @@ void CStatement::Action(const CDbapiEvent& e)
 
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(e.GetSource());
-        CResultSet *rs;
         if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
             _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
         }
-        else if((rs = dynamic_cast<CResultSet*>(e.GetSource())) != 0 ) {
+    }
+    if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
+        CResultSet *rs;
+        if((rs = dynamic_cast<CResultSet*>(e.GetSource())) != 0 ) {
             if( rs->GetCDB_Result() == m_rs ) {
                 _TRACE("Clearing cached CDB_Result " << (void*)m_rs); 
                 m_rs = 0;

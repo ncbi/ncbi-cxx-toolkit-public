@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.27  2004/03/01 16:21:55  kholodov
+* Fixed: double deletion in calling subsequently CResultset::Close() and delete
+*
 * Revision 1.26  2004/02/19 15:23:21  kholodov
 * Fixed: attempt to delete cached CDB_Result when it was already deleted by the CResultSet object
 *
@@ -365,6 +368,8 @@ ostream& CResultSet::GetBlobOStream(size_t blob_size,
 void CResultSet::Close()
 {
     delete m_rs;
+    Notify(CDbapiClosedEvent(this));
+    m_rs = 0;
     delete m_istr;
     m_istr = 0;
     delete m_ostr;
