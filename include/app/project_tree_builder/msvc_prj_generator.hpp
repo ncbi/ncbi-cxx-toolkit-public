@@ -27,7 +27,25 @@ private:
     const string m_Version;
     const string m_Keyword;
 
-    // Prohibited to:
+    /// Helpers:
+    static void CollectSources(const CProjItem& project,
+                               const CMsvcPrjProjectContext& context,
+                               list<string> * pRelPathes);
+
+
+    static void CollectHeaders(const CProjItem& project,
+                               const CMsvcPrjProjectContext& context,
+                               list<string> * pRelPathes);
+
+    static void CollectHeaderDirs(const CProjItem& project,
+                               const CMsvcPrjProjectContext& context,
+                               list<string> * pRelDirs);
+
+    static void CollectInlines(const CProjItem& project,
+                               const CMsvcPrjProjectContext& context,
+                               list<string> * pRelPathes);
+
+    /// Prohibited to.
     CMsvcProjectGenerator(void);
     CMsvcProjectGenerator(const CMsvcProjectGenerator&);
     CMsvcProjectGenerator& operator = (const CMsvcProjectGenerator&);
