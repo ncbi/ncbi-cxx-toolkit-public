@@ -322,6 +322,9 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
         ++index;
 
         if (translate) {
+            ASSERT(strand == eNa_strand_both ||
+                   strand == eNa_strand_plus ||
+                   strand == eNa_strand_minus);
 
             // Get both strands of the original nucleotide sequence with
             // sentinels
@@ -353,6 +356,10 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             BlastMaskDNAToProtein(&mask, *itr->seqloc, itr->scope);
 
         } else if (is_na) {
+
+            ASSERT(strand == eNa_strand_both ||
+                   strand == eNa_strand_plus ||
+                   strand == eNa_strand_minus);
 
             pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
                 GetSequence(*itr->seqloc, encoding, itr->scope, strand, true));
@@ -644,7 +651,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
     }
 
-    return make_pair(AutoPtr<Uint1, CDeleter<Uint1> >(buf), sv.size());
+    return make_pair(AutoPtr<Uint1, CDeleter<Uint1> >(buf), buflen);
 }
 
 #if 0
@@ -837,6 +844,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2003/11/06 21:25:37  camacho
+* Revert previous change, add assertions
+*
 * Revision 1.47  2003/11/04 17:14:22  dondosha
 * Length in subject sequence block C structure should not include sentinels
 *
