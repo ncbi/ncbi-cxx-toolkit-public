@@ -33,11 +33,7 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
-#include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Author.hpp>
-#include <objects/biblio/Cit_book.hpp>
-#include <objects/biblio/Title.hpp>
-#include <objects/biblio/Imprint.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -179,6 +175,7 @@ void CGenbankFormatter::FormatDefline
     text_os.AddParagraph(l);
 }
 
+
 ///////////////////////////////////////////////////////////////////////////
 //
 // Accession
@@ -187,11 +184,11 @@ void CGenbankFormatter::FormatAccession
 (const CAccessionItem& acc, 
  IFlatTextOStream& text_os)
 {
-    string acc_line = x_FormatAccession(acc, ';');
+    string acc_line = x_FormatAccession(acc, ' ');
     
     if ( !acc_line.empty() ) {
         list<string> l;
-        Wrap(l, "ACCESSION", x_FormatAccession(acc, ' '));
+        Wrap(l, "ACCESSION", acc_line);
         text_os.AddParagraph(l);
     }
 }
@@ -392,135 +389,13 @@ void CGenbankFormatter::x_Title
 }
 
 
-static size_t s_NumAuthors(const CCit_book::TAuthors& authors)
-{
-    if ( authors.CanGetNames() ) {
-        const CAuth_list::C_Names& names = authors.GetNames();
-        switch ( names.Which() ) {
-        case CAuth_list::C_Names::e_Std:
-            return names.GetStd().size();
-        case CAuth_list::C_Names::e_Ml:
-            return names.GetMl().size();
-        case CAuth_list::C_Names::e_Str:
-            return names.GetStr().size();
-        default:
-            break;
-        }
-    }
-
-    return 0;
-}
-
-
 void CGenbankFormatter::x_Journal
 (list<string>& l,
  const CReferenceItem& ref,
  CFFContext& ctx) const
 {
     string journal;
-    if ( ref.GetBook() == 0 ) {  // not from a book
-        
-        switch ( ref.GetCategory() ) {
-        case CReferenceItem::eSubmission:
-            journal = "Submitted ";
-            if ( ref.GetDate() != 0 ) {
-                journal += '(';
-                DateToString(*ref.GetDate(), journal, true);
-                journal += ") ";
-            }
-            journal += ref.GetJournal();
-            break;
-        case CReferenceItem::eUnpublished:
-            journal = ref.GetJournal();
-            break;
-        case CReferenceItem::ePublished:
-            journal = ref.GetJournal();
-            if ( !ref.GetVolume().empty() ) {
-                journal += " " + ref.GetVolume();
-            }
-            if ( !ref.GetIssue().empty() ) {
-                journal += " (" + ref.GetIssue() + ')';
-            }
-            if ( !ref.GetPages().empty() ) {
-                journal += ", " + ref.GetPages();
-            }
-            if ( ref.GetDate() != 0 ) {
-                ref.GetDate()->GetDate(&journal, " (%Y)");
-            }
-            break;
-        default:
-            break;
-        }
-        
-        if ( journal.empty() ) {
-            journal = "Unpublished";
-        }
-    } else {
-        while ( true ) {
-            const CCit_book& book = *ref.GetBook();
-            _ASSERT(book.CanGetImp()  &&  book.CanGetTitle());
-            
-            string year;
-
-            if ( ref.GetDate() != 0 ) {
-                ref.GetDate()->GetDate(&year, "(%Y)");
-            }
-            
-            if ( ref.GetCategory() == CReferenceItem::eUnpublished ) {
-                journal = "Unpublished " + year;
-                break;
-            }
-            
-            string title = book.GetTitle().GetTitle();
-            if ( title.length() < 3 ) {
-                journal = ".";
-                break;
-            }
-
-            CNcbiOstrstream jour;
-            jour << "(in) ";
-            if ( book.CanGetAuthors() ) {
-                const CCit_book::TAuthors& auth = book.GetAuthors();
-                jour << CReferenceItem::GetAuthString(&auth);
-                size_t num_auth = s_NumAuthors(auth);
-                jour << ((num_auth == 1) ? " (Ed.);" : " (Eds.);") << endl;
-            }
-            jour << NStr::ToUpper(title);
-            if ( !ref.GetVolume().empty()  &&  ref.GetVolume() != "0" ) {
-                jour << " " << ref.GetVolume();
-            }
-
-            if ( !ref.GetIssue().empty() ) {
-                jour << " " << ref.GetIssue();
-            }
-
-            if ( !ref.GetPages().empty() ) {
-                jour << ": " << ref.GetPages();
-            }
-
-            jour << ';' << endl;
-
-            const CCit_book::TImp& imp = book.GetImp();
-            if ( imp.CanGetPub() ) {
-                string affil;
-                CReferenceItem::FormatAffil(imp.GetPub(), affil);
-                if ( !affil.empty() ) {
-                    jour << affil << ' ';
-                }
-            }
-
-            jour << year;
-
-            if ( imp.CanGetPrepub()  &&
-                 imp.GetPrepub() == CImprint::ePrepub_in_press ) {
-                jour << " In press";
-            }
-
-            journal = CNcbiOstrstreamToString(jour);
-            break;
-        }
-    }
-
+    x_FormatRefJournal(journal, ref);
     Wrap(l, "JOURNAL", journal, eSubp);
 }
 
@@ -572,14 +447,6 @@ void CGenbankFormatter::FormatComment
     } else {
         Wrap(l, "COMMENT", comment.GetComment());
     }
-
-    /*
-    if ( !l.empty() ) {
-        if ( !NStr::EndsWith(l.back(), ".") ) {
-            l.back() += ".";
-        }
-    }
-    */
 
     text_os.AddParagraph(l);
 }
@@ -818,6 +685,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/04/13 16:47:53  shomrat
+* Journal formatting moved to base class
+*
 * Revision 1.10  2004/03/26 17:25:36  shomrat
 * fixes to reference formatting
 *
