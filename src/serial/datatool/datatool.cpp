@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/11/15 20:01:34  vasilche
+* Fixed GCC error
+*
 * Revision 1.18  1999/11/15 19:36:16  vasilche
 * Fixed warnings on GCC
 *
@@ -409,7 +412,9 @@ void LoadDefinitions(CFileSet& fileSet, const list<FileInfo>& names)
         }
         try {
 			SourceFile fName(name);
-            fileSet.AddFile(ASNParser(ASNLexer(fName)).Modules(name));
+            ASNLexer lexer(fName);
+            ASNParser parser(lexer);
+            fileSet.AddFile(parser.Modules(name));
         }
         catch (exception& exc) {
             ERR_POST("Parsing failed: " << exc.what());
