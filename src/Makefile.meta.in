@@ -24,6 +24,11 @@ builddir = @builddir@
 
 RWL = @top_srcdir@/scripts/run_with_lock.sh
 
+### Tests config variables
+
+check_run = @top_srcdir@/scripts/check_run.sh
+check_add = @top_srcdir@/scripts/check_add.sh
+
 ### One-level build -- [USR_PROJ] makefiles
 
 NOTK_BRA = test "$$expendable" = true || case "$(MFLAGS)" in *k*) ;; *)
@@ -79,6 +84,25 @@ APPP_KET = || $(NOTK_BRA) exit 3 $(NOTK_KET) ; \
    done ; \
 fi
 
+CHECK_BRA = \
+if test -f "$(check_run)"; then \
+  $(check_run) $(MAKE) $(MFLAGS)
+CHECK_KET = ||  exit 4 ; \
+fi
+
+CHECK_ADD_BRA = \
+if test ! -z "$(APP_PROJ)"  ||  test ! -z "@UNIX_APP_PROJ@" \
+	|| test ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
+   x_project="$(APP_PROJ) @UNIX_APP_PROJ@ - $(EXPENDABLE_APP_PROJ)" ; \
+   expendable=false ; \
+   for i in $$x_project ; do \
+      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
+      $(check_add) $(srcdir) $(x_project) $$i
+CHECK_ADD_KET = ||  exit 5 ; \
+   done ; \
+fi
+
+
 all:
 	@$(USRP_BRA) all   $(USRP_KET)
 	@$(LIBP_BRA) all   $(LIBP_KET)
@@ -91,9 +115,13 @@ purge:
 	@$(USRP_BRA) purge $(USRP_KET)
 	@$(LIBP_BRA) purge $(LIBP_KET)
 	@$(APPP_BRA) purge $(APPP_KET)
-
 libs:
 	@$(LIBP_BRA) all   $(LIBP_KET)
+check:
+	@$(CHECK_BRA) check_add $(CHECK_KET)
+check_add:
+	@$(CHECK_ADD_BRA)  $(CHECK_ADD_KET)
+
 
 ### Recursive build -- in the [SUB_PROJ] directories
 
@@ -120,6 +148,11 @@ clean_r: clean
 	@$(SUB_BRA) clean_r $(SUB_KET)
 purge_r: purge 
 	@$(SUB_BRA) purge_r $(SUB_KET)
+check_r:
+	@$(CHECK_BRA) check_add_r $(CHECK_KET)
+check_add_r: check_add
+	@$(SUB_BRA) check_add_r $(SUB_KET)
+
 
 top_srcdir = @top_srcdir@
 PROJECTS = @PROJECTS@ # File listing relevant project directories.
@@ -150,3 +183,10 @@ clean_p: $(RELEVANT_FILE)
 purge_p: $(RELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) purge; else true; fi
 	@if $(RELEVANT_SUBS); then $(SUB_BRA) purge_p $(SUB_KET); else true; fi
+
+check_p: $(RELEVANT_FILE)
+	@$(CHECK_BRA) check_add_p $(CHECK_KET)
+
+check_add_p: $(RELEVANT_FILE)
+	@if $(RELEVANT_DIR); then $(CHECK_ADD_BRA) $(CHECK_ADD_KET); else true; fi
+	@if $(RELEVANT_SUBS); then $(SUB_BRA) check_add_p $(SUB_KET); else true; fi
