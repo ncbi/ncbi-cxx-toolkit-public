@@ -41,12 +41,6 @@
 #include <stdlib.h>
 
 
-#define MAX_IP_ADDR_LEN  16 /* sizeof("255.255.255.255") */
-#ifndef   MAXHOSTNAMELEN
-#  define MAXHOSTNAMELEN 64
-#endif
-
-
 static const char* s_GetValue(const char* service, const char* param,
                               char* value, size_t value_size,
                               const char* def_value)
@@ -362,7 +356,8 @@ extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
     if (!user_header || !(newlen = strlen(user_header)))
         return 1/*success*/;
 
-    new_header = realloc((void*) info->http_user_header, oldlen + newlen + 1);
+    new_header = (char*)
+        realloc((void*) info->http_user_header, oldlen + newlen + 1);
     if (!new_header)
         return 0/*failure*/;
 
@@ -395,7 +390,7 @@ static int/*bool*/ s_OverrideOrDeleteUserHeader(SConnNetInfo* info,
         return 1/*success*/;
 
     if (!do_delete) {
-        if (!(new_header = malloc(newhdrlen + 1)))
+        if (!(new_header = (char*) malloc(newhdrlen + 1)))
             return 0/*failure*/;
         memcpy(new_header, user_header, newhdrlen + 1);
     } else
@@ -445,7 +440,7 @@ static int/*bool*/ s_OverrideOrDeleteUserHeader(SConnNetInfo* info,
 
             if (len != linelen) {
                 if (len > linelen) {
-                    char*  temp   = realloc(hdr, hdrlen + len - linelen + 1);
+                    char*  temp   = (char*) realloc(hdr, hdrlen+len-linelen+1);
                     size_t offset = (size_t)(line - hdr);
                     if (!temp) {
                         retval = 0/*failure*/;
@@ -1361,9 +1356,9 @@ extern const char* StringToHostPort(const char*     str,
                                     unsigned int*   host,
                                     unsigned short* port)
 {
-    char abuf[MAXHOSTNAMELEN];
     unsigned short p;
     unsigned int h;
+    char abuf[256];
     const char* s;
     size_t alen;
     int n = 0;
@@ -1399,7 +1394,7 @@ extern size_t HostPortToString(unsigned int   host,
                                char*          buf,
                                size_t         buflen)
 {
-    char abuf[MAX_IP_ADDR_LEN + 10/*:port*/];
+    char abuf[16/*sizeof("255.255.255.255")*/ + 10/*:port*/];
     size_t n;
 
     if (!buf || !buflen)
@@ -1420,6 +1415,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2002/11/01 20:13:50  lavr
+ * Remove MAXHOSTNAMELEN and MAX_IP_ADDR_LEN macros
+ *
  * Revision 6.40  2002/10/28 15:42:38  lavr
  * Use "ncbi_ansi_ext.h" privately and use strncpy0()
  *
