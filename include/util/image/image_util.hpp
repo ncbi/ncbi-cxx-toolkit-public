@@ -50,6 +50,12 @@ public:
     static CImage* Scale(const CImage& image,
                          size_t width, size_t height,
                          EScale scale = eScale_Average);
+
+    // flip an image along the X axis (its width)
+    static void FlipX(CImage& image);
+
+    // flip an axis along the Y axis (its height)
+    static void FlipY(CImage& image);
 };
 
 
@@ -59,6 +65,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/18 13:51:26  dicuccio
+ * Added FlipX() and FlipY() to flip an image about an axis
+ *
  * Revision 1.1  2003/11/03 15:12:46  dicuccio
  * Initial revision
  *
