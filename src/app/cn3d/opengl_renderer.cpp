@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/01/30 20:51:19  thiessen
+* minor fixes
+*
 * Revision 1.31  2000/12/19 16:39:09  thiessen
 * tweaks to show/hide
 *
@@ -1037,19 +1040,21 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
 
             /* figure out which points on the previous circle "match" best
                with these, to minimize envelope twisting */
-            for (m = 0; m < sides; m++) {
-                len = 0.0;
-                for (j = 0; j < sides; j++) {
-                    k = j + m;
-                    if (k >= sides)
-                        k -= sides;
-                    len += (Cx[k] - pCx[j]) * (Cx[k] - pCx[j]) +
-                           (Cy[k] - pCy[j]) * (Cy[k] - pCy[j]) +
-                           (Cz[k] - pCz[j]) * (Cz[k] - pCz[j]);
-                }
-                if (m == 0 || len < prevlen) {
-                    prevlen = len;
-                    offset = m;
+            if (i > 0) {
+                for (m = 0; m < sides; m++) {
+                    len = 0.0;
+                    for (j = 0; j < sides; j++) {
+                        k = j + m;
+                        if (k >= sides)
+                            k -= sides;
+                        len += (Cx[k] - pCx[j]) * (Cx[k] - pCx[j]) +
+                               (Cy[k] - pCy[j]) * (Cy[k] - pCy[j]) +
+                               (Cz[k] - pCz[j]) * (Cz[k] - pCz[j]);
+                    }
+                    if (m == 0 || len < prevlen) {
+                        prevlen = len;
+                        offset = m;
+                    }
                 }
             }
 
@@ -1077,9 +1082,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
                 dQt.normalize();
                 glNormal3d(-dQt.x, -dQt.y, -dQt.z);
                 for (j = sides - 1; j >= 0; j--) {
-                    k = j + offset;
-                    if (k >= sides) k -= sides;
-                    glVertex3d(Cx[k], Cy[k], Cz[k]);
+                    glVertex3d(Cx[j], Cy[j], Cz[j]);
                 }
                 glEnd();
             }

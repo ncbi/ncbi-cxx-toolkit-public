@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/01/30 20:51:18  thiessen
+* minor fixes
+*
 * Revision 1.33  2001/01/18 19:37:28  thiessen
 * save structure (re)alignments to asn output
 *
@@ -323,8 +326,8 @@ void AlignmentManager::RealignAllSlaves(void) const
 {
     const BlockMultipleAlignment *multiple = GetCurrentMultipleAlignment();
     if (!multiple) return;
-    BlockMultipleAlignment::UngappedAlignedBlockList *blocks = multiple->GetUngappedAlignedBlocks();
-    if (!blocks) {
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
+    if (!blocks.get()) {
         ERR_POST(Warning << "Can't realign slaves with no aligned residues!");
         return;
     }
@@ -333,7 +336,6 @@ void AlignmentManager::RealignAllSlaves(void) const
     for (b=blocks->begin(); b!=be; b++) nResidues += (*b)->width;
     if (nResidues <= 2) {
         ERR_POST(Warning << "Can't realign slaves with < 3 aligned residues!");
-        delete blocks;
         return;
     }
 
@@ -341,7 +343,6 @@ void AlignmentManager::RealignAllSlaves(void) const
     const Molecule *masterMol, *slaveMol;
     if (!masterSeq || !(masterMol = masterSeq->molecule)) {
         ERR_POST(Warning << "Can't realign slaves to non-structured master!");
-        delete blocks;
         return;
     }
 
@@ -378,7 +379,6 @@ void AlignmentManager::RealignAllSlaves(void) const
         }
     }
 
-    delete blocks;
     delete masterSeqIndexes;
     delete slaveSeqIndexes;
     delete masterCoords;

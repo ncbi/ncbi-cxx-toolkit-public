@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/01/30 20:51:20  thiessen
+* minor fixes
+*
 * Revision 1.21  2000/12/15 15:51:48  thiessen
 * show/hide system installed
 *
@@ -419,7 +422,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         atomStyle->radius = 0.0;
 
     // determine color
-    static Vector unalignedColor(175.0/255, 175.0/255, 175.0/255);
+    static const Vector unalignedColor(175.0/255, 175.0/255, 175.0/255);
     StyleSettings::eColorScheme
         colorStyle = backboneStyle ? backboneStyle->colorScheme : generalStyle->colorScheme;
     switch (colorStyle) {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/01/30 20:51:19  thiessen
+* minor fixes
+*
 * Revision 1.13  2001/01/04 18:20:52  thiessen
 * deal with accession seq-id
 *
@@ -262,7 +265,7 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
     }
 
     // create a single Seq-annot, with 'align' data that holds one Seq-align per slave
-    SeqAnnotList *newAsnAlignmentData = new SeqAnnotList(1);
+    auto_ptr<SeqAnnotList> newAsnAlignmentData(new SeqAnnotList(1));
     CSeq_annot *seqAnnot = new CSeq_annot();
     newAsnAlignmentData->back().Reset(seqAnnot);
 
@@ -270,11 +273,8 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
     seqAligns.resize(multiple->NRows() - 1);
     CSeq_annot::C_Data::TAlign::iterator sa = seqAligns.begin();
 
-    BlockMultipleAlignment::UngappedAlignedBlockList *blocks = multiple->GetUngappedAlignedBlocks();
-    if (blocks->size() == 0) {
-        delete blocks;
-        return NULL;
-    }
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
+    if (blocks->size() == 0) return NULL;
 
     // create Seq-aligns, using dendiag storage for BlockMultipleAlignment that uses UngappedAlignedBlock
     int newRow;
@@ -312,11 +312,9 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
         }
     }
 
-    delete blocks;
-
-    AlignmentSet *newAlignmentSet;
+    auto_ptr<AlignmentSet> newAlignmentSet;
     try {
-        newAlignmentSet = new AlignmentSet(parent, *newAsnAlignmentData);
+        newAlignmentSet.reset(new AlignmentSet(parent, *newAsnAlignmentData));
     } catch (exception& e) {
         ERR_POST(Error
             << "AlignmentSet::CreateFromMultiple() - failed to create AlignmentSet from new asn object; "
@@ -324,8 +322,8 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
         return NULL;
     }
 
-    newAlignmentSet->newAsnAlignmentData = newAsnAlignmentData;
-    return newAlignmentSet;
+    newAlignmentSet->newAsnAlignmentData = newAsnAlignmentData.release();
+    return newAlignmentSet.release();
 }
 
 

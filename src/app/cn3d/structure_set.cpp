@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2001/01/30 20:51:19  thiessen
+* minor fixes
+*
 * Revision 1.45  2001/01/25 20:21:18  thiessen
 * fix ostrstream memory leaks
 *
@@ -934,8 +937,8 @@ void StructureObject::RealignStructure(int nCoords,
     graphAlignment.GetObject().SetAlignment().resize(2);
 
     // fill out sequence alignment intervals
-    BlockMultipleAlignment::UngappedAlignedBlockList *blocks = multiple->GetUngappedAlignedBlocks();
-    if (blocks) {
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
+    if (blocks.get()) {
         CRef<CChem_graph_pntrs>
             masterCGPs(new CChem_graph_pntrs()),
             slaveCGPs(new CChem_graph_pntrs());
