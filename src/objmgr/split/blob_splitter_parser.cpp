@@ -113,7 +113,7 @@ void CBlobSplitterImpl::CopySkeleton(CSeq_entry& dst, const CSeq_entry& src)
         NcbiEndl;
 #endif
 
-    if ( m_Params.m_Verbose ) {
+    if ( m_Params.m_Verbose && m_Skeleton == &dst ) {
         // skeleton statistics
         s_Sizer.Set(*m_Skeleton, m_Params);
         CSize size(s_Sizer);
@@ -290,6 +290,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/03/24 18:29:19  vasilche
+* Fixed performance problem in verbose output.
+*
 * Revision 1.6  2004/03/05 17:40:34  vasilche
 * Added 'verbose' option to splitter parameters.
 *
