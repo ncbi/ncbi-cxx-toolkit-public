@@ -1128,7 +1128,7 @@ BLAST_ScoreBlkMatFill(BlastScoreBlk* sbp, char* matrix_path)
 }
 
 Blast_ResFreq*
-Blast_ResFreqDestruct(Blast_ResFreq* rfp)
+Blast_ResFreqFree(Blast_ResFreq* rfp)
 {
 	if (rfp == NULL)
 		return NULL;
@@ -1165,7 +1165,7 @@ Blast_ResFreqNew(const BlastScoreBlk* sbp)
 	rfp->prob0 = (double*) calloc(sbp->alphabet_size, sizeof(double));
 	if (rfp->prob0 == NULL) 
 	{
-		rfp = Blast_ResFreqDestruct(rfp);
+		rfp = Blast_ResFreqFree(rfp);
 		return rfp;
 	}
 	rfp->prob = rfp->prob0 - sbp->alphabet_start;
@@ -2177,14 +2177,14 @@ BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 cont
 	retval = Blast_KarlinBlkCalc(sbp->kbp_std[context_number], sbp->sfp[context_number]);
 	if (retval)
 	{
-		rfp = Blast_ResFreqDestruct(rfp);
-		stdrfp = Blast_ResFreqDestruct(stdrfp);
+		rfp = Blast_ResFreqFree(rfp);
+		stdrfp = Blast_ResFreqFree(stdrfp);
 		return retval;
 	}
 	sbp->kbp_psi[context_number] = Blast_KarlinBlkNew();
 	retval = Blast_KarlinBlkCalc(sbp->kbp_psi[context_number], sbp->sfp[context_number]);
-	rfp = Blast_ResFreqDestruct(rfp);
-	stdrfp = Blast_ResFreqDestruct(stdrfp);
+	rfp = Blast_ResFreqFree(rfp);
+	stdrfp = Blast_ResFreqFree(stdrfp);
 
 	return retval;
 }
@@ -2208,7 +2208,7 @@ Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp)
 	sbp->kbp_ideal = Blast_KarlinBlkNew();
 	Blast_KarlinBlkCalc(sbp->kbp_ideal, sfp);
 
-	stdrfp = Blast_ResFreqDestruct(stdrfp);
+	stdrfp = Blast_ResFreqFree(stdrfp);
 	sfp = Blast_ScoreFreqFree(sfp);
 
     return status;
@@ -3621,6 +3621,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.103  2004/11/30 15:27:16  camacho
+ * Rename Blast_ResFreqDestruct to Blast_ResFreqFree
+ *
  * Revision 1.102  2004/11/29 13:53:23  camacho
  * Renamed Blast_ScoreFreq structure free function
  *
@@ -3809,7 +3812,7 @@ BLAST_ComputeLengthAdjustment(double K,
  * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure, renamed some functions to start with Blast_Karlin, made Blast_KarlinBlkFree public
  *
  * Revision 1.56  2004/04/12 18:57:31  madden
- * Rename BLAST_ResFreq to Blast_ResFreq, make Blast_ResFreqNew, Blast_ResFreqDestruct, and Blast_ResFreqStdComp non-static
+ * Rename BLAST_ResFreq to Blast_ResFreq, make Blast_ResFreqNew, Blast_ResFreqFree, and Blast_ResFreqStdComp non-static
  *
  * Revision 1.55  2004/04/08 13:53:10  papadopo
  * fix doxygen warning

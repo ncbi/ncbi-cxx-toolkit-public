@@ -1168,7 +1168,7 @@ BLAST_GetStandardAaProbabilities()
         retval[i] = standard_probabilities->prob[i];
     }
 
-    Blast_ResFreqDestruct(standard_probabilities);
+    Blast_ResFreqFree(standard_probabilities);
     sbp = BlastScoreBlkFree(sbp);
     return retval;
 }

@@ -477,7 +477,7 @@ Blast_ResFreq* Blast_ResFreqNew(const BlastScoreBlk* sbp);
 /** Deallocates Blast_ResFreq and prob0 element.
  * @param rfp the Blast_ResFreq to be deallocated.
 */
-Blast_ResFreq* Blast_ResFreqDestruct(Blast_ResFreq* rfp);
+Blast_ResFreq* Blast_ResFreqFree(Blast_ResFreq* rfp);
 
 
 /** Calculates residues frequencies given a standard distribution.
