@@ -754,6 +754,9 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
     } else if (prot.NotEmpty()  &&  prot->IsSetDesc()
                &&  !prot->GetDesc().empty()) {
         result = prot->GetDesc();
+    } else if (prot.NotEmpty()  &&  prot->IsSetActivity()
+               &&  !prot->GetActivity().empty()) {
+        result = prot->GetActivity().front();
     } else if (gene) {
         string gene_name;
         if (gene->IsSetLocus()  &&  !gene->GetLocus().empty()) {
@@ -873,6 +876,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.29  2003/12/29 22:16:19  ucko
+* s_TitleFromProtein: consult activity if name and desc are both empty.
+*
 * Revision 1.28  2003/08/20 20:28:12  vasilche
 * Fixed null pointer exception when there is no gene in s_TitleFromSegment().
 *
