@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2001/12/21 23:08:48  thiessen
+* add residue info when structure selected
+*
 * Revision 1.90  2001/12/15 03:15:59  thiessen
 * adjustments for slightly changed object loader Set...() API
 *
@@ -1084,9 +1087,10 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     if (!residue->GetParentOfType(&molecule)) return;
     GlobalMessenger()->ToggleHighlight(molecule, residue->id);
     TESTMSG("selected " << molecule->identifier->ToString()
-        << " rID " << residue->id << " aID " << atomID);
+        << " residue " << residue->id << " (PDB: " << residue->nameGraph << ' ' << residue->namePDB
+        << ") atom " << atomID);
 
-    // if indicate, use atom site as rotation center; use coordinate from first CoordSet, default altConf
+    // if indicated, use atom site as rotation center; use coordinate from first CoordSet, default altConf
     if (setCenter) {
         const StructureObject *object;
         if (!molecule->GetParentOfType(&object)) return;
