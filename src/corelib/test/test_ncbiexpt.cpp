@@ -86,159 +86,6 @@ public:
     NCBI_EXCEPTION_DEFAULT(CSupersystemException, CSubsystemException);
 };
 
-/////////////////////////////////////////////////////////////////////////////
-// CErrnosystemException  (multiple inheritance)
-
-#if defined(EXCEPTION_BUG_WORKAROUND)
-class CErrnosystemException : public CErrnoException
-#else
-class CErrnosystemException : public CErrnoException, public CCoreException
-#endif
-{
-public:
-    enum EErrCode {
-        eErrnoCode1,
-        eErrnoCode2
-    };
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eErrnoCode1: return "eErrnoCode1";
-        case eErrnoCode2: return "eErrnoCode2";
-        default:      return CException::GetErrCodeString();
-        }
-    }
-    NCBI_EXCEPTION_DEFAULT(CErrnosystemException, CErrnoException);
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// CParsesystemException  (multiple inheritance)
-
-#if defined(EXCEPTION_BUG_WORKAROUND)
-class CParsesystemException : public CParseException
-#else
-class CParsesystemException : public CParseException, public CCoreException
-#endif
-{
-public:
-    enum EErrCode {
-        eParseCode1,
-        eParseCode2
-    };
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eParseCode1: return "eParseCode1";
-        case eParseCode2: return "eParseCode2";
-        default:      return CException::GetErrCodeString();
-        }
-    }
-    NCBI_EXCEPTION_DEFAULT2(CParsesystemException, CParseException,
-                            string::size_type, pos);
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// CErrnoSuperException
-
-#if defined(EXCEPTION_BUG_WORKAROUND)
-class CErrnoSuperException : public CParseException
-#else
-class CErrnoSuperException : public CParseException,
-                             public CErrnoException,
-                             public CCoreException
-#endif
-{
-public:
-    enum EErrCode {
-        eErrnoSuper1,
-        eErrnoSuper2
-    };
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eErrnoSuper1: return "eErrnoSuper1";
-        case eErrnoSuper2: return "eErrnoSuper2";
-        default:      return CException::GetErrCodeString();
-        }
-    }
-    virtual void ReportExtra(ostream& out) const
-    {
-#if !defined(EXCEPTION_BUG_WORKAROUND)
-        CErrnoException::ReportExtra(out);
-        out << ", ";
-#endif
-        CParseException::ReportExtra(out);
-    }
-    NCBI_EXCEPTION_DEFAULT2(CErrnoSuperException, CParseException,
-                            string::size_type, pos);
-};
-
-
-/*
-template <class TBase>
-class CErrnoTemplException : public TBase
-{
-public:
-    enum EErrCode {
-        eErrnoTempl1,
-        eErrnoTempl2
-    };
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eErrnoTempl1: return "eErrnoTempl1";
-        case eErrnoTempl2: return "eErrnoTempl2";
-        default:      return CException::GetErrCodeString();
-        }
-    }
-
-    CErrnoTemplException(const char* file,int line,
-        const CException* prev_exception,
-        EErrCode err_code, const string& message) throw()
-          : TBase(file, line, prev_exception,
-            (typename TBase::EErrCode)(CException::eInvalid),
-            message)
-    {
-        m_Errno = errno;
-        x_Init(file,line,message + ": " + ::strerror(m_Errno),prev_exception);
-        x_InitErrCode((CException::EErrCode) err_code);
-    }
-    CErrnoTemplException(const CErrnoTemplException<TBase>& other) throw()
-        : TBase( other)
-    {
-        m_Errno = other.m_Errno;
-        x_Assign(other);
-    }
-    virtual ~CErrnoTemplException(void) throw() {}
-
-    virtual void ReportExtra(ostream& out) const
-    {
-        out << "m_Errno = " << m_Errno;
-    }
-
-    // Attributes
-    virtual const char* GetType(void) const {return "CErrnoTemplException";}
-    EErrCode GetErrCode(void) const
-    {
-        return typeid(*this) == typeid(CErrnoTemplException<TBase>) ?
-            (CErrnoTemplException<TBase>::EErrCode) x_GetErrCode() :
-            (CErrnoTemplException<TBase>::EErrCode) CException::eInvalid;
-    }
-    int GetErrno(void) const throw() { return m_Errno; }
-
-protected:
-    CErrnoTemplException(void) throw()
-    {
-        m_Errno = errno;
-    }
-    virtual const CException* x_Clone(void) const
-    {
-        return new CErrnoTemplException<TBase>(*this);
-    }
-private:
-    int m_Errno;
-};
-*/
 
 class CErrnoMoreException : public CErrnoTemplException<CCoreException>
 {
@@ -268,12 +115,6 @@ private:
     void f2(void);
     void f3(void);
     void f4(void);
-
-    void e1(void);
-    void e2(void);
-
-    void p1(void);
-    void p2(void);
 
     void s1(void);
     void s2(void);
@@ -356,89 +197,9 @@ void CExceptApplication::f4(void)
     NCBI_THROW(CSupersystemException,eSuper2,"from f4");
 }
 
-
-//---------------------------------------------------------------------------
-void CExceptApplication::e1(void)
-{
-    try {
-        e2();
-    }
-    catch (CCoreException& e) {
-        _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
-
-        _ASSERT(UppermostCast<CErrnosystemException>(e));
-        _ASSERT(!UppermostCast<CErrnoException>(e));
-        _ASSERT(!UppermostCast<CCoreException>(e));
-
-        const CErrnosystemException *pe = UppermostCast<CErrnosystemException>(e);
-        _ASSERT(pe->GetErrCode() == CErrnosystemException::eErrnoCode2);
-
-        NCBI_RETHROW(e,CErrnosystemException,eErrnoCode1,"calling e2 from e1");
-    }
-}
-
-void CExceptApplication::e2(void)
-{
-    NCBI_THROW(CErrnosystemException,eErrnoCode2,"from e2");
-}
-
-
-//---------------------------------------------------------------------------
-void CExceptApplication::p1(void)
-{
-    try {
-        p2();
-    }
-    catch (CCoreException& e) {
-        _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
-
-        _ASSERT(UppermostCast<CParsesystemException>(e));
-        _ASSERT(!UppermostCast<CParseException>(e));
-        _ASSERT(!UppermostCast<CCoreException>(e));
-
-        const CParsesystemException *pe = UppermostCast<CParsesystemException>(e);
-        _ASSERT(pe->GetErrCode() == CParsesystemException::eParseCode2);
-
-        NCBI_RETHROW_SAME(e,"calling p2 from p1");
-    }
-}
-
-void CExceptApplication::p2(void)
-{
-    NCBI_THROW2(CParsesystemException,eParseCode2,"from p2",101);
-}
-
-
-
-//---------------------------------------------------------------------------
-void CExceptApplication::s1(void)
-{
-    try {
-        s2();
-    }
-    catch (CCoreException& e) {
-        _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
-
-        _ASSERT(UppermostCast<CErrnoSuperException>(e));
-        _ASSERT(!UppermostCast<CErrnoException>(e));
-        _ASSERT(!UppermostCast<CCoreException>(e));
-
-        const CErrnoSuperException *pe = UppermostCast<CErrnoSuperException>(e);
-        _ASSERT(pe->GetErrCode() == CErrnoSuperException::eErrnoSuper2);
-
-        NCBI_RETHROW2(e,CErrnoSuperException,eErrnoSuper1,"calling s2 from s1",321);
-    }
-}
-
-void CExceptApplication::s2(void)
-{
-    NCBI_THROW2(CErrnoSuperException,eErrnoSuper2,"from s2",123);
-}
-
-
 void CExceptApplication::t1(void)
 {
-    NCBI_THROW(CErrnoTemplException<CCoreException>,eErrnoTempl,"from t1");
+    NCBI_THROW(CErrnoTemplException<CCoreException>,eErrno,"from t1");
 }
 
 void CExceptApplication::m1(void)
@@ -448,7 +209,7 @@ void CExceptApplication::m1(void)
 
 void CExceptApplication::tp1(void)
 {
-    NCBI_THROW2(CParseTemplException<CCoreException>,eParseTempl,"from t1",123);
+    NCBI_THROW2(CParseTemplException<CCoreException>,eErr,"from tp1",123);
 }
 
 //---------------------------------------------------------------------------
@@ -552,122 +313,15 @@ int CExceptApplication::Run(void)
     }
 
 
-// exception with multiple inheritance
-    try {
-        e1();
-    }
-    catch (CErrnoException& e) {
-        NCBI_REPORT_EXCEPTION("Errnosystem",e);
-
-        _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
-        _ASSERT(UppermostCast<CErrnosystemException>(e));
-        _ASSERT(!UppermostCast<CErrnoException>(e));
-        _ASSERT(!UppermostCast<CCoreException>(e));
-        const CErrnosystemException *pe = UppermostCast<CErrnosystemException>(e);
-        const CException* pred = e.GetPredecessor();
-#if defined(EXCEPTION_BUG_WORKAROUND)
-        _ASSERT(pe->GetErrCode() == CErrnosystemException::eErrnoCode2);
-        _ASSERT(!pred);
-#else
-        _ASSERT(pe->GetErrCode() == CErrnosystemException::eErrnoCode1);
-        _ASSERT(pred);
-        _ASSERT(pred->GetErrCode() == CException::eInvalid);
-        _ASSERT(UppermostCast<CErrnosystemException>(*pred));
-        _ASSERT(!UppermostCast<CErrnoException>(*pred));
-        _ASSERT(!UppermostCast<CCoreException>(*pred));
-        pe = UppermostCast<CErrnosystemException>(*pred);
-        _ASSERT(pe->GetErrCode() == CErrnosystemException::eErrnoCode2);
-#endif
-    }
-    catch (exception&) {
-        _ASSERT(0);
-    }
-    catch (...) {
-        _ASSERT(0);
-    }
-
-
-// another exception with multiple inheritance
-    try {
-        p1();
-    }
-    catch (CException& e) {
-        NCBI_REPORT_EXCEPTION("Parsesystem",e);
-        cerr << endl << "****** e.what() ******" << endl;
-        cerr << e.what();
-
-        _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
-        _ASSERT(UppermostCast<CParsesystemException>(e));
-        _ASSERT(!UppermostCast<CParseException>(e));
-        _ASSERT(!UppermostCast<CCoreException>(e));
-        const CParsesystemException *pe = UppermostCast<CParsesystemException>(e);
-        _ASSERT(pe->GetErrCode() == CParsesystemException::eParseCode2);
-
-        const CException* pred = e.GetPredecessor();
-#if defined(EXCEPTION_BUG_WORKAROUND)
-        _ASSERT(!pred);
-#else
-        _ASSERT(pred);
-        _ASSERT(pred->GetErrCode() == CException::eInvalid);
-        _ASSERT(UppermostCast<CParsesystemException>(*pred));
-        _ASSERT(!UppermostCast<CParseException>(*pred));
-        _ASSERT(!UppermostCast<CCoreException>(*pred));
-        pe = UppermostCast<CParsesystemException>(*pred);
-        _ASSERT(pe->GetErrCode() == CParsesystemException::eParseCode2);
-#endif
-    }
-    catch (exception&) {
-        _ASSERT(0);
-    }
-    catch (...) {
-        _ASSERT(0);
-    }
-
-// even more complicated exception with multiple inheritance
-    try {
-        s1();
-    }
-    catch (CException& e) {
-        NCBI_REPORT_EXCEPTION("ErrnoSuper",e);
-
-        _ASSERT((int)e.GetErrCode() == (int)CException::eInvalid);
-        _ASSERT(UppermostCast<CErrnoSuperException>(e));
-        _ASSERT(!UppermostCast<CErrnosystemException>(e));
-        _ASSERT(!UppermostCast<CErrnoException>(e));
-        _ASSERT(!UppermostCast<CCoreException>(e));
-        const CErrnoSuperException *pe = UppermostCast<CErrnoSuperException>(e);
-        const CException* pred = e.GetPredecessor();
-#if defined(EXCEPTION_BUG_WORKAROUND)
-        _ASSERT(pe->GetErrCode() == CErrnoSuperException::eErrnoSuper2);
-        _ASSERT(!pred);
-#else
-        _ASSERT(pe->GetErrCode() == CErrnoSuperException::eErrnoSuper1);
-        _ASSERT(pred);
-        _ASSERT(pred->GetErrCode() == CException::eInvalid);
-        _ASSERT(UppermostCast<CErrnoSuperException>(*pred));
-        _ASSERT(!UppermostCast<CErrnosystemException>(*pred));
-        _ASSERT(!UppermostCast<CErrnoException>(*pred));
-        _ASSERT(!UppermostCast<CCoreException>(*pred));
-        pe = UppermostCast<CErrnoSuperException>(*pred);
-        _ASSERT(pe->GetErrCode() == CErrnoSuperException::eErrnoSuper2);
-#endif
-    }
-    catch (exception&) {
-        _ASSERT(0);
-    }
-    catch (...) {
-        _ASSERT(0);
-    }
-
     try {
         t1();
     } catch (CErrnoTemplException<CCoreException>& e) {
         NCBI_REPORT_EXCEPTION("caught as CErrnoTemplException<CCoreException>", e);
-        _ASSERT(e.GetErrCode() == CErrnoTemplException<CCoreException>::eErrnoTempl);
+        _ASSERT(e.GetErrCode() == CErrnoTemplException<CCoreException>::eErrno);
     } catch (CCoreException& e) {
         NCBI_REPORT_EXCEPTION("caught as CCoreException", e);
         const CErrnoTemplException<CCoreException>* pe = UppermostCast< CErrnoTemplException<CCoreException> > (e);
-        _ASSERT(pe->GetErrCode() == CErrnoTemplException<CCoreException>::eErrnoTempl);
+        _ASSERT(pe->GetErrCode() == CErrnoTemplException<CCoreException>::eErrno);
     } catch (exception&) {
         _ASSERT(0);
     }
@@ -688,7 +342,7 @@ int CExceptApplication::Run(void)
         tp1();
     } catch (CParseTemplException<CCoreException>& e) {
         NCBI_REPORT_EXCEPTION("caught as CParseTemplException<CCoreException>", e);
-        _ASSERT(e.GetErrCode() == CParseTemplException<CCoreException>::eParseTempl);
+        _ASSERT(e.GetErrCode() == CParseTemplException<CCoreException>::eErr);
     } catch (exception&) {
         _ASSERT(0);
     }
@@ -714,6 +368,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.11  2003/02/24 19:56:51  gouriano
+ * use template-based exceptions instead of errno and parse exceptions
+ *
  * Revision 6.10  2003/02/14 19:32:49  gouriano
  * added testing of template-based errno and parse exceptions
  *

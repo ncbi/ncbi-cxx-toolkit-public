@@ -545,56 +545,18 @@ public:
 //
 
 
-class NCBI_XNCBI_EXPORT CErrnoException : EXCEPTION_VIRTUAL_BASE public CException
-{
-public:
-
-    enum EErrCode {
-        eErrno
-    };
-
-    // Report description of "errno" along with "what"
-    CErrnoException(const char* file,int line,
-        const CException* prev_exception,
-        EErrCode err_code, const string& message) throw();
-    CErrnoException(const CErrnoException& other) throw();
-
-    // for backward compatibility
-    CErrnoException(const string& message) throw();
-
-    virtual ~CErrnoException(void) throw();
-
-    // Reporting
-    virtual void ReportExtra(ostream& out) const;
-
-    // Attributes
-    virtual const char* GetType(void) const;
-    virtual const char* GetErrCodeString(void) const;
-    EErrCode GetErrCode(void) const;
-
-    // Extra
-    int GetErrno(void) const throw() { return m_Errno; }
-
-protected:
-    CErrnoException(void) throw();
-    virtual const CException* x_Clone(void) const;
-
-private:
-    int m_Errno;
-};
-
 template <class TBase>
 class CErrnoTemplException : EXCEPTION_VIRTUAL_BASE public TBase
 {
 public:
     enum EErrCode {
-        eErrnoTempl
+        eErrno
     };
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eErrnoTempl: return "eErrnoTempl";
-        default:      return CException::GetErrCodeString();
+        case eErrno: return "eErrno";
+        default:     return CException::GetErrCodeString();
         }
     }
 
@@ -647,61 +609,19 @@ private:
 
 
 
-class NCBI_XNCBI_EXPORT CParseException : EXCEPTION_VIRTUAL_BASE public CException
-{
-public:
-
-    enum EErrCode {
-        eSection,
-        eEntry,
-        eValue,
-        eErr
-    };
-
-    // Report "pos" along with "what"
-    CParseException(const char* file,int line,
-        const CException* prev_exception,
-        EErrCode err_code,const string& message,
-        string::size_type pos) throw();
-    CParseException(const CParseException& other) throw();
-
-    // for backward compatibility
-    CParseException(const string& message,string::size_type pos) throw();
-
-    virtual ~CParseException(void) throw();
-
-    // Reporting
-    virtual void ReportExtra(ostream& out) const;
-
-    // Attributes
-    virtual const char* GetType(void) const;
-    virtual const char* GetErrCodeString(void) const;
-    EErrCode GetErrCode(void) const;
-
-    // Extra
-    string::size_type GetPos(void) const throw() { return m_Pos; }
-
-protected:
-    CParseException(void) throw();
-    virtual const CException* x_Clone(void) const;
-
-private:
-    string::size_type m_Pos;
-};
-
 class NStr;
 template <class TBase>
 class CParseTemplException : EXCEPTION_VIRTUAL_BASE public TBase
 {
 public:
     enum EErrCode {
-        eParseTempl
+        eErr
     };
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eParseTempl: return "eParseTempl";
-        default:     return CException::GetErrCodeString();
+        case eErr: return "eErr";
+        default:   return CException::GetErrCodeString();
         }
     }
 
@@ -776,8 +696,7 @@ private:
 // To define exceptions with one additional parameter
 // (e.g. derived from CParseException)
 
-#define NCBI_EXCEPTION_DEFAULT2(exception_class, base_class, \
-                                extra_type, extra_param) \
+#define NCBI_EXCEPTION_DEFAULT2(exception_class, base_class, extra_type) \
 public: \
     exception_class(const char* file,int line, \
         const CException* prev_exception, \
@@ -795,6 +714,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2003/02/24 19:54:52  gouriano
+ * use template-based exceptions instead of errno and parse exceptions
+ *
  * Revision 1.40  2003/02/14 19:31:23  gouriano
  * added definition of templates for errno and parse exceptions
  *

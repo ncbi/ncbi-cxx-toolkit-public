@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/02/24 20:01:55  gouriano
+* use template-based exceptions instead of errno and parse exceptions
+*
 * Revision 1.17  2002/07/18 20:18:36  lebedev
 * NCBI_OS_MAC: STDOUT_FILENO define added
 *
@@ -94,6 +97,7 @@
 */
 
 #include <cgi/ncbicgir.hpp>
+#include <cgi/cgi_exception.hpp>
 #include <time.h>
 
 // Mac OS has unistd.h, but STDOUT_FILENO is not defined
@@ -178,7 +182,7 @@ void CCgiResponse::SetHeaderValue(const string& name, const tm& date)
 
     char buff[64];
     if ( !::strftime(buff, sizeof(buff), "%a %b %d %H:%M:%S %Y", &date) ) {
-        NCBI_THROW(CErrnoException,eErrno,
+        NCBI_THROW(CCgiErrnoException,eErrno,
                    "CCgiResponse::SetHeaderValue() -- strftime() failed");
     }
     SetHeaderValue(name, buff);

@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <objects/seqset/seqset_exception.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
@@ -260,7 +261,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
                     SIZE_TYPE end = s_EndOfFastaID(name, pos);
                     if (end == NPOS) {
                         if (pos > 0) {
-                            NCBI_THROW2(CParseException, eErr,
+                            NCBI_THROW2(CSeqsetParseException, eFormat,
                                         "ReadFasta: Bad ID "
                                         + name.substr(pos),
                                         pos);
@@ -370,6 +371,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.14  2003/02/24 20:03:11  gouriano
+ * use template-based exceptions instead of errno and parse exceptions
+ *
  * Revision 6.13  2003/01/13 20:01:24  gouriano
  * corrected parsing fasta seq ids
  *

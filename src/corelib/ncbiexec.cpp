@@ -162,7 +162,7 @@ int CExec::System(const char *cmdline)
     ?
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CErrnoException,eErrno,
+        NCBI_THROW(CExecException,eSystem,
             "CExec::System: call to system failed");
     }
 #if defined(NCBI_OS_UNIX)
@@ -185,7 +185,7 @@ int CExec::SpawnL(const EMode mode, const char *cmdname, const char *argv, ...)
     ?
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnL");
+        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnL");
     }
     return status;
 }
@@ -204,7 +204,7 @@ int CExec::SpawnLE(const EMode mode, const char *cmdname,  const char *argv, ...
     ?
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnLE");
+        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnLE");
     }
     return status;
 }
@@ -223,7 +223,7 @@ int CExec::SpawnLP(const EMode mode, const char *cmdname,
     ?
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnLP");
+        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnLP");
     }
     return status;
 }
@@ -243,7 +243,7 @@ int CExec::SpawnLPE(const EMode mode, const char *cmdname,
     ?
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnLPE");
+        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnLPE");
     }
     return status;
 }
@@ -263,7 +263,7 @@ int CExec::SpawnV(const EMode mode, const char *cmdname,
     ?
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnV");
+        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnV");
     }
     return status;
 }
@@ -283,7 +283,7 @@ int CExec::SpawnVE(const EMode mode, const char *cmdname,
     ?
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnVE");
+        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnVE");
     }
     return status;
 }
@@ -303,7 +303,7 @@ int CExec::SpawnVP(const EMode mode, const char *cmdname,
     ?
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnVP");
+        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnVP");
     }
     return status;
 }
@@ -323,7 +323,7 @@ int CExec::SpawnVPE(const EMode mode, const char *cmdname,
     ?
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CErrnoException,eErrno, "CExec::SpawnVPE");
+        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnVPE");
     }
     return status;
 }
@@ -352,6 +352,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/02/24 19:56:05  gouriano
+ * use template-based exceptions instead of errno and parse exceptions
+ *
  * Revision 1.10  2002/08/15 18:26:29  ivanov
  * Changed s_SpawnUnix() -- empty environment, setsid() for eDetach mode
  *

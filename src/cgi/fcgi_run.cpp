@@ -31,6 +31,7 @@
  */
 
 #include <cgi/cgiapp.hpp>
+#include <cgi/cgi_exception.hpp>
 
 
 #if !defined(HAVE_LIBFASTCGI)
@@ -64,7 +65,7 @@ static time_t s_GetModTime(const char* filename)
     struct stat st;
     if (stat(filename, &st) != 0) {
         ERR_POST("s_GetModTime(): " << strerror(errno));
-        NCBI_THROW(CErrnoException,eErrno,
+        NCBI_THROW(CCgiErrnoException,eModTime,
                    "Cannot get modification time of the CGI executable");
     }
     return st.st_mtime;
@@ -335,6 +336,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.24  2003/02/24 20:01:54  gouriano
+ * use template-based exceptions instead of errno and parse exceptions
+ *
  * Revision 1.23  2003/02/21 22:11:37  vakatov
  * Get rid of a couple of compilation warnings
  *

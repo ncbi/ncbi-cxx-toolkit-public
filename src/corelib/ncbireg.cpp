@@ -222,13 +222,13 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
             beg++;
             SIZE_TYPE end = str.find_first_of(']');
             if (end == NPOS)
-                NCBI_THROW2(CParseException, eSection,
+                NCBI_THROW2(CRegistryException, eSection,
                             "Invalid registry section(']' is missing): `"
                             + str + "'", line);
             while ( isspace(str[beg]) )
                 beg++;
             if (str[beg] == ']') {
-                NCBI_THROW2(CParseException, eSection,
+                NCBI_THROW2(CRegistryException, eSection,
                             "Unnamed registry section: `" + str + "'", line);
             }
 
@@ -241,7 +241,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
                 end++;
             _ASSERT( end <= str.find_first_of(']', 0) );
             if (str[end] != ']')
-                NCBI_THROW2(CParseException, eSection,
+                NCBI_THROW2(CRegistryException, eSection,
                             "Invalid registry section name: `"
                             + str + "'", line);
             // add section comment
@@ -259,7 +259,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
         default:  { // regular entry
             if (!s_IsNameSectionSymbol(str[beg])  ||
                 str.find_first_of('=') == NPOS)
-                NCBI_THROW2(CParseException, eEntry,
+                NCBI_THROW2(CRegistryException, eEntry,
                             "Invalid registry entry format: '" + str + "'",
                             line);
             // name
@@ -272,7 +272,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
             while ( isspace(str[mid]) )
                 mid++;
             if (str[mid] != '=')
-                NCBI_THROW2(CParseException, eEntry,
+                NCBI_THROW2(CRegistryException, eEntry,
                             "Invalid registry entry name: '" + str + "'",
                             line);
             for (mid++;  mid < len  &&  isspace(str[mid]);  mid++)
@@ -312,7 +312,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
                 for (SIZE_TYPE i = beg;  i <= end;  i++) {
                     if (str[i] == '"') {
                         if (i != end) {
-                            NCBI_THROW2(CParseException, eValue,
+                            NCBI_THROW2(CRegistryException, eValue,
                                         "Single(unescaped) '\"' in the middle "
                                         "of registry value: '" + str + "'",
                                         line);
@@ -340,7 +340,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
                         value += '"';
                         i++;
                     } else {
-                        NCBI_THROW2(CParseException, eValue,
+                        NCBI_THROW2(CRegistryException, eValue,
                                     "Badly placed '\\' in the registry "
                                     "value: '" + str + "'", line);
                     }
@@ -354,7 +354,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, TFlags flags)
     }
 
     if ( !is.eof() ) {
-        NCBI_THROW2(CParseException, eErr,
+        NCBI_THROW2(CRegistryException, eErr,
                     "Error in reading the registry: '" + str + "'", line);
     }
 
@@ -874,6 +874,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/02/24 19:56:05  gouriano
+ * use template-based exceptions instead of errno and parse exceptions
+ *
  * Revision 1.29  2003/01/17 20:45:39  kuznets
  * Minor code cleanup~
  *

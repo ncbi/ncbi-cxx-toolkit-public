@@ -34,6 +34,7 @@
 
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbitime.hpp>
+#include <cgi/cgi_exception.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <stdio.h>
 #include <time.h>
@@ -297,7 +298,7 @@ void CCgiCookies::Add(const string& str)
         Add(str.substr(pos_beg, pos_mid-pos_beg),
             str.substr(pos_mid+1, pos_end-pos_mid));
     }
-    NCBI_THROW2(CParseException,eErr,
+    NCBI_THROW2(CCgiParseException,eCookie,
                "Invalid cookie string: `" + str + "'", pos);
 }
 
@@ -591,13 +592,13 @@ static void s_ParseQuery(const string& str,
             s_ParseIsIndex(str, 0, &entries) :
             s_ParseIsIndex(str, &indexes, 0);
         if (err_pos != 0)
-            NCBI_THROW2(CParseException,eErr,
+            NCBI_THROW2(CCgiParseException,eIndex,
                        "Init CCgiRequest::ParseISINDEX(\"" +
                        str + "\"", err_pos);
     } else {  // regular(FORM) entries
         SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
         if (err_pos != 0)
-            NCBI_THROW2(CParseException,eErr,
+            NCBI_THROW2(CCgiParseException,eEntry,
                        "Init CCgiRequest::ParseFORM(\"" +
                        str + "\")", err_pos);
     }
@@ -611,7 +612,7 @@ static string s_FindAttribute(const string& str, const string& name,
     SIZE_TYPE att_pos = str.find("; " + name + "=\"", start);
     if (att_pos == NPOS  ||  att_pos >= end) {
         if (required) {
-            NCBI_THROW2(CParseException, eErr,
+            NCBI_THROW2(CCgiParseException, eAttribute,
                         "s_FindAttribute: missing " + name + " in "
                         + str.substr(start, end - start),
                         start);
@@ -622,7 +623,7 @@ static string s_FindAttribute(const string& str, const string& name,
     SIZE_TYPE att_start = att_pos + name.size() + 4;
     SIZE_TYPE att_end   = str.find('\"', att_start);
     if (att_end == NPOS  ||  att_end >= end) {
-        NCBI_THROW2(CParseException, eErr,
+        NCBI_THROW2(CCgiParseException, eFormat,
                     "s_FindAttribute: malformatted " + name + " in "
                     + str.substr(att_pos, end - att_pos),
                     att_start);
@@ -650,7 +651,7 @@ static void s_ParseMultipartEntries(const string& boundary,
             // potential corner case: no actual data
             return;
         }
-        NCBI_THROW2(CParseException, eErr,
+        NCBI_THROW2(CCgiParseException, eEntry,
                     s_Me + ": input does not start with boundary line "
                     + boundary,
                     0);
@@ -660,7 +661,7 @@ static void s_ParseMultipartEntries(const string& boundary,
         SIZE_TYPE tail_size = boundary_size + eol_size + 2;
         SIZE_TYPE tail_start = str.find(s_Eol + boundary + "--");
         if (tail_start == NPOS) {
-            NCBI_THROW2(CParseException, eErr,
+            NCBI_THROW2(CCgiParseException, eEntry,
                         s_Me + ": input does not contain trailing boundary "
                         + boundary + "--",
                         0);
@@ -684,7 +685,7 @@ static void s_ParseMultipartEntries(const string& boundary,
             }
             pos = str.find(':', bol_pos);
             if (pos == NPOS  ||  pos >= eol_pos) {
-                NCBI_THROW2(CParseException, eErr,
+                NCBI_THROW2(CCgiParseException, eEntry,
                             s_Me + ": no colon in header "
                             + str.substr(bol_pos, eol_pos - bol_pos),
                             bol_pos);
@@ -697,7 +698,7 @@ static void s_ParseMultipartEntries(const string& boundary,
                 continue;
             }
             if (NStr::CompareNocase(str, pos, 13, ": form-data; ") != 0) {
-                NCBI_THROW2(CParseException, eErr,
+                NCBI_THROW2(CCgiParseException, eEntry,
                             s_Me + ": bad Content-Disposition header "
                             + str.substr(bol_pos, eol_pos - bol_pos),
                             pos);
@@ -709,7 +710,7 @@ static void s_ParseMultipartEntries(const string& boundary,
             pos = eol_pos + eol_size;
         }
         if (!found) {
-            NCBI_THROW2(CParseException, eErr,
+            NCBI_THROW2(CCgiParseException, eEntry,
                         s_Me + ": missing Content-Disposition header", pos);
         }
         s_AddEntry(entries, name, str.substr(pos, next_boundary - pos),
@@ -734,7 +735,7 @@ static void s_ParsePostQuery(const string& content_type, const string& str,
             err_pos = CCgiRequest::ParseEntries(str, entries);
         }
         if ( err_pos != 0 ) {
-            NCBI_THROW2(CParseException,eErr,
+            NCBI_THROW2(CCgiParseException, eEntry,
                         "Init CCgiRequest::ParseFORM(\"" +
                         str + "\")", err_pos);
         }
@@ -745,7 +746,7 @@ static void s_ParsePostQuery(const string& content_type, const string& str,
         string start = "boundary=";
         SIZE_TYPE pos = content_type.find(start);
         if ( pos == NPOS )
-            NCBI_THROW2(CParseException,eErr,
+            NCBI_THROW2(CCgiParseException, eEntry,
                         "CCgiRequest::ParsePostQuery(\"" +
                         content_type + "\"): no boundary field", 0);
         s_ParseMultipartEntries("--" + content_type.substr(pos + start.size()),
@@ -1074,7 +1075,7 @@ extern string URL_DecodeString(const string& str)
     string    x_str = str;
     SIZE_TYPE err_pos = s_URL_Decode(x_str);
     if (err_pos != 0)
-        NCBI_THROW2(CParseException,eErr,
+        NCBI_THROW2(CCgiParseException, eFormat,
                     "URL_DecodeString(<badly_formatted_str>)",err_pos);
     return x_str;
 }
@@ -1157,6 +1158,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.66  2003/02/24 20:01:54  gouriano
+* use template-based exceptions instead of errno and parse exceptions
+*
 * Revision 1.65  2003/02/19 17:50:47  kuznets
 * Added function AddExpTime to CCgiCookie class
 *

@@ -39,6 +39,7 @@
 
 // generated includes
 #include <objects/general/Date_std.hpp>
+#include <objects/general/general_exception.hpp>
 
 #include <vector>
 
@@ -167,7 +168,7 @@ void CDate_std::GetDate(string* label, const string& format) const
             continue;
         }
         if (++it == format.end()) {
-            NCBI_THROW2(CParseException, eErr,
+            NCBI_THROW2(CGeneralParseException, eFormat,
                         "CDate_std::GetDate(): incomplete % expression",
                         it - format.begin());
         }
@@ -183,7 +184,7 @@ void CDate_std::GetDate(string* label, const string& format) const
             continue;
         } else if (*it == '}') {
             if (depth == 0) {
-                NCBI_THROW2(CParseException, eErr,
+                NCBI_THROW2(CGeneralParseException, eFormat,
                             "CDate_std::GetDate(): unbalanced %}",
                             it - format.begin());
             }
@@ -200,7 +201,7 @@ void CDate_std::GetDate(string* label, const string& format) const
                 while (++it != format.end()  &&  *it != '%')
                     ;
                 if (it == format.end()  ||  ++it == format.end()) {
-                    NCBI_THROW2(CParseException, eErr,
+                    NCBI_THROW2(CGeneralParseException, eFormat,
                                 "CDate_std::GetDate(): unbalanced %{",
                                 starts.back().second);
                 }
@@ -224,7 +225,7 @@ void CDate_std::GetDate(string* label, const string& format) const
         while (isdigit(*it)) {
             length = length * 10 + *it - '0';
             if (++it == format.end()) {
-                NCBI_THROW2(CParseException, eErr,
+                NCBI_THROW2(CGeneralParseException, eFormat,
                             "CDate_std::GetDate(): incomplete % expression",
                             it - format.begin());
             }
@@ -239,7 +240,7 @@ void CDate_std::GetDate(string* label, const string& format) const
         case 'm': value = IsSetMinute() ? GetMinute() : -1; break;
         case 's': value = IsSetSecond() ? GetSecond() : -1; break;
         default:
-            NCBI_THROW2(CParseException, eErr,
+            NCBI_THROW2(CGeneralParseException, eFormat,
                         "CDate_std::GetDate(): unrecognized format specifier",
                         it - format.begin());
         }
@@ -281,14 +282,14 @@ void CDate_std::GetDate(string* label, const string& format) const
                     ;
                 if (it == format.end()  ||  ++it == format.end()) {
                     if (depth > 0  ||  depth2 > 0) {
-                        NCBI_THROW2(CParseException, eErr,
+                        NCBI_THROW2(CGeneralParseException, eFormat,
                                     "CDate_std::GetDate(): unbalanced %{",
                                     starts.back().second);
                     } else {
-                        NCBI_THROW(CException, eUnknown,
+                        NCBI_THROW2(CGeneralParseException, eFormat,
                                    string("CDate_std::GetDate():"
                                           " missing required field %")
-                                   + request);
+                                   + request, it - format.begin() - 1);
                     }
                 }
                 if (*it == '|'  &&  depth2 == 0) {
@@ -296,7 +297,7 @@ void CDate_std::GetDate(string* label, const string& format) const
                 } else if (*it == '}') {
                     if (depth2 == 0) {
                         if (depth == 0) {
-                            NCBI_THROW2(CParseException, eErr,
+                            NCBI_THROW2(CGeneralParseException, eFormat,
                                         "CDate_std::GetDate(): unbalanced %}",
                                         it - format.begin());
                         }
@@ -323,6 +324,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.5  2003/02/24 20:02:36  gouriano
+ * use template-based exceptions instead of errno and parse exceptions
+ *
  * Revision 6.4  2002/12/09 17:30:11  ucko
  * Rename Assign to SetToTime to avoid shadowing CSerialObject; propagate tz
  *

@@ -649,16 +649,18 @@ static void TestException_Aux(void)
 {
     try {
         assert( !strtod("1e-999999", 0) );
-        NCBI_THROW(CErrnoException,eErrno,"Failed strtod(\"1e-999999\", 0)");
+        NCBI_THROW(CErrnoTemplException<CCoreException>,eErrno,
+            "Failed strtod(\"1e-999999\", 0)");
     }
-    catch (CErrnoException& e) {
-        NCBI_REPORT_EXCEPTION("TEST CErrnoException ---> ",e);
+    catch (CErrnoTemplException<CCoreException>& e) {
+        NCBI_REPORT_EXCEPTION("TEST CErrnoTemplException<CCoreException> ---> ",e);
     }
     try {
-        NCBI_THROW2(CParseException,eErr,"Failed parsing (at pos. 123)",123);
+        NCBI_THROW2(CParseTemplException<CCoreException>,eErr,
+            "Failed parsing (at pos. 123)",123);
     }
     catch (CException& e) {
-        NCBI_REPORT_EXCEPTION("TEST CParseException ---> ",e);
+        NCBI_REPORT_EXCEPTION("TEST CParseTemplException<CCoreException> ---> ",e);
     }
     catch (...) {
         // should never be here
@@ -671,10 +673,11 @@ static void TestException_AuxTrace(void)
 {
     try {
         assert( !strtod("1e-999999", 0) );
-        NCBI_THROW(CErrnoException,eErrno,"Failed strtod('1e-999999', 0)");
+        NCBI_THROW(CErrnoTemplException<CCoreException>,eErrno,
+            "Failed strtod('1e-999999', 0)");
     }
-    catch (CErrnoException& e) {
-        NCBI_REPORT_EXCEPTION("throw CErrnoException ---> ",e);
+    catch (CErrnoTemplException<CCoreException>& e) {
+        NCBI_REPORT_EXCEPTION("throw CErrnoTemplException<CCoreException> ---> ",e);
     }
 
     try {
@@ -702,10 +705,11 @@ static void TestException_AuxTrace(void)
     STD_CATCH ("THROW_TRACE  runtime_error ---> ");
 
     try {
-        NCBI_THROW2(CParseException,eErr,"Failed parsing (at pos. 123)", 123);
+        NCBI_THROW2(CParseTemplException<CCoreException>,eErr,
+            "Failed parsing (at pos. 123)", 123);
     }
     catch (CException& e) {
-        NCBI_REPORT_EXCEPTION("throw CParseException ---> ",e);
+        NCBI_REPORT_EXCEPTION("throw CParseTemplException<CCoreException> ---> ",e);
     }
 }
 
@@ -877,6 +881,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2003/02/24 19:56:51  gouriano
+ * use template-based exceptions instead of errno and parse exceptions
+ *
  * Revision 1.86  2002/08/28 17:06:18  vasilche
  * Added code for checking heap detection
  *
