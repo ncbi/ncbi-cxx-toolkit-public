@@ -34,6 +34,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2002/04/22 20:36:11  ivanov
+ * #undef _ASSERT added for Windows to disable use this macro in tests
+ * -- application don't terminate in Windows _ASSERT (CRT library bug).
+ *
  * Revision 1.5  2002/04/22 19:28:13  lavr
  * Shuffle things around again to get asserts defined in both Debug and Release
  *
@@ -89,14 +93,24 @@
 
 
 #ifdef NCBI_OS_MSWIN
-#  ifdef   _ASSERT
-#    undef _ASSERT
+#  ifndef   _DEBUG
+#    define _DEBUG
+#  endif
+#  ifdef    _ASSERT
+#    undef  _ASSERT
 #  endif
 #  define Type aType
 #  include <crtdbg.h>
 #  include <stdio.h>
 #  include <windows.h>
 #  undef Type
+
+/* Don't use Windows _ASSERT and test_assert.h together:
+ * application don't terminate in this case (CRT library bug).
+ * Use "assert" instead _ASSERT.
+ */
+#  undef _ASSERT
+
 
 /* Suppress popup messages on execution errors.
  * NOTE: Windows-specific, suppresses all error message boxes in both runtime
