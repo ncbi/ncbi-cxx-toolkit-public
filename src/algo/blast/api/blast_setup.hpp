@@ -69,7 +69,7 @@ SetupSubjects(const TSeqLocVector& subjects,
  * bytes (ignored for protein sequences, which always have sentinels) [in]
  * @return pair containing the buffer and its length. 
  */
-pair<AutoPtr<Uint1,CDeleter<Uint1> >,int>
+pair<AutoPtr<Uint1, CDeleter<Uint1> >, int>
 GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
             objects::CScope* scope, 
             objects::ENa_strand strand = objects::eNa_strand_plus, 
@@ -117,6 +117,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/09/09 15:57:23  camacho
+* Fix indentation
+*
 * Revision 1.10  2003/09/09 12:57:15  camacho
 * + internal setup functions, use smart pointers to handle memory mgmt
 *

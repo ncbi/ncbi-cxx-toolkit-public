@@ -250,7 +250,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOption& options,
 
             // Get both strands of the original nucleotide sequence with
             // sentinels
-            pair<AutoPtr<Uint1,CDeleter<Uint1> >,int> seqbuf(
+            pair<AutoPtr<Uint1, CDeleter<Uint1> >, int> seqbuf(
                 GetSequence(*itr->seqloc, encoding, itr->scope, 
                             eNa_strand_both, true));
 
@@ -282,7 +282,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOption& options,
                 strand_opt == eNa_strand_plus) {
                 strand = strand_opt;
             }
-            pair<AutoPtr<Uint1,CDeleter<Uint1> >,int> seqbuf(
+            pair<AutoPtr<Uint1, CDeleter<Uint1> >, int> seqbuf(
                 GetSequence(*itr->seqloc, encoding, itr->scope, strand, true));
             int index = (strand == eNa_strand_minus) ? 
                 ctx_index + 1 : ctx_index;
@@ -291,7 +291,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOption& options,
 
         } else {
 
-            pair<AutoPtr<Uint1,CDeleter<Uint1> >,int> seqbuf(
+            pair<AutoPtr<Uint1, CDeleter<Uint1> >, int> seqbuf(
                 GetSequence(*itr->seqloc, encoding, itr->scope, 
                             eNa_strand_unknown, true));
             int offset = qinfo->context_offsets[ctx_index];
@@ -343,7 +343,7 @@ SetupSubjects(const TSeqLocVector& subjects,
         BLAST_SequenceBlk* subj = (BLAST_SequenceBlk*) 
             calloc(1, sizeof(BLAST_SequenceBlk));
 
-        pair<AutoPtr<Uint1,CDeleter<Uint1> >,int> seqbuf( 
+        pair<AutoPtr<Uint1, CDeleter<Uint1> >, int> seqbuf( 
             GetSequence(*itr->seqloc, encoding, itr->scope, strand, false));
 
         if (subj_is_na) {
@@ -356,7 +356,7 @@ SetupSubjects(const TSeqLocVector& subjects,
                 true : false;
 
             // Retrieve the sequence with ambiguities
-            pair<AutoPtr<Uint1,CDeleter<Uint1> >,int> sbuf2(
+            pair<AutoPtr<Uint1, CDeleter<Uint1> >, int> sbuf2(
                      GetSequence(*itr->seqloc, encoding, itr->scope, strand, 
                                  use_sentinels));
             subj->sequence_start = sbuf2.first.release();
@@ -410,7 +410,7 @@ static void PackDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
    
 }
 
-pair<AutoPtr<Uint1,CDeleter<Uint1> >, int>
+pair<AutoPtr<Uint1, CDeleter<Uint1> >, int>
 GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope, 
             ENa_strand strand, bool add_nucl_sentinel)
 {
@@ -692,6 +692,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/09/09 15:57:23  camacho
+* Fix indentation
+*
 * Revision 1.22  2003/09/09 14:21:39  coulouri
 * change blastkar.h to blast_stat.h
 *
