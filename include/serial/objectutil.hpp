@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/04/06 18:32:31  kholodov
+* Modified: renamed to SerialEqual, added type checking.
+*
 * Revision 1.1  2001/04/04 20:04:31  kholodov
 * Added: Equals() function template for comparing two objects
 *
@@ -47,14 +50,26 @@ BEGIN_NCBI_SCOPE
 
 // Compares two objects by converting them to binary streams and performing
 // byte comparison
+enum ESerialCompareMethod
+{
+  eMatchType,
+  ePolymorphic
+};
 
-extern bool SerialCompare(TConstObjectPtr a, 
-		   TConstObjectPtr b, 
-		   TTypeInfo type);
+extern bool SerialEqual(TConstObjectPtr a, 
+			TConstObjectPtr b, 
+			TTypeInfo type);
 
 template <class T>
-bool Equals(const T& a, const T& b) {
+bool SerialEqual(const T& a, 
+		 const T& b, 
+		 ESerialCompareMethod method = eMatchType) 
+{
 
+  if (method == eMatchType  &&  typeid(a) != typeid(b)) {
+    return false;
+  }
+  
   TTypeInfo type = Type<T>::GetTypeInfo();
   return SerialCompare(&a, &b, type);
 }

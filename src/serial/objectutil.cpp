@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/04/06 18:32:22  kholodov
+* Modified: renamed to SerialEqual, added type checking.
+*
 * Revision 1.1  2001/04/04 20:04:23  kholodov
 * Added: Equals() function template for comparing two objects
 *
@@ -44,9 +47,10 @@
 
 BEGIN_NCBI_SCOPE
 
-bool SerialCompare(TConstObjectPtr a, 
-			  TConstObjectPtr b, 
-			  TTypeInfo type) {
+bool SerialEqual(TConstObjectPtr a, 
+		 TConstObjectPtr b, 
+		 TTypeInfo type) 
+{
 
   bool result = false;
 
