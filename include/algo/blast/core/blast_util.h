@@ -229,6 +229,9 @@ Int2 BLAST_ContextToFrame(Uint1 prog_number, Int2 context_number);
  */
 Int4 BLAST_GetQueryLength(BlastQueryInfoPtr query_info, Int4 context);
 
+/** Deallocate memory for query information structure */
+BlastQueryInfoPtr BlastQueryInfoFree(BlastQueryInfoPtr query_info);
+
 #ifdef __cplusplus
 }
 #endif
