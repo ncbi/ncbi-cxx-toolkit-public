@@ -14708,7 +14708,7 @@ _ACEOF
 
 
 if test -z "$BZ2_LIBS"; then
-   bzlocal=util/compress/bzlib
+   bzlocal=util/compress/bzip2
    { echo "$as_me:$LINENO: using local copy in $bzlocal" >&5
 echo "$as_me: using local copy in $bzlocal" >&6;}
    BZ2_PATH="<$bzlocal>"

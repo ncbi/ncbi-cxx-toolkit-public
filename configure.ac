@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.284 2004/04/05 15:54:12 ucko Exp $
+#  $Id: configure.ac,v 1.285 2004/04/05 20:06:47 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2213,7 +2213,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(bz2,
       [[BZFILE* fp; char buf[1024]; int err;
         int n = BZ2_bzRead(&err, fp, buf, sizeof(buf))]])]])
 if test -z "$BZ2_LIBS"; then
-   bzlocal=util/compress/bzlib
+   bzlocal=util/compress/bzip2
    AC_MSG_NOTICE([using local copy in $bzlocal])
    BZ2_PATH="<$bzlocal>"
    BZ2_INCLUDE="-I\$(includedir)/$bzlocal -I\$(includedir0)/$bzlocal"
