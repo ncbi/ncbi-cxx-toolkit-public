@@ -253,7 +253,6 @@ CSeq_align::CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser) const
 
     TSeqPos row_len;
     TSeqPos from, to;
-    int width;
     ENa_strand strand;
 
 
@@ -270,9 +269,9 @@ CSeq_align::CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser) const
         widths_determined.push_back(false);
 
         row = 0;
-        const CSeq_id* seq_id;
         ITERATE (CStd_seg::TLoc, i, ss.GetLoc()) {
 
+            const CSeq_id* seq_id = 0;
             // push back initialization values
             if (seg == 0) {
                 widths.push_back(0);
@@ -289,6 +288,7 @@ CSeq_align::CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser) const
                 row_len = to - from + 1;
                 row_lens.push_back(row_len);
                 
+                int width = 0;
                 // try to determine/check the seg_len and width
                 if (!seg_len) {
                     width = 0;
@@ -386,6 +386,7 @@ CSeq_align::CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser) const
             // go back and determine/check widths
             for (row = 0; row < dim; row++) {
                 if ((row_len = row_lens[row]) > 0) {
+                    int width = 0;
                     if (row_len == seg_len * 3) {
                         width = 3;
                     } else if (row_len == seg_len) {
@@ -416,7 +417,7 @@ CSeq_align::CreateDensegFromStdseg(SSeqIdChooser* SeqIdChooser) const
         if (!widths_determined[seg]) {
             for(row = 0; row < dim; row++) {
                 if (starts[seg * dim + row] >= 0) {
-                    width = widths[row];
+                    int width = widths[row];
                     if (width == 3) {
                         seg_lens[seg] /= 3;
                     } else if (width == 0) {
@@ -514,6 +515,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/04/12 16:51:02  vasilche
+* Fixed uninitialized variables.
+*
 * Revision 1.11  2004/03/09 17:27:42  kuznets
 * Bug fix(compilation): CSeq_align::CreateDensegFromStdseg MSVC
 *
