@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.73  2003/12/08 16:03:05  coulouri
+ * Propagate protein neighboring threshold even if it is zero
+ *
  * Revision 1.72  2003/11/24 23:18:32  dondosha
  * Added gap_decay_rate argument to BLAST_Cutoffs; removed BLAST_Cutoffs_simple
  *
@@ -948,8 +951,8 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
       }
    }
 
-   if (threshold)
-      options->threshold = threshold;
+   options->threshold = threshold;
+
    if (use_pssm)
       options->use_pssm = use_pssm;
    if (word_size)
