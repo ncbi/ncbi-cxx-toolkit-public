@@ -424,18 +424,14 @@ int CDemoApp::Run(void)
     if ( !handle ) {
         ERR_POST(Fatal << "Bioseq not found");
     }
-    if ( !id->IsGi() ) {
+    {{
+        NcbiCout << "Synonyms:" << NcbiEndl;
         CConstRef<CSynonymsSet> syns = scope.GetSynonyms(handle);
         ITERATE ( CSynonymsSet, it, *syns ) {
-            CConstRef<CSeq_id> seq_id =
-                CSynonymsSet::GetSeq_id_Handle(it).GetSeqId();
-            if ( seq_id->IsGi() ) {
-                int gi = seq_id->GetGi();
-                NcbiCout << "Sequence gi is "<<gi<<NcbiEndl;
-                break;
-            }
+            CSeq_id_Handle idh = CSynonymsSet::GetSeq_id_Handle(it);
+            NcbiCout << "    " << idh.AsString() << NcbiEndl;
         }
-    }
+    }}
 
     CSeq_id_Handle master_id = CSeq_id_Handle::GetHandle(*id);
 
@@ -752,6 +748,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2004/02/09 14:54:22  vasilche
+* Dump synonyms of the sequence.
+*
 * Revision 1.58  2004/02/05 14:53:53  vasilche
 * Used "new" cache interface by default.
 *
