@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2001/01/03 22:34:44  lavr
+ * MAX_IP_ADDRESS_LEN -> MAX_IP_ADDR_LEN (as everywhere else)
+ *
  * Revision 6.18  2000/12/29 17:59:38  lavr
  * Reading and writing of SERV_Info now use SOCK_* utility functions
  * SOCK_gethostaddr and SOCK_ntoa. More clean code for reading.
@@ -102,6 +105,9 @@
 #include <string.h>
 
 
+#define MAX_IP_ADDR_LEN 16 /* sizeof("255.255.255.255") */
+
+
 /*****************************************************************************
  *  Attributes for the different server types::  Interface
  */
@@ -158,8 +164,6 @@ const char* SERV_ReadType(const char* str, ESERV_Type* type)
  *  Utilities
  */
 
-#define MAX_IP_ADDRESS_LEN      15 /* sizeof("255.255.255.255")-1 */
-
 
 /* Utility routine to read host:port from a string.
  * The string has not to contain host if 'default_host' provided non-zero,
@@ -178,7 +182,7 @@ static const char* s_Read_HostPort(const char* str, unsigned int default_host,
     int n;
 
     if (!default_host) {
-        char abuf[MAX_IP_ADDRESS_LEN + 1];
+        char abuf[MAX_IP_ADDR_LEN];
         size_t alen;
 
         if (!s || (alen = (size_t)(s - str)) > sizeof(abuf) - 1)
@@ -212,7 +216,7 @@ static const char* s_Read_HostPort(const char* str, unsigned int default_host,
  */
 static int s_Write_HostPort(char *str, unsigned int host, unsigned short port)
 {
-    char abuf[MAX_IP_ADDRESS_LEN + 1];
+    char abuf[MAX_IP_ADDR_LEN];
 
     if (host) {
         if (SOCK_ntoa(host, abuf, sizeof(abuf)) != 0)
@@ -239,8 +243,8 @@ static const char *k_FlagTag[N_FLAG_TAGS] = {
 char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
 {
     const SSERV_Attr* attr = s_GetAttrByType(info->type);
-    size_t reserve = attr->tag_len+1 + MAX_IP_ADDRESS_LEN+1 + 5+1 +
-        10+1/*algorithm*/ + 12+1/*time*/ + 12+1/*rate*/ + 6/*stat*/;
+    size_t reserve = attr->tag_len+1 + MAX_IP_ADDR_LEN + 5+1/*port*/ +
+        10+1/*algorithm*/ + 12+1/*time*/ + 12+1/*rate*/ + 6/*sful*/;
     char* str;
 
     /* write server-specific info */
