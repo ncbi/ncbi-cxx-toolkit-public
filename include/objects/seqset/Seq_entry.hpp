@@ -47,6 +47,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CSeq_loc;
+
 class NCBI_SEQSET_EXPORT CSeq_entry : public CSeq_entry_Base, public CSerialUserOp
 {
     typedef CSeq_entry_Base Tparent;
@@ -164,6 +166,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2003/05/23 21:12:42  ucko
+ * Predeclare CSeq_loc for ReadFasta.
+ *
  * Revision 1.15  2003/05/23 20:28:11  ucko
  * Give ReadFasta an optional argument for reporting lowercase
  * characters' location.
