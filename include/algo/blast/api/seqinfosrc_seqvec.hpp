@@ -52,7 +52,7 @@ class CSeqVecSeqInfoSrc : public IBlastSeqInfoSrc
 {
 public:
     /// Constructor from a vector of sequence locations.
-    CSeqVecSeqInfoSrc(const TSeqLocVector seqv);
+    CSeqVecSeqInfoSrc(const TSeqLocVector& seqv);
     /// Destructor
     virtual ~CSeqVecSeqInfoSrc();
     /// Retrieve a sequence identifier given its index in the vector.
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/10/18 20:33:24  dondosha
+ * Pass TSeqLocVector to constructor by reference
+ *
  * Revision 1.3  2004/10/06 17:47:34  dondosha
  * Removed ncbi_pch.hpp
  *

@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CSeqVecSeqInfoSrc::CSeqVecSeqInfoSrc(const TSeqLocVector seqv)
+CSeqVecSeqInfoSrc::CSeqVecSeqInfoSrc(const TSeqLocVector& seqv)
     : m_SeqVec(seqv)
 {
     if (seqv.size() == 0) {
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/10/18 20:33:31  dondosha
+ * Pass TSeqLocVector to constructor by reference
+ *
  * Revision 1.1  2004/10/06 14:53:00  dondosha
  * Implementation of IBlastSeqInfoSrc with TSeqLocVector
  *
