@@ -68,7 +68,7 @@ public:
         if (dbf.primary_seqid.IsNull())
             return;
 
-        string seq_id_str = dbf.primary_seqid;
+        string seq_id_str = (const char*)dbf.primary_seqid;
         if (seq_id_str.empty())
             return;
         CSeq_id seq_id_db(seq_id_str);
@@ -185,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/07/30 18:36:38  kuznets
+ * Minor syntactic fix
+ *
  * Revision 1.2  2003/06/18 18:49:01  kuznets
  * Implemented new constructor.
  *
