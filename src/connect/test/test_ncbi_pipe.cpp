@@ -34,6 +34,12 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbipipe.hpp>
 
+#if defined(NCBI_OS_MSWIN)
+#  include <io.h>
+#elif defined(NCBI_OS_UNIX)
+#  include <unistd.h>
+#endif
+
 #include <test/test_assert.h>  // This header must go last
 
 
@@ -49,11 +55,10 @@ USING_NCBI_SCOPE;
 //
 
 // Reading from pipe
-string s_ReadPipe(CPipe* pipe) 
+static string s_ReadPipe(CPipe& pipe) 
 {
     char buf[BUFFER_SIZE];
-    unsigned int cnt = 0;
-    cnt = pipe->Read(buf, BUFFER_SIZE-1);
+    size_t cnt = pipe.Read(buf, BUFFER_SIZE-1);
     buf[cnt] = 0;
     string str = buf;
     cerr << "Read from pipe: " << str << endl;
@@ -62,19 +67,18 @@ string s_ReadPipe(CPipe* pipe)
 
 
 // Writing to pipe
-void s_WritePipe(CPipe* pipe, string message) 
+static void s_WritePipe(CPipe& pipe, string message) 
 {
-    pipe->Write(message.c_str(), message.length());
+    pipe.Write(message.c_str(), message.length());
     cerr << "Wrote to pipe: " << message << endl;
 }
 
 
 // Reading from file stream
-string s_ReadFile(FILE* fs) 
+static string s_ReadFile(FILE* fs) 
 {
     char buf[BUFFER_SIZE];
-    unsigned int cnt = 0;
-    cnt = read(fileno(fs), buf, BUFFER_SIZE-1);
+    size_t cnt = read(fileno(fs), buf, BUFFER_SIZE-1);
     buf[cnt] = 0;
     string str = buf;
     cerr << "Read from file stream: " << str << endl;
@@ -88,14 +92,42 @@ void s_WriteFile(FILE* fs, string message)
     cerr << "Wrote to file stream: " << message << endl;
 }
 
+// Reading from iostream
+static string s_ReadStream(istream& ios)
+{
+    char buf[BUFFER_SIZE];
+    size_t read = 0;
+    size_t size = BUFFER_SIZE-1;
+    for (;;) {
+        ios.read(buf, size);
+        size_t cnt = ios.gcount();
+        read += cnt;
+        size -= cnt;
+        if (cnt == 0 && ios.eof())
+            break;
+        ios.clear();
+    }
+    buf[read] = 0;
+    string str = buf;
+    cerr << "Read from iostream: " << str << endl;
+    return str;
+}
 
-// Delay a some time. Needs only for better output.
+// Writing to iostream
+void s_WriteFile(ostream& ios, string message) 
+{
+    ios << message;
+    cerr << "Wrote to file stream: " << message << endl;
+}
+
+
+// Delay a some time. Needs only for more proper output.
 void Delay() 
 {
 #if defined(NCBI_OS_MSWIN)
     Sleep(300);
 #elif defined(NCBI_OS_UNIX)
-    sleep(1);
+    usleep(300000);
 #elif defined(NCBI_OS_MAC)
     ?
 #endif
@@ -127,29 +159,66 @@ int CTest::Run(void)
     string str;
     vector<string> args;
 
-    // Pipe for reading
+    // Pipe for reading (direct from pipe)
     args.push_back("-l");
     CPipe pipe("ls", args, CPipe::eDoNotUse, CPipe::eText);
-    s_ReadPipe(&pipe);
+    s_ReadPipe(pipe);
     assert(pipe.Close() == 0);
 
-    // Pipe for writing
+    // Pipe for reading (iostream)
+    pipe.Open("ls", args, CPipe::eDoNotUse, CPipe::eText);
+    CPipeIOStream ios(pipe);
+    s_ReadStream(ios);
+    assert(pipe.Close() == 0);
+
+    // Pipe for writing (direct from pipe)
     args.clear();
     args.push_back("one_argument");
     pipe.Open(app.c_str(), args, CPipe::eText, CPipe::eDoNotUse);
-    s_WritePipe(&pipe, "Child, are You ready?");
+    s_WritePipe(pipe, "Child, are You ready?");
     Delay();
     assert(pipe.Close() == TEST_RESULT);
 
-    // Bi-directional pipe
+    // Pipe for writing (iostream)
+    pipe.Open(app.c_str(), args, CPipe::eText, CPipe::eDoNotUse);
+    s_WritePipe(pipe, "Child, are You ready?");
+    Delay();
+    assert(pipe.Close() == TEST_RESULT);
+    
+    // Bidirectional pipe (direct from pipe)
     args.clear();
     args.push_back("two");
     args.push_back("arguments");
     pipe.Open(app.c_str(), args);
-    s_WritePipe(&pipe, "Child, are You ready again?");
     Delay();
-    str = s_ReadPipe(&pipe);
+    s_WritePipe(pipe, "Child, are You ready again?");
+    Delay();
+    str = s_ReadPipe(pipe);
     assert(str == "Ok. Test 2 running.");
+    assert(pipe.Close() == TEST_RESULT);
+
+    // Bidirectional pipe (iostream)
+    args.clear();
+    args.push_back("one");
+    args.push_back("two");
+    args.push_back("three");
+    pipe.Open(app.c_str(), args, CPipe::eText,  CPipe::eText,  CPipe::eText);
+    CPipeIOStream ps(pipe);
+    Delay();
+    cout << endl;
+    for (int i = 5; i<=10; i++) {
+        int value; 
+        cout << "How much is " << i << "*" << i << "?\t";
+        ps << i << endl;
+        ps.flush();
+        ps >> value;
+        cout << value << endl;
+        assert(value == i*i);
+    }
+    ps.SetReadHandle(CPipe::eStdErr);
+    ps >> str;
+    cout << str << endl;
+    assert(str == "Done");
     assert(pipe.Close() == TEST_RESULT);
 
     cout << endl << "TEST execution completed successfully!" << endl << endl;
@@ -166,7 +235,7 @@ int main(int argc, const char* argv[])
 {
     string command;
     // Spawned process for unidirectional test
-    if ( argc == 2) {
+    if (argc == 2) {
         cerr << endl << "--- CPipe unidirectional test ---" << endl;
         command = s_ReadFile(stdin);
         assert(command == "Child, are You ready?");
@@ -174,12 +243,26 @@ int main(int argc, const char* argv[])
         exit(TEST_RESULT);
     }
 
-    // Spawned process for bidirectional test
-    if ( argc == 3) {
-        cerr << endl << "--- CPipe bidirectional test ---" << endl;
+    // Spawned process for bidirectional test (direct from pipe)
+    if (argc == 3) {
+        cerr << endl << "--- CPipe bidirectional test (pipe) ---" << endl;
         command = s_ReadFile(stdin);
         assert(command == "Child, are You ready again?");
         s_WriteFile(stdout, "Ok. Test 2 running.");
+        exit(TEST_RESULT);
+    }
+
+    // Spawned process for bidirectional test (iostream)
+    if (argc == 4) {
+        //cerr << endl << "--- CPipe bidirectional test (iostream) ---" << endl;
+        for (int i = 5; i<=10; i++) {
+            int value;
+            cin >> value;
+            assert(value == i);
+            cout << value*value << endl;
+            cout.flush();
+        }
+        cerr << "Done" << endl;
         exit(TEST_RESULT);
     }
 
@@ -191,6 +274,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2002/06/11 19:25:56  ivanov
+ * Added tests for CPipeIOStream
+ *
  * Revision 6.3  2002/06/10 18:49:08  ivanov
  * Fixed argument passed to child process
  *
