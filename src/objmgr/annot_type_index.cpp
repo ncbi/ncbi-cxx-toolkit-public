@@ -31,6 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <objmgr/impl/annot_type_index.hpp>
 #include <objmgr/annot_type_selector.hpp>
 #include <objmgr/annot_types_ci.hpp>
@@ -55,11 +56,16 @@ CAnnotType_Index::TIndexRangeTable CAnnotType_Index::sm_FeatTypeIndexRange;
 
 CAnnotType_Index::TIndexTable CAnnotType_Index::sm_FeatSubtypeIndex;
 
+DEFINE_STATIC_FAST_MUTEX(sm_TablesInitializeMutex);
 bool CAnnotType_Index::sm_TablesInitialized = false;
 
 
 void CAnnotType_Index::x_InitIndexTables(void)
 {
+    CFastMutexGuard guard(sm_TablesInitializeMutex);
+    if ( sm_TablesInitialized ) {
+        return;
+    }
     // Check flag, lock tables
     _ASSERT(!sm_TablesInitialized);
     sm_AnnotTypeIndexRange.resize(kAnnotTypeMax + 1);
@@ -170,6 +176,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/09/30 18:38:12  vasilche
+* Added thread safety to CAnnot_Index::x_InitIndexTables().
+*
 * Revision 1.4  2004/08/05 18:26:15  vasilche
 * CAnnotName and CAnnotTypeSelector are moved in separate headers.
 *
