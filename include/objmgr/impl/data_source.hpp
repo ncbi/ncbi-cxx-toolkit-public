@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/03/07 21:25:34  grichenk
+* +GetSeq_annot() in annotation iterators
+*
 * Revision 1.14  2002/03/05 18:44:55  grichenk
 * +x_UpdateTSEStatus()
 *
@@ -90,6 +93,7 @@
 #include <objects/objmgr1/seq_map.hpp>
 #include <objects/objmgr1/data_loader.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -225,9 +229,15 @@ private:
     CSeqMap& x_GetSeqMap(const CBioseq_Handle& handle);
 
     // Process a single data element
-    void x_MapFeature(const CSeq_feat& feat, CTSE_Info& tse);
-    void x_MapAlign(const CSeq_align& align, CTSE_Info& tse);
-    void x_MapGraph(const CSeq_graph& graph, CTSE_Info& tse);
+    void x_MapFeature(const CSeq_feat& feat,
+                      const CSeq_annot& annot,
+                      CTSE_Info& tse);
+    void x_MapAlign(const CSeq_align& align,
+                    const CSeq_annot& annot,
+                    CTSE_Info& tse);
+    void x_MapGraph(const CSeq_graph& graph,
+                    const CSeq_annot& annot,
+                    CTSE_Info& tse);
 
     // Check if the Seq-entry is handled by this data-source
     CSeq_entry* x_FindEntry(const CSeq_entry& entry);
@@ -236,9 +246,9 @@ private:
     void x_DropEntry(CSeq_entry& entry);
     void x_DropAnnotMap(CSeq_entry& entry);
     // Process a single data element
-    void x_DropFeature(const CSeq_feat& feat);
-    void x_DropAlign(const CSeq_align& align);
-    void x_DropGraph(const CSeq_graph& graph);
+    void x_DropFeature(const CSeq_feat& feat, const CSeq_annot& annot);
+    void x_DropAlign(const CSeq_align& align, const CSeq_annot& annot);
+    void x_DropGraph(const CSeq_graph& graph, const CSeq_annot& annot);
 
     // Global cleanup -- search for unlocked TSEs and drop them.
     void x_CleanupUnusedEntries(void);

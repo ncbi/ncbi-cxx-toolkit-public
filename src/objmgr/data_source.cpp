@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/03/07 21:25:33  grichenk
+* +GetSeq_annot() in annotation iterators
+*
 * Revision 1.20  2002/03/06 19:37:19  grichenk
 * Fixed minor bugs and comments
 *
@@ -666,7 +669,7 @@ bool CDataSource::AttachAnnot(const CSeq_entry& entry,
             {
                 iterate ( CSeq_annot::C_Data::TFtable, fi,
                     annot.GetData().GetFtable() ) {
-                    x_MapFeature(**fi, *tse);
+                    x_MapFeature(**fi, annot, *tse);
                 }
                 break;
             }
@@ -674,7 +677,7 @@ bool CDataSource::AttachAnnot(const CSeq_entry& entry,
             {
                 iterate ( CSeq_annot::C_Data::TAlign, ai,
                     annot.GetData().GetAlign() ) {
-                    x_MapAlign(**ai, *tse);
+                    x_MapAlign(**ai, annot, *tse);
                 }
                 break;
             }
@@ -682,7 +685,7 @@ bool CDataSource::AttachAnnot(const CSeq_entry& entry,
             {
                 iterate ( CSeq_annot::C_Data::TGraph, gi,
                     annot.GetData().GetGraph() ) {
-                    x_MapGraph(**gi, *tse);
+                    x_MapGraph(**gi, annot, *tse);
                 }
                 break;
             }
@@ -791,7 +794,7 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
             {
                 iterate ( CSeq_annot::C_Data::TFtable, it,
                     (*ai)->GetData().GetFtable() ) {
-                    x_MapFeature(**it, *tse);
+                    x_MapFeature(**it, **ai, *tse);
                 }
                 break;
             }
@@ -799,7 +802,7 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
             {
                 iterate ( CSeq_annot::C_Data::TAlign, it,
                     (*ai)->GetData().GetAlign() ) {
-                    x_MapAlign(**it, *tse);
+                    x_MapAlign(**it, **ai, *tse);
                 }
                 break;
             }
@@ -807,7 +810,7 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
             {
                 iterate ( CSeq_annot::C_Data::TGraph, it,
                     (*ai)->GetData().GetGraph() ) {
-                    x_MapGraph(**it, *tse);
+                    x_MapGraph(**it, **ai, *tse);
                 }
                 break;
             }
@@ -1015,11 +1018,13 @@ void CDataSource::x_DataToSeqMap(const CSeq_data& data,
 }
 
 
-void CDataSource::x_MapFeature(const CSeq_feat& feat, CTSE_Info& tse)
+void CDataSource::x_MapFeature(const CSeq_feat& feat,
+                               const CSeq_annot& annot,
+                               CTSE_Info& tse)
 {
     // Create annotation object. It will split feature location
     // to a handle-ranges map.
-    CAnnotObject* aobj = new CAnnotObject(*this, feat);
+    CAnnotObject* aobj = new CAnnotObject(*this, feat, annot);
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
@@ -1030,10 +1035,12 @@ void CDataSource::x_MapFeature(const CSeq_feat& feat, CTSE_Info& tse)
 }
 
 
-void CDataSource::x_MapAlign(const CSeq_align& align, CTSE_Info& tse)
+void CDataSource::x_MapAlign(const CSeq_align& align,
+                             const CSeq_annot& annot,
+                             CTSE_Info& tse)
 {
     // Create annotation object. It will process the align locations
-    CAnnotObject* aobj = new CAnnotObject(*this, align);
+    CAnnotObject* aobj = new CAnnotObject(*this, align, annot);
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
@@ -1044,11 +1051,13 @@ void CDataSource::x_MapAlign(const CSeq_align& align, CTSE_Info& tse)
 }
 
 
-void CDataSource::x_MapGraph(const CSeq_graph& graph, CTSE_Info& tse)
+void CDataSource::x_MapGraph(const CSeq_graph& graph,
+                             const CSeq_annot& annot,
+                             CTSE_Info& tse)
 {
     // Create annotation object. It will split graph location
     // to a handle-ranges map.
-    CAnnotObject* aobj = new CAnnotObject(*this, graph);
+    CAnnotObject* aobj = new CAnnotObject(*this, graph, annot);
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
@@ -1262,7 +1271,7 @@ void CDataSource::x_DropAnnotMap(CSeq_entry& entry)
             {
                 iterate ( CSeq_annot::C_Data::TFtable, it,
                     (*ai)->GetData().GetFtable() ) {
-                    x_DropFeature(**it);
+                    x_DropFeature(**it, **ai);
                 }
                 break;
             }
@@ -1270,7 +1279,7 @@ void CDataSource::x_DropAnnotMap(CSeq_entry& entry)
             {
                 iterate ( CSeq_annot::C_Data::TAlign, it,
                     (*ai)->GetData().GetAlign() ) {
-                    x_DropAlign(**it);
+                    x_DropAlign(**it, **ai);
                 }
                 break;
             }
@@ -1278,7 +1287,7 @@ void CDataSource::x_DropAnnotMap(CSeq_entry& entry)
             {
                 iterate ( CSeq_annot::C_Data::TGraph, it,
                     (*ai)->GetData().GetGraph() ) {
-                    x_DropGraph(**it);
+                    x_DropGraph(**it, **ai);
                 }
                 break;
             }
@@ -1287,10 +1296,11 @@ void CDataSource::x_DropAnnotMap(CSeq_entry& entry)
 }
 
 
-void CDataSource::x_DropFeature(const CSeq_feat& feat)
+void CDataSource::x_DropFeature(const CSeq_feat& feat,
+                                const CSeq_annot& annot)
 {
     // Create a copy of annot object to iterate all seq-id handles
-    CRef<CAnnotObject> aobj(new CAnnotObject(*this, feat));
+    CRef<CAnnotObject> aobj(new CAnnotObject(*this, feat, annot));
     // Iterate id handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
@@ -1327,10 +1337,11 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat)
 }
 
 
-void CDataSource::x_DropAlign(const CSeq_align& align)
+void CDataSource::x_DropAlign(const CSeq_align& align,
+                              const CSeq_annot& annot)
 {
     // Create a copy of annot object to iterate all seq-id handles
-    CRef<CAnnotObject> aobj(new CAnnotObject(*this, align));
+    CRef<CAnnotObject> aobj(new CAnnotObject(*this, align, annot));
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
@@ -1367,10 +1378,11 @@ void CDataSource::x_DropAlign(const CSeq_align& align)
 }
 
 
-void CDataSource::x_DropGraph(const CSeq_graph& graph)
+void CDataSource::x_DropGraph(const CSeq_graph& graph,
+                              const CSeq_annot& annot)
 {
     // Create a copy of annot object to iterate all seq-id handles
-    CRef<CAnnotObject> aobj(new CAnnotObject(*this, graph));
+    CRef<CAnnotObject> aobj(new CAnnotObject(*this, graph, annot));
     // Iterate handles
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/03/07 21:25:33  grichenk
+* +GetSeq_annot() in annotation iterators
+*
 * Revision 1.9  2002/03/05 16:08:14  grichenk
 * Moved TSE-restriction to new constructors
 *
@@ -63,6 +66,7 @@
 * ===========================================================================
 */
 
+#include "annot_object.hpp"
 #include <objects/objmgr1/annot_types_ci.hpp>
 #include "data_source.hpp"
 #include "tse_info.hpp"
@@ -203,6 +207,15 @@ CAnnotObject* CAnnotTypes_CI::Get(void) const
     _ASSERT( IsValid() );
     return &*m_CurrentAnnot;
 }
+
+
+const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
+{
+    _ASSERT( IsValid() );
+    return m_CurrentAnnot->GetSeq_annot();
+}
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/03/07 21:25:31  grichenk
+* +GetSeq_annot() in annotation iterators
+*
 * Revision 1.7  2002/03/05 16:08:12  grichenk
 * Moved TSE-restriction to new constructors
 *
@@ -94,6 +97,8 @@ public:
     CAnnotTypes_CI& operator= (const CAnnotTypes_CI& it);
 
     typedef set< CRef<CTSE_Info> > TTSESet;
+
+    const CSeq_annot& GetSeq_annot(void) const;
 
 protected:
     // Check if a datasource and an annotation are selected.

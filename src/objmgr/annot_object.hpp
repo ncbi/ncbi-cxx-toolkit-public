@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/07 21:25:33  grichenk
+* +GetSeq_annot() in annotation iterators
+*
 * Revision 1.4  2002/02/21 19:27:04  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -50,19 +53,12 @@
 * ===========================================================================
 */
 
-
-/*
-#include <objects/seq/Seq_annot.hpp>
-
-#include <objects/objmgr1/annot_ci.hpp>
-*/
 #include "data_source.hpp"
 #include "handle_range_map.hpp"
-
+#include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
-
 #include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -73,9 +69,15 @@ BEGIN_SCOPE(objects)
 class CAnnotObject : public CObject
 {
 public:
-    CAnnotObject(CDataSource& data_source, const CSeq_feat&  feat);
-    CAnnotObject(CDataSource& data_source, const CSeq_align& align);
-    CAnnotObject(CDataSource& data_source, const CSeq_graph& graph);
+    CAnnotObject(CDataSource& data_source,
+                 const CSeq_feat&  feat,
+                 const CSeq_annot& annot);
+    CAnnotObject(CDataSource& data_source,
+                 const CSeq_align& align,
+                 const CSeq_annot& annot);
+    CAnnotObject(CDataSource& data_source,
+                 const CSeq_graph& graph,
+                 const CSeq_annot& annot);
     virtual ~CAnnotObject(void);
 
     SAnnotSelector::TAnnotChoice Which(void) const;
@@ -89,7 +91,10 @@ public:
     bool IsGraph(void) const;
     const CSeq_graph& GetGraph(void) const;
 
-    const CHandleRangeMap& GetRangeMap(void) const { return m_RangeMap; }
+    const CHandleRangeMap& GetRangeMap(void) const;
+
+    // Get Seq-annot, containing the element
+    const CSeq_annot& GetSeq_annot(void) const;
 
 private:
     void x_ProcessAlign(const CSeq_align& align);
@@ -97,6 +102,7 @@ private:
     CDataSource*                 m_DataSource;
     SAnnotSelector::TAnnotChoice m_Choice;
     CConstRef<CObject>           m_Object;
+    CConstRef<CSeq_annot>        m_Annot;
     CHandleRangeMap              m_RangeMap;
 };
 
@@ -110,10 +116,13 @@ private:
 
 
 inline
-CAnnotObject::CAnnotObject(CDataSource& data_source, const CSeq_feat& feat)
+CAnnotObject::CAnnotObject(CDataSource& data_source,
+                           const CSeq_feat& feat,
+                           const CSeq_annot& annot)
     : m_DataSource(&data_source),
       m_Choice(CSeq_annot::C_Data::e_Ftable),
       m_Object(dynamic_cast<const CObject*>(&feat)),
+      m_Annot(&annot),
       m_RangeMap(data_source.GetIdMapper())
 {
     m_RangeMap.AddLocation(feat.GetLocation());
@@ -123,10 +132,13 @@ CAnnotObject::CAnnotObject(CDataSource& data_source, const CSeq_feat& feat)
 }
 
 inline
-CAnnotObject::CAnnotObject(CDataSource& data_source, const CSeq_align& align)
+CAnnotObject::CAnnotObject(CDataSource& data_source,
+                           const CSeq_align& align,
+                           const CSeq_annot& annot)
     : m_DataSource(&data_source),
       m_Choice(CSeq_annot::C_Data::e_Align),
       m_Object(dynamic_cast<const CObject*>(&align)),
+      m_Annot(&annot),
       m_RangeMap(data_source.GetIdMapper())
 {
     x_ProcessAlign(align);
@@ -134,10 +146,13 @@ CAnnotObject::CAnnotObject(CDataSource& data_source, const CSeq_align& align)
 }
 
 inline
-CAnnotObject::CAnnotObject(CDataSource& data_source, const CSeq_graph& graph)
+CAnnotObject::CAnnotObject(CDataSource& data_source,
+                           const CSeq_graph& graph,
+                           const CSeq_annot& annot)
     : m_DataSource(&data_source),
       m_Choice(CSeq_annot::C_Data::e_Graph),
       m_Object(dynamic_cast<const CObject*>(&graph)),
+      m_Annot(&annot),
       m_RangeMap(data_source.GetIdMapper())
 {
     m_RangeMap.AddLocation(graph.GetLoc());
@@ -190,6 +205,18 @@ inline
 const CSeq_graph& CAnnotObject::GetGraph(void) const
 {
     return dynamic_cast<const CSeq_graph&>(*m_Object);
+}
+
+inline
+const CHandleRangeMap& CAnnotObject::GetRangeMap(void) const
+{
+    return m_RangeMap;
+}
+
+inline
+const CSeq_annot& CAnnotObject::GetSeq_annot(void) const
+{
+    return *m_Annot;
 }
 
 
