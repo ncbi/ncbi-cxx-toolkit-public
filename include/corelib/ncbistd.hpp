@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/04/17 19:30:12  vakatov
+* Allowed case-insensitive comparison for StartsWith() and EndsWith()
+*
 * Revision 1.38  2000/04/17 04:14:20  vakatov
 * NStr::  extended Compare(), and allow case-insensitive string comparison
 * NStr::  added ToLower() and ToUpper()
@@ -213,25 +216,29 @@ struct NStr {
         return Compare(s1, 0, NPOS, s2, use_case);
     }
 
+    // these 4 methods change the passed string, then return it
     static string& ToLower(string& str);
     static char*   ToLower(char*   str);
     static string& ToUpper(string& str);
     static char*   ToUpper(char*   str);
 
-    static inline bool StartsWith(const string& str, const string& start) {
+    static inline bool StartsWith(const string& str, const string& start,
+                                  ECase use_case = eCase) {
         return str.size() >= start.size()  &&
-            Compare(str, 0, start.size(), start) == 0;
+            Compare(str, 0, start.size(), start, use_case) == 0;
     }
     
-    static inline bool EndsWith(const string& str, const string& end) {
+    static inline bool EndsWith(const string& str, const string& end,
+                                  ECase use_case = eCase) {
         return str.size() >= end.size()  &&
-            Compare(str, str.size() - end.size(), end.size(), end) == 0;
+            Compare(str, str.size() - end.size(), end.size(),
+                    end, use_case) == 0;
     }
 
     enum ETrunc {
-        eTrunc_Begin,
-        eTrunc_End,
-        eTrunc_Both
+        eTrunc_Begin,  // truncate leading  spaces only
+        eTrunc_End,    // truncate trailing spaces only
+        eTrunc_Both    // truncate spaces at both begin and end of string
     };
     static string TruncateSpaces(const string& str, ETrunc where=eTrunc_Both);
 
