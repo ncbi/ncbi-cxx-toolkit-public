@@ -67,6 +67,9 @@ public:
     CRange<TSeqPos> GetSeqRange(TDim row) const;
     TSeqPos         GetSeqStart(TDim row) const;
     TSeqPos         GetSeqStop (TDim row) const;
+    // Get seq-id (the first one if segments have different ids).
+    // Throw exception if row is invalid.
+    const CSeq_id&  GetSeq_id(TDim row) const;
 
     /// Reverse the segments' orientation
     /// NOTE: currently *only* works for dense-seg
@@ -130,6 +133,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/04/19 17:27:22  grichenk
+* Added GetSeq_id(TDim row)
+*
 * Revision 1.10  2004/03/15 17:42:29  todorov
 * Derive SSeqIdChooser from CObject to avoid possible multiple inheritance in
 * the client. Workshop has problems with it (missplaced vtable).

@@ -176,6 +176,54 @@ TSeqPos CSeq_align::GetSeqStop (TDim row) const
 }
 
 
+const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
+{
+    switch (GetSegs().Which()) {
+    case C_Segs::e_Denseg:
+        {
+            if ( GetSegs().GetDenseg().IsSetIds()  &&
+                row < GetSegs().GetDenseg().GetIds().size()) {
+                return *GetSegs().GetDenseg().GetIds()[row];
+            }
+            break;
+        }
+    case C_Segs::e_Dendiag:
+        {
+            // If segments have different number of rows, this will try
+            // to find the segment with enough rows to get the id.
+            ITERATE(CSeq_align::C_Segs::TDendiag, seg, GetSegs().GetDendiag()) {
+                if( (*seg)->IsSetIds()  &&
+                    row < (*seg)->GetIds().size() ) {
+                    return *(*seg)->GetIds()[row];
+                }
+            }
+            break;
+        }
+    case C_Segs::e_Std:
+        {
+            // If segments have different number of rows, this will try
+            // to find the segment with enough rows to get the id.
+            ITERATE(CSeq_align::C_Segs::TStd, seg, GetSegs().GetStd()) {
+                if ( (*seg)->IsSetLoc()  &&
+                    row < (*seg)->GetLoc().size() ) {
+                    CSeq_loc_CI loc_iter(*(*seg)->GetLoc()[row]);
+                    return loc_iter.GetSeq_id();
+                }
+            }
+            break;
+        }
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::GetSeq_id() currently does not handle "
+                   "this type of alignment.");
+    }
+    NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+               "CSeq_align::GetSeq_id(): "
+               "can not get seq-id for the row requested.");
+    // return CSeq_id();
+}
+
+
 void CSeq_align::Validate(bool full_test) const
 {
     switch (GetSegs().Which()) {
@@ -515,6 +563,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/04/19 17:27:22  grichenk
+* Added GetSeq_id(TDim row)
+*
 * Revision 1.12  2004/04/12 16:51:02  vasilche
 * Fixed uninitialized variables.
 *
