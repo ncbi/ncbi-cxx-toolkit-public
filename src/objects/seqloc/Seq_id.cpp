@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2001/10/15 23:00:00  vakatov
+ * CSeq_id::x_Init() -- get rid of unreachable "break;"
+ *
  * Revision 6.15  2001/08/31 20:05:44  ucko
  * Fix ICC build.
  *
@@ -682,8 +685,7 @@ CSeq_id::x_Init
             break;
         }
     default:
-        THROW1_TRACE(invalid_argument, "Specified Seq-id type not supported.");
-        break;
+        THROW1_TRACE(invalid_argument, "Specified Seq-id type not supported");
     }
 }
 
