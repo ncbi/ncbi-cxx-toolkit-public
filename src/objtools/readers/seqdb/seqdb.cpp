@@ -36,6 +36,32 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Helper function to build private implementation object.
+///
+/// This method builds and returns the object which implements the
+/// functionality for the CSeqDB API.  If this method is called with
+/// '-' for the sequence data type, protein will be tried first, then
+/// nucleotide.  The created object will be returned.  Either
+/// kSeqTypeProt for a protein database, kSeqTypeNucl for nucleotide,
+/// or kSeqTypeUnkn to less this function try one then the other.
+/// 
+/// @param dbname
+///   A list of database or alias names, seperated by spaces.
+/// @param prot_nucl
+///   Specify whether to use protein, nucleotide, or either.
+/// @param oid_begin
+///   Iterator will skip OIDs less than this value.  Only OIDs
+///   found in the OID lists (if any) will be returned.
+/// @param oid_end
+///   Iterator will return up to (but not including) this OID.
+/// @param use_mmap
+///   If kSeqDBMMap is specified (the default), memory mapping is
+///   attempted.  If kSeqDBNoMMap is specified, or memory mapping
+///   fails, this platform does not support it, the less efficient
+///   read and write calls are used instead.
+/// @return
+///   The CSeqDBImpl object that was created.
+
 static CSeqDBImpl *
 s_SeqDBInit(const string & dbname,
             char           prot_nucl,
@@ -83,8 +109,8 @@ CSeqDB::CSeqDB(const string & dbname, char prot_nucl)
 
 CSeqDB::CSeqDB(const string & dbname,
                char           prot_nucl,
-               Uint4          oid_begin,
-               Uint4          oid_end,
+               TOID           oid_begin,
+               TOID           oid_end,
                bool           use_mmap)
 {
     m_Impl = s_SeqDBInit(dbname,
@@ -104,12 +130,12 @@ Uint4 CSeqDB::GetSeqLengthApprox(TOID oid) const
     return m_Impl->GetSeqLengthApprox(oid);
 }
 
-CRef<CBlast_def_line_set> CSeqDB::GetHdr(Uint4 oid) const
+CRef<CBlast_def_line_set> CSeqDB::GetHdr(TOID oid) const
 {
     return m_Impl->GetHdr(oid);
 }
 
-char CSeqDB::GetSeqType(void) const
+char CSeqDB::GetSeqType() const
 {
     return m_Impl->GetSeqType();
 }
