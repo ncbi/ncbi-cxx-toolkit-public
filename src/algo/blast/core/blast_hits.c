@@ -445,9 +445,8 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject,
 
    *align_length_ptr = align_length;
    *num_ident_ptr = num_ident;
+
    return 0;
-
-
 }
 
 /** TRUE if c is between a and b; f between d and f. Determines if the
@@ -1033,6 +1032,32 @@ Int2 Blast_HSPListGetEvalues(Uint1 program, BlastQueryInfo* query_info,
    return 0;
 }
 
+Int2 Blast_HSPListGetBitScores(BlastHSPList* hsp_list, 
+                               Boolean gapped_calculation, BlastScoreBlk* sbp)
+{
+   BlastHSP* hsp;
+   Blast_KarlinBlk** kbp;
+   Int4 index;
+   
+   if (hsp_list == NULL)
+      return 1;
+   
+   if (gapped_calculation)
+      kbp = sbp->kbp_gap_std;
+   else
+      kbp = sbp->kbp_std;
+   
+   for (index=0; index<hsp_list->hspcnt; index++) {
+      hsp = hsp_list->hsp_array[index];
+      ASSERT(hsp != NULL);
+      hsp->bit_score = 
+         (hsp->score*kbp[hsp->context]->Lambda - kbp[hsp->context]->logK) / 
+         NCBIMATH_LN2;
+   }
+   
+   return 0;
+}
+
 void Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp)
 {
    Int4 index;
@@ -1247,13 +1272,6 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    hsp_array = hsp_list->hsp_array;
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
-   /* In case of no traceback, return without doing anything */
-   if (!hsp_list->traceback_done && gapped_calculation) {
-      if (hsp_list->hspcnt > 1)
-         status = Blast_HSPListUniqSort(hsp_list);
-      return status;
-   }
-
    if (hsp_list->hspcnt == 0)
       /* All HSPs have been deleted */
       return status;
@@ -1298,10 +1316,6 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
       Blast_HSPListPurgeNullHSPs(hsp_list);
    }
    
-   /* Check for HSP inclusion once more */
-   if (hsp_list->hspcnt > 1)
-      status = Blast_HSPListUniqSort(hsp_list);
-
    BlastSequenceBlkFree(seq_arg.seq);
    subject_blk->sequence = NULL;
 
