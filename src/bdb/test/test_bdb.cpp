@@ -287,6 +287,28 @@ static void s_TEST_BDB_Types(void)
 //
 //
 
+static 
+void s_IdTableFill(TestDBF1& dbf, unsigned int records)
+{
+    for (unsigned int i = 1; i < records; ++i) {
+        char buf[256];
+        sprintf(buf, s_TestStrTempl, i);
+        dbf.IdKey = i;
+        dbf.idata = 400+i;
+        dbf.str = buf;
+        dbf.i2.Set(i+3);
+        int i2 = dbf.i2;
+        assert (i2 == (int)(i+3));
+
+        assert(!dbf.idata.IsNull());
+
+        EBDB_ErrCode err = dbf.Insert();
+        assert(err == eBDB_Ok);
+        assert(dbf.idata.IsNull());
+    }
+
+}
+
 
 static void s_TEST_BDB_IdTable_Fill(void)
 {
@@ -308,24 +330,9 @@ static void s_TEST_BDB_IdTable_Fill(void)
     // Fill the table
 
     unsigned i;
+
+    s_IdTableFill(dbf1, s_RecsInTable);
     
-    for (i = 1; i < s_RecsInTable; ++i) {
-        char buf[256];
-        sprintf(buf, s_TestStrTempl, i);
-        dbf1.IdKey = i;
-        dbf1.idata = 400+i;
-        dbf1.str = buf;
-        dbf1.i2.Set(i+3);
-        int i2 = dbf1.i2;
-        assert (i2 == (int)(i+3));
-
-        assert(!dbf1.idata.IsNull());
-
-        EBDB_ErrCode err = dbf1.Insert();
-        assert(err == eBDB_Ok);
-        assert(dbf1.idata.IsNull());
-    }
-
     // Trying to put duplicate record
 
     dbf1.IdKey = 1;
@@ -424,6 +431,72 @@ static void s_TEST_BDB_IdTable_Fill(void)
 
 
 }
+
+
+
+static void s_TEST_BDB_IdTable_FillStress(void)
+{
+    cout << "======== Id table filling stress test." << endl;
+
+    CBDB_Env env;
+    env.SetCacheSize(64 * (1024 * 1024));
+    env.OpenWithLocks(0);
+
+    TestDBF1  dbf1;
+
+    dbf1.SetEnv(env);
+
+    dbf1.Open(s_TestFileName, CBDB_File::eCreate);
+    assert(dbf1.idata.IsNull());
+
+    // Fill the table
+
+    unsigned i;
+
+    const unsigned int recs = 1000000;
+
+    s_IdTableFill(dbf1, recs);
+
+    cout << "Table loaded..." << endl;    
+
+    // Read the table check if all records are in place
+
+    dbf1.Reopen(CBDB_File::eReadOnly);
+
+    for (i = 1; i < recs; ++i) {
+        dbf1.IdKey = i;
+        EBDB_ErrCode ret = dbf1.Fetch();
+        assert (ret == eBDB_Ok);
+
+        ValidateRecord(dbf1, i);
+
+    } // for
+
+    cout << "Check 1 complete" << endl;
+
+    dbf1.Reopen(CBDB_File::eReadOnly);
+
+    for (i = 1; i < recs; ++i) {
+
+        {{
+            CBDB_FileCursor cur(dbf1);
+            cur.SetCondition(CBDB_FileCursor::eEQ);
+
+            cur.From << i;
+            EBDB_ErrCode ret = cur.FetchFirst();
+            assert (ret == eBDB_Ok);
+            ValidateRecord(dbf1, i);
+        }}
+
+
+    } // for
+
+
+    cout << "======== Id table stress filling test ok." << endl;
+
+
+}
+
 
 class CTestScanner : public CBDB_FileScanner
 {
@@ -654,6 +727,14 @@ static void s_TEST_BDB_Query(void)
     bres = scanner.StaticEvaluate(query);
     assert(bres);
     }}
+
+    {{
+    const char* ch = "yyy";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(!bres);
+    }}
+
 
     {{
     const char* ch = "id = '1' AND test";
@@ -1777,6 +1858,7 @@ int CBDB_Test::Run(void)
 
         s_TEST_BDB_Query();
 
+        s_TEST_BDB_IdTable_FillStress();
 
     }
     catch (CBDB_ErrnoException& ex)
@@ -1810,6 +1892,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/03/12 12:41:50  kuznets
+ * + stress test for cursors
+ *
  * Revision 1.40  2004/03/10 16:22:22  kuznets
  * + more tests
  *
