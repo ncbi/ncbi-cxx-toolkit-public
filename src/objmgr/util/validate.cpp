@@ -56,6 +56,7 @@
 #include <objects/seq/seq__.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seq/gencode.hpp>
+#include <objects/seq/Seqdesc.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 
@@ -668,6 +669,17 @@ CValidError_impl::CValidError_impl
 
 CValidError_impl::~CValidError_impl()
 {
+}
+
+
+inline
+const CSeq_id& s_GetId(const CBioseq& seq)
+{
+    if (!seq.GetId().empty()) {
+        return **seq.GetId().begin();
+    } else {
+        NCBI_THROW(CValidException, eSeqId, "Bioseq has no Seq-id");
+    }
 }
 
 
@@ -2913,7 +2925,9 @@ void CValidError_impl::ValidateFeatPartialness(const CSeq_feat& feat)
     };
 
     partial_loc  = s_GetSeqlocPartialInfo(feat.GetLocation (), m_Scope.GetPointer () );
-    partial_prod = s_GetSeqlocPartialInfo(feat.GetProduct (), m_Scope.GetPointer () );
+    if (feat.IsSetProduct ()) {
+        partial_prod = s_GetSeqlocPartialInfo(feat.GetProduct (), m_Scope.GetPointer () );
+    }
 
     if ( (partial_loc  != eSeqlocPartial_Complete)  ||
          (partial_prod != eSeqlocPartial_Complete)  ||   
@@ -2928,6 +2942,7 @@ void CValidError_impl::ValidateFeatPartialness(const CSeq_feat& feat)
         // a partial feature, with complete location, but partial product
         else if ( feat.GetPartial()  &&
                   partial_loc == eSeqlocPartial_Complete  &&
+                  feat.IsSetProduct () &&
                   feat.GetProduct ().Which () == CSeq_loc::e_Whole  &&
                   partial_prod != eSeqlocPartial_Complete ) {
             ValidErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
@@ -4210,6 +4225,17 @@ void CValidError_impl::ValidateRna(const CRNA_ref &rna, const CSeq_feat& feat)
 
 }
 
+static CBioseq_Handle GetBioseqHandleByLoc (CScope & scope, const CSeq_loc& loc)
+
+{
+    for (CSeq_loc_CI citer (loc); citer; ++citer) {
+        const CSeq_id & id = citer.GetSeq_id ();
+        CBioseq_Handle bsh = scope.GetBioseqHandle (id);
+        return bsh;
+    }
+
+    NCBI_THROW(CValidException, eSeqId, "GetBioseqHandleByLoc failed");
+}
 
 void CValidError_impl::ValidateCdregion (
     const CCdregion& cdregion, 
@@ -4250,7 +4276,16 @@ void CValidError_impl::ValidateCdregion (
         ValidErr (eDiag_Warning, eErr_SEQ_FEAT_PsuedoCdsHasProduct,
             "A pseudo coding region should not have a product", feat);
     }
-    
+
+    const CBioseq_Handle & bsh = GetBioseqHandleByLoc (*m_Scope, feat.GetLocation ());
+    /*
+    for (CDesc_CI diter (bsh); diter; ++diter) {
+        const CSeq_descr & desc = *diter;
+        if (desc.IsSource ()) {
+        }
+    }
+    */
+
     /*
       biopgencode = 0;
       cdsgencode = 0;
@@ -4358,19 +4393,15 @@ void CValidError_impl::CdTransCheck(const CSeq_feat &feat)
 
 void CValidError_impl::CheckForBothStrands (const CSeq_feat &feat)
 {
-  bool bothstrands = false;
-  const CSeq_loc &location = feat.GetLocation (),
-       *slp = 0;
-
-  while (true/*(slp = SeqLocFindNext (location, slp)) != 0*/) {
-    //if (SeqLocStrand (slp) == Seq_strand_both) {
-
-    if ( GetStrand(*slp, m_Scope) == eNa_strand_both ) {
-        ValidErr (eDiag_Error, eErr_SEQ_FEAT_BothStrands, 
-            "mRNA or CDS may not be on both strands", feat);  
-        break;
+    bool bothstrands = false;
+    const CSeq_loc &location = feat.GetLocation ();
+    for (CSeq_loc_CI citer (location); citer; ++citer) {
+        if ( citer.GetStrand () == eNa_strand_both ) {
+            ValidErr (eDiag_Error, eErr_SEQ_FEAT_BothStrands, 
+                "mRNA or CDS may not be on both strands", feat);  
+            break;
+        }
     }
-  }
 }
 
 
@@ -5171,6 +5202,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2002/10/30 22:44:50  kans
+* fixes to a few functions, first pass at GetBioseqHandleByLoc
+*
 * Revision 1.19  2002/10/29 19:35:46  clausen
 * Moved CValidException definition here
 *
