@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/05/24 19:06:19  thiessen
+* fix to compile on SGI
+*
 * Revision 1.10  2000/08/25 14:22:00  thiessen
 * minor tweaks
 *
@@ -129,40 +132,40 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
     CModel_space_points::TZ::const_iterator i_Z = coords.GetSites().GetZ().begin();
 
     // occupancy iterator
-    CAtomic_occupancies::TO::const_iterator *i_occup = NULL;
+    CAtomic_occupancies::TO::const_iterator i_occup;
     double occupScale = 0.0;
     if (haveOccup) {
         occupScale = static_cast<double>(coords.GetOccupancies().GetScale_factor());
-        i_occup = &(coords.GetOccupancies().GetO().begin());
+        i_occup = coords.GetOccupancies().GetO().begin();
     }    
 
     // altConfID iterator
-    CAlternate_conformation_ids::Tdata::const_iterator *i_alt = NULL;
-    if (haveAlt) i_alt = &(coords.GetAlternate_conf_ids().Get().begin());
+    CAlternate_conformation_ids::Tdata::const_iterator i_alt;
+    if (haveAlt) i_alt = coords.GetAlternate_conf_ids().Get().begin();
 
     // temperature iterators
     double tempScale = 0.0;
-    CIsotropic_temperature_factors::TB::const_iterator *i_tempI = NULL;
-    CAnisotropic_temperature_factors::TB_11::const_iterator *i_tempA11 = NULL;
-    CAnisotropic_temperature_factors::TB_12::const_iterator *i_tempA12 = NULL;
-    CAnisotropic_temperature_factors::TB_13::const_iterator *i_tempA13 = NULL;
-    CAnisotropic_temperature_factors::TB_22::const_iterator *i_tempA22 = NULL;
-    CAnisotropic_temperature_factors::TB_23::const_iterator *i_tempA23 = NULL;
-    CAnisotropic_temperature_factors::TB_33::const_iterator *i_tempA33 = NULL;
+    CIsotropic_temperature_factors::TB::const_iterator i_tempI;
+    CAnisotropic_temperature_factors::TB_11::const_iterator i_tempA11;
+    CAnisotropic_temperature_factors::TB_12::const_iterator i_tempA12;
+    CAnisotropic_temperature_factors::TB_13::const_iterator i_tempA13;
+    CAnisotropic_temperature_factors::TB_22::const_iterator i_tempA22;
+    CAnisotropic_temperature_factors::TB_23::const_iterator i_tempA23;
+    CAnisotropic_temperature_factors::TB_33::const_iterator i_tempA33;
     if (haveTemp) {
         if (coords.GetTemperature_factors().IsIsotropic()) {
             tempScale = static_cast<double>
                 (coords.GetTemperature_factors().GetIsotropic().GetScale_factor());
-            i_tempI = &(coords.GetTemperature_factors().GetIsotropic().GetB().begin());
+            i_tempI = coords.GetTemperature_factors().GetIsotropic().GetB().begin();
         } else {
             tempScale = static_cast<double>
                 (coords.GetTemperature_factors().GetAnisotropic().GetScale_factor());
-            i_tempA11 = &(coords.GetTemperature_factors().GetAnisotropic().GetB_11().begin());
-            i_tempA12 = &(coords.GetTemperature_factors().GetAnisotropic().GetB_12().begin());
-            i_tempA13 = &(coords.GetTemperature_factors().GetAnisotropic().GetB_13().begin());
-            i_tempA22 = &(coords.GetTemperature_factors().GetAnisotropic().GetB_22().begin());
-            i_tempA23 = &(coords.GetTemperature_factors().GetAnisotropic().GetB_23().begin());
-            i_tempA33 = &(coords.GetTemperature_factors().GetAnisotropic().GetB_33().begin());
+            i_tempA11 = coords.GetTemperature_factors().GetAnisotropic().GetB_11().begin();
+            i_tempA12 = coords.GetTemperature_factors().GetAnisotropic().GetB_12().begin();
+            i_tempA13 = coords.GetTemperature_factors().GetAnisotropic().GetB_13().begin();
+            i_tempA22 = coords.GetTemperature_factors().GetAnisotropic().GetB_22().begin();
+            i_tempA23 = coords.GetTemperature_factors().GetAnisotropic().GetB_23().begin();
+            i_tempA33 = coords.GetTemperature_factors().GetAnisotropic().GetB_33().begin();
         }
     }
 
@@ -174,21 +177,21 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
         atom->site.y = (static_cast<double>(*(i_Y++)))/siteScale;
         atom->site.z = (static_cast<double>(*(i_Z++)))/siteScale;
         if (haveOccup)
-            atom->occupancy = (static_cast<double>(*((*i_occup)++)))/occupScale;
+            atom->occupancy = (static_cast<double>(*(i_occup++)))/occupScale;
         if (haveAlt)
-            atom->altConfID = (*((*i_alt)++)).GetObject().Get()[0];
+            atom->altConfID = (*(i_alt++)).GetObject().Get()[0];
         if (haveTemp) {
             if (coords.GetTemperature_factors().IsIsotropic()) {
                 atom->averageTemperature =
-                    (static_cast<double>(*((*i_tempI)++)))/tempScale;
+                    (static_cast<double>(*(i_tempI++)))/tempScale;
             } else {
                 atom->averageTemperature = (
-                    (static_cast<double>(*((*i_tempA11)++))) +
-                    (static_cast<double>(*((*i_tempA12)++))) +
-                    (static_cast<double>(*((*i_tempA13)++))) +
-                    (static_cast<double>(*((*i_tempA22)++))) +
-                    (static_cast<double>(*((*i_tempA23)++))) +
-                    (static_cast<double>(*((*i_tempA33)++)))) / (tempScale * 6.0);
+                    (static_cast<double>(*(i_tempA11++))) +
+                    (static_cast<double>(*(i_tempA12++))) +
+                    (static_cast<double>(*(i_tempA13++))) +
+                    (static_cast<double>(*(i_tempA22++))) +
+                    (static_cast<double>(*(i_tempA23++))) +
+                    (static_cast<double>(*(i_tempA33++)))) / (tempScale * 6.0);
             }
         }
 
