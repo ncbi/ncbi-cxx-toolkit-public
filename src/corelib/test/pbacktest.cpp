@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/01/30 20:07:13  lavr
+ * Verbose message about the difference, not just a position number
+ *
  * Revision 1.1  2002/01/29 16:02:19  lavr
  * Initial revision
  *
@@ -147,21 +150,22 @@ extern int TEST_StreamPushback(iostream&    ios,
     buf2[buflen] = '\0';
 
     for (i = 0; i < kBufferSize; i++) {
-        if (!buf2[i])
-            break;
-        if (buf2[i] != buf1[i])
-            break;
+        if (!buf2[i]) {
+            ERR_POST("Zero byte within encountered at position " << i + 1);
+            return 1;
+        }
+        if (buf2[i] != buf1[i]) {
+            ERR_POST("In: '" << buf1[i] << "', Out: '" << buf2[i] << '\''
+                     << " at position " << i + 1);
+            return 1;
+        }
     }
-
-    if (i < kBufferSize) {
-        ERR_POST("Not entirely bounced, mismatch position: " << i + 1);
-        return 1;
-    } else if (buflen > kBufferSize) {
+    if (buflen > kBufferSize) {
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
         return 1;
     } else
         LOG_POST(Info << "Test passed");
-    
+
     delete[] buf1;
     delete[] buf2;
 
