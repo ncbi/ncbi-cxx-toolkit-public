@@ -888,6 +888,7 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
                     istr->read(&str[pos], rlen);
                     size_t count = istr->gcount();
                     if ( count == 0 ) {
+                        str.resize(pos);
                         if ( istr->eof() ) {
                             string err = "\
 CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF";
@@ -1220,6 +1221,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.74  2003/10/15 17:06:02  ucko
+* CCgiRequest::x_Init: truncate str properly in the case of unexpected EOF.
+*
 * Revision 1.73  2003/08/20 19:41:34  ucko
 * CCgiRequest::ParseEntries: handle unencoded = signs in values.
 *
