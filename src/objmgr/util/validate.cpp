@@ -3550,7 +3550,7 @@ void CValidError_impl::ValidateCollidingGeneNames(const CBioseq& seq)
     for (CTypeConstIterator<CSeq_feat> ft(ConstBegin(seq)); ft; ++ft) {
         label.erase();
         feature::GetLabel(*ft, &label, feature::eContent, m_Scope.GetPointer());
-        label_map.insert(make_pair(label, &*ft));
+        label_map.insert(TSmap::value_type(label, &*ft));
     }
 
     // Iterate through multimap and compare labels
@@ -4098,6 +4098,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2002/10/04 14:39:41  ucko
+* Use TSmap::value_type's constructor directly rather than via make_pair,
+* as the latter fails under WorkShop.
+*
 * Revision 1.3  2002/10/04 14:27:37  ivanov
 * Fixed s_IsDifferentDbxref() -- MSVC don't like identifier names lst1
 * and lst2 in this function (weird compiler :).
