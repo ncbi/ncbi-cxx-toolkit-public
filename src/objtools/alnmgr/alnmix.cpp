@@ -177,7 +177,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
     m_InputDSsMap[(void *)dsp] = dsp;
 
     // check if scope was given
-    if ( !(flags & fDontUseObjMgr  ||  m_Scope) ) {
+    if ( !(flags & fDontUseObjMgr  ||  m_Scope != 0) ) {
         NCBI_THROW(CAlnException, eMergeFailure, 
                    "CAlnMix::Add(): "
                    "AlnMix will not create a scope for you. "
@@ -1903,6 +1903,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.85  2003/12/22 19:30:35  kuznets
+* Fixed compilation error (operator ambiguity) (MSVC)
+*
 * Revision 1.84  2003/12/22 18:30:37  todorov
 * ObjMgr is no longer created internally. Scope should be passed as a reference in the ctor
 *
