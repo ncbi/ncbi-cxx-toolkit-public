@@ -82,7 +82,7 @@ private:
 
 
 // derived classes (or their proxies) predeclared here, for (minor) convenience
-struct CFlatForehead;
+class  CFlatForehead;
 struct SFlatHead;
 struct SFlatKeywords;
 struct SFlatSegment;
@@ -93,7 +93,7 @@ struct SFlatPrimary;
 class  CFlatFeatHeader;
 struct SFlatFeature;
 struct SFlatDataHeader;
-class  SFlatData;
+struct SFlatData;
 struct SFlatContig;
 struct SFlatWGSRange;
 struct SFlatGenomeInfo;
@@ -109,6 +109,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/10 21:59:41  ucko
+* Fix keywords (struct/class) in forward declarations to match reality.
+*
 * Revision 1.1  2003/03/10 16:39:08  ucko
 * Initial check-in of new flat-file generator
 *
