@@ -237,8 +237,8 @@ RELEVANT_SUBS = find "`pwd`"/* -type d | $(RELEVANT)
 
 SUB_BRA_P = \
 if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
-        -n "$(EXPENDABLE_SUB_PROJ)"  -o  -n "$(CHECK_SUB_PROJ)" ;  then \
-    x_subproj="$(SUB_PROJ) $(POTENTIAL_SUB_PROJ) - $(EXPENDABLE_SUB_PROJ) $(CHECK_SUB_PROJ)"; \
+        -n "$(EXPENDABLE_SUB_PROJ)";  then \
+    x_subproj="$(SUB_PROJ) $(POTENTIAL_SUB_PROJ) - $(EXPENDABLE_SUB_PROJ)"; \
     expendable=false ; \
     for i in $$x_subproj ; do \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
