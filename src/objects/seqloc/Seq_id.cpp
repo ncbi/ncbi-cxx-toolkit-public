@@ -559,7 +559,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             switch (pfx[1]) {
             case 'A': case 'B': case 'D': case 'F':
             case 'K': case 'N': case 'O': case 'V': return eAcc_gb_est;
-            case 'C': case 'E': case 'G': case 'L': return eAcc_gb_gss;
+            case 'C': case 'E': case 'G': case 'L':
+            case 'W':                               return eAcc_gb_gss;
             case 'H': case 'M':                     return eAcc_gb_con;
             case 'I': case 'J':                     return eAcc_ddbj_est;
             case 'P':                               return eAcc_gb_genome;
@@ -1515,6 +1516,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.89  2004/09/15 14:10:12  ucko
+ * IdentifyAccession: CW -> eAcc_gb_gss
+ *
  * Revision 6.88  2004/08/06 17:20:59  ucko
  * IdentifyAccession: CV -> eAcc_gb_est
  *
