@@ -81,7 +81,7 @@ static void s_SetPrimitiveData(TUFData& data, CConstObjectInfo obj)
     case ePrimitiveValueEnum:
         try {
             obj.GetPrimitiveValueString(data.SetStr());
-        } catch (CSerialException& e) {
+        } catch (CSerialException&) {
             data.SetInt(obj.GetPrimitiveValueInt());
         }
         break;
@@ -165,7 +165,7 @@ static CUser_field::TNum s_SetContainerData(TUFData& data,
                 string s;
                 try {
                     obj2.GetPrimitiveValueString(s);
-                } catch (CSerialException& e) {
+                } catch (CSerialException&) {
                     s = NStr::IntToString(obj.GetPrimitiveValueInt());
                 }
                 data.SetStrs().push_back(s);
@@ -372,7 +372,7 @@ static void s_UnpackContainerField(const TUFData& data, CObjectInfo obj)
             case ePrimitiveValueSpecial:
                 break;
             case ePrimitiveValueBool:
-                obj2.SetPrimitiveValueBool(*it);
+                obj2.SetPrimitiveValueBool(*it ? true : false);
                 break;
             case ePrimitiveValueInteger:
             case ePrimitiveValueEnum:
@@ -534,6 +534,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/10/28 18:41:12  dicuccio
+* Dropped unused local variables in exceptions - clears compiler warning
+*
 * Revision 1.1  2004/07/27 15:13:18  ucko
 * Add a somewhat rough implementation of User-object <-> ObjectInfo conversion.
 *
