@@ -162,7 +162,7 @@ double PHIScoreToEvalue(Int4 score, BlastScoreBlk* sbp)
 {
    double paramC = sbp->kbp[0]->paramC;
    double Lambda = sbp->kbp[0]->Lambda;
-   Int4 pattern_space = sbp->effective_search_sp;
+   Int8 pattern_space = sbp->effective_search_sp;
    
    return pattern_space*paramC*(1+Lambda*score)*exp(-Lambda*score);
 }
