@@ -139,7 +139,7 @@ extern char* LOG_ComposeMessage
  TLOG_FormatFlags    format_flags)
 {
     static const char s_RawData_Begin[] =
-        "\n#################### [BEGIN] Raw Data (%lu bytes):\n";
+        "\n#################### [BEGIN] Raw Data (%lu byte%s):\n";
     static const char s_RawData_End[] =
         "\n#################### [END] Raw Data\n";
 
@@ -217,7 +217,7 @@ extern char* LOG_ComposeMessage
         message_len = strlen(call_data->message);
     }
 
-    if ( call_data->raw_data ) {
+    if ( call_data->raw_size ) {
         const unsigned char* d = (const unsigned char*) call_data->raw_data;
         size_t      i = call_data->raw_size;
         for (data_len = 0;  i;  i--, d++) {
@@ -267,7 +267,8 @@ extern char* LOG_ComposeMessage
         const unsigned char* d;
 
         s = str + strlen(str);
-        sprintf(s, s_RawData_Begin, (unsigned long) call_data->raw_size);
+        sprintf(s, s_RawData_Begin, (unsigned long) call_data->raw_size,
+                call_data->raw_size == 1 ? "" : "s");
         s += strlen(s);
 
         d = (const unsigned char*) call_data->raw_data;
@@ -503,6 +504,9 @@ extern const char* CORE_GetPlatform(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2003/05/05 20:19:13  lavr
+ * LOG_ComposeMessage() to check raw_size instead of raw_data ptr
+ *
  * Revision 6.27  2003/05/05 11:41:09  rsmith
  * added defines and declarations to allow cross compilation Mac->Win32 using Metrowerks Codewarrior.
  *
