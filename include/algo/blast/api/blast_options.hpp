@@ -597,7 +597,6 @@ private:
     
     void x_Throwx(const string& msg) const
     {
-        cout << "thrown: " << msg << endl;
         NCBI_THROW(CBlastException, eInternal, msg);
     }
 };
@@ -1726,7 +1725,6 @@ private:
     
     void x_Throwx(const string& msg ) const
     {
-        cout << "thrown: " << msg << endl;
         NCBI_THROW(CBlastException, eInternal, msg);
     }
 };
@@ -2434,6 +2432,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.72  2004/08/26 20:54:56  dondosha
+* Removed a debugging printout in x_Throwx method
+*
 * Revision 1.71  2004/08/18 18:13:42  camacho
 * Remove GetProgramFromBlastProgramType, add ProgramNameToEnum
 *
