@@ -1,4 +1,4 @@
---$Revision: 6.0 $
+--$Revision: 6.1 $
 --**********************************************************************
 --
 --  NCBI Taxonomy Server
@@ -16,17 +16,52 @@ IMPORTS Org-ref FROM NCBI-Organism;
 
                           -- Requests to the Taxon server
 Taxon1-req ::= CHOICE {
-	init	NULL,     -- initialize the server
-	getbyid INTEGER,  -- get Org-ref by TaxonID
-	lookup  Org-ref,  -- lookup by data
-	fini    NULL }    -- close the server
+	init		NULL,		-- initialize the server
+	findname	VisibleString,	-- find orgnames match string
+	getdesignator 	VisibleString,	-- find designator
+	getunique     	VisibleString,	-- get taxid for unique name
+	getidbyorg    	Org-ref,	-- get taxid matches orgref
+	getorgnames   	INTEGER,	-- get all organism names
+	getcde		NULL,		-- get name classes
+	getranks	NULL,		-- get ranks
+	getdivs		NULL,		-- get divisions
+	getgcs		NULL,		-- get gencodes
+	getlineage      INTEGER,        -- get lineage for org
+	getchildren	INTEGER,	-- get children
+	getbyid		INTEGER,  	-- get Org-ref by TaxonID
+	lookup		Org-ref,  	-- lookup by data
+	getorgmod	Taxon1-info,  	-- lookup for OrgMod
+	fini    	NULL }    	-- close the server
 
 Taxon1-resp ::= CHOICE {
-	error   Taxon1-error,  -- sent on any error
-	init    NULL,     -- sent by successful initiation
-	getbyid Taxon1-data,
-	lookup  Taxon1-data,
-	fini    NULL }
+	error		Taxon1-error,	-- sent on any error
+	init    	NULL,		-- sent by successful initiation
+	findname	SET OF Taxon1-name,
+	getdesignator	INTEGER,
+	getunique	INTEGER,
+	getidbyorg	INTEGER,
+	getorgnames	SET OF Taxon1-name,
+	getcde		SET OF Taxon1-info,
+	getranks	SET OF Taxon1-info,
+	getdivs		SET OF Taxon1-info,
+	getgcs		SET OF Taxon1-info,
+	getlineage	SET OF Taxon1-info,
+	getchildren	SET OF Taxon1-info,
+	getbyid 	Taxon1-data,
+	lookup  	Taxon1-data,
+	getorgmod	SET OF Taxon1-info,  
+	fini    	NULL }
+
+Taxon1-info ::= SEQUENCE {
+	ival1	INTEGER,
+	ival2	INTEGER,
+	sval	VisibleString OPTIONAL}
+
+Taxon1-name ::= SEQUENCE {
+	taxid	INTEGER,
+	cde	INTEGER,
+	oname	VisibleString OPTIONAL,
+	uname	VisibleString OPTIONAL }
 
 Taxon1-error ::= SEQUENCE {
 	level ENUMERATED {
@@ -38,7 +73,7 @@ Taxon1-error ::= SEQUENCE {
 	msg VisibleString OPTIONAL }
 
 Taxon1-data ::= SEQUENCE {
-	org Org-ref ,    -- Org-ref with Org-name and db filled in
+	org Org-ref OPTIONAL,    -- Org-ref with Org-name and db filled in
 	div VisibleString ,  -- GenBank division
 	embl-code VisibleString ,     -- 2 letter EMBL code
 	is-species-level BOOLEAN }   -- species level or below
