@@ -402,10 +402,7 @@ CTL_RPCCmd::~CTL_RPCCmd()
         } catch (CDB_Exception& ) {}
     }
 
-    if (ct_cmd_drop(m_Cmd) != CS_SUCCEED) {
-        throw CDB_ClientEx(eDB_Fatal, 121021, "CTL_RPCCmd::~CTL_RPCCmd",
-                           "ct_cmd_drop failed");
-    }
+    ct_cmd_drop(m_Cmd);
 }
 
 
@@ -443,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/06/24 18:42:26  soussov
+ * removes throwing exception from destructor
+ *
  * Revision 1.6  2003/06/05 16:00:31  soussov
  * adds code for DumpResults and for the dumped results processing
  *
