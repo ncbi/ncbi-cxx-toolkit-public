@@ -2257,7 +2257,8 @@ public:
     */
     enumerator first() const
     {
-        return bvector<A, MS>::enumerator(this, 0);
+        typedef typename bvector<A, MS>::enumerator TEnumerator;
+        return TEnumerator(this, 0);
     }
 
     /**
@@ -2266,7 +2267,8 @@ public:
     */
     enumerator end() const
     {
-        return bvector<A, MS>::enumerator(this, 1);
+        typedef typename bvector<A, MS>::enumerator TEnumerator;
+        return TEnumerator(this, 1);
     }
 
 
