@@ -182,6 +182,15 @@ string CHTMLHelper::StripTags(const string& str)
         s.erase(pos, pos_end - pos + 3);
         pos++;
     }
+    // Next, strip mapping tags <@...@>
+    while ( (pos = s.find("<@", pos)) != NPOS ) {
+        SIZE_TYPE pos_end = s.find("@>", pos + 1);
+        if ( pos_end == NPOS ) {
+            break;
+        }
+        s.erase(pos, pos_end - pos + 2);
+        pos++;
+    }
     // Now, strip balanced "<..>"
     pos =0;
     while ( (pos = s.find("<", pos)) != NPOS ) {
@@ -242,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/10/21 17:39:47  ivanov
+ * CHTMLHelper::StripTags() : strip mapping tags <@...@> before stripping tags
+ *
  * Revision 1.19  2004/10/20 18:58:10  ivanov
  * CHTMLHelper::StripTags() -- remove tag also if last symbol before tag
  * closing is not an alpha.
