@@ -31,6 +31,9 @@
 
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_process.hpp>
+
+
 #include <bdb/bdb_blobcache.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <corelib/ncbimtx.hpp>
@@ -332,19 +335,43 @@ private:
 
 
 CBDB_BLOB_Cache::CBDB_BLOB_Cache()
-: m_IntCacheInstance(m_IntCacheDB)
+: m_IntCacheInstance(m_IntCacheDB),
+  m_PidGuard(0)
 {
 }
 
 CBDB_BLOB_Cache::~CBDB_BLOB_Cache()
 {
+    delete m_PidGuard;
 }
 
-void CBDB_BLOB_Cache::Open(const char* path)
+void CBDB_BLOB_Cache::Open(const char* path, ELockMode lm)
 {
     m_Path = CDirEntry::AddTrailingPathSeparator(path);
 
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+
+    // Make sure our directory exists
+    {{
+        CDir dir(m_Path);
+        if ( !dir.Exists() ) {
+            dir.Create();
+        }
+    }}
+
+    string lock_file = "lc_lock.pid";
+    string lock_file_path = m_Path + lock_file;
+
+    switch (lm)
+    {
+    case ePidLock:
+        m_PidGuard = new CPIDGuard(lock_file_path, m_Path);
+        break;
+    case eNoLock:
+        break;
+    default:
+        break;
+    }
 
     m_Env.SetCacheSize(2 * s_WriterBufferSize);
 
@@ -893,6 +920,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/10/24 12:37:42  kuznets
+ * Implemented cache locking using PID guard
+ *
  * Revision 1.23  2003/10/23 13:46:38  vasilche
  * Implemented PendingCount() method.
  *
