@@ -118,8 +118,14 @@ private:
 class NCBI_SEQLOC_EXPORT CSeq_loc_CI
 {
 public:
+    // Options for empty locations processing
+    enum EEmptyFlag {
+        eEmpty_Skip,    // ignore empty locations
+        eEmpty_Allow    // treat empty locations as usual
+    };
+
     CSeq_loc_CI(void);
-    CSeq_loc_CI(const CSeq_loc& loc);
+    CSeq_loc_CI(const CSeq_loc& loc, EEmptyFlag empty_flag = eEmpty_Skip);
     ~CSeq_loc_CI(void);
 
     CSeq_loc_CI(const CSeq_loc_CI& iter);
@@ -159,8 +165,6 @@ private:
     // Simple location structure: id/from/to
     struct SLoc_Info {
         SLoc_Info(void);
-        SLoc_Info(const SLoc_Info& loc_info);
-        SLoc_Info& operator= (const SLoc_Info& loc_info);
 
         CConstRef<CSeq_id>  m_Id;
         TRange              m_Range;
@@ -177,6 +181,8 @@ private:
     TLocList                 m_LocList;
     // Current interval
     TLocList::const_iterator m_CurLoc;
+    // Empty locations processing option
+    EEmptyFlag               m_EmptyFlag;
 };
 
 
@@ -216,32 +222,11 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 
 inline
 CSeq_loc_CI::SLoc_Info::SLoc_Info(void)
-    : m_Id(0), m_Strand(eNa_strand_unknown), m_Loc(0)
+    : m_Id(0),
+      m_Strand(eNa_strand_unknown),
+      m_Loc(0)
 {
     return;
-}
-
-inline
-CSeq_loc_CI::SLoc_Info::SLoc_Info(const SLoc_Info& loc_info)
-    : m_Id(loc_info.m_Id),
-      m_Range(loc_info.m_Range),
-      m_Strand(loc_info.m_Strand),
-      m_Loc(loc_info.m_Loc)
-{
-    return;
-}
-
-inline
-CSeq_loc_CI::SLoc_Info&
-CSeq_loc_CI::SLoc_Info::operator= (const SLoc_Info& loc_info)
-{
-    if (this == &loc_info)
-        return *this;
-    m_Id = loc_info.m_Id;
-    m_Range = loc_info.m_Range;
-    m_Strand = loc_info.m_Strand;
-    m_Loc = loc_info.m_Loc;
-    return *this;
 }
 
 inline
@@ -332,6 +317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/04/02 15:17:45  grichenk
+ * Added flag for CSeq_loc_CI to skip/include empty locations.
+ *
  * Revision 1.22  2003/02/06 22:23:29  vasilche
  * Added CSeq_id::Assign(), CSeq_loc::Assign().
  * Added int CSeq_id::Compare() (not safe).

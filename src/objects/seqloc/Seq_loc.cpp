@@ -347,14 +347,16 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRange(void) const
 
 // CSeq_loc_CI implementation
 CSeq_loc_CI::CSeq_loc_CI(void)
-    : m_Location(0)
+    : m_Location(0),
+      m_EmptyFlag(eEmpty_Skip)
 {
     m_CurLoc = m_LocList.end();
 }
 
 
-CSeq_loc_CI::CSeq_loc_CI(const CSeq_loc& loc)
-    : m_Location(&loc)
+CSeq_loc_CI::CSeq_loc_CI(const CSeq_loc& loc, EEmptyFlag empty_flag)
+    : m_Location(&loc),
+      m_EmptyFlag(empty_flag)
 {
     x_ProcessLocation(loc);
     m_CurLoc = m_LocList.begin();
@@ -378,6 +380,7 @@ CSeq_loc_CI& CSeq_loc_CI::operator= (const CSeq_loc_CI& iter)
         return *this;
     m_LocList.clear();
     m_Location = iter.m_Location;
+    m_EmptyFlag = iter.m_EmptyFlag;
     ITERATE(TLocList, li, iter.m_LocList) {
         TLocList::iterator tmp = m_LocList.insert(m_LocList.end(), *li);
         if (iter.m_CurLoc == li)
@@ -403,7 +406,13 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
     case CSeq_loc::e_Null:
     case CSeq_loc::e_Empty:
         {
-            // Ignore empty locations
+            if (m_EmptyFlag == eEmpty_Allow) {
+                SLoc_Info info;
+                info.m_Id.Reset(new CSeq_id);
+                info.m_Range = TRange::GetEmpty();
+                info.m_Loc = &loc;
+                m_LocList.push_back(info);
+            }
             return;
         }
     case CSeq_loc::e_Whole:
@@ -787,6 +796,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.28  2003/04/02 15:17:47  grichenk
+ * Added flag for CSeq_loc_CI to skip/include empty locations.
+ *
  * Revision 6.27  2003/03/11 15:55:44  kuznets
  * iterate -> ITERATE
  *
