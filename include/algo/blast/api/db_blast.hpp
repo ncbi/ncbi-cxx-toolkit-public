@@ -46,7 +46,10 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
-/// Runs the BLAST algorithm between 2 sequences.
+// Type definition for a vector of error messages from the BLAST engine
+typedef vector<Blast_Message*> TBlastError;
+
+/// Runs the BLAST algorithm between a set of sequences and BLAST database
 class NCBI_XBLAST_EXPORT CDbBlast : public CObject
 {
 public:
@@ -76,7 +79,7 @@ public:
     virtual void PartialRun();
 
     // Remove extra results if a limit is provided on total number of HSPs
-    bool TrimBlastHSPResults();
+    void TrimBlastHSPResults();
 
     /// Retrieves regions filtered on the query/queries
     //const TSeqLocVector& GetFilteredQueryRegions() const;
@@ -87,7 +90,7 @@ public:
     BlastReturnStat* GetReturnStats() const;
     BlastScoreBlk* GetScoreBlk() const;
     const CBlastQueryInfo& GetQueryInfo() const;
-
+    TBlastError GetErrorMessage() const;
 
 protected:
     virtual int SetupSearch();
@@ -114,13 +117,13 @@ private:
     ListNode*           mi_pLookupSegments; /* Intervals for which lookup 
                                                table is created: complement of
                                                filtered regions */
-    BlastMaskLoc*          mi_pFilteredRegions; // Filtered regions
+    BlastMaskLoc*       mi_pFilteredRegions; // Filtered regions
 
     /// Results structure
-    BlastHSPResults*                       mi_pResults;
+    BlastHSPResults*    mi_pResults;
     /// Statistical return structures
-    BlastReturnStat*                    mi_pReturnStats;
-
+    BlastReturnStat*    mi_pReturnStats;
+    TBlastError         mi_vErrors;
 
    
     void x_ResetQueryDs();
@@ -198,6 +201,12 @@ inline const CBlastQueryInfo& CDbBlast::GetQueryInfo() const
 
 }
 
+inline TBlastError CDbBlast::GetErrorMessage() const
+{
+    return mi_vErrors;
+}
+
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -205,6 +214,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/02/19 21:10:25  dondosha
+* Added vector of error messages to the CDbBlast class
+*
 * Revision 1.7  2004/02/18 23:48:45  dondosha
 * Added TrimBlastHSPResults method to remove extra HSPs if limit on total number is provided
 *
