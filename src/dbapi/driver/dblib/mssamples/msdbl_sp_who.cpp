@@ -25,7 +25,7 @@
  *
  * Author:  Vladimir Soussov
  *
- * This simple program illustartes how to use the RPC command
+ * This simple program illustrates how to use the RPC command
  *
  */
 
@@ -57,6 +57,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/11/06 18:00:00  lavr
+ * Formatted uniformly as the rest of the library
+ *
  * Revision 1.3  2001/10/25 00:18:04  vakatov
  * SampleDBAPI_XXX() to accept yet another arg -- server name
  *

@@ -25,7 +25,7 @@
  *
  * Author:  Vladimir Soussov
  *
- * File Description:  CTLib language command
+ * File Description:  DBLib Results
  *
  */
 
@@ -1390,6 +1390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2001/11/06 17:59:58  lavr
+ * Formatted uniformly as the rest of the library
+ *
  * Revision 1.4  2001/10/24 16:38:42  lavr
  * Explicit casts (where necessary) to eliminate 64->32 bit compiler warnings
  *

@@ -27,7 +27,6 @@
  *
  * File Description:  CTLib connection
  *
- *
  */
 
 #include <dbapi/driver/ctlib/interfaces.hpp>
@@ -592,6 +591,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2001/11/06 17:59:55  lavr
+ * Formatted uniformly as the rest of the library
+ *
  * Revision 1.5  2001/10/12 21:21:00  lavr
  * Faster checks against zero for unsigned ints
  *

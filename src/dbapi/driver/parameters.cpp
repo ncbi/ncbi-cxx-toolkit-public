@@ -25,8 +25,7 @@
  *
  * Author:  Vladimir Soussov
  *   
- * File Description:  Params container implementation
- *
+ * File Description:  Param container implementation
  *
  */
 
@@ -194,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2001/11/06 17:59:53  lavr
+ * Formatted uniformly as the rest of the library
+ *
  * Revision 1.5  2001/10/25 00:22:10  vakatov
  * string::compare() with 4 args does not work with GCC ver. < 3, so
  * use NStr::Compare() instead.

@@ -28,8 +28,7 @@
  *
  * Author:  Vladimir Soussov
  *   
- * File Description:  Params container
- *
+ * File Description:  Param container
  *
  */
 
@@ -101,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/11/06 17:58:07  lavr
+ * Formatted uniformly as the rest of the library
+ *
  * Revision 1.2  2001/10/22 15:18:29  lavr
  * + g_SubstituteParam
  *

@@ -27,7 +27,6 @@
  *
  * File Description:  Driver for TDS server
  *
- *
  */
 
 #include <dbapi/driver/ftds/interfaces.hpp>
@@ -372,6 +371,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/11/06 18:00:02  lavr
+ * Formatted uniformly as the rest of the library
+ *
  * Revision 1.1  2001/10/25 00:39:22  vakatov
  * Initial revision
  *

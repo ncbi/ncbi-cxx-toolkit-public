@@ -30,7 +30,6 @@
  *   
  * File Description:  Data Server public interfaces
  *
- * ===========================================================================
  */
 
 #include <dbapi/driver/interfaces.hpp>
@@ -414,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/11/06 17:58:03  lavr
+ * Formatted uniformly as the rest of the library
+ *
  * Revision 1.2  2001/09/27 20:08:29  vakatov
  * Added "DB_" (or "I_") prefix where it was missing
  *

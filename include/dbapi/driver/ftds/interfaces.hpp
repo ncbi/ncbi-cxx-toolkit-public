@@ -30,7 +30,6 @@
  *
  * File Description:  Driver for TDS server
  *
- * ===========================================================================
  */
 
 #include <dbapi/driver/public.hpp>
@@ -172,15 +171,15 @@ public:
     virtual void TDS_SetPacketSize(int p_size);
     virtual bool TDS_SetMaxNofConns(int n);
     static  int  TDS_dberr_handler(DBPROCESS*    dblink,   int     severity,
-                                     int           dberr,    int     oserr,
-                                     const string& dberrstr,
-                                     const string& oserrstr);
+                                   int           dberr,    int     oserr,
+                                   const string& dberrstr,
+                                   const string& oserrstr);
     static  void TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT   msgno,
-                                     int           msgstate, int     severity,
-                                     const string& msgtxt,
-                                     const string& srvname,
-                                     const string& procname,
-                                     int           line);
+                                   int           msgstate, int     severity,
+                                   const string& msgtxt,
+                                   const string& srvname,
+                                   const string& procname,
+                                   int           line);
 
 private:
     static CTDSContext* m_pTDSContext;
@@ -694,9 +693,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/11/06 17:58:04  lavr
+ * Formatted uniformly as the rest of the library
+ *
  * Revision 1.1  2001/10/25 00:39:20  vakatov
  * Initial revision
- *
  *
  * ===========================================================================
  */

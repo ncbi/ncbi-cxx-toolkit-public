@@ -30,7 +30,6 @@
  *   
  * File Description:  Data Server interfaces
  *
- * ===========================================================================
  */
 
 #include <dbapi/driver/types.hpp>
@@ -388,12 +387,12 @@ public:
 
     // Create new connection to specified server (within this context).
     // It is your responsibility to delete the returned connection object.
-    virtual CDB_Connection* Connect(const string&      srv_name,
-                                    const string&      user_name,
-                                    const string&      passwd, 
-                                    TConnectionMode    mode,
-                                    bool               reusable  = false,
-                                    const string&      pool_name = kEmptyStr)=0;
+    virtual CDB_Connection* Connect(const string&   srv_name,
+                                    const string&   user_name,
+                                    const string&   passwd, 
+                                    TConnectionMode mode,
+                                    bool            reusable  = false,
+                                    const string&   pool_name = kEmptyStr) = 0;
 
     // Return number of currently open connections in this context.
     // If "srv_name" is not NULL, then return # of conn. open to that server.
@@ -473,8 +472,9 @@ protected:
                                   unsigned int  nof_params,
                                   unsigned int  batch_size = 1) = 0;
     // "Send-data" command
-    virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc, size_t data_size,
-                                         bool log_it = true) = 0;
+    virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
+                                         size_t          data_size,
+                                         bool            log_it = true) = 0;
 
     // Shortcut to send text and image to the server without using the
     // "Send-data" command (SendDataCmd)
@@ -531,6 +531,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2001/11/06 17:58:03  lavr
+ * Formatted uniformly as the rest of the library
+ *
  * Revision 1.5  2001/10/01 20:09:27  vakatov
  * Introduced a generic default user error handler and the means to
  * alternate it. Added an auxiliary error handler class

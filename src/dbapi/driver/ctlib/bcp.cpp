@@ -1,34 +1,33 @@
 /* $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Vladimir Soussov
-*
-* File Description:  CTLib bcp-in command
-*
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Vladimir Soussov
+ *
+ * File Description:  CTLib bcp-in command
+ *
+ */
 
 
 #include <dbapi/driver/ctlib/interfaces.hpp>
@@ -87,7 +86,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             CS_INT value = (CS_INT) par.Value();
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_INT));
             ret_code = blk_bind(m_Cmd, i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer, &m_Bind[i].datalen,
+                                (CS_VOID*) m_Bind[i].buffer,
+                                &m_Bind[i].datalen,
                                 &m_Bind[i].indicator);
             break;
         }
@@ -97,7 +97,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             CS_SMALLINT value = (CS_SMALLINT) par.Value();
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_SMALLINT));
             ret_code = blk_bind(m_Cmd, i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer, &m_Bind[i].datalen,
+                                (CS_VOID*) m_Bind[i].buffer,
+                                &m_Bind[i].datalen,
                                 &m_Bind[i].indicator);
             break;
         }
@@ -107,7 +108,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             CS_TINYINT value = (CS_TINYINT) par.Value();
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_TINYINT));
             ret_code = blk_bind(m_Cmd, i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer, &m_Bind[i].datalen,
+                                (CS_VOID*) m_Bind[i].buffer,
+                                &m_Bind[i].datalen,
                                 &m_Bind[i].indicator);
             break;
         }
@@ -124,7 +126,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.precision = 18;
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_NUMERIC));
             ret_code = blk_bind(m_Cmd, i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer, &m_Bind[i].datalen,
+                                (CS_VOID*) m_Bind[i].buffer,
+                                &m_Bind[i].datalen,
                                 &m_Bind[i].indicator);
             break;
         }
@@ -176,7 +179,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             CS_REAL value = (CS_REAL) par.Value();
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_REAL));
             ret_code = blk_bind(m_Cmd, i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer, &m_Bind[i].datalen,
+                                (CS_VOID*) m_Bind[i].buffer,
+                                &m_Bind[i].datalen,
                                 &m_Bind[i].indicator);
             break;
         }
@@ -186,7 +190,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             CS_FLOAT value = (CS_FLOAT) par.Value();
             memcpy(m_Bind[i].buffer, &value, sizeof(CS_FLOAT));
             ret_code = blk_bind(m_Cmd, i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer, &m_Bind[i].datalen,
+                                (CS_VOID*) m_Bind[i].buffer,
+                                &m_Bind[i].datalen,
                                 &m_Bind[i].indicator);
             break;
         }
@@ -198,7 +203,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             dt.minutes = par.GetMinutes();
             memcpy(m_Bind[i].buffer, &dt, sizeof(CS_DATETIME4));
             ret_code = blk_bind(m_Cmd, i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer, &m_Bind[i].datalen,
+                                (CS_VOID*) m_Bind[i].buffer,
+                                &m_Bind[i].datalen,
                                 &m_Bind[i].indicator);
             break;
         }
@@ -210,7 +216,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             dt.dttime = par.Get300Secs();
             memcpy(m_Bind[i].buffer, &dt, sizeof(CS_DATETIME));
             ret_code = blk_bind(m_Cmd, i + 1, &param_fmt,
-                                (CS_VOID*) m_Bind[i].buffer, &m_Bind[i].datalen,
+                                (CS_VOID*) m_Bind[i].buffer,
+                                &m_Bind[i].datalen,
                                 &m_Bind[i].indicator);
             break;
         }
@@ -304,10 +311,10 @@ bool CTL_BCPInCmd::SendRow()
 
             CDB_Object& param = *m_Params.GetParam(i);
 
-            if((param.GetType() != eDB_Text) && (param.GetType() != eDB_Image)) {
-		continue;
-	    }
-	    else {
+            if ((param.GetType() != eDB_Text) &&
+                (param.GetType() != eDB_Image)) {
+                continue;
+            } else {
                 CDB_Stream& par = dynamic_cast<CDB_Stream&> (param);
                 for (datalen = (CS_INT) par.Size();  datalen > 0;
                      datalen -= (CS_INT) n) {
@@ -401,11 +408,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/11/06 17:59:55  lavr
+ * Formatted uniformly as the rest of the library
+ *
  * Revision 1.3  2001/10/11 19:10:59  soussov
  * merges the text/image processing in CTL_BCPInCmd::SendRow()]
  *
  * Revision 1.2  2001/10/11 16:30:44  soussov
- * excludes ctlib dependences fron numeric conversions calls
+ * exclude ctlib dependencies from numeric conversion calls
  *
  * Revision 1.1  2001/09/21 23:40:02  vakatov
  * -----  Initial (draft) revision.  -----
