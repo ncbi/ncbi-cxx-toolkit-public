@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/03/28 18:34:58  grichenk
+* Fixed convertions bug
+*
 * Revision 1.7  2002/03/08 21:24:35  gouriano
 * fixed errors with unresolvable references
 *
@@ -206,6 +209,8 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
         // Need CRef<> to delete temporary object on return
         CConstRef<CSeq_data> out;
 
+        TSeqPosition start = m_CurData.src_start;
+
         if (m_CurData.src_data->Which() == m_Coding  ||
             m_Coding == CSeq_data::e_not_set) {
             out = m_CurData.src_data;
@@ -215,6 +220,8 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
             out.Reset(tmp);
             CSeqportUtil::Convert(*m_CurData.src_data, tmp,
                 m_Coding, m_CurData.src_start, m_CurData.length);
+            // Adjust starting position
+            start = 0;
         }
 
         if ( !m_PlusStrand ) {
@@ -226,23 +233,21 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
         case CSeq_data::e_Iupacna:
             {
                 m_CachedData = out->GetIupacna().Get().
-                    substr(m_CurData.src_start, m_CachedLen);
+                    substr(start, m_CachedLen);
                 break;
             }
         case CSeq_data::e_Iupacaa:
             {
                 m_CachedData = out->GetIupacaa().Get().
-                    substr(m_CurData.src_start, m_CachedLen);
+                    substr(start, m_CachedLen);
                 break;
             }
         case CSeq_data::e_Ncbi2na:
             {
                 m_CachedData = "";
                 const vector<char>& buf = out->GetNcbi2na().Get();
-                for (int i = m_CurData.src_start; i <
-                    m_CurData.src_start + m_CachedLen; i++) {
-                    m_CachedData +=
-                        (buf[i/4] >> (6-(i%4)*2)) & 0x03;
+                for (int i = start; i < start + m_CachedLen; i++) {
+                    m_CachedData += (buf[i/4] >> (6-(i%4)*2)) & 0x03;
                 }
                 break;
             }
@@ -250,8 +255,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
             {
                 m_CachedData = "";
                 const vector<char>& buf = out->GetNcbi4na().Get();
-                for (int i = m_CurData.src_start; i <
-                    m_CurData.src_start + m_CachedLen; i++) {
+                for (int i = start; i < start + m_CachedLen; i++) {
                     m_CachedData += (buf[i/2] >> (4-(i % 2)*4)) & 0x0f;
                 }
                 break;
@@ -260,8 +264,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
             {
                 m_CachedData = "";
                 const vector<char>& buf = out->GetNcbi8na().Get();
-                for (int i = m_CurData.src_start; i <
-                    m_CurData.src_start + m_CachedLen; i++) {
+                for (int i = start; i < start + m_CachedLen; i++) {
                     m_CachedData += buf[i];
                 }
                 break;
@@ -269,15 +272,14 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
         case CSeq_data::e_Ncbieaa:
             {
                 m_CachedData = out->GetNcbieaa().Get().
-                    substr(m_CurData.src_start, m_CachedLen);
+                    substr(start, m_CachedLen);
                 break;
             }
         case CSeq_data::e_Ncbipna:
             {
                 m_CachedData = "";
                 const vector<char>& buf = out->GetNcbipna().Get();
-                for (int i = m_CurData.src_start; i <
-                    m_CurData.src_start + m_CachedLen; i++) {
+                for (int i = start; i < start + m_CachedLen; i++) {
                     m_CachedData += buf[i];
                 }
                 break;
@@ -286,8 +288,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
             {
                 m_CachedData = "";
                 const vector<char>& buf = out->GetNcbi8aa().Get();
-                for (int i = m_CurData.src_start; i <
-                    m_CurData.src_start + m_CachedLen; i++) {
+                for (int i = start; i < start + m_CachedLen; i++) {
                     m_CachedData += buf[i];
                 }
                 break;
@@ -296,8 +297,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
             {
                 m_CachedData = "";
                 const vector<char>& buf = out->GetNcbipaa().Get();
-                for (int i = m_CurData.src_start; i <
-                    m_CurData.src_start + m_CachedLen; i++) {
+                for (int i = start; i < start + m_CachedLen; i++) {
                     m_CachedData += buf[i];
                 }
                 break;
@@ -306,8 +306,7 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(int pos)
             {
                 m_CachedData = "";
                 const vector<char>& buf = out->GetNcbistdaa().Get();
-                for (int i = m_CurData.src_start; i <
-                    m_CurData.src_start + m_CachedLen; i++) {
+                for (int i = start; i < start + m_CachedLen; i++) {
                     m_CachedData += buf[i];
                 }
                 break;
