@@ -26,8 +26,8 @@ builddir = @builddir@
 ### One-level build -- [USR_PROJ] makefiles
 
 USRP_BRA = \
-if test ! -z "$(USR_PROJ)" ; then \
-   x_project="$(USR_PROJ)" ; \
+if test ! -z "$(USR_PROJ)"  ||  test ! -z "@UNIX_USR_PROJ@" ; then \
+   x_project="$(USR_PROJ) @UNIX_USR_PROJ@" ; \
    for i in $$x_project ; do \
       if test -f "Makefile.$$i" ; then \
         x_mfile="Makefile.$$i" ; \
@@ -39,8 +39,8 @@ USRP_KET = ||  exit 1 ; \
 fi
 
 LIBP_BRA = \
-if test ! -z "$(LIB_PROJ)" ; then \
-   x_project="$(LIB_PROJ)" ; \
+if test ! -z "$(LIB_PROJ)"  ||  test ! -z "@UNIX_LIB_PROJ@" ; then \
+   x_project="$(LIB_PROJ) @UNIX_LIB_PROJ@" ; \
    for i in $$x_project ; do \
 		$(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
 LIBP_KET = ||  exit 2 ; \
@@ -49,8 +49,8 @@ fi
 
 @APP_NOBUILD@
 APPP_BRA = \
-if test ! -z "$(APP_PROJ)" ; then \
-   x_project="$(APP_PROJ)" ; \
+if test ! -z "$(APP_PROJ)"  ||  test ! -z "@UNIX_APP_PROJ@" ; then \
+   x_project="$(APP_PROJ) @UNIX_APP_PROJ@" ; \
    for i in $$x_project ; do \
 		$(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS)
 APPP_KET = ||  exit 3 ; \
@@ -74,8 +74,8 @@ purge:
 ### Recursive build -- in the [SUB_PROJ] directories
 
 SUB_BRA = \
-if test ! -z "$(SUB_PROJ)" ; then \
-	x_subproj="$(SUB_PROJ)" ; \
+if test ! -z "$(SUB_PROJ)"  ||  test ! -z "@UNIX_SUB_PROJ@" ; then \
+	x_subproj="$(SUB_PROJ) @UNIX_SUB_PROJ@" ; \
 	for i in $$x_subproj ; do \
 		( if test -d $$i ; then \
           cd $$i  &&  $(MAKE) $(MFLAGS)
