@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/07/12 13:34:11  kholodov
+* Fixed: incorrect length reported for NULL BLOB
+*
 * Revision 1.7  2002/06/21 14:41:32  kholodov
 * Fixed: reset total bytes written for debug output
 *
@@ -136,6 +139,8 @@ CT_INT_TYPE CByteStreamBuf::underflow()
     else {
         m_len = m_rs->ReadItem(getGBuf(), m_size);
         _TRACE("Column: " << m_column << ", Bytes read to buffer: " << m_len);
+        if( m_len == 0 )
+            return CT_EOF;
         total += m_len;
         setg(getGBuf(), getGBuf(), getGBuf() + m_len);
         return CT_TO_INT_TYPE(*getGBuf());
