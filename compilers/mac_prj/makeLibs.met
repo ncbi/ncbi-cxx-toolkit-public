@@ -422,6 +422,7 @@ on SetProjectData()
 		AddSimpleProject("ncbi_xloader_trace", {}, "objtools:data_loaders:trace")
 		AddSimpleProject("ncbi_xloader_genbank", {}, "objtools:data_loaders:genbank")
 		AddSimpleProjectListFiles("ncbi_xreader_id1", {}, "objtools:data_loaders:genbank:readers:id1", {"reader_id1.cpp"})
+		AddSimpleProject("ncbi_xreader_id2", {}, "objtools:data_loaders:genbank:readers:id2")
 		AddSimpleProjectListFiles("ncbi_xreader_id1c", {}, "objtools:data_loaders:genbank:readers:id1", {"reader_id1_cache.cpp"})
 		AddSimpleProject("ncbi_xreader_pubseqos", {}, "objtools:data_loaders:genbank:readers:pubseqos")
 		
@@ -439,12 +440,13 @@ on SetProjectData()
 		AddProject(ProjectData("gui_config", {"fltk"}, Â
 			{GuiFileDataList("config", {"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "feat_decorate.cpp", "config___.cpp", "config__.cpp"})}))
 		
-		AddGuiProject("gui_dlg", {}, "dialogs")
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
 		-- AddGuiProject("gui_dlg_registry", {}, "dialogs:registry")
 		AddGuiProject("gui_dlg_progress", {}, "dialogs:progress")
 		AddGuiProject("gui_dlg_config", {}, "dialogs:config")
+		AddGuiProject("gui_dlg_edit", {}, "dialogs:edit")
+		AddGuiProject("gui_dlg_seq_feat_edit", {}, "dialogs:edit:feature")
 		-- AddGuiProject("gui_dlg_feature", {}, "dialogs:feature") -- empty
 		-- AddGuiProject("gui_dlg_general", {}, "dialogs:general") -- currently empty?
 		AddGuiProject("gui_opengl", {}, "opengl")
@@ -471,6 +473,7 @@ on SetProjectData()
 		AddGuiProject("w_seq", {}, "widgets:seq")
 		AddGuiProject("w_aln_table", {}, "widgets:aln_table")
 		AddGuiProject("w_workspace", {}, "widgets:workspace")
+		AddGuiProject("w_serial_browse", {}, "widgets:serial_browse")
 		
 		-- AddGuiProject("w_dock", {}, "widgets:dock") -- not ready yet.
 		-- AddGuiProject("w_flek", {}, "widgets:Flek") -- use w_fltk instead.
@@ -505,7 +508,7 @@ on SetProjectData()
 		set SeqObjects to {"seq", "seqcode", "seqset", "sequtil", "seqsplit"}
 		set SomeObjects to {"biblio", "general", "medline", "pub", "entrez2", "entrez2cli"}
 		set MostObjects to SeqObjects & SomeObjects & Â
-			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1"}
+			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1", "ncbi_xreader_id2"}
 		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "creaders", "xalnmgr", "regexp", "tables"}
 		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
 		
@@ -525,7 +528,7 @@ on SetProjectData()
 		-- Basic/Required plugins
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
 			{"xflat", "ncbi_xloader_lds", "gbseq", "xalgophytree", "fastme", "biotree", "xobjwrite"})
-		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "ncbi_xloader_lds", "ncbi_xreader_id1c", "ncbi_xloader_trace"})
+		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "ncbi_xloader_lds", "ncbi_xreader_id1c", "ncbi_xloader_trace", "gui_dlg_edit", "gui_dlg_seq_feat_edit", "w_serial_browse"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xalgoseq", "gui_multi_col_dlg", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
 		
@@ -557,7 +560,7 @@ on SetProjectData()
 		AddPlugin("gui_view_taxplot", {}, "plugins:view:taxplot", {"w_taxplot3d", "gui_graph"})
 		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_aln_table"})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
-			{"gbseq", "xflat", "xformat", "taxon1", "w_taxtree", "w_seq"})
+			{"gbseq", "xflat", "xformat", "taxon1", "w_taxtree", "w_seq", "w_serial_browse"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xvalidate"})
 		
 	end if
