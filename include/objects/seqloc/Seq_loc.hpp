@@ -241,7 +241,7 @@ CSeq_loc_CI::TRange CSeq_loc_CI::GetRange(void) const
 inline
 ENa_strand CSeq_loc_CI::GetStrand(void) const
 {
-    x_ThrowNotValid("GetRange()");
+    x_ThrowNotValid("GetStrand()");
     return m_CurLoc->m_Strand;
 }
 
@@ -291,6 +291,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2002/12/19 20:11:20  grichenk
+ * Fixed error message
+ *
  * Revision 1.13  2002/10/03 18:49:05  clausen
  * Removed extra whitespace
  *
