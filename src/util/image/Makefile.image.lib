@@ -5,7 +5,7 @@ SRC = image image_io image_util image_io_handler image_io_jpeg image_io_png \
 
 LIB = ximage
 
-DLL_LIB = xutil xncbi
+DLL_LIB = xutil $(Z_LIB) xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(JPEG_INCLUDE) $(PNG_INCLUDE) $(GIF_INCLUDE) $(TIFF_INCLUDE) $(XPM_INCLUDE)
 LIBS  = $(IMAGE_LIBS) $(ORIG_LIBS)
