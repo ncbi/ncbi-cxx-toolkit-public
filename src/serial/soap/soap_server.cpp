@@ -111,6 +111,7 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
 
 // process request
     CSoapMessage soap_out;
+    soap_out.SetDefaultObjectNamespaceName(GetDefaultNamespaceName());
     if (listeners) {
         TListeners::const_iterator it;
         for (it = listeners->begin(); it != listeners->end(); ++it) {
@@ -197,6 +198,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/06/24 20:53:10  gouriano
+* Set default namespace in SoapMessage
+*
 * Revision 1.1  2004/06/24 20:40:00  gouriano
 * Initial revision
 *
