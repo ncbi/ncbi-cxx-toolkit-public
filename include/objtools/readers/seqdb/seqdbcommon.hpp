@@ -43,15 +43,27 @@
 
 BEGIN_NCBI_SCOPE
 
-// Publically visible seqdb related definitions.
+/// CSeqDBException
+/// 
+/// This exception class is thrown for SeqDB related errors such as
+/// corrupted blast database or alias files, incorrect arguments to
+/// SeqDB methods, and failures of SeqDB to accomplish tasks for other
+/// reasons.  SeqDB may be used in applications with strong robustness
+/// requirements, where it is considered better to fail an operation
+/// and lose context information, than to terminate with a core dump,
+/// and preserve it, so exceptions are the preferred mechanism for
+/// most error scenarios.  SeqDB still uses assertions in cases where
+/// memory corruption is suspected, or cleanup may not be possible.
 
 class CSeqDBException : public CException {
 public:
-    /// Errors are classified into one of three types.
+    /// Errors are classified into one of two types.
     enum EErrCode {
+        /// Argument validation failed.
         eArgErr,
-        eFileErr,
-        eMemErr
+        
+        /// Files were missing or contents were incorrect.
+        eFileErr
     };
     
     /// Get a message describing the situation leading to the throw.
@@ -60,7 +72,6 @@ public:
         switch ( GetErrCode() ) {
         case eArgErr:  return "eArgErr";
         case eFileErr: return "eFileErr";
-        case eMemErr:  return "eMemErr";
         default:       return CException::GetErrCodeString();
         }
     }
