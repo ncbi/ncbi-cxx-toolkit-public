@@ -42,7 +42,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 
-BEGIN_NCBI_SCOPE 
+USING_NCBI_SCOPE;
 
 class CBlastApplication : public CNcbiApplication
 {
@@ -52,8 +52,6 @@ class CBlastApplication : public CNcbiApplication
      virtual int Run(void);
 private:
 };
-
-END_NCBI_SCOPE 
 
 #endif 
 
