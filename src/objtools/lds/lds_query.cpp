@@ -45,26 +45,77 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+//////////////////////////////////////////////////////////////////
+//
+// Base class for sequence search functors.
+//
+
+class CLDS_FindSeqIdBase
+{
+public:
+    CLDS_FindSeqIdBase(const vector<string>&  seqids,
+                       CLDS_Set*              obj_ids)
+    :
+      m_SeqIds(seqids),
+      m_ResultSet(obj_ids)
+    {
+        _ASSERT(obj_ids);
+    }
+
+    bool MatchSeqId(const CSeq_id& seq_id_db, const string& candidate_str)
+    {
+        CSeq_id seq_id(candidate_str);
+        if (seq_id.Which() == CSeq_id::e_not_set) {
+            seq_id.SetLocal().SetStr(candidate_str);
+            if (seq_id.Which() == CSeq_id::e_not_set) {
+                return false;
+            }
+        }
+        if (seq_id.Match(seq_id_db)) {
+            return true;
+        }
+        // Sequence does not match, lets try "force it local" strategy
+        //
+        if (seq_id.Which() != CSeq_id::e_Local) {
+            if (candidate_str.find('|') == NPOS) {
+                seq_id.SetLocal().SetStr(candidate_str);
+                if (seq_id.Which() != CSeq_id::e_Local) {
+                    return false;
+                }
+                if (seq_id.Match(seq_id_db)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+private:
+    CLDS_FindSeqIdBase(const CLDS_FindSeqIdBase&);
+    CLDS_FindSeqIdBase& operator=(const CLDS_FindSeqIdBase&);
+
+protected:
+    const vector<string>&   m_SeqIds;    // Search criteria
+    CLDS_Set*               m_ResultSet; // Search result 
+};
 
 //////////////////////////////////////////////////////////////////
 //
-// Class Functor used for scanning the Berkeley DB database.
+// Functor used for scanning the Berkeley DB database.
 // This functor is driven by the BDB_iterate_file algorithm,
 // checks every object record to determine if it contains 
 // objects(molecules) satisfying the the given set of ids.
 //
 
-class CLDS_FindSeqIdFunctor
+class CLDS_FindSeqIdFunctor : public CLDS_FindSeqIdBase
 {
 public:
     CLDS_FindSeqIdFunctor(SLDS_TablesCollection& db,
                           const vector<string>&  seqids,
                           CLDS_Set*              obj_ids)
-    : m_db(db),
-      m_SeqIds(seqids),
-      m_ResultSet(obj_ids)
+    : CLDS_FindSeqIdBase(seqids, obj_ids),
+      m_db(db)
     {
-        _ASSERT(obj_ids);
     }
 
     void operator()(SLDS_ObjectDB& dbf)
@@ -132,46 +183,50 @@ public:
         }
 
     }
-protected:
-
-    bool MatchSeqId(const CSeq_id& seq_id_db, const string& candidate_str)
-    {
-        CSeq_id seq_id(candidate_str);
-        if (seq_id.Which() == CSeq_id::e_not_set) {
-            seq_id.SetLocal().SetStr(candidate_str);
-            if (seq_id.Which() == CSeq_id::e_not_set) {
-                return false;
-            }
-        }
-        if (seq_id.Match(seq_id_db)) {
-            return true;
-        }
-        // Sequence does not match, lets try "force it local" strategy
-        //
-        if (seq_id.Which() != CSeq_id::e_Local) {
-            if (candidate_str.find('|') == NPOS) {
-                seq_id.SetLocal().SetStr(candidate_str);
-                if (seq_id.Which() != CSeq_id::e_Local) {
-                    return false;
-                }
-                if (seq_id.Match(seq_id_db)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
 private:
     CLDS_FindSeqIdFunctor(const CLDS_FindSeqIdFunctor&);
     CLDS_FindSeqIdFunctor& operator=(const CLDS_FindSeqIdFunctor&);
 
 private:
     SLDS_TablesCollection&  m_db;        // The LDS database
-    const vector<string>&   m_SeqIds;    // Seq-Ids to search for
-    CLDS_Set*               m_ResultSet; // Search result 
 };
 
+//////////////////////////////////////////////////////////////////
+//
+// Functor used for scanning the SLDS_SeqId_List database.
+//
+
+class CLDS_FindSeqIdListFunctor : public CLDS_FindSeqIdBase
+{
+public:
+    CLDS_FindSeqIdListFunctor(const vector<string>&  seqids,
+                              CLDS_Set*  obj_ids)
+    : CLDS_FindSeqIdBase(seqids, obj_ids)
+    {
+    }
+
+    void operator()(SLDS_SeqId_List& dbf)
+    {
+        if (dbf.seq_id.IsEmpty())
+            return;
+
+        CSeq_id seq_id_db((const char*)dbf.seq_id);
+        if (seq_id_db.Which() == CSeq_id::e_not_set) {
+            seq_id_db.SetLocal().SetStr((const char*)dbf.seq_id);
+            if (seq_id_db.Which() == CSeq_id::e_not_set) {
+                return;
+            }
+        }
+        int object_id = dbf.object_id;
+
+        ITERATE (vector<string>, it, m_SeqIds) {
+            if (MatchSeqId(seq_id_db, *it)) {
+                m_ResultSet->insert(object_id);
+                return;
+            }
+        }
+    }
+};
 
 //////////////////////////////////////////////////////////////////
 //
@@ -197,12 +252,21 @@ void CLDS_Query::FindSequences(const vector<string>& seqids,
     BDB_iterate_file(m_db.object_db, search_func);
 }
 
+void CLDS_Query::FindSeqIdList(const vector<string>& seqids, CLDS_Set* obj_ids)
+{
+    CLDS_FindSeqIdListFunctor search_func(seqids, obj_ids);
+    BDB_iterate_file(m_db.seq_id_list, search_func);
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/07/09 19:32:10  kuznets
+ * Added query scanning sequence id list.
+ *
  * Revision 1.5  2003/06/27 14:36:45  kuznets
  * Fixed compilation problem with GCC
  *

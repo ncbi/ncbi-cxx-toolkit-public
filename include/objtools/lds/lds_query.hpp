@@ -57,6 +57,9 @@ public:
     // All found ids are added to the obj_ids set.
     void FindSequences(const vector<string>& seqids, CLDS_Set* obj_ids);
 
+    // Scans seq_id_list, search for referred sequence ids .
+    void FindSeqIdList(const vector<string>& seqids, CLDS_Set* obj_ids);
+
 private:
     SLDS_TablesCollection& m_db;
 };
@@ -67,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/07/09 19:31:56  kuznets
+ * Added query scanning sequence id list.
+ *
  * Revision 1.2  2003/06/20 19:55:50  kuznets
  * Implemented new function "FindSequences"
  *
