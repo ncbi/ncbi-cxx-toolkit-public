@@ -168,7 +168,7 @@ void CAlnMix::Add(const CSeq_align& aln, TAddFlags flags)
             CRef<CSeq_align> sa = aln.CreateDensegFromStdseg();
             Add(*sa, flags);
         } else if (aln.GetSegs().IsDisc()) {
-            iterate (CSeq_align_set::Tdata,
+            ITERATE (CSeq_align_set::Tdata,
                      aln_it,
                      aln.GetSegs().GetDisc().Get()) {
                 Add(**aln_it, flags);
@@ -1273,9 +1273,9 @@ void CAlnMix::x_CreateSegmentsVector()
     }
 
 #if _DEBUG
-    iterate (TSeqs, row_i, m_Rows) {
-        iterate (CAlnMixSegment::TStarts, st_i, (*row_i)->m_Starts) {
-            iterate(CAlnMixSegment::TStartIterators,
+    ITERATE (TSeqs, row_i, m_Rows) {
+        ITERATE (CAlnMixSegment::TStarts, st_i, (*row_i)->m_Starts) {
+            ITERATE(CAlnMixSegment::TStartIterators,
                     st_it_i, (*st_i).second->m_StartIts) {
                 // both should point to the same seg
                 if ((*st_it_i).second->second != (*st_i).second) {
@@ -1909,6 +1909,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.83  2003/12/18 19:46:27  todorov
+* iterate -> ITERATE
+*
 * Revision 1.82  2003/12/12 22:42:53  todorov
 * Init frames and use refseq instead of seq1 which may be refseqs child
 *
