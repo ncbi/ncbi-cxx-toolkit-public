@@ -533,8 +533,8 @@ public:
     void DuplicatedMember(const CMemberInfo* memberInfo);
     void ExpectedMember(const CMemberInfo* memberInfo);
 
-    void StartDelayBuffer(void);
-    CRef<CByteSource> EndDelayBuffer(void);
+    virtual void StartDelayBuffer(void);
+    virtual CRef<CByteSource> EndDelayBuffer(void);
     void EndDelayBuffer(CDelayBuffer& buffer,
                         const CItemInfo* itemInfo, TObjectPtr objectPtr);
 
@@ -671,6 +671,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.106  2004/09/09 19:16:58  vasilche
+* StartDelayBuffer/EndDelayBuffer made virtual to update input if needed.
+*
 * Revision 1.105  2004/08/30 18:13:24  gouriano
 * use CNcbiStreamoff instead of size_t for stream offset operations
 *

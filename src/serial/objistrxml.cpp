@@ -1004,6 +1004,18 @@ string CObjectIStreamXml::ReadOtherPointer(void)
     return NcbiEmptyString;
 }
 
+void CObjectIStreamXml::StartDelayBuffer(void)
+{
+    BeginData();
+    return CObjectIStream::StartDelayBuffer();
+}
+
+CRef<CByteSource> CObjectIStreamXml::EndDelayBuffer(void)
+{
+    _ASSERT(OutsideTag());
+    return CObjectIStream::EndDelayBuffer();
+}
+
 CLightString CObjectIStreamXml::SkipTagName(CLightString tag,
                                             const char* str, size_t length)
 {
@@ -2090,6 +2102,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2004/09/09 19:16:58  vasilche
+* StartDelayBuffer/EndDelayBuffer made virtual to update input if needed.
+*
 * Revision 1.66  2004/07/22 17:48:32  gouriano
 * Corrected diagnostic message in ReadEnum
 *

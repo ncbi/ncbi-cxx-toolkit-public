@@ -91,6 +91,9 @@ protected:
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
     virtual void SkipAnyContentObject(void);
 
+    virtual void StartDelayBuffer(void);
+    virtual CRef<CByteSource> EndDelayBuffer(void);
+
     virtual void SkipBool(void);
     virtual void SkipChar(void);
     virtual void SkipSNumber(void);
@@ -254,6 +257,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/09/09 19:16:58  vasilche
+* StartDelayBuffer/EndDelayBuffer made virtual to update input if needed.
+*
 * Revision 1.36  2004/06/08 20:23:37  gouriano
 * Moved several functions out of VIRTUAL_MID_LEVEL_IO condition:
 * there is no need for them to be there
