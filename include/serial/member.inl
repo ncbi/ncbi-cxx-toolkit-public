@@ -30,73 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.13  2002/11/14 20:48:17  gouriano
-* modified constructor to use CClassTypeInfoBase
-*
-* Revision 1.12  2002/09/09 18:13:59  grichenk
-* Added CObjectHookGuard class.
-* Added methods to be used by hooks for data
-* reading and skipping.
-*
-* Revision 1.11  2000/10/13 20:22:46  vasilche
-* Fixed warnings on 64 bit compilers.
-* Fixed missing typename in templates.
-*
-* Revision 1.10  2000/09/29 16:18:13  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* Revision 1.9  2000/09/19 14:10:24  vasilche
-* Added files to MSVC project
-* Updated shell scripts to use new datattool path on MSVC
-* Fixed internal compiler error on MSVC
-*
-* Revision 1.8  2000/09/18 20:00:02  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.7  2000/08/15 19:44:39  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.6  2000/02/01 21:44:35  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Added buffering to CObjectIStreamAsn.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-*
-* Revision 1.5  1999/09/01 17:38:01  vasilche
-* Fixed vector<char> implementation.
-* Added explicit naming of class info.
-* Moved IMPLICIT attribute from member info to class info.
-*
-* Revision 1.4  1999/08/31 17:50:04  vasilche
-* Implemented several macros for specific data types.
-* Added implicit members.
-* Added multimap and set.
-*
-* Revision 1.3  1999/08/13 15:53:42  vasilche
-* C++ analog of asntool: datatool
-*
-* Revision 1.2  1999/06/30 16:04:22  vasilche
-* Added support for old ASN.1 structures.
-*
-* Revision 1.1  1999/06/24 14:44:39  vasilche
-* Added binary ASN.1 output.
-*
-* ===========================================================================
 */
 
 inline
@@ -276,3 +209,77 @@ void CMemberInfo::DefaultSkipMissingMember(CObjectIStream& stream) const
 }
 
 #endif /* def MEMBER__HPP  &&  ndef MEMBER__INL */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.14  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.13  2002/11/14 20:48:17  gouriano
+* modified constructor to use CClassTypeInfoBase
+*
+* Revision 1.12  2002/09/09 18:13:59  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
+* Revision 1.11  2000/10/13 20:22:46  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
+* Revision 1.10  2000/09/29 16:18:13  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
+* Revision 1.9  2000/09/19 14:10:24  vasilche
+* Added files to MSVC project
+* Updated shell scripts to use new datattool path on MSVC
+* Fixed internal compiler error on MSVC
+*
+* Revision 1.8  2000/09/18 20:00:02  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.7  2000/08/15 19:44:39  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* Revision 1.6  2000/02/01 21:44:35  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
+* Revision 1.5  1999/09/01 17:38:01  vasilche
+* Fixed vector<char> implementation.
+* Added explicit naming of class info.
+* Moved IMPLICIT attribute from member info to class info.
+*
+* Revision 1.4  1999/08/31 17:50:04  vasilche
+* Implemented several macros for specific data types.
+* Added implicit members.
+* Added multimap and set.
+*
+* Revision 1.3  1999/08/13 15:53:42  vasilche
+* C++ analog of asntool: datatool
+*
+* Revision 1.2  1999/06/30 16:04:22  vasilche
+* Added support for old ASN.1 structures.
+*
+* Revision 1.1  1999/06/24 14:44:39  vasilche
+* Added binary ASN.1 output.
+*
+* ===========================================================================
+*/

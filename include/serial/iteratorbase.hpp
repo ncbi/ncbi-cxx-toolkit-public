@@ -30,9 +30,26 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <corelib/ncbistd.hpp>
+
+BEGIN_NCBI_SCOPE
+
+#include <serial/iteratorbase.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* ITERATORBASE__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.6  2000/10/17 18:45:24  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -60,13 +77,3 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-
-BEGIN_NCBI_SCOPE
-
-#include <serial/iteratorbase.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* ITERATORBASE__HPP */

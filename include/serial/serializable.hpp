@@ -30,21 +30,6 @@
 *
 * File Description:
 *   General serializable interface for different output formats
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2001/05/21 14:38:38  kholodov
-* Added: method WriteAsString() for string representation of an object.
-*
-* Revision 1.2  2001/04/17 04:08:01  vakatov
-* Redesigned from a pure interface (ISerializable) into a regular
-* base class (CSerializable) to make its usage safer, more formal and
-* less bulky.
-*
-* Revision 1.1  2001/04/12 17:01:04  kholodov
-* General serializable interface for different output formats
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -52,7 +37,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CSerializable
+class NCBI_XSERIAL_EXPORT CSerializable
 {
 protected:
     enum EOutputType { eAsFasta, 
@@ -61,18 +46,19 @@ protected:
 		       eAsXML, 
 		       eAsString };
 
-    virtual void WriteAsFasta     (ostream& out) const;
-    virtual void WriteAsAsnText   (ostream& out) const;
-    virtual void WriteAsAsnBinary (ostream& out) const;
-    virtual void WriteAsXML       (ostream& out) const;
-    virtual void WriteAsString    (ostream& out) const;
+    virtual void WriteAsFasta     (CNcbiOstream& out) const;
+    virtual void WriteAsAsnText   (CNcbiOstream& out) const;
+    virtual void WriteAsAsnBinary (CNcbiOstream& out) const;
+    virtual void WriteAsXML       (CNcbiOstream& out) const;
+    virtual void WriteAsString    (CNcbiOstream& out) const;
 
     const CSerializable& Dump(EOutputType output_type) const;
 
 private:
     mutable EOutputType m_OutputType;
 
-    friend ostream& operator << (ostream& out, const CSerializable& src);
+    NCBI_XSERIAL_EXPORT
+    friend CNcbiOstream& operator << (CNcbiOstream& out, const CSerializable& src);
 };
 
 
@@ -86,9 +72,32 @@ const CSerializable& CSerializable::Dump(EOutputType output_type)
 }
 
 
-ostream& operator << (ostream& out, const CSerializable& src);
+NCBI_XSERIAL_EXPORT
+CNcbiOstream& operator << (CNcbiOstream& out, const CSerializable& src);
 
 
 END_NCBI_SCOPE
 
 #endif  /* SERIALIZABLE__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.4  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.3  2001/05/21 14:38:38  kholodov
+* Added: method WriteAsString() for string representation of an object.
+*
+* Revision 1.2  2001/04/17 04:08:01  vakatov
+* Redesigned from a pure interface (ISerializable) into a regular
+* base class (CSerializable) to make its usage safer, more formal and
+* less bulky.
+*
+* Revision 1.1  2001/04/12 17:01:04  kholodov
+* General serializable interface for different output formats
+*
+* ===========================================================================
+*/

@@ -30,25 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2000/11/07 17:25:14  vasilche
-* Fixed encoding of XML:
-*     removed unnecessary apostrophes in OCTET STRING
-*     removed unnecessary content in NULL
-* Added module names to CTypeInfo and CEnumeratedTypeValues
-*
-* Revision 1.2  2000/10/13 16:28:33  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* Revision 1.1  1999/07/13 20:18:11  vasilche
-* Changed types naming.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -59,7 +40,7 @@ BEGIN_NCBI_SCOPE
 class CTypeInfoMapData;
 class CTypeInfoMap2Data;
 
-class CTypeInfoMap
+class NCBI_XSERIAL_EXPORT CTypeInfoMap
 {
 public:
     CTypeInfoMap(void);
@@ -72,7 +53,7 @@ private:
     CTypeInfoMapData* m_Data;
 };
 
-class CTypeInfoMap2
+class NCBI_XSERIAL_EXPORT CTypeInfoMap2
 {
 public:
     CTypeInfoMap2(void);
@@ -90,3 +71,29 @@ private:
 END_NCBI_SCOPE
 
 #endif  /* TYPEMAP__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.4  2002/12/23 18:38:52  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.3  2000/11/07 17:25:14  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
+* Revision 1.2  2000/10/13 16:28:33  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
+* Revision 1.1  1999/07/13 20:18:11  vasilche
+* Changed types naming.
+*
+* ===========================================================================
+*/

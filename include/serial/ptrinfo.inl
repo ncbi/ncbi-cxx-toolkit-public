@@ -30,16 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2000/09/18 20:00:09  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* ===========================================================================
 */
 
 inline
@@ -68,3 +58,20 @@ void CPointerTypeInfo::SetObjectPointer(TObjectPtr object,
 }
 
 #endif /* def PTRINFO__HPP  &&  ndef PTRINFO__INL */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.2  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.1  2000/09/18 20:00:09  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* ===========================================================================
+*/

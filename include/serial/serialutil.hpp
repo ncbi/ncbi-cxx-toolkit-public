@@ -30,20 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2000/10/13 20:22:46  vasilche
-* Fixed warnings on 64 bit compilers.
-* Fixed missing typename in templates.
-*
-* Revision 1.1  2000/09/18 20:00:10  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -156,3 +142,24 @@ TPointerOffsetType Sub(TConstObjectPtr first, TConstObjectPtr second)
 END_NCBI_SCOPE
 
 #endif  /* SERIALUTIL__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.3  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.2  2000/10/13 20:22:46  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
+* Revision 1.1  2000/09/18 20:00:10  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* ===========================================================================
+*/

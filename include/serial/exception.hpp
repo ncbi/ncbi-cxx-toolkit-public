@@ -29,9 +29,69 @@
 *
 * File Description:
 *   Standard exception classes used in serial package
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiexpt.hpp>
+
+BEGIN_NCBI_SCOPE
+
+// root class for all serialization exceptions
+class NCBI_XSERIAL_EXPORT CSerialException : public runtime_error
+{
+public:
+    CSerialException(const string& msg) THROWS_NONE;
+    ~CSerialException(void) THROWS_NONE;
+};
+
+// this exception is thrown when value doesn't fit in place
+class NCBI_XSERIAL_EXPORT CSerialOverflowException : public CSerialException
+{
+public:
+    CSerialOverflowException(const string& msg) THROWS_NONE;
+    ~CSerialOverflowException(void) THROWS_NONE;
+};
+
+// this exception is thrown when some functionality is not implemented
+class NCBI_XSERIAL_EXPORT CSerialNotImplemented : public CSerialException
+{
+public:
+    CSerialNotImplemented(const string& msg) THROWS_NONE;
+    ~CSerialNotImplemented(void) THROWS_NONE;
+};
+
+// this exception is thrown when file format is bad
+class NCBI_XSERIAL_EXPORT CSerialFormatException : public CSerialException
+{
+public:
+    CSerialFormatException(const string& msg) THROWS_NONE;
+    ~CSerialFormatException(void) THROWS_NONE;
+};
+
+class NCBI_XSERIAL_EXPORT CInvalidChoiceSelection : public runtime_error
+{
+public:
+    CInvalidChoiceSelection(const string& current, const string& mustBe) THROWS_NONE;
+    CInvalidChoiceSelection(size_t currentIndex, size_t mustBeIndex,
+                            const char* const names[], size_t namesCount) THROWS_NONE;
+    ~CInvalidChoiceSelection(void) THROWS_NONE;
+
+    static const char* GetName(size_t index,
+                               const char* const names[], size_t namesCount);
+};
+
+END_NCBI_SCOPE
+
+#endif /* EXCEPTION__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.7  2001/04/12 16:59:13  kholodov
 * Added: CSerialNotImplemented exception
 *
@@ -67,56 +127,3 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiexpt.hpp>
-
-BEGIN_NCBI_SCOPE
-
-// root class for all serialization exceptions
-class CSerialException : public runtime_error
-{
-public:
-    CSerialException(const string& msg) THROWS_NONE;
-    ~CSerialException(void) THROWS_NONE;
-};
-
-// this exception is thrown when value doesn't fit in place
-class CSerialOverflowException : public CSerialException
-{
-public:
-    CSerialOverflowException(const string& msg) THROWS_NONE;
-    ~CSerialOverflowException(void) THROWS_NONE;
-};
-
-// this exception is thrown when some functionality is not implemented
-class CSerialNotImplemented : public CSerialException
-{
-public:
-    CSerialNotImplemented(const string& msg) THROWS_NONE;
-    ~CSerialNotImplemented(void) THROWS_NONE;
-};
-
-// this exception is thrown when file format is bad
-class CSerialFormatException : public CSerialException
-{
-public:
-    CSerialFormatException(const string& msg) THROWS_NONE;
-    ~CSerialFormatException(void) THROWS_NONE;
-};
-
-class CInvalidChoiceSelection : public runtime_error
-{
-public:
-    CInvalidChoiceSelection(const string& current, const string& mustBe) THROWS_NONE;
-    CInvalidChoiceSelection(size_t currentIndex, size_t mustBeIndex,
-                            const char* const names[], size_t namesCount) THROWS_NONE;
-    ~CInvalidChoiceSelection(void) THROWS_NONE;
-
-    static const char* GetName(size_t index,
-                               const char* const names[], size_t namesCount);
-};
-
-END_NCBI_SCOPE
-
-#endif /* EXCEPTION__HPP */

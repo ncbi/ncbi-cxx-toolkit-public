@@ -30,9 +30,175 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <corelib/ncbistd.hpp>
+#include <serial/objistr.hpp>
+#include <util/lightstr.hpp>
+
+BEGIN_NCBI_SCOPE
+
+class NCBI_XSERIAL_EXPORT CObjectIStreamAsn : public CObjectIStream
+{
+public:
+    CObjectIStreamAsn(EFixNonPrint how = eFNP_Default);
+    CObjectIStreamAsn(CNcbiIstream& in,
+                      EFixNonPrint how = eFNP_Default);
+    CObjectIStreamAsn(CNcbiIstream& in,
+                      bool deleteIn,
+                      EFixNonPrint how = eFNP_Default);
+
+    ESerialDataFormat GetDataFormat(void) const;
+
+    virtual string GetPosition(void) const;
+
+    virtual string ReadFileHeader(void);
+    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
+
+    virtual void ReadNull(void);
+
+    Uint1 ReadByte(void);
+    void ReadBytes(Uint1* bytes, unsigned size);
+    EFixNonPrint FixNonPrint(EFixNonPrint how)
+    {
+        EFixNonPrint tmp = m_FixMethod;
+        m_FixMethod = how;
+        return tmp;
+    }
+
+protected:
+    TObjectIndex ReadIndex(void);
+
+    // action: read ID into local buffer
+    // return: ID pointer and length
+    // note: it is not zero ended
+    CLightString ScanEndOfId(bool isId);
+    CLightString ReadTypeId(char firstChar);
+    CLightString ReadMemberId(char firstChar);
+    CLightString ReadUCaseId(char firstChar);
+    CLightString ReadLCaseId(char firstChar);
+    CLightString ReadNumber(void);
+
+    virtual bool ReadBool(void);
+    virtual char ReadChar(void);
+    virtual Int4 ReadInt4(void);
+    virtual Uint4 ReadUint4(void);
+    virtual Int8 ReadInt8(void);
+    virtual Uint8 ReadUint8(void);
+    virtual double ReadDouble(void);
+    virtual void ReadString(string& s);
+
+    virtual void SkipBool(void);
+    virtual void SkipChar(void);
+    virtual void SkipSNumber(void);
+    virtual void SkipUNumber(void);
+    virtual void SkipFNumber(void);
+    virtual void SkipString(void);
+    virtual void SkipNull(void);
+    virtual void SkipByteBlock(void);
+
+protected:
+#ifdef VIRTUAL_MID_LEVEL_IO
+    virtual void ReadContainer(const CContainerTypeInfo* containerType,
+                               TObjectPtr containerPtr);
+    virtual void SkipContainer(const CContainerTypeInfo* containerType);
+
+    virtual void ReadClassSequential(const CClassTypeInfo* classType,
+                                     TObjectPtr classPtr);
+    virtual void ReadClassRandom(const CClassTypeInfo* classType,
+                                 TObjectPtr classPtr);
+    virtual void SkipClassSequential(const CClassTypeInfo* classType);
+    virtual void SkipClassRandom(const CClassTypeInfo* classType);
+
+    virtual void ReadChoice(const CChoiceTypeInfo* choiceType,
+                            TObjectPtr choicePtr);
+    virtual void SkipChoice(const CChoiceTypeInfo* choiceType);
+#endif
+    // low level I/O
+    virtual void BeginContainer(const CContainerTypeInfo* containerType);
+    virtual void EndContainer(void);
+    virtual bool BeginContainerElement(TTypeInfo elementType);
+
+    virtual void BeginClass(const CClassTypeInfo* classInfo);
+    virtual void EndClass(void);
+
+    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType);
+    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType,
+                                          TMemberIndex pos);
+
+    virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
+
+	virtual void BeginBytes(ByteBlock& block);
+    int GetHexChar(void);
+	virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
+	virtual void EndBytes(const ByteBlock& block);
+
+	virtual void BeginChars(CharBlock& block);
+	virtual size_t ReadChars(CharBlock& block, char* dst, size_t length);
+
+private:
+    virtual EPointerType ReadPointerType(void);
+    virtual TObjectIndex ReadObjectPointer(void);
+    virtual string ReadOtherPointer(void);
+
+    void SkipObjectData(void);
+    void SkipObjectPointer(void);
+    void SkipBlock(void);
+
+public:
+    // low level methods
+    char GetChar(void);
+    char PeekChar(void);
+
+	// parse methods
+    char GetChar(bool skipWhiteSpace);
+    char PeekChar(bool skipWhiteSpace);
+private:
+    bool GetChar(char c, bool skipWhiteSpace = false);
+    void Expect(char c, bool skipWhiteSpace = false);
+    bool Expect(char charTrue, char charFalse, bool skipWhiteSpace = false);
+    void ExpectString(const char* s, bool skipWhiteSpace = false);
+
+    static bool FirstIdChar(char c);
+    static bool IdChar(char c);
+
+    void SkipEndOfLine(char c);
+    char SkipWhiteSpace(void);
+    char SkipWhiteSpaceAndGetChar(void);
+    void SkipComments(void);
+    void UnexpectedMember(const CLightString& id, const CItemsInfo& items);
+    void BadStringChar(size_t startLine, char c);
+    void UnendedString(size_t startLine);
+
+    void StartBlock(void);
+    bool NextElement(void);
+    void EndBlock(void);
+    TMemberIndex GetMemberIndex(const CClassTypeInfo* classType,
+                                const CLightString& id);
+    TMemberIndex GetMemberIndex(const CClassTypeInfo* classType,
+                                const CLightString& id,
+                                const TMemberIndex pos);
+    TMemberIndex GetChoiceIndex(const CChoiceTypeInfo* choiceType,
+                                const CLightString& id);
+
+    bool m_BlockStart;
+    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
+};
+
+//#include <objistrb.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* OBJISTRB__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.52  2002/10/25 14:49:29  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -261,162 +427,3 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-#include <serial/objistr.hpp>
-#include <util/lightstr.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class CObjectIStreamAsn : public CObjectIStream
-{
-public:
-    CObjectIStreamAsn(EFixNonPrint how = eFNP_Default);
-    CObjectIStreamAsn(CNcbiIstream& in,
-                      EFixNonPrint how = eFNP_Default);
-    CObjectIStreamAsn(CNcbiIstream& in,
-                      bool deleteIn,
-                      EFixNonPrint how = eFNP_Default);
-
-    ESerialDataFormat GetDataFormat(void) const;
-
-    virtual string GetPosition(void) const;
-
-    virtual string ReadFileHeader(void);
-    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
-
-    virtual void ReadNull(void);
-
-    Uint1 ReadByte(void);
-    void ReadBytes(Uint1* bytes, unsigned size);
-    EFixNonPrint FixNonPrint(EFixNonPrint how)
-    {
-        EFixNonPrint tmp = m_FixMethod;
-        m_FixMethod = how;
-        return tmp;
-    }
-
-protected:
-    TObjectIndex ReadIndex(void);
-
-    // action: read ID into local buffer
-    // return: ID pointer and length
-    // note: it is not zero ended
-    CLightString ScanEndOfId(bool isId);
-    CLightString ReadTypeId(char firstChar);
-    CLightString ReadMemberId(char firstChar);
-    CLightString ReadUCaseId(char firstChar);
-    CLightString ReadLCaseId(char firstChar);
-    CLightString ReadNumber(void);
-
-    virtual bool ReadBool(void);
-    virtual char ReadChar(void);
-    virtual Int4 ReadInt4(void);
-    virtual Uint4 ReadUint4(void);
-    virtual Int8 ReadInt8(void);
-    virtual Uint8 ReadUint8(void);
-    virtual double ReadDouble(void);
-    virtual void ReadString(string& s);
-
-    virtual void SkipBool(void);
-    virtual void SkipChar(void);
-    virtual void SkipSNumber(void);
-    virtual void SkipUNumber(void);
-    virtual void SkipFNumber(void);
-    virtual void SkipString(void);
-    virtual void SkipNull(void);
-    virtual void SkipByteBlock(void);
-
-protected:
-#ifdef VIRTUAL_MID_LEVEL_IO
-    virtual void ReadContainer(const CContainerTypeInfo* containerType,
-                               TObjectPtr containerPtr);
-    virtual void SkipContainer(const CContainerTypeInfo* containerType);
-
-    virtual void ReadClassSequential(const CClassTypeInfo* classType,
-                                     TObjectPtr classPtr);
-    virtual void ReadClassRandom(const CClassTypeInfo* classType,
-                                 TObjectPtr classPtr);
-    virtual void SkipClassSequential(const CClassTypeInfo* classType);
-    virtual void SkipClassRandom(const CClassTypeInfo* classType);
-
-    virtual void ReadChoice(const CChoiceTypeInfo* choiceType,
-                            TObjectPtr choicePtr);
-    virtual void SkipChoice(const CChoiceTypeInfo* choiceType);
-#endif
-    // low level I/O
-    virtual void BeginContainer(const CContainerTypeInfo* containerType);
-    virtual void EndContainer(void);
-    virtual bool BeginContainerElement(TTypeInfo elementType);
-
-    virtual void BeginClass(const CClassTypeInfo* classInfo);
-    virtual void EndClass(void);
-
-    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType);
-    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType,
-                                          TMemberIndex pos);
-
-    virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
-
-	virtual void BeginBytes(ByteBlock& block);
-    int GetHexChar(void);
-	virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
-	virtual void EndBytes(const ByteBlock& block);
-
-	virtual void BeginChars(CharBlock& block);
-	virtual size_t ReadChars(CharBlock& block, char* dst, size_t length);
-
-private:
-    virtual EPointerType ReadPointerType(void);
-    virtual TObjectIndex ReadObjectPointer(void);
-    virtual string ReadOtherPointer(void);
-
-    void SkipObjectData(void);
-    void SkipObjectPointer(void);
-    void SkipBlock(void);
-
-public:
-    // low level methods
-    char GetChar(void);
-    char PeekChar(void);
-
-	// parse methods
-    char GetChar(bool skipWhiteSpace);
-    char PeekChar(bool skipWhiteSpace);
-private:
-    bool GetChar(char c, bool skipWhiteSpace = false);
-    void Expect(char c, bool skipWhiteSpace = false);
-    bool Expect(char charTrue, char charFalse, bool skipWhiteSpace = false);
-    void ExpectString(const char* s, bool skipWhiteSpace = false);
-
-    static bool FirstIdChar(char c);
-    static bool IdChar(char c);
-
-    void SkipEndOfLine(char c);
-    char SkipWhiteSpace(void);
-    char SkipWhiteSpaceAndGetChar(void);
-    void SkipComments(void);
-    void UnexpectedMember(const CLightString& id, const CItemsInfo& items);
-    void BadStringChar(size_t startLine, char c);
-    void UnendedString(size_t startLine);
-
-    void StartBlock(void);
-    bool NextElement(void);
-    void EndBlock(void);
-    TMemberIndex GetMemberIndex(const CClassTypeInfo* classType,
-                                const CLightString& id);
-    TMemberIndex GetMemberIndex(const CClassTypeInfo* classType,
-                                const CLightString& id,
-                                const TMemberIndex pos);
-    TMemberIndex GetChoiceIndex(const CChoiceTypeInfo* choiceType,
-                                const CLightString& id);
-
-    bool m_BlockStart;
-    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
-};
-
-//#include <objistrb.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* OBJISTRB__HPP */

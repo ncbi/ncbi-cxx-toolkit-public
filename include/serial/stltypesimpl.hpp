@@ -30,29 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2001/09/04 14:08:27  ucko
-* Handle CConstRef analogously to CRef in type macros
-*
-* Revision 1.3  2000/11/07 17:25:13  vasilche
-* Fixed encoding of XML:
-*     removed unnecessary apostrophes in OCTET STRING
-*     removed unnecessary content in NULL
-* Added module names to CTypeInfo and CEnumeratedTypeValues
-*
-* Revision 1.2  2000/10/13 20:22:47  vasilche
-* Fixed warnings on 64 bit compilers.
-* Fixed missing typename in templates.
-*
-* Revision 1.1  2000/10/13 16:28:33  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -63,7 +40,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CStlClassInfoUtil
+class NCBI_XSERIAL_EXPORT CStlClassInfoUtil
 {
 public:
     static TTypeInfo Get_auto_ptr(TTypeInfo arg, TTypeInfoCreator1 f);
@@ -85,7 +62,7 @@ public:
     static void CannotGetElementOfSet(void);
 };
 
-class CStlOneArgTemplate : public CContainerTypeInfo
+class NCBI_XSERIAL_EXPORT CStlOneArgTemplate : public CContainerTypeInfo
 {
     typedef CContainerTypeInfo CParent;
 public:
@@ -118,7 +95,7 @@ private:
     CMemberId m_DataId;
 };
 
-class CStlTwoArgsTemplate : public CStlOneArgTemplate
+class NCBI_XSERIAL_EXPORT CStlTwoArgsTemplate : public CStlOneArgTemplate
 {
     typedef CStlOneArgTemplate CParent;
 public:
@@ -159,3 +136,33 @@ private:
 END_NCBI_SCOPE
 
 #endif  /* STLTYPESIMPL__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.5  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.4  2001/09/04 14:08:27  ucko
+* Handle CConstRef analogously to CRef in type macros
+*
+* Revision 1.3  2000/11/07 17:25:13  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
+* Revision 1.2  2000/10/13 20:22:47  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
+* Revision 1.1  2000/10/13 16:28:33  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
+* ===========================================================================
+*/

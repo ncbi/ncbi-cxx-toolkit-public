@@ -30,43 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2000/12/15 21:28:49  vasilche
-* Moved some typedefs/enums from corelib/ncbistd.hpp.
-* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
-* TByte typedef replaced by Uint1.
-*
-* Revision 1.6  2000/09/18 20:00:08  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.5  2000/02/17 20:02:29  vasilche
-* Added some standard serialization exceptions.
-* Optimized text/binary ASN.1 reading.
-* Fixed wrong encoding of StringStore in ASN.1 binary format.
-* Optimized logic of object collection.
-*
-* Revision 1.4  2000/01/10 19:46:33  vasilche
-* Fixed encoding/decoding of REAL type.
-* Fixed encoding/decoding of StringStore.
-* Fixed encoding/decoding of NULL type.
-* Fixed error reporting.
-* Reduced object map (only classes).
-*
-* Revision 1.3  1999/07/22 17:33:47  vasilche
-* Unified reading/writing of objects in all three formats.
-*
-* Revision 1.2  1999/07/21 14:20:01  vasilche
-* Added serialization of bool.
-*
-* Revision 1.1  1999/07/02 21:31:49  vasilche
-* Implemented reading from ASN.1 binary format.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -152,3 +115,47 @@ namespace CObjectStreamAsnBinaryDefs
 END_NCBI_SCOPE
 
 #endif  /* OBJSTRASNB__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.8  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.7  2000/12/15 21:28:49  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
+* Revision 1.6  2000/09/18 20:00:08  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.5  2000/02/17 20:02:29  vasilche
+* Added some standard serialization exceptions.
+* Optimized text/binary ASN.1 reading.
+* Fixed wrong encoding of StringStore in ASN.1 binary format.
+* Optimized logic of object collection.
+*
+* Revision 1.4  2000/01/10 19:46:33  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
+* Revision 1.3  1999/07/22 17:33:47  vasilche
+* Unified reading/writing of objects in all three formats.
+*
+* Revision 1.2  1999/07/21 14:20:01  vasilche
+* Added serialization of bool.
+*
+* Revision 1.1  1999/07/02 21:31:49  vasilche
+* Implemented reading from ASN.1 binary format.
+*
+* ===========================================================================
+*/

@@ -30,16 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  1999/09/16 19:21:47  vasilche
-* Added virtual destructor.
-*
-* Revision 1.1  1999/08/13 15:53:45  vasilche
-* C++ analog of asntool: datatool
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -47,7 +37,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CTypeMapper
+class NCBI_XSERIAL_EXPORT CTypeMapper
 {
 public:
     virtual ~CTypeMapper(void);
@@ -57,3 +47,20 @@ public:
 END_NCBI_SCOPE
 
 #endif  /* TYPEMAPPER__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.3  2002/12/23 18:38:52  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.2  1999/09/16 19:21:47  vasilche
+* Added virtual destructor.
+*
+* Revision 1.1  1999/08/13 15:53:45  vasilche
+* C++ analog of asntool: datatool
+*
+* ===========================================================================
+*/

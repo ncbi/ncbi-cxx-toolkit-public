@@ -30,90 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.19  2002/10/25 14:49:29  vasilche
-* NCBI C Toolkit compatibility code extracted to libxcser library.
-* Serial streams flags names were renamed to fXxx.
-*
-* Names of flags
-*
-* Revision 1.18  2001/10/17 20:41:19  grichenk
-* Added CObjectOStream::CharBlock class
-*
-* Revision 1.17  2001/07/17 14:52:39  kholodov
-* Fixed: replaced int argument by size_t in CheckVisibleChar() and
-* ReplaceVisibleChar to avoid truncation in 64 bit mode.
-*
-* Revision 1.16  2001/06/11 14:34:55  grichenk
-* Added support for numeric tags in ASN.1 specifications and data streams.
-*
-* Revision 1.15  2001/06/07 17:12:46  grichenk
-* Redesigned checking and substitution of non-printable characters
-* in VisibleString
-*
-* Revision 1.14  2001/05/17 14:59:17  lavr
-* Typos corrected
-*
-* Revision 1.13  2000/12/15 21:28:47  vasilche
-* Moved some typedefs/enums from corelib/ncbistd.hpp.
-* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
-* TByte typedef replaced by Uint1.
-*
-* Revision 1.12  2000/12/15 15:38:00  vasilche
-* Added support of Int8 and long double.
-* Enum values now have type Int4 instead of long.
-*
-* Revision 1.11  2000/10/20 15:51:26  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* Revision 1.10  2000/10/03 17:22:34  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.9  2000/09/29 16:18:13  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* Revision 1.8  2000/09/18 20:00:05  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.7  2000/08/15 19:44:40  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.6  2000/06/16 20:01:20  vasilche
-* Avoid use of unexpected_exception() which is unimplemented on Mac.
-*
-* Revision 1.5  2000/05/24 20:08:13  vasilche
-* Implemented XML dump.
-*
-* Revision 1.4  2000/05/09 16:38:33  vasilche
-* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
-* Added write context to CObjectOStream.
-* Inlined most of methods of helping class Member, Block, ByteBlock etc.
-*
-* Revision 1.3  2000/05/04 16:22:23  vasilche
-* Cleaned and optimized blocks and members.
-*
-* ===========================================================================
 */
 
 inline
@@ -504,3 +420,94 @@ char& CheckVisibleChar(char& c,
 
 
 #endif /* def OBJISTR__HPP  &&  ndef OBJISTR__INL */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.20  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.19  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
+* Revision 1.18  2001/10/17 20:41:19  grichenk
+* Added CObjectOStream::CharBlock class
+*
+* Revision 1.17  2001/07/17 14:52:39  kholodov
+* Fixed: replaced int argument by size_t in CheckVisibleChar() and
+* ReplaceVisibleChar to avoid truncation in 64 bit mode.
+*
+* Revision 1.16  2001/06/11 14:34:55  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
+* Revision 1.15  2001/06/07 17:12:46  grichenk
+* Redesigned checking and substitution of non-printable characters
+* in VisibleString
+*
+* Revision 1.14  2001/05/17 14:59:17  lavr
+* Typos corrected
+*
+* Revision 1.13  2000/12/15 21:28:47  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
+* Revision 1.12  2000/12/15 15:38:00  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
+* Revision 1.11  2000/10/20 15:51:26  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* Revision 1.10  2000/10/03 17:22:34  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* Revision 1.9  2000/09/29 16:18:13  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
+* Revision 1.8  2000/09/18 20:00:05  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.7  2000/08/15 19:44:40  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* Revision 1.6  2000/06/16 20:01:20  vasilche
+* Avoid use of unexpected_exception() which is unimplemented on Mac.
+*
+* Revision 1.5  2000/05/24 20:08:13  vasilche
+* Implemented XML dump.
+*
+* Revision 1.4  2000/05/09 16:38:33  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
+* Revision 1.3  2000/05/04 16:22:23  vasilche
+* Cleaned and optimized blocks and members.
+*
+* ===========================================================================
+*/

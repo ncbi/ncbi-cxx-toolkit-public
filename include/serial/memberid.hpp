@@ -30,9 +30,79 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <corelib/ncbistd.hpp>
+
+BEGIN_NCBI_SCOPE
+
+// CMemberId class holds information about logical object member access:
+//     name and/or tag (ASN.1)
+// default value of name is empty string
+// default value of tag is eNoExplicitTag
+class NCBI_XSERIAL_EXPORT CMemberId {
+public:
+    typedef int TTag;
+    enum {
+        eNoExplicitTag = -1,
+        eParentTag = 30,
+        eFirstTag = 0
+    };
+
+    CMemberId(void);
+    CMemberId(TTag tag, bool explicitTag = true);
+    CMemberId(const string& name);
+    CMemberId(const string& name, TTag tag, bool explicitTag = true);
+    CMemberId(const char* name);
+    CMemberId(const char* name, TTag tag, bool explicitTag = true);
+    ~CMemberId(void);
+
+    const string& GetName(void) const;     // ASN.1 tag name
+    TTag GetTag(void) const;               // ASN.1 effective binary tag value
+    bool HaveExplicitTag(void) const;      // ASN.1 explicit binary tag value
+
+    void SetName(const string& name);
+    void SetTag(TTag tag, bool explicitTag = true);
+
+    bool HaveParentTag(void) const;
+    void SetParentTag(void);
+
+    // return visible representation of CMemberId (as in ASN.1)
+    string ToString(void) const;
+
+    void SetNoPrefix(void);
+    bool HaveNoPrefix(void) const;
+
+    void SetAttlist(void);
+    bool IsAttlist(void) const;
+
+    void SetNotag(void);
+    bool HasNotag(void) const;
+
+private:
+    // identification
+    string m_Name;
+    TTag m_Tag;
+    bool m_ExplicitTag;
+    bool m_NoPrefix;
+    bool m_Attlist;
+    bool m_Notag;
+};
+
+#include <serial/memberid.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* MEMBERID__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.15  2002/11/14 20:49:01  gouriano
 * added Attlist and Notag flags
 *
@@ -95,66 +165,3 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-
-BEGIN_NCBI_SCOPE
-
-// CMemberId class holds information about logical object member access:
-//     name and/or tag (ASN.1)
-// default value of name is empty string
-// default value of tag is eNoExplicitTag
-class CMemberId {
-public:
-    typedef int TTag;
-    enum {
-        eNoExplicitTag = -1,
-        eParentTag = 30,
-        eFirstTag = 0
-    };
-
-    CMemberId(void);
-    CMemberId(TTag tag, bool explicitTag = true);
-    CMemberId(const string& name);
-    CMemberId(const string& name, TTag tag, bool explicitTag = true);
-    CMemberId(const char* name);
-    CMemberId(const char* name, TTag tag, bool explicitTag = true);
-    ~CMemberId(void);
-
-    const string& GetName(void) const;     // ASN.1 tag name
-    TTag GetTag(void) const;               // ASN.1 effective binary tag value
-    bool HaveExplicitTag(void) const;      // ASN.1 explicit binary tag value
-
-    void SetName(const string& name);
-    void SetTag(TTag tag, bool explicitTag = true);
-
-    bool HaveParentTag(void) const;
-    void SetParentTag(void);
-
-    // return visible representation of CMemberId (as in ASN.1)
-    string ToString(void) const;
-
-    void SetNoPrefix(void);
-    bool HaveNoPrefix(void) const;
-
-    void SetAttlist(void);
-    bool IsAttlist(void) const;
-
-    void SetNotag(void);
-    bool HasNotag(void) const;
-
-private:
-    // identification
-    string m_Name;
-    TTag m_Tag;
-    bool m_ExplicitTag;
-    bool m_NoPrefix;
-    bool m_Attlist;
-    bool m_Notag;
-};
-
-#include <serial/memberid.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* MEMBERID__HPP */

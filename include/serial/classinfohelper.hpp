@@ -30,22 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2002/12/12 21:10:26  gouriano
-* implemented handling of complex XML containers
-*
-* Revision 1.2  2000/11/01 20:35:27  vasilche
-* Removed ECanDelete enum and related constructors.
-*
-* Revision 1.1  2000/10/13 16:28:29  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -61,7 +45,7 @@ class CClassTypeInfo;
 class CChoiceTypeInfo;
 
 // these methods are external to avoid inclusion of big headers
-class CClassInfoHelperBase
+class NCBI_XSERIAL_EXPORT CClassInfoHelperBase
 {
 protected:
     typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
@@ -262,3 +246,26 @@ private:
 END_NCBI_SCOPE
 
 #endif  /* CLASSINFOHELPER__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.4  2002/12/23 18:38:50  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.3  2002/12/12 21:10:26  gouriano
+* implemented handling of complex XML containers
+*
+* Revision 1.2  2000/11/01 20:35:27  vasilche
+* Removed ECanDelete enum and related constructors.
+*
+* Revision 1.1  2000/10/13 16:28:29  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
+* ===========================================================================
+*/

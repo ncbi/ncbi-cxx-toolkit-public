@@ -30,97 +30,6 @@
 *
 * File Description:
 *   Iterators through object hierarchy
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.21  2002/06/13 15:15:19  ucko
-* Add [explicit] CSerialObject-based constructors, which should get rid
-* of the need for [Const]Begin() in the majority of cases.
-*
-* Revision 1.20  2001/05/17 14:56:45  lavr
-* Typos corrected
-*
-* Revision 1.19  2000/11/09 15:21:25  vasilche
-* Fixed bugs in iterators.
-* Added iterator constructors from CObjectInfo.
-* Added CLeafTypeIterator.
-*
-* Revision 1.18  2000/11/08 19:24:17  vasilche
-* Added CLeafTypeIterator<Type> and CLeafTypeConstIterator<Type>.
-*
-* Revision 1.17  2000/10/20 15:51:23  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* Revision 1.16  2000/10/03 17:22:32  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.15  2000/09/19 20:16:52  vasilche
-* Fixed type in CStlClassInfo_auto_ptr.
-* Added missing include serialutil.hpp.
-*
-* Revision 1.14  2000/09/18 20:00:02  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.13  2000/07/03 18:42:33  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* Revision 1.12  2000/06/07 19:45:42  vasilche
-* Some code cleaning.
-* Macros renaming in more clear way.
-* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
-*
-* Revision 1.11  2000/06/01 19:06:55  vasilche
-* Added parsing of XML data.
-*
-* Revision 1.10  2000/05/24 20:08:12  vasilche
-* Implemented XML dump.
-*
-* Revision 1.9  2000/05/09 16:38:32  vasilche
-* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
-* Added write context to CObjectOStream.
-* Inlined most of methods of helping class Member, Block, ByteBlock etc.
-*
-* Revision 1.8  2000/05/05 17:59:02  vasilche
-* Unfortunately MSVC doesn't support explicit instantiation of template methods.
-*
-* Revision 1.7  2000/05/05 16:26:51  vasilche
-* Simplified iterator templates.
-*
-* Revision 1.6  2000/05/05 13:08:16  vasilche
-* Simplified CTypesIterator interface.
-*
-* Revision 1.5  2000/05/04 16:23:09  vasilche
-* Updated CTypesIterator and CTypesConstInterator interface.
-*
-* Revision 1.4  2000/04/10 21:01:38  vasilche
-* Fixed Erase for map/set.
-* Added iteratorbase.hpp header for basic internal classes.
-*
-* Revision 1.3  2000/03/29 18:02:39  vasilche
-* Workaround of bug in MSVC: abstract member in template.
-*
-* Revision 1.2  2000/03/29 17:22:34  vasilche
-* Fixed ambiguity in Begin() template function.
-*
-* Revision 1.1  2000/03/29 15:55:19  vasilche
-* Added two versions of object info - CObjectInfo and CConstObjectInfo.
-* Added generic iterators by class -
-* 	CTypeIterator<class>, CTypeConstIterator<class>,
-* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
-* 	CObjectsIterator and CObjectsConstIterator.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -798,3 +707,101 @@ CConstBeginInfo Begin(const C& obj, EDetectLoops)
 END_NCBI_SCOPE
 
 #endif  /* ITERATOR__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.22  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.21  2002/06/13 15:15:19  ucko
+* Add [explicit] CSerialObject-based constructors, which should get rid
+* of the need for [Const]Begin() in the majority of cases.
+*
+* Revision 1.20  2001/05/17 14:56:45  lavr
+* Typos corrected
+*
+* Revision 1.19  2000/11/09 15:21:25  vasilche
+* Fixed bugs in iterators.
+* Added iterator constructors from CObjectInfo.
+* Added CLeafTypeIterator.
+*
+* Revision 1.18  2000/11/08 19:24:17  vasilche
+* Added CLeafTypeIterator<Type> and CLeafTypeConstIterator<Type>.
+*
+* Revision 1.17  2000/10/20 15:51:23  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* Revision 1.16  2000/10/03 17:22:32  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* Revision 1.15  2000/09/19 20:16:52  vasilche
+* Fixed type in CStlClassInfo_auto_ptr.
+* Added missing include serialutil.hpp.
+*
+* Revision 1.14  2000/09/18 20:00:02  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.13  2000/07/03 18:42:33  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
+* Revision 1.12  2000/06/07 19:45:42  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
+* Revision 1.11  2000/06/01 19:06:55  vasilche
+* Added parsing of XML data.
+*
+* Revision 1.10  2000/05/24 20:08:12  vasilche
+* Implemented XML dump.
+*
+* Revision 1.9  2000/05/09 16:38:32  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
+* Revision 1.8  2000/05/05 17:59:02  vasilche
+* Unfortunately MSVC doesn't support explicit instantiation of template methods.
+*
+* Revision 1.7  2000/05/05 16:26:51  vasilche
+* Simplified iterator templates.
+*
+* Revision 1.6  2000/05/05 13:08:16  vasilche
+* Simplified CTypesIterator interface.
+*
+* Revision 1.5  2000/05/04 16:23:09  vasilche
+* Updated CTypesIterator and CTypesConstInterator interface.
+*
+* Revision 1.4  2000/04/10 21:01:38  vasilche
+* Fixed Erase for map/set.
+* Added iteratorbase.hpp header for basic internal classes.
+*
+* Revision 1.3  2000/03/29 18:02:39  vasilche
+* Workaround of bug in MSVC: abstract member in template.
+*
+* Revision 1.2  2000/03/29 17:22:34  vasilche
+* Fixed ambiguity in Begin() template function.
+*
+* Revision 1.1  2000/03/29 15:55:19  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
+* ===========================================================================
+*/

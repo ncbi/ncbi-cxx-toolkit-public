@@ -30,9 +30,18 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#endif /* def TYPEINFOIMPL__HPP  &&  ndef TYPEINFOIMPL__INL */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/12/23 18:38:52  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.1  2000/09/18 20:00:12  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -41,5 +50,3 @@
 *
 * ===========================================================================
 */
-
-#endif /* def TYPEINFOIMPL__HPP  &&  ndef TYPEINFOIMPL__INL */

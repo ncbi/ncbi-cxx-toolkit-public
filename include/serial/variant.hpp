@@ -30,50 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2002/11/19 19:45:55  gouriano
-* added SetNotag method
-*
-* Revision 1.7  2002/10/15 13:39:06  gouriano
-* added "noprefix" flag
-*
-* Revision 1.6  2002/09/09 18:14:00  grichenk
-* Added CObjectHookGuard class.
-* Added methods to be used by hooks for data
-* reading and skipping.
-*
-* Revision 1.5  2000/10/13 20:22:47  vasilche
-* Fixed warnings on 64 bit compilers.
-* Fixed missing typename in templates.
-*
-* Revision 1.4  2000/10/03 17:22:36  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.3  2000/09/29 16:18:15  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* Revision 1.2  2000/09/26 17:38:08  vasilche
-* Fixed incomplete choiceptr implementation.
-* Removed temporary comments.
-*
-* Revision 1.1  2000/09/18 20:00:12  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -99,7 +55,7 @@ class CDelayBuffer;
 
 class CVariantInfoFunctions;
 
-class CVariantInfo : public CItemInfo
+class NCBI_XSERIAL_EXPORT CVariantInfo : public CItemInfo
 {
     typedef CItemInfo CParent;
 public:
@@ -225,3 +181,54 @@ private:
 END_NCBI_SCOPE
 
 #endif  /* VARIANT__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.9  2002/12/23 18:38:52  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.8  2002/11/19 19:45:55  gouriano
+* added SetNotag method
+*
+* Revision 1.7  2002/10/15 13:39:06  gouriano
+* added "noprefix" flag
+*
+* Revision 1.6  2002/09/09 18:14:00  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
+* Revision 1.5  2000/10/13 20:22:47  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
+* Revision 1.4  2000/10/03 17:22:36  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* Revision 1.3  2000/09/29 16:18:15  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
+* Revision 1.2  2000/09/26 17:38:08  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
+* Revision 1.1  2000/09/18 20:00:12  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* ===========================================================================
+*/

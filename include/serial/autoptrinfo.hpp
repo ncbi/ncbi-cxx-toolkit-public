@@ -30,9 +30,49 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <serial/ptrinfo.hpp>
+
+BEGIN_NCBI_SCOPE
+
+class NCBI_XSERIAL_EXPORT CAutoPointerTypeInfo : public CPointerTypeInfo
+{
+    typedef CPointerTypeInfo CParent;
+public:
+    CAutoPointerTypeInfo(TTypeInfo type);
+
+    const string& GetModuleName(void) const;
+
+    static TTypeInfo GetTypeInfo(TTypeInfo base);
+    static CTypeInfo* CreateTypeInfo(TTypeInfo base);
+
+protected:
+    static void ReadAutoPtr(CObjectIStream& in,
+                            TTypeInfo objectType,
+                            TObjectPtr objectPtr);
+    static void WriteAutoPtr(CObjectOStream& out,
+                             TTypeInfo objectType,
+                             TConstObjectPtr objectPtr);
+    static void SkipAutoPtr(CObjectIStream& in,
+                            TTypeInfo objectType);
+    static void CopyAutoPtr(CObjectStreamCopier& copier,
+                            TTypeInfo objectType);
+};
+
+//#include <serial/autoptrinfo.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* AUTOPTRINFO__HPP */
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/12/23 18:38:50  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.10  2000/11/07 17:25:11  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -81,37 +121,3 @@
 *
 * ===========================================================================
 */
-
-#include <serial/ptrinfo.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class CAutoPointerTypeInfo : public CPointerTypeInfo
-{
-    typedef CPointerTypeInfo CParent;
-public:
-    CAutoPointerTypeInfo(TTypeInfo type);
-
-    const string& GetModuleName(void) const;
-
-    static TTypeInfo GetTypeInfo(TTypeInfo base);
-    static CTypeInfo* CreateTypeInfo(TTypeInfo base);
-
-protected:
-    static void ReadAutoPtr(CObjectIStream& in,
-                            TTypeInfo objectType,
-                            TObjectPtr objectPtr);
-    static void WriteAutoPtr(CObjectOStream& out,
-                             TTypeInfo objectType,
-                             TConstObjectPtr objectPtr);
-    static void SkipAutoPtr(CObjectIStream& in,
-                            TTypeInfo objectType);
-    static void CopyAutoPtr(CObjectStreamCopier& copier,
-                            TTypeInfo objectType);
-};
-
-//#include <serial/autoptrinfo.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* AUTOPTRINFO__HPP */

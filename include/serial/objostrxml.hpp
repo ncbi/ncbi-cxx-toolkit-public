@@ -30,105 +30,6 @@
 *
 * File Description:
 *   XML objects output stream
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.23  2002/12/12 21:10:26  gouriano
-* implemented handling of complex XML containers
-*
-* Revision 1.22  2002/11/14 20:52:55  gouriano
-* added support of attribute lists
-*
-* Revision 1.21  2002/10/18 14:25:52  gouriano
-* added possibility to enable/disable/set public identifier
-*
-* Revision 1.20  2002/03/07 22:02:00  grichenk
-* Added "Separator" modifier for CObjectOStream
-*
-* Revision 1.19  2001/11/09 19:07:22  grichenk
-* Fixed DTDFilePrefix functions
-*
-* Revision 1.18  2001/10/17 20:41:20  grichenk
-* Added CObjectOStream::CharBlock class
-*
-* Revision 1.17  2001/10/17 18:18:28  grichenk
-* Added CObjectOStreamXml::xxxFilePrefix() and
-* CObjectOStreamXml::xxxFileName()
-*
-* Revision 1.16  2001/05/17 14:59:47  lavr
-* Typos corrected
-*
-* Revision 1.15  2001/04/13 14:57:21  kholodov
-* Added: SetDTDFileName function to set DTD module name in XML header
-*
-* Revision 1.14  2000/12/15 21:28:48  vasilche
-* Moved some typedefs/enums from corelib/ncbistd.hpp.
-* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
-* TByte typedef replaced by Uint1.
-*
-* Revision 1.13  2000/12/15 15:38:01  vasilche
-* Added support of Int8 and long double.
-* Enum values now have type Int4 instead of long.
-*
-* Revision 1.12  2000/11/07 17:25:12  vasilche
-* Fixed encoding of XML:
-*     removed unnecessary apostrophes in OCTET STRING
-*     removed unnecessary content in NULL
-* Added module names to CTypeInfo and CEnumeratedTypeValues
-*
-* Revision 1.11  2000/10/20 15:51:27  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* Revision 1.10  2000/10/04 19:18:54  vasilche
-* Fixed processing floating point data.
-*
-* Revision 1.9  2000/09/29 16:18:15  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* Revision 1.8  2000/09/18 20:00:07  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.7  2000/09/01 13:16:02  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.6  2000/08/15 19:44:41  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.5  2000/07/03 18:42:36  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* Revision 1.4  2000/06/16 16:31:07  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.3  2000/06/07 19:45:44  vasilche
-* Some code cleaning.
-* Macros renaming in more clear way.
-* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
-*
-* Revision 1.2  2000/06/01 19:06:58  vasilche
-* Added parsing of XML data.
-*
-* Revision 1.1  2000/05/24 20:08:14  vasilche
-* Implemented XML dump.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -136,7 +37,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CObjectOStreamXml : public CObjectOStream
+class NCBI_XSERIAL_EXPORT CObjectOStreamXml : public CObjectOStream
 {
 public:
     CObjectOStreamXml(CNcbiOstream& out, bool deleteOut);
@@ -329,3 +230,109 @@ private:
 END_NCBI_SCOPE
 
 #endif
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.24  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.23  2002/12/12 21:10:26  gouriano
+* implemented handling of complex XML containers
+*
+* Revision 1.22  2002/11/14 20:52:55  gouriano
+* added support of attribute lists
+*
+* Revision 1.21  2002/10/18 14:25:52  gouriano
+* added possibility to enable/disable/set public identifier
+*
+* Revision 1.20  2002/03/07 22:02:00  grichenk
+* Added "Separator" modifier for CObjectOStream
+*
+* Revision 1.19  2001/11/09 19:07:22  grichenk
+* Fixed DTDFilePrefix functions
+*
+* Revision 1.18  2001/10/17 20:41:20  grichenk
+* Added CObjectOStream::CharBlock class
+*
+* Revision 1.17  2001/10/17 18:18:28  grichenk
+* Added CObjectOStreamXml::xxxFilePrefix() and
+* CObjectOStreamXml::xxxFileName()
+*
+* Revision 1.16  2001/05/17 14:59:47  lavr
+* Typos corrected
+*
+* Revision 1.15  2001/04/13 14:57:21  kholodov
+* Added: SetDTDFileName function to set DTD module name in XML header
+*
+* Revision 1.14  2000/12/15 21:28:48  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
+* Revision 1.13  2000/12/15 15:38:01  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
+* Revision 1.12  2000/11/07 17:25:12  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
+* Revision 1.11  2000/10/20 15:51:27  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* Revision 1.10  2000/10/04 19:18:54  vasilche
+* Fixed processing floating point data.
+*
+* Revision 1.9  2000/09/29 16:18:15  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
+* Revision 1.8  2000/09/18 20:00:07  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.7  2000/09/01 13:16:02  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
+* Revision 1.6  2000/08/15 19:44:41  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* Revision 1.5  2000/07/03 18:42:36  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
+* Revision 1.4  2000/06/16 16:31:07  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* Revision 1.3  2000/06/07 19:45:44  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
+* Revision 1.2  2000/06/01 19:06:58  vasilche
+* Added parsing of XML data.
+*
+* Revision 1.1  2000/05/24 20:08:14  vasilche
+* Implemented XML dump.
+*
+* ===========================================================================
+*/

@@ -30,9 +30,18 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#endif /* def OBJECT__HPP  &&  ndef OBJECT__INL */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.12  2001/05/17 14:57:10  lavr
 * Typos corrected
 *
@@ -92,5 +101,3 @@
 *
 * ===========================================================================
 */
-
-#endif /* def OBJECT__HPP  &&  ndef OBJECT__INL */

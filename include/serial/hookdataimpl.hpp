@@ -30,30 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2002/11/04 21:28:59  grichenk
-* Fixed usage of const CRef<> and CRef<> constructor
-*
-* Revision 1.3  2001/01/05 20:10:34  vasilche
-* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
-* were moved to util.
-*
-* Revision 1.2  2000/10/13 16:28:30  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* Revision 1.1  2000/10/03 17:22:31  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -62,7 +38,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CHookDataKeyData
+class NCBI_XSERIAL_EXPORT CHookDataKeyData
 {
 public:
     typedef CRef<CObject> mapped_type;
@@ -74,7 +50,7 @@ public:
     TKey m_Key;
 };
 
-class CHookDataData
+class NCBI_XSERIAL_EXPORT CHookDataData
 {
 public:
     CHookDataData(void);
@@ -102,3 +78,34 @@ public:
 END_NCBI_SCOPE
 
 #endif  /* HOOKDATAIMPL__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.5  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.4  2002/11/04 21:28:59  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
+* Revision 1.3  2001/01/05 20:10:34  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
+* Revision 1.2  2000/10/13 16:28:30  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
+* Revision 1.1  2000/10/03 17:22:31  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* ===========================================================================
+*/

@@ -30,9 +30,30 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <corelib/ncbistd.hpp>
+#include <serial/objectinfo.hpp>
+#include <serial/objectiter.hpp>
+#include <serial/objecttype.hpp>
+#include <serial/objectio.hpp>
+
+BEGIN_NCBI_SCOPE
+
+//#include <serial/object.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* OBJECT__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.18  2001/05/17 14:57:05  lavr
 * Typos corrected
 *
@@ -114,17 +135,3 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-#include <serial/objectinfo.hpp>
-#include <serial/objectiter.hpp>
-#include <serial/objecttype.hpp>
-#include <serial/objectio.hpp>
-
-BEGIN_NCBI_SCOPE
-
-//#include <serial/object.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* OBJECT__HPP */

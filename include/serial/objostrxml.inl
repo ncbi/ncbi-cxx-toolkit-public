@@ -30,38 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2002/12/12 21:10:26  gouriano
-* implemented handling of complex XML containers
-*
-* Revision 1.6  2002/11/14 20:52:55  gouriano
-* added support of attribute lists
-*
-* Revision 1.5  2002/10/18 14:25:51  gouriano
-* added possibility to enable/disable/set public identifier
-*
-* Revision 1.4  2001/11/09 19:07:22  grichenk
-* Fixed DTDFilePrefix functions
-*
-* Revision 1.3  2001/10/17 18:18:28  grichenk
-* Added CObjectOStreamXml::xxxFilePrefix() and
-* CObjectOStreamXml::xxxFileName()
-*
-* Revision 1.2  2000/11/07 17:25:12  vasilche
-* Fixed encoding of XML:
-*     removed unnecessary apostrophes in OCTET STRING
-*     removed unnecessary content in NULL
-* Added module names to CTypeInfo and CEnumeratedTypeValues
-*
-* Revision 1.1  2000/09/18 20:00:07  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* ===========================================================================
 */
 
 inline
@@ -212,3 +180,42 @@ string CObjectOStreamXml::GetDTDPublicId(void) const
 }
 
 #endif /* def OBJOSTRXML__HPP  &&  ndef OBJOSTRXML__INL */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.8  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.7  2002/12/12 21:10:26  gouriano
+* implemented handling of complex XML containers
+*
+* Revision 1.6  2002/11/14 20:52:55  gouriano
+* added support of attribute lists
+*
+* Revision 1.5  2002/10/18 14:25:51  gouriano
+* added possibility to enable/disable/set public identifier
+*
+* Revision 1.4  2001/11/09 19:07:22  grichenk
+* Fixed DTDFilePrefix functions
+*
+* Revision 1.3  2001/10/17 18:18:28  grichenk
+* Added CObjectOStreamXml::xxxFilePrefix() and
+* CObjectOStreamXml::xxxFileName()
+*
+* Revision 1.2  2000/11/07 17:25:12  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
+* Revision 1.1  2000/09/18 20:00:07  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* ===========================================================================
+*/

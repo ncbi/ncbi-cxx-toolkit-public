@@ -30,24 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2001/08/15 20:53:06  juran
-* Heed warnings.
-*
-* Revision 1.2  2000/12/15 21:28:49  vasilche
-* Moved some typedefs/enums from corelib/ncbistd.hpp.
-* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
-* TByte typedef replaced by Uint1.
-*
-* Revision 1.1  2000/09/18 20:00:08  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* ===========================================================================
 */
 
 inline
@@ -81,3 +63,28 @@ Uint1 ExtractClassAndConstructed(Uint1 byte)
 }
 
 #endif /* def OBJSTRASNB__HPP  &&  ndef OBJSTRASNB__INL */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.4  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.3  2001/08/15 20:53:06  juran
+* Heed warnings.
+*
+* Revision 1.2  2000/12/15 21:28:49  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
+* Revision 1.1  2000/09/18 20:00:08  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* ===========================================================================
+*/

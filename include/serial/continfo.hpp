@@ -30,40 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2000/10/13 16:28:30  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* Revision 1.5  2000/09/18 20:00:00  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.4  2000/09/13 15:10:13  vasilche
-* Fixed type detection in type iterators.
-*
-* Revision 1.3  2000/09/01 13:15:58  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.2  2000/08/15 19:44:38  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.1  2000/07/03 18:42:33  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -77,7 +43,7 @@ BEGIN_NCBI_SCOPE
 class CConstContainerElementIterator;
 class CContainerElementIterator;
 
-class CContainerTypeInfo : public CTypeInfo
+class NCBI_XSERIAL_EXPORT CContainerTypeInfo : public CTypeInfo
 {
     typedef CTypeInfo CParent;
 public:
@@ -220,7 +186,7 @@ private:
     TAddElementIn m_AddElementIn;
 };
 
-class CConstContainerElementIterator
+class NCBI_XSERIAL_EXPORT CConstContainerElementIterator
 {
 public:
     typedef CContainerTypeInfo::CConstIterator TIterator;
@@ -249,7 +215,7 @@ private:
     bool m_Valid;
 };
 
-class CContainerElementIterator
+class NCBI_XSERIAL_EXPORT CContainerElementIterator
 {
 public:
     typedef CContainerTypeInfo::CIterator TIterator;
@@ -281,3 +247,44 @@ private:
 END_NCBI_SCOPE
 
 #endif  /* CONTINFO__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.7  2002/12/23 18:38:50  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.6  2000/10/13 16:28:30  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
+* Revision 1.5  2000/09/18 20:00:00  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.4  2000/09/13 15:10:13  vasilche
+* Fixed type detection in type iterators.
+*
+* Revision 1.3  2000/09/01 13:15:58  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
+* Revision 1.2  2000/08/15 19:44:38  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* Revision 1.1  2000/07/03 18:42:33  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
+* ===========================================================================
+*/

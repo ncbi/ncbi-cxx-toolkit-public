@@ -30,9 +30,76 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <corelib/ncbistd.hpp>
+#include <serial/choice.hpp>
+#include <serial/stdtypes.hpp>
+#include <serial/stdtypeinfo.hpp>
+#include <map>
+
+BEGIN_NCBI_SCOPE
+
+class CPointerTypeInfo;
+
+// CTypeInfo for pointers which behave like CHOICE
+// (select one of limited choices)
+class NCBI_XSERIAL_EXPORT CChoicePointerTypeInfo : public CChoiceTypeInfo
+{
+    typedef CChoiceTypeInfo CParent;
+public:
+    typedef map<const type_info*, TMemberIndex, CLessTypeInfo> TVariantsByType;
+
+    CChoicePointerTypeInfo(TTypeInfo pointerType);
+
+    const CPointerTypeInfo* GetPointerTypeInfo(void) const
+        {
+            return m_PointerTypeInfo;
+        }
+
+    static TTypeInfo GetTypeInfo(TTypeInfo base);
+    static CTypeInfo* CreateTypeInfo(TTypeInfo base);
+
+protected:
+    static TMemberIndex GetPtrIndex(const CChoiceTypeInfo* choiceType,
+                                    TConstObjectPtr choicePtr);
+    static void SetPtrIndex(const CChoiceTypeInfo* choiceType,
+                            TObjectPtr choicePtr,
+                            TMemberIndex index);
+    static void ResetPtrIndex(const CChoiceTypeInfo* choiceType,
+                              TObjectPtr choicePtr);
+
+private:
+    void SetPointerType(TTypeInfo pointerType);
+
+    const CPointerTypeInfo* m_PointerTypeInfo;
+    TVariantsByType m_VariantsByType;
+    TMemberIndex m_NullPointerIndex;
+};
+
+class NCBI_XSERIAL_EXPORT CNullTypeInfo : public CVoidTypeInfo
+{
+    typedef CVoidTypeInfo CParent;
+public:
+    CNullTypeInfo(void);
+
+    static TTypeInfo GetTypeInfo(void);
+};
+
+//#include <serial/choiceptr.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* CHOICEPTR__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/12/23 18:38:50  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.23  2000/11/07 17:25:11  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -135,63 +202,3 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-#include <serial/choice.hpp>
-#include <serial/stdtypes.hpp>
-#include <serial/stdtypeinfo.hpp>
-#include <map>
-
-BEGIN_NCBI_SCOPE
-
-class CPointerTypeInfo;
-
-// CTypeInfo for pointers which behave like CHOICE
-// (select one of limited choices)
-class CChoicePointerTypeInfo : public CChoiceTypeInfo
-{
-    typedef CChoiceTypeInfo CParent;
-public:
-    typedef map<const type_info*, TMemberIndex, CLessTypeInfo> TVariantsByType;
-
-    CChoicePointerTypeInfo(TTypeInfo pointerType);
-
-    const CPointerTypeInfo* GetPointerTypeInfo(void) const
-        {
-            return m_PointerTypeInfo;
-        }
-
-    static TTypeInfo GetTypeInfo(TTypeInfo base);
-    static CTypeInfo* CreateTypeInfo(TTypeInfo base);
-
-protected:
-    static TMemberIndex GetPtrIndex(const CChoiceTypeInfo* choiceType,
-                                    TConstObjectPtr choicePtr);
-    static void SetPtrIndex(const CChoiceTypeInfo* choiceType,
-                            TObjectPtr choicePtr,
-                            TMemberIndex index);
-    static void ResetPtrIndex(const CChoiceTypeInfo* choiceType,
-                              TObjectPtr choicePtr);
-
-private:
-    void SetPointerType(TTypeInfo pointerType);
-
-    const CPointerTypeInfo* m_PointerTypeInfo;
-    TVariantsByType m_VariantsByType;
-    TMemberIndex m_NullPointerIndex;
-};
-
-class CNullTypeInfo : public CVoidTypeInfo
-{
-    typedef CVoidTypeInfo CParent;
-public:
-    CNullTypeInfo(void);
-
-    static TTypeInfo GetTypeInfo(void);
-};
-
-//#include <serial/choiceptr.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* CHOICEPTR__HPP */

@@ -30,15 +30,22 @@
 *
 * File Description:
 *   Serialization classes.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  1999/03/25 19:11:59  vasilche
-* Beginning of serialization library.
-*
-* ===========================================================================
 */
 
 
 
 #endif /* def SERIAL__HPP  &&  ndef SERIAL__INL */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.2  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.1  1999/03/25 19:11:59  vasilche
+* Beginning of serialization library.
+*
+* ===========================================================================
+*/

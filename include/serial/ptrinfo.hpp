@@ -30,9 +30,93 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <serial/typeinfo.hpp>
+#include <serial/typeref.hpp>
+
+BEGIN_NCBI_SCOPE
+
+// CTypeInfo for pointers
+class NCBI_XSERIAL_EXPORT CPointerTypeInfo : public CTypeInfo
+{
+    typedef CTypeInfo CParent;
+public:
+    CPointerTypeInfo(TTypeInfo type);
+    CPointerTypeInfo(const CTypeRef& typeRef);
+    CPointerTypeInfo(size_t size, TTypeInfo type);
+    CPointerTypeInfo(size_t size, const CTypeRef& typeRef);
+    CPointerTypeInfo(const string& name, TTypeInfo type);
+
+    static TTypeInfo GetTypeInfo(TTypeInfo base);
+
+    TTypeInfo GetPointedType(void) const;
+    
+    TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const;
+    TObjectPtr GetObjectPointer(TObjectPtr object) const;
+    void SetObjectPointer(TObjectPtr object, TObjectPtr pointer) const;
+
+    TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;
+
+    virtual bool MayContainType(TTypeInfo type) const;
+
+    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual bool Equals(TConstObjectPtr object1,
+                        TConstObjectPtr object2) const;
+    virtual void SetDefault(TObjectPtr dst) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+
+    typedef TObjectPtr (*TGetDataFunction)(const CPointerTypeInfo* objectType,
+                                           TObjectPtr objectPtr);
+    typedef void (*TSetDataFunction)(const CPointerTypeInfo* objectType,
+                                     TObjectPtr objectPtr,
+                                     TObjectPtr dataPtr);
+
+    void SetFunctions(TGetDataFunction getFunc, TSetDataFunction setFunc);
+
+protected:
+    static TObjectPtr GetPointer(const CPointerTypeInfo* objectType,
+                                 TObjectPtr objectPtr);
+    static void SetPointer(const CPointerTypeInfo* objectType,
+                           TObjectPtr objectPtr,
+                           TObjectPtr dataPtr);
+
+    static TObjectPtr CreatePointer(TTypeInfo objectType);
+
+    static void ReadPointer(CObjectIStream& in,
+                            TTypeInfo objectType,
+                            TObjectPtr objectPtr);
+    static void WritePointer(CObjectOStream& out,
+                             TTypeInfo objectType,
+                             TConstObjectPtr objectPtr);
+    static void SkipPointer(CObjectIStream& in,
+                            TTypeInfo objectType);
+    static void CopyPointer(CObjectStreamCopier& copier,
+                            TTypeInfo objectType);
+
+protected:
+    CTypeRef m_DataTypeRef;
+    TGetDataFunction m_GetData;
+    TSetDataFunction m_SetData;
+
+private:
+    void InitPointerTypeInfoFunctions(void);
+};
+
+#include <serial/ptrinfo.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* PTRINFO__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.25  2000/10/17 18:45:25  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -138,80 +222,3 @@
 *
 * ===========================================================================
 */
-
-#include <serial/typeinfo.hpp>
-#include <serial/typeref.hpp>
-
-BEGIN_NCBI_SCOPE
-
-// CTypeInfo for pointers
-class CPointerTypeInfo : public CTypeInfo
-{
-    typedef CTypeInfo CParent;
-public:
-    CPointerTypeInfo(TTypeInfo type);
-    CPointerTypeInfo(const CTypeRef& typeRef);
-    CPointerTypeInfo(size_t size, TTypeInfo type);
-    CPointerTypeInfo(size_t size, const CTypeRef& typeRef);
-    CPointerTypeInfo(const string& name, TTypeInfo type);
-
-    static TTypeInfo GetTypeInfo(TTypeInfo base);
-
-    TTypeInfo GetPointedType(void) const;
-    
-    TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const;
-    TObjectPtr GetObjectPointer(TObjectPtr object) const;
-    void SetObjectPointer(TObjectPtr object, TObjectPtr pointer) const;
-
-    TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;
-
-    virtual bool MayContainType(TTypeInfo type) const;
-
-    virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr object1,
-                        TConstObjectPtr object2) const;
-    virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
-
-    typedef TObjectPtr (*TGetDataFunction)(const CPointerTypeInfo* objectType,
-                                           TObjectPtr objectPtr);
-    typedef void (*TSetDataFunction)(const CPointerTypeInfo* objectType,
-                                     TObjectPtr objectPtr,
-                                     TObjectPtr dataPtr);
-
-    void SetFunctions(TGetDataFunction getFunc, TSetDataFunction setFunc);
-
-protected:
-    static TObjectPtr GetPointer(const CPointerTypeInfo* objectType,
-                                 TObjectPtr objectPtr);
-    static void SetPointer(const CPointerTypeInfo* objectType,
-                           TObjectPtr objectPtr,
-                           TObjectPtr dataPtr);
-
-    static TObjectPtr CreatePointer(TTypeInfo objectType);
-
-    static void ReadPointer(CObjectIStream& in,
-                            TTypeInfo objectType,
-                            TObjectPtr objectPtr);
-    static void WritePointer(CObjectOStream& out,
-                             TTypeInfo objectType,
-                             TConstObjectPtr objectPtr);
-    static void SkipPointer(CObjectIStream& in,
-                            TTypeInfo objectType);
-    static void CopyPointer(CObjectStreamCopier& copier,
-                            TTypeInfo objectType);
-
-protected:
-    CTypeRef m_DataTypeRef;
-    TGetDataFunction m_GetData;
-    TSetDataFunction m_SetData;
-
-private:
-    void InitPointerTypeInfoFunctions(void);
-};
-
-#include <serial/ptrinfo.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* PTRINFO__HPP */

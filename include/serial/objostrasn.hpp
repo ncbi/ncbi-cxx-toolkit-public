@@ -30,9 +30,140 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <corelib/ncbistd.hpp>
+#include <serial/objostr.hpp>
+
+BEGIN_NCBI_SCOPE
+
+class NCBI_XSERIAL_EXPORT CObjectOStreamAsn : public CObjectOStream
+{
+public:
+    CObjectOStreamAsn(CNcbiOstream& out,
+                      EFixNonPrint how = eFNP_Default);
+    CObjectOStreamAsn(CNcbiOstream& out,
+                      bool deleteOut,
+                      EFixNonPrint how = eFNP_Default);
+    virtual ~CObjectOStreamAsn(void);
+
+    ESerialDataFormat GetDataFormat(void) const;
+
+    virtual string GetPosition(void) const;
+
+    virtual void WriteFileHeader(TTypeInfo type);
+    virtual void WriteEnum(const CEnumeratedTypeValues& values,
+                           TEnumValueType value);
+    virtual void CopyEnum(const CEnumeratedTypeValues& values,
+                          CObjectIStream& in);
+    void WriteEnum(TEnumValueType value, const string& valueName);
+    EFixNonPrint FixNonPrint(EFixNonPrint how)
+    {
+        EFixNonPrint tmp = m_FixMethod;
+        m_FixMethod = how;
+        return tmp;
+    }
+
+protected:
+    virtual void WriteBool(bool data);
+    virtual void WriteChar(char data);
+    virtual void WriteInt4(Int4 data);
+    virtual void WriteUint4(Uint4 data);
+    virtual void WriteInt8(Int8 data);
+    virtual void WriteUint8(Uint8 data);
+    virtual void WriteFloat(float data);
+    virtual void WriteDouble(double data);
+    void WriteDouble2(double data, size_t digits);
+    virtual void WriteCString(const char* str);
+    virtual void WriteString(const string& str);
+    virtual void WriteStringStore(const string& str);
+    virtual void CopyString(CObjectIStream& in);
+    virtual void CopyStringStore(CObjectIStream& in);
+
+    virtual void WriteNullPointer(void);
+    virtual void WriteObjectReference(TObjectIndex index);
+    virtual void WriteOtherBegin(TTypeInfo typeInfo);
+    virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
+    void WriteId(const string& str);
+
+    void WriteNull(void);
+
+#ifdef VIRTUAL_MID_LEVEL_IO
+    virtual void WriteContainer(const CContainerTypeInfo* containerType,
+                                TConstObjectPtr containerPtr);
+
+    virtual void WriteClass(const CClassTypeInfo* objectType,
+                            TConstObjectPtr objectPtr);
+    virtual void WriteClassMember(const CMemberId& memberId,
+                                  TTypeInfo memberType,
+                                  TConstObjectPtr memberPtr);
+    virtual bool WriteClassMember(const CMemberId& memberId,
+                                  const CDelayBuffer& buffer);
+
+    virtual void WriteChoice(const CChoiceTypeInfo* choiceType,
+                             TConstObjectPtr choicePtr);
+
+    // COPY
+    virtual void CopyContainer(const CContainerTypeInfo* containerType,
+                               CObjectStreamCopier& copier);
+    virtual void CopyClassRandom(const CClassTypeInfo* objectType,
+                                 CObjectStreamCopier& copier);
+    virtual void CopyClassSequential(const CClassTypeInfo* objectType,
+                                     CObjectStreamCopier& copier);
+    virtual void CopyChoice(const CChoiceTypeInfo* choiceType,
+                            CObjectStreamCopier& copier);
+#endif
+    // low level I/O
+    virtual void BeginContainer(const CContainerTypeInfo* containerType);
+    virtual void EndContainer(void);
+    virtual void BeginContainerElement(TTypeInfo elementType);
+
+    virtual void BeginClass(const CClassTypeInfo* classInfo);
+    virtual void EndClass(void);
+    virtual void BeginClassMember(const CMemberId& id);
+
+    virtual void BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
+                                    const CMemberId& id);
+
+	virtual void BeginBytes(const ByteBlock& block);
+	virtual void WriteBytes(const ByteBlock& block,
+                            const char* bytes, size_t length);
+	virtual void EndBytes(const ByteBlock& block);
+
+	virtual void BeginChars(const CharBlock& block);
+	virtual void WriteChars(const CharBlock& block,
+                            const char* chars, size_t length);
+	virtual void EndChars(const CharBlock& block);
+
+    // Write current separator to the stream
+    virtual void WriteSeparator(void);
+
+private:
+    void WriteString(const char* str, size_t length);
+    void WriteMemberId(const CMemberId& id);
+
+    void StartBlock(void);
+    void NextElement(void);
+    void EndBlock(void);
+
+    bool m_BlockStart;
+    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
+};
+
+//#include <serial/objostrasn.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* OBJOSTRASN__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.41  2002/10/25 14:49:29  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -200,127 +331,3 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-#include <serial/objostr.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class CObjectOStreamAsn : public CObjectOStream
-{
-public:
-    CObjectOStreamAsn(CNcbiOstream& out,
-                      EFixNonPrint how = eFNP_Default);
-    CObjectOStreamAsn(CNcbiOstream& out,
-                      bool deleteOut,
-                      EFixNonPrint how = eFNP_Default);
-    virtual ~CObjectOStreamAsn(void);
-
-    ESerialDataFormat GetDataFormat(void) const;
-
-    virtual string GetPosition(void) const;
-
-    virtual void WriteFileHeader(TTypeInfo type);
-    virtual void WriteEnum(const CEnumeratedTypeValues& values,
-                           TEnumValueType value);
-    virtual void CopyEnum(const CEnumeratedTypeValues& values,
-                          CObjectIStream& in);
-    void WriteEnum(TEnumValueType value, const string& valueName);
-    EFixNonPrint FixNonPrint(EFixNonPrint how)
-    {
-        EFixNonPrint tmp = m_FixMethod;
-        m_FixMethod = how;
-        return tmp;
-    }
-
-protected:
-    virtual void WriteBool(bool data);
-    virtual void WriteChar(char data);
-    virtual void WriteInt4(Int4 data);
-    virtual void WriteUint4(Uint4 data);
-    virtual void WriteInt8(Int8 data);
-    virtual void WriteUint8(Uint8 data);
-    virtual void WriteFloat(float data);
-    virtual void WriteDouble(double data);
-    void WriteDouble2(double data, size_t digits);
-    virtual void WriteCString(const char* str);
-    virtual void WriteString(const string& str);
-    virtual void WriteStringStore(const string& str);
-    virtual void CopyString(CObjectIStream& in);
-    virtual void CopyStringStore(CObjectIStream& in);
-
-    virtual void WriteNullPointer(void);
-    virtual void WriteObjectReference(TObjectIndex index);
-    virtual void WriteOtherBegin(TTypeInfo typeInfo);
-    virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
-    void WriteId(const string& str);
-
-    void WriteNull(void);
-
-#ifdef VIRTUAL_MID_LEVEL_IO
-    virtual void WriteContainer(const CContainerTypeInfo* containerType,
-                                TConstObjectPtr containerPtr);
-
-    virtual void WriteClass(const CClassTypeInfo* objectType,
-                            TConstObjectPtr objectPtr);
-    virtual void WriteClassMember(const CMemberId& memberId,
-                                  TTypeInfo memberType,
-                                  TConstObjectPtr memberPtr);
-    virtual bool WriteClassMember(const CMemberId& memberId,
-                                  const CDelayBuffer& buffer);
-
-    virtual void WriteChoice(const CChoiceTypeInfo* choiceType,
-                             TConstObjectPtr choicePtr);
-
-    // COPY
-    virtual void CopyContainer(const CContainerTypeInfo* containerType,
-                               CObjectStreamCopier& copier);
-    virtual void CopyClassRandom(const CClassTypeInfo* objectType,
-                                 CObjectStreamCopier& copier);
-    virtual void CopyClassSequential(const CClassTypeInfo* objectType,
-                                     CObjectStreamCopier& copier);
-    virtual void CopyChoice(const CChoiceTypeInfo* choiceType,
-                            CObjectStreamCopier& copier);
-#endif
-    // low level I/O
-    virtual void BeginContainer(const CContainerTypeInfo* containerType);
-    virtual void EndContainer(void);
-    virtual void BeginContainerElement(TTypeInfo elementType);
-
-    virtual void BeginClass(const CClassTypeInfo* classInfo);
-    virtual void EndClass(void);
-    virtual void BeginClassMember(const CMemberId& id);
-
-    virtual void BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
-                                    const CMemberId& id);
-
-	virtual void BeginBytes(const ByteBlock& block);
-	virtual void WriteBytes(const ByteBlock& block,
-                            const char* bytes, size_t length);
-	virtual void EndBytes(const ByteBlock& block);
-
-	virtual void BeginChars(const CharBlock& block);
-	virtual void WriteChars(const CharBlock& block,
-                            const char* chars, size_t length);
-	virtual void EndChars(const CharBlock& block);
-
-    // Write current separator to the stream
-    virtual void WriteSeparator(void);
-
-private:
-    void WriteString(const char* str, size_t length);
-    void WriteMemberId(const CMemberId& id);
-
-    void StartBlock(void);
-    void NextElement(void);
-    void EndBlock(void);
-
-    bool m_BlockStart;
-    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
-};
-
-//#include <serial/objostrasn.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* OBJOSTRASN__HPP */

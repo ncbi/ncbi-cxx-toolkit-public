@@ -30,26 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2001/05/17 14:57:32  lavr
-* Typos corrected
-*
-* Revision 1.3  2001/01/22 23:23:57  vakatov
-* Added   CIStreamClassMemberIterator
-* Renamed CIStreamContainer --> CIStreamContainerIterator
-*
-* Revision 1.2  2000/10/20 19:29:15  vasilche
-* Adapted for MSVC which doesn't like explicit operator templates.
-*
-* Revision 1.1  2000/10/20 15:51:25  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -58,7 +38,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class COStreamFrame
+class NCBI_XSERIAL_EXPORT COStreamFrame
 {
 public:
     COStreamFrame(CObjectOStream& stream);
@@ -78,7 +58,7 @@ private:
     //void operator delete[](void* ptr);
 };
 
-class CIStreamFrame
+class NCBI_XSERIAL_EXPORT CIStreamFrame
 {
 public:
     CIStreamFrame(CObjectIStream& stream);
@@ -111,7 +91,7 @@ private:
         ... // write member object
     } // here COStreamClassMember destructor will be called
 **************************/
-class COStreamClassMember : public COStreamFrame
+class NCBI_XSERIAL_EXPORT COStreamClassMember : public COStreamFrame
 {
     typedef COStreamFrame CParent;
 public:
@@ -134,7 +114,7 @@ public:
        i >> element;
    }
 **************************/
-class CIStreamClassMemberIterator : public CIStreamFrame
+class NCBI_XSERIAL_EXPORT CIStreamClassMemberIterator : public CIStreamFrame
 {
     typedef CIStreamFrame CParent;
 public:
@@ -182,7 +162,7 @@ private:
        i >> element;
    }
 **************************/
-class CIStreamContainerIterator : public CIStreamFrame
+class NCBI_XSERIAL_EXPORT CIStreamContainerIterator : public CIStreamFrame
 {
     typedef CIStreamFrame CParent;
 public:
@@ -250,7 +230,7 @@ void operator>>(CIStreamContainerIterator& i, T& element)
         }
     } // here COStreamContainer destructor will be called
 **************************/
-class COStreamContainer : public COStreamFrame
+class NCBI_XSERIAL_EXPORT COStreamContainer : public COStreamFrame
 {
     typedef COStreamFrame CParent;
 public:
@@ -281,3 +261,30 @@ void operator<<(COStreamContainer& o, const T& element)
 END_NCBI_SCOPE
 
 #endif  /* OBJECTIO__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.5  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.4  2001/05/17 14:57:32  lavr
+* Typos corrected
+*
+* Revision 1.3  2001/01/22 23:23:57  vakatov
+* Added   CIStreamClassMemberIterator
+* Renamed CIStreamContainer --> CIStreamContainerIterator
+*
+* Revision 1.2  2000/10/20 19:29:15  vasilche
+* Adapted for MSVC which doesn't like explicit operator templates.
+*
+* Revision 1.1  2000/10/20 15:51:25  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* ===========================================================================
+*/

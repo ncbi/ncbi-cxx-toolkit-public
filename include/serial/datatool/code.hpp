@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/12/23 18:38:52  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.9  2002/08/14 17:14:22  grichenk
 * Fixed function name conflict on Win32: renamed
 * GetClassName() -> GetClassNameDT()
@@ -184,11 +188,15 @@ public:
     void AddINLCode(const CNcbiOstrstream& code);
     void AddCPPCode(const CNcbiOstrstream& code);
 
+    static void SetExportSpecifier(const string& str);
+    static const string& GetExportSpecifier(void);
+
 private:
     CClassContext& m_Code;
     string m_ClassName;
     string m_ParentClassName;
     CNamespace m_ParentClassNamespace;
+    static string sm_ExportSpecifier;
 
     bool m_VirtualDestructor;
     CNcbiOstrstream m_ClassPublic;

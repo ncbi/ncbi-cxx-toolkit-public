@@ -30,9 +30,165 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <corelib/ncbistd.hpp>
+#include <serial/serialdef.hpp>
+#include <serial/hookdata.hpp>
+#include <serial/hookfunc.hpp>
+
+BEGIN_NCBI_SCOPE
+
+class CObject;
+
+class CObjectIStream;
+class CObjectOStream;
+class CObjectStreamCopier;
+
+class CClassTypeInfo;
+
+class CObjectTypeInfo;
+class CConstObjectInfo;
+class CObjectInfo;
+
+class CReadObjectHook;
+class CWriteObjectHook;
+class CCopyObjectHook;
+
+class CTypeInfoFunctions;
+
+// CTypeInfo class contains all information about C++ types (both basic and
+// classes): members and layout in memory.
+class NCBI_XSERIAL_EXPORT CTypeInfo
+{
+protected:
+    CTypeInfo(ETypeFamily typeFamily, size_t size);
+    CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name);
+    CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name);
+public:
+    // various function pointers
+    typedef TObjectPtr (*TTypeCreate)(TTypeInfo objectType);
+
+    virtual ~CTypeInfo(void);
+
+    ETypeFamily GetTypeFamily(void) const;
+
+    // name of this type
+    const string& GetName(void) const;
+
+    // name of module
+    virtual const string& GetModuleName(void) const;
+    void SetModuleName(const string& name);
+    void SetModuleName(const char* name);
+
+    // size of data object in memory (like sizeof in C)
+    size_t GetSize(void) const;
+
+    // creates object of this type in heap (can be deleted by operator delete)
+    TObjectPtr Create(void) const;
+
+    // deletes object
+    virtual void Delete(TObjectPtr object) const;
+    // clear object contents so Delete will not leave unused memory allocated
+    // note: object contents is not guaranteed to be in initial state
+    //       (as after Create), to do so you should call SetDefault after
+    virtual void DeleteExternalObjects(TObjectPtr object) const;
+
+    // check, whether object contains default value
+    virtual bool IsDefault(TConstObjectPtr object) const = 0;
+    // check if both objects contain the same values
+    virtual bool Equals(TConstObjectPtr object1,
+                        TConstObjectPtr object2) const = 0;
+    // set object to default value
+    virtual void SetDefault(TObjectPtr dst) const = 0;
+    // set object to copy of another one
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const = 0;
+
+    // return true if type is inherited from CObject
+    bool IsCObject(void) const;
+    virtual const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
+    // return true CTypeInfo of object (redefined in polymorphic classes)
+    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
+
+    // I/O interface:
+    void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+    void CopyData(CObjectStreamCopier& copier) const;
+    void SkipData(CObjectIStream& in) const;
+
+    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
+    virtual bool IsType(TTypeInfo type) const;
+    virtual bool MayContainType(TTypeInfo type) const;
+    bool IsOrMayContainType(TTypeInfo type) const;
+
+    // hooks
+    void SetGlobalReadHook(CReadObjectHook* hook);
+    void SetLocalReadHook(CObjectIStream& in, CReadObjectHook* hook);
+    void ResetGlobalReadHook(void);
+    void ResetLocalReadHook(CObjectIStream& in);
+
+    void SetGlobalWriteHook(CWriteObjectHook* hook);
+    void SetLocalWriteHook(CObjectOStream& out, CWriteObjectHook* hook);
+    void ResetGlobalWriteHook(void);
+    void ResetLocalWriteHook(CObjectOStream& out);
+
+    void SetGlobalCopyHook(CCopyObjectHook* hook);
+    void SetLocalCopyHook(CObjectStreamCopier& copier, CCopyObjectHook* hook);
+    void ResetGlobalCopyHook(void);
+    void ResetLocalCopyHook(CObjectStreamCopier& copier);
+
+    // default methods without checking hook
+    void DefaultReadData(CObjectIStream& in, TObjectPtr object) const;
+    void DefaultWriteData(CObjectOStream& out, TConstObjectPtr object) const;
+    void DefaultCopyData(CObjectStreamCopier& copier) const;
+    void DefaultSkipData(CObjectIStream& in) const;
+
+private:
+    // private constructors to avoid copying
+    CTypeInfo(const CTypeInfo&);
+    CTypeInfo& operator=(const CTypeInfo&);
+
+    // type information
+    ETypeFamily m_TypeFamily;
+    size_t m_Size;
+    string m_Name;
+    string m_ModuleName;
+
+protected:
+    void SetCreateFunction(TTypeCreate func);
+    void SetReadFunction(TTypeReadFunction func);
+    void SetWriteFunction(TTypeWriteFunction func);
+    void SetCopyFunction(TTypeCopyFunction func);
+    void SetSkipFunction(TTypeSkipFunction func);
+
+    bool m_IsCObject;
+
+private:
+    // type specific function pointers
+    TTypeCreate m_CreateFunction;
+
+    CHookData<CReadObjectHook, TTypeReadFunction> m_ReadHookData;
+    CHookData<CWriteObjectHook, TTypeWriteFunction> m_WriteHookData;
+    CHookData<CCopyObjectHook, TTypeCopyFunction> m_CopyHookData;
+    TTypeSkipFunction m_SkipFunction;
+
+    friend class CTypeInfoFunctions;
+};
+
+#include <serial/typeinfo.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* TYPEINFO__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.37  2002/09/09 18:14:00  grichenk
 * Added CObjectHookGuard class.
 * Added methods to be used by hooks for data
@@ -189,152 +345,3 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-#include <serial/serialdef.hpp>
-#include <serial/hookdata.hpp>
-#include <serial/hookfunc.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class CObject;
-
-class CObjectIStream;
-class CObjectOStream;
-class CObjectStreamCopier;
-
-class CClassTypeInfo;
-
-class CObjectTypeInfo;
-class CConstObjectInfo;
-class CObjectInfo;
-
-class CReadObjectHook;
-class CWriteObjectHook;
-class CCopyObjectHook;
-
-class CTypeInfoFunctions;
-
-// CTypeInfo class contains all information about C++ types (both basic and
-// classes): members and layout in memory.
-class CTypeInfo
-{
-protected:
-    CTypeInfo(ETypeFamily typeFamily, size_t size);
-    CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name);
-    CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name);
-public:
-    // various function pointers
-    typedef TObjectPtr (*TTypeCreate)(TTypeInfo objectType);
-
-    virtual ~CTypeInfo(void);
-
-    ETypeFamily GetTypeFamily(void) const;
-
-    // name of this type
-    const string& GetName(void) const;
-
-    // name of module
-    virtual const string& GetModuleName(void) const;
-    void SetModuleName(const string& name);
-    void SetModuleName(const char* name);
-
-    // size of data object in memory (like sizeof in C)
-    size_t GetSize(void) const;
-
-    // creates object of this type in heap (can be deleted by operator delete)
-    TObjectPtr Create(void) const;
-
-    // deletes object
-    virtual void Delete(TObjectPtr object) const;
-    // clear object contents so Delete will not leave unused memory allocated
-    // note: object contents is not guaranteed to be in initial state
-    //       (as after Create), to do so you should call SetDefault after
-    virtual void DeleteExternalObjects(TObjectPtr object) const;
-
-    // check, whether object contains default value
-    virtual bool IsDefault(TConstObjectPtr object) const = 0;
-    // check if both objects contain the same values
-    virtual bool Equals(TConstObjectPtr object1,
-                        TConstObjectPtr object2) const = 0;
-    // set object to default value
-    virtual void SetDefault(TObjectPtr dst) const = 0;
-    // set object to copy of another one
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const = 0;
-
-    // return true if type is inherited from CObject
-    bool IsCObject(void) const;
-    virtual const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
-    // return true CTypeInfo of object (redefined in polymorphic classes)
-    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
-
-    // I/O interface:
-    void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-    void CopyData(CObjectStreamCopier& copier) const;
-    void SkipData(CObjectIStream& in) const;
-
-    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
-    virtual bool IsType(TTypeInfo type) const;
-    virtual bool MayContainType(TTypeInfo type) const;
-    bool IsOrMayContainType(TTypeInfo type) const;
-
-    // hooks
-    void SetGlobalReadHook(CReadObjectHook* hook);
-    void SetLocalReadHook(CObjectIStream& in, CReadObjectHook* hook);
-    void ResetGlobalReadHook(void);
-    void ResetLocalReadHook(CObjectIStream& in);
-
-    void SetGlobalWriteHook(CWriteObjectHook* hook);
-    void SetLocalWriteHook(CObjectOStream& out, CWriteObjectHook* hook);
-    void ResetGlobalWriteHook(void);
-    void ResetLocalWriteHook(CObjectOStream& out);
-
-    void SetGlobalCopyHook(CCopyObjectHook* hook);
-    void SetLocalCopyHook(CObjectStreamCopier& copier, CCopyObjectHook* hook);
-    void ResetGlobalCopyHook(void);
-    void ResetLocalCopyHook(CObjectStreamCopier& copier);
-
-    // default methods without checking hook
-    void DefaultReadData(CObjectIStream& in, TObjectPtr object) const;
-    void DefaultWriteData(CObjectOStream& out, TConstObjectPtr object) const;
-    void DefaultCopyData(CObjectStreamCopier& copier) const;
-    void DefaultSkipData(CObjectIStream& in) const;
-
-private:
-    // private constructors to avoid copying
-    CTypeInfo(const CTypeInfo&);
-    CTypeInfo& operator=(const CTypeInfo&);
-
-    // type information
-    ETypeFamily m_TypeFamily;
-    size_t m_Size;
-    string m_Name;
-    string m_ModuleName;
-
-protected:
-    void SetCreateFunction(TTypeCreate func);
-    void SetReadFunction(TTypeReadFunction func);
-    void SetWriteFunction(TTypeWriteFunction func);
-    void SetCopyFunction(TTypeCopyFunction func);
-    void SetSkipFunction(TTypeSkipFunction func);
-
-    bool m_IsCObject;
-
-private:
-    // type specific function pointers
-    TTypeCreate m_CreateFunction;
-
-    CHookData<CReadObjectHook, TTypeReadFunction> m_ReadHookData;
-    CHookData<CWriteObjectHook, TTypeWriteFunction> m_WriteHookData;
-    CHookData<CCopyObjectHook, TTypeCopyFunction> m_CopyHookData;
-    TTypeSkipFunction m_SkipFunction;
-
-    friend class CTypeInfoFunctions;
-};
-
-#include <serial/typeinfo.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* TYPEINFO__HPP */

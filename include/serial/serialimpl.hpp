@@ -218,7 +218,10 @@ private:
 };
 
 // Functions preventing memory leaks due to undestroyed type info objects
+NCBI_XSERIAL_EXPORT
 void RegisterEnumTypeValuesObject(CEnumeratedTypeValues* object);
+
+NCBI_XSERIAL_EXPORT
 void RegisterTypeInfoObject(CTypeInfo* object);
 
 template<typename T>
@@ -228,7 +231,7 @@ TTypeInfo EnumTypeInfo(const T* member, const CEnumeratedTypeValues* enumInfo)
     return CreateEnumeratedTypeInfo(*member, enumInfo);
 }
 
-SSystemMutex& GetTypeInfoMutex(void);
+NCBI_XSERIAL_EXPORT SSystemMutex& GetTypeInfoMutex(void);
 
 // internal macros for implementing BEGIN_*_INFO and ADD_*_MEMBER
 #define DECLARE_BASE_OBJECT(ClassName) ClassName* base = 0
@@ -479,65 +482,81 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 #define END_ENUM_IN_INFO END_ENUM_INFO_METHOD
 #define END_ENUM_INFO END_ENUM_INFO_METHOD
 
+NCBI_XSERIAL_EXPORT
 void SetModuleName(CTypeInfo* info, const char* name);
+
+NCBI_XSERIAL_EXPORT
 void SetModuleName(CEnumeratedTypeValues* info, const char* name);
 
 // internal methods
 // add member
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfo t);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter f);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        const CTypeRef& r);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f1,
                        const CTypeRef& r);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        const CTypeRef& r);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        const CTypeRef& r);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f4,
@@ -545,6 +564,7 @@ CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f4,
@@ -552,6 +572,7 @@ CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f);
+NCBI_XSERIAL_EXPORT
 CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f4,
@@ -560,60 +581,73 @@ CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        TTypeInfoGetter1 f1,
                        const CTypeRef& r);
 // add variant
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfo t);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter f);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        const CTypeRef& r);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f1,
                        const CTypeRef& r);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        const CTypeRef& r);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        const CTypeRef& r);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f4,
@@ -621,6 +655,7 @@ CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f4,
@@ -628,6 +663,7 @@ CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f);
+NCBI_XSERIAL_EXPORT
 CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f4,

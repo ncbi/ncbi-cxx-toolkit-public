@@ -30,19 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.2  2001/05/17 14:57:22  lavr
-* Typos corrected
-*
-* Revision 1.1  2000/10/20 15:51:24  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* ===========================================================================
 */
 
 /////////////////////////////////////////////////////////////////////////////
@@ -289,3 +276,23 @@ CObjectInfo::operator=(pair<TObjectPtr, TTypeInfo> object)
 }
 
 #endif /* def OBJECTINFO__HPP  &&  ndef OBJECTINFO__INL */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.3  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.2  2001/05/17 14:57:22  lavr
+* Typos corrected
+*
+* Revision 1.1  2000/10/20 15:51:24  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* ===========================================================================
+*/

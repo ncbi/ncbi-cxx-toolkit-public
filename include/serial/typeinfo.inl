@@ -30,42 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.6  2002/09/09 18:14:00  grichenk
-* Added CObjectHookGuard class.
-* Added methods to be used by hooks for data
-* reading and skipping.
-*
-* Revision 1.5  2001/10/22 15:16:20  grichenk
-* Optimized CTypeInfo::IsCObject()
-*
-* Revision 1.4  2000/09/29 16:18:15  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* Revision 1.3  2000/09/18 20:00:11  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.2  2000/03/29 15:55:22  vasilche
-* Added two versions of object info - CObjectInfo and CConstObjectInfo.
-* Added generic iterators by class -
-* 	CTypeIterator<class>, CTypeConstIterator<class>,
-* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
-* 	CObjectsIterator and CObjectsConstIterator.
-*
-* Revision 1.1  1999/05/19 19:56:33  vasilche
-* Commit just in case.
-*
-* ===========================================================================
 */
 
 inline
@@ -161,3 +125,46 @@ bool CTypeInfo::IsCObject(void) const
 }
 
 #endif /* def TYPEINFO__HPP  &&  ndef TYPEINFO__INL */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.7  2002/12/23 18:38:52  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.6  2002/09/09 18:14:00  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
+* Revision 1.5  2001/10/22 15:16:20  grichenk
+* Optimized CTypeInfo::IsCObject()
+*
+* Revision 1.4  2000/09/29 16:18:15  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
+* Revision 1.3  2000/09/18 20:00:11  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.2  2000/03/29 15:55:22  vasilche
+* Added two versions of object info - CObjectInfo and CConstObjectInfo.
+* Added generic iterators by class -
+* 	CTypeIterator<class>, CTypeConstIterator<class>,
+* 	CStdTypeIterator<type>, CStdTypeConstIterator<type>,
+* 	CObjectsIterator and CObjectsConstIterator.
+*
+* Revision 1.1  1999/05/19 19:56:33  vasilche
+* Commit just in case.
+*
+* ===========================================================================
+*/

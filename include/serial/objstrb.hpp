@@ -30,35 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  1999/07/26 18:31:31  vasilche
-* Implemented skipping of unused values.
-* Added more useful error report.
-*
-* Revision 1.7  1999/07/21 14:20:01  vasilche
-* Added serialization of bool.
-*
-* Revision 1.6  1999/07/09 20:27:02  vasilche
-* Fixed some bugs
-*
-* Revision 1.5  1999/07/09 16:32:54  vasilche
-* Added OCTET STRING write/read.
-*
-* Revision 1.4  1999/06/15 16:20:05  vasilche
-* Added ASN.1 object output stream.
-*
-* Revision 1.3  1999/06/10 21:06:41  vasilche
-* Working binary output and almost working binary input.
-*
-* Revision 1.2  1999/06/04 20:51:36  vasilche
-* First compilable version of serialization.
-*
-* Revision 1.1  1999/05/19 19:56:27  vasilche
-* Commit just in case.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -97,3 +68,39 @@ namespace CObjectStreamBinaryDefs
 END_NCBI_SCOPE
 
 #endif  /* OBJSTRB__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.9  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.8  1999/07/26 18:31:31  vasilche
+* Implemented skipping of unused values.
+* Added more useful error report.
+*
+* Revision 1.7  1999/07/21 14:20:01  vasilche
+* Added serialization of bool.
+*
+* Revision 1.6  1999/07/09 20:27:02  vasilche
+* Fixed some bugs
+*
+* Revision 1.5  1999/07/09 16:32:54  vasilche
+* Added OCTET STRING write/read.
+*
+* Revision 1.4  1999/06/15 16:20:05  vasilche
+* Added ASN.1 object output stream.
+*
+* Revision 1.3  1999/06/10 21:06:41  vasilche
+* Working binary output and almost working binary input.
+*
+* Revision 1.2  1999/06/04 20:51:36  vasilche
+* First compilable version of serialization.
+*
+* Revision 1.1  1999/05/19 19:56:27  vasilche
+* Commit just in case.
+*
+* ===========================================================================
+*/

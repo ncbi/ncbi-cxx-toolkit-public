@@ -30,9 +30,28 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <corelib/ncbistd.hpp>
+#include <serial/classinfo.hpp>
+#include <vector>
+
+BEGIN_NCBI_SCOPE
+
+#include <serial/objistrimpl.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* OBJISTRIMPL__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.3  2000/12/26 22:23:44  vasilche
 * Fixed errors of compilation on Mac.
 *
@@ -47,15 +66,3 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-#include <serial/classinfo.hpp>
-#include <vector>
-
-BEGIN_NCBI_SCOPE
-
-#include <serial/objistrimpl.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* OBJISTRIMPL__HPP */

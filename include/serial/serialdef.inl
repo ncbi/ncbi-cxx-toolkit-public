@@ -30,9 +30,18 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#endif /* def SERIALDEF__HPP  &&  ndef SERIALDEF__INL */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.2  2000/09/18 20:00:09  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -44,5 +53,3 @@
 *
 * ===========================================================================
 */
-
-#endif /* def SERIALDEF__HPP  &&  ndef SERIALDEF__INL */

@@ -30,9 +30,18 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#endif /* def ITERATORBASE__HPP  &&  ndef ITERATORBASE__INL */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.2  2000/07/03 18:42:34  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -43,5 +52,3 @@
 *
 * ===========================================================================
 */
-
-#endif /* def ITERATORBASE__HPP  &&  ndef ITERATORBASE__INL */

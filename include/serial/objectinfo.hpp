@@ -30,26 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2001/05/17 14:57:17  lavr
-* Typos corrected
-*
-* Revision 1.3  2001/01/22 23:20:30  vakatov
-* + CObjectInfo::GetMember(), CConstObjectInfo::GetMember()
-*
-* Revision 1.2  2000/12/15 15:37:59  vasilche
-* Added support of Int8 and long double.
-* Enum values now have type Int4 instead of long.
-*
-* Revision 1.1  2000/10/20 15:51:24  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -95,7 +75,7 @@ class CObjectInfoMI;
 class CObjectInfoCV;
 class CObjectInfoEI;
 
-class CObjectTypeInfo
+class NCBI_XSERIAL_EXPORT CObjectTypeInfo
 {
 public:
     typedef CObjectTypeInfoMI CMemberIterator;
@@ -185,7 +165,7 @@ private:
     CTypeInfo* GetNCTypeInfo(void) const;
 };
 
-class CConstObjectInfo : public CObjectTypeInfo
+class NCBI_XSERIAL_EXPORT CConstObjectInfo : public CObjectTypeInfo
 {
 public:
     typedef TConstObjectPtr TObjectPtrType;
@@ -270,7 +250,7 @@ private:
     CConstRef<CObject> m_Ref; // hold reference to CObject for correct removal
 };
 
-class CObjectInfo : public CConstObjectInfo
+class NCBI_XSERIAL_EXPORT CObjectInfo : public CConstObjectInfo
 {
     typedef CConstObjectInfo CParent;
 public:
@@ -343,3 +323,30 @@ public:
 END_NCBI_SCOPE
 
 #endif  /* OBJECTINFO__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.5  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.4  2001/05/17 14:57:17  lavr
+* Typos corrected
+*
+* Revision 1.3  2001/01/22 23:20:30  vakatov
+* + CObjectInfo::GetMember(), CConstObjectInfo::GetMember()
+*
+* Revision 1.2  2000/12/15 15:37:59  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
+* Revision 1.1  2000/10/20 15:51:24  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* ===========================================================================
+*/

@@ -30,94 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.19  2002/12/12 21:10:26  gouriano
-* implemented handling of complex XML containers
-*
-* Revision 1.18  2002/11/26 22:01:38  gouriano
-* added HasMoreElements method
-*
-* Revision 1.17  2002/11/20 21:21:58  gouriano
-* corrected processing of unnamed sequences as choice variants
-*
-* Revision 1.16  2002/11/14 20:51:27  gouriano
-* added support of attribute lists
-*
-* Revision 1.15  2002/10/15 13:45:15  gouriano
-* added "UndoClassMember" function
-*
-* Revision 1.14  2001/10/17 20:41:19  grichenk
-* Added CObjectOStream::CharBlock class
-*
-* Revision 1.13  2001/01/05 20:10:36  vasilche
-* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
-* were moved to util.
-*
-* Revision 1.12  2000/12/15 21:28:47  vasilche
-* Moved some typedefs/enums from corelib/ncbistd.hpp.
-* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
-* TByte typedef replaced by Uint1.
-*
-* Revision 1.11  2000/12/15 15:38:00  vasilche
-* Added support of Int8 and long double.
-* Enum values now have type Int4 instead of long.
-*
-* Revision 1.10  2000/11/07 17:25:12  vasilche
-* Fixed encoding of XML:
-*     removed unnecessary apostrophes in OCTET STRING
-*     removed unnecessary content in NULL
-* Added module names to CTypeInfo and CEnumeratedTypeValues
-*
-* Revision 1.9  2000/10/03 17:22:35  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.8  2000/09/29 16:18:14  vasilche
-* Fixed binary format encoding/decoding on 64 bit compulers.
-* Implemented CWeakMap<> for automatic cleaning map entries.
-* Added cleaning local hooks via CWeakMap<>.
-* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
-* Added some user interface methods to CObjectIStream, CObjectOStream and
-* CObjectStreamCopier.
-*
-* Revision 1.7  2000/09/18 20:00:06  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.6  2000/09/01 13:16:01  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.5  2000/08/15 19:44:40  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.4  2000/07/03 18:42:36  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* Revision 1.3  2000/06/16 16:31:06  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.2  2000/06/07 19:45:43  vasilche
-* Some code cleaning.
-* Macros renaming in more clear way.
-* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
-*
-* Revision 1.1  2000/06/01 19:06:57  vasilche
-* Added parsing of XML data.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -128,7 +40,7 @@ BEGIN_NCBI_SCOPE
 
 class CItemsInfo;
 
-class CObjectIStreamXml : public CObjectIStream
+class NCBI_XSERIAL_EXPORT CObjectIStreamXml : public CObjectIStream
 {
 public:
     CObjectIStreamXml(void);
@@ -294,3 +206,98 @@ private:
 END_NCBI_SCOPE
 
 #endif  /* OBJISTRXML__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.20  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.19  2002/12/12 21:10:26  gouriano
+* implemented handling of complex XML containers
+*
+* Revision 1.18  2002/11/26 22:01:38  gouriano
+* added HasMoreElements method
+*
+* Revision 1.17  2002/11/20 21:21:58  gouriano
+* corrected processing of unnamed sequences as choice variants
+*
+* Revision 1.16  2002/11/14 20:51:27  gouriano
+* added support of attribute lists
+*
+* Revision 1.15  2002/10/15 13:45:15  gouriano
+* added "UndoClassMember" function
+*
+* Revision 1.14  2001/10/17 20:41:19  grichenk
+* Added CObjectOStream::CharBlock class
+*
+* Revision 1.13  2001/01/05 20:10:36  vasilche
+* CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
+* were moved to util.
+*
+* Revision 1.12  2000/12/15 21:28:47  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
+* Revision 1.11  2000/12/15 15:38:00  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
+* Revision 1.10  2000/11/07 17:25:12  vasilche
+* Fixed encoding of XML:
+*     removed unnecessary apostrophes in OCTET STRING
+*     removed unnecessary content in NULL
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
+* Revision 1.9  2000/10/03 17:22:35  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* Revision 1.8  2000/09/29 16:18:14  vasilche
+* Fixed binary format encoding/decoding on 64 bit compulers.
+* Implemented CWeakMap<> for automatic cleaning map entries.
+* Added cleaning local hooks via CWeakMap<>.
+* Renamed ReadTypeName -> ReadFileHeader, ENoTypeName -> ENoFileHeader.
+* Added some user interface methods to CObjectIStream, CObjectOStream and
+* CObjectStreamCopier.
+*
+* Revision 1.7  2000/09/18 20:00:06  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.6  2000/09/01 13:16:01  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
+* Revision 1.5  2000/08/15 19:44:40  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* Revision 1.4  2000/07/03 18:42:36  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
+* Revision 1.3  2000/06/16 16:31:06  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* Revision 1.2  2000/06/07 19:45:43  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
+* Revision 1.1  2000/06/01 19:06:57  vasilche
+* Added parsing of XML data.
+*
+* ===========================================================================
+*/

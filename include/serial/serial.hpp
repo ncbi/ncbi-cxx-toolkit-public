@@ -30,9 +30,97 @@
 *
 * File Description:
 *   Serialization classes.
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <serial/typeref.hpp>
+
+BEGIN_NCBI_SCOPE
+
+class CObjectOStream;
+class CObjectIStream;
+
+TTypeInfo CPointerTypeInfoGetTypeInfo(TTypeInfo type);
+
+// define type info getter for classes
+template<class Class>
+inline TTypeInfoGetter GetTypeInfoGetter(const Class* object);
+
+
+// define type info getter for pointers
+template<typename T>
+inline
+CTypeRef GetPtrTypeRef(const T* const* object)
+{
+    const T* p = 0;
+    return CTypeRef(&CPointerTypeInfoGetTypeInfo, GetTypeInfoGetter(p));
+}
+
+// define type info getter for user classes
+template<class Class>
+inline
+TTypeInfoGetter GetTypeInfoGetter(const Class* )
+{
+    return &Class::GetTypeInfo;
+}
+
+template<typename T>
+inline
+TTypeInfoGetter GetTypeRef(const T* object)
+{
+    return GetTypeInfoGetter(object);
+}
+
+NCBI_XSERIAL_EXPORT
+void Write(CObjectOStream& out, TConstObjectPtr object, const CTypeRef& type);
+
+NCBI_XSERIAL_EXPORT
+void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type);
+
+// reader/writer
+template<typename T>
+inline
+CObjectOStream& Write(CObjectOStream& out, const T& object)
+{
+    Write(out, &object, GetTypeRef(&object));
+    return out;
+}
+
+template<typename T>
+inline
+CObjectIStream& Read(CObjectIStream& in, T& object)
+{
+    Read(in, &object, GetTypeRef(&object));
+    return in;
+}
+
+template<typename T>
+inline
+CObjectOStream& operator<<(CObjectOStream& out, const T& object)
+{
+    return Write(out, object);
+}
+
+template<typename T>
+inline
+CObjectIStream& operator>>(CObjectIStream& in, T& object)
+{
+    return Read(in, object);
+}
+
+//#include <serial/serial.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* SERIAL__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.44  2002/08/26 18:32:28  grichenk
 * Added Get/SetAutoSeparator() to CObjectOStream to control
 * output of separators.
@@ -181,81 +269,3 @@
 *
 * ===========================================================================
 */
-
-#include <serial/typeref.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class CObjectOStream;
-class CObjectIStream;
-
-TTypeInfo CPointerTypeInfoGetTypeInfo(TTypeInfo type);
-
-// define type info getter for classes
-template<class Class>
-inline TTypeInfoGetter GetTypeInfoGetter(const Class* object);
-
-
-// define type info getter for pointers
-template<typename T>
-inline
-CTypeRef GetPtrTypeRef(const T* const* object)
-{
-    const T* p = 0;
-    return CTypeRef(&CPointerTypeInfoGetTypeInfo, GetTypeInfoGetter(p));
-}
-
-// define type info getter for user classes
-template<class Class>
-inline
-TTypeInfoGetter GetTypeInfoGetter(const Class* )
-{
-    return &Class::GetTypeInfo;
-}
-
-template<typename T>
-inline
-TTypeInfoGetter GetTypeRef(const T* object)
-{
-    return GetTypeInfoGetter(object);
-}
-
-void Write(CObjectOStream& out, TConstObjectPtr object, const CTypeRef& type);
-void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type);
-
-// reader/writer
-template<typename T>
-inline
-CObjectOStream& Write(CObjectOStream& out, const T& object)
-{
-    Write(out, &object, GetTypeRef(&object));
-    return out;
-}
-
-template<typename T>
-inline
-CObjectIStream& Read(CObjectIStream& in, T& object)
-{
-    Read(in, &object, GetTypeRef(&object));
-    return in;
-}
-
-template<typename T>
-inline
-CObjectOStream& operator<<(CObjectOStream& out, const T& object)
-{
-    return Write(out, object);
-}
-
-template<typename T>
-inline
-CObjectIStream& operator>>(CObjectIStream& in, T& object)
-{
-    return Read(in, object);
-}
-
-//#include <serial/serial.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* SERIAL__HPP */

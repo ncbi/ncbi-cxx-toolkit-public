@@ -30,9 +30,20 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+
+
+#endif /* def OBJOSTRASNB__HPP  &&  ndef OBJOSTRASNB__INL */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.1  2000/09/29 16:18:14  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -43,7 +54,3 @@
 *
 * ===========================================================================
 */
-
-
-
-#endif /* def OBJOSTRASNB__HPP  &&  ndef OBJOSTRASNB__INL */

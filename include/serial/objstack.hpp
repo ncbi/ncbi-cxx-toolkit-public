@@ -30,71 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.15  2002/12/13 21:51:05  gouriano
-* corrected reading of choices
-*
-* Revision 1.14  2002/12/12 21:11:15  gouriano
-* added some debug tracing
-*
-* Revision 1.13  2002/11/19 19:45:13  gouriano
-* added const qualifier to GetSkipTag/GetNotag functions
-*
-* Revision 1.12  2002/11/14 20:53:42  gouriano
-* added support of XML attribute lists
-*
-* Revision 1.11  2002/10/25 14:49:29  vasilche
-* NCBI C Toolkit compatibility code extracted to libxcser library.
-* Serial streams flags names were renamed to fXxx.
-*
-* Names of flags
-*
-* Revision 1.10  2002/10/15 13:40:33  gouriano
-* added "skiptag" flag
-*
-* Revision 1.9  2002/09/26 18:12:27  gouriano
-* added HasMemberId method
-*
-* Revision 1.8  2001/05/17 14:59:47  lavr
-* Typos corrected
-*
-* Revision 1.7  2000/10/20 15:51:28  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* Revision 1.6  2000/09/18 20:00:07  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.5  2000/09/01 13:16:02  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.4  2000/08/15 19:44:41  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.3  2000/06/07 19:45:44  vasilche
-* Some code cleaning.
-* Macros renaming in more clear way.
-* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
-*
-* Revision 1.2  2000/06/01 19:06:58  vasilche
-* Added parsing of XML data.
-*
-* Revision 1.1  2000/05/24 20:08:14  vasilche
-* Implemented XML dump.
-*
-* ===========================================================================
 */
 
 #define VIRTUAL_MID_LEVEL_IO 1
@@ -114,7 +49,7 @@ BEGIN_NCBI_SCOPE
 
 class CObjectStack;
 
-class CObjectStackFrame
+class NCBI_XSERIAL_EXPORT CObjectStackFrame
 {
 public:
     enum EFrameType {
@@ -156,7 +91,7 @@ private:
     bool m_Notag;
 };
 
-class CObjectStack
+class NCBI_XSERIAL_EXPORT CObjectStack
 {
 public:
     typedef CObjectStackFrame TFrame;
@@ -252,3 +187,75 @@ private:
 END_NCBI_SCOPE
 
 #endif  /* OBJSTACK__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.16  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.15  2002/12/13 21:51:05  gouriano
+* corrected reading of choices
+*
+* Revision 1.14  2002/12/12 21:11:15  gouriano
+* added some debug tracing
+*
+* Revision 1.13  2002/11/19 19:45:13  gouriano
+* added const qualifier to GetSkipTag/GetNotag functions
+*
+* Revision 1.12  2002/11/14 20:53:42  gouriano
+* added support of XML attribute lists
+*
+* Revision 1.11  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
+* Revision 1.10  2002/10/15 13:40:33  gouriano
+* added "skiptag" flag
+*
+* Revision 1.9  2002/09/26 18:12:27  gouriano
+* added HasMemberId method
+*
+* Revision 1.8  2001/05/17 14:59:47  lavr
+* Typos corrected
+*
+* Revision 1.7  2000/10/20 15:51:28  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* Revision 1.6  2000/09/18 20:00:07  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.5  2000/09/01 13:16:02  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
+* Revision 1.4  2000/08/15 19:44:41  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* Revision 1.3  2000/06/07 19:45:44  vasilche
+* Some code cleaning.
+* Macros renaming in more clear way.
+* BEGIN_NAMED_*_INFO, ADD_*_MEMBER, ADD_NAMED_*_MEMBER.
+*
+* Revision 1.2  2000/06/01 19:06:58  vasilche
+* Added parsing of XML data.
+*
+* Revision 1.1  2000/05/24 20:08:14  vasilche
+* Implemented XML dump.
+*
+* ===========================================================================
+*/

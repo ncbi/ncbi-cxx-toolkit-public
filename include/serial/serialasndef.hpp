@@ -30,16 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2000/10/13 16:28:32  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -75,3 +65,20 @@ TTypeInfo COldAsnTypeInfoGetTypeInfo(const string& name,
 END_NCBI_SCOPE
 
 #endif  /* SERIALASNDEF__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.2  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.1  2000/10/13 16:28:32  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
+* ===========================================================================
+*/

@@ -30,52 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2002/09/19 14:00:37  grichenk
-* Implemented CObjectHookGuard for write and copy hooks
-* Added DefaultRead/Write/Copy methods to base hook classes
-*
-* Revision 1.8  2002/09/09 18:44:53  grichenk
-* Fixed CObjectHookGuard methods for GCC
-*
-* Revision 1.7  2002/09/09 18:20:18  grichenk
-* Fixed includes (to declare Type<>)
-*
-* Revision 1.6  2002/09/09 18:13:59  grichenk
-* Added CObjectHookGuard class.
-* Added methods to be used by hooks for data
-* reading and skipping.
-*
-* Revision 1.5  2000/11/01 20:35:27  vasilche
-* Removed ECanDelete enum and related constructors.
-*
-* Revision 1.4  2000/10/03 17:22:34  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.3  2000/09/26 17:38:07  vasilche
-* Fixed incomplete choiceptr implementation.
-* Removed temporary comments.
-*
-* Revision 1.2  2000/09/18 20:00:04  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.1  2000/08/15 19:44:39  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -99,7 +53,7 @@ class CObjectInfoCV;
 class CConstObjectInfoCV;
 class CObjectTypeInfoCV;
 
-class CReadObjectHook : public CObject
+class NCBI_XSERIAL_EXPORT CReadObjectHook : public CObject
 {
 public:
     virtual ~CReadObjectHook(void);
@@ -113,7 +67,7 @@ public:
                      const CObjectInfo& object);
 };
 
-class CReadClassMemberHook : public CObject
+class NCBI_XSERIAL_EXPORT CReadClassMemberHook : public CObject
 {
 public:
     virtual ~CReadClassMemberHook(void);
@@ -128,7 +82,7 @@ public:
                      const CObjectInfoMI& object);
 };
 
-class CReadChoiceVariantHook : public CObject
+class NCBI_XSERIAL_EXPORT CReadChoiceVariantHook : public CObject
 {
 public:
     virtual ~CReadChoiceVariantHook(void);
@@ -140,7 +94,7 @@ public:
     // No default skip method - can not skip variants
 };
 
-class CReadContainerElementHook : public CObject
+class NCBI_XSERIAL_EXPORT CReadContainerElementHook : public CObject
 {
 public:
     virtual ~CReadContainerElementHook(void);
@@ -149,7 +103,7 @@ public:
                                       const CObjectInfo& container) = 0;
 };
 
-class CWriteObjectHook : public CObject
+class NCBI_XSERIAL_EXPORT CWriteObjectHook : public CObject
 {
 public:
     virtual ~CWriteObjectHook(void);
@@ -160,7 +114,7 @@ public:
                       const CConstObjectInfo& object);
 };
 
-class CWriteClassMemberHook : public CObject
+class NCBI_XSERIAL_EXPORT CWriteClassMemberHook : public CObject
 {
 public:
     virtual ~CWriteClassMemberHook(void);
@@ -171,7 +125,7 @@ public:
                       const CConstObjectInfoMI& member);
 };
 
-class CWriteChoiceVariantHook : public CObject
+class NCBI_XSERIAL_EXPORT CWriteChoiceVariantHook : public CObject
 {
 public:
     virtual ~CWriteChoiceVariantHook(void);
@@ -182,7 +136,7 @@ public:
                       const CConstObjectInfoCV& variant);
 };
 
-class CCopyObjectHook : public CObject
+class NCBI_XSERIAL_EXPORT CCopyObjectHook : public CObject
 {
 public:
     virtual ~CCopyObjectHook(void);
@@ -193,7 +147,7 @@ public:
                      const CObjectTypeInfo& type);
 };
 
-class CCopyClassMemberHook : public CObject
+class NCBI_XSERIAL_EXPORT CCopyClassMemberHook : public CObject
 {
 public:
     virtual ~CCopyClassMemberHook(void);
@@ -206,7 +160,7 @@ public:
                      const CObjectTypeInfoMI& member);
 };
 
-class CCopyChoiceVariantHook : public CObject
+class NCBI_XSERIAL_EXPORT CCopyChoiceVariantHook : public CObject
 {
 public:
     virtual ~CCopyChoiceVariantHook(void);
@@ -563,3 +517,56 @@ CObjectHookGuard<T>::~CObjectHookGuard(void)
 END_NCBI_SCOPE
 
 #endif  /* OBJHOOK__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.11  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.10  2002/09/19 14:00:37  grichenk
+* Implemented CObjectHookGuard for write and copy hooks
+* Added DefaultRead/Write/Copy methods to base hook classes
+*
+* Revision 1.8  2002/09/09 18:44:53  grichenk
+* Fixed CObjectHookGuard methods for GCC
+*
+* Revision 1.7  2002/09/09 18:20:18  grichenk
+* Fixed includes (to declare Type<>)
+*
+* Revision 1.6  2002/09/09 18:13:59  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
+* Revision 1.5  2000/11/01 20:35:27  vasilche
+* Removed ECanDelete enum and related constructors.
+*
+* Revision 1.4  2000/10/03 17:22:34  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* Revision 1.3  2000/09/26 17:38:07  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
+* Revision 1.2  2000/09/18 20:00:04  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.1  2000/08/15 19:44:39  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* ===========================================================================
+*/

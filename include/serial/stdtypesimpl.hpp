@@ -30,44 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.8  2000/12/15 15:38:02  vasilche
-* Added support of Int8 and long double.
-* Enum values now have type Int4 instead of long.
-*
-* Revision 1.7  2000/10/13 16:28:32  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* Revision 1.6  2000/09/19 20:16:53  vasilche
-* Fixed type in CStlClassInfo_auto_ptr.
-* Added missing include serialutil.hpp.
-*
-* Revision 1.5  2000/09/18 20:00:11  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.4  2000/09/01 13:16:03  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.3  2000/07/03 20:47:18  vasilche
-* Removed unused variables/functions.
-*
-* Revision 1.2  2000/07/03 19:04:25  vasilche
-* Fixed type references in templates.
-*
-* Revision 1.1  2000/07/03 18:42:37  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -121,7 +83,7 @@ void ThrowIllegalCall(void);
     SERIAL_ENUMERATE_ALL_INTEGRAL_TYPES \
     SERIAL_ENUMERATE_ALL_FLOAT_TYPES
 
-class CPrimitiveTypeInfoBool : public CPrimitiveTypeInfo
+class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoBool : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
@@ -133,7 +95,7 @@ public:
     void SetValueBool(TObjectPtr object, bool value) const;
 };
 
-class CPrimitiveTypeInfoChar : public CPrimitiveTypeInfo
+class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoChar : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
@@ -147,7 +109,7 @@ public:
     void SetValueString(TObjectPtr object, const string& value) const;
 };
 
-class CPrimitiveTypeInfoInt : public CPrimitiveTypeInfo
+class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoInt : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
@@ -187,7 +149,7 @@ protected:
     TSetUint8Function m_SetUint8;
 };
 
-class CPrimitiveTypeInfoDouble : public CPrimitiveTypeInfo
+class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoDouble : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
@@ -199,7 +161,7 @@ public:
     void SetValueDouble(TObjectPtr objectPtr, double value) const;
 };
 
-class CPrimitiveTypeInfoFloat : public CPrimitiveTypeInfo
+class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoFloat : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
@@ -212,7 +174,7 @@ public:
 };
 
 #if SIZEOF_LONG_DOUBLE != 0
-class CPrimitiveTypeInfoLongDouble : public CPrimitiveTypeInfo
+class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoLongDouble : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
@@ -230,7 +192,7 @@ public:
 #endif
 
 // CTypeInfo for C++ STL type string
-class CPrimitiveTypeInfoString : public CPrimitiveTypeInfo
+class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoString : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
@@ -282,3 +244,48 @@ public:
 END_NCBI_SCOPE
 
 #endif  /* STDTYPESIMPL__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.9  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.8  2000/12/15 15:38:02  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
+* Revision 1.7  2000/10/13 16:28:32  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
+* Revision 1.6  2000/09/19 20:16:53  vasilche
+* Fixed type in CStlClassInfo_auto_ptr.
+* Added missing include serialutil.hpp.
+*
+* Revision 1.5  2000/09/18 20:00:11  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.4  2000/09/01 13:16:03  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
+* Revision 1.3  2000/07/03 20:47:18  vasilche
+* Removed unused variables/functions.
+*
+* Revision 1.2  2000/07/03 19:04:25  vasilche
+* Fixed type references in templates.
+*
+* Revision 1.1  2000/07/03 18:42:37  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
+* ===========================================================================
+*/

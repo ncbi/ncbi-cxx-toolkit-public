@@ -45,7 +45,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CClassTypeInfoBase : public CTypeInfo {
+class NCBI_XSERIAL_EXPORT CClassTypeInfoBase : public CTypeInfo {
     typedef CTypeInfo CParent;
 public:
     typedef map<TTypeInfo, bool> TContainedTypes;
@@ -143,6 +143,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2002/12/23 18:38:50  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.11  2002/12/12 17:58:16  ucko
 * Stop shadowing CTypeInfo::m_IsCObject, which had made IsCObject always
 * return false.

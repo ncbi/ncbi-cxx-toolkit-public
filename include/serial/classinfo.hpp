@@ -30,9 +30,153 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#include <corelib/ncbistd.hpp>
+#include <serial/classinfob.hpp>
+#include <serial/member.hpp>
+#include <list>
+
+BEGIN_NCBI_SCOPE
+
+class CObjectIStream;
+class CObjectOStream;
+class COObjectList;
+class CMemberId;
+class CMemberInfo;
+class CClassInfoHelperBase;
+
+class NCBI_XSERIAL_EXPORT CClassTypeInfo : public CClassTypeInfoBase
+{
+    typedef CClassTypeInfoBase CParent;
+protected:
+    typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
+
+    enum EClassType {
+        eSequential,
+        eRandom,
+        eImplicit
+    };
+
+    friend class CClassInfoHelperBase;
+
+    CClassTypeInfo(size_t size, const char* name,
+                   const void* nonCObject, TTypeCreate createFunc,
+                   const type_info& ti, TGetTypeIdFunction idFunc);
+    CClassTypeInfo(size_t size, const char* name,
+                   const CObject* cObject, TTypeCreate createFunc,
+                   const type_info& ti, TGetTypeIdFunction idFunc);
+    CClassTypeInfo(size_t size, const string& name,
+                   const void* nonCObject, TTypeCreate createFunc,
+                   const type_info& ti, TGetTypeIdFunction idFunc);
+    CClassTypeInfo(size_t size, const string& name,
+                   const CObject* cObject, TTypeCreate createFunc,
+                   const type_info& ti, TGetTypeIdFunction idFunc);
+
+public:
+    typedef list<pair<CMemberId, CTypeRef> > TSubClasses;
+
+    const CItemsInfo& GetMembers(void) const;
+    const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
+    const CMemberInfo* GetMemberInfo(const CIterator& i) const;
+
+    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual bool Equals(TConstObjectPtr object1,
+                        TConstObjectPtr object2) const;
+    virtual void SetDefault(TObjectPtr dst) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+
+    bool RandomOrder(void) const;
+    CClassTypeInfo* SetRandomOrder(bool random = true);
+
+    bool Implicit(void) const;
+    CClassTypeInfo* SetImplicit(void);
+
+    void AddSubClass(const CMemberId& id, const CTypeRef& type);
+    void AddSubClass(const char* id, TTypeInfoGetter getter);
+    void AddSubClassNull(const CMemberId& id);
+    void AddSubClassNull(const char* id);
+    const TSubClasses* SubClasses(void) const;
+
+    const CClassTypeInfo* GetParentClassInfo(void) const;
+    void SetParentClass(TTypeInfo parentClass);
+
+public:
+
+    // iterators interface
+    const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
+
+protected:
+    void AssignMemberDefault(TObjectPtr object, TMemberIndex index) const;
+    
+    virtual bool IsType(TTypeInfo typeInfo) const;
+    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
+    virtual bool CalcMayContainType(TTypeInfo typeInfo) const;
+
+    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
+    void RegisterSubClasses(void) const;
+
+private:
+    void InitClassTypeInfo(void);
+
+    EClassType m_ClassType;
+
+    const CClassTypeInfo* m_ParentClassInfo;
+    auto_ptr<TSubClasses> m_SubClasses;
+
+    TGetTypeIdFunction m_GetTypeIdFunction;
+
+    const CMemberInfo* GetImplicitMember(void) const;
+
+private:
+    void UpdateFunctions(void);
+
+    static void ReadClassSequential(CObjectIStream& in,
+                                    TTypeInfo objectType,
+                                    TObjectPtr objectPtr);
+    static void ReadClassRandom(CObjectIStream& in,
+                                TTypeInfo objectType,
+                                TObjectPtr objectPtr);
+    static void ReadImplicitMember(CObjectIStream& in,
+                                   TTypeInfo objectType,
+                                   TObjectPtr objectPtr);
+    static void WriteClassRandom(CObjectOStream& out,
+                                 TTypeInfo objectType,
+                                 TConstObjectPtr objectPtr);
+    static void WriteClassSequential(CObjectOStream& out,
+                                     TTypeInfo objectType,
+                                     TConstObjectPtr objectPtr);
+    static void WriteImplicitMember(CObjectOStream& out,
+                                    TTypeInfo objectType,
+                                    TConstObjectPtr objectPtr);
+    static void SkipClassSequential(CObjectIStream& in,
+                                    TTypeInfo objectType);
+    static void SkipClassRandom(CObjectIStream& in,
+                                TTypeInfo objectType);
+    static void SkipImplicitMember(CObjectIStream& in,
+                                   TTypeInfo objectType);
+    static void CopyClassSequential(CObjectStreamCopier& copier,
+                                    TTypeInfo objectType);
+    static void CopyClassRandom(CObjectStreamCopier& copier,
+                                TTypeInfo objectType);
+    static void CopyImplicitMember(CObjectStreamCopier& copier,
+                                   TTypeInfo objectType);
+};
+
+#include <serial/classinfo.inl>
+
+END_NCBI_SCOPE
+
+#endif  /* CLASSINFO__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/12/23 18:38:50  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.37  2002/11/14 20:44:09  gouriano
 * moved AddMember method into the base class
 *
@@ -186,140 +330,3 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-#include <serial/classinfob.hpp>
-#include <serial/member.hpp>
-#include <list>
-
-BEGIN_NCBI_SCOPE
-
-class CObjectIStream;
-class CObjectOStream;
-class COObjectList;
-class CMemberId;
-class CMemberInfo;
-class CClassInfoHelperBase;
-
-class CClassTypeInfo : public CClassTypeInfoBase
-{
-    typedef CClassTypeInfoBase CParent;
-protected:
-    typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
-
-    enum EClassType {
-        eSequential,
-        eRandom,
-        eImplicit
-    };
-
-    friend class CClassInfoHelperBase;
-
-    CClassTypeInfo(size_t size, const char* name,
-                   const void* nonCObject, TTypeCreate createFunc,
-                   const type_info& ti, TGetTypeIdFunction idFunc);
-    CClassTypeInfo(size_t size, const char* name,
-                   const CObject* cObject, TTypeCreate createFunc,
-                   const type_info& ti, TGetTypeIdFunction idFunc);
-    CClassTypeInfo(size_t size, const string& name,
-                   const void* nonCObject, TTypeCreate createFunc,
-                   const type_info& ti, TGetTypeIdFunction idFunc);
-    CClassTypeInfo(size_t size, const string& name,
-                   const CObject* cObject, TTypeCreate createFunc,
-                   const type_info& ti, TGetTypeIdFunction idFunc);
-
-public:
-    typedef list<pair<CMemberId, CTypeRef> > TSubClasses;
-
-    const CItemsInfo& GetMembers(void) const;
-    const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
-    const CMemberInfo* GetMemberInfo(const CIterator& i) const;
-
-    virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr object1,
-                        TConstObjectPtr object2) const;
-    virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
-
-    bool RandomOrder(void) const;
-    CClassTypeInfo* SetRandomOrder(bool random = true);
-
-    bool Implicit(void) const;
-    CClassTypeInfo* SetImplicit(void);
-
-    void AddSubClass(const CMemberId& id, const CTypeRef& type);
-    void AddSubClass(const char* id, TTypeInfoGetter getter);
-    void AddSubClassNull(const CMemberId& id);
-    void AddSubClassNull(const char* id);
-    const TSubClasses* SubClasses(void) const;
-
-    const CClassTypeInfo* GetParentClassInfo(void) const;
-    void SetParentClass(TTypeInfo parentClass);
-
-public:
-
-    // iterators interface
-    const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
-
-protected:
-    void AssignMemberDefault(TObjectPtr object, TMemberIndex index) const;
-    
-    virtual bool IsType(TTypeInfo typeInfo) const;
-    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
-    virtual bool CalcMayContainType(TTypeInfo typeInfo) const;
-
-    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
-    void RegisterSubClasses(void) const;
-
-private:
-    void InitClassTypeInfo(void);
-
-    EClassType m_ClassType;
-
-    const CClassTypeInfo* m_ParentClassInfo;
-    auto_ptr<TSubClasses> m_SubClasses;
-
-    TGetTypeIdFunction m_GetTypeIdFunction;
-
-    const CMemberInfo* GetImplicitMember(void) const;
-
-private:
-    void UpdateFunctions(void);
-
-    static void ReadClassSequential(CObjectIStream& in,
-                                    TTypeInfo objectType,
-                                    TObjectPtr objectPtr);
-    static void ReadClassRandom(CObjectIStream& in,
-                                TTypeInfo objectType,
-                                TObjectPtr objectPtr);
-    static void ReadImplicitMember(CObjectIStream& in,
-                                   TTypeInfo objectType,
-                                   TObjectPtr objectPtr);
-    static void WriteClassRandom(CObjectOStream& out,
-                                 TTypeInfo objectType,
-                                 TConstObjectPtr objectPtr);
-    static void WriteClassSequential(CObjectOStream& out,
-                                     TTypeInfo objectType,
-                                     TConstObjectPtr objectPtr);
-    static void WriteImplicitMember(CObjectOStream& out,
-                                    TTypeInfo objectType,
-                                    TConstObjectPtr objectPtr);
-    static void SkipClassSequential(CObjectIStream& in,
-                                    TTypeInfo objectType);
-    static void SkipClassRandom(CObjectIStream& in,
-                                TTypeInfo objectType);
-    static void SkipImplicitMember(CObjectIStream& in,
-                                   TTypeInfo objectType);
-    static void CopyClassSequential(CObjectStreamCopier& copier,
-                                    TTypeInfo objectType);
-    static void CopyClassRandom(CObjectStreamCopier& copier,
-                                TTypeInfo objectType);
-    static void CopyImplicitMember(CObjectStreamCopier& copier,
-                                   TTypeInfo objectType);
-};
-
-#include <serial/classinfo.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* CLASSINFO__HPP */

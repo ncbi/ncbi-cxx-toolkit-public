@@ -30,9 +30,18 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+#endif /* def ITERATOR__HPP  &&  ndef ITERATOR__INL */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.2  2000/04/10 21:01:38  vasilche
 * Fixed Erase for map/set.
 * Added iteratorbase.hpp header for basic internal classes.
@@ -46,5 +55,3 @@
 *
 * ===========================================================================
 */
-
-#endif /* def ITERATOR__HPP  &&  ndef ITERATOR__INL */

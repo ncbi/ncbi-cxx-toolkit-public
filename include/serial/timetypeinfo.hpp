@@ -30,14 +30,6 @@
 *
 * File Description:
 *   TypeInfo and serialization functions for CTime class
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2002/11/19 15:12:03  grichenk
-* Initial Revision
-*
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -52,7 +44,7 @@ BEGIN_NCBI_SCOPE
 
 const string kSerialTimeFormat = "M/D/Y h:m:s.S Z";
 
-class CTimeFunctions
+class NCBI_XSERIAL_EXPORT CTimeFunctions
 {
 public:
     static CTime& Get(TObjectPtr object)
@@ -127,7 +119,7 @@ public:
 };
 
 
-class CTimeTypeInfo : public CPrimitiveTypeInfoString
+class NCBI_XSERIAL_EXPORT CTimeTypeInfo : public CPrimitiveTypeInfoString
 {
 public:
     CTimeTypeInfo(void);
@@ -166,7 +158,7 @@ void CTimeTypeInfo::SetValueString(TObjectPtr object,
 
 
 EMPTY_TEMPLATE
-class CStdTypeInfo<CTime>
+class NCBI_XSERIAL_EXPORT CStdTypeInfo<CTime>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
@@ -199,3 +191,18 @@ TTypeInfoGetter GetTypeInfoGetter<CTime>(const CTime* )
 END_NCBI_SCOPE
 
 #endif  /* TIMETYPEINFO__HPP */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.2  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.1  2002/11/19 15:12:03  grichenk
+* Initial Revision
+*
+*
+* ===========================================================================
+*/

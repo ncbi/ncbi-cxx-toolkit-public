@@ -30,9 +30,49 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
+*/
+
+inline
+const string& CMemberId::GetName(void) const
+{
+    return m_Name;
+}
+
+inline
+CMemberId::TTag CMemberId::GetTag(void) const
+{
+    return m_Tag;
+}
+
+inline
+bool CMemberId::HaveExplicitTag(void) const
+{
+    return m_ExplicitTag;
+}
+
+inline
+void CMemberId::SetName(const string& name)
+{
+    m_Name = name;
+}
+
+inline
+void CMemberId::SetTag(TTag tag, bool explicitTag)
+{
+    m_Tag = tag;
+    m_ExplicitTag = explicitTag;
+}
+
+#endif /* def MEMBERID__HPP  &&  ndef MEMBERID__INL */
+
+
+
+/* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
 * Revision 1.9  2000/10/03 17:22:33  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -68,36 +108,3 @@
 *
 * ===========================================================================
 */
-
-inline
-const string& CMemberId::GetName(void) const
-{
-    return m_Name;
-}
-
-inline
-CMemberId::TTag CMemberId::GetTag(void) const
-{
-    return m_Tag;
-}
-
-inline
-bool CMemberId::HaveExplicitTag(void) const
-{
-    return m_ExplicitTag;
-}
-
-inline
-void CMemberId::SetName(const string& name)
-{
-    m_Name = name;
-}
-
-inline
-void CMemberId::SetTag(TTag tag, bool explicitTag)
-{
-    m_Tag = tag;
-    m_ExplicitTag = explicitTag;
-}
-
-#endif /* def MEMBERID__HPP  &&  ndef MEMBERID__INL */

@@ -30,81 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.16  2002/10/25 14:49:29  vasilche
-* NCBI C Toolkit compatibility code extracted to libxcser library.
-* Serial streams flags names were renamed to fXxx.
-*
-* Names of flags
-*
-* Revision 1.15  2002/08/26 18:32:28  grichenk
-* Added Get/SetAutoSeparator() to CObjectOStream to control
-* output of separators.
-*
-* Revision 1.14  2002/03/07 22:01:59  grichenk
-* Added "Separator" modifier for CObjectOStream
-*
-* Revision 1.13  2002/02/13 22:39:15  ucko
-* Support AIX.
-*
-* Revision 1.12  2001/10/17 20:41:20  grichenk
-* Added CObjectOStream::CharBlock class
-*
-* Revision 1.11  2001/05/17 14:59:47  lavr
-* Typos corrected
-*
-* Revision 1.10  2000/12/15 21:28:48  vasilche
-* Moved some typedefs/enums from corelib/ncbistd.hpp.
-* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
-* TByte typedef replaced by Uint1.
-*
-* Revision 1.9  2000/12/15 15:38:01  vasilche
-* Added support of Int8 and long double.
-* Enum values now have type Int4 instead of long.
-*
-* Revision 1.8  2000/10/20 15:51:27  vasilche
-* Fixed data error processing.
-* Added interface for constructing container objects directly into output stream.
-* object.hpp, object.inl and object.cpp were split to
-* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
-*
-* Revision 1.7  2000/10/03 17:22:35  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.6  2000/09/18 20:00:07  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.5  2000/08/15 19:44:41  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.4  2000/05/24 20:08:14  vasilche
-* Implemented XML dump.
-*
-* Revision 1.3  2000/05/09 16:38:34  vasilche
-* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
-* Added write context to CObjectOStream.
-* Inlined most of methods of helping class Member, Block, ByteBlock etc.
-*
-* Revision 1.2  2000/05/04 16:22:24  vasilche
-* Cleaned and optimized blocks and members.
-*
-* Revision 1.1  1999/05/19 19:56:27  vasilche
-* Commit just in case.
-*
-* ===========================================================================
 */
 
 inline
@@ -413,3 +338,85 @@ void CObjectOStream::SetAutoSeparator(bool value)
 
 
 #endif /* def OBJOSTR__HPP  &&  ndef OBJOSTR__INL */
+
+
+
+/* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.17  2002/12/23 18:38:51  dicuccio
+* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
+* Moved all CVS logs to the end.
+*
+* Revision 1.16  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
+* Revision 1.15  2002/08/26 18:32:28  grichenk
+* Added Get/SetAutoSeparator() to CObjectOStream to control
+* output of separators.
+*
+* Revision 1.14  2002/03/07 22:01:59  grichenk
+* Added "Separator" modifier for CObjectOStream
+*
+* Revision 1.13  2002/02/13 22:39:15  ucko
+* Support AIX.
+*
+* Revision 1.12  2001/10/17 20:41:20  grichenk
+* Added CObjectOStream::CharBlock class
+*
+* Revision 1.11  2001/05/17 14:59:47  lavr
+* Typos corrected
+*
+* Revision 1.10  2000/12/15 21:28:48  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
+* Revision 1.9  2000/12/15 15:38:01  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
+* Revision 1.8  2000/10/20 15:51:27  vasilche
+* Fixed data error processing.
+* Added interface for constructing container objects directly into output stream.
+* object.hpp, object.inl and object.cpp were split to
+* objectinfo.*, objecttype.*, objectiter.* and objectio.*.
+*
+* Revision 1.7  2000/10/03 17:22:35  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* Revision 1.6  2000/09/18 20:00:07  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.5  2000/08/15 19:44:41  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* Revision 1.4  2000/05/24 20:08:14  vasilche
+* Implemented XML dump.
+*
+* Revision 1.3  2000/05/09 16:38:34  vasilche
+* CObject::GetTypeInfo now moved to CObjectGetTypeInfo::GetTypeInfo to reduce possible errors.
+* Added write context to CObjectOStream.
+* Inlined most of methods of helping class Member, Block, ByteBlock etc.
+*
+* Revision 1.2  2000/05/04 16:22:24  vasilche
+* Cleaned and optimized blocks and members.
+*
+* Revision 1.1  1999/05/19 19:56:27  vasilche
+* Commit just in case.
+*
+* ===========================================================================
+*/
