@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/04/15 20:06:09  lavr
+ * Fixed function pointer type: now explicit instead of Microsoft's PFV
+ *
  * Revision 6.6  2002/04/15 19:22:24  lavr
  * Register MSVC-specific handler which suppresses popup messages at run-time
  *
@@ -94,7 +97,7 @@ static void _SuppressDiagPopupMessages(void)
  */
 #  pragma data_seg(".CRT$XIV")
 
-static PFV _SDPM = _SuppressDiagPopupMessages;
+static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
 
 #  pragma data_seg()
 #endif
