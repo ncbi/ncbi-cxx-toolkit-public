@@ -32,7 +32,6 @@
 /// some auxiliary functions to convert CSeq_loc to/from BlastMask structures.
 
 #include <ncbi_pch.hpp>
-#include <sstream>
 
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -407,9 +406,7 @@ EProgram ProgramNameToEnum(const std::string& program_name)
     } else if (lowercase_program_name == "rpstblastn") {
         return eRPSTblastn;
     }
-    ostringstream os;
-    os << program_name << " not supported";
-    NCBI_THROW(CBlastException, eNotSupported, os.str());
+    NCBI_THROW(CBlastException, eNotSupported, program_name + " not supported");
 }
 
 
@@ -422,6 +419,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.51  2004/10/21 18:04:06  camacho
+ * Remove unneeded ostringstream
+ *
  * Revision 1.50  2004/09/13 15:55:04  madden
  * Remove unused parameter from CSeqLoc2BlastSeqLoc
  *
