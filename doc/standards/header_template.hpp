@@ -92,9 +92,12 @@ public:
     /// A detailed description of TestMe. Use the following when parameter
     /// descriptions are going to be long, and you are describing a
     /// complex method:
-    /// @param foo an int value meaning something.
-    /// @param bar a constant character pointer meaning something.
-    /// @return The TestMe() results
+    /// @param foo
+    ///   An int value meaning something.
+    /// @param bar
+    ///   A constant character pointer meaning something.
+    /// @return
+    ///   The TestMe() results.
     /// @sa CMyClass(), ~CMyClass() and TestMeToo() - see also.
     int TestMe(int foo, const char* bar);
 
@@ -152,9 +155,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.5  2003/09/29 18:40:11  vakatov
- * Add to a DOXYGEN group ("Miscellaneous" by default).
- * Minor style adjustments.
+ * Revision 1.6  2003/10/01 20:06:24  vakatov
+ * @param and @return comments -- on a separate line
  *
  * ===========================================================================
  */
