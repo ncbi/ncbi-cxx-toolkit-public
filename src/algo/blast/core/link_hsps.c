@@ -268,13 +268,15 @@ sumscore_compare_hsps(const void* v1, const void* v2)
 
 #define MAX_SPLICE_DIST 5
 static Boolean
-FindSpliceJunction(Uint1* subject_seq, BlastHSP* hsp1, 
-                   BlastHSP* hsp2)
+FindSpliceJunction(Uint1* subject_seq, BlastHSP* hsp1, BlastHSP* hsp2)
 {
    Boolean found = FALSE;
    Int4 overlap, length, i;
    Uint1* nt_seq;
    Uint1 g = 4, t = 8, a = 1; /* ncbi4na values for G, T, A respectively */
+
+   if (!subject_seq)
+      return FALSE;
 
    overlap = hsp1->query.end - hsp2->query.offset;
 
@@ -285,14 +287,14 @@ FindSpliceJunction(Uint1* subject_seq, BlastHSP* hsp1,
       length = MAX_SPLICE_DIST;
       nt_seq = &subject_seq[hsp1->subject.end];
    }
-
+   
    for (i=0; i<length-1; i++) {
       if (nt_seq[i] == g && nt_seq[i+1] == t) {
          found = TRUE;
          break;
       }
    }
-
+      
    if (!found) 
       return FALSE;
    else
@@ -1143,6 +1145,46 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    return 0;
 }
 
+static void ConnectLinkHSPStructs(LinkHSPStruct** linkhsp_array, Int4 hspcnt,
+                                  Uint1* subject_seq)
+{
+   Int4 index, index1, i;
+   LinkHSPStruct* hsp;
+
+   qsort(linkhsp_array, hspcnt, sizeof(LinkHSPStruct*), 
+         sumscore_compare_hsps);
+
+   hsp = linkhsp_array[0];
+   for (index=0; index<hspcnt; hsp = hsp->next) {
+      if (hsp->linked_set) {
+         index1 = hsp->hsp->num;
+         for (i=1; i < index1; i++, hsp = hsp->next) {
+            hsp->next->hsp->evalue = hsp->hsp->evalue; 
+            hsp->next->hsp->num = hsp->hsp->num;
+            hsp->next->sumscore = hsp->sumscore;
+            if (FindSpliceJunction(subject_seq, hsp->hsp, hsp->next->hsp)) {
+               /* Kludge: ordering_method here would indicate existence of
+                  splice junctions(s) */
+               hsp->hsp->splice_junction++;
+               hsp->next->hsp->splice_junction++;
+            } else {
+               hsp->hsp->splice_junction--;
+               hsp->next->hsp->splice_junction--;
+            }
+         }
+      } 
+      while (++index < hspcnt)
+         if (!linkhsp_array[index]->linked_set ||
+             linkhsp_array[index]->start_of_chain)
+            break;
+      if (index == hspcnt) {
+         hsp->next = NULL;
+         break;
+      }
+      hsp->next = linkhsp_array[index];
+   }
+}
+
 static Int2
 new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
@@ -1155,7 +1197,6 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    double best_evalue, evalue;
    Int4 sumscore, best_sumscore = 0;
    Boolean reverse_link;
-   Uint1* subject_seq = NULL;
    Int4 longest_intron = hit_params->options->longest_intron;
    LinkHSPStruct** link_hsp_array;
 
@@ -1298,47 +1339,17 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
          index++;
       }
    }
-   
-   qsort(score_hsp_array, hspcnt, sizeof(LinkHSPStruct*), sumscore_compare_hsps);
-   /* Get the nucleotide subject sequence in Seq_code_ncbi4na */
-   subject_seq = subject->sequence_start;
-
-   hsp = head_hsp = score_hsp_array[0];
-   for (index=0; index<hspcnt; hsp = hsp->next) {
-      if (hsp->linked_set) {
-         index1 = hsp->hsp->num;
-         for (i=1; i < index1; i++, hsp = hsp->next) {
-            hsp->next->hsp->evalue = hsp->hsp->evalue; 
-            hsp->next->hsp->num = hsp->hsp->num;
-            hsp->next->sumscore = hsp->sumscore;
-            if (FindSpliceJunction(subject_seq, hsp->hsp, hsp->next->hsp)) {
-               /* Kludge: ordering_method here would indicate existence of
-                  splice junctions(s) */
-               hsp->hsp->splice_junction++;
-               hsp->next->hsp->splice_junction++;
-            } else {
-               hsp->hsp->splice_junction--;
-               hsp->next->hsp->splice_junction--;
-            }
-         }
-      } 
-      while (++index < hspcnt)
-         if (!score_hsp_array[index]->linked_set ||
-             score_hsp_array[index]->start_of_chain)
-            break;
-      if (index == hspcnt) {
-         hsp->next = NULL;
-         break;
-      }
-      hsp->next = score_hsp_array[index];
-   }
+  
+   ConnectLinkHSPStructs(score_hsp_array, hspcnt, 
+                         subject->sequence_start);
+   head_hsp = score_hsp_array[0];
 
    sfree(score_hsp_array);
    sfree(offset_hsp_array);
    sfree(end_hsp_array);
 
    /* Place HSPs in the original HSP array in their new order */
-   for (index=0; index<hsp_list->hspcnt; index++) {
+   for (index=0; head_hsp && index<hspcnt; index++) {
       hsp_list->hsp_array[index] = head_hsp->hsp;
       var_hsp = head_hsp->next;
       sfree(head_hsp);
