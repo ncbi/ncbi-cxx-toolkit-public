@@ -19,10 +19,10 @@ Working with the serializable object classes</h1>
 Toolkit</a></li>
 
 <li>
-<a href="#base">Base classes and user classes</a></li>
+<a href="#base"><i>Base classes</i> and <i>user classes</a></i></li>
 
 <li>
-<a href="#methods">Adding methods to the user classes</a></li>
+<a href="#methods">Adding methods to the <i>user classes</i></a></li>
 </ul>
 
 <h3>
@@ -30,8 +30,8 @@ Toolkit</a></li>
 All of the ASN.1 data types defined in the C Toolkit have been re-implemented
 in the C++ Toolkit as serializable objects. Header files for these classes
 can be found in the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/">include/objects</a></i>
-directory, and their implementations are located in the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/">src/objects</a></i>
-directory,
+directories, and their implementations are located in the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/">src/objects</a></i>
+directories.&nbsp; and
 <p>The implementation of these classes as serializable objects has a number
 of implications. It must be possible to use expressions like: <i>instream
 >> myObject </i>and <i>outstream &lt;&lt; myObject,&nbsp;</i> where specializations
@@ -40,16 +40,16 @@ etc.) , as well as for the internal structure of the object.&nbsp; The
 C++ Toolkit deploys several <a href="objstream.html"><i>object stream</i>
 classes</a> that specialize in various formats, and which know how to access
 and apply the <i><a href="typeinfo.html">type information </a></i>that
-is associated with the target object.
+is associated with the serializable object.
 <p>The type information for each class is defined in a separate static
 <i><a href="typeinfo.html#ctypeinfo">CTypeInfo</a></i>
 object, which can be accessed by all instances of that class.&nbsp; This
 is a very powerful device, which allows for the implementation of many
 features generally found only in languages which have built-in class reflection.&nbsp;
-Using the Toolkit's serializable&nbsp; objects will require some&nbsp;
-familiarity with the usage of this type information, and several sections
-of this manual cover these topics.(see <a href="typeinfo.html"><i>Runtime
-Object Type Information</i> </a>for a general discussion).
+Using the Toolkit's serializable objects will require some&nbsp; familiarity
+with the usage of this type information, and several sections of this manual
+cover these topics (see <a href="typeinfo.html"><i>Runtime Object Type
+Information</i> </a>for a general discussion).
 <h3>
 <a NAME="locate"></a>Locating and browsing serializable objects in the
 C++ Toolkit</h3>
@@ -60,24 +60,25 @@ subtree includes a set of subtrees containing the source files for these
 libraries. Finally, your<i> build/objects</i> directory will contain a
 corresponding set of build subtrees where these libraries are actually
 built.
-<p>If you checked out the entire C++ cvs tree,&nbsp; you may be surprised
+<p>If you checked out the entire C++ CVS tree,&nbsp; you may be surprised
 to find that initially, the&nbsp; <i>include/objects</i> subtrees are empty,
 and the subdirectories in the <i>src/objects</i> subtree contain only ASN.1
 modules.&nbsp; This is because both the header files and source files are
 auto-generated from the ASN.1 specifications by the <i><a href="/home/zimmerma/internal/c++/doc/tools/datatool/datatool.html">datatool</a></i>
-program.. As described in <i><a href="inside_tree.html">Working within
-the C++ source tree</a></i>, you will need to build everything by running
-<i>make
-all_r </i>in the build directory.
+program. As described in <i><a href="inside_tree.html">Working within the
+C++ source tree</a></i>, you can build everything by running
+<i>make all_r
+</i>in
+the build directory.
 <p><font color="#FF0000">N.B.</font> If you would like to have the <i>objects</i>
-libraries built locally, you <b>must</b> have used the <i>--with-objects</i>
+libraries built locally, you <b>must</b> use the <i>--with-objects</i>
 flag when running the <i>configure</i> script.
-<p>You can also access the pre-compiled serializable objects in the public
+<p>You can also access the pre-generated serializable objects in the public
 area, using the source browsers to locate the objects you are particularly
 interested in. For example, if you are seeking the new class definition
 for the <i>Bioseq struct</i> defined in the C Toolkit, you can search for
 the <i>CBioseq</i> class, using either the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident/">LXR</a></i>
-identifier search tool, or the <i>doc++</i>&nbsp; <a href="http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/docxx/HIER.html">class
+identifier search tool, or the <i>DOC++</i>&nbsp; <a href="http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/docxx/HIER.html">class
 hierarchy</a> browser. Starting with the name of the data object as it
 appears in the ASN.1 module, two simple rules apply in deriving the new
 C++ class name:
@@ -90,15 +91,15 @@ All hyphens ('-') should be replaced by underscores ('_')</li>
 </ol>
 For example, <i>Seq-descr </i>becomes <i>CSeq_descr</i>.
 <h3>
-<a NAME="base"></a>Base classes and user classes</h3>
-The classes whose names are derived in this manner are called the <i>user</i>
-classes, and each also has a corresponding base class implementation. The
-name of the base class is arrived at by appending "<i>_Base"</i>&nbsp;
-to the user class name.&nbsp; Most of the user classes are empty wrapper
-classes that do not bring any new functionality or data members to the
-inherited base class; they are simply provided as a platform for development.
-In contrast, the base classes are <i>not</i> intended for public use (other
-than browsing), and should never be modified.
+<a NAME="base"></a><i>Base classes </i>and <i>user classes</i></h3>
+The classes whose names are derived in this manner are called the <i>userclasses</i>,
+and each also has a corresponding <i>base class </i>implementation. The
+name of the <i>base class</i> is arrived at by appending "<i>_Base"</i>&nbsp;
+to the <i>user class</i> name.&nbsp; Most of the <i>user classes </i>are
+empty wrapper classes that do not bring any new functionality or data members
+to the inherited <i>base class</i>; they are simply provided as a platform
+for development. In contrast, the <i>base classes</i> are <b>not</b> intended
+for public use (other than browsing), and should never be modified.
 <p>Many applications will involve a "tangled hierarchy" of these objects,
 reflecting the complexity of the real world data that they represent.&nbsp;
 For example, a <i>CBioseq_set</i> contains a list of <i>CSeq_entry</i>
@@ -106,28 +107,28 @@ objects, where each <i>CSeq_entry&nbsp; </i>is, in turn, a <i><a href="choice.ht
 between a <i>CBioseq</i> and a <i>CBioseq_set</i>.
 <p>Given the potential for this complexity of interactions, a critical
 design issue becomes how one can ensure that methods which may have been
-defined only in the <i>user </i>class will be available for all instances
+defined only in the <i>user class</i> will be available for all instances
 of that class. In particular, these instances may occur as contained elements
 of another object which is compiled in a different library.&nbsp; These
-inter-object dependancies are the motivation for the user classes. As depicted
-schematically below, all references to external objects which occur inside
-the base classes, access external <i>user</i> classes, so as to include
-any methods which may be defined only in the user classes:
+inter-object dependancies are the motivation for the <i>user classes.</i>
+As depicted schematically below, all references to external objects which
+occur inside the <i>base classes</i>, access external <i>user</i> <i>classes</i>,
+so as to include any methods which may be defined only in the<i> user classes</i>:
 <center><img SRC="user_base.gif" height=216 width=540></center>
-In most cases, adding <i>non</i>-virtual methods to a user class will <i>not</i>
-require re-compiling any libraries except the one which defines the modified
-object.&nbsp; Note however, that addiing <i>non</i>-static data members
-and/or <i>virtual</i> methods to the user classes <i>will</i> change the
-class layouts, and in these cases only, <i>will</i> entail recompiling
+In most cases, adding <i>non</i>-virtual methods to a <i>user class</i>
+will <b>not</b> require re-compiling any libraries except the one which
+defines the modified object.&nbsp; Note however, that addiing <i>non</i>-static
+data members and/or <i>virtual</i> methods to the <i>user classes</i> <b>will</b>
+change the class layouts, and in these cases only, <b>will</b> entail recompiling
 any external library objects which access these classes.
 <h3>
-<a NAME="methods"></a>Adding methods to the user classes</h3>
+<a NAME="methods"></a>Adding methods to the <i>user</i> <i>classes</i></h3>
 <font color="#FF0000">N.B.: </font>This section describes the steps <b>currently</b>
-required to add new methods to the <i>user</i> classes.&nbsp; It is subject
-to change, and there is no guarantee the material here is up-to-date. In
-general, it is not recommended practice to add methods to the&nbsp; user
-classes, unless your purpose is to extend these classes across all applications
-as part of a development effort.
+required to add new methods to the <i>user</i> <i>classes</i>.&nbsp; It
+is subject to change, and there is no guarantee the material here is up-to-date.
+In general, it is not recommended practice to add methods to the <i>user
+classes,</i> unless your purpose is to extend these classes across all
+applications as part of a development effort.
 <h4>
 Checking out source code, configuring the working environment, building
 the libraries.</h4>
@@ -135,38 +136,43 @@ the libraries.</h4>
 <ol>
 <li>
 Create a working directory (e.g. <i><font color="#990000">Work</font></i>)
-and check out the C++ tree to that directory:, using either <i>cvs checkout
-</i>or
-the shell script, <i>cvs_core.sh &lt;dirname> --with-objects</i>.</li>
+and check out the C++ tree to that directory:, using either <i><a href="/home/zimmerma/internal/c++/doc/new_proj.html#ref_Checkout">cvs
+checkout</a></i> or the shell script, <i>cvs_core.sh &lt;dirname></i>.</li>
 
 <br>&nbsp;
 <li>
-Configure the environment to work inside this tree using one of the configure
-scripts, according to the platform you will be working on. Be sure to<b>
-include the <i>--with-objects</i> flag</b> in invoking the configure script.</li>
+<a href="/home/zimmerma/internal/c++/doc/config.html#ref_Running">Configure</a>
+the environment to work inside this tree using one of the configure <a href="/home/zimmerma/internal/c++/doc/config.html#ref_Wrappers">scripts</a>,
+according to the platform you will be working on. Be sure to<b> include
+the <i>--with-objects</i> flag</b> in invoking the <i>configure</i> script.</li>
 
 <br>&nbsp;
 <li>
-Build the xncbi and xser libraries, e.g,:</li>
+Build the <i>xncbi</i> and <i>xser</i> libraries, e.g,:</li>
 
+<br>&nbsp;
+<p>&nbsp;
 <p>&nbsp;cd ~/Work/internal/c++/GCC-Debug/build/corelib&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# build xncbi library
+# build <i>xncbi</i> library
 <br>make
 <br>cd ~/Work/internal/c++/GCC-Debug/build/serial&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# build xser
+# build <i>xser </i>library
 <br>make
 <br>&nbsp;
 <li>
-Run <i>datatool</i> to create the objects header and source files, and build all
-of the object module libraries:</li>
+Run <i>datatool</i> to create the objects header and source files, and
+build all of the object module libraries:</li>
 
+<br>&nbsp;
+<p>&nbsp;
 <p>cd ~/Work/internal/c++/GCC-Debug/build/objects
 <br>make all_r
 <p>In addition to creating the header and source files, using <i>make all_r
-</i>(instead of just<i> make</i>) will build all the libraries. All libraries
-that are built are also copied to the <i>lib</i> dir, e.g.: <i>~/Work/internal/c++/GCC-Debug/lib.</i>
-Similarly, all executables (such as asn2asn) are copied to the bin dir,
-e.g.: <i>~/Work/internal/c++/GCC-Debug/bin.</i></ol>
+</i>(instead
+of just<i> make</i>) will build all the libraries. All libraries that are
+built are also copied to the <i>lib</i> dir, e.g.: <i>~/Work/internal/c++/GCC-Debug/lib.</i>
+Similarly, all executables (such as <i>asn2asn</i>) are copied to the bin
+dir, e.g.: <i>~/Work/internal/c++/GCC-Debug/bin.</i></ol>
 You are now ready to edit the user class files and add methods.
 <h4>
 Adding methods</h4>
@@ -174,35 +180,35 @@ As an example, suppose that we would like to&nbsp; add a method to the
 <i>CSeq_inst</i>
 class to calculate sequence length, e.g.: <i>CSeq_inst::CalculateLength()</i>.
 We begin by adding a declaration of this method to the public section of
-the user class definition in <i>Seq_inst.hpp</i>:<font color="#3366FF"></font>
+the user class definition in <i>Seq_inst.hpp</i>:
 <p><tt><font color="#3366FF">class CSeq_inst : public CSeq_inst_Base</font></tt>
 <br><tt><font color="#3366FF">{</font></tt>
-<br><tt><font color="#3366FF">public</font><font color="#005050">:</font></tt><tt><font color="#005050"></font></tt>
-<p><tt><font color="#999999">&nbsp;&nbsp;&nbsp; CSeq_inst(void);</font></tt>
-<br><tt><font color="#999999">&nbsp;&nbsp;&nbsp; ~CSeq_inst(void);</font></tt><tt><font color="#999999"></font></tt>
+<br><tt><font color="#3366FF">public</font><font color="#005050">:</font></tt>
+<br><tt><font color="#999999">&nbsp;&nbsp;&nbsp; CSeq_inst(void);</font></tt>
+<br><tt><font color="#999999">&nbsp;&nbsp;&nbsp; ~CSeq_inst(void);</font></tt>
 <p><tt><font color="#999999">&nbsp;&nbsp;&nbsp; static CSeq_inst* New(void)</font></tt>
 <br><tt><font color="#999999">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 {</font></tt>
 <br><tt><font color="#999999">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 return new CSeq_inst(eCanDelete);</font></tt>
 <br><tt><font color="#999999">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-}</font></tt><tt><font color="#999999"></font></tt>
+}</font></tt>
 <p><b><tt><font color="#33CC00">&nbsp;&nbsp;&nbsp; int CalculateLength()
-const;</font></tt></b><tt><font color="#003232"></font></tt>
+const;</font></tt></b>
 <p><tt><font color="#3366FF">protected</font><font color="#005050">:</font></tt>
-<br><tt><font color="#005050">&nbsp;</font></tt>
 <br><tt><font color="#999999">&nbsp;&nbsp;&nbsp; CSeq_inst(ECanDelete);</font></tt>
 <br><tt><font color="#999999">};</font></tt>
 <p>and in the source file, <i>Seq_inst.cpp</i>, we implement
-<p><tt><font color="#3366FF">int <i>CSeq_inst::CalculateLength()</i>. const
+<p><tt><font color="#3366FF">int <i>CSeq_inst::CalculateLength()</i> const
 </font><font color="#666666">{</font></tt>
 <br><tt><font color="#666666">&nbsp;&nbsp;&nbsp; // implementation goes
 here</font></tt>
 <br><tt><font color="#666666">}</font></tt>
-<p>These files are in the <i>seq</i> subdirectories in <i>include/objects</i>
-and s<i>rc/objects</i>, respectively. Once you have made the modifications
-to the files, you need to recompile the <i>seq</i> library,<i> libseq.a</i>,
-i.e.:
+<p>These files are in the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/seq">include/objects/seq</a></i>
+and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/seq">src/objects/seq
+</a></i>subdirectories,
+respectively. Once you have made the modifications to the files, you need
+to recompile the <i>seq</i> library,<i> libseq.a</i>, i.e.:
 <p><i>cd ~/Work/internal/c++/GCC-Debug/build/objects/seq</i>
 <br><i>make</i>
 <p>The new method can now be invoked from within a <i>CBioseq</i> object
@@ -221,8 +227,8 @@ The addition of new, non-static data members</li>
 <li>
 The addition of virtual methods</li>
 </ul>
-If you have added either of the above to the user class, then you will
-need to identify all external objects which use your object, and recompile
+If you have added either of the above to the <i>user class</i>, then you
+will need to identify all external objects which use your object, and recompile
 the libraries in which these objects are defined.
 <p><a href="inside_tree.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp; <i><a href="../index.html">up&nbsp;</a></i><!-- a href=".html"> <i>next</a></i-->
 <hr>
