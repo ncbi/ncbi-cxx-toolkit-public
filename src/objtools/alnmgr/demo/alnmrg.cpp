@@ -94,7 +94,7 @@ void CAlnMrgApp::Init(void)
     arg_desc->AddDefaultKey
         ("in", "input_file_name",
          "Name of file to read from (standard input by default)",
-         CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
+         CArgDescriptions::eInputFile, "-");
 
     arg_desc->AddDefaultKey
         ("asnout", "asn_out_file_name",
@@ -455,6 +455,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2004/09/22 21:21:42  todorov
+* - CArgDescriptions::fPreOpen
+*
 * Revision 1.26  2004/09/22 19:11:24  todorov
 * open in file depending on the mode
 *
