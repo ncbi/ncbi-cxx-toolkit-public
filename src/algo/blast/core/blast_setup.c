@@ -127,7 +127,7 @@ Int2 BLAST_GetTranslatedSeqLoc(SeqLocPtr query_slp,
    
    for ( ; query_slp; query_slp = query_slp->next) {
       query_length = SeqLocLen(query_slp);
-      status = BlastSetUp_GetSequence(query_slp, FALSE, TRUE, &buffer, 
+      status = BlastSetUp_GetSequence(query_slp, FALSE, FALSE, &buffer, 
                                       &buffer_length, NULL);
       buffer_var = buffer + 1;
       
