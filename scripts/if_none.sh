@@ -42,7 +42,7 @@ ExecAction()
   src_file="$1"
   dest_file="$2"
   cmd="$action $src_file $dest_file"
-  cmp -s "$src_file" "$dest_file"  ||
+  test -f "$dest_file"  ||
   ( test "$quiet" = yes || echo "$cmd" ;  $cmd )  ||
   Usage "\"$cmd\" failed"
 }
