@@ -85,6 +85,7 @@ public:
     // optionally, get the inserts and screen limit coords
     string& GetWholeAlnSeqString(TNumrow       row,
                                  string&       buffer,
+                                 TSeqPosList * insert_aln_starts = 0,
                                  TSeqPosList * insert_starts = 0,
                                  TSeqPosList * insert_lens = 0,
                                  unsigned int  scrn_width = 0,
@@ -353,6 +354,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2003/07/23 20:40:54  todorov
+ * +aln_starts for the inserts in GetWhole...
+ *
  * Revision 1.21  2003/07/17 22:46:09  todorov
  * +GetWholeAlnSeqString
  *
