@@ -55,8 +55,8 @@ extern "C" {
 #endif
 
 /* For some reason, ICC claims a suitable __STDC_VERSION__ but then
-   barfs on restrict. */
-#ifdef __ICC
+   barfs on restrict. Added ECC per Haruna Cofer */
+#if defined(__ICC) || defined(__ECC)
 #define NCBI_RESTRICT __restrict
 #elif __STDC_VERSION__ >= 199901
 #define NCBI_RESTRICT restrict
