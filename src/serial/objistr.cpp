@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/15 16:19:48  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.5  1999/06/11 19:14:57  vasilche
 * Working binary serialization and deserialization of first test object.
 *
@@ -54,66 +57,110 @@
 BEGIN_NCBI_SCOPE
 
 // root reader
-void CObjectIStream::Read(TObjectPtr data, TTypeInfo typeInfo)
+void CObjectIStream::Read(TObjectPtr object, TTypeInfo typeInfo)
 {
-    RegisterObject(data, typeInfo);
-    typeInfo->ReadData(*this, data);
+    _TRACE("CObjectIStream::Read(" << unsigned(object) << ", "
+           << typeInfo->GetName() << ")");
+    TIndex index = RegisterObject(object, typeInfo);
+    _TRACE("CObjectIStream::ReadData(" << unsigned(object) << ", "
+           << typeInfo->GetName() << ") @" << index);
+    ReadData(object, typeInfo);
 }
 
-void CObjectIStream::RegisterAndRead(TObjectPtr data, TTypeInfo typeInfo)
+void CObjectIStream::ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo)
 {
-    RegisterObject(data, typeInfo);
-    typeInfo->ReadData(*this, data);
+    _TRACE("CObjectIStream::Read(" << unsigned(object) << ", "
+           << typeInfo->GetName() << ")");
+    TIndex index = RegisterObject(object, typeInfo);
+    _TRACE("CObjectIStream::ReadData(" << unsigned(object) << ", "
+           << typeInfo->GetName() << ") @" << index);
+    ReadData(object, typeInfo);
 }
 
-unsigned CObjectIStream::Begin(Block& , bool )
+void CObjectIStream::SkipValue(void)
 {
-    return unsigned(-1);
+    THROW1_TRACE(runtime_error, "cannot skip value");
 }
 
-bool CObjectIStream::Next(Block& )
-{
-    return false;
-}
-
-void CObjectIStream::End(Block& )
-{
-}
-
-CObjectIStream::Block::Block(CObjectIStream& in, bool tmpl)
-    : m_In(in), m_Count(in.Begin(*this, tmpl))
+void CObjectIStream::Begin(VarBlock& )
 {
 }
 
-bool CObjectIStream::Block::Next(void)
+void CObjectIStream::Next(FixedBlock& )
 {
-    switch ( m_Count ) {
-    case unsigned(-1):
-        return m_In.Next(*this);
-    case 0:
+}
+
+void CObjectIStream::End(FixedBlock& )
+{
+}
+
+void CObjectIStream::End(VarBlock& )
+{
+}
+
+CObjectIStream::Block::Block(CObjectIStream& in)
+    : m_In(in), m_NextIndex(0)
+{
+}
+
+CObjectIStream::FixedBlock::FixedBlock(CObjectIStream& in)
+    : Block(in), m_Size(0)
+{
+    m_Size = in.Begin(*this);
+}
+
+bool CObjectIStream::FixedBlock::Next(void)
+{
+    if ( GetNextIndex() >= GetSize() ) {
         return false;
-    default:
-        --m_Count;
-        return true;
     }
+    m_In.Next(*this);
+    IncIndex();
+    return true;
 }
 
-CObjectIStream::Block::~Block(void)
+CObjectIStream::FixedBlock::~FixedBlock(void)
 {
-    switch ( m_Count ) {
-    case unsigned(-1):
-        m_In.End(*this);
-        break;
-    case 0:
-        break;
-    default:
+    if ( GetNextIndex() != GetSize() ) {
         THROW1_TRACE(runtime_error, "not all elements read");
     }
+    m_In.End(*this);
 }
 
-const string& CObjectIStream::ReadId(void)
+CObjectIStream::VarBlock::VarBlock(CObjectIStream& in)
+    : Block(in), m_Finished(false)
+{
+    in.Begin(*this);
+}
+
+bool CObjectIStream::VarBlock::Next(void)
+{
+    if ( Finished() )
+        return false;
+    if ( !m_In.Next(*this) ) {
+        m_Finished = true;
+        return false;
+    }
+    IncIndex();
+    return true;
+}
+
+CObjectIStream::VarBlock::~VarBlock(void)
+{
+    if ( !Finished() ) {
+        THROW1_TRACE(runtime_error, "not all elements read");
+    }
+    m_In.End(*this);
+}
+
+string CObjectIStream::ReadId(void)
 {
     return ReadString();
+}
+
+string CObjectIStream::ReadMemberName(void)
+{
+    return ReadId();
 }
 
 CObjectIStream::TIndex CObjectIStream::RegisterObject(TObjectPtr object,
@@ -131,136 +178,6 @@ const CIObjectInfo& CObjectIStream::GetRegisteredObject(TIndex index) const
     }
     return m_Objects[index];
 }
-
-/*
-CObjectIStream::TObjectPtr CObjectIStream::ReadObject(TTypeInfo typeInfo)
-{
-    CObjectInfo oInfo;
-    switch ( ReadReferenceType() ) {
-    case NULL_OBJECT:
-        return 0;
-    case NEW_THIS_OBJECT:
-        oInfo = CreateAndRegister(dataTypeInfo);
-        ReadObjectData(oInfo);
-        return oInfo.m_Object;
-    case OLD_OBJECT:
-        oInfo = m_Objects[ReadUInt()];
-        break;
-    case NEW_ANY_OBJECT:
-        oInfo = CreateAndRegister(ReadTypeInfo());
-        ReadObjectData(oInfo);
-        break;
-    case MEMBER_OF:
-        {
-            const string& mName = ReadId();
-            oInfo = ReadObjectPointer();
-            const CMemberInfo* mInfo = oInfo.m_TypeInfo->GetMember(mName);
-            if ( !mInfo ) {
-                throw runtime_error("member " + mName + " not found in class " +
-                                    oInfo.m_TypeInfo->GetName());
-            }
-            oInfo.m_Object = mInfo->Get(oInfo.m_Object);
-            oInfo.m_TypeInfo = mInfo->GetTypeInfo();
-            return ToParentClass(oInfo, dataTypeInfo);
-        }
-        break;
-    default:
-        throw runtime_error("invalid object code");
-    }
-    return ToParentClass(SelectMember(oInfo), dataTypeInfo).m_Object;
-}
-
-CObjectInfo CObjectIStream::ReadObjectPointer(void)
-{
-    switch ( ReadReferenceType() ) {
-    case OLD_OBJECT:
-        {
-            unsigned id = ReadUInt();
-            if ( id >= m_Objects.size() )
-                throw runtime_error("invalid back reference");
-            CObjectInfo oInfo = m_Objects[id];
-            SelectMember(oInfo);
-            return oInfo;
-        }
-        break;
-    case NEW_ANY_OBJECT:
-        {
-            TTypeInfo objectTypeInfo = ReadTypeInfo();
-            CObjectInfo oInfo = CreateAndRegister(objectTypeInfo);
-            ReadObjectData(oInfo.m_Object, oInfo.m_TypeInfo);
-            SelectMember(oInfo);
-            return oInfo;
-        }
-    case MEMBER_OF:
-        {
-            const string& mName = ReadId();
-            CObjectInfo oInfo = ReadObjectPointer();
-            const CMemberInfo* mInfo = oInfo.m_TypeInfo->GetMember(mName);
-            if ( !mInfo ) {
-                throw runtime_error("member " + mName + " not found in class " +
-                                    oInfo.m_TypeInfo->GetName());
-            }
-            oInfo.m_Object = mInfo->Get(oInfo.m_Object);
-            oInfo.m_TypeInfo = mInfo->GetTypeInfo();
-            return oInfo;
-        }
-    default:
-        throw runtime_error("invalid object code");
-    }
-}
-
-CObjectInfo CObjectIStream::SelectMember(CObjectInfo oInfo)
-{
-    while ( ReadMemberReference() ) {
-        const string& mName = ReadId();
-        const CMemberInfo* mInfo = oInfo.m_TypeInfo->GetMember(mName);
-        if ( !mInfo ) {
-            throw runtime_error("member " + mName + " not found in class " +
-                                oInfo.m_TypeInfo->GetName());
-        }
-        oInfo.m_Object = mInfo->Get(oInfo.m_Object);
-        oInfo.m_TypeInfo = mInfo->GetTypeInfo();
-    }
-    return oInfo;
-}
-
-bool CObjectIStream::ReadMemberReference(void)
-{
-    return false;
-}
-
-CObjectInfo CObjectIStream::CreateAndRegister(TTypeInfo typeInfo)
-{
-    CObjectInfo oInfo;
-    oInfo.m_TypeInfo = typeInfo;
-    oInfo.m_Object = typeInfo->Create();
-    m_Objects.push_back(oInfo);
-    return oInfo;
-}
-
-CObjectIStream::TTypeInfo CObjectIStream::ReadTypeInfo(void)
-{
-    unsigned id = ReadUInt();
-    if ( id != unsigned(-1) )
-        return m_Classes[id].m_TypeInfo;
-    id = m_Classes.size();
-    m_Classes.push_back(CClassInfo());
-    TTypeInfo typeInfo;
-    switch ( ReadClassType() ) {
-    case TEMPLATE:
-        typeInfo = CTemplateResolver::ResolveTemplate(*this);
-        break;
-    case CLASS:
-        typeInfo = CTypeInfo::GetTypeInfo(ReadString());
-        break;
-    default:
-        throw runtime_error("bad class code");
-    }
-    m_Classes[id].m_TypeInfo = typeInfo;
-    m_ClassIds[typeInfo] = id;
-    return typeInfo;
-}
-*/
 
 END_NCBI_SCOPE
 

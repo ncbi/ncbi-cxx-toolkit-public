@@ -1,5 +1,5 @@
-#ifndef OBJOSTRB__HPP
-#define OBJOSTRB__HPP
+#ifndef OBJOSTRASN__HPP
+#define OBJOSTRASN__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,7 +33,7 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1999/06/15 16:20:04  vasilche
+* Revision 1.1  1999/06/15 16:20:04  vasilche
 * Added ASN.1 object output stream.
 *
 * Revision 1.2  1999/06/10 21:06:40  vasilche
@@ -47,18 +47,17 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
-#include <map>
 
 BEGIN_NCBI_SCOPE
 
-class CObjectOStreamBinary : public CObjectOStream
+class CObjectOStreamAsn : public CObjectOStream
 {
 public:
     typedef unsigned char TByte;
     typedef map<string, TIndex> TStrings;
 
-    CObjectOStreamBinary(CNcbiOstream& out);
-    virtual ~CObjectOStreamBinary(void);
+    CObjectOStreamAsn(CNcbiOstream& out);
+    virtual ~CObjectOStreamAsn(void);
 
     virtual void WriteStd(const char& data);
     virtual void WriteStd(const unsigned char& data);
@@ -78,26 +77,35 @@ public:
     virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
 
     void WriteNull(void);
-    void WriteByte(TByte byte);
-    void WriteBytes(const char* bytes, size_t size);
     void WriteIndex(TIndex index);
     void WriteSize(unsigned size);
     void WriteString(const string& str);
+    void WriteChar(char c);
+    void WriteId(const string& str);
+    void WriteMemberName(const string& str);
 
 protected:
 
     virtual void Begin(FixedBlock& block, unsigned size);
+    virtual void Next(FixedBlock& block);
+    virtual void End(FixedBlock& block);
+    virtual void Begin(VarBlock& block);
     virtual void Next(VarBlock& block);
     virtual void End(VarBlock& block);
 
-private:
-    TStrings m_Strings;
+    void WriteNewLine(void);
+    void WriteBlockBegin(void);
+    void WriteBlockSeparator(const Block& block);
+    void WriteBlockEnd(void);
 
+private:
     CNcbiOstream& m_Output;
+
+    int m_Ident;
 };
 
-//#include <serial/objostrb.inl>
+//#include <serial/objostrasn.inl>
 
 END_NCBI_SCOPE
 
-#endif  /* OBJOSTRB__HPP */
+#endif  /* OBJOSTRASN__HPP */

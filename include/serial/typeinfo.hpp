@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/15 16:20:09  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.5  1999/06/10 21:06:42  vasilche
 * Working binary output and almost working binary input.
 *
@@ -58,6 +61,7 @@ BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
 class CObjectOStream;
+class CClassInfoTmpl;
 class COObjectList;
 class CTypeRef;
 class CMemberInfo;
@@ -120,6 +124,12 @@ public:
                                             TConstObjectPtr member,
                                             TTypeInfo memberTypeInfo) const;
 
+    // collect info about all memory chunks for writing
+    void CollectObjects(COObjectList& objectList,
+                        TConstObjectPtr object) const;
+    virtual void CollectExternalObjects(COObjectList& list,
+                                        TConstObjectPtr object) const;
+
 protected:
 
     CTypeInfo(void);
@@ -127,18 +137,15 @@ protected:
 
     friend class CObjectOStream;
     friend class CObjectIStream;
+    friend class CClassInfoTmpl;
 
     // read object
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const = 0;
-
-    // collect info about all memory chunks for writing
-    virtual void CollectObjects(COObjectList& list,
-                                TConstObjectPtr object) const;
-    static void AddObject(COObjectList& list,
-                          TConstObjectPtr object, TTypeInfo typeInfo);
+    virtual void ReadData(CObjectIStream& in,
+                          TObjectPtr object) const = 0;
 
     // write object
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const = 0;
+    virtual void WriteData(CObjectOStream& out,
+                           TConstObjectPtr object) const = 0;
 
 private:
     typedef map<string, TTypeInfo> TTypesByName;

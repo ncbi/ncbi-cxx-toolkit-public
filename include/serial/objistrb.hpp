@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/15 16:20:02  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.3  1999/06/10 21:06:38  vasilche
 * Working binary output and almost working binary input.
 *
@@ -73,24 +76,21 @@ public:
     virtual void ReadStd(string& data);
 
     virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
-    virtual TTypeInfo ReadTypeInfo(void);
-    virtual void ReadObject(TObjectPtr object,
-                            const CClassInfoTmpl* typeInfo);
 
-    virtual unsigned Begin(Block& block, bool tmpl);
+    virtual void SkipValue(void);
+
+    virtual unsigned Begin(FixedBlock& block);
+    virtual bool Next(VarBlock& block);
 
     TByte ReadByte(void);
     void ReadBytes(TByte* bytes, unsigned size);
     TIndex ReadIndex(void);
     unsigned ReadSize(void);
-    const string& ReadString(void);
+    virtual string ReadString(void);
 
 private:
     CIObjectInfo ReadObjectPointer(void);
 
-    bool ReadNextMember(void);
-
-    void SkipValue(void);
     void SkipObjectData(void);
     void SkipObjectPointer(void);
     void SkipBlock(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/15 16:19:47  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.6  1999/06/10 21:06:45  vasilche
 * Working binary output and almost working binary input.
 *
@@ -95,21 +98,51 @@ CClassInfoTmpl* CClassInfoTmpl::AddMember(const CMemberInfo& member)
     return this;
 }
 
-void CClassInfoTmpl::CollectObjects(COObjectList& l,
-                                    TConstObjectPtr object) const
+void CClassInfoTmpl::CollectExternalObjects(COObjectList& objectList,
+                                            TConstObjectPtr object) const
 {
-    AddObject(l, object, this);
+    for ( TMembers::const_iterator i = m_Members.begin();
+          i != m_Members.end(); ++i ) {
+        const CMemberInfo& memberInfo = i->second;
+        TTypeInfo memberTypeInfo = memberInfo.GetTypeInfo();
+        TConstObjectPtr member = memberInfo.GetMember(object);
+        memberTypeInfo->CollectExternalObjects(objectList, member);
+    }
 }
 
 void CClassInfoTmpl::WriteData(CObjectOStream& out,
                                TConstObjectPtr object) const
 {
-    out.WriteObject(object, this);
+    CObjectOStream::VarBlock block(out);
+    for ( TMembers::const_iterator i = m_Members.begin();
+          i != m_Members.end(); ++i ) {
+        const CMemberInfo& memberInfo = i->second;
+        TTypeInfo memberTypeInfo = memberInfo.GetTypeInfo();
+        TConstObjectPtr member = memberInfo.GetMember(object);
+        if ( !memberTypeInfo->IsDefault(member) ) {
+            block.Next();
+            out.WriteMemberName(memberInfo.GetName());
+            memberTypeInfo->WriteData(out, member);
+        }
+    }
 }
 
 void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    in.ReadObject(object, this);
+    CObjectIStream::VarBlock block(in);
+    while ( block.Next() ) {
+        const string& memberName = in.ReadMemberName();
+        TMembers::const_iterator i = m_Members.find(memberName);
+        if ( i == m_Members.end() ) {
+            ERR_POST("unknown member: "+memberName+", trying to skip...");
+            in.SkipValue();
+            continue;
+        }
+        const CMemberInfo& memberInfo = i->second;
+        TTypeInfo memberTypeInfo = memberInfo.GetTypeInfo();
+        TObjectPtr member = memberInfo.GetMember(object);
+        memberTypeInfo->ReadData(in, member);
+    }
 }
 
 const CMemberInfo* CClassInfoTmpl::FindMember(const string& name) const

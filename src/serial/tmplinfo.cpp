@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/15 16:19:53  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.2  1999/06/07 19:30:28  vasilche
 * More bug fixes
 *
@@ -112,7 +115,7 @@ void CTemplateResolver1::Register(TTypeInfo templ, TTypeInfo arg)
 void CTemplateResolver1::Write(CObjectOStream& out,
                                TTypeInfo tmpl, TTypeInfo arg) const
 {
-    out.WriteTemplateInfo(GetName(), tmpl, arg);
+    //    out.WriteTemplateInfo(GetName(), tmpl, arg);
 }
 
 CTypeInfo::TTypeInfo CTemplateResolver1::GetTemplate(TTypeInfo arg) const
@@ -146,7 +149,7 @@ void CTemplateResolver2::Register(TTypeInfo templ,
 void CTemplateResolver2::Write(CObjectOStream& out, TTypeInfo tmpl,
                                TTypeInfo arg1, TTypeInfo arg2) const
 {
-    out.WriteTemplateInfo(GetName(), tmpl, arg1, arg2);
+    //    out.WriteTemplateInfo(GetName(), tmpl, arg1, arg2);
 }
 
 CTypeInfo::TTypeInfo CTemplateResolver2::GetTemplate(TTypeInfo arg1,

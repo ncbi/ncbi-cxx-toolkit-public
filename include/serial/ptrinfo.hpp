@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/15 16:20:05  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.1  1999/06/04 20:51:36  vasilche
 * First compilable version of serialization.
 *
@@ -64,12 +67,6 @@ public:
             return m_DataTypeRef.Get();
         }
 
-    TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const
-        {
-            return GetDataTypeInfo()->GetRealTypeInfo(GetObject(object));
-        }
-
-
     virtual size_t GetSize(void) const;
 
     virtual TObjectPtr Create(void) const;
@@ -77,7 +74,8 @@ public:
     virtual bool IsDefault(TConstObjectPtr object) const;
 
 protected:
-    virtual void CollectObjects(COObjectList& list, TConstObjectPtr object) const;
+    virtual void CollectExternalObjects(COObjectList& list,
+                                        TConstObjectPtr object) const;
 
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
 

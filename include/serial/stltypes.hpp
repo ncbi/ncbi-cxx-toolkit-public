@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/15 16:20:08  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.5  1999/06/11 19:15:50  vasilche
 * Working binary serialization and deserialization of first test object.
 *
@@ -125,34 +128,37 @@ public:
         }
 
 protected:
-    virtual void CollectObjects(COObjectList& list,
-                                TConstObjectPtr object) const
+    virtual void CollectExternalObjects(COObjectList& objectList,
+                                        TConstObjectPtr object) const
         {
             const TObjectType& l = Get(object);
+            TTypeInfo dataTypeInfo = GetDataTypeInfo();
             for ( TObjectType::const_iterator i = l.begin();
                   i != l.end(); ++i ) {
-                AddObject(list, &*i, GetDataTypeInfo());
+                dataTypeInfo->CollectObjects(objectList, &*i);
             }
         }
 
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
             const TObjectType& l = Get(object);
-            CObjectOStream::Block block(out, l.size());
+            TTypeInfo dataTypeInfo = GetDataTypeInfo();
+            CObjectOStream::FixedBlock block(out, l.size());
             for ( TObjectType::const_iterator i = l.begin();
                   i != l.end(); ++i ) {
                 block.Next();
-                out.RegisterAndWrite(&*i, GetDataTypeInfo());
+                out.WriteExternalObject(&*i, dataTypeInfo);
             }
         }
 
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
             TObjectType& l = Get(object);
-            CObjectIStream::Block block(in);
+            TTypeInfo dataTypeInfo = GetDataTypeInfo();
+            CObjectIStream::FixedBlock block(in);
             while ( block.Next() ) {
                 l.push_back(Data());
-                in.RegisterAndRead(&l.back(), GetDataTypeInfo());
+                in.ReadExternalObject(&l.back(), dataTypeInfo);
             }
         }
 };

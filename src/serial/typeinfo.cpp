@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/15 16:19:53  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.5  1999/06/10 21:06:50  vasilche
 * Working binary output and almost working binary input.
 *
@@ -153,16 +156,14 @@ CTypeInfo::TTypeInfo CTypeInfo::GetPointerTypeInfo(const type_info& id,
     return GetTypeInfoById(id);
 }
 
-void CTypeInfo::AddObject(COObjectList& l,
-                          TConstObjectPtr object, TTypeInfo typeInfo)
+void CTypeInfo::CollectObjects(COObjectList& objectList,
+                               TConstObjectPtr object) const
 {
-    if ( l.Add(object, typeInfo) ) {
-        // new object
-        typeInfo->CollectObjects(l, object);
-    }
+    if ( objectList.Add(object, this) )
+        CollectExternalObjects(objectList, object);
 }
 
-void CTypeInfo::CollectObjects(COObjectList& , TConstObjectPtr ) const
+void CTypeInfo::CollectExternalObjects(COObjectList& , TConstObjectPtr ) const
 {
     // there is no members by default
 }

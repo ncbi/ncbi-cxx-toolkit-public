@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/15 16:20:01  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.4  1999/06/10 21:06:38  vasilche
 * Working binary output and almost working binary input.
 *
@@ -82,20 +85,6 @@ private:
     TTypeInfo m_TypeInfo;
 };
 
-class CIClassInfo
-{
-public:
-    typedef CTypeInfo::TTypeInfo TTypeInfo;
-
-    CIClassInfo(void)
-        : m_TypeInfo(0)
-        {
-        }
-
-private:
-    TTypeInfo m_TypeInfo;
-};
-
 class CObjectIStream
 {
 public:
@@ -122,50 +111,109 @@ public:
     virtual void ReadStd(string& data) = 0;
 
     // object level readers
-    void RegisterAndRead(TObjectPtr object, TTypeInfo typeInfo);
+    void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
     // reads type info
     virtual TObjectPtr ReadPointer(TTypeInfo declaredType) = 0;
-    virtual TTypeInfo ReadTypeInfo(void) = 0;
 
-    // read object content
-    virtual void ReadObject(TObjectPtr object,
-                            const CClassInfoTmpl* typeInfo) = 0;
+    virtual void SkipValue(void);
+
+    virtual string ReadMemberName(void);
 
     // block interface
-    class Block;
-    virtual unsigned Begin(Block& block, bool tmpl);
-    virtual bool Next(Block& block);
-    virtual void End(Block& block);
     class Block
     {
     public:
-        Block(CObjectIStream& in, bool tmpl = false);
-        bool Next(void);
-        ~Block(void);
+        Block(CObjectIStream& in);
+
+        unsigned GetIndex(void) const
+            {
+                return m_NextIndex - 1;
+            }
+
+        unsigned GetNextIndex(void) const
+            {
+                return m_NextIndex;
+            }
+
+    protected:
+        CObjectIStream& m_In;
+
+        void IncIndex(void)
+            {
+                ++m_NextIndex;
+            }
 
     private:
-        CObjectIStream& m_In;
-        unsigned m_Count;
+        // to prevent copying
+        Block(const Block&);
+        Block& operator=(const Block&);
+        // to prevent allocation in heap
+        void* operator new(size_t size);
+
+        unsigned m_NextIndex;
+    };
+
+    class VarBlock : public Block
+    {
+    public:
+        VarBlock(CObjectIStream& in);
+        bool Next(void);
+        ~VarBlock(void);
+
+        bool Finished(void) const
+            {
+                return m_Finished;
+            }
+
+    private:
+        bool m_Finished;
+    };
+
+    // block interface
+    class FixedBlock : public Block
+    {
+    public:
+        FixedBlock(CObjectIStream& in);
+        bool Next(void);
+        ~FixedBlock(void);
+
+        unsigned GetSize(void) const
+            {
+                return m_Size;
+            }
+
+    private:
+        unsigned m_Size;
     };
 
 protected:
+    // block interface
+    friend class VarBlock;
+    friend class FixedBlock;
+    virtual void Begin(VarBlock& block);
+    virtual bool Next(VarBlock& block) = 0;
+    virtual void End(VarBlock& block);
+    virtual unsigned Begin(FixedBlock& block) = 0;
+    virtual void Next(FixedBlock& block);
+    virtual void End(FixedBlock& block);
+
+protected:
     // low level readers
-    virtual const string& ReadString(void) = 0;
-    virtual const string& ReadId(void);
+    virtual string ReadString(void) = 0;
+    virtual string ReadId(void);
 
-    TTypeInfo GetRegiteredClass(TIndex index) const;
-    TTypeInfo GetRegiteredClass(const string& name) const;
-    TTypeInfo RegisterClass(TTypeInfo typeInfo);
-
-    TTypeInfo GetClass(TIndex index) const;
     const CIObjectInfo& GetRegisteredObject(TIndex index) const;
     TIndex RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
     TIndex RegisterInvalidObject(void)
         { return RegisterObject(0, 0); }
+
+    void ReadData(TObjectPtr object, TTypeInfo typeInfo)
+        {
+            typeInfo->ReadData(*this, object);
+        }
     
 private:
     vector<CIObjectInfo> m_Objects;
-    vector<CIClassInfo> m_Classes;
 };
 
 //#include <serial/objistr.inl>

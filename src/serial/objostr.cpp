@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/15 16:19:50  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.4  1999/06/10 21:06:48  vasilche
 * Working binary output and almost working binary input.
 *
@@ -59,25 +62,29 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
 {
     _TRACE("CObjectOStream::Write(" << unsigned(object) << ", "
            << typeInfo->GetName() << ')');
+    _TRACE("CTypeInfo::CollectObjects: " << unsigned(object));
     typeInfo->CollectObjects(m_Objects, object);
     COObjectInfo info(m_Objects, object, typeInfo);
     if ( info.IsMember() ) {
-        if ( !info.GetRootObjectInfo().IsWritten() )
+        if ( !info.GetRootObjectInfo().IsWritten() ) {
             THROW1_TRACE(runtime_error,
                          "trying to write member of non written object");
+        }
     }
     else {
         if ( info.GetRootObjectInfo().IsWritten() ) {
             THROW1_TRACE(runtime_error,
                          "trying to write already written object");
         }
+        m_Objects.RegisterObject(info.GetRootObjectInfo());
+        _TRACE("CTypeInfo::Write: " << unsigned(object) << " @" << info.GetRootObjectInfo().GetIndex());
     }
-    m_Objects.RegisterObject(info.GetRootObjectInfo());
-    typeInfo->WriteData(*this, object);
+    WriteData(object, typeInfo);
     m_Objects.CheckAllWritten();
 }
 
-void CObjectOStream::RegisterAndWrite(TConstObjectPtr object, TTypeInfo typeInfo)
+void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
+                                         TTypeInfo typeInfo)
 {
     _TRACE("CObjectOStream::RegisterAndWrite(" << unsigned(object) << ", "
            << typeInfo->GetName() << ')');
@@ -91,9 +98,10 @@ void CObjectOStream::RegisterAndWrite(TConstObjectPtr object, TTypeInfo typeInfo
             THROW1_TRACE(runtime_error,
                          "trying to write already written object");
         }
+        m_Objects.RegisterObject(info.GetRootObjectInfo());
+        _TRACE("CTypeInfo::Write: " << unsigned(object) << " @" << info.GetRootObjectInfo().GetIndex());
     }
-    m_Objects.RegisterObject(info.GetRootObjectInfo());
-    typeInfo->WriteData(*this, object);
+    WriteData(object, typeInfo);
 }
 
 void CObjectOStream::WriteId(const string& id)
@@ -101,48 +109,73 @@ void CObjectOStream::WriteId(const string& id)
     WriteString(id);
 }
 
-void CObjectOStream::Begin(Block& , unsigned , bool )
+void CObjectOStream::WriteMemberName(const string& name)
+{
+    WriteId(name);
+}
+
+void CObjectOStream::Next(FixedBlock& )
 {
 }
 
-void CObjectOStream::Next(Block& )
+void CObjectOStream::End(FixedBlock& )
 {
 }
 
-void CObjectOStream::End(Block& )
+void CObjectOStream::Begin(VarBlock& )
 {
 }
 
-void CObjectOStream::RegisterClass(TTypeInfo )
+void CObjectOStream::Next(VarBlock& )
 {
-    throw runtime_error("not implemented");
 }
 
-COClassInfo* CObjectOStream::GetRegisteredClass(TTypeInfo ) const
+void CObjectOStream::End(VarBlock& )
 {
-    throw runtime_error("not implemented");
 }
 
-CObjectOStream::Block::Block(CObjectOStream& out, unsigned count, bool tmpl)
-    : m_Out(out), m_Count(count)
+CObjectOStream::Block::Block(CObjectOStream& out)
+    : m_Out(out), m_NextIndex(0)
 {
-    m_Out.Begin(*this, count, tmpl);
 }
 
-void CObjectOStream::Block::Next(void)
+CObjectOStream::FixedBlock::FixedBlock(CObjectOStream& out, unsigned size)
+    : Block(out), m_Size(size)
 {
-    if ( !m_Count ) {
+    m_Out.Begin(*this, size);
+}
+
+void CObjectOStream::FixedBlock::Next(void)
+{
+    if ( GetNextIndex() >= GetSize() ) {
         THROW1_TRACE(runtime_error, "too many elements");
     }
     m_Out.Next(*this);
-    --m_Count;
+    IncIndex();
 }
 
-CObjectOStream::Block::~Block(void)
+CObjectOStream::FixedBlock::~FixedBlock(void)
 {
-    if ( m_Count ) {
+    if ( GetNextIndex() != GetSize() ) {
         THROW1_TRACE(runtime_error, "not all elements written");
     }
+    m_Out.End(*this);
+}
+
+CObjectOStream::VarBlock::VarBlock(CObjectOStream& out)
+    : Block(out)
+{
+    m_Out.Begin(*this);
+}
+
+void CObjectOStream::VarBlock::Next(void)
+{
+    m_Out.Next(*this);
+    IncIndex();
+}
+
+CObjectOStream::VarBlock::~VarBlock(void)
+{
     m_Out.End(*this);
 }
 

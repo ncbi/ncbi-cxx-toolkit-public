@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/06/15 16:20:06  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.8  1999/06/11 19:15:49  vasilche
 * Working binary serialization and deserialization of first test object.
 *
@@ -180,13 +183,14 @@ CTypeRef GetStlTypeRef(const list<Data>* )
 }
 
 // define type info getter for pointers
-template<typename CLASS>
+template<typename T>
 inline
-CTypeRef GetTypeRef(const CLASS* const* object)
+CTypeRef GetTypeRef(const T* const* object)
 {
-    _TRACE("GetTypeRef(const CLASS*) CLASS: " << typeid(CLASS).name());
-    return CTypeRef(CTypeInfo::GetPointerTypeInfo(typeid(CLASS*),
-                                                  GetTypeRef(object)));
+    typename T* p = 0;
+    _TRACE("GetTypeRef(const T*) T: " << typeid(*p).name());
+    return CTypeRef(CTypeInfo::GetPointerTypeInfo(typeid(p),
+                        GetTypeRef(p)));
 }
 
 template<typename Data>

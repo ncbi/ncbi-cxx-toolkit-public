@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/15 16:19:52  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.2  1999/06/07 20:42:58  vasilche
 * Fixed compilation under MS VS
 *
@@ -61,20 +64,29 @@ bool CPointerTypeInfo::IsDefault(TConstObjectPtr object) const
     return GetObject(object) == 0;
 }
 
-void CPointerTypeInfo::CollectObjects(COObjectList& l,
-                                      TConstObjectPtr object) const
+void CPointerTypeInfo::CollectExternalObjects(COObjectList& objectList,
+                                              TConstObjectPtr object) const
 {
-    AddObject(l, GetObject(object), GetRealDataTypeInfo(object));
+    TConstObjectPtr externalObject = GetObject(object);
+    _TRACE("CPointerTypeInfo::CollectExternalObjects: " << unsigned(externalObject));
+    if ( externalObject ) {
+        GetDataTypeInfo()->GetRealTypeInfo(externalObject)->
+            CollectObjects(objectList, externalObject);
+    }
 }
 
 void CPointerTypeInfo::WriteData(CObjectOStream& out,
                                  TConstObjectPtr object) const
 {
-    out.WritePointer(GetObject(object), GetRealDataTypeInfo(object));
+    TConstObjectPtr externalObject = GetObject(object);
+    _TRACE("CPointerTypeInfo::WriteData: " << unsigned(externalObject));
+    out.WritePointer(externalObject,
+                     GetDataTypeInfo()->GetRealTypeInfo(externalObject));
 }
 
 void CPointerTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
+    _TRACE("CPointerTypeInfo::ReadData: " << unsigned(GetObject(object)));
     GetObject(object) = in.ReadPointer(GetDataTypeInfo());
 }
 

@@ -9,6 +9,7 @@ const CTypeInfo* CSerialObject::GetTypeInfo(void)
     if ( info == 0 ) {
         info = new CClassInfo<CClass>();
         info->ADD_CLASS_MEMBER(m_Name);
+        info->ADD_CLASS_MEMBER(m_NamePtr);
         info->ADD_CLASS_MEMBER(m_Size);
         info->ADD_STL_CLASS_MEMBER(m_Attributes);
     }
@@ -20,9 +21,22 @@ CSerialObject::CSerialObject(void)
 {
 }
 
+string Ptr(const void* p)
+{
+    char b[128];
+    sprintf(b, "%p", p);
+    return b;
+}
+
 void CSerialObject::Dump(ostream& out) const
 {
-    out << "m_Name: \"" << m_Name << '\"' << endl;
+    out << "m_Name: \"" << m_Name << "\" (*" << Ptr(&m_Name) << ")" << endl;
+    out << "m_NamePtr: ";
+    if ( m_NamePtr )
+        out << '"' << *m_NamePtr << "\" (*" << Ptr(m_NamePtr) << ")";
+    else
+        out << "null";
+    out << endl;
     out << "m_Size: " << m_Size << endl;
     out << "m_Attributes: {" << endl;
     for ( list<string>::const_iterator i = m_Attributes.begin();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/15 16:19:49  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.3  1999/06/10 21:06:48  vasilche
 * Working binary output and almost working binary input.
 *
@@ -59,6 +62,7 @@ COObjectList::~COObjectList(void)
 
 bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
 {
+    _TRACE("COObjectList::Add(" << unsigned(object) << ", " << typeInfo->GetName() << ")");
     // note that TObject have reverse sort order
     // just in case typedef in header file will be redefined:
     typedef map<TConstObjectPtr, CORootObjectInfo, greater<TConstObjectPtr> > TObject;
@@ -100,9 +104,10 @@ bool COObjectList::Add(TConstObjectPtr object, TTypeInfo typeInfo)
                 }
                 // check who is owner
                 if ( CheckMember(beforeObject, beforeTypeInfo,
-                                 object, typeInfo) )
+                                 object, typeInfo) ) {
                     // good beforeObject is owner of object
                     return false;
+                }
                 if ( !CheckMember(object, typeInfo,
                                   beforeObject, beforeTypeInfo) ) {
                     THROW1_TRACE(runtime_error, "overlapping objects");

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/15 16:20:05  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.3  1999/06/10 21:06:41  vasilche
 * Working binary output and almost working binary input.
 *
@@ -65,10 +68,11 @@ public:
 
         eBlock = 0xE0,
         eObjectReference,
+        eMemberReference,
         eThisClass,
         eOtherClass,
-        eMember,
-        eEndOfMembers
+        eElement,
+        eEndOfElements
     };
 };
 

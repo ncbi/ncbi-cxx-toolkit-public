@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/15 16:20:03  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.4  1999/06/10 21:06:40  vasilche
 * Working binary output and almost working binary input.
 *
@@ -52,33 +55,8 @@
 #include <serial/typeinfo.hpp>
 #include <serial/objlist.hpp>
 #include <map>
-#include <vector>
 
 BEGIN_NCBI_SCOPE
-
-class CClassInfoTmpl;
-
-class COClassInfo
-{
-public:
-    typedef unsigned TIndex;
-    typedef CTypeInfo::TTypeInfo TTypeInfo;
-
-    COClassInfo(void)
-        : m_Index(-1), m_TypeInfo(0), m_StreamDefinition(0)
-        { }
-
-    bool IsWritten(void) const
-        { return m_StreamDefinition != 0; }
-    TIndex GetIndex(void) const
-        { return m_Index; }
-    TTypeInfo GetTypeInfo(void) const
-        { return m_TypeInfo; }
-private:
-    TIndex m_Index;
-    TTypeInfo m_TypeInfo;
-    void* m_StreamDefinition;
-};
 
 class CObjectOStream
 {
@@ -110,48 +88,83 @@ public:
     virtual void WriteStd(const char* const& data) = 0;
 
     // object level writers
-    void RegisterAndWrite(TConstObjectPtr object, TTypeInfo typeInfo);
+    void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
     // type info writers
     virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo) = 0;
-    // write object content
-    virtual void WriteObject(TConstObjectPtr object,
-                             const CClassInfoTmpl* typeInfo) = 0;
-
-    virtual void WriteTypeInfo(TTypeInfo typeInfo) = 0;
-    virtual void WriteClassInfo(TTypeInfo typeInfo) = 0;
-    virtual void WriteTemplateInfo(const string& name, TTypeInfo tmpl,
-                                   TTypeInfo arg) = 0;
-    virtual void WriteTemplateInfo(const string& name, TTypeInfo tmpl,
-                                   TTypeInfo arg1, TTypeInfo arg2) = 0;
-    virtual void WriteTemplateInfo(const string& name, TTypeInfo tmpl,
-                                   const vector<TTypeInfo>& args) = 0;
+    // write member name
+    virtual void WriteMemberName(const string& name);
 
     // block interface
-    class Block;
-    virtual void Begin(Block& block, unsigned count, bool tmpl);
-    virtual void Next(Block& block);
-    virtual void End(Block& block);
     class Block
     {
     public:
-        Block(CObjectOStream& out, unsigned count, bool tmpl = false);
-        void Next(void);
-        ~Block(void);
+        Block(CObjectOStream& out);
 
-        unsigned GetCount(void) const
+        unsigned GetIndex(void) const
             {
-                return m_Count;
+                return m_NextIndex - 1;
+            }
+
+        unsigned GetNextIndex(void) const
+            {
+                return m_NextIndex;
+            }
+
+    protected:
+        CObjectOStream& m_Out;
+
+        void IncIndex(void)
+            {
+                ++m_NextIndex;
             }
 
     private:
-        CObjectOStream& m_Out;
-        unsigned m_Count;
+        // to prevent copying
+        Block(const Block&);
+        Block& operator=(const Block&);
+        // to prevent allocation in heap
+        void* operator new(size_t size);
+
+        int m_NextIndex;
     };
     
-    COClassInfo* GetRegisteredClass(TTypeInfo typeInfo) const;
-    virtual void RegisterClass(TTypeInfo typeInfo);
+    class FixedBlock : public Block
+    {
+    public:
+        FixedBlock(CObjectOStream& out, unsigned size);
+        ~FixedBlock(void);
 
+        void Next(void);
+
+        unsigned GetSize(void) const
+            {
+                return m_Size;
+            }
+
+    private:
+        int m_Size;
+    };
+    
+    class VarBlock : public Block
+    {
+    public:
+        VarBlock(CObjectOStream& out);
+        ~VarBlock(void);
+
+        void Next(void);
+    };
+    
 protected:
+    // block interface
+    friend class FixedBlock;
+    friend class VarBlock;
+    virtual void Begin(FixedBlock& block, unsigned size) = 0;
+    virtual void Next(FixedBlock& block);
+    virtual void End(FixedBlock& block);
+    virtual void Begin(VarBlock& block);
+    virtual void Next(VarBlock& block);
+    virtual void End(VarBlock& block);
+
     // low level writers
     virtual void WriteString(const string& str) = 0;
     virtual void WriteId(const string& id);
@@ -160,7 +173,10 @@ protected:
     void RegisterObject(CORootObjectInfo& info)
         { m_Objects.RegisterObject(info); }
 
-    map<TTypeInfo, COClassInfo> m_Classes;
+    void WriteData(TConstObjectPtr object, TTypeInfo typeInfo)
+        {
+            typeInfo->WriteData(*this, object);
+        }
 };
 
 //#include <serial/objostr.inl>

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/15 16:20:00  vasilche
+* Added ASN.1 object output stream.
+*
 * Revision 1.5  1999/06/10 21:06:37  vasilche
 * Working binary output and almost working binary input.
 *
@@ -149,8 +152,8 @@ public:
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
-    virtual void CollectObjects(COObjectList& list,
-                                TConstObjectPtr object) const;
+    virtual void CollectExternalObjects(COObjectList& list,
+                                        TConstObjectPtr object) const;
 
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const;
