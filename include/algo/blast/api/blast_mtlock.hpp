@@ -40,6 +40,21 @@
  *
  * @{
  */
+
+/** Initialize a mutex locking mechanism for BLAST. */
 MT_LOCK Blast_CMT_LOCKInit(void);
+
+/* @} */
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.2  2004/07/06 15:43:59  dondosha
+* Added doxygen comments
+*
+* ===========================================================================
+*/
+
 
 #endif /* ALGO_BLAST_API___BLAST_MTLOCK_HPP */

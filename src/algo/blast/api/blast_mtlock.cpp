@@ -42,7 +42,8 @@ USING_NCBI_SCOPE;
 
 extern "C" {
 
-static int CollectorLockHandler(void* user_data, EMT_Lock how)
+/** Locking callback for the Blast MT_LOCK implementation. */
+static int BlastLockHandler(void* user_data, EMT_Lock how)
 {
     CFastMutex* lock = (CFastMutex*) user_data;
     
@@ -60,7 +61,8 @@ static int CollectorLockHandler(void* user_data, EMT_Lock how)
     return 1;
 }
 
-static void CollectorLockCleanup(void* user_data)
+/** Cleanup callback for the Blast MT_LOCK implementation. */
+static void BlastLockCleanup(void* user_data)
 {
     CFastMutex* lock = (CFastMutex*) user_data;
     delete lock;
@@ -68,11 +70,11 @@ static void CollectorLockCleanup(void* user_data)
 
 }
 
+/// Initializes the C++ style locking mechanism for BLAST.
 MT_LOCK Blast_CMT_LOCKInit()
 {
-    CFastMutex* results_mutex = new CFastMutex();
+    CFastMutex* mutex = new CFastMutex();
     MT_LOCK lock = 
-        MT_LOCK_Create((void*)results_mutex, CollectorLockHandler, 
-                       CollectorLockCleanup);
+        MT_LOCK_Create((void*)mutex, BlastLockHandler, BlastLockCleanup);
     return lock;
 }

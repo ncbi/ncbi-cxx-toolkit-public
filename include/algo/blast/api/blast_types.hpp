@@ -59,6 +59,7 @@ enum EProgram {
     eBlastProgramMax    ///< Undefined program
 };
 
+/// Structure combining a Seq-loc, scope and masking locations for one sequence
 struct SSeqLoc {
     /// Seq-loc describing the sequence to use as query/subject to BLAST
     /// The types of Seq-loc currently supported are: whole, seq-interval...
@@ -85,7 +86,10 @@ struct SSeqLoc {
             const objects::CSeq_loc& m)
         : seqloc(&sl), scope(&s), mask(&m) {}
 };
+
+/// Vector of sequence locations
 typedef vector<SSeqLoc>   TSeqLocVector;
+/// Vector of Seq-align-sets
 typedef vector< CRef<objects::CSeq_align_set> > TSeqAlignVector;
 
 END_SCOPE(blast)
@@ -95,6 +99,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/07/06 15:46:09  dondosha
+* Added doxygen comments
+*
 * Revision 1.14  2004/06/23 15:09:51  camacho
 * Added doxygen comments for SSeqLoc
 *
