@@ -348,7 +348,18 @@ public:
     ///
     /// HINT: Use empty "name" to add extra (unnamed) args, and they will be
     /// automagically assigned with the virtual names: "#1", "#2", "#3", etc.
-    void Add(CArgValue* arg, bool update = false);
+    ///
+    /// @param arg
+    ///    argument value added to the collection
+    /// @param update
+    ///    when TRUE and argument already exists it will be replaced
+    ///    when FALSE throws an exception 
+    /// @param add_value
+    ///    when TRUE and argument already exists the value is
+    ///    added to the string list (multiple argument)
+    void Add(CArgValue* arg, 
+             bool       update    = false,
+             bool       add_value = false);
 
     /// Check if there are no arguments in this container.
     bool IsEmpty(void) const;
@@ -366,6 +377,7 @@ private:
 
     /// Find argument value with name "name".
     TArgsCI x_Find(const string& name) const;
+    TArgsI x_Find(const string& name);
 };
 
 
@@ -430,14 +442,23 @@ public:
     /// Get argument type's name string.
     static const string& GetTypeName(EType type);
 
-    /// File related flags.
+    /// Additional flags, the first group is file related flags.
     ///
     /// Must match the argument type, or an exception will be thrown.
-    /// Used for eInputFile and eOutputFiler argument types.
+    /// ( File related are for eInputFile and eOutputFiler argument types.)
     enum EFlags {
-        fPreOpen = 0x1,  ///< Open file right away for eInputFile, eOutputFile
-        fBinary  = 0x2,  ///< Open as binary file for eInputFile, eOutputFile
-        fAppend  = 0x10  ///< Append to end-of-file for eOutputFile only
+        // file related flags:
+
+        /// Open file right away for eInputFile, eOutputFile
+        fPreOpen = (1 << 0), 
+        /// Open as binary file for eInputFile, eOutputFile
+        fBinary  = (1 << 1), 
+        ///< Append to end-of-file for eOutputFile only
+        fAppend  = (1 << 2), 
+
+        // multiple keys flag
+        /// Repeated key arguments are legal (use with AddKey)
+        fAllowMultiple = (1 << 3) 
     };
     typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
 
@@ -677,19 +698,22 @@ public:
 
                 if (new_arg_value) {
 
-                    CArgValue::TStringArray& varr = 
-                        new_arg_value->SetStringList();
+                    if (x_IsMultiArg(param_name)) {
 
-                    // try to add all additional arguments to arg value
-                    for (++vit; vit != vend; ++vit) {
-                        const string& n = vit->first;
-                        if (n != param_name) {
-                            break;
-                        }
-                        const string& v = vit->second;
+                        CArgValue::TStringArray& varr = 
+                            new_arg_value->SetStringList();
 
-                        varr.push_back(v);
-                    } // for
+                        // try to add all additional arguments to arg value
+                        for (++vit; vit != vend; ++vit) {
+                            const string& n = vit->first;
+                            if (n != param_name) {
+                                break;
+                            }
+                            const string& v = vit->second;
+
+                            varr.push_back(v);
+                        } // for
+                    }
                 }
 
             } else {
@@ -772,6 +796,9 @@ private:
 
     /// Helper method for doing post-processing consistency checks.
     void    x_PostCheck(CArgs& args, unsigned n_plain) const;
+
+    /// Returns TRUE if parameter supports multiple arguments
+    bool x_IsMultiArg(const string& name) const;
 
 public:
     /// Create parsed arguments in CArgs object.
@@ -1151,6 +1178,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/12/03 14:29:51  kuznets
+ * Introduced new argument flag fAllowMultiple
+ *
  * Revision 1.38  2004/12/02 14:23:59  kuznets
  * Implement support of multiple key arguments (list of values)
  *
