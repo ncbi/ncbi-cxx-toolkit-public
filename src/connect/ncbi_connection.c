@@ -454,7 +454,8 @@ extern EIO_Status CONN_Write
     if (!n_written)
         return eIO_InvalidArg;
     *n_written = 0;
-
+    if (!!buf ^ !!size)
+        return eIO_InvalidArg;
     CONN_NOT_NULL(Write);
 
     if (conn->state == eCONN_Unusable)
@@ -614,6 +615,8 @@ extern EIO_Status CONN_Read
     if (!n_read)
         return eIO_InvalidArg;
     *n_read = 0;
+    if (!!buf ^ !!size)
+        return eIO_InvalidArg;
 
     CONN_NOT_NULL(Read);
 
@@ -644,6 +647,74 @@ extern EIO_Status CONN_Read
         break;
     }
     return eIO_Unknown;
+}
+
+
+extern EIO_Status CONN_ReadLine
+(CONN    conn,
+ char*   line,
+ size_t  size,
+ size_t* n_read
+ )
+{
+    char       w[1024];
+    EIO_Status status;
+    size_t     len;
+
+    if (!n_read)
+        return eIO_InvalidArg;
+    *n_read = 0;
+    if (!!line ^ !!size)
+        return eIO_InvalidArg;
+
+    CONN_NOT_NULL(ReadLine);
+
+    /* perform open, if not opened yet */
+    if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
+        return status;
+    assert(conn->state == eCONN_Open  &&  conn->meta.list != 0);
+
+    /* flush the unwritten output data (if any) */
+    if ( conn->meta.flush ) {
+        conn->meta.flush(conn->meta.c_flush,
+                         conn->r_timeout == kDefaultTimeout ?
+                         conn->meta.default_timeout : conn->r_timeout);
+    }
+
+    len = 0;
+    while (len < size) {
+        size_t i;
+        size_t x_read = 0;
+        size_t x_size = BUF_Size(conn->buf);
+        char*  buf = size - len < sizeof(w) ? w : &line[len];
+        if (x_size == 0 || x_size > sizeof(w))
+            x_size = sizeof(w);
+        status = s_CONN_Read(conn, buf, x_size, &x_read, 0);
+        for (i = 0; i < x_read; i++) {
+            if (buf == w)
+                line[len] = buf[i];
+            if (buf[i] == '\n') {
+                line[len] = '\0';
+                i++;
+                break;
+            } else if (++len >= size) {
+                i++;
+                break;
+            }
+        }
+        if (i < x_read) {
+            if (!BUF_PushBack(&conn->buf, &buf[i], x_read - i))
+                status = eIO_Unknown;
+            break;
+        } else if (status != eIO_Success) {
+            if (len < size)
+                line[len] = '\0';
+            break;
+        }
+    }
+
+    *n_read = len;
+    return status;
 }
 
 
@@ -783,6 +854,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2004/05/24 19:54:59  lavr
+ * +CONN_ReadLine()
+ *
  * Revision 6.39  2004/03/23 02:27:37  lavr
  * Code formatting
  *

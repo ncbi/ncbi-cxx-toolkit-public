@@ -198,7 +198,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Flush
  );
 
 
-/* Read up to "size" bytes from the connection to mem.buffer pointed by "buf".
+/* Read up to "size" bytes from a connection to the buffer to pointed by "buf".
  * In "*n_read", return the number of successfully read bytes.
  * If there is absolutely no data available to read and the timeout (see
  * CONN_SetTimeout()) is expired then return eIO_Timeout (and "*n_read" := 0).
@@ -215,6 +215,27 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Read
  size_t         size,   /* [in]  max. # of bytes to read            */
  size_t*        n_read, /* [out, non-NULL] # of actually read bytes */
  EIO_ReadMethod how     /* [in]  read/peek | persist                */
+ );
+
+
+/* Read up to "size" bytes from a connection into the string buffer pointed
+ * to by "line".  Stop reading if either '\n' or an error is encountered.
+ * Replace '\n' with '\0'.  Upon return "*n_read" contains the number
+ * of characters written to "line", not including the terminating '\0'.
+ * If not enough space provided in "line" to accomodate the '\0'-terminated
+ * line, then all "size" bytes are used and "*n_read" equals "size" on return.
+ * This is the only case when "line" will not be '\0'-terminated.
+ * Return code advises the caller whether another line read can be attempted:
+ *   eIO_Success -- read completed successfully, keep reading;
+ *   other code  -- an error occurred, and further attempt may fail.
+ *
+ * This call utilizes eIO_Read timeout as set by CONN_SetTimeout().
+ */
+extern EIO_Status CONN_ReadLine
+(CONN    conn,
+ char*   line,
+ size_t  size,
+ size_t* n_read
  );
 
 
@@ -305,6 +326,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2004/05/24 19:53:30  lavr
+ * +CONN_ReadLine()
+ *
  * Revision 6.17  2004/02/23 15:23:36  lavr
  * New (last) parameter "how" added in CONN_Write() API call
  *
