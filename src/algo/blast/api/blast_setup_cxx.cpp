@@ -39,7 +39,6 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objmgr/gbloader.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
@@ -847,6 +846,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2004/01/07 17:39:27  vasilche
+* Fixed include path to genbank loader.
+*
 * Revision 1.54  2003/12/29 17:00:57  camacho
 * Update comment
 *

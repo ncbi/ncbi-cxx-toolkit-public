@@ -36,8 +36,8 @@
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbistre.hpp>
 #include <objmgr/object_manager.hpp>
-#include <objmgr/gbloader.hpp>
-#include <objmgr/reader_id1.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -1347,6 +1347,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/01/07 17:39:25  vasilche
+* Fixed include path to genbank loader.
+*
 * Revision 1.5  2004/01/06 19:47:05  kapustin
 * Detect inclusions on both sides
 *

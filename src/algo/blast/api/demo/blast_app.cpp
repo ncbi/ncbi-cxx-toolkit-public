@@ -43,7 +43,7 @@ Contents: C++ driver for running BLAST
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <algo/blast/api/blast_options.hpp>

@@ -37,7 +37,7 @@
 #include <corelib/ncbienv.hpp>
 
 #include <objmgr/object_manager.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 
@@ -250,6 +250,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/07 17:39:28  vasilche
+ * Fixed include path to genbank loader.
+ *
  * Revision 1.3  2003/12/12 20:06:34  johnson
  * accommodate MSVC 7 refactoring; also made more features accessible from
  * command line

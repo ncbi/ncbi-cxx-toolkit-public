@@ -50,7 +50,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -200,6 +200,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/01/07 17:38:03  vasilche
+* Fixed include path to genbank loader.
+*
 * Revision 1.6  2003/12/22 21:29:27  ucko
 * Fix for new alnmgr API.
 *

@@ -50,7 +50,7 @@
 #include <objmgr/desc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 
 using namespace ncbi;
@@ -260,6 +260,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2004/01/07 17:38:03  vasilche
+ * Fixed include path to genbank loader.
+ *
  * Revision 1.12  2003/06/02 16:06:17  dicuccio
  * Rearranged src/objects/ subtree.  This includes the following shifts:
  *     - src/objects/asn2asn --> arc/app/asn2asn

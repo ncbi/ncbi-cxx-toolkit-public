@@ -62,7 +62,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/impl/synonyms.hpp>
@@ -715,6 +715,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2004/01/07 17:38:02  vasilche
+* Fixed include path to genbank loader.
+*
 * Revision 1.52  2004/01/05 18:14:03  vasilche
 * Fixed name of project and path to header.
 *
