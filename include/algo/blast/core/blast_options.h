@@ -126,7 +126,7 @@ extern "C" {
 #define RPS_LOOKUP_TABLE 6
 
 /** Defaults for PSI-BLAST options */
-#define PSI_ETHRESH 0.005
+#define PSI_INCLUSION_ETHRESH 0.002
 #define PSI_PSEUDO_COUNT_CONST 9
 
 /** Default genetic code for query and/or database */
@@ -385,8 +385,13 @@ typedef struct BlastEffectiveLengthsParameters {
  *  Some of these possibly should be transfered elsewhere  
  */
 typedef struct PSIBlastOptions {
-   double inclusion_ethresh; /**< minimum evalue for inclusion in PSSM calc. */
-   Int4 pseudo_count;      /**< pseudo count constant */
+    /** Minimum evalue for inclusion in PSSM calculation. Needed for the first
+     * stage of the PSSM calculation algorithm */
+    double inclusion_ethresh;
+
+    /** Pseudocount constant. Needed for the computing the PSSM residue 
+     * frequencies */
+    Int4 pseudo_count;
 } PSIBlastOptions;
 
 /** Options used to create the ReadDBFILE structure 
