@@ -743,6 +743,7 @@ int CDemoApp::Run(void)
                 CSynonymsSet::GetSeq_id_Handle(it).GetSeqId();
             if ( seq_id->Which() == CSeq_id::e_Gi ) {
                 gi = seq_id->GetGi();
+                NcbiCout << "Sequence gi is "<<gi<<NcbiEndl;
                 break;
             }
         }
@@ -1022,6 +1023,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/10/08 17:55:32  vasilche
+* Print sequence gi when -id option is used.
+*
 * Revision 1.40  2003/10/07 13:43:23  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.
