@@ -125,7 +125,7 @@ static const char* kWeekdayFull [7] = {
     "Sunday", "Monday", "Tuesday", "Wednesday",
     "Thursday", "Friday", "Saturday"
 };
- 
+
 // Default value for time/timespan format
 static const char* kDefaultFormatTime = "M/D/Y h:m:s";
 static const char* kDefaultFormatSpan = "-S.n";
@@ -157,7 +157,7 @@ static unsigned s_Date2Number(const CTime& date)
     }
     c  = y / 100;
     ya = y - 100 * c;
-    
+
     return ((146097 * c) >> 2) + ((1461 * ya) >> 2) +
             (153 * m + 2) / 5 +  d + 1721119;
 }
@@ -191,14 +191,14 @@ static CTime s_Number2Date(unsigned num, const CTime& t)
         year++;
     }
     // Construct new CTime object
-    return 
-        CTime (year, month, day, t.Hour(), t.Minute(), t.Second(), 
+    return
+        CTime (year, month, day, t.Hour(), t.Minute(), t.Second(),
               t.NanoSecond(), t.GetTimeZoneFormat(), t.GetTimeZonePrecision());
 }
 
 
-// Calc <value> + <offset> on module <bound>. 
-// Normalized value return in <value> and other part, which above 
+// Calc <value> + <offset> on module <bound>.
+// Normalized value return in <value> and other part, which above
 // than <bound>, write at <major>.
 static void s_Offset(long *value, long offset, long bound, int *major)
 {
@@ -245,7 +245,7 @@ void CTime::x_Init(const string& str, const string& fmt)
     if ( str.empty() ) {
         return;
     }
-    
+
     const char* fff;
     const char* sss = str.c_str();
 #if ! defined(TIMEZONE_IS_UNDEFINED)
@@ -267,7 +267,8 @@ void CTime::x_Init(const string& str, const string& fmt)
             continue;
         }
         // Skip space symbols in time string
-        while ( isspace(*sss) ) sss++; 
+        while ( isspace(*sss) )
+            sss++;
 
         // Non-format symbols
         if (strchr(kFormatSymbolsTime, *fff) == 0) {
@@ -313,7 +314,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             continue;
         }
 
-        // Timezone (GMT time) 
+        // Timezone (GMT time)
         if (*fff == 'Z') {
             if (NStr::strncasecmp(sss, "GMT", 3) == 0) {
                 m_Tz = eGmt;
@@ -334,7 +335,7 @@ void CTime::x_Init(const string& str, const string& fmt)
                 sss += 3;
             }
             while ( isspace(*sss) ) {
-                sss++; 
+                sss++;
             }
             int sign = (*sss == '+') ? 1 : ((*sss == '-') ? -1 : 0);
             if ( sign ) {
@@ -349,7 +350,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             char* s = value_str;
             for (size_t len = 2;
                  len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
-                 *s++ = *sss++; 
+                 *s++ = *sss++;
             }
             *s = '\0';
             try {
@@ -364,7 +365,7 @@ void CTime::x_Init(const string& str, const string& fmt)
                     for (size_t len = 2;
                         len != 0  &&  *sss != '\0'  &&  isdigit(*sss);
                         len--) {
-                        *s++ = *sss++; 
+                        *s++ = *sss++;
                     }
                     *s = '\0';
                     x_min = NStr::StringToLong(value_str,10,NStr::eCheck_Skip);
@@ -400,9 +401,9 @@ void CTime::x_Init(const string& str, const string& fmt)
             case 'S': len = 9; break;
             case 'l': len = 3; break;
             case 'r': len = 6; break;
-        } 
+        }
         for ( ; len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
-            *s++ = *sss++; 
+            *s++ = *sss++;
         }
         *s = '\0';
         long value = NStr::StringToLong(value_str);
@@ -464,7 +465,8 @@ void CTime::x_Init(const string& str, const string& fmt)
         NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid day of week");
     }
 
-    while ( isspace(*sss) ) sss++; 
+    while ( isspace(*sss) )
+        sss++;
     if (*fff != '\0'  ||  *sss != '\0') {
         NCBI_THROW(CTimeException, eFormat, "CTime:  format is incorrect");
     }
@@ -472,7 +474,7 @@ void CTime::x_Init(const string& str, const string& fmt)
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
-#if ! defined(TIMEZONE_IS_UNDEFINED)
+#if !defined(TIMEZONE_IS_UNDEFINED)
     // Adjust time for current timezone
     if ( adjust_needed  &&  adjust_tz != -TimeZone() ) {
         AddSecond(-TimeZone() - adjust_tz);
@@ -481,7 +483,7 @@ void CTime::x_Init(const string& str, const string& fmt)
 }
 
 
-CTime::CTime(int year, int month, int day, int hour, 
+CTime::CTime(int year, int month, int day, int hour,
              int minute, int second, long nanosecond,
              ETimeZone tz, ETimeZonePrecision tzp)
 {
@@ -521,7 +523,7 @@ CTime::CTime(time_t t, ETimeZonePrecision tzp)
 }
 
 
-CTime::CTime(const string& str, const string& fmt, 
+CTime::CTime(const string& str, const string& fmt,
              ETimeZone tz, ETimeZonePrecision tzp)
 {
     m_Tz = tz;
@@ -658,7 +660,7 @@ int CTime::MonthWeekNumber(EDayOfWeek first_day_of_week) const
 }
 
 
-int CTime::DayOfWeek(void) const 
+int CTime::DayOfWeek(void) const
 {
     int y = Year();
     int m = Month();
@@ -668,7 +670,7 @@ int CTime::DayOfWeek(void) const
 }
 
 
-int CTime::DaysInMonth(void) const 
+int CTime::DaysInMonth(void) const
 {
     int n_days = s_DaysInMonth[Month()-1];
     if (n_days == 0) {
@@ -680,13 +682,13 @@ int CTime::DaysInMonth(void) const
 
 int CTime::MonthNameToNum(const string& month)
 {
-    const char** name = month.length() == 3 ? kMonthAbbr : kMonthFull; 
+    const char** name = month.length() == 3 ? kMonthAbbr : kMonthFull;
     for (int i = 0; i < 12; i++) {
         if (month == name[i]) {
             return i+1;
         }
     }
-    // Always throw exceptions here. 
+    // Always throw exceptions here.
     // Next if statements avoid compilation warnings.
     if ( name ) {
         NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid month name");
@@ -707,13 +709,13 @@ string CTime::MonthNumToName(int month, ENameFormat format)
 
 int CTime::DayOfWeekNameToNum(const string& day)
 {
-    const char** name = day.length() == 3 ? kWeekdayAbbr : kWeekdayFull; 
+    const char** name = day.length() == 3 ? kWeekdayAbbr : kWeekdayFull;
     for (int i = 0; i <= 6; i++) {
         if (day == name[i]) {
             return i;
         }
     }
-    // Always throw exceptions here. 
+    // Always throw exceptions here.
     // Next if statements avoid compilation warnings.
     if ( name ) {
         NCBI_THROW(CTimeException,eInvalid,"CTime:  invalid day of week name");
@@ -803,7 +805,6 @@ string CTime::AsString(const string& fmt, long out_tz) const
             t_out->AddSecond(TimeZone() - out_tz);
             t = t_out;
         }
-    
 #endif
     }
     string str;
@@ -820,22 +821,24 @@ string CTime::AsString(const string& fmt, long out_tz) const
         case 'H': s_AddZeroPadInt(str, t->Hour() % 12);     break;
         case 'm': s_AddZeroPadInt(str, t->Minute());        break;
         case 's': s_AddZeroPadInt(str, t->Second());        break;
-        case 'l': s_AddZeroPadInt(str, t->NanoSecond() / 1000000, 3); 
+        case 'l': s_AddZeroPadInt(str, t->NanoSecond() / 1000000, 3);
                   break;
-        case 'r': s_AddZeroPadInt(str, t->NanoSecond() / 1000, 6); 
+        case 'r': s_AddZeroPadInt(str, t->NanoSecond() / 1000, 6);
                   break;
         case 'S': s_AddZeroPadInt(str, t->NanoSecond(), 9); break;
         case 'p': str += ( t->Hour() <= 12) ? "am" : "pm" ; break;
         case 'P': str += ( t->Hour() <= 12) ? "AM" : "PM" ; break;
         case 'z': {
 #if defined(TIMEZONE_IS_UNDEFINED)
-                      ERR_POST("Format symbol 'z' is unsupported on this platform");
-#else                 str += "GMT";
+                      ERR_POST("Format symbol 'z' is not supported on "
+                               "this platform");
+#else
+                      str += "GMT";
                       if (IsGmtTime()) {
                           break;
                       }
-                      long tz = (out_tz == eCurrentTimeZone) ? TimeZone() : 
-                                                               out_tz;
+                      long tz = (out_tz == eCurrentTimeZone) ?
+                          TimeZone() : out_tz;
                       str += (tz > 0) ? '-' : '+';
                       if (tz < 0) tz = -tz;
                       int tzh = tz / 3600;
@@ -905,9 +908,9 @@ time_t CTime::GetTimeT(void) const
     // Correct timezone for GMT time
     if ( IsGmtTime() ) {
 
-       // Call mktime() second time for GMT time !!!  
+       // Call mktime() second time for GMT time !!!
        // 1st - to get correct value of TimeZone().
-       // 2nd - to get value "timer". 
+       // 2nd - to get value "timer".
 
         t.tm_sec   = Second() - (int)TimeZone();
         t.tm_min   = Minute();
@@ -985,7 +988,7 @@ CTime& CTime::SetTimeDBI(const TDBTimeI& t)
     time.SetTimeZonePrecision(GetTimeZonePrecision());
     time.AddDay(t.days);
     time.AddSecond(t.time / 300);
-    time.AddNanoSecond((long)((t.time % 300) * 
+    time.AddNanoSecond((long)((t.time % 300) *
                               (double)kNanoSecondsPerSecond / 300));
     time.ToTime(GetTimeZoneFormat());
 
@@ -1011,7 +1014,7 @@ CTime& CTime::x_SetTime(const time_t* value)
         struct _timeb timebuffer;
         _ftime(&timebuffer);
         timer = timebuffer.time;
-        ns = (long) timebuffer.millitm * 
+        ns = (long) timebuffer.millitm *
             (long) (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
     }
 #elif defined(NCBI_OS_UNIX)
@@ -1023,9 +1026,9 @@ CTime& CTime::x_SetTime(const time_t* value)
         if (gettimeofday(&tp,0) == -1) {
             timer = 0;
             ns = 0;
-        } else { 
+        } else {
             timer = tp.tv_sec;
-            ns = long((double)tp.tv_usec * 
+            ns = long((double)tp.tv_usec *
                       (double)kNanoSecondsPerSecond /
                       (double)kMicroSecondsPerSecond);
         }
@@ -1070,7 +1073,7 @@ CTime& CTime::AddMonth(int months, EDaylight adl)
         return *this;
     }
     CTime *pt = 0;
-    bool aflag = false; 
+    bool aflag = false;
     if ((adl == eAdjustDaylight)  &&  x_NeedAdjustTime()) {
         pt = new CTime(*this);
         if ( !pt ) {
@@ -1098,7 +1101,7 @@ CTime& CTime::AddDay(int days, EDaylight adl)
         return *this;
     }
     CTime *pt = 0;
-    bool aflag = false; 
+    bool aflag = false;
     if ((adl == eAdjustDaylight)  &&  x_NeedAdjustTime()) {
         pt = new CTime(*this);
         if ( !pt ) {
@@ -1119,7 +1122,7 @@ CTime& CTime::AddDay(int days, EDaylight adl)
 }
 
 
-// Parameter <shift_time> access or denied use time shift in process 
+// Parameter <shift_time> access or denied use time shift in process
 // adjust hours.
 CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
 {
@@ -1127,7 +1130,7 @@ CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
         return *this;
     }
     CTime *pt = 0;
-    bool aflag = false; 
+    bool aflag = false;
     if ((adl == eAdjustDaylight)  &&  x_NeedAdjustTime()) {
         pt = new CTime(*this);
         if ( !pt ) {
@@ -1154,7 +1157,7 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
         return *this;
     }
     CTime *pt = 0;
-    bool aflag = false; 
+    bool aflag = false;
     if ((adl == eAdjustDaylight) && x_NeedAdjustTime()) {
         pt = new CTime(*this);
         if ( !pt ) {
@@ -1214,7 +1217,7 @@ CTime& CTime::AddTimeSpan(const CTimeSpan& ts)
 
 bool CTime::IsValid(void) const
 {
-    if ( IsEmpty() ) 
+    if ( IsEmpty() )
         return true;
 
     if (Year() < 1583) // first Gregorian date February 24, 1582
@@ -1247,7 +1250,7 @@ CTime& CTime::ToTime(ETimeZone tz)
         struct tm* t;
         time_t timer;
         timer = GetTimeT();
-        if (timer == -1) 
+        if (timer == -1)
             return *this;
 
         // MT-Safe protect
@@ -1296,31 +1299,31 @@ bool CTime::operator> (const CTime& t) const
     CTime tmp(t);
     tmp.ToTime(GetTimeZoneFormat());
 
-    if (Year()   > tmp.Year())   
+    if (Year()   > tmp.Year())
         return true;
-    if (Year()   < tmp.Year())   
+    if (Year()   < tmp.Year())
         return false;
-    if (Month()  > tmp.Month())  
+    if (Month()  > tmp.Month())
         return true;
-    if (Month()  < tmp.Month())  
+    if (Month()  < tmp.Month())
         return false;
-    if (Day()    > tmp.Day())    
+    if (Day()    > tmp.Day())
         return true;
-    if (Day()    < tmp.Day())    
+    if (Day()    < tmp.Day())
         return false;
-    if (Hour()   > tmp.Hour())   
+    if (Hour()   > tmp.Hour())
         return true;
-    if (Hour()   < tmp.Hour())   
+    if (Hour()   < tmp.Hour())
         return false;
-    if (Minute() > tmp.Minute()) 
+    if (Minute() > tmp.Minute())
         return true;
-    if (Minute() < tmp.Minute()) 
+    if (Minute() < tmp.Minute())
         return false;
-    if (Second() > tmp.Second()) 
+    if (Second() > tmp.Second())
         return true;
-    if (Second() < tmp.Second()) 
+    if (Second() < tmp.Second())
         return false;
-    if (NanoSecond() > tmp.NanoSecond()) 
+    if (NanoSecond() > tmp.NanoSecond())
         return true;
 
     return false;
@@ -1332,31 +1335,31 @@ bool CTime::operator< (const CTime& t) const
     CTime tmp(t);
     tmp.ToTime(GetTimeZoneFormat());
 
-    if (Year()   < tmp.Year())   
+    if (Year()   < tmp.Year())
         return true;
-    if (Year()   > tmp.Year())   
+    if (Year()   > tmp.Year())
         return false;
-    if (Month()  < tmp.Month())  
+    if (Month()  < tmp.Month())
         return true;
-    if (Month()  > tmp.Month())  
+    if (Month()  > tmp.Month())
         return false;
-    if (Day()    < tmp.Day())    
+    if (Day()    < tmp.Day())
         return true;
-    if (Day()    > tmp.Day())    
+    if (Day()    > tmp.Day())
         return false;
-    if (Hour()   < tmp.Hour())   
+    if (Hour()   < tmp.Hour())
         return true;
-    if (Hour()   > tmp.Hour())  
+    if (Hour()   > tmp.Hour())
         return false;
-    if (Minute() < tmp.Minute()) 
+    if (Minute() < tmp.Minute())
         return true;
-    if (Minute() > tmp.Minute()) 
+    if (Minute() > tmp.Minute())
         return false;
-    if (Second() < tmp.Second()) 
+    if (Second() < tmp.Second())
         return true;
-    if (Second() > tmp.Second()) 
+    if (Second() > tmp.Second())
         return false;
-    if (NanoSecond() > tmp.NanoSecond()) 
+    if (NanoSecond() > tmp.NanoSecond())
         return true;
 
     return false;
@@ -1423,7 +1426,7 @@ void CTime::x_AdjustDay()
 CTime& CTime::x_AdjustTime(const CTime& from, bool shift_time)
 {
     if ( !x_NeedAdjustTime() )
-        return *this; 
+        return *this;
 
     switch ( GetTimeZonePrecision() ) {
     case eMinute:
@@ -1443,7 +1446,7 @@ CTime& CTime::x_AdjustTime(const CTime& from, bool shift_time)
     }
     return *this;
 }
-  
+
 
 CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
 {
@@ -1456,20 +1459,20 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     CFastMutexGuard LOCK(s_TimeAdjustMutex);
 
     // Special conversion from <const CTime> to <CTime>
-    CTime tmp(from); 
+    CTime tmp(from);
     int sign = 0;
     int diff = 0;
     // Primary procedure call
     if ( shift_time ) {
         sign = ( *this > from ) ? 1 : -1;
-        // !!! Run TimeZoneDiff() first for old time value 
+        // !!! Run TimeZoneDiff() first for old time value
         diff = -tmp.TimeZoneDiff() + TimeZoneDiff();
         // Correction need's if time already in identical timezone
         if (!diff  ||  diff == m_AdjustTimeDiff) {
             return *this;
         }
-    } 
-    // Recursive procedure call. Inside below 
+    }
+    // Recursive procedure call. Inside below
     // x_AddHour(*, eAdjustDaylight, false)
     else  {
         // Correction need't if difference not found
@@ -1522,7 +1525,7 @@ void CTimeSpan::x_Init(const string& str, const string& fmt)
     if ( str.empty() ) {
         return;
     }
-   
+
     const char* fff;
     const char* sss = str.c_str();
     int   sign = 1;
@@ -1549,9 +1552,9 @@ void CTimeSpan::x_Init(const string& str, const string& fmt)
         // Other format symbols -- read the next data ingredient
         char value_str[21];
         char* s = value_str;
-        for (size_t len = 20; 
-             len != 0  &&  *sss != '\0'  && isdigit(*sss);  len--) {
-            *s++ = *sss++; 
+        for (size_t len = 20;
+             len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
+            *s++ = *sss++;
         }
         *s = '\0';
         long value = NStr::StringToLong(value_str);
@@ -1587,7 +1590,7 @@ void CTimeSpan::x_Init(const string& str, const string& fmt)
         }
     }
     // Normalize time span
-    if ( sign < 0 ) {
+    if (sign < 0) {
         Invert();
     }
     x_Normalize();
@@ -1626,7 +1629,7 @@ void CTimeSpan::x_VerifyFormat(const string& fmt)
         if (strchr(kFormatSymbolsSpan, *it) != 0  &&
             ++count[(unsigned int) *it] > 1) {
             NCBI_THROW(CTimeException, eFormat,
-	               "CTimeSpan's format is incorrect");
+                       "CTimeSpan's format is incorrect");
         }
     }
 }
@@ -1754,7 +1757,7 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
                 }
             }
        }
-        // Add adjustment time span 
+        // Add adjustment time span
         switch (ESmartStringPrecision(adjust_level)) {
             case eSSP_Year:
                 diff += CTimeSpan(365/2, 0, 0, 0);
@@ -1811,9 +1814,9 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
     string result;
     int current_precision = is_named_precision ? eSSP_Year  : eSSP_Precision1;
 
-    // Compose result string 
+    // Compose result string
 
-    for (int i = 0; i < max_count  &&  current_precision <= precision; i++) {
+    for (int i = 0;  i < max_count  &&  current_precision <= precision;  i++) {
         long val = span[i].value;
         if ( !val ) {
             if ( result.empty() ) {
@@ -1831,8 +1834,8 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
             } else {
                 long sum = 0;
                 int  cp = current_precision + 1;
-                for (int j = i+1;
-		     j < max_count &&  (cp <= precision); j++, cp++ ) {
+                for (int j = i + 1;
+                     j < max_count  &&  (cp <= precision);  j++, cp++) {
                     sum += span[j].value;
                 }
                 if ( !sum ) {
@@ -1844,7 +1847,7 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
         }
         current_precision++;
         if ( !result.empty() ) {
-            result += " "; 
+            result += " ";
         }
         result += NStr::IntToString(val) + " " + span[i].str;
         if (val > 1  ||  val == 0) {
@@ -1937,7 +1940,7 @@ string CStopWatch::AsString(const string& fmt) const
 //
 //============================================================================
 
- 
+
 CTime operator+ (int days, const CTime& t)
 {
     CTime tmp = s_Number2Date(s_Date2Number(t) + days, t);
@@ -1957,6 +1960,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2004/09/27 23:16:56  vakatov
+ * Fixed a typo;  +cosmetics
+ *
  * Revision 1.55  2004/09/27 17:12:06  ucko
  * Tweak to avoid defining struct SItem within AsSmartString, which
  * MIPSpro can't handle.
