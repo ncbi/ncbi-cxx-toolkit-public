@@ -345,11 +345,27 @@ public:
     /// Attach DLL resolver to plugin manager 
     /// 
     /// Plugin mananger uses all attached resolvers to search for DLLs
-    /// exporting drivers of this interface.
+    /// exporting drivers of this interface. 
     ///
     /// @param resolver
     ///   DLL resolver. Plugin manager takes ownership of the resolver.
+    ///
+    /// @sa DetachResolver
     void AddResolver(CPluginManager_DllResolver* resolver);
+
+    /// Remove resolver from the list of active resolvers.
+    ///
+    /// Method is used when we need to freeze some of the resolution variants
+    /// Resolver is not deleted, and can be reattached again by AddResolver
+    ///
+    /// @param resolver
+    ///   DLL resolver. Ownership is returned to the caller and resolver
+    ///   should be deleted by the caller
+    ///
+    /// @return Pointer on the detached resolver (same as resolver parameter)
+    /// or NULL if resolver not found
+    CPluginManager_DllResolver* 
+    DetachResolver(CPluginManager_DllResolver* resolver);
 
     /// Add path for the DLL lookup (for all resolvers)
     void AddDllSearchPath(const string& path);
@@ -359,8 +375,16 @@ public:
                  const CVersionInfo& version = CVersionInfo
                  (TIfVer::eMajor, TIfVer::eMinor, TIfVer::ePatchLevel));
 
+    /// Disable/enable DLL resolution (search for class factories in DLLs)
+    void FreezeResolution(bool value = true) { m_BlockResolution = vlaue; }
+
+    
+    /// Disable/enable DLL resolution (search for class factories in DLLs)
+    /// for the specified driver
+    void FreezeResolution(const string& driver, bool value = true);
+
     // ctors
-    CPluginManager(void) {}
+    CPluginManager(void) : m_BlockResolution(false) {}
     virtual ~CPluginManager();
 
 protected:
@@ -373,16 +397,23 @@ protected:
 
     typedef vector<CDllResolver::SResolvedEntry> TResolvedEntries;
 
+    typedef vector<CPluginManager_DllResolver*>  TDllResolvers;
+
+    typedef set<string>                          TStringSet;
 private:
     /// List of factories presently registered with (and owned by)
     /// the plugin manager.
     set<TClassFactory*>                  m_Factories;
     /// DLL resolvers
-    vector<CPluginManager_DllResolver*>  m_Resolvers;
+    TDllResolvers                        m_Resolvers;
     /// Paths used for DLL search
     vector<string>                       m_DllSearchPaths;
     /// DLL entries resolved and registered with dll resolver(s)
     TResolvedEntries                     m_RegisteredEntries;
+    /// Flag, prohibits DLL resolution
+    bool                                 m_BlockResolution;
+    /// Set of drivers prohibited from DLL resolution
+    TStringSet                           m_FreezeResolutionDrivers;
 };
 
 
@@ -528,13 +559,21 @@ CPluginManager<TClass, TIfVer>::GetFactory(const string&       driver,
         return cf;
     }
 
-    // Trying to resolve the driver's factory
-    Resolve(driver, version);
+    if (!m_BlockResolution) {
 
-    // Re-scanning factories...
-    cf = FindClassFactory(driver, version);
-    if (cf) {
-        return cf;
+        typename TStringSet::const_iterator it = 
+                 m_FreezeResolutionDrivers.find(driver);
+
+        if (it == m_FreezeResolutionDrivers.end()) {
+            // Trying to resolve the driver's factory
+            Resolve(driver, version);
+
+            // Re-scanning factories...
+            cf = FindClassFactory(driver, version);
+            if (cf) {
+                return cf;
+            }
+        }
     }
 
     NCBI_THROW(CPluginManagerException, eResolveFailure, 
@@ -633,6 +672,19 @@ void CPluginManager<TClass, TIfVer>::AddResolver
     m_Resolvers.push_back(resolver);
 }
 
+template <class TClass, class TIfVer>
+CPluginManager_DllResolver* 
+CPluginManager<TClass, TIfVer>::DetachResolver(CPluginManager_DllResolver* 
+                                                                    resolver)
+{
+    NON_CONST_ITERATE(TDllResolvers, it, m_Resolvers) {
+        if (resolver == *it) {
+            m_Resolvers.erase(it);
+            return resolver;
+        }
+    }
+    return 0;
+}
 
 template <class TClass, class TIfVer>
 void CPluginManager<TClass, TIfVer>::AddDllSearchPath(const string& path)
@@ -640,6 +692,16 @@ void CPluginManager<TClass, TIfVer>::AddDllSearchPath(const string& path)
     m_DllSearchPaths.push_back(path);
 }
 
+template <class TClass, class TIfVer>
+void CPluginManager<TClass, TIfVer>::FreezeResolution(const string& driver, 
+                                                      bool          value)
+{
+    if (value) {
+        m_FreezeResolutionDrivers.insert(driver);
+    } else {
+        m_FreezeResolutionDrivers.erase(driver);
+    }
+}
 
 template <class TClass, class TIfVer>
 void CPluginManager<TClass, TIfVer>::Resolve(const string&       /*driver*/,
@@ -718,6 +780,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/03/19 19:16:20  kuznets
+ * Added group of functions to better control DLL resolution (FreezeResolution)
+ *
  * Revision 1.20  2004/02/10 20:21:13  ucko
  * Make the interface version class a template parameter with the
  * appropriate default value to work around limitations in IBM's
