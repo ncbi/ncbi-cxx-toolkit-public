@@ -105,12 +105,24 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
             "};\n"
             "\n";
         // prototype of GetTypeInfo_enum_* function
+
+#if 0
         if ( inClass )
             hpp << "DECLARE_INTERNAL_ENUM_INFO";
         else
             hpp << CClassCode::GetExportSpecifier() << " DECLARE_ENUM_INFO";
-        hpp << '('<<m_EnumName<<");\n"
-            "\n";
+        hpp << '('<<m_EnumName<<");\n\n";
+#else
+        hpp << "/// Access to " << m_EnumName
+            << "'s attributes (values, names) as defined in spec\n";
+        if ( inClass ) {
+            hpp << "static";
+        } else {
+            hpp << CClassCode::GetExportSpecifier();
+        }
+        hpp << " const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME";
+        hpp << '('<<m_EnumName<<")(void);\n\n";
+#endif
         ctx.AddHPPCode(hpp);
     }
     {
@@ -217,6 +229,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/05/24 15:10:33  gouriano
+* Expose method to access named integers (or enums) in generated classes
+*
 * Revision 1.19  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
