@@ -862,6 +862,19 @@ else
 fi
 
 
+### typedef socklen_t
+AC_MSG_CHECKING(for type socklen_t)
+AC_TRY_COMPILE(
+   [#include <sys/socket.h>],
+   [
+     socklen_t addrlen = 0;
+     (void) accept(0, (struct sockaddr*) 0, &addrlen);
+   ],
+   AC_DEFINE_UNQUOTED(HAVE_SOCKLEN_T, 1)
+)
+AC_MSG_RESULT()
+
+
 ### <sys/sockio.h>
 AC_MSG_CHECKING(for sys/sockio.h)
 AC_TRY_COMPILE(

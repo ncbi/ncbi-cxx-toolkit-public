@@ -46,6 +46,9 @@
 /* <sys/sockio.h> */
 #undef HAVE_SYS_SOCKIO_H
 
+/* typedef socklen_t */
+#undef HAVE_SOCKLEN_T
+
 /* gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R
 

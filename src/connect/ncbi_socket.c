@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2001/06/04 21:03:08  vakatov
+ * + HAVE_SOCKLEN_T
+ *
  * Revision 6.30  2001/05/31 15:42:10  lavr
  * INADDR_* constants are all and always in host byte order -
  * this was mistakenly forgotten, and now fixed by use of htonl().
@@ -661,9 +664,14 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     }}
 
     {{ /* accept next connection */
+#if defined(HAVE_SOCKLEN_T)
+        typedef socklen_t SOCK_socklen_t;
+#else
+        typedef int       SOCK_socklen_t;
+#endif
         struct sockaddr_in addr;
-        int addrlen = sizeof(struct sockaddr);
-        if ((x_sock = accept(lsock->sock, (struct sockaddr *)&addr, &addrlen))
+	SOCK_socklen_t addrlen = sizeof(struct sockaddr);
+        if ((x_sock = accept(lsock->sock, (struct sockaddr*) &addr, &addrlen))
             == SOCK_INVALID) {
             CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
                            "[LSOCK_Accept]  Failed accept()");
