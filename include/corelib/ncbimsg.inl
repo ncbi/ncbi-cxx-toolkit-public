@@ -33,7 +33,7 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.8  1998/10/01 22:35:53  vakatov
+* Revision 1.9  1998/10/02 22:53:09  vakatov
 * *** empty log message ***
 *
 * ==========================================================================
@@ -47,12 +47,16 @@
 /////////////////////////////////////////////////////////////////////////////
 
 
-// These two dont need to be protected by mutexes
-// because that is not critical while not having a mutex around would
-// save us a little performance
+// These two dont need to be protected by mutexes because it is not
+// critical -- while not having a mutex around would save us a little
+// performance
 extern EMsgSeverity s_MessagePostSeverity;
 extern EMsgSeverity s_MessageDieSeverity;
 
+// Call current message handler directly
+extern void g_MessageHandler(EMsgSeverity sev,
+                             const char*  message_buf,
+                             size_t       message_len);
 
 
 //////////////////////////////////////////////////////////////////
@@ -178,8 +182,9 @@ inline void CMsgBuffer::f_Flush(void) {
 
     EMsgSeverity sev = m_Msg->f_GetSeverity();
     if ( m_Stream.pcount() ) {
-        VERIFY( f_FlushHook(sev, m_Stream.str(), m_Stream.pcount()) );
+        const char* message = m_Stream.str();
         m_Stream.freeze(false);
+        g_MessageHandler(sev, message, m_Stream.pcount());
         f_Reset(m_Msg);
     }
     if (sev >= s_MessageDieLevel)

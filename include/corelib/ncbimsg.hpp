@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/10/02 22:53:09  vakatov
+* *** empty log message ***
+*
 * Revision 1.8  1998/10/01 22:35:52  vakatov
 * *** empty log message ***
 *
@@ -101,7 +104,7 @@ namespace ncbi_msg {
     // Write the error diagnostics to output stream "os"
     // (this uses the g_SetMessageHandler() functionality)
     // Return previous output stream, if any
-    extern ostream* g_SetMessageStream(ostream* os);
+    extern void g_SetMessageStream(ostream* os);
 
     // Set new message handler("func"), data("data") and destructor("cleanup").
     // "func(..., data)" is to be called when any instance of "CMessageBuffer"
@@ -112,10 +115,10 @@ namespace ncbi_msg {
     // NOTE 2:  "func()", "cleanup()" and "g_SetMessageHandler()" calls are
     //          MT-protected, so that they will not be called simultaneously
     //          from different threads
-    typedef void (*FMessageHandler)(EMsgSeverity severity,
-                                    const char* message_buf,
-                                    size_t message_len,
-                                    void* data);
+    typedef void (*FMessageHandler)(EMsgSeverity sev,
+                                    const char*  message_buf,
+                                    size_t       message_len,
+                                    void*        data);
     typedef void (*FMessageCleanup)(void* data);
     extern void g_SetMessageHandler(FMessageHandler func, void* data,
                                     FMessageCleanup cleanup);
