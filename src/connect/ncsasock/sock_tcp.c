@@ -43,6 +43,9 @@
 extern SocketPtr sockets;
 extern SpinFn spinroutine;	/* The spin routine. */ 
 
+static void sock_tcp_send_done(TCPiopb *pb);
+static void sock_tcp_listen_done(TCPiopb *pb);
+static void sock_tcp_connect_done(TCPiopb *pb);
 /*
  * sock_tcp_new_stream
  *
@@ -99,7 +102,6 @@ int sock_tcp_connect(
 {
 	OSErr io;
 	TCPiopb	*pb;
-	void sock_tcp_connect_done();
 #ifdef __MACTCP__
 	TCPIOCompletionUPP proc;
 #endif
@@ -164,7 +166,6 @@ int sock_tcp_listen(
 {
 	OSErr		io;
 	TCPiopb		*pb;
-	void sock_tcp_listen_done(TCPiopb *pb);
 #ifdef __MACTCP__
 	TCPIOCompletionUPP proc;
 #endif
@@ -619,7 +620,6 @@ int sock_tcp_send(
 	short	wdsnum;
 	TCPiopb	*pb;
 	miniwds	wdsarray[TCP_MAX_WDS];
-	void	sock_tcp_send_done();
 #ifdef __MACTCP__
 	TCPIOCompletionUPP proc;
 #endif

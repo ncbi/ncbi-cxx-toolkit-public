@@ -38,6 +38,9 @@
 extern SocketPtr sockets;
 extern SpinFn spinroutine;
 
+static void sock_udp_read_ahead_done(UDPiopb *pb);
+static void sock_udp_send_done(UDPiopb *pb);
+
 #if 0
 /*
  * asynchronous notification routine 
@@ -193,7 +196,6 @@ int sock_udp_connect(
 static int sock_udp_read_ahead(SocketPtr sp)
 	{
 	OSErr io;
-	void sock_udp_read_ahead_done(UDPiopb *pb);
 	
 	io = xUDPRead(sp, (UDPIOCompletionProc)sock_udp_read_ahead_done);
 	if (io != noErr) 
@@ -313,7 +315,6 @@ int sock_udp_send(SocketPtr sp,struct sockaddr_in *to,char *buffer,int count,int
 #pragma unused(flags)
 	miniwds  awds;
 	OSErr    io;
-	void sock_udp_send_done(UDPiopb *pb);
 	
 #if SOCK_UDP_DEBUG >= 2
 	dprintf("sock_udp_send: %08x state %04x\n",sp,sp->sstate);
