@@ -30,6 +30,7 @@
 */
 
 #include "test_helper.hpp"
+#include <corelib/ncbithr.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <serial/object.hpp>
 #include <serial/objistr.hpp>
@@ -1367,7 +1368,6 @@ void CTestHelper::TestDataRetrieval(CScope& scope, int idx,
                                     int delta)
 {
     CSeq_id id;
-
     // find seq. by local id
     id.SetLocal().SetStr("seq" + NStr::IntToString(11+idx*1000));
     // iterate through the whole Scope
@@ -1391,7 +1391,7 @@ void CTestHelper::TestDataRetrieval(CScope& scope, int idx,
     ProcessBioseq(scope, id, 62,
         "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
         "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-        1, 5+delta, 1, 1, 0, 0, 1, 1, 0, 0);
+        1, 6+delta, 2, 1, 0, 0, 1, 1, 0, 0);
     id.SetGi(22+idx*1000);
     ProcessBioseq(scope, id, 20, "QGCGEQTMTLLAPTLAASRY", "",
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -1410,6 +1410,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2004/04/01 20:18:12  grichenk
+* Added initialization of m_MultiId member.
+*
 * Revision 1.56  2004/03/31 22:35:17  grichenk
 * Fixed number of features found
 *

@@ -145,7 +145,7 @@ bool CTestObjectManager::Thread_Run(int idx)
         CTestHelper::ProcessBioseq(*pScope2, id, 62,
             "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
             "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
-            1, 1, 1, 1, 0, 0, 1, 1, 0, 0);
+            1, 2, 2, 1, 0, 0, 1, 1, 0, 0);
 
         // 1.2.8. Test scope history
         CRef<CSeq_entry> entry1b(&CDataGenerator::CreateTestEntry1(idx));
@@ -208,6 +208,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/04/01 20:18:12  grichenk
+* Added initialization of m_MultiId member.
+*
 * Revision 1.24  2004/03/31 22:35:17  grichenk
 * Fixed number of features found
 *

@@ -67,7 +67,8 @@ CAnnotObject_Info::CAnnotObject_Info(void)
       m_Object(0),
       m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
-      m_AnnotType(CSeq_annot::C_Data::e_not_set)
+      m_AnnotType(CSeq_annot::C_Data::e_not_set),
+      m_MultiId(0)
 {
 }
 
@@ -78,7 +79,8 @@ CAnnotObject_Info::CAnnotObject_Info(const CSeq_feat& feat,
       m_Object(&feat),
       m_FeatSubtype(feat.GetData().GetSubtype()),
       m_FeatType(feat.GetData().Which()),
-      m_AnnotType(CSeq_annot::C_Data::e_Ftable)
+      m_AnnotType(CSeq_annot::C_Data::e_Ftable),
+      m_MultiId(0)
 {
     _ASSERT(!IsChunkStub());
 }
@@ -90,7 +92,8 @@ CAnnotObject_Info::CAnnotObject_Info(const CSeq_align& align,
       m_Object(&align),
       m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
-      m_AnnotType(CSeq_annot::C_Data::e_Align)
+      m_AnnotType(CSeq_annot::C_Data::e_Align),
+      m_MultiId(0)
 {
     _ASSERT(!IsChunkStub());
 }
@@ -102,7 +105,8 @@ CAnnotObject_Info::CAnnotObject_Info(const CSeq_graph& graph,
       m_Object(&graph),
       m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
-      m_AnnotType(CSeq_annot::C_Data::e_Graph)
+      m_AnnotType(CSeq_annot::C_Data::e_Graph),
+      m_MultiId(0)
 {
     _ASSERT(!IsChunkStub());
 }
@@ -424,6 +428,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/04/01 20:18:12  grichenk
+* Added initialization of m_MultiId member.
+*
 * Revision 1.35  2004/03/31 20:43:29  grichenk
 * Fixed mapping of seq-locs containing both master sequence
 * and its segments.

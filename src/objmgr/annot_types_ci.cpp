@@ -1116,8 +1116,8 @@ bool CAnnotTypes_CI::x_AddObjectMapping(CAnnotObject_Ref& object_ref,
                                         CSeq_loc_Conversion* cvt)
 {
     _ASSERT(object_ref.GetAnnotObject_Info().GetMultiIdFlags()
-		|| cvt->IsPartial()
-		||  object_ref.IsAlign() );
+            || cvt->IsPartial()
+            ||  object_ref.IsAlign() );
     object_ref.ResetLocation();
     CSeq_loc_Conversion_Set& mapping_set =
         m_DataCollector->m_AnnotMappingSet[object_ref];
@@ -1294,25 +1294,27 @@ void CAnnotTypes_CI::x_SearchRange(const CTSE_Info& tse,
             CAnnotObject_Ref annot_ref(annot_info);
             if (!cvt  &&  annot_info.GetMultiIdFlags()) {
                 // Create self-conversion, add to conversion set
-				CRef<CSeq_loc_Conversion> cvt_ref(
-					new CSeq_loc_Conversion(id, m_Scope));
-				if (x_AddObjectMapping(annot_ref, &*cvt_ref)) {
-					return;
-				}
+                CRef<CSeq_loc_Conversion> cvt_ref
+                    (new CSeq_loc_Conversion(id, m_Scope));
+                if (x_AddObjectMapping(annot_ref, &*cvt_ref)) {
+                    return;
+                }
             }
-			else {
-				if (cvt  &&  !annot_ref.IsAlign() ) {
-					cvt->Convert(annot_ref,
-						m_FeatProduct ? CSeq_loc_Conversion::eProduct :
-						CSeq_loc_Conversion::eLocation);
-				}
-				else {
-					annot_ref.SetAnnotObjectRange(aoit->first, m_FeatProduct != 0);
-				}
-				if ( x_AddObject(annot_ref, cvt) ) {
-					return;
-				}
-			}
+            else {
+                if (cvt  &&  !annot_ref.IsAlign() ) {
+                    cvt->Convert
+                        (annot_ref,
+                         m_FeatProduct ? CSeq_loc_Conversion::eProduct :
+                         CSeq_loc_Conversion::eLocation);
+                }
+                else {
+                    annot_ref.SetAnnotObjectRange(aoit->first,
+                                                  m_FeatProduct != 0);
+                }
+                if ( x_AddObject(annot_ref, cvt) ) {
+                    return;
+                }
+            }
         }
     }
 }
@@ -1499,6 +1501,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.119  2004/04/01 20:18:12  grichenk
+* Added initialization of m_MultiId member.
+*
 * Revision 1.118  2004/03/31 20:43:29  grichenk
 * Fixed mapping of seq-locs containing both master sequence
 * and its segments.
