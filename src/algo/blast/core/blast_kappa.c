@@ -53,8 +53,9 @@ static char const rcsid[] =
                            exceed true Evalue*/
 
 #define PRO_TRUE_ALPHABET_SIZE 20
-#define scoreRange 10000
 
+/** Range of scores in a scoring matrix */
+static const int kScoreMatrixScoreRange = 10000;
 
 /*positions of true characters in protein alphabet*/
 Int4 trueCharPositions[20] = {1,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22};
@@ -2128,7 +2129,7 @@ Kappa_SearchParametersNew(
     sp->resProb    =
       (double *) calloc(BLASTAA_SIZE, sizeof(double));
     sp->scoreArray =
-      (double *) calloc(scoreRange, sizeof(double));
+      (double *) calloc(kScoreMatrixScoreRange, sizeof(double));
     sp->return_sfp =
       (Blast_ScoreFreq*) calloc(1, sizeof(Blast_ScoreFreq));
     
@@ -2326,11 +2327,11 @@ Kappa_AdjustSearch(
     if(positionBased) {
       this_sfp =
         posfillSfp(sp->startMatrix, queryLength, sp->resProb, sp->scoreArray,
-                   sp->return_sfp, scoreRange);
+                   sp->return_sfp, kScoreMatrixScoreRange);
     } else {
       this_sfp =
         notposfillSfp(sp->startMatrix, sp->resProb, sp->queryProb,
-                      sp->scoreArray, sp->return_sfp, scoreRange);
+                      sp->scoreArray, sp->return_sfp, kScoreMatrixScoreRange);
     }
     correctUngappedLambda =
       Blast_KarlinLambdaNR(this_sfp, sp->scaledUngappedLambda);
