@@ -144,6 +144,16 @@ void CTest_validatorApplication::Init(void)
 }
 
 
+static const string diag_sev[] = {
+    "Info",
+    "Warning",
+    "Error",
+    "Critical",
+    "Fatal",
+    "Trace"
+};
+
+
 int CTest_validatorApplication::Run(void)
 {
     // Setup application registry and logs for CONNECT library
@@ -216,7 +226,7 @@ int CTest_validatorApplication::Run(void)
             for (CValidError_CI vit(*eval); vit; ++vit) {
                 codes[vit->GetErrCode()]++;
                 sev[vit->GetSeverity()]++;
-                cout << "Error code: " << vit->GetErrCode() << endl << endl;
+                cout << diag_sev[vit->GetSeverity()] << "\t\t" << vit->GetErrCode() << endl << endl;
                 cout << "Message: " << vit->GetMsg() << endl << endl;
                 cout << "Verbose: " << vit->GetVerbose() << endl << endl;
             }
@@ -254,6 +264,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2003/02/14 21:55:13  shomrat
+ * Output the severity of an error
+ *
  * Revision 1.10  2003/02/07 21:26:01  shomrat
  * More detailed error report
  *
