@@ -48,7 +48,7 @@
 #  include <unistd.h>
 #  define USE_SETHEAPLIMIT
 #  define USE_SETCPULIMIT
-#  if defined (NCBI_COMPILER_METROWERKS) && _MSL_USING_MW_C_HEADERS
+#  if defined(NCBI_COMPILER_METROWERKS) && _MSL_USING_MW_C_HEADERS
 #    include <ncbi_mslextras.h>
 #  endif
 #endif
@@ -419,6 +419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/04/02 16:22:33  rsmith
+ * clean up metrowerks ifdefs.
+ *
  * Revision 1.26  2003/04/02 13:29:29  rsmith
  * include ncbi_mslextras.h when compiling with MSL libs in Codewarrior.
  *

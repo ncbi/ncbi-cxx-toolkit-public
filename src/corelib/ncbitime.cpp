@@ -41,7 +41,7 @@
 #   include <sys/time.h>
 #endif
 
-#if defined(NCBI_OS_MAC) || (defined (NCBI_COMPILER_METROWERKS) &&  _MSL_USING_MW_C_HEADERS)
+#if defined(NCBI_OS_MAC) || (defined(NCBI_OS_DARWIN) && defined(NCBI_COMPILER_METROWERKS) && _MSL_USING_MW_C_HEADERS)
 #    include <OSUtils.h>
 typedef
 struct MyTZDLS {
@@ -498,7 +498,7 @@ time_t CTime::GetTimeT(void) const
     struct tm t;
 
     // Convert time to time_t value at base local time
-#if defined(HAVE_TIMEGM) || (defined(NCBI_OS_DARWIN) && ! _MSL_USING_MW_C_HEADERS)
+#if defined(HAVE_TIMEGM) || (defined(NCBI_OS_DARWIN) && ! (defined(NCBI_COMPILER_METROWERKS) && _MSL_USING_MW_C_HEADERS))
     t.tm_sec   = Second();
 #else
     t.tm_sec   = Second() + (int) (IsGmtTime() ? -TimeZone() : 0);
@@ -509,7 +509,7 @@ time_t CTime::GetTimeT(void) const
     t.tm_mon   = Month()-1;
     t.tm_year  = Year()-1900;
     t.tm_isdst = -1;
-#if defined(NCBI_OS_DARWIN) && ! _MSL_USING_MW_C_HEADERS
+#if defined(NCBI_OS_DARWIN) && ! (defined(NCBI_COMPILER_METROWERKS) && _MSL_USING_MW_C_HEADERS)
     time_t tt = mktime(&t);
     return IsGmtTime() ? tt+t.tm_gmtoff : tt;
 #elif defined(HAVE_TIMEGM)
@@ -1210,6 +1210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/04/02 16:22:34  rsmith
+ * clean up metrowerks ifdefs.
+ *
  * Revision 1.31  2003/04/02 13:31:18  rsmith
  * change #ifdefs to allow compilation on MacOSX w/codewarrior using MSL headers.
  *

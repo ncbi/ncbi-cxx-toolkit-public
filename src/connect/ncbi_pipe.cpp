@@ -37,7 +37,7 @@
 #elif defined NCBI_OS_UNIX
 #   include <unistd.h>
 #   include <errno.h>
-#   if defined (NCBI_OS_DARWIN) && defined (NCBI_COMPILER_METROWERKS) &&  _MSL_USING_MW_C_HEADERS
+#   if defined(NCBI_OS_DARWIN) && defined(NCBI_COMPILER_METROWERKS) &&  _MSL_USING_MW_C_HEADERS
 #       include <ncbi_mslextras.h>
 #   endif
 #else
@@ -748,6 +748,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/04/02 16:22:34  rsmith
+ * clean up metrowerks ifdefs.
+ *
  * Revision 1.14  2003/04/02 13:29:53  rsmith
  * include ncbi_mslextras.h when compiling with MSL libs in Codewarrior.\
  *
