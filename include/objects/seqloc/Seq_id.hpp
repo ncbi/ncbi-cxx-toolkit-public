@@ -127,9 +127,9 @@ public:
         eAcc_genome        = 3 << 8,
         eAcc_div_patent    = 4 << 8,
         eAcc_htgs          = 5 << 8,
-        eAcc_con           = 6 << 8, // constructed/artificial
+        eAcc_con           = 6 << 8, // just a contig/segset
+        eAcc_segset        = eAcc_con, // was once wrongly split out
         eAcc_wgs           = 7 << 8,
-        eAcc_segset        = 8 << 8,
         eAcc_division_mask = 0xff00,
 
         // Actual return values, grouped by Seq-id type
@@ -159,9 +159,10 @@ public:
         eAcc_gb_patent      = e_Genbank | eAcc_div_patent /* | fAcc_nuc */,
         eAcc_gb_patent_prot = e_Genbank | eAcc_div_patent | fAcc_prot,
         eAcc_gb_htgs        = e_Genbank | eAcc_htgs       | fAcc_nuc,
+        eAcc_gb_con         = e_Genbank | eAcc_con,
+        eAcc_gb_segset      = eAcc_gb_con, // for compatibility
         eAcc_gb_wgs_nuc     = e_Genbank | eAcc_wgs        | fAcc_nuc,
         eAcc_gb_wgs_prot    = e_Genbank | eAcc_wgs        | fAcc_prot,
-        eAcc_gb_segset      = e_Genbank | eAcc_segset,
         eAcc_gsdb_dirsub    = e_Genbank | 128 << 8        | fAcc_nuc,
         eAcc_gb_gsdb        = e_Genbank | 129 << 8        | fAcc_nuc,
         eAcc_gb_gss         = e_Genbank | 130 << 8        | fAcc_nuc,
@@ -375,6 +376,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2003/10/24 14:55:10  ucko
+ * Merged eAcc_con and eAcc_segset (had been mistakenly separated);
+ * renamed eAcc_gb_segset to eAcc_gb_con, but left the old name as a synoynm.
+ *
  * Revision 1.34  2003/02/06 22:23:29  vasilche
  * Added CSeq_id::Assign(), CSeq_loc::Assign().
  * Added int CSeq_id::Compare() (not safe).
