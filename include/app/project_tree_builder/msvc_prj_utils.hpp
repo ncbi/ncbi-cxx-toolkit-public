@@ -166,6 +166,7 @@ public:
     string            m_ProjectEngineName;
     string            m_Encoding;
     string            m_CompilersSubdir;
+    string            m_ProjectsSubdir;
     string            m_MakefilesExt;
     string            m_MetaMakefile;
     list<string>      m_NotProvidedRequests;
@@ -261,6 +262,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/04/13 17:06:02  gorelenk
+ * Added member m_CompilersSubdir to class CMsvc7RegSettings.
+ *
  * Revision 1.16  2004/03/18 17:41:03  gorelenk
  * Aligned classes member-functions parameters inside declarations.
  *
