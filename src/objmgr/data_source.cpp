@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2002/06/28 17:30:42  grichenk
+* Duplicate seq-id: ERR_POST() -> THROW1_TRACE() with the seq-id
+* list.
+* Fixed x_CleanupUnusedEntries().
+* Fixed a bug with not found sequences.
+* Do not copy bioseq data in GetBioseqCore().
+*
 * Revision 1.52  2002/06/21 15:12:15  grichenk
 * Added resolving seq-id to the best version
 *
@@ -360,6 +367,12 @@ const CSeq_entry& CDataSource::GetTSE(const CBioseq_Handle& handle)
 CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
     (const CBioseq_Handle& handle)
 {
+    // Bioseq core and TSE must be loaded if there exists a handle --
+    // just return the bioseq as-is.
+    // the handle must be resolved to this data source
+    _ASSERT(handle.m_DataSource == this);
+    return &handle.m_Entry->GetSeq();
+/*
     const CBioseq* seq = &GetBioseq(handle);
 
     CMutexGuard guard(sm_DataSource_Mutex);
@@ -420,6 +433,7 @@ CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
     }
 
     return seq_core;
+*/
 }
 
 
@@ -887,11 +901,36 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
             TBioseqMap::iterator found = tse_info->m_BioseqMap.find(key);
             if ( found != tse_info->m_BioseqMap.end() ) {
                 // No duplicate bioseqs in the same TSE
-                // CBioseq* seq2 = &found->second->m_Entry->GetSeq();
-                ERR_POST(Fatal <<
-                    " duplicate Bioseq: " << (*id)->DumpAsFasta());
-                // _ASSERT(SerialEquals<CBioseq>(*seq, *seq2));
-                // return;
+                string sid1, sid2, si_conflict;
+                {{
+                    strstream os;
+                    iterate (CBioseq::TId, id_it, found->second->m_Entry->GetSeq().GetId()) {
+                        os << (*id_it)->DumpAsFasta() << " | ";
+                    }
+                    sid1 = os.str();
+                    sid1.resize(os.pcount());
+                    os.freeze(0);
+                }}
+                {{
+                    strstream os;
+                    iterate (CBioseq::TId, id_it, seq->GetId()) {
+                        os << (*id_it)->DumpAsFasta() << " | ";
+                    }
+                    sid2 = os.str();
+                    sid2.resize(os.pcount());
+                    os.freeze(0);
+                }}
+                {{
+                    strstream os;
+                    os << (*id)->DumpAsFasta();
+                    si_conflict = os.str();
+                    si_conflict.resize(os.pcount());
+                    os.freeze(0);
+                }}
+                THROW1_TRACE(runtime_error,
+                    " duplicate Bioseq id '" + si_conflict + "' present in" +
+                    "\n  seq1: " + sid1 +
+                    "\n  seq2: " + sid2);
             }
             else {
                 // Add new seq-id synonym
@@ -1666,9 +1705,16 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph,
 void CDataSource::x_CleanupUnusedEntries(void)
 {
     //### CMutexGuard guard(sm_DataSource_Mutex);
-    iterate(TEntries, it, m_Entries) {
-        if ( !it->second->Locked() ) {
-            DropTSE(*it->first);
+    bool broken = true;
+    while ( broken ) {
+        broken = false;
+        iterate(TEntries, it, m_Entries) {
+            if ( !it->second->Locked() ) {
+                //### Lock the entry and check again
+                DropTSE(*it->first);
+                broken = true;
+                break;
+            }
         }
     }
 }
@@ -1698,10 +1744,12 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
         hrm.AddRanges(idh, rg);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore, &loaded_tse_set);
     }
-    CSeq_id_Handle idh = GetIdMapper().GetHandle(id, true);
-    //### CMutexGuard guard(sm_DataSource_Mutex);
-    CTSE_Info* tse = x_FindBestTSE(idh, scope.m_History);
     CSeqMatch_Info match;
+    CSeq_id_Handle idh = GetIdMapper().GetHandle(id, true);
+    if ( !idh ) {
+        return match; // The seq-id is not even mapped yet
+    }
+    CTSE_Info* tse = x_FindBestTSE(idh, scope.m_History);
     if ( !tse ) {
         // Try to find the best matching id (not exactly equal)
         TSeq_id_HandleSet hset;
