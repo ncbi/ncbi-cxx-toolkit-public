@@ -2072,7 +2072,8 @@ CBlastOptionsLocal::SetFilterString(const char* f)
    // Repeat filtering is only allowed for blastn.
    if (GetProgramType() != eBlastTypeBlastn && 
             m_QueryOpts->filtering_options->repeatFilterOptions)
-         SRepeatFilterOptionsFree(m_QueryOpts->filtering_options->repeatFilterOptions);
+         m_QueryOpts->filtering_options->repeatFilterOptions =
+            SRepeatFilterOptionsFree(m_QueryOpts->filtering_options->repeatFilterOptions);
 
    return;
 }
@@ -2782,6 +2783,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.89  2005/03/22 19:00:20  madden
+* NULL out repeatFilterOptions upon free to prevent double free
+*
 * Revision 1.88  2005/03/10 14:21:55  madden
 * Do not set repeatFilterOptions for non-blastn jobs when parsing filter_string
 *
