@@ -140,7 +140,7 @@ void CInt_fuzz::AssignTranslated(const CInt_fuzz& f2, TSeqPos n1, TSeqPos n2)
 void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
                     ECombine mode)
 {
-    static const double kInfinity = numeric_limits<double>::max() * 2.0;
+    static const double kInfinity = 1.0e20;
     bool                hit_pct = false, hit_unk = false, hit_circle = false;
     double              min_delta = 0.0, max_delta = 0.0;
     set<TSignedSeqPos>  offsets;
@@ -240,10 +240,11 @@ void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
         swap(min_delta, max_delta);
     }
 
-    TSignedSeqPos min_delta_sp(rint(min_delta)), max_delta_sp(rint(max_delta));
+    TSignedSeqPos min_delta_sp(floor(min_delta + 0.5));
+    TSignedSeqPos max_delta_sp(floor(max_delta + 0.5));
 
-    if ( !finite(min_delta) ) {
-        if ( !finite(max_delta) ) {
+    if (min_delta < -kInfinity / 2) {
+        if (max_delta > kInfinity / 2) {
             if (mode == eReduce  &&  !hit_unk ) {
                 // assume cancellation
                 SetP_m(0);
@@ -257,7 +258,7 @@ void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
             n1 += max_delta_sp;
             SetLim(eLim_lt);
         }
-    } else if ( !finite(max_delta) ) {
+    } else if (max_delta > kInfinity / 2) {
         if ( !offsets.empty() ) {
             n1 += *offsets.begin();
         }
@@ -287,7 +288,7 @@ void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
         }
     } else if (max_delta - min_delta < 0.5) { // single point identified
         double delta  = 0.5 * (min_delta + max_delta);
-        double rdelta = rint(delta);
+        double rdelta = floor(delta + 0.5);
         n1 += (TSignedSeqPos)rdelta;
         if (delta - rdelta > 0.25) {
             SetLim(eLim_tr);
@@ -299,8 +300,8 @@ void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
             SetP_m(0);
         }
     } else if (hit_pct) {
-        n1 += (TSignedSeqPos)rint(0.5 * (min_delta + max_delta));
-        SetPct((TSeqPos)rint(500.0 * (max_delta - min_delta) / n1);
+        n1 += (TSignedSeqPos)floor(0.5 * (min_delta + max_delta + 1));
+        SetPct((TSeqPos)floor(500.0 * (max_delta - min_delta) / n1 + 0.5);
     } else if (min_delta + max_delta < 0.5) { // symmetric
         SetP_m(max_delta_sp);
     } else {
@@ -357,6 +358,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.6  2003/10/15 16:20:09  ucko
+ * portability fixes to use of double in CInt_fuzz::Add
+ *
  * Revision 6.5  2003/10/15 15:43:07  ucko
  * Add more operations: AssignTranslated, Add, Subtract, and Negate/Negative.
  *
