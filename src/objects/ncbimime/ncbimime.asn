@@ -1,4 +1,4 @@
---$Revision: 6.4 $
+--$Revision: 6.5 $
 --****************************************************************
 --
 --  NCBI MIME type (chemical/ncbi-asn1-ascii and chemical/ncbi-asn1-binary)
@@ -13,14 +13,15 @@ EXPORTS Ncbi-mime-asn1;
 IMPORTS Biostruc, Biostruc-annot-set FROM MMDB
 	Seq-entry FROM NCBI-Seqset
 	Seq-annot FROM NCBI-Sequence
-	Medline-entry FROM NCBI-Medline;
-	
+    Medline-entry FROM NCBI-Medline
+    Cn3d-style-dictionary FROM NCBI-Cn3d;
+
 Ncbi-mime-asn1 ::= CHOICE {
 	entrez	Entrez-general,			-- just a structure
 	alignstruc	Biostruc-align,			-- structures & sequences & alignments
 	alignseq	Biostruc-align-seq,	-- sequence alignment
     strucseq    Biostruc-seq,	-- structure & sequences
-    strucseqs   Biostruc-seqs	    -- structure & sequences & alignments 
+    strucseqs   Biostruc-seqs	    -- structure & sequences & alignments
 	-- others may be added here in the future
 }
 
@@ -29,20 +30,28 @@ Biostruc-align ::= SEQUENCE {
 	slaves	SET OF Biostruc,
 	alignments	Biostruc-annot-set,	-- structure alignments
 	sequences SET OF Seq-entry,	-- sequences
-	seqalign SET OF Seq-annot }
+    seqalign SET OF Seq-annot,
+    style-dictionary Cn3d-style-dictionary OPTIONAL
+}
 
 Biostruc-align-seq ::= SEQUENCE {	-- display seq structure align only
 	sequences SET OF Seq-entry,	-- sequences
-	seqalign SET OF Seq-annot }	
+    seqalign SET OF Seq-annot,
+    style-dictionary Cn3d-style-dictionary OPTIONAL
+}
 
-Biostruc-seq ::= SEQUENCE {	-- display  structure seq added by yanli 
+Biostruc-seq ::= SEQUENCE {	-- display  structure seq added by yanli
     structure Biostruc,
-	sequences SET OF Seq-entry }
+    sequences SET OF Seq-entry,
+    style-dictionary Cn3d-style-dictionary OPTIONAL
+}
 
-Biostruc-seqs ::= SEQUENCE { -- display blast alignment along with neighbor's structure added by yanli 
+Biostruc-seqs ::= SEQUENCE { -- display blast alignment along with neighbor's structure added by yanli
     structure Biostruc,
 	sequences SET OF Seq-entry,	-- sequences
-	seqalign SET OF Seq-annot }
+    seqalign SET OF Seq-annot,
+    style-dictionary Cn3d-style-dictionary OPTIONAL
+}
 
 Entrez-style ::= ENUMERATED {
 	docsum (1),
