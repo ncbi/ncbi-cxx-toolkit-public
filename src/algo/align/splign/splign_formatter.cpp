@@ -36,8 +36,6 @@
 #include <algo/align/splign/splign_formatter.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objects/seqalign/Dense_seg.hpp>
-
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -214,7 +212,8 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
 
       const size_t* box = &(*(boxes.begin() + i*4));
       const size_t query_start = box[0];
-      ENa_strand query_strand = eNa_strand_plus;
+      ENa_strand query_strand = box[0] <= box[1]? eNa_strand_plus:
+          eNa_strand_minus;
       const size_t subj_start = box[2];
       ENa_strand subj_strand = box[2] <= box[3]? eNa_strand_plus:
           eNa_strand_minus;
@@ -241,8 +240,13 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2004/12/09 22:37:16  kapustin
+ * Do not assume query plus strand when converting to seq-align
+ *
  * Revision 1.11  2004/11/29 14:37:16  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be 
+ * specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two 
+ * additional parameters to specify starting coordinates.
  *
  * Revision 1.10  2004/11/04 17:55:46  kapustin
  * Use CDense_seg::FromTrancsript() to format dense-segs
