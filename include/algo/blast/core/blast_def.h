@@ -75,6 +75,11 @@ void __sfree(void** x); /* implemented in lib/util.c */
 #define CODON_LENGTH 3
 #endif
 
+/** Gap character in ncbistdaa */
+#ifndef GAP_CHAR
+#define GAP_CHAR 0
+#endif
+
 /** Structure to hold a sequence. */
 typedef struct BLAST_SequenceBlk {
    Uint1* sequence; /**< Sequence used for search (could be translation). */
