@@ -199,7 +199,7 @@ typedef struct MBLookupTable {
    Int4 num_unique_pos_added; /**< Number of positions added to the l.t. */
    PV_ARRAY_TYPE *pv_array;/**< Presence vector, used for quick presence 
                               check */
-   Uint1 pv_array_bts; /**< The exponent of 2 by which pv_array is smaller than
+   Int4 pv_array_bts; /**< The exponent of 2 by which pv_array is smaller than
                           the backbone */
    Int4 longest_chain; /**< Largest number of query positions for a given 
                           word */
