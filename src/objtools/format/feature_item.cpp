@@ -345,13 +345,10 @@ string CFeatureItem::GetKey(void) const
         switch ( subtype ) {
         case CSeqFeatData::eSubtype_region:
             return "Region";
-            break;
         case CSeqFeatData::eSubtype_bond:
             return "Bond";
-            break;
         case CSeqFeatData::eSubtype_site:
             return "Site";
-            break;
         default:
             break;
         }
@@ -1092,38 +1089,26 @@ void CFeatureItem::x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier s
         return;
     }
 
-    CSeq_id::E_Choice choice = CSeq_id::e_not_set;
+    const CBioseq::TId& ids = prod.GetBioseq().GetId();
+    if ( ids.empty() ) {
+        return;
+    }
 
-    ITERATE (CBioseq::TId, it, prod.GetBioseqCore()->GetId()) {
+    // the product id (transcript or protein) is set to the best id
+    const CSeq_id* best = FindBestChoice(ids, CSeq_id::Score);
+    if ( best == 0 ) {
+        return;
+    }
+    x_AddQual(slot, new CFlatSeqIdQVal(*best));
+
+    // all other ids are printed as db_xref
+    ITERATE (CBioseq::TId, it, ids) {
         const CSeq_id& id = **it;
-        switch ( id.Which() ) {
-        case CSeq_id::e_Genbank:
-        case CSeq_id::e_Embl:
-        case CSeq_id::e_Ddbj:
-        case CSeq_id::e_Other:
-        case CSeq_id::e_Tpg:
-        case CSeq_id::e_Tpe:
-        case CSeq_id::e_Tpd:
-            choice = id.Which();
-            x_AddQual(slot, new CFlatSeqIdQVal(id));
-            break;
-
-        case CSeq_id::e_Gi:
-            if ( choice == CSeq_id::e_not_set ) {
-                x_AddQual(slot, new CFlatSeqIdQVal(id));
-            }
-            x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(id, true));
-            break;
-        case CSeq_id::e_General:
-            if ( id.GetGeneral().GetType() != CDbtag::eDbtagType_PID ) {
-                if ( prod.GetBioseqCore()->GetId().size() > 1 ) {
-                    x_AddQual(slot, new CFlatSeqIdQVal(id));
-                }
-            }
-            break;
-        default:
-            break;
+        if ( &id == best  &&  !id.IsGi() ) {
+            // we've already done 'best'. 
+            continue;
         }
+        x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(id, id.IsGi()));
     }
 }
 
@@ -2090,6 +2075,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/03/10 16:22:18  shomrat
+* Fixed product-id qualifiers
+*
 * Revision 1.9  2004/03/08 21:02:18  shomrat
 * + Exception quals gathering; fixed product id gathering
 *
