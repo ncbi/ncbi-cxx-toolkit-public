@@ -112,7 +112,7 @@ private:
                                     const CPrjContext& project);
 
     void WriteUtilityProjectConfiguration(const TUtilityProject& project, 
-                                          CNcbiOfstream& ofs);
+                                          CNcbiOfstream&         ofs);
 
     // Prohibited to:
     CMsvcSolutionGenerator(void);
@@ -127,6 +127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/03/18 17:41:03  gorelenk
+ * Aligned classes member-functions parameters inside declarations.
+ *
  * Revision 1.10  2004/02/25 19:45:38  gorelenk
  * +BuildAll utility project.
  *

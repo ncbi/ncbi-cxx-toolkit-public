@@ -101,7 +101,7 @@ struct SConfigInfo
 {
     SConfigInfo(void);
     SConfigInfo(const string& name, 
-                bool debug, 
+                bool          debug, 
                 const string& runtime_library);
 
     string m_Name;
@@ -261,6 +261,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/03/18 17:41:03  gorelenk
+ * Aligned classes member-functions parameters inside declarations.
+ *
  * Revision 1.15  2004/03/10 16:42:12  gorelenk
  * Changed declaration of class CMsvc7RegSettings.
  *

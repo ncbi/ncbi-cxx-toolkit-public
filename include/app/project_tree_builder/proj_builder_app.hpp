@@ -98,10 +98,10 @@ private:
 
 public:
 
-    void    GetMetaDataFiles    (list<string>*      files)   const;
+    void GetMetaDataFiles(list<string>* files) const;
 
 
-    const CMsvc7RegSettings& GetRegSettings(void);
+    const CMsvc7RegSettings& GetRegSettings (void);
     
     const CMsvcSite&         GetSite(void);
 
@@ -177,6 +177,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/03/18 17:41:03  gorelenk
+ * Aligned classes member-functions parameters inside declarations.
+ *
  * Revision 1.11  2004/03/08 23:32:11  gorelenk
  * Added member m_DllsInfo and declaration of member-function GetDllsInfo
  * to class CProjBulderApp.

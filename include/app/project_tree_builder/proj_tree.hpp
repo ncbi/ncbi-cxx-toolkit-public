@@ -82,10 +82,11 @@ public:
 
 private:
     //helper for CProjectTreeBuilder
-    static void CreateFrom(	const string& root_src,
-                            const TFiles& makein, 
-                            const TFiles& makelib, 
-                            const TFiles& makeapp , CProjectItemsTree* tree);
+    static void CreateFrom(	const string&      root_src,
+                            const TFiles&      makein, 
+                            const TFiles&      makelib, 
+                            const TFiles&      makeapp , 
+                            CProjectItemsTree* tree);
 
 
     void Clear(void);
@@ -211,6 +212,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/18 17:41:03  gorelenk
+ * Aligned classes member-functions parameters inside declarations.
+ *
  * Revision 1.1  2004/03/02 16:35:16  gorelenk
  * Initial revision.
  *

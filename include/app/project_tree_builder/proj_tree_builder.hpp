@@ -103,9 +103,9 @@ struct SMakeProjectT
     static void Create3PartyLibs(const list<string>& libs_flags, 
                                  list<string>*       libs_list);
 
-    static void DoResolveDefs(CSymResolver& resolver, 
+    static void DoResolveDefs(CSymResolver&              resolver, 
                               CProjectItemsTree::TFiles& files,
-                              const set<string>& keys);
+                              const set<string>&         keys);
 
     static bool IsMakeInFile(const string& name);
 
@@ -131,12 +131,12 @@ struct SMakeProjectT
 struct SAppProjectT : public SMakeProjectT
 {
     static void CreateNcbiCToolkitLibs(const CSimpleMakeFileContents& makefile,
-                                       list<string>* libs_list);
+                                       list<string>*                  libs_list);
 
-    static CProjKey DoCreate(const string& source_base_dir,
-                             const string& proj_name,
-                             const string& applib_mfilepath,
-                             const TFiles& makeapp, 
+    static CProjKey DoCreate(const string&      source_base_dir,
+                             const string&      proj_name,
+                             const string&      applib_mfilepath,
+                             const TFiles&      makeapp, 
                              CProjectItemsTree* tree);
 };
 
@@ -151,10 +151,10 @@ struct SAppProjectT : public SMakeProjectT
 
 struct SLibProjectT : public SMakeProjectT
 {
-    static CProjKey DoCreate(const string& source_base_dir,
-                             const string& proj_name,
-                             const string& applib_mfilepath,
-                             const TFiles& makeapp, 
+    static CProjKey DoCreate(const string&      source_base_dir,
+                             const string&      proj_name,
+                             const string&      applib_mfilepath,
+                             const TFiles&      makeapp, 
                              CProjectItemsTree* tree);
 };
 
@@ -172,11 +172,11 @@ struct SAsnProjectT : public SMakeProjectT
 {
     typedef CProjectItemsTree::TProjects TProjects;
 
-    static CProjKey DoCreate(const string& source_base_dir,
-                             const string& proj_name,
-                             const string& applib_mfilepath,
-                             const TFiles& makeapp, 
-                             const TFiles& makelib, 
+    static CProjKey DoCreate(const string&      source_base_dir,
+                             const string&      proj_name,
+                             const string&      applib_mfilepath,
+                             const TFiles&      makeapp, 
+                             const TFiles&      makelib, 
                              CProjectItemsTree* tree);
     
     typedef enum {
@@ -186,8 +186,8 @@ struct SAsnProjectT : public SMakeProjectT
         } TAsnType;
 
     static TAsnType GetAsnProjectType(const string& applib_mfilepath,
-                                       const TFiles& makeapp,
-                                       const TFiles& makelib);
+                                      const TFiles& makeapp,
+                                      const TFiles& makelib);
 };
 
 
@@ -201,11 +201,11 @@ struct SAsnProjectT : public SMakeProjectT
 
 struct SAsnProjectSingleT : public SAsnProjectT
 {
-    static CProjKey DoCreate(const string& source_base_dir,
-                             const string& proj_name,
-                             const string& applib_mfilepath,
-                             const TFiles& makeapp, 
-                             const TFiles& makelib, 
+    static CProjKey DoCreate(const string&      source_base_dir,
+                             const string&      proj_name,
+                             const string&      applib_mfilepath,
+                             const TFiles&      makeapp, 
+                             const TFiles&      makelib, 
                              CProjectItemsTree* tree);
 };
 
@@ -220,11 +220,11 @@ struct SAsnProjectSingleT : public SAsnProjectT
 
 struct SAsnProjectMultipleT : public SAsnProjectT
 {
-    static CProjKey DoCreate(const string& source_base_dir,
-                             const string& proj_name,
-                             const string& applib_mfilepath,
-                             const TFiles& makeapp, 
-                             const TFiles& makelib, 
+    static CProjKey DoCreate(const string&      source_base_dir,
+                             const string&      proj_name,
+                             const string&      applib_mfilepath,
+                             const TFiles&      makeapp, 
+                             const TFiles&      makelib, 
                              CProjectItemsTree* tree);
 };
 
@@ -290,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/18 17:41:03  gorelenk
+ * Aligned classes member-functions parameters inside declarations.
+ *
  * Revision 1.2  2004/03/16 23:54:49  gorelenk
  * Changed parameters list of member-function CreateNcbiCToolkitLibs
  * of struct SAppProjectT.

@@ -54,8 +54,8 @@ private:
 
     void InitializeFrom(const CMsvcSite& site);
 
-    bool ProcessDefine (const string& define, 
-                        const CMsvcSite& site, 
+    bool ProcessDefine (const string&            define, 
+                        const CMsvcSite&         site, 
                         const list<SConfigInfo>& configs) const;
 
     typedef map<string, char> TConfigSite;
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/18 17:41:03  gorelenk
+ * Aligned classes member-functions parameters inside declarations.
+ *
  * Revision 1.2  2004/02/06 23:15:39  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.

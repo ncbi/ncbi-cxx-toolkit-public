@@ -95,9 +95,9 @@ public:
     CProjItem& operator= (const CProjItem& item);
 
     CProjItem(TProjType type,
-              const string& name,
-              const string& id,
-              const string& sources_base,
+              const string&         name,
+              const string&         id,
+              const string&         sources_base,
               const list<string>&   sources, 
               const list<CProjKey>& depends,
               const list<string>&   requires,
@@ -157,6 +157,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/03/18 17:41:03  gorelenk
+ * Aligned classes member-functions parameters inside declarations.
+ *
  * Revision 1.15  2004/03/10 16:45:39  gorelenk
  * Added eDll to enum TProjType.
  *
