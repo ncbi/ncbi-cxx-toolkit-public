@@ -291,6 +291,9 @@ bool MoleculeIdentifier::MatchesSeqId(const ncbi::objects::CSeq_id& sid) const
     if (sid.IsDdbj() && sid.GetDdbj().IsSetAccession())
         return (sid.GetDdbj().GetAccession() == accession);
 
+    if (sid.IsPir() && sid.GetPir().IsSetAccession())
+        return (sid.GetPir().GetAccession() == accession);
+
     ERRORMSG("MoleculeIdentifier::MatchesSeqId() - can't match this type of Seq-id");
     return false;
 }
@@ -335,6 +338,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/09/15 18:34:38  thiessen
+* handle pir accessions
+*
 * Revision 1.13  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *
