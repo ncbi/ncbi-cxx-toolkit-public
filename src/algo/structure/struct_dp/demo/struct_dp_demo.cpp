@@ -185,14 +185,14 @@ int DPApp::Run(void)
         INFO_MESSAGE("Found alignment, total score: " << alignment->score
             << " for " << alignment->nBlocks << " blocks");
         unsigned int block;
-        for (block=alignment->firstBlock; block<alignment->firstBlock+alignment->nBlocks; block++) {
+        for (block=0; block<alignment->nBlocks; block++) {
             unsigned int
-                subjectStart = blocks->blockPositions[block],
-                queryStart = alignment->blockPositions[block - alignment->firstBlock],
-                blockSize = blocks->blockSizes[block];
+                subjectStart = blocks->blockPositions[block + alignment->firstBlock],
+                queryStart = alignment->blockPositions[block],
+                blockSize = blocks->blockSizes[block + alignment->firstBlock];
             INFO_MESSAGE(
-                "Block " << (block + 1) << ", score " 
-                << ScoreByBlosum62(block, alignment->blockPositions[block]) << ":\n"
+                "Block " << (block + alignment->firstBlock + 1) << ", score " 
+                << ScoreByBlosum62(block + alignment->firstBlock, alignment->blockPositions[block]) << ":\n"
                 << "S: " << subject.substr(subjectStart, blockSize)
                 << ' ' << (subjectStart + 1) << '-' << (subjectStart + blockSize) << '\n'
                 << "Q: " << query.substr(queryStart, blockSize)
@@ -233,6 +233,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/06/18 22:11:00  thiessen
+* simplify alignment printout code, again... ;)
+*
 * Revision 1.4  2003/06/18 22:06:03  thiessen
 * simplify alignment printout code
 *
