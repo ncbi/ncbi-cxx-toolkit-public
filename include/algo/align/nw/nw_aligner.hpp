@@ -79,11 +79,8 @@ public:
 
     virtual ~CNWAligner() {}
 
-    // Run generic Needleman-Wunsch algorithm, return the alignment's score
+    // Run the Needleman-Wunsch algorithm, return the alignment's score
     virtual TScore Run();
-
-    // Time estimation routine
-    virtual unsigned EstimateRunningTime(unsigned test_duration_sec);
 
     // Formatters
     enum EFormat {
@@ -131,6 +128,7 @@ public:
     static TScore GetDefaultWg  () { return -5; }
     static TScore GetDefaultWs  () { return -2; }
 
+    // available transcript symbols
     enum ETranscriptSymbol {
         eNone = 0,
         eInsert,
@@ -139,6 +137,10 @@ public:
         eReplace,
         eIntron
     };
+
+    // guiding hits
+    void  SetGuides(const vector<size_t>& v1, const vector<size_t>& v2)
+        throw (CNWAlignerException);
 
 protected:
     // Bonuses and penalties
@@ -170,11 +172,17 @@ protected:
     size_t x_CheckSequence(const char* seq, size_t len) const;
     virtual bool x_CheckMemoryLimit();
 
-    // Transcript and score
+    // Transcript, score and guiding hits
     vector<ETranscriptSymbol> m_Transcript;
     TScore                    m_score;
+    vector<size_t>            m_guides;
 
-    void   x_DoBackTrace(const unsigned char* backtrace_matrix);
+    virtual TScore x_Run (const char* seg1, size_t len1,
+                          const char* seg2, size_t len2,
+                          vector<ETranscriptSymbol>* transcript);
+    virtual void   x_DoBackTrace(const unsigned char* backtrace_matrix,
+                          size_t N1, size_t N2,
+                          vector<ETranscriptSymbol>* transcript);
     size_t x_ApplyTranscript(vector<char>* seq1_transformed,
                              vector<char>* seq2_transformed) const;
     enum { kInfMinus = kMin_Int / 2 };
@@ -193,6 +201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/04/10 19:14:04  kapustin
+ * Introduce guiding hits approach
+ *
  * Revision 1.17  2003/04/10 19:04:30  siyan
  * Added doxygen support
  *

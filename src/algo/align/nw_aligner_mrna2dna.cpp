@@ -55,14 +55,19 @@ CNWAlignerMrna2Dna::CNWAlignerMrna2Dna(const char* seq1, size_t len1,
     for(unsigned char st = 0; st < splice_type_count; ++st) {
         m_Wi[st] = GetDefaultWi(st);
     }
+    
+    // default for spliced alignment
+    SetEndSpaceFree(true, true, false, false);
 }
+
 
 CNWAligner::TScore CNWAlignerMrna2Dna::GetDefaultWi(unsigned char splice_type)
     throw(CNWAlignerException)
 {
     switch(splice_type) {
-    case 0: case 1: case 2: default:
-        return -10;
+    case 0: return -10;
+    case 1: return -50;
+    case 2: return -50;
     }
 
     NCBI_THROW(CNWAlignerException,
@@ -83,19 +88,20 @@ CNWAligner::TScore CNWAlignerMrna2Dna::GetDefaultWi(unsigned char splice_type)
 // 00   00     no dnr/acc
 // 01   01     GT/AG
 // 10   10     GC/AG
-// 11   11     AT/AC 
+// 11   11     AT/AC
 
 const unsigned char kMaskFc    = 0x01;
 const unsigned char kMaskEc    = 0x02;
 const unsigned char kMaskE     = 0x04;
 const unsigned char kMaskD     = 0x08;
 
-CNWAligner::TScore CNWAlignerMrna2Dna::Run()
+CNWAligner::TScore CNWAlignerMrna2Dna::x_Run (
+                         const char* seg1, size_t len1,
+                         const char* seg2, size_t len2,
+                         vector<ETranscriptSymbol>* transcript )
 {
-    x_LoadScoringMatrix();
-
-    const size_t N1 = m_SeqLen1 + 1;
-    const size_t N2 = m_SeqLen2 + 1;
+    const size_t N1 = len1 + 1;
+    const size_t N2 = len2 + 1;
 
     TScore* rowV    = new TScore [N2];
     TScore* rowF    = new TScore [N2];
@@ -105,33 +111,23 @@ CNWAligner::TScore CNWAlignerMrna2Dna::Run()
 
     TScore* pV = rowV - 1;
 
-    const char* seq1   = m_Seq1 - 1;
-    const char* seq2   = m_Seq2 - 1;
+    const char* seq1   = seg1 - 1;
+    const char* seq2   = seg2 - 1;
 
-    bool bFreeGapLeft1  = m_esf_L1;
-    bool bFreeGapRight1 = m_esf_R1;
-    bool bFreeGapLeft2  = m_esf_L2;
-    bool bFreeGapRight2 = m_esf_R2;
+    bool bFreeGapLeft1  = m_esf_L1 && seg1 == m_Seq1;
+    bool bFreeGapRight1 = m_esf_R1 && m_Seq1 + m_SeqLen1 - len1 == seg1;
+    bool bFreeGapLeft2  = m_esf_L2 && seg2 == m_Seq2;
+    bool bFreeGapRight2 = m_esf_R2 && m_Seq2 + m_SeqLen2 - len2 == seg2;
 
     TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
     TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
-    TScore wg1 = m_Wg, ws1 = m_Ws;
-
-    // first row
-    rowV[0] = wgleft1;
-    size_t k;
-    for (k = 1; k < N2; k++) {
-        rowV[k] = pV[k] + wsleft1;
-        rowF[k] = kInfMinus;
-        backtrace_matrix[k] = kMaskE | kMaskEc;
-    }
-    rowV[0] = 0;
+    TScore wg1 = wgleft1, ws1 = wsleft1;
 
     // recurrences
     TScore wgleft2   = bFreeGapLeft2? 0: m_Wg;
     TScore wsleft2   = bFreeGapLeft2? 0: m_Ws;
     TScore V  = 0;
-    TScore V0 = wgleft2;
+    TScore V0 = 0;
     TScore E, G, n0;
     unsigned char tracer;
 
@@ -145,15 +141,23 @@ CNWAligner::TScore CNWAlignerMrna2Dna::Run()
     TScore  vBestDonor [splice_type_count];
     size_t  jBestDonor [splice_type_count];
 
-    size_t i, j, k0;
+    // fake row
+    rowV[0] = kInfMinus;
+    size_t k;
+    for (k = 0; k < N2; k++) {
+        rowV[k] = rowF[k] = kInfMinus;
+    }
+    k = 0;
+
+    size_t i, j = 0, k0;
     char ci;
-    for(i = 1;  i < N1;  ++i) {
-        
-        V = V0 += wsleft2;
+    for(i = 0;  i < N1;  ++i, j = 0) {
+       
+        V = i > 0? (V0 += wsleft2) : 0;
         E = kInfMinus;
         k0 = k;
         backtrace_matrix[k++] = kMaskFc;
-        ci = seq1[i];
+        ci = i > 0? seq1[i]: 'N';
 
         for(unsigned char st = 0; st < splice_type_count; ++st) {
             jTail[st] = jHead[st] = 0;
@@ -165,6 +169,15 @@ CNWAligner::TScore CNWAlignerMrna2Dna::Run()
         }
 
         TScore wg2 = m_Wg, ws2 = m_Ws;
+            
+        // detect donor candidate
+        for( unsigned char st = 0; st < splice_type_count && N2 > 2; ++st ) {
+            if( seq2[1] == donor[st][0] && seq2[2] == donor[st][1] ) {
+                jAllDonors[st][jTail[st]] = j;
+                vAllDonors[st][jTail[st]] = V;
+                ++(jTail[st]);
+            }
+        }
 
         for (j = 1; j < N2; ++j, ++k) {
             
@@ -234,7 +247,8 @@ CNWAligner::TScore CNWAlignerMrna2Dna::Run()
             for(unsigned char st = 0; st < splice_type_count; ++st) {
 
                 if(seq2[j-1] == acceptor[st][0] && seq2[j] == acceptor[st][1]
-                   && i < N1 - 1 && vBestDonor[st] > kInfMinus) {
+                   && vBestDonor[st] > kInfMinus) {
+
                     TScore vAcc = vBestDonor[st] + m_Wi[st];
                     if(vAcc > V) {
                         V = vAcc;
@@ -251,9 +265,10 @@ CNWAligner::TScore CNWAlignerMrna2Dna::Run()
             backtrace_matrix[k] = tracer | tracer_splice;
             
             // detect donor candidate
-            for(unsigned char st = 0; st < splice_type_count; ++st) {
-                if( j < N2 - 2 && i < N1 - 1 &&
-                    seq2[j+1] == donor[st][0] && seq2[j+2] == donor[st][1] ) {
+            for( unsigned char st = 0;
+                 j < N2 - 2 && st < splice_type_count; ++st ) {
+
+                if( seq2[j+1] == donor[st][0] && seq2[j+2] == donor[st][1] ) {
                     jAllDonors[st][jTail[st]] = j;
                     vAllDonors[st][jTail[st]] = V;
                     ++(jTail[st]);
@@ -262,6 +277,12 @@ CNWAligner::TScore CNWAlignerMrna2Dna::Run()
         }
 
         pV[j] = V;
+
+        if(i == 0) {
+            V0 = wgleft2;
+            wg1 = m_Wg;
+            ws1 = m_Ws;
+        }
 
     }
 
@@ -272,7 +293,7 @@ CNWAligner::TScore CNWAlignerMrna2Dna::Run()
     delete[] rowV;
     delete[] rowF;
 
-    x_DoBackTrace(backtrace_matrix);
+    x_DoBackTrace(backtrace_matrix, N1, N2, transcript);
 
     delete[] backtrace_matrix;
 
@@ -281,27 +302,24 @@ CNWAligner::TScore CNWAlignerMrna2Dna::Run()
 
 
 // perform backtrace step;
-// create transcript in member variable
-void CNWAlignerMrna2Dna::x_DoBackTrace(const unsigned char* backtrace)
+void CNWAlignerMrna2Dna::x_DoBackTrace(const unsigned char* backtrace_matrix,
+                                 size_t N1, size_t N2,
+                                 vector<ETranscriptSymbol>* transcript)
 {
-    const size_t N1 = m_SeqLen1 + 1;
-    const size_t N2 = m_SeqLen2 + 1;
-
-    // backtrace
-    m_Transcript.clear();
-    m_Transcript.reserve(N1 + N2);
+    transcript->clear();
+    transcript->reserve(N1 + N2);
 
     size_t k = N1*N2 - 1;
     while (k != 0) {
-        unsigned char Key = backtrace[k];
+        unsigned char Key = backtrace_matrix[k];
 
         while(Key & 0x30) {  // detect acceptor
             unsigned char acc_type = (Key & 0x30) >> 4, dnr_type = ~acc_type;
             for( ; acc_type != dnr_type; dnr_type = (Key & 0xC0) >> 6 ) {
                 Key = 0; // make sure we enter the loop
                 while(!(Key & 0xC0)) {
-                    m_Transcript.push_back(eIntron);
-                    Key = backtrace[--k];
+                    transcript->push_back(eIntron);
+                    Key = backtrace_matrix[--k];
                 }
             }
             if(Key & 0x30) {
@@ -310,24 +328,26 @@ void CNWAlignerMrna2Dna::x_DoBackTrace(const unsigned char* backtrace)
                            "Adjacent splices encountered during backtrace");
             }
         }
+
+        if(k == 0) continue;
         
         if (Key & kMaskD) {
-            m_Transcript.push_back(eMatch);  // or eReplace
+            transcript->push_back(eMatch);  // or eReplace
             k -= N2 + 1;
         }
         else if (Key & kMaskE) {
-            m_Transcript.push_back(eInsert); --k;
+            transcript->push_back(eInsert); --k;
             while(k > 0 && (Key & kMaskEc)) {
-                m_Transcript.push_back(eInsert);
-                Key = backtrace[k--];
+                transcript->push_back(eInsert);
+                Key = backtrace_matrix[k--];
             }
         }
         else {
-            m_Transcript.push_back(eDelete);
+            transcript->push_back(eDelete);
             k -= N2;
             while(k > 0 && (Key & kMaskFc)) {
-                m_Transcript.push_back(eDelete);
-                Key = backtrace[k];
+                transcript->push_back(eDelete);
+                Key = backtrace_matrix[k];
                 k -= N2;
             }
         }
@@ -339,6 +359,7 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
     throw (CNWAlignerException)
 {
     const size_t dim = m_Transcript.size();
+    if(dim == 0) return 0;
 
     TScore score = 0;
 
@@ -351,6 +372,7 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
     switch(m_Transcript[dim-1]) {
     case eMatch:    state1 = state2 = 0; break;
     case eInsert:   state1 = 1; state2 = 0; score += m_Wg; break;
+    case eIntron:   state1 = 0; state2 = 0; break; // intron flag set later
     case eDelete:   state1 = 0; state2 = 1; score += m_Wg; break;
     default: {
         NCBI_THROW(
@@ -365,8 +387,8 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
     
     for(int i = dim-1; i >= 0; --i) {
 
-        char c1 = *p1;
-        char c2 = *p2;
+        char c1 = m_Seq1? *p1: 0;
+        char c2 = m_Seq2? *p2: 0;
         switch(m_Transcript[i]) {
 
         case eMatch: {
@@ -465,7 +487,7 @@ void CNWAlignerMrna2Dna::FormatAsText(string* output,
 
 {
     CNcbiOstrstream ss;
-    ss.precision(2);
+    ss.precision(3);
     switch (type) {
             
     case eFormatExonTable: {
@@ -497,7 +519,8 @@ void CNWAlignerMrna2Dna::FormatAsText(string* output,
                 size_t beg1  = p1_beg - m_Seq1, end1 = p1 - m_Seq1 - 1;
                 size_t beg2  = p2_beg - m_Seq2, end2 = p2 - m_Seq2 - 1;
                 ss << beg1 << '\t'<< end1<< '\t'<< beg2 << '\t'<< end2<< '\t';
-                ss << exon_size << '\t' << identity << '\t';
+                ss << exon_size << '\t';
+                ss << identity << '\t';
                 char c1 = (p2_beg >= m_Seq2 + 2)? *(p2_beg - 2): ' ';
                 char c2 = (p2_beg >= m_Seq2 + 1)? *(p2_beg - 1): ' ';
                 char c3 = (p2 < m_Seq2 + m_SeqLen2)? *(p2): ' ';
@@ -530,6 +553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/04/10 19:15:16  kapustin
+ * Introduce guiding hits approach
+ *
  * Revision 1.12  2003/04/02 20:53:21  kapustin
  * Add exon table output format
  *

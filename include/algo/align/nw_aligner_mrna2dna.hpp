@@ -59,20 +59,20 @@ public:
                        const char* seq2, size_t len2)
         throw(CNWAlignerException);
 
-    // Run the algorithm, return the alignment's score
-    virtual TScore Run();
-
     // Setters
-    void SetWi  (unsigned char splice_type, TScore value)
-    {
+    void SetWi  (unsigned char splice_type, TScore value) {
         m_Wi[splice_type]  = value;
     }
-    void SetIntronMinSize  (size_t s)  { m_IntronMinSize  = s; }
+    void SetIntronMinSize  (size_t s)  {
+        m_IntronMinSize  = s;
+    }
 
     // Getters
     static TScore GetDefaultWi  (unsigned char splice_type)
         throw(CNWAlignerException);
-    static size_t GetDefaultIntronMinSize () { return 50; }
+    static size_t GetDefaultIntronMinSize () {
+        return 50;
+    }
 
     // Formatters
     virtual void FormatAsText(string* output, EFormat type,
@@ -84,7 +84,13 @@ protected:
     TScore   m_Wi [splice_type_count];  // intron weights
     size_t   m_IntronMinSize; // intron min size
 
-    virtual void   x_DoBackTrace(const unsigned char* backtrace_matrix);
+    virtual TScore x_Run (const char* seg1, size_t len1,
+                          const char* seg2, size_t len2,
+                          vector<ETranscriptSymbol>* transcript);
+
+    virtual void   x_DoBackTrace(const unsigned char* backtrace_matrix,
+                          size_t N1, size_t N2,
+                          vector<ETranscriptSymbol>* transcript);
 
     virtual TScore x_ScoreByTranscript() const
         throw(CNWAlignerException);
@@ -101,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/04/10 19:14:04  kapustin
+ * Introduce guiding hits approach
+ *
  * Revision 1.7  2003/04/10 19:04:31  siyan
  * Added doxygen support
  *
