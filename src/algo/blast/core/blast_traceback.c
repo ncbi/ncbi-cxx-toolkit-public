@@ -625,7 +625,7 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
 {
 
             Boolean keep = TRUE;
-            Int4 align_length;
+            Int4 align_length = 0;
             double scalingFactor;
 
             if (psi_options == NULL)
