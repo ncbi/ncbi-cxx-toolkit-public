@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/05/28 20:43:10  vakatov
+* ::~CHTMLBasicPage(): MSVC++ 6.0 SP3 cant compile:  DeleteElements(m_TagMap);
+*
 * Revision 1.16  1999/05/28 16:32:16  vasilche
 * Fixed memory leak in page tag mappers.
 *
@@ -105,7 +108,13 @@ CHTMLBasicPage::CHTMLBasicPage(const CHTMLBasicPage& page)
 
 CHTMLBasicPage::~CHTMLBasicPage(void)
 {
-    DeleteElements(m_TagMap);
+    // BW_02:  the following does not compile on MSVC++ 6.0 SP3:
+    // DeleteElements(m_TagMap);
+
+    for (TTagMap::iterator i = m_TagMap.begin();  i != m_TagMap.end();  ++i) {
+        delete i->second;
+    }
+
 }
 
 CNCBINode* CHTMLBasicPage::CloneSelf(void) const
