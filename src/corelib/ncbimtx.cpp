@@ -230,7 +230,6 @@ void SSystemMutex::Unlock(void)
 
 void SSystemMutex::ThrowNotOwned(void)
 {
-    abort();
     NCBI_THROW(CMutexException, eOwner,
                "Mutex is not owned by current thread");
 }
@@ -1025,6 +1024,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/09/02 19:03:59  vasilche
+ * Removed debug abort().
+ *
  * Revision 1.11  2003/09/02 16:08:49  vasilche
  * Fixed race condition with optimization on some compilers - added 'volatile'.
  * Moved mutex Lock/Unlock methods out of inline section - they are quite complex.
