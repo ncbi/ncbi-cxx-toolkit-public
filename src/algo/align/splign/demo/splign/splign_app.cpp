@@ -301,37 +301,29 @@ void CSplignApp::x_LogStatus(size_t model_id, bool query_strand,
 istream* CSplignApp::x_GetPairwiseHitStream(
                          CSeqLoaderPairwise& seq_loader) const
 {
-    vector<char> query, subj;
-    seq_loader.Load(seq_loader.GetQueryStringId(), &query, 0, kMax_UInt);
-    seq_loader.Load(seq_loader.GetSubjStringId(), &subj, 0, kMax_UInt);
-    
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CRef<CSeq_loc> seqloc_query;
-    CRef<CScope> scope_query;
+    CRef<CScope> scope(new CScope(*objmgr));
+    scope->AddDefaults();
     {{
-    scope_query.Reset(new CScope(*objmgr));
-    scope_query->AddDefaults();
     CRef<CSeq_entry> se (seq_loader.GetQuerySeqEntry());
-    scope_query->AddTopLevelSeqEntry(*se);
+    scope->AddTopLevelSeqEntry(*se);
     seqloc_query.Reset(new CSeq_loc);
     seqloc_query->SetWhole().Assign(*(se->GetSeq().GetId().front()));
     }}
 
     CRef<CSeq_loc> seqloc_subj;
-    CRef<CScope> scope_subj;
     {{
-    scope_subj.Reset(new CScope(*objmgr));
-    scope_subj->AddDefaults();
     CRef<CSeq_entry> se (seq_loader.GetSubjSeqEntry());
-    scope_subj->AddTopLevelSeqEntry(*se);
+    scope->AddTopLevelSeqEntry(*se);
     seqloc_subj.Reset(new CSeq_loc);
     seqloc_subj->SetWhole().Assign(*(se->GetSeq().GetId().front()));
     }}
 
     blast::CBl2Seq Blast(blast::SSeqLoc(seqloc_query.GetNonNullPointer(),
-                                        scope_query.GetNonNullPointer()),
+                                        scope.GetNonNullPointer()),
                          blast::SSeqLoc(seqloc_subj.GetNonNullPointer(),
-                                        scope_subj.GetNonNullPointer()),
+                                        scope.GetNonNullPointer()),
                          blast::eMegablast);
 
     blast::TSeqAlignVector blast_output (Blast.Run());
@@ -660,6 +652,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/02/23 22:14:18  kapustin
+ * Remove outdated code. Shae scope object
+ *
  * Revision 1.34  2005/01/31 13:45:19  kapustin
  * Enforce local seq-id if type not recognized
  *
