@@ -80,15 +80,17 @@ public:
     /// - Most read-only operations consider all layers; the only exception
     ///   is Write, which defaults to fPersistent and fJustCore.
     enum EFlags {
-        fTransient   = 0x1,     ///< Transient -- not saved by default
-        fPersistent  = 0x100,   ///< Persistent -- saved when file is written
-        fOverride    = 0x2,     ///< Existing value can be overriden
-        fNoOverride  = 0x200,   ///< Cannot change existing value
-        fTruncate    = 0x4,     ///< Leading, trailing blanks can be truncated
-        fNoTruncate  = 0x400,   ///< Cannot truncate parameter value
-        fJustCore    = 0x8,     ///< Ignore auxiliary subregistries
-        fNotJustCore = 0x800,   ///< Include auxiliary subregistries
-        fAllLayers   = fTransient | fPersistent | fNotJustCore
+        fTransient      = 0x1,   ///< Transient -- not saved by default
+        fPersistent     = 0x100, ///< Persistent -- saved when file is written
+        fOverride       = 0x2,   ///< Existing value can be overriden
+        fNoOverride     = 0x200, ///< Cannot change existing value
+        fTruncate       = 0x4,   ///< Leading, trailing blanks can be truncated
+        fNoTruncate     = 0x400, ///< Cannot truncate parameter value
+        fJustCore       = 0x8,   ///< Ignore auxiliary subregistries
+        fNotJustCore    = 0x800, ///< Include auxiliary subregistries
+        fIgnoreErrors   = 0x10,  ///< Continue Read()ing after parse errors
+        fInternalSpaces = 0x20,  ///< Allow internal whitespace in names
+        fAllLayers      = fTransient | fPersistent | fNotJustCore
     };
     typedef int TFlags;  ///< Binary OR of "EFlags"
 
@@ -779,6 +781,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/03/21 19:46:24  ucko
+ * Add support for two new flags: fIgnoreErrors, fInternalSpaces.
+ *
  * Revision 1.37  2005/03/14 15:52:09  ucko
  * Support taking settings from the environment.
  *

@@ -51,23 +51,24 @@ typedef CRegistryWriteGuard TWriteGuard;
 
 /* Valid symbols for a section/entry name
  */
-inline bool s_IsNameSectionSymbol(char ch)
+inline bool s_IsNameSectionSymbol(char ch, IRegistry::TFlags flags)
 {
     return (isalnum(ch)
-            ||  ch == '_'  ||  ch == '-' ||  ch == '.'  ||  ch == '/');
+            ||  ch == '_'  ||  ch == '-' ||  ch == '.'  ||  ch == '/'
+            ||  ((flags & IRegistry::fInternalSpaces)  &&  ch == ' '));
 }
 
 
 /* Check if "str" consists of alphanumeric and '_' only
  */
-static bool s_IsNameSection(const string& str)
+static bool s_IsNameSection(const string& str, IRegistry::TFlags flags)
 {
     if (str.empty()) {
         return false;
     }
 
     ITERATE (string, it, str) {
-        if (!s_IsNameSectionSymbol(*it)) {
+        if (!s_IsNameSectionSymbol(*it, flags)) {
             return false;
         }
     }
@@ -180,7 +181,7 @@ void IRegistry::SetModifiedFlag(bool modified, TFlags flags)
 // Somewhat inefficient, but that can't really be helped....
 bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
 {
-    x_CheckFlags("IRegistry::Write", flags, fLayerFlags);
+    x_CheckFlags("IRegistry::Write", flags, fLayerFlags | fInternalSpaces);
     if ( !(flags & fTransient) ) {
         flags |= fPersistent;
     }
@@ -222,8 +223,9 @@ bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
 
     // Clear the modified bit (checking it first so as to perform the
     // const_cast<> only if absolutely necessary).
-    if (Modified(flags)) {
-        const_cast<IRegistry*>(this)->SetModifiedFlag(false, flags);
+    if (Modified(flags & fLayerFlags)) {
+        const_cast<IRegistry*>(this)->SetModifiedFlag
+            (false, flags & fLayerFlags);
     }
 
     return true;
@@ -232,18 +234,18 @@ bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
 const string& IRegistry::Get(const string& section, const string& name,
                              TFlags flags) const
 {
-    x_CheckFlags("IRegistry::Get", flags, fLayerFlags);
+    x_CheckFlags("IRegistry::Get", flags, fLayerFlags | fInternalSpaces);
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
     string clean_section = NStr::TruncateSpaces(section);
-    if ( !s_IsNameSection(clean_section) ) {
+    if ( !s_IsNameSection(clean_section, flags) ) {
         _TRACE("IRegistry::Get: bad section name \""
                << NStr::PrintableString(section) << '\"');
         return kEmptyStr;
     }
     string clean_name = NStr::TruncateSpaces(name);
-    if ( !s_IsNameSection(clean_name) ) {
+    if ( !s_IsNameSection(clean_name, flags) ) {
         _TRACE("IRegistry::Get: bad entry name \""
                << NStr::PrintableString(name) << '\"');
         return kEmptyStr;
@@ -255,18 +257,18 @@ const string& IRegistry::Get(const string& section, const string& name,
 bool IRegistry::HasEntry(const string& section, const string& name,
                          TFlags flags) const
 {
-    x_CheckFlags("IRegistry::HasEntry", flags, fLayerFlags);
+    x_CheckFlags("IRegistry::HasEntry", flags, fLayerFlags | fInternalSpaces);
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
     string clean_section = NStr::TruncateSpaces(section);
-    if ( !s_IsNameSection(clean_section) ) {
+    if ( !s_IsNameSection(clean_section, flags) ) {
         _TRACE("IRegistry::HasEntry: bad section name \""
                << NStr::PrintableString(section) << '\"');
         return false;
     }
     string clean_name = NStr::TruncateSpaces(name);
-    if ( !clean_name.empty()  &&  !s_IsNameSection(clean_name) ) {
+    if ( !clean_name.empty()  &&  !s_IsNameSection(clean_name, flags) ) {
         _TRACE("IRegistry::HasEntry: bad entry name \""
                << NStr::PrintableString(name) << '\"');
         return false;
@@ -371,15 +373,16 @@ double IRegistry::GetDouble(const string& section, const string& name,
 const string& IRegistry::GetComment(const string& section, const string& name,
                                     TFlags flags) const
 {
-    x_CheckFlags("IRegistry::GetComment", flags, fLayerFlags);
+    x_CheckFlags("IRegistry::GetComment", flags,
+                 fLayerFlags | fInternalSpaces);
     string clean_section = NStr::TruncateSpaces(section);
-    if ( !clean_section.empty()  &&  !s_IsNameSection(clean_section) ) {
+    if ( !clean_section.empty()  &&  !s_IsNameSection(clean_section, flags) ) {
         _TRACE("IRegistry::GetComment: bad section name \""
                << NStr::PrintableString(section) << '\"');
         return kEmptyStr;
     }
     string clean_name = NStr::TruncateSpaces(name);
-    if ( !clean_name.empty()  &&  !s_IsNameSection(clean_name) ) {
+    if ( !clean_name.empty()  &&  !s_IsNameSection(clean_name, flags) ) {
         _TRACE("IRegistry::GetComment: bad entry name \""
                << NStr::PrintableString(name) << '\"');
         return kEmptyStr;
@@ -390,7 +393,8 @@ const string& IRegistry::GetComment(const string& section, const string& name,
 
 void IRegistry::EnumerateSections(list<string>* sections, TFlags flags) const
 {
-    x_CheckFlags("IRegistry::EnumerateSections", flags, fLayerFlags);
+    x_CheckFlags("IRegistry::EnumerateSections", flags,
+                 fLayerFlags | fInternalSpaces);
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
@@ -403,14 +407,15 @@ void IRegistry::EnumerateSections(list<string>* sections, TFlags flags) const
 void IRegistry::EnumerateEntries(const string& section, list<string>* entries,
                                  TFlags flags) const
 {
-    x_CheckFlags("IRegistry::EnumerateEntries", flags, fLayerFlags);
+    x_CheckFlags("IRegistry::EnumerateEntries", flags,
+                 fLayerFlags | fInternalSpaces);
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
     _ASSERT(entries);
     entries->clear();
     string clean_section = NStr::TruncateSpaces(section);
-    if ( !clean_section.empty()  &&  !s_IsNameSection(clean_section) ) {
+    if ( !clean_section.empty()  &&  !s_IsNameSection(clean_section, flags) ) {
         _TRACE("IRegistry::EnumerateEntries: bad section name \""
                << NStr::PrintableString(section) << '\"');
         return;
@@ -451,7 +456,7 @@ void IRegistry::x_CheckFlags(const string& func, TFlags& flags, TFlags allowed)
 
 void IRWRegistry::Clear(TFlags flags)
 {
-    x_CheckFlags("IRWRegistry::Clear", flags, fLayerFlags);
+    x_CheckFlags("IRWRegistry::Clear", flags, fLayerFlags | fInternalSpaces);
     TWriteGuard LOCK(*this);
     if ( (flags & fPersistent)  &&  !x_Empty(fPersistent) ) {
         x_SetModifiedFlag(true, flags & ~fTransient);
@@ -464,7 +469,8 @@ void IRWRegistry::Clear(TFlags flags)
 
 void IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
 {
-    x_CheckFlags("IRWRegistry::Read", flags, fTransient | fNoOverride);
+    x_CheckFlags("IRWRegistry::Read", flags,
+                 fTransient | fNoOverride | fIgnoreErrors | fInternalSpaces);
     x_Read(is, flags);
 }
 
@@ -473,9 +479,10 @@ void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
     // Whether to consider this read to be (unconditionally) non-modifying
     EFlags layer         = (flags & fTransient) ? fTransient : fPersistent;
     bool   non_modifying = Empty(layer)  &&  !Modified(layer);
+    bool   ignore_errors = flags & fIgnoreErrors;
 
     // Adjust flags for Set()
-    flags = (flags & ~fTPFlags) | layer;
+    flags = (flags & ~fTPFlags & ~fIgnoreErrors) | layer;
 
     string    str;          // the line being parsed
     SIZE_TYPE line;         // # of the line being parsed
@@ -483,119 +490,129 @@ void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
     string    comment;      // current comment
 
     for (line = 1;  NcbiGetlineEOL(is, str);  ++line) {
-        SIZE_TYPE len = str.length();
-        SIZE_TYPE beg = 0;
+        try {
+            SIZE_TYPE len = str.length();
+            SIZE_TYPE beg = 0;
 
-        while (beg < len  &&  isspace(str[beg])) {
-            ++beg;
-        }
-        if (beg == len) {
-            comment += str;
-            comment += '\n';
-            continue;
-        }
-
-        switch (str[beg]) {
-
-        case '#':  { // file comment
-            SetComment(GetComment() + str + '\n');
-            break;
-        }
-
-        case ';':  { // section or entry comment
-            comment += str;
-            comment += '\n';
-            break;
-        }
-
-        case '[':  { // section name
-            ++beg;
-            SIZE_TYPE end = str.find_first_of(']', beg + 1);
-            if (end == NPOS) {
-                NCBI_THROW2(CRegistryException, eSection,
-                            "Invalid registry section(']' is missing): `"
-                            + str + "'", line);
+            while (beg < len  &&  isspace(str[beg])) {
+                ++beg;
             }
-            section = NStr::TruncateSpaces(str.substr(beg, end - beg));
-            if (section.empty()) {
-                NCBI_THROW2(CRegistryException, eSection,
-                            "Unnamed registry section: `" + str + "'", line);
-            } else if ( !s_IsNameSection(section) ) {
-                NCBI_THROW2(CRegistryException, eSection,
-                            "Invalid registry section name: `"
-                            + str + "'", line);
+            if (beg == len) {
+                comment += str;
+                comment += '\n';
+                continue;
             }
-            // add section comment
-            if ( !comment.empty() ) {
-                SetComment(GetComment(section) + comment, section);
-                comment.erase();
-            }
-            break;
-        }
 
-        default:  { // regular entry
-            string name, value;
-            if ( !NStr::SplitInTwo(str, "=", name, value) ) {
-                NCBI_THROW2(CRegistryException, eEntry,
-                            "Invalid registry entry format: '" + str + "'",
-                            line);
+            switch (str[beg]) {
+
+            case '#':  { // file comment
+                SetComment(GetComment() + str + '\n');
+                break;
             }
-            NStr::TruncateSpacesInPlace(name);
-            if ( !s_IsNameSection(name) ) {
-                NCBI_THROW2(CRegistryException, eEntry,
-                            "Invalid registry entry name: '" + str + "'",
-                            line);
+
+            case ';':  { // section or entry comment
+                comment += str;
+                comment += '\n';
+                break;
             }
-            
-            NStr::TruncateSpacesInPlace(value);
-            if (value.empty()) {
-                if ( !(flags & fNoOverride) ) {
-                    Set(section, name, kEmptyStr, flags, comment);
+
+            case '[':  { // section name
+                ++beg;
+                SIZE_TYPE end = str.find_first_of(']', beg + 1);
+                if (end == NPOS) {
+                    NCBI_THROW2(CRegistryException, eSection,
+                                "Invalid registry section(']' is missing): `"
+                                + str + "'", line);
+                }
+                section = NStr::TruncateSpaces(str.substr(beg, end - beg));
+                if (section.empty()) {
+                    NCBI_THROW2(CRegistryException, eSection,
+                                "Unnamed registry section: `" + str + "'",
+                                line);
+                } else if ( !s_IsNameSection(section, flags) ) {
+                    NCBI_THROW2(CRegistryException, eSection,
+                                "Invalid registry section name: `"
+                                + str + "'", line);
+                }
+                // add section comment
+                if ( !comment.empty() ) {
+                    SetComment(GetComment(section) + comment, section);
                     comment.erase();
                 }
                 break;
             }
-            // read continuation lines, if any
-            string cont;
-            while (s_Backslashed(value, value.size())
-                   &&  NcbiGetlineEOL(is, cont)) {
-                ++line;
-                value[value.size() - 1] = '\n';
-                value += NStr::TruncateSpaces(cont);
-                str   += 'n' + cont; // for presentation in exceptions
-            }
 
-            // Historically, " may appear unescaped at the beginning,
-            // end, both, or neither.
-            beg = 0;
-            SIZE_TYPE end = value.size();
-            for (SIZE_TYPE pos = value.find('\"');  pos < end  &&  pos != NPOS;
-                 pos = value.find('\"', pos + 1)) {
-                if (s_Backslashed(value, pos)) {
-                    continue;
-                } else if (pos == beg) {
-                    ++beg;
-                } else if (pos == end - 1) {
-                    --end;
-                } else {
-                    NCBI_THROW2(CRegistryException, eValue,
-                                "Single(unescaped) '\"' in the middle "
-                                "of registry value: '" + str + "'",
+            default:  { // regular entry
+                string name, value;
+                if ( !NStr::SplitInTwo(str, "=", name, value) ) {
+                    NCBI_THROW2(CRegistryException, eEntry,
+                                "Invalid registry entry format: '" + str + "'",
                                 line);
                 }
-            }
+                NStr::TruncateSpacesInPlace(name);
+                if ( !s_IsNameSection(name, flags) ) {
+                    NCBI_THROW2(CRegistryException, eEntry,
+                                "Invalid registry entry name: '" + str + "'",
+                                line);
+                }
+            
+                NStr::TruncateSpacesInPlace(value);
+                if (value.empty()) {
+                    if ( !(flags & fNoOverride) ) {
+                        Set(section, name, kEmptyStr, flags, comment);
+                        comment.erase();
+                    }
+                    break;
+                }
+                // read continuation lines, if any
+                string cont;
+                while (s_Backslashed(value, value.size())
+                       &&  NcbiGetlineEOL(is, cont)) {
+                    ++line;
+                    value[value.size() - 1] = '\n';
+                    value += NStr::TruncateSpaces(cont);
+                    str   += 'n' + cont; // for presentation in exceptions
+                }
 
-            try {
-                value = NStr::ParseEscapes(value.substr(beg, end - beg));
-            } catch (CStringException&) {
-                NCBI_THROW2(CRegistryException, eValue,
-                            "Badly placed '\\' in the registry value: '"
-                            + str + "'", line);
+                // Historically, " may appear unescaped at the beginning,
+                // end, both, or neither.
+                beg = 0;
+                SIZE_TYPE end = value.size();
+                for (SIZE_TYPE pos = value.find('\"');
+                     pos < end  &&  pos != NPOS;
+                     pos = value.find('\"', pos + 1)) {
+                    if (s_Backslashed(value, pos)) {
+                        continue;
+                    } else if (pos == beg) {
+                        ++beg;
+                    } else if (pos == end - 1) {
+                        --end;
+                    } else {
+                        NCBI_THROW2(CRegistryException, eValue,
+                                    "Single(unescaped) '\"' in the middle "
+                                    "of registry value: '" + str + "'",
+                                    line);
+                    }
+                }
 
+                try {
+                    value = NStr::ParseEscapes(value.substr(beg, end - beg));
+                } catch (CStringException&) {
+                    NCBI_THROW2(CRegistryException, eValue,
+                                "Badly placed '\\' in the registry value: '"
+                                + str + "'", line);
+
+                }
+                Set(section, name, value, flags, comment);
+                comment.erase();
             }
-            Set(section, name, value, flags, comment);
-            comment.erase();
-        }
+            }
+        } catch (exception& e) {
+            if (ignore_errors) {
+                ERR_POST(e.what());
+            } else {
+                throw;
+            }
         }
     }
 
@@ -614,15 +631,15 @@ bool IRWRegistry::Set(const string& section, const string& name,
                       const string& comment)
 {
     x_CheckFlags("IRWRegistry::Set", flags,
-                 fPersistent | fNoOverride | fTruncate);
+                 fPersistent | fNoOverride | fTruncate | fInternalSpaces);
     string clean_section = NStr::TruncateSpaces(section);
-    if ( !s_IsNameSection(clean_section) ) {
+    if ( !s_IsNameSection(clean_section, flags) ) {
         _TRACE("IRWRegistry::Set: bad section name \""
                << NStr::PrintableString(section) << '\"');
         return false;
     }
     string clean_name = NStr::TruncateSpaces(name);
-    if ( !s_IsNameSection(clean_name) ) {
+    if ( !s_IsNameSection(clean_name, flags) ) {
         _TRACE("IRWRegistry::Set: bad entry name \""
                << NStr::PrintableString(name) << '\"');
         return false;
@@ -651,15 +668,16 @@ bool IRWRegistry::Set(const string& section, const string& name,
 bool IRWRegistry::SetComment(const string& comment, const string& section,
                              const string& name, TFlags flags)
 {
-    x_CheckFlags("IRWRegistry::SetComment", flags, fTransient | fNoOverride);
+    x_CheckFlags("IRWRegistry::SetComment", flags,
+                 fTransient | fNoOverride | fInternalSpaces);
     string clean_section = NStr::TruncateSpaces(section);
-    if ( !clean_section.empty()  &&  !s_IsNameSection(clean_section) ) {
+    if ( !clean_section.empty()  &&  !s_IsNameSection(clean_section, flags) ) {
         _TRACE("IRWRegistry::SetComment: bad section name \""
                << NStr::PrintableString(section) << '\"');
         return false;
     }
     string clean_name = NStr::TruncateSpaces(name);
-    if ( !clean_name.empty()  &&  !s_IsNameSection(clean_name) ) {
+    if ( !clean_name.empty()  &&  !s_IsNameSection(clean_name, flags) ) {
         _TRACE("IRWRegistry::SetComment: bad entry name \""
                << NStr::PrintableString(name) << '\"');
         return false;
@@ -743,17 +761,21 @@ const string& CMemoryRegistry::x_GetComment(const string& section,
 }
 
 void CMemoryRegistry::x_Enumerate(const string& section, list<string>& entries,
-                                  TFlags) const
+                                  TFlags flags) const
 {
     if (section.empty()) {
         ITERATE (TSections, it, m_Sections) {
-            entries.push_back(it->first);
+            if (s_IsNameSection(it->first, flags)) {
+                entries.push_back(it->first);
+            }
         }
     } else {
         TSections::const_iterator sit = m_Sections.find(section);
         if (sit != m_Sections.end()) {
             ITERATE (TEntries, it, sit->second.entries) {
-                entries.push_back(it->first);
+                if (s_IsNameSection(it->first, flags)) {
+                    entries.push_back(it->first);
+                }
             }
         }
     }
@@ -1377,6 +1399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/03/21 19:46:30  ucko
+ * Add support for two new flags: fIgnoreErrors, fInternalSpaces.
+ *
  * Revision 1.48  2005/03/17 00:01:52  ucko
  * CNcbiRegistry::x_Read: don't overoptimize the standard case.
  *
