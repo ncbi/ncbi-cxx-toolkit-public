@@ -245,11 +245,15 @@ static CSeq_id::EAccessionInfo s_IdentifyNAcc(const string& acc)
 CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
 {
     SIZE_TYPE digit_pos = acc.find_first_of("0123456789");
+    SIZE_TYPE main_size = acc.find('.');
+    if (main_size == NPOS) {
+        main_size = acc.size();
+    }
     string pfx = acc.substr(0, digit_pos);
     NStr::ToUpper(pfx);
     switch (pfx.size()) {
     case 0:
-        if (acc.size() == 4  ||  (acc.size() > 4  &&  acc[4] == '|')) {
+        if (main_size == 4  ||  (main_size > 4  &&  acc[4] == '|')) {
             return eAcc_pdb;
         } else {
             return eAcc_unknown;
@@ -800,6 +804,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.26  2002/08/06 18:22:19  ucko
+ * Properly handle versioned PDB accessions.
+ *
  * Revision 6.25  2002/08/01 20:33:10  ucko
  * s_IdentifyAccession -> IdentifyAccession; s_ is only for module-static names.
  *
