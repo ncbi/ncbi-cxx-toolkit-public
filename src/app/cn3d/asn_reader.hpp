@@ -84,14 +84,14 @@ bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, s
 
     // Read the asn data
     bool okay = true;
-    SetDiagTrace(eDT_Disable);
+    ncbi::SetDiagTrace(ncbi::eDT_Disable);
     try {
         *inObject >> *ASNobject;
     } catch (std::exception& e) {
         *err = e.what();
         okay = false;
     }
-    SetDiagTrace(eDT_Default);
+    ncbi::SetDiagTrace(ncbi::eDT_Default);
 
     inStream.close();
     return okay;
@@ -123,7 +123,7 @@ bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBina
 
     // write the asn data
     bool okay = true;
-    SetDiagTrace(eDT_Disable);
+    ncbi::SetDiagTrace(ncbi::eDT_Disable);
     try {
         *outObject << ASNobject;
         outStream.flush();
@@ -131,7 +131,7 @@ bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBina
         *err = e.what();
         okay = false;
     }
-    SetDiagTrace(eDT_Default);
+    ncbi::SetDiagTrace(ncbi::eDT_Default);
 
     outStream.close();
     return okay;
@@ -161,14 +161,14 @@ bool GetAsnDataViaHTTP(
             inObject.reset(new ncbi::CObjectIStreamAsnBinary(httpStream));
         else
             inObject.reset(new ncbi::CObjectIStreamAsn(httpStream));
-        SetDiagTrace(eDT_Disable);
+        ncbi::SetDiagTrace(ncbi::eDT_Disable);
         *inObject >> *asnObject;
         okay = true;
 
     } catch (std::exception& e) {
         *err = e.what();
     }
-    SetDiagTrace(eDT_Default);
+    ncbi::SetDiagTrace(ncbi::eDT_Default);
 
     CORE_SetREG(NULL);
     return okay;
@@ -181,6 +181,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/05/25 17:48:19  ucko
+* Qualify diag-trace manipulation with ncbi::.
+*
 * Revision 1.18  2004/01/27 22:56:55  thiessen
 * remove auto_ptr from stream objects
 *
