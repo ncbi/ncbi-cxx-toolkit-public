@@ -29,15 +29,12 @@
  * Author:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
- *   Simple heap manager with a primitive garbage collection.
+ *   Simple heap manager with a primitive garbage collection
  *
  * --------------------------------------------------------------------------
  * $Log$
- * Revision 6.2  2000/05/09 15:31:28  lavr
- * Minor changes
- *
- * Revision 6.1  2000/05/05 20:23:59  lavr
- * Initial revision
+ * Revision 6.3  2000/05/12 18:28:40  lavr
+ * First working revision
  *
  * ==========================================================================
  */
@@ -90,7 +87,7 @@ HEAP HEAP_Attach
  );
 
 
-/* Allocate a new block of memory in the heap
+/* Allocate a new block of memory in the heap.
  */
 SHEAP_Block* HEAP_Alloc
 (HEAP   heap,  /* heap handle */
@@ -98,7 +95,7 @@ SHEAP_Block* HEAP_Alloc
  );
 
 
-/* Deallocate block pointed by "block_ptr"
+/* Deallocate block pointed by "block_ptr".
  */
 void HEAP_Free
 (HEAP         heap,      /* heap handle */
@@ -116,12 +113,12 @@ SHEAP_Block* HEAP_Walk
  );
 
 
-/* Detach from the heap (previously attached to by HEAP_Attach)
+/* Detach from the heap (previously attached to by HEAP_Attach).
  */
 void HEAP_Detach(HEAP heap);
 
 
-/* Destroy heap
+/* Destroy heap.
  */
 void HEAP_Destroy(HEAP heap);
 

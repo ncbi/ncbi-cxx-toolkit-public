@@ -37,6 +37,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/05/12 18:31:48  lavr
+ * First working revision
+ *
  * Revision 6.2  2000/05/09 15:31:29  lavr
  * Minor changes
  *
@@ -66,6 +69,19 @@ typedef enum {
 typedef int TSERV_Type;  /*  bit-wise OR of "ESERV_Type" flags */
 
 
+/* Flags to specify the algorithm for selecting the most preferred
+ * service from the set of available services
+ */
+typedef enum {
+    fSERV_Regular = 0x0,
+    fSERV_Blast   = 0x1
+} ESERV_Flags;
+typedef int TSERV_Flags;
+
+
+#define SERV_DEFAULT_FLAG       fSERV_Regular
+
+
 /* Verbal representation of a service type (no internal spaces allowed)
  */
 const char* SERV_TypeStr(ESERV_Type type);
@@ -82,22 +98,17 @@ const char* SERV_ReadType(const char* str, ESERV_Type* type);
 /* Meta-addresses for various types of NCBI services
  */
 typedef struct {
-    unsigned int    host;
-    unsigned short  port;
-    size_t          args;
+    size_t         args;
 #define SERV_NCBID_ARGS(i)      ((char *)(i) + (i)->args)
 } SSERV_NcbidInfo;
 
 typedef struct {
-    unsigned int    host;
-    unsigned short  port;
+    int            dummy;       /* placeholder, not used */
 } SSERV_StandaloneInfo;
 
 typedef struct {
-    unsigned int    host;
-    unsigned short  port;
-    size_t          path;
-    size_t          args;
+    size_t         path;
+    size_t         args;
 #define SERV_HTTP_PATH(i)       ((char *)(i) + (i)->path)
 #define SERV_HTTP_ARGS(i)       ((char *)(i) + (i)->args)
 } SSERV_HttpInfo;
@@ -106,15 +117,18 @@ typedef struct {
 /* Generic NCBI service meta-address
  */
 typedef union {
-    SSERV_NcbidInfo       ncbid;
-    SSERV_StandaloneInfo  standalone;
-    SSERV_HttpInfo        http;
-} USERV_Info ;
+    SSERV_NcbidInfo      ncbid;
+    SSERV_StandaloneInfo standalone;
+    SSERV_HttpInfo       http;
+} USERV_Info;
 
 typedef struct {
-    TSERV_Type type;
-    time_t     expiration_time;
-    USERV_Info u;
+    TSERV_Type     type;
+    unsigned int   host;
+    unsigned short port;
+    TSERV_Flags    flag;
+    time_t         time;
+    USERV_Info     u;
 } SSERV_Info;
 
 
@@ -162,12 +176,13 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host);
 /* Return an actual size (in bytes) the service info occupies
  * (to be used for copying info structures in whole).
  */
-size_t SERV_SizeOfInfo(const SSERV_Info *info);
+size_t SERV_SizeOfInfo(const SSERV_Info* info);
 
 
 /* Return 'true' if two service infos are equal.
  */
-int/*bool*/ SERV_EqualInfo(const SSERV_Info *info1, const SSERV_Info *info2);
+int/*bool*/ SERV_EqualInfo(const SSERV_Info* info1, const SSERV_Info* info2);
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

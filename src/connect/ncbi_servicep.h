@@ -1,5 +1,5 @@
-#ifndef NCBI_SERVICE__H
-#define NCBI_SERVICE__H
+#ifndef NCBI_SERVICEP__H
+#define NCBI_SERVICEP__H
 
 /*  $Id$
  * ===========================================================================
@@ -29,70 +29,47 @@
  * Author:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
- *   Top-level API to resolve NCBI service name to the service meta-address.
+ *   Private API to define service iterator structure.
  *
  * --------------------------------------------------------------------------
  * $Log$
- * Revision 6.2  2000/05/12 18:29:22  lavr
+ * Revision 6.1  2000/05/12 18:38:16  lavr
  * First working revision
  *
  * ==========================================================================
  */
 
-#include <connect/ncbi_service_info.h>
-#include <stddef.h>
+#include <connect/ncbi_service.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-/* Iterator through the services
+/* Table of iterator "virtual functions"
  */
-struct SSERV_IterTag;
-typedef struct SSERV_IterTag* SERV_ITER;
+typedef struct {
+    SSERV_Info* (*GetNextInfo)(SERV_ITER iter);
+    void        (*Close)(SERV_ITER iter);
+} SSERV_VTable;
 
 
-/* Create iterator for the iterative service lookup.
+/* Iterator structure
  */
-SERV_ITER SERV_OpenSimple
-(const char*       service         /* service name */
- );
+struct SSERV_IterTag {
+    char*        service;        /* requested service name */
+    TSERV_Type   type;           /* requested service type(s) */
+    unsigned int preferred_host; /* preferred host to select */
+    SSERV_Info** skip;           /* services to skip */
+    size_t       n_skip;         /* number of services in the array */
+    size_t       n_max_skip;     /* number of allocated slots in the array */
 
-SERV_ITER SERV_Open
-(const char*       service,        /* service name */
- TSERV_Type        type,           /* mask of type of service requested */
- unsigned int      preferred_host  /* preferred host to use service on */
- );
-
-SERV_ITER SERV_OpenEx
-(const char*       service,        /* service name */
- TSERV_Type        type,           /* mask of type of service requested */
- unsigned int      preferred_host, /* preferred host to use service on */
- const SSERV_Info* skip[],         /* services NOT to select */
- size_t            n_skip          /* number of services in preceding array */
- );
-
-
-/* Get the next service meta-address.
- * Note that the application program should NOT destroy returned service info:
- * it will be freed automatically upon iterator destruction.
- */
-const SSERV_Info* SERV_GetNextInfo
-(SERV_ITER         iter            /* handle obtained via 'SERV_Open*' call */
- );
-
-
-/* Deallocate iterator.
- * Must be called to finish lookup process.
- */
-void SERV_Close
-(SERV_ITER         iter            /* handle obtained via 'SERV_Open*' call */
- );
+    const SSERV_VTable* op;      /* table of virtual functions */
+};
 
 
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_SERVICE__H */
+#endif /* NCBI_SERVICEP__H */
