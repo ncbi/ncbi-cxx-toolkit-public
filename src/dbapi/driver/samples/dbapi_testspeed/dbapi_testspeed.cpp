@@ -36,8 +36,6 @@
 
 USING_NCBI_SCOPE;
 
-#include "upload_files.cpp"
-
 const char usage[] =
   "Run a series of BCP/insert/select commands,\n"
   "measure the time required for their execution. \n"
