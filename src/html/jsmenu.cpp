@@ -217,7 +217,7 @@ string CHTMLPopupMenu::GetAttributeValue(EHTML_PM_Attribute attribute) const
 
 struct SAttributeSupport {
     EHTML_PM_Attribute attr;
-    const char*              name[CHTMLPopupMenu::ePMLast+1];
+    const char*        name[CHTMLPopupMenu::ePMLast+1];
 };
 
 const SAttributeSupport ksAttributeSupportTable[] = {
@@ -316,8 +316,8 @@ const SAttributeSupport ksAttributeSupportTable[] = {
 string CHTMLPopupMenu::GetAttributeName(EHTML_PM_Attribute attribute, EType type)
 {
     // Find attribute
-    for (size_t i = 0; 
-         i < sizeof(ksAttributeSupportTable)/sizeof(SAttributeSupport);
+    size_t i;
+    for (i = 0; i < sizeof(ksAttributeSupportTable)/sizeof(SAttributeSupport);
          i++) {
         if ( ksAttributeSupportTable[i].attr == attribute ) {
             if ( ksAttributeSupportTable[i].name[type] ) {
@@ -326,8 +326,36 @@ string CHTMLPopupMenu::GetAttributeName(EHTML_PM_Attribute attribute, EType type
             break;
         }
     }
+    string type_name = "This";
+    switch (type) {
+    case eSmith:
+        type_name = "eSmith";
+        break;
+    case eKurdin:
+        type_name = "eKurdin";
+        break;
+    case eKurdinConf:
+        type_name = "eKurdinConf";
+        break;
+    case eKurdinSide:
+        type_name = "eKurdinSide";
+        break;
+    }
+    // Get attribute name approximately on the base other menu types
+    string attr_name;
+    for (size_t j = 0; j < ePMLast; j++) {
+        const char* name = ksAttributeSupportTable[i].name[j];
+        if ( name  &&  name[0] != '\0' ) {
+            attr_name = name;
+        }
+    }
+    // Name is not defined, use attribute numeric value
+    if ( attr_name.empty() ) {
+        attr_name = "with code " + NStr::IntToString(attribute);
+    }
     ERR_POST(Warning << "CHTMLPopupMenu::GetMenuAttributeName:  " <<
-             "This menu type does not support specified attribute");
+             type_name << " menu type does not support attribute " <<
+             attr_name);
     return kEmptyStr;
 }
 
@@ -572,6 +600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/04/22 15:26:34  ivanov
+ * GetAttributeName(): improved diagnostic messages
+ *
  * Revision 1.28  2004/04/20 16:16:05  ivanov
  * eKurdinConf: Remove extra comma if local configuration is not specified
  *
