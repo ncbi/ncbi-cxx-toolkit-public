@@ -6,8 +6,10 @@
 # Meta-makefile for the "Cgi" lib
 #################################
 
-LIB_PROJ = cgi fcgi
+LIB_PROJ = cgi
 SUB_PROJ = demo test
+
+UNIX_LIB_PROJ = fcgi
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
