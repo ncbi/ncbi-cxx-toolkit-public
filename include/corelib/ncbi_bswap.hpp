@@ -59,41 +59,79 @@ public:
 
 
 
-
 inline
 Int2 CByteSwap::GetInt2(const unsigned char* ptr)
 {
-    Int2 ret = (ptr[0] << 8) | (ptr[1]);
+#ifdef WORDS_BIGENDIAN
+    Int2 ret = (ptr[1] << 8) | 
+               (ptr[0]);
+#else
+    Int2 ret = (ptr[0] << 8) | 
+               (ptr[1]);
+#endif
+
     return ret;
 }
 
 inline
 void CByteSwap::PutInt2(unsigned char* ptr, Int2 value)
 {
+#ifdef WORDS_BIGENDIAN
+    ptr[1] = (unsigned char)(value >> 8);
+    ptr[0] = (unsigned char)(value);
+#else
     ptr[0] = (unsigned char)(value >> 8);
     ptr[1] = (unsigned char)(value);
+#endif
 }
 
 
 inline
 Int4 CByteSwap::GetInt4(const unsigned char* ptr)
 {
-    Int4 ret = (ptr[0] << 24) | (ptr[1] << 16) | (ptr[2] << 8) | (ptr[3]);
+#ifdef WORDS_BIGENDIAN
+    Int4 ret = (ptr[3] << 24) | 
+               (ptr[2] << 16) | 
+               (ptr[1] << 8)  | 
+               (ptr[0]);
+#else
+    Int4 ret = (ptr[0] << 24) | 
+               (ptr[1] << 16) | 
+               (ptr[2] << 8)  | 
+               (ptr[3]);
+#endif
     return ret;
 }
 
 inline
 void CByteSwap::PutInt4(unsigned char* ptr, Int4 value)
 {
+#ifdef WORDS_BIGENDIAN
+    ptr[3] = (unsigned char)(value >> 24);
+    ptr[2] = (unsigned char)(value >> 16);
+    ptr[1] = (unsigned char)(value >> 8);
+    ptr[0] = (unsigned char)(value);
+#else
     ptr[0] = (unsigned char)(value >> 24);
     ptr[1] = (unsigned char)(value >> 16);
     ptr[2] = (unsigned char)(value >> 8);
     ptr[3] = (unsigned char)(value);
+#endif
 }
 
 inline
 Int8 CByteSwap::GetInt8(const unsigned char* ptr)
 {
+#ifdef WORDS_BIGENDIAN
+    Int8 ret = (ptr[7] << 56) | 
+               (ptr[6] << 48) | 
+               (ptr[5] << 40) | 
+               (ptr[4] << 32) |
+               (ptr[3] << 24) |
+               (ptr[2] << 16) |
+               (ptr[1] << 8)  |
+               (ptr[0]);
+#else
     Int8 ret = (ptr[0] << 56) | 
                (ptr[1] << 48) | 
                (ptr[2] << 40) | 
@@ -102,12 +140,24 @@ Int8 CByteSwap::GetInt8(const unsigned char* ptr)
                (ptr[5] << 16) |
                (ptr[6] << 8)  |
                (ptr[7]);
+#endif
+
     return ret;
 }
 
 inline
 void CByteSwap::PutInt8(unsigned char* ptr, Int8 value)
 {
+#ifdef WORDS_BIGENDIAN
+    ptr[7] = (unsigned char)(value >> 56);
+    ptr[6] = (unsigned char)(value >> 48);
+    ptr[5] = (unsigned char)(value >> 40);
+    ptr[4] = (unsigned char)(value >> 32);
+    ptr[3] = (unsigned char)(value >> 24);
+    ptr[2] = (unsigned char)(value >> 16);
+    ptr[1] = (unsigned char)(value >> 8);
+    ptr[0] = (unsigned char)(value);
+#else
     ptr[0] = (unsigned char)(value >> 56);
     ptr[1] = (unsigned char)(value >> 48);
     ptr[2] = (unsigned char)(value >> 40);
@@ -116,6 +166,7 @@ void CByteSwap::PutInt8(unsigned char* ptr, Int8 value)
     ptr[5] = (unsigned char)(value >> 16);
     ptr[6] = (unsigned char)(value >> 8);
     ptr[7] = (unsigned char)(value);
+#endif
 }
 
 
@@ -153,12 +204,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/09 19:52:25  kuznets
+ * Added support for big-little endian byte orders.
+ *
  * Revision 1.2  2003/09/09 14:28:54  kuznets
  * All functions joined into one CByteSwap class.
  *
  * Revision 1.1  2003/09/08 20:36:51  kuznets
  * Initial revision
- *
  *
  * ===========================================================================
  */
