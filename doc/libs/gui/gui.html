@@ -1,0 +1,26 @@
+<!--#set var="TITLE" value="NCBI C++ CGI library" -->
+<!--#set var="DOCROOT" value=".." -->
+<!--#include virtual="../ssi/header.shtml" -->
+
+<b><font FACE="Arial" SIZE=4><p>NCBI C++ GUI Development</p>
+</b></font>
+<p>Last Revision: 24 Sep 2002</p>
+
+<p>&nbsp;</p>
+<p>GUI part of the NCBI C++ Toolkit defines its own namespace: "gui". GUI namespace will also include NCBI namespace. In your code use BEGIN_GUI_SCOPE and END_GUI_SCOPE when working on GUI projects</p>
+
+<p>&nbsp;</p>
+<p>GUI part of the NCBI C++ Toolkit introduces the following type definitions.</p>
+
+<p><b>TColor</b> - used to deal with colors in GUI. Sequence View stores the color that is either an index into a color palette of 256 colors (like FL_YELLOW) or a 24-bit RGB color. The color palette is not the X or WIN32 color map, but instead is an FLTK internal table with fixed contents. Currently defined as Fl_Color. Take a look into "FL/Enumerations.H" in the FLTK for complete list of definitions. Take a look into FLTK documentation on how to define new colors.</p>
+<p><b>TKey</b> - used to store the values for keyboard keys like FL_Left, 'c', 'A', FL_Page_Up. Currently defined as integer. Take a look into "FL/Enumerations.H" in the FLTK for complete list of definitions.</p>
+<p><b>TKeyState</b> - used to store the values for keyboard keys modifiers like Control, Alt or Shift (FL_CTRL, FL_ALT, FL_SHIFT). Currently defined as integer. Take a look into "FL/Enumerations.H" in the FLTK for complete list of definitions.</p>
+<p><b>TLineNo</b> - used to store line numbers in the Sequence View. Currently defined as integer.</p>
+<p><b>TCharNo</b> - used to store character positions in the Sequence View. Currently defined as integer.</p>
+<p><b>TDimension</b> - used to store various measurements in the Sequence View. Currently defined as integer.</p>
+<p><b>TPosition</b> - used to store X or Y coordinates in the Sequence View. Currently defined as integer.</p>
+
+
+
+<!--#include virtual="../ssi/navlinks.shtml" -->
+<!--#include virtual="../ssi/footer.shtml" -->
