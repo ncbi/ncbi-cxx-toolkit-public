@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 ///    Extract query string from HTTP referrers
 ///
 
-class CRefArgs
+class NCBI_XCGI_EXPORT CRefArgs
 {
 public:
     /// Create referrer parser from a set of definitions.
@@ -79,8 +79,8 @@ public:
     /// Get default set of search engine definitions.
     static string GetDefaultDefinitions(void);
 
-    /// Check if the host is listed in definitions.
-    bool IsListedHost(const string& host) const;
+    /// Check if the host from the referrer string is listed in definitions.
+    bool IsListedHost(const string& referrer) const;
 
 private:
     typedef multimap<string, string> THostMap;
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2005/02/18 17:45:53  grichenk
+* IsListedHost() accepts referrer string rather than host name.
+*
 * Revision 1.3  2005/02/17 20:27:25  grichenk
 * Added IsListedHost()
 *

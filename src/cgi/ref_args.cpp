@@ -128,8 +128,19 @@ string CRefArgs::GetQueryString(const string& referrer) const
 }
 
 
-bool CRefArgs::IsListedHost(const string& host) const
+bool CRefArgs::IsListedHost(const string& referrer) const
 {
+    // Remove http:// prefix
+    SIZE_TYPE pos = NStr::Find(referrer, "://");
+    string host =  (pos != NPOS) ?
+        referrer.substr(pos+3, referrer.size()) : referrer;
+
+    // Find end of host name
+    pos = NStr::Find(host, "/");
+    if (pos != NPOS) {
+        host = host.substr(0, pos);
+    }
+
     ITERATE(THostMap, it, m_HostMap) {
         if (NStr::FindNoCase(host, it->first) != NPOS) {
             return true;
@@ -146,6 +157,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2005/02/18 17:45:53  grichenk
+* IsListedHost() accepts referrer string rather than host name.
+*
 * Revision 1.4  2005/02/17 20:27:25  grichenk
 * Added IsListedHost()
 *
