@@ -744,6 +744,8 @@ BLAST_SearchEngine(Uint1 program_number,
                Blast_HSPListReevaluateWithAmbiguities(hsp_list, query, 
                   seq_arg.seq, hit_options, query_info, sbp, score_params, 
                   seq_src);
+            /* Check for HSP inclusion */
+            status = Blast_HSPListUniqSort(hsp_list);
          }
          /* Save the HSPs into a hit list */
          Blast_HSPResultsSaveHitList(program_number, results, hsp_list, hit_params);
