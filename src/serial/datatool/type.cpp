@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2001/09/04 17:04:03  vakatov
+* Extended workaround for the SUN Forte 6 Update 1 compiler internal bug
+* to all higher versions of the compiler, as Update 2 also has this the
+* same bug!
+*
 * Revision 1.61  2001/08/20 20:23:20  vakatov
 * Workaround for the SUN Forte 6 Update 1 compiler internal bug.
 *
@@ -204,9 +209,9 @@ CDataType::CDataType(void)
 
 CDataType::~CDataType()
 {
-#if defined(NCBI_COMPILER_WORKSHOP)  &&  (NCBI_COMPILER_VERSION == 520)
+#if defined(NCBI_COMPILER_WORKSHOP)  &&  (NCBI_COMPILER_VERSION >= 520)
     // BW_010::  to workaround (already reported to SUN, CASE ID 62563729)
-    //           internal bug of the SUN Forte 6 Update 1 compiler
+    //           internal bug of the SUN Forte 6 Update 1 and Update 2 compiler
     (void) atoi("5");
 #endif
 }
