@@ -33,6 +33,7 @@
  *
  */
 
+#include "ncbi_server_infop.h"
 #include <connect/ncbi_service.h>
 
 
@@ -45,7 +46,7 @@ extern "C" {
  */
 typedef struct {
     void        (*Reset)(SERV_ITER iter);
-    SSERV_Info* (*GetNextInfo)(SERV_ITER iter, char** env);
+    SSERV_Info* (*GetNextInfo)(SERV_ITER iter, HOST_INFO* host_info);
     int/*bool*/ (*Update)(SERV_ITER iter, TNCBI_Time now, const char* text);
     int/*bool*/ (*Penalize)(SERV_ITER iter, double penalty);
     void        (*Close)(SERV_ITER iter);
@@ -114,6 +115,9 @@ char* SERV_GetConfig(void);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2002/10/28 20:16:00  lavr
+ * Take advantage of host info API
+ *
  * Revision 6.16  2002/10/11 19:48:25  lavr
  * +SERV_GetConfig()
  * const dropped in return value of SERV_ServiceName()

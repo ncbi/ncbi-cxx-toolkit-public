@@ -31,10 +31,10 @@
  */
 
 #include "ncbi_ansi_ext.h"
+#include "ncbi_dispd.h"
+#include "ncbi_lbsmd.h"
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
-#include "ncbi_servicep_lbsmd.h"
-#include "ncbi_servicep_dispd.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -112,7 +112,7 @@ static SERV_ITER s_Open(const char* service,
                         TSERV_Type type, unsigned int preferred_host,
                         const SConnNetInfo* net_info,
                         const SSERV_Info* const skip[], size_t n_skip,
-                        SSERV_Info** info, char** env)
+                        SSERV_Info** info, HOST_INFO* host_info)
 {
     const char* s = SERV_ServiceName(service);
     const SSERV_VTable* op;
@@ -152,7 +152,7 @@ static SERV_ITER s_Open(const char* service,
     assert(n_skip == iter->n_skip);
 
     if (!net_info) {
-        if (!(op = SERV_LBSMD_Open(iter, info, env))) {
+        if (!(op = SERV_LBSMD_Open(iter, info, host_info))) {
             /* LBSMD failed in non-DISPD mapping */
             SERV_Close(iter);
             return 0;
@@ -163,8 +163,8 @@ static SERV_ITER s_Open(const char* service,
         if (net_info->firewall)
             iter->type |= fSERV_Firewall;
         if ((net_info->lb_disable ||
-             !(op = SERV_LBSMD_Open(iter, info, env))) &&
-            !(op = SERV_DISPD_Open(iter, net_info, info, env))) {
+             !(op = SERV_LBSMD_Open(iter, info, host_info))) &&
+            !(op = SERV_DISPD_Open(iter, net_info, info, host_info))) {
             SERV_Close(iter);
             return 0;
         }
@@ -189,13 +189,13 @@ SSERV_Info* SERV_GetInfoEx(const char* service,
                            TSERV_Type type, unsigned int preferred_host,
                            const SConnNetInfo* net_info,
                            const SSERV_Info* const skip[], size_t n_skip,
-                           char** env)
+                           HOST_INFO* host_info)
 {
     SSERV_Info* info = 0;
     SERV_ITER iter = s_Open(service, type, preferred_host,
-                            net_info, skip, n_skip, &info, env);
+                            net_info, skip, n_skip, &info, host_info);
     if (iter && !info && iter->op && iter->op->GetNextInfo)
-        info = (*iter->op->GetNextInfo)(iter, env);
+        info = (*iter->op->GetNextInfo)(iter, host_info);
     SERV_Close(iter);
     return info;
 }
@@ -223,7 +223,7 @@ static void s_SkipSkip(SERV_ITER iter)
 }
 
 
-const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER iter, char** env)
+const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER iter, HOST_INFO* host_info)
 {
     SSERV_Info* info = 0;
 
@@ -232,7 +232,7 @@ const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER iter, char** env)
         s_SkipSkip(iter);
         /* Next, obtain a fresh entry from the actual mapper */
         if (iter->op->GetNextInfo &&
-            (info = (*iter->op->GetNextInfo)(iter, env)) != 0 &&
+            (info = (*iter->op->GetNextInfo)(iter, host_info)) != 0 &&
             !s_AddSkipInfo(iter, info)) {
             free(info);
             info = 0;
@@ -429,6 +429,9 @@ char* SERV_Print(SERV_ITER iter)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2002/10/28 20:16:00  lavr
+ * Take advantage of host info API
+ *
  * Revision 6.40  2002/10/28 15:43:49  lavr
  * Use "ncbi_ansi_ext.h" privately and use strncpy0()
  *
