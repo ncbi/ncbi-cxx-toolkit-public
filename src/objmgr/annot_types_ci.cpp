@@ -43,6 +43,7 @@
 #include <objmgr/impl/seq_loc_cvt.hpp>
 
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -68,9 +69,18 @@ BEGIN_SCOPE(objects)
 
 inline
 CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
-    : m_Object(&object),
-      m_ObjectType(eType_AnnotObject_Info)
+    : m_Object(&object.GetSeq_annot_Info()),
+      m_AnnotObject_Index(object.GetSeq_annot_Info().GetAnnotObjectIndex(object)),
+      m_ObjectType(eType_Seq_annot_Info),
+      m_Partial(false),
+      m_MappedType(CSeq_loc::e_not_set)
 {
+    if ( object.IsFeat() ) {
+        const CSeq_feat& feat = *object.GetFeatFast();
+        if ( feat.IsSetPartial() ) {
+            m_Partial = feat.GetPartial();
+        }
+    }
 }
 
 
@@ -78,9 +88,39 @@ inline
 CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
                                    TSeqPos index)
     : m_Object(&snp_annot),
-      m_ObjectType(eType_Seq_annot_SNP_Info)
+      m_AnnotObject_Index(index),
+      m_ObjectType(eType_Seq_annot_SNP_Info),
+      m_Partial(false),
+      m_MappedType(CSeq_loc::e_not_set)
 {
-    m_SNP_Index = index;
+}
+
+
+const CSeq_annot_Info& CAnnotObject_Ref::GetSeq_annot_Info(void) const
+{
+    _ASSERT(m_ObjectType == eType_Seq_annot_Info);
+    return static_cast<const CSeq_annot_Info&>(*m_Object);
+}
+
+
+const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
+{
+    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
+    return static_cast<const CSeq_annot_SNP_Info&>(*m_Object);
+}
+
+
+const CAnnotObject_Info& CAnnotObject_Ref::GetAnnotObject_Info(void) const
+{
+    _ASSERT(m_ObjectType == eType_Seq_annot_Info);
+    return static_cast<const CSeq_annot_Info&>(*m_Object).GetAnnotObject_Info(m_AnnotObject_Index);
+}
+
+
+const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
+{
+    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
+    return static_cast<const CSeq_annot_SNP_Info&>(*m_Object).GetSNP_Info(m_AnnotObject_Index);
 }
 
 
@@ -95,32 +135,9 @@ const CSeq_annot& CAnnotObject_Ref::GetSeq_annot(void) const
 }
 
 
-inline
 void CAnnotObject_Ref::SetPartial(bool value)
 {
-    if ( value )
-        m_Flags |= fPartial;
-    else
-        m_Flags &= ~fPartial;
-}
-
-
-inline
-void CAnnotObject_Ref::SetMinusStrand(bool value)
-{
-    if ( value )
-        m_Flags |= fMinusStrand;
-    else
-        m_Flags &= ~fMinusStrand;
-}
-
-
-inline
-const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
-{
-    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
-    return *(static_cast<const CSeq_annot_SNP_Info&>(*m_Object).begin() +
-             m_SNP_Index);
+    m_Partial = value;
 }
 
 
@@ -129,32 +146,119 @@ void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
                                     CSeq_loc_Conversion* cvt)
 {
     _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
+    ENa_strand snp_strand =
+        snp.MinusStrand()? eNa_strand_minus: eNa_strand_plus;
     if ( !cvt ) {
         m_TotalRange.SetFrom(snp.GetPosition()).SetTo(snp.GetEndPosition());
-        m_Flags = snp.MinusStrand()? fMinusStrand: 0;
+        m_Partial = false;
         m_MappedLocation.Reset();
+        m_MappedIndex = 0;
+        m_MappedType = CSeq_loc::e_Pnt;
+        m_MappedStrand = snp_strand;
         return;
     }
 
     TSeqPos src_from = snp.GetPosition();
     TSeqPos src_to = snp.GetEndPosition();
+    cvt->Reset();
     if ( src_from == src_to ) {
         // point
-        TSeqPos dst_pos = cvt->ConvertPos(src_from);
-        _ASSERT(dst_pos != kInvalidSeqPos);
-        m_TotalRange.SetFrom(dst_pos).SetTo(dst_pos);
-        m_Flags = 0;
+        _VERIFY(cvt->ConvertPoint(src_from, snp_strand));
     }
     else {
         // interval
-        cvt->Reset();
-        m_TotalRange.SetFrom(src_from).SetTo(src_to);
-        _VERIFY(cvt->ConvertRange(m_TotalRange));
-        m_Flags = cvt->IsPartial()? fPartial: 0;
+        _VERIFY(cvt->ConvertInterval(src_from, src_to, snp_strand));
     }
-    if ( cvt->MinusStrand()^snp.MinusStrand() )
-        m_Flags |= fMinusStrand;
-    m_MappedLocation.Reset(cvt->GetDstLocWhole());
+    cvt->SetMappedLocation(*this, 0);
+}
+
+
+void CAnnotObject_Ref::UpdateMappedLocation(CRef<CSeq_loc>& loc) const
+{
+    _ASSERT(MappedNeedsUpdate());
+
+    CRef<CSeq_id> id(const_cast<CSeq_id*>(&m_MappedLocation->GetWhole()));
+    if ( !loc || !loc->ReferencedOnlyOnce() ) {
+        /*
+        NcbiCout << "New mapped location, was: " << loc.GetPointerOrNull() << NcbiEndl;
+        if ( loc ) {
+            NcbiCout << "Old location (" << ((CAtomicCounter&)(*loc)).Get() << "): ";
+            CObjectOStreamAsn out(NcbiCout);
+            out << *loc;
+        }
+        */
+        loc.Reset(new CSeq_loc);
+    }
+    if ( m_MappedType == CSeq_loc::e_Pnt ) {
+        CSeq_point& point = loc->SetPnt();
+        point.SetId(*id);
+        point.SetPoint(m_TotalRange.GetFrom());
+        if ( m_MappedStrand != eNa_strand_unknown )
+            point.SetStrand(ENa_strand(m_MappedStrand));
+        else
+            point.ResetStrand();
+    }
+    else {
+        CSeq_interval& interval = loc->SetInt();
+        interval.SetId(*id);
+        interval.SetFrom(m_TotalRange.GetFrom());
+        interval.SetTo(m_TotalRange.GetTo());
+        if ( m_MappedStrand != eNa_strand_unknown )
+            interval.SetStrand(ENa_strand(m_MappedStrand));
+        else
+            interval.ResetStrand();
+    }
+}
+
+
+void CAnnotObject_Ref::UpdateMappedLocation(CRef<CSeq_loc>& loc,
+                                            CRef<CSeq_point>& pnt_ref,
+                                            CRef<CSeq_interval>& int_ref) const
+{
+    _ASSERT(MappedNeedsUpdate());
+
+    CRef<CSeq_id> id(const_cast<CSeq_id*>(&m_MappedLocation->GetWhole()));
+    if ( !loc || !loc->ReferencedOnlyOnce() ) {
+        /*
+        NcbiCout << "New mapped location, was: " << loc.GetPointerOrNull() << NcbiEndl;
+        if ( loc ) {
+            NcbiCout << "Old location (" << ((CAtomicCounter&)(*loc)).Get() << "): ";
+            CObjectOStreamAsn out(NcbiCout);
+            out << *loc;
+        }
+        */
+        loc.Reset(new CSeq_loc);
+    }
+    else {
+        loc->Reset();
+    }
+    if ( m_MappedType == CSeq_loc::e_Pnt ) {
+        if ( !pnt_ref || !pnt_ref->ReferencedOnlyOnce() ) {
+            pnt_ref.Reset(new CSeq_point);
+        }
+        CSeq_point& point = *pnt_ref;
+        loc->SetPnt(point);
+        point.SetId(*id);
+        point.SetPoint(m_TotalRange.GetFrom());
+        if ( m_MappedStrand != eNa_strand_unknown )
+            point.SetStrand(ENa_strand(m_MappedStrand));
+        else
+            point.ResetStrand();
+    }
+    else {
+        if ( !int_ref || !int_ref->ReferencedOnlyOnce() ) {
+            int_ref.Reset(new CSeq_interval);
+        }
+        CSeq_interval& interval = *int_ref;
+        loc->SetInt(interval);
+        interval.SetId(*id);
+        interval.SetFrom(m_TotalRange.GetFrom());
+        interval.SetTo(m_TotalRange.GetTo());
+        if ( m_MappedStrand != eNa_strand_unknown )
+            interval.SetStrand(ENa_strand(m_MappedStrand));
+        else
+            interval.ResetStrand();
+    }
 }
 
 
@@ -233,42 +337,7 @@ struct CAnnotObject_Less
 bool CFeat_Less::x_less(const CAnnotObject_Ref& x,
                         const CAnnotObject_Ref& y) const
 {
-    if ( x.IsSNPFeat() && y.IsSNPFeat() ) {
-        return x.GetSNP_Index() < y.GetSNP_Index();
-    }
-    else if ( x.IsSNPFeat() ) {
-        const CAnnotObject_Info& y_info = y.GetAnnotObject_Info();
-        const CSeq_feat* y_feat = y_info.GetFeatFast();
-        _ASSERT(y_feat);
-        const CSeqFeatData& y_data = y_feat->GetData();
-        int x_order = CSeq_feat::GetTypeSortingOrder(CSeqFeatData::e_Imp);
-        int y_order = CSeq_feat::GetTypeSortingOrder(y_data.Which());
-        if ( x_order != y_order ) {
-            return x_order < y_order;
-        }
-        CSeqFeatData::ESubtype y_subtype = y_data.GetSubtype();
-        if ( CSeqFeatData::eSubtype_variation != y_subtype ) {
-            return CSeqFeatData::eSubtype_variation < y_order;
-        }
-        return true;
-    }
-    else if ( y.IsSNPFeat() ) {
-        const CAnnotObject_Info& x_info = x.GetAnnotObject_Info();
-        const CSeq_feat* x_feat = x_info.GetFeatFast();
-        _ASSERT(x_feat);
-        const CSeqFeatData& x_data = x_feat->GetData();
-        int x_order = CSeq_feat::GetTypeSortingOrder(x_data.Which());
-        int y_order = CSeq_feat::GetTypeSortingOrder(CSeqFeatData::e_Imp);
-        if ( x_order != y_order ) {
-            return x_order < y_order;
-        }
-        CSeqFeatData::ESubtype x_subtype = x_data.GetSubtype();
-        if ( x_subtype != CSeqFeatData::eSubtype_variation ) {
-            return x_subtype < CSeqFeatData::eSubtype_variation;
-        }
-        return false;
-    }
-    else {
+    if ( !x.IsSNPFeat() && !y.IsSNPFeat() ) {
         const CAnnotObject_Info& x_info = x.GetAnnotObject_Info();
         const CAnnotObject_Info& y_info = y.GetAnnotObject_Info();
         const CSeq_feat* x_feat = x_info.GetFeatFast();
@@ -294,25 +363,68 @@ bool CFeat_Less::x_less(const CAnnotObject_Ref& x,
                 y_loc = &y_feat->GetProduct();
             }
         }
-        int diff;
         try {
-            diff = x_feat->CompareNonLocation(*y_feat, *x_loc, *y_loc);
+            int diff = x_feat->CompareNonLocation(*y_feat, *x_loc, *y_loc);
+            if ( diff != 0 ) {
+                return diff < 0;
+            }
         }
         catch ( exception& /*ignored*/ ) {
             // do not fail sort when compare function throws an exception
-            diff = 0;
         }
-        return diff? diff < 0: &x_info < &y_info;
     }
+    else if ( !y.IsSNPFeat() ) {
+        const CAnnotObject_Info& y_info = y.GetAnnotObject_Info();
+        const CSeq_feat* y_feat = y_info.GetFeatFast();
+        _ASSERT(y_feat);
+        const CSeqFeatData& y_data = y_feat->GetData();
+        int x_order = CSeq_feat::GetTypeSortingOrder(CSeqFeatData::e_Imp);
+        int y_order = CSeq_feat::GetTypeSortingOrder(y_data.Which());
+        if ( x_order != y_order ) {
+            return x_order < y_order;
+        }
+        CSeqFeatData::ESubtype y_subtype = y_data.GetSubtype();
+        if ( CSeqFeatData::eSubtype_variation != y_subtype ) {
+            return CSeqFeatData::eSubtype_variation < y_order;
+        }
+        // both are SNP but x is simple, and y is not, so x is first
+        return true;
+    }
+    else if ( !x.IsSNPFeat() ) {
+        const CAnnotObject_Info& x_info = x.GetAnnotObject_Info();
+        const CSeq_feat* x_feat = x_info.GetFeatFast();
+        _ASSERT(x_feat);
+        const CSeqFeatData& x_data = x_feat->GetData();
+        int x_order = CSeq_feat::GetTypeSortingOrder(x_data.Which());
+        int y_order = CSeq_feat::GetTypeSortingOrder(CSeqFeatData::e_Imp);
+        if ( x_order != y_order ) {
+            return x_order < y_order;
+        }
+        CSeqFeatData::ESubtype x_subtype = x_data.GetSubtype();
+        if ( x_subtype != CSeqFeatData::eSubtype_variation ) {
+            return x_subtype < CSeqFeatData::eSubtype_variation;
+        }
+        // both are SNP but y is simple, and x is not, so y is first
+        return false;
+    }
+    const CSeq_annot& x_annot = x.GetSeq_annot();
+    const CSeq_annot& y_annot = y.GetSeq_annot();
+    if ( &x_annot != &y_annot ) {
+        return &x_annot < &y_annot;
+    }
+    return x.GetAnnotObjectIndex() < y.GetAnnotObjectIndex();
 }
 
 
 bool CAnnotObject_Less::x_less(const CAnnotObject_Ref& x,
                                const CAnnotObject_Ref& y) const
 {
-    const CAnnotObject_Info& x_info = x.GetAnnotObject_Info();
-    const CAnnotObject_Info& y_info = y.GetAnnotObject_Info();
-    return &x_info < &y_info;
+    const CSeq_annot& x_annot = x.GetSeq_annot();
+    const CSeq_annot& y_annot = y.GetSeq_annot();
+    if ( &x_annot != &y_annot ) {
+        return &x_annot < &y_annot;
+    }
+    return x.GetAnnotObjectIndex() < y.GetAnnotObjectIndex();
 }
 
 
@@ -458,7 +570,6 @@ CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
     return *this;
 }
 
-
 void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
 {
     try {
@@ -523,6 +634,18 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
             break;
         }
         Rewind();
+        /*
+        size_t mapped = 0, optimized = 0;
+        ITERATE ( TAnnotSet, it, m_AnnotSet ) {
+            const CSeq_loc* loc = it->GetMappedLocation();
+            if ( !loc ) continue;
+            ++mapped;
+            if ( it->MappedNeedsUpdate() ) {
+                ++optimized;
+            }
+        }
+        NcbiCout << "Total: " << m_AnnotSet.size() << " mapped: " << mapped << " optimized: " << optimized << "\n";
+        */
     }
     catch (...) {
         x_Clear();
@@ -690,7 +813,6 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
 
     ITERATE ( TTSE_LockSet, tse_it, *entries ) {
         const CTSE_Info& tse_info = **tse_it;
-        //CTSE_Guard guard(tse_info);
 
         CTSE_Info::TAnnotObjsLock::TReadLockGuard
             guard(tse_info.m_AnnotObjsLock);
@@ -722,7 +844,6 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                         }
                         CAnnotObject_Ref annot_ref(snp_annot, index);
                         annot_ref.SetSNP_Point(snp, cvt);
-                        annot_ref.SetMappedIndex(0);
                         m_AnnotSet.push_back(annot_ref);
                         ++index;
                     } while ( ++snp_it != snp_annot.end() );
@@ -755,91 +876,14 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                 }
                 
                 CAnnotObject_Ref annot_ref(annot_info);
-                annot_ref.SetMappedIndex(m_FeatProduct);
                 if ( cvt ) {
                     cvt->Convert(annot_ref, m_FeatProduct);
                 }
                 else {
-                    annot_ref.SetAnnotObjectRange(aoit->first);
+                    annot_ref.SetAnnotObjectRange(aoit->first, m_FeatProduct);
                 }
                 m_AnnotSet.push_back(annot_ref);
 
-#if 0 && defined _DEBUG
-                {{ // some debug checks
-                    const CAnnotObject_Ref& obj = m_AnnotSet.back();
-                    const CSeq_loc* loc;
-                    if ( !m_FeatProduct ) {
-                        if ( obj.IsMappedLoc() ) {
-                            loc = &obj.GetMappedLoc();
-                        }
-                        else {
-                            switch(obj.Get().Which()) {
-                            case CSeq_annot::C_Data::e_Ftable:
-                                loc = &obj.GetFeatFast().GetLocation();
-                                break;
-                            case CSeq_annot::C_Data::e_Graph:
-                                loc = &obj.Get().GetGraphFast()->GetLoc();
-                                break;
-                            case CSeq_annot::C_Data::e_Align:
-                                // TODO: map align
-                                loc = 0;
-                                break;
-                            }
-                        }
-                    }
-                    else {
-                        if ( obj.IsMappedProd() ) {
-                            loc = &obj.GetMappedProd();
-                        }
-                        else {
-                            _ASSERT(obj.Get().IsFeat());
-                            const CSeq_feat& feat = obj.GetFeatFast();
-                            _ASSERT(feat.IsSetProduct());
-                            loc = &feat.GetProduct();
-                        }
-                    }
-                    if ( loc ) {
-                        CHandleRange::TRange lrange;
-                        CHandleRangeMap hrm;
-                        CSeq_id_Handle dst_id;
-                        if ( cvt )
-                            dst_id = CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(cvt->GetDstId());
-                        else
-                            dst_id = id;
-                        hrm.AddLocation(*loc);
-                        ITERATE ( CHandleRangeMap, hrmit, hrm ) {
-                            if ( hrmit->first == dst_id ) {
-                                lrange = hrmit->second.GetOverlappingRange();
-                                break;
-                            }
-                        }
-                        if ( obj.GetTotalRange() != lrange ) {
-                            LOG_POST("Mapping feature:");
-                            {{
-                                CObjectOStreamAsn out(NcbiCout);
-                                switch(obj.Get().Which()) {
-                                case CSeq_annot::C_Data::e_Ftable:
-                                    out << obj.Get().GetFeat();
-                                    break;
-                                case CSeq_annot::C_Data::e_Graph:
-                                    out << obj.Get().GetGraph();
-                                    break;
-                                case CSeq_annot::C_Data::e_Align:
-                                    out << obj.Get().GetAlign();
-                                    break;
-                                }
-                            }}
-                            LOG_POST("Mapped loc:");
-                            {{
-                                CObjectOStreamAsn out(NcbiCout);
-                                out << *loc;
-                            }}
-                            LOG_POST("mappedLoc: "<<lrange.GetFrom()<<"-"<<lrange.GetTo());
-                            LOG_POST("  sortLoc: "<<obj.GetTotalRange().GetFrom()<<"-"<<obj.GetTotalRange().GetTo());
-                        }
-                    }
-                }}
-#endif // _DEBUG
                 // Limit number of annotations to m_MaxSize
                 if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
                     return;
@@ -970,7 +1014,6 @@ void CAnnotTypes_CI::x_Search(const CObject& limit_info)
         THROW1_TRACE(runtime_error,
                      "CAnnotTypes_CI::x_Search: "
                      "search must be limited to an object");
-        break;
     }
 }
 
@@ -1005,10 +1048,7 @@ void CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
                                   range.GetToOpen() + shift);
                 }
                 else {
-                    if ( strand == eNa_strand_minus )
-                        strand = eNa_strand_plus;
-                    else if ( strand == eNa_strand_plus )
-                        strand = eNa_strand_minus;
+                    strand = Reverse(strand);
                     range.Set(shift - range.GetTo(), shift - range.GetFrom());
                 }
                 hr.AddRange(range, strand);
@@ -1035,6 +1075,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2003/08/27 14:29:52  vasilche
+* Reduce object allocations in feature iterator.
+*
 * Revision 1.82  2003/08/22 14:58:57  grichenk
 * Added NoMapping flag (to be used by CAnnot_CI for faster fetching).
 * Added GetScope().

@@ -185,7 +185,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
     bool have_weight = false;
     ITERATE ( CUser_object::TData, it, ext.GetData() ) {
         const CUser_field& field = **it;
-        const CUser_field::TData& data = field.GetData();
+        const CUser_field::TData& user_data = field.GetData();
 
         {{
             const CObject_id& id = field.GetLabel();
@@ -198,14 +198,15 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         if ( have_weight ) {
             return eSNP_Complex_WeightCountIsNotOne;
         }
-        if ( field.IsSetNum() || data.Which() != CUser_field::TData::e_Int ) {
+        if ( field.IsSetNum() ||
+             user_data.Which() != CUser_field::TData::e_Int ) {
             return eSNP_Complex_WeightBadValue;
         }
-        int value = data.GetInt();
+        int value = user_data.GetInt();
         if ( value < 0 || value > kMax_UI1 ) {
             return eSNP_Complex_WeightBadValue;
         }
-        m_Weight = Uint8(value);
+        m_Weight = Uint1(value);
         have_weight = true;
     }
     if ( !have_weight ) {
@@ -313,8 +314,8 @@ CRef<CSeq_feat> SSNP_Info::x_CreateSeq_feat(void) const
 }
 
 
-void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
-                               const CSeq_annot_SNP_Info& annot_info) const
+void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
+                                     const CSeq_annot_SNP_Info& annot_info) const
 {
     { // comment
         if ( m_CommentIndex < 0 ) {
@@ -323,27 +324,6 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
         else {
             CPackString::Assign(feat.SetComment(),
                                 annot_info.x_GetComment(m_CommentIndex));
-        }
-    }
-    { // location
-        TSeqPos end_position = m_EndPosition;
-        Int1 position_delta = m_PositionDelta;
-        int gi = annot_info.GetGi();
-        ENa_strand strand = MinusStrand()? eNa_strand_minus: eNa_strand_plus;
-        if ( position_delta == 0 ) {
-            // point
-            CSeq_point& point = feat.SetLocation().SetPnt();
-            point.SetPoint(end_position);
-            point.SetStrand(strand);
-            point.SetId().SetGi(gi);
-        }
-        else {
-            // interval
-            CSeq_interval& interval = feat.SetLocation().SetInt();
-            interval.SetFrom(end_position-position_delta);
-            interval.SetTo(end_position);
-            interval.SetStrand(strand);
-            interval.SetId().SetGi(gi);
         }
     }
     { // allele
@@ -383,6 +363,74 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
 }
 
 
+void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
+                                 CRef<CSeq_point>& seq_point,
+                                 CRef<CSeq_interval>& seq_interval,
+                                 const CSeq_annot_SNP_Info& annot_info) const
+{
+    x_UpdateSeq_featData(feat, annot_info);
+    { // location
+        TSeqPos end_position = m_EndPosition;
+        Int1 position_delta = m_PositionDelta;
+        int gi = annot_info.GetGi();
+        ENa_strand strand = MinusStrand()? eNa_strand_minus: eNa_strand_plus;
+        if ( position_delta == 0 ) {
+            // point
+            feat.SetLocation().Reset();
+            if ( !seq_point || !seq_point->ReferencedOnlyOnce() ) {
+                seq_point.Reset(new CSeq_point);
+            }
+            CSeq_point& point = *seq_point;
+            feat.SetLocation().SetPnt(point);
+            point.SetPoint(end_position);
+            point.SetStrand(strand);
+            point.SetId().SetGi(gi);
+        }
+        else {
+            // interval
+            feat.SetLocation().Reset();
+            if ( !seq_interval || !seq_interval->ReferencedOnlyOnce() ) {
+                seq_interval.Reset(new CSeq_interval);
+            }
+            CSeq_interval& interval = *seq_interval;
+            feat.SetLocation().SetInt(interval);
+            interval.SetFrom(end_position-position_delta);
+            interval.SetTo(end_position);
+            interval.SetStrand(strand);
+            interval.SetId().SetGi(gi);
+        }
+    }
+}
+
+
+void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
+                                 const CSeq_annot_SNP_Info& annot_info) const
+{
+    x_UpdateSeq_featData(feat, annot_info);
+    { // location
+        TSeqPos end_position = m_EndPosition;
+        Int1 position_delta = m_PositionDelta;
+        int gi = annot_info.GetGi();
+        ENa_strand strand = MinusStrand()? eNa_strand_minus: eNa_strand_plus;
+        if ( position_delta == 0 ) {
+            // point
+            CSeq_point& point = feat.SetLocation().SetPnt();
+            point.SetPoint(end_position);
+            point.SetStrand(strand);
+            point.SetId().SetGi(gi);
+        }
+        else {
+            // interval
+            CSeq_interval& interval = feat.SetLocation().SetInt();
+            interval.SetFrom(end_position-position_delta);
+            interval.SetTo(end_position);
+            interval.SetStrand(strand);
+            interval.SetId().SetGi(gi);
+        }
+    }
+}
+
+
 CRef<CSeq_feat>
 SSNP_Info::CreateSeq_feat(const CSeq_annot_SNP_Info& annot_info) const
 {
@@ -402,11 +450,26 @@ void SSNP_Info::UpdateSeq_feat(CRef<CSeq_feat>& feat_ref,
 }
 
 
+void SSNP_Info::UpdateSeq_feat(CRef<CSeq_feat>& feat_ref,
+                               CRef<CSeq_point>& seq_point,
+                               CRef<CSeq_interval>& seq_interval,
+                               const CSeq_annot_SNP_Info& annot_info) const
+{
+    if ( !feat_ref || !feat_ref->ReferencedOnlyOnce() ) {
+        feat_ref = x_CreateSeq_feat();
+    }
+    x_UpdateSeq_feat(*feat_ref, seq_point, seq_interval, annot_info);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.4  2003/08/27 14:29:53  vasilche
+ * Reduce object allocations in feature iterator.
+ *
  * Revision 1.3  2003/08/19 18:35:21  vasilche
  * CPackString classes were moved to SERIAL library.
  *

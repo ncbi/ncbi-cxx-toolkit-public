@@ -76,7 +76,7 @@ CAnnot_CI::~CAnnot_CI(void)
 void CAnnot_CI::x_Collect(void)
 {
     while ( IsValid() ) {
-        if (Get().GetObjectType() != CAnnotObject_Ref::eType_AnnotObject_Info) {
+        if (Get().GetObjectType() != CAnnotObject_Ref::eType_Seq_annot_Info) {
             Next();
             continue;
         }
@@ -95,6 +95,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/08/27 14:29:52  vasilche
+* Reduce object allocations in feature iterator.
+*
 * Revision 1.26  2003/08/22 15:00:49  grichenk
 * Redesigned CAnnot_CI to iterate over seq-annots, containing
 * given location.

@@ -58,6 +58,15 @@ CSeq_annot_Info::~CSeq_annot_Info(void)
 }
 
 
+size_t CSeq_annot_Info::GetAnnotObjectIndex(const CAnnotObject_Info& info) const
+{
+    _ASSERT(&info.GetSeq_annot_Info() == this);
+    _ASSERT(!m_ObjectInfos.empty());
+    _ASSERT(&info >= &m_ObjectInfos.front() && &info <= &m_ObjectInfos.back());
+    return &info - &m_ObjectInfos.front();
+}
+
+
 CDataSource& CSeq_annot_Info::GetDataSource(void) const
 {
     return GetSeq_entry_Info().GetDataSource();
@@ -91,14 +100,12 @@ const CSeq_entry& CSeq_annot_Info::GetSeq_entry(void) const
 void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
 {
     _ASSERT(m_ObjectKeys.empty());
-    //_ASSERT(m_ObjectInfos.empty());
 
     size_t objCount = objs.size();
 
     m_ObjectKeys.reserve(size_t(1.1*objCount));
     m_ObjectInfos.reserve(objCount);
 
-    //CDataSource& data_source = GetDataSource();
     CTSE_Info& tse_info = GetTSE_Info();
     CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
 
@@ -109,11 +116,8 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
         CSeq_feat& feat = **fit;
         m_ObjectInfos.push_back(CAnnotObject_Info(feat, *this));
         CAnnotObject_Info& info = m_ObjectInfos.back();
-        info.AddReference();
 
         key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = &info;
-
-        //data_source.x_RegisterAnnotObject(&feat, &info);
 
         info.GetMaps(hrmaps);
         annotRef.m_AnnotLocationIndex = 0;
@@ -141,14 +145,12 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
 void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
 {
     _ASSERT(m_ObjectKeys.empty());
-    //_ASSERT(m_ObjectInfos.empty());
 
     size_t objCount = objs.size();
 
     m_ObjectKeys.reserve(objCount);
     m_ObjectInfos.reserve(objCount);
 
-    //CDataSource& data_source = GetDataSource();
     CTSE_Info& tse_info = GetTSE_Info();
     CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
 
@@ -159,11 +161,8 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
         CSeq_graph& graph = **git;
         m_ObjectInfos.push_back(CAnnotObject_Info(graph, *this));
         CAnnotObject_Info& info = m_ObjectInfos.back();
-        info.AddReference();
 
         key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = &info;
-
-        //data_source.x_RegisterAnnotObject(&graph, &info);
 
         info.GetMaps(hrmaps);
         annotRef.m_AnnotLocationIndex = 0;
@@ -191,14 +190,12 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
 void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs)
 {
     _ASSERT(m_ObjectKeys.empty());
-    //_ASSERT(m_ObjectInfos.empty());
 
     size_t objCount = objs.size();
 
     m_ObjectKeys.reserve(objCount);
     m_ObjectInfos.reserve(objCount);
 
-    //CDataSource& data_source = GetDataSource();
     CTSE_Info& tse_info = GetTSE_Info();
     CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
 
@@ -209,11 +206,8 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs)
         CSeq_align& align = **ait;
         m_ObjectInfos.push_back(CAnnotObject_Info(align, *this));
         CAnnotObject_Info& info = m_ObjectInfos.back();
-        info.AddReference();
 
         key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = &info;
-
-        //data_source.x_RegisterAnnotObject(&align, &info);
 
         info.GetMaps(hrmaps);
         annotRef.m_AnnotLocationIndex = 0;
@@ -254,13 +248,6 @@ void CSeq_annot_Info::x_UnmapAnnotObjects(void)
 
 void CSeq_annot_Info::x_DropAnnotObjects(void)
 {
-    //CDataSource& data_source = GetDataSource();
-
-    ITERATE( TObjectInfos, it, m_ObjectInfos ) {
-        //data_source.x_UnregisterAnnotObject(it->GetObjectPointer());
-        it->RemoveReference();
-    }
-
     m_ObjectInfos.clear();
 }
 
@@ -271,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/08/27 14:29:52  vasilche
+ * Reduce object allocations in feature iterator.
+ *
  * Revision 1.6  2003/07/18 19:41:46  vasilche
  * Removed unused variable.
  *

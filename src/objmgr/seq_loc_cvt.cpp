@@ -57,7 +57,16 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id& master_id,
                                          const CSeqMap_CI& seg,
                                          const CSeq_id_Handle& src_id,
                                          CScope* scope)
-    : m_Src_id(src_id), m_Dst_id(master_id), m_Scope(scope)
+    : m_Src_id(src_id),
+      m_Src_from(0),
+      m_Src_to(0),
+      m_Shift(0),
+      m_Reverse(false),
+      m_Dst_id(master_id),
+      m_Partial(false),
+      m_LastType(CSeq_loc::e_not_set),
+      m_LastStrand(eNa_strand_unknown),
+      m_Scope(scope)
 {
     SetConversion(seg);
     Reset();
@@ -66,6 +75,7 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id& master_id,
 
 CSeq_loc_Conversion::~CSeq_loc_Conversion(void)
 {
+    _ASSERT(!IsSpecialLoc());
 }
 
 
@@ -83,59 +93,33 @@ void CSeq_loc_Conversion::SetConversion(const CSeqMap_CI& seg)
 }
 
 
-bool CSeq_loc_Conversion::ConvertRange(TRange& range)
+bool CSeq_loc_Conversion::ConvertPoint(TSeqPos src_pos,
+                                       ENa_strand src_strand)
 {
-    TSeqPos src_from = range.GetFrom();
-    if ( src_from < m_Src_from ) {
-        m_Partial = true;
-        src_from = m_Src_from;
-    }
-    TSeqPos src_to = range.GetTo();
-    if ( src_to > m_Src_to ) {
-        m_Partial = true;
-        src_to = m_Src_to;
-    }
-    if ( src_from > src_to ) {
-        return false;
-    }
-    TSeqPos dst_from, dst_to;
-    if ( !m_Reverse ) {
-        dst_from = m_Shift + src_from;
-        dst_to = m_Shift + src_to;
-    }
-    else {
-        dst_from = m_Shift - src_to;
-        dst_to = m_Shift - src_from;
-    }
-    range.SetFrom(dst_from).SetTo(dst_to);
-    return true;
-}
-
-
-bool CSeq_loc_Conversion::ConvertPoint(TSeqPos src_pos)
-{
+    _ASSERT(!IsSpecialLoc());
     if ( src_pos < m_Src_from || src_pos > m_Src_to ) {
         m_Partial = true;
         return false;
     }
     TSeqPos dst_pos;
     if ( !m_Reverse ) {
+        m_LastStrand = src_strand;
         dst_pos = m_Shift + src_pos;
     }
     else {
+        m_LastStrand = Reverse(src_strand);
         dst_pos = m_Shift - src_pos;
     }
-    CSeq_point* dst;
-    dst_pnt.Reset(dst = new CSeq_point);
-    dst->SetId().Assign(m_Dst_id);
-    dst->SetPoint(dst_pos);
-    m_TotalRange += TRange(dst_pos, dst_pos);
+    m_LastType = CSeq_loc::e_Pnt;
+    m_TotalRange += m_LastRange.SetFrom(dst_pos).SetTo(dst_pos);
     return true;
 }
 
 
-bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to)
+bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to,
+                                          ENa_strand src_strand)
 {
+    _ASSERT(!IsSpecialLoc());
     if ( src_from < m_Src_from ) {
         m_Partial = true;
         src_from = m_Src_from;
@@ -149,20 +133,92 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to)
     }
     TSeqPos dst_from, dst_to;
     if ( !m_Reverse ) {
+        m_LastStrand = src_strand;
         dst_from = m_Shift + src_from;
         dst_to = m_Shift + src_to;
     }
     else {
+        m_LastStrand = Reverse(src_strand);
         dst_from = m_Shift - src_to;
         dst_to = m_Shift - src_from;
     }
-    CSeq_interval* dst;
-    dst_int.Reset(dst = new CSeq_interval);
-    dst->SetId().Assign(m_Dst_id);
-    dst->SetFrom(dst_from);
-    dst->SetTo(dst_to);
-    m_TotalRange += TRange(dst_from, dst_to);
+    m_LastType = CSeq_loc::e_Int;
+    m_TotalRange += m_LastRange.SetFrom(dst_from).SetTo(dst_to);
     return true;
+}
+
+
+inline
+void CSeq_loc_Conversion::CheckDstInterval(void)
+{
+    if ( m_LastType != CSeq_loc::e_Int ) {
+        THROW1_TRACE(runtime_error,
+                     "CSeq_loc_Conversion::CheckDstInterval: wrong last location type");
+    }
+    m_LastType = CSeq_loc::e_not_set;
+}
+
+
+inline
+void CSeq_loc_Conversion::CheckDstPoint(void)
+{
+    if ( m_LastType != CSeq_loc::e_Pnt ) {
+        THROW1_TRACE(runtime_error,
+                     "CSeq_loc_Conversion::CheckDstPoint: wrong last location type");
+    }
+    m_LastType = CSeq_loc::e_not_set;
+}
+
+
+CRef<CSeq_interval> CSeq_loc_Conversion::GetDstInterval(void)
+{
+    CheckDstInterval();
+    CRef<CSeq_interval> ret(new CSeq_interval);
+    CSeq_interval& interval = *ret;
+    interval.SetId(const_cast<CSeq_id&>(m_Dst_id));
+    interval.SetFrom(m_LastRange.GetFrom());
+    interval.SetTo(m_LastRange.GetTo());
+    if ( m_LastStrand != eNa_strand_unknown ) {
+        interval.SetStrand(m_LastStrand);
+    }
+    return ret;
+}
+
+
+CRef<CSeq_point> CSeq_loc_Conversion::GetDstPoint(void)
+{
+    CheckDstPoint();
+    _ASSERT(m_LastRange.GetLength() == 1);
+    CRef<CSeq_point> ret(new CSeq_point);
+    CSeq_point& point = *ret;
+    point.SetId(const_cast<CSeq_id&>(m_Dst_id));
+    point.SetPoint(m_LastRange.GetFrom());
+    if ( m_LastStrand != eNa_strand_unknown ) {
+        point.SetStrand(m_LastStrand);
+    }
+    return ret;
+}
+
+
+void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>& dst)
+{
+    if ( !dst ) {
+        dst.Reset(new CSeq_loc);
+        switch ( m_LastType ) {
+        case CSeq_loc::e_Int:
+            dst->SetInt(*GetDstInterval());
+            break;
+        case CSeq_loc::e_Pnt:
+            dst->SetPnt(*GetDstPoint());
+            break;
+        default:
+            dst->SetEmpty(const_cast<CSeq_id&>(m_Dst_id));
+            break;
+        }
+    }
+    else {
+        _ASSERT(!IsSpecialLoc());
+    }
 }
 
 
@@ -170,6 +226,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
                                   bool always)
 {
     dst.Reset();
+    _ASSERT(!IsSpecialLoc());
     switch ( src.Which() ) {
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
@@ -177,6 +234,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
     case CSeq_loc::e_Feat:
         // Nothing to do, although this should never happen --
         // the seq_loc is intersecting with the conv. loc.
+        _ASSERT("this cannot happen" || 0);
         break;
     case CSeq_loc::e_Whole:
     {
@@ -184,38 +242,18 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         // Convert to the allowed master seq interval
         if ( GoodSrcId(src_id) ) {
             CBioseq_Handle bh = m_Scope->GetBioseqHandle(src_id);
-            if ( !bh ) {
-                THROW1_TRACE(runtime_error,
-                             "CSeq_loc_Conversion::Convert: "
-                             "cannot determine sequence length");
-            }
-            CBioseq_Handle::TBioseqCore core = bh.GetBioseqCore();
-            if ( !core->GetInst().IsSetLength() ) {
-                THROW1_TRACE(runtime_error,
-                             "CSeq_loc_Conversion::Convert: "
-                             "cannot determine sequence length");
-            }
-            if ( ConvertInterval(0, core->GetInst().GetLength()) ) {
-                dst.Reset(new CSeq_loc);
-                dst->SetInt(*dst_int);
-            }
+            ConvertInterval(0, bh.GetBioseqLength(), eNa_strand_unknown);
         }
         break;
     }
     case CSeq_loc::e_Int:
     {
-        if ( ConvertInterval(src.GetInt()) ) {
-            dst.Reset(new CSeq_loc);
-            dst->SetInt(*dst_int);
-        }
+        ConvertInterval(src.GetInt());
         break;
     }
     case CSeq_loc::e_Pnt:
     {
-        if ( ConvertPoint(src.GetPnt()) ) {
-            dst.Reset(new CSeq_loc);
-            dst->SetPnt(*dst_pnt);
-        }
+        ConvertPoint(src.GetPnt());
         break;
     }
     case CSeq_loc::e_Packed_int:
@@ -228,7 +266,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
                     dst.Reset(new CSeq_loc);
                     dst_ints = &dst->SetPacked_int().Set();
                 }
-                dst_ints->push_back(dst_int);
+                dst_ints->push_back(GetDstInterval());
             }
         }
         break;
@@ -265,7 +303,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         CSeq_loc_mix::Tdata* dst_mix = 0;
         CRef<CSeq_loc> dst_loc;
         ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
-            if ( Convert(**i, dst_loc) ) {
+            if ( Convert(**i, dst_loc, true) ) {
                 if ( !dst_mix ) {
                     dst.Reset(new CSeq_loc);
                     dst_mix = &dst->SetMix().Set();
@@ -281,7 +319,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         CSeq_loc_equiv::Tdata* dst_equiv = 0;
         CRef<CSeq_loc> dst_loc;
         ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
-            if ( Convert(**i, dst_loc) ) {
+            if ( Convert(**i, dst_loc, true) ) {
                 if ( !dst_equiv ) {
                     dst.Reset(new CSeq_loc);
                     dst_equiv = &dst->SetEquiv().Set();
@@ -298,15 +336,15 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         if ( ConvertPoint(src_bond.GetA()) ) {
             dst.Reset(new CSeq_loc);
             dst_bond = &dst->SetBond();
-            dst_bond->SetA(*dst_pnt);
-        }
-        if ( src_bond.IsSetB() ) {
-            if ( ConvertPoint(src_bond.GetB()) ) {
-                if ( !dst_bond ) {
-                    dst.Reset(new CSeq_loc);
-                    dst_bond = &dst->SetBond();
+            dst_bond->SetA(*GetDstPoint());
+            if ( src_bond.IsSetB() ) {
+                if ( ConvertPoint(src_bond.GetB()) ) {
+                    if ( !dst_bond ) {
+                        dst.Reset(new CSeq_loc);
+                        dst_bond = &dst->SetBond();
+                    }
+                    dst_bond->SetB(*GetDstPoint());
                 }
-                dst_bond->SetB(*dst_pnt);
             }
         }
         break;
@@ -316,9 +354,8 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
                      "CSeq_loc_Conversion::Convert: "
                      "Unsupported location type");
     }
-    if ( always && !dst ) {
-        dst.Reset(new CSeq_loc);
-        dst->SetEmpty();
+    if ( always && IsSpecialLoc() ) {
+        SetDstLoc(dst);
     }
     return dst;
 }
@@ -328,33 +365,42 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, int index)
 {
     Reset();
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
-    CRef<CSeq_loc> loc;
     switch ( obj.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
-    {
-        const CSeq_feat& feat = *obj.GetFeatFast();
         if ( index == 0 ) {
-            Convert(feat.GetLocation(), loc, true);
+            Convert(obj.GetFeatFast()->GetLocation(), ref.m_MappedLocation, false);
         }
         else {
-            _ASSERT(feat.IsSetProduct());
-            Convert(feat.GetProduct(), loc, true);
+            Convert(obj.GetFeatFast()->GetProduct(), ref.m_MappedLocation, false);
         }
         break;
-    }
     case CSeq_annot::C_Data::e_Graph:
-    {
-        const CSeq_graph& graph = *obj.GetGraphFast();
-        Convert(graph.GetLoc(), loc, true);
+        Convert(obj.GetGraphFast()->GetLoc(), ref.m_MappedLocation, false);
         break;
-    }
     case CSeq_annot::C_Data::e_Align:
-    {
         // TODO: map align
         break;
     }
+    SetMappedLocation(ref, index);
+}
+
+
+void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref, int index)
+{
+    ref.m_MappedIndex = index;
+    ref.m_Partial |= m_Partial;
+    ref.m_TotalRange = m_TotalRange;
+    ref.m_MappedType = m_LastType;
+    if ( IsSpecialLoc() ) {
+        _ASSERT(!ref.m_MappedLocation);
+        // special interval or point
+        ref.m_MappedLocation.Reset(GetDstLocWhole());
+        ref.m_MappedStrand = m_LastStrand;
+        m_LastType = CSeq_loc::e_not_set;
     }
-    ref.SetAnnotObjectRange(m_TotalRange, IsPartial(), loc);
+    else {
+        _ASSERT(ref.m_MappedLocation);
+    }
 }
 
 
@@ -374,6 +420,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/08/27 14:29:52  vasilche
+* Reduce object allocations in feature iterator.
+*
 * Revision 1.2  2003/08/15 19:19:16  vasilche
 * Fixed memory leak in string packing hooks.
 * Fixed processing of 'partial' flag of features.

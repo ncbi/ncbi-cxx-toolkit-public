@@ -482,35 +482,15 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
 }
 
 
-void CAnnotObject_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
-{
-    ddc.SetFrame("CAnnotObject_Info");
-    CObject::DebugDump( ddc, depth);
-
-    string choice;
-    switch (m_AnnotType) {
-    default:                            choice="unknown";   break;
-    case CSeq_annot::C_Data::e_not_set: choice="notset";    break;
-    case CSeq_annot::C_Data::e_Ftable:  choice="feature";   break;
-    case CSeq_annot::C_Data::e_Align:   choice="alignment"; break;
-    case CSeq_annot::C_Data::e_Graph:   choice="graph";     break;
-    case CSeq_annot::C_Data::e_Ids:     choice="ids";       break;
-    case CSeq_annot::C_Data::e_Locs:    choice="locs";      break;
-    }
-    ddc.Log("m_AnnotType", choice);
-//    ddc.Log("m_DataSource", m_DataSource,0);
-    ddc.Log("m_FeatType", long(m_FeatType));
-    ddc.Log("m_Object", m_Object.GetPointer(),0);
-//    ddc.Log("m_Annot", m_Annot.GetPointer(),0);
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/08/27 14:29:52  vasilche
+* Reduce object allocations in feature iterator.
+*
 * Revision 1.24  2003/08/26 21:28:47  grichenk
 * Added seq-align verification
 *
