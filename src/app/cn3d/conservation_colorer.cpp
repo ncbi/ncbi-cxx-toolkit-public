@@ -89,6 +89,9 @@ static int GetPSSMScore(const BLAST_Matrix *pssm, char ch, int masterIndex)
         ERRORMSG("GetPSSMScore() - invalid parameters");
         return 0;
     }
+    ch = ScreenResidueCharacter(ch);
+    if (ch == 'B' || ch == 'Z')     // by current calculations, B and Z have "infinite" negative scores in PSSM
+        ch = 'X';
     return pssm->matrix[masterIndex][LookupBLASTResidueNumberFromCharacter(ch)];
 }
 
@@ -128,10 +131,10 @@ float GetStandardProbability(char ch)
         stdrfp = BlastResFreqNew(sbp);
         if (!stdrfp) goto on_error;
         if (BlastResFreqStdComp(sbp, stdrfp) != 0) goto on_error;
-        for (a=1; a<23; ++a) // from 'A' to 'Y'
+        for (a=1; a<24; ++a) // from 'A' to 'Z'
             StandardProbabilities[ncbistdaa2char[a]] = (float) stdrfp->prob[a];
-//        for (a=1; a<23; ++a)
-//            TESTMSG("std prob '" << ncbistdaa2char[a] << "' = "
+//        for (a=1; a<24; ++a)
+//            TRACEMSG("std prob '" << ncbistdaa2char[a] << "' = "
 //                << setprecision(10) << StandardProbabilities[ncbistdaa2char[a]]);
         goto cleanup;
 
@@ -146,7 +149,7 @@ cleanup:
     CharFloatMap::const_iterator f = StandardProbabilities.find(ch);
     if (f != StandardProbabilities.end())
         return f->second;
-    ERRORMSG("GetStandardProbability() - unknown residue character " << ch);
+    WARNINGMSG("GetStandardProbability() - unknown residue character " << ch);
     return 0.0f;
 }
 
@@ -530,6 +533,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/01/04 18:55:36  thiessen
+* handle B,Z better
+*
 * Revision 1.36  2004/09/27 15:33:04  thiessen
 * add block info content optimization on ctrl+shift+click
 *
