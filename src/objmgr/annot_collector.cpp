@@ -1169,10 +1169,13 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info&      tse,
                 master_hr.AddRange(aoit->first, eNa_strand_unknown);
                 CConstRef<CSeqMap> seqMap =
                     CSeqMap::CreateSeqMapForSeq_loc(ref_loc, m_Scope);
-                CSeqMap_CI smit(seqMap->FindResolved(0,
-                                                     m_Scope,
-                                                     0, // do not resolve refs
-                                                     CSeqMap::fFindRef));
+                CSeqMap_CI smit(seqMap->
+                                ResolvedRangeIterator(m_Scope,
+                                                      range.GetFrom(),
+                                                      range.GetLength(),
+                                                      eNa_strand_unknown,
+                                                      0, // do not resolve refs
+                                                      CSeqMap::fFindRef));
                 while ( smit  &&
                     smit.GetPosition() <= aoit->first.GetToOpen() ) {
                     _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
@@ -1443,6 +1446,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/07/14 16:04:03  grichenk
+* Fixed range when searching through annot-locs
+*
 * Revision 1.12  2004/07/12 15:05:32  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *
