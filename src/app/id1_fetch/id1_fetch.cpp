@@ -536,8 +536,8 @@ bool CId1FetchApp::LookUpGI(int gi)
         bool gp = fmt == "genpept";
         const CSeq_entry& entry = handle.GetTopLevelSeqEntry();
 #if 1
-        CFlatNCBIFormatter formatter(*new CFlatTextOStream(cout), *m_Scope,
-                                     IFlatFormatter::eMode_Entrez);
+        CFlatNCBIFormatter formatter(*new CFlatTextOStream(*m_OutputFile),
+                                     *m_Scope, IFlatFormatter::eMode_Entrez);
         formatter.Format(entry, formatter,
                          gp ? IFlatFormatter::fSkipNucleotides
                          : IFlatFormatter::fSkipProteins);
@@ -744,6 +744,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/05/13 17:14:17  ucko
+* Direct flat output to *m_OutputFile rather than hard-coding cout.
+*
 * Revision 1.43  2003/04/24 16:17:10  vasilche
 * Added '-repeat' option.
 * Updated includes.
