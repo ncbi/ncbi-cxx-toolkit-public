@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2003/04/16 11:46:25  dicuccio
+ * Implemented delayed instantiation for internal interface class
+ *
  * Revision 6.6  2003/03/11 15:53:25  kuznets
  * iterate -> ITERATE
  *
@@ -69,6 +72,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+auto_ptr<CGencode_implementation> CGencode::sm_Implementation;
 
 // Singleton object holding needed state.
 
@@ -152,7 +156,6 @@ private:
     const string& GetSncbieaa(const string& name) const;
 };
 
-static CGencode_implementation s_Implementation;
 
 
 // Implement the public interface.
@@ -169,7 +172,7 @@ void CGencode::Translate
  bool                 bStop,
  bool                 bRemove_trailing_x)
 {
-    s_Implementation.Translate
+    x_GetImplementation().Translate
         (in_seq,
          out_seq,
          genetic_code,
@@ -185,12 +188,18 @@ void CGencode::Translate
 
 unsigned int CGencode::Codon2Idx(const string& codon)
 {
-    return s_Implementation.Codon2Idx(codon);
+    return x_GetImplementation().Codon2Idx(codon);
 }
 
 const string& CGencode::Idx2Codon(unsigned int idx)
 {
-    return s_Implementation.Idx2Codon(idx);
+    return x_GetImplementation().Idx2Codon(idx);
+}
+
+
+void CGencode::x_InitImplementation(void)
+{
+    sm_Implementation.reset(new CGencode_implementation());
 }
 
 
