@@ -75,6 +75,9 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+#define ALLOW_CACHE 1
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  Demo application
@@ -87,8 +90,9 @@ public:
     virtual void Init(void);
     virtual int  Run (void);
 
-
     auto_ptr<CBDB_BLOB_Cache> bdb_cache;
+    auto_ptr<CBDB_Cache> blob_cache;
+    auto_ptr<CBDB_Cache> id_cache;
 };
 
 
@@ -170,11 +174,19 @@ void CDemoApp::Init(void)
                             "Subtype of features to select",
                             CArgDescriptions::eInteger, "-1");
 
+#if ALLOW_CACHE
     arg_desc->AddFlag("cache",
                       "use BDB cache");
+    arg_desc->AddDefaultKey("cache_mode", "CacheMode",
+                            "Cache classes to use",
+                            CArgDescriptions::eString, "old");
+    arg_desc->SetConstraint("cache_mode",
+                            &(*new CArgAllow_Strings,
+                              "old", "newid", "new"));
     arg_desc->AddDefaultKey("id_cache_days", "id_cache_days",
                             "number of days to keep gi->sat/satkey cache",
                             CArgDescriptions::eInteger, "1");
+#endif
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -275,7 +287,7 @@ int CDemoApp::Run(void)
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
 
-#if 1
+#if ALLOW_CACHE
     if ( args["cache"] ) {
         // caching options
         CNcbiRegistry& reg = GetConfig();
@@ -286,6 +298,9 @@ int CDemoApp::Run(void)
                                       CNcbiRegistry::eErrPost);
         int cache_age = reg.GetInt("LOCAL_CACHE", "Age", 5,
                                    CNcbiRegistry::eErrPost);
+        if (cache_age == 0) {
+            cache_age = 5;   // keep objects for 5 days (default)
+        }
 
         auto_ptr<CCachedId1Reader> id1_reader;
 
@@ -299,31 +314,62 @@ int CDemoApp::Run(void)
                     }
                 }}
 
-                bdb_cache.reset(new CBDB_BLOB_Cache());
-                bdb_cache->Open(cache_path.c_str());
+                // setup blob cache
+                CCachedId1Reader* rdr;
+                string cache_mode = args["cache_mode"].AsString();
+                if ( cache_mode == "new" ) {
+                    blob_cache.reset(new CBDB_Cache());
 
-                // Cache cleaning
-                // Objects age should be assigned in days, negative value
-                // means cleaning is disabled
+                    ICache::TTimeStampFlags flags =
+                        ICache::fTimeStampOnRead |
+                        ICache::fExpireLeastFrequentlyUsed |
+                        ICache::fPurgeOnStartup;
+                    blob_cache->SetTimeStampPolicy(flags, cache_age*24*60*60);
 
-                if (cache_age == 0) {
-                    cache_age = 5;   // keep objects for 5 days (default)
+                    blob_cache->Open(cache_path.c_str(), "blobs");
+
+                    rdr = new CCachedId1Reader(5, blob_cache.get());
                 }
+                else {
+                    bdb_cache.reset(new CBDB_BLOB_Cache());
 
-                if (cache_age) {
-                    CTime time_stamp(CTime::eCurrent);
-                    time_t age = time_stamp.GetTimeT();
+                    bdb_cache->Open(cache_path.c_str());
+                    
+                    // Cache cleaning
+                    // Objects age should be assigned in days, negative value
+                    // means cleaning is disabled
+                    if (cache_age) {
+                        CTime time_stamp(CTime::eCurrent);
+                        time_t age = time_stamp.GetTimeT();
+                        
+                        age -= 60 * 60 * 24 * cache_age;
+                        
+                        bdb_cache->Purge(age);
+                    }
 
-                    age -= 60 * 60 * 24 * cache_age;
-
-                    bdb_cache->Purge(age);
+                    rdr = new CCachedId1Reader(5, bdb_cache.get());
                 }
+                id1_reader.reset(rdr);
 
                 int id_days = args["id_cache_days"].AsInteger();
-                bdb_cache->GetIntCache()->SetExpirationTime(id_days*24*60*60);
-                id1_reader.reset(new CCachedId1Reader(5,
-                                                      bdb_cache.get(),
-                                                      bdb_cache->GetIntCache()));
+                if ( cache_mode != "old" ) {
+                    id_cache.reset(new CBDB_Cache());
+
+                    ICache::TTimeStampFlags flags =
+                        ICache::fTimeStampOnCreate|
+                        ICache::fCheckExpirationAlways;
+                    id_cache->SetTimeStampPolicy(flags, id_days*24*60*60);
+
+                    id_cache->Open((cache_path+"/id").c_str(), "ids");
+
+                    rdr->SetIdCache(id_cache.get());
+                }
+                else {
+                    bdb_cache->GetIntCache()->
+                        SetExpirationTime(id_days*24*60*60);
+
+                    rdr->SetIdCache(bdb_cache->GetIntCache());
+                }
                 LOG_POST(Info << "ID1 cache enabled in " << cache_path);
             }
             catch(CException& e) {
@@ -351,7 +397,7 @@ int CDemoApp::Run(void)
         {
             // Create genbank data loader and register it with the OM.
             // The last argument "eDefault" informs the OM that the loader
-            // must be included in scopes during the CScope::AddDefaults() call.
+            // must be included in scopes during the CScope::AddDefaults() call
             pOm->RegisterDataLoader(
                 *new CGBDataLoader("ID", 0, 2),
                 CObjectManager::eDefault);
@@ -668,6 +714,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/12/30 16:01:41  vasilche
+* Added possibility to specify type of cache to use: -cache_mode (old|newid|new).
+*
 * Revision 1.48  2003/12/19 19:50:22  vasilche
 * Removed obsolete split code.
 * Do not use intemediate gi.
