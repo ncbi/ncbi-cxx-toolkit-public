@@ -178,7 +178,10 @@ int CAsn2FlatApp::Run(void)
     in->Read(ObjectInfo(*se));
 
     // add entry to scope    
-    scope->AddTopLevelSeqEntry(*se);
+    CSeq_entry_Handle entry = scope->AddTopLevelSeqEntry(*se);
+    if ( !entry ) {
+        NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
+    }
 
     // open the output stream
     CNcbiOstream* os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
@@ -187,7 +190,7 @@ int CAsn2FlatApp::Run(void)
     CRef<CFlatFileGenerator> ffg(x_CreateFlatFileGenerator(*scope, args));
     
     // generate flat file
-    ffg->Generate(*se, *os);
+    ffg->Generate(entry, *os);
 
     return 0;
 }
@@ -322,6 +325,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/03/25 21:07:54  shomrat
+* Use handles
+*
 * Revision 1.4  2004/03/05 18:51:45  shomrat
 * use view instead of filter
 *
