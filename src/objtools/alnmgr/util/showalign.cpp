@@ -454,6 +454,10 @@ void CDisplaySeqalign::AddLinkout(const CBioseq& cbsp, const CBlast_def_line& bd
         sprintf(buf, URL_Structure, m_Rid.c_str(), firstGi, gi, m_CddRid.c_str(), "onepair", (m_EntrezTerm == NcbiEmptyString) ? "none":((char*) m_EntrezTerm.c_str()));
 	out << buf;
       }
+      if ((*iter) & eGeo){
+         sprintf(buf, URL_Geo, gi);
+         out << buf;
+      }
     }
   }
 }
@@ -914,7 +918,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
     toolUrl = m_Reg->Get(m_BlastType, "TOOL_URL");
   }
   auto_ptr<CObjectOStream> out2(CObjectOStream::Open(eSerial_AsnText, out));
-
+  //*out2 << *m_SeqalignSetRef;
   if(!(m_AlignOption&eMultiAlign)){/*pairwise alignment. Note we can't just show each alnment as we go because we will need seg information form all hsp's with the same id for genome url link.  As a result we show hsp's with the same id as a group*/
     list<alnInfo*> avList;        
     string previousId = NcbiEmptyString, subid = NcbiEmptyString;
@@ -1071,7 +1075,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
       bool hasAln = false;
       for(CTypeConstIterator<CSeq_align> alnRef = ConstBegin(*alnVector[i]); alnRef; ++alnRef){
 	CTypeConstIterator<CDense_seg> ds = ConstBegin(*alnRef);
-	//	*out2 << *ds;
+        //*out2 << *ds;      
 	try{
 	  if (m_AlignOption & eTranslateNucToNucAlignment) {	 
 	    mix[i]->Add(*ds, CAlnMix::fForceTranslation);
@@ -1084,7 +1088,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
 	 hasAln = true;
       }
       if(hasAln){
-	//	*out2<<*alnVector[i];
+        //    *out2<<*alnVector[i];
 	  mix[i]->Merge(CAlnMix::fGen2EST| CAlnMix::fMinGap | CAlnMix::fQuerySeqMergeOnly | CAlnMix::fFillUnalignedRegions);  
 	//	*out2<<mix[i]->GetDenseg();
       }
@@ -1959,6 +1963,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.28  2004/01/13 17:58:02  jianye
+*Added geo linkout
+*
 *Revision 1.27  2004/01/05 17:59:24  vasilche
 *Moved genbank loader and its readers sources to new location in objtools.
 *Genbank is now in library libncbi_xloader_genbank.
