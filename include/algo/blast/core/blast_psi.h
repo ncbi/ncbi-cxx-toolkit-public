@@ -111,11 +111,14 @@ PSIMatrixFree(PSIMatrix* matrix);
 /** Structure to allow requesting various diagnostics data to be collected by
  * PSSM engine */
 typedef struct PSIDiagnosticsRequest {
-    Boolean information_content;
-    Boolean residue_frequencies;
-    Boolean weighted_residue_frequencies;
-    Boolean frequency_ratios;
-    Boolean gapless_column_weights;
+    Boolean information_content;            /**< request information content */
+    Boolean residue_frequencies;            /**< request observed residue
+                                              frequencies */
+    Boolean weighted_residue_frequencies;   /**< request observed weighted
+                                              residue frequencies */
+    Boolean frequency_ratios;               /**< request frequency ratios */
+    Boolean gapless_column_weights;         /**< request gapless column weights
+                                              */
 } PSIDiagnosticsRequest;
 
 /** This structure contains the diagnostics information requested using the

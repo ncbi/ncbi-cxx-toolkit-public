@@ -49,7 +49,7 @@ class CPssmEngineTest;      // unit test class
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
-    // forward declaration of ASN.1 object containing PSSM
+    /// forward declaration of ASN.1 object containing PSSM (scoremat.asn)
     class CScore_matrix_parameters;
 END_SCOPE(objects)
 
@@ -118,6 +118,8 @@ private:
     /// Converts the PSIMatrix structure into a CScore_matrix_parameters object
     /// @param pssm input PSIMatrix structure [in]
     /// @param matrix_name underlying scoring matrix name [in]
+    /// @param diagnostics contains diagnostics data from PSSM creation process
+    /// to save into the return value [in]
     /// @return CScore_matrix_parameters object with equivalent contents to
     /// those in pssm argument
     CRef<objects::CScore_matrix_parameters>
@@ -132,7 +134,8 @@ private:
     /// Prohibit assignment operator
     CPssmEngine& operator=(const CPssmEngine& rhs);
 
-    friend class ::CPssmEngineTest; // unit test class
+    /// unit test class
+    friend class ::CPssmEngineTest; 
 };
 
 END_SCOPE(blast)
@@ -144,6 +147,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/09/17 13:11:20  camacho
+ * Added doxygen comments
+ *
  * Revision 1.10  2004/08/05 18:02:13  camacho
  * Enhanced documentation
  *
