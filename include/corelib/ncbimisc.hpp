@@ -445,6 +445,9 @@ ssize_t CRawPointer::Sub(const void* first, const void* second)
 template<class C>
 class CBoolFor
 {
+protected:
+    static void dummy(void);
+    
 private: // all methods are private and hidden
     CBoolFor(void);
     CBoolFor(const CBoolFor<C>&);
@@ -467,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2005/01/13 16:42:26  lebedev
+ * CBoolFor template: dummy method added to avoid warnings on Mac OS X
+ *
  * Revision 1.75  2005/01/12 15:21:43  vasilche
  * Added helper template and macro for easy implementation of boolean operator via pointer.
  *
