@@ -1,6 +1,7 @@
 #################################
 # $Id$
-# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov),
+#          Aaron Ucko    (ucko@ncbi.nlm.nih.gov)
 #################################
 #
 #  C and C++ compilation rules
@@ -11,7 +12,7 @@
 
 ###  C++ compilation
 %@obj_ext@: ./%.cpp
-	@if [ -n "$(XSHLIB)" ]; then \
+	@if [ -n "$(XDLL)" ]; then \
 		mkdir -p shared && \
 		echo "$(CXX) $(CXXFLAGS_ALL) $(CXXFLAGS_DLL) $<" \
 			"@f_outobj@shared/$@ $(CXX_FILTER)" && \
@@ -20,7 +21,7 @@
 	fi
 	$(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
 %@obj_ext@: $(srcdir)/%.cpp
-	@if [ -n "$(XSHLIB)" ]; then \
+	@if [ -n "$(XDLL)" ]; then \
 		mkdir -p shared && \
 		echo "$(CXX) $(CXXFLAGS_ALL) $(CXXFLAGS_DLL) $<" \
 			"@f_outobj@shared/$@ $(CXX_FILTER)" && \
@@ -31,7 +32,7 @@
 
 ###  C compilation
 %@obj_ext@: ./%.c
-	@if [ -n "$(XSHLIB)" ]; then \
+	@if [ -n "$(XDLL)" ]; then \
 		mkdir -p shared && \
 		echo "$(CC) $(CFLAGS_ALL) $(CFLAGS_DLL) $<" \
 			"@f_outobj@shared/$@ $(CC_FILTER)" && \
@@ -40,7 +41,7 @@
 	fi
 	$(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
 %@obj_ext@: $(srcdir)/%.c
-	@if [ -n "$(XSHLIB)" ]; then \
+	@if [ -n "$(XDLL)" ]; then \
 		mkdir -p shared && \
 		echo "$(CC) $(CFLAGS_ALL) $(CFLAGS_DLL) $<" \
 			"@f_outobj@shared/$@ $(CC_FILTER)" && \
