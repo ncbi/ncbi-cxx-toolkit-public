@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/04/18 15:46:32  thiessen
+* show description, length, and PDB numbering in status line
+*
 * Revision 1.14  2001/03/28 23:01:38  thiessen
 * first working full threading
 *
@@ -112,7 +115,9 @@ public:
     int id;
     static const char NO_CODE;
     char code;
-    std::string name;
+    std::string
+        nameGraph,  // 'name' field from residue-graph dictionary
+        namePDB;    // 'name' in Residue, supposed to correspond to PDB-assigned residue number
     static const int NO_ALPHA_ID;
     int alphaID; // ID of "alpha" atom (C-alpha or P)
 
@@ -149,7 +154,7 @@ public:
 
     // public methods
     bool HasCode(void) const { return (code != NO_CODE); }
-    bool HasName(void) const { return (!name.empty()); }
+    bool HasName(void) const { return (!nameGraph.empty()); }
     bool IsNucleotide(void) const { return (type == eDNA || type == eRNA); }
     bool IsAminoAcid(void) const { return (type == eAminoAcid); }
     bool Draw(const AtomSet *atomSet) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/04/18 15:46:53  thiessen
+* show description, length, and PDB numbering in status line
+*
 * Revision 1.21  2001/03/28 23:02:17  thiessen
 * first working full threading
 *
@@ -113,6 +116,9 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seqblock/PDB_block.hpp>
 
 #include <corelib/ncbistre.hpp>
 
@@ -259,6 +265,20 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
     if (gi == VALUE_NOT_SET && pdbID.size() == 0) {
         ERR_POST(Error << "Sequence::Sequence() - can't parse SeqId");
         return;
+    }
+
+    // try to get description from title or compound
+    if (bioseq.IsSetDescr()) {
+        CSeq_descr::Tdata::const_iterator d, de = bioseq.GetDescr().Get().end();
+        for (d=bioseq.GetDescr().Get().begin(); d!=de; d++) {
+            if (d->GetObject().IsTitle()) {
+                description = d->GetObject().GetTitle();
+                break;
+            } else if (d->GetObject().IsPdb() && d->GetObject().GetPdb().GetCompound().size() > 0) {
+                description = d->GetObject().GetPdb().GetCompound().front();
+                break;
+            }
+        }
     }
 
     // get link to MMDB id - mainly for CDD's where Biostrucs have to be loaded separately

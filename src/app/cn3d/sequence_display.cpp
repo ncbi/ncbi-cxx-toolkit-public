@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/04/18 15:46:53  thiessen
+* show description, length, and PDB numbering in status line
+*
 * Revision 1.12  2001/04/05 22:55:35  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -338,30 +341,55 @@ void SequenceDisplay::MouseOver(int column, int row) const
 {
     if (*viewerWindow) {
         wxString idLoc, status;
-        if (column >= 0 && row >= 0) {
-            const DisplayRow *displayRow = rows[row];
 
-            // show id
-            if (column < displayRow->Width()) {
-                const Sequence *sequence;
-                int index;
+        if (row >= 0 && row < rows.size()) {
+            const DisplayRow *displayRow = rows[row];
+            const Sequence *sequence = NULL;
+
+            // show id if we're in sequence area
+            if (column >= 0 && column < displayRow->Width()) {
+
+                // show title and seqloc
+                int index = -1;
                 if (displayRow->GetSequenceAndIndexAt(column,
                         (*viewerWindow)->GetCurrentJustification(), &sequence, &index)) {
                     if (index >= 0) {
                         wxString title;
                         wxColour color;
                         if (GetRowTitle(row, &title, &color)) {
-                            idLoc.Printf(", loc %i", index);
+                            idLoc.Printf(", loc %i", index + 1);    // show one-based numbering
                             idLoc = title + idLoc;
                         }
                     }
                 }
+
+                // show PDB residue number if available (assume resID = index+1)
+                if (sequence && index >= 0 && sequence->molecule) {
+                    const Residue *residue = sequence->molecule->residues.find(index + 1)->second;
+                    if (residue && residue->namePDB.size() > 0) {
+                        wxString n = residue->namePDB.c_str();
+                        n = n.Strip(wxString::both);
+                        if (n.size() > 0)
+                            idLoc.Printf("%s (PDB %s)", idLoc, n.c_str());
+                    }
+                }
+
+                // show any alignment row-wise string
+                const DisplayRowFromAlignment *alnRow =
+                    dynamic_cast<const DisplayRowFromAlignment *>(displayRow);
+                if (alnRow) status = alnRow->alignment->GetRowStatusLine(alnRow->row).c_str();
             }
 
-            // show any alignment row-wise string
-            const DisplayRowFromAlignment *alnRow = dynamic_cast<const DisplayRowFromAlignment *>(displayRow);
-            if (alnRow) status = alnRow->alignment->GetRowStatusLine(alnRow->row).c_str();
+            // else show length and description if we're in the title area
+            else if (column < 0) {
+                sequence = displayRow->GetSequence();
+                if (sequence) {
+                    idLoc.Printf("length %i", sequence->sequenceString.size());
+                    status = sequence->description.c_str();
+                }
+            }
         }
+
         (*viewerWindow)->SetStatusText(idLoc, 0);
         (*viewerWindow)->SetStatusText(status, 1);
     }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/04/18 15:46:32  thiessen
+* show description, length, and PDB numbering in status line
+*
 * Revision 1.17  2001/03/01 20:15:29  thiessen
 * major rearrangement of sequence viewer code into base and derived classes
 *
@@ -133,7 +136,7 @@ public:
 
     static const int VALUE_NOT_SET;
     int gi, pdbChain, mmdbLink;
-    std::string pdbID, sequenceString, accession;
+    std::string pdbID, sequenceString, accession, description;
     bool isProtein;
 
     // corresponding protein chain (if any)

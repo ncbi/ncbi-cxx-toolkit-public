@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/04/18 15:46:54  thiessen
+* show description, length, and PDB numbering in status line
+*
 * Revision 1.10  2001/04/05 22:55:37  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -89,7 +92,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
 
     // status bar with two fields - first is for id/loc, second is for general status line
     CreateStatusBar(2);
-    int widths[2] = { 150, -1 };
+    int widths[2] = { 175, -1 };
     SetStatusWidths(2, widths);
 
     viewerWidget = new SequenceViewerWidget(this);

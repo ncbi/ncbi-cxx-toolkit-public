@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/04/18 15:46:53  thiessen
+* show description, length, and PDB numbering in status line
+*
 * Revision 1.18  2001/04/04 00:27:15  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -125,6 +128,7 @@ public:
 
 private:
     void OnPaint(wxPaintEvent& event);
+    void OnMouseEvent(wxMouseEvent& event);
 
     const SequenceViewerWidget_SequenceArea *sequenceArea;
 
@@ -204,6 +208,7 @@ private:
 
 public:
     int GetCellHeight(void) const { return cellHeight; }
+    int GetAreaHeight(void) const { return areaHeight; }
     void SetTitleArea(SequenceViewerWidget_TitleArea *titleA)
         { titleArea = titleA; }
     SequenceViewerWidget::eMouseMode GetMouseMode(void) const { return mouseMode; }
@@ -771,6 +776,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
 
 BEGIN_EVENT_TABLE(SequenceViewerWidget_TitleArea, wxWindow)
     EVT_PAINT               (SequenceViewerWidget_TitleArea::OnPaint)
+    EVT_MOUSE_EVENTS        (SequenceViewerWidget_TitleArea::OnMouseEvent)
 END_EVENT_TABLE()
 
 SequenceViewerWidget_TitleArea::SequenceViewerWidget_TitleArea(
@@ -906,6 +912,39 @@ void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
     dc.EndDrawing();
 }
 
+void SequenceViewerWidget_TitleArea::OnMouseEvent(wxMouseEvent& event)
+{
+    static const ViewableAlignment *prevAlignment = NULL;
+    static int prevMOY = -1;
+
+    if (!alignment) {
+        prevAlignment = NULL;
+        prevMOY = -1;
+        return;
+    }
+    if (alignment != prevAlignment) {
+        prevMOY = -1;
+        prevAlignment = alignment;
+    }
+
+    // get coordinates of mouse when it's over the drawing area
+    wxCoord mX, mY;
+    event.GetPosition(&mX, &mY);
+
+    // translate visible area coordinates to cell coordinates
+    int vsX, vsY, MOY;
+    sequenceArea->GetViewStart(&vsX, &vsY);
+    MOY = vsY + mY / cellHeight;
+
+    // if the mouse is leaving the window or is outside area
+    if (event.Leaving() || MOY >= sequenceArea->GetAreaHeight())
+        MOY = -1;
+
+    // do MouseOver if not in the same cell as last time
+    if (MOY != prevMOY)
+        alignment->MouseOver(-1, MOY);
+    prevMOY = MOY;
+}
 
 //////////////////////////////////////////////////////////////////////
 ///////// This is the implementation of SequenceViewerWidget /////////

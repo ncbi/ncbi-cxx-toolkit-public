@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/04/18 15:46:53  thiessen
+* show description, length, and PDB numbering in status line
+*
 * Revision 1.20  2001/03/23 23:31:56  thiessen
 * keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
 *
@@ -195,6 +198,9 @@ Residue::Residue(StructureBase *parent,
     // get ID
     id = residue.GetId().Get();
 
+    // get Residue name
+    if (residue.IsSetName()) namePDB = residue.GetName();
+
     // get CResidue_graph*
     // standard (of correct type) or local dictionary?
     const ResidueGraphList *dictionary;
@@ -229,12 +235,12 @@ Residue::Residue(StructureBase *parent,
     if (residueGraph->IsSetIupac_code())
         code = residueGraph->GetIupac_code().front()[0];
 
-    // get name if present
+    // get residue-graph name if present
     if (residueGraph->IsSetDescr()) {
         CResidue_graph::TDescr::const_iterator j, je = residueGraph->GetDescr().end();
         for (j=residueGraph->GetDescr().begin(); j!=je; j++) {
             if (j->GetObject().IsName()) {
-                name = j->GetObject().GetName();
+                nameGraph = j->GetObject().GetName();
                 break;
             }
         }
