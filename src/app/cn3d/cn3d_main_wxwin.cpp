@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/05/15 14:57:54  thiessen
+* add cn3d_tools; bring up log window when threading starts
+*
 * Revision 1.36  2001/05/11 13:45:06  thiessen
 * set up data directory
 *
@@ -220,6 +223,7 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/show_hide_dialog.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -292,6 +296,11 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
         *logText << wxString(errMsg.data(), errMsg.size());
         logFrame->Show(true);
     }
+}
+
+void RaiseLogWindow(void)
+{
+    logFrame->Raise();
 }
 
 

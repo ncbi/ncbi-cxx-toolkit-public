@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/05/15 14:57:48  thiessen
+* add cn3d_tools; bring up log window when threading starts
+*
 * Revision 1.18  2001/05/11 13:45:10  thiessen
 * set up data directory
 *
@@ -101,20 +104,8 @@
 #define TESTMSG(stream) ERR_POST(Info << stream)
 //#define TESTMSG(stream)
 
-class wxFrame;
-
 
 BEGIN_SCOPE(Cn3D)
-
-// strings for various directories (actual objects live in cn3d_main_wxwin.cpp)
-const std::string& GetWorkingDir(void); // current working directory
-const std::string& GetUserDir(void);    // directory of latest user-selected file
-const std::string& GetProgramDir(void); // directory where Cn3D executable lives
-const std::string& GetDataDir(void);    // 'data' directory with external data files
-
-// top-level window (the main structure window)
-wxFrame * GlobalTopWindow(void);
-
 
 class StructureSet;
 class AtomSet;

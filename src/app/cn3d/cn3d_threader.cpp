@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/15 14:57:55  thiessen
+* add cn3d_tools; bring up log window when threading starts
+*
 * Revision 1.15  2001/05/11 13:45:06  thiessen
 * set up data directory
 *
@@ -96,6 +99,7 @@
 #include "cn3d/residue.hpp"
 #include "cn3d/coord_set.hpp"
 #include "cn3d/atom_set.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -103,7 +107,7 @@ USING_NCBI_SCOPE;
 BEGIN_SCOPE(Cn3D)
 
 // define to include debugging output (threader structures to files)
-#define DEBUG_THREADER
+//#define DEBUG_THREADER
 
 // always do debugging in Debug build mode
 #if (!defined(DEBUG_THREADER) && defined(_DEBUG))
@@ -929,11 +933,11 @@ static bool FreezeIsolatedBlocks(Cor_Def *corDef, const Cor_Def *masterCorDef, c
 
         if (!adjacentLeft) {
             corDef->sll.nomx[i] = corDef->sll.nomn[i];
-            TESTMSG("block " << i << " fixed N-terminus");
+//            TESTMSG("block " << i << " fixed N-terminus");
         }
         if (!adjacentRight) {
             corDef->sll.comx[i] = corDef->sll.comn[i];
-            TESTMSG("block " << i << " fixed C-terminus");
+//            TESTMSG("block " << i << " fixed C-terminus");
         }
     }
 

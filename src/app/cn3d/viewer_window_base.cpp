@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/05/15 14:57:56  thiessen
+* add cn3d_tools; bring up log window when threading starts
+*
 * Revision 1.13  2001/05/11 13:45:06  thiessen
 * set up data directory
 *
@@ -81,7 +84,7 @@
 #include "cn3d/messenger.hpp"
 #include "cn3d/cn3d_threader.hpp"
 #include "cn3d/alignment_manager.hpp"
-#include "cn3d/structure_base.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 

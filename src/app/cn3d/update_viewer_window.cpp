@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/05/15 14:57:56  thiessen
+* add cn3d_tools; bring up log window when threading starts
+*
 * Revision 1.9  2001/05/02 13:46:29  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -76,6 +79,7 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/cn3d_threader.hpp"
 #include "cn3d/wx_tools.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -85,7 +89,7 @@ BEGIN_SCOPE(Cn3D)
 BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     INCLUDE_VIEWER_WINDOW_BASE_EVENTS
     EVT_CLOSE     (                                     UpdateViewerWindow::OnCloseWindow)
-    EVT_MENU      (MID_THREAD_ALL,                    UpdateViewerWindow::OnRunThreader)
+    EVT_MENU      (MID_THREAD_ALL,                      UpdateViewerWindow::OnRunThreader)
     EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,        UpdateViewerWindow::OnMerge)
     EVT_MENU      (MID_DELETE_ALN,                      UpdateViewerWindow::OnDeleteAlignment)
 END_EVENT_TABLE()
@@ -146,6 +150,7 @@ void UpdateViewerWindow::OnRunThreader(wxCommandEvent& event)
         return;
     }
 
+    RaiseLogWindow();
     SetCursor(*wxHOURGLASS_CURSOR);
     updateViewer->alignmentManager->ThreadUpdates(options);
     SetCursor(wxNullCursor);
