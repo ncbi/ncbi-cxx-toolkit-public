@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/03/06 23:57:06  lavr
+ * SERV_DISPD_LOCAL_SVC_BONUS #define'd for services running locally
+ *
  * Revision 6.5  2000/12/29 18:18:22  lavr
  * RATIO added to update pool if it exhausted due to expiration times of
  * untaken services.
@@ -59,6 +62,8 @@
 
 /* Lower bound of up-to-date/out-of-date ratio */
 #define SERV_DISPD_STALE_RATIO_OK 0.8
+/* Rate increase if svc runs locally */
+#define SERV_DISPD_LOCAL_SVC_BONUS 2.
 
 #ifdef __cplusplus
 extern "C" {
