@@ -232,7 +232,7 @@ void CFlatDataHeader::GetCounts(TSeqPos& a, TSeqPos& c, TSeqPos& g, TSeqPos& t,
             TSeqPos count = min(chunk_size, v.size() - start);
             v.GetSeqData(start, start + count, buf);
             for (TSeqPos i = 0;  i < count;  ++i) {
-                ++counts[buf[i]];
+                ++counts[(unsigned char)buf[i]];
             }
         }
         m_As = counts[1];
@@ -328,6 +328,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/12/16 21:15:12  ucko
+* GetCounts: cast indices to unsigned char just in case 8-bit values
+* somehow crop up.
+*
 * Revision 1.7  2004/12/06 17:54:10  grichenk
 * Replaced calls to deprecated methods
 *
