@@ -163,13 +163,14 @@ private:
     void x_AddProtQuals(const CSeq_feat& feat, CBioseqContext& ctx,
         bool& pseudo, bool& had_prot_desc, string& precursor_comment) const;
     void x_AddRegionQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
-    void x_AddQuals(const CGene_ref& gene) const;
+    void x_AddQuals(const CGene_ref& gene, bool gene_feat) const;
     void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddGoQuals(const CUser_object& uo) const;
     void x_AddExceptionQuals(CBioseqContext& ctx) const;
     void x_ImportQuals(const CSeq_feat::TQual& quals) const;
     void x_CleanQuals(void) const;
     const CFlatStringQVal* x_GetStringQual(EFeatureQualifier slot) const;
+    CFlatStringListQVal* x_GetStringListQual(EFeatureQualifier slot) const;
     // feature table quals
     typedef vector< CRef<CFormatQual> > TQualVec;
     void x_AddFTableQuals(CBioseqContext& ctx) const;
@@ -301,6 +302,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/08/19 16:24:04  shomrat
+* indicate gene feature when doing gene_ref quals
+*
 * Revision 1.16  2004/05/19 14:42:38  shomrat
 * + x_DropIllegalQuals
 *
