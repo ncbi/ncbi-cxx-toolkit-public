@@ -34,8 +34,7 @@
  *
  */
 
-#include <connect/ncbi_namedpipe_connector.h>
-#include <connect/ncbi_namedpipe.hpp>
+#include <connect/ncbi_namedpipe_connector.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -234,7 +233,9 @@ static void s_Destroy
  *  EXTERNAL -- the connector's "constructors"
  ***********************************************************************/
 
-extern CONNECTOR NAMEDPIPE_CreateConnectorEx
+BEGIN_NCBI_SCOPE
+
+extern CONNECTOR NAMEDPIPE_CreateConnector
 (const char*  pipename,
  size_t       bufsize) 
 {
@@ -258,17 +259,15 @@ extern CONNECTOR NAMEDPIPE_CreateConnectorEx
 }
 
 
-extern CONNECTOR NAMEDPIPE_CreateConnector
-(const char*  pipename) 
-{
-    return NAMEDPIPE_CreateConnectorEx(pipename,
-                                       CNamedPipe::kDefaultBufferSize);
-}
+END_NCBI_SCOPE
 
 
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2003/09/03 13:58:12  ivanov
+ * ncbi_namedpipe_connector.h -> ncbi_namedpipe_connector.hpp
+ *
  * Revision 1.4  2003/08/28 16:01:46  ivanov
  * Set correct timeout value in the Open()
  *
