@@ -603,9 +603,14 @@ extern void ConnNetInfo_DeleteArg(SConnNetInfo* info,
         if (arglen < argnamelen || strncmp(a, arg, argnamelen) != 0 ||
             (a[argnamelen] && a[argnamelen] != '=' && a[argnamelen] != '&'))
             continue;
-        memmove(a, a + arglen, strlen(a + arglen) + 1);
-        if (!*a && a != info->args)
-            *--a = '\0'; /* remove '&' at the end */
+        if (a[arglen]) {
+            arglen++;     /* for intermediary args, eat '&' separator, too */
+            memmove(a, a + arglen, strlen(a + arglen) + 1);
+        } else if (a != info->args) {
+            *--a = '\0';  /* last argument in a list: remove trailing '&' */
+        } else {
+            *a = '\0';    /* last and the only argument removed */
+        }
         arglen = 0;
     }
 }
@@ -1488,6 +1493,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.64  2004/04/06 19:25:56  lavr
+ * Fix ConnNetInfo_DeleteArg() to remove arg's trailing '&'
+ *
  * Revision 6.63  2004/01/14 18:52:39  lavr
  * Recognize eMIME_XmlSoap and corresponding text representation "xml+soap"
  *
