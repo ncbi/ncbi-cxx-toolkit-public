@@ -74,10 +74,15 @@ public:
     /// NOTE: currently *only* works for dense-seg
     void SwapRows(TDim row1, TDim row2);
 
-
     // Create a Dense-seg from a Std-seg
     // Used by AlnMgr to handle nucl2prot alignments
-    CRef<CSeq_align> CreateDensegFromStdseg(void) const;
+    //
+    // The optional ChooseSeqId callback is supposed to choose the 
+    // prefered seq-id (and SerialAssign it to id1) if both ids correspond
+    // to the same sequence or throw an exeption otherwise.
+    // OM is needed to resolve the ids which is the reason for the callback design.
+    typedef void (* TChooseSeqIdCallback)(CSeq_id& id1, const CSeq_id& id2);
+    CRef<CSeq_align> CreateDensegFromStdseg(TChooseSeqIdCallback ChooseSeqId = 0) const;
 
     // Create a Dense-seg with widths from Dense-seg of nucleotides
     // Used by AlnMgr to handle translated nucl2nucl alignments
@@ -115,6 +120,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/02/23 15:30:55  todorov
+* +TChooseSeqIdCallback to abstract resolving seq-ids in CreateDensegFromStdseg()
+*
 * Revision 1.6  2004/01/15 20:13:27  todorov
 * -CheckNumSegs
 *

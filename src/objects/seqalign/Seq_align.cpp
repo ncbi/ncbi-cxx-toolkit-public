@@ -229,7 +229,7 @@ void CSeq_align::SwapRows(TDim row1, TDim row2)
 /// PRE : the Seq-align has StdSeg segs
 /// POST: Seq_align of type Dense-seg is created with m_Widths if necessary
 CRef<CSeq_align> 
-CSeq_align::CreateDensegFromStdseg() const
+CSeq_align::CreateDensegFromStdseg(TChooseSeqIdCallback ChooseSeqId) const
 {
     if ( !GetSegs().IsStd() ) {
         NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
@@ -353,10 +353,21 @@ CSeq_align::CreateDensegFromStdseg() const
                 SerialAssign(*id, *seq_id);
                 ds.SetIds().push_back(id);
             } else {
-                // if (!SerialEquals(*ds.GetIds()[row], *seq_id)) {
-                //     Do nothing. Without using OM
-                //     there's no guarantee that the seqs are different.
-                // }
+                CSeq_id& id = *ds.SetIds()[row];
+                if (ChooseSeqId) {
+                    ChooseSeqId(id, *seq_id);
+                } else {
+                    if (!SerialEquals(id, *seq_id)) {
+                        string errstr =
+                            string("CreateDensegFromStdseg(): Seq-ids: ") +
+                            id.AsFastaString() + " and " +
+                            seq_id->AsFastaString() + " are not identical!" +
+                            " Without the OM it cannot be determined if they belong to"
+                            " the same sequence."
+                            " Use TChooseSeqIdCallback to resolve seq-ids.";
+                        NCBI_THROW(CSeqalignException, eInvalidInputAlignment, errstr);
+                    }
+                }
             }
 
             // next row
@@ -503,6 +514,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/02/23 15:31:24  todorov
+* +TChooseSeqIdCallback to abstract resolving seq-ids in CreateDensegFromStdseg()
+*
 * Revision 1.8  2004/02/13 17:10:24  todorov
 * - inconsistent ids exception in CreateDensegFromStdseg
 *
