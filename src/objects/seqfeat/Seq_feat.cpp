@@ -51,10 +51,11 @@ CSeq_feat::~CSeq_feat(void)
 }
 
 // Corresponds to SortFeatItemListByPos from the C toolkit
-int CSeq_feat::Compare(const CSeq_feat& f2) const
+int CSeq_feat::Compare(const CSeq_feat& f2,
+                       const CSeq_loc* mapped1, const CSeq_loc* mapped2) const
 {
-    const CSeq_loc& loc1 = GetLocation();
-    const CSeq_loc& loc2 = f2.GetLocation();
+    const CSeq_loc& loc1 = mapped1 ? *mapped1 : GetLocation();
+    const CSeq_loc& loc2 = mapped2 ? *mapped2 : f2.GetLocation();
     CSeq_loc::TRange range1 = loc1.GetTotalRange();
     CSeq_loc::TRange range2 = loc2.GetTotalRange();
     
@@ -180,6 +181,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.10  2003/02/10 15:52:08  grichenk
+ * CSeq_feat::Compare() takes optional seq-locs for remapped features
+ *
  * Revision 6.9  2003/02/06 22:24:23  vasilche
  * Added int CSeq_feat::Compare().
  * Fixed slow comparison of CSeq_feat with mix seq locs.

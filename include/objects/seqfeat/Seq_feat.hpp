@@ -70,7 +70,11 @@ public:
     // get protein (if present) from Seq-feat.xref list
     const CProt_ref* GetProtXref(void) const;
 
-    int Compare(const CSeq_feat& f2) const;
+    // Optional locations are used for features with locations
+    // re-mapped to a master sequence
+    int Compare(const CSeq_feat& f2,
+                const CSeq_loc* mapped1 = 0,
+                const CSeq_loc* mapped2 = 0) const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -78,7 +82,6 @@ private:
     CSeq_feat& operator=(const CSeq_feat& value);        
 };
 
-// Corresponds to SortFeatItemListByPos from the C toolkit
 NCBI_SEQFEAT_EXPORT
 inline
 bool operator< (const CSeq_feat& f1, const CSeq_feat& f2)
@@ -109,6 +112,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2003/02/10 15:52:07  grichenk
+* CSeq_feat::Compare() takes optional seq-locs for remapped features
+*
 * Revision 1.9  2003/02/06 22:24:23  vasilche
 * Added int CSeq_feat::Compare().
 * Fixed slow comparison of CSeq_feat with mix seq locs.
