@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_config_value.hpp>
 
 //#define USE_SINGLE_ALLOC
 //#define USE_DEBUG_NEW
@@ -82,13 +83,6 @@
 #    define STACK_THRESHOLD (16*1024)
 #  endif
 #endif
-
-
-static bool s_EnvFlag(const char* env_var_name)
-{
-    const char* value = getenv(env_var_name);
-    return value  &&  (*value == 'Y'  ||  *value == 'y' || *value == '1');
-}
 
 
 BEGIN_NCBI_SCOPE
@@ -476,7 +470,12 @@ void CObject::DoDeleteThisObject(void)
 void CObjectException::x_InitErrCode(CException::EErrCode err_code)
 {
     CCoreException::x_InitErrCode(err_code);
-    static bool abort_on_throw = s_EnvFlag("NCBI_ABORT_ON_COBJECT_THROW");
+    static int sx_abort_on_throw = -1;
+    int abort_on_throw = sx_abort_on_throw;
+    if ( abort_on_throw < 0 ) {
+        sx_abort_on_throw = abort_on_throw =
+            GetConfigFlag("NCBI", "ABORT_ON_COBJECT_THROW");
+    }
     if ( abort_on_throw ) {
         Abort();
     }
@@ -493,7 +492,12 @@ void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 
 void CObject::ThrowNullPointerException(void)
 {
-    static bool abort_on_null = s_EnvFlag("NCBI_ABORT_ON_NULL");
+    static int sx_abort_on_null = -1;
+    int abort_on_null = sx_abort_on_null;
+    if ( abort_on_null < 0 ) {
+        sx_abort_on_null = abort_on_null =
+            GetConfigFlag("NCBI", "ABORT_ON_NULL");
+    }
     if ( abort_on_null ) {
         Abort();
     }
@@ -504,6 +508,13 @@ void CObject::ThrowNullPointerException(void)
 END_NCBI_SCOPE
 
 #ifdef USE_DEBUG_NEW
+
+static bool s_EnvFlag(const char* env_var_name)
+{
+    const char* value = getenv(env_var_name);
+    return value  &&  (*value == 'Y'  ||  *value == 'y' || *value == '1');
+}
+
 
 struct SAllocHeader
 {
@@ -790,6 +801,9 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/03/14 17:03:37  vasilche
+ * Allow to set NCBI_ABORT_ON_NULL and NCBI_ABORT_ON_COBJECT_THROW via registry.
+ *
  * Revision 1.47  2004/09/30 18:35:17  vasilche
  * Relax check for ref counter to allow temporary references.
  *
