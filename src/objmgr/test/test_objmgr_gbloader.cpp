@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/03/26 17:24:58  grichenk
+* Removed extra ++i
+*
 * Revision 1.8  2002/03/26 15:40:31  kimelman
 * get rid of catch clause
 *
@@ -122,7 +125,6 @@ int CTestApplication::Run()
            }
         }
         NcbiCout << NcbiEndl;
-        i++;
     }
 
 
