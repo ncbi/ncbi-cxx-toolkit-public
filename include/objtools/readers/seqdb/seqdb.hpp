@@ -64,7 +64,7 @@ USING_SCOPE(objects);
 
 class CSeqDB;
 
-class CSeqDBIter {
+class NCBI_XOBJREAD_EXPORT CSeqDBIter {
 public:
     typedef Uint4 TOID;
     
