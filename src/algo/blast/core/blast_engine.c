@@ -267,27 +267,6 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          /* Assign frames in all HSPs. */
          HSPListSetFrames(program_number, hsp_list, score_options->is_ooframe);
          
-         if (hit_options->do_sum_stats == TRUE) {
-            status = BLAST_LinkHsps(program_number, hsp_list, query_info,
-                        subject, gap_align->sbp, hit_params, 
-                        score_options->gapped_calculation);
-         } else if (hit_options->phi_align) {
-            /* These e-values will not be accurate yet, since we don't know
-               the number of pattern occurrencies in the database. That
-               is arbitrarily set to 1 at this time. */
-            PHIGetEvalue(hsp_list, gap_align->sbp);
-         } else {
-            /* Calculate e-values for all HSPs. Skip this step
-               for RPS blast, since all the E values would likely
-               be zero. */
-            if (gap_align->rps_blast == FALSE)
-               status = BLAST_GetNonSumStatsEvalue(program_number, query_info, 
-                                      hsp_list, score_options, gap_align->sbp);
-         }
-
-         /* Discard HSPs that don't pass the e-value test */
-         status = BLAST_ReapHitlistByEvalue(hsp_list, hit_options);
-         
          AdjustOffsetsInHSPList(hsp_list, offset);
          /* Allow merging of HSPs either if traceback is already 
             available, or if it is an ungapped search */
@@ -302,6 +281,28 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
                     FALSE, TRUE);
    } /* End loop on frames */
 
+   hsp_list = *hsp_list_out;
+   if (hit_params->do_sum_stats == TRUE) {
+      status = BLAST_LinkHsps(program_number, hsp_list, query_info,
+                              subject, gap_align->sbp, hit_params, 
+                              score_options->gapped_calculation);
+   } else if (hit_options->phi_align) {
+      /* These e-values will not be accurate yet, since we don't know
+         the number of pattern occurrencies in the database. That
+         is arbitrarily set to 1 at this time. */
+      PHIGetEvalue(hsp_list, gap_align->sbp);
+   } else {
+      /* Calculate e-values for all HSPs. Skip this step
+         for RPS blast, since all the E values would likely
+         be zero. */
+      if (gap_align->rps_blast == FALSE)
+         status = BLAST_GetNonSumStatsEvalue(program_number, query_info, 
+                     hsp_list, score_options, gap_align->sbp);
+   }
+   
+   /* Discard HSPs that don't pass the e-value test */
+   status = BLAST_ReapHitlistByEvalue(hsp_list, hit_options);
+   
    if (translation_buffer) {
        sfree(translation_buffer);
    }
@@ -352,6 +353,7 @@ FillReturnXDropoffsInfo(BlastReturnStat* return_stats,
  * @param word_params Parameters for initial word processing [out]
  * @param ext_params Parameters for gapped extension [out]
  * @param hit_params Parameters for saving hits [out]
+ * @param eff_len_params Parameters for calculating effective lengths [out]
  * @param aux_struct_ptr Placeholder joining various auxiliary memory 
  *                       structures [out]
  */
@@ -370,6 +372,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    BlastInitialWordParameters** word_params,
    BlastExtensionParameters** ext_params,
    BlastHitSavingParameters** hit_params,
+   BlastEffectiveLengthsParameters** eff_len_params,                         
    BlastCoreAuxStruct** aux_struct_ptr)
 {
    Int2 status = 0;
@@ -380,24 +383,29 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
                          lookup_wrap->lut_type == PHI_NA_LOOKUP);
    Boolean ag_blast = (word_options->extension_method == eRightAndLeft);
    Int4 offset_array_size = GetOffsetArraySize(lookup_wrap);
+   Uint4 avg_subj_length;
 
    *aux_struct_ptr = aux_struct = (BlastCoreAuxStruct*)
       calloc(1, sizeof(BlastCoreAuxStruct));
 
+   if (seq_src)
+     avg_subj_length = BLASTSeqSrcGetAvgSeqLen(seq_src);
+   else
+     avg_subj_length = subject_length;
+
    if ((status = BLAST_ExtendWordInit(query->length, word_options, 
-                    eff_len_options->db_length, eff_len_options->dbseq_num, 
-                    &aux_struct->ewp)) != 0)
+                    avg_subj_length, &aux_struct->ewp)) != 0)
       return status;
 
    if ((status = BLAST_GapAlignSetUp(program_number, seq_src, 
                     scoring_options, eff_len_options, ext_options, 
                     hit_options, query, query_info, sbp, subject_length,
-                    ext_params, hit_params, gap_align)) != 0)
+                    ext_params, hit_params, eff_len_params, gap_align)) != 0)
       return status;
       
    BlastInitialWordParametersNew(program_number, word_options, 
-      *hit_params, *ext_params, sbp, query_info, eff_len_options, 
-      scoring_options->gapped_calculation, word_params);
+      *hit_params, *ext_params, sbp, query_info, avg_subj_length, 
+      word_params);
 
    if (mb_lookup) {
       aux_struct->WordFinder = MB_WordFinder;
@@ -575,6 +583,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    BlastInitialWordParameters* word_params;
    BlastExtensionParameters* ext_params;
    BlastHitSavingParameters* hit_params;
+   BlastEffectiveLengthsParameters* eff_len_params = NULL;
    BlastGapAlignStruct* gap_align;
    Int2 status = 0;
 
@@ -587,6 +596,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
 
    Int8 dbsize;
    Int4 num_db_seqs;
+   Uint4 avg_subj_length = 0;
    LookupTable *lookup = (LookupTable *)lookup_wrap->lut;
    double scale_factor;
    BlastQueryInfo concat_db_info;
@@ -604,7 +614,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
           internal_score_options, eff_len_options, lookup_wrap, word_options,
           ext_options, internal_hit_options, query, query_info, sbp,
           0, &gap_align, &word_params, &ext_params,
-          &hit_params, &aux_struct)) != 0)
+          &hit_params, &eff_len_params, &aux_struct)) != 0)
       return status;
 
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
@@ -675,12 +685,10 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    /* Change the table of diagonals that will be used for the
       search; we need a diag table that can fit the entire
       concatenated DB */
-
+   avg_subj_length = (Uint4) (dbsize / num_db_seqs);
    BlastExtendWordFree(aux_struct->ewp);
    BLAST_ExtendWordInit(concat_db.length, word_options, 
-                 eff_len_options->db_length, 
-                 eff_len_options->dbseq_num, 
-                 &aux_struct->ewp);
+			avg_subj_length, &aux_struct->ewp);
 
    /* Run the search; the input query is what gets scanned
       and the concatenated DB is the sequence associated with
@@ -770,17 +778,19 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    BlastInitialWordParameters* word_params;
    BlastExtensionParameters* ext_params;
    BlastHitSavingParameters* hit_params;
+   BlastEffectiveLengthsParameters* eff_len_params = NULL;
    BlastGapAlignStruct* gap_align;
    GetSeqArg seq_arg;
    Int2 status = 0;
    BlastSeqSrcIterator* itr = NULL;
+   Int8 db_length = 0;
    
    if ((status = 
        BLAST_SetUpAuxStructures(program_number, seq_src,
           score_options, eff_len_options, lookup_wrap, word_options, 
           ext_options, hit_options, query, query_info, sbp, 
           0, &gap_align, &word_params, &ext_params, 
-          &hit_params, &aux_struct)) != 0)
+          &hit_params, &eff_len_params, &aux_struct)) != 0)
       return status;
 
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
@@ -795,6 +805,9 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
       /** NEED AN ERROR MESSAGE HERE? */
       return -1;
    }
+   
+   if (seq_src)
+     db_length = BLASTSeqSrcGetTotLen(seq_src);
 
 #ifdef THREADS_IMPLEMENTED
    /* FIXME: will only work for full databases */
@@ -817,6 +830,25 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
       BlastSequenceBlkClean(seq_arg.seq);
       if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
           continue;
+
+      /* Calculate cutoff scores for linking HSPs */
+      if (hit_params->do_sum_stats) {
+         CalculateLinkHSPCutoffs(program_number, query_info, sbp, 
+                                 hit_params, db_length, seq_arg.seq->length, 
+                                 psi_options);
+      }
+
+      if (db_length == 0) {
+         /* This is not a database search, hence need to recalculate and save
+            the effective search spaces and length adjustments for all 
+            queries based on the length of the current single subject 
+            sequence. */
+         if ((status = BLAST_OneSubjectUpdateParameters(program_number, 
+                          seq_arg.seq->length, score_options, query_info, 
+                          sbp, ext_params, hit_params, word_params, 
+                          eff_len_params)) != 0)
+            return status;
+      }
 
       BLAST_SearchEngineCore(program_number, query, query_info,
          seq_arg.seq, lookup_wrap, gap_align, score_options, word_params, 
@@ -850,13 +882,14 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    }
 
    /* Now sort the hit lists for all queries */
-   BLAST_SortResults(results);
+   if (db_length > 0)
+     BLAST_SortResults(results);
 
    if (!ext_options->skip_traceback && score_options->gapped_calculation) {
       status = 
          BLAST_ComputeTraceback(program_number, results, query, query_info,
             seq_src, gap_align, score_options, ext_params, hit_params,
-            db_options, psi_options);
+            eff_len_params, db_options, psi_options);
    }
 
    /* Do not destruct score block here */
@@ -867,6 +900,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    sfree(hit_params);
    sfree(ext_params);
    sfree(word_params);
+   sfree(eff_len_params);
 
    return status;
 }
@@ -886,11 +920,12 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    BlastHSPResults* results, BlastReturnStat* return_stats)
 {
    BlastCoreAuxStruct* aux_struct = NULL;
-   BlastHSPList* hsp_list; 
-   BlastHitSavingParameters* hit_params; 
-   BlastInitialWordParameters* word_params; 
-   BlastExtensionParameters* ext_params;
-   BlastGapAlignStruct* gap_align;
+   BlastHSPList* hsp_list = NULL; 
+   BlastHitSavingParameters* hit_params = NULL; 
+   BlastInitialWordParameters* word_params = NULL; 
+   BlastExtensionParameters* ext_params = NULL;
+   BlastEffectiveLengthsParameters* eff_len_params = NULL;
+   BlastGapAlignStruct* gap_align = NULL;
    Int2 status = 0;
 
    if (!subject)
@@ -901,7 +936,12 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
            eff_len_options, lookup_wrap, word_options, ext_options, 
            hit_options, query, query_info, 
            sbp, subject->length, &gap_align, &word_params, &ext_params, 
-           &hit_params, &aux_struct)) != 0)
+           &hit_params, &eff_len_params, &aux_struct)) != 0)
+      return status;
+
+   eff_len_params->real_db_length = subject->length;
+   if ((status = BLAST_CalcEffLengths(program_number, score_options, 
+                                      eff_len_params, sbp, query_info)) != 0)
       return status;
 
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
