@@ -87,12 +87,12 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
 
 
 
-void CObjectsSniffer::OnObjectFoundPre(const CObjectInfo& object, 
-                                       size_t stream_offset)
+void CObjectsSniffer::OnObjectFoundPre(const CObjectInfo& /*object*/, 
+                                       size_t /*stream_offset*/)
 {
 }
 
-void CObjectsSniffer::OnObjectFoundPost(const CObjectInfo& object)
+void CObjectsSniffer::OnObjectFoundPost(const CObjectInfo& /*object*/)
 {
 }
 
@@ -218,6 +218,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2003/08/05 14:43:47  kuznets
+* Fixed compilation warnings
+*
 * Revision 1.9  2003/08/05 14:31:28  kuznets
 * Implemented background "do not call" candidates for recognition.
 *
