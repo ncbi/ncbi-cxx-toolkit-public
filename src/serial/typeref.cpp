@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/08/14 17:14:57  grichenk
+* Another improvement to MT-safety
+*
 * Revision 1.6  2002/08/13 13:56:06  grichenk
 * Improved MT-safety in CTypeInfo and CTypeRef
 *
@@ -138,6 +141,9 @@ void CTypeRef::Assign(const CTypeRef& typeRef)
 
 TTypeInfo CTypeRef::sx_Abort(const CTypeRef& typeRef)
 {
+    CMutexGuard guard(s_TypeRefMutex);
+    if (typeRef.m_Getter != sx_Abort)
+        return typeRef.m_Getter(typeRef);
     THROW1_TRACE(runtime_error, "uninitialized type ref");
 }
 
