@@ -1161,6 +1161,9 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info&      tse,
                 const CSeq_id* ref_id = 0;
                 ref_loc.CheckId(ref_id);
                 _ASSERT(ref_id);
+                _ASSERT( ref_loc.IsInt() );
+                bool reverse_ref = ref_loc.GetInt().IsSetStrand() ?
+                    IsReverse(ref_loc.GetInt().GetStrand()) : false;
                 CSeq_id_Handle ref_idh = CSeq_id_Handle::GetHandle(*ref_id);
                 if ( m_Selector.m_ResolveMethod ==
                     SAnnotSelector::eResolve_TSE &&
@@ -1191,7 +1194,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info&      tse,
                             aoit->first,
                             ref_idh,
                             ref_range.GetFrom(),
-                            false, // no strand for locs
+                            reverse_ref,
                             m_Scope));
                     if ( cvt ) {
                         locs_cvt->CombineWith(*cvt);
@@ -1449,6 +1452,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/07/19 17:41:59  grichenk
+* Added strand processing in annot.locs
+*
 * Revision 1.15  2004/07/19 14:24:00  grichenk
 * Simplified and fixed mapping through annot.locs
 *
