@@ -273,7 +273,7 @@ s_HSPListFromDistinctAlignments(
     Blast_HSPInit(align->queryStart,   align->queryEnd,
                   align->matchStart,   align->matchEnd,
                   unknown_value, unknown_value,
-                  0, align->frame, align->score,
+                  0, 0, align->frame, align->score,
                   &align->editBlock, &new_hsp);
 
     /* At this point, the subject and possibly the query sequence have

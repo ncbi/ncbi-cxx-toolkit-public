@@ -2374,11 +2374,12 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
                the offsets to start the alignment from, if traceback is to 
                be performed later */
             BlastHSP* new_hsp;
-            Blast_HSPInit(gap_align->query_start, gap_align->query_stop,
-                           gap_align->subject_start, gap_align->subject_stop, 
-                           init_hsp->q_off, init_hsp->s_off, 
-                           context, 1, gap_align->score,
-                           &(gap_align->edit_block), &new_hsp);
+            Blast_HSPInit(gap_align->query_start, gap_align->query_stop, 
+                          gap_align->subject_start, gap_align->subject_stop,
+                          init_hsp->q_off, init_hsp->s_off, context, 
+                          query_info->contexts[context].frame, 1, 
+                          gap_align->score, &(gap_align->edit_block), 
+                          &new_hsp);
             Blast_HSPListSaveHSP(hsp_list, new_hsp);
          }
       }
@@ -3158,16 +3159,16 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                Boolean hsp_start_is_contained=FALSE, hsp_end_is_contained=FALSE;
                
                if (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end, q_start,
-                   hsp1->subject.offset, hsp1->subject.end, s_start) &&
-                   (!init_hsp->ungapped_data || (SIGN(hsp1->query.frame) ==
-                       SIGN(init_hsp->ungapped_data->frame))))
+                                    hsp1->subject.offset, hsp1->subject.end, 
+                                    s_start))
                {
                      hsp_start_is_contained = TRUE;
                }
 
-               if (hsp_start_is_contained && (CONTAINED_IN_HSP(hsp1->query.offset,
-                   hsp1->query.end, q_end, hsp1->subject.offset,
-                   hsp1->subject.end, s_end)))
+               if (hsp_start_is_contained && 
+                   (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end, q_end,
+                                     hsp1->subject.offset, hsp1->subject.end, 
+                                     s_end)))
                {
                   hsp_end_is_contained = TRUE;
                }
@@ -3220,14 +3221,26 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
             gap_align->sbp->posMatrix = orig_pssm;
             return status;
          }
+        
+         if (gap_align->score >= hit_params->cutoff_score) {
+             Int2 query_frame = 0;
+             /* For mixed-frame search, the query frame is determined 
+                from the offset, not only from context. */
+             if (score_params->options->is_ooframe && 
+                 program_number == eBlastTypeBlastx) {
+                 query_frame = gap_align->query_start % CODON_LENGTH + 1;
+                 if ((context % NUM_FRAMES) >= CODON_LENGTH)
+                     query_frame = -query_frame;
+             } else {
+                 query_frame = query_info->contexts[context].frame;
+             }
 
-         if (gap_align->score >= hit_params->cutoff_score)
-         {
-             Blast_HSPInit(gap_align->query_start, gap_align->query_stop,
-                       gap_align->subject_start, gap_align->subject_stop, 
-                       init_hsp->q_off, init_hsp->s_off, 
-                       context, subject->frame, gap_align->score,
-                       &(gap_align->edit_block), &new_hsp);
+             Blast_HSPInit(gap_align->query_start, 
+                           gap_align->query_stop, gap_align->subject_start, 
+                           gap_align->subject_stop, init_hsp->q_off, 
+                           init_hsp->s_off, context, 
+                           query_frame, subject->frame, gap_align->score, 
+                           &(gap_align->edit_block), &new_hsp);
              Blast_HSPListSaveHSP(hsp_list, new_hsp);
 
              /* Fill in the helper structure. */
@@ -3836,9 +3849,10 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject,
 }
 
 Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
-        BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
-        const BlastHitSavingOptions* hit_options, 
-        BlastHSPList** hsp_list_ptr)
+                              BlastQueryInfo* query_info, 
+                              BLAST_SequenceBlk* subject, 
+                              const BlastHitSavingOptions* hit_options, 
+                              BlastHSPList** hsp_list_ptr)
 {
    BlastHSPList* hsp_list = NULL;
    Int4 index;
@@ -3873,11 +3887,13 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
          *hsp_list_ptr = hsp_list;
       }
       ungapped_data = init_hsp->ungapped_data;
-      Blast_HSPInit(ungapped_data->q_start, ungapped_data->length+ungapped_data->q_start,
-                    ungapped_data->s_start, ungapped_data->length+ungapped_data->s_start,
+      Blast_HSPInit(ungapped_data->q_start, 
+                    ungapped_data->length+ungapped_data->q_start,
+                    ungapped_data->s_start, 
+                    ungapped_data->length+ungapped_data->s_start,
                     init_hsp->q_off, init_hsp->s_off, 
-                    context, subject->frame, ungapped_data->score,
-                    NULL, &new_hsp);
+                    context, query_info->contexts[context].frame, 
+                    subject->frame, ungapped_data->score, NULL, &new_hsp);
       Blast_HSPListSaveHSP(hsp_list, new_hsp);
    }
 
@@ -4019,10 +4035,11 @@ Int2 PHIGetGappedScore (EBlastProgramType program_number,
          return status;
       }
 
-      Blast_HSPInit(gap_align->query_start, gap_align->query_stop,
+      Blast_HSPInit(gap_align->query_start, gap_align->query_stop, 
                     gap_align->subject_start, gap_align->subject_stop, 
                     init_hsp->q_off, init_hsp->s_off, 
-                    context, subject->frame, gap_align->score,
+                    context, query_info->contexts[context].frame, 
+                    subject->frame, gap_align->score,
                     &(gap_align->edit_block), &new_hsp);
       new_hsp->pattern_length = init_hsp->ungapped_data->length;
       Blast_HSPListSaveHSP(hsp_list, new_hsp);
