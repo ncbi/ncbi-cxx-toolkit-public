@@ -32,6 +32,8 @@
 
 #include <algo/phy_tree/dist_methods.hpp>
 
+#include <math.h>
+
 #include "fastme/graph.h"
 
 BEGIN_NCBI_SCOPE
@@ -339,6 +341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/10 23:07:46  ucko
+ * +<math.h> for log()
+ *
  * Revision 1.2  2004/02/10 17:01:19  dicuccio
  * Use swap() instead of iter_swap(), as the latter isn't found on MSVC
  *
