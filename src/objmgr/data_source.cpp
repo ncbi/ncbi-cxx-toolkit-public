@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2002/06/21 15:12:15  grichenk
+* Added resolving seq-id to the best version
+*
 * Revision 1.51  2002/06/12 14:39:53  grichenk
 * Performance improvements
 *
@@ -1699,7 +1702,21 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
     //### CMutexGuard guard(sm_DataSource_Mutex);
     CTSE_Info* tse = x_FindBestTSE(idh, scope.m_History);
     CSeqMatch_Info match;
-    if (tse) {
+    if ( !tse ) {
+        // Try to find the best matching id (not exactly equal)
+        TSeq_id_HandleSet hset;
+        GetIdMapper().GetMatchingHandles(id, hset);
+        iterate(TSeq_id_HandleSet, hit, hset) {
+            if ( tse  &&  idh.IsBetter(*hit) )
+                continue;
+            CTSE_Info* tmp_tse = x_FindBestTSE(*hit, scope.m_History);
+            if ( tmp_tse ) {
+                tse = tmp_tse;
+                idh = *hit;
+            }
+        }
+    }
+    if ( tse ) {
         match = CSeqMatch_Info(idh, *tse, *this);
     }
     bool just_loaded = false;
