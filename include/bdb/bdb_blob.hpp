@@ -31,6 +31,8 @@
  * File Description: BDB library BLOB support.
  *
  */
+/// @file bdb_blob.hpp
+/// BDB library BLOB support.
 
 #include <bdb/bdb_file.hpp>
 
@@ -39,11 +41,10 @@ BEGIN_NCBI_SCOPE
 
 class CBDB_BLobStream;
 
-//////////////////////////////////////////////////////////////////
-//
-// Berkeley DB BLob File class. 
-//
-//
+/// Berkeley DB BLob File class. 
+///
+/// The basic BLOB file. Key part of the file consists of one or more 
+/// fields. Data part is one binary object(BLOB).
 
 class NCBI_BDB_EXPORT CBDB_BLobFile : public CBDB_File
 {
@@ -51,35 +52,61 @@ public:
 
     CBDB_BLobFile();
 
+    /// Insert BLOB into the database
+    ///
+    /// Before calling this function you should assign the key fields.
+    /// @param data BLOB data
+    /// @param size data size in bytes
     EBDB_ErrCode Insert(const void* data, size_t size);
 
-    // Fetches the record corresponding to the current key value.
+    /// Fetche the record corresponding to the current key value.
+    ///
+    /// Key fields should be assigned before calling this function.
+    /// This call actually translates into a BerkeleyDB call, so the target page
+    /// will be read from the disk into the BerkeleyDB internal cache.
+    /// You can call LobSize to get BLOB data size, allocate the target 
+    /// buffer and then call GetData (two phase BLOB fetch). 
+    /// If you know the data size upfront parameterized Fetch is a 
+    /// better alternative.
     EBDB_ErrCode Fetch();
 
-    // Fetch LOB record directly into the provided '*buf'.
-    // If size of the LOB is greater than 'buf_size', then
-    // if reallocation is allowed -- '*buf' will be reallocated
-    // to fit the LOB size; otherwise, a exception will be thrown.
+    /// Retrieve BLOB data
+    ///
+    /// Fetch LOB record directly into the provided '*buf'.
+    /// If size of the LOB is greater than 'buf_size', then
+    /// if reallocation is allowed -- '*buf' will be reallocated
+    /// to fit the BLOB size; otherwise it throws an exception.
+    /// @param buf pointer on buffer pointer
+    /// @param buf_size buffer size
+    /// @param allow_realloc when "eReallocAllowed" Berkeley DB reallocates
+    /// the buffer to allow successful fetch
     EBDB_ErrCode Fetch(void**       buf, 
                        size_t       buf_size, 
                        EReallocMode allow_realloc);
 
-    // Get LOB size. Becomes available right after successfull Fetch.
+    /// Get LOB size. Becomes available right after successfull Fetch.
     size_t LobSize() const;
 
-    // Copy LOB data into the 'buf'.
-    // Throw an exception if buffer size 'size' is less than LOB size. 
+    /// Copy LOB data into the 'buf'.
+    /// Throw an exception if buffer size 'size' is less than LOB size.
+    ///
+    /// @param buf destination data buffer
+    /// @param size data buffer size
+    /// @sa LobSize
     EBDB_ErrCode GetData(void* buf, size_t size);
 
+    /// Creates stream like object to retrieve or write BLOB by chunks.
+    /// Caller is responsible for deletion.
     CBDB_BLobStream* CreateStream();
 
 };
 
-//////////////////////////////////////////////////////////////////
-//
-// Berkeley DB BLob File stream. 
-//
-//
+/// Berkeley DB BLob File stream. 
+///
+/// Class wraps partial data read/write functionality of Berkeley DB.
+/// Both Read and Write functions of the class directly call 
+/// corresponding Berkeley DB methods without any buffering. For performance
+/// reasons it's advised to read or write data in chunks of substantial size.
 
 class NCBI_BDB_EXPORT CBDB_BLobStream
 {
@@ -89,7 +116,9 @@ public:
 
     ~CBDB_BLobStream();
 
+    /// Read data from BLOB
     void Read(void *buf, size_t buf_size, size_t *bytes_read);
+    /// Write data into BLOB
     void Write(const void* buf, size_t buf_size);
 
 private:
@@ -105,49 +134,48 @@ private:
 };
 
 
-//////////////////////////////////////////////////////////////////
-//
-// Berkeley DB Large OBject File class. 
-// Implements simple BLOB storage based on single unsigned integer key
-//
+
+/// Berkeley DB Large Object File class. 
+/// Implements simple BLOB storage based on single unsigned integer key
 
 class NCBI_BDB_EXPORT CBDB_LobFile : public CBDB_RawFile
 {
 public:
     CBDB_LobFile();
 
+    /// Insert BLOB data into the database
+    ///
+    /// @param lob_id insertion key
+    /// @param data buffer pointer
+    /// @param size data size in bytes
     EBDB_ErrCode Insert(unsigned int lob_id, const void* data, size_t size);
 
-    // Fetch LOB record. On success, LOB size becomes available
-    // (see LobSize()), and the value can be obtained using GetData().
-    //
-    // <pre>
-    // Typical usage for this function is:
-    // 1. Call Fetch()
-    // 2. Allocate LobSize() chunk of memory
-    // 3. Use GetData() to retrive lob value
-    // </pre>
+    /// Fetch LOB record. On success, LOB size becomes available
+    /// (see LobSize()), and the value can be obtained using GetData().
+    ///
+    /// <pre>
+    /// Typical usage for this function is:
+    /// 1. Call Fetch()
+    /// 2. Allocate LobSize() chunk of memory
+    /// 3. Use GetData() to retrive lob value
+    /// </pre>
     EBDB_ErrCode Fetch(unsigned int lob_id);
 
-    // Fetch LOB record directly into the provided '*buf'.
-    // If size of the LOB is greater than 'buf_size', then
-    // if reallocation is allowed -- '*buf' will be reallocated
-    // to fit the LOB size; otherwise, a exception will be thrown.
+    /// Fetch LOB record directly into the provided '*buf'.
+    /// If size of the LOB is greater than 'buf_size', then
+    /// if reallocation is allowed -- '*buf' will be reallocated
+    /// to fit the LOB size; otherwise, a exception will be thrown.
     EBDB_ErrCode Fetch(unsigned int lob_id, 
                        void**       buf, 
                        size_t       buf_size, 
                        EReallocMode allow_realloc);
 
-    // Get LOB size. Becomes available right after successfull Fetch.
+    /// Get LOB size. Becomes available right after successfull Fetch.
     size_t LobSize() const;
 
-    // Copy LOB data into the 'buf'.
-    // Throw an exception if buffer size 'size' is less than LOB size. 
+    /// Copy LOB data into the 'buf'.
+    /// Throw an exception if buffer size 'size' is less than LOB size. 
     EBDB_ErrCode GetData(void* buf, size_t size);
-
-protected:
-    // Sets custom comparison function
-    virtual void SetCmp(DB* db);
 
 private:
     unsigned int  m_LobKey;  
@@ -180,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/09/26 18:48:05  kuznets
+ * Doxigenification of comments
+ *
  * Revision 1.8  2003/09/17 18:17:15  kuznets
  * +CBDB_BLobStream class
  *
