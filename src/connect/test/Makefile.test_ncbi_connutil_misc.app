@@ -5,6 +5,7 @@ SRC = test_ncbi_connutil_misc
 LIB = connect
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
-#LINK = purify $(ORIG_LINK)
+LINK = $(C_LINK)
+#LINK = purify $(C_LINK)
 
 CHECK_CMD =
