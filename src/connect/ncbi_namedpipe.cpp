@@ -592,12 +592,11 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
 #endif
         strcpy(addr.sun_path, pipename.c_str());
         
-        int x_errno;
+        int x_errno = 0;
         int n;
         // Auto-resume if interrupted by a signal
         for (n = 0; ; n = 1) {
             if (connect(sock, (struct sockaddr*) &addr, sizeof(addr)) == 0) {
-                x_errno = 0;
                 break;
             }
             x_errno = errno;
@@ -606,7 +605,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
             }
         }
         // If not connected
-        if (x_errno) {
+        if ( x_errno ) {
             if ((n != 0 || x_errno != EINPROGRESS)  &&
                 (n == 0 || x_errno != EALREADY)     &&
                 x_errno != EWOULDBLOCK) {
@@ -620,16 +619,21 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
             if (!timeout  ||  timeout->sec  ||  timeout->usec) {
                 // Auto-resume if interrupted by a signal
                 for (;;) {
-                    struct timeval tm;
-                    tm.tv_sec = timeout->sec;
-                    tm.tv_usec = timeout->usec;
+                    struct timeval  tm;
+                    struct timeval* tmp = 0;
+
+                    if ( !timeout ) {
+                        tm.tv_sec = timeout->sec;
+                        tm.tv_usec = timeout->usec;
+                        tmp = &tm;
+                    } 
                     fd_set wfds;
                     fd_set efds;
                     FD_ZERO(&wfds);
                     FD_ZERO(&efds);
                     FD_SET(sock, &wfds);
                     FD_SET(sock, &efds);
-                    n = select(sock + 1, 0, &wfds, &efds, &tm);
+                    n = select(sock + 1, 0, &wfds, &efds, tmp);
                     if (n < 0 || FD_ISSET(sock, &efds)) {
                         if (errno == EINTR) {
                             continue;
@@ -753,13 +757,12 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
             // Wait for the client to connect
             fd_set          fd;
             struct timeval  tm;
-            struct timeval* tmp = &tm;
+            struct timeval* tmp = 0;
 
             if ( !timeout ) {
-                tmp = 0;
-            } else {
                 tm.tv_sec = timeout->sec;
                 tm.tv_usec = timeout->usec;
+                tmp = &tm;
             }   
             FD_ZERO(&fd);
             FD_SET(m_LSocket, &fd);
@@ -1139,6 +1142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/09/02 19:51:17  ivanov
+ * Fixed incorrect infinite timeout handling in the CNamedPipeHandle::Open()
+ *
  * Revision 1.9  2003/08/28 16:03:05  ivanov
  * Use os-specific Status() function
  *
