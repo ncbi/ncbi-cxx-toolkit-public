@@ -331,13 +331,17 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 }
 
 
-extern void ConnNetInfo_SetUserHeader(SConnNetInfo* info,
+extern int/*bool*/ ConnNetInfo_SetUserHeader(SConnNetInfo* info,
                                       const char*   user_header)
 {
     if (info->http_user_header)
         free((void*) info->http_user_header);
-    info->http_user_header =
-        user_header && *user_header ? strdup(user_header) : 0;
+    if (user_header && *user_header) {
+        info->http_user_header = strdup(user_header);
+        return info->http_user_header ? 1/*success*/ : 0/*failure*/;
+    } else
+        info->http_user_header = 0;
+    return 1/*success*/;
 }
 
 
@@ -347,10 +351,8 @@ extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
     size_t oldlen, newlen;
     char* new_header;
 
-    if (!info->http_user_header || !(oldlen = strlen(info->http_user_header))){
-        ConnNetInfo_SetUserHeader(info, user_header);
-        return !!info->http_user_header == !!user_header ? 1/*ok*/ : 0/*fail*/;
-    }
+    if (!info->http_user_header || !(oldlen = strlen(info->http_user_header)))
+        return ConnNetInfo_SetUserHeader(info, user_header);
 
     if (!user_header || !(newlen = strlen(user_header)))
         return 1/*success*/;
@@ -367,9 +369,9 @@ extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
 
 
 typedef enum {
-    eUserHeaderOp_Override,
+    eUserHeaderOp_Delete,
     eUserHeaderOp_Extend,
-    eUserHeaderOp_Delete
+    eUserHeaderOp_Override
 } EUserHeaderOp;
 
 
@@ -429,14 +431,14 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
                 break;
         }
         switch (op) {
-        case eUserHeaderOp_Override:
-            len = newtagval < newline + newlinelen ? newlinelen : 0;
+        case eUserHeaderOp_Delete:
+            len = 0;
             break;
         case eUserHeaderOp_Extend:
             len = newlinelen - (size_t)(newtagval - newline);
             break;
-        case eUserHeaderOp_Delete:
-            len = 0;
+        case eUserHeaderOp_Override:
+            len = newtagval < newline + newlinelen ? newlinelen : 0;
             break;
         default:
             assert(0);
@@ -466,9 +468,9 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
             } else
                 l = len;
             if (l != linelen) {
+                size_t off  = (size_t)(line - hdr);
                 if (l > linelen) {
-                    char*  temp = (char*)realloc(hdr, hdrlen + l - linelen +1);
-                    size_t off  = (size_t)(line - hdr);
+                    char* temp = (char*)realloc(hdr, hdrlen + l - linelen + 1);
                     if (!temp) {
                         retval = 0/*failure*/;
                         continue;
@@ -476,9 +478,8 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
                     hdr  = temp;
                     line = temp + off;
                 }
-                memmove(line + l, line + linelen,
-                        hdrlen - (size_t)(line - hdr) - linelen + 1);
                 hdrlen -= linelen;
+                memmove(line + l, line + linelen, hdrlen - off + 1);
                 hdrlen += l;
             }
 
@@ -571,9 +572,10 @@ extern int/*bool*/ ConnNetInfo_PrependArg(SConnNetInfo* info,
     if (!info->args[0])
         amp = '\0';
     off = strlen(arg) + (val && *val ? 1 + strlen(val) : 0) + (amp ? 1 : 0);
-    if (strlen(info->args) + off + 1 >= sizeof(info->args))
+    if (off + strlen(info->args) >= sizeof(info->args))
         return 0/*failure*/;
-    memmove(&info->args[off], info->args, strlen(info->args) + 1);
+    if (amp)
+        memmove(&info->args[off], info->args, strlen(info->args) + 1);
     strcpy(info->args, arg);
     if (val && *val) {
         strcat(info->args, "=");
@@ -641,7 +643,7 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
                                     (info->service
                                      ? strlen(info->service) + 1 : 0));
     *x_info = *info;
-    if (info->timeout  &&  info->timeout != CONN_DEFAULT_TIMEOUT) {
+    if (info->timeout  &&  info->timeout != kDefaultTimeout) {
         x_info->tmo     = *info->timeout;
         x_info->timeout = &x_info->tmo;
     }
@@ -759,13 +761,13 @@ extern SOCK URL_Connect
     static const char  X_REQ_Q[] = "?";
     static const char  X_REQ_E[] = " HTTP/1.0\r\n";
 
-    EIO_Status st;
-    BUF        buf;
-    SOCK       sock;
-    char*      header;
-    char       buffer[80];
-    size_t     headersize;
-    char*      x_args = 0;
+    EIO_Status  st;
+    BUF         buf;
+    SOCK        sock;
+    char*       header;
+    char        buffer[80];
+    size_t      headersize;
+    const char* x_args = 0;
 
     /* check the args */
     if (!host  ||  !*host  ||  !port  ||  !path  ||  !*path  ||
@@ -803,15 +805,16 @@ extern SOCK URL_Connect
         if ( encode_args ) {
             size_t dst_size = 3 * src_size;
             size_t src_read, dst_written;
-            x_args = (char*) malloc(dst_size + 1);
-            URL_Encode(args,   src_size, &src_read,
-                       x_args, dst_size, &dst_written);
-            x_args[dst_written] = '\0';
+            char* xx_args = (char*) malloc(dst_size + 1);
+            if (!xx_args)
+                return 0/*failure: no memory*/;
+            URL_Encode(args,    src_size, &src_read,
+                       xx_args, dst_size, &dst_written);
+            xx_args[dst_written] = '\0';
             assert(src_read == src_size);
-        } else {
-            x_args = (char*) malloc(src_size + 1);
-            memcpy(x_args, args, src_size + 1);
-        }
+            x_args = xx_args;
+        } else
+            x_args = args;
     }
 
     buf = 0;
@@ -841,12 +844,12 @@ extern SOCK URL_Connect
                                " %s:%hu%s%s", host, port, errno ? ": " : "",
                                errno ? strerror(errno) : ""));
         BUF_Destroy(buf);
-        if (x_args)
-            free(x_args);
+        if (x_args  &&  x_args != args)
+            free((void*) x_args);
         return 0/*error*/;
     }
-    if (x_args)
-        free(x_args);
+    if (x_args  &&  x_args != args)
+        free((void*) x_args);
 
     if (!(header = (char*) malloc(headersize = BUF_Size(buf))) ||
         BUF_Read(buf, header, headersize) != headersize) {
@@ -1476,6 +1479,11 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.59  2003/08/25 14:44:43  lavr
+ * Employ new k..Timeout constants
+ * URL_Connect():  get rid of one avoidable malloc()
+ * User header manipulation routines:  factor out some arithmetics for speed
+ *
  * Revision 6.58  2003/05/31 05:13:38  lavr
  * Replace bitwise XOR with inequality [of the same effect]
  *
