@@ -88,7 +88,7 @@ void ValidateRecord(const TestDBF1& dbf1, unsigned int id)
 
     int idata1 = dbf1.idata;
     unsigned int id_key = dbf1.IdKey;
-    string s = dbf1.str;
+    string s = (const char*)dbf1.str;
     int i21 = dbf1.i2;
 
     assert(s == string(buf));
@@ -750,6 +750,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/04/29 19:04:13  kuznets
+ * +Test makefiles
+ *
  * Revision 1.1  2003/04/28 18:12:52  kuznets
  * Initial revision
  *

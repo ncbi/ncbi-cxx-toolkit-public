@@ -1,0 +1,9 @@
+# $Id$
+
+APP = bdbtest
+SRC = test_bdb
+LIB = bdb xncbi
+LIBS = $(BERKELEYDB_LIBS) $(ORIG_LIBS)
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)
+REQUIRES = BerkeleyDB
