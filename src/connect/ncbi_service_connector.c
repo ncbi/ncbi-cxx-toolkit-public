@@ -34,7 +34,6 @@
 #include "ncbi_comm.h"
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
-#include <connect/ncbi_connection.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
@@ -847,6 +846,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.58  2003/05/29 20:13:48  lavr
+ * -#include <connect/ncbi_connection.h>
+ *
  * Revision 6.57  2003/05/22 20:31:28  lavr
  * Callbacks in the constructor had to be set after successful init only
  *
