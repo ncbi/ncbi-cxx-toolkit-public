@@ -220,12 +220,6 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
    delete_hsp = FALSE;
    hsp->score = score;
 
-   /* NB: this function is called only for a blastn search after greedy 
-      gapped extension, so use gapped Karlin block for e-value calculation. */
-   hsp->evalue = 
-      BLAST_KarlinStoE_simple(score, sbp->kbp_gap[hsp->context], 
-                              query_info->eff_searchsp_array[hsp->context]);
-
    if (hsp->score < hit_params->cutoff_score) {
       delete_hsp = TRUE;
    } else {
@@ -314,13 +308,7 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start,
 
    delete_hsp = FALSE;
    hsp->score = score;
-   /* Calculate individual HSP e-value here if linking of HSPs is turned off. 
-      Use ungapped Karlin block. */
-   if (!hit_params->link_hsp_params) {
-      hsp->evalue = 
-         BLAST_KarlinStoE_simple(score, sbp->kbp_std[hsp->context], 
-                                 query_info->eff_searchsp_array[hsp->context]);
-   }
+
    if (hsp->score < word_params->cutoff_score) {
       delete_hsp = TRUE;
    } else {
@@ -781,8 +769,13 @@ void Blast_HSPListSortByScore(BlastHSPList* hsp_list)
     }
 }
 
+/** Precision to which e-values are compared. */
 #define FUZZY_EVALUE_COMPARE_FACTOR 1e-6
-/** Compares 2 real numbers up to a fixed precision */
+
+/** Compares 2 real numbers up to a fixed precision.
+ * @param evalue1 First evalue [in]
+ * @param evalue2 Second evalue [in]
+ */
 static int 
 s_FuzzyEvalueComp(double evalue1, double evalue2)
 {
@@ -795,10 +788,13 @@ s_FuzzyEvalueComp(double evalue1, double evalue2)
 }
 
 /** Comparison callback function for sorting HSPs by e-value and score, before
-    saving BlastHSPList in a BlastHitList. E-value has priority over score, 
-    because lower scoring HSPs might have lower e-values, if they are linked
-    with sum statistics.
-    E-values are compared only up to a certain precision. */
+ * saving BlastHSPList in a BlastHitList. E-value has priority over score, 
+ * because lower scoring HSPs might have lower e-values, if they are linked
+ * with sum statistics.
+ * E-values are compared only up to a certain precision. 
+ * @param v1 Pointer to first HSP [in]
+ * @param v2 Pointer to second HSP [in]
+ */
 static int
 s_EvalueCompareHSPs(const void* v1, const void* v2)
 {
@@ -872,7 +868,12 @@ typedef struct BlastHSPSegment {
    struct BlastHSPSegment* next;
 } BlastHSPSegment;
 
+/** Maximal diagonal distance between HSP starting offsets, within which HSPs 
+ * from search of different chunks of subject sequence are considered for 
+ * merging.
+ */
 #define OVERLAP_DIAG_CLOSE 10
+
 /** Merge the two HSPs if they intersect.
  * @param hsp1 The first HSP; also contains the result of merge. [in] [out]
  * @param hsp2 The second HSP [in]
@@ -1339,8 +1340,10 @@ Blast_HSPListSetFrames(EBlastProgramType program_number, BlastHSPList* hsp_list,
 }
 
 Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
-        BlastHSPList* hsp_list, Boolean gapped_calculation, 
-        BlastScoreBlk* sbp, double gap_decay_rate)
+                             BlastHSPList* hsp_list, 
+                             Boolean gapped_calculation, 
+                             BlastScoreBlk* sbp, double gap_decay_rate,
+                             double scaling_factor)
 {
    BlastHSP* hsp;
    BlastHSP** hsp_array;
@@ -1362,11 +1365,19 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
 
    if (gap_decay_rate != 0.)
       gap_decay_divisor = BLAST_GapDecayDivisor(gap_decay_rate, 1);
-   
+  
    for (index=0; index<hsp_cnt; index++) {
       hsp = hsp_array[index];
 
       ASSERT(hsp != NULL);
+      
+      /* Prevent division by 0. */
+      if (scaling_factor == 0.0)
+         scaling_factor = 1.0;
+      /* Divide Lambda by the scaling factor, so e-value is 
+         calculated correctly from a scaled score. This is needed only
+         for RPS BLAST, where scores are scaled, but Lambda is not. */
+      kbp[hsp->context]->Lambda /= scaling_factor;
 
       /* Get effective search space from the score block, or from the 
          query information block, in order of preference */
@@ -1379,6 +1390,8 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
                query_info->eff_searchsp_array[hsp->context]);
       }
       hsp->evalue /= gap_decay_divisor;
+      /* Put back the unscaled value of Lambda. */
+      kbp[hsp->context]->Lambda *= scaling_factor;
    }
    
    /* Assign the best e-value field. Here the best e-value will always be
@@ -1505,6 +1518,7 @@ Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list)
         return 0;
 }
 
+/** Status values returned by an HSP inclusion test function. */
 typedef enum EHSPInclusionStatus {
    eEqual = 0,      /**< Identical */
    eFirstInSecond,  /**< First included in rectangle formed by second */
@@ -1516,6 +1530,10 @@ typedef enum EHSPInclusionStatus {
 
 /** Are the two HSPs within a given diagonal distance of each other? */
 #define MB_HSP_CLOSE(q1, q2, s1, s2, c) (ABS(((q1)-(s1)) - ((q2)-(s2))) < (c))
+
+/** Diagonal distance between HSPs, outside of which one HSP cannot be 
+ * considered included in the other.
+ */ 
 #define MIN_DIAG_DIST 60
 
 /** HSP inclusion criterion for megablast: one HSP must be included in a
@@ -2105,6 +2123,9 @@ Int2 Blast_HitListHSPListsFree(BlastHitList* hitlist)
    return 0;
 }
 
+/** Purge a BlastHitList of empty HSP lists. 
+ * @param hit_list BLAST hit list structure. [in] [out]
+ */
 static void 
 s_BlastHitListPurge(BlastHitList* hit_list)
 {
@@ -2186,6 +2207,9 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list,
    return 0;
 }
 
+/** Purges a BlastHitList of NULL HSP lists.
+ * @param hit_list BLAST hit list to purge. [in] [out]
+ */
 static Int2 
 s_BlastHitListPurgeNullHSPLists(BlastHitList* hit_list)
 {
