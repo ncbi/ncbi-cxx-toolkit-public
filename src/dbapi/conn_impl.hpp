@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.8  2002/09/23 18:25:10  kholodov
+* Added: GetDataSource() method.
+*
 * Revision 1.7  2002/09/18 18:49:26  kholodov
 * Modified: class declaration and Action method to reflect
 * direct inheritance of CActiveObject from IEventListener
@@ -80,6 +83,7 @@ public:
     virtual void ResetMode(EConnMode mode);
     virtual unsigned int GetModeMask();
 
+    virtual IDataSource* GetDataSource();
 
     virtual void Connect(const string& user,
                          const string& password,

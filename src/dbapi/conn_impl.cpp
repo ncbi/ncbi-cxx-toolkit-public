@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.15  2002/09/23 18:25:10  kholodov
+* Added: GetDataSource() method.
+*
 * Revision 1.14  2002/09/18 18:49:27  kholodov
 * Modified: class declaration and Action method to reflect
 * direct inheritance of CActiveObject from IEventListener
@@ -119,6 +122,11 @@ void CConnection::SetMode(EConnMode mode)
 void CConnection::ResetMode(EConnMode mode)
 {
     m_modeMask &= ~mode;
+}
+
+IDataSource* CConnection::GetDataSource()
+{
+    return m_ds;
 }
 
 unsigned int CConnection::GetModeMask()
