@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/01/22 18:54:09  gouriano
+* added unfreezing of the string stream
+*
 * Revision 1.5  2003/01/06 17:14:15  gouriano
 * corrected CSerialObject::DebugDump: disabled autoseparator in output stream
 *
@@ -92,6 +95,7 @@ void CSerialObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     ostr << endl << "****** end   ASN dump ******" << endl;
     ostr << '\0';
     ddc.Log( "Serial_AsnText", string(ostr.str()));
+    ostr.freeze(false);
 }
 
 
