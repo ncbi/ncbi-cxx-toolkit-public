@@ -175,6 +175,10 @@ void CDB_Connection::PopMsgHandler(CDB_UserHandler* h)
     m_Connect->PopMsgHandler(h);
 }
 
+CDB_ResultProcessor* CDB_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
+{
+    return m_Connect? m_Connect->SetResultProcessor(rp) : 0;
+}
 
 CDB_Connection::~CDB_Connection()
 {
@@ -378,6 +382,11 @@ int CDB_LangCmd::RowCount() const
     return m_Cmd->RowCount();
 }
 
+void CDB_LangCmd::DumpResults()
+{
+    s_CheckLangCmd(m_Cmd, "DumpResults");
+    m_Cmd->DumpResults();
+}
 
 CDB_LangCmd::~CDB_LangCmd()
 {
@@ -473,6 +482,12 @@ int CDB_RPCCmd::RowCount() const
 {
     s_CheckRPCCmd(m_Cmd, "RowCount");
     return m_Cmd->RowCount();
+}
+
+void CDB_RPCCmd::DumpResults()
+{
+    s_CheckRPCCmd(m_Cmd, "DumpResults");
+    m_Cmd->DumpResults();
 }
 
 void CDB_RPCCmd::SetRecompile(bool recompile)
@@ -681,6 +696,14 @@ int CDB_ITDescriptor::DescriptorType() const
 CDB_ITDescriptor::~CDB_ITDescriptor()
 {
 }
+
+// this default implementation just dumps all rows
+// you need to override it to get the data
+void CDB_ResultProcessor::ProcessResult(CDB_Result& res)
+{
+    while(res.Fetch());
+}
+
 END_NCBI_SCOPE
 
 
@@ -688,6 +711,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/06/05 15:58:38  soussov
+ * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface, adds CDB_ResultProcessor class
+ *
  * Revision 1.5  2003/01/29 22:35:05  soussov
  * replaces const string& with const char* in inlines
  *

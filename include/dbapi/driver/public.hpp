@@ -110,6 +110,8 @@ public:
     // Remove the message handler (and all above it) from the stack
     virtual void PopMsgHandler(CDB_UserHandler* h);
 
+    virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
+
     // Destructor
     virtual ~CDB_Connection();
 
@@ -229,6 +231,11 @@ public:
     //                command could ever affect any rows (like PRINT).
     virtual int RowCount() const;
 
+    // Dump the results of the command
+    // if result processor is installed for this connection, it will be called for
+    // each result set
+    virtual void DumpResults();
+
     // Destructor
     virtual ~CDB_LangCmd();
 
@@ -282,6 +289,11 @@ public:
     // Special case:  negative on error or if there is no way that this
     //                command could ever affect any rows (like PRINT).
     virtual int RowCount() const;
+
+    // Dump the results of the command
+    // if result processor is installed for this connection, it will be called for
+    // each result set
+    virtual void DumpResults();
 
     // Set the "recompile before execute" flag for the stored proc
     virtual void SetRecompile(bool recompile = true);
@@ -442,6 +454,27 @@ protected:
     string m_SearchConditions;
 };
 
+class CDB_ResultProcessor {
+public:
+    CDB_ResultProcessor(CDB_Connection* c) {
+        m_Con= c;
+        if(m_Con) m_Prev= m_Con->SetResultProcessor(this);
+    }
+    virtual void ProcessResult(CDB_Result& res);
+    ~CDB_ResultProcessor() {
+        if(m_Con) m_Con->SetResultProcessor(m_Prev);
+    }
+
+private:
+    // Prohibit default- and copy- constructors, and assignment
+    CDB_ResultProcessor();
+    CDB_ResultProcessor& operator= (const CDB_ResultProcessor&);
+    CDB_ResultProcessor(const CDB_ResultProcessor&);
+
+    CDB_ResultProcessor* m_Prev;
+    CDB_Connection* m_Con;
+};
+
 END_NCBI_SCOPE
 
 
@@ -451,6 +484,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/06/05 15:54:43  soussov
+ * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface, adds CDB_ResultProcessor class
+ *
  * Revision 1.7  2003/04/11 17:46:09  siyan
  * Added doxygen support
  *
