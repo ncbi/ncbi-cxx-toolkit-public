@@ -68,30 +68,6 @@ void CSequenceItem::Format
 }
 
 
-const CSeqVector& CSequenceItem::GetSequence(void) const
-{
-    return m_Sequence;
-}
-
-
-TSeqPos CSequenceItem::GetFrom(void) const
-{
-    return m_From + 1;
-}
-
-
-TSeqPos CSequenceItem::GetTo(void) const
-{
-    return m_To + 1;
-}
-
-
-bool CSequenceItem::IsFirst(void) const
-{
-    return m_First;
-}
-
-
 /***************************************************************************/
 /*                                  PRIVATE                                */
 /***************************************************************************/
@@ -132,6 +108,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/11/24 16:52:11  shomrat
+* Inilined methods
+*
 * Revision 1.9  2004/11/19 15:15:16  shomrat
 * Do not force fetching the complete bioseq
 *
