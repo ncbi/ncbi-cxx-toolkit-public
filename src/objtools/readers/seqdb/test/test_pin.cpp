@@ -38,7 +38,7 @@ int hang10()
     return 0;
 }
 
-int main(int argc, char ** argv)
+int test1(int argc, char ** argv)
 {
     string dbpath = "/net/fridge/vol/export/blast/db/blast";
     
@@ -70,8 +70,42 @@ int main(int argc, char ** argv)
         string s = args.front();
         args.pop_front();
         
+        if (s == "-here") {
+            CSeqDB nr("tenth", 'p', true);
+            
+            for(int i = 0; i<100; i++) {
+                CRef<CBioseq> bs = nr.GetBioseq(i);
+                
+                cout << "-----seq " << i << "------------" << endl;
+                
+                auto_ptr<CObjectOStream>
+                    outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                
+                *outpstr << *bs;
+            }
+            
+            return 0;
+        } else desc += " [-here]";
+        
+        if (s == "-local") {
+            CSeqDB nr("/home/bealer/seqdb/tenth", 'p', true);
+            
+            for(int i = 0; i<100; i++) {
+                CRef<CBioseq> bs = nr.GetBioseq(i);
+                
+                cout << "-----seq " << i << "------------" << endl;
+                
+                auto_ptr<CObjectOStream>
+                    outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                
+                *outpstr << *bs;
+            }
+            
+            return 0;
+        } else desc += " [-local]";
+        
         if (s == "-seqids") {
-            CSeqDB nr(dbpath, "nr", 'p', true);
+            CSeqDB nr(/*dbpath,*/ "nr", 'p', true);
             
             for(int i = 0; i<100; i++) {
                 list< CRef<CSeq_id> > seqids =
@@ -98,7 +132,7 @@ int main(int argc, char ** argv)
         } else desc += " [-seqids]";
         
         if (s == "-memtest") {
-            CSeqDB nt(dbpath, "nt", 'n', false);
+            CSeqDB nt(/*dbpath,*/ "nt", 'n', false);
             
             Uint4 oid = 0;
             
@@ -133,7 +167,7 @@ int main(int argc, char ** argv)
                 }
                 
                 if (1) {
-                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclNcbi4NA);
+                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclNcbi8NA);
                     
                     int y = (length > 16) ? 16 : length;
                 
@@ -153,7 +187,7 @@ int main(int argc, char ** argv)
                 }
                 
                 if (1) {
-                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclBlastNA);
+                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclBlast8NA);
                 
                     int y = (length > 16) ? 16 : length;
                 
@@ -179,7 +213,7 @@ int main(int argc, char ** argv)
         } else desc += " [-memtest]";
         
         if (s == "-getambig") {
-            CSeqDB nt(dbpath, "nt", 'n', false);
+            CSeqDB nt(/*dbpath,*/ "nt", 'n', false);
             
             Uint4 oid = 0;
             
@@ -214,7 +248,7 @@ int main(int argc, char ** argv)
                 }
                 
                 {
-                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclNcbi4NA);
+                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclNcbi8NA);
                 
                     int y = (length > 16) ? 16 : length;
                 
@@ -234,7 +268,7 @@ int main(int argc, char ** argv)
                 }
                 
                 {
-                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclBlastNA);
+                    int length = nt.GetAmbigSeq(oid, & buf, kSeqDBNuclBlast8NA);
                 
                     int y = (length > 16) ? 16 : length;
                 
@@ -261,7 +295,7 @@ int main(int argc, char ** argv)
         
         if (s == "-iter2") {
             {
-                CSeqDB phil(dbpath, "swissprot pataa", 'p', true);
+                CSeqDB phil(/*dbpath,*/ "swissprot pataa", 'p', true);
             
                 {
                     CSeqDBIter skywalk = phil.Begin();
@@ -285,7 +319,7 @@ int main(int argc, char ** argv)
                 }
             }
             {
-                CSeqDB phil(dbpath, "pataa swissprot", 'p', true);
+                CSeqDB phil(/*dbpath,*/ "pataa swissprot", 'p', true);
             
                 {
                     CSeqDBIter skywalk = phil.Begin();
@@ -313,7 +347,7 @@ int main(int argc, char ** argv)
         } else desc += " [-iter2]";
         
         if (s == "-iter") {
-            CSeqDB phil(dbpath, "swissprot pdb", 'p', true);
+            CSeqDB phil(/*dbpath,*/ "swissprot pdb", 'p', true);
             
             {
                 CSeqDBIter skywalk = phil.Begin();
@@ -356,7 +390,7 @@ int main(int argc, char ** argv)
         } else desc += " [-iter]";
         
         if (s == "-iterpdb") {
-            CSeqDB phil(dbpath, "pdb", 'p', true);
+            CSeqDB phil(/*dbpath,*/ "pdb", 'p', true);
             
             {
                 CSeqDBIter skywalk = phil.Begin();
@@ -381,7 +415,7 @@ int main(int argc, char ** argv)
         } else desc += " [-iterpdb]";
         
         if (s == "-itersp") {
-            CSeqDB phil(dbpath, "swissprot", 'p', true);
+            CSeqDB phil(/*dbpath,*/ "swissprot", 'p', true);
             
             {
                 CSeqDBIter skywalk = phil.Begin();
@@ -406,7 +440,7 @@ int main(int argc, char ** argv)
         } else desc += " [-itersp]";
         
         if (s == "-spcount") {
-            CSeqDB phil(dbpath, "swissprot", 'p', true);
+            CSeqDB phil(/*dbpath,*/ "swissprot", 'p', true);
             
             double besht = 100.0;
             double woist = 0.0;
@@ -452,7 +486,7 @@ int main(int argc, char ** argv)
         } else desc += " [-spcount]";
         
         if (s == "-swiss") {
-            CSeqDB phil(dbpath, "swissprot", 'p', true);
+            CSeqDB phil(/*dbpath,*/ "swissprot", 'p', true);
              
             {
                 Uint8 tlen = 0;
@@ -499,7 +533,7 @@ int main(int argc, char ** argv)
         
         
         if (s == "-lib") {
-            CSeqDB phil(dbpath, "nt nt month est", 'n', true);
+            CSeqDB phil(/*dbpath,*/ "nt nt month est", 'n', true);
             phil.GetSeqLength(123);
             phil.GetSeqLengthApprox(123);
             phil.GetHdr(123);
@@ -521,7 +555,7 @@ int main(int argc, char ** argv)
         } else desc += " [-lib]";
         
         if (s == "-summary") {
-            CSeqDB phil(dbpath, "month", 'n', true);
+            CSeqDB phil(/*dbpath,*/ "month", 'n', true);
             cout << "dbpath: " << dbpath            << endl;
             cout << "title:  " << phil.GetTitle()   << endl;
             cout << "nseqs:  " << phil.GetNumSeqs() << endl;
@@ -543,7 +577,7 @@ int main(int argc, char ** argv)
 //                 args.pop_front(); 
 //             }
             
-//             ncbi::CSeqDBAliasNode phil(dbpath, dbname, ending[0], true);
+//             ncbi::CSeqDBAliasNode phil(/*dbpath,*/ dbname, ending[0], true);
             
 //             vector<string> vols;
             
@@ -562,9 +596,9 @@ int main(int argc, char ** argv)
             string dbname2("pataa");
             string dbname3(dbname1 + " " + dbname2);
             
-            CSeqDB dbi1(dbpath, dbname1, kSeqTypeProt, use_mm);
-            CSeqDB dbi2(dbpath, dbname2, kSeqTypeProt, use_mm);
-            CSeqDB dbi3(dbpath, dbname3, kSeqTypeProt, use_mm);
+            CSeqDB dbi1(/*dbpath,*/ dbname1, kSeqTypeProt, use_mm);
+            CSeqDB dbi2(/*dbpath,*/ dbname2, kSeqTypeProt, use_mm);
+            CSeqDB dbi3(/*dbpath,*/ dbname3, kSeqTypeProt, use_mm);
             
             cout << "1 " << dbi1.GetTotalLength() << endl;
             cout << "2 " << dbi2.GetTotalLength() << endl;
@@ -620,9 +654,9 @@ int main(int argc, char ** argv)
             
             string dbname3(dbname1 + " " + dbname2);
             
-            CSeqDB dbi1(dbpath, dbname1, kSeqTypeNucl, use_mm);
-            CSeqDB dbi2(dbpath, dbname2, kSeqTypeNucl, use_mm);
-            CSeqDB dbi3(dbpath, dbname3, kSeqTypeNucl, use_mm);
+            CSeqDB dbi1(/*dbpath,*/ dbname1, kSeqTypeNucl, use_mm);
+            CSeqDB dbi2(/*dbpath,*/ dbname2, kSeqTypeNucl, use_mm);
+            CSeqDB dbi3(/*dbpath,*/ dbname3, kSeqTypeNucl, use_mm);
             
             cout << "1 " << dbi1.GetTotalLength() << endl;
             cout << "2 " << dbi2.GetTotalLength() << endl;
@@ -711,15 +745,15 @@ int main(int argc, char ** argv)
             continue;
         } else desc += " [-approx]";
         
-        if (s == "-ambig") {
-            dbname = "/home/bealer/seqdb/dbs/ambig";
-            continue;
-        } else desc += " [-ambig]";
+//         if (s == "-ambig") {
+//             dbname = "/home/bealer/seqdb/dbs/ambig";
+//             continue;
+//         } else desc += " [-ambig]";
         
-        if (s == "-kevinx") {
-            dbname = "/home/bealer/seqdb/dbs/kevinx";
-            continue;
-        } else desc += " [-kevinx]";
+//         if (s == "-kevinx") {
+//             dbname = "/home/bealer/seqdb/dbs/kevinx";
+//             continue;
+//         } else desc += " [-kevinx]";
         
         if (s == "-no-del") {
             deletions = false;
@@ -833,7 +867,7 @@ int main(int argc, char ** argv)
         try {
             double dstart = dbl_time();
             
-            CSeqDB dbi(dbpath, dbname, seqtype, use_mm);
+            CSeqDB dbi(/*dbpath,*/ dbname, seqtype, use_mm);
             
             if (show_progress)
                 cout << "at line " << __LINE__ << endl;
@@ -973,143 +1007,26 @@ int main(int argc, char ** argv)
     return 0;
 }
 
-
-#if 0
+int main(int argc, char ** argv)
 {
-//     {
-//         string dbname("/home/bealer/seqdb/dbs/nr.test");
-        
-//         CSeqDBIndexFile DBIndex(dbname, kSeqTypeUnkn, false);
-        
-//         Int4 seq_length5 = DBIndex.GetSeqLengthBytes(5);
-        
-//         cout << "Sequence length for NR sequence 5 == " << seq_length5 << endl;
-//     }
+    int rc = 0;
     
-//     {
-//         string dbname("/home/bealer/seqdb/dbs/nt.test");
-        
-//         CSeqDBIndexFile DBIndex(dbname, kSeqTypeUnkn, false);
-        
-//         Int4 seq_length5 = DBIndex.GetSeqLengthBytes(5);
-        
-//         cout << "Sequence length for NT sequence 5 == " << seq_length5 << endl;
-//     }
-    
-    
-//     {
-//         string dbname("/home/bealer/seqdb/dbs/nr.test");
-        
-//         CSeqDB DBIndex(dbname, kSeqTypeUnkn, false);
-        
-//         Int4 seq_length5 = DBIndex.GetSeqLength(5);
-        
-//         cout << "Sequence length for NR sequence 5 == " << seq_length5 << endl;
-//     }
-    
-    
-//     {
-//         string dbname("/home/bealer/seqdb/dbs/nt.test");
-        
-//         CSeqDB DBIndex(dbname, kSeqTypeUnkn, false);
-        
-//         for (int scuba = 1; scuba < 10; scuba ++) {
-//             Int4 seq_length5 = DBIndex.GetSeqLength(scuba);
-            
-//             cout << "Sequence length for NT sequence ("
-//                  << scuba
-//                  << ") == "
-//                  << seq_length5 << endl;
-//         }
-//     }
-    
-    string dbname("/home/bealer/seqdb/dbs/nr.test");
-    CSeqDB DBIndex(dbpath, dbname, kSeqTypeUnkn, false);
-    
-    auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
-    
-    CRef<CBlast_def_line_set> phil;
-    
-    for(int i = 0; i<1; i++) {
-        phil = DBIndex.GetHdr(i);
-
-        // Blast-def-line-set ::= {
-        //   {
-        //     title "gi|16857|gb|M6485.1|HTOPATP Hitoplasma capslatum plama mebrane H+
-        //  ATase gene",
-        //     seqid {
-        //       general {
-        //         db "BL_ORD_ID",
-        //         tag id 0
-        //       }
-        //     },
-        //     taxid 0
-        //   }
-        // }
-        
-        CRef<CBlast_def_line> phil1 = phil->Get().front();
-        
-        const CDbtag & seq1 = phil1->GetSeqid().front()->GetGeneral();
-        
-        cout << "------------------------------\n";
-        cout << "Fetched oid       =" << i << "\n";
-        cout << "Fetched title     =<<* " << phil1->GetTitle()       << " *>> \n";
-        cout << "Fetched taxid     =<<* " << phil1->GetTaxid()       << " *>>\n";
-        cout << "Fetched seqid.db  =<<* " << seq1.GetDb()            << " *>>\n";
-        
-        if (seq1.GetTag().IsId()) {
-            cout << "Fetched seqid.tag(id)  =" << seq1.GetTag().GetId() << "\n";
-        } else if (seq1.GetTag().IsStr()) {
-            cout << "Fetched seqid.tag(str) =<<* " << seq1.GetTag().GetStr() << " *>>\n";
-        }
-        
-        cout << "---" << endl;
-        
-        if (phil.NotEmpty()) {
-            *outpstr << *phil;
-        }
+    try {
+        cout << "--one--" << endl;
+        rc = test1(argc, argv);
+        cout << "--two--" << endl;
+    }
+    catch(exception e) {
+        cout << "--three--" << endl;
+        cout << "Caught an exception: {" << e.what() << "}" << endl;
+        rc = 1;
+        cout << "--four--" << endl;
+    }
+    catch(...) {
+        cout << "--five--" << endl;
     }
     
-    cout << endl;
-    //cout << "Got sequence for oid = 4:\n[" << DBIndex.GetProtSeq(4) << endl;
-    
-    {
-        string dbname("/home/bealer/seqdb/dbs/nr.test");
-        CSeqDB dbi(dbpath, dbname, kSeqTypeUnkn, false);
-        
-        const char * buffy = 0;
-        int lenny1 = dbi.GetSequence(3, & buffy);
-        
-        cout << "dont vote for (strlen=" << strlen(buffy) <<") lenny = [" << lenny1 << "]" << endl;
-        cout << "Seq 3 nr = [" << 0 << "]" << endl;
-    }
-
-    {
-        string dbname("/home/bealer/seqdb/dbs/nt.test");
-        CSeqDB dbi(dbpath, dbname, kSeqTypeUnkn, false);
-        
-        const char * buffy = 0;
-        int lenny1 = dbi.GetSequence(3, & buffy);
-        
-        cout << "dont vote for (strlen=" << strlen(buffy) <<") lenny = [" << lenny1 << "]" << endl;
-        cout << "Seq 3 nt = [" << 0 << "]" << endl;
-    }
-    
-    {
-        auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
-        
-        string dbname("/home/bealer/seqdb/dbs/nr.test");
-        CSeqDB dbi(dbpath, dbname, kSeqTypeUnkn, false);
-        
-        //string descriptor = dbi.GetDescriptor();
-        
-        CRef<CBioseq> bseq = dbi.GetBioseq(4);
-        
-        cout << "----" << endl;
-        
-        *outpstr << *bseq;
-        
-        cout << "----" << endl;
-    }
+    return rc;
 }
-#endif
+
+
