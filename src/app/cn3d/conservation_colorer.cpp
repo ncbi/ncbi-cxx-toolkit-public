@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/04 17:41:30  thiessen
+* change highlight color (cell background) handling
+*
 * Revision 1.1  2000/09/20 22:24:48  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -44,8 +47,8 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-const Vector ConservationColorer::ZeroIdentityColor(100.0/255, 100.0/255, 1.0);
-const Vector ConservationColorer::FullIdentityColor(1.0, 25.0/255, 25.0/255);
+const Vector ConservationColorer::MinimumConservationColor(100.0/255, 100.0/255, 1.0);
+const Vector ConservationColorer::MaximumConservationColor(1.0, 25.0/255, 25.0/255);
         
         
 #define BLOSUMSIZE 24
@@ -191,13 +194,13 @@ void ConservationColorer::CalculateConservationColors(void)
         // variety
         scale = 1.0 * (varieties[profileColumn] - minVariety) / (maxVariety - minVariety);
         varietyColors[profileColumn] =
-            FullIdentityColor + (ZeroIdentityColor - FullIdentityColor) * scale;
+            MaximumConservationColor + (MinimumConservationColor - MaximumConservationColor) * scale;
 
         // weighted variety
         scale = 1.0 * (weightedVarieties[profileColumn] - minWeightedVariety) /
             (maxWeightedVariety - minWeightedVariety);
         weightedVarietyColors[profileColumn] =
-            ZeroIdentityColor + (FullIdentityColor - ZeroIdentityColor) * scale;
+            MinimumConservationColor + (MaximumConservationColor - MinimumConservationColor) * scale;
     }
 }
 

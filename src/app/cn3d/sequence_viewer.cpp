@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/10/04 17:41:30  thiessen
+* change highlight color (cell background) handling
+*
 * Revision 1.14  2000/10/03 18:59:23  thiessen
 * added row/column selection
 *
@@ -92,6 +95,8 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
+
+static const wxColour highlightColor(255,255,0);  // yellow
 
 ////////////////////////////////////////////////////////////////////////////////
 // SequenceViewerWindow is the top-level window that contains the
@@ -192,6 +197,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     viewer->SetUnalignedJustification(BlockMultipleAlignment::eSplit);
     menuBar->Check(MID_SPLIT, true);
 
+    viewerWidget->TitleAreaOff();
+
     SetMenuBar(menuBar);
 }
 
@@ -267,7 +274,8 @@ class DisplayRow
 public:
     virtual int Size() const = 0;
     virtual bool GetCharacterTraitsAt(int column,
-        char *character, Vector *color, bool *isHighlighted) const = 0;
+        char *character, Vector *color, bool *drawBackground,
+        wxColour *cellBackgroundColor) const = 0;
     virtual bool GetSequenceAndIndexAt(int column,
         const Sequence **sequence, int *index) const = 0;
     virtual const Sequence * GetSequence(void) const = 0;
@@ -286,9 +294,18 @@ public:
     int Size() const { return alignment->AlignmentWidth(); }
 
     bool GetCharacterTraitsAt(int column,
-        char *character, Vector *color, bool *isHighlighted) const
+        char *character, Vector *color,
+        bool *drawBackground, wxColour *cellBackgroundColor) const
     {
-        return alignment->GetCharacterTraitsAt(column, row, character, color, isHighlighted);
+        bool isHighlighted,
+			result = alignment->GetCharacterTraitsAt(column, row, character, color, &isHighlighted);
+        if (isHighlighted) {
+            *drawBackground = true;
+            *cellBackgroundColor = highlightColor;
+        } else {
+            *drawBackground = false;
+        }
+        return result;
     }
 
     bool GetSequenceAndIndexAt(int column,
@@ -321,7 +338,8 @@ public:
     int Size() const { return sequence->sequenceString.size(); }
     
     bool GetCharacterTraitsAt(int column,
-        char *character, Vector *color, bool *isHighlighted) const;
+        char *character, Vector *color,
+        bool *drawBackground, wxColour *cellBackgroundColor) const;
 
     bool GetSequenceAndIndexAt(int column,
         const Sequence **sequenceHandle, int *index) const;
@@ -336,15 +354,19 @@ class DisplayRowFromString : public DisplayRow
 {
 public:
     const std::string theString;
-    const Vector stringColor;
+    const Vector stringColor, backgroundColor;
+    const bool hasBackgroundColor;
 
-    DisplayRowFromString(const std::string& s, const Vector color = Vector(0,0,0.5)) : 
-        theString(s), stringColor(color) { }
+    DisplayRowFromString(const std::string& s, const Vector color = Vector(0,0,0.5),
+        bool hasBG = false, Vector bgColor = (1,1,1)) : 
+        theString(s), stringColor(color),
+        hasBackgroundColor(hasBG), backgroundColor(bgColor) { }
 
     int Size() const { return theString.size(); }
     
     bool GetCharacterTraitsAt(int column,
-        char *character, Vector *color, bool *isHighlighted) const;
+        char *character, Vector *color,
+        bool *drawBackground, wxColour *cellBackgroundColor) const;
 
     bool GetSequenceAndIndexAt(int column,
         const Sequence **sequenceHandle, int *index) const { return false; }
@@ -356,7 +378,7 @@ public:
 
 
 bool DisplayRowFromSequence::GetCharacterTraitsAt(int column,
-    char *character, Vector *color, bool *isHighlighted) const
+    char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const
 {    
     if (column >= sequence->sequenceString.size())
         return false;
@@ -366,7 +388,13 @@ bool DisplayRowFromSequence::GetCharacterTraitsAt(int column,
         *color = sequence->molecule->GetResidueColor(column);
     else
         color->Set(0,0,0);
-    *isHighlighted = messenger->IsHighlighted(sequence, column);
+    if (messenger->IsHighlighted(sequence, column)) {
+        *drawBackground = true;
+        *cellBackgroundColor = highlightColor;
+    } else {
+        drawBackground = false;
+    }
+
     return true;
 }
 
@@ -399,13 +427,24 @@ void DisplayRowFromSequence::SelectedRange(int from, int to) const
 }
 
 bool DisplayRowFromString::GetCharacterTraitsAt(int column,
-    char *character, Vector *color, bool *isHighlighted) const
+    char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const
 {
     if (column >= theString.size()) return false;
 
     *character = theString[column];
     *color = stringColor;
-    *isHighlighted = false;
+
+    if (hasBackgroundColor) {
+        *drawBackground = true;
+        // convert vector color to wxColour
+        cellBackgroundColor->Set(
+            static_cast<unsigned char>((backgroundColor[0] + 0.000001) * 255),
+            static_cast<unsigned char>((backgroundColor[1] + 0.000001) * 255),
+            static_cast<unsigned char>((backgroundColor[2] + 0.000001) * 255)
+        );
+    } else {
+        *drawBackground = false;
+    }
     return true;
 }
 
@@ -456,7 +495,8 @@ public:
     bool GetCharacterTraitsAt(int column, int row,              // location
         char *character,										// character to draw
         wxColour *color,                                        // color of this character
-        bool *isHighlighted
+        bool *drawBackground,                                   // special background color?
+        wxColour *cellBackgroundColor
     ) const;
     
     // callbacks for ViewableAlignment
@@ -544,7 +584,8 @@ bool SequenceDisplay::GetRowTitle(int row, wxString *title, wxColour *color) con
 }
 
 bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
-        char *character, wxColour *color, bool *isHighlighted) const
+        char *character, wxColour *color, bool *drawBackground,
+        wxColour *cellBackgroundColor) const
 {
     if (row < 0 || row > rows.size()) {
         ERR_POST(Warning << "SequenceDisplay::GetCharacterTraitsAt() - row out of range");
@@ -557,7 +598,8 @@ bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
         return false;
 
     Vector colorVec;
-    if (!displayRow->GetCharacterTraitsAt(column, character, &colorVec, isHighlighted))
+    if (!displayRow->GetCharacterTraitsAt(
+            column, character, &colorVec, drawBackground, cellBackgroundColor))
         return false;
 
     // convert vector color to wxColour

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/04 17:41:29  thiessen
+* change highlight color (cell background) handling
+*
 * Revision 1.12  2000/10/02 23:25:19  thiessen
 * working sequence identifier window in sequence viewer
 *
@@ -88,14 +91,21 @@ BEGIN_SCOPE(Cn3D)
 
 ///// AlignmentManager methods /////
 
-AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet,
+AlignmentManager::AlignmentManager(const SequenceSet *sSet, AlignmentSet *aSet,
     Messenger *mesg) :
     sequenceSet(sSet), alignmentSet(aSet), currentMultipleAlignment(NULL),
-    messenger(mesg)
+    messenger(mesg), sequenceViewer(NULL)
+{
+    NewAlignments(sSet, aSet);
+}
+
+void AlignmentManager::NewAlignments(const SequenceSet *sSet, AlignmentSet *aSet)
 {
     // create a sequence viewer for this alignment
-    sequenceViewer = new SequenceViewer(messenger);
-    messenger->AddSequenceViewer(sequenceViewer);
+    if (!sequenceViewer) {
+        sequenceViewer = new SequenceViewer(messenger);
+        messenger->AddSequenceViewer(sequenceViewer);
+    }
 
     if (!alignmentSet) {
         sequenceViewer->DisplaySequences(&(sequenceSet->sequences));
@@ -227,7 +237,7 @@ BlockMultipleAlignment::~BlockMultipleAlignment(void)
 
 bool BlockMultipleAlignment::AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock)
 {
-    if (!newBlock || !newBlock->isAligned) {
+    if (!newBlock || !newBlock->IsAligned()) {
         ERR_POST("MultipleAlignment::AddAlignedBlockAtEnd() - add aligned blocks only");
         return false;
     }
@@ -260,8 +270,8 @@ bool BlockMultipleAlignment::AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock
 Block * BlockMultipleAlignment::
     CreateNewUnalignedBlockBetween(const Block *leftBlock, const Block *rightBlock)
 {
-    if ((leftBlock && !leftBlock->isAligned) || 
-        (rightBlock && !rightBlock->isAligned)) {
+    if ((leftBlock && !leftBlock->IsAligned()) || 
+        (rightBlock && !rightBlock->IsAligned())) {
         ERR_POST(Error << "CreateNewUnalignedBlockBetween() - passed an unaligned block");
         return NULL;
     }
@@ -386,7 +396,7 @@ bool BlockMultipleAlignment::GetSequenceAndIndexAt(int alignmentColumn, int row,
     const BlockInfo& blockInfo = blockMap[alignmentColumn];
     eUnalignedJustification justification;
 
-    if (!blockInfo.block->isAligned) {
+    if (!blockInfo.block->IsAligned()) {
         *isAligned = false;
         if (blockInfo.block == blocks.back()) // also true if there's a single aligned block
             justification = eLeft;
@@ -429,7 +439,7 @@ bool BlockMultipleAlignment::IsAligned(const Sequence *sequence, int seqIndex) c
     if (row < 0) return false;
 
     const Block *block = GetBlock(row, seqIndex);
-    if (block && block->isAligned)
+    if (block && block->IsAligned())
         return true;
     else
         return false;
@@ -440,7 +450,7 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(int row, int seqIndex) 
     static const Vector noColor(0,0,0); // black
 
     const UngappedAlignedBlock *block = dynamic_cast<const UngappedAlignedBlock*>(GetBlock(row, seqIndex));
-    if (!block || !block->isAligned) {
+    if (!block || !block->IsAligned()) {
         ERR_POST(Warning << "BlockMultipleAlignment::GetAlignmentColor() called on unaligned residue");
         return &noColor;
     }
@@ -461,7 +471,7 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(int row, int seqIndex) 
 
     switch (colorScheme) {
         case StyleSettings::eAligned:
-            alignedColor = &ConservationColorer::FullIdentityColor;
+            alignedColor = &ConservationColorer::MaximumConservationColor;
             break;
         case StyleSettings::eIdentity:
             alignedColor = conservationColorer->
@@ -529,9 +539,9 @@ const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
 int BlockMultipleAlignment::GetFirstAlignedBlockPosition(void) const
 {
     BlockList::const_iterator b = blocks.begin();
-    if (blocks.size() > 0 && (*b)->isAligned) // first block is aligned
+    if (blocks.size() > 0 && (*b)->IsAligned()) // first block is aligned
         return 0;
-    else if (blocks.size() >= 2 && (*(++b))->isAligned) // second block is aligned
+    else if (blocks.size() >= 2 && (*(++b))->IsAligned()) // second block is aligned
         return blocks.front()->width;
     else
         return -1;

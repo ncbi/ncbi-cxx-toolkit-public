@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/10/04 17:41:31  thiessen
+* change highlight color (cell background) handling
+*
 * Revision 1.11  2000/10/03 18:59:23  thiessen
 * added row/column selection
 *
@@ -142,7 +145,6 @@ public:
     bool AttachAlignment(ViewableAlignment *newAlignment);
     void SetMouseMode(SequenceViewerWidget::eMouseMode mode);
     void SetBackgroundColor(const wxColor& backgroundColor);
-    void SetHighlightColor(const wxColor& highlightColor);
     void SetCharacterFont(wxFont *font);
     void SetRubberbandColor(const wxColor& rubberbandColor);
     
@@ -157,7 +159,6 @@ private:
 
     wxFont *currentFont;            // character font
     wxColor currentBackgroundColor; // background for whole window
-    wxColor currentHighlightColor;  // background for highlighted chars
     wxColor currentRubberbandColor; // color of rubber band
     SequenceViewerWidget::eMouseMode mouseMode;           // mouse mode
     int cellWidth, cellHeight;      // dimensions of cells in pixels
@@ -210,9 +211,6 @@ SequenceViewerWidget_SequenceArea::SequenceViewerWidget_SequenceArea(
     // set default background color
     currentBackgroundColor = *wxWHITE;
 
-    // set default highlight color
-    currentHighlightColor.Set(255,255,0);   // yellow
-
     // set default mouse mode
     mouseMode = SequenceViewerWidget::eSelectRectangle;
 
@@ -249,11 +247,6 @@ bool SequenceViewerWidget_SequenceArea::AttachAlignment(ViewableAlignment *newAl
     }
 
     return true;
-}
-
-void SequenceViewerWidget_SequenceArea::SetHighlightColor(const wxColor& highlightColor)
-{
-    currentHighlightColor = highlightColor;
 }
 
 void SequenceViewerWidget_SequenceArea::SetBackgroundColor(const wxColor& backgroundColor)
@@ -378,20 +371,20 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
 void SequenceViewerWidget_SequenceArea::DrawCell(wxDC& dc, int x, int y, int vsX, int vsY, bool redrawBackground)
 {
 	char character;
-    wxColor color;
-    bool isHighlighted, drawChar;
+    wxColor color, cellBackgroundColor;
+    bool drawBackground, drawChar;
 
-    drawChar = alignment->GetCharacterTraitsAt(x, y, &character, &color, &isHighlighted);
+    drawChar = alignment->GetCharacterTraitsAt(x, y, &character, &color, &drawBackground, &cellBackgroundColor);
 
     // adjust x,y into visible area coordinates
     x = (x - vsX) * cellWidth;
     y = (y - vsY) * cellHeight;
 
     // if necessary, redraw background with appropriate color
-    if (isHighlighted || redrawBackground) {
-        if (drawChar && isHighlighted) {
-            dc.SetPen(*(wxThePenList->FindOrCreatePen(currentHighlightColor, 1, wxSOLID)));
-            dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(currentHighlightColor, wxSOLID)));
+    if (drawBackground || redrawBackground) {
+        if (drawChar && drawBackground) {
+            dc.SetPen(*(wxThePenList->FindOrCreatePen(cellBackgroundColor, 1, wxSOLID)));
+            dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(cellBackgroundColor, wxSOLID)));
         } else {
             dc.SetPen(*(wxThePenList->FindOrCreatePen(currentBackgroundColor, 1, wxSOLID)));
             dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(currentBackgroundColor, wxSOLID)));
@@ -677,7 +670,9 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
         dc.SetFont(*currentFont);
 
         // remove rubberband
-        if (mouseMode == SequenceViewerWidget::eSelectRectangle)
+        if (mouseMode == SequenceViewerWidget::eSelectRectangle ||
+            mouseMode == SequenceViewerWidget::eSelectColumns ||
+            mouseMode == SequenceViewerWidget::eSelectRows)
             RemoveRubberband(dc, fromX, fromY, cellX, cellY, vsX, vsY);
         else {
             DrawCell(dc, fromX, fromY, vsX, vsY, true);
@@ -948,11 +943,6 @@ void SequenceViewerWidget::SetBackgroundColor(const wxColor& backgroundColor)
 {
     sequenceArea->SetBackgroundColor(backgroundColor);
     titleArea->SetBackgroundColor(backgroundColor);
-}
-
-void SequenceViewerWidget::SetHighlightColor(const wxColor& highlightColor)
-{
-    sequenceArea->SetHighlightColor(highlightColor);
 }
 
 void SequenceViewerWidget::SetCharacterFont(wxFont *font)
