@@ -672,11 +672,11 @@ static void alignPiece_quicksort(alignPiece **qs, Int4 i, Int4 j)
       return;
     }
 
-    lf = i+1; 
-    rt = j; 
+    lf = i+1;
+    rt = j;
     /*use median of three since array may be nearly sorted*/
     alignPiecemedianOfThree(qs, i, j);
-    /*implicitly choose qs[i] as the partition element*/    
+    /*implicitly choose qs[i] as the partition element*/
     partitionScore = qs[i]->score;
     secondaryPartitionValue = qs[i]->index;
     /*partititon around partitionScore = qs[i]->score*/
@@ -696,16 +696,16 @@ static void alignPiece_quicksort(alignPiece **qs, Int4 i, Int4 j)
 	qs[rt] = tp;
 	rt--;
 	lf++;
-      } 
-      else 
+      }
+      else
 	break;
     }
     /*swap partition element into middle position*/
     tp = qs[i];
-    qs[i] = qs[rt]; 
+    qs[i] = qs[rt];
     qs[rt] = tp;
     /*call recursively on two parts*/
-    alignPiece_quicksort(qs, i,rt-1); 
+    alignPiece_quicksort(qs, i,rt-1);
     alignPiece_quicksort(qs, rt+1, j);
 }
 
@@ -721,11 +721,11 @@ static void alignBlocks_quicksort(alignBlocks **qs, Int4 i, Int4 j)
       return;
     }
 
-    lf = i+1; 
-    rt = j; 
+    lf = i+1;
+    rt = j;
     /*use median of three since array may be nearly sorted*/
     alignBlocksmedianOfThree(qs, i, j);
-    /*implicitly choose qs[i] as the partition element*/    
+    /*implicitly choose qs[i] as the partition element*/
     partitionScore = qs[i]->score;
     partitionBlocksMatched = qs[i]->numBlocksMatched;
     /*partititon around partitionScore = qs[i]->score*/
@@ -745,16 +745,16 @@ static void alignBlocks_quicksort(alignBlocks **qs, Int4 i, Int4 j)
 	qs[rt] = tp;
 	rt--;
 	lf++;
-      } 
-      else 
+      }
+      else
 	break;
     }
     /*swap partition element into middle position*/
     tp = qs[i];
-    qs[i] = qs[rt]; 
+    qs[i] = qs[rt];
     qs[rt] = tp;
     /*call recursively on two parts*/
-    alignBlocks_quicksort(qs, i,rt-1); 
+    alignBlocks_quicksort(qs, i,rt-1);
     alignBlocks_quicksort(qs, rt+1, j);
 }
 
@@ -774,11 +774,11 @@ void LIBCALL sortAlignPieces(Int4 numBlocks)
     /*Copy the list  into the array qs*/
     if (NULL != alignPieceLists[blockIndex]) {
       qs = (alignPiece **) MemNew(sizeof(alignPiece *)*(numPiecesInList[blockIndex]+1));
-      for (i = 0, sp = (alignPieceLists[blockIndex]); 
-	   i < numPiecesInList[blockIndex]; i++, sp = sp->next) 
+      for (i = 0, sp = (alignPieceLists[blockIndex]);
+	   i < numPiecesInList[blockIndex]; i++, sp = sp->next)
 	qs[i] = sp;
       /*Put sentinel at the end of the array*/
-      qs[i] = &sentinel; 
+      qs[i] = &sentinel;
       sentinel.score = -(BLAST_SCORE_MIN);
       alignPiece_quicksort(qs, 0, numPiecesInList[blockIndex]-1);
       /*Copy back to the list */
@@ -803,10 +803,10 @@ alignBlocks * sortAlignBlocks(alignBlocks *alignBlocksList, Int4 num)
 
   /*Copy the list  into the array qs*/
   qs = (alignBlocks **) MemNew(sizeof(alignBlocks *)*(num+1));
-  for (i = 0, sp = alignBlocksList; i < num; i++, sp = sp->next) 
+  for (i = 0, sp = alignBlocksList; i < num; i++, sp = sp->next)
       qs[i] = sp;
   /*Put sentinel at the end of the array*/
-  qs[i] = &sentinel; 
+  qs[i] = &sentinel;
   sentinel.score = -(BLAST_SCORE_MIN);
   alignBlocks_quicksort(qs, 0, num-1);
   /*Copy back to the list */
@@ -913,7 +913,7 @@ void pruneBestPairs(Int4 blockIndex1, Int4 blockIndex2, Int4 queryLength,
   prevAlignBlock = NULL;
   while(thisAlignBlock != NULL) {
     lastPosition = thisAlignBlock->queryEnds[blockIndex2];
-    if ((thisAlignBlock->score < bestScores[blockIndex1][blockIndex2][lastPosition]) || 
+    if ((thisAlignBlock->score < bestScores[blockIndex1][blockIndex2][lastPosition]) ||
       ((localAlignment) && (thisAlignBlock->score < scoreThreshold))) {
       numInBestPairs[blockIndex1][blockIndex2]--;
       if (NULL == prevAlignBlock) {
@@ -932,12 +932,14 @@ void pruneBestPairs(Int4 blockIndex1, Int4 blockIndex2, Int4 queryLength,
       thisAlignBlock = thisAlignBlock->next;
     }
   }
+  if (0 < numInBestPairs[blockIndex1][blockIndex2])
+    bestPairs[blockIndex1][blockIndex2] = sortAlignBlocks(bestPairs[blockIndex1][blockIndex2], numInBestPairs[blockIndex1][blockIndex2]);
 }
 
   /*can firstBlockCandidate and secondBlockcandidate be consolidated
     to make a longer candidate*/
-Boolean alignBlocksCompatible (alignBlocks *firstBlockCandidate, 
-       alignBlocks *secondBlockCandidate, Int4 blockIndex1, 
+Boolean alignBlocksCompatible (alignBlocks *firstBlockCandidate,
+       alignBlocks *secondBlockCandidate, Int4 blockIndex1,
        Int4 blockIndex2, Int4 *allowedGaps)
   {
     if ((firstBlockCandidate->score + secondBlockCandidate->score) <
@@ -954,32 +956,40 @@ Boolean alignBlocksCompatible (alignBlocks *firstBlockCandidate,
     return(TRUE);
   }
 
-void updateBestPairs(Int4 numBlocks, Int4 queryLength, Int4 *allowedGaps, 
+void updateBestPairs(Int4 numBlocks, Int4 queryLength, Int4 *allowedGaps,
 		     Int4 scoreThreshold, Boolean localAlignment)
 {
   Int4 blockIndex1, blockIndex2; /*indices over blocks*/
   alignBlocks *firstBlockCandidate, *secondBlockCandidate, *newAlignBlocks;
   alignBlocks *lastInserted;
+  Int4 firstLoopUpperBound;
   Int4 c,i; /*loop index*/
 
-  for(blockIndex1 = 0; blockIndex1 < (numBlocks -1); blockIndex1++) {
+  if (localAlignment)
+    firstLoopUpperBound = numBlocks-1;
+  else
+    firstLoopUpperBound = 1;
+  for(blockIndex1 = 0; blockIndex1 < firstLoopUpperBound; blockIndex1++) {
     for(blockIndex2 = blockIndex1+1; blockIndex2 < numBlocks; blockIndex2++) {
       lastInserted = NULL;
       for(firstBlockCandidate = bestPairs[blockIndex1][blockIndex2 -1];
-	  firstBlockCandidate != NULL; 
+	  firstBlockCandidate != NULL;
 	  firstBlockCandidate= firstBlockCandidate->next) {
 	for(secondBlockCandidate = bestPairs[blockIndex2][blockIndex2];
 	    secondBlockCandidate != NULL;
 	    secondBlockCandidate = secondBlockCandidate->next) {
+	  /*next test assumes list of firstCandidates is sorted in
+          decreasing order of score; if this secondCandidate was already
+          extended back, then that must have yielded a better score*/
 	  if (0 == secondBlockCandidate->extendedBackScore) {
-	    if (alignBlocksCompatible(firstBlockCandidate, 
+	    if (alignBlocksCompatible(firstBlockCandidate,
                 secondBlockCandidate,blockIndex1, blockIndex2, allowedGaps)) {
 	      newAlignBlocks = alignBlocksNew(numBlocks);
               for(i = blockIndex1; i <= blockIndex2; i++) {
 		newAlignBlocks->queryStarts[i] = firstBlockCandidate->queryStarts[i];
 		newAlignBlocks->queryEnds[i] = firstBlockCandidate->queryEnds[i];
 	      }
-	      newAlignBlocks->queryStarts[blockIndex2] = 
+	      newAlignBlocks->queryStarts[blockIndex2] =
 		secondBlockCandidate->queryStarts[blockIndex2];
 	      newAlignBlocks->queryEnds[blockIndex2] =
 		secondBlockCandidate->queryEnds[blockIndex2];
@@ -999,10 +1009,10 @@ void updateBestPairs(Int4 numBlocks, Int4 queryLength, Int4 *allowedGaps,
 	      lastInserted = newAlignBlocks;
 	      numInBestPairs[blockIndex1][blockIndex2]++;
 	      c = newAlignBlocks->queryEnds[blockIndex2];
-	      while ((c >= 0) && 
+	      while ((c >= 0) &&
 		     (newAlignBlocks->score > bestScores[blockIndex1][blockIndex2][c]))
 		bestScores[blockIndex1][blockIndex2][c] = newAlignBlocks->score;
-	    }		     
+	    }
 	  }
 	}
       }
@@ -1031,8 +1041,8 @@ alignBlocks *copyAlignBlock(alignBlocks *oldAlignBlock, Int4 numBlocks)
   return(returnAlignBlock);
 }
 
-SeqAlign *convertAlignBlockToSeqAlign(Uint1Ptr query, Int4 queryLength, 
-    SeqIdPtr subject_id, SeqIdPtr query_id, Uint1Ptr seq, 
+SeqAlign *convertAlignBlockToSeqAlign(Uint1Ptr query, Int4 queryLength,
+    SeqIdPtr subject_id, SeqIdPtr query_id, Uint1Ptr seq,
     alignBlocks *lastAlignBlock, Int4 numBlocks, Int4 *blockStarts,
     Int4 *blockEnds, Nlm_FloatHi Lambda, Nlm_FloatHi K, Int4 searchSpaceSize)
 {
@@ -1057,14 +1067,14 @@ SeqAlign *convertAlignBlockToSeqAlign(Uint1Ptr query, Int4 queryLength,
      blockIndex++;
    overallQueryStart = lastAlignBlock->queryStarts[blockIndex];
    overallSeqStart = blockStarts[blockIndex];
-   
+
    done = FALSE;
    scriptIndex = 0;
    do {
      /*add replaces for this block*/
-     for(j = 0; j < (lastAlignBlock->queryEnds[blockIndex] - 
+     for(j = 0; j < (lastAlignBlock->queryEnds[blockIndex] -
 		     lastAlignBlock->queryStarts[blockIndex] +1); j++) {
-       data.sapp[scriptIndex++] = 0; 
+       data.sapp[scriptIndex++] = 0;
        /*data.last = *data.sapp++ = 0;*/
      }
      blockIndex++;
@@ -1074,12 +1084,12 @@ SeqAlign *convertAlignBlockToSeqAlign(Uint1Ptr query, Int4 queryLength,
 	              lastAlignBlock->queryEnds[blockIndex -1] -1;
        commonSpacing = MIN(seqSpacing,querySpacing);
        for(j = 0; j < commonSpacing; j++) {
-	 data.sapp[scriptIndex++] = MININT; 
+	 data.sapp[scriptIndex++] = MININT;
 	 data.last = 0;
        }
        if ((seqSpacing - querySpacing) != 0)
 	 data.sapp[scriptIndex++] = (seqSpacing - querySpacing);
-	 /* data.last = (data.last > 0) ? (data.sapp[-1] += 
+	 /* data.last = (data.last > 0) ? (data.sapp[-1] +=
 	    (seqSpacing - querySpacing)) : (*data.sapp++ = (seqSpacing - querySpacing));*/
      }
      else
@@ -1092,9 +1102,9 @@ SeqAlign *convertAlignBlockToSeqAlign(Uint1Ptr query, Int4 queryLength,
    nextEditBlock = TracebackToGapXEditBlock(
                      query - 1 + overallQueryStart,
 		     seq - 1 + overallSeqStart,
-		     overallQueryEnd - overallQueryStart +1, 
+		     overallQueryEnd - overallQueryStart +1,
                      overallSeqEnd - overallSeqStart +1,
-                     &(data.sapp[0]), overallQueryStart, 
+                     &(data.sapp[0]), overallQueryStart,
 		     overallSeqStart);
    nextEditBlock->discontinuous = TRUE;
    nextSeqAlign = GapXEditBlockToSeqAlign(nextEditBlock, subject_id, query_id);
@@ -1102,7 +1112,7 @@ SeqAlign *convertAlignBlockToSeqAlign(Uint1Ptr query, Int4 queryLength,
      eValue = 0;
    else
      eValue = K * searchSpaceSize * exp(-(lastAlignBlock->score) * Lambda +logK);
-   nextSeqAlign->score = addScoresToSeqAlign(lastAlignBlock->score, 
+   nextSeqAlign->score = addScoresToSeqAlign(lastAlignBlock->score,
                      eValue, Lambda, logK);
    nextEditBlock = GapXEditBlockDelete(nextEditBlock);
    if (NULL != data.sapp)
@@ -1111,10 +1121,10 @@ SeqAlign *convertAlignBlockToSeqAlign(Uint1Ptr query, Int4 queryLength,
 }
 
 SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
-				     SeqIdPtr query_id, 
+				     SeqIdPtr query_id,
 				     Uint1Ptr seq, Int4 seqLength,
     Int4 numBlocks, Int4 queryLength, Int4 *blockStarts, Int4 *blockEnds,
-    Int4 *bestFirstBlock, Int4 *bestLastBlock, Nlm_FloatHi Lambda, 
+    Int4 *bestFirstBlock, Int4 *bestLastBlock, Nlm_FloatHi Lambda,
     Nlm_FloatHi K, Int4 searchSpaceSize, Boolean localAlignment)
 {
   Int4 blockIndex1, blockIndex2;
@@ -1125,13 +1135,13 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
   Int4 actualSearchSpace;
   Int4 startLoop1, endLoop1, startLoop2, endLoop2; /*loop bounds that
       depend on whether we are doing local or global alignment*/
-            
+
 
 
   *bestFirstBlock = -1;
   *bestLastBlock = -1;
   lastAlignBlock = NULL;
-  if (0 == searchSpaceSize) 
+  if (0 == searchSpaceSize)
     actualSearchSpace = queryLength * seqLength;
   else
     actualSearchSpace = searchSpaceSize;
@@ -1143,7 +1153,7 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
     startLoop1 = 0;
     endLoop1 = 1;
   }
-  for(blockIndex1 = startLoop1; blockIndex1 < endLoop1; blockIndex1++) {  
+  for(blockIndex1 = startLoop1; blockIndex1 < endLoop1; blockIndex1++) {
     if (localAlignment) {
       startLoop2 = blockIndex1;
       endLoop2 = numBlocks;
@@ -1176,8 +1186,8 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
   lastAlignBlock = finalPairsToPrint;
   listToReturn = lastSeqAlign = NULL;
   while (NULL != lastAlignBlock) {
-    newSeqAlign = convertAlignBlockToSeqAlign(query, queryLength, 
-           subject_id, query_id, 
+    newSeqAlign = convertAlignBlockToSeqAlign(query, queryLength,
+           subject_id, query_id,
            seq, lastAlignBlock,numBlocks, blockStarts, blockEnds,
            Lambda, K, actualSearchSpace);
     if (NULL == lastSeqAlign) {
@@ -1203,9 +1213,9 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
   return(listToReturn);
 }
 
-SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks, 
+SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks,
    Int4 queryLength, Uint1Ptr seq, Int4 seqLength, Int4 *blockStarts, Int4 *blockEnds,
-   Int4 *allowedGaps, Int4 scoreThreshold, SeqIdPtr subject_id, 
+   Int4 *allowedGaps, Int4 scoreThreshold, SeqIdPtr subject_id,
 				   SeqIdPtr query_id, Int4* bestFirstBlock,
                                    Int4 *bestLastBlock, Nlm_FloatHi Lambda,
                                    Nlm_FloatHi K, Int4 searchSpaceSize,
@@ -1219,14 +1229,14 @@ SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks,
      initializeBestPairs(numBlocks, queryLength, NEG_INFINITY);
    updateBestPairs(numBlocks, queryLength, allowedGaps, scoreThreshold,
 		   localAlignment);
-   returnValue = getAlignmentsFromBestPairs(query, subject_id, 
-         query_id, seq, seqLength, numBlocks, queryLength, 
+   returnValue = getAlignmentsFromBestPairs(query, subject_id,
+         query_id, seq, seqLength, numBlocks, queryLength,
          blockStarts, blockEnds, bestFirstBlock, bestLastBlock,
          Lambda,K,searchSpaceSize, localAlignment);
    return(returnValue);
 }
 
- 
+
 Int4 getSearchSpaceSize(Int4 masterLength, Int4 databaseLength, Int4 initSearchSpaceSize)
 {
 
@@ -1314,9 +1324,9 @@ Int2  Main(void)
    CharPtr blockalign_outputfile; /*name of file for output*/
    CharPtr diag_outputfile; /*name of file for diagnostics*/
 
-   Boolean show_gi; /*should the gi number be shown in the output?*/ 
+   Boolean show_gi; /*should the gi number be shown in the output?*/
    Boolean believe_query=FALSE; /*do we believe the def line in the query file?*/
-   Int4 number_of_descriptions, number_of_alignments; /* maximum number 
+   Int4 number_of_descriptions, number_of_alignments; /* maximum number
         		 of header lines and alignments to be displayed*/
 
    SeqEntryPtr sep; /*sequence entry pointer representation of query*/
@@ -1356,7 +1366,7 @@ Int2  Main(void)
                                          alignment*/
    Int4 searchSpaceSize; /*size of search space for getting E-values*/
    Int4 i; /*loop index*/
-   Int4 startQueryRegion, endQueryRegion; /*start and end positions of query 
+   Int4 startQueryRegion, endQueryRegion; /*start and end positions of query
 					    desired in alignments*/
    Boolean localAlignment; /*should the alignment be local or global*/
 
@@ -1374,7 +1384,7 @@ Int2  Main(void)
    UseLocalAsnloadDataAndErrMsg();
 
    if ((infp = FileOpen(myargs [0].strvalue, "r")) == NULL) {
-        ErrPostEx(SEV_FATAL, 0, 0, "blockalign: Unable to open input file %s\n", 
+        ErrPostEx(SEV_FATAL, 0, 0, "blockalign: Unable to open input file %s\n",
                   myargs [0].strvalue);
         return 0;
    }
@@ -1402,7 +1412,7 @@ Int2  Main(void)
 	 }
      }
 
-   
+
    sep = FastaToSeqEntryEx(infp, FALSE, NULL, FALSE);
    if (sep != NULL) {
      query_bsp = NULL;
@@ -1423,10 +1433,10 @@ Int2  Main(void)
        ErrPostEx(SEV_WARNING, 0, 0, "Percentile given as -p %.2lf for gap lengths is >= 1.0, reinterpreted as largest gap times this value", myargs[21].floatvalue);
    }
 
-   numBlocks = readBlockData(myargs[1].strvalue, diagfp, convertedQuery, queryLength, 
+   numBlocks = readBlockData(myargs[1].strvalue, diagfp, convertedQuery, queryLength,
 	      myargs[10].strvalue, &blockStarts, &blockEnds,
 	      &masterSequence, &masterLength, &thisPosFreqs, &thisScoreMat,
-	      &allowedGaps, &subject_id, myargs[21].floatvalue, myargs[22].intvalue, 
+	      &allowedGaps, &subject_id, myargs[21].floatvalue, myargs[22].intvalue,
               myargs[26].floatvalue);
 
    init_buff_ex(90);
@@ -1449,15 +1459,15 @@ Int2  Main(void)
        fake_bsp->length = query_bsp->length;
        fake_bsp->seq_data_type = query_bsp->seq_data_type;
        fake_bsp->seq_data = query_bsp->seq_data;
-       
+
        obidp = ObjectIdNew();
        obidp->str = StringSave("QUERY");
        ValNodeAddPointer(&(fake_bsp->id), SEQID_LOCAL, obidp);
-       
+
        /* FASTA defline not parsed, ignore the "lcl|tempseq" ID. */
        query_bsp->id = SeqIdSetFree(query_bsp->id);
      }
- 
+
    searchSpaceSize = getSearchSpaceSize(masterLength,myargs[14].intvalue,myargs[15].intvalue);
 
    private_slp = SeqLocIntNew(0, fake_bsp->length-1 , Seq_strand_plus, SeqIdFindBest(fake_bsp->id, SEQID_GI));
@@ -1466,23 +1476,23 @@ Int2  Main(void)
 
    startQueryRegion = MAX(0,myargs[27].intvalue -1);
    endQueryRegion = queryLength;
-   if (1 <= myargs[28].intvalue) 
+   if (1 <= myargs[28].intvalue)
      endQueryRegion = MIN(queryLength, myargs[28].intvalue);
    allocateAlignPieceMemory(numBlocks);
    localAlignment = (Boolean) myargs[29].intvalue;
    if (localAlignment)
      findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, myargs[17].intvalue, localAlignment);
    else
-     findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, 
+     findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat,
 NEG_INFINITY, localAlignment);
    sortAlignPieces(numBlocks);
-   results = makeMultiPieceAlignments(convertedQuery, numBlocks, 
+   results = makeMultiPieceAlignments(convertedQuery, numBlocks,
       queryLength, masterSequence, masterLength,
    blockStarts, blockEnds, allowedGaps, myargs[18].intvalue,
    subject_id,query_id, &bestFirstBlock,&bestLastBlock,myargs[24].floatvalue,
    myargs[25].floatvalue,searchSpaceSize, localAlignment);
-   
-   
+
+
 #ifdef OS_UNIX
    fprintf(outfp, "%s", "done");
 #endif
@@ -1495,19 +1505,19 @@ NEG_INFINITY, localAlignment);
    if (show_gi) {
      align_options += TXALIGN_SHOW_GI;
      print_options += TXALIGN_SHOW_GI;
-   } 
+   }
 
    if (myargs[3].intvalue != 0)
      {
        align_options += TXALIGN_MASTER;
-       if (myargs[3].intvalue == 1 || 
+       if (myargs[3].intvalue == 1 ||
 	   myargs[3].intvalue == 3)
 	 align_options += TXALIGN_MISMATCH;
-       if (myargs[3].intvalue == 3 || 
-	   myargs[3].intvalue == 4 || 
+       if (myargs[3].intvalue == 3 ||
+	   myargs[3].intvalue == 4 ||
 	   myargs[3].intvalue == 6)
 	 align_options += TXALIGN_FLAT_INS;
-       if (myargs[3].intvalue == 5 || 
+       if (myargs[3].intvalue == 5 ||
 	   myargs[3].intvalue == 6)
 	 align_options += TXALIGN_BLUNT_END;
      }
@@ -1516,7 +1526,7 @@ NEG_INFINITY, localAlignment);
        align_options += TXALIGN_MATRIX_VAL;
        align_options += TXALIGN_SHOW_QS;
      }
-   
+
    number_of_descriptions = myargs[19].intvalue;
    number_of_alignments = myargs[20].intvalue;
 
@@ -1542,11 +1552,11 @@ NEG_INFINITY, localAlignment);
 	 PrintDefLinesFromSeqAlign(prune->sap, 80, outfp, print_options, FIRST_PASS, NULL);
 	 free_buff();
 	 prune = BlastPruneHitsFromSeqAlign(results, number_of_alignments, prune);
-	 if(!DDV_DisplayBlastPairList(prune->sap, NULL, 
-                                         outfp, FALSE, 
+	 if(!DDV_DisplayBlastPairList(prune->sap, NULL,
+                                         outfp, FALSE,
                                          align_options,
-                                         (Uint1) (align_options & TXALIGN_HTML ? 6 : 1))) { 
-                fprintf(stdout, 
+                                         (Uint1)(align_options & TXALIGN_HTML ? 6 : 1))) {
+                fprintf(stdout,
                         "\n\n!!!\n   "
                         "    --------  Failure to print alignment...  --------"
                         "\n!!!\n\n");
@@ -1583,7 +1593,7 @@ NEG_INFINITY, localAlignment);
    freeBestScores(numBlocks);
    freeBestPairs(numBlocks);
    freeAlignPieceLists(numBlocks);
-   FileClose(infp);   
+   FileClose(infp);
    FileClose(outfp);
    FileClose(diagfp);
    return 0;

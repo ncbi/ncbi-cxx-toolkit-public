@@ -916,6 +916,8 @@ void pruneBestPairs(Int4 blockIndex1, Int4 blockIndex2, Int4 queryLength,
       thisAlignBlock = thisAlignBlock->next;
     }
   }
+  if (0 < numInBestPairs[blockIndex1][blockIndex2])
+    bestPairs[blockIndex1][blockIndex2] = sortAlignBlocks(bestPairs[blockIndex1][blockIndex2], numInBestPairs[blockIndex1][blockIndex2]);
 }
 
   /*can firstBlockCandidate and secondBlockcandidate be consolidated
@@ -944,9 +946,14 @@ void updateBestPairs(Int4 numBlocks, Int4 queryLength, Int4 *allowedGaps,
   Int4 blockIndex1, blockIndex2; /*indices over blocks*/
   alignBlocks *firstBlockCandidate, *secondBlockCandidate, *newAlignBlocks;
   alignBlocks *lastInserted;
+  Int4 firstLoopUpperBound;
   Int4 c,i; /*loop index*/
 
-  for(blockIndex1 = 0; blockIndex1 < (numBlocks -1); blockIndex1++) {
+  if (localAlignment)
+    firstLoopUpperBound = numBlocks-1;
+  else
+    firstLoopUpperBound = 1;
+  for(blockIndex1 = 0; blockIndex1 < firstLoopUpperBound; blockIndex1++) {
     for(blockIndex2 = blockIndex1+1; blockIndex2 < numBlocks; blockIndex2++) {
       lastInserted = NULL;
       for(firstBlockCandidate = bestPairs[blockIndex1][blockIndex2 -1];
@@ -955,6 +962,9 @@ void updateBestPairs(Int4 numBlocks, Int4 queryLength, Int4 *allowedGaps,
 	for(secondBlockCandidate = bestPairs[blockIndex2][blockIndex2];
 	    secondBlockCandidate != NULL;
 	    secondBlockCandidate = secondBlockCandidate->next) {
+	  /*next test assumes list of firstCandidates is sorted in
+          decreasing order of score; if this secondCandidate was already
+          extended back, then that must have yielded a better score*/
 	  if (0 == secondBlockCandidate->extendedBackScore) {
 	    if (alignBlocksCompatible(firstBlockCandidate, 
                 secondBlockCandidate,blockIndex1, blockIndex2, allowedGaps)) {
