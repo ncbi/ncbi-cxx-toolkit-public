@@ -1,4 +1,4 @@
---$Revision: 1.3 $
+--$Revision: 1.4 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -17,10 +17,8 @@ NCBI-ID1Access DEFINITIONS ::=
 BEGIN
 
 IMPORTS Seq-id FROM NCBI-Seqloc
-		-- Bioseq-set FROM NCBI-Seqset
 		Seq-entry FROM NCBI-Seqset
-		Seq-hist  FROM NCBI-Sequence
-		Seq-id	  FROM NCBI-Seqloc;
+		Seq-hist  FROM NCBI-Sequence;
 
         --**********************************
         -- requests
