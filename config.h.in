@@ -117,6 +117,9 @@
 /* Define to 1 if union semun exists. */
 #undef HAVE_SEMUN
 
+/* Define to 1 if struct sockaddr_in has a "sin_len" field */
+#undef HAVE_SIN_LEN
+
 /* Define to 1 if the system has the type `socklen_t'. */
 #undef HAVE_SOCKLEN_T
 
