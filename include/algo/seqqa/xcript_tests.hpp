@@ -104,6 +104,11 @@ DECLARE_TRANSCRIPT_TEST(CdsStartCodon);
 DECLARE_TRANSCRIPT_TEST(CdsStopCodon);
 
 ///
+/// Check CDS features for premature stop codons
+///
+DECLARE_TRANSCRIPT_TEST(PrematureStopCodon);
+
+///
 /// Compare the annotated protein product of a CDS in the database 
 /// to actual translation of that CDS
 ///
@@ -132,6 +137,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/10/18 21:07:46  jcherry
+ * Added premature stop codon test
+ *
  * Revision 1.1  2004/10/06 19:58:35  jcherry
  * Initial version
  *

@@ -109,6 +109,8 @@ void CSeqTestManager::RegisterStandardTests()
     RegisterTest(CSeq_id::GetTypeInfo(),
                  new CTestTranscript_CdsStopCodon);
     RegisterTest(CSeq_id::GetTypeInfo(),
+                 new CTestTranscript_PrematureStopCodon);
+    RegisterTest(CSeq_id::GetTypeInfo(),
                  new CTestTranscript_CompareProtProdToTrans);
     RegisterTest(CSeq_id::GetTypeInfo(),
                  new CTestTranscript_InframeUpstreamStart);
@@ -206,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/10/18 21:07:46  jcherry
+ * Added premature stop codon test
+ *
  * Revision 1.4  2004/10/13 15:49:06  jcherry
  * Use resolve depth of zero rather than adaptive depth
  *

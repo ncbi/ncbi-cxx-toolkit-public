@@ -284,7 +284,7 @@ static void s_InframeUpstreamStop(const CSeq_id& id,
         if (tbl.IsOrfStop(tbl.SetCodonState(vec[i], vec[i + 1],
                                             vec[i + 2]))) {
             result.SetOutput_data()
-                .AddField("upstream_stop_exists",
+                .AddField("inframe_upstream_stop_exists",
                           true);
             result.SetOutput_data()
                 .AddField("nearest_inframe_upstream_stop_distance",
@@ -511,6 +511,40 @@ CTestTranscript_CdsStopCodon::RunTest(const CSerialObject& obj,
 }
 
 
+static void s_PrematureStopCodon(const CSeq_id& id, const CSeqTestContext* ctx,
+                                 CFeat_CI feat_iter, CSeq_test_result& result)
+{
+    CConstRef<CGenetic_code> code = 
+        s_GetCode(feat_iter->GetData().GetCdregion());
+    const CTrans_table& tbl = CGen_code_table::GetTransTable(*code); 
+    
+    CSeqVector vec(feat_iter->GetLocation(), ctx->GetScope());
+    vec.SetIupacCoding();
+
+    for (int i = 0;  i < vec.size() - 3;  i += 3) {
+        if (tbl.IsOrfStop(tbl.SetCodonState(vec[i], vec[i + 1],
+                                            vec[i + 2]))) {
+            result.SetOutput_data()
+                .AddField("has_premature_stop_codon", true);
+            result.SetOutput_data()
+                .AddField("first_premature_stop_position", i);
+            return;
+        }
+    }
+
+    result.SetOutput_data()
+        .AddField("has_premature_stop_codon", false);
+}
+
+
+CRef<CSeq_test_result_set>
+CTestTranscript_PrematureStopCodon::RunTest(const CSerialObject& obj,
+                                            const CSeqTestContext* ctx)
+{
+    return x_TestAllCdregions(obj, ctx, "premature_stop_codon",
+                              s_PrematureStopCodon);
+}
+
 
 static void s_CompareProtProdToTrans(const CSeq_id& id,
                                      const CSeqTestContext* ctx,
@@ -633,6 +667,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/10/18 21:07:46  jcherry
+ * Added premature stop codon test
+ *
  * Revision 1.6  2004/10/13 15:49:06  jcherry
  * Use resolve depth of zero rather than adaptive depth
  *
