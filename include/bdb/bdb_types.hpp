@@ -81,8 +81,8 @@ int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
 int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
-/// non-segmented "char" keys
-int BDB_CharCompare(DB*, const DBT* val1, const DBT* val2);
+/// non-segmented "unsigned char" keys
+int BDB_UCharCompare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "float" keys
@@ -678,16 +678,16 @@ public:
 /// Char field type
 ///
 
-class CBDB_FieldChar:public CBDB_FieldSimpleInt<char>
+class CBDB_FieldUChar:public CBDB_FieldSimpleInt<unsigned char>
 {
 public:
-    const CBDB_FieldChar& operator = (char val) 
+    const CBDB_FieldUChar& operator = (unsigned char val) 
     { 
         Set(val); 
         return *this; 
     }
 
-    const CBDB_FieldChar& operator = (const CBDB_FieldChar& val) 
+    const CBDB_FieldUChar& operator = (const CBDB_FieldUChar& val) 
     { 
         Set(val); 
         return *this; 
@@ -695,12 +695,12 @@ public:
 
     virtual CBDB_Field * Construct(size_t) const
     { 
-        return new CBDB_FieldChar(); 
+        return new CBDB_FieldUChar(); 
     }
     
-    char Get() const  
+    unsigned char Get() const  
     { 
-        return *(const char*)GetBuffer(); 
+        return *(const unsigned char*)GetBuffer(); 
     }
 
     operator char () const  
@@ -720,15 +720,15 @@ public:
 
     virtual BDB_CompareFunction GetCompareFunction(bool) const 
     { 
-        return BDB_CharCompare; 
+        return BDB_UCharCompare; 
     }
     
     virtual int Compare(const void * p1, 
                         const void * p2, 
                         bool) const 
     { 
-        const char& c1=*(const char *)p1;
-        const char& c2=*(const char *)p2;
+        const unsigned char& c1 = *(const unsigned char *)p1;
+        const unsigned char& c2 = *(const unsigned char *)p2;
         
         return (c1 < c2) ? -1 : (c1 > c2) ? 1 : 0;
     }
@@ -1829,6 +1829,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/05/06 15:42:58  rotmistr
+ * Changed Char type to UChar
+ *
  * Revision 1.35  2004/05/05 19:18:21  rotmistr
  * CBDB_FieldChar added
  *

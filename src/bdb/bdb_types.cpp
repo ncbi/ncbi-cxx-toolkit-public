@@ -122,10 +122,10 @@ int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2)
                      : ((v2 < v1) ? 1 : 0);
 }
 
-int BDB_CharCompare(DB*, const DBT* val1, const DBT* val2)
+int BDB_UCharCompare(DB*, const DBT* val1, const DBT* val2)
 {
-    const char& v1=*static_cast<char*>(val1->data);
-    const char& v2=*static_cast<char*>(val2->data);
+    const unsigned char& v1=*static_cast<unsigned char*>(val1->data);
+    const unsigned char& v2=*static_cast<unsigned char*>(val2->data);
 
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
@@ -877,6 +877,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/05/06 15:42:19  rotmistr
+ * Changed Char type to UChar
+ *
  * Revision 1.21  2004/05/05 19:18:21  rotmistr
  * CBDB_FieldChar added
  *
