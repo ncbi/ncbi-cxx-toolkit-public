@@ -43,42 +43,42 @@ BEGIN_NCBI_SCOPE
 
 #if defined(_DEBUG)
 
+#  define CORE_ASSERT(expression) \
+    if ( !(expression) ) Abort();
+
 // 'simple' verify
-#define xncbi_Verify(expression) \
-if ( !(expression) ) { \
-    Abort(); \
-}
+#  define xncbi_Verify(expression) CORE_ASSERT(expression)
 
 // Abort execution (by default), or throw exception (if explicitly specified
 // by calling xncbi_SetValidateAction(eValidate_Throw)) if
 // "expression" evaluates to FALSE.
-#define xncbi_Validate(expression, message) \
-do { \
-    EValidateAction action = xncbi_GetValidateAction(); \
-    if (action == eValidate_Throw) { \
-        if ( !(expression) ) { \
-            throw runtime_error( message ); \
+#  define xncbi_Validate(expression, message) \
+    do { \
+        EValidateAction action = xncbi_GetValidateAction(); \
+        if (action == eValidate_Throw) { \
+            if ( !(expression) ) { \
+                throw runtime_error( message ); \
+            } \
         } \
-    } \
-    else { \
-        if ( !(expression) ) { \
-            Abort(); \
+        else { \
+            CORE_ASSERT(expression)
         } \
-    } \
-} while (0)
+    } while (0)
 
 #else // _DEBUG
 
+#  define CORE_ASSERT(expr) ((void)0)
+
 // 'simple' verify - just evaluate the expression
-#define xncbi_Verify(expression) ((void)(expression))
+#  define xncbi_Verify(expression) ((void)(expression))
 
 // Throw exception if "expression" evaluates to FALSE.
-#define xncbi_Validate(expression, message) \
-do { \
-    if ( !(expression) ) { \
-        throw runtime_error( message ); \
-    } \
-} while (0)
+#  define xncbi_Validate(expression, message) \
+    do { \
+        if ( !(expression) ) { \
+            throw runtime_error( message ); \
+        } \
+    } while (0)
 
 #endif // _DEBUG
 
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/04/10 18:30:02  ivanov
+ * Added new macros CORE_ASSERT
+ *
  * Revision 1.3  2002/04/10 14:47:04  ivanov
  * Changed assert() to condition with call Abort()
  *
