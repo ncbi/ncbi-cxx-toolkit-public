@@ -43,7 +43,7 @@
 #include <objects/general/Object_id.hpp>
 #include <corelib/ncbistd.hpp>
 
-#include <algorithm>
+#include <util/static_map.hpp>
 
 // generated classes
 
@@ -51,81 +51,72 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-
-struct SApprovedDbXref {
-    CDbtag::EDbtagType type;
-    const char* name;
-
-    SApprovedDbXref(CDbtag::EDbtagType t, const char* n)
-        : type(t), name(n)
-    {
-    }
+typedef pair<const char*, CDbtag::EDbtagType> TDbxrefPair;
+static const TDbxrefPair kApprovedDbXrefs[] = {
+    TDbxrefPair("ATCC", CDbtag::eDbtagType_ATCC),
+    TDbxrefPair("ATCC(dna)", CDbtag::eDbtagType_ATCC_dna),
+    TDbxrefPair("ATCC(in host)", CDbtag::eDbtagType_ATCC_in_host),
+    TDbxrefPair("AceView/WormGenes", CDbtag::eDbtagType_AceView_WormGenes),
+    TDbxrefPair("BDGP_EST", CDbtag::eDbtagType_BDGP_EST),
+    TDbxrefPair("BDGP_INS", CDbtag::eDbtagType_BDGP_INS),
+    TDbxrefPair("CDD", CDbtag::eDbtagType_CDD),
+    TDbxrefPair("CK", CDbtag::eDbtagType_CK),
+    TDbxrefPair("COG", CDbtag::eDbtagType_COG),
+    TDbxrefPair("ENSEMBL", CDbtag::eDbtagType_ENSEMBL),
+    TDbxrefPair("ESTLIB", CDbtag::eDbtagType_ESTLIB),
+    TDbxrefPair("FANTOM_DB", CDbtag::eDbtagType_FANTOM_DB),
+    TDbxrefPair("FLYBASE", CDbtag::eDbtagType_FLYBASE),
+    TDbxrefPair("GABI", CDbtag::eDbtagType_GABI),
+    TDbxrefPair("GDB", CDbtag::eDbtagType_GDB),
+    TDbxrefPair("GI", CDbtag::eDbtagType_GI),
+    TDbxrefPair("GO", CDbtag::eDbtagType_GO),
+    TDbxrefPair("GOA", CDbtag::eDbtagType_GOA),
+    TDbxrefPair("GeneDB", CDbtag::eDbtagType_GeneDB),
+    TDbxrefPair("GeneID", CDbtag::eDbtagType_GeneID),
+    TDbxrefPair("IFO", CDbtag::eDbtagType_IFO),
+    TDbxrefPair("IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA),
+    TDbxrefPair("IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM),
+    TDbxrefPair("ISFinder", CDbtag::eDbtagType_ISFinder),
+    TDbxrefPair("InterimID", CDbtag::eDbtagType_InterimID),
+    TDbxrefPair("Interpro", CDbtag::eDbtagType_Interpro),
+    TDbxrefPair("JCM", CDbtag::eDbtagType_JCM),
+    TDbxrefPair("LocusID", CDbtag::eDbtagType_LocusID),
+    TDbxrefPair("MGD", CDbtag::eDbtagType_MGD),
+    TDbxrefPair("MGI", CDbtag::eDbtagType_MGI),
+    TDbxrefPair("MIM", CDbtag::eDbtagType_MIM),
+    TDbxrefPair("MaizeDB", CDbtag::eDbtagType_MaizeDB),
+    TDbxrefPair("NextDB", CDbtag::eDbtagType_NextDB),
+    TDbxrefPair("PID", CDbtag::eDbtagType_PID),
+    TDbxrefPair("PIDd", CDbtag::eDbtagType_PIDd),
+    TDbxrefPair("PIDe", CDbtag::eDbtagType_PIDe),
+    TDbxrefPair("PIDg", CDbtag::eDbtagType_PIDg),
+    TDbxrefPair("PIR", CDbtag::eDbtagType_PIR),
+    TDbxrefPair("PSEUDO", CDbtag::eDbtagType_PSEUDO),
+    TDbxrefPair("RATMAP", CDbtag::eDbtagType_RATMAP),
+    TDbxrefPair("REMTREMBL", CDbtag::eDbtagType_REMTREMBL),
+    TDbxrefPair("RGD", CDbtag::eDbtagType_RGD),
+    TDbxrefPair("RZPD", CDbtag::eDbtagType_RZPD),
+    TDbxrefPair("RiceGenes", CDbtag::eDbtagType_RiceGenes),
+    TDbxrefPair("SGD", CDbtag::eDbtagType_SGD),
+    TDbxrefPair("SPTREMBL", CDbtag::eDbtagType_SPTREMBL),
+    TDbxrefPair("SWISS-PROT", CDbtag::eDbtagType_SWISS_PROT),
+    TDbxrefPair("SoyBase", CDbtag::eDbtagType_SoyBase),
+    TDbxrefPair("UniGene", CDbtag::eDbtagType_UniGene),
+    TDbxrefPair("UniSTS", CDbtag::eDbtagType_UniSTS),
+    TDbxrefPair("WorfDB", CDbtag::eDbtagType_WorfDB),
+    TDbxrefPair("WormBase", CDbtag::eDbtagType_WormBase),
+    TDbxrefPair("ZFIN", CDbtag::eDbtagType_ZFIN),
+    TDbxrefPair("dbEST", CDbtag::eDbtagType_dbEST),
+    TDbxrefPair("dbSNP", CDbtag::eDbtagType_dbSNP),
+    TDbxrefPair("dbSTS", CDbtag::eDbtagType_dbSTS),
+    TDbxrefPair("niaEST", CDbtag::eDbtagType_niaEST),
+    TDbxrefPair("taxon", CDbtag::eDbtagType_taxon)
 };
 
 
-static const SApprovedDbXref kApprovedDbXrefs[] = {
-    SApprovedDbXref(CDbtag::eDbtagType_ATCC, "ATCC"),
-    SApprovedDbXref(CDbtag::eDbtagType_ATCC_dna, "ATCC(dna)"),
-    SApprovedDbXref(CDbtag::eDbtagType_ATCC_in_host, "ATCC(in host)"),
-    SApprovedDbXref(CDbtag::eDbtagType_AceView_WormGenes, "AceView/WormGenes"),
-    SApprovedDbXref(CDbtag::eDbtagType_BDGP_EST, "BDGP_EST"),
-    SApprovedDbXref(CDbtag::eDbtagType_BDGP_INS, "BDGP_INS"),
-    SApprovedDbXref(CDbtag::eDbtagType_CDD, "CDD"),
-    SApprovedDbXref(CDbtag::eDbtagType_CK, "CK"),
-    SApprovedDbXref(CDbtag::eDbtagType_COG, "COG"),
-    SApprovedDbXref(CDbtag::eDbtagType_ENSEMBL, "ENSEMBL"),
-    SApprovedDbXref(CDbtag::eDbtagType_ESTLIB, "ESTLIB"),
-    SApprovedDbXref(CDbtag::eDbtagType_FANTOM_DB, "FANTOM_DB"),
-    SApprovedDbXref(CDbtag::eDbtagType_FLYBASE, "FLYBASE"),
-    SApprovedDbXref(CDbtag::eDbtagType_GABI, "GABI"),
-    SApprovedDbXref(CDbtag::eDbtagType_GDB, "GDB"),
-    SApprovedDbXref(CDbtag::eDbtagType_GI, "GI"),
-    SApprovedDbXref(CDbtag::eDbtagType_GO, "GO"),
-    SApprovedDbXref(CDbtag::eDbtagType_GOA, "GOA"),
-    SApprovedDbXref(CDbtag::eDbtagType_GeneDB, "GeneDB"),
-    SApprovedDbXref(CDbtag::eDbtagType_GeneID, "GeneID"),
-    SApprovedDbXref(CDbtag::eDbtagType_IFO, "IFO"),
-    SApprovedDbXref(CDbtag::eDbtagType_IMGT_HLA, "IMGT/HLA"),
-    SApprovedDbXref(CDbtag::eDbtagType_IMGT_LIGM, "IMGT/LIGM"),
-    SApprovedDbXref(CDbtag::eDbtagType_ISFinder, "ISFinder"),
-    SApprovedDbXref(CDbtag::eDbtagType_InterimID, "InterimID"),
-    SApprovedDbXref(CDbtag::eDbtagType_Interpro, "Interpro"),
-    SApprovedDbXref(CDbtag::eDbtagType_JCM, "JCM"),
-    SApprovedDbXref(CDbtag::eDbtagType_LocusID, "LocusID"),
-    SApprovedDbXref(CDbtag::eDbtagType_MGD, "MGD"),
-    SApprovedDbXref(CDbtag::eDbtagType_MGI, "MGI"),
-    SApprovedDbXref(CDbtag::eDbtagType_MIM, "MIM"),
-    SApprovedDbXref(CDbtag::eDbtagType_MaizeDB, "MaizeDB"),
-    SApprovedDbXref(CDbtag::eDbtagType_NextDB, "NextDB"),
-    SApprovedDbXref(CDbtag::eDbtagType_PID, "PID"),
-    SApprovedDbXref(CDbtag::eDbtagType_PIDd, "PIDd"),
-    SApprovedDbXref(CDbtag::eDbtagType_PIDe, "PIDe"),
-    SApprovedDbXref(CDbtag::eDbtagType_PIDg, "PIDg"),
-    SApprovedDbXref(CDbtag::eDbtagType_PIR, "PIR"),
-    SApprovedDbXref(CDbtag::eDbtagType_PSEUDO, "PSEUDO"),
-    SApprovedDbXref(CDbtag::eDbtagType_RATMAP, "RATMAP"),
-    SApprovedDbXref(CDbtag::eDbtagType_REMTREMBL, "REMTREMBL"),
-    SApprovedDbXref(CDbtag::eDbtagType_RGD, "RGD"),
-    SApprovedDbXref(CDbtag::eDbtagType_RZPD, "RZPD"),
-    SApprovedDbXref(CDbtag::eDbtagType_RiceGenes, "RiceGenes"),
-    SApprovedDbXref(CDbtag::eDbtagType_SGD, "SGD"),
-    SApprovedDbXref(CDbtag::eDbtagType_SPTREMBL, "SPTREMBL"),
-    SApprovedDbXref(CDbtag::eDbtagType_SWISS_PROT, "SWISS-PROT"),
-    SApprovedDbXref(CDbtag::eDbtagType_SoyBase, "SoyBase"),
-    SApprovedDbXref(CDbtag::eDbtagType_UniGene, "UniGene"),
-    SApprovedDbXref(CDbtag::eDbtagType_UniSTS, "UniSTS"),
-    SApprovedDbXref(CDbtag::eDbtagType_WorfDB, "WorfDB"),
-    SApprovedDbXref(CDbtag::eDbtagType_WormBase, "WormBase"),
-    SApprovedDbXref(CDbtag::eDbtagType_ZFIN, "ZFIN"),
-    SApprovedDbXref(CDbtag::eDbtagType_dbEST, "dbEST"),
-    SApprovedDbXref(CDbtag::eDbtagType_dbSNP, "dbSNP"),
-    SApprovedDbXref(CDbtag::eDbtagType_dbSTS, "dbSTS"),
-    SApprovedDbXref(CDbtag::eDbtagType_niaEST, "niaEST"),
-    SApprovedDbXref(CDbtag::eDbtagType_taxon, "taxon")
-};
-static const size_t
-kApprovedDbXrefs_size = sizeof(kApprovedDbXrefs) / sizeof(SApprovedDbXref);
-
+typedef CStaticArrayMap<const char*, CDbtag::EDbtagType, PCase> TDbxrefTypeMap;
+static const TDbxrefTypeMap sc_DbxrefTypeMap(kApprovedDbXrefs,
+                                             sizeof(kApprovedDbXrefs));
 
 
 // destructor
@@ -157,12 +148,6 @@ void CDbtag::GetLabel(string* label) const
     }
 }
 
-static inline
-bool LessByName(const SApprovedDbXref& s1, const SApprovedDbXref& s2)
-{
-    return NStr::strcmp(s1.name, s2.name) < 0;
-}
-
 // Test if CDbtag.dbis in the approved databases list.
 // NOTE: 'GenBank', 'EMBL' and 'DDBJ' are approved only in 
 //        the context of a RefSeq record.
@@ -184,10 +169,7 @@ bool CDbtag::IsApproved(bool refseq) const
     }
 
     // Check the rest of approved databases
-    return binary_search(kApprovedDbXrefs,
-                         kApprovedDbXrefs + kApprovedDbXrefs_size,
-                         SApprovedDbXref(CDbtag::eDbtagType_bad, db.c_str()),
-                         LessByName);
+    return sc_DbxrefTypeMap.find(db.c_str()) != sc_DbxrefTypeMap.end();
 }
 
 
@@ -201,15 +183,10 @@ CDbtag::EDbtagType CDbtag::GetType(void) const
 
         const string& db = GetDb();
 
-        const SApprovedDbXref* item =
-            lower_bound(kApprovedDbXrefs,
-                        kApprovedDbXrefs + kApprovedDbXrefs_size,
-                        SApprovedDbXref(CDbtag::eDbtagType_bad, db.c_str()),
-                        LessByName);
-
-        if (item != kApprovedDbXrefs + kApprovedDbXrefs_size  &&
-            db == item->name) {
-            m_Type = static_cast<EDbtagType>(item - kApprovedDbXrefs);
+        TDbxrefTypeMap::const_iterator iter =
+            sc_DbxrefTypeMap.find(db.c_str());
+        if ( iter != sc_DbxrefTypeMap.end() ) {
+            m_Type = iter->second;
         } else {
             if (db == "GenBank") {
                 m_Type = eDbtagType_GenBank;
@@ -240,6 +217,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.13  2004/01/29 20:35:22  vasilche
+ * Use CStaticArrayMap<>.
+ *
  * Revision 6.12  2004/01/20 20:28:59  ucko
  * Fix calculation of kApprovedDbXrefs_size.
  *
