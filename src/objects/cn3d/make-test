@@ -2,9 +2,9 @@ mkdir test
 mkdir test/include
 mkdir test/src
 rm test/include/* test/src/*
-datatool -m cn3d.asn -oR test -oA
+datatool -m cn3d.asn -oR test -oA -M ../mmdb1/mmdb1.asn
 asntool -m cn3d.asn -w 100 -o cn3d.h
-asntool -B objcn3d -m cn3d.asn -G -w 100 -K cn3d.h
+asntool -B objcn3d -m cn3d.asn -G -w 100 -K cn3d.h -I mapcn3d.h -M ../mmdb1/mmdb1.asn,../mmdb2/mmdb2.asn,../mmdb3/mmdb3.asn
 mv cn3d.h test/include
 mv objcn3d.c test/src
 mv objcn3d.h test/include
