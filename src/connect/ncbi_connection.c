@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/05/30 19:42:44  vakatov
+ * s_CONN_Read() -- do not issue warning if requested zero bytes
+ * (by A.Lavrentiev)
+ *
  * Revision 6.11  2001/04/24 21:29:04  lavr
  * CONN_DEFAULT_TIMEOUT is used everywhere when timeout is not set explicitly
  *
@@ -435,7 +439,7 @@ static EIO_Status s_CONN_Read
         return eIO_InvalidArg;
 
     /* perform open, if not yet */
-    if (conn->state != eCONN_Open && (status = s_Open(conn)) != eIO_Success)
+    if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
         return status;
     
     /* flush the unwritten output data, if any */
@@ -444,14 +448,14 @@ static EIO_Status s_CONN_Read
     *n_read = 0;
 
     /* check if the read method is specified at all */
-    if (!conn->meta.read) {
+    if ( !conn->meta.read ) {
         status = eIO_NotSupported;
         CONN_LOG(eLOG_Error, "[CONN_Read]  Unable to read data");
         return status;
     }
 
     /* read data from the internal "peek-buffer", if any */
-    if (size) {
+    if ( size ) {
         *n_read = peek ?
             BUF_Peek(conn->buf, buf, size) : BUF_Read(conn->buf, buf, size);
         if (*n_read == size)
@@ -467,17 +471,19 @@ static EIO_Status s_CONN_Read
         status = (*conn->meta.read)(conn->meta.c_read,
                                     buf, size, &x_read, conn->r_timeout);
         *n_read += x_read;
-        if (peek && x_read)  /* save the read data in the "peek-buffer" */
+        if (peek  &&  x_read)  /* save the read data in the "peek-buffer" */
             verify(BUF_Write(&conn->buf, buf, x_read));
     }}
     
     if (status != eIO_Success) {
-        if (*n_read) {
+        if ( *n_read ) {
             CONN_LOG(eLOG_Trace, "[CONN_Read]  Read error");
             return eIO_Success;
         } else {
-            CONN_LOG((status == eIO_Closed ? eLOG_Trace : eLOG_Warning),
-                     "[CONN_Read]  Cannot read data");
+            if ( size ) {
+                CONN_LOG((status == eIO_Closed ? eLOG_Trace : eLOG_Warning),
+                         "[CONN_Read]  Cannot read data");
+            }
             return status;  /* error or EOF */
         }
     }
