@@ -111,8 +111,8 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0);
 
 //////////////////////////////////////////////////////////////////
 //
-// Class - description of multi-entry FASTA file.
-// 
+// Class - description of multi-entry FASTA file,
+// to keep list of offsets on all molecules in the file.
 //
 struct SFastaFileMap
 {
@@ -132,7 +132,8 @@ struct SFastaFileMap
 // molecule entry after another filling the map structure describing and
 // pointing on molecule entries. Fasta map can be used later for quick
 // CSeq_entry retrival
-void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input);
+void NCBI_SEQSET_EXPORT ReadFastaFileMap(SFastaFileMap* fasta_map, 
+                                         CNcbiIfstream& input);
 
 
 
@@ -162,6 +163,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2003/05/16 13:31:20  kuznets
+ * Fixed comments, added _dllexport.
+ *
  * Revision 1.13  2003/05/15 18:50:15  kuznets
  * Implemented ReadFastaFileMap function. Function reads multientry FASTA
  * file filling SFastaFileMap structure(seq_id, sequence offset, description)
