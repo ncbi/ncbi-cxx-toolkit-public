@@ -152,7 +152,13 @@ CAnnotObject_Ref::TRange CAnnotObject_Ref::x_UpdateTotalRange(void) const
                 return range;
             }
         }
-        range = m_TotalRange = loc->GetTotalRange();
+        try {
+            range = m_TotalRange = loc->GetTotalRange();
+        }
+        catch (runtime_error) {
+            m_TotalRange.Set(TRange::GetWholeFrom(), TRange::GetWholeTo());
+            range = m_TotalRange;
+        }
     }
     return range;
 }
@@ -1023,6 +1029,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2003/06/13 17:22:54  grichenk
+* Protected against multi-ID seq-locs
+*
 * Revision 1.68  2003/06/02 16:06:37  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
