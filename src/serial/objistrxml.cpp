@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/01/21 19:32:27  gouriano
+* corrected reading containers of primitive types
+*
 * Revision 1.34  2002/12/26 19:32:33  gouriano
 * changed XML I/O streams to properly handle object copying
 *
@@ -902,10 +905,17 @@ void CObjectIStreamXml::CloseTag(const string& e)
 
 void CObjectIStreamXml::OpenStackTag(size_t level)
 {
-    CLightString tagName = ReadName(BeginOpeningTag());
-    CLightString rest = SkipStackTagName(tagName, level);
-    if ( !rest.Empty() )
-        ThrowError(fFormatError, "unexpected tag");
+    CLightString tagName;
+    if (m_RejectedTag.empty()) {
+        tagName = ReadName(BeginOpeningTag());
+        if (!m_StdXml) {
+            CLightString rest = SkipStackTagName(tagName, level);
+            if ( !rest.Empty() )
+                ThrowError(fFormatError, "unexpected tag");
+        }
+    } else {
+        tagName = RejectedName();
+    }
 }
 
 void CObjectIStreamXml::CloseStackTag(size_t level)
@@ -1045,21 +1055,37 @@ void CObjectIStreamXml::SkipContainer(const CContainerTypeInfo* containerType)
 bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
 {
     if (NextTagIsClosing()) {
+        m_LastPrimitive.erase();
         return false;
     }
-    TTypeInfo type = elementType;
-    if (type->GetTypeFamily() == eTypeFamilyPointer) {
-        const CPointerTypeInfo* ptr =
-            dynamic_cast<const CPointerTypeInfo*>(type);
-        if (ptr) {
-            type = ptr->GetPointedType();
+    if (m_StdXml) {
+        CLightString tagName;
+        TTypeInfo type = elementType;
+        // this is to handle STL containers of primitive types
+        if (GetRealTypeFamily(type) == eTypeFamilyPrimitive) {
+            if (!m_RejectedTag.empty()) {
+                m_LastPrimitive = m_RejectedTag;
+                return true;
+            } else {
+                tagName = ReadName(BeginOpeningTag());
+                UndoClassMember();
+                bool res = (tagName == m_LastPrimitive);
+                if (!res) {
+                    m_LastPrimitive.erase();
+                }
+                return res;
+            }
         }
-    }
-    const CClassTypeInfoBase* classType =
-        dynamic_cast<const CClassTypeInfoBase*>(type);
-    if (classType) {
-        if (m_StdXml) {
-            CLightString tagName;
+        if (type->GetTypeFamily() == eTypeFamilyPointer) {
+            const CPointerTypeInfo* ptr =
+                dynamic_cast<const CPointerTypeInfo*>(type);
+            if (ptr) {
+                type = ptr->GetPointedType();
+            }
+        }
+        const CClassTypeInfoBase* classType =
+            dynamic_cast<const CClassTypeInfoBase*>(type);
+        if (classType) {
             if (m_RejectedTag.empty()) {
                 tagName = ReadName(BeginOpeningTag());
             } else {
@@ -1073,9 +1099,9 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
     return true;
 }
 
-void CObjectIStreamXml::BeginArrayElement(TTypeInfo /*elementType*/)
+void CObjectIStreamXml::BeginArrayElement(TTypeInfo elementType)
 {
-    if (m_StdXml) {
+    if (m_StdXml && GetRealTypeFamily(elementType) != eTypeFamilyPrimitive) {
         TopFrame().SetNotag();
     } else {
         OpenStackTag(0);

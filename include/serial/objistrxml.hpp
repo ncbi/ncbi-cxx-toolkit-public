@@ -203,6 +203,7 @@ private:
     string m_RejectedTag;
     bool m_Attlist;
     bool m_StdXml;
+    string m_LastPrimitive;
 };
 
 #include <serial/objistrxml.inl>
@@ -215,6 +216,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/01/21 19:28:44  gouriano
+* corrected reading containers of primitive types
+*
 * Revision 1.21  2002/12/26 19:33:06  gouriano
 * changed XML I/O streams to properly handle object copying
 *

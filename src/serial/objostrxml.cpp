@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/01/21 19:32:26  gouriano
+* corrected reading containers of primitive types
+*
 * Revision 1.45  2003/01/10 17:48:41  gouriano
 * added check for empty container
 *
@@ -760,9 +763,9 @@ void CObjectOStreamXml::WriteContainer(const CContainerTypeInfo* cType,
         WriteContainerContents(cType, containerPtr);
     }
 }
-void CObjectOStreamXml::BeginArrayElement(TTypeInfo /*elementType*/)
+void CObjectOStreamXml::BeginArrayElement(TTypeInfo elementType)
 {
-    if (m_StdXml) {
+    if (m_StdXml && GetRealTypeFamily(elementType) != eTypeFamilyPrimitive) {
         TopFrame().SetNotag();
     } else {
         OpenStackTag(0);
