@@ -206,9 +206,9 @@ SLDS_ObjectAttrDB::SLDS_ObjectAttrDB()
 {
     BindKey("object_attr_id", &object_attr_id);
 
-    BindData("object_title", &object_title, 512);
+    BindData("object_title", &object_title, 1024);
     BindData("organism", &organism, 256);
-    BindData("keywords", &keywords, 1024);
+    BindData("keywords", &keywords, 2048);
     BindData("seq_ids", &seq_ids, 65536);
 }
 
@@ -228,6 +228,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2003/10/08 18:11:33  kuznets
+* Increased length of "object_title" field
+*
 * Revision 1.11  2003/07/09 19:27:59  kuznets
 * Added Sequence id list table.
 *
