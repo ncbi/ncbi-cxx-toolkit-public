@@ -398,7 +398,7 @@ void CPagerViewButtons::CreateSubNodes()
     butt->SetEventHandler(eHTML_EH_Click,
                           "form.cmd.value='';form." + CPager::KParam_InputPage +
                           ".value=form.textpage" + m_jssuffix +
-                          ".value;document.frmQueryBox.submit();");
+                          ".value;form.submit();");
     InsertAt(0, column, butt);
     InsertAt(0, column, new CHTML_nbsp);
 
@@ -406,22 +406,20 @@ void CPagerViewButtons::CreateSubNodes()
                                          NStr::IntToString(currentPage + 1));
     textpage->SetClass("dblinks");
     
-    string suffix = kEmptyStr;
-    if ( m_jssuffix == "" ) {
+    string suffix;
+    if( m_jssuffix.empty() ) {
        suffix = "1";
     }
                                
     textpage->SetEventHandler(eHTML_EH_Change,
-                              "document.frmQueryBox.textpage" +
-                              suffix +".value=" + "this.value;");
+                              "if(form.textpage" + suffix + "){form.textpage"
+                              + suffix +".value=" + "this.value}");
     
     textpage->SetEventHandler(eHTML_EH_KeyPress,
-                              "document.frmQueryBox." +
-                              CPager::KParam_InputPage +
+                              "form." + CPager::KParam_InputPage +
                               ".value=" + "this.value; KeyPress('',event);");
                                          
     InsertAt(0, column++, textpage);
-
 
     CHTML_div* div = new CHTML_div;
     div->SetClass("medium2");
