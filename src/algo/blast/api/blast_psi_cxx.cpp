@@ -71,6 +71,10 @@ CPssmEngine::CPssmEngine(IPssmInputData* input)
                                             m_PssmInput->GetMatrixName()));
 }
 
+CPssmEngine::~CPssmEngine()
+{
+}
+
 void
 CPssmEngine::x_CheckAgainstNullData()
 {
@@ -95,8 +99,66 @@ CPssmEngine::x_CheckAgainstNullData()
     }
 }
 
-CPssmEngine::~CPssmEngine()
+static string
+x_PssmEngineErrorToString(int error_code)
 {
+    string retval;
+
+    switch (error_code) {
+    case PSI_SUCCESS:
+        retval = "No error detected";
+        break;
+
+    case PSIERR_BADPARAM:
+        retval = "Bad argument to function detected";
+        break;
+
+    case PSIERR_OUTOFMEM:
+        retval = "Out of memory";
+        break;
+
+    case PSIERR_BADSEQWEIGHTS:
+        retval = "Error computing sequence weights";
+        break;
+
+    case PSIERR_NOFREQRATIOS:
+        retval = "No matrix frequency ratios were found for requested matrix";
+        break;
+
+    case PSIERR_POSITIVEAVGSCORE:
+        retval = "PSSM has positive average score";
+        break;
+
+    case PSIERR_NOALIGNEDSEQS:
+        retval = "No sequences left after purging biased sequences in ";
+        retval += "multiple sequence alignment";
+        break;
+
+    case PSIERR_GAPINQUERY:
+        retval = "Gap found in query sequence";
+        break;
+
+    case PSIERR_UNALIGNEDCOLUMN:
+        retval = "Found column with no sequences aligned in it";
+        break;
+
+    case PSIERR_COLUMNOFGAPS:
+        retval = "Found column with only GAP residues";
+        break;
+
+    case PSIERR_STARTINGGAP:
+        retval = "Found flanking gap at start of alignment";
+        break;
+
+    case PSIERR_ENDINGGAP:
+        retval = "Found flanking gap at end of alignment";
+        break;
+
+    default:
+        retval = "Unknown error code";
+    }
+
+    return retval;
 }
 
 // This method is the core of this class. It delegates the extraction of
@@ -120,11 +182,10 @@ CPssmEngine::Run()
                                      m_PssmInput->GetDiagnosticsRequest(),
                                      &pssm, 
                                      &diagnostics);
-    if (status) {
+    if (status != PSI_SUCCESS) {
         // FIXME: need to use core level perror-like facility
-        ostringstream os;
-        os << "Error code in PSSM engine: " << status;
-        NCBI_THROW(CBlastException, eInternal, os.str());
+        string msg = x_PssmEngineErrorToString(status);
+        NCBI_THROW(CBlastException, eInternal, msg);
     }
 
     // Convert core BLAST matrix structure into ASN.1 score matrix object
@@ -234,7 +295,7 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
         if (errors) {
             string msg(errors->message);
             errors = Blast_MessageFree(errors);
-            NCBI_THROW(CBlastException, eInternal, msg.c_str());
+            NCBI_THROW(CBlastException, eInternal, msg);
         } else {
             NCBI_THROW(CBlastException, eInternal, 
                        "Unknown error when setting up BlastScoreBlk");
@@ -302,7 +363,7 @@ CPssmEngine::x_ValidateNoFlankingGaps()
     }
 
     if (os.str().length() != 0) {
-        NCBI_THROW(CBlastException, eBadParameter, os.str().c_str());
+        NCBI_THROW(CBlastException, eBadParameter, os.str());
     }
 }
 
@@ -329,7 +390,7 @@ CPssmEngine::x_ValidateNoGapsInQuery()
     }
 
     if (os.str().length() != 0) {
-        NCBI_THROW(CBlastException, eBadParameter, os.str().c_str());
+        NCBI_THROW(CBlastException, eBadParameter, os.str());
     }
 }
 
@@ -365,7 +426,7 @@ CPssmEngine::x_ValidateAlignedColumns()
     }
 
     if (os.str().length() != 0) {
-        NCBI_THROW(CBlastException, eBadParameter, os.str().c_str());
+        NCBI_THROW(CBlastException, eBadParameter, os.str());
     }
 }
 
@@ -459,6 +520,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2004/10/18 14:34:37  camacho
+ * Added function to convert PSSM engine error codes to strings
+ *
  * Revision 1.18  2004/10/14 19:10:48  camacho
  * Fix compiler warning
  *
