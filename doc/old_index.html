@@ -1,143 +1,209 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
 <html>
-  <head>
-    <title>C++/STL Guide for NCBI SWG</title>
-  </head>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.75 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title>C++/STL Guide for NCBI SWG</title>
+</head>
+<body bgcolor="#FFFFFF">
 
-  <body BGCOLOR=white>
+<h1>
+C++/STL Developer Guide for NCBI SWG</h1>
 
-  <body>
-	 <h1>C++/STL Developer Guide for NCBI SWG</h1>
+<ul>
+<li>
+CVS location: <i>internal/c++/doc</i></li>
 
-	 <p>
-	 <ul>
-		<li> CVS location:  <i>internal/c++/doc</i>
-		<li> Public WWW docs (the latest version):
-		<a href="http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/index.html">
-		  <i>http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/index.html</i>
-	 </a>
-	 </ul>
+<li>
+Public WWW docs (the latest version): <a href="http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/index.html"><i>http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/index.html</i></a></li>
+</ul>
+This guide is intended to support C++/STL projects developed in the NCBI
+SWG. Guidelines for generating uniform appearance and functionality of
+in-house code are given. Please read, think upon and follow these rules.
+<p>Source browser:
+<ul>
+<li>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/">Source
+navigation</a>, <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident/">identifier
+search</a>, <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/search/">freetext
+search</a>, and <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/find/">file
+search</a></li>
 
-	 <p>
-	 This guide is intended to support C++/STL projects developed in the NCBI SWG.
-	 Guidelines for generating uniform appearance and functionality of in-house code
-	 are given. Please read, think upon and follow these rules.
+<li>
+<a href="docxx/index.html">Index</a> and <a href="docxx/HIER.html">class
+hierarchy</a> (alphabetically ordered)</li>
+</ul>
+Programming Manual:
+<ul>
+<li>
+Setting up the work environment</li>
 
+<ul>
+<li>
+<a href="programming_manual/outside_tree.html">Working in a separate directory</a></li>
 
-	 <p>
-	 Source browser:
-	 <ul>
-		  <li>
-			 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/">Source navigation</a>,
-			 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident/">identifier search</a>,
-			 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/search/">freetext search</a>, and
-			 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/find/">file search</a>
-		  <li>
-			 <a href="docxx/index.html">Index</a> and
-			 <a href="docxx/HIER.html">class hierarchy</a> (alphabetically ordered)
-	</ul>
+<li>
+<a href="programming_manual/sub_tree.html">Working independently in a C++
+subtree</a></li>
 
+<li>
+<a href="programming_manual/inside_tree.html">Working within the C++ source
+tree</a></li>
 
-	 <p>
-    Programming Manual:
-	 <ul>
-	 <li> Setting up the work environment 
-	      <ul>
-	        <li> <a href="programming_manual/outside_tree.html"> Working in a separate directory </a> 
-		<li> <a href="programming_manual/sub_tree.html"> Working independently in a C++ subtree </a> 
-		<li> <a href="programming_manual/inside_tree.html"> Working within the C++ source tree </a> 
-		<li> <a href="programming_manual/objects.html"> Working with the serializable object classes</a> 
-	      </ul><br>
-	 <li> Some NCBI C++ Toolkit Basics
-	      <ul>
-		<li> [~] <a href="programming_manual/applic.html"> Writing a simple application project </a> 
-		<li> [-] <a href="programming_manual/argdescr.html"> Using the CArgDescriptions class </a> 
-		<li> [+] <a href="programming_manual/diag.html"> Diagnostic Streams </a> 
-		<li> [+] <a href="programming_manual/exceptions.html"> Exception handling in the NCBI C++ Toolkit </a>
-		<li> [-] <a href="programming_manual/choice.html"> Choice objects in the NCBI C++ Toolkit</a>
-		<li> [+] <a href="programming_manual/cref.html"> Smart pointers: <i>auto_ptr&lt;&gt;</i> and
-		<i>CRef&lt;&gt;</i> template classes </a> 
-		<li> [-] <a href="programming_manual/typeinfo.html"> Runtime Object Type Information </a>
-		<li> [-] <a href="programming_manual/iterators.html"> The NCBI C++ Toolkit Iterators </a> 
-		<li> [-] <a href="programming_manual/objstream.html"><i>CObject[IO]Streams</i></a>
-	      </ul><br>
-	 <li> Applications
-	      <ul>
-		<li> [-] <a href="programming_manual/cgi.html"> Developing CGI applications </a>
-		<li> [-] <a href="programming_manual/webpgs.html"> Generating web pages with the HTML classes </a>
-		<li> [-] <a href="programming_manual/htmlcgi.html"> An example web-based CGI application </a>
-		<li> [+] <a href="programming_manual/asn.html"> Processing serial data </a> 
-		<li> [~] <a href="programming_manual/traverse.html"> Traversing a serialized data structure </a>
-	      </ul><br>
+<li>
+<a href="programming_manual/objects.html">Working with the serializable
+object classes</a></li>
+</ul><p>
 
-	 <li> Advanced Topics
-	      <ul>
-		<li> [-] <a href="programming_manual/usrtypeinfo.html"> User-defined Type Information</a>. 
-		<li> [-] <a href="programming_manual/methods.html"> Adding methods to serial objects </a>
-	      </ul><br>
+<li>
+Some NCBI C++ Toolkit Basics</li>
 
+<ul>
+<li>
+[~] <a href="programming_manual/applic.html">Writing a simple application
+project</a></li>
 
-	 <li> <a href="programming_manual/Examples.html"> Programming Examples </a>
-	 </ul>
+<li>
+[-] <a href="programming_manual/argdescr.html">Using the CArgDescriptions
+class</a></li>
 
-	 <p>
-	 Reference manual:
+<li>
+[+] <a href="programming_manual/diag.html">Diagnostic Streams</a></li>
 
-	 <ul>
-		<li> <a href="config.html">
-		  Installation and configuration</a>
-		<li> <a href="new_proj.html">
-		  Starting new C++ project</a>
-		<li> <a href="new_mod.html">
-		  Starting new C++ module(source &amp; headers)</a>
-		<li> <a href="style.html">
-		  Naming conventions, Identation and Bracing, Etc.</a>
-		<li> <a href="tips.html">
-		  Introduction to some of C++ and STL features and techniques</a>
-		<li> <a href="dont_use.html">
-		  C++/STL pit-falls and discouraged/prohibited features</a>
-		<li> <a href="types.html">
-		  Standard NCBI C++ types</a>
-	 </ul>
+<li>
+[+] <a href="programming_manual/exceptions.html">Exception handling in
+the NCBI C++ Toolkit</a></li>
 
+<li>
+[-] <a href="programming_manual/choice.html">Choice objects in the NCBI
+C++ Toolkit</a></li>
 
-	 <p>
-	 Libraries, tools, applications, and demo:
+<li>
+[+] <a href="programming_manual/cref.html">Smart pointers: <i>auto_ptr&lt;></i>
+and <i>CRef&lt;></i> template classes</a></li>
 
-	 <ul>
-		<li> <a href="tools.html">
-		  NCBI C++ tools and applications</a>
-		<li> <a href="libs.html">
-		  NCBI C++ libraries</a>
-    </ul>
+<li>
+[-] <a href="programming_manual/typeinfo.html">Runtime Object Type Information</a></li>
 
+<li>
+[-] <a href="programming_manual/iterators.html">The NCBI C++ Toolkit Iterators</a></li>
 
-	 <p>
-	 Miscellaneous:
+<li>
+[-] <i><a href="programming_manual/objstream.html">CObject[IO]Streams</a></i></li>
+</ul><p>
 
-	 <ul>
-		<li> <a href="http://www.cygnus.com/misc/wp/dec96pub/">
-		  [Doc] ISO/ANSI C++ Draft Standard Working Papers</a>
-		<li> <a href="books.html">
-		  [Literature] Books and links to C++ and STL manuals</a>
-		<li> <a href="mkfiles.html">
-		  [Example]  NCBI C++ makefile hierarchy for project <i>"corelib/"</i></a>
-		<li> <a href="src_tree.gif">
-		  [Chart]  NCBI C++ source tree hierarchy</a>
-		<li> <a href="src_tree.gif">
-		  [Chart]  NCBI C++ build tree hierarchy</a>
-	 </ul>
+<li>
+Applications</li>
 
-	 <hr>
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
-		  <!-- <td align=center><i>$Revision$</i></td> -->
-		  <td align=right><i>$Date$</i></td>
-		<tr>
-		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td></tr>
-		<tr>
-		  <td><address><a href="mailto:lewisg@ncbi.nlm.nih.gov">Lewis Geer</a></address></td></tr>
-	 </table>
-  </body>
+<ul>
+<li>
+[-] <a href="programming_manual/cgi.html">Developing CGI applications</a></li>
+
+<li>
+[-] <a href="programming_manual/webpgs.html">Generating web pages with
+the HTML classes</a></li>
+
+<li>
+[-] <a href="programming_manual/htmlcgi.html">An example web-based CGI
+application</a></li>
+
+<li>
+[+] <a href="programming_manual/asn.html">Processing serial data</a></li>
+
+<li>
+[~] <a href="programming_manual/traverse.html">Traversing a serialized
+data structure</a></li>
+</ul><p>
+
+<li>
+Advanced Topics</li>
+
+<ul>
+<li>
+[-] <a href="programming_manual/usrtypeinfo.html">User-defined Type Information</a>.</li>
+</ul><p>
+
+<li>
+<a href="programming_manual/Examples.html">Programming Examples</a></li>
+</ul>
+Reference manual:
+<ul>
+<li>
+<a href="config.html">Installation and configuration</a></li>
+
+<li>
+<a href="new_proj.html">Starting new C++ project</a></li>
+
+<li>
+<a href="new_mod.html">Starting new C++ module(source &amp; headers)</a></li>
+
+<li>
+<a href="style.html">Naming conventions, Identation and Bracing, Etc.</a></li>
+
+<li>
+<a href="tips.html">Introduction to some of C++ and STL features and techniques</a></li>
+
+<li>
+<a href="dont_use.html">C++/STL pit-falls and discouraged/prohibited features</a></li>
+
+<li>
+<a href="types.html">Standard NCBI C++ types</a></li>
+</ul>
+Libraries, tools, applications, and demo:
+<ul>
+<li>
+<a href="tools.html">NCBI C++ tools and applications</a></li>
+
+<li>
+<a href="libs.html">NCBI C++ libraries</a></li>
+</ul>
+Miscellaneous:
+<ul>
+<li>
+<a href="http://www.cygnus.com/misc/wp/dec96pub/">[Doc] ISO/ANSI C++ Draft
+Standard Working Papers</a></li>
+
+<li>
+<a href="books.html">[Literature] Books and links to C++ and STL manuals</a></li>
+
+<li>
+<a href="mkfiles.html">[Example] NCBI C++ makefile hierarchy for project
+<i>"corelib/"</i></a></li>
+
+<li>
+<a href="src_tree.gif">[Chart] NCBI C++ source tree hierarchy</a></li>
+
+<li>
+<a href="src_tree.gif">[Chart] NCBI C++ build tree hierarchy</a></li>
+</ul>
+
+<hr>
+<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<tr>
+<td>
+<address>
+<a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
+</td>
+
+<td><!-- <td align=center><i>$Revision$</i></td> --></td>
+
+<td ALIGN=RIGHT><i>$Date$</i></td>
+</tr>
+
+<tr>
+<td>
+<address>
+<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+</td>
+</tr>
+
+<tr>
+<td>
+<address>
+<a href="mailto:lewisg@ncbi.nlm.nih.gov">Lewis Geer</a></address>
+</td>
+</tr>
+</table>
+
+</body>
 </html>
