@@ -122,7 +122,8 @@ private:
     };
     /// One .lst file
     typedef list<SLstElement> TLstFileContents;
-    TLstFileContents m_LstFileContents;
+    TLstFileContents m_LstFileContentsInclude;
+    TLstFileContents m_LstFileContentsExclude;
     
 
 
@@ -141,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/18 19:11:12  gorelenk
+ * Added m_LstFileContentsExclude member to class CProjectsLstFileFilter.
+ *
  * Revision 1.4  2004/02/26 21:26:11  gorelenk
  * Removed all older class declarations. Added declaration of classes that
  * implements IProjectFilter interface: CProjectDummyFilter,
