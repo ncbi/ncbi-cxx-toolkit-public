@@ -81,6 +81,19 @@ public:
     }
     void SetGapXDropoffFinal(double x) { m_Opts->SetGapXDropoffFinal(x); }
 
+    /************************ Scoring options ************************/
+    const char* GetMatrixName() const { return m_Opts->GetMatrixName(); }
+    void SetMatrixName(const char* matrix) { m_Opts->SetMatrixName(matrix); }
+
+    const char* GetMatrixPath() const { return m_Opts->GetMatrixPath(); }
+    void SetMatrixPath(const char* path) { m_Opts->SetMatrixPath(path); }
+
+    int GetGapOpeningCost() const { return m_Opts->GetGapOpeningCost(); }
+    void SetGapOpeningCost(int g) { m_Opts->SetGapOpeningCost(g); }
+
+    int GetGapExtensionCost() const { return m_Opts->GetGapExtensionCost(); }
+    void SetGapExtensionCost(int e) { m_Opts->SetGapExtensionCost(e); }
+
     Int8 GetEffectiveSearchSpace() const { 
         return m_Opts->GetEffectiveSearchSpace(); 
     }
@@ -112,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/10 14:55:02  madden
+ * Added methods for get/set matrix, matrix-path, gap-opening, gap-extension
+ *
  * Revision 1.4  2004/01/16 20:44:08  bealer
  * - Add locality flag for options handle classes.
  *
