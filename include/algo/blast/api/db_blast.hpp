@@ -68,7 +68,6 @@ public:
     const TSeqLocVector& GetQueries() const;
 
     CBlastOptions& SetOptions();
-    void SetOptions(const CBlastOptions& opts);
     const CBlastOptions& GetOptions() const;
 
     CBlastOptionsHandle& SetOptionsHandle();
@@ -255,6 +254,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/05/04 14:05:30  dondosha
+* Removed extra unimplemented SetOptions method
+*
 * Revision 1.13  2004/03/16 23:29:55  dondosha
 * Added optional RPSInfo* argument to constructors; added function x_InitFields; changed mi_ to m_i in member field names
 *
