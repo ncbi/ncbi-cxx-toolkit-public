@@ -167,8 +167,8 @@ public:
     //
     // Valid flags := { ePersistent }
     // If "ePersistent" flag is set, then dont search in transients at all.
-    const string Get(const string& section, const string& name,
-                     TFlags flags = 0) const;
+    const string& Get(const string& section, const string& name,
+                      TFlags flags = 0) const;
 
     // Like "GetString()", but if the config. parameter not found, then
     // return 'default_value' (rather than empty string)
@@ -186,17 +186,17 @@ public:
         eReturn   // return default value
     };
 
-    int    GetInt    (const  string& section, const string& name,
-                      int    default_value,  TFlags flags = 0,
-                      EErrAction err_action = eThrow) const;
-    bool   GetBool   (const  string& section, const string& name,
-                      bool   default_value,  TFlags flags = 0,
-                      EErrAction err_action = eThrow) const;
-    double GetDouble (const  string& section, const string& name,
-                      double default_value,  TFlags flags = 0,
-                      EErrAction err_action = eThrow) const;
+    int     GetInt    (const string& section, const string& name,
+                       int    default_value,  TFlags flags = 0,
+                       EErrAction err_action = eThrow) const;
+    bool    GetBool   (const string& section, const string& name,
+                       bool   default_value,  TFlags flags = 0,
+                       EErrAction err_action = eThrow) const;
+    double  GetDouble (const string& section, const string& name,
+                       double default_value,  TFlags flags = 0,
+                       EErrAction err_action = eThrow) const;
 
-    // Set the configuration parameter value (unset if "value" is empty)
+    // Set the configuration parameter value(unset if "value" is empty)
     // Return TRUE if the new "value" is successfully set(or unset)
     //
     // Valid flags := { ePersistent, eNoOverride, eTruncate }
@@ -210,13 +210,6 @@ public:
     bool Set(const string& section, const string& name, const string& value,
              TFlags flags = 0, const string& comment = kEmptyStr);
 
-    // Get comment of the registry entry "section:name".
-    // If "name" is empty string, then get "section"'s comment.
-    // If "section" is empty string, then get the registry's comment.
-    // Return empty string if the "section:name" entry not found.
-    const string GetComment(const string& section = kEmptyStr,
-                            const string& name    = kEmptyStr);
-
     // Set comment "comment" for the registry entry "section:name".
     // If "name" is empty string, then set as the "section" comment.
     // If "section" is empty string, then set as the registry comment.
@@ -225,7 +218,14 @@ public:
                     const string& section = kEmptyStr,
                     const string& name    = kEmptyStr);
 
-    // These two functions:  first erase the passed list, then fill it out by
+    // Get comment of the registry entry "section:name".
+    // If "name" is empty string, then get "section"'s comment.
+    // If "section" is empty string, then get the registry's comment.
+    // Return empty string if the "section:name" entry not found.
+    const string& GetComment(const string& section = kEmptyStr,
+                             const string& name    = kEmptyStr);
+
+    // These two functions:  first erase the passed list, then fill it out by:
     //    name of sections that comprise the whole registry
     void EnumerateSections(list<string>* sections) const;
     //    name of entries(all) that belong to the specified "section"
@@ -233,41 +233,28 @@ public:
 
 private:
     struct TRegEntry {
-        string persistent;   // non-transient
-        string transient;    // transient (thus does not get dumped by Write())
-        string comment;      // entry's comment
+        string persistent;  // non-transient
+        string transient;   // transient (thus does not get dumped by Write())
+        string comment;     // entry's comment
     };
     typedef map<string, TRegEntry,   PNocase>  TRegSection;
     typedef map<string, TRegSection, PNocase>  TRegistry;
+    TRegistry    m_Registry;
 
-    TRegistry    m_Registry; // registry data
-    string       m_Comment;  // all-registry comment
+    string       m_Comment;   // all-registry comment
 
-    mutable bool m_Modified; // persistent value(s) changed
-    mutable bool m_Written;  // method Write() was called at least once
+    mutable bool m_Modified;  // persistent value(s) changed
+    mutable bool m_Written;   // method Write() was called at least once
 
-    // Set values for the specified registry entry.
+
     // Valid flags := { ePersistent, eTruncate }
     void x_SetValue(TRegEntry& entry, const string& value,
-					TFlags flags, const string& comment);
-
-    // Set the configuration parameter value w/o lock
-    bool x_Set(const string& section, const string& name, const string& value,
-			   TFlags flags = 0, const string& comment = kEmptyStr);
-
-    // Get comment of the registry entry "section:name" w/o lock
-    const string x_GetComment(const string& section = kEmptyStr,
-							  const string& name    = kEmptyStr);
-
-    // Set comment "comment" for the registry entry "section:name" w/o lock.
-    bool x_SetComment(const string& comment,
-					  const string& section = kEmptyStr,
-					  const string& name    = kEmptyStr);
+                    TFlags flags, const string& comment);
 
     // Check if the registry contains only transient entries and comments
     bool x_IsAllTransient(void) const;
 
-    // Prohibit default initialization and assignment
+    // prohibit default initialization and assignment
     CNcbiRegistry(const CNcbiRegistry&);
     CNcbiRegistry& operator= (const CNcbiRegistry&);
 };
@@ -282,6 +269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/04/07 19:40:03  ivanov
+ * Rollback to R1.24
+ *
  * Revision 1.25  2003/04/07 16:08:41  ivanov
  * Added more thread-safety to CNcbiRegistry:: methods -- mutex protection.
  * Get() and GetComment() returns "string", not "string&".
