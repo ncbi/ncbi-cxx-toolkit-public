@@ -41,6 +41,10 @@ Contents: High level BLAST functions
 #include <blast_util.h>
 #include <blast_gapalign.h>
 
+extern Uint1Ptr
+GetPrivatTranslationTable PROTO((CharPtr genetic_code,
+                                 Boolean reverse_complement));
+
 #ifdef GAPPED_LOG
 /** Print out the initial hits information. Used for debugging only, will be 
  * removed later.
@@ -123,7 +127,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    Boolean ag_blast = (Boolean)
       (word_options->extend_word_method & EXTEND_WORD_AG);
    Int4 max_hits = 0, total_hits = 0, num_hits;
-   BlastHSPListPtr hsp_list, combined_hsp_list;
+   BlastHSPListPtr hsp_list, combined_hsp_list, full_hsp_list;
 #ifdef GAPPED_LOG  
    Boolean first_time = TRUE;
 #endif
@@ -151,6 +155,12 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 		       BlastInitHitListPtr); /* initial hitlist */
    Uint4Ptr query_offsets, subject_offsets;
    Int4 offset_array_size = 0;
+   Uint1 program_number = gap_align->program;
+   Boolean translated_subject;
+   Int2 frame, frame_min, frame_max;
+   Int4 nucl_length;
+   Uint1Ptr nucl_sequence, translation_buffer;
+   Uint1Ptr translation_table, translation_table_rc;
    
    /* search prologue */
 
@@ -205,14 +215,79 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 
    init_hitlist = BLAST_InitHitListNew();
 
+   translated_subject = (program_number == blast_type_tblastn
+                         || program_number == blast_type_tblastx
+                         || program_number == blast_type_psitblastn);
+   if (translated_subject) {
+      /** DATABASE GENETIC CODE OPTION IS NOT PASSED HERE!!!
+          THIS MUST BE CORRECTED IN THE FUTURE */
+      CharPtr genetic_code;
+      ValNodePtr vnp;
+      GeneticCodePtr gcp;
+      /* Preallocate buffer for the translated sequences */
+      translation_buffer = (Uint1Ptr) 
+         Malloc(3 + readdb_get_maxlen(db)/CODON_LENGTH);
+
+      gcp = GeneticCodeFind(1, NULL);
+      for (vnp = (ValNodePtr)gcp->data.ptrvalue; vnp != NULL; 
+           vnp = vnp->next) {
+         if (vnp->choice == 3) {  /* ncbieaa */
+            genetic_code = (CharPtr)vnp->data.ptrvalue;
+            break;
+         }
+      }
+
+      translation_table = GetPrivatTranslationTable(genetic_code, FALSE);
+      translation_table_rc = GetPrivatTranslationTable(genetic_code, TRUE);
+   }
+
    /* iterate over all subject sequences */
    for (oid = 0; oid < numseqs; oid++) {
 
 #ifdef _DEBUG
-	if ( (oid % 10000) == 0 ) printf("oid=%d\n",oid);
+      if ( (oid % 10000) == 0 ) printf("oid=%d\n",oid);
 #endif
 
-      MakeBlastSequenceBlk(db, &subject, oid, TRUE);
+      /* Retrieve subject sequence in ncbistdaa for proteins or ncbi2na 
+         for nucleotides */
+      MakeBlastSequenceBlk(db, &subject, oid, BLASTP_ENCODING);
+      if (translated_subject) {
+         frame_min = -3;
+         frame_max = 3;
+      } else if (program_number == blast_type_blastn) {
+         frame_min = 1;
+         frame_max = 1;
+      } else {
+         frame_min = 0;
+         frame_max = 0;
+      }
+
+      if (translated_subject) {
+         nucl_length = subject->length;
+         nucl_sequence = subject->sequence;
+         subject->sequence = translation_buffer;
+      }
+
+      full_hsp_list = NULL;
+
+      /* Loop over frames of the subject sequence */
+      for (frame=frame_min; frame<=frame_max; frame++) {
+         subject->frame = frame;
+         if (translated_subject) {
+            if (frame == 0) {
+               continue;
+            } else if (frame > 0) {
+               subject->length = 
+                  BLAST_TranslateCompressedSequence(translation_table,
+                     nucl_length, nucl_sequence, frame, translation_buffer);
+            } else {
+               subject->length = 
+                  BLAST_TranslateCompressedSequence(translation_table_rc,
+                     nucl_length, nucl_sequence, frame, translation_buffer);
+               
+            }
+            subject->sequence = translation_buffer + 1;
+         }
      
       /* Split subject sequence into chunks if it is too long */
       num_chunks = (subject->length - DBSEQ_CHUNK_OVERLAP) / 
@@ -268,7 +343,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          if (query_info->last_context > 1) {
             /* Multiple contexts - adjust all HSP offsets to the individual 
                query coordinates; also assign frames */
-            BLAST_AdjustQueryOffsets(gap_align->program, hsp_list, 
+            BLAST_AdjustQueryOffsets(program_number, hsp_list, 
                                      query_info);
          }
 
@@ -278,7 +353,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          else
 #endif
             /* Calculate e-values for all HSPs */
-            status = BLAST_GetNonSumStatsEvalue(gap_align->program, 
+            status = BLAST_GetNonSumStatsEvalue(program_number, 
                         query_info, hsp_list, hit_options, gap_align->sbp);
 
          /* Discard HSPs that don't pass the e-value test */
@@ -288,7 +363,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          /* Allow merging of HSPs either if traceback is already available,
             or if it is an ungapped search */
          if (MergeHSPLists(hsp_list, &combined_hsp_list, offset,
-                (hsp_list->traceback_done || !hit_options->is_gapped))) {
+                (hsp_list->traceback_done || !hit_options->is_gapped),
+                FALSE)) {
             /* Destruct the unneeded hsp_list, but make sure the HSPs 
                themselves are not destructed */
             hsp_list->hspcnt = 0;
@@ -297,11 +373,15 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          offset += subject->length - DBSEQ_CHUNK_OVERLAP;
          subject->sequence += 
             (subject->length - DBSEQ_CHUNK_OVERLAP)/COMPRESSION_RATIO;
-      }
+      } /* End loop on chunks of subject sequence */
+
+      MergeHSPLists(combined_hsp_list, &full_hsp_list, 0, FALSE, TRUE);
+
+      } /* End loop on frames */
       
       /* Save the HSPs into a hit list */
-      BLAST_SaveHitlist(gap_align->program, query, subject, results, 
-         combined_hsp_list, hit_params, query_info, gap_align->sbp, 
+      BLAST_SaveHitlist(program_number, query, subject, results, 
+         full_hsp_list, hit_params, query_info, gap_align->sbp, 
          score_options, db, NULL);
    }
 

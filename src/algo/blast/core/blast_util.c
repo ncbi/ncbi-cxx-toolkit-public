@@ -65,18 +65,21 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
 /** Create the subject sequence block given an ordinal id in a database */
 void
 MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr PNTR seq_blk,
-                     Int4 oid, Boolean compressed)
+                     Int4 oid, Uint1 encoding)
 {
   Int4 length, buf_len = 0;
   Uint1Ptr buffer = NULL;
 
-  if (compressed) {
-     length=readdb_get_sequence(db, oid, &buffer);
-  } else {
+  if (encoding == BLASTNA_ENCODING) {
      length = readdb_get_sequence_ex(db, oid, &buffer, &buf_len, TRUE);
+  } else if (encoding == NCBI4NA_ENCODING) {
+     length = readdb_get_sequence_ex(db, oid, &buffer, &buf_len, FALSE);
+  } else {
+     length=readdb_get_sequence(db, oid, &buffer);
   }
 
-  BlastSetUp_SeqBlkNew(buffer, length, 0, NULL, seq_blk, !compressed);
+  BlastSetUp_SeqBlkNew(buffer, length, 0, NULL, seq_blk, 
+                       (encoding != BLASTP_ENCODING));
   (*seq_blk)->oid = oid;
 }
 
@@ -246,16 +249,16 @@ Int4 MakeBlastSequenceBlkFromOID(ReadDBFILEPtr db, Int4 oid, BLAST_SequenceBlkPt
 
 Int4 MakeBlastSequenceBlkFromFasta(FILE *fasta_fp, BLAST_SequenceBlkPtr seq)
 {
-BioseqPtr query_bsp;
-SeqEntryPtr query_sep;
-Boolean is_na = FALSE;
-Boolean believe_defline = TRUE;
-SeqLocPtr mask_slp = NULL;
-Int2 ctr=1;
-
-Uint1Ptr sequence = NULL;
-
-query_sep=FastaToSeqEntryForDb(fasta_fp,
+   BioseqPtr query_bsp;
+   SeqEntryPtr query_sep;
+   Boolean is_na = FALSE;
+   Boolean believe_defline = TRUE;
+   SeqLocPtr mask_slp = NULL;
+   Int2 ctr=1;
+   
+   Uint1Ptr sequence = NULL;
+   
+   query_sep=FastaToSeqEntryForDb(fasta_fp,
                                is_na, /* query is nucleotide? */
                                NULL, /* error message */
                                believe_defline, /* believe query defline? */
@@ -263,29 +266,330 @@ query_sep=FastaToSeqEntryForDb(fasta_fp,
                                &ctr, /* starting point for constructing a unique id */
                                &mask_slp);
 
-if (query_sep == NULL)
-    return 1;
-
-SeqEntryExplore(query_sep, &query_bsp, FindProt);
-
-if (query_bsp == NULL)
-    return 1;
-	                  
-/* allocate contiguous space for the sequence */
-sequence = Malloc(query_bsp->length);
-
-if (sequence == NULL)
-    return 1;
-
-/* convert to ncbistdaa encoding */
-BioseqRawConvert(query_bsp, Seq_code_ncbistdaa);
-            
-/* read the sequence */
-BSSeek(query_bsp->seq_data, 0, SEEK_SET);
-BSRead(query_bsp->seq_data, sequence, query_bsp->length);
-
-seq->length = query_bsp->length;
-seq->sequence = sequence;
-return 0;
+   if (query_sep == NULL)
+      return 1;
+   
+   SeqEntryExplore(query_sep, &query_bsp, FindProt);
+   
+   if (query_bsp == NULL)
+      return 1;
+   
+   /* allocate contiguous space for the sequence */
+   sequence = Malloc(query_bsp->length);
+   
+   if (sequence == NULL)
+      return 1;
+   
+   /* convert to ncbistdaa encoding */
+   BioseqRawConvert(query_bsp, Seq_code_ncbistdaa);
+   
+   /* read the sequence */
+   BSSeek(query_bsp->seq_data, 0, SEEK_SET);
+   BSRead(query_bsp->seq_data, sequence, query_bsp->length);
+   
+   seq->length = query_bsp->length;
+   seq->sequence = sequence;
+   return 0;
 }
 
+/*
+  Translate a compressed nucleotide sequence without ambiguity codes.
+*/
+Int4 LIBCALL
+BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length, 
+   Uint1Ptr nt_seq, Int2 frame, Uint1Ptr prot_seq)
+{
+   register int state;
+   Int2 total_remainder;
+   Int4 prot_length;
+   register int byte_value, codon;
+   Uint1 last_remainder, last_byte, remainder;
+   register Uint1Ptr nt_seq_end, nt_seq_start;
+   Uint1Ptr prot_seq_start;
+   int byte_value1,byte_value2,byte_value3,byte_value4,byte_value5;
+   
+   prot_length=0;
+   if (nt_seq == NULL || prot_seq == NULL || 
+       (length-ABS(frame)+1) < CODON_LENGTH)
+      return prot_length;
+   
+   *prot_seq = NULLB;
+   prot_seq++;
+   
+   /* record to determine protein length. */
+   prot_seq_start = prot_seq;
+  
+   remainder = length%4;
+
+   if (frame > 0) {
+      nt_seq_end = nt_seq + (length)/4 - 1;
+      last_remainder = (4*(length/4) - frame + 1)%CODON_LENGTH;
+      total_remainder = last_remainder+remainder;
+      
+      state = frame-1;
+      byte_value = *nt_seq;
+      
+      /* If there's lots to do, advance to state 0, then enter fast loop */
+      while (nt_seq < nt_seq_end) {
+         switch (state)	{
+         case 0:
+            codon = (byte_value >> 2);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            /* do state = 3 now, break is NOT missing. */
+         case 3:
+            codon = ((byte_value & 3) << 4);
+            nt_seq++;
+            byte_value = *nt_seq;	
+            codon += (byte_value >> 4);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            if (nt_seq >= nt_seq_end) {
+               state = 2;
+               break;
+            }
+            /* Go on to state = 2 if not at end. */
+         case 2:
+            codon = ((byte_value & 15) << 2);
+            nt_seq++;
+            byte_value = *nt_seq;	
+            codon += (byte_value >> 6);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            if (nt_seq >= nt_seq_end) {
+               state = 1;
+               break;
+            }
+            /* Go on to state = 1 if not at end. */
+         case 1:
+            codon = byte_value & 63;
+            *prot_seq = translation[codon];
+            prot_seq++;
+            nt_seq++;
+            byte_value = *nt_seq;	
+            state = 0;
+            break;
+         } /* end switch */
+         /* switch ends at state 0, except when at end */
+         
+         /********************************************/
+         /* optimized loop: start in state 0. continue til near end */
+         while (nt_seq < (nt_seq_end-10)) {
+            byte_value1 = *(++nt_seq);
+            byte_value2 = *(++nt_seq);
+            byte_value3 = *(++nt_seq);
+            /* case 0: */
+            codon = (byte_value >> 2);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            
+            /* case 3: */
+            codon = ((byte_value & 3) << 4);
+            codon += (byte_value1 >> 4);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            
+            byte_value4 = *(++nt_seq);
+            /* case 2: */
+            codon = ((byte_value1 & 15) << 2);
+            
+            codon += (byte_value2 >> 6);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            /* case 1: */
+            codon = byte_value2 & 63;
+            byte_value5 = *(++nt_seq);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            
+            /* case 0: */
+            codon = (byte_value3 >> 2);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            /* case 3: */
+            byte_value = *(++nt_seq);
+            codon = ((byte_value3 & 3) << 4);
+            codon += (byte_value4 >> 4);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            /* case 2: */
+            codon = ((byte_value4 & 15) << 2);
+            codon += (byte_value5 >> 6);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            /* case 1: */
+            codon = byte_value5 & 63;
+            *prot_seq = translation[codon];
+            prot_seq++;
+            state=0;
+         } /* end optimized while */
+         /********************************************/
+      } /* end while */
+      
+      if (state == 1) { 
+         /* This doesn't get done above, DON't do the state = 0
+            below if this is done. */
+         byte_value = *nt_seq;
+         codon = byte_value & 63;
+         state = 0;
+         *prot_seq = translation[codon];
+         prot_seq++;
+      } else if (state == 0) { /* This one doesn't get done above. */
+         byte_value = *nt_seq;
+         codon = ((byte_value) >> 2);
+         state = 3;
+         *prot_seq = translation[codon];
+         prot_seq++;
+      }
+
+      if (total_remainder >= CODON_LENGTH) {
+         byte_value = *(nt_seq_end);
+         last_byte = *(nt_seq_end+1);
+         if (state == 0) {
+            codon = (last_byte >> 2);
+         } else if (state == 2) {
+            codon = ((byte_value & 15) << 2);
+            codon += (last_byte >> 6);
+         } else if (state == 3)	{
+            codon = ((byte_value & 3) << 4);
+            codon += (last_byte >> 4);
+         }
+         *prot_seq = translation[codon];
+         prot_seq++;
+      }
+      *prot_seq = NULLB;
+   } else {
+      nt_seq_start = nt_seq;
+      nt_seq += length/4;
+      state = remainder+frame;
+      /* Do we start in the last byte?  This one has the lowest order
+         bits set to represent the remainder, hence the odd coding here. */
+      if (state >= 0) {
+         last_byte = *nt_seq;
+         nt_seq--;
+         if (state == 0) {
+            codon = (last_byte >> 6);
+            byte_value = *nt_seq;
+            codon += ((byte_value & 15) << 2);
+            state = 1;
+         } else if (state == 1) {
+            codon = (last_byte >> 4);
+            byte_value = *nt_seq;
+            codon += ((byte_value & 3) << 4);
+            state = 2;
+         } else if (state == 2)	{
+            codon = (last_byte >> 2);
+            state = 3;
+         }
+         *prot_seq = translation[codon];
+         prot_seq++;
+      }	else {
+         state = 3 + (remainder + frame + 1);
+         nt_seq--;
+      }
+      
+      byte_value = *nt_seq;	
+
+      /* If there's lots to do, advance to state 3, then enter fast loop */
+      while (nt_seq > nt_seq_start) {
+         switch (state) {
+         case 3:
+            codon = (byte_value & 63);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            /* do state = 0 now, break is NOT missing. */
+         case 0:
+            codon = (byte_value >> 6);
+            nt_seq--;
+            byte_value = *nt_seq;	
+            codon += ((byte_value & 15) << 2);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            if (nt_seq <= nt_seq_start)	{
+               state = 1;
+               break;
+            }
+            /* Go on to state = 2 if not at end. */
+         case 1:
+            codon = (byte_value >> 4);
+            nt_seq--;
+            byte_value = *nt_seq;
+            codon += ((byte_value & 3) << 4);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            if (nt_seq <= nt_seq_start)	{
+               state = 2;
+               break;
+            }
+            /* Go on to state = 2 if not at end. */
+         case 2:
+            codon = (byte_value >> 2);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            nt_seq--;
+            byte_value = *nt_seq;	
+            state = 3;
+            break;
+         } /* end switch */
+         /* switch ends at state 3, except when at end */
+         
+         /********************************************/
+         /* optimized area: start in state 0. continue til near end */
+         while (nt_seq > (nt_seq_start+10)) {
+            byte_value1 = *(--nt_seq);	
+            byte_value2 = *(--nt_seq);
+            byte_value3 = *(--nt_seq);
+            
+            codon = (byte_value & 63);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            codon = (byte_value >> 6);
+            codon += ((byte_value1 & 15) << 2);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            byte_value4 = *(--nt_seq);
+            codon = (byte_value1 >> 4);
+            codon += ((byte_value2 & 3) << 4);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            codon = (byte_value2 >> 2);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            byte_value5 = *(--nt_seq);
+            
+            codon = (byte_value3 & 63);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            byte_value = *(--nt_seq);
+            codon = (byte_value3 >> 6);
+            codon += ((byte_value4 & 15) << 2);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            codon = (byte_value4 >> 4);
+            codon += ((byte_value5 & 3) << 4);
+            *prot_seq = translation[codon];
+            prot_seq++;
+            codon = (byte_value5 >> 2);
+            *prot_seq = translation[codon];
+            prot_seq++;
+         } /* end optimized while */
+         /********************************************/
+         
+      } /* end while */
+      
+      byte_value = *nt_seq;
+      if (state == 3) {
+         codon = (byte_value & 63);
+         *prot_seq = translation[codon];
+         prot_seq++;
+      } else if (state == 2) {
+         codon = (byte_value >> 2);
+         *prot_seq = translation[codon];
+         prot_seq++;
+      }
+   }
+
+   *prot_seq = NULLB;
+   
+   return (prot_seq - prot_seq_start);
+} /* BlastTranslateUnambiguousSequence */

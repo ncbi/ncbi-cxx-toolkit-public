@@ -56,8 +56,9 @@ static Int4 BLAST_AlignPackedNucl(Uint1Ptr B, Uint1Ptr A, Int4 N, Int4 M,
 static Int2
 BLAST_GapAlignStructFill(BlastGapAlignStructPtr gap_align, Int4 q_start, 
    Int4 s_start, Int4 q_end, Int4 s_end, Int4 score, GapXEditScriptPtr esp);
-static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align, BlastInitHSPPtr
-   init_hsp, BlastHSPListPtr hsp_list, BlastHitSavingOptionsPtr hit_options);
+static Int2 
+BLAST_SaveHsp(BlastGapAlignStructPtr gap_align, BlastInitHSPPtr init_hsp, 
+   BlastHSPListPtr hsp_list, BlastHitSavingOptionsPtr hit_options, Int2 frame);
 
 static Int2 BLAST_ProtGappedAlignment(BLAST_SequenceBlkPtr query_in,
    BLAST_SequenceBlkPtr subject_in, BlastGapAlignStructPtr gap_align,
@@ -1504,7 +1505,7 @@ Int2 BLAST_MbGetGappedScore(BLAST_SequenceBlkPtr query,
             /* gap_align contains alignment endpoints; init_hsp contains 
                the offsets to start the alignment from, if traceback is to 
                be performed later */
-            BLAST_SaveHsp(gap_align, init_hsp, hsp_list, hit_options); 
+            BLAST_SaveHsp(gap_align, init_hsp, hsp_list, hit_options, 1); 
          }
       }
    }
@@ -1917,10 +1918,12 @@ static Int4 BLAST_AlignPackedNucl(Uint1Ptr B, Uint1Ptr A, Int4 N, Int4 M,
  * @param hsp_list Structure holding all HSPs with full gapped alignment 
  *        information [in] [out]
  * @param hit_options Options related to saving hits [in]
+ * @param frame Subject frame: -3..3 for translated sequence, 1 for blastn, 
+ *              0 for blastp [in]
  */
 static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align, 
    BlastInitHSPPtr init_hsp, BlastHSPListPtr hsp_list, 
-   BlastHitSavingOptionsPtr hit_options)
+   BlastHitSavingOptionsPtr hit_options, Int2 frame)
 {
    BlastHSPPtr PNTR hsp_array, new_hsp;
    Int4 highscore, lowscore, score;
@@ -1965,13 +1968,14 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
       gap_align->query_stop - gap_align->query_start;
    new_hsp->subject.length = 
       gap_align->subject_stop - gap_align->subject_start;
+   new_hsp->subject.frame = frame;
 
    /* Increment ending offsets for convenience */
    new_hsp->query.end = gap_align->query_stop;
    new_hsp->subject.end = gap_align->subject_stop;
    new_hsp->query.gapped_start = init_hsp->q_off;
    new_hsp->subject.gapped_start = init_hsp->s_off;
-   
+
    new_hsp->gap_info = gap_align->edit_block;
    gap_align->edit_block = NULL;
 
@@ -2267,7 +2271,8 @@ BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
             }
 
          }
-         BLAST_SaveHsp(gap_align, init_hsp, hsp_list, hit_options);
+         BLAST_SaveHsp(gap_align, init_hsp, hsp_list, hit_options, 
+                       subject->frame);
 
          /* Once at least one HSP is saved, try to extend all HSPs */
          check_gap_trigger = FALSE;
