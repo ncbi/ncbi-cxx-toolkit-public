@@ -22,14 +22,7 @@ POTENTIAL_PROJ = @gui@
 SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
 include ./Makefile.meta
 
-$(OPTIONAL_PROJ) util connect cgi html hello: corelib
-hello: html cgi
 
-objects: serial connect dbapi util
-
-ctools gui: objects
-
-internal: $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
 
 #################################
 #  Special rules
