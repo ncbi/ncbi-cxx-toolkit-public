@@ -1504,6 +1504,7 @@ END_SUBTYPE
 START_SUBTYPE(unsure)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
+    ADD_QUAL(compare);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(gene);
@@ -1670,6 +1671,8 @@ END_SUBTYPE
 
 START_SUBTYPE(gap)
     ADD_QUAL(estimated_length);
+    ADD_QUAL(map);
+    ADD_QUAL(note);
 END_SUBTYPE
 
 START_SUBTYPE(operon)
@@ -1981,6 +1984,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.20  2004/10/22 15:32:40  shomrat
+* Add qual compare to unsure, map and note to gap
+*
 * Revision 6.19  2004/10/18 17:43:33  shomrat
 * Added legal qualifiers for bond, psec_str and het feature types
 *
