@@ -26,7 +26,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   Dummy LBSMD mapper for non-UNIX platforms.
+ *   Dummy LBSMD mapper for non-UNIX and non-inhouse platforms.
  *
  */
 
@@ -79,6 +79,9 @@ int/*bool*/ LBSM_HINFO_BLASTParams(const void* load_ptr, unsigned int blast[8])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2003/08/11 19:08:56  lavr
+ * Mention "non-inhouse" in file description
+ *
  * Revision 6.5  2002/10/28 20:12:57  lavr
  * Module renamed and host info API included
  *
