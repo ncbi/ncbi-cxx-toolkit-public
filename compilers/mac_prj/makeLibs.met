@@ -46,7 +46,8 @@ property pStationeryName : "LibraryStationery"
 property pPluginStationeryName : "PluginStationery"
 property pDylibStationeryName : "DLLStationery"
 
-property pTargetKeyWords : "MSL BSD Debug Final"
+property pTargetKeyWords : {"MSL", "BSD", "Debug", "Final"}
+property pDefaultTargets : {"BSD", "Debug"}
 
 --
 --  Set Global variables
@@ -63,6 +64,7 @@ global gMakeDir
 global gLibsDir
 global gFLTKRootFolder
 global gBdbRootFolder
+global gSqliteSrcFolder -- where sqlite source is located.
 global gSqliteRootFolder -- sqlite install folder.  (not source).
 
 
@@ -595,29 +597,52 @@ on FindSpecialFolder(default, pattern)
 	return aSpecialFolder
 end FindSpecialFolder
 
-on BuildSqlite()
-	set sqliteSrcFolder to my FindSpecialFolder(pSqliteRootFolder, "src/sqlite.h.in")
-	if sqliteSrcFolder is "" then
+on FindSqlite()
+	set gSqliteSrcFolder to my FindSpecialFolder(pSqliteRootFolder, "src/sqlite.h.in")
+	if gSqliteSrcFolder is "" then
 		return ""
 	end if
+	set sqliteLibsFolder to (gLibsDir & "sqlite:")
+	return sqliteLibsFolder
+end FindSqlite
+
+
+on BuildSqlite()
+	if gSqliteSrcFolder is "" then
+		return
+	end if
+	
+	CreateFolder(gLibsDir)
 	-- shell script command name
 	set makeCommand to "sh " & POSIX path of (gMakeDir & "makesqlite")
 	-- command arguments:
 	-- source directory
-	set makeCommand to makeCommand & " " & (POSIX path of sqliteSrcFolder)
+	set makeCommand to makeCommand & " " & (POSIX path of gSqliteSrcFolder)
 	-- build directory
 	set makeCommand to makeCommand & " " & (POSIX path of (gLibsDir & "sqlite-build"))
 	-- install directory
 	set sqliteLibsFolder to (gLibsDir & "sqlite:")
 	set makeCommand to makeCommand & " " & (POSIX path of sqliteLibsFolder)
 	
-	--try
-	do shell script makeCommand
-	--on error
-	--return ""
-	--end try
+	try
+		do shell script makeCommand without altering line endings
+	on error errmsg number errnum
+		if pSaveContinueOnErrors then
+			-- copy results into an error file.
+			set sqliteErrFileName to gProjectsDir & "sqlitelib.errs"
+			try
+				tell application "Finder" to delete file sqliteErrFileName
+			end try
+			set sqliteErrFile to open for access sqliteErrFileName with write permission
+			write errmsg to sqliteErrFile
+			close access sqliteErrFile
+		else
+			-- display results and stop.
+			error "Errors building sqlite: " & return & errmsg number errnum
+		end if
+	end try
 	-- return the standard output of the script which should be the install directory.
-	return sqliteLibsFolder -- ((POSIX file result) as string) & ":"
+	return
 end BuildSqlite
 
 
@@ -660,7 +685,7 @@ on SetGlobals()
 		if gBdbRootFolder is "" then
 			display dialog "Can't find bdb. (download from http://www.sleepycat.com/ into your home directory or C++ toolkit directory). Some libraries will fail to build." with icon caution
 		end if
-		set gSqliteRootFolder to my BuildSqlite()
+		set gSqliteRootFolder to my FindSqlite()
 		if gSqliteRootFolder is "" then
 			display dialog "Can't find sqlite. (download from http://www.sqlite.org/ into your home or C++ toolkit directory). Some plugins may fail to build." with icon caution
 		end if
@@ -1224,6 +1249,10 @@ on CreateAndBuildAllProjects()
 	CleanupFiles(gProjectsDir)
 	set targetSpecs to GetTargetSpecs()
 	
+	my BuildSqlite()
+	
+	tell application "CodeWarrior IDE" to activate
+	
 	repeat with proj in gProjectData
 		CreateProject(proj)
 		if pShouldBuild then
@@ -1257,12 +1286,33 @@ on GetTargetSpecs()
 			set targetSpecs to targetSpecs & MakeTargetSpec(f)
 		end if
 	end repeat
-	-- no Build files? match everything.
+	-- no Build files? Ask what to build.
 	if (count items of targetSpecs) is 0 then
-		set targetSpecs to {""}
+		set targetSpecs to {AskForTargetSpec()}
 	end if
 	return targetSpecs
 end GetTargetSpecs
+
+on AskForTargetSpec()
+	try
+		choose from list pTargetKeyWords default items pDefaultTargets Â
+			with prompt "Choose Target types to compile:" cancel button name "Build All" with multiple selections allowed
+	on error errmsg number errnum
+		if errnum is -1713 then -- no user interaction allowed.
+			return "" -- build all
+		else
+			error errmsg number errnum
+		end if
+	end try
+	set targ to result
+	if targ is false then
+		return "" -- build all
+	end if
+	set {stid, text item delimiters of AppleScript} to {text item delimiters of AppleScript, " "}
+	set targ to targ as string
+	set text item delimiters of AppleScript to stid
+	return targ
+end AskForTargetSpec
 
 on MakeTargetSpec(f)
 	set tspec to ""
@@ -1389,8 +1439,6 @@ with timeout of 60000 seconds
 	SetGlobals()
 	SetProjectData()
 	CopyHeaders()
-	
-	tell application "CodeWarrior IDE" to activate
 	
 	CreateAndBuildAllProjects()
 	
