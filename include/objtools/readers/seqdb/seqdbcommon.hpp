@@ -212,6 +212,10 @@ private:
 NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis);
 
+NCBI_XOBJREAD_EXPORT
+void SeqDB_ReadMemoryGiList(const char * fbeginp,
+                            const char * fendp,
+                            vector<CSeqDBGiList::SGiOid> & gis);
 
 NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadGiList(const string & fname,

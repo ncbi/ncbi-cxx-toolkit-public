@@ -405,15 +405,13 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
     }
 }
 
-void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis)
+void SeqDB_ReadMemoryGiList(const char * fbeginp,
+                            const char * fendp,
+                            vector<CSeqDBGiList::SGiOid> & gis)
 {
-    CMemoryFile mfile(fname);
-    
-    Int8 file_size = mfile.GetSize();
-    const char * fbeginp = (char*) mfile.GetPtr();
-    const char * fendp   = fbeginp + (int)file_size;
-    
     bool is_binary = false;
+    
+    Int8 file_size = fendp - fbeginp;
     
     if (file_size == 0) {
         NCBI_THROW(CSeqDBException,
@@ -456,7 +454,7 @@ void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis)
         // allocated, but this is preferable to letting the vector
         // double itself (which it still will do if needed).
         
-        gis.reserve(file_size / 7);
+        gis.reserve(int(file_size / 7));
         
         Uint4 elem(0);
         
@@ -526,6 +524,17 @@ void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis)
             elem += dig;
         }
     }
+}
+
+void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis)
+{
+    CMemoryFile mfile(fname);
+    
+    Int8 file_size = mfile.GetSize();
+    const char * fbeginp = (char*) mfile.GetPtr();
+    const char * fendp   = fbeginp + (int)file_size;
+    
+    SeqDB_ReadMemoryGiList(fbeginp, fendp, gis);
 }
 
 CSeqDBFileGiList::CSeqDBFileGiList(const string & fname)
