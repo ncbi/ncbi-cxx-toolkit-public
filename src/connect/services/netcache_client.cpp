@@ -294,6 +294,8 @@ bool CNetCacheClient::IsAlive()
 
 string CNetCacheClient::ServerVersion()
 {
+    CheckConnect(kEmptyStr);
+
     string request;
     string version;
     
@@ -552,6 +554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/11/10 18:47:30  kuznets
+ * fixed connection in IsAlive()
+ *
  * Revision 1.22  2004/11/10 13:37:21  kuznets
  * Code cleanup
  *
