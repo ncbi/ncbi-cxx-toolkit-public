@@ -40,6 +40,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 class CMetaRegistry
 {
 public:
@@ -63,7 +64,8 @@ public:
 
     /// m_ActualName is always an absolute path (or empty)
     struct SEntry {
-        string         requested_name, actual_name;
+        string         requested_name;
+        string         actual_name;
         ENameStyle     style;
         TFlags         flags;
         TRegFlags      reg_flags;
@@ -91,11 +93,11 @@ public:
     ///   class unless fPrivate or fDontOwn was given).
     ///   On failure, .actual_name will be empty and .registry will be
     ///   NULL.
-    static SEntry Load(const string& name,
-                       ENameStyle    style     = eName_AsIs,
-                       TFlags        flags     = 0,
-                       TRegFlags     reg_flags = 0,
-                       CNcbiRegistry* reg      = 0);
+    static SEntry Load(const string&  name,
+                       ENameStyle     style     = eName_AsIs,
+                       TFlags         flags     = 0,
+                       TRegFlags      reg_flags = 0,
+                       CNcbiRegistry* reg       = 0);
 
     /// Accessors for the search path for unqualified names.
     /// By default, the path list contains the following dirs in this order:
@@ -106,7 +108,7 @@ public:
     ///      (requires use of CNcbiApplication)
     typedef vector<string> TSearchPath;
     static const TSearchPath& GetSearchPath(void);
-    static TSearchPath&       SetSearchPath(void);
+    static       TSearchPath& SetSearchPath(void);
 
     /// Clears path and substitutes the default search path
     static void GetDefaultSearchPath(TSearchPath& path);
@@ -137,7 +139,11 @@ private:
 };
 
 
-/// inline methods
+
+/////////////////////////////////////////////////////////////////////////////
+//  IMPLEMENTATION of INLINE functions
+/////////////////////////////////////////////////////////////////////////////
+
 
 inline
 CMetaRegistry::SEntry CMetaRegistry::Load(const string& name,
@@ -149,17 +155,20 @@ CMetaRegistry::SEntry CMetaRegistry::Load(const string& name,
     return Instance().x_Load(name, style, flags, reg_flags, reg, name, style);
 }
 
+
 inline
 const CMetaRegistry::TSearchPath& CMetaRegistry::GetSearchPath(void)
 {
     return Instance().x_GetSearchPath();
 }
 
+
 inline
 CMetaRegistry::TSearchPath& CMetaRegistry::SetSearchPath(void)
 {
     return Instance().x_SetSearchPath();
 }
+
 
 inline
 CMetaRegistry::CMetaRegistry()
@@ -180,12 +189,18 @@ CMetaRegistry& CMetaRegistry::Instance(void)
     return *sm_Instance;
 }
 
+
 END_NCBI_SCOPE
+
+
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/12 19:01:55  vakatov
+* Minor, formal code style amendments
+*
 * Revision 1.2  2003/08/06 20:25:55  ucko
 * Allow Load to take an existing registry to reuse.
 *
