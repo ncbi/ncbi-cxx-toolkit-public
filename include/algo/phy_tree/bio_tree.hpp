@@ -560,7 +560,7 @@ void BioTreeConvert2Dynamic(TDynamicTree&      dyn_tree,
        func(&dyn_tree, node_conv);
 
     typedef typename TBioTree::TBioTreeNode TTreeNode;
-    typename const TTreeNode *n = bio_tree.GetTreeNode();
+    const TTreeNode *n = bio_tree.GetTreeNode();
 
     TreeDepthFirstTraverse(*(const_cast<TTreeNode*>(n)), func);
 }
@@ -573,6 +573,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/19 14:37:03  ucko
+ * Remove extraneous "typename" that confused some compilers.
+ *
  * Revision 1.6  2004/05/19 12:46:25  kuznets
  * Added utilities to convert tree to a fully dynamic variant.
  *
