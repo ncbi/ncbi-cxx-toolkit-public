@@ -61,6 +61,7 @@ tds_put_n(TDSSOCKET *tds, const unsigned char *buf, int n)
 		}
 		tds->out_pos+=to_copy;
 		n-=to_copy;
+		if(to_copy == 0 && tds->s == 0) break;
 	}
 #else
 int i;
