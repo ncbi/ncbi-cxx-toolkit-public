@@ -147,20 +147,17 @@ typedef struct BlastGapAlignStruct {
 /** Initializes the BlastGapAlignStruct structure 
  * @param score_options Options related to scoring alignments [in]
  * @param ext_params Options and parameters related to gapped extension [in]
- * @param total_num_contexts Number of contexts of the query sequence [in]
  * @param max_subject_length Maximum length of any subject sequence (needed 
  *        for greedy extension allocation only) [in]
  * @param query_length The length of the query sequence [in]
- * @param program The name of the BLAST program [in]
  * @param sbp The scoring information block [in]
  * @param gap_align_ptr The BlastGapAlignStruct structure [out]
 */
 Int2
 BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options, 
-   BlastExtensionParametersPtr ext_params, Int4 total_num_contexts, 
+   BlastExtensionParametersPtr ext_params, 
    Uint4 max_subject_length, Int4 query_length, 
-   Uint1 program, BLAST_ScoreBlkPtr sbp, 
-   BlastGapAlignStructPtr* gap_align_ptr);
+   BLAST_ScoreBlkPtr sbp, BlastGapAlignStructPtr* gap_align_ptr);
 
 /** Deallocates memory in the BlastGapAlignStruct structure */
 BlastGapAlignStructPtr 

@@ -523,15 +523,11 @@ BLAST_GapAlignStructFree(BlastGapAlignStructPtr gap_align)
 /** Documented in blast_gapalign.h */
 Int2
 BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options, 
-   BlastExtensionParametersPtr ext_params, Int4 total_num_contexts, 
+   BlastExtensionParametersPtr ext_params, 
    Uint4 max_subject_length, Int4 query_length, 
-   Uint1 program, BLAST_ScoreBlkPtr sbp, 
-   BlastGapAlignStructPtr* gap_align_ptr)
+   BLAST_ScoreBlkPtr sbp, BlastGapAlignStructPtr* gap_align_ptr)
 {
    Int2 status = 0;
-   Boolean is_na = (program == blast_type_blastn ||
-                    program == blast_type_blastx ||
-                    program == blast_type_tblastx);
    BlastGapAlignStructPtr gap_align;
 
    if (!gap_align_ptr || !sbp || !score_options || !ext_params)
