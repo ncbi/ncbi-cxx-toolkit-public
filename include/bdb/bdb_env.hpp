@@ -32,25 +32,42 @@
  *
  */
 
+/// @file bdb_env.hpp
+/// Wrapper around Berkeley DB environment structure
+
 #include <bdb/bdb_types.hpp>
 
 BEGIN_NCBI_SCOPE
+
+
+/// BDB environment object a collection including support for some or 
+/// all of caching, locking, logging and transaction subsystems.
 
 class NCBI_BDB_EXPORT CBDB_Env
 {
 public:
     CBDB_Env();
 
-    // Construct CBDB_Env taking ownership of external DB_ENV. 
-    // Presumed that env has been opened with all required parameters
+    /// Construct CBDB_Env taking ownership of external DB_ENV. 
+    ///
+    /// Presumed that env has been opened with all required parameters.
+    /// Class takes the ownership on the provided DB_ENV object.
     CBDB_Env(DB_ENV* env);
 
     ~CBDB_Env();
 
+    /// Open environment
+    ///
+    /// @param db_home destination directory for the database
+    /// @param flags - Berkeley DB flags (see documentation on DB_ENV->open)
     void Open(const char* db_home, int flags);
+
+    /// Open environment with database locking (DB_INIT_LOCK)
+    ///
+    /// @param db_home destination directory for the database
     void OpenWithLocks(const char* db_home);
 
-    // Return underlying DB_ENV structure for low level access.
+    /// Return underlying DB_ENV structure pointer for low level access.
     DB_ENV* GetEnv() { return m_Env; }
 private:
     CBDB_Env(const CBDB_Env&);
@@ -65,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/26 19:16:09  kuznets
+ * Documentation changes
+ *
  * Revision 1.2  2003/08/27 15:13:53  kuznets
  * Fixed DLL export spec
  *
