@@ -40,6 +40,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/04/07 19:56:06  vakatov
+ * Get rid of <errno.h>
+ *
  * Revision 6.2  2000/03/24 23:12:05  vakatov
  * Starting the development quasi-branch to implement CONN API.
  * All development is performed in the NCBI C++ tree only, while
@@ -53,7 +56,6 @@
 
 #include <connect/ncbi_core.h>
 #include <stdio.h>
-#include <errno.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -107,13 +109,13 @@ extern void CORE_SetLOGFILE
  */
 typedef unsigned int TLOG_FormatFlags;  /* binary OR of "ELOG_FormatFlags" */
 typedef enum {
-  fLOG_Default = 0x0,  /* "fLOG_Short" if NDEBUG, else "fLOG_Full" */
-  fLOG_Short   = 0x1,
-  fLOG_Full    = 0x7,
+    fLOG_Default = 0x0,  /* "fLOG_Short" if NDEBUG, else "fLOG_Full" */
+    fLOG_Short   = 0x1,
+    fLOG_Full    = 0x7,
 
-  fLOG_Level    = 0x1,
-  fLOG_Module   = 0x2,
-  fLOG_FileLine = 0x4  /* (should always be printed for "eLOG_Trace" level) */
+    fLOG_Level    = 0x1,
+    fLOG_Module   = 0x2,
+    fLOG_FileLine = 0x4  /* (must always be printed for "eLOG_Trace" level) */
 } ELOG_Format;
 
 extern char* LOG_ComposeMessage
