@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/04/21 05:16:59  vakatov
+* Decreased the # of threads from 40 to 34 to avoid triggering guard-bomb
+* on SCHROEDER
+*
 * Revision 1.11  2002/03/18 21:47:16  grichenk
 * Moved most includes to test_helper.cpp
 * Added test for CBioseq::ConstructExcludedSequence()
@@ -101,8 +105,8 @@ const unsigned int   c_NumThreadsMax = 500;
 const int            c_SpawnByMin    = 1;
 const int            c_SpawnByMax    = 100;
 
-unsigned int  s_NumThreads = 40;
-int           s_SpawnBy    = 13;
+unsigned int  s_NumThreads = 34;
+int           s_SpawnBy    = 6;
 unsigned int  s_NextIndex  = 0;
 CFastMutex    s_GlobalLock;
 
