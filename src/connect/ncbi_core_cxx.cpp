@@ -31,41 +31,10 @@
  *     Logging
  *     Locking
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.9  2002/05/07 18:21:23  lavr
- * +#include <ncbidiag.hpp>
- *
- * Revision 6.8  2002/01/25 23:33:04  vakatov
- * s_LOCK_Handler() -- to match handler proto, return boolean value (not VOID!)
- *
- * Revision 6.7  2002/01/15 21:28:49  lavr
- * +MT_LOCK_cxx2c()
- *
- * Revision 6.6  2001/03/02 20:08:17  lavr
- * Typos fixed
- *
- * Revision 6.5  2001/01/25 17:03:46  lavr
- * s_LOG_Handler: user_data commented out as unused
- *
- * Revision 6.4  2001/01/23 23:08:06  lavr
- * LOG_cxx2c introduced
- *
- * Revision 6.3  2001/01/12 05:48:50  vakatov
- * Use reinterpret_cast<> rather than static_cast<> to cast functions.
- * Added more paranoia to catch ALL possible exceptions in the s_*** functions.
- *
- * Revision 6.2  2001/01/11 23:51:47  lavr
- * static_cast instead of linkage specification 'extern "C" {}'.
- * Reason: MSVC++ doesn't allow C-linkage of the funs compiled in C++ file.
- *
- * Revision 6.1  2001/01/11 23:08:16  lavr
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <connect/ncbi_core_cxx.hpp>
+#include <connect/ncbi_util.h>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistr.hpp>
 #include <string.h>
@@ -120,12 +89,12 @@ static void s_REG_Cleanup(void* user_data)
 
 extern REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership)
 {
-    return REG_Create
+    return reg ? REG_Create
         (static_cast<void*> (reg),
          reinterpret_cast<FREG_Get> (s_REG_Get),
          reinterpret_cast<FREG_Set> (s_REG_Set),
          pass_ownership ? reinterpret_cast<FREG_Cleanup> (s_REG_Cleanup) : 0,
-         0);
+         0) : 0;
 }
 
 
@@ -241,4 +210,55 @@ extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
 }
 
 
+/***********************************************************************
+ *                                 Init                                *
+ ***********************************************************************/
+
+extern void CONNECT_Init(CNcbiRegistry* reg)
+{
+    CORE_SetLOCK(MT_LOCK_cxx2c());
+    CORE_SetLOG(LOG_cxx2c());
+    CORE_SetREG(REG_cxx2c(reg, true/*pass ownership*/));
+}
+
+
 END_NCBI_SCOPE
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.10  2002/06/10 19:50:02  lavr
+ * +CONNECT_Init(). Log moved to the end
+ *
+ * Revision 6.9  2002/05/07 18:21:23  lavr
+ * +#include <ncbidiag.hpp>
+ *
+ * Revision 6.8  2002/01/25 23:33:04  vakatov
+ * s_LOCK_Handler() -- to match handler proto, return boolean value (not VOID!)
+ *
+ * Revision 6.7  2002/01/15 21:28:49  lavr
+ * +MT_LOCK_cxx2c()
+ *
+ * Revision 6.6  2001/03/02 20:08:17  lavr
+ * Typos fixed
+ *
+ * Revision 6.5  2001/01/25 17:03:46  lavr
+ * s_LOG_Handler: user_data commented out as unused
+ *
+ * Revision 6.4  2001/01/23 23:08:06  lavr
+ * LOG_cxx2c introduced
+ *
+ * Revision 6.3  2001/01/12 05:48:50  vakatov
+ * Use reinterpret_cast<> rather than static_cast<> to cast functions.
+ * Added more paranoia to catch ALL possible exceptions in the s_*** functions.
+ *
+ * Revision 6.2  2001/01/11 23:51:47  lavr
+ * static_cast instead of linkage specification 'extern "C" {}'.
+ * Reason: MSVC++ doesn't allow C-linkage of the funs compiled in C++ file.
+ *
+ * Revision 6.1  2001/01/11 23:08:16  lavr
+ * Initial revision
+ *
+ * ===========================================================================
+ */
