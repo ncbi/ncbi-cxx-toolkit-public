@@ -98,6 +98,7 @@ Int2 BlastNumber2Program(Uint1 number, char* *program);
  * @param seq_blk SequenceBlk to be allocated and filled in [out]
  * @param buffer_allocated Is the buffer allocated? If yes, 'sequence_start' is
  *        the start of the sequence, otherwise it is 'sequence'. [in]
+ * @deprecated Use BlastSeqBlkNew and BlastSeqBlkSet* functions instead
 */
 Int2
 BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int4 context,
