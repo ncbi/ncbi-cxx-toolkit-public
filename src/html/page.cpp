@@ -160,30 +160,34 @@ void CHTMLPage::Init(void)
 
 void CHTMLPage::CreateSubNodes(void)
 {
-    AppendChild(CreateTemplate());
+    if (m_UsePopupMenus) {
+        AppendChild(CreateTemplate());
+    }
+    // Otherwise, done while printing to avoid latency on large files
 }
 
 
-CNCBINode* CHTMLPage::CreateTemplate(void) 
+CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
 {
     // Get template stream
     if ( !m_TemplateFile.empty() ) {
         CNcbiIfstream is(m_TemplateFile.c_str());
-        return x_CreateTemplate(is);
+        return x_CreateTemplate(is, out, mode);
     } else if ( m_TemplateStream ) {
-        return x_CreateTemplate(*m_TemplateStream);
+        return x_CreateTemplate(*m_TemplateStream, out, mode);
     } else if ( m_TemplateBuffer ) {
         CNcbiIstrstream is((char*)m_TemplateBuffer, m_TemplateSize);
-        return x_CreateTemplate(is);
+        return x_CreateTemplate(is, out, mode);
     } else {
         return new CHTMLText(kEmptyStr);
     }
 }
 
-CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is)
+CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
+                                       CNCBINode::TMode mode)
 {
     string str;
-    char   buf[1024];
+    char   buf[4096];
 
     if ( !is.good() ) {
         // tmp diagnostics to find error //
@@ -194,6 +198,30 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is)
         ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " << int(is.rdstate()));
         THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  \
                      failed to open template");
+    }
+
+    // special case: stream large templates on the first pass to reduce latency
+    if (out) {
+        auto_ptr<CNCBINode> node(new CNCBINode);
+
+        while (is) {
+            is.read(buf, sizeof(buf));
+            str.append(buf, is.gcount());
+            SIZE_TYPE pos = str.rfind('\n');
+            if (pos != NPOS) {
+                CHTMLText* child = new CHTMLText(str.substr(0, pos));
+                child->Print(*out, mode);
+                node->AppendChild(child);
+                str.erase(0, pos);
+            }
+        }
+
+        if ( !is.eof() ) {
+            THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  \
+                     error reading template");
+        }
+        
+        return node.release();
     }
 
     if (m_TemplateSize) {
@@ -219,37 +247,33 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is)
     if ( m_UsePopupMenus ) {
         // a "do ... while (false)" lets us avoid a goto
         do {
-            string strl = str;
-            NStr::ToLower(strl);
-
             // Search </HEAD> tag
-            SIZE_TYPE pos = strl.find("/head");
+            SIZE_TYPE pos = NStr::FindNoCase(str, "/head");
             if ( pos == NPOS) {
                 break;
             }
-            pos = strl.rfind("<", pos);
+            pos = str.rfind("<", pos);
             if ( pos == NPOS) {
                 break;
             }
 
-            SIZE_TYPE script_length = 0;
             // Insert code for load popup menu library
             for (int t = CHTMLPopupMenu::ePMFirst; t <= CHTMLPopupMenu::ePMLast; t++ ) {
                 CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
                 TPopupMenus::const_iterator info = m_PopupMenus.find(type);
                 if ( info != m_PopupMenus.end() ) {
                     string script = CHTMLPopupMenu::GetCodeHead(type, info->second.m_Url);
-                    script_length += script.length();
                     str.insert(pos, script);
+                    pos += script.length();
                 }
             }
 
             // Search <BODY> tag
-            pos = strl.find("<body", pos);
+            pos = NStr::FindNoCase(str, "<body", pos);
             if ( pos == NPOS) {
                 break;
             }
-            pos = strl.find(">", pos);
+            pos = str.find(">", pos);
             if ( pos == NPOS) {
                 break;
             }
@@ -260,18 +284,17 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is)
                     if ( CHTMLPopupMenu::GetCodeBodyTagHandler(type) != kEmptyStr ) {
                         string script = " "+CHTMLPopupMenu::GetCodeBodyTagHandler(type) + "=\"" +
                                         CHTMLPopupMenu::GetCodeBodyTagAction(type) + "\"" ;
-                        str.insert(pos + script_length, script);
-                        script_length += script.length();
+                        str.insert(pos, script);
                     }
                 }
             }
 
             // Search </BODY> tag
-            pos = strl.rfind("/body");
+            pos = NStr::FindNoCase(str, "/body", 0, NPOS, NStr::eLast);
             if ( pos == NPOS) {
                 break;
             }
-            pos = strl.rfind("<", pos);
+            pos = str.rfind("<", pos);
             if ( pos == NPOS) {
                 break;
             }
@@ -283,7 +306,7 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is)
                 if ( info != m_PopupMenus.end() ) {
                     string script = CHTMLPopupMenu::GetCodeBody(type,
                         info->second.m_UseDynamicMenu);
-                    str.insert(pos + script_length, script);
+                    str.insert(pos, script);
                 }
             }
         }
@@ -361,12 +384,29 @@ void CHTMLPage::AddTagMap(const string& name, BaseTagMapper* mapper)
 }
 
 
+CNcbiOstream& CHTMLPage::PrintChildren(CNcbiOstream& out, TMode mode)
+{
+    if (HaveChildren()) {
+        return CParent::PrintChildren(out, mode);
+    } else {
+        AppendChild(CreateTemplate(&out, mode));
+        return out;
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.34  2003/05/14 21:54:27  ucko
+ * Adjust interface to allow automatic streaming of large templates when
+ * not using JavaScript menus.
+ * Other performance improvements -- in particular, use NStr::FindNoCase
+ * instead of making a lowercase copy of the template.
+ *
  * Revision 1.33  2003/05/13 15:44:41  ucko
  * Make reading large templates more efficient.
  *
