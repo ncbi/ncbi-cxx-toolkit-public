@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/06/14 03:37:28  vakatov
+* For the ErrCode manipulator, use CNcbiDiag:: method rather than a friend
+*
 * Revision 1.26  2001/06/13 23:19:36  vakatov
 * Revamped previous revision (prefix and error codes)
 *
@@ -191,8 +194,9 @@ enum EDiagPostFlag {
 };
 
 
-// Forward declaration of internal class
+// Forward declaration of some classes
 class CDiagBuffer;
+class ErrCode;
 
 
 //////////////////////////////////////////////////////////////////
@@ -216,14 +220,10 @@ public:
     }
 #endif
 
-#if defined(NCBI_COMPILER_GCC)
-    // GCC compiler bug. Compiler apparently does not use out-of-class
-    // "operator<<" for "ErrCode". Instead, it tries to use
-    // template<class X> CNcbiDiag& CNcbiDiag::operator<< (const X& x).
-    CNcbiDiag& operator<< (const class ErrCode& err_code);
-#endif
+    // manipulator to set error code(s), like:  CNcbiDiag() << ErrCode(5,3);
+    CNcbiDiag& operator<< (const ErrCode& err_code);
 
-    // manipulators
+    // other (function-based) manipulators
     CNcbiDiag& operator<< (CNcbiDiag& (*f)(CNcbiDiag&)) {
         return f(*this);
     }

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/06/14 03:37:28  vakatov
+* For the ErrCode manipulator, use CNcbiDiag:: method rather than a friend
+*
 * Revision 1.21  2001/06/13 23:19:36  vakatov
 * Revamped previous revision (prefix and error codes)
 *
@@ -296,25 +299,15 @@ public:
     int m_SubCode;
 };
 
-// GCC compiler bug
-#if defined(NCBI_COMPILER_GCC)
 inline
 CNcbiDiag& CNcbiDiag::operator<< (const ErrCode& err_code)
 {
     return SetErrorCode(err_code.m_Code, err_code.m_SubCode);
 }
-#else
-inline
-CNcbiDiag& operator<< (CNcbiDiag& diag, const ErrCode& e)
-{
-    return diag.SetErrorCode(e.m_Code, e.m_SubCode);
-}
-#endif
-
 
 
 ///////////////////////////////////////////////////////
-//  CNcbiDiag:: manipulators
+//  Other CNcbiDiag:: manipulators
 
 inline
 CNcbiDiag& Reset(CNcbiDiag& diag)  {
