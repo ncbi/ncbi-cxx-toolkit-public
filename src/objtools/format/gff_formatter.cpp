@@ -393,8 +393,9 @@ string CGFFFormatter::x_GetGeneID(const CFlatFeature& feat,
     }
 
     CConstRef<CSeq_feat> gene_feat =
-        GetBestOverlappingFeat(seqfeat, CSeqFeatData::e_Gene,
-                               sequence::eOverlap_Interval, ctx.GetScope());
+        sequence::GetBestOverlappingFeat(seqfeat, CSeqFeatData::e_Gene,
+                                         sequence::eOverlap_Interval,
+                                         ctx.GetScope());
     if (gene_feat) {
         gene_id = main_acc + ':';
         feature::GetLabel(*gene_feat, &gene_id, feature::eContent);
@@ -572,6 +573,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/01/13 19:06:25  ucko
+* x_GetGeneID: qualify GetBestOverlappingFeat with sequence:: for MIPSpro.
+*
 * Revision 1.14  2005/01/13 15:27:04  dicuccio
 * Handle CDS truncation reversibly.  Provide better gene_id labels.
 *
