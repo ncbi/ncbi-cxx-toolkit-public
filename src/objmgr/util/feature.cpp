@@ -53,6 +53,7 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -564,7 +565,26 @@ void s_GetContentLabel
         tlabel += feat.GetData().GetHet().Get();
         break;        
     case CSeqFeatData::e_Biosrc:
-        feat.GetData().GetBiosrc().GetOrg().GetLabel(&tlabel);
+        {{
+            const CBioSource& biosrc = feat.GetData().GetBiosrc();
+            string str;
+            if (biosrc.IsSetSubtype()) {
+                ITERATE (CBioSource::TSubtype, iter, biosrc.GetSubtype()) {
+                    if ( !str.empty() ) {
+                        str += "; ";
+                    }
+                    (*iter)->GetLabel(&str);
+                }
+            }
+            if (str.empty()) {
+                feat.GetData().GetBiosrc().GetOrg().GetLabel(&str);
+            } else {
+                str += " (";
+                feat.GetData().GetBiosrc().GetOrg().GetLabel(&str);
+                str += ")";
+            }
+            tlabel += str;
+        }}
         break;        
     default:
         break;
@@ -643,6 +663,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.17  2005/02/23 20:25:11  dicuccio
+* Added better handling of biosrc feature labels
+*
 * Revision 1.16  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.
 *
