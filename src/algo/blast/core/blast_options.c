@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.24  2003/06/06 17:02:30  dondosha
+ * Typo fix
+ *
  * Revision 1.23  2003/06/04 20:16:51  coulouri
  * make prototypes and definitions agree
  *
@@ -396,7 +399,7 @@ BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options,
    else
       kbp = sbp->kbp_std[context];
 
-   /* Calculate score cutoff corresponding to a fixed e-value (1e-5);
+   /* Calculate score cutoff corresponding to a fixed e-value (0.05);
       If it is smaller, then use this one */
    qlen = query_info->context_offsets[query_info->last_context+1] - 1;
 
