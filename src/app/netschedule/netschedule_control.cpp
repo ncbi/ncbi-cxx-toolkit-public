@@ -57,6 +57,11 @@ public:
 
     void ShutdownServer() { CNetScheduleClient::ShutdownServer(); }
     void DropQueue() { CNetScheduleClient::DropQueue(); }
+    void PrintStatistics(CNcbiOstream & out) 
+    {
+        CNetScheduleClient::PrintStatistics(out);
+    }
+
 //    void Logging(bool on_off) { CNetCacheClient::Logging(on_off); }
 };
 ///////////////////////////////////////////////////////////////////////
@@ -104,6 +109,11 @@ void CNetScheduleControl::Init(void)
                              "Drop ALL jobs in the queue (no questions asked!)",
                              CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("stat",
+                             "stat_queue",
+                             "Print queue statistics",
+                             CArgDescriptions::eString);
+
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -134,6 +144,13 @@ int CNetScheduleControl::Run(void)
         NcbiCout << "Queue droppped: " << queue << NcbiEndl;
     }
 
+    if (args["stat"]) {  
+        string queue = args["stat"].AsString(); 
+        CNetScheduleClient_Control cl(host, port, queue);
+        cl.PrintStatistics(NcbiCout);
+        NcbiCout << NcbiEndl;
+    }
+
     if (args["s"]) {  // shutdown
         nc_client.ShutdownServer();
         NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
@@ -141,13 +158,15 @@ int CNetScheduleControl::Run(void)
     }
 
 
-    string version = nc_client.ServerVersion();
-    if (version.empty()) {
-        NcbiCout << "NetCache server communication error." << NcbiEndl;
-        return 1;
+    if (args["v"]) {  // shutdown
+        string version = nc_client.ServerVersion();
+        if (version.empty()) {
+            NcbiCout << "NetCache server communication error." << NcbiEndl;
+            return 1;
+        }
+        NcbiCout << version << NcbiEndl;
     }
-    NcbiCout << version << NcbiEndl;
-    
+
     return 0;
 }
 
@@ -161,6 +180,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/21 13:07:57  kuznets
+ * Adde stat option
+ *
  * Revision 1.3  2005/02/28 12:24:17  kuznets
  * New job status Returned, better error processing and queue management
  *
