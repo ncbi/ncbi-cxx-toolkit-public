@@ -398,6 +398,10 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
 
    parameters->cutoff_score = MIN(hit_params->cutoff_score, cutoff_s);
    
+   /* Note that x_dropoff_init stays constant throughout the search.
+      The cutoff_score and x_dropoff parameters may be updated multiple times, 
+      if every subject sequence is treated individually. Hence we need to know 
+      the original value of x_dropoff in order to take the minimum. */
    if (parameters->x_dropoff_init != 0 && parameters->cutoff_score != 0) {
       parameters->x_dropoff = 
          MIN(parameters->x_dropoff_init, parameters->cutoff_score);
@@ -1606,6 +1610,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.135  2004/10/13 17:44:17  dondosha
+ * Added comment for setting of ungapped X-dropoff in BlastInitialWordParametersUpdate
+ *
  * Revision 1.134  2004/09/28 16:20:17  papadopo
  * From Michael Gertz:
  * 1. Disallow setting longest intron for programs other than tblastn and
