@@ -664,7 +664,9 @@ BlastnWordUngappedExtend(BLAST_SequenceBlk* query,
  * exact match has already been extended to the word size parameter.
  * @param query The query sequence [in]
  * @param subject The subject sequence [in]
- * @param lookup Lookup table structure [in]
+ * @param min_step Distance at which new word hit lies within the previously
+ *                 extended hit. Non-zero only when ungapped extension is not
+ *                 performed, e.g. for contiguous megablast. [in]
  * @param word_params The parameters related to initial word extension [in]
  * @param matrix the substitution matrix for ungapped extension [in]
  * @param ewp The structure containing word extension information [in]
@@ -676,7 +678,7 @@ BlastnWordUngappedExtend(BLAST_SequenceBlk* query,
  */
 static Int2
 BlastnExtendInitialHit(BLAST_SequenceBlk* query, 
-   BLAST_SequenceBlk* subject, LookupTableWrap* lookup,
+   BLAST_SequenceBlk* subject, Uint4 min_step,
    const BlastInitialWordParameters* word_params, 
    Int4** matrix, BLAST_ExtendWord* ewp, Int4 q_off, Int4 s_end,
    Int4 s_off, BlastInitHitList* init_hitlist)
@@ -689,9 +691,8 @@ BlastnExtendInitialHit(BLAST_SequenceBlk* query,
    Int4 window_size = word_options->window_size;
    Boolean hit_ready;
    Boolean new_hit = FALSE, second_hit = FALSE;
-   Int4 min_step, step;
+   Int4 step;
    DiagStruct* diag_array_elem;
-   Boolean do_ungapped_extension = word_options->ungapped_extension;
 
    diag_table = ewp->diag_table;
 
@@ -706,17 +707,6 @@ BlastnExtendInitialHit(BLAST_SequenceBlk* query,
       /* This is a hit on a diagonal that has already been explored 
          further down */
       return 0;
-
-   min_step = 0;
-   if (!do_ungapped_extension) {
-      if (lookup->lut_type == MB_LOOKUP_TABLE) {
-         MBLookupTable* lut = (MBLookupTable*)lookup->lut;
-         if(!lut->discontiguous)
-            min_step = lut->scan_step;
-      } else {
-         min_step = ((LookupTable*)lookup->lut)->scan_step;
-      }
-   }
 
    if (window_size == 0 ||
        (diag_array_elem->diag_level == 1)) {
@@ -841,7 +831,7 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
 
          if (left + right >= extra_bases) {
             /* Check if this diagonal has already been explored. */
-            BlastnExtendInitialHit(query, subject, lookup_wrap, 
+            BlastnExtendInitialHit(query, subject, 0, 
                word_params, matrix, ewp, q_offsets[i], 
                s_offsets[i] + word_size + right, 
                s_offsets[i], init_hitlist);
@@ -928,10 +918,89 @@ BlastNaExactMatchExtend(Uint1* q_start, Uint1* s_start,
    return (length >= max_length);
 }
 
+/** Extend the lookup table exact match hit in both directions and 
+ * update the diagonal structure.
+ * @param q_offsets Array of query offsets [in]
+ * @param s_offsets Array of subject offsets [in]
+ * @param num_hits Size of the above arrays [in]
+ * @param word_params Parameters for word extension [in]
+ * @param lookup_wrap Lookup table wrapper structure [in]
+ * @param query Query sequence data [in]
+ * @param subject Subject sequence data [in]
+ * @param matrix Scoring matrix for ungapped extension [in]
+ * @param ewp Word extension structure containing information about the 
+ *            extent of already processed hits on each diagonal [in]
+ * @param init_hitlist Structure to keep the extended hits. 
+ *                     Must be allocated outside of this function [in] [out]
+ */
+static void 
+BlastNaExtendRightAndLeft(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits, 
+                          const BlastInitialWordParameters* word_params,
+                          LookupTableWrap* lookup_wrap,
+                          BLAST_SequenceBlk* query, BLAST_SequenceBlk* subject,
+                          Int4** matrix, BLAST_ExtendWord* ewp, 
+                          BlastInitHitList* init_hitlist)
+{
+   Int4 index;
+
+   Uint4 query_length = query->length;
+   Uint4 subject_length = subject->length;
+   Uint1* q_start = query->sequence;
+   Uint1* s_start = subject->sequence;
+   Uint4 word_length = 0;
+   Uint4 q_off, s_off;
+   Uint4 max_bases_left, max_bases_right;
+   Uint4 extended_right;
+   Uint4 shift;
+   Uint1* q, *s;
+   Uint4 min_step = 0;
+   Boolean do_ungapped_extension = word_params->options->ungapped_extension;
+   Boolean variable_wordsize = 
+      (Boolean) word_params->options->variable_wordsize;
+
+   if (lookup_wrap->lut_type == MB_LOOKUP_TABLE) {
+      MBLookupTable* lut = (MBLookupTable*)lookup_wrap->lut;
+      word_length = lut->word_length;
+      if(!do_ungapped_extension && !lut->discontiguous)
+         min_step = lut->scan_step;
+   } else {
+      LookupTable* lut = (LookupTable*)lookup_wrap->lut;
+      word_length = lut->word_length;
+   }
+
+   for (index = 0; index < num_hits; ++index) {
+      /* Adjust offsets to the start of the next full byte in the
+         subject sequence */
+      shift = (COMPRESSION_RATIO - s_offsets[index]%COMPRESSION_RATIO)
+         % COMPRESSION_RATIO;
+      q_off = q_offsets[index] + shift;
+      s_off = s_offsets[index] + shift;
+      s = s_start + s_off/COMPRESSION_RATIO;
+      q = q_start + q_off;
+      
+      max_bases_left = 
+         MIN(word_length, MIN(q_off, s_off));
+      max_bases_right = MIN(word_length, 
+                            MIN(query_length-q_off, subject_length-s_off));
+      
+      if (BlastNaExactMatchExtend(q, s, max_bases_left, 
+                                  max_bases_right, word_length, 
+                                  !variable_wordsize, &extended_right)) 
+      {
+         /* Check if this diagonal has already been explored and save
+            the hit if needed. */
+         BlastnExtendInitialHit(query, subject, min_step,
+                                word_params, matrix, ewp, q_offsets[index], 
+                                s_off + extended_right, s_offsets[index], 
+                                init_hitlist);
+      }
+   }
+}
+
 /* Description in blast_extend.h */
 Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
 		   BLAST_SequenceBlk* query,
-		   LookupTableWrap* lookup,
+		   LookupTableWrap* lookup_wrap,
 		   Int4** matrix, 
 		   const BlastInitialWordParameters* word_params,
 		   BLAST_ExtendWord* ewp,
@@ -942,25 +1011,14 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
 {
    const BlastInitialWordOptions* word_options = word_params->options;
    /* Pointer to the beginning of the first word of the subject sequence */
-   MBLookupTable* mb_lt = (MBLookupTable*) lookup->lut;
-   Uint1* s_start,* q_start,* q,* s;
+   MBLookupTable* mb_lt = (MBLookupTable*) lookup_wrap->lut;
    Int4 hitsfound=0;
    Int4 hit_counter=0, index;
    Int4 start_offset, next_start, last_start, last_end;
-   Uint4 word_length;
-   Uint4 max_bases_left, max_bases_right;
-   Int4 query_length = query->length;
    Int4 subject_length = subject->length;
-   Boolean ag_blast, variable_wordsize;
-   Uint4 extended_right;
-   Uint4 q_off, s_off; 
-   Uint4 remainder;
+   Boolean ag_blast;
 
-   s_start = subject->sequence;
-   q_start = query->sequence;
-   word_length = mb_lt->word_length;
    ag_blast = (Boolean) (word_options->extension_method == eRightAndLeft);
-   variable_wordsize = (Boolean) word_options->variable_wordsize;
 
    start_offset = 0;
    if (mb_lt->discontiguous) {
@@ -982,45 +1040,22 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
          without the extra bases for the discontiguous case */
       next_start = last_end;
       if (mb_lt->discontiguous) {
-         hitsfound = MB_DiscWordScanSubject(lookup, subject, start_offset,
+         hitsfound = MB_DiscWordScanSubject(lookup_wrap, subject, start_offset,
             q_offsets, s_offsets, max_hits, &next_start);
       } else if (!ag_blast) {
-         hitsfound = MB_ScanSubject(lookup, subject, start_offset, 
+         hitsfound = MB_ScanSubject(lookup_wrap, subject, start_offset, 
 	    q_offsets, s_offsets, max_hits, &next_start);
       } else {
-         hitsfound = MB_AG_ScanSubject(lookup, subject, start_offset, 
+         hitsfound = MB_AG_ScanSubject(lookup_wrap, subject, start_offset, 
 	    q_offsets, s_offsets, max_hits, &next_start);
       }
       if (ag_blast) {
-         for (index = 0; index < hitsfound; ++index) {
-            /* Adjust offsets to the start of the next full byte in the
-               subject sequence */
-            remainder = ((Uint4)(-s_offsets[index]))%COMPRESSION_RATIO;
-            q_off = q_offsets[index] + remainder;
-            s_off = s_offsets[index] + remainder;
-            s = s_start + s_off/COMPRESSION_RATIO;
-            q = q_start + q_off;
-	    
-            max_bases_left = 
-               MIN(word_length, MIN(q_off, s_off));
-            max_bases_right = MIN(word_length, 
-               MIN(query_length-q_off, subject_length-s_off));
-                                                
-            if (BlastNaExactMatchExtend(q, s, max_bases_left, 
-                   max_bases_right, word_length, !variable_wordsize, 
-                   &extended_right))
-            {
-               /* Check if this diagonal has already been explored and save
-                  the hit if needed. */
-               BlastnExtendInitialHit(query, subject, lookup,
-                  word_params, matrix, ewp, q_offsets[index], 
-                  s_off + extended_right, s_offsets[index], 
-                  init_hitlist);
-            }
-         }
+         BlastNaExtendRightAndLeft(q_offsets, s_offsets, hitsfound, 
+                                   word_params, lookup_wrap, query, subject, 
+                                   matrix, ewp, init_hitlist);
       } else {
          for (index = 0; index < hitsfound; ++index) {
-            MB_ExtendInitialHit(query, subject, lookup, word_params,
+            MB_ExtendInitialHit(query, subject, lookup_wrap, word_params,
                matrix, ewp, q_offsets[index], s_offsets[index], init_hitlist);
          }
       }
@@ -1047,27 +1082,12 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
 			  Int4 max_hits,
 			  BlastInitHitList* init_hitlist)
 {
-   const BlastInitialWordOptions* word_options = word_params->options;
-   LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
-   Uint1* s_start = subject->sequence;
-   Uint1* q_start = query->sequence;
-   Int4 index;
-   Uint1* q;
-   Uint1* s;
-   Int4 query_length = query->length;
-   Int4 subject_length = subject->length;
    Int4 hitsfound, total_hits = 0;
-   Uint4 word_length;
    Int4 start_offset, end_offset, next_start;
-   Uint4 max_bases_left, max_bases_right;
-   Boolean variable_wordsize = word_options->variable_wordsize;
-   Uint4 extended_right;
-   Uint4 q_off, s_off; /* Adjusted offsets */
-   Uint4 remainder; 
+   LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
 
-   word_length = lookup->word_length;
    start_offset = 0;
-   end_offset = subject_length - COMPRESSION_RATIO*lookup->reduced_wordsize;
+   end_offset = subject->length - COMPRESSION_RATIO*lookup->reduced_wordsize;
 
    /* start_offset points to the beginning of the word; end_offset is the
       beginning of the last word */
@@ -1076,31 +1096,15 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
                      q_offsets, s_offsets, max_hits, &next_start); 
       
       total_hits += hitsfound;
-      for (index = 0; index < hitsfound; ++index) {
-         remainder = ((Uint4)(-s_offsets[index]))%COMPRESSION_RATIO;
-         q_off = q_offsets[index] + remainder;
-         s_off = s_offsets[index] + remainder;
-         s = s_start + s_off/COMPRESSION_RATIO;
-         q = q_start + q_off;
-	    
-         max_bases_left = 
-            MIN(word_length, MIN(q_off, s_off));
-         max_bases_right = MIN(word_length, 
-            MIN(query_length-q_off, subject_length-s_off));
-         
-         if (BlastNaExactMatchExtend(q, s, max_bases_left, max_bases_right,
-                word_length, !variable_wordsize, &extended_right)) 
-         {
-            /* Check if this diagonal has already been explored. */
-            BlastnExtendInitialHit(query, subject, lookup_wrap, 
-               word_params, matrix, ewp, q_offsets[index], 
-               s_off + extended_right, s_offsets[index], init_hitlist);
-         }
-      }
+
+      BlastNaExtendRightAndLeft(q_offsets, s_offsets, hitsfound, 
+                                word_params, lookup_wrap, query, subject, 
+                                matrix, ewp, init_hitlist);
+
       start_offset = next_start;
    }
 
-   BlastNaExtendWordExit(ewp, subject_length);
+   BlastNaExtendWordExit(ewp, subject->length);
    return total_hits;
 } 
 
