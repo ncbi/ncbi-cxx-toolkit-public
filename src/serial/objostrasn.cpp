@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/08/13 20:22:58  vasilche
+* Fixed lot of bugs in datatool
+*
 * Revision 1.21  1999/08/13 15:53:52  vasilche
 * C++ analog of asntool: datatool
 *
@@ -365,6 +368,9 @@ unsigned CObjectOStreamAsn::GetAsnFlags(void)
 
 void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
 {
+#ifdef NCBI_OS_MSWIN
+	THROW1_TRACE(runtime_error, "illegal call in Windows");
+#else
     size_t indent = asn->indent_level = m_Ident;
     size_t max_indent = asn->max_indent;
     if ( indent >= max_indent ) {
@@ -374,6 +380,7 @@ void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
         MemFree(tmp);
         asn->max_indent = indent;
     }
+#endif
 }
 
 void CObjectOStreamAsn::AsnWrite(AsnIo& , const char* data, size_t length)

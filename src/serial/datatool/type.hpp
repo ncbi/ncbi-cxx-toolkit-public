@@ -5,6 +5,7 @@
 #include <ostream>
 #include <list>
 #include <autoptr.hpp>
+#include <value.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -14,7 +15,6 @@ END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 
-class ASNValue;
 class ASNModule;
 
 class ASNType {

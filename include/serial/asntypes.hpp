@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/08/13 20:22:56  vasilche
+* Fixed lot of bugs in datatool
+*
 * Revision 1.9  1999/08/13 15:53:42  vasilche
 * C++ analog of asntool: datatool
 *
@@ -82,7 +85,8 @@ BEGIN_NCBI_SCOPE
 
 class CSequenceOfTypeInfo : public CTypeInfo {
 public:
-    CSequenceOfTypeInfo(const string& name, TTypeInfo type);
+    CSequenceOfTypeInfo(TTypeInfo type);
+	CSequenceOfTypeInfo(const string& name, TTypeInfo type);
 
     static TObjectPtr& First(TObjectPtr object)
         {
@@ -127,13 +131,12 @@ public:
                         TConstObjectPtr src) const;
 
 private:
-    // set this sequence to have next field first element of data struct
-    // (used for SET OF SEQUENCE, SET etc.)
-    void SetInlineNext(void);
+	void Init(void);
+
     // set this sequence to have ValNode as data holder
     // (used for SET OF (INTEGER, STRING, SET OF etc.)
     void SetValNodeNext(void);
-    // SET OF CHOICE
+    // SET OF CHOICE (use choice's valnode->next field as link)
     void SetChoiceNext(void);
 
     TTypeInfo GetDataTypeInfo(void) const
@@ -164,6 +167,7 @@ private:
 
 class CSetOfTypeInfo : public CSequenceOfTypeInfo {
 public:
+    CSetOfTypeInfo(TTypeInfo type);
     CSetOfTypeInfo(const string& name, TTypeInfo type);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base)
@@ -176,55 +180,6 @@ public:
 private:
     static CTypeInfoMap<CSetOfTypeInfo> sm_Map;
 };
-
-#if 0
-class CAsnPointerTypeInfo : public CTypeInfo {
-public:
-    CAsnPointerTypeInfo(TTypeInfo asnType)
-        : CTypeInfo(asnType->GetName()), m_AsnType(asnType)
-        { }
-
-    static TObjectPtr& Get(TObjectPtr object)
-        {
-            return *static_cast<TObjectPtr*>(object);
-        }
-    static const TConstObjectPtr& Get(TConstObjectPtr object)
-        {
-            return *static_cast<const TObjectPtr*>(object);
-        }
-
-    static TTypeInfo GetTypeInfo(TTypeInfo base)
-        {
-            return sm_Map.GetTypeInfo(base);
-        }
-
-    virtual size_t GetSize(void) const;
-
-    virtual TConstObjectPtr GetDefault(void) const;
-
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
-
-    virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
-
-    TTypeInfo GetAsnTypeInfo(void) const
-        { return m_AsnType; }
-
-protected:
-    
-    void CollectExternalObjects(COObjectList& list,
-                                TConstObjectPtr object) const;
-
-    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-
-    void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-private:
-    
-    TTypeInfo m_AsnType;
-
-    static CTypeInfoMap<CAsnPointerTypeInfo> sm_Map;
-};
-#endif
 
 class CChoiceTypeInfo : public CTypeInfo {
 public:

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/08/13 20:22:57  vasilche
+* Fixed lot of bugs in datatool
+*
 * Revision 1.15  1999/08/13 15:53:42  vasilche
 * C++ analog of asntool: datatool
 *
@@ -304,9 +307,9 @@ public:
         {
         }
 
-    virtual const type_info& GetCPlusPlusTypeInfo(TConstObjectPtr object) const
+    virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const
         {
-            return typeid(*static_cast<const TObjectType*>(object));
+            return &typeid(*static_cast<const TObjectType*>(object));
         }
 };
 
@@ -332,10 +335,9 @@ public:
         {
         }
 
-    virtual const type_info& GetCPlusPlusTypeInfo(TConstObjectPtr object) const
+    virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const
         {
-            _TRACE("GetCPlusPlusTypeInfo: " << typeid(*static_cast<const TObjectType*>(object)).name());
-            return typeid(*static_cast<const TObjectType*>(object));
+            return &typeid(*static_cast<const TObjectType*>(object));
         }
 
     virtual TObjectPtr Create(void) const

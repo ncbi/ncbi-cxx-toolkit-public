@@ -161,9 +161,9 @@ AutoPtr<ASNType> ASNParser::x_Type(ASNModule& module)
     case T_IDENTIFIER:
     case T_TYPE_REFERENCE:
         return new ASNUserType(module, TypeReference());
-    default:
-        ParseError("type");
     }
+    ParseError("type");
+	return 0;
 }
 
 void ASNParser::TypesBlock(ASNModule& module, list<AutoPtr<ASNMember> >& members)
@@ -276,12 +276,11 @@ AutoPtr<ASNValue> ASNParser::x_Value(void)
                 ConsumeSymbol('}');
                 return b.release();
             }
-        default:
-            ParseError("value");
         }
-    default:
-        ParseError("value");
+		break;
     }
+    ParseError("value");
+	return 0;
 }
 
 long ASNParser::Number(void)
@@ -306,9 +305,9 @@ string ASNParser::Identifier(void)
         return ConsumeAndValue();
     case T_IDENTIFIER:
         return ConsumeAndValue();
-    default:
-        ParseError("identifier");
     }
+    ParseError("identifier");
+	return NcbiEmptyString;
 }
 
 string ASNParser::TypeReference(void)
@@ -319,9 +318,9 @@ string ASNParser::TypeReference(void)
     case T_IDENTIFIER:
         ERR_POST(Location() << "type name must begin with uppercase letter");
         return ConsumeAndValue();
-    default:
-        ParseError("type name");
     }
+    ParseError("type name");
+	return NcbiEmptyString;
 }
 
 string ASNParser::ModuleReference(void)
@@ -332,7 +331,7 @@ string ASNParser::ModuleReference(void)
     case T_IDENTIFIER:
         ERR_POST(Location() << "module name must begin with uppercase letter");
         return ConsumeAndValue();
-    default:
-        ParseError("module name");
     }
+    ParseError("module name");
+	return NcbiEmptyString;
 }

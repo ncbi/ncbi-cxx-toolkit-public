@@ -1,18 +1,19 @@
 #ifndef ASNVALUE_HPP
 #define ASNVALUE_HPP
 
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
 #include <list>
-#include <ostream>
 #include <autoptr.hpp>
 
-using namespace std;
+USING_NCBI_SCOPE;
 
 class ASNValue {
 public:
     ASNValue();
     virtual ~ASNValue();
 
-    virtual ostream& Print(ostream& out, int indent) = 0;
+    virtual CNcbiOstream& Print(CNcbiOstream& out, int indent) = 0;
 
     void Warning(const string& mess) const;
     
@@ -22,14 +23,14 @@ public:
 class ASNNullValue : public ASNValue {
 public:
 
-    ostream& Print(ostream& out, int indent);
+    CNcbiOstream& Print(CNcbiOstream& out, int indent);
 };
 
 class ASNBoolValue : public ASNValue {
 public:
     ASNBoolValue(bool v);
 
-    ostream& Print(ostream& out, int indent);
+    CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
     bool value;
 };
@@ -38,7 +39,7 @@ class ASNIntegerValue : public ASNValue {
 public:
     ASNIntegerValue(long v);
 
-    ostream& Print(ostream& out, int indent);
+    CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
     long value;
 };
@@ -47,7 +48,7 @@ class ASNStringValue : public ASNValue {
 public:
     ASNStringValue(const string& v);
 
-    ostream& Print(ostream& out, int indent);
+    CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
     string value;
 };
@@ -56,7 +57,7 @@ class ASNBitStringValue : public ASNValue {
 public:
     ASNBitStringValue(const string& v);
 
-    ostream& Print(ostream& out, int indent);
+    CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
     string value;
 };
@@ -65,7 +66,7 @@ class ASNIdValue : public ASNValue {
 public:
     ASNIdValue(const string& v);
 
-    ostream& Print(ostream& out, int indent);
+    CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
     string id;
 };
@@ -75,7 +76,7 @@ public:
     ASNNamedValue();
     ASNNamedValue(const string& id, const AutoPtr<ASNValue>& v);
 
-    ostream& Print(ostream& out, int indent);
+    CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
     string name;
     AutoPtr<ASNValue> value;
@@ -85,7 +86,7 @@ class ASNBlockValue : public ASNValue {
 public:
     typedef list<AutoPtr<ASNValue> > TValues;
 
-    ostream& Print(ostream& out, int indent);
+    CNcbiOstream& Print(CNcbiOstream& out, int indent);
 
     TValues values;
 };

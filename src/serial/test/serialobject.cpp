@@ -16,7 +16,7 @@ BEGIN_CLASS_INFO(CSerialObject)
     ADD_STL_CLASS_MEMBER(m_Offsets);
     ADD_STL_CLASS_MEMBER(m_Names);
     ADD_PTR_CLASS_MEMBER(m_Next)->SetOptional();
-    ADD_OLD_ASN_MEMBER2("webEnv", m_WebEnv, WebEnv)->SetOptional();
+ //   ADD_OLD_ASN_MEMBER2("webEnv", m_WebEnv, WebEnv)->SetOptional();
 
     info->ADD_SUB_CLASS(CSerialObject2);
 END_CLASS_INFO

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/08/13 20:22:57  vasilche
+* Fixed lot of bugs in datatool
+*
 * Revision 1.10  1999/08/13 15:53:51  vasilche
 * C++ analog of asntool: datatool
 *
@@ -202,8 +205,14 @@ unsigned char CObjectIStreamAsnBinary::ReadByte(void)
             SetFailFlags(eFormatError);
             THROW1_TRACE(runtime_error, "first byte of length is zero");
         }
-        m_CurrentTagState = eLengthValue;
-        // fall down to next case (no break needed)
+        if ( --m_CurrentTagLengthSize == 0 ) {
+            SetTagLength(byte);
+		}
+		else {
+			m_CurrentTagLength = byte;
+			m_CurrentTagState = eLengthValue;
+		}
+		break;
     case eLengthValue:
         m_CurrentTagLength = (m_CurrentTagLength << 8) | byte;
         if ( --m_CurrentTagLengthSize == 0 )

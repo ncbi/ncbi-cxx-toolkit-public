@@ -1,13 +1,14 @@
 #ifndef ASNMODULE_HPP
 #define ASNMODULE_HPP
 
-#include <ostream>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
 #include <set>
 #include <list>
 #include <map>
 #include <autoptr.hpp>
 
-using namespace std;
+USING_NCBI_SCOPE;
 
 class ASNType;
 class CModuleSet;
@@ -30,7 +31,7 @@ public:
 
     void AddDefinition(const string& name, const AutoPtr<ASNType> type);
 
-    virtual ostream& Print(ostream& out) const;
+    virtual CNcbiOstream& Print(CNcbiOstream& out) const;
 
     bool Check();
     bool CheckNames();

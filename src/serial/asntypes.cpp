@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/08/13 20:22:57  vasilche
+* Fixed lot of bugs in datatool
+*
 * Revision 1.16  1999/08/13 15:53:49  vasilche
 * C++ analog of asntool: datatool
 *
@@ -245,9 +248,21 @@ static const TConstObjectPtr zeroPointer = 0;
 
 CTypeInfoMap<CSequenceOfTypeInfo> CSequenceOfTypeInfo::sm_Map;
 
+CSequenceOfTypeInfo::CSequenceOfTypeInfo(TTypeInfo type)
+    : CTypeInfo("SEQUENCE OF " + type->GetName()), m_DataType(type)
+{
+	Init();
+}
+
 CSequenceOfTypeInfo::CSequenceOfTypeInfo(const string& name, TTypeInfo type)
     : CTypeInfo(name), m_DataType(type)
 {
+	Init();
+}
+
+void CSequenceOfTypeInfo::Init(void)
+{
+	TTypeInfo type = m_DataType;
     _TRACE("SequenceOf(" << type->GetName() << ") " << typeid(*type).name());
     const CAutoPointerTypeInfo* ptrInfo =
         dynamic_cast<const CAutoPointerTypeInfo*>(type);
@@ -255,37 +270,33 @@ CSequenceOfTypeInfo::CSequenceOfTypeInfo(const string& name, TTypeInfo type)
         TTypeInfo asnType = ptrInfo->GetDataTypeInfo();
         if ( dynamic_cast<const CChoiceTypeInfo*>(asnType) != 0 ) {
             // CHOICE
-            _TRACE("SequenceOf(" << type->GetName() << ") CHOICE");
+            _TRACE("SequenceOf(" << type->GetName() << ") AUTO CHOICE");
             SetChoiceNext();
             m_DataType = asnType;
         }
-        else if ( dynamic_cast<const CStructInfoTmpl*>(asnType) != 0 ) {
-            // SEQUENCE or SET
-            _TRACE("SequenceOf(" << type->GetName() << ") INLINE");
-            SetInlineNext();
+        else if ( asnType->GetSize() <= sizeof(dataval) ) {
+            // statndard types and SET/SEQUENCE OF
+            _TRACE("SequenceOf(" << type->GetName() << ") AUTO VALNODE");
+            SetValNodeNext();
+			m_DataType = asnType;
         }
-        else {
+		else {
             // user types
+			_ASSERT(type->GetSize() <= sizeof(dataval));
             _TRACE("SequenceOf(" << type->GetName() << ") VALNODE");
             SetValNodeNext();
-        }
+		}
     }
-    else if ( dynamic_cast<const CStructInfoTmpl*>(type) != 0 ) {
-        // SEQUENCE or SET
-        _TRACE("SequenceOf(" << type->GetName() << ") INLINE");
-        SetInlineNext();
-    }
-    else {
+    else if ( type->GetSize() <= sizeof(dataval) ) {
         // SEQUENCE OF, SET OF or primitive types
         _TRACE("SequenceOf(" << type->GetName() << ") VALNODE");
         SetValNodeNext();
     }
-}
-
-void CSequenceOfTypeInfo::SetInlineNext(void)
-{
-    m_NextOffset = 0;
-    m_DataOffset = 0;
+	else {
+		THROW1_TRACE(runtime_error,
+			"CSequenceOfTypeInfo: incompatible type: " +
+			type->GetName() + ": " + typeid(*type).name());
+	}
 }
 
 void CSequenceOfTypeInfo::SetChoiceNext(void)
@@ -317,14 +328,14 @@ TConstObjectPtr CSequenceOfTypeInfo::GetDefault(void) const
 
 TObjectPtr CSequenceOfTypeInfo::CreateData(void) const
 {
-    if ( m_NextOffset == 0 && m_DataOffset == 0 )
+	_ASSERT(m_NextOffset == offsetof(valnode, next));
+    if ( m_DataOffset == 0 ) {
         return GetDataTypeInfo()->Create();
-    else if ( m_NextOffset == offsetof(valnode, next) &&
-              m_DataOffset == offsetof(valnode, data) || m_DataOffset == 0 )
+	}
+    else {
+		_ASSERT(m_DataOffset == offsetof(valnode, data));
         return Alloc(sizeof(valnode));
-    else
-        THROW1_TRACE(runtime_error,
-                     "CSequenceOfTypeInfo::CreateData(): unknown type");
+	}
 }
 
 bool CSequenceOfTypeInfo::Equals(TConstObjectPtr object1,
@@ -412,6 +423,11 @@ void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
 }
 
 CTypeInfoMap<CSetOfTypeInfo> CSetOfTypeInfo::sm_Map;
+
+CSetOfTypeInfo::CSetOfTypeInfo(TTypeInfo type)
+    : CSequenceOfTypeInfo("SET OF " + type->GetName(), type)
+{
+}
 
 CSetOfTypeInfo::CSetOfTypeInfo(const string& name, TTypeInfo type)
     : CSequenceOfTypeInfo(name, type)

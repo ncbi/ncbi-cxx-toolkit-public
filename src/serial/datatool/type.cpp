@@ -523,7 +523,7 @@ CTypeInfo* ASNContainerType::CreateTypeInfo(void)
         if ( member->Optional() )
             memberInfo->SetOptional();
         else if ( member->defaultValue ) {
-            _TRACE("skipped DEFAULT value");
+            _TRACE("skipped DEFAULT value: not implemented");
         }
     }
     return new CAutoPointerTypeInfo(typeInfo.release());

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/08/13 20:22:57  vasilche
+* Fixed lot of bugs in datatool
+*
 * Revision 1.1  1999/08/13 15:53:43  vasilche
 * C++ analog of asntool: datatool
 *
@@ -71,7 +74,7 @@ public:
 
     operator bool(void) const
         {
-            return m_Object;
+            return m_Object != 0;
         }
 
     TObjectPtr GetObject(void)

@@ -159,6 +159,7 @@ int main(int argc, const char*argv[])
     }
 
     SetDiagStream(&NcbiCerr);
+	return 0;
 }
 
 

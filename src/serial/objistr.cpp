@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/08/13 20:22:57  vasilche
+* Fixed lot of bugs in datatool
+*
 * Revision 1.18  1999/08/13 15:53:50  vasilche
 * C++ analog of asntool: datatool
 *
@@ -505,14 +508,22 @@ extern "C" {
 CObjectIStream::AsnIo::AsnIo(CObjectIStream& in)
     : m_In(in), m_Count(0)
 {
+#ifdef NCBI_OS_MSWIN
+	THROW1_TRACE(runtime_error, "illegal call in Windows");
+#else
     m_AsnIo = AsnIoNew(in.GetAsnFlags() | ASNIO_IN, 0, this, ReadAsn, 0);
     in.AsnOpen(*this);
+#endif
 }
 
 CObjectIStream::AsnIo::~AsnIo(void)
 {
+#ifdef NCBI_OS_MSWIN
+	THROW1_TRACE(runtime_error, "illegal call in Windows");
+#else
     AsnIoClose(*this);
     m_In.AsnClose(*this);
+#endif
 }
 
 void CObjectIStream::AsnOpen(AsnIo& )

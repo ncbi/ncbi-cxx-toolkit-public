@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/08/13 20:22:58  vasilche
+* Fixed lot of bugs in datatool
+*
 * Revision 1.15  1999/08/13 15:53:52  vasilche
 * C++ analog of asntool: datatool
 *
@@ -186,7 +189,14 @@ void CObjectOStreamAsnBinary::WriteByte(TByte byte)
     case eLengthValueFirst:
         if ( byte == 0 )
             THROW1_TRACE(runtime_error, "first byte of length is zero");
-        m_CurrentTagState = eLengthValue;
+        if ( --m_CurrentTagLengthSize == 0 ) {
+            SetTagLength(byte);
+		}
+		else {
+	        m_CurrentTagLength = byte;
+			m_CurrentTagState = eLengthValue;
+		}
+        break;
         // fall down to next case (no break needed)
     case eLengthValue:
         m_CurrentTagLength = (m_CurrentTagLength << 8) | byte;
