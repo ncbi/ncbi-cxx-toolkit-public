@@ -39,8 +39,12 @@
 #include <objtools/lds/lds_expt.hpp>
 #include <objtools/lds/lds_coreobjreader.hpp>
 
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CObjectManager;
+class CScope;
 
 //////////////////////////////////////////////////////////////////
 //
@@ -50,7 +54,8 @@ BEGIN_SCOPE(objects)
 class NCBI_LDS_EXPORT CLDS_Object
 {
 public:
-    CLDS_Object(SLDS_TablesCollection& db, const map<string, int>& obj_map);    
+    CLDS_Object(SLDS_TablesCollection& db, const map<string, int>& obj_map);
+    ~CLDS_Object();
 
     // Delete all objects living in the specified set of files.
     // All deleted ids are added to deleted set.
@@ -75,8 +80,11 @@ protected:
     // Checks if parsed object is a "bio object" (returns TRUE) 
     // or an annotation. if applicable object_str_id parameter receives
     // objject or annotation id. (fasta format).
+    // If possible function extracts objects' title and molecule type
+    // (0 - unknown, 1 - NA, 2 - protein)
     bool IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_info,
-                  string* object_str_id);
+                  string* object_str_id, 
+                  string* object_title);
 
     // Save object to the database, return record id.
     // NOTE: This function recursively finds all objects' parents and saves
@@ -103,6 +111,8 @@ private:
 
     int                     m_MaxObjRecId;  // Max. id in "object" table
     int                     m_MaxAnnRecId;  // Max. id in "annotation" table
+    CObjectManager*         m_TSE_Manager;  // OM for top level seq entry
+    CScope*                 m_Scope;        // OM Scope
 };
 
 
@@ -113,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/06/04 16:34:42  kuznets
+ * Added forward declaration of "ObjectManager & Co".
+ *
  * Revision 1.5  2003/06/03 19:14:02  kuznets
  * Added lds dll export/import specifications
  *
