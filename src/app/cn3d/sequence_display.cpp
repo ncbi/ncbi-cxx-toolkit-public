@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/06/01 18:07:27  thiessen
+* fix display clone bug
+*
 * Revision 1.22  2001/06/01 14:05:12  thiessen
 * add float PDB sort
 *
@@ -442,7 +445,7 @@ void SequenceDisplay::UpdateAfterEdit(const BlockMultipleAlignment *forAlignment
 
 bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
 {
-    TESTMSG("got MouseDown");
+    TESTMSG("got MouseDown at col:" << column << " row:" << row);
 
     // process events in title area (launch of browser for entrez page on a sequence)
     if (column < 0 && row >= 0 && row < NRows()) {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/06/01 18:07:38  thiessen
+* fix display clone bug
+*
 * Revision 1.12  2001/06/01 14:04:54  thiessen
 * add float PDB sort
 *
@@ -184,7 +187,7 @@ public:
     DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const
         { return new DisplayRowFromString(
             theString, stringColor, title, hasBackgroundColor, backgroundColor,
-            newAlignments.find(alignment)->second); }
+            alignment ? newAlignments.find(alignment)->second : NULL); }
 
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const;
