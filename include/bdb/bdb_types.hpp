@@ -1424,12 +1424,20 @@ protected:
 	/// Return fields ownership flag
 	bool IsOwnFields() const { return m_OwnFields; }
 
+    /// Disable-enable packing
+    void SetPackable(bool packable) { m_Packable = packable; }
+
+private:
+    void x_ComputePackOpt();
 private:
     CBDB_BufferManager(const CBDB_BufferManager&);
     CBDB_BufferManager& operator= (const CBDB_BufferManager&);
 
 private:
-    vector<CBDB_Field*>     m_Fields;
+    typedef vector<CBDB_Field*>  TFieldVector;
+
+private:
+    TFieldVector            m_Fields;
     /// Array of pointers to the fields' data
     vector<void*>           m_Ptrs;        
     char*                   m_Buffer;
@@ -1453,6 +1461,16 @@ private:
 	
 	/// Field ownership flag
 	bool                    m_OwnFields;
+
+
+    // pack optimization fields
+
+    /// Pack optimization flag (turns TRUE on first Pack call)
+    bool                    m_PackOptComputed;
+    /// Index of first variable length field
+    unsigned int            m_FirstVarFieldIdx;
+    /// Buffer offset of first variable length field
+    unsigned int            m_FirstVarFieldIdxOffs;
 
 private:
     friend class CBDB_Field;
@@ -2037,6 +2055,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/03/15 14:45:48  kuznets
+ * Optimization in record packing
+ *
  * Revision 1.48  2004/11/09 20:03:41  kuznets
  * Bug fix. Removed obsolete assert
  *

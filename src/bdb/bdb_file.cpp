@@ -47,7 +47,10 @@ const int  CBDB_RawFile::kOpenFileMask      = 0664;
 
 
 
-// Auto-pointer style guard class for DB structure
+/// Auto-pointer style guard class for DB structure
+///
+/// @internal
+///
 class CDB_guard
 {
 public:
@@ -850,13 +853,16 @@ CBDB_Field& CBDB_File::GetField(TUnifiedFieldIndex idx)
         --idx;
         buffer = m_DataBuf.get();
     }
-
     _ASSERT(buffer);
 
     CBDB_Field& fld = buffer->GetField(idx);
     return fld;
 }
 
+void CBDB_File::DisableDataPacking()
+{
+    m_DataBuf->SetPackable(false); // disable packing
+}
 
 void CBDB_File::CopyFrom(const CBDB_File& dbf)
 {
@@ -1068,6 +1074,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/03/15 14:46:45  kuznets
+ * Optimization in record packing
+ *
  * Revision 1.49  2005/02/23 19:42:06  kuznets
  * Fixed error when closing a file with non-associated transaction
  *

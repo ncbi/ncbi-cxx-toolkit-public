@@ -338,7 +338,10 @@ CBDB_BufferManager::CBDB_BufferManager()
     m_NullSetSize(0),
     m_CompareLimit(0),
     m_LegacyString(false),
-	m_OwnFields(false)
+	m_OwnFields(false),
+    m_PackOptComputed(false),
+    m_FirstVarFieldIdx(0),
+    m_FirstVarFieldIdxOffs(0)
 {
 }
 
@@ -481,6 +484,26 @@ void CBDB_BufferManager::ArrangePtrsPacked()
     }
 }
 
+void CBDB_BufferManager::x_ComputePackOpt()
+{
+    unsigned int offset = m_NullSetSize;
+
+    for (TFieldVector::size_type i = 0;  i < m_Fields.size();  ++i) {
+        CBDB_Field& df = *m_Fields[i];
+
+        if (df.IsVariableLength()) {
+            m_FirstVarFieldIdx = i;
+            break;
+        }
+
+        size_t actual_len = df.GetLength();
+        offset += actual_len;
+    } // for
+
+    m_FirstVarFieldIdxOffs = offset;
+    m_PackOptComputed = true;
+}
+
 
 unsigned int CBDB_BufferManager::Pack()
 {
@@ -492,11 +515,15 @@ unsigned int CBDB_BufferManager::Pack()
         return (unsigned)m_PackedSize;
     }
 
-    char* new_ptr = m_Buffer;
-    new_ptr += m_NullSetSize;
-    m_PackedSize = m_NullSetSize;
+    if (!m_PackOptComputed) {
+        x_ComputePackOpt();
+    }
 
-    for (size_t i = 0;  i < m_Fields.size();  ++i) {
+    char* new_ptr = m_Buffer;
+    new_ptr += m_FirstVarFieldIdxOffs; 
+    m_PackedSize = m_FirstVarFieldIdxOffs; 
+
+    for (size_t i = m_FirstVarFieldIdx;  i < m_Fields.size();  ++i) {
         CBDB_Field& df = *m_Fields[i];
         size_t actual_len = df.GetLength();
         void* old_ptr = m_Ptrs[i];
@@ -530,6 +557,9 @@ unsigned int CBDB_BufferManager::Unpack()
         m_PackedSize = 0;
         return (unsigned)m_PackedSize;
     }
+    if (!m_PackOptComputed) {
+        x_ComputePackOpt();
+    }
 
     _ASSERT(!m_Fields.empty());
     for (size_t i = m_Fields.size() - 1;  true;  --i) {
@@ -543,11 +573,12 @@ unsigned int CBDB_BufferManager::Unpack()
         }
         m_PackedSize -= actual_len;
 
-        if (i == 0)
+        if (i == m_FirstVarFieldIdx) {
+            m_PackedSize -= m_FirstVarFieldIdxOffs;
             break;
+        }
     }
 
-    m_PackedSize -= m_NullSetSize;
 
     _ASSERT(m_PackedSize == 0);
     return (unsigned)m_BufferSize;
@@ -1003,6 +1034,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/03/15 14:46:45  kuznets
+ * Optimization in record packing
+ *
  * Revision 1.32  2004/09/02 15:37:02  rotmistr
  * Fixed name for UInt1 to Uint1
  *
