@@ -39,16 +39,16 @@ static char const rcsid[] =
 
 /** Complete type definition of Blast Hsp Stream ADT */
 struct BlastHSPStream {
-
-    BlastHSPStreamConstructor NewFnPtr;       /**< Constructor */
-    BlastHSPStreamDestructor  DeleteFnPtr;    /**< Destructor */
-
-    /* The operational interface */
-
-    BlastHSPStreamMethod      WriteFnPtr;     /**< Write to BlastHSPStream */
-    BlastHSPStreamMethod      ReadFnPtr;      /**< Read from BlastHSPStream */
-
-    void* DataStructure;  /**< ADT holding HSPStream */
+   BlastHSPStreamConstructor NewFnPtr;    /**< Constructor */
+   BlastHSPStreamDestructor  DeleteFnPtr; /**< Destructor */
+   
+   /* The operational interface */
+   
+   BlastHSPStreamMethod      WriteFnPtr;  /**< Write to BlastHSPStream */
+   BlastHSPStreamMethod      ReadFnPtr;   /**< Read from BlastHSPStream */
+   BlastHSPStreamCloseFnType CloseFnPtr;  /**< Close BlastHSPStream for
+                                             writing */
+   void* DataStructure;                   /**< ADT holding HSPStream */
 };
 
 BlastHSPStream* BlastHSPStreamNew(const BlastHSPStreamNewInfo* bhsn_info)
@@ -94,6 +94,22 @@ BlastHSPStream* BlastHSPStreamFree(BlastHSPStream* hsp_stream)
     }
 
     return (BlastHSPStream*) (*destructor_fnptr)(hsp_stream);
+}
+
+void BlastHSPStreamClose(BlastHSPStream* hsp_stream)
+{
+    BlastHSPStreamCloseFnType close_fnptr = NULL;
+
+    if (!hsp_stream)
+       return;
+
+    /** Close functionality is optional. If closing function is not provided,
+        just do nothing. */
+    if ( !(close_fnptr = (*hsp_stream->CloseFnPtr))) {
+       return;
+    }
+
+    (*close_fnptr)(hsp_stream);
 }
 
 const int kBlastHSPStream_Error = -1;
@@ -199,6 +215,10 @@ int SetMethod(BlastHSPStream* hsp_stream,
     case eWrite:
         hsp_stream->WriteFnPtr = fnptr_type.method;
         break;
+
+    case eClose:
+       hsp_stream->CloseFnPtr = fnptr_type.closeFn;
+       break;
 
     default:
         abort();    /* should never happen */

@@ -70,6 +70,12 @@ typedef BlastHSPStream* (*BlastHSPStreamDestructor) (BlastHSPStream*);
  * ownership, writing releases ownership) */
 typedef int (*BlastHSPStreamMethod) (BlastHSPStream*, BlastHSPList**);
 
+/** Function pointer typedef to implement the close functionality of the 
+ * BlastHSPStream. Argument is a pointer to the structure to close for 
+ * writing.
+ */
+typedef void (*BlastHSPStreamCloseFnType) (BlastHSPStream*);
+
 /*****************************************************************************/
 
 /** Structure that contains the information needed for BlastHSPStreamNew to 
@@ -98,6 +104,12 @@ BlastHSPStream* BlastHSPStreamNew(const BlastHSPStreamNewInfo* bhsn_info);
  * @return NULL
  */
 BlastHSPStream* BlastHSPStreamFree(BlastHSPStream* hsp_stream);
+
+/** Closes the BlastHSPStream structure for writing. Any subsequent attempt
+ * to write to the stream will return error.
+ * @param hsp_stream The stream to close [in] [out]
+ */
+void BlastHSPStreamClose(BlastHSPStream* hsp_stream);
 
 /** Standard error return value for BlastHSPStream methods */
 extern const int kBlastHSPStream_Error;
@@ -138,20 +150,23 @@ typedef enum EMethodName {
     eDestructor,        /**< Destructor for a BlastHSPStream implementation */
     eRead,              /**< Read from the BlastHSPStream */
     eWrite,             /**< Write to the BlastHSPStream */
+    eClose,             /**< Close the BlastHSPStream for writing */ 
     eMethodBoundary     /**< Limit to facilitate error checking */
 } EMethodName;
 
 /** Union to encapsulate the supported methods on the BlastHSPStream interface
  */
 typedef union BlastHSPStreamFunctionPointerTypes {
-    /** Used for read/write function pointers */
-    BlastHSPStreamMethod method;        
-
-    /** Used for constructor function pointer */
-    BlastHSPStreamConstructor ctor;     
-
-    /** Used for destructor function pointer */
-    BlastHSPStreamDestructor dtor;      
+   /** Used for read/write function pointers */
+   BlastHSPStreamMethod method;        
+   
+   /** Used for constructor function pointer */
+   BlastHSPStreamConstructor ctor;     
+   
+   /** Used for destructor function pointer */
+   BlastHSPStreamDestructor dtor;      
+   /** Use for close function pointer */
+   BlastHSPStreamCloseFnType closeFn;
 } BlastHSPStreamFunctionPointerTypes;
 
 /** Sets implementation specific data structure 
