@@ -432,7 +432,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             m_Hour = (unsigned char) value;
             break;
         case 'H':
-            m_Hour = (unsigned char) value;
+            m_Hour = (unsigned char) value % 12;
             is_12hour = true;
             break;
         case 'm':
@@ -818,7 +818,7 @@ string CTime::AsString(const string& fmt, long out_tz) const
         case 'D': s_AddZeroPadInt(str, t->Day());           break;
         case 'd': s_AddZeroPadInt(str, t->Day(),1);         break;
         case 'h': s_AddZeroPadInt(str, t->Hour());          break;
-        case 'H': s_AddZeroPadInt(str, t->Hour() % 12);     break;
+        case 'H': s_AddZeroPadInt(str, (t->Hour()+11) % 12+1);     break;
         case 'm': s_AddZeroPadInt(str, t->Minute());        break;
         case 's': s_AddZeroPadInt(str, t->Second());        break;
         case 'l': s_AddZeroPadInt(str, t->NanoSecond() / 1000000, 3);
@@ -826,8 +826,8 @@ string CTime::AsString(const string& fmt, long out_tz) const
         case 'r': s_AddZeroPadInt(str, t->NanoSecond() / 1000, 6);
                   break;
         case 'S': s_AddZeroPadInt(str, t->NanoSecond(), 9); break;
-        case 'p': str += ( t->Hour() <= 12) ? "am" : "pm" ; break;
-        case 'P': str += ( t->Hour() <= 12) ? "AM" : "PM" ; break;
+        case 'p': str += ( t->Hour() < 12) ? "am" : "pm" ; break;
+        case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ; break;
         case 'z': {
 #if defined(TIMEZONE_IS_UNDEFINED)
                       ERR_POST("Format symbol 'z' is not supported on "
@@ -1960,6 +1960,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2004/12/29 21:41:30  vasilche
+ * Fixed parsing and formatting of twelfth hour in AM/PM mode.
+ *
  * Revision 1.56  2004/09/27 23:16:56  vakatov
  * Fixed a typo;  +cosmetics
  *

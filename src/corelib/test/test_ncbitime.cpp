@@ -426,75 +426,127 @@ static void s_TestFormats(void)
     cout << "Test Formats" << endl;
     cout << "---------------------------" << endl << endl;
 
-    for (int i = 0;  s_Fmt[i].format;  i++) {
-        const char* fmt = s_Fmt[i].format;
-
-        CTime t1(2001, 4, 2, 13, 4, 5, 88888888,
-                 strchr(fmt, 'Z') ? CTime::eGmt : CTime::eLocal);
-
-        CTime::SetFormat(fmt);
-        string t1_str = t1.AsString();
-        cout << "[" << t1_str << "]";
-
-        CTime::SetFormat("MDY__s");
-
-        CTime t2(t1_str, fmt);
-        cout << " --> [" << t1_str << "]" << endl;
-        if ( s_Fmt[i].truncated ) {
-            string test_str = t2.AsString("M/D/Y h:m:s");
-            assert(test_str == "04/02/2001 13:04:05");
-        } else {
-            assert(t1 == t2);
+    for ( int hour = 0; hour < 24; ++hour ) {
+        for (int i = 0;  s_Fmt[i].format;  i++) {
+            const char* fmt = s_Fmt[i].format;
+            
+            CTime t1(2001, 4, 2, hour, 4, 5, 88888888,
+                     strchr(fmt, 'Z') ? CTime::eGmt : CTime::eLocal);
+            
+            CTime::SetFormat(fmt);
+            string t1_str = t1.AsString();
+            cout << "[" << t1_str << "]";
+            
+            CTime::SetFormat("MDY__s");
+            
+            CTime t2(t1_str, fmt);
+            cout << " --> [" << t1_str << "]" << endl;
+            if ( s_Fmt[i].truncated ) {
+                string test_str = t2.AsString("M/D/Y h:m:s");
+                CNcbiOstrstream s;
+                s << "04/02/2001 " << hour/10 << hour%10 << ":04:05";
+                string need_str = CNcbiOstrstreamToString(s);
+                assert(test_str == need_str);
+            } else {
+                assert(t1 == t2);
+            }
+            
+            CTime::SetFormat(fmt);
+            string t2_str = t2;
+            assert(t1_str.compare(t2_str) == 0);
         }
-
-        CTime::SetFormat(fmt);
-        string t2_str = t2;
-        assert(t1_str.compare(t2_str) == 0);
     }
 
     // Check against well-known dates
-    const char fmtstr[] = "M/D/Y h:m:s Z W";
     {{
-        CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
-        t.SetFormat(fmtstr);
-        string s = t.AsString();
-        assert(s.compare("02/10/2003 20:40:30 GMT Monday") == 0);
+        const char fmtstr[] = "M/D/Y h:m:s Z W";
+        {{
+            CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("02/10/2003 20:40:30 GMT Monday") == 0);
+        }}
+        {{
+            CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("02/10/1998 20:40:30 GMT Tuesday") == 0);
+        }}
+        {{
+            CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("03/13/2003 15:49:30 GMT Thursday") == 0);
+        }}
+        {{
+            CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("03/13/2001 15:49:30 GMT Tuesday") == 0);
+        }}
+        {{
+            CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("12/31/2002 23:59:59 GMT Tuesday") == 0);
+        }}
+        {{
+            CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("01/01/2003 00:00:00 GMT Wednesday") == 0);
+        }}
+        {{
+            CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("12/13/2002 12:34:56 GMT Friday") == 0);
+        }}
     }}
     {{
-        CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eGmt);
-        t.SetFormat(fmtstr);
-        string s = t.AsString();
-        assert(s.compare("02/10/1998 20:40:30 GMT Tuesday") == 0);
-    }}
-    {{
-        CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eGmt);
-        t.SetFormat(fmtstr);
-        string s = t.AsString();
-        assert(s.compare("03/13/2003 15:49:30 GMT Thursday") == 0);
-    }}
-    {{
-        CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eGmt);
-        t.SetFormat(fmtstr);
-        string s = t.AsString();
-        assert(s.compare("03/13/2001 15:49:30 GMT Tuesday") == 0);
-    }}
-    {{
-        CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eGmt);
-        t.SetFormat(fmtstr);
-        string s = t.AsString();
-        assert(s.compare("12/31/2002 23:59:59 GMT Tuesday") == 0);
-    }}
-    {{
-        CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eGmt);
-        t.SetFormat(fmtstr);
-        string s = t.AsString();
-        assert(s.compare("01/01/2003 00:00:00 GMT Wednesday") == 0);
-    }}
-    {{
-        CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eGmt);
-        t.SetFormat(fmtstr);
-        string s = t.AsString();
-        assert(s.compare("12/13/2002 12:34:56 GMT Friday") == 0);
+        const char fmtstr[] = "M/D/Y H:m:s P Z W";
+        {{
+            CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("02/10/2003 08:40:30 PM GMT Monday") == 0);
+        }}
+        {{
+            CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("02/10/1998 08:40:30 PM GMT Tuesday") == 0);
+        }}
+        {{
+            CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("03/13/2003 03:49:30 PM GMT Thursday") == 0);
+        }}
+        {{
+            CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("03/13/2001 03:49:30 PM GMT Tuesday") == 0);
+        }}
+        {{
+            CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("12/31/2002 11:59:59 PM GMT Tuesday") == 0);
+        }}
+        {{
+            CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("01/01/2003 12:00:00 AM GMT Wednesday") == 0);
+        }}
+        {{
+            CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eGmt);
+            t.SetFormat(fmtstr);
+            string s = t.AsString();
+            assert(s.compare("12/13/2002 12:34:56 PM GMT Friday") == 0);
+        }}
     }}
 }
 
@@ -1028,6 +1080,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.28  2004/12/29 21:41:30  vasilche
+ * Fixed parsing and formatting of twelfth hour in AM/PM mode.
+ *
  * Revision 6.27  2004/09/27 14:08:01  ivanov
  * Removed some debug code
  *
