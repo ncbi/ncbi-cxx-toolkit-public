@@ -55,7 +55,7 @@ BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp,
 	{
 		sbp->penalty = scoring_options->penalty;
 		sbp->reward = scoring_options->reward;
-		BlastScoreBlkMatFill(sbp, "BLOSUM62"); /* does this neeeed to be done? */
+        BlastScoreBlkMatFill(sbp, scoring_options->matrix);
 	}
 	else
 	{
@@ -177,10 +177,10 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
       
       /* Set the ambiguous residue before the ScoreBlk is filled. */
       if (is_na) {
-         if (!StringHasNoText(scoring_options->matrix)) {
-            sbp->read_in_matrix = TRUE;
-         } else {
+         if (scoring_options->matrix && scoring_options->matrix[0] != NULLB) {
             sbp->read_in_matrix = FALSE;
+         } else {
+            sbp->read_in_matrix = TRUE;
          }
          BlastScoreSetAmbigRes(sbp, 'N');
       } else {

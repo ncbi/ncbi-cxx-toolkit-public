@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.9  2003/07/25 18:58:43  camacho
+ * Avoid using StrUpper and StringHasNoText
+ *
  * Revision 1.8  2003/07/25 17:25:43  coulouri
  * in progres:
  *  * use malloc/calloc/realloc instead of Malloc/Calloc/Realloc
@@ -1503,19 +1506,22 @@ static Int2 BlastScoreBlkMatCreate(BLAST_ScoreBlkPtr sbp)
 */
 
 Int2
-BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix)
-
+BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
 {
-    Char string[PATH_MAX] = "", alphabet_type[3] = "";
+    Char string[PATH_MAX] = "", alphabet_type[3] = "", matrix[PATH_MAX];
     CharPtr matrix_dir = NULL;
     Int2 status = 0;
     FILE *fp = NULL;
+    int i, len;
     
     if (sbp->read_in_matrix) {
-        /* Convert matrix name to upper case. */
-        matrix = StrUpper(matrix);
-        
-        sbp->name = StringSave(matrix);	/* Save the name of the matrix. */
+        ASSERT(matrix_name != NULL);
+
+        /* Convert matrix name to upper case and save it in sbp */
+        len = strlen(matrix_name);
+        for (i = 0; i < len && i < (sizeof(matrix)-1); i++)
+            matrix[i] = toupper(matrix_name[i]);
+        sbp->name = StringSave(matrix);
 
         /* 1. Try local directory */
         if(FileLength(matrix) > 0)
