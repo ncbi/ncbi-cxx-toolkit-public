@@ -507,14 +507,14 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
 
             /* Calculate alignment length and number of identical letters */
             if (scoring_options->is_ooframe) {
-               BlastOOFGetNumIdentical(query, subject, hsp, program_number,
+               BlastOOFGetNumIdentities(query, subject, hsp, program_number,
                                        &hsp->num_ident, &align_length);
             }
             else {
                /* Do not get the number of identities for PSI blast,
                   because the query may not be available */
                if (psi_options == NULL)
-                  BlastHSPGetNumIdentical(query, subject, hsp, 
+                  BlastHSPGetNumIdentities(query, subject, hsp, 
                      scoring_options->gapped_calculation, &hsp->num_ident, 
                      &align_length);
             }

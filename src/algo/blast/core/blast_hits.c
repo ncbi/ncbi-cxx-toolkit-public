@@ -211,7 +211,7 @@ BlastHSPArrayPurge (BlastHSP** hsp_array, Int4 hspcnt)
 }
 
 Int2
-BlastHSPGetNumIdentical(Uint1* query, Uint1* subject, 
+BlastHSPGetNumIdentities(Uint1* query, Uint1* subject, 
    BlastHSP* hsp, Boolean is_gapped, Int4* num_ident_ptr, 
    Int4* align_length_ptr)
 {
@@ -275,7 +275,7 @@ BlastHSPGetNumIdentical(Uint1* query, Uint1* subject,
 }
 
 Int2
-BlastOOFGetNumIdentical(Uint1* query, Uint1* subject, 
+BlastOOFGetNumIdentities(Uint1* query, Uint1* subject, 
    BlastHSP* hsp, Uint1 program, 
    Int4* num_ident_ptr, Int4* align_length_ptr)
 {
@@ -683,7 +683,7 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
          }
          last_esp->num = last_esp_num;
       }
-      BlastHSPGetNumIdentical(query_start, subject_start, hsp, 
+      BlastHSPGetNumIdentities(query_start, subject_start, hsp, 
          gapped_calculation, &hsp->num_ident, &align_length);
       /* Check if this HSP passes the percent identity test */
       if (((double)hsp->num_ident) / align_length * 100 < 
