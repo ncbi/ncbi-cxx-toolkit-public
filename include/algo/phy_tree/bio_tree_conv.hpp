@@ -45,32 +45,31 @@ BEGIN_NCBI_SCOPE
 
 // --------------------------------------------------------------------------
 
-/// Visitor functor to convert tree nodes to dynamic tree
+
+/// Visitor functor to convert one tree to another
 ///
 /// @internal
 
-template<class TDynamicTree, class TSrcTree, class TNodeConvFunc>
-class CTreeConvert2DynamicFunc
+template<class TDstTreeNode, class TSrcTreeNode, class TNodeConvFunc>
+class CTree2TreeFunc
 {
 public:
-    typedef TSrcTree                             TBioTreeNodeType;
-    typedef typename TDynamicTree::TBioTreeNode  TDynamicNodeType;
+    typedef TDstTreeNode                         TDstTreeNodeType;
+    typedef TSrcTreeNode                         TSrcTreeNodeType;
 
 public:
-    CTreeConvert2DynamicFunc(TDynamicTree* dyn_tree, TNodeConvFunc func)
-    : m_DynTree(dyn_tree),
-      m_ConvFunc(func)
-    {}
+    CTree2TreeFunc(TNodeConvFunc& func) : m_DstTree(0), m_ConvFunc(func) {}
+
 
     ETreeTraverseCode 
-    operator()(const TBioTreeNodeType& node, 
+    operator()(const TSrcTreeNodeType& node, 
                int                     delta_level)
     {
         if (m_TreeStack.size() == 0) {
-            auto_ptr<TDynamicNodeType> pnode(MakeDynamicNode(node));
+            auto_ptr<TDstTreeNodeType> pnode(MakeNewTreeNode(node));
 
             m_TreeStack.push_back(pnode.get());
-            m_DynTree->SetTreeNode(pnode.release());
+            m_DstTree = pnode.release();
             return eTreeTraverse;
         }
 
@@ -78,8 +77,8 @@ public:
             if (m_TreeStack.size() > 0) {
                 m_TreeStack.pop_back();
             }
-            TDynamicNodeType* parent_node = m_TreeStack.back();
-            TDynamicNodeType* pnode= MakeDynamicNode(node);
+            TDstTreeNodeType* parent_node = m_TreeStack.back();
+            TDstTreeNodeType* pnode= MakeNewTreeNode(node);
 
             parent_node->AddNode(pnode);
             m_TreeStack.push_back(pnode);
@@ -87,8 +86,8 @@ public:
         }
 
         if (delta_level == 1) {
-            TDynamicNodeType* parent_node = m_TreeStack.back();
-            TDynamicNodeType* pnode= MakeDynamicNode(node);
+            TDstTreeNodeType* parent_node = m_TreeStack.back();
+            TDstTreeNodeType* pnode= MakeNewTreeNode(node);
 
             parent_node->AddNode(pnode);
             m_TreeStack.push_back(pnode);
@@ -101,22 +100,24 @@ public:
         return eTreeTraverse;
     }
 
+    TDstTreeNodeType* GetTreeNode() { return m_DstTree; }
+
 protected:
 
-    TDynamicNodeType* MakeDynamicNode(const TBioTreeNodeType& src_node)
+    TDstTreeNodeType* MakeNewTreeNode(const TSrcTreeNodeType& src_node)
     {
-        auto_ptr<TDynamicNodeType> pnode(new TDynamicNodeType());
-        TBioTreeNodeId uid = src_node.GetValue().GetId();
+        auto_ptr<TDstTreeNodeType> pnode(new TDstTreeNodeType());
+        unsigned int uid = src_node.GetValue().GetId();
         pnode->GetValue().SetId(uid);
 
         m_ConvFunc(*pnode.get(), src_node);
-        return pnode.release();        
+        return pnode.release();
     }
 
 private:
-    TDynamicTree*                m_DynTree;
-    TNodeConvFunc                m_ConvFunc;
-    vector<TDynamicNodeType*>    m_TreeStack;
+    TDstTreeNodeType*            m_DstTree;
+    TNodeConvFunc&               m_ConvFunc;
+    vector<TDstTreeNodeType*>    m_TreeStack;
 };
 
 
@@ -129,14 +130,21 @@ void BioTreeConvert2Dynamic(TDynamicTree&         dyn_tree,
                             TNodeConvFunc         node_conv)
 {
     dyn_tree.Clear();
-    typedef typename TSrcBioTree::TBioTreeNode   TBioTreeNodeType;
+    typedef typename TSrcBioTree::TBioTreeNode    TSrcTreeNodeType;
+    typedef typename TDynamicTree::TBioTreeNode   TDstTreeNodeType;
 
-    CTreeConvert2DynamicFunc<TDynamicTree, TBioTreeNodeType, TNodeConvFunc> 
-       func(&dyn_tree, node_conv);
 
-    const TBioTreeNodeType *n = bio_tree.GetTreeNode();
+    CTree2TreeFunc<TDstTreeNodeType, TSrcTreeNodeType, TNodeConvFunc> 
+       func(node_conv);
 
-    TreeDepthFirstTraverse(*(const_cast<TBioTreeNodeType*>(n)), func);
+    const TSrcTreeNodeType *n = bio_tree.GetTreeNode();
+
+    CTree2TreeFunc<TDstTreeNodeType, TSrcTreeNodeType, TNodeConvFunc> 
+        rfunc(
+           TreeDepthFirstTraverse(*(const_cast<TSrcTreeNodeType*>(n)), func)
+        );
+
+    dyn_tree.SetTreeNode(rfunc.GetTreeNode());
 }
 
 
@@ -151,11 +159,44 @@ void TreeConvert2Dynamic(TDynamicTree&      dyn_tree,
 {
     dyn_tree.Clear();
 
-    CTreeConvert2DynamicFunc<TDynamicTree, TTreeNode, TNodeConvFunc> 
-       func(&dyn_tree, node_conv);
+    typedef TTreeNode    TSrcTreeNodeType;
+    typedef typename TDynamicTree::TBioTreeNode   TDstTreeNodeType;
 
-    TreeDepthFirstTraverse(*(const_cast<TTreeNode*>(src_tree)), func);
+    CTree2TreeFunc<TDstTreeNodeType, TSrcTreeNodeType, TNodeConvFunc> 
+       func(node_conv);
+    CTree2TreeFunc<TDstTreeNodeType, TSrcTreeNodeType, TNodeConvFunc> 
+        rfunc(
+          TreeDepthFirstTraverse(*(const_cast<TTreeNode*>(src_tree)), func)
+        );
+    dyn_tree.SetTreeNode(rfunc.GetTreeNode());
 }
+
+
+
+/// Convert dynamic tree to CTreeNode<>, 
+/// returned CTReeNode<> to be deleted by caller.
+///
+template<class TDynamicTree, class TTreeNode, class TNodeConvFunc>
+TTreeNode* DynamicConvert2Tree(TDynamicTree&      dyn_tree, 
+                               TNodeConvFunc      node_conv,
+                               TTreeNode*&        dst_node)
+{
+    typedef TTreeNode    TDstTreeNodeType;
+    typedef typename TDynamicTree::TBioTreeNode   TSrcTreeNodeType;
+
+    CTree2TreeFunc<TDstTreeNodeType, TSrcTreeNodeType, TNodeConvFunc> 
+       func(node_conv);
+
+    const TSrcTreeNodeType *n = dyn_tree.GetTreeNode();
+
+    CTree2TreeFunc<TDstTreeNodeType, TSrcTreeNodeType, TNodeConvFunc> 
+        rfunc(
+        TreeDepthFirstTraverse(*(const_cast<TSrcTreeNodeType*>(n)), func)
+        );
+    return (dst_node = rfunc.GetTreeNode());
+}
+
+
 
 
 
@@ -595,6 +636,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/17 17:53:40  kuznets
+ * Reimplemented Tree to Dynamic tree converters. More universal templates
+ *
  * Revision 1.8  2004/11/10 19:26:24  kuznets
  * Added coverter from CTreeNode<> to dynamic
  *
