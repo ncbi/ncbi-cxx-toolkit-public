@@ -2178,13 +2178,14 @@ bool NStr::Equal(const string& s1, const string& s2, ECase use_case)
 inline
 bool NStr::EqualCase(const string& s1, const string& s2)
 {
-    return EqualCase(s1.c_str(), s2.c_str()) == 0;
+    // return EqualCase(s1.c_str(), s2.c_str());
+    return s1 == s2;
 }
 
 inline
 bool NStr::EqualNocase(const string& s1, const string& s2)
 {
-    return EqualNocase(s1.c_str(), s2.c_str()) == 0;
+    return EqualNocase(s1.c_str(), s2.c_str());
 }
 
 inline
@@ -2344,6 +2345,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.56  2004/05/26 20:46:35  ucko
+ * Fix backwards logic in Equal{Case,Nocase}.
+ *
  * Revision 1.55  2004/04/26 14:44:30  ucko
  * Move CParseTemplException from ncbiexpt.hpp, as it needs NStr.
  *
