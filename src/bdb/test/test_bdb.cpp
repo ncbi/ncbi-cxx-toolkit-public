@@ -296,12 +296,14 @@ static void s_TEST_BDB_Types(void)
 //
 
 static 
-void s_IdTableFill(TestDBF1& dbf, unsigned int records)
+void s_IdTableFill(TestDBF1& dbf, 
+                   unsigned int records, 
+                   int seed = 0)
 {
     for (unsigned int i = 1; i < records; ++i) {
         char buf[256];
         sprintf(buf, s_TestStrTempl, i);
-        dbf.IdKey = i;
+        dbf.IdKey = i + seed;
         dbf.idata = 400+i;
         dbf.str = buf;
         dbf.i2.Set(i+3);
@@ -449,40 +451,39 @@ static void s_TEST_BDB_IdTable_FillStress(void)
 
     CBDB_Env env;
     {{
-    env.SetCacheSize(150 * (1024 * 1024));
+//    env.SetCacheSize(100 * (1024 * 1024));
     env.OpenErrFile("err.txt");
 
     env.OpenWithTrans(".", CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
     cout << "Removing LOG files" << endl;
     env.CleanLog();
-//    env.OpenWithLocks(0);
     cout << "Removing LOG files. ok." << endl;
 
     env.SetLockTimeout(30 * 1000000);
     env.SetTransactionTimeout(30 * 1000000);
 
     TestDBF1  dbf1;
-
-    CBDB_Transaction trans(env);
-    dbf1.SetTransaction(&trans);
-
     dbf1.SetEnv(env);
-
     dbf1.Open(s_TestFileName, CBDB_File::eCreate);
     assert(dbf1.idata.IsNull());
 
-    // Fill the table
-
     unsigned i;
-
     //const unsigned int recs = 1000000;
-    const unsigned int recs = 100000;
+    const unsigned int recs = 10000;
+    
+    for (i = 0; i < 10; ++i) {
+        cout << i << " " << flush;
+       CBDB_Transaction trans(env);
+       dbf1.SetTransaction(&trans);
 
-    s_IdTableFill(dbf1, recs);
+       s_IdTableFill(dbf1, recs, i * 1000000);
 
-    trans.Commit();
-    env.TransactionCheckpoint();
-    cout << "Removing LOG files." << endl;
+       trans.Commit();
+       env.TransactionCheckpoint();
+    }
+    
+    
+    cout << endl << "Removing LOG files." << endl;
     env.CleanLog();
     cout << "Removing LOG files. ok." << endl;
 
@@ -493,11 +494,9 @@ static void s_TEST_BDB_IdTable_FillStress(void)
     dbf1.Reopen(CBDB_File::eReadOnly);
 
     for (i = 1; i < recs; ++i) {
-        dbf1.IdKey = i;
+        dbf1.IdKey = i + (1 * 1000000);
         EBDB_ErrCode ret = dbf1.Fetch();
         assert (ret == eBDB_Ok);
-
-        ValidateRecord(dbf1, i);
 
     } // for
 
@@ -511,10 +510,9 @@ static void s_TEST_BDB_IdTable_FillStress(void)
             CBDB_FileCursor cur(dbf1);
             cur.SetCondition(CBDB_FileCursor::eEQ);
 
-            cur.From << i;
+            cur.From << i+ (1 * 1000000);
             EBDB_ErrCode ret = cur.FetchFirst();
             assert (ret == eBDB_Ok);
-            ValidateRecord(dbf1, i);
         }}
 
 
@@ -1886,7 +1884,6 @@ int CBDB_Test::Run(void)
 
     try
     {
-
         s_TEST_BDB_Types();
 
         s_TEST_BDB_IdTable_Fill();
@@ -1949,6 +1946,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2004/08/13 11:51:16  kuznets
+ * Stress test improvements
+ *
  * Revision 1.49  2004/08/13 11:13:48  kuznets
  * changes in tests
  *
