@@ -124,9 +124,9 @@ public:
     }
     
     template <class ValueT, class MethodT, class OptsT>
-    void Remote(ValueT & valobj,
-                MethodT param,
-                OptsT & cboh)
+    void Remote(ValueT &,
+                MethodT,
+                OptsT &)
     {
     }
     
@@ -228,6 +228,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/04/15 21:18:56  bealer
+ * - Remove semi-colons so that solaris compiler will not choke.
+ *
  * Revision 1.3  2004/03/22 20:46:22  bealer
  * - Fix non-literate comments to look less like doxygen comments.
  *

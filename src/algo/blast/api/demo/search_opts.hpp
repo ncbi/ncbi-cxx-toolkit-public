@@ -256,42 +256,42 @@ public:                                        \
 // Helper and Shortcut Handler Sets
 
 #define OPT_HANDLER_SUPPORT_ALL(NAME)               \
-OPT_HANDLER_START(NAME, V);                         \
-OPT_HANDLER_SUPPORT(CBlastxOptionsHandle);          \
-OPT_HANDLER_SUPPORT(CTBlastnOptionsHandle);         \
-OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle);         \
-OPT_HANDLER_SUPPORT(CBlastProteinOptionsHandle);    \
-OPT_HANDLER_SUPPORT(CBlastNucleotideOptionsHandle); \
+OPT_HANDLER_START(NAME, V)                          \
+OPT_HANDLER_SUPPORT(CBlastxOptionsHandle)           \
+OPT_HANDLER_SUPPORT(CTBlastnOptionsHandle)          \
+OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle)          \
+OPT_HANDLER_SUPPORT(CBlastProteinOptionsHandle)     \
+OPT_HANDLER_SUPPORT(CBlastNucleotideOptionsHandle)  \
 OPT_HANDLER_END()
 
 #define OPT_HANDLER_EXPR_ALL(NAME, EXPR)            \
-OPT_HANDLER_START(NAME, EXPR);                      \
-OPT_HANDLER_SUPPORT(CBlastxOptionsHandle);          \
-OPT_HANDLER_SUPPORT(CTBlastnOptionsHandle);         \
-OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle);         \
-OPT_HANDLER_SUPPORT(CBlastProteinOptionsHandle);    \
-OPT_HANDLER_SUPPORT(CBlastNucleotideOptionsHandle); \
+OPT_HANDLER_START(NAME, EXPR)                       \
+OPT_HANDLER_SUPPORT(CBlastxOptionsHandle)           \
+OPT_HANDLER_SUPPORT(CTBlastnOptionsHandle)          \
+OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle)          \
+OPT_HANDLER_SUPPORT(CBlastProteinOptionsHandle)     \
+OPT_HANDLER_SUPPORT(CBlastNucleotideOptionsHandle)  \
 OPT_HANDLER_END()
 
 #define OPT_HANDLER_SUPPORT_NUCL(NAME)              \
-OPT_HANDLER_START(NAME, V);                         \
-OPT_HANDLER_SUPPORT(CBlastNucleotideOptionsHandle); \
+OPT_HANDLER_START(NAME, V)                          \
+OPT_HANDLER_SUPPORT(CBlastNucleotideOptionsHandle)  \
 OPT_HANDLER_END()
 
 // Translated Query (blastx, tblastx)
 
 #define OPT_HANDLER_SUPPORT_TRQ(NAME)       \
-OPT_HANDLER_START(NAME, V);                 \
-OPT_HANDLER_SUPPORT(CBlastxOptionsHandle);  \
-OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle); \
+OPT_HANDLER_START(NAME, V)                  \
+OPT_HANDLER_SUPPORT(CBlastxOptionsHandle)   \
+OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle)  \
 OPT_HANDLER_END()
 
 // Translated DB (tblastx, tblastn)
 
 #define OPT_HANDLER_SUPPORT_TRD(NAME)       \
-OPT_HANDLER_START(NAME, V);                 \
-OPT_HANDLER_SUPPORT(CTBlastnOptionsHandle); \
-OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle); \
+OPT_HANDLER_START(NAME, V)                  \
+OPT_HANDLER_SUPPORT(CTBlastnOptionsHandle)  \
+OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle)  \
 OPT_HANDLER_END()
 
 // CRemoteBlast option .. i.e. a program option rather than an
@@ -300,8 +300,8 @@ OPT_HANDLER_END()
 // support only the CRemoteBlast type.  Only EXPR type is defined.
 
 #define OPT_HANDLER_RB_EXPR(NAME,EXPR) \
-OPT_HANDLER_START(NAME, EXPR);         \
-OPT_HANDLER_SUPPORT(CRemoteBlast);     \
+OPT_HANDLER_START(NAME, EXPR)          \
+OPT_HANDLER_SUPPORT(CRemoteBlast)      \
 OPT_HANDLER_END()
 
 
@@ -552,6 +552,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/04/15 21:18:56  bealer
+ * - Remove semi-colons so that solaris compiler will not choke.
+ *
  * Revision 1.3  2004/03/16 19:41:56  vasilche
  * Namespace qualifier is invalid in extern declaration. Removed extra semicolons
  *
