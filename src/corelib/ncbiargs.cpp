@@ -1659,87 +1659,15 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
 //  CArgDescriptions::PrintUsage()
 
 
-static void s_PrintSynopsis(string& str, const CArgDesc& arg,
-                            SIZE_TYPE* pos, SIZE_TYPE width)
+static void s_PrintCommentBody(list<string>& arr, const string& s,
+                               SIZE_TYPE width)
 {
-    string s;
-    if ( s_IsOptional(arg) ) {
-        s += " [" + arg.GetUsageSynopsis() + ']';
-    } else if ( s_IsPositional(arg) ) {
-        s += " <" + arg.GetUsageSynopsis() + '>';
-    } else {
-        s += ' ' + arg.GetUsageSynopsis();
-    }
-
-    if (*pos + s.length() > width) {
-        const static string s_NewLine("\n   ");
-        str += s_NewLine;
-        *pos = s_NewLine.length();
-    }
-    str  += s;
-    *pos += s.length();
+    NStr::Wrap(s, width, arr, NStr::fWrap_Hyphenate, "   ");
 }
 
 
-static void s_PrintCommentBody(string& str, const string& s, SIZE_TYPE width)
-{
-    const static string s_NewLine("\n   ");
-    width -= s_NewLine.length();
-    SIZE_TYPE pos = 0;
-
-    for (;;) {
-        // find first non-space
-        pos = s.find_first_not_of("\t\n\r ", pos);
-        if (pos == NPOS)
-            break;
-
-        // start new line
-        str += s_NewLine;
-
-        SIZE_TYPE endl_pos = pos + width;
-        if (endl_pos > s.length()) {
-            endl_pos = s.length();
-        }
-
-        // explicit '\n'?
-        SIZE_TYPE break_pos;
-        for (break_pos = pos;
-             break_pos < endl_pos  &&  s[break_pos] != '\n';
-             break_pos++) {
-            continue;
-        }
-        if (break_pos < endl_pos) {
-            _ASSERT(s[break_pos] == '\n');
-            str.append(s, pos, break_pos - pos);
-            pos = break_pos + 1;
-            continue;
-        }
-
-        // last line?
-        if (s.length() <= endl_pos) {
-            str.append(s, pos, NPOS);
-            break;
-        }
-
-        // break a line off the string
-        for (break_pos = endl_pos - 1;
-             break_pos != pos  &&  !isspace(s[break_pos]);
-             break_pos--) {
-            continue;
-        }
-        if (break_pos == pos  ||  break_pos + 4 < endl_pos) {
-            str.append(s, pos, width - 1);
-            str += '-';
-            pos += width - 1;
-        } else {
-            str.append(s, pos, break_pos - pos);
-            pos = break_pos + 1;
-        }
-    }
-}
-
-
-static void s_PrintComment(string& str, const CArgDesc& arg, SIZE_TYPE width)
+static void s_PrintComment(list<string>& arr, const CArgDesc& arg,
+                           SIZE_TYPE width)
 {
     string intro = ' ' + arg.GetUsageSynopsis(true/*name_only*/);
 
@@ -1753,48 +1681,26 @@ static void s_PrintComment(string& str, const CArgDesc& arg, SIZE_TYPE width)
 
     // Wrap intro if necessary...
     {{
-        SIZE_TYPE pos = 0, indent = intro.find(", ") + 2;
-        if (indent == NPOS + 2) {
-            indent = 1;
-        }
-        string spaces(indent - 1, ' '); // We always get one extra space
-        while (intro.size() > pos + width) {
-            SIZE_TYPE break_pos = NPOS, limit = pos + width;
-            // Check for existing newlines (unlikely!)
-            break_pos = intro.rfind('\n', limit);
-            if (break_pos > pos  &&  break_pos != NPOS) {
-                pos = break_pos + 1;
-                continue;
-            }
-            // Check for breaks between choices
-            break_pos = intro.rfind("', `", limit - 2) + 2;
-            if (break_pos <= pos  ||  break_pos == NPOS + 2) {
-                // Check for spaces within choices
-                break_pos = intro.rfind(' ', limit);
-                if (break_pos <= pos  ||  break_pos == NPOS) {
-                    // Just break anywhere
-                    break_pos = limit - 1;
-                }
-            }
-            if (intro[break_pos] == ' ') {
-                intro.insert(break_pos, "\n" + spaces);
-                pos = break_pos + 2;
-            } else {
-                intro.insert(break_pos, "-\n " + spaces);
-                pos = break_pos + 3;
+        SIZE_TYPE indent = intro.find(", ");
+        if (indent == NPOS  ||  indent > width / 2) {
+            indent = intro.find(" <");
+            if (indent == NPOS  ||  indent > width / 2) {
+                indent = 0;
             }
         }
+        NStr::Wrap(intro, width, arr,
+                   NStr::fWrap_Hyphenate | NStr::fWrap_UsePrefix1,
+                   string(indent + 2, ' '), kEmptyStr);
     }}
 
     // Print description
-    str += '\n' + intro;
-    s_PrintCommentBody(str, arg.GetComment(), width);
+    s_PrintCommentBody(arr, arg.GetComment(), width);
 
     // Print default value, if any
     const CArgDescDefault* dflt = dynamic_cast<const CArgDescDefault*> (&arg);
     if ( dflt ) {
         s_PrintCommentBody
-            (str, "Default = `" + dflt->GetDefaultValue() + '\'', width);
+            (arr, "Default = `" + dflt->GetDefaultValue() + '\'', width);
     }
 }
 
@@ -1874,44 +1780,57 @@ string& CArgDescriptions::PrintUsage(string& str) const
 
 
     // Do Printout
-    TListCI it;
+    TListCI      it;
+    list<string> arr;
 
-    // SYNOPSYS
-    str += "USAGE\n  ";
-    str += m_UsageName;
-    SIZE_TYPE pos = 3 + m_UsageName.length();
-
-    for (it = args.begin();  it != args.end();  ++it) {
-        s_PrintSynopsis(str, **it, &pos, m_UsageWidth);
-    }
+    // SYNOPSIS
+    arr.push_back("USAGE");
+    {{
+        list<string> syn;
+        syn.push_back(m_UsageName);
+        for (it = args.begin();  it != args.end();  ++it) {
+            if ( s_IsOptional(**it) ) {
+                syn.push_back('[' + (*it)->GetUsageSynopsis() + ']');
+            } else if ( s_IsPositional(**it) ) {
+                syn.push_back('<' + (*it)->GetUsageSynopsis() + '>');
+            } else {
+                syn.push_back((*it)->GetUsageSynopsis());
+            }
+        }
+        NStr::WrapList(syn, m_UsageWidth, " ", arr, NStr::fWrap_UsePrefix1,
+                       "    ", "  ");
+    }}
 
     // DESCRIPTION
-    str += "\n\nDESCRIPTION   ";
+    arr.push_back(kEmptyStr);
     if ( m_UsageDescription.empty() ) {
-        str += " -- none";
+        arr.push_back("DESCRIPTION    -- none");
     } else {
-        s_PrintCommentBody(str, m_UsageDescription, m_UsageWidth);
+        arr.push_back("DESCRIPTION");
+        s_PrintCommentBody(arr, m_UsageDescription, m_UsageWidth);
     }
 
     // REQUIRED & OPTIONAL ARGUMENTS
-    string s_req;
-    string s_opt;
+    list<string> req;
+    list<string> opt;
     for (it = args.begin();  it != args.end();  ++it) {
-        s_PrintComment((s_IsOptional(**it) || s_IsFlag(**it)) ? s_opt : s_req,
+        s_PrintComment((s_IsOptional(**it) || s_IsFlag(**it)) ? opt : req,
                        **it, m_UsageWidth);
     }
-    if ( !s_req.empty() ) {
-        str += "\n\nREQUIRED ARGUMENTS";
-        str += s_req;
+    if ( !req.empty() ) {
+        arr.push_back(kEmptyStr);
+        arr.push_back("REQUIRED ARGUMENTS");
+        arr.splice(arr.end(), req);
     }
-    if ( !s_opt.empty() ) {
-        str += "\n\nOPTIONAL ARGUMENTS";
-        str += s_opt;
+    if ( !m_nExtra  &&  !opt.empty() ) {
+        arr.push_back(kEmptyStr);
+        arr.push_back("OPTIONAL ARGUMENTS");
+        arr.splice(arr.end(), opt);
     }
 
     // # of extra arguments
     if (m_nExtra  ||  (m_nExtraOpt != 0  &&  m_nExtraOpt != kMax_UInt)) {
-        string str_extra = "\nNOTE:  Specify ";
+        string str_extra = "NOTE:  Specify ";
         if ( m_nExtra ) {
             str_extra += "at least ";
             str_extra += NStr::UIntToString(m_nExtra);
@@ -1924,9 +1843,15 @@ string& CArgDescriptions::PrintUsage(string& str) const
             str_extra += NStr::UIntToString(m_nExtra + m_nExtraOpt);
         }
         str_extra += " arguments in \"....\"";
-        s_PrintCommentBody(str, str_extra, m_UsageWidth);
+        s_PrintCommentBody(arr, str_extra, m_UsageWidth);
+    }
+    if ( m_nExtra  &&  !opt.empty() ) {
+        arr.push_back(kEmptyStr);
+        arr.push_back("OPTIONAL ARGUMENTS");
+        arr.splice(arr.end(), opt);
     }
 
+    str += NStr::Join(arr, "\n");
     str += "\n";
     return str;
 }
@@ -2211,6 +2136,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2002/10/02 20:16:46  ucko
+ * Take advantage of the new wrapping-related code in NStr:: when
+ * formatting usage messages.
+ * Move the note about "...." up if there are required extra arguments.
+ *
  * Revision 1.39  2002/08/08 18:37:32  gouriano
  * corrected CArgDescriptions::Delete
  *
