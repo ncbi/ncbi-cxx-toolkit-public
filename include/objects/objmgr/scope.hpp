@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/03/27 18:46:26  gouriano
+* three functions made public
+*
 * Revision 1.10  2002/03/20 21:20:38  grichenk
 * +CScope::ResetHistory()
 *
@@ -112,6 +115,13 @@ public:
 
     // Add annotations to a seq-entry (seq or set)
     bool AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot);
+    // Add new sub-entry to the existing tree if it is in this scope
+    bool AttachEntry(const CSeq_entry& parent, CSeq_entry& entry);
+    // Add sequence map for a bioseq if it is in this scope
+    bool AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap);
+    // Add seq-data to a bioseq if it is in this scope
+    bool AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
+                      TSeqPosition start, TSeqLength length);
 
     // Get bioseq handle by seq-id
     // Declared "virtual" to avoid circular dependencies with seqloc
@@ -149,13 +159,6 @@ private:
     // Get TSEs containing annotations for the given location
     void x_PopulateTSESet(CHandleRangeMap& loc,
                           CAnnotTypes_CI::TTSESet& tse_set);
-    // Add new sub-entry to the existing tree if it is in this scope
-    bool x_AttachEntry(const CSeq_entry& parent, CSeq_entry& entry);
-    // Add sequence map for a bioseq if it is in this scope
-    bool x_AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap);
-    // Add seq-data to a bioseq if it is in this scope
-    bool x_AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
-                      TSeqPosition start, TSeqLength length);
 
     bool x_GetSequence(const CBioseq_Handle& handle,
                        TSeqPosition point,

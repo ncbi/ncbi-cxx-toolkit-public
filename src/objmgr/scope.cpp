@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/03/27 18:45:44  gouriano
+* three functions made public
+*
 * Revision 1.14  2002/03/20 21:20:39  grichenk
 * +CScope::ResetHistory()
 *
@@ -161,6 +164,46 @@ bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 }
 
 
+bool CScope::AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
+{
+    CMutexGuard guard(sm_Scope_Mutex);
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
+        if ( (*it)->AttachEntry(parent, entry) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CScope::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
+{
+    CMutexGuard guard(sm_Scope_Mutex);
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
+        if ( (*it)->AttachMap(bioseq, seqmap) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CScope::AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
+                             TSeqPosition start, TSeqLength length)
+{
+    CMutexGuard guard(sm_Scope_Mutex);
+    CRef<CDelta_seq> dseq = new CDelta_seq;
+    dseq->SetLiteral().SetSeq_data(seq);
+    dseq->SetLiteral().SetLength(length);
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
+        if ( (*it)->AttachSeqData(bioseq, *dseq, start, length) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 {
     CMutexGuard guard(sm_Scope_Mutex);
@@ -260,46 +303,6 @@ void CScope::x_PopulateTSESet(CHandleRangeMap& loc,
     iterate (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {
         x_AddToHistory(**tse_it);
     }
-}
-
-
-bool CScope::x_AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
-{
-    CMutexGuard guard(sm_Scope_Mutex);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->AttachEntry(parent, entry) ) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-bool CScope::x_AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
-{
-    CMutexGuard guard(sm_Scope_Mutex);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->AttachMap(bioseq, seqmap) ) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-bool CScope::x_AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
-                             TSeqPosition start, TSeqLength length)
-{
-    CMutexGuard guard(sm_Scope_Mutex);
-    CRef<CDelta_seq> dseq = new CDelta_seq;
-    dseq->SetLiteral().SetSeq_data(seq);
-    dseq->SetLiteral().SetLength(length);
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->AttachSeqData(bioseq, *dseq, start, length) ) {
-            return true;
-        }
-    }
-    return false;
 }
 
 
