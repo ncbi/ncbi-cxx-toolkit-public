@@ -36,6 +36,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objects/objmgr/annot_selector.hpp>
 #include <objects/objmgr/impl/handle_range_map.hpp>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -205,6 +206,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/04/24 17:54:13  ucko
+* +<memory> (for auto_ptr<>)
+*
 * Revision 1.6  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.
