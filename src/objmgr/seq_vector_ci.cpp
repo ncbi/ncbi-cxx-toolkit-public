@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-static const TSeqPos kCacheSize = 16384;
+static const TSeqPos kCacheSize = 1024;
 
 
 template<class DstIter, class SrcCont>
@@ -161,7 +161,6 @@ void CSeqVector_CI::x_UpdateCachePtr(void)
 
 void CSeqVector_CI::x_ResizeCache(size_t size)
 {
-    _TRACE("CSeqVector_CI::x_ResizeCache(" << size << ")");
     m_CacheData.resize(size);
     x_UpdateCachePtr();
 }
@@ -169,7 +168,6 @@ void CSeqVector_CI::x_ResizeCache(size_t size)
 
 void CSeqVector_CI::x_UpdateCache(TSeqPos pos)
 {
-    _TRACE("CSeqVector_CI::x_UpdateCache(" << pos << ")");
     _ASSERT(bool(m_Vector));
     // Adjust segment
     if (pos == kInvalidSeqPos)
@@ -177,8 +175,6 @@ void CSeqVector_CI::x_UpdateCache(TSeqPos pos)
     if (pos < m_Seg.GetPosition()  || pos >= m_Seg.GetEndPosition()) {
         m_Seg = m_Vector->x_GetSeqMap().FindResolved(pos,
             m_Vector->m_Scope, m_Vector->m_Strand);
-        _TRACE("CSeqVector_CI::x_UpdateCache -- got new segment at "
-            << m_Seg.GetPosition());
     }
     TSeqPos segStart = m_Seg.GetPosition();
     TSeqPos segSize = m_Seg.GetLength();
@@ -195,14 +191,12 @@ void CSeqVector_CI::x_UpdateCache(TSeqPos pos)
     _ASSERT(pos < segStart + segSize);
 
     if (segSize <= kCacheSize) {
-        _TRACE("CSeqVector_CI::x_UpdateCache -- caching whole segment");
         // Try to cache the whole segment
         m_CachePos = segStart;
         x_ResizeCache(segSize);
         x_FillCache(segSize);
     }
     else {
-        _TRACE("CSeqVector_CI::x_UpdateCache -- caching partial segment");
         // Calculate new cache start
         TSignedSeqPos start;
         if ( m_CachePos == kInvalidSeqPos ) {
@@ -246,8 +240,6 @@ void CSeqVector_CI::x_UpdateCache(TSeqPos pos)
 
 void CSeqVector_CI::x_FillCache(TSeqPos count)
 {
-    _TRACE("CSeqVector_CI::x_FillCache(" << count << ")");
-
     _ASSERT(m_Seg.GetType() != CSeqMap::eSeqEnd);
     _ASSERT(count <= m_CacheData.size());
     _ASSERT(m_CachePos >= m_Seg.GetPosition());
@@ -256,8 +248,6 @@ void CSeqVector_CI::x_FillCache(TSeqPos count)
     switch ( m_Seg.GetType() ) {
     case CSeqMap::eSeqData:
     {
-        _TRACE("CSeqVector_CI::x_FillCache -- getting seq-data: "
-            << m_CachePos << " - " << m_CachePos + count);
         const CSeq_data& data = m_Seg.GetRefData();
         TSeqPos dataPos;
         if ( m_Seg.GetRefMinusStrand() ) {
@@ -346,7 +336,6 @@ void CSeqVector_CI::x_FillCache(TSeqPos count)
 
 void CSeqVector_CI::SetPos(TSeqPos pos)
 {
-    _TRACE("CSeqVector_CI::SetPos(" << pos << ")");
     pos = min(m_Vector->size() - 1, pos);
     // If vector size is 0 and pos is kInvalidSqePos, the result will be
     // kInvalidSeqPos, which is not good.
@@ -361,11 +350,9 @@ void CSeqVector_CI::SetPos(TSeqPos pos)
 
         if (!m_CacheData.empty()  &&
             pos >= m_CachePos  &&  pos < x_CacheEnd()) {
-            _TRACE("CSeqVector_CI::SetPos -- re-using backup cache");
             if (m_CachePos >= m_Seg.GetEndPosition()  ||
                 m_CachePos < m_Seg.GetPosition()) {
                 // Update map segment
-                _TRACE("CSeqVector_CI::SetPos -- adjusting segment");
                 if (m_CachePos == x_BackupEnd()) {
                     // Skip zero-length segments
                     do {
@@ -389,7 +376,6 @@ void CSeqVector_CI::SetPos(TSeqPos pos)
             }
         }
         else {
-            _TRACE("CSeqVector_CI::SetPos -- can not use backup cache; re-filling");
             // Can not use backup cache -- reset and refill
             m_CacheData.clear();
             m_CachePos = kInvalidSeqPos;
@@ -402,11 +388,10 @@ void CSeqVector_CI::SetPos(TSeqPos pos)
 
 void CSeqVector_CI::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
 {
-    _TRACE("CSeqVector_CI::GetSeqData(" << start << ", " << stop << ")");
     stop = min(stop, m_Vector->size());
     buffer.erase();
     if ( start < stop ) {
-        buffer.reserve(stop-start);
+        buffer.reserve(stop - start);
         if ( m_Cache >= m_CacheData.end() ||
              start < m_CachePos  ||
              start >= x_CacheEnd() ) {
@@ -428,62 +413,55 @@ void CSeqVector_CI::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
 
 void CSeqVector_CI::x_NextCacheSeg()
 {
-    _TRACE("CSeqVector_CI::x_NextCacheSeg()");
     _ASSERT(m_Vector);
     TSeqPos newPos = x_CacheEnd();
     swap(m_CachePos, m_BackupPos);
     m_CacheData.swap(m_BackupData);
-    // Try to re-use backup cache
-    if (m_CachePos > newPos  ||  x_CacheEnd() <= newPos) {
-        _TRACE("CSeqVector_CI::x_NextCacheSeg() -- can not re-use backup cache");
-        // can not use backup cache
-        m_CacheData.clear();
-    }
-    else {
-        _TRACE("CSeqVector_CI::x_NextCacheSeg() -- switching to backup cache");
-        m_Cache = m_CacheData.begin() + newPos - m_CachePos;
-    }
-    while ((newPos >= m_Seg.GetEndPosition()
-        ||  m_Seg.GetLength() == 0)
-        && m_Seg.GetType() != CSeqMap::eSeqEnd) {
+    while (newPos >= m_Seg.GetEndPosition()) {
+        if ( !m_Seg ) {
+            m_CacheData.clear();
+            m_CachePos = m_Seg.GetPosition();
+            m_Cache = m_CacheData.begin();
+            return;
+        }
         ++m_Seg;
     }
-    if (m_CacheData.empty()  &&  m_Seg.GetType() != CSeqMap::eSeqEnd) {
+    // Try to re-use backup cache
+    if (newPos < m_CachePos  ||  newPos >= x_CacheEnd()) {
+        // can not use backup cache
+        m_CacheData.clear();
         m_CachePos = m_BackupPos;
         x_UpdateCache(newPos);
+    }
+    else {
+        m_Cache = m_CacheData.begin() + newPos - m_CachePos;
     }
 }
 
 
 void CSeqVector_CI::x_PrevCacheSeg()
 {
-    _TRACE("CSeqVector_CI::x_PrevCacheSeg()");
     _ASSERT(m_Vector);
     if (m_CachePos == 0) {
         // Can not go further
-        THROW1_TRACE(runtime_error, "CSeqVector_CI::x_PrevCacheSeg: no more data");
+        THROW1_TRACE(runtime_error,
+                     "CSeqVector_CI::x_PrevCacheSeg: no more data");
     }
     TSeqPos newPos = m_CachePos - 1;
     swap(m_CachePos, m_BackupPos);
     m_CacheData.swap(m_BackupData);
-    // Try to re-use backup cache
-    if (m_CachePos > newPos  ||  x_CacheEnd() <= newPos) {
-        _TRACE("CSeqVector_CI::x_PrevCacheSeg() -- can not re-use backup cache");
-        // can not use backup cache
-        m_CacheData.clear();
-    }
-    else {
-        _TRACE("CSeqVector_CI::x_PrevCacheSeg() -- switching to backup cache");
-        m_Cache = m_CacheData.begin() + newPos - m_CachePos;
-    }
-    while ((newPos < m_Seg.GetPosition()
-        ||  m_Seg.GetLength() == 0)
-        && m_Seg.GetPosition() > 0) {
+    while (m_Seg.GetPosition() > newPos) {
         --m_Seg;
     }
-    if (m_CacheData.empty()  &&  m_Seg.GetType() != CSeqMap::eSeqEnd) {
+    // Try to re-use backup cache
+    if (newPos < m_CachePos  ||  newPos >= x_CacheEnd()) {
+        // can not use backup cache
+        m_CacheData.clear();
         m_CachePos = m_BackupPos;
         x_UpdateCache(newPos);
+    }
+    else {
+        m_Cache = m_CacheData.begin() + newPos - m_CachePos;
     }
 }
 
@@ -494,6 +472,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/06/17 20:37:06  grichenk
+* Removed _TRACE-s, fixed bug in x_GetNextSeg()
+*
 * Revision 1.13  2003/06/13 17:22:28  grichenk
 * Check if seq-map is not null before using it
 *
