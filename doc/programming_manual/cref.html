@@ -15,7 +15,7 @@
   <li> <a href="#usage"> When to use <i>CRef</i>s and <i>auto_ptr</i>s</a>
 </ul>
 
-<a name="autoptr"> <a href="../docxx/auto_ptr.html">
+<a name="autoptr"> <a href="http://www.cygnus.com/misc/wp/dec96pub/lib-utilities.html#lib.auto.ptr">
  <h3> <i>STL auto_ptrs</i> </h3> </a>
 C programmers are well-acquainted with the advantages and pitfalls of using pointers. As is often 
 the case, the good news is also the bad news: 
@@ -35,7 +35,7 @@ pointer.  The wrapper class's constructors and destructors can then handle memor
 the object goes in and out of scope. The problem with this solution is that it does not handle
 multiple pointers to the same resource properly, and it raises the issue of ownership. This is
 essentially what the 
-<a href="../docxx/auto_ptr.html">
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=auto_ptr">
 <i>auto_ptr</i></a> offers, but this strategy is only safe to use when the
 resource maps to a single pointer variable.<p>
 
