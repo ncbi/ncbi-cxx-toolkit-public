@@ -18,7 +18,7 @@ for m in $MODULES; do \
     (
         cd $m
         M="$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\(objects[/a-z0-9]*\)/\1.asn/g')"
-        if ! "$TOOL" -oR "$ROOT" -m "$m.asn" -M "$M" -oA -of "$m.files" -or "objects/$m" -odi -od "$m.def"; then
+        if ! "$TOOL" -oR "$ROOT" -m "$m.asn" -M "$M" -oA -of "$m.files" -or "objects/$m" -oc "$m" -odi -od "$m.def"; then
             echo ERROR!
             exit 2
         fi
