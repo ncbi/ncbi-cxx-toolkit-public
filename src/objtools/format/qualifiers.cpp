@@ -86,63 +86,77 @@ static bool s_StringIsJustQuotes(const string& str)
 
 static string s_GetGOText(const CUser_field& field, bool is_ftable)
 {
-    string text_string, evidence, go_id;
+    const string* text_string = NULL,
+                * evidence = NULL,
+                * go_id = NULL;
+    string temp;
     int pmid = 0;
+    
+    
 
     ITERATE (CUser_field::C_Data::TFields, it, field.GetData().GetFields()) {
-        if ( !(*it)->CanGetLabel()  ||  !(*it)->GetLabel().IsStr() ) {
+        if ( !(*it)->IsSetLabel()  ||  !(*it)->GetLabel().IsStr() ) {
             continue;
         }
         
         const string& label = (*it)->GetLabel().GetStr();
         const CUser_field::C_Data& data = (*it)->GetData();
         
-        if ( label == "text string"  &&  data.IsStr() ) {
-            text_string = data.GetStr();
-        }
-        
-        if ( label == "go id" ) {
-            if ( data.IsStr() ) {
-                go_id = data.GetStr();
-            } else if ( data.IsInt() ) {
-                go_id = NStr::IntToString(data.GetInt());
+        if (data.IsStr()) {
+            if (label == "text string") {
+                text_string = &data.GetStr();
+            } else if (label == "go id") {
+                go_id = &data.GetStr();
+            } else if (label == "evidence") {
+                evidence = &data.GetStr();
+            }
+        } else if (data.IsInt()) {
+            if (label == "go id") {
+                NStr::IntToString(temp, data.GetInt());
+                go_id = &temp;
+            } else if (label == "pubmed id") {
+                pmid = data.GetInt();
             }
         }
-        
-        if ( label == "evidence"  &&  data.IsStr() ) {
-            evidence = data.GetStr();
-        }
-        
-        if ( label == "pubmed id"  &&  data.IsInt() ) {
-            pmid = data.GetInt();
-        }
     }
-
     
-    CNcbiOstrstream text;
+    string go_text;
     
-    text << text_string;
+    if (text_string != NULL) {
+        go_text = *text_string;
+    }
     if ( is_ftable ) {
-        text << "|" << go_id << "|";
-        if ( pmid != 0 ) {
-            text <<  pmid;
+        go_text += '|';
+        if (go_id != NULL) {
+            go_text += *go_id;
         }
-        if ( !evidence.empty() ) {
-            text << "|" << evidence;
+        go_text += '|';
+        if ( pmid != 0 ) {
+            go_text +=  NStr::IntToString(pmid);
+        }
+        if (evidence != NULL) {
+            go_text += '|';
+            go_text += *evidence;
         }
     } else { 
-        if ( !go_id.empty() ) {
-            text << " [goid " << go_id << "]";
-            if ( !evidence.empty() ) {
-                text << " [evidence " << evidence << "]";
+        if (go_id != NULL) {
+            go_text += " [goid ";
+            go_text += *go_id;
+            go_text += ']';
+            if (evidence != NULL) {
+                go_text += " [evidence ";
+                go_text += *evidence;
+                go_text += ']';
             }
             if ( pmid != 0 ) {
-                text << " [pmid " << pmid << "]";
+                go_text += " [pmid ";
+                go_text += pmid;
+                go_text += ']';
             }
         }
     }
-
-    return NStr::TruncateSpaces(CNcbiOstrstreamToString(text));
+    NStr::TruncateSpacesInPlace(go_text);
+    return go_text;
 }
 
 
@@ -226,7 +240,7 @@ CFormatQual::CFormatQual
     m_Name(name), m_Value(value), m_Prefix(prefix), m_Suffix(suffix),
     m_Style(style), m_AddPeriod(false)
 {
-    NStr::TruncateSpaces(m_Value, NStr::eTrunc_End);
+    NStr::TruncateSpacesInPlace(m_Value, NStr::eTrunc_End);
 }
 
 
@@ -234,7 +248,7 @@ CFormatQual::CFormatQual(const string& name, const string& value, TStyle style) 
     m_Name(name), m_Value(value), m_Prefix(" "), m_Suffix(kEmptyStr),
     m_Style(style), m_AddPeriod(false)
 {
-    NStr::TruncateSpaces(m_Value, NStr::eTrunc_End);
+    NStr::TruncateSpacesInPlace(m_Value, NStr::eTrunc_End);
 }
 
 
@@ -242,8 +256,9 @@ CFormatQual::CFormatQual(const string& name, const string& value, TStyle style) 
 
 CFlatStringQVal::CFlatStringQVal(const string& value, TStyle style)
     :  IFlatQVal(&kSpace, &kSemicolon),
-       m_Value(NStr::TruncateSpaces(value)), m_Style(style), m_AddPeriod(0)
+       m_Value(value), m_Style(style), m_AddPeriod(0)
 {
+    NStr::TruncateSpacesInPlace(m_Value);
 }
 
 
@@ -253,9 +268,10 @@ CFlatStringQVal::CFlatStringQVal
  const string& sfx,
  TStyle style)
     :   IFlatQVal(&pfx, &sfx),
-        m_Value(NStr::TruncateSpaces(value)),
+        m_Value(value),
         m_Style(style), m_AddPeriod(0)
 {
+    NStr::TruncateSpacesInPlace(m_Value);
 }
 
 
@@ -265,7 +281,7 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
     flags |= m_AddPeriod;
 
     ETildeStyle tilde_style = (name == "seqfeat_note" ? eTilde_newline : eTilde_space);
-    m_Value = ExpandTildes(m_Value, tilde_style);
+    ExpandTildes(m_Value, tilde_style);
                 
     TFlatQual qual = x_AddFQ(q, (s_IsNote(flags) ? "note" : name), m_Value, m_Style);
     if ((flags & fAddPeriod)  &&  qual) {
@@ -380,17 +396,18 @@ void CFlatGeneSynonymsQVal::Format
  CBioseqContext& ctx,
  IFlatQVal::TFlags flags) const
 {
-    size_t num_syns = GetValue().size();
-    if (num_syns > 0) {
-        string syns = (num_syns > 1) ? "synonyms: " : "synonym: ";
-        syns += NStr::Join(GetValue(), ", ");
-        x_AddFQ(q, 
-            (s_IsNote(flags) ? "note" : name),
-            syns,
-            m_Style);
-
-        m_Suffix = &kSemicolon;
+    if (GetValue().empty()) {
+        return;
     }
+    string qual = name;
+    string syns;
+    if (ctx.Config().GeneSynsToNote()) {
+        qual = "note";
+        syns = (GetValue().size() > 1) ? "synonyms: " : "synonym: ";
+    } 
+    syns += NStr::Join(GetValue(), ", ");
+    x_AddFQ(q, qual, syns, m_Style);
+    m_Suffix = &kSemicolon;
 }
 
 
@@ -717,7 +734,7 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
             if (NStr::EqualNocase(db, "MGI")  ||  NStr::EqualNocase(db, "MGD")) {
                 if (NStr::StartsWith(id, "MGI:", NStr::eNocase)  ||
                     NStr::StartsWith(id, "MGD:", NStr::eNocase)) {
-                    db = "MGI:";
+                    db = "MGI";
                     id.erase(0, 4);
                 }
             }
@@ -751,7 +768,21 @@ bool CFlatXrefQVal::x_XrefInGeneXref(const CDbtag& dbtag) const
     }
 
     typedef TQuals::const_iterator TQCI;
-    pair<TQCI, TQCI> gxrefs = m_Quals->GetQuals(eFQ_gene_xref);
+    TQCI gxref = m_Quals->LowerBound(eFQ_gene_xref);
+    TQCI end = m_Quals->end();
+    while (gxref != end  &&  gxref->first == eFQ_gene_xref) {
+        const CFlatXrefQVal* xrefqv =
+            dynamic_cast<const CFlatXrefQVal*>(gxref->second.GetPointerOrNull());
+        if (xrefqv != NULL) {
+            ITERATE (TXref, dbt, xrefqv->m_Value) {
+                if (dbtag.Match(**dbt)) {
+                    return true;
+                }
+            }
+        }
+        ++gxref;
+    }
+    /*pair<TQCI, TQCI> gxrefs = m_Quals->GetQuals(eFQ_gene_xref);
     for ( TQCI it = gxrefs.first; it != gxrefs.second; ++it ) {
         const CFlatXrefQVal* xrefqv =
             dynamic_cast<const CFlatXrefQVal*>(it->second.GetPointerOrNull());
@@ -762,7 +793,7 @@ bool CFlatXrefQVal::x_XrefInGeneXref(const CDbtag& dbtag) const
                 }
             }
         }
-    }
+    }*/
     return false;
 }
 
@@ -905,6 +936,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2005/03/28 17:23:36  shomrat
+* Changes to synonym formatting
+*
 * Revision 1.25  2005/02/09 14:59:39  shomrat
 * Initial support for HTML output
 *
