@@ -479,6 +479,7 @@ CLocaseCharPtrConverter Locase(const char* s)
     return CLocaseCharPtrConverter(s);
 }
 
+NCBI_XNCBI_EXPORT
 extern string Printable(char c);
 
 inline
@@ -534,6 +535,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/08/17 14:34:51  dicuccio
+ * Export Printable()
+ *
  * Revision 1.40  2004/04/26 14:45:08  ucko
  * Continue to suppress warnings about strstream in GCC 3.4.0, which uses
  * a slightly different include guard.
