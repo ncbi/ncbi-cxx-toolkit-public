@@ -37,6 +37,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.3  2002/03/14 19:10:04  gouriano
+* added checking of number of threads
+*
 * Revision 6.2  2001/12/13 19:48:23  gouriano
 * *** empty log message ***
 *
@@ -176,6 +179,9 @@ bool CTestSemaphoreApp::TestApp_Init(void)
         << NStr::IntToString(s_NumThreads)
         << " threads"
         << NcbiEndl;
+    if (s_NumThreads%2 != 0) {
+        throw runtime_error("The number of threads MUST be even");
+    }
     return true;
 }
 
