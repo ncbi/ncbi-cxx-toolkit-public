@@ -112,15 +112,14 @@ public:
         fState_suppress_temp = 1 << 0,
         fState_suppress_perm = 1 << 1,
         fState_suppress      = fState_suppress_temp |
-                                fState_suppress_perm,
+                               fState_suppress_perm,
         fState_dead          = 1 << 2,
         fState_confidential  = 1 << 3,
         fState_withdrawn     = 1 << 4,
         fState_no_data       = 1 << 5, 
         fState_conflict      = 1 << 6,
-        fState_conn_failed   = 1 << 7,
-        fState_not_found     = 1 << 8,
-        fState_other_error   = 1 << 9
+        fState_not_found     = 1 << 7,
+        fState_other_error   = 1 << 8
     };
     typedef int TBioseqStateFlags;
 
@@ -135,7 +134,6 @@ public:
     bool State_Withdrawn(void) const;
     bool State_NoData(void) const;
     bool State_Conflict(void) const;
-    bool State_ConnectionFailed(void) const;
     bool State_NotFound(void) const;
 
     /// Check if this id can be used to obtain this bioseq handle
@@ -630,13 +628,6 @@ bool CBioseq_Handle::State_Conflict(void) const
 
 
 inline
-bool CBioseq_Handle::State_ConnectionFailed(void) const
-{
-    return (GetState() & fState_conn_failed) != 0;
-}
-
-
-inline
 bool CBioseq_Handle::State_NotFound(void) const
 {
     return (GetState() & fState_not_found) != 0;
@@ -694,6 +685,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2005/02/16 19:35:55  grichenk
+* Removed obsolete "connection failed" flag.
+*
 * Revision 1.75  2005/02/10 22:15:20  grichenk
 * Added ContainsSegment
 *
