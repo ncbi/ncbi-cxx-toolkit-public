@@ -40,9 +40,10 @@ extern "C" {
 #endif
 
 
-#define NCBID_NAME              "/Service/ncbid.cgi"
+#define NCBID_WEBPATH           "/Service/ncbid.cgi"
 #define HTTP_CONNECTION_INFO    "Connection-Info:"
 #define HTTP_DISP_FAILURES      "Dispatcher-Failures:"
+#define DISPATCHER_CFGPATH      "/var/etc/lbsmd/"
 #define DISPATCHER_CFGFILE      "servrc.cfg"
 
 typedef unsigned int ticket_t;
@@ -56,6 +57,9 @@ typedef unsigned int ticket_t;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/10/11 19:44:51  lavr
+ * NCBID_NAME changed into NCBID_WEBAPTH; DISPATCHER_CFGPATH added
+ *
  * Revision 6.5  2002/09/19 18:07:57  lavr
  * Header file guard macro changed; log moved to end
  *
