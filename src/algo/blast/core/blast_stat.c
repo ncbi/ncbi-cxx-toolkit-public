@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.21  2003/07/30 22:08:09  dondosha
+ * Process of finding path to the matrix is moved out of the blast library
+ *
  * Revision 1.20  2003/07/30 21:52:41  camacho
  * Follow conventional structure definition
  *
@@ -1036,164 +1039,44 @@ BLAST_ScorePtr* BlastScoreBlkMatCreateEx(BLAST_ScorePtr* matrix,BLAST_Score pena
 
 	The query is in the first index, the subject is the second.
 */
-
-
 static Int2 BlastScoreBlkMatCreate(BLAST_ScoreBlkPtr sbp)
 {
-	Char buffer[25];
-
-        sbp->matrix = BlastScoreBlkMatCreateEx(sbp->matrix,sbp->penalty, sbp->reward);
+   sbp->matrix = BlastScoreBlkMatCreateEx(sbp->matrix,sbp->penalty, sbp->reward);
 	sbp->mat_dim1 = BLASTNA_SIZE;
 	sbp->mat_dim2 = BLASTNA_SIZE;
-
-	sprintf(buffer, "blastn matrix:%ld %ld", (long) sbp->reward, (long) sbp->penalty);
-	sbp->name = strdup(buffer);
 
 	return 0;
 }
 
-
-
-
-
-/*
-	This function fills in the BLAST_ScoreBlk structure.  
-	Tasks are:
-		-read in the matrix
-		-set maxscore
-*/
-
 Int2
-BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
+BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_path)
 {
-    Char string[PATH_MAX] = "", alphabet_type[3] = "", matrix[PATH_MAX];
-    CharPtr matrix_dir = NULL;
     Int2 status = 0;
     FILE *fp = NULL;
-    Uint4 i, len;
     
     if (sbp->read_in_matrix) {
-        ASSERT(matrix_name != NULL);
+        ASSERT(matrix_path != NULL);
 
-        /* Convert matrix name to upper case and save it in sbp */
-        len = strlen(matrix_name);
-        for (i = 0; i < len && i < (sizeof(matrix)-1); i++)
-            matrix[i] = toupper(matrix_name[i]);
-        sbp->name = strdup(matrix);
+        if((FileLength(matrix_path) <= 0) ||
+           ((fp = fopen(matrix_path, "r")) == NULL))
+           return -1;
 
-        /* 1. Try local directory */
-        if(FileLength(matrix) > 0)
-            fp = fopen(matrix, "r");
-        
-        /* 2. Try configuration file */
-        if (fp == NULL) {
-           if (sbp->protein_alphabet)
-              strncpy(alphabet_type, "aa", 2);
-           else
-              strncpy(alphabet_type, "nt", 2);
-           alphabet_type[2] = NULLB;
-
-           if(FindPath("ncbi", "ncbi", "data", string, PATH_MAX)) {
-               matrix_dir = strdup(string);
-               sprintf(string, "%s%s", matrix_dir, matrix);
-               if(FileLength(string) > 0) {
-                  fp = fopen(string, "r");
-               } else {
-                  sprintf(string, "%s%s%s%s", matrix_dir, 
-                          alphabet_type, DIRDELIMSTR, matrix);
-                  if(FileLength(string) > 0)
-                     fp = fopen(string, "r");
-               }
-               sfree(matrix_dir);
-            }
-        }
-        /* Trying to use local "data" directory */
-
-        if(fp == NULL) {
-            sprintf(string, "data%s%s", DIRDELIMSTR, matrix);
-            if(FileLength(string) > 0)
-                fp = fopen(string, "r");
-        }
- 
-#ifdef OS_UNIX
-        /* Get the matrix locations from the environment for UNIX. */
-        if (fp == NULL) {
-            
-            matrix_dir = getenv("BLASTMAT");
-            if (matrix_dir != NULL) {
-                sprintf(string, "%s%s%s%s%s", matrix_dir, DIRDELIMSTR,alphabet_type, DIRDELIMSTR, matrix); 
-            } else {
-                sprintf(string, "%s%s%s%s%s", BLASTMAT_DIR, DIRDELIMSTR, alphabet_type, DIRDELIMSTR, matrix); 
-            }
-
-            if(FileLength(string) > 0)
-                fp = fopen(string, "r");
-            
-            /* Try again without "aa" or "nt" */
-            if (fp == NULL) {
-                if (matrix_dir != NULL) {
-                    sprintf(string, "%s%s%s", matrix_dir, DIRDELIMSTR, matrix); 
-                } else {
-                    sprintf(string, "%s%s%s", BLASTMAT_DIR, DIRDELIMSTR, matrix); 
-                }
-
-                if(FileLength(string) > 0)
-                    fp = fopen(string, "r");
-            }
-        }
-#endif
-        if (fp == NULL) {
-#ifdef ERR_POST_EX_DEFINED
-            ErrPostEx(SEV_WARNING, 0, 0, "Unable to open %s", matrix);
-#endif
-            return 4;
-        }
-        
         if((status=BlastScoreBlkMatRead(sbp, fp)) != 0) {
-            fclose(fp);
-            return status;
+           fclose(fp);
+           return status;
         }
         fclose(fp);
     } else {
-        if((status=BlastScoreBlkMatCreate(sbp)) != 0)
-            return status;
+       /* Nucleotide BLAST only! */
+       if((status=BlastScoreBlkMatCreate(sbp)) != 0)
+          return status;
     }
     
     if((status=BlastScoreBlkMaxScoreSet(sbp)) != 0)
-        return status;
+       return status;
     
     return status;
 }
-
-/*
-	Return the specified matrix.  Do this by setting up the ScoreBlkPtr
-	and then fetching the matrix from disk.
-*/
-
-BLAST_MatrixPtr
-BLAST_MatrixFetch(CharPtr matrix_name)
-
-{
-	BLAST_MatrixPtr matrix;
-	BLAST_ScoreBlkPtr sbp;
-
-	if (matrix_name == NULL)
-		return NULL;
-
-	sbp = BLAST_ScoreBlkNew(BLASTAA_SEQ_CODE, 1)
-;
-	/* Read in for protein. */
-	sbp->read_in_matrix = TRUE;
-
-	BlastScoreBlkMatFill(sbp, matrix_name);
-
-	matrix = BLAST_MatrixFill(sbp);
-
-	sbp = BLAST_ScoreBlkDestruct(sbp);	
-
-	return matrix;
-}
-
 
 /*
   Calculate the Karlin parameters.  This function should be called once
