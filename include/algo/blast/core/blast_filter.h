@@ -74,6 +74,23 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc);
 NCBI_XBLAST_EXPORT
 BlastMaskLoc* BlastMaskLocNew(Int4 total);
 
+/** Given a BlastMaskLoc with an array of lists of DNA mask locations, 
+ * substitutes that array by a new array of per-protein-frame mask location 
+ * lists.
+ * @param mask_loc Mask locations structure [in|out]
+ * @param query_info Query information structure, containing contexts data [in]
+ */
+Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc, 
+                              const BlastQueryInfo* query_info);
+
+/** Given a BlastMaskLoc with an array of lists of mask locations per protein
+ * frame, recalculates all mask offsets in terms of the DNA sequence. 
+ * @param mask_loc Mask locations structure [in|out]
+ * @param query_info Query information structure, containing contexts data [in]
+ */
+Int2 BlastMaskLocProteinToDNA(BlastMaskLoc* mask_loc, 
+                              const BlastQueryInfo* query_info);
+
 /** Go through all mask locations in one sequence, 
  * combine any that overlap. Deallocate the memory for the locations that 
  * were on the list, produce a new (merged) list of locations. 

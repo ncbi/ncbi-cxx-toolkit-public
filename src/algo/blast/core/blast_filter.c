@@ -50,11 +50,11 @@ static char const rcsid[] =
 BlastSeqLoc* BlastSeqLocNew(BlastSeqLoc** head, Int4 from, Int4 to)
 {
    BlastSeqLoc* loc = (BlastSeqLoc*) calloc(1, sizeof(BlastSeqLoc));
-   SSeqRange* di = (SSeqRange*) malloc(sizeof(SSeqRange));
+   SSeqRange* seq_range = (SSeqRange*) malloc(sizeof(SSeqRange));
 
-   di->left = from;
-   di->right = to;
-   loc->ssr = di;
+   seq_range->left = from;
+   seq_range->right = to;
+   loc->ssr = seq_range;
 
    if (head)
    {
@@ -76,13 +76,13 @@ BlastSeqLoc* BlastSeqLocNew(BlastSeqLoc** head, Int4 from, Int4 to)
 
 BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc)
 {
-   SSeqRange* dintp;
+   SSeqRange* seq_range;
    BlastSeqLoc* next_loc;
 
    while (loc) {
       next_loc = loc->next;
-      dintp = loc->ssr;
-      sfree(dintp);
+      seq_range = loc->ssr;
+      sfree(seq_range);
       sfree(loc);
       loc = next_loc;
    }
@@ -99,15 +99,15 @@ BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc)
 static BlastSeqLoc* s_BlastSeqLocDup(BlastSeqLoc* from)
 {
     BlastSeqLoc* to;
-    SSeqRange* di;
+    SSeqRange* seq_range;
 
     if (from == NULL)
        return NULL;
 
-    di = from->ssr;
-    ASSERT(di);
+    seq_range = from->ssr;
+    ASSERT(seq_range);
 
-    to = BlastSeqLocNew(NULL, di->left, di->right);
+    to = BlastSeqLocNew(NULL, seq_range->left, seq_range->right);
 
     return to;
 }
@@ -136,6 +136,139 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc)
    sfree(mask_loc->seqloc_array);
    sfree(mask_loc);
    return NULL;
+}
+
+/** Calculates length of the DNA query from the BlastQueryInfo structure that 
+ * contains context information for translated frames for a set of queries.
+ * @param Query information containing data for all contexts [in]
+ * @param query_index Which query to find DNA length for?
+ * @return DNA length of the query, calculated as sum of 3 protein frame lengths, 
+ *         plus 2, because 2 last nucleotide residues do not have a 
+ *         corresponding codon.
+ */
+static Int4 
+s_GetTranslatedQueryDNALength(const BlastQueryInfo* query_info, Int4 query_index)
+{
+    Int4 start_context = NUM_FRAMES*query_index;
+    Int4 dna_length = 2;
+    Int4 index;
+ 
+    /* Make sure that query index is within appropriate range, and that this is
+       really a translated search */
+    ASSERT(query_index < query_info->num_queries);
+    ASSERT(start_context < query_info->last_context);
+
+    /* If only reverse strand is searched, then forward strand contexts don't 
+       have lengths information */
+    if (query_info->contexts[start_context].query_length == 0)
+        start_context += 3;
+
+    for (index = start_context; index < start_context + 3; ++index)
+        dna_length += query_info->contexts[index].query_length;
+ 
+    return dna_length;
+}
+
+Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc, 
+                              const BlastQueryInfo* query_info)
+{
+    BlastSeqLoc** prot_seqloc_array;
+    Uint4 seq_index;
+
+    if (!mask_loc)
+        return 0;
+
+    /* Check that the number of sequences in BlastQueryInfo is the same as the
+       size of the DNA mask locations array in the BlastMaskLoc. */
+    ASSERT(mask_loc->total_size == query_info->num_queries);
+
+    mask_loc->total_size *= NUM_FRAMES;
+    prot_seqloc_array = 
+        (BlastSeqLoc**) calloc(mask_loc->total_size, sizeof(BlastSeqLoc*));
+
+    /* Loop over multiple DNA sequences */
+    for (seq_index = 0; seq_index < query_info->num_queries; ++seq_index) { 
+        BlastSeqLoc** prot_seqloc = 
+            &(prot_seqloc_array[NUM_FRAMES*seq_index]);
+        BlastSeqLoc* dna_seqloc = mask_loc->seqloc_array[seq_index];
+        Int4 dna_length = s_GetTranslatedQueryDNALength(query_info, seq_index);
+        Int4 context;
+
+        /* Reproduce this mask for all 6 frames, with translated coordinates */
+        for (context = 0; context < NUM_FRAMES; ++context) {
+            BlastSeqLoc* prot_head=NULL;
+            BlastSeqLoc* seqloc_var;
+            Int2 frame = BLAST_ContextToFrame(eBlastTypeBlastx, context);
+
+            prot_head = NULL;
+            for (seqloc_var = dna_seqloc; seqloc_var; 
+                 seqloc_var = seqloc_var->next) {
+                Int4 from, to;
+                SSeqRange* seq_range = seqloc_var->ssr;
+                if (frame < 0) {
+                    from = (dna_length + frame - seq_range->right)/CODON_LENGTH;
+                    to = (dna_length + frame - seq_range->left)/CODON_LENGTH;
+                } else {
+                    from = (seq_range->left - frame + 1)/CODON_LENGTH;
+                    to = (seq_range->right - frame + 1)/CODON_LENGTH;
+                }
+                BlastSeqLocNew(&prot_head, from, to);
+            }
+            prot_seqloc[context] = prot_head;
+        }
+        BlastSeqLocFree(dna_seqloc);
+    }
+    sfree(mask_loc->seqloc_array);
+    mask_loc->seqloc_array = prot_seqloc_array;
+
+    return 0;
+}
+
+
+Int2 BlastMaskLocProteinToDNA(BlastMaskLoc* mask_loc, 
+                              const BlastQueryInfo* query_info)
+{
+   Int2 status = 0;
+   Int4 index;
+
+   /* If there is not mask, there is nothing to convert to DNA coordinates,
+      hence just return. */
+   if (!mask_loc) 
+      return 0;
+
+   /* Check that the array size in BlastMaskLoc corresponds to the number
+      of contexts in BlastQueryInfo. */
+   ASSERT(mask_loc->total_size == query_info->last_context + 1);
+
+   /* Loop over all DNA sequences */
+   for (index=0; index < query_info->num_queries; ++index)
+   {
+       Int4 frame_start = index*NUM_FRAMES;
+       Int4 frame_index;
+       Int4 dna_length = s_GetTranslatedQueryDNALength(query_info, index);
+       /* Loop over all frames of one DNA sequence */
+       for (frame_index=frame_start; frame_index<(frame_start+NUM_FRAMES); 
+            frame_index++) {
+           BlastSeqLoc* loc;
+           Int2 frame = 
+               BLAST_ContextToFrame(eBlastTypeBlastx, frame_index % NUM_FRAMES);
+           /* Loop over all mask locations for a given frame */
+           for (loc = mask_loc->seqloc_array[frame_index]; loc; loc = loc->next) {
+               Int4 from=0, to=0;
+               SSeqRange* seq_range = loc->ssr;
+               if (frame < 0) {
+                   to = dna_length - CODON_LENGTH*seq_range->left + frame;
+                   from = dna_length - CODON_LENGTH*seq_range->right + frame + 1;
+               } else {
+                   from = CODON_LENGTH*seq_range->left + frame - 1;
+                   to = CODON_LENGTH*seq_range->right + frame - 1;
+               }
+               seq_range->left = from;
+               seq_range->right = to;
+           }
+       }
+   }
+   return status;
 }
 
 /** Used for qsort, compares two SeqLoc's by starting position. */
@@ -285,7 +418,7 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
       Boolean reverse = FALSE; /* Sequence on minus strand. */
       Int4 index; /* loop index */
       Int4 start_offset, end_offset, filter_start, filter_end;
-      Int4 left, right; /* Used for left/right extent of a region. */
+      Int4 left=0, right; /* Used for left/right extent of a region. */
 
       start_offset = query_info->contexts[context].query_offset;
       end_offset = query_info->contexts[context].query_length + start_offset - 1;
@@ -326,13 +459,13 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
 
       first = TRUE;
       for ( ; loc; loc = loc->next) {
-         SSeqRange* di = loc->ssr;
+         SSeqRange* seq_range = loc->ssr;
          if (reverse) {
-            filter_start = end_offset - di->right;
-            filter_end = end_offset - di->left;
+            filter_start = end_offset - seq_range->right;
+            filter_end = end_offset - seq_range->left;
          } else {
-            filter_start = start_offset + di->left;
-            filter_end = start_offset + di->right;
+            filter_start = start_offset + seq_range->left;
+            filter_end = start_offset + seq_range->right;
          }
          /* The canonical "state" at the top of this 
             while loop is that both "left" and "right" have
