@@ -48,10 +48,10 @@
 /* Table of virtual functions
  */
 typedef struct {
-    char*       (*Write ) (size_t reserve, const USERV_Info* u);
-    SSERV_Info* (*Read  ) (const char** str);
-    size_t      (*SizeOf) (const USERV_Info *u);
-    int/*bool*/ (*Equal ) (const USERV_Info *u1, const USERV_Info *u2);
+    char*       (*Write )(size_t reserve, const USERV_Info* u);
+    SSERV_Info* (*Read  )(const char** str);
+    size_t      (*SizeOf)(const USERV_Info *u);
+    int/*bool*/ (*Equal )(const USERV_Info *u1, const USERV_Info *u2);
 } SSERV_Info_VTable;
 
 
@@ -93,7 +93,6 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag);
 const char* SERV_TypeStr(ESERV_Type type)
 {
     const SSERV_Attr* attr = s_GetAttrByType(type);
-
     if (attr)
         return attr->tag;
     return "";
@@ -103,7 +102,6 @@ const char* SERV_TypeStr(ESERV_Type type)
 const char* SERV_ReadType(const char* str, ESERV_Type* type)
 {
     const SSERV_Attr* attr = s_GetAttrByTag(str);
-
     if (!attr)
         return 0;
     *type = attr->type;
@@ -841,6 +839,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.51  2003/06/16 15:58:50  lavr
+ * Minor code format changes
+ *
  * Revision 6.50  2003/05/31 05:16:28  lavr
  * Add ARGSUSED where args are meant to be unused
  *
