@@ -2067,8 +2067,14 @@ CBlastOptionsLocal::SetFilterString(const char* f)
             SBlastFilterOptionsFree(m_QueryOpts->filtering_options);
 
     BlastFilteringOptionsFromString(GetProgramType(), f, 
-       &(m_QueryOpts->filtering_options), NULL);
-          
+            &(m_QueryOpts->filtering_options), NULL);
+
+   // Repeat filtering is only allowed for blastn.
+   if (GetProgramType() != eBlastTypeBlastn && 
+            m_QueryOpts->filtering_options->repeatFilterOptions)
+         SRepeatFilterOptionsFree(m_QueryOpts->filtering_options->repeatFilterOptions);
+
+   return;
 }
 
 inline bool
@@ -2776,6 +2782,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.88  2005/03/10 14:21:55  madden
+* Do not set repeatFilterOptions for non-blastn jobs when parsing filter_string
+*
 * Revision 1.87  2005/03/10 13:17:27  madden
 * Changed type from short to int for [GS]etPseudoCount
 *
