@@ -81,6 +81,7 @@ typedef enum {
     eWaitGetJob,
     ePutJobResult,
     eReturnJob,
+    eJobRunTimeout,
     eDropQueue,
 
     eShutdown,
@@ -185,6 +186,7 @@ public:
     void ProcessPut(CSocket& sock, SThreadData& tdata);
     void ProcessDropQueue(CSocket& sock, SThreadData& tdata);
     void ProcessReturn(CSocket& sock, SThreadData& tdata);
+    void ProcessJobRunTimeout(CSocket& sock, SThreadData& tdata);
 protected:
     virtual void ProcessOverflow(SOCK sock) 
     { 
@@ -365,6 +367,9 @@ void CNetScheduleServer::Process(SOCK sock)
             case eReturnJob:
                 ProcessReturn(socket, *tdata);
                 break;
+            case eJobRunTimeout:
+                ProcessJobRunTimeout(socket, *tdata);
+                break;
             case eShutdown:
                 LOG_POST("Shutdown request...");
                 SetShutdownFlag();
@@ -461,6 +466,17 @@ void CNetScheduleServer::ProcessCancel(CSocket& sock, SThreadData& tdata)
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
     CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
     queue.Cancel(job_id);
+    WriteMsg(sock, "OK:", "");
+}
+
+void 
+CNetScheduleServer::ProcessJobRunTimeout(CSocket& sock, SThreadData& tdata)
+{
+    SJS_Request& req = tdata.req;
+
+    unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
+    queue.SetJobRunTimeout(job_id, req.timeout);
     WriteMsg(sock, "OK:", "");
 }
 
@@ -641,8 +657,21 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 11.QUIT 
     // 12.DROPQ
     // 13.WGET udp_port_number timeout
+    // 14.JRTO JSID_01_1 timeout
 
     const char* s = reqstr.c_str();
+
+    if (strncmp(s, "STATUS", 6) == 0) {
+        req->req_type = eStatusJob;
+        s += 6;
+        NS_SKIPSPACE(s)
+        NS_GETSTRING(s, req->job_key_str)
+        
+        if (req->job_key_str.empty()) {
+            NS_RETURN_ERROR("Misformed STATUS request")
+        }
+        return;
+    }
 
     if (strncmp(s, "SUBMIT", 6) == 0) {
         req->req_type = eSubmitJob;
@@ -657,28 +686,6 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
             *ptr++ = *s;
         }
         *ptr = 0;
-        return;
-    }
-    if (strncmp(s, "CANCEL", 6) == 0) {
-        req->req_type = eCancelJob;
-        s += 6;
-        NS_SKIPSPACE(s)
-        NS_GETSTRING(s, req->job_key_str)
-        
-        if (req->job_key_str.empty()) {
-            NS_RETURN_ERROR("Misformed CANCEL request")
-        }
-        return;
-    }
-    if (strncmp(s, "STATUS", 6) == 0) {
-        req->req_type = eStatusJob;
-        s += 6;
-        NS_SKIPSPACE(s)
-        NS_GETSTRING(s, req->job_key_str)
-        
-        if (req->job_key_str.empty()) {
-            NS_RETURN_ERROR("Misformed STATUS request")
-        }
         return;
     }
 
@@ -765,11 +772,51 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         return;
     }
 
+    if (strncmp(s, "CANCEL", 6) == 0) {
+        req->req_type = eCancelJob;
+        s += 6;
+        NS_SKIPSPACE(s)
+        NS_GETSTRING(s, req->job_key_str)
+        
+        if (req->job_key_str.empty()) {
+            NS_RETURN_ERROR("Misformed CANCEL request")
+        }
+        return;
+    }
+
+    if (strncmp(s, "JRTO", 4) == 0) {
+        req->req_type = eJobRunTimeout;
+        
+        s += 4;
+        NS_SKIPSPACE(s)
+
+        NS_CHECKEND(s, "Misformed job run timeout request")
+
+        NS_GETSTRING(s, req->job_key_str)
+        
+        if (req->job_key_str.empty()) {
+            NS_RETURN_ERROR("Misformed job run timeout request")
+        }
+        NS_SKIPSPACE(s)
+
+        NS_CHECKEND(s, "Misformed job run timeout request")
+
+        int timeout = atoi(s);
+        if (timeout < 0) {
+            NS_RETURN_ERROR(
+                "Invalid job run timeout request: incorrect timeout value")
+        }
+        req->timeout = timeout;
+
+        return;
+    }
 
     if (strncmp(s, "RETURN", 6) == 0) {
         req->req_type = eReturnJob;
         s += 6;
         NS_SKIPSPACE(s)
+
+        NS_CHECKEND(s, "Misformed job return request")
 
         NS_GETSTRING(s, req->job_key_str)
 
@@ -1008,7 +1055,7 @@ int CNetScheduleDApp::Run(void)
 
         string qname = "noname";
         LOG_POST(Info << "Mounting queue: " << qname);
-        qdb->MountQueue(qname, 3600, 7, 3600); // default queue
+        qdb->MountQueue(qname, 3600, 7, 3600, 1800); // default queue
 
 
         // Scan and mount queues
@@ -1033,26 +1080,28 @@ int CNetScheduleDApp::Run(void)
                 reg.GetInt(sname, "run_timeout", 
                                             timeout, 0, IRegistry::eReturn);
 
-            if (run_timeout < (int)min_run_timeout) {
-                min_run_timeout = run_timeout;
-            }
+            int run_timeout_precision =
+                reg.GetInt(sname, "run_timeout_precision", 
+                                            run_timeout, 0, IRegistry::eReturn);
+            min_run_timeout = 
+                std::min(min_run_timeout, (unsigned)run_timeout_precision);
 
             LOG_POST(Info 
                 << "Mounting queue:         " << qname          << "\n"
                 << "   Timeout:              " << timeout       << "\n"
                 << "   Notification timeout: " << notif_timeout << "\n"
                 << "   Run timeout:          " << run_timeout   << "\n"
+                << "   Run timeout precision:" << run_timeout_precision <<"\n"
             );
-            qdb->MountQueue(qname, timeout, notif_timeout, run_timeout);
+            qdb->MountQueue(qname, timeout, 
+                            notif_timeout, run_timeout, run_timeout_precision);
             
         }
 
-        unsigned run_delay = min_run_timeout / 2;
-        if (run_delay == 0) {
-            run_delay = min_run_timeout;
-        }
-        qdb->RunExecutionWatcherThread(run_delay >= 0 ? run_delay : 2);
-
+        LOG_POST(Info << "Running execution control every " 
+                      << min_run_timeout << " seconds. ");
+        min_run_timeout = min_run_timeout >= 0 ? min_run_timeout : 2;
+        qdb->RunExecutionWatcherThread(min_run_timeout);
 
         qdb->RunPurgeThread();
 
@@ -1156,6 +1205,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/10 14:19:57  kuznets
+ * Implemented individual run timeouts
+ *
  * Revision 1.10  2005/03/09 17:37:16  kuznets
  * Added node notification thread and execution control timeline
  *

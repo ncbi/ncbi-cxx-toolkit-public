@@ -258,7 +258,8 @@ void CQueueDataBase::Open(const string& path, unsigned cache_ram_size)
 void CQueueDataBase::MountQueue(const string& queue_name, 
                                 int           timeout,
                                 int           notif_timeout,
-                                int           run_timeout)
+                                int           run_timeout,
+                                int           run_timeout_precision)
 {
     _ASSERT(m_Env);
 
@@ -303,7 +304,7 @@ void CQueueDataBase::MountQueue(const string& queue_name,
 
     queue.run_timeout = run_timeout;
     if (run_timeout) {
-        queue.run_time_line = new CJobTimeLine(run_timeout, 0);
+        queue.run_time_line = new CJobTimeLine(run_timeout_precision, 0);
     }
 
     LOG_POST(Info << "Records = " << recs);
@@ -744,6 +745,7 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
 
     if (cur.FetchFirst() != eBDB_Ok) {
         // TODO: Integrity error or job just expired?
+        return;
     }
     db.status = (int) CNetScheduleClient::eDone;
     db.ret_code = ret_code;
@@ -758,6 +760,66 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
     js_guard.Release();
 
     RemoveFromTimeLine(job_id);
+}
+
+void CQueueDataBase::CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
+{
+    CNetScheduleClient::EJobStatus st = GetStatus(job_id);
+    if (st != CNetScheduleClient::eRunning) {
+        return;
+    }
+    SQueueDB& db = m_LQueue.db;
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+
+    unsigned exp_time = 0;
+    time_t curr = time(0);
+
+    {{
+    CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(&trans);
+
+    CBDB_FileCursor& cur = *GetCursor(trans);
+    CCursorGuard cg(cur);    
+
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+    cur.From << job_id;
+
+    if (cur.FetchFirst() != eBDB_Ok) {
+        return;
+    }
+
+    int status = db.status;
+
+    if (status != (int)CNetScheduleClient::eRunning) {
+        return;
+    }
+
+    unsigned time_run = db.time_run;
+    unsigned run_timeout = db.run_timeout;
+
+    exp_time = x_ComputeExpirationTime(time_run, run_timeout);
+    if (exp_time == 0) {
+        return;
+    }
+
+    db.run_timeout = tm;
+    db.time_run = curr;
+
+    cur.Update();
+
+    }}
+
+    trans.Commit();
+
+    {{
+        CJobTimeLine& tl = *m_LQueue.run_time_line;
+
+        CWriteLockGuard guard(m_LQueue.rtl_lock);
+        tl.MoveObject(exp_time, curr + tm, job_id);
+    }}
+
 }
 
 void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
@@ -1289,13 +1351,16 @@ time_t CQueueDataBase::CQueue::CheckExecutionTimeout(unsigned job_id,
 
     unsigned time_run = db.time_run;
     unsigned run_timeout = db.run_timeout;
+/*
     if (run_timeout == 0) {
         run_timeout = m_LQueue.run_timeout;
     }
     if (run_timeout == 0) {
         return 0;
     }
-    time_t exp_time = time_run + run_timeout;
+*/
+    time_t exp_time = x_ComputeExpirationTime(time_run, run_timeout);
+        //time_run + run_timeout;
     if (!(curr_time < exp_time)) { 
         return exp_time;
     }
@@ -1311,12 +1376,30 @@ time_t CQueueDataBase::CQueue::CheckExecutionTimeout(unsigned job_id,
     return 0;
 }
 
+time_t 
+CQueueDataBase::CQueue::x_ComputeExpirationTime(unsigned time_run, 
+                                                unsigned run_timeout) const
+{
+    if (run_timeout == 0) {
+        run_timeout = m_LQueue.run_timeout;
+    }
+    if (run_timeout == 0) {
+        return 0;
+    }
+    time_t exp_time = time_run + run_timeout;
+    return exp_time;
+}
+
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/03/10 14:19:57  kuznets
+ * Implemented individual run timeouts
+ *
  * Revision 1.13  2005/03/09 19:05:36  kuznets
  * Fixed unintialized variable
  *

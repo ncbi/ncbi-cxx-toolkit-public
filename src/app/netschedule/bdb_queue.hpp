@@ -241,7 +241,8 @@ public:
     void MountQueue(const string& queue_name,
                     int           timeout,
                     int           notif_timeout,
-                    int           run_timeout);
+                    int           run_timeout,
+                    int           run_timeout_precision);
     void Close();
     bool QueueExists(const string& qname) const 
                 { return m_QueueCollection.QueueExists(qname); }
@@ -300,6 +301,12 @@ public:
         CNetScheduleClient::EJobStatus 
         GetStatus(unsigned int job_id) const;
 
+
+        /// Set job run-expiration timeout
+        /// @param tm
+        ///    Time worker node needs to execute the job (in seconds)
+        void SetJobRunTimeout(unsigned job_id, unsigned tm);
+
         /// Delete if job is done and timeout expired
         ///
         /// @return TRUE if job has been deleted
@@ -344,6 +351,9 @@ public:
         CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
 
         void RemoveFromTimeLine(unsigned job_id);
+
+        time_t x_ComputeExpirationTime(unsigned time_run, 
+                                       unsigned run_timeout) const; 
 
     private:
         CQueue(const CQueue&);
@@ -394,6 +404,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/03/10 14:19:57  kuznets
+ * Implemented individual run timeouts
+ *
  * Revision 1.9  2005/03/09 17:37:17  kuznets
  * Added node notification thread and execution control timeline
  *
