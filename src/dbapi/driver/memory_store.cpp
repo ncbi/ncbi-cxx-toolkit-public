@@ -78,7 +78,7 @@ size_t CMemStore::Append(const void* buff, size_t size)
     TSize f_free;
     TSize n = 0;
     char* b = (char*) buff;
-    if(size > kMax_Int) size= kMax_Int;
+    if(size > kMax_BlobSize) size= kMax_BlobSize;
     TSize nof_bytes = (TSize) size;
 
     while (nof_bytes > 0) {
@@ -111,7 +111,7 @@ size_t CMemStore::Read(void* buff, size_t size)
     if (!m_Current  ||  !buff  ||  !size)
         return 0;
 
-    if(size > kMax_Int) size= kMax_Int;
+    if(size > kMax_BlobSize) size= kMax_BlobSize;
 
     TSize n = 0;
     char* b = (char*) buff;
@@ -259,7 +259,7 @@ size_t CMemStore::Write(const void* buff, size_t size)
     if (!buff  ||  !size)
         return 0;
 
-    if(size > kMax_Int) size= kMax_Int;
+    if(size > kMax_BlobSize) size= kMax_BlobSize;
 
     char* b         = (char*) buff;
     TSize nof_bytes = (TSize) size;
@@ -311,7 +311,7 @@ size_t CMemStore::Write(const void* buff, size_t size)
 
 size_t CMemStore::Truncate(size_t size)
 {
-    if(size > kMax_Int) size= kMax_Int;
+    if(size > kMax_BlobSize) size= kMax_BlobSize;
 
     TSize nof_bytes = (TSize) size;
 
@@ -362,7 +362,7 @@ size_t CMemStore::Insert(const void* buff, size_t size)
     if (!buff  ||  !size)
         return 0;
 
-    if(size > kMax_Int) size= kMax_Int;
+    if(size > kMax_BlobSize) size= kMax_BlobSize;
 
     if ( !m_Current )
         return Append(buff, size);
@@ -443,7 +443,7 @@ size_t CMemStore::Delete(size_t size)
     if (!m_Last  ||  !size == 0)
         return m_Size;
 
-    if(size > kMax_Int) size= kMax_Int;
+    if(size > kMax_BlobSize) size= kMax_BlobSize;
 
     if ( !m_Current )
         return Truncate(size);
@@ -508,7 +508,7 @@ size_t CMemStore::Delete(size_t size)
 
 CMemStore::CMemStore(C_SA_Storage& storage, size_t block_size)
 {
-    if(block_size > kMax_Int) block_size= kMax_Int;
+    if(block_size > kMax_BlobSize) block_size= kMax_BlobSize;
     x_Init((TSize) block_size);
 
     char* buff = new char[m_BlockSize];
@@ -540,6 +540,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/09/13 18:43:18  soussov
+ * fixes compiler warnings
+ *
  * Revision 1.5  2002/09/13 18:27:02  soussov
  * fixed bug with long overflow
  *
