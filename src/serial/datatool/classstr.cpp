@@ -512,10 +512,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 code.Methods(inl) <<
                     "    "DELAY_PREFIX<<i->cName<<".Update();\n";
             }
-            code.Methods(inl) <<
-                "    if (!CanGet"<< i->cName<<"()) {\n"
-                "        ThrowUnassigned("<<member_index<<");\n"
-                "    }\n";
+            if (i->defaultValue.empty() && i->type->GetKind() != eKindContainer) {
+                code.Methods(inl) <<
+                    "    if (!CanGet"<< i->cName<<"()) {\n"
+                    "        ThrowUnassigned("<<member_index<<");\n"
+                    "    }\n";
+            }
             code.Methods(inl) <<
                 "    return "<<i->valueName<<";\n"
                 "}\n"
@@ -1189,6 +1191,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2003/05/05 20:10:28  gouriano
+* removed CanGet check for members which are always "gettable"
+*
 * Revision 1.53  2003/04/29 18:31:09  gouriano
 * object data member initialization verification
 *
