@@ -343,7 +343,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 
 
 extern int/*bool*/ ConnNetInfo_SetUserHeader(SConnNetInfo* info,
-                                      const char*   user_header)
+                                             const char*   user_header)
 {
     if (info->http_user_header)
         free((void*) info->http_user_header);
@@ -1508,6 +1508,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.68  2005/02/28 17:58:31  lavr
+ * Cosmetics
+ *
  * Revision 6.67  2005/02/24 19:03:11  lavr
  * Always init SConnNetInfo::http_user_header
  *
