@@ -64,11 +64,20 @@ Detailed Contents:
 extern "C" {
 #endif
 
-#ifdef _MSC_VER
+/* inlining support -- compiler dependent */
+#if defined(__cplusplus)  ||  __STDC_VERSION__ >= 199901
+/* C++ and C99 both guarantee "inline" */
+#define NCBI_INLINE inline
+#elif defined(__GNUC__)
+/* So does GCC, normally, but it may be running with strict options
+   that require the extra underscores */
+#define NCBI_INLINE __inline__
+#elif defined(_MSC_VER)  ||  defined(__sgi)
+/* MSVC and (older) MIPSpro always require leading underscores */
 #define NCBI_INLINE __inline
-#elif defined(__sgi)  &&  !defined(__GNUC__)  &&  !defined(__cplusplus)
-#define NCBI_INLINE
 #else
+/* "inline" seems to work on our remaining in-house compilers
+   (WorkShop, Compaq, ICC, MPW) */
 #define NCBI_INLINE inline
 #endif
 
