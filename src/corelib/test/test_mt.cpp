@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/03/13 05:50:19  vakatov
+ * sNumThreads = 35;  sSpawnBy = 6;  (to work on SCHROEDER)
+ *
  * Revision 6.1  2001/04/06 15:53:08  grichenk
  * Initial revision
  *
@@ -46,11 +49,11 @@ static CFastMutex    s_GlobalLock;
 static CThreadedApp* s_Application;
 
 // Default values
-unsigned int  s_NumThreads    = 40;
-int           s_SpawnBy       = 13;
+unsigned int  s_NumThreads    = 35;
+int           s_SpawnBy       = 6;
 
 // Next test thread index
-static unsigned int  s_NextIndex     = 0;
+static unsigned int  s_NextIndex = 0;
 
 
 /////////////////////////////////////////////////////////////////////////////
