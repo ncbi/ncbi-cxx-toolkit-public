@@ -225,7 +225,7 @@ void CSeqVector_CI::x_UpdateCache(TSeqPos pos)
             m_CachePos = segStart;
             newCacheEnd = segStart + min(segSize, kCacheSize);
         }
-        else if ( start + kCacheSize > TSignedSeqPos(segStart + segSize) ) {
+        else if ( start + kCacheSize > segStart + segSize ) {
             // Segment is too short at the end
             m_CachePos = segStart + max(kCacheSize, segSize) - kCacheSize;
             newCacheEnd = segStart + segSize;
@@ -494,6 +494,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/06/10 15:27:14  vasilche
+* Fixed warning
+*
 * Revision 1.11  2003/06/06 15:09:43  grichenk
 * One more fix for coordinates
 *
