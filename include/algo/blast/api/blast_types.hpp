@@ -61,8 +61,10 @@ struct SSeqLoc {
 
     SSeqLoc()
         : seqloc(), scope() {}
-    SSeqLoc(CConstRef<objects::CSeq_loc> sl, CRef<objects::CScope> s)
+    SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s)
         : seqloc(sl), scope(s) {}
+    SSeqLoc(const objects::CSeq_loc& sl, objects::CScope& s)
+        : seqloc(&sl), scope(&s) {}
 };
 typedef vector<SSeqLoc>   TSeqLocVector;
 typedef vector< CRef<objects::CSeq_align_set> > TSeqAlignVector;
@@ -74,6 +76,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/21 12:12:37  dicuccio
+* Changed constructors of SSeqLoc to take pointers insted of CConstRef<>/CRef<>.
+* Added constructors to take C++ references
+*
 * Revision 1.2  2003/08/20 14:45:26  dondosha
 * All references to CDisplaySeqalign moved to blast_format.hpp
 *
