@@ -2371,7 +2371,7 @@ static unsigned int s_GetSeqlocPartialInfo(const CSeq_loc& loc, CScope* scope)
                             retval |= eSeqlocPartial_Internal;
                         }
                         if (miss_end) {
-                            if (&(*i2) == last) {
+                            if (&(*i2) == first /* was last */) {
                                 retval |= eSeqlocPartial_Nostart;
                             } else {
                                 retval |= eSeqlocPartial_Nointernal;
@@ -7970,6 +7970,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.37  2002/12/19 21:57:59  kans
+* fix in s_GetSeqlocPartialInfo, same fix done recently in SeqLocPartialCheck in C toolkit
+*
 * Revision 1.36  2002/12/17 17:59:35  shomrat
 * Add checks for Bioseq with no pubs / source
 *
