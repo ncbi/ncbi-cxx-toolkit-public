@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.228 2003/10/20 21:49:14 ucko Exp $
+#  $Id: configure.ac,v 1.229 2003/10/21 21:45:22 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -326,15 +326,6 @@ AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os",     [System OS only])
 
 #### Make some provisions for traditional operation
 AC_PROG_INSTALL
-if test -z "$with_runpath"; then
-   if test -n "$libdir" -a "x$libdir" != "xNONE"; then
-      with_runpath=$libdir
-   elif test -n "$exec_prefix" -a "x$exec_prefix" != "xNONE"; then
-      with_runpath=$exec_prefix/lib
-   elif test -n "$prefix" -a "x$prefix" != "xNONE"; then
-      with_runpath=$prefix/lib
-   fi
-fi
 
 
 #### C and C++ compilers
@@ -1244,6 +1235,15 @@ esac
 
 
 #### Set runpath (may depend on build root)
+if test -z "$with_runpath"; then
+   # NOTE:  we do not support "--libdir" here as it makes things complicated
+   if test -n "$exec_prefix"  -a  "$exec_prefix" != "NONE" ; then
+      with_runpath=$exec_prefix/lib
+   elif test -n "$prefix"  -a  "$prefix" != "NONE" ; then
+      with_runpath=$prefix/lib
+   fi
+fi
+
 if   test "$with_runpath" = "no" ; then
    runpath=
    pure_runpath=
