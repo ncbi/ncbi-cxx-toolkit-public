@@ -59,19 +59,16 @@ static void s_ThrowException(const string& what)
 
 
 #if defined(NCBI_OS_MSWIN)
-
-// Real exec modes
-#  define EXEC_MODE_COUNT  4
-const int _exec_mode[EXEC_MODE_COUNT] =  { 
-    P_OVERLAY, P_WAIT, P_NOWAIT, P_DETACH 
-};
-
 // Convert CExec class mode to the real mode
 static int s_GetRealMode(const CExec::EMode mode)
 {
-    if ( mode < 0  ||  mode >= EXEC_MODE_COUNT ) 
-        _TROUBLE;
-    return _exec_mode[mode];
+    static const int s_Mode[] =  { 
+        P_OVERLAY, P_WAIT, P_NOWAIT, P_DETACH 
+    };
+
+    int x_mode = (int) mode;
+    _ASSERT(0 <= x_mode  &&  x_mode < sizeof(s_Mode)/sizeof(s_Mode[0]));
+    return s_Mode[x_mode];
 }
 #endif
 
@@ -346,6 +343,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/06/30 03:22:14  vakatov
+ * s_GetRealMode() -- formal code rearrangement to avoid a warning
+ *
  * Revision 1.4  2002/06/11 19:28:31  ivanov
  * Use AutoPtr<char*> for exec arguments in GET_EXEC_ARGS
  *
