@@ -34,7 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <util/range_coll.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -47,105 +47,29 @@ class CSeq_id;
 
 BEGIN_SCOPE(sequence)
 
-// Flags for seq-loc operations.
-// ePreserveStrand (default) treats ranges on plus and minus strands as
-// different sub-sets.
-// eIgnoreStrand does not make difference between plus and
-// minus strands.
-// Both modes set strand of each range in the result to the strand
-// of the first original range covering the same interval.
-// Strands may be reset by sorting (see below).
-enum EStrandFlag {
-    ePreserveStrand,  // preserve original strand
-    eIgnoreStrand     // ignore strands
-};
+// All functions create and return a new seq-loc object.
+// Optional scope or synonym mapper may be provided to detect and convert
+// synonyms of a bioseq.
 
-// eNoMerge (default) results in no merging or sorting of the result.
-// eMerge merges overlapping ranges without sorting. When merging
-// different strands, strand from the first interval is used.
-// eMergeAndSort merges overlapping ranges and sorts them.
-// All strands are set to unknow (in eIgnoreStrand mode) or
-// plus and minus (in ePerserveStrand mode).
-// Merging does not preserve the original seq-loc structure,
-// it will be converted to mix.
-enum EMergeFlag {
-    eNoMerge,       // no merging or sorting
-    eMerge,         // merge ranges without sorting
-    eMergeAndSort   // merge and sort resulting seq-loc
-};
+// Merge ranges in a seq-loc
+NCBI_XOBJUTIL_EXPORT
+CRef<CSeq_loc> Seq_loc_Merge(const CSeq_loc& loc,
+                             CSeq_loc::TOpFlags flags,
+                             CScope* scope);
 
-
-// Base class for mapping IDs to the best synonym. Should provide
-// GetBestSynonym() method which returns the ID which should replace
-// the original one in the destination seq-loc.
-class CSynonymMapper_Base
-{
-public:
-    CSynonymMapper_Base(void) {}
-    virtual ~CSynonymMapper_Base(void) {}
-
-    virtual CSeq_id_Handle GetBestSynonym(const CSeq_id& id) = 0;
-};
-
-
-class CLengthGetter_Base
-{
-public:
-    CLengthGetter_Base(void) {}
-    virtual ~CLengthGetter_Base(void) {}
-
-    virtual TSeqPos GetLength(const CSeq_id& id) = 0;
-};
-
-
-// If a scope is provided, all operations perform synonyms check and
-// use the first of IDs in the result. The scope will also be used
-// to get real length of a whole location.
+// Add two seq-locs
 NCBI_XOBJUTIL_EXPORT
 CRef<CSeq_loc> Seq_loc_Add(const CSeq_loc& loc1,
                            const CSeq_loc& loc2,
-                           EMergeFlag  merge_flag = eNoMerge,
-                           EStrandFlag strand_flag = ePreserveStrand,
-                           CScope* scope = 0);
+                           CSeq_loc::TOpFlags flags,
+                           CScope* scope);
 
 NCBI_XOBJUTIL_EXPORT
 CRef<CSeq_loc> Seq_loc_Subtract(const CSeq_loc& loc1,
                                 const CSeq_loc& loc2,
-                                EMergeFlag  merge_flag = eNoMerge,
-                                EStrandFlag strand_flag = ePreserveStrand,
-                                CScope* scope = 0);
+                                CSeq_loc::TOpFlags flags,
+                                CScope* scope);
 
-// Merge flag should be eMerge or eMergeAndSort. If it's eNoMerge
-// the method returns a copy of the original location.
-NCBI_XOBJUTIL_EXPORT
-CRef<CSeq_loc> Seq_loc_Merge(const CSeq_loc& loc,
-                             EMergeFlag  merge_flag = eNoMerge,
-                             EStrandFlag strand_flag = ePreserveStrand,
-                             CScope* scope = 0);
-
-// Synonym mapper should provide a method to get the best synonym
-// for each ID. The best synonym is used in the destination seq-loc.
-// Length getter is used to get length of a whole location.
-NCBI_XOBJUTIL_EXPORT
-CRef<CSeq_loc> Seq_loc_Add(const CSeq_loc& loc1,
-                           const CSeq_loc& loc2,
-                           CSynonymMapper_Base& syn_mapper,
-                           EMergeFlag  merge_flag = eNoMerge,
-                           EStrandFlag strand_flag = ePreserveStrand);
-
-NCBI_XOBJUTIL_EXPORT
-CRef<CSeq_loc> Seq_loc_Subtract(const CSeq_loc& loc1,
-                                const CSeq_loc& loc2,
-                                CSynonymMapper_Base& syn_mapper,
-                                CLengthGetter_Base&  len_getter,
-                                EMergeFlag  merge_flag = eNoMerge,
-                                EStrandFlag strand_flag = ePreserveStrand);
-
-NCBI_XOBJUTIL_EXPORT
-CRef<CSeq_loc> Seq_loc_Merge(const CSeq_loc& loc,
-                             CSynonymMapper_Base& syn_mapper,
-                             EMergeFlag  merge_flag = eNoMerge,
-                             EStrandFlag strand_flag = ePreserveStrand);
 
 END_SCOPE(sequence)
 END_SCOPE(objects)
@@ -154,6 +78,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2004/11/15 15:07:57  grichenk
+* Moved seq-loc operations to CSeq_loc, modified flags.
+*
 * Revision 1.1  2004/10/20 18:09:43  grichenk
 * Initial revision
 *

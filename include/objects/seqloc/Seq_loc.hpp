@@ -58,6 +58,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CSeq_id_Handle;
+class ISynonymMapper;
+class ILengthGetter;
+
 
 class NCBI_SEQLOC_EXPORT CSeq_loc : public CSeq_loc_Base
 {
@@ -153,6 +156,69 @@ public:
     // Works only if current state is "Int".
     void ChangeToPackedInt(void);
 
+    // CSeq_loc operations
+    //
+    // Flags for operations:
+    // fStrand_Ignore - if set, strands will be ignored and any ranges
+    // may be merged/sorted. If not set, ranges on plus and minus strands
+    // are treated as different sub-sets. In some operations strand may
+    // still be checked (see fMerge_Abutting and order of ranges).
+    //
+    // fMerge_Contained - merges (removes) any range which is completely
+    // contained in another range.
+    // fMerge_Abutting - merge abutting ranges. Also forces merging of
+    // contained ranges. Even if fStrand_Ignore is set, only the ranges
+    // with the correct order are merged (e.g. loc2.to == loc1.from must be
+    // true if loc1.strand is minus).
+    // fMerge_Overlapping - merge overlapping ranges. Also forces merging of
+    // contained ranges.
+    // fMerge_All - merge any ranges if possible (contained, overlapping, abutting)
+    // fMerge_SingleRange - creates a single range, covering all original ranges.
+    // Strand is set to the first strand in the original seq-loc, regardless of the
+    // strand flag.
+    //
+    // fSort - forces sorting of the resulting ranges. All ranges on the
+    // same ID are grouped together, but the order of IDs is undefined. Strand
+    // is reset to plus and minuns (in strand-preserve mode) or unknown (in
+    // strand-ignore mode). NULLs are always merged to a single NULL. The order
+    // of locations for each ID is: NULL, whole, empty, plus strand intervals,
+    // minus strand intervals.
+
+    enum EOpFlags {
+        fStrand_Ignore         = 1<<0,
+        fMerge_Contained       = 1<<1,
+        fMerge_AbuttingOnly    = 1<<2,
+        fMerge_Abutting        = fMerge_AbuttingOnly | fMerge_Contained,
+        fMerge_OverlappingOnly = 1<<3,
+        fMerge_Overlapping     = fMerge_OverlappingOnly | fMerge_Contained,
+        fMerge_All             = fMerge_Abutting | fMerge_Overlapping,
+        fMerge_SingleRange     = 1<<4,
+        fSort                  = 1<<5
+    };
+    typedef int TOpFlags;
+
+    // All functions create and return a new seq-loc object.
+    // Optional synonym mapper may be provided to detect and convert
+    // synonyms of a bioseq. Length getter is used by Subtract() to
+    // calculate real sequence length.
+
+    // Merge ranges depending on flags, return a new seq-loc object.
+    CRef<CSeq_loc> Merge(TOpFlags        flags,
+                         ISynonymMapper* syn_mapper) const;
+
+    // Add seq-loc, merge/sort resulting ranges depending on flags.
+    // Return a new seq-loc object.
+    CRef<CSeq_loc> Add(const CSeq_loc& other,
+                       TOpFlags        flags,
+                       ISynonymMapper* syn_mapper) const;
+
+    // Subtract seq-loc from this, merge/sort resulting ranges depending on
+    // flags. Return a new seq-loc object.
+    CRef<CSeq_loc> Subtract(const CSeq_loc& other,
+                            TOpFlags        flags,
+                            ISynonymMapper* syn_mapper,
+                            ILengthGetter*  len_getter) const;
+
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc(const CSeq_loc&);
@@ -178,6 +244,30 @@ private:
     mutable const CSeq_id* m_IdCache;
 };
 
+
+// Interface for mapping IDs to the best synonym. Should provide
+// GetBestSynonym() method which returns the ID which should replace
+// the original one in the destination seq-loc.
+class ISynonymMapper
+{
+public:
+    ISynonymMapper(void) {}
+    virtual ~ISynonymMapper(void) {}
+
+    virtual CSeq_id_Handle GetBestSynonym(const CSeq_id& id) = 0;
+};
+
+
+// Interface for getting bioseq length. Should provide GetLength()
+// method.
+class ILengthGetter
+{
+public:
+    ILengthGetter(void) {}
+    virtual ~ILengthGetter(void) {}
+
+    virtual TSeqPos GetLength(const CSeq_id& id) = 0;
+};
 
 
 // Seq-loc iterator class -- iterates all intervals from a seq-loc
@@ -475,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/11/15 15:07:57  grichenk
+ * Moved seq-loc operations to CSeq_loc, modified flags.
+ *
  * Revision 1.40  2004/10/25 18:00:42  shomrat
  * + FlipStrand
  *

@@ -46,6 +46,8 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
+#include <util/range_coll.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -706,7 +708,12 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
         {
             if (m_EmptyFlag == eEmpty_Allow) {
                 SLoc_Info info;
-                info.m_Id.Reset(new CSeq_id);
+                if (loc.Which() == CSeq_loc::e_Empty) {
+                    info.m_Id = &loc.GetEmpty();
+                }
+                else {
+                    info.m_Id.Reset(new CSeq_id);
+                }
                 info.m_Range = TRange::GetEmpty();
                 info.m_Loc = &loc;
                 m_LocList.push_back(info);
@@ -1658,6 +1665,604 @@ void CSeq_loc::FlipStrand(void)
 }
 
 
+// Types used in operations with seq-locs
+typedef CSeq_loc::TRange                    TRange;
+typedef vector<TRange>                      TRanges;
+typedef map<CSeq_id_Handle, TRanges>        TIdToRangeMap;
+typedef CRangeCollection<TSeqPos>           TRangeColl;
+typedef map<CSeq_id_Handle, TRangeColl>     TIdToRangeColl;
+
+
+class CRange_Less
+{
+public:
+    CRange_Less(void) {}
+
+    bool operator() (const TRange& rg1, const TRange& rg2) const
+    {
+        if ( rg1.IsWhole() ) {
+            return !rg2.IsWhole();
+        }
+        if ( rg1.Empty() ) {
+            return !rg2.Empty()  &&  !rg2.IsWhole();
+        }
+        return !rg2.IsWhole()  &&  !rg2.Empty()  &&  rg1 < rg2;
+    }
+};
+
+
+class CRange_ReverseLess
+{
+public:
+    CRange_ReverseLess(void) {}
+
+    bool operator() (const TRange& rg1, const TRange& rg2) const
+    {
+        if ( rg1.IsWhole() ) {
+            return !rg2.IsWhole();
+        }
+        if ( rg1.Empty() ) {
+            return !rg2.Empty()  &&  !rg2.IsWhole();
+        }
+        if ( rg2.IsWhole()  ||  rg2.Empty() ) {
+            return false;
+        }
+        if (rg1.GetTo() != rg2.GetTo()) {
+            return rg1.GetTo() > rg2.GetTo();
+        }
+        return rg1.GetFrom() < rg2.GetFrom();
+    }
+};
+
+
+inline
+bool x_MatchStrand(ENa_strand str1, ENa_strand str2, CSeq_loc::TOpFlags flags)
+{
+    return (flags & CSeq_loc::fStrand_Ignore) != 0 ||
+    IsReverse(str1) == IsReverse(str2);
+}
+
+
+bool x_MergeRanges(TRange& rg1, ENa_strand str1,
+                   const TRange& rg2, ENa_strand str2,
+                   CSeq_loc::TOpFlags flags)
+{
+    if ( !x_MatchStrand(str1, str2, flags) ) {
+        return false;
+    }
+    // Check contained
+    if ( (flags & CSeq_loc::fMerge_Contained) != 0 ) {
+        if (rg1.GetFrom() <= rg2.GetFrom()  &&  rg1.GetTo() >= rg2.GetTo()) {
+            // rg2 already contained in rg1
+            return true;
+        }
+        if (rg1.GetFrom() >= rg2.GetFrom()  &&  rg1.GetTo() <= rg2.GetTo()) {
+            // rg1 contained in rg2
+            rg1 = rg2;
+            return true;
+        }
+    }
+    // Check overlapping
+    if ( (flags & CSeq_loc::fMerge_OverlappingOnly) != 0  &&
+        rg1.IntersectingWith(rg2) ) {
+        rg1 += rg2;
+        return true;
+    }
+    // Check abutting
+    if ((flags & CSeq_loc::fMerge_AbuttingOnly) != 0) {
+        if ( !IsReverse(str1) ) {
+            if ( rg1.GetToOpen() == rg2.GetFrom() ) {
+                rg1.SetTo(rg2.GetTo());
+                return true;
+            }
+        }
+        else {
+            if (rg1.GetFrom() == rg2.GetToOpen()) {
+                rg1.SetFrom(rg2.GetFrom());
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+void x_PushRange(CSeq_loc& dst,
+                 CSeq_id_Handle idh,
+                 TRange rg,
+                 ENa_strand strand)
+{
+    if ( !idh ) {
+        // NULL
+        CRef<CSeq_loc> null_loc(new CSeq_loc);
+        null_loc->SetNull();
+        dst.SetMix().Set().push_back(null_loc);
+    }
+    else if ( rg.IsWhole() ) {
+        CRef<CSeq_loc> whole(new CSeq_loc);
+        whole->SetWhole().Assign(*idh.GetSeqId());
+        dst.SetMix().Set().push_back(whole);
+    }
+    else if ( rg.Empty() ) {
+        CRef<CSeq_loc> empty(new CSeq_loc);
+        empty->SetEmpty().Assign(*idh.GetSeqId());
+        dst.SetMix().Set().push_back(empty);
+    }
+    else {
+        CRef<CSeq_id> id(new CSeq_id);
+        id->Assign(*idh.GetSeqId());
+        dst.SetMix().AddInterval(*id,
+                                rg.GetFrom(),
+                                rg.GetTo(),
+                                strand);
+    }
+}
+
+
+void x_SingleRange(CSeq_loc& dst,
+                   const CSeq_loc& src,
+                   ISynonymMapper& syn_mapper)
+{
+    // Create a single range
+    TRange total_rg = TRange::GetEmpty();
+    CSeq_id_Handle first_id;
+    ENa_strand first_strand = eNa_strand_unknown;
+    for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
+        CSeq_id_Handle next_id = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        if ( !next_id ) {
+            // Ignore NULLs
+            continue;
+        }
+        if ( first_id ) {
+            // Seq-id may be missing for NULL seq-loc
+            if (next_id  &&  first_id != next_id) {
+                NCBI_THROW(CException, eUnknown,
+                    "Can not merge multi-id seq-loc");
+            }
+        }
+        else {
+            first_id = next_id;
+            first_strand = it.GetStrand();
+        }
+        total_rg += it.GetRange();
+    }
+    if ( first_id ) {
+        CRef<CSeq_id> id(new CSeq_id);
+        id->Assign(*first_id.GetSeqId());
+        CRef<CSeq_interval> interval(new CSeq_interval(*id,
+                                                       total_rg.GetFrom(),
+                                                       total_rg.GetTo(),
+                                                       first_strand));
+        dst.SetInt(*interval);
+    }
+    else {
+        // Null seq-loc
+        dst.SetNull();
+    }
+}
+
+
+void x_RangesToSeq_loc(CSeq_loc& dst,
+                       TIdToRangeMap& id_map,
+                       ENa_strand default_strand,
+                       CSeq_loc::TOpFlags flags)
+{
+    // Iterate ids for each strand
+    NON_CONST_ITERATE(TIdToRangeMap, id_it, id_map) {
+        if ( !id_it->first ) {
+            // All NULLs merged
+            x_PushRange(dst,
+                        id_it->first,
+                        TRange::GetEmpty(),
+                        eNa_strand_unknown);
+            continue;
+        }
+        CRef<CSeq_id> id(new CSeq_id);
+        id->Assign(*id_it->first.GetSeqId());
+        TRanges& ranges = id_it->second;
+        if ( (flags & CSeq_loc::fSort) != 0 ) {
+            if ( !IsReverse(default_strand) ) {
+                sort(ranges.begin(), ranges.end(), CRange_Less());
+            }
+            else {
+                sort(ranges.begin(), ranges.end(), CRange_ReverseLess());
+            }
+        }
+        // Merge ranges according to the flags, add to destination
+        TRange last_rg = TRange::GetEmpty();
+        bool have_range = false;
+        ITERATE(TRanges, rg, ranges) {
+            if (x_MergeRanges(last_rg, default_strand,
+                            *rg, default_strand,
+                            flags)) {
+                have_range = true;
+                continue;
+            }
+            // No merging - push current range, reset last values
+            if (have_range) {
+                x_PushRange(dst, id_it->first, last_rg, default_strand);
+            }
+            last_rg = *rg;
+            have_range = true;
+        }
+        if (have_range) {
+            x_PushRange(dst, id_it->first, last_rg, default_strand);
+        }
+    }
+}
+
+
+void x_MergeNoSort(CSeq_loc& dst,
+                   const CSeq_loc& src,
+                   CSeq_loc::TOpFlags flags,
+                   ISynonymMapper& syn_mapper)
+{
+    _ASSERT((flags & CSeq_loc::fSort) == 0);
+    dst.ChangeToMix();
+    CSeq_id_Handle last_id;
+    TRange last_rg = TRange::GetEmpty();
+    ENa_strand last_strand = eNa_strand_unknown;
+    bool have_range = false;
+    for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
+        CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        // ID and strand must match
+        TRange it_rg = it.GetRange();
+        if ( have_range  &&  last_id == idh ) {
+            if (x_MergeRanges(last_rg,
+                              last_strand,
+                              it_rg,
+                              it.GetStrand(),
+                              flags)) {
+                have_range = true;
+                continue;
+            }
+        }
+        // No merging - push current range, reset last values
+        if ( have_range ) {
+            x_PushRange(dst, last_id, last_rg, last_strand);
+        }
+        last_id = idh;
+        last_rg = it_rg;
+        last_strand = it.GetStrand();
+        have_range = true;
+    }
+    if ( have_range ) {
+        x_PushRange(dst, last_id, last_rg, last_strand);
+    }
+}
+
+
+void x_MergeAndSort(CSeq_loc& dst,
+                    const CSeq_loc& src,
+                    CSeq_loc::TOpFlags flags,
+                    ISynonymMapper& syn_mapper)
+{
+    bool use_strand = (flags & CSeq_loc::fStrand_Ignore) == 0;
+    // Id -> range map for both strands
+    auto_ptr<TIdToRangeMap> pid_map_minus(use_strand ?
+        new TIdToRangeMap : 0);
+    TIdToRangeMap id_map_plus;
+    TIdToRangeMap& id_map_minus = use_strand ?
+        *pid_map_minus.get() : id_map_plus;
+
+    // Prepare default strands
+    ENa_strand default_plus = use_strand ?
+        eNa_strand_plus : eNa_strand_unknown;
+    ENa_strand default_minus = use_strand ?
+        eNa_strand_minus : eNa_strand_unknown;
+
+    // Split location by by id/strand/range
+    for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
+        CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        if ( IsReverse(it.GetStrand()) ) {
+            id_map_minus[idh].push_back(it.GetRange());
+        }
+        else {
+            id_map_plus[idh].push_back(it.GetRange());
+        }
+    }
+
+    x_RangesToSeq_loc(dst, id_map_plus, default_plus, flags);
+    if ( use_strand ) {
+        x_RangesToSeq_loc(dst, id_map_minus, default_minus, flags);
+    }
+}
+
+
+void x_SingleRange(CSeq_loc& dst,
+                   const CSeq_loc& src,
+                   TIdToRangeColl& rg_coll_plus,
+                   TIdToRangeColl& rg_coll_minus,
+                   ISynonymMapper& syn_mapper,
+                   ILengthGetter& len_getter)
+{
+    TRange total_rg = TRange::GetEmpty();
+    CSeq_id_Handle first_id;
+    ENa_strand first_strand = eNa_strand_unknown;
+    for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
+        CSeq_id_Handle next_id = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        if ( !next_id ) {
+            // Ignore NULLs
+            continue;
+        }
+        if ( first_id ) {
+            // Seq-id may be missing for NULL seq-loc
+            if (next_id  &&  first_id != next_id) {
+                NCBI_THROW(CException, eUnknown,
+                    "Can not merge multi-id seq-loc");
+            }
+        }
+        else {
+            first_id = next_id;
+            first_strand = it.GetStrand();
+        }
+        TRange it_range = it.GetRange();
+        if (it_range.GetFrom() >= total_rg.GetFrom()  &&
+            it_range.GetTo() <= total_rg.GetTo()) {
+            // Nothing new can be added from this interval
+            continue;
+        }
+        if ( it_range.IsWhole() ) {
+            it_range.SetOpen(0, len_getter.GetLength(it.GetSeq_id()));
+        }
+        TRangeColl it_rg_coll(it_range);
+        TIdToRangeColl& rg_coll = IsReverse(it.GetStrand()) ?
+            rg_coll_minus : rg_coll_plus;
+        TIdToRangeColl::const_iterator id_it = rg_coll.find(next_id);
+        if (id_it != rg_coll.end()) {
+            it_rg_coll -= id_it->second;
+        }
+        total_rg += it_rg_coll.GetLimits();
+    }
+
+    if ( first_id ) {
+        CRef<CSeq_id> id(new CSeq_id);
+        id->Assign(*first_id.GetSeqId());
+        CRef<CSeq_interval> interval(new CSeq_interval(*id,
+                                                       total_rg.GetFrom(),
+                                                       total_rg.GetTo(),
+                                                       first_strand));
+        dst.SetInt(*interval);
+    }
+    else {
+        // Null seq-loc
+        dst.SetNull();
+    }
+}
+
+
+void x_SubNoSort(CSeq_loc& dst,
+                 const CSeq_loc& src,
+                 TIdToRangeColl& rg_coll_plus,
+                 TIdToRangeColl& rg_coll_minus,
+                 ISynonymMapper& syn_mapper,
+                 ILengthGetter& len_getter,
+                 CSeq_loc::TOpFlags flags)
+{
+    _ASSERT((flags & CSeq_loc::fSort) == 0);
+    dst.ChangeToMix();
+    CSeq_id_Handle last_id;
+    TRange last_rg = TRange::GetEmpty();
+    ENa_strand last_strand = eNa_strand_unknown;
+    bool have_range = false;
+    for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
+        CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        TRange it_range = it.GetRange();
+        if ( it_range.IsWhole() ) {
+            it_range.SetOpen(0, len_getter.GetLength(it.GetSeq_id()));
+        }
+        TRangeColl it_rg_coll(it_range);
+        TIdToRangeColl& rg_coll = IsReverse(it.GetStrand()) ?
+            rg_coll_minus : rg_coll_plus;
+        TIdToRangeColl::const_iterator id_it = rg_coll.find(idh);
+        if (id_it != rg_coll.end()) {
+            it_rg_coll -= id_it->second;
+        }
+        ITERATE(TRangeColl, rg_it, it_rg_coll) {
+            if ( have_range  &&  last_id == idh ) {
+                if (x_MergeRanges(last_rg,
+                                last_strand,
+                                *rg_it,
+                                it.GetStrand(),
+                                flags)) {
+                    have_range = true;
+                    continue;
+                }
+            }
+            // No merging - push current range, reset last values
+            if ( have_range ) {
+                x_PushRange(dst, last_id, last_rg, last_strand);
+            }
+            last_id = idh;
+            last_rg = *rg_it;
+            last_strand = it.GetStrand();
+            have_range = true;
+        }
+    }
+    if ( have_range ) {
+        x_PushRange(dst, last_id, last_rg, last_strand);
+    }
+}
+
+
+void x_SubAndSort(CSeq_loc& dst,
+                  const CSeq_loc& src,
+                  TIdToRangeColl& rg_coll_plus,
+                  TIdToRangeColl& rg_coll_minus,
+                  ISynonymMapper& syn_mapper,
+                  ILengthGetter& len_getter,
+                  CSeq_loc::TOpFlags flags)
+{
+    bool use_strand = (flags & CSeq_loc::fStrand_Ignore) == 0;
+
+    // Id -> range map for both strands
+    auto_ptr<TIdToRangeMap> p_id_map_minus(use_strand ?
+        new TIdToRangeMap : 0);
+    TIdToRangeMap id_map_plus;
+    TIdToRangeMap& id_map_minus = use_strand ?
+        *p_id_map_minus.get() : id_map_plus;
+
+    // Prepare default strands
+    ENa_strand default_plus = use_strand ?
+        eNa_strand_plus : eNa_strand_unknown;
+    ENa_strand default_minus = use_strand ?
+        eNa_strand_minus : eNa_strand_unknown;
+
+    dst.ChangeToMix();
+    for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
+        CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        TRange it_range = it.GetRange();
+        if ( it_range.IsWhole() ) {
+            it_range.SetOpen(0, len_getter.GetLength(it.GetSeq_id()));
+        }
+        TRangeColl it_rg_coll(it_range);
+        TRanges& rg_map = IsReverse(it.GetStrand()) ?
+            id_map_minus[idh] : id_map_plus[idh];
+        TIdToRangeColl& rg_coll = IsReverse(it.GetStrand()) ?
+            rg_coll_minus : rg_coll_plus;
+        TIdToRangeColl::const_iterator id_it = rg_coll.find(idh);
+        if (id_it != rg_coll.end()) {
+            it_rg_coll -= id_it->second;
+        }
+        ITERATE(TRangeColl, rg_it, it_rg_coll) {
+            rg_map.push_back(*rg_it);
+        }
+    }
+
+    x_RangesToSeq_loc(dst, id_map_plus, default_plus, flags);
+    if ( use_strand ) {
+        x_RangesToSeq_loc(dst, id_map_minus, default_minus, flags);
+    }
+}
+
+
+class CDummySynonymMapper : public ISynonymMapper
+{
+public:
+    CDummySynonymMapper(void) {}
+    virtual ~CDummySynonymMapper(void) {}
+
+    virtual CSeq_id_Handle GetBestSynonym(const CSeq_id& id)
+        {
+            return CSeq_id_Handle::GetHandle(id);
+        }
+};
+
+
+CRef<CSeq_loc> CSeq_loc::Merge(TOpFlags        flags,
+                               ISynonymMapper* syn_mapper) const
+{
+    auto_ptr<CDummySynonymMapper> p_mapper;
+    if ( !syn_mapper ) {
+        p_mapper.reset(new CDummySynonymMapper);
+        syn_mapper = p_mapper.get();
+    }
+
+    CRef<CSeq_loc> ret(new CSeq_loc);
+    if ( (flags & CSeq_loc::fMerge_SingleRange) != 0 ) {
+        x_SingleRange(*ret, *this, *syn_mapper);
+    }
+    else if ( (flags & CSeq_loc::fSort) == 0 ) {
+        x_MergeNoSort(*ret, *this, flags, *syn_mapper);
+    }
+    else {
+        x_MergeAndSort(*ret, *this, flags, *syn_mapper);
+    }
+    return ret;
+}
+
+
+CRef<CSeq_loc> CSeq_loc::Add(const CSeq_loc& other,
+                             TOpFlags        flags,
+                             ISynonymMapper* syn_mapper) const
+{
+    auto_ptr<CDummySynonymMapper> p_mapper;
+    if ( !syn_mapper ) {
+        p_mapper.reset(new CDummySynonymMapper);
+        syn_mapper = p_mapper.get();
+    }
+
+    CRef<CSeq_loc> ret(new CSeq_loc);
+    CSeq_loc tmp;
+    tmp.SetMix().AddSeqLoc(const_cast<CSeq_loc&>(*this));
+    tmp.SetMix().AddSeqLoc(const_cast<CSeq_loc&>(other));
+    if ( (flags & CSeq_loc::fMerge_SingleRange) != 0 ) {
+        x_SingleRange(*ret, tmp, *syn_mapper);
+    }
+    else if ( (flags & CSeq_loc::fSort) == 0 ) {
+        x_MergeNoSort(*ret, tmp, flags, *syn_mapper);
+    }
+    else {
+        x_MergeAndSort(*ret, tmp, flags, *syn_mapper);
+    }
+    return ret;
+}
+
+
+CRef<CSeq_loc> CSeq_loc::Subtract(const CSeq_loc& other,
+                                  TOpFlags        flags,
+                                  ISynonymMapper* syn_mapper,
+                                  ILengthGetter*  len_getter) const
+{
+    auto_ptr<CDummySynonymMapper> p_mapper;
+    if ( !syn_mapper ) {
+        p_mapper.reset(new CDummySynonymMapper);
+        syn_mapper = p_mapper.get();
+    }
+
+    CRef<CSeq_loc> ret(new CSeq_loc);
+
+    bool use_strand = (flags & CSeq_loc::fStrand_Ignore) == 0;
+
+    // Range collection for each strand
+    auto_ptr<TIdToRangeColl> p_rg_coll_minus(use_strand ?
+        new TIdToRangeColl : 0);
+    TIdToRangeColl rg_coll_plus;
+    TIdToRangeColl& rg_coll_minus = use_strand ?
+        *p_rg_coll_minus.get() : rg_coll_plus;
+
+    // Create range collection(s) for loc2
+    for (CSeq_loc_CI it(other); it; ++it) {
+        if ( it.IsEmpty() ) {
+            continue;
+        }
+        CSeq_id_Handle idh = syn_mapper->GetBestSynonym(it.GetSeq_id());
+        TRangeColl& rmap = IsReverse(it.GetStrand()) ?
+            rg_coll_minus[idh] : rg_coll_plus[idh];
+        rmap += it.GetRange();
+    }
+
+    if ( (flags & CSeq_loc::fMerge_SingleRange) != 0 ) {
+        x_SingleRange(*ret,
+                      *this,
+                      rg_coll_plus,
+                      rg_coll_minus,
+                      *syn_mapper,
+                      *len_getter);
+    }
+    else if ( (flags & CSeq_loc::fSort) == 0 ) {
+        x_SubNoSort(*ret,
+                    *this,
+                    rg_coll_plus,
+                    rg_coll_minus,
+                    *syn_mapper,
+                    *len_getter,
+                    flags);
+    }
+    else {
+        x_SubAndSort(*ret,
+                     *this,
+                     rg_coll_plus,
+                     rg_coll_minus,
+                     *syn_mapper,
+                     *len_getter,
+                     flags);
+    }
+
+    return ret;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -1665,6 +2270,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.49  2004/11/15 15:07:57  grichenk
+ * Moved seq-loc operations to CSeq_loc, modified flags.
+ *
  * Revision 6.48  2004/10/25 18:03:15  shomrat
  * Bug fix
  *
