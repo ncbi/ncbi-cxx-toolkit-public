@@ -151,19 +151,6 @@ public:
     bool GetGappedMode() const { return m_Opts->GetGappedMode(); }
     void SetGappedMode(bool m = true) { m_Opts->SetGappedMode(m); }
 
-    /************************ Scoring options ************************/
-    const char* GetMatrixName() const { return m_Opts->GetMatrixName(); }
-    void SetMatrixName(const char* matrix) { m_Opts->SetMatrixName(matrix); }
-
-    const char* GetMatrixPath() const { return m_Opts->GetMatrixPath(); }
-    void SetMatrixPath(const char* path) { m_Opts->SetMatrixPath(path); }
-
-    int GetGapOpeningCost() const { return m_Opts->GetGapOpeningCost(); }
-    void SetGapOpeningCost(int g) { m_Opts->SetGapOpeningCost(g); }
-
-    int GetGapExtensionCost() const { return m_Opts->GetGapExtensionCost(); }
-    void SetGapExtensionCost(int e) { m_Opts->SetGapExtensionCost(e); }
-
     /******************** Database (subject) options *******************/
     Int8 GetDbLength() const { return m_Opts->GetDbLength(); }
     void SetDbLength(Int8 len) { m_Opts->SetDbLength(len); }
@@ -197,6 +184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/03/10 14:54:39  madden
+ * Remove methods for get/set matrix, matrix-path, gap-opening, gap-extension (moved up to next class)
+ *
  * Revision 1.8  2004/02/18 23:47:56  dondosha
  * Uncommented [SG]etTotalHspLimit, as they will now be used
  *
