@@ -37,9 +37,6 @@
 
 BEGIN_NCBI_SCOPE
 
-// Default image limit
-#define IMAGE_LIMIT_16MB  0x1000000
-
 enum ECompressMethod {
     eNone,
     eZLib,
@@ -244,6 +241,14 @@ protected:
 
 class NCBI_DBAPIUTIL_BLOBSTORE_EXPORT CBlobStoreBase {
 public:
+    
+    enum
+    {
+        // Default image limit  
+        IMAGE_LIMIT_16MB = 0x1000000
+    };
+
+
     bool Exists(const string& blob_id);
     //user has to delete istream
     istream* OpenForRead(const string& blob_id);
@@ -374,6 +379,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/10/25 14:32:08  ivanovsk
+ * Replace #define of default image size by enum.
+ *
  * Revision 1.6  2004/10/22 11:40:17  ivanov
  * Replaced static const member CBlobStoreBase::g_16MB with
  * #define IMAGE_LIMIT_16MB.
