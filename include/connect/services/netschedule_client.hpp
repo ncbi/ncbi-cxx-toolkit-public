@@ -128,6 +128,16 @@ public:
     bool RequestRateControl() const { return m_RequestRateControl; }
 
 
+    /// Set program version (like: MyProgram v. 1.2.3)
+    ///
+    /// Program version is passed to NetSchedule queue so queue
+    /// controls versions and does not allow obsolete clients
+    /// to connect and submit or execute jobs
+    ///
+    void SetProgramVersion(const string& pv) { m_ProgramVersion = pv; }
+
+    /// Get program version string
+    const string& GetProgramVersion() const { return m_ProgramVersion; }
 
     // -----------------------------------------------------------------
 
@@ -424,6 +434,7 @@ protected:
     string            m_Queue;
     bool              m_RequestRateControl;
     CNetSchedule_Key  m_JobKey;
+    string            m_ProgramVersion;
 
 private:
     string         m_Tmp; ///< Temporary string
@@ -572,20 +583,22 @@ public:
         eInvalidJobStatus,
         eUnknownQueue,
         eTooManyPendingJobs,
-        eDataTooLong
+        eDataTooLong,
+        eInvalidClientOrVersion
     };
 
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode())
         {
-        case eAuthenticationError:return "eAuthenticationError";
-        case eKeyFormatError:     return "eKeyFormatError";
-        case eInvalidJobStatus:   return "eInvalidJobStatus";
-        case eUnknownQueue:       return "eUnknownQueue";
-        case eTooManyPendingJobs: return "eTooManyPendingJobs";
-        case eDataTooLong:        return "eDataTooLong";
-        default:                  return CException::GetErrCodeString();
+        case eAuthenticationError:    return "eAuthenticationError";
+        case eKeyFormatError:         return "eKeyFormatError";
+        case eInvalidJobStatus:       return "eInvalidJobStatus";
+        case eUnknownQueue:           return "eUnknownQueue";
+        case eTooManyPendingJobs:     return "eTooManyPendingJobs";
+        case eDataTooLong:            return "eDataTooLong";
+        case eInvalidClientOrVersion: return "eInvalidClientOrVersion";
+        default:                      return CException::GetErrCodeString();
         }
     }
 
@@ -646,6 +659,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/04/06 12:37:07  kuznets
+ * Added support of client version control
+ *
  * Revision 1.21  2005/04/01 14:21:27  kuznets
  * Added penalty to unavailable service
  *

@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
-#include <corelib/plugin_manager_impl.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netschedule_client.hpp>
@@ -952,6 +951,12 @@ void CNetScheduleClient::CheckOK(string* str)
         // Answer is not in "OK:....." format
         string msg = "Server error:";
         TrimErr(str);
+
+        if (*str == "CLIENT_VERSION") {
+            NCBI_THROW(CNetScheduleException, eInvalidClientOrVersion, 
+                       "Client name or version incompatibility");
+        }
+
         msg += *str;
         NCBI_THROW(CNetServiceException, eCommunicationError, msg);
     }
@@ -971,6 +976,12 @@ void CNetScheduleClient::MakeCommandPacket(string* out_str,
     }
 
     *out_str = m_ClientName;
+
+    if (!m_ProgramVersion.empty()) {
+        out_str->append(" prog='");
+        out_str->append(m_ProgramVersion);
+        out_str->append("'");
+    }
 /*
     const string& client_name_comment = GetClientNameComment();
     if (!client_name_comment.empty()) {
@@ -1016,130 +1027,15 @@ bool CNetScheduleClient::IsError(const char* str)
     return cmp == 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-const char* kNetScheduleDriverName = "netscheduleclient";
-
-/// @internal
-class CNetScheduleClientCF : public IClassFactory<CNetScheduleClient>
-{
-public:
-
-    typedef CNetScheduleClient                 TDriver;
-    typedef CNetScheduleClient                 IFace;
-    typedef IFace                              TInterface;
-    typedef IClassFactory<CNetScheduleClient>  TParent;
-    typedef TParent::SDriverInfo               TDriverInfo;
-    typedef TParent::TDriverList               TDriverList;
-
-    /// Construction
-    ///
-    /// @param driver_name
-    ///   Driver name string
-    /// @param patch_level
-    ///   Patch level implemented by the driver.
-    ///   By default corresponds to interface patch level.
-    CNetScheduleClientCF(const string& driver_name = kNetScheduleDriverName,
-                         int patch_level = -1)
-        : m_DriverVersionInfo
-        (ncbi::CInterfaceVersion<IFace>::eMajor,
-         ncbi::CInterfaceVersion<IFace>::eMinor,
-         patch_level >= 0 ?
-            patch_level : ncbi::CInterfaceVersion<IFace>::ePatchLevel),
-          m_DriverName(driver_name)
-    {
-        _ASSERT(!m_DriverName.empty());
-    }
-
-    /// Create instance of TDriver
-    virtual TInterface*
-    CreateInstance(const string& driver  = kEmptyStr,
-                   CVersionInfo version = NCBI_INTERFACE_VERSION(IFace),
-                   const TPluginManagerParamTree* params = 0) const
-    {
-        TDriver* drv = 0;
-        if (params && (driver.empty() || driver == m_DriverName)) {
-            if (version.Match(NCBI_INTERFACE_VERSION(IFace))
-                                != CVersionInfo::eNonCompatible) {
-
-            CConfig conf(params);
-            const string& client_name = 
-                conf.GetString(m_DriverName, 
-                               "client_name", CConfig::eErr_Throw, "noname");
-            const string& queue_name = 
-                conf.GetString(m_DriverName, 
-                               "queue_name", CConfig::eErr_Throw, "noname");
-            const string& service = 
-                conf.GetString(m_DriverName, 
-                               "service", CConfig::eErr_NoThrow, "");
-            if (!service.empty()) {
-                unsigned int rebalance_time = conf.GetInt(m_DriverName, 
-                                                "rebalance_time",
-                                                CConfig::eErr_NoThrow, 10);
-                unsigned int rebalance_requests = conf.GetInt(m_DriverName,
-                                                "rebalance_requests",
-                                                CConfig::eErr_NoThrow, 100);
-                drv = new CNetScheduleClient_LB(client_name, 
-                                                service, queue_name,
-                                                rebalance_time, 
-                                                rebalance_requests);
-
-                const string& services_list = conf.GetString(m_DriverName,
-                                                "sevices_lis",
-                                                 CConfig::eErr_NoThrow, "");
-                vector<string> services;
-                NStr::Tokenize(services_list, ",", services);
-                for(vector<string>::const_iterator it = services.begin();
-                                                   it != services.end(); ++it) {
-                    string host, sport;
-                    if (NStr::SplitInTwo(*it,":",host,sport)) {
-                        try {
-                            unsigned int port = NStr::StringToUInt(sport);
-                            static_cast<CNetScheduleClient_LB*>(drv)->
-                                                  AddServiceAddress(host,port);
-                        } catch(CStringException&) {}
-                    }
-                }
-            } else { // non lb client
-                const string& host = 
-                    conf.GetString(m_DriverName, 
-                                  "host", CConfig::eErr_Throw, "");
-                unsigned int port = conf.GetInt(m_DriverName,
-                                               "port",
-                                               CConfig::eErr_Throw, 9100);
-
-                drv = new CNetScheduleClient(host, port, 
-                                             client_name, queue_name);
-            }
-            }                               
-        }
-        return drv;
-    }
-
-    void GetDriverVersions(TDriverList& info_list) const
-    {
-        info_list.push_back(TDriverInfo(m_DriverName, m_DriverVersionInfo));
-    }
-protected:
-    CVersionInfo  m_DriverVersionInfo;
-    string        m_DriverName;
-
-};
-
-void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetschedule(
-     CPluginManager<CNetScheduleClient>::TDriverInfoList&   info_list,
-     CPluginManager<CNetScheduleClient>::EEntryPointRequest method)
-{
-       CHostEntryPointImpl<CNetScheduleClientCF>::
-       NCBI_EntryPointImpl(info_list, method);
-
-}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/04/06 12:37:31  kuznets
+ * Added support of client version control
+ *
  * Revision 1.20  2005/04/01 16:42:59  didenko
  * Added reading services_list parameter from ini file when LB client is
  * created by PluginManager
