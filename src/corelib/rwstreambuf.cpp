@@ -153,7 +153,7 @@ CT_INT_TYPE CRWStreambuf::overflow(CT_INT_TYPE c)
         return n_written == sizeof(b) ? c : CT_EOF;
     }
 
-    assert(CT_EQ_INT_TYPE(c, CT_EOF));
+    _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF));
     switch ( m_Writer->Flush() ) {
     case eRW_Error:
     case eRW_Eof:
@@ -282,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2005/02/03 20:40:25  ucko
+ * Use our portable _ASSERT rather than assert.
+ *
  * Revision 1.10  2005/02/03 19:37:58  lavr
  * Fix flush() problem in overflow()
  *
