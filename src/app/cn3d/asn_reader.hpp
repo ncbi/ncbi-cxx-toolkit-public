@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/05/29 23:58:06  thiessen
+* use text mode ostream for ascii asn
+*
 * Revision 1.8  2001/09/27 20:58:14  thiessen
 * add VisibleString filter option
 *
@@ -120,7 +123,8 @@ static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool
 
     // initialize a binary output stream
     auto_ptr<ncbi::CNcbiOstream> outStream;
-    outStream.reset(new ncbi::CNcbiOfstream(filename, IOS_BASE::out | IOS_BASE::binary));
+    outStream.reset(new ncbi::CNcbiOfstream(filename,
+        isBinary ? (IOS_BASE::out | IOS_BASE::binary) : IOS_BASE::out));
     if (!(*outStream)) {
         *err = "Cannot open file for writing";
         return false;
