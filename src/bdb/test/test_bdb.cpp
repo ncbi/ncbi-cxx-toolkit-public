@@ -1475,7 +1475,7 @@ static void s_TEST_BDB_BLOB_File(void)
 
     cur.From << 1;
 
-    const char* tdata = test_data;
+    //const char* tdata = test_data;
     while (cur.Fetch() == eBDB_Ok) { 
         i2 = blob.i2;
         assert(i2 == 2 || i2 == 3 || i2 == 4);
@@ -2021,6 +2021,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2004/12/17 12:10:35  kuznets
+ * Code cleanup: removed unused variable
+ *
  * Revision 1.55  2004/11/23 17:09:11  kuznets
  * Implemented BLOB update in cursor
  *

@@ -238,7 +238,9 @@ void SearchPhoneBook(SPhoneBookDB& dbf, SPhoneBookZipIDX& idx, int zip_code)
 
         dbf.person_id = *it;
         EBDB_ErrCode ret = dbf.Fetch();
-        assert(ret == eBDB_Ok);
+        if (ret != eBDB_Ok) {
+            assert(0);
+        }
 
         cout << "====================================" << endl;
         PrintRecord(dbf);
@@ -308,6 +310,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/12/17 12:10:41  kuznets
+ * Code cleanup: removed unused variable
+ *
  * Revision 1.3  2004/05/17 20:55:18  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

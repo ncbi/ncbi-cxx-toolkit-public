@@ -747,10 +747,6 @@ public:
         GetArguments(tr, eCheckAll);
 
         CBDB_QueryNode& qnode = tr.GetValue();
-
-        unsigned int size = m_ArgVector.size();
-        _ASSERT(size);
-
         const string* arg = GetArg(0);
         if (*arg == "0") {
             qnode.SetValue("1");
@@ -1133,6 +1129,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/12/17 12:10:28  kuznets
+ * Code cleanup: removed unused variable
+ *
  * Revision 1.14  2004/06/28 12:16:49  kuznets
  * Fixed bug incorrect search in NULL fields
  *
