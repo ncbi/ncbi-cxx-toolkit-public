@@ -364,16 +364,6 @@ CSeq_id_Mapper& CSeq_id_Handle::GetMapper(void) const
 }
 
 
-inline
-unsigned CSeq_id_Handle::GetHash(void) const
-{
-    unsigned hash = m_Gi;
-    if ( !hash ) {
-        hash = unsigned((unsigned long)(m_Info)>>3);
-    }
-    return hash;
-}
-
 /* @} */
 
 
@@ -384,6 +374,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/01/12 15:00:57  vasilche
+* Fixed the way to get pointer in GetHash().
+*
 * Revision 1.30  2004/12/22 15:56:01  vasilche
 * Added helper functions to avoid retrieval of CSeq_id_Mapper.
 *

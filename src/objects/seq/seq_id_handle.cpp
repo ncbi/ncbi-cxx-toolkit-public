@@ -324,12 +324,26 @@ string CSeq_id_Handle::AsString() const
     return CNcbiOstrstreamToString(os);
 }
 
+
+unsigned CSeq_id_Handle::GetHash(void) const
+{
+    unsigned hash = m_Gi;
+    if ( !hash ) {
+        hash = unsigned((unsigned long)(m_Info.GetPointerOrNull())>>3);
+    }
+    return hash;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/01/12 15:00:57  vasilche
+* Fixed the way to get pointer in GetHash().
+*
 * Revision 1.28  2004/12/22 15:56:01  vasilche
 * Added helper functions to avoid retrieval of CSeq_id_Mapper.
 *
