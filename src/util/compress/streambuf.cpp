@@ -160,6 +160,9 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
         }
     } while ( out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow);
 
+    // Sync underlying stream buffers
+    m_Stream->rdbuf()->PUBSYNC()
+
     // Cleanup
     sp->m_Processor->End();
     sp->m_Finalized = true;
@@ -455,6 +458,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/02/24 14:53:32  ivanov
+ * CCompressionStreambuf::Finalize(): do not forget to sync underlying
+ * stream buffers
+ *
  * Revision 1.13  2004/08/11 15:22:16  vakatov
  * Compilation warning fix
  *
