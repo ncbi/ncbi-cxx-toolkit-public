@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/03/07 20:05:00  vasilche
+* Added NewInstance method to generated classes.
+*
 * Revision 1.11  2000/03/07 14:06:34  vasilche
 * Added generation of reference counted objects.
 *
@@ -118,6 +121,11 @@ bool CTypeStrings::IsObject(void) const
 bool CTypeStrings::NeedSetFlag(void) const
 {
     return true;
+}
+
+string CTypeStrings::NewInstance(const string& init) const
+{
+    return "new "+GetCType()+'('+init+')';
 }
 
 string CTypeStrings::GetIsSetCode(const string& /*var*/) const

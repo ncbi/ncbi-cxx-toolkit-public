@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/03/07 20:04:59  vasilche
+* Added NewInstance method to generated classes.
+*
 * Revision 1.7  2000/03/07 14:06:30  vasilche
 * Added generation of reference counted objects.
 *
@@ -424,14 +427,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 else if ( i->memberType == ePointerMember ) {
                     code.Methods() <<
-                        "    case "<<STATE_PREFIX<<i->cName<<":\n";
+                        "    case "<<STATE_PREFIX<<i->cName<<":\n"
+                        "        m_"<<i->cName<<" = "<<i->type->NewInstance(NcbiEmptyString)<<";\n";
                     if ( i->type->IsObject() ) {
                         code.Methods() <<
-                            "        (m_"<<i->cName<<" = new "<<i->cType<<")->AddReference();\n";
-                    }
-                    else {
-                        code.Methods() <<
-                            "        m_"<<i->cName<<" = new "<<i->cType<<";\n";
+                            "        m_"<<i->cName<<"->AddReference();\n";
                     }
                     code.Methods() <<
                         "        break;\n";
@@ -586,7 +586,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "// helper methods\n"
         "void* "<<methodPrefix<<"x_Create(void)\n"
         "{\n"
-        "    return new "<<GetClassName()<<";\n"
+        "    return "<<GetClassName()<<"::NewInstance();\n"
         "}\n"
         "\n"
         "int "<<methodPrefix<<"x_Selected(const void* object)\n"

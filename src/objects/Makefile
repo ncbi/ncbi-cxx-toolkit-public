@@ -2,7 +2,7 @@ SUB_PROJ = general biblio medline medlars pub pubmed seqloc seqalign seqblock se
 
 new_module = ../../../scripts/new_module.sh
 
-all sources makefiles directories:
+all sources makefiles directories clean_all_sources:
 	for i in $(SUB_PROJ); do \
 		( cd $$i && $(new_module) $$i $@; ) || exit 2; \
 	done

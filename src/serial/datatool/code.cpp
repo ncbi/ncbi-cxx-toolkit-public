@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/03/07 20:05:00  vasilche
+* Added NewInstance method to generated classes.
+*
 * Revision 1.27  2000/03/07 14:06:31  vasilche
 * Added generation of reference counted objects.
 *
@@ -160,6 +163,24 @@ void CClassCode::AddDestructionCode(const string& code)
     m_DestructionCode.push_front(code);
 }
 
+bool CClassCode::HaveInitializers(void) const
+{
+    return const_cast<CNcbiOstrstream&>(m_Initializers).pcount() != 0;
+}
+
+CNcbiOstream& CClassCode::WriteInitializers(CNcbiOstream& out) const
+{
+    return Write(out, m_Initializers);
+}
+
+CNcbiOstream& CClassCode::WriteDestructionCode(CNcbiOstream& out) const
+{
+    iterate ( list<string>, i, m_DestructionCode ) {
+        WriteTabbed(out, *i);
+    }
+    return out;
+}
+
 CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
 {
     header <<
@@ -168,16 +189,13 @@ CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
         header << " : public "<<GetParentClassNamespaceName()<<"::"<<GetParentClassName();
     header <<
         "\n"
-        "{\n"
-        "public:\n"
-        "    // constructor/destructor\n"
-        "    "<<GetClassName()<<"(void);\n"
-        "    ";
-    if ( HaveVirtualDestructor() )
-        header << "virtual ";
+        "{\n";
+    if ( !GetParentClassName().empty() ) {
+        header <<
+            "    typedef "<<GetParentClassNamespaceName()<<"::"<<GetParentClassName()<<" Tparent;\n";
+    }
     header <<
-        '~'<<GetClassName()<<"(void);\n"
-        "\n";
+        "public:\n";
     Write(header, m_ClassPublic);
     header << 
         "\n"
@@ -200,26 +218,6 @@ CNcbiOstream& CClassCode::GenerateINL(CNcbiOstream& code) const
 
 CNcbiOstream& CClassCode::GenerateCPP(CNcbiOstream& code) const
 {
-    string methodPrefix = GetMethodPrefix();
-    code <<
-        methodPrefix<<GetClassName()<<"(void)\n";
-    if ( const_cast<CNcbiOstrstream&>(m_Initializers).pcount() != 0 ) {
-        code << "    : ";
-        Write(code, m_Initializers);
-        code << "\n";
-    }
-    code <<
-        "{\n"
-        "}\n"
-        "\n"
-         <<methodPrefix<<"~"<<GetClassName()<<"(void)\n"
-        "{\n";
-    iterate ( list<string>, i, m_DestructionCode ) {
-        WriteTabbed(code, *i);
-    }
-    code <<
-        "}\n"
-        "\n";
     Write(code, m_Methods);
     code << "\n";
     return code;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/03/07 20:04:57  vasilche
+* Added NewInstance method to generated classes.
+*
 * Revision 1.2  2000/03/07 14:06:06  vasilche
 * Added generation of reference counted objects.
 *
@@ -83,6 +86,8 @@ public:
     virtual bool CanBeInSTL(void) const;
     virtual bool IsObject(void) const;
     virtual bool NeedSetFlag(void) const;
+
+    virtual string NewInstance(const string& init) const;
 
     virtual string GetInitializer(void) const;
     virtual string GetDestructionCode(const string& expr) const;

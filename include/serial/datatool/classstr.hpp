@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/03/07 20:04:56  vasilche
+* Added NewInstance method to generated classes.
+*
 * Revision 1.3  2000/03/07 14:06:05  vasilche
 * Added generation of reference counted objects.
 *
@@ -123,6 +126,8 @@ public:
     bool CanBeInSTL(void) const;
     bool IsObject(void) const;
 
+    string NewInstance(const string& init) const;
+
     void SetObject(bool isObject)
         {
             m_IsObject = isObject;
@@ -173,6 +178,8 @@ public:
     bool CanBeKey(void) const;
     bool CanBeInSTL(void) const;
     bool IsObject(void) const;
+
+    string NewInstance(const string& init) const;
 
     string GetResetCode(const string& var) const;
 

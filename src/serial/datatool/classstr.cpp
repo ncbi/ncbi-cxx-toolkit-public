@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/03/07 20:05:00  vasilche
+* Added NewInstance method to generated classes.
+*
 * Revision 1.5  2000/03/07 14:06:30  vasilche
 * Added generation of reference counted objects.
 *
@@ -149,6 +152,11 @@ bool CClassTypeStrings::CanBeInSTL(void) const
     return false;
 }
 
+string CClassTypeStrings::NewInstance(const string& init) const
+{
+    return GetCType()+"::NewInstance("+init+')';
+}
+
 bool CClassTypeStrings::IsObject(void) const
 {
     return m_IsObject;
@@ -175,13 +183,46 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     if ( haveUserClass )
         codeClassName += "_Base";
     CClassCode code(ctx, codeClassName);
-    if ( haveUserClass )
-        code.SetVirtualDestructor();
     if ( m_ParentClassName.empty() ) {
         code.SetParentClass("CObject", "NCBI_NS_NCBI");
     }
     else {
         code.SetParentClass(m_ParentClassName, m_ParentClassNamespaceName);
+    }
+    string methodPrefix = code.GetMethodPrefix();
+
+    // constructors
+    code.ClassPublic() <<
+        "    // constructor for static/automatic objects\n"
+        "    "<<codeClassName<<"(void);\n";
+
+    code.ClassProtected() <<
+        "    // hidden constructor for dynamic objects\n"
+        "    "<<codeClassName<<"(NCBI_NS_NCBI::CObject::ECanDelete);\n";
+
+    // destructor
+    code.ClassPublic() <<
+        "    // destructor\n"
+        "    ";
+    if ( haveUserClass )
+        code.ClassPublic() << "virtual ";
+    code.ClassPublic() <<
+        '~'<<codeClassName<<"(void);\n"
+        "\n";
+
+    if ( !haveUserClass ) {
+        code.ClassPublic() <<
+            "    // create dynamically allocated object\n"
+            "    static "<<codeClassName<<"* NewInstance(void);\n"
+            "\n";
+        code.InlineMethods() <<
+            "// create dynamically allocated object\n"
+            "inline\n"<<
+            ctx.GetMethodPrefix()<<codeClassName<<"* "<<methodPrefix<<"NewInstance(void)\n"
+            "{\n"
+            "    return new "<<codeClassName<<"(NCBI_NS_NCBI::CObject::eCanDelete);\n"
+            "}\n"
+            "\n";
     }
 
     code.ClassPublic() <<
@@ -191,8 +232,46 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 
     GenerateClassCode(code,
                       haveUserClass? code.ClassPublic(): code.ClassProtected(),
-                      code.GetMethodPrefix(),
-                      codeClassName);
+                      methodPrefix, codeClassName);
+
+    // constructors/destructor code
+    code.Methods() <<
+        "// constructor for static/automatic objects\n"<<
+        methodPrefix<<codeClassName<<"(void)\n";
+    if ( code.HaveInitializers() ) {
+        code.Methods() <<
+            "    : ";
+        code.WriteInitializers(code.Methods());
+        code.Methods() << '\n';
+    }
+    code.Methods() <<
+        "{\n"
+        "}\n"
+        "\n";
+
+    code.Methods() <<
+        "// constructor for dynamic objects\n"<<
+        methodPrefix<<codeClassName<<"(NCBI_NS_NCBI::CObject::ECanDelete)\n";
+    code.Methods() <<
+        "    : Tparent(NCBI_NS_NCBI::CObject::eCanDelete)";
+    if ( code.HaveInitializers() ) {
+        code.Methods() << ", ";
+        code.WriteInitializers(code.Methods());
+    }
+    code.Methods() <<
+        "\n"
+        "{\n"
+        "}\n"
+        "\n";
+
+    code.Methods() <<
+        "// destructor\n"<<
+        methodPrefix<<"~"<<codeClassName<<"(void)\n"
+        "{\n";
+    code.WriteDestructionCode(code.Methods());
+    code.Methods() <<
+        "}\n"
+        "\n";
 }
 
 void CClassTypeStrings::GenerateClassCode(CClassCode& code,
@@ -458,13 +537,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     string init = i->defaultValue;
                     if ( !init.empty() ) {
                         code.AddInitializer(i->mName,
-                                            "new "+i->tName+'('+init+')');
+                                            i->type->NewInstance(init));
                     }
                     else if ( !i->optional ) {
                         if ( init.empty() )
                             init = i->type->GetInitializer();
                         code.AddInitializer(i->mName,
-                                            "new "+i->tName+'('+init+')');
+                                            i->type->NewInstance(init));
                     }
                 }
                 else {
@@ -561,11 +640,22 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
     out <<
         "class "<<GetClassName()<<" : public "<<GetClassName()<<"_Base\n"
         "{\n"
-        "    typedef "<<GetClassName()<<"_Base CBase;\n"
+        "    typedef "<<GetClassName()<<"_Base Tparent;\n"
         "public:\n"
-        "    // constructors/destructors\n"
+        "    // constructor for static/automatic objects\n"
         "    "<<GetClassName()<<"(void);\n"
+        "    // destructor\n"
         "    ~"<<GetClassName()<<"(void);\n"
+        "\n"
+        "    // create dynamically allocated object\n"
+        "    static "<<GetClassName()<<"* NewInstance(void)\n"
+        "        {\n"
+        "            return new "<<GetClassName()<<"(NCBI_NS_NCBI::CObject::eCanDelete);\n"
+        "        }\n"
+        "\n"
+        "protected:\n"
+        "    // hidden constructor for dynamic objects\n"
+        "    "<<GetClassName()<<"(NCBI_NS_NCBI::CObject::ECanDelete);\n"
         "\n"
         "};\n"
         "\n";
@@ -574,11 +664,19 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
 void CClassTypeStrings::GenerateUserCPPCode(CNcbiOstream& out) const
 {
     out <<
+        "// constructor for static/automatic objects\n"<<
         GetClassName()<<"::"<<GetClassName()<<"(void)\n"
         "{\n"
         "}\n"
         "\n"
-        <<GetClassName()<<"::~"<<GetClassName()<<"(void)\n"
+        "// constructor for dynamic objects\n"<<
+        GetClassName()<<"::"<<GetClassName()<<"(NCBI_NS_NCBI::CObject::ECanDelete)\n"
+        "    : Tparent(NCBI_NS_NCBI::CObject::eCanDelete)\n"
+        "{\n"
+        "}\n"
+        "\n"
+        "// destructor\n"<<
+        GetClassName()<<"::~"<<GetClassName()<<"(void)\n"
         "{\n"
         "}\n"
         "\n";
@@ -622,6 +720,11 @@ bool CClassRefTypeStrings::CanBeKey(void) const
 bool CClassRefTypeStrings::CanBeInSTL(void) const
 {
     return false;
+}
+
+string CClassRefTypeStrings::NewInstance(const string& init) const
+{
+    return GetCType()+"::NewInstance("+init+')';
 }
 
 bool CClassRefTypeStrings::IsObject(void) const
