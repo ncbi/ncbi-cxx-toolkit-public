@@ -80,15 +80,15 @@ static string s_EncodeLabel(const string& label) {
     }
     string rv;
     rv.reserve(label.size() + 2);
-    rv.push_back('\'');
+    rv.append(1, '\'');
     for (unsigned int i = 0;  i < label.size();  ++i) {
-        rv.push_back(label[i]);
+        rv.append(1, label[i]);
         if (label[i] == '\'') {
             // "'" -> "''"
-            rv.push_back(label[i]);
+            rv.append(1, label[i]);
         }
     }
-    rv.push_back('\'');
+    rv.append(1, '\'');
 
     return rv;
 }
@@ -100,6 +100,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/10 17:01:42  dicuccio
+ * Use basic_string::append() instead of push_back, as the latter isn't found on
+ * MSVC
+ *
  * Revision 1.1  2004/02/10 15:15:58  jcherry
  * Initial version
  *
