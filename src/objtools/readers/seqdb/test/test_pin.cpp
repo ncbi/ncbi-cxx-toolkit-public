@@ -2479,6 +2479,83 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-ugl-timing]";
         
+        if (s == "-euk-nt-timing") {
+            CTimedTask t1("build euk gi list");
+            CRef<CSeqDBGiList> gi_list(new CSeqDBFileGiList("/net/fridge/vol/export/blast/db/blast/Eukaryota.n.gil"));
+            t1.Mark();
+            
+            CTimedTask t2("build nucl_dbs seqdb");
+            string dbn = "nucl_dbs";
+            CSeqDB db(dbn, CSeqDB::eNucleotide, 0, 0, use_mm, gi_list);
+            t2.Mark();
+            
+            int count = 0;
+            
+            CTimedTask t3("find first oid");
+            int oid = 0;
+            db.CheckOrFindOID(oid);
+            t3.Mark();
+            
+            CTimedTask t4("find rest of oids");
+            for(oid = 0; db.CheckOrFindOID(oid); oid++) {
+                count ++;
+            }
+            t4.Mark();
+            
+            return 0;
+        } else desc += " [-euk-nt-timing]";
+        
+        if (s == "-euk2") {
+            CTimedTask t1("build euk gi list");
+            CRef<CSeqDBGiList> gi_list(new CSeqDBFileGiList("/net/fridge/vol/export/blast/db/blast/Mammalia.n.gil"));
+            t1.Mark();
+            
+            CTimedTask t2("build euk2 seqdb");
+            CSeqDB db("euk2", CSeqDB::eNucleotide, 0, 0, use_mm, gi_list);
+            t2.Mark();
+            
+            int count = 0;
+            
+            CTimedTask t3("find first oid");
+            int oid = 0;
+            db.CheckOrFindOID(oid);
+            t3.Mark();
+            
+            CTimedTask t4("find rest of oids");
+            for(oid = 0; db.CheckOrFindOID(oid); oid++) {
+                count ++;
+            }
+            t4.Mark();
+            
+            return 0;
+        } else desc += " [-euk2]";
+        
+        if (s == "-euknt") {
+            CTimedTask t1("build euk gi list");
+            CRef<CSeqDBGiList> gi_list(new CSeqDBFileGiList("/net/fridge/vol/export/blast/db/blast/Eukaryota.n.gil"));
+            t1.Mark();
+            
+            CTimedTask t2("build nt seqdb");
+            string dbn = "nt";
+            CSeqDB db(dbn, CSeqDB::eNucleotide, 0, 0, use_mm, gi_list);
+            t2.Mark();
+            
+            int count = 0;
+            
+            CTimedTask t3("find first oid");
+            int oid = 0;
+            db.CheckOrFindOID(oid);
+            t3.Mark();
+            
+            CTimedTask t4("find rest of oids");
+            for(oid = 0; db.CheckOrFindOID(oid); oid++) {
+                count ++;
+            }
+            t4.Mark();
+            
+            return 0;
+        } else desc += " [-euknt]";
+        
         if (s == "-user-gi-list") {
             int gi = 129295;
             
