@@ -27,121 +27,6 @@
 *
 * File Description:
 *   Definition CGI application class and its context class.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.34  2003/02/04 21:27:22  kuznets
-* + Implementation of statistics logging
-*
-* Revision 1.33  2003/01/23 19:59:02  kuznets
-* CGI logging improvements
-*
-* Revision 1.32  2002/08/02 20:13:53  gouriano
-* disable arg descriptions by default
-*
-* Revision 1.31  2001/12/06 15:06:04  ucko
-* Remove name of unused argument to CAsBodyDiagFactory::New.
-*
-* Revision 1.30  2001/11/19 15:20:17  ucko
-* Switch CGI stuff to new diagnostics interface.
-*
-* Revision 1.29  2001/10/29 15:16:12  ucko
-* Preserve default CGI diagnostic settings, even if customized by app.
-*
-* Revision 1.28  2001/10/17 15:59:55  ucko
-* Don't crash if m_DiagHandler is null.
-*
-* Revision 1.27  2001/10/17 14:18:22  ucko
-* Add CCgiApplication::SetCgiDiagHandler for the benefit of derived
-* classes that overload ConfigureDiagDestination.
-*
-* Revision 1.26  2001/10/05 14:56:26  ucko
-* Minor interface tweaks for CCgiStreamDiagHandler and descendants.
-*
-* Revision 1.25  2001/10/04 18:17:52  ucko
-* Accept additional query parameters for more flexible diagnostics.
-* Support checking the readiness of CGI input and output streams.
-*
-* Revision 1.24  2001/06/13 21:04:37  vakatov
-* Formal improvements and general beautifications of the CGI lib sources.
-*
-* Revision 1.23  2001/01/12 21:58:43  golikov
-* cgicontext available from cgiapp
-*
-* Revision 1.22  2000/01/20 17:54:58  vakatov
-* CCgiApplication:: constructor to get CNcbiArguments, and not raw argc/argv.
-* SetupDiag_AppSpecific() to override the one from CNcbiApplication:: -- lest
-* to write the diagnostics to the standard output.
-*
-* Revision 1.21  1999/12/17 17:24:52  vakatov
-* Get rid of some extra stuff
-*
-* Revision 1.20  1999/12/17 04:08:04  vakatov
-* cgiapp.cpp
-*
-* Revision 1.19  1999/11/17 22:48:51  vakatov
-* Moved "GetModTime()"-related code and headers to under #if HAVE_LIBFASTCGI
-*
-* Revision 1.18  1999/11/15 15:54:53  sandomir
-* Registry support moved from CCgiApplication to CNcbiApplication
-*
-* Revision 1.17  1999/10/21 14:50:49  sandomir
-* optimization for overflow() (internal buffer added)
-*
-* Revision 1.16  1999/07/09 18:50:21  sandomir
-* FASTCGI mode: if programs modification date changed, break out the loop
-*
-* Revision 1.15  1999/07/08 14:10:16  sandomir
-* Simple output add on exitfastcgi command
-*
-* Revision 1.14  1999/06/11 20:30:26  vasilche
-* We should catch exception by reference, because catching by value
-* doesn't preserve comment string.
-*
-* Revision 1.13  1999/06/03 21:47:20  vakatov
-* CCgiApplication::LoadConfig():  patch for R1.12
-*
-* Revision 1.12  1999/05/27 16:42:42  vakatov
-* CCgiApplication::LoadConfig():  if the executable name is "*.exe" then
-* compose the default registry file name as "*.ini" rather than
-* "*.exe.ini";  use "Warning" rather than "Error" diagnostic severity
-* if cannot open the default registry file
-*
-* Revision 1.11  1999/05/17 00:26:18  vakatov
-* Use double-quote rather than angle-brackets for the private headers
-*
-* Revision 1.10  1999/05/14 19:21:53  pubmed
-* myncbi - initial version; minor changes in CgiContext, history, query
-*
-* Revision 1.8  1999/05/06 23:16:45  vakatov
-* <fcgibuf.hpp> became a local header file.
-* Use #HAVE_LIBFASTCGI(from <ncbiconf.h>) rather than cmd.-line #FAST_CGI.
-*
-* Revision 1.7  1999/05/06 20:33:42  pubmed
-* CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
-*
-* Revision 1.6  1999/05/04 16:14:43  vasilche
-* Fixed problems with program environment.
-* Added class CNcbiEnvironment for cached access to C environment.
-*
-* Revision 1.5  1999/05/04 00:03:11  vakatov
-* Removed the redundant severity arg from macro ERR_POST()
-*
-* Revision 1.4  1999/04/30 19:21:02  vakatov
-* Added more details and more control on the diagnostics
-* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
-*
-* Revision 1.3  1999/04/28 16:54:40  vasilche
-* Implemented stream input processing for FastCGI applications.
-* Fixed POST request parsing
-*
-* Revision 1.2  1999/04/27 16:11:11  vakatov
-* Moved #define FAST_CGI from inside the "cgiapp.cpp" to "sunpro50.sh"
-*
-* Revision 1.1  1999/04/27 14:50:03  vasilche
-* Added FastCGI interface.
-* CNcbiContext renamed to CCgiContext.
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -515,7 +400,7 @@ void CCgiApplication::x_LogPost(const char*             msg_header,
 
         if ( flags & fEnd ) {
             CTime end_time(CTime::eCurrent);
-            CTime elapsed = end_time - start_time;
+            CTime elapsed(end_time.DiffSecond(start_time));
 
             msg << "    end time = " << end_time.AsString()
                 << "    elapsed = "  << elapsed.AsString();
@@ -646,7 +531,7 @@ string CCgiStatistics::Compose_ProgramName(void)
 
 string CCgiStatistics::Compose_Timing(const CTime& end_time)
 {
-    CTime elapsed = end_time - m_StartTime;
+    CTime elapsed(end_time.DiffSecond(m_StartTime));
     return m_StartTime.AsString() + m_LogDelim + elapsed.AsString();
 }
 
@@ -721,3 +606,125 @@ string CCgiStatistics::Compose_ErrMessage(void)
 
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.35  2003/02/10 22:33:54  ucko
+* Use CTime::DiffSecond rather than operator -, which works in days, and
+* don't rely on implicit time_t -> CTime construction.
+*
+* Revision 1.34  2003/02/04 21:27:22  kuznets
+* + Implementation of statistics logging
+*
+* Revision 1.33  2003/01/23 19:59:02  kuznets
+* CGI logging improvements
+*
+* Revision 1.32  2002/08/02 20:13:53  gouriano
+* disable arg descriptions by default
+*
+* Revision 1.31  2001/12/06 15:06:04  ucko
+* Remove name of unused argument to CAsBodyDiagFactory::New.
+*
+* Revision 1.30  2001/11/19 15:20:17  ucko
+* Switch CGI stuff to new diagnostics interface.
+*
+* Revision 1.29  2001/10/29 15:16:12  ucko
+* Preserve default CGI diagnostic settings, even if customized by app.
+*
+* Revision 1.28  2001/10/17 15:59:55  ucko
+* Don't crash if m_DiagHandler is null.
+*
+* Revision 1.27  2001/10/17 14:18:22  ucko
+* Add CCgiApplication::SetCgiDiagHandler for the benefit of derived
+* classes that overload ConfigureDiagDestination.
+*
+* Revision 1.26  2001/10/05 14:56:26  ucko
+* Minor interface tweaks for CCgiStreamDiagHandler and descendants.
+*
+* Revision 1.25  2001/10/04 18:17:52  ucko
+* Accept additional query parameters for more flexible diagnostics.
+* Support checking the readiness of CGI input and output streams.
+*
+* Revision 1.24  2001/06/13 21:04:37  vakatov
+* Formal improvements and general beautifications of the CGI lib sources.
+*
+* Revision 1.23  2001/01/12 21:58:43  golikov
+* cgicontext available from cgiapp
+*
+* Revision 1.22  2000/01/20 17:54:58  vakatov
+* CCgiApplication:: constructor to get CNcbiArguments, and not raw argc/argv.
+* SetupDiag_AppSpecific() to override the one from CNcbiApplication:: -- lest
+* to write the diagnostics to the standard output.
+*
+* Revision 1.21  1999/12/17 17:24:52  vakatov
+* Get rid of some extra stuff
+*
+* Revision 1.20  1999/12/17 04:08:04  vakatov
+* cgiapp.cpp
+*
+* Revision 1.19  1999/11/17 22:48:51  vakatov
+* Moved "GetModTime()"-related code and headers to under #if HAVE_LIBFASTCGI
+*
+* Revision 1.18  1999/11/15 15:54:53  sandomir
+* Registry support moved from CCgiApplication to CNcbiApplication
+*
+* Revision 1.17  1999/10/21 14:50:49  sandomir
+* optimization for overflow() (internal buffer added)
+*
+* Revision 1.16  1999/07/09 18:50:21  sandomir
+* FASTCGI mode: if programs modification date changed, break out the loop
+*
+* Revision 1.15  1999/07/08 14:10:16  sandomir
+* Simple output add on exitfastcgi command
+*
+* Revision 1.14  1999/06/11 20:30:26  vasilche
+* We should catch exception by reference, because catching by value
+* doesn't preserve comment string.
+*
+* Revision 1.13  1999/06/03 21:47:20  vakatov
+* CCgiApplication::LoadConfig():  patch for R1.12
+*
+* Revision 1.12  1999/05/27 16:42:42  vakatov
+* CCgiApplication::LoadConfig():  if the executable name is "*.exe" then
+* compose the default registry file name as "*.ini" rather than
+* "*.exe.ini";  use "Warning" rather than "Error" diagnostic severity
+* if cannot open the default registry file
+*
+* Revision 1.11  1999/05/17 00:26:18  vakatov
+* Use double-quote rather than angle-brackets for the private headers
+*
+* Revision 1.10  1999/05/14 19:21:53  pubmed
+* myncbi - initial version; minor changes in CgiContext, history, query
+*
+* Revision 1.8  1999/05/06 23:16:45  vakatov
+* <fcgibuf.hpp> became a local header file.
+* Use #HAVE_LIBFASTCGI(from <ncbiconf.h>) rather than cmd.-line #FAST_CGI.
+*
+* Revision 1.7  1999/05/06 20:33:42  pubmed
+* CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
+*
+* Revision 1.6  1999/05/04 16:14:43  vasilche
+* Fixed problems with program environment.
+* Added class CNcbiEnvironment for cached access to C environment.
+*
+* Revision 1.5  1999/05/04 00:03:11  vakatov
+* Removed the redundant severity arg from macro ERR_POST()
+*
+* Revision 1.4  1999/04/30 19:21:02  vakatov
+* Added more details and more control on the diagnostics
+* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
+*
+* Revision 1.3  1999/04/28 16:54:40  vasilche
+* Implemented stream input processing for FastCGI applications.
+* Fixed POST request parsing
+*
+* Revision 1.2  1999/04/27 16:11:11  vakatov
+* Moved #define FAST_CGI from inside the "cgiapp.cpp" to "sunpro50.sh"
+*
+* Revision 1.1  1999/04/27 14:50:03  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+* ===========================================================================
+*/
