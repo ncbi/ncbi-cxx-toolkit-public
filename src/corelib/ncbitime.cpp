@@ -71,6 +71,9 @@ static MyTZDLS sTZDLS = MyReadLocation();
 #elif defined(__CYGWIN__)
 #  define TimeZone() _timezone
 #  define Daylight() _daylight
+#elif defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
+#  define TimeZone()  0
+#  define Daylight()  0
 #else
 #  define TimeZone()  timezone
 #  define Daylight()  daylight
@@ -1542,6 +1545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2004/03/25 13:03:31  ivanov
+ * Temporary fix for NCBI_OS_DARWIN and NCBI_OS_BSD
+ *
  * Revision 1.46  2004/03/24 18:47:47  ivanov
  * Replaced abs() with if-clause
  *
