@@ -47,6 +47,7 @@
 #include <serial/choiceptr.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/serialbase.hpp>
+#include <serial/exception.hpp>
 #include <typeinfo>
 
 struct valnode;

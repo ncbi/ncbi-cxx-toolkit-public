@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/03 17:22:32  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.1  2000/09/18 20:00:02  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -44,6 +51,12 @@
 
 inline
 const CMemberId& CItemInfo::GetId(void) const
+{
+    return m_Id;
+}
+
+inline
+CMemberId& CItemInfo::GetId(void)
 {
     return m_Id;
 }

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/10/03 17:22:33  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.15  2000/09/26 19:24:53  vasilche
 * Added user interface for setting read/write/copy hooks.
 *
@@ -103,11 +110,12 @@
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/continfo.hpp>
-#include <serial/classinfo.hpp>
-#include <serial/choice.hpp>
 #include <serial/ptrinfo.hpp>
 #include <serial/stdtypes.hpp>
-#include <serial/memberid.hpp>
+#include <serial/classinfob.hpp>
+#include <serial/classinfo.hpp>
+#include <serial/choice.hpp>
+#include <vector>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
@@ -117,6 +125,7 @@ class CConstObjectInfo;
 class CObjectInfo;
 
 class CPrimitiveTypeInfo;
+class CClassTypeInfoBase;
 class CClassTypeInfo;
 class CChoiceTypeInfo;
 class CContainerTypeInfo;
@@ -131,6 +140,7 @@ class CReadContainerElementHook;
 
 class CObjectTypeInfoMI;
 class CObjectTypeInfoVI;
+class CObjectTypeInfoCV;
 class CConstObjectInfoMI;
 class CConstObjectInfoCV;
 class CConstObjectInfoEI;
@@ -149,6 +159,7 @@ class CObjectTypeInfo
 public:
     typedef CObjectTypeInfoMI CMemberIterator;
     typedef CObjectTypeInfoVI CVariantIterator;
+    typedef CObjectTypeInfoCV CChoiceVariant;
 
     CObjectTypeInfo(TTypeInfo typeinfo = 0);
 
@@ -385,6 +396,8 @@ public:
 private:
     bool CheckValid(void) const;
 
+    void ReportNonValid(void) const;
+    
     CConstContainerElementIterator m_Iterator;
 #if _DEBUG
     mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
@@ -414,6 +427,8 @@ public:
 private:
     bool CheckValid(void) const;
 
+    void ReportNonValid(void) const;
+    
     CContainerElementIterator m_Iterator;
 #if _DEBUG
     mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
@@ -451,7 +466,9 @@ private:
     CObjectTypeInfo m_OwnerType;
     TMemberIndex m_ItemIndex;
     TMemberIndex m_LastItemIndex;
-        
+    
+    void ReportNonValid(void) const;
+    
 protected:
 #if _DEBUG
     mutable enum { eNone, eValid, eNext, eErase } m_LastCall;

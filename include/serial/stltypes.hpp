@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2000/10/03 17:22:35  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.51  2000/09/19 20:16:53  vasilche
 * Fixed type in CStlClassInfo_auto_ptr.
 * Added missing include serialutil.hpp.
@@ -235,9 +242,6 @@
 #include <corelib/ncbiobj.hpp>
 #include <serial/serialutil.hpp>
 #include <serial/typeref.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
-#include <serial/objhook.hpp>
 #include <serial/memberid.hpp>
 #include <serial/ptrinfo.hpp>
 #include <set>
@@ -407,6 +411,12 @@ private:
     TIterator m_Iterator;
 };
 
+class CStlElementIterator_set_Functions
+{
+public:
+    static void CannotGetElementOfSet(const CContainerTypeInfo::CIterator& it);
+};
+
 template<class Container>
 class CStlElementIterator_set : public CContainerTypeInfo::CIterator
 {
@@ -433,8 +443,8 @@ public:
         }
     TObjectPtr GetElementPtr(void) const
         {
-            THROW1_TRACE(runtime_error,
-                         "cannot get pointer to element of set");
+            CStlElementIterator_set_Functions::CannotGetElementOfSet(*this);
+            return 0;
         }
     bool Erase(void)
         {
@@ -578,7 +588,7 @@ protected:
                 // push empty element
                 container.push_back(value_type());
             }
-            in.ReadObject(&container.back(), elementType);
+            elementType->ReadData(in, &container.back());
         }
 };
 
@@ -719,7 +729,7 @@ protected:
     void AddElement(TObjectPtr containerPtr, CObjectIStream& in) const
         {
             Data data;
-            in.ReadObject(&data, GetElementType());
+            GetElementType()->ReadData(in, &data);
             InsertElement(containerPtr, &data);
         }
 };
@@ -756,7 +766,7 @@ protected:
     void AddElement(TObjectPtr containerPtr, CObjectIStream& in) const
         {
             Data data;
-            in.ReadObject(&data, GetElementType());
+            GetElementType()->ReadData(in, &data);
             InsertElement(containerPtr, &data);
         }
 };
@@ -776,11 +786,6 @@ public:
                          TConstObjectPtr keyOffset,
                          const CTypeRef& valueType,
                          TConstObjectPtr valueOffset);
-
-    const CClassTypeInfo* GetElementClassType(void) const
-        {
-            return CTypeConverter<CClassTypeInfo>::SafeCast(GetElementType());
-        }
 
 private:
     static TTypeInfo CreateElementClassType(TTypeInfo mapType);
@@ -891,7 +896,7 @@ protected:
     void AddElement(TObjectPtr containerPtr, CObjectIStream& in) const
         {
             value_type data;
-            in.ReadObject(&data, GetElementClassType());
+            GetElementType()->ReadData(in, &data);
             InsertElement(containerPtr, &data);
         }
 };
@@ -930,7 +935,7 @@ protected:
     void AddElement(TObjectPtr containerPtr, CObjectIStream& in) const
         {
             value_type data;
-            in.ReadValue(&data, GetElementClassType());
+            GetElementType()->ReadData(in, &data);
             InsertElement(containerPtr, &data);
         }
 };

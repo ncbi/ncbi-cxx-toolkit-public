@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/10/03 17:22:44  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.10  2000/09/29 16:18:23  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -86,6 +93,7 @@
 #include <serial/objhook.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>
+#include <serial/ptrinfo.hpp>
 #include <serial/continfo.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/memberid.hpp>
@@ -928,13 +936,12 @@ void CObjectIStreamXml::EndClass(void)
 }
 
 void CObjectIStreamXml::UnexpectedMember(const CLightString& id,
-                                         const CMembersInfo& members)
+                                         const CItemsInfo& items)
 {
     string message =
         "\""+string(id)+"\": unexpected member, should be one of: ";
-    for ( TMemberIndex i = members.FirstIndex();
-          i <= members.LastIndex(); ++i ) {
-        message += '\"' + members.GetItemInfo(i)->GetId().ToString() + "\" ";
+    for ( CItemsInfo::CIterator i(items); i.Valid(); ++i ) {
+        message += '\"' + items.GetItemInfo(i)->GetId().ToString() + "\" ";
     }
     ThrowError(eFormatError, message);
 }

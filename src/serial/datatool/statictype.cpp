@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/10/03 17:22:50  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.13  2000/08/25 15:59:24  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -90,6 +97,7 @@
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
 #include <serial/autoptrinfo.hpp>
+#include <typeinfo>
 
 BEGIN_NCBI_SCOPE
 

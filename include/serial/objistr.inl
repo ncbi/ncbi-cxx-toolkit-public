@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/10/03 17:22:34  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.9  2000/09/29 16:18:13  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -78,27 +85,9 @@ void CObjectIStream::ReadObject(TObjectPtr object, TTypeInfo typeInfo)
 }
 
 inline
-void CObjectIStream::ReadObject(const CObjectInfo& object)
-{
-    ReadObject(object.GetObjectPtr(), object.GetTypeInfo());
-}
-
-inline
 void CObjectIStream::SkipObject(TTypeInfo typeInfo)
 {
     typeInfo->SkipData(*this);
-}
-
-inline
-void CObjectIStream::SkipObject(const CObjectTypeInfo& objectType)
-{
-    SkipObject(objectType.GetTypeInfo());
-}
-
-inline
-void CObjectIStream::SkipSeparateObject(const CObjectTypeInfo& objectType)
-{
-    SkipObject(objectType);
 }
 
 inline

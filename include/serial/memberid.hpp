@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/03 17:22:32  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.12  2000/09/01 13:15:59  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -87,8 +94,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class CMembersInfo;
-
 // CMemberId class holds information about logical object member access:
 //     name and/or tag (ASN.1)
 // default value of name is empty string
@@ -98,39 +103,36 @@ public:
     typedef int TTag;
     enum {
         eNoExplicitTag = -1,
-        eParentTag = 0,
+        eParentTag = 30,
         eFirstTag = 0
     };
 
     CMemberId(void);
-    CMemberId(TTag tag);
+    CMemberId(TTag tag, bool explicitTag = true);
     CMemberId(const string& name);
-    CMemberId(const string& name, TTag tag);
+    CMemberId(const string& name, TTag tag, bool explicitTag = true);
     CMemberId(const char* name);
-    CMemberId(const char* name, TTag tag);
-    CMemberId(const CMemberId& id);
-    CMemberId& operator=(const CMemberId& id);
+    CMemberId(const char* name, TTag tag, bool explicitTag = true);
     ~CMemberId(void);
 
     const string& GetName(void) const;     // ASN.1 tag name
-    TTag GetExplicitTag(void) const;       // ASN.1 explicit binary tag value
     TTag GetTag(void) const;               // ASN.1 effective binary tag value
+    bool HaveExplicitTag(void) const;      // ASN.1 explicit binary tag value
+
+    void SetName(const string& name);
+    void SetTag(TTag tag, bool explicitTag = true);
+
+    bool HaveParentTag(void) const;
+    void SetParentTag(void);
 
     // return visible representation of CMemberId (as in ASN.1)
     string ToString(void) const;
 
 private:
-    TTag GetTagLong(void) const;  // update and return effective binary tag
-    
-    CMembersInfo* m_MemberList; // member list
-
     // identification
     string m_Name;
-    TTag m_ExplicitTag;
-
-    friend class CMembersInfo;
-
-    mutable TTag m_Tag;
+    TTag m_Tag;
+    bool m_ExplicitTag;
 };
 
 #include <serial/memberid.inl>

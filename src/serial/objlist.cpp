@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/10/03 17:22:44  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.20  2000/09/18 20:00:24  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -145,8 +152,7 @@ CWriteObjectInfo& COObjectList::RegisterObject(TTypeInfo typeInfo)
 {
     TObjectIndex newIndex = m_Objects.size();
     _ASSERT(m_Objects.empty() || m_Objects.back().IsWritten());
-    m_Objects.push_back(CConstObjectInfo(0, typeInfo,
-                                         CConstObjectInfo::eNonCObject));
+    m_Objects.push_back(CConstObjectInfo(0, typeInfo));
     CWriteObjectInfo& info = m_Objects.back();
     MarkObjectWritten(info);
     info.m_Index = newIndex;
@@ -180,8 +186,7 @@ CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
 #endif
             // new object
             _ASSERT(m_Objects.empty() || m_Objects.back().IsWritten());
-            m_Objects.push_back(CConstObjectInfo(object, typeInfo,
-                                                 CConstObjectInfo::eNonCObject));
+            m_Objects.push_back(CConstObjectInfo(object, typeInfo));
             return m_Objects.back();
         }
         else if ( cObject->Referenced() ) {

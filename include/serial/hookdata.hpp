@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/10/03 17:22:31  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.2  2000/09/29 16:18:12  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -52,11 +59,13 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <serial/weakmap.hpp>
-#include <algorithm>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
+
+template<class Object> class CWeakMap;
+template<class Object> class CWeakMapKey;
+template<class Object> class CHookDataData;
 
 template<class Hook, typename Function>
 class CHookData
@@ -69,49 +78,29 @@ public:
     typedef Function TFunction;
 
 private:
-    struct SHooks {
-        typedef CWeakMap<mapped_type> TMap;
+    typedef CHookDataData<mapped_type> TData;
 
-        mapped_type m_GlobalHook;
-        TMap m_LocalHooks;
-        
-        bool empty(void) const
-            {
-                return !m_GlobalHook && m_LocalHooks.empty();
-            }
-    };
+    TData& CreateData(void);
+    void ResetHooks(void);
 
-    SHooks& GetHooksForSet(void)
+    TData& GetDataForSet(void)
         {
-            SHooks* hooks = m_Hooks.get();
-            if ( !hooks ) {
-                m_Hooks.reset(hooks = new SHooks);
-                swap(m_CurrentFunction, m_SecondaryFunction);
-            }
-            return *hooks;
+            TData* hooks = m_Data.get();
+            return hooks? *hooks: CreateData();
         }
-    SHooks& GetHooksForReset(void)
+    TData& GetDataForReset(void)
         {
-            SHooks* hooks = m_Hooks.get();
-            _ASSERT(hooks);
-            return *hooks;
+            _ASSERT(m_Data.get());
+            return *m_Data.get();
         }
-    const SHooks* GetHooksForGet(void) const
+    const TData* GetDataForGet(void) const
         {
-            return m_Hooks.get();
-        }
-    void ResetHooks(void)
-        {
-            swap(m_CurrentFunction, m_SecondaryFunction);
-            m_Hooks.reset(0);
+            return m_Data.get();
         }
 
 public:
-
-    CHookData(TFunction typeFunction, TFunction hookFunction)
-        : m_CurrentFunction(typeFunction), m_SecondaryFunction(hookFunction)
-        {
-        }
+    CHookData(TFunction typeFunction, TFunction hookFunction);
+    ~CHookData(void);
 
     TFunction GetCurrentFunction(void) const
         {
@@ -120,63 +109,26 @@ public:
 
     bool HaveHooks(void) const
         {
-            return m_Hooks.get();
+            return m_Data.get() != 0;
         }
 
     TFunction& GetDefaultFunction(void)
         {
-            return HaveHooks()? m_SecondaryFunction: m_CurrentFunction;
+            return m_Data.get()? m_SecondaryFunction: m_CurrentFunction;
         }
     TFunction GetDefaultFunction(void) const
         {
-            return HaveHooks()? m_SecondaryFunction: m_CurrentFunction;
+            return m_Data.get()? m_SecondaryFunction: m_CurrentFunction;
         }
 
-    void SetLocalHook(key_type& key, THook* hook)
-        {
-            _ASSERT(hook);
-            GetHooksForSet().m_LocalHooks.insert(key, hook);
-        }
-    void SetGlobalHook(THook* hook)
-        {
-            _ASSERT(hook);
-            GetHooksForSet().m_GlobalHook.Reset(hook);
-        }
+    void SetLocalHook(key_type& key, THook* hook);
+    void SetGlobalHook(THook* hook);
 
-    void ResetLocalHook(key_type& key)
-        {
-            SHooks& hooks = GetHooksForReset();
-            hooks.m_LocalHooks.erase(key);
-            if ( hooks.empty() )
-                ResetHooks();
-        }
-    void ResetGlobalHook(void)
-        {
-            SHooks& hooks = GetHooksForReset();
-            hooks.m_GlobalHook.Reset(0);
-            if ( hooks.m_LocalHooks.empty() ) // m_GlobalHook already empty
-                ResetHooks();
-        }
+    void ResetLocalHook(key_type& key);
+    void ResetGlobalHook(void);
 
-    THook* GetGlobalHook(void) const
-        {
-            const SHooks* hooks = GetHooksForGet();
-            if ( hooks )
-                return hooks->m_GlobalHook.GetPointer();
-            return 0;
-        }
-    THook* GetHook(key_type& key) const
-        {
-            const SHooks* hooks = GetHooksForGet();
-            if ( hooks ) {
-                typedef typename SHooks::TMap::const_iterator TMapCI;
-                TMapCI i = hooks->m_LocalHooks.find(key);
-                if ( i != hooks->m_LocalHooks.end() )
-                    return i->second.GetPointer();
-                return hooks->m_GlobalHook.GetPointer();
-            }
-            return 0;
-        }
+    THook* GetGlobalHook(void) const;
+    THook* GetHook(key_type& key) const;
 
 private:
     TFunction m_CurrentFunction;   // current function
@@ -192,7 +144,7 @@ private:
     //     m_CurrentFunction == function checking hooks
     //     m_SecondaryFunction == original type specific function
 
-    auto_ptr<SHooks> m_Hooks;
+    auto_ptr<TData> m_Data;
 };
 
 //#include <serial/hookdata.inl>

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2000/10/03 17:22:41  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.46  2000/09/18 20:00:20  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -264,6 +271,17 @@ CSequenceOfTypeInfo::CSequenceOfTypeInfo(const string& name,
 	InitSequenceOfTypeInfo();
 }
 
+static
+size_t GetFirstItemOffset(const CItemsInfo& items)
+{
+    size_t offset = INT_MAX;
+    for ( CItemsInfo::CIterator i(items); i.Valid(); ++i ) {
+        const CItemInfo* itemInfo = items.GetItemInfo(i);
+        offset = min(offset, itemInfo->GetOffset());
+    }
+    return offset;
+}
+
 void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
 {
     SetReadFunction(&ReadSequence);
@@ -285,7 +303,7 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
             // user types
             const CClassTypeInfo* classType =
                 CTypeConverter<CClassTypeInfo>::SafeCast(asnType);
-            if ( classType->GetItems().GetFirstItemOffset() < sizeof(void*) ) {
+            if ( GetFirstItemOffset(classType->GetItems()) < sizeof(void*) ) {
                 THROW1_TRACE(runtime_error,
                              "CSequenceOfTypeInfo: incompatible type: " +
                              type->GetName() + ": " + typeid(*type).name() +

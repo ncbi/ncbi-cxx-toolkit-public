@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/10/03 17:22:30  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.18  2000/09/26 18:03:21  vasilche
 * Added missing class keyword.
 *
@@ -170,15 +177,9 @@ public:
                     TSelectFunction selectFunc,
                     TResetFunction resetFunc);
 
-    const CMembersInfo& GetVariants(void) const
-        {
-            return GetItems();
-        }
-    const CVariantInfo* GetVariantInfo(TMemberIndex index) const
-        {
-            return static_cast<const CVariantInfo*>
-                (GetItems().GetItemInfo(index));
-        }
+    const CItemsInfo& GetVariants(void) const;
+    const CVariantInfo* GetVariantInfo(TMemberIndex index) const;
+    const CVariantInfo* GetVariantInfo(const CIterator& i) const;
 
     CVariantInfo* AddVariant(const char* variantId,
                              const void* variantPtr,

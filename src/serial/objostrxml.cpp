@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/10/03 17:22:45  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.11  2000/09/29 16:18:24  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -555,16 +562,16 @@ void CObjectOStreamXml::WriteClass(const CClassTypeInfo* classType,
         BEGIN_OBJECT_FRAME2(eFrameClass, classType);
         OpenTag(classType);
         
-        for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
-            classType->GetMemberInfo(*i)->WriteMember(*this, classPtr);
+        for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
+            classType->GetMemberInfo(i)->WriteMember(*this, classPtr);
         }
         
         CloseTag(classType, true);
         END_OBJECT_FRAME();
     }
     else {
-        for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
-            classType->GetMemberInfo(*i)->WriteMember(*this, classPtr);
+        for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
+            classType->GetMemberInfo(i)->WriteMember(*this, classPtr);
         }
     }
 }

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/10/03 17:22:33  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.17  2000/09/18 20:00:03  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -114,7 +121,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/lightstr.hpp>
 #include <serial/memberid.hpp>
-#include <serial/member.hpp>
+#include <serial/item.hpp>
 #include <vector>
 #include <map>
 
@@ -124,17 +131,17 @@ class CConstObjectInfo;
 class CObjectInfo;
 
 // This class supports sets of members with IDs
-class CMembersInfo
+class CItemsInfo
 {
 public:
     typedef CMemberId::TTag TTag;
     typedef vector< AutoPtr<CItemInfo> > TItems;
-    typedef map<CLightString, TMemberIndex> TMembersByName;
-    typedef map<TTag, TMemberIndex> TMembersByTag;
-    typedef map<size_t, TMemberIndex> TMembersByOffset;
+    typedef map<CLightString, TMemberIndex> TItemsByName;
+    typedef map<TTag, TMemberIndex> TItemsByTag;
+    typedef map<size_t, TMemberIndex> TItemsByOffset;
 
-    CMembersInfo(void);
-    virtual ~CMembersInfo(void);
+    CItemsInfo(void);
+    virtual ~CItemsInfo(void);
 
     bool Empty(void) const
         {
@@ -155,27 +162,53 @@ public:
     TMemberIndex Find(TTag tag) const;
     TMemberIndex Find(TTag tag, TMemberIndex pos) const;
 
-    void UpdateTags(void) const;
-    size_t GetFirstItemOffset(void) const;
-
     const CItemInfo* GetItemInfo(TMemberIndex index) const;
     void AddItem(CItemInfo* item);
+
+    // helping member iterator class (internal use)
+    class CIterator
+    {
+    public:
+        CIterator(const CItemsInfo& items);
+        CIterator(const CItemsInfo& items, TMemberIndex index);
+
+        void SetIndex(TMemberIndex index);
+        CIterator& operator=(TMemberIndex index);
+
+        bool Valid(void) const;
+
+        void Next(void);
+        void operator++(void);
+
+        TMemberIndex GetIndex(void) const;
+        TMemberIndex operator*(void) const;
+
+    private:
+        TMemberIndex m_CurrentIndex;
+        TMemberIndex m_LastIndex;
+    };
+    const CItemInfo* GetItemInfo(const CIterator& i) const;
 
 protected:
     CItemInfo* x_GetItemInfo(TMemberIndex index) const;
 
 private:
-    const TMembersByName& GetMembersByName(void) const;
-    const TMembersByOffset& GetMembersByOffset(void) const;
+    const TItemsByName& GetItemsByName(void) const;
+    const TItemsByOffset& GetItemsByOffset(void) const;
+    void UpdateTagMap(void) const;
 
+    // items
     TItems m_Items;
-    mutable auto_ptr<TMembersByName> m_MembersByName;
-    mutable TMemberIndex m_ZeroTagIndex;
-    mutable auto_ptr<TMembersByTag> m_MembersByTag;
-    mutable auto_ptr<TMembersByOffset> m_MembersByOffset;
 
-    CMembersInfo(const CMembersInfo&);
-    CMembersInfo& operator=(const CMembersInfo&);
+    // items by name
+    mutable auto_ptr<TItemsByName> m_ItemsByName;
+
+    // items by tag
+    mutable TMemberIndex m_ZeroTagIndex;
+    mutable auto_ptr<TItemsByTag> m_ItemsByTag;
+
+    // items by offset
+    mutable auto_ptr<TItemsByOffset> m_ItemsByOffset;
 };
 
 #include <serial/memberlist.inl>

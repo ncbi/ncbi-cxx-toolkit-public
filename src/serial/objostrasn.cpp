@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2000/10/03 17:22:44  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.47  2000/09/29 16:18:24  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -597,7 +604,7 @@ void CObjectOStreamAsn::WriteClass(const CClassTypeInfo* classType,
 {
     StartBlock();
     
-    for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
+    for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
         classType->GetMemberInfo(*i)->WriteMember(*this, classPtr);
     }
     
@@ -686,7 +693,7 @@ void CObjectOStreamAsn::CopyClassRandom(const CClassTypeInfo* classType,
     END_OBJECT_FRAME_OF(copier.In());
 
     // init all absent members
-    for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
+    for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
         if ( !read[*i] ) {
             classType->GetMemberInfo(*i)->CopyMissingMember(copier);
         }
@@ -730,7 +737,7 @@ void CObjectOStreamAsn::CopyClassSequential(const CClassTypeInfo* classType,
         
         memberInfo->CopyMember(copier);
         
-        pos = index + 1;
+        pos.SetIndex(index + 1);
 
         copier.In().EndClassMember();
     }
@@ -739,7 +746,7 @@ void CObjectOStreamAsn::CopyClassSequential(const CClassTypeInfo* classType,
     END_OBJECT_FRAME_OF(copier.In());
 
     // init all absent members
-    for ( ; pos; ++pos ) {
+    for ( ; pos.Valid(); ++pos ) {
         classType->GetMemberInfo(*pos)->CopyMissingMember(copier);
     }
 

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2000/10/03 17:22:43  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.62  2000/09/29 16:18:22  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -283,6 +290,7 @@
 #include <serial/bytesrc.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/objistrimpl.hpp>
+#include <serial/object.hpp>
 #if HAVE_WINDOWS_H
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
 # include <float.h>
@@ -522,7 +530,7 @@ TTypeInfo MapType(const string& name)
 void CObjectIStream::RegisterObject(TTypeInfo typeInfo)
 {
 #if NCBISER_ALLOW_CYCLES
-    m_Objects.push_back(CObjectInfo(0, typeInfo, CObjectInfo::eNonCObject));
+    m_Objects.push_back(CObjectInfo(0, typeInfo));
 #endif
 }
 void CObjectIStream::RegisterAndRead(TObjectPtr object, TTypeInfo typeInfo)
@@ -695,6 +703,16 @@ CObjectInfo CObjectIStream::ReadObject(void)
 
     END_OBJECT_FRAME();
     return object;
+}
+
+void CObjectIStream::ReadObject(const CObjectInfo& object)
+{
+    ReadObject(object.GetObjectPtr(), object.GetTypeInfo());
+}
+
+void CObjectIStream::SkipObject(const CObjectTypeInfo& objectType)
+{
+    SkipObject(objectType.GetTypeInfo());
 }
 
 string CObjectIStream::ReadFileHeader(void)

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/10/03 17:22:43  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.21  2000/09/28 16:29:41  vasilche
 * Reverted back changes in processing parent classes.
 * It causes exceptions with map container.
@@ -129,79 +136,77 @@
 
 BEGIN_NCBI_SCOPE
 
-CMembersInfo::CMembersInfo(void)
+CItemsInfo::CItemsInfo(void)
     : m_ZeroTagIndex(kInvalidMember)
 {
 }
 
-CMembersInfo::~CMembersInfo(void)
+CItemsInfo::~CItemsInfo(void)
 {
 }
 
-void CMembersInfo::AddItem(CItemInfo* item)
+void CItemsInfo::AddItem(CItemInfo* item)
 {
     // clear cached maps (byname and bytag)
-    m_MembersByName.reset(0);
+    m_ItemsByName.reset(0);
     m_ZeroTagIndex = kInvalidMember;
-    m_MembersByTag.reset(0);
-    m_MembersByOffset.reset(0);
+    m_ItemsByTag.reset(0);
+    m_ItemsByOffset.reset(0);
+
+    // update item's tag
+    if ( !item->GetId().HaveExplicitTag() ) {
+        TTag tag = CMemberId::eFirstTag;
+        if ( !Empty() ) {
+            TMemberIndex lastIndex = LastIndex();
+            const CItemInfo* lastItem = GetItemInfo(lastIndex);
+            if ( lastIndex != FirstIndex() ||
+                 !lastItem->GetId().HaveParentTag() )
+                tag = lastItem->GetId().GetTag() + 1;
+        }
+        item->GetId().SetTag(tag, false);
+    }
+
+    // add item
     m_Items.push_back(AutoPtr<CItemInfo>(item));
-    item->m_Id.m_MemberList = this;
     item->m_Index = LastIndex();
 }
 
-size_t CMembersInfo::GetFirstItemOffset(void) const
+const CItemsInfo::TItemsByName& CItemsInfo::GetItemsByName(void) const
 {
-    size_t offset = INT_MAX;
-    iterate ( TItems, i, m_Items ) {
-        offset = min(offset, (*i)->GetOffset());
-    }
-    return offset;
-}
-
-const CMembersInfo::TMembersByName& CMembersInfo::GetMembersByName(void) const
-{
-    TMembersByName* members = m_MembersByName.get();
-    if ( !members ) {
-        m_MembersByName.reset(members = new TMembersByName);
-        // TMembers is vector so we'll use index access instead iterator
-        // because we need index value to inser in map too
-        TMemberIndex lastIndex = LastIndex();
-        for ( TMemberIndex index = FirstIndex();
-              index <= lastIndex; ++index ) {
-            const string& name = GetItemInfo(index)->GetId().GetName();
-            if ( !members->insert(TMembersByName::value_type(name,
-                                                             index)).second ) {
+    TItemsByName* items = m_ItemsByName.get();
+    if ( !items ) {
+        m_ItemsByName.reset(items = new TItemsByName);
+        for ( CIterator i(*this); i.Valid(); ++i ) {
+            const CItemInfo* itemInfo = GetItemInfo(i);
+            const string& name = itemInfo->GetId().GetName();
+            if ( !items->insert(TItemsByName::value_type(name, *i)).second ) {
                 if ( !name.empty() )
                     THROW1_TRACE(runtime_error, "duplicated member name");
             }
         }
     }
-    return *members;
+    return *items;
 }
 
-const CMembersInfo::TMembersByOffset&
-CMembersInfo::GetMembersByOffset(void) const
+const CItemsInfo::TItemsByOffset&
+CItemsInfo::GetItemsByOffset(void) const
 {
-    TMembersByOffset* members = m_MembersByOffset.get();
-    if ( !members ) {
+    TItemsByOffset* items = m_ItemsByOffset.get();
+    if ( !items ) {
         // create map
-        m_MembersByOffset.reset(members = new TMembersByOffset);
+        m_ItemsByOffset.reset(items = new TItemsByOffset);
         // fill map
-        
-        TMemberIndex lastIndex = LastIndex();
-        for ( TMemberIndex index = FirstIndex();
-              index <= lastIndex; ++index ) {
-            const CItemInfo* memberInfo = GetItemInfo(index);
-            size_t offset = memberInfo->GetOffset();
-            if ( !members->insert(TMembersByOffset::value_type(offset, index)).second ) {
+        for ( CIterator i(*this); i.Valid(); ++i ) {
+            const CItemInfo* itemInfo = GetItemInfo(i);
+            size_t offset = itemInfo->GetOffset();
+            if ( !items->insert(TItemsByOffset::value_type(offset, *i)).second ) {
                 THROW1_TRACE(runtime_error, "conflict member offset");
             }
         }
 /*
         // check overlaps
         size_t nextOffset = 0;
-        for ( TMembersByOffset::const_iterator m = members->begin();
+        for ( TItemsByOffset::const_iterator m = members->begin();
               m != members->end(); ++m ) {
             size_t offset = m->first;
             if ( offset < nextOffset ) {
@@ -212,72 +217,60 @@ CMembersInfo::GetMembersByOffset(void) const
         }
 */
     }
-    return *members;
+    return *items;
 }
 
-void CMembersInfo::UpdateTags(void) const
+void CItemsInfo::UpdateTagMap(void) const
 {
-    m_ZeroTagIndex = kInvalidMember;
-    m_MembersByTag.reset(0);
-
     TMemberIndex zeroTagIndex = kInvalidMember;
 
-    TTag nextTag = CMemberId::eFirstTag;
-    TMemberIndex lastIndex = LastIndex();
-    for ( TMemberIndex index = FirstIndex();
-          index <= lastIndex; ++index ) {
-        CMemberId& id = x_GetItemInfo(index)->m_Id;
-        TTag tag = id.GetExplicitTag();
-        if ( tag == CMemberId::eNoExplicitTag ) {
-            if ( index == FirstIndex() && id.GetName().empty() ) {
-                // parent class
-                tag = CMemberId::eParentTag;
-            }
-            else {
-                tag = nextTag;
-            }
-        }
+    for ( CIterator i(*this); i.Valid(); ++i ) {
+        const CItemInfo* itemInfo = GetItemInfo(i);
+        TTag tag = itemInfo->GetId().GetTag();
         if ( zeroTagIndex == kInvalidMember ) {
-            if ( index == FirstIndex() )
-                zeroTagIndex = index - tag;
+            if ( *i == FirstIndex() )
+                zeroTagIndex = *i - tag;
         }
         else {
-            if ( zeroTagIndex != index - tag )
+            if ( zeroTagIndex != *i - tag )
                 zeroTagIndex = kInvalidMember;
         }
-        id.m_Tag = tag;
-        nextTag = tag + 1;
     }
 
     m_ZeroTagIndex = zeroTagIndex;
+    if ( zeroTagIndex == kInvalidMember ) {
+        TItemsByTag* items;
+        m_ItemsByTag.reset(items = new TItemsByTag);
+        for ( CIterator i(*this); i.Valid(); ++i ) {
+            const CItemInfo* itemInfo = GetItemInfo(i);
+            TTag tag = itemInfo->GetId().GetTag();
+            if ( !items->insert(TItemsByTag::value_type(tag, *i)).second ) {
+                THROW1_TRACE(runtime_error, "duplicated member tag");
+            }
+        }
+    }
 }
 
-TMemberIndex CMembersInfo::Find(const CLightString& name) const
+TMemberIndex CItemsInfo::Find(const CLightString& name) const
 {
-    const TMembersByName& members = GetMembersByName();
-    TMembersByName::const_iterator i = members.find(name);
-    if ( i == members.end() )
+    const TItemsByName& items = GetItemsByName();
+    TItemsByName::const_iterator i = items.find(name);
+    if ( i == items.end() )
         return kInvalidMember;
     return i->second;
 }
 
-TMemberIndex CMembersInfo::Find(const CLightString& name,
-                                TMemberIndex pos) const
+TMemberIndex CItemsInfo::Find(const CLightString& name, TMemberIndex pos) const
 {
-    TMemberIndex lastIndex = LastIndex();
-    for ( TMemberIndex index = pos; index <= lastIndex; ++index ) {
-        const CMemberId& id = GetItemInfo(index)->GetId();
-        if ( name == id.GetName() )
-            return index;
+    for ( CIterator i(*this, pos); i.Valid(); ++i ) {
+        if ( name == GetItemInfo(i)->GetId().GetName() )
+            return *i;
     }
     return kInvalidMember;
 }
 
-TMemberIndex CMembersInfo::Find(TTag tag) const
+TMemberIndex CItemsInfo::Find(TTag tag) const
 {
-    if ( m_ZeroTagIndex == kInvalidMember && !m_MembersByTag.get() )
-        UpdateTags();
-
     if ( m_ZeroTagIndex != kInvalidMember ) {
         TMemberIndex index = tag + m_ZeroTagIndex;
         if ( index < FirstIndex() || index > LastIndex() )
@@ -285,45 +278,23 @@ TMemberIndex CMembersInfo::Find(TTag tag) const
         return index;
     }
 
-    TMembersByTag* members = m_MembersByTag.get();
-    if ( !members ) {
-        m_MembersByTag.reset(members = new TMembersByTag);
-        TTag nextTag = CMemberId::eFirstTag;
-        TMemberIndex lastIndex = LastIndex();
-        for ( TMemberIndex index = FirstIndex();
-              index <= lastIndex; ++index ) {
-            const CMemberId& id = GetItemInfo(index)->GetId();
-            TTag currentTag = id.GetTag();
-            if ( currentTag == CMemberId::eNoExplicitTag ) {
-                if ( index == FirstIndex() && id.GetName().empty() ) {
-                    // parent class - skip it
-                    currentTag = CMemberId::eParentTag;
-                }
-                else {
-                    currentTag = nextTag;
-                }
-            }
-            if ( !members->insert(TMembersByTag::value_type(currentTag,
-                                                            index)).second ) {
-                THROW1_TRACE(runtime_error, "duplicated member tag");
-            }
-            nextTag = currentTag + 1;
-        }
+    TItemsByTag* items = m_ItemsByTag.get();
+    if ( !items ) {
+        UpdateTagMap();
+        return Find(tag);
     }
 
-    TMembersByTag::const_iterator mi = members->find(tag);
-    if ( mi == members->end() )
+    TItemsByTag::const_iterator mi = items->find(tag);
+    if ( mi == items->end() )
         return kInvalidMember;
     return mi->second;
 }
 
-TMemberIndex CMembersInfo::Find(TTag tag, TMemberIndex pos) const
+TMemberIndex CItemsInfo::Find(TTag tag, TMemberIndex pos) const
 {
-    TMemberIndex lastIndex = LastIndex();
-    for ( TMemberIndex index = pos; index <= lastIndex; ++index ) {
-        const CMemberId& id = GetItemInfo(index)->GetId();
-        if ( id.GetTag() == tag )
-            return index;
+    for ( CIterator i(*this, pos); i.Valid(); ++i ) {
+        if ( GetItemInfo(i)->GetId().GetTag() == tag )
+            return *i;
     }
     return kInvalidMember;
 }

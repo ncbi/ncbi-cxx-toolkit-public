@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/10/03 17:22:42  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.14  2000/09/29 16:18:22  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -207,15 +214,15 @@ CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
       m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
-      m_ReadHookData(SMemberRead(&TFunc::ReadSimpleMember,
-                                 &TFunc::ReadMissingSimpleMember),
-                     SMemberRead(&TFunc::ReadHookedMember,
-                                 &TFunc::ReadMissingHookedMember)),
+      m_ReadHookData(SMemberReadFunctions(&TFunc::ReadSimpleMember,
+                                          &TFunc::ReadMissingSimpleMember),
+                     SMemberReadFunctions(&TFunc::ReadHookedMember,
+                                          &TFunc::ReadMissingHookedMember)),
       m_WriteHookData(&TFunc::WriteSimpleMember, &TFunc::WriteHookedMember),
-      m_CopyHookData(SMemberCopy(&TFunc::CopySimpleMember,
-                                 &TFunc::CopyMissingSimpleMember),
-                     SMemberCopy(&TFunc::CopyHookedMember,
-                                 &TFunc::CopyMissingHookedMember)),
+      m_CopyHookData(SMemberCopyFunctions(&TFunc::CopySimpleMember,
+                                          &TFunc::CopyMissingSimpleMember),
+                     SMemberCopyFunctions(&TFunc::CopyHookedMember,
+                                          &TFunc::CopyMissingHookedMember)),
       m_SkipFunction(&TFunc::SkipSimpleMember),
       m_SkipMissingFunction(&TFunc::SkipMissingSimpleMember)
 {
@@ -228,15 +235,15 @@ CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
       m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
-      m_ReadHookData(SMemberRead(&TFunc::ReadSimpleMember,
-                                 &TFunc::ReadMissingSimpleMember),
-                     SMemberRead(&TFunc::ReadHookedMember,
-                                 &TFunc::ReadMissingHookedMember)),
+      m_ReadHookData(SMemberReadFunctions(&TFunc::ReadSimpleMember,
+                                          &TFunc::ReadMissingSimpleMember),
+                     SMemberReadFunctions(&TFunc::ReadHookedMember,
+                                          &TFunc::ReadMissingHookedMember)),
       m_WriteHookData(&TFunc::WriteSimpleMember, &TFunc::WriteHookedMember),
-      m_CopyHookData(SMemberCopy(&TFunc::CopySimpleMember,
-                                 &TFunc::CopyMissingSimpleMember),
-                     SMemberCopy(&TFunc::CopyHookedMember,
-                                 &TFunc::CopyMissingHookedMember)),
+      m_CopyHookData(SMemberCopyFunctions(&TFunc::CopySimpleMember,
+                                          &TFunc::CopyMissingSimpleMember),
+                     SMemberCopyFunctions(&TFunc::CopyHookedMember,
+                                          &TFunc::CopyMissingHookedMember)),
       m_SkipFunction(&TFunc::SkipSimpleMember),
       m_SkipMissingFunction(&TFunc::SkipMissingSimpleMember)
 {
@@ -249,15 +256,15 @@ CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
       m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
-      m_ReadHookData(SMemberRead(&TFunc::ReadSimpleMember,
-                                 &TFunc::ReadMissingSimpleMember),
-                     SMemberRead(&TFunc::ReadHookedMember,
-                                 &TFunc::ReadMissingHookedMember)),
+      m_ReadHookData(SMemberReadFunctions(&TFunc::ReadSimpleMember,
+                                          &TFunc::ReadMissingSimpleMember),
+                     SMemberReadFunctions(&TFunc::ReadHookedMember,
+                                          &TFunc::ReadMissingHookedMember)),
       m_WriteHookData(&TFunc::WriteSimpleMember, &TFunc::WriteHookedMember),
-      m_CopyHookData(SMemberCopy(&TFunc::CopySimpleMember,
-                                 &TFunc::CopyMissingSimpleMember),
-                     SMemberCopy(&TFunc::CopyHookedMember,
-                                 &TFunc::CopyMissingHookedMember)),
+      m_CopyHookData(SMemberCopyFunctions(&TFunc::CopySimpleMember,
+                                          &TFunc::CopyMissingSimpleMember),
+                     SMemberCopyFunctions(&TFunc::CopyHookedMember,
+                                          &TFunc::CopyMissingHookedMember)),
       m_SkipFunction(&TFunc::SkipSimpleMember),
       m_SkipMissingFunction(&TFunc::SkipMissingSimpleMember)
 {
@@ -270,31 +277,30 @@ CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
       m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
-      m_ReadHookData(SMemberRead(&TFunc::ReadSimpleMember,
-                                 &TFunc::ReadMissingSimpleMember),
-                     SMemberRead(&TFunc::ReadHookedMember,
-                                 &TFunc::ReadMissingHookedMember)),
+      m_ReadHookData(SMemberReadFunctions(&TFunc::ReadSimpleMember,
+                                          &TFunc::ReadMissingSimpleMember),
+                     SMemberReadFunctions(&TFunc::ReadHookedMember,
+                                          &TFunc::ReadMissingHookedMember)),
       m_WriteHookData(&TFunc::WriteSimpleMember, &TFunc::WriteHookedMember),
-      m_CopyHookData(SMemberCopy(&TFunc::CopySimpleMember,
-                                 &TFunc::CopyMissingSimpleMember),
-                     SMemberCopy(&TFunc::CopyHookedMember,
-                                 &TFunc::CopyMissingHookedMember)),
+      m_CopyHookData(SMemberCopyFunctions(&TFunc::CopySimpleMember,
+                                          &TFunc::CopyMissingSimpleMember),
+                     SMemberCopyFunctions(&TFunc::CopyHookedMember,
+                                          &TFunc::CopyMissingHookedMember)),
       m_SkipFunction(&TFunc::SkipSimpleMember),
       m_SkipMissingFunction(&TFunc::SkipMissingSimpleMember)
 {
 }
 
-CMemberInfo::~CMemberInfo(void)
-{
-}
-
 void CMemberInfo::SetParentClass(void)
 {
+    GetId().SetParentTag();
     m_ReadHookData.GetDefaultFunction() =
-        SMemberRead(&TFunc::ReadParentClass, &TFunc::ReadMissingParentClass);
+        SMemberReadFunctions(&TFunc::ReadParentClass,
+                             &TFunc::ReadMissingParentClass);
     m_WriteHookData.GetDefaultFunction() = &TFunc::WriteParentClass;
     m_CopyHookData.GetDefaultFunction() =
-        SMemberCopy(&TFunc::CopyParentClass, &TFunc::CopyMissingParentClass);
+        SMemberCopyFunctions(&TFunc::CopyParentClass,
+                             &TFunc::CopyMissingParentClass);
     m_SkipFunction = &TFunc::SkipParentClass;
     m_SkipMissingFunction = &TFunc::SkipMissingParentClass;
 }
@@ -337,9 +343,9 @@ CMemberInfo* CMemberInfo::SetOptional(const bool* setFlag)
 
 void CMemberInfo::UpdateFunctions(void)
 {
-    SMemberRead& readFuncs = m_ReadHookData.GetDefaultFunction();
-    TMemberWrite& writeFunc = m_WriteHookData.GetDefaultFunction();
-    SMemberCopy& copyFuncs = m_CopyHookData.GetDefaultFunction();
+    SMemberReadFunctions& readFuncs = m_ReadHookData.GetDefaultFunction();
+    TMemberWriteFunction& writeFunc = m_WriteHookData.GetDefaultFunction();
+    SMemberCopyFunctions& copyFuncs = m_CopyHookData.GetDefaultFunction();
 
     // get/readmain/write
     if ( CanBeDelayed() ) {
@@ -395,37 +401,37 @@ void CMemberInfo::UpdateDelayedBuffer(CObjectIStream& in,
     GetTypeInfo()->ReadData(in, GetItemPtr(classPtr));
 }
 
-void CMemberInfo::SetReadFunction(TMemberRead func)
+void CMemberInfo::SetReadFunction(TMemberReadFunction func)
 {
     m_ReadHookData.GetDefaultFunction().m_Main = func;
 }
 
-void CMemberInfo::SetReadMissingFunction(TMemberRead func)
+void CMemberInfo::SetReadMissingFunction(TMemberReadFunction func)
 {
     m_ReadHookData.GetDefaultFunction().m_Missing = func;
 }
 
-void CMemberInfo::SetWriteFunction(TMemberWrite func)
+void CMemberInfo::SetWriteFunction(TMemberWriteFunction func)
 {
     m_WriteHookData.GetDefaultFunction() = func;
 }
 
-void CMemberInfo::SetCopyFunction(TMemberCopy func)
+void CMemberInfo::SetCopyFunction(TMemberCopyFunction func)
 {
     m_CopyHookData.GetDefaultFunction().m_Main = func;
 }
 
-void CMemberInfo::SetCopyMissingFunction(TMemberCopy func)
+void CMemberInfo::SetCopyMissingFunction(TMemberCopyFunction func)
 {
     m_CopyHookData.GetDefaultFunction().m_Missing = func;
 }
 
-void CMemberInfo::SetSkipFunction(TMemberSkip func)
+void CMemberInfo::SetSkipFunction(TMemberSkipFunction func)
 {
     m_SkipFunction = func;
 }
 
-void CMemberInfo::SetSkipMissingFunction(TMemberSkip func)
+void CMemberInfo::SetSkipMissingFunction(TMemberSkipFunction func)
 {
     m_SkipMissingFunction = func;
 }
@@ -730,12 +736,11 @@ void CMemberInfoFunctions::ReadHookedMember(CObjectIStream& stream,
     CReadClassMemberHook* hook =
         memberInfo->m_ReadHookData.GetHook(stream.m_ClassMemberHookKey);
     if ( hook ) {
-        CObjectInfo object(classPtr, memberInfo->GetClassType(),
-                           CObjectInfo::eNonCObject);
+        CObjectInfo object(classPtr, memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
-        hook->ReadClassMember(stream,
-                              CObjectInfo::CMemberIterator(object,
-                                                           index));
+        CObjectInfo::CMemberIterator member(object, index);
+        _ASSERT(member.Valid());
+        hook->ReadClassMember(stream, member);
     }
     else
         memberInfo->DefaultReadMember(stream, classPtr);
@@ -748,12 +753,11 @@ void CMemberInfoFunctions::ReadMissingHookedMember(CObjectIStream& stream,
     CReadClassMemberHook* hook =
         memberInfo->m_ReadHookData.GetHook(stream.m_ClassMemberHookKey);
     if ( hook ) {
-        CObjectInfo object(classPtr, memberInfo->GetClassType(),
-                           CObjectInfo::eNonCObject);
+        CObjectInfo object(classPtr, memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
-        hook->ReadMissingClassMember(stream,
-                                     CObjectInfo::CMemberIterator(object,
-                                                                  index));
+        CObjectInfo::CMemberIterator member(object, index);
+        _ASSERT(member.Valid());
+        hook->ReadMissingClassMember(stream, member);
     }
     else
         memberInfo->DefaultReadMissingMember(stream, classPtr);
@@ -766,12 +770,11 @@ void CMemberInfoFunctions::WriteHookedMember(CObjectOStream& stream,
     CWriteClassMemberHook* hook =
         memberInfo->m_WriteHookData.GetHook(stream.m_ClassMemberHookKey);
     if ( hook ) {
-        CConstObjectInfo object(classPtr, memberInfo->GetClassType(),
-                                CObjectInfo::eNonCObject);
+        CConstObjectInfo object(classPtr, memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
-        hook->WriteClassMember(stream,
-                               CConstObjectInfo::CMemberIterator(object,
-                                                                 index));
+        CConstObjectInfo::CMemberIterator member(object, index);
+        _ASSERT(member.Valid());
+        hook->WriteClassMember(stream, member);
     }
     else
         memberInfo->DefaultWriteMember(stream, classPtr);
@@ -785,9 +788,9 @@ void CMemberInfoFunctions::CopyHookedMember(CObjectStreamCopier& stream,
     if ( hook ) {
         CObjectTypeInfo type(memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
-        hook->CopyClassMember(stream,
-                              CObjectTypeInfo::CMemberIterator(type,
-                                                               index));
+        CObjectTypeInfo::CMemberIterator member(type, index);
+        _ASSERT(member.Valid());
+        hook->CopyClassMember(stream, member);
     }
     else
         memberInfo->DefaultCopyMember(stream);
@@ -801,9 +804,9 @@ void CMemberInfoFunctions::CopyMissingHookedMember(CObjectStreamCopier& stream,
     if ( hook ) {
         CObjectTypeInfo type(memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
-        hook->CopyMissingClassMember(stream,
-                                     CObjectTypeInfo::CMemberIterator(type,
-                                                                      index));
+        CObjectTypeInfo::CMemberIterator member(type, index);
+        _ASSERT(member.Valid());
+        hook->CopyMissingClassMember(stream, member);
     }
     else
         memberInfo->DefaultCopyMissingMember(stream);

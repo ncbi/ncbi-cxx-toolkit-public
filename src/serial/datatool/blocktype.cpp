@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/10/03 17:22:49  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.24  2000/09/19 14:10:26  vasilche
 * Added files to MSVC project
 * Updated shell scripts to use new datattool path on MSVC
@@ -130,6 +137,7 @@
 #include <serial/datatool/classstr.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
+#include <typeinfo>
 
 BEGIN_NCBI_SCOPE
 

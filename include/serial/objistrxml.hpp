@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/10/03 17:22:35  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.8  2000/09/29 16:18:14  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -81,6 +88,8 @@
 #include <serial/lightstr.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CItemsInfo;
 
 class CObjectIStreamXml : public CObjectIStream
 {
@@ -219,7 +228,7 @@ private:
     char SkipWS(void);
     char SkipWSAndComments(void);
 
-    void UnexpectedMember(const CLightString& id, const CMembersInfo& members);
+    void UnexpectedMember(const CLightString& id, const CItemsInfo& items);
 
     enum ETagState {
         eTagOutside,

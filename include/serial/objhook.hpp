@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/03 17:22:34  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.3  2000/09/26 17:38:07  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -70,7 +77,7 @@ class CConstObjectInfoMI;
 class CObjectTypeInfoMI;
 class CObjectInfoCV;
 class CConstObjectInfoCV;
-class CObjectTypeInfoVI;
+class CObjectTypeInfoCV;
 
 class CReadObjectHook : public CObject
 {
@@ -233,7 +240,7 @@ public:
     virtual ~CCopyChoiceVariantHook(void);
 
     virtual void CopyChoiceVariant(CObjectStreamCopier& copier,
-                                   const CObjectTypeInfoVI& variant) = 0;
+                                   const CObjectTypeInfoCV& variant) = 0;
 };
 
 //#include <serial/objhook.inl>

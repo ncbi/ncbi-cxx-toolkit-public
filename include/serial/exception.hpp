@@ -1,3 +1,5 @@
+#ifndef EXCEPTION__HPP
+#define EXCEPTION__HPP
 /*  $Id$
 * ===========================================================================
 *
@@ -30,6 +32,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/03 17:22:31  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.4  2000/07/03 18:42:33  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -110,3 +119,5 @@ public:
 };
 
 END_NCBI_SCOPE
+
+#endif /* EXCEPTION__HPP */

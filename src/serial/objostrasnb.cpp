@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/10/03 17:22:45  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.44  2000/09/29 16:18:24  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -960,8 +967,8 @@ void CObjectOStreamAsnBinary::WriteClass(const CClassTypeInfo* classType,
         WriteShortTag(eUniversal, true, eSequence);
     WriteIndefiniteLength();
     
-    for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
-        classType->GetMemberInfo(*i)->WriteMember(*this, classPtr);
+    for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
+        classType->GetMemberInfo(i)->WriteMember(*this, classPtr);
     }
     
     WriteEndOfContent();
@@ -1044,9 +1051,9 @@ void CObjectOStreamAsnBinary::CopyClassRandom(const CClassTypeInfo* classType,
     END_OBJECT_FRAME_OF(copier.In());
 
     // init all absent members
-    for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
+    for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
         if ( !read[*i] ) {
-            classType->GetMemberInfo(*i)->CopyMissingMember(copier);
+            classType->GetMemberInfo(i)->CopyMissingMember(copier);
         }
     }
 
@@ -1091,7 +1098,7 @@ void CObjectOStreamAsnBinary::CopyClassSequential(const CClassTypeInfo* classTyp
 
         WriteEndOfContent();
         
-        pos = index + 1;
+        pos.SetIndex(index + 1);
 
         copier.In().EndClassMember();
     }
@@ -1100,8 +1107,8 @@ void CObjectOStreamAsnBinary::CopyClassSequential(const CClassTypeInfo* classTyp
     END_OBJECT_FRAME_OF(copier.In());
 
     // init all absent members
-    for ( ; pos; ++pos ) {
-        classType->GetMemberInfo(*pos)->CopyMissingMember(copier);
+    for ( ; pos.Valid(); ++pos ) {
+        classType->GetMemberInfo(pos)->CopyMissingMember(copier);
     }
 
     WriteEndOfContent();

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/10/03 17:22:31  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.2  2000/09/29 16:18:12  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -51,7 +58,13 @@
 */
 
 inline
-const CMembersInfo& CClassTypeInfoBase::GetItems(void) const
+const CItemsInfo& CClassTypeInfoBase::GetItems(void) const
+{
+    return m_Items;
+}
+
+inline
+CItemsInfo& CClassTypeInfoBase::GetItems(void)
 {
     return m_Items;
 }
@@ -64,78 +77,16 @@ const type_info& CClassTypeInfoBase::GetId(void) const
 }
 
 inline
-CMembersInfo& CClassTypeInfoBase::GetItems(void)
-{
-    return m_Items;
-}
-
-inline
 CClassTypeInfoBase::CIterator::CIterator(const CClassTypeInfoBase* type)
-    : m_CurrentIndex(type->GetItems().FirstIndex()),
-      m_LastIndex(type->GetItems().LastIndex())
+    : CParent(type->GetItems())
 {
 }
 
 inline
 CClassTypeInfoBase::CIterator::CIterator(const CClassTypeInfoBase* type,
                                          TMemberIndex index)
-    : m_CurrentIndex(index),
-      m_LastIndex(type->GetItems().LastIndex())
+    : CParent(type->GetItems(), index)
 {
-    _ASSERT(index >= kFirstMemberIndex);
-    _ASSERT(index <= (m_LastIndex + 1));
-}
-
-inline
-CClassTypeInfoBase::CIterator&
-CClassTypeInfoBase::CIterator::operator=(TMemberIndex index)
-{
-    _ASSERT(index >= kFirstMemberIndex);
-    _ASSERT(index <= (m_LastIndex + 1));
-    m_CurrentIndex = index;
-    return *this;
-}
-
-inline
-bool CClassTypeInfoBase::CIterator::Valid(void) const
-{
-    return m_CurrentIndex <= m_LastIndex;
-}
-
-inline
-CClassTypeInfoBase::CIterator::operator bool(void) const
-{
-    return Valid();
-}
-
-inline
-bool CClassTypeInfoBase::CIterator::operator!(void) const
-{
-    return !Valid();
-}
-
-inline
-void CClassTypeInfoBase::CIterator::Next(void)
-{
-    ++m_CurrentIndex;
-}
-
-inline
-void CClassTypeInfoBase::CIterator::operator++(void)
-{
-    Next();
-}
-
-inline
-TMemberIndex CClassTypeInfoBase::CIterator::GetIndex(void) const
-{
-    return m_CurrentIndex;
-}
-
-inline
-TMemberIndex CClassTypeInfoBase::CIterator::operator*(void) const
-{
-    return GetIndex();
 }
 
 #endif /* def CLASSINFOB__HPP  &&  ndef CLASSINFOB__INL */

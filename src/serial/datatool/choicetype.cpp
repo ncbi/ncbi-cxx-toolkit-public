@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/10/03 17:22:49  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.17  2000/09/26 17:38:25  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -114,6 +121,7 @@
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/choicestr.hpp>
 #include <serial/datatool/choiceptrstr.hpp>
+#include <typeinfo>
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/03 17:22:42  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.12  2000/09/18 20:00:22  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -90,56 +97,49 @@
 BEGIN_NCBI_SCOPE
 
 CMemberId::CMemberId(void)
-    : m_MemberList(0), m_ExplicitTag(eNoExplicitTag), m_Tag(eNoExplicitTag)
+    : m_Tag(eNoExplicitTag), m_ExplicitTag(false)
 {
 }
 
-CMemberId::CMemberId(TTag tag)
-    : m_MemberList(0), m_ExplicitTag(tag), m_Tag(tag)
+CMemberId::CMemberId(TTag tag, bool explicitTag)
+    : m_Tag(tag), m_ExplicitTag(explicitTag)
 {
 }
 
 CMemberId::CMemberId(const string& name)
-    : m_MemberList(0), m_Name(name),
-      m_ExplicitTag(eNoExplicitTag), m_Tag(eNoExplicitTag)
+    : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false)
 {
 }
 
-CMemberId::CMemberId(const string& name, TTag tag)
-    : m_MemberList(0), m_Name(name), m_ExplicitTag(tag), m_Tag(tag)
+CMemberId::CMemberId(const string& name, TTag tag, bool explicitTag)
+    : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag)
 {
 }
 
 CMemberId::CMemberId(const char* name)
-    : m_MemberList(0), m_Name(name), 
-      m_ExplicitTag(eNoExplicitTag), m_Tag(eNoExplicitTag)
+    : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false)
 {
     _ASSERT(name);
 }
 
-CMemberId::CMemberId(const char* name, TTag tag)
-    : m_MemberList(0), m_Name(name), m_ExplicitTag(tag), m_Tag(tag)
+CMemberId::CMemberId(const char* name, TTag tag, bool explicitTag)
+    : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag)
 {
     _ASSERT(name);
-}
-
-CMemberId::CMemberId(const CMemberId& id)
-    : m_MemberList(id.m_MemberList), m_Name(id.m_Name),
-      m_ExplicitTag(id.m_ExplicitTag), m_Tag(eNoExplicitTag)
-{
-}
-
-CMemberId& CMemberId::operator=(const CMemberId& id)
-{
-    m_MemberList = id.m_MemberList;
-    m_Name = id.m_Name;
-    m_ExplicitTag = id.m_ExplicitTag;
-    m_Tag = eNoExplicitTag;
-    return *this;
 }
 
 CMemberId::~CMemberId(void)
 {
+}
+
+bool CMemberId::HaveParentTag(void) const
+{
+    return GetTag() == eParentTag && !HaveExplicitTag();
+}
+
+void CMemberId::SetParentTag(void)
+{
+    SetTag(eParentTag, false);
 }
 
 string CMemberId::ToString(void) const
@@ -148,13 +148,6 @@ string CMemberId::ToString(void) const
         return m_Name;
     else
         return '[' + NStr::IntToString(GetTag()) + ']';
-}
-
-CMemberId::TTag CMemberId::GetTagLong(void) const
-{
-    _ASSERT(m_MemberList != 0);
-    m_MemberList->UpdateTags();
-    return m_Tag;
 }
 
 END_NCBI_SCOPE

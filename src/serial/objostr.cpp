@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2000/10/03 17:22:44  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.49  2000/09/29 16:18:24  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -239,6 +246,7 @@
 #include <serial/continfo.hpp>
 #include <serial/member.hpp>
 #include <serial/variant.hpp>
+#include <serial/object.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -328,6 +336,11 @@ void CObjectOStream::EndOfWrite(void)
     FlushBuffer();
     m_Objects.Clear();
 }    
+
+void CObjectOStream::WriteObject(const CConstObjectInfo& object)
+{
+    object.GetTypeInfo()->WriteData(*this, object.GetObjectPtr());
+}
 
 void CObjectOStream::Write(const CConstObjectInfo& object)
 {
@@ -683,7 +696,7 @@ void CObjectOStream::WriteClass(const CClassTypeInfo* classType,
     BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     BeginClass(classType);
     
-    for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
+    for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
         classType->GetMemberInfo(*i)->WriteMember(*this, classPtr);
     }
     
@@ -760,7 +773,7 @@ void CObjectOStream::CopyClassRandom(const CClassTypeInfo* classType,
     END_OBJECT_FRAME_OF(copier.In());
 
     // init all absent members
-    for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
+    for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
         if ( !read[*i] ) {
             classType->GetMemberInfo(*i)->CopyMissingMember(copier);
         }
@@ -799,7 +812,7 @@ void CObjectOStream::CopyClassSequential(const CClassTypeInfo* classType,
 
         memberInfo->CopyMember(copier);
         
-        pos = index + 1;
+        pos.SetIndex(index + 1);
 
         EndClassMember();
         copier.In().EndClassMember();
@@ -809,7 +822,7 @@ void CObjectOStream::CopyClassSequential(const CClassTypeInfo* classType,
     END_OBJECT_FRAME_OF(copier.In());
 
     // init all absent members
-    for ( ; pos; ++pos ) {
+    for ( ; pos.Valid(); ++pos ) {
         classType->GetMemberInfo(*pos)->CopyMissingMember(copier);
     }
 

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/03 17:22:32  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.4  2000/07/03 18:42:34  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -51,7 +58,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/object.hpp>
+//#include <serial/object.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/10/03 17:22:33  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.8  2000/09/01 13:15:59  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -69,18 +76,28 @@ const string& CMemberId::GetName(void) const
 }
 
 inline
-CMemberId::TTag CMemberId::GetExplicitTag(void) const
+CMemberId::TTag CMemberId::GetTag(void) const
+{
+    return m_Tag;
+}
+
+inline
+bool CMemberId::HaveExplicitTag(void) const
 {
     return m_ExplicitTag;
 }
 
 inline
-CMemberId::TTag CMemberId::GetTag(void) const
+void CMemberId::SetName(const string& name)
 {
-    TTag tag = m_Tag;
-    if ( tag != eNoExplicitTag )
-        return tag;
-    return GetTagLong();
+    m_Name = name;
+}
+
+inline
+void CMemberId::SetTag(TTag tag, bool explicitTag)
+{
+    m_Tag = tag;
+    m_ExplicitTag = explicitTag;
 }
 
 #endif /* def MEMBERID__HPP  &&  ndef MEMBERID__INL */

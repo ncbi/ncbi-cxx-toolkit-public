@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2000/10/03 17:22:35  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.46  2000/09/29 16:18:14  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -216,7 +223,6 @@
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/objlist.hpp>
-#include <serial/object.hpp>
 #include <serial/strbuffer.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/objstack.hpp>

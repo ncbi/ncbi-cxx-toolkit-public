@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/10/03 17:22:33  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.9  2000/09/26 19:24:54  vasilche
 * Added user interface for setting read/write/copy hooks.
 *
@@ -106,6 +113,13 @@ ETypeFamily CObjectTypeInfo::GetTypeFamily(void) const
 }
 
 inline
+void CObjectTypeInfo::CheckTypeFamily(ETypeFamily family) const
+{
+    if ( GetTypeInfo()->GetTypeFamily() != family )
+        WrongTypeFamily(family);
+}
+
+inline
 void CObjectTypeInfo::ResetTypeInfo(void)
 {
     m_TypeInfo = 0;
@@ -145,105 +159,6 @@ inline
 bool CObjectTypeInfo::operator!=(const CObjectTypeInfo& type) const
 {
     return GetTypeInfo() != type.GetTypeInfo();
-}
-
-inline
-void CObjectTypeInfo::CheckTypeFamily(ETypeFamily family) const
-{
-    if ( GetTypeInfo()->GetTypeFamily() != family )
-        WrongTypeFamily(family);
-}
-
-inline
-const CPrimitiveTypeInfo* CObjectTypeInfo::GetPrimitiveTypeInfo(void) const
-{
-    CheckTypeFamily(eTypeFamilyPrimitive);
-    return CTypeConverter<CPrimitiveTypeInfo>::SafeCast(GetTypeInfo());
-}
-
-inline
-const CClassTypeInfo* CObjectTypeInfo::GetClassTypeInfo(void) const
-{
-    CheckTypeFamily(eTypeFamilyClass);
-    return CTypeConverter<CClassTypeInfo>::SafeCast(GetTypeInfo());
-}
-
-inline
-const CChoiceTypeInfo* CObjectTypeInfo::GetChoiceTypeInfo(void) const
-{
-    CheckTypeFamily(eTypeFamilyChoice);
-    return CTypeConverter<CChoiceTypeInfo>::SafeCast(GetTypeInfo());
-}
-
-inline
-const CContainerTypeInfo* CObjectTypeInfo::GetContainerTypeInfo(void) const
-{
-    CheckTypeFamily(eTypeFamilyContainer);
-    return CTypeConverter<CContainerTypeInfo>::SafeCast(GetTypeInfo());
-}
-
-inline
-const CPointerTypeInfo* CObjectTypeInfo::GetPointerTypeInfo(void) const
-{
-    CheckTypeFamily(eTypeFamilyPointer);
-    return CTypeConverter<CPointerTypeInfo>::SafeCast(GetTypeInfo());
-}
-
-inline
-CObjectTypeInfo CObjectTypeInfo::GetElementType(void) const
-{
-    return GetContainerTypeInfo()->GetElementType();
-}
-
-// pointer interface
-inline
-CConstObjectInfo CConstObjectInfo::GetPointedObject(void) const
-{
-    return GetPointerTypeInfo()->GetPointedObject(*this);
-}
-
-inline
-CObjectInfo CObjectInfo::GetPointedObject(void) const
-{
-    return GetPointerTypeInfo()->GetPointedObject(*this);
-}
-
-// primitive interface
-inline
-EPrimitiveValueType
-CObjectTypeInfo::GetPrimitiveValueType(void) const
-{
-    return GetPrimitiveTypeInfo()->GetPrimitiveValueType();
-}
-
-inline
-bool CObjectTypeInfo::IsPrimitiveValueSigned(void) const
-{
-    return GetPrimitiveTypeInfo()->IsSigned();
-}
-
-inline
-TMemberIndex CObjectTypeInfo::FindMemberIndex(const string& name) const
-{
-    return GetClassTypeInfo()->GetMembers().Find(name);
-}
-
-inline
-TMemberIndex CObjectTypeInfo::FindMemberIndex(int tag) const
-{
-    return GetClassTypeInfo()->GetMembers().Find(tag);
-}
-
-inline
-TMemberIndex CObjectTypeInfo::FindVariantIndex(const string& name) const
-{
-    return GetChoiceTypeInfo()->GetVariants().Find(name);
-}
-
-inline
-TMemberIndex CObjectTypeInfo::FindVariantIndex(int tag) const
-{
-    return GetChoiceTypeInfo()->GetVariants().Find(tag);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -311,6 +226,7 @@ inline
 void CConstObjectInfo::ResetObjectPtr(void)
 {
     m_ObjectPtr = 0;
+    m_Ref.Reset();
 }
 
 inline
@@ -328,9 +244,8 @@ pair<TConstObjectPtr, TTypeInfo> CConstObjectInfo::GetPair(void) const
 inline
 void CConstObjectInfo::Reset(void)
 {
-    m_ObjectPtr = 0;
+    ResetObjectPtr();
     ResetTypeInfo();
-    m_Ref.Reset();
 }
 
 inline
@@ -355,62 +270,6 @@ CConstObjectInfo::operator=(pair<TObjectPtr, TTypeInfo> object)
 {
     Set(object.first, object.second);
     return *this;
-}
-
-inline
-bool CConstObjectInfo::GetPrimitiveValueBool(void) const
-{
-    return GetPrimitiveTypeInfo()->GetValueBool(GetObjectPtr());
-}
-
-inline
-char CConstObjectInfo::GetPrimitiveValueChar(void) const
-{
-    return GetPrimitiveTypeInfo()->GetValueChar(GetObjectPtr());
-}
-
-inline
-long CConstObjectInfo::GetPrimitiveValueLong(void) const
-{
-    return GetPrimitiveTypeInfo()->GetValueLong(GetObjectPtr());
-}
-
-inline
-unsigned long CConstObjectInfo::GetPrimitiveValueULong(void) const
-{
-    return GetPrimitiveTypeInfo()->GetValueULong(GetObjectPtr());
-}
-
-inline
-double CConstObjectInfo::GetPrimitiveValueDouble(void) const
-{
-    return GetPrimitiveTypeInfo()->GetValueDouble(GetObjectPtr());
-}
-
-inline
-void CConstObjectInfo::GetPrimitiveValueString(string& value) const
-{
-    GetPrimitiveTypeInfo()->GetValueString(GetObjectPtr(), value);
-}
-
-inline
-string CConstObjectInfo::GetPrimitiveValueString(void) const
-{
-    string value;
-    GetPrimitiveValueString(value);
-    return value;
-}
-
-inline
-void CConstObjectInfo::GetPrimitiveValueOctetString(vector<char>& value) const
-{
-    GetPrimitiveTypeInfo()->GetValueOctetString(GetObjectPtr(), value);
-}
-
-inline
-TMemberIndex CConstObjectInfo::GetCurrentChoiceVariantIndex(void) const
-{
-    return GetChoiceTypeInfo()->GetIndex(GetObjectPtr());
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -468,48 +327,6 @@ CObjectInfo::operator=(pair<TObjectPtr, TTypeInfo> object)
     return *this;
 }
 
-inline
-void CObjectInfo::SetPrimitiveValueBool(bool value)
-{
-    GetPrimitiveTypeInfo()->SetValueBool(GetObjectPtr(), value);
-}
-
-inline
-void CObjectInfo::SetPrimitiveValueChar(char value)
-{
-    GetPrimitiveTypeInfo()->SetValueChar(GetObjectPtr(), value);
-}
-
-inline
-void CObjectInfo::SetPrimitiveValueLong(long value)
-{
-    GetPrimitiveTypeInfo()->SetValueLong(GetObjectPtr(), value);
-}
-
-inline
-void CObjectInfo::SetPrimitiveValueULong(unsigned long value)
-{
-    GetPrimitiveTypeInfo()->SetValueULong(GetObjectPtr(), value);
-}
-
-inline
-void CObjectInfo::SetPrimitiveValueDouble(double value)
-{
-    GetPrimitiveTypeInfo()->SetValueDouble(GetObjectPtr(), value);
-}
-
-inline
-void CObjectInfo::SetPrimitiveValueString(const string& value)
-{
-    GetPrimitiveTypeInfo()->SetValueString(GetObjectPtr(), value);
-}
-
-inline
-void CObjectInfo::SetPrimitiveValueOctetString(const vector<char>& value)
-{
-    GetPrimitiveTypeInfo()->SetValueOctetString(GetObjectPtr(), value);
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // iterators
 /////////////////////////////////////////////////////////////////////////////
@@ -527,7 +344,7 @@ bool CConstObjectInfoEI::CheckValid(void) const
 {
 #if _DEBUG
     if ( m_LastCall != eValid)
-        ERR_POST("CElementIterator was used without checking its validity");
+        ReportNonValid();
 #endif
     return m_Iterator.Valid();
 }
@@ -599,7 +416,7 @@ bool CObjectInfoEI::CheckValid(void) const
 {
 #if _DEBUG
     if ( m_LastCall != eValid)
-        ERR_POST("CElementIterator was used without checking its validity");
+        ReportNonValid();
 #endif
     return m_Iterator.Valid();
 }
@@ -726,7 +543,7 @@ bool CObjectTypeInfoII::CheckValid(void) const
 {
 #if _DEBUG
     if ( m_LastCall != eValid)
-        ERR_POST("CTypeMemberIterator is used without validity check");
+        ReportNonValid();
 #endif
     return m_ItemIndex >= kFirstMemberIndex &&
         m_ItemIndex <= m_LastItemIndex;

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2000/10/03 17:22:34  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.50  2000/09/29 16:18:13  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -225,7 +232,6 @@
 #include <corelib/ncbiobj.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/object.hpp>
 #include <serial/strbuffer.hpp>
 #include <serial/objstack.hpp>
 #include <serial/weakmap.hpp>
@@ -237,7 +243,10 @@ struct asnio;
 BEGIN_NCBI_SCOPE
 
 class CMemberId;
-class CMembersInfo;
+class CItemsInfo;
+class CItemInfo;
+class CMemberInfo;
+class CVariantInfo;
 class CDelayBuffer;
 class CByteSource;
 class CByteSourceReader;
@@ -311,7 +320,6 @@ public:
 
     // temporary reader
     void ReadSeparateObject(const CObjectInfo& object);
-    void SkipSeparateObject(const CObjectTypeInfo& objectType);
 
     // END OF USER INTERFACE
 

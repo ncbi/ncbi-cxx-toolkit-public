@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/03 17:22:32  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.1  2000/09/18 20:00:01  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -50,7 +57,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CMembersInfo;
+class CItemsInfo;
 
 class CItemInfo
 {
@@ -67,6 +74,7 @@ public:
     virtual ~CItemInfo(void);
 
     const CMemberId& GetId(void) const;
+    CMemberId& GetId(void);
 
     TMemberIndex GetIndex(void) const;
 
@@ -81,7 +89,7 @@ public:
     TConstObjectPtr GetItemPtr(TConstObjectPtr object) const;
 
 private:
-    friend class CMembersInfo;
+    friend class CItemsInfo;
 
     // member ID
     CMemberId m_Id;

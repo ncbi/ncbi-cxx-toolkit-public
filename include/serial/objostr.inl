@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/10/03 17:22:35  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.6  2000/09/18 20:00:07  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -68,12 +75,6 @@ void CObjectOStream::WriteObject(TConstObjectPtr objectPtr,
                                  TTypeInfo objectType)
 {
     objectType->WriteData(*this, objectPtr);
-}
-
-inline
-void CObjectOStream::WriteObject(const CConstObjectInfo& object)
-{
-    object.GetTypeInfo()->WriteData(*this, object.GetObjectPtr());
 }
 
 inline

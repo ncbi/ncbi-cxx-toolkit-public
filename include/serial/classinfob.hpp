@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/10/03 17:22:30  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.6  2000/09/18 20:00:00  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -101,7 +108,7 @@ protected:
 public:
     virtual ~CClassTypeInfoBase(void);
 
-    const CMembersInfo& GetItems(void) const;
+    const CItemsInfo& GetItems(void) const;
 
     const type_info& GetId(void) const;
 
@@ -126,33 +133,17 @@ public:
     virtual bool MayContainType(TTypeInfo type) const;
 
     // helping member iterator class (internal use)
-    class CIterator
+    class CIterator : public CItemsInfo::CIterator
     {
+        typedef CItemsInfo::CIterator CParent;
     public:
         CIterator(const CClassTypeInfoBase* type);
         CIterator(const CClassTypeInfoBase* type, TMemberIndex index);
-        
-        CIterator& operator=(TMemberIndex index);
-
-        bool Valid(void) const;
-
-        operator bool(void) const;
-        bool operator!(void) const;
-
-        void Next(void);
-        void operator++(void);
-
-        TMemberIndex GetIndex(void) const;
-        TMemberIndex operator*(void) const;
-
-    private:
-        TMemberIndex m_CurrentIndex;
-        TMemberIndex m_LastIndex;
     };
 
 protected:
     friend class CIterator;
-    CMembersInfo& GetItems(void);
+    CItemsInfo& GetItems(void);
 
     virtual bool CalcMayContainType(TTypeInfo typeInfo) const;
 
@@ -160,7 +151,7 @@ private:
     const type_info* m_Id;
     bool m_IsCObject;
 
-    CMembersInfo m_Items;
+    CItemsInfo m_Items;
 
     mutable auto_ptr<TContainedTypes> m_ContainedTypes;
 

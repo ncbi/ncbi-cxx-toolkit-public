@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/10/03 17:22:42  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.6  2000/09/29 16:18:22  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -68,6 +75,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/classinfob.hpp>
 #include <serial/object.hpp>
+#include <serial/objhook.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/10/03 17:22:32  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.17  2000/09/29 16:18:12  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -117,7 +124,7 @@
 #include <serial/serialutil.hpp>
 #include <serial/item.hpp>
 #include <serial/hookdata.hpp>
-#include <serial/objhook.hpp>
+#include <serial/hookfunc.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -143,16 +150,6 @@ public:
                                                TConstObjectPtr classPtr);
     typedef TObjectPtr (*TMemberGet)(const CMemberInfo* memberInfo,
                                      TObjectPtr classPtr);
-    typedef void (*TMemberRead)(CObjectIStream& in,
-                                const CMemberInfo* memberInfo,
-                                TObjectPtr classPtr);
-    typedef void (*TMemberWrite)(CObjectOStream& out,
-                                 const CMemberInfo* memberInfo,
-                                 TConstObjectPtr classPtr);
-    typedef void (*TMemberSkip)(CObjectIStream& in,
-                                const CMemberInfo* memberInfo);
-    typedef void (*TMemberCopy)(CObjectStreamCopier& copier,
-                                const CMemberInfo* memberInfo);
 
     CMemberInfo(const CClassTypeInfo* classType,
                 const CMemberId& id, TOffset offset, const CTypeRef& type);
@@ -162,7 +159,6 @@ public:
                 const char* id, TOffset offset, const CTypeRef& type);
     CMemberInfo(const CClassTypeInfo* classType,
                 const char* id, TOffset offset, TTypeInfo type);
-    ~CMemberInfo(void);
 
     const CClassTypeInfo* GetClassType(void) const;
 
@@ -244,34 +240,19 @@ private:
     TMemberGetConst m_GetConstFunction;
     TMemberGet m_GetFunction;
 
-	struct SMemberRead {
-		SMemberRead(TMemberRead main, TMemberRead missing)
-			: m_Main(main), m_Missing(missing)
-		{
-		}
-		TMemberRead m_Main, m_Missing;
-	};
-	struct SMemberCopy {
-		SMemberCopy(TMemberCopy main, TMemberCopy missing)
-			: m_Main(main), m_Missing(missing)
-		{
-		}
-		TMemberCopy m_Main, m_Missing;
-	};
+    CHookData<CReadClassMemberHook, SMemberReadFunctions> m_ReadHookData;
+    CHookData<CWriteClassMemberHook, TMemberWriteFunction> m_WriteHookData;
+    CHookData<CCopyClassMemberHook, SMemberCopyFunctions> m_CopyHookData;
+    TMemberSkipFunction m_SkipFunction;
+    TMemberSkipFunction m_SkipMissingFunction;
 
-    CHookData<CReadClassMemberHook, SMemberRead> m_ReadHookData;
-    CHookData<CWriteClassMemberHook, TMemberWrite> m_WriteHookData;
-    CHookData<CCopyClassMemberHook, SMemberCopy> m_CopyHookData;
-    TMemberSkip m_SkipFunction;
-    TMemberSkip m_SkipMissingFunction;
-
-    void SetReadFunction(TMemberRead func);
-    void SetReadMissingFunction(TMemberRead func);
-    void SetWriteFunction(TMemberWrite func);
-    void SetCopyFunction(TMemberCopy func);
-    void SetCopyMissingFunction(TMemberCopy func);
-    void SetSkipFunction(TMemberSkip func);
-    void SetSkipMissingFunction(TMemberSkip func);
+    void SetReadFunction(TMemberReadFunction func);
+    void SetReadMissingFunction(TMemberReadFunction func);
+    void SetWriteFunction(TMemberWriteFunction func);
+    void SetCopyFunction(TMemberCopyFunction func);
+    void SetCopyMissingFunction(TMemberCopyFunction func);
+    void SetSkipFunction(TMemberSkipFunction func);
+    void SetSkipMissingFunction(TMemberSkipFunction func);
 
     void UpdateFunctions(void);
 

@@ -1,5 +1,5 @@
-#if defined(CHOICE__HPP)  &&  !defined(CHOICE__INL)
-#define CHOICE__INL
+#ifndef HOOKDATAIMPL__HPP
+#define HOOKDATAIMPL__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,73 +33,39 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2000/10/03 17:22:30  vasilche
+* Revision 1.1  2000/10/03 17:22:31  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
 * Fixed tag allocation for parent classes.
 * Fixed CObject allocation/deallocation in streams.
 * Moved instantiation of several templates in separate source file.
 *
-* Revision 1.1  2000/09/18 19:59:59  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
 * ===========================================================================
 */
 
-inline
-TMemberIndex CChoiceTypeInfo::GetIndex(TConstObjectPtr object) const
-{
-    return m_WhichFunction(this, object);
-}
+#include <corelib/ncbistd.hpp>
+#include <serial/weakmap.hpp>
 
-inline
-void CChoiceTypeInfo::ResetIndex(TObjectPtr object) const
-{
-    m_ResetFunction(this, object);
-}
+BEGIN_NCBI_SCOPE
 
-inline
-void CChoiceTypeInfo::SetIndex(TObjectPtr object,
-                               TMemberIndex index) const
+template<class Object>
+class CHookDataData
 {
-    m_SelectFunction(this, object, index);
-}
+public:
+    typedef Object mapped_type;
+    typedef CWeakMap<mapped_type> TMap;
+    
+    bool empty(void) const
+        {
+            return !m_GlobalHook && m_LocalHooks.empty();
+        }
 
-inline
-const CItemsInfo& CChoiceTypeInfo::GetVariants(void) const
-{
-    return GetItems();
-}
+    mapped_type m_GlobalHook;
+    TMap m_LocalHooks;
+};
 
-inline
-const CVariantInfo* CChoiceTypeInfo::GetVariantInfo(TMemberIndex index) const
-{
-    return static_cast<const CVariantInfo*>(GetVariants().GetItemInfo(index));
-}
+//#include <serial/hookdataimpl.inl>
 
-inline
-const CVariantInfo* CChoiceTypeInfo::GetVariantInfo(const CIterator& i) const
-{
-    return GetVariantInfo(*i);
-}
+END_NCBI_SCOPE
 
-inline
-TConstObjectPtr CChoiceTypeInfo::GetData(TConstObjectPtr object,
-                                         TMemberIndex index) const
-{
-    const CVariantInfo* variantInfo = GetVariantInfo(index);
-    return variantInfo->GetVariantPtr(object);
-}
-
-inline
-TObjectPtr CChoiceTypeInfo::GetData(TObjectPtr object,
-                                    TMemberIndex index) const
-{
-    const CVariantInfo* variantInfo = GetVariantInfo(index);
-    return variantInfo->GetVariantPtr(object);
-}
-
-#endif /* def CHOICE__HPP  &&  ndef CHOICE__INL */
+#endif  /* HOOKDATAIMPL__HPP */

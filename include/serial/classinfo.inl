@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/03 17:22:30  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.1  2000/09/18 20:00:00  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -43,7 +50,7 @@
 */
 
 inline
-const CMembersInfo& CClassTypeInfo::GetMembers(void) const
+const CItemsInfo& CClassTypeInfo::GetMembers(void) const
 {
     return GetItems();
 }
@@ -51,7 +58,13 @@ const CMembersInfo& CClassTypeInfo::GetMembers(void) const
 inline
 const CMemberInfo* CClassTypeInfo::GetMemberInfo(TMemberIndex index) const
 {
-    return static_cast<const CMemberInfo*>(GetItems().GetItemInfo(index));
+    return static_cast<const CMemberInfo*>(GetMembers().GetItemInfo(index));
+}
+
+inline
+const CMemberInfo* CClassTypeInfo::GetMemberInfo(const CIterator& i) const
+{
+    return GetMemberInfo(*i);
 }
 
 inline

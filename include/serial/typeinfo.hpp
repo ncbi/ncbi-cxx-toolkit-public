@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/10/03 17:22:36  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.32  2000/09/29 16:18:15  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -169,7 +176,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/hookdata.hpp>
-#include <serial/objhook.hpp>
+#include <serial/hookfunc.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -202,16 +209,6 @@ protected:
 public:
     // various function pointers
     typedef TObjectPtr (*TTypeCreate)(TTypeInfo objectType);
-    typedef void (*TTypeRead)(CObjectIStream& in,
-                              TTypeInfo objectType,
-                              TObjectPtr objectPtr);
-    typedef void (*TTypeWrite)(CObjectOStream& out,
-                               TTypeInfo objectType,
-                               TConstObjectPtr objectPtr);
-    typedef void (*TTypeCopy)(CObjectStreamCopier& copier,
-                              TTypeInfo objectType);
-    typedef void (*TTypeSkip)(CObjectIStream& in,
-                              TTypeInfo objectType);
 
     virtual ~CTypeInfo(void);
 
@@ -293,19 +290,19 @@ private:
 
 protected:
     void SetCreateFunction(TTypeCreate func);
-    void SetReadFunction(TTypeRead func);
-    void SetWriteFunction(TTypeWrite func);
-    void SetCopyFunction(TTypeCopy func);
-    void SetSkipFunction(TTypeSkip func);
+    void SetReadFunction(TTypeReadFunction func);
+    void SetWriteFunction(TTypeWriteFunction func);
+    void SetCopyFunction(TTypeCopyFunction func);
+    void SetSkipFunction(TTypeSkipFunction func);
 
 private:
     // type specific function pointers
     TTypeCreate m_CreateFunction;
 
-    CHookData<CReadObjectHook, TTypeRead> m_ReadHookData;
-    CHookData<CWriteObjectHook, TTypeWrite> m_WriteHookData;
-    CHookData<CCopyObjectHook, TTypeCopy> m_CopyHookData;
-    TTypeSkip m_SkipFunction;
+    CHookData<CReadObjectHook, TTypeReadFunction> m_ReadHookData;
+    CHookData<CWriteObjectHook, TTypeWriteFunction> m_WriteHookData;
+    CHookData<CCopyObjectHook, TTypeCopyFunction> m_CopyHookData;
+    TTypeSkipFunction m_SkipFunction;
 
     friend class CTypeInfoFunctions;
 };

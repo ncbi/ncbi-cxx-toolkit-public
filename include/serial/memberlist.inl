@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/03 17:22:33  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.3  2000/09/18 20:00:03  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -49,16 +56,83 @@
 */
 
 inline
-CItemInfo* CMembersInfo::x_GetItemInfo(TMemberIndex index) const
+CItemInfo* CItemsInfo::x_GetItemInfo(TMemberIndex index) const
 {
     _ASSERT(index >= FirstIndex() && index <= LastIndex());
     return m_Items[index - FirstIndex()].get();
 }
 
 inline
-const CItemInfo* CMembersInfo::GetItemInfo(TMemberIndex index) const
+const CItemInfo* CItemsInfo::GetItemInfo(TMemberIndex index) const
 {
     return x_GetItemInfo(index);
+}
+
+inline
+CItemsInfo::CIterator::CIterator(const CItemsInfo& items)
+    : m_CurrentIndex(items.FirstIndex()),
+      m_LastIndex(items.LastIndex())
+{
+}
+
+inline
+CItemsInfo::CIterator::CIterator(const CItemsInfo& items, TMemberIndex index)
+    : m_CurrentIndex(index),
+      m_LastIndex(items.LastIndex())
+{
+    _ASSERT(index >= kFirstMemberIndex);
+    _ASSERT(index <= (m_LastIndex + 1));
+}
+
+inline
+void CItemsInfo::CIterator::SetIndex(TMemberIndex index)
+{
+    _ASSERT(index >= kFirstMemberIndex);
+    _ASSERT(index <= (m_LastIndex + 1));
+    m_CurrentIndex = index;
+}
+
+inline
+CItemsInfo::CIterator& CItemsInfo::CIterator::operator=(TMemberIndex index)
+{
+    SetIndex(index);
+    return *this;
+}
+
+inline
+bool CItemsInfo::CIterator::Valid(void) const
+{
+    return m_CurrentIndex <= m_LastIndex;
+}
+
+inline
+void CItemsInfo::CIterator::Next(void)
+{
+    ++m_CurrentIndex;
+}
+
+inline
+void CItemsInfo::CIterator::operator++(void)
+{
+    Next();
+}
+
+inline
+TMemberIndex CItemsInfo::CIterator::GetIndex(void) const
+{
+    return m_CurrentIndex;
+}
+
+inline
+TMemberIndex CItemsInfo::CIterator::operator*(void) const
+{
+    return GetIndex();
+}
+
+inline
+const CItemInfo* CItemsInfo::GetItemInfo(const CIterator& i) const
+{
+    return GetItemInfo(*i);
 }
 
 #endif /* def MEMBERLIST__HPP  &&  ndef MEMBERLIST__INL */

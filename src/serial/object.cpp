@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/10/03 17:22:43  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.10  2000/09/26 19:24:57  vasilche
 * Added user interface for setting read/write/copy hooks.
 *
@@ -80,20 +87,200 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/object.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/continfo.hpp>
 #include <serial/classinfob.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>
 #include <serial/ptrinfo.hpp>
-#include <serial/continfo.hpp>
 #include <serial/stdtypes.hpp>
+#include <serial/memberid.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
+#include <serial/objhook.hpp>
+#include <serial/objcopy.hpp>
 
 BEGIN_NCBI_SCOPE
+
+// object type info
 
 void CObjectTypeInfo::WrongTypeFamily(ETypeFamily needFamily) const
 {
     THROW1_TRACE(runtime_error, "wrong type family");
+}
+
+void CConstObjectInfoEI::ReportNonValid(void) const
+{
+    ERR_POST("CElementIterator was used without checking its validity");
+}
+
+void CObjectInfoEI::ReportNonValid(void) const
+{
+    ERR_POST("CElementIterator was used without checking its validity");
+}
+
+void CObjectTypeInfoII::ReportNonValid(void) const
+{
+    ERR_POST("CTypeMemberIterator is used without validity check");
+}
+
+const CPrimitiveTypeInfo* CObjectTypeInfo::GetPrimitiveTypeInfo(void) const
+{
+    CheckTypeFamily(eTypeFamilyPrimitive);
+    return CTypeConverter<CPrimitiveTypeInfo>::SafeCast(GetTypeInfo());
+}
+
+const CClassTypeInfo* CObjectTypeInfo::GetClassTypeInfo(void) const
+{
+    CheckTypeFamily(eTypeFamilyClass);
+    return CTypeConverter<CClassTypeInfo>::SafeCast(GetTypeInfo());
+}
+
+const CChoiceTypeInfo* CObjectTypeInfo::GetChoiceTypeInfo(void) const
+{
+    CheckTypeFamily(eTypeFamilyChoice);
+    return CTypeConverter<CChoiceTypeInfo>::SafeCast(GetTypeInfo());
+}
+
+const CContainerTypeInfo* CObjectTypeInfo::GetContainerTypeInfo(void) const
+{
+    CheckTypeFamily(eTypeFamilyContainer);
+    return CTypeConverter<CContainerTypeInfo>::SafeCast(GetTypeInfo());
+}
+
+const CPointerTypeInfo* CObjectTypeInfo::GetPointerTypeInfo(void) const
+{
+    CheckTypeFamily(eTypeFamilyPointer);
+    return CTypeConverter<CPointerTypeInfo>::SafeCast(GetTypeInfo());
+}
+
+CObjectTypeInfo CObjectTypeInfo::GetElementType(void) const
+{
+    return GetContainerTypeInfo()->GetElementType();
+}
+
+// pointer interface
+CConstObjectInfo CConstObjectInfo::GetPointedObject(void) const
+{
+    return GetPointerTypeInfo()->GetPointedObject(*this);
+}
+
+CObjectInfo CObjectInfo::GetPointedObject(void) const
+{
+    return GetPointerTypeInfo()->GetPointedObject(*this);
+}
+
+// primitive interface
+EPrimitiveValueType CObjectTypeInfo::GetPrimitiveValueType(void) const
+{
+    return GetPrimitiveTypeInfo()->GetPrimitiveValueType();
+}
+
+bool CObjectTypeInfo::IsPrimitiveValueSigned(void) const
+{
+    return GetPrimitiveTypeInfo()->IsSigned();
+}
+
+TMemberIndex CObjectTypeInfo::FindMemberIndex(const string& name) const
+{
+    return GetClassTypeInfo()->GetMembers().Find(name);
+}
+
+TMemberIndex CObjectTypeInfo::FindMemberIndex(int tag) const
+{
+    return GetClassTypeInfo()->GetMembers().Find(tag);
+}
+
+TMemberIndex CObjectTypeInfo::FindVariantIndex(const string& name) const
+{
+    return GetChoiceTypeInfo()->GetVariants().Find(name);
+}
+
+TMemberIndex CObjectTypeInfo::FindVariantIndex(int tag) const
+{
+    return GetChoiceTypeInfo()->GetVariants().Find(tag);
+}
+
+bool CConstObjectInfo::GetPrimitiveValueBool(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueBool(GetObjectPtr());
+}
+
+char CConstObjectInfo::GetPrimitiveValueChar(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueChar(GetObjectPtr());
+}
+
+long CConstObjectInfo::GetPrimitiveValueLong(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueLong(GetObjectPtr());
+}
+
+unsigned long CConstObjectInfo::GetPrimitiveValueULong(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueULong(GetObjectPtr());
+}
+
+double CConstObjectInfo::GetPrimitiveValueDouble(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueDouble(GetObjectPtr());
+}
+
+void CConstObjectInfo::GetPrimitiveValueString(string& value) const
+{
+    GetPrimitiveTypeInfo()->GetValueString(GetObjectPtr(), value);
+}
+
+string CConstObjectInfo::GetPrimitiveValueString(void) const
+{
+    string value;
+    GetPrimitiveValueString(value);
+    return value;
+}
+
+void CConstObjectInfo::GetPrimitiveValueOctetString(vector<char>& value) const
+{
+    GetPrimitiveTypeInfo()->GetValueOctetString(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueBool(bool value)
+{
+    GetPrimitiveTypeInfo()->SetValueBool(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueChar(char value)
+{
+    GetPrimitiveTypeInfo()->SetValueChar(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueLong(long value)
+{
+    GetPrimitiveTypeInfo()->SetValueLong(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueULong(unsigned long value)
+{
+    GetPrimitiveTypeInfo()->SetValueULong(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueDouble(double value)
+{
+    GetPrimitiveTypeInfo()->SetValueDouble(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueString(const string& value)
+{
+    GetPrimitiveTypeInfo()->SetValueString(GetObjectPtr(), value);
+}
+
+void CObjectInfo::SetPrimitiveValueOctetString(const vector<char>& value)
+{
+    GetPrimitiveTypeInfo()->SetValueOctetString(GetObjectPtr(), value);
+}
+
+TMemberIndex CConstObjectInfo::GetCurrentChoiceVariantIndex(void) const
+{
+    return GetChoiceTypeInfo()->GetIndex(GetObjectPtr());
 }
 
 void CObjectTypeInfo::SetLocalReadHook(CObjectIStream& stream,

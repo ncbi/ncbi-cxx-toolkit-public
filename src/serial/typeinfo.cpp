@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/10/03 17:22:45  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.26  2000/09/29 16:18:24  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -302,22 +309,22 @@ void CTypeInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
     m_CopyHookData.ResetLocalHook(stream.m_ObjectHookKey);
 }
 
-void CTypeInfo::SetReadFunction(TTypeRead func)
+void CTypeInfo::SetReadFunction(TTypeReadFunction func)
 {
     m_ReadHookData.GetDefaultFunction() = func;
 }
 
-void CTypeInfo::SetWriteFunction(TTypeWrite func)
+void CTypeInfo::SetWriteFunction(TTypeWriteFunction func)
 {
     m_WriteHookData.GetDefaultFunction() = func;
 }
 
-void CTypeInfo::SetCopyFunction(TTypeCopy func)
+void CTypeInfo::SetCopyFunction(TTypeCopyFunction func)
 {
     m_CopyHookData.GetDefaultFunction() = func;
 }
 
-void CTypeInfo::SetSkipFunction(TTypeSkip func)
+void CTypeInfo::SetSkipFunction(TTypeSkipFunction func)
 {
     m_SkipFunction = func;
 }
@@ -329,8 +336,7 @@ void CTypeInfoFunctions::ReadWithHook(CObjectIStream& stream,
     CReadObjectHook* hook =
         objectType->m_ReadHookData.GetHook(stream.m_ObjectHookKey);
     if ( hook )
-        hook->ReadObject(stream, CObjectInfo(objectPtr, objectType,
-                                             CObjectInfo::eNonCObject));
+        hook->ReadObject(stream, CObjectInfo(objectPtr, objectType));
     else
         objectType->DefaultReadData(stream, objectPtr);
 }
@@ -342,8 +348,7 @@ void CTypeInfoFunctions::WriteWithHook(CObjectOStream& stream,
     CWriteObjectHook* hook =
         objectType->m_WriteHookData.GetHook(stream.m_ObjectHookKey);
     if ( hook )
-        hook->WriteObject(stream, CConstObjectInfo(objectPtr, objectType,
-                                                   CObjectInfo::eNonCObject));
+        hook->WriteObject(stream, CConstObjectInfo(objectPtr, objectType));
     else
         objectType->DefaultWriteData(stream, objectPtr);
 }

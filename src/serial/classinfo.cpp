@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2000/10/03 17:22:41  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.53  2000/09/26 17:38:21  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -374,7 +381,7 @@ void CClassTypeInfo::SetParentClass(TTypeInfo parentType)
     _ASSERT(!m_ParentClassInfo);
     m_ParentClassInfo = parentClass;
     _ASSERT(GetMembers().Empty());
-    AddMember(CMemberId(), 0, parentType)->SetParentClass();
+    AddMember(NcbiEmptyString, 0, parentType)->SetParentClass();
 }
 
 TTypeInfo CClassTypeInfo::GetRealTypeInfo(TConstObjectPtr object) const

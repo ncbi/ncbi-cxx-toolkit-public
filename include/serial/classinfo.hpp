@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/10/03 17:22:30  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.34  2000/09/18 19:59:59  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -173,7 +180,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/classinfob.hpp>
-#include <serial/objhook.hpp>
+#include <serial/member.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -213,8 +220,9 @@ protected:
 
 public:
 
-    const CMembersInfo& GetMembers(void) const;
+    const CItemsInfo& GetMembers(void) const;
     const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
+    const CMemberInfo* GetMemberInfo(const CIterator& i) const;
 
     CMemberInfo* AddMember(const char* memberId,
                            const void* memberPtr, const CTypeRef& memberType);

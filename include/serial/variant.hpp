@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/03 17:22:36  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.3  2000/09/29 16:18:15  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -55,9 +62,10 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/serialutil.hpp>
 #include <serial/item.hpp>
 #include <serial/hookdata.hpp>
-#include <serial/objhook.hpp>
+#include <serial/hookfunc.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -84,17 +92,6 @@ public:
     typedef TObjectPtr (*TVariantGet)(const CVariantInfo* variantInfo,
                                       TObjectPtr choicePtr);
 
-    typedef void (*TVariantRead)(CObjectIStream& in,
-                                 const CVariantInfo* variantInfo,
-                                 TObjectPtr classPtr);
-    typedef void (*TVariantWrite)(CObjectOStream& out,
-                                  const CVariantInfo* variantInfo,
-                                  TConstObjectPtr classPtr);
-    typedef void (*TVariantSkip)(CObjectIStream& in,
-                                 const CVariantInfo* variantInfo);
-    typedef void (*TVariantCopy)(CObjectStreamCopier& copier,
-                                 const CVariantInfo* variantInfo);
-
     enum EVariantType {
         ePointerFlag = 1 << 0,
         eObjectFlag = 1 << 1,
@@ -112,7 +109,6 @@ public:
                  const char* id, TOffset offset, const CTypeRef& type);
     CVariantInfo(const CChoiceTypeInfo* choiceType,
                  const char* id, TOffset offset, TTypeInfo type);
-    ~CVariantInfo(void);
 
     const CChoiceTypeInfo* GetChoiceType(void) const;
 
@@ -186,15 +182,15 @@ private:
     TVariantGetConst m_GetConstFunction;
     TVariantGet m_GetFunction;
 
-    CHookData<CReadChoiceVariantHook, TVariantRead> m_ReadHookData;
-    CHookData<CWriteChoiceVariantHook, TVariantWrite> m_WriteHookData;
-    CHookData<CCopyChoiceVariantHook, TVariantCopy> m_CopyHookData;
-    TVariantSkip m_SkipFunction;
+    CHookData<CReadChoiceVariantHook, TVariantReadFunction> m_ReadHookData;
+    CHookData<CWriteChoiceVariantHook, TVariantWriteFunction> m_WriteHookData;
+    CHookData<CCopyChoiceVariantHook, TVariantCopyFunction> m_CopyHookData;
+    TVariantSkipFunction m_SkipFunction;
 
-    void SetReadFunction(TVariantRead func);
-    void SetWriteFunction(TVariantWrite func);
-    void SetCopyFunction(TVariantCopy func);
-    void SetSkipFunction(TVariantSkip func);
+    void SetReadFunction(TVariantReadFunction func);
+    void SetWriteFunction(TVariantWriteFunction func);
+    void SetCopyFunction(TVariantCopyFunction func);
+    void SetSkipFunction(TVariantSkipFunction func);
 
     void UpdateFunctions(void);
 

@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/03 17:22:34  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.1  2000/09/18 20:00:06  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -66,9 +73,9 @@
 #define ClassRandomContentsEnd(Func, Args) \
     } \
     END_OBJECT_FRAME(); \
-    for ( CClassTypeInfo::CIterator i(classType); i; ++i ) { \
+    for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) { \
         if ( !read[*i] ) { \
-            classType->GetMemberInfo(*i)->NCBI_NAME2(Func,MissingMember)Args; \
+            classType->GetMemberInfo(i)->NCBI_NAME2(Func,MissingMember)Args; \
         } \
     } \
 }
@@ -103,14 +110,14 @@
         { \
             memberInfo->NCBI_NAME2(Func,Member)Args; \
         } \
-        pos = index + 1; \
+        pos.SetIndex(index + 1); \
     }
 
 #define ClassSequentialContentsEnd(Func, Args) \
     } \
     END_OBJECT_FRAME(); \
-    for ( ; pos; ++pos ) { \
-        classType->GetMemberInfo(*pos)->NCBI_NAME2(Func,MissingMember)Args; \
+    for ( ; pos.Valid(); ++pos ) { \
+        classType->GetMemberInfo(pos)->NCBI_NAME2(Func,MissingMember)Args; \
     } \
 }
 

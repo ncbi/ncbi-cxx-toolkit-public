@@ -33,6 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/10/03 17:22:32  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.15  2000/09/19 20:16:52  vasilche
 * Fixed type in CStlClassInfo_auto_ptr.
 * Added missing include serialutil.hpp.
@@ -264,10 +271,12 @@ protected:
         {
 #if _DEBUG
             if ( m_LastCall != eValid)
-                ERR_POST("Object iterator was used without checking its validity");
+                ReportNonValid();
 #endif
             return m_CurrentObject;
         }
+
+    void ReportNonValid(void) const;
 
     virtual bool CanSelect(const CConstObjectInfo& object);
     virtual bool CanEnter(const CConstObjectInfo& object);

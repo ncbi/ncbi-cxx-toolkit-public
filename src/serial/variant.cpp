@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/03 17:22:45  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.4  2000/09/29 16:18:25  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -194,10 +201,6 @@ CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
 {
 }
 
-CVariantInfo::~CVariantInfo(void)
-{
-}
-
 CVariantInfo* CVariantInfo::SetPointer(void)
 {
     if ( !IsInline() )
@@ -238,9 +241,9 @@ CVariantInfo* CVariantInfo::SetDelayBuffer(CDelayBuffer* buffer)
 
 void CVariantInfo::UpdateFunctions(void)
 {
-    TVariantRead& readFunc = m_ReadHookData.GetDefaultFunction();
-    TVariantWrite& writeFunc = m_WriteHookData.GetDefaultFunction();
-    TVariantCopy& copyFunc = m_CopyHookData.GetDefaultFunction();
+    TVariantReadFunction& readFunc = m_ReadHookData.GetDefaultFunction();
+    TVariantWriteFunction& writeFunc = m_WriteHookData.GetDefaultFunction();
+    TVariantCopyFunction& copyFunc = m_CopyHookData.GetDefaultFunction();
 
     // read/write/get
     if ( CanBeDelayed() ) {
@@ -307,22 +310,22 @@ void CVariantInfo::UpdateDelayedBuffer(CObjectIStream& in,
     variantType->ReadData(in, variantPtr);
 }
 
-void CVariantInfo::SetReadFunction(TVariantRead func)
+void CVariantInfo::SetReadFunction(TVariantReadFunction func)
 {
     m_ReadHookData.GetDefaultFunction() = func;
 }
 
-void CVariantInfo::SetWriteFunction(TVariantWrite func)
+void CVariantInfo::SetWriteFunction(TVariantWriteFunction func)
 {
     m_WriteHookData.GetDefaultFunction() = func;
 }
 
-void CVariantInfo::SetCopyFunction(TVariantCopy func)
+void CVariantInfo::SetCopyFunction(TVariantCopyFunction func)
 {
     m_CopyHookData.GetDefaultFunction() = func;
 }
 
-void CVariantInfo::SetSkipFunction(TVariantSkip func)
+void CVariantInfo::SetSkipFunction(TVariantSkipFunction func)
 {
     m_SkipFunction = func;
 }
@@ -662,12 +665,11 @@ void CVariantInfoFunctions::ReadHookedVariant(CObjectIStream& stream,
     CReadChoiceVariantHook* hook =
         variantInfo->m_ReadHookData.GetHook(stream.m_ChoiceVariantHookKey);
     if ( hook ) {
-        CObjectInfo type(choicePtr, variantInfo->GetChoiceType(),
-                         CConstObjectInfo::eNonCObject);
+        CObjectInfo choice(choicePtr, variantInfo->GetChoiceType());
         TMemberIndex index = variantInfo->GetIndex();
-        hook->ReadChoiceVariant(stream,
-                                CObjectInfo::CChoiceVariant(type,
-                                                            index));
+        CObjectInfo::CChoiceVariant variant(choice, index);
+        _ASSERT(variant.Valid());
+        hook->ReadChoiceVariant(stream, variant);
     }
     else
         variantInfo->DefaultReadVariant(stream, choicePtr);
@@ -680,12 +682,11 @@ void CVariantInfoFunctions::WriteHookedVariant(CObjectOStream& stream,
     CWriteChoiceVariantHook* hook =
         variantInfo->m_WriteHookData.GetHook(stream.m_ChoiceVariantHookKey);
     if ( hook ) {
-        CConstObjectInfo type(choicePtr, variantInfo->GetChoiceType(),
-                              CConstObjectInfo::eNonCObject);
+        CConstObjectInfo choice(choicePtr, variantInfo->GetChoiceType());
         TMemberIndex index = variantInfo->GetIndex();
-        hook->WriteChoiceVariant(stream,
-                                 CConstObjectInfo::CChoiceVariant(type,
-                                                                  index));
+        CConstObjectInfo::CChoiceVariant variant(choice, index);
+        _ASSERT(variant.Valid());
+        hook->WriteChoiceVariant(stream, variant);
     }
     else
         variantInfo->DefaultWriteVariant(stream, choicePtr);
@@ -699,9 +700,9 @@ void CVariantInfoFunctions::CopyHookedVariant(CObjectStreamCopier& stream,
     if ( hook ) {
         CObjectTypeInfo type(variantInfo->GetChoiceType());
         TMemberIndex index = variantInfo->GetIndex();
-        hook->CopyChoiceVariant(stream,
-                                CObjectTypeInfo::CVariantIterator(type,
-                                                                  index));
+        CObjectTypeInfo::CChoiceVariant variant(type, index);
+        _ASSERT(variant.Valid());
+        hook->CopyChoiceVariant(stream, variant);
     }
     else
         variantInfo->DefaultCopyVariant(stream);

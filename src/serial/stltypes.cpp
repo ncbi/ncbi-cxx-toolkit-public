@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/10/03 17:22:45  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
 * Revision 1.30  2000/09/18 20:00:26  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -247,6 +254,12 @@ TTypeInfo CStlClassInfoMapImpl::CreateElementClassType(TTypeInfo argType)
                          TConstObjectPtr(mapType->m_ValueOffset),
                          mapType->GetValueTypeInfo());
     return classInfo;
+}
+
+void CStlElementIterator_set_Functions::CannotGetElementOfSet(const CContainerTypeInfo::CIterator& /*it*/)
+{
+    THROW1_TRACE(runtime_error,
+                 "cannot get pointer to element of set");
 }
 
 END_NCBI_SCOPE
