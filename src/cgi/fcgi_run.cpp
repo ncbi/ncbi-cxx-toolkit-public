@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2001/07/16 21:18:09  vakatov
+ * CAutoCgiContext:: to provide a clean reset of "m_Context" in RunFastCGI()
+ *
  * Revision 1.9  2001/07/16 19:28:56  pubmed
  * volodyas fix for contex cleanup
  *
@@ -58,6 +61,7 @@
  */
 
 #include <cgi/cgiapp.hpp>
+
 
 #if !defined(HAVE_LIBFASTCGI)
 
@@ -93,6 +97,17 @@ static time_t s_GetModTime(const char* filename)
     }
     return st.st_mtime;
 }
+
+
+// Aux. class to provide timely reset of "m_Context" in RunFastCGI()
+class CAutoCgiContext
+{
+public:
+    CAutoCgiContext(auto_ptr<CCgiContext>& ctx) : m_Ctx(ctx) {}
+    ~CAutoCgiContext(void) { m_Ctx.reset(); }
+private:
+    auto_ptr<CCgiContext>& m_Ctx;
+};
 
 
 bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
@@ -154,6 +169,9 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
 
             m_Context.reset(CreateContext(&args, &env, &istr, &ostr));
 
+            // safely clear contex data and reset "m_Context" to zero
+            CAutoCgiContext auto_context(m_Context);
+
             // checking for exit request
             if (m_Context->GetRequest().GetEntries().find("exitfastcgi") !=
                 m_Context->GetRequest().GetEntries().end()) {
@@ -173,7 +191,7 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
                 m_Context->PutMsg
                     ("FastCGI: " + NStr::IntToString(iteration + 1) +
                      " iteration of " + NStr::IntToString(iterations) +
-		     ", pid " + NStr::IntToString(getpid()));
+                     ", pid " + NStr::IntToString(getpid()));
             }
 
             // call ProcessRequest()
@@ -183,9 +201,6 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
             m_Context->GetResponse().Flush();
             _TRACE("CCgiApplication::Run: done, status: " << *result);
             FCGX_SetExitStatus(*result, pfout);
-            
-            // clear contex data
-            m_Context.reset(NULL);
         }
         catch (exception& e) {
             ERR_POST("CCgiApplication::ProcessRequest() failed: " << e.what());
@@ -198,7 +213,7 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
 
         // check if this CGI executable has been changed
         time_t mtimeNew =
-            s_GetModTime( GetArguments().GetProgramName().c_str() );    
+            s_GetModTime( GetArguments().GetProgramName().c_str() );
         if (mtimeNew != mtime) {
             _TRACE("CCgiApplication::RunFastCGI: "
                    "the program modification date has changed");
