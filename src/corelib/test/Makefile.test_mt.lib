@@ -2,3 +2,5 @@
 
 LIBOBJ = test_mt
 LIB    = test_mt
+
+REQUIRES = MT
