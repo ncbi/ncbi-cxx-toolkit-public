@@ -471,7 +471,7 @@ static EIO_Status s_Select(size_t                n,
     int/*bool*/ write_only = 1;
     fd_set r_fds, w_fds, e_fds;
 
-    for (;;) { /* auto-resume if interrupted by a signal */
+    for (;;) { /* (optionally) auto-resume if interrupted by a signal */
         struct timeval tmo;
 
         n_fds = 0;
@@ -535,6 +535,13 @@ static EIO_Status s_Select(size_t                n,
             CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Trace,
                            "[SOCK::s_Select]  Failed select()");
             return eIO_Unknown;
+        }
+
+        if ((n != 1 && s_InterruptOnSignal == eOn) ||
+            (n == 1 && (socks[0].sock->i_on_sig == eOn ||
+                        (socks[0].sock->i_on_sig == eDefault &&
+                         s_InterruptOnSignal == eOn)))) {
+            return eIO_Interrupt;
         }
     }
 
@@ -669,14 +676,16 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     {{ /* wait for the connection request to come (up to timeout) */
         EIO_Status status;
         struct timeval tv;
-        SSOCK_Poll poll;
-        poll.sock  = (SOCK) lsock; /*HACK: we'd actually use 1st field only */
-        poll.event = eIO_Read;     /* ... due to READ-only operation        */
-        if ((status = s_Select(1,&poll, s_to2tv(timeout, &tv))) != eIO_Success)
+        SSOCK_Poll poll[2];
+        poll[0].sock  = (SOCK) lsock;/*HACK: we'd actually use 1st field only*/
+        poll[0].event = eIO_Read;    /* ... due to READ-only operation       */
+        poll[1].sock  = 0;           /*HACK: make 2 descriptors here to...   */
+        poll[1].event = eIO_Open;    /* ...avoid dereferencing i_on_s in [0] */
+        if ((status = s_Select(2, poll, s_to2tv(timeout, &tv))) != eIO_Success)
             return status;
-        if (poll.revent == eIO_Close)
+        if (poll[0].revent == eIO_Close)
             return eIO_Unknown;
-        assert(poll.event == eIO_Read  &&  poll.revent == eIO_Read);
+        assert(poll[0].event == eIO_Read  &&  poll[0].revent == eIO_Read);
     }}
 
     {{ /* accept next connection */
@@ -703,7 +712,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     (*sock)->is_eof = 0/*false*/;
     (*sock)->r_status = eIO_Success;
     (*sock)->w_status = eIO_Success;
-    verify(SOCK_SetTimeout(*sock, eIO_ReadWrite, 0) == eIO_Success);
+    /* all timeouts zeroed - infinite */
     (*sock)->host = x_host;
     (*sock)->port = x_port;
     BUF_SetChunkSize(&(*sock)->buf, SOCK_BUF_CHUNK_SIZE);
@@ -724,8 +733,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
                  "[LSOCK::Close]  Cannot set socket back to blocking mode");
     }
 
-    /* Close (persistently -- retry if interrupted by a signal) */
-    for (;;) {
+    for (;;) { /* close persistently - retry if interrupted by a signal */
         /* success */
         if (SOCK_CLOSE(lsock->sock) == 0)
             break;
@@ -861,7 +869,7 @@ static EIO_Status s_Connect(SOCK            sock,
             memset(&s, 0, sizeof(s)); /* make it temporary and fill partially*/
             s.sock     = x_sock;
             s.r_on_w   = eOff;        /* to prevent upread inquiry           */
-            s.i_on_sig = eOff;
+            s.i_on_sig = eOff;        /* uninterruptible                     */
             poll.sock  = &s;
             poll.event = eIO_Write;
             status = s_Select(1, &poll, s_to2tv(timeout, &tv));
@@ -872,7 +880,7 @@ static EIO_Status s_Connect(SOCK            sock,
                 status = eIO_Unknown;
 #endif /*NCBI_OS_UNIX*/
             if (status != eIO_Success  ||  poll.revent != eIO_Write) {
-                if (poll.revent != eIO_Write)
+                if (status != eIO_Interrupt  ||  poll.revent != eIO_Write)
                     status = eIO_Unknown;
                 if (CORE_GetLOG()) {
                     char str[256];
@@ -943,8 +951,7 @@ static EIO_Status s_Close(SOCK sock)
                  "[SOCK::s_Close]  Cannot shutdown socket for reading");
     }
 
-    /* Close (persistently retry if interrupted by a signal) */
-    for (;;) {
+    for (;;) { /* close persistently - retry if interrupted by a signal */
         /* success */
         if (SOCK_CLOSE(sock->sock) == 0)
             break;
@@ -968,7 +975,7 @@ static EIO_Status s_Close(SOCK sock)
 /* To allow emulating "peek" using the NCBI data buffering.
  * (MSG_PEEK is not implemented on Mac, and it is poorly implemented
  * on Win32, so we had to implement this feature by ourselves.)
- * Please note the following status combination and their meanings:
+ * Please note the following status combinations and their meanings:
  * -------------------------------+------------------------------------------
  *              Field             |
  * ---------------+---------------+                  Meaning
@@ -1077,7 +1084,7 @@ static EIO_Status s_Recv(SOCK        sock,
     if (size == 0)
         return SOCK_Status(sock, eIO_Read);
 
-    for (;;) {
+    for (;;) { /* retry if interrupted by a signal */
         /* try to read */
         int x_read = s_NCBI_Recv(sock, buf, size, peek);
         if (x_read > 0) {
@@ -1110,7 +1117,11 @@ static EIO_Status s_Recv(SOCK        sock,
 
         if (x_errno != SOCK_EINTR)
             break;
-        /* retry if interrupted by a signal */
+
+        if (sock->i_on_sig == eOn ||
+            (sock->i_on_sig == eDefault && s_InterruptOnSignal == eOn)) {
+            return eIO_Interrupt;
+        }
     }
 
     /* dont want to handle all possible errors... let them be "unknown" */
@@ -1225,9 +1236,9 @@ static EIO_Status s_WriteWhole(SOCK        sock,
     if ( !size )
         return eIO_Success;
 
-    for (;;) {
+    for (;;) { /* retry if interrupted by a signal */
         /* try to write */
-        int x_written = send(sock->sock, buf, size, 0);
+        int x_written = send(sock->sock, (void*) buf, size, 0);
         if (x_written >= 0) {
             /* statistics & logging */
             if (sock->log_data == eOn  ||
@@ -1241,7 +1252,7 @@ static EIO_Status s_WriteWhole(SOCK        sock,
             break/*done*/;
         }
         x_errno = SOCK_ERRNO;
-        /* dont want to handle all possible errors... let them be "unknown" */
+        /* don't want to handle all possible errors... let them be "unknown" */
         sock->w_status = eIO_Unknown;
 
         /* blocked -- retry if unblocked before the timeout is expired */
@@ -1262,12 +1273,17 @@ static EIO_Status s_WriteWhole(SOCK        sock,
         }
 
         if (x_errno != SOCK_EINTR) {
-            /* forcibly closed by peer, or shut down */
+            /* forcibly closed by peer or shut down */
             if (x_errno == SOCK_ECONNRESET  ||  x_errno == SOCK_EPIPE)
                 sock->w_status = eIO_Closed; /* actually closed */
             break;
         }
-        /* retry if interrupted by a signal */
+
+        sock->w_status = eIO_Interrupt;
+        if (sock->i_on_sig == eOn ||
+            (sock->i_on_sig == eDefault && s_InterruptOnSignal == eOn)) {
+            break;
+        }
     }
 
     return sock->w_status;
@@ -1430,9 +1446,10 @@ extern EIO_Status SOCK_Close(SOCK sock)
         return eIO_Unknown;
     }
 
-    status = s_Close(sock);
-    BUF_Destroy(sock->buf);
-    free(sock);
+    if ((status = s_Close(sock)) != eIO_Interrupt) {
+        BUF_Destroy(sock->buf);
+        free(sock);
+    }
     return status;
 }
 
@@ -1525,15 +1542,34 @@ extern EIO_Status SOCK_Poll(size_t          n,
                             const STimeout* timeout,
                             size_t*         n_ready)
 {
+    SSOCK_Poll xx_socks[2];
+    SSOCK_Poll* x_socks;
     struct timeval tv;
+    EIO_Status status;
+    size_t x_n;
 
-    if ((n == 0) ^ (socks == NULL)) {
+    if ((n == 0) != (socks == 0)) {
         if ( n_ready )
             *n_ready = 0;
         return eIO_InvalidArg;
     }
 
-    return s_SelectStallsafe(n, socks, s_to2tv(timeout, &tv), n_ready);
+    if (n == 1) {
+        xx_socks[0] = socks[0];
+        memset(&xx_socks[1], 0, sizeof(xx_socks[1]));
+        x_socks = xx_socks;
+        x_n = 2;
+    } else {
+        x_socks = socks;
+        x_n = n;
+    }
+
+    status = s_SelectStallsafe(x_n, x_socks, s_to2tv(timeout, &tv), n_ready);
+
+    if (n == 1)
+        socks[0].revent = xx_socks[0].revent;
+
+    return status;
 }
 
 
@@ -1827,10 +1863,10 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
     host = inet_addr(hostname);
     if (host == htonl(INADDR_NONE)) {
 #if defined(HAVE_GETADDRINFO)
-        struct addrinfo hints, *out = NULL;
+        struct addrinfo hints, *out = 0;
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = PF_INET; /* We only handle IPv4. */
-        if (getaddrinfo(hostname, NULL, &hints, &out) == 0  &&  out) {
+        if (getaddrinfo(hostname, 0, &hints, &out) == 0  &&  out) {
             struct sockaddr_in* addr = (struct sockaddr_in *) out->ai_addr;
             assert(addr->sin_family == AF_INET);
             host = addr->sin_addr.s_addr;
@@ -1945,6 +1981,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.56  2002/08/13 19:29:30  lavr
+ * Implement interrupted I/O
+ *
  * Revision 6.55  2002/08/12 15:06:38  lavr
  * Implementation of plain and persistent SOCK_Write()
  *
