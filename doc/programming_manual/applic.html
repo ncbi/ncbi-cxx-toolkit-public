@@ -48,7 +48,7 @@ Five fundamental classes form the foundation of the C++ Toolkit:
 <p>
 <i><a href="../docxx/CNcbiApplication.html">CNcbiApplication</a></i>
 is an abstract class used to define the basic functionality and behavior
-of an NCBI application. Since this application class effectively supercedes
+of an NCBI application. Since this application class effectively supersedes
 the <i>C</i>-style <i>main()</i> function, minimally, it must provide the
 same functionality, i.e.
 <ul>
@@ -57,7 +57,7 @@ same functionality, i.e.
   <li>
     A data structure for holding program command-line arguments ("argv")</li>
   <li>
-    A data structure for holding environmental variables</li>
+    A data structure for holding environment variables</li>
 </ul>
 In addition, the application class provides the same features previously
 implemented in the C Toolkit, namely:
@@ -71,7 +71,7 @@ implemented in the C Toolkit, namely:
     Methods to describe, and then automatically parse, validate and access
     program command-line arguments, and to generate the<i>USAGE</i> message</li>
 </ul>
-The mechansim to execute the application is provided by <i>CNcbiApplication</i>'s
+The mechanism to execute the application is provided by <i>CNcbiApplication</i>'s
 member function <i>Run()</i> - which you must write your own implementation
 of. The <i>Run()</i> function will be automatically invoked by <i>CNcbiApplication::AppMain()</i>,
 after it has initialized its
@@ -85,11 +85,11 @@ and <i>CNcbiDiag</i> data members.
 The <i><a href="../docxx/CNcbiArguments.html">CNcbiArguments</a></i>
 class provides a data structure for holding the application's command-line
 arguments, along with methods for accessing and modifying these. Access
-to the argument values is implemented using the built-in <i>[ ]</i> operator
-. For example, the first argument in <i>argv</i> (following the program
+to the argument values is implemented using the built-in <i>[ ]</i> operator.
+For example, the first argument in <i>argv</i> (following the program
 name) can be retrieved using the
 <i>CNcbiApplication::GetArguments()</i>
-method, as:
+method:
 <br />
 <pre>string arg1_value = GetArguments()[1];</pre>
 Here,
