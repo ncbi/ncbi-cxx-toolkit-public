@@ -486,6 +486,16 @@ static void s_TEST_IdTree()
     tr3->AddNode(222, 222);
 
     {{
+    const TTree* tnd = tr->FindSubNode(100);
+    assert(tnd);
+    assert(tnd->GetId() == 100);
+    assert(tnd->GetValue() == 110);
+    const TTree::TTreeValueType& tv = tnd->GetTreeValue();
+    assert(tv.value == 110);
+
+    }}
+
+    {{
     list<int> npath;
     npath.push_back(2);
     npath.push_back(22);
@@ -594,6 +604,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2004/07/22 16:31:19  kuznets
+ * + test for CTreePairNode::FindSubNode
+ *
  * Revision 1.1  2004/07/21 18:21:21  kuznets
  * Moved tree test from corelib
  *
