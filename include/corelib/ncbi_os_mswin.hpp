@@ -35,7 +35,7 @@
  *
  */
 
-
+#include <ncbiconf.h>
 #if !defined(NCBI_OS_MSWIN)
 #  error "ncbi_os_mswin.hpp must be used on MS Windows platforms only"
 #endif
