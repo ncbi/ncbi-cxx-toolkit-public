@@ -57,13 +57,19 @@ CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
 }
 
 
+CConn_IOStream::~CConn_IOStream(void)
+{
+    Cleanup();
+}
+
+
 CONN CConn_IOStream::GetCONN() const
 {
     return m_CSb ? m_CSb->GetCONN() : 0;
 }
 
 
-CConn_IOStream::~CConn_IOStream(void)
+void CConn_IOStream::Cleanup(void)
 {
 #if !defined(HAVE_IOS_XALLOC) || defined(HAVE_BUGGY_IOS_CALLBACKS)
     streambuf* sb = rdbuf();
@@ -71,6 +77,7 @@ CConn_IOStream::~CConn_IOStream(void)
     if (sb != m_CSb)
 #endif
         delete m_CSb;
+    m_CSb = 0;
 #ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
 #endif
@@ -258,9 +265,13 @@ CConn_PipeStream::CConn_PipeStream(const string&         cmd,
 }
 
 
-EIO_Status CConn_PipeStream::SetReadHandle(CPipe::EChildIOHandle from_handle)
+CConn_PipeStream::~CConn_PipeStream()
 {
-    return m_Pipe.SetReadHandle(from_handle);
+    // Explicit call Cleanup() to avoid using dead m_Pipe otherwise.
+    Cleanup();
+#ifndef AUTOMATIC_STREAMBUF_DESTRUCTION
+    rdbuf(0);
+#endif
 }
 
 
@@ -281,6 +292,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2003/11/12 16:37:50  ivanov
+ *  Explicit call Cleanup() to avoid using dead m_Pipe otherwise
+ *
  * Revision 6.26  2003/10/23 12:16:27  lavr
  * CConn_IOStream:: base class is now CNcbiIostream
  *
