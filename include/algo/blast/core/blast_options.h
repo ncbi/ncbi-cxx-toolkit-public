@@ -476,6 +476,11 @@ typedef struct PSIBlastOptions {
      * in a query-subject alignment (i.e.: HSP with the lowest e-value), else
      * use all HSPs in a query-subject alignment. */
     Boolean use_best_alignment;
+
+    /** Setting this option to TRUE enables a customization of the PSSM 
+     * engine implemented for the structure group. It forces the PSSM engine to
+     * ignore the query while building the PSSM. It is FALSE by default. */
+    Boolean ignore_consensus;
 } PSIBlastOptions;
 
 /** Options used to create the ReadDBFILE structure 

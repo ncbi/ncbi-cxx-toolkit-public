@@ -99,6 +99,16 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
         return PSIERR_OUTOFMEM;
     }
 
+    /*** Enable structure group customization if needed ***/
+    if (options->ignore_consensus) {
+        unsigned int i;
+        msa->use_sequence[kQueryIndex] = FALSE;
+        for (i = 0; i < msa->dimensions->query_length; i++) {
+            msa->cell[kQueryIndex][i].is_aligned = FALSE;
+            msa->cell[kQueryIndex][i].letter = AMINOACID_TO_NCBISTDAA['-'];
+        }
+    }
+
     /*** Run the engine's stages ***/
     status = _PSIPurgeBiasedSegments(msa);
     if (status != PSI_SUCCESS) {

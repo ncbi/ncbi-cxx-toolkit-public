@@ -463,7 +463,6 @@ _PSIPurgeSimilarAlignments(_PSIMsa* msa,
 /**************** PurgeMatches stage of PSSM creation ***********************/
 int
 _PSIPurgeBiasedSegments(_PSIMsa* msa)
-    /* FIXME: will need ignore_query option */
 {
     if ( !msa ) {
         return PSIERR_BADPARAM;
@@ -1008,7 +1007,7 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
     ASSERT(seq_weights);
 
     aligned_seqs = (Uint4*) malloc((msa->dimensions->num_seqs + 1) *
-                                          sizeof(Uint4));
+                                   sizeof(Uint4));
     if ( !aligned_seqs ) {
         return PSIERR_OUTOFMEM;
     }
@@ -1029,7 +1028,6 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
         num_aligned_seqs = _PSIGetAlignedSequencesForPosition(msa, pos,
                                                               aligned_seqs);
         ASSERT(msa->num_matching_seqs[pos] == num_aligned_seqs);
-        /* FIXME: could be 0 if ignore_query */
         if (num_aligned_seqs <= 1) {
             continue;
         }
@@ -1039,9 +1037,9 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
         memset((void*)seq_weights->row_sigma, 0,
                sizeof(double)*(msa->dimensions->num_seqs+1));
 
-        _PSICalculateNormalizedSequenceWeights(msa,
-                                     aligned_blocks, pos, aligned_seqs, 
-                                     num_aligned_seqs, seq_weights);
+        _PSICalculateNormalizedSequenceWeights(msa, aligned_blocks, pos, 
+                                               aligned_seqs, num_aligned_seqs, 
+                                               seq_weights);
 
 
         /* Uses seq_weights->norm_seq_weights to populate match_weights */
@@ -1314,7 +1312,7 @@ _PSICheckSequenceWeights(const _PSIMsa* msa,
         double running_total = 0.0;
         Uint4 residue = 0;
 
-        /* FIXME: num_matching_seqs might be 0 if ignore_query... */
+        /* FIXME: num_matching_seqs might be 0 if ignore_consensus... */
         if (msa->num_matching_seqs[pos] <= 1 ||
             msa->cell[kQueryIndex][pos].letter == X) {
             continue;
@@ -2061,6 +2059,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/09/14 21:17:02  camacho
+ * Add structure group customization to ignore query
+ *
  * Revision 1.23  2004/08/31 16:13:28  camacho
  * Documentation changes
  *

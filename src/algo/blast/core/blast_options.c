@@ -1381,6 +1381,7 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
    options->inclusion_ethresh = PSI_INCLUSION_ETHRESH;
    options->pseudo_count = PSI_PSEUDO_COUNT_CONST;
    options->use_best_alignment = TRUE;
+   options->ignore_consensus = FALSE;
    
    return 0;
 }
@@ -1576,6 +1577,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.132  2004/09/14 21:17:02  camacho
+ * Add structure group customization to ignore query
+ *
  * Revision 1.131  2004/09/13 19:33:49  camacho
  * Add comments
  *
