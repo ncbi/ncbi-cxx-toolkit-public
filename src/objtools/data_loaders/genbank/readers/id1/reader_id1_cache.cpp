@@ -912,7 +912,7 @@ void CCachedId1Reader::StoreSNPBlob(const string& key, TBlobVersion version,
 
         {{
             CWStream stream(writer.get());
-            CSeq_annot_SNP_Info_Reader::Write(stream, Begin(reply), snps);
+            CSeq_annot_SNP_Info_Reader::Write(stream, ConstBegin(reply), snps);
         }}
         writer->Flush();
         writer.reset();
