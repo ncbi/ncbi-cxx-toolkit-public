@@ -773,12 +773,15 @@ bool CCachedId1Reader::LoadWholeBlob(CTSE_Info& tse_info,
 void CCachedId1Reader::x_SetBlobRequest(CID1server_request& request,
                                         const CBlob_id& blob_id)
 {
+    x_SetParams(request.SetGetsewithinfo(), blob_id);
+/*
     if ( m_BlobCache ) {
         x_SetParams(request.SetGetsewithinfo(), blob_id);
     }
     else {
         x_SetParams(request.SetGetsefromgi(), blob_id);
     }
+*/
 }
 
 
