@@ -69,8 +69,8 @@ enum EFlags {
     fAlwaysTranslateCDS   = 0x20,
     fOnlyNearFeatures     = 0x40,
     fFavorFarFeatures     = 0x80,  // ignore near feats on segs w/far feats
-    fCopyCDSFromCDNA      = 0x100, // these two are for gen. prod. sets
-    fCopyGeneToCDNA       = 0x200,
+    fCopyCDSFromCDNA      = 0x100, // for gen-prod sets
+    fCopyGeneToCDNA       = 0x200, // for gen-prod sets
     fShowContigInMaster   = 0x400,
     fHideImportedFeatures = 0x800,
     fHideRemoteImpFeats   = 0x1000,
@@ -86,7 +86,8 @@ enum EFlags {
     fOnlyGeneRIFs         = 0x400000,
     fLatestGeneRIFs       = 0x800000,
     fShowContigAndSeq     = 0x1000000,
-    fHideSourceFeats      = 0x2000000
+    fHideSourceFeats      = 0x2000000,
+    fShowFtableRefs       = 0x4000000
 };
 
 enum EFilterFlags {
@@ -110,6 +111,9 @@ typedef EFilterFlags    TFilter;
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/18 15:30:13  shomrat
+* + new flag fShowFtableRefs
+*
 * Revision 1.3  2004/03/05 18:53:08  shomrat
 * fixed indentation
 *
