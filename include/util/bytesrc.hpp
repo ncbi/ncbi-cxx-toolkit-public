@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/09/25 12:46:28  kuznets
+* CSubSourceCollector(s) are changed so they can be chained
+* (CByteSourceReader can have more than one CSubSourceCollector)
+*
 * Revision 1.11  2003/04/17 17:50:11  siyan
 * Added doxygen support
 *
@@ -111,16 +115,33 @@ public:
     // end of data reached or error occurred
     virtual bool EndOfData(void) const;
 
-    virtual CRef<CSubSourceCollector> SubSource(size_t prepend);
+    virtual CRef<CSubSourceCollector> 
+        SubSource(size_t prepend, CRef<CSubSourceCollector>& parent);
 };
 
+/// Sub-source collector
+///
 class NCBI_XUTIL_EXPORT CSubSourceCollector : public CObject
 {
 public:
+    /// Constructor.
+    ///
+    /// @param parent_collector pointer on parent(chained) collector
+    /// CSubSourceCollector relays all AddChunk calls to the parent object
+    /// making possible having several sub-sources chained together.
+    CSubSourceCollector(CRef<CSubSourceCollector>& parent);
+
     virtual ~CSubSourceCollector(void);
 
-    virtual void AddChunk(const char* buffer, size_t bufferLength) = 0;
+    /// Add data to the sub-source. If parent pointer is set(m_ParentSubSource) 
+    /// call is redirected to the parent chain.
+    virtual void AddChunk(const char* buffer, size_t bufferLength);
+
     virtual CRef<CByteSource> GetSource(void) = 0;
+
+protected:
+    /// Pointer on parent (or chained) collector.
+    CRef<CSubSourceCollector>     m_ParentSubSource;
 };
 
 class NCBI_XUTIL_EXPORT CStreamByteSource : public CByteSource
@@ -191,7 +212,8 @@ class NCBI_XUTIL_EXPORT CFileByteSourceReader : public CStreamByteSourceReader
 public:
     CFileByteSourceReader(const CFileByteSource* source);
 
-    CRef<CSubSourceCollector> SubSource(size_t prepend);
+    CRef<CSubSourceCollector> SubSource(size_t prepend, 
+                                        CRef<CSubSourceCollector>& parent);
 private:
     CConstRef<CFileByteSource> m_FileSource;
     CNcbiIfstream m_FStream;
@@ -257,9 +279,13 @@ private:
     size_t m_CurrentChunkOffset;
 };
 
+/// Imple
 class NCBI_XUTIL_EXPORT CMemorySourceCollector : public CSubSourceCollector
 {
 public:
+    CMemorySourceCollector(CRef<CSubSourceCollector>& 
+                           parent=CRef<CSubSourceCollector>());
+
     virtual void AddChunk(const char* buffer, size_t bufferLength);
     virtual CRef<CByteSource> GetSource(void);
 
@@ -280,7 +306,8 @@ public:
 #endif
 
     CFileSourceCollector(const CConstRef<CFileByteSource>& source,
-                         TFilePos start);
+                         TFilePos start,
+                         CRef<CSubSourceCollector>& parent);
 
     virtual void AddChunk(const char* buffer, size_t bufferLength);
     virtual CRef<CByteSource> GetSource(void);
