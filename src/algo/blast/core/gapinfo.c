@@ -39,11 +39,11 @@ static char const rcsid[] = "$Id$";
 
 #include <gapinfo.h>
 
-GapStateArrayStructPtr 
-GapStateFree(GapStateArrayStructPtr state_struct)
+GapStateArrayStruct* 
+GapStateFree(GapStateArrayStruct* state_struct)
 
 {
-	GapStateArrayStructPtr next;
+	GapStateArrayStruct* next;
 
 	while (state_struct)
 	{
@@ -63,13 +63,13 @@ GapStateFree(GapStateArrayStructPtr state_struct)
 	new one.
 
 */
-GapEditScriptPtr 
-GapEditScriptNew(GapEditScriptPtr old)
+GapEditScript* 
+GapEditScriptNew(GapEditScript* old)
 
 {
-	GapEditScriptPtr new;
+	GapEditScript* new;
 
-	new = (GapEditScriptPtr) calloc(1, sizeof(GapEditScript));
+	new = (GapEditScript*) calloc(1, sizeof(GapEditScript));
 
 	if (old == NULL)
 		return new;
@@ -84,10 +84,10 @@ GapEditScriptNew(GapEditScriptPtr old)
 	return new;
 }
 
-GapEditScriptPtr
-GapEditScriptDelete(GapEditScriptPtr old)
+GapEditScript*
+GapEditScriptDelete(GapEditScript* old)
 {
-	GapEditScriptPtr next;
+	GapEditScript* next;
 
 	while (old)
 	{
@@ -98,21 +98,21 @@ GapEditScriptDelete(GapEditScriptPtr old)
 	return old;
 }
 
-GapEditBlockPtr
+GapEditBlock*
 GapEditBlockNew(Int4 start1, Int4 start2)
 
 {
-	GapEditBlockPtr edit_block;
+	GapEditBlock* edit_block;
 
-	edit_block = (GapEditBlockPtr) calloc(1, sizeof(GapEditBlock));
+	edit_block = (GapEditBlock*) calloc(1, sizeof(GapEditBlock));
 	edit_block->start1 = start1;
 	edit_block->start2 = start2;
 
 	return edit_block;
 }
 
-GapEditBlockPtr
-GapEditBlockDelete(GapEditBlockPtr edit_block)
+GapEditBlock*
+GapEditBlockDelete(GapEditBlock* edit_block)
 
 {
 	if (edit_block == NULL)

@@ -52,17 +52,17 @@ typedef struct Blast_Message {
 	Int4 severity;		/**< severity code (0, 1, 2, 3) */
 	Int4 code;		/**< major code for error. */
 	Int4 subcode;		/**< minor code for this error. */
-	CharPtr message;	/**< User message to be saved. */
-} Blast_Message, *Blast_MessagePtr;
+	Char* message;	/**< User message to be saved. */
+} Blast_Message;
 
 /** Deallocates message memory.
  * @param blast_msg structure to be deallocated [in]
 */
 
-Blast_MessagePtr Blast_MessageFree(Blast_MessagePtr blast_msg);
+Blast_Message* Blast_MessageFree(Blast_Message* blast_msg);
 
 
-/** Writes a message to a structure.  The Blast_MessagePtr is allocated.
+/** Writes a message to a structure.  The Blast_Message* is allocated.
  * @param blast_msg structure to be filled in [in] 
  * @param severity severity code (0, 1, 2, 3) [in] 
  * @param code major code for this error [in]
@@ -70,7 +70,7 @@ Blast_MessagePtr Blast_MessageFree(Blast_MessagePtr blast_msg);
  * @param message User message to be saved [in]
 */
 
-Int2 Blast_MessageWrite(Blast_MessagePtr *blast_msg, Int4 severity, Int4 code,
+Int2 Blast_MessageWrite(Blast_Message* *blast_msg, Int4 severity, Int4 code,
         Int4 subcode, const Char *message);
 
 
@@ -78,7 +78,7 @@ Int2 Blast_MessageWrite(Blast_MessagePtr *blast_msg, Int4 severity, Int4 code,
  * @param blast_msg message to be printed [in]
 */
 
-Int2 Blast_MessagePost(Blast_MessagePtr blast_msg);
+Int2 Blast_MessagePost(Blast_Message* blast_msg);
 
 
 #ifdef __cplusplus

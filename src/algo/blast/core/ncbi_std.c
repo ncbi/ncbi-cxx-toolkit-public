@@ -3,7 +3,7 @@
 
 void * MemDup (const void *orig, size_t size)
 {
-	VoidPtr	copy;
+	void*	copy;
 
 	if (orig == NULL || size == 0)
 		return NULL;
@@ -16,10 +16,10 @@ void * MemDup (const void *orig, size_t size)
 }
 
 #if 0
-static CharPtr Nlm_FileBuildPath (CharPtr root, CharPtr sub_path, CharPtr filename)
+static Char* Nlm_FileBuildPath (Char* root, Char* sub_path, Char* filename)
 
 {
-    CharPtr tmp;
+    Char* tmp;
     Boolean dir_start = FALSE;
 
     if (root == NULL)              /* no place to put it */
@@ -91,11 +91,11 @@ Boolean FindPath(const Char* file, const Char* section, const Char* type, Char* 
 *      adds after last node in list if vnp not NULL
 *
 *****************************************************************************/
-ListNodePtr ListNodeNew (ListNodePtr vnp)
+ListNode* ListNodeNew (ListNode* vnp)
 {
-	ListNodePtr newnode;
+	ListNode* newnode;
 
-	newnode = (ListNodePtr) calloc(1, sizeof(ListNode));
+	newnode = (ListNode*) calloc(1, sizeof(ListNode));
 	if (vnp != NULL)
     {
         while (vnp->next != NULL)
@@ -113,9 +113,9 @@ ListNodePtr ListNodeNew (ListNodePtr vnp)
 *      returns pointer to the NEW node added
 *
 *****************************************************************************/
-ListNodePtr ListNodeAdd (ListNodePtr* head)
+ListNode* ListNodeAdd (ListNode** head)
 {
-	ListNodePtr newnode;
+	ListNode* newnode;
 
 	if (head != NULL)
 	{
@@ -135,10 +135,10 @@ ListNodePtr ListNodeAdd (ListNodePtr* head)
 *      sets newnode->ptr = value
 *
 *****************************************************************************/
-ListNodePtr ListNodeAddPointer (ListNodePtr* head, Int2 choice, 
+ListNode* ListNodeAddPointer (ListNode** head, Int2 choice, 
                                 void *value)
 {
-	ListNodePtr newnode;
+	ListNode* newnode;
 
 	newnode = ListNodeAdd(head);
 	if (newnode != NULL)
@@ -160,9 +160,9 @@ ListNodePtr ListNodeAddPointer (ListNodePtr* head, Int2 choice,
 *      if str == NULL, does not add a ListNode
 *
 *****************************************************************************/
-ListNodePtr ListNodeCopyStr (ListNodePtr* head, Int2 choice, CharPtr str)
+ListNode* ListNodeCopyStr (ListNode** head, Int2 choice, Char* str)
 {
-	ListNodePtr newnode;
+	ListNode* newnode;
 
 	if (str == NULL) return NULL;
 
@@ -184,9 +184,9 @@ ListNodePtr ListNodeCopyStr (ListNodePtr* head, Int2 choice, CharPtr str)
 *           see ListNodeFreeData()
 *
 *****************************************************************************/
-ListNodePtr ListNodeFree (ListNodePtr vnp)
+ListNode* ListNodeFree (ListNode* vnp)
 {
-	ListNodePtr next;
+	ListNode* next;
 
 	while (vnp != NULL)
 	{
@@ -205,9 +205,9 @@ ListNodePtr ListNodeFree (ListNodePtr vnp)
 *           allocated single memory block structures.
 *
 *****************************************************************************/
-ListNodePtr ListNodeFreeData (ListNodePtr vnp)
+ListNode* ListNodeFreeData (ListNode* vnp)
 {
-	ListNodePtr next;
+	ListNode* next;
 
 	while (vnp != NULL)
 	{
@@ -225,7 +225,7 @@ ListNodePtr ListNodeFreeData (ListNodePtr vnp)
 *      returns the number of nodes in the linked list
 *
 *****************************************************************************/
-Int4 ListNodeLen (ListNodePtr vnp)
+Int4 ListNodeLen (ListNode* vnp)
 {
 	Int4 len;
 
@@ -244,22 +244,22 @@ Int4 ListNodeLen (ListNodePtr vnp)
 *   	Makes array from ListNode list, calls HeapSort, reconnects ListNode list
 *
 *****************************************************************************/
-ListNodePtr ListNodeSort (ListNodePtr list, 
+ListNode* ListNodeSort (ListNode* list, 
                int (*compar )(const void *, const void *))
 {
-	ListNodePtr tmp,* head;
+	ListNode* tmp,** head;
 	Int4 count, i;
 
 	if (list == NULL) return NULL;
 	
 	count = ListNodeLen (list);
-	head = (ListNodePtr *) calloc (((size_t) count + 1), sizeof (ListNodePtr));
+	head = (ListNode* *) calloc (((size_t) count + 1), sizeof (ListNode*));
 	for (tmp = list, i = 0; tmp != NULL && i < count; i++) {
 		head [i] = tmp;
 		tmp = tmp->next;
 	}
 
-	qsort (head, (size_t) count, sizeof (ListNodePtr), compar);
+	qsort (head, (size_t) count, sizeof (ListNode*), compar);
 	for (i = 0; i < count; i++) {
 		tmp = head [i];
 		tmp->next = head [i + 1];

@@ -53,20 +53,20 @@ typedef struct DCURLOC { /* localcurrents */
 
 /* local functions */
 
-static Int4 wo (Int4, Uint1Ptr, Int4, DCURLOC*, Uint1Ptr seq);
-static void wo1 (Int4, Uint1Ptr, Int4, DCURLOC*);
-static Int4 dust_triplet_find (Uint1Ptr, Int4, Int4, Uint1Ptr);
+static Int4 wo (Int4, Uint1*, Int4, DCURLOC*, Uint1* seq);
+static void wo1 (Int4, Uint1*, Int4, DCURLOC*);
+static Int4 dust_triplet_find (Uint1*, Int4, Int4, Uint1*);
 
 /* entry point for dusting */
 
-static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
+static Int4 dust_segs (Uint1* sequence, Int4 length, Int4 start,
 		       DREGION* reg,
 		       Int4 level, Int4 windowsize, Int4 minwin, Int4 linker)
 {
    Int4    len;
    Int4	i;
    Int4 retlen;
-   Uint1Ptr seq;
+   Uint1* seq;
    DREGION* regold = NULL;
    DCURLOC	cloc;
    Int4	nreg, windowhalf;
@@ -79,7 +79,7 @@ static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
    windowhalf = windowsize / 2;
    
    nreg = 0;
-   seq = (Uint1Ptr) calloc(1, windowsize);			/* triplets */
+   seq = (Uint1*) calloc(1, windowsize);			/* triplets */
    if (!seq) {
       return -1;
    }
@@ -133,8 +133,8 @@ static Int4 dust_segs (Uint1Ptr sequence, Int4 length, Int4 start,
    return nreg;
 }
 
-static Int4 wo (Int4 len, Uint1Ptr seq_start, Int4 iseg, DCURLOC* cloc, 
-                Uint1Ptr seq)
+static Int4 wo (Int4 len, Uint1* seq_start, Int4 iseg, DCURLOC* cloc, 
+                Uint1* seq)
 {
 	Int4 i, flen;
 
@@ -156,7 +156,7 @@ static Int4 wo (Int4 len, Uint1Ptr seq_start, Int4 iseg, DCURLOC* cloc,
 	return flen;
 }
 
-static void wo1 (Int4 len, Uint1Ptr seq, Int4 iwo, DCURLOC* cloc)
+static void wo1 (Int4 len, Uint1* seq, Int4 iwo, DCURLOC* cloc)
 {
    Uint4 sum;
 	Int4 loop;
@@ -201,13 +201,13 @@ static void wo1 (Int4 len, Uint1Ptr seq, Int4 iwo, DCURLOC* cloc)
  * @return How far was the sequence processed?
  */
 static Int4 
-dust_triplet_find (Uint1Ptr seq_start, Int4 icur, Int4 max, Uint1Ptr s1)
+dust_triplet_find (Uint1* seq_start, Int4 icur, Int4 max, Uint1* s1)
 {
    Int4 n;
-   Uint1Ptr s2, s3;
+   Uint1* s2,* s3;
    Int2 c;
    Boolean flagVD;
-   Uint1Ptr seq = &seq_start[icur];
+   Uint1* seq = &seq_start[icur];
    Uint1 end_byte = ncbi4na_to_blastna[NULLB];
    
    n = 0;
@@ -252,11 +252,11 @@ dust_triplet_find (Uint1Ptr seq_start, Int4 icur, Int4 max, Uint1Ptr s1)
 /* look for dustable locations (as slpDust from dust.c */
 
 static Int2 
-GetDustLocations (ListNodePtr* loc, DREGION* reg, Int4 nreg)
+GetDustLocations (ListNode** loc, DREGION* reg, Int4 nreg)
 {
    Int4 i;
-   ListNodePtr last_loc = NULL;
-   DoubleIntPtr dintp;
+   ListNode* last_loc = NULL;
+   DoubleInt* dintp;
         
    if (!loc)
       return -1;
@@ -266,7 +266,7 @@ GetDustLocations (ListNodePtr* loc, DREGION* reg, Int4 nreg)
    /* point to dusted locations */
    if (nreg > 0) {
       for (i = 0; reg && i < nreg; i++) {
-         dintp = (DoubleIntPtr) calloc(1, sizeof(DoubleInt));
+         dintp = (DoubleInt*) calloc(1, sizeof(DoubleInt));
          if (!dintp) {
             return -1;
          }
@@ -282,9 +282,9 @@ GetDustLocations (ListNodePtr* loc, DREGION* reg, Int4 nreg)
    return 0;
 }
 
-Int2 SeqBufferDust (Uint1Ptr sequence, Int4 length, Int4 offset,
+Int2 SeqBufferDust (Uint1* sequence, Int4 length, Int4 offset,
                     Int2 level, Int2 window, Int2 minwin, Int2 linker,
-                    BlastSeqLocPtr* dust_loc)
+                    BlastSeqLoc** dust_loc)
 {
 	DREGION* reg,* regold;
 	Int4 nreg;

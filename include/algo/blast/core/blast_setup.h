@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.19  2003/07/31 00:32:35  camacho
+* Eliminated Ptr notation
+*
 * Revision 1.18  2003/07/24 20:49:36  camacho
 * Remove unnecessary #include
 *
@@ -184,8 +187,8 @@ extern "C" {
  *
 */
 Int2
-BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp,
-const BlastScoringOptionsPtr scoring_options, Uint1 program_number);
+BlastScoreBlkGappedFill(BLAST_ScoreBlk* sbp,
+const BlastScoringOptions* scoring_options, Uint1 program_number);
 
 
 /** "Main" setup routine for BLAST. Calculates all information for BLAST search
@@ -195,7 +198,7 @@ const BlastScoringOptionsPtr scoring_options, Uint1 program_number);
  * @param scoring_options options for scoring. [in]
  * @param lookup_options options for lookup table. [in]
  * @param hit_options options for saving hits. [in]
- * @param query_blk BLAST_SequenceBlkPtr for the query. [in]
+ * @param query_blk BLAST_SequenceBlk* for the query. [in]
  * @param query_info The query information block [in]
  * @param lookup_segments Start/stop locations for non-masked query 
  *                        segments [out]
@@ -204,14 +207,14 @@ const BlastScoringOptionsPtr scoring_options, Uint1 program_number);
  * @param blast_message error or warning [out] 
  */
 Int2 BLAST_MainSetUp(Uint1 program_number,
-        const QuerySetUpOptionsPtr qsup_options,
-        const BlastScoringOptionsPtr scoring_options,
-        const LookupTableOptionsPtr lookup_options,	
-        const BlastHitSavingOptionsPtr hit_options,
-        BLAST_SequenceBlkPtr query_blk,
-        BlastQueryInfoPtr query_info, BlastSeqLocPtr *lookup_segments,
-        BlastMaskPtr *filter_slp_out,
-        BLAST_ScoreBlkPtr *sbpp, Blast_MessagePtr *blast_message);
+        const QuerySetUpOptions* qsup_options,
+        const BlastScoringOptions* scoring_options,
+        const LookupTableOptions* lookup_options,	
+        const BlastHitSavingOptions* hit_options,
+        BLAST_SequenceBlk* query_blk,
+        BlastQueryInfo* query_info, BlastSeqLoc* *lookup_segments,
+        BlastMask* *filter_slp_out,
+        BLAST_ScoreBlk* *sbpp, Blast_Message* *blast_message);
 
 #ifdef __cplusplus
 }

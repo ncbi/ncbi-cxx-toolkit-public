@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.48  2003/07/31 00:32:37  camacho
+ * Eliminated Ptr notation
+ *
  * Revision 1.47  2003/07/30 22:06:25  dondosha
  * Convert matrix name to upper case when filling scoring options
  *
@@ -271,8 +274,8 @@ static char const rcsid[] = "$Id$";
 #include <blast_gapalign.h>
 #include <blast_filter.h>
 
-QuerySetUpOptionsPtr
-BlastQuerySetUpOptionsFree(QuerySetUpOptionsPtr options)
+QuerySetUpOptions*
+BlastQuerySetUpOptionsFree(QuerySetUpOptions* options)
 
 {
    BlastMaskFree(options->lcase_mask);
@@ -283,9 +286,9 @@ BlastQuerySetUpOptionsFree(QuerySetUpOptionsPtr options)
 }
 
 Int2
-BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options)
+BlastQuerySetUpOptionsNew(QuerySetUpOptions* *options)
 {
-   *options = (QuerySetUpOptionsPtr) calloc(1, sizeof(QuerySetUpOptions));
+   *options = (QuerySetUpOptions*) calloc(1, sizeof(QuerySetUpOptions));
    
    if (*options == NULL)
       return 1;
@@ -295,7 +298,7 @@ BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options)
    return 0;
 }
 
-Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
+Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
         Uint1 program, const char *filter_string, Uint1 strand_option)
 {
    if (options == NULL)
@@ -318,8 +321,8 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
    return 0;
 }
 
-BlastInitialWordOptionsPtr
-BlastInitialWordOptionsFree(BlastInitialWordOptionsPtr options)
+BlastInitialWordOptions*
+BlastInitialWordOptionsFree(BlastInitialWordOptions* options)
 
 {
 
@@ -331,10 +334,10 @@ BlastInitialWordOptionsFree(BlastInitialWordOptionsPtr options)
 
 Int2
 BlastInitialWordOptionsNew(Uint1 program, 
-   BlastInitialWordOptionsPtr *options)
+   BlastInitialWordOptions* *options)
 {
    *options = 
-      (BlastInitialWordOptionsPtr) calloc(1, sizeof(BlastInitialWordOptions));
+      (BlastInitialWordOptions*) calloc(1, sizeof(BlastInitialWordOptions));
    if (*options == NULL)
       return 1;
 
@@ -349,7 +352,7 @@ BlastInitialWordOptionsNew(Uint1 program,
 }
 
 Int2
-BLAST_FillInitialWordOptions(BlastInitialWordOptionsPtr options, 
+BLAST_FillInitialWordOptions(BlastInitialWordOptions* options, 
    Uint1 program, Boolean greedy, Int4 window_size, 
    Boolean variable_wordsize, Boolean ag_blast, Boolean mb_lookup,
    FloatHi xdrop_ungapped)
@@ -385,8 +388,8 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptionsPtr options,
 
 
 
-BlastInitialWordParametersPtr
-BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters)
+BlastInitialWordParameters*
+BlastInitialWordParametersFree(BlastInitialWordParameters* parameters)
 
 {
 	sfree(parameters);
@@ -397,25 +400,25 @@ BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters)
 
 Int2
 BlastInitialWordParametersNew(Uint1 program_number, 
-   BlastInitialWordOptionsPtr word_options, 
-   BlastHitSavingParametersPtr hit_params, 
-   BlastExtensionParametersPtr ext_params, BLAST_ScoreBlkPtr sbp, 
-   BlastQueryInfoPtr query_info, 
-   BlastEffectiveLengthsOptionsPtr eff_len_options, 
-   BlastInitialWordParametersPtr *parameters)
+   BlastInitialWordOptions* word_options, 
+   BlastHitSavingParameters* hit_params, 
+   BlastExtensionParameters* ext_params, BLAST_ScoreBlk* sbp, 
+   BlastQueryInfo* query_info, 
+   BlastEffectiveLengthsOptions* eff_len_options, 
+   BlastInitialWordParameters* *parameters)
 {
    Int4 context = query_info->first_context;
    Int4 cutoff_score = 0, s2 = 0;
    FloatHi e2 = UNGAPPED_CUTOFF_EVALUE;
-   BLAST_KarlinBlkPtr kbp;
+   BLAST_KarlinBlk* kbp;
    FloatHi qlen;
-   BlastHitSavingOptionsPtr hit_options;
+   BlastHitSavingOptions* hit_options;
    FloatHi avglen;
 
    if (!word_options || !hit_params || !sbp || !sbp->kbp_std[context])
       return 8;
 
-   *parameters = (BlastInitialWordParametersPtr) 
+   *parameters = (BlastInitialWordParameters*) 
       calloc(1, sizeof(BlastInitialWordParameters));
 
    hit_options = hit_params->options;
@@ -455,8 +458,8 @@ BlastInitialWordParametersNew(Uint1 program_number,
    return 0;
 }
 
-BlastExtensionOptionsPtr
-BlastExtensionOptionsFree(BlastExtensionOptionsPtr options)
+BlastExtensionOptions*
+BlastExtensionOptionsFree(BlastExtensionOptions* options)
 
 {
 
@@ -468,10 +471,10 @@ BlastExtensionOptionsFree(BlastExtensionOptionsPtr options)
 
 
 Int2
-BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptionsPtr *options)
+BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options)
 
 {
-	*options = (BlastExtensionOptionsPtr) 
+	*options = (BlastExtensionOptions*) 
            calloc(1, sizeof(BlastExtensionOptions));
 
 	if (*options == NULL)
@@ -494,7 +497,7 @@ BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptionsPtr *options)
 }
 
 Int2
-BLAST_FillExtensionOptions(BlastExtensionOptionsPtr options, 
+BLAST_FillExtensionOptions(BlastExtensionOptions* options, 
    Uint1 program, Boolean greedy, FloatHi x_dropoff, FloatHi x_dropoff_final)
 {
    if (!options)
@@ -522,7 +525,7 @@ BLAST_FillExtensionOptions(BlastExtensionOptionsPtr options,
 
 Int2 
 BlastExtensionOptionsValidate(Uint1 program_number, 
-   BlastExtensionOptionsPtr options, Blast_MessagePtr *blast_msg)
+   BlastExtensionOptions* options, Blast_Message* *blast_msg)
 
 {
 	if (options == NULL)
@@ -544,11 +547,11 @@ BlastExtensionOptionsValidate(Uint1 program_number,
 }
 
 Int2 BlastExtensionParametersNew(Uint1 program_number, 
-        BlastExtensionOptionsPtr options, BLAST_ScoreBlkPtr sbp,
-        BlastQueryInfoPtr query_info, BlastExtensionParametersPtr *parameters)
+        BlastExtensionOptions* options, BLAST_ScoreBlk* sbp,
+        BlastQueryInfo* query_info, BlastExtensionParameters* *parameters)
 {
-   BLAST_KarlinBlkPtr kbp, kbp_gap;
-   BlastExtensionParametersPtr params;
+   BLAST_KarlinBlk* kbp,* kbp_gap;
+   BlastExtensionParameters* params;
 
    if (sbp->kbp) {
       kbp = sbp->kbp[query_info->first_context];
@@ -564,7 +567,7 @@ Int2 BlastExtensionParametersNew(Uint1 program_number,
       kbp_gap = kbp;
    }
    
-   *parameters = params = (BlastExtensionParametersPtr) 
+   *parameters = params = (BlastExtensionParameters*) 
       malloc(sizeof(BlastExtensionParameters));
 
    params->options = options;
@@ -579,16 +582,16 @@ Int2 BlastExtensionParametersNew(Uint1 program_number,
    return 0;
 }
 
-BlastExtensionParametersPtr
-BlastExtensionParametersFree(BlastExtensionParametersPtr parameters)
+BlastExtensionParameters*
+BlastExtensionParametersFree(BlastExtensionParameters* parameters)
 {
   sfree(parameters);
   return NULL;
 }
 
 
-BlastScoringOptionsPtr
-BlastScoringOptionsFree(BlastScoringOptionsPtr options)
+BlastScoringOptions*
+BlastScoringOptionsFree(BlastScoringOptions* options)
 
 {
 	if (options == NULL)
@@ -602,9 +605,9 @@ BlastScoringOptionsFree(BlastScoringOptionsPtr options)
 }
 
 Int2 
-BlastScoringOptionsNew(Uint1 program_number, BlastScoringOptionsPtr *options)
+BlastScoringOptionsNew(Uint1 program_number, BlastScoringOptions* *options)
 {
-   *options = (BlastScoringOptionsPtr) calloc(1, sizeof(BlastScoringOptions));
+   *options = (BlastScoringOptions*) calloc(1, sizeof(BlastScoringOptions));
 
    if (*options == NULL)
       return 1;
@@ -625,7 +628,7 @@ BlastScoringOptionsNew(Uint1 program_number, BlastScoringOptionsPtr *options)
 }
 
 Int2 
-BLAST_FillScoringOptions(BlastScoringOptionsPtr options, 
+BLAST_FillScoringOptions(BlastScoringOptions* options, 
    Uint1 program_number, Boolean greedy_extension, Int4 penalty, Int4 reward, 
    const char *matrix, Int4 gap_open, Int4 gap_extend)
 {
@@ -666,7 +669,7 @@ BLAST_FillScoringOptions(BlastScoringOptionsPtr options,
 
 Int2 
 BlastScoringOptionsValidate(Uint1 program_number, 
-   BlastScoringOptionsPtr options, Blast_MessagePtr *blast_msg)
+   BlastScoringOptions* options, Blast_Message* *blast_msg)
 
 {
 	if (options == NULL)
@@ -690,7 +693,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 		{
 			if (status == 1)
 			{
-				CharPtr buffer;
+				Char* buffer;
 				Int4 code=2;
 				Int4 subcode=1;
 
@@ -702,7 +705,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 			}
 			else if (status == 2)
 			{
-				CharPtr buffer;
+				Char* buffer;
 				Int4 code=2;
 				Int4 subcode=1;
 
@@ -730,8 +733,8 @@ BlastScoringOptionsValidate(Uint1 program_number,
 }
 
 
-BlastEffectiveLengthsOptionsPtr
-BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptionsPtr options)
+BlastEffectiveLengthsOptions*
+BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptions* options)
 
 {
 	sfree(options);
@@ -741,10 +744,10 @@ BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptionsPtr options)
 
 
 Int2 
-BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptionsPtr *options)
+BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptions* *options)
 
 {
-   *options = (BlastEffectiveLengthsOptionsPtr)
+   *options = (BlastEffectiveLengthsOptions*)
       calloc(1, sizeof(BlastEffectiveLengthsOptions));
 
    if (*options == NULL)
@@ -754,7 +757,7 @@ BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptionsPtr *options)
 }
 
 Int2 
-BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptionsPtr options, 
+BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptions* options, 
    Int4 dbseq_num, Int8 db_length, Int8 searchsp_eff)
 {
    if (!options)
@@ -773,8 +776,8 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptionsPtr options,
    return 0;
 }
 
-LookupTableOptionsPtr
-LookupTableOptionsFree(LookupTableOptionsPtr options)
+LookupTableOptions*
+LookupTableOptionsFree(LookupTableOptions* options)
 
 {
 	sfree(options);
@@ -782,9 +785,9 @@ LookupTableOptionsFree(LookupTableOptionsPtr options)
 }
 
 Int2 
-LookupTableOptionsNew(Uint1 program_number, LookupTableOptionsPtr *options)
+LookupTableOptionsNew(Uint1 program_number, LookupTableOptions* *options)
 {
-   *options = (LookupTableOptionsPtr) calloc(1, sizeof(LookupTableOptions));
+   *options = (LookupTableOptions*) calloc(1, sizeof(LookupTableOptions));
    
    if (*options == NULL)
       return 1;
@@ -811,7 +814,7 @@ LookupTableOptionsNew(Uint1 program_number, LookupTableOptionsPtr *options)
 }
 
 Int2 
-BLAST_FillLookupTableOptions(LookupTableOptionsPtr options, 
+BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    Uint1 program_number, Boolean is_megablast, Int4 threshold,
    Int2 word_size, Boolean ag_blast, Boolean variable_wordsize)
 {
@@ -853,7 +856,7 @@ BLAST_FillLookupTableOptions(LookupTableOptionsPtr options,
 
 Int2 
 LookupTableOptionsValidate(Uint1 program_number, 
-   LookupTableOptionsPtr options, Blast_MessagePtr *blast_msg)
+   LookupTableOptions* options, Blast_Message* *blast_msg)
 
 {
 	if (options == NULL)
@@ -923,8 +926,8 @@ LookupTableOptionsValidate(Uint1 program_number,
 	return 0;
 }
 
-BlastHitSavingOptionsPtr
-BlastHitSavingOptionsFree(BlastHitSavingOptionsPtr options)
+BlastHitSavingOptions*
+BlastHitSavingOptionsFree(BlastHitSavingOptions* options)
 
 {
   sfree(options);
@@ -933,9 +936,9 @@ BlastHitSavingOptionsFree(BlastHitSavingOptionsPtr options)
 
 
 Int2 BlastHitSavingOptionsNew(Uint1 program_number, 
-        BlastHitSavingOptionsPtr *options)
+        BlastHitSavingOptions* *options)
 {
-   *options = (BlastHitSavingOptionsPtr) calloc(1, sizeof(BlastHitSavingOptions));
+   *options = (BlastHitSavingOptions*) calloc(1, sizeof(BlastHitSavingOptions));
    
    if (*options == NULL)
       return 1;
@@ -953,7 +956,7 @@ Int2 BlastHitSavingOptionsNew(Uint1 program_number,
 }
 
 Int2
-BLAST_FillHitSavingOptions(BlastHitSavingOptionsPtr options, 
+BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
    Boolean is_gapped, FloatHi evalue, Int4 hitlist_size)
 {
    if (!options)
@@ -971,7 +974,7 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptionsPtr options,
 
 Int2
 BlastHitSavingOptionsValidate(Uint1 program_number,
-   BlastHitSavingOptionsPtr options, Blast_MessagePtr *blast_msg)
+   BlastHitSavingOptions* options, Blast_Message* *blast_msg)
 {
 	if (options == NULL)
 		return 1;
@@ -1000,8 +1003,8 @@ BlastHitSavingOptionsValidate(Uint1 program_number,
 }
 
 
-BlastHitSavingParametersPtr
-BlastHitSavingParametersFree(BlastHitSavingParametersPtr parmameters)
+BlastHitSavingParameters*
+BlastHitSavingParametersFree(BlastHitSavingParameters* parmameters)
 
 {
   sfree(parmameters);
@@ -1011,19 +1014,19 @@ BlastHitSavingParametersFree(BlastHitSavingParametersPtr parmameters)
 
 Int2
 BlastHitSavingParametersNew(Uint1 program_number, 
-   BlastHitSavingOptionsPtr options, 
-   int (*handle_results)(VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, 
-           VoidPtr), BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info, 
-   BlastHitSavingParametersPtr *parameters)
+   BlastHitSavingOptions* options, 
+   int (*handle_results)(void*, void*, void*, void*, void*, void*, void*), 
+   BLAST_ScoreBlk* sbp, BlastQueryInfo* query_info, 
+   BlastHitSavingParameters* *parameters)
 {
-   BlastHitSavingParametersPtr params;
-   BLAST_KarlinBlkPtr kbp;
+   BlastHitSavingParameters* params;
+   BLAST_KarlinBlk* kbp;
    FloatHi evalue = options->expect_value;
 
    if (!options || !parameters)
       return 1;
 
-   *parameters = params = (BlastHitSavingParametersPtr) 
+   *parameters = params = (BlastHitSavingParameters*) 
       calloc(1, sizeof(BlastHitSavingParameters));
 
    if (params == NULL)
@@ -1058,10 +1061,10 @@ BlastHitSavingParametersNew(Uint1 program_number,
    return 0;
 }
 
-Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr* psi_options)
+Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
 {
-   PSIBlastOptionsPtr options = 
-      (PSIBlastOptionsPtr) calloc(1, sizeof(PSIBlastOptions));
+   PSIBlastOptions* options = 
+      (PSIBlastOptions*) calloc(1, sizeof(PSIBlastOptions));
    *psi_options = options;
    options->ethresh = PSI_ETHRESH;
    options->maxNumPasses = PSI_MAX_NUM_PASSES;
@@ -1071,7 +1074,7 @@ Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr* psi_options)
    return 0;
 }
 
-PSIBlastOptionsPtr PSIBlastOptionsFree(PSIBlastOptionsPtr psi_options)
+PSIBlastOptions* PSIBlastOptionsFree(PSIBlastOptions* psi_options)
 {
    if (psi_options->isPatternSearch)
       sfree(psi_options->phi_pattern);
@@ -1080,9 +1083,9 @@ PSIBlastOptionsPtr PSIBlastOptionsFree(PSIBlastOptionsPtr psi_options)
    return NULL;
 }
 
-Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr* db_options)
+Int2 BlastDatabaseOptionsNew(BlastDatabaseOptions** db_options)
 {
-   BlastDatabaseOptionsPtr options = (BlastDatabaseOptionsPtr)
+   BlastDatabaseOptions* options = (BlastDatabaseOptions*)
       calloc(1, sizeof(BlastDatabaseOptions));
 
    options->genetic_code = BLAST_GENETIC_CODE;
@@ -1091,8 +1094,8 @@ Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr* db_options)
    return 0;
 }
 
-BlastDatabaseOptionsPtr 
-BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options)
+BlastDatabaseOptions* 
+BlastDatabaseOptionsFree(BlastDatabaseOptions* db_options)
 {
    sfree(db_options->gen_code_string);
    sfree(db_options);
@@ -1100,15 +1103,15 @@ BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options)
 }
 
 Int2 BLAST_InitDefaultOptions(Uint1 program_number,
-   LookupTableOptionsPtr* lookup_options,
-   QuerySetUpOptionsPtr* query_setup_options, 
-   BlastInitialWordOptionsPtr* word_options,
-   BlastExtensionOptionsPtr* ext_options,
-   BlastHitSavingOptionsPtr* hit_options,
-   BlastScoringOptionsPtr* score_options,
-   BlastEffectiveLengthsOptionsPtr* eff_len_options,
-   PSIBlastOptionsPtr* psi_options,
-   BlastDatabaseOptionsPtr* db_options)
+   LookupTableOptions** lookup_options,
+   QuerySetUpOptions** query_setup_options, 
+   BlastInitialWordOptions** word_options,
+   BlastExtensionOptions** ext_options,
+   BlastHitSavingOptions** hit_options,
+   BlastScoringOptions** score_options,
+   BlastEffectiveLengthsOptions** eff_len_options,
+   PSIBlastOptions** psi_options,
+   BlastDatabaseOptions** db_options)
 {
    Int2 status;
 

@@ -47,20 +47,20 @@ static char const rcsid[] = "$Id$";
 #define MIN_INIT_HITLIST_SIZE 100
 
 /* Description in blast_extend.h */
-BlastInitHitListPtr BLAST_InitHitListNew(void)
+BlastInitHitList* BLAST_InitHitListNew(void)
 {
-   BlastInitHitListPtr init_hitlist = (BlastInitHitListPtr)
+   BlastInitHitList* init_hitlist = (BlastInitHitList*)
       calloc(1, sizeof(BlastInitHitList));
 
    init_hitlist->allocated = MIN_INIT_HITLIST_SIZE;
 
-   init_hitlist->init_hsp_array = (BlastInitHSPPtr)
+   init_hitlist->init_hsp_array = (BlastInitHSP*)
       malloc(MIN_INIT_HITLIST_SIZE*sizeof(BlastInitHSP));
 
    return init_hitlist;
 }
 
-BlastInitHitListPtr BLAST_InitHitListDestruct(BlastInitHitListPtr init_hitlist)
+BlastInitHitList* BLAST_InitHitListDestruct(BlastInitHitList* init_hitlist)
 {
   sfree(init_hitlist->init_hsp_array);
   sfree(init_hitlist);
@@ -68,21 +68,21 @@ BlastInitHitListPtr BLAST_InitHitListDestruct(BlastInitHitListPtr init_hitlist)
 }
 
 
-/** Allocates memory for the BLAST_DiagTablePtr. This function also 
+/** Allocates memory for the BLAST_DiagTable*. This function also 
  * sets many of the parametes such as diag_array_length etc.
  * @param qlen Length of the query [in]
  * @param multiple_hits Specifies whether multiple hits method is used [in]
  * @param window_size The max. distance between two hits that are extended [in]
  * @return The allocated BLAST_DiagTable structure
 */
-static BLAST_DiagTablePtr
+static BLAST_DiagTable*
 BLAST_DiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
 
 {
-        BLAST_DiagTablePtr diag_table;
+        BLAST_DiagTable* diag_table;
         Int4 diag_array_length;
 
-        diag_table= (BLAST_DiagTablePtr) calloc(1, sizeof(BLAST_DiagTable));
+        diag_table= (BLAST_DiagTable*) calloc(1, sizeof(BLAST_DiagTable));
 
         if (diag_table)
         {
@@ -104,14 +104,14 @@ BLAST_DiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
 }
 
 /* Description in blast_extend.h */
-Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
-   BlastInitialWordOptionsPtr word_options,
-   Int8 dblen, Int4 dbseq_num, BLAST_ExtendWordPtr* ewp_ptr)
+Int2 BLAST_ExtendWordInit(BLAST_SequenceBlk* query,
+   BlastInitialWordOptions* word_options,
+   Int8 dblen, Int4 dbseq_num, BLAST_ExtendWord** ewp_ptr)
 {
-   BLAST_ExtendWordPtr ewp;
+   BLAST_ExtendWord* ewp;
    Int4 index, i;
 
-   *ewp_ptr = ewp = (BLAST_ExtendWordPtr) calloc(1, sizeof(BLAST_ExtendWord));
+   *ewp_ptr = ewp = (BLAST_ExtendWord*) calloc(1, sizeof(BLAST_ExtendWord));
 
    if (!ewp) {
       return -1;
@@ -120,43 +120,43 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
    if (word_options->extend_word_method & EXTEND_WORD_MB_STACKS) {
       FloatHi av_search_space;
       Int4 stack_size, num_stacks;
-      MB_StackTablePtr stack_table;
+      MB_StackTable* stack_table;
 
       ewp->stack_table = stack_table = 
-         (MB_StackTablePtr) malloc(sizeof(MB_StackTable));
+         (MB_StackTable*) malloc(sizeof(MB_StackTable));
 
       av_search_space = 
          ((FloatHi) query->length) * dblen / dbseq_num;
       num_stacks = MIN(1 + (Int4) (sqrt(av_search_space)/100), 500);
       stack_size = 5000/num_stacks;
-      stack_table->stack_index = (Int4Ptr) calloc(num_stacks, sizeof(Int4));
-      stack_table->stack_size = (Int4Ptr) malloc(num_stacks*sizeof(Int4));
+      stack_table->stack_index = (Int4*) calloc(num_stacks, sizeof(Int4));
+      stack_table->stack_size = (Int4*) malloc(num_stacks*sizeof(Int4));
       stack_table->estack = 
-         (MbStackPtr*) malloc(num_stacks*sizeof(MbStackPtr));
+         (MbStack**) malloc(num_stacks*sizeof(MbStack*));
       for (index=0; index<num_stacks; index++) {
          stack_table->estack[index] = 
-            (MbStackPtr) malloc(stack_size*sizeof(MbStack));
+            (MbStack*) malloc(stack_size*sizeof(MbStack));
          stack_table->stack_size[index] = stack_size;
       }
       stack_table->num_stacks = num_stacks;
    } else {
       Boolean multiple_hits = (word_options->window_size > 0);
-      Int4Ptr buffer;
-      BLAST_DiagTablePtr diag_table;
+      Int4* buffer;
+      BLAST_DiagTable* diag_table;
 
       ewp->diag_table = diag_table = 
          BLAST_DiagTableNew(query->length, multiple_hits, 
                             word_options->window_size);
       /* Allocate the buffer to be used for diagonal array. */
       buffer = 
-         (Int4Ptr) calloc(diag_table->diag_array_length, sizeof(DiagStruct));
+         (Int4*) calloc(diag_table->diag_array_length, sizeof(DiagStruct));
       
       if (buffer == NULL)	{
          sfree(ewp);
          return -1;
       }
          
-      diag_table->diag_array= (DiagStructPtr) buffer;
+      diag_table->diag_array= (DiagStruct*) buffer;
       for(i=0;i<diag_table->diag_array_length;i++){
          diag_table->diag_array[i].diag_level=0;
          diag_table->diag_array[i].last_hit = -diag_table->window;
@@ -168,10 +168,10 @@ Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
    return 0;
 }
 
-Boolean BLAST_SaveInitialHit(BlastInitHitListPtr init_hitlist, 
-                  Int4 q_off, Int4 s_off, BlastUngappedDataPtr ungapped_data) 
+Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist, 
+                  Int4 q_off, Int4 s_off, BlastUngappedData* ungapped_data) 
 {
-   BlastInitHSPPtr match_array;
+   BlastInitHSP* match_array;
    Int4 num, num_avail;
 
    num = init_hitlist->total;
@@ -182,7 +182,7 @@ Boolean BLAST_SaveInitialHit(BlastInitHitListPtr init_hitlist,
       if (init_hitlist->do_not_reallocate) 
          return FALSE;
       num_avail *= 2;
-      match_array = (BlastInitHSPPtr) 
+      match_array = (BlastInitHSP*) 
          realloc(match_array, num_avail*sizeof(BlastInitHSP));
       if (!match_array) {
          init_hitlist->do_not_reallocate = TRUE;
@@ -214,22 +214,22 @@ Boolean BLAST_SaveInitialHit(BlastInitHitListPtr init_hitlist,
  *                     initial hits [in] [out]
  */
 static Int2
-MB_ExtendInitialHit(BLAST_SequenceBlkPtr query, 
-   BLAST_SequenceBlkPtr subject, LookupTableWrapPtr lookup,
-   BlastInitialWordParametersPtr word_params, 
-   Int4Ptr* matrix, BLAST_ExtendWordPtr ewp, Int4 q_off, Int4 s_off,
-   BlastInitHitListPtr init_hitlist) 
+MB_ExtendInitialHit(BLAST_SequenceBlk* query, 
+   BLAST_SequenceBlk* subject, LookupTableWrap* lookup,
+   BlastInitialWordParameters* word_params, 
+   Int4** matrix, BLAST_ExtendWord* ewp, Int4 q_off, Int4 s_off,
+   BlastInitHitList* init_hitlist) 
 {
    Int4 index, index1, step;
-   MBLookupTablePtr mb_lt = (MBLookupTablePtr) lookup->lut;
-   MbStackPtr estack;
+   MBLookupTable* mb_lt = (MBLookupTable*) lookup->lut;
+   MbStack* estack;
    Int4 diag, stack_top;
    Int4 window, word_extra_length, scan_step;
    Boolean new_hit, hit_ready, two_hits, do_ungapped_extension;
-   BLAST_DiagTablePtr diag_table = ewp->diag_table;
-   MB_StackTablePtr stack_table = ewp->stack_table;
-   BlastUngappedDataPtr ungapped_data = NULL;
-   BlastInitialWordOptionsPtr word_options = word_params->options;
+   BLAST_DiagTable* diag_table = ewp->diag_table;
+   MB_StackTable* stack_table = ewp->stack_table;
+   BlastUngappedData* ungapped_data = NULL;
+   BlastInitialWordOptions* word_options = word_params->options;
    Int4 s_pos;
 
    window = word_options->window_size;
@@ -242,8 +242,8 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
       (word_options->extend_word_method & EXTEND_WORD_UNGAPPED);
 
    if (diag_table) {
-      DiagStructPtr diag_array = diag_table->diag_array;
-      DiagStructPtr diag_array_elem;
+      DiagStruct* diag_array = diag_table->diag_array;
+      DiagStruct* diag_array_elem;
       Int4 diag_mask;
       Int4 offset, s_pos;
 
@@ -395,8 +395,8 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
       /* Need an extra slot on the stack for this hit */
       if (++stack_top >= stack_table->stack_size[index1]) {
          /* Stack about to overflow - reallocate memory */
-         MbStackPtr ptr;
-         if (!(ptr = (MbStackPtr)realloc(estack,
+         MbStack* ptr;
+         if (!(ptr = (MbStack*)realloc(estack,
                      2*stack_table->stack_size[index1]*sizeof(MbStack)))) {
             return 1;
          } else {
@@ -443,9 +443,9 @@ MB_ExtendInitialHit(BLAST_SequenceBlkPtr query,
  * @param subject_length The length of the subject sequence that has just been
  *        processed [in]
  */
-static Int2 BlastNaExtendWordExit(BLAST_ExtendWordPtr ewp, Int4 subject_length)
+static Int2 BlastNaExtendWordExit(BLAST_ExtendWord* ewp, Int4 subject_length)
 {
-   BLAST_DiagTablePtr diag_table;
+   BLAST_DiagTable* diag_table;
    Int4 diag_array_length, i;
 
    if (!ewp)
@@ -476,7 +476,7 @@ static Int2 BlastNaExtendWordExit(BLAST_ExtendWordPtr ewp, Int4 subject_length)
  * @param subject_length The length of the subject sequence that has just been
  *        processed [in]
  */
-static Int2 MB_ExtendWordExit(BLAST_ExtendWordPtr ewp, Int4 subject_length)
+static Int2 MB_ExtendWordExit(BLAST_ExtendWord* ewp, Int4 subject_length)
 {
    if (!ewp)
       return -1;
@@ -504,7 +504,7 @@ static Int2 MB_ExtendWordExit(BLAST_ExtendWordPtr ewp, Int4 subject_length)
  * @param extra_bytes Number of compressed bytes to compare [in]
  * @return TRUE if sequences are identical, FALSE if mismatch is found.
  */
-static NCBI_INLINE Boolean BlastNaCompareExtraBytes(Uint1Ptr q, Uint1Ptr s, 
+static NCBI_INLINE Boolean BlastNaCompareExtraBytes(Uint1* q, Uint1* s, 
                                                Int4 extra_bytes)
 {
    Int4 index;
@@ -525,7 +525,7 @@ static NCBI_INLINE Boolean BlastNaCompareExtraBytes(Uint1Ptr q, Uint1Ptr s,
  * @return Number of matched bases
 */
 static NCBI_INLINE Uint1 
-BlastNaMiniExtendLeft(Uint1Ptr q, Uint1Ptr s, Uint1 max_left)
+BlastNaMiniExtendLeft(Uint1* q, Uint1* s, Uint1 max_left)
 {
    Uint1 left = 0;
    Uint1 s_val = *s;
@@ -546,7 +546,7 @@ BlastNaMiniExtendLeft(Uint1Ptr q, Uint1Ptr s, Uint1 max_left)
  * @return Number of matched bases
 */
 static NCBI_INLINE Uint1 
-BlastNaMiniExtendRight(Uint1Ptr q, Uint1Ptr s, Uint1 max_right)
+BlastNaMiniExtendRight(Uint1* q, Uint1* s, Uint1 max_right)
 {
    Uint1 right;
    Uint1 s_val = *s;
@@ -562,15 +562,15 @@ BlastNaMiniExtendRight(Uint1Ptr q, Uint1Ptr s, Uint1 max_right)
 
 /* Description in blast_extend.h */
 Boolean
-BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query, 
-   BLAST_SequenceBlkPtr subject, Int4Ptr* matrix, 
+BlastnWordUngappedExtend(BLAST_SequenceBlk* query, 
+   BLAST_SequenceBlk* subject, Int4** matrix, 
    Int4 q_off, Int4 s_off, Int4 cutoff, Int4 X, 
-   BlastUngappedDataPtr* ungapped_data)
+   BlastUngappedData** ungapped_data)
 {
-	Uint1Ptr q;
+	Uint1* q;
 	Int4 sum, score;
 	Uint1 ch;
-	Uint1Ptr subject0, sf, q_beg, q_end, s_end, s, start;
+	Uint1* subject0,* sf,* q_beg,* q_end,* s_end,* s,* start;
 	Int2 remainder, base;
 	Int4 q_avail, s_avail;
 
@@ -614,7 +614,7 @@ BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query,
            return FALSE;
 
 	if (ungapped_data) {
-           *ungapped_data = (BlastUngappedDataPtr) 
+           *ungapped_data = (BlastUngappedData*) 
               malloc(sizeof(BlastUngappedData));
 	   (*ungapped_data)->q_start = q_beg - query->sequence;
 	   (*ungapped_data)->s_start = 
@@ -674,22 +674,22 @@ BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query,
  *                     initial hits [in] [out]
  */
 static Int2
-BlastnExtendInitialHit(BLAST_SequenceBlkPtr query, 
-   BLAST_SequenceBlkPtr subject, LookupTableWrapPtr lookup,
-   BlastInitialWordParametersPtr word_params, 
-   Int4Ptr* matrix, BLAST_ExtendWordPtr ewp, Int4 q_off, Int4 s_end,
-   Int4 s_off, BlastInitHitListPtr init_hitlist)
+BlastnExtendInitialHit(BLAST_SequenceBlk* query, 
+   BLAST_SequenceBlk* subject, LookupTableWrap* lookup,
+   BlastInitialWordParameters* word_params, 
+   Int4** matrix, BLAST_ExtendWord* ewp, Int4 q_off, Int4 s_end,
+   Int4 s_off, BlastInitHitList* init_hitlist)
 {
    Int4 diag, real_diag;
    Int4 s_pos, last_hit;
-   BLAST_DiagTablePtr     diag_table;
-   BlastUngappedDataPtr ungapped_data;
-   BlastInitialWordOptionsPtr word_options = word_params->options;
+   BLAST_DiagTable*     diag_table;
+   BlastUngappedData* ungapped_data;
+   BlastInitialWordOptions* word_options = word_params->options;
    Int4 window_size = word_options->window_size;
    Boolean hit_ready;
    Boolean new_hit = FALSE, second_hit = FALSE;
    Int4 min_step, step;
-   DiagStructPtr diag_array_elem;
+   DiagStruct* diag_array_elem;
    Boolean do_ungapped_extension = 
       (word_options->extend_word_method & EXTEND_WORD_UNGAPPED);
 
@@ -710,11 +710,11 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
    min_step = 0;
    if (!do_ungapped_extension) {
       if (lookup->lut_type == MB_LOOKUP_TABLE) {
-         MBLookupTablePtr lut = (MBLookupTablePtr)lookup->lut;
+         MBLookupTable* lut = (MBLookupTable*)lookup->lut;
          if(!lut->discontiguous)
             min_step = lut->scan_step;
       } else {
-         min_step = ((LookupTablePtr)lookup->lut)->scan_step;
+         min_step = ((LookupTable*)lookup->lut)->scan_step;
       }
    }
 
@@ -767,29 +767,29 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
 }
 
 /* Description in blast_extend.h */
-Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject, 
-		       BLAST_SequenceBlkPtr query,
-		       LookupTableWrapPtr lookup_wrap,
-		       Int4Ptr* matrix,
-		       BlastInitialWordParametersPtr word_params,
-		       BLAST_ExtendWordPtr ewp,
-		       Uint4Ptr q_offsets,
-		       Uint4Ptr s_offsets,
+Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject, 
+		       BLAST_SequenceBlk* query,
+		       LookupTableWrap* lookup_wrap,
+		       Int4** matrix,
+		       BlastInitialWordParameters* word_params,
+		       BLAST_ExtendWord* ewp,
+		       Uint4* q_offsets,
+		       Uint4* s_offsets,
 		       Int4 max_hits,
-		       BlastInitHitListPtr init_hitlist)
+		       BlastInitHitList* init_hitlist)
 {
-   LookupTablePtr lookup = (LookupTablePtr) lookup_wrap->lut;
-   Uint1Ptr s_start = subject->sequence;
-   Uint1Ptr abs_start = s_start;
+   LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
+   Uint1* s_start = subject->sequence;
+   Uint1* abs_start = s_start;
    Int4 i;
-   Uint1Ptr s, s_end;
-   Uint1Ptr q_start = query->sequence;
-   Uint1Ptr q_end = query->sequence + query->length;
+   Uint1* s,* s_end;
+   Uint1* q_start = query->sequence;
+   Uint1* q_end = query->sequence + query->length;
    Int4 hitsfound, total_hits = 0;
    Uint4 word_size, compressed_wordsize, reduced_word_length;
    Uint4 extra_bytes_needed;
    Uint2 extra_bases, left, right;
-   Uint1Ptr q;
+   Uint1* q;
    Int4 start_offset, last_start, next_start, last_end;
    Int4 max_bases;
    Int4 bases_in_last_byte, bases_in_extra_bytes;
@@ -871,12 +871,12 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
  * @return TRUE if extension successful 
  */
 static Boolean 
-BlastNaExactMatchExtend(Uint1Ptr q_start, Uint1Ptr s_start, 
+BlastNaExactMatchExtend(Uint1* q_start, Uint1* s_start, 
    Int4 max_bases_left, Int4 max_bases_right, Int4 max_length, 
-   Boolean extend_partial_byte, Int4Ptr extended_right)
+   Boolean extend_partial_byte, Int4* extended_right)
 {
    Int4 length = 0, extended_left = 0;
-   Uint1Ptr q, s;
+   Uint1* q,* s;
    
    *extended_right = 0;
 
@@ -927,21 +927,21 @@ BlastNaExactMatchExtend(Uint1Ptr q_start, Uint1Ptr s_start,
 }
 
 /* Description in blast_extend.h */
-Int4 MB_WordFinder(BLAST_SequenceBlkPtr subject,
-		   BLAST_SequenceBlkPtr query,
-		   LookupTableWrapPtr lookup,
-		   Int4Ptr* matrix, 
-		   BlastInitialWordParametersPtr word_params,
-		   BLAST_ExtendWordPtr ewp,
-		   Uint4Ptr q_offsets,
-		   Uint4Ptr s_offsets,
+Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
+		   BLAST_SequenceBlk* query,
+		   LookupTableWrap* lookup,
+		   Int4** matrix, 
+		   BlastInitialWordParameters* word_params,
+		   BLAST_ExtendWord* ewp,
+		   Uint4* q_offsets,
+		   Uint4* s_offsets,
 		   Int4 max_hits,
-		   BlastInitHitListPtr init_hitlist)
+		   BlastInitHitList* init_hitlist)
 {
-   BlastInitialWordOptionsPtr word_options = word_params->options;
+   BlastInitialWordOptions* word_options = word_params->options;
    /* Pointer to the beginning of the first word of the subject sequence */
-   MBLookupTablePtr mb_lt = (MBLookupTablePtr) lookup->lut;
-   Uint1Ptr s_start, q_start, q, s;
+   MBLookupTable* mb_lt = (MBLookupTable*) lookup->lut;
+   Uint1* s_start,* q_start,* q,* s;
    Int4 hitsfound=0;
    Int4 hit_counter=0, i;
    Int4 start_offset, next_start, last_start, last_end;
@@ -1024,35 +1024,35 @@ Int4 MB_WordFinder(BLAST_SequenceBlkPtr subject,
 }
 
 /* Description in blast_extend.h */
-Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject, 
-			  BLAST_SequenceBlkPtr query,
-			  LookupTableWrapPtr lookup_wrap, 
-			  Int4Ptr* matrix,
-			  BlastInitialWordParametersPtr word_params,
-			  BLAST_ExtendWordPtr ewp,
-			  Uint4Ptr q_offsets,
-			  Uint4Ptr s_offsets,
+Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject, 
+			  BLAST_SequenceBlk* query,
+			  LookupTableWrap* lookup_wrap, 
+			  Int4** matrix,
+			  BlastInitialWordParameters* word_params,
+			  BLAST_ExtendWord* ewp,
+			  Uint4* q_offsets,
+			  Uint4* s_offsets,
 			  Int4 max_hits,
-			  BlastInitHitListPtr init_hitlist)
+			  BlastInitHitList* init_hitlist)
 {
-   BlastInitialWordOptionsPtr word_options = word_params->options;
-   LookupTablePtr lookup = (LookupTablePtr) lookup_wrap->lut;
-   Uint1Ptr s_start = subject->sequence;
+   BlastInitialWordOptions* word_options = word_params->options;
+   LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
+   Uint1* s_start = subject->sequence;
    Int4 i;
-   Uint1Ptr s, s_end;
-   Uint1Ptr q_start = query->sequence;
+   Uint1* s,* s_end;
+   Uint1* q_start = query->sequence;
    Int4 query_length = query->length;
    Int4 subject_length = subject->length;
    Int4 hitsfound, total_hits = 0;
    Uint4 extra_length, reduced_word_length, min_extra_length;
-   Uint1Ptr q;
+   Uint1* q;
    Int4 start_offset, end_offset, next_start;
    Uint4 max_bases_left, max_bases_right;
    Int4 bases_in_last_byte;
    Boolean variable_wordsize = (Boolean) 
       (word_options->extend_word_method & EXTEND_WORD_VARIABLE_SIZE);
    Int4 extended_right;
-   Uint1Ptr q_tmp, s_tmp;
+   Uint1* q_tmp,* s_tmp;
    Uint4 length;
 
    s_end = subject->sequence + subject_length/COMPRESSION_RATIO;
@@ -1133,7 +1133,7 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject,
 } 
 
 /** Deallocate memory for the diagonal table structure */
-static BLAST_DiagTablePtr BlastDiagTableFree(BLAST_DiagTablePtr diag_table)
+static BLAST_DiagTable* BlastDiagTableFree(BLAST_DiagTable* diag_table)
 {
    if (diag_table) {
       sfree(diag_table->diag_array);
@@ -1143,7 +1143,7 @@ static BLAST_DiagTablePtr BlastDiagTableFree(BLAST_DiagTablePtr diag_table)
 }
 
 /** Deallocate memory for the stack table structure */
-static MB_StackTablePtr MBStackTableFree(MB_StackTablePtr stack_table)
+static MB_StackTable* MBStackTableFree(MB_StackTable* stack_table)
 {
    Int4 index;
 
@@ -1159,7 +1159,7 @@ static MB_StackTablePtr MBStackTableFree(MB_StackTablePtr stack_table)
    return NULL;
 }
 
-BLAST_ExtendWordPtr BlastExtendWordFree(BLAST_ExtendWordPtr ewp)
+BLAST_ExtendWord* BlastExtendWordFree(BLAST_ExtendWord* ewp)
 {
    BlastDiagTableFree(ewp->diag_table);
    MBStackTableFree(ewp->stack_table);

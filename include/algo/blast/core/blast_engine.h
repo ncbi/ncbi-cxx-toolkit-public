@@ -71,17 +71,17 @@ extern "C" {
  */
 Int4 
 BLAST_DatabaseSearchEngine(Uint1 program_number, 
-   const BLAST_SequenceBlkPtr query, const BlastQueryInfoPtr query_info,
-   const BlastSeqSrcNewInfoPtr bssn_info, BLAST_ScoreBlkPtr sbp, 
-   const BlastScoringOptionsPtr score_options, 
-   LookupTableWrapPtr lookup_wrap, 
-   const BlastInitialWordOptionsPtr word_options, 
-   const BlastExtensionOptionsPtr ext_options, 
-   const BlastHitSavingOptionsPtr hit_options,
-   const BlastEffectiveLengthsOptionsPtr eff_len_options,
-   const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseOptionsPtr db_options,
-   BlastResultsPtr results, BlastReturnStatPtr return_stats);
+   const BLAST_SequenceBlk* query, const BlastQueryInfo* query_info,
+   const BlastSeqSrcNewInfo* bssn_info, BLAST_ScoreBlk* sbp, 
+   const BlastScoringOptions* score_options, 
+   LookupTableWrap* lookup_wrap, 
+   const BlastInitialWordOptions* word_options, 
+   const BlastExtensionOptions* ext_options, 
+   const BlastHitSavingOptions* hit_options,
+   const BlastEffectiveLengthsOptions* eff_len_options,
+   const PSIBlastOptions* psi_options, 
+   const BlastDatabaseOptions* db_options,
+   BlastResults* results, BlastReturnStat* return_stats);
 
 /** The high level function performing BLAST comparison of two sequences,
  * after all the setup has been done.
@@ -104,17 +104,17 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
  */
 Int4 
 BLAST_TwoSequencesEngine(Uint1 program_number, 
-   const BLAST_SequenceBlkPtr query, const BlastQueryInfoPtr query_info, 
-   const BLAST_SequenceBlkPtr subject, 
-   BLAST_ScoreBlkPtr sbp, const BlastScoringOptionsPtr score_options, 
-   LookupTableWrapPtr lookup_wrap, 
-   const BlastInitialWordOptionsPtr word_options, 
-   const BlastExtensionOptionsPtr ext_options, 
-   const BlastHitSavingOptionsPtr hit_options, 
-   const BlastEffectiveLengthsOptionsPtr eff_len_options,
-   const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseOptionsPtr db_options,
-   BlastResultsPtr results, BlastReturnStatPtr return_stats);
+   const BLAST_SequenceBlk* query, const BlastQueryInfo* query_info, 
+   const BLAST_SequenceBlk* subject, 
+   BLAST_ScoreBlk* sbp, const BlastScoringOptions* score_options, 
+   LookupTableWrap* lookup_wrap, 
+   const BlastInitialWordOptions* word_options, 
+   const BlastExtensionOptions* ext_options, 
+   const BlastHitSavingOptions* hit_options, 
+   const BlastEffectiveLengthsOptions* eff_len_options,
+   const PSIBlastOptions* psi_options, 
+   const BlastDatabaseOptions* db_options,
+   BlastResults* results, BlastReturnStat* return_stats);
 
 /** Create the lookup table for all query words.
  * @param query The query sequence [in]
@@ -124,10 +124,10 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
  * @param sbp Scoring block containing matrix [in]
  * @param lookup_wrap_ptr The initialized lookup table [out]
  */
-Int2 LookupTableWrapInit(BLAST_SequenceBlkPtr query, 
-        const LookupTableOptionsPtr lookup_options,	
-        ListNodePtr lookup_segments, BLAST_ScoreBlkPtr sbp, 
-        LookupTableWrapPtr* lookup_wrap_ptr);
+Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
+        const LookupTableOptions* lookup_options,	
+        ListNode* lookup_segments, BLAST_ScoreBlk* sbp, 
+        LookupTableWrap** lookup_wrap_ptr);
 
 /** Function to calculate effective query length and db length as well as
  * effective search space. 
@@ -139,47 +139,47 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlkPtr query,
  *                   search spaces for all queries [in] [out]
 */
 Int2 BLAST_CalcEffLengths (Uint1 program_number, 
-   const BlastScoringOptionsPtr scoring_options,
-   const BlastEffectiveLengthsOptionsPtr eff_len_options, 
-   const BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info);
+   const BlastScoringOptions* scoring_options,
+   const BlastEffectiveLengthsOptions* eff_len_options, 
+   const BLAST_ScoreBlk* sbp, BlastQueryInfo* query_info);
 
 /** Gapped extension function pointer type */
 typedef Int2 (*BlastGetGappedScoreType) 
-     (Uint1, BLAST_SequenceBlkPtr, BLAST_SequenceBlkPtr, 
-      BlastGapAlignStructPtr, BlastScoringOptionsPtr,
-      BlastExtensionParametersPtr, BlastHitSavingParametersPtr,
-      BlastInitHitListPtr, BlastHSPListPtr*);
+     (Uint1, BLAST_SequenceBlk*, BLAST_SequenceBlk*, 
+      BlastGapAlignStruct*, BlastScoringOptions*,
+      BlastExtensionParameters*, BlastHitSavingParameters*,
+      BlastInitHitList*, BlastHSPList**);
      
 /** Word finder function pointer type */
 typedef Int4 (*BlastWordFinderType) 
-     (BLAST_SequenceBlkPtr, BLAST_SequenceBlkPtr,
-      LookupTableWrapPtr, Int4Ptr*, BlastInitialWordParametersPtr,
-      BLAST_ExtendWordPtr, Uint4Ptr, Uint4Ptr, Int4, BlastInitHitListPtr);
+     (BLAST_SequenceBlk*, BLAST_SequenceBlk*,
+      LookupTableWrap*, Int4**, BlastInitialWordParameters*,
+      BLAST_ExtendWord*, Uint4*, Uint4*, Int4, BlastInitHitList*);
 
 /** Structure to be passed to BLAST_SearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */
 typedef struct BlastCoreAuxStruct {
 
-   BlastSeqSrcPtr bssp;     /**< Source for subject sequences */
-   BLAST_ExtendWordPtr ewp; /**< Structure for keeping track of diagonal
+   BlastSeqSrc* bssp;     /**< Source for subject sequences */
+   BLAST_ExtendWord* ewp; /**< Structure for keeping track of diagonal
                                information for initial word matches */
    BlastWordFinderType WordFinder; /**< Word finder function pointer */
    BlastGetGappedScoreType GetGappedScore; /**< Gapped extension function
                                               pointer */
-   BlastInitHitListPtr init_hitlist; /**< Placeholder for HSPs after 
+   BlastInitHitList* init_hitlist; /**< Placeholder for HSPs after 
                                         ungapped extension */
-   BlastHSPListPtr hsp_list; /**< Placeholder for HSPs after gapped 
+   BlastHSPList* hsp_list; /**< Placeholder for HSPs after gapped 
                                 extension */
-   Uint4Ptr query_offsets; /**< Placeholder for initial word match query 
+   Uint4* query_offsets; /**< Placeholder for initial word match query 
                               offsets */
-   Uint4Ptr subject_offsets; /**< Placeholder for initial word match  
+   Uint4* subject_offsets; /**< Placeholder for initial word match  
                               subject offsets */
-   Uint1Ptr translation_buffer; /**< Placeholder for translated subject
+   Uint1* translation_buffer; /**< Placeholder for translated subject
                                    sequences */
-   Uint1Ptr translation_table; /**< Translation table for forward strand */
-   Uint1Ptr translation_table_rc; /**< Translation table for reverse 
+   Uint1* translation_table; /**< Translation table for forward strand */
+   Uint1* translation_table_rc; /**< Translation table for reverse 
                                      strand */
-} BlastCoreAuxStruct,* BlastCoreAuxStructPtr;
+} BlastCoreAuxStruct;
 
 #ifdef __cplusplus
 }

@@ -51,8 +51,8 @@ static char const rcsid[] = "$Id$";
  * @param index Lookup table index [out]
  * @return Pointer to the next byte after the end of the word
  */
-static NCBI_INLINE Uint1Ptr BlastNaLookupInitIndex(Int4 length,
-		          const Uint1Ptr word, Int4Ptr index)
+static NCBI_INLINE Uint1* BlastNaLookupInitIndex(Int4 length,
+		          const Uint1* word, Int4* index)
 {
    Int4 i;
    
@@ -71,7 +71,7 @@ static NCBI_INLINE Uint1Ptr BlastNaLookupInitIndex(Int4 length,
  * @return The value of the lookup index for the next word 
  */
 static NCBI_INLINE Int4 BlastNaLookupComputeIndex(Int4 scan_shift, Int4 mask, 
-		      const Uint1Ptr word, Int4 index)
+		      const Uint1* word, Int4 index)
 {
    return (((index)<<scan_shift) & mask) | *(word);  
    
@@ -86,7 +86,7 @@ static NCBI_INLINE Int4 BlastNaLookupComputeIndex(Int4 scan_shift, Int4 mask,
  *        recomputation
  * @return The adjusted value of the lookup index
  */
-static NCBI_INLINE Int4 BlastNaLookupAdjustIndex(Uint1Ptr s, Int4 index, 
+static NCBI_INLINE Int4 BlastNaLookupAdjustIndex(Uint1* s, Int4 index, 
                       Int4 mask, Uint1 bit)
 {
    return (((index)<<bit) & mask) | ((*s)>>(FULL_BYTE_SHIFT-bit));
@@ -94,17 +94,17 @@ static NCBI_INLINE Int4 BlastNaLookupAdjustIndex(Uint1Ptr s, Int4 index,
 }
 
 /* Description in na_lookup.h */
-Int4 BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
-       const BLAST_SequenceBlkPtr subject, Int4 start_offset,
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,  
-       Int4Ptr end_offset)
+Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,  
+       Int4* end_offset)
 {
-   LookupTablePtr lookup = (LookupTablePtr) lookup_wrap->lut;
-   Uint1Ptr s;
-   Uint1Ptr abs_start;
+   LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
+   Uint1* s;
+   Uint1* abs_start;
    Int4  index=0, s_off;
    
-   Int4Ptr lookup_pos;
+   Int4* lookup_pos;
    Int4 num_hits;
    Int4 q_off;
    PV_ARRAY_TYPE *pv_array = lookup->pv;
@@ -123,7 +123,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
    /* NB: s in this function always points to the start of the word!
     */
    if (full_byte_scan) {
-      Uint1Ptr s_end = abs_start + subject->length/COMPRESSION_RATIO - 
+      Uint1* s_end = abs_start + subject->length/COMPRESSION_RATIO - 
          compressed_wordsize;
       for ( ; s <= s_end; s += compressed_scan_step) {
          index = 0;
@@ -141,7 +141,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
                lookup_pos = lookup->thick_backbone[index].payload.entries;
             else
                /* hits live in overflow array */
-               lookup_pos = (Int4Ptr)
+               lookup_pos = (Int4*)
                   (lookup->thick_backbone[index].payload.overflow);
             
             s_off = 
@@ -185,7 +185,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
                lookup_pos = lookup->thick_backbone[adjusted_index].payload.entries;
             else
                /* hits live in overflow array */
-               lookup_pos = (Int4Ptr)
+               lookup_pos = (Int4*)
                  (lookup->thick_backbone[adjusted_index].payload.overflow);
             
             while (num_hits) {
@@ -205,14 +205,14 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
 }
 
 /* Description in na_lookup.h */
-Int4 MB_AG_ScanSubject(const LookupTableWrapPtr lookup_wrap,
-       const BLAST_SequenceBlkPtr subject, Int4 start_offset,
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,  
-       Int4Ptr end_offset)
+Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,  
+       Int4* end_offset)
 {
-   MBLookupTablePtr mb_lt = (MBLookupTablePtr) lookup_wrap->lut;
-   Uint1Ptr s;
-   Uint1Ptr abs_start;
+   MBLookupTable* mb_lt = (MBLookupTable*) lookup_wrap->lut;
+   Uint1* s;
+   Uint1* abs_start;
    Int4  index=0, s_off;
    
    Int4 q_off;
@@ -233,7 +233,7 @@ Int4 MB_AG_ScanSubject(const LookupTableWrapPtr lookup_wrap,
    /* NB: s in this function always points to the start of the word!
     */
    if (full_byte_scan) {
-      Uint1Ptr s_end = abs_start + subject->length/COMPRESSION_RATIO - 
+      Uint1* s_end = abs_start + subject->length/COMPRESSION_RATIO - 
          compressed_wordsize;
       for ( ; s <= s_end; s += compressed_scan_step) {
          BlastNaLookupInitIndex(compressed_wordsize, s, &index);
@@ -285,16 +285,16 @@ Int4 MB_AG_ScanSubject(const LookupTableWrapPtr lookup_wrap,
 }
 
 /* Description in na_lookup.h */
-Int4 BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
-       const BLAST_SequenceBlkPtr subject, Int4 start_offset,
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits, 
-       Int4Ptr end_offset)
+Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits, 
+       Int4* end_offset)
 {
-   Uint1Ptr s;
-   Uint1Ptr abs_start, s_end;
+   Uint1* s;
+   Uint1* abs_start,* s_end;
    Int4  index=0, s_off;
-   LookupTablePtr lookup = (LookupTablePtr) lookup_wrap->lut;
-   Int4Ptr lookup_pos;
+   LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
+   Int4* lookup_pos;
    Int4 num_hits;
    Int4 q_off;
    PV_ARRAY_TYPE *pv_array = lookup->pv;
@@ -327,7 +327,7 @@ Int4 BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
             else
                /* hits live in overflow array */
                lookup_pos = 
-                  (Int4Ptr)(lookup->thick_backbone[index].payload.overflow);
+                  (Int4*)(lookup->thick_backbone[index].payload.overflow);
             
             /* Save the hits offsets */
             s_off = (s - abs_start)*COMPRESSION_RATIO;
@@ -371,7 +371,7 @@ Int4 BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
             else
                /* hits live in overflow array */
                lookup_pos = 
-                  (Int4Ptr)(lookup->thick_backbone[index].payload.overflow);
+                  (Int4*)(lookup->thick_backbone[index].payload.overflow);
             
             /* Save the hits offsets */
             s_off = (s - abs_start)*COMPRESSION_RATIO + bit/2;
@@ -402,7 +402,7 @@ Int4 BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
    return total_hits;
 }
 
-static LookupTablePtr LookupTableDestruct(LookupTablePtr lookup)
+static LookupTable* LookupTableDestruct(LookupTable* lookup)
 {
    sfree(lookup->thick_backbone);
    sfree(lookup->overflow);
@@ -412,14 +412,14 @@ static LookupTablePtr LookupTableDestruct(LookupTablePtr lookup)
 }
 
 /* Description in na_lookup.h */
-LookupTableWrapPtr BlastLookupTableDestruct(LookupTableWrapPtr lookup)
+LookupTableWrap* BlastLookupTableDestruct(LookupTableWrap* lookup)
 {
    if (lookup->lut_type == MB_LOOKUP_TABLE) {
-      lookup->lut = (VoidPtr) 
-         MBLookupTableDestruct((MBLookupTablePtr)lookup->lut);
+      lookup->lut = (void*) 
+         MBLookupTableDestruct((MBLookupTable*)lookup->lut);
    } else {
-      lookup->lut = (VoidPtr) 
-         LookupTableDestruct((LookupTablePtr)lookup->lut);
+      lookup->lut = (void*) 
+         LookupTableDestruct((LookupTable*)lookup->lut);
    }
    sfree(lookup);
    return NULL;
@@ -433,7 +433,7 @@ LookupTableWrapPtr BlastLookupTableDestruct(LookupTableWrapPtr lookup)
  */
 #define BLAST2NA_MASK 0xfc
 static NCBI_INLINE Int2
-Na_LookupComputeIndex(LookupTablePtr lookup, Uint1Ptr word, Int4Ptr index)
+Na_LookupComputeIndex(LookupTable* lookup, Uint1* word, Int4* index)
 {
    Int4 i;
    Int4 wordsize = lookup->reduced_wordsize*COMPRESSION_RATIO; /* i.e. 8 or 4 */
@@ -455,14 +455,14 @@ Na_LookupComputeIndex(LookupTablePtr lookup, Uint1Ptr word, Int4Ptr index)
  * @param w Pointer to the start of a word [in]
  * @param query_offset Offset into the query sequence where this word ends [in]
  */
-static Int4 BlastNaLookupAddWordHit(LookupTablePtr lookup, Uint1Ptr w,
+static Int4 BlastNaLookupAddWordHit(LookupTable* lookup, Uint1* w,
                                     Int4 query_offset)
 {
   Int4 index=0;
   Int4 chain_size = 0; /* Total number of elements in the chain */
   Int4 hits_in_chain = 0; /* Number of occupied elements in the chain, not 
                              including the zeroth and first positions */ 
-  Int4Ptr chain = NULL;
+  Int4* chain = NULL;
 
   /* compute its index */
   if (Na_LookupComputeIndex(lookup, w, &index) == -1)
@@ -510,17 +510,17 @@ static Int4 BlastNaLookupAddWordHit(LookupTablePtr lookup, Uint1Ptr w,
  * @param query The query sequence [in]
  * @param location What part of the query should be indexed? [in]
  */
-Int4 BlastNaLookupIndexQuery(LookupTablePtr lookup, BLAST_SequenceBlkPtr query,
-			ListNodePtr location)
+Int4 BlastNaLookupIndexQuery(LookupTable* lookup, BLAST_SequenceBlk* query,
+			ListNode* location)
 {
-  ListNodePtr loc;
+  ListNode* loc;
   Int4 from, to;
   Int4 offset;
-  Uint1Ptr sequence;
+  Uint1* sequence;
 
   for(loc=location; loc; loc=loc->next) {
-     from = ((DoubleIntPtr) loc->ptr)->i1;
-     to = ((DoubleIntPtr) loc->ptr)->i2;
+     from = ((DoubleInt*) loc->ptr)->i1;
+     to = ((DoubleInt*) loc->ptr)->i2;
      
      sequence = query->sequence + from;
      /* Make the offsets point to the ends of the words */
@@ -549,7 +549,7 @@ Int4 BlastNaLookupIndexQuery(LookupTablePtr lookup, BLAST_SequenceBlkPtr query,
  *        those for the first template by setting a special bit. [in]
  * @return The lookup table index of the discontiguous word [out]
  */
-static NCBI_INLINE Int4 ComputeDiscontiguousIndex(Uint1Ptr subject, Int4 word,
+static NCBI_INLINE Int4 ComputeDiscontiguousIndex(Uint1* subject, Int4 word,
                   Uint1 template_type, Int4 second_template_bit)
 {
    Int4 index;
@@ -609,7 +609,7 @@ static NCBI_INLINE Int4 ComputeDiscontiguousIndex(Uint1Ptr subject, Int4 word,
       break;
    }
 #ifdef USE_HASH_TABLE
-   hash_buf = (Uint1Ptr)&index;
+   hash_buf = (Uint1*)&index;
    CRC32(crc, hash_buf);
    index = (crc>>hash_shift) & hash_mask;
 #endif
@@ -630,12 +630,12 @@ static NCBI_INLINE Int4 ComputeDiscontiguousIndex(Uint1Ptr subject, Int4 word,
  *        template [in]
  * @return The lookup index for the discontiguous word.
 */
-static NCBI_INLINE Int4 ComputeDiscontiguousIndex_1b(const Uint1Ptr word_start, 
+static NCBI_INLINE Int4 ComputeDiscontiguousIndex_1b(const Uint1* word_start, 
                       Int4 word, Uint1 sequence_bit, Uint1 template_type,
                       Int4 second_template_bit)
 {
    Int4 index;
-   Uint1Ptr subject = word_start;
+   Uint1* subject = word_start;
    Uint1 bit;
    Int4 extra_code, tmpval;   
 
@@ -701,7 +701,7 @@ static NCBI_INLINE Int4 ComputeDiscontiguousIndex_1b(const Uint1Ptr word_start,
       break;
    }
 #ifdef USE_HASH_TABLE
-   hash_buf = (Uint1Ptr)&index;
+   hash_buf = (Uint1*)&index;
    CRC32(crc, hash_buf);
    index = (crc>>hash_shift) & hash_mask;
 #endif
@@ -710,18 +710,18 @@ static NCBI_INLINE Int4 ComputeDiscontiguousIndex_1b(const Uint1Ptr word_start,
 }
 
 /* Description in na_lookup.h */
-Int4 MB_ScanSubject(const LookupTableWrapPtr lookup,
-       const BLAST_SequenceBlkPtr subject, Int4 start_offset, 
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,
-       Int4Ptr end_offset) 
+Int4 MB_ScanSubject(const LookupTableWrap* lookup,
+       const BLAST_SequenceBlk* subject, Int4 start_offset, 
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,
+       Int4* end_offset) 
 {
-   Uint1Ptr abs_start, s_end;
-   Uint1Ptr s;
+   Uint1* abs_start,* s_end;
+   Uint1* s;
    Int4 hitsfound = 0;
    Uint4 query_offset, subject_offset;
    Int4 index;
-   MBLookupTablePtr mb_lt = (MBLookupTablePtr) lookup->lut;
-   Uint4Ptr q_ptr = q_offsets, s_ptr = s_offsets;
+   MBLookupTable* mb_lt = (MBLookupTable*) lookup->lut;
+   Uint4* q_ptr = q_offsets,* s_ptr = s_offsets;
    PV_ARRAY_TYPE *pv_array = mb_lt->pv_array;
    Uint1 pv_array_bts = mb_lt->pv_array_bts;
 
@@ -768,18 +768,18 @@ Int4 MB_ScanSubject(const LookupTableWrapPtr lookup,
 }
 
 /* Description in na_lookup.h */
-Int4 MB_DiscWordScanSubject(const LookupTableWrapPtr lookup, 
-       const BLAST_SequenceBlkPtr subject, Int4 start_offset,
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits, 
-       Int4Ptr end_offset)
+Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup, 
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits, 
+       Int4* end_offset)
 {
-   Uint1Ptr s;
-   Uint1Ptr s_start, abs_start, s_end;
+   Uint1* s;
+   Uint1* s_start,* abs_start,* s_end;
    Int4 hitsfound = 0;
    Uint4 query_offset, subject_offset;
    Int4 word, index, index2=0;
-   MBLookupTablePtr mb_lt = (MBLookupTablePtr) lookup->lut;
-   Uint4Ptr q_ptr = q_offsets, s_ptr = s_offsets;
+   MBLookupTable* mb_lt = (MBLookupTable*) lookup->lut;
+   Uint4* q_ptr = q_offsets,* s_ptr = s_offsets;
    Boolean full_byte_scan = mb_lt->full_byte_scan;
    Boolean two_templates = mb_lt->two_templates;
    Uint1 template_type = mb_lt->template_type;

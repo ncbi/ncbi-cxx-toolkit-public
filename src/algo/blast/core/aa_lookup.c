@@ -35,34 +35,34 @@ static char const rcsid[] = "$Id$";
 
 static NCBI_INLINE Int4 ComputeWordScore(Int4 ** matrix,
 				    Int4 wordsize,
-				    const Uint1Ptr w1,
-				    const Uint1Ptr w2,
+				    const Uint1* w1,
+				    const Uint1* w2,
 				    Boolean *exact);
 
 static NCBI_INLINE void  _ComputeIndex(Int4 wordsize,
 				  Int4 charsize,
 				  Int4 mask,
-				  const Uint1Ptr word,
-				  Int4Ptr index);
+				  const Uint1* word,
+				  Int4* index);
 
 static NCBI_INLINE void  _ComputeIndexIncremental(Int4 wordsize,
 					     Int4 charsize,
 					     Int4 mask,
-					     const Uint1Ptr word,
-					     Int4Ptr index);
+					     const Uint1* word,
+					     Int4* index);
 
-Int4 BlastAaLookupNew(const LookupTableOptionsPtr opt,
-		      LookupTablePtr * lut)
+Int4 BlastAaLookupNew(const LookupTableOptions* opt,
+		      LookupTable* * lut)
 {
   return LookupTableNew(opt, lut, TRUE);
 }
 
-Int4 LookupTableNew(const LookupTableOptionsPtr opt,
-		      LookupTablePtr * lut,
+Int4 LookupTableNew(const LookupTableOptions* opt,
+		      LookupTable* * lut,
 		      Boolean is_protein)
 {
-   LookupTablePtr lookup = *lut = 
-      (LookupTablePtr) malloc(sizeof(LookupTable));
+   LookupTable* lookup = *lut = 
+      (LookupTable*) malloc(sizeof(LookupTable));
 
   if (is_protein) {
     lookup->charsize = ilog2(opt->alphabet_size) + 1;
@@ -91,13 +91,13 @@ Int4 LookupTableNew(const LookupTableOptionsPtr opt,
   lookup->neighbor_matches=0;
   lookup->threshold = opt->threshold;
   lookup->thin_backbone = 
-     (Int4Ptr*) calloc(lookup->backbone_size , sizeof(Int4Ptr));
+     (Int4**) calloc(lookup->backbone_size , sizeof(Int4*));
 
   return 0;
 }
 
-Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup, /* in/out: the lookup table */
-                             Uint1Ptr w,
+Int4 BlastAaLookupAddWordHit(LookupTable* lookup, /* in/out: the lookup table */
+                             Uint1* w,
 			     Int4 query_offset)
 {
   Int4 index=0;
@@ -115,7 +115,7 @@ Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup, /* in/out: the lookup table 
     {
       chain_size = 8;
       hits_in_chain = 0;
-      chain = (Int4Ptr) malloc( chain_size * sizeof(Int4) );
+      chain = (Int4*) malloc( chain_size * sizeof(Int4) );
       chain[0] = chain_size;
       chain[1] = hits_in_chain;
       lookup->thin_backbone[index] = chain;
@@ -132,7 +132,7 @@ Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup, /* in/out: the lookup table 
   if ( (hits_in_chain + 2) == chain_size )
     {
       chain_size = chain_size * 2;
-      chain = (Int4Ptr) realloc(chain, chain_size * sizeof(Int4) );
+      chain = (Int4*) realloc(chain, chain_size * sizeof(Int4) );
       lookup->thin_backbone[index] = chain;
       chain[0] = chain_size;
     }
@@ -143,7 +143,7 @@ Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup, /* in/out: the lookup table 
 
   return 0;
 }
-Int4 _BlastAaLookupFinalize(LookupTablePtr lookup)
+Int4 _BlastAaLookupFinalize(LookupTable* lookup)
 {
   Int4 i;
   Int4 overflow_cells_needed=0;
@@ -175,7 +175,7 @@ Int4 _BlastAaLookupFinalize(LookupTablePtr lookup)
  lookup->longest_chain = longest_chain;
 
  /* allocate the overflow array */
- lookup->overflow = (Int4Ptr) malloc( overflow_cells_needed * sizeof(Int4) );
+ lookup->overflow = (Int4*) malloc( overflow_cells_needed * sizeof(Int4) );
 
 /* for each position in the lookup table backbone, */
 for(i=0;i<lookup->backbone_size;i++)
@@ -252,8 +252,8 @@ for(i=0;i<lookup->backbone_size;i++)
 static NCBI_INLINE void  _ComputeIndex(Int4 wordsize,
 				  Int4 charsize,
 				  Int4 mask,
-				  const Uint1Ptr word,
-				  Int4Ptr index)
+				  const Uint1* word,
+				  Int4* index)
 {
   Int4 i;
 
@@ -276,29 +276,29 @@ static NCBI_INLINE void  _ComputeIndex(Int4 wordsize,
 static NCBI_INLINE void  _ComputeIndexIncremental(Int4 wordsize,
 					     Int4 charsize,
 					     Int4 mask,
-					     const Uint1Ptr word,
-					     Int4Ptr index)
+					     const Uint1* word,
+					     Int4* index)
 {
   *index = ((*index << charsize) | word[wordsize - 1]) & mask;
   return;
 }
 
 
-Int4 BlastAaScanSubject(const LookupTableWrapPtr lookup_wrap,
+Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk *subject,
-                        Int4Ptr offset,
+                        Int4* offset,
                         Uint4 * query_offsets,
                         Uint4 * subject_offsets,
                         Int4 array_size
 		   )
 {
   Int4 index=0;
-  Uint1Ptr s=NULL;
-  Uint1Ptr s_first=NULL;
-  Uint1Ptr s_last=NULL;
+  Uint1* s=NULL;
+  Uint1* s_first=NULL;
+  Uint1* s_last=NULL;
   Int4 numhits = 0; /* number of hits found for a given subject offset */
   Int4 totalhits = 0; /* cumulative number of hits found */
-  LookupTablePtr lookup = lookup_wrap->lut;
+  LookupTable* lookup = lookup_wrap->lut;
 
   s_first = subject->sequence + *offset;
   s_last  = subject->sequence + subject->length - lookup->wordsize; 
@@ -326,7 +326,7 @@ Int4 BlastAaScanSubject(const LookupTableWrapPtr lookup_wrap,
 	  if ( numhits <= (array_size - totalhits) )
 	    /* ...then copy the hits to the destination */
 	    {
-	      Int4Ptr src;
+	      Int4* src;
 	      Int4 i;
 	      if ( numhits <= HITS_ON_BACKBONE )
 		/* hits live in thick_backbone */
@@ -363,10 +363,10 @@ Int4 BlastAaScanSubject(const LookupTableWrapPtr lookup_wrap,
 }
 
 
-Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
+Int4 BlastAaLookupIndexQueries(LookupTable* lookup,
 			       Int4 ** matrix,
-			       BLAST_SequenceBlkPtr query,
-			       ListNodePtr locations,
+			       BLAST_SequenceBlk* query,
+			       ListNode* locations,
 			       Int4 num_queries)
 {
   Int4 i;
@@ -391,19 +391,19 @@ Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
   return 0;
 }
 
-Int4 _BlastAaLookupIndexQuery(LookupTablePtr lookup,
+Int4 _BlastAaLookupIndexQuery(LookupTable* lookup,
 			      Int4 ** matrix,
-			      BLAST_SequenceBlkPtr query,
-			      ListNodePtr location)
+			      BLAST_SequenceBlk* query,
+			      ListNode* location)
 {
-  ListNodePtr loc;
+  ListNode* loc;
   Int4 from, to;
   Int4 w;
 
   for(loc=location; loc; loc=loc->next)
     {
-      from = ((DoubleIntPtr) loc->ptr)->i1;
-      to = ((DoubleIntPtr) loc->ptr)->i2 - lookup->wordsize;
+      from = ((DoubleInt*) loc->ptr)->i1;
+      to = ((DoubleInt*) loc->ptr)->i2 - lookup->wordsize;
 
       for(w=from;w<=to;w++)
 	{
@@ -416,7 +416,7 @@ Int4 _BlastAaLookupIndexQuery(LookupTablePtr lookup,
   return 0;
 }
 
-Int4 MakeAllWordSequence(LookupTablePtr lookup)
+Int4 MakeAllWordSequence(LookupTable* lookup)
 {
   Int4 k,n;
   Int4 i;
@@ -430,7 +430,7 @@ Int4 MakeAllWordSequence(LookupTablePtr lookup)
   
   lookup->neighbors_length = len;
 
-  lookup->neighbors = (Uint1Ptr) malloc( len );
+  lookup->neighbors = (Uint1*) malloc( len );
 
   /* generate the de Bruijn sequence */
 
@@ -444,13 +444,13 @@ Int4 MakeAllWordSequence(LookupTablePtr lookup)
   return 0;
 }
 
-Int4 AddNeighboringWords(LookupTablePtr lookup, Int4 ** matrix, BLAST_SequenceBlkPtr query, Int4 offset)
+Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk* query, Int4 offset)
 {
-  Uint1Ptr s = lookup->neighbors;
-  Uint1Ptr s_end=s + lookup->neighbors_length - lookup->wordsize;
+  Uint1* s = lookup->neighbors;
+  Uint1* s_end=s + lookup->neighbors_length - lookup->wordsize;
   Boolean exact;
   Int4 score;
-  Uint1Ptr w = query->sequence + offset;
+  Uint1* w = query->sequence + offset;
   
   if (lookup->threshold == 0)
     {
@@ -499,8 +499,8 @@ Int4 AddNeighboringWords(LookupTablePtr lookup, Int4 ** matrix, BLAST_SequenceBl
  */
 static NCBI_INLINE Int4 ComputeWordScore(Int4 ** matrix,
 				    Int4 wordsize,
-				    const Uint1Ptr w1, /* the first word */
-				    const Uint1Ptr w2, /* the second word */
+				    const Uint1* w1, /* the first word */
+				    const Uint1* w2, /* the second word */
 				    Boolean *exact)
 {
 Int4 i;

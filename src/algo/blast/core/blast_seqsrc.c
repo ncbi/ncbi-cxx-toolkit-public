@@ -35,7 +35,7 @@ static char const rcsid[] = "$Id$";
 #include <blast_seqsrc.h>
 
 /** Complete type definition of Blast Sequence Source ADT */
-typedef struct BlastSeqSrc {
+struct BlastSeqSrc {
 
     BlastSeqSrcConstructor NewFnPtr;       /**< Constructor */
     BlastSeqSrcDestructor  DeleteFnPtr;    /**< Destructor */
@@ -48,16 +48,16 @@ typedef struct BlastSeqSrc {
 
     void*           DataStructure;  /**< ADT holding the sequence data */
 
-} BlastSeqSrc;
+};
 
-BlastSeqSrcPtr BlastSeqSrcNew(BlastSeqSrcNewInfoPtr bssn_info)
+BlastSeqSrc* BlastSeqSrcNew(BlastSeqSrcNewInfo* bssn_info)
 {
-    BlastSeqSrcPtr retval = NULL;
+    BlastSeqSrc* retval = NULL;
 
     if (!bssn_info)
         return NULL;
 
-    if ( !(retval = (BlastSeqSrcPtr) calloc(1, sizeof(BlastSeqSrc))))
+    if ( !(retval = (BlastSeqSrc*) calloc(1, sizeof(BlastSeqSrc))))
         return NULL;
 
     /* Save the constructor and invoke it */
@@ -69,12 +69,12 @@ BlastSeqSrcPtr BlastSeqSrcNew(BlastSeqSrcNewInfoPtr bssn_info)
     return retval;
 }
 
-BlastSeqSrcPtr BlastSeqSrcFree(BlastSeqSrcPtr bssp)
+BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp)
 {
     BlastSeqSrcDestructor destructor_fnptr = NULL;
 
     if (!bssp)
-        return (BlastSeqSrcPtr) NULL;
+        return (BlastSeqSrc*) NULL;
 
     /* This could leave a memory leak if destructor function pointer is not
      * initialized! It is the implementation's resposibility to provide this */
@@ -84,7 +84,7 @@ BlastSeqSrcPtr BlastSeqSrcFree(BlastSeqSrcPtr bssp)
 	return NULL;
       }
 
-    return (BlastSeqSrcPtr) (*destructor_fnptr)(bssp);
+    return (BlastSeqSrc*) (*destructor_fnptr)(bssp);
 }
 
 #define DECLARE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
@@ -105,12 +105,12 @@ void Set##member(data_structure_type var, member_type arg) \
 { if (var) var->member = arg; }
 
 /* Note there's no ; after these macros! */
-DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrcPtr)
-DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrcPtr)
+DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrc*)
+DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*)
 
-DECLARE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrcPtr)
-DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrcPtr)
-DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrcPtr)
-DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrcPtr)
-DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrcPtr)
-DECLARE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrcPtr)
+DECLARE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*)
+DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*)
+DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*)
+DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*)
+DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*)
+DECLARE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrc*)

@@ -192,10 +192,10 @@ typedef struct MBLookupTable {
                                   template */
    Int4 scan_step;     /**< Step size for scanning the database */
    Boolean full_byte_scan; 
-   Int4Ptr hashtable;   /**< Array of positions              */
-   Int4Ptr hashtable2;  /**< Array of positions for second template */
-   Int4Ptr next_pos;    /**< Extra positions stored here     */
-   Int4Ptr next_pos2;   /**< Extra positions for the second template */
+   Int4* hashtable;   /**< Array of positions              */
+   Int4* hashtable2;  /**< Array of positions for second template */
+   Int4* next_pos;    /**< Extra positions stored here     */
+   Int4* next_pos2;   /**< Extra positions for the second template */
    Int4 num_unique_pos_added; /**< Number of positions added to the l.t. */
    PV_ARRAY_TYPE *pv_array;/**< Presence vector, used for quick presence 
                               check */
@@ -203,7 +203,7 @@ typedef struct MBLookupTable {
                           the backbone */
    Int4 longest_chain; /**< Largest number of query positions for a given 
                           word */
-} MBLookupTable,* MBLookupTablePtr;
+} MBLookupTable;
 
 /**
  * Create the lookup table for Mega BLAST 
@@ -214,14 +214,14 @@ typedef struct MBLookupTable {
  * @param mb_lt_ptr Pointer to the lookup table to be created [out]
  * @param lookup_options Options for lookup table creation [in]
  */
-Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
-                       MBLookupTablePtr* mb_lt_ptr,
-                       LookupTableOptionsPtr lookup_options);
+Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
+                       MBLookupTable** mb_lt_ptr,
+                       LookupTableOptions* lookup_options);
 
 /** 
  * Deallocate memory used by the Mega BLAST lookup table
  */
-MBLookupTablePtr MBLookupTableDestruct(MBLookupTablePtr mb_lt);
+MBLookupTable* MBLookupTableDestruct(MBLookupTable* mb_lt);
 
 /* General types of discontiguous word templates */   
 typedef enum {

@@ -30,31 +30,31 @@ static char const rcsid[] = "$Id$";
 
 #include <aa_ungapped.h>
 
-static NCBI_INLINE Int4 DiagCheckLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset);
+static NCBI_INLINE Int4 DiagCheckLevel(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset);
 
-static NCBI_INLINE Int4 DiagUpdateLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset, Int4 subject_extension);
+static NCBI_INLINE Int4 DiagUpdateLevel(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset, Int4 subject_extension);
 
-static NCBI_INLINE Int4 DiagGetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset);
+static NCBI_INLINE Int4 DiagGetLastHit(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset);
 
-static NCBI_INLINE Int4 DiagSetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset);
+static NCBI_INLINE Int4 DiagSetLastHit(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset);
 
-static void BlastAaSaveInitHsp(BlastInitHitListPtr ungapped_hsps, Int4 q_start, Int4 s_start, Int4 q_off, Int4 s_off, Int4 len, Int4 score);
+static void BlastAaSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, Int4 q_off, Int4 s_off, Int4 len, Int4 score);
 
 /*
  * this is currently somewhat broken since the diagonal array is NULL
  * and the offset arrays are allocated for every subject sequence.  this
  * must be factored out!
  */
-Int4 BlastAaWordFinder(BLAST_SequenceBlkPtr subject,
-                       BLAST_SequenceBlkPtr query,
-                       LookupTableWrapPtr lut_wrap,
-                       Int4Ptr* matrix,
-                       BlastInitialWordParametersPtr word_params,
-                       BLAST_ExtendWordPtr ewp,
-		       Uint4Ptr query_offsets,
-		       Uint4Ptr subject_offsets,
+Int4 BlastAaWordFinder(BLAST_SequenceBlk* subject,
+                       BLAST_SequenceBlk* query,
+                       LookupTableWrap* lut_wrap,
+                       Int4** matrix,
+                       BlastInitialWordParameters* word_params,
+                       BLAST_ExtendWord* ewp,
+		       Uint4* query_offsets,
+		       Uint4* subject_offsets,
 		       Int4 offset_array_size,
-                       BlastInitHitListPtr init_hitlist)
+                       BlastInitHitList* init_hitlist)
 {
   Int4 hits=0;
 
@@ -92,19 +92,19 @@ Int4 BlastAaWordFinder(BLAST_SequenceBlkPtr subject,
   return hits;
 }
 
-Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlkPtr subject,
-			      const BLAST_SequenceBlkPtr query,
-			      const LookupTableWrapPtr lookup_wrap,
-			      BLAST_DiagTablePtr diag,
+Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
+			      const BLAST_SequenceBlk* query,
+			      const LookupTableWrap* lookup_wrap,
+			      BLAST_DiagTable* diag,
 			      Int4 ** matrix,
 			      Int4 cutoff,
 			      Int4 dropoff,
 			      Uint4 * query_offsets,
 			      Uint4 * subject_offsets,
 			      Int4 array_size,
-			      BlastInitHitListPtr ungapped_hsps)
+			      BlastInitHitList* ungapped_hsps)
 {
-   LookupTablePtr lookup = lookup_wrap->lut;
+   LookupTable* lookup = lookup_wrap->lut;
    Int4 i;
    Int4 hits=0;
    Int4 totalhits=0;
@@ -115,7 +115,7 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlkPtr subject,
    Int4 window;
    Int4 last_hit, level, diff;
    Int4 diag_offset, diag_coord, diag_mask;
-   DiagStructPtr diag_array;
+   DiagStruct* diag_array;
 
    if (diag == NULL)
       return -1;
@@ -194,19 +194,19 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlkPtr subject,
    return totalhits;
 }
 
-Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlkPtr subject,
-			      const BLAST_SequenceBlkPtr query,
-			      const LookupTableWrapPtr lookup_wrap,
-			      BLAST_DiagTablePtr diag,
+Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
+			      const BLAST_SequenceBlk* query,
+			      const LookupTableWrap* lookup_wrap,
+			      BLAST_DiagTable* diag,
 			      Int4 ** matrix,
 			      Int4 cutoff,
 			      Int4 dropoff,
 			      Uint4 * query_offsets,
 			      Uint4 * subject_offsets,
 			      Int4 array_size,
-                              BlastInitHitListPtr ungapped_hsps)
+                              BlastInitHitList* ungapped_hsps)
 {
-   LookupTablePtr lookup = lookup_wrap->lut;
+   LookupTable* lookup = lookup_wrap->lut;
    Int4 hits=0;
    Int4 totalhits=0;
    Int4 first_offset = 0;
@@ -215,7 +215,7 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlkPtr subject,
    Int4 i;
    Int4 score;
    Int4 diag_offset, diag_coord, diag_mask, diff;
-   DiagStructPtr diag_array;
+   DiagStruct* diag_array;
 
    if (!diag) 
       return -1;
@@ -274,7 +274,7 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlkPtr subject,
  * @return the subject offset of the previous hit
  */
 
-static NCBI_INLINE Int4 DiagGetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset)
+static NCBI_INLINE Int4 DiagGetLastHit(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset)
 {
   Int4 diag_coord;
 
@@ -294,7 +294,7 @@ static NCBI_INLINE Int4 DiagGetLastHit(BLAST_DiagTablePtr diag, Int4 query_offse
  * @return Zero.
  */
 
-static NCBI_INLINE Int4 DiagSetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset)
+static NCBI_INLINE Int4 DiagSetLastHit(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset)
 {
   Int4 diag_coord;
   
@@ -318,7 +318,7 @@ static NCBI_INLINE Int4 DiagSetLastHit(BLAST_DiagTablePtr diag, Int4 query_offse
  */
 
 
-static NCBI_INLINE Int4 DiagCheckLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset)
+static NCBI_INLINE Int4 DiagCheckLevel(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset)
 {
   Int4 diag_coord;
   Int4 level;
@@ -340,12 +340,12 @@ static NCBI_INLINE Int4 DiagCheckLevel(BLAST_DiagTablePtr diag, Int4 query_offse
 }
 
 static void 
-BlastAaSaveInitHsp(BlastInitHitListPtr ungapped_hsps, Int4 q_start, Int4 s_start, 
+BlastAaSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, 
    Int4 q_off, Int4 s_off, Int4 len, Int4 score)
 {
-  BlastUngappedDataPtr ungapped_data = NULL;
+  BlastUngappedData* ungapped_data = NULL;
 
-  ungapped_data = (BlastUngappedDataPtr) malloc(sizeof(BlastUngappedData));
+  ungapped_data = (BlastUngappedData*) malloc(sizeof(BlastUngappedData));
 
   ungapped_data->q_start = q_start;
   ungapped_data->s_start = s_start;
@@ -359,18 +359,18 @@ BlastAaSaveInitHsp(BlastInitHitListPtr ungapped_hsps, Int4 q_start, Int4 s_start
 }
 
 Int4 BlastAaExtendRight(Int4 ** matrix,
-			const BLAST_SequenceBlkPtr subject,
-			const BLAST_SequenceBlkPtr query,
+			const BLAST_SequenceBlk* subject,
+			const BLAST_SequenceBlk* query,
 			Int4 s_off,
 			Int4 q_off,
 			Int4 dropoff,
-			Int4Ptr displacement)
+			Int4* displacement)
 {
   Int4 i, n, best_i = -1;
   Int4 score=0;
   Int4 maxscore=0;
 
-  Uint1Ptr s, q;
+  Uint1* s,* q;
   n = MIN( subject->length - s_off , query->length - q_off );
 
   s=subject->sequence + s_off;
@@ -393,18 +393,18 @@ Int4 BlastAaExtendRight(Int4 ** matrix,
 }
 
 Int4 BlastAaExtendLeft(Int4 ** matrix,
-		       const BLAST_SequenceBlkPtr subject,
-		       const BLAST_SequenceBlkPtr query,
+		       const BLAST_SequenceBlk* subject,
+		       const BLAST_SequenceBlk* query,
 		       Int4 s_off,
 		       Int4 q_off,
 		       Int4 dropoff,
-		       Int4Ptr displacement)
+		       Int4* displacement)
 {
    Int4 i, n, best_i;
    Int4 score = 0;
    Int4 maxscore = 0;
    
-   Uint1Ptr s, q;
+   Uint1* s,* q;
    
    n = MIN( s_off , q_off );
    best_i = n + 1;
@@ -428,14 +428,14 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
 }
 
 Int4 BlastAaExtendOneHit(Int4 ** matrix,
-                         const BLAST_SequenceBlkPtr subject,
-                         const BLAST_SequenceBlkPtr query,
+                         const BLAST_SequenceBlk* subject,
+                         const BLAST_SequenceBlk* query,
                          Int4 s_off,
                          Int4 q_off,
                          Int4 dropoff,
-			 Int4Ptr hsp_q,
-			 Int4Ptr hsp_s,
-			 Int4Ptr hsp_len)
+			 Int4* hsp_q,
+			 Int4* hsp_s,
+			 Int4* hsp_len)
 {
   Int4 left_score, right_score;
   Int4 left_disp, right_disp;
@@ -454,15 +454,15 @@ Int4 BlastAaExtendOneHit(Int4 ** matrix,
 }
 
 Int4 BlastAaExtendTwoHit(Int4 ** matrix,
-                         const BLAST_SequenceBlkPtr subject,
-                         const BLAST_SequenceBlkPtr query,
+                         const BLAST_SequenceBlk* subject,
+                         const BLAST_SequenceBlk* query,
                          Int4 s_left_off,
                          Int4 s_right_off,
                          Int4 q_right_off,
                          Int4 dropoff,
-			 Int4Ptr hsp_q,
-			 Int4Ptr hsp_s,
-			 Int4Ptr hsp_len)
+			 Int4* hsp_q,
+			 Int4* hsp_s,
+			 Int4* hsp_len)
 {
    Int4 left_d, right_d = 0; /* left and right displacements */
    Int4 left_score = 0, right_score = 0; /* left and right scores */
@@ -504,7 +504,7 @@ Int4 BlastAaExtendTwoHit(Int4 ** matrix,
  * @return Zero.
  */
 
-static NCBI_INLINE Int4 DiagUpdateLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset, Int4 subject_extension)
+static NCBI_INLINE Int4 DiagUpdateLevel(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset, Int4 subject_extension)
 {
   Int4 diag_coord;
 
@@ -543,12 +543,12 @@ static NCBI_INLINE Int4 DiagUpdateLevel(BLAST_DiagTablePtr diag, Int4 query_offs
  *
  */
 
-Int4 DiagNew(BLAST_DiagTablePtr * diag, Int4 window_size, Int4 longest_seq)
+Int4 DiagNew(BLAST_DiagTable* * diag, Int4 window_size, Int4 longest_seq)
 {
-  *diag = (BLAST_DiagTablePtr) malloc(sizeof(BLAST_DiagTable));
+  *diag = (BLAST_DiagTable*) malloc(sizeof(BLAST_DiagTable));
 
   (*diag)->diag_array_length = 2 * longest_seq;
-  (*diag)->diag_array = (DiagStructPtr) 
+  (*diag)->diag_array = (DiagStruct*) 
      malloc( (*diag)->diag_array_length * sizeof(DiagStruct));
   (*diag)->window = window_size;
   DiagClear(*diag);
@@ -556,7 +556,7 @@ Int4 DiagNew(BLAST_DiagTablePtr * diag, Int4 window_size, Int4 longest_seq)
 return 0;
 }
 
-Int4 DiagUpdate(BLAST_DiagTablePtr diag, Int4 length)
+Int4 DiagUpdate(BLAST_DiagTable* diag, Int4 length)
 {
   if (diag == NULL)
     return 0;
@@ -573,7 +573,7 @@ Int4 DiagUpdate(BLAST_DiagTablePtr diag, Int4 length)
 }
 
 
-Int4 DiagClear(BLAST_DiagTablePtr diag)
+Int4 DiagClear(BLAST_DiagTable* diag)
 {
   Int4 i,n;
 
@@ -590,7 +590,7 @@ Int4 DiagClear(BLAST_DiagTablePtr diag)
   return 0;
 }
 
-Int4 DiagFree(BLAST_DiagTablePtr diag)
+Int4 DiagFree(BLAST_DiagTable* diag)
 {
   if (diag == NULL)
     return 0;

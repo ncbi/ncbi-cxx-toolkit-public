@@ -47,8 +47,8 @@ BlastGetVirtualOIDList PROTO((ReadDBFILEPtr rdfp_chain));
 #endif
 
 /** Deallocates all memory in BlastCoreAuxStruct */
-static BlastCoreAuxStructPtr 
-BlastCoreAuxStructFree(BlastCoreAuxStructPtr aux_struct)
+static BlastCoreAuxStruct* 
+BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
 {
    BlastExtendWordFree(aux_struct->ewp);
    BLAST_InitHitListDestruct(aux_struct->init_hitlist);
@@ -71,12 +71,12 @@ BlastCoreAuxStructFree(BlastCoreAuxStructPtr aux_struct)
  *                       tblastn only [in]
  */
 static void TranslateHSPsToDNAPCoord(Uint1 program, 
-        BlastInitHitListPtr init_hitlist, BlastQueryInfoPtr query_info,
+        BlastInitHitList* init_hitlist, BlastQueryInfo* query_info,
         Int2 subject_frame, Int4 subject_length)
 {
-   BlastInitHSPPtr init_hsp;
+   BlastInitHSP* init_hsp;
    Int4 index, context, frame;
-   Int4Ptr context_offsets = query_info->context_offsets;
+   Int4* context_offsets = query_info->context_offsets;
    
    for (index = 0; index < init_hitlist->total; ++index) {
       init_hsp = &init_hitlist->init_hsp_array[index];
@@ -118,34 +118,34 @@ static void TranslateHSPsToDNAPCoord(Uint1 program,
  * too long, it can be split into several chunks. 
  */
 static Int2
-BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query, 
-   BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject, 
-   LookupTableWrapPtr lookup, BlastGapAlignStructPtr gap_align, 
-   const BlastScoringOptionsPtr score_options, 
-   BlastInitialWordParametersPtr word_params, 
-   BlastExtensionParametersPtr ext_params, 
-   BlastHitSavingParametersPtr hit_params, 
-   const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseOptionsPtr db_options,
-   BlastReturnStatPtr return_stats,
-   BlastCoreAuxStructPtr aux_struct,
-   BlastHSPListPtr* hsp_list_out)
+BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query, 
+   BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
+   LookupTableWrap* lookup, BlastGapAlignStruct* gap_align, 
+   const BlastScoringOptions* score_options, 
+   BlastInitialWordParameters* word_params, 
+   BlastExtensionParameters* ext_params, 
+   BlastHitSavingParameters* hit_params, 
+   const PSIBlastOptions* psi_options, 
+   const BlastDatabaseOptions* db_options,
+   BlastReturnStat* return_stats,
+   BlastCoreAuxStruct* aux_struct,
+   BlastHSPList** hsp_list_out)
 {
-   BlastInitHitListPtr init_hitlist = aux_struct->init_hitlist;
-   BlastHSPListPtr hsp_list = aux_struct->hsp_list;
-   BLAST_ExtendWordPtr ewp = aux_struct->ewp;
-   Uint4Ptr query_offsets = aux_struct->query_offsets;
-   Uint4Ptr subject_offsets = aux_struct->subject_offsets;
-   Uint1Ptr translation_buffer;
-   Int4Ptr frame_offsets;
+   BlastInitHitList* init_hitlist = aux_struct->init_hitlist;
+   BlastHSPList* hsp_list = aux_struct->hsp_list;
+   BLAST_ExtendWord* ewp = aux_struct->ewp;
+   Uint4* query_offsets = aux_struct->query_offsets;
+   Uint4* subject_offsets = aux_struct->subject_offsets;
+   Uint1* translation_buffer;
+   Int4* frame_offsets;
    Int4 num_chunks, chunk, total_subject_length, offset;
-   BlastHitSavingOptionsPtr hit_options = hit_params->options;
-   BlastHSPListPtr combined_hsp_list;
+   BlastHitSavingOptions* hit_options = hit_params->options;
+   BlastHSPList* combined_hsp_list;
    Int2 status = 0;
    Boolean translated_subject;
    Int2 context, first_context, last_context;
    Int4 orig_length = subject->length, prot_length = 0;
-   Uint1Ptr orig_sequence = subject->sequence;
+   Uint1* orig_sequence = subject->sequence;
 
    translated_subject = (program_number == blast_type_tblastn
                          || program_number == blast_type_tblastx
@@ -282,9 +282,9 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query,
 }
 
 static Int2 
-FillReturnXDropoffsInfo(BlastReturnStatPtr return_stats, 
-   BlastInitialWordParametersPtr word_params, 
-   BlastExtensionParametersPtr ext_params)
+FillReturnXDropoffsInfo(BlastReturnStat* return_stats, 
+   BlastInitialWordParameters* word_params, 
+   BlastExtensionParameters* ext_params)
 {
    if (!return_stats)
       return -1;
@@ -298,9 +298,9 @@ FillReturnXDropoffsInfo(BlastReturnStatPtr return_stats,
 }
 
 Int2 BLAST_CalcEffLengths (Uint1 program_number, 
-   const BlastScoringOptionsPtr scoring_options,
-   const BlastEffectiveLengthsOptionsPtr eff_len_options, 
-   const BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info)
+   const BlastScoringOptions* scoring_options,
+   const BlastEffectiveLengthsOptions* eff_len_options, 
+   const BLAST_ScoreBlk* sbp, BlastQueryInfo* query_info)
 {
    Nlm_FloatHi alpha, beta; /*alpha and beta for new scoring system */
    Int4 min_query_length;   /* lower bound on query length. */
@@ -309,8 +309,8 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    Int4 index;		/* loop index. */
    Int4	db_num_seqs;	/* number of sequences in database. */
    Int8	db_length;	/* total length of database. */
-   BLAST_KarlinBlkPtr *kbp_ptr; /* Array of Karlin block pointers */
-   BLAST_KarlinBlkPtr kbp; /* Karlin-Blk pointer from ScoreBlk. */
+   BLAST_KarlinBlk* *kbp_ptr; /* Array of Karlin block pointers */
+   BLAST_KarlinBlk* kbp; /* Karlin-Blk pointer from ScoreBlk. */
    Int4 query_length;   /* length of an individual query sequence */
    Int8 effective_length, effective_db_length; /* effective lengths of 
                                                   query and database */
@@ -322,7 +322,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    if (sbp == NULL || eff_len_options == NULL)
       return 1;
 
-   /* use values in BlastEffectiveLengthsOptionsPtr */
+   /* use values in BlastEffectiveLengthsOptions* */
    db_length = eff_len_options->db_length;
    if (program_number == blast_type_tblastn || 
        program_number == blast_type_tblastx)
@@ -419,20 +419,20 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
  */
 static Int2 
 BLAST_SetUpAuxStructures(Uint1 program_number,
-   const BlastSeqSrcNewInfoPtr bssn_info,
-   const BlastScoringOptionsPtr scoring_options,
-   const BlastEffectiveLengthsOptionsPtr eff_len_options,
-   LookupTableWrapPtr lookup_wrap,	
-   const BlastInitialWordOptionsPtr word_options,
-   const BlastExtensionOptionsPtr ext_options,
-   const BlastHitSavingOptionsPtr hit_options,
-   BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
-   BLAST_ScoreBlkPtr sbp, Uint4 subject_length, 
-   BlastGapAlignStructPtr* gap_align, 
-   BlastInitialWordParametersPtr* word_params,
-   BlastExtensionParametersPtr* ext_params,
-   BlastHitSavingParametersPtr* hit_params,
-   BlastCoreAuxStructPtr* aux_struct_ptr)
+   const BlastSeqSrcNewInfo* bssn_info,
+   const BlastScoringOptions* scoring_options,
+   const BlastEffectiveLengthsOptions* eff_len_options,
+   LookupTableWrap* lookup_wrap,	
+   const BlastInitialWordOptions* word_options,
+   const BlastExtensionOptions* ext_options,
+   const BlastHitSavingOptions* hit_options,
+   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+   BLAST_ScoreBlk* sbp, Uint4 subject_length, 
+   BlastGapAlignStruct** gap_align, 
+   BlastInitialWordParameters** word_params,
+   BlastExtensionParameters** ext_params,
+   BlastHitSavingParameters** hit_params,
+   BlastCoreAuxStruct** aux_struct_ptr)
 {
    Int2 status = 0;
    Boolean blastp = (lookup_wrap->lut_type == AA_LOOKUP_TABLE);
@@ -440,11 +440,11 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    Boolean ag_blast = (Boolean)
       (word_options->extend_word_method & EXTEND_WORD_AG);
    Int4 offset_array_size = 0;
-   BLAST_ExtendWordPtr ewp;
-   BlastCoreAuxStructPtr aux_struct;
+   BLAST_ExtendWord* ewp;
+   BlastCoreAuxStruct* aux_struct;
    Uint4 max_subject_length;
 
-   *aux_struct_ptr = aux_struct = (BlastCoreAuxStructPtr)
+   *aux_struct_ptr = aux_struct = (BlastCoreAuxStruct*)
       calloc(1, sizeof(BlastCoreAuxStruct));
 
    /* Initialize the BlastSeqSrc */
@@ -489,7 +489,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    if (mb_lookup) {
       aux_struct->WordFinder = MB_WordFinder;
       offset_array_size = OFFSET_ARRAY_SIZE + 
-         ((MBLookupTablePtr)lookup_wrap->lut)->longest_chain;
+         ((MBLookupTable*)lookup_wrap->lut)->longest_chain;
    } else {
       if (blastp) {
          aux_struct->WordFinder = BlastAaWordFinder;
@@ -499,13 +499,13 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
          aux_struct->WordFinder = BlastNaWordFinder;
       }
       offset_array_size = OFFSET_ARRAY_SIZE + 
-         ((LookupTablePtr)lookup_wrap->lut)->longest_chain;
+         ((LookupTable*)lookup_wrap->lut)->longest_chain;
    }
 
    aux_struct->query_offsets = 
-      (Uint4Ptr) malloc(offset_array_size * sizeof(Uint4));
+      (Uint4*) malloc(offset_array_size * sizeof(Uint4));
    aux_struct->subject_offsets = 
-      (Uint4Ptr) malloc(offset_array_size * sizeof(Uint4));
+      (Uint4*) malloc(offset_array_size * sizeof(Uint4));
 
    aux_struct->init_hitlist = BLAST_InitHitListNew();
    aux_struct->hsp_list = BlastHSPListNew();
@@ -515,8 +515,8 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
 
 #ifdef THREADS_IMPLEMENTED
 static Boolean 
-BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop, 
-   Int4Ptr id_list, Int4Ptr id_list_number, BlastThrInfoPtr thr_info)
+BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4* start, Int4* stop, 
+   Int4* id_list, Int4* id_list_number, BlastThrInfo* thr_info)
 {
     Boolean done=FALSE;
     OIDListPtr virtual_oidlist = NULL;
@@ -615,9 +615,9 @@ BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop,
 }
 
 #define BLAST_DB_CHUNK_SIZE 1024
-static BlastThrInfoPtr BLAST_ThrInfoNew(ReadDBFILEPtr rdfp)
+static BlastThrInfo* BLAST_ThrInfoNew(ReadDBFILEPtr rdfp)
 {
-   BlastThrInfoPtr thr_info;
+   BlastThrInfo* thr_info;
    
    thr_info = calloc(1, sizeof(BlastThrInfo));
    thr_info->db_chunk_size = BLAST_DB_CHUNK_SIZE;
@@ -626,7 +626,7 @@ static BlastThrInfoPtr BLAST_ThrInfoNew(ReadDBFILEPtr rdfp)
    return thr_info;
 }
 
-static void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info)
+static void BLAST_ThrInfoFree(BlastThrInfo* thr_info)
 {
     if (thr_info == NULL)
 	return;
@@ -641,31 +641,31 @@ static void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info)
 
 Int4 
 BLAST_DatabaseSearchEngine(Uint1 program_number, 
-   const BLAST_SequenceBlkPtr query, const BlastQueryInfoPtr query_info,
-   const BlastSeqSrcNewInfoPtr bssn_info,  BLAST_ScoreBlkPtr sbp,
-   const BlastScoringOptionsPtr score_options, 
-   LookupTableWrapPtr lookup_wrap,
-   const BlastInitialWordOptionsPtr word_options, 
-   const BlastExtensionOptionsPtr ext_options, 
-   const BlastHitSavingOptionsPtr hit_options,
-   const BlastEffectiveLengthsOptionsPtr eff_len_options,
-   const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseOptionsPtr db_options,
-   BlastResultsPtr results, BlastReturnStatPtr return_stats)
+   const BLAST_SequenceBlk* query, const BlastQueryInfo* query_info,
+   const BlastSeqSrcNewInfo* bssn_info,  BLAST_ScoreBlk* sbp,
+   const BlastScoringOptions* score_options, 
+   LookupTableWrap* lookup_wrap,
+   const BlastInitialWordOptions* word_options, 
+   const BlastExtensionOptions* ext_options, 
+   const BlastHitSavingOptions* hit_options,
+   const BlastEffectiveLengthsOptions* eff_len_options,
+   const PSIBlastOptions* psi_options, 
+   const BlastDatabaseOptions* db_options,
+   BlastResults* results, BlastReturnStat* return_stats)
 {
-   BlastCoreAuxStructPtr aux_struct = NULL;
-   BlastThrInfoPtr thr_info = NULL;
+   BlastCoreAuxStruct* aux_struct = NULL;
+   BlastThrInfo* thr_info = NULL;
    Int4 start = 0, stop = 0, index;
-   Int4Ptr oid_list = NULL;
+   Int4* oid_list = NULL;
    Boolean use_oid_list = FALSE;
 #ifdef THREADS_IMPLEMENTED
    Int4 oid, oid_list_length = 0; /* Subject ordinal id in the database */
 #endif
-   BlastHSPListPtr hsp_list; 
-   BlastInitialWordParametersPtr word_params;
-   BlastExtensionParametersPtr ext_params;
-   BlastHitSavingParametersPtr hit_params;
-   BlastGapAlignStructPtr gap_align;
+   BlastHSPList* hsp_list; 
+   BlastInitialWordParameters* word_params;
+   BlastExtensionParameters* ext_params;
+   BlastHitSavingParameters* hit_params;
+   BlastGapAlignStruct* gap_align;
    GetSeqArg seq_arg;
    Int2 status = 0;
    
@@ -751,24 +751,24 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
 
 Int4 
 BLAST_TwoSequencesEngine(Uint1 program_number, 
-   const BLAST_SequenceBlkPtr query, const BlastQueryInfoPtr query_info, 
-   const BLAST_SequenceBlkPtr subject, 
-   BLAST_ScoreBlkPtr sbp, const BlastScoringOptionsPtr score_options, 
-   LookupTableWrapPtr lookup_wrap,
-   const BlastInitialWordOptionsPtr word_options, 
-   const BlastExtensionOptionsPtr ext_options, 
-   const BlastHitSavingOptionsPtr hit_options, 
-   const BlastEffectiveLengthsOptionsPtr eff_len_options,
-   const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseOptionsPtr db_options,
-   BlastResultsPtr results, BlastReturnStatPtr return_stats)
+   const BLAST_SequenceBlk* query, const BlastQueryInfo* query_info, 
+   const BLAST_SequenceBlk* subject, 
+   BLAST_ScoreBlk* sbp, const BlastScoringOptions* score_options, 
+   LookupTableWrap* lookup_wrap,
+   const BlastInitialWordOptions* word_options, 
+   const BlastExtensionOptions* ext_options, 
+   const BlastHitSavingOptions* hit_options, 
+   const BlastEffectiveLengthsOptions* eff_len_options,
+   const PSIBlastOptions* psi_options, 
+   const BlastDatabaseOptions* db_options,
+   BlastResults* results, BlastReturnStat* return_stats)
 {
-   BlastCoreAuxStructPtr aux_struct = NULL;
-   BlastHSPListPtr hsp_list; 
-   BlastHitSavingParametersPtr hit_params; 
-   BlastInitialWordParametersPtr word_params; 
-   BlastExtensionParametersPtr ext_params;
-   BlastGapAlignStructPtr gap_align;
+   BlastCoreAuxStruct* aux_struct = NULL;
+   BlastHSPList* hsp_list; 
+   BlastHitSavingParameters* hit_params; 
+   BlastInitialWordParameters* word_params; 
+   BlastExtensionParameters* ext_params;
+   BlastGapAlignStruct* gap_align;
    Int2 status = 0;
 
    if (!subject)
@@ -816,37 +816,37 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    return status;
 }
 
-Int2 LookupTableWrapInit(BLAST_SequenceBlkPtr query, 
-        const LookupTableOptionsPtr lookup_options,	
-        ListNodePtr lookup_segments, BLAST_ScoreBlkPtr sbp, 
-        LookupTableWrapPtr* lookup_wrap_ptr)
+Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
+        const LookupTableOptions* lookup_options,	
+        ListNode* lookup_segments, BLAST_ScoreBlk* sbp, 
+        LookupTableWrap** lookup_wrap_ptr)
 {
-   LookupTableWrapPtr lookup_wrap;
+   LookupTableWrap* lookup_wrap;
 
    /* Construct the lookup table. */
    *lookup_wrap_ptr = lookup_wrap = 
-      (LookupTableWrapPtr) calloc(1, sizeof(LookupTableWrap));
+      (LookupTableWrap*) calloc(1, sizeof(LookupTableWrap));
    lookup_wrap->lut_type = lookup_options->lut_type;
 
    switch ( lookup_options->lut_type ) {
    case AA_LOOKUP_TABLE:
-      BlastAaLookupNew(lookup_options, (LookupTablePtr *)
+      BlastAaLookupNew(lookup_options, (LookupTable* *)
                        &lookup_wrap->lut);
-      BlastAaLookupIndexQueries( (LookupTablePtr) lookup_wrap->lut,
+      BlastAaLookupIndexQueries( (LookupTable*) lookup_wrap->lut,
                                  sbp->matrix, query, lookup_segments, 1);
-      _BlastAaLookupFinalize((LookupTablePtr) lookup_wrap->lut);
+      _BlastAaLookupFinalize((LookupTable*) lookup_wrap->lut);
       break;
    case MB_LOOKUP_TABLE:
       MB_LookupTableNew(query, lookup_segments, 
-         (MBLookupTablePtr *) &(lookup_wrap->lut), lookup_options);
+         (MBLookupTable* *) &(lookup_wrap->lut), lookup_options);
       break;
    case NA_LOOKUP_TABLE:
       LookupTableNew(lookup_options, 
-         (LookupTablePtr *) &(lookup_wrap->lut), FALSE);
+         (LookupTable* *) &(lookup_wrap->lut), FALSE);
 	    
-      BlastNaLookupIndexQuery((LookupTablePtr) lookup_wrap->lut, query,
+      BlastNaLookupIndexQuery((LookupTable*) lookup_wrap->lut, query,
                               lookup_segments);
-      _BlastAaLookupFinalize((LookupTablePtr) lookup_wrap->lut);
+      _BlastAaLookupFinalize((LookupTable*) lookup_wrap->lut);
       break;
    default:
       {

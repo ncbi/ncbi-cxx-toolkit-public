@@ -49,11 +49,11 @@ static char const rcsid[] = "$Id$";
 static int
 score_compare_hsps(const void* v1, const void* v2)
 {
-   BlastHSPPtr h1, h2;
-   BlastHSPPtr* hp1,* hp2;
+   BlastHSP* h1,* h2;
+   BlastHSP** hp1,** hp2;
    
-   hp1 = (BlastHSPPtr*) v1;
-   hp2 = (BlastHSPPtr*) v2;
+   hp1 = (BlastHSP**) v1;
+   hp2 = (BlastHSP**) v2;
    h1 = *hp1;
    h2 = *hp2;
    
@@ -83,11 +83,11 @@ score_compare_hsps(const void* v1, const void* v2)
 */
 #define CONTAINED_IN_HSP(a,b,c,d,e,f) (((a <= c && b >= c) && (d <= f && e >= f)) ? TRUE : FALSE)
 
-static void BLASTCheckHSPInclusion(BlastHSPPtr *hsp_array, Int4 hspcnt, 
+static void BLASTCheckHSPInclusion(BlastHSP* *hsp_array, Int4 hspcnt, 
                                    Boolean is_ooframe)
 {
    Int4 index, index1;
-   BlastHSPPtr hsp, hsp1;
+   BlastHSP* hsp,* hsp1;
    
    for (index = 0; index < hspcnt; index++) {
       hsp = hsp_array[index];
@@ -147,11 +147,11 @@ static void BLASTCheckHSPInclusion(BlastHSPPtr *hsp_array, Int4 hspcnt,
  * ambiguity characters. Such a change can lead to 'strange' results from ALIGN. 
 */
 static Boolean
-BLAST_CheckStartForGappedAlignment (BlastHSPPtr hsp, Uint1Ptr query, 
-                                    Uint1Ptr subject, BLAST_ScoreBlkPtr sbp)
+BLAST_CheckStartForGappedAlignment (BlastHSP* hsp, Uint1* query, 
+                                    Uint1* subject, BLAST_ScoreBlk* sbp)
 {
    Int4 index1, score, start, end, width;
-   Uint1Ptr query_var, subject_var;
+   Uint1* query_var,* subject_var;
    Boolean positionBased = (sbp->posMatrix != NULL);
    
    width = MIN((hsp->query.gapped_start-hsp->query.offset), HSP_MAX_WINDOW/2);
@@ -183,11 +183,11 @@ BLAST_CheckStartForGappedAlignment (BlastHSPPtr hsp, Uint1Ptr query,
  * functions to start the gapped alignments.
 */
 static Int4 
-BLAST_GetStartForGappedAlignment (BlastHSPPtr hsp, Uint1Ptr query, 
-                                  Uint1Ptr subject, BLAST_ScoreBlkPtr sbp)
+BLAST_GetStartForGappedAlignment (BlastHSP* hsp, Uint1* query, 
+                                  Uint1* subject, BLAST_ScoreBlk* sbp)
 {
    Int4 index1, max_offset, score, max_score, hsp_end;
-   Uint1Ptr query_var, subject_var;
+   Uint1* query_var,* subject_var;
    Boolean positionBased = (sbp->posMatrix != NULL);
    
    if (hsp->query.length <= HSP_MAX_WINDOW) {
@@ -235,14 +235,14 @@ BLAST_GetStartForGappedAlignment (BlastHSPPtr hsp, Uint1Ptr query,
 }
 
 static Int2
-BlastHSPGetNumIdentical(Uint1Ptr query, Uint1Ptr subject, BlastHSPPtr hsp,
-   Boolean gapped_calculation, Int4Ptr num_ident_ptr, Int4Ptr align_length_ptr)
+BlastHSPGetNumIdentical(Uint1* query, Uint1* subject, BlastHSP* hsp,
+   Boolean gapped_calculation, Int4* num_ident_ptr, Int4* align_length_ptr)
 {
    Int4 i, num_ident, align_length, q_off, s_off;
    Int2 context;
-   Uint1Ptr q, s;
-   GapEditBlockPtr gap_info;
-   GapEditScriptPtr esp;
+   Uint1* q,* s;
+   GapEditBlock* gap_info;
+   GapEditScript* esp;
 
    gap_info = hsp->gap_info;
 
@@ -296,13 +296,13 @@ BlastHSPGetNumIdentical(Uint1Ptr query, Uint1Ptr subject, BlastHSPPtr hsp,
 }
 
 static Int2
-BlastOOFGetNumIdentical(Uint1Ptr query_seq, Uint1Ptr subject_seq, 
-   BlastHSPPtr hsp, Int4Ptr num_ident_ptr, Int4Ptr align_length_ptr)
+BlastOOFGetNumIdentical(Uint1* query_seq, Uint1* subject_seq, 
+   BlastHSP* hsp, Int4* num_ident_ptr, Int4* align_length_ptr)
 {
    Int4 i, num_ident, align_length, q_off, s_off;
    Int2 context;
-   Uint1Ptr q, s;
-   GapEditScriptPtr esp;
+   Uint1* q,* s;
+   GapEditScript* esp;
 
    if (!hsp->gap_info)
       return -1;
@@ -381,24 +381,24 @@ BlastOOFGetNumIdentical(Uint1Ptr query_seq, Uint1Ptr subject_seq,
  * @param db_options Options containing database genetic code string [in]
  */
 static Int2
-BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list, 
-   BLAST_SequenceBlkPtr query_blk, BLAST_SequenceBlkPtr subject_blk, 
-   BlastQueryInfoPtr query_info,
-   BlastGapAlignStructPtr gap_align, BLAST_ScoreBlkPtr sbp, 
-   BlastScoringOptionsPtr score_options,
-   BlastHitSavingParametersPtr hit_params,
-   const BlastDatabaseOptionsPtr db_options)
+BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list, 
+   BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
+   BlastQueryInfo* query_info,
+   BlastGapAlignStruct* gap_align, BLAST_ScoreBlk* sbp, 
+   BlastScoringOptions* score_options,
+   BlastHitSavingParameters* hit_params,
+   const BlastDatabaseOptions* db_options)
 {
    Int4 index, index1, index2;
    Boolean hsp_start_is_contained, hsp_end_is_contained, do_not_do;
-   BlastHSPPtr hsp, hsp1=NULL, hsp2;
-   Uint1Ptr query, subject, subject_start = NULL;
+   BlastHSP* hsp,* hsp1=NULL,* hsp2;
+   Uint1* query,* subject,* subject_start = NULL;
    Int4 query_length, subject_length, subject_length_orig=0;
    Int4 max_start = MAX_DBSEQ_LEN / 2, start_shift;
-   BlastHSPPtr* hsp_array;
+   BlastHSP** hsp_array;
    Int4 q_start, s_start, max_offset;
    Boolean keep;
-   BlastHitSavingOptionsPtr hit_options = hit_params->options;
+   BlastHitSavingOptions* hit_options = hit_params->options;
    Int4 min_score_to_keep = hit_params->cutoff_score;
    Int4 align_length;
    /** THE FOLLOWING HAS TO BE PASSED IN THE ARGUMENTS!!!!! 
@@ -410,10 +410,10 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
    Boolean translate_subject = 
       (program_number == blast_type_tblastn ||
        program_number == blast_type_psitblastn);   
-   Uint1Ptr translation_buffer;
-   Int4Ptr frame_offsets;
-   Uint1Ptr nucl_sequence = NULL;
-   BLAST_KarlinBlkPtr* kbp;
+   Uint1* translation_buffer;
+   Int4* frame_offsets;
+   Uint1* nucl_sequence = NULL;
+   BLAST_KarlinBlk** kbp;
 
    if (hsp_list->hspcnt == 0) {
       return 0;
@@ -703,7 +703,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPListPtr hsp_list,
     
     new_hspcnt = BlastHSPArrayPurge(hsp_array, hsp_list->hspcnt);
     
-    qsort(hsp_array,new_hspcnt,sizeof(BlastHSPPtr), score_compare_hsps);
+    qsort(hsp_array,new_hspcnt,sizeof(BlastHSP*), score_compare_hsps);
     
     /* Remove extra HSPs if there is a user proveded limit on the number 
        of HSPs per database sequence */
@@ -746,19 +746,19 @@ static Uint1 GetTracebackEncoding(Uint1 program_number)
    return encoding;
 }
 
-Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results, 
-        BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
-        const BlastSeqSrcPtr bssp, BlastGapAlignStructPtr gap_align,
-        BlastScoringOptionsPtr score_options,
-        BlastExtensionParametersPtr ext_params,
-        BlastHitSavingParametersPtr hit_params,
-        const BlastDatabaseOptionsPtr db_options)
+Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results, 
+        BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+        const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
+        BlastScoringOptions* score_options,
+        BlastExtensionParameters* ext_params,
+        BlastHitSavingParameters* hit_params,
+        const BlastDatabaseOptions* db_options)
 {
    Int2 status = 0;
    Int4 query_index, subject_index;
-   BlastHitListPtr hit_list;
-   BlastHSPListPtr hsp_list;
-   BLAST_ScoreBlkPtr sbp;
+   BlastHitList* hit_list;
+   BlastHSPList* hsp_list;
+   BLAST_ScoreBlk* sbp;
    Uint1 encoding;
    GetSeqArg seq_arg;
    
@@ -812,20 +812,20 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results,
 }
 
 Int2 BLAST_TwoSequencesTraceback(Uint1 program_number, 
-        BlastResultsPtr results, 
-        BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
-        BLAST_SequenceBlkPtr subject, 
-        BlastGapAlignStructPtr gap_align,
-        BlastScoringOptionsPtr score_options,
-        BlastExtensionParametersPtr ext_params,
-        BlastHitSavingParametersPtr hit_params,
-        const BlastDatabaseOptionsPtr db_options)
+        BlastResults* results, 
+        BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+        BLAST_SequenceBlk* subject, 
+        BlastGapAlignStruct* gap_align,
+        BlastScoringOptions* score_options,
+        BlastExtensionParameters* ext_params,
+        BlastHitSavingParameters* hit_params,
+        const BlastDatabaseOptions* db_options)
 {
    Int2 status = 0;
    Int4 query_index;
-   BlastHitListPtr hit_list;
-   BlastHSPListPtr hsp_list;
-   BLAST_ScoreBlkPtr sbp;
+   BlastHitList* hit_list;
+   BlastHSPList* hsp_list;
+   BLAST_ScoreBlk* sbp;
    Uint1 encoding=ERROR_ENCODING;
    Boolean db_is_na;
    

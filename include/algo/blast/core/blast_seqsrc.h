@@ -39,17 +39,17 @@ extern "C" {
 #endif
 
 /** This incomplete type is the only handle to the Blast Sequence Source ADT */
-typedef struct BlastSeqSrc* BlastSeqSrcPtr;
+typedef struct BlastSeqSrc BlastSeqSrc;
 
 /** Function pointer typedef to create a new BlastSeqSrc structure.
  * First argument is a pointer to the structure to be populated (allocated for
  * client implementations), second argument should be typecast'd to the 
  * correct type by user-defined constructor function */
-typedef BlastSeqSrcPtr (*BlastSeqSrcConstructor) (BlastSeqSrcPtr, void*);
+typedef BlastSeqSrc* (*BlastSeqSrcConstructor) (BlastSeqSrc*, void*);
 
 /** Function pointer typedef to deallocate a BlastSeqSrc structure.
  * Argument is the BlastSeqSrc structure to free, always returns NULL. */
-typedef BlastSeqSrcPtr (*BlastSeqSrcDestructor) (BlastSeqSrcPtr);
+typedef BlastSeqSrc* (*BlastSeqSrcDestructor) (BlastSeqSrc*);
 
 /** Function pointer typedef to return a 4-byte integer.
  * First argument is the BlastSeqSrc structure used, second argument is
@@ -81,8 +81,8 @@ typedef struct GetSeqArg {
     Uint1 encoding;
     /** Sequence to return, if NULL, it should allocated by GetSeqBlkFnPtr, else
      * its contents are freed and the structure is reused [out]*/
-    BLAST_SequenceBlkPtr seq;
-} GetSeqArg, *GetSeqArgPtr;
+    BLAST_SequenceBlk* seq;
+} GetSeqArg;
 
 /* Return values from GetSeqBlkFnPtr */
 
@@ -96,7 +96,7 @@ typedef struct BlastSeqSrcNewInfo {
     BlastSeqSrcConstructor constructor; /**< User-defined function to initialize
                                           a BlastSeqSrc structure */
     void* ctor_argument;                /**< Argument to the above function */
-} BlastSeqSrcNewInfo, *BlastSeqSrcNewInfoPtr;
+} BlastSeqSrcNewInfo;
 
 /** Allocates memory for a BlastSeqSrc structure and then invokes the
  * constructor function defined in its first argument, passing the 
@@ -105,7 +105,7 @@ typedef struct BlastSeqSrcNewInfo {
  * @param bssn_info Structure defining constructor and its argument to be
  *        invoked from this function [in]
  */
-BlastSeqSrcPtr BlastSeqSrcNew(BlastSeqSrcNewInfoPtr bssn_info);
+BlastSeqSrc* BlastSeqSrcNew(BlastSeqSrcNewInfo* bssn_info);
 
 /** Frees the BlastSeqSrc structure by invoking the destructor function set by
  * the user-defined constructor function when the structure is initialized
@@ -114,7 +114,7 @@ BlastSeqSrcPtr BlastSeqSrcNew(BlastSeqSrcNewInfoPtr bssn_info);
  * @param bssp BlastSeqSrc to free [in]
  * @return NULL
  */
-BlastSeqSrcPtr BlastSeqSrcFree(BlastSeqSrcPtr bssp);
+BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp);
 
 /** Convenience macros call function pointers (TODO: needs to be more robust)
  * Currently, this defines the API */
@@ -139,15 +139,15 @@ member_type Get##member(data_structure_type var)
 #define DEFINE_MUTATOR(member_type, member, data_structure_type) \
 void Set##member(data_structure_type var, member_type arg) \
 
-DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrcPtr);
-DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrcPtr);
+DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrc*);
+DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*);
 
-DEFINE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrcPtr);
-DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrcPtr);
-DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrcPtr);
-DEFINE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrcPtr);
-DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrcPtr);
-DEFINE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrcPtr);
+DEFINE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*);
+DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*);
+DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*);
+DEFINE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*);
+DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*);
+DEFINE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrc*);
 
 #ifdef __cplusplus
 }

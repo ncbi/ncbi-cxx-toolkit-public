@@ -58,17 +58,17 @@ typedef struct Seg
    int begin;
    int end;
    struct Seg *next;
-  } Seg,* SegPtr;
+  } Seg;
 
 typedef struct Alpha
   {
    Int4 alphabet;
    Int4 alphasize;
    FloatHi lnalphasize;
-   Int4Ptr alphaindex;
+   Int4* alphaindex;
    unsigned char* alphaflag;
-   CharPtr alphachar;
-  } Alpha,* AlphaPtr;
+   Char* alphachar;
+  } Alpha;
 
 typedef struct SegParameters
   {
@@ -80,14 +80,14 @@ typedef struct SegParameters
    Boolean overlaps;	/* merge overlapping pieces if TRUE. */
    Int4 maxtrim;
    Int4 maxbogus;
-   AlphaPtr palpha;
-  } SegParameters,* SegParametersPtr;
+   Alpha* palpha;
+  } SegParameters;
 
 typedef struct Sequence
   {
    struct Sequence* parent;
-   CharPtr seq;
-   AlphaPtr palpha;
+   Char* seq;
+   Alpha* palpha;
    Int4 start;
    Int4 length;
    Int4 bogus;
@@ -95,13 +95,13 @@ typedef struct Sequence
    Int4* composition;
    Int4* state;
    FloatHi entropy;
-  } Sequence,* SequencePtr;
+  } Sequence;
 
-SegParametersPtr SegParametersNewAa (void);
-void SegParametersFree(SegParametersPtr sparamsp);
+SegParameters* SegParametersNewAa (void);
+void SegParametersFree(SegParameters* sparamsp);
 
-Int2 SeqBufferSeg (Uint1Ptr sequence, Int4 length, Int4 offset,
-                   SegParametersPtr sparamsp, BlastSeqLocPtr* seg_locs);
+Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
+                   SegParameters* sparamsp, BlastSeqLoc** seg_locs);
 
 #ifdef __cplusplus
 }

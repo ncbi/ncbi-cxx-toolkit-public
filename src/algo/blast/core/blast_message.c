@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.8  2003/07/31 00:32:37  camacho
+ * Eliminated Ptr notation
+ *
  * Revision 1.7  2003/07/30 16:32:02  madden
  * Use ansi functions when possible
  *
@@ -67,8 +70,8 @@ static char const rcsid[] = "$Id$";
 	Deallocates message memory.
 */
 
-Blast_MessagePtr 
-Blast_MessageFree(Blast_MessagePtr blast_msg)
+Blast_Message* 
+Blast_MessageFree(Blast_Message* blast_msg)
 {
 	if (blast_msg == NULL)
 		return NULL;
@@ -84,13 +87,13 @@ Blast_MessageFree(Blast_MessagePtr blast_msg)
 */
 
 Int2 
-Blast_MessageWrite(Blast_MessagePtr *blast_msg, Int4 severity, Int4 code,
+Blast_MessageWrite(Blast_Message* *blast_msg, Int4 severity, Int4 code,
 	Int4 subcode, const Char *message)
 {
 	if (blast_msg == NULL)
 		return 1;
 
-	*blast_msg = (Blast_MessagePtr) malloc(sizeof(Blast_Message));
+	*blast_msg = (Blast_Message*) malloc(sizeof(Blast_Message));
 
 	(*blast_msg)->severity = severity;
 	(*blast_msg)->code = code;
@@ -105,7 +108,7 @@ Blast_MessageWrite(Blast_MessagePtr *blast_msg, Int4 severity, Int4 code,
 */
 
 Int2 
-Blast_MessagePost(Blast_MessagePtr blast_msg)
+Blast_MessagePost(Blast_Message* blast_msg)
 {
 	if (blast_msg == NULL)
 		return 1;

@@ -77,8 +77,8 @@ void __sfree(void** x); /* implemented in lib/util.c */
 
 /** Structure to hold a sequence. */
 typedef struct BLAST_SequenceBlk {
-   Uint1Ptr sequence; /**< Sequence used for search (could be translation). */
-   Uint1Ptr sequence_start; /**< Start of sequence, usually one byte before 
+   Uint1* sequence; /**< Sequence used for search (could be translation). */
+   Uint1* sequence_start; /**< Start of sequence, usually one byte before 
                                sequence as that byte is a NULL sentinel byte.*/
    Int4     length;         /**< Length of sequence. */
    Int2	context; /**< Context of the query, needed for multi-query searches */
@@ -88,9 +88,9 @@ typedef struct BLAST_SequenceBlk {
                                   sequence */
    Boolean sequence_start_allocated; /**< TRUE if memory has been allocated 
                                         for sequence_start */
-   Uint1Ptr oof_sequence; /**< Mixed-frame protein representation of a
+   Uint1* oof_sequence; /**< Mixed-frame protein representation of a
                              nucleotide sequence for out-of-frame alignment */
-} BLAST_SequenceBlk, *BLAST_SequenceBlkPtr;
+} BLAST_SequenceBlk;
 
 /** The query related information 
  */
@@ -99,19 +99,19 @@ typedef struct BlastQueryInfo {
    int last_context;  /**< Index of the last element of the context array */
    int num_queries;   /**< Number of query sequences */
    Int4 total_length; /**< Total length of all query sequences/strands/frames */
-   Int4Ptr context_offsets; /**< Offsets of the individual queries in the
+   Int4* context_offsets; /**< Offsets of the individual queries in the
                                concatenated super-query */
-   Int4Ptr length_adjustments; /**< Length adjustments for boundary conditions */
-   Int8Ptr eff_searchsp_array; /**< Array of effective search spaces for
+   Int4* length_adjustments; /**< Length adjustments for boundary conditions */
+   Int8* eff_searchsp_array; /**< Array of effective search spaces for
                                   multiple queries. Dimension = number of 
                                   query sequences. */
-} BlastQueryInfo,* BlastQueryInfoPtr;
+} BlastQueryInfo;
 
 /** Wrapper structure for different types of BLAST lookup tables */
 typedef struct LookupTableWrap {
    Uint1 lut_type; /**< What kind of a lookup table it is? */
-   VoidPtr lut; /**< Pointer to the actual lookup table structure */
-} LookupTableWrap,* LookupTableWrapPtr;
+   void* lut; /**< Pointer to the actual lookup table structure */
+} LookupTableWrap;
 
 /** A structure containing two integers, used e.g. for locations for the 
  * lookup table.
@@ -119,14 +119,13 @@ typedef struct LookupTableWrap {
 typedef struct DoubleInt {
    Int4 i1;
    Int4 i2;
-} DoubleInt,* DoubleIntPtr;
+} DoubleInt;
 
 /** BlastSeqLoc is a ListNode with choice equal to the sequence local id,
  * and data->ptrvalue pointing to a DoubleInt structure defining the 
  * location interval in the sequence.
  */
 #define BlastSeqLoc ListNode
-#define BlastSeqLocPtr ListNodePtr
 
 typedef struct BlastThrInfo {
 #ifdef THREADS_IMPLEMENTED
@@ -147,7 +146,7 @@ typedef struct BlastThrInfo {
     Int4 last_db_seq; /**< Last database sequence processed so far */
     Int4 number_of_pos_hits;/**< How many positive hits were found */
     Boolean realdb_done; /**< Is processing of real database(s) done? */
-} BlastThrInfo,* BlastThrInfoPtr;
+} BlastThrInfo;
 
 /** Return statistics from the BLAST search */
 typedef struct BlastReturnStat {
@@ -167,14 +166,14 @@ typedef struct BlastReturnStat {
    Int4 x_drop_gap_final; /**< Raw value of the x-dropoff for gapped 
                              extensions with traceback */
    FloatHi gap_trigger; /**< Minimal raw score for starting gapped extension */
-} BlastReturnStat,* BlastReturnStatPtr;
+} BlastReturnStat;
 
 /** Structure for keeping the query masking information */
 typedef struct BlastMask {
    Int4 index; /**< Index of the query sequence this mask is applied to */
-   ListNodePtr loc_list; /**< List of mask locations */
+   ListNode* loc_list; /**< List of mask locations */
    struct BlastMask* next; /**< Pointer to the next query mask */
-} BlastMask,* BlastMaskPtr;
+} BlastMask;
 
 #define COMPRESSION_RATIO 4
 

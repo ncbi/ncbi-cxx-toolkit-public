@@ -60,10 +60,10 @@ extern "C" {
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
-Int4 BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
-       const BLAST_SequenceBlkPtr subject, Int4 start_offset,
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits, 
-       Int4Ptr end_offset);
+Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits, 
+       Int4* end_offset);
 
 /** Scan the compressed subject sequence, returning all word hits, using the 
  *  arbitrary stride. Lookup table is presumed to have a traditional BLASTn 
@@ -77,10 +77,10 @@ Int4 BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
-Int4 BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
-       const BLAST_SequenceBlkPtr subject, Int4 start_offset,
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits, 
-       Int4Ptr end_offset);
+Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits, 
+       Int4* end_offset);
 
 /** Scan the compressed subject sequence, returning all word hits, using the
  * old MegaBLAST approach - looking up words at every byte (4 bases) of the 
@@ -95,10 +95,10 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
-Int4 MB_ScanSubject(const LookupTableWrapPtr lookup,
-       const BLAST_SequenceBlkPtr subject, Int4 start_offset,
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,
-       Int4Ptr end_offset);
+Int4 MB_ScanSubject(const LookupTableWrap* lookup,
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,
+       Int4* end_offset);
 
 /** Scan the compressed subject sequence, returning all word hits, looking up 
  * discontiguous words. Lookup table is presumed to have a traditional 
@@ -112,10 +112,10 @@ Int4 MB_ScanSubject(const LookupTableWrapPtr lookup,
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
-Int4 MB_DiscWordScanSubject(const LookupTableWrapPtr lookup,
-       const BLAST_SequenceBlkPtr subject, Int4 start_offset, 
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,     
-       Int4Ptr end_offset);
+Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
+       const BLAST_SequenceBlk* subject, Int4 start_offset, 
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,     
+       Int4* end_offset);
 
 /** Scan the compressed subject sequence, returning all word hits, using the 
  * arbitrary stride. Lookup table is presumed to have a traditional MegaBLAST 
@@ -129,21 +129,21 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrapPtr lookup,
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
-Int4 MB_AG_ScanSubject(const LookupTableWrapPtr lookup,
-       const BLAST_SequenceBlkPtr subject, Int4 start_offset,
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,
-       Int4Ptr end_offset); 
+Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup,
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,
+       Int4* end_offset); 
 
 /** Deallocate memory for the lookup table */
-LookupTableWrapPtr BlastLookupTableDestruct(LookupTableWrapPtr lookup);
+LookupTableWrap* BlastLookupTableDestruct(LookupTableWrap* lookup);
 
 /** Fill the lookup table for a given query sequence or partial sequence.
  * @param lookup Pointer to the lookup table structure [in] [out]
  * @param query The query sequence [in]
  * @param location What locations on the query sequence to index? [in]
  */
-Int4 BlastNaLookupIndexQuery(LookupTablePtr lookup, BLAST_SequenceBlkPtr query,
-                             ListNodePtr location);
+Int4 BlastNaLookupIndexQuery(LookupTable* lookup, BLAST_SequenceBlk* query,
+                             ListNode* location);
 
 #ifdef __cplusplus
 }

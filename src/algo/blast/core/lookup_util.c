@@ -37,8 +37,8 @@ void __sfree(void **x)
   return;
 }
 
-static void fkm_output(Int4Ptr a, Int4 n, Int4 p, Uint1Ptr output, Int4Ptr cursor, Uint1Ptr alphabet);
-static void fkm(Int4Ptr a, Int4 n, Int4 k, Uint1Ptr output, Int4Ptr cursor, Uint1Ptr alphabet);
+static void fkm_output(Int4* a, Int4 n, Int4 p, Uint1* output, Int4* cursor, Uint1* alphabet);
+static void fkm(Int4* a, Int4 n, Int4 k, Uint1* output, Int4* cursor, Uint1* alphabet);
 
 Int4 iexp(Int4 x, Int4 n)
 {
@@ -101,7 +101,7 @@ return mask;
  * @param alphabet optional translation alphabet
  */
 
-static void fkm_output(Int4Ptr a, Int4 n, Int4 p, Uint1Ptr output, Int4Ptr cursor, Uint1Ptr alphabet)
+static void fkm_output(Int4* a, Int4 n, Int4 p, Uint1* output, Int4* cursor, Uint1* alphabet)
 {
   Int4 i;
 
@@ -140,7 +140,7 @@ static void fkm_output(Int4Ptr a, Int4 n, Int4 p, Uint1Ptr output, Int4Ptr curso
  * @param alphabet optional translation alphabet
  */
 
-static void fkm(Int4Ptr a, Int4 n, Int4 k, Uint1Ptr output, Int4Ptr cursor, Uint1Ptr alphabet)
+static void fkm(Int4* a, Int4 n, Int4 k, Uint1* output, Int4* cursor, Uint1* alphabet)
 {
   Int4 i,j;
 
@@ -165,13 +165,13 @@ do
  while (i>0);
 }
 
-void debruijn(Int4 n, Int4 k, Uint1Ptr output, Uint1Ptr alphabet)
+void debruijn(Int4 n, Int4 k, Uint1* output, Uint1* alphabet)
 {
-  Int4Ptr a;
+  Int4* a;
   Int4 cursor=0;
 
   /* n+1 because the array is indexed from one, not zero */
-  a = (Int4Ptr) calloc( (n+1), sizeof(Int4));
+  a = (Int4*) calloc( (n+1), sizeof(Int4));
 
   /* compute the (n,k) de Bruijn sequence and store it in output */
  

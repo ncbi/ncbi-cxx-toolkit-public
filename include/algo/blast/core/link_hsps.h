@@ -52,7 +52,7 @@ extern "C" {
  * preceding link_hsps in link_hsps.c for more info.
  */
 typedef struct LinkHelpStruct {
-  BlastHSPPtr ptr;
+  BlastHSP* ptr;
   Int4 q_off_trim;
   Int4 s_off_trim;
   Int4 sum[BLAST_NUMBER_OF_ORDERING_METHODS];
@@ -70,9 +70,9 @@ typedef struct LinkHelpStruct {
  * @param gapped_calculation Is this a gapped search? [in]
  */
 Int2 
-BlastLinkHsps(Uint1 program_number, BlastHSPListPtr hsp_list, 
-   BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject, 
-   BLAST_ScoreBlkPtr sbp, BlastHitSavingParametersPtr hit_params,
+BlastLinkHsps(Uint1 program_number, BlastHSPList* hsp_list, 
+   BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
+   BLAST_ScoreBlk* sbp, BlastHitSavingParameters* hit_params,
    Boolean gapped_calculation);
 
 #ifdef __cplusplus

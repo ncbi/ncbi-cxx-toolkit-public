@@ -60,44 +60,44 @@ typedef struct BlastUngappedData {
    Int4 length;  /**< Length of the ungapped alignment */
    Int4 score;   /**< Score of the ungapped alignment */
    Int2 frame;   /**< Needed for translated searches */
-} BlastUngappedData, *BlastUngappedDataPtr;
+} BlastUngappedData;
 
 /** Structure to hold the initial HSP information */
 typedef struct BlastInitHSP {
    Int4 q_off; /**< Offset in query */
    Int4 s_off; /**< Offset in subject */
-   BlastUngappedDataPtr ungapped_data; /**< Pointer to a structure holding
+   BlastUngappedData* ungapped_data; /**< Pointer to a structure holding
                                           ungapped alignment information */
-} BlastInitHSP, *BlastInitHSPPtr;
+} BlastInitHSP;
 
 /** Structure to hold all initial HSPs for a given subject sequence */
 typedef struct BlastInitHitList {
    Int4 total; /**< Total number of hits currently saved */
    Int4 allocated; /**< Available size of the offsets array */
-   BlastInitHSPPtr init_hsp_array; /**< Array of offset pairs, possibly with
+   BlastInitHSP* init_hsp_array; /**< Array of offset pairs, possibly with
                                       scores */
    Boolean do_not_reallocate; /**< Can the init_hsp_array be reallocated? */
-} BlastInitHitList, *BlastInitHitListPtr;
+} BlastInitHitList;
 
 /** Structure for keeping last hit information for a diagonal */
 typedef struct DiagStruct {
    Int4 last_hit; /**< Offset of the last hit */
    Int4 diag_level; /**< To what length has this hit been extended so far? */
-} DiagStruct,* DiagStructPtr;
+} DiagStruct;
 
 /** Structure for keeping last hit information for a diagonal on a stack */
 typedef struct MbStack {
    Int4 diag; /**< This hit's actual diagonal */
    Int4 level; /**< This hit's offset in the subject sequence */
    Int4 length; /**< To what length has this hit been extended so far? */
-} MbStack,* MbStackPtr;
+} MbStack;
 
 /** Structure containing parameters needed for initial word extension.
  * Only one copy of this structure is needed, regardless of how many
  * contexts there are.
 */
 typedef struct BLAST_DiagTable {
-   DiagStructPtr diag_array;/**< Array to hold latest hits for all diagonals */
+   DiagStruct* diag_array;/**< Array to hold latest hits for all diagonals */
    Int4 diag_array_length; /**< Smallest power of 2 longer than query length */
    Int4 diag_mask; /**< Used to mask off everything above
                           min_diag_length (mask = min_diag_length-1). */
@@ -112,21 +112,21 @@ typedef struct BLAST_DiagTable {
                             neccessary, but possible. */
    Int4 actual_window; /**< The actual window used if the multiple
                           hits method was used and a hit was found. */
-} BLAST_DiagTable,* BLAST_DiagTablePtr;
+} BLAST_DiagTable;
 
 typedef struct MB_StackTable {
    Int4 num_stacks; /**< Number of stacks to be used for storing hit offsets
                        by MegaBLAST */
-   Int4Ptr stack_index; /**< Current number of elements in each stack */
-   Int4Ptr stack_size;  /**< Available memory for each stack */
-   MbStackPtr* estack; /**< Array of stacks for most recent hits */
-} MB_StackTable,* MB_StackTablePtr;
+   Int4* stack_index; /**< Current number of elements in each stack */
+   Int4* stack_size;  /**< Available memory for each stack */
+   MbStack** estack; /**< Array of stacks for most recent hits */
+} MB_StackTable;
    
 /** Structure for keeping initial word extension information */
 typedef struct BLAST_ExtendWord {
-   BLAST_DiagTablePtr diag_table; /**< Diagonal array and related parameters */
-   MB_StackTablePtr stack_table; /**< Stacks and related parameters */ 
-} BLAST_ExtendWord,* BLAST_ExtendWordPtr;
+   BLAST_DiagTable* diag_table; /**< Diagonal array and related parameters */
+   MB_StackTable* stack_table; /**< Stacks and related parameters */ 
+} BLAST_ExtendWord;
 
 /** Initializes the word extension structure
  * @param query The query sequence [in]
@@ -135,15 +135,15 @@ typedef struct BLAST_ExtendWord {
  * @param dbseq_num The total number of sequences in the database [in]
  * @param ewp_ptr Pointer to the word extension structure [out]
  */
-Int2 BLAST_ExtendWordInit(BLAST_SequenceBlkPtr query,
-   BlastInitialWordOptionsPtr word_options,
-   Int8 dblen, Int4 dbseq_num, BLAST_ExtendWordPtr* ewp_ptr);
+Int2 BLAST_ExtendWordInit(BLAST_SequenceBlk* query,
+   BlastInitialWordOptions* word_options,
+   Int8 dblen, Int4 dbseq_num, BLAST_ExtendWord** ewp_ptr);
 
 /** Allocate memory for the BlastInitHitList structure */
-BlastInitHitListPtr BLAST_InitHitListNew(void);
+BlastInitHitList* BLAST_InitHitListNew(void);
 
   /** Free memory for the BlastInitList structure */
-BlastInitHitListPtr BLAST_InitHitListDestruct(BlastInitHitListPtr init_hitlist);
+BlastInitHitList* BLAST_InitHitListDestruct(BlastInitHitList* init_hitlist);
 
 /** Finds all words for a given subject sequence, satisfying the wordsize and 
  *  discontiguous template conditions, and performs initial (exact match) 
@@ -162,16 +162,16 @@ BlastInitHitListPtr BLAST_InitHitListDestruct(BlastInitHitListPtr init_hitlist);
  * @param init_hitlist Structure to hold all hits information. Has to be 
  *        allocated up front [out]
  */
-Int4 MB_WordFinder(BLAST_SequenceBlkPtr subject,
-		   BLAST_SequenceBlkPtr query, 
-		   LookupTableWrapPtr lookup,
-		   Int4Ptr* matrix, 
-		   BlastInitialWordParametersPtr word_params,
-		   BLAST_ExtendWordPtr ewp,
-		   Uint4Ptr q_offsets,
-		   Uint4Ptr s_offsets,
+Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
+		   BLAST_SequenceBlk* query, 
+		   LookupTableWrap* lookup,
+		   Int4** matrix, 
+		   BlastInitialWordParameters* word_params,
+		   BLAST_ExtendWord* ewp,
+		   Uint4* q_offsets,
+		   Uint4* s_offsets,
 		   Int4 max_hits,
-		   BlastInitHitListPtr init_hitlist);
+		   BlastInitHitList* init_hitlist);
 
 /** Perform ungapped extension of a word hit
  * @param query The query sequence [in]
@@ -186,10 +186,10 @@ Int4 MB_WordFinder(BLAST_SequenceBlkPtr subject,
  *         this HSP should be deleted.
  */
 Boolean
-BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query, 
-   BLAST_SequenceBlkPtr subject, Int4Ptr* matrix, 
+BlastnWordUngappedExtend(BLAST_SequenceBlk* query, 
+   BLAST_SequenceBlk* subject, Int4** matrix, 
    Int4 q_off, Int4 s_off, Int4 cutoff, Int4 X, 
-   BlastUngappedDataPtr* ungapped_data);
+   BlastUngappedData** ungapped_data);
 
 /** Finds all initial hits for a given subject sequence, that satisfy the 
  *  wordsize condition, and pass the ungapped extension test.
@@ -207,16 +207,16 @@ BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query,
  * @param init_hitlist Structure to hold all hits information. Has to be 
  *        allocated up front [out]
  */
-Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject, 
-		       BLAST_SequenceBlkPtr query,
-		       LookupTableWrapPtr lookup_wrap,
-		       Int4Ptr* matrix,
-		       BlastInitialWordParametersPtr word_params, 
-		       BLAST_ExtendWordPtr ewp,
-		       Uint4Ptr q_offsets,
-		       Uint4Ptr s_offsets,
+Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject, 
+		       BLAST_SequenceBlk* query,
+		       LookupTableWrap* lookup_wrap,
+		       Int4** matrix,
+		       BlastInitialWordParameters* word_params, 
+		       BLAST_ExtendWord* ewp,
+		       Uint4* q_offsets,
+		       Uint4* s_offsets,
 		       Int4 max_hits,
-		       BlastInitHitListPtr init_hitlist);
+		       BlastInitHitList* init_hitlist);
 
 /** Finds all words for a given subject sequence, satisfying the wordsize and 
  *  discontiguous template conditions, and performs initial (exact match) 
@@ -235,16 +235,16 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlkPtr subject,
  * @param init_hitlist Structure to hold all hits information. Has to be 
  *        allocated up front [out]
  */
-Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject, 
-			  BLAST_SequenceBlkPtr query,
-			  LookupTableWrapPtr lookup_wrap,
-			  Int4Ptr* matrix,
-			  BlastInitialWordParametersPtr word_params, 
-			  BLAST_ExtendWordPtr ewp,
-			  Uint4Ptr q_offsets,
-			  Uint4Ptr s_offsets,
+Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject, 
+			  BLAST_SequenceBlk* query,
+			  LookupTableWrap* lookup_wrap,
+			  Int4** matrix,
+			  BlastInitialWordParameters* word_params, 
+			  BLAST_ExtendWord* ewp,
+			  Uint4* q_offsets,
+			  Uint4* s_offsets,
 			  Int4 max_hits,
-			  BlastInitHitListPtr init_hitlist);
+			  BlastInitHitList* init_hitlist);
 
 /** Save the initial hit data into the initial hit list structure.
  * @param init_hitlist the structure holding all the initial hits 
@@ -254,11 +254,11 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlkPtr subject,
  * @param ungapped_data The information about the ungapped extension of this 
  *        hit [in]
  */
-Boolean BLAST_SaveInitialHit(BlastInitHitListPtr init_hitlist, 
-           Int4 q_off, Int4 s_off, BlastUngappedDataPtr ungapped_data); 
+Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist, 
+           Int4 q_off, Int4 s_off, BlastUngappedData* ungapped_data); 
 
 /** Deallocate memory for the word extension structure */
-BLAST_ExtendWordPtr BlastExtendWordFree(BLAST_ExtendWordPtr ewp);
+BLAST_ExtendWord* BlastExtendWordFree(BLAST_ExtendWord* ewp);
 
 #ifdef __cplusplus
 }

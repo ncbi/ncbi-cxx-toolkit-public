@@ -75,7 +75,7 @@ Int4 makemask(Int4 x);
  * @param alphabet optional translation alphabet
  */
 
-void debruijn(Int4 n, Int4 k, Uint1Ptr output, Uint1Ptr alphabet);
+void debruijn(Int4 n, Int4 k, Uint1* output, Uint1* alphabet);
 
 #ifdef __cplusplus
 }

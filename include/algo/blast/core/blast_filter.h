@@ -50,13 +50,13 @@ extern "C" {
  * @param to End of the interval [in]
  * @return Pointer to the allocated BlastSeqLoc structure.
  */
-BlastSeqLocPtr BlastSeqLocNew(Int4 from, Int4 to);
+BlastSeqLoc* BlastSeqLocNew(Int4 from, Int4 to);
 
 /** Deallocate a BlastSeqLoc structure */
-BlastSeqLocPtr BlastSeqLocFree(BlastSeqLocPtr loc);
+BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc);
 
 /** Deallocate memory for a list of BlastMask structures */
-BlastMaskPtr BlastMaskFree(BlastMaskPtr mask_loc);
+BlastMask* BlastMaskFree(BlastMask* mask_loc);
 
 /** Go through all mask locations in one sequence, 
  * combine any that overlap. Deallocate the memory for the locations that 
@@ -65,11 +65,11 @@ BlastMaskPtr BlastMaskFree(BlastMaskPtr mask_loc);
  * @param mask_loc_out The new (merged) list of masks. [out]
 */
 Int2
-CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out);
+CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out);
 
 /** This function takes the list of mask locations (i.e., regions that 
  * should not be searched or not added to lookup table) and makes up a set 
- * of DoubleIntPtr's that should be searched (that is, takes the 
+ * of DoubleInt*'s that should be searched (that is, takes the 
  * complement). If the entire sequence is filtered, then a DoubleInt is 
  * created and both of its elements (i1 and i2) are set to -1 to indicate 
  * this. 
@@ -78,12 +78,12 @@ CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out);
  * @param program_number Type of BLAST program [in]
  * @param query_info The query information structure [in]
  * @param mask_loc All mask locations [in]
- * @param complement_mask Linked list of DoubleIntPtrs with offsets. [out]
+ * @param complement_mask Linked list of DoubleInt*s with offsets. [out]
 */
 Int2 
 BLAST_ComplementMaskLocations(Uint1 program_number, 
-   BlastQueryInfoPtr query_info, BlastMaskPtr mask_loc, 
-   BlastSeqLocPtr *complement_mask);
+   BlastQueryInfo* query_info, BlastMask* mask_loc, 
+   BlastSeqLoc* *complement_mask);
 
 /** Runs filtering functions, according to the string "instructions", on the
  * SeqLocPtr. Should combine all SeqLocs so they are non-redundant.
@@ -97,9 +97,9 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
  * @param seqloc_retval Resulting locations for filtered region. [out]
 */
 Int2
-BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length, 
-   Int4 offset, CharPtr instructions, Boolean *mask_at_hash, 
-   BlastSeqLocPtr *seqloc_retval);
+BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length, 
+   Int4 offset, Char* instructions, Boolean *mask_at_hash, 
+   BlastSeqLoc* *seqloc_retval);
 
 #ifdef __cplusplus
 }

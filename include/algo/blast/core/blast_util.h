@@ -67,15 +67,15 @@ extern "C" {
  * @param encoding In what encoding should the sequence be retrieved? [in]
  */ 
 void
-MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr* seq_ptr,
+MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlk** seq_ptr,
                      Int4 oid, Uint1 encoding);
 #endif
 
 /** Deallocate memory only for the sequence in the sequence block */
-Int2 BlastSequenceBlkClean(BLAST_SequenceBlkPtr seq_blk);
+Int2 BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk);
    
 /** Deallocate memory for a sequence block */
-BLAST_SequenceBlkPtr BlastSequenceBlkFree(BLAST_SequenceBlkPtr seq_blk);
+BLAST_SequenceBlk* BlastSequenceBlkFree(BLAST_SequenceBlk* seq_blk);
 
 /** Set number for a given program type.  Return is zero on success.
  * @param program string name of program [in]
@@ -87,7 +87,7 @@ Int2 BlastProgram2Number(const Char *program, Uint1 *number);
  * @param number number of program [in]
  * @param program string name of program (memory should be deallocated by called) [out]
 */
-Int2 BlastNumber2Program(Uint1 number, CharPtr *program);
+Int2 BlastNumber2Program(Uint1 number, Char* *program);
 
 /** Allocates memory for *sequence_blk and then populates it.
  * @param buffer start of sequence [in]
@@ -98,8 +98,8 @@ Int2 BlastNumber2Program(Uint1 number, CharPtr *program);
  *        the start of the sequence, otherwise it is 'sequence'. [in]
 */
 Int2
-BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
-	BLAST_SequenceBlkPtr *seq_blk, Boolean buffer_allocated);
+BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int2 context,
+	BLAST_SequenceBlk* *seq_blk, Boolean buffer_allocated);
 
 /** Allocate and initialize the query information structure.
  * @param program_number Type of BLAST program [in]
@@ -107,12 +107,12 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
  * @param query_info_ptr The initialized structure [out]
  */
 Int2 BLAST_QueryInfoInit(Uint1 program_number, 
-        Int4 num_queries, BlastQueryInfoPtr *query_info_ptr);
+        Int4 num_queries, BlastQueryInfo* *query_info_ptr);
 
 /** GetTranslation to get the translation of the nucl. sequence in the
  * appropriate frame and with the appropriate GeneticCode.
- * The function return an allocated CharPtr, the caller must delete this.
- * The first and last spaces of this CharPtr contain NULLB's.
+ * The function return an allocated Char*, the caller must delete this.
+ * The first and last spaces of this Char* contain NULLB's.
  * @param query_seq Forward strand of the nucleotide sequence [in]
  * @param query_seq_rev Reverse strand of the nucleotide sequence [in]
  * @param nt_length Length of the nucleotide sequence [in]
@@ -122,8 +122,8 @@ Int2 BLAST_QueryInfoInit(Uint1 program_number,
  *                     in ncbistdaa encoding [in]
  * @return Length of the traslated protein sequence.
 */
-Int4 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
-   Int4 nt_length, Int2 frame, Uint1Ptr buffer, const Uint1Ptr genetic_code);
+Int4 BLAST_GetTranslation(Uint1* query_seq, Uint1* query_seq_rev, 
+   Int4 nt_length, Int2 frame, Uint1* buffer, const Uint1* genetic_code);
 
 /** Translate a nucleotide sequence without ambiguity codes.
  * This is used for the first-pass translation of the database.
@@ -152,8 +152,8 @@ Int4 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev,
  * @param prot_seq Preallocated buffer for the (translated) protein sequence, 
  *                 with NULLB sentinels on either end. [out]
 */
-Int4 BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length, 
-        Uint1Ptr nt_seq, Int2 frame, Uint1Ptr prot_seq);
+Int4 BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length, 
+        Uint1* nt_seq, Int2 frame, Uint1* prot_seq);
 
 /** Reverse a nucleotide sequence in the blastna encoding, adding sentinel 
  * bytes on both ends.
@@ -161,18 +161,18 @@ Int4 BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length,
  * @param length Length of the sequence plus 1 for the sentinel byte [in]
  * @param rev_sequence_ptr Reverse strand of the sequence [out]
  */
-Int2 GetReverseNuclSequence(Uint1Ptr sequence, Int4 length, 
-                            Uint1Ptr* rev_sequence_ptr);
+Int2 GetReverseNuclSequence(Uint1* sequence, Int4 length, 
+                            Uint1** rev_sequence_ptr);
 
 #if 0
 /** CC: Moved to blast_engine.c as static functions? */
 /** Initialize the thread information structure
  * @param last_oid2search Last ordinal id to examine in a database search.
  */
-BlastThrInfoPtr BLAST_ThrInfoNew(Int4 last_oid2search);
+BlastThrInfo* BLAST_ThrInfoNew(Int4 last_oid2search);
 
 /** Deallocate the thread information structure */
-void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info);
+void BLAST_ThrInfoFree(BlastThrInfo* thr_info);
 
 /** Gets the next set of sequences from the database to search.
  * @param rdfp The BLAST database(s) being searched [in]
@@ -186,8 +186,8 @@ void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info);
  * @return Is this the last chunk of the database? 
 */
 Boolean 
-BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop, 
-                Int4Ptr id_list, Int4Ptr id_list_number, BlastThrInfoPtr thr_info);
+BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4* start, Int4* stop, 
+                Int4* id_list, Int4* id_list_number, BlastThrInfo* thr_info);
 #endif
 
 /** This function translates the context number of a context into the frame of 
@@ -206,13 +206,13 @@ Int2 BLAST_ContextToFrame(Uint1 prog_number, Int2 context_number);
  *                set [in]
  * @return Length of the individual sequence/strand/frame.
  */
-Int4 BLAST_GetQueryLength(BlastQueryInfoPtr query_info, Int4 context);
+Int4 BLAST_GetQueryLength(BlastQueryInfo* query_info, Int4 context);
 
 /** Deallocate memory for query information structure */
-BlastQueryInfoPtr BlastQueryInfoFree(BlastQueryInfoPtr query_info);
+BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info);
 
-Int2 BLAST_PackDNA(Uint1Ptr buffer, Int4 length, Uint1 encoding, 
-                   Uint1Ptr* packed_seq);
+Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding, 
+                   Uint1** packed_seq);
 
 /** Initialize the mixed-frame sequence for out-of-frame gapped extension.
  * @param query_blk Sequence block containing the concatenated frames of the 
@@ -220,8 +220,8 @@ Int2 BLAST_PackDNA(Uint1Ptr buffer, Int4 length, Uint1 encoding,
  * @param query_info Query information structure containing offsets into the* 
  *                   concatenated sequence. [in]
  */
-Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk, 
-                       BlastQueryInfoPtr query_info);
+Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk, 
+                       BlastQueryInfo* query_info);
 
 /** Translate nucleotide into 6 frames. All frames are put into a 
  * translation buffer, with sentinel NULLB bytes in between.
@@ -238,10 +238,10 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk,
  * @param mixed_seq_ptr If not NULL, will hold a mixed frame sequence for 
  *                      out-of-frame gapping [out]
  */
-Int2 BLAST_GetAllTranslations(const Uint1Ptr nucl_seq, Uint1 encoding,
-        Int4 nucl_length, Uint1Ptr genetic_code, 
-        Uint1Ptr* translation_buffer_ptr, Int4Ptr* frame_offsets_ptr,
-        Uint1Ptr* mixed_seq_ptr);
+Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
+        Int4 nucl_length, Uint1* genetic_code, 
+        Uint1** translation_buffer_ptr, Int4** frame_offsets_ptr,
+        Uint1** mixed_seq_ptr);
 
 /** Convert translation frame into a context for the concatenated translation
  * buffer.
@@ -250,7 +250,7 @@ Int2 FrameToContext(Int2 frame);
 
 
 /** The following binary search routine assumes that array A is filled. */
-Int4 BSearchInt4(Int4 n, Int4Ptr A, Int4 size);
+Int4 BSearchInt4(Int4 n, Int4* A, Int4 size);
 
 #ifdef __cplusplus
 }

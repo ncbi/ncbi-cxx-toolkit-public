@@ -43,23 +43,23 @@ static char const rcsid[] = "$Id$";
 
 /*---------------------------------------------------------------(SeqNew)---*/
 
-static SequencePtr SeqNew(void)
+static Sequence* SeqNew(void)
 {
-   SequencePtr seq;
+   Sequence* seq;
 
-   seq = (SequencePtr) calloc(1, sizeof(Sequence));
+   seq = (Sequence*) calloc(1, sizeof(Sequence));
    if (seq==NULL)
      {
       /* raise error flag and etc. */
       return(seq);
      }
 
-   seq->parent = (SequencePtr) NULL;
-   seq->seq = (CharPtr) NULL;
-   seq->palpha = (AlphaPtr) NULL;
+   seq->parent = (Sequence*) NULL;
+   seq->seq = (Char*) NULL;
+   seq->palpha = (Alpha*) NULL;
    seq->start = seq->length = 0;
    seq->bogus = seq->punctuation = FALSE;
-   seq->composition = seq->state = (Int4Ptr) NULL;
+   seq->composition = seq->state = (Int4*) NULL;
    seq->entropy = (FloatHi) 0.0;
 
    return(seq);
@@ -67,7 +67,7 @@ static SequencePtr SeqNew(void)
 
 /*------------------------------------------------------------(AlphaFree)---*/
 
-static void AlphaFree (AlphaPtr palpha)
+static void AlphaFree (Alpha* palpha)
 
   {
    if (!palpha) return;
@@ -82,7 +82,7 @@ static void AlphaFree (AlphaPtr palpha)
 
 /*--------------------------------------------------------------(SeqFree)---*/
 
-static void SeqFree(SequencePtr seq)
+static void SeqFree(Sequence* seq)
 {
    if (seq==NULL) return;
 
@@ -96,9 +96,9 @@ static void SeqFree(SequencePtr seq)
 
 /*--------------------------------------------------------------(SegFree)---*/
 
-static void SegFree(SegPtr seg)
+static void SegFree(Seg* seg)
 {
-   SegPtr nextseg;
+   Seg* nextseg;
 
    while (seg)
      {
@@ -112,7 +112,7 @@ static void SegFree(SegPtr seg)
 
 /*--------------------------------------------------------------(hasdash)---*/
 
-static Boolean hasdash(SequencePtr win)
+static Boolean hasdash(Sequence* win)
 {
 	register char	*seq, *seqmax;
 
@@ -140,13 +140,13 @@ static int state_cmp(const void* s1, const void* s2)
 
 /*---------------------------------------------------------------(compon)---*/
 
-static void compon(SequencePtr win)
+static void compon(Sequence* win)
 
 {
-	Int4Ptr comp;
+	Int4* comp;
 	Int4 letter;
-	CharPtr seq, seqmax;
-        Int4Ptr alphaindex;
+	Char* seq,* seqmax;
+        Int4* alphaindex;
         unsigned char* alphaflag;
         Int4 alphasize;
 
@@ -155,7 +155,7 @@ static void compon(SequencePtr win)
         alphaflag = win->palpha->alphaflag;
 
 	win->composition = comp =
-                (Int4Ptr) calloc(alphasize, sizeof(Int4));
+                (Int4*) calloc(alphasize, sizeof(Int4));
 	seq = win->seq;
 	seqmax = seq + win->length;
 
@@ -171,7 +171,7 @@ static void compon(SequencePtr win)
 
 /*--------------------------------------------------------------(stateon)---*/
 
-static void stateon(SequencePtr win)
+static void stateon(Sequence* win)
 
 {
 	Int4 letter, nel, c;
@@ -182,7 +182,7 @@ static void stateon(SequencePtr win)
 	if (win->composition == NULL)
 		compon(win);
 
-	win->state = (Int4Ptr) calloc((alphasize+1), sizeof(win->state[0]));
+	win->state = (Int4*) calloc((alphasize+1), sizeof(win->state[0]));
 
 	for (letter = nel = 0; letter < alphasize; ++letter) {
 		if ((c = win->composition[letter]) == 0)
@@ -199,16 +199,16 @@ static void stateon(SequencePtr win)
 
 /*--------------------------------------------------------------(openwin)---*/
 
-static SequencePtr openwin(SequencePtr parent, Int4 start, Int4 length)
+static Sequence* openwin(Sequence* parent, Int4 start, Int4 length)
 {
-   SequencePtr win;
+   Sequence* win;
 
    if (start<0 || length<0 || start+length>parent->length)
      {
-      return((SequencePtr) NULL);
+      return((Sequence*) NULL);
      }
 
-   win = (SequencePtr) calloc(1, sizeof(Sequence));
+   win = (Sequence*) calloc(1, sizeof(Sequence));
 
 /*---                                          ---[set links, up and down]---*/
 
@@ -220,7 +220,7 @@ static SequencePtr openwin(SequencePtr parent, Int4 start, Int4 length)
    win->start = start;
    win->length = length;
 #if 0                                                    /* Hi Warren! */
-   win->seq = (CharPtr) calloc(length + 1, sizeof(Char));
+   win->seq = (Char*) calloc(length + 1, sizeof(Char));
    memcpy(win->seq, (parent->seq)+start, length);
    win->seq[length] = '\0';
 #else
@@ -231,8 +231,8 @@ static SequencePtr openwin(SequencePtr parent, Int4 start, Int4 length)
 	win->punctuation = FALSE;
 
 	win->entropy = -2.;
-	win->state = (Int4Ptr) NULL;
-	win->composition = (Int4Ptr) NULL;
+	win->state = (Int4*) NULL;
+	win->composition = (Int4*) NULL;
 
 	stateon(win);
 
@@ -241,7 +241,7 @@ static SequencePtr openwin(SequencePtr parent, Int4 start, Int4 length)
 
 /*--------------------------------------------------------------(entropy)---*/
 
-static FloatHi entropy(Int4Ptr sv)
+static FloatHi entropy(Int4* sv)
 
   {FloatHi ent;
    Int4 i, total;
@@ -266,7 +266,7 @@ static FloatHi entropy(Int4Ptr sv)
 
 /*----------------------------------------------------------(decrementsv)---*/
 
-static void decrementsv(Int4Ptr sv, Int4 class)
+static void decrementsv(Int4* sv, Int4 class)
 
 {
 	Int4	svi;
@@ -281,7 +281,7 @@ static void decrementsv(Int4Ptr sv, Int4 class)
 
 /*----------------------------------------------------------(incrementsv)---*/
 
-static void incrementsv(Int4Ptr sv, Int4 class)
+static void incrementsv(Int4* sv, Int4 class)
 
 {
 	for (;;) {
@@ -294,11 +294,11 @@ static void incrementsv(Int4Ptr sv, Int4 class)
 
 /*------------------------------------------------------------(shiftwin1)---*/
 
-static Int4 shiftwin1(SequencePtr win)
+static Int4 shiftwin1(Sequence* win)
 {
 	Int4 j, length;
-	Int4Ptr comp;
-        Int4Ptr alphaindex;
+	Int4* comp;
+        Int4* alphaindex;
         unsigned char* alphaflag;
 
 	length = win->length;
@@ -330,7 +330,7 @@ static Int4 shiftwin1(SequencePtr win)
 
 /*-------------------------------------------------------------(closewin)---*/
 
-static void closewin(SequencePtr win)
+static void closewin(Sequence* win)
 {
    if (win==NULL) return;
 
@@ -343,7 +343,7 @@ static void closewin(SequencePtr win)
 
 /*----------------------------------------------------------------(enton)---*/
 
-static void enton(SequencePtr win)
+static void enton(Sequence* win)
 
   {
    if (win->state==NULL) {stateon(win);}
@@ -354,10 +354,10 @@ static void enton(SequencePtr win)
   }
 
 /*---------------------------------------------------------------(seqent)---*/
-static FloatHiPtr seqent(SequencePtr seq, Int4 window, Int4 maxbogus)
+static FloatHi* seqent(Sequence* seq, Int4 window, Int4 maxbogus)
 {
-   SequencePtr win;
-   FloatHiPtr H;
+   Sequence* win;
+   FloatHi* H;
    Int4 i, first, last, downset, upset;
 
    downset = (window+1)/2 - 1;
@@ -365,10 +365,10 @@ static FloatHiPtr seqent(SequencePtr seq, Int4 window, Int4 maxbogus)
 
    if (window>seq->length)
      {
-      return((FloatHiPtr) NULL);
+      return((FloatHi*) NULL);
      }
 
-   H = (FloatHiPtr) calloc(seq->length, sizeof(FloatHi));
+   H = (FloatHi*) calloc(seq->length, sizeof(FloatHi));
 
    for (i=0; i<seq->length; i++)
      {
@@ -406,9 +406,9 @@ static FloatHiPtr seqent(SequencePtr seq, Int4 window, Int4 maxbogus)
 /*------------------------------------------------------------(appendseg)---*/
 
 static void
-appendseg(SegPtr segs, SegPtr seg)
+appendseg(Seg* segs, Seg* seg)
 
-  {SegPtr temp;
+  {Seg* temp;
 
    temp = segs;
    while (TRUE)
@@ -429,7 +429,7 @@ appendseg(SegPtr segs, SegPtr seg)
 
 /*---------------------------------------------------------------(findlo)---*/
 
-static Int4 findlo(Int4 i, Int4 limit, FloatHi hicut, FloatHiPtr H)
+static Int4 findlo(Int4 i, Int4 limit, FloatHi hicut, FloatHi* H)
 
   {
    Int4 j;
@@ -445,7 +445,7 @@ static Int4 findlo(Int4 i, Int4 limit, FloatHi hicut, FloatHiPtr H)
 
 /*---------------------------------------------------------------(findhi)---*/
 
-static Int4 findhi(Int4 i, Int4 limit, FloatHi hicut, FloatHiPtr H)
+static Int4 findhi(Int4 i, Int4 limit, FloatHi hicut, FloatHi* H)
 
   {
    Int4 j;
@@ -461,7 +461,7 @@ static Int4 findhi(Int4 i, Int4 limit, FloatHi hicut, FloatHiPtr H)
 
 /*---------------------------------------------------------------(lnperm)---*/
 
-static FloatHi lnperm(Int4Ptr sv, Int4 tot)
+static FloatHi lnperm(Int4* sv, Int4 tot)
 
   {
    FloatHi ans;
@@ -479,7 +479,7 @@ static FloatHi lnperm(Int4Ptr sv, Int4 tot)
 
 /*----------------------------------------------------------------(lnass)---*/
 
-static FloatHi lnass(Int4Ptr sv, Int4 alphasize)
+static FloatHi lnass(Int4* sv, Int4 alphasize)
 
 {
 	double	ans;
@@ -523,7 +523,7 @@ static FloatHi lnass(Int4Ptr sv, Int4 alphasize)
 
 /*--------------------------------------------------------------(getprob)---*/
 
-static FloatHi getprob(Int4Ptr sv, Int4 total, AlphaPtr palpha)
+static FloatHi getprob(Int4* sv, Int4 total, Alpha* palpha)
 
   {
    FloatHi ans, ans1, ans2 = 0, totseq;
@@ -557,11 +557,11 @@ fprintf(stderr, "%lf %lf %lf\n", ans, ans1, ans2);
 
 /*-----------------------------------------------------------------(trim)---*/
 
-static void trim(SequencePtr seq, Int4Ptr leftend, Int4Ptr rightend,
-                 SegParametersPtr sparamsp)
+static void trim(Sequence* seq, Int4* leftend, Int4* rightend,
+                 SegParameters* sparamsp)
 
   {
-   SequencePtr win;
+   Sequence* win;
    FloatHi prob, minprob;
    Int4 shift, len, i;
    Int4 lend, rend;
@@ -616,11 +616,11 @@ static void trim(SequencePtr seq, Int4Ptr leftend, Int4Ptr rightend,
 
 /*---------------------------------------------------------------(SegSeq)---*/
 
-static void SegSeq(SequencePtr seq, SegParametersPtr sparamsp, SegPtr *segs,
+static void SegSeq(Sequence* seq, SegParameters* sparamsp, Seg* *segs,
                    Int4 offset)
 {
-   SegPtr seg, leftsegs;
-   SequencePtr leftseq;
+   Seg* seg,* leftsegs;
+   Sequence* leftseq;
    Int4 window;
    FloatHi locut, hicut;
    Int4 maxbogus;
@@ -628,7 +628,7 @@ static void SegSeq(SequencePtr seq, SegParametersPtr sparamsp, SegPtr *segs,
    Int4 first, last, lowlim;
    Int4 loi, hii, i;
    Int4 leftend, rightend, lend, rend;
-   FloatHiPtr H;
+   FloatHi* H;
 
    if (sparamsp->window<=0) return;
    if (sparamsp->locut<=0.) sparamsp->locut = 0.;
@@ -667,7 +667,7 @@ static void SegSeq(SequencePtr seq, SegParametersPtr sparamsp, SegPtr *segs,
             rend = leftend - 1;
 
             leftseq = openwin(seq, lend, rend-lend+1);
-            leftsegs = (SegPtr) NULL;
+            leftsegs = (Seg*) NULL;
             SegSeq(leftseq, sparamsp, &leftsegs, offset+lend);
             if (leftsegs!=NULL)
               {
@@ -677,18 +677,18 @@ static void SegSeq(SequencePtr seq, SegParametersPtr sparamsp, SegPtr *segs,
             closewin(leftseq);
 
 /*          trim(openwin(seq, lend, rend-lend+1), &lend, &rend);
-            seg = (SegPtr) calloc(1, sizeof(Seg));
+            seg = (Seg*) calloc(1, sizeof(Seg));
             seg->begin = lend;
             seg->end = rend;
-            seg->next = (SegPtr) NULL;
+            seg->next = (Seg*) NULL;
             if (segs==NULL) segs = seg;
             else appendseg(segs, seg);  */
            }
 
-         seg = (SegPtr) calloc(1, sizeof(Seg));
+         seg = (Seg*) calloc(1, sizeof(Seg));
          seg->begin = leftend + offset;
          seg->end = rightend + offset;
-         seg->next = (SegPtr) NULL;
+         seg->next = (Seg*) NULL;
 
          if (*segs==NULL) *segs = seg;
          else appendseg(*segs, seg);
@@ -707,9 +707,9 @@ static void SegSeq(SequencePtr seq, SegParametersPtr sparamsp, SegPtr *segs,
 	hilenmin also does something, but we need to ask Scott Federhen what?
 */
 
-static void mergesegs(SequencePtr seq, SegPtr segs, Boolean overlaps)
+static void mergesegs(Sequence* seq, Seg* segs, Boolean overlaps)
 {
-   SegPtr seg, nextseg;
+   Seg* seg,* nextseg;
    Int4 hilenmin;		/* hilenmin yet unset */
    Int4 len;
 
@@ -761,13 +761,13 @@ static void mergesegs(SequencePtr seq, SegPtr segs, Boolean overlaps)
    return;
 }
 
-static Int2 SegsToBlastSeqLoc(SegPtr segs, Int4 offset, BlastSeqLocPtr* seg_locs)
+static Int2 SegsToBlastSeqLoc(Seg* segs, Int4 offset, BlastSeqLoc** seg_locs)
 {
-   DoubleIntPtr dip;
-   BlastSeqLocPtr last_slp = NULL, head_slp = NULL;
+   DoubleInt* dip;
+   BlastSeqLoc* last_slp = NULL,* head_slp = NULL;
 
    for ( ; segs; segs = segs->next) {
-      dip = (DoubleIntPtr) calloc(1, sizeof(DoubleInt));
+      dip = (DoubleInt*) calloc(1, sizeof(DoubleInt));
       dip->i1 = segs->begin + offset;
       dip->i2 = segs->end + offset;
 
@@ -784,23 +784,23 @@ static Int2 SegsToBlastSeqLoc(SegPtr segs, Int4 offset, BlastSeqLocPtr* seg_locs
 
 /*------------------------------------------------------------(AA20alpha)---*/
 
-static AlphaPtr AA20alpha_std (void)
+static Alpha* AA20alpha_std (void)
 {
-   AlphaPtr palpha;
-   Int4Ptr alphaindex;
+   Alpha* palpha;
+   Int4* alphaindex;
    unsigned char* alphaflag;
-   CharPtr alphachar;
+   Char* alphachar;
    Uint1 c, i;
 
-   palpha = (AlphaPtr) calloc(1, sizeof(Alpha));
+   palpha = (Alpha*) calloc(1, sizeof(Alpha));
 
    palpha->alphabet = AA20;
    palpha->alphasize = 20;
    palpha->lnalphasize = LN20;
 
-   alphaindex = (Int4Ptr) calloc(CHAR_SET , sizeof(Int4));
+   alphaindex = (Int4*) calloc(CHAR_SET , sizeof(Int4));
    alphaflag = (unsigned char*) calloc(CHAR_SET , sizeof(char));
-   alphachar = (CharPtr) calloc(palpha->alphasize , sizeof(Char));
+   alphachar = (Char*) calloc(palpha->alphasize , sizeof(Char));
 
    for (c=0, i=0; c<128; c++)
      {
@@ -823,11 +823,11 @@ static AlphaPtr AA20alpha_std (void)
 
 /*-------------------------------------------------------(SegParametersNewAa)---*/
 
-SegParametersPtr SegParametersNewAa (void)
+SegParameters* SegParametersNewAa (void)
 {
-   SegParametersPtr sparamsp;
+   SegParameters* sparamsp;
 
-   sparamsp = (SegParametersPtr) calloc(1, sizeof(SegParameters));
+   sparamsp = (SegParameters*) calloc(1, sizeof(SegParameters));
 
    sparamsp->window = 12;
    sparamsp->locut = 2.2;
@@ -844,7 +844,7 @@ SegParametersPtr SegParametersNewAa (void)
 
 /*-------------------------------------------------------(SegParametersCheck)---*/
 
-static void SegParametersCheck (SegParametersPtr sparamsp)
+static void SegParametersCheck (SegParameters* sparamsp)
 {
    if (!sparamsp) return;
 
@@ -874,7 +874,7 @@ static void SegParametersCheck (SegParametersPtr sparamsp)
 
 /*--------------------------------------------------------(SegParametersFree)---*/
 
-void SegParametersFree(SegParametersPtr sparamsp)
+void SegParametersFree(SegParameters* sparamsp)
 {
    if (!sparamsp) return;
    AlphaFree(sparamsp->palpha);
@@ -884,21 +884,21 @@ void SegParametersFree(SegParametersPtr sparamsp)
 
 /*------------------------------------------------------------(AlphaCopy)---*/
 
-static AlphaPtr AlphaCopy (AlphaPtr palpha)
+static Alpha* AlphaCopy (Alpha* palpha)
 {
-   AlphaPtr pbeta;
+   Alpha* pbeta;
    Int2 i;
 
-   if (!palpha) return((AlphaPtr) NULL);
+   if (!palpha) return((Alpha*) NULL);
 
-   pbeta = (AlphaPtr) calloc(1, sizeof(Alpha));
+   pbeta = (Alpha*) calloc(1, sizeof(Alpha));
    pbeta->alphabet = palpha->alphabet;
    pbeta->alphasize = palpha->alphasize;
    pbeta->lnalphasize = palpha->lnalphasize;
 
-   pbeta->alphaindex = (Int4Ptr) calloc(CHAR_SET , sizeof(Int4));
+   pbeta->alphaindex = (Int4*) calloc(CHAR_SET , sizeof(Int4));
    pbeta->alphaflag = (unsigned char*) calloc(CHAR_SET , sizeof(char));
-   pbeta->alphachar = (CharPtr) calloc(palpha->alphasize , sizeof(Char));
+   pbeta->alphachar = (Char*) calloc(palpha->alphasize , sizeof(Char));
 
    for (i=0; i<CHAR_SET; i++)
      {
@@ -914,11 +914,11 @@ static AlphaPtr AlphaCopy (AlphaPtr palpha)
    return(pbeta);
 }
 
-Int2 SeqBufferSeg (Uint1Ptr sequence, Int4 length, Int4 offset,
-                     SegParametersPtr sparamsp, BlastSeqLocPtr* seg_locs)
+Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
+                     SegParameters* sparamsp, BlastSeqLoc** seg_locs)
 {
-   SequencePtr seqwin;
-   SegPtr segs;
+   Sequence* seqwin;
+   Seg* segs;
    Boolean params_allocated = FALSE;
    
    SegParametersCheck (sparamsp);
@@ -941,13 +941,13 @@ Int2 SeqBufferSeg (Uint1Ptr sequence, Int4 length, Int4 offset,
    /* make an old-style genwin sequence window object */
     
    seqwin = SeqNew();
-   seqwin->seq = (CharPtr) sequence;
+   seqwin->seq = (Char*) sequence;
    seqwin->length = length;
    seqwin->palpha = AlphaCopy(sparamsp->palpha);
    
    /* seg the sequence */
    
-   segs = (SegPtr) NULL;
+   segs = (Seg*) NULL;
    SegSeq (seqwin, sparamsp, &segs, 0);
 
    /* merge the segment if desired. */

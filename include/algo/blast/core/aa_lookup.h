@@ -69,11 +69,11 @@ extern "C" {
     Int4 num_used;       /* num valid positions */
 
     union {
-      Int4Ptr overflow;
+      Int4* overflow;
       Int4 entries[HITS_ON_BACKBONE];
     } payload;
 
-  } LookupBackboneCell,* LookupBackboneCellPtr;
+  } LookupBackboneCell;
     
   typedef struct LookupTable {
     Int4 threshold; /* the score threshold for neighboring words */
@@ -93,9 +93,9 @@ extern "C" {
     LookupBackboneCell * thick_backbone; /* the "thick" backbone. after queries are indexed, compact the backbone to put at most HITS_ON_BACKBONE hits on the backbone, otherwise point to some overflow storage */
     Int4 * overflow; /* the overflow array for the compacted lookup table */
     PV_ARRAY_TYPE *pv; /* presence vector. a bit vector indicating which cells are occupied */
-    Uint1Ptr neighbors; /* neighboring word array */
+    Uint1* neighbors; /* neighboring word array */
     Int4 neighbors_length; /* length of neighboring word array */
-  } LookupTable, * LookupTablePtr;
+  } LookupTable;
   
   /** Create a mapping from word w to the supplied query offset
  *
@@ -105,8 +105,8 @@ extern "C" {
  * @return Zero.
  */
 
-Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup,
-                             Uint1Ptr w,
+Int4 BlastAaLookupAddWordHit(LookupTable* lookup,
+                             Uint1* w,
                              Int4 query_offset);
 
 /** Convert the chained lookup table to the pv_array and thick_backbone.
@@ -115,7 +115,7 @@ Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup,
  * @return Zero.
  */
 
-Int4 _BlastAaLookupFinalize(LookupTablePtr lookup);
+Int4 _BlastAaLookupFinalize(LookupTable* lookup);
 /**
  * Scans the subject sequence from "offset" to the end of the sequence.
  * Copies at most array_size hits.
@@ -131,9 +131,9 @@ Int4 _BlastAaLookupFinalize(LookupTablePtr lookup);
  * @param array_size length of the offset arrays [in]
  * @return The number of hits found.
  */
-Int4 BlastAaScanSubject(const LookupTableWrapPtr lookup_wrap, /* in: the LUT */
+Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap, /* in: the LUT */
                         const BLAST_SequenceBlk *subject,
-                        Int4Ptr offset,
+                        Int4* offset,
                         Uint4 * query_offsets, /* out: pointer to the array to which hits will be copied */
 		        Uint4 * subject_offsets, /* out : pointer to the array where offsets will be stored */
 		        Int4 array_size);
@@ -143,7 +143,7 @@ Int4 BlastAaScanSubject(const LookupTableWrapPtr lookup_wrap, /* in: the LUT */
   * @param lut handle to lookup table structure [in/modified]
   */
   
-Int4 BlastAaLookupNew(const LookupTableOptionsPtr opt, LookupTablePtr * lut);
+Int4 BlastAaLookupNew(const LookupTableOptions* opt, LookupTable* * lut);
 
 
 /** Create a new lookup table.
@@ -152,7 +152,7 @@ Int4 BlastAaLookupNew(const LookupTableOptionsPtr opt, LookupTablePtr * lut);
   * @param is_protein boolean indicating protein or nucleotide [in]
   */
   
-Int4 LookupTableNew(const LookupTableOptionsPtr opt, LookupTablePtr * lut, 
+Int4 LookupTableNew(const LookupTableOptions* opt, LookupTable* * lut, 
 		    Boolean is_protein);
 
 /** Index an array of queries.
@@ -160,14 +160,14 @@ Int4 LookupTableNew(const LookupTableOptionsPtr opt, LookupTablePtr * lut,
  * @param lookup the lookup table [in/modified]
  * @param matrix the substitution matrix [in]
  * @param query the array of queries to index
- * @param unmasked_regions an array of ListNodePtrs, each of which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
+ * @param unmasked_regions an array of ListNode*s, each of which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
  * @param num_queries the number of queries [in]
  * @return Zero.
  */
-Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
+Int4 BlastAaLookupIndexQueries(LookupTable* lookup,
 			       Int4 ** matrix,
-			       BLAST_SequenceBlkPtr query,
-			       ListNodePtr unmasked_regions,
+			       BLAST_SequenceBlk* query,
+			       ListNode* unmasked_regions,
 			       Int4 num_queries);
 
 /** Index a single query.
@@ -175,15 +175,15 @@ Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
  * @param lookup the lookup table [in/modified]
  * @param matrix the substitution matrix [in]
  * @param query the array of queries to index
- * @param unmasked_regions a ListNodePtr which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
+ * @param unmasked_regions a ListNode* which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
 i
  * @return Zero.
  */
 
-Int4 _BlastAaLookupIndexQuery(LookupTablePtr lookup,
+Int4 _BlastAaLookupIndexQuery(LookupTable* lookup,
 			      Int4 ** matrix,
-			      BLAST_SequenceBlkPtr query,
-			      ListNodePtr unmasked_regions);
+			      BLAST_SequenceBlk* query,
+			      ListNode* unmasked_regions);
 
 /** Create a sequence containing all possible words as subsequences.
  *
@@ -191,7 +191,7 @@ Int4 _BlastAaLookupIndexQuery(LookupTablePtr lookup,
  * @return Zero.
  */
 
-Int4 MakeAllWordSequence(LookupTablePtr lookup);
+Int4 MakeAllWordSequence(LookupTable* lookup);
 
 /**
  * Find the words in the neighborhood of w, that is, those whose
@@ -211,9 +211,9 @@ Int4 MakeAllWordSequence(LookupTablePtr lookup);
  * @return Zero.
  */
 
-Int4 AddNeighboringWords(LookupTablePtr lookup,
+Int4 AddNeighboringWords(LookupTable* lookup,
 			 Int4 ** matrix,
-			 BLAST_SequenceBlkPtr query,
+			 BLAST_SequenceBlk* query,
 			 Int4 offset);
 
 #define SET_HIGH_BIT(x) (x |= 0x80000000)

@@ -42,8 +42,8 @@ $Revision$
 /* BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
 */
 Int2 
-BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp, 
-   const BlastScoringOptionsPtr scoring_options, Uint1 program)
+BlastScoreBlkGappedFill(BLAST_ScoreBlk* sbp, 
+   const BlastScoringOptions* scoring_options, Uint1 program)
 {
    Int2 status;
 
@@ -74,12 +74,11 @@ BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp,
 		sbp->read_in_matrix = TRUE;
       BlastScoreSetAmbigRes(sbp, 'X');
       if (!scoring_options->matrix)
-         scoring_options->matrix = strdup("BLOSUM62");
-      sbp->name = strdup(scoring_options->matrix);
+          sbp->name = strdup("BLOSUM62");
 		if (scoring_options->matrix_path) {
 			status = BlastScoreBlkMatFill(sbp, scoring_options->matrix_path);
 		} else {
-			status = BlastScoreBlkMatFill(sbp, scoring_options->matrix);
+			status = BlastScoreBlkMatFill(sbp, sbp->name);
       }
 
       if (status)
@@ -109,10 +108,10 @@ BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp,
  *
 */
 static Int2
-BlastSetUp_MaskTheResidues(Uint1Ptr buffer, Int4 max_length, Boolean is_na,
-	ListNodePtr mask_loc, Boolean reverse, Int4 offset)
+BlastSetUp_MaskTheResidues(Uint1* buffer, Int4 max_length, Boolean is_na,
+	ListNode* mask_loc, Boolean reverse, Int4 offset)
 {
-   DoubleIntPtr loc = NULL;
+   DoubleInt* loc = NULL;
    Int2 status = 0;
    Int4 index, start, stop;
    Uint1 mask_letter;
@@ -123,7 +122,7 @@ BlastSetUp_MaskTheResidues(Uint1Ptr buffer, Int4 max_length, Boolean is_na,
       mask_letter = 21;
    
    for ( ; mask_loc; mask_loc = mask_loc->next) {
-      loc = (DoubleIntPtr) mask_loc->ptr;
+      loc = (DoubleInt*) mask_loc->ptr;
       if (reverse)	{
          start = max_length - 1 - loc->i2;
          stop = max_length - 1 - loc->i1;
@@ -143,29 +142,29 @@ BlastSetUp_MaskTheResidues(Uint1Ptr buffer, Int4 max_length, Boolean is_na,
 }
 
 Int2 BLAST_MainSetUp(Uint1 program_number,
-        const QuerySetUpOptionsPtr qsup_options,
-        const BlastScoringOptionsPtr scoring_options,
-        const LookupTableOptionsPtr lookup_options,	
-        const BlastHitSavingOptionsPtr hit_options,
-        BLAST_SequenceBlkPtr query_blk,
-        BlastQueryInfoPtr query_info, BlastSeqLocPtr *lookup_segments,
-        BlastMaskPtr *filter_out,
-        BLAST_ScoreBlkPtr *sbpp, Blast_MessagePtr *blast_message)
+        const QuerySetUpOptions* qsup_options,
+        const BlastScoringOptions* scoring_options,
+        const LookupTableOptions* lookup_options,	
+        const BlastHitSavingOptions* hit_options,
+        BLAST_SequenceBlk* query_blk,
+        BlastQueryInfo* query_info, BlastSeqLoc* *lookup_segments,
+        BlastMask* *filter_out,
+        BLAST_ScoreBlk* *sbpp, Blast_Message* *blast_message)
 {
-   BLAST_ScoreBlkPtr sbp;
+   BLAST_ScoreBlk* sbp;
    Boolean mask_at_hash;/* mask only for making lookup table? */
    Boolean is_na;	/* Is this nucleotide? */
    Int2 context=0, index;/* Loop variables. */
    Int2 total_num_contexts=0;/* number of different strands, sequences, etc. */
    Int2 status=0;	/* return value */
    Int4 query_length=0;	/* Length of query described by SeqLocPtr. */
-   BlastSeqLocPtr filter_slp=NULL;/* SeqLocPtr computed for filtering. */
-   BlastSeqLocPtr filter_slp_combined;/* Used to hold combined SeqLoc's */
-   BlastSeqLocPtr loc; /* Iterator variable */
-   BlastMaskPtr last_filter_out = NULL; 
-   Uint1Ptr buffer;	/* holds sequence for plus strand or protein. */
+   BlastSeqLoc* filter_slp=NULL;/* SeqLocPtr computed for filtering. */
+   BlastSeqLoc* filter_slp_combined;/* Used to hold combined SeqLoc's */
+   BlastSeqLoc* loc; /* Iterator variable */
+   BlastMask* last_filter_out = NULL; 
+   Uint1* buffer;	/* holds sequence for plus strand or protein. */
    Boolean reverse; /* Indicates the strand when masking filtered locations */
-   BlastMaskPtr mask_slp, next_mask_slp;/* Auxiliary locations for lower 
+   BlastMask* mask_slp,* next_mask_slp;/* Auxiliary locations for lower 
                                               case masks */
    Int4 context_offset;
    
@@ -254,10 +253,10 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
          if (filter_slp_combined) {
             if (!last_filter_out) {
                last_filter_out = *filter_out = 
-                  (BlastMaskPtr) calloc(1, sizeof(BlastMask));
+                  (BlastMask*) calloc(1, sizeof(BlastMask));
             } else {
                last_filter_out->next = 
-                  (BlastMaskPtr) calloc(1, sizeof(BlastMask));
+                  (BlastMask*) calloc(1, sizeof(BlastMask));
                last_filter_out = last_filter_out->next;
             }
             last_filter_out->index = index;
@@ -272,7 +271,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
                   return status;
          }
             
-         if ((status=BlastScoreBlkFill(sbp, (CharPtr) buffer, 
+         if ((status=BlastScoreBlkFill(sbp, (Char*) buffer, 
                                        query_length, context)))
             return status;
       }

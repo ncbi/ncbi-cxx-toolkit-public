@@ -70,8 +70,6 @@ extern "C" {
 #endif
 
 #ifndef NCBI_C_TOOLKIT
-typedef void Void;
-typedef void * VoidPtr;
 typedef double FloatHi, Nlm_FloatHi;
 typedef double * FloatHiPtr;
 typedef Uint1 Boolean, Nlm_Boolean;
@@ -182,7 +180,7 @@ FloatHi LnFactorial (FloatHi x); /* Logarithm of the factorial Fn */
 #define ROMBERG_ITMAX 20
 
 FloatHi RombergIntegrate(
-        FloatHi (*f) (FloatHi,VoidPtr), VoidPtr fargs, FloatHi p, 
+        FloatHi (*f) (FloatHi,void*), void* fargs, FloatHi p, 
         FloatHi q, FloatHi eps, Int4 epsit, Int4 itmin);
 
 /*

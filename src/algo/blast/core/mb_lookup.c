@@ -42,7 +42,7 @@ Detailed Contents:
 
 static char const rcsid[] = "$Id$";
 
-MBLookupTablePtr MBLookupTableDestruct(MBLookupTablePtr mb_lt)
+MBLookupTable* MBLookupTableDestruct(MBLookupTable* mb_lt)
 {
    if (!mb_lt)
       return NULL;
@@ -103,18 +103,18 @@ DiscTemplateType GetDiscTemplateType(Int2 weight, Uint1 length,
 }
 
 /** Documentation in mb_lookup.h */
-Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
-        MBLookupTablePtr* mb_lt_ptr,
-        LookupTableOptionsPtr lookup_options)
+Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
+        MBLookupTable** mb_lt_ptr,
+        LookupTableOptions* lookup_options)
 {
    Int4 query_length;
-   Uint1Ptr seq, pos;
+   Uint1* seq,* pos;
    Int4 index;
    Int4 ecode;
    Int4 mask;
    Int4 ecode1, ecode2;
    Uint1 val, nuc_mask = 0xfc;
-   MBLookupTablePtr mb_lt;
+   MBLookupTable* mb_lt;
    Int4 masked_word_count = 0;
    PV_ARRAY_TYPE *pv_array=NULL;
    Int4 pv_shift, pv_array_bts, pv_size, pv_index;
@@ -122,7 +122,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
    Int4 last_offset;
 #ifdef USE_HASH_TABLE
    Int4 hash_shift, hash_mask, crc, size, length;
-   Uint1Ptr hash_buf;
+   Uint1* hash_buf;
 #endif
    DiscTemplateType template_type;
    Boolean amb_cond;
@@ -131,7 +131,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
    Int2 bytes_in_word;
    Uint1 width;
    Int4 from, to;
-   ListNodePtr loc;
+   ListNode* loc;
    Int4 longest_chain = 0;
    Int4 pcount, pcount1=0;
    
@@ -145,7 +145,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
                                      lookup_options->mb_template_length, 
                                      lookup_options->mb_template_type);
    query_length = query->length;
-   mb_lt = (MBLookupTablePtr) calloc(1, sizeof(MBLookupTable));
+   mb_lt = (MBLookupTable*) calloc(1, sizeof(MBLookupTable));
     
    bytes_in_word = (lookup_options->word_size + 1)/ 4;
    if (bytes_in_word < 3) 
@@ -196,13 +196,13 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
 
    mb_lt->full_byte_scan = (mb_lt->scan_step % COMPRESSION_RATIO == 0);
 
-   if ((mb_lt->hashtable = (Int4Ptr) 
+   if ((mb_lt->hashtable = (Int4*) 
         calloc(mb_lt->hashsize, sizeof(Int4))) == NULL) {
       MBLookupTableDestruct(mb_lt);
       return -1;
    }
 
-   if ((mb_lt->next_pos = (Int4Ptr) 
+   if ((mb_lt->next_pos = (Int4*) 
         calloc((query_length+1), sizeof(Int4))) == NULL) {
       MBLookupTableDestruct(mb_lt);
       return -1;
@@ -210,7 +210,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
 
    if (two_templates) {
       if (lookup_options->word_size >= 12) {
-         if ((mb_lt->hashtable2 = (Int4Ptr) 
+         if ((mb_lt->hashtable2 = (Int4*) 
               calloc(mb_lt->hashsize, sizeof(Int4))) == NULL) {
             MBLookupTableDestruct(mb_lt);
             return -1;
@@ -218,7 +218,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
       } else {/* For weight 11 no need for extra main table */
          mb_lt->hashtable2 = mb_lt->hashtable;
       }
-      if ((mb_lt->next_pos2 = (Int4Ptr) 
+      if ((mb_lt->next_pos2 = (Int4*) 
            calloc((query_length+1), sizeof(Int4))) == NULL) {
          MBLookupTableDestruct(mb_lt);
          return -1;
@@ -226,8 +226,8 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
    }
 
    for (loc = location; loc; loc = loc->next) {
-      from = ((DoubleIntPtr) loc->ptr)->i1;
-      to = ((DoubleIntPtr) loc->ptr)->i2;
+      from = ((DoubleInt*) loc->ptr)->i1;
+      to = ((DoubleInt*) loc->ptr)->i2;
 
       seq = query->sequence_start + from;
       pos = seq + word_length;
@@ -317,7 +317,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
                   }
                      
 #ifdef USE_HASH_TABLE                     
-                  hash_buf = (Uint1Ptr)&ecode1;
+                  hash_buf = (Uint1*)&ecode1;
                   CRC32(crc, hash_buf);
                   ecode1 = (crc>>hash_shift) & hash_mask;
 #endif
@@ -352,7 +352,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ListNodePtr location,
                      }
                      
 #ifdef USE_HASH_TABLE                     
-                     hash_buf = (Uint1Ptr)&ecode2;
+                     hash_buf = (Uint1*)&ecode2;
                      CRC32(crc, hash_buf);
                      ecode2 = (crc>>hash_shift) & hash_mask;
 #endif

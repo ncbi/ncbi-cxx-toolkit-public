@@ -42,8 +42,8 @@ Contents: Various BLAST utilities
 static char const rcsid[] = "$Id$";
 
 Int2
-BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
-   BLAST_SequenceBlkPtr *seq_blk, Boolean buffer_allocated)
+BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int2 context,
+   BLAST_SequenceBlk* *seq_blk, Boolean buffer_allocated)
 {
    /* Check if BLAST_SequenceBlk itself needs to be allocated here or not */
    if (*seq_blk == NULL) {
@@ -69,11 +69,11 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
 #if 0
 /** Create the subject sequence block given an ordinal id in a database */
 void
-MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr* seq_blk,
+MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlk** seq_blk,
                      Int4 oid, Uint1 encoding)
 {
   Int4 length, buf_len = 0;
-  Uint1Ptr buffer = NULL;
+  Uint1* buffer = NULL;
 
   if (encoding == BLASTNA_ENCODING) {
      length = readdb_get_sequence_ex(db, oid, &buffer, &buf_len, TRUE);
@@ -89,7 +89,7 @@ MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr* seq_blk,
 }
 #endif
 
-Int2 BlastSequenceBlkClean(BLAST_SequenceBlkPtr seq_blk)
+Int2 BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk)
 {
    if (!seq_blk)
       return 1;
@@ -102,7 +102,7 @@ Int2 BlastSequenceBlkClean(BLAST_SequenceBlkPtr seq_blk)
    return 0;
 }
 
-BLAST_SequenceBlkPtr BlastSequenceBlkFree(BLAST_SequenceBlkPtr seq_blk)
+BLAST_SequenceBlk* BlastSequenceBlkFree(BLAST_SequenceBlk* seq_blk)
 {
    if (!seq_blk)
       return NULL;
@@ -135,7 +135,7 @@ Int2 BlastProgram2Number(const Char *program, Uint1 *number)
 	return 0;
 }
 
-Int2 BlastNumber2Program(Uint1 number, CharPtr *program)
+Int2 BlastNumber2Program(Uint1 number, Char* *program)
 {
 
 	if (program == NULL)
@@ -175,7 +175,7 @@ Int2 BlastNumber2Program(Uint1 number, CharPtr *program)
  * @param codes Geneic code string to use (must be in ncbistdaa encoding!)
  * @return Amino acid in ncbistdaa
  */
-static Uint1 CodonToAA (Uint1Ptr codon, Uint1Ptr codes)
+static Uint1 CodonToAA (Uint1* codon, Uint1* codes)
 {
    register Uint1 aa = 0, taa;
    register int i, j, k, index0, index1, index2;
@@ -218,13 +218,13 @@ static Uint1 CodonToAA (Uint1Ptr codon, Uint1Ptr codes)
 }
 
 Int4
-BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
-   Int4 nt_length, Int2 frame, Uint1Ptr prot_seq, const Uint1Ptr genetic_code)
+BLAST_GetTranslation(Uint1* query_seq, Uint1* query_seq_rev, 
+   Int4 nt_length, Int2 frame, Uint1* prot_seq, const Uint1* genetic_code)
 {
 	Uint1 codon[CODON_LENGTH];
 	Int4 index, index_prot;
 	Uint1 residue;
-   Uint1Ptr nucl_seq;
+   Uint1* nucl_seq;
 
    nucl_seq = (frame >= 0 ? query_seq : query_seq_rev+1);
 
@@ -253,16 +253,16 @@ BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev,
   Translate a compressed nucleotide sequence without ambiguity codes.
 */
 Int4
-BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length, 
-   Uint1Ptr nt_seq, Int2 frame, Uint1Ptr prot_seq)
+BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length, 
+   Uint1* nt_seq, Int2 frame, Uint1* prot_seq)
 {
    int state;
    Int2 total_remainder;
    Int4 prot_length;
    int byte_value, codon=-1;
    Uint1 last_remainder, last_byte, remainder;
-   Uint1Ptr nt_seq_end, nt_seq_start;
-   Uint1Ptr prot_seq_start;
+   Uint1* nt_seq_end,* nt_seq_start;
+   Uint1* prot_seq_start;
    int byte_value1,byte_value2,byte_value3,byte_value4,byte_value5;
    
    prot_length=0;
@@ -552,10 +552,10 @@ BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length,
 
 
 /** Reverse a nucleotide sequence in the ncbi4na encoding */
-Int2 GetReverseNuclSequence(Uint1Ptr sequence, Int4 length, 
-                            Uint1Ptr* rev_sequence_ptr)
+Int2 GetReverseNuclSequence(Uint1* sequence, Int4 length, 
+                            Uint1** rev_sequence_ptr)
 {
-   Uint1Ptr rev_sequence;
+   Uint1* rev_sequence;
    Int4 index;
    /* Conversion table from forward to reverse strand residue in the blastna 
       encoding */
@@ -565,7 +565,7 @@ Int2 GetReverseNuclSequence(Uint1Ptr sequence, Int4 length,
    if (!rev_sequence_ptr)
       return -1;
 
-   rev_sequence = (Uint1Ptr) malloc(length + 2);
+   rev_sequence = (Uint1*) malloc(length + 2);
    
    rev_sequence[0] = rev_sequence[length+1] = NULLB;
 
@@ -600,13 +600,13 @@ Int2 BLAST_ContextToFrame(Uint1 prog_number, Int2 context_number)
    return frame;
 }
 
-Int4 BLAST_GetQueryLength(BlastQueryInfoPtr query_info, Int4 context)
+Int4 BLAST_GetQueryLength(BlastQueryInfo* query_info, Int4 context)
 {
    return query_info->context_offsets[context+1] -
       query_info->context_offsets[context] - 1;
 }
 
-BlastQueryInfoPtr BlastQueryInfoFree(BlastQueryInfoPtr query_info)
+BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info)
 {
    sfree(query_info->context_offsets);
    sfree(query_info->length_adjustments);
@@ -620,11 +620,11 @@ BlastQueryInfoPtr BlastQueryInfoFree(BlastQueryInfoPtr query_info)
 /** Convert a sequence in ncbi4na or blastna encoding into a packed sequence
  * in ncbi2na encoding. Needed for 2 sequences BLASTn comparison.
  */
-Int2 BLAST_PackDNA(Uint1Ptr buffer, Int4 length, Uint1 encoding, 
-                          Uint1Ptr* packed_seq)
+Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding, 
+                          Uint1** packed_seq)
 {
    Int4 new_length = (length+COMPRESSION_RATIO-1)/COMPRESSION_RATIO;
-   Uint1Ptr new_buffer = (Uint1Ptr) malloc(new_length);
+   Uint1* new_buffer = (Uint1*) malloc(new_length);
    Int4 index, new_index;
    Uint1 remainder;
    Uint1 shift;     /* bit shift to pack bases */
@@ -678,17 +678,17 @@ Int2 BLAST_PackDNA(Uint1Ptr buffer, Int4 length, Uint1 encoding,
    return 0;
 }
 
-Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk, 
-                            BlastQueryInfoPtr query_info)
+Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk, 
+                            BlastQueryInfo* query_info)
 {
-   Uint1Ptr buffer, seq, tmp_seq;
+   Uint1* buffer,* seq,* tmp_seq;
    Int4 total_length, index, offset, i, context;
    Int4 length[CODON_LENGTH];
-   Int4Ptr context_offsets = query_info->context_offsets;
+   Int4* context_offsets = query_info->context_offsets;
 
    total_length = context_offsets[query_info->last_context+1] + 1;
 
-   buffer = (Uint1Ptr) malloc(total_length);
+   buffer = (Uint1*) malloc(total_length);
 
    for (index = 0; index <= query_info->last_context; index += CODON_LENGTH) {
       seq = &buffer[context_offsets[index]];
@@ -724,13 +724,13 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk,
  * @param reverse_complement Get translation table for the reverse strand? [in]
  * @return The translation table.
 */
-static Uint1Ptr
-BLAST_GetTranslationTable(Uint1Ptr genetic_code, Boolean reverse_complement)
+static Uint1*
+BLAST_GetTranslationTable(Uint1* genetic_code, Boolean reverse_complement)
 
 {
 	Int2 index1, index2, index3, bp1, bp2, bp3;
 	Int2 codon;
-	Uint1Ptr translation;
+	Uint1* translation;
    /* The next array translate between the ncbi2na rep's and 
       the rep's used by the genetic_code tables.  The rep used by the 
       genetic code arrays is in mapping: T=0, C=1, A=2, G=3 */
@@ -780,23 +780,23 @@ BLAST_GetTranslationTable(Uint1Ptr genetic_code, Boolean reverse_complement)
 }
 
 
-Int2 BLAST_GetAllTranslations(Uint1Ptr nucl_seq, Uint1 encoding,
-        Int4 nucl_length, Uint1Ptr genetic_code,
-        Uint1Ptr* translation_buffer_ptr, Int4Ptr* frame_offsets_ptr,
-        Uint1Ptr* mixed_seq_ptr)
+Int2 BLAST_GetAllTranslations(const Uint1* nucl_seq, Uint1 encoding,
+        Int4 nucl_length, Uint1* genetic_code,
+        Uint1** translation_buffer_ptr, Int4** frame_offsets_ptr,
+        Uint1** mixed_seq_ptr)
 {
-   Uint1Ptr translation_buffer, mixed_seq;
-   Uint1Ptr translation_table, translation_table_rc;
-   Uint1Ptr nucl_seq_rev;
+   Uint1* translation_buffer,* mixed_seq;
+   Uint1* translation_table,* translation_table_rc;
+   Uint1* nucl_seq_rev;
    Int4 offset = 0, length;
    Int2 context, frame;
-   Int4Ptr frame_offsets;
+   Int4* frame_offsets;
    
    if (encoding != NCBI2NA_ENCODING && encoding != NCBI4NA_ENCODING)
       return -1;
 
    if ((*translation_buffer_ptr = translation_buffer = 
-        (Uint1Ptr) malloc(2*(nucl_length+1)+1)) == NULL)
+        (Uint1*) malloc(2*(nucl_length+1)+1)) == NULL)
       return -1;
 
    if (encoding == NCBI4NA_ENCODING) {
@@ -808,7 +808,7 @@ Int2 BLAST_GetAllTranslations(Uint1Ptr nucl_seq, Uint1 encoding,
       translation_table_rc = BLAST_GetTranslationTable(genetic_code, TRUE);
    } 
 
-   *frame_offsets_ptr = frame_offsets = (Int4Ptr) malloc(7*sizeof(Int4));
+   *frame_offsets_ptr = frame_offsets = (Int4*) malloc(7*sizeof(Int4));
    frame_offsets[0] = 0;
    
    for (context = 0; context < 6; ++context) {
@@ -845,10 +845,10 @@ Int2 BLAST_GetAllTranslations(Uint1Ptr nucl_seq, Uint1 encoding,
    /* All frames are ready. For the out-of-frame gapping option, allocate 
       and fill buffer with the mixed frame sequence */
    if (mixed_seq_ptr) {
-      Uint1Ptr seq;
+      Uint1* seq;
       Int4 index, i;
 
-      *mixed_seq_ptr = mixed_seq = (Uint1Ptr) malloc(2*(nucl_length+1));
+      *mixed_seq_ptr = mixed_seq = (Uint1*) malloc(2*(nucl_length+1));
       seq = mixed_seq;
       for (index = 0; index < 6; index += CODON_LENGTH) {
          for (i = 0; i <= nucl_length; ++i) {
@@ -870,7 +870,7 @@ Int2 FrameToContext(Int2 frame)
       return 2 - frame;
 }
 
-Int4 BSearchInt4(Int4 n, Int4Ptr A, Int4 size)
+Int4 BSearchInt4(Int4 n, Int4* A, Int4 size)
 {
     Int4 m, b, e;
 

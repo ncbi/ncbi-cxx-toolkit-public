@@ -73,44 +73,44 @@ enum {         /* half of the (fixed) match score */
 /* ----- pool allocator ----- */
 typedef struct ThreeVal {
     Int4 I, C, D;
-} ThreeVal,* ThreeValPtr;
+} ThreeVal;
 
 typedef struct MBSpace {
-    ThreeValPtr space_array;
+    ThreeVal* space_array;
     Int4 used, size;
     struct MBSpace *next;
-} MBSpace, *MBSpacePtr;
+} MBSpace;
 
 #define EDIT_VAL(op) (op >> 2)
 
 #define EDIT_OPC(op) (op & EDIT_OP_MASK)
 
-MBSpacePtr MBSpaceNew(void);
-void MBSpaceFree(MBSpacePtr sp);
+MBSpace* MBSpaceNew(void);
+void MBSpaceFree(MBSpace* sp);
 
 typedef struct GreedyAlignMem {
-   Int4Ptr* flast_d;
-   Int4Ptr max_row_free;
-   ThreeValPtr* flast_d_affine;
-   Int4Ptr uplow_free;
-   MBSpacePtr space;
-} GreedyAlignMem,* GreedyAlignMemPtr;
+   Int4** flast_d;
+   Int4* max_row_free;
+   ThreeVal** flast_d_affine;
+   Int4* uplow_free;
+   MBSpace* space;
+} GreedyAlignMem;
 
 Int4 
-BLAST_GreedyAlign (const Uint1Ptr s1, Int4 len1,
-			     const Uint1Ptr s2, Int4 len2,
+BLAST_GreedyAlign (const Uint1* s1, Int4 len1,
+			     const Uint1* s2, Int4 len2,
 			     Boolean reverse, Int4 xdrop_threshold, 
 			     Int4 match_cost, Int4 mismatch_cost,
-			     Int4Ptr e1, Int4Ptr e2, GreedyAlignMemPtr abmp, 
+			     Int4* e1, Int4* e2, GreedyAlignMem* abmp, 
 			     MBGapEditScript *S, Uint1 rem);
 Int4 
-BLAST_AffineGreedyAlign (const Uint1Ptr s1, Int4 len1,
-				  const Uint1Ptr s2, Int4 len2,
+BLAST_AffineGreedyAlign (const Uint1* s1, Int4 len1,
+				  const Uint1* s2, Int4 len2,
 				  Boolean reverse, Int4 xdrop_threshold, 
 				  Int4 match_cost, Int4 mismatch_cost,
 				  Int4 gap_open, Int4 gap_extend,
-				  Int4Ptr e1, Int4Ptr e2, 
-				  GreedyAlignMemPtr abmp, 
+				  Int4* e1, Int4* e2, 
+				  GreedyAlignMem* abmp, 
 				  MBGapEditScript *S, Uint1 rem);
 
 #ifdef __cplusplus

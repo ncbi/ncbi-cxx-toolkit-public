@@ -42,10 +42,10 @@ static char const rcsid[] = "$Id$";
 
 #define WINDOW_SIZE 20
 static FloatHi 
-SumHSPEvalue(Uint1 program_number, BLAST_ScoreBlkPtr sbp, 
-   BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject, 
-   BlastHitSavingParametersPtr hit_params, 
-   BlastHSPPtr head_hsp, BlastHSPPtr hsp, Int4Ptr sumscore)
+SumHSPEvalue(Uint1 program_number, BLAST_ScoreBlk* sbp, 
+   BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
+   BlastHitSavingParameters* hit_params, 
+   BlastHSP* head_hsp, BlastHSP* hsp, Int4* sumscore)
 {
    FloatHi gap_prob, gap_decay_rate, sum_evalue, score_prime;
    Int4 gap_size, num;
@@ -94,11 +94,11 @@ SumHSPEvalue(Uint1 program_number, BLAST_ScoreBlkPtr sbp,
 static int
 fwd_compare_hsps(const void* v1, const void* v2)
 {
-	BlastHSPPtr h1, h2;
-	BlastHSPPtr* hp1,* hp2;
+	BlastHSP* h1,* h2;
+	BlastHSP** hp1,** hp2;
 
-	hp1 = (BlastHSPPtr*) v1;
-	hp2 = (BlastHSPPtr*) v2;
+	hp1 = (BlastHSP**) v1;
+	hp2 = (BlastHSP**) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 
@@ -126,11 +126,11 @@ fwd_compare_hsps(const void* v1, const void* v2)
 static int
 end_compare_hsps(const void* v1, const void* v2)
 {
-	BlastHSPPtr h1, h2;
-	BlastHSPPtr* hp1,* hp2;
+	BlastHSP* h1,* h2;
+	BlastHSP** hp1,** hp2;
 
-	hp1 = (BlastHSPPtr*) v1;
-	hp2 = (BlastHSPPtr*) v2;
+	hp1 = (BlastHSP**) v1;
+	hp2 = (BlastHSP**) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 
@@ -157,12 +157,12 @@ end_compare_hsps(const void* v1, const void* v2)
 static int
 sumscore_compare_hsps(const void* v1, const void* v2)
 {
-	BlastHSPPtr h1, h2;
-	BlastHSPPtr* hp1,* hp2;
+	BlastHSP* h1,* h2;
+	BlastHSP** hp1,** hp2;
    Int4 score1, score2;
 
-	hp1 = (BlastHSPPtr*) v1;
-	hp2 = (BlastHSPPtr*) v2;
+	hp1 = (BlastHSP**) v1;
+	hp2 = (BlastHSP**) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 
@@ -186,12 +186,12 @@ sumscore_compare_hsps(const void* v1, const void* v2)
 
 #define MAX_SPLICE_DIST 5
 static Boolean
-FindSpliceJunction(Uint1Ptr subject_seq, BlastHSPPtr hsp1, 
-                   BlastHSPPtr hsp2)
+FindSpliceJunction(Uint1* subject_seq, BlastHSP* hsp1, 
+                   BlastHSP* hsp2)
 {
    Boolean found = FALSE;
    Int4 overlap, length, i;
-   Uint1Ptr nt_seq;
+   Uint1* nt_seq;
    Uint1 g = 4, t = 8, a = 1; /* ncbi4na values for G, T, A respectively */
 
    overlap = hsp1->query.end - hsp2->query.offset;
@@ -232,7 +232,7 @@ FindSpliceJunction(Uint1Ptr subject_seq, BlastHSPPtr hsp1,
 
 /* Find an HSP with offset closest, but not smaller/larger than a given one.
  */
-static Int4 hsp_binary_search(BlastHSPPtr* hsp_array, Int4 size, 
+static Int4 hsp_binary_search(BlastHSP** hsp_array, Int4 size, 
                               Int4 offset, Boolean right)
 {
    Int4 index, begin, end, coord;
@@ -258,11 +258,11 @@ static int
 rev_compare_hsps(const void *v1, const void *v2)
 
 {
-	BlastHSPPtr h1, h2;
-	BlastHSPPtr* hp1,* hp2;
+	BlastHSP* h1,* h2;
+	BlastHSP** hp1,** hp2;
 
-	hp1 = (BlastHSPPtr*) v1;
-	hp2 = (BlastHSPPtr*) v2;
+	hp1 = (BlastHSP**) v1;
+	hp2 = (BlastHSP**) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 	
@@ -286,11 +286,11 @@ static int
 rev_compare_hsps_cfj(const void *v1, const void *v2)
 
 {
-	BlastHSPPtr h1, h2;
-	BlastHSPPtr* hp1,* hp2;
+	BlastHSP* h1,* h2;
+	BlastHSP** hp1,** hp2;
 
-	hp1 = (BlastHSPPtr*) v1;
-	hp2 = (BlastHSPPtr*) v2;
+	hp1 = (BlastHSP**) v1;
+	hp2 = (BlastHSP**) v2;
 	h1 = *hp1;
 	h2 = *hp2;
 
@@ -318,15 +318,15 @@ rev_compare_hsps_cfj(const void *v1, const void *v2)
 }
 
 static Int2
-link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list, 
-   BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject,
-   BLAST_ScoreBlkPtr sbp, BlastHitSavingParametersPtr hit_params,
+link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
+   BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
+   BLAST_ScoreBlk* sbp, BlastHitSavingParameters* hit_params,
    Boolean gapped_calculation)
 {
-	BlastHSPPtr H, H2, best[2], first_hsp, last_hsp, hp_frame_start[3*2];
+	BlastHSP* H,* H2,* best[2],* first_hsp,* last_hsp,* hp_frame_start[3*2];
 	BlastHSP hp_start;
-   BlastHSPPtr* hsp_array;
-	BLAST_KarlinBlkPtr* kbp;
+   BlastHSP** hsp_array;
+	BLAST_KarlinBlk** kbp;
 	BLAST_Score maxscore, cutoff[2];
 	Boolean frame_change, linked_set, ignore_small_gaps;
 	Nlm_FloatHi gap_decay_rate, gap_prob, prob[2];
@@ -334,7 +334,7 @@ link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
 	Int4 hp_frame_number[3*2];
 	Int4 gap_size, number_of_hsps, total_number_of_hsps;
    Int4 query_length, subject_length;
-	VoidPtr link;
+	void* link;
 	Int4 H2_index,H_index;
 	Int4 i;
 	Int4 max_q_diff;
@@ -366,7 +366,7 @@ link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
 	gap_prob = hit_params->gap_prob;
 	gap_decay_rate = hit_params->gap_decay_rate;
    /* Sort by (reverse) position. */
-	qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSPPtr), rev_compare_hsps_cfj);
+	qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSP*), rev_compare_hsps_cfj);
 
 	cutoff[0] = hit_params->cutoff_small_gap;
 	cutoff[1] = hit_params->cutoff_big_gap;
@@ -571,7 +571,7 @@ link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
                   Int4 H_hsp_num=0;
                   Int4 H_hsp_sum=0;
                   Nlm_FloatHi H_hsp_xsum=0.0;
-                  VoidPtr H_hsp_link=NULL;
+                  void* H_hsp_link=NULL;
                   if (H->score > cutoff[index]) {
                      Int4 H_query_etrim = H->query.end_trim;
                      Int4 H_sub_etrim = H->subject.end_trim;
@@ -634,7 +634,7 @@ link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
                      }
                      H->hsp_link.xsum[index] = new_xsum;
                      if(H_hsp_link)
-                        ((BlastHSPPtr)H_hsp_link)->linked_to++;
+                        ((BlastHSP*)H_hsp_link)->linked_to++;
                   }
                } /* end for H=... */
             }
@@ -647,7 +647,7 @@ link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
                Int4 H_hsp_num=0;
                Int4 H_hsp_sum=0;
                Nlm_FloatHi H_hsp_xsum=0.0;
-               VoidPtr H_hsp_link=NULL;
+               void* H_hsp_link=NULL;
                
                H->hsp_link.changed=1;
                H2 = H->hsp_link.link[index];
@@ -759,7 +759,7 @@ link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
                   }
                   H->hsp_link.xsum[index] = new_xsum;
                   if(H_hsp_link)
-                     ((BlastHSPPtr)H_hsp_link)->linked_to++;
+                     ((BlastHSP*)H_hsp_link)->linked_to++;
                }
             }
             path_changed=0;
@@ -840,10 +840,10 @@ link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
 	} /* end for frame_index ... */
 
 
-	qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSPPtr), rev_compare_hsps);
+	qsort(hsp_array,total_number_of_hsps,sizeof(BlastHSP*), rev_compare_hsps);
    /* Sort by starting position. */
    
-	qsort(hsp_array, total_number_of_hsps,sizeof(BlastHSPPtr), fwd_compare_hsps);
+	qsort(hsp_array, total_number_of_hsps,sizeof(BlastHSP*), fwd_compare_hsps);
 
 	for (index=0, last_hsp=NULL;index<total_number_of_hsps; index++) 
 	{
@@ -891,7 +891,7 @@ link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
 			{
 				H->num = num_links;
 				H->sumscore = H->hsp_link.sum[ordering_method];
-				H->next = (BlastHSPPtr) link;
+				H->next = (BlastHSP*) link;
 				H->prev = last_hsp;
 				last_hsp = H;
 				H = H->next;
@@ -925,18 +925,18 @@ link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
 }
 
 static Int2
-new_link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list, 
-   BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject,
-   BLAST_ScoreBlkPtr sbp, BlastHitSavingParametersPtr hit_params)
+new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
+   BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
+   BLAST_ScoreBlk* sbp, BlastHitSavingParameters* hit_params)
 {
-   BlastHSPPtr* hsp_array;
-   BlastHSPPtr* score_hsp_array,* offset_hsp_array,* end_hsp_array;
-   BlastHSPPtr hsp, head_hsp, best_hsp, var_hsp;
+   BlastHSP** hsp_array;
+   BlastHSP** score_hsp_array,** offset_hsp_array,** end_hsp_array;
+   BlastHSP* hsp,* head_hsp,* best_hsp,* var_hsp;
    Int4 hspcnt, index, index1, i;
    FloatHi best_evalue, evalue;
    Int4 sumscore, best_sumscore;
    Boolean reverse_link;
-   Uint1Ptr subject_seq = NULL;
+   Uint1* subject_seq = NULL;
    Int4 longest_intron = hit_params->options->longest_intron;
 
    hspcnt = hsp_list->hspcnt;
@@ -948,17 +948,17 @@ new_link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
       hsp_array[index]->ordering_method = 3;
    }
 
-   score_hsp_array = (BlastHSPPtr*) malloc(hspcnt*sizeof(BlastHSPPtr));
-   offset_hsp_array = (BlastHSPPtr*) malloc(hspcnt*sizeof(BlastHSPPtr));
-   end_hsp_array = (BlastHSPPtr*) malloc(hspcnt*sizeof(BlastHSPPtr));
+   score_hsp_array = (BlastHSP**) malloc(hspcnt*sizeof(BlastHSP*));
+   offset_hsp_array = (BlastHSP**) malloc(hspcnt*sizeof(BlastHSP*));
+   end_hsp_array = (BlastHSP**) malloc(hspcnt*sizeof(BlastHSP*));
 
-   memcpy(score_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
-   memcpy(offset_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
-   memcpy(end_hsp_array, hsp_array, hspcnt*sizeof(BlastHSPPtr));
-   qsort(offset_hsp_array, hspcnt, sizeof(BlastHSPPtr), fwd_compare_hsps);
-   qsort(end_hsp_array, hspcnt, sizeof(BlastHSPPtr), end_compare_hsps);
+   memcpy(score_hsp_array, hsp_array, hspcnt*sizeof(BlastHSP*));
+   memcpy(offset_hsp_array, hsp_array, hspcnt*sizeof(BlastHSP*));
+   memcpy(end_hsp_array, hsp_array, hspcnt*sizeof(BlastHSP*));
+   qsort(offset_hsp_array, hspcnt, sizeof(BlastHSP*), fwd_compare_hsps);
+   qsort(end_hsp_array, hspcnt, sizeof(BlastHSP*), end_compare_hsps);
 
-   qsort(score_hsp_array, hspcnt, sizeof(BlastHSPPtr), 
+   qsort(score_hsp_array, hspcnt, sizeof(BlastHSP*), 
             sumscore_compare_hsps);
       
    head_hsp = NULL;
@@ -1074,7 +1074,7 @@ new_link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
       }
    }
    
-   qsort(score_hsp_array, hspcnt, sizeof(BlastHSPPtr), sumscore_compare_hsps);
+   qsort(score_hsp_array, hspcnt, sizeof(BlastHSP*), sumscore_compare_hsps);
    /* Get the nucleotide subject sequence in Seq_code_ncbi4na */
    subject_seq = subject->sequence;
 
@@ -1122,9 +1122,9 @@ new_link_hsps(Uint1 program_number, BlastHSPListPtr hsp_list,
 }
 
 Int2 
-BlastLinkHsps(Uint1 program_number, BlastHSPListPtr hsp_list, 
-   BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject, 
-   BLAST_ScoreBlkPtr sbp, BlastHitSavingParametersPtr hit_params,
+BlastLinkHsps(Uint1 program_number, BlastHSPList* hsp_list, 
+   BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
+   BLAST_ScoreBlk* sbp, BlastHitSavingParameters* hit_params,
    Boolean gapped_calculation)
 {
 	if (hsp_list && hsp_list->hspcnt > 0)

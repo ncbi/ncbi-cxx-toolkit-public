@@ -47,10 +47,10 @@ Contents: All code related to query sequence masking/filtering for BLAST
 
 /* The following function will replace BlastSetUp_CreateDoubleInt */
 
-BlastSeqLocPtr BlastSeqLocNew(Int4 from, Int4 to)
+BlastSeqLoc* BlastSeqLocNew(Int4 from, Int4 to)
 {
-   BlastSeqLocPtr loc = (BlastSeqLocPtr) calloc(1, sizeof(BlastSeqLoc));
-   DoubleIntPtr di = (DoubleIntPtr) malloc(sizeof(DoubleInt));
+   BlastSeqLoc* loc = (BlastSeqLoc*) calloc(1, sizeof(BlastSeqLoc));
+   DoubleInt* di = (DoubleInt*) malloc(sizeof(DoubleInt));
 
    di->i1 = from;
    di->i2 = to;
@@ -58,14 +58,14 @@ BlastSeqLocPtr BlastSeqLocNew(Int4 from, Int4 to)
    return loc;
 }
 
-BlastSeqLocPtr BlastSeqLocFree(BlastSeqLocPtr loc)
+BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc)
 {
-   DoubleIntPtr dintp;
-   BlastSeqLocPtr next_loc;
+   DoubleInt* dintp;
+   BlastSeqLoc* next_loc;
 
    while (loc) {
       next_loc = loc->next;
-      dintp = (DoubleIntPtr) loc->ptr;
+      dintp = (DoubleInt*) loc->ptr;
       sfree(dintp);
       sfree(loc);
       loc = next_loc;
@@ -73,9 +73,9 @@ BlastSeqLocPtr BlastSeqLocFree(BlastSeqLocPtr loc)
    return NULL;
 }
 
-BlastMaskPtr BlastMaskFree(BlastMaskPtr mask_loc)
+BlastMask* BlastMaskFree(BlastMask* mask_loc)
 {
-   BlastMaskPtr next_loc;
+   BlastMask* next_loc;
    while (mask_loc) {
       next_loc = mask_loc->next;
       BlastSeqLocFree(mask_loc->loc_list);
@@ -88,10 +88,10 @@ BlastMaskPtr BlastMaskFree(BlastMaskPtr mask_loc)
 /** Used for qsort, compares two SeqLoc's by starting position. */
 static int DoubleIntSortByStartPosition(const void *vp1, const void *vp2)
 {
-   ListNodePtr v1 = *((ListNodePtr*) vp1);
-   ListNodePtr v2 = *((ListNodePtr*) vp2);
-   DoubleIntPtr loc1 = (DoubleIntPtr) v1->ptr;
-   DoubleIntPtr loc2 = (DoubleIntPtr) v2->ptr;
+   ListNode* v1 = *((ListNode**) vp1);
+   ListNode* v2 = *((ListNode**) vp2);
+   DoubleInt* loc1 = (DoubleInt*) v1->ptr;
+   DoubleInt* loc2 = (DoubleInt*) v2->ptr;
    
    if (loc1->i1 < loc2->i1)
       return -1;
@@ -103,13 +103,13 @@ static int DoubleIntSortByStartPosition(const void *vp1, const void *vp2)
 
 /* This will go in place of CombineSeqLocs to combine filtered locations */
 Int2
-CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out)
+CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out)
 {
    Int2 status=0;		/* return value. */
    Int4 start, stop;	/* USed to merge overlapping SeqLoc's. */
-   DoubleIntPtr di = NULL, di_next = NULL, di_tmp=NULL;
-   BlastSeqLocPtr loc_head=NULL, last_loc=NULL, loc_var=NULL;
-   BlastSeqLocPtr new_loc = NULL, new_loc_last = NULL;
+   DoubleInt* di = NULL,* di_next = NULL,* di_tmp=NULL;
+   BlastSeqLoc* loc_head=NULL,* last_loc=NULL,* loc_var=NULL;
+   BlastSeqLoc* new_loc = NULL,* new_loc_last = NULL;
    
    if (!mask_loc) {
       *mask_loc_out = NULL;
@@ -119,25 +119,25 @@ CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out)
    /* Put all the SeqLoc's into one big linked list. */
    if (loc_head == NULL) {
       loc_head = last_loc = 
-         (BlastSeqLocPtr) MemDup(mask_loc, sizeof(BlastSeqLoc));
+         (BlastSeqLoc*) MemDup(mask_loc, sizeof(BlastSeqLoc));
    } else {
-      last_loc->next = (BlastSeqLocPtr) MemDup(mask_loc, sizeof(BlastSeqLoc));
+      last_loc->next = (BlastSeqLoc*) MemDup(mask_loc, sizeof(BlastSeqLoc));
       last_loc = last_loc->next;
    }
          
    /* Copy all locations, so loc points at the end of the chain */
    while (last_loc->next) {		
       last_loc->next = 
-         (BlastSeqLocPtr)MemDup(last_loc->next, sizeof(BlastSeqLoc));
+         (BlastSeqLoc*)MemDup(last_loc->next, sizeof(BlastSeqLoc));
       last_loc = last_loc->next;
    }
    
    /* Sort them by starting position. */
-   loc_head = (BlastSeqLocPtr) 
-      ListNodeSort ((ListNodePtr) loc_head, 
+   loc_head = (BlastSeqLoc*) 
+      ListNodeSort ((ListNode*) loc_head, 
                    DoubleIntSortByStartPosition);
    
-   di = (DoubleIntPtr) loc_head->ptr;
+   di = (DoubleInt*) loc_head->ptr;
    start = di->i1;
    stop = di->i2;
    loc_var = loc_head;
@@ -149,7 +149,7 @@ CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out)
       if (di_next && stop+1 >= di_next->i1) {
          stop = MAX(stop, di_next->i2);
       } else {
-         di_tmp = (DoubleIntPtr) malloc(sizeof(DoubleInt));
+         di_tmp = (DoubleInt*) malloc(sizeof(DoubleInt));
          di_tmp->i1 = start;
          di_tmp->i2 = stop;
          if (!new_loc)
@@ -178,13 +178,13 @@ CombineMaskLocations(BlastSeqLocPtr mask_loc, BlastSeqLocPtr *mask_loc_out)
 
 Int2 
 BLAST_ComplementMaskLocations(Uint1 program_number, 
-   BlastQueryInfoPtr query_info, 
-   BlastMaskPtr mask_loc, BlastSeqLocPtr *complement_mask) 
+   BlastQueryInfo* query_info, 
+   BlastMask* mask_loc, BlastSeqLoc* *complement_mask) 
 {
    Int4 start_offset, end_offset, filter_start, filter_end;
    Int4 context, index;
-   BlastSeqLocPtr loc, last_loc = NULL, start_loc;
-   DoubleIntPtr double_int = NULL, di;
+   BlastSeqLoc* loc,* last_loc = NULL,* start_loc;
+   DoubleInt* double_int = NULL,* di;
    Boolean first;	/* Specifies beginning of query. */
    Boolean last_interval_open=TRUE; /* if TRUE last interval needs to be closed. */
    Boolean is_na, reverse = FALSE;
@@ -208,7 +208,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       if (!mask_loc || (mask_loc->index > index) ||
           !mask_loc->loc_list) {
          /* No masks for this context */
-         double_int = (DoubleIntPtr) calloc(1, sizeof(DoubleInt));
+         double_int = (DoubleInt*) calloc(1, sizeof(DoubleInt));
          double_int->i1 = start_offset;
          double_int->i2 = end_offset;
          if (!last_loc)
@@ -219,11 +219,11 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       }
       
       if (reverse) {
-         BlastSeqLocPtr prev_loc = NULL;
+         BlastSeqLoc* prev_loc = NULL;
          /* Reverse the order of the locations */
          for (start_loc = mask_loc->loc_list; start_loc; 
               start_loc = start_loc->next) {
-            loc = (BlastSeqLocPtr) MemDup(start_loc, sizeof(BlastSeqLoc));
+            loc = (BlastSeqLoc*) MemDup(start_loc, sizeof(BlastSeqLoc));
             loc->next = prev_loc;
             prev_loc = loc;
          }
@@ -252,7 +252,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
          if (first) {
             last_interval_open = TRUE;
             first = FALSE;
-            double_int = (DoubleIntPtr) calloc(1, sizeof(DoubleInt));
+            double_int = (DoubleInt*) calloc(1, sizeof(DoubleInt));
             
             if (filter_start > start_offset) {
                /* beginning of sequence not filtered */
@@ -275,7 +275,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
             last_interval_open = FALSE;
             break;
          } else {
-            double_int = (DoubleIntPtr) calloc(1, sizeof(DoubleInt));
+            double_int = (DoubleInt*) calloc(1, sizeof(DoubleInt));
                double_int->i1 = filter_end + 1;
          }
       }
@@ -285,7 +285,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       }
       
       if (last_interval_open) {
-         /* Need to finish DoubleIntPtr for last interval. */
+         /* Need to finish DoubleInt* for last interval. */
          double_int->i2 = end_offset;
          if (!last_loc)
             last_loc = ListNodeAddPointer(complement_mask, 0, double_int);
@@ -307,8 +307,8 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
  * @param linker sets linker for dust. [out]
 */
 static Int2
-parse_dust_options(const Char *ptr, Int4Ptr level, Int4Ptr window,
-	Int4Ptr cutoff, Int4Ptr linker)
+parse_dust_options(const Char *ptr, Int4* level, Int4* window,
+	Int4* cutoff, Int4* linker)
 
 {
 	Char buffer[BLASTOPTIONS_BUFFER_SIZE];
@@ -374,7 +374,7 @@ parse_dust_options(const Char *ptr, Int4Ptr level, Int4Ptr window,
  * @param hicut returns "hicut" for seg. [out]
 */
 static Int2
-parse_seg_options(const Char *ptr, Int4Ptr window, FloatHiPtr locut, FloatHiPtr hicut)
+parse_seg_options(const Char *ptr, Int4* window, FloatHi* locut, FloatHi* hicut)
 
 {
 	Char buffer[BLASTOPTIONS_BUFFER_SIZE];
@@ -433,7 +433,7 @@ parse_seg_options(const Char *ptr, Int4Ptr window, FloatHiPtr locut, FloatHiPtr 
  * @param linker returns linker [out]
 */
 static Int2
-parse_cc_options(const Char *ptr, Int4Ptr window, FloatHiPtr cutoff, Int4Ptr linker)
+parse_cc_options(const Char *ptr, Int4* window, FloatHi* cutoff, Int4* linker)
 
 {
 	Char buffer[BLASTOPTIONS_BUFFER_SIZE];
@@ -494,10 +494,10 @@ parse_cc_options(const Char *ptr, Int4Ptr window, FloatHiPtr cutoff, Int4Ptr lin
  * @param buffer filled with filtering commands for one algorithm. [out]
 */
 static const Char *
-BlastSetUp_load_options_to_buffer(const Char *instructions, CharPtr buffer)
+BlastSetUp_load_options_to_buffer(const Char *instructions, Char* buffer)
 {
 	Boolean not_started=TRUE;
-	CharPtr buffer_ptr;
+	Char* buffer_ptr;
 	const Char *ptr;
 	Int4 index;
 
@@ -543,37 +543,37 @@ BlastSetUp_load_options_to_buffer(const Char *instructions, CharPtr buffer)
 #define CC_LINKER 32
 
 Int2
-BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length, 
-   Int4 offset, CharPtr instructions, Boolean *mask_at_hash, 
-   BlastSeqLocPtr *seqloc_retval)
+BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length, 
+   Int4 offset, Char* instructions, Boolean *mask_at_hash, 
+   BlastSeqLoc* *seqloc_retval)
 {
 	Boolean do_default=FALSE, do_seg=FALSE, do_dust=FALSE; 
-	CharPtr buffer=NULL;
+	Char* buffer=NULL;
    const Char *ptr;
 	Int2 seqloc_num;
 	Int2 status=0;		/* return value. */
 	Int4 window_dust, level_dust, minwin_dust, linker_dust;
-   BlastSeqLocPtr dust_loc = NULL, seg_loc = NULL;
-	SegParametersPtr sparamsp=NULL;
+   BlastSeqLoc* dust_loc = NULL,* seg_loc = NULL;
+	SegParameters* sparamsp=NULL;
 #ifdef CC_FILTER_ALLOWED
    Boolean do_coil_coil = FALSE;
-   BlastSeqLocPtr cc_loc = NULL;
+   BlastSeqLoc* cc_loc = NULL;
 	PccDatPtr pccp;
    Int4 window_cc, linker_cc;
 	Nlm_FloatHi cutoff_cc;
 #endif
 #ifdef TEMP_BLAST_OPTIONS
    /* TEMP_BLAST_OPTIONS is set to zero until these are implemented. */
-   BlastSeqLocPtr vs_loc = NULL, repeat_loc = NULL;
+   BlastSeqLoc* vs_loc = NULL,* repeat_loc = NULL;
 	BLAST_OptionsBlkPtr repeat_options, vs_options;
 	Boolean do_repeats=FALSE; 	/* screen for orgn. specific repeats. */
 	Boolean do_vecscreen=FALSE;	/* screen for vector contamination. */
 	Boolean myslp_allocated;
-	CharPtr repeat_database=NULL, vs_database=NULL, error_msg;
+	Char* repeat_database=NULL,* vs_database=NULL,* error_msg;
 	SeqLocPtr repeat_slp=NULL, vs_slp=NULL;
 	SeqAlignPtr seqalign;
 	SeqLocPtr myslp, seqloc_var, seqloc_tmp;
-	ListNodePtr vnp=NULL, vnp_var;
+	ListNode* vnp=NULL,* vnp_var;
 #endif
 
 #ifdef CC_FILTER_ALLOWED
@@ -599,7 +599,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 	}
 	else
 	{
-		buffer = (CharPtr) calloc(strlen(instructions), sizeof(Char));
+		buffer = (Char*) calloc(strlen(instructions), sizeof(Char));
 		ptr = instructions;
 		/* allow old-style filters when m cannot be followed by the ';' */
 		if (*ptr == 'm' && ptr[1] == ' ')
@@ -794,7 +794,7 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 
 	if (seqloc_num)
 	{ 
-		BlastSeqLocPtr seqloc_list=NULL;  /* Holds all SeqLoc's for
+		BlastSeqLoc* seqloc_list=NULL;  /* Holds all SeqLoc's for
                                                       return. */
 #if 0
 		if (seg_slp)
