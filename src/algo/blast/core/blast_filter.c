@@ -41,7 +41,7 @@ Contents: All code related to query sequence masking/filtering for BLAST
 #include <blast_filter.h>
 #include <blast_dust.h>
 #include <blast_seg.h>
-#if CC_FILTER_ALLOWED
+#ifdef CC_FILTER_ALLOWED
 #include <urkpcc.h>
 #endif
 
@@ -425,6 +425,7 @@ parse_seg_options(const Char *ptr, Int4Ptr window, FloatHiPtr locut, FloatHiPtr 
 	return 0;
 }
 
+#ifdef CC_FILTER_ALLOWED
 /** Coiled-coiled algorithm parameters. 
  * @param ptr buffer containing instructions. [in]
  * @param window returns window for coil-coiled algorithm. [out]
@@ -482,6 +483,7 @@ parse_cc_options(const Char *ptr, Int4Ptr window, FloatHiPtr cutoff, Int4Ptr lin
 
 	return 0;
 }
+#endif
 
 /** Copies filtering commands for one filtering algorithm from "instructions" to
  * "buffer". 
@@ -545,21 +547,24 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
    Int4 offset, CharPtr instructions, Boolean *mask_at_hash, 
    BlastSeqLocPtr *seqloc_retval)
 {
-	Boolean do_default=FALSE, do_seg=FALSE, do_coil_coil=FALSE, do_dust=FALSE; 
+	Boolean do_default=FALSE, do_seg=FALSE, do_dust=FALSE; 
 	CharPtr buffer=NULL;
    const Char *ptr;
 	Int2 seqloc_num;
 	Int2 status=0;		/* return value. */
-	Int4 window_cc, linker_cc, window_dust, level_dust, minwin_dust, linker_dust;
+	Int4 window_dust, level_dust, minwin_dust, linker_dust;
    BlastSeqLocPtr dust_loc = NULL, seg_loc = NULL;
-   BlastSeqLocPtr cc_loc = NULL, vs_loc = NULL, repeat_loc = NULL;
-#if CC_FILTER_ALLOWED
-	PccDatPtr pccp;
-#endif
-	Nlm_FloatHi cutoff_cc;
 	SegParametersPtr sparamsp=NULL;
+#ifdef CC_FILTER_ALLOWED
+   Boolean do_coil_coil = FALSE;
+   BlastSeqLocPtr cc_loc = NULL;
+	PccDatPtr pccp;
+   Int4 window_cc, linker_cc;
+	Nlm_FloatHi cutoff_cc;
+#endif
 #ifdef TEMP_BLAST_OPTIONS
    /* TEMP_BLAST_OPTIONS is set to zero until these are implemented. */
+   BlastSeqLocPtr vs_loc = NULL, repeat_loc = NULL;
 	BLAST_OptionsBlkPtr repeat_options, vs_options;
 	Boolean do_repeats=FALSE; 	/* screen for orgn. specific repeats. */
 	Boolean do_vecscreen=FALSE;	/* screen for vector contamination. */
@@ -571,7 +576,9 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 	ValNodePtr vnp=NULL, vnp_var;
 #endif
 
+#ifdef CC_FILTER_ALLOWED
 	cutoff_cc = CC_CUTOFF;
+#endif
 
 	/* FALSE is the default right now. */
 	if (mask_at_hash)
@@ -616,6 +623,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 			}
 			else if (*ptr == 'C')
 			{
+#ifdef CC_FILTER_ALLOWED
 				ptr = BlastSetUp_load_options_to_buffer(ptr+1, buffer);
 				window_cc = CC_WINDOW;
 				cutoff_cc = CC_CUTOFF;
@@ -623,6 +631,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 				if (buffer[0] != NULLB)
 					parse_cc_options(buffer, &window_cc, &cutoff_cc, &linker_cc);
 				do_coil_coil = TRUE;
+#endif
 			}
 			else if (*ptr == 'D')
 			{
@@ -693,9 +702,9 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 			sparamsp = NULL;
 			seqloc_num++;
 		}
+#ifdef CC_FILTER_ALLOWED
 		if (do_coil_coil)
 		{
-#if CC_FILTER_ALLOWED
 			pccp = PccDatNew ();
 			pccp->window = window_cc;
 			ReadPccData (pccp);
@@ -704,9 +713,9 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
                                           SeqIdDup(sip), FALSE);
 			sfree(scores);
 			PccDatFree (pccp);
-#endif
 			seqloc_num++;
 		}
+#endif
 	}
 	else
 	{
