@@ -331,10 +331,11 @@ void CScope::ResetHistory(void)
 
 
 void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
-                                        set<CBioseq_Handle>& handles)
+                                        set<CBioseq_Handle>& handles,
+                                        CSeq_inst::EMol filter)
 {
     iterate(set<CDataSource*>, itSrc, m_setDataSrc) {
-        if ((*itSrc)->GetTSEHandles(*this, tse, handles))
+        if ((*itSrc)->GetTSEHandles(*this, tse, handles, filter))
             break;
     }
 }
@@ -389,6 +390,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/10/02 17:58:23  grichenk
+* Added sequence type filter to CBioseq_CI
+*
 * Revision 1.28  2002/09/30 20:01:19  grichenk
 * Added methods to support CBioseq_CI
 *

@@ -44,8 +44,12 @@ BEGIN_SCOPE(objects)
 class CBioseq_CI
 {
 public:
+    // 'ctors
     CBioseq_CI(void);
-    CBioseq_CI(CScope& scope, const CSeq_entry& entry);
+    // Iterate over bioseqs from the entry taken from the scope. Use optional
+    // filter to iterate over selected bioseq types only.
+    CBioseq_CI(CScope& scope, const CSeq_entry& entry,
+        CSeq_inst::EMol filter = CSeq_inst::eMol_not_set);
     CBioseq_CI(const CBioseq_CI& bioseq_ci);
     ~CBioseq_CI(void);
 
@@ -53,6 +57,7 @@ public:
     CBioseq_CI& operator++ (void);
     CBioseq_CI& operator++ (int);
     operator bool (void) const;
+
     const CBioseq_Handle& operator* (void) const;
     const CBioseq_Handle* operator-> (void) const;
 
@@ -72,10 +77,10 @@ CBioseq_CI::CBioseq_CI(void)
     m_Current = m_Handles.end();
 }
 
-CBioseq_CI::CBioseq_CI(CScope& scope, const CSeq_entry& entry)
+CBioseq_CI::CBioseq_CI(CScope& scope, const CSeq_entry& entry, CSeq_inst::EMol filter)
     : m_Scope(&scope)
 {
-    m_Scope->x_PopulateBioseq_HandleSet(entry, m_Handles);
+    m_Scope->x_PopulateBioseq_HandleSet(entry, m_Handles, filter);
     m_Current = m_Handles.begin();
 }
 
@@ -144,6 +149,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/10/02 17:58:21  grichenk
+* Added sequence type filter to CBioseq_CI
+*
 * Revision 1.1  2002/09/30 20:00:48  grichenk
 * Initial revision
 *

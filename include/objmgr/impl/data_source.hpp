@@ -155,11 +155,13 @@ public:
                         CScope& scope);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
-    // Return false if the entry was not found or is not a TSE.
+    // Return false if the entry was not found or is not a TSE. "filter" may
+    // be used to select a particular sequence type.
     // Used to initialize bioseq iterators.
     bool GetTSEHandles(CScope& scope,
                        const CSeq_entry& entry,
-                       set<CBioseq_Handle>& handles);
+                       set<CBioseq_Handle>& handles,
+                       CSeq_inst::EMol filter);
 
     CSeqMatch_Info BestResolve(const CSeq_id& id, CScope& scope);
 
@@ -322,6 +324,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/10/02 17:58:23  grichenk
+* Added sequence type filter to CBioseq_CI
+*
 * Revision 1.27  2002/09/30 20:01:19  grichenk
 * Added methods to support CBioseq_CI
 *

@@ -1849,7 +1849,8 @@ bool CDataSource::IsSynonym(const CSeq_id& id1, CSeq_id& id2) const
 
 bool CDataSource::GetTSEHandles(CScope& scope,
                                 const CSeq_entry& entry,
-                                set<CBioseq_Handle>& handles)
+                                set<CBioseq_Handle>& handles,
+                                CSeq_inst::EMol filter)
 {
     // Find TSE_Info
     CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&entry));
@@ -1868,6 +1869,12 @@ bool CDataSource::GetTSEHandles(CScope& scope,
     TEntryToInfo bioseq_map;
     // Populate the map
     iterate (CTSE_Info::TBioseqMap, bit, found->second->m_BioseqMap) {
+        if (filter != CSeq_inst::eMol_not_set) {
+            // Filter sequences
+            _ASSERT(bit->second->m_Entry->IsSeq());
+            if (bit->second->m_Entry->GetSeq().GetInst().GetMol() != filter)
+                continue;
+        }
         bioseq_map[bit->second->m_Entry.GetPointer()] = bit->second;
     }
     // Convert each map entry into bioseq handle
@@ -1952,6 +1959,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2002/10/02 17:58:23  grichenk
+* Added sequence type filter to CBioseq_CI
+*
 * Revision 1.64  2002/09/30 20:01:19  grichenk
 * Added methods to support CBioseq_CI
 *

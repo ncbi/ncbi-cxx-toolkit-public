@@ -44,6 +44,7 @@
 #include <objects/objmgr/seqmatch_info.hpp>
 #include <objects/objmgr/mutex_pool.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbithr.hpp>
 
@@ -127,9 +128,10 @@ private:
                           CSeq_annot::C_Data::E_Choice sel,
                           CAnnotTypes_CI::TTSESet& tse_set);
 
-    // Get bioseq handles for sequences from the given TSE
+    // Get bioseq handles for sequences from the given TSE using the filter
     void x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
-                                    set<CBioseq_Handle>& handles);
+                                    set<CBioseq_Handle>& handles,
+                                    CSeq_inst::EMol filter);
 
     bool x_GetSequence(const CBioseq_Handle& handle,
                        TSeqPos point,
@@ -169,6 +171,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/10/02 17:58:21  grichenk
+* Added sequence type filter to CBioseq_CI
+*
 * Revision 1.20  2002/09/30 20:01:17  grichenk
 * Added methods to support CBioseq_CI
 *
