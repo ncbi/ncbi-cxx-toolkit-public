@@ -98,7 +98,7 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
                             char**          redirect,
                             int/*bool*/     drop_unread)
 {
-    assert(!uuu->sock);
+    assert(!uuu->sock && uuu->can_connect != eCC_None);
     /* we're here because something is going wrong */
     if (++uuu->failure_count >= uuu->net_info->max_try) {
         if (*redirect) {
@@ -865,6 +865,7 @@ static void s_Destroy(CONNECTOR connector)
 
     if (uuu->adjust_cleanup)
         uuu->adjust_cleanup(uuu->adjust_data);
+    ConnNetInfo_Destroy(uuu->net_info);
     BUF_Destroy(uuu->http);
     BUF_Destroy(uuu->r_buf);
     BUF_Destroy(uuu->w_buf);
@@ -945,6 +946,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.50  2003/05/20 23:54:00  lavr
+ * Reinstate ConnNetInfo_Destroy() accidently deleted from s_Destroy()
+ *
  * Revision 6.49  2003/05/20 21:26:40  lavr
  * Restructure SHttpConnector; add SHttpConnector::shut_down; enable to
  * call SOCK_Shutdown() again (after doing a dummy write of 0 bytes)
