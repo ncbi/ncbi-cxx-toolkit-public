@@ -53,7 +53,7 @@ CSequenceItem::CSequenceItem
  bool first, 
  CBioseqContext& ctx) :
     CFlatItem(&ctx),
-    m_From(from), m_To(to - 1), m_First(first)
+    m_From(from), m_To(to), m_First(first)
 {
     x_GatherInfo(ctx);
 }
@@ -78,24 +78,14 @@ void CSequenceItem::x_GatherInfo(CBioseqContext& ctx)
     x_SetObject(*ctx.GetHandle().GetBioseqCore());
 
     const CSeq_loc& loc = ctx.GetLocation();
-    TSeqPos offset = loc.GetStart(eExtreme_Positional);
-    TSeqPos start = m_From + offset;
-    TSeqPos end   = min(m_To + offset, ctx.GetHandle().GetInst_Length() - 1);
-    
-    CSeq_loc region;
-    CSeq_loc::TInt& ival = region.SetInt();
-    region.SetId(*ctx.GetPrimaryId());
-    ival.SetFrom(start);
-    ival.SetTo(end);
-    
-    m_Sequence = CSeqVector(region, ctx.GetHandle().GetScope());
+    m_Sequence = CSeqVector(loc, ctx.GetScope());
 
-    CSeqVector::TCoding code = CSeq_data::e_Iupacna;
-    if ( ctx.IsProt() ) {
-        code = ctx.Config().IsModeRelease() ?
+    CSeqVector::TCoding coding = CSeq_data::e_Iupacna;
+    if (ctx.IsProt()) {
+        coding = ctx.Config().IsModeRelease() ?
             CSeq_data::e_Iupacaa : CSeq_data::e_Ncbieaa;
     }
-    m_Sequence.SetCoding(code);
+    m_Sequence.SetCoding(coding);
 }
 
 
@@ -107,6 +97,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/03/28 17:24:09  shomrat
+* Changed internal representation
+*
 * Revision 1.12  2005/02/18 15:09:26  shomrat
 * CSeq_loc interface changes
 *
