@@ -102,9 +102,18 @@ public:
         ePidLock     ///< Create PID lock on cache (exception if failed) 
     };
 
-    void Open(const char* cache_path, 
-              const char* cache_name,
-              ELockMode lm = eNoLock);
+    /// Open local cache instance (read-write access)
+    /// If cache does not exists it is created.
+    ///
+    /// @param cache_path  Path to cache
+    /// @param cache_name  Cache instance name
+    /// @param lm          Locking mode, protection against using the 
+    ///                    cache from multiple applications
+    /// @param cache_size  Berkeley DB memory cache settings
+    void Open(const char*  cache_path, 
+              const char*  cache_name,
+              ELockMode    lm = eNoLock,
+              unsigned int cache_ram_size = 0);
 
     void Close();
 
@@ -231,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/05/24 18:02:49  kuznets
+ * CBDB_Cache::Open added parameter to specify RAM cache size
+ *
  * Revision 1.16  2004/04/28 12:21:46  kuznets
  * Cleaned up dead code
  *

@@ -417,7 +417,8 @@ CBDB_Cache::~CBDB_Cache()
 
 void CBDB_Cache::Open(const char* cache_path, 
                       const char* cache_name,
-                      ELockMode lm)
+                      ELockMode lm, 
+                      unsigned int cache_ram_size)
 {
     {{
     
@@ -464,6 +465,9 @@ void CBDB_Cache::Open(const char* cache_path,
 
     m_Env->SetDirectDB(true);
     m_Env->SetDirectLog(true);
+    if (cache_ram_size) {
+        m_Env->SetCacheSize(cache_ram_size);
+    }
 
     m_CacheDB = new SCacheDB();
     m_CacheAttrDB = new SCache_AttrDB();
@@ -1181,6 +1185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2004/05/24 18:03:03  kuznets
+ * CBDB_Cache::Open added parameter to specify RAM cache size
+ *
  * Revision 1.52  2004/05/17 20:55:11  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
