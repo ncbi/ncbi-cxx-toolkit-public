@@ -1221,7 +1221,7 @@ public:
                         bool/* byte_swapped */) const
     {
         _ASSERT(p1 && p2);
-        return NStr::strcasecmp((const char*) p1, (const char*) p2);
+        return NStr::CompareNocase((const char*) p1, (const char*) p2);
     }
 
     virtual 
@@ -2036,6 +2036,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2004/08/17 14:33:38  dicuccio
+ * Use NStr::CompareNocase() instead of NStr::strcasecmp() because the latter
+ * gives SWIG an especially hard time in Windows.
+ *
  * Revision 1.45  2004/07/09 15:15:24  kuznets
  * Fixed warning (MSVC 7)
  *
