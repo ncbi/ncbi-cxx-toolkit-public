@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.94  2001/10/12 14:52:05  thiessen
+* fix for wxGTK crash
+*
 * Revision 1.93  2001/10/11 14:18:57  thiessen
 * make MultiTextDialog non-modal
 *
@@ -1695,9 +1698,12 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
     if (!GetContext() || !renderer) return;
     SetCurrent();
 
+// in wxGTK >= 2.3.2, this causes a system crash on some Solaris machines...
+#if !defined(__WXGTK__) || wxVERSION_NUMBER < 2302
     // keep mouse focus while holding down button
     if (event.LeftDown()) CaptureMouse();
     if (event.LeftUp()) ReleaseMouse();
+#endif
 
     if (event.LeftIsDown()) {
         if (!dragging) {
