@@ -409,7 +409,7 @@ on SetProjectData()
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xalnmgr", "xvalidate"})
 		
 		-- AddPlugin("gui_algo_stdio", {}, "plugins:algo:stdio", {}) -- empty
-		AddPlugin("gui_algo_print_test", {}, "plugins:algo:print_test", {})
+		-- AddPlugin("gui_algo_print_test", {}, "plugins:algo:print_test", {}) -- broke
 		
 		
 	end if
