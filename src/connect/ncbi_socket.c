@@ -1282,6 +1282,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     (*sock)->r_status = eIO_Success;
     (*sock)->eof      = 0/*false*/;
     (*sock)->w_status = eIO_Success;
+    (*sock)->connect  = 1/*true*/;
     /* all timeouts zeroed - infinite */
     BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
     /* w_buf is unused for accepted sockets */
@@ -1697,7 +1698,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
         for (i = j; i < n; i++) {
             /* try to push pending writes */
             if (polls[i].event == eIO_Read  &&  polls[i].revent == eIO_Write) {
-                assert(n != 1  &&  polls[i].sock->pending != 0);
+                assert(n != 1  &&  polls[i].sock->pending);
                 status = s_WritePending(polls[i].sock, tv, 1);
                 if (status != eIO_Success  &&  status != eIO_Timeout) {
                     polls[i].revent = eIO_Close;
@@ -1906,7 +1907,7 @@ static EIO_Status s_WritePending(SOCK                  sock,
     size_t off;
 
     assert(sock->type != eSOCK_Datagram  &&  sock->sock != SOCK_INVALID);
-    if (sock->pending == 0  ||  sock->w_status == eIO_Closed)
+    if (sock->w_status == eIO_Closed)
         return eIO_Success;
 
     if ( !sock->connect ) {
@@ -1977,8 +1978,7 @@ static EIO_Status s_Read(SOCK        sock,
         return sock->r_status;
     }
 
-    status = s_WritePending(sock, sock->r_timeout, 0);
-    if (!sock->connect  ||  status != eIO_Success)
+    if ((status = s_WritePending(sock, sock->r_timeout, 0)) != eIO_Success)
         return status;
 
     for (;;) { /* retry if either blocked or interrupted (optional) */
@@ -3706,6 +3706,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.108  2003/05/19 21:04:37  lavr
+ * Fix omission to make listening sockets "connected"
+ *
  * Revision 6.107  2003/05/19 18:47:42  lavr
  * Fix MSVC compilation errors
  *
