@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/02/17 21:26:22  vasilche
+* Inline methods now will be at the end of *_Base.hpp files.
+*
 * Revision 1.2  2000/02/17 20:05:03  vasilche
 * Inline methods now will be generated in *_Base.inl files.
 * Fixed processing of StringStore.
@@ -99,7 +102,6 @@ public:
             return m_HeaderPrefix;
         }
     string GetHPPName(void) const;
-    string GetINLName(void) const;
     string GetCPPName(void) const;
     string GetUserHPPName(void) const;
     string GetUserCPPName(void) const;
