@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2002/01/21 04:48:15  vakatov
+ * Use #_MSC_VER instead of #NCBI_OS_MSWIN
+ *
  * Revision 1.6  2002/01/20 04:42:22  vakatov
  * Do not #define _DEBUG on NCBI_OS_MSWIN
  *
@@ -57,7 +60,7 @@
 #  undef  NDEBUG
 #endif 
 
-#if !defined(_DEBUG)  &&  !defined(NCBI_OS_MSWIN)
+#if !defined(_DEBUG)  &&  !defined(_MSC_VER)
 #  define _DEBUG
 #endif 
 
