@@ -3,7 +3,7 @@
 SRC = ncbithr ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbiargs \
       ncbistr ncbiobj ncbitime ncbimtx ncbi_safe_static ncbi_system ncbifile \
       ncbidbg ncbidll ncbiexec ncbicfg $(ncbicntr) ddumpable version metareg \
-      ncbiatomic ncbi_process plugin_manager ncbidiag_p ncbi_config \
+      env_reg ncbiatomic ncbi_process plugin_manager ncbidiag_p ncbi_config \
       obj_store plugin_manager_store
 
 UNIX_SRC = ncbi_os_unix

@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Authors:  Denis Vakatov, Aaron Ucko
  *
  * File Description:
  *   Handle info in the NCBI configuration file(s):
@@ -35,6 +35,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/env_reg.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbimtx.hpp>
 
 #include <algorithm>
@@ -135,6 +137,11 @@ inline bool s_Backslashed(const string& s, SIZE_TYPE pos)
     return (pos - last_non_bs) % 2 == 0;
 }
 
+inline string s_FlatKey(const string& section, const string& name)
+{
+    return section + '#' + name;
+}
+
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -226,6 +233,9 @@ const string& IRegistry::Get(const string& section, const string& name,
                              TFlags flags) const
 {
     x_CheckFlags("IRegistry::Get", flags, fLayerFlags);
+    if ( !(flags & fTPFlags) ) {
+        flags |= fTPFlags;
+    }
     string clean_section = NStr::TruncateSpaces(section);
     if ( !s_IsNameSection(clean_section) ) {
         _TRACE("IRegistry::Get: bad section name \""
@@ -246,6 +256,9 @@ bool IRegistry::HasEntry(const string& section, const string& name,
                          TFlags flags) const
 {
     x_CheckFlags("IRegistry::HasEntry", flags, fLayerFlags);
+    if ( !(flags & fTPFlags) ) {
+        flags |= fTPFlags;
+    }
     string clean_section = NStr::TruncateSpaces(section);
     if ( !s_IsNameSection(clean_section) ) {
         _TRACE("IRegistry::HasEntry: bad section name \""
@@ -452,7 +465,11 @@ void IRWRegistry::Clear(TFlags flags)
 void IRWRegistry::Read(CNcbiIstream& is, TFlags flags)
 {
     x_CheckFlags("IRWRegistry::Read", flags, fTransient | fNoOverride);
+    x_Read(is, flags);
+}
 
+void IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags)
+{
     // Whether to consider this read to be (unconditionally) non-modifying
     EFlags layer         = (flags & fTransient) ? fTransient : fPersistent;
     bool   non_modifying = Empty(layer)  &&  !Modified(layer);
@@ -1037,10 +1054,10 @@ void CTwoLayerRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
 const string& CTwoLayerRegistry::x_Get(const string& section,
                                        const string& name, TFlags flags) const
 {
-    if ( !(flags & fPersistent) ) {
+    if (flags & fTransient) {
         const string& result = m_Transient->Get(section, name,
                                                 flags & ~fTPFlags);
-        if ( !result.empty() ) {
+        if ( !result.empty()  ||  !(flags & fPersistent) ) {
             return result;
         }
     }
@@ -1050,12 +1067,10 @@ const string& CTwoLayerRegistry::x_Get(const string& section,
 bool CTwoLayerRegistry::x_HasEntry(const string& section, const string& name,
                                    TFlags flags) const
 {
-    if ( !(flags & fPersistent)
-        &&  m_Transient->HasEntry(section, name, flags & ~fTPFlags) ) {
-        return true;
-    } else {
-        return m_Persistent->HasEntry(section, name, flags & ~fTPFlags);
-    }
+    return (((flags & fTransient)
+             &&  m_Transient->HasEntry(section, name, flags & ~fTPFlags))  ||
+            ((flags & fPersistent)
+             &&  m_Persistent->HasEntry(section, name, flags & ~fTPFlags)));
 }
 
 const string& CTwoLayerRegistry::x_GetComment(const string& section,
@@ -1142,26 +1157,47 @@ bool CTwoLayerRegistry::x_SetComment(const string& comment,
 
 //////////////////////////////////////////////////////////////////////
 //
-// CNcbiRegistry -- mostly just a wrapper around a general-purpose setup
+// CNcbiRegistry --  elaborate general-purpose setup
 
-const char kReservedName[] = "__MAIN__";
+const char* CNcbiRegistry::sm_MainRegName = ".main";
+const char* CNcbiRegistry::sm_EnvRegName  = ".env";
+const char* CNcbiRegistry::sm_FileRegName = ".file";
+
+inline
+void CNcbiRegistry::x_Init(void)
+{
+    m_AllRegistries.Reset(new CCompoundRegistry);
+    m_AllRegistries->SetCoreCutoff(ePriority_Reserved);
+
+    m_MainRegistry.Reset(new CTwoLayerRegistry);
+    m_AllRegistries->Add(*m_MainRegistry, ePriority_Main);
+
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        m_EnvRegistry.Reset(new CEnvironmentRegistry(app->SetEnvironment()));
+    } else {
+        m_EnvRegistry.Reset(new CEnvironmentRegistry);
+    }
+    m_AllRegistries->Add(*m_EnvRegistry, ePriority_Environment);
+
+    m_FileRegistry.Reset(new CTwoLayerRegistry);
+    m_AllRegistries->Add(*m_FileRegistry, ePriority_File);
+}
 
 CNcbiRegistry::CNcbiRegistry(void)
-    : m_MainRegistry(new CTwoLayerRegistry),
-      m_AllRegistries(new CCompoundRegistry)
 {
-    m_AllRegistries->SetCoreCutoff(ePriority_Reserved);
-    m_AllRegistries->Add(*m_MainRegistry, ePriority_Reserved, kReservedName);
+    x_Init();
 }
 
 CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags)
-    : m_MainRegistry(new CTwoLayerRegistry),
-      m_AllRegistries(new CCompoundRegistry)
 {
     x_CheckFlags("CNcbiRegistry::CNcbiRegistry", flags, fTransient);
-    m_AllRegistries->SetCoreCutoff(ePriority_Reserved);
-    m_AllRegistries->Add(*m_MainRegistry, ePriority_Reserved, kReservedName);
-    Read(is, flags);
+    x_Init();
+    m_FileRegistry->Read(is, flags);
+}
+
+CNcbiRegistry::~CNcbiRegistry()
+{
 }
 
 CNcbiRegistry::TPriority CNcbiRegistry::GetCoreCutoff(void)
@@ -1177,14 +1213,14 @@ void CNcbiRegistry::SetCoreCutoff(TPriority prio)
 void CNcbiRegistry::Add(const IRegistry& reg, TPriority prio,
                         const string& name)
 {
-    if (name == kReservedName) {
+    if (name.size() > 1  &&  name[0] == '.') {
         NCBI_THROW2(CRegistryException, eErr,
                     "The sub-registry name " + name + " is reserved.", 0);
     }
-    if (prio >= ePriority_Reserved) {
+    if (prio > ePriority_MaxUser) {
         ERR_POST(Warning
                  << "Reserved priority value automatically downgraded.");
-        prio = ePriority_Max;
+        prio = ePriority_MaxUser;
     }
     m_AllRegistries->Add(reg, prio, name);
 }
@@ -1235,12 +1271,28 @@ void CNcbiRegistry::x_SetModifiedFlag(bool modified, TFlags flags)
 const string& CNcbiRegistry::x_Get(const string& section, const string& name,
                                    TFlags flags) const
 {
+    TClearedEntries::const_iterator it
+        = m_ClearedEntries.find(s_FlatKey(section, name));
+    if (it != m_ClearedEntries.end()) {
+        flags &= ~it->second;
+        if ( !flags ) {
+            return kEmptyStr;
+        }
+    }
     return m_AllRegistries->Get(section, name, flags);
 }
 
 bool CNcbiRegistry::x_HasEntry(const string& section, const string& name,
                                TFlags flags) const
 {
+    TClearedEntries::const_iterator it
+        = m_ClearedEntries.find(s_FlatKey(section, name));
+    if (it != m_ClearedEntries.end()) {
+        flags &= ~it->second;
+        if ( !flags ) {
+            return false;
+        }
+    }
     return m_AllRegistries->HasEntry(section, name, flags);
 }
 
@@ -1254,6 +1306,7 @@ const string& CNcbiRegistry::x_GetComment(const string& section,
 void CNcbiRegistry::x_Enumerate(const string& section, list<string>& entries,
                                 TFlags flags) const
 {
+    // XXX - may reveal "ghosts"
     m_AllRegistries->EnumerateEntries(section, &entries, flags);
 }
 
@@ -1262,15 +1315,35 @@ void CNcbiRegistry::x_ChildLockAction(FLockAction action)
     m_AllRegistries->x_ChildLockAction(action);
 }
 
-void CNcbiRegistry::x_Clear(TFlags flags)
+void CNcbiRegistry::x_Clear(TFlags flags) // XXX - should this do more?
 {
     m_MainRegistry->Clear(flags);
+    m_FileRegistry->Clear(flags);
 }
 
 bool CNcbiRegistry::x_Set(const string& section, const string& name,
                           const string& value, TFlags flags,
                           const string& comment)
 {
+    if ( !(flags & fPersistent) ) {
+        flags |= fTransient;
+    }
+    if (value.empty()) {
+        if ( !(flags & fNoOverride) ) {
+            bool was_empty = Get(section, name, flags).empty();
+            m_MainRegistry->Set(section, name, value, flags, comment);
+            m_ClearedEntries[s_FlatKey(section, name)] |= flags;
+            return !was_empty;
+        }
+    } else {
+        TClearedEntries::iterator it
+            = m_ClearedEntries.find(s_FlatKey(section, name));
+        if (it != m_ClearedEntries.end()) {
+            if ((it->second &= ~flags) == 0) {
+                m_ClearedEntries.erase(it);
+            }
+        }
+    }
     return m_MainRegistry->Set(section, name, value, flags, comment);
 }
 
@@ -1278,6 +1351,18 @@ bool CNcbiRegistry::x_SetComment(const string& comment, const string& section,
                                  const string& name, TFlags flags)
 {
     return m_MainRegistry->SetComment(comment, section, name, flags);
+}
+
+void CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
+{
+    // Normally, all settings should go to the main portion.  However,
+    // loading an initial configuration file should instead go to the
+    // file portion so that environment settings can take priority.
+    if (m_MainRegistry->Empty()  &&  m_FileRegistry->Empty()) {
+        m_FileRegistry->Read(is, flags);
+    } else {
+        m_MainRegistry->Read(is, flags);
+    }
 }
 
 
@@ -1288,6 +1373,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/03/14 15:52:09  ucko
+ * Support taking settings from the environment.
+ *
  * Revision 1.45  2005/01/18 15:18:51  ucko
  * CTwoLayerRegistry::x_Enumerate: remember to call set_union with PNocase().
  *

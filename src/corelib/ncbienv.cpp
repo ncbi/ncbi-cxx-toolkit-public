@@ -41,6 +41,8 @@
 #include <unistd.h>
 #endif
 
+extern char** environ;
+
 BEGIN_NCBI_SCOPE
 
 
@@ -50,7 +52,7 @@ BEGIN_NCBI_SCOPE
 
 CNcbiEnvironment::CNcbiEnvironment(void)
 {
-    return;
+    Reset(environ);
 }
 
 
@@ -94,6 +96,19 @@ const string& CNcbiEnvironment::Get(const string& name) const
     if ( i != m_Cache.end() )
         return i->second;
     return m_Cache[name] = Load(name);
+}
+
+
+void CNcbiEnvironment::Enumerate(list<string>& names, const string& prefix)
+    const
+{
+    names.clear();
+    for (map<string, string>::const_iterator it = m_Cache.lower_bound(prefix);
+         it != m_Cache.end()  &&  NStr::StartsWith(it->first, prefix);  ++it) {
+        if ( !it->second.empty() ) { // missing/empty values cached too...
+            names.push_back(it->first);
+        }
+    }
 }
 
 
@@ -272,6 +287,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/03/14 15:52:09  ucko
+ * Support taking settings from the environment.
+ *
  * Revision 1.13  2004/08/09 19:06:56  ucko
  * CNcbiArguments: add an optional argument for the fully-resolved
  * program name (which is already being cached) to several functions.

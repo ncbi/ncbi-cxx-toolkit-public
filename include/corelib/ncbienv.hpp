@@ -132,6 +132,10 @@ public:
     /// cached, too, after the call to "Get()".
     const string& Get(const string& name) const;
 
+    /// Find all variable names starting with an optional prefix.
+    void Enumerate(list<string>& names, const string& prefix = kEmptyStr)
+        const;
+
     /// Set an environment variable by name
     ///
     /// This will throw an exception if setting the variable fails
@@ -232,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/03/14 15:52:09  ucko
+ * Support taking settings from the environment.
+ *
  * Revision 1.16  2004/08/19 12:44:16  dicuccio
  * Dropped unnecessary export specifier on exceptions
  *

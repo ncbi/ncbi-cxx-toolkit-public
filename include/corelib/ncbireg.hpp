@@ -390,6 +390,10 @@ protected:
     virtual bool x_SetComment(const string& comment, const string& section,
                               const string& name, TFlags flags) = 0;
 
+    /// Most implementations should not override this, but
+    /// CNcbiRegistry must, to handle some special cases properly.
+    virtual void x_Read(CNcbiIstream& is, TFlags flags);
+
     // for use by implementations
     static bool MaybeSet(string& target, const string& value, TFlags flags);
 };
@@ -555,8 +559,7 @@ protected:
     bool x_HasEntry(const string& section, const string& name,
                     TFlags flags) const;
     const string& x_GetComment(const string& section, const string& name,
-                               TFlags flags)
-        const;
+                               TFlags flags) const;
     void x_Enumerate(const string& section, list<string>& entries,
                      TFlags flags) const;
     void x_ChildLockAction(FLockAction action);
@@ -573,6 +576,9 @@ private:
     CRegRef m_Transient;
     CRegRef m_Persistent;
 };
+
+
+class CEnvironmentRegistry; // see <corelib/env_reg.hpp>
 
 
 
@@ -615,16 +621,18 @@ public:
     ///   Read()
     CNcbiRegistry(CNcbiIstream& is, TFlags flags = 0);
 
+    ~CNcbiRegistry();
+
     // The below interfaces provide access to the embedded compound registry.
 
     /// Priority for sub-registries; entries in higher-priority
     /// sub-registries take precedence over (identically named) entries
     /// in lower-priority ones.  Ties are broken arbitrarily.
     enum EPriority {
-        ePriority_Min      = CCompoundRegistry::ePriority_Min,
+        ePriority_MinUser  = CCompoundRegistry::ePriority_Min,
         ePriority_Default  = CCompoundRegistry::ePriority_Default,
-        ePriority_Max      = CCompoundRegistry::ePriority_Max - 1,
-        ePriority_Reserved = CCompoundRegistry::ePriority_Max
+        ePriority_MaxUser  = CCompoundRegistry::ePriority_Max - 100,
+        ePriority_Reserved ///< Everything greater is for internal use.
     };
     typedef int TPriority; ///< Not restricted to ePriority_*.
 
@@ -656,6 +664,11 @@ public:
                                         const string& entry = kEmptyStr,
                                         TFlags        flags = 0) const;
 
+    /// Predefined subregistries' names.
+    static const char* sm_MainRegName;
+    static const char* sm_EnvRegName;
+    static const char* sm_FileRegName;
+
 protected:
     bool x_Empty(TFlags flags) const;
     bool x_Modified(TFlags flags) const;
@@ -676,10 +689,24 @@ protected:
                const string& comment);
     bool x_SetComment(const string& comment, const string& section,
                       const string& name, TFlags flags);
+    void x_Read(CNcbiIstream& is, TFlags flags);
 
 private:
-    CRef<CTwoLayerRegistry> m_MainRegistry;
-    CRef<CCompoundRegistry> m_AllRegistries;
+    void x_Init(void);
+
+    enum EReservedPriority {
+        ePriority_File = ePriority_Reserved,
+        ePriority_Environment,
+        ePriority_Main
+    };
+
+    typedef map<string, TFlags> TClearedEntries;
+
+    TClearedEntries            m_ClearedEntries;
+    CRef<CTwoLayerRegistry>    m_MainRegistry;
+    CRef<CEnvironmentRegistry> m_EnvRegistry;
+    CRef<CTwoLayerRegistry>    m_FileRegistry;
+    CRef<CCompoundRegistry>    m_AllRegistries;
 };
 
 
@@ -752,6 +779,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/03/14 15:52:09  ucko
+ * Support taking settings from the environment.
+ *
  * Revision 1.36  2004/12/21 16:20:58  ucko
  * IRegistry: comment out trivial x_* methods' unused arguments' names.
  *
