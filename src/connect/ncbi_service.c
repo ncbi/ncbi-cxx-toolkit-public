@@ -28,127 +28,6 @@
  * File Description:
  *   Top-level API to resolve NCBI service name to the server meta-address.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.37  2002/05/06 19:16:50  lavr
- * +#include <stdio.h>, +SERV_ServiceName() - translation of service name
- *
- * Revision 6.36  2002/04/15 20:07:09  lavr
- * Use size_t for iterating over skip_info's
- *
- * Revision 6.35  2002/04/13 06:35:11  lavr
- * Fast track routine SERV_GetInfoEx(), many syscalls optimizations
- *
- * Revision 6.34  2002/03/22 19:51:28  lavr
- * Do not explicitly include <assert.h>: included from ncbi_core.h
- *
- * Revision 6.33  2002/03/11 21:59:32  lavr
- * 'Client version' changed into 'Client revision'
- *
- * Revision 6.32  2001/11/09 20:03:14  lavr
- * Minor fix to remove a trailing space in client version tag
- *
- * Revision 6.31  2001/10/01 19:52:38  lavr
- * Call update directly; do not remove time from server specs in SERV_Print()
- *
- * Revision 6.30  2001/09/29 19:33:04  lavr
- * BUGFIX: SERV_Update() requires VT bound (was not the case in constructor)
- *
- * Revision 6.29  2001/09/28 22:03:12  vakatov
- * Included missing <connect/ncbi_ansi_ext.h>
- *
- * Revision 6.28  2001/09/28 20:50:16  lavr
- * SERV_Update() modified to capture Used-Server-Info tags;
- * Update VT method changed - now called on per-line basis;
- * Few bugfixes related to keeping last info correct
- *
- * Revision 6.27  2001/09/24 20:28:48  lavr
- * +SERV_Reset(); SERV_Close() changed to utilize SERV_Reset()
- *
- * Revision 6.26  2001/09/10 21:19:48  lavr
- * SERV_Print():  Client version tag added
- * SERV_OpenEx(): Firewall type handling
- *
- * Revision 6.25  2001/08/20 21:58:19  lavr
- * Parameter change for clarity: info -> net_info if type is SConnNetInfo
- *
- * Revision 6.24  2001/06/25 15:35:54  lavr
- * Added function: SERV_GetNextInfoEx
- *
- * Revision 6.23  2001/06/20 17:27:49  kans
- * include <time.h> for Mac compiler
- *
- * Revision 6.22  2001/06/19 19:12:01  lavr
- * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
- *
- * Revision 6.21  2001/05/24 21:28:12  lavr
- * Timeout for skip servers increased to 1 year period
- *
- * Revision 6.20  2001/05/17 15:02:51  lavr
- * Typos corrected
- *
- * Revision 6.19  2001/04/24 21:37:26  lavr
- * New code for: SERV_MapperName() and SERV_Penalize().
- *
- * Revision 6.18  2001/03/21 21:23:30  lavr
- * Explicit type conversion size_t -> unsigned in printf
- *
- * Revision 6.17  2001/03/20 22:03:32  lavr
- * BUGFIX in SERV_Print (miscalculation of buflen for accepted server types)
- *
- * Revision 6.16  2001/03/06 23:55:25  lavr
- * SOCK_gethostaddr -> SOCK_gethostbyname
- *
- * Revision 6.15  2001/03/05 23:10:29  lavr
- * SERV_WriteInfo takes only one argument now
- *
- * Revision 6.14  2001/03/02 20:09:51  lavr
- * Support added for SERV_LOCALHOST as preferred_host.
- *
- * Revision 6.13  2001/03/01 00:31:23  lavr
- * SERV_OpenSimple now builds SConnNetInfo to use both LBSMD and DISPD.CGI
- *
- * Revision 6.12  2001/02/09 17:33:06  lavr
- * Modified: fSERV_StatelessOnly overrides info->stateless
- *
- * Revision 6.11  2001/01/25 17:05:32  lavr
- * Bugfix in SERV_OpenEx: op was not inited to 0
- *
- * Revision 6.10  2001/01/08 23:47:29  lavr
- * (unsigned char) conversion in isspace
- *
- * Revision 6.9  2001/01/08 22:38:34  lavr
- * Numerous patches to code after debugging
- *
- * Revision 6.8  2000/12/29 18:01:27  lavr
- * SERV_Print introduced; pool of skipped services now follows
- * expiration times of services and is updated on that basis.
- *
- * Revision 6.7  2000/12/06 22:20:30  lavr
- * Skip info list is not maintained forever; instead the entries get
- * deleted in accordance with their expiration period
- *
- * Revision 6.6  2000/10/20 17:19:04  lavr
- * SConnNetInfo made 'const' as a parameter to 'SERV_Open*'
- * 'SERV_Update' added as a private interface
- *
- * Revision 6.5  2000/10/05 22:36:21  lavr
- * Additional parameters in call to DISPD mapper
- *
- * Revision 6.4  2000/05/31 23:12:23  lavr
- * First try to assemble things together to get working service mapper
- *
- * Revision 6.3  2000/05/22 16:53:11  lavr
- * Rename service_info -> server_info everywhere (including
- * file names) as the latter name is more relevant
- *
- * Revision 6.2  2000/05/12 21:42:59  lavr
- * Cleaned up for the C++ compilation, etc.
- *
- * Revision 6.1  2000/05/12 18:50:20  lavr
- * First working revision
- *
- * ==========================================================================
  */
 
 #include "ncbi_priv.h"
@@ -542,3 +421,131 @@ char* SERV_Print(SERV_ITER iter)
     BUF_Destroy(buf);
     return str;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.38  2002/09/04 15:11:41  lavr
+ * Log moved to end
+ *
+ * Revision 6.37  2002/05/06 19:16:50  lavr
+ * +#include <stdio.h>, +SERV_ServiceName() - translation of service name
+ *
+ * Revision 6.36  2002/04/15 20:07:09  lavr
+ * Use size_t for iterating over skip_info's
+ *
+ * Revision 6.35  2002/04/13 06:35:11  lavr
+ * Fast track routine SERV_GetInfoEx(), many syscalls optimizations
+ *
+ * Revision 6.34  2002/03/22 19:51:28  lavr
+ * Do not explicitly include <assert.h>: included from ncbi_core.h
+ *
+ * Revision 6.33  2002/03/11 21:59:32  lavr
+ * 'Client version' changed into 'Client revision'
+ *
+ * Revision 6.32  2001/11/09 20:03:14  lavr
+ * Minor fix to remove a trailing space in client version tag
+ *
+ * Revision 6.31  2001/10/01 19:52:38  lavr
+ * Call update directly; do not remove time from server specs in SERV_Print()
+ *
+ * Revision 6.30  2001/09/29 19:33:04  lavr
+ * BUGFIX: SERV_Update() requires VT bound (was not the case in constructor)
+ *
+ * Revision 6.29  2001/09/28 22:03:12  vakatov
+ * Included missing <connect/ncbi_ansi_ext.h>
+ *
+ * Revision 6.28  2001/09/28 20:50:16  lavr
+ * SERV_Update() modified to capture Used-Server-Info tags;
+ * Update VT method changed - now called on per-line basis;
+ * Few bugfixes related to keeping last info correct
+ *
+ * Revision 6.27  2001/09/24 20:28:48  lavr
+ * +SERV_Reset(); SERV_Close() changed to utilize SERV_Reset()
+ *
+ * Revision 6.26  2001/09/10 21:19:48  lavr
+ * SERV_Print():  Client version tag added
+ * SERV_OpenEx(): Firewall type handling
+ *
+ * Revision 6.25  2001/08/20 21:58:19  lavr
+ * Parameter change for clarity: info -> net_info if type is SConnNetInfo
+ *
+ * Revision 6.24  2001/06/25 15:35:54  lavr
+ * Added function: SERV_GetNextInfoEx
+ *
+ * Revision 6.23  2001/06/20 17:27:49  kans
+ * include <time.h> for Mac compiler
+ *
+ * Revision 6.22  2001/06/19 19:12:01  lavr
+ * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
+ *
+ * Revision 6.21  2001/05/24 21:28:12  lavr
+ * Timeout for skip servers increased to 1 year period
+ *
+ * Revision 6.20  2001/05/17 15:02:51  lavr
+ * Typos corrected
+ *
+ * Revision 6.19  2001/04/24 21:37:26  lavr
+ * New code for: SERV_MapperName() and SERV_Penalize().
+ *
+ * Revision 6.18  2001/03/21 21:23:30  lavr
+ * Explicit type conversion size_t -> unsigned in printf
+ *
+ * Revision 6.17  2001/03/20 22:03:32  lavr
+ * BUGFIX in SERV_Print (miscalculation of buflen for accepted server types)
+ *
+ * Revision 6.16  2001/03/06 23:55:25  lavr
+ * SOCK_gethostaddr -> SOCK_gethostbyname
+ *
+ * Revision 6.15  2001/03/05 23:10:29  lavr
+ * SERV_WriteInfo takes only one argument now
+ *
+ * Revision 6.14  2001/03/02 20:09:51  lavr
+ * Support added for SERV_LOCALHOST as preferred_host.
+ *
+ * Revision 6.13  2001/03/01 00:31:23  lavr
+ * SERV_OpenSimple now builds SConnNetInfo to use both LBSMD and DISPD.CGI
+ *
+ * Revision 6.12  2001/02/09 17:33:06  lavr
+ * Modified: fSERV_StatelessOnly overrides info->stateless
+ *
+ * Revision 6.11  2001/01/25 17:05:32  lavr
+ * Bugfix in SERV_OpenEx: op was not inited to 0
+ *
+ * Revision 6.10  2001/01/08 23:47:29  lavr
+ * (unsigned char) conversion in isspace
+ *
+ * Revision 6.9  2001/01/08 22:38:34  lavr
+ * Numerous patches to code after debugging
+ *
+ * Revision 6.8  2000/12/29 18:01:27  lavr
+ * SERV_Print introduced; pool of skipped services now follows
+ * expiration times of services and is updated on that basis.
+ *
+ * Revision 6.7  2000/12/06 22:20:30  lavr
+ * Skip info list is not maintained forever; instead the entries get
+ * deleted in accordance with their expiration period
+ *
+ * Revision 6.6  2000/10/20 17:19:04  lavr
+ * SConnNetInfo made 'const' as a parameter to 'SERV_Open*'
+ * 'SERV_Update' added as a private interface
+ *
+ * Revision 6.5  2000/10/05 22:36:21  lavr
+ * Additional parameters in call to DISPD mapper
+ *
+ * Revision 6.4  2000/05/31 23:12:23  lavr
+ * First try to assemble things together to get working service mapper
+ *
+ * Revision 6.3  2000/05/22 16:53:11  lavr
+ * Rename service_info -> server_info everywhere (including
+ * file names) as the latter name is more relevant
+ *
+ * Revision 6.2  2000/05/12 21:42:59  lavr
+ * Cleaned up for the C++ compilation, etc.
+ *
+ * Revision 6.1  2000/05/12 18:50:20  lavr
+ * First working revision
+ *
+ * ==========================================================================
+ */
