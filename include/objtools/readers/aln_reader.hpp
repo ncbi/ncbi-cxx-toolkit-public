@@ -1,5 +1,5 @@
-#ifndef UTIL_CREADERS___ALN_READER__HPP
-#define UTIL_CREADERS___ALN_READER__HPP
+#ifndef OBJTOOLS_READERS___ALN_READER__HPP
+#define OBJTOOLS_READERS___ALN_READER__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -39,41 +39,51 @@
 BEGIN_NCBI_SCOPE
 
 
+///
+/// class CAlnReader supports importing a large variety of text-based
+/// alignment formats into standard data structures.
+///
+
 class NCBI_XOBJREAD_EXPORT CAlnReader
 {
 public:
+
+    // alphabets to try
+    enum EAlphabet {
+        eAlpha_Nucleotide,
+        eAlpha_Protein
+    };
 
     // constructor
     CAlnReader(CNcbiIstream& is) : m_IS(is), m_ReadDone(false) {};
 
     // destructor
-    ~CAlnReader(void) {};
+    ~CAlnReader(void);
 
 
 
     /// Sequence data accessors and modifiers:
 
-    const string& GetAlphabet(void)                    const {return m_Alphabet;};
-    string&       SetAlphabet(void)                          {return m_Alphabet;};
-    void          SetAlphabet(const string& value)           {m_Alphabet = value;};
+    const string& GetAlphabet(void) const;
+    string&       SetAlphabet(void);
+    void          SetAlphabet(const string& value);
+    void          SetAlphabet(EAlphabet alpha);
 
-    const string& GetBeginningGap(void)                const {return m_BeginningGap;};
-    string&       SetBeginningGap(void)                      {return m_BeginningGap;};
-    void          SetBeginningGap(const string& value)       {m_BeginningGap = value;};
+    const string& GetBeginningGap(void) const;
+    string&       SetBeginningGap(void);
+    void          SetBeginningGap(const string& value);
 
-    const string& GetMiddleGap(void)                   const {return m_MiddleGap;};
-    string&       SetMiddleGap(void)                         {return m_MiddleGap;};
-    void          SetMiddleGap(const string& value)          {m_MiddleGap = value;};
+    const string& GetMiddleGap(void) const;
+    string&       SetMiddleGap(void);
+    void          SetMiddleGap(const string& value);
 
-    const string& GetEndGap(void)                      const {return m_EndGap;};
-    string&       SetEndGap(void)                            {return m_EndGap;};
-    void          SetEndGap(const string& value)             {m_EndGap = value;};
+    const string& GetEndGap(void) const;
+    string&       SetEndGap(void);
+    void          SetEndGap(const string& value);
 
     /// Convenience function for setting beginning, middle, and
     /// end gap to the same thing
-    void          SetAllGap(const string& value)             {
-        m_BeginningGap = m_MiddleGap = m_EndGap = value;
-    };
+    void          SetAllGap(const string& value);
 
     const string& GetMissing(void)                     const {return m_Missing;};
     string&       SetMissing(void)                           {return m_Missing;};
@@ -85,9 +95,9 @@ public:
 
 
     /// Alternative & easy way to choose alphabet, etc.
-    void SetClustalNucl(void);
-    void SetClustalProt(void);
-
+    void SetClustal(EAlphabet alpha);
+    void SetPhylip(EAlphabet alpha);
+    void SetPaup(EAlphabet alpha);
 
 
     /// Read the file
@@ -111,8 +121,7 @@ public:
 
 private:
 
-    /// Prohibit default constructor, copy constructor and assignment operator
-    CAlnReader(void);
+    /// Prohibit copy constructor and assignment operator
     CAlnReader(const CAlnReader& value);
     CAlnReader& operator=(const CAlnReader& value);
 
@@ -150,13 +159,130 @@ private:
 };
 
 
+
+///////////////////////////////////////////////////////////////////////
+//
+//  Inline Methods
+//
+
+inline
+const string& CAlnReader::GetAlphabet(void) const
+{
+    return m_Alphabet;
+}
+
+
+inline
+string& CAlnReader::SetAlphabet(void)
+{
+    return m_Alphabet;
+}
+
+
+inline
+void CAlnReader::SetAlphabet(const string& value)
+{
+    m_Alphabet = value;
+}
+
+
+inline
+const string& CAlnReader::GetBeginningGap(void) const
+{
+    return m_BeginningGap;
+}
+
+
+inline
+string& CAlnReader::SetBeginningGap(void)
+{
+    return m_BeginningGap;
+}
+
+
+inline
+void CAlnReader::SetBeginningGap(const string& value)
+{
+    m_BeginningGap = value;
+}
+
+
+inline
+const string& CAlnReader::GetMiddleGap(void) const
+{
+    return m_MiddleGap;
+}
+
+
+inline
+string& CAlnReader::SetMiddleGap(void)
+{
+    return m_MiddleGap;
+}
+
+
+inline
+void CAlnReader::SetMiddleGap(const string& value)
+{
+    m_MiddleGap = value;
+}
+
+
+inline
+const string& CAlnReader::GetEndGap(void) const
+{
+    return m_EndGap;
+}
+    
+inline
+string& CAlnReader::SetEndGap(void)
+{
+    return m_EndGap;
+}
+
+
+inline
+void CAlnReader::SetEndGap(const string& value)
+{
+    m_EndGap = value;
+}
+
+
+inline
+void CAlnReader::SetAlphabet(EAlphabet alpha)
+{
+    switch (alpha) {
+    case eAlpha_Nucleotide:
+        // Nucleotide alphabet: IUPAC plus 'x'
+        SetAlphabet("ABCDGHKMNRSTUVWXYabcdghkmnrstuvwxy");
+        break;
+
+    case eAlpha_Protein:
+        SetAlphabet("ABCDEFGHIKLMNPQRSTUVWXYZabcdefghiklmnpqrstuvwxyz");
+        break;
+    }
+}
+
+
+inline
+void CAlnReader::SetAllGap(const string& value)
+{
+    m_BeginningGap = m_MiddleGap = m_EndGap = value;
+};
+
+
 END_NCBI_SCOPE
 
-#endif // UTIL_CREADERS___ALN_READER__HPP
+#endif // OBJTOOLS_READERS___ALN_READER__HPP
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/01 15:26:32  dicuccio
+ * Code clean-up.  Added enum for standard alphabets.  Added new APIs to set
+ * standard parameters for other alignment types (implemented with unclear details
+ * currently).  Added better exception handling.
+ *
  * Revision 1.1  2004/02/19 16:55:27  todorov
  * File moved from util/creaders and renamed to aln_reader
  *

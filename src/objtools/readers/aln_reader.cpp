@@ -30,6 +30,7 @@
  */
 
 #include <objtools/readers/aln_reader.hpp>
+#include <objtools/readers/reader_exception.hpp>
 #include <util/creaders/alnread.h>
 #include <util/format_guess.hpp>
 
@@ -57,13 +58,13 @@ static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
         return 0;
     }
     string s;
-    getline(*is, s);
+    NcbiGetlineEOL(*is, s);
     return strdup(s.c_str());
 }
 
 
-static void ALIGNMENT_CALLBACK s_ReportError (TErrorInfoPtr err_ptr,
-                           void *user_data)
+static void ALIGNMENT_CALLBACK s_ReportError(TErrorInfoPtr err_ptr,
+                                             void *user_data)
 {
     if (err_ptr->category != eAlnErr_Fatal) {
         // ignore non-fatal errors
@@ -77,7 +78,13 @@ static void ALIGNMENT_CALLBACK s_ReportError (TErrorInfoPtr err_ptr,
         msg += ":  ";
         msg += err_ptr->message;
     }
-    throw runtime_error(msg);
+
+    NCBI_THROW2(CObjReaderParseException, eFormat, msg, err_ptr->line_num);
+}
+
+
+CAlnReader::~CAlnReader()
+{
 }
 
 
@@ -89,19 +96,20 @@ void CAlnReader::Read()
 
     // make a SSequenceInfo corresponding to our CSequenceInfo argument
     SSequenceInfo info;
-    info.alphabet = const_cast<char *>(m_Alphabet.c_str());
+    info.alphabet      = const_cast<char *>(m_Alphabet.c_str());
     info.beginning_gap = const_cast<char *>(m_BeginningGap.c_str());
-    info.end_gap = const_cast<char *>(m_EndGap.c_str());;
-    info.middle_gap = const_cast<char *>(m_MiddleGap.c_str());
-    info.missing = const_cast<char *>(m_Missing.c_str());
-    info.match = const_cast<char *>(m_Match.c_str());
+    info.end_gap       = const_cast<char *>(m_EndGap.c_str());;
+    info.middle_gap    = const_cast<char *>(m_MiddleGap.c_str());
+    info.missing       = const_cast<char *>(m_Missing.c_str());
+    info.match         = const_cast<char *>(m_Match.c_str());
 
     // read the alignment stream
     TAlignmentFilePtr afp;
     afp = ReadAlignmentFile(s_ReadLine, (void *) &m_IS,
                             s_ReportError, 0, &info);
     if (!afp) {
-        throw runtime_error("Error reading alignment");
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+                   "Error reading alignment: no alignments found", 0);
     }
 
     // build the CAlignment
@@ -140,20 +148,23 @@ void CAlnReader::Read()
 }
 
 
-void CAlnReader::SetClustalNucl(void)
+void CAlnReader::SetClustal(EAlphabet alpha)
 {
-    // Nucleotide alphabet: IUPAC plus 'x'
-    m_Alphabet = "ABCDGHKMNRSTUVWXYabcdghkmnrstuvwxy";
-
+    SetAlphabet(alpha);
     SetAllGap("-");
 }
 
 
-void CAlnReader::SetClustalProt(void)
+void CAlnReader::SetPaup(EAlphabet alpha)
 {
-    // IUPAC alphabet
-    m_Alphabet = "ABCDEFGHIKLMNPQRSTUVWXYZabcdefghiklmnpqrstuvwxyz";
+    SetAlphabet(alpha);
+    SetAllGap("-");
+}
 
+
+void CAlnReader::SetPhylip(EAlphabet alpha)
+{
+    SetAlphabet(alpha);
     SetAllGap("-");
 }
 
@@ -163,9 +174,9 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
     if (m_Aln) {
         return m_Aln;
     } else if ( !m_ReadDone ) {
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW2(CObjReaderParseException, eFormat,
                    "CAlnReader::GetSeqAlign(): "
-                   "Seq_align is not available until after Read()");
+                   "Seq_align is not available until after Read()", 0);
     }
 
     typedef CDense_seg::TNumseg TNumseg;
@@ -282,9 +293,9 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry()
     if (m_Entry) {
         return m_Entry;
     } else if ( !m_ReadDone ) {
-        NCBI_THROW(CException, eUnknown,
+        NCBI_THROW2(CObjReaderParseException, eFormat,
                    "CAlnReader::GetSeqEntry(): "
-                   "Seq_entry is not available until after Read()");
+                   "Seq_entry is not available until after Read()", 0);
     }
     m_Entry = new CSeq_entry();
     CRef<CSeq_annot> seq_annot (new CSeq_annot);
@@ -359,6 +370,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/01 15:26:33  dicuccio
+ * Code clean-up.  Added enum for standard alphabets.  Added new APIs to set
+ * standard parameters for other alignment types (implemented with unclear details
+ * currently).  Added better exception handling.
+ *
  * Revision 1.6  2004/02/24 17:52:12  jcherry
  * iupacaa for proteins
  *
