@@ -257,6 +257,16 @@ void
 Blast_HSPGetAdjustedOffsets(BlastHSP* hsp, Int4* q_start, Int4* q_end,
                             Int4* s_start, Int4* s_end);
 
+/** Comparison callback function for sorting HSPs by e-value and score, before
+ * saving BlastHSPList in a BlastHitList. E-value has priority over score, 
+ * because lower scoring HSPs might have lower e-values, if they are linked
+ * with sum statistics.
+ * E-values are compared only up to a certain precision. 
+ */
+NCBI_XBLAST_EXPORT
+int
+Blast_HSPEvalueCompareCallback(const void* v1, const void* v2);
+
 /********************************************************************************
           HSPList API
 ********************************************************************************/
@@ -408,6 +418,13 @@ NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPListUniqSort(BlastHSPList* hsp_list);
 
+/** Check if HSP list is sorted by e-value, and sort if it is not. 
+ * @param hsp_list HSP list to check [in] [out]
+ * @return Was this list sorted coming in, or was an extra sort necessary? 
+ */
+Boolean Blast_HSPListCheckIfSorted(BlastHSPList* hsp_list);
+   
+
 /********************************************************************************
           HitList API.
 ********************************************************************************/
@@ -475,7 +492,8 @@ Int2 Blast_HSPResultsReverseOrder(BlastHSPResults* results);
  *  Save the HSPs from an HSPList obtained on the preliminary stage of 
  * RPS BLAST to appropriate places in the results structure. Input HSPList
  * contains HSPs from a single query, but from all RPS BLAST database 
- * sequences. 
+ * sequences. The HSPs in the list are not assumed to be sorted, because
+ * e-values are not yet calculated.
  * @param program The type of BLAST search [in]
  * @param results The structure holding results for all queries [in] [out]
  * @param hsp_list The results for the current subject sequence; in case of 
@@ -490,7 +508,8 @@ Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* 
 /** Blast_HSPResultsSaveHSPList
  *  Save the current HSP list to appropriate places in the results structure.
  * The input HSPList contains HSPs from a single BLAST database sequence, but
- * possibly from multiple queries.
+ * possibly from multiple queries. The HSPs in the list are assumed to be sorted
+ * by e-value and score.
  * @param program The type of BLAST search [in]
  * @param results The structure holding results for all queries [in] [out]
  * @param hsp_list The results for the current subject sequence; in case of 
