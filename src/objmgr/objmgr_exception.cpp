@@ -100,6 +100,7 @@ const char* CLoaderException::GetErrCodeString(void) const
     case eConnectionFailed: return "eConnectionFailed";
     case eCompressionError: return "eCompressionError";
     case eLoaderFailed:     return "eLoaderFailed";
+    case eNoConnection:     return "eNoConnection";
     default:                return CException::GetErrCodeString();
     }
 }

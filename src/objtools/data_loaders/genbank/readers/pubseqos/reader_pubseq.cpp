@@ -71,9 +71,9 @@ CPubseqReader::CPubseqReader(TConn noConn,
 #if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
     if ( s_pubseq_readers.Add(1) > 1 ) {
         s_pubseq_readers.Add(-1);
-        THROW1_TRACE(runtime_error,
-                     "CPubseqReader: "
-                     "Attempt to open multiple pubseq_readers without MT-safe DB library");
+        NCBI_THROW(CLoaderException, eNoConnection,
+                   "Attempt to open multiple pubseq_readers "
+                   "without MT-safe DB library");
     }
 #endif
     try {
@@ -126,7 +126,7 @@ CDB_Connection* CPubseqReader::x_GetConnection(TConn conn)
         ret = x_NewConnection();
 
         if ( !ret ) {
-            NCBI_THROW(CLoaderException, eConnectionFailed,
+            NCBI_THROW(CLoaderException, eNoConnection,
                        "too many connections failed: probably server is dead");
         }
 
@@ -159,14 +159,14 @@ CDB_Connection *CPubseqReader::x_NewConnection(void)
                 LOG_POST(errmsg);
 #if defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
                 m_NoMoreConnections = true;
-                NCBI_THROW(CLoaderException, eConnectionFailed,
+                NCBI_THROW(CLoaderException, eNoConnection,
                            "Neither ctlib nor dblib are available");
 #else
                 createContextFunc = drvMgr.GetDriver("dblib",&errmsg);
                 if ( !createContextFunc ) {
                     LOG_POST(errmsg);
                     m_NoMoreConnections = true;
-                    NCBI_THROW(CLoaderException, eConnectionFailed,
+                    NCBI_THROW(CLoaderException, eNoConnection,
                                "Neither ctlib nor dblib are available");
                 }
 #endif
@@ -468,6 +468,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.39  2003/10/22 16:12:38  vasilche
+* Added CLoaderException::eNoConnection.
+* Added check for 'fail' state of ID1 connection stream.
+* CLoaderException::eNoConnection will be rethrown from CGBLoader.
+*
 * Revision 1.38  2003/10/21 14:27:35  vasilche
 * Added caching of gi -> sat,satkey,version resolution.
 * SNP blobs are stored in cache in preprocessed format (platform dependent).

@@ -208,7 +208,7 @@ CConn_ServiceStream* CId1Reader::x_GetConnection(TConn conn)
         ret = x_NewConnection();
 
         if ( !ret ) {
-            NCBI_THROW(CLoaderException, eConnectionFailed,
+            NCBI_THROW(CLoaderException, eNoConnection,
                        "too many connections failed: probably server is dead");
         }
 
@@ -235,11 +235,16 @@ CConn_ServiceStream* CId1Reader::x_NewConnection(void)
             STimeout tmout;
             tmout.sec = 20;
             tmout.usec = 0;
-            return new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout);
+            auto_ptr<CConn_ServiceStream> stream
+                (new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout));
+            if ( *stream ) {
+                return stream.release();
+            }
+            ERR_POST("CId1Reader::x_NewConnection: cannot connect.");
         }
         catch ( CException& exc ) {
-            ERR_POST("CId1Reader::x_NewConnection: "
-                     "cannot connect: " << exc.what());
+            ERR_POST("CId1Reader::x_NewConnection: cannot connect: " <<
+                     exc.what());
         }
     }
     m_NoMoreConnections = true;
@@ -604,6 +609,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.53  2003/10/22 16:12:38  vasilche
+ * Added CLoaderException::eNoConnection.
+ * Added check for 'fail' state of ID1 connection stream.
+ * CLoaderException::eNoConnection will be rethrown from CGBLoader.
+ *
  * Revision 1.52  2003/10/21 16:32:50  vasilche
  * Cleaned ID1 statistics messages.
  * Now by setting GENBANK_ID1_STATS=1 CId1Reader collects and displays stats.

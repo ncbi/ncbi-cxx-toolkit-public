@@ -145,7 +145,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
                 break;
         }
         if(!m_Driver) {
-            NCBI_THROW(CLoaderException, eLoaderFailed,
+            NCBI_THROW(CLoaderException, eNoConnection,
                        "Could not create driver: " + string(env));
         }
     }
@@ -682,6 +682,13 @@ void CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
                     tse->m_LoadState   = STSEinfo::eLoadStateDone;
                     _ASSERT(!x_NeedMoreData(*tse));
                 }
+                else if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
+                    g.Lock();
+                    g.Lock(&*tse);
+                    tse->locked--;
+                    x_UpdateDropList(&*tse); // move up as just checked
+                    throw;
+                }
                 else {
                     LOG_POST(e.what());
                     LOG_POST("GenBank connection failed: Reconnecting....");
@@ -748,6 +755,18 @@ void CGBDataLoader::x_GetChunk(CRef<STSEinfo> tse,
             x_GetChunk(tse, conn, chunk_info);
             done = true;
             break;
+        }
+        catch ( CLoaderException& e ) {
+            if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
+                g.Lock();
+                g.Lock(&*tse);
+                tse->locked--;
+                x_UpdateDropList(&*tse); // move up as just checked
+                throw;
+            }
+            LOG_POST(e.what());
+            LOG_POST("GenBank connection failed: Reconnecting....");
+            m_Driver->Reconnect(conn);
         }
         catch(const CIOException &e) {
             LOG_POST(e.what());
@@ -836,6 +855,14 @@ CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
             osr.clear();
             m_Driver->RetrieveSeqrefs(osr, *h.GetSeqId(), conn);
             got = true;
+        }
+        catch ( CLoaderException& e ) {
+            if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
+                throw;
+            }
+            LOG_POST(e.what());
+            LOG_POST("GenBank connection failed: Reconnecting....");
+            m_Driver->Reconnect(conn);
         }
         catch(const CIOException &e) {
             LOG_POST(e.what());
@@ -982,6 +1009,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2003/10/22 16:12:37  vasilche
+* Added CLoaderException::eNoConnection.
+* Added check for 'fail' state of ID1 connection stream.
+* CLoaderException::eNoConnection will be rethrown from CGBLoader.
+*
 * Revision 1.86  2003/10/07 13:43:23  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

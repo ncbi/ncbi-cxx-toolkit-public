@@ -111,7 +111,8 @@ public:
         ePrivateData,
         eConnectionFailed,
         eCompressionError,
-        eLoaderFailed
+        eLoaderFailed,
+        eNoConnection
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CLoaderException, CObjMgrException);
@@ -124,6 +125,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/10/22 16:12:37  vasilche
+* Added CLoaderException::eNoConnection.
+* Added check for 'fail' state of ID1 connection stream.
+* CLoaderException::eNoConnection will be rethrown from CGBLoader.
+*
 * Revision 1.2  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
