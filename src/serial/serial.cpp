@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/11/05 17:45:10  grichenk
+* Reset object before reading
+*
 * Revision 1.20  2002/10/25 15:05:44  vasilche
 * Moved more code to libxcser library.
 *
@@ -138,6 +141,7 @@ void Write(CObjectOStream& out, TConstObjectPtr object, const CTypeRef& type)
 
 void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type)
 {
+    type.Get()->SetDefault(object);
     in.Read(object, type.Get());
 }
 
