@@ -62,10 +62,6 @@ const CRegexp::TCompile kSL = PCRE_DOTALL + PCRE_UNGREEDY;
 const CRegexp::TCompile kML = PCRE_MULTILINE + PCRE_UNGREEDY;
 const CRegexp::TCompile kDF = 0;
 
-/// Special flags to search.
-const char* kFirst = (char*)(1);
-const char* kAll   = (char*)(0);
-
 
 /////////////////////////////////////////////////////////////////////////////
 //  
@@ -100,6 +96,13 @@ public:
         eMT,
         eST,
         eSuffixMax
+    };
+
+    /// Define a replacement command. 
+    struct SReplacement {
+        const char*  from;  ///< Change from value.
+        const char*  to;    ///< Change to value.
+        size_t       count; ///< Maximum count of changes (0 - infinite).
     };
 
 public:
@@ -637,48 +640,47 @@ string CMainApplication::Configure(const string& cfg_template,
     // Either replace with hooks, or just remove the compiler switches,
     // which may be configuration-dependent or inconsistent.
 
-    const char* ksOpt[][3] = {
-        { "/Gm"           , ""   , kAll },
-        { "/GZ"           , ""   , kAll },
-        { "/FR"           , ""   , kAll },
-        { "/Fr"           , ""   , kAll },
-        { "/c"            , " @c", kAll },
-        { "/ZI"           , " @Z", kAll },
-        { "/Zi"           , " @Z", kAll },
-        { "/Z7"           , " @Z", kAll },
-        { "/O[0-9A-Za-z]*", " @O", kAll },
-        { "/D +\"{0,1}DEBUG=*[0-9]*\"{0,1}", " @D", kAll }
+    const SReplacement ksOpt[] = {
+        { "/Gm"           , ""   , 0 },
+        { "/GZ"           , ""   , 0 },
+        { "/FR"           , ""   , 0 },
+        { "/Fr"           , ""   , 0 },
+        { "/c"            , " @c", 0 },
+        { "/ZI"           , " @Z", 0 },
+        { "/Zi"           , " @Z", 0 },
+        { "/Z7"           , " @Z", 0 },
+        { "/O[0-9A-Za-z]*", " @O", 0 },
+        { "/D +\"{0,1}DEBUG=*[0-9]*\"{0,1}", " @D", 0 }
     };
     re.SetRange("^# ADD .*CPP ");
     for (size_t i = 0; i < sizeof(ksOpt)/sizeof(ksOpt[0]); i++) {
-        re.ReplaceRange(string(" +") + ksOpt[i][0], ksOpt[i][1],
-                        kDF, kDF, CRegexpUtil::eInside, (int)ksOpt[i][2]);
+        re.ReplaceRange(string(" +") + ksOpt[i].from, ksOpt[i].to,
+                        kDF, kDF, CRegexpUtil::eInside, (int)ksOpt[i].count);
     }
-
 
     // Configuration-dependent changes: replace hooks and more compiler
     // options where appropriate.
 
-    const char* ksOptDebug[][3] = {
-        { "@c"       , " /GZ /c"         , kAll   },
-        { "@O"       , " /Od"            , kFirst },
-        { "@Z"       , " /Z7"            , kFirst },
-        { "@D"       , " /D \"DEBUG=1\"" , kFirst },
-        { "(/W[^ ]*)", " $1 /Gm"         , kFirst },
-        { "@O"       , ""                , kAll   },
-        { "@Z"       , ""                , kAll   },
-        { "@D"       , ""                , kAll   }
+    const SReplacement ksOptDebug[] = {
+        { "@c"       , " /GZ /c"         , 0 },
+        { "@O"       , " /Od"            , 1 },
+        { "@Z"       , " /Z7"            , 1 },
+        { "@D"       , " /D \"DEBUG=1\"" , 1 },
+        { "(/W[^ ]*)", " $1 /Gm"         , 1 },
+        { "@O"       , ""                , 0 },
+        { "@Z"       , ""                , 0 },
+        { "@D"       , ""                , 0 }
     };
-    const char* ksOptRelease[][3] = {
-        { "@c"       , " /c"             , kAll   },
-        { "@O"       , " /O2"            , kFirst },
-        { "@O"       , ""                , kAll   },
-        { "@Z"       , ""                , kAll   },
-        { "@D"       , ""                , kAll   }
+    const SReplacement ksOptRelease[] = {
+        { "@c"       , " /c"             , 0 },
+        { "@O"       , " /O2"            , 1 },
+        { "@O"       , ""                , 0 },
+        { "@Z"       , ""                , 0 },
+        { "@D"       , ""                , 0 }
     };
   
-    const char** subst;
-    int          subst_size;
+    const SReplacement* subst;
+    size_t              subst_size;
 
     if (config == eDebug) {
         re.SetRange("^# PROP ");
@@ -686,21 +688,20 @@ string CMainApplication::Configure(const string& cfg_template,
         re.SetRange("^# ADD .*LINK32 ");
         re.ReplaceRange("  */pdb:[^ ]*", kEmptyStr);
         re.ReplaceRange("/mach", "/pdb:none /debug /mach");
-        subst = &ksOptDebug[0][0];
+        subst = &ksOptDebug[0];
         subst_size = sizeof(ksOptDebug)/sizeof(subst[0])/3;
     } else {
         re.SetRange("^# PROP ");
         re.ReplaceRange("  *Use_Debug_Libraries  *1"," Use_Debug_Libraries 0");
         re.SetRange("^# ADD .*LINK32 ");
         re.ReplaceRange("  */pdbtype[^ ]*", kEmptyStr);
-        subst = &ksOptRelease[0][0];
+        subst = &ksOptRelease[0];
         subst_size = sizeof(ksOptRelease)/sizeof(subst[0])/3;
     }
     re.SetRange("^# ADD .*CPP ");
     for (int i = 0; i < subst_size; i++) {
-        int j = i*3;
-        re.ReplaceRange(string(" +") + subst[j+0], subst[j+1], 
-                        kDF, kDF, CRegexpUtil::eInside, (int)subst[j+2]);
+        re.ReplaceRange(string(" +") + subst[i].from, subst[i].to, 
+                        kDF, kDF, CRegexpUtil::eInside, subst[i].count);
     }
     re.Replace("^(# ADD .*LINK32.*) */debug(.*)", "$1$2", kML);
 
@@ -938,6 +939,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/07 17:14:56  ivanov
+ * Use array of SReplacement instead of two-dim arrays
+ *
  * Revision 1.3  2003/11/07 13:42:27  ivanov
  * Fixed lines wrapped at 79th columns. Get rid of compilation warnings on UNIX.
  *
