@@ -752,15 +752,13 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
       if (hsp_list && hsp_list->hspcnt > 0) {
          if (!gapped_calculation || prelim_traceback) {
-            /* Some special processing for blastn */
+            /* @todo FIXME: The following must be performed for any ungapped
+               search with a nucleotide database, not just blastn. */
             if (program_number == eBlastTypeBlastn) {
                status = 
                   Blast_HSPListReevaluateWithAmbiguities(hsp_list, query, 
-                     seq_arg.seq, hit_params, query_info, sbp, score_params, 
-                     seq_src);
-               /* Check for HSP inclusion in a diagonal strip around another
-                  HSP. */
-               status = Blast_HSPListUniqSort(hsp_list);
+                     seq_arg.seq, word_params, hit_params, query_info, sbp, 
+                     score_params, seq_src);
                /* Relink HSPs if sum statistics is used, because scores might
                   have changed after reevaluation with ambiguities, and there
                   will be no traceback stage where relinking is done normally. */
@@ -771,6 +769,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                                       hit_params->link_hsp_params, 
                                       gapped_calculation);
                }
+               status = Blast_HSPListReapByEvalue(hsp_list, hit_params->options);
             }
              
             /* Calculate and fill the bit scores, since there will be no
