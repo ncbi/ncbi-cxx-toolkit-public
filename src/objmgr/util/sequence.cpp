@@ -1612,12 +1612,31 @@ TSeqPos LocationOffset(const CSeq_loc& outer, const CSeq_loc& inner,
 }
 
 
+bool TestForStrands(ENa_strand strand1, ENa_strand strand2)
+{
+    // Check strands. Overlapping rules for strand:
+    //   - equal strands overlap
+    //   - "both" overlaps with any other
+    //   - "unknown" overlaps with any other except "minus"
+    return strand1 == strand2
+        || strand1 == eNa_strand_both
+        || strand2 == eNa_strand_both
+        || (strand1 == eNa_strand_unknown  && strand2 != eNa_strand_minus)
+        || (strand2 == eNa_strand_unknown  && strand1 != eNa_strand_minus);
+}
+
+
 int TestForOverlap(const CSeq_loc& loc1,
                    const CSeq_loc& loc2,
                    EOverlapType type)
 {
     CRange<TSeqPos> rg1 = loc1.GetTotalRange();
     CRange<TSeqPos> rg2 = loc2.GetTotalRange();
+
+    ENa_strand strand1 = GetStrand(loc1);
+    ENa_strand strand2 = GetStrand(loc2);
+    if ( !TestForStrands(strand1, strand2) )
+        return -1;
     switch (type) {
     case eOverlap_Simple:
         {
@@ -1671,6 +1690,9 @@ int TestForOverlap(const CSeq_loc& loc1,
             for ( ; it1  &&  it1.GetRange().GetTo() < loc2start; ++it1) {};
             // Check intervals one by one
             while ( it1  &&  it2 ) {
+                if ( !TestForStrands(it1.GetStrand(), it2.GetStrand()) ) {
+                    return -1;
+                }
                 if (it1.GetRange().GetTo()  !=  it2.GetRange().GetTo() ) {
                     // The last interval from loc2 may be shorter than the
                     // current interval from loc1
@@ -1738,6 +1760,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
             TestForOverlap(loc, feat_it->GetLocation(), overlap_type);
         if (cur_diff < 0)
             continue;
+/*
         // Compare strands. This may not work properly if
         // both seq-locs have "other" strand, which may mean
         // presence of both "plus" and "minus" intervals. The
@@ -1753,6 +1776,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                 || f_strand == eNa_strand_minus)) {
             continue;
         }
+*/
         if ( cur_diff < diff  ||  diff < 0 ) {
             diff = cur_diff;
             feat_ref = &feat_it->GetMappedFeature();
@@ -2846,6 +2870,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.42  2003/03/25 22:00:20  grichenk
+* Added strand checking to TestForOverlap()
+*
 * Revision 1.41  2003/03/18 21:48:35  grichenk
 * Removed obsolete class CAnnot_CI
 *
