@@ -1077,13 +1077,13 @@ void CSeq_loc::SetPartialLeft (bool val)
 
     switch ( Which() ) {
         case CSeq_loc::e_Int:
-            return SetInt().SetPartialLeft(val);
+            SetInt().SetPartialLeft(val);
 
         case CSeq_loc::e_Pnt:
-            return SetPnt().SetPartialLeft(val);
+            SetPnt().SetPartialLeft(val);
 
         case CSeq_loc::e_Mix :
-            return SetMix().SetPartialLeft(val);
+            SetMix().SetPartialLeft(val);
 
         default :
             break;
@@ -1099,13 +1099,13 @@ void CSeq_loc::SetPartialRight(bool val)
 
     switch ( Which() ) {
         case CSeq_loc::e_Int:
-            return SetInt().SetPartialRight(val);
+            SetInt().SetPartialRight(val);
 
         case CSeq_loc::e_Pnt:
-            return SetPnt().SetPartialRight(val);
+            SetPnt().SetPartialRight(val);
 
         case CSeq_loc::e_Mix:
-            return SetMix().SetPartialRight(val);
+            SetMix().SetPartialRight(val);
 
         default :
             break;
@@ -1507,6 +1507,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.41  2004/05/07 12:51:13  shomrat
+ * Removed return from function returning void
+ *
  * Revision 6.40  2004/05/06 16:55:00  shomrat
  * Added methods to set partial left and right
  *
