@@ -113,8 +113,7 @@ typedef struct BlastHSPList {
    BlastHSPPtr PNTR hsp_array; /**< Array of pointers to individual HSPs */
    Int4 hspcnt; /**< Number of HSPs saved */
    Int4 allocated; /**< The allocated size of the hsp_array */
-   Int4 hsp_max; /**< The maximal number of HSPs saved in the hsp_array so 
-                    far */
+   Int4 hsp_max; /**< The maximal number of HSPs allowed to be saved */
    Boolean do_not_reallocate; /**< Is reallocation of the hsp_array allowed? */
    Boolean traceback_done; /**< Has the traceback already been done on HSPs in
                               this list? */
