@@ -30,6 +30,9 @@ endif
 ifeq ($(MAKECMDGOALS),purge)
 DONT_INCLUDE = 1
 endif
+ifeq ($(MAKECMDGOALS),requirements)
+DONT_INCLUDE = 1
+endif
 
 ifndef DONT_INCLUDE
 include $(SOURCES:=.d)
