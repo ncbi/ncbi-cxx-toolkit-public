@@ -392,11 +392,13 @@ void CBDB_Cache::Open(const char* cache_path,
                       const char* cache_name,
                       ELockMode lm)
 {
+    {{
+    
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+
     Close();
 
     m_Path = CDirEntry::AddTrailingPathSeparator(cache_path);
-
-    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
     // Make sure our directory exists
     {{
@@ -444,6 +446,8 @@ void CBDB_Cache::Open(const char* cache_path,
 
     m_CacheDB->Open(cache_db_name.c_str(),    CBDB_RawFile::eReadWriteCreate);
     m_CacheAttrDB->Open(attr_db_name.c_str(), CBDB_RawFile::eReadWriteCreate);
+    
+    }}
 
     if (m_TimeStampFlag & fPurgeOnStartup) {
         Purge(GetTimeout());
@@ -463,6 +467,7 @@ void CBDB_Cache::Close()
 void CBDB_Cache::SetTimeStampPolicy(TTimeStampFlags policy, 
                                     int             timeout)
 {
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
     m_TimeStampFlag = policy;
     m_Timeout = timeout;
 }
@@ -479,6 +484,7 @@ int CBDB_Cache::GetTimeout()
 
 void CBDB_Cache::SetVersionRetention(EKeepVersions policy)
 {
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
     m_VersionFlag = policy;
 }
 
@@ -889,6 +895,8 @@ void CBDB_Cache::Purge(const string&    key,
                        time_t           access_timeout,
                        EKeepVersions    keep_last_version)
 {
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+
     if (key.empty() || 
         (keep_last_version == eDropAll && access_timeout == 0)) {
         x_TruncateDB();
@@ -1894,6 +1902,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/11/26 13:09:16  kuznets
+ * Fixed bug in mutex locking
+ *
  * Revision 1.28  2003/11/25 19:36:35  kuznets
  * + ICache implementation
  *
