@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2001/04/03 20:30:15  juran
+ * Changes to work with OT sockets.  Not all of pjc's changes are here -- I will test them shortly.
+ *
  * Revision 6.22  2001/03/29 21:15:36  lavr
  * More accurate length calculation in 'SOCK_gethostbyaddr'
  *
@@ -151,28 +154,27 @@
 #  include <winsock2.h>
 
 #elif defined(NCBI_OS_MAC)
-#  include <macsockd.h>
-#  define __TYPES__       /* avoid Mac <Types.h> */
-#  define __MEMORY__      /* avoid Mac <Memory.h> */
-#  define ipBadLapErr     /* avoid Mac <MacTCPCommonTypes.h> */
-#  define APPL_SOCK_DEF
-#  define SOCK_DEFS_ONLY
+// 2001-03-28:  Joshua Juran
+// Comment out MacTCP hacks.
+//#  include <macsockd.h>
+//#  define __TYPES__       /* avoid Mac <Types.h> */
+//#  define __MEMORY__      /* avoid Mac <Memory.h> */
+//#  define ipBadLapErr     /* avoid Mac <MacTCPCommonTypes.h> */
+//#  define APPL_SOCK_DEF
+//#  define SOCK_DEFS_ONLY
 #  include <sock_ext.h>
 extern void bzero(char* target, long numbytes);
 #  include <netdb.h>
 #  include <s_types.h>
 #  include <s_socket.h>
-#  include <s_ioctl.h>
 #  include <neti_in.h>
 #  include <a_inet.h>
-#  include <s_time.h>
-#  include <s_fcntl.h>
 #  include <neterrno.h> /* missing error numbers on Mac */
 /* cannot write more than SOCK_WRITE_SLICE at once on Mac; so we have to split
  * big output buffers into smaller(<SOCK_WRITE_SLICE) slices before writing
  * them to the socket
  */
-#  define SOCK_WRITE_SLICE 2048
+// #  define SOCK_WRITE_SLICE 2048  pjc 2/01
 
 #else
 #  error "Unsupported platform, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN, NCBI_OS_MAC !!!"
@@ -274,7 +276,9 @@ typedef int TSOCK_Handle;
 #  define SOCK_SHUTDOWN_WR    1
 
 /* (but see ni_lib.c line 2508 for gethostname substitute for Mac) */
+#ifndef NCBI_OS_MAC
 extern int gethostname(char* machname, long buflen);
+#endif
 
 #endif /* NCBI_OS_MSWIN, NCBI_OS_UNIX, NCBI_OS_MAC */
 
@@ -639,11 +643,11 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
 
     {{ /* accept next connection */
         struct sockaddr_in addr;
-#ifdef NCBI_OS_MAC
-        long addrlen = sizeof(struct sockaddr);
-#else
+//#ifdef NCBI_OS_MAC	2/17/01 pjc
+//        long addrlen = sizeof(struct sockaddr);
+//#else
         int addrlen = sizeof(struct sockaddr);
-#endif
+//#endif
         if ((x_sock = accept(lsock->sock, (struct sockaddr *)&addr, &addrlen))
             == SOCK_INVALID) {
             CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
