@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2001/07/26 15:12:17  lavr
+ * while(1) -> for(;;)
+ *
  * Revision 6.24  2001/06/05 14:11:29  lavr
  * SERV_MIME_UNDEFINED split into 2 (typed) constants:
  * SERV_MIME_TYPE_UNDEFINED and SERV_MIME_SUBTYPE_UNDEFINED
@@ -350,7 +353,7 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
     if (net_info->firewall)
         return 0/*nothing to adjust*/;
     
-    while (1) {
+    for (;;) {
         if (!(info = SERV_GetNextInfo(uuu->iter)))
             return 0/*false - not adjusted*/;
         /* Skip any 'stateful_capable' issues here, which might
