@@ -38,16 +38,22 @@ test2() {
 
 #### TEST CASES #####
 
+
+# fill unaligned
+
 test1 unaln "-fillunaln t -noobjmgr t" \
 "test that fillunaln does not affect this alignment"
+
 
 # gi 6467445
 test2 independent_dss "-b Seq-entry" \
 "test independent dss"
 
+
 # gi 19880863
 test2 gapjoin "-gapjoin t -b Seq-entry" \
 "test gap join"
+
 
 # gi 19172277
 test2 19172277 "-b Seq-entry" "test gi 19172277"
@@ -55,6 +61,7 @@ test2 19172277 "-b Seq-entry" "test gi 19172277"
 test1 multiple_row_inserts "" "multiple row inserts"
 
 test2 iterator_minus_minus "" "iterator minus minus"
+
 
 # test2 blast "-queryseqmergeonly t" "blast output merge"
 
@@ -78,6 +85,17 @@ test2 trunc8 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 8"
 
 test2 framed_refseq "" "query sequence is on diff frames w/ overlaps on subject"
 
+
+# test preservation of rows
+
+test1 preserve_rows "-preserverows t" "preservation of rows"
+
+test2 preserve_rows_set "-noobjmgr t -preserverows t -truncateoverlaps t" \
+"preserve rows and truncate overlaps"
+
+
+
+# clean
 rm $tmp_out
 
 echo "Done!"

@@ -167,6 +167,11 @@ void CAlnMrgApp::Init(void)
          "Force translation of nucleotides",
          CArgDescriptions::eBoolean, "f");
 
+    arg_desc->AddDefaultKey
+        ("preserverows", "bool",
+         "Preserve rows",
+         CArgDescriptions::eBoolean, "f");
+
 
     // Viewing args:
     arg_desc->AddOptionalKey
@@ -338,6 +343,10 @@ void CAlnMrgApp::SetOptions(void)
         m_AddFlags |= CAlnMix::fForceTranslation;
     }
 
+    if (args["preserverows"]  &&  args["preserverows"].AsBoolean()) {
+        m_AddFlags |= CAlnMix::fPreserveRows;
+    }
+
     if (args["calcscore"]  &&  args["calcscore"].AsBoolean()) {
         m_AddFlags |= CAlnMix::fCalcScore;
     }
@@ -446,6 +455,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2004/09/22 17:00:53  todorov
+* +CAlnMix::fPreserveRows
+*
 * Revision 1.24  2004/09/20 15:51:17  todorov
 * Made log an optional parameter
 *

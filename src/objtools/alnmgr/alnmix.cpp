@@ -99,7 +99,7 @@ void CAlnMix::x_Reset()
     m_Segments.clear();
     m_Rows.clear();
     m_ExtraRows.clear();
-    ITERATE (TSeqs, seq_i, m_Seqs) {
+    NON_CONST_ITERATE (TSeqs, seq_i, m_Seqs) {
         (*seq_i)->m_Starts.clear();
         (*seq_i)->m_ExtraRow = 0;
     }
@@ -287,6 +287,41 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
         }
         aln_seq->m_DS_Count++;
         ds_seq.push_back(aln_seq);
+    }
+
+    // Preserve the row of the the original sequences if requested.
+    // This is mostly used to allow a sequence to itself.
+    if (m_AddFlags & fPreserveRows) {
+        for (CAlnMap::TNumrow row = 0;  row < dsp->GetDim();  row++) {
+            CRef<CAlnMixSeq>& row_seq = ds_seq[row];
+            int row_index = row_seq->m_RowIndex;
+            if (row_index == -1) {
+                // initialization
+                row_seq->m_RowIndex = row;
+            } else while (row_index != row) {
+                if (!row_seq->m_AnotherRow) {
+
+                    CRef<CAlnMixSeq> another_row (new CAlnMixSeq);
+
+                    another_row->m_BioseqHandle = row_seq->m_BioseqHandle;
+                    another_row->m_SeqId        = row_seq->m_SeqId;
+                    another_row->m_Width        = row_seq->m_Width;
+                    another_row->m_SeqIndex     = row_seq->m_SeqIndex;
+                    another_row->m_DSIndex      = ds_index;
+                    another_row->m_RowIndex     = row;
+
+                    m_Seqs.push_back(another_row);
+
+                    row_seq->m_AnotherRow = another_row;
+
+                    row_seq = row_seq->m_AnotherRow;
+
+                    break;
+                }
+                row_seq   = row_seq->m_AnotherRow;
+                row_index = row_seq->m_RowIndex;
+            }
+        }
     }
 
     //record all alignment relations
@@ -502,9 +537,8 @@ void CAlnMix::x_Merge()
             if (ds_cnt == m_InputDSs.size()) {
                 m_SingleRefseq = true;
                 if ( !first_refseq ) {
-                    CAlnMixSeq * refseq = *it;
                     m_Seqs.erase(it);
-                    m_Seqs.insert(m_Seqs.begin(), refseq);
+                    m_Seqs.insert(m_Seqs.begin(), *it);
                 }
                 break;
             }
@@ -515,7 +549,7 @@ void CAlnMix::x_Merge()
     // Index the sequences
     {{
         int seq_idx=0;
-        ITERATE (TSeqs, seq_i, m_Seqs) {
+        NON_CONST_ITERATE (TSeqs, seq_i, m_Seqs) {
             (*seq_i)->m_SeqIndex = seq_idx++;
         }
     }}
@@ -523,7 +557,7 @@ void CAlnMix::x_Merge()
     // Set the widths if the mix contains both AA & NA
     // or in case we force translation
     if (m_ContainsNA  &&  m_ContainsAA  ||  m_AddFlags & fForceTranslation) {
-        ITERATE (TSeqs, seq_i, m_Seqs) {
+        NON_CONST_ITERATE (TSeqs, seq_i, m_Seqs) {
             (*seq_i)->m_Width = (*seq_i)->m_IsAA ? 1 : 3;
         }
     }
@@ -557,7 +591,7 @@ void CAlnMix::x_Merge()
             refseq->m_RefBy = 0;
 
             // try to find the best scoring 'connected' candidate
-            ITERATE (TSeqs, it, m_Seqs){
+            NON_CONST_ITERATE (TSeqs, it, m_Seqs){
                 if ( !((*it)->m_MatchList.empty())  &&
                      (*it)->m_RefBy == refseq) {
                     refseq = *it;
@@ -567,7 +601,7 @@ void CAlnMix::x_Merge()
             if (refseq->m_RefBy == 0) {
                 // no candidate was found 'connected' to the refseq
                 // continue with the highest scoring candidate
-                ITERATE (TSeqs, it, m_Seqs){
+                NON_CONST_ITERATE (TSeqs, it, m_Seqs){
                     if ( !((*it)->m_MatchList.empty()) ) {
                         refseq = *it;
                         break;
@@ -743,7 +777,7 @@ void CAlnMix::x_Merge()
                     // TEMPORARY, for the single refseq version of mix,
                     // clear all MatchLists and exit
                     if ( !(m_SingleRefseq  ||  first_refseq) ) {
-                        ITERATE (TSeqs, it, m_Seqs){
+                        NON_CONST_ITERATE (TSeqs, it, m_Seqs){
                             if ( !((*it)->m_MatchList.empty()) ) {
                                 (*it)->m_MatchList.clear();
                             }
@@ -1333,11 +1367,11 @@ void CAlnMix::x_CreateRowsVector()
     m_Rows.clear();
 
     int count = 0;
-    ITERATE (TSeqs, i, m_Seqs) {
-        CAlnMixSeq * seq = *i;
+    NON_CONST_ITERATE (TSeqs, i, m_Seqs) {
+        CRef<CAlnMixSeq>& seq = *i;
         m_Rows.push_back(seq);
         seq->m_RowIndex = count++;
-        while ( (seq = seq->m_ExtraRow) != NULL ) {
+        while ((seq = seq->m_ExtraRow) != NULL ) {
             seq->m_RowIndex = count++;
             m_Rows.push_back(seq);
         }
@@ -2072,6 +2106,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.106  2004/09/22 17:00:53  todorov
+* +CAlnMix::fPreserveRows
+*
 * Revision 1.105  2004/09/22 14:26:35  todorov
 * changed TSegments & TSegmentsContainer from vectors to lists
 *

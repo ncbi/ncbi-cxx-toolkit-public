@@ -91,7 +91,8 @@ public:
         fSortSeqsByScore      = 0x0040, // Seqs with better scoring aligns on top
         fQuerySeqMergeOnly    = 0x0080, // Only put the query seq on same row, 
                                         // other seqs from diff densegs go to diff rows
-        fFillUnalignedRegions = 0x0100
+        fPreserveRows         = 0x0100, // Used for mapping sequence to itself
+        fFillUnalignedRegions = 0x0200
     };
     typedef int TMergeFlags; // binary OR of EMergeFlags
 
@@ -122,7 +123,7 @@ private:
 
     typedef map<void *, CConstRef<CDense_seg> >           TConstDSsMap;
     typedef map<void *, CConstRef<CSeq_align> >           TConstAlnsMap;
-    typedef vector<CAlnMixSeq*>                           TSeqs;
+    typedef vector<CRef<CAlnMixSeq> >                     TSeqs;
     typedef map<CBioseq_Handle, CRef<CAlnMixSeq> >        TBioseqHandleMap;
     typedef map<CRef<CSeq_id>, CRef<CAlnMixSeq>, SSeqIds> TSeqIdMap;
     typedef vector<CRef<CAlnMixMatch> >                   TMatches;
@@ -221,7 +222,9 @@ public:
           m_Frame(-1),
           m_RefBy(0),
           m_ExtraRow(0),
-          m_DSIndex(0)
+          m_AnotherRow(0),
+          m_DSIndex(0),
+          m_RowIndex(-1)
     {};
 
     typedef CAlnMixSegment::TStarts TStarts;
@@ -239,9 +242,10 @@ public:
     TStarts               m_Starts;
     CAlnMixSeq *          m_RefBy;
     CAlnMixSeq *          m_ExtraRow;
-    int                   m_RowIndex;
+    CAlnMixSeq *          m_AnotherRow;
     int                   m_SeqIndex;
     int                   m_DSIndex;
+    int                   m_RowIndex;
     TStarts::iterator     m_StartIt;
     TMatchList            m_MatchList;
 
@@ -336,6 +340,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2004/09/22 17:00:53  todorov
+* +CAlnMix::fPreserveRows
+*
 * Revision 1.40  2004/09/22 14:26:43  todorov
 * changed TSegments & TSegmentsContainer from vectors to lists
 *
