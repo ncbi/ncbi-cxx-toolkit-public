@@ -1,5 +1,5 @@
-#ifndef TEST_MT__HPP
-#define TEST_MT__HPP
+#ifndef CORELIB___TEST_MT__HPP
+#define CORELIB___TEST_MT__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -42,14 +42,13 @@
 #include <corelib/ncbiargs.hpp>
 
 
+
+BEGIN_NCBI_SCOPE
+
 /** @addtogroup MTWrappers
  *
  * @{
  */
-
-
-BEGIN_NCBI_SCOPE
-
 
 /////////////////////////////////////////////////////////////////////////////
 // Globals
@@ -165,6 +164,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/11/18 11:59:00  siyan
+ * Changed so @addtogroup does not cross namespace boundary
+ *
  * Revision 1.6  2003/09/08 12:18:13  siyan
  * Documentation changes
  *

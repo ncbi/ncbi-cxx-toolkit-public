@@ -47,14 +47,13 @@ extern "C" {
 #endif
 
 
+
+BEGIN_NCBI_SCOPE
+
 /** @addtogroup Threads
  *
  * @{
  */
-
-
-BEGIN_NCBI_SCOPE
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -131,6 +130,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/11/18 11:58:06  siyan
+ * Changed so @addtogroup does not cross namespace boundary
+ *
  * Revision 1.7  2003/08/18 16:03:33  siyan
  * Added CORELIB___ prefix to the #ifndef/#define file inclusion check macros.
  *

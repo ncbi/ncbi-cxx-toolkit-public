@@ -112,15 +112,13 @@
 #include <string>
 
 
+// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+BEGIN_NCBI_SCOPE
+
 /** @addtogroup Stream
  *
  * @{
  */
-
-
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
-BEGIN_NCBI_SCOPE
-
 
 // I/O classes
 
@@ -520,6 +518,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2003/11/18 11:57:46  siyan
+ * Changed so @addtogroup does not cross namespace boundary
+ *
  * Revision 1.37  2003/11/05 13:41:14  lavr
  * Enforce direction in CNcbiIfstream and CNcbiOfstream for MSVC
  *

@@ -42,14 +42,13 @@
 #include <map>
 
 
+
+BEGIN_NCBI_SCOPE
+
 /** @addtogroup Utility Template Utilities
  *
  * @{
  */
-
-
-BEGIN_NCBI_SCOPE
-
 
 //-------------------------------------------
 // Utilities
@@ -268,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/11/18 11:58:41  siyan
+ * Changed so @addtogroup does not cross namespace boundary
+ *
  * Revision 1.32  2003/10/20 01:49:10  siyan
  * Documentation changes.
  *

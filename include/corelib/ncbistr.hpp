@@ -46,14 +46,13 @@
 #include <vector>
 
 
+
+BEGIN_NCBI_SCOPE
+
 /** @addtogroup String
  *
  * @{
  */
-
-
-BEGIN_NCBI_SCOPE
-
 
 /// Empty "C" string (points to a '\0').
 NCBI_XNCBI_EXPORT extern const char *const kEmptyCStr;
@@ -1813,6 +1812,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.46  2003/11/18 11:57:37  siyan
+ * Changed so @addtogroup does not cross namespace boundary
+ *
  * Revision 1.45  2003/11/03 14:51:55  siyan
  * Fixed a typo in StringToInt header
  *

@@ -50,14 +50,14 @@
 #include <set>
 #include <list>
 
-/** @addtogroup Threads
- *
- * @{
- */
 
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup Threads
+ *
+ * @{
+ */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -390,6 +390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/11/18 11:57:58  siyan
+ * Changed so @addtogroup does not cross namespace boundary
+ *
  * Revision 1.22  2003/09/17 15:20:45  vasilche
  * Moved atomic counter swap functions to separate file.
  * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.

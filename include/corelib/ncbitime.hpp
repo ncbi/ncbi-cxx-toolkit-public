@@ -49,14 +49,13 @@
 #include <time.h>
 
 
+
+BEGIN_NCBI_SCOPE
+
 /** @addtogroup Time
  *
  * @{
  */
-
-
-BEGIN_NCBI_SCOPE
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1077,6 +1076,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/11/18 11:58:24  siyan
+ * Changed so @addtogroup does not cross namespace boundary
+ *
  * Revision 1.25  2003/10/03 18:26:48  ivanov
  * Added month and day of week names conversion functions
  *
