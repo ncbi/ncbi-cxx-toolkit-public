@@ -171,6 +171,9 @@ void* CBlastTabularFormatThread::Main(void)
            continue;
        }
 
+       /* Make sure the HSPs in this HSP list are sorted. */
+       Blast_HSPListCheckIfSorted(hsp_list);
+
        /* Perform traceback if necessary */
        if (m_ibPerformTraceback) {
            BlastSequenceBlkClean(seq_arg.seq);
@@ -261,6 +264,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/09/21 13:51:44  dondosha
+* Check if HSPs in HSP lists are sorted coming out of BlastHSPStream
+*
 * Revision 1.5  2004/08/11 14:24:50  camacho
 * Move FindGeneticCode
 *
