@@ -166,7 +166,7 @@ public:
                  CDiagStrMatcher*  func,
                  EDiagFilterAction action)
         : m_File(file), m_Module(module), m_Class(nclass), m_Function(func), 
-          m_Action(action)
+          m_Action(action), m_DiagSev(eDiag_Info)
     {}
 
     // Check if the filter accepts a filename
@@ -180,12 +180,16 @@ public:
     // Print state
     void Print(ostream& out) const;
 
+    EDiagSev GetSeverity() const { return m_DiagSev; }
+    void SetSeverity(EDiagSev sev) { m_DiagSev = sev; }
+
 private:
     AutoPtr<CDiagStrMatcher> m_File;
     AutoPtr<CDiagStrMatcher> m_Module;
     AutoPtr<CDiagStrMatcher> m_Class;
     AutoPtr<CDiagStrMatcher> m_Function;
     EDiagFilterAction        m_Action;
+    EDiagSev                 m_DiagSev;
 };
 
 
@@ -202,19 +206,21 @@ class NCBI_XNCBI_EXPORT CDiagFilter
 {
 public:
     // 'tors
-    CDiagFilter()   {}
+    CDiagFilter() {}
     ~CDiagFilter()  { Clean(); }
 
     // Check if the filter accepts the pass
     EDiagFilterAction CheckFile(const char* file) const;
 
-    // Check if the filter accepts the message
-    EDiagFilterAction Check(const CNcbiDiag& message) const;
+    /// Check if the filter accepts message with the specified severity
+    EDiagFilterAction Check(const CNcbiDiag& message,
+                            EDiagSev         sev) const;
 
     // Check if the filter accepts the exception
     // NOTE: iterate through all exceptions and return TRUE
     //       if any exception matches
-    EDiagFilterAction Check(const CException& ex) const;
+    EDiagFilterAction Check(const CException& ex,
+                            EDiagSev          sev) const;
 
     // Fill the filter from a string
     void Fill(const char* filter_string);
@@ -226,7 +232,8 @@ private:
     // Check if the filter accepts the location
     EDiagFilterAction x_Check(const char* module,
                               const char* nclass,
-                              const char* function) const;
+                              const char* function,
+                              EDiagSev    sev) const;
 
     // CSyntaxParser can insert CDiagStrMatcher and clean
     friend class CDiagSyntaxParser;
@@ -263,6 +270,7 @@ public:
         eId,             // id and ?
         eDoubleColon,    // ::
         ePars,           // ()
+        eBrackets,       // []
         eEnd             // end of stream
     };
 
@@ -317,11 +325,17 @@ private:
     // Creates a CDiagStrMatcher by string
     static CDiagStrMatcher* x_CreateMatcher(const string& str);
 
+    /// "Info", "Warning", etc converted to enum value
+    /// Throws an excpetion if incorrect value passed
+    EDiagSev x_GetDiagSeverity(const string& sev_str);
+
+private:
     typedef vector< AutoPtr<CDiagStrMatcher> >  TMatchers;
     TMatchers                 m_Matchers;
     AutoPtr<CDiagStrMatcher>  m_FileMatcher;             
     int                       m_Pos;
     bool                      m_Negative;
+    EDiagSev                  m_DiagSev;
 };
 
 
@@ -332,6 +346,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/12/13 14:38:32  kuznets
+ * Implemented severity filtering
+ *
  * Revision 1.3  2004/09/22 22:39:15  vakatov
  * CDiagFilter -- NCBI_XNCBI_EXPORT, as it is used by test applications
  *

@@ -834,15 +834,17 @@ bool s_CheckDiagFilter(const CException& ex, EDiagSev sev, const char* file)
     if (sev == eDiag_Trace) {
         EDiagFilterAction action = s_TraceFilter.CheckFile(file);
         if(action == eDiagFilter_None)
-            return s_TraceFilter.Check(ex) == eDiagFilter_Accept;
+            return s_TraceFilter.Check(ex, sev) == eDiagFilter_Accept;
         return action == eDiagFilter_Accept;
     }
 
     // check for post filter
     EDiagFilterAction action = s_PostFilter.CheckFile(file);
-    if(action == eDiagFilter_None)
-        return s_PostFilter.Check(ex) == eDiagFilter_Accept;
-    return action == eDiagFilter_Accept;
+    if (action == eDiagFilter_None) {
+        action = s_PostFilter.Check(ex, sev);
+    }
+
+    return (action == eDiagFilter_Accept);
 }
 
 
@@ -918,16 +920,20 @@ bool CNcbiDiag::CheckFilters(void) const
         m_CheckFilters = true;
         return true;
     }
-    if (GetSeverity() == eDiag_Fatal) 
+    EDiagSev current_sev = GetSeverity();
+    if (current_sev == eDiag_Fatal) 
         return true;
 
     CMutexGuard LOCK(s_DiagMutex);
-    if (GetSeverity() == eDiag_Trace)
+    if (GetSeverity() == eDiag_Trace) {
         // check for trace filter
-        return s_TraceFilter.Check(*this) != eDiagFilter_Reject;
+        return 
+        s_TraceFilter.Check(*this, this->GetSeverity()) != eDiagFilter_Reject;
+    }
     
-    // check for post filter
-    return     s_PostFilter.Check(*this)  != eDiagFilter_Reject;
+    // check for post filter and severity
+    return 
+     (s_PostFilter.Check(*this, this->GetSeverity()) != eDiagFilter_Reject);
 }
 
 
@@ -1367,6 +1373,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.86  2004/12/13 14:38:32  kuznets
+ * Implemented severity filtering
+ *
  * Revision 1.85  2004/10/21 15:27:51  vakatov
  * CDiagBuffer::Flush(), eDPF_PreMergeLines -- fixed incorrect construction
  * of C++ string from not-NUL-terminated C string (reported by V.Chetvernin)

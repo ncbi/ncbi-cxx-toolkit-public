@@ -206,7 +206,8 @@ void CDiagFilter::Fill(const char* filter_string)
 
 
 // Check if the filter accepts the message
-EDiagFilterAction CDiagFilter::Check(const CNcbiDiag& message) const
+EDiagFilterAction CDiagFilter::Check(const CNcbiDiag& message,
+                                     EDiagSev         sev) const
 {
     // if we do not have any filters accept
     if(m_Matchers.empty())
@@ -216,17 +217,20 @@ EDiagFilterAction CDiagFilter::Check(const CNcbiDiag& message) const
     if (action == eDiagFilter_None) 
         action = x_Check(message.GetModule(),
                          message.GetClass(),
-                         message.GetFunction());
+                         message.GetFunction(),
+                         sev);
 
-    if (action == eDiagFilter_None) 
+    if (action == eDiagFilter_None) {
         action = eDiagFilter_Reject;
+    }
 
     return action;
 }
 
 
 // Check if the filter accepts the exception
-EDiagFilterAction CDiagFilter::Check(const CException& ex) const
+EDiagFilterAction CDiagFilter::Check(const CException& ex,
+                                     EDiagSev          sev) const
 {
     // if we do not have any filters accept
     if(m_Matchers.empty())
@@ -238,7 +242,8 @@ EDiagFilterAction CDiagFilter::Check(const CException& ex) const
         if (action == eDiagFilter_None) 
             action = x_Check(pex->GetModule()  .c_str(),
                              pex->GetClass()   .c_str(),
-                             pex->GetFunction().c_str());
+                             pex->GetFunction().c_str(),
+                             sev);
         if (action == eDiagFilter_Accept)
                 return action;
     }
@@ -260,10 +265,15 @@ EDiagFilterAction CDiagFilter::CheckFile(const char* file) const
 // Check if the filter accepts module, class and function
 EDiagFilterAction CDiagFilter::x_Check(const char* module,
                                        const char* nclass,
-                                       const char* function) const
+                                       const char* function,
+                                       EDiagSev    sev) const
 {
     ITERATE(TMatchers, i, m_Matchers) {
         EDiagFilterAction action = (*i)->Match(module, nclass, function);
+        if (action == eDiagFilter_Accept && 
+            int(sev) < int((*i)->GetSeverity())) {
+            continue;
+        }
         if( action != eDiagFilter_None )
             return action;
     }
@@ -301,6 +311,7 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
         eStart, 
         eExpectColon, 
         eExpectClosePar, 
+        eExpectCloseBracket,
         eInsideId,
         eInsidePath
     };
@@ -327,6 +338,10 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
                 break;
             case '(' :
                 state = eExpectClosePar;
+                break;
+            case '[':
+                m_Str = kEmptyStr;
+                state = eExpectCloseBracket;
                 break;
             case '/' :
                 state = eInsidePath;
@@ -356,6 +371,14 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
                 return ePars;
             throw CDiagSyntaxParser::TErrorInfo
                 ( "wrong symbol, expected )", m_Pos );
+        case eExpectCloseBracket:
+            if (symbol == ']') {
+                return eBrackets;
+            }
+            if( isspace( symbol ) )
+                break;
+            m_Str += symbol;
+            break;
         case eInsideId :
             if(isalpha(symbol)  ||  isdigit(symbol)  ||  symbol == '_') {
                 m_Str += symbol;
@@ -397,7 +420,8 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
 
 CDiagSyntaxParser::CDiagSyntaxParser()
     : m_Pos(0),
-      m_Negative(false)
+      m_Negative(false),
+      m_DiagSev(eDiag_Info)
 {
 }
 
@@ -459,6 +483,7 @@ void CDiagSyntaxParser::x_PutIntoFilter(CDiagFilter& to, EInto into)
     }
     m_Matchers.clear();
     m_FileMatcher = NULL;
+    matcher->SetSeverity(m_DiagSev);
 
     _ASSERT( matcher );
     to.InsertMatcher(matcher);
@@ -475,6 +500,31 @@ CDiagStrMatcher* CDiagSyntaxParser::x_CreateMatcher(const string& str)
     return new CDiagStrStringMatcher(str);
 }
 
+
+
+EDiagSev CDiagSyntaxParser::x_GetDiagSeverity(const string& sev_str)
+{
+    if (NStr::CompareNocase(sev_str, "Info") == 0) {
+        return eDiag_Info;
+    }
+    if (NStr::CompareNocase(sev_str, "Warning") == 0) {
+        return eDiag_Warning;
+    }
+    if (NStr::CompareNocase(sev_str, "Error") == 0) {
+        return eDiag_Error;
+    }
+    if (NStr::CompareNocase(sev_str, "Critical") == 0) {
+        return eDiag_Critical;
+    }
+    if (NStr::CompareNocase(sev_str, "Fatal") == 0) {
+        return eDiag_Fatal;
+    }
+    if (NStr::CompareNocase(sev_str, "Trace") == 0) {
+        return eDiag_Trace;
+    }
+    throw TErrorInfo("Incorrect severity level", m_Pos);
+    
+}
 
 void CDiagSyntaxParser::Parse(istream& in, CDiagFilter& to)
 {
@@ -521,10 +571,20 @@ void CDiagSyntaxParser::Parse(istream& in, CDiagFilter& to)
                     m_FileMatcher = new CDiagStrPathMatcher(lexer.GetId());
                     x_PutIntoFilter(to, eModule);
                     break;
+                case CDiagLexParser::eBrackets:
+                    {
+                    EDiagSev sev = x_GetDiagSeverity(lexer.GetId());
+                    // trace is not controlled by this filtering
+                    if (sev == eDiag_Trace) {
+                        throw TErrorInfo("unexpected 'Trace' severity", m_Pos);
+                    }                    
+                    m_DiagSev = sev;
+                    }
+                    break;
                 case CDiagLexParser::eEnd:
                     break;
                 default :
-                    throw TErrorInfo("'!' '::' or 'id' expected", m_Pos);
+                    throw TErrorInfo("'!' '::' '[]' or 'id' expected", m_Pos);
                 }
                 break;
 
@@ -642,6 +702,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2004/12/13 14:38:32  kuznets
+ * Implemented severity filtering
+ *
  * Revision 1.4  2004/09/23 21:27:41  ucko
  * CDiagLexParser::Parse: properly detect end of input.
  *
