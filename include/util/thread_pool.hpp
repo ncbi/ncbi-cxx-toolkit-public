@@ -135,8 +135,14 @@ protected:
         Uint4 m_Priority;
         TRequest m_Request;
     };
+    
+    struct SQueueItemGreater {
+    	bool operator()(const CQueueItem& i1, const CQueueItem& i2)
+    	{ return i1 > i2; }
+    };
+    
     /// The type of the queue
-    typedef set<CQueueItem, greater<CQueueItem> > TQueue;
+    typedef set<CQueueItem, SQueueItemGreater > TQueue;
 
     // Derived classes should take care to use these members properly.
     volatile TQueue     m_Queue;  /// The Queue
@@ -654,6 +660,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/03/29 15:15:53  rsmith
+* change comparator for CQueueItem to satisfy peculiar STL implementation.
+*
 * Revision 1.19  2005/03/23 20:37:44  didenko
 * Moved checking the queue size and raising the semaphore after a request insertion in CBlockingQueue<>::Put method
 *
