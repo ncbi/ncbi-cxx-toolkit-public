@@ -37,7 +37,8 @@
 #include <corelib/ncbimtx.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/annot_selector.hpp>
-#include <objmgr/impl/tse_lock.hpp>
+#include <objmgr/tse_handle.hpp>
+#include <objmgr/impl/heap_scope.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -197,8 +198,7 @@ private:
     CAnnot_Collector(const CAnnot_Collector&);
     CAnnot_Collector& operator= (const CAnnot_Collector&);
 
-    typedef set<TTSE_Lock>       TTSE_LockSet;
-    typedef vector<CAnnotObject_Ref> TAnnotSet;
+    typedef vector<CAnnotObject_Ref>                    TAnnotSet;
 
     const TAnnotSet& GetAnnotSet(void) const;
     CScope& GetScope(void) const;
@@ -223,20 +223,21 @@ private:
                         CSeq_loc&             master_loc_empty,
                         const CSeq_id_Handle& master_id,
                         const CHandleRange&   master_hr);
-    bool x_Search(const CHandleRangeMap& loc,
-                  CSeq_loc_Conversion*   cvt);
-    bool x_Search(const TTSE_Lock&      tse_lock,
-                  const CSeq_id_Handle& id,
-                  const CHandleRange&   hr,
-                  CSeq_loc_Conversion*  cvt);
-    void x_Search(const TTSE_Lock&      tse,
-                  const SIdAnnotObjs*   objs,
-                  CReadLockGuard&       guard,
-                  const CAnnotName&     name,
-                  const CSeq_id_Handle& id,
-                  const CHandleRange&   hr,
-                  CSeq_loc_Conversion*  cvt);
-    void x_SearchRange(const TTSE_Lock&      tse,
+    bool x_SearchLoc(const CHandleRangeMap& loc,
+                     CSeq_loc_Conversion*   cvt,
+                     const CTSE_Handle&     using_tse);
+    bool x_SearchTSE(const CTSE_Handle&    tse,
+                     const CSeq_id_Handle& id,
+                     const CHandleRange&   hr,
+                     CSeq_loc_Conversion*  cvt);
+    void x_SearchObjects(const CTSE_Handle&    tse,
+                         const SIdAnnotObjs*   objs,
+                         CReadLockGuard&       guard,
+                         const CAnnotName&     name,
+                         const CSeq_id_Handle& id,
+                         const CHandleRange&   hr,
+                         CSeq_loc_Conversion*  cvt);
+    void x_SearchRange(const CTSE_Handle&    tse,
                        const SIdAnnotObjs*   objs,
                        CReadLockGuard&       guard,
                        const CAnnotName&     name,
@@ -276,8 +277,7 @@ private:
     SAnnotSelector                   m_Selector;
     CHeapScope                       m_Scope;
     // TSE set to keep all the TSEs locked
-    TTSE_LockSet                     m_TSE_LockSet;
-    TTSE_Lock                        m_LimitTSE_Lock;
+    set<CTSE_Handle>                 m_TSE_LockSet;
     auto_ptr<CAnnotMappingCollector> m_MappingCollector;
     // Set of all the annotations found
     TAnnotSet                        m_AnnotSet;
@@ -649,9 +649,6 @@ CScope::EGetBioseqFlag CAnnot_Collector::GetGetFlag(void) const
     switch (m_Selector.m_ResolveMethod) {
     case SAnnotSelector::eResolve_All:
         return CScope::eGetBioseq_All;
-    case SAnnotSelector::eResolve_TSE:
-        // TSE is already resolved
-        return CScope::eGetBioseq_Resolved;
     default:
         // Do not load new TSEs
         return CScope::eGetBioseq_Loaded;
@@ -665,6 +662,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/12/22 15:56:19  vasilche
+* Added CTSE_Handle.
+* Renamed x_Search() methods to avoid name clash.
+* Allow used TSE linking.
+*
 * Revision 1.20  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *
