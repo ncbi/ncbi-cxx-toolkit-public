@@ -31,6 +31,7 @@
  */
 
 #include <dbapi/driver/util/parameters.hpp>
+#include <ctype.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -161,10 +162,27 @@ void g_SubstituteParam(string& query, const string& name, const string& val)
 {
     size_t name_len = name.length();
     size_t val_len = val.length();
+    size_t len = query.length();
+    char q = 0;
 
-    for (size_t pos = 0; (pos = query.find(name, pos))
-             != string::npos; pos += val_len) {
-        query.replace(pos, name_len, val);
+    for (size_t pos = 0; pos < len; pos++) {
+        if (q) {
+            if (query[pos] == q)
+                q = 0;
+            continue;
+        }
+        if (query[pos] == '"' || query[pos] == '\'') {
+            q = query[pos];
+            continue;
+        }
+        if (query.compare(pos, name_len, name) == 0
+            && (pos == 0 || !isalnum(query[pos - 1]))
+            && !isalnum(query[pos + name_len])
+            && query[pos + name_len] != '_') {
+            query.replace(pos, name_len, val);
+            len = query.length();
+            pos += val_len;
+        }
     }
 }
 
@@ -176,6 +194,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/10/24 19:05:29  lavr
+ * g_SubstituteParam() fixed to correctly replace names with values
+ *
  * Revision 1.3  2001/10/22 15:21:45  lavr
  * +g_SubstituteParam
  *
