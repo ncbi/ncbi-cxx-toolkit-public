@@ -31,9 +31,11 @@
  *
  */
 
+#include <corelib/ncbiobj.hpp>
 #include <objtools/lds/lds_db.hpp>
 #include <objtools/lds/lds_expt.hpp>
 #include <objtools/lds/lds_query.hpp>
+
 
 #include <map>
 
@@ -82,6 +84,23 @@ private:
     TObjTypeMap            m_ObjTypeMap;
 };
 
+//////////////////////////////////////////////////////////////////
+//
+// LDS database incapsulated into CObject compatible container
+//
+
+struct NCBI_LDS_EXPORT CLDS_DatabaseHolder : public CObject
+{
+    CLDS_Database*  lds_db;
+
+    CLDS_DatabaseHolder(CLDS_Database* db) : lds_db(db) {}
+    ~CLDS_DatabaseHolder() { delete lds_db; }
+
+private:
+    CLDS_DatabaseHolder(const CLDS_DatabaseHolder&);
+    CLDS_DatabaseHolder& operator=(const CLDS_DatabaseHolder&);
+};
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -89,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/07/31 20:00:08  kuznets
+ * + CLDS_DatabaseHolder (CObject compatible vehicle for CLDs_Database)
+ *
  * Revision 1.11  2003/06/23 18:41:19  kuznets
  * Added #include <lds_query.hpp>
  *
