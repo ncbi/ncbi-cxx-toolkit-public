@@ -206,7 +206,6 @@ Boolean BLAST_SaveInitialHit(BlastInitHitListPtr init_hitlist,
  * @param matrix the substitution matrix for ungapped extension [in]
  * @param ewp The structure containing word extension information [in]
  * @param q_off The offset in the query sequence [in]
- * @param s_start The start of this hit in the subject sequence [in]
  * @param s_off The offset in the subject sequence [in]
  * @param init_hitlist The structure containing information about all 
  *                     initial hits [in] [out]
