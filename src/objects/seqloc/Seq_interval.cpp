@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/06/06 20:48:16  clausen
+ * Moved IsValid to objects/util/sequence.cpp
+ *
  * Revision 6.2  2002/05/03 21:28:18  ucko
  * Introduce T(Signed)SeqPos.
  *
@@ -48,8 +51,6 @@
 // standard includes
 #include <objects/seqloc/Seq_interval.hpp>
 
-#include <objects/seq/Bioseq.hpp>
-
 // generated includes
 
 // generated classes
@@ -62,21 +63,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CSeq_interval::~CSeq_interval(void)
 {
 }
-// Checks from and to values of the CSeq_interval. Checks from <= to,
-// from >= 0, and to < length of the CBioseq this is an interval for.
-bool CSeq_interval::IsValid(CScope* scope) const
-{
-    // Check 0 <= from <= to and to < length. If scope is null
-    // GetLength returns the maximum possible value.
-    if( GetFrom() < 0 || GetFrom() > GetTo() || 
-        GetTo() >= GetId().GetLength(scope) ) {
-        return false;
-    }
-      
-    // All checks passed, so return true
-    return true;
-}
-        
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/06/06 20:50:50  clausen
+ * Moved IsValid to objects/util/sequence.cpp
+ *
  * Revision 1.1  2002/01/10 19:11:02  clausen
  * Commiting add
  *
@@ -55,8 +58,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CScope;
-
 class CSeq_point : public CSeq_point_Base
 {
     typedef CSeq_point_Base Tparent;
@@ -66,10 +67,6 @@ public:
     // destructor
     ~CSeq_point(void);
     
-    // Checks that point >= 0 and point < length of Bioseq. If scope is
-    // 0, length is assumed to be the maximum value of an int
-    bool IsValid(CScope* scope = 0) const;
-
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_point(const CSeq_point& value);

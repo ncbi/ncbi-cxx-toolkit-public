@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/06/06 20:49:00  clausen
+ * Moved IsValid to objects/util/sequence.cpp
+ *
  * Revision 6.2  2002/05/03 21:28:19  ucko
  * Introduce T(Signed)SeqPos.
  *
@@ -46,8 +49,6 @@
  */
 #include <objects/seqloc/Seq_point.hpp>
 
-#include <objects/seq/Bioseq.hpp>
-
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -58,19 +59,6 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CSeq_point::~CSeq_point(void)
 {
 }
-
-// Checks that point >= 0 and point < length of Bioseq
-bool CSeq_point::IsValid(CScope* scope) const
-{
-    // Check that point >= 0 and point < length. If scope is null
-    // GetLength returns the maximum possible value of its type.
-    if( GetPoint() < 0 || GetPoint() >= GetId().GetLength(scope) ) {
-        return false;
-    }
-    
-    // All checks passed, so return true
-    return true;
-}    
 
 
 END_objects_SCOPE // namespace ncbi::objects::

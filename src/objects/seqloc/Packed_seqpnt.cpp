@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/06/06 20:45:36  clausen
+ * Moved IsValid to objects/util/sequence.cpp
+ *
  * Revision 6.2  2002/05/03 21:28:17  ucko
  * Introduce T(Signed)SeqPos.
  *
@@ -50,7 +53,7 @@
 
 // generated includes
 #include <objects/seqloc/Packed_seqpnt.hpp>
-#include <objects/seqloc/Seq_id.hpp>
+//#include <objects/seqloc/Seq_id.hpp>
 
 // generated classes
 
@@ -63,21 +66,6 @@ CPacked_seqpnt::~CPacked_seqpnt(void)
 {
 }
 
-// Checks that all points >=0 and < length of CBioseq. If scope is 0
-// assumes length is the maximum value of a TSeqPos
-bool CPacked_seqpnt::IsValid(CScope* scope) const
-{
-    // Returns kMax_int if scope is 0
-    TSeqPos length = GetId().GetLength(scope);
-    iterate( TPoints, it, GetPoints() ) {
-        if( *it < 0 || *it >= length ) {
-            return false;
-        }
-    }
-    
-    return true;
-}
-    
 
 END_objects_SCOPE // namespace ncbi::objects::
 
