@@ -39,12 +39,15 @@ bindir      = $(exec_prefix)/bin
 STD_INCLUDE = -I$(incdir) -I$(includedir) -I$(includedir)/internal
 
 
-### Auxiliary commands
+### Auxiliary commands, filters
 
 RM      = rm -f
 RMDIR   = rm -rf
 COPY    = cp -p
 BINCOPY = @BINCOPY@
+
+CC_FILTER  = @CC_FILTER@
+CXX_FILTER = @CXX_FILTER@
 
 
 ### Configurable compiler/librarian/linker binaries and options
