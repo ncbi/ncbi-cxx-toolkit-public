@@ -64,16 +64,11 @@ BEGIN_SCOPE(sequence)
 
 TSeqPos GetLength(const CSeq_id& id, CScope* scope)
 {
-    try {
-        if ( !scope ) {
-            return numeric_limits<TSeqPos>::max();
-        }
-
-        CBioseq_Handle hnd = scope->GetBioseqHandle(id);
-        return hnd.GetBioseqLength();
-    } catch (...) {
+    if ( !scope ) {
         return numeric_limits<TSeqPos>::max();
     }
+    CBioseq_Handle hnd = scope->GetBioseqHandle(id);
+    return hnd.GetBioseqLength();
 }
 
 
@@ -2612,6 +2607,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2004/12/07 15:20:47  ucko
+* Restore GetLength adjustment from R1.10.
+*
 * Revision 1.11  2004/12/06 14:55:15  shomrat
 * Added GetIdHandle and IsSameBioseq for CSeq_id_Handles
 *
