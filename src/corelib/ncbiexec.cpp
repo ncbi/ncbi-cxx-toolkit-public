@@ -124,7 +124,7 @@ static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode,
     va_start(vargs, argv); \
     while ( va_arg(vargs, const char*) ) xcnt++; \
     va_end(vargs); \
-    const char **args = new const char*[xcnt]; \
+    const char **args = new const char*[xcnt+1]; \
     typedef ArrayDeleter<const char*> TArgsDeleter; \
     AutoPtr<const char*, TArgsDeleter> p_args(args); \
     if ( !args ) return -1; \
@@ -132,7 +132,7 @@ static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode,
     args[1] = argv; \
     va_start(vargs, argv); \
     int xi = 1; \
-    while ( args[xi]  &&  xi < xcnt) { \
+    while ( xi < xcnt ) { \
         xi++; \
         args[xi] = va_arg(vargs, const char*); \
     } \
@@ -349,6 +349,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/07/15 16:38:50  ivanov
+ * Fixed bug in macro GET_EXEC_ARGS -- write over array bound
+ *
  * Revision 1.6  2002/07/11 14:18:26  gouriano
  * exceptions replaced by CNcbiException-type ones
  *
