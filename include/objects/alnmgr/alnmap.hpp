@@ -40,9 +40,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-// forward declarations
-// _none_so_far
-
 class NCBI_XALNMGR_EXPORT CAlnMap : public CObject
 {
     typedef CObject TParent;
@@ -71,6 +68,7 @@ public:
     typedef CDense_seg::TNumseg   TNumseg;
 
     enum EGetChunkFlags {
+        fAllChunks           = 0x00,
         fIgnoreUnaligned     = 0x01,
         fInsertSameAsSeq     = 0x02,
         fDeletionSameAsGap   = 0x04,
@@ -82,7 +80,8 @@ public:
         fSkipInserts         = 0x20,
         fSkipAlnSeq          = 0x40,
         fSeqOnly             = fSkipAllGaps | fSkipInserts,
-        fInsertsOnly         = fSkipAllGaps | fSkipAlnSeq
+        fInsertsOnly         = fSkipAllGaps | fSkipAlnSeq,
+        fAlnSegsOnly         = fSkipInserts | fSkipUnalignedGaps
     };
     typedef int TGetChunkFlags; // binary OR of EGetChunkFlags
 
@@ -177,7 +176,7 @@ public:
     
     // Get a vector of chunks defined by flags in a range of aln coords
     CRef<CAlnChunkVec> GetAlnChunks(TNumrow row, const TSignedRange& range,
-                                    TGetChunkFlags flags = 0) const;
+                                    TGetChunkFlags flags = fAlnSegsOnly) const;
 
     class NCBI_XALNMGR_EXPORT CAlnChunkVec : public CObject
     {
@@ -544,6 +543,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/01/09 22:08:11  todorov
+* Changed the default TGetChunkFlags for consistency
+*
 * Revision 1.14  2003/01/07 23:02:48  todorov
 * Fixed EGetChunkFlags
 *
