@@ -133,8 +133,13 @@ extern "C" {
 #define BLAST_PENALTY -3        /**< default nucleotide mismatch score */
 #define BLAST_REWARD 1          /**< default nucleotide match score */
 
+/** Default parameters for saving hits */
 #define BLAST_EXPECT_VALUE 10.0 /**< by default, alignments whose expect
                                      value exceeds this number are discarded */
+#define BLAST_HITLIST_SIZE 500 /**< Number of database sequences to save hits 
+                                  for */
+#define BLAST_PRELIM_HITLIST_SIZE 500 /**< Number of database sequences to save 
+                                         hits for in the preliminary stage. */
 
 /** Types of the lookup table */
 #define MB_LOOKUP_TABLE 1  /**< megablast lookup table (includes both
@@ -195,7 +200,10 @@ typedef struct QuerySetUpOptions {
  *  during computation of ungapped extensions 
  */
 typedef enum SeedContainerType {
-    eDiagArray,         /**< use diagonal structures */
+    eDiagArray,         /**< use diagonal structures with array of last hits
+                           and levels. */
+    eLastHitArray,      /**< use diagonal structures with array of last hits
+                           only */
     eMbStacks,          /**< use stacks (megablast only) */
     eMaxContainerType   /**< maximum value for this enumeration */
 } SeedContainerType;
@@ -207,6 +215,7 @@ typedef enum SeedContainerType {
 typedef enum SeedExtensionMethod {
     eRight,             /**< extend only to the right */
     eRightAndLeft,      /**< extend to left and right (used with AG method) */
+    eUpdateDiag,        /**< update match info on corresponding diagonal record*/
     eMaxSeedExtensionMethod   /**< maximum value for this enumeration */
 } SeedExtensionMethod;
 
@@ -518,6 +527,31 @@ BlastInitialWordOptionsFree(BlastInitialWordOptions* options);
 Int2
 BlastInitialWordOptionsNew(EBlastProgramType program, 
    BlastInitialWordOptions* *options);
+
+/** Validate correctness of the initial word options. The following is checked:
+ * 1. For blastn program:
+ *  1a. If initial word extension is one-directional, scanning stride must be 4;
+ *  1b. If variable word size is used, word size must be divisible by 4;
+ *  1c. Classic megablast word finder requires megablast lookup table, 
+ *      scanning stride 4 and either wordsize divisible by 4, or discontiguous
+ *      word options;
+ * 2. For other programs:
+ *  2a. Initial word extension is always one-directional;
+ *  2b. Variable wordsize option is not applicable;
+ *  2c. The only container type available is diagonal array;
+ * @param program_number Type of BLAST program [in]
+ * @param options Initial word options [in]
+ * @param lookup_options Lookup table options - these contain some information
+ *                       needed to determine correctness of initial word 
+ *                       options [in]
+ * @param blast_msg Error message [out]
+ * @return Validation status
+ */
+Int2
+BlastInitialWordOptionsValidate(EBlastProgramType program_number,
+   const BlastInitialWordOptions* options, 
+   const LookupTableOptions* lookup_options,
+   Blast_Message* *blast_msg);
 
 /** Fill non-default values in the BlastInitialWordOptions structure.
  * @param options The options structure [in] [out] 
@@ -940,6 +974,7 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
                            const BlastExtensionOptions* ext_options,
                            const BlastScoringOptions* score_options, 
                            const LookupTableOptions* lookup_options, 
+                           const BlastInitialWordOptions* word_options, 
                            const BlastHitSavingOptions* hit_options,
                            Blast_Message* *blast_msg);
 
@@ -957,7 +992,7 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
 void
 CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, BlastLinkHSPParameters* link_hsp_params, 
-   BlastExtensionParameters* ext_params,
+   const BlastExtensionParameters* ext_params,
    Int8 db_length, Int4 subject_length);
 
 #ifdef __cplusplus
