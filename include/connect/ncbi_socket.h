@@ -80,6 +80,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/04/23 22:22:06  vakatov
+ * SOCK_Read() -- special treatment for "buf" == NULL
+ *
  * Revision 6.11  2001/03/22 17:44:14  vakatov
  * + SOCK_AllowSigPipeAPI()
  *
@@ -361,6 +364,9 @@ extern const STimeout* SOCK_GetTimeout
  * If there is no data available to read (also, if eIO_Persist and cannot
  * read exactly "size" bytes) and the timeout(see SOCK_SetTimeout) is expired
  * then return eIO_Timeout.
+ * If "buf" is passed NULL, then:
+ *   1) if PEEK -- read up to "size" bytes and store them in internal buffer;
+ *   2) else -- discard up to "size" bytes from internal buffer and socket.
  * NOTE1: Theoretically, eIO_Closed may indicate an empty message
  *        rather than a real closure of the connection...
  * NOTE2: If on input "size" == 0, then "*n_read" is set to 0, and

@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2001/04/23 22:22:08  vakatov
+ * SOCK_Read() -- special treatment for "buf" == NULL
+ *
  * Revision 6.24  2001/04/04 14:58:59  vakatov
  * Cleaned up after R6.23 (and get rid of the C++ style comments)
  *
@@ -896,54 +899,70 @@ static int s_NCBI_Recv(SOCK          sock,
                        size_t        size,
                        int  /*bool*/ peek)
 {
+    char   xx_buffer[4096];
     char*  x_buffer = (char*) buffer;
-    size_t n_readbuf;
-    int    n_readsock;
+    size_t n_read;
 
     /* read (or peek) from the internal buffer */
-    n_readbuf = peek ?
+    n_read = peek ?
         BUF_Peek(sock->buf, x_buffer, size) :
         BUF_Read(sock->buf, x_buffer, size);
-    if (n_readbuf == size  ||  sock->r_status == eIO_Closed) {
-        return (int) n_readbuf;
+    if (n_read == size  ||  sock->r_status == eIO_Closed) {
+        return (int) n_read;
     }
-    x_buffer += n_readbuf;
-    size     -= n_readbuf;
 
     /* read (not just peek) from the socket */
-    n_readsock = recv(sock->sock, x_buffer, size, 0);
-
-    /* catch EOF */
-    if (n_readsock == 0  ||
-        (n_readsock < 0  &&  SOCK_ERRNO == SOCK_ENOTCONN)) {
-        sock->r_status = eIO_Closed;
-        sock->is_eof   = 1/*true*/;
-        return (int) (n_readbuf ? n_readbuf : 0);
-    }
-    /* catch unknown ERROR */
-    if (n_readsock < 0) {
-        int x_errno = SOCK_ERRNO;
-        if (x_errno != SOCK_EWOULDBLOCK  &&
-            x_errno != SOCK_EAGAIN  &&
-            x_errno != SOCK_EINTR) {
-            sock->r_status = eIO_Unknown;
+    do {
+        /* recv */
+        int    x_readsock;
+        size_t n_todo = size - n_read;
+        if ( buffer ) {
+            /* read to the data buffer provided by user */
+            x_buffer += n_read;
+            x_readsock = recv(sock->sock, x_buffer, n_todo, 0);
+        } else {
+            /* read to the temporary buffer (to store or discard later) */
+            if (n_todo > sizeof(xx_buffer)) {
+                n_todo = sizeof(xx_buffer);
+            }
+            x_readsock = recv(sock->sock, xx_buffer, n_todo, 0);
+            x_buffer = xx_buffer;
         }
-        return n_readbuf ? (int)n_readbuf : -1;
-    }
 
-    /* if "peek" -- store the new read data in the internal buffer */
-    if ( peek ) {
-        verify(BUF_Write(&sock->buf, x_buffer, n_readsock));
-    }
+        /* catch EOF */
+        if (x_readsock == 0  ||
+            (x_readsock < 0  &&  SOCK_ERRNO == SOCK_ENOTCONN)) {
+            sock->r_status = eIO_Closed;
+            sock->is_eof   = 1/*true*/;
+            return (int) (n_read ? n_read : 0);
+        }
+        /* catch unknown ERROR */
+        if (x_readsock < 0) {
+            int x_errno = SOCK_ERRNO;
+            if (x_errno != SOCK_EWOULDBLOCK  &&
+                x_errno != SOCK_EAGAIN  &&
+                x_errno != SOCK_EINTR) {
+                sock->r_status = eIO_Unknown;
+            }
+            return n_read ? (int) n_read : -1;
+        }
 
-    /* statistics & logging */
-    if (sock->log_data == eOn  ||
-        (sock->log_data == eDefault  &&  s_LogData == eOn)) {
-        s_DoLogData(sock, eIO_Read, x_buffer, (size_t) n_readsock);
-    }
-    sock->n_read += n_readsock;
+        /* if "peek" -- store the new read data in the internal buffer */
+        if ( peek ) {
+            verify(BUF_Write(&sock->buf, x_buffer, (size_t) x_readsock));
+        }
 
-    return (int) (n_readbuf + n_readsock);
+        /* statistics & logging */
+        if (sock->log_data == eOn  ||
+            (sock->log_data == eDefault  &&  s_LogData == eOn)) {
+            s_DoLogData(sock, eIO_Read, x_buffer, (size_t) x_readsock);
+        }
+        sock->n_read += x_readsock;
+        n_read       += x_readsock;
+    }
+    while (!buffer  &&  n_read < size);
+
+    return (int) n_read;
 }
 
 
@@ -1311,8 +1330,8 @@ extern EIO_Status SOCK_Read(SOCK           sock,
         *n_read = 0;
         do {
             size_t x_read;
-            status = SOCK_Read(sock, (char*) buf + *n_read, size, &x_read,
-                               eIO_Plain);
+            status = SOCK_Read(sock, (char*) buf + (buf ? *n_read : 0), size,
+                               &x_read, eIO_Plain);
             *n_read += x_read;
             if (status != eIO_Success)
                 return status;
