@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/02/13 14:53:30  thiessen
+* add update sort
+*
 * Revision 1.29  2002/02/12 17:19:23  thiessen
 * first working structure import
 *
@@ -147,6 +150,7 @@ BEGIN_SCOPE(Cn3D)
 BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     INCLUDE_VIEWER_WINDOW_BASE_EVENTS
     EVT_CLOSE     (                                     UpdateViewerWindow::OnCloseWindow)
+    EVT_MENU      (MID_SORT_UPDATES_IDENTIFIER,         UpdateViewerWindow::OnSortUpdates)
     EVT_MENU_RANGE(MID_THREAD_ONE, MID_THREAD_ALL,      UpdateViewerWindow::OnRunThreader)
     EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,        UpdateViewerWindow::OnMerge)
     EVT_MENU_RANGE(MID_DELETE_ONE, MID_DELETE_ALL,      UpdateViewerWindow::OnDelete)
@@ -161,6 +165,10 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     updateViewer(thisUpdateViewer)
 {
     // Edit menu
+    editMenu->AppendSeparator();
+    wxMenu *subMenu = new wxMenu;
+    subMenu->Append(MID_SORT_UPDATES_IDENTIFIER, "By &Identifier");
+    editMenu->Append(MID_SORT_UPDATES, "Sort &Updates...", subMenu);
     editMenu->AppendSeparator();
     editMenu->Append(MID_IMPORT_SEQUENCES, "&Import Sequences");
     editMenu->Append(MID_IMPORT_STRUCTURE, "Import S&tructure");
@@ -350,6 +358,12 @@ void UpdateViewerWindow::OnRunBlast(wxCommandEvent& event)
                 BlastSingleOff();
             break;
     }
+}
+
+void UpdateViewerWindow::OnSortUpdates(wxCommandEvent& event)
+{
+    if (event.GetId() == MID_SORT_UPDATES_IDENTIFIER)
+        updateViewer->SortByIdentifier();
 }
 
 

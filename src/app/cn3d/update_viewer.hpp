@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/02/13 14:53:30  thiessen
+* add update sort
+*
 * Revision 1.11  2002/02/12 17:19:23  thiessen
 * first working structure import
 *
@@ -130,6 +133,9 @@ public:
     // save pending structures
     void SavePendingStructures(void);
 
+    // sort updates
+    void SortByIdentifier(void);
+
 private:
     UpdateViewerWindow *updateWindow;
 
@@ -143,6 +149,8 @@ private:
 
     typedef std::list < ncbi::CRef < ncbi::objects::CBiostruc > > BiostrucList;
     BiostrucList pendingStructures;
+
+    void SortUpdates(void);
 };
 
 END_SCOPE(Cn3D)

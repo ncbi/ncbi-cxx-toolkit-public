@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/02/13 14:53:30  thiessen
+* add update sort
+*
 * Revision 1.26  2002/02/12 17:19:22  thiessen
 * first working structure import
 *
@@ -134,6 +137,7 @@
 #include <objects/mmdb1/Mmdb_id.hpp>
 
 #include <memory>
+#include <algorithm>
 
 // C stuff
 #include <stdio.h>
@@ -816,6 +820,86 @@ void UpdateViewer::SetWindowTitle(const std::string& title) const
 {
     if (*viewerWindow)
         (*viewerWindow)->SetTitle(wxString(title.c_str()) + " - Update Viewer");
+}
+
+// comparison function: if CompareRows(a, b) == true, then row a moves up
+typedef bool (*CompareUpdates)(BlockMultipleAlignment *a, BlockMultipleAlignment *b);
+
+static bool CompareUpdatesByIdentifier(BlockMultipleAlignment *a, BlockMultipleAlignment *b)
+{
+    const Sequence
+        *seqA = a->GetSequenceOfRow(1), // sort by first slave row
+        *seqB = b->GetSequenceOfRow(1);
+
+    // identifier sort - float sequences with PDB id's to the top, then gi's, then accessions
+    if (seqA->identifier->pdbID.size() > 0) {
+        if (seqB->identifier->pdbID.size() > 0) {
+            if (seqA->identifier->pdbID < seqB->identifier->pdbID)
+                return true;
+            else if (seqA->identifier->pdbID > seqB->identifier->pdbID)
+                return false;
+            else
+                return (seqA->identifier->pdbChain < seqB->identifier->pdbChain);
+        } else
+            return true;
+    }
+
+    else if (seqA->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+        if (seqB->identifier->pdbID.size() > 0)
+            return false;
+        else if (seqB->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET)
+            return (seqA->identifier->gi < seqB->identifier->gi);
+        else
+            return true;
+    }
+
+    else if (seqA->identifier->accession.size() > 0) {
+        if (seqB->identifier->pdbID.size() > 0 || seqB->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET)
+            return false;
+        else if (seqB->identifier->accession.size() > 0)
+            return (seqA->identifier->accession < seqB->identifier->accession);
+    }
+
+    ERR_POST(Error << "CompareUpdatesByIdentifier() - unrecognized identifier");
+    return false;
+}
+
+static CompareUpdates updateComparisonFunction = NULL;
+
+void UpdateViewer::SortByIdentifier(void)
+{
+    TESTMSG("sorting updates by identifier");
+    updateComparisonFunction = CompareUpdatesByIdentifier;
+    SortUpdates();
+}
+
+void UpdateViewer::SortUpdates(void)
+{
+    if (!updateComparisonFunction) {
+        ERR_POST(Error << "UpdateViewer::SortUpdates() - must first set comparison function");
+        return;
+    }
+
+    // make vector of alignments
+    const AlignmentList *currentAlignments = GetCurrentAlignments();
+    if (!currentAlignments) return;
+    std::vector < BlockMultipleAlignment * > sortedVector(currentAlignments->size());
+    AlignmentList::const_iterator a, ae = currentAlignments->end();
+    int i = 0;
+    for (a=currentAlignments->begin(); a!=ae; a++) sortedVector[i++] = *a;
+
+    // sort them
+    stable_sort(sortedVector.begin(), sortedVector.end(), updateComparisonFunction);
+    updateComparisonFunction = NULL;
+
+    // replace window contents with sorted list
+    alignmentStack.back().clear();
+    delete displayStack.back();
+    displayStack.back() = new SequenceDisplay(true, viewerWindow);
+
+    AlignmentList sortedList;
+    for (i=0; i<sortedVector.size(); i++) sortedList.push_back(sortedVector[i]);
+    AddAlignments(sortedList);
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/02/13 14:53:30  thiessen
+* add update sort
+*
 * Revision 1.17  2002/02/12 17:19:23  thiessen
 * first working structure import
 *
@@ -119,18 +122,21 @@ private:
 
     // menu identifiers - additional items beyond base class items
     enum {
-        MID_THREAD_ONE = START_VIEWER_WINDOW_DERIVED_MID,
+        MID_SORT_UPDATES = START_VIEWER_WINDOW_DERIVED_MID,
+        MID_SORT_UPDATES_IDENTIFIER,
+        MID_IMPORT_SEQUENCES,
+        MID_IMPORT_STRUCTURE,
+        MID_THREAD_ONE,
         MID_THREAD_ALL,
         MID_BLAST_ONE,
         MID_MERGE_ONE,
         MID_MERGE_ALL,
         MID_DELETE_ONE,
-        MID_DELETE_ALL,
-        MID_IMPORT_SEQUENCES,
-        MID_IMPORT_STRUCTURE
+        MID_DELETE_ALL
     };
 
     void OnCloseWindow(wxCloseEvent& event);
+    void OnSortUpdates(wxCommandEvent& event);
     void OnRunThreader(wxCommandEvent& event);
     void OnRunBlast(wxCommandEvent& event);
     void OnMerge(wxCommandEvent& event);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/02/13 14:53:30  thiessen
+* add update sort
+*
 * Revision 1.25  2001/12/06 23:13:45  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -161,7 +164,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_SORT_THREADER, "By &Score");
     subMenu->Append(MID_FLOAT_PDBS, "Float &PDBs");
     subMenu->Append(MID_PROXIMITY_SORT, "&Proximity Sort", "", true);
-    editMenu->Append(MID_SORT_ROWS, "Sort &Rows", subMenu);
+    editMenu->Append(MID_SORT_ROWS, "Sort &Rows...", subMenu);
     editMenu->Append(MID_DELETE_ROW, "De&lete Row", "", true);
 
     mouseModeMenu->Append(MID_MOVE_ROW, "&Move Row", "", true);
