@@ -2257,8 +2257,8 @@ inline
 bool NStr::Equal(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                   const char* pattern, ECase use_case)
 {
-    return (use_case == eCase ?
-        EqualCase(str, pos, n, pattern) : EqualNocase(str, pos, n, pattern)) == 0;
+    return use_case == eCase ?
+        EqualCase(str, pos, n, pattern) : EqualNocase(str, pos, n, pattern);
 }
 
 inline
@@ -2266,7 +2266,7 @@ bool NStr::Equal(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                   const string& pattern, ECase use_case)
 {
     return use_case == eCase ?
-        EqualCase(str, pos, n, pattern): EqualNocase(str, pos, n, pattern);
+        EqualCase(str, pos, n, pattern) : EqualNocase(str, pos, n, pattern);
 }
 
 inline
@@ -2298,25 +2298,25 @@ bool NStr::EqualCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
 inline
 bool NStr::Equal(const char* s1, const char* s2, ECase use_case)
 {
-    return (use_case == eCase ? EqualCase(s1, s2): EqualNocase(s1, s2)) == 0;
+    return (use_case == eCase ? EqualCase(s1, s2) : EqualNocase(s1, s2));
 }
 
 inline
 bool NStr::Equal(const string& s1, const char* s2, ECase use_case)
 {
-    return Equal(s1.c_str(), s2, use_case) == 0;
+    return Equal(s1.c_str(), s2, use_case);
 }
 
 inline
 bool NStr::Equal(const char* s1, const string& s2, ECase use_case)
 {
-    return Equal(s1, s2.c_str(), use_case) == 0;
+    return Equal(s1, s2.c_str(), use_case);
 }
 
 inline
 bool NStr::Equal(const string& s1, const string& s2, ECase use_case)
 {
-    return Equal(s1.c_str(), s2.c_str(), use_case) == 0;
+    return Equal(s1.c_str(), s2.c_str(), use_case);
 }
 
 inline
@@ -2508,6 +2508,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.71  2004/11/05 16:30:02  shomrat
+ * Fixed implementation (inline) of Equal methods
+ *
  * Revision 1.70  2004/10/15 12:00:52  ivanov
  * Renamed NStr::StringToUInt_DataSize -> NStr::StringToUInt8_DataSize.
  * Added doxygen @return statement to NStr::StringTo* comments.
