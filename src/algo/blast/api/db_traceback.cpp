@@ -46,8 +46,8 @@ CDbBlastTraceback::CDbBlastTraceback(const TSeqLocVector& queries,
                        BlastHSPResults* results)
     : CDbBlast(queries, seq_src, p)
 {
-    BLAST_ResultsFree(mi_pResults);
-    mi_pResults = results;
+    BLAST_ResultsFree(m_ipResults);
+    m_ipResults = results;
 }
 
 CDbBlastTraceback::CDbBlastTraceback(const TSeqLocVector& queries, 
@@ -55,8 +55,8 @@ CDbBlastTraceback::CDbBlastTraceback(const TSeqLocVector& queries,
                        BlastHSPResults* results)
     : CDbBlast(queries, seq_src, opts)
 {
-    BLAST_ResultsFree(mi_pResults);
-    mi_pResults = results;
+    BLAST_ResultsFree(m_ipResults);
+    m_ipResults = results;
 }
 
 int CDbBlastTraceback::SetupSearch()
@@ -64,31 +64,31 @@ int CDbBlastTraceback::SetupSearch()
     int status = 0;
     EProgram x_eProgram = GetOptionsHandle().GetOptions().GetProgram();
     
-    if ( !mi_bQuerySetUpDone ) {
+    if ( !m_ibQuerySetUpDone ) {
         x_ResetQueryDs();
         
         SetupQueryInfo(GetQueries(), GetOptionsHandle().GetOptions(), 
-                       &mi_clsQueryInfo);
+                       &m_iclsQueryInfo);
         SetupQueries(GetQueries(), GetOptionsHandle().GetOptions(), 
-                     mi_clsQueryInfo, &mi_clsQueries);
+                     m_iclsQueryInfo, &m_iclsQueries);
 
-        mi_pScoreBlock = 0;
+        m_ipScoreBlock = 0;
         
         Blast_Message* blast_message = NULL;
         
         /* Pass NULL lookup segments and output filtering locations pointers
            in the next call, to indicate that we don't need them here. */
         BLAST_MainSetUp(x_eProgram, GetQueryOpts(), GetScoringOpts(),
-            GetHitSaveOpts(), mi_clsQueries, mi_clsQueryInfo, NULL, NULL,
-            &mi_pScoreBlock, &blast_message);
+            GetHitSaveOpts(), m_iclsQueries, m_iclsQueryInfo, NULL, NULL,
+            &m_ipScoreBlock, &blast_message);
 
         if (blast_message)
             GetErrorMessage().push_back(blast_message);
 
         BLAST_GapAlignSetUp(x_eProgram, GetSeqSrc(), 
             GetScoringOpts(), GetEffLenOpts(), GetExtnOpts(), GetHitSaveOpts(),
-            mi_clsQueryInfo, mi_pScoreBlock,
-            &mi_pExtParams, &mi_pHitParams, &mi_pEffLenParams, &mi_pGapAlign);
+            m_iclsQueryInfo, m_ipScoreBlock,
+            &m_ipExtParams, &m_ipHitParams, &m_ipEffLenParams, &m_ipGapAlign);
 
     }
     return status;
@@ -101,9 +101,9 @@ CDbBlastTraceback::RunSearchEngine()
 
     status = 
         BLAST_ComputeTraceback(GetOptionsHandle().GetOptions().GetProgram(), 
-            mi_pResults, mi_clsQueries, mi_clsQueryInfo,
-            GetSeqSrc(), mi_pGapAlign, GetScoringOpts(), mi_pExtParams, 
-            mi_pHitParams, mi_pEffLenParams, GetDbOpts(), GetProtOpts());
+            m_ipResults, m_iclsQueries, m_iclsQueryInfo,
+            GetSeqSrc(), m_ipGapAlign, GetScoringOpts(), m_ipExtParams, 
+            m_ipHitParams, m_ipEffLenParams, GetDbOpts(), GetProtOpts());
 }
 
 /// Resets query data structures; does only part of the work in the base 
@@ -111,14 +111,14 @@ CDbBlastTraceback::RunSearchEngine()
 void
 CDbBlastTraceback::x_ResetQueryDs()
 {
-    mi_bQuerySetUpDone = false;
+    m_ibQuerySetUpDone = false;
     // should be changed if derived classes are created
-    mi_clsQueries.Reset(NULL);
-    mi_clsQueryInfo.Reset(NULL);
-    mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
+    m_iclsQueries.Reset(NULL);
+    m_iclsQueryInfo.Reset(NULL);
+    m_ipScoreBlock = BlastScoreBlkFree(m_ipScoreBlock);
     
-    sfree(mi_pReturnStats);
-    NON_CONST_ITERATE(TBlastError, itr, mi_vErrors) {
+    sfree(m_ipReturnStats);
+    NON_CONST_ITERATE(TBlastError, itr, m_ivErrors) {
         *itr = Blast_MessageFree(*itr);
     }
 
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/03/16 23:30:59  dondosha
+ * Changed mi_ to m_i in member field names
+ *
  * Revision 1.3  2004/03/15 19:57:00  dondosha
  * Merged TwoSequences and Database engines
  *

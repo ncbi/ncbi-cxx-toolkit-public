@@ -54,10 +54,10 @@ protected:
     void RunSearchEngine();
     void x_ResetQueryDs();
 private:
-    BlastExtensionParameters* mi_pExtParams;
-    BlastHitSavingParameters* mi_pHitParams;
-    BlastEffectiveLengthsParameters* mi_pEffLenParams;
-    BlastGapAlignStruct* mi_pGapAlign;
+    BlastExtensionParameters* m_ipExtParams;
+    BlastHitSavingParameters* m_ipHitParams;
+    BlastEffectiveLengthsParameters* m_ipEffLenParams;
+    BlastGapAlignStruct* m_ipGapAlign;
 };
 
 inline void CDbBlastTraceback::PartialRun()
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/16 23:30:25  dondosha
+* Changed mi_ to m_i in member field names
+*
 * Revision 1.3  2004/03/09 18:41:31  dondosha
 * Added effective lengths parameters member
 *
