@@ -1177,8 +1177,8 @@ fi
 #### GNU compiler
 if test "$GCC" = "yes" ; then
    # GNU compiler
-   CFLAGS="-Wall -ansi $CFLAGS"
-   CXXFLAGS="-Wall -ansi $CXXFLAGS"
+   CFLAGS="-Wall $CFLAGS"
+   CXXFLAGS="-Wall $CXXFLAGS"
    cat >> confdefs.h <<EOF
 #define __EXTENSIONS__ 1
 EOF

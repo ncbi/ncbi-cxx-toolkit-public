@@ -182,8 +182,8 @@ fi
 #### GNU compiler
 if test "$GCC" = "yes" ; then
    # GNU compiler
-   CFLAGS="-Wall -ansi $CFLAGS"
-   CXXFLAGS="-Wall -ansi $CXXFLAGS"
+   CFLAGS="-Wall $CFLAGS"
+   CXXFLAGS="-Wall $CXXFLAGS"
    AC_DEFINE_UNQUOTED(__EXTENSIONS__, 1)
    AC_DEFINE_UNQUOTED(_SVID_SOURCE,   1)
 fi
