@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.67 2002/05/02 15:28:06 ucko Exp $
+#  $Id: configure.ac,v 1.68 2002/05/02 22:40:07 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -737,10 +737,14 @@ if test -z "$CONF_f_runpath" ; then
     solaris*:GCC )
       CONF_f_runpath="-Wl,-R"
       ;;
-    linux*:GCC | linux*:ICC )
+    linux*:GCC )
       # osf*:GCC could go here as well, but then the linker's
       # unwillingness to merge -rpath options bites us if we use GCC 3. :-/
       CONF_f_runpath="-Wl,-rpath,"
+      ;;
+    linux*:ICC )
+      # trying to use "-Wl,-rpath," here sends "ld" to endless 100% CPU loop
+      CONF_f_runpath="-Xlinker -rpath -Xlinker "
       ;;
     irix*:* | linux*:KCC )
       CONF_f_runpath="-rpath "
