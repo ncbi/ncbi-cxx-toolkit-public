@@ -551,14 +551,8 @@ if test -z "$CFLAGS_DLL"  -a  -z "$CXXFLAGS_DLL" ; then
    esac
 fi
 
-# Provide runpath to the C++ Toolkit DLLs
-rundir="\$(libdir)"
-
-if test -z "$with_runpath"  &&  test "$with_dll" = "no" ; then
-   with_runpath="no"
-fi
-
-if test "$with_runpath" != "no" ; then
+# Provide runpath to the C++ Toolkit (or as specified by --with-runpath=) DLLs
+if test -z "$CONF_f_runpath" ; then
    case "$host_os:$compiler" in
     solaris*:WorkShop* | solaris*:KCC )
       CONF_f_runpath="-R"
@@ -569,14 +563,22 @@ if test "$with_runpath" != "no" ; then
     irix*:* | linux*:KCC | linux:ICC )
       CONF_f_runpath="-rpath "
       ;;
+    * )
+      CONF_f_runpath=${CONF_f_runpath:=""}
+      ;;
    esac
-
-   if test -n "$with_runpath"  &&  test "$with_runpath" != "yes" ; then
-      rundir="$with_runpath"
-   fi
-else
-   CONF_f_runpath=
 fi
+
+if   test -z "$CONF_f_runpath"  -o  "$with_runpath" = "no" ; then
+   runpath=
+elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
+   runpath="${CONF_f_runpath}${with_runpath}"
+elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
+   runpath="${CONF_f_runpath}\$(libdir)"
+else
+   runpath=
+fi
+
 
 # Whether to build DLLs or static (and whether by default, or forcibly)
 LIB_OR_DLL="lib"
@@ -1921,7 +1923,7 @@ AC_SUBST(top_srcdir)
 AC_SUBST(srcdir)
 AC_SUBST(includedir)
 AC_SUBST(builddir)
-AC_SUBST(rundir)
+AC_SUBST(runpath)
 
 AC_SUBST(CC)
 AC_SUBST(CPP)

@@ -22,7 +22,6 @@
 top_srcdir  = @top_srcdir@
 exec_prefix = @exec_prefix@
 builddir    = @builddir@
-rundir      = @rundir@
 
 
 ### Paths
@@ -31,6 +30,7 @@ includedir  = $(top_srcdir)/include
 incdir      = $(exec_prefix)/inc
 libdir      = $(exec_prefix)/lib
 bindir      = $(exec_prefix)/bin
+runpath     = @runpath@
 
 
 ### Optional top-level project groups
