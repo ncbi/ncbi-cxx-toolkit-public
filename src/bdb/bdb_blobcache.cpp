@@ -1071,7 +1071,7 @@ public:
     {
         delete m_BlobStream;
         delete m_OverflowFile;
-        delete m_Buffer;
+        delete[] m_Buffer;
     }
 
 
@@ -1902,6 +1902,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/11/28 17:35:05  vasilche
+ * Fixed new[]/delete discrepancy.
+ *
  * Revision 1.29  2003/11/26 13:09:16  kuznets
  * Fixed bug in mutex locking
  *
