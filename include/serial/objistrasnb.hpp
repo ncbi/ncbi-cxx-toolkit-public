@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/10/18 20:11:16  vasilche
+* Enum values now have long type.
+* Fixed template generation for enums.
+*
 * Revision 1.11  1999/09/24 18:19:13  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -94,7 +98,7 @@ public:
     CObjectIStreamAsnBinary(CNcbiIstream& in);
     virtual ~CObjectIStreamAsnBinary(void);
 
-    virtual int ReadEnumValue(void);
+    virtual long ReadEnumValue(void);
 
     virtual void SkipValue(void);
 

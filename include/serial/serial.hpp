@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  1999/10/18 20:11:16  vasilche
+* Enum values now have long type.
+* Fixed template generation for enums.
+*
 * Revision 1.34  1999/10/15 16:37:47  vasilche
 * Added namespace specificators.
 *
@@ -158,6 +162,7 @@
 #include <serial/autoptrinfo.hpp>
 #include <serial/asntypes.hpp>
 #include <serial/classinfo.hpp>
+#include <serial/enumerated.hpp>
 
 struct valnode;
 
@@ -178,6 +183,10 @@ class CMemberInfo;
 
 #define STD_TYPE(Name) Name
 #define STD_REF(Name) NCBI_NS_NCBI::CStdTypeInfo<Name>::GetTypeInfo
+
+#define ENUM_TYPE(Type, Name) Type
+#define ENUM_REF(Type, Name) \
+    NCBI_NS_NCBI::CreateEnumeratedTypeInfo(Type(0), NAME2(GetEnumInfo_,Name)())
 
 #define POINTER_TYPE(Type,Args) TYPE(Type)Args*
 #define POINTER_REF(Type,Args) \
@@ -231,9 +240,18 @@ struct Check
 };
 
 template<typename T>
+inline
 CMemberInfo* Member(const T* member)
 {
     return new CRealMemberInfo(size_t(member), GetTypeRef(member));
+}
+
+template<typename T>
+inline
+CMemberInfo* EnumMember(const T* member, const CEnumeratedTypeValues* enumInfo)
+{
+    return new CRealMemberInfo(size_t(member),
+                               CreateEnumeratedTypeInfo(*member, enumInfo));
 }
 
 #define BASE_OBJECT(Class) const Class* const kObject = 0
@@ -243,11 +261,15 @@ CMemberInfo* Member(const T* member)
 #define M(Name,Type,Args) \
     NCBI_NS_NCBI::Check<TYPE(Type)Args>::Member(MEMBER_PTR(Name),REF(Type)Args)
 #define STD_M(Name) NCBI_NS_NCBI::Member(MEMBER_PTR(Name))
-
+#define ENUM_M(Name,Type) \
+    NCBI_NS_NCBI::EnumMember(MEMBER_PTR(Name), NAME2(GetEnumInfo_, Type)())
+    
 #define ADD_N_M(Name,Mem,Type,Args) info->AddMember(Name,M(Mem,Type,Args))
 #define ADD_N_STD_M(Name,Mem) info->AddMember(Name,STD_M(Mem))
+#define ADD_N_ENUM_M(Name,Mem,Type) info->AddMember(Name,ENUM_M(Mem,Type))
 #define ADD_M(Name,Type,Args) ADD_N_M(#Name,Name,Type,Args)
 #define ADD_STD_M(Name) ADD_N_STD_M(#Name,Name)
+#define ADD_ENUM_M(Name,Type) ADD_N_ENUM_M(#Name,Name,Type)
 
 // define type info getter for standard classes
 template<typename T>
@@ -718,6 +740,25 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
                 NCBI_NS_NCBI::CChoiceTypeInfo, (Name))
 #define BEGIN_CHOICE_INFO(Class) BEGIN_CHOICE_INFO2(#Class, Class)
 #define END_CHOICE_INFO END_TYPE_INFO
+
+#define CREATE_ENUM(Int, Enum, IsInteger) { \
+        NCBI_NS_NCBI::CEnumeratedTypeInfoTmpl<Int>* info; \
+        enumInfo = info = \
+            new NCBI_NS_NCBI::CEnumeratedTypeInfoTmpl<Int>(#Enum, IsInteger); \
+        enumValues = &info->Values(); \
+    }
+#define IF_ENUM_SIZE(Int, Enum, IsInteger) \
+    if ( sizeof(Enum) == sizeof(Int) ) CREATE_ENUM(Int, Enum, IsInteger)
+
+#define BEGIN_ENUM_INFO(Method, Enum, IsInteger) \
+const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
+{ static NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo = 0; if ( !enumInfo ) { \
+    enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(#Enum, IsInteger); \
+    Enum enumValue;
+
+#define ADD_ENUM_VALUE(Name, Value) enumInfo->AddValue(Name, enumValue = Value)
+
+#define END_ENUM_INFO } return enumInfo; }
 
 // adding members
 #define MEMBER(Member, Type) \

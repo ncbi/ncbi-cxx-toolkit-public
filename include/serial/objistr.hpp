@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/10/18 20:11:15  vasilche
+* Enum values now have long type.
+* Fixed template generation for enums.
+*
 * Revision 1.27  1999/10/04 16:22:08  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -150,7 +154,7 @@ public:
     
     // try to read enum value name, "" if none
     virtual string ReadEnumName(void);
-    virtual int ReadEnumValue(void);
+    virtual long ReadEnumValue(void);
 
     virtual TTypeInfo MapType(const string& name);
     void SetTypeMapper(CTypeMapper* typeMapper);

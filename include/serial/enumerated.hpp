@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/10/18 20:11:15  vasilche
+* Enum values now have long type.
+* Fixed template generation for enums.
+*
 * Revision 1.1  1999/09/24 18:20:05  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -45,30 +49,104 @@
 
 BEGIN_NCBI_SCOPE
 
-class CEnumeratedTypeInfo : public CStdTypeInfo<int>
+class CEnumeratedTypeValues
 {
-    typedef CStdTypeInfo<int> CParent;
 public:
-    typedef CParent::TObjectType TValue;
-    typedef map<string, TValue> TNameToValue;
-    typedef map<TValue, string> TValueToName;
+    typedef map<string, long> TNameToValue;
+    typedef map<long, string> TValueToName;
 
-    CEnumeratedTypeInfo(const string& name, bool isInteger = false);
+    CEnumeratedTypeValues(const string& name, bool isInteger);
+    ~CEnumeratedTypeValues(void);
 
-    void AddValue(const string& name, TValue value);
+    const string& GetName(void) const
+        {
+            return m_Name;
+        }
+    bool IsInteger(void) const
+        {
+            return m_Integer;
+        }
 
-    TValue FindValue(const string& name) const;
-    const string& FindName(TValue value) const;
+    void AddValue(const string& name, long value);
 
-protected:
-    void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+    // returns value of enum element, if found
+    // otherwise, throws exception
+    long FindValue(const string& name) const;
+
+    // returns name of enum element, if found
+    // otherwise, if (allowBadValue == true) returns empty string,
+    // otherwise, throws exception
+    const string& FindName(long value, bool allowBadValue) const;
+
+    // tries to read enum element. Success flag is in second member,
+    // value is in first member
+    pair<long, bool> ReadEnum(CObjectIStream& in) const;
+
+    // tries to write enum element. Returns success flag
+    bool WriteEnum(CObjectOStream& out, long value) const;
 
 private:
+    string m_Name;
     bool m_Integer;
     TNameToValue m_NameToValue;
     TValueToName m_ValueToName;
 };
+
+template<typename T>
+class CEnumeratedTypeInfoTmpl : public CStdTypeInfo<T>
+{
+    typedef CStdTypeInfo<T> CParent;
+public:
+
+    // values should exist for all live time of our instance
+    CEnumeratedTypeInfoTmpl(const CEnumeratedTypeValues* values)
+        : CParent(values->GetName()), m_Values(*values)
+        {
+        }
+
+    const CEnumeratedTypeValues& Values(void) const
+        {
+            return m_Values;
+        }
+
+protected:
+    void ReadData(CObjectIStream& in, TObjectPtr object) const
+        {
+            pair<long, bool> value = Values().ReadEnum(in);
+            if ( value.second ) {
+                // value already read
+                Get(object) = T(value.first);
+            }
+            else {
+                // plain integer
+                CParent::ReadData(in, object);
+            }
+        }
+    void WriteData(CObjectOStream& out, TConstObjectPtr object) const
+        {
+            if ( !Values().WriteEnum(out, Get(object)) ) {
+                // plain integer
+                CParent::WriteData(out, object);
+            }
+        }
+
+private:
+    const CEnumeratedTypeValues& m_Values;
+};
+
+TTypeInfo CreateEnumeratedTypeInfoForSize(size_t size, long /* dummy */,
+                                          const CEnumeratedTypeValues* enumInfo);
+
+template<typename T>
+inline
+TTypeInfo CreateEnumeratedTypeInfo(const T& dummy,
+                                   const CEnumeratedTypeValues* enumInfo)
+{
+    return CreateEnumeratedTypeInfoForSize(sizeof(T), dummy, enumInfo);
+}
+
+// standard template for plain enums
+typedef CEnumeratedTypeInfoTmpl<int> CEnumeratedTypeInfo;
 
 END_NCBI_SCOPE
 
