@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/01/24 14:21:28  vasilche
+* Fixed missing find() declaration.
+*
 * Revision 1.6  2000/01/21 20:06:53  pubmed
 * Volodya: support of non-existing documents for Sequences
 *
@@ -64,6 +67,7 @@
 #include <map>
 #include <set>
 #include <list>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
