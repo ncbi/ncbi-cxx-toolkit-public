@@ -783,8 +783,10 @@ HSPCheckForDegenerateAlignments(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_in
  * @param gap_align Auxiliary structure used for gapped alignment [in]
  * @param sbp Statistical parameters [in]
  * @param score_options Scoring parameters [in]
+ * @param ext_options Gapped extension options [in]
  * @param hit_params Hit saving parameters [in]
  * @param db_options Options containing database genetic code string [in]
+ * @param psi_options Options specific to PSI BLAST [in]
  */
 static Int2
 BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list, 
