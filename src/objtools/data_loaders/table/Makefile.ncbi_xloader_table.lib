@@ -4,7 +4,7 @@
 ###############################
 
 LIB = ncbi_xloader_table
-SRC = sage_dload sqlite_table
+SRC = sage_dload sqlite_table user_feature_dload
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
 
