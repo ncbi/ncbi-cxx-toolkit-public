@@ -112,6 +112,8 @@ void CBlastHSPListQueueData::Close()
     m_Sema->Post();
 }
 
+extern "C" {
+
 BlastHSPStream* BlastHSPListCQueueFree(BlastHSPStream* hsp_stream) 
 {
    CBlastHSPListQueueData* stream_data = 
@@ -147,7 +149,7 @@ void BlastHSPListCQueueClose(BlastHSPStream* hsp_stream)
    stream_data->Close();
 }
 
-extern "C" BlastHSPStream* 
+BlastHSPStream* 
 BlastHSPListCQueueNew(BlastHSPStream* hsp_stream, void* args) 
 {
     BlastHSPStreamFunctionPointerTypes fnptr;
@@ -164,6 +166,8 @@ BlastHSPListCQueueNew(BlastHSPStream* hsp_stream, void* args)
     SetData(hsp_stream, args);
     return hsp_stream;
 }
+
+}   // end extern "C"
 
 BlastHSPStream* Blast_HSPListCQueueInit()
 {
