@@ -1067,7 +1067,8 @@ public:
 private:
     TObjectType* AtomicSwap(TObjectType* ptr)
         {
-            return static_cast<TObjectType*>
+            // MIPSpro won't accept static_cast for some reason.
+            return reinterpret_cast<TObjectType*>
                 (SwapPointers(const_cast<void*volatile*>(
                                   const_cast<void**>(
                                       reinterpret_cast<const void**>(&m_Ptr))),
@@ -1331,6 +1332,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2003/10/01 00:24:02  ucko
+ * CConstRef::AtomicSwap: use reinterpret_cast rather than static_cast to
+ * placate MIPSpro.
+ *
  * Revision 1.51  2003/09/17 17:57:38  vasilche
  * Added Ref() and ConstRef() templated functions for getting CRef<> objects.
  *
