@@ -94,11 +94,11 @@ int CTestApp::Run(void)
 
     // 1.2.3. Scope is an object on the stack
     for (idx = 0; idx <= 0; idx++) {
-        //CScope Scope1(*m_ObjMgr);
-        //CScope Scope2(*m_ObjMgr);
+        CScope Scope1(*m_ObjMgr);
+        CScope Scope2(*m_ObjMgr);
         CScope Scope(*m_ObjMgr);
         // populate
-#if 0
+#if 1
         CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
         Scope1.AddTopLevelSeqEntry(*entry1);
         CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
@@ -247,6 +247,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/09/30 20:40:48  vasilche
+* Added test for CScope::AddScope().
+*
 * Revision 1.34  2003/09/30 18:04:13  vasilche
 * Temporarily avoid failed assertion.
 *
