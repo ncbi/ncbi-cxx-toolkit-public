@@ -62,6 +62,7 @@ public:
     enum ESubSat {
         eSubSat_main =    0,
         eSubSat_SNP  = 1<<0,
+        eSubSat_SNP_graph  = 1<<2,
         eSubSat_CDD  = 1<<3,
         eSubSat_MGC  = 1<<4
     };
@@ -179,6 +180,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2004/10/05 21:07:22  vasilche
+* Added SNP_graph support.
+*
 * Revision 1.4  2004/08/19 16:55:45  vasilche
 * Fixed typo MGS -> MGC.
 *

@@ -412,6 +412,7 @@ static const TSI sc_SatIndex[] = {
     TSI("ANNOT:CDD",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_CDD)),
     TSI("ANNOT:MGC",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_MGC)),
     TSI("ANNOT:SNP",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_SNP)),
+    TSI("ANNOT:SNP GRAPH",TSK(TRDR::eSat_ANNOT,  TRDR::eSubSat_SNP_graph)),
     TSI("SNP",        TSK(TRDR::eSat_SNP,        TRDR::eSubSat_main)),
     TSI("ti",         TSK(TRDR::eSat_TRACE,      TRDR::eSubSat_main)),
     TSI("TR_ASSM_CH", TSK(TRDR::eSat_TR_ASSM_CH, TRDR::eSubSat_main)),
@@ -681,6 +682,16 @@ void CId1Reader::GetSeq_entry(CID1server_back& id1_reply,
         }
         else {
             x_ReadBlobReply(id1_reply, obj_stream, blob_id);
+            if ( GetDebugLevel() >= eTraceConn   ) {
+                NcbiCout << "CId1Reader("<<conn<<"): Received";
+                if ( GetDebugLevel() >= eTraceASN ) {
+                    NcbiCout << ": " << MSerial_AsnText << id1_reply;
+                }
+                else {
+                    NcbiCout << " ID1server-back.";
+                }
+                NcbiCout << NcbiEndl;
+            }
         }
 #endif
         size = obj_stream.GetStreamOffset();

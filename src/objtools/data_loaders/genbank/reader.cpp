@@ -425,6 +425,12 @@ void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
                 type.SetFeatSubtype(CSeqFeatData::eSubtype_region);
                 db_name = "Annot:CDD";
             }
+            else if ( blob_id.GetSubSat() == eSubSat_SNP_graph ) {
+                blob->SetName("SNP");
+                name.SetNamed("SNP");
+                type.SetAnnotType(CSeq_annot::C_Data::e_Graph);
+                db_name = "Annot:SNP graph";
+            }
             else if ( blob_id.GetSubSat() == eSubSat_MGC ) {
                 type.SetFeatSubtype(CSeqFeatData::eSubtype_misc_difference);
                 db_name = "Annot:MGC";
