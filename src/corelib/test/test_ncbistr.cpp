@@ -727,6 +727,17 @@ int CTestApplication::Run(void)
 
     NcbiCout << " completed successfully!" << NcbiEndl;
 
+    NcbiCout << NcbiEndl << "Equal{Case,Nocase} tests...";
+
+    assert( NStr::EqualNocase(as1, as2) == true );
+    assert( NStr::EqualNocase(as1, as3) == true );
+    assert( NStr::EqualNocase(as3, as4) == false );
+    assert( NStr::EqualCase(as1, as2)   == true );
+    assert( NStr::EqualCase(as1, as3)   == false );
+    assert( NStr::EqualCase(as2, as4)   == false );
+
+    NcbiCout << " completed successfully!" << NcbiEndl;
+
     {{
         NcbiCout << NcbiEndl 
                  << "Testing string reference counting properties:"
@@ -823,6 +834,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.28  2004/05/26 20:46:54  ucko
+ * Add tests for Equal{Case,Nocase}.
+ *
  * Revision 6.27  2004/05/26 19:26:29  ucko
  * Add a(n incomplete) set of tests for FindNoCase.
  *
