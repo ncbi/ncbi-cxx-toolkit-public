@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/04/15 22:10:43  vakatov
+* Fixed "class TagMapper<>" to "struct ..."
+*
 * Revision 1.9  1998/12/28 23:29:10  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -111,7 +114,7 @@ void CHTMLBasicPage::AddTagMap(const string& name, BaseTagMapper* mapper)
 
 // CHTMLPage
 
-template class TagMapper<CHTMLPage>;
+template struct TagMapper<CHTMLPage>;
 
 CHTMLPage::CHTMLPage(void)
     : m_PageName("PubMed"), m_TemplateFile("frontpage.html")

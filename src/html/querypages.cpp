@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/04/15 22:12:14  vakatov
+* Fixed "class TagMapper<>" to "struct ..."
+*
 * Revision 1.12  1999/01/28 21:58:09  vasilche
 * QueryBox now inherits from CHTML_table (not CHTML_form as before).
 * Use 'new CHTML_form("url", queryBox)' as replacement of old QueryBox.
@@ -129,7 +132,7 @@ CNCBINode* CPmFrontPage::CreateView(void)
 // Docsum page
 //
 
-template class TagMapper<CPmDocSumPage>;
+template struct TagMapper<CPmDocSumPage>;
 
 CPmDocSumPage::CPmDocSumPage()
 {
