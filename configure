@@ -930,9 +930,9 @@ Optional Packages:
  --without-xpm           do not use libXpm
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
  --without-serial        do not build the serialization library and tools
- --with-objects          generate/build serializeable objects from ASNs
- --without-dbapi         do not build NCBI portable database libraries
- --with-app              build standalone applications like ID1_FETCH
+ --without-objects       do not generate/build serializeable objects from ASNs
+ --without-dbapi         do not build database connectivity libraries
+ --without-app           do not build standalone applications like ID1_FETCH
  --without-ctools        do not build NCBI C Toolkit based projects
  --without-gui           do not build FLTK-based projects
  --without-algo          do not build CPU-intensive algorithms
@@ -4523,7 +4523,7 @@ if test -z "$CONF_f_runpath" ; then
 fi
 
 
-### Linker command-line to build DLL (may depend on runpath)
+#### Linker command-line to build DLL (may depend on runpath)
 has_dll_loadable="@# "
 case "$compiler" in
  GCC | MIPSpro73 | ICC | Compaq )
@@ -13867,8 +13867,7 @@ fi
 
 ## `objects' projects
 
-if test "$with_objects" = "no"  || \
-   test "$with_objects" = ""  -a  "$with_app" != "yes" ; then
+if test "$with_objects" = "no" ; then
    NoConfProjects="$NoConfProjects objects"
 fi
 
@@ -13882,12 +13881,12 @@ echo "$as_me: error: \"--with-objects:  OBJECTS sources are missing\"" >&2;}
    with_objects="no"
 fi
 
-if test "$with_objects" = "yes"  -a  -n "$serial" ; then
-   WithProjects="$WithProjects objects"
-   objects="objects"
-else
+if test "$with_objects" = "no"  -o  -z "$serial" ; then
    WithoutProjects="$WithoutProjects objects"
    objects=
+else
+   WithProjects="$WithProjects objects"
+   objects="objects"
 fi
 
 
@@ -13957,12 +13956,12 @@ echo "$as_me: error: \"--with-app:  APP sources are missing\"" >&2;}
    with_app="no"
 fi
 
-if test "$with_app" = "yes" ; then
-   WithProjects="$WithProjects app"
-   app="app"
-else
+if test "$with_app" = "no" ; then
    WithoutProjects="$WithoutProjects app"
    app=
+else
+   WithProjects="$WithProjects app"
+   app="app"
 fi
 
 

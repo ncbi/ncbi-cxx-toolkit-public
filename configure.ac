@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.222 2003/10/07 14:32:04 ucko Exp $
+#  $Id: configure.ac,v 1.223 2003/10/08 22:52:08 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -227,11 +227,11 @@ AC_ARG_WITH(local-lbsm,
 AC_ARG_WITH(serial,
    [ --without-serial        do not build the serialization library and tools])
 AC_ARG_WITH(objects,
-   [ --with-objects          generate/build serializeable objects from ASNs])
+   [ --without-objects       do not generate/build serializeable objects from ASNs])
 AC_ARG_WITH(dbapi,
-   [ --without-dbapi         do not build NCBI portable database libraries])
+   [ --without-dbapi         do not build database connectivity libraries])
 AC_ARG_WITH(app,
-   [ --with-app              build standalone applications like ID1_FETCH])
+   [ --without-app           do not build standalone applications like ID1_FETCH])
 AC_ARG_WITH(ctools,
    [ --without-ctools        do not build NCBI C Toolkit based projects])
 AC_ARG_WITH(gui,
@@ -3174,8 +3174,7 @@ fi
 
 ## `objects' projects
 
-if test "$with_objects" = "no"  || \
-   test "$with_objects" = ""  -a  "$with_app" != "yes" ; then
+if test "$with_objects" = "no" ; then
    NoConfProjects="$NoConfProjects objects"
 fi
 
@@ -3187,12 +3186,12 @@ if test ! -f ${srcdir}/src/objects/Makefile.in  -o  \
    with_objects="no"
 fi
 
-if test "$with_objects" = "yes"  -a  -n "$serial" ; then
-   WithProjects="$WithProjects objects"
-   objects="objects"
-else
+if test "$with_objects" = "no"  -o  -z "$serial" ; then
    WithoutProjects="$WithoutProjects objects"
    objects=
+else
+   WithProjects="$WithProjects objects"
+   objects="objects"
 fi
 
 
@@ -3256,12 +3255,12 @@ if test ! -f ${srcdir}/src/app/Makefile.in  -o  \
    with_app="no"
 fi
 
-if test "$with_app" = "yes" ; then
-   WithProjects="$WithProjects app"
-   app="app"
-else
+if test "$with_app" = "no" ; then
    WithoutProjects="$WithoutProjects app"
    app=
+else
+   WithProjects="$WithProjects app"
+   app="app"
 fi
 
 
