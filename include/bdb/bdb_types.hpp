@@ -1005,6 +1005,7 @@ public:
     virtual CBDB_Field* Construct(size_t buf_size) const;
 
     operator const char* () const;
+    operator string() const { return GetString(); }
     const CBDB_FieldLString& operator= (const CBDB_FieldLString& str);
     const CBDB_FieldLString& operator= (const char*             str);
     const CBDB_FieldLString& operator= (const string&           str);
@@ -1720,6 +1721,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/02/04 15:08:12  kuznets
+ * + CBDB_FieldLString::operator string() const
+ *
  * Revision 1.29  2003/12/23 22:31:31  ucko
  * Fix typo that could lead to stack overruns.
  *
