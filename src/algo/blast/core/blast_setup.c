@@ -333,8 +333,6 @@ BlastScoreBlkMatrixInit(Uint1 program_number,
                   const BlastScoringOptions* scoring_options,
                   BlastScoreBlk* sbp)
 {
-   Int2 status = 0;
-
    if (!sbp || !scoring_options)
       return 1;
 
@@ -357,7 +355,6 @@ BlastScoreBlkMatrixInit(Uint1 program_number,
                   (long) sbp->reward, (long) sbp->penalty);
           sbp->name = strdup(buffer);
        }
-       status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
 
     } else {
        char* p = NULL;
@@ -368,15 +365,21 @@ BlastScoreBlkMatrixInit(Uint1 program_number,
        /* protein matrices are in all caps by convention */
        for (p = sbp->name; *p != NULLB; p++)
           *p = toupper(*p);
-       status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
    }
 
-   return status;
+   return BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
 }
 
 
 Int2 
-BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, const BlastScoringOptions* scoring_options, Uint1 program_number, Boolean phi_align, BlastScoreBlk* *sbpp, double scale_factor, Blast_Message* *blast_message)
+BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, 
+                         BlastQueryInfo* query_info, 
+                         const BlastScoringOptions* scoring_options, 
+                         Uint1 program_number, 
+                         Boolean phi_align, 
+                         BlastScoreBlk* *sbpp, 
+                         double scale_factor, 
+                         Blast_Message* *blast_message)
 {
     BlastScoreBlk* sbp;
     Int2 status=0;      /* return value. */
@@ -466,32 +469,40 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_inf
 }
 
 Int2 BLAST_MainSetUp(Uint1 program_number,
-                     const QuerySetUpOptions * qsup_options,
-                     const BlastScoringOptions * scoring_options,
-                     const BlastHitSavingOptions * hit_options,
-                     BLAST_SequenceBlk * query_blk,
-                     BlastQueryInfo * query_info,
-                     double scale_factor,
-                     BlastSeqLoc ** lookup_segments, 
-                     BlastMaskLoc * *filter_out,
-                     BlastScoreBlk * *sbpp, 
-                     Blast_Message * *blast_message)
+    const QuerySetUpOptions *qsup_options,
+    const BlastScoringOptions *scoring_options,
+    const BlastHitSavingOptions *hit_options,
+    BLAST_SequenceBlk *query_blk,
+    BlastQueryInfo *query_info,
+    double scale_factor,
+    BlastSeqLoc **lookup_segments, 
+    BlastMaskLoc **filter_out,
+    BlastScoreBlk **sbpp, 
+    Blast_Message **blast_message)
 {
     Boolean mask_at_hash = FALSE; /* mask only for making lookup table? */
     Int2 status = 0;            /* return value */
     BlastMaskLoc *filter_maskloc = NULL;   /* Local variable for mask locs. */
 
 
-    if ((status=BlastSetUp_GetFilteringLocations(query_blk, query_info, program_number, qsup_options->filter_string, 
-       &filter_maskloc, &mask_at_hash, blast_message)))
-    {
+    status = BlastSetUp_GetFilteringLocations(query_blk, 
+                                              query_info, 
+                                              program_number, 
+                                              qsup_options->filter_string, 
+                                              &filter_maskloc, 
+                                              &mask_at_hash, 
+                                              blast_message);
+    if (status) {
         return status;
     } 
 
     if (!mask_at_hash)
     {
-        if ((status=BlastSetUp_MaskQuery(query_blk, query_info, filter_maskloc, program_number)) != 0)
+        status = BlastSetUp_MaskQuery(query_blk, query_info, filter_maskloc, 
+                                      program_number);
+        if (status != 0) {
             return status;
+        }
     }
 
     /* If there was a lower case mask, its contents have now been moved to 
@@ -508,12 +519,16 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         BLAST_InitDNAPSequence(query_blk, query_info);
     }
 
-    BLAST_ComplementMaskLocations(program_number, query_info, filter_maskloc, lookup_segments);
+    BLAST_ComplementMaskLocations(program_number, query_info, filter_maskloc, 
+                                  lookup_segments);
 
 
-    if ((status=BlastSetup_GetScoreBlock(query_blk, query_info, scoring_options, program_number, 
-           hit_options->phi_align, sbpp, scale_factor, blast_message)) > 0)
+    status = BlastSetup_GetScoreBlock(query_blk, query_info, scoring_options, 
+                                      program_number, hit_options->phi_align, 
+                                      sbpp, scale_factor, blast_message);
+    if (status > 0) {
         return status;
+    }
 
     return 0;
 }
@@ -619,18 +634,18 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
 
 Int2 
 BLAST_GapAlignSetUp(Uint1 program_number,
-                    const BlastSeqSrc* seq_src,
-                    const BlastScoringOptions* scoring_options,
-                    const BlastEffectiveLengthsOptions* eff_len_options,
-                    const BlastExtensionOptions* ext_options,
-                    const BlastHitSavingOptions* hit_options,
-                    BlastQueryInfo* query_info, 
-                    BlastScoreBlk* sbp, 
-                    BlastScoringParameters** score_params,
-                    BlastExtensionParameters** ext_params,
-                    BlastHitSavingParameters** hit_params,
-                    BlastEffectiveLengthsParameters** eff_len_params,
-                    BlastGapAlignStruct** gap_align)
+    const BlastSeqSrc* seq_src,
+    const BlastScoringOptions* scoring_options,
+    const BlastEffectiveLengthsOptions* eff_len_options,
+    const BlastExtensionOptions* ext_options,
+    const BlastHitSavingOptions* hit_options,
+    BlastQueryInfo* query_info, 
+    BlastScoreBlk* sbp, 
+    BlastScoringParameters** score_params,
+    BlastExtensionParameters** ext_params,
+    BlastHitSavingParameters** hit_params,
+    BlastEffectiveLengthsParameters** eff_len_params,
+    BlastGapAlignStruct** gap_align)
 {
    Int2 status = 0;
    Uint4 max_subject_length;
