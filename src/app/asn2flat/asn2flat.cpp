@@ -303,7 +303,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         }
     }
 
-    m_FFGenerator->Reset();
+    // m_FFGenerator->Reset();
 
     return true;
 }
@@ -545,6 +545,10 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/03/02 17:09:42  ucko
+* Comment out call to CFlatFileGenerator::Reset(), which seems to have
+* been dropped with no explanation.
+*
 * Revision 1.12  2005/02/07 15:04:35  shomrat
 * Basic support for Seq-submit formatting
 *
