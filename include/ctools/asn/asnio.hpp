@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/04/14 19:11:48  vakatov
+* Added "LIBCALLBACK" to AsnRead/Write proto (MSVC++ feature)
+*
 * Revision 1.2  1999/04/14 17:25:45  vasilche
 * Fixed warning about mixing pointers to "C" and "C++" functions.
 *
@@ -68,8 +71,6 @@ public:
 private:
     void Init(void);
 
-    //    static Int2 ReadAsn(Pointer data, CharPtr buffer, Uint2 size);
-
     string m_Source;
     const char* m_Data;
     size_t m_Size;
@@ -104,8 +105,6 @@ public:
     size_t Write(const char* buffer, size_t size);
 
 private:
-    //    static Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
-
     char* m_Data;
     size_t m_Size;
     size_t m_Ptr;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/04/14 19:11:51  vakatov
+* Added "LIBCALLBACK" to AsnRead/Write proto (MSVC++ feature)
+*
 * Revision 1.2  1999/04/14 17:25:41  vasilche
 * Fixed warning about mixing pointers to "C" and "C++" functions.
 *
@@ -49,8 +52,8 @@
 BEGIN_NCBI_SCOPE
 
 extern "C" {
-    static Int2 ReadAsn(Pointer data, CharPtr buffer, Uint2 size);
-    static Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
+    static Int2 LIBCALLBACK ReadAsn(Pointer data, CharPtr buffer, Uint2 size);
+    static Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size);
 }
 
 AsnMemoryRead::AsnMemoryRead(const string& str)
@@ -78,13 +81,13 @@ void AsnMemoryRead::Init(void)
 
 size_t AsnMemoryRead::Read(char* buffer, size_t size)
 {
-    int count = min(size, m_Size - m_Ptr);
+    int count = MIN(size, m_Size - m_Ptr);
     memcpy(buffer, m_Data + m_Ptr, count);
     m_Ptr += count;
     return count;
 }
 
-Int2 ReadAsn(Pointer data, CharPtr buffer, Uint2 size)
+Int2 LIBCALLBACK ReadAsn(Pointer data, CharPtr buffer, Uint2 size)
 {
     if ( !data || !buffer )
         return -1;
@@ -123,7 +126,7 @@ size_t AsnMemoryWrite::Write(const char* buffer, size_t size)
     return size;
 }
 
-Int2 WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
+Int2 LIBCALLBACK WriteAsn(Pointer data, CharPtr buffer, Uint2 size)
 {
     if ( !data || !buffer )
         return -1;
