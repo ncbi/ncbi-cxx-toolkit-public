@@ -30,8 +30,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.19  2001/10/12 15:34:01  ucko
+ * Edit in-source version of CVS log to avoid end-of-comment marker.  (Oops.)
+ *
  * Revision 1.18  2001/10/12 15:29:08  ucko
- * Drop */util/asciiseqdata.* in favor of CSeq_vector.
+ * Drop {src,include}/objects/util/asciiseqdata.* in favor of CSeq_vector.
  * Rewrite GenBank output code to take fuller advantage of the object manager.
  *
  * Revision 1.17  2001/10/10 16:02:53  ucko
