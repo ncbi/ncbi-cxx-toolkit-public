@@ -3869,17 +3869,20 @@ s_CreateSequencesBasedOnTokenPatterns
                              ||  line_counter < next_offset_ptr->ival - 1);
                      pattern_line_counter ++)
                 {
-                    if ((int) strlen (lip->data) != sip->size_value) {
-                        s_ReportLineLengthError (curr_id, lip, sip->size_value,
-                                               afrp->report_error,
-                                               afrp->report_error_userdata);
+                    if (lip->data [0]  !=  ']'  &&  lip->data [0]  != '[') {
+                        if ((int) strlen (lip->data) != sip->size_value) {
+                            s_ReportLineLengthError (curr_id, lip, 
+                                                     sip->size_value,
+                                                     afrp->report_error,
+                                                     afrp->report_error_userdata);
+                        }
+                        afrp->sequences = s_AddAlignRawSeqById (afrp->sequences, 
+                                                                curr_id, 
+                                                                lip->data,
+                                                                lip->line_num,
+                                                                lip->line_num,
+                                                                lip->line_offset);
                     }
-                    afrp->sequences = s_AddAlignRawSeqById (afrp->sequences, 
-                                                          curr_id, 
-                                                          lip->data,
-                                                          lip->line_num,
-                                                          lip->line_num,
-                                                          lip->line_offset);
                     lip = lip->next;
                     line_counter ++;
                 }
@@ -5768,6 +5771,10 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/01/13 14:56:42  bollin
+ * be sure to skip over segment brackets when reading segments for alignment of
+ * segmented sets
+ *
  * Revision 1.16  2005/01/10 19:31:09  bollin
  * limit how hard we will try to read a badly formatted alignment
  *
