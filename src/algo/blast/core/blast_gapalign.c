@@ -2614,15 +2614,12 @@ Blast_PrelimEditBlockToGapEditScript (GapPrelimEditBlock* rev_prelim_tback,
  * @param s_start The starting offset in subject [in]
  * @param q_end The ending offset in query [in]
  * @param s_end The ending offset in subject [in]
- * @param query_length Length of the query sequence [in]
- * @param subject_length Length of the subject sequence [in]
  * @param score The alignment score [in]
  * @param esp The edit script containing the traceback information [in]
  */
 static Int2
 s_BlastGapAlignStructFill(BlastGapAlignStruct* gap_align, Int4 q_start, 
-   Int4 s_start, Int4 q_end, Int4 s_end, Uint4 query_length, 
-   Uint4 subject_length, Int4 score, GapEditScript* esp)
+   Int4 s_start, Int4 q_end, Int4 s_end, Int4 score, GapEditScript* esp)
 {
    gap_align->query_start = q_start;
    gap_align->query_stop = q_end;
@@ -2712,9 +2709,8 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
                                              fwd_prelim_tback);
    }
    
-   s_BlastGapAlignStructFill(gap_align, q_off-q_ext_l, 
-      s_off-s_ext_l, q_off+q_ext_r, 
-      s_off+s_ext_r, query_length, subject_length, score, esp);
+   s_BlastGapAlignStructFill(gap_align, q_off-q_ext_l, s_off-s_ext_l, 
+                             q_off+q_ext_r, s_off+s_ext_r, score, esp);
    return 0;
 }
 
@@ -3628,10 +3624,10 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
  * @return Always zero
  */
 static Int2
-s_BlastOOFTracebackToGapEditBlock(GapPrelimEditBlock *rev_prelim_tback,
-                     GapPrelimEditBlock *fwd_prelim_tback,
-                     Int4 q_start, Int4 s_start, Int4 nucl_align_length,
-                     GapEditScript** edit_script_ptr)
+s_BlastOOFTracebackToGapEditScript(GapPrelimEditBlock *rev_prelim_tback,
+                                   GapPrelimEditBlock *fwd_prelim_tback,
+                                   Int4 nucl_align_length,
+                                   GapEditScript** edit_script_ptr)
 {
     GapEditScript* e_script;
     EGapAlignOpType last_op;
@@ -3905,9 +3901,8 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
             nucl_align_length = gap_align->subject_stop - 
                                 gap_align->subject_start;
         }
-        status = s_BlastOOFTracebackToGapEditBlock(rev_prelim_tback, 
-                       fwd_prelim_tback, gap_align->query_start, 
-                       gap_align->subject_start, nucl_align_length, 
+        status = s_BlastOOFTracebackToGapEditScript(rev_prelim_tback, 
+                       fwd_prelim_tback, nucl_align_length, 
                        &gap_align->edit_script);
     } else {
         gap_align->edit_script = 

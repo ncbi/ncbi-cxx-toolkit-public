@@ -2307,8 +2307,6 @@ NewAlignmentUsingXdrop(
   const BlastScoringParameters* scoringParams,
   double localScalingFactor,
   Int4 prog_number,
-  Int4 queryLength,
-  Int4 subjectLength,
   Kappa_DistinctAlignment * next)
 {
   Int4 newScore;
@@ -2355,10 +2353,7 @@ NewAlignmentUsingXdrop(
 static Kappa_DistinctAlignment *
 NewAlignmentFromGapAlign(
   BlastGapAlignStruct * gap_align,
-  Kappa_WindowInfo * window,
-  Kappa_SequenceData * query,
-  Kappa_SequenceData * subject,
-  Int4 full_subject_length)
+  Kappa_WindowInfo * window)
 {
   Kappa_DistinctAlignment * obj; /* the new alignment */
   obj = malloc(sizeof(Kappa_DistinctAlignment));
@@ -3024,8 +3019,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
                                        aSwScore, window,
                                        gapAlign, scoringParams,
                                        localScalingFactor,
-                                       program_number, query.length,
-                                       matchingSeq.length, alignments);
+                                       program_number, alignments);
 
               Kappa_ForbiddenRangesPush(&forbidden,
                                         queryStart,
@@ -3094,9 +3088,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
                                                q_start, s_start,
                                                query.length, subject.length);
 
-            newAlign = NewAlignmentFromGapAlign(gapAlign, window,
-                                                &query, &subject,
-                                                matchingSeq.length);
+            newAlign = NewAlignmentFromGapAlign(gapAlign, window);
             withDistinctEnds(&newAlign, &alignments);
           } /* end if adjust search failed */
         } /* end if not isAlreadyContained */
