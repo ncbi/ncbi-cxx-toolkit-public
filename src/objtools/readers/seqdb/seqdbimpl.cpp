@@ -355,7 +355,14 @@ Uint4 CSeqDBImpl::x_GetNumOIDs(void) const
 {
     Uint4 num_oids = m_VolSet.GetNumOIDs();
     
-    _ASSERT(num_oids == m_Aliases.GetNumOIDs(m_VolSet));
+    // The aliases file may have more of these, because walking the
+    // alias tree will count volumes each time they appear in the
+    // volume set.  The volset number is the "good" one, because it
+    // corresponds to the range of OIDs we accept in methods like
+    // "GetSequence()".  you toss this API an OID, that is the range
+    // it must have.
+    
+    _ASSERT(num_oids <= m_Aliases.GetNumOIDs(m_VolSet));
     
     return num_oids;
 }
