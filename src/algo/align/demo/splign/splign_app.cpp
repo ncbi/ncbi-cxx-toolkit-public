@@ -49,7 +49,7 @@
 BEGIN_NCBI_SCOPE
 
 
-const size_t g_max_intron = 10000;
+const size_t g_max_intron = 15000;
 const double g_min_hit_idty = 0.95;
 
 
@@ -570,6 +570,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/12/03 19:47:02  kapustin
+ * Increase exon search scope at the ends
+ *
  * Revision 1.8  2003/11/26 16:13:21  kapustin
  * Determine subject after filtering for more accurate log reporting
  *
