@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/11/19 18:24:49  vasilche
+* Added ArrayDeleter and CDeleter for use in AutoPtr.
+*
 * Revision 1.7  1999/11/19 15:44:51  vasilche
 * Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
 *
@@ -157,6 +160,22 @@ struct Deleter
 {
     static void Delete(X* object)
         { delete object; }
+};
+
+// array delete function
+template<class X>
+struct ArrayDeleter
+{
+    static void Delete(X* object)
+        { delete[] object; }
+};
+
+// C structures delete function
+template<class X>
+struct CDeleter
+{
+    static void Delete(X* object)
+        { free(object); }
 };
 
 // get map element (pointer) or NULL if absent
