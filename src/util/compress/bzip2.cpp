@@ -188,7 +188,7 @@ const char* CBZip2Compression::GetBZip2ErrorDescription(int errcode)
         "CONFIG_ERROR"
     };
     // errcode must be negative
-    if ( errcode >= 0  ||  errcode < -kErrorCount) {
+    if ( errcode >= 0  ||  errcode < -kErrorCount ) {
         return 0;
     }
     return kErrorDesc[-errcode - 1];
@@ -577,6 +577,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/10 12:03:18  ivanov
+ * The real changes in R1.7 was:
+ *     Added calls to increase the number of processed/output bytes.
+ *
  * Revision 1.7  2004/05/10 11:56:08  ivanov
  * Added gzip file format support
  *
