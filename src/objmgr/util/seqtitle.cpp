@@ -537,6 +537,8 @@ static string s_TitleFromBioSource(const CBioSource& source,
     if (islower(title[0])) {
         title[0] = toupper(title[0]);
     }
+
+    return title;
 }
 
 
@@ -880,6 +882,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.31  2004/01/22 20:37:20  vasilche
+* Added missing return statement.
+*
 * Revision 1.30  2004/01/22 19:57:33  ucko
 * s_TitleFromBioSource: trim trailing spaces and capitalize first letter
 * of title [per C Toolkit].
