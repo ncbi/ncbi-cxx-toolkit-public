@@ -86,6 +86,7 @@ public:
     void Generate(const CSeq_id& id, const TRange& range,
         ENa_strand strand, CScope& scope, CFlatItemOStream& item_os);
 
+    void Reset(void);
 private:
     CRef<CFlatFileContext>    m_Ctx;
 
@@ -103,6 +104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/05/19 14:46:24  shomrat
+* + Reset()
+*
 * Revision 1.8  2004/04/22 15:47:30  shomrat
 * API changes
 *

@@ -241,6 +241,12 @@ void CFlatFileGenerator::Generate
 }
 
 
+void CFlatFileGenerator::Reset(void)
+{
+    m_Ctx->Reset();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -249,6 +255,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/05/19 14:47:56  shomrat
+* + Reset()
+*
 * Revision 1.8  2004/04/22 16:02:53  shomrat
 * Changed in API
 *
