@@ -175,20 +175,21 @@
 
 
 /*
+ * Definitions for GUI_CORE.DLL
+ */
+#ifdef NCBI_GUICORE_EXPORTS
+#  define NCBI_XGBPLUGIN_EXPORTS
+#endif
+
+
+#if 0
+/*
  * Definitions for GUI_UTILS.DLL
  */
 #ifdef NCBI_GUIUTILS_EXPORTS
 #  define NCBI_GUIOBJUTILS_EXPORTS
 #  define NCBI_GUIOPENGL_EXPORTS
 #  define NCBI_GUIMATH_EXPORTS
-#endif
-
-
-/*
- * Definitions for GUI_CORE.DLL
- */
-#ifdef NCBI_GUICORE_EXPORTS
-#  define NCBI_XGBPLUGIN_EXPORTS
 #endif
 
 
@@ -236,6 +237,7 @@
 #  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORTS
 #endif
 
+#endif
 
 /* ------------------------------------------------- */
 /*
@@ -469,267 +471,6 @@
 #endif
 
 /*
- * Export specifier for library gui_dialogs
- */
-#ifdef NCBI_GUIDIALOGS_EXPORTS
-#  define NCBI_GUIDIALOGS_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIDIALOGS_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_graph
- */
-#ifdef NCBI_GUIGRAPH_EXPORTS
-#  define NCBI_GUIGRAPH_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIGRAPH_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_math
- */
-#ifdef NCBI_GUIMATH_EXPORTS
-#  define NCBI_GUIMATH_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIMATH_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_objutils
- */
-#ifdef NCBI_GUIOBJUTILS_EXPORTS
-#  define NCBI_GUIOBJUTILS_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIOBJUTILS_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_opengl
- */
-#ifdef NCBI_GUIOPENGL_EXPORTS
-#  define NCBI_GUIOPENGL_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIOPENGL_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_utils
- */
-#ifdef NCBI_GUIUTILS_EXPORTS
-#  define NCBI_GUIUTILS_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIUTILS_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_aln
- */
-#ifdef NCBI_GUIWIDGETSALN_EXPORTS
-#  define NCBI_GUIWIDGETSALN_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETSALN_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library id2_split
- */
-#ifdef NCBI_ID2_SPLIT_EXPORTS
-#  define NCBI_ID2_SPLIT_EXPORT           __declspec(dllexport)
-#else
-#  define NCBI_ID2_SPLIT_EXPORT           __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_misc
- */
-#ifdef NCBI_GUIWIDGETSMISC_EXPORTS
-#  define NCBI_GUIWIDGETSMISC_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETSMISC_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_seq
- */
-#ifdef NCBI_GUIWIDGETSSEQ_EXPORTS
-#  define NCBI_GUIWIDGETSSEQ_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETSSEQ_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_alncrossaln
- */
-#ifdef NCBI_GUIWIDGETS_ALNCROSSALN_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNCROSSALN_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_ALNCROSSALN_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_alndotmatrix
- */
-#ifdef NCBI_GUIWIDGETS_ALNDOTMATRIX_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNDOTMATRIX_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_ALNDOTMATRIX_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_alnmultiple
- */
-#ifdef NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_alntextaln
- */
-#ifdef NCBI_GUIWIDGETS_ALNTEXTALN_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets
- */
-#ifdef NCBI_GUIWIDGETS_EXPORTS
-#  define NCBI_GUIWIDGETS_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_fltable
- */
-#ifdef NCBI_GUIWIDGETS_FLTABLE_EXPORTS
-#  define NCBI_GUIWIDGETS_FLTABLE_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_FLTABLE_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_flu
- */
-#ifdef NCBI_GUIWIDGETS_FLU_EXPORTS
-#  define NCBI_GUIWIDGETS_FLU_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_FLU_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_fl
- */
-#ifdef NCBI_GUIWIDGETS_FL_EXPORTS
-#  define NCBI_GUIWIDGETS_FL_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_FL_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_gl
- */
-#ifdef NCBI_GUIWIDGETS_GL_EXPORTS
-#  define NCBI_GUIWIDGETS_GL_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_GL_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_hitmatrix
- */
-#ifdef NCBI_GUIWIDGETS_HIT_MATRIX_EXPORTS
-#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_phylo_tree
- */
-#ifdef NCBI_GUIWIDGETS_PHYLO_TREE_EXPORTS
-#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_seqgraphic
- */
-#ifdef NCBI_GUIWIDGETS_SEQGRAPHIC_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQGRAPHIC_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_SEQGRAPHIC_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_seqicon
- */
-#ifdef NCBI_GUIWIDGETS_SEQICON_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQICON_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_SEQICON_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_seqinfo
- */
-#ifdef NCBI_GUIWIDGETS_SEQINFO_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQINFO_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_SEQINFO_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_seq
- */
-#ifdef NCBI_GUIWIDGETS_SEQ_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQ_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_SEQ_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_table
- */
-#ifdef NCBI_GUIWIDGETS_TABLE_EXPORTS
-#  define NCBI_GUIWIDGETS_TABLE_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_TABLE_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_taxplot
- */
-#ifdef NCBI_GUIWIDGETS_TAXPLOT_EXPORTS
-#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_toplevel
- */
-#ifdef NCBI_GUIWIDGETS_TOPLEVEL_EXPORTS
-#  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_widgets_workspace
- */
-#ifdef NCBI_GUIWIDGETS_WORKSPACE_EXPORTS
-#  define NCBI_GUIWIDGETS_WORKSPACE_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUIWIDGETS_WORKSPACE_EXPORT __declspec(dllimport)
-#endif
-
-/*
  * Export specifier for library id1
  */
 #ifdef NCBI_ID1_EXPORTS
@@ -745,6 +486,15 @@
 #  define NCBI_ID2_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_ID2_EXPORT __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library id2_split
+ */
+#ifdef NCBI_ID2_SPLIT_EXPORTS
+#  define NCBI_ID2_SPLIT_EXPORT           __declspec(dllexport)
+#else
+#  define NCBI_ID2_SPLIT_EXPORT           __declspec(dllimport)
 #endif
 
 /*
@@ -1329,33 +1079,6 @@
 #  define NCBI_GENERAL_EXPORT
 #  define NCBI_GUICONFIG_EXPORT
 #  define NCBI_GUICORE_EXPORT
-#  define NCBI_GUIDIALOGS_EXPORT
-#  define NCBI_GUIGRAPH_EXPORT
-#  define NCBI_GUIMATH_EXPORT
-#  define NCBI_GUIOBJUTILS_EXPORT
-#  define NCBI_GUIOPENGL_EXPORT
-#  define NCBI_GUIUTILS_EXPORT
-#  define NCBI_GUIWIDGETSALN_EXPORT
-#  define NCBI_GUIWIDGETSSEQ_EXPORT
-#  define NCBI_GUIWIDGETS_ALNCROSSALN_EXPORT
-#  define NCBI_GUIWIDGETS_ALNDOTMATRIX_EXPORT
-#  define NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORT
-#  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORT
-#  define NCBI_GUIWIDGETS_EXPORT
-#  define NCBI_GUIWIDGETS_FLTABLE_EXPORT
-#  define NCBI_GUIWIDGETS_FLU_EXPORT
-#  define NCBI_GUIWIDGETS_FL_EXPORT
-#  define NCBI_GUIWIDGETS_GL_EXPORT
-#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORT
-#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORT
-#  define NCBI_GUIWIDGETS_SEQGRAPHIC_EXPORT
-#  define NCBI_GUIWIDGETS_SEQICON_EXPORT
-#  define NCBI_GUIWIDGETS_SEQINFO_EXPORT
-#  define NCBI_GUIWIDGETS_SEQ_EXPORT
-#  define NCBI_GUIWIDGETS_TABLE_EXPORT
-#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORT
-#  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORT
-#  define NCBI_GUIWIDGETS_WORKSPACE_EXPORT
 #  define NCBI_ID1_EXPORT
 #  define NCBI_ID2_EXPORT
 #  define NCBI_ID2_SPLIT_EXPORT
@@ -1441,6 +1164,10 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.80  2004/08/04 15:42:25  dicuccio
+ * Moved most GUI export specifiers into gui_export; specifiers for GUICORE,
+ * GUICONFIG, and XGBPLUGIN, as well as the GUICORE DLL cluster, remain here.
+ *
  * Revision 1.79  2004/08/04 14:37:07  vasilche
  * Added exports for ID2 libraries. ID1 & ID2 moved to ncbi_seqext.dll.
  *
