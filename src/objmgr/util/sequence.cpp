@@ -80,6 +80,9 @@ TSeqPos GetLength(const CSeq_id& id, CScope* scope)
         return numeric_limits<TSeqPos>::max();
     }
     CBioseq_Handle hnd = scope->GetBioseqHandle(id);
+    if ( !hnd ) {
+        return numeric_limits<TSeqPos>::max();
+    }
     CBioseq_Handle::TBioseqCore core = hnd.GetBioseqCore();
     return core->GetInst().IsSetLength() ? core->GetInst().GetLength() :
         numeric_limits<TSeqPos>::max();
@@ -2908,6 +2911,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.48  2003/05/01 17:55:17  ucko
+* Fix GetLength(const CSeq_id&, CScope*) to return ...::max() rather
+* than throwing if it can't resolve the ID to a handle.
+*
 * Revision 1.47  2003/04/24 16:15:58  vasilche
 * Added missing includes and forward class declarations.
 *
