@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/18 23:05:18  kimelman
+* comments
+*
 * Revision 1.4  2002/03/18 17:26:32  grichenk
 * +CDataLoader::x_GetSeq_id(), x_GetSeq_id_Key(), x_GetSeq_id_Handle()
 *
@@ -84,48 +87,54 @@ public:
 
 public:
     enum EChoice {
-        eBlob,
-        eBioseq,
+        eBlob,        // whole seqentry
+        eBioseq,      // whole bioseq
         eCore,        // everything except bioseqs & annotations
-        eBioseqCore,
-        eSequence,
-        eFeatures,
-        eGraph,
+        eBioseqCore,  // bioseq without seqdata and annotations
+        eSequence,    // seq data 
+        eFeatures,    // SeqFeatures
+        eGraph,       // SeqGraph 
         eAll          // whatever fits location
     };
+    
     // Request from a datasource for data specified in "choice".
     // The data loaded will be sent back to the datasource through
     // CDataSource::AppendXXX() methods.
     //### virtual bool GetRecords(const CSeq_loc& loc, EChoice choice) = 0;
-
+    
     // Request from a datasource using handles and ranges instead of seq-loc
-    virtual bool GetRecords(const CHandleRangeMap& hrmap, EChoice choice) = 0;
-
+    virtual bool GetRecords(const CHandleRangeMap& hrmap,
+                            const EChoice choice) = 0;
+    
     // 
     virtual bool DropTSE(const CSeq_entry *sep) = 0 ;
-  
+    
     // Specify datasource to send loaded data to.
     void SetTargetDataSource(CDataSource& data_source);
-
+    
     string GetName(void) const;
-
-    // Resolve TSE conflict -- select the best TSE from the set of
-    // dead (?) TSEs.
+    
+    // Resolve TSE conflict
+    // *select the best TSE from the set of dead TSEs.
+    // *select the live TSE from the list of live TSEs
+    //  and mark the others one as dead.
     typedef set< CRef<CTSE_Info> > TTSESet;
-    virtual CTSE_Info* ResolveConflict(CSeq_id_Handle handle,
-        const TTSESet& tse_set) { return 0; } //### = 0;
-
+    virtual CTSE_Info*
+      ResolveConflict(const CSeq_id_Handle& handle,
+                      const TTSESet& tse_set) { return 0; } //### = 0;
+    
 protected:
     void SetName(const string& loader_name);
     CDataSource* GetDataSource(void);
-
+    
     TSeq_id_Key    x_GetSeq_id_Key(const CSeq_id_Handle& handle);
     CSeq_id_Handle x_GetSeq_id_Handle(TSeq_id_Key key);
     const CSeq_id* x_GetSeq_id(const CSeq_id_Handle& handle) const;
 
 private:
-    string m_Name;
+    string       m_Name;
     CDataSource* m_DataSource;
+    
     CRef<CSeq_id_Mapper> m_Mapper;
     friend class CObjectManager;
 };
