@@ -6,8 +6,11 @@
 # Test suite for library "xconnect"
 #################################
 
+LIB_PROJ = conntest
+
 APP_PROJ = test_ncbi_buffer test_ncbi_core test_ncbi_socket \
-           test_ncbi_connutil_hit test_ncbi_connutil_misc
+           test_ncbi_connutil_hit test_ncbi_connutil_misc socket_io_bouncer \
+           test_ncbi_socket_connector
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
