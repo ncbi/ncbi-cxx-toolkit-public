@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/12/26 17:25:38  vasilche
+* CRef<> returns non const object.
+*
 * Revision 1.17  2000/12/15 19:18:36  vakatov
 * Added assignment operator for CRef<> and CConstRef<>
 *
@@ -353,32 +356,17 @@ public:
         }
 
     inline
-    const TObjectType& operator*(void) const
+    TObjectType& operator*(void) const
         {
             return GetObject();
         }
     inline
-    TObjectType& operator*(void)
-        {
-            return GetObject();
-        }
-    inline
-    const TObjectType* operator->(void) const
+    TObjectType* operator->(void) const
         {
             return GetPointer();
         }
     inline
-    TObjectType* operator->(void)
-        {
-            return GetPointer();
-        }
-    inline
-    operator const TObjectType*(void) const
-        {
-            return GetPointer();
-        }
-    inline
-    operator TObjectType*(void)
+    operator TObjectType*(void) const
         {
             return GetPointer();
         }
