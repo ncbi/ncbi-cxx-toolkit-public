@@ -101,7 +101,8 @@ typedef unsigned char CS_BIT;
 #  define DBBIT CS_BIT
 #endif
 
-#ifndef NCBI_FTDS
+#if defined(NCBI_FTDS)
+#  if NCBI_FTDS == 7
 extern "C" {
     BYTE *dbgetuserdata(DBPROCESS *dbproc);
     RETCODE dbsetuserdata(DBPROCESS *dbproc, BYTE *ptr);
@@ -111,6 +112,7 @@ extern "C" {
     STATUS dbreadtext(DBPROCESS *dbproc, void *buf, DBINT bufsize);
     int dbrettype(DBPROCESS *dbproc,int retnum);
 }
+#  endif
 #endif
 
 class CTDSContext;
@@ -727,6 +729,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/12/13 21:56:41  vakatov
+ * Use the newly defined #NCBI_FTDS value "7"
+ *
  * Revision 1.8  2002/12/05 22:39:39  soussov
  * Adapted for TDS8
  *
