@@ -101,7 +101,7 @@ public:
         }
     }
 
-    // Standard exception boilerplate code
+    // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CAppException, CCoreException);
 };
 
@@ -475,6 +475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2003/07/28 10:58:54  siyan
+ * Minor comment changes.
+ *
  * Revision 1.36  2003/07/17 00:05:33  siyan
  * Changed doc on some enum types so Doxygen picks them up better.
  *
