@@ -1930,15 +1930,6 @@ int CAlnMix::x_RankSeqId(const CSeq_id& id)
     case CSeq_id::e_Gi:
         return 51;
 
-    case CSeq_id::e_Patent:
-        return 55;
-
-    case CSeq_id::e_Gibbsq:
-        return 55;
-
-    case CSeq_id::e_Gibbmt:
-        return 56;
-
     case CSeq_id::e_Genbank:
     case CSeq_id::e_Embl:
     case CSeq_id::e_Pir:
@@ -1954,6 +1945,11 @@ int CAlnMix::x_RankSeqId(const CSeq_id& id)
     case CSeq_id::e_Other:
         return 65;
 
+    case CSeq_id::e_Patent:
+        return 55;
+
+    case CSeq_id::e_Gibbsq:
+    case CSeq_id::e_Gibbmt:
     case CSeq_id::e_Giim:
         return 70;
 
@@ -1978,6 +1974,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.90  2004/03/30 20:41:29  todorov
+* Rearranged the rank of seq-ids according to the C toolkit rearrangement
+*
 * Revision 1.89  2004/03/29 17:05:06  todorov
 * extended exception msg
 *
