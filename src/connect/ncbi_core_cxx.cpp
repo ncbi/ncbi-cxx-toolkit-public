@@ -36,6 +36,7 @@
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
 #include "ncbi_core_cxxp.hpp"
+#include "ncbi_priv.h"
 #include <connect/ncbi_util.h>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidiag.hpp>
@@ -272,13 +273,19 @@ extern void CONNECT_Init(CNcbiRegistry*    reg,
 extern void CONNECT_InitInternal(void)
 {
     s_ConnectInitMutex.Lock();
-    try {
-        if (s_ConnectInit == eConnectInit_Intact) {
-            CNcbiApplication* theApp = CNcbiApplication::Instance();
-            s_Init(theApp ? &theApp->GetConfig() : 0);
+    CORE_LOCK_READ;
+    if (!g_CORE_Registry  &&  !g_CORE_Log  &&  !g_CORE_MT_Lock) {
+        try {
+            if (s_ConnectInit == eConnectInit_Intact) {
+                CNcbiApplication* theApp = CNcbiApplication::Instance();
+                s_Init(theApp ? &theApp->GetConfig() : 0);
+            }
         }
+        STD_CATCH_ALL("CONNECT_InitInternal() failed");
+    } else {
+        s_ConnectInit = eConnect_InitExplicit;
     }
-    STD_CATCH_ALL("CONNECT_InitInternal() failed");
+    CORE_UNLOCK;
     s_ConnectInitMutex.Unlock();
 }
 
@@ -289,6 +296,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2004/09/22 16:40:45  lavr
+ * Do not perform weak init if C level REG/LOG/LOCK seen as being used
+ *
  * Revision 6.21  2004/09/09 16:45:30  lavr
  * Introduce CONNECT_InitInternal() [and locking against concurrent init]
  *
