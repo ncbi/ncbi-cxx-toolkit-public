@@ -792,7 +792,12 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
                          "Managed to " MSG " of erroneous sequence"); \
         } \
     }}
-#define CHECK_END_ALWAYS(MSG) got_exception = have_errors; CHECK_END(MSG)
+#define CHECK_END_ALWAYS(MSG) \
+        } catch (runtime_error) { \
+            got_exception = true; \
+            LOG_POST("Can not " MSG); throw; \
+        } \
+    }}
 
 
 void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
@@ -843,7 +848,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             len += seg.GetLength();
             break;
         case CSeqMap::eSeqEnd:
-            _ASSERT("Unexpected END segment" && 0);
+            _ASSERT(/*seg.GetLength() == 0 || */"Unexpected END segment" && 0);
             break;
         default:
             break;
@@ -893,6 +898,21 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     _ASSERT(NStr::PrintableString(sout) == seq_str);
     CHECK_END("get seq vector");
+
+    CHECK_WRAP();
+    CSeq_interval interval;
+    interval.SetId(id);
+    interval.SetFrom(seq_str.size());
+    interval.SetTo(seq_str.size()-1);
+    CSeq_loc loc;
+    loc.SetInt(interval);
+    CSeqVector seq_vect = handle.GetSequenceView(loc, CBioseq_Handle::eViewConstructed);
+    string sout = "";
+    for (TSeqPos i = 0; i < seq_vect.size(); i++) {
+        sout += seq_vect[i];
+    }
+    _ASSERT(sout.empty());
+    CHECK_END_ALWAYS("get seq view");
 
     if (seq_core->GetInst().IsSetStrand() &&
         seq_core->GetInst().GetStrand() == CSeq_inst::eStrand_ds) {
@@ -1103,6 +1123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/01/24 20:13:38  vasilche
+* Added check for empty CSeqVector from CBioseq_Handle::GetSequenceView().
+*
 * Revision 1.24  2003/01/22 20:11:55  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.
