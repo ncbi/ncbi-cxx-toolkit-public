@@ -814,7 +814,7 @@ CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
                 if(mark_dead) tse->mode.set(STSEinfo::eDead);
                 tse->m_SeqIds.erase(h); // drop h as refewrenced seqid
                 g.Unlock(&*tse);
-                if(mark_dead && tse->m_upload.m_tse) {
+                if(mark_dead && bool(tse->m_upload.m_tse)) {
                     // inform data_source :: make sure to avoid deadlocks
                     GetDataSource()->x_UpdateTSEStatus(*(tse->m_upload.m_tse),true);
                 }
@@ -922,6 +922,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2003/05/20 21:13:02  vasilche
+* Fixed ambiguity on MSVC.
+*
 * Revision 1.71  2003/05/20 18:27:29  vasilche
 * Fixed ambiguity on MSVC.
 *
