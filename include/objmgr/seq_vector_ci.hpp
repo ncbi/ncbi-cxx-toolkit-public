@@ -47,57 +47,83 @@ class CSeqVector;
 class NCBI_XOBJMGR_EXPORT CSeqVector_CI
 {
 public:
+    typedef unsigned char TResidue;
+    typedef TResidue value_type;
+    typedef CSeq_data::E_Choice   TCoding;
+
     CSeqVector_CI(void);
     ~CSeqVector_CI(void);
     CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos = 0);
     CSeqVector_CI(const CSeqVector_CI& sv_it);
     CSeqVector_CI& operator=(const CSeqVector_CI& sv_it);
 
-    typedef unsigned char TResidue;
+    bool operator==(const CSeqVector_CI& iter) const;
 
     // Fill the buffer string with the sequence data for the interval
     // [start, stop).
     void GetSeqData(TSeqPos start, TSeqPos stop, string& buffer);
+    // Fill the buffer string with the count bytes of sequence data
+    // starting with current iterator position
+    void GetSeqData(string& buffer, TSeqPos count);
 
     CSeqVector_CI& operator++(void);
     CSeqVector_CI& operator--(void);
 
     TSeqPos GetPos(void) const;
-    void SetPos(TSeqPos pos);
+    CSeqVector_CI& SetPos(TSeqPos pos);
+
+    TCoding GetCoding(void) const;
+    void SetCoding(TCoding coding);
 
     TResidue operator*(void) const;
     operator bool(void) const;
 
 private:
+    TSeqPos x_GetSize(void) const;
+    
     void x_SetPos(TSeqPos pos);
     void x_InitializeCache(void);
     void x_DestroyCache(void);
     void x_ClearCache(void);
     void x_ResizeCache(size_t size);
     void x_SwapCache(void);
-    void x_UpdateCache(TSeqPos pos);
+    void x_UpdateCacheUp(TSeqPos pos);
+    void x_UpdateCacheDown(TSeqPos pos);
     void x_FillCache(TSeqPos start, TSeqPos count);
+    void x_UpdateSeg(TSeqPos pos);
+    void x_InitSeg(TSeqPos pos);
 
     void x_NextCacheSeg(void);
     void x_PrevCacheSeg(void);
 
-    TSeqPos x_CacheEnd(void) const;
-    TSeqPos x_BackupEnd(void) const;
+    TSeqPos x_CachePos(void) const;
+    TSeqPos x_CacheSize(void) const;
+    TSeqPos x_CacheEndPos(void) const;
+    TSeqPos x_BackupPos(void) const;
+    TSeqPos x_BackupSize(void) const;
+    TSeqPos x_BackupEndPos(void) const;
+
+    TSeqPos x_CacheOffset(void) const;
+
+    void x_ResetCache(void);
+    void x_ResetBackup(void);
 
     friend class CSeqVector;
+    void x_SetVector(CSeqVector& seq_vector);
 
     typedef char* TCacheData;
     typedef char* TCache_I;
-    typedef CSeq_data::E_Choice   TCoding;
 
     CConstRef<CSeqVector>   m_Vector;
     TCoding                 m_Coding;
+    // Current CSeqMap segment
     CSeqMap::const_iterator m_Seg;
+    // Current cache pointer
+    TCache_I                m_Cache;
     // Current cache
     TSeqPos                 m_CachePos;
     TCacheData              m_CacheData;
     TCache_I                m_CacheEnd;
-    TCache_I                m_Cache;
     // Backup cache
     TSeqPos                 m_BackupPos;
     TCacheData              m_BackupData;
@@ -113,80 +139,81 @@ private:
 
 
 inline
-CSeqVector_CI& CSeqVector_CI::operator++(void)
+CSeqVector_CI::TCoding CSeqVector_CI::GetCoding(void) const
 {
-    _ASSERT(m_Cache != m_CacheEnd);
-    if (++m_Cache >= m_CacheEnd) {
-        x_NextCacheSeg();
-    }
-    return *this;
+    return m_Coding;
 }
 
+
 inline
-CSeqVector_CI& CSeqVector_CI::operator--(void)
+TSeqPos CSeqVector_CI::x_CachePos(void) const
 {
-    _ASSERT(m_Cache >= m_CacheData);
-    if (m_Cache == m_CacheData) {
-        x_PrevCacheSeg();
-    }
-    else {
-        --m_Cache;
-    }
-    return *this;
+    return m_CachePos;
 }
+
+
+inline
+TSeqPos CSeqVector_CI::x_CacheSize(void) const
+{
+    return m_CacheEnd - m_CacheData;
+}
+
+
+inline
+TSeqPos CSeqVector_CI::x_CacheEndPos(void) const
+{
+    return x_CachePos() + x_CacheSize();
+}
+
+
+inline
+TSeqPos CSeqVector_CI::x_BackupPos(void) const
+{
+    return m_BackupPos;
+}
+
+
+inline
+TSeqPos CSeqVector_CI::x_BackupSize(void) const
+{
+    return m_BackupEnd - m_BackupData;
+}
+
+
+inline
+TSeqPos CSeqVector_CI::x_BackupEndPos(void) const
+{
+    return x_BackupPos() + x_BackupSize();
+}
+
+
+inline
+TSeqPos CSeqVector_CI::x_CacheOffset(void) const
+{
+    return m_Cache - m_CacheData;
+}
+
 
 inline
 TSeqPos CSeqVector_CI::GetPos(void) const
 {
-    return (m_Cache - m_CacheData) + m_CachePos;
+    return x_CachePos() + x_CacheOffset();
 }
 
-inline
-void CSeqVector_CI::SetPos(TSeqPos pos)
-{
-    TCache_I data = m_CacheData;
-    TSeqPos offset = pos - m_CachePos;
-    TSeqPos size = m_CacheEnd - data;
-    if ( offset >= size ) {
-        x_SetPos(pos);
-    }
-    else {
-        m_Cache = data + offset;
-    }
-}
 
 inline
-CSeqVector_CI::TResidue CSeqVector_CI::operator*(void) const
+void CSeqVector_CI::x_ResetBackup(void)
 {
-    _ASSERT(m_Cache < m_CacheEnd);
-    return *m_Cache;
+    m_BackupEnd = m_BackupData;
 }
 
-inline
-CSeqVector_CI::operator bool(void) const
-{
-    return m_Cache < m_CacheEnd;
-}
 
 inline
-TSeqPos CSeqVector_CI::x_CacheEnd(void) const
+void CSeqVector_CI::x_ResetCache(void)
 {
-    return m_CachePos + (m_CacheEnd - m_CacheData);
+    m_Cache = m_CacheEnd = m_CacheData;
 }
 
-inline
-TSeqPos CSeqVector_CI::x_BackupEnd(void) const
-{
-    return m_BackupPos + (m_BackupEnd - m_BackupData);
-}
-
-inline
-void CSeqVector_CI::x_ClearCache(void)
-{
-    m_CachePos = kInvalidSeqPos;
-    m_CacheEnd = m_CacheData;
-    m_Cache = m_CacheEnd;
-}
 
 inline
 void CSeqVector_CI::x_SwapCache(void)
@@ -198,12 +225,88 @@ void CSeqVector_CI::x_SwapCache(void)
 }
 
 
+inline
+CSeqVector_CI& CSeqVector_CI::SetPos(TSeqPos pos)
+{
+    TCache_I cache = m_CacheData;
+    TSeqPos offset = pos - m_CachePos;
+    TSeqPos size = m_CacheEnd - cache;
+    if ( offset >= size ) {
+        x_SetPos(pos);
+    }
+    else {
+        m_Cache = cache + offset;
+    }
+    return *this;
+}
+
+
+inline
+CSeqVector_CI::operator bool(void) const
+{
+    return m_Cache < m_CacheEnd;
+}
+
+
+inline
+bool CSeqVector_CI::operator==(const CSeqVector_CI& iter) const
+{
+    return GetPos() == iter.GetPos();
+}
+
+
+inline
+CSeqVector_CI::TResidue CSeqVector_CI::operator*(void) const
+{
+    _ASSERT(*this);
+    return *m_Cache;
+}
+
+
+inline
+CSeqVector_CI& CSeqVector_CI::operator++(void)
+{
+    _ASSERT(*this);
+    if ( ++m_Cache >= m_CacheEnd ) {
+        x_NextCacheSeg();
+    }
+    return *this;
+}
+
+
+inline
+CSeqVector_CI& CSeqVector_CI::operator--(void)
+{
+    TCache_I cache = m_Cache;
+    if ( cache == m_CacheData ) {
+        x_PrevCacheSeg();
+    }
+    else {
+        m_Cache = cache - 1;
+    }
+    return *this;
+}
+
+
+inline
+void CSeqVector_CI::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
+{
+    SetPos(start);
+    GetSeqData(buffer, stop - start);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/08/29 13:34:47  vasilche
+* Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
+* CSeqVector::operator[] made significantly faster.
+* Added possibility to have platform dependent byte unpacking functions.
+*
 * Revision 1.13  2003/08/21 13:32:04  vasilche
 * Optimized CSeqVector iteration.
 * Set some CSeqVector values (mol type, coding) in constructor instead of detecting them while iteration.

@@ -53,9 +53,9 @@ BEGIN_SCOPE(objects)
 
 CSeqVector::CSeqVector(void)
     : m_Scope(0),
-      m_Size(0),
-      m_Iterator(0)
+      m_Size(0)
 {
+    m_Iterator.x_SetVector(*this);
 }
 
 
@@ -65,9 +65,9 @@ CSeqVector::CSeqVector(const CSeqVector& vec)
       m_Coding(vec.m_Coding),
       m_Strand(vec.m_Strand),
       m_Size(vec.m_Size),
-      m_Mol(vec.m_Mol),
-      m_Iterator(0)
+      m_Mol(vec.m_Mol)
 {
+    m_Iterator.x_SetVector(*this);
 }
 
 
@@ -78,12 +78,11 @@ CSeqVector::CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
       m_Coding(CSeq_data::e_not_set),
       m_Strand(strand),
       m_Size(seqMap->GetLength(&scope)),
-      m_Mol(seqMap->GetMol()),
-      m_Iterator(0)
+      m_Mol(seqMap->GetMol())
 {
+    m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
-
 
 CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
                        EVectorCoding coding, ENa_strand strand)
@@ -92,9 +91,9 @@ CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
       m_Coding(CSeq_data::e_not_set),
       m_Strand(strand),
       m_Size(seqMap.GetLength(&scope)),
-      m_Mol(seqMap.GetMol()),
-      m_Iterator(0)
+      m_Mol(seqMap.GetMol())
 {
+    m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
 
@@ -113,7 +112,7 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
         m_Strand = vec.m_Strand;
         m_Size = vec.m_Size;
         m_Mol = vec.m_Mol;
-        m_Iterator.reset();
+        m_Iterator.x_SetVector(*this);
     }
     return *this;
 }
@@ -242,8 +241,8 @@ void CSeqVector::SetCoding(TCoding coding)
 {
     if (m_Coding != coding) {
         m_Coding = coding;
-        m_Iterator.reset();
     }
+    m_Iterator.SetCoding(coding);
 }
 
 
@@ -281,6 +280,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2003/08/29 13:34:47  vasilche
+* Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
+* CSeqVector::operator[] made significantly faster.
+* Added possibility to have platform dependent byte unpacking functions.
+*
 * Revision 1.60  2003/08/21 18:43:29  vasilche
 * Added CSeqVector::IsProtein() and CSeqVector::IsNucleotide() methods.
 *

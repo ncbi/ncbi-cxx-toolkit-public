@@ -70,6 +70,7 @@ private:
                        TSeqPos stop);
     void x_TestVector(TSeqPos start,
                       TSeqPos stop);
+    bool x_CheckBuf(const string& buf, size_t pos, size_t len) const;
 
     CSeqVector m_Vect;
     string m_RefBuf;
@@ -91,7 +92,7 @@ void CTestApp::Init(void)
                             "29791621");
     arg_desc->AddDefaultKey("cycles", "RandomCycles",
                             "repeat random test 'cycles' times",
-                            CArgDescriptions::eInteger, "20");
+                            CArgDescriptions::eInteger, "100");
     arg_desc->AddDefaultKey("seed", "RandomSeed",
                             "Force random seed",
                             CArgDescriptions::eInteger, "0");
@@ -108,11 +109,26 @@ void CTestApp::Init(void)
 }
 
 
+bool CTestApp::x_CheckBuf(const string& buf, size_t pos, size_t len) const
+{
+    if ( pos > m_RefBuf.size() || pos + len > m_RefBuf.size() ||
+         buf.size() != len ) {
+        return false;
+    }
+    return memcmp(buf.data(), m_RefBuf.data()+pos, len) == 0;
+}
+
+
 void CTestApp::x_TestIterate(CSeqVector_CI& vit,
                              TSeqPos start,
                              TSeqPos stop)
 {
+    if (stop > m_Vect.size()) {
+        stop = m_Vect.size();
+    }
     if (start != kInvalidSeqPos) {
+        if (start > m_Vect.size())
+            start = m_Vect.size();
         vit.SetPos(start);
     }
     else {
@@ -123,28 +139,29 @@ void CTestApp::x_TestIterate(CSeqVector_CI& vit,
 
     if (start > stop) {
         // Moving down
-        if ( !vit ) {
-            --vit;
-        }
-        for ( ; vit.GetPos() > stop; --vit) {
-            if (*vit != m_RefBuf[vit.GetPos()]) {
-                cout << endl << "ERROR: Test failed at position "
-                    << vit.GetPos() << endl;
+        const char* data = m_RefBuf.data();
+        for ( TSeqPos pos = start; pos > stop;  ) {
+            --vit; --pos;
+            if ( vit.GetPos() != pos ) {
+                cout << endl << "ERROR: GetPos failed at position " << pos << endl;
+                throw runtime_error("Test failed");
+            }
+            if (*vit != data[pos]) {
+                cout << endl << "ERROR: Test failed at position " << pos << endl;
                 throw runtime_error("Test failed");
             }
         }
     }
     else {
         // Moving up
-        if ( !vit )
-            ++vit;
-        if (stop > m_Vect.size()) {
-            stop = m_Vect.size();
-        }
-        for ( ; vit.GetPos() < stop; ++vit) {
-            if (*vit != m_RefBuf[vit.GetPos()]) {
-                cout << endl << "ERROR: Test failed at position "
-                    << vit.GetPos() << endl;
+        const char* data = m_RefBuf.data();
+        for ( TSeqPos pos = start; pos < stop; ++vit, ++pos ) {
+            if ( vit.GetPos() != pos ) {
+                cout << endl << "ERROR: GetPos failed at position " << pos << endl;
+                throw runtime_error("Test failed");
+            }
+            if (*vit != data[pos]) {
+                cout << endl << "ERROR: Test failed at position " << pos << endl;
                 throw runtime_error("Test failed");
             }
         }
@@ -177,7 +194,7 @@ void CTestApp::x_TestGetData(CSeqVector_CI& vit,
     if (stop > m_Vect.size())
         stop = m_Vect.size();
 
-    if (buf != m_RefBuf.substr(start, stop - start)) {
+    if ( !x_CheckBuf(buf, start, stop - start) ) {
         cout << endl << "ERROR: Test failed -- invalid data" << endl;
         throw runtime_error("Test failed");
     }
@@ -188,18 +205,20 @@ void CTestApp::x_TestGetData(CSeqVector_CI& vit,
 void CTestApp::x_TestVector(TSeqPos start,
                             TSeqPos stop)
 {
-    if (start >= m_Vect.size()) {
-        start = m_Vect.size() - 1;
+    if (start > m_Vect.size()) {
+        start = m_Vect.size();
     }
-    if (stop >= m_Vect.size()) {
-        stop = m_Vect.size() - 1;
+    if (stop > m_Vect.size()) {
+        stop = m_Vect.size();
     }
     // cout << "Testing vector[], " << start << " - " << stop << "... ";
 
     if (start > stop) {
         // Moving down
-        for (TSeqPos i = start; i > stop; --i) {
-            if (m_Vect[i] != m_RefBuf[i]) {
+        const char* data = m_RefBuf.data();
+        for (TSeqPos i = start; i > stop; ) {
+            --i;
+            if (m_Vect[i] != data[i]) {
                 cout << endl << "ERROR: Test failed at position " << i << endl;
                 throw runtime_error("Test failed");
             }
@@ -207,11 +226,9 @@ void CTestApp::x_TestVector(TSeqPos start,
     }
     else {
         // Moving up
-        if (stop > m_Vect.size()) {
-            stop = m_Vect.size();
-        }
+        const char* data = m_RefBuf.data();
         for (TSeqPos i = start; i < stop; ++i) {
-            if (m_Vect[i] != m_RefBuf[i]) {
+            if (m_Vect[i] != data[i]) {
                 cout << endl << "ERROR: Test failed at position " << i << endl;
                 throw runtime_error("Test failed");
             }
@@ -270,7 +287,7 @@ int CTestApp::Run(void)
     cout << "Testing past-end read (stop > size)... ";
     vit.GetSeqData(
         max<TSeqPos>(m_Vect.size(), 100) - 100, m_Vect.size() + 1, buf);
-    if (buf != m_RefBuf.substr(max<TSeqPos>(m_Vect.size(), 100) - 100, 100)) {
+    if ( !x_CheckBuf(buf, max<TSeqPos>(m_Vect.size(), 100) - 100, 100) ) {
         cout << "ERROR: GetSeqData() failed -- invalid data" << endl;
         throw runtime_error("Past-end read test failed");
     }
@@ -281,14 +298,16 @@ int CTestApp::Run(void)
     // Compare iterator with GetSeqData()
     // Not using x_TestIterate() to also check operator bool()
     cout << "Testing basic iterator... ";
-    string::iterator c = m_RefBuf.begin();
+    const char* data = m_RefBuf.data();
+    const char* c = data;
+    const char* data_end = data + m_RefBuf.size();
     for (vit.SetPos(0); vit; ++vit, ++c) {
-        if (c == m_RefBuf.end()  ||  *vit != *c) {
+        if (c == data_end ||  *vit != *c) {
             cout << "ERROR: Invalid data at " << vit.GetPos() << endl;
             throw runtime_error("Basic iterator test failed");
         }
     }
-    if (c != m_RefBuf.end()) {
+    if (c != data_end) {
         cout << "ERROR: Invalid data length" << endl;
         throw runtime_error("Basic iterator test failed");
     }
@@ -296,16 +315,16 @@ int CTestApp::Run(void)
 
     // Partial retrieval with GetSeqData() test, limit to 2000 bases
     cout << "Testing partial retrieval... ";
-    for (int i = max<int>(1, m_Vect.size() / 2 - 2000);
-        i < m_Vect.size() / 2; ++i) {
+    for (unsigned i = max<int>(1, m_Vect.size() / 2 - 2000);
+         i <= m_Vect.size() / 2; ++i) {
         x_TestGetData(vit, i, m_Vect.size() - i);
     }
     cout << "OK" << endl;
 
     // Butterfly test
     cout << "Testing butterfly reading... ";
-    for (int i = 1; i < m_Vect.size() / 2; ++i) {
-        if (m_Vect[i] != m_RefBuf[i]) {
+    for (unsigned i = 1; i < m_Vect.size() / 2; ++i) {
+        if (m_Vect[i] != data[i]) {
             cout << "ERROR: Butterfly test failed at position " << i << endl;
             throw runtime_error("Butterfly read test failed");
         }
@@ -424,8 +443,8 @@ int CTestApp::Run(void)
     CRandom random(rseed);
     vit = CSeqVector_CI(m_Vect);
     for (int i = 0; i < cycles; ++i) {
-        TSeqPos start = random.GetRand(0, m_Vect.size() - 1);
-        TSeqPos stop = random.GetRand(0, m_Vect.size() - 1);
+        TSeqPos start = random.GetRand(0, m_Vect.size());
+        TSeqPos stop = random.GetRand(0, m_Vect.size());
         switch (i % 3) {
         case 0:
             x_TestIterate(vit, start, stop);
@@ -463,6 +482,11 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/08/29 13:34:48  vasilche
+* Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
+* CSeqVector::operator[] made significantly faster.
+* Added possibility to have platform dependent byte unpacking functions.
+*
 * Revision 1.4  2003/08/06 20:51:54  grichenk
 * Use CRandom class
 *

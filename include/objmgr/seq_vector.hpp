@@ -63,6 +63,11 @@ public:
     typedef CSeqVector_CI::TCoding  TCoding;
     typedef CBioseq_Handle::EVectorCoding EVectorCoding;
 
+    typedef CSeqVector_CI const_iterator;
+    typedef TResidue value_type;
+    typedef TSeqPos size_type;
+    typedef TSignedSeqPos difference_type;
+
     CSeqVector(void);
     CSeqVector(const CSeqMap& seqMap, CScope& scope,
                EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
@@ -76,6 +81,7 @@ public:
 
     CSeqVector& operator= (const CSeqVector& vec);
 
+    bool empty(void) const;
     TSeqPos size(void) const;
     // 0-based array of residues
     TResidue operator[] (TSeqPos pos) const;
@@ -106,6 +112,9 @@ public:
 
     bool CanGetRange(TSeqPos from, TSeqPos to) const;
 
+    const_iterator begin(void) const;
+    const_iterator end(void) const;
+
 private:
 
     friend class CBioseq_Handle;
@@ -115,7 +124,8 @@ private:
     void x_InitSequenceType(void);
     TResidue x_GetGapChar(TCoding coding) const;
     const CSeqMap& x_GetSeqMap(void) const;
-    CSeqVector_CI& x_GetIterator(void) const;
+    CSeqVector_CI& x_GetIterator(TSeqPos pos) const;
+    CSeqVector_CI* x_CreateIterator(TSeqPos pos) const;
 
     static const char* sx_GetConvertTable(TCoding src, TCoding dst, bool reverse);
 
@@ -126,7 +136,7 @@ private:
     TSeqPos               m_Size;
     TMol                  m_Mol;
 
-    mutable auto_ptr<CSeqVector_CI> m_Iterator;
+    mutable CSeqVector_CI m_Iterator;
 };
 
 
@@ -138,20 +148,9 @@ private:
 
 
 inline
-CSeqVector_CI& CSeqVector::x_GetIterator(void) const
-{
-    if ( !m_Iterator.get() ) {
-        m_Iterator.reset(new CSeqVector_CI(*this, 0));
-    }
-    return *m_Iterator;
-}
-
-inline
 CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos) const
 {
-    CSeqVector_CI& it = x_GetIterator();
-    it.SetPos(pos);
-    return *it;
+    return *m_Iterator.SetPos(pos);
 }
 
 
@@ -159,6 +158,20 @@ inline
 TSeqPos CSeqVector::size(void) const
 {
     return m_Size;
+}
+
+
+inline
+CSeqVector_CI CSeqVector::begin(void) const
+{
+    return CSeqVector_CI(*this, 0);
+}
+
+
+inline
+CSeqVector_CI CSeqVector::end(void) const
+{
+    return CSeqVector_CI(*this, size());
 }
 
 
@@ -211,7 +224,7 @@ bool CSeqVector::IsNucleotide(void) const
 inline
 void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
 {
-    x_GetIterator().GetSeqData(start, stop, buffer);
+    m_Iterator.GetSeqData(start, stop, buffer);
 }
 
 
@@ -229,6 +242,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/08/29 13:34:47  vasilche
+* Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
+* CSeqVector::operator[] made significantly faster.
+* Added possibility to have platform dependent byte unpacking functions.
+*
 * Revision 1.42  2003/08/21 18:43:29  vasilche
 * Added CSeqVector::IsProtein() and CSeqVector::IsNucleotide() methods.
 *

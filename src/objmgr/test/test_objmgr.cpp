@@ -103,11 +103,13 @@ int CTestApp::Run(void)
         // retrieve data
         CTestHelper::TestDataRetrieval( Scope, 0, 0);
 
+        /*
         // Find seq_id
         {
             set< CRef<const CSeq_id> > setId;
             Scope.FindSeqid(setId, "seq11.3");
         }
+        */
     }
     // 1.2.4. Scope is an object on the heap
     for (idx = 1; idx <= 1; idx++) {
@@ -234,6 +236,11 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/08/29 13:34:48  vasilche
+* Rewrote CSeqVector/CSeqVector_CI code to allow better inlining.
+* CSeqVector::operator[] made significantly faster.
+* Added possibility to have platform dependent byte unpacking functions.
+*
 * Revision 1.31  2003/04/24 16:12:39  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.
