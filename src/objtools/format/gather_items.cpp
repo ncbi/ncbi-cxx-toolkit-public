@@ -923,18 +923,18 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
         // pub features are used in the REFERENCES section
         sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_pub);
         // some feature types are always excluded (deprecated?)
-        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue);
-        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite);
-        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq);
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
+           .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
+           .ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq);
         // exclude other types based on user flags
         if ( cfg.HideImpFeats() ) {
             sel.ExcludeFeatType(CSeqFeatData::e_Imp);
         }
         if ( cfg.HideRemoteImpFeats() ) {
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_exon);
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron);
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_misc_feature);
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation)
+               .ExcludeFeatSubtype(CSeqFeatData::eSubtype_exon)
+               .ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron)
+               .ExcludeFeatSubtype(CSeqFeatData::eSubtype_misc_feature);
         }
         if ( cfg.HideSNPFeatures() ) {
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
@@ -952,13 +952,19 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
     // only for non-user selector
     if (ctx.GetAnnotSelector() == NULL) {
         sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
-        if ( GetStrand(ctx.GetLocation(), &ctx.GetScope()) == eNa_strand_minus ) {
+        if (GetStrand(ctx.GetLocation(), &ctx.GetScope()) == eNa_strand_minus) {
             sel.SetSortOrder(SAnnotSelector::eSortOrder_Reverse);  // sort in reverse biological order
         } else {
             sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
         }
-        sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
-        sel.SetResolveTSE();
+        if (cfg.ShowContigFeatures()) {
+            sel.SetResolveAll()
+               .SetAdaptiveDepth(true)
+               .SetSegmentSelectFirst();
+        } else {
+            sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry())
+               .SetResolveTSE();
+        }
     }
 }
 
@@ -984,15 +990,20 @@ static CSeq_loc_Mapper* s_CreateMapper(CBioseqContext& ctx)
     if ( ctx.GetMapper() != 0 ) {
         return ctx.GetMapper();
     }
-
-    // do not create mapper if not segmented or segmented but not doing master style.
     const CFlatFileConfig& cfg = ctx.Config();
-    if ( !ctx.IsSegmented()  || !(cfg.IsStyleMaster()  ||  cfg.IsFormatFTable()) ) {
+
+    // do not create mapper if:
+    // 1 .segmented but not doing master style.
+    if (ctx.IsSegmented()  &&  !cfg.IsStyleMaster()) {
+        return 0;
+    }
+    // 2. delta and not doing remote features
+    if (ctx.IsDelta()  &&  !cfg.ShowContigFeatures()) {
         return 0;
     }
 
     CSeq_loc_Mapper* mapper = new CSeq_loc_Mapper(ctx.GetHandle());
-    if ( mapper != 0 ) {
+    if (mapper != NULL) {
         mapper->SetMergeAbutting();
         mapper->PreserveDestinationLocs();
         mapper->KeepNonmappingRanges();
@@ -1128,11 +1139,11 @@ void CFlatGatherer::x_GatherFeatures(void) const
     CFlatItemOStream& out = *m_ItemOS;
 
     SAnnotSelector sel;
-    const SAnnotSelector* selp = ctx.GetAnnotSelector();
-    if (selp == NULL) {
-        selp = &sel;
+    SAnnotSelector* selp = &sel;
+    if (ctx.GetAnnotSelector() != NULL) {
+        selp = &ctx.SetAnnotSelector();
     }
-    s_SetSelection(sel, ctx);
+    s_SetSelection(*selp, ctx);
 
     // optionally map gene from genomic onto cDNA
     if ( ctx.IsInGPS()  &&  cfg.CopyGeneToCDNA()  &&
@@ -1159,12 +1170,12 @@ void CFlatGatherer::x_GatherFeatures(void) const
 
     // collect features
     if ( ctx.IsSegmented()  &&  cfg.IsStyleMaster()  &&  cfg.OldFeatsOrder() ) {
-        if ( ctx.GetAnnotSelector() == 0 ) {
-            sel.SetResolveNone();
+        if (ctx.GetAnnotSelector() == NULL) {
+            selp->SetResolveNone();
         }
         
         // first do the master bioeseq
-        x_GatherFeaturesOnLocation(loc, sel, ctx);
+        x_GatherFeaturesOnLocation(loc, *selp, ctx);
 
         // map the location on the segments        
         CSeq_loc_Mapper mapper(1, ctx.GetHandle());
@@ -1172,11 +1183,11 @@ void CFlatGatherer::x_GatherFeatures(void) const
         if ( seg_loc ) {
             // now go over each of the segments
             for ( CSeq_loc_CI it(*seg_loc); it; ++it ) {
-                x_GatherFeaturesOnLocation(it.GetSeq_loc(), sel, ctx);
+                x_GatherFeaturesOnLocation(it.GetSeq_loc(), *selp, ctx);
             }
         }
     } else {
-        x_GatherFeaturesOnLocation(loc, sel, ctx);
+        x_GatherFeaturesOnLocation(loc, *selp, ctx);
     }
     
     if ( ctx.IsProt() ) {
@@ -1194,11 +1205,11 @@ void CFlatGatherer::x_GatherFeatures(void) const
         // look for Prot features (only for RefSeq records or
         // GenBank not release_mode).
         if ( ctx.IsRefSeq()  ||  !cfg.ForGBRelease() ) {
-            SAnnotSelector sel(CSeqFeatData::e_Prot, true);
-            sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
-            sel.SetResolveMethod(SAnnotSelector::eResolve_TSE);
-            sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
-            for ( CFeat_CI it(ctx.GetHandle(), 0, 0, sel); it; ++it ) {  
+            SAnnotSelector prod_sel(CSeqFeatData::e_Prot, true);
+            prod_sel.SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
+            prod_sel.SetResolveMethod(SAnnotSelector::eResolve_TSE);
+            prod_sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
+            for (CFeat_CI it(ctx.GetHandle(), 0, 0, prod_sel); it; ++it) {  
                 out << new CFeatureItem(it->GetOriginalFeature(),
                                         ctx,
                                         &it->GetProduct(),
@@ -1338,6 +1349,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2004/09/02 15:41:16  shomrat
+* Fixed initialization of user defined AnnotSelector
+*
 * Revision 1.27  2004/09/01 19:57:08  shomrat
 * Apply flags to user defined AnnotSelector
 *
