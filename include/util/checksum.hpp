@@ -29,10 +29,105 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   CRC32 calculation class
+*   checksum (CRC32 or MD5) calculation class
+*/
+
+#include <util/md5.hpp>
+
+
+/** @addtogroup Checksum
+ *
+ * @{
+ */
+
+
+BEGIN_NCBI_SCOPE
+
+class NCBI_XUTIL_EXPORT CChecksum
+{
+public:
+    enum EMethod {
+        eNone,             // no checksum in file
+        eCRC32,            // 32-bit Cyclic Redundancy Check
+        eMD5,              // Message Digest version 5
+        eDefault = eCRC32
+    };
+    enum {
+        kMinimumChecksumLength = 20
+    };
+
+    CChecksum(EMethod method = eDefault);
+    CChecksum(const CChecksum& cks);
+    ~CChecksum();
+    CChecksum& operator=(const CChecksum& cks);
+
+    bool Valid(void) const;
+    EMethod GetMethod(void) const;
+
+    void AddLine(const char* line, size_t length);
+    void AddLine(const string& line);
+
+    void AddChars(const char* str, size_t length);
+    void NextLine(void);
+
+    bool ValidChecksumLine(const char* line, size_t length) const;
+    bool ValidChecksumLine(const string& line) const;
+
+    CNcbiOstream& WriteChecksum(CNcbiOstream& out) const;
+
+    /// Only valid in CRC32 mode!
+    Uint4 GetChecksum() const;
+
+    /// Only valid in MD5 mode!
+    void GetMD5Digest(unsigned char digest[16]) const;
+
+    CNcbiOstream& WriteChecksumData(CNcbiOstream& out) const;
+
+private:
+    size_t m_LineCount;
+    size_t m_CharCount;
+    EMethod m_Method;
+    union {
+        Uint4 m_CRC32;
+        CMD5* m_MD5;
+    } m_Checksum;
+
+    static Uint4 sm_CRC32Table[256];
+    static void InitTables(void);
+    static Uint4 UpdateCRC32(Uint4 checksum, const char* str, size_t length);
+
+    bool ValidChecksumLineLong(const char* line, size_t length) const;
+};
+
+inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const CChecksum& checksum);
+
+
+/// This function computes the checksum for the given file.
+
+CChecksum NCBI_XUTIL_EXPORT ComputeFileChecksum(const string& path,
+                                                CChecksum::EMethod method);
+
+inline Uint4 ComputeFileCRC32(const string& path)
+{
+    return ComputeFileChecksum(path, CChecksum::eCRC32).GetChecksum();
+}
+
+
+/* @} */
+
+
+#include <util/checksum.inl>
+
+END_NCBI_SCOPE
+
+/*
+* ===========================================================================
 *
-* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/07/29 21:29:26  ucko
+* Add MD5 support (cribbed from the C Toolkit)
+*
 * Revision 1.6  2003/05/08 19:10:21  kuznets
 * + ComputeFileCRC32 function
 *
@@ -53,77 +148,5 @@
 *
 * ===========================================================================
 */
-
-#include <corelib/ncbistd.hpp>
-
-
-/** @addtogroup Checksum
- *
- * @{
- */
-
-
-BEGIN_NCBI_SCOPE
-
-class NCBI_XUTIL_EXPORT CChecksum
-{
-public:
-    enum EMethod {
-        eNone,             // no checksum in file
-        eCRC32,            // CRC32
-        eDefault = eCRC32
-    };
-    enum {
-        kMinimumChecksumLength = 20
-    };
-
-    CChecksum(EMethod method = eDefault);
-
-    bool Valid(void) const;
-    EMethod GetMethod(void) const;
-
-    void AddLine(const char* line, size_t length);
-    void AddLine(const string& line);
-
-    void AddChars(const char* str, size_t length);
-    void NextLine(void);
-
-    bool ValidChecksumLine(const char* line, size_t length) const;
-    bool ValidChecksumLine(const string& line) const;
-
-    CNcbiOstream& WriteChecksum(CNcbiOstream& out) const;
-    Uint4 GetChecksum() const;
-
-private:
-    CNcbiOstream& WriteChecksumData(CNcbiOstream& out) const;
-
-private:
-    size_t m_LineCount;
-    size_t m_CharCount;
-    EMethod m_Method;
-    Uint4 m_Checksum;
-
-    static Uint4 sm_CRC32Table[256];
-    static void InitTables(void);
-    static Uint4 UpdateCRC32(Uint4 checksum, const char* str, size_t length);
-
-    bool ValidChecksumLineLong(const char* line, size_t length) const;
-};
-
-inline
-CNcbiOstream& operator<<(CNcbiOstream& out, const CChecksum& checksum);
-
-
-// Function computes CRC32 control sum for the given file.
-
-Uint4 NCBI_XUTIL_EXPORT ComputeFileCRC32(const string& path);
-
-
-/* @} */
-
-
-#include <util/checksum.inl>
-
-END_NCBI_SCOPE
 
 #endif  /* CHECKSUM__HPP */

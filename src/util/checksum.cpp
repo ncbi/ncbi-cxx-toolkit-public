@@ -26,7 +26,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   CRC32 calculation class
+*   checksum (CRC32 or MD5) calculation class
 */
 
 #include <corelib/ncbistd.hpp>
@@ -42,9 +42,58 @@ static const char sx_LineCount[] = "lines: ";
 static const char sx_CharCount[] = "chars: ";
 
 CChecksum::CChecksum(EMethod method)
-    : m_LineCount(0), m_CharCount(0), m_Method(method), m_Checksum(0)
+    : m_LineCount(0), m_CharCount(0), m_Method(method)
 {
-    InitTables();
+    switch ( GetMethod() ) {
+    case eCRC32:
+        InitTables();
+        m_Checksum.m_CRC32 = 0;
+        break;
+    case eMD5:
+        m_Checksum.m_MD5 = new CMD5;
+        break;
+    }
+}
+
+CChecksum::CChecksum(const CChecksum& cks)
+    : m_LineCount(cks.m_LineCount), m_CharCount(cks.m_CharCount),
+      m_Method(cks.m_Method)
+{
+    switch ( GetMethod() ) {
+    case eCRC32:
+        m_Checksum.m_CRC32 = cks.m_Checksum.m_CRC32;
+        break;
+    case eMD5:
+        m_Checksum.m_MD5 = new CMD5(*cks.m_Checksum.m_MD5);
+        break;
+    }
+}
+
+CChecksum::~CChecksum()
+{
+    switch ( GetMethod() ) {
+    case eMD5:
+        delete m_Checksum.m_MD5;
+        break;
+    }
+}
+
+CChecksum& CChecksum::operator= (const CChecksum& cks)
+{
+    m_LineCount = cks.m_LineCount;
+    m_CharCount = cks.m_CharCount;
+    m_Method    = cks.m_Method;
+
+    switch ( GetMethod() ) {
+    case eCRC32:
+        m_Checksum.m_CRC32 = cks.m_Checksum.m_CRC32;
+        break;
+    case eMD5:
+        m_Checksum.m_MD5 = new CMD5(*cks.m_Checksum.m_MD5);
+        break;
+    }
+
+    return *this;
 }
 
 CNcbiOstream& CChecksum::WriteChecksum(CNcbiOstream& out) const
@@ -77,7 +126,10 @@ CNcbiOstream& CChecksum::WriteChecksumData(CNcbiOstream& out) const
 {
     switch ( GetMethod() ) {
     case eCRC32:
-        return out << "CRC32: " << hex << setprecision(8) << m_Checksum;
+        return out << "CRC32: " << hex << setprecision(8)
+                   << m_Checksum.m_CRC32;
+    case eMD5:
+        return out << "MD5: " << m_Checksum.m_MD5->GetHexSum();
     default:
         return out << "none";
     }
@@ -85,14 +137,28 @@ CNcbiOstream& CChecksum::WriteChecksumData(CNcbiOstream& out) const
 
 void CChecksum::AddChars(const char* str, size_t count)
 {
-    m_Checksum = UpdateCRC32(m_Checksum, str, count);
+    switch ( GetMethod() ) {
+    case eCRC32:
+        m_Checksum.m_CRC32 = UpdateCRC32(m_Checksum.m_CRC32, str, count);
+        break;
+    case eMD5:
+        m_Checksum.m_MD5->Update(str, count);
+        break;
+    }
     m_CharCount += count;
 }
 
 void CChecksum::NextLine(void)
 {
     char eol = '\n';
-    m_Checksum = UpdateCRC32(m_Checksum, &eol, 1);
+    switch ( GetMethod() ) {
+    case eCRC32:
+        m_Checksum.m_CRC32 = UpdateCRC32(m_Checksum.m_CRC32, &eol, 1);
+        break;
+    case eMD5:
+        m_Checksum.m_MD5->Update(&eol, 1);
+        break;
+    }
     ++m_LineCount;
 }
 
@@ -132,13 +198,13 @@ Uint4 CChecksum::UpdateCRC32(Uint4 checksum, const char *str, size_t count)
 
 // ---------------------------------------------------------------------------
 
-Uint4 ComputeFileCRC32(const string& path)
+CChecksum ComputeFileChecksum(const string& path, CChecksum::EMethod method)
 {
     CNcbiIfstream input(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
 
-    if (!input.is_open()) return 0;
+    CChecksum cks(method);
 
-    CChecksum crc(CChecksum::eCRC32);
+    if (!input.is_open()) return cks;
 
     while (!input.eof()) {
         char buf[1024];
@@ -147,12 +213,12 @@ Uint4 ComputeFileCRC32(const string& path)
         size_t count = input.gcount();
 
         if (count) {
-            crc.AddChars(buf, count);
+            cks.AddChars(buf, count);
         }
 
     } // while
     input.close();
-    return crc.GetChecksum();
+    return cks;
 }
 
 
@@ -163,6 +229,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/07/29 21:29:26  ucko
+* Add MD5 support (cribbed from the C Toolkit)
+*
 * Revision 1.5  2003/05/09 14:08:28  ucko
 * ios_base:: -> IOS_BASE:: for gcc 2.9x compatibility
 *

@@ -30,19 +30,6 @@
 *
 * File Description:
 *   CRC32 calculation inline methods
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2003/04/15 16:12:09  kuznets
-* GetChecksum() method implemented
-*
-* Revision 1.2  2001/01/05 20:08:52  vasilche
-* Added util directory for various algorithms and utility classes.
-*
-* Revision 1.1  2000/11/22 16:26:22  vasilche
-* Added generation/checking of checksum to user files.
-*
-* ===========================================================================
 */
 
 inline
@@ -94,8 +81,33 @@ bool CChecksum::ValidChecksumLine(const string& line) const
 
 inline Uint4 CChecksum::GetChecksum() const
 {
-    return m_Checksum;
+    _ASSERT(GetMethod() == eCRC32);
+    return m_Checksum.m_CRC32;
 }
 
+inline void CChecksum::GetMD5Digest(unsigned char digest[16]) const
+{
+    _ASSERT(GetMethod() == eMD5);
+    return m_Checksum.m_MD5->Finalize(digest);
+}
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.4  2003/07/29 21:29:26  ucko
+* Add MD5 support (cribbed from the C Toolkit)
+*
+* Revision 1.3  2003/04/15 16:12:09  kuznets
+* GetChecksum() method implemented
+*
+* Revision 1.2  2001/01/05 20:08:52  vasilche
+* Added util directory for various algorithms and utility classes.
+*
+* Revision 1.1  2000/11/22 16:26:22  vasilche
+* Added generation/checking of checksum to user files.
+*
+* ===========================================================================
+*/
 
 #endif /* def CHECKSUM__HPP  &&  ndef CHECKSUM__INL */
