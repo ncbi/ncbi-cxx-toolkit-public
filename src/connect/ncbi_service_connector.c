@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/08 22:39:40  lavr
+ * Further development of service-mapping protocol: stateless/stateful
+ * is now separated from firewall/direct mode (see also in few more files)
+ *
  * Revision 6.4  2001/01/03 22:35:53  lavr
  * Next working revision (bugfixes and protocol changes)
  *
@@ -53,6 +57,7 @@
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -140,19 +145,20 @@ static int/*bool*/ s_ParseHeader(const char* header, void* data,
     SServiceConnector* uuu = (SServiceConnector*) data;
     const char* line;
 
+    if (!SERV_Update(uuu->iter, header))
+        return 0/*failed*/;
     if (server_error)
-        return 1/*okay*/;
+        return 1/*parsed okay*/;
 
-    SERV_Update(uuu->iter, header);
     line = header;
     while (line && *line) {
-        if (strncasecmp(line, CONNECTION_INFO,
-                        sizeof(CONNECTION_INFO) - 1) == 0) {
+        if (strncasecmp(line, HTTP_CONNECTION_INFO,
+                        sizeof(HTTP_CONNECTION_INFO) - 1) == 0) {
             unsigned int i1, i2, i3, i4, temp;
             unsigned char o1, o2, o3, o4;
             char host[64];
 
-            if (sscanf(line + sizeof(CONNECTION_INFO) - 1,
+            if (sscanf(line + sizeof(HTTP_CONNECTION_INFO) - 1,
                        "%d.%d.%d.%d %hu %x",
                        &i1, &i2, &i3, &i4, &uuu->port, &temp) < 6)
                 return 0/*failed*/;
@@ -166,7 +172,47 @@ static int/*bool*/ s_ParseHeader(const char* header, void* data,
         if ((line = strchr(line, '\n')) != 0)
             line++;
     }
+
     return 1/*success*/;
+}
+
+
+static void s_AdjustNetInfo(SConnNetInfo* net_info,
+                            EReqMethod    req_method,
+                            const char*   cgi_name,
+                            const char*   cgi_args,
+                            const char*   last_arg,
+                            const char*   last_val)
+{
+    net_info->req_method = req_method;
+
+    if (cgi_name) {
+        strncpy(net_info->path, cgi_name, sizeof(net_info->path) - 1);
+        net_info->path[sizeof(net_info->path) - 1] = '\0';
+    }
+
+    if (cgi_args) {
+        strncpy(net_info->args, cgi_args, sizeof(net_info->args) - 1);
+        net_info->args[sizeof(net_info->args) - 1] = '\0';
+    }
+
+    if (last_arg) {
+        size_t n = 0, m = strlen(net_info->args);
+        
+        if (m)
+            n++/*&*/;
+        n += strlen(last_arg) +
+            (last_val ? 1/*=*/ + strlen(last_val) : 0);
+        if (n < sizeof(net_info->args) - m) {
+            char *s = net_info->args + m;
+            if (m)
+                strcat(s, "&");
+            strcat(s, last_arg);
+            strcat(s, "=");
+            if (last_val)
+                strcat(s, last_val);
+        }
+    }
 }
 
 
@@ -179,14 +225,42 @@ extern "C" {
 static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
                                 unsigned int n)
 {
+    static const char header[] = "Connection-Mode: STATELESS\r\n";
     SServiceConnector* uuu = (SServiceConnector*) data;
-
-    printf("Adjust info called with n = %d\n", n);
-    if (n) {
-        /* Failed connection request */
-        
+    const SSERV_Info* info;
+    
+    if (!n || !(info = SERV_GetNextInfo(uuu->iter)))
+        return 0;
+    
+    switch (info->type) {
+    case fSERV_Ncbid:
+        s_AdjustNetInfo(net_info, eReqMethod_Post,
+                        NCBID_NAME,
+                        SERV_NCBID_ARGS(&info->u.ncbid),
+                        "service", uuu->serv);
+        break;
+    case fSERV_Http:
+    case fSERV_HttpGet:
+    case fSERV_HttpPost:
+        s_AdjustNetInfo(net_info,
+                        info->type == fSERV_HttpGet ? eReqMethod_Get :
+                        (info->type == fSERV_HttpPost ? eReqMethod_Post :
+                         eReqMethod_Any),
+                        SERV_HTTP_PATH(&info->u.http),
+                        SERV_HTTP_ARGS(&info->u.http),
+                        0, 0);
+        break;
+    case fSERV_Standalone:
+        s_AdjustNetInfo(net_info, eReqMethod_Post,
+                        uuu->info->path, 0,
+                        "service", uuu->serv);
+        break;
+    default:
+        return 0;
     }
-    return 0;
+    ConnNetInfo_SetUserHeader(net_info, header);
+    assert(strcmp(net_info->http_user_header, header) == 0);
+    return 1;
 }
 
 
@@ -203,69 +277,78 @@ static EIO_Status s_VT_Open
     CONNECTOR conn;
 
     assert(uuu->conn == 0 && uuu->type == 0);
-
+    
     if (!uuu->iter && !s_OpenDispatcher(uuu))
         return eIO_Unknown;
     
-    if (uuu->info->client_mode != eClientModeFirewall &&
-        !(info = SERV_GetNextInfo(uuu->iter)) &&
-        !(info = SERV_GetNextInfo(uuu->iter)))
+    if (!uuu->info->firewall && !(info = SERV_GetNextInfo(uuu->iter)))
         return eIO_Unknown;
-
+    
     if (!(net_info = ConnNetInfo_Clone(uuu->info)))
         return eIO_Unknown;
     
     if (info) {
+        /* Not a firewall/relay connection here */
+        EReqMethod req_method;
+        
         /* We know the connection point, let's try to use it! */
         SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
         net_info->port = info->port;
         switch (info->type) {
         case fSERV_Ncbid:
-            if (net_info->client_mode != eClientModeStatelessOnly) {
-                /* We will wait for conn-info back */
-                net_info->req_method = eReqMethodGet;
-                header = "Connection-Mode: Stateful\r\n";
-            } else {
+            if (net_info->stateless) {
                 /* Connection request with data */
-                net_info->req_method = eReqMethodPost;
-                header = "Connection-Mode: Stateless\r\n";
+                req_method = eReqMethod_Post;
+                header = "Connection-Mode: STATELESS\r\n";
+            } else {
+                /* We will wait for conn-info back */
+                req_method = eReqMethod_Get;
+                header = "Connection-Mode: STATEFUL\r\n";
             }
-            strncpy(net_info->path, NCBID_NAME, sizeof(net_info->path) - 1);
-            net_info->path[sizeof(net_info->path) - 1] = '\0';
-            
-            strncpy(net_info->args, SERV_NCBID_ARGS(&info->u.ncbid),
-                    sizeof(net_info->args) - 1);
-            net_info->args[sizeof(net_info->args) - 1] = '\0';
-            if (strlen(net_info->args) < sizeof(net_info->args) -
-                (1/*&*/ + 8/*service=*/ + strlen(uuu->serv) + 1)) {
-                strcat(net_info->args, "&");
-                strcat(net_info->args, "service=");
-                strcat(net_info->args, uuu->serv);
-            }
+            s_AdjustNetInfo(net_info, req_method,
+                            NCBID_NAME,
+                            SERV_NCBID_ARGS(&info->u.ncbid),
+                            "service", uuu->serv);
             break;
         case fSERV_Http:
         case fSERV_HttpGet:
         case fSERV_HttpPost:
-            /* Connection request with data */
-            net_info->req_method =
+            /* Connection request with data - no addtl HTTP tags required,
+               but we put one here to distinguish our requests */
+            header = "Connection-Mode: STATELESS\r\n";
+            req_method =
                 info->type == fSERV_HttpGet
-                ? eReqMethodGet :
+                ? eReqMethod_Get :
                     (info->type == fSERV_HttpPost
-                     ? eReqMethodPost :
-                     eReqMethodAny);
-            strncpy(net_info->path, SERV_HTTP_PATH(&info->u.http),
-                    sizeof(net_info->path) - 1);
-            net_info->path[sizeof(net_info->path) - 1] = '\0';
-            strncpy(net_info->args, SERV_HTTP_ARGS(&info->u.http),
-                    sizeof(net_info->args) - 1);
-            net_info->args[sizeof(net_info->args) - 1] = '\0';
-            header = "";
+                     ? eReqMethod_Post : eReqMethod_Any);
+            s_AdjustNetInfo(net_info, req_method,
+                            SERV_HTTP_PATH(&info->u.http),
+                            SERV_HTTP_ARGS(&info->u.http),
+                            0, 0);
             break;
-        default: /* case fSERV_Standalone: */
+        case fSERV_Standalone:
+            if (net_info->stateless) {
+                /* This will be a pass-thru connection */
+                header = "";
+                s_AdjustNetInfo(net_info, eReqMethod_Post,
+                                0, 0,
+                                "service", uuu->serv);
+            }
+            break;
+        default:
             break;
         }
-    } else
-        header = "Client-Mode: FIREWALL\r\n";
+    } else {
+        /* Firewall */
+        s_AdjustNetInfo(net_info,
+                        net_info->stateless ? eReqMethod_Post : eReqMethod_Get,
+                        0, 0, "service", uuu->serv);
+        header = net_info->stateless
+            ? "Client-Mode: STATELESS_ONLY\r\n"
+              "Relay-Mode: FIREWALL\r\n"
+            : "Client-Mode: STATEFUL_CAPABLE\r\n"
+              "Relay-Mode: FIREWALL\r\n";
+    }
     
     if (header) {
         /* We create HTTP connector here */
@@ -283,6 +366,9 @@ static EIO_Status s_VT_Open
             header = 0;
         ConnNetInfo_SetUserHeader(net_info, header);
         assert(!header || strcmp(net_info->http_user_header, header) == 0);
+        if (user_header)
+            free(user_header);
+        /* Clear connection info */
         uuu->host = 0;
         uuu->port = 0;
         uuu->tckt = 0;
@@ -290,9 +376,8 @@ static EIO_Status s_VT_Open
                                       s_ParseHeader, s_AdjustInfo,
                                       uuu/*adj.data*/, 0/*clenup.data*/);
         /* What do we expect now? */
-        if (net_info->client_mode == eClientModeFirewall ||
-            (info && info->type == fSERV_Ncbid &&
-             net_info->client_mode != eClientModeStatelessOnly)) {
+        if (!net_info->stateless &&
+            (net_info->firewall || info->type == fSERV_Ncbid)) {
             /* We'll wait for connection-info back */
             CONN c;
             
@@ -361,8 +446,8 @@ static EIO_Status s_VT_Open
 
 
 static EIO_Status s_VT_Status
-(CONNECTOR      connector,
- EIO_Event      dir)
+(CONNECTOR connector,
+ EIO_Event dir)
 {
     return eIO_Success;
 }
