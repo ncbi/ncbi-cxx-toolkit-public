@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2001/09/10 21:16:27  lavr
+ * FIREWALL server type added, documented
+ *
  * Revision 6.24  2001/06/19 19:09:35  lavr
  * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
  *
@@ -131,7 +134,8 @@ typedef enum {
     fSERV_Standalone = 0x2,
     fSERV_HttpGet    = 0x4,
     fSERV_HttpPost   = 0x8,
-    fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost
+    fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost,
+    fSERV_Firewall   = 0x10
 } ESERV_Type;
 
 #define fSERV_Any           0
@@ -184,6 +188,10 @@ typedef struct {
 #define SERV_HTTP_ARGS(ui)      ((char*) (ui) + (ui)->args)
 } SSERV_HttpInfo;
 
+typedef struct {
+    ESERV_Type     type;        /* type of original server */
+} SSERV_FirewallInfo;
+
 
 /* Generic NCBI server meta-address
  */
@@ -191,6 +199,7 @@ typedef union {
     SSERV_NcbidInfo      ncbid;
     SSERV_StandaloneInfo standalone;
     SSERV_HttpInfo       http;
+    SSERV_FirewallInfo   firewall;
 } USERV_Info;
 
 typedef struct {
@@ -212,23 +221,29 @@ typedef struct {
 /* Constructors for the various types of NCBI server meta-addresses
  */
 SSERV_Info* SERV_CreateNcbidInfo
-(unsigned int   host,           /* network byte order */
- unsigned short port,           /* host byte order    */
+(unsigned int   host,           /* network byte order                        */
+ unsigned short port,           /* host byte order                           */
  const char*    args
  );
 
 SSERV_Info* SERV_CreateStandaloneInfo
-(unsigned int   host,           /* network byte order */
- unsigned short port            /* host byte order    */
+(unsigned int   host,           /* network byte order                        */
+ unsigned short port            /* host byte order                           */
  );
 
 SSERV_Info* SERV_CreateHttpInfo
-(ESERV_Type     type,           /* verified, must be one of fSERV_Http* */
- unsigned int   host,           /* network byte order */
- unsigned short port,           /* host byte order    */
+(ESERV_Type     type,           /* verified, must be one of fSERV_Http*      */
+ unsigned int   host,           /* network byte order                        */
+ unsigned short port,           /* host byte order                           */
  const char*    path,
  const char*    args
  );
+
+SSERV_Info* SERV_CreateFirewallInfo
+(unsigned int   host,           /* original server's host in net byte order  */
+ unsigned short port,           /* original server's port in host byte order */
+ ESERV_Type     type            /* type of original server, wrapped into     */
+);
 
 
 /* Dump server info to a string.
@@ -241,7 +256,7 @@ char* SERV_WriteInfo(const SSERV_Info* info);
 /* Server specification consists of the following:
  * TYPE [host][:port] [server-specific_parameters] [tags]
  *
- * TYPE := { STANDALONE | NCBID | HTTP | HTTP_GET | HTTP_POST }
+ * TYPE := { STANDALONE | NCBID | HTTP | HTTP_GET | HTTP_POST | FIREWALL }
  *
  * Host should be specified as either an IP address (in dotted notation),
  * or as a host name (using domain notation if necessary).
@@ -260,6 +275,14 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *    HTTP* servers: Path (required) and args (optional) in the form
  *                   path[?args] (here brackets denote the optional part).
  *                   Note that no spaces allowed within this parameter.
+ *
+ *    FIREWALL servers: Servers of this type are converted real servers of
+ *                      the above types, when only accessible via FIREWALL
+ *                      mode of NCBI dispatcher. The purpose of this fake
+ *                      server type is just to let the client know that
+ *                      the service exists. Additional parameter the original
+ *                      type of the server before conversion. Note that servers
+ *                      of type FIREWALL cannot be configured in LBSMD.
  *
  * Tags may follow in no particular order but no more than one instance
  * of each flag is allowed:
