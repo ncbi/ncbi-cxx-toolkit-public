@@ -65,6 +65,7 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
    return 0;
 }
 
+#if 0
 /** Create the subject sequence block given an ordinal id in a database */
 void
 MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr PNTR seq_blk,
@@ -85,6 +86,7 @@ MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr PNTR seq_blk,
                        (encoding != BLASTP_ENCODING));
   (*seq_blk)->oid = oid;
 }
+#endif
 
 Int2 BlastSequenceBlkClean(BLAST_SequenceBlkPtr seq_blk)
 {
