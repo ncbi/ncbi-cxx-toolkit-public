@@ -108,10 +108,13 @@ void CBDB_Env::JoinEnv(const char* db_home, unsigned int opt)
 
     // Check if we joined the transactional environment
 
-    DB_TXN_STAT *txn_statp;
+    DB_TXN_STAT *txn_statp = 0;
     int ret = m_Env->txn_stat(m_Env, &txn_statp, 0);
     if (ret == 0)
     {
+        ::free(txn_statp);
+        txn_statp = 0;
+
         // Try to create a fake transaction to test the environment
         DB_TXN* txn = 0;
         ret = m_Env->txn_begin(m_Env, 0, &txn, 0);
@@ -120,7 +123,6 @@ void CBDB_Env::JoinEnv(const char* db_home, unsigned int opt)
             m_Transactional = true;
             ret = txn->abort(txn);
         }
-        ::free(txn_statp);
     }
 }
 
@@ -151,6 +153,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/04 14:39:01  kuznets
+ * Minor code clean up in JoinEnv when deallocating transaction statistics
+ * structure
+ *
  * Revision 1.12  2003/12/29 18:45:41  kuznets
  * JoinEnv changed to support thread safe join
  *
