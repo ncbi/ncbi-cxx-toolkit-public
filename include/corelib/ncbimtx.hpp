@@ -251,10 +251,27 @@ public:
     friend class CMutexGuard;
 };
 
-#if defined(SYSTEM_MUTEX_INITIALIZER)
+#if defined(NCBI_NO_THREADS)
+
+#   define DEFINE_STATIC_FAST_MUTEX(id) \
+static NCBI_NS_NCBI::SSystemFastMutex id
+#   define DECLARE_CLASS_STATIC_FAST_MUTEX(id) \
+static NCBI_NS_NCBI::SSystemFastMutex id
+#   define DEFINE_CLASS_STATIC_FAST_MUTEX(id) \
+NCBI_NS_NCBI::SSystemFastMutex id
+
+#   define DEFINE_STATIC_MUTEX(id) \
+static NCBI_NS_NCBI::SSystemMutex id
+#   define DECLARE_CLASS_STATIC_MUTEX(id) \
+static NCBI_NS_NCBI::SSystemMutex id
+#   define DEFINE_CLASS_STATIC_MUTEX(id) \
+NCBI_NS_NCBI::SSystemMutex id
+
+#elif defined(SYSTEM_MUTEX_INITIALIZER)
 
 #   define STATIC_FAST_MUTEX_INITIALIZER \
     { SYSTEM_MUTEX_INITIALIZER, NCBI_NS_NCBI::SSystemFastMutex::eMutexInitialized }
+
 #   define DEFINE_STATIC_FAST_MUTEX(id) \
 static NCBI_NS_NCBI::SSystemFastMutex id = STATIC_FAST_MUTEX_INITIALIZER
 #   define DECLARE_CLASS_STATIC_FAST_MUTEX(id) \
@@ -264,6 +281,7 @@ NCBI_NS_NCBI::SSystemFastMutex id = STATIC_FAST_MUTEX_INITIALIZER
 
 #   define STATIC_MUTEX_INITIALIZER \
     { STATIC_FAST_MUTEX_INITIALIZER, THREAD_SYSTEM_ID_INITIALIZER, 0 }
+
 #   define DEFINE_STATIC_MUTEX(id) \
 static NCBI_NS_NCBI::SSystemMutex id = STATIC_MUTEX_INITIALIZER
 #   define DECLARE_CLASS_STATIC_MUTEX(id) \
@@ -781,6 +799,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2002/09/20 19:13:58  vasilche
+ * Fixed single-threaded mode on Win32
+ *
  * Revision 1.13  2002/09/20 13:51:56  vasilche
  * Added #include <memory> for auto_ptr<>
  *
