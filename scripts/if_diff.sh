@@ -49,7 +49,15 @@ ExecAction()
   cmd="$action $src_file $dest_file"
   cmp -s "$src_file" "$dest_file"  ||
   ( $rm "$dest_file" ;  test "$quiet" = yes || echo "$cmd" ;  $cmd )  ||
-  Usage "\"$cmd\" failed"
+  case "`basename \"$action\"`" in
+    ln | ln\ -f )
+      test "$quiet" = yes || echo "failed; trying \"cp -p ...\" instead"
+      cmd="cp -p $src_file $dest_file"
+      ( $rm "$dest_file" ;  test "$quiet" = yes || echo "$cmd" ;  $cmd )  ||
+      Usage "\"$cmd\" failed"
+      ;;
+    *) Usage "\"$cmd\" failed" ;;
+  esac
 }
 
 
