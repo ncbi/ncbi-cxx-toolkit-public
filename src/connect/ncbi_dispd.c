@@ -171,8 +171,8 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     /* Dispatcher CGI arguments (sacrifice some if they all do not fit) */
     if ((arch = CORE_GetPlatform()) != 0 && *arch)
         ConnNetInfo_PreOverrideArg(net_info, platform, arch);
-    if (!strchr(net_info->client_host, '.')                    &&
-        (ip = SOCK_gethostbyname(net_info->client_host)) != 0  &&
+    if (!strchr(net_info->client_host, '.') &&
+        (ip = SOCK_gethostbyname(0)) != 0   &&
         SOCK_ntoa(ip, addr, sizeof(addr)) == 0) {
         if ((s= malloc(strlen(net_info->client_host) + strlen(addr) + 3)) != 0)
             sprintf(s, "%s(%s)", net_info->client_host, addr);
@@ -180,7 +180,8 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
             s = net_info->client_host;
     } else
         s = net_info->client_host;
-    ConnNetInfo_PreOverrideArg(net_info, address, s);
+    if (s && *s)
+        ConnNetInfo_PreOverrideArg(net_info, address, s);
     if (s != net_info->client_host)
         free(s);
     if (!ConnNetInfo_PreOverrideArg(net_info, service, iter->service)) {
@@ -465,6 +466,9 @@ void DISP_SetMessageHook(FDISP_MessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.60  2003/10/10 19:33:24  lavr
+ * Do not generate address CGI parameter if host address is unknown
+ *
  * Revision 6.59  2003/08/11 19:07:03  lavr
  * +DISP_SetMessageHook() and implementation of message delivery
  *
