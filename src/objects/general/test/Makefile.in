@@ -1,4 +1,3 @@
-SUB_PROJ = test
-ASN_PROJ = general
+APP_PROJ = test_date
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
