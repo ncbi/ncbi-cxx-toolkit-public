@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = tables
+SRC = raw_scoremat

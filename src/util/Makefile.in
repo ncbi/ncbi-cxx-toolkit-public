@@ -1,10 +1,10 @@
 # $Id$
 
-# Meta-makefile("UTIL" project)
+# Meta-makefile ("UTIL" project)
 #################################
 
 LIB_PROJ = util xregexp
-SUB_PROJ = regexp compress image test
+SUB_PROJ = regexp compress image tables test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
