@@ -68,6 +68,7 @@ int main (int argc, char* argv[])
   I_DriverContext* my_context;
   CDB_Connection* con;
   CDB_BCPInCmd* bcp=NULL;
+  CDB_LangCmd* ins_cmd=NULL;
   CStopWatch timer;
 
 
@@ -175,8 +176,22 @@ int main (int argc, char* argv[])
       bcp = con->BCPIn(table_name, col_count);
     }
     else {
-      cerr << "-c option not supported yet\n";
-      return 1;
+      //cerr << "-c option not supported yet\n";
+      //return 1;
+      string s  = "insert into ";
+      s+= table_name;
+      s+= " (int_val";
+      string sv = "@i";
+
+      if(col_count>1) { s+= ", fl_val"  ; sv+=", @f"; }
+      if(col_count>2) { s+= ", date_val"; sv+=", @d"; }
+      if(col_count>3) { s+= ", str_val" ; sv+=", @s"; }
+
+      s+= ") values (";
+      s+= sv;
+      s+= ")";
+
+      ins_cmd = con->LangCmd(s);
     }
 
     CDB_Int int_val;
@@ -202,11 +217,24 @@ int main (int argc, char* argv[])
     timer.Start();
 
     // Bind data from a program variables
-    bcp->Bind(0, &int_val);
-    if(col_count>1) bcp->Bind(1, &fl_val  );
-    if(col_count>2) bcp->Bind(2, &date_val);
-    if(col_count>3) bcp->Bind(3, &str_val );
-    if(col_count>4) bcp->Bind(4, &pTxt    );
+    if(bcp) {
+      bcp->Bind(0, &int_val);
+      if(col_count>1) bcp->Bind(1, &fl_val  );
+      if(col_count>2) bcp->Bind(2, &date_val);
+      if(col_count>3) bcp->Bind(3, &str_val );
+      if(col_count>4) bcp->Bind(4, &pTxt    );
+    }
+    else{
+      if( !ins_cmd->BindParam("@i", &int_val) ) {
+        cerr << "Error in BindParam()\n";
+        DeleteTable(con, table_name);
+        return 1;
+      }
+
+      if(col_count>1) ins_cmd->BindParam("@f", &fl_val  );
+      if(col_count>2) ins_cmd->BindParam("@d", &date_val);
+      if(col_count>3) ins_cmd->BindParam("@s", &str_val );
+    }
 
     for(i= 0; i<row_count; i++) {
       int_val  = i;
@@ -225,9 +253,13 @@ int main (int argc, char* argv[])
         count++;
       }
       else {
-
+        ins_cmd->Send();
+        CDB_Result* r;
+        while(ins_cmd->HasMoreResults()) {
+          r= ins_cmd->Result();
+          if(r) delete r;
+        }
       }
-
     }
     if( bcp ) {
       bcp->CompleteBCP();
