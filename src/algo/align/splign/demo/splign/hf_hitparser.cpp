@@ -180,14 +180,29 @@ CHitParser::~CHitParser()
 }
 
 
+bool  CHitParser::x_DetectInclusion(const CHit& h1, const CHit& h2) const
+{
+  if( h2.m_ai[0] <= h1.m_ai[0] && h1.m_ai[1] <= h2.m_ai[1]) {
+    return true;
+  }
+  if( h2.m_ai[2] <= h1.m_ai[2] && h1.m_ai[3] <= h2.m_ai[3]) {
+    return true;
+  }
+  if( h1.m_ai[0] <= h2.m_ai[0] && h2.m_ai[1] <= h1.m_ai[1]) {
+    return true;
+  }
+  if( h1.m_ai[2] <= h2.m_ai[2] && h2.m_ai[3] <= h1.m_ai[3]) {
+    return true;
+  }
+  return false;
+}
+
+
 // implements half splitmode
 bool CHitParser::x_RunAltSplitMode(char cSide, CHit& hit1, CHit& hit2)
 {
     int nb = cSide*2;
-    // detect inclusion
-    if( hit2.m_ai[nb] <= hit1.m_ai[nb] && hit1.m_ai[nb+1] <= hit2.m_ai[nb+1] ||
-        hit1.m_ai[nb] <= hit2.m_ai[nb] && hit2.m_ai[nb+1] <= hit1.m_ai[nb+1] )
-        return false;
+
     // detect intersection
     if(hit1.m_ai[nb] <= hit2.m_ai[nb] && hit2.m_ai[nb] <= hit1.m_ai[nb+1])
     {
@@ -376,6 +391,14 @@ int CHitParser::x_RunMaxScore()
             for(j0 = int(m_Out.size())-1; j0 > i0; --j0) {
 
                 vector<CHit>::iterator jj = m_Out.begin() + j0;
+
+		if(m_SplitQuery == eSplitMode_Clear
+		   || m_SplitSubject == eSplitMode_Clear) {
+		  if(x_DetectInclusion(hit, *jj)) {
+		    m_Out.erase(jj);
+		    continue;
+		  }
+		}
 
                 if(m_SplitQuery == eSplitMode_Clear) {
                     if(x_RunAltSplitMode(0, hit, *jj) == false) {
@@ -1324,6 +1347,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/01/06 19:47:05  kapustin
+* Detect inclusions on both sides
+*
 * Revision 1.4  2003/12/10 21:33:47  kapustin
 * -<stdio.h>, +<ncbistre.hpp>, sprintf --> CNcbiOstrstream
 *

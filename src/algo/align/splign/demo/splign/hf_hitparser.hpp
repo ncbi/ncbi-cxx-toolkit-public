@@ -136,7 +136,8 @@ private:
     void     x_CalcGlobalEnvelop();
     void     x_Combine(double dProximity); // search for close hits and combine them
     int      x_RunMaxScore();  // max score
-    bool     x_RunAltSplitMode(char, CHit&, CHit&); // half split mode algorithm
+    bool     x_RunAltSplitMode(char, CHit&, CHit&);
+    bool     x_DetectInclusion(const CHit& h1, const CHit& h2) const;
 
     // max score group selection
     int      x_RunMSGS(bool SelectGroupsOnly, int& GroupId);
