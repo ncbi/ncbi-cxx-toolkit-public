@@ -355,13 +355,17 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
             dst_bond = &dst->SetBond();
             dst_bond->SetA(*GetDstPoint());
             if ( src_bond.IsSetB() ) {
-                if ( ConvertPoint(src_bond.GetB()) ) {
-                    if ( !dst_bond ) {
-                        dst.Reset(new CSeq_loc);
-                        dst_bond = &dst->SetBond();
-                    }
-                    dst_bond->SetB(*GetDstPoint());
+                dst_bond->SetB().Assign(src_bond.GetB());
+            }
+        }
+        if ( src_bond.IsSetB() ) {
+            if ( ConvertPoint(src_bond.GetB()) ) {
+                if ( !dst_bond ) {
+                    dst.Reset(new CSeq_loc);
+                    dst_bond = &dst->SetBond();
+                    dst_bond->SetA().Assign(src_bond.GetA());
                 }
+                dst_bond->SetB(*GetDstPoint());
             }
         }
         break;
@@ -632,8 +636,8 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
         CSeq_loc_mix::Tdata& locs = tmp->SetMix().Set();
         ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
             bool mapped = false;
-            TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetEmpty()),
-                *i, *i);
+            TRangeIterator mit = BeginRanges(
+                CSeq_id_Handle::GetHandle(src_pack_pnts.GetId()), *i, *i);
             for ( ; mit; ++mit) {
                 CSeq_loc_Conversion& cvt = *mit->second;
                 cvt.Reset();
@@ -692,7 +696,8 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
         dst->SetBond();
         CRef<CSeq_point> pntA(0);
         CRef<CSeq_point> pntB(0);
-        TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetEmpty()),
+        TRangeIterator mit = BeginRanges(
+            CSeq_id_Handle::GetHandle(src_bond.GetA().GetId()),
             src_bond.GetA().GetPoint(), src_bond.GetA().GetPoint());
         for ( ; mit  &&  !bool(pntA); ++mit) {
             CSeq_loc_Conversion& cvt = *mit->second;
@@ -704,7 +709,8 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
             }
         }
         if ( src_bond.IsSetB() ) {
-            TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetEmpty()),
+            TRangeIterator mit = BeginRanges(
+                CSeq_id_Handle::GetHandle(src_bond.GetB().GetId()),
                 src_bond.GetB().GetPoint(), src_bond.GetB().GetPoint());
             for ( ; mit  &&  !bool(pntB); ++mit) {
                 CSeq_loc_Conversion& cvt = *mit->second;
@@ -748,6 +754,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/12/04 20:04:24  grichenk
+* Fixed bugs in seq-loc converters.
+*
 * Revision 1.8  2003/11/10 18:11:04  grichenk
 * Moved CSeq_loc_Conversion_Set to seq_loc_cvt
 *
