@@ -442,7 +442,7 @@ on SetProjectData()
 		AddGuiProject("gui_dlg", {}, "dialogs")
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
-		AddGuiProject("gui_dlg_registry", {}, "dialogs:registry")
+		-- AddGuiProject("gui_dlg_registry", {}, "dialogs:registry")
 		AddGuiProject("gui_dlg_progress", {}, "dialogs:progress")
 		AddGuiProject("gui_dlg_config", {}, "dialogs:config")
 		-- AddGuiProject("gui_dlg_feature", {}, "dialogs:feature") -- empty
@@ -478,7 +478,6 @@ on SetProjectData()
 		--AddGuiProject("w_seq_info", {}, "widgets:seq_info") -- empty
 		-- AddGuiProject("w_table", {}, "widgets:table") -- merged into w_fltk
 		
-		AddSimpleProjectListFiles("gui_project", {}, "gui:core", {"gui_project__.cpp", "gui_project___.cpp"})
 		
 		-- FLTK library.
 		set saveCppExt to pCPlusPlusExt
@@ -497,6 +496,8 @@ on SetProjectData()
 	end if
 	
 	if pCreatePluginLibs then
+		
+		AddSimpleProjectListFiles("gui_project", {}, "gui:core", {"gui_project__.cpp", "gui_project___.cpp"})
 		
 		-- Plugin's automatically have fltk and plugin features.
 		-- Plugins and DLL's must be after statics and DLL's they depend on.
