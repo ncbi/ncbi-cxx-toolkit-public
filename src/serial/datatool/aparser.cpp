@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/05/14 14:41:36  gouriano
+* corrected writing comments
+*
 * Revision 1.16  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -123,6 +126,7 @@ void AbstractParser::CopyLineComment(int line, CComments& comments,
         const AbstractLexer::CComment& c = Lexer().NextComment();
         if ( c.GetLine() > line ) {
             // next comment is below limit line
+            Lexer().FlushComments();
             return;
         }
 

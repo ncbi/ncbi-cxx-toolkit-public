@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/05/14 14:41:36  gouriano
+* corrected writing comments
+*
 * Revision 1.29  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -382,10 +385,7 @@ CEnumDataType* ASNParser::EnumeratedBlock(CEnumDataType* enumType)
         line = NextTokenLine();
         CEnumDataTypeValue& value = EnumeratedValue(*e);
         more = HaveMoreElements();
-        if ( more )
-            CopyLineComment(line, value.GetComments(), eCombineNext);
-        else
-            CopyLineComment(line, value.GetComments());
+        CopyLineComment(line, value.GetComments(), eCombineNext);
     }
     return e.release();
 }
