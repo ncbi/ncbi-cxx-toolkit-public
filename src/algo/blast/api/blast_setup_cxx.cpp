@@ -523,8 +523,6 @@ TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 coding,
     return retval;
 }
 
-#define LAST2BITS 0x03
-
 // Compresses sequence data on vector to buffer, which should have been
 // allocated and have the right size.
 static 
@@ -536,10 +534,10 @@ void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
     ASSERT(vec.GetCoding() == CSeq_data::e_Ncbi2na);
 
     for (ci = 0, i = 0; ci < (TSeqPos) buflen-1; ci++, i += COMPRESSION_RATIO) {
-        buffer[ci] = ((vec[i+0] & LAST2BITS)<<6) |
-                     ((vec[i+1] & LAST2BITS)<<4) |
-                     ((vec[i+2] & LAST2BITS)<<2) |
-                     ((vec[i+3] & LAST2BITS)<<0);
+        buffer[ci] = ((vec[i+0] & NCBI2NA_MASK)<<6) |
+                     ((vec[i+1] & NCBI2NA_MASK)<<4) |
+                     ((vec[i+2] & NCBI2NA_MASK)<<2) |
+                     ((vec[i+3] & NCBI2NA_MASK)<<0);
     }
 
     buffer[ci] = 0;
@@ -551,7 +549,7 @@ void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
                case 2: bit_shift = 2; break;
                default: abort();   // should never happen
             }
-            buffer[ci] |= ((vec[i] & LAST2BITS)<<bit_shift);
+            buffer[ci] |= ((vec[i] & NCBI2NA_MASK)<<bit_shift);
     }
     // Set the number of bases in the last byte.
     buffer[ci] |= vec.size()%COMPRESSION_RATIO;
@@ -846,6 +844,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2004/02/18 15:16:28  camacho
+* Consolidated ncbi2na mask definition
+*
 * Revision 1.55  2004/01/07 17:39:27  vasilche
 * Fixed include path to genbank loader.
 *

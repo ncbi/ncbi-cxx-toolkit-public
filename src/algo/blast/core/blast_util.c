@@ -663,8 +663,6 @@ BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info)
    return NULL;
 }
 
-#define PACK_MASK 0x03
-
 /** Convert a sequence in ncbi4na or blastna encoding into a packed sequence
  * in ncbi2na encoding. Needed for 2 sequences BLASTn comparison.
  */
@@ -680,14 +678,16 @@ Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding,
         ++new_index, index += COMPRESSION_RATIO) {
       if (encoding == BLASTNA_ENCODING)
          new_buffer[new_index] = 
-            ((buffer[index]&PACK_MASK)<<6) | ((buffer[index+1]&PACK_MASK)<<4) |
-            ((buffer[index+2]&PACK_MASK)<<2) | (buffer[index+3]&PACK_MASK);
+            ((buffer[index]&NCBI2NA_MASK)<<6) | 
+            ((buffer[index+1]&NCBI2NA_MASK)<<4) |
+            ((buffer[index+2]&NCBI2NA_MASK)<<2) | 
+             (buffer[index+3]&NCBI2NA_MASK);
       else
          new_buffer[new_index] = 
-            ((NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK)<<6) | 
-            ((NCBI4NA_TO_BLASTNA[buffer[index+1]]&PACK_MASK)<<4) |
-            ((NCBI4NA_TO_BLASTNA[buffer[index+2]]&PACK_MASK)<<2) | 
-            (NCBI4NA_TO_BLASTNA[buffer[index+3]]&PACK_MASK);
+            ((NCBI4NA_TO_BLASTNA[buffer[index]]&NCBI2NA_MASK)<<6) | 
+            ((NCBI4NA_TO_BLASTNA[buffer[index+1]]&NCBI2NA_MASK)<<4) |
+            ((NCBI4NA_TO_BLASTNA[buffer[index+2]]&NCBI2NA_MASK)<<2) | 
+            (NCBI4NA_TO_BLASTNA[buffer[index+3]]&NCBI2NA_MASK);
    }
 
    /* Handle the last byte of the compressed sequence.
@@ -703,10 +703,10 @@ Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding,
       default: abort();     /* should never happen */
       }
       if (encoding == BLASTNA_ENCODING)
-         new_buffer[new_index] |= ((buffer[index]&PACK_MASK)<<shift);
+         new_buffer[new_index] |= ((buffer[index]&NCBI2NA_MASK)<<shift);
       else
          new_buffer[new_index] |=
-            ((NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK)<<shift);
+            ((NCBI4NA_TO_BLASTNA[buffer[index]]&NCBI2NA_MASK)<<shift);
    }
 
    *packed_seq = new_buffer;

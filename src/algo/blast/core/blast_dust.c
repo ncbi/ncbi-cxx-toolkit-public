@@ -40,6 +40,7 @@ static char const rcsid[] = "$Id";
 
 
 #include <algo/blast/core/blast_dust.h>
+#include <algo/blast/core/blast_util.h>
 
 /* local, file scope, structures and variables */
 
@@ -210,7 +211,6 @@ static Boolean wo1 (Int4 len, Uint1* seq, Int4 iwo, DCURLOC* cloc)
 	return(TRUE);
 }
 
-#define NCBI_2NA_MASK 0x03
 /** Fill an array with 2-bit encoded triplets.
  * @param seq_start Pointer to the start of the sequence in blastna 
  *                  encoding [in]
@@ -236,20 +236,20 @@ dust_triplet_find (Uint1* seq_start, Int4 icur, Int4 max, Uint1* s1)
    /* set up 1 */
    if ((c = *seq++) == end_byte)
       return n;
-   c &= NCBI_2NA_MASK;
+   c &= NCBI2NA_MASK;
    *s1 |= c;
    *s1 <<= 2;
    
    /* set up 2 */
    if ((c = *seq++) == end_byte)
       return n;
-   c &= NCBI_2NA_MASK;
+   c &= NCBI2NA_MASK;
    *s1 |= c;
    *s2 |= c;
    
    /* triplet fill loop */
    while (n < max && (c = *seq++) != end_byte) {
-      c &= NCBI_2NA_MASK;
+      c &= NCBI2NA_MASK;
       *s1 <<= 2;
       *s2 <<= 2;
       *s1 |= c;
