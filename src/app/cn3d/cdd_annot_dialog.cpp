@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/01/19 15:25:03  thiessen
+* tweaks for DebugMT build to work
+*
 * Revision 1.20  2002/01/19 02:34:35  thiessen
 * fixes for changes in asn serialization API
 *
@@ -430,7 +433,7 @@ void CDDAnnotateDialog::NewAnnotation(void)
 
     // fill out location
     if (intervals.size() == 1) {
-        annot->SetLocation().SetInt(intervals.front().GetObject());
+        annot->SetLocation().SetInt(*(intervals.front()));
     } else {
         CPacked_seqint *packed = new CPacked_seqint();
         packed->Set() = intervals;  // copy list
@@ -501,7 +504,7 @@ void CDDAnnotateDialog::EditAnnotation(void)
         else if (move == wxYES) {
             // change location
             if (intervals.size() == 1) {
-                selectedAnnot->SetLocation().SetInt(intervals.front().GetObject());
+                selectedAnnot->SetLocation().SetInt(*(intervals.front()));
             } else {
                 CPacked_seqint *packed = new CPacked_seqint();
                 packed->Set() = intervals;  // copy list

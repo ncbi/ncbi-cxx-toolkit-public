@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.119  2002/01/19 15:25:04  thiessen
+* tweaks for DebugMT build to work
+*
 * Revision 1.118  2002/01/18 15:41:36  thiessen
 * add Mac file type/creator to output files
 *
@@ -449,6 +452,19 @@
 *
 * ===========================================================================
 */
+
+#ifdef __WXMSW__
+#include <windows.h>
+#ifdef Yield
+#undef Yield
+#endif
+#ifdef DrawText
+#undef DrawText
+#endif
+#ifdef CreateDialog
+#undef CreateDialog
+#endif
+#endif
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 
