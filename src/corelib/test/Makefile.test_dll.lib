@@ -4,3 +4,4 @@ SRC = test_dll
 LIB = test_dll
 
 LIB_OR_DLL = dll
+DLL_TYPE = plugin
