@@ -39,6 +39,7 @@
 #include <serial/serial.hpp>
 
 #include <objects/general/Date.hpp>
+#include <objects/general/User_object.hpp>
 #include <objects/general/uoconv.hpp>
 
 USING_NCBI_SCOPE;
@@ -75,6 +76,9 @@ int main(int argc, char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/21 18:44:29  vasilche
+* Added include general/User_object.hpp since it was removed from uoconv.hpp.
+*
 * Revision 1.1  2004/07/27 15:13:18  ucko
 * Add a somewhat rough implementation of User-object <-> ObjectInfo conversion.
 *
