@@ -261,8 +261,9 @@ typedef enum EBlastPrelimGapExt {
 typedef enum EBlastTbackExt {
     eDynProgTbck,          /**< standard affine gapping */
     eGreedyTbck,           /**< Greedy extension (megaBlast) */
-    eSmithWatermanTbck     /**< Smith-waterman finds optimal scores, then ALIGN_EX
-                            to find alignment. */
+    eSmithWatermanTbck,    /**< Smith-waterman finds optimal scores, then 
+                                ALIGN_EX to find alignment. */
+    eSkipTbck              /**< Traceback information is not needed */
 } EBlastTbackExt;
 
 /** Options used for gapped extension 
@@ -281,7 +282,6 @@ typedef struct BlastExtensionOptions {
                               score. */
    EBlastTbackExt eTbackExt; /**< type of traceback extension. */
    Boolean compositionBasedStats; /**< if TRUE use composition-based stats. */
-   Boolean skip_traceback; /**< @deprecated Is traceback information needed in results? */
 } BlastExtensionOptions;
 
 /** Computed values used as parameters for gapped alignments */
@@ -503,7 +503,7 @@ BlastInitialWordOptionsNew(Uint1 program,
 /** Fill non-default values in the BlastInitialWordOptions structure.
  * @param options The options structure [in] [out] 
  * @param program Program number (blastn, blastp, etc.) [in]
- * @param greedy Settings should assume greedy alignments [in]
+ * @param greedy Settings should assume greedy alignments. [in]
  * @param window_size Size of a largest window between 2 words for the two-hit
  *                    version [in]
  * @param variable_wordsize Will only full bytes of the compressed sequence be
@@ -583,7 +583,8 @@ BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options);
 /** Fill non-default values in the BlastExtensionOptions structure.
  * @param options The options structure [in] [out]
  * @param program Program number (blastn, blastp, etc.) [in]
- * @param greedy Settings should assume greedy alignments [in]
+ * @param greedy In how many stages of the search greedy alignment is 
+ *               used (values 0, 1, 2)? [in]
  * @param x_dropoff X-dropoff parameter value for preliminary gapped 
  *                  extensions [in]
  * @param x_dropoff_final X-dropoff parameter value for final gapped 
@@ -591,7 +592,7 @@ BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options);
 */
 Int2
 BLAST_FillExtensionOptions(BlastExtensionOptions* options, 
-   Uint1 program, Boolean greedy, double x_dropoff, 
+   Uint1 program, Int4 greedy, double x_dropoff, 
    double x_dropoff_final);
 
 
