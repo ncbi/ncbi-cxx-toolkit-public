@@ -32,6 +32,7 @@
 
 #include <html/html.hpp>
 #include <html/htmlhelper.hpp>
+#include <html/indentstream.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -450,6 +451,15 @@ CNcbiOstream& CHTMLBlockElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     CParent::PrintEnd(out, mode);
     if ( mode == ePlainText ) {
+        // Add a newline iff no node on the path to the last descendant
+        // is also a block element.  (We only need one break.)
+        CNCBINode* node = this;
+        while (node->HaveChildren()) {
+            node = node->Children().back();
+            if (dynamic_cast<CHTMLBlockElement*>(node)) {
+                return out;
+            }
+        }
         out << endl;
     }
     return out;
@@ -512,6 +522,18 @@ CHTMLListElement* CHTMLListElement::SetCompact(void)
 {
     SetOptionalAttribute("compact", true);
     return this;
+}
+
+
+CNcbiOstream& CHTMLListElement::PrintChildren(CNcbiOstream& out, TMode mode)
+{
+    if (mode == ePlainText) {
+        CIndentingOstream out2(out);
+        CHTMLElement::PrintChildren(out2, mode);
+    } else {
+        CHTMLElement::PrintChildren(out, mode);
+    }
+    return out;
 }
 
 
@@ -2040,6 +2062,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2003/02/14 16:19:32  ucko
+ * Indent the children of CHTMLListElement in plain-text mode.
+ * Avoid redundant newlines in CHTMLBlockElement::PrintEnd.
+ *
  * Revision 1.79  2002/12/24 14:56:03  ivanov
  * Fix for R1.76:  HTML classes for tags <h1-6>, <p>, <div>. <pre>, <blockquote>
  * now inherits from CHTMLBlockElement (not CHTMElement as before)
