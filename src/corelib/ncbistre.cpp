@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/09/06 19:35:14  ucko
+* WorkShop 5.3's implementation of istream::read is broken; provide one
+* that works.
+*
 * Revision 1.12  2001/04/11 20:14:31  vakatov
 * Printable() -- added the forgotten "break"s.
 * Printable(), WritePrintable() -- cast "char" to "unsigned char".
@@ -234,6 +238,37 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s)
     return out;
 }
 
+#if defined(NCBI_COMPILER_WORKSHOP) && NCBI_COMPILER_VERSION == 530
+// The version that ships with the compiler is buggy.
+// Here's a working (and simpler!) one.
+template<>
+istream& istream::read(char *s, streamsize n)
+{
+    sentry ipfx(*this, 1);
+
+    try {
+        if (rdbuf()->sgetc() == traits_type::eof()) {
+            // Workaround for bug in sgetn.  *SIGH*.
+            __chcount = 0;
+            setstate(eofbit);
+            return *this;
+        }
+        __chcount = rdbuf()->sgetn(s, n);
+        if (__chcount == 0) {
+            setstate(eofbit);
+        } else if (__chcount < n) {
+            setstate(eofbit | failbit);
+        } else if (!ipfx) {
+            setstate(failbit);
+        } 
+    } catch (...) {
+        setstate(failbit);
+        throw;
+    }
+
+    return *this;
+}
+#endif
 
 END_NCBI_SCOPE
 
