@@ -233,14 +233,19 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
                   subject->length = 2*orig_length + 1;
                }
             }
-
-            aux_struct->GetGappedScore(program_number, query, subject, 
-               gap_align, score_options, ext_params, hit_params, 
+            /** NB: If queries are concatenated, HSP offsets must be adjusted
+             * inside the following function call, so coordinates are
+             * relative to the individual contexts (i.e. queries, strands or
+             * frames). Contexts should also be filled in HSPs when they 
+             * are saveed.
+            */
+            aux_struct->GetGappedScore(program_number, query, query_info, 
+               subject, gap_align, score_options, ext_params, hit_params, 
                init_hitlist, &hsp_list);
             if (score_options->is_ooframe && translated_subject)
                subject->length = prot_length;
          } else {
-            BLAST_GetUngappedHSPList(init_hitlist, subject,
+            BLAST_GetUngappedHSPList(init_hitlist, query_info, subject,
                                      hit_params->options, &hsp_list);
          }
 
@@ -252,11 +257,8 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          /* The subject ordinal id is not yet filled in this HSP list */
          hsp_list->oid = subject->oid;
          
-         /* Multiple contexts - adjust all HSP offsets to the individual 
-            query coordinates; also assign frames, except in case of
-            out-of-frame gapping. */
-         BLAST_AdjustQueryOffsets(program_number, hsp_list, query_info, 
-                                  score_options->is_ooframe);
+         /* Assign frames in all HSPs. */
+         HSPListSetFrames(program_number, hsp_list, score_options->is_ooframe);
          
          if (hit_options->do_sum_stats == TRUE) {
             status = BLAST_LinkHsps(program_number, hsp_list, query_info,
