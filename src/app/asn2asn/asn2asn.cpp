@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/10/03 17:23:50  vasilche
+* Added code for CSeq_entry as choice pointer.
+*
 * Revision 1.23  2000/09/29 14:38:54  vasilche
 * Updated for changes in library.
 *
@@ -105,11 +108,47 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <memory>
+
+BEGIN_NCBI_SCOPE
+
+#define CSEQ_ENTRY_REF_CHOICE 0
+
+#if CSEQ_ENTRY_REF_CHOICE
+
+template<typename T> const CTypeInfo* (*GetTypeRef(const T* object))(void);
+template<typename T> pair<void*, const CTypeInfo*> ObjectInfo(T& object);
+template<typename T> pair<const void*, const CTypeInfo*> ConstObjectInfo(const T& object);
+
+template<>
+inline
+const CTypeInfo* (*GetTypeRef< CRef<NCBI_NS_NCBI::objects::CSeq_entry> >(const CRef<NCBI_NS_NCBI::objects::CSeq_entry>* object))(void)
+{
+    return &NCBI_NS_NCBI::objects::CSeq_entry::GetRefChoiceTypeInfo;
+}
+template<>
+inline
+pair<void*, const CTypeInfo*> ObjectInfo< CRef<NCBI_NS_NCBI::objects::CSeq_entry> >(CRef<NCBI_NS_NCBI::objects::CSeq_entry>& object)
+{
+    return make_pair((void*)&object, GetTypeRef(&object)());
+}
+template<>
+inline
+pair<const void*, const CTypeInfo*> ConstObjectInfo< CRef<NCBI_NS_NCBI::objects::CSeq_entry> >(const CRef<NCBI_NS_NCBI::objects::CSeq_entry>& object)
+{
+    return make_pair((const void*)&object, GetTypeRef(&object)());
+}
+
+#endif
+
+END_NCBI_SCOPE
+
 #include "asn2asn.hpp"
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
@@ -121,13 +160,25 @@ USING_NCBI_SCOPE;
 
 using namespace NCBI_NS_NCBI::objects;
 
+#if CSEQ_ENTRY_REF_CHOICE
+typedef CRef<CSeq_entry> TSeqEntry;
+#else
+typedef CSeq_entry TSeqEntry;
+#endif
+
 int main(int argc, char** argv)
 {
     return CAsn2Asn().AppMain(argc, argv);
 }
 
 static
-void SeqEntryProcess(CSeq_entry& sep);  /* dummy function */
+void SeqEntryProcess(CSeq_entry& entry);  /* dummy function */
+
+static
+void SeqEntryProcess(CRef<CSeq_entry>& entry)
+{
+    SeqEntryProcess(*entry);
+}
 
 class CReadSeqSetHook : public CReadClassMemberHook
 {
@@ -190,7 +241,7 @@ int CAsn2Asn::Run(void)
         args.reset(argDesc.CreateArgs(GetArguments()));
     }
 
-    if ( args->Exist("l") )
+    if ( args->IsProvided("l") )
         SetDiagStream(&(*args)["l"].AsOutputFile());
 
     string inFile = (*args)["i"].AsString();
@@ -242,7 +293,7 @@ int CAsn2Asn::Run(void)
                 copier.Copy(Type<CSeq_entry>());
             }
             else {
-                CSeq_entry entry;
+                TSeqEntry entry;
                 if ( displayMessages )
                     NcbiCerr << "Reading Seq-entry..." << NcbiEndl;
                 *in >> entry;
@@ -272,8 +323,9 @@ int CAsn2Asn::Run(void)
                     NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
                 if ( readHook ) {
                     CObjectTypeInfo bioseqSetType = Type<CBioseq_set>();
-                    CObjectTypeInfo::CMemberIterator seqSetMember =
+                    CObjectTypeInfo::CMemberIterator seqSetMember = 
                         bioseqSetType.FindMember("seq-set");
+                    _ASSERT(seqSetMember);
                     CReadSeqSetHook hook;
                     seqSetMember.SetLocalReadHook(*in, &hook);
                     *in >> entries;
@@ -309,7 +361,7 @@ int CAsn2Asn::Run(void)
 *
 *****************************************************************************/
 static
-void SeqEntryProcess (CSeq_entry& /*sep*/)
+void SeqEntryProcess(CSeq_entry& seqEntry)
 {
 }
 
@@ -318,12 +370,18 @@ void CReadSeqSetHook::ReadClassMember(CObjectIStream& in,
 {
     ++m_Level;
     //    NcbiCerr << "+Level: " << m_Level << NcbiEndl;
-    if ( m_Level == 1 ) {
-        CReadSeqEntryHook hook;
-        (*member).ReadContainer(in, hook);
+    try {
+        if ( m_Level == 1 ) {
+            CReadSeqEntryHook hook;
+            (*member).ReadContainer(in, hook);
+        }
+        else {
+            in.ReadObject(*member);
+        }
     }
-    else {
-        in.ReadObject(*member);
+    catch (...) {
+        --m_Level;
+        throw;
     }
     //    NcbiCerr << "-Level: " << m_Level << NcbiEndl;
     --m_Level;
@@ -333,7 +391,11 @@ void CReadSeqSetHook::
 CReadSeqEntryHook::ReadContainerElement(CObjectIStream& in,
                                         const CObjectInfo& /*cont*/)
 {
-    CSeq_entry entry;
+    TSeqEntry entry;
     in.ReadSeparateObject(ObjectInfo(entry));
+#if CSEQ_ENTRY_REF_CHOICE
+    if ( !entry->ReferencedOnlyOnce() )
+        THROW1_TRACE(runtime_error, "error");
+#endif
     SeqEntryProcess(entry);
 }
