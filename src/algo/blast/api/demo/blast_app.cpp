@@ -81,7 +81,8 @@ private:
     void InitScope(void);
     void InitOptions(void);
     void SetOptions(const CArgs& args);
-    void ProcessCommandLineArgs(CBlastOptionsHandle* opt, BlastSeqSrc* bssp);
+    void ProcessCommandLineArgs(CBlastOptionsHandle* opt, 
+                                BlastSeqSrc* bssp, RPSInfo *rps_info);
     int BlastSearch(void);
     void RegisterBlastDbLoader(char* dbname, bool is_na);
     void FormatResults(CDbBlast& blaster, TSeqAlignVector& seqalignv);
@@ -259,11 +260,11 @@ CBlastApplication::RegisterBlastDbLoader(char *dbname, bool db_is_na)
 
 void
 CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle, 
-                                          BlastSeqSrc* bssp)
+                                          BlastSeqSrc* bssp, RPSInfo *rps_info)
 {
     CArgs args = GetArgs();
-
     CBlastOptions& opt = opts_handle->SetOptions();
+    EProgram program_number = opt.GetProgram();
 
     if (args["strand"].AsInteger()) {
         switch (args["strand"].AsInteger()) {
@@ -287,9 +288,24 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
         break;
     }
 
-    if (args["matrix"]) {
-        opt.SetMatrixName(args["matrix"].AsString().c_str());
+    if (program_number == eRPSBlast ||
+        program_number == eRPSTblastn) {
+        ASSERT(rps_info != NULL);
+        opt.SetGapOpeningCost(rps_info->aux_info.gap_open_penalty);
+        opt.SetGapExtensionCost(rps_info->aux_info.gap_extend_penalty);
     }
+    else {
+        if (args["matrix"]) {
+            opt.SetMatrixName(args["matrix"].AsString().c_str());
+        }
+        if (args["gopen"].AsInteger()) {
+            opt.SetGapOpeningCost(args["gopen"].AsInteger());
+        }
+        if (args["gext"].AsInteger()) {
+            opt.SetGapExtensionCost(args["gext"].AsInteger());
+        }
+    }
+
     if (args["mismatch"].AsInteger()) {
         opt.SetMismatchPenalty(args["mismatch"].AsInteger());
     }
@@ -347,13 +363,6 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
 
     if (args["ungapped"].AsBoolean()) {
         opt.SetGappedMode(false);
-    }
-
-    if (args["gopen"].AsInteger()) {
-        opt.SetGapOpeningCost(args["gopen"].AsInteger());
-    }
-    if (args["gext"].AsInteger()) {
-        opt.SetGapExtensionCost(args["gext"].AsInteger());
     }
 
     switch (args["greedy"].AsInteger()) {
@@ -673,17 +682,28 @@ int CBlastApplication::Run(void)
     BlastProgram2Number(args["program"].AsString().c_str(), &program_number);
     EProgram program = static_cast<EProgram>(program_number);
 
-    ENa_strand strand = (ENa_strand) args["strand"].AsInteger();
+    Int4 strand_number = args["strand"].AsInteger();
+    ENa_strand strand;
     Int4 from = args["qstart"].AsInteger();
     Int4 to = args["qend"].AsInteger();
     Int4 first_oid = 0;
     Int4 last_oid = 0;
 
-    if (strand == eNa_strand_unknown &&
-        (program != eBlastp &&
-         program != eTblastn &&
-         program != eRPSBlast))
-        strand = eNa_strand_both;
+    if (program == eBlastx ||
+        program == eRPSTblastn) {
+        strand = eNa_strand_plus;
+    }
+    else if (program == eBlastn) {
+        if (strand_number == 1)
+            strand = eNa_strand_plus;
+        else if (strand_number == 2)
+            strand = eNa_strand_minus;
+        else
+            strand = eNa_strand_both;
+    }
+    else {
+        strand = eNa_strand_unknown;
+    }
 
     InitScope();
 
@@ -709,20 +729,22 @@ int CBlastApplication::Run(void)
                               first_oid, last_oid, NULL);
 
     CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(program);
-    ProcessCommandLineArgs(opts, seq_src);
 
     Nlm_MemMapPtr rps_mmap = NULL;
     Nlm_MemMapPtr rps_pssm_mmap = NULL;
     RPSInfo *rps_info = NULL;
     // Need to set up the RPS database information structure too
-    if ((program == eRPSBlast || program == eRPSTblastn) &&
-        BLAST_FillRPSInfo(&rps_info, &rps_mmap,
+    if (program == eRPSBlast || program == eRPSTblastn) {
+        if (BLAST_FillRPSInfo(&rps_info, &rps_mmap,
             &rps_pssm_mmap, args["db"].AsString().c_str()) != 0) 
-    {
-        NCBI_THROW(CBlastException, eBadParameter, 
-                   "Cannot initialize RPS BLAST database");
-    }        
+        {
+            NCBI_THROW(CBlastException, eBadParameter, 
+                       "Cannot initialize RPS BLAST database");
+        }        
+    }
     
+    ProcessCommandLineArgs(opts, seq_src, rps_info);
+
     CDbBlast blaster(query_loc, seq_src, *opts, rps_info);
 
     TSeqAlignVector seqalignv = blaster.Run();
