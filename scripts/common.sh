@@ -110,3 +110,46 @@ COMMON_ExecRB()
         COMMON_Error "$@"
     fi
 }
+
+
+#
+#  Limit size of the text file to specified number of Kbytes.
+#
+#  $1 - source file;
+#  $2 - destination file;
+#  $3 - max.size of the destination file in Kbytes.
+#
+#  Return size of output file in Kbytes or zero on error.
+#
+
+COMMON_LimitTextFileSize()
+{
+    file_in="$1"
+    file_out="$2"
+    maxsize="${3:-0}"
+
+    test $maxsize -lt 1  &&  return 0
+    cp $file_in $file_out 1>&2
+    test $? -ne 0  &&  return 0
+
+    size=`cat $file_out | wc -c`
+    size=`expr $size / 1024`
+    test $size -lt $maxsize  &&  return $size
+
+    lines=`cat $file_out | wc -l`
+ 
+    while [ $size -ge $maxsize ]; do
+        lines=`expr $lines / 2`
+        {
+            echo "[The size of output is limited to $maxsize Kb]"
+            echo "..."
+            echo
+        } > $file_out
+        tail -$lines $file_in >> $file_out
+        size=`cat $file_out | wc -c`
+        size=`expr $size / 1024`
+        test $lines -eq 1  &&   break
+    done
+
+    return $size
+}
