@@ -37,6 +37,7 @@ blast_seg \
 blast_setup \
 blast_traceback \
 blast_util \
+blast_seqsrc \
 mb_lookup \
 na_lookup \
 util
