@@ -8,6 +8,9 @@ build_root="@build_root@"
 bindir=$build_root/bin
 libdir=$build_root/lib
 
+# Some useful common functions (such as COMMON_AddRunpath)
+. ${top_srcdir}/scripts/common.sh
+
 # detect root directory of current tree (which may be incomplete!)
 p="`pwd`"
 mp=
@@ -109,11 +112,7 @@ done
 # detect datatool program path
 if test -x "$bindir/datatool"; then
     datatool=$bindir/datatool
-    LD_LIBRARY_PATH=$libdir:$LD_LIBRARY_PATH
-    export LD_LIBRARY_PATH
-    case "`uname`" in
-        IRIX*) _RLD_ROOT=/usr; export _RLD_ROOT ;;
-    esac    
+    COMMON_AddRunpath "$libdir"
 elif test -x "$NCBI_DATATOOL_PATH/datatool"; then
     datatool=$NCBI_DATATOOL_PATH/datatool
 elif test -x "$NCBI/c++/Release/bin/datatool"; then
