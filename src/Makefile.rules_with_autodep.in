@@ -15,12 +15,12 @@ include $(builddir)/Makefile.rules
 ### Dependencies (GNU make only)
 DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 %.d: ./%.cpp
-	$(CXX) $(DEPFLAGS_ALL) $< | sed 's/$*@obj_ext@ *:/$*@obj_ext@ $@ :/g' > $@ 
+	$(CXX) $(DEPFLAGS_ALL) $< | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@ 
 %.d: $(srcdir)/%.cpp
-	$(CXX) $(DEPFLAGS_ALL) $< | sed 's/$*@obj_ext@ *:/$*@obj_ext@ $@ :/g' > $@ 
+	$(CXX) $(DEPFLAGS_ALL) $< | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@ 
 %.d: ./%.c
-	$(CC)  $(DEPFLAGS_ALL) $< | sed 's/$*@obj_ext@ *:/$*@obj_ext@ $@ :/g' > $@ 
+	$(CC)  $(DEPFLAGS_ALL) $< | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@ 
 %.d: $(srcdir)/%.c
-	$(CC)  $(DEPFLAGS_ALL) $< | sed 's/$*@obj_ext@ *:/$*@obj_ext@ $@ :/g' > $@ 
+	$(CC)  $(DEPFLAGS_ALL) $< | sed 's%$*@obj_ext@ *:%$*@obj_ext@ $@ :%g' > $@ 
 
 include $(SOURCES:=.d)
