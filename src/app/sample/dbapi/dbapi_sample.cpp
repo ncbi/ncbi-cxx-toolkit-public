@@ -97,7 +97,7 @@ int CDbapiTest::Run()
     IDataSource *ds = 0;
 
     try {
-    
+        
         CDriverManager &dm = CDriverManager::GetInstance();
 
         string server = args["s"].AsString();
@@ -107,13 +107,20 @@ int CDbapiTest::Run()
         DBAPI_RegisterDriver_ODBC(dm);
         //DBAPI_RegisterDriver_DBLIB(dm);
 #endif
-   
-        ds = dm.CreateDs(args["d"].AsString());
 
-        //ds->SetLogStream(0);
+        // set TDS version for STRAUSS
+        if( NStr::CompareNocase(server, "STRAUSS") == 0 ) {
+            map<string,string> attr;
+            attr["version"] = "100";
+            ds = dm.CreateDs(args["d"].AsString(), &attr);
+        }
+        else
+            ds = dm.CreateDs(args["d"].AsString());
 
-        //CNcbiOfstream log("test.log");
-        ds->SetLogStream(&NcbiCerr);
+        ds->SetLogStream(0);
+
+
+        //ds->SetLogStream(&NcbiCerr);
 
         IConnection* conn = ds->CreateConnection();
 
@@ -131,33 +138,70 @@ int CDbapiTest::Run()
     
         IStatement *stmt = conn->CreateStatement();
 
-        string sql = "select int_val, fl_val, date_val, str_val from SelectSample";
+        string sql = "select int_val, fl_val, date_val, str_val \
+from SelectSample ";
         NcbiCout << "Testing simple select..." << endl
                  << sql << endl;
 
-        stmt->Execute(sql);
+        conn->MsgToEx(true);
+
+        try {
+            stmt->Execute(sql);
     
-        while( stmt->HasMoreResults() ) {
-            if( stmt->HasRows() ) {   
-                IResultSet *rs = stmt->GetResultSet();
-                const IResultSetMetaData *rsMeta = rs->GetMetaData();
-                NcbiCout << rsMeta->GetName(1) << "  "
-                         << rsMeta->GetName(2) << "  "
-                         << rsMeta->GetName(3) << "  " 
-                         << rsMeta->GetName(4) << "  " 
-                         << endl;
-                while(rs->Next()) { 
-                    NcbiCout << rs->GetVariant(1).GetInt4() << "|"
-                             << rs->GetVariant(2).GetFloat() << "|"
-                             << rs->GetVariant("date_val").GetString() << "|"
-                             << rs->GetVariant(4).GetString()
-                             << endl;
-                } 
-				
+            while( stmt->HasMoreResults() ) {
+                if( stmt->HasRows() ) {   
+                    IResultSet *rs = stmt->GetResultSet();
+                    const IResultSetMetaData *rsMeta = rs->GetMetaData();
+
+                    rs->BindBlobToVariant(true);
+
+                    for(int i = 1; i <= rsMeta->GetTotalColumns(); ++i )
+                        NcbiCout << rsMeta->GetName(i) << "  ";
+
+                    NcbiCout << endl;
+
+                    while(rs->Next()) { 
+                        for(int i = 1;  i <= rsMeta->GetTotalColumns(); ++i ) {
+                            if( rsMeta->GetType(i) == eDB_Text
+                                || rsMeta->GetType(i) == eDB_Image ) {
+
+                                CDB_Stream *b = dynamic_cast<CDB_Stream*>(rs->GetVariant(i).GetData());
+                                _ASSERT(b);
+
+                                char *buf = new char[b->Size() + 1];
+                                b->Read(buf, b->Size());
+                                buf[b->Size()] = '\0';
+                                NcbiCout << buf << "|";
+                                delete buf;
+                                
+                            }
+                            else
+                                NcbiCout << rs->GetVariant(i).GetString() << "|";
+                        }
+                        NcbiCout << endl;
+                                
+                            
+#if 0
+                        NcbiCout << rs->GetVariant(1).GetInt4() << "|"
+                                 << rs->GetVariant(2).GetFloat() << "|"
+                                 << rs->GetVariant("date_val").GetString() << "|"
+                                 << rs->GetVariant(4).GetString()
+                                 << endl;
+#endif
+                    
+                    } 
+                    
+                }
             }
         }
+        catch(CDB_Exception& e) {
+            NcbiCout << "Exception: " << e.what() << endl;
+            NcbiCout << ds->GetErrorInfo();
+        } 
 
         NcbiCout << "Rows : " << stmt->GetRowCount() << endl;
+
+        conn->MsgToEx(false);
 
         //delete stmt;
 
@@ -535,8 +579,11 @@ from BlobSample where id = 1");
 
 
     }
+    catch(out_of_range) {
+        NcbiCout << "Exception: Out of range" << endl;
+    }
     catch(exception& e) {
-        NcbiCout << e.what() << endl;
+        NcbiCout << "Exception: " << e.what() << endl;
         NcbiCout << ds->GetErrorInfo();
     }
 
@@ -558,6 +605,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/03/06 16:17:21  kholodov
+* Fixed: incorrect TDS version for STRAUSS
+*
 * Revision 1.7  2002/10/23 13:32:59  kholodov
 * Fixed: extra exit() call removed
 *
