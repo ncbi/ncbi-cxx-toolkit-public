@@ -56,14 +56,17 @@ class CNWAlignerException : public CException
 public:
     enum EErrCode {
         eBadParameter,
-        eInvalidSequence
+        eInvalidCharacter,
+        eIncorrectSequenceOrder
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
         case eBadParameter:
             return "One or more parameters passed are invalid";
-        case eInvalidSequence:
+        case eInvalidCharacter:
             return "Sequence contains one or more invalid characters";
+        case eIncorrectSequenceOrder:
+            return "mRna should go first";
         default:
             return CException::GetErrCodeString();
         }
@@ -114,7 +117,7 @@ public:
     static TScore GetDefaultWg  () { return -5; }
     static TScore GetDefaultWs  () { return -2; }
 
-private:
+protected:
     // Bonuses and penalties
     TScore   m_Wm;   // match bonus (eNucl)
     TScore   m_Wms;  // mismatch penalty (eNucl)
@@ -157,6 +160,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/12/12 17:55:00  kapustin
+ * Add support for spliced alignment
+ *
  * Revision 1.2  2002/12/09 15:44:40  kapustin
  * exception forward declaration removed
  *
