@@ -324,10 +324,10 @@ void CFlatSeqLoc::x_Add
             }
         case CInt_fuzz::e_Range:
             {
-                oss << '(' << fuzz->GetRange().GetMin() 
-                    << '.' << fuzz->GetRange().GetMax() << ')';
-            }
+                oss << '(' << (fuzz->GetRange().GetMin() + 1)
+                    << '.' << (fuzz->GetRange().GetMax() + 1) << ')';
                 break;
+            }
         case CInt_fuzz::e_Pct: // actually per thousand...
             {
                 // calculate in floating point to avoid overflow
@@ -415,6 +415,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/05/20 13:45:43  shomrat
+* fixed formatting of fuzz-range
+*
 * Revision 1.8  2004/04/22 15:58:01  shomrat
 * Changes in context
 *
