@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile (flat-file generator demos)
+##################################
+
+APP_PROJ = flatten_asn
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
