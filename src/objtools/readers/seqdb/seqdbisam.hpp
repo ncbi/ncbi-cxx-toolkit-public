@@ -165,7 +165,7 @@ private:
     Int4           m_IdxOption;       // Options set by upper layer
     bool           m_Initialized;     // Was this structure initialized
                                       // for ISAM Search ?
-    Uint8          m_KeySampleOffset; // Offset of samples in index file.
+    TIndx          m_KeySampleOffset; // Offset of samples in index file.
     bool           m_TestNonUnique;   // Check if data for String ISAM sorted
     char         * m_FileStart;       // Pointer to index file if no memmap
     Int4           m_FirstOffset;     // First and last offset's of last page.

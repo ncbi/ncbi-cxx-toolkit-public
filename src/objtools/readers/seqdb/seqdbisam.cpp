@@ -51,7 +51,7 @@ CSeqDBIsam::x_InitSearch(CSeqDBLockHold & locked)
     if(m_Initialized == true)
         return eNoError;
     
-    Uint8 info_needed = 10 * sizeof(Int4);
+    TIndx info_needed = 10 * sizeof(Int4);
     
     m_Atlas.Lock(locked);
     m_Atlas.GetRegion(m_IndexLease, m_IndexFname, 0, info_needed);
@@ -142,10 +142,10 @@ CSeqDBIsam::x_SearchIndexNumeric(Uint4            Number,
     
     while(Stop >= Start) {
         SampleNum = ((Uint4)(Stop + Start)) >> 1;
-            
-        Uint8 offset_begin = m_KeySampleOffset + (obj_size * SampleNum);
-        Uint8 offset_end   = offset_begin + obj_size;
-            
+	
+        TIndx offset_begin = m_KeySampleOffset + (obj_size * SampleNum);
+        TIndx offset_end   = offset_begin + obj_size;
+	
         m_Atlas.Lock(locked);
             
         if (! m_IndexLease.Contains(offset_begin, offset_end)) {
@@ -234,8 +234,8 @@ CSeqDBIsam::x_SearchDataNumeric(Uint4            Number,
     
     
     if (NoData) {
-        Uint8 offset_begin = Start*sizeof(Int4);
-        Uint8 offset_end = offset_begin + sizeof(Int4)*NumElements;
+        TIndx offset_begin = Start*sizeof(Int4);
+        TIndx offset_end = offset_begin + sizeof(Int4)*NumElements;
         
         m_Atlas.Lock(locked);
         
@@ -250,8 +250,8 @@ CSeqDBIsam::x_SearchDataNumeric(Uint4            Number,
         
         KeyPage = KeyPageStart - Start;
     } else {
-        Uint8 offset_begin = Start * sizeof(SNumericKeyData);
-        Uint8 offset_end = offset_begin + sizeof(SNumericKeyData) * NumElements;
+        TIndx offset_begin = Start * sizeof(SNumericKeyData);
+        TIndx offset_end = offset_begin + sizeof(SNumericKeyData) * NumElements;
         
         m_Atlas.Lock(locked);
         
