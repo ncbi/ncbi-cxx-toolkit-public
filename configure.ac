@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.70 2002/05/07 14:48:33 ucko Exp $
+#  $Id: configure.ac,v 1.71 2002/05/08 19:29:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2025,11 +2025,12 @@ if test "$with_pubmed" != "no" ; then
    if test ! -d "${NCBI_PM_PATH}" ; then
       with_pubmed="no"
    else
-      CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi $NCBI_C_INCLUDE $orig_CPPFLAGS"
-      LIBS="-L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
+      CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi -I$NCBI_PM_PATH/xmldb/ur/include $NCBI_C_INCLUDE $orig_CPPFLAGS"
+      LIBS="-L$NCBI_PM_PATH/xmldb/out/lib -lpmurapi-static -L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
       AC_TRY_LINK(
-         [#include <ncbistr.hpp>],
-         [ CNcbiString("abc"); ],
+         [#include <ncbistr.hpp>
+          #include <hastring.h>],
+         [ CNcbiString("abc"); CAString("def"); ],
          [AC_DEFINE(HAVE_LIBPUBMED, 1,
                     [Define to 1 if NCBI PubMed libraries are available.])],
          [with_pubmed="no"]
