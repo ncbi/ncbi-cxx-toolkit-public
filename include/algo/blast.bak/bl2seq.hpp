@@ -36,7 +36,7 @@
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 
-#include <BlastOption.hpp>
+#include <algo/blast/blast_option.hpp>
 
 USING_SCOPE(objects);
 
@@ -219,6 +219,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/04 15:14:19  dicuccio
+* Changed #includes to catch the correct C++ files.  Fixed some compiler warnings
+* abouR char -> bool conversion
+*
 * Revision 1.1  2003/08/04 14:22:58  dicuccio
 * Initial import into the C++ toolkit
 *

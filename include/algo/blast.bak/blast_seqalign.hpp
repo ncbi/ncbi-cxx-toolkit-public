@@ -39,7 +39,7 @@
 #include <objects/seqalign/seqalign__.hpp>
 
 // Blast++ includes
-#include <BlastOption.hpp>
+#include <algo/blast/blast_option.hpp>
 
 // NewBlast includes
 #include <blast_hits.h>
@@ -77,6 +77,10 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/04 15:14:19  dicuccio
+* Changed #includes to catch the correct C++ files.  Fixed some compiler warnings
+* abouR char -> bool conversion
+*
 * Revision 1.1  2003/08/04 14:22:58  dicuccio
 * Initial import into the C++ toolkit
 *
