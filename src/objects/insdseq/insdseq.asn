@@ -1,4 +1,4 @@
---$Revision: 1.1 $
+--$Revision: 1.2 $
 --************************************************************************
 --
 -- ASN.1 and XML for the components of a GenBank/EMBL/DDBJ sequence record
@@ -83,7 +83,7 @@ BEGIN
 --
 --********
 
-Seq ::= SEQUENCE {
+INSDSeq ::= SEQUENCE {
 	locus VisibleString ,
 	length INTEGER ,
 	strandedness INTEGER {
@@ -121,12 +121,12 @@ Seq ::= SEQUENCE {
 	source VisibleString OPTIONAL ,
 	organism VisibleString OPTIONAL ,
 	taxonomy VisibleString OPTIONAL ,
-	references SEQUENCE OF Reference OPTIONAL ,
+	references SEQUENCE OF INSDReference OPTIONAL ,
 	comment VisibleString OPTIONAL ,
 	primary VisibleString OPTIONAL ,
 	source-db VisibleString OPTIONAL ,
 	database-reference VisibleString OPTIONAL ,
-	feature-table SEQUENCE OF Feature OPTIONAL ,
+	feature-table SEQUENCE OF INSDFeature OPTIONAL ,
 	sequence VisibleString OPTIONAL ,  -- Optional for other dump forms
 	contig VisibleString OPTIONAL }
 
@@ -136,9 +136,9 @@ Seq ::= SEQUENCE {
 
 	Keyword ::= VisibleString
 
-	Reference ::= SEQUENCE {
+	INSDReference ::= SEQUENCE {
 		reference VisibleString ,
-		authors SEQUENCE OF Author OPTIONAL ,
+		authors SEQUENCE OF INSDAuthor OPTIONAL ,
 		consortium VisibleString OPTIONAL ,
 		title VisibleString OPTIONAL ,
 		journal VisibleString ,
@@ -146,25 +146,25 @@ Seq ::= SEQUENCE {
 		pubmed INTEGER OPTIONAL ,
 		remark VisibleString OPTIONAL }
 
-	Author ::= VisibleString
+	INSDAuthor ::= VisibleString
 
-	Feature ::= SEQUENCE {
+	INSDFeature ::= SEQUENCE {
 		key VisibleString ,
 		location VisibleString ,
-		intervals SEQUENCE OF Interval OPTIONAL ,
-		quals SEQUENCE OF Qualifier OPTIONAL }
+		intervals SEQUENCE OF INSDInterval OPTIONAL ,
+		quals SEQUENCE OF INSDQualifier OPTIONAL }
 
-	Interval ::= SEQUENCE {
+	INSDInterval ::= SEQUENCE {
 		from INTEGER OPTIONAL ,
 		to INTEGER OPTIONAL ,
 		point INTEGER OPTIONAL ,
 		accession VisibleString }
 
-	Qualifier ::= SEQUENCE {
+	INSDQualifier ::= SEQUENCE {
 		name VisibleString ,
 		value VisibleString OPTIONAL }
 
-	Set ::= SEQUENCE OF Seq
+	INSDSet ::= SEQUENCE OF INSDSeq
 		
 END
 
