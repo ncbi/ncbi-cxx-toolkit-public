@@ -47,6 +47,7 @@
 class CBlastGapAlignTest;
 class CBlastDbTest;
 class CBlastTraceBackTest; 
+class CScoreBlkTest; 
 
 /** @addtogroup AlgoBlast
  *
@@ -1614,6 +1615,7 @@ public:
     friend class ::CBlastDbTest;        // unit test class
     friend class ::CBlastGapAlignTest;  // unit test class
     friend class ::CBlastTraceBackTest;  // unit test class
+    friend class ::CScoreBlkTest;        // unit test class
 
 protected:
     QuerySetUpOptions * GetQueryOpts() const
@@ -2359,6 +2361,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2004/03/30 15:47:37  madden
+* Add CScoreBlkTest as friend class
+*
 * Revision 1.54  2004/03/19 18:56:04  camacho
 * Move to doxygen AlgoBlast group
 *
