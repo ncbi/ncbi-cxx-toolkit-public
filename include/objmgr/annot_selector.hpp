@@ -207,14 +207,17 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
     SAnnotSelector& SetIdResolvingLoaded(void)
         {
             m_IdResolving = eLoadedOnly;
+            return *this;
         }
     SAnnotSelector& SetIdResolvingIgnore(void)
         {
             m_IdResolving = eIgnoreUnresolved;
+            return *this;
         }
     SAnnotSelector& SetIdResolvingFail(void)
         {
             m_IdResolving = eFailUnresolved;
+            return *this;
         }
 
 protected:
@@ -237,6 +240,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/03/14 20:39:26  ucko
+* return *this from SetIdResolvingXxx().
+*
 * Revision 1.5  2003/03/14 19:10:33  grichenk
 * + SAnnotSelector::EIdResolving; fixed operator=() for several classes
 *
