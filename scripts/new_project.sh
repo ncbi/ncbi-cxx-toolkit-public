@@ -153,6 +153,7 @@ esac
 if test ! -d "$builddir"  ||  test ! -f "$builddir/../inc/ncbiconf.h" ; then
   Usage "Pre-built NCBI C++ toolkit is not found in:  \"$builddir\""
 fi
+builddir=`(cd "${builddir}" ; pwd)`
 
 if test "$proj_name" != `basename $proj_name` ; then
   Usage "Invalid project name:  \"$proj_name\""
