@@ -55,8 +55,13 @@ class CSocket;
 
 /// Client API for NCBI NetSchedule server
 ///
+/// This API is logically divided into two sections:
+/// Job Submitter API and Worker Node API.
+///
+///
 /// @sa CNetServiceException, CNetScheduleException
 ///
+
 class NCBI_XCONNECT_EXPORT CNetScheduleClient : protected CNetServiceClient
 {
 public:
@@ -120,10 +125,41 @@ public:
     ///    Job identification string
     void CancelJob(const string& job_key);
 
+    /// Get a pending job. Job receives running status.
+    ///
+    /// @param job_key
+    ///     Job key
+    /// @param input
+    ///     Job input data (NetCache key). 
+    /// @return
+    ///     TRUE if job has been returned from the queue.
+    ///     FALSE means queue is empty or for some reason scheduler
+    ///     decided not to grant the job (node is overloaded).
+    ///     In this case worker node should pause and come again later
+    ///     for a new job.
+    ///
+    bool GetJob(string* job_key, string* input);
+
+    /// Put job result (job should be received by GetJob())
+    /// 
+    /// @param job_key
+    ///     Job key
+    /// @param ret_code
+    ///     Job return code
+    /// @param output
+    ///     Job output data (NetCache key). 
+    ///
+    void PutResult(const string& job_key, 
+                   int           ret_code, 
+                   const string& output);
+
     /// Request of current job status
     /// eJobNotFound is returned if job status cannot be found 
     /// (job record timed out)
-    EJobStatus GetStatus(const string& job_key);
+    ///
+    EJobStatus GetStatus(const string& job_key, 
+                         int*          ret_code,
+                         string*       output);
 
     /// Return version string
     string ServerVersion();
@@ -245,6 +281,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/10 20:00:54  kuznets
+ * +GetJob(), +PutResult()
+ *
  * Revision 1.2  2005/02/09 18:58:04  kuznets
  * Implemented job submission part of the API
  *

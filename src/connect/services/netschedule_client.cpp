@@ -221,7 +221,9 @@ void CNetScheduleClient::CancelJob(const string& job_key)
 }
 
 CNetScheduleClient::EJobStatus 
-CNetScheduleClient::GetStatus(const string& job_key)
+CNetScheduleClient::GetStatus(const string& job_key,
+                              int*          ret_code,
+                              string*       output)
 {
     EJobStatus status;
 
@@ -236,10 +238,106 @@ CNetScheduleClient::GetStatus(const string& job_key)
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Invalid server response. Empty key.");
     }
-    int st = NStr::StringToInt(m_Tmp);
+
+    const char* str = m_Tmp.c_str();
+
+    int st = atoi(str);
     status = (EJobStatus) st;
 
+    if (status == eDone && (ret_code || output)) {
+        for ( ;*str && isdigit(*str); ++str) {
+        }
+
+        for ( ; *str && isspace(*str); ++str) {
+        }
+
+        if (ret_code) {
+            *ret_code = atoi(str);
+        }
+
+        if (output) {
+            output->erase();
+
+            for ( ;*str && isdigit(*str); ++str) {
+            }
+            for ( ; *str && isspace(*str); ++str) {
+            }
+
+            if (*str && *str == '"') {
+                ++str;
+                for( ;*str && *str != '"'; ++str) {
+                    output->push_back(*str);
+                }
+            }
+        }
+    }
+
     return status;
+}
+
+bool CNetScheduleClient::GetJob(string* job_key, string* input)
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    CommandInitiate("GET ", kEmptyStr, &m_Tmp);
+
+    TrimPrefix(&m_Tmp);
+
+    if (m_Tmp.empty()) {
+        return false;
+    }
+
+    input->erase();
+    job_key->erase();
+
+    const char* str = m_Tmp.c_str();
+
+    while (*str && isspace(*str))
+        ++str;
+
+    for(;*str && !isspace(*str); ++str) {
+        job_key->push_back(*str);
+    }
+
+    while (*str && isspace(*str))
+        ++str;
+
+    if (*str == '"')
+        ++str;
+    for (;*str && *str != '"'; ++str) {
+        input->push_back(*str);
+    }
+
+    _ASSERT(!job_key->empty());
+    _ASSERT(!input->empty());
+
+    return true;
+}
+
+void CNetScheduleClient::PutResult(const string& job_key, 
+                                   int           ret_code, 
+                                   const string& output)
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "PUT ");
+
+    m_Tmp.append(job_key);
+    m_Tmp.append(" ");
+    m_Tmp.append(NStr::IntToString(ret_code));
+    m_Tmp.append(" \"");
+    m_Tmp.append(output);
+    m_Tmp.append("\"");
+
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    CheckOK(&m_Tmp);
 }
 
 
@@ -371,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/10 20:01:19  kuznets
+ * +GetJob(), +PutResult()
+ *
  * Revision 1.2  2005/02/09 18:59:08  kuznets
  * Implemented job submission part of the API
  *
