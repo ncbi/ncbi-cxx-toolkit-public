@@ -104,11 +104,88 @@ static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
 }
 
 
+
+////////////////////////////////
+// Test application
+//
+
+class CTest : public CNcbiApplication
+{
+public:
+    virtual void Init(void);
+    virtual int  Run(void);
+private:
+    void Client(int num);
+    void Server(void);
+private:
+    string m_PipeName;
+};
+
+
+void CTest::Init(void)
+{
+    // Set error posting and tracing on maximum
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostFlag(eDPF_All);
+    UnsetDiagPostFlag(eDPF_Line);
+    UnsetDiagPostFlag(eDPF_File);
+    UnsetDiagPostFlag(eDPF_LongFilename);
+    SetDiagPostLevel(eDiag_Info);
+
+    // Create command-line argument descriptions class
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    // Specify USAGE context
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "Test named pipes API");
+
+    // Describe the expected command-line arguments
+    arg_desc->AddPositional 
+        ("mode", "Test mode",
+         CArgDescriptions::eString);
+    arg_desc->SetConstraint
+        ("mode", &(*new CArgAllow_Strings, "client", "server"));
+    arg_desc->AddDefaultPositional
+        ("postfix", "Unique string that will be added to the base pipe name",
+         CArgDescriptions::eString, "");
+
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(arg_desc.release());
+}
+
+
+int CTest::Run(void)
+{
+    CArgs args = GetArgs();
+
+    m_PipeName = kPipeName;
+    if ( !args["postfix"].AsString().empty() ) {
+        m_PipeName += "_" + args["postfix"].AsString();
+    }
+    LOG_POST("Used pipe name: " + m_PipeName);
+
+    if (args["mode"].AsString() == "client") {
+        SetDiagPostPrefix("Client");
+        for (int i=1; i<=3; i++) {
+            Client(i);
+        }
+    }
+    else if (args["mode"].AsString() == "server") {
+        SetDiagPostPrefix("Server");
+        Server();
+    }
+    else {
+        _TROUBLE;
+    }
+    return 0;
+}
+
+
 /////////////////////////////////
 // Named pipe client
 //
 
-static void Client(int num)
+void CTest::Client(int num)
 {
     LOG_POST("\nStart client " + NStr::IntToString(num) + "...\n");
     STimeout timeout = {2,0};
@@ -119,7 +196,7 @@ static void Client(int num)
     assert(pipe.SetTimeout(eIO_Read,  &timeout) == eIO_Success);
     assert(pipe.SetTimeout(eIO_Write, &timeout) == eIO_Success);
 
-    assert(pipe.Open(kPipeName, kDefaultTimeout, kSubBlobSize) == eIO_Success);
+    assert(pipe.Open(m_PipeName,kDefaultTimeout,kSubBlobSize) == eIO_Success);
 
     char buf[kSubBlobSize];
     size_t n_read    = 0;
@@ -167,13 +244,13 @@ static void Client(int num)
 // Named pipe server
 //
 
-static void Server(void)
+void CTest::Server(void)
 {
     LOG_POST("\nStart server...\n");
 
 #if defined(NCBI_OS_UNIX)
     // Remove the pipe if it is already exists
-    CFile(kPipeName).Remove();
+    CFile(m_PipeName).Remove();
 #endif  
 
     char buf[kSubBlobSize];
@@ -181,7 +258,7 @@ static void Server(void)
     size_t   n_written = 0;
 
     STimeout timeout   = {30,0};
-    CNamedPipeServer pipe(kPipeName, &timeout, kSubBlobSize + 512);
+    CNamedPipeServer pipe(m_PipeName, &timeout, kSubBlobSize + 512);
 
     assert(pipe.IsServerSide());
     assert(pipe.SetTimeout(eIO_Read,  &timeout) == eIO_Success);
@@ -247,68 +324,6 @@ static void Server(void)
 }
 
 
-////////////////////////////////
-// Test application
-//
-
-class CTest : public CNcbiApplication
-{
-public:
-    virtual void Init(void);
-    virtual int  Run(void);
-};
-
-
-void CTest::Init(void)
-{
-    // Set error posting and tracing on maximum
-    SetDiagTrace(eDT_Enable);
-    SetDiagPostFlag(eDPF_All);
-    UnsetDiagPostFlag(eDPF_Line);
-    UnsetDiagPostFlag(eDPF_File);
-    UnsetDiagPostFlag(eDPF_LongFilename);
-    SetDiagPostLevel(eDiag_Info);
-
-    // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
-    // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Test named pipes API");
-
-    // Describe the expected command-line arguments
-    arg_desc->AddPositional 
-        ("mode", "Test mode",
-         CArgDescriptions::eString);
-    arg_desc->SetConstraint
-        ("mode", &(*new CArgAllow_Strings, "client", "server"));
-
-    // Setup arg.descriptions for this application
-    SetupArgDescriptions(arg_desc.release());
-}
-
-
-int CTest::Run(void)
-{
-    CArgs args = GetArgs();
-
-    if (args["mode"].AsString() == "client") {
-        SetDiagPostPrefix("Client");
-        for (int i=1; i<=3; i++) {
-            Client(i);
-        }
-    }
-    else if (args["mode"].AsString() == "server") {
-        SetDiagPostPrefix("Server");
-        Server();
-    }
-    else {
-        _TROUBLE;
-    }
-    return 0;
-}
-
-
 ///////////////////////////////////
 // APPLICATION OBJECT  and  MAIN
 //
@@ -323,6 +338,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/19 15:29:57  ivanov
+ * Added additional cmd line parameter to create unique pipe name
+ *
  * Revision 1.6  2004/05/17 20:58:22  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
