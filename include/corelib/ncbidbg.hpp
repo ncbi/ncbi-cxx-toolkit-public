@@ -33,6 +33,13 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/11/06 22:42:37  vakatov
+* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+* API to namespace "ncbi::" and to use it by default, respectively
+* Introduced THROWS_NONE and THROWS(x) macros for the exception
+* specifications
+* Other fixes and rearrangements throughout the most of "corelib" code
+*
 * Revision 1.5  1998/11/04 23:46:35  vakatov
 * Fixed the "ncbidbg/diag" header circular dependencies
 *
@@ -40,6 +47,10 @@
 */
 
 #include <ncbidiag.hpp>
+
+// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+BEGIN_NCBI_SCOPE
+
 
 #if defined(_DEBUG)
 
@@ -74,5 +85,8 @@
 
 #endif  /* else!_DEBUG */
 
+
+// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+END_NCBI_SCOPE
 
 #endif  /* NCBIDBG__HPP */

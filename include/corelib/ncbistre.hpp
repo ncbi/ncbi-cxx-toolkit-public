@@ -34,41 +34,34 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.6  1998/11/03 22:56:17  vakatov
-* + #define I/O manipulators like "flush" --> "NcbiFlush"
-*
-* Revision 1.5  1998/11/03 20:48:18  vakatov
-* + <iostream>
-* + SEEKOFF
-*
-* Revision 1.4  1998/10/30 20:08:33  vakatov
-* Fixes to (first-time) compile and test-run on MSVS++
-*
-* Revision 1.3  1998/10/28 22:43:17  vakatov
-* Catch the "strstrea.h" case(MSVC++ feature)
-*
-* Revision 1.2  1998/10/27 20:10:02  vakatov
-* Catch the case of missing iostream header(s)
-*
-* Revision 1.1  1998/10/27 19:49:36  vakatov
-* Initial revision
+* Revision 1.7  1998/11/06 22:42:39  vakatov
+* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+* API to namespace "ncbi::" and to use it by default, respectively
+* Introduced THROWS_NONE and THROWS(x) macros for the exception
+* specifications
+* Other fixes and rearrangements throughout the most of "corelib" code
 *
 * ==========================================================================
 */
 
 #include <ncbistl.hpp>
 
+// Determine which iostream library to use, include appropriate
+// headers, and #define specific preprocessor variables
 #if !defined(HAVE_IOSTREAM_H)
 #  define NCBI_USE_NEW_IOSTREAM
 #endif
-
 
 #if defined(HAVE_IOSTREAM)  &&  defined(NCBI_USE_NEW_IOSTREAM)
 #  include <iostream>
 #  include <fstream>
 #  include <strstream>
-#  define IO_PREFIX  std
-#  define IOS_BASE   std::ios_base
+#  if defined(NCBI_NO_NAMESPACE)
+#    define IO_PREFIX
+#  else
+#    define IO_PREFIX  std
+#  endif
+#  define IOS_BASE   IO_PREFIX::ios_base
 #  define SEEKOFF    pubseekoff
 
 #elif defined(HAVE_IOSTREAM_H)
@@ -86,6 +79,10 @@
 #else
 #  error "Cannot find neither <iostream> nor <iostream.h>!"
 #endif
+
+// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+BEGIN_NCBI_SCOPE
+
 
 // I/O classes
 typedef IO_PREFIX::streampos     CNcbiStreampos;
@@ -122,5 +119,9 @@ typedef IO_PREFIX::fstream       CNcbiFstream;
 #define NcbiHex    IO_PREFIX::hex
 #define NcbiOct    IO_PREFIX::oct
 #define NcbiWs     IO_PREFIX::ws
+
+
+// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+END_NCBI_SCOPE
 
 #endif /* NCBISTRE__HPP */

@@ -29,29 +29,22 @@
 * Author:  Denis Vakatov
 *
 * File Description:
-*   The NCBI C++ standards
+*   The NCBI C++ standard #include's and #defin'itions
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.7  1998/11/04 23:46:36  vakatov
-* Fixed the "ncbidbg/diag" header circular dependencies
-*
-* Revision 1.6  1998/10/30 20:08:31  vakatov
-* Fixes to (first-time) compile and test-run on MSVS++
-*
-* Revision 1.5  1998/10/27 19:51:53  vakatov
-* + #include <ncbistre.hpp>
-* It was not really necessary to #include all this stuff to here,
-* but this should force people to use CNcbiXXX stream wrappers
-*
-* Revision 1.4  1998/10/21 19:24:43  vakatov
-* Moved all STL-related code to "ncbistl.hpp"
-* Import NCBI typedefs and limits from "ncbitype.h"
+* Revision 1.8  1998/11/06 22:42:38  vakatov
+* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+* API to namespace "ncbi::" and to use it by default, respectively
+* Introduced THROWS_NONE and THROWS(x) macros for the exception
+* specifications
+* Other fixes and rearrangements throughout the most of "corelib" code
 *
 * ==========================================================================
 */
 
 #include <ncbitype.h>
+#include <ncbistl.hpp>
 #include <ncbidbg.hpp>
 #include <ncbiexpt.hpp>
 

@@ -30,22 +30,38 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1998/10/29 19:30:00  vakatov
-* Use $Id$
+* Revision 1.4  1998/11/06 22:42:34  vakatov
+* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+* API to namespace "ncbi::" and to use it by default, respectively
+* Introduced THROWS_NONE and THROWS(x) macros for the exception
+* specifications
+* Other fixes and rearrangements throughout the most of "corelib" code
 *
 * ===========================================================================
 */
 
 #include <ncbistd.hpp>
 #include <framewrk.hpp>
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//  !!! PUT YOUR OTHER #include's HERE !!!
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-// This is to use the STL(Standard Template Library)
-NCBI_USING_STL;
+
+// This is to use the ANSI C++ standard templates without the "std::" prefix
+// NCBI_USING_NAMESPACE_STD;
+
+// This is to use the ANSI C++ standard templates without the "std::" prefix
+// and to use NCBI C++ entities without the "ncbi::" prefix
+// USING_NCBI_SCOPE;
+
+// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+BEGIN_NCBI_SCOPE
 
 
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!
 //  !!! PUT YOUR CODE HERE !!!
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-
-
-
+// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+END_NCBI_SCOPE

@@ -33,18 +33,12 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1998/11/05 00:31:02  lewisg
-* added Modena string lib defines and ms vc warning disable
-*
-* Revision 1.3  1998/11/03 20:46:30  vakatov
-* HAVE_NAMESPACES(not just HAVE_NAMESPACE)
-* Removed extra semicolumn from NCBI_USING_STL
-*
-* Revision 1.2  1998/10/30 20:08:32  vakatov
-* Fixes to (first-time) compile and test-run on MSVS++
-*
-* Revision 1.1  1998/10/21 19:22:51  vakatov
-* Initial revision
+* Revision 1.5  1998/11/06 22:42:39  vakatov
+* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+* API to namespace "ncbi::" and to use it by default, respectively
+* Introduced THROWS_NONE and THROWS(x) macros for the exception
+* specifications
+* Other fixes and rearrangements throughout the most of "corelib" code
 *
 * ==========================================================================
 */
@@ -86,9 +80,26 @@
 
 // Using the STL namespace
 #if defined(NCBI_NO_NAMESPACES)
-#  define NCBI_USING_STL
+#  define NCBI_USING_NAMESPACE_STD
 #else
-#  define NCBI_USING_STL using namespace std
+#  define NCBI_USING_NAMESPACE_STD using namespace std
+#endif
+
+
+// Using the NCBI namespace
+// To avoid the annoying(and potentially dangerous -- e.g. when dealing with a
+// non-namespace-capable compiler) use of "std::" prefix in NCBI header files
+// and "std::" and/or "ncbi::" prefixes in the source files
+#if defined(HAVE_NAMESPACE)
+namespace std { /* the fake one */ }
+namespace ncbi { /* the fake one */ }
+#  define BEGIN_NCBI_SCOPE namespace ncbi { NCBI_USING_NAMESPACE_STD;
+#  define END_NCBI_SCOPE }
+#  define USING_NCBI_SCOPE using namespace ncbi
+#else
+#  define BEGIN_NCBI_SCOPE
+#  define END_NCBI_SCOPE
+#  define USING_NCBI_SCOPE
 #endif
 
 #endif /* NCBISTL__HPP */

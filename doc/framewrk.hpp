@@ -33,21 +33,38 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1998/10/29 19:30:01  vakatov
-* Use $Id$
+* Revision 1.3  1998/11/06 22:42:34  vakatov
+* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+* API to namespace "ncbi::" and to use it by default, respectively
+* Introduced THROWS_NONE and THROWS(x) macros for the exception
+* specifications
+* Other fixes and rearrangements throughout the most of "corelib" code
 *
 * ===========================================================================
 */
 
 #include <ncbistd.hpp>
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//  !!! PUT YOUR OTHER #include's HERE !!!
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-//  !!! PUT YOUR CODE HERE !!!
+// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+BEGIN_NCBI_SCOPE
 
 
-    ///////////////////////////////////////////////////////
-    // All inline function implementations and internal data
-    // types, etc. are in this file
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//  !!! PUT YOUR CODE(PROTOTYPES, TYPEDEFS, ETC.) HERE !!!
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+///////////////////////////////////////////////////////
+// All inline function implementations and internal data
+// types, etc. are in this file
 #include <framewrk.inl>
+
+
+// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+END_NCBI_SCOPE
 
 #endif  /* FRAMEWRK__HPP */

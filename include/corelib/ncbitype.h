@@ -33,6 +33,13 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/11/06 22:42:39  vakatov
+* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+* API to namespace "ncbi::" and to use it by default, respectively
+* Introduced THROWS_NONE and THROWS(x) macros for the exception
+* specifications
+* Other fixes and rearrangements throughout the most of "corelib" code
+*
 * Revision 1.2  1998/10/30 20:08:34  vakatov
 * Fixes to (first-time) compile and test-run on MSVS++
 *
@@ -130,7 +137,18 @@ const Int8  kMin_I8  = -9223372036854775807-1;
 const Int8  kMax_I8  =  9223372036854775807;
 const Uint8 kMax_UI8 =  18446744073709551615;
 #else
-/* TODO */
+#  define kMin_I1  ((Int1 ) (-128))
+#  define kMax_I1  ((Int1 ) ( 127))
+#  define kMax_UI1 ((Uint1) ( 255))
+#  define kMin_I2  ((Int2 ) (-32768))
+#  define kMax_I2  ((Int2 ) ( 32767))
+#  define kMax_UI2 ((Uint2) ( 65535))
+#  define kMin_I4  ((Int4 ) (-2147483647-1))
+#  define kMax_I4  ((Int4 ) ( 2147483647))
+#  define kMax_UI4 ((Uint4) ( 4294967295))
+#  define kMin_I8  ((Int8 ) (-9223372036854775807-1))
+#  define kMax_I8  ((Int8 ) ( 9223372036854775807))
+#  define kMax_UI8 ((Uint8) (18446744073709551615))
 #endif
 
 

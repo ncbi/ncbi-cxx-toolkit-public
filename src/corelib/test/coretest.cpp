@@ -30,6 +30,13 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/11/06 22:42:42  vakatov
+* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+* API to namespace "ncbi::" and to use it by default, respectively
+* Introduced THROWS_NONE and THROWS(x) macros for the exception
+* specifications
+* Other fixes and rearrangements throughout the most of "corelib" code
+*
 * Revision 1.5  1998/11/04 23:48:15  vakatov
 * Replaced <ncbidiag> by <ncbistd>
 *
@@ -37,6 +44,10 @@
 */
 
 #include <ncbistd.hpp>
+
+// This is to use the ANSI C++ standard templates without the "std::" prefix
+// and to use NCBI C++ entities without the "ncbi::" prefix
+USING_NCBI_SCOPE;
 
 
 /////////////////////////////////
@@ -53,7 +64,7 @@ inline CNcbiOstream& operator <<(CNcbiOstream& os, const CNcbiTestDiag& cntd) {
 }
 
 
-extern void TestDiag(void)
+static void TestDiag(void)
 {
     CNcbiDiag diag;
     double d = 123.45;
@@ -75,6 +86,55 @@ extern void TestDiag(void)
          << Info  << "This message has severity \"Info\"" << Endm;
 }
 
+/////////////////////////////////
+// Exceptions
+//
+
+static void TE_runtime(void) {
+    throw runtime_error("TE_runtime::runtime_error");
+}
+
+static void TE_none(void) THROWS_NONE {
+    return;
+}
+
+
+static void TE_logic(void) THROWS((runtime_error,logic_error)) {
+    throw logic_error("TE_logic::logic_error");
+}
+
+
+static void TestException(void)
+{
+    SetDiagStream(&NcbiCout);
+
+    try { TE_runtime(); }
+    catch (runtime_error& e) {
+        NcbiCerr << "CATCH TE_runtime::runtime_error&: " << e.what()<<NcbiEndl;
+    }
+
+    try { TE_runtime(); }
+    catch (exception& e) {
+        NcbiCerr << "CATCH TE_runtime::exception&: " << e.what() << NcbiEndl;
+    }
+
+    try { TE_runtime(); }
+    STD_CATCH ("STD_CATCH" << ' ' << "TE_runtime");
+
+    try { TE_runtime(); }
+    catch (logic_error& e) {
+        NcbiCerr << "CATCH TE_runtime::logic_error&" << e.what() << NcbiEndl;
+        _TROUBLE; }
+    STD_CATCH_ALL ("STD_CATCH_ALL" << " " << "TE_runtime");
+
+    TE_none();
+
+    try { TE_logic(); }
+    catch (logic_error& e) {
+        NcbiCerr << "CATCH TE_logic" << e.what() << NcbiEndl; }
+    STD_CATCH_ALL ("try { TE_logic(); }  SOMETHING IS WRONG!");    
+}
+
 
 /////////////////////////////////
 // MAIN
@@ -82,6 +142,7 @@ extern void TestDiag(void)
 extern int main(void)
 {
     TestDiag();
+    TestException();
 
     return 0;
 }

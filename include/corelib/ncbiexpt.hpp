@@ -33,17 +33,34 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1998/10/30 20:08:30  vakatov
-* Fixes to (first-time) compile and test-run on MSVS++
-*
-* Revision 1.1  1998/10/23 22:38:36  vakatov
-* Initial revision
+* Revision 1.3  1998/11/06 22:42:38  vakatov
+* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+* API to namespace "ncbi::" and to use it by default, respectively
+* Introduced THROWS_NONE and THROWS(x) macros for the exception
+* specifications
+* Other fixes and rearrangements throughout the most of "corelib" code
 *
 * ==========================================================================
 */
 
 #include <stdexcept>
 #include <ncbidiag.hpp>
+
+// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+BEGIN_NCBI_SCOPE
+
+
+// The use of C+++ exception specification mechanism, like:
+//   "f() throw();"       <==  "f() THROWS_NONE;"
+//   "g() throw(e1,e2);"  <==  "f() THROWS((e1,e2));"
+#if defined(NCBI_USE_THROW_SPEC)
+#define THROWS_NONE throw()
+#define THROWS(x) throw x
+#else
+#define THROWS_NONE
+#define THROWS(x)
+#endif
+
 
 // Standard handling of "exception"-derived exceptions
 #define STD_CATCH(message) \
@@ -62,5 +79,8 @@ STD_CATCH(message) \
       diag << Error << "[" << message << "]" << "Unknown exception"; \
 }
 
+
+// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+END_NCBI_SCOPE
 
 #endif  /* NCBIEXPT__HPP */

@@ -33,14 +33,20 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1998/10/29 19:30:01  vakatov
-* Use $Id$
+* Revision 1.3  1998/11/06 22:42:35  vakatov
+* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+* API to namespace "ncbi::" and to use it by default, respectively
+* Introduced THROWS_NONE and THROWS(x) macros for the exception
+* specifications
+* Other fixes and rearrangements throughout the most of "corelib" code
 *
 * ===========================================================================
 */
 
 
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!
 //  !!! PUT YOUR CODE HERE !!!
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 #endif /* def FRAMEWRK__HPP  &&  ndef FRAMEWRK__INL */

@@ -30,6 +30,13 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/11/06 22:42:41  vakatov
+* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
+* API to namespace "ncbi::" and to use it by default, respectively
+* Introduced THROWS_NONE and THROWS(x) macros for the exception
+* specifications
+* Other fixes and rearrangements throughout the most of "corelib" code
+*
 * Revision 1.6  1998/11/03 22:57:51  vakatov
 * Use #define'd manipulators(like "NcbiFlush" instead of "flush") to
 * make it compile and work with new(templated) version of C++ streams
@@ -53,6 +60,9 @@
 */
 
 #include <ncbidiag.hpp>
+
+// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+BEGIN_NCBI_SCOPE
 
 
 //## DECLARE_MUTEX(s_Mutex);  // protective mutex
@@ -184,3 +194,6 @@ extern void SetDiagStream(CNcbiOstream* os, bool quick_flush)
     SetDiagHandler(s_ToStream_Handler, data, s_ToStream_Cleanup);
 }
 
+
+// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+END_NCBI_SCOPE
