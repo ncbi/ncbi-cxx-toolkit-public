@@ -41,6 +41,7 @@ Contents: Structures used for saving BLAST hits
 extern "C" {
 #endif
 
+#include <blast_seqsrc.h>
 #include <blast_gapalign.h>
 
 /** The structure to contain all BLAST results for one query sequence */
@@ -83,7 +84,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlkPtr query,
         BLAST_SequenceBlkPtr subject, BlastResultsPtr results, 
         BlastHSPListPtr hsp_list, BlastHitSavingParametersPtr hit_parameters, 
         BlastQueryInfoPtr query_info, BLAST_ScoreBlkPtr sbp, 
-        BlastScoringOptionsPtr score_options, ReadDBFILEPtr rdfp, 
+        BlastScoringOptionsPtr score_options, const BlastSeqSrcPtr bssp,
         BlastThrInfoPtr thr_info);
 
 /** Initialize the results structure.

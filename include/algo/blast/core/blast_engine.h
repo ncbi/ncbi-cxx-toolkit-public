@@ -46,6 +46,7 @@ extern "C" {
 #include <blast_extend.h>
 #include <blast_gapalign.h>
 #include <blast_hits.h>
+#include <blast_seqsrc.h>
 
 #define OFFSET_ARRAY_SIZE 4096
 
@@ -71,7 +72,7 @@ extern "C" {
 Int4 
 BLAST_DatabaseSearchEngine(Uint1 program_number, 
    const BLAST_SequenceBlkPtr query, const BlastQueryInfoPtr query_info,
-   ReadDBFILEPtr rdfp, BLAST_ScoreBlkPtr sbp, 
+   const BlastSeqSrcNewInfoPtr bssn_info, BLAST_ScoreBlkPtr sbp, 
    const BlastScoringOptionsPtr score_options, 
    LookupTableWrapPtr lookup_wrap, 
    const BlastInitialWordOptionsPtr word_options, 
@@ -158,6 +159,8 @@ typedef Int4 (LIBCALLBACK *BlastWordFinderType)
 /** Structure to be passed to BLAST_SearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */
 typedef struct BlastCoreAuxStruct {
+
+   BlastSeqSrcPtr bssp;     /**< Source for subject sequences */
    BLAST_ExtendWordPtr ewp; /**< Structure for keeping track of diagonal
                                information for initial word matches */
    BlastWordFinderType WordFinder; /**< Word finder function pointer */

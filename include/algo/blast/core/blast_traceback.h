@@ -42,6 +42,7 @@ Contents: Functions to do gapped alignment with traceback and/or convert
 extern "C" {
 #endif
 
+#include <blast_seqsrc.h>
 #include <blast_hits.h>
 
 /** Given the preliminary alignment results from a database search, redo 
@@ -59,7 +60,7 @@ extern "C" {
  */
 Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResultsPtr results, 
         BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
-        ReadDBFILEPtr rdfp, BlastGapAlignStructPtr gap_align,
+        const BlastSeqSrcPtr bssp, BlastGapAlignStructPtr gap_align,
         BlastScoringOptionsPtr score_options,
         BlastExtensionParametersPtr ext_params,
         BlastHitSavingParametersPtr hit_params,
