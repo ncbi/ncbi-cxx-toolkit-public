@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.60 2002/04/23 15:15:15 ucko Exp $
+#  $Id: configure.ac,v 1.61 2002/04/24 04:02:42 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1321,16 +1321,6 @@ AC_CHECK_FUNCS(timegm)
 ### Check for typedefs, structures, and compiler features.
 AC_C_CONST
 AC_TYPE_SIZE_T
-
-AC_MSG_CHECKING(if in-class template functions are supported)
-AC_TRY_COMPILE(
-   [class C { template<class T> void operator<<(const T& t) {} };],
-   ,
-   ,
-   AC_DEFINE(NO_INCLASS_TMPL, 1,
-             [Define to 1 if in-class template functions are NOT supported.])
-)
-AC_MSG_RESULT()
 
 
 AC_MSG_CHECKING(if can use exception specifications throw(...) in func.proto)

@@ -240,9 +240,6 @@
 /* Define to 1 if prototypes can use exception specifications. */
 #undef NCBI_USE_THROW_SPEC
 
-/* Define to 1 if in-class template functions are NOT supported. */
-#undef NO_INCLASS_TMPL
-
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 

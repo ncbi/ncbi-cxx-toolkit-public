@@ -1872,67 +1872,6 @@ string& CArgDescriptions::PrintUsage(string& str) const
 }
 
 
-
-#ifdef NO_INCLASS_TMPL
-
-///////////////////////////////////////////////////////
-//  CArgDescriptions::CreateArgs()
-
-CArgs* CArgDescriptions::CreateArgs(int argc, const char* argv[])
-    const
-{
-    // Pre-processing consistency checks
-    x_PreCheck();
-    // Check for "-h" flag
-    if ( m_AutoHelp ) {
-        for (int i = 1;  i < argc;  i++) {
-            x_CheckAutoHelp(argv[i]);
-        }
-    }
-    // Create new "CArgs" to fill up, and parse cmd.-line args into it
-    auto_ptr<CArgs> args(new CArgs());
-    unsigned n_plain = kMax_UInt;
-    for (int i = 1;  i < argc;  i++) {
-        bool have_arg2 = (i + 1 < argc);
-        if ( x_CreateArg(argv[i], have_arg2,
-                         have_arg2 ? (string)argv[i+1] : kEmptyStr,
-                         &n_plain, *args) )
-            i++;
-    }
-    // Post-processing consistency checks
-    x_PostCheck(*args, n_plain);
-    return args.release();
-}
-
-CArgs* CArgDescriptions::CreateArgs(SIZE_TYPE argc, const CNcbiArguments& argv)
-    const
-{
-    // Pre-processing consistency checks
-    x_PreCheck();
-    // Check for "-h" flag
-    if ( m_AutoHelp ) {
-        for (SIZE_TYPE i = 1;  i < argc;  i++) {
-            x_CheckAutoHelp(argv[i]);
-        }
-    }
-    // Create new "CArgs" to fill up, and parse cmd.-line args into it
-    auto_ptr<CArgs> args(new CArgs());
-    unsigned n_plain = kMax_UInt;
-    for (SIZE_TYPE i = 1;  i < argc;  i++) {
-        bool have_arg2 = (i + 1 < argc);
-        if ( x_CreateArg(argv[i], have_arg2,
-                         have_arg2 ? (string)argv[i+1] : kEmptyStr,
-                         &n_plain, *args) )
-            i++;
-    }
-    // Post-processing consistency checks
-    x_PostCheck(*args, n_plain);
-    return args.release();
-}
-
-#endif /* NO_INCLASS_TMPL */
-
-
 CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
 {
     return CreateArgs(args.Size(), args);
@@ -2212,6 +2151,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2002/04/24 04:02:45  vakatov
+ * Do not use #NO_INCLASS_TMPL anymore -- apparently all modern
+ * compilers seem to be supporting in-class template methods.
+ *
  * Revision 1.34  2002/04/11 21:08:01  ivanov
  * CVS log moved to end of the file
  *

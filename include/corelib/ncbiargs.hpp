@@ -415,11 +415,6 @@ public:
     // (2) CNcbiArguments ncbi_args;
     //     CreateArgs(desc, ncbi_args.Size(), ncbi_args);
     //
-#ifdef NO_INCLASS_TMPL
-    // (this is temporary, until we abandon Sun WorkShop 5.0 compiler)
-    CArgs* CreateArgs(int       argc, const char*           argv[]) const;
-    CArgs* CreateArgs(SIZE_TYPE argc, const CNcbiArguments& argv  ) const;
-#else
     template<class TSize, class TArray>
     CArgs* CreateArgs(TSize argc, TArray argv) const
     {
@@ -445,7 +440,6 @@ public:
         x_PostCheck(*args, n_plain);
         return args.release();
     }
-#endif /* NO_INCLASS_TMPL */
 
     CArgs* CreateArgs(const CNcbiArguments& argv) const;
 };
@@ -604,6 +598,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2002/04/24 04:02:43  vakatov
+ * Do not use #NO_INCLASS_TMPL anymore -- apparently all modern
+ * compilers seem to be supporting in-class template methods.
+ *
  * Revision 1.21  2002/04/11 20:39:16  ivanov
  * CVS log moved to end of the file
  *
