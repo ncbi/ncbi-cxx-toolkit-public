@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/08/24 14:54:50  thiessen
+* make status row # order-independent :)
+*
 * Revision 1.30  2001/08/24 14:32:51  thiessen
 * add row # to status line
 *
@@ -440,10 +443,17 @@ void SequenceDisplay::MouseOver(int column, int row) const
                     dynamic_cast<const DisplayRowFromAlignment *>(displayRow);
                 if (alnRow) {
                     int blockNum = alnRow->alignment->GetAlignedBlockNumber(column);
+                    int rowNum = 0;
+                    // get apparent row number (crude!)
+                    for (int r=0; r<=row; r++) {
+                        const DisplayRowFromAlignment *aRow =
+                            dynamic_cast<const DisplayRowFromAlignment *>(rows[r]);
+                        if (aRow && aRow->alignment == alnRow->alignment) rowNum++;
+                    }
                     if (blockNum > 0)
-                        status.Printf("Block %i, Row %i", blockNum, alnRow->row + 1);
+                        status.Printf("Block %i, Row %i", blockNum, rowNum);
                     else
-                        status.Printf("Row %i", alnRow->row + 1);
+                        status.Printf("Row %i", rowNum);
                     if (alnRow->alignment->GetRowStatusLine(alnRow->row).size() > 0) {
                         if (blockNum > 0) status += " ; ";
                         status += alnRow->alignment->GetRowStatusLine(alnRow->row).c_str();
