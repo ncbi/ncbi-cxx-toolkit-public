@@ -340,9 +340,7 @@ bool CGBDataLoader::x_CreateReaders(const TParamTree* params)
     string str;
     if ( str.empty() ) {
         // try config first
-        static string env_reader = GetConfigString("GENBANK",
-                                                   "LOADER_METHOD",
-                                                   0);
+        string env_reader = GetConfigString("GENBANK", "LOADER_METHOD");
         str = env_reader;
     }
     if ( str.empty() ) {
@@ -443,7 +441,8 @@ CReader* CGBDataLoader::x_CreateReader(const string& names,
                                        const TParamTree* params)
 {
     try {
-        return x_GetReaderManager()->CreateInstanceFromList(params, names);
+        CRef<TReaderManager> manager = x_GetReaderManager();
+        return manager->CreateInstanceFromList(params, names);
     }
     catch ( exception& e ) {
         LOG_POST(names << " readers are not available ::" << e.what());
@@ -459,7 +458,8 @@ CWriter* CGBDataLoader::x_CreateWriter(const string& names,
                                        const TParamTree* params)
 {
     try {
-        return x_GetWriterManager()->CreateInstanceFromList(params, names);
+        CRef<TWriterManager> manager = x_GetWriterManager();
+        return manager->CreateInstanceFromList(params, names);
     }
     catch ( exception& e ) {
         LOG_POST(names << " writers are not available ::" << e.what());

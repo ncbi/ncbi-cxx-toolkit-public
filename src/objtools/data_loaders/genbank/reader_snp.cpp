@@ -79,8 +79,13 @@ BEGIN_SCOPE(objects)
 
 static bool CollectSNPStat(void)
 {
-    static bool var = GetConfigFlag("GENBANK", "SNP_TABLE_STAT");
-    return var;
+    static int s_Value = -1;
+    int value = s_Value;
+    if ( value < 0 ) {
+        value = GetConfigFlag("GENBANK", "SNP_TABLE_STAT");
+        s_Value = value;
+    }
+    return value != 0;
 }
 
 
@@ -218,7 +223,16 @@ void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
     }
     else {
 #ifdef _DEBUG
-        static int dump_feature = GetConfigInt("GENBANK", "SNP_TABLE_DUMP");
+        static int s_Value = -1;
+        int value = s_Value;
+        if ( value < 0 ) {
+            value =  GetConfigInt("GENBANK", "SNP_TABLE_DUMP");
+            if ( value < 0 ) {
+                value = 0;
+            }
+            s_Value = value;
+        }
+        int dump_feature = value;
         if ( dump_feature > 0 ) {
             --dump_feature;
             NcbiCerr <<
@@ -589,6 +603,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.20  2005/03/14 17:28:47  vasilche
+ * Thread safe retrieval of configuration parameters.
+ *
  * Revision 1.19  2005/03/10 20:55:07  vasilche
  * New CReader/CWriter schema of CGBDataLoader.
  *
