@@ -273,9 +273,9 @@ static Int4 find_hitsL(Int4 *hitArray, const Uint1* seq, Int4 len1,
     Int4 *matchResult; /*Array of words to hold the result of the
                          final test for a match*/
 
-    matchResult = (Int4 *) ckalloc(sizeof(Int4)*patternSearch->numWords);
-    mask = (Int4 *) ckalloc(sizeof(Int4)*patternSearch->numWords);
-    prefixMatchedBitPattern = (Int4 *) ckalloc(sizeof(Int4)*patternSearch->numWords);
+    matchResult = (Int4 *) calloc(patternSearch->numWords, sizeof(Int4));
+    mask = (Int4 *) calloc(patternSearch->numWords, sizeof(Int4));
+    prefixMatchedBitPattern = (Int4 *) calloc(patternSearch->numWords, sizeof(Int4));
     for (wordIndex = 0; wordIndex < patternSearch->numWords; wordIndex++) {
       mask[wordIndex] = patternSearch->match_maskL[wordIndex];
       prefixMatchedBitPattern[wordIndex] = 0;
