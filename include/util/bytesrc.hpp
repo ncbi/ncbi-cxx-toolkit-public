@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <util/reader_writer.hpp>
 
 
 /** @addtogroup StreamSupport
@@ -202,6 +203,7 @@ private:
     CRef<CMemoryChunk> m_NextChunk;
 };
 
+
 class NCBI_XUTIL_EXPORT CMemoryByteSource : public CByteSource
 {
 public:
@@ -235,7 +237,7 @@ private:
     size_t m_CurrentChunkOffset;
 };
 
-/// Imple
+
 class NCBI_XUTIL_EXPORT CMemorySourceCollector : public CSubSourceCollector
 {
 public:
@@ -248,6 +250,37 @@ public:
 private:
     CConstRef<CMemoryChunk> m_FirstChunk;
     CRef<CMemoryChunk> m_LastChunk;
+};
+
+/// Class adapter IWriter - CSubSourceCollector
+class NCBI_XUTIL_EXPORT CIWriterSourceCollector : public CSubSourceCollector
+{
+public:
+    /// Constructor
+    ///
+    /// @param writer pointer on adapted IWriter interface
+    /// @param own flag to take ownership on the writer 
+    /// (delete on destruction)
+    /// @param parent chained sub-source
+    CIWriterSourceCollector(IWriter*                    writer, 
+                            EOwnership                  own, 
+                            CRef<CSubSourceCollector>   parent);
+    virtual ~CIWriterSourceCollector();
+
+    /// Reset the destination IWriter interface
+    ///
+    /// @param writer pointer on adapted IWriter interface
+    /// @param own flag to take ownership on the writer 
+    /// (delete on destruction)
+    void SetWriter(IWriter*   writer, 
+                   EOwnership own);
+
+    virtual void AddChunk(const char* buffer, size_t bufferLength);
+    virtual CRef<CByteSource> GetSource(void);
+
+private:
+    IWriter*    m_IWriter; //!< Destination interface pointer
+    EOwnership  m_Own;     //!< Flag to delete IWriter on destruction
 };
 
 class NCBI_XUTIL_EXPORT CFileSourceCollector : public CSubSourceCollector
@@ -328,6 +361,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/09/25 16:37:47  kuznets
+* + IWriter based sub source collector
+*
 * Revision 1.13  2003/09/25 13:59:35  ucko
 * Pass C(Const)Ref by value, not reference!
 * Move CVS log to end.

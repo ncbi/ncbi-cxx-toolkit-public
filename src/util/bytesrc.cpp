@@ -328,12 +328,53 @@ CRef<CByteSource> CMemorySourceCollector::GetSource(void)
 }
 
 
+CIWriterSourceCollector::CIWriterSourceCollector(IWriter*    writer, 
+                                                 EOwnership  own, 
+                                       CRef<CSubSourceCollector>  parent)
+    : CSubSourceCollector(parent),
+      m_IWriter(writer),
+      m_Own(own)
+{
+}
+
+
+CIWriterSourceCollector::~CIWriterSourceCollector()
+{
+    if (m_Own)
+        delete m_IWriter;
+}
+
+
+void CIWriterSourceCollector::SetWriter(IWriter*   writer, 
+                                        EOwnership own)
+{
+    if (m_Own)
+        delete m_IWriter;
+    m_IWriter = writer;
+    m_Own = own;    
+}
+
+void CIWriterSourceCollector::AddChunk(const char* buffer, size_t bufferLength)
+{
+    size_t written;
+    m_IWriter->Write(buffer, bufferLength, &written);
+}
+
+CRef<CByteSource> CIWriterSourceCollector::GetSource(void)
+{
+    return CRef<CByteSource>(); // TODO: Add appropriate bytesource
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.22  2003/09/25 16:38:03  kuznets
+ * + IWriter based sub source collector
+ *
  * Revision 1.21  2003/09/25 13:59:40  ucko
  * Pass C(Const)Ref by value, not reference!
  *
