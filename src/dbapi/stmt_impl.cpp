@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.12  2004/02/10 18:50:44  kholodov
+* Modified: made Move() method const
+*
 * Revision 1.11  2003/06/16 19:43:58  kholodov
 * Added: SQL command logging
 *
@@ -87,7 +90,8 @@ BEGIN_NCBI_SCOPE
 
 // implementation
 CStatement::CStatement(CConnection* conn)
-    : m_conn(conn), m_cmd(0), m_rs(0), m_rowCount(-1), m_failed(false)
+    : m_conn(conn), m_cmd(0), m_rs(0), m_rowCount(-1), m_failed(false),
+      m_irs(0)
 {
     SetIdent("CStatement");
 }
@@ -106,14 +110,40 @@ IConnection* CStatement::GetParentConn()
 
 void CStatement::SetCDB_Result(CDB_Result *rs) 
 { 
+/*
     RequestedRsList::iterator i = m_requestedRsList.find(m_rs);
     if( i == m_requestedRsList.end() ) {
         _TRACE(GetIdent() << ": deleting unrequested CDB_Result " 
                << (void*)m_rs);
         delete m_rs;
     }
+*/
+    if( m_rs != 0 && (m_irs == 0 || (m_irs != 0 && m_irs->GetCDB_Result() != m_rs)) ) {
+        _TRACE(GetIdent() << ": deleting unrequested CDB_Result " 
+               << (void*)m_rs);
+        
+        delete m_rs;
+    }
 
     m_rs = rs;
+}
+
+IResultSet* CStatement::GetResultSet()
+{
+    if( m_rs == 0 )
+        return 0;
+
+    if( m_irs == 0 || (m_irs != 0 && m_irs->GetCDB_Result() != m_rs) ) {
+        _TRACE(GetIdent() << ": CDB_Result " << (void*)m_rs << " requested");
+        CResultSet *ri = new CResultSet(m_conn, m_rs);
+        ri->AddListener(this);
+        AddListener(ri);
+        //m_requestedRsList.insert(m_rs);
+        m_irs = ri;
+        return ri;
+    }
+    else
+        return m_irs;
 }
 
 bool CStatement::HasMoreResults() 
@@ -224,20 +254,6 @@ void CStatement::Cancel()
     m_rowCount = -1;
 }
 
-IResultSet* CStatement::GetResultSet()
-{
-    if( m_rs != 0 ) {
-        _TRACE(GetIdent() << ": CDB_Result " << (void*)m_rs << " requested");
-        CResultSet *ri = new CResultSet(m_conn, m_rs);
-        ri->AddListener(this);
-        AddListener(ri);
-        m_requestedRsList.insert(m_rs);
-        return ri;
-    }
-    else
-        return 0;
-}
-
 CDB_LangCmd* CStatement::GetLangCmd() 
 {
     //if( m_cmd == 0 )
@@ -248,7 +264,7 @@ CDB_LangCmd* CStatement::GetLangCmd()
 void CStatement::Action(const CDbapiEvent& e) 
 {
     _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName() 
-           << "' from " << e.GetSource()->GetIdent());
+           << "' received from " << e.GetSource()->GetIdent());
 
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(e.GetSource());

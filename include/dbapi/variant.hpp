@@ -184,13 +184,13 @@ public:
 
     // Methods to work with BLOB data (Text and Image)
     size_t GetBlobSize() const;
-    size_t Read(void* buf, size_t len);
+    size_t Read(void* buf, size_t len) const;
     size_t Append(const void* buf, size_t len);
     // Truncates from buffer end to buffer start. 
     // Truncates everything if no argument
     void Truncate(size_t len = kMax_UInt);
     // Moves the internal position pointer
-    bool MoveTo(size_t pos);
+    bool MoveTo(size_t pos) const;
 
 protected:
     // Set methods
@@ -241,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/02/10 18:52:35  kholodov
+ * Modified: made Move() method const
+ *
  * Revision 1.19  2003/12/15 20:05:41  ivanov
  * Added export specifier for building DLLs in MS Windows.
  *

@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.9  2004/02/10 18:50:44  kholodov
+* Modified: made Move() method const
+*
 * Revision 1.8  2002/12/16 18:56:50  kholodov
 * Fixed: memory leak in CStatement object
 *
@@ -144,8 +147,9 @@ private:
     bool m_failed;
     typedef map<string, CVariant*> ParamList;
     ParamList m_params;
-    typedef set<CDB_Result*> RequestedRsList;
-    RequestedRsList m_requestedRsList;
+    //typedef set<CDB_Result*> RequestedRsList;
+    //RequestedRsList m_requestedRsList;
+    class CResultSet *m_irs;
 
 };
 

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.27  2004/02/10 18:50:44  kholodov
+* Modified: made Move() method const
+*
 * Revision 1.26  2003/12/10 22:34:14  kholodov
 * Added: MoveTo() method
 *
@@ -574,7 +577,7 @@ bool CVariant::IsNull() const
     return GetData() == 0 ? true : GetData()->IsNULL();
 }
 
-size_t CVariant::Read(void* buf, size_t len)
+size_t CVariant::Read(void* buf, size_t len) const
 {
 
     switch(GetType()) {
@@ -629,7 +632,7 @@ void CVariant::Truncate(size_t len)
     return;
 }
 
-bool CVariant::MoveTo(size_t pos)
+bool CVariant::MoveTo(size_t pos) const
 {
 
     switch(GetType()) {

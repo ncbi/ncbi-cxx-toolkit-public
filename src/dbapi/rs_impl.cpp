@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.25  2004/02/10 18:50:44  kholodov
+* Modified: made Move() method const
+*
 * Revision 1.24  2003/06/25 21:03:05  kholodov
 * Fixed: method name in error message
 *
@@ -370,7 +373,7 @@ void CResultSet::Action(const CDbapiEvent& e)
 {
     _TRACE(GetIdent() << " " << (void*)this 
            << ": '" << e.GetName() 
-           << "' from " << e.GetSource()->GetIdent());
+           << "' received from " << e.GetSource()->GetIdent());
  
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
 
@@ -394,7 +397,8 @@ int CResultSet::GetColNum(const string& name) {
             return i;
     }
 
-    throw CDbapiException("CResultSet::GetColNum(): invalid column name");
+    throw CDbapiException("CResultSet::GetColNum(): invalid column name ["
+                          + name + "]");
 }
 
 void CResultSet::CheckIdx(unsigned int idx) 
