@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/06/07 17:54:36  lavr
+ * Modified exit branch in s_CONN_Read()
+ *
  * Revision 6.12  2001/05/30 19:42:44  vakatov
  * s_CONN_Read() -- do not issue warning if requested zero bytes
  * (by A.Lavrentiev)
@@ -463,7 +466,7 @@ static EIO_Status s_CONN_Read
         buf = (char*) buf + *n_read;
         size -= *n_read;
     }
-    
+
     /* read data from the connection */
     {{
         size_t x_read = 0;
@@ -474,22 +477,18 @@ static EIO_Status s_CONN_Read
         if (peek  &&  x_read)  /* save the read data in the "peek-buffer" */
             verify(BUF_Write(&conn->buf, buf, x_read));
     }}
-    
+
     if (status != eIO_Success) {
         if ( *n_read ) {
             CONN_LOG(eLOG_Trace, "[CONN_Read]  Read error");
-            return eIO_Success;
-        } else {
-            if ( size ) {
-                CONN_LOG((status == eIO_Closed ? eLOG_Trace : eLOG_Warning),
-                         "[CONN_Read]  Cannot read data");
-            }
-            return status;  /* error or EOF */
+            status = eIO_Success;
+        } else  if ( size ) {
+            CONN_LOG((status == eIO_Closed ? eLOG_Trace : eLOG_Warning),
+                     "[CONN_Read]  Cannot read data");
         }
     }
-    
-    /* success */
-    return eIO_Success;
+
+    return status;
 }
 
 
