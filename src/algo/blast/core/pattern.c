@@ -41,14 +41,16 @@ static char const rcsid[] =
 #include <algo/blast/core/pattern.h>
 
 
-/*Looks for 1 bits in the same position of s and mask
-  Let rightOne be the rightmost position where s and mask both have
-  a 1.
-  Let rightMaskOnly < rightOne be the rightmost position where mask has a 1, if any
-     or -1 otherwise
-  returns (rightOne - rightMaskOnly) */
-  
-static Int4 lenof(Int4 s, Int4 mask)
+/** Looks for 1 bits in the same position of s and mask
+ * Let rightOne be the rightmost position where s and mask both have a 1.
+ * Let rightMaskOnly < rightOne be the rightmost position where mask has a 1, 
+ * if any or -1 otherwise.
+ * @param s Some number [in]
+ * @param mask Mask [in]
+ * @return (rightOne - rightMaskOnly) 
+ */
+static Int4 
+s_LenOf(Int4 s, Int4 mask)
 {
     Int4 checkingMatches = s & mask;  /*look for 1 bits in same position*/
     Int4 rightOne; /*loop index looking for 1 in checkingMatches*/
@@ -65,15 +67,17 @@ static Int4 lenof(Int4 s, Int4 mask)
     return(-1);
 }
 
-/* routine to find hits of pattern to sequence when sequence is proteins
-   hitArray is an array of matches to pass back
-   seq is the input sequence
-   len1 is the length of the input sequence
-   patternSearch carries variables that keep track of
-      search parameters
-   returns the number of matches*/
-static Int4 find_hitsS(Int4 *hitArray, const Uint1* seq, Int4 len1, 
-		patternSearchItems *patternSearch)
+/** Routine to find hits of pattern to sequence when sequence is proteins
+ * @param hitArray An array of matches to pass back [out]
+ * @param seq The input sequence [in]
+ * @param len1 Length of the input sequence. [in]
+ * @param patternSearch Carries variables that keep track of search 
+ *                      parameters. [in]
+ * @return the number of matches found.
+ */
+static Int4 
+s_FindHitsShort(Int4 *hitArray, const Uint1* seq, Int4 len1, 
+            patternSearchItems *patternSearch)
 {
     Int4 i; /*loop index on sequence*/
     Int4 prefixMatchedBitPattern = 0; /*indicates where pattern aligns
@@ -98,7 +102,7 @@ static Int4 find_hitsS(Int4 *hitArray, const Uint1* seq, Int4 len1,
          /*first part of pair is index of place in seq where match
            ends; second part is where match starts*/
          hitArray[numMatches++] = i;
-         hitArray[numMatches++] = i - lenof(prefixMatchedBitPattern, mask)+1;
+         hitArray[numMatches++] = i - s_LenOf(prefixMatchedBitPattern, mask)+1;
          if (numMatches == MAX_HIT)
          {
             /*ErrPostEx(SEV_WARNING, 0, 0, 
@@ -110,12 +114,18 @@ static Int4 find_hitsS(Int4 *hitArray, const Uint1* seq, Int4 len1,
     return numMatches;
 }
 
-/*find hits when sequence is DNA and pattern is short
-  returns twice the number of hits
-  pos indicates the starting position
-  len is length of sequence seq
-  hitArray stores the results*/
-static Int4 find_hitsS_DNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
+/** Find hits when sequence is DNA and pattern is short returns twice the number
+ * of hits.
+ * @param hitArray Array of hits to pass back [out]
+ * @param seq The input sequence [in]
+ * @param pos Starting position [in]
+ * @param len Length of sequence seq [in]
+ * @param patternSearch Carries variables that keep track of search 
+ *                      parameters. [in]
+ * @return Number of hits found.
+ */
+static Int4 
+s_FindHitsShortDNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
 	       patternSearchItems *patternSearch)
 {
   /*Some variables and the algorithm are similar to what is
@@ -153,7 +163,7 @@ static Int4 find_hitsS_DNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
       for (j = 0; j < 4; j++) {
 	if (tmp & patternSearch->match_mask) {
 	  hitArray[twiceNumHits++] = i*4+j + pos;
-	  hitArray[twiceNumHits++] = i*4+j + pos -lenof(tmp & patternSearch->match_mask, 
+	  hitArray[twiceNumHits++] = i*4+j + pos -s_LenOf(tmp & patternSearch->match_mask, 
 					  patternSearch->match_mask)+1;
 	}
 	tmp = (tmp << 1);
@@ -167,7 +177,7 @@ static Int4 find_hitsS_DNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
      for (j = 0; j < remain; j++) {
         if (tmp & patternSearch->match_mask) {
            hitArray[twiceNumHits++] = i*4+j + pos;
-           hitArray[twiceNumHits++] = i*4+j + pos - lenof(tmp & patternSearch->match_mask, patternSearch->match_mask)+1;
+           hitArray[twiceNumHits++] = i*4+j + pos - s_LenOf(tmp & patternSearch->match_mask, patternSearch->match_mask)+1;
         }
         tmp = (tmp << 1);
      }
@@ -175,25 +185,34 @@ static Int4 find_hitsS_DNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
   return twiceNumHits;
 }
 
-/*Top level routine when pattern has a short description
-  hitArray is to return the hits
-  seq is the input sequence
-  start is what position to start at in seq
-  len is the length of seq
-  is_dna is 1 if and only if seq is a DNA sequence
-  the return value from the appropriate lower level routine is passed
-  back*/
-static Int4  find_hitsS_head(Int4* hitArray, const Uint1* seq, Int4 start, Int4 len, 
-		      Uint1 is_dna, patternSearchItems *patternSearch)
+/** Top level routine to find hits when pattern has a short description.
+ * @param hitArray Array of hits to pass back [out]
+ * @param seq Input sequence [in]
+ * @param start Position to start at in seq [in]
+ * @param len Length of seq [in]
+ * @param is_dna 1 if and only if seq is a DNA sequence [in]
+ * @param patternSearch Carries variables that keep track of search 
+ *                      parameters. [in]
+ * @return Number of matches found.
+ */
+static Int4  
+s_FindHitsShortHead(Int4* hitArray, const Uint1* seq, Int4 start, Int4 len, 
+                Uint1 is_dna, patternSearchItems *patternSearch)
 {
   if (is_dna) 
-    return find_hitsS_DNA(hitArray, &seq[start/4], start % 4, len, patternSearch);
-  return find_hitsS(hitArray, &seq[start], len, patternSearch);
+    return s_FindHitsShortDNA(hitArray, &seq[start/4], start % 4, len, patternSearch);
+  return s_FindHitsShort(hitArray, &seq[start], len, patternSearch);
 }
 
-/*Shift each word in the array left by 1 bit and add bit b,
-  if the new values is bigger that OVERFLOW1, then subtract OVERFLOW1 */
-static void lmove(Int4 *a, Uint1 b, patternSearchItems *patternSearch)
+/** Shift each word in the array left by 1 bit and add bit b,
+ * if the new values is bigger that OVERFLOW1, then subtract OVERFLOW1.
+ * @param a Array to work with [in] [out]
+ * @param b Bit to add [in]
+ * @param patternSearch Carries variables that keep track of search 
+ *                      parameters. [in]
+ */
+static void 
+s_MoveLeft(Int4 *a, Uint1 b, patternSearchItems *patternSearch)
 {
     Int4 x;
     Int4 i; /*index on words*/
@@ -210,17 +229,30 @@ static void lmove(Int4 *a, Uint1 b, patternSearchItems *patternSearch)
     }
 }  
 
-/*Do a word-by-word bit-wise or of a and b and put the result back in a*/
-static void or(Int4 *a, Int4 *b, patternSearchItems *patternSearch)
+/** Do a word-by-word bit-wise or of a and b and put the result back in a.
+ * @param a First array [in] [out]
+ * @param b Second array [in]
+ * @param patternSearch Carries variables that keep track of search 
+ *                      parameters. [in]
+ */
+static void 
+s_BitwiseOr(Int4 *a, Int4 *b, patternSearchItems *patternSearch)
 {
     Int4 i; /*index over words*/
     for (i = 0; i < patternSearch->numWords; i++) 
 	a[i] = (a[i] | b[i]);
 }
 
-/*Do a word-by-word bit-wise or of a and b and put the result in
-  result; return 1 if there are any non-zero words*/
-static Int4 and(Int4 *result, Int4 *a, Int4 *b, patternSearchItems *patternSearch)
+/** Do a word-by-word bit-wise or of a and b and put the result in
+ * result.
+ * @param a First array [in]
+ * @param b Second array [in]
+ * @param patternSearch Carries variables that keep track of search 
+ *                      parameters. [in]
+ * @return 1 if there are any non-zero words
+ */
+static Int4 
+s_BitwiseAnd(Int4 *result, Int4 *a, Int4 *b, patternSearchItems *patternSearch)
 {
     Int4 i; /*index over words*/
     Int4 returnValue = 0;
@@ -231,11 +263,17 @@ static Int4 and(Int4 *result, Int4 *a, Int4 *b, patternSearchItems *patternSearc
     return returnValue;
 }
 
-/*Let F be the number of the first bit in s that is 1
-  Let G be the first bit in mask that is one such that G < F;
-  Else let G = -1;
-  Returns F - G*/
-static Int4 lenofL(Int4 *s, Int4 *mask, patternSearchItems *patternSearch)
+/** Let F be the number of the first bit in s that is 1.
+ * Let G be the first bit in mask that is one such that G < F;
+ * Else let G = -1;
+ * @param s Input sequence [in]
+ * @param mask Array of word masks [in]
+ * @param patternSearch Carries variables that keep track of search 
+ *                      parameters. [in]
+ * @return F - G
+ */
+static Int4 
+s_LenOfL(Int4 *s, Int4 *mask, patternSearchItems *patternSearch)
 {
     Int4 bitIndex; /*loop index over bits in a word*/
     Int4 wordIndex;  /*loop index over words*/
@@ -254,20 +292,23 @@ static Int4 lenofL(Int4 *s, Int4 *mask, patternSearchItems *patternSearch)
     return(-1);
 }
 
-/* Finds places where pattern matches seq and returns them as
-   pairs of positions in consecutive entries of hitArray;
-   similar to find_hitsS
-   hitArray is array of hits to return
-   seq is the input sequence and len1 is its length
-   patternSearch carries all the pattern variables
-   return twice the number of hits*/
-static Int4 find_hitsL(Int4 *hitArray, const Uint1* seq, Int4 len1, 
-		       patternSearchItems *patternSearch)
+/** Finds places where pattern matches seq and returns them as
+ * pairs of positions in consecutive entries of hitArray;
+ * similar to s_FindHitsShort
+ * @param hitArray Array of hits to return [out]
+ * @param seq Input sequence [in]
+ * @param len1 Length of seq [in]
+ * @param patternSearch carries all the pattern variables
+ * @return twice the number of hits.
+ */
+static Int4 
+s_FindHitsLong(Int4 *hitArray, const Uint1* seq, Int4 len1, 
+               patternSearchItems *patternSearch)
 {
     Int4 wordIndex; /*index on words in mask*/
     Int4 i; /*loop index on seq */
     Int4  *prefixMatchedBitPattern; /*see similar variable in
-                                      find_hitsS*/
+                                      s_FindHitsShort*/
     Int4 twiceNumHits = 0; /*counter for hitArray*/
     Int4 *mask; /*local copy of match_maskL version of pattern
                   indicates after which positions a match can be declared*/
@@ -281,15 +322,15 @@ static Int4 find_hitsL(Int4 *hitArray, const Uint1* seq, Int4 len1,
       mask[wordIndex] = patternSearch->match_maskL[wordIndex];
       prefixMatchedBitPattern[wordIndex] = 0;
     }
-    /*This is a multiword version of the algorithm in find_hitsS*/
-    lmove(mask, 1, patternSearch);
+    /*This is a multiword version of the algorithm in s_FindHitsShort*/
+    s_MoveLeft(mask, 1, patternSearch);
     for (i = 0; i < len1; i++) {
-      lmove(prefixMatchedBitPattern, 0, patternSearch);
-      or(prefixMatchedBitPattern, mask, patternSearch); 
-      and(prefixMatchedBitPattern, prefixMatchedBitPattern, patternSearch->bitPatternByLetter[seq[i]], patternSearch);
-      if (and(matchResult, prefixMatchedBitPattern, patternSearch->match_maskL, patternSearch)) { 
+      s_MoveLeft(prefixMatchedBitPattern, 0, patternSearch);
+      s_BitwiseOr(prefixMatchedBitPattern, mask, patternSearch); 
+      s_BitwiseAnd(prefixMatchedBitPattern, prefixMatchedBitPattern, patternSearch->bitPatternByLetter[seq[i]], patternSearch);
+      if (s_BitwiseAnd(matchResult, prefixMatchedBitPattern, patternSearch->match_maskL, patternSearch)) { 
 	hitArray[twiceNumHits++] = i; 
-	hitArray[twiceNumHits++] = i-lenofL(matchResult, patternSearch->match_maskL, patternSearch)+1;
+	hitArray[twiceNumHits++] = i-s_LenOfL(matchResult, patternSearch->match_maskL, patternSearch)+1;
       }
     }
     sfree(prefixMatchedBitPattern); 
@@ -298,18 +339,24 @@ static Int4 find_hitsL(Int4 *hitArray, const Uint1* seq, Int4 len1,
     return twiceNumHits;
 }
 
-/*find matches when pattern is very long,
-  hitArray is used to pass back pairs of end position. start position for hits
-  seq is the sequence; len is its length
-  is_dna indicates if the sequence is DNA or protein*/
-static Int4 find_hitsLL(Int4 *hitArray, const Uint1* seq, Int4 len, Boolean is_dna,
-		 patternSearchItems *patternSearch)
+/** Find matches when pattern is very long,
+ * @param hitArray Array to pass back pairs of start and end positions for 
+ *                 hits [out]
+ * @param seq Input sequence [in]
+ * @param len Length of seq [in]
+ * @param is_dna Is sequence DNA or protein? [in]
+ * @param patternSearch carries all the pattern variables [in]
+ * @return Twice the number of hits found.
+ */
+static Int4 
+s_FindHitsVeryLong(Int4 *hitArray, const Uint1* seq, Int4 len, Boolean is_dna,
+             patternSearchItems *patternSearch)
 {
     Int4 twiceNumHits; /*twice the number of matches*/
     Int4 twiceHitsOneCall; /*twice the number of hits in one call to 
-                                 find_hitsS */
+                                 s_FindHitsShort */
     Int4 wordIndex;  /*index over words in pattern*/
-    Int4 start; /*start position in sequence for calls to find_hitsS */
+    Int4 start; /*start position in sequence for calls to s_FindHitsShort */
     Int4 hitArray1[MAX_HIT]; /*used to get hits against different words*/
     Int4 nextPosInHitArray; /*next available position in hitArray1 */
     Int4 hitIndex1, hitIndex2;  /*indices over hitArray1*/
@@ -323,7 +370,7 @@ static Int4 find_hitsLL(Int4 *hitArray, const Uint1* seq, Int4 len, Boolean is_d
       patternSearch->DNAwhichSuffixPosPtr = patternSearch->DNAsuffixSLL[patternSearch->whichMostSpecific];
     }
     /*find matches to most specific word of pattern*/
-    twiceNumHits = find_hitsS_head(hitArray, seq, 0, len, is_dna, patternSearch);
+    twiceNumHits = s_FindHitsShortHead(hitArray, seq, 0, len, is_dna, patternSearch);
     if (twiceNumHits < 2) 
       return 0;
     /*extend matches word by word*/
@@ -338,7 +385,7 @@ static Int4 find_hitsLL(Int4 *hitArray, const Uint1* seq, Int4 len, Boolean is_d
 	}
 	nextPosInHitArray = 0;
 	for (hitIndex2 = 0; hitIndex2 < twiceNumHits; hitIndex2 += 2) {
-	  twiceHitsOneCall = find_hitsS_head(&hitArray1[nextPosInHitArray], seq, 
+	  twiceHitsOneCall = s_FindHitsShortHead(&hitArray1[nextPosInHitArray], seq, 
        hitArray[hitIndex2]+1, MIN(len-hitArray[hitIndex2]-1, 
        patternSearch->spacing[wordIndex-1] + patternSearch->numPlacesInWord[wordIndex]), is_dna, patternSearch);
 	  for (hitIndex1 = 0; hitIndex1 < twiceHitsOneCall; hitIndex1+= 2) {
@@ -370,7 +417,7 @@ static Int4 find_hitsLL(Int4 *hitArray, const Uint1* seq, Int4 len, Boolean is_d
 	start = hitArray[hitIndex2+1]-patternSearch->spacing[wordIndex]-patternSearch->numPlacesInWord[wordIndex];
 	if (start < 0) 
 	  start = 0;
-	twiceHitsOneCall = find_hitsS_head(&hitArray1[nextPosInHitArray], seq, start, 
+	twiceHitsOneCall = s_FindHitsShortHead(&hitArray1[nextPosInHitArray], seq, start, 
 			    hitArray[hitIndex2+1]-start, is_dna, patternSearch);
 	for (hitIndex1 = 0; hitIndex1 < twiceHitsOneCall; hitIndex1+= 2) {
 	  hitArray1[nextPosInHitArray+hitIndex1] = hitArray[hitIndex2];
@@ -393,8 +440,8 @@ Int4 FindPatternHits(Int4 *hitArray, const Uint1* seq, Int4 len,
                Boolean is_dna, patternSearchItems * patternSearch)
 {
     if (patternSearch->flagPatternLength == ONE_WORD_PATTERN) 
-      return find_hitsS_head(hitArray, seq, 0, len, is_dna, patternSearch);
+      return s_FindHitsShortHead(hitArray, seq, 0, len, is_dna, patternSearch);
     if (patternSearch->flagPatternLength == MULTI_WORD_PATTERN) 
-      return find_hitsL(hitArray, seq, len, patternSearch);
-    return find_hitsLL(hitArray, seq, len, is_dna, patternSearch);
+      return s_FindHitsLong(hitArray, seq, len, patternSearch);
+    return s_FindHitsVeryLong(hitArray, seq, len, is_dna, patternSearch);
 }
