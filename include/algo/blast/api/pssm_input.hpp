@@ -56,6 +56,8 @@ BEGIN_SCOPE(blast)
 class IPssmInputData
 {
 public:
+    virtual ~IPssmInputData() {}
+
     /// Algorithm to produce multiple sequence alignment structure should be
     /// implemented in this method. This will be invoked by the CPssmEngine
     /// object before calling GetData()
@@ -82,6 +84,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/10/12 21:21:39  camacho
+ * + virtual destructor
+ *
  * Revision 1.5  2004/08/05 18:02:13  camacho
  * Enhanced documentation
  *
