@@ -977,18 +977,18 @@ const CRef<CBlast_def_line_set>  CDisplaySeqalign::GetBlastDefline (const CBiose
            string buf;
           
 	   if(usf.front()->GetData().IsOss()){ //only one user field
-	   
-	     const list< vector< char >* >& oss =  usf.front()->GetData().GetOss();
+             typedef const CUser_field::TData::TOss TOss;
+             const TOss& oss = usf.front()->GetData().GetOss();
              int size = 0;
              //determine the octet string length
-             for (list< vector< char >* >::const_iterator iter3 = oss.begin(); iter3 != oss.end(); iter3++){           
+             ITERATE (TOss, iter3, oss) {
 	       size += (**iter3).size();
              }
              
              int i =0;
              char* temp = new char[size];
              //retrive the string
-             for (list< vector< char >* >::const_iterator iter3 = oss.begin(); iter3 != oss.end(); iter3++){
+             ITERATE (TOss, iter3, oss) {
       
                for(vector< char >::iterator iter4 = (**iter3).begin(); iter4 !=(**iter3).end(); iter4++){
                  temp[i] = *iter4;
@@ -1027,8 +1027,7 @@ static string GetTaxNames(const CBioseq& cbsp, int taxid){
               const CObject_id& oid = (*iter2)->GetLabel();
               if (oid.GetId() == taxid){
                 (**iter2).GetData().Which();
-                const list< string >& strs = (**iter2).GetData().GetStrs();
-                name = strs.front();
+                name = (**iter2).GetData().GetStrs().front();
                 break;
               }
             }
@@ -1049,7 +1048,7 @@ void CDisplaySeqalign::getFeatureInfo(list<FeatureInfo*>& feature, CScope& scope
       const CSeq_loc& loc = feat->GetLocation();
       string featLable = NcbiEmptyString;
 
-      GetLabel(feat->GetOriginalFeature(), &featLable, feature::eBoth, &(m_AV->GetScope()));
+      feature::GetLabel(feat->GetOriginalFeature(), &featLable, feature::eBoth, &(m_AV->GetScope()));
       int alnStop = m_AV->GetAlnStop();
 
       if(loc.IsInt()){
