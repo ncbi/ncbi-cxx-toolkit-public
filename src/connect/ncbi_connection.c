@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/06/29 21:06:46  lavr
+ * BUGFIX: CONN_LOG now checks for non-NULL get_type virtual function
+ *
  * Revision 6.14  2001/06/28 22:00:48  lavr
  * Added function: CONN_SetCallback
  * Added callback: eCONN_OnClose
@@ -103,11 +106,13 @@
 
 /* Standard logging message
  */
-#define CONN_LOG(level, descr) \
-  CORE_LOGF(level, \
-            ("%s (connector \"%s\", error \"%s\")", \
-            descr, \
-            (*conn->meta.get_type)(conn->meta.c_get_type), \
+#define CONN_LOG(level, descr)                               \
+  CORE_LOGF(level,                                           \
+            ("%s (connector \"%s\", error \"%s\")",          \
+            descr,                                           \
+            conn->meta.get_type                              \
+             ? (*conn->meta.get_type)(conn->meta.c_get_type) \
+             : "<unknown>",                                  \
             IO_StatusStr(status)))
 
 
@@ -188,8 +193,8 @@ extern EIO_Status CONN_ReInit
     if (!connector && !conn->meta.list) {
         status = eIO_Unknown;
         CONN_LOG(eLOG_Error,
-                 "[CONN_ReInit]  Cannot reinit empty connection with NULL");
-        return status;    
+                 "[CONN_ReInit]  Cannot re-init empty connection with NULL");
+        return status;
     }
 
     /* reset and close current connector(s), if any */
