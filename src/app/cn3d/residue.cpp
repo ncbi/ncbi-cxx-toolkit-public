@@ -200,7 +200,7 @@ Residue::Residue(StructureBase *parent,
     }
 
     // get atom info
-    nAtomsPresentInAllCoordSets = 0;
+    nAtomsWithAnyCoords = 0;
     CResidue_graph::TAtoms::const_iterator a, ae = residueGraph->GetAtoms().end();
     for (a=residueGraph->GetAtoms().begin(); a!=ae; a++) {
 
@@ -209,18 +209,14 @@ Residue::Residue(StructureBase *parent,
         AtomInfo *info = new AtomInfo;
         AtomPntr ap(moleculeID, id, atomID);
 
-        // see if this atom is present each CoordSet; for display, this forces an intersection on
-        // CoordSets - e.g., from a multi-model NMR structure, only those atoms present in *all*
-        // models will be displayed.
+        // see if this atom is present in any CoordSet
         StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
         for (c=object->coordSets.begin(); c!=ce; c++) {
-            if (!((*c)->atomSet->GetAtom(ap, true, true))) break;
+            if (((*c)->atomSet->GetAtom(ap, true, true))) {
+                nAtomsWithAnyCoords++;
+                break;
+            }
         }
-        if (c == ce) {
-            info->isPresentInAllCoordSets = true;
-            nAtomsPresentInAllCoordSets++;
-        } else
-            info->isPresentInAllCoordSets = false;
 
         info->residue = this;
         // get name if present
@@ -310,9 +306,8 @@ bool Residue::Draw(const AtomSet *atomSet) const
     for (a=atomInfos.begin(); a!=ae; a++) {
 
         // get AtomCoord* for appropriate altConf
-        if (!a->second->isPresentInAllCoordSets) continue;
         AtomPntr ap(molecule->id, id, a->first);
-        atom = atomSet->GetAtom(ap, overlayEnsembles);
+        atom = atomSet->GetAtom(ap, overlayEnsembles, true);
         if (!atom) continue;
 
         // get Style
@@ -454,6 +449,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/06/21 08:18:58  thiessen
+* show all atoms with coordinates, even if not in all coord sets
+*
 * Revision 1.30  2003/02/03 19:20:05  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -71,15 +71,6 @@ const Bond* MakeBond(StructureBase *parent,
 
     AtomPntr ap1(mID1, rID1, aID1), ap2(mID2, rID2, aID2);
 
-    // check for presence of both atoms
-    StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
-    for (c=object->coordSets.begin(); c!=ce; c++) {
-        if (!((*c)->atomSet->GetAtom(ap1, true, true)) ||
-            !((*c)->atomSet->GetAtom(ap2, true, true)))
-            break;
-    }
-    if (c != ce) return NULL;
-
     Bond *bond = new Bond(parent);
     bond->atom1 = ap1;
     bond->atom2 = ap2;
@@ -114,9 +105,9 @@ bool Bond::Draw(const AtomSet *atomSet) const
         return false;
     }
     bool overlayEnsembles = parentSet->showHideManager->OverlayConfEnsembles();
-    const AtomCoord *a1 = atomSet->GetAtom(atom1, overlayEnsembles);
+    const AtomCoord *a1 = atomSet->GetAtom(atom1, overlayEnsembles, true);
     if (!a1) return true;
-    const AtomCoord *a2 = atomSet->GetAtom(atom2, overlayEnsembles);
+    const AtomCoord *a2 = atomSet->GetAtom(atom2, overlayEnsembles, true);
     if (!a2) return true;
 
     // get Style
@@ -138,13 +129,13 @@ bool Bond::Draw(const AtomSet *atomSet) const
         bondStyle.end2.style == StyleManager::eThickWormBond) {
 
         if (previousVirtual) {
-            const AtomCoord *a0 = atomSet->GetAtom(previousVirtual->atom1, overlayEnsembles);
+            const AtomCoord *a0 = atomSet->GetAtom(previousVirtual->atom1, overlayEnsembles, true);
             if (a0) site0 = &(a0->site);
         }
         if (!site0) site0 = &(a1->site);
 
         if (nextVirtual) {
-            const AtomCoord *a3 = atomSet->GetAtom(nextVirtual->atom2, overlayEnsembles);
+            const AtomCoord *a3 = atomSet->GetAtom(nextVirtual->atom2, overlayEnsembles, true);
             if (a3) site3 = &(a3->site);
         }
         if (!site3) site3 = &(a2->site);
@@ -162,6 +153,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/06/21 08:18:58  thiessen
+* show all atoms with coordinates, even if not in all coord sets
+*
 * Revision 1.18  2003/02/03 19:20:01  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

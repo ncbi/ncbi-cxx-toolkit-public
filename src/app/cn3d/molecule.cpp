@@ -166,7 +166,7 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
             // chemical graph, so check inter-atomic distances for cases where either one
             // of the two residues is alpha only.
             if (!foundReal && (IsProtein() || IsNucleotide()) &&
-                (residue->NAtoms() == 1 || prevResidue->NAtoms() == 1)) {
+                (residue->NAtomsWithAnyCoords() == 1 || prevResidue->NAtomsWithAnyCoords() == 1)) {
 
                 // get atom coordinates
                 AtomPntr ap1(id, residue->id, residue->alphaID);
@@ -396,6 +396,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/06/21 08:18:58  thiessen
+* show all atoms with coordinates, even if not in all coord sets
+*
 * Revision 1.38  2003/02/03 19:20:04  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

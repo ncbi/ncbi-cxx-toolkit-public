@@ -99,7 +99,6 @@ public:
         unsigned int glName;
         const Residue *residue;  // convenient way to go from atom->residue
         bool isIonizableProton;
-        bool isPresentInAllCoordSets;
     } AtomInfo;
 
     typedef std::list < const Bond * > BondList;
@@ -115,12 +114,14 @@ public:
     typedef std::map < int , const AtomInfo * > AtomInfoMap;
 
 private:
-    // mapped by Atom-id
-    AtomInfoMap atomInfos;
-    int nAtomsPresentInAllCoordSets;
+    AtomInfoMap atomInfos;  // mapped by Atom-id
+    int nAtomsWithAnyCoords;
 
 public:
-    int NAtoms(void) const { return nAtomsPresentInAllCoordSets; }
+    // # atoms in the graph for this residue
+    int NAtomsInGraph(void) const { return atomInfos.size(); }
+    // # atoms in this residue with real coordinates in any model
+    int NAtomsWithAnyCoords(void) const { return nAtomsWithAnyCoords; }
 
     const AtomInfoMap& GetAtomInfos(void) const { return atomInfos; }
     const AtomInfo * GetAtomInfo(int aID) const
@@ -139,6 +140,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/06/21 08:18:58  thiessen
+* show all atoms with coordinates, even if not in all coord sets
+*
 * Revision 1.18  2003/02/03 19:20:05  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

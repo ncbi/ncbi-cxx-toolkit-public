@@ -584,7 +584,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
 
     const StyleSettings& settings = GetStyleForResidue(object, atom.mID, atom.rID);
     const Residue::AtomInfo *info = residue->GetAtomInfo(atom.aID);
-    if (!info || !info->isPresentInAllCoordSets || (info->atomicNumber == 1 && !settings.hydrogensOn))
+    if (!info || (info->atomicNumber == 1 && !settings.hydrogensOn))
         ATOM_NOT_DISPLAYED;
 
     // set up some pointers for more convenient access to style settings
@@ -805,7 +805,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     if (molecule->IsSolvent())
         atomStyle->style = eTransparentAtom;
     else if (IsMetal(info->atomicNumber) ||
-             (molecule->NResidues() == 1 && residue->NAtoms() == 1)) {
+             (molecule->NResidues() == 1 && residue->NAtomsInGraph() == 1)) {
         atomStyle->style = eTransparentAtom;
         // always big spheres for metals or isolated atoms
         atomStyle->radius = element->vdWRadius * settings.spaceFillProportion;
@@ -1010,7 +1010,6 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             if (bondStyle->end1.style == StyleManager::eThickWormBond &&
                     (!bond->previousVirtual ||
                     !(infoV = object->graph->GetAtomInfo(bond->previousVirtual->atom1)) ||
-                    !infoV->isPresentInAllCoordSets ||
                     !GetAtomStyle(infoV->residue, bond->previousVirtual->atom1, NULL,
                         &atomStyleV, &backboneStyleV, &generalStyleV) ||
                     atomStyleV.style == StyleManager::eNotDisplayed ||
@@ -1020,7 +1019,6 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             if (bondStyle->end2.style == StyleManager::eThickWormBond &&
                     (!bond->nextVirtual ||
                     !(infoV = object->graph->GetAtomInfo(bond->nextVirtual->atom2)) ||
-                    !infoV->isPresentInAllCoordSets ||
                     !GetAtomStyle(infoV->residue, bond->nextVirtual->atom2, NULL,
                         &atomStyleV, &backboneStyleV, &generalStyleV) ||
                     atomStyleV.style == StyleManager::eNotDisplayed ||
@@ -1596,6 +1594,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2003/06/21 08:18:58  thiessen
+* show all atoms with coordinates, even if not in all coord sets
+*
 * Revision 1.74  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *
