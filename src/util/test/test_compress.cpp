@@ -78,8 +78,8 @@ public:
 };
 
 
-// Print
-#define PrintOk() cout << "OK\n\n";
+// Print OK message
+#define OK cout << "OK\n\n"
 
 // Init destination buffers
 #define INIT_BUFFERS  memset(dst_buf, 0, kBufLen); memset(cmp_buf, 0, kBufLen)
@@ -126,8 +126,7 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
 
         // Compare original and decompressed data
         assert(memcmp(src_buf, cmp_buf, out_len) == 0);
-
-        PrintOk();
+        OK;
     }}
 
     // Compression output stream test
@@ -158,8 +157,7 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
         // Compare original and decompressed data
         assert(memcmp(src_buf, cmp_buf, out_len) == 0);
         os_str.rdbuf()->freeze(0);
-
-        PrintOk();
+        OK;
     }}
 
     // Decompression input stream test
@@ -190,8 +188,7 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
 
         // Compare original and uncompressed data
         assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
-
-        PrintOk();
+        OK;
     }}
 
     // Decompression output stream test
@@ -223,8 +220,7 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
         // Compare original and uncompressed data
         assert(memcmp(src_buf, str, os_str_len) == 0);
         os_str.rdbuf()->freeze(0);
-
-        PrintOk();
+        OK;
     }}
 
     // Advanced I/O stream test
@@ -295,7 +291,7 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
             assert(memcmp(str, src_buf, kDataLen) == 0);
             os_str.rdbuf()->freeze(0);
         }}
-        PrintOk();
+        OK;
     }}
 
     // Overflow test
@@ -308,7 +304,7 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
                                   &out_len);
         assert(result == false  &&  out_len == dst_len);
         PrintResult(eCompress, c.GetLastError(), kDataLen, dst_len, out_len);
-        PrintOk();
+        OK;
     }}
 
     // File test
@@ -356,7 +352,7 @@ void CTestCompressor<TCompression, TCompressionFile, TCompressIStream,
         assert(memcmp(src_buf, cmp_buf, kDataLen) == 0);
 
         CFile(kFileName).Remove();
-        PrintOk();
+        OK;
     }}
 }
 
@@ -414,8 +410,9 @@ int CTest::Run(void)
     assert(src_buf);
 
     // Preparing a data for compression
-
-    srand((unsigned int)time(0));
+    unsigned int seed = time(0);
+    cout << "seed = " << seed << endl << endl;
+    srand(seed);
     for (size_t i=0; i<kDataLen; i++) {
         // Use a set from 25 chars [A-Z]
         // src_buf[i] = (char)(65+(double)rand()/RAND_MAX*(90-65));
@@ -458,6 +455,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/04 21:12:17  ivanov
+ * Added a random seed print out. Minor cosmetic changes.
+ *
  * Revision 1.2  2003/06/03 20:12:26  ivanov
  * Added small changes after Compression API redesign.
  * Added tests for CCompressionFile class.
