@@ -253,7 +253,6 @@ on SetProjectData()
 		
 	end tell
 	
-	
 	-- fluid
 	set saveCppExt to pCPlusPlusExt
 	set pCPlusPlusExt to ".cxx"
@@ -267,7 +266,7 @@ on SetProjectData()
 	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
 		{}, {"gui_core"})
 	
-	---------- SERIAL ----------	
+		---------- SERIAL ----------	
 	AddProject(datatoolData)
 	
 	---------- OBJECTS ----------	
@@ -277,9 +276,11 @@ on SetProjectData()
 		objMgrLibs & {"xvalidate"}, {}))
 	AddProject(DataPlusLibs(SimpleProjectData("id1_fetch_simple", "app:id1_fetch", {"C++", "sockets"}), Â
 		commonObjLibs & {"id1", "xconnect"}, {}))
-	
+
 	if pBuildDemos then
 		---- DEMO ---
+		
+		AddAppProject("bdbtest", {"bdb"}, "bdb:test", {"bdb", "libdb", "xncbi", "xutil"}, {})
 		
 		AddAppProject("test_density_map", {"libdl"}, "gui:utils:demo:test_density_map", Â
 			{"gui_utils", "xalnmgr", "tables"} & objMgrLibs, {})
@@ -302,6 +303,7 @@ on SetProjectData()
 			{"gui_config", "gui_dlg_config", "gui_utils", "w_flu", "w_fltk", "fltk", "gui_opengl", "xncbi", "xser", "xutil", "seq", "xobjmgr", "general", "pub", "medline", "biblio", "id1"}, {})
 		*)
 	end if
+	
 end SetProjectData
 
 
@@ -1156,6 +1158,13 @@ on SignalCompletion()
 	beep
 end SignalCompletion
 
+on RunInstallationScripts()
+	set plugin_scanner to POSIX path of (gProjectsDir & "gbench_plugin_scan")
+	set plugin_dir to POSIX path of gPluginsDir
+	do shell script (plugin_scanner & " " & plugin_dir)
+end RunInstallationScripts
+
+
 with timeout of 60000 seconds
 	
 	if not my IsOSX() then
@@ -1168,6 +1177,8 @@ with timeout of 60000 seconds
 	CreateAndBuildAllProjects()
 	
 	CleanupFiles(gProjectsDir)
+	
+	RunInstallationScripts()
 	
 	SignalCompletion()
 	
