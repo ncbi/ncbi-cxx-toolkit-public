@@ -2047,7 +2047,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             cdregion, 
             true,   // include stop codons
             false); // do not remove trailing X/B/Z
-    } catch ( const runtime_error& ) {
+    } catch ( const exception& ) {
     }
     if ( transl_prot.empty() ) {
         PostErr (eDiag_Error, eErr_SEQ_FEAT_CdTransFail, 
@@ -2613,6 +2613,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2003/12/16 17:35:39  shomrat
+* catch all exceptions, not just runtime
+*
 * Revision 1.44  2003/12/16 16:21:34  shomrat
 * Implemented ValidateCdConflict
 *
