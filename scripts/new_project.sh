@@ -56,7 +56,7 @@ LIBOBJ =
 LIB    = 
 # LOBJ =
 
-# CPPFLAGS = $(ORIG_CPPFLAGS)
+# CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 # CFLAGS   = $(ORIG_CFLAGS)
 # CXXFLAGS = $(ORIG_CXXFLAGS)
 #                                                                         ###
@@ -99,11 +99,11 @@ LOCAL_CPPFLAGS = -I.
 APP = 
 OBJ = 
 
-# PRE_LIBS = 
+# PRE_LIBS = $(NCBI_C_LIBPATH) .....
 LIB        = 
-# LIBS     = $(ORIG_LIBS)
+# LIBS     = $(NCBI_C_LIBPATH) -lncbi $(NETWORK_LIBS) $(ORIG_LIBS)
 
-# CPPFLAGS = $(ORIG_CPPFLAGS)
+# CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 # CFLAGS   = $(ORIG_CFLAGS)
 # CXXFLAGS = $(ORIG_CXXFLAGS)
 # LDFLAGS  = $(ORIG_LDFLAGS)
