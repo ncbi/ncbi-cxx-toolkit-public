@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/10/21 16:10:12  gouriano
+* added more DTD tokens
+*
 * Revision 1.6  2002/10/18 14:30:16  gouriano
 * added T_ENTITY token
 *
@@ -112,6 +115,8 @@ static const TToken K_ENTITY  = 203;
 static const TToken K_PCDATA  = 204;
 static const TToken K_ANY     = 205;
 static const TToken K_EMPTY   = 206;
+static const TToken K_SYSTEM  = 207;
+static const TToken K_PUBLIC  = 208;
 
 END_NCBI_SCOPE
 

@@ -191,6 +191,8 @@ TToken DTDLexer::LookupKeyword(void)
         break;
     case 6:
         CHECK("ENTITY", K_ENTITY, 6);
+        CHECK("SYSTEM", K_SYSTEM, 6);
+        CHECK("PUBLIC", K_PUBLIC, 6);
         break;
     case 7:
         CHECK("ELEMENT", K_ELEMENT, 7);
@@ -257,6 +259,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2002/10/21 16:09:46  gouriano
+ * added more DTD tokens
+ *
  * Revision 1.2  2002/10/18 14:38:56  gouriano
  * added parsing of internal parsed entities
  *
