@@ -1024,13 +1024,42 @@
 #endif
 
 /*
- * Export specifier for library ncbi_xloader_table
+ * Export specifier for library ncbi_xloader_genbank
  */
-#ifdef NCBI_XLOADER_TABLE_EXPORTS
-#  define NCBI_XLOADER_TABLE_EXPORT     __declspec(dllexport)
+#ifdef NCBI_XLOADER_GENBANK_EXPORTS
+#  define NCBI_XLOADER_GENBANK_EXPORT     __declspec(dllexport)
 #else
-#  define NCBI_XLOADER_TABLE_EXPORT     __declspec(dllimport)
+#  define NCBI_XLOADER_GENBANK_EXPORT     __declspec(dllimport)
 #endif
+
+/*
+ * Export specifier for library ncbi_xreader_id1
+ */
+#ifdef NCBI_XREADER_ID1_EXPORTS
+#  define NCBI_XREADER_ID1_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XREADER_ID1_EXPORT     __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library ncbi_xreader_id2
+ */
+#ifdef NCBI_XREADER_ID2_EXPORTS
+#  define NCBI_XREADER_ID2_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XREADER_ID2_EXPORT     __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library ncbi_xreader_pubseqos
+ */
+#ifdef NCBI_XREADER_PUBSEQOS_EXPORTS
+#  define NCBI_XREADER_PUBSEQOS_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XREADER_PUBSEQOS_EXPORT     __declspec(dllimport)
+#endif
+
+
 
 /*
  * Export specifier for library xobjmanip
@@ -1174,6 +1203,7 @@
 #  define NCBI_XLOADER_CDD_EXPORT
 #  define NCBI_XLOADER_LDS_EXPORT
 #  define NCBI_XLOADER_TABLE_EXPORT
+#  define NCBI_XLOADER_GENBANK_EXPORT
 #  define NCBI_XNCBI_EXPORT
 #  define NCBI_XOBJMANIP_EXPORT
 #  define NCBI_XOBJMGR_EXPORT
@@ -1184,6 +1214,9 @@
 #  define NCBI_XUTIL_EXPORT
 #  define NCBI_OMSSA_EXPORT
 #  define NCBI_XOMSSA_EXPORT
+#  define NCBI_XREADER_ID1_EXPORT
+#  define NCBI_XREADER_ID2_EXPORT
+#  define NCBI_XREADER_PUBSEQOS_EXPORT
 
 #endif
 
@@ -1193,6 +1226,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.51  2003/12/17 13:48:39  kuznets
+ * Added export symbols for genbank data loader and associated readers.
+ *
  * Revision 1.50  2003/12/15 16:56:58  ivanov
  * + NCBI_DBAPI_EXPORT
  *
