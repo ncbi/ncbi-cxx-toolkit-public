@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2001/11/16 20:25:53  lavr
+ * +g_SERV_LocalServerDefault as a private global parameter
+ *
  * Revision 6.31  2001/09/24 20:43:58  lavr
  * TSERV_Flags reverted to 'int'; expilict cast added in comparison
  *
@@ -133,6 +136,7 @@
  * ==========================================================================
  */
 
+#include "ncbi_server_infop.h"
 #include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_server_info.h>
 #include <connect/ncbi_socket.h>
@@ -175,6 +179,11 @@ static const char* k_FlagTag[] = {
     "Regular",  /* fSERV_Regular */
     "Blast"     /* fSERV_Blast   */
 };
+
+
+/* Any server is not local by default.
+ */
+int/*bool*/ g_SERV_LocalServerDefault = 0/*false*/;
 
 
 /* Attributes' lookup (by either type or tag)
@@ -475,7 +484,7 @@ SSERV_Info* SERV_CreateNcbidInfo
         info->host         = host;
         info->port         = port;
         info->sful         = 0;
-        info->locl         = 0;
+        info->locl         = g_SERV_LocalServerDefault;
         info->flag         = SERV_DEFAULT_FLAG;
         info->time         = 0;
         info->coef         = 0.0;
@@ -536,7 +545,7 @@ SSERV_Info* SERV_CreateStandaloneInfo
         info->host   = host;
         info->port   = port;
         info->sful   = 0;
-        info->locl   = 0;
+        info->locl   = g_SERV_LocalServerDefault;
         info->flag   = SERV_DEFAULT_FLAG;
         info->time   = 0;
         info->coef   = 0.0;
@@ -645,7 +654,7 @@ SSERV_Info* SERV_CreateHttpInfo
         info->host        = host;
         info->port        = port;
         info->sful        = 0;
-        info->locl        = 0;
+        info->locl        = g_SERV_LocalServerDefault;
         info->flag        = SERV_DEFAULT_FLAG;
         info->time        = 0;
         info->coef        = 0.0;
@@ -710,7 +719,7 @@ SSERV_Info* SERV_CreateFirewallInfo(unsigned int host, unsigned short port,
         info->host   = host;
         info->port   = port;
         info->sful   = 0;
-        info->locl   = 0;
+        info->locl   = g_SERV_LocalServerDefault;
         info->flag   = SERV_DEFAULT_FLAG;
         info->time   = 0;
         info->coef   = 0.0;
