@@ -170,6 +170,10 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
                 loc.SetInt().SetStrand(eNa_strand_plus);
             } else if (fields[8] == "-") {
                 loc.SetInt().SetStrand(eNa_strand_minus);
+            } else if (fields[8] == "0") {
+                loc.SetInt().SetStrand(eNa_strand_unknown);
+            } else if (fields[8] == "na") {
+                loc.SetInt().SetStrand(eNa_strand_other);
             } else {
                 NCBI_THROW2(CObjReaderParseException, eFormat,
                             string("error at line ") + 
@@ -202,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.3  2004/01/05 23:01:37  jcherry
+ * Support unknown ("0") or irrelevant ("na") strand designation
+ *
  * Revision 1.2  2003/12/08 23:39:20  jcherry
  * Set length of Seq-inst
  *
