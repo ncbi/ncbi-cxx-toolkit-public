@@ -729,6 +729,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/03/16 16:03:11  vasilche
+* Removed Windows EOL.
+*
 * Revision 1.15  2004/03/16 15:47:29  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
