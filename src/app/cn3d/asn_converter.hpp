@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/06/11 13:18:47  thiessen
+* fixes for gcc 3
+*
 * Revision 1.4  2002/01/24 18:12:33  thiessen
 * fix another leak
 *
@@ -102,7 +105,7 @@ static bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass 
 
     } catch (const char *msg) {
         *err = msg;
-    } catch (exception& e) {
+    } catch (std::exception& e) {
         *err = std::string("uncaught exception: ") + e.what();
     }
 
@@ -125,14 +128,14 @@ static Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, 
         ncbi::CObjectOStreamAsnBinary objOstream(asnOstrstream);
         objOstream << from;
 
-        auto_ptr<char> strData(asnOstrstream.str()); // to make sure data gets freed
+        std::auto_ptr<char> strData(asnOstrstream.str()); // to make sure data gets freed
         aimp = AsnIoMemOpen("rb", (unsigned char *) asnOstrstream.str(), asnOstrstream.pcount());
         if (!aimp || !(cObject = (*readFunc)(aimp->aip, NULL)))
             throw "AsnIoMem -> C object failed";
 
     } catch (const char *msg) {
         *err = msg;
-    } catch (exception& e) {
+    } catch (std::exception& e) {
         *err = std::string("uncaught exception: ") + e.what();
     }
 
@@ -145,7 +148,7 @@ template < class ASNClass >
 static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err)
 {
     err->erase();
-    auto_ptr<ASNClass> newObject;
+    std::auto_ptr<ASNClass> newObject;
 
     try {
         // create output stream and load object into it
@@ -158,7 +161,7 @@ static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err
         newObject.reset(new ASNClass());
         inObject >> *newObject;
 
-    } catch (exception& e) {
+    } catch (std::exception& e) {
         *err = e.what();
         return NULL;
     }

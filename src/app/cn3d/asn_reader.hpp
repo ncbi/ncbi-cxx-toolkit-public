@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/06/11 13:18:47  thiessen
+* fixes for gcc 3
+*
 * Revision 1.9  2002/05/29 23:58:06  thiessen
 * use text mode ostream for ascii asn
 *
@@ -76,6 +79,7 @@
 #include <connect/ncbi_util.h>
 
 #include <string>
+#include <memory>
 
 
 BEGIN_SCOPE(Cn3D)
@@ -87,14 +91,14 @@ static bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBi
     err->erase();
 
     // initialize the binary input stream
-    auto_ptr<ncbi::CNcbiIstream> inStream;
+    std::auto_ptr<ncbi::CNcbiIstream> inStream;
     inStream.reset(new ncbi::CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
     if (!(*inStream)) {
         *err = "Cannot open file for reading";
         return false;
     }
 
-    auto_ptr<ncbi::CObjectIStream> inObject;
+    std::auto_ptr<ncbi::CObjectIStream> inObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         inObject.reset(new ncbi::CObjectIStreamAsnBinary(*inStream));
@@ -106,7 +110,7 @@ static bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBi
     // Read the asn data
     try {
         *inObject >> *ASNobject;
-    } catch (exception& e) {
+    } catch (std::exception& e) {
         *err = e.what();
         return false;
     }
@@ -122,7 +126,7 @@ static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool
     err->erase();
 
     // initialize a binary output stream
-    auto_ptr<ncbi::CNcbiOstream> outStream;
+    std::auto_ptr<ncbi::CNcbiOstream> outStream;
     outStream.reset(new ncbi::CNcbiOfstream(filename,
         isBinary ? (IOS_BASE::out | IOS_BASE::binary) : IOS_BASE::out));
     if (!(*outStream)) {
@@ -130,7 +134,7 @@ static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool
         return false;
     }
 
-    auto_ptr<ncbi::CObjectOStream> outObject;
+    std::auto_ptr<ncbi::CObjectOStream> outObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
         outObject.reset(new ncbi::CObjectOStreamAsnBinary(*outStream, fixNonPrint));
@@ -142,7 +146,7 @@ static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool
     // write the asn data
     try {
         *outObject << ASNobject;
-    } catch (exception& e) {
+    } catch (std::exception& e) {
         *err = e.what();
         return false;
     }
@@ -172,7 +176,7 @@ static bool GetAsnDataViaHTTP(
         asnStream >> *asnObject;
         okay = true;
 
-    } catch (exception& e) {
+    } catch (std::exception& e) {
         *err = e.what();
     }
 
