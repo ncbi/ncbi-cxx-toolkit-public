@@ -56,6 +56,19 @@ bool CTDS_CursorCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
         m_Params.BindParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
 }
 
+static bool for_update_of(const string& q)
+{
+    if((q.find("update") == string::npos) && 
+       (q.find("UPDATE") == string::npos))
+        return false;
+
+    if((q.find("for update") != string::npos) || 
+       (q.find("FOR UPDATE") != string::npos)) 
+        return true;
+
+    // TODO: add more logic here to find "for update" clause
+    return false;
+}
 
 CDB_Result* CTDS_CursorCmd::Open()
 {
@@ -74,7 +87,15 @@ CDB_Result* CTDS_CursorCmd::Open()
 
 
     m_LCmd = 0;
-    string buff = "declare " + m_Name + " cursor for " + m_Query;
+    string cur_feat;
+    if(for_update_of(m_Query)) {
+        cur_feat= " cursor FORWARD_ONLY SCROLL_LOCKS for ";
+    }
+    else {
+        cur_feat= " cursor FORWARD_ONLY for ";
+    }
+        
+    string buff = "declare " + m_Name + cur_feat + m_Query;
 
     try {
         m_LCmd = m_Connect->LangCmd(buff);
@@ -483,6 +504,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/12/03 19:18:58  soussov
+ * adopting the TDS8 cursors
+ *
  * Revision 1.6  2002/05/16 21:36:45  soussov
  * fixes the memory leak in text/image processing
  *
