@@ -58,11 +58,11 @@ void CCpGDemoApp::Init(void)
 {
     auto_ptr<CArgDescriptions> argDescr(new CArgDescriptions);
     argDescr->AddDefaultKey("gc", "gcContent", "calibrated organism %GC "
-                            "content (ie. human: 0.5, rat: 0.48)",
-                            CArgDescriptions::eDouble, "0.5");
+                            "content (ie. human: 50, rat: 48)",
+                            CArgDescriptions::eInteger, "50");
     argDescr->AddDefaultKey("cpg", "obsexp",
-                            "observed / expected CpG ratio",
-                            CArgDescriptions::eDouble, "0.6");
+                            "observed / expected CpG percentage",
+                            CArgDescriptions::eInteger, "60");
     argDescr->AddDefaultKey("win", "window_size",
                             "width of sliding window",
                             CArgDescriptions::eInteger, "200");
@@ -129,7 +129,7 @@ int ScanForCpGs(const string& acc, CScope &scope, const CArgs& args)
     
     CCpGIslands cpgIsles(seqString.data(), seqString.length(),
                          args["win"].AsInteger(), args["len"].AsInteger(),
-                         args["gc"].AsDouble(), args["cpg"].AsDouble());
+                         args["gc"].AsInteger(), args["cpg"].AsInteger());
     if (args["m"]) {
         cpgIsles.MergeIslesWithin(args["m"].AsInteger());
     }
@@ -172,7 +172,7 @@ int ScanForCpGs(istream &infile, const CArgs &args)
         //scan
         CCpGIslands cpgIsles(seqString.data(), seqString.length(),
                              args["win"].AsInteger(), args["len"].AsInteger(),
-                             args["gc"].AsDouble(), args["cpg"].AsDouble());
+                             args["gc"].AsInteger(), args["cpg"].AsInteger());
         if (args["m"]) {
             cpgIsles.MergeIslesWithin(args["m"].AsInteger());
         }
@@ -251,6 +251,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/11/01 16:15:38  kskatz
+ * Reflects change in CCpGIslands where arguments percent GC and CpG observed/expected are now unsigned int instead of double
+ *
  * Revision 1.6  2004/07/21 15:51:24  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added
