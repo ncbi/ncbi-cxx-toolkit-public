@@ -34,29 +34,34 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/09 21:04:26  sandomir
+* CNcbiResource - initial draft; in no means is a final header
+*
 * Revision 1.1  1998/12/04 18:11:23  sandomir
 * CNcbuResource - initial draft
 *
 * ===========================================================================
 */
 
-#include <map>
+#include <list>
+#include <functional>
 
 BEGIN_NCBI_SCOPE
 
-class CCgiApplication;
+//
+// class CNcbiResource
+//
+
 class CNcbiDatabase;
 class CNcbiCommand;
 
 class CNcbiResPresentation;
 class CNcbiNode;
 
-typedef map< string, CNcbiDatabase* > TDbList;
-typedef map< string, CNcbiCommand* > TCmdList;
+class CHTML_a;
 
-//
-// class CNcbiResource
-//
+typedef list<CNcbiDatabaseInfo*> TDbInfoList;
+typedef list<CNcbiCommand*> TCmdList;
 
 class CNcbiResource
 {
@@ -65,28 +70,25 @@ public:
   CNcbiResource( void );
   virtual ~CNcbiResource( void );
 
-  const CNcbiResPresentation* GetPresentation() const
-    { return m_presentation; }
+  virtual void Init( void ); // init presentation, databases, commands
+  virtual void Exit( void );
 
-  virtual CNcbiNode* GetLogo( void ) const = 0;
-  virtual string GetName( void ) const = 0;
+  virtual const CNcbiResPresentation* GetPresentation( void ) const
+    { return 0; }
 
-  const TDbList& GetDbList( void ) const
-    { return m_db; }
+  const TDbList& GetDatabaseInfoList( void ) const
+    { return m_dbInfo; }
+
+  virtual CNcbiDatabase& GetDatabase( const CNcbiDatabaseInfo& info );
 
   const TCmdList& GetCmdList( void ) const
     { return m_cmd; }
-  
-  virtual void Init( void ); // init presentation, databases, commands
-  virtual void Exit( void );
 
   virtual void HandleRequest( const CCgiRequest& request );
 
 protected:
 
-  CNcbiResPresentation* m_presentation;
-
-  TDbList m_db;
+  TDbInfoList m_dbInfo;
   TCmdList m_cmd;
 };
 
@@ -98,13 +100,12 @@ class CNcbiResPresentation
 {
 public:
 
-  CNcbiResPresentation( const CNcbiResource& resource );
+  CNcbiResPresentation();
   virtual ~CNcbiResPresentation( void );
 
-protected:
-
-  const CNcbiResource& m_resource;
-
+  virtual CNcbiNode* GetLogo( void ) const { return 0; }
+  virtual string GetName( void ) const = 0;
+  virtual CHTML_a* GetLink( void ) const { return 0; }
 };
 
 //
@@ -120,15 +121,59 @@ public:
 
   virtual CNcbiCommand* Clone( void ) const = 0;
 
-  virtual CNcbiNode* GetLogo( void ) const = 0;
+  virtual CNcbiNode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
+  virtual CHTML_a* GetLink( void ) const { return 0; }
 
-  virtual void Execute( const CCgiRequest& request );
+  virtual void Execute( const CCgiRequest& request ) = 0;
 
+  virtual bool IsRequested( const CCgiRequest& request ) = 0;
+
+  // inner class CFind to be used to find command(s) corresponding to the request
+  // TCmdList l; 
+  // TCmdList::iterator it = l.find_if( l.begin(), l.end(), CNcbiCommand::CFind( request ) ); 
+  class CFind : public unary_function<CNcbiCommand,bool>
+  {
+    const CCgiRequest& m_request;
+
+  public:
+
+    explicit CFind( const CCgiRequest& request ) : m_request( request ) {}
+    bool operator() ( const CNcbiCommand& cmd ) const
+      { return cmd.IsRequested( m_request ); }
+  }; // class CFind 
+    
 protected:
 
   const CNcbiResource& m_resource;
+};
 
+//
+// class CNcbiDatabaseInfo
+//
+
+class CNcbiDatabaseInfo
+{
+public:
+
+  virtual const CNcbiDbPresentation* GetPresentation() const
+    { return 0; }
+
+  virtual bool CheckName( const string& name ) = 0;
+
+  // inner class CFind to be used to find db(s) corresponding to the request
+  // TDbInfoList l; 
+  // TDbInfoList::iterator it = l.find_if( l.begin(), l.end(), CNcbiDatabaseInfo::CFind( alias ) ); 
+  class CFind : public unary_function<CNcbiDatabaseInfo,bool>
+  {
+    const string& m_name;
+    
+  public:
+    
+    explicit CFind( const string& name ) : m_name( name ) {}
+    bool operator() ( const CNcbiDatabaseInfo& dbinfo ) const
+      { return dbinfo.CheckName( m_name ); }
+  }; // class CFind
 };
                      
 //
@@ -136,81 +181,123 @@ protected:
 //
 
 class CNcbiDbPresentation;
-
 typedef map< string, CNcbiDatabaseFilter* > TFilterList;
 
 class CNcbiDatabase
 {
-  CNcbiDatabase( const CNcbiResource& resource );
+  CNcbiDatabase( const CNcbiDatabaseInfo& dbinfo );
   virtual ~CNcbiDatabase( void );
 
-  const CNcbiDbPresentation* GetPresentation() const
-    { return m_presentation; }
-
-  virtual CNcbiNode* GetLogo( void ) const = 0;
-  virtual string GetName( void ) const = 0;
+  virtual void Connect( void ); 
+  virtual void Disconnect( void );
 
   const TFilterList& GetFilterList( void ) const
     { return m_filter; }
 
-  virtual void Init( void ); // init presentation
-  virtual void Exit( void );
+  virtual CNcbiQueryResult* Execute( const CCgiRequest& request ) = 0;
 
 protected:
 
-  const CNcbiResource& m_resource;
-  CNcbiDbPresentation* m_presentation;
+  const CNcbiDatabaseInfo& m_dbinfo;
 
   TFilterList m_filter;
+};
+
+//
+// class CNcbiDatabaseFilter
+//
+
+class CNcbiDatabaseFilter
+{};
+
+class CNcbiDbFilterReport
+{
+  virtual CNcbiNode* CreateView( const CCgiRequest& request ) const = 0;
 };
 
 //
 // class CNcbiDbPresentation
 //
 
-class CNcbiDatabaseReport;
-
-typedef map< string, CNcbiDatabaseReport* > TReportList;
-
 class CNcbiDbPresentation
 {
 public:
 
-  CNcbiDbPresentation( const CNcbiDatabase& db  );
+  CNcbiDbPresentation();
   virtual ~CNcbiDbPresentation( void );
 
-  const TReportList& GetReportList( void ) const
-    { return m_report; }
+  virtual CNcbiNode* GetLogo( void ) const { return 0; }
+  virtual string GetName( void ) const = 0;
+  virtual CHTML_a* GetLink( void ) const { return 0; }
+};
 
-protected:
+//
+// CNcbiDataObject
+//
 
-  const CNcbiResource& m_db;
+class CNcbiDataObjectReport;
+typedef list<CNcbiDataObjectReport*> TReportList;
 
-  TReportList m_report;
+class CNcbiDataObject
+{
+public:
 
+  typedef CNcbiDataObject* iterator;
+
+  virtual int GetID( void ) const = 0;
+  virtual string GetType( void ) const = 0;
+
+  virtual const TReportList& GetReportList( void ) const = 0;
+};
+
+//
+// class CNcbiQueryResult
+//
+
+class CNcbiQueryResult
+{
+public:
+
+  virtual CNcbiDataObject::iterator begin() = 0;
+  virtual CNcbiDataObject::iterator end() = 0;
+  virtual int size() = 0;
 };
 
 //
 // class CNcbiDatabaseReport
 //
 
-class CNcbiDatabaseReport
+class CNcbiDataObjectReport
 {
 public:
 
-  CNcbiDatabaseReport( const CNcbiDatabase& db );
+  CNcbiDatabaseReport( const CNcbiDataObject& db );
   virtual ~CNcbiDatabaseReport( void );
 
-  virtual CNcbiDatabaseReport* Clone( void ) const = 0;
+  virtual CNcbiDataObjectReport* Clone( void ) const = 0;
 
-  virtual CNcbiNode* GetLogo( void ) const = 0;
+  virtual CNcbiNode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
+  virtual CHTML_a* GetLink( void ) const { return 0; }
 
-  CNcbiNode* CreateView( const CCgiRequest& request ) const = 0;
+  virtual CNcbiNode* CreateView( const CCgiRequest& request ) const = 0;
+
+  virtual bool IsRequested( const CCgiRequest& request ) = 0;
+
+  class CFind : public unary_function<CNcbiDatabaseReport,bool>
+  {
+    const CCgiRequest& m_request;
+
+  public:
+
+    explicit CFind( const CCgiRequest& request ) : m_request( request ) {}
+    bool operator() ( const CNcbiDatabaseReport& rpt ) const
+      { return rpt.IsRequested( m_request ); }
+  }; // class CFind
 
 protected:
 
-  const CNcbiDatabase& m_db;
+  const CNcbiDataObject& m_obj;
 };
 
 END_NCBI_SCOPE
