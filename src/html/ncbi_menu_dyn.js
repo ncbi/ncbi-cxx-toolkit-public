@@ -1,4 +1,4 @@
-/**
+/*
  * Menu 0.8 990602
  * by gary smith, July 1997
  * Copyright (c) 1997-1999 Netscape Communications Corp.
@@ -14,15 +14,15 @@
  *    Fixed some errors.
  */
 
-// Default: dynamic menu is off
+// By default dynamic menu is off
 window.useDynamicMenu = false;
 
 // NOTE:
-// By default all menu use one containe if useDynamicMenu == TRUE
-// Accordingly only one menu can be show at a time.
+// By default all menu use one container if "useDynamicMenu == TRUE"
+// Accordingly only a one menu can be shown at a time.
 //
-// Dynamic menu work only in browsers that support property innerHTML
-// (Internet Explorer > 4.x & Netscap Navigator > 6.x) 
+// Dynamic menus work only in browsers that support property innerHTML
+// (Internet Explorer > 4.x & Netscape Navigator > 6.x) 
 
 
 function dynamiccontentNS6(el, content)
@@ -400,13 +400,16 @@ function setContainerProperty(container)
 function writeMenus(container) 
 {
     if (!window.attemptCount)
-       window.attemptCount = 1;
+        window.attemptCount = 1;
     if (!container && document.layers) {
         if (eval("document.width"))
             container = new Layer(1000);
     } else if (!container && document.all) {
-        if (!document.all["menuContainer"])
-            document.writeln('<SPAN ID="menuContainer"></SPAN>');
+        if  (!document.all["menuContainer"]) {
+            container = document.createElement("DIV") 
+            container.id = "menuContainer" 
+	        document.getElementsByTagName("BODY").item(0).appendChild(container)
+        }
         container = document.all["menuContainer"];
     } else if (!container && document.getElementById && document.getElementsByTagName("BODY")) {
         if (!document.getElementById("menuContainer")) {

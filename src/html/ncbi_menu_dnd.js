@@ -18,10 +18,10 @@
 window.useDynamicMenu = false;
 
 // NOTE:
-// By default all menu use a one container if "useDynamicMenu == TRUE"
-// Accordingly only one menu can be shown at a time.
+// By default all menu use one container if "useDynamicMenu == TRUE"
+// Accordingly only a one menu can be shown at a time.
 //
-// Dynamic menu work only in browsers that support property innerHTML
+// Dynamic menus work only in browsers that support property innerHTML
 // (Internet Explorer > 4.x & Netscape Navigator > 6.x) 
 
 
@@ -412,8 +412,11 @@ function writeMenus(container)
             container = new Layer(1000);
 
     } else if (!container && document.all) {
-        if (!document.all["menuContainer"])
-            document.writeln('<SPAN ID="menuContainer"></SPAN>');
+        if  (!document.all["menuContainer"]) {
+            container = document.createElement("DIV") 
+            container.id = "menuContainer" 
+	        document.getElementsByTagName("BODY").item(0).appendChild(container)
+        }
         container = document.all["menuContainer"];
 
     } else if (!container && document.getElementById && document.getElementsByTagName("BODY")) {
