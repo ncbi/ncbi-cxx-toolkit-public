@@ -1987,6 +1987,34 @@ void CValidError_bioseq::x_ValidateCompletness
 }
 
 
+static bool s_StandaloneProt(const CBioseq_Handle& bsh)
+{
+    // proteins are never standalone within the context of a Genbank / Refseq
+    // record.
+
+    CSeq_entry_Handle eh = bsh.GetSeq_entry_Handle();
+    while ( eh ) {
+        if ( eh.IsSet()  &&  eh.Set_IsSetClass() ) {
+            CBioseq_set::TClass cls = eh.Set_GetClass();
+            switch ( cls ) {
+            case CBioseq_set::eClass_nuc_prot:
+            case CBioseq_set::eClass_mut_set:
+            case CBioseq_set::eClass_pop_set:
+            case CBioseq_set::eClass_phy_set:
+            case CBioseq_set::eClass_eco_set:
+            case CBioseq_set::eClass_gen_prod_set:
+                return false;
+            default:
+                break;
+            }
+        }
+        eh = eh.GetParentEntry();
+    }
+
+    return true;
+}
+
+
 void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
@@ -2022,6 +2050,12 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                 break;
                 
             case CSeqFeatData::e_Gene:
+                // report only if NOT standalone protein
+                if ( !s_StandaloneProt(bsh) ) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
+                        "Invalid feature for a protein Bioseq.", feat);
+                }
+                break;
             case CSeqFeatData::e_Cdregion:
             case CSeqFeatData::e_Rna:
             case CSeqFeatData::e_Rsite:
@@ -3465,6 +3499,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2004/03/11 16:37:00  shomrat
+* Gene is invalid feature for a protein bioseq only if not in a nuc-prot, mut/phy/pop/eco or gen-prod set
+*
 * Revision 1.63  2004/03/10 21:23:51  shomrat
 * Check for unwanted complete flag
 *
