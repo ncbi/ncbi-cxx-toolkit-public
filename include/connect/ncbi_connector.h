@@ -71,9 +71,16 @@ typedef struct SConnectorTag* CONNECTOR;  /* connector handle */
  */
 
 
-/* Get the name of the connector (may not be NULL!)
+/* Get the name of the connector (may be NULL on error)
  */
 typedef const char* (*FConnectorGetType)
+(CONNECTOR       connector
+ );
+
+
+/* Get the human readable connector's description (may be NULL on error)
+ */
+typedef char* (*FConnectorDescr)
 (CONNECTOR       connector
  );
 
@@ -167,6 +174,7 @@ typedef EIO_Status (*FConnectorClose)
  */
 typedef struct {
     FConnectorGetType   get_type;    CONNECTOR c_get_type;
+    FConnectorDescr     descr;       CONNECTOR c_descr;
     FConnectorOpen      open;        CONNECTOR c_open;
     FConnectorWait      wait;        CONNECTOR c_wait;
 #ifdef IMPLEMENTED__CONN_WaitAsync
@@ -282,6 +290,9 @@ typedef EIO_Status (*FConnectorWaitAsync)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2003/05/14 03:47:53  lavr
+ * +(*FConnectorDescr)()
+ *
  * Revision 6.13  2003/04/09 17:58:45  siyan
  * Added doxygen support
  *
