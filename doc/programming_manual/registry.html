@@ -21,12 +21,14 @@ The CNcbiRegistry Class</h1>
 
 <h3>
 <a NAME="intro"></a>Introduction</h3>
+<p>
 The <i><a href="../docxx/CNcbiRegistry.html">CNcbiRegistry</a></i> class
 is used to access, modify and store runtime information read from a configuration
-file. Previously, these files were by convention named "<i>.*r</i>c" files
+file. Previously, these files were by convention named "<i>.*rc</i>" files
 on UNIX systems. The convention for all platforms now is to name such files
 "<i>*.ini"</i>, where "*" is by default the application name.&nbsp; Unless
-you explicitly override the default behavior, the <i><a href="applic.html#CNcbiApplication">CNcbiApplication</a></i>
+you explicitly override the default behavior, the
+<i><a href="applic.html#CNcbiApplication">CNcbiApplication</a></i>
 class looks for a configuration file with the default name.&nbsp; You can
 override this by calling your application's <i><a href="applic.html#appmain">AppMain()
 </a></i>method
@@ -34,12 +36,27 @@ with the full set of arguments:
 <pre>
 AppMain (argc, argv, envp, diag_stream, config_file, progname);
 </pre>
+</p>
 
-<p>Here, <i>config_file</i> is a string specifying the name of the file
+<p>
+Here, <i>config_file</i> is a string specifying the name of the file
 to be used when loading the registry. If you do not need to use this facility,
 you can specify <i>config_file</i> using <i>NcbiEmptyString</i>.&nbsp;
 This will eliminate a warning message, positing that no configuration file
 was found.
+</p>
+<p>
+As long as the configuration file is specified without a path, the system will
+look for it in the following locations:
+<ol>
+<li>in the current working directory,</li>
+<li>in the directory, defined by the environment variable <tt>NCBI</tt>,</li>
+<li>in the user's home directory,</li>
+<li>in the program directory.</li>
+</ol>
+</p>
+
+
 <h1>
 <a NAME="syntax"></a></h1>
 
