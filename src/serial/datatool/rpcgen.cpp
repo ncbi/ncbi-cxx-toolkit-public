@@ -194,6 +194,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
     const CCodeGenerator& generator  = m_Source.m_Generator;
     string                treq       = class_base + "::TRequest";
     string                trep       = class_base + "::TReply";
+    const CNamespace&     ns         = code.GetNamespace();
 
     // Pull in the relevant headers, and add corresponding typedefs
     code.HPPIncludes().insert(m_Source.m_RequestDataType->FileName());
@@ -425,7 +426,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         } else {
             TTypeStr typestr = req_type->GetFullCType();
             typestr->GeneratePointerTypeCode(code);
-            req_class = typestr->GetCType(code.GetNamespace());
+            req_class = typestr->GetCType(ns);
         }
 
         const CDataType* rep_type = rm->second->GetType()->Resolve();
@@ -436,13 +437,14 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             rep_class = "void";
             null_rep  = true;
         } else if ( !rep_type->GetParentType()  &&  !rep_type->IsStdType() ) {
-            rep_class = "CRef<" + rep_type->ClassName() + '>';
+            rep_class = ns.GetNamespaceRef(CNamespace::KNCBINamespace)
+                + "CRef<" + rep_type->ClassName() + '>';
             use_cref  = true;
             code.CPPIncludes().insert(rep_type->FileName());
         } else {
             TTypeStr typestr = rep_type->GetFullCType();
             typestr->GeneratePointerTypeCode(code);
-            rep_class = typestr->GetCType(code.GetNamespace());
+            rep_class = typestr->GetCType(ns);
         }
         code.ClassPublic()
             << "    virtual " << rep_class << ' ' << method << "\n";
@@ -501,6 +503,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/02/09 15:10:55  ucko
+* Make sure to qualify CRef with ncbi:: if necessary.
+*
 * Revision 1.10  2003/11/20 15:40:53  ucko
 * Update for new (saner) treatment of ASN.1 NULLs.
 *
