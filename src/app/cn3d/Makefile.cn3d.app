@@ -9,7 +9,7 @@ REQUIRES = objects wxWindows ctools OpenGL C-Toolkit
 APP = cn3d
 
 SRC = \
-	cn3d_dummy_pch \
+	aaa_dummy_pch \
 	alignment_manager \
 	alignment_set \
 	animation_controls \
