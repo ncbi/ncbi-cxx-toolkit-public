@@ -45,8 +45,7 @@
 
 #if defined(NCBI_OS_MSWIN)
 #   include <float.h>
-#endif
-#if !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_LINUX)
+#elif defined(HAVE_IEEEFP_H)
 #   include <ieeefp.h>
 #endif
 
@@ -78,6 +77,10 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/04 18:07:39  ucko
+ * Use configure's test for ieeefp.h rather than harcoding an incomplete
+ * list of platforms.
+ *
  * Revision 1.7  2004/05/04 17:58:16  gouriano
  * Not include ieeefp.h on Linux
  *
