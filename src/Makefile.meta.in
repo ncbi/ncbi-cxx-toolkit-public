@@ -97,7 +97,7 @@ if test ! -z "$(APP_PROJ)"  ||  test ! -z "@UNIX_APP_PROJ@" \
    expendable=false ; \
    for i in $$x_project ; do \
       if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
-      $(check_add) $(srcdir) $(x_project) $$i
+      $(check_add) $(srcdir) $$i @exe_ext@
 CHECK_ADD_KET = ||  exit 5 ; \
    done ; \
 fi
