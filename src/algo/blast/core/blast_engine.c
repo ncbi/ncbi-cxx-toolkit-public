@@ -71,10 +71,11 @@ BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
  * @param subject_frame Frame of the subject sequence; tblastn only [in]
  * @param subject_length Length of the original nucleotide subject sequence;
  *                       tblastn only [in]
+ * @param offset Shift in the subject sequence protein coordinates [in]
  */
 static void TranslateHSPsToDNAPCoord(Uint1 program, 
         BlastInitHitList* init_hitlist, BlastQueryInfo* query_info,
-        Int2 subject_frame, Int4 subject_length)
+        Int2 subject_frame, Int4 subject_length, Int4 offset)
 {
    BlastInitHSP* init_hsp;
    Int4 index, context, frame;
@@ -96,6 +97,8 @@ static void TranslateHSPsToDNAPCoord(Uint1 program,
             (init_hsp->ungapped_data->q_start - context_offsets[context]) 
             * CODON_LENGTH + context_offsets[context-frame] + frame;
       } else {
+         init_hsp->s_off += offset;
+         init_hsp->ungapped_data->s_start += offset;
          if (subject_frame > 0) {
             init_hsp->s_off = 
                (init_hsp->s_off * CODON_LENGTH) + subject_frame - 1;
@@ -197,8 +200,12 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
       for (chunk = 0; chunk < num_chunks; ++chunk) {
          if (chunk > 0) {
             offset += subject->length - DBSEQ_CHUNK_OVERLAP;
-            subject->sequence += 
-               (subject->length - DBSEQ_CHUNK_OVERLAP)/COMPRESSION_RATIO;
+            if (program_number == blast_type_blastn) {
+               subject->sequence += 
+                  (subject->length - DBSEQ_CHUNK_OVERLAP)/COMPRESSION_RATIO;
+            } else {
+               subject->sequence += (subject->length - DBSEQ_CHUNK_OVERLAP);
+            }
          }
          subject->length = MIN(total_subject_length - offset, 
                                MAX_DBSEQ_LEN);
@@ -220,7 +227,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
                /* Convert query offsets in all HSPs into the mixed-frame  
                   coordinates */
                TranslateHSPsToDNAPCoord(program_number, init_hitlist, 
-                  query_info, subject->frame, orig_length);
+                  query_info, subject->frame, orig_length, offset);
                if (translated_subject) {
                   prot_length = subject->length;
                   subject->length = 2*orig_length + 1;
