@@ -137,18 +137,18 @@ EKozakStrength s_GetKozakStrength(const CSeqVector& vec, TSeqPos pos)
 string s_KozakStrengthToString(EKozakStrength strength)
 {
     switch (strength) {
+    default:
     case eNone:
         return "none";
-        break;
+
     case eWeak:
         return "weak";
-        break;
+
     case eModerate:
         return "moderate";
-        break;
+
     case eStrong:
         return "strong";
-        break;
     }
 }
 
@@ -749,6 +749,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/08 17:51:01  dicuccio
+ * s_KozakStrengthToString(): all return paths covered...
+ *
  * Revision 1.10  2004/11/03 21:03:08  jcherry
  * Record id of updated protein
  *
