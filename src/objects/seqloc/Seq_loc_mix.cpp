@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/06/06 20:51:51  clausen
+ * Moved GetLength to objects/util/sequence.cpp
+ *
  * Revision 6.6  2002/05/03 21:28:19  ucko
  * Introduce T(Signed)SeqPos.
  *
@@ -60,13 +63,10 @@
  */
 
 #include <objects/seqloc/Seq_loc_mix.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <corelib/ncbiutil.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
-
 
 CSeq_loc_mix::CSeq_loc_mix(void)
 {
@@ -88,20 +88,6 @@ CSeq_loc_mix::~CSeq_loc_mix(void)
 #  endif
 #endif
 }
-
-
-// length calculator
-TSeqPos CSeq_loc_mix::GetLength(void) const // THROWS((CSeq_loc::CException))
-{
-    TSeqPos length = 0;
-
-	iterate( Tdata, i, Get() ) {
-        TSeqPos ret = (**i).GetLength();
-        length += ret;
-    }
-    return length;
-}
-
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE

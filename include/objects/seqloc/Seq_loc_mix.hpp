@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2002/06/06 20:52:24  clausen
+ * Moved GetLength to objects/util/sequence.cpp
+ *
  * Revision 1.8  2002/05/03 21:28:04  ucko
  * Introduce T(Signed)SeqPos.
  *
@@ -67,13 +70,8 @@
 #ifndef OBJECTS_SEQLOC_SEQ_LOC_MIX_HPP
 #define OBJECTS_SEQLOC_SEQ_LOC_MIX_HPP
 
-#include <memory>
-
 // generated includes
 #include <objects/seqloc/Seq_loc_mix_.hpp>
-
-#include <util/rangemap.hpp>
-#include <memory>
 
 // generated classes
 
@@ -89,9 +87,6 @@ public:
     CSeq_loc_mix(void);
     // destructor
     ~CSeq_loc_mix(void);
-
-    // Length Calculator
-    TSeqPos GetLength(void) const /* THROWS((CSeq_loc::CException)) */;
     
 private:
     // Prohibit copy constructor & assignment operator
