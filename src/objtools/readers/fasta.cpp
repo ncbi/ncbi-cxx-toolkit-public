@@ -38,6 +38,8 @@
 #include <corelib/ncbiutil.hpp>
 #include <util/format_guess.hpp>
 
+#include <objects/general/Object_id.hpp>
+
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -192,7 +194,7 @@ static CSeq_data& s_LastData(CSeq_inst& inst)
 
 static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
                                            const string& line,
-                                           TReadFastaFlags flags)
+                                           TReadFastaFlags flags, int* counter)
 {
     SIZE_TYPE       start = 0;
     CSeq_inst::EMol mol   = CSeq_inst::eMol_not_set;
@@ -246,6 +248,13 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
                          (start == NPOS) ? NPOS : (start - space - 1));
         }
     } while (start != NPOS  &&  (flags & fReadFasta_AllSeqIds));
+
+    if (ids.empty()) {
+        CRef<CSeq_id> id(new CSeq_id);
+        id->SetLocal().SetId(++*counter);
+        ids.push_back(id);
+    }
+
     return mol;
 }
 
@@ -282,16 +291,21 @@ static void s_GuessMol(CSeq_inst::EMol& mol, const string& data,
 
 
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
-                           vector<CRef<CSeq_loc> >* lcv)
+                           int* counter, vector<CRef<CSeq_loc> >* lcv)
 {
     CRef<CSeq_entry>       entry(new CSeq_entry);
     CBioseq_set::TSeq_set& sset  = entry->SetSet().SetSeq_set();
     CRef<CBioseq>          seq(0); // current Bioseq
     string                 line;
-    TSeqPos                pos, lc_start;
+    TSeqPos                pos = 0, lc_start = 0;
     bool                   was_lc = false;
     CRef<CSeq_id>          best_id;
     CRef<CSeq_loc>         lowercase(0);
+    int                    defcounter = 1;
+
+    if ( !counter ) {
+        counter = &defcounter;
+    }
 
     while ( !in.eof() ) {
         if ((flags & fReadFasta_OneSeq)  &&  seq.NotEmpty()
@@ -323,7 +337,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
             }}
             string          title;
             CSeq_inst::EMol mol = s_ParseFastaDefline(seq->SetId(), title,
-                                                      line, flags);
+                                                      line, flags, counter);
             if (mol == CSeq_inst::eMol_not_set
                 &&  (flags & fReadFasta_NoSeqData)) {
                 if (flags & fReadFasta_AssumeNuc) {
@@ -341,7 +355,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                 seq->SetDescr().Set().push_back(desc);
             }
 
-            if (lcv /*  &&  ( !lowercase  ||  !lowercase->IsNull() ) */) {
+            if (lcv) {
                 pos       = 0;
                 was_lc    = false;
                 best_id   = FindBestChoice(seq->GetId(), CSeq_id::Score);
@@ -491,6 +505,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/08/07 21:13:21  ucko
+* Support a counter for assigning local IDs to sequences with no ID given.
+* Fix some minor bugs in lowercase-character support.
+*
 * Revision 1.4  2003/08/06 19:08:33  ucko
 * Slight interface tweak to ReadFasta: report lowercase locations in a
 * vector with one entry per Bioseq rather than a consolidated Seq_loc_mix.
