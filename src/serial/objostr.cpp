@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2003/01/22 18:53:27  gouriano
+* corrected stream destruction
+*
 * Revision 1.72  2002/12/26 21:35:49  gouriano
 * corrected handling choice's XML attributes
 *
@@ -399,15 +402,18 @@ CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
 
 CObjectOStream::~CObjectOStream(void)
 {
+    Close();
 }
 
 void CObjectOStream::Close(void)
 {
-    m_Fail = fNotOpen;
-    m_Output.Close();
-    if ( m_Objects )
-        m_Objects->Clear();
-    ClearStack();
+    if (m_Fail != fNotOpen) {
+        m_Fail = fNotOpen;
+        m_Output.Flush();
+        if ( m_Objects )
+            m_Objects->Clear();
+        ClearStack();
+    }
 }
 
 CObjectOStream::TFailFlags CObjectOStream::SetFailFlagsNoError(TFailFlags flags)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.99  2003/01/22 18:53:28  gouriano
+* corrected stream destruction
+*
 * Revision 1.98  2002/12/13 21:50:42  gouriano
 * corrected reading of choices
 *
@@ -518,6 +521,7 @@ CObjectIStream::CObjectIStream(void)
 
 CObjectIStream::~CObjectIStream(void)
 {
+    Close();
 }
 
 void CObjectIStream::Open(CByteSourceReader& reader)
@@ -540,11 +544,13 @@ void CObjectIStream::Open(CNcbiIstream& inStream, bool deleteInStream)
 
 void CObjectIStream::Close(void)
 {
-    m_Input.Close();
-    if ( m_Objects )
-        m_Objects->Clear();
-    ClearStack();
-    m_Fail = fNotOpen;
+    if (m_Fail != fNotOpen) {
+        m_Input.Close();
+        if ( m_Objects )
+            m_Objects->Clear();
+        ClearStack();
+        m_Fail = fNotOpen;
+    }
 }
 
 CObjectIStream::TFailFlags CObjectIStream::SetFailFlags(TFailFlags flags,

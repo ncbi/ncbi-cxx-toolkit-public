@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2003/01/22 18:53:26  gouriano
+* corrected stream destruction
+*
 * Revision 1.74  2002/12/13 21:50:42  gouriano
 * corrected reading of choices
 *
@@ -986,6 +989,7 @@ void CObjectOStreamAsn::EndChars(const CharBlock& )
 void CObjectOStreamAsn::WriteSeparator(void)
 {
     m_Output.PutString(GetSeparator());
+    FlushBuffer();
 }
 
 
