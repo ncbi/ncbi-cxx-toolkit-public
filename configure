@@ -3803,29 +3803,9 @@ signature="${compiler}${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${b
 test -d "${build_root}"  ||  mkdir -p "${build_root}"
 
 
-#### Make "build_root" absolute; store relative path in "rel_build_root"
-rel_build_root=$build_root
+#### Make "build_root" absolute
 case "${build_root}" in
-   /* )
-      common=`pwd`
-      head=
-      while  "x$common" != "x/" ; do
-         case "${build_root}" in $common/* | $common) break ;; esac
-         common=`dirname $common`
-         head=${head:+$head/}..
-      done
-      tmp=$build_root
-      tail=
-      while  "x$tmp" != "x$common" ; do
-         tail=`basename $tmp`${tail:+/$tail}
-         tmp=`dirname $tmp`
-      done
-      if  -n "$head" -a -n "$tail" ; then
-         rel_build_root=$head/$tail
-      else
-         rel_build_root=$head$tail
-      fi
-   ;;
+   /* ) ;;
    . )
       CDPATH=
       if test "${PWD}" != "" && test "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`"  ;
@@ -7963,7 +7943,7 @@ fi
 if test "$with_internal" = "yes" ; then
    OPT_GROUPS="$OPT_GROUPS internal"
    if test "$with_sybase" = "no"  -o  "$with_ncbi_c" = "no"  -o  \
-           "$with_sss" = "no"  -o  "$with_pubmed" = "no"  \
+           "$with_sss" = "no"  -o  "$with_pubmed" = "no" -o \
            "$with_sp" = "no"  -o  "$with_geo" = "no"  -o  "$with_sp" = "no"
    then
       { { echo "$as_me:$LINENO: error: \"--with-internal:  Cannot build INTERNAL projects\"" >&5
