@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/09/04 15:51:52  thiessen
+* turn off options->tweak_parameters
+*
 * Revision 1.19  2002/08/30 16:52:10  thiessen
 * progress on trying to match scores with RPS-BLAST
 *
@@ -284,7 +287,7 @@ static BLAST_OptionsBlkPtr CreateBlastOptionsBlk(void)
 //    bob->no_check_score = FALSE;
 //    bob->discontinuous = TRUE;
     bob->scalingFactor = 1.0;
-    bob->tweak_parameters = TRUE;   // causes score rescaling to occur
+//    bob->tweak_parameters = TRUE;   // causes score rescaling to occur
     return bob;
 }
 
