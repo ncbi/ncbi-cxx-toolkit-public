@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/05/03 14:38:32  thiessen
+* put ViewableAlignment in its own (non-wx) header
+*
 * Revision 1.9  2001/04/04 00:27:21  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -68,7 +71,7 @@
 
 #include <map>
 
-#include "cn3d/sequence_viewer_widget.hpp"
+#include "cn3d/viewable_alignment.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/sequence_set.hpp"
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/05/03 14:39:14  thiessen
+* put ViewableAlignment in its own (non-wx) header
+*
 * Revision 1.20  2001/05/02 16:35:15  thiessen
 * launch entrez web page on sequence identifier
 *
@@ -103,6 +106,7 @@
 #include <corelib/ncbidiag.hpp>
 
 #include "cn3d/sequence_viewer_widget.hpp"
+#include "cn3d/viewable_alignment.hpp"
 
 USING_NCBI_SCOPE;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2001/05/03 14:39:14  thiessen
+* put ViewableAlignment in its own (non-wx) header
+*
 * Revision 1.55  2001/05/02 13:46:26  thiessen
 * major revision of stuff relating to saving of updates; allow stored null-alignments
 *
@@ -198,7 +201,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h>  // namespace kludge
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
 

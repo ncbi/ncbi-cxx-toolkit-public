@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/05/03 14:38:32  thiessen
+* put ViewableAlignment in its own (non-wx) header
+*
 * Revision 1.14  2001/03/17 14:06:52  thiessen
 * more workarounds for namespace/#define conflicts
 *
@@ -91,72 +94,7 @@
 #include <wx/wx.h>
 #include <wx/splitter.h>
 
-
-// This is the generic interface to a viewable alignment; it provides a minimal
-// set of functions that are required to build the display. Any objects to be
-// displayed in the SequenceViewerWidget must be derived from ViewableAlignment,
-// and must implement these functions.
-
-class ViewableAlignment
-{
-public:
-    // should set the overall size of the display, in columns (width) and rows (height)
-    virtual void GetSize(int *columns, int *rows) const = 0;
-
-    // should set a title string and color for a row; if the return value is false,
-    // the title area will be left blank.
-    virtual bool GetRowTitle(int row, wxString *title, wxColour *color) const = 0;
-
-    // should set the character and its traits to display at the given location;
-    // both columns and rows are numbered from zero. If the return value is false,
-    // the cell for this character will be left blank. If drawBackground is true,
-    // then the cell's background will be redrawn with the given color (e.g.,
-    // for highlights).
-    virtual bool GetCharacterTraitsAt(int column, int row,      // location
-        char *character,                                        // character to draw
-        wxColour *color,                                        // color of this character
-        bool *drawBackground,                                   // special background color?
-        wxColour *cellBackgroundColor                           // background color
-    ) const = 0;
-
-
-    ///// the following funtions are optional; they do nothing as-is, but can  /////
-    ///// be overridden to provide some user-defined behaviour on these events /////
-
-    // this is called when the mouse is moved over a cell; (-1,-1) means
-    // the mouse is not over the character grid. This is only called called once
-    // when the mouse enters a cell, or leaves the grid - it is not repeated if
-    // the mouse is dragged around inside a single cell.
-    virtual void MouseOver(int column, int row) const { }
-
-    // these are used in the the following feedback functions to tell whether
-    // control keys were down at the time of (the beginning of) selection. The
-    // 'controls' item may be any bitwise combination of the following:
-    enum eControlKeys {
-        eShiftDown      = 0x01,
-        eControlDown    = 0x02,
-        eAltOrMetaDown  = 0x04
-    };
-
-    // this is called when the mouse-down event occurs (i.e., at the
-    // beginning of selection), saying where the mouse was at the time and
-    // with what control keys (see eControlKeys above). If 'false' is returned,
-    // then no selection will ensue; if 'true', selection acts normally.
-    virtual bool MouseDown(int column, int row, unsigned int controls) { return true; }
-
-    // this is the callback when the the widget is in eSelect mode; it gives the
-    // corners of the rectangle of cells selected.
-    virtual void SelectedRectangle(
-        int columnLeft, int rowTop,
-        int columnRight, int rowBottom) { }
-
-    // this is the callback when the widget is in eDrag mode; it gives two cells,
-    // one where the mouse button-down occurred, and one where mouse-up occurred.
-    virtual void DraggedCell(
-        int columnFrom, int rowFrom,
-        int columnTo, int rowTo) { }
-};
-
+class ViewableAlignment;
 
 // This is the GUI class itself. It is a wxSplitterWindow - a viewing area where
 // characters are drawn, with right and bottom scrollbars that will automatically
