@@ -1,6 +1,7 @@
 # $Id$
 
-LIBOBJ = handle_stack numeric_convert parameters interfaces public types \
+LIBOBJ = handle_stack numeric_convert parameters \
+         exception interfaces public types \
          memory_store pointer_pot
 
 LIB    = dbapi_driver
