@@ -206,6 +206,8 @@ for f in $files ; do
    test $? -eq 0  || Usage "Failed to copy (w/adjustment) $install_builddir/$f"
 done
 
+chmod a+x $install_builddir/*.sh
+
 
 #####  DONE
 
