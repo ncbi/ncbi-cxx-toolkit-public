@@ -333,7 +333,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
         for(int tr_idx = tr_idx_hi; tr_idx >= tr_idx_lo;) {
             const char* p1_beg = p1;
             const char* p2_beg = p2;
-            size_t matches = 0, exon_size = 0;
+            size_t matches = 0, exon_aln_size = 0;
 
             vector<char>::iterator ii_ex = trans_ex.begin();
             while(tr_idx >= tr_idx_lo && 
@@ -357,30 +357,41 @@ void CNWFormatter::AsText(string* output, ETextFormatType type,
                     if(type_ex) *ii_ex++ = 'I';
                 }
                 --tr_idx;
-                ++exon_size;
+                ++exon_aln_size;
             }
 
-            if(exon_size > 0) {
+            if(exon_aln_size > 0) {
 
                 if(m_Seq1Id.size() && m_Seq2Id.size()) {
                     ss << m_Seq1Id << '\t' << m_Seq2Id << '\t';
                 }
-                float identity = float(matches) / exon_size;
-                ss << identity << '\t' << exon_size << '\t';
+		else {
+		    ss << "-\t-\t";
+		}
+                float identity = float(matches) / exon_aln_size;
+                ss << identity << '\t' << exon_aln_size << '\t';
                 size_t beg1  = p1_beg - start1, end1 = p1 - start1 - 1;
                 size_t beg2  = p2_beg - start2, end2 = p2 - start2 - 1;
-                ss << beg1 << '\t'<< end1<< '\t'<< beg2 << '\t'<< end2<< '\t';
+		if(beg1 <= end1) {
+		    ss << beg1 << '\t' << end1 << '\t';
+		}
+		else {
+		    ss << "-\t-\t";
+		}
+		ss << beg2 << '\t' << end2 << '\t';
                 char c1 = (p2_beg >= start2 + 2)? *(p2_beg - 2): ' ';
                 char c2 = (p2_beg >= start2 + 1)? *(p2_beg - 1): ' ';
                 char c3 = (p2 < start2 + len2)? *(p2): ' ';
                 char c4 = (p2 < start2 + len2 - 1)? *(p2+1): ' ';
                 ss << c1 << c2 << "<exon>" << c3 << c4;
+
                 if(type == eFormatExonTableEx) {
                     ss << '\t';
                     copy(trans_ex.begin(), ii_ex, ostream_iterator<char>(ss));
                 }
                 ss << endl;
             }
+
             // find next exon
             while(tr_idx >= tr_idx_lo &&
                   (transcript[tr_idx] == CNWAligner::eTS_Intron)) {
@@ -467,6 +478,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/10/14 19:26:59  kapustin
+ * Format void exons properly
+ *
  * Revision 1.5  2003/09/26 14:43:18  kapustin
  * Remove exception specifications
  *
