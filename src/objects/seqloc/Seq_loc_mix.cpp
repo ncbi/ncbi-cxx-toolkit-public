@@ -78,7 +78,7 @@ void CSeq_loc_mix::SetPartialLeft (bool val)
 void CSeq_loc_mix::SetPartialRight(bool val)
 {
     if ( !Set().empty() ) {
-        Set().front()->SetPartialRight(val);
+        Set().back()->SetPartialRight(val);
     }
     _ASSERT(val == IsPartialRight());
 }
@@ -174,6 +174,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.14  2004/10/21 21:45:07  kans
+ * CSeq_loc_mix::SetPartialRight was incorrectly using front instead of back
+ *
  * Revision 6.13  2004/09/01 15:33:44  grichenk
  * Check strand in GetStart and GetEnd. Circular length argument
  * made optional.
