@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2002/04/26 21:18:31  lavr
+* Do not enforce the last line of the form to have HTTP_EOL (but just EOF)
+*
 * Revision 1.52  2002/01/10 23:48:55  vakatov
 * s_ParseMultipartEntries() -- allow for empty parts
 *
@@ -777,16 +780,35 @@ static void s_ParseMultipartEntries(const string& boundary,
 
     SIZE_TYPE pos = 0;
     SIZE_TYPE partStart = 0;
+    bool last_line = false;
     string name;
     for ( ;; ) {
         SIZE_TYPE eol = str.find(s_Eol, pos);
         if (eol == NPOS) {
+            eol = str.size();
+            last_line = true;
+        }
+        if (eol == pos + boundary.size() + 2  &&
+            NStr::Compare(str, pos, boundary.size(), boundary) == 0  &&
+            str[eol-1] == '-'  &&  str[eol-2] == '-') {
+            // last boundary
+            if (partStart == NPOS) {
+                s_AddEntry(entries, name, kEmptyStr);
+            }
+            if (partStart != 0) {
+                SIZE_TYPE partEnd = pos - s_Eol.size();
+                s_AddEntry(entries,
+                           name, str.substr(partStart, partEnd - partStart));
+            }
+            return;
+        }
+        if (last_line) {
             throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
                                   boundary + "\"): unexpected eof: " +
                                   str.substr(pos), 0);
         }
-        else if (eol == pos + boundary.size()  &&
-                 NStr::Compare(str, pos, boundary.size(), boundary) == 0) {
+        if (eol == pos + boundary.size()  &&
+            NStr::Compare(str, pos, boundary.size(), boundary) == 0) {
             // boundary
             if (partStart == NPOS) {
                 s_AddEntry(entries, name, kEmptyStr);
@@ -796,23 +818,8 @@ static void s_ParseMultipartEntries(const string& boundary,
                 s_AddEntry(entries,
                            name, str.substr(partStart, partEnd - partStart));
             }
-
             partStart = NPOS;
             name = kEmptyStr;
-        }
-        else if (eol == pos + boundary.size() + 2  &&
-                 NStr::Compare(str, pos, boundary.size(), boundary) == 0  &&
-                 str[eol-1] == '-'  &&  str[eol-2] == '-') {
-            // last boundary
-            if (partStart == NPOS) {
-                s_AddEntry(entries, name, kEmptyStr);
-            }
-            if ( partStart != 0 ) {
-                SIZE_TYPE partEnd = pos - s_Eol.size();
-                s_AddEntry(entries,
-                           name, str.substr(partStart, partEnd - partStart));
-            }
-            return;
         }
         else if (partStart == NPOS) {
             // in header
@@ -825,7 +832,6 @@ static void s_ParseMultipartEntries(const string& boundary,
 CCgiRequest::ParseMultipartQuery(\"" + boundary + "\"): bad name header " +
                                           str.substr(pos), 0);
                 }
-
                 // new name
                 name = str.substr(nameStart, nameEnd - nameStart);
             }
