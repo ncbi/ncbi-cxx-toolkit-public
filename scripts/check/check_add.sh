@@ -52,8 +52,7 @@ if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then
       x_signature=`echo $x_signature | sed 's/-[a-z]*$//'`
       root_dir=`echo "$x_srcdir" | sed 's%/src/.*$%%'`
       ignore_list="$root_dir/src/check/ignore.lst"
-      grep "$x_srcdir_rel/$x_test *$x_signature" $ignore_list > /dev/null 2>&1
-      if grep "$x_srcdir_rel/$x_test *$x_signature" $ignore_list > /dev/null 2>&1; then
+      if grep "^ *$x_srcdir_rel/$x_test *$x_signature" $ignore_list > /dev/null 2>&1; then
          echo "SKIP -- $x_tpath"
          exit 0
       fi
