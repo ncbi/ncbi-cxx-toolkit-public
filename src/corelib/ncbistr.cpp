@@ -531,6 +531,10 @@ static const string s_kTrueString  = "true";
 static const string s_kFalseString = "false";
 static const string s_kTString     = "t";
 static const string s_kFString     = "f";
+static const string s_kYesString   = "yes";
+static const string s_kNoString    = "no";
+static const string s_kYString     = "y";
+static const string s_kNString     = "n";
 
 const string& NStr::BoolToString(bool value)
 {
@@ -540,12 +544,16 @@ const string& NStr::BoolToString(bool value)
 
 bool NStr::StringToBool(const string& str)
 {
-    if (AStrEquiv(str, s_kTrueString,  PNocase())  ||
-        AStrEquiv(str, s_kTString,  PNocase()) )
+    if ( AStrEquiv(str, s_kTrueString,  PNocase())  ||
+         AStrEquiv(str, s_kTString,     PNocase())  ||
+         AStrEquiv(str, s_kYesString,   PNocase())  ||
+         AStrEquiv(str, s_kYString,     PNocase()) )
         return true;
 
     if ( AStrEquiv(str, s_kFalseString, PNocase())  ||
-         AStrEquiv(str, s_kFString, PNocase()))
+         AStrEquiv(str, s_kFString,     PNocase())  ||
+         AStrEquiv(str, s_kNoString,    PNocase())  ||
+         AStrEquiv(str, s_kNString,     PNocase()) )
         return false;
 
     NCBI_THROW2(CStringException,eConvert,"String cannot be converted",0);
@@ -971,6 +979,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2003/02/25 19:14:53  kuznets
+ * NStr::StringToBool changed to understand YES/NO
+ *
  * Revision 1.78  2003/02/25 15:43:40  dicuccio
  * Added #ifdef'd hack for MSVC's non-standard sprintf() in PtrToString() - '%p'
  * lacks a leading '0x'
