@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2001/06/15 02:23:00  thiessen
+* fill code for settings<->asn
+*
 * Revision 1.38  2001/06/14 17:45:10  thiessen
 * progress in styles<->asn ; add structure limits
 *
@@ -151,6 +154,10 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <objects/cn3d/Cn3d_backbone_style.hpp>
+#include <objects/cn3d/Cn3d_general_style.hpp>
+#include <objects/cn3d/Cn3d_color.hpp>
+
 #include <memory>
 #include <string.h> // for memcpy()
 
@@ -175,14 +182,129 @@ BEGIN_SCOPE(Cn3D)
 
 ///// StyleSettings stuff /////
 
-bool StyleSettings::SaveSettingsToASN(ncbi::objects::CCn3d_style_settings *styleASN) const
+static void Vector2ASNColor(const Vector &vec, CCn3d_color *asnColor)
 {
-	return NULL;
+    static const int SCALE = 1000;
+    asnColor->SetScale_factor(SCALE);
+    asnColor->SetRed((int) (vec[0] * SCALE));
+    asnColor->SetGreen((int) (vec[1] * SCALE));
+    asnColor->SetBlue((int) (vec[2] * SCALE));
+    asnColor->SetAlpha(SCALE);  // no alpha in Cn3D's colors
+}
+
+static bool SaveBackboneStyleToASN(
+    const StyleSettings::BackboneStyle bbSettings, CCn3d_backbone_style *bbASN)
+{
+    // these static_casts rely on correspondence of enumerated values!
+    bbASN->SetType(static_cast<ECn3d_backbone_type>(bbSettings.type));
+    bbASN->SetStyle(static_cast<ECn3d_drawing_style>(bbSettings.style));
+    bbASN->SetColor_scheme(static_cast<ECn3d_color_scheme>(bbSettings.colorScheme));
+    Vector2ASNColor(bbSettings.userColor, &(bbASN->SetUser_color()));
+    return true;
+}
+
+static bool SaveGeneralStyleToASN(
+    const StyleSettings::GeneralStyle gSettings, CCn3d_general_style *gASN)
+{
+    // these static_casts rely on correspondence of enumerated values!
+    gASN->SetIs_on(gSettings.isOn);
+    gASN->SetStyle(static_cast<ECn3d_drawing_style>(gSettings.style));
+    gASN->SetColor_scheme(static_cast<ECn3d_color_scheme>(gSettings.colorScheme));
+    Vector2ASNColor(gSettings.userColor, &(gASN->SetUser_color()));
+    return true;
+}
+
+bool StyleSettings::SaveSettingsToASN(CCn3d_style_settings *styleASN) const
+{
+    styleASN->SetVirtual_disulfides_on(virtualDisulfidesOn);
+    Vector2ASNColor(virtualDisulfideColor, &(styleASN->SetVirtual_disulfide_color()));
+    styleASN->SetHydrogens_on(hydrogensOn);
+    Vector2ASNColor(backgroundColor, &(styleASN->SetBackground_color()));
+
+    static const int SCALE = 10000;
+    styleASN->SetScale_factor(SCALE);
+    styleASN->SetSpace_fill_proportion((int) (spaceFillProportion * SCALE));
+    styleASN->SetBall_radius((int) (ballRadius * SCALE));
+    styleASN->SetStick_radius((int) (stickRadius * SCALE));
+    styleASN->SetTube_radius((int) (tubeRadius * SCALE));
+    styleASN->SetTube_worm_radius((int) (tubeWormRadius * SCALE));
+    styleASN->SetHelix_radius((int) (helixRadius * SCALE));
+    styleASN->SetStrand_width((int) (strandWidth * SCALE));
+    styleASN->SetStrand_thickness((int) (strandThickness * SCALE));
+
+    return (
+        SaveBackboneStyleToASN(proteinBackbone, &(styleASN->SetProtein_backbone())) &&
+        SaveBackboneStyleToASN(nucleotideBackbone, &(styleASN->SetNucleotide_backbone())) &&
+        SaveGeneralStyleToASN(proteinSidechains, &(styleASN->SetProtein_sidechains())) &&
+        SaveGeneralStyleToASN(nucleotideSidechains, &(styleASN->SetNucleotide_sidechains())) &&
+        SaveGeneralStyleToASN(heterogens, &(styleASN->SetHeterogens())) &&
+        SaveGeneralStyleToASN(solvents, &(styleASN->SetSolvents())) &&
+        SaveGeneralStyleToASN(connections, &(styleASN->SetConnections())) &&
+        SaveGeneralStyleToASN(helixObjects, &(styleASN->SetHelix_objects())) &&
+        SaveGeneralStyleToASN(strandObjects, &(styleASN->SetStrand_objects()))
+    );
+}
+
+static void ASNColor2Vector(const CCn3d_color& asnColor, Vector *vec)
+{
+    int SCALE = asnColor.GetScale_factor();
+    vec->Set(
+        1.0 * asnColor.GetRed() / SCALE,
+        1.0 * asnColor.GetGreen() / SCALE,
+        1.0 * asnColor.GetBlue() / SCALE
+    );
+    // no alpha in Cn3D's colors
+}
+
+static bool LoadBackboneStyleFromASN(
+    const CCn3d_backbone_style& bbASN, StyleSettings::BackboneStyle *bbSettings)
+{
+    // these static_casts rely on correspondence of enumerated values!
+    bbSettings->type = static_cast<StyleSettings::eBackboneType>(bbASN.GetType());
+    bbSettings->style = static_cast<StyleSettings::eDrawingStyle>(bbASN.GetStyle());
+    bbSettings->colorScheme = static_cast<StyleSettings::eColorScheme>(bbASN.GetColor_scheme());
+    ASNColor2Vector(bbASN.GetUser_color(), &(bbSettings->userColor));
+    return true;
+}
+
+static bool LoadGeneralStyleFromASN(
+    const CCn3d_general_style& gASN, StyleSettings::GeneralStyle *gSettings)
+{
+    // these static_casts rely on correspondence of enumerated values!
+    gSettings->isOn = gASN.GetIs_on();
+    gSettings->style = static_cast<StyleSettings::eDrawingStyle>(gASN.GetStyle());
+    gSettings->colorScheme = static_cast<StyleSettings::eColorScheme>(gASN.GetColor_scheme());
+    ASNColor2Vector(gASN.GetUser_color(), &(gSettings->userColor));
+    return true;
 }
 
 bool StyleSettings::LoadSettingsFromASN(const CCn3d_style_settings& styleASN)
 {
-	return false;
+    virtualDisulfidesOn = styleASN.GetVirtual_disulfides_on();
+    ASNColor2Vector(styleASN.GetVirtual_disulfide_color(), &virtualDisulfideColor);
+    hydrogensOn = styleASN.GetHydrogens_on();
+    ASNColor2Vector(styleASN.GetBackground_color(), &backgroundColor);
+
+    int SCALE = styleASN.GetScale_factor();
+    spaceFillProportion = 1.0 * styleASN.GetSpace_fill_proportion() / SCALE;
+    stickRadius = 1.0 * styleASN.GetStick_radius() / SCALE;
+    tubeRadius = 1.0 * styleASN.GetTube_radius() / SCALE;
+    tubeWormRadius = 1.0 * styleASN.GetTube_worm_radius() / SCALE;
+    helixRadius = 1.0 * styleASN.GetHelix_radius() / SCALE;
+    strandWidth = 1.0 * styleASN.GetStrand_width() / SCALE;
+    strandThickness = 1.0 * styleASN.GetStrand_thickness() / SCALE;
+
+    return (
+        LoadBackboneStyleFromASN(styleASN.GetProtein_backbone(), &proteinBackbone) &&
+        LoadBackboneStyleFromASN(styleASN.GetNucleotide_backbone(), &nucleotideBackbone) &&
+        LoadGeneralStyleFromASN(styleASN.GetProtein_sidechains(), &proteinSidechains) &&
+        LoadGeneralStyleFromASN(styleASN.GetNucleotide_sidechains(), &nucleotideSidechains) &&
+        LoadGeneralStyleFromASN(styleASN.GetHeterogens(), &heterogens) &&
+        LoadGeneralStyleFromASN(styleASN.GetSolvents(), &solvents) &&
+        LoadGeneralStyleFromASN(styleASN.GetConnections(), &connections) &&
+        LoadGeneralStyleFromASN(styleASN.GetHelix_objects(), &helixObjects) &&
+        LoadGeneralStyleFromASN(styleASN.GetStrand_objects(), &strandObjects)
+    );
 }
 
 void StyleSettings::SetToSecondaryStructure(void)
@@ -964,7 +1086,8 @@ CCn3d_style_dictionary * StyleManager::CreateASNStyleDictionary(void) const
 
 bool StyleManager::LoadFromASNStyleDictionary(const CCn3d_style_dictionary& styleDictionary)
 {
-	return false;
+    bool okay = globalStyle.LoadSettingsFromASN(styleDictionary.GetGlobal_style());
+    return okay;
 }
 
 END_SCOPE(Cn3D)
