@@ -526,8 +526,14 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
         BLAST_InitDNAPSequence(query_blk, query_info);
     }
 
-    BLAST_ComplementMaskLocations(program_number, query_info, filter_maskloc, 
-                                  lookup_segments);
+    /* Find complement of the mask locations, for which lookup table will be
+     * created. This should only be done if we do want to create a lookup table,
+     * i.e. if it is a full search, not a traceback-only search. 
+     */
+    if (lookup_segments) {
+        BLAST_ComplementMaskLocations(program_number, query_info, 
+                                      filter_maskloc, lookup_segments);
+    }
 
     if (maskInfo)
     {
