@@ -1014,7 +1014,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
                 CRef<CGb_qual> gbq (new CGb_qual);
                 gbq->SetQual (qual);
                 if (x_StringIsJustQuotes (val)) {
-                    gbq->SetVal ("\"\"");
+                    gbq->SetVal (kEmptyStr);
                 } else {
                     gbq->SetVal (val);
                 }
@@ -1336,7 +1336,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                         CRef<CGb_qual> gbq (new CGb_qual);
                         gbq->SetQual (qual);
                         if (x_StringIsJustQuotes (val)) {
-                            gbq->SetVal ("\"\"");
+                            gbq->SetVal (kEmptyStr);
                         } else {
                             gbq->SetVal (val);
                         }
@@ -1645,7 +1645,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                             CRef<CGb_qual> gbq (new CGb_qual);
                             gbq->SetQual (qual);
                             if (x_StringIsJustQuotes (val)) {
-                                gbq->SetVal ("\"\"");
+                                gbq->SetVal (kEmptyStr);
                             } else {
                                 gbq->SetVal (val);
                             }
@@ -1783,7 +1783,7 @@ void CFeature_table_reader_imp::AddFeatQual (
                 CRef<CGb_qual> gbq (new CGb_qual);
                 gbq->SetQual (qual);
                 if (x_StringIsJustQuotes (val)) {
-                    gbq->SetVal ("\"\"");
+                    gbq->SetVal (kEmptyStr);
                 } else {
                     gbq->SetVal (val);
                 }
