@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/06/02 19:14:08  thiessen
+* Maximize() not implemented in wxGTK
+*
 * Revision 1.49  2001/05/31 18:47:07  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -358,7 +361,9 @@ void RaiseLogWindow(void)
 {
     logFrame->logText->ShowPosition(logFrame->logText->GetLastPosition());
     logFrame->Show(true);
+#if defined(__WXMSW__)
     if (logFrame->IsIconized()) logFrame->Maximize(false);
+#endif
     logFrame->Raise();
 }
 
