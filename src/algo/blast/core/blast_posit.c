@@ -97,15 +97,13 @@ Kappa_posSearchItemsFree(Kappa_posSearchItems* posSearch)
 }
 
 Kappa_compactSearchItems*
-Kappa_compactSearchItemsNew(Uint1* query, unsigned int queryLength, 
-                            int** standardSubstitutionMatrix, 
+Kappa_compactSearchItemsNew(const Uint1* query, unsigned int queryLength, 
                             BlastScoreBlk* sbp)
 {
     Kappa_compactSearchItems* retval = NULL;
 
     ASSERT(sbp);
     ASSERT(query);
-    ASSERT(standardSubstitutionMatrix);
 
     retval = (Kappa_compactSearchItems*) 
         calloc(1, sizeof(Kappa_compactSearchItems));
@@ -121,12 +119,13 @@ Kappa_compactSearchItemsNew(Uint1* query, unsigned int queryLength,
     ASSERT(sbp->alphabet_code == BLASTAA_SEQ_CODE);
     ASSERT(sbp->protein_alphabet == TRUE);
     ASSERT(sbp->alphabet_size == BLASTAA_SIZE);
+    ASSERT(sbp->matrix);
 
-    retval->query = query;
+    retval->query = (Uint1*) query;
     retval->qlength = queryLength;
     retval->alphabetSize = BLASTAA_SIZE;
     retval->gapped_calculation = TRUE;
-    retval->matrix = standardSubstitutionMatrix;
+    retval->matrix = sbp->matrix->data;
     retval->lambda = sbp->kbp_gap_std[0]->Lambda;
     retval->kbp_std = sbp->kbp_std;
     retval->kbp_psi = sbp->kbp_psi;
@@ -180,7 +179,8 @@ static Blast_ScoreFreq* fillSfp(int ** matrix, int matrixLength,
     int i, j, k;               /* indices */
     double onePosFrac;     /* 1/matrix length as a double */
 
-    minScore = maxScore = 0;
+    minScore = BLAST_SCORE_MAX;
+    maxScore = BLAST_SCORE_MIN;
 
     for (i = 0; i < matrixLength; i++) {
         for (j = 0; j < PRO_TRUE_ALPHABET_SIZE; j++) {
@@ -192,6 +192,9 @@ static Blast_ScoreFreq* fillSfp(int ** matrix, int matrixLength,
                 maxScore = matrix[i][k];
         }
     }
+    ASSERT(minScore != BLAST_SCORE_MAX);
+    ASSERT(maxScore != BLAST_SCORE_MIN);
+
     return_sfp->obs_min = minScore;
     return_sfp->obs_max = maxScore;
     if ((maxScore - minScore) >= kScoreMatrixScoreRange) {
@@ -223,7 +226,6 @@ _PSIUpdateLambdaK(const int** pssm,              /* [in] */
                   const Uint1* query,            /* [in] */
                   Uint4 query_length,            /* [in] */
                   const double* std_probs,       /* [in] */
-                  double* initial_lambda_guess,  /* [in] */
                   BlastScoreBlk* sbp);           /* [in|out] */
 
 static Boolean
@@ -371,7 +373,6 @@ impalaScaleMatrix(Kappa_compactSearchItems* compactSearch,
                       compactSearch->query, 
                       compactSearch->qlength, 
                       compactSearch->standardProb, 
-                      NULL, 
                       sbp);
 
     scalefactor = ((double) scalingFactor) / kPSIScaleFactor;
@@ -418,6 +419,9 @@ Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/02/22 22:48:52  camacho
+ * Use matrix data in sbp in Kappa_compactSearchItemsNew
+ *
  * Revision 1.2  2005/02/14 15:04:05  camacho
  * Fix compiler warnings
  *
