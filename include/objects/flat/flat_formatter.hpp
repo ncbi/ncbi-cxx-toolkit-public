@@ -115,7 +115,7 @@ public:
                 IFlatItemOStream& out, SFlatContext* context = 0);
 
     bool              DoHTML     (void) const
-        { return m_Flags & fProduceHTML; }
+        { return (m_Flags & fProduceHTML) != 0; }
     virtual EDatabase GetDatabase(void) const = 0;
     EMode             GetMode    (void) const { return m_Mode; }
 
@@ -209,6 +209,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/10 22:00:20  ucko
+* Add a redundant "!= 0" to DoHTML to suppress a MSVC warning.
+*
 * Revision 1.1  2003/03/10 16:39:08  ucko
 * Initial check-in of new flat-file generator
 *
