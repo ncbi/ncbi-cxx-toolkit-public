@@ -35,7 +35,6 @@
  * sequence identifiers retrieval from a CSeqDB class.
  */
 
-#include <ncbi_pch.hpp>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
 
@@ -74,6 +73,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/10/06 17:47:34  dondosha
+ * Removed ncbi_pch.hpp
+ *
  * Revision 1.2  2004/10/06 17:45:35  dondosha
  * Removed USING_SCOPE; qualify objects classes directly
  *
