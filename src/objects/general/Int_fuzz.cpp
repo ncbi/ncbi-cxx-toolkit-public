@@ -170,13 +170,13 @@ void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
             switch (f.GetLim()) {
             case eLim_unk:
                 hit_unk   = (!hit_unk  ||  mode != eReduce);
-                min_delta = kInfinity;
+                min_delta = -kInfinity;
                 // fall through
             case eLim_gt:
                 max_delta = kInfinity;
                 break;
             case eLim_lt:
-                min_delta = kInfinity;
+                min_delta = -kInfinity;
                 break;
             case eLim_tr:
                 min_delta += 0.5;
@@ -233,7 +233,7 @@ void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
             break;
         }
 
-        if (mode == eReduce) {
+        if (mode == eReduce  &&  max_delta - min_delta < kInfinity / 2) {
             swap(min_delta, max_delta);
         }
     }
@@ -247,7 +247,7 @@ void CInt_fuzz::Add(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
 
     if (min_delta < -kInfinity / 2) {
         if (max_delta > kInfinity / 2) {
-            if (mode == eReduce  &&  !hit_unk ) {
+            if ( /* mode == eReduce  && */ !hit_unk ) {
                 // assume cancellation
                 SetP_m(0);
             } else {
@@ -360,6 +360,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.9  2003/10/15 19:07:09  ucko
+ * Fix some logic errors with lt/gt limits in CInt_fuzz::Add
+ *
  * Revision 6.8  2003/10/15 17:37:15  ucko
  * Fix a couple of instances of unintentional fall-through.
  *
