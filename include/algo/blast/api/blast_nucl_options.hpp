@@ -93,7 +93,7 @@ public:
             ws % COMPRESSION_RATIO != 0)
             SetVariableWordSize(false);
 
-        unsigned int s = CalculateBestStride(GetWordSize(), 
+        unsigned int s = CalculateBestStride(ws,
                                              GetVariableWordSize(), 
                                              GetLookupTableType());
 
@@ -329,6 +329,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/08/03 21:52:16  dondosha
+ * Minor correction in options dependency logic
+ *
  * Revision 1.15  2004/08/03 20:20:30  dondosha
  * Added some option dependencies to setter methods
  *

@@ -70,6 +70,7 @@ public:
     void SetTemplateLength(unsigned char length) 
     {
         m_Opts->SetScanStep(4);
+        m_Opts->SetSeedExtensionMethod(eUpdateDiag);
         m_Opts->SetMBTemplateLength(length);
     }
 
@@ -125,6 +126,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/08/03 21:52:16  dondosha
+ * Minor correction in options dependency logic
+ *
  * Revision 1.10  2004/08/03 20:19:52  dondosha
  * Set scanning stride to 4 in SetTemplateLength method
  *
