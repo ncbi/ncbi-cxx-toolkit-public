@@ -43,11 +43,18 @@
 BEGIN_NCBI_SCOPE
 
 
-//  EOwnership
-
+//  Ownership
 enum EOwnership {
     eNoOwnership,
     eTakeOwnership
+};
+
+
+// Nullability
+enum ENullable
+{
+    eNullable,
+    eNotNullable
 };
 
 
@@ -272,13 +279,13 @@ extern char* strdup(const char* str);
 // Useful macro to write 'for' statements with the STL container iterator as
 // a variable.
 //
-
+/*
 #define iterate(Type, Var, Cont) \
     for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
 
 #define non_const_iterate(Type, Var, Cont) \
     for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
-
+*/
 
 #define ITERATE(Type, Var, Cont) \
     for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
@@ -315,6 +322,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2003/04/18 18:10:08  kuznets
+ * + enum ENullable
+ *
  * Revision 1.62  2003/03/10 17:43:45  kuznets
  * iterate -> ITERATE cleanup
  *
