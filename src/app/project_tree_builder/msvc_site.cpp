@@ -215,6 +215,52 @@ CMsvcSite::ELibChoice CMsvcSite::GetChoiceFor3PartyLib(const string& lib_3party)
 }
 
 
+void CMsvcSite::GetLibChoiceIncludes (const string& cpp_flags_define, 
+                                      list<string>* abs_includes) const
+{
+    abs_includes->clear();
+
+    string include_str = m_Registry.GetString("LibChoicesIncludes", 
+                                              cpp_flags_define, "");
+    //split on parts
+    list<string> parts;
+    NStr::Split(include_str, LIST_SEPARATOR, parts);
+
+    string lib_id;
+    ITERATE(list<string>, p, parts) {
+        if ( lib_id.empty() )
+            lib_id = *p;
+        else  {
+            
+            ELibChoice choice = GetChoiceForLib(lib_id);
+            if (choice == eLib) {
+                const string& rel_include_path = *p;
+                string abs_include_path = 
+                    GetApp().GetProjectTreeInfo().m_Include;
+                abs_include_path = 
+                    CDirEntry::ConcatPath(abs_include_path, rel_include_path);
+                abs_include_path = CDirEntry::NormalizePath(abs_include_path);
+                abs_includes->push_back(abs_include_path);
+            }
+            if (choice == e3PartyLib) {
+                ITERATE(list<SLibChoice>, n, m_LibChoices) {
+                    const SLibChoice& choice = *n;
+                    if (choice.m_LibId == lib_id) {
+                        SLibInfo lib_info;
+                        GetLibInfo(choice.m_3PartyLib, SConfigInfo(), &lib_info);
+                        if ( !lib_info.m_IncludeDir.empty() ) {
+                            abs_includes->push_back(lib_info.m_IncludeDir);
+                        }
+                    }
+                }
+            }
+            //
+            lib_id.erase();
+        }
+    }
+}
+
+
 //-----------------------------------------------------------------------------
 bool IsLibOk(const SLibInfo& lib_info)
 {
@@ -249,6 +295,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/13 14:55:00  gorelenk
+ * Implemented CMsvcSite::GetLibChoiceIncludes .
+ *
  * Revision 1.11  2004/04/20 22:09:00  gorelenk
  * Changed implementation of struct SLibChoice constructor.
  *
