@@ -476,10 +476,12 @@ string CSocketAPI::ntoa(unsigned int host)
 string CSocketAPI::gethostbyaddr(unsigned int host)
 {
     char hostname[256];
-    if ( !SOCK_gethostbyaddr(host, hostname, sizeof(hostname)) )
+    if ( !SOCK_gethostbyaddr(host, hostname, sizeof(hostname))  &&
+         SOCK_ntoa(host, hostname, sizeof(hostname)) != 0) {
         *hostname = 0;
+    }
     return string(hostname);
-}    
+}
 
 
 unsigned int CSocketAPI::gethostbyname(const string& hostname)
@@ -539,6 +541,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2004/09/24 18:43:55  lavr
+ * CSocketAPI::gethostbyaddr(): to try to do 'ntoa' if no name was found
+ *
  * Revision 6.25  2004/07/23 19:05:26  lavr
  * CListeningSocket(), CListeningSocket::Listen() to accept flags
  *
