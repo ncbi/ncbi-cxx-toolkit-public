@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.33 2002/02/13 22:39:12 ucko Exp $
+#  $Id: configure.ac,v 1.34 2002/02/19 05:02:52 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -28,7 +28,7 @@
 # Authors:  Denis Vakatov, Aaron Ucko
 #
 # File Description:
-#   Generate platform-dependent header("config.h") for NCBI C++ libs
+#   Generate platform-dependent header("ncbiconf.h") for NCBI C++ libs
 #   USAGE:
 #    1) Process this file with "autoconf" to produce a "configure" script.
 #    2) Run the resultant "configure" script to produce
@@ -52,7 +52,7 @@ cache_file=config.cache
 # command-line setting.
 AC_DIVERT_POP
 
-AC_INIT(ncbi-tools++, 0.0, cpp@ncbi.nlm.nih.gov)
+AC_INIT(ncbi-tools++, 0.0, cpp-core@ncbi.nlm.nih.gov)
 AC_CONFIG_SRCDIR(src/Makefile.mk.in)
 
 
@@ -109,6 +109,8 @@ AC_ARG_WITH(lib-rebuilds2,
    [ --with-lib-rebuilds=ask ask whether to update each app's libraries])dnl'
 AC_ARG_WITH(projects,
    [ --with-projects=FILE    build projects listed in FILE by default])
+AC_ARG_WITH(check,
+   [ --with-check=           run test suite after the build])
 
 ## NCBI packages
 AC_ARG_WITH(ncbi-c,
@@ -153,8 +155,8 @@ AC_ARG_WITH(serial,
    [ --without-serial        do not build the serialization library and tools])
 AC_ARG_WITH(objects,
    [ --with-objects          generate/build serializeable objects from ASNs])
-AC_ARG_WITH(objects,
-   [ --without-dbapi         do not build NCBI portable database APIs])
+AC_ARG_WITH(dbapi,
+   [ --without-dbapi         do not build NCBI portable database libraries])
 AC_ARG_WITH(app,
    [ --with-app              build standalone applications like ID1_FETCH])
 AC_ARG_WITH(ctools,
@@ -205,7 +207,8 @@ for x_arg in "$@" ; do
       ;;
 
       --with-extra-action=* | --exec-prefix=* | --with-build-root=* \
-      | --with-projects=* | --cache-file=* | --build=* | --host=* \
+      | --with-projects=* | --with-check=* \
+      | --cache-file=* | --build=* | --host=* \
       | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
@@ -275,6 +278,7 @@ if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes"; then
       *AIX* ) VAC="yes" ;;
    esac
 fi
+
 
 #### Detect supported compilers
 changequote(, )dnl
@@ -881,14 +885,14 @@ fi
 
 
 #### Release/Debug
-   if test "$with_debug" = "no" ; then
-      release_debug="Release"
-      D_SFX=
-   else
-      release_debug="Debug"
-      D_SFX=d
-   fi
-   DEBUG_SFX=${release_debug}
+if test "$with_debug" = "no" ; then
+   release_debug="Release"
+   D_SFX=
+else
+   release_debug="Debug"
+   D_SFX=d
+fi
+DEBUG_SFX=${release_debug}
 
 
 #### Add "Release"/"Debug" and "MT", "DLL", "64" suffixes to "${build_root}"
@@ -901,6 +905,10 @@ fi
 if test "$with_hostspec" = "yes" ; then
    build_root="${build_root}--${host}"
 fi
+
+
+#### Overall configuration mode summary
+signature="${compiler}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}--${host}"
 
 
 #### Check if there is "${build_root}" dir
@@ -1071,6 +1079,10 @@ elif test "$x_have_unistd" = "yes" ; then
    UNIX_SRC='$(UNIX_SRC)'
    UNIX_USR_PROJ='$(UNIX_USR_PROJ)'
    WithFeatures="$WithFeatures unix"
+
+   if test "$OSTYPE" = "irix" ; then
+      AC_DEFINE_UNQUOTED(NCBI_OS_IRIX, 1)
+   fi
 else
    AC_DEFINE_UNQUOTED(NCBI_OS_MAC, 1)
    AC_DEFINE_UNQUOTED(NCBI_OS, "MAC")
@@ -2248,6 +2260,16 @@ case "$with_projects" in
  *       ) AC_SUBST(PROJECTS, "\$(top_srcdir)/$with_projects") ;;
 esac
 
+
+# Run the test suite after the build?
+
+if test -n "$with_check"  -a  "$with_check" != "no" ; then
+   check="check"
+   test "$with_check" != "yes"  &&  CHECK_ARG="$with_check"
+fi
+
+
+
 ### Check for C standard types and sizes
 ### --------------------------------------------
 
@@ -2265,6 +2287,7 @@ AC_CHECK_SIZEOF(long double)
 AC_CHECK_SIZEOF(size_t)
 bits=`expr 8 \* $ac_cv_sizeof_size_t`
 AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $bits)
+
 
 
 ### Cleanup
@@ -2320,6 +2343,8 @@ eval ncbi_runpath=`echo $pure_runpath`
 AC_DEFINE_UNQUOTED(NCBI_RUNPATH, "$ncbi_runpath")
 
 ### Template substitutions
+AC_SUBST(signature)
+
 AC_SUBST(build_root)
 
 AC_SUBST(top_srcdir)
@@ -2361,6 +2386,9 @@ AC_SUBST(serial)
 AC_SUBST(objects)
 AC_SUBST(dbapi)
 AC_SUBST(app)
+
+AC_SUBST(check)
+AC_SUBST(CHECK_ARG)
 
 AC_SUBST(script_shell)
 AC_SUBST(make_shell)
