@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.20  2003/05/21 22:29:04  dondosha
+* Fix for two sequences tblastn traceback
+*
 * Revision 1.19  2003/05/20 15:47:16  dondosha
 * Fix in BLAST_SetUpSubject for two sequences case
 *
@@ -1541,21 +1544,19 @@ Int2 BLAST_GetSubjectSequence(SeqLocPtr subject_slp, Uint1Ptr *buffer,
       *(++buffer_var) = NULLB;
       break;
    case NCBI4NA_ENCODING:
-      *buffer = buffer_var = (Uint1Ptr) Malloc(*buffer_length + 2);
-      *buffer_var = NULLB;
+      /* No extra sentinel bytes are allocated in this case, 
+         mirroring the readdb API */
+      *buffer = buffer_var = (Uint1Ptr) Malloc(*buffer_length);
       spp = SeqPortNewByLoc(subject_slp, Seq_code_ncbi4na);
       subject_bsp = BioseqFindCore(SeqLocId(subject_slp));
       if (subject_bsp != NULL && subject_bsp->repr == Seq_repr_delta)
          SeqPortSet_do_virtual(spp, TRUE);
-      *buffer_var = 0;
       
       while ((residue=SeqPortGetResidue(spp)) != SEQPORT_EOF) {
          if (IS_residue(residue)) {
-            *(++buffer_var) = residue;
+            *(buffer_var++) = residue;
          }
       }
-      /* Gap character in last space. */
-      *(++buffer_var) = 0;
       break;
    case BLASTNA_ENCODING:
       *buffer = buffer_var = (Uint1Ptr) Malloc(*buffer_length + 2);
@@ -1720,8 +1721,9 @@ Int2 BLAST_MainSetUp(SeqLocPtr query_slp, const Uint1 program_number,
         LookupTableOptionsValidate(lookup_options, blast_message)) != 0)
       return status;
    
-   if ((status=
-        BlastHitSavingOptionsValidate(hit_options, blast_message)) != 0)
+   if ((status =
+        BlastHitSavingOptionsValidate(hit_options, program_number, 
+                                      blast_message)) != 0)
       return status;
    
    is_na = ISA_na(SeqLocMol(slp));
