@@ -183,7 +183,7 @@ auto_ptr<ofstream> open_ofstream (const string& filename) {
 
 
 void CAppNWA::x_RunOnPair() const
-    throw(CAppNWAException, CAlgoAlignException)
+    THROWS((CAppNWAException, CAlgoAlignException))
 {
     const CArgs& args = GetArgs();
 
@@ -418,6 +418,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/04/30 13:01:33  kuznets
+ * throw -> THROWS
+ *
  * Revision 1.25  2003/11/07 18:30:17  kapustin
  * mRna2Dna --> Spliced
  *
