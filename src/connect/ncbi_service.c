@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/02/09 17:33:06  lavr
+ * Modified: fSERV_StatelessOnly overrides info->stateless
+ *
  * Revision 6.11  2001/01/25 17:05:32  lavr
  * Bugfix in SERV_OpenEx: op was not initted to 0
  *
@@ -159,6 +162,8 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
             return 0;
         }
     } else {
+        if (info->stateless)
+            iter->type |= fSERV_StatelessOnly;
         if ((info->lb_disable || !(op = SERV_LBSMD_Open(iter))) &&
             !(op = SERV_DISPD_Open(iter, info))) {
             SERV_Close(iter);

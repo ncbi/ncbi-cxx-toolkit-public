@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/02/09 17:32:52  lavr
+ * Modified: fSERV_StatelessOnly overrides info->stateless
+ *
  * Revision 6.11  2001/01/08 22:48:00  lavr
  * Double return 0 in GetNextInfo removed:
  * 0 now indicates an error unconditionally
@@ -85,12 +88,14 @@ typedef struct SSERV_IterTag* SERV_ITER;
 
 
 /* Create iterator for the iterative server lookup.
- * Connection information (info) can be NULL pointer, which means
+ * Connection information 'info' can be a NULL pointer, which means
  * not to make any network connections (only LBSMD will be consulted).
- * If info is not NULL, LBSMD is consulted first (unless info->lb_disable
- * is true, meaning to skip LBSMD on this step), and then DISPD is consulted
+ * If 'info' is not NULL, LBSMD is consulted first (unless 'info->lb_disable'
+ * is non-zero, meaning to skip LBSMD), and then DISPD is consulted
  * (using information provided) but only if mapping with LBSMD (if any)
  * failed. This scheme permits to use any combination of service mappers.
+ * Note that if 'info' is not NULL then non-zero value of 'info->stateless'
+ * forces 'types' to have 'fSERV_StatelessOnly' set.
  * NB: 'nbo' in comments denotes parameters coming in network byte order.
  */
 SERV_ITER SERV_OpenSimple
@@ -99,14 +104,14 @@ SERV_ITER SERV_OpenSimple
 
 SERV_ITER SERV_Open
 (const char*         service,       /* service name                          */
- TSERV_Type          type,          /* mask of type of servers requested     */
+ TSERV_Type          types,         /* mask of type(s) of servers requested  */
  unsigned int        preferred_host,/* preferred host to use service on, nbo */
  const SConnNetInfo* info           /* connection information                */
  );
 
 SERV_ITER SERV_OpenEx
 (const char*         service,       /* service name                          */
- TSERV_Type          type,          /* mask of type of servers requested     */
+ TSERV_Type          types,         /* mask of type(s) of servers requested  */
  unsigned int        preferred_host,/* preferred host to use service on, nbo */
  const SConnNetInfo* info,          /* connection information                */
  const SSERV_Info    *const skip[], /* array of servers NOT to select        */

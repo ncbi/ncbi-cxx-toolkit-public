@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/02/09 17:36:48  lavr
+ * Modified: fSERV_StatelessOnly overrides info->stateless
+ *
  * Revision 6.10  2001/01/25 17:06:36  lavr
  * s_FreeData now calls ConnNetInfo_Destroy() unconditionally
  *
@@ -180,7 +183,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     static const char stateless[] = "Client-Mode: STATELESS_ONLY\r\n";
     static const char dispatch_mode[] = "Dispatch-Mode: INFORMATION_ONLY\r\n";
     static const char stateful_capable[] = "Client-Mode: STATEFUL_CAPABLE\r\n";
-    SConnNetInfo *net_info = ((SDISPD_Data *)iter->data)->net_info;
+    SConnNetInfo *net_info = ((SDISPD_Data*) iter->data)->net_info;
     const char *tag1, *tag2;
     size_t buflen;
     CONNECTOR c;
@@ -241,7 +244,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     /* This dummy read will send all the HTTP data, we'll get a callback */
     CONN_Read(conn, 0, 0, &buflen, eIO_Plain);
     CONN_Close(conn);
-    return ((SDISPD_Data*)(iter->data))->n_info != 0;
+    return ((SDISPD_Data*) iter->data)->n_info != 0;
 }
 
 
@@ -386,6 +389,8 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
     if (!(data = (SDISPD_Data*) malloc(sizeof(*data))))
         return 0;
     data->net_info = ConnNetInfo_Clone(net_info);
+    if (iter->type & fSERV_StatelessOnly)
+        data->net_info->stateless = 1/*true*/;
     data->n_info = data->n_max_info = 0;
     data->s_info = 0;
     iter->data = data;
