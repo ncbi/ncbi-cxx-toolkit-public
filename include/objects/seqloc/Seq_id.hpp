@@ -286,7 +286,8 @@ public:
     };
 
     enum ELabelFlags {
-        fLabel_Version = 0x10,
+        fLabel_Version            = 0x10,
+        fLabel_GeneralDbIsContent = 0x20,
 
         // default options - always show the version
         fLabel_Default = fLabel_Version
@@ -489,6 +490,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.48  2004/06/28 14:20:42  dicuccio
+ * Added flag for GetLabel(): treat the 'db' portion of a general ID as content
+ *
  * Revision 1.47  2004/05/11 14:34:12  ucko
  * Factored out and refined Textseq-id bonus calculation.
  *
