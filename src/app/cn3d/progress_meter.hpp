@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/10/24 17:07:30  thiessen
+* add PNG output for wxGTK
+*
 * Revision 1.1  2001/10/23 13:53:40  thiessen
 * add PNG export
 *
@@ -61,6 +64,10 @@ public:
 
     // set gauge value
     void SetValue(int value, bool doYield = true);
+    
+private:
+    void OnCloseWindow(wxCloseEvent& event);
+    DECLARE_EVENT_TABLE()
 };
 
 END_SCOPE(Cn3D)

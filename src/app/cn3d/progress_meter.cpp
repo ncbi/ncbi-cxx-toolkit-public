@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/10/24 17:07:30  thiessen
+* add PNG output for wxGTK
+*
 * Revision 1.1  2001/10/23 13:53:40  thiessen
 * add PNG export
 *
@@ -53,6 +56,10 @@ BEGIN_SCOPE(Cn3D)
         ERR_POST(Error << "Can't find window with id " << id); \
         return; \
     }
+
+BEGIN_EVENT_TABLE(ProgressMeter, wxDialog)
+    EVT_CLOSE       (       ProgressMeter::OnCloseWindow)
+END_EVENT_TABLE()
 
 ProgressMeter::ProgressMeter(wxWindow *myParent,
         const wxString& message, const wxString& title, int maximumValue) :
@@ -98,8 +105,30 @@ ProgressMeter::ProgressMeter(wxWindow *myParent,
 
     // automatically bring up the window and let it be shown right away
     Show(true);
+#ifdef __WXGTK__
+    // wxSafeYield seems to force redraws in wxGTK, so make window modal
+    // so that it's safe to call wxYield() instead
+    SetFocus();
+    MakeModal(true);
+    wxYield();
+#else        
     wxSafeYield();
+#endif        
 }
+
+void ProgressMeter::OnCloseWindow(wxCloseEvent& event)
+{
+#ifdef __WXGTK__
+    ERR_POST(Info << "can veto: " << event.CanVeto());
+    if (event.CanVeto()) {
+        event.Veto();
+    } else {
+        MakeModal(false);
+        Show(false);
+    }
+#endif
+}
+
 
 void ProgressMeter::SetValue(int value, bool doYield)
 {
@@ -110,7 +139,12 @@ void ProgressMeter::SetValue(int value, bool doYield)
         gauge->SetValue((value <= 0) ? 0 : ((value >= max) ? max : value));
 
         // yield for window redraw
-        if (doYield) wxSafeYield();
+        if (doYield) 
+#ifdef __WXGTK__
+            wxYield();  // wxSafeYield seems to force redraws in wxGTK...
+#else
+            wxSafeYield();
+#endif        
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/10/24 17:07:30  thiessen
+* add PNG output for wxGTK
+*
 * Revision 1.3  2001/10/24 11:25:20  thiessen
 * fix wxString problem
 *
@@ -51,6 +54,7 @@
 
 #elif defined(__WXGTK__)
 #include <GL/glx.h>
+#include <gdk/gdkx.h>
 
 #elif defined(__WXMAC__)
 #define DONT_USE_GL_DIR
@@ -355,10 +359,19 @@ static void writepng_error_handler(png_structp png_ptr, png_const_charp msg)
     ERR_POST(Error << "PNG library error: " << msg);
 }
 
+#ifdef __WXGTK__
+static bool gotAnXError;
+int X_error_handler(Display *dpy, XErrorEvent *error)
+{
+    gotAnXError = true;
+    return 0;
+}
+#endif
+
 // called after each row is written to the file
 static void write_row_callback(png_structp png_ptr, png_uint_32 row, int pass)
 {
-	if (!progressMeter) return;
+    if (!progressMeter) return;
     int progress = 0;
 
     if (nRows < 0) { /* if negative, then we're doing interlacing */
@@ -401,6 +414,18 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     PIXELFORMATDESCRIPTOR pfd;
     int nPixelFormat;
 
+#elif defined(__WXGTK__)
+    GLint glSize;
+    int nAttribs, attribs[20];
+    XVisualInfo *visinfo = NULL;
+    bool localVI = false;
+    Pixmap xPixmap = 0;
+    GLXContext currentCtx = NULL, glCtx = NULL;
+    GLXPixmap glxPixmap = 0;
+    GLXDrawable currentXdrw = 0;
+    Display *display;
+    int (*currentXErrHandler)(Display *, XErrorEvent *) = NULL;
+
 #else
     ERR_POST("PNG export not (yet) implemented on this platform");
     return false;
@@ -434,13 +459,12 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
             if (outputHeight % bufferHeight != 0) nChunks++;    // partially occupied chunk
             interlaced = false;
         }
-        TESTMSG("interlaced: " << interlaced << ", nChunks: " << nChunks
-            << ", buffer height: " << bufferHeight);
 
         // create and show progress meter
         wxString message;
         message.Printf("Writing PNG file %s (%ix%i)",
-            wxFileNameFromPath(filename.c_str()), outputWidth, outputHeight);
+            (wxString(wxFileNameFromPath(filename.c_str()))).c_str(), 
+            outputWidth, outputHeight);
         progressMeter = new ProgressMeter(NULL, message, "Saving...", PROGRESS_RESOLUTION);
 
         // open the output file for writing
@@ -489,8 +513,65 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
             ERR_POST(Error << "wglMakeCurrent failed");
             throw GetLastError();
         }
+
+#elif defined(__WXGTK__)
+        currentCtx = glXGetCurrentContext(); // save current context info
+        currentXdrw = glXGetCurrentDrawable();
+        display = GDK_DISPLAY();
+
+        currentXErrHandler = XSetErrorHandler(X_error_handler);
+        gotAnXError = false;
+
+        // first, try to get a non-doublebuffered visual, to economize on memory
+        nAttribs = 0;
+        attribs[nAttribs++] = GLX_USE_GL;
+        attribs[nAttribs++] = GLX_RGBA;
+        attribs[nAttribs++] = GLX_RED_SIZE;
+        glGetIntegerv(GL_RED_BITS, &glSize);
+        attribs[nAttribs++] = glSize;
+        attribs[nAttribs++] = GLX_GREEN_SIZE;
+        attribs[nAttribs++] = glSize;
+        attribs[nAttribs++] = GLX_BLUE_SIZE;
+        attribs[nAttribs++] = glSize;
+        attribs[nAttribs++] = GLX_DEPTH_SIZE;
+        glGetIntegerv(GL_DEPTH_BITS, &glSize);
+        attribs[nAttribs++] = glSize;
+        attribs[nAttribs++] = None;
+        visinfo = glXChooseVisual(display, DefaultScreen(display), attribs);
+
+        // if that fails, just revert to the one used for the regular window
+        if (visinfo)
+            localVI = true;
+        else
+            visinfo = (XVisualInfo *) (glCanvas->m_vi);
+
+        // create pixmap
+        xPixmap = XCreatePixmap(display,
+            RootWindow(display, DefaultScreen(display)),
+            outputWidth, bufferHeight, visinfo->depth);
+        if (!xPixmap) throw "failed to create Pixmap";
+        glxPixmap = glXCreateGLXPixmap(display, visinfo, xPixmap);
+        if (!glxPixmap) throw "failed to create GLXPixmap";
+        if (gotAnXError) throw "Got an X error creating GLXPixmap";
+        
+        // try to share display lists with "regular" context
+        glCtx = glXCreateContext(display, visinfo, currentCtx, GL_FALSE);
+        if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx)) {
+            ERR_POST(Warning << "failed to make GLXPixmap rendering context with shared display lists");
+            shareDisplayLists = false;
+            if (glCtx) glXDestroyContext(display, glCtx);
+            
+            // try to create context without shared lists
+            glCtx = glXCreateContext(display, visinfo, NULL, GL_FALSE);
+            if (!glCtx || !glXMakeCurrent(display, glxPixmap, glCtx))
+                throw "failed to make GLXPixmap rendering context without shared display lists";
+        }
+
 #endif
 
+        TESTMSG("interlaced: " << interlaced << ", nChunks: " << nChunks
+            << ", buffer height: " << bufferHeight << ", shared: " << shareDisplayLists);
+        
         // allocate a row of pixel storage
         rowStorage = new unsigned char[outputWidth * bytesPerPixel];
         if (!rowStorage) throw "failed to allocate pixel row buffer";
@@ -568,9 +649,9 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
             nRows = outputHeight;
 
             for (int chunk = nChunks - 1; chunk >= 0; chunk--) {
-                TESTMSG("drawing chunk #" << (chunk + 1));
 
                 // set viewport for this chunk and redraw
+                if (nChunks > 1) TESTMSG("drawing chunk #" << (chunk + 1));
                 if (nChunks > 1) glViewport(0, -chunk*bufferHeight, outputWidth, outputHeight);
                 glCanvas->renderer->Display();
 
@@ -608,6 +689,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
             png_destroy_write_struct(&png_ptr, NULL);
     }
     if (progressMeter) {
+        progressMeter->Close(true);
         progressMeter->Destroy();
         progressMeter = NULL;
     }
@@ -618,6 +700,18 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
     if (hglrc) wglDeleteContext(hglrc);
     if (hbm) DeleteObject(hbm);
     if (hdc) DeleteDC(hdc);
+
+#elif defined(__WXGTK__)
+    gotAnXError = false;
+    if (glCtx) {
+        glXMakeCurrent(display, currentXdrw, currentCtx);
+        glXDestroyContext(display, glCtx);
+    }
+    if (glxPixmap) glXDestroyGLXPixmap(display, glxPixmap);
+    if (xPixmap) XFreePixmap(display, xPixmap);
+    if (localVI && visinfo) XFree(visinfo);
+    if (gotAnXError) ERR_POST(Warning << "Got an X error destroying GLXPixmap context");
+    XSetErrorHandler(currentXErrHandler);
 #endif
 
     // reset font after "regular" context restore
