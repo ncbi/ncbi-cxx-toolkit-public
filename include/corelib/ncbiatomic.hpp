@@ -133,7 +133,7 @@ void* SwapPointers(void * volatile * location, void* new_value)
         (InterlockedExchange(reinterpret_cast<LPLONG>(nv_loc),
                              reinterpret_cast<LONG>(new_value)));
 #  elif defined(NCBI_COUNTER_ASM_OK)
-#    ifdef __i386
+#    if defined(__i386) || defined(__x86_64) // same (overloaded) opcode...
     void* old_value;
 #      ifdef NCBI_COMPILER_WORKSHOP
     old_value = NCBICORE_asm_xchg(new_value, nv_loc);
@@ -186,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/21 22:07:37  ucko
+ * SwapPointers: use XCHG opcode on x86-64 in addition to vanilla x86.
+ *
  * Revision 1.4  2003/10/09 21:02:48  ucko
  * Only predeclare SwapPointers when not inlining it, to avoid a warning.
  *
