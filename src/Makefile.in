@@ -7,5 +7,5 @@
 #################################
 
 PROJECT = 
-SUBPROJ = corelib
+SUBPROJ = corelib html
 include @builddir@/Makefile.meta
