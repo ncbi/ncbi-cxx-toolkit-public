@@ -5,7 +5,7 @@ user=$REMOTE_USER
 [ -z "$user" ] && user=$USER
 [ -z "$user" ] && user=`id`
 
-fmt -79 > "$file.$$" <<EOF
+fmt -74 > "$file.$$" <<EOF
 $user appears to be running $1 in `pwd` as process $2 on `hostname`.  If
 you have received this message in error, delete `pwd`/$file and try again.
 EOF
