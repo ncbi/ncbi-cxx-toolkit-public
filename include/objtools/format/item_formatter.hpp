@@ -79,32 +79,32 @@ public:
 
 
     // control methods
-    virtual void Start       (IFlatTextOStream& text_os) {}
-    virtual void StartSection(IFlatTextOStream& text_os) {}
-    virtual void EndSection  (IFlatTextOStream& text_os) {}
-    virtual void End         (IFlatTextOStream& text_os) {}
+    virtual void Start       (IFlatTextOStream&) {}
+    virtual void StartSection(IFlatTextOStream&) {}
+    virtual void EndSection  (IFlatTextOStream&) {}
+    virtual void End         (IFlatTextOStream&) {}
 
     // Format methods
     void Format(const IFlatItem& item, IFlatTextOStream& text_os);
-    virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os) {}
-    virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os) {}
-    virtual void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os) {}
-    virtual void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os) {}
-    virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os) {}
-    virtual void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os) {}
-    virtual void FormatSource(const CSourceItem& keys, IFlatTextOStream& text_os) {}
-    virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os) {}
-    virtual void FormatComment(const CCommentItem& comment, IFlatTextOStream& text_os) {}
-    virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os) {}
-    virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os) {}
-    virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os) {}
-    virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os) {}
-    virtual void FormatDate(const CDateItem& seg, IFlatTextOStream& text_os) {}
-    virtual void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os) {}
-    virtual void FormatPrimary(const CPrimaryItem& prim, IFlatTextOStream& text_os) {}
-    virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os) {}
-    virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os) {}
-    virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os) {}
+    virtual void FormatLocus     (const CLocusItem&, IFlatTextOStream&)       {}
+    virtual void FormatDefline   (const CDeflineItem&, IFlatTextOStream&)     {}
+    virtual void FormatAccession (const CAccessionItem&, IFlatTextOStream&)   {}
+    virtual void FormatVersion   (const CVersionItem&, IFlatTextOStream&)     {}
+    virtual void FormatSegment   (const CSegmentItem&, IFlatTextOStream&)     {}
+    virtual void FormatKeywords  (const CKeywordsItem&, IFlatTextOStream&)    {}
+    virtual void FormatSource    (const CSourceItem&, IFlatTextOStream&)      {}
+    virtual void FormatReference (const CReferenceItem&, IFlatTextOStream&)   {}
+    virtual void FormatComment   (const CCommentItem&, IFlatTextOStream&)     {}
+    virtual void FormatBasecount (const CBaseCountItem&, IFlatTextOStream&)   {}
+    virtual void FormatSequence  (const CSequenceItem&, IFlatTextOStream&)    {}
+    virtual void FormatFeatHeader(const CFeatHeaderItem&, IFlatTextOStream&)  {}
+    virtual void FormatFeature   (const CFeatureItemBase&, IFlatTextOStream&) {}
+    virtual void FormatDate      (const CDateItem&, IFlatTextOStream&)        {}
+    virtual void FormatDBSource  (const CDBSourceItem&, IFlatTextOStream&)    {}
+    virtual void FormatPrimary   (const CPrimaryItem&, IFlatTextOStream&)     {}
+    virtual void FormatContig    (const CContigItem&, IFlatTextOStream&)      {}
+    virtual void FormatWGS       (const CWGSItem&, IFlatTextOStream&)         {}
+    virtual void FormatGenome    (const CGenomeItem&, IFlatTextOStream&)      {}
 
     // Context
     void SetContext(CFFContext& ctx) { m_Ctx.Reset(&ctx); }
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/11 16:48:14  shomrat
+* removed variable names to supress compiler warnings
+*
 * Revision 1.2  2004/01/14 15:56:18  shomrat
 * const removed; added control methods
 *
