@@ -40,6 +40,7 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seg_ext.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_literal.hpp>
@@ -737,26 +738,18 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
 
     {{ // Find organism name 
         CConstRef<COrg_ref> org;
-        {{
-            CSeqdesc_CI it(handle, CSeqdesc::e_Source);
-            for (;  it;  ++it) {
-                org = &it->GetSource().GetOrg();
-                BREAK(it);
+        // Don't go up(!)
+        ITERATE(CSeq_descr::Tdata, it, core->GetDescr().Get()) {
+            if ((*it)->IsSource()) {
+                org = &(*it)->GetSource().GetOrg();
+                break;
             }
-        }}
+        }
         if (org.Empty()  &&  cds_loc.NotEmpty()) {
-            CTypeConstIterator<CSeq_id> id = ConstBegin(*cds_loc);
-            for (; id; ++id) {
-                CBioseq_Handle na_handle = scope.GetBioseqHandle(*id);
-                if (!na_handle) {
-                    continue;
-                }
-                CSeqdesc_CI it(na_handle, CSeqdesc::e_Source);
-                for (;  it;  ++it) {
-                    org = &it->GetSource().GetOrg();
-                    BREAK(it);
-                }
-                if (org) BREAK(id);
+            for (CFeat_CI it(scope, *cds_loc, CSeqFeatData::e_Biosrc);
+                 it;  ++it) {
+                org = &it->GetData().GetBiosrc().GetOrg();
+                BREAK(it);
             }
         }
         if (org.NotEmpty()  &&  org->IsSetTaxname()) {
@@ -844,6 +837,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.22  2003/05/23 14:16:00  ucko
+* Adjust s_TitleFromProtein's orgname-extraction code to match the C
+* version: only look at source descriptors directly on the protein, and
+* look at features rather than descriptors when falling back on nucleotides.
+*
 * Revision 1.21  2003/05/02 20:52:22  ucko
 * Sort #include directives to ease maintainability.
 * Add support for constructing NR_ titles.
