@@ -74,6 +74,17 @@ ASNP_KET = ) || $(NOTK_BRA) exit 6 $(NOTK_KET) ; \
    done ; \
 fi
 
+MAKE_DTD = $(builddir)/new_module.sh --dtd "$$i"
+DTDP_BRA = \
++if test ! -z "$(DTD_PROJ)" ; then \
+   x_project="$(DTD_PROJ)" ; \
+   for i in $$x_project ; do \
+      (cd `echo $(srcdir) | sed -e 's,^$(top_srcdir),$(abs_top_srcdir),'` \
+       && MAKE="$(MAKE) $(MFLAGS)" $(RWL) -base make_asn $(MAKE_DTD)
+DTDP_KET = ) || $(NOTK_BRA) exit 6 $(NOTK_KET) ; \
+   done ; \
+fi
+
 # If you change this rule, please continue to honor external
 # definitions of $(MAKE_LIB).
 MAKE_LIB = $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
@@ -140,20 +151,24 @@ check_add: check_add.needs-reqs
 all.real: configurables
 	@$(USRP_BRA) all   $(USRP_KET)
 	@$(ASNP_BRA) all   $(ASNP_KET)
+	@$(DTDP_BRA) all   $(DTDP_KET)
 	@$(LIBP_BRA) all   $(LIBP_KET)
 	@$(APPP_BRA) all   $(APPP_KET)
 clean.real:
 	@$(USRP_BRA) clean $(USRP_KET)
 #	@$(ASNP_BRA) clean_sources $(ASNP_KET)
+#	@$(DTDP_BRA) clean_sources $(DTDP_KET)
 	@$(LIBP_BRA) clean $(LIBP_KET)
 	@$(APPP_BRA) clean $(APPP_KET)
 purge.real:
 	@$(USRP_BRA) purge $(USRP_KET)
 #	@$(ASNP_BRA) purge_sources $(ASNP_KET)
+#	@$(DTDP_BRA) purge_sources $(DTDP_KET)
 	@$(LIBP_BRA) purge $(LIBP_KET)
 	@$(APPP_BRA) purge $(APPP_KET)
 sources:
 	@$(ASNP_BRA) all   $(ASNP_KET)
+	@$(DTDP_BRA) all   $(DTDP_KET)
 libs:
 	@$(LIBP_BRA) all   $(LIBP_KET)
 check.real:
