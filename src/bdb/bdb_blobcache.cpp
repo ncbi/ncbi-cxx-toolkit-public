@@ -88,29 +88,40 @@ struct SCacheDescr
     SCacheDescr() {}
 };
 
+#define BDB_TRAN_SYNC \
+    (m_WSync == CBDB_Cache::eWriteSync ? \
+     CBDB_Transaction::eTransSync : CBDB_Transaction::eTransASync)
+
 /// @internal
 class CBDB_CacheIReader : public IReader
 {
 public:
 
-    CBDB_CacheIReader(CBDB_BLobStream* blob_stream)
+    CBDB_CacheIReader(CBDB_BLobStream*           blob_stream, 
+                      CBDB_Cache::EWriteSyncMode wsync)
     : m_BlobStream(blob_stream),
       m_OverflowFile(0),
-      m_Buffer(0)
+      m_Buffer(0),
+      m_WSync(wsync)
     {}
 
-    CBDB_CacheIReader(CNcbiIfstream* overflow_file)
+    CBDB_CacheIReader(CNcbiIfstream*             overflow_file,
+                      CBDB_Cache::EWriteSyncMode wsync)
     : m_BlobStream(0),
       m_OverflowFile(overflow_file),
-      m_Buffer(0)
+      m_Buffer(0),
+      m_WSync(wsync)
     {}
 
-    CBDB_CacheIReader(unsigned char* buf, size_t buf_size)
+    CBDB_CacheIReader(unsigned char*             buf, 
+                      size_t                     buf_size,
+                      CBDB_Cache::EWriteSyncMode wsync)
     : m_BlobStream(0),
       m_OverflowFile(0),
       m_Buffer(buf),
       m_BufferPtr(buf),
-      m_BufferSize(buf_size)
+      m_BufferSize(buf_size),
+      m_WSync(wsync)
     {
     }
 
@@ -198,11 +209,12 @@ private:
     CBDB_CacheIReader& operator=(const CBDB_CacheIReader&);
 
 private:
-    CBDB_BLobStream* m_BlobStream;
-    CNcbiIfstream*   m_OverflowFile;
-    unsigned char*   m_Buffer;
-    unsigned char*   m_BufferPtr;
-    size_t           m_BufferSize;
+    CBDB_BLobStream*            m_BlobStream;
+    CNcbiIfstream*              m_OverflowFile;
+    unsigned char*              m_Buffer;
+    unsigned char*              m_BufferPtr;
+    size_t                      m_BufferSize;
+    CBDB_Cache::EWriteSyncMode  m_WSync;
 };
 
 
@@ -210,14 +222,15 @@ private:
 class CBDB_CacheIWriter : public IWriter
 {
 public:
-    CBDB_CacheIWriter(const char*         path,
-                      const string&       blob_key,
-                      int                 version,
-                      const string&       subkey,
-                      CBDB_BLobStream*    blob_stream,
-                      SCacheDB&           blob_db,
-                      SCache_AttrDB&      attr_db,
-                      int                 stamp_subkey)
+    CBDB_CacheIWriter(const char*                path,
+                      const string&              blob_key,
+                      int                        version,
+                      const string&              subkey,
+                      CBDB_BLobStream*           blob_stream,
+                      SCacheDB&                  blob_db,
+                      SCache_AttrDB&             attr_db,
+                      int                        stamp_subkey,
+                      CBDB_Cache::EWriteSyncMode wsync)
     : m_Path(path),
       m_BlobKey(blob_key),
       m_Version(version),
@@ -229,7 +242,8 @@ public:
       m_BytesInBuffer(0),
       m_OverflowFile(0),
       m_StampSubKey(stamp_subkey),
-	  m_AttrUpdFlag(false)
+	  m_AttrUpdFlag(false),
+      m_WSync(wsync)
     {
         m_Buffer = new unsigned char[s_WriterBufferSize];
     }
@@ -240,7 +254,7 @@ public:
 			// Dumping the buffer
 			CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
-			CBDB_Transaction trans(*m_AttrDB.GetEnv());
+			CBDB_Transaction trans(*m_AttrDB.GetEnv(), BDB_TRAN_SYNC);
 			m_AttrDB.SetTransaction(&trans);
 			m_BlobDB.SetTransaction(&trans);
 
@@ -248,7 +262,9 @@ public:
 				_TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
 				m_BlobStream->SetTransaction(&trans);
 				m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
-				m_BlobDB.Sync();
+                if (m_WSync == CBDB_Cache::eWriteSync) {
+    				m_BlobDB.Sync();
+                }
 				delete[] m_Buffer;
 			}
 
@@ -257,7 +273,7 @@ public:
 			}
 
 			trans.Commit();
-			m_AttrDB.GetEnv()->TransactionCheckpoint();
+			//m_AttrDB.GetEnv()->TransactionCheckpoint();
 		}
 
         delete m_BlobStream;
@@ -315,7 +331,7 @@ public:
         // Dumping the buffer
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
-        CBDB_Transaction trans(*m_AttrDB.GetEnv());
+        CBDB_Transaction trans(*m_AttrDB.GetEnv(), BDB_TRAN_SYNC);
         m_AttrDB.SetTransaction(&trans);
         m_BlobDB.SetTransaction(&trans);
 
@@ -327,7 +343,10 @@ public:
             m_Buffer = 0;
             m_BytesInBuffer = 0;
         }
-        m_BlobDB.Sync();
+        if (m_WSync == CBDB_Cache::eWriteSync) {
+    		m_BlobDB.Sync();
+        }
+
         if ( m_OverflowFile ) {
             m_OverflowFile->flush();
             if ( m_OverflowFile->bad() ) {
@@ -338,7 +357,7 @@ public:
 		x_UpdateAttributes();
 
         trans.Commit();
-        m_AttrDB.GetEnv()->TransactionCheckpoint();
+        //m_AttrDB.GetEnv()->TransactionCheckpoint();
 
         return eRW_Success;
     }
@@ -388,7 +407,11 @@ private:
 			m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
 	        m_AttrDB.UpdateInsert();
 		}
-        m_AttrDB.Sync();
+
+        if (m_WSync == CBDB_Cache::eWriteSync) {
+    		m_AttrDB.Sync();
+        }
+
 		m_AttrUpdFlag = true;
 	}
 
@@ -412,6 +435,7 @@ private:
 
     int                   m_StampSubKey;
 	bool                  m_AttrUpdFlag; ///< Falgs attributes are up to date
+    CBDB_Cache::EWriteSyncMode m_WSync;
 };
 
 
@@ -423,7 +447,8 @@ CBDB_Cache::CBDB_Cache()
   m_CacheDB(0),
   m_CacheAttrDB(0),
   m_VersionFlag(eDropOlder),
-  m_PageSizeHint(eLarge)
+  m_PageSizeHint(eLarge),
+  m_WSync(eWriteSync)
 {
     m_TimeStampFlag = fTimeStampOnRead | 
                       fExpireLeastFrequentlyUsed |
@@ -566,7 +591,7 @@ void CBDB_Cache::Open(const char* cache_path,
     if (m_TimeStampFlag & fPurgeOnStartup) {
         Purge(GetTimeout());
     }
-    m_Env->TransactionCheckpoint();
+    //m_Env->TransactionCheckpoint();
 
     m_ReadOnly = false;
 
@@ -760,7 +785,7 @@ void CBDB_Cache::Store(const string&  key,
     }
 
     trans.Commit();
-    m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
+    //m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
 }
 
 
@@ -907,7 +932,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
         if ( m_TimeStampFlag & fTimeStampOnRead ) {
             x_UpdateReadAccessTime(key, version, subkey);
         }
-        return new CBDB_CacheIReader(overflow_file.release());
+        return new CBDB_CacheIReader(overflow_file.release(), m_WSync);
 
     }
 
@@ -934,7 +959,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     if ( m_TimeStampFlag & fTimeStampOnRead ) {
         x_UpdateReadAccessTime(key, version, subkey);
     }
-    return new CBDB_CacheIReader(buf, bsize);
+    return new CBDB_CacheIReader(buf, bsize, m_WSync);
 }
 
 
@@ -981,7 +1006,8 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
                               bstream, 
                               *m_CacheDB,
                               *m_CacheAttrDB,
-                              m_TimeStampFlag & fTrackSubKey);
+                              m_TimeStampFlag & fTrackSubKey,
+                              m_WSync);
 
 }
 
@@ -1056,7 +1082,7 @@ void CBDB_Cache::Remove(const string& key)
     }
 
     trans.Commit();
-    m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
+    //m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
 
 }
 
@@ -1089,7 +1115,7 @@ void CBDB_Cache::Remove(const string&    key,
 
 
 
-    CBDB_Transaction trans(*m_Env);
+    CBDB_Transaction trans(*m_Env, BDB_TRAN_SYNC);
     m_CacheDB->SetTransaction(&trans);
     m_CacheAttrDB->SetTransaction(&trans);
 
@@ -1101,7 +1127,7 @@ void CBDB_Cache::Remove(const string&    key,
     }
 
 	trans.Commit();
-    m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
+    //m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
 
     if (m_MemAttr.IsActive()) {
         m_MemAttr.Remove(CacheKey(key, version, subkey));
@@ -1181,7 +1207,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
     } // while
     }}
 
-    CBDB_Transaction trans(*m_Env);
+    CBDB_Transaction trans(*m_Env, BDB_TRAN_SYNC);
     m_CacheDB->SetTransaction(&trans);
     m_CacheAttrDB->SetTransaction(&trans);
 
@@ -1251,7 +1277,7 @@ void CBDB_Cache::Purge(const string&    key,
 
     }}
 
-    CBDB_Transaction trans(*m_Env);
+    CBDB_Transaction trans(*m_Env, BDB_TRAN_SYNC);
     m_CacheDB->SetTransaction(&trans);
     m_CacheAttrDB->SetTransaction(&trans);
 
@@ -1282,7 +1308,7 @@ void CBDB_Cache::Verify(const char*  cache_path,
     try {
         m_Env->Open(cache_path, DB_INIT_MPOOL | DB_USE_ENVIRON);
     } 
-    catch (CBDB_Exception& ex)
+    catch (CBDB_Exception& /*ex*/)
     {
         m_Env->Open(cache_path, 
                     DB_CREATE | DB_INIT_MPOOL | DB_PRIVATE | DB_USE_ENVIRON);
@@ -1751,6 +1777,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2004/09/03 13:35:58  kuznets
+ * Added async write option, commented out transaction checkpoints
+ *
  * Revision 1.72  2004/08/24 15:14:09  kuznets
  * Misprint fixed
  *
