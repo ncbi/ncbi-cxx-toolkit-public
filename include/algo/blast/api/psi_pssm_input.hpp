@@ -40,6 +40,12 @@
 // Forward declaration for unit test classes
 class CPssmEngineTest;
 
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
+
 BEGIN_NCBI_SCOPE
 
 // Forward declarations in objects scope
@@ -63,7 +69,7 @@ public:
     /// @param sset pairwise alignment produced by BLAST where query was the
     /// query sequence.
     /// @param opts options to be used in the PSSM engine
-    CPsiBlastInputData(const Uint1* query,
+    CPsiBlastInputData(const unsigned char* query,
                        unsigned int query_length,
                        CRef<objects::CSeq_align_set> sset,
                        CRef<objects::CScope> scope,
@@ -71,6 +77,8 @@ public:
     virtual ~CPsiBlastInputData();
 
     void Process();
+    unsigned char* GetQuery();
+    unsigned int GetQueryLength();
     PsiAlignmentData* GetData();
     const PSIBlastOptions* GetOptions();
 
@@ -82,7 +90,6 @@ protected:
     //void x_ExtractAlignmentDataUseBestAlign();
 
     unsigned int GetNumAlignedSequences() const;
-    unsigned int GetQueryLength() const;
 
     /// Iterates over the Dense-seg passed in and extracts alignment 
     /// information to multiple alignment data structure.
@@ -96,13 +103,13 @@ protected:
 private:
 
     /// Pointer to query sequence
-    Uint1*                          m_Query;
+    unsigned char*                  m_Query;
     /// Scope where to retrieve the sequences in the aligment from
     CRef<objects::CScope>           m_Scope;
     // Structure representing the multiple sequence alignment
     PsiAlignmentData*               m_AlignmentData;
     /// Multiple sequence alignment dimensions
-    PsiInfo                         m_MSA_Dimensions;
+    PsiMsaDimensions                   m_MSA_Dimensions;
     /// Pairwise alignment result of a BLAST search
     CRef<objects::CSeq_align_set>   m_SeqAlignSet;
     /// Algorithm options
@@ -134,13 +141,17 @@ private:
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/08/02 13:29:49  camacho
+ * + implementation query sequence methods
+ *
  * Revision 1.1  2004/07/29 17:53:47  camacho
  * Initial revision
- *
  *
  * ===========================================================================
  */

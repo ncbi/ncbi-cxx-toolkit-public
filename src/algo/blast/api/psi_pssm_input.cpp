@@ -56,6 +56,11 @@ static char const rcsid[] =
 #include <objmgr/seq_vector.hpp>
 #include <objects/seq/Seq_data.hpp>
 
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
@@ -101,7 +106,7 @@ CPsiBlastInputData::CPsiBlastInputData(const Uint1* query,
     m_SeqAlignSet.Reset(sset);
     m_Opts = opts;
 
-    m_MSA_Dimensions.query_sz = query_length;
+    m_MSA_Dimensions.query_length = query_length;
     m_MSA_Dimensions.num_seqs = 0;
     m_AlignmentData = NULL;
 
@@ -112,6 +117,7 @@ CPsiBlastInputData::CPsiBlastInputData(const Uint1* query,
 
 CPsiBlastInputData::~CPsiBlastInputData()
 {
+    delete [] m_Query;
     m_ProcessHit.clear();
     PSIAlignmentDataFree(m_AlignmentData);
 }
@@ -125,15 +131,12 @@ CPsiBlastInputData::Process()
     m_MSA_Dimensions.num_seqs = x_CountAndSelectQualifyingAlignments();
 
     // Create multiple alignment data structure and populate with query
-    // sequence (afterwards we're done with the query)
+    // sequence
     m_AlignmentData = PSIAlignmentDataNew(m_Query, &m_MSA_Dimensions);
     if ( !m_AlignmentData ) {
         NCBI_THROW(CBlastException, eOutOfMemory, "Multiple alignment data "
                    "structure");
     }
-
-    delete [] m_Query;
-    m_Query = NULL;
 
     _PSIExtractQuerySequenceInfo(m_AlignmentData);
     x_ExtractAlignmentData();
@@ -189,10 +192,16 @@ CPsiBlastInputData::GetData()
     return m_AlignmentData;
 }
 
-inline unsigned int
-CPsiBlastInputData::GetQueryLength() const
+inline unsigned char*
+CPsiBlastInputData::GetQuery()
 {
-    return m_MSA_Dimensions.query_sz;
+    return m_Query;
+}
+
+inline unsigned int
+CPsiBlastInputData::GetQueryLength()
+{
+    return m_MSA_Dimensions.query_length;
 }
 
 inline const PSIBlastOptions*
@@ -347,10 +356,10 @@ CPsiBlastInputData::x_ProcessDenseg(const CDense_seg& denseg,
     // sequence alignment structure
     if (seq.first.get() == NULL) {
         for (unsigned int i = 0; i < GetQueryLength(); i++) {
-            PsiDesc& pos_desc =
+            PsiMsaCell& pos_desc =
                 m_AlignmentData->desc_matrix[msa_index][i];
             pos_desc.letter = (unsigned char) -1;
-            pos_desc.used = false;
+            pos_desc.is_aligned = false;
             pos_desc.e_value = kDefaultEvalueForPosition;
             pos_desc.extents.left = (unsigned int) -1;
             pos_desc.extents.right = GetQueryLength();
@@ -400,11 +409,11 @@ CPsiBlastInputData::x_ProcessDenseg(const CDense_seg& denseg,
 
             // gap in subject, initialize appropriately
             for (TSeqPos i = 0; i < lengths[segmt_idx]; i++) {
-                PsiDesc& pos_desc =
+                PsiMsaCell& pos_desc =
                     m_AlignmentData->desc_matrix[msa_index][query_offset++];
-                if ( !pos_desc.used ) {
+                if ( !pos_desc.is_aligned ) {
                     pos_desc.letter = GAP;
-                    pos_desc.used = true;
+                    pos_desc.is_aligned = true;
                     pos_desc.e_value = kDefaultEvalueForPosition;
                 }
             }
@@ -413,11 +422,11 @@ CPsiBlastInputData::x_ProcessDenseg(const CDense_seg& denseg,
 
             // Aligned segments without any gaps
             for (TSeqPos i = 0; i < lengths[segmt_idx]; i++, subj_seq_idx++) {
-                PsiDesc& pos_desc =
+                PsiMsaCell& pos_desc =
                     m_AlignmentData->desc_matrix[msa_index][query_offset++];
-                if ( !pos_desc.used ) {
+                if ( !pos_desc.is_aligned ) {
                     pos_desc.letter = seq.first.get()[subj_seq_idx];
-                    pos_desc.used = true;
+                    pos_desc.is_aligned = true;
                     pos_desc.e_value = e_value;
     /*
 if (msa_index == 1 && (query_offset-1) == 7320) {
@@ -545,9 +554,8 @@ s_ExtractSequenceFromSeqVector(CSeqVector& sv)
         retval = new Uint1[sv.size()];
     } catch (const std::bad_alloc&) {
         ostringstream os;
-        os << sv.size();
-        string msg = string("Could not allocate ") + os.str() + " bytes";
-        NCBI_THROW(CBlastException, eOutOfMemory, msg);
+        os << "Could not allocate " << sv.size() << " bytes";
+        NCBI_THROW(CBlastException, eOutOfMemory, os.str());
     }
     for (TSeqPos i = 0; i < sv.size(); i++) {
         retval[i] = sv[i];
@@ -559,17 +567,21 @@ s_ExtractSequenceFromSeqVector(CSeqVector& sv)
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/08/02 13:29:53  camacho
+ * + implementation query sequence methods
+ *
  * Revision 1.2  2004/07/29 21:00:22  ucko
  * Tweak call to assign() in constructor to avoid triggering an
  * inappropriate template (that takes two iterators) on some compilers.
  *
  * Revision 1.1  2004/07/29 17:55:05  camacho
  * Initial revision
- *
  *
  * ===========================================================================
  */
