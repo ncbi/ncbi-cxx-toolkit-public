@@ -97,8 +97,6 @@ public:
   virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId);
   virtual CSeqref *RetrieveSeqref(istream &is);
 
-private:
-  strstream m_Stream;
 };
 
 END_SCOPE(objects)
@@ -108,6 +106,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2002/03/26 18:48:31  butanaev
+* Fixed bug not deleting streambuf.
+*
 * Revision 1.4  2002/03/21 19:14:52  kimelman
 * GB related bugfixes
 *

@@ -4,7 +4,7 @@
 #################################
 
 #APP_PROJ = test reader_id1_test test_title test_mt
-APP_PROJ = test_basic test test_mt test_gbloader
+APP_PROJ = test_basic test test_mt test_gbloader reader_id1_test
 SUB_PROJ = 
 
 srcdir = @srcdir@

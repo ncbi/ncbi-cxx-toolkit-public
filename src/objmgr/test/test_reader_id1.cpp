@@ -38,105 +38,6 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 using namespace std;
 
-int test_id1_calls()
-{
-  STimeout tmout;
-  CSeq_id seqId;
-  
-  tmout.sec = 20;
-  tmout.usec = 0;
-  seqId.SetGi(5);
-  
-  
-  for(int k=0;k<100;k++)
-    {
-      int number = 0;
-      string dbname;
-      int lgi = 0;
-      
-      cout << "ID1: " << k << endl;
-      
-      auto_ptr<CConn_ServiceStream> m_ID1_Server;
-      CConn_ServiceStream *server;
-      
-      m_ID1_Server.reset(new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout));
-      server = m_ID1_Server.get();
-    
-      {
-        CID1server_request id1_request;
-        id1_request.SetGetgi(seqId);
-        CObjectOStreamAsnBinary server_output(*server);
-        server_output << id1_request;
-        server_output.Flush();
-      }
-      
-      CObjectIStream& server_input = *CObjectIStream::Open(eSerial_AsnBinary, *server, false);
-      CID1server_back id1_reply;
-    
-      server_input >> id1_reply;
-      int gi = id1_reply.GetGotgi();
-      _VERIFY(gi==5);
-
-      //cout << "got gi: " << gi << endl;
-      {
-        CID1server_request id1_request1;
-        id1_request1.SetGetgirev(gi);
-        CObjectOStreamAsnBinary server_output(*server);
-        server_output << id1_request1;
-        server_output.Flush();
-      }
-      server_input >> id1_reply;
-      
-      for(CTypeConstIterator<CSeq_hist_rec> it = ConstBegin(id1_reply); it;  ++it)
-        {
-          iterate(CSeq_hist_rec::TIds, it2, it->GetIds())
-            {
-              if((*it2)->IsGi()) lgi = (*it2)->GetGi();
-              else if((*it2)->IsGeneral())
-                {
-                  dbname = (*it2)->GetGeneral().GetDb();
-                  const CObject_id& tag = (*it2)->GetGeneral().GetTag();
-                  if(tag.IsStr()) number = NStr::StringToInt(tag.GetStr());
-                  else            number = (tag.GetId());
-                }
-            }
-          //cout << "HIST: " << lgi << "," << dbname << "," << number << endl;
-          if(gi==lgi) break;
-        }
-      
-      //cout << "BLOB: " << endl;
-      m_ID1_Server.reset(new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout));
-      server = m_ID1_Server.get();
-      
-      {//aaaaa
-        CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
-        params->SetGi(lgi);
-        params->SetEnt(number);
-        params->SetSat(dbname);
-        
-        CID1server_request id1_request;
-        id1_request.SetGetsefromgi(*params);
-        CObjectOStreamAsnBinary server_output(*server);
-        //cout << "BLOB: sending request" << endl;
-        server_output << id1_request;
-        server_output.Flush();
-        
-      }
-      //cout << "BLOB: request sent " << endl;
-      CObjectIStream& server_input1 = *CObjectIStream::Open(eSerial_AsnBinary, *server, false);
-      server_input1 >> id1_reply ;
-      {
-        CRef<CSeq_entry> se;
-        if(id1_reply.IsGotseqentry())
-          se = &id1_reply.GetGotseqentry();
-        else if(id1_reply.IsGotdeadseqentry())
-          se = &id1_reply.GetGotdeadseqentry();
-      }
-      //cout << "BLOB:(" << gi << ") OK" << endl;
-    }
-  return 1;
-}
-
 int main()
 {
   //export CONN_DEBUG_PRINTOUT=data
@@ -146,63 +47,41 @@ int main()
   //SetDiagPostFlag(eDPF_All);
 
   //test_id1_calls();
-  
+
   CSeq_id seqId;
   seqId.SetGi(5);
-  //seqId.SetEmbl().SetAccession("X66994");
-  //seqId.SetEmbl().SetVersion(1);
-  
 
-  CId1Reader reader;
-  for(int k=0;k<10;)
+  for(int k=0; k<1200; k++)
+  {
+    CId1Reader reader;
+    for(CIStream srs(reader.SeqrefStreamBuf(seqId)); ! srs.Eof(); )
     {
-      for(CIStream srs(reader.SeqrefStreamBuf(seqId)); ! srs.Eof(); )
-        {
-          delete reader.RetrieveSeqref(srs);
-          cout << "SR: " << k++ << endl;
-        }
-    }
-/*
-  CId1Reader reader;
-  CSeqref *seqRef = 0;
-  for(CIStream srs(reader.SeqrefStreamBuf(seqId)); ! srs.Eof(); )
-    {
-      if(!seqRef) seqRef = reader.RetrieveSeqref(srs); 
-      delete reader.RetrieveSeqref(srs); 
-    }
-*/
-  
-  CBlobClass cl;
-  for(int k=0;k<1200;k++)
-    {
-       CId1Reader reader;
-       CSeqref *seqRef = 0;
-       for(CIStream srs(reader.SeqrefStreamBuf(seqId)); ! srs.Eof(); )
-       {
-         if(!seqRef) seqRef = reader.RetrieveSeqref(srs);
-         delete reader.RetrieveSeqref(srs);
-       }
+      CSeqref *seqRef = reader.RetrieveSeqref(srs);
 
-       cout << "K: " << k << endl;
-       streambuf *x = seqRef->BlobStreamBuf(0, 0, cl);
-       for(CIStream bs(x); ! bs.Eof(); )
-         {
-           CBlob *blob = seqRef->RetrieveBlob(bs);
-           //CObjectOStreamAsn oos(cout);
-           //oos << *blob->Seq_entry();
-           //cout << endl;
-           
-           CRef<CSeq_entry> se=blob->Seq_entry();
-           delete blob;
-         }
-       delete x ;
-       delete seqRef;
+      cout << "K: " << k << endl;
+
+      CBlobClass cl;
+      for(CIStream bs(seqRef->BlobStreamBuf(0, 0, cl)); ! bs.Eof(); )
+      {
+        CBlob *blob = seqRef->RetrieveBlob(bs);
+        //CObjectOStreamAsn oos(cout);
+        //oos << *blob->Seq_entry();
+        //cout << endl;
+
+        CRef<CSeq_entry> se=blob->Seq_entry();
+        delete blob;
+      }
+      delete seqRef;
     }
+  }
   return 0;
 }
 
 /*
 * $Log$
+* Revision 1.6  2002/03/26 18:48:59  butanaev
+* Fixed bug not deleting streambuf.
+*
 * Revision 1.5  2002/03/26 17:17:04  kimelman
 * reader stream fixes
 *

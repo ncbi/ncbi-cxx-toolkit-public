@@ -75,7 +75,7 @@ class CIStream : public istream
 {
 public:
   CIStream(streambuf *sb) : istream(sb), m_sb(sb) { setf(0, ios_base::skipws); }
-  ~CIStream() { delete m_sb ; }
+  ~CIStream() { delete m_sb; }
 
   bool Eof();
   static size_t CIStream::Read(istream &is, char* buffer, size_t bufferLength);
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.7  2002/03/26 18:48:30  butanaev
+* Fixed bug not deleting streambuf.
+*
 * Revision 1.6  2002/03/26 17:16:59  kimelman
 * reader stream fixes
 *

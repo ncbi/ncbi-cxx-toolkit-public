@@ -31,8 +31,28 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+struct CStrStreamBuf : public streambuf
+{
+  CStrStreamBuf(strstream *s) : m_Stream(s) {}
+  ~CStrStreamBuf() {}
+
+  CT_INT_TYPE underflow();
+
+  CT_CHAR_TYPE buffer[1024];
+  auto_ptr<strstream> m_Stream;
+};
+
+CT_INT_TYPE CStrStreamBuf::underflow()
+{
+  int n = CIStream::Read(*m_Stream, buffer, sizeof(buffer));
+  setg(buffer, buffer, buffer + n);
+  return n == 0 ? CT_EOF : CT_TO_INT_TYPE(buffer[0]);
+}
+
 streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
 {
+  strstream *ss = new strstream;
+
   int gi=0;
   STimeout tmout;
   tmout.sec = 20;
@@ -57,8 +77,8 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
   server_input >> id1_reply;
   gi = id1_reply.GetGotgi();
 
-  if(gi==0)
-    return m_Stream.rdbuf();
+  if(gi == 0)
+    return new CStrStreamBuf(ss);
 
   {
     CID1server_request id1_request1;
@@ -68,50 +88,53 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId)
     server_output.Flush();
   }
   server_input >> id1_reply;
-  
+
   for(CTypeConstIterator<CSeq_hist_rec> it = ConstBegin(id1_reply); it;  ++it)
+  {
+    int number = 0;
+    string dbname;
+    int lgi = 0;
+
+    iterate(CSeq_hist_rec::TIds, it2, it->GetIds())
     {
-      int number = 0;
-      string dbname;
-      int lgi = 0;
-      
-      iterate(CSeq_hist_rec::TIds, it2, it->GetIds())
-        {
-          if((*it2)->IsGi())
-            {
-              lgi = (*it2)->GetGi();
-            }
-          else if((*it2)->IsGeneral())
-            {
-              dbname = (*it2)->GetGeneral().GetDb();
-              const CObject_id& tag = (*it2)->GetGeneral().GetTag();
-              if(tag.IsStr())
-                {
-                  number = NStr::StringToInt(tag.GetStr());
-                }
-              else
-                {
-                  number = (tag.GetId());
-                }
-            }
-        }
-      if(gi!=lgi) continue;
-      CId1Seqref id1Seqref;
-      id1Seqref.Gi() = gi;
-      id1Seqref.Sat() = dbname;
-      id1Seqref.SatKey() = number;
-      id1Seqref.Flag() = 0;
-      try {
-        m_Stream << id1Seqref;
-      } catch ( exception e ) {
-        
-        LOG_POST( "TROUBLE: reader_id1:m_stream:: write failed for (" <<
-                  dbname << ":" << number << " - " << gi << ") :: " << e.what() );
-        throw runtime_error("reader_id1 - internal buffer overflow") ;
+      if((*it2)->IsGi())
+      {
+        lgi = (*it2)->GetGi();
       }
-      break; // mk - get only the first one
+      else if((*it2)->IsGeneral())
+      {
+        dbname = (*it2)->GetGeneral().GetDb();
+        const CObject_id& tag = (*it2)->GetGeneral().GetTag();
+        if(tag.IsStr())
+        {
+          number = NStr::StringToInt(tag.GetStr());
+        }
+        else
+        {
+          number = (tag.GetId());
+        }
+      }
     }
-   return m_Stream.rdbuf();
+    if(gi!=lgi) continue;
+    CId1Seqref id1Seqref;
+    id1Seqref.Gi() = gi;
+    id1Seqref.Sat() = dbname;
+    id1Seqref.SatKey() = number;
+    id1Seqref.Flag() = 0;
+    try
+    {
+      *ss << id1Seqref;
+    }
+    catch ( exception e )
+    {
+
+      LOG_POST( "TROUBLE: reader_id1:m_stream:: write failed for (" <<
+                dbname << ":" << number << " - " << gi << ") :: " << e.what() );
+      throw runtime_error("reader_id1 - internal buffer overflow") ;
+    }
+    break; // mk - get only the first one
+  }
+  return new CStrStreamBuf(ss);
 }
 
 void CId1Seqref::Save(ostream &os) const
@@ -173,12 +196,12 @@ CId1StreamBuf::CId1StreamBuf(CId1Seqref &id1Seqref) : m_Id1Seqref(id1Seqref)
     server_output << id1_request;
     server_output.Flush();
   }
-  LOG_POST("CId1StreamBuf new (" << ((void*)this) << ")");
+  //LOG_POST("CId1StreamBuf new (" << ((void*)this) << ")");
 }
 
 CId1StreamBuf::~CId1StreamBuf()
 {
-  LOG_POST("CId1StreamBuf delete (" << ((void*)this) << ")");
+  //LOG_POST("CId1StreamBuf delete (" << ((void*)this) << ")");
 }
 
 CT_INT_TYPE CId1StreamBuf::underflow()
@@ -279,6 +302,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.12  2002/03/26 18:48:58  butanaev
+* Fixed bug not deleting streambuf.
+*
 * Revision 1.11  2002/03/26 17:17:02  kimelman
 * reader stream fixes
 *
