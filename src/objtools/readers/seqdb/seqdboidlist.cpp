@@ -35,6 +35,7 @@
 #include <corelib/ncbistr.hpp>
 #include "seqdboidlist.hpp"
 #include "seqdbfile.hpp"
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -49,7 +50,11 @@ CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas        & atlas,
       m_BitEnd  (0),
       m_BitOwner(false)
 {
-    _ASSERT( volset.HasFilter() || gi_list);
+    // MSVC for some reason doesn't compile the following _ASSERT()
+    // Interesting fact: if we add one more _ASSERT(gi_list) before failing _ASSERT without
+    // removing it MSCV will compile it without warnings. :-)
+    //_ASSERT(volset.HasFilter() || gi_list);
+    _ASSERT(gi_list || volset.HasFilter());
     
     if (volset.HasSimpleMask() && gi_list.Empty()) {
         x_Setup( volset.GetSimpleMask(), locked );
