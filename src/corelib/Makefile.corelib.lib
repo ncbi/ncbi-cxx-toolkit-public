@@ -2,7 +2,7 @@
 
 SRC = ncbithr ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbiargs \
       ncbistd ncbiobj ncbitime ncbimtx ncbi_safe_static ncbi_system ncbifile \
-      ncbidbg ncbidll
+      ncbidbg ncbidll ncbicfg
 
 LIB = xncbi
 

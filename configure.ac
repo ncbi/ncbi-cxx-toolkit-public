@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.35 2002/03/07 01:20:15 vakatov Exp $
+#  $Id: configure.ac,v 1.36 2002/03/11 15:30:08 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2343,7 +2343,7 @@ if test -z "$configurables" ; then
 fi
 
 eval ncbi_runpath=`echo $pure_runpath`
-AC_DEFINE_UNQUOTED(NCBI_RUNPATH, "$ncbi_runpath")
+dnl AC_DEFINE_UNQUOTED(NCBI_RUNPATH, "$ncbi_runpath")
 
 ### Template substitutions
 AC_SUBST(signature)
@@ -2356,6 +2356,7 @@ AC_SUBST(includedir)
 AC_SUBST(status_dir)
 AC_SUBST(builddir)
 AC_SUBST(runpath)
+AC_SUBST(ncbi_runpath)
 
 AC_SUBST(CC)
 AC_SUBST(CPP)

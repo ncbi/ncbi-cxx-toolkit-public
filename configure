@@ -9289,9 +9289,6 @@ echo "$as_me: error: Cannot find any configurables below \"${srcdir}\"!" >&2;}
 fi
 
 eval ncbi_runpath=`echo $pure_runpath`
-cat >>confdefs.h <<EOF
-#define NCBI_RUNPATH "$ncbi_runpath"
-EOF
 
 ### Template substitutions
 
@@ -9396,7 +9393,7 @@ DEFS=-DHAVE_CONFIG_H
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files
 ac_clean_files="$ac_clean_files $CONFIG_STATUS"
-{ echo "$as_me:9399: creating $CONFIG_STATUS" >&5
+{ echo "$as_me:9396: creating $CONFIG_STATUS" >&5
 echo "$as_me: creating $CONFIG_STATUS" >&6;}
 cat >$CONFIG_STATUS <<_ACEOF
 #! $SHELL
@@ -9571,7 +9568,7 @@ cat >>$CONFIG_STATUS <<\EOF
     echo "$ac_cs_version"; exit 0 ;;
   --he | --h)
     # Conflict between --help and --header
-    { { echo "$as_me:9574: error: ambiguous option: $1
+    { { echo "$as_me:9571: error: ambiguous option: $1
 Try \`$0 --help' for more information." >&5
 echo "$as_me: error: ambiguous option: $1
 Try \`$0 --help' for more information." >&2;}
@@ -9590,7 +9587,7 @@ Try \`$0 --help' for more information." >&2;}
     ac_need_defaults=false;;
 
   # This is an error.
-  -*) { { echo "$as_me:9593: error: unrecognized option: $1
+  -*) { { echo "$as_me:9590: error: unrecognized option: $1
 Try \`$0 --help' for more information." >&5
 echo "$as_me: error: unrecognized option: $1
 Try \`$0 --help' for more information." >&2;}
@@ -9654,7 +9651,7 @@ do
   "$configurables" ) CONFIG_FILES="$CONFIG_FILES $configurables" ;;
   "default" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default" ;;
   "${ncbiconf}" ) CONFIG_HEADERS="$CONFIG_HEADERS ${ncbiconf}:config.h.in" ;;
-  *) { { echo "$as_me:9657: error: invalid argument: $ac_config_target" >&5
+  *) { { echo "$as_me:9654: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
   esac
@@ -9771,6 +9768,7 @@ s,@srcdir@,$srcdir,;t t
 s,@status_dir@,$status_dir,;t t
 s,@builddir@,$builddir,;t t
 s,@runpath@,$runpath,;t t
+s,@ncbi_runpath@,$ncbi_runpath,;t t
 s,@CPP@,$CPP,;t t
 s,@FAST_CFLAGS@,$FAST_CFLAGS,;t t
 s,@FAST_CXXFLAGS@,$FAST_CXXFLAGS,;t t
@@ -9967,7 +9965,7 @@ done; }
   esac
 
   if test x"$ac_file" != x-; then
-    { echo "$as_me:9970: creating $ac_file" >&5
+    { echo "$as_me:9968: creating $ac_file" >&5
 echo "$as_me: creating $ac_file" >&6;}
     rm -f "$ac_file"
   fi
@@ -9985,7 +9983,7 @@ echo "$as_me: creating $ac_file" >&6;}
       -) echo $tmp/stdin ;;
       [\\/$]*)
          # Absolute (can't be DOS-style, as IFS=:)
-         test -f "$f" || { { echo "$as_me:9988: error: cannot find input file: $f" >&5
+         test -f "$f" || { { echo "$as_me:9986: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          echo $f;;
@@ -9998,7 +9996,7 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
            echo $srcdir/$f
          else
            # /dev/null tree
-           { { echo "$as_me:10001: error: cannot find input file: $f" >&5
+           { { echo "$as_me:9999: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          fi;;
@@ -10058,7 +10056,7 @@ for ac_file in : $CONFIG_HEADERS; do test "x$ac_file" = x: && continue
   * )   ac_file_in=$ac_file.in ;;
   esac
 
-  test x"$ac_file" != x- && { echo "$as_me:10061: creating $ac_file" >&5
+  test x"$ac_file" != x- && { echo "$as_me:10059: creating $ac_file" >&5
 echo "$as_me: creating $ac_file" >&6;}
 
   # First look for the input files in the build tree, otherwise in the
@@ -10069,7 +10067,7 @@ echo "$as_me: creating $ac_file" >&6;}
       -) echo $tmp/stdin ;;
       [\\/$]*)
          # Absolute (can't be DOS-style, as IFS=:)
-         test -f "$f" || { { echo "$as_me:10072: error: cannot find input file: $f" >&5
+         test -f "$f" || { { echo "$as_me:10070: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          echo $f;;
@@ -10082,7 +10080,7 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
            echo $srcdir/$f
          else
            # /dev/null tree
-           { { echo "$as_me:10085: error: cannot find input file: $f" >&5
+           { { echo "$as_me:10083: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          fi;;
@@ -10199,7 +10197,7 @@ cat >>$CONFIG_STATUS <<\EOF
   rm -f $tmp/in
   if test x"$ac_file" != x-; then
     if cmp -s $ac_file $tmp/config.h 2>/dev/null; then
-      { echo "$as_me:10202: $ac_file is unchanged" >&5
+      { echo "$as_me:10200: $ac_file is unchanged" >&5
 echo "$as_me: $ac_file is unchanged" >&6;}
     else
       ac_dir=`$as_expr X"$ac_file" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
