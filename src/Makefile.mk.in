@@ -126,6 +126,7 @@ serial_ws50_rtti_kludge=@serial_ws50_rtti_kludge@
 # Some platform-specific system libs that can be linked eventually
 THREAD_LIBS  = @THREAD_LIBS@
 NETWORK_LIBS = @NETWORK_LIBS@
+MATH_LIBS    = @MATH_LIBS@
 KSTAT_LIBS   = @KSTAT_LIBS@
 RPCSVC_LIBS  = @RPCSVC_LIBS@
 
