@@ -125,6 +125,9 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
                 m_Params[param_no].param = param->Clone();
             }
         }
+	else {
+	    m_Params[param_no].param = param->Clone();
+	}
         if ( !param_name.empty()) {
             if (m_Params[param_no].name.compare(param_name) != 0) {
                 m_Params[param_no].name = param_name;
@@ -133,7 +136,6 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
         else {
             m_Params[param_no].name.erase();
         }
-        m_Params[param_no].param  = param;
         m_Params[param_no].status |= fSet | (is_out ? fOutput : 0);
         return true;
     }
@@ -163,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/04 18:41:24  soussov
+ * fixes bug in CDB_Params::SetParam
+ *
  * Revision 1.1  2001/09/21 23:40:00  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
