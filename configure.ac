@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.131 2002/10/02 16:58:42 ucko Exp $
+#  $Id: configure.ac,v 1.132 2002/10/02 18:09:51 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1871,6 +1871,8 @@ fi
 
 ## OpenGL
 if test "$with_opengl" != "no"; then
+   LIBS="$orig_LIBS"
+   CPPFLAGS="$orig_CPPFLAGS"
    AC_PATH_XTRA
    AC_CHECK_LIB(Xext, XextCreateExtension, Xext="-lXext", Xext=,
      [$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])

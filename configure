@@ -8129,6 +8129,8 @@ fi
 
 ## OpenGL
 if test "$with_opengl" != "no"; then
+   LIBS="$orig_LIBS"
+   CPPFLAGS="$orig_CPPFLAGS"
    echo "$as_me:$LINENO: checking for X" >&5
 echo $ECHO_N "checking for X... $ECHO_C" >&6
 
