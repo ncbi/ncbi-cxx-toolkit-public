@@ -81,7 +81,12 @@ public:
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(const SBlastDbParam& param);
-    
+    static string GetLoaderNameFromArgs(const string& dbname = "nr",
+                                        const EDbType dbtype = eUnknown)
+        {
+            return GetLoaderNameFromArgs(SBlastDbParam(dbname, dbtype));
+        }
+
     virtual ~CBlastDbDataLoader(void);
     
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice);
@@ -128,6 +133,10 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.13  2004/11/29 20:57:09  grichenk
+ * Added GetLoaderNameFromArgs with full set of arguments.
+ * Fixed BlastDbDataLoader name.
+ *
  * Revision 1.12  2004/10/25 16:53:37  vasilche
  * No need to reimplement GetRecords as method name conflict is resolved.
  *

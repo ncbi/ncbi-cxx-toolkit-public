@@ -73,6 +73,14 @@ public:
         objects::CObjectManager::TPriority priority
             = objects::CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(const SSageParam& param);
+    static string GetLoaderNameFromArgs(const string& input_file,
+                                        const string& temp_file,
+                                        bool delete_file = true)
+        {
+            return GetLoaderNameFromArgs(SSageParam(input_file,
+                                                    temp_file,
+                                                    delete_file));
+        }
 
     // Request features from our database corresponding to a given
     // CSeq_id_Handle
@@ -153,6 +161,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/11/29 20:57:09  grichenk
+ * Added GetLoaderNameFromArgs with full set of arguments.
+ * Fixed BlastDbDataLoader name.
+ *
  * Revision 1.11  2004/08/10 16:56:11  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *

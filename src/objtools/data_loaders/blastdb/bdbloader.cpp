@@ -66,9 +66,20 @@ CBlastDbDataLoader::TRegisterLoaderInfo CBlastDbDataLoader::RegisterInObjectMana
 }
 
 
-string CBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& /*param*/)
+inline
+string DbTypeToStr(CBlastDbDataLoader::EDbType dbtype)
 {
-    return "BLASTDB";
+    switch (dbtype) {
+    case CBlastDbDataLoader::eNucleotide: return "Nucleotide";
+    case CBlastDbDataLoader::eProtein:    return "Protein";
+    default:                              return "Unknown";
+    }
+}
+
+
+string CBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& param)
+{
+    return "BLASTDB_" + param.m_DbName + DbTypeToStr(param.m_DbType);
 }
 
 
@@ -236,6 +247,10 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.19  2004/11/29 20:57:09  grichenk
+ * Added GetLoaderNameFromArgs with full set of arguments.
+ * Fixed BlastDbDataLoader name.
+ *
  * Revision 1.18  2004/11/29 20:44:28  camacho
  * Correct class name in DebugDump
  *
