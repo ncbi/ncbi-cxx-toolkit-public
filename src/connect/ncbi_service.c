@@ -44,7 +44,7 @@
 #define SERV_SERVICE_NAME "SERVICE_NAME"
 
 
-const char* SERV_ServiceName(const char* service)
+char* SERV_ServiceName(const char* service)
 {
     char *s, *p;
     char key[128];
@@ -260,6 +260,12 @@ int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 }
 
 
+char* SERV_GetConfig(void)
+{
+    return SERV_LBSMD_GetConfig();
+}
+
+
 void SERV_Reset(SERV_ITER iter)
 {
     size_t i;
@@ -426,6 +432,10 @@ char* SERV_Print(SERV_ITER iter)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2002/10/11 19:48:10  lavr
+ * +SERV_GetConfig()
+ * const dropped in return value of SERV_ServiceName()
+ *
  * Revision 6.38  2002/09/04 15:11:41  lavr
  * Log moved to end
  *

@@ -92,11 +92,18 @@ const char* SERV_MapperName(SERV_ITER iter);
 /* Get final service name, using CONN_SERVICE_NAME_service environment
  * variable, then (if not found) registry section [service] and a key
  * CONN_SERVICE_NAME. Return resulting name (perhaps, an exact copy of
- * "service" if no override name was found in environment/registry),
- * which must be freed by a caller. Return 0 on error.
+ * "service" if no override name was found in environment/registry), which
+ * is to be freed by a caller when no longer needed. Return NULL on error.
  * NOTE: This procedure does not detect cyclical redefinitions.
  */
-const char* SERV_ServiceName(const char* service);
+char* SERV_ServiceName(const char* service);
+
+
+/* Get configuration file name. Returned '\0'-terminated string
+ * is to be free()'d by a caller when no longer needed.
+ * Return NULL if no configuration file name available.
+ */
+char* SERV_GetConfig(void);
 
 
 #ifdef __cplusplus
@@ -107,6 +114,10 @@ const char* SERV_ServiceName(const char* service);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2002/10/11 19:48:25  lavr
+ * +SERV_GetConfig()
+ * const dropped in return value of SERV_ServiceName()
+ *
  * Revision 6.15  2002/09/19 18:08:43  lavr
  * Header file guard macro changed; log moved to end
  *
