@@ -373,7 +373,7 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
 
     for( Uint4 i( 0 ); i < vector_size; ++i )
     {
-        Uint4 ri; 
+        Uint4 ri = 0; 
 
         if( counts[i] > 0 )
         {
@@ -407,6 +407,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/03/17 20:35:06  morgulis
+ * *** empty log message ***
+ *
  * Revision 1.4  2005/03/17 20:30:21  morgulis
  * *** empty log message ***
  *
