@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/05/03 18:35:36  grichenk
+* throw -> THROW1_TRACE
+*
 * Revision 1.15  2002/04/23 19:01:06  grichenk
 * Added optional flag to GetSeqVector() and GetSequenceView()
 * for switching to IUPAC encoding.
@@ -227,10 +230,10 @@ const CSeq_id_Handle CBioseq_Handle::GetKey(void) const
 inline
 bool CBioseq_Handle::operator== (const CBioseq_Handle& h) const
 {
-    if (m_Scope != h.m_Scope)
-    {
-        throw runtime_error(
-            "Unable to compare CBioseq_Handles from different scopes");
+    if (m_Scope != h.m_Scope) {
+        THROW1_TRACE(runtime_error,
+            "CBioseq_Handle::operator==() -- "
+            "Unable to compare handles from different scopes");
     }
     if ( m_Entry  &&  h.m_Entry )
         return m_DataSource == h.m_DataSource  &&  m_Entry == h.m_Entry;
@@ -247,9 +250,9 @@ bool CBioseq_Handle::operator!= (const CBioseq_Handle& h) const
 inline
 bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
 {
-    if (m_Scope != h.m_Scope)
-    {
-        throw runtime_error(
+    if (m_Scope != h.m_Scope) {
+        THROW1_TRACE(runtime_error,
+            "CBioseq_Handle::operator<() -- "
             "Unable to compare CBioseq_Handles from different scopes");
     }
     if ( m_Entry != h.m_Entry )
@@ -260,8 +263,11 @@ bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
 inline
 CDataSource& CBioseq_Handle::x_GetDataSource(void) const
 {
-    if ( !m_DataSource )
-        throw runtime_error("Can not resolve data source for bioseq handle.");
+    if ( !m_DataSource ) {
+        THROW1_TRACE(runtime_error,
+            "CBioseq_Handle::x_GetDataSource() -- "
+            "Can not resolve data source for bioseq handle.");
+    }
     return *m_DataSource;
 }
 
