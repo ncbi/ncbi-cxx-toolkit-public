@@ -26,26 +26,10 @@
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 
+#include "strstreambuf.hpp"
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-struct CStrStreamBuf : public streambuf
-{
-  CStrStreamBuf(strstream *s) : m_Stream(s) {}
-  ~CStrStreamBuf() {}
-
-  CT_INT_TYPE underflow();
-
-  CT_CHAR_TYPE buffer[1024];
-  auto_ptr<strstream> m_Stream;
-};
-
-CT_INT_TYPE CStrStreamBuf::underflow()
-{
-  int n = CIStream::Read(*m_Stream, buffer, sizeof(buffer));
-  setg(buffer, buffer, buffer + n);
-  return n == 0 ? CT_EOF : CT_TO_INT_TYPE(buffer[0]);
-}
 
 void CPubseqSeqref::Save(ostream &os) const
 {
@@ -357,6 +341,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2002/04/09 16:10:57  ucko
+* Split CStrStreamBuf out into a common location.
+*
 * Revision 1.1  2002/04/08 20:52:27  butanaev
 * Added PUBSEQ reader.
 *
