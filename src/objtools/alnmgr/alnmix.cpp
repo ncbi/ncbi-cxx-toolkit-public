@@ -128,7 +128,7 @@ void CAlnMix::Merge(TMergeFlags flags)
             break; // nothing has been added
         case 1:
             // only one ds, nothing to merge
-            m_DS.Reset(const_cast<CDense_seg*>(&*m_InputDSs.begin()->second));
+            m_DS.Reset(const_cast<CDense_seg*>(&**m_InputDSs.begin()));
             m_Aln = new CSeq_align();
             m_Aln->SetSegs().SetDenseg(*m_DS);
             m_Aln->SetDim(m_DS->GetDim());
@@ -232,12 +232,13 @@ void CAlnMix::x_InitBlosum62Map()
 
 void CAlnMix::Add(const CDense_seg &ds)
 {
-    if (m_InputDSs.find((void *)&ds) != m_InputDSs.end()) {
+    if (m_InputDSsMap.find((void *)&ds) != m_InputDSsMap.end()) {
         return; // it has already been added
     }
     x_Reset();
 
-    m_InputDSs[(void *)&ds] = &ds;
+    m_InputDSsMap[(void *)&ds] = &ds;
+    m_InputDSs.push_back(CConstRef<CDense_seg>(&ds));
 
     vector<CRef<CAlnMixSeq> > ds_seq;
 
@@ -1113,6 +1114,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/01/02 16:40:11  todorov
+* Added accessors to the input data
+*
 * Revision 1.13  2003/01/02 15:30:17  todorov
 * Fixed the order of checks in x_SecondRowFits
 *

@@ -74,17 +74,22 @@ public:
     typedef int TMergeFlags; // binary OR of EMergeFlags
     void Merge(TMergeFlags flags = 0);
 
-    CScope&            GetScope   (void) const;
-    const CDense_seg&  GetDenseg  (void) const;
-    const CSeq_align&  GetSeqAlign(void) const;
+    typedef vector<CConstRef<CDense_seg> >         TConstDSs;
+    typedef vector<CConstRef<CSeq_align> >         TConstAlns;
+
+    CScope&            GetScope         (void) const;
+    const TConstDSs&   GetInputDensegs  (void) const;
+    const TConstAlns&  GetInputSeqAligns(void) const;
+    const CDense_seg&  GetDenseg        (void) const;
+    const CSeq_align&  GetSeqAlign      (void) const;
 
 private:
     // Prohibit copy constructor and assignment operator
     CAlnMix(const CAlnMix& value);
     CAlnMix& operator=(const CAlnMix& value);
 
-    typedef map<void *, CConstRef<CDense_seg> >    TConstDSs;
-    typedef map<void *, CConstRef<CSeq_align> >    TConstAlns;
+    typedef map<void *, CConstRef<CDense_seg> >    TConstDSsMap;
+    typedef map<void *, CConstRef<CSeq_align> >    TConstAlnsMap;
     typedef vector<CAlnMixSeq*>                    TSeqs;
     typedef map<CBioseq_Handle, CRef<CAlnMixSeq> > TBioseqHandleMap;
     typedef vector<CRef<CAlnMixMatch> >            TMatches;
@@ -114,6 +119,8 @@ private:
     mutable CRef<CScope>        m_Scope;
     TConstDSs                   m_InputDSs;
     TConstAlns                  m_InputAlns;
+    TConstDSsMap                m_InputDSsMap;
+    TConstAlnsMap               m_InputAlnsMap;
     CRef<CDense_seg>            m_DS;
     CRef<CSeq_align>            m_Aln;
     TMergeFlags                 m_MergeFlags;
@@ -217,6 +224,20 @@ CScope& CAlnMix::GetScope() const
 
 
 inline
+const CAlnMix::TConstDSs& CAlnMix::GetInputDensegs() const
+{
+    return m_InputDSs;
+}
+
+
+inline
+const CAlnMix::TConstAlns& CAlnMix::GetInputSeqAligns() const
+{
+    return m_InputAlns;
+}
+
+
+inline
 const CDense_seg& CAlnMix::GetDenseg() const
 {
     if (!m_DS) {
@@ -243,8 +264,10 @@ const CSeq_align& CAlnMix::GetSeqAlign() const
 inline
 void CAlnMix::Add(const CSeq_align& aln)
 {
-    if (m_InputAlns.find((void *)&aln) == m_InputAlns.end()) {
+    if (m_InputAlnsMap.find((void *)&aln) == m_InputAlnsMap.end()) {
         // add only if not already added
+        m_InputAlnsMap[(void *)&aln] = &aln;
+        m_InputAlns.push_back(CConstRef<CSeq_align>(&aln));
         CTypeConstIterator<CDense_seg> i;
         for (i = ConstBegin(aln); i; ++i) {
             Add(*i);
@@ -265,6 +288,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/01/02 16:39:57  todorov
+* Added accessors to the input data
+*
 * Revision 1.12  2002/12/26 12:38:08  dicuccio
 * Added Win32 export specifiers
 *
