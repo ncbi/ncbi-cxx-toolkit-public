@@ -5339,7 +5339,7 @@ else
 cat conftest.$ac_ext >&5
 fi
 rm -f conftest.$ac_objext conftest.$ac_ext
-    if test "$x_gethostbyname_r" = "no" ; then
+    if test "$ncbi_cv_func_gethostbyname_r" = "no" ; then
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.104 2002/07/01 21:24:02 vakatov Exp $
+#  $Id: configure.ac,v 1.105 2002/07/10 15:37:19 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1236,7 +1236,7 @@ AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
     	 ncbi_cv_func_gethostbyname_r="5"
        ]
     )
-    if test "$x_gethostbyname_r" = "no" ; then
+    if test "$ncbi_cv_func_gethostbyname_r" = "no" ; then
     AC_TRY_COMPILE(
        [#include <netdb.h>],
        [
