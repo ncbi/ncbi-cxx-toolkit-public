@@ -317,11 +317,11 @@ RunTest() {
 
          if [ -f "\$x_work_dir/core" ]; then
             echo "@@@ CORE DUMPED" >> \$x_test_out
-		    if [ -d "$x_bin_dir" -a -f "$x_bin_dir/\$x_test" ]; then
+            if [ -d "$x_bin_dir" -a -f "$x_bin_dir/\$x_test" ]; then
                mv "\$x_work_dir/core" "$x_bin_dir/\$x_test.core"
             else
                rm -f "\$x_work_dir/core"
-		    fi
+            fi
          fi
 
          # And write result also on the screen and into the log
