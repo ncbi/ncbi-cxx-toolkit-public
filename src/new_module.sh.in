@@ -114,10 +114,12 @@ if test -x "$bindir/datatool"; then
     case "`uname`" in
         IRIX*) _RLD_ROOT=/usr; export _RLD_ROOT ;;
     esac    
+elif test -x "$NCBI_DATATOOL_PATH/datatool"; then
+    datatool=$NCBI_DATATOOL_PATH/datatool
 elif test -x "$NCBI/c++/Release/bin/datatool"; then
     datatool="$NCBI/c++/Release/bin/datatool"
 else
-    datatool=datatool
+    datatool=`command -v datatool`
 fi
 
 # guess the make command, if it is not specified in the $MAKE env. variable
