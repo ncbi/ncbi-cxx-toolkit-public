@@ -171,7 +171,7 @@ static void s_GetCdregionLabel
                     }
                 }
             }
-        } catch (CNotUnique& e) {}
+        } catch (CNotUnique&) {}
     }
     
     // Try and create a label from a CGene_ref in CSeqFeatXref in feature
@@ -607,6 +607,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2002/12/26 21:17:06  dicuccio
+* Minor tweaks to avoid compiler warnings in MSVC (remove unused variables)
+*
 * Revision 1.5  2002/08/26 16:29:41  ucko
 * Be even more careful with TRNA extensions.
 *

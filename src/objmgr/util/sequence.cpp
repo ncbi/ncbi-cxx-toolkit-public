@@ -193,7 +193,7 @@ bool IsOneBioseq(const CSeq_loc& loc, CScope* scope)
     try {
         GetId(loc, scope);
         return true;
-    } catch (CNotUnique& e) {
+    } catch (CNotUnique&) {
         return false;
     }
 }
@@ -2722,6 +2722,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.27  2002/12/26 21:17:06  dicuccio
+* Minor tweaks to avoid compiler warnings in MSVC (remove unused variables)
+*
 * Revision 1.26  2002/12/20 17:14:18  kans
 * added SeqLocPartialCheck
 *
