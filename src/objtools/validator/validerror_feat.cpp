@@ -1219,95 +1219,123 @@ void CValidError_feat::ValidateImpGbquals
                     "Wrong qualifier " + qual_str + " for feature " + 
                     key, feat);
             }
-
+            
             string val = (*qual)->GetVal();
-
+            
             bool error = false;
             switch ( gbqual ) {
             case CGbqualType::e_Rpt_type:
-                for ( size_t i = 0; 
-                      i < sizeof(s_LegalRepeatTypes) / sizeof(string); 
-                      ++i ) {
-                    if ( val.find(s_LegalRepeatTypes[i]) != string::npos ) {
-                        bool left = false, right = false;
-                        if ( i > 0 ) {
-                            left = val[i-1] == ','  ||  val[i-1] == '(';
+                {{
+                    for ( size_t i = 0; 
+                    i < sizeof(s_LegalRepeatTypes) / sizeof(string); 
+                    ++i ) {
+                        if ( val.find(s_LegalRepeatTypes[i]) != string::npos ) {
+                            bool left = false, right = false;
+                            if ( i > 0 ) {
+                                left = val[i-1] == ','  ||  val[i-1] == '(';
+                            }
+                            if ( i < val.length() - 1 ) {
+                                right = val[i+1] == ','  ||  val[i+1] == ')';
+                            }
+                            if ( left  &&  right ) {
+                                error = true;
+                            }
+                            break;
                         }
-                        if ( i < val.length() - 1 ) {
-                            right = val[i+1] == ','  ||  val[i+1] == ')';
-                        }
-                        if ( left  &&  right ) {
-                            error = true;
-                        }
-                        break;
                     }
-                }
+                }}
                 break;
-
+                
             case CGbqualType::e_Rpt_unit:
-                {
-                    /*
-                    bool found = false,
-                         multiple_rpt_unit = true;
-
-                    for ( size_t i = 0; i < val.length(); ++i ) {
-                        if ( val[i] <= ' ' ) {
+                {{
+                    bool found = false, multiple_rpt_unit = true;
+                    ITERATE(string, it, val) {
+                        if ( *it <= ' ' ) {
                             found = true;
-                        } else if ( val[i] == '('  ||  val[i] == ')'  ||
-                                    val[i] == ','  ||  val[i] == '.'  ||
-                                    isdigit(val[i]) ) {
+                        } else if ( *it == '('  ||  *it == ')'  ||
+                            *it == ','  ||  *it == '.'  ||
+                            isdigit(*it) ) {
                         } else {
                             multiple_rpt_unit = false;
                         }
                     }
+                    /*
                     if ( found || 
-                         (!multiple_rpt_unit && val.length() > 48) ) {
-                        error = true;
+                    (!multiple_rpt_unit && val.length() > 48) ) {
+                    error = true;
                     }
                     */
-                    break;
-                }
+                    if ( NStr::CompareNocase(key, "repeat_region") == 0  &&
+                        !multiple_rpt_unit  &&
+                        val.length() == GetLength(feat.GetLocation(), m_Scope) ) {
+                        bool just_nuc_letters = true;
+                        static const string nuc_letters = "ACGTNacgtn";
+                        
+                        ITERATE(string, it, val) {
+                            if ( nuc_letters.find(*it) == NPOS ) {
+                                just_nuc_letters = false;
+                                break;
+                            }
+                        }
+                        
+                        if ( just_nuc_letters ) {
+                            CSeqVector vec = GetSequenceFromFeature(feat, *m_Scope);
+                            if ( !vec.empty() ) {
+                                string vec_data;
+                                vec.GetSeqData(0, vec.size(), vec_data);
+                                if ( NStr::CompareNocase(val, vec_data) != 0 ) {
+                                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                        "repeat_region /rpt_unit and underlying"
+                                        "sequence do not match", feat);
+                                }
+                            }
+                            
+                            
+                        }
+                    }
+                }}
+                break;
                 
             case CGbqualType::e_Label:
-                {
+                {{
                     bool only_digits = true,
-                         has_spaces = false;
-
-                    for ( size_t i = 0; i < val.length(); ++i ) {
-                        if ( isspace(val[i]) ) {
+                        has_spaces = false;
+                    
+                    ITERATE(string, it, val) {
+                        if ( isspace(*it) ) {
                             has_spaces = true;
                         }
-                        if ( !isdigit(val[i]) ) {
+                        if ( !isdigit(*it) ) {
                             only_digits = false;
                         }
                     }
-                    error = only_digits || has_spaces;
-                }                
+                    error = only_digits  ||  has_spaces;
+                }}
                 break;
                 
             case CGbqualType::e_Cons_splice:
-                { 
+                {{
                     error = true;
-                    for ( size_t i = 0; 
-                          i < sizeof(s_LegalConsSpliceStrings) / sizeof(string); 
-                          ++i ) {
+                    for (size_t i = 0; 
+                         i < sizeof(s_LegalConsSpliceStrings) / sizeof(string);
+                         ++i) {
                         if ( NStr::CompareNocase(val, s_LegalConsSpliceStrings[i]) == 0 ) {
                             error = false;
                             break;
                         }
                     }
-                }
+                }}
                 break;
 
-	    default:
-	        break;
-            }
+	        default:
+	            break;
+            } // end of switch statement
             if ( error ) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                     val + " is not a legal value for qualifier " + qual_str, feat);
             }
         }
-    }
+    }  // end of ITERATE 
 }
 
 
@@ -2547,6 +2575,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2003/10/27 14:18:03  shomrat
+* ValidateImp warns if repeat_region /rpt_unit has same length as feature location but does not have matching sequence
+*
 * Revision 1.42  2003/10/24 17:57:25  shomrat
 * warn about allele gbqual when inheriting allele from gene; warn about operon when same as gene
 *
