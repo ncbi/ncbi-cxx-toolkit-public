@@ -164,9 +164,6 @@ public:
     /// Copy range from one lease to another (updating refcnts).
     void Dup(CSeqDBMemLease & recv, const CSeqDBMemLease & src);
     
-private:
-    typedef map<const char *, Uint4>::iterator TPoolIter;
-    
     class CRegionMap {
     public:
         CRegionMap(const string * fname,
@@ -281,6 +278,9 @@ private:
         int m_Clock;
         int m_Penalty;
     };
+    
+private:
+    typedef map<const char *, Uint4>::iterator TPoolIter;
     
     const char * x_FindRegion(Uint4         fid,
                               Uint8       & begin,
