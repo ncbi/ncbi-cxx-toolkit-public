@@ -54,10 +54,21 @@
 
 BEGIN_NCBI_SCOPE
 
+#if defined (NCBI_COMPILER_MIPSPRO)  ||  (defined(NCBI_COMPILER_GCC) && defined(NO_PUBSYNC))
+// Old iostream implementations lack showmanyc, but some of our
+// classes have definitions that should be visible to client code,
+// including in particular CStreamUtils::Readsome....
+class CShowmanycStreambuf : public CNcbiStreambuf
+{
+public:
+    virtual streamsize showmanyc() { return 0; }
+};
+#endif
+
 
 #ifdef NCBI_COMPILER_MIPSPRO
 
-class CMIPSPRO_ReadsomeTolerantStreambuf : public CNcbiStreambuf
+class CMIPSPRO_ReadsomeTolerantStreambuf : public CShowmanycStreambuf
 {
 public:
     // Do not use these two ugly, weird, ad-hoc methods, ever!!!
@@ -90,16 +101,7 @@ void CMIPSPRO_ReadsomeTolerantStreambuf::MIPSPRO_ReadsomeEnd(void)
     --m_MIPSPRO_ReadsomeGptrSetLevel;
 }
 
-#elif defined(NCBI_COMPILER_GCC)  &&  defined(NO_PUBSYNC)
-// Old GCC iostreams lack showmanyc, but some of our classes have
-// definitions that should be visible to client code, including in
-// particular CStreamUtils::Readsome....
-class CGCC_ShowmanycStreambuf : public CNcbiStreambuf
-{
-public:
-    virtual streamsize showmanyc() { return 0; }
-};
-#endif
+#endif // NCBI_COMPILER_MIPSPRO
 
 
 struct NCBI_XUTIL_EXPORT CStreamUtils {
@@ -151,6 +153,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2003/12/18 13:23:40  ucko
+ * It seems MIPSpro also lacks showmanyc, so extend our
+ * streambuf-with-showmanyc class to cover it as well and make it
+ * CMIPSPRO_ReadsomeTolerantStreambuf's base class.
+ *
  * Revision 1.15  2003/12/18 03:43:28  ucko
  * Add CGCC_ShowmanycStreambuf as a layer between streambuf and
  * CConn_Streambuf for the benefit of Readsome.
