@@ -114,7 +114,7 @@ public:
 
     bool IsSetQual(void) const
         { return m_Feat->IsSetQual(); }
-    const list< CRef< CGb_qual > >& GetQual(void) const
+    const CSeq_feat::TQual& GetQual(void) const
         { return m_Feat->GetQual(); }
 
     bool IsSetTitle(void) const
@@ -139,12 +139,12 @@ public:
 
     bool IsSetXref(void) const
         { return m_Feat->IsSetXref(); }
-    const list< CRef< CSeqFeatXref > >& GetXref(void) const
+    const CSeq_feat::TXref& GetXref(void) const
         { return m_Feat->GetXref(); }
 
     bool IsSetDbxref(void) const
         { return m_Feat->IsSetDbxref(); }
-    const list< CRef< CDbtag > >& GetDbxref(void) const
+    const CSeq_feat::TDbxref& GetDbxref(void) const
         { return m_Feat->GetDbxref(); }
 
     bool IsSetPseudo(void) const
@@ -374,6 +374,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/07/22 21:48:02  vasilche
+* Use typedef for member access.
+*
 * Revision 1.27  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr
