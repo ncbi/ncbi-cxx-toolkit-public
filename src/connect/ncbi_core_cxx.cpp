@@ -144,7 +144,7 @@ static void s_LOG_Handler(void* /*user_data*/, SLOG_Handler* call_data)
                 " byte" << (call_data->raw_size != 1 ? "s" : "") << ")\n" <<
                 NStr::PrintableString
                 (string(static_cast<const char*>(call_data->raw_data),
-                        call_data->raw_size)) <<
+                        call_data->raw_size), NStr::eNewLine_Passthru) <<
                 "\n#################### [END] Raw Data";
         }
     }
@@ -228,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/10/21 18:31:31  lavr
+ * Take advantage of eNewLine_Passthru in data dumping
+ *
  * Revision 6.11  2002/09/24 15:07:13  lavr
  * File description indented uniformly
  *
