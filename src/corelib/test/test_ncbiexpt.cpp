@@ -43,7 +43,11 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 // CExceptionSubsystem
 
+#if defined(EXCEPTION_BUG_WORKAROUND)
 class CSubsystemException : public CException
+#else
+class CSubsystemException : virtual public CException
+#endif
 {
 public:
     enum EErrCode {
@@ -690,6 +694,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2002/07/31 18:34:14  gouriano
+ * added test for virtual base class
+ *
  * Revision 6.6  2002/07/29 19:30:10  gouriano
  * changes to allow multiple inheritance in CException classes
  *
