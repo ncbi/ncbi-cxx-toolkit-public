@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2003/06/27 15:39:49  shomrat
+ * Added IsApproved
+ *
  * Revision 1.4  2002/12/26 12:40:33  dicuccio
  * Added Win32 export specifiers
  *
@@ -78,6 +81,11 @@ public:
     
     // Appends a label to "label" based on content of CDbtag
     void GetLabel(string* label) const;
+
+    // Test if DB is approved by the consortium.
+    // 'GenBank', 'EMBL' and 'DDBJ' are approved only in the
+    // context of a RefSeq record.
+    bool IsApproved(bool refseq = false) const;
     
 private:
     // Prohibit copy constructor & assignment operator
