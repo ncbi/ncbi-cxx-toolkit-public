@@ -56,6 +56,7 @@ class Cn3DGLCanvas;
 class CDDAnnotateDialog;
 class MultiTextDialog;
 class CDDRefDialog;
+class CDDBookRefDialog;
 class CDDSplashDialog;
 class CommandProcessor;
 
@@ -172,6 +173,7 @@ public:
             MID_EDIT_CDD_DESCR,
             MID_EDIT_CDD_NOTES,
             MID_EDIT_CDD_REFERENCES,
+            MID_EDIT_CDD_BOOK_REFERENCES,
             MID_ANNOT_CDD,
             MID_CDD_REJECT_SEQ,
             MID_CDD_SHOW_REJECTS,
@@ -190,6 +192,7 @@ public:
     void ShowCDDOverview(void);
     void ShowCDDAnnotations(void);
     void ShowCDDReferences(void);
+    void ShowCDDBookReferences(void);
 
 private:
 
@@ -197,6 +200,7 @@ private:
     CDDAnnotateDialog *cddAnnotateDialog;
     MultiTextDialog *cddDescriptionDialog, *cddNotesDialog;
     CDDRefDialog *cddRefDialog;
+    CDDBookRefDialog *cddBookRefDialog;
     CDDSplashDialog *cddOverview;
     void DestroyNonModalDialogs(void);
 
@@ -256,6 +260,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/09/26 17:12:46  thiessen
+* add book reference dialog
+*
 * Revision 1.5  2003/07/17 18:47:01  thiessen
 * add -f option to force save to same file
 *

@@ -68,6 +68,7 @@
 #include "cn3d/cdd_annot_dialog.hpp"
 #include "cn3d/preferences_dialog.hpp"
 #include "cn3d/cdd_ref_dialog.hpp"
+#include "cn3d/cdd_book_ref_dialog.hpp"
 #include "cn3d/cn3d_png.hpp"
 #include "cn3d/wx_tools.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
@@ -148,8 +149,8 @@ END_EVENT_TABLE()
 StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
     glCanvas(NULL), cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL),
-    cddRefDialog(NULL), helpController(NULL), helpConfig(NULL), cddOverview(NULL),
-    fileMessagingManager("Cn3D"), fileMessenger(NULL)
+    cddRefDialog(NULL), cddBookRefDialog(NULL), helpController(NULL), helpConfig(NULL),
+    cddOverview(NULL), fileMessagingManager("Cn3D"), fileMessenger(NULL)
 {
     GlobalMessenger()->AddStructureWindow(this);
     animationTimer.SetOwner(this, MID_ANIMATE);
@@ -303,8 +304,10 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     menu->Enable(MID_EDIT_CDD_DESCR, !readOnly);
     menu->Append(MID_EDIT_CDD_NOTES, "Edit No&tes");
     menu->Enable(MID_EDIT_CDD_NOTES, !readOnly);
-    menu->Append(MID_EDIT_CDD_REFERENCES, "Edit &References");
+    menu->Append(MID_EDIT_CDD_REFERENCES, "Edit PubMed &References");
     menu->Enable(MID_EDIT_CDD_REFERENCES, !readOnly);
+    menu->Append(MID_EDIT_CDD_BOOK_REFERENCES, "Edit &Book References");
+    menu->Enable(MID_EDIT_CDD_BOOK_REFERENCES, !readOnly);
     menu->Append(MID_ANNOT_CDD, "Edit &Annotations");
     menu->Enable(MID_ANNOT_CDD, !readOnly);
     menu->AppendSeparator();
@@ -863,6 +866,7 @@ void StructureWindow::DestroyNonModalDialogs(void)
     if (cddNotesDialog) cddNotesDialog->DestroyDialog();
     if (cddDescriptionDialog) cddDescriptionDialog->DestroyDialog();
     if (cddRefDialog) cddRefDialog->Destroy();
+    if (cddBookRefDialog) cddBookRefDialog->Destroy();
     if (cddOverview) cddOverview->Destroy();
 }
 
@@ -930,9 +934,18 @@ void StructureWindow::ShowCDDReferences(void)
 {
     if (!cddRefDialog)
         cddRefDialog = new CDDRefDialog(
-            glCanvas->structureSet, &cddRefDialog, this, -1, "CDD References");
+            glCanvas->structureSet, &cddRefDialog, this, -1, "CDD PubMed References");
     cddRefDialog->Raise();
     cddRefDialog->Show(true);
+}
+
+void StructureWindow::ShowCDDBookReferences(void)
+{
+    if (!cddBookRefDialog)
+        cddBookRefDialog = new CDDBookRefDialog(
+            glCanvas->structureSet, &cddBookRefDialog, this, -1, "CDD Book References");
+    cddBookRefDialog->Raise();
+    cddBookRefDialog->Show(true);
 }
 
 void StructureWindow::OnCDD(wxCommandEvent& event)
@@ -978,6 +991,10 @@ void StructureWindow::OnCDD(wxCommandEvent& event)
 
         case MID_EDIT_CDD_REFERENCES:
             ShowCDDReferences();
+            break;
+
+        case MID_EDIT_CDD_BOOK_REFERENCES:
+            ShowCDDBookReferences();
             break;
 
         case MID_ANNOT_CDD:
@@ -1460,6 +1477,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/09/26 17:12:46  thiessen
+* add book reference dialog
+*
 * Revision 1.18  2003/09/22 17:33:12  thiessen
 * add AlignmentChanged flag; flush message file; check row order of repeats
 *
