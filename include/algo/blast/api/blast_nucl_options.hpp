@@ -244,7 +244,12 @@ public:
     void SetTraditionalBlastnDefaults();
     /// Sets TraditionalMegablastDefaults
     void SetTraditionalMegablastDefaults();
-
+    
+    EProgram GetFactorySetting()
+    {
+        return m_FactorySetting;
+    }
+    
 protected:
     /// Overrides LookupTableDefaults for nucleotide options
     virtual void SetLookupTableDefaults();
@@ -276,6 +281,8 @@ private:
     CBlastNucleotideOptionsHandle(const CBlastNucleotideOptionsHandle& rhs);
     /// Disallow assignment operator
     CBlastNucleotideOptionsHandle& operator=(const CBlastNucleotideOptionsHandle& rhs);
+    
+    EProgram m_FactorySetting;
 };
 
 END_SCOPE(blast)
@@ -288,6 +295,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/08/02 15:01:36  bealer
+ * - Distinguish between blastn and megablast (for remote blast).
+ *
  * Revision 1.13  2004/06/14 15:42:08  dondosha
  * Typo fix in comment
  *

@@ -76,10 +76,7 @@ public:
     }
     
     /// Create a blastn (nucleotide) search.
-    CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts)
-    {
-        x_Init(algo_opts, "blastn", "plain");
-    }
+    inline CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts);
     
     /// Create a blastx (translated query) search.
     CRemoteBlast(CBlastxOptionsHandle * algo_opts)
@@ -438,6 +435,28 @@ private:
 };
 
 
+CRemoteBlast::CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts)
+{
+    string service;
+    
+    switch(algo_opts->GetFactorySetting()) {
+    case eBlastn:
+        service = "plain";
+        break;
+        
+    case eMegablast:
+        service = "megablast";
+        break;
+        
+    default:
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "Unknown nucleotide type specified.");
+    }
+    
+    x_Init(algo_opts, "blastn", service.c_str());
+}
+
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -447,6 +466,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/08/02 15:01:36  bealer
+ * - Distinguish between blastn and megablast (for remote blast).
+ *
  * Revision 1.10  2004/07/29 15:05:17  bealer
  * - Ignore empty entrez query.
  *

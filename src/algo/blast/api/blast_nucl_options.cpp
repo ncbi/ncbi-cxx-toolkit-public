@@ -46,7 +46,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 CBlastNucleotideOptionsHandle::CBlastNucleotideOptionsHandle(EAPILocality locality)
-    : CBlastOptionsHandle(locality)
+    : CBlastOptionsHandle(locality),
+      m_FactorySetting(eBlastn)
 {
     SetDefaults();
 }
@@ -61,9 +62,12 @@ CBlastNucleotideOptionsHandle::SetDefaults()
 void
 CBlastNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
 {
+    m_FactorySetting = eBlastn;
+    
     if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
         return;
     }
+    
     SetQueryOptionDefaults();
     SetLookupTableDefaults();
     // NB: Initial word defaults must be set after lookup table defaults, 
@@ -78,6 +82,8 @@ CBlastNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
 void
 CBlastNucleotideOptionsHandle::SetTraditionalMegablastDefaults()
 {
+    m_FactorySetting = eMegablast;
+    
     if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
         return;
     }
@@ -248,6 +254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/08/02 15:00:16  bealer
+ * - Distinguish between blastn and megablast (for remote blast).
+ *
  * Revision 1.12  2004/06/08 15:20:22  dondosha
  * Skip traceback option has been moved to the traceback extension method enum
  *
