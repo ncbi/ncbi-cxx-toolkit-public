@@ -163,11 +163,45 @@ int CTestNetScheduleStress::Run(void)
     }
 
     double elapsed = sw.Elapsed();
-    double avg = elapsed / jcount;
+    if (jcount) {
+        double avg = elapsed / (double)jcount;
 
-    NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
-    NcbiCout << "Elapsed :"  << elapsed << " sec." << NcbiEndl;
-    NcbiCout << "Avg time :" << avg << " sec." << NcbiEndl;
+        NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
+        NcbiCout << "Elapsed :"  << elapsed << " sec." << NcbiEndl;
+        NcbiCout << "Avg time :" << avg << " sec." << NcbiEndl;
+    }
+    }}
+
+    vector<string> jobs_returned;
+    jobs_returned.reserve(jcount);
+
+    {{
+    NcbiCout << NcbiEndl << "Take-Return jobs..." << NcbiEndl;
+    SleepMilliSec(4000);
+    CStopWatch sw(true);
+    string input;
+
+    unsigned cnt = 0;
+    for (; cnt < 1000; ++cnt) {
+        bool job_exists = cl.GetJob(&job_key, &input);
+        if (!job_exists)
+            break;
+        cl.ReturnJob(job_key);
+        jobs_returned.push_back(job_key);
+    }
+    double elapsed = sw.Elapsed();
+    if (cnt) {
+        double avg = elapsed / cnt;
+
+        NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
+        NcbiCout << "Jobs processed: " << cnt << NcbiEndl;
+        NcbiCout << "Elapsed: "  << elapsed << " sec." << NcbiEndl;
+        NcbiCout << "Avg time: " << avg << " sec." << NcbiEndl;
+    }
+
+    NcbiCout << NcbiEndl << "Waiting..." << NcbiEndl;
+    SleepMilliSec(40 * 1000);
+    NcbiCout << NcbiEndl << "Ok." << NcbiEndl;
 
     }}
 
@@ -193,14 +227,44 @@ int CTestNetScheduleStress::Run(void)
         cl.PutResult(job_key, 0, out);
     }
     double elapsed = sw.Elapsed();
-    double avg = elapsed / cnt;
 
-    NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
-    NcbiCout << "Jobs processed: " << cnt << NcbiEndl;
-    NcbiCout << "Elapsed: "  << elapsed << " sec." << NcbiEndl;
-    NcbiCout << "Avg time: " << avg << " sec." << NcbiEndl;
+    if (cnt) {
+        double avg = elapsed / cnt;
+
+        NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
+        NcbiCout << "Jobs processed: " << cnt << NcbiEndl;
+        NcbiCout << "Elapsed: "  << elapsed << " sec." << NcbiEndl;
+        NcbiCout << "Avg time: " << avg << " sec." << NcbiEndl;
+    }
 
     }}
+
+
+    {{
+    NcbiCout << NcbiEndl << "Check returned jobs..." << NcbiEndl;
+    SleepMilliSec(5000);
+    CStopWatch sw(true);
+
+    string output;
+    NON_CONST_ITERATE(vector<string>, it, jobs_returned) {
+        const string& jk = *it;
+        int ret_code;
+        status = cl.GetStatus(jk, &ret_code, &output);
+        switch (status) {
+        case CNetScheduleClient::ePending:
+            NcbiCout << "Job pending: " << jk << NcbiEndl;
+            break;
+        case CNetScheduleClient::eReturned:
+            NcbiCout << "Job returned: " << jk << NcbiEndl;
+            break;
+        default:
+            break;
+        }
+    }
+
+
+    }}
+
 
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
     return 0;
@@ -216,6 +280,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/28 18:41:14  kuznets
+ * test for ReturnJob()
+ *
  * Revision 1.1  2005/02/17 17:20:12  kuznets
  * Initial revision
  *
