@@ -71,6 +71,18 @@ CLoadInfoSeq_ids::CLoadInfoSeq_ids(void)
 }
 
 
+CLoadInfoSeq_ids::CLoadInfoSeq_ids(const CSeq_id_Handle& /*seq_id*/)
+    : m_GiLoaded(false)
+{
+}
+
+
+CLoadInfoSeq_ids::CLoadInfoSeq_ids(const string& /*seq_id*/)
+    : m_GiLoaded(false)
+{
+}
+
+
 CLoadInfoSeq_ids::~CLoadInfoSeq_ids(void)
 {
 }

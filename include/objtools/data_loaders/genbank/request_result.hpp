@@ -96,6 +96,8 @@ public:
     typedef TSeq_ids::const_iterator const_iterator;
 
     CLoadInfoSeq_ids(void);
+    CLoadInfoSeq_ids(const CSeq_id_Handle& seq_id);
+    CLoadInfoSeq_ids(const string& seq_id);
     ~CLoadInfoSeq_ids(void);
 
     bool IsLoadedGi(void);
