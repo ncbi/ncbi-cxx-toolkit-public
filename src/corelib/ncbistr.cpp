@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/07/08 16:10:14  vakatov
+* Fixed a warning in NStr::StringToUInt()
+*
 * Revision 1.16  1999/07/06 15:21:06  vakatov
 * + NStr::TruncateSpaces(const string& str, ETrunc where=eTrunc_Both)
 *
@@ -109,7 +112,7 @@ unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
     char* endptr = 0;
     unsigned long value = ::strtoul(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
-        value < 0  ||  value > kMax_UInt)
+	value > kMax_UInt)
         throw runtime_error("NStr::StringToUInt():  cannot convert");
     return value;
 }
