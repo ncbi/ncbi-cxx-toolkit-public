@@ -5,14 +5,12 @@
 #################################
 
 APP = asniotest
-
-SRC = \
-	asniotest
+SRC = asniotest
 
 LIB = \
-	ncbimime \
-	cdd \
-	scoremat \
+    ncbimime \
+    cdd \
+    coremat \
 	cn3d \
 	mmdb \
 	seqset $(SEQ_LIBS) \
@@ -23,3 +21,6 @@ LIB = \
 	xser \
 	xutil \
 	xncbi
+
+CHECK_CMD =
+CHECK_COPY = ADF.bin pdbSeqId.txt
