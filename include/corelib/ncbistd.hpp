@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2001/05/30 16:04:22  vakatov
+* AutoPtr::  -- do not make it owner if the source AutoPtr object was not
+* an owner (for copy-constructor and operator=).
+*
 * Revision 1.53  2001/05/17 14:54:12  lavr
 * Typos corrected
 *
@@ -321,8 +325,9 @@ public:
     {
     }
     AutoPtr(const AutoPtr<X>& p)
-        : m_Ptr(p.x_Release()), m_Owner(true)
+        : m_Ptr(0), m_Owner(p.m_Owner)
     {
+        m_Ptr = p.x_Release();
     }
 
     ~AutoPtr(void)
@@ -333,7 +338,9 @@ public:
     AutoPtr& operator=(const AutoPtr<X>& p)
     {
         if (this != &p) {
+            bool owner = p.m_Owner;
             reset(p.x_Release());
+            m_Owner = owner;
         }
         return *this;
     }
