@@ -42,6 +42,7 @@ void DBAPI_RegisterDriver_DBLIB   (I_DriverMgr& mgr);
 void DBAPI_RegisterDriver_FTDS    (I_DriverMgr& mgr);
 void DBAPI_RegisterDriver_ODBC    (I_DriverMgr& mgr);
 void DBAPI_RegisterDriver_MSDBLIB (I_DriverMgr& mgr);
+void DBAPI_RegisterDriver_MYSQL   (I_DriverMgr& mgr);
 
 
 END_NCBI_SCOPE
@@ -51,6 +52,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/02/19 03:38:42  vakatov
+ * + DBAPI_RegisterDriver_MYSQL
+ *
  * Revision 1.3  2002/07/09 17:00:21  soussov
  * separates the msdblib
  *
