@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2001/07/16 16:24:08  grichenk
+* Added "case eFNP_Allow:" to ReplaceVisibleChar()
+*
 * Revision 1.79  2001/06/07 17:12:50  grichenk
 * Redesigned checking and substitution of non-printable characters
 * in VisibleString
@@ -1381,6 +1384,8 @@ char& ReplaceVisibleChar(char& c, EFixNonPrint fix_method, int at_line)
         break;
     case eFNP_Abort:
         CNcbiDiag(eDiag_Fatal, eDPF_Default) << message << Endm;
+        break;
+    case eFNP_Allow:
         break;
     }
     return c;
