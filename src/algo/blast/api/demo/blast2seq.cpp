@@ -255,7 +255,7 @@ vector< CConstRef<CSeq_loc> >
 BLASTGetSeqLocFromStream(CNcbiIstream& in, CRef<CScope>& scope, 
         CSeq_loc* lcase_mask = NULL)
 {
-    _ASSERT(scope != NULL);
+    _ASSERT(scope);
     vector< CConstRef<CSeq_loc> > retval;
     CRef<CSeq_entry> seq_entry;
 
@@ -377,6 +377,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/07/14 21:53:32  camacho
+ * Minor
+ *
  * Revision 1.2  2003/07/11 21:22:57  camacho
  * Use same command line option as blast to display seqalign
  *
