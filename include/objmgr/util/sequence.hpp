@@ -347,7 +347,6 @@ CSeq_loc* SeqLocMergeOne(const CBioseq_Handle& target,
 
 // Merge a set of locations, returning the result.
 template<typename LocContainer>
-NCBI_XOBJUTIL_EXPORT
 CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
                       LocContainer& locs,
                       TSeqLocFlags flags = 0)
@@ -675,6 +674,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.44  2004/05/06 18:58:31  shomrat
+* removed export specifier from templated function
+*
 * Revision 1.43  2004/05/06 18:34:11  ucko
 * Reorder SeqLocMerge<> and SeqLocMergeOne to avoid compilation errors
 * on (at least) GCC 3.4.
