@@ -1,4 +1,4 @@
---$Revision: 1.14 $ 
+--$Revision: 1.15 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -112,6 +112,7 @@ Gene-commentary ::= SEQUENCE {
     genomic-coords SEQUENCE OF Seq-loc OPTIONAL , -- referenced sequences in genomic coords
     seqs SEQUENCE OF Seq-loc OPTIONAL ,           -- referenced sequences in non-genomic coords
     products SEQUENCE OF Gene-commentary OPTIONAL ,
+    properties SEQUENCE OF Gene-commentary OPTIONAL ,
     comment SEQUENCE OF Gene-commentary OPTIONAL } 
  
 Other-source ::= SEQUENCE { 
