@@ -190,14 +190,27 @@ int CProjBulderApp::Run(void)
     index_prj_path += MSVC_PROJECT_FILE_EXT;
     SaveIfNewer(index_prj_path, index_xmlprj);
     //
+
+    // BuildAll utility project
+    CVisualStudioProject build_all_xmlprj;
+    CreateUtilityProject("-BUILD-ALL-", 
+                         GetRegSettings().m_ConfigInfo, 
+                         &build_all_xmlprj);
+    string build_all_prj_path = 
+        CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
+    build_all_prj_path += MSVC_PROJECT_FILE_EXT;
+    SaveIfNewer(build_all_prj_path, build_all_xmlprj);
+    //
+
     // Solution
     CMsvcSolutionGenerator sln_gen(GetRegSettings().m_ConfigInfo);
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
         sln_gen.AddProject(p->second);
     }
-    sln_gen.AddUtilityProject(master_prj_gen.GetPath());
-    sln_gen.AddUtilityProject(configure_generator.GetPath());
-    sln_gen.AddUtilityProject(index_prj_path);
+    sln_gen.AddUtilityProject (master_prj_gen.GetPath());
+    sln_gen.AddUtilityProject (configure_generator.GetPath());
+    sln_gen.AddUtilityProject (index_prj_path);
+    sln_gen.AddBuildAllProject(build_all_prj_path);
     sln_gen.SaveSolution(m_Solution);
 
     //
@@ -473,6 +486,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/02/25 19:44:04  gorelenk
+ * Added creation of BuildAll utility project to CProjBulderApp::Run.
+ *
  * Revision 1.22  2004/02/20 22:53:58  gorelenk
  * Added analysis of ASN projects depends.
  *
