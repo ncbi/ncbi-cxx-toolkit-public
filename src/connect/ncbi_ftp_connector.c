@@ -48,6 +48,15 @@
  *  INTERNAL -- Auxiliary types and static functions
  ***********************************************************************/
 
+
+typedef enum {
+    eFtpFeature_None = 0,
+    eFtpFeature_MDTM = 1,
+    eFtpFeature_SIZE = 2
+} EFtpFeature;
+typedef unsigned int TFtpFeatures; /* bitwise OR of individual EFtpFeature's */
+
+
 /* All internal data necessary to perform the (re)connect and i/o
  */
 typedef struct {
@@ -57,6 +66,7 @@ typedef struct {
     const char*    pass;
     const char*    path;
     const char*    name;
+    TFtpFeatures   feat;
     ESwitch        log;
     SOCK           cntl;  /* control connection */
     SOCK           data;  /* data    connection */
@@ -254,7 +264,8 @@ static EIO_Status s_FTPAbort(SFTPConnector* xxx)
               == eIO_Success);
         if (status == eIO_Success)
             status = s_FTPReply(xxx, &code, 0, 0);
-        if (status == eIO_Success  &&  code != 226  &&  code != 426)
+        /* Microsoft FTP is known to return 225 (instead of 226) */
+        if (status == eIO_Success  &&  (code/100) != 2  &&  code != 426)
             status = eIO_Unknown;
         if (status == eIO_Success)
             status = SOCK_Close(xxx->data);
@@ -283,13 +294,21 @@ static EIO_Status s_FTPPasv(SFTPConnector*  xxx)
     if (status != eIO_Success  ||  code != 227)
         return eIO_Unknown;
     buf[sizeof(buf) - 1] = '\0';
-    if (!(c = strchr(buf, '(')))
-        return eIO_Unknown;
-    if (sscanf(++c, "%d,%d,%d,%d,%d,%d)",
-               &o[0], &o[1], &o[2], &o[3], &o[4], &o[5]) < 6) {
-        return eIO_Unknown;
+    for (;;) {
+        /* RFC 1123 4.1.2.6 says that ()'s in PASV reply must not be assumed */
+        for (c = buf; *c; c++) {
+            if (isdigit((unsigned char) *c))
+                break;
+        }
+        if (!*c)
+            return eIO_Unknown;
+        if (sscanf(c, "%d,%d,%d,%d,%d,%d%n",
+                   &o[0], &o[1], &o[2], &o[3], &o[4], &o[5], &code) >= 6) {
+            break;
+        }
+        strcpy(buf, c + code);
     }
-    for (i = 0; i < sizeof(o)/sizeof(o[0]); i++) {
+    for (i = 0; i < (unsigned int)(sizeof(o)/sizeof(o[0])); i++) {
         if (o[i] < 0 || o[i] > 255)
             return eIO_Unknown;
     }
@@ -673,6 +692,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2005/01/05 17:40:13  lavr
+ * FEAT extensions and fixes for protocol compliance
+ *
  * Revision 1.4  2004/12/27 15:31:27  lavr
  * Implement telnet SYNCH and FTP ABORT according to the standard
  *
