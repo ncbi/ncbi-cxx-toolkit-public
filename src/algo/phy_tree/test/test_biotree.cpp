@@ -127,7 +127,12 @@ int CTestApplication::Run(void)
 		cout << tax_id << endl;
 
 		CBioTreeContainer btrc;
-		Taxon1ConvertToBioTreeContainer(btrc, tax, tax_id);
+		CTaxon1ConvertToBioTreeContainer<CBioTreeContainer, 
+				                         CTaxon1,
+				                         ITaxon1Node,
+				                         ITreeIterator>
+		  conv_func;
+		conv_func(btrc, tax, tax_id);
 
 		cout << MSerial_AsnText << btrc;
 
@@ -275,6 +280,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/06/09 13:39:05  kuznets
+ * Fixed compilation errors
+ *
  * Revision 1.1  2004/06/08 15:33:31  kuznets
  * Initial revision
  *
