@@ -150,22 +150,35 @@ CMutex CMutexPool::sm_Lock;
 // CGBLGuard 
 //
 CGBLGuard::CGBLGuard(TLMutex& lm,EState orig,const char *loc,int select)
-    : m_Locks(&lm),m_Loc(loc),m_orig(orig),m_current(orig),m_select(select)
+    : m_Locks(&lm),
+      m_Loc(loc),
+      m_orig(orig),
+      m_current(orig),
+      m_select(select)
 {
 }
 
 CGBLGuard::CGBLGuard(TLMutex &lm,const char *loc)
     // assume orig=eNone, switch to e.Main in constructor
-    : m_Locks(&lm),m_Loc(loc),m_orig(eNone),m_current(eNone),m_select(-1)
+    : m_Locks(&lm),
+      m_Loc(loc),
+      m_orig(eNone),
+      m_current(eNone),
+      m_select(-1)
 {
     Switch(eMain);
 }
 
 CGBLGuard::CGBLGuard(CGBLGuard &g,const char *loc)
-    : m_Locks(g.m_Locks),m_Loc(g.m_Loc),
-      m_orig(g.m_current),m_current(g.m_current),m_select(g.m_select)
+    : m_Locks(g.m_Locks),
+      m_Loc(g.m_Loc),
+      m_orig(g.m_current),
+      m_current(g.m_current),
+      m_select(g.m_select)
 {
-    if(loc) m_Loc = loc;
+    if ( loc ) {
+        m_Loc = loc;
+    }
     _VERIFY(m_Locks);
 }
 
@@ -177,7 +190,9 @@ CGBLGuard::~CGBLGuard()
 #if defined(NCBI_THREADS)
 void CGBLGuard::Select(int s)
 {
-    if(m_current==eMain) m_select=s;
+    if ( m_current==eMain ) {
+        m_select=s;
+    }
     _ASSERT(m_select==s);
 }
 
@@ -219,7 +234,9 @@ void CGBLGuard::Switch(EState newstate)
     if(newstate==m_current) return;
     switch(newstate) {
     case eNone:
-        if(m_current!=eMain) Switch(eMain);
+        if ( m_current!=eMain ) {
+            Switch(eMain);
+        }
         _ASSERT(m_current==eMain);
         //LOCK_POST(&m_Locks << ":: switch 'main' to 'none'");
         MUnlock();
@@ -227,24 +244,35 @@ void CGBLGuard::Switch(EState newstate)
         return;
       
     case eBoth:
-        if(m_current!=eMain) Switch(eMain);
+        if ( m_current!=eMain ) {
+            Switch(eMain);
+        }
         _ASSERT(m_current==eMain);
         //LOCK_POST(&m_Locks << ":: switch 'main' to 'both'");
-        if(m_Locks->m_SlowTraverseMode>0) PLock();
+        if ( m_Locks->m_SlowTraverseMode>0 ) {
+            PLock();
+        }
         m_current=eBoth;
         return;
       
     case eLocal:
-        if(m_current!=eBoth) Switch(eBoth);
+        if ( m_current!=eBoth ) {
+            Switch(eBoth);
+        }
         _ASSERT(m_current==eBoth);
         //LOCK_POST(&m_Locks << ":: switch 'both' to 'local'");
-        if(m_Locks->m_SlowTraverseMode==0) PLock();
+        if(m_Locks->m_SlowTraverseMode==0) {
+            PLock();
+        }
         try {
             m_Locks->m_SlowTraverseMode++;
             MUnlock();
-        } catch(...) {
+        }
+        catch(...) {
             m_Locks->m_SlowTraverseMode--;
-            if(m_Locks->m_SlowTraverseMode==0) PUnlock();
+            if(m_Locks->m_SlowTraverseMode==0) {
+                PUnlock();
+            }
             throw;
         }
         m_current=eLocal;
@@ -259,7 +287,9 @@ void CGBLGuard::Switch(EState newstate)
             return;
         case eBoth:
             //LOCK_POST(&m_Locks << ":: switch 'both' to 'main'");
-            if(m_Locks->m_SlowTraverseMode>0) PUnlock();
+            if(m_Locks->m_SlowTraverseMode>0) {
+                PUnlock();
+            }
             m_select=-1;
             m_current=eMain;
             return;
@@ -290,6 +320,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/11/21 16:33:10  vasilche
+* Some code formatting.
+*
 * Revision 1.19  2003/11/19 22:18:02  grichenk
 * All exceptions are now CException-derived. Catch "exception" rather
 * than "runtime_error".
