@@ -2705,6 +2705,107 @@ CSeq_loc* SeqLocMerge
 }
 
 
+static CSeq_interval* s_SeqIntRevCmp(const CSeq_interval& i, CScope* scope)
+{
+    CRef<CSeq_interval> rev_int(new CSeq_interval);
+    rev_int->Assign(i);
+    
+    ENa_strand s = i.CanGetStrand() ? i.GetStrand() : eNa_strand_unknown;
+    rev_int->SetStrand(Reverse(s));
+
+    return rev_int.Release();
+}
+
+
+static CSeq_point* s_SeqPntRevCmp(const CSeq_point& pnt, CScope* scope)
+{
+    CRef<CSeq_point> rev_pnt(new CSeq_point);
+    rev_pnt->Assign(pnt);
+    
+    ENa_strand s = pnt.CanGetStrand() ? pnt.GetStrand() : eNa_strand_unknown;
+    rev_pnt->SetStrand(Reverse(s));
+
+    return rev_pnt.Release();
+}
+
+
+CSeq_loc* SeqLocRevCmp(const CSeq_loc& loc, CScope* scope)
+{
+    CRef<CSeq_loc> rev_loc(new CSeq_loc);
+
+    switch ( loc.Which() ) {
+
+    // -- reverse is the same.
+    case CSeq_loc::e_Null:
+    case CSeq_loc::e_Empty:
+    case CSeq_loc::e_Whole:
+        rev_loc->Assign(loc);
+        break;
+
+    // -- just reverse the strand
+    case CSeq_loc::e_Int:
+        rev_loc->SetInt(*s_SeqIntRevCmp(loc.GetInt(), scope));
+        break;
+    case CSeq_loc::e_Pnt:
+        rev_loc->SetPnt(*s_SeqPntRevCmp(loc.GetPnt(), scope));
+        break;
+    case CSeq_loc::e_Packed_pnt:
+        rev_loc->SetPacked_pnt().Assign(loc.GetPacked_pnt());
+        rev_loc->SetPacked_pnt().SetStrand(Reverse(GetStrand(loc, scope)));
+        break;
+
+    // -- possibly more than one sequence
+    case CSeq_loc::e_Packed_int:
+    {
+        // reverse each interval and store them in reverse order
+        typedef CRef< CSeq_interval > TInt;
+        CPacked_seqint& pint = rev_loc->SetPacked_int();
+        ITERATE (CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
+            pint.Set().push_front(TInt(s_SeqIntRevCmp(**it, scope)));
+        }
+        break;
+    }
+    case CSeq_loc::e_Mix:
+    {
+        // reverse each location and store them in reverse order
+        typedef CRef< CSeq_loc > TLoc;
+        CSeq_loc_mix& mix = rev_loc->SetMix();
+        ITERATE (CSeq_loc_mix::Tdata, it, loc.GetMix().Get()) {
+            mix.Set().push_front(TLoc(SeqLocRevCmp(**it, scope)));
+        }
+        break;
+    }
+    case CSeq_loc::e_Equiv:
+    {
+        // reverse each location (no need to reverse order)
+        typedef CRef< CSeq_loc > TLoc;
+        CSeq_loc_equiv& e = rev_loc->SetEquiv();
+        ITERATE (CSeq_loc_equiv::Tdata, it, loc.GetEquiv().Get()) {
+            e.Set().push_back(TLoc(SeqLocRevCmp(**it, scope)));
+        }
+        break;
+    }
+
+    case CSeq_loc::e_Bond:
+    {
+        CSeq_bond& bond = rev_loc->SetBond();
+        bond.SetA(*s_SeqPntRevCmp(loc.GetBond().GetA(), scope));
+        if ( loc.GetBond().CanGetB() ) {
+            bond.SetA(*s_SeqPntRevCmp(loc.GetBond().GetB(), scope));
+        }
+    }
+        
+    // -- not supported
+    case CSeq_loc::e_Feat:
+    default:
+        NCBI_THROW(CException, eUnknown,
+            "CSeq_loc::SeqLocRevCmp -- unsupported location type");
+    }
+
+    return rev_loc.Release();
+}
+
+
 // Get the encoding CDS feature of a given protein sequence.
 const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope)
 {
@@ -3912,6 +4013,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.73  2004/02/19 18:16:48  shomrat
+* Implemented SeqlocRevCmp
+*
 * Revision 1.72  2004/02/09 14:43:18  vasilche
 * Added missing typename keyword.
 *
