@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/01/11 15:16:28  vasilche
+* On MSVC second argument of allocator::allocate() is not optional.
+*
 * Revision 1.2  2001/01/11 15:08:20  vasilche
 * Removed missing header.
 *
@@ -280,7 +283,7 @@ bool CIntervalTree::DoDelete(SIntervalTreeNode* node, interval_type interval)
 
 SIntervalTreeNode* CIntervalTree::AllocNode(void)
 {
-    return /*static_cast<SIntervalTreeNode*>*/(m_NodeAllocator.allocate(1));
+    return m_NodeAllocator.allocate(1, 0);
 }
 
 void CIntervalTree::DeallocNode(SIntervalTreeNode* node)
@@ -290,7 +293,7 @@ void CIntervalTree::DeallocNode(SIntervalTreeNode* node)
 
 SIntervalTreeNodeIntervals* CIntervalTree::AllocNodeIntervals(void)
 {
-    return /*static_cast<SIntervalTreeNodeIntervals*>*/(m_NodeIntervalsAllocator.allocate(1));
+    return m_NodeIntervalsAllocator.allocate(1, 0);
 }
 
 void CIntervalTree::DeallocNodeIntervals(SIntervalTreeNodeIntervals* ptr)
