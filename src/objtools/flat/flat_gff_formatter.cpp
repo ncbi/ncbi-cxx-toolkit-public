@@ -38,6 +38,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 
 #include <objmgr/seq_vector.hpp>
@@ -90,27 +91,39 @@ void CFlatGFFFormatter::FormatHead(const CFlatHead& head)
 
 void CFlatGFFFormatter::FormatFeature(const IFlattishFeature& f)
 {
-    string   key(f.GetKey());
-    bool     gtf      = false;
-    CSeq_loc tentative_stop;
+    const CSeq_feat& seqfeat = f.GetFeat();
+    string           key(f.GetKey()), oldkey;
+    bool             gtf     = false;
+    // CSeq_loc         tentative_stop;
 
     if ((m_GFFFlags & fGTFCompat)  &&  !m_Context->IsProt()
         &&  (key == "CDS"  ||  key == "exon")) {
         gtf = true;
+    } else if ((m_GFFFlags & fGTFCompat)
+               &&  m_Context->GetMol() == CSeq_inst::eMol_dna
+               &&  seqfeat.GetData().IsRna()) {
+        oldkey = key;
+        key    = "exon";
+        gtf    = true;
     } else if ((m_GFFFlags & fGTFOnly) == fGTFOnly) {
         return;
     }
 
-    CFlatFeature&    feat    = *f.Format();
-    const CSeq_feat& seqfeat = feat.GetFeat();
-    list<string>     l;
-    list<string>     attr_list;
+    CFlatFeature& feat = *f.Format();
+    list<string>  l;
+    list<string>  attr_list;
+
+    if ( !oldkey.empty() ) {
+        attr_list.push_back("gbkey \"" + oldkey + "\";");
+    }
 
     ITERATE (CFlatFeature::TQuals, it, feat.GetQuals()) {
-        const string& name = (*it)->GetName();
+        string name = (*it)->GetName();
         if (name == "codon_start"  ||  name == "translation"
             ||  name == "transcription") {
             continue; // suppressed to reduce verbosity
+        } else if (name == "number"  &&  key == "exon") {
+            name = "exon_number";
         } else if ((m_GFFFlags & fGTFCompat)  &&  !m_Context->IsProt()
                    &&  name == "gene") {
             string gene_id = x_GetGeneID(feat, (*it)->GetValue());
@@ -119,11 +132,12 @@ void CFlatGFFFormatter::FormatFeature(const IFlattishFeature& f)
             attr_list.push_front("gene_id \"" + gene_id + "\";");
             continue;
         }
-        string value0((*it)->GetValue()), value;
+        string value0(NStr::PrintableString((*it)->GetValue())), value;
+        // some parsers may be dumb, so avoid spaces and quotes
+        // (even though the latter are already backslashed)
         ITERATE (string, c, value0) {
             switch (*c) {
-            case '\\': value += "\\\\";  break;
-            case '\"': value += "\\x22"; break;
+            case '\"': value += "x22";   break;
             case ' ':  value += "\\x20"; break;
             default:   value += *c;
             }
@@ -139,89 +153,19 @@ void CFlatGFFFormatter::FormatFeature(const IFlattishFeature& f)
         const CCdregion& cds = seqfeat.GetData().GetCdregion();
         frame = max(cds.GetFrame() - 1, 0);
     }
-    tentative_stop.SetNull();
-    ITERATE (CFlatLoc::TIntervals, it, feat.GetLoc().GetIntervals()) {
-        if (it->m_Accession != m_Context->GetAccession()) {
-            continue;
-        }
-
-        TSeqPos from = it->m_Range.GetFrom(), to = it->m_Range.GetTo();
-        if (gtf  &&  &*it == &feat.GetLoc().GetIntervals().back()
-            &&  key == "CDS"  &&  !seqfeat.GetLocation().IsPartialRight() ) {
-            CConstRef<CSeq_feat> seqfeat2(&seqfeat);
-            if ( !seqfeat.GetLocation().Equals(f.GetLoc()) ) {
-                CRef<CSeq_feat> new_feat(new CSeq_feat);
-                new_feat->Assign(seqfeat);
-                new_feat->SetLocation(const_cast<CSeq_loc&>(f.GetLoc()));
-                seqfeat2.Reset(new_feat);
-            }
-            CRef<CSeq_loc> src_nostop =
-                sequence::ProductToSource(*seqfeat2, seqfeat.GetProduct(),
-                                          0, m_Scope);
-            CSeq_interval&  si = tentative_stop.SetInt();
-            CSeq_loc_CI     it2(*src_nostop);
-            CRange<TSeqPos> range;
-            do {
-                range = it2.GetRange();
-                si.SetId(const_cast<CSeq_id&>(it2.GetSeq_id()));
-            } while (++it2);
-
-            // We need to introduce fuzz so that our potential stop codon
-            // won't also have to be a start codon....
-            if (it->IsReversed()) {
-                from = range.GetFrom() + 1;
-                if (from > 3) {
-                    si.SetFrom(from - 4);
-                    si.SetTo(from - 2);
-                    si.SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
-                    si.SetStrand(eNa_strand_minus);
-                } else {
-                    tentative_stop.SetNull();
-                }
-            } else if (to + 3 <= sequence::GetLength(si.GetId(), m_Scope)) {
-                to = range.GetTo() + 1;
-                si.SetFrom(to);
-                si.SetTo(to + 2);
-                si.SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
-                si.SetStrand(eNa_strand_plus);
-            } else {
-                tentative_stop.SetNull();
-            }
-        }
-        char strand = '+';
-        if (it->IsReversed()) {
-            strand = '-';
-        } else if (f.GetLoc().IsWhole()
-                   ||  (m_Strandedness <= CSeq_inst::eStrand_ss
-                        &&  m_Context->GetMol() != CSeq_inst::eMol_dna)) {
-            strand = '.'; // N/A
-        }
-        l.push_back(m_Context->GetAccession() + '\t'
-                    + source + '\t'
-                    + key + '\t'
-                    + NStr::IntToString(from) + '\t'
-                    + NStr::IntToString(to) + '\t'
-                    + ".\t" // score -- supply if known
-                    + strand + '\t'
-                    + (frame >= 0 ? char(frame + '0') : '.') + "\t"
-                    + attrs);
-        if (frame >= 0) {
-            frame = (frame + to - from + 1) % 3;
-        }
-    }
+    x_AddFeature(l, f.GetLoc(), source, key, "." /*score*/, frame, attrs, gtf);
 
     if (gtf  &&  seqfeat.GetData().IsCdregion()) {
         const CCdregion& cds = seqfeat.GetData().GetCdregion();
-        if ( !seqfeat.GetLocation().IsPartialLeft() ) {
+        if ( !f.GetLoc().IsPartialLeft() ) {
             CRef<CSeq_loc> tentative_start;
             {{
                 CRef<SRelLoc::TRange> range(new SRelLoc::TRange);
                 SRelLoc::TRanges      ranges;
-                range->SetFrom(max(cds.GetFrame() - 1, 0));
-                range->SetTo(range->GetFrom() + 2);
+                range->SetFrom(frame);
+                range->SetTo(frame + 2);
                 ranges.push_back(range);
-                tentative_start
-                    = SRelLoc(seqfeat.GetLocation(), ranges).Resolve(m_Scope);
+                tentative_start = SRelLoc(f.GetLoc(), ranges).Resolve(m_Scope);
             }}
 
             string s;
@@ -234,38 +178,36 @@ void CFlatGFFFormatter::FormatFeature(const IFlattishFeature& f)
             } else {
                 tt = &CGen_code_table::GetTransTable(1);
             }
-            if (tt->IsAnyStart(tt->SetCodonState(s[0], s[1], s[2]))
-                &&  tentative_start->IsInt()
-                &&  sequence::IsSameBioseq(tentative_start->GetInt().GetId(),
-                                           m_Context->GetPrimaryID(),
-                                           m_Scope)) {
-                const CSeq_interval& si = tentative_start->GetInt();
-                l.push_back(m_Context->GetAccession() + '\t'
-                            + source + '\t'
-                            + "start_codon\t"
-                            + NStr::IntToString(si.GetFrom() + 1) + '\t'
-                            + NStr::IntToString(si.GetTo() + 1) + '\t'
-                            + ".\t" // score
-                            + (IsReverse(si.GetStrand()) ? '-' : '+') + '\t'
-                            + "0\t" // frame -- better be 0!
-                            + attrs);                
+            if (s.size() == 3
+                &&  tt->IsAnyStart(tt->SetCodonState(s[0], s[1], s[2]))) {
+                x_AddFeature(l, *tentative_start, source, "start_codon",
+                             "." /* score */, 0, attrs, gtf);
             }
         }
-        if ( !tentative_stop.IsNull() ) {
-            string s;
-            CCdregion_translate::TranslateCdregion
-                (s, m_Context->GetHandle(), tentative_stop, cds);
-            if (s == "*") {
-                const CSeq_interval& si = tentative_stop.GetInt();
-                l.push_back(m_Context->GetAccession() + '\t'
-                            + source + '\t'
-                            + "stop_codon\t"
-                            + NStr::IntToString(si.GetFrom() + 1) + '\t'
-                            + NStr::IntToString(si.GetTo() + 1) + '\t'
-                            + ".\t" // score
-                            + (IsReverse(si.GetStrand()) ? '-' : '+') + '\t'
-                            + "0\t" // frame -- better be 0!
-                            + attrs);
+
+        if ( !f.GetLoc().IsPartialRight()  &&  seqfeat.IsSetProduct() ) {
+            TSeqPos loc_len = sequence::GetLength(f.GetLoc(), m_Scope);
+            TSeqPos prod_len = sequence::GetLength(seqfeat.GetProduct(),
+                                                   m_Scope);
+            CRef<CSeq_loc> tentative_stop;
+            if (loc_len >= frame + 3 * prod_len + 3) {
+                SRelLoc::TRange range;
+                range.SetFrom(frame + 3 * prod_len);
+                range.SetTo  (frame + 3 * prod_len + 2);
+                // needs to be partial for TranslateCdregion to DTRT
+                range.SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+                SRelLoc::TRanges ranges;
+                ranges.push_back(CRef<SRelLoc::TRange>(&range));
+                tentative_stop = SRelLoc(f.GetLoc(), ranges).Resolve(m_Scope);
+            }
+            if (tentative_stop  &&  !tentative_stop->IsNull()) {
+                string s;
+                CCdregion_translate::TranslateCdregion
+                    (s, m_Context->GetHandle(), *tentative_stop, cds);
+                if (s == "*") {
+                    x_AddFeature(l, *tentative_stop, source, "stop_codon",
+                                 "." /* score */, 0, attrs, gtf);
+                }
             }
         }
     }
@@ -373,6 +315,76 @@ string CFlatGFFFormatter::x_GetSourceName(const IFlattishFeature&)
 }
 
 
+void CFlatGFFFormatter::x_AddFeature(list<string>& l, const CSeq_loc& loc,
+                                     const string& source, const string& key,
+                                     const string& score, int frame,
+                                     const string& attrs, bool gtf)
+{
+    int exon_number = 1;
+    for (CSeq_loc_CI it(loc);  it;  ++it) {
+        TSeqPos from   = it.GetRange().GetFrom(), to = it.GetRange().GetTo();
+        char    strand = '+';
+
+        if (IsReverse(it.GetStrand())) {
+            strand = '-';
+        } else if (it.GetRange().IsWhole()
+                   ||  (m_Strandedness <= CSeq_inst::eStrand_ss
+                        &&  m_Context->GetMol() != CSeq_inst::eMol_dna)) {
+            strand = '.'; // N/A
+        }
+
+        if (it.GetRange().IsWhole()) {
+            to = sequence::GetLength(it.GetSeq_id(), m_Scope) - 1;
+        }
+
+        string extra_attrs;
+        if (gtf  &&  attrs.find("exon_number ") == NPOS) {
+            CSeq_loc       loc2;
+            CSeq_interval& si = loc2.SetInt();
+            si.SetFrom(from);
+            si.SetTo(to);
+            si.SetStrand(it.GetStrand());
+            si.SetId(const_cast<CSeq_id&>(it.GetSeq_id()));
+            CConstRef<CSeq_feat> exon = sequence::GetBestOverlappingFeat
+                (loc2, CSeqFeatData::eSubtype_exon,
+                 sequence::eOverlap_Contains, *m_Scope);
+            if (exon  &&  exon->IsSetQual()) {
+                ITERATE (CSeq_feat::TQual, q, exon->GetQual()) {
+                    if ( !NStr::CompareNocase((*q)->GetQual(), "number") ) {
+                        int n = NStr::StringToNumeric((*q)->GetVal());
+                        if (n >= exon_number) {
+                            exon_number = n;
+                            break;
+                        }
+                    }
+                }
+            }
+            extra_attrs = " exon_number \"" + NStr::IntToString(exon_number)
+                + "\";";
+            ++exon_number;
+        }
+
+        if ( sequence::IsSameBioseq(it.GetSeq_id(), m_Context->GetPrimaryID(),
+                                    m_Scope) ) {
+            // conditionalize printing, but update state regardless
+            l.push_back(m_Context->GetAccession() + '\t'
+                        + source + '\t'
+                        + key + '\t'
+                        + NStr::UIntToString(from + 1) + '\t'
+                        + NStr::UIntToString(to + 1) + '\t'
+                        + score + '\t'
+                        + strand + '\t'
+                        + (frame >= 0 ? char(frame + '0') : '.') + "\t"
+                        + attrs + extra_attrs);
+        }
+
+        if (frame >= 0) {
+            frame = (frame + to - from + 1) % 3;
+        }
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -380,6 +392,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/10/17 21:06:35  ucko
+* Reworked GTF mode per Wratko's critique:
+*  - Now handles multi-exonic(!) start and stop codons.
+*  - Treats all RNA features on DNA as exons.
+*  - Sets exon_number attribute for GTF 1 compatibility.
+*  - Quotes other attributes better.
+*
 * Revision 1.1  2003/10/08 21:11:45  ucko
 * New GFF/GTF formatter
 *
