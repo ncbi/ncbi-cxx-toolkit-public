@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2000/11/30 21:54:05  ostell
+ * added Match()
+ *
  * Revision 1.1  2000/11/30 18:40:23  ostell
  * added Textseq_id.Match
  *
@@ -63,6 +66,9 @@ public:
     CPatent_seq_id(void);
     // destructor
     ~CPatent_seq_id(void);
+
+    // comparison function
+    bool Match(const CPatent_seq_id& psip2) const;
 
 };
 

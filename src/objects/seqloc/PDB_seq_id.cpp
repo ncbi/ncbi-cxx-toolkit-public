@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/11/30 21:56:25  ostell
+ * added Match()
+ *
  * Revision 6.1  2000/11/30 18:39:26  ostell
  * added Textseq_id.Match
  *
@@ -56,6 +59,17 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 // destructor
 CPDB_seq_id::~CPDB_seq_id(void)
 {
+}
+
+// comparison function
+bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
+{
+       if (AStrEquiv(GetMol().Get(), psip2.GetMol().Get(), PNocase()))
+       {
+            if ((GetChain()) == (psip2.GetChain()))
+                         return true;
+	}
+	return false;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
