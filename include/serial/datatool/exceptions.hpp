@@ -33,6 +33,15 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/09/22 13:32:17  kononenk
+* "Diagnostic Message Filtering" functionality added.
+* Added function SetDiagFilter()
+* Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+* Module, class and function attribute added to CNcbiDiag and CException
+* Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+* 	CDiagCompileInfo + fixes on derived classes and their usage
+* Macro NCBI_MODULE can be used to set default module name in cpp files
+*
 * Revision 1.10  2004/06/16 11:56:19  dicuccio
 * throw() --> THROWS_NONE
 *
@@ -145,11 +154,11 @@ public:
         }
     }
 
-    CAmbiguiousTypes(const char* file,int line,
+    CAmbiguiousTypes(const CDiagCompileInfo& info,
         const CException* prev_exception,
         EErrCode err_code,const string& message,
         const list<CDataType*>& types) THROWS_NONE
-        : CNotFoundException(file, line, prev_exception,
+        : CNotFoundException(info, prev_exception,
             (CNotFoundException::EErrCode) CException::eInvalid,
             message), m_Types(types)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CAmbiguiousTypes, CNotFoundException);

@@ -170,10 +170,10 @@ public:
     }
 
     /// Constructor.
-    CPIDGuardException(const char* file, int line,
+    CPIDGuardException(const CDiagCompileInfo& info,
                        const CException* prev_exception, EErrCode err_code,
                        const string& message, TPid pid = 0)
-        : CException(file, line, prev_exception, CException::eInvalid,
+        : CException(info, prev_exception, CException::eInvalid,
                      message),
           m_PID(pid)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CPIDGuardException, CException);
@@ -255,6 +255,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/09/22 13:32:16  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.9  2004/08/19 12:43:47  dicuccio
  * Dropped unnecessary export specifier
  *

@@ -113,7 +113,7 @@ public:
     static const char* GetName(size_t index,
                                const char* const names[], size_t namesCount);
 
-    CInvalidChoiceSelection(const char* file,int line,
+    CInvalidChoiceSelection(const CDiagCompileInfo& diag_info,
         size_t currentIndex, size_t mustBeIndex,
         const char* const names[], size_t namesCount);
 // for backward compatibility
@@ -141,6 +141,15 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/09/22 13:32:17  kononenk
+* "Diagnostic Message Filtering" functionality added.
+* Added function SetDiagFilter()
+* Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+* Module, class and function attribute added to CNcbiDiag and CException
+* Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+* 	CDiagCompileInfo + fixes on derived classes and their usage
+* Macro NCBI_MODULE can be used to set default module name in cpp files
+*
 * Revision 1.18  2004/08/19 13:09:30  dicuccio
 * Dropped export specifier on inlined exception
 *

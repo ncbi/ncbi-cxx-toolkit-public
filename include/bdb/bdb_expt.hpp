@@ -155,12 +155,12 @@ public:
 
 
 #define BDB_THROW(errcode, message) \
-    throw CBDB_LibException(__FILE__, __LINE__, 0, CBDB_LibException::errcode, \
+    throw CBDB_LibException(DIAG_COMPILE_INFO, 0, CBDB_LibException::errcode, \
                             (message))
 
 
 #define BDB_ERRNO_THROW(errnum, message) \
-    throw CBDB_ErrnoException(__FILE__, __LINE__, 0, \
+    throw CBDB_ErrnoException(DIAG_COMPILE_INFO, 0, \
          ((errnum > 0) ? CBDB_ErrnoException::eSystem : \
                          CBDB_ErrnoException::eBerkeleyDB), \
           (message), errnum)
@@ -190,6 +190,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/09/22 13:32:16  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.14  2004/08/19 12:43:09  dicuccio
  * Dropped unnecessary export specifier
  *

@@ -348,11 +348,11 @@ public:
     CNcbiStreamoff GetStreamOffset(void) const;
     void   SetStreamOffset(CNcbiStreamoff pos);
 
-    void ThrowError1(const char* file, int line,
+    void ThrowError1(const CDiagCompileInfo& diag_info,
                      TFailFlags fail, const char* message);
-    void ThrowError1(const char* file, int line,
+    void ThrowError1(const CDiagCompileInfo& diag_info,
                      TFailFlags fail, const string& message);
-#define ThrowError(flag, mess) ThrowError1(__FILE__, __LINE__,flag,mess)
+#define ThrowError(flag, mess) ThrowError1(DIAG_COMPILE_INFO,flag,mess)
 
     enum EFlags {
         fFlagNone                = 0,
@@ -671,6 +671,15 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.107  2004/09/22 13:32:17  kononenk
+* "Diagnostic Message Filtering" functionality added.
+* Added function SetDiagFilter()
+* Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+* Module, class and function attribute added to CNcbiDiag and CException
+* Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+* 	CDiagCompileInfo + fixes on derived classes and their usage
+* Macro NCBI_MODULE can be used to set default module name in cpp files
+*
 * Revision 1.106  2004/09/09 19:16:58  vasilche
 * StartDelayBuffer/EndDelayBuffer made virtual to update input if needed.
 *

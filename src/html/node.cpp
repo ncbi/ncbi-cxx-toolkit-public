@@ -272,7 +272,7 @@ CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode prev)
             if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
                 throw;
             }
-            CHTMLException new_e(__FILE__, __LINE__, 0,
+            CHTMLException new_e(DIAG_COMPILE_INFO, 0,
                                  CHTMLException::eUnknown, e.GetMsg());
             new_e.AddTraceInfo(GetName());
             throw new_e;
@@ -282,7 +282,7 @@ CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode prev)
             if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
                 throw;
             }
-            CHTMLException new_e(__FILE__, __LINE__, 0,
+            CHTMLException new_e(DIAG_COMPILE_INFO, 0,
                                  CHTMLException::eUnknown,
                                  string("CNCBINode::Print: ") + e.what());
             new_e.AddTraceInfo(GetName());
@@ -293,7 +293,7 @@ CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode prev)
             if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
                 throw;
             }
-            CHTMLException new_e(__FILE__, __LINE__, 0,
+            CHTMLException new_e(DIAG_COMPILE_INFO, 0,
                                  CHTMLException::eUnknown,
                                  "CNCBINode::Print: unknown exception");
             new_e.AddTraceInfo(GetName());
@@ -362,6 +362,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/09/22 13:32:17  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.33  2004/05/17 20:59:50  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -77,22 +77,22 @@ extern void DoThrowTraceAbort(void)
         abort();
 }
 
-extern void DoDbgPrint(const char* file, int line, const char* message)
+extern void DoDbgPrint(const CDiagCompileInfo &info, const char* message)
 {
-    CNcbiDiag(file, line, eDiag_Trace) << message;
+    CNcbiDiag(info, eDiag_Trace) << message;
     DoThrowTraceAbort();
 }
 
-extern void DoDbgPrint(const char* file, int line, const string& message)
+extern void DoDbgPrint(const CDiagCompileInfo &info, const string& message)
 {
-    CNcbiDiag(file, line, eDiag_Trace) << message;
+    CNcbiDiag(info, eDiag_Trace) << message;
     DoThrowTraceAbort();
 }
 
-extern void DoDbgPrint(const char* file, int line,
+extern void DoDbgPrint(const CDiagCompileInfo &info,
                        const char* msg1, const char* msg2)
 {
-    CNcbiDiag(file, line, eDiag_Trace) << msg1 << ": " << msg2;
+    CNcbiDiag(info, eDiag_Trace) << msg1 << ": " << msg2;
     DoThrowTraceAbort();
 }
 
@@ -103,14 +103,14 @@ extern void DoDbgPrint(const char* file, int line,
 bool CException::sm_BkgrEnabled = false;
 
 
-CException::CException(const char* file, int line,
+CException::CException(const CDiagCompileInfo& info,
     const CException* prev_exception,
     EErrCode err_code, const string& message)
     :   m_ErrCode(err_code),
         m_InReporter(false)
 {
     m_Predecessor = 0;
-    x_Init(file,line,message,prev_exception);
+    x_Init(info, message,prev_exception);
 }
 
 
@@ -145,7 +145,7 @@ const char* CException::GetType(void) const
 }
 
 
-void CException::AddBacklog(const char* file,int line,
+void CException::AddBacklog(const CDiagCompileInfo& info,
                             const string& message)
 {
     const CException* prev = m_Predecessor;
@@ -153,7 +153,7 @@ void CException::AddBacklog(const char* file,int line,
     if (prev) {
         delete prev;
     }
-    x_Init(file,line,message,0);
+    x_Init(info, message,0);
 }
 
 
@@ -166,16 +166,16 @@ const char* CException::what(void) const throw()
 }
 
 
-void CException::Report(const char* file, int line,
+void CException::Report(const CDiagCompileInfo& info,
                         const string& title,CExceptionReporter* reporter,
                         TDiagPostFlags flags) const
 {
-    if (reporter ) {
-        reporter->Report(file, line, title, *this, flags);
+    if (reporter) {
+        reporter->Report(info.GetFile(), info.GetLine(), title, *this, flags);
     }
     // unconditionally ... 
     // that is, there will be two reports
-    CExceptionReporter::ReportDefault(file, line, title, *this, flags);
+    CExceptionReporter::ReportDefault(info, title, *this, flags);
 }
 
 
@@ -196,7 +196,8 @@ string CException::ReportAll(TDiagPostFlags flags) const
     }
     if (sm_BkgrEnabled && !m_InReporter) {
         m_InReporter = true;
-        CExceptionReporter::ReportDefault(0, 0, "(background reporting)",
+        CExceptionReporter::ReportDefault(CDiagCompileInfo(0, 0),
+                                          "(background reporting)",
                                           *this, eDPF_Trace);
         m_InReporter = false;
     }
@@ -224,8 +225,12 @@ void CException::ReportStd(ostream& out, TDiagPostFlags flags) const
     err_type += GetErrCodeString();
     SDiagMessage diagmsg(
         eDiag_Error, text.c_str(), text.size(),
-        GetFile().c_str(), GetLine(),
-        flags, 0,0,0,err_type.c_str());
+        GetFile().c_str(), 
+        GetLine(),
+        flags, NULL, 0, 0, err_type.c_str(),
+        GetModule().c_str(),
+        GetClass().c_str(),
+        GetFunction().c_str());
     diagmsg.Write(out, SDiagMessage::fNoEndl);
 }
 
@@ -282,12 +287,13 @@ const CException* CException::x_Clone(void) const
 }
 
 
-void CException::x_Init(const string& file,int line,const string& message,
+void CException::x_Init(const CDiagCompileInfo& info,const string& message,
                         const CException* prev_exception)
 {
-    m_File = file;
-    m_Line = line;
-    m_Msg  = message;
+    m_File    = info.GetFile();
+    m_Line    = info.GetLine();
+    m_Module  = info.GetModule();
+    m_Msg     = message;
     if (!m_Predecessor && prev_exception) {
         m_Predecessor = prev_exception->x_Clone();
     }
@@ -297,8 +303,16 @@ void CException::x_Init(const string& file,int line,const string& message,
 void CException::x_Assign(const CException& src)
 {
     m_InReporter = false;
-    x_Init(src.m_File, src.m_Line, src.m_Msg, src.m_Predecessor);
+    m_File     = src.m_File;
+    m_Line     = src.m_Line;
+    m_Msg      = src.m_Msg;
     x_AssignErrCode(src);
+    m_Module   = src.m_Module;
+    m_Class    = src.m_Class;
+    m_Function = src.m_Function;
+
+    delete m_Predecessor;
+    m_Predecessor = src.m_Predecessor ? src.m_Predecessor->x_Clone() : NULL;
 }
 
 
@@ -358,16 +372,20 @@ bool CExceptionReporter::EnableDefault(bool enable)
 }
 
 
-void CExceptionReporter::ReportDefault(const char* file, int line,
+void CExceptionReporter::ReportDefault(const CDiagCompileInfo& info,
     const string& title,const CException& ex, TDiagPostFlags flags)
 {
     if ( !sm_DefEnabled )
         return;
 
     if ( sm_DefHandler ) {
-        sm_DefHandler->Report(file, line, title, ex, flags);
+        sm_DefHandler->Report(info.GetFile(), 
+                              info.GetLine(), 
+                              title, 
+                              ex, 
+                              flags);
     } else {
-        CNcbiDiag(file, line, eDiag_Error, flags) << title << ex;
+        CNcbiDiag(info, eDiag_Error, flags) << title << ex;
     }
 }
 
@@ -392,10 +410,19 @@ CExceptionReporterStream::~CExceptionReporterStream(void)
 void CExceptionReporterStream::Report(const char* file, int line,
     const string& title, const CException& ex, TDiagPostFlags flags) const
 {
-    SDiagMessage diagmsg(
-        eDiag_Error, title.c_str(), title.size(),
-        file, line, flags);
+    SDiagMessage diagmsg(eDiag_Error, 
+                         title.c_str(), 
+                         title.size(), 
+                         file, 
+                         line, 
+                         flags,
+                         NULL,
+                         0, 0,
+                         ex.GetModule().c_str(), 
+                         ex.GetClass().c_str(), 
+                         ex.GetFunction().c_str());
     diagmsg.Write(m_Out);
+
     m_Out << "NCBI C++ Exception:" << endl;
     // invert the order
     stack<const CException*> pile;
@@ -422,6 +449,7 @@ const char* CCoreException::GetErrCodeString(void) const
     case eCore:       return "eCore";
     case eNullPtr:    return "eNullPtr";
     case eDll:        return "eDll";
+    case eDiagFilter: return "eDiagFilter";
     case eInvalidArg: return "eInvalidArg";
     default:          return CException::GetErrCodeString();
     }
@@ -434,6 +462,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/09/22 13:32:17  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.40  2004/08/25 21:26:26  vakatov
  * By default, disable the background exception reporting.
  *

@@ -40,6 +40,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include "ncbidiag_p.hpp"
 #include <stdlib.h>
 #include <time.h>
 #include <stack>
@@ -68,6 +69,37 @@ extern "C" {
 }
 
 #endif
+
+
+///////////////////////////////////////////////////////
+//  Static variables for Trace and Post filters
+
+static CDiagFilter s_TraceFilter;
+static CDiagFilter s_PostFilter;
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+/// CDiagCompileInfo::
+
+CDiagCompileInfo::CDiagCompileInfo(const char* file, 
+                                   int line, 
+                                   const char* module)
+    : m_File(file), m_Module(0), m_Line(line)
+{
+    if (!file  ||  !module)
+        return;
+
+    string lfile(file);
+    size_t pos = lfile.rfind('.');
+    if (pos == string::npos )
+        return;
+
+    string ext = lfile.substr(pos + 1);
+    if (ext == "cpp"  ||  ext == "C"  ||  ext == "c"  ||  ext == "cxx")
+        m_Module = module;
+}
+
 
 
 ///////////////////////////////////////////////////////
@@ -202,18 +234,27 @@ void CDiagBuffer::Flush(void)
             flags |= sm_TraceFlags | eDPF_Trace;
         }
 
-        string dest;
-        if (IsSetDiagPostFlag(eDPF_PreMergeLines, flags)) {
-            string src(message,0,size);
-            NStr::Replace(NStr::Replace(src,"\r",""),"\n",";", dest);
-            message = dest.c_str();
-            size = dest.length();
+        if (  m_Diag->CheckFilters()  ) {
+            string dest;
+            if (IsSetDiagPostFlag(eDPF_PreMergeLines, flags)) {
+                string src(message,0,size);
+                NStr::Replace(NStr::Replace(src,"\r",""),"\n",";", dest);
+                message = dest.c_str();
+                size = dest.length();
+            }
+            SDiagMessage mess(sev, message, size,
+                              m_Diag->GetFile(), 
+                              m_Diag->GetLine(), 
+                              flags,
+                              NULL, 
+                              m_Diag->GetErrorCode(), 
+                              m_Diag->GetErrorSubCode(), 
+                              NULL,
+                              m_Diag->GetModule(), 
+                              m_Diag->GetClass(),
+                              m_Diag->GetFunction());
+            DiagHandler(mess);
         }
-        SDiagMessage mess
-            (sev, message, size,
-             m_Diag->GetFile(), m_Diag->GetLine(), flags,
-             0, m_Diag->GetErrorCode(), m_Diag->GetErrorSubCode());
-        DiagHandler(mess);
 
 #if defined(NCBI_COMPILER_KCC)
         // KCC's implementation of "freeze(false)" makes the ostrstream buffer
@@ -395,6 +436,42 @@ CNcbiOstream& SDiagMessage::x_Write(CNcbiOstream& os,
             }
         }
         os << ") ";
+    }
+
+    // Module::Class::Function -
+    bool print_location =
+        ((m_Module    &&  *m_Module) ||
+         (m_Class     &&  *m_Class ) ||
+         (m_Function  &&  *m_Function))
+        && IsSetDiagPostFlag(eDPF_Location, m_Flags);
+
+    if (print_location) {
+        // Module:: Module::Class Module::Class::Function()
+        // ::Class ::Class::Function()
+        // Module::Function() Function()
+        bool need_double_colon = false;
+
+        if (m_Module  &&  *m_Module) {
+            os << m_Module;
+            need_double_colon = true;
+        }
+
+        if (m_Class  &&  *m_Class) {
+            os << "::" << m_Class;
+            need_double_colon = m_Function && *m_Function;
+        }
+
+        if (m_Function  &&  *m_Function) {
+            if (need_double_colon)
+                os << "::";
+            need_double_colon = false;
+            os << m_Function << "()";
+        }
+
+        if( need_double_colon )
+            os << "::";
+
+        os << " - ";
     }
 
     // [<prefix1>::<prefix2>::.....]
@@ -734,39 +811,135 @@ extern CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership)
 }
 
 
+extern void SetDiagFilter(EDiagFilter what, const char* filter_str)
+{
+    CMutexGuard LOCK(s_DiagMutex);
+    if (what == eDiagFilter_Trace  ||  what == eDiagFilter_All) 
+        s_TraceFilter.Fill(filter_str);
+
+    if (what == eDiagFilter_Post  ||  what == eDiagFilter_All) 
+        s_PostFilter .Fill(filter_str);
+}
+
+
+static
+bool s_CheckDiagFilter(const CException& ex, EDiagSev sev, const char* file)
+{
+    if (sev == eDiag_Fatal) 
+        return true;
+
+    CMutexGuard LOCK(s_DiagMutex);
+
+    // check for trace filter
+    if (sev == eDiag_Trace) {
+        EDiagFilterAction action = s_TraceFilter.CheckFile(file);
+        if(action == eDiagFilter_None)
+            return s_TraceFilter.Check(ex) == eDiagFilter_Accept;
+        return action == eDiagFilter_Accept;
+    }
+
+    // check for post filter
+    EDiagFilterAction action = s_PostFilter.CheckFile(file);
+    if(action == eDiagFilter_None)
+        return s_PostFilter.Check(ex) == eDiagFilter_Accept;
+    return action == eDiagFilter_Accept;
+}
+
+
+
 ///////////////////////////////////////////////////////
 //  CNcbiDiag::
 
 CNcbiDiag::CNcbiDiag(EDiagSev sev, TDiagPostFlags post_flags)
     : m_Severity(sev), m_Line(0), m_ErrCode(0), m_ErrSubCode(0),
-      m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags)
+      m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags),
+      m_CheckFilters(true)
 {
     *m_File = '\0';
+    *m_Module = *m_Class = *m_Function = '\0';
 }
 
 
-CNcbiDiag::CNcbiDiag(const char* file, size_t line,
+CNcbiDiag::CNcbiDiag(const CDiagCompileInfo &info,
                      EDiagSev sev, TDiagPostFlags post_flags)
-    : m_Severity(sev), m_Line(line), m_ErrCode(0), m_ErrSubCode(0),
-      m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags)
+    : m_Severity(sev), m_Line(info.GetLine()), m_ErrCode(0), m_ErrSubCode(0),
+      m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags),
+      m_CheckFilters(true)
 {
-    SetFile(file);
+    SetFile(   info.GetFile()   );
+    SetModule( info.GetModule() );
+    *m_Class = *m_Function = '\0';
 }
 
+
+// service function to set char[] field
+inline 
+void s_SetStrField(char* to, const char* from, size_t size)
+{
+    if (!from  ||  *from == 0) {
+        *to = '\0';
+        return;
+    }
+    strncpy(to, from, size);
+    to[size - 1] = '\0';
+}
 
 const CNcbiDiag& CNcbiDiag::SetFile(const char* file) const
 {
-    if (file  &&  *file) {
-        strncpy(m_File, file, sizeof(m_File));
-        m_File[sizeof(m_File) - 1] = '\0';
-    } else {
-        *m_File = '\0';
-    }
+    s_SetStrField(m_File, file, sizeof(m_File));
     return *this;
 }
 
+
+const CNcbiDiag& CNcbiDiag::SetModule(const char* module) const
+{
+    s_SetStrField(m_Module, module, sizeof(m_Module));
+    return *this;
+}
+
+
+const CNcbiDiag& CNcbiDiag::SetClass(const char* nclass ) const
+{
+    s_SetStrField(m_Class, nclass, sizeof(m_Class));
+    return *this;
+}
+
+
+const CNcbiDiag& CNcbiDiag::SetFunction(const char* function) const
+{
+    s_SetStrField(m_Function, function, sizeof(m_Function));
+    return *this;
+}
+
+
+bool CNcbiDiag::CheckFilters(void) const
+{
+    if ( !m_CheckFilters ) {
+        m_CheckFilters = true;
+        return true;
+    }
+    if (GetSeverity() == eDiag_Fatal) 
+        return true;
+
+    CMutexGuard LOCK(s_DiagMutex);
+    if (GetSeverity() == eDiag_Trace)
+        // check for trace filter
+        return s_TraceFilter.Check(*this) != eDiagFilter_Reject;
+    
+    // check for post filter
+    return     s_PostFilter.Check(*this)  != eDiagFilter_Reject;
+}
+
+
+
 const CNcbiDiag& CNcbiDiag::operator<< (const CException& ex) const
 {
+    if ( !s_CheckDiagFilter(ex, GetSeverity(), GetFile()) ) {
+        m_Buffer.Reset(*this);
+        return *this;
+    }
+
+    m_CheckFilters = false;
 
     {
         ostrstream os;
@@ -794,10 +967,19 @@ const CNcbiDiag& CNcbiDiag::operator<< (const CException& ex) const
         string err_type(pex->GetType());
         err_type += "::";
         err_type += pex->GetErrCodeString();
-        SDiagMessage diagmsg(
-            eDiag_Error, text.c_str(), text.size(),
-            (pex->GetFile()).c_str(), pex->GetLine(),
-            GetPostFlags(), 0,0,0,err_type.c_str());
+        SDiagMessage diagmsg(eDiag_Error, 
+                             text.c_str(), 
+                             text.size(),
+                             pex->GetFile().c_str(),
+                             pex->GetLine(),
+                             GetPostFlags(),
+                             NULL,
+                             0,
+                             0,
+                             err_type.c_str(),
+                             pex->GetModule().c_str(),
+                             pex->GetClass().c_str(),
+                             pex->GetFunction().c_str());
         string report;
         diagmsg.Write(report);
         *this << "    "; // indentation
@@ -832,34 +1014,34 @@ bool CNcbiDiag::StrToSeverityLevel(const char* str_sev, EDiagSev& sev)
     return sev >= eDiagSevMin && sev <= eDiagSevMax;
 }
 
-void CNcbiDiag::DiagFatal(const char* file, size_t line,
+void CNcbiDiag::DiagFatal(const CDiagCompileInfo& info,
                           const char* message)
 {
-    CNcbiDiag(file, line, NCBI_NS_NCBI::eDiag_Fatal) << message << Endm;
+    CNcbiDiag(info, NCBI_NS_NCBI::eDiag_Fatal) << message << Endm;
 }
 
-void CNcbiDiag::DiagTrouble(const char* file, size_t line)
+void CNcbiDiag::DiagTrouble(const CDiagCompileInfo& info)
 {
-    DiagFatal(file, line, "Trouble!");
+    DiagFatal(info, "Trouble!");
 }
 
-void CNcbiDiag::DiagAssert(const char* file, size_t line,
+void CNcbiDiag::DiagAssert(const CDiagCompileInfo& info,
                            const char* expression)
 {
-    CNcbiDiag(file, line, NCBI_NS_NCBI::eDiag_Fatal, eDPF_Trace) <<
+    CNcbiDiag(info, NCBI_NS_NCBI::eDiag_Fatal, eDPF_Trace) <<
         "Assertion failed: (" << expression << ')' << Endm;
 }
 
-void CNcbiDiag::DiagValidate(const char* file, size_t line,
+void CNcbiDiag::DiagValidate(const CDiagCompileInfo& info,
                              const char* _DEBUG_ARG(expression),
                              const char* message)
 {
 #ifdef _DEBUG
     if ( xncbi_GetValidateAction() != eValidate_Throw ) {
-        DiagAssert(file, line, expression);
+        DiagAssert(info, expression);
     }
 #endif
-    throw CCoreException(file, (int) line, 0, CCoreException::eCore, message);
+    throw CCoreException(info, 0, CCoreException::eCore, message);
 }
 
 ///////////////////////////////////////////////////////
@@ -1185,6 +1367,15 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.82  2004/09/22 13:32:17  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.81  2004/06/30 17:17:58  vasilche
  * Workaround for TotalView 6.5 (beta).
  *

@@ -64,13 +64,13 @@ const char* CInvalidChoiceSelection::GetName(
 }
 
 CInvalidChoiceSelection::CInvalidChoiceSelection(
-    const char* file,int line,
+    const CDiagCompileInfo& diag_info,
     size_t currentIndex, size_t mustBeIndex,
     const char* const names[], size_t namesCount)
-        : CSerialException(file, line, 0,
+        : CSerialException(diag_info, 0,
           (CSerialException::EErrCode) CException::eInvalid,"")
 {
-    x_Init(file,line,
+    x_Init(diag_info,
            string("Invalid choice selection: ")+
            GetName(currentIndex, names, namesCount)+". "
            "Expected: "+
@@ -81,10 +81,10 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(
 CInvalidChoiceSelection::CInvalidChoiceSelection(
     size_t currentIndex, size_t mustBeIndex,
     const char* const names[], size_t namesCount)
-        : CSerialException("unknown", 0, 0,
+        : CSerialException(CDiagCompileInfo("unknown", 0), 0,
           (CSerialException::EErrCode) CException::eInvalid,"")
 {
-    x_Init("unknown", 0,
+    x_Init(CDiagCompileInfo("unknown", 0),
            string("Invalid choice selection: ")+
            GetName(currentIndex, names, namesCount)+". "
            "Expected: "+
@@ -129,6 +129,15 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/09/22 13:32:17  kononenk
+* "Diagnostic Message Filtering" functionality added.
+* Added function SetDiagFilter()
+* Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+* Module, class and function attribute added to CNcbiDiag and CException
+* Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+* 	CDiagCompileInfo + fixes on derived classes and their usage
+* Macro NCBI_MODULE can be used to set default module name in cpp files
+*
 * Revision 1.14  2004/07/04 19:11:24  vakatov
 * Do not use "throw()" specification after constructors and assignment
 * operators of exception classes inherited from "std::exception" -- as it

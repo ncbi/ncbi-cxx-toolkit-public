@@ -51,21 +51,21 @@ void CObjectStreamCopier::CopyObject(TTypeInfo type)
 }
 
 inline
-void CObjectStreamCopier::ThrowError1(const char* file, int line,
+void CObjectStreamCopier::ThrowError1(const CDiagCompileInfo& diag_info,
                                       TFailFlags flags,
                                       const char* message)
 {
     Out().SetFailFlagsNoError(CObjectOStream::fInvalidData);
-    In().ThrowError1(file, line, flags, message);
+    In().ThrowError1(diag_info, flags, message);
 }
 
 inline
-void CObjectStreamCopier::ThrowError1(const char* file, int line,
+void CObjectStreamCopier::ThrowError1(const CDiagCompileInfo& diag_info,
                                       TFailFlags flags,
                                       const string& message)
 {
     Out().SetFailFlagsNoError(CObjectOStream::fInvalidData);
-    In().ThrowError1(file, line, flags, message);
+    In().ThrowError1(diag_info, flags, message);
 }
 
 inline
@@ -151,6 +151,15 @@ void CObjectStreamCopier::CopyAlias(const CAliasTypeInfo* aliasType)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/09/22 13:32:17  kononenk
+* "Diagnostic Message Filtering" functionality added.
+* Added function SetDiagFilter()
+* Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+* Module, class and function attribute added to CNcbiDiag and CException
+* Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+* 	CDiagCompileInfo + fixes on derived classes and their usage
+* Macro NCBI_MODULE can be used to set default module name in cpp files
+*
 * Revision 1.10  2003/10/21 21:08:45  grichenk
 * Fixed aliases-related bug in XML stream
 *

@@ -89,15 +89,15 @@ extern void DoThrowTraceAbort(void);
 
 /// Print the specified debug message.
 NCBI_XNCBI_EXPORT
-extern void DoDbgPrint(const char* file, int line, const char* message);
+extern void DoDbgPrint(const CDiagCompileInfo& info, const char* message);
 
 /// Print the specified debug message.
 NCBI_XNCBI_EXPORT
-extern void DoDbgPrint(const char* file, int line, const string& message);
+extern void DoDbgPrint(const CDiagCompileInfo& info, const string& message);
 
 /// Print the specified debug messages.
 NCBI_XNCBI_EXPORT
-extern void DoDbgPrint(const char* file, int line,
+extern void DoDbgPrint(const CDiagCompileInfo& info,
                        const char* msg1, const char* msg2);
 
 #if defined(_DEBUG)
@@ -107,37 +107,37 @@ extern void DoDbgPrint(const char* file, int line,
 /// Print debug message for the specified exception type.
 template<typename T>
 inline
-const T& DbgPrint(const char* file, int line,
+const T& DbgPrint(const CDiagCompileInfo& info,
                   const T& e, const char* e_str)
 {
-    DoDbgPrint(file, line, e_str, e.what());
+    DoDbgPrint(info, e_str, e.what());
     return e;
 }
 
 /// Print debug message for "const char*" object.
 inline
-const char* DbgPrint(const char* file, int line,
+const char* DbgPrint(const CDiagCompileInfo& info,
                      const char* e, const char* )
 {
-    DoDbgPrint(file, line, e);
+    DoDbgPrint(info, e);
     return e;
 }
 
 /// Print debug message for "char*" object.
 inline
-char* DbgPrint(const char* file, int line,
+char* DbgPrint(const CDiagCompileInfo& info,
                char* e, const char* )
 {
-    DoDbgPrint(file, line, e);
+    DoDbgPrint(info, e);
     return e;
 }
 
 /// Print debug message for "std::string" object.
 inline
-const string& DbgPrint(const char* file, int line,
+const string& DbgPrint(const CDiagCompileInfo& info,
                        const string& e, const char* )
 {
-    DoDbgPrint(file, line, e);
+    DoDbgPrint(info, e);
     return e;
 }
 
@@ -148,9 +148,9 @@ const string& DbgPrint(const char* file, int line,
 ///   SetThrowTraceAbort(), DoThrowTraceAbort()
 template<typename T>
 inline
-const T& DbgPrintP(const char* file, int line, const T& e, const char* e_str)
+const T& DbgPrintP(const CDiagCompileInfo& info, const T& e, const char* e_str)
 {
-    CNcbiDiag(file, line, eDiag_Trace) << e_str << ": " << e;
+    CNcbiDiag(info, eDiag_Trace) << e_str << ": " << e;
     DoThrowTraceAbort();
     return e;
 }
@@ -162,9 +162,11 @@ const T& DbgPrintP(const char* file, int line, const T& e, const char* e_str)
 ///   DbgPrintP()
 template<typename T>
 inline
-const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
+const T& DbgPrintNP(const CDiagCompileInfo& info, 
+                    const T& e, 
+                    const char* e_str)
 {
-    DoDbgPrint(file, line, e_str);
+    DoDbgPrint(info, e_str);
     return e;
 }
 
@@ -196,7 +198,7 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
 /// -  THROW0_TRACE("Throw just a string");
 /// -  THROW0_TRACE(runtime_error("message"));
 #  define THROW0_TRACE(exception_object) \
-    throw NCBI_NS_NCBI::DbgPrint(__FILE__, __LINE__, \
+    throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO, \
         exception_object, #exception_object)
 
 /// Throw trace.
@@ -215,7 +217,7 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
 /// @sa
 ///   THROW0np_TRACE
 #  define THROW0p_TRACE(exception_object) \
-    throw NCBI_NS_NCBI::DbgPrintP(__FILE__, __LINE__, \
+    throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO, \
         exception_object, #exception_object)
 
 /// Throw trace.
@@ -235,7 +237,7 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
 /// @sa
 ///   THROW0p_TRACE
 #  define THROW0np_TRACE(exception_object) \
-    throw NCBI_NS_NCBI::DbgPrintNP(__FILE__, __LINE__, \
+    throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO, \
         exception_object, #exception_object)
 
 /// Throw trace.
@@ -251,7 +253,7 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
 /// Example:
 /// -  THROW1_TRACE(runtime_error, "Something is weird...");
 #  define THROW1_TRACE(exception_class, exception_arg) \
-    throw NCBI_NS_NCBI::DbgPrint(__FILE__, __LINE__, \
+    throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO, \
         exception_class(exception_arg), #exception_class)
 
 /// Throw trace.
@@ -271,7 +273,7 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
 /// @sa
 ///   THROW1np_TRACE
 #  define THROW1p_TRACE(exception_class, exception_arg) \
-    throw NCBI_NS_NCBI::DbgPrintP(__FILE__, __LINE__, \
+    throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO,    \
         exception_class(exception_arg), #exception_class)
 
 /// Throw trace.
@@ -291,7 +293,7 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
 /// Example:
 /// -  THROW1np_TRACE(CUserClass, "argument");
 #  define THROW1np_TRACE(exception_class, exception_arg) \
-    throw NCBI_NS_NCBI::DbgPrintNP(__FILE__, __LINE__, \
+    throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO,    \
         exception_class(exception_arg), #exception_class)
 
 /// Throw trace.
@@ -314,7 +316,7 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
 /// @sa
 ///   THROW1_TRACE
 #  define THROW_TRACE(exception_class, exception_args) \
-    throw NCBI_NS_NCBI::DbgPrint(__FILE__, __LINE__, \
+    throw NCBI_NS_NCBI::DbgPrint(DIAG_COMPILE_INFO,    \
         exception_class exception_args, #exception_class)
 
 /// Throw trace.
@@ -337,7 +339,7 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
 /// @sa
 ///   THROW1p_TRACE
 #  define THROWp_TRACE(exception_class, exception_args) \
-    throw NCBI_NS_NCBI::DbgPrintP(__FILE__, __LINE__, \
+    throw NCBI_NS_NCBI::DbgPrintP(DIAG_COMPILE_INFO,    \
         exception_class exception_args, #exception_class)
 
 /// Throw trace.
@@ -359,7 +361,7 @@ const T& DbgPrintNP(const char* file, int line, const T& e, const char* e_str)
 /// Example:
 /// -  THROWnp_TRACE(CUserClass, (arg1, arg2));
 #  define THROWnp_TRACE(exception_class, exception_args) \
-    throw NCBI_NS_NCBI::DbgPrintNP(__FILE__, __LINE__, \
+    throw NCBI_NS_NCBI::DbgPrintNP(DIAG_COMPILE_INFO,    \
         exception_class exception_args, #exception_class)
 
 #else  /* _DEBUG */
@@ -414,22 +416,36 @@ STD_CATCH(message) \
 /// Generic macro to throw an exception, given the exception class,
 /// error code and message string.
 #define NCBI_THROW(exception_class, err_code, message) \
-    throw exception_class(__FILE__, __LINE__, \
-        0,exception_class::err_code, (message))
+    throw exception_class(DIAG_COMPILE_INFO,           \
+        0, exception_class::err_code, (message))
+
+// NCBI_THROW(foo).SetModule("aaa");
+/// Generic macro to make an exception, given the exception class,
+/// error code and message string.
+#define NCBI_EXCEPTION(exception_class, err_code, message)           \
+    (exception_class(DIAG_COMPILE_INFO, 0, exception_class::err_code,\
+                     (message) ))
+     
+
+/// Generic macro to make an exception, given the exception class,
+/// previous exception , error code and message string.
+#define NCBI_EXCEPTION_EX(prev_exception, exception_class, err_code, message) \
+    exception_class(DIAG_COMPILE_INFO,                                        \
+        &(prev_exception), exception_class::err_code, (message))
 
 /// Generic macro to re-throw an exception.
 #define NCBI_RETHROW(prev_exception, exception_class, err_code, message) \
-    throw exception_class(__FILE__, __LINE__, \
+    throw exception_class(DIAG_COMPILE_INFO, \
         &(prev_exception), exception_class::err_code, (message))
 
 /// Generic macro to re-throw the same exception.
-#define NCBI_RETHROW_SAME(prev_exception, message) \
-    do { prev_exception.AddBacklog(__FILE__, __LINE__, message); \
+#define NCBI_RETHROW_SAME(prev_exception, message)              \
+    do { prev_exception.AddBacklog(DIAG_COMPILE_INFO, message); \
     throw; }  while (0)
 
 /// Generate a report on the exception.
 #define NCBI_REPORT_EXCEPTION(title,ex) \
-    CExceptionReporter::ReportDefault(__FILE__,__LINE__,title,ex,eDPF_Default)
+    CExceptionReporter::ReportDefault(DIAG_COMPILE_INFO,title,ex,eDPF_Default)
 
 
 
@@ -468,7 +484,7 @@ public:
     /// Constructor.
     ///
     /// When throwing an exception initially, "prev_exception" must be 0.
-    CException(const char* file, int line,
+    CException(const CDiagCompileInfo& info,
                const CException* prev_exception,
                EErrCode err_code,const string& message);
 
@@ -476,7 +492,7 @@ public:
     CException(const CException& other);
 
     /// Add a message to backlog (to re-throw the same exception then).
-    void AddBacklog(const char* file, int line,const string& message);
+    void AddBacklog(const CDiagCompileInfo& info,const string& message);
 
 
     // ---- Reporting --------------
@@ -489,7 +505,7 @@ public:
     /// Report the exception using "reporter" exception reporter.
     /// If "reporter" is not specified (value 0), then use the default
     /// reporter as set with CExceptionReporter::SetDefault.
-    void Report(const char* file, int line,
+    void Report(const CDiagCompileInfo& info,
                 const string& title, CExceptionReporter* reporter = 0,
                 TDiagPostFlags flags = eDPF_Trace) const;
 
@@ -535,6 +551,27 @@ public:
     /// Get file name used for reporting.
     const string& GetFile(void) const { return m_File; }
 
+    /// Set module name used for reporting.
+    CException& SetModule(const string& module)
+    { m_Module = module;  return *this; }
+
+    /// Get module name used for reporting.
+    const string& GetModule(void) const { return m_Module; }
+
+    /// Set class name used for reporting.
+    CException& SetClass(const string& nclass)
+    { m_Class = nclass;  return *this; }
+
+    /// Get class name used for reporting.
+    const string& GetClass(void) const { return m_Class; }
+
+    /// Set function name used for reporting.
+    CException& SetFunction(const string& function)
+    { m_Function = function;  return *this; }
+
+    /// Get function name used for reporting.
+    const string& GetFunction(void) const { return m_Function; }
+
     /// Get line number where error occurred.
     int GetLine(void) const { return m_Line; }
 
@@ -542,7 +579,7 @@ public:
     TErrCode GetErrCode(void) const;
 
     /// Get message string.
-    const string& GetMsg (void) const { return m_Msg;  }
+    const string& GetMsg(void) const { return m_Msg; }
 
     /// Get "previous" exception from the backlog.
     const CException* GetPredecessor(void) const { return m_Predecessor; }
@@ -563,7 +600,7 @@ protected:
     virtual const CException* x_Clone(void) const;
 
     /// Helper method for initializing exception data.
-    virtual void x_Init(const string& file, int line,
+    virtual void x_Init(const CDiagCompileInfo& info,
                         const string& message,
                         const CException* prev_exception);
 
@@ -580,10 +617,13 @@ protected:
     virtual int  x_GetErrCode(void) const { return m_ErrCode; }
 
 private:
-    string  m_File;                  ///< File to report on
+    string  m_File;                  ///< File     to report on
     int     m_Line;                  ///< Line number
     int     m_ErrCode;               ///< Error code
     string  m_Msg;                   ///< Message string
+    string  m_Module;                ///< Module   to report on
+    string  m_Class;                 ///< Class    to report on
+    string  m_Function;              ///< Function to report on
 
     mutable string m_What;           ///< What type of exception
     const CException* m_Predecessor; ///< Previous exception
@@ -611,7 +651,7 @@ const TTo* UppermostCast(const TFrom& from)
 ///   NCBI_EXCEPTION_DEFAULT
 #define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class) \
     { \
-        x_Init(file,line,message, prev_exception); \
+        x_Init(info, message, prev_exception); \
         x_InitErrCode((CException::EErrCode) err_code); \
     } \
     exception_class(const exception_class& other) \
@@ -642,12 +682,12 @@ private: \
 ///
 /// This can be used ONLY if the derived class does not have any additional
 /// (non-standard) data members.
-#define NCBI_EXCEPTION_DEFAULT(exception_class, base_class) \
-public: \
-    exception_class(const char* file,int line, \
-        const CException* prev_exception, \
-        EErrCode err_code,const string& message) \
-        : base_class(file, line, prev_exception, \
+#define NCBI_EXCEPTION_DEFAULT(exception_class, base_class)         \
+public:                                                             \
+    exception_class(const CDiagCompileInfo& info,                   \
+        const CException* prev_exception,                           \
+                    EErrCode err_code,const string& message)        \
+        : base_class(info, prev_exception,                          \
             (base_class::EErrCode) CException::eInvalid, (message)) \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
 
@@ -658,7 +698,7 @@ public: \
 /// the warning.
 #define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL(exception_class, base_class) \
     { \
-        this->x_Init(file,line,message, prev_exception); \
+        this->x_Init(info, message, prev_exception); \
         this->x_InitErrCode((typename CException::EErrCode) err_code); \
     } \
     exception_class(const exception_class& other) \
@@ -734,7 +774,7 @@ public:
     static bool EnableDefault(bool enable);
 
     /// Report exception using default reporter.
-    static void ReportDefault(const char* file, int line,
+    static void ReportDefault(const CDiagCompileInfo& info,
                               const string& title, const CException& ex,
                               TDiagPostFlags flags = eDPF_Trace);
 
@@ -793,6 +833,7 @@ public:
         eCore,          ///< Generic corelib error
         eNullPtr,       ///< Null pointer error
         eDll,           ///< Dll error
+        eDiagFilter,    ///< Illegal syntax of the diagnostics filter string
         eInvalidArg     ///< Invalid argument error
     };
 
@@ -858,30 +899,30 @@ public:
     }
 
     /// Constructor.
-    CErrnoTemplExceptionEx(const char* file, int line,
+    CErrnoTemplExceptionEx(const CDiagCompileInfo& info,
                            const CException* prev_exception,
                            EErrCode err_code, const string& message)
-          : TBase(file, line, prev_exception,
+          : TBase(info, prev_exception,
             (typename TBase::EErrCode)(CException::eInvalid),
             message)
     {
         m_Errno = errno;
-        this->x_Init(file, line, message + ": " + PErrstr(m_Errno),
+        this->x_Init(info, message + ": " + PErrstr(m_Errno),
                      prev_exception);
         this->x_InitErrCode((CException::EErrCode) err_code);
     }
 
     /// Constructor.
-    CErrnoTemplExceptionEx(const char* file,int line,
+    CErrnoTemplExceptionEx(const CDiagCompileInfo& info,
                            const CException* prev_exception,
                            EErrCode err_code, const string& message, 
                            int errnum)
-          : TBase(file, line, prev_exception,
+          : TBase(info, prev_exception,
             (typename TBase::EErrCode)(CException::eInvalid),
             message),
             m_Errno(errnum)
     {
-        this->x_Init(file, line, message + ": " + PErrstr(m_Errno),
+        this->x_Init(info, message + ": " + PErrstr(m_Errno),
                      prev_exception);
         this->x_InitErrCode((CException::EErrCode) err_code);
     }
@@ -951,10 +992,10 @@ public:
     typedef CErrnoTemplExceptionEx<TBase, NCBI_STRERROR_WRAPPER> CParent;
 
     /// Constructor.
-    CErrnoTemplException<TBase>(const char* file,int line,
+    CErrnoTemplException<TBase>(const CDiagCompileInfo& info,
         const CException* prev_exception,
         typename CParent::EErrCode err_code,const string& message)
-        : CParent(file, line, prev_exception,
+        : CParent(info, prev_exception,
                  (typename CParent::EErrCode) CException::eInvalid, message)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL(CErrnoTemplException<TBase>,
                                                 CParent)
@@ -966,7 +1007,7 @@ public:
 /// Required to throw exceptions with one additional parameter
 /// (e.g. positional information for CParseException).
 #define NCBI_THROW2(exception_class, err_code, message, extra) \
-    throw exception_class(__FILE__, __LINE__, \
+    throw exception_class(DIAG_COMPILE_INFO, \
         0,exception_class::err_code, (message), (extra))
 
 /// Re-throw exception with extra parameter.
@@ -974,7 +1015,7 @@ public:
 /// Required to re-throw exceptions with one additional parameter
 /// (e.g. positional information for CParseException).
 #define NCBI_RETHROW2(prev_exception,exception_class,err_code,message,extra) \
-    throw exception_class(__FILE__, __LINE__, \
+    throw exception_class(DIAG_COMPILE_INFO, \
         &(prev_exception), exception_class::err_code, (message), (extra))
 
 
@@ -984,11 +1025,11 @@ public:
 /// (e.g. derived from CParseException).
 #define NCBI_EXCEPTION_DEFAULT2(exception_class, base_class, extra_type) \
 public: \
-    exception_class(const char* file,int line, \
+    exception_class(const CDiagCompileInfo &info, \
         const CException* prev_exception, \
         EErrCode err_code,const string& message, \
         extra_type extra_param) \
-        : base_class(file, line, prev_exception, \
+        : base_class(info, prev_exception, \
             (base_class::EErrCode) CException::eInvalid, \
             (message), extra_param) \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
@@ -1002,6 +1043,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2004/09/22 13:32:16  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.56  2004/08/17 14:34:38  dicuccio
  * Added export specifiers
  *

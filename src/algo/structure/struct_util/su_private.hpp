@@ -44,7 +44,7 @@ BEGIN_SCOPE(struct_util)
 #define INFO_MESSAGE(s) ERR_POST(ncbi::Info << "struct_util: " << s)
 #define TRACE_MESSAGE(s) ERR_POST(ncbi::Trace << "struct_util: " << s)
 
-#define THROW_MESSAGE(str) throw ncbi::CException(__FILE__, __LINE__, NULL, ncbi::CException::eUnknown, (str))
+#define THROW_MESSAGE(str) throw ncbi::CException(DIAG_COMPILE_INFO, NULL, ncbi::CException::eUnknown, (str))
 
 // utility function to remove some elements from a vector. Actually does this by copying to a new
 // vector, so T should have an efficient copy ctor.
@@ -84,6 +84,15 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/09/22 13:32:17  kononenk
+* "Diagnostic Message Filtering" functionality added.
+* Added function SetDiagFilter()
+* Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+* Module, class and function attribute added to CNcbiDiag and CException
+* Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+* 	CDiagCompileInfo + fixes on derived classes and their usage
+* Macro NCBI_MODULE can be used to set default module name in cpp files
+*
 * Revision 1.7  2004/05/26 02:40:24  thiessen
 * progress towards LOO - all but PSSM and row ordering
 *

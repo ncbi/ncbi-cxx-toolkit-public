@@ -222,6 +222,18 @@ inline const char* CNcbiDiag::GetFile(void) const {
     return m_File;
 }
 
+inline const char* CNcbiDiag::GetModule(void) const {
+    return m_Module;
+}
+
+inline const char* CNcbiDiag::GetClass(void) const {
+    return m_Class;
+}
+
+inline const char* CNcbiDiag::GetFunction(void) const {
+    return m_Function;
+}
+
 inline size_t CNcbiDiag::GetLine(void) const {
     return m_Line;
 }
@@ -371,7 +383,10 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
                            const char* file, size_t line,
                            TDiagPostFlags flags, const char* prefix,
                            int err_code, int err_subcode,
-                           const char* err_text)
+                           const char* err_text,
+                           const char* module, 
+                           const char* nclass, 
+                           const char* function)
 {
     m_Severity   = severity;
     m_Buffer     = buf;
@@ -383,6 +398,9 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
     m_ErrCode    = err_code;
     m_ErrSubCode = err_subcode;
     m_ErrText    = err_text;
+    m_Module     = module;
+    m_Class      = nclass;
+    m_Function   = function;
 }
 
 
@@ -449,11 +467,85 @@ bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+/// MDiagModuleCpp::
+
+/*inline
+const CNcbiDiag& operator<< (const CNcbiDiag&      diag,
+                             const MDiagModuleCpp& module)
+{
+    if(module.m_Module)
+        diag.SetModule(module.m_Module);
+    return diag;
+    }*/
+
+
+/////////////////////////////////////////////////////////////////////////////
+/// MDiagModule::
+
+inline
+MDiagModule::MDiagModule(const char* module)
+    : m_Module(module)
+{
+}
+
+
+inline
+const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagModule& module)
+{
+    return diag.SetModule(module.m_Module);
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+/// MDiagClass::
+
+inline
+MDiagClass::MDiagClass(const char* nclass)
+    : m_Class(nclass)
+{
+}
+
+
+inline
+const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagClass& nclass)
+{
+    return diag.SetClass(nclass.m_Class);
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+/// MDiagFunction::
+
+inline
+MDiagFunction::MDiagFunction(const char* function)
+    : m_Function(function)
+{
+}
+
+
+inline
+const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& function)
+{
+    return diag.SetFunction(function.m_Function);
+}
+
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/09/22 13:32:16  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.44  2004/08/17 14:34:25  dicuccio
  * Added export specifiers for some static variables
  *

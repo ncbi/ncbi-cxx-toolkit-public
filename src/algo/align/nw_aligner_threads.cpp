@@ -67,7 +67,8 @@ void* CNWAlignerThread_Align::Main()
 
     catch(...) {
 
-        m_exception.reset(new CException (0, 0, 0, CException::eUnknown,
+        m_exception.reset(new CException (DIAG_COMPILE_INFO, 0, 
+                                          CException::eUnknown,
                                           "Unregistered exception caught from "
                                           "CNWAligner::x_Align()"));
     }
@@ -88,6 +89,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/09/22 13:32:17  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.1  2004/06/29 20:28:48  kapustin
  * Initial revision
  *

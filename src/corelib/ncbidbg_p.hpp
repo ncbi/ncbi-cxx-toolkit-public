@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 #  define xncbi_Validate(expression, message) \
     do { \
         if ( !(expression) ) \
-            NCBI_NS_NCBI::CNcbiDiag::DiagValidate(__FILE__, __LINE__, #expression, message); \
+            NCBI_NS_NCBI::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, #expression, message); \
     } while ( 0 )
 
 #else // _DEBUG
@@ -64,7 +64,7 @@ BEGIN_NCBI_SCOPE
 #  define xncbi_Validate(expression, message) \
     do { \
         if ( !(expression) ) \
-            NCBI_NS_NCBI::CNcbiDiag::DiagValidate(__FILE__, __LINE__, #expression, message); \
+            NCBI_NS_NCBI::CNcbiDiag::DiagValidate(DIAG_COMPILE_INFO, #expression, message); \
     } while ( 0 )
 
 #endif // _DEBUG
@@ -76,6 +76,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/09/22 13:32:17  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.10  2002/09/19 20:05:42  vasilche
  * Safe initialization of static mutexes
  *

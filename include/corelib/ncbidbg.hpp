@@ -55,14 +55,14 @@ BEGIN_NCBI_SCOPE
 #if defined(_DEBUG)
 
 #  define _TRACE(message) \
-    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, NCBI_NS_NCBI::eDiag_Trace) \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO, NCBI_NS_NCBI::eDiag_Trace) \
       << message << NCBI_NS_NCBI::Endm )
 
-#  define _TROUBLE NCBI_NS_NCBI::CNcbiDiag::DiagTrouble(__FILE__, __LINE__)
+#  define _TROUBLE NCBI_NS_NCBI::CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO)
 
 #  define _ASSERT(expr) \
     do { if ( !(expr) ) \
-        NCBI_NS_NCBI::CNcbiDiag::DiagAssert(__FILE__, __LINE__, #expr); \
+        NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr); \
     } while ( 0 )
 
 #  define _VERIFY(expr) _ASSERT(expr)
@@ -107,6 +107,15 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.33  2004/09/22 13:32:16  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.32  2004/03/10 19:52:42  gorelenk
  * Added NCBI_XNCBI_EXPORT for functions xncbi_SetValidateAction and
  * xncbi_GetValidateAction.

@@ -543,13 +543,13 @@ string CObjectIStream::GetPosition(void) const
     return "byte "+NStr::UIntToString(GetStreamOffset());
 }
 
-void CObjectIStream::ThrowError1(const char* file, int line, 
+void CObjectIStream::ThrowError1(const CDiagCompileInfo& diag_info, 
                                  TFailFlags fail, const char* message)
 {
-    ThrowError1(file,line,fail,string(message));
+    ThrowError1(diag_info,fail,string(message));
 }
 
-void CObjectIStream::ThrowError1(const char* file, int line, 
+void CObjectIStream::ThrowError1(const CDiagCompileInfo& diag_info, 
                                  TFailFlags fail, const string& message)
 {
     CSerialException::EErrCode err;
@@ -557,7 +557,7 @@ void CObjectIStream::ThrowError1(const char* file, int line,
     switch(fail)
     {
     case fNoError:
-        CNcbiDiag(file, line, eDiag_Trace) << message;
+        CNcbiDiag(diag_info, eDiag_Trace) << message;
         return;
     case fEOF:          err = CSerialException::eEOF;          break;
     default:
@@ -570,7 +570,7 @@ void CObjectIStream::ThrowError1(const char* file, int line,
     case fNotOpen:      err = CSerialException::eNotOpen;      break;
     case fMissingValue: err = CSerialException::eMissingValue; break;
     }
-    throw CSerialException(file,line,0,err,GetPosition()+": "+message);
+    throw CSerialException(diag_info,0,err,GetPosition()+": "+message);
 }
 
 static inline
@@ -1519,6 +1519,15 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.131  2004/09/22 13:32:17  kononenk
+* "Diagnostic Message Filtering" functionality added.
+* Added function SetDiagFilter()
+* Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+* Module, class and function attribute added to CNcbiDiag and CException
+* Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+* 	CDiagCompileInfo + fixes on derived classes and their usage
+* Macro NCBI_MODULE can be used to set default module name in cpp files
+*
 * Revision 1.130  2004/08/30 18:19:39  gouriano
 * Use CNcbiStreamoff instead of size_t for stream offset operations
 *

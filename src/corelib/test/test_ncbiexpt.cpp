@@ -293,7 +293,7 @@ int CExceptApplication::Run(void)
         CExceptionReporter::EnableDefault(false);
 
         cerr << endl;
-        e.Report(__FILE__, __LINE__,
+        e.Report(DIAG_COMPILE_INFO,
             "****** stream reporter ******", &reporter, eDPF_All);
         cerr << endl;
         NCBI_REPORT_EXCEPTION(
@@ -369,6 +369,15 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.13  2004/09/22 13:32:17  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 6.12  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *

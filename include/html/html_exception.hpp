@@ -90,10 +90,10 @@ public:
     }
 
     /// Constructor.
-    CHTMLException(const char* file, int line,
+    CHTMLException(const CDiagCompileInfo& info,
                    const CException* prev_exception, EErrCode err_code,
                    const string& message)
-        : CException(file, line, prev_exception, CException::eInvalid,message)
+        : CException(info, prev_exception, CException::eInvalid, message)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CHTMLException, CException);
 
 public:
@@ -121,6 +121,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/09/22 13:32:16  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.6  2004/07/04 19:11:23  vakatov
  * Do not use "throw()" specification after constructors and assignment
  * operators of exception classes inherited from "std::exception" -- as it

@@ -1822,15 +1822,15 @@ public:
     /// Constructor.
     ///
     /// Report "pos" along with "what".
-    CParseTemplException(const char* file,int line,
+    CParseTemplException(const CDiagCompileInfo &info,
         const CException* prev_exception,
         EErrCode err_code,const string& message,
         string::size_type pos)
-          : TBase(file, line,prev_exception,
+          : TBase(info, prev_exception,
             (typename TBase::EErrCode)(CException::eInvalid),
             message), m_Pos(pos)
     {
-        this->x_Init(file, line,
+        this->x_Init(info,
                      string("{") + NStr::UIntToString(m_Pos) + "} " + message,
                      prev_exception);
         this->x_InitErrCode((CException::EErrCode) err_code);
@@ -2399,6 +2399,15 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.63  2004/09/22 13:32:16  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.62  2004/09/21 18:44:55  kuznets
  * SoftStringToUInt renamed StringToUInt_DataSize
  *

@@ -409,7 +409,7 @@ MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
         CBlastException::EErrCode code = (CBlastException::EErrCode) error_msg->code;
         string message(error_msg->message);
         Blast_MessageFree(error_msg);
-        throw CBlastException(__FILE__, __LINE__, 0, code, message.c_str());
+        throw CBlastException(DIAG_COMPILE_INFO, 0, code, message.c_str());
     }
     Blast_MessageFree(error_msg);
     return seq_src;
@@ -425,6 +425,15 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2004/09/22 13:32:17  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.20  2004/07/19 14:58:47  dondosha
  * Renamed multiseq_src to seqsrc_multiseq, seqdb_src to seqsrc_seqdb
  *

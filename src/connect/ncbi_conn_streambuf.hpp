@@ -47,6 +47,7 @@
 
 BEGIN_NCBI_SCOPE
 
+class CDiagCompileInfo;
 
 class CConn_Streambuf : public CConn_StreambufBase
 {
@@ -82,7 +83,7 @@ private:
     CT_CHAR_TYPE        x_Buf;       // default m_ReadBuf for unbuffered stream
     CT_POS_TYPE         x_Pos;       // put position [for istream.tellp()]
 
-    EIO_Status          x_LogIfError(const char* file, int line,
+    EIO_Status          x_LogIfError(const CDiagCompileInfo& diag_info,
                                      EIO_Status status, const string& msg);
 };
 
@@ -93,6 +94,15 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2004/09/22 13:32:17  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 6.31  2004/01/20 20:36:24  lavr
  * Cease defining and using HAVE_BUGGY_IOS_CALLBACKS in this file
  *

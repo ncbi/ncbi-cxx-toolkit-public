@@ -84,7 +84,7 @@ NCBI_NS_STD::string CTime_Base::SelectionName(E_Choice index)
 
 void CTime_Base::ThrowInvalidSelection(E_Choice index) const
 {
-    throw NCBI_NS_NCBI::CInvalidChoiceSelection(__FILE__,__LINE__,m_choice, index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));
+    throw NCBI_NS_NCBI::CInvalidChoiceSelection(DIAG_COMPILE_INFO, m_choice, index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));
 }
 
 const CFull_Time& CTime_Base::GetFull(void) const

@@ -72,7 +72,7 @@ public:
 
 
 #define LDS_THROW(errcode, message) \
-    throw CLDS_Exception(__FILE__, __LINE__, 0, CLDS_Exception::errcode, \
+    throw CLDS_Exception(DIAG_COMPILE_INFO, 0, CLDS_Exception::errcode, \
                           (message))
 
 
@@ -82,6 +82,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/09/22 13:32:16  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.5  2004/08/19 13:07:14  dicuccio
  * Dropped export specifiers on inlined exceptions
  *

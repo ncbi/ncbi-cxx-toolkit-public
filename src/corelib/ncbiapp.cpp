@@ -948,6 +948,18 @@ void CNcbiApplication::x_HonorStandardSettings(CNcbiRegistry* reg)
                      << " sec (as per the config param [NCBI.CpuTimeLimit])");
         }
     }
+
+    // TRACE and POST filters
+
+    // [DIAG.TRACE_FILTER]
+    string trace_filter = reg->Get("DIAG", "TRACE_FILTER");
+    if ( !trace_filter.empty() )
+        SetDiagFilter(eDiagFilter_Trace, trace_filter.c_str());
+
+    // [DIAG.POST_FILTER]
+    string post_filter = reg->Get("DIAG", "POST_FILTER");
+    if ( !post_filter.empty() )
+        SetDiagFilter(eDiagFilter_Post, post_filter.c_str());
 }
 
 
@@ -957,6 +969,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.95  2004/09/22 13:32:17  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.94  2004/08/09 20:05:32  ucko
  * FindProgramExecutablePath: On Linux, consult PATH_MAX, not FILENAME_MAX,
  * which is less relevant and might not have been defined (via stdio.h).

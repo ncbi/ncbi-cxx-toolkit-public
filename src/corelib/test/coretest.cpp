@@ -742,7 +742,7 @@ static void TestThrowTrace(void)
         THROW1_TRACE(runtime_error, "Message");
     }
     catch (...) {
-        CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace) <<
+        CNcbiDiag(CDiagCompileInfo(__FILE__, __LINE__ - 3), eDiag_Trace) <<
             "runtime_error: Message";
     }
     string mess = "ERROR";
@@ -750,7 +750,7 @@ static void TestThrowTrace(void)
         THROW1_TRACE(runtime_error, mess);
     }
     catch (...) {
-        CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace) <<
+        CNcbiDiag(CDiagCompileInfo(__FILE__, __LINE__ - 3), eDiag_Trace) <<
             "runtime_error: ERROR";
     }
     int i = 123;
@@ -758,7 +758,7 @@ static void TestThrowTrace(void)
         THROW0p_TRACE(i);
     }
     catch (...) {
-        CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace) <<
+        CNcbiDiag(CDiagCompileInfo(__FILE__, __LINE__ - 3), eDiag_Trace) <<
             "i: 123";
     }
     SetDiagTrace(eDT_Default);
@@ -891,6 +891,15 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.91  2004/09/22 13:32:17  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.90  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *

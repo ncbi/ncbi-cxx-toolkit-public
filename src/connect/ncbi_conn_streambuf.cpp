@@ -37,7 +37,7 @@
 #include <memory>
 
 
-#define LOG_IF_ERROR(status, msg) x_LogIfError(__FILE__, __LINE__, status, msg)
+#define LOG_IF_ERROR(status, msg) x_LogIfError(DIAG_COMPILE_INFO, status, msg)
 
 BEGIN_NCBI_SCOPE
 
@@ -277,11 +277,11 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
 }
 
 
-EIO_Status CConn_Streambuf::x_LogIfError(const char* file, int line,
+EIO_Status CConn_Streambuf::x_LogIfError(const CDiagCompileInfo& diag_info,
                                          EIO_Status status, const string& msg)
 {
     if (status != eIO_Success) {
-        CNcbiDiag(file, line) << "CConn_Streambuf::" << msg <<
+        CNcbiDiag(diag_info) << "CConn_Streambuf::" << msg <<
             " (" << IO_StatusStr(status) << ")" << Endm;
     }
     return status;
@@ -294,6 +294,15 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2004/09/22 13:32:17  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 6.46  2004/05/17 20:58:13  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

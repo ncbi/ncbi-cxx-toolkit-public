@@ -126,7 +126,7 @@ int CTestLogrotateApplication::Run(void)
         EDiagSev    severity = (EDiagSev)(s_Rand(eDiag_Fatal));
         ErrCode     errcode(rand(), rand());
         const char* message  = messages[s_Rand(4)];
-        CNcbiDiag(__FILE__, __LINE__, severity) << errcode << message << Endm;
+        CNcbiDiag(DIAG_COMPILE_INFO, severity) << errcode << message << Endm;
         SleepMilliSec(s_Rand(256));
 #ifdef NCBI_OS_UNIX
         if (s_Signal) {
@@ -166,6 +166,15 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/09/22 13:32:18  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.3  2004/05/17 21:09:26  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -55,53 +55,107 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Set default module name based on NCBI_MODULE macro
+#ifdef NCBI_MODULE
+#  define NCBI_MODULE_AS_STRING(module) #module
+#  define NCBI_MAKE_MODULE(module) NCBI_MODULE_AS_STRING(module)
+#else
+#  define NCBI_MAKE_MODULE(module) NULL
+#endif 
+
+/// Incapsulate compile time information such as
+/// _FILE_ _LINE NCBI_MODULE
+/// NCBI_MODULE is used only in .cpp file
+/// @sa
+///   DIAG_COMPILE_INFO
+
+class CDiagCompileInfo
+{
+public:
+    // DO NOT create CDiagCompileInfo directly
+    // use macro DIAG_COMPILE_INFO instead!
+    CDiagCompileInfo(const char* file, int line, const char* module = 0);
+
+    const char* GetFile  () const { return m_File   ? m_File   : ""; }
+    const char* GetModule() const { return m_Module ? m_Module : ""; }
+    int         GetLine  () const { return m_Line; }
+
+private:
+    const char* m_File;
+    const char* m_Module;
+    int         m_Line; 
+};
+
+
+
+/// Make compile time diagnostic information object
+/// to use in CDiagInfo and CException
+/// @sa
+///   CDiagCompileInfo
+
+#define DIAG_COMPILE_INFO NCBI_NS_NCBI::CDiagCompileInfo(__FILE__, __LINE__,  \
+                                                 NCBI_MAKE_MODULE(NCBI_MODULE))
+
+    
+
+
 /// Error posting with file, line number information but without error codes.
 ///
 /// @sa
 ///   ERR_POST_EX macro
-#define ERR_POST(message) \
-    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << message << NCBI_NS_NCBI::Endm )
+#define ERR_POST(message)                        \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO) \
+      << message                                 \
+      << NCBI_NS_NCBI::Endm )
+
 
 /// Log message only without severity, location, prefix information.
 ///
 /// @sa
 ///   LOG_POST_EX macro
-#define LOG_POST(message) \
-    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log) << message << NCBI_NS_NCBI::Endm )
+#define LOG_POST(message)                            \
+    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log) \
+      << message                                     \
+      << NCBI_NS_NCBI::Endm )
 
 /// Error posting with error codes.
 ///
 /// @sa
 ///   ERR_POST
-#define ERR_POST_EX(err_code, err_subcode, message) \
-    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << NCBI_NS_NCBI::ErrCode(err_code, err_subcode) << message << NCBI_NS_NCBI::Endm )
+#define ERR_POST_EX(err_code, err_subcode, message)         \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO)            \
+      << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
+      << message                                            \
+      << NCBI_NS_NCBI::Endm )
 
 /// Log posting with error codes.
 ///
 /// @sa
 ///   LOG_POST
-#define LOG_POST_EX(err_code, err_subcode, message) \
-    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log) << NCBI_NS_NCBI::ErrCode(err_code, err_subcode) << message << NCBI_NS_NCBI::Endm )
+#define LOG_POST_EX(err_code, err_subcode, message)         \
+    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log)        \
+      << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
+      << message << NCBI_NS_NCBI::Endm )
 
 
 #define LOG_POST_N_TIMES(count, message) \
     do { \
-        static volatile int sx_to_show = count; \
+        static volatile int sx_to_show = (count);  \
         int to_show = sx_to_show; \
         if ( to_show > 0 ) { \
             sx_to_show = to_show - 1; \
-            LOG_POST(message); \
+            LOG_POST(message);     \
         } \
     } while ( false )
 
 
 #define ERR_POST_N_TIMES(count, message) \
     do { \
-        static volatile int sx_to_show = count; \
+        static volatile int sx_to_show = (count);  \
         int to_show = sx_to_show; \
         if ( to_show > 0 ) { \
             sx_to_show = to_show - 1; \
-            ERR_POST(message); \
+            ERR_POST(message);     \
         } \
     } while ( false )
 
@@ -144,7 +198,8 @@ enum EDiagSevChange {
 ///
 /// - If all flags are set, and prefix string is set to "My prefix", and
 ///   ERR_POST(eDiag_Warning, "Take care!"):
-///   "/home/iam/myfile.cpp", line 33: Warning: (2.11) [aa::bb::cc] Take care!
+///   "/home/iam/myfile.cpp", line 33: Warning: (2.11)
+///   Module::Class::Function() - [My prefix] Take care!
 ///
 /// @sa
 ///   SDiagMessage::Compose()
@@ -160,6 +215,8 @@ enum EDiagPostFlag {
     eDPF_ErrCodeExplanation = 0x200, ///< Set by default (always)
     eDPF_ErrCodeUseSeverity = 0x400, ///< Set by default (always)
     eDPF_DateTime           = 0x80,  ///< Include date and time
+    eDPF_Location           = 0x800, ///< Include module, class and function
+                                     ///< if any, not set by default
 
     /// All flags (except for the "unusual" ones!)
     eDPF_All                = 0x3FFF,
@@ -209,6 +266,60 @@ public:
 };
 
 
+class CNcbiDiag;
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// MDiagModule --
+///
+/// Manipulator to set Module for CNcbiDiag
+
+class MDiagModule 
+{
+public:
+    MDiagModule(const char* module);
+    friend const CNcbiDiag& operator<< (const CNcbiDiag&   diag,
+                                        const MDiagModule& module);
+private:
+    const char* m_Module;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// MDiagClass --
+///
+/// Manipulator to set Class for CNcbiDiag
+
+class MDiagClass 
+{
+public:
+    MDiagClass(const char* nclass);
+    friend const CNcbiDiag& operator<< (const CNcbiDiag&  diag,
+                                        const MDiagClass& nclass);
+private:
+    const char* m_Class;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// MDiagFunction --
+///
+/// Manipulator to set Function for CNcbiDiag
+
+class MDiagFunction 
+{
+public:
+    MDiagFunction(const char* function);
+    friend const CNcbiDiag& operator<< (const CNcbiDiag&     diag,
+                                        const MDiagFunction& function);
+private:
+    const char* m_Function;
+};
+
 
 class CException;
 
@@ -230,10 +341,9 @@ public:
 
     /// Constructor -- includes file and line# information.
     NCBI_XNCBI_EXPORT
-    CNcbiDiag(const char*    file,    ///< File to write diag. messages
-              size_t         line,    ///< Line number
+    CNcbiDiag(const CDiagCompileInfo& info,  ///< File, line and module
               EDiagSev       sev          = eDiag_Error,  ///< Severity level
-              TDiagPostFlags post_flags = eDPF_Default  ///< What info.
+              TDiagPostFlags post_flags   = eDPF_Default  ///< What info.
              );
 
     /// Destructor.
@@ -321,6 +431,18 @@ public:
     NCBI_XNCBI_EXPORT
     const CNcbiDiag& SetFile(const char* file) const;
 
+    /// Set module name.
+    NCBI_XNCBI_EXPORT
+    const CNcbiDiag& SetModule(const char* module) const;
+
+    /// Set class name.
+    NCBI_XNCBI_EXPORT
+    const CNcbiDiag& SetClass(const char* nclass) const;
+
+    /// Set function name.
+    NCBI_XNCBI_EXPORT
+    const CNcbiDiag& SetFunction(const char* function) const;
+
     /// Set line number for post.
     const CNcbiDiag& SetLine(size_t line) const;
 
@@ -342,6 +464,18 @@ public:
     /// Get error subcode of the current message.
     int GetErrorSubCode(void) const;
 
+    /// Get module name of the current message.
+    const char* GetModule(void) const;
+
+    /// Get class name of the current message.
+    const char* GetClass(void) const;
+
+    /// Get function name of the current message.
+    const char* GetFunction(void) const;
+
+    /// Check if filters are passed
+    bool CheckFilters(void) const;
+
     /// Get post flags for the current message.
     /// If the post flags have "eDPF_Default" set, then in the returned flags
     /// it will be reset and substituted by current default flags.
@@ -349,30 +483,34 @@ public:
 
     /// Display fatal error message.
     NCBI_XNCBI_EXPORT
-    static void DiagFatal(const char* file, size_t line,
+    static void DiagFatal(const CDiagCompileInfo& info,
                           const char* message);
     /// Display trouble error message.
     NCBI_XNCBI_EXPORT
-    static void DiagTrouble(const char* file, size_t line);
+    static void DiagTrouble(const CDiagCompileInfo& info);
 
     /// Assert specfied expression and report results.
     NCBI_XNCBI_EXPORT
-    static void DiagAssert(const char* file, size_t line,
+    static void DiagAssert(const CDiagCompileInfo& info,
                            const char* expression);
 
     /// Display validation message.
     NCBI_XNCBI_EXPORT
-    static void DiagValidate(const char* file, size_t line,
+    static void DiagValidate(const CDiagCompileInfo& info,
                              const char* expression, const char* message);
 
 private:
-    mutable EDiagSev       m_Severity;   ///< Severity level of current msg.
-    mutable char           m_File[256];  ///< File name
-    mutable size_t         m_Line;       ///< Line number
-    mutable int            m_ErrCode;    ///< Error code
-    mutable int            m_ErrSubCode; ///< Error subcode
-            CDiagBuffer&   m_Buffer;     ///< This thread's error msg. buffer
-    mutable TDiagPostFlags m_PostFlags;  ///< Bitwise OR of "EDiagPostFlag"
+    mutable EDiagSev       m_Severity;       ///< Severity level of current msg.
+    mutable char           m_File[256];      ///< File name
+    mutable size_t         m_Line;           ///< Line number
+    mutable int            m_ErrCode;        ///< Error code
+    mutable int            m_ErrSubCode;     ///< Error subcode
+            CDiagBuffer&   m_Buffer;         ///< This thread's error msg. buffer
+    mutable TDiagPostFlags m_PostFlags;      ///< Bitwise OR of "EDiagPostFlag"
+    mutable char           m_Module[128];    ///< Module name
+    mutable char           m_Class[256];     ///< Class name
+    mutable char           m_Function[256];  ///< Function name
+    mutable bool           m_CheckFilters;   ///< Is it necessary to check filters
 
     /// Private copy constructor to prohibit copy.
     CNcbiDiag(const CNcbiDiag&);
@@ -574,12 +712,18 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
                  const char* file = 0, size_t line = 0,
                  TDiagPostFlags flags = eDPF_Default, const char* prefix = 0,
                  int err_code = 0, int err_subcode = 0,
-                 const char* err_text = 0);
+                 const char* err_text = 0,
+                 const char* module   = 0,
+                 const char* nclass   = 0, 
+                 const char* function = 0);
 
     mutable EDiagSev m_Severity;   ///< Severity level
     const char*      m_Buffer;     ///< Not guaranteed to be '\0'-terminated!
     size_t           m_BufferLen;  ///< Length of m_Buffer
     const char*      m_File;       ///< File name
+    const char*      m_Module;     ///< Module name
+    const char*      m_Class;      ///< Class name
+    const char*      m_Function;   ///< Function name
     size_t           m_Line;       ///< Line number in file
     int              m_ErrCode;    ///< Error code
     int              m_ErrSubCode; ///< Sub Error code
@@ -659,6 +803,30 @@ extern void SetDiagHandler(FDiagHandler func,
 ///   Return TRUE if user has ever set (or unset) diag. handler.
 NCBI_XNCBI_EXPORT
 extern bool IsSetDiagHandler(void);
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Diagnostic Filter Functionality
+//
+
+/// Diag severity types to put the filter on
+///
+/// @sa SetDiagFilter
+enum EDiagFilter {
+    eDiagFilter_Trace,  //< for TRACEs only
+    eDiagFilter_Post,   //< for all non-TRACE, non-FATAL
+    eDiagFilter_All     //< for all non-FATAL
+};
+
+
+/// Set diagnostic filter
+/// @param what
+///    Filter is set for
+/// @param filter_str
+///    Filter string
+NCBI_XNCBI_EXPORT
+extern void SetDiagFilter(EDiagFilter what, const char* filter_str);
 
 
 
@@ -928,6 +1096,15 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.76  2004/09/22 13:32:16  kononenk
+ * "Diagnostic Message Filtering" functionality added.
+ * Added function SetDiagFilter()
+ * Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+ * Module, class and function attribute added to CNcbiDiag and CException
+ * Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+ * 	CDiagCompileInfo + fixes on derived classes and their usage
+ * Macro NCBI_MODULE can be used to set default module name in cpp files
+ *
  * Revision 1.75  2004/09/07 18:10:49  vakatov
  * Comment fix
  *

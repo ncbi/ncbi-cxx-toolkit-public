@@ -30,6 +30,15 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2004/09/22 13:32:17  kononenk
+* "Diagnostic Message Filtering" functionality added.
+* Added function SetDiagFilter()
+* Added class CDiagCompileInfo and macro DIAG_COMPILE_INFO
+* Module, class and function attribute added to CNcbiDiag and CException
+* Parameters __FILE__ and __LINE in CNcbiDiag and CException changed to
+* 	CDiagCompileInfo + fixes on derived classes and their usage
+* Macro NCBI_MODULE can be used to set default module name in cpp files
+*
 * Revision 1.51  2004/07/21 13:29:59  gouriano
 * Set and return primitive type data by value
 *
@@ -890,7 +899,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "\n"
             "void "<<methodPrefix<<"ThrowInvalidSelection("STATE_ENUM" index) const\n"
             "{\n"
-            "    throw NCBI_NS_NCBI::CInvalidChoiceSelection(__FILE__,__LINE__,m_choice, index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
+            "    throw NCBI_NS_NCBI::CInvalidChoiceSelection(DIAG_COMPILE_INFO, m_choice, index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
             "}\n"
             "\n";
     }
