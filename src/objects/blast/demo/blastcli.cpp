@@ -153,6 +153,21 @@ get_parameters()
 
 //  ==========================================================================
 //
+//  sample "get-paramsets" command
+//
+//  ==========================================================================
+
+static void
+get_paramsets()
+{
+    CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    body->SetGet_paramsets();
+
+    submit(body);
+}
+
+//  ==========================================================================
+//
 //  sample "get-programs" command
 //
 //  ==========================================================================
@@ -423,6 +438,8 @@ CBlastcliApplication::Run(void)
         get_matrices();
     else if(a == "get-parameters")
         get_parameters();
+    else if(a == "get-paramsets")
+        get_paramsets();
     else if(a == "get-programs")
         get_programs();
     else if(a == "get-sequences")
