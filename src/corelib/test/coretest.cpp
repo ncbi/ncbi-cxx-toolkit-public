@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/11/03 22:32:04  vakatov
+* + Test for a serializable class
+*
 * Revision 1.2  1998/11/03 20:49:15  vakatov
 * use "NcbiCerr" instead of just "cerr"
 *
@@ -45,17 +48,34 @@
 /////////////////////////////////
 // Diagnostics
 //
+
+class CNcbiTestDiag {
+public:
+    int i;
+    CNcbiTestDiag(void) { i = 4321; }
+};
+inline CNcbiOstream& operator <<(CNcbiOstream& os, const CNcbiTestDiag& cntd) {
+    return os << "Output of an serializable class content = " << cntd.i;
+}
+
+
 extern void TestDiag(void)
 {
     CNcbiDiag diag;
     double d = 123.45;
 
-    diag << "[Unset Diag Stream]  Diagnostics double = " << d;
+    diag << "[Unset Diag Stream]  Diagnostics double = " << d << Endm;
     _TRACE( "[Unset Diag Stream]  Trace double = " << d );
 
     SetDiagStream(&NcbiCerr);
-    diag << "[Set Diag Stream(cerr)]  Diagnostics double = " << d;
+    diag << "[Set Diag Stream(cerr)]  Diagnostics double = " << d << Endm;
     _TRACE( "[Set Diag Stream(cerr)]  Trace double = " << d );
+
+    CNcbiTestDiag cntd;
+    SetDiagPostLevel(eDiag_Error);
+    diag << Warning << cntd << Endm;
+    SetDiagPostLevel(eDiag_Info);
+    diag << Warning << cntd << Endm;
 }
 
 
