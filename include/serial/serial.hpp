@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/07/20 18:22:56  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.21  1999/07/19 15:50:19  vasilche
 * Added interface to old ASN.1 routines.
 * Added naming of key/value in STL map.
@@ -498,6 +502,13 @@ const CTypeInfo* Method(void) \
 BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, ())
 #define END_CLASS_INFO END_TYPE_INFO
 
+#define BEGIN_DERIVED_CLASS_INFO(Class, BaseClass) \
+BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, ()) \
+    info->AddMember(NcbiEmptyString, \
+                    MemberInfo(static_cast<const BaseClass*> \
+                               (static_cast<const CClass*>(0))));
+#define END_DERIVED_CLASS_INFO END_TYPE_INFO
+
 #define BEGIN_STRUCT_INFO2(Name, Class) \
 BEGIN_TYPE_INFO(NAME2(struct_, Class), NAME2(GetTypeInfo_struct_, Class), \
                 CStructInfo<CClass>, (Name))
@@ -562,6 +573,11 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
     info->AddVariant(#Name, GetTypeRef(&static_cast<const valnode*>(0)->data.NAME2(Member, value)))
 #define ADD_CHOICE_VARIANT(Name, Type, Struct) \
     info->AddVariant(#Name, NAME3(Get, Type, TypeRef)(reinterpret_cast<const NAME2(struct_, Struct)* const*>(&static_cast<const valnode*>(0)->data.ptrvalue)))
+
+#define ADD_SUB_CLASS2(Name, Class) \
+    AddSubClass(CMemberId(Name), GetTypeRef(static_cast<const Class*>(0)))
+#define ADD_SUB_CLASS(Class) \
+    ADD_SUB_CLASS2(#Class, Class)
 
 
 // reader/writer

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/07/20 18:23:12  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.15  1999/07/19 15:50:36  vasilche
 * Added interface to old ASN.1 routines.
 * Added naming of key/value in STL map.
@@ -211,7 +215,7 @@ void CObjectOStreamAsn::WriteStd(const double& data)
 
 void CObjectOStreamAsn::WriteNull(void)
 {
-    m_Output << "null";
+    m_Output << "NULL";
 }
 
 void CObjectOStreamAsn::WriteString(const string& str)

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/20 18:23:08  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.12  1999/07/19 15:50:30  vasilche
 * Added interface to old ASN.1 routines.
 * Added naming of key/value in STL map.
@@ -538,6 +542,7 @@ void CChoiceValNodeInfo::ReadData(CObjectIStream& in,
 }
 
 COctetStringTypeInfo::COctetStringTypeInfo(void)
+    : CTypeInfo("OCTET STRING")
 {
 }
 
@@ -640,7 +645,8 @@ map<COldAsnTypeInfo::TNewProc, COldAsnTypeInfo*> COldAsnTypeInfo::m_Types;
 
 COldAsnTypeInfo::COldAsnTypeInfo(TNewProc newProc, TFreeProc freeProc,
                                  TReadProc readProc, TWriteProc writeProc)
-    : m_NewProc(newProc), m_FreeProc(freeProc),
+    : CTypeInfo("old ASN.1"),
+      m_NewProc(newProc), m_FreeProc(freeProc),
       m_ReadProc(readProc), m_WriteProc(writeProc)
 {
 }

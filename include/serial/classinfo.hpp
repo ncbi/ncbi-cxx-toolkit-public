@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/20 18:22:53  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.13  1999/07/13 20:18:04  vasilche
 * Changed types naming.
 *
@@ -115,6 +119,8 @@ public:
     typedef CMembers::TIndex TIndex;
     typedef vector<CMemberInfo*> TMembersInfo;
     typedef map<size_t, TIndex> TMembersByOffset;
+    typedef vector<CTypeRef> TSubClassesInfo;
+    typedef map<const type_info*, TIndex, CTypeInfoOrder> TSubClassesById;
 
     CClassInfoTmpl(const string& name, const type_info& ti,
                    size_t size, bool randomOrder);
@@ -165,6 +171,9 @@ public:
     static TTypeInfo GetClassInfoById(const type_info& id);
     static TTypeInfo GetClassInfoBy(const type_info& id, void (*creator)(void));
 
+    CClassInfoTmpl* AddSubClass(const CMemberId& id,
+                                const CTypeRef& type);
+
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
@@ -174,6 +183,18 @@ protected:
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const;
 
+    virtual void CollectPointer(COObjectList& objectList,
+                                TConstObjectPtr object) const;
+    virtual void WritePointer(CObjectOStream& out,
+                              TConstObjectPtr object) const;
+    virtual TObjectPtr ReadPointer(CObjectIStream& in) const;
+
+    virtual const type_info& GetCPlusPlusTypeInfo(TConstObjectPtr object) const = 0;
+    TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const
+        {
+            return GetClassInfoById(GetCPlusPlusTypeInfo(object));
+        }
+
 private:
     size_t m_Size;
     bool m_RandomOrder;
@@ -181,6 +202,10 @@ private:
     CMembers m_Members;
     TMembersInfo m_MembersInfo;
     mutable auto_ptr<TMembersByOffset> m_MembersByOffset;
+
+    CMembers m_SubClasses;
+    TSubClassesInfo m_SubClassesInfo;
+    mutable auto_ptr<TSubClassesById> m_SubClassesById;
 
     // class mapping
     typedef list<CClassInfoTmpl*> TClasses;
@@ -198,6 +223,8 @@ private:
     static TClasses& Classes(void);
     static TClassesById& ClassesById(void);
     static TClassesByName& ClassesByName(void);
+
+    TSubClassesById& SubClassesById(void) const;
 };
 
 class CAliasInfo;
@@ -271,6 +298,11 @@ public:
         : CStructInfoTmpl(name, typeid(Class), sizeof(Class), true)
         {
         }
+
+    virtual const type_info& GetCPlusPlusTypeInfo(TConstObjectPtr object) const
+        {
+            return typeid(*static_cast<const TObjectType*>(object));
+        }
 };
 
 template<class CLASS, class PCLASS = CLASS>
@@ -295,10 +327,10 @@ public:
         {
         }
 
-    virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const
+    virtual const type_info& GetCPlusPlusTypeInfo(TConstObjectPtr object) const
         {
-            return GetClassInfoById(
-                typeid(*static_cast<const TObjectType*>(object)));
+            _TRACE("GetCPlusPlusTypeInfo: " << typeid(*static_cast<const TObjectType*>(object)).name());
+            return typeid(*static_cast<const TObjectType*>(object));
         }
 
     virtual TObjectPtr Create(void) const

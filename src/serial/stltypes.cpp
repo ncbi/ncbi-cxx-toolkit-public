@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/20 18:23:14  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.7  1999/07/19 15:50:39  vasilche
 * Added interface to old ASN.1 routines.
 * Added naming of key/value in STL map.
@@ -108,6 +112,7 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
 }
 
 CStlClassInfoCharVector::CStlClassInfoCharVector(void)
+    : CTypeInfo("vector<char>")
 {
 }
 

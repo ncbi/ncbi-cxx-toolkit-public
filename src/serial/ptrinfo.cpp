@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/20 18:23:13  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.7  1999/07/13 20:18:22  vasilche
 * Changed types naming.
 *
@@ -113,10 +117,9 @@ void CPointerTypeInfo::CollectExternalObjects(COObjectList& objectList,
                                               TConstObjectPtr object) const
 {
     TConstObjectPtr externalObject = GetObject(object);
-    _TRACE("CPointerTypeInfo::CollectExternalObjects: " << unsigned(externalObject));
+    _TRACE("CPointerTypeInfo::CollectExternalObjects: " << unsigned(externalObject) << " type: " << GetDataTypeInfo()->GetName());
     if ( externalObject ) {
-        GetDataTypeInfo()->GetRealTypeInfo(externalObject)->
-            CollectObjects(objectList, externalObject);
+        GetDataTypeInfo()->CollectPointer(objectList, externalObject);
     }
 }
 
@@ -124,15 +127,14 @@ void CPointerTypeInfo::WriteData(CObjectOStream& out,
                                  TConstObjectPtr object) const
 {
     TConstObjectPtr externalObject = GetObject(object);
-    _TRACE("CPointerTypeInfo::WriteData: " << unsigned(externalObject));
-    out.WritePointer(externalObject,
-                     GetDataTypeInfo()->GetRealTypeInfo(externalObject));
+    _TRACE("CPointerTypeInfo::WriteData: " << unsigned(externalObject) << " type: " << GetDataTypeInfo()->GetName());
+    GetDataTypeInfo()->WritePointer(out, externalObject);
 }
 
 void CPointerTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    _TRACE("CPointerTypeInfo::ReadData: " << unsigned(GetObject(object)));
-    GetObject(object) = in.ReadPointer(GetDataTypeInfo());
+    _TRACE("CPointerTypeInfo::ReadData: " << unsigned(GetObject(object)) << " type: " << GetDataTypeInfo()->GetName());
+    GetObject(object) = GetDataTypeInfo()->ReadPointer(in);
 }
 
 END_NCBI_SCOPE

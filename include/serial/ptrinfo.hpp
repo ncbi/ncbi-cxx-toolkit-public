@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/20 18:22:55  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.6  1999/07/13 20:18:06  vasilche
 * Changed types naming.
 *
@@ -73,7 +77,7 @@ public:
         { return *static_cast<const TConstObjectPtr*>(object); }
 
     CPointerTypeInfo(TTypeInfo type)
-        : m_DataType(type)
+        : CTypeInfo(type->GetName() + '*'), m_DataType(type)
         { }
 
     static TTypeInfo GetTypeInfo(TTypeInfo base)

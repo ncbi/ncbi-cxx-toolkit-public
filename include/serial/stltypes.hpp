@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/07/20 18:22:57  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.15  1999/07/19 15:50:20  vasilche
 * Added interface to old ASN.1 routines.
 * Added naming of key/value in STL map.
@@ -101,7 +105,7 @@ class CStlOneArgTemplate : public CTypeInfo
 public:
 
     CStlOneArgTemplate(const CTypeRef& dataType)
-        : m_DataType(dataType)
+        : CParent("stl<X>"), m_DataType(dataType)
         { }
 
     TTypeInfo GetDataTypeInfo(void) const
@@ -119,7 +123,7 @@ class CStlTwoArgsTemplate : public CTypeInfo
 public:
 
     CStlTwoArgsTemplate(const CTypeRef& keyType, const CTypeRef& valueType)
-        : m_KeyType(keyType), m_ValueType(valueType)
+        : CParent("stl<X,Y>"), m_KeyType(keyType), m_ValueType(valueType)
         { }
 
     const CMemberId& GetKeyId(void) const

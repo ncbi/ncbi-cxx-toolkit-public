@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/20 18:22:54  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.2  1999/07/01 17:55:18  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -61,6 +65,11 @@ public:
 
     CMembers(void);
     ~CMembers(void);
+
+    bool Empty(void) const
+        {
+            return m_Members.size() == 0;
+        }
 
     const TMembers& GetMembers(void) const
         {

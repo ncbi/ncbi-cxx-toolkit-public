@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/20 18:23:14  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.13  1999/07/19 15:50:39  vasilche
 * Added interface to old ASN.1 routines.
 * Added naming of key/value in STL map.
@@ -82,11 +86,6 @@
 #include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
-
-CTypeInfo::CTypeInfo(void)
-    : m_Default(0)
-{
-}
 
 CTypeInfo::CTypeInfo(const string& name)
     : m_Name(name), m_Default(0)
@@ -153,6 +152,23 @@ const CMemberId* CTypeInfo::GetMemberId(TMemberIndex ) const
 const CMemberInfo* CTypeInfo::GetMemberInfo(TMemberIndex ) const
 {
     return 0;
+}
+
+void CTypeInfo::CollectPointer(COObjectList& objectList,
+                               TConstObjectPtr object) const
+{
+    GetRealTypeInfo(object)->CollectObjects(objectList, object);
+}
+
+void CTypeInfo::WritePointer(CObjectOStream& out,
+                             TConstObjectPtr object) const
+{
+    out.WritePointer(object, GetRealTypeInfo(object));
+}
+
+TObjectPtr CTypeInfo::ReadPointer(CObjectIStream& in) const
+{
+    return in.ReadPointer(this);
 }
 
 END_NCBI_SCOPE

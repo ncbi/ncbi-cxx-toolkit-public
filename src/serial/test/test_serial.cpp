@@ -49,10 +49,14 @@ int CTestSerial::Run(void)
         
 
         CSerialObject write;
-        CSerialObject write1;
+        CSerialObject2 write1;
+
+        _TRACE("CSerialObject(object1): " << long(&write));
+        _TRACE("CSerialObject2(object2): " << long(&write1));
+        _TRACE("CSerialObject(object2): " << long(static_cast<CSerialObject*>(&write1)));
 
         write.m_Name = "name";
-        write.m_NamePtr = &write1.m_Name;
+        //write.m_NamePtr = &write1.m_Name;
         write.m_Size = -1;
         write.m_Attributes.push_back("m_Attributes");
         write.m_Attributes.push_back("m_Size");
@@ -75,6 +79,7 @@ int CTestSerial::Run(void)
         write1.m_Attributes.push_back("write1");
         write1.m_Next = &write1;
         write1.m_WebEnv = WebEnvNew();
+        write1.m_Name2 = "name2";
 
         {
             {

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/07/20 18:23:11  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.8  1999/07/01 17:55:32  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -162,6 +166,9 @@ bool COObjectList::CheckMember(TConstObjectPtr owner, TTypeInfo ownerTypeInfo,
                                TConstObjectPtr member, TTypeInfo memberTypeInfo)
 {
     while ( owner != member || ownerTypeInfo != memberTypeInfo ) {
+        _TRACE("CheckMember(" <<
+               long(owner) << ": " << ownerTypeInfo->GetName() << ", " <<
+               long(member) << ": " << memberTypeInfo->GetName() << ")");
         CTypeInfo::TMemberIndex index =
             ownerTypeInfo->LocateMember(owner, member, memberTypeInfo);
         if ( index < 0 ) {

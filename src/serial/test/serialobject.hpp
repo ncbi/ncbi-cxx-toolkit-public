@@ -22,7 +22,7 @@ class CSerialObject
 public:
     CSerialObject(void);
 
-    void Dump(ostream& out) const;
+    virtual void Dump(ostream& out) const;
 
     static const CTypeInfo* GetTypeInfo(void);
 
@@ -36,6 +36,16 @@ public:
     
     CSerialObject* m_Next;
     struct_Web_Env* m_WebEnv;
+};
+
+class CSerialObject2 : public CSerialObject
+{
+public:
+    CSerialObject2(void);
+
+    static const CTypeInfo* GetTypeInfo(void);
+
+    string m_Name2;
 };
 
 #endif

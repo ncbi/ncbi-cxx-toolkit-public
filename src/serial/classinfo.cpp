@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/07/20 18:23:09  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.16  1999/07/13 20:18:17  vasilche
 * Changed types naming.
 *
@@ -147,6 +151,7 @@ CClassInfoTmpl::TClassesById& CClassInfoTmpl::ClassesById(void)
         for ( TClasses::const_iterator i = cc.begin(); i != cc.end(); ++i ) {
             const CClassInfoTmpl* info = *i;
             if ( info->GetId() != typeid(void) ) {
+                _TRACE("class by id: " << info->GetId().name() << " : " << info->GetName());
                 if ( !classes->insert(
                          TClassesById::value_type(&info->GetId(),
                                                   info)).second ) {
@@ -170,6 +175,7 @@ CClassInfoTmpl::TClassesByName& CClassInfoTmpl::ClassesByName(void)
         for ( TClasses::const_iterator i = cc.begin(); i != cc.end(); ++i ) {
             const CClassInfoTmpl* info = *i;
             if ( !info->GetName().empty() ) {
+                _TRACE("ass class by name: " << " : " << info->GetName() << info->GetId().name());
                 if ( !classes->insert(
                          TClassesByName::value_type(info->GetName(),
                                                     info)).second ) {
@@ -200,7 +206,7 @@ TTypeInfo CClassInfoTmpl::GetClassInfoById(const type_info& id)
     TClassesById& types = ClassesById();
     TClassesById::iterator i = types.find(&id);
     if ( i == types.end() ) {
-        THROW1_TRACE(runtime_error, "class not found: "+string(id.name()));
+        THROW1_TRACE(runtime_error, "class not found: " + string(id.name()));
     }
     return i->second;
 }
@@ -222,6 +228,7 @@ size_t CClassInfoTmpl::GetSize(void) const
 
 CMemberInfo* CClassInfoTmpl::AddMember(const CMemberId& id, CMemberInfo* member)
 {
+    _TRACE(GetName() << ".AddMember:" << id.ToString() << ", " << member->GetOffset() << ", " << member->GetTypeInfo()->GetName());
     m_MembersByOffset.reset(0);
     m_Members.AddMember(id);
     m_MembersInfo.push_back(member);
@@ -231,6 +238,15 @@ CMemberInfo* CClassInfoTmpl::AddMember(const CMemberId& id, CMemberInfo* member)
 CMemberInfo* CClassInfoTmpl::AddMember(const string& name, CMemberInfo* member)
 {
     return AddMember(CMemberId(name), member);
+}
+
+CClassInfoTmpl* CClassInfoTmpl::AddSubClass(const CMemberId& id,
+                                            const CTypeRef& type)
+{
+    m_SubClassesById.reset(0);
+    m_SubClasses.AddMember(id);
+    m_SubClassesInfo.push_back(type);
+    return this;
 }
 
 void CClassInfoTmpl::CollectExternalObjects(COObjectList& objectList,
@@ -453,6 +469,88 @@ void CClassInfoTmpl::Assign(TObjectPtr dst, TConstObjectPtr src) const
         const CMemberInfo& member = *m_MembersInfo[i];
         member.GetTypeInfo()->Assign(member.GetMember(dst),
                                      member.GetMember(src));
+    }
+}
+
+CClassInfoTmpl::TSubClassesById& CClassInfoTmpl::SubClassesById(void) const
+{
+    TSubClassesById* subclasses = m_SubClassesById.get();
+    if ( !subclasses ) {
+        m_SubClassesById.reset(subclasses = new TSubClassesById);
+
+        for ( TMemberIndex i = 0, size = m_SubClassesInfo.size();
+              i != size; ++i ) {
+            TTypeInfo info = m_SubClassesInfo[i].Get();
+            const type_info& id =
+                dynamic_cast<const CClassInfoTmpl*>(info)->GetId();
+            if ( !subclasses->insert(TSubClassesById::
+                                     value_type(&id, i)).second ) {
+                THROW1_TRACE(runtime_error,
+                             "conflict subclasses: " + string(id.name()));
+            }
+        }
+    }
+    return *subclasses;
+}
+
+void CClassInfoTmpl::CollectPointer(COObjectList& objectList,
+                                    TConstObjectPtr object) const
+{
+    if ( m_SubClasses.Empty() ) {
+        GetRealTypeInfo(object)->CollectObjects(objectList, object);
+    }
+    else {
+        if ( !object )
+            THROW1_TRACE(runtime_error, "null is not allowed");
+
+        TSubClassesById& subclasses = SubClassesById();
+        const type_info& id = GetCPlusPlusTypeInfo(object);
+        _TRACE("CollectPointer: " << id.name());
+        TSubClassesById::const_iterator p = subclasses.find(&id);
+        if ( p == subclasses.end() ) {
+            THROW1_TRACE(runtime_error,
+                         "incompatible type: " + string(id.name()));
+        }
+        m_SubClassesInfo[p->second].Get()->CollectObjects(objectList, object);
+    }
+}
+
+void CClassInfoTmpl::WritePointer(CObjectOStream& out,
+                                  TConstObjectPtr object) const
+{
+    if ( m_SubClasses.Empty() ) {
+        out.WritePointer(object, GetRealTypeInfo(object));
+    }
+    else {
+        if ( !object )
+            THROW1_TRACE(runtime_error, "null is not allowed");
+
+        TSubClassesById& subclasses = SubClassesById();
+        const type_info& id = GetCPlusPlusTypeInfo(object);
+        _TRACE("WritePointer: " << id.name());
+        TSubClassesById::const_iterator p = subclasses.find(&id);
+        if ( p == subclasses.end() )
+            THROW1_TRACE(runtime_error,
+                         "incompatible type: " + string(id.name()));
+        TTypeInfo typeInfo = m_SubClassesInfo[p->second].Get();
+        const CMemberId& tag = m_SubClasses.GetCompleteMemberId(p->second);
+        CObjectOStream::Member m(out, tag);
+        out.WritePointer(object, typeInfo);
+    }
+}
+
+TObjectPtr CClassInfoTmpl::ReadPointer(CObjectIStream& in) const
+{
+    if ( m_SubClasses.Empty() ) {
+        return in.ReadPointer(this);
+    }
+    else {
+        CObjectIStream::Member m(in);
+        TIndex index = m_SubClasses.FindMember(m);
+        if ( index < 0 )
+            THROW1_TRACE(runtime_error, "incompatible type: " + m.ToString());
+        TTypeInfo realType = m_SubClassesInfo[index].Get();
+        return in.ReadPointer(realType);
     }
 }
 

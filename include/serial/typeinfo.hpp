@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/20 18:22:57  vasilche
+* Added interface to old ASN.1 routines.
+* Added fixed choice of subclasses to use for pointers.
+*
 * Revision 1.14  1999/07/19 15:50:22  vasilche
 * Added interface to old ASN.1 routines.
 * Added naming of key/value in STL map.
@@ -141,7 +145,6 @@ public:
 
 protected:
 
-    CTypeInfo(void);
     CTypeInfo(const string& name);
 
     friend class CObjectOStream;
@@ -156,6 +159,15 @@ public:
     // write object
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const = 0;
+
+    // collect pointer to object
+    virtual void CollectPointer(COObjectList& objectList,
+                                TConstObjectPtr object) const;
+    // write pointer to object
+    virtual void WritePointer(CObjectOStream& out,
+                              TConstObjectPtr object) const;
+    // read pointer to object
+    virtual TObjectPtr ReadPointer(CObjectIStream& in) const;
 
 private:
     string m_Name;
