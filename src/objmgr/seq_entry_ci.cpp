@@ -77,7 +77,7 @@ void CSeq_entry_CI::x_Initialize(const CBioseq_set_Handle& seqset)
 
 void CSeq_entry_CI::x_SetCurrentEntry(void)
 {
-    if ( *this ) {
+    if ( m_Parent && m_Iterator != m_Parent.x_GetInfo().GetSeq_set().end() ) {
         m_Current = CSeq_entry_Handle(m_Parent.GetScope(), **m_Iterator);
     }
     else {
@@ -88,7 +88,7 @@ void CSeq_entry_CI::x_SetCurrentEntry(void)
 
 CSeq_entry_CI& CSeq_entry_CI::operator ++(void)
 {
-    if ( m_Parent && m_Iterator != m_Parent.x_GetInfo().GetSeq_set().end() ) {
+    if ( *this ) {
         ++m_Iterator;
         x_SetCurrentEntry();
     }
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/22 16:51:10  grichenk
+* Fixed CSeq_entry_CI initialization
+*
 * Revision 1.1  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
