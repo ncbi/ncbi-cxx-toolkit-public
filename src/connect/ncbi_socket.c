@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2000/12/28 21:26:27  lavr
+ * Cosmetic fix to get rid of "converting -1 to unsigned" warning
+ *
  * Revision 6.12  2000/12/26 21:40:03  lavr
  * SOCK_Read modified to handle properly the case of 0 byte reading
  *
@@ -877,7 +880,7 @@ static int s_NCBI_Recv(SOCK          sock,
             x_errno != SOCK_EINTR) {
             sock->r_status = eIO_Unknown;
         }
-        return (int) (n_readbuf ? n_readbuf : -1);
+        return n_readbuf ? (int)n_readbuf : -1;
     }
 
     /* if "peek" -- store the new read data in the internal buffer */
