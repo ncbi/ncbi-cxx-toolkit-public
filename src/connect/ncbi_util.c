@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/07/26 15:13:02  lavr
+ * Always do stream flush after message output (previously was in DEBUG only)
+ *
  * Revision 6.11  2001/07/25 20:27:23  lavr
  * Included header files rearranged
  *
@@ -316,9 +319,7 @@ static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data)
         char* str = LOG_ComposeMessage(call_data, fLOG_Default);
         if ( str ) {
             fprintf(fp, "%s\n", str);
-#ifndef NDEBUG
             fflush(fp);
-#endif
             free(str);
         }
     }
