@@ -252,8 +252,6 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     CTime mtime = s_GetModTime(GetArguments().GetProgramName());
     for (m_Iteration = 1;  m_Iteration <= iterations;  ++m_Iteration) {
 
-        CTime start_time(CTime::eCurrent);
-
         _TRACE("CCgiApplication::FastCGI: " << m_Iteration
                << " iteration of " << iterations);
 
@@ -306,9 +304,10 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         // Default exit status (error)
         *result = -1;
         FCGX_SetExitStatus(-1, pfout);
+        CTime start_time(CTime::eCurrent);
 
         // Process the request
-        try {
+        try {            
             // Initialize CGI context with the new request data
             CNcbiEnvironment  env(penv);
             if (logopt == eLog) {
@@ -445,6 +444,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.30  2003/05/07 13:27:04  kuznets
+ * Corrected fast CGI ProcessRequest timing measurements
+ *
  * Revision 1.29  2003/04/18 16:30:10  ucko
  * Make timeout handling actually work.  (Requires the reentrant
  * interface, so we can set FCGI_FAIL_ACCEPT_ON_INTR....)
