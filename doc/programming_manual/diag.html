@@ -18,6 +18,9 @@
 <a href="#buffering">The message buffer</a></li>
 
 <li>
+<a href="#errcodes">Error codes and a message file</a></li>
+
+<li>
 <a href="#callback">FDiagHandler functions</a></li>
 
 <li>
@@ -58,6 +61,7 @@ Each <i>CNcbiDiag</i> instance has its own (<i><a href="../lxr/ident?i=EDiagSev"
 severity level, which is compared to a global severity threshold to determine
 whether or not its message should be posted. Six levels of severity are
 defined by the <i>EDiagSev</i> enumeration:
+<blockquote>
 <pre>enum EDiagSev {
     eDiag_Info = 0,
     eDiag_Warning,
@@ -66,6 +70,7 @@ defined by the <i>EDiagSev</i> enumeration:
     eDiag_Fatal,   // guarantees to exit(or abort)
     eDiag_Trace
 };</pre>
+</blockquote>
 The default is to post only those messages whose severity level exceeds
 the
 <i>eDiag_Warning</i> level (i.e. <i>eDiag_Error, eDiag_Critical</i>,
@@ -85,46 +90,53 @@ file.
 <p><a NAME="sevman"></a>The <i>CNcbiDiag</i> class also has class-specific
 <i>manipulators</i> to control the message severity level. These can be
 invoked as in the following examples on diagnostic stream <i>diag</i>:
-<pre>
-  diag &lt;&lt; Info;     // set severity level to <i>eDiag_Info</i>
-  diag &lt;&lt; Warning;  // set severity level to <i>eDiag_Warning</i>
-  diag &lt;&lt; Error;    // set severity level to <i>eDiag_Error</i> [default]
-  diag &lt;&lt; Fatal;    // set severity level to <i>eDiag_Fatal</i>
-  diag &lt;&lt; Trace;    // set severity level to <i>eDiag_Trace</i></pre>
+<blockquote><pre>diag &lt;&lt; Info;     // set severity level to <i>eDiag_Info</i>
+diag &lt;&lt; Warning;  // set severity level to <i>eDiag_Warning</i>
+diag &lt;&lt; Error;    // set severity level to <i>eDiag_Error</i> [default]
+diag &lt;&lt; Fatal;    // set severity level to <i>eDiag_Fatal</i>
+diag &lt;&lt; Trace;    // set severity level to <i>eDiag_Trace</i>
+</pre></blockquote>
 
 <a NAME="PostFlags"></a>
 <h3>Post Flags</h3>
 The post flags define additional information that will appear along with
 the message body. The standard format of a message is:
-<center>
-<pre>
-&nbsp;"&lt;file>", line &lt;line>:&lt;severity>: [&lt;prefix>] &lt;message body>
-</pre></center>
-where the <i>file, line, severity</i> and <i>prefix</i> fields are displayed
-(or not) depending on the post flags
+<blockquote><pre>"&lt;file&gt;", line &lt;line&gt;: &lt;severity&gt;: (&lt;err_code&gt;.&lt;err_subcode&gt;)
+[&lt;prefix1&gt;::&lt;prefix2&gt;::&lt;prefixN&gt;] &lt;message&gt;\n
+&lt;err_code_message\n
+&lt;err_code_explanation&gt;
+</pre></blockquote>
+
+where the each field are displayed (or not) depending on the post flags
 <a href="../lxr/ident?i=EDiagPostFlag">EDiagPostFlag
 </a>associated with the <i>CNcbiDiag</i>:
 <font size="-1">
+<blockquote>
 <pre>enum EDiagPostFlag {
-    eDPF_File         = 0x1,  // set by default #if _DEBUG;  else -- not set
-    eDPF_LongFilename = 0x2,  // set by default #if _DEBUG;  else -- not set
-    eDPF_Line         = 0x4,  // set by default #if _DEBUG;  else -- not set
-    eDPF_Prefix       = 0x8,  // set by default (always)
-    eDPF_Severity     = 0x10, // set by default (always)
-    eDPF_ErrCode      = 0x20, // set by default (always)
-    eDPF_ErrSubCode   = 0x40, // set by default (always)
-    eDPF_DateTime     = 0x80,
-    eDPF_OmitInfoSev  = 0x4000,// no severity indication if eDiag_Info is sev.
-
+    eDPF_File               = 0x1,   // set by default #if _DEBUG; else not set
+    eDPF_LongFilename       = 0x2,   // set by default #if _DEBUG; else not set
+    eDPF_Line               = 0x4,   // set by default #if _DEBUG; else not set
+    eDPF_Prefix             = 0x8,   // set by default (always)
+    eDPF_Severity           = 0x10,  // set by default (always)
+    eDPF_ErrCode            = 0x20,  // set by default (always)
+    eDPF_ErrSubCode         = 0x40,  // set by default (always)
+    eDPF_ErrCodeMessage     = 0x100, // set by default (always)
+    eDPF_ErrCodeExplanation = 0x200, // set by default (always)
+    eDPF_ErrCodeUseSeverity = 0x400, // set by default (always)
+    eDPF_DateTime           = 0x80,  //
+    eDPF_OmitInfoSev        = 0x4000,// no severity indication if eDiag_Info 
+                                     // is sev.
     // set all flags
-    eDPF_All          = 0x3FFF,
+    eDPF_All                = 0x3FFF,
     // set all flags for using with __FILE__ and __LINE__
-    eDPF_Trace        = 0x1F,
+    eDPF_Trace              = 0x1F,
     // print the posted message only;  without severity, location, prefix, etc.
-    eDPF_Log          = 0x0,
+    eDPF_Log                = 0x0,
     // ignore all other flags, use global flags
-    eDPF_Default      = 0x8000
+    eDPF_Default            = 0x8000
 };</pre>
+</blockquote>
+
 </font>
 
 The default message format displays only the severity level and the message
@@ -138,11 +150,12 @@ All <i>CNcbiDiag</i> objects are associated with a single globally defined
 object, which often writes the messages to an output stream. The default
 is to post messages to <i>cerr</i>, but the stream destination can be reset
 at any time using:
-<center>
-<p><i><a href="../lxr/ident?i=SetDiagStream">SetDiagStream</a>
+<blockquote>
+   <i><a href="../lxr/ident?i=SetDiagStream">SetDiagStream</a>
 (CNcbiOstream* os, bool quick_flush,
 <a href="../lxr/ident?i=FDiagCleanup">FDiagCleanup</a>
-cleanup, void* cleanup_data)</i></center>
+cleanup, void* cleanup_data)</i>
+</blockquote>
 
 <p>This function can be called numerous times, thus allowing different
 sections of the executable to write to different files. At any given time
@@ -189,20 +202,186 @@ designated output stream, with the action (continue or abort) determined
 by the severity level of the message.
 <p>
 
+
+
+<a NAME="errcodes"></a>
+<h3>Error codes and a message file</h3>
+
+The <i>CNcbiDiag</i> class is capable of posting messages with error codes using
+<i><a href="../lxr/ident?i=ErrCode">ErrCode</a> manipulator</i>.
+For example:
+<blockquote><pre>
+diag &lt;&lt; ErrCode(2,1);  // set error code 2, subcode 1
+</pre></blockquote>
+
+Error codes and subcodes are posted to an output stream only if applicable 
+<a href="#PostFlags">post flags</a> were set. 
+<br />
+In addition to error codes, <i>CNcbiDiag</i> can also post their text explanations.
+It uses <i>CDiagErrCodeInfo</i> class to find an error message, which
+corresponds to a given error code/subcode. Such descriptions could be
+specified directly in the program code or placed in a separate message file.
+It is even possible to use several such files simultaneously.
+<i>CDiagErrCodeInfo</i> can also read error descriptions from any input
+stream(s), not necessarily files.
+
+
+<h4>Preparing error message file.</h4>
+
+Error message file is a plain ASCII text. We would suggest using
+<var>.msg</var> extension, but it is not mandatory. For example,
+the message file for an application named <i>SomeApp</i> might be called
+<i>SomeApp.msg</i>.
+<br />
+The message file must contain a  line with the keyword <i>MODULE</i> in it,
+followed by the name of the module (in our example <i>SomeApp</i>).
+This line must be placed in the beginning of the file, before any other declarations.
+Lines with symbol <var>#</var> in the first position are treated as comments
+and ignored.
+
+<br />
+Here is an example of the message file:
+
+<blockquote><pre>
+# This is a message file for application "SomeApp"
+
+MODULE SomeApp
+ 
+# ------ Code 1 ------
+$$ NoMemory, 1, Fatal : Memory allocation error
+ 
+# ------ Code 2 ------
+$$ File, 2, Critical : File error
+ 
+$^   Open, 1 : Error open a specified file
+This often indicates that the file simply does not exist. 
+Or, it may exist but you do not have permission to 
+access the file in the requested mode.
+ 
+$^   Read, 2, Error : Error read file
+Not sure what would cause this...
+ 
+$^   Write, 3, Critical
+This may indicate that the filesystem is full.
+ 
+# ------ Code 3 ------
+$$ Math, 3
+$^   Param, 20
+$^   Range, 3
+</pre></blockquote>
+
+Lines beginning with <var>$$</var> define a top-level error code.
+Similarly, lines beginning with <var>$^</var> define
+subcodes of the top-level error code. 
+In the above example
+<var>Open</var> is a subcode of <var>File</var>
+top-level error, which means the error with code 2 and subcode 1.
+<br />
+Both types of lines have similar structure:
+<br />
+<blockquote><pre>
+$$/$^ &lt;mnemonic_name&gt;, &lt;code&gt; [, &lt;severity&gt; ] [: &lt;message&gt; ] \n
+[ &lt;explanation&gt; ]
+</pre></blockquote>
+where
+
+<ul>
+<li><b>mnemonic_name</b> (<i>required</i>)<br />
+Internal name of the error code/subcode. This is used as a part of an error name
+in a program code - so, it should also be a correct  C/C++ identifier.
+</li>
+
+<li><b>code</b> (<i>required</i>)<br />
+Integer identifier of the error.
+</li>
+
+<li><b>severity</b> (<i>optional</i>)<br />
+This may be supplied to specify the severity level of the
+error. It may be specified as a severity level string
+(Valid values are <i>Info, Warning, Error, Critical, Fatal, Trace</i>) or as
+an integer in the range from 0 (eDiag_Info) to 5 (eDiag_Trace).
+While the latter is acceptable, it is way more readable to use string
+values instead.
+<br />
+If the severity level was not specified or could not be recognized, it is ignored,
+or inherited from a higher level (the severity of a subcode becomes the same
+as the severity of a top-level error code, which contains this subcode).
+As long as diagnostic <i>eDPF_ErrCodeUseSeverity</i> flag is set,
+the severity level specified in the message file overrides the one
+specified in a program, which allows for runtime customization.
+<br />
+In the above example, <i>Critical</i> severity level will be used for
+all <var>File</var> errors, except <var>Read</var> subcode,
+which would have <i>Error</i> severity level.
+</li>
+
+<li><b>message</b> (<i>optional</i>)<br />
+Short description of the error. It must be a single-line message.
+As long as diagnostic <i>eDPF_ErrCodeMessage</i> flag is set,
+this message is posted as a part of the diagnostic output.
+</li>
+
+<li><b>explanation</b> (<i>optional</i>)<br />
+Following a top-level error code or a subcode definition string,
+it may be one or several lines of an explanation text.
+Its purpose is to provide additional information, which could be
+more detailed description of the error, or possible reasons of the problem.
+This text is posted in a diagnostic channel only if
+<i>eDPF_ErrCodeExplanaton</i> flag was set.
+</li>
+</ul>
+
+
+
+<h4>Using error codes in the program</h4>
+
+Taking a message file as an input,
+script <a href="../lxr/source/scripts/msg2hpp.sh">msg2hpp.sh</a> could generate
+a C/C++ header file with macro definitions of error codes.
+Based on our example, this script would generate the following:
+<blockquote><pre>
+#ifndef __MODULE_SomeApp__
+#define __MODULE_SomeApp__
+
+#define ERR_NoMemory       1,0
+#define ERR_Fil            2,0
+#define ERR_File_Open      2,1
+#define ERR_File_Read      2,2
+#define ERR_File_Write     2,3
+#define ERR_Math           3,0
+#define ERR_Math_Param     3,20
+#define ERR_Math_Range     3,3
+
+#endif
+</pre></blockquote>
+
+Having included this file in an application, it is possible to
+use mnemonic error names:
+<blockquote><pre>
+diag &lt;&lt; ErrCode(ERR_File_Open);
+</pre></blockquote>
+instead of their numeric representations:
+<blockquote><pre>
+diag &lt;&lt; ErrCode(2,1);
+</pre></blockquote>
+
+
+
 <a NAME="callback"></a>
 <h3>Custom handlers: CDiagHandler</h3>
 The user can install his own handler (of type
 <i><a href="../lxr/ident?i=CDiagHandler">CDiagHandler</a></i>,) using
 <i><a href="../lxr/ident?i=SetDiagHandler">SetDiagHandler()</a></i>.
 CDiagHandler is a simple abstract class:
-<pre>
-class CDiagHandler
+<blockquote>
+<pre>class CDiagHandler
 {
 public:
     virtual ~CDiagHandler(void) {}
     virtual void Post(const SDiagMessage&amp; mess) = 0;
 };
 </pre>
+</blockquote>
 where <i><a href="../lxr/ident?i=SDiagMessage">SDiagMessage</a></i>
 is a simple struct defined in <i>ncbidiag.hpp</i> whose data members' values
 are obtained from the <i>CNcbiDiag</i> object. The transfer of data values
@@ -217,15 +396,19 @@ This macro implicitly creates a temporary <i>CNcbiDiag</i> object and puts
 the passed "message" into it with a default severity of <i>eDiag_Error</i>.
 A <a href="#sevman">severity level manipulator</a> can be applied if desired,
 to modify the message's severity level. For example:
-<pre>long lll = 345;
+<blockquote><pre>long lll = 345;
 ERR_POST("My ERR_POST message, print long: " &lt;&lt; lll);</pre>
+</blockquote>
 would write to the diagnostic stream something like:
-<pre>"somefile.cpp", line 111: Error:  My ERR_POST message, print long: 345</pre>
+<blockquote><pre>"somefile.cpp", line 111: Error:  My ERR_POST message, print long: 345</pre>
+</blockquote>
 while:
-<pre>double ddd = 123.345;
+<blockquote><pre>double ddd = 123.345;
 ERR_POST(Warning &lt;&lt; "...print double: " &lt;&lt; ddd);</pre>
+</blockquote>
 would write to the diagnostic stream something like:
-<pre>"somefile.cpp", line 222: Warning:  ...print double: 123.345</pre>
+<blockquote><pre>"somefile.cpp", line 222: Warning:  ...print double: 123.345</pre>
+</blockquote>
 
 <a NAME="trace"></a>
 <h3>The _TRACE macro</h3>
@@ -240,11 +423,13 @@ variable or registry entry is defined, tracing is
 (EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on/off.
 <p> Just like <i>ERR_POST</i>, the <i>_TRACE</i> macro takes a message,
 and the message will be posted only if tracing has been enabled. For example:
-<pre>
-    SetDiagTrace(eDT_Disable);
-    _TRACE("Testing the _TRACE macro");
-    SetDiagTrace(eDT_Enable);
-    _TRACE("Testing the _TRACE macro AGAIN");</pre>
+<blockquote>
+<pre>SetDiagTrace(eDT_Disable);
+_TRACE("Testing the _TRACE macro");
+SetDiagTrace(eDT_Enable);
+_TRACE("Testing the _TRACE macro AGAIN");</pre>
+</blockquote>
+
 Here, only the second trace message will be posted, as tracing is disabled
 when the first <i>_TRACE()</i> macro call is executed. <a NAME="example"></a>
 <h4>Example usage of the <i>CNcbiDiag</i> class</h4>
@@ -252,9 +437,9 @@ when the first <i>_TRACE()</i> macro call is executed. <a NAME="example"></a>
 to post messages, and regulate the severity level by using
 <a href="#sevman">severity
 level manipulators</a>, like:</i>
-<pre><i>
-   ERR_POST(Info &lt;&lt; "A notice" &lt;&lt; "Fooo");
-   ERR_POST(Critical &lt;&lt; "Some critical error");</i></pre>
+<blockquote><pre><i>ERR_POST(Info &lt;&lt; "A notice" &lt;&lt; "Fooo");
+ERR_POST(Critical &lt;&lt; "Some critical error");</i>
+</pre></blockquote>
 Examples in <i><a href="diag_cpp.html">diag.cpp</a></i> demonstrate the
 features described above. <i>CTestApp::Run()</i> begins by testing the
 <i>ERR_POST</i> and <i>_TRACE</i> macros. Initially, tracing is enabled
@@ -277,6 +462,7 @@ will not be made visible. All of the messages which do not explicitly use
 the <i>Endm</i> manipulator are automatically terminated when <i>Run()</i>
 exits.
 <p>Output generated by <i>diag.cpp</i>:
+<blockquote>
 <pre>"/home/zimmerma/internal/c++/src/Demos/DiagStream/diag.cpp",
    line 23: Error: My ERR_POST message, print long: 345
 "/home/zimmerma/internal/c++/src/Demos/DiagStream/diag.cpp",
@@ -287,33 +473,18 @@ exits.
 "diag.cpp", line 42: Warning: This is a test message
 "diag.cpp", line 43: Error: This is a test message
 Installed Handler "diag.cpp", line 45: Critical: This is a test message</pre>
+</blockquote>
+
 <i><a href="registry.html">previous</a></i>
 <i><a href="../index.html">up</a></i>
 <i><a href="exceptions.html">next</a></i>
 
 <br>
+
 <!--#include virtual="../ssi/navlinks.shtml" -->
 
 <!-- Begin footer content -->
 
-<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
-<tr>
-<td>
-<address>
-<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
-</td>
-
-<td><!-- <td align=center><i>$Revision$</i></td> --></td>
-
-<td ALIGN=RIGHT><i>$Date$</i></td>
-</tr>
-
-<tr>
-<td>
-<address>
-<a href="mailto:cpp-core@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
-</td>
-</tr>
-</table>
-
 <!--#include virtual="../ssi/footer.shtml" -->
+
+
