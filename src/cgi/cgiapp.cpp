@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/05/27 16:42:42  vakatov
+* CCgiApplication::LoadConfig():  if the executable name is "*.exe" then
+* compose the default registry file name as "*.ini" rather than
+* "*.exe.ini";  use "Warning" rather than "Error" diagnostic severity
+* if cannot open the default registry file
+*
 * Revision 1.11  1999/05/17 00:26:18  vakatov
 * Use double-quote rather than angle-brackets for the private headers
 *
@@ -171,11 +177,11 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
 #endif /* HAVE_LIBFASTCGI */
         {
             _TRACE("CCgiApplication::Run: calling ProcessRequest");
-            auto_ptr<CCgiContext> ctx( CreateContext(0, 0, 0, m_Argc, m_Argv) );
+            auto_ptr<CCgiContext> ctx(CreateContext(0, 0, 0, m_Argc, m_Argv));
             int result = ProcessRequest(*ctx);
             _TRACE("CCgiApplication::Run: flushing");
             ctx->GetResponse().Flush();
-            _TRACE("CCgiApplication::Run: return");
+            _TRACE("CCgiApplication::Run: return " << result);
             return result;
         }
 }
@@ -208,10 +214,15 @@ void CCgiApplication::Exit(void)
 CNcbiRegistry* CCgiApplication::LoadConfig(void)
 {
     auto_ptr<CNcbiRegistry> config(new CNcbiRegistry);
-    string fileName = string(m_Argv[0]) + ".ini";
+    string fileName = m_Argv[0];
+    if (fileName.find_last_of(".exe") == fileName.length() - 1)
+        fileName.resize(fileName.length() - 4);
+    fileName += ".ini";
+
     CNcbiIfstream is(fileName.c_str());
     if ( !is ) {
-        ERR_POST("CCgiApplication::LoadConfig: cannot load registry file: "
+        ERR_POST(Warning <<
+                 "CCgiApplication::LoadConfig: cannot open registry file: "
                  << fileName);
     }
     else {
