@@ -1,6 +1,6 @@
 #################################
 # $Id$
-# Author:  Eugen Vasilchenko (vasilche@ncbi.nlm.nih.gov)
+# Author:  Eugene Vasilchenko (vasilche@ncbi.nlm.nih.gov)
 #################################
 
 # Build serialization test application "serialtest"
@@ -10,6 +10,6 @@ APP = serialtest
 OBJ = serialobject serialobject_Base testserial cppwebenv twebenv
 LIB = xser xutil xncbi
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE) -I$(top_srcdir)/src/serial/test/
+CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE) -I$(srcdir)
 
-LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(MATH_LIBS) $(ORIG_LIBS)
+LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)
