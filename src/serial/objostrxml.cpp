@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/09/22 20:55:23  gouriano
+* Corrected writing of AnyContent objects in case of no schema reference
+*
 * Revision 1.62  2003/09/16 14:48:36  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *
@@ -513,29 +516,31 @@ void CObjectOStreamXml::x_EndTypeNamespace(void)
 bool CObjectOStreamXml::x_BeginNamespace(const string& ns_name,
                                          const string& ns_prefix)
 {
-    _ASSERT(m_UseSchemaRef);
-    if (!ns_name.empty()) {
-        string nsPrefix(ns_prefix);
-        if (m_NsNameToPrefix.find(ns_name) == m_NsNameToPrefix.end()) {
-            for (char a='a';
-                m_NsPrefixToName.find(nsPrefix) != m_NsPrefixToName.end(); ++a) {
-                nsPrefix += a;
-            }
-            m_CurrNsPrefix = nsPrefix;
-            m_NsNameToPrefix[ns_name] = nsPrefix;
-            m_NsPrefixToName[nsPrefix] = ns_name;
-            m_NsPrefixes.push(nsPrefix);
-            return true;
-        } else {
-            m_CurrNsPrefix = m_NsNameToPrefix[ns_name];
+    if (!m_UseSchemaRef || ns_name.empty()) {
+        return false;
+    }
+    string nsPrefix(ns_prefix);
+    if (m_NsNameToPrefix.find(ns_name) == m_NsNameToPrefix.end()) {
+        for (char a='a';
+            m_NsPrefixToName.find(nsPrefix) != m_NsPrefixToName.end(); ++a) {
+            nsPrefix += a;
         }
+        m_CurrNsPrefix = nsPrefix;
+        m_NsNameToPrefix[ns_name] = nsPrefix;
+        m_NsPrefixToName[nsPrefix] = ns_name;
+        m_NsPrefixes.push(nsPrefix);
+        return true;
+    } else {
+        m_CurrNsPrefix = m_NsNameToPrefix[ns_name];
     }
     return false;
 }
 
 void CObjectOStreamXml::x_EndNamespace(const string& ns_name)
 {
-    _ASSERT(m_UseSchemaRef);
+    if (!m_UseSchemaRef) {
+        return;
+    }
     string nsPrefix = m_NsNameToPrefix[ns_name];
 // not sure about it - should we erase them or not?
 //    m_NsNameToPrefix.erase(ns_name);
@@ -761,7 +766,11 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
             vector<CSerialAttribInfoItem>::const_iterator it;
             for ( it = attlist.begin(); it != attlist.end(); ++it) {
                 m_Output.PutChar(' ');
-                m_Output.PutString(m_NsNameToPrefix[it->GetNamespaceName()]);
+                string ns(it->GetNamespaceName());
+                if (m_NsNameToPrefix.find(ns) == m_NsNameToPrefix.end()) {
+                    ThrowError(fInvalidData, "attribute namespace undefined: " + ns);
+                }
+                m_Output.PutString(m_NsNameToPrefix[ns]);
                 m_Output.PutChar(':');
                 m_Output.PutString(it->GetName());
                 m_Output.PutString("=\"");
@@ -776,32 +785,30 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
 // no verification on write!
     const string& value = obj.GetValue();
     bool wasOpen = true;
-    if (m_UseSchemaRef) {
-        for (string::const_iterator is=value.begin(); is != value.end(); ++is) {
-            if (*is == '<') {
-                if (*(is+1) == '/') {
-                    m_Output.DecIndentLevel();
-                    if (!wasOpen) {
-                        m_Output.PutEol();
-                    }
-                    wasOpen = false;
-                } else {
+    for (string::const_iterator is=value.begin(); is != value.end(); ++is) {
+        if (*is == '<') {
+            if (*(is+1) == '/') {
+                m_Output.DecIndentLevel();
+                if (!wasOpen) {
                     m_Output.PutEol();
-                    m_Output.IncIndentLevel();
-                    wasOpen = true;
                 }
+                wasOpen = false;
+            } else {
+                m_Output.PutEol();
+                m_Output.IncIndentLevel();
+                wasOpen = true;
             }
-            m_Output.PutChar(*is);
-            if (*is == '<') {
-                if (*(is+1) == '/') {
-                    m_Output.PutChar(*(++is));
-                }
+        }
+        m_Output.PutChar(*is);
+        if (*is == '<') {
+            if (*(is+1) == '/') {
+                m_Output.PutChar(*(++is));
+            }
+            if (m_UseSchemaRef) {
                 m_Output.PutString(m_CurrNsPrefix);
                 m_Output.PutChar(':');
             }
         }
-    } else {
-        m_Output.PutString(obj.GetValue());
     }
 
 // close tag
