@@ -66,19 +66,29 @@ int main(int argc, char **argv)
                           "b datetime,"
                           "c varchar(100),"
                           "d text,"
-                          "e double)"
+                          "e double,"
+                          "bl BLOB)"
                          ));
       lcmd->Send();
       cout << "Table created" << endl;
     }
 
+    int nBlobSize = 0xffff;
+    auto_ptr<char> buff( new char[nBlobSize]);
+    
     // inserting data
     {
+      char* p = buff.get();
+      for( int i = 0; i < nBlobSize; i++)
+        *(p++) = i;
+
       auto_ptr<CDB_LangCmd>
         lcmd(con->LangCmd(
                           "insert into tmp_t1 values"
-                          "(1, '2002-11-25 12:45:59', 'Hello, world', 'SOME TEXT', 3.1415)"
+                          "(1, '2002-11-25 12:45:59', 'Hello, world', 'SOME TEXT', 3.1415, '"
                          ));
+      lcmd->More( reinterpret_cast<CMySQL_LangCmd*>(lcmd.get())->EscapeString( buff.get(), nBlobSize));
+      lcmd->More( "')");
       lcmd->Send();
       cout << "Data inserted " << lcmd->RowCount() << " row(s) affected" << endl;
     }
@@ -97,19 +107,26 @@ int main(int argc, char **argv)
           CDB_VarChar c;
           CDB_VarChar d;
           CDB_Double e;
+          CDB_Image blob;
 
           r->GetItem(&a);
           r->GetItem(&b);
           r->GetItem(&c);
           r->GetItem(&d);
           r->GetItem(&e);
+          r->GetItem(&blob);
 
+	  auto_ptr<char> buff2( new char[blob.Size()]);
+	  blob.Read( buff2.get(), blob.Size());
+          int correct = memcmp( buff2.get(), buff.get(), nBlobSize);
+          
           cout
             << "a=" << a.Value() << endl
             << "b=" << b.Value().AsString() << endl
             << "c=" << c.Value() << endl
             << "d=" << d.Value() << endl
-            << "e=" << e.Value() << endl;
+            << "e=" << e.Value() << endl
+            << "blob size is " << nBlobSize << " blob data is " << (!correct ? "correct" : "not correct") << endl;
         }
       }
     }
@@ -153,6 +170,9 @@ int main(int argc, char **argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/24 19:45:16  vysokolo
+ * Added blob support
+ *
  * Revision 1.6  2003/05/29 21:25:47  butanaev
  * Added function to return last insert id, fixed RowCount, Send,
  * added call to RowCount in sample app.
