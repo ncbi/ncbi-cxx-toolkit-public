@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objtools/format/items/item_base.hpp>
+#include <objtools/format/items/comment_item.hpp>
 #include <objtools/format/formatter.hpp>
 
 
@@ -83,7 +84,9 @@ private:
 class CStartSectionItem : public CCtrlItem
 {
 public:
-    CStartSectionItem(CFFContext& ctx) : CCtrlItem(ctx) {}
+    CStartSectionItem(CFFContext& ctx) : CCtrlItem(ctx) {
+        CCommentItem::ResetFirst();
+    }
     void Format(IFormatter& f, IFlatTextOStream& text_os) const {
         f.StartSection(text_os);
     }
@@ -130,6 +133,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/03/05 18:48:59  shomrat
+* reset comment count at start of a new section
+*
 * Revision 1.1  2004/01/14 15:57:49  shomrat
 * Initial Revision
 *
