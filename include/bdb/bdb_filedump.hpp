@@ -106,6 +106,9 @@ public:
     
     /// Dump BDB cursor to stream
     void Dump(CNcbiOstream& out, CBDB_FileCursor& cur);
+    
+    /// Return number of records processed by Dump
+    unsigned GetRecordsDumped() const { return m_RecordsDumped; }
 protected:
         
     void PrintHeader(CNcbiOstream& out,
@@ -126,6 +129,7 @@ protected:
     EPrintFieldNames     m_PrintNames;
     EValueFormatting     m_ValueFormatting;
     TBlobFormat          m_BlobFormat;
+    unsigned int         m_RecordsDumped;
 }; 
 
 /* @} */
@@ -162,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/06/23 19:38:04  kuznets
+ * Added counter for dumped records
+ *
  * Revision 1.5  2004/06/22 18:28:22  kuznets
  * Added BLOB dumping flags
  *

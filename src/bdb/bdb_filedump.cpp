@@ -45,8 +45,8 @@ CBDB_FileDumper::CBDB_FileDumper(const string& col_separator)
 : m_ColumnSeparator(col_separator),
   m_PrintNames(ePrintNames),
   m_ValueFormatting(eNoQuotes),
-  m_BlobFormat(eBlobSummary | eBlobAsHex)
-  
+  m_BlobFormat(eBlobSummary | eBlobAsHex),
+  m_RecordsDumped(0)
 {
 }
 
@@ -54,7 +54,8 @@ CBDB_FileDumper::CBDB_FileDumper(const CBDB_FileDumper& fdump)
 : m_ColumnSeparator(fdump.m_ColumnSeparator),
   m_PrintNames(fdump.m_PrintNames),
   m_ValueFormatting(fdump.m_ValueFormatting),
-  m_BlobFormat(fdump.m_BlobFormat)
+  m_BlobFormat(fdump.m_BlobFormat),
+  m_RecordsDumped(0)
 {
 }
 
@@ -64,6 +65,8 @@ CBDB_FileDumper& CBDB_FileDumper::operator=(const CBDB_FileDumper& fdump)
     m_PrintNames = fdump.m_PrintNames;
     m_ValueFormatting = fdump.m_ValueFormatting;
     m_BlobFormat = fdump.m_BlobFormat;
+    
+    m_RecordsDumped = 0;
     
     return *this;
 }
@@ -117,9 +120,11 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
     if (m_PrintNames == ePrintNames) {
         PrintHeader(out, key, data);
     }
+    
+    m_RecordsDumped = 0;
 
     string blob_sz;
-    while (cur.Fetch() == eBDB_Ok) {
+    for ( ;cur.Fetch() == eBDB_Ok; ++m_RecordsDumped) {
         if (key) {
             x_DumpFields(out, *key, key_quote_flags, true/*key*/);
         }
@@ -279,6 +284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/06/23 19:37:47  kuznets
+ * Added counter for dumped records
+ *
  * Revision 1.6  2004/06/23 14:10:27  kuznets
  * Improved BLOB dumping
  *
