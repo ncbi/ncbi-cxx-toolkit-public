@@ -1,5 +1,5 @@
-#ifndef NCBI_UTILITY__HPP
-#define NCBI_UTILITY__HPP
+#ifndef CORELIB___NCBI_UTILITY__HPP
+#define CORELIB___NCBI_UTILITY__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -29,10 +29,12 @@
  * Author: 
  *   Eugene Vasilchenko
  *
- * File Description:
- *   Some useful classes and methods.
  *
  */
+
+/// @file ncbiutil.hpp
+/// Useful/utility classes and methods.
+
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
@@ -52,7 +54,7 @@ BEGIN_NCBI_SCOPE
 //-------------------------------------------
 // Utilities
 
-// check for equality object pointed by pointer
+/// Check for equality of objects pointed by pointer.
 template <class T>
 struct p_equal_to : public binary_function
 <const T*, const T*, bool>
@@ -69,7 +71,7 @@ struct p_equal_to : public binary_function
     { return *x == *y; }
 };
 
-// check for equality object pointed by pointer
+/// Check for equality of objects pointed by pointer.
 template <class Pair>
 struct pair_equal_to : public binary_function
 <Pair, typename Pair::second_type, bool>
@@ -79,7 +81,7 @@ struct pair_equal_to : public binary_function
     { return x.second == y; }
 };
 
-// checker for not null value (after C malloc, strdup etc.)
+/// Check for not null value (after C malloc, strdup etc.).
 template<class X>
 inline X* NotNull(X* object)
 {
@@ -89,7 +91,7 @@ inline X* NotNull(X* object)
     return object;
 }
 
-// get map element (pointer) or NULL if absent
+/// Get map element (pointer) or NULL if absent.
 template<class Key, class Element>
 inline Element GetMapElement(const map<Key, Element>& m, const Key& key,
                              const Element& def = 0)
@@ -100,6 +102,7 @@ inline Element GetMapElement(const map<Key, Element>& m, const Key& key,
     return def;
 }
 
+/// Set map element -- if data is null, erase the existing key.
 template<class Key, class Element>
 inline void SetMapElement(map<Key, Element*>& m, const Key& key, Element* data)
 {
@@ -109,6 +112,7 @@ inline void SetMapElement(map<Key, Element*>& m, const Key& key, Element* data)
         m.erase(key);
 }
 
+/// Insert map element.
 template<class Key, class Element>
 inline bool InsertMapElement(map<Key, Element*>& m,
                              const Key& key, Element* data)
@@ -116,7 +120,7 @@ inline bool InsertMapElement(map<Key, Element*>& m,
     return m.insert(map<Key, Element*>::value_type(key, data)).second;
 }
 
-// get map element or "" if absent
+/// Get string map element or "" if absent.
 template<class Key>
 inline string GetMapString(const map<Key, string>& m, const Key& key)
 {
@@ -126,6 +130,7 @@ inline string GetMapString(const map<Key, string>& m, const Key& key)
     return string();
 }
 
+/// Get string map element or "" if absent.
 template<class Key>
 inline void SetMapString(map<Key, string>& m,
                          const Key& key, const string& data)
@@ -136,8 +141,8 @@ inline void SetMapString(map<Key, string>& m,
         m.erase(key);
 }
 
-// delete all elements from a container of pointers
-// (list, vector, set, multiset);  clear the container afterwards
+/// Delete all elements from a container of pointers (list, vector, set,
+/// multiset); clear the container afterwards.
 template<class Cnt>
 inline void DeleteElements( Cnt& cnt )
 {
@@ -147,8 +152,8 @@ inline void DeleteElements( Cnt& cnt )
     cnt.clear();
 }
 
-// delete all elements from map containing pointers;
-// clear container afterwards
+/// Delete all elements from map containing pointers; clear container
+/// afterwards.
 template<class Key, class Element>
 inline void DeleteElements(map<Key, Element*>& m)
 {
@@ -159,8 +164,8 @@ inline void DeleteElements(map<Key, Element*>& m)
     m.clear();
 }
 
-// delete all elements from multimap containing pointers;
-// clear container afterwards
+/// Delete all elements from multimap containing pointers; clear container
+/// afterwards.
 template<class Key, class Element>
 inline void DeleteElements(multimap<Key, Element*>& m)
 {
@@ -171,6 +176,8 @@ inline void DeleteElements(multimap<Key, Element*>& m)
     m.clear();
 }
 
+/// Retrieve the result from the result cache - if cache is empty,
+/// insert into cache from the supplied source.
 template<class Result, class Source, class ToKey>
 inline
 Result&
@@ -188,6 +195,7 @@ AutoMap(auto_ptr<Result>& cache, const Source& source, const ToKey& toKey)
     return *ret;
 }
 
+/// Get name attribute for Value object.
 template<class Value>
 struct CNameGetter
 {
@@ -201,28 +209,42 @@ struct CNameGetter
 // in part for consistency with the C Toolkit, lower scores are
 // better, and earlier elements win ties.
 
+
+
+/// Tracks the best score (lowest value).
+///
+/// Values are specified by template parameter T, and scoring function by
+/// template parameter F.
 template <typename T, typename F>
 class CBestChoiceTracker : public unary_function<T, void>
 {
 public:
+    /// Constructor.
     CBestChoiceTracker(F func) : m_Func(func), m_Value(T()), m_Score(kMax_Int)
-        { }
+    { }
+
+    /// Define application operator.
     void operator() (const T& x)
-        {
-            int score = m_Func(x);
-            if (score < m_Score) {
-                m_Value = x;
-                m_Score = score;
-            }
+    {
+        int score = m_Func(x);
+        if (score < m_Score) {
+            m_Value = x;
+            m_Score = score;
         }
+    }
+
+    /// Get best choice with lowest score.
     const T& GetBestChoice() { return m_Value; }
 
 private:
-    F   m_Func;
-    T   m_Value;
-    int m_Score;
+    F   m_Func;         ///< Scoring function
+    T   m_Value;        ///< Current best value 
+    int m_Score;        ///< Current best score
 };
 
+/// Find the best choice (lowest score) for values in a container.
+///
+/// Container and scoring functions are specified as template parameters.
 template <typename C, typename F>
 inline
 typename C::value_type
@@ -246,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/10/20 01:49:10  siyan
+ * Documentation changes.
+ *
  * Revision 1.31  2003/04/01 19:19:23  siyan
  * Added doxygen support
  *
