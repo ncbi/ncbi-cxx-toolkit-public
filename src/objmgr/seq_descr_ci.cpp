@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:25:57  gouriano
 * restructured objmgr
 *
@@ -59,7 +62,7 @@ CDesc_CI::CDesc_CI(void)
 }
 
 
-CDesc_CI::CDesc_CI(const CBioseqHandle& handle)
+CDesc_CI::CDesc_CI(const CBioseq_Handle& handle)
     : m_Handle(handle)
 {
     const CBioseq* seq = &(handle.GetBioseq());

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.1  2002/01/11 19:06:20  gouriano
 * restructured objmgr
 *
@@ -52,9 +55,9 @@ BEGIN_SCOPE(objects)
 class CHandleRangeMap
 {
 public:
-    typedef map<CBioseqHandle, CHandleRange> TLocMap;
+    typedef map<CBioseq_Handle, CHandleRange> TLocMap;
 
-    CHandleRangeMap(void);
+    CHandleRangeMap(CSeq_id_Mapper& id_mapper);
     CHandleRangeMap(const CHandleRangeMap& rmap);
     ~CHandleRangeMap(void);
 
@@ -63,7 +66,7 @@ public:
     // Add all ranges for each seq-id from a seq-loc
     void AddLocation(const CSeq_loc& loc);
     // Add ranges from "range" substituting their handle with "h"
-    void AddRanges(const CBioseqHandle& h, const CHandleRange& range);
+    void AddRanges(const CBioseq_Handle& h, const CHandleRange& range);
     // Get the ranges map
     const TLocMap& GetMap(void) const { return m_LocMap; }
 
@@ -74,6 +77,7 @@ private:
     // Split the location and add range lists to the locmap
     void x_ProcessLocation(const CSeq_loc& loc);
 
+    CRef<CSeq_id_Mapper> m_IdMapper;
     TLocMap      m_LocMap;
 };
 

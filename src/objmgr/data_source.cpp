@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.3  2002/01/18 15:56:23  gouriano
 * changed TSeqMaps definition
 *
@@ -76,9 +79,9 @@
 #include <serial/iterator.hpp>
 
 #include <objects/objmgr1/scope.hpp>
+#include "seq_id_mapper.hpp"
 #include "data_source.hpp"
 #include "annot_object.hpp"
-#include "seq_id_mapper.hpp"
 
 #include <corelib/ncbithr.hpp>
 
@@ -137,8 +140,8 @@ CDataSource::SBioseqInfo::operator= (const SBioseqInfo& info)
 
 static CMutex s_DataSource_Mutex;
 
-CDataSource::CDataSource(CDataLoader& loader)
-    : m_Loader(&loader), m_pTopEntry(0)
+CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
+    : m_Loader(&loader), m_pTopEntry(0), m_ObjMgr(&objmgr)
 {
     NcbiCout << "DataSource " << NStr::PtrToString(this)
         << " created (loader)" << NcbiEndl;
@@ -146,8 +149,8 @@ CDataSource::CDataSource(CDataLoader& loader)
 }
 
 
-CDataSource::CDataSource(CSeq_entry& entry)
-    : m_Loader(0), m_pTopEntry(&entry)
+CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
+    : m_Loader(0), m_pTopEntry(&entry), m_ObjMgr(&objmgr)
 {
     NcbiCout << "DataSource " << NStr::PtrToString(this)
         << " created (entry)" << NcbiEndl;
@@ -175,26 +178,26 @@ CSeq_entry* CDataSource::GetTopEntry(void)
 }
 
 
-CBioseqHandle CDataSource::GetBioseqHandle(const CSeq_id& id)
+CBioseq_Handle CDataSource::GetBioseqHandle(const CSeq_id& id)
 {
     if ( m_Loader ) {
         // Send request to the loader
         CSeq_loc loc;
         SerialAssign<CSeq_id>(loc.SetWhole(), id);
         if ( !m_Loader->GetRecords(loc, CDataLoader::eBioseqCore) )
-            return CBioseqHandle();
+            return CBioseq_Handle();
     }
-    CBioseqHandle h(CSeqIdMapper::SeqIdToHandle(id));
+    CBioseq_Handle h(GetIdMapper().GetHandle(id));
     CMutexGuard guard(s_DataSource_Mutex);
     TBioseqMap::iterator found = m_BioseqMap.find(h.m_Value);
     if ( found == m_BioseqMap.end() )
-        return CBioseqHandle(0);
+        return CBioseq_Handle();
     h.x_ResolveTo(*this, *found->second->m_Entry);
     return h;
 }
 
 
-const CBioseq& CDataSource::GetBioseq(const CBioseqHandle& handle)
+const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
 {
     // Bioseq core and TSE must be loaded if there exists a handle
     //### Loader may be called to load descriptions (not included in core)
@@ -214,7 +217,7 @@ const CBioseq& CDataSource::GetBioseq(const CBioseqHandle& handle)
 }
 
 
-const CSeq_entry& CDataSource::GetTSE(const CBioseqHandle& handle)
+const CSeq_entry& CDataSource::GetTSE(const CBioseq_Handle& handle)
 {
     // Bioseq and TSE must be loaded if there exists a handle
     CMutexGuard guard(s_DataSource_Mutex);
@@ -227,8 +230,8 @@ const CSeq_entry& CDataSource::GetTSE(const CBioseqHandle& handle)
 }
 
 
-CBioseqHandle::TBioseqCore CDataSource::GetBioseqCore
-    (const CBioseqHandle& handle)
+CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
+    (const CBioseq_Handle& handle)
 {
     CMutexGuard guard(s_DataSource_Mutex);
     const CBioseq* seq = &GetBioseq(handle);
@@ -266,7 +269,7 @@ CBioseqHandle::TBioseqCore CDataSource::GetBioseqCore
         }
         else {
             // Do not copy seq-data
-            CDelta_ext::Tdata& dlist = ext->SetDelta();
+            //### CDelta_ext::Tdata& dlist = ext->SetDelta();
             iterate (CDelta_ext::Tdata, it, inst.GetExt().GetDelta().Get()) {
                 CDelta_seq* dseq = new CDelta_seq;
                 if ( (*it)->IsLiteral() ) {
@@ -294,14 +297,14 @@ CBioseqHandle::TBioseqCore CDataSource::GetBioseqCore
 }
 
 
-const CSeqMap& CDataSource::GetSeqMap(const CBioseqHandle& handle)
+const CSeqMap& CDataSource::GetSeqMap(const CBioseq_Handle& handle)
 {
     CMutexGuard guard(s_DataSource_Mutex);
     return x_GetSeqMap(handle);
 }
 
 
-CSeqMap& CDataSource::x_GetSeqMap(const CBioseqHandle& handle)
+CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
 {
 /*
     //### Call loader first
@@ -331,7 +334,7 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseqHandle& handle)
 }
 
 
-bool CDataSource::GetSequence(const CBioseqHandle& handle,
+bool CDataSource::GetSequence(const CBioseq_Handle& handle,
                               TSeqPosition point,
                               SSeqData* seq_piece,
                               CScope& scope)
@@ -566,7 +569,7 @@ void CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse)
         SBioseqInfo* info = new SBioseqInfo(entry);
         iterate ( CBioseq::TId, id, seq->GetId() ) {
             // Find the bioseq index
-            CBioseqHandle::THandle key = CSeqIdMapper::SeqIdToHandle(**id);
+            CSeq_id_Handle key = GetIdMapper().GetHandle(**id);
             TBioseqMap::iterator found = m_BioseqMap.find(key);
             if ( found != m_BioseqMap.end() ) {
                 CBioseq* seq2 = &found->second->m_Entry->GetSeq();
@@ -730,7 +733,7 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
             CSeqMap::TSeqSegment seg(pos,
                 CSeqMap::CSegmentInfo(CSeqMap::eSeqRef, false)); //???
             seg.second.m_RefPos = 0;
-            seg.second.m_RefSeq = CSeqIdMapper::SeqIdToHandle(loc.GetWhole());
+            seg.second.m_RefSeq = GetIdMapper().GetHandle(loc.GetWhole());
             seqmap.Add(seg);
             return;
         }
@@ -740,8 +743,8 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
                 loc.GetInt().GetStrand() == eNa_strand_minus; //???
             CSeqMap::TSeqSegment seg(pos,
                 CSeqMap::CSegmentInfo(CSeqMap::eSeqRef, minus_strand)); //???
-            seg.second.m_RefSeq = CSeqIdMapper::SeqIdToHandle
-                (loc.GetInt().GetId());
+            seg.second.m_RefSeq =
+                GetIdMapper().GetHandle(loc.GetInt().GetId());
             seg.second.m_RefPos = loc.GetInt().GetFrom();
             seg.second.m_RefLen = loc.GetInt().GetLength();
             seqmap.Add(seg);
@@ -754,8 +757,8 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
                 loc.GetPnt().GetStrand() == eNa_strand_minus; //???
             CSeqMap::TSeqSegment seg(pos,
                 CSeqMap::CSegmentInfo(CSeqMap::eSeqRef, minus_strand)); //???
-            seg.second.m_RefSeq = CSeqIdMapper::SeqIdToHandle
-                (loc.GetPnt().GetId());
+            seg.second.m_RefSeq =
+                GetIdMapper().GetHandle(loc.GetPnt().GetId());
             seg.second.m_RefPos = loc.GetPnt().GetPoint();
             seg.second.m_RefLen = 1;
             seqmap.Add(seg);
@@ -769,8 +772,8 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
                     (*ii)->GetStrand() == eNa_strand_minus; //???
                 CSeqMap::TSeqSegment seg(pos,
                     CSeqMap::CSegmentInfo(CSeqMap::eSeqRef, minus_strand)); //???
-                seg.second.m_RefSeq = CSeqIdMapper::SeqIdToHandle
-                    ((*ii)->GetId());
+                seg.second.m_RefSeq =
+                    GetIdMapper().GetHandle((*ii)->GetId());
                 seg.second.m_RefPos = (*ii)->GetFrom();
                 seg.second.m_RefLen = (*ii)->GetLength();
                 seqmap.Add(seg);
@@ -786,8 +789,8 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
                 loc.GetPacked_pnt().GetPoints() ) {
                 CSeqMap::TSeqSegment seg(pos,
                     CSeqMap::CSegmentInfo(CSeqMap::eSeqRef, minus_strand)); //???
-                seg.second.m_RefSeq = CSeqIdMapper::SeqIdToHandle
-                    (loc.GetPacked_pnt().GetId());
+                seg.second.m_RefSeq =
+                    GetIdMapper().GetHandle(loc.GetPacked_pnt().GetId());
                 seg.second.m_RefPos = *pi;
                 seg.second.m_RefLen = 1;
                 seqmap.Add(seg);
@@ -882,7 +885,7 @@ void CDataSource::x_MapGraph(const CSeq_graph& graph)
 
 
 CDataSource::TRangeMap*
-CDataSource::x_GetRangeMap(const CBioseqHandle& handle, bool create)
+CDataSource::x_GetRangeMap(const CBioseq_Handle& handle, bool create)
 {
     TAnnotMap::iterator rm = m_AnnotMap.find(handle.m_Value);
     if ( rm == m_AnnotMap.end() ) {
@@ -898,7 +901,7 @@ CDataSource::x_GetRangeMap(const CBioseqHandle& handle, bool create)
 void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc)
 {
     CMutexGuard guard(s_DataSource_Mutex);
-    CHandleRangeMap tmp;
+    CHandleRangeMap tmp(GetIdMapper());
     iterate ( CHandleRangeMap::TLocMap, it, loc.GetMap() ) {
         TBioseqMap::const_iterator info = m_BioseqMap.find(it->first.m_Value);
         if ( info == m_BioseqMap.end() ) {
@@ -937,7 +940,7 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
         CBioseq* seq = &entry.GetSeq();
         iterate ( CBioseq::TId, id, seq->GetId() ) {
             // Find the bioseq index
-            CBioseqHandle::THandle key = CSeqIdMapper::SeqIdToHandle(**id);
+            CSeq_id_Handle key = GetIdMapper().GetHandle(**id);
             TBioseqMap::iterator found = m_BioseqMap.find(key);
             _ASSERT( found != m_BioseqMap.end() );
             m_BioseqMap.erase(found);

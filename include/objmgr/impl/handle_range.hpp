@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:25:58  gouriano
 * restructured objmgr
 *
@@ -64,7 +67,7 @@ public:
     typedef pair<TRange, ENa_strand> TRangeWithStrand;
     typedef list<TRangeWithStrand> TRanges;
 
-    CHandleRange(const CBioseqHandle& handle);
+    CHandleRange(const CBioseq_Handle& handle);
     CHandleRange(const CHandleRange& hrange);
     ~CHandleRange(void);
 
@@ -83,8 +86,8 @@ private:
     static void x_CombineRanges(TRange& dest, const TRange& src);
     static bool x_IntersectingStrands(ENa_strand str1, ENa_strand str2);
 
-    CBioseqHandle m_Handle;
-    TRanges       m_Ranges;
+    CBioseq_Handle m_Handle;
+    TRanges        m_Ranges;
 
     friend class CDataSource;
     friend class CHandleRangeMap;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:29  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:26:36  gouriano
 * restructured objmgr
 *
@@ -80,13 +83,13 @@ private:
     friend class CScope;
 
     // Created by CScope only
-    CSeqVector(const CBioseqHandle& handle, bool plus_strand, CScope& scope);
+    CSeqVector(const CBioseq_Handle& handle, bool plus_strand, CScope& scope);
 
     // Get residue assuming the data in m_CurrentData are valid
     TResidue x_GetResidue(int pos);
 
     CScope*            m_Scope;
-    CBioseqHandle      m_Handle;
+    CBioseq_Handle     m_Handle;
     bool               m_PlusStrand;
     SSeqData           m_CurData;
     CConstRef<CSeqMap> m_SeqMap;

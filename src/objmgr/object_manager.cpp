@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.3  2002/01/18 15:53:29  gouriano
 * implemented RegisterTopLevelSeqEntry
 *
@@ -52,6 +55,7 @@
 #include <corelib/ncbithr.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/objmgr1/object_manager.hpp>
+#include "seq_id_mapper.hpp"
 #include "data_source.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -60,6 +64,7 @@ BEGIN_SCOPE(objects)
 static CMutex s_OM_Mutex;
 
 CObjectManager::CObjectManager(void)
+    : m_IdMapper(new CSeq_id_Mapper)
 {
     NcbiCout << "ObjectManager " << NStr::PtrToString(this)
         << " created" << NcbiEndl;
@@ -123,7 +128,7 @@ void CObjectManager::RegisterDataLoader( CDataLoader& loader,
     CMutexGuard guard(s_OM_Mutex);
     m_mapNameToLoader[ loader_name] = &loader;
     // create data source
-    CDataSource* source = new CDataSource(loader);
+    CDataSource* source = new CDataSource(loader, *this);
     m_mapLoaderToSource[&loader] = source;
     source->AddReference();
     if (is_default == eDefault) {
@@ -218,7 +223,7 @@ void CObjectManager::RegisterTopLevelSeqEntry(CSeq_entry& top_entry)
 {
     CMutexGuard guard(s_OM_Mutex);
     if (m_mapEntryToSource.find(&top_entry) == m_mapEntryToSource.end()) {
-        m_mapEntryToSource[ &top_entry] = new CDataSource(top_entry);
+        m_mapEntryToSource[ &top_entry] = new CDataSource(top_entry, *this);
     }
 }
 
@@ -273,7 +278,7 @@ void CObjectManager::AddDataLoader(
         // register
         m_mapNameToLoader[loader_name] = &loader;
         // create data source
-        m_mapLoaderToSource[&loader] = new CDataSource(loader);
+        m_mapLoaderToSource[&loader] = new CDataSource(loader, *this);
     }
     x_AddDataSource(sources, m_mapLoaderToSource[&loader]);
 }
@@ -333,7 +338,8 @@ void CObjectManager::AddTopLevelSeqEntry(
 {
     CMutexGuard guard(s_OM_Mutex);
     if (m_mapEntryToSource.find(&top_entry) == m_mapEntryToSource.end()) {
-        m_mapEntryToSource[ &top_entry] = new CDataSource(top_entry);
+        m_mapEntryToSource[ &top_entry] =
+            new CDataSource(top_entry, *this);
     }
     x_AddDataSource(sources, m_mapEntryToSource[ &top_entry]);
 }

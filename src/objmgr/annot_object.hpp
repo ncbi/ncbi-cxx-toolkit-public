@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:25:57  gouriano
 * restructured objmgr
 *
@@ -52,6 +55,7 @@
 #include <objects/seqres/Seq_graph.hpp>
 
 #include <objects/objmgr1/annot_ci.hpp>
+#include "data_source.hpp"
 #include "handle_range_map.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -103,7 +107,7 @@ CAnnotObject::CAnnotObject(CDataSource& data_source, const CSeq_feat& feat)
     : m_DataSource(&data_source),
       m_Choice(CSeq_annot::C_Data::e_Ftable),
       m_Object(dynamic_cast<const CObject*>(&feat)),
-      m_RangeMap()
+      m_RangeMap(data_source.GetIdMapper())
 {
     m_RangeMap.AddLocation(feat.GetLocation());
     if ( feat.IsSetProduct() )
@@ -116,7 +120,7 @@ CAnnotObject::CAnnotObject(CDataSource& data_source, const CSeq_align& align)
     : m_DataSource(&data_source),
       m_Choice(CSeq_annot::C_Data::e_Align),
       m_Object(dynamic_cast<const CObject*>(&align)),
-      m_RangeMap()
+      m_RangeMap(data_source.GetIdMapper())
 {
     x_ProcessAlign(align);
     return;
@@ -127,7 +131,7 @@ CAnnotObject::CAnnotObject(CDataSource& data_source, const CSeq_graph& graph)
     : m_DataSource(&data_source),
       m_Choice(CSeq_annot::C_Data::e_Graph),
       m_Object(dynamic_cast<const CObject*>(&graph)),
-      m_RangeMap()
+      m_RangeMap(data_source.GetIdMapper())
 {
     m_RangeMap.AddLocation(graph.GetLoc());
     return;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/23 21:59:34  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.3  2002/01/16 18:56:30  grichenk
 * Removed CRef<> argument from choice variant setter, updated sources to
 * use references instead of CRef<>s
@@ -807,14 +810,14 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
                                 int seq_feat_cnt, int seq_featrg_cnt,
                                 int seq_align_cnt, int seq_alignrg_cnt)
 {
-    CBioseqHandle handle = scope.GetBioseqHandle(id);
+    CBioseq_Handle handle = scope.GetBioseqHandle(id);
     if ( !handle ) {
         LOG_POST("No seq-id found");
         return;
     }
 
     handle.GetTopLevelSeqEntry();
-    CBioseqHandle::TBioseqCore seq_core = handle.GetBioseqCore();
+    CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
     {{
         CSeqMap seq_map = handle.GetSeqMap();
         // Iterate seq-map except the last element
@@ -842,7 +845,7 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     }}
 
     {{
-        CSeqVector seq_vect = scope.GetSequence(handle);
+        CSeqVector seq_vect = scope.GetSeqVector(handle);
         string sout = "";
         for (size_t i = 0; i < seq_vect.size(); i++) {
             sout += seq_vect[i];
@@ -851,7 +854,7 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     }}
     if (seq_core->GetInst().IsSetStrand() &&
         seq_core->GetInst().GetStrand() == CSeq_inst::eStrand_ds) {
-        CSeqVector seq_vect_rev = scope.GetSequence(handle, false);
+        CSeqVector seq_vect_rev = scope.GetSeqVector(handle, false);
         string sout_rev = "";
         for (size_t i = seq_vect_rev.size(); i> 0; i--) {
             sout_rev += seq_vect_rev[i-1];

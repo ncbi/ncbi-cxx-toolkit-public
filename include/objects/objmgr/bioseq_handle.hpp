@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:29  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:26:36  gouriano
 * restructured objmgr
 *
@@ -47,6 +50,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/objmgr1/seq_id_handle.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -56,33 +60,32 @@ class CDataSource;
 class CSeqMap;
 
 // Bioseq handle -- must be a copy-safe const type.
-class CBioseqHandle
+class CBioseq_Handle
 {
 public:
-    typedef int THandle;
+    // Destructor
+    virtual ~CBioseq_Handle(void);
+
     // Bioseq core -- using partially populated CBioseq
     typedef CConstRef<CBioseq> TBioseqCore;
 
 
-    CBioseqHandle(void)
-        : m_Value(0),
-          m_DataSource(0),
+    CBioseq_Handle(void)
+        : m_DataSource(0),
           m_Entry(0) {}
-    CBioseqHandle(const CBioseqHandle& h);
-    CBioseqHandle& operator= (const CBioseqHandle& h);
-    ~CBioseqHandle(void) {}
+    CBioseq_Handle(const CBioseq_Handle& h);
+    CBioseq_Handle& operator= (const CBioseq_Handle& h);
 
     // Comparison
-    bool operator== (const CBioseqHandle& h) const;
-    bool operator!= (const CBioseqHandle& h) const;
-    bool operator<  (const CBioseqHandle& h) const;
+    bool operator== (const CBioseq_Handle& h) const;
+    bool operator!= (const CBioseq_Handle& h) const;
+    bool operator<  (const CBioseq_Handle& h) const;
 
     // Check
     operator bool(void)  const { return ( m_DataSource  &&  m_Value); }
     bool operator!(void) const { return (!m_DataSource  || !m_Value); }
-  
+
     const CSeq_id* GetSeqId(void)  const;
-    const THandle  GetHandle(void) const;
 
     // Get the complete bioseq (as loaded by now)
     // Declared "virtual" to avoid circular dependencies with seqloc
@@ -100,14 +103,16 @@ public:
     virtual const CSeqMap& GetSeqMap(void) const;
 
 private:
-    CBioseqHandle(THandle value);
+    CBioseq_Handle(CSeq_id_Handle value);
 
+    // Get the internal seq-id handle
+    const CSeq_id_Handle  GetHandle(void) const;
     // Get data source
     CDataSource& x_GetDataSource(void) const;
     // Set the handle seq-entry and datasource
     void x_ResolveTo(CDataSource& datasource, CSeq_entry& entry) const;
 
-    THandle              m_Value;       // Seq-id equivalent
+    CSeq_id_Handle       m_Value;       // Seq-id equivalent
     mutable CDataSource* m_DataSource;  // Data source for resolved handles
     mutable CSeq_entry*  m_Entry;       // Seq-entry, containing the bioseq
 
@@ -120,14 +125,14 @@ private:
 
 
 inline
-void CBioseqHandle::x_ResolveTo(CDataSource& datasource, CSeq_entry& entry) const
+void CBioseq_Handle::x_ResolveTo(CDataSource& datasource, CSeq_entry& entry) const
 {
     m_DataSource = &datasource;
     m_Entry = &entry;
 }
 
 inline
-CBioseqHandle::CBioseqHandle(THandle value)
+CBioseq_Handle::CBioseq_Handle(CSeq_id_Handle value)
     : m_Value(value),
       m_DataSource(0),
       m_Entry(0)
@@ -135,13 +140,13 @@ CBioseqHandle::CBioseqHandle(THandle value)
 }
 
 inline
-const CBioseqHandle::THandle CBioseqHandle::GetHandle(void) const
+const CSeq_id_Handle CBioseq_Handle::GetHandle(void) const
 {
     return m_Value;
 }
 
 inline
-CBioseqHandle::CBioseqHandle(const CBioseqHandle& h)
+CBioseq_Handle::CBioseq_Handle(const CBioseq_Handle& h)
     : m_Value(h.m_Value),
       m_DataSource(h.m_DataSource),
       m_Entry(h.m_Entry)
@@ -149,7 +154,7 @@ CBioseqHandle::CBioseqHandle(const CBioseqHandle& h)
 }
 
 inline
-CBioseqHandle& CBioseqHandle::operator= (const CBioseqHandle& h)
+CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
 {
     m_Value = h.m_Value;
     m_DataSource = h.m_DataSource;
@@ -158,7 +163,7 @@ CBioseqHandle& CBioseqHandle::operator= (const CBioseqHandle& h)
 }
 
 inline
-bool CBioseqHandle::operator== (const CBioseqHandle& h) const
+bool CBioseq_Handle::operator== (const CBioseq_Handle& h) const
 {
     if ( m_Entry  &&  h.m_Entry )
         return m_DataSource == h.m_DataSource  &&  m_Entry == h.m_Entry;
@@ -167,13 +172,13 @@ bool CBioseqHandle::operator== (const CBioseqHandle& h) const
 }
 
 inline
-bool CBioseqHandle::operator!= (const CBioseqHandle& h) const
+bool CBioseq_Handle::operator!= (const CBioseq_Handle& h) const
 {
     return !(*this == h);
 }
 
 inline
-bool CBioseqHandle::operator< (const CBioseqHandle& h) const
+bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
 {
     if ( m_Entry != h.m_Entry )
         return m_Entry < h.m_Entry;
@@ -181,7 +186,7 @@ bool CBioseqHandle::operator< (const CBioseqHandle& h) const
 }
 
 inline
-CDataSource& CBioseqHandle::x_GetDataSource(void) const
+CDataSource& CBioseq_Handle::x_GetDataSource(void) const
 {
     if ( !m_DataSource )
         throw runtime_error("Can not resolve data source for bioseq handle.");

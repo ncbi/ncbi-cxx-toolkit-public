@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:29  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:26:36  gouriano
 * restructured objmgr
 *
@@ -56,7 +59,7 @@
 #include <set>
 
 #include <objects/objmgr1/scope.hpp>
-#include "objects/objmgr1/data_loader.hpp"
+#include <objects/objmgr1/data_loader.hpp>
 #include <objects/objmgr1/seq_vector.hpp>
 #include <objects/objmgr1/seq_map.hpp>
 #include <objects/objmgr1/desc_ci.hpp>
@@ -164,7 +167,9 @@ private:
     map< CSeq_entry* , CDataSource* > m_mapEntryToSource;
     set< CScope* > m_setScope;
 
+    CRef<CSeq_id_Mapper> m_IdMapper;
     friend class CScope;
+    friend class CDataSource; // To get id-mapper
 };
 
 

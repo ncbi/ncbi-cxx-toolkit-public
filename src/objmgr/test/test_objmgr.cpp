@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/01/23 21:59:34  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.4  2002/01/18 17:06:30  gouriano
 * renamed CScope::GetSequence to CScope::GetSeqVector
 *
@@ -100,9 +103,6 @@
 #include <objects/objmgr1/object_manager.hpp>
 
 #include <objects/seq/seqport_util.hpp>
-
-#include "../id_handles.hpp"
-#include <objects/id1/id1__.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -579,14 +579,14 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
                              int seq_feat_cnt, int seq_featrg_cnt,
                              int seq_align_cnt, int seq_alignrg_cnt)
 {
-    CBioseqHandle handle = scope.GetBioseqHandle(id);
+    CBioseq_Handle handle = scope.GetBioseqHandle(id);
     if ( !handle ) {
         LOG_POST("No seq-id found");
         return;
     }
 
     handle.GetTopLevelSeqEntry();
-    CBioseqHandle::TBioseqCore seq_core = handle.GetBioseqCore();
+    CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
     {{
         CSeqMap seq_map = handle.GetSeqMap();
         // Iterate seq-map except the last element
@@ -724,6 +724,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
 
 int CTestApp::Run(void)
 {
+/*
     // Temp. test for seq-id handles and mapper
     CID1server_back back;
     CObjectIStream& is = *CObjectIStream::Open("id1.asn", eSerial_AsnText);
@@ -762,6 +763,7 @@ int CTestApp::Run(void)
         NcbiCout << mapper.GetSeq_id(*hit).DumpAsFasta() << NcbiEndl;
     }
     return 0;
+*/
 
     NcbiCout << "Testing ObjectManager..." << NcbiEndl;
     CSeq_id id;

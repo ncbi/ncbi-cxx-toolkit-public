@@ -1,5 +1,5 @@
-#ifndef SEQ_ID_MAPPER__HPP
-#define SEQ_ID_MAPPER__HPP
+#ifndef OBJECTS_OBJMGR___SEQ_ID_MAPPER__HPP
+#define OBJECTS_OBJMGR___SEQ_ID_MAPPER__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -26,52 +26,99 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko, Michael Kimelman
+* Author: Aleksey Grichenko
 *
 * File Description:
+*   Seq-id mapper for Object Manager
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.1  2002/01/11 19:06:23  gouriano
-* restructured objmgr
+* Revision 1.2  2002/01/23 21:59:32  grichenk
+* Redesigned seq-id handles and mapper
 *
 *
 * ===========================================================================
 */
 
 
-#include <objects/seqloc/Seq_id.hpp>
-#include "seq_id_mapper_real.hpp"
+#include <corelib/ncbiobj.hpp>
+#include <objects/objmgr1/seq_id_handle.hpp>
 
+#include <map>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CSeqIdMapper
+class CSeq_id;
+
+
+////////////////////////////////////////////////////////////////////
+//
+//  CSeq_id_Mapper::
+//
+//    Allows fast convertions between CSeq_id and CSeq_id_Handle,
+//    including searching for multiple matches for a given seq-id.
+//
+
+
+typedef pair< CConstRef<CSeq_id>, TSeq_id_Key > TSeq_id_Info;
+typedef set<CSeq_id_Handle>                     TSeq_id_HandleSet;
+
+
+// forward declaration
+class CSeq_id_Which_Tree;
+
+
+const size_t kKeyUsageTableSize = 65536;
+
+
+class CSeq_id_Mapper : public CObject
 {
 public:
-    typedef CSeqIdMapper_Real::TKey TKey;
+    // Get seq-id handle. Create new handle if not found and
+    // do_not_create is false. Get only the exactly equal seq-id handle.
+    CSeq_id_Handle GetHandle(const CSeq_id& id, bool do_not_create = false);
+    // Get the list of matching handles, do not create new handles
+    void GetMatchingHandles(const CSeq_id& id, TSeq_id_HandleSet& h_set);
+    // Get the list of string-matching handles, do not create new handles
+    void GetMatchingHandlesStr(string sid, TSeq_id_HandleSet& h_set);
+    // Get seq-id for the given handle
+    static const CSeq_id& GetSeq_id(const CSeq_id_Handle& handle);
 
-    // Get key for the seq-id (create a new key if not created yet)
-    static TKey SeqIdToHandle(const CSeq_id& id)
-    {
-        return sm_Mapper.SeqIdToHandle(id);
-    };
-    // Reverse lookup of seq-id
-    static CSeq_id* HandleToSeqId(TKey key)
-    {
-        return sm_Mapper.HandleToSeqId(key);
-    };
-    static CSeqIdMapper_Real& GetMapper(void)
-    {
-        return sm_Mapper;
-    };
+    // References to each handle must be tracked to re-use their values
+    void AddHandleReference(const CSeq_id_Handle& handle);
+    void ReleaseHandleReference(const CSeq_id_Handle& handle);
+
 private:
-    static CSeqIdMapper_Real sm_Mapper;
+    // Constructor available for CObjectManager only
+    CSeq_id_Mapper(void);
+    friend class CObjectManager;
+
+    // Hide copy constructor and operator
+    CSeq_id_Mapper(const CSeq_id_Mapper&);
+    CSeq_id_Mapper& operator= (const CSeq_id_Mapper&);
+
+    // Get next available key for CSeq_id_Handle
+    TSeq_id_Key GetNextKey(void);
+
+    // Table for id reference counters. The keys are grouped by
+    // kKeyUsageTableSize elements. When a group is completely
+    // unreferenced, it may be deleted and its keys re-used.
+    size_t m_KeyUsageTable[kKeyUsageTableSize];
+
+    // Next available key value -- must be read through GetNextKey() only.
+    TSeq_id_Key m_NextKey;
+
+    // Some map entries may point to the same subtree (e.g. gb, dbj, emb).
+    typedef map<CSeq_id::E_Choice, CRef<CSeq_id_Which_Tree> > TIdMap;
+    TIdMap m_IdMap;
 };
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif  // SEQ_ID_MAPPER__HPP
+#endif  /* OBJECTS_OBJMGR___SEQ_ID_MAPPER__HPP */

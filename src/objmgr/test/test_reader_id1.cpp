@@ -29,7 +29,7 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
-#include <objects/objmgr/reader_id1.hpp>
+#include <objects/objmgr1/reader_id1.hpp>
 
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_core_cxx.hpp>
@@ -71,6 +71,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.2  2002/01/23 21:59:34  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.1  2002/01/11 19:06:27  gouriano
 * restructured objmgr
 *

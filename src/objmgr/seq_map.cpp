@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:32  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:25:56  gouriano
 * restructured objmgr
 *
@@ -50,6 +53,7 @@
 
 #include <objects/objmgr1/scope.hpp>
 #include <objects/objmgr1/seq_map.hpp>
+#include <objects/objmgr1/seq_id_handle.hpp>
 #include "seq_id_mapper.hpp"
 
 
@@ -82,7 +86,7 @@ CSeqMap::TSeqSegment& CSeqMap::x_FindSegment(int pos)
 {
     int seg_idx = 0;
     // Ignore eSeqEnd
-    for ( ; seg_idx < m_SeqMap.size() - 1; seg_idx++) {
+    for ( ; seg_idx+1 < m_SeqMap.size(); seg_idx++) {
         int cur_pos = m_SeqMap[seg_idx].first;
         int next_pos = m_SeqMap[seg_idx+1].first;
         if (next_pos > pos  || (next_pos == pos  &&  cur_pos == pos))
@@ -111,9 +115,9 @@ CSeqMap::TSeqSegment& CSeqMap::x_Resolve(int pos, CScope& scope)
             continue; // not a reference - nothing to resolve
         if (m_SeqMap[i].second.m_RefLen != 0)
             continue; // resolved reference, known length
-        CRef<CSeq_id> id(
-            CSeqIdMapper::HandleToSeqId(m_SeqMap[i].second.m_RefSeq));
-        CBioseqHandle::TBioseqCore seq =
+        CConstRef<CSeq_id> id(
+            &CSeq_id_Mapper::GetSeq_id(m_SeqMap[i].second.m_RefSeq));
+        CBioseq_Handle::TBioseqCore seq =
             scope.GetBioseqHandle(*id).GetBioseqCore();
         if ( seq->GetInst().IsSetLength() ) {
             m_SeqMap[i].second.m_RefLen = seq->GetInst().GetLength();

@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/23 21:59:29  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.3  2002/01/18 17:07:12  gouriano
 * renamed GetSequence to GetSeqVector
 *
@@ -101,7 +104,7 @@ public:
 public:
     // Get bioseq handle by seq-id
     // Declared "virtual" to avoid circular dependencies with seqloc
-    virtual CBioseqHandle  GetBioseqHandle(const CSeq_id& id);
+    virtual CBioseq_Handle  GetBioseqHandle(const CSeq_id& id);
 
 
     // Get sequence's title (used in various flat-file formats.)
@@ -114,11 +117,11 @@ public:
         fGetTitle_Organism    = 0x4  // append [organism]
     };
     typedef int TGetTitleFlags;
-    virtual string GetTitle(const CBioseqHandle& handle,
+    virtual string GetTitle(const CBioseq_Handle& handle,
                             TGetTitleFlags flags = 0);
 
     // Get sequence: Iupacna or Iupacaa
-    virtual CSeqVector GetSeqVector(const CBioseqHandle& handle,
+    virtual CSeqVector GetSeqVector(const CBioseq_Handle& handle,
                                     bool plus_strand = true);
 
     // Find mode flags: how to treat duplicate IDs within the same scope
@@ -141,9 +144,11 @@ private:
     bool x_AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
                       TSeqPosition start, TSeqLength length);
 
-    bool x_GetSequence(const CBioseqHandle& handle,
+    bool x_GetSequence(const CBioseq_Handle& handle,
                        TSeqPosition point,
                        SSeqData* seq_piece);
+
+    CSeq_id_Mapper& x_GetIdMapper(void);
 
     CRef<CObjectManager> m_pObjMgr;
     set<CDataSource*>    m_setDataSrc;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/18 15:56:24  gouriano
 * changed TSeqMaps definition
 *
@@ -55,9 +58,11 @@
 #include <set>
 
 #include <objects/objmgr1/bioseq_handle.hpp>
+#include <objects/objmgr1/seq_id_handle.hpp>
 #include <objects/objmgr1/data_loader.hpp>
 #include <objects/objmgr1/seq_map.hpp>
 #include <objects/objmgr1/annot_ci.hpp>
+#include <objects/objmgr1/object_manager.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -68,8 +73,8 @@ class CDataSource : public CObject
 {
 public:
     /// 'ctors
-    CDataSource(CDataLoader& loader);
-    CDataSource(CSeq_entry& entry);
+    CDataSource(CDataLoader& loader, CObjectManager& objmgr);
+    CDataSource(CSeq_entry& entry, CObjectManager& objmgr);
     virtual ~CDataSource(void);
 
     /// Register new TSE (Top Level Seq-entry)
@@ -98,7 +103,7 @@ public:
 
     /// Get Bioseq handle by Seq-Id.
     /// Return "NULL" handle if the Bioseq cannot be resolved.
-    CBioseqHandle GetBioseqHandle(const CSeq_id& id);
+    CBioseq_Handle GetBioseqHandle(const CSeq_id& id);
 
     // Remove TSE from the datasource, update indexes
     bool DropTSE(const CSeq_entry& tse);
@@ -106,19 +111,21 @@ public:
     // Contains (or can load) any entries?
     bool IsEmpty(void) const;
 
+    CSeq_id_Mapper& GetIdMapper(void);
+
 private:
 
     /// Get the complete Bioseq (as loaded by now)
-    const CBioseq& GetBioseq(const CBioseqHandle& handle);
+    const CBioseq& GetBioseq(const CBioseq_Handle& handle);
 
     /// Get top level Seq-Entry for a Bioseq
-    const CSeq_entry& GetTSE(const CBioseqHandle& handle);
+    const CSeq_entry& GetTSE(const CBioseq_Handle& handle);
 
     /// Get Bioseq core structure
-    CBioseqHandle::TBioseqCore GetBioseqCore(const CBioseqHandle& handle);
+    CBioseq_Handle::TBioseqCore GetBioseqCore(const CBioseq_Handle& handle);
 
     /// Get sequence map
-    const CSeqMap& GetSeqMap(const CBioseqHandle& handle);
+    const CSeqMap& GetSeqMap(const CBioseq_Handle& handle);
 
     /// Get a piece of seq. data ("seq_piece"), which the "point" belongs to:
     ///   "length"     -- length   of the data piece the "point" is found in;
@@ -128,7 +135,7 @@ private:
     /// Return FALSE if the final source Bioseq (i.e. the Bioseq that actually
     /// describe the piece of sequence data containing the "point") cannot be
     /// found.
-    bool GetSequence(const CBioseqHandle& handle,
+    bool GetSequence(const CBioseq_Handle& handle,
                      TSeqPosition point,
                      SSeqData* seq_piece,
                      CScope& scope);
@@ -153,7 +160,7 @@ private:
                         int& pos, int len,
                         CSeqMap& seqmap);
     // Non-const version of GetSeqMap()
-    CSeqMap& x_GetSeqMap(const CBioseqHandle& handle);
+    CSeqMap& x_GetSeqMap(const CBioseq_Handle& handle);
 
     // Process a single data element
     void x_MapFeature(const CSeq_feat& feat);
@@ -161,7 +168,7 @@ private:
     void x_MapGraph(const CSeq_graph& graph);
 
     // Get range map for a given handle or null
-    TRangeMap* x_GetRangeMap(const CBioseqHandle& handle,
+    TRangeMap* x_GetRangeMap(const CBioseq_Handle& handle,
                              bool create = false);
 
     // Check if the Seq-entry is handled by this data-source
@@ -175,14 +182,15 @@ private:
     CSeq_entry* GetTopEntry(void);
 
 private:
-    CRef< CDataLoader> m_Loader;
-    CRef< CSeq_entry> m_pTopEntry;
+    CRef<CDataLoader>    m_Loader;
+    CRef<CSeq_entry>     m_pTopEntry;
+    CRef<CObjectManager> m_ObjMgr;
 
     // Structure to keep bioseq's parent seq-entry along with the list
     // of seq-id synonyms for the bioseq.
     struct SBioseqInfo : public CObject
     {
-        typedef set<CBioseqHandle::THandle> TSynonyms;
+        typedef set<CSeq_id_Handle> TSynonyms;
 
         SBioseqInfo(void);
         SBioseqInfo(CSeq_entry& entry);
@@ -203,7 +211,7 @@ private:
     // range sets for each synonym of each handle
     void x_ResolveLocationHandles(CHandleRangeMap& loc);
 
-    typedef map<CBioseqHandle::THandle, CRef<SBioseqInfo> > TBioseqMap;
+    typedef map<CSeq_id_Handle, CRef<SBioseqInfo> > TBioseqMap;
 
     TEntries                 m_Entries;   // All known seq-entries
     TBioseqMap               m_BioseqMap; // Bioseq by seq-id key
@@ -215,7 +223,7 @@ private:
     friend class CAnnotTypes_CI;
     friend class CScope;
     friend class CSeqVector;
-    friend class CBioseqHandle;
+    friend class CBioseq_Handle;
     friend class CObjectManager;
 };
 
@@ -225,6 +233,13 @@ bool CDataSource::IsEmpty(void) const
 {
     return m_Loader == 0  &&  m_Entries.empty();
 }
+
+inline
+CSeq_id_Mapper& CDataSource::GetIdMapper(void)
+{
+    return *m_ObjMgr->m_IdMapper;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

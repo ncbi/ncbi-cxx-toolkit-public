@@ -37,6 +37,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.4  2002/01/18 17:06:29  gouriano
 * renamed CScope::GetSequence to CScope::GetSeqVector
 *
@@ -135,12 +138,12 @@ bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 }
 
 
-CBioseqHandle CScope::GetBioseqHandle(const CSeq_id& id)
+CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 {
     CMutexGuard guard(sm_Scope_Mutex);
-    CBioseqHandle found;
+    CBioseq_Handle found;
     iterate (set<CDataSource*>, it, m_setDataSrc) {
-        CBioseqHandle handle = (*it)->GetBioseqHandle(id);
+        CBioseq_Handle handle = (*it)->GetBioseqHandle(id);
         if ( handle ) {
             if (m_FindMode == eFirst) {
                 return handle;
@@ -170,7 +173,7 @@ CBioseqHandle CScope::GetBioseqHandle(const CSeq_id& id)
 }
 
 
-CSeqVector CScope::GetSeqVector(const CBioseqHandle& handle,
+CSeqVector CScope::GetSeqVector(const CBioseq_Handle& handle,
                                 bool plus_strand)
 {
     return CSeqVector(handle, plus_strand, *this);
@@ -223,7 +226,7 @@ bool CScope::x_AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
 }
 
 
-bool CScope::x_GetSequence(const CBioseqHandle& handle,
+bool CScope::x_GetSequence(const CBioseq_Handle& handle,
                            TSeqPosition point,
                            SSeqData* seq_piece)
 {
@@ -240,6 +243,11 @@ bool CScope::x_GetSequence(const CBioseqHandle& handle,
 void CScope::SetFindMode(EFindMode mode)
 {
     m_FindMode = mode;
+}
+
+
+CSeq_id_Mapper& CScope::x_GetIdMapper(void) {
+    return *m_pObjMgr->m_IdMapper;
 }
 
 

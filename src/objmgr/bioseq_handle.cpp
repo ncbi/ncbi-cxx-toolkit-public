@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:25:56  gouriano
 * restructured objmgr
 *
@@ -43,38 +46,42 @@
 
 #include <objects/objmgr1/bioseq_handle.hpp>
 #include "data_source.hpp"
-#include "seq_id_mapper.hpp"
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-const CSeq_id* CBioseqHandle::GetSeqId(void) const
+CBioseq_Handle::~CBioseq_Handle(void)
 {
-    if (!m_Value) return 0;
-    return CSeqIdMapper::HandleToSeqId(m_Value);
 }
 
 
-const CBioseq& CBioseqHandle::GetBioseq(void) const
+const CSeq_id* CBioseq_Handle::GetSeqId(void) const
+{
+    if (!m_Value) return 0;
+    return m_Value.m_SeqId.GetPointer();
+}
+
+
+const CBioseq& CBioseq_Handle::GetBioseq(void) const
 {
     return x_GetDataSource().GetBioseq(*this);
 }
 
 
-const CSeq_entry& CBioseqHandle::GetTopLevelSeqEntry(void) const
+const CSeq_entry& CBioseq_Handle::GetTopLevelSeqEntry(void) const
 {
     return x_GetDataSource().GetTSE(*this);
 }
 
-CBioseqHandle::TBioseqCore CBioseqHandle::GetBioseqCore(void) const
+CBioseq_Handle::TBioseqCore CBioseq_Handle::GetBioseqCore(void) const
 {
     return x_GetDataSource().GetBioseqCore(*this);
 }
 
 
-const CSeqMap& CBioseqHandle::GetSeqMap(void) const
+const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 {
     return x_GetDataSource().GetSeqMap(*this);
 }

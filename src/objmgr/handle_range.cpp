@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.1  2002/01/11 19:06:19  gouriano
 * restructured objmgr
 *
@@ -51,7 +54,7 @@ BEGIN_SCOPE(objects)
 //
 
 
-CHandleRange::CHandleRange(const CBioseqHandle& handle)
+CHandleRange::CHandleRange(const CBioseq_Handle& handle)
     : m_Handle(handle)
 {
 }

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:32  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:25:58  gouriano
 * restructured objmgr
 *
@@ -58,9 +61,9 @@
 
 #include <objects/objmgr1/seq_vector.hpp>
 #include <objects/objmgr1/scope.hpp>
+#include "seq_id_mapper.hpp"
 #include "data_source.hpp"
 #include "annot_object.hpp"
-#include "seq_id_mapper.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -73,7 +76,7 @@ BEGIN_SCOPE(objects)
 //
 
 
-CSeqVector::CSeqVector(const CBioseqHandle& handle,
+CSeqVector::CSeqVector(const CBioseq_Handle& handle,
                          bool plus_strand,
                          CScope& scope)
     : m_Scope(&scope),
@@ -138,10 +141,10 @@ size_t CSeqVector::size(void)
                 case CSeqMap::eSeqRef:
                     {
                         // Zero length stands for "whole" reference
-                        CSeq_id* id =
-                            CSeqIdMapper::HandleToSeqId(
+                        const CSeq_id* id =
+                            &CSeq_id_Mapper::GetSeq_id(
                             (*m_SeqMap)[i].second.m_RefSeq);
-                        CBioseqHandle::TBioseqCore ref_seq =
+                        CBioseq_Handle::TBioseqCore ref_seq =
                             (m_Scope->GetBioseqHandle(*id)).GetBioseqCore();
                         if (ref_seq.GetPointer()  &&
                             ref_seq->GetInst().IsSetLength()) {

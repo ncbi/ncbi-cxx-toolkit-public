@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:25:56  gouriano
 * restructured objmgr
 *
@@ -50,7 +53,6 @@
 #include <serial/iterator.hpp>
 
 #include "annot_object.hpp"
-#include "seq_id_mapper.hpp"
 
 
 BEGIN_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:29  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:26:37  gouriano
 * restructured objmgr
 *
@@ -56,7 +59,7 @@ class CDesc_CI
 {
 public:
     CDesc_CI(void);
-    CDesc_CI(const CBioseqHandle& handle);
+    CDesc_CI(const CBioseq_Handle& handle);
     CDesc_CI(const CDesc_CI& iter);
     ~CDesc_CI(void);
 
@@ -73,7 +76,7 @@ private:
     // Move to the next entry containing a descriptor
     void x_Walk(void);
 
-    CBioseqHandle         m_Handle;    // Source bioseq
+    CBioseq_Handle        m_Handle;    // Source bioseq
     CConstRef<CSeq_entry> m_NextEntry; // Next Seq-entry to get descriptor from
     CConstRef<CSeq_descr> m_Current;   // Current descriptor
 };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/23 21:59:31  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.3  2002/01/18 15:51:18  gouriano
 * *** empty log message ***
 *
@@ -65,7 +68,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                const CSeq_loc& loc,
                                SAnnotSelector selector)
     : m_Selector(selector),
-      m_Location(new CHandleRangeMap())
+      m_Location(new CHandleRangeMap(scope.x_GetIdMapper()))
 {
     m_Location->AddLocation(loc);
     scope.x_CopyDataSources( m_Sources);

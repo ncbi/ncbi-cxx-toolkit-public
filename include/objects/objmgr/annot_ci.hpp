@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:28  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:26:36  gouriano
 * restructured objmgr
 *
@@ -48,6 +51,7 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <util/rangemap.hpp>
 
+#include <objects/objmgr1/seq_id_handle.hpp>
 #include <objects/objmgr1/bioseq_handle.hpp>
 
 
@@ -82,7 +86,7 @@ class CAnnot_CI
 public:
     typedef CRange<int>                                              TRange;
     typedef CRangeMultimap<CRef<CAnnotObject>,TRange::position_type> TRangeMap;
-    typedef map<CBioseqHandle::THandle, TRangeMap>                   TAnnotMap;
+    typedef map<CSeq_id_Handle, TRangeMap>                           TAnnotMap;
 
     CAnnot_CI(void);
     CAnnot_CI(CDataSource& datasource,
@@ -117,7 +121,7 @@ private:
     TRange            m_CoreRange;
     TRangeIter        m_Current;
     CHandleRangeMap*  m_HandleRangeMap;
-    CBioseqHandle     m_CurrentHandle;
+    CBioseq_Handle    m_CurrentHandle;
 };
 
 

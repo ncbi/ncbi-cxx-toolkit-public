@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/23 21:59:32  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.3  2002/01/16 18:56:28  grichenk
 * Removed CRef<> argument from choice variant setter, updated sources to
 * use references instead of CRef<>s
@@ -87,17 +90,17 @@ BEGIN_SCOPE(objects)
 static string s_TitleFromBioSource (const CBioSource&    source);
 static string s_TitleFromChromosome(const CBioSource&    source,
                                     const CMolInfo&      mol_info);
-static string s_TitleFromProtein   (const CBioseqHandle& handle,
+static string s_TitleFromProtein   (const CBioseq_Handle& handle,
                                           CScope&        scope,
                                           string&        organism);
-static string s_TitleFromSegment   (const CBioseqHandle& handle,
+static string s_TitleFromSegment   (const CBioseq_Handle& handle,
                                           CScope&        scope);
 
-string CScope::GetTitle(const CBioseqHandle& handle, TGetTitleFlags flags)
+string CScope::GetTitle(const CBioseq_Handle& handle, TGetTitleFlags flags)
 {
     string                    prefix, title, suffix;
     string                    organism;
-    CBioseqHandle::TBioseqCore core        = handle.GetBioseqCore();
+    CBioseq_Handle::TBioseqCore core        = handle.GetBioseqCore();
     CConstRef<CTextseq_id>    tsid        = NULL;
     CConstRef<CPDB_seq_id>    pdb_id      = NULL;
     CConstRef<CPatent_seq_id> pat_id      = NULL;
@@ -537,13 +540,13 @@ static CConstRef<CSeq_feat> s_FindLongestFeature(const CSeq_loc& location,
 }
 
 
-static string s_TitleFromProtein(const CBioseqHandle& handle, CScope& scope,
+static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
                                  string& organism)
 {
     CConstRef<CProt_ref> prot;
     CConstRef<CSeq_loc>  cds_loc;
     CConstRef<CGene_ref> gene;
-    CBioseqHandle::TBioseqCore  core = handle.GetBioseqCore();
+    CBioseq_Handle::TBioseqCore  core = handle.GetBioseqCore();
     string               result;
 
     CSeq_loc everywhere;
@@ -606,7 +609,7 @@ static string s_TitleFromProtein(const CBioseqHandle& handle, CScope& scope,
     if (cds_loc) {
         CConstRef<COrg_ref> org;
         for (CTypeConstIterator<CSeq_id> id = ConstBegin(*cds_loc); id; ++id) {
-            CBioseqHandle na_handle = scope.GetBioseqHandle(*id);
+            CBioseq_Handle na_handle = scope.GetBioseqHandle(*id);
             for (CSeqdesc_CI it(na_handle, CSeqdesc::e_Source);  it;  ++it) {
                 org = &it->GetSource().GetOrg();
                 BREAK(it);
@@ -622,11 +625,11 @@ static string s_TitleFromProtein(const CBioseqHandle& handle, CScope& scope,
 }
 
 
-static string s_TitleFromSegment(const CBioseqHandle& handle, CScope& scope)
+static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
 {
     string              organism, product, locus;
     string              completeness = "complete";
-    CBioseqHandle::TBioseqCore core = handle.GetBioseqCore();
+    CBioseq_Handle::TBioseqCore core = handle.GetBioseqCore();
 
     CSeq_loc everywhere;
     everywhere.SetMix().Set() = core->GetInst().GetExt().GetSeg();

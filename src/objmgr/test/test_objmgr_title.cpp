@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:34  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/15 21:36:41  grichenk
 * Fixed to work with the new OM and scopes
 *
@@ -118,7 +121,7 @@ int CTitleTester::Run(void)
     }
 #endif
 
-    CBioseqHandle          handle = scope.GetBioseqHandle(id);
+    CBioseq_Handle         handle = scope.GetBioseqHandle(id);
     CScope::TGetTitleFlags flags  = 0;
     if (args["reconstruct"]) {
         flags |= CScope::fGetTitle_Reconstruct;

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/23 21:59:29  grichenk
+* Redesigned seq-id handles and mapper
+*
 * Revision 1.2  2002/01/16 16:26:37  gouriano
 * restructured objmgr
 *
@@ -48,6 +51,7 @@
 #include <vector>
 
 #include <objects/objmgr1/bioseq_handle.hpp>
+#include <objects/objmgr1/seq_id_handle.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -109,9 +113,9 @@ public:
 
     private:
 
-        ESegmentType m_SegType;      // Type of map segment
+        ESegmentType         m_SegType; // Type of map segment
         // Referenced bioseq information
-        CBioseqHandle::THandle      m_RefSeq;
+        CSeq_id_Handle       m_RefSeq;
         // Seq-data (m_RefPos and m_RefLen must be also set)
         CConstRef<CSeq_data> m_RefData;
         // Referenced location
@@ -179,7 +183,6 @@ bool operator< (const CSeqMap::TSeqSegment& int1,
 inline
 CSeqMap::CSegmentInfo::CSegmentInfo(void)
     : m_SegType(eSeqGap),
-      m_RefSeq(0),
       m_RefData(0),
       m_RefPos(0),
       m_RefLen(0),
@@ -191,7 +194,6 @@ CSeqMap::CSegmentInfo::CSegmentInfo(void)
 inline
 CSeqMap::CSegmentInfo::CSegmentInfo(ESegmentType seg_type, bool minus_strand)
     : m_SegType(seg_type),
-      m_RefSeq(0),
       m_RefData(0),
       m_RefPos(0),
       m_RefLen(0),
