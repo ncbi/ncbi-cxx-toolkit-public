@@ -2010,8 +2010,9 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
 
    new_hsp->score = score;
    new_hsp->subject.frame = frame;
-   new_hsp->query.gapped_start = init_hsp->q_off;
-   new_hsp->subject.gapped_start = init_hsp->s_off;
+   new_hsp->query.gapped_start = MIN(init_hsp->q_off, new_hsp->query.end-1);
+   new_hsp->subject.gapped_start = 
+      MIN(init_hsp->s_off, new_hsp->subject.end-1);
 
    /* If we are saving ALL HSP's, simply save and sort later. */
    if (hsp_list->do_not_reallocate == FALSE)
