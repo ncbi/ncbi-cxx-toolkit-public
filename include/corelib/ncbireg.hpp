@@ -424,7 +424,7 @@ protected:
     bool x_SetComment(const string& comment, const string& section,
                       const string& name, TFlags flags);
 
-private:
+public: // WorkShop needs these exposed
     struct SEntry {
         string value, comment;
     };
@@ -435,6 +435,7 @@ private:
     };
     typedef map<string, SSection, PNocase> TSections;
 
+private:
     bool      m_IsModified;
     string    m_RegistryComment;
     TSections m_Sections;
@@ -751,6 +752,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/12/20 17:33:52  ucko
+ * Expose CMemoryRegistry's internal types to make WorkShop happy.
+ *
  * Revision 1.34  2004/12/20 15:28:26  ucko
  * Extensively refactor, and add support for subregistries.
  *
