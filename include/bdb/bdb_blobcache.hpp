@@ -245,6 +245,15 @@ void NCBI_BDB_EXPORT NCBI_BDB_ICacheEntryPoint(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method);
 
+inline 
+void NCBI_BDB_EXPORT NCBI_EntryPoint_ICache_bdb(
+     CPluginManager<ICache>::TDriverInfoList&   info_list,
+     CPluginManager<ICache>::EEntryPointRequest method)
+{
+    NCBI_BDB_ICacheEntryPoint(info_list, method);
+}
+
+
 } // extern C
 
 
@@ -281,6 +290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/07/27 13:35:49  kuznets
+ * + ICache entry point
+ *
  * Revision 1.21  2004/07/19 16:11:10  kuznets
  * + Remove for key,version,subkey
  *
