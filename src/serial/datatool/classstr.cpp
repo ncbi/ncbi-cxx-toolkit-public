@@ -27,187 +27,6 @@
 *
 * File Description:
 *   Type info for class generation: includes, used classes, C code etc.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.39  2002/10/15 13:58:05  gouriano
-* use "noprefix" flag
-*
-* Revision 1.38  2002/08/14 17:14:25  grichenk
-* Fixed function name conflict on Win32: renamed
-* GetClassName() -> GetClassNameDT()
-*
-* Revision 1.37  2002/05/15 20:22:04  grichenk
-* Added CSerialObject -- base class for all generated ASN.1 classes
-*
-* Revision 1.36  2001/12/12 17:47:35  grichenk
-* Updated setters/getters generator to avoid using CRef<>s
-*
-* Revision 1.35  2001/12/07 18:56:15  grichenk
-* Most generated class members are stored in CRef<>-s by default
-*
-* Revision 1.34  2001/06/25 16:36:23  grichenk
-* // Hide -> // Prohibit
-*
-* Revision 1.33  2001/06/21 19:47:39  grichenk
-* Copy constructor and operator=() moved to "private" section
-*
-* Revision 1.32  2001/06/13 14:40:02  grichenk
-* Modified class and choice info generation code to avoid warnings
-*
-* Revision 1.31  2001/06/11 14:35:02  grichenk
-* Added support for numeric tags in ASN.1 specifications and data streams.
-*
-* Revision 1.30  2001/05/17 15:07:11  lavr
-* Typos corrected
-*
-* Revision 1.29  2000/11/29 17:42:43  vasilche
-* Added CComment class for storing/printing ASN.1/XML module comments.
-* Added srcutil.hpp file to reduce file dependency.
-*
-* Revision 1.28  2000/11/07 17:26:25  vasilche
-* Added module names to CTypeInfo and CEnumeratedTypeValues
-* Added possibility to set include directory for whole module
-*
-* Revision 1.27  2000/11/02 14:42:34  vasilche
-* MSVC doesn't understand namespaces in parent class specifier in subclass methods.
-*
-* Revision 1.26  2000/11/01 20:38:58  vasilche
-* OPTIONAL and DEFAULT are not permitted in CHOICE.
-* Fixed code generation for DEFAULT.
-*
-* Revision 1.25  2000/09/26 17:38:25  vasilche
-* Fixed incomplete choiceptr implementation.
-* Removed temporary comments.
-*
-* Revision 1.24  2000/08/25 15:59:20  vasilche
-* Renamed directory tool -> datatool.
-*
-* Revision 1.23  2000/08/15 19:45:28  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.22  2000/07/11 20:36:28  vasilche
-* Removed unnecessary generation of namespace references for enum members.
-* Removed obsolete methods.
-*
-* Revision 1.21  2000/06/27 16:34:47  vasilche
-* Fixed generated comments.
-* Fixed class names conflict. Now internal classes' names begin with "C_".
-*
-* Revision 1.20  2000/06/27 13:22:00  vasilche
-* Added const modifier to generated IsSet*() methods.
-*
-* Revision 1.19  2000/06/16 16:31:38  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.18  2000/05/03 14:38:18  vasilche
-* SERIAL: added support for delayed reading to generated classes.
-* DATATOOL: added code generation for delayed reading.
-*
-* Revision 1.17  2000/04/17 19:11:07  vasilche
-* Fixed failed assertion.
-* Removed redundant namespace specifications.
-*
-* Revision 1.16  2000/04/12 15:36:49  vasilche
-* Added -on <namespace> argument to datatool.
-* Removed unnecessary namespace specifications in generated files.
-*
-* Revision 1.15  2000/04/07 19:26:24  vasilche
-* Added namespace support to datatool.
-* By default with argument -oR datatool will generate objects in namespace
-* NCBI_NS_NCBI::objects (aka ncbi::objects).
-* Datatool's classes also moved to NCBI namespace.
-*
-* Revision 1.14  2000/04/06 16:11:25  vasilche
-* Removed unneeded calls to Reset().
-*
-* Revision 1.13  2000/04/03 18:47:30  vasilche
-* Added main include file for generated headers.
-* serialimpl.hpp is included in generated sources with GetTypeInfo methods
-*
-* Revision 1.12  2000/03/29 15:52:26  vasilche
-* Generated files names limited to 31 symbols due to limitations of Mac.
-* Removed unions with only one member.
-*
-* Revision 1.11  2000/03/17 16:49:55  vasilche
-* Added copyright message to generated files.
-* All objects pointers in choices now share the only CObject pointer.
-* All setters/getters made public until we'll find better solution.
-*
-* Revision 1.10  2000/03/15 14:18:39  vasilche
-* Forgot to fix _ASSERT() expression.
-*
-* Revision 1.9  2000/03/14 18:32:58  vasilche
-* Fixed class includes generation.
-*
-* Revision 1.8  2000/03/14 14:43:10  vasilche
-* All OPTIONAL members implemented via CRef<> by default.
-*
-* Revision 1.7  2000/03/08 14:40:00  vasilche
-* Renamed NewInstance() -> New().
-*
-* Revision 1.6  2000/03/07 20:05:00  vasilche
-* Added NewInstance method to generated classes.
-*
-* Revision 1.5  2000/03/07 14:06:30  vasilche
-* Added generation of reference counted objects.
-*
-* Revision 1.4  2000/02/17 20:05:06  vasilche
-* Inline methods now will be generated in *_Base.inl files.
-* Fixed processing of StringStore.
-* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
-* Enumerated values now will preserve case as in ASN.1 definition.
-*
-* Revision 1.3  2000/02/02 19:08:20  vasilche
-* Fixed variable conflict in generated files on MSVC.
-*
-* Revision 1.2  2000/02/02 18:54:15  vasilche
-* Fixed variable conflict in MSVC.
-* Added missing #include <serial/choice.hpp>
-*
-* Revision 1.1  2000/02/01 21:47:55  vasilche
-* Added CGeneratedChoiceTypeInfo for generated choice classes.
-* Removed CMemberInfo subclasses.
-* Added support for DEFAULT/OPTIONAL members.
-* Changed class generation.
-* Moved datatool headers to include/internal/serial/tool.
-*
-* Revision 1.8  2000/01/10 19:46:47  vasilche
-* Fixed encoding/decoding of REAL type.
-* Fixed encoding/decoding of StringStore.
-* Fixed encoding/decoding of NULL type.
-* Fixed error reporting.
-* Reduced object map (only classes).
-*
-* Revision 1.7  1999/12/28 18:56:00  vasilche
-* Reduced size of compiled object files:
-* 1. avoid inline or implicit virtual methods (especially destructors).
-* 2. avoid std::string's methods usage in inline methods.
-* 3. avoid string literals ("xxx") in inline methods.
-*
-* Revision 1.6  1999/12/17 19:05:19  vasilche
-* Simplified generation of GetTypeInfo methods.
-*
-* Revision 1.5  1999/12/01 17:36:28  vasilche
-* Fixed CHOICE processing.
-*
-* Revision 1.4  1999/11/18 17:13:07  vasilche
-* Fixed generation of ENUMERATED CHOICE and VisibleString.
-* Added generation of initializers to zero for primitive types and pointers.
-*
-* Revision 1.3  1999/11/16 15:41:17  vasilche
-* Added plain pointer choice.
-* By default we use C pointer instead of auto_ptr.
-* Start adding initializers.
-*
-* Revision 1.2  1999/11/15 19:36:20  vasilche
-* Fixed warnings on GCC
-*
-* ===========================================================================
 */
 
 #include <serial/datatool/classstr.hpp>
@@ -222,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 CClassTypeStrings::CClassTypeStrings(const string& externalName,
                                      const string& className)
-    : m_IsObject(true), m_HaveUserClass(true),
+    : m_IsObject(true), m_HaveUserClass(true), m_HaveTypeInfo(true),
       m_ExternalName(externalName), m_ClassName(className)
 {
 }
@@ -377,10 +196,12 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     string ncbiNamespace =
         code.GetNamespace().GetNamespaceRef(CNamespace::KNCBINamespace);
 
-    code.ClassPublic() <<
-        "    // type info\n"
-        "    DECLARE_INTERNAL_TYPE_INFO();\n"
-        "\n";
+    if (HaveTypeInfo()) {
+        code.ClassPublic() <<
+            "    // type info\n"
+            "    DECLARE_INTERNAL_TYPE_INFO();\n"
+            "\n";
+    }
 
     GenerateClassCode(code,
                       code.ClassPublic(),
@@ -1158,3 +979,190 @@ string CClassRefTypeStrings::GetResetCode(const string& var) const
 }
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.40  2002/11/13 00:44:00  ucko
+* Made type info declaration optional (but on by default); CVS logs to end
+*
+* Revision 1.39  2002/10/15 13:58:05  gouriano
+* use "noprefix" flag
+*
+* Revision 1.38  2002/08/14 17:14:25  grichenk
+* Fixed function name conflict on Win32: renamed
+* GetClassName() -> GetClassNameDT()
+*
+* Revision 1.37  2002/05/15 20:22:04  grichenk
+* Added CSerialObject -- base class for all generated ASN.1 classes
+*
+* Revision 1.36  2001/12/12 17:47:35  grichenk
+* Updated setters/getters generator to avoid using CRef<>s
+*
+* Revision 1.35  2001/12/07 18:56:15  grichenk
+* Most generated class members are stored in CRef<>-s by default
+*
+* Revision 1.34  2001/06/25 16:36:23  grichenk
+* // Hide -> // Prohibit
+*
+* Revision 1.33  2001/06/21 19:47:39  grichenk
+* Copy constructor and operator=() moved to "private" section
+*
+* Revision 1.32  2001/06/13 14:40:02  grichenk
+* Modified class and choice info generation code to avoid warnings
+*
+* Revision 1.31  2001/06/11 14:35:02  grichenk
+* Added support for numeric tags in ASN.1 specifications and data streams.
+*
+* Revision 1.30  2001/05/17 15:07:11  lavr
+* Typos corrected
+*
+* Revision 1.29  2000/11/29 17:42:43  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependency.
+*
+* Revision 1.28  2000/11/07 17:26:25  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+* Added possibility to set include directory for whole module
+*
+* Revision 1.27  2000/11/02 14:42:34  vasilche
+* MSVC doesn't understand namespaces in parent class specifier in subclass methods.
+*
+* Revision 1.26  2000/11/01 20:38:58  vasilche
+* OPTIONAL and DEFAULT are not permitted in CHOICE.
+* Fixed code generation for DEFAULT.
+*
+* Revision 1.25  2000/09/26 17:38:25  vasilche
+* Fixed incomplete choiceptr implementation.
+* Removed temporary comments.
+*
+* Revision 1.24  2000/08/25 15:59:20  vasilche
+* Renamed directory tool -> datatool.
+*
+* Revision 1.23  2000/08/15 19:45:28  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* Revision 1.22  2000/07/11 20:36:28  vasilche
+* Removed unnecessary generation of namespace references for enum members.
+* Removed obsolete methods.
+*
+* Revision 1.21  2000/06/27 16:34:47  vasilche
+* Fixed generated comments.
+* Fixed class names conflict. Now internal classes' names begin with "C_".
+*
+* Revision 1.20  2000/06/27 13:22:00  vasilche
+* Added const modifier to generated IsSet*() methods.
+*
+* Revision 1.19  2000/06/16 16:31:38  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* Revision 1.18  2000/05/03 14:38:18  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
+* Revision 1.17  2000/04/17 19:11:07  vasilche
+* Fixed failed assertion.
+* Removed redundant namespace specifications.
+*
+* Revision 1.16  2000/04/12 15:36:49  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
+* Revision 1.15  2000/04/07 19:26:24  vasilche
+* Added namespace support to datatool.
+* By default with argument -oR datatool will generate objects in namespace
+* NCBI_NS_NCBI::objects (aka ncbi::objects).
+* Datatool's classes also moved to NCBI namespace.
+*
+* Revision 1.14  2000/04/06 16:11:25  vasilche
+* Removed unneeded calls to Reset().
+*
+* Revision 1.13  2000/04/03 18:47:30  vasilche
+* Added main include file for generated headers.
+* serialimpl.hpp is included in generated sources with GetTypeInfo methods
+*
+* Revision 1.12  2000/03/29 15:52:26  vasilche
+* Generated files names limited to 31 symbols due to limitations of Mac.
+* Removed unions with only one member.
+*
+* Revision 1.11  2000/03/17 16:49:55  vasilche
+* Added copyright message to generated files.
+* All objects pointers in choices now share the only CObject pointer.
+* All setters/getters made public until we'll find better solution.
+*
+* Revision 1.10  2000/03/15 14:18:39  vasilche
+* Forgot to fix _ASSERT() expression.
+*
+* Revision 1.9  2000/03/14 18:32:58  vasilche
+* Fixed class includes generation.
+*
+* Revision 1.8  2000/03/14 14:43:10  vasilche
+* All OPTIONAL members implemented via CRef<> by default.
+*
+* Revision 1.7  2000/03/08 14:40:00  vasilche
+* Renamed NewInstance() -> New().
+*
+* Revision 1.6  2000/03/07 20:05:00  vasilche
+* Added NewInstance method to generated classes.
+*
+* Revision 1.5  2000/03/07 14:06:30  vasilche
+* Added generation of reference counted objects.
+*
+* Revision 1.4  2000/02/17 20:05:06  vasilche
+* Inline methods now will be generated in *_Base.inl files.
+* Fixed processing of StringStore.
+* Renamed in choices: Selected() -> Which(), E_choice -> E_Choice.
+* Enumerated values now will preserve case as in ASN.1 definition.
+*
+* Revision 1.3  2000/02/02 19:08:20  vasilche
+* Fixed variable conflict in generated files on MSVC.
+*
+* Revision 1.2  2000/02/02 18:54:15  vasilche
+* Fixed variable conflict in MSVC.
+* Added missing #include <serial/choice.hpp>
+*
+* Revision 1.1  2000/02/01 21:47:55  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+* Changed class generation.
+* Moved datatool headers to include/internal/serial/tool.
+*
+* Revision 1.8  2000/01/10 19:46:47  vasilche
+* Fixed encoding/decoding of REAL type.
+* Fixed encoding/decoding of StringStore.
+* Fixed encoding/decoding of NULL type.
+* Fixed error reporting.
+* Reduced object map (only classes).
+*
+* Revision 1.7  1999/12/28 18:56:00  vasilche
+* Reduced size of compiled object files:
+* 1. avoid inline or implicit virtual methods (especially destructors).
+* 2. avoid std::string's methods usage in inline methods.
+* 3. avoid string literals ("xxx") in inline methods.
+*
+* Revision 1.6  1999/12/17 19:05:19  vasilche
+* Simplified generation of GetTypeInfo methods.
+*
+* Revision 1.5  1999/12/01 17:36:28  vasilche
+* Fixed CHOICE processing.
+*
+* Revision 1.4  1999/11/18 17:13:07  vasilche
+* Fixed generation of ENUMERATED CHOICE and VisibleString.
+* Added generation of initializers to zero for primitive types and pointers.
+*
+* Revision 1.3  1999/11/16 15:41:17  vasilche
+* Added plain pointer choice.
+* By default we use C pointer instead of auto_ptr.
+* Start adding initializers.
+*
+* Revision 1.2  1999/11/15 19:36:20  vasilche
+* Fixed warnings on GCC
+*
+* ===========================================================================
+*/
