@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/04/22 14:27:29  thiessen
+* add alignment export
+*
 * Revision 1.28  2002/03/19 18:48:00  thiessen
 * small bug fixes; remember PSSM weight
 *
@@ -155,6 +158,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_SORT_IDENT, MID_PROXIMITY_SORT,  SequenceViewerWindow::OnSort)
     EVT_MENU      (MID_SCORE_THREADER,                  SequenceViewerWindow::OnScoreThreader)
     EVT_MENU_RANGE(MID_MARK_BLOCK, MID_CLEAR_MARKS,     SequenceViewerWindow::OnMarkBlock)
+    EVT_MENU_RANGE(MID_EXPORT_FASTA, MID_EXPORT_HTML,   SequenceViewerWindow::OnExport)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
@@ -165,9 +169,14 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
 {
     viewMenu->Append(MID_SHOW_HIDE_ROWS, "Show/Hide &Rows");
     viewMenu->Append(MID_SCORE_THREADER, "Show PSSM+Contact &Scores");
+    wxMenu *subMenu = new wxMenu;
+    subMenu->Append(MID_EXPORT_FASTA, "&FASTA");
+    subMenu->Append(MID_EXPORT_TEXT, "&Text");
+    subMenu->Append(MID_EXPORT_HTML, "&HTML");
+    viewMenu->Append(MID_EXPORT, "Export...", subMenu);
 
     editMenu->AppendSeparator();
-    wxMenu *subMenu = new wxMenu;
+    subMenu = new wxMenu;
     subMenu->Append(MID_SORT_IDENT, "By &Identifier");
     subMenu->Append(MID_SORT_THREADER, "By &Score");
     subMenu->Append(MID_FLOAT_PDBS, "Float &PDBs");
@@ -476,6 +485,14 @@ void SequenceViewerWindow::TurnOnEditor(void)
 {
     if (!menuBar->IsChecked(MID_ENABLE_EDIT))
         Command(SequenceViewerWindow::MID_ENABLE_EDIT);
+}
+
+void SequenceViewerWindow::OnExport(wxCommandEvent& event)
+{
+    sequenceViewer->ExportAlignment(
+        event.GetId() == MID_EXPORT_FASTA,
+        event.GetId() == MID_EXPORT_TEXT,
+        event.GetId() == MID_EXPORT_HTML);
 }
 
 END_SCOPE(Cn3D)

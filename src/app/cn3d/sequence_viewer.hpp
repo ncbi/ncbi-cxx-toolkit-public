@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/04/22 14:27:28  thiessen
+* add alignment export
+*
 * Revision 1.24  2002/03/07 19:16:04  thiessen
 * don't auto-show sequence windows
 *
@@ -105,6 +108,9 @@ public:
 
     // set window title
     void SetWindowTitle(const std::string& title) const;
+
+    // export current alignment
+    void ExportAlignment(bool asFASTA, bool asTEXT, bool asHTML);
 
 private:
 

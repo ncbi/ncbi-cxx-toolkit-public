@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/04/22 14:27:29  thiessen
+* add alignment export
+*
 * Revision 1.13  2001/12/06 23:13:46  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -103,6 +106,10 @@ private:
         // view menu
         MID_SHOW_HIDE_ROWS = START_VIEWER_WINDOW_DERIVED_MID,
         MID_SCORE_THREADER,
+        MID_EXPORT,
+            MID_EXPORT_FASTA,
+            MID_EXPORT_TEXT,
+            MID_EXPORT_HTML,
         // edit menu
         MID_DELETE_ROW,
         MID_SORT_ROWS,   // sort rows submenu
@@ -128,6 +135,7 @@ private:
     void OnSort(wxCommandEvent& event);
     void OnScoreThreader(wxCommandEvent& event);
     void OnMarkBlock(wxCommandEvent& event);
+    void OnExport(wxCommandEvent& event);
 
     // called before an operation (e.g., alignment editor enable) that requires
     // all rows of an alignment to be visible; 'false' return should abort that operation
@@ -185,6 +193,8 @@ public:
         if (DoMarkBlock()) MarkBlockOff();
         if (DoProximitySort()) ProximitySortOff();
     }
+
+    void EnableExport(bool enabled) { menuBar->Enable(MID_EXPORT, enabled); }
 };
 
 END_SCOPE(Cn3D)
