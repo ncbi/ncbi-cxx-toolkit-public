@@ -1080,18 +1080,27 @@ static void CreateHeap (void* b, size_t nel, size_t width,
    }
 }
 
-/** Given a BlastHSPList* with a heapified HSP array, remove the worst scoring 
+/** Given a BlastHSPList* with a heapified HSP array, check whether the 
+ * new HSP is better than the worst scoring.  If it is, then remove the 
+ * worst scoring and insert, otherwise free the new one.
  * HSP and insert the new HSP in the heap. 
  * @param hsp_list Contains all HSPs for a given subject. [in] [out]
- * @param hsp A new HSP to be inserted into the HSP list [in]
+ * @param hsp A pointer to new HSP to be inserted into the HSP list [in] [out]
  */
 static void 
 Blast_HSPListInsertHSPInHeap(BlastHSPList* hsp_list, 
-                             BlastHSP* hsp)
+                             BlastHSP** hsp)
 {
     BlastHSP** hsp_array = hsp_list->hsp_array;
-    Blast_HSPFree(hsp_array[0]);
-    hsp_array[0] = hsp;
+    if (score_compare_hsps(hsp, &hsp_array[0]) > 0)
+    {
+         Blast_HSPFree(*hsp);
+         return;
+    }
+    else
+         Blast_HSPFree(hsp_array[0]);
+
+    hsp_array[0] = *hsp;
     if (hsp_list->hspcnt >= 2) {
         heapify((char*)hsp_array, (char*)hsp_array, 
                 (char*)&hsp_array[hsp_list->hspcnt/2 - 1],
@@ -1153,11 +1162,9 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* new_hsp)
       hsp_array[hsp_list->hspcnt] = new_hsp;
       (hsp_list->hspcnt)++;
       return status;
-   } else if (new_hsp->score < hsp_array[0]->score) {
-       Blast_HSPFree(new_hsp);
    } else {
        /* Insert the new HSP in heap. */
-       Blast_HSPListInsertHSPInHeap(hsp_list, new_hsp);
+       Blast_HSPListInsertHSPInHeap(hsp_list, &new_hsp);
    }
    
    return status;
