@@ -228,20 +228,71 @@
 /* ========================================================================= */
 
 
-
-
-/** @defgroup OBJECTMANAGER OBJECT MANAGER
- *  Object Manager members
- */
-
-
 /** @defgroup CTOOLS 
  *  Ctool members
  */
 
+/** @defgroup CToolsBridge C/C++ Toolkit Bridge
+ *  @ingroup CTOOLS
+ */
+
+/** @defgroup CToolsASNConn ASN Streams Connection
+ *  @ingroup CTOOLS
+ */
+
+/** @defgroup CToolsASNConv ASN Converter
+ *  @ingroup CTOOLS
+ */
+
+
+/* ========================================================================= */
+
 
 /** @defgroup DBAPI 
- *  Dbapi members
+ *  Database API members
+ */
+
+/** @defgroup DbAPI	Database APIs
+ *  @ingroup DBAPI
+ */
+
+/** @defgroup DbDrvMgr	Driver Manager
+ *  @ingroup DBAPI
+ */
+
+/** @defgroup DbVariant Variant exception and data type
+ *  @ingroup DBAPI
+ */
+
+/** @defgroup DbExceptions Database Exceptions
+ *  @ingroup DBAPI
+ */
+
+/** @defgroup DbInterfaces Database Server Interfaces
+ *  @ingroup DBAPI
+ */
+
+/** @defgroup DbInterfaces Database Server Public Interfaces
+ *  @ingroup DBAPI
+ */
+
+/** @defgroup DbTypes Database Types
+ *  @ingroup DBAPI
+ */
+
+/** @defgroup DbDriverReg Drivers' Registration
+ *  @ingroup DBAPI
+ */
+
+
+
+
+
+/* ========================================================================= */
+
+
+/** @defgroup OBJECTMANAGER OBJECT MANAGER
+ *  Object Manager members
  */
 
 
