@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/05/18 22:58:52  thiessen
+* fix display list bug with disulfides
+*
 * Revision 1.23  2001/03/23 23:31:56  thiessen
 * keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
 *
@@ -231,13 +234,13 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
         // gets its own display list (one display list for each molecule for
         // each set of coordinates), while everything else - hets, solvents,
         // inter-molecule bonds - goes in a single list.
-        for (unsigned int n=0; n<nAlts; n++) {
+        for (int n=0; n<nAlts; n++) {
 
             if (molecule->IsProtein() || molecule->IsNucleotide()) {
+
                 molecule->displayLists.push_back(++(parentSet->lastDisplayList));
-                parentSet->transformMap[parentSet->lastDisplayList] = &(object->transformToMaster);
-                // add molecule's display list to frame
                 parentSet->frameMap[firstNewFrame + n].push_back(parentSet->lastDisplayList);
+                parentSet->transformMap[parentSet->lastDisplayList] = &(object->transformToMaster);
 
             } else { // het/solvent
                 if (displayListOtherStart == OpenGLRenderer::NO_LIST) {
@@ -245,7 +248,6 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
                     parentSet->lastDisplayList += nAlts;
                 }
                 molecule->displayLists.push_back(displayListOtherStart + n);
-                parentSet->transformMap[displayListOtherStart + n] = &(object->transformToMaster);
             }
         }
     }
@@ -278,8 +280,10 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
 
     // if hets/solvent/i-m bonds present, add display lists to frames
     if (displayListOtherStart != OpenGLRenderer::NO_LIST) {
-        for (unsigned int n=0; n<nAlts; n++)
+        for (int n=0; n<nAlts; n++) {
             parentSet->frameMap[firstNewFrame + n].push_back(displayListOtherStart + n);
+            parentSet->transformMap[displayListOtherStart + n] = &(object->transformToMaster);
+        }
     }
 
     // fill out secondary structure and domain maps from NCBI assigments (in feature block)
