@@ -37,6 +37,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2000/10/20 22:23:26  vakatov
+ * CArgAllow_Strings customization;  MSVC++ fixes;  better diagnostic messages
+ *
  * Revision 1.9  2000/10/20 20:25:53  vakatov
  * Redesigned/reimplemented the user-defined arg.value constraints
  * mechanism (CArgAllow-related classes and methods). +Generic clean-up.
@@ -105,9 +108,6 @@ class CArgAllow;
 //                     only alphanumeric characters
 //    <value> is an arbitrary string (additional constraints can
 //            be applied in the argument description, see "EType")
-//
-// If <value> starts from dash ('-') then (and only then) this first dash must
-// be doubled, e.g.  "-my-val" --> "--my-val", or  "--a" --> "---a".    
 //
 // {arg_plain} and {arg_extra} are position dependent arguments, with
 // no tag preceeding them. {arg_plain} have individual names and descriptions
@@ -457,19 +457,27 @@ protected:
 
 
 
-// Allow an argument to have only particular string values
-// Example:  SetConstraint("a1", (*new CArgAllow_Strings, "foo", "bar", "etc"))
+// Allow an argument to have only particular string values.
+// Use "Allow()" to add the allowed string values, can daisy-chain it:
+//  SetConstraint("a", (new CArgAllow_Strings)->
+//                      Allow("foo")->Allow("bar")->Allow("etc"));
+// One can also use "operator,()" in order to shorten the notation:
+//  SetConstraint("b", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
 //
 
 class CArgAllow_Strings : public CArgAllow
 {
 public:
-    CArgAllow_Strings& operator,(const string& value); 
+    CArgAllow_Strings(void);
+    CArgAllow_Strings* Allow(const string& value);
+    CArgAllow_Strings& operator,(const string& value) { return *Allow(value); }
+protected:
     virtual bool   Verify(const string& value) const;
     virtual string GetUsage(void) const;
 private:
     set<string> m_Strings;
 };
+
 
 
 // Allow an argument to have only integer values falling within given interval
@@ -480,6 +488,7 @@ class CArgAllow_Integers : public CArgAllow
 {
 public:
     CArgAllow_Integers(long x_min, long x_max);
+protected:
     virtual bool   Verify(const string& value) const;
     virtual string GetUsage(void) const;
 private:
@@ -496,6 +505,7 @@ class CArgAllow_Doubles : public CArgAllow
 {
 public:
     CArgAllow_Doubles(double x_min, double x_max);
+protected:
     virtual bool   Verify(const string& value) const;
     virtual string GetUsage(void) const;
 private:

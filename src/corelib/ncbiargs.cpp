@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2000/10/20 22:23:28  vakatov
+ * CArgAllow_Strings customization;  MSVC++ fixes;  better diagnostic messages
+ *
  * Revision 1.14  2000/10/20 20:25:55  vakatov
  * Redesigned/reimplemented the user-defined arg.value constraints
  * mechanism (CArgAllow-related classes and methods). +Generic clean-up.
@@ -669,9 +672,8 @@ CArgValue* CArgDesc_Plain::ProcessArgument(const string& value,
                                            bool          is_default) const
 {
     // Check against additional (user-defined) constraints, if any imposed
-    if (m_Constraint  &&  !m_Constraint->Verify(value)) {
-        ARG_THROW("Illegal value (must be " + m_Constraint->GetUsage() +
-                  ")", value);
+    if (m_Constraint.NotEmpty()  &&  !m_Constraint->Verify(value)) {
+        ARG_THROW("Illegal value, must be " + m_Constraint->GetUsage(), value);
     }
 
     // Process according to the argument type
@@ -1183,8 +1185,8 @@ bool CArgDescriptions::x_CreateArg
     // Check for too many plain/extra arguments
     if ((m_Constraint == eEqual  ||  m_Constraint == eLessOrEqual)  &&
         *n_plain > (m_ConstrArgs ? m_ConstrArgs : m_PlainArgs.size())) {
-        ARG_THROW("Too many positional arguments",
-                  NStr::UIntToString(*n_plain));
+        ARG_THROW("Too many positional arguments (" +
+                  NStr::UIntToString(*n_plain) + ")", arg1);
     }
 
     // Get arg. description
@@ -1249,7 +1251,8 @@ void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
     for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
         CArgDesc_Key* arg = dynamic_cast<CArgDesc_Key*> (it->second.get());
         if (arg  &&  !args.Exist(it->first))
-            ARG_THROW("Must specify mandatory argument, with key", it->first);
+            ARG_THROW("Must specify mandatory argument",
+                      arg->GetUsageSynopsis(it->first, false));
 
         // Default optional arguments (if not provided in a command line)
         CArgDesc_OptionalKey* optArg =
@@ -1385,7 +1388,7 @@ static void s_PrintComment(string& str, const CArgUsage& arg, SIZE_TYPE width)
     // print constraint info, if any
     string constr = arg.m_Desc->GetUsageConstraint();
     if ( !constr.empty() ) {
-        str += constr.insert(0, "\n     * constraint:  ");
+        str += constr.insert(0, "\n    * constraint:  ");
     }
 
     // print description
@@ -1583,10 +1586,17 @@ CArgAllow::~CArgAllow(void)
 //  CArgAllow_Strings::
 //
 
-CArgAllow_Strings& CArgAllow_Strings::operator,(const string& value)
+CArgAllow_Strings::CArgAllow_Strings(void)
+    : CArgAllow()
+{
+    return;
+}
+
+
+CArgAllow_Strings* CArgAllow_Strings::Allow(const string& value)
 {
     m_Strings.insert(value);
-    return *this;
+    return this;
 }
 
 
@@ -1602,7 +1612,7 @@ string CArgAllow_Strings::GetUsage(void) const
         return "ERROR:  Constraint with no values allowed(?!)";
     }
 
-    string str = "{ ";
+    string str = "{";
     set<string>::const_iterator it = m_Strings.begin();
     for (;;) {
         str += "`";
@@ -1617,7 +1627,7 @@ string CArgAllow_Strings::GetUsage(void) const
         str += "', ";
     }
 
-    str += " }";
+    str += "}";
     return str;
 }
 
@@ -1628,7 +1638,7 @@ string CArgAllow_Strings::GetUsage(void) const
 //
 
 CArgAllow_Integers::CArgAllow_Integers(long x_min, long x_max)
-    : m_Min(x_min), m_Max(x_max)
+    : CArgAllow(), m_Min(x_min), m_Max(x_max)
 {
     return;
 }
@@ -1656,7 +1666,7 @@ string CArgAllow_Integers::GetUsage(void) const
 //
 
 CArgAllow_Doubles::CArgAllow_Doubles(double x_min, double x_max)
-    : m_Min(x_min), m_Max(x_max)
+    : CArgAllow(), m_Min(x_min), m_Max(x_max)
 {
     return;
 }
