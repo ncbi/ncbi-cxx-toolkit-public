@@ -242,7 +242,7 @@ const string& CCgiContext::GetSelfURL(void) const
 CCgiContext::TStreamStatus
 CCgiContext::GetStreamStatus(STimeout* timeout) const
 {
-#if defined(NCBI_OS_UNIX) && !(defined(NCBI_COMPILER_METROWERKS)  && _MSL_USING_MW_C_HEADERS)
+#if defined(NCBI_OS_UNIX) && !(defined(NCBI_COMPILER_MW_MSL))
     int ifd  = m_Request->GetInputFD();
     int ofd  = m_Response.GetOutputFD();
     int nfds = max(ifd, ofd) + 1;
@@ -284,6 +284,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.32  2003/04/03 14:14:59  rsmith
+* combine pp symbols NCBI_COMPILER_METROWERKS & _MSL_USING_MW_C_HEADERS into NCBI_COMPILER_MW_MSL
+*
 * Revision 1.31  2003/04/02 13:27:53  rsmith
 * GetStreamStatus not implemented on MacOSX w/Codewarrior using MSL headers.
 *

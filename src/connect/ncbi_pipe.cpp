@@ -37,7 +37,7 @@
 #elif defined NCBI_OS_UNIX
 #   include <unistd.h>
 #   include <errno.h>
-#   if defined(NCBI_OS_DARWIN) && defined(NCBI_COMPILER_METROWERKS) &&  _MSL_USING_MW_C_HEADERS
+#   ifdef NCBI_COMPILER_MW_MSL
 #       include <ncbi_mslextras.h>
 #   endif
 #else
@@ -748,6 +748,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/04/03 14:15:48  rsmith
+ * combine pp symbols NCBI_COMPILER_METROWERKS & _MSL_USING_MW_C_HEADERS into NCBI_COMPILER_MW_MSL
+ *
  * Revision 1.15  2003/04/02 16:22:34  rsmith
  * clean up metrowerks ifdefs.
  *

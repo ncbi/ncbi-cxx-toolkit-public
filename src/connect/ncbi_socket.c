@@ -86,7 +86,7 @@
 #if defined(NCBI_OS_UNIX)
 #  include <sys/time.h>
 #  include <unistd.h>
-#  if  defined(NCBI_OS_DARWIN) && defined(NCBI_COMPILER_METROWERKS) &&  _MSL_USING_MW_C_HEADERS
+#  ifdef NCBI_COMPILER_MW_MSL
 #    include <ncbi_mslextras.h>
 #  else
 #    include <netdb.h>
@@ -2979,6 +2979,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.90  2003/04/03 14:16:18  rsmith
+ * combine pp symbols NCBI_COMPILER_METROWERKS & _MSL_USING_MW_C_HEADERS into NCBI_COMPILER_MW_MSL
+ *
  * Revision 6.89  2003/04/02 16:21:34  rsmith
  * replace _MWERKS_ with NCBI_COMPILER_METROWERKS
  *
