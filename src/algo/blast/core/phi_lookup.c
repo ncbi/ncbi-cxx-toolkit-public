@@ -52,7 +52,7 @@ score matrix, program_flag says which variant of the program is
 used; is_dna tells whether the strings are DNA or protein*/
 static void init_order(Int4 **matrix, Int4 program_flag, Boolean is_dna, seedSearchItems *seedSearch)
 {
-    Char i, j; /*loop indices for matrix*/ 
+    Uint1 i, j; /*loop indices for matrix*/ 
     Int4 *matrixRow; /*row of matrixToFill*/ 
     double rowSum; /*sum of scaled substitution probabilities on matrixRow*/
     
@@ -64,7 +64,7 @@ static void init_order(Int4 **matrix, Int4 program_flag, Boolean is_dna, seedSea
     } 
     else {
       for (i = 0; i < ALPHABET_SIZE; i++) 
-	seedSearch->order[seedSearch->pchars[i]] = i;
+	seedSearch->order[(Uint1)seedSearch->pchars[i]] = i;
     }
     if (program_flag == SEED_FLAG) {
       for (i = 0; i < ALPHABET_SIZE; i++) 
@@ -513,7 +513,8 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
         currentSetMask =  charSetMask = (1 << seedSearch->order[c]);
         if (!(prevSetMask & currentSetMask)) /*character sets don't overlap*/
            currentWildcardProduct = 1;
-        positionProbability = seedSearch->standardProb[seedSearch->order[c]];
+        positionProbability = 
+           seedSearch->standardProb[(Uint1)seedSearch->order[c]];
 	  }
 	}
       }
@@ -530,7 +531,7 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
            return(-1);
         }
         charSetMask = charSetMask | (1 << seedSearch->order[c]);
-        positionProbability += seedSearch->standardProb[seedSearch->order[c]];
+        positionProbability += seedSearch->standardProb[(Uint1)seedSearch->order[c]];
 	  }
      prevSetMask = currentSetMask;
      currentSetMask = charSetMask;
@@ -544,7 +545,7 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
 	  positionProbability = 1;
 	  while ((c=pattern[++i]) != '}') { /*end of set*/
 	    charSetMask = charSetMask -  (charSetMask & (1 << seedSearch->order[c]));
-	    positionProbability -= seedSearch->standardProb[seedSearch->order[c]];
+	    positionProbability -= seedSearch->standardProb[(Uint1)seedSearch->order[c]];
 	  }
           prevSetMask = currentSetMask;
           currentSetMask = charSetMask;
@@ -615,15 +616,6 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
     return j; /*return number of places for pattern representation*/
 }
 
-static Int2 InitPHIPatternInfo(const char *pattern, 
-                               patternSearchItems* *pattern_info)
-{
-   *pattern_info = 
-      (patternSearchItems *) calloc(1, sizeof(patternSearchItems));
-   
-
-}
-
 Int2 PHILookupTableNew(const LookupTableOptions* opt, PHILookupTable* * lut,
                        Boolean is_dna, BlastScoreBlk* sbp)
 {
@@ -639,9 +631,14 @@ Int2 PHILookupTableNew(const LookupTableOptions* opt, PHILookupTable* * lut,
                 &error_msg); 
    lookup->num_matches = 0;
    lookup->allocated_size = MIN_PHI_LOOKUP_SIZE;
-   lookup->start_offsets = 
-       (Int4*) malloc(MIN_PHI_LOOKUP_SIZE*sizeof(Int4));
-   lookup->lengths = (Int4*) malloc(MIN_PHI_LOOKUP_SIZE*sizeof(Int4));
+   if ((lookup->start_offsets = 
+       (Int4*) malloc(MIN_PHI_LOOKUP_SIZE*sizeof(Int4))) == NULL)
+      return -1;
+   if ((lookup->lengths = (Int4*) malloc(MIN_PHI_LOOKUP_SIZE*sizeof(Int4)))
+        == NULL)
+      return -1;
+
+   return 0;
 }
 
 PHILookupTable* PHILookupTableDestruct(PHILookupTable* lut)
@@ -677,8 +674,8 @@ Int4 PHIBlastIndexQuery(PHILookupTable* lookup,
 {
    ListNode* loc;
    Int4 from, to;
-   Int4 offset, length, loc_length;
-   Uint1* sequence, *seq_end;
+   Int4 offset, loc_length;
+   Uint1* sequence;
    patternSearchItems* pattern_info = lookup->pattern_info;
    Int4* hitArray;
    Int4 i, twiceNumHits;
@@ -722,7 +719,7 @@ Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
         Int4* offset_ptr, Uint4 * query_offsets, Uint4 * subject_offsets, 
         Int4 array_size)
 {
-   Uint1* subject, *query, *subject_start, *subject_end;
+   Uint1* subject, *query, *subject_start;
    PHILookupTable* lookup = (PHILookupTable*) lookup_wrap->lut;
    Int4 index, count = 0, twiceNumHits, i;
    Int4 *start_offsets = lookup->start_offsets;
@@ -763,4 +760,5 @@ Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
          }
       }
    }
+   return count;
 }
