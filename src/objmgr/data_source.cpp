@@ -1381,8 +1381,10 @@ void CTSE_Lock::x_Unlock(void)
     _ASSERT(*this);
     const CTSE_Info* info = GetNonNullPointer();
     //_TRACE("TSE_Lock("<<info<<") "<<this<<" unlock");
+    CDataSource* ds = info->HasDataSource() ? &info->GetDataSource() : 0;
     if ( info->m_LockCounter.Add(-1) == 0 ) {
-        info->GetDataSource().x_ReleaseLastLock(*this);
+        _ASSERT(ds);
+        ds->x_ReleaseLastLock(*this);
         _ASSERT(!*this);
     }
     else {
