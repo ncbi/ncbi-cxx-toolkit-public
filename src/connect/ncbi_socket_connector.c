@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/08/12 15:06:58  lavr
+ * Use persistent SOCK_Write*(
+ *
  * Revision 6.9  2002/08/07 16:37:45  lavr
  * EIO_ReadMethod enums changed accordingly;
  * eSCC_SetReadOnWrite processing added
@@ -187,7 +190,7 @@ static EIO_Status s_VT_Open
                 return eIO_Success;
             SOCK_SetTimeout(xxx->sock, eIO_Write, timeout);
             status = SOCK_Write(xxx->sock, xxx->init_data, xxx->init_size,
-                                &n_written);
+                                &n_written, eIO_WritePersist);
             if (status == eIO_Success)
                 return eIO_Success;
         }
@@ -232,7 +235,7 @@ static EIO_Status s_VT_Write
     if (!xxx->sock)
         return eIO_Closed;
     SOCK_SetTimeout(xxx->sock, eIO_Write, timeout);
-    return SOCK_Write(xxx->sock, buf, size, n_written);
+    return SOCK_Write(xxx->sock, buf, size, n_written, eIO_WritePlain);
 }
 
 
