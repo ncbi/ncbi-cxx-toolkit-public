@@ -49,6 +49,7 @@
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1538,6 +1539,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/10/27 18:42:49  vasilche
+* Added include <algorithm> for sort().
+*
 * Revision 1.43  2004/10/27 18:01:13  vasilche
 * Fixed order of mapping segments in annotation iterator.
 *
