@@ -1122,7 +1122,7 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 }
 
 Int2 
-BlastLinkHsps(Uint1 program_number, BlastHSPList* hsp_list, 
+BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
    BLAST_ScoreBlk* sbp, BlastHitSavingParameters* hit_params,
    Boolean gapped_calculation)
