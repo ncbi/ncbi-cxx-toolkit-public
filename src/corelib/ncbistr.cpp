@@ -292,6 +292,8 @@ int NStr::StringToNumeric(const string& str)
 
 # define CHECK_ENDPTR(conv)                                           \
     if (check_endptr == eCheck_Need  &&  *endptr != '\0') {           \
+        if ( on_error == eConvErr_NoThrow )                           \
+            return 0;                                                 \
         NCBI_THROW2(CStringException, eBadArgs,                       \
             "String cannot be converted to " conv " - trailing junk", \
             s_DiffPtr(endptr, str.c_str()));                          \
@@ -1599,6 +1601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.117  2004/09/22 16:01:30  ivanov
+ * CHECK_ENDPTR macro -- throw exception only if specified, otherwise return 0
+ *
  * Revision 1.116  2004/09/22 13:52:36  kuznets
  * Code cleanup
  *
