@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/11/22 21:04:32  vasilche
+* Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
+*
 * Revision 1.19  1999/10/04 19:39:45  vasilche
 * Fixed bug in CObjectOStreamBinary.
 * Start using of BSRead/BSWrite.
@@ -105,6 +108,7 @@
 #include <serial/typeref.hpp>
 #include <serial/typemap.hpp>
 #include <serial/choice.hpp>
+#include <serial/serialasn.hpp>
 #include <map>
 
 struct valnode;
@@ -264,12 +268,6 @@ protected:
 
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
 };
-
-#ifdef HAVE_WINDOWS_H
-# define ASNCALL __stdcall
-#else
-# define ASNCALL
-#endif
 
 class COldAsnTypeInfo : public CTypeInfoTmpl<void*>
 {

@@ -1,7 +1,7 @@
 #include <ncbiconf.h>
 #if HAVE_NCBI_C
 #include "cppwebenv.hpp"
-#include <serial/serial.hpp>
+#include <serial/serialimpl.hpp>
 #include <serial/asntypes.hpp>
 #include <serial/classinfo.hpp>
 

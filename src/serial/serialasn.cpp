@@ -30,7 +30,7 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1999/11/22 21:04:41  vasilche
+* Revision 1.1  1999/11/22 21:04:42  vasilche
 * Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
 *
 * Revision 1.3  1999/06/04 20:51:49  vasilche
@@ -45,27 +45,39 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include <serial/serial.hpp>
-#include <serial/ptrinfo.hpp>
-#include <serial/objostr.hpp>
-#include <serial/objistr.hpp>
+#include <serial/serialasn.hpp>
+#include <serial/autoptrinfo.hpp>
+#include <serial/asntypes.hpp>
 
 BEGIN_NCBI_SCOPE
 
-TTypeInfo CPointerTypeInfoGetTypeInfo(TTypeInfo type)
+TTypeInfo COctetStringTypeInfoGetTypeInfo(void)
 {
-    return CPointerTypeInfo::GetTypeInfo(type);
+    return COctetStringTypeInfo::GetTypeInfo();
 }
 
-void Write(CObjectOStream& out, TConstObjectPtr object, const CTypeRef& type)
+TTypeInfo CAutoPointerTypeInfoGetTypeInfo(TTypeInfo type)
 {
-    out.Write(object, type.Get());
+    return CAutoPointerTypeInfo::GetTypeInfo(type);
 }
 
-void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type)
+TTypeInfo CSetOfTypeInfoGetTypeInfo(TTypeInfo type)
 {
-    in.Read(object, type.Get());
+    return CSetOfTypeInfo::GetTypeInfo(type);
+}
+
+TTypeInfo CSequenceOfTypeInfoGetTypeInfo(TTypeInfo type)
+{
+    return CSequenceOfTypeInfo::GetTypeInfo(type);
+}
+
+TTypeInfo COldAsnTypeInfoGetTypeInfo(const string& name,
+                                     TNewProc newProc,
+                                     TFreeProc freeProc,
+                                     TReadProc readProc,
+                                     TWriteProc writeProc)
+{
+    return new COldAsnTypeInfo(name, newProc, freeProc, readProc, writeProc);
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/11/22 21:04:49  vasilche
+* Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
+*
 * Revision 1.2  1999/11/15 19:36:14  vasilche
 * Fixed warnings on GCC
 *
@@ -232,7 +235,7 @@ void CFileCode::GenerateCPP(const string& path) const
         "// This is generated file, don't modify" << NcbiEndl <<
         NcbiEndl <<
         "// standard includes" << NcbiEndl <<
-        "#include <serial/serial.hpp>" << NcbiEndl <<
+        "#include <serial/serialimpl.hpp>" << NcbiEndl <<
         NcbiEndl <<
         "// generated includes" << NcbiEndl <<
         "#include <" << GetUserHPPName() << ">" << NcbiEndl;
@@ -336,7 +339,6 @@ bool CFileCode::GenerateUserCPP(const string& path) const
         "// This is generated file, you may modify it freely" << NcbiEndl <<
         NcbiEndl <<
         "// standard includes" << NcbiEndl <<
-        "#include <serial/serial.hpp>" << NcbiEndl <<
         NcbiEndl <<
         "// generated includes" << NcbiEndl <<
         "#include <" << GetUserHPPName() << ">" << NcbiEndl;

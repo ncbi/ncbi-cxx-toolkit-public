@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/11/22 21:04:49  vasilche
+* Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
+*
 * Revision 1.11  1999/11/15 19:36:17  vasilche
 * Fixed warnings on GCC
 *
@@ -44,11 +47,6 @@
 #include "moduleset.hpp"
 #include "exceptions.hpp"
 #include "type.hpp"
-
-void Warning(const string& message)
-{
-    CNcbiDiag() << NCBI_NS_NCBI::Warning << message;
-}
 
 CDataTypeModule::CDataTypeModule(const string& n)
     : m_Errors(false), m_Name(n), m_ModuleContainer(0)
@@ -70,8 +68,8 @@ void CDataTypeModule::AddDefinition(const string& name,
 {
     CDataType*& oldType = m_LocalTypes[name];
     if ( oldType ) {
-        Warning(type->LocationString() + ": redefinition, original: " +
-                oldType->LocationString());
+        type->Warning("redefinition, original: " +
+                      oldType->LocationString());
         m_Errors = true;
         return;
     }
@@ -164,7 +162,7 @@ bool CDataTypeModule::CheckNames()
         const string& name = *e;
         TTypesByName::iterator it = m_LocalTypes.find(name);
         if ( it == m_LocalTypes.end() ) {
-            Warning("undefined export type: " + name);
+            ERR_POST(Warning << "undefined export type: " << name);
             ok = false;
         }
         else {
@@ -179,14 +177,15 @@ bool CDataTypeModule::CheckNames()
               t != imp.types.end(); ++t ) {
             const string& name = *t;
             if ( m_LocalTypes.find(name) != m_LocalTypes.end() ) {
-                Warning("import conflicts with local defenition: " + name);
+                ERR_POST(Warning <<
+                         "import conflicts with local defenition: " << name);
                 ok = false;
                 continue;
             }
             pair<TImportsByName::iterator, bool> ins =
                 m_ImportedTypes.insert(TImportsByName::value_type(name, module));
             if ( !ins.second ) {
-                Warning("duplicated import: " + name);
+                ERR_POST(Warning << "duplicated import: " << name);
                 ok = false;
                 continue;
             }
