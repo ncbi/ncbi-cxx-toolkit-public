@@ -1097,7 +1097,7 @@ void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map,
                                    const CSeq_id* top_id)
 {
     CSeqMap::const_iterator seg_it =
-        seq_map.begin_resolved(m_Scope.GetPointerOrNull(), size_t(-1),
+        seq_map.BeginResolved(m_Scope.GetPointerOrNull(), size_t(-1),
         CSeqMap::fFindRef);
 
     TSeqPos top_start = kInvalidSeqPos;
@@ -1146,7 +1146,7 @@ void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map,
                                    const CSeq_id* top_id)
 {
     CSeqMap::const_iterator seg_it =
-        seq_map.begin_resolved(m_Scope.GetPointerOrNull(), depth,
+        seq_map.BeginResolved(m_Scope.GetPointerOrNull(), depth,
         CSeqMap::fFindRef);
 
     TSeqPos top_start = kInvalidSeqPos;
@@ -1846,6 +1846,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/08/25 15:03:56  grichenk
+* Removed duplicate methods from CSeqMap
+*
 * Revision 1.22  2004/08/11 17:23:09  grichenk
 * Added eMergeContained flag. Fixed convertion of whole to seq-interval.
 *

@@ -1027,9 +1027,9 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
            ") seq_len="<<seq_len<<") resolved:");
     // Iterate seq-map except the last element
     len = 0;
-    CSeqMap::const_iterator seg = seq_map->begin_resolved(&scope);
+    CSeqMap::const_iterator seg = seq_map->BeginResolved(&scope);
     vector<CSeqMap::const_iterator> itrs;
-    for ( ; seg != seq_map->end_resolved(&scope); ++seg ) {
+    for ( ; seg != seq_map->EndResolved(&scope); ++seg ) {
         _ASSERT(seg);
         itrs.push_back(seg);
         switch (seg.GetType()) {
@@ -1411,6 +1411,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2004/08/25 15:03:56  grichenk
+* Removed duplicate methods from CSeqMap
+*
 * Revision 1.58  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -137,10 +137,10 @@ protected:
     };
 
 public:
-    typedef CSeqMap_CI CSegmentInfo; // for compatibility
+    // typedef CSeqMap_CI CSegmentInfo; // for compatibility
+    // typedef CSeqMap_CI TSegment_CI;
 
     typedef CSeqMap_CI const_iterator;
-    typedef CSeqMap_CI TSegment_CI;
     
     ~CSeqMap(void);
 
@@ -151,11 +151,11 @@ public:
     // STL style methods
     const_iterator begin(CScope* scope = 0) const;
     const_iterator end(CScope* scope = 0) const;
-    const_iterator find(TSeqPos pos, CScope* scope = 0) const;
+
     // NCBI style methods
-    TSegment_CI Begin(CScope* scope = 0) const;
-    TSegment_CI End(CScope* scope = 0) const;
-    TSegment_CI FindSegment(TSeqPos pos, CScope* scope = 0) const;
+    CSeqMap_CI Begin(CScope* scope = 0) const;
+    CSeqMap_CI End(CScope* scope = 0) const;
+    CSeqMap_CI FindSegment(TSeqPos pos, CScope* scope = 0) const;
 
     enum EFlags {
         fFindData     = (1<<0),
@@ -170,54 +170,34 @@ public:
     typedef int TFlags;
 
     // resolved iterators
-    const_iterator begin_resolved(CScope* scope,
-                                  size_t maxResolveCount = size_t(-1),
-                                  TFlags flags = fDefaultFlags) const;
-    const_iterator find_resolved(TSeqPos pos, CScope* scope,
-                                 size_t maxResolveCount = size_t(-1),
-                                 TFlags flags = fDefaultFlags) const;
-    const_iterator find_resolved(TSeqPos pos, CScope* scope,
-                                 ENa_strand strand,
-                                 size_t maxResolveCount,
-                                 TFlags flags) const;
-    const_iterator end_resolved(CScope* scope,
-                                size_t maxResolveCount = size_t(-1),
-                                TFlags flags = fDefaultFlags) const;
-
-    TSegment_CI BeginResolved(CScope* scope,
-                              size_t maxResolveCount = size_t(-1),
-                              TFlags flags = fDefaultFlags) const;
-    TSegment_CI FindResolved(TSeqPos pos, CScope* scope,
+    CSeqMap_CI BeginResolved(CScope* scope,
                              size_t maxResolveCount = size_t(-1),
                              TFlags flags = fDefaultFlags) const;
-    TSegment_CI FindResolved(TSeqPos pos, CScope* scope,
-                             ENa_strand strand,
-                             size_t maxResolveCount = size_t(-1),
-                             TFlags flags = fDefaultFlags) const;
-    TSegment_CI EndResolved(CScope* scope,
+    CSeqMap_CI FindResolved(TSeqPos pos, CScope* scope,
                             size_t maxResolveCount = size_t(-1),
                             TFlags flags = fDefaultFlags) const;
+    CSeqMap_CI FindResolved(TSeqPos pos, CScope* scope,
+                            ENa_strand strand,
+                            size_t maxResolveCount = size_t(-1),
+                            TFlags flags = fDefaultFlags) const;
+    CSeqMap_CI EndResolved(CScope* scope,
+                           size_t maxResolveCount = size_t(-1),
+                           TFlags flags = fDefaultFlags) const;
 
-    // iterate range with plus strand coordinates
-    TSegment_CI ResolvedRangeIterator(CScope* scope,
-                                      TSeqPos from,
-                                      TSeqPos length,
-                                      ENa_strand strand = eNa_strand_plus,
-                                      size_t maxResolve = size_t(-1),
-                                      TFlags flags = fDefaultFlags) const;
     // iterate range with specified strand coordinates
-    TSegment_CI ResolvedRangeIterator(CScope* scope,
-                                      ENa_strand strand,
-                                      TSeqPos from,
-                                      TSeqPos length,
-                                      size_t maxResolve = size_t(-1),
-                                      TFlags flags = fDefaultFlags) const;
+    CSeqMap_CI ResolvedRangeIterator(CScope* scope,
+                                     TSeqPos from,
+                                     TSeqPos length,
+                                     ENa_strand strand = eNa_strand_plus,
+                                     size_t maxResolve = size_t(-1),
+                                     TFlags flags = fDefaultFlags) const;
     
     bool CanResolveRange(CScope* scope,
                          TSeqPos from,
                          TSeqPos length,
                          ENa_strand strand = eNa_strand_plus) const;
 
+    // Methods used internally by other OM classes
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
     static CConstRef<CSeqMap> CreateSeqMapForBioseq(const CBioseq& seq);
@@ -329,6 +309,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2004/08/25 15:03:56  grichenk
+* Removed duplicate methods from CSeqMap
+*
 * Revision 1.47  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

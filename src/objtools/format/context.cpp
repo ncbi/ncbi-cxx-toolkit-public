@@ -551,8 +551,7 @@ void CMasterContext::x_SetBaseName(void)
     CScope* scope = &m_Handle.GetScope();
     CBioseq_Handle segment;
     const CSeqMap& seqmap = m_Handle.GetSeqMap();
-    CSeqMap::TSegment_CI it =
-        seqmap.BeginResolved(scope, 1, CSeqMap::fFindRef);
+    CSeqMap_CI it = seqmap.BeginResolved(scope, 1, CSeqMap::fFindRef);
     while (it) {
         CSeq_id_Handle id = it.GetRefSeqid();
         segment = scope->GetBioseqHandleFromTSE(id, m_Handle);
@@ -587,6 +586,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/08/25 15:03:56  grichenk
+* Removed duplicate methods from CSeqMap
+*
 * Revision 1.20  2004/08/19 20:32:30  ucko
 * Substitute string::erase() for string::clear(), which still isn't
 * portable (to gcc 2.95).

@@ -350,7 +350,7 @@ int CTestApp::Run(void)
 
     {{
         const CSeqMap& smap = handle.GetSeqMap();
-        CSeqMap_CI map_it = smap.begin_resolved(&scope);
+        CSeqMap_CI map_it = smap.BeginResolved(&scope);
         if ( map_it ) {
             // Should happen for any non-empty sequence
             pos2 = map_it.GetEndPosition();
@@ -494,6 +494,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/08/25 15:03:56  grichenk
+* Removed duplicate methods from CSeqMap
+*
 * Revision 1.6  2004/07/21 15:51:26  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

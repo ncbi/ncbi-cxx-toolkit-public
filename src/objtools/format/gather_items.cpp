@@ -236,7 +236,7 @@ void CFlatGatherer::x_DoMultipleSections(const CBioseq_Handle& seq) const
     CScope* scope = &seq.GetScope();
     const CSeqMap& seqmap = seq.GetSeqMap();
 
-    CSeqMap::TSegment_CI it = seqmap.BeginResolved(scope, 1, CSeqMap::fFindRef);
+    CSeqMap_CI it = seqmap.BeginResolved(scope, 1, CSeqMap::fFindRef);
     while ( it ) {
         CSeq_id_Handle id = it.GetRefSeqid();
         CBioseq_Handle part = scope->GetBioseqHandleFromTSE(id, seq);
@@ -719,7 +719,7 @@ void CFlatGatherer::x_CollectSourceDescriptors
         CConstRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForSeq_loc(loc, scope);
               
         // iterate over segments
-        CSeqMap_CI smit(seq_map->begin_resolved(scope, 1, CSeqMap::fFindRef));
+        CSeqMap_CI smit(seq_map->BeginResolved(scope, 1, CSeqMap::fFindRef));
         for ( ; smit; ++smit ) {
             CBioseq_Handle segh = scope->GetBioseqHandle(smit.GetRefSeqid());
             if ( !segh  ||  !segh.IsSetDescr() ) {
@@ -1287,6 +1287,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2004/08/25 15:03:56  grichenk
+* Removed duplicate methods from CSeqMap
+*
 * Revision 1.23  2004/08/19 16:31:29  shomrat
 * Do only non-virtual parts; gather feature comments
 *

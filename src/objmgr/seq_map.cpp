@@ -381,21 +381,21 @@ bool CSeqMap::x_GetRefMinusStrand(const CSegment& seg) const
 }
 
 
-CSeqMap::TSegment_CI CSeqMap::Begin(CScope* scope) const
+CSeqMap_CI CSeqMap::Begin(CScope* scope) const
 {
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope, 0);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, 0);
 }
 
 
-CSeqMap::TSegment_CI CSeqMap::End(CScope* scope) const
+CSeqMap_CI CSeqMap::End(CScope* scope) const
 {
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope, GetLength(scope));
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, GetLength(scope));
 }
 
 
-CSeqMap::TSegment_CI CSeqMap::FindSegment(TSeqPos pos, CScope* scope) const
+CSeqMap_CI CSeqMap::FindSegment(TSeqPos pos, CScope* scope) const
 {
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope, pos);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, pos);
 }
 
 
@@ -411,103 +411,48 @@ CSeqMap::const_iterator CSeqMap::end(CScope* scope) const
 }
 
 
-CSeqMap::const_iterator CSeqMap::find(TSeqPos pos, CScope* scope) const
+CSeqMap_CI CSeqMap::BeginResolved(CScope* scope,
+                                  size_t maxResolveCount,
+                                  TFlags flags) const
 {
-    return FindSegment(pos, scope);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, 0,
+                      maxResolveCount, flags);
 }
 
 
-CSeqMap::TSegment_CI CSeqMap::BeginResolved(CScope* scope, size_t maxResolveCount,
-                                            TFlags flags) const
+CSeqMap_CI CSeqMap::EndResolved(CScope* scope,
+                                size_t maxResolveCount,
+                                TFlags flags) const
 {
-    return begin_resolved(scope, maxResolveCount, flags);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope,
+                      GetLength(scope),
+                      maxResolveCount, flags);
 }
 
 
-CSeqMap::TSegment_CI CSeqMap::EndResolved(CScope* scope, size_t maxResolveCount,
-                                          TFlags flags) const
+CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,
+                                 CScope* scope,
+                                 size_t maxResolveCount,
+                                 TFlags flags) const
 {
-    return end_resolved(scope, maxResolveCount, flags);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, pos,
+                      maxResolveCount, flags);
 }
 
 
-CSeqMap::TSegment_CI CSeqMap::FindResolved(TSeqPos pos, CScope* scope,
-                                           size_t maxResolveCount,
-                                           TFlags flags) const
+CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,
+                                 CScope* scope,
+                                 ENa_strand strand,
+                                 size_t maxResolveCount,
+                                 TFlags flags) const
 {
-    return find_resolved(pos, scope, maxResolveCount, flags);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope,
+                      pos, strand,
+                      maxResolveCount, flags);
 }
 
 
-CSeqMap::TSegment_CI CSeqMap::FindResolved(TSeqPos pos, CScope* scope,
-                                           ENa_strand strand,
-                                           size_t maxResolveCount,
-                                           TFlags flags) const
-{
-    return find_resolved(pos, scope, strand, maxResolveCount, flags);
-}
-
-
-CSeqMap::const_iterator CSeqMap::begin_resolved(CScope* scope,
-                                                size_t maxResolveCount,
-                                                TFlags flags) const
-{
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope, 0,
-                       maxResolveCount, flags);
-}
-
-
-CSeqMap::const_iterator CSeqMap::end_resolved(CScope* scope,
-                                              size_t maxResolveCount,
-                                              TFlags flags) const
-{
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope,
-                       GetLength(scope),
-                       maxResolveCount, flags);
-}
-
-
-CSeqMap::const_iterator CSeqMap::find_resolved(TSeqPos pos, CScope* scope,
-                                               size_t maxResolveCount,
-                                               TFlags flags) const
-{
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope, pos,
-                       maxResolveCount, flags);
-}
-
-
-CSeqMap::const_iterator CSeqMap::find_resolved(TSeqPos pos, CScope* scope,
-                                               ENa_strand strand,
-                                               size_t maxResolveCount,
-                                               TFlags flags) const
-{
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope,
-                       pos, strand,
-                       maxResolveCount, flags);
-}
-
-
-CSeqMap::TSegment_CI
-CSeqMap::ResolvedRangeIterator(CScope* scope,
-                               ENa_strand strand,
-                               TSeqPos from,
-                               TSeqPos length,
-                               size_t maxResolveCount,
-                               TFlags flags) const
-{
-    if ( IsReverse(strand) ) {
-        from = GetLength(scope) - from - length;
-    }
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope,
-                       SSeqMapSelector()
-                       .SetRange(from, length)
-                       .SetResolveCount(maxResolveCount)
-                       .SetFlags(flags),
-                       strand);
-}
-
-
-CSeqMap::TSegment_CI
+CSeqMap_CI
 CSeqMap::ResolvedRangeIterator(CScope* scope,
                                TSeqPos from,
                                TSeqPos length,
@@ -515,12 +460,12 @@ CSeqMap::ResolvedRangeIterator(CScope* scope,
                                size_t maxResolveCount,
                                TFlags flags) const
 {
-    return TSegment_CI(CConstRef<CSeqMap>(this), scope,
-                       SSeqMapSelector()
-                       .SetRange(from, length)
-                       .SetResolveCount(maxResolveCount)
-                       .SetFlags(flags),
-                       strand);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope,
+                      SSeqMapSelector()
+                      .SetRange(from, length)
+                      .SetResolveCount(maxResolveCount)
+                      .SetFlags(flags),
+                      strand);
 }
 
 
@@ -530,12 +475,12 @@ bool CSeqMap::CanResolveRange(CScope* scope,
                               ENa_strand strand) const
 {
     try {
-        TSegment_CI seg(CConstRef<CSeqMap>(this), scope,
-                        SSeqMapSelector()
-                        .SetRange(from, length)
-                        .SetResolveCount(size_t(-1))
-                        .SetFlags(fDefaultFlags),
-                        strand);
+        CSeqMap_CI seg(CConstRef<CSeqMap>(this), scope,
+                       SSeqMapSelector()
+                       .SetRange(from, length)
+                       .SetResolveCount(size_t(-1))
+                       .SetFlags(fDefaultFlags),
+                       strand);
         for ( ; seg; ++seg);
     }
     catch (exception) {
@@ -903,6 +848,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2004/08/25 15:03:56  grichenk
+* Removed duplicate methods from CSeqMap
+*
 * Revision 1.58  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme
