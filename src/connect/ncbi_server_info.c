@@ -28,131 +28,6 @@
  * File Description:
  *   NCBI server meta-address info
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.38  2002/05/06 19:16:16  lavr
- * +#include <stdio.h>
- *
- * Revision 6.37  2002/03/22 19:52:18  lavr
- * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
- *
- * Revision 6.36  2002/03/19 22:13:58  lavr
- * Do not use home-made ANSI-extensions if the platform provides
- *
- * Revision 6.35  2002/03/11 21:59:00  lavr
- * Support for changes in ncbi_server_info.h: DNS server type added as
- * well as support for MIME encoding in server specifications
- *
- * Revision 6.34  2001/12/06 16:07:44  lavr
- * More accurate string length estimation in SERV_WriteInfo()
- *
- * Revision 6.33  2001/11/25 22:12:00  lavr
- * Replaced g_SERV_LocalServerDefault -> SERV_SetLocalServerDefault()
- *
- * Revision 6.32  2001/11/16 20:25:53  lavr
- * +g_SERV_LocalServerDefault as a private global parameter
- *
- * Revision 6.31  2001/09/24 20:43:58  lavr
- * TSERV_Flags reverted to 'int'; expilict cast added in comparison
- *
- * Revision 6.30  2001/09/10 21:17:10  lavr
- * Support written for FIREWALL server type
- *
- * Revision 6.29  2001/06/19 19:12:01  lavr
- * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
- *
- * Revision 6.28  2001/06/05 14:11:29  lavr
- * SERV_MIME_UNDEFINED split into 2 (typed) constants:
- * SERV_MIME_TYPE_UNDEFINED and SERV_MIME_SUBTYPE_UNDEFINED
- *
- * Revision 6.27  2001/06/04 17:01:06  lavr
- * MIME type/subtype added to server descriptor
- *
- * Revision 6.26  2001/05/03 16:35:46  lavr
- * Local bonus coefficient modified: meaning of negative value changed
- *
- * Revision 6.25  2001/04/24 21:38:21  lavr
- * Additions to code to support new locality and bonus attributes of servers.
- *
- * Revision 6.24  2001/03/26 18:39:38  lavr
- * Casting to (unsigned char) instead of (int) for ctype char.class macros
- *
- * Revision 6.23  2001/03/06 23:53:07  lavr
- * SERV_ReadInfo can now consume either hostname or IP address
- *
- * Revision 6.22  2001/03/05 23:10:11  lavr
- * SERV_WriteInfo & SERV_ReadInfo both take only one argument now
- *
- * Revision 6.21  2001/03/02 20:09:14  lavr
- * Typo fixed
- *
- * Revision 6.20  2001/03/01 18:48:19  lavr
- * NCBID allowed to have '' (special case) as an empty argument
- *
- * Revision 6.19  2001/01/03 22:34:44  lavr
- * MAX_IP_ADDRESS_LEN -> MAX_IP_ADDR_LEN (as everywhere else)
- *
- * Revision 6.18  2000/12/29 17:59:38  lavr
- * Reading and writing of SERV_Info now use SOCK_* utility functions
- * SOCK_gethostaddr and SOCK_ntoa. More clean code for reading.
- *
- * Revision 6.17  2000/12/06 22:19:02  lavr
- * Binary host addresses are now explicitly stated to be in network byte
- * order, whereas binary port addresses now use native (host) representation
- *
- * Revision 6.16  2000/12/04 17:34:19  beloslyu
- * the order of include files is important, especially on other Unixes!
- * Look the man on inet_ntoa
- *
- * Revision 6.15  2000/10/20 17:13:30  lavr
- * Service descriptor parse bug fixed
- * Unknown type now returns empty text string (instead of abort) in 'SERV_TypeStr'
- *
- * Revision 6.14  2000/10/05 21:31:23  lavr
- * Standalone connection marked "stateful" by default
- *
- * Revision 6.13  2000/06/05 20:21:20  lavr
- * Eliminated gcc warning: "subscript has type `char'" in calls to
- * classification macros (<ctype.h>) by explicit casting to unsigned chars
- *
- * Revision 6.12  2000/05/31 23:12:22  lavr
- * First try to assemble things together to get working service mapper
- *
- * Revision 6.11  2000/05/24 16:45:15  lavr
- * Introduced replacement for inet_ntoa: my_ntoa
- *
- * Revision 6.10  2000/05/23 21:05:33  lavr
- * Memory leaks fixed (appeared after server-info structure rearrangement)
- *
- * Revision 6.9  2000/05/23 19:02:49  lavr
- * Server-info now includes rate; verbal representation changed
- *
- * Revision 6.8  2000/05/22 16:53:11  lavr
- * Rename service_info -> server_info everywhere (including
- * file names) as the latter name is more relevant
- *
- * Revision 6.7  2000/05/18 14:12:43  lavr
- * Cosmetic change
- *
- * Revision 6.6  2000/05/17 16:15:13  lavr
- * NCBI_* (for ANSI ext) undone - now "ncbi_ansi_ext.h" does good prototyping
- *
- * Revision 6.5  2000/05/17 14:22:32  lavr
- * Small cosmetic changes
- *
- * Revision 6.4  2000/05/16 15:09:02  lavr
- * Added explicit type casting to get "very smart" compilers happy
- *
- * Revision 6.3  2000/05/15 19:06:09  lavr
- * Use home-made ANSI extensions (NCBI_***)
- *
- * Revision 6.2  2000/05/12 21:42:59  lavr
- * Cleaned up for the C++ compilation, etc.
- *
- * Revision 6.1  2000/05/12 18:36:26  lavr
- * First working revision
- *
- * ==========================================================================
  */
 
 #include "ncbi_config.h"
@@ -254,7 +129,8 @@ char* SERV_WriteInfo(const SSERV_Info* info)
     size_t reserve;
     char* str;
 
-    if (info->mime_t != SERV_MIME_TYPE_UNDEFINED &&
+    if (info->type != fSERV_Dns &&
+        info->mime_t != SERV_MIME_TYPE_UNDEFINED &&
         info->mime_s != SERV_MIME_SUBTYPE_UNDEFINED) {
         char* p;
         if (!MIME_ComposeContentTypeEx(info->mime_t, info->mime_s,
@@ -269,9 +145,9 @@ char* SERV_WriteInfo(const SSERV_Info* info)
     } else
         *c_t = 0;
     attr = s_GetAttrByType(info->type);
-    reserve = attr->tag_len+1 + strlen(c_t)+3 + MAX_IP_ADDR_LEN + 5+1/*port*/ +
-        10+1/*algorithm*/ + 12+1/*time*/ + 14+1/*rate*/ + 9+1/*coef*/ +
-        5+1/*locl*/ + 5+1/*priv*/ + 5+1/*sful*/ + 1/*EOL*/;
+    reserve = attr->tag_len+1 + MAX_IP_ADDR_LEN + 1+5/*port*/ + 1+10/*flag*/ +
+        1+9/*coef*/ + 3+strlen(c_t)/*cont.type*/ + 1+5/*locl*/ + 1+5/*priv*/ +
+        1+7/*quorum*/ + 1+14/*rate*/ + 1+5/*sful*/ + 1+12/*time*/ + 1/*EOL*/;
     /* write server-specific info */
     if ((str = attr->vtable.Write(reserve, &info->u)) != 0) {
         char* s = str;
@@ -286,17 +162,26 @@ char* SERV_WriteInfo(const SSERV_Info* info)
             memmove(s, str + reserve, n+1);
             s = str + strlen(str);
         }
-        if (*c_t)
-            s += sprintf(s, " C=%s", c_t);
+
         assert(info->flag < (int)(sizeof(k_FlagTag)/sizeof(k_FlagTag[0])));
         if (k_FlagTag[info->flag] && *k_FlagTag[info->flag])
             s += sprintf(s, " %s", k_FlagTag[info->flag]);
-        s += sprintf(s, " T=%lu R=%.2f B=%.2f L=%s", (unsigned long)info->time,
-                     info->rate, info->coef, info->locl & 0x0F ? "yes" : "no");
-        if (!(info->type & fSERV_Http))
-            s += sprintf(s, " S=%s", info->sful ? "yes" : "no");
-        if (info->locl & 0xF0)
+        s += sprintf(s, " B=%.2f", info->coef);
+        if (*c_t)
+            s += sprintf(s, " C=%s", c_t);
+        s += sprintf(s, " L=%s", info->locl & 0x0F ? "yes" : "no");
+        if (info->type != fSERV_Dns && (info->locl & 0xF0))
             s += sprintf(s, " P=yes");
+        if (info->host && info->quorum) {
+            if (info->quorum == (unsigned short)(-1))
+                s += sprintf(s, " Q=yes");
+            else
+                s += sprintf(s, " Q=%hu", info->quorum);
+        }
+        s += sprintf(s, " R=%.2f", info->rate);
+        if (!(info->type & fSERV_Http) && info->type != fSERV_Dns)
+            s += sprintf(s, " S=%s", info->sful ? "yes" : "no");
+        s += sprintf(s, " T=%lu", (unsigned long)info->time);
     }
     return str;
 }
@@ -307,7 +192,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
     /* detect server type */
     ESERV_Type  type;
     const char* str = SERV_ReadType(info_str, &type);
-    int/*bool*/ mime, time, rate, coef, locl, priv, sful;
+    int/*bool*/ coef, mime, locl, priv, quorum, rate, sful, time;
     unsigned short port;                /* host (native) byte order */
     unsigned int host;                  /* network byte order       */
     SSERV_Info *info;
@@ -327,13 +212,14 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
     info->host = host;
     if (port)
         info->port = port;
-    mime = time = rate = coef = locl = priv = sful = 0; /* unassigned */
+    coef = mime = locl = priv = quorum = rate = sful = time = 0;/*unassigned*/
     /* continue reading server info: optional parts: ... */
     while (*str && isspace((unsigned char)(*str)))
         str++;
     while (*str) {
         if (*(str + 1) == '=') {
             double         d;
+            unsigned short h;
             unsigned long  t;
             char           s[4];
             EMIME_Type     mime_t;
@@ -341,38 +227,8 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
             EMIME_Encoding mime_e;
             
             switch (toupper(*str++)) {
-            case 'C':
-                if (!mime && MIME_ParseContentTypeEx(str + 1, &mime_t,
-                                                     &mime_s, &mime_e)) {
-                    info->mime_t = mime_t;
-                    info->mime_s = mime_s;
-                    info->mime_e = mime_e;
-                    mime = 1;
-                    while (*str && !isspace((unsigned char)(*str)))
-                        str++;
-                }
-                break;
-            case 'T':
-                if (!time && sscanf(str, "=%lu%n", &t, &n) >= 1) {
-                    str += n;
-                    info->time = (TNCBI_Time) t;
-                    time = 1;
-                }
-                break;
-            case 'R':
-                if (!rate && sscanf(str, "=%lf%n", &d, &n) >= 1) {
-                    str += n;
-                    if (fabs(d) < 0.01)
-                        d = 0.0;
-                    else if (fabs(d) > 100000.0)
-                        d = (d < 0 ? -1.0 : 1.0)*100000.0;
-                    info->rate = d;
-                    rate = 1;
-                }
-                break;
             case 'B':
                 if (!coef && sscanf(str, "=%lf%n", &d, &n) >= 1) {
-                    str += n;
                     if (d < -100.0)
                         d = -100.0;
                     else if (d < 0.0)
@@ -382,7 +238,21 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
                     else if (d > 1000.0)
                         d = 1000.0;
                     info->coef = d;
+                    str += n;
                     coef = 1;
+                }
+                break;
+            case 'C':
+                if (type == fSERV_Dns)
+                    break;
+                if (!mime && MIME_ParseContentTypeEx(str + 1, &mime_t,
+                                                     &mime_s, &mime_e)) {
+                    info->mime_t = mime_t;
+                    info->mime_s = mime_s;
+                    info->mime_e = mime_e;
+                    mime = 1;
+                    while (*str && !isspace((unsigned char)(*str)))
+                        str++;
                 }
                 break;
             case 'L':
@@ -399,7 +269,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
                 }
                 break;
             case 'P':
-                if ((type & fSERV_Dns) != 0)
+                if (type == fSERV_Dns)
                     break;
                 if (!priv && sscanf(str, "=%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
@@ -413,11 +283,37 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
                     }
                 }
                 break;
+            case 'Q':
+                if (!info->host || quorum)
+                    break;
+                if (sscanf(str,"=%3s%n",s,&n) >= 1 && strcasecmp(s, "YES")==0){
+                    info->quorum = (unsigned short)(-1);
+                    str += n;
+                    quorum = 1;
+                } else if (sscanf(str, "=%hu%n", &h, &n) >= 1) {
+                    info->quorum = h;
+                    str += n;
+                    quorum = 1;
+                }
+                break;
+            case 'R':
+                if (!rate && sscanf(str, "=%lf%n", &d, &n) >= 1) {
+                    if (fabs(d) < 0.01)
+                        d = 0.0;
+                    else if (fabs(d) > 100000.0)
+                        d = (d < 0 ? -1.0 : 1.0)*100000.0;
+                    info->rate = d;
+                    str += n;
+                    rate = 1;
+                }
+                break;
             case 'S':
                 if ((type & fSERV_Http) != 0)
                     break;
                 if (!sful && sscanf(str, "=%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
+                        if (type == fSERV_Dns)
+                            break; /*check only here for compatibility*/
                         info->sful = 1/*true */;
                         str += n;
                         sful = 1;
@@ -426,6 +322,13 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
                         str += n;
                         sful = 1;
                     }
+                }
+                break;
+            case 'T':
+                if (!time && sscanf(str, "=%lu%n", &t, &n) >= 1) {
+                    info->time = (TNCBI_Time) t;
+                    str += n;
+                    time = 1;
                 }
                 break;
             }
@@ -540,6 +443,7 @@ SSERV_Info* SERV_CreateNcbidInfo
         info->mime_s       = SERV_MIME_SUBTYPE_UNDEFINED;
         info->mime_e       = eENCOD_None;
         info->flag         = SERV_DEFAULT_FLAG;
+        info->quorum       = 0;
         memset(&info->reserved, 0, sizeof(info->reserved));
         info->u.ncbid.args = (TNCBI_Size) sizeof(info->u.ncbid);
         if (strcmp(args, "''") == 0) /* special case */
@@ -603,6 +507,7 @@ SSERV_Info* SERV_CreateStandaloneInfo
         info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
         info->mime_e = eENCOD_None;
         info->flag   = SERV_DEFAULT_FLAG;
+        info->quorum = 0;
         memset(&info->reserved, 0, sizeof(info->reserved));
         memset(&info->u.standalone, 0, sizeof(info->u.standalone));
     }
@@ -715,6 +620,7 @@ SSERV_Info* SERV_CreateHttpInfo
         info->mime_s      = SERV_MIME_SUBTYPE_UNDEFINED;
         info->mime_e      = eENCOD_None;
         info->flag        = SERV_DEFAULT_FLAG;
+        info->quorum      = 0;
         memset(&info->reserved, 0, sizeof(info->reserved));
         info->u.http.path = (TNCBI_Size) sizeof(info->u.http);
         info->u.http.args = (TNCBI_Size) (info->u.http.path +
@@ -782,6 +688,7 @@ SSERV_Info* SERV_CreateFirewallInfo(unsigned int host, unsigned short port,
         info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
         info->mime_e = eENCOD_None;
         info->flag   = SERV_DEFAULT_FLAG;
+        info->quorum = 0;
         memset(&info->reserved, 0, sizeof(info->reserved));
         info->u.firewall.type = type;
     }
@@ -839,6 +746,7 @@ SSERV_Info* SERV_CreateDnsInfo(unsigned int host)
         info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
         info->mime_e = eENCOD_None;
         info->flag   = SERV_DEFAULT_FLAG;
+        info->quorum = 0;
         memset(&info->reserved, 0, sizeof(info->reserved));
         memset(&info->u.dns.pad, 0, sizeof(info->u.dns.pad));
     }
@@ -926,3 +834,135 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
     }
     return 0;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.39  2002/09/04 15:09:47  lavr
+ * Handle quorum field in SSERV_Info::, log moved to end
+ *
+ * Revision 6.38  2002/05/06 19:16:16  lavr
+ * +#include <stdio.h>
+ *
+ * Revision 6.37  2002/03/22 19:52:18  lavr
+ * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
+ *
+ * Revision 6.36  2002/03/19 22:13:58  lavr
+ * Do not use home-made ANSI-extensions if the platform provides
+ *
+ * Revision 6.35  2002/03/11 21:59:00  lavr
+ * Support for changes in ncbi_server_info.h: DNS server type added as
+ * well as support for MIME encoding in server specifications
+ *
+ * Revision 6.34  2001/12/06 16:07:44  lavr
+ * More accurate string length estimation in SERV_WriteInfo()
+ *
+ * Revision 6.33  2001/11/25 22:12:00  lavr
+ * Replaced g_SERV_LocalServerDefault -> SERV_SetLocalServerDefault()
+ *
+ * Revision 6.32  2001/11/16 20:25:53  lavr
+ * +g_SERV_LocalServerDefault as a private global parameter
+ *
+ * Revision 6.31  2001/09/24 20:43:58  lavr
+ * TSERV_Flags reverted to 'int'; expilict cast added in comparison
+ *
+ * Revision 6.30  2001/09/10 21:17:10  lavr
+ * Support written for FIREWALL server type
+ *
+ * Revision 6.29  2001/06/19 19:12:01  lavr
+ * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
+ *
+ * Revision 6.28  2001/06/05 14:11:29  lavr
+ * SERV_MIME_UNDEFINED split into 2 (typed) constants:
+ * SERV_MIME_TYPE_UNDEFINED and SERV_MIME_SUBTYPE_UNDEFINED
+ *
+ * Revision 6.27  2001/06/04 17:01:06  lavr
+ * MIME type/subtype added to server descriptor
+ *
+ * Revision 6.26  2001/05/03 16:35:46  lavr
+ * Local bonus coefficient modified: meaning of negative value changed
+ *
+ * Revision 6.25  2001/04/24 21:38:21  lavr
+ * Additions to code to support new locality and bonus attributes of servers.
+ *
+ * Revision 6.24  2001/03/26 18:39:38  lavr
+ * Casting to (unsigned char) instead of (int) for ctype char.class macros
+ *
+ * Revision 6.23  2001/03/06 23:53:07  lavr
+ * SERV_ReadInfo can now consume either hostname or IP address
+ *
+ * Revision 6.22  2001/03/05 23:10:11  lavr
+ * SERV_WriteInfo & SERV_ReadInfo both take only one argument now
+ *
+ * Revision 6.21  2001/03/02 20:09:14  lavr
+ * Typo fixed
+ *
+ * Revision 6.20  2001/03/01 18:48:19  lavr
+ * NCBID allowed to have '' (special case) as an empty argument
+ *
+ * Revision 6.19  2001/01/03 22:34:44  lavr
+ * MAX_IP_ADDRESS_LEN -> MAX_IP_ADDR_LEN (as everywhere else)
+ *
+ * Revision 6.18  2000/12/29 17:59:38  lavr
+ * Reading and writing of SERV_Info now use SOCK_* utility functions
+ * SOCK_gethostaddr and SOCK_ntoa. More clean code for reading.
+ *
+ * Revision 6.17  2000/12/06 22:19:02  lavr
+ * Binary host addresses are now explicitly stated to be in network byte
+ * order, whereas binary port addresses now use native (host) representation
+ *
+ * Revision 6.16  2000/12/04 17:34:19  beloslyu
+ * the order of include files is important, especially on other Unixes!
+ * Look the man on inet_ntoa
+ *
+ * Revision 6.15  2000/10/20 17:13:30  lavr
+ * Service descriptor parse bug fixed
+ * Return empty string on unknown type (instead of abort) in 'SERV_TypeStr'
+ *
+ * Revision 6.14  2000/10/05 21:31:23  lavr
+ * Standalone connection marked "stateful" by default
+ *
+ * Revision 6.13  2000/06/05 20:21:20  lavr
+ * Eliminated gcc warning: "subscript has type `char'" in calls to
+ * classification macros (<ctype.h>) by explicit casting to unsigned chars
+ *
+ * Revision 6.12  2000/05/31 23:12:22  lavr
+ * First try to assemble things together to get working service mapper
+ *
+ * Revision 6.11  2000/05/24 16:45:15  lavr
+ * Introduced replacement for inet_ntoa: my_ntoa
+ *
+ * Revision 6.10  2000/05/23 21:05:33  lavr
+ * Memory leaks fixed (appeared after server-info structure rearrangement)
+ *
+ * Revision 6.9  2000/05/23 19:02:49  lavr
+ * Server-info now includes rate; verbal representation changed
+ *
+ * Revision 6.8  2000/05/22 16:53:11  lavr
+ * Rename service_info -> server_info everywhere (including
+ * file names) as the latter name is more relevant
+ *
+ * Revision 6.7  2000/05/18 14:12:43  lavr
+ * Cosmetic change
+ *
+ * Revision 6.6  2000/05/17 16:15:13  lavr
+ * NCBI_* (for ANSI ext) undone - now "ncbi_ansi_ext.h" does good prototyping
+ *
+ * Revision 6.5  2000/05/17 14:22:32  lavr
+ * Small cosmetic changes
+ *
+ * Revision 6.4  2000/05/16 15:09:02  lavr
+ * Added explicit type casting to get "very smart" compilers happy
+ *
+ * Revision 6.3  2000/05/15 19:06:09  lavr
+ * Use home-made ANSI extensions (NCBI_***)
+ *
+ * Revision 6.2  2000/05/12 21:42:59  lavr
+ * Cleaned up for the C++ compilation, etc.
+ *
+ * Revision 6.1  2000/05/12 18:36:26  lavr
+ * First working revision
+ *
+ * ==========================================================================
+ */
