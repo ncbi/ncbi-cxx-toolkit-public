@@ -1,4 +1,4 @@
-/* projects/corelib/include/ncbiconf.h.  Generated automatically by configure.  */
+/* config.h.  Generated automatically by configure.  */
 /* config.h.in.  Generated automatically from configure.in by autoheader.  */
 
 /* Define if type char is unsigned and you are not using gcc.  */

@@ -135,14 +135,8 @@ if test "$GCC" = "yes" ; then
    # GNU compiler
    CFLAGS="-Wall -ansi $CFLAGS"
    CXXFLAGS="-Wall -ansi $CXXFLAGS"
-elif test "$CXX" = "cl -TP"  ||  test "$CXX" = "cl.exe -TP" ; then
+elif test "$CXX" = "cl.exe /TP" ; then
    # MSVC++ compiler
-   AR="lib"
-
-   CFLAGS="-W4 $CFLAGS"
-   CXXFLAGS="-W4 $CXXFLAGS"
-   CPPFLAGS="/nologo $CPPFLAGS"
-
    script_shell=""
    make_shell=""
    obj_ext=".obj"
