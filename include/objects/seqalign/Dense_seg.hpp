@@ -137,7 +137,7 @@ const vector<int>& CDense_seg::GetWidths(void) const
 inline
 vector<int>& CDense_seg::SetWidths(void)
 {
-    m_set_State1[0] |= 0x1;
+    m_set_State1[0] |= 0x3;
     return m_Widths;
 }
 
@@ -183,6 +183,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/04/09 14:26:46  dicuccio
+* FIxed bug in SetWidths(): use the correct bit to indicate set state
+*
 * Revision 1.5  2003/11/04 14:46:16  todorov
 * +RemapToLoc
 *
