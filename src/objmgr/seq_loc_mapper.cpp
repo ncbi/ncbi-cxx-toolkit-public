@@ -77,13 +77,7 @@ bool CMappingRange::CanMap(TSeqPos from,
                            bool is_set_strand,
                            ENa_strand strand) const
 {
-    if (from > m_Src_to || to < m_Src_from) {
-        return false;
-    }
-    return (m_Src_strand == eNa_strand_unknown)  ||
-        (strand == eNa_strand_unknown)  ||
-        SameOrientation(is_set_strand ? strand : eNa_strand_unknown,
-        m_Src_strand);
+    return from <= m_Src_to  &&  to >= m_Src_from;
 }
 
 
@@ -2034,6 +2028,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/03/02 22:10:38  grichenk
+* Removed strand check from CanMap()
+*
 * Revision 1.39  2005/03/01 22:22:10  grichenk
 * Added strand to index conversion macro, changed strand index type to size_t.
 *
