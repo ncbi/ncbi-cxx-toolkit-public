@@ -503,6 +503,7 @@ bool CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_i
         CSeq_entry* seq_entry = CType<CSeq_entry>().Get(parse_info.info);
 
         if (seq_entry) {
+            m_Scope.Reset();
             m_TSE_Manager = new CObjectManager;
             m_Scope = new CScope(*m_TSE_Manager);
 
@@ -585,6 +586,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/06/23 19:59:03  vasilche
+ * Fix order of deletion CScope and CObjectManager.
+ *
  * Revision 1.20  2004/05/21 21:42:55  gorelenk
  * Added PCH ncbi_pch.hpp
  *
