@@ -722,13 +722,9 @@ void CSeqDBAtlas::Dup(CSeqDBMemLease & recv, const CSeqDBMemLease & src)
 
 void CSeqDBAtlas::CRegionMap::Show()
 {
-    // Of course, the casting isnt really necessary.
-    
-    printf(" [%8.8X]-[%8.8X]: %s, ref=%d\n",
-           int(m_Data),
-           int(m_Data + m_End - m_Begin),
-           m_Fname->c_str(),
-           m_Ref);
+    cout << " [" << static_cast<const void*>(m_Data) << "]-["
+         << static_cast<const void*>(m_Data + m_End - m_Begin) << "]: "
+         << m_Fname << ", ref=" << m_Ref;
 }
 
 CSeqDBAtlas::CRegionMap::CRegionMap(const string * fname, Uint4 fid, Uint8 begin, Uint8 end, Uint4 ident)
