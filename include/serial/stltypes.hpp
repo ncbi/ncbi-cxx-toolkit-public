@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/15 16:59:55  vasilche
+* Fixed template use in typedef.
+*
 * Revision 1.12  1999/07/15 16:54:44  vasilche
 * Implemented vector<X> & vector<char> as special case.
 *
@@ -202,7 +205,7 @@ protected:
 template<typename Data>
 class CStlClassInfoList : public CStlOneArgTemplateImpl< list<Data> >
 {
-    typedef CStlOneArgTemplateImpl CParent;
+    typedef CStlOneArgTemplateImpl<TObjectType> CParent;
 public:
     typedef Data TDataType;
 
@@ -236,7 +239,7 @@ protected:
 template<typename Data>
 class CStlClassInfoVector : public CStlOneArgTemplateImpl< vector<Data> >
 {
-    typedef CStlOneArgTemplateImpl CParent;
+    typedef CStlOneArgTemplateImpl<TObjectType> CParent;
 public:
     typedef Data TDataType;
 
