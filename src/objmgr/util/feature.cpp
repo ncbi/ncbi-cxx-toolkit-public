@@ -243,6 +243,10 @@ static void s_GetRnaRefLabel
         break;
     case CRNA_ref::C_Ext::e_TRNA:
     {
+        if ( !rna.GetExt().GetTRNA().IsSetAa() ) {
+            s_GetRnaRefLabelFromComment(feat, label, label_type, type_label);
+            break;                
+        }
         try {
             CTrna_ext::C_Aa::E_Choice aa_code_type = 
                 rna.GetExt().GetTRNA().GetAa().Which();
@@ -593,6 +597,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2002/08/21 15:30:30  ucko
+* Handle empty tRNA extensions.
+*
 * Revision 1.3  2002/08/20 20:01:50  ucko
 * s_GetRnaRefLabel: factor out code to look at comments, and fall back
 * on it for bogus TRNA extensions.
