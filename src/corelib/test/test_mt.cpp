@@ -28,20 +28,6 @@
  * File Description:
  *   Wrapper for testing modules in MT environment
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.3  2002/03/14 19:48:25  gouriano
- * changed sNumThreads = 36:
- * in test_semaphore_mt number of threads must be even
- *
- * Revision 6.2  2002/03/13 05:50:19  vakatov
- * sNumThreads = 35;  sSpawnBy = 6;  (to work on SCHROEDER)
- *
- * Revision 6.1  2001/04/06 15:53:08  grichenk
- * Initial revision
- *
- *
- * ===========================================================================
  */
 
 #include "test_mt.hpp"
@@ -251,5 +237,23 @@ bool CThreadedApp::TestApp_Exit(void)
 }
 
 
-
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 6.4  2002/04/10 18:38:19  ivanov
+ * Moved CVS log to end of file
+ *
+ * Revision 6.3  2002/03/14 19:48:25  gouriano
+ * changed sNumThreads = 36:
+ * in test_semaphore_mt number of threads must be even
+ *
+ * Revision 6.2  2002/03/13 05:50:19  vakatov
+ * sNumThreads = 35;  sSpawnBy = 6;  (to work on SCHROEDER)
+ *
+ * Revision 6.1  2001/04/06 15:53:08  grichenk
+ * Initial revision
+ *
+ * ===========================================================================
+ */
