@@ -3,7 +3,7 @@
 
 APP = test_compress
 SRC = test_compress
-LIB = xncbi xutil xcompress z bz2
+LIB = z bz2 xutil xcompress xncbi
 
 CHECK_CMD =
 
