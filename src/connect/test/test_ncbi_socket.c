@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2000/11/15 18:51:44  vakatov
+ * Add tests for SOCK_Shutdown() and SOCK_Status().
+ * Use SOCK_Status() instead of SOCK_Eof().
+ *
  * Revision 6.7  2000/06/23 19:39:22  vakatov
  * Test the logging of socket I/O (incl. binary data)
  *
@@ -131,6 +135,7 @@ static void TEST__client_1(SOCK sock)
     status = SOCK_Write(sock, s_C1, n_io, &n_io_done);
     assert(status == eIO_Success  &&  n_io == n_io_done);
 
+    /* Read the string back (it must be bounced by the server) */
     SOCK_SetDataLoggingAPI(eOff);
     SOCK_SetDataLogging(sock, eOn);
     n_io = strlen(s_S1) + 1;
@@ -146,10 +151,34 @@ static void TEST__client_1(SOCK sock)
     memset(buf, '\xFF', n_io_done);
     assert(SOCK_Read(sock, buf, n_io_done, &n_io_done, eIO_Plain)
            == eIO_Success);
+    assert(SOCK_Status(sock, eIO_Read) == eIO_Success);
     assert(strcmp(buf, s_S1) == 0);
 
     SOCK_SetDataLoggingAPI(eDefault);
     SOCK_SetDataLogging(sock, eDefault);
+
+    /* Try to read more data (must hit EOF as the peer is shutdown) */
+    assert(SOCK_Read(sock, buf, 1, &n_io_done, eIO_Peek)
+           == eIO_Closed);
+    assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
+    assert(SOCK_Read(sock, buf, 1, &n_io_done, eIO_Plain)
+           == eIO_Closed);
+    assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
+    
+
+    /* Shutdown on read */
+    assert(SOCK_Shutdown(sock, eIO_Read)  == eIO_Success);
+    assert(SOCK_Status  (sock, eIO_Write) == eIO_Success);
+    assert(SOCK_Status  (sock, eIO_Read)  == eIO_Closed);
+    assert(SOCK_Read    (sock, 0, 0, &n_io_done, eIO_Plain) == eIO_Closed);
+    assert(SOCK_Read    (sock, 0, 0, &n_io_done, eIO_Peek)  == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Read)  == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Write) == eIO_Success);
+    assert(SOCK_Read    (sock, buf, 1, &n_io_done, eIO_Plain) == eIO_Closed);
+    assert(SOCK_Read    (sock, buf, 1, &n_io_done, eIO_Peek)  == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Read)  == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Write) == eIO_Success);
+
 
     /* Send a very big binary blob */
     {{
@@ -164,6 +193,22 @@ static void TEST__client_1(SOCK sock)
         }
         free(blob);
     }}
+
+    /* Shutdown on write */
+    assert(SOCK_Shutdown(sock, eIO_Write)          == eIO_Success);
+    assert(SOCK_Status  (sock, eIO_Write)          == eIO_Closed);
+    assert(SOCK_Write   (sock, 0, 0, &n_io_done)   == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Write)          == eIO_Closed);
+    assert(SOCK_Write   (sock, buf, 1, &n_io_done) == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Write)          == eIO_Closed);
+
+    /* Double shutdown should be okay */
+    assert(SOCK_Shutdown(sock, eIO_Read)      == eIO_Success);
+    assert(SOCK_Shutdown(sock, eIO_ReadWrite) == eIO_Success);
+    assert(SOCK_Shutdown(sock, eIO_Write)     == eIO_Success);
+    assert(SOCK_Status  (sock, eIO_Read)      == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Write)     == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_ReadWrite) == eIO_InvalidArg);
 }
 
 
@@ -192,6 +237,13 @@ static void TEST__server_1(SOCK sock)
     status = SOCK_Write(sock, s_S1, n_io, &n_io_done);
     assert(status == eIO_Success  &&  n_io == n_io_done);
     SOCK_SetDataLoggingAPI(eOff);
+
+    /* Shutdown on write */
+    assert(SOCK_Shutdown(sock, eIO_Write)        == eIO_Success);
+    assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
+    assert(SOCK_Write   (sock, 0, 0, &n_io_done) == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Write)        == eIO_Closed);
+    assert(SOCK_Status  (sock, eIO_Read)         == eIO_Success);
 
     /* Receive a very big binary blob, and check its content */
     {{
@@ -229,6 +281,7 @@ static void s_DoubleTimeout(STimeout *to) {
         to->usec = (2 * to->usec) % 1000000;
     }
 }
+
 
 static void TEST__client_2(SOCK sock)
 {
@@ -272,7 +325,8 @@ static void TEST__client_2(SOCK sock)
                         "[INFO] TEST__client_2::reconnect: i=%lu, status=%s\n",
                         (unsigned long)i, IO_StatusStr(status));
                 assert(status == eIO_Success);
-                assert(!SOCK_Eof(sock));
+                assert(SOCK_Status(sock, eIO_Read)  == eIO_Success);
+                assert(SOCK_Status(sock, eIO_Write) == eIO_Success);
 
                 /* give a break to let server reset the listening socket */
                 X_SLEEP(1);
@@ -340,7 +394,7 @@ static void TEST__client_2(SOCK sock)
             if (status == eIO_Closed) {
                 fprintf(log_fp,
                         "[ERROR] TC2::read: connection closed\n");
-                assert(SOCK_Eof(sock));
+                assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
                 assert(0);
             }
             fprintf(log_fp, "[INFO] TC2::read: "
@@ -411,7 +465,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
 
         case eIO_Closed:
             fprintf(log_fp, "[INFO] TS2::read: connection closed\n");
-            assert(SOCK_Eof(sock));
+            assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
 
             /* reconnect */
             if ( !lsock )
@@ -421,7 +475,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
             SOCK_Close(sock);
             status = LSOCK_Accept(lsock, NULL, &sock);
             assert(status == eIO_Success);
-            assert(!SOCK_Eof(sock));
+            assert(SOCK_Status(sock, eIO_Read) == eIO_Success);
             /* !!! */ 
             goto l_reconnect;
 
@@ -433,7 +487,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
             s_DoubleTimeout(&r_to);
             status = SOCK_SetTimeout(sock, eIO_Read, &r_to);
             assert(status == eIO_Success);
-            assert( !SOCK_Eof(sock) );
+            assert(SOCK_Status(sock, eIO_Read) == eIO_Success);
             break;
 
         default:
