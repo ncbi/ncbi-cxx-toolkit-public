@@ -452,7 +452,7 @@ void CReader::LoadBlobs(CReaderRequestResult& result,
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
         if ( (info.GetContentsMask() & mask) != 0 ) {
-            LoadBlob(result, blobs, it);
+            LoadBlob(result, it->first);
         }
     }
 }
@@ -573,10 +573,8 @@ void CId1ReaderBase::ResolveSeq_ids(CReaderRequestResult& result,
 
 
 void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
-                              CLoadLockBlob_ids& blobs,
-                              CLoadInfoBlob_ids::const_iterator blob_iter)
+                              const TBlob_id& blob_id)
 {
-    const TBlob_id& blob_id = blob_iter->first;
     CLoadLockBlob blob(result, blob_id);
     if ( !blob.IsLoaded() ) {
         if ( IsAnnotBlob_id(blob_id) ) {
@@ -637,12 +635,13 @@ void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
         catch ( CLoaderException& exc ) {
             if ( exc.GetErrCode() == exc.ePrivateData ) {
                 // leave tse empty
-                blob->SetSuppressionLevel(CTSE_Info::eSuppression_private);
+                blob->SetBlobState(CTSE_Info::fState_private|
+                                   CTSE_Info::fState_no_data);
                 blob.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoData ) {
                 // leave tse empty
-                blob->SetSuppressionLevel(CTSE_Info::eSuppression_no_data);
+                blob->SetBlobState(CTSE_Info::fState_no_data);
                 blob.SetLoaded();
             }
             else if ( exc.GetErrCode() == exc.eNoConnection ) {

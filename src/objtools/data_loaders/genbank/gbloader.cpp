@@ -330,8 +330,9 @@ CDataLoader::TBlobVersion CGBDataLoader::GetBlobVersion(const TBlobId& id)
 }
 
 
-TTSE_Lock CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
-                                         const TTSE_LockSet& tse_set)
+CDataLoader::TTSE_Lock
+CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
+                               const TTSE_LockSet& tse_set)
 {
     TTSE_Lock best;
     bool         conflict=false;
@@ -522,6 +523,33 @@ CGBDataLoader::GetDetailedRecords(const CSeq_id_Handle& sih,
 }
 
 
+bool CGBDataLoader::CanGetBlobById(void) const
+{
+    return true;
+}
+
+
+CDataLoader::TTSE_Lock
+CGBDataLoader::GetBlobById(const TBlobId& id)
+{
+    CBlob_id blob_id = GetBlobId(id);
+    for ( int attempt_count = 0; attempt_count < 3; ++attempt_count ) {
+        CGBReaderRequestResult result(this);
+        CLoadLockBlob blob(result, blob_id);
+        if ( !blob.IsLoaded() ) {
+            m_Driver->LoadBlob(result, blob_id);
+            if ( !blob.IsLoaded() ) {
+                continue;
+            }
+        }
+        return blob;
+    }
+    NCBI_THROW(CLoaderException, eOtherError,
+               "cannot get load blob "+blob_id.ToString()+
+               ": too many attempts");
+}
+
+
 namespace {
     struct SBetterId
     {
@@ -623,7 +651,7 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
             }
             CLoadLockBlob blob(result, it->first);
             if ( !blob.IsLoaded() ) {
-                m_Driver->LoadBlob(result, blobs, it);
+                m_Driver->LoadBlob(result, it->first);
                 if ( !blob.IsLoaded() ) {
                     done = false;
                 }
@@ -895,12 +923,18 @@ CGBReaderRequestResult::operator CInitMutexPool&(void)
 }
 
 
-bool CGBDataLoader::LessBlobId(const TBlobId& id1,
-                                const TBlobId& id2) const
+bool CGBDataLoader::LessBlobId(const TBlobId& id1, const TBlobId& id2) const
 {
     const CBlob_id& bid1 = dynamic_cast<const CBlob_id&>(*id1);
     const CBlob_id& bid2 = dynamic_cast<const CBlob_id&>(*id2);
     return bid1 < bid2;
+}
+
+
+string CGBDataLoader::BlobIdToString(const TBlobId& id) const
+{
+    const CBlob_id& bid = dynamic_cast<const CBlob_id&>(*id);
+    return bid.ToString();
 }
 
 

@@ -95,8 +95,7 @@ public:
                    CLoadLockBlob_ids blobs,
                    int sr_mask);
     void LoadBlob(CReaderRequestResult& result,
-                  CLoadLockBlob_ids& blobs,
-                  CLoadInfoBlob_ids::const_iterator blob_iter);
+                  const TBlob_id& blob_id);
     void LoadChunk(CReaderRequestResult& result,
                    const TBlob_id& blob_id, TChunk_id chunk_id);
 

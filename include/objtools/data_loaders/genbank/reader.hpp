@@ -99,8 +99,7 @@ public:
                            CLoadLockBlob_ids blobs,
                            TContentsMask mask);
     virtual void LoadBlob(CReaderRequestResult& result,
-                          CLoadLockBlob_ids& blobs,
-                          CLoadInfoBlob_ids::const_iterator blob_iter) = 0;
+                          const CBlob_id& blob_id) = 0;
     virtual TBlobVersion GetBlobVersion(CReaderRequestResult& result,
                                         const TBlob_id& blob_id) = 0;
     virtual void LoadChunk(CReaderRequestResult& result,
@@ -138,8 +137,7 @@ public:
     void ResolveSeq_ids(CReaderRequestResult& result,
                         const CSeq_id_Handle& seq_id);
     void LoadBlob(CReaderRequestResult& result,
-                  CLoadLockBlob_ids& blobs,
-                  CLoadInfoBlob_ids::const_iterator blob_iter);
+                  const TBlob_id& blob_id);
     TBlobVersion GetBlobVersion(CReaderRequestResult& result,
                                 const TBlob_id& blob_id);
     void LoadChunk(CReaderRequestResult& result,

@@ -174,6 +174,8 @@ public:
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
     virtual TBlobVersion GetBlobVersion(const TBlobId& id);
     CBlob_id GetBlobId(const TBlobId& blob_id) const;
+    bool CanGetBlobById(void) const;
+    TTSE_Lock GetBlobById(const TBlobId& id);
 
     // Create GB loader and register in the object manager if
     // no loader with the same name is registered yet.
@@ -199,6 +201,7 @@ public:
     CConstRef<CSeqref> GetSatSatkey(const CSeq_id& id);
 
     bool LessBlobId(const TBlobId& id1, const TBlobId& id2) const;
+    string BlobIdToString(const TBlobId& id) const;
     
     virtual TTSE_Lock ResolveConflict(const CSeq_id_Handle& handle,
                                       const TTSE_LockSet& tse_set);
