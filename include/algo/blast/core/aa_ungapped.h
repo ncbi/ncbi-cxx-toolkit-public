@@ -257,19 +257,6 @@ Int4 BlastAaExtendTwoHit(Int4 ** matrix,
 	                 Boolean *right_extend,
 	                 Int4* s_last_off);
 
-/** Update the offset for use with a new sequence.
-  * @param diag pointer to the diagonal array structure [in]
-  * @param length length of the new sequence [in]
-  */
-  
-Int4 DiagUpdate(BLAST_DiagTable* diag, Int4 length);
-
-/** Reset the diagonal array structure. Used when offset has wrapped around.
-  * @param diag pointer to the diagonal array structure [in]
-  */
-Int4 DiagClear(BLAST_DiagTable* diag);
-
-
 #ifdef __cplusplus
 }
 #endif
