@@ -1274,7 +1274,8 @@ void CAlnMix::x_MinimizeGaps(TSegmentsContainer& gapped_segs)
                         // calc the start
                         TSeqPos this_start = orig_start + 
                             (seq->m_PositiveStrand ? 
-                             len_so_far : orig_len - 1 - len_so_far);
+                             len_so_far :
+                             orig_len - len_so_far - seg->m_Len);
 
                         // create the bindings:
                         seq->m_Starts[this_start] = seg;
@@ -1398,6 +1399,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2003/05/20 21:20:59  todorov
+* mingap minus strand multiple segs bug fix
+*
 * Revision 1.46  2003/05/15 23:31:26  todorov
 * Minimize gaps bug fix
 *
