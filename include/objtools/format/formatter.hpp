@@ -68,6 +68,7 @@ class CDBSourceItem;
 class COriginItem;
 class CStartSectionItem;
 class CEndSectionItem;
+class CGapItem;
 
 
 class IFormatter : public CObject
@@ -104,6 +105,7 @@ public:
     virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os) = 0;
     virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os) = 0;
     virtual void FormatOrigin(const COriginItem& origin, IFlatTextOStream& text_os) = 0;
+    virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os) = 0;
     
     virtual ~IFormatter(void) {}
 };
@@ -117,6 +119,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/11/24 16:48:02  shomrat
+* Handle gap items
+*
 * Revision 1.7  2004/06/21 18:50:03  ucko
 * Add a virtual FormatAlignment method, defined to do nothing by
 * default because most formats can't represent them anyway.

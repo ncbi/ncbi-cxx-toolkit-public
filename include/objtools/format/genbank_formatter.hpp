@@ -64,6 +64,7 @@ class CDateItem;
 class CDBSourceItem;
 class CBioseqContext;
 class COriginItem;
+class CGapItem;
 
 
 class CGenbankFormatter : public CFlatItemFormatter
@@ -94,6 +95,7 @@ public:
     virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os);
     virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os);
     virtual void FormatOrigin(const COriginItem& origin, IFlatTextOStream& text_os);
+    virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os);
 
 private:
     // source
@@ -120,6 +122,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/11/24 16:48:02  shomrat
+* Handle gap items
+*
 * Revision 1.4  2004/04/22 15:45:27  shomrat
 * Changes in context
 *

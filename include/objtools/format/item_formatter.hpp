@@ -107,6 +107,7 @@ public:
     virtual void FormatWGS       (const CWGSItem&, IFlatTextOStream&)         {}
     virtual void FormatGenome    (const CGenomeItem&, IFlatTextOStream&)      {}
     virtual void FormatOrigin    (const COriginItem&, IFlatTextOStream&)      {}
+    virtual void FormatGap       (const CGapItem&, IFlatTextOStream&)         {}
 
     // Context
     void SetContext(CFlatFileContext& ctx) { m_Ctx.Reset(&ctx); }
@@ -167,6 +168,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/11/24 16:48:02  shomrat
+* Handle gap items
+*
 * Revision 1.7  2004/04/22 15:46:39  shomrat
 * Changes in context
 *
