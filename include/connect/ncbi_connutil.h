@@ -56,23 +56,27 @@
  *       URL_Connect()
  *       
  *    3.Perform URL encoding/decoding of data:
+ *       URL_Encode()
  *       URL_Decode()
  *       URL_DecodeEx()
- *       URL_Encode()
  *
- *    4.Compose or parse NCBI-specific Content-Type's:
+ *    4.Perform BASE64 (RFC 1521) encoding/decoding of data:
+ *       BASE64_Encode()
+ *       BASE64_Decode()
+ *
+ *    5.Compose or parse NCBI-specific Content-Type's:
  *       EMIME_Type
  *       EMIME_SubType
  *       EMIME_Encoding
  *       MIME_ComposeContentType()
  *       MIME_ParseContentType()
  *
- *    5.Search for a token in the input stream (either CONN or SOCK):
+ *    6.Search for a token in the input stream (either CONN or SOCK):
  *       CONN_StripToPattern()
  *       SOCK_StripToPattern()
  *       BUF_StripToPattern()
  *
- *    6.Convert "[host][:port]" from verbal into binary form and vice versa:
+ *    7.Convert "[host][:port]" from verbal into binary form and vice versa:
  *       StringToHostPort()
  *       HostPortToString()
  *
@@ -365,6 +369,7 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Log
 extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
 
 
+
 /* Hit URL "http://host:port/path?args" with:
  *    {POST|GET} <path>?<args> HTTP/1.0\r\n
  *    <user_header\r\n>
@@ -405,6 +410,7 @@ extern NCBI_XCONNECT_EXPORT SOCK URL_Connect
  );
 
 
+
 /* Discard all input data before(and including) the first occurrence of
  * "pattern". If "buf" is not NULL then add the discarded data(including
  * the "pattern") to it. If "n_discarded" is not NULL then "*n_discarded"
@@ -436,12 +442,29 @@ extern NCBI_XCONNECT_EXPORT EIO_Status BUF_StripToPattern
  );
 
 
+
+/* URL-encode up to "src_size" symbols(bytes) from buffer "src_buf".
+ * Write the encoded data to buffer "dst_buf", but no more than "dst_size"
+ * bytes.
+ * Assign "*src_read" to the # of bytes successfully encoded from "src_buf".
+ * Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
+ */
+extern NCBI_XCONNECT_EXPORT void URL_Encode
+(const void* src_buf,    /* [in]     non-NULL */
+ size_t      src_size,   /* [in]              */
+ size_t*     src_read,   /* [out]    non-NULL */
+ void*       dst_buf,    /* [in/out] non-NULL */
+ size_t      dst_size,   /* [in]              */
+ size_t*     dst_written /* [out]    non-NULL */
+ );
+
+
 /* URL-decode up to "src_size" symbols(bytes) from buffer "src_buf".
  * Write the decoded data to buffer "dst_buf", but no more than "dst_size"
  * bytes.
  * Assign "*src_read" to the # of bytes successfully decoded from "src_buf".
  * Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
- * Return FALSE only if cannot decode nothing, and an unrecoverable
+ * Return FALSE (0) only if cannot decode anything, and an unrecoverable
  * URL-encoding error (such as an invalid symbol or a bad "%.." sequence)
  * has occurred.
  * NOTE:  the unfinished "%.." sequence is fine -- return TRUE, but dont
@@ -474,13 +497,34 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ URL_DecodeEx
  );
 
 
-/* URL-encode up to "src_size" symbols(bytes) from buffer "src_buf".
+
+/* BASE64-encode up to "src_size" symbols(bytes) from buffer "src_buf".
  * Write the encoded data to buffer "dst_buf", but no more than "dst_size"
  * bytes.
  * Assign "*src_read" to the # of bytes successfully encoded from "src_buf".
  * Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
+ * Resulting lines will not exceed "*line_len" (or the standard default
+ * if "line_len" is NULL) bytes;  *line_len == 0 disables line breaks.
  */
-extern NCBI_XCONNECT_EXPORT void URL_Encode
+extern NCBI_XCONNECT_EXPORT void BASE64_Encode
+(const void* src_buf,    /* [in]     non-NULL */
+ size_t      src_size,   /* [in]              */
+ size_t*     src_read,   /* [out]    non-NULL */
+ void*       dst_buf,    /* [in/out] non-NULL */
+ size_t      dst_size,   /* [in]              */
+ size_t*     dst_written,/* [out]    non-NULL */
+ size_t*     line_len    /* [in]  may be NULL */
+ );
+
+
+/* BASE64-decode up to "src_size" symbols(bytes) from buffer "src_buf".
+ * Write the decoded data to buffer "dst_buf", but no more than "dst_size"
+ * bytes.
+ * Assign "*src_read" to the # of bytes successfully decoded from "src_buf".
+ * Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
+ * Return FALSE (0) only if cannot decode anything.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ BASE64_Decode
 (const void* src_buf,    /* [in]     non-NULL */
  size_t      src_size,   /* [in]              */
  size_t*     src_read,   /* [out]    non-NULL */
@@ -647,6 +691,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2005/03/19 02:13:55  lavr
+ * +BASE64_{En|De}code
+ *
  * Revision 6.39  2005/02/28 17:23:20  lavr
  * Fix HTTP_USER_HEADER env.var. name ("HTTP" was missing)
  *

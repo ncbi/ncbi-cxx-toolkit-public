@@ -1261,6 +1261,144 @@ extern void URL_Encode
 
 
 
+extern void BASE64_Encode
+(const void* src_buf,
+ size_t      src_size,
+ size_t*     src_read,
+ void*       dst_buf,
+ size_t      dst_size,
+ size_t*     dst_written,
+ size_t*     line_len)
+{
+    static const char syms[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ" /*26*/
+        "abcdefghijklmnopqrstuvwxyz" /*52*/
+        "0123456789+/";              /*64*/
+    const size_t max_len = line_len ? *line_len : 76;
+    const size_t max_src =
+        ((dst_size - (max_len ? dst_size/(max_len + 1) : 0)) >> 2) * 3;
+    unsigned char* src = (unsigned char*) src_buf;
+    unsigned char* dst = (unsigned char*) dst_buf;
+    size_t len = 0, i = 0, j;
+    unsigned char shift = 2;
+    unsigned char temp = 0;
+    if (!max_src) {
+        *src_read    = 0;
+        *dst_written = 0;
+        if (dst_size > 0) {
+            *dst = '\0';
+        }
+        return;
+    }
+    if (src_size > max_src) {
+        src_size = max_src;
+    }
+    for (j = 0; j < dst_size; j++) {
+        unsigned char c = i < src_size ? src[i] : 0;
+        unsigned char bits = (c >> shift) & 0x3F;
+        assert((temp | bits) < sizeof(syms) - 1);
+        dst[j] = syms[temp | bits];
+        if (max_len  &&  ++len >= max_len) {
+            dst[++j] = '\n';
+            len = 0;
+        }
+        shift += 2;
+        shift &= 7;
+        if (shift) {
+            if (i == src_size) {
+                break;
+            }
+            i++;
+        }
+        temp = (c << (8 - shift)) & 0x3F;
+    }
+    assert(temp == 0);
+    *src_read = i;
+    for (i = 0; i < src_size % 3; i++) {
+        dst[j++] = '=';
+        if (max_len  &&  ++len >= max_len) {
+            dst[j++] = '\n';
+            len = 0;
+        }
+    }
+    *dst_written = j;
+    if (j < dst_size) {
+        dst[j] = '\0';
+    }
+}
+
+
+extern int/*bool*/ BASE64_Decode
+(const void* src_buf,
+ size_t      src_size,
+ size_t*     src_read,
+ void*       dst_buf,
+ size_t      dst_size,
+ size_t*     dst_written)
+{
+    unsigned char* src = (unsigned char*) src_buf;
+    unsigned char* dst = (unsigned char*) dst_buf;
+    size_t i = 0, j = 0, k = 0;
+    unsigned int temp = 0;
+    if (src_size < 4  ||  dst_size < 3) {
+        *src_read    = 0;
+        *dst_written = 0;
+        return 0/*false*/;
+    }
+    while (i < src_size) {
+        unsigned char c = src[i++];
+        if (c == '=') {
+            c  = 64;
+        } else if (c >= 'A'  &&  c <= 'Z') {
+            c -= 'A';
+        } else if (c >= 'a'  &&  c <= 'z') {
+            c -= 'a' - 26;
+        } else if (c >= '0'  &&  c <= '9') {
+            c -= '0' - 52;
+        } else if (c == '+') {
+            c  = 62;
+        } else if (c == '/') {
+            c  = 63;
+        } else {
+            c  = 128;
+        }
+        if (c < 128) {
+            temp <<= 6;
+            temp  |= c & 0x3F;
+            if (!(++k & 3)  ||  c == 64) {
+                if (c != 64) {
+                    k = 0;
+                }
+                switch (k) {
+                case 0:
+                    dst[j++] = (temp & 0xFF0000) >> 16;
+                    /*FALLTHRU*/;
+                case 4:
+                    dst[j++] = (temp & 0xFF00) >> 8;
+                    /*FALLTHRU*/
+                case 3:
+                case 2:
+                    /*FALLTHRU*/
+                    dst[j++] = (temp & 0xFF);
+                    break;
+                default:
+                    break;
+                }
+                temp = 0;
+                k = 0;
+                if (j + 3 >= dst_size  ||  c == 64) {
+                    break;
+                }
+            }
+        }
+    }
+    *src_read    = i;
+    *dst_written = j;
+    return k ? 0/*false*/ : 1/*true*/;
+}
+
+
+
 /****************************************************************************
  * NCBI-specific MIME content type and sub-types
  */
@@ -1508,6 +1646,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.69  2005/03/19 02:13:55  lavr
+ * +BASE64_{En|De}code
+ *
  * Revision 6.68  2005/02/28 17:58:31  lavr
  * Cosmetics
  *
