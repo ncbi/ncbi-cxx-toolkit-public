@@ -26,7 +26,7 @@
  */
 
 /** @file blast_inline.h
- * @todo FIXME needs file description
+ * Functions from algo/blast/core that should be inlined if possible.
  */
 
 #include <algo/blast/core/blast_util.h>

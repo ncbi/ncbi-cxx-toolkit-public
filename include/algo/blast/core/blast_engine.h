@@ -28,7 +28,7 @@
  */
 
 /** @file blast_engine.h
- * High level BLAST functions.
+* Function calls to actually perform a BLAST search (high level).
  */
 
 #ifndef __BLAST_ENGINE__

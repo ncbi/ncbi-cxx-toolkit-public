@@ -28,7 +28,11 @@
  */
 
 /** @file lookup_wrap.c
- * @todo FIXME file had copy-and-paste description!
+ * Wrapper for different flavors of lookup tables allowing a uniform interface in the code.
+ * The wrapper (LookupTableWrap) contains an unsigned byte specifying the type of lookup 
+ * table as well as a void pointer pointing to the actual lookup table.  Examples of different 
+ * types of lookup tables are those for protein queries, the "standard" nucleotide one, the 
+ * megablast lookup table, etc.
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING

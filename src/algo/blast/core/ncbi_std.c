@@ -26,7 +26,7 @@
  */
 
 /** @file ncbi_std.c
- * Function definitions for toolkit independent utility functions?
+ * A few utilities needed by code in algo/blast/core but not provided elsewhere.
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING

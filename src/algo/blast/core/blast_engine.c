@@ -28,7 +28,8 @@
  */
 
 /** @file blast_engine.c
- * High level BLAST functions. The hierarchy of function calls, starting from
+ * Function calls to actually perform a BLAST search (high level).
+ * The hierarchy of function calls, starting from
  * the top level in the BLAST core, is described below.
  * <pre>
  * Preliminary stage of the BLAST search:
