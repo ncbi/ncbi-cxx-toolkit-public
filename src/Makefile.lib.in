@@ -37,7 +37,7 @@ XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
 ### The library build rule
 
 $(XLIB): $(XLIBOBJ)
-	$(AR) $(XLIB) $(XLIBOBJ)
+	$(AR) @f_outlib@$(XLIB) $(XLIBOBJ)
 	-$(RANLIB) $(XLIB)
 
 

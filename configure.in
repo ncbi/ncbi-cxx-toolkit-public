@@ -126,6 +126,7 @@ lib_l_ext=""
 exe_ext=""
 f_compile="-c "
 f_outobj="-o "
+f_outlib=""
 f_libpath="-L"
 f_outexe="-o "
 
@@ -136,6 +137,8 @@ if test "$GCC" = "yes" ; then
    CXXFLAGS="-Wall -ansi $CXXFLAGS"
 elif test "$CXX" = "cl -TP"  ||  test "$CXX" = "cl.exe -TP" ; then
    # MSVC++ compiler
+   AR="lib"
+
    CFLAGS="-W4 $CFLAGS"
    CXXFLAGS="-W4 $CXXFLAGS"
    CPPFLAGS="/nologo $CPPFLAGS"
@@ -150,6 +153,7 @@ elif test "$CXX" = "cl -TP"  ||  test "$CXX" = "cl.exe -TP" ; then
    exe_ext=".exe"
    f_compile="/c "
    f_outobj="/Fo"
+   f_outlib="/OUT:"
    f_libpath="/LIBPATH:"
    f_outexe="/OUT:"
 fi
@@ -264,6 +268,7 @@ AC_SUBST(lib_l_ext)
 AC_SUBST(exe_ext)
 AC_SUBST(f_compile)
 AC_SUBST(f_outobj)
+AC_SUBST(f_outlib)
 AC_SUBST(f_libpath)
 AC_SUBST(f_outexe)
 
@@ -315,7 +320,7 @@ if test "$exec_prefix" != "$top_srcdir" ; then
    status_dir="$exec_prefix/status"
    echo "Status  directory:  $status_dir"
    test -d  "$status_dir"  ||  mkdir -p "$status_dir"
-   cp -p config.status config.cache config.log configure "$status_dir"/
+   mv config.status config.cache config.log "$status_dir"/
 
    echo "Configuration completed."
 fi,
