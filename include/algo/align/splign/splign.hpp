@@ -123,6 +123,9 @@ public:
         void Update(CConstRef<CSplicedAligner> aligner); // recompute members
         const char* GetDonor(void) const;    // raw pointers to parts of annot
         const char* GetAcceptor(void) const; // or zero if less than 2 chars
+
+        static bool s_IsConsensusSplice(const char* donor,
+                                        const char* acceptor);
         
         // NetCache-related serialization
         typedef vector<char> TNetCacheBuffer;
@@ -227,6 +230,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2005/01/26 21:32:31  kapustin
+ * +CSplign::SSegment::s_IsConsensusSplice
+ *
  * Revision 1.18  2004/12/16 23:03:47  kapustin
  * Fix #include
  *
