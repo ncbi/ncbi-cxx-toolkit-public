@@ -38,14 +38,13 @@
 #include <corelib/ncbistd.hpp>
 
 
+
+BEGIN_NCBI_SCOPE
+
 /** @addtogroup Version
  *
  * @{
  */
-
-
-BEGIN_NCBI_SCOPE
-
 
 /////////////////////////////////////////////////////////////////////////////
 // CVersionInfo
@@ -212,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/01/21 16:29:33  siyan
+ * Changed order of addtogroup relative to begin name scope.
+ *
  * Revision 1.10  2003/12/03 16:15:00  kuznets
  * Added missing dll export spec for IsBetterVersion
  *
