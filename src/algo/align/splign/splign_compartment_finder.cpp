@@ -43,56 +43,56 @@ BEGIN_NCBI_SCOPE
 
 void CCompartmentFinder::CCompartment::UpdateMinMax() {
 
-  m_box[0] = m_box[2] = kMax_UInt;
-  m_box[1] = m_box[3] = 0;
-  ITERATE(vector<const CHit*>, ph, m_members) {
-    
-    const CHit* hit = *ph;
-    if(size_t(hit->m_ai[0]) < m_box[0]) {
-      m_box[0] = hit->m_ai[0];
+    m_box[0] = m_box[2] = kMax_UInt;
+    m_box[1] = m_box[3] = 0;
+    ITERATE(vector<const CHit*>, ph, m_members) {
+        
+        const CHit* hit = *ph;
+        if(size_t(hit->m_ai[0]) < m_box[0]) {
+            m_box[0] = hit->m_ai[0];
+        }
+        if(size_t(hit->m_ai[2]) < m_box[2]) {
+            m_box[2] = hit->m_ai[2];
+        }
+        if(size_t(hit->m_ai[1]) > m_box[1]) {
+            m_box[1] = hit->m_ai[1];
+        }
+        if(size_t(hit->m_ai[3]) > m_box[3]) {
+            m_box[3] = hit->m_ai[3];
+        }
     }
-    if(size_t(hit->m_ai[2]) < m_box[2]) {
-      m_box[2] = hit->m_ai[2];
-    }
-    if(size_t(hit->m_ai[1]) > m_box[1]) {
-      m_box[1] = hit->m_ai[1];
-    }
-    if(size_t(hit->m_ai[3]) > m_box[3]) {
-      m_box[3] = hit->m_ai[3];
-    }
-  }
 }
 
 
 bool CCompartmentFinder::CCompartment::GetStrand() const {
 
-  if(m_members.size()) {
-    return m_members[0]->IsStraight();
-  }
-  else {
+    if(m_members.size()) {
+        return m_members[0]->IsStraight();
+    }
+    else {
         NCBI_THROW( CAlgoAlignException,
                     eInternal,
                     "Strand requested on an empty compartment" );
-  }
+    }
 }
 
 
 CCompartmentFinder::CCompartmentFinder(vector<CHit>::const_iterator start,
                                        vector<CHit>::const_iterator finish):
-  m_intron_min(GetDefaultIntronMin()),
-  m_intron_max(GetDefaultIntronMax()),
-  m_penalty(GetDefaultPenalty()),
-  m_min_coverage(GetDefaultMinCoverage()),
-  m_iter(-1)
+    m_intron_min(GetDefaultIntronMin()),
+    m_intron_max(GetDefaultIntronMax()),
+    m_penalty(GetDefaultPenalty()),
+    m_min_coverage(GetDefaultMinCoverage()),
+    m_iter(-1)
 {
-  const size_t dim = finish - start;
-  if(dim >  0) {
-    m_hits.resize(dim);
-    const CHit* p0 = &(*start);
-    for(size_t i = 0; i < dim; ++i) {
-      m_hits[i] = p0++;
+    const size_t dim = finish - start;
+    if(dim >  0) {
+        m_hits.resize(dim);
+        const CHit* p0 = &(*start);
+        for(size_t i = 0; i < dim; ++i) {
+            m_hits[i] = p0++;
+        }
     }
-  }
 }
 
 
@@ -272,37 +272,37 @@ size_t CCompartmentFinder::Run()
 
 CCompartmentFinder::CCompartment* CCompartmentFinder::GetFirst()
 {
-  if(m_compartments.size()) {
-    m_iter = 0;
-    return &m_compartments[m_iter++];
-  }
-  else {
-    m_iter = -1;
-    return 0;
-  }
+    if(m_compartments.size()) {
+        m_iter = 0;
+        return &m_compartments[m_iter++];
+    }
+    else {
+        m_iter = -1;
+        return 0;
+    }
 }
 
 
 void CCompartmentFinder::OrderCompartments(void) {
   
-  for(int i = 0, dim = m_compartments.size(); i < dim; ++i) {
-    m_compartments[i].UpdateMinMax();
-  }
-
-  sort(m_compartments.begin(), m_compartments.end(), PLowerSubj);
+    for(int i = 0, dim = m_compartments.size(); i < dim; ++i) {
+        m_compartments[i].UpdateMinMax();
+    }
+    
+    sort(m_compartments.begin(), m_compartments.end(), PLowerSubj);
 }
 
 
 CCompartmentFinder::CCompartment* CCompartmentFinder::GetNext()
 {
-  const size_t dim = m_compartments.size();
-  if(m_iter == -1 || m_iter >= int(dim)) {
-    m_iter = -1;
-    return 0;
-  }
-  else {
-    return &m_compartments[m_iter++];
-  }
+    const size_t dim = m_compartments.size();
+    if(m_iter == -1 || m_iter >= int(dim)) {
+        m_iter = -1;
+        return 0;
+    }
+    else {
+        return &m_compartments[m_iter++];
+    }
 }
 
 
@@ -316,102 +316,103 @@ CCompartmentAccessor::CCompartmentAccessor(vector<CHit>::iterator istart,
     sort(ib, ie, CHit::PPrecedeStrand);
     size_t minus_subj_min = kMax_UInt, minus_subj_max = 0;
     for(ii = ib; ii != ie; ++ii) {
-      if(ii->IsStraight()) {
-        iplus_beg = ii;
-        break;
-      }
-      else {
-        if(size_t(ii->m_ai[2]) < minus_subj_min) {
-          minus_subj_min = ii->m_ai[2];
+        if(ii->IsStraight()) {
+            iplus_beg = ii;
+            break;
         }
-        if(size_t(ii->m_ai[3]) > minus_subj_max) {
-          minus_subj_max = ii->m_ai[3];
+        else {
+            if(size_t(ii->m_ai[2]) < minus_subj_min) {
+                minus_subj_min = ii->m_ai[2];
+            }
+            if(size_t(ii->m_ai[3]) > minus_subj_max) {
+                minus_subj_max = ii->m_ai[3];
+            }
         }
-      }
     }
-
+    
     // minus
     {{
-      // flip
-      for(ii = ib; ii != iplus_beg; ++ii) {
-        int s0 = minus_subj_min + minus_subj_max - ii->m_ai[3];
-        int s1 = minus_subj_min + minus_subj_max - ii->m_ai[2];
-        ii->m_an[2] = ii->m_ai[2] = s0;
-        ii->m_an[3] = ii->m_ai[3] = s1;
-      }
-
-      CCompartmentFinder finder (ib, iplus_beg);
-      finder.SetMinCoverage(min_coverage);
-      finder.SetPenalty(comp_penalty);
-      finder.Run();
-
-      // un-flip
-      for(ii = ib; ii != iplus_beg; ++ii) {
-        int s0 = minus_subj_min + minus_subj_max - ii->m_ai[3];
-        int s1 = minus_subj_min + minus_subj_max - ii->m_ai[2];
-        ii->m_an[3] = ii->m_ai[2] = s0;
-        ii->m_an[2] = ii->m_ai[3] = s1;
-      }
-
-      x_Copy2Pending(finder);
+        // flip
+        for(ii = ib; ii != iplus_beg; ++ii) {
+            int s0 = minus_subj_min + minus_subj_max - ii->m_ai[3];
+            int s1 = minus_subj_min + minus_subj_max - ii->m_ai[2];
+            ii->m_an[2] = ii->m_ai[2] = s0;
+            ii->m_an[3] = ii->m_ai[3] = s1;
+        }
+        
+        CCompartmentFinder finder (ib, iplus_beg);
+        finder.SetMinCoverage(min_coverage);
+        finder.SetPenalty(comp_penalty);
+        finder.Run();
+        
+        // un-flip
+        for(ii = ib; ii != iplus_beg; ++ii) {
+            int s0 = minus_subj_min + minus_subj_max - ii->m_ai[3];
+            int s1 = minus_subj_min + minus_subj_max - ii->m_ai[2];
+            ii->m_an[3] = ii->m_ai[2] = s0;
+            ii->m_an[2] = ii->m_ai[3] = s1;
+        }
+        
+        x_Copy2Pending(finder);
     }}
 
     // plus
     {{
-      CCompartmentFinder finder (iplus_beg, ie);
-      finder.SetMinCoverage(min_coverage);
-      finder.SetPenalty(comp_penalty);
-      finder.Run();
-      x_Copy2Pending(finder);
+        CCompartmentFinder finder (iplus_beg, ie);
+        finder.SetMinCoverage(min_coverage);
+        finder.SetPenalty(comp_penalty);
+        finder.Run();
+        x_Copy2Pending(finder);
     }}
 }
 
 
 void CCompartmentAccessor::x_Copy2Pending(CCompartmentFinder& finder)
 {
+    finder.OrderCompartments();
 
-  finder.OrderCompartments();
-
-  // copy to pending
-  for(CCompartmentFinder::CCompartment* compartment = finder.GetFirst(); compartment;
-      compartment = finder.GetNext()) {
-    
-    m_pending.push_back(vector<CHit>(0));
-    vector<CHit>& vh = m_pending.back();
-    
-    for(const CHit* ph = compartment->GetFirst(); ph; ph = compartment->GetNext()) {
-      vh.push_back(*ph);
+    // copy to pending
+    for(CCompartmentFinder::CCompartment* compartment = finder.GetFirst();
+        compartment;
+        compartment = finder.GetNext()) {
+        
+        m_pending.push_back(vector<CHit>(0));
+        vector<CHit>& vh = m_pending.back();
+        
+        for(const CHit* ph = compartment->GetFirst();
+            ph; ph = compartment->GetNext()) {
+            
+            vh.push_back(*ph);
+        }
+        
+        const size_t* box = compartment->GetBox();
+        m_ranges.push_back(box[0] - 1);
+        m_ranges.push_back(box[1] - 1);
+        m_ranges.push_back(box[2] - 1);
+        m_ranges.push_back(box[3] - 1);
+        
+        m_strands.push_back(compartment->GetStrand());
     }
-    
-    const size_t* box = compartment->GetBox();
-    m_ranges.push_back(box[0]-1);
-    m_ranges.push_back(box[1]-1);
-    m_ranges.push_back(box[2]-1);
-    m_ranges.push_back(box[3]-1);
-
-    m_strands.push_back(compartment->GetStrand());
-  }
 }
-
 
 
 bool CCompartmentAccessor::GetFirst(vector<CHit>& compartment) {
 
-  m_iter = 0;
-  return GetNext(compartment);
+    m_iter = 0;
+    return GetNext(compartment);
 }
 
 
 bool CCompartmentAccessor::GetNext(vector<CHit>& compartment) {
 
-  compartment.clear();
-  if(m_iter < m_pending.size()) {
-    compartment = m_pending[m_iter++];
-    return true;
-  }
-  else {
-    return false;
-  }
+    compartment.clear();
+    if(m_iter < m_pending.size()) {
+        compartment = m_pending[m_iter++];
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
 
@@ -421,11 +422,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/06/03 19:29:07  kapustin
+ * Minor fixes
+ *
+ * 
  * Revision 1.5  2004/05/24 16:13:57  gorelenk
  * Added PCH ncbi_pch.hpp
- *
- * Revision 1.4  2004/05/18 21:43:40  kapustin
- * Code cleanup
  *
  * Revision 1.3  2004/04/23 14:37:44  kapustin
  * *** empty log message ***

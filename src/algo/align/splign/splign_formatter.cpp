@@ -52,81 +52,64 @@ CSplignFormatter::CSplignFormatter (const CSplign& splign):
 
 string CSplignFormatter::AsText(void) const
 {
-
-  CNcbiOstrstream oss;
-  oss.precision(3);
-  const vector<CSplign::SAlignedCompartment>& acs = m_splign->GetResult();
-
-  ITERATE(vector<CSplign::SAlignedCompartment>, ii, acs) {
+    CNcbiOstrstream oss;
+    oss.precision(3);
+    const vector<CSplign::SAlignedCompartment>& acs = m_splign->GetResult();
     
-    for(size_t i = 0, seg_dim = ii->m_segments.size(); i < seg_dim; ++i) {
-
-      const CSplign::SSegment& seg = ii->m_segments[i];
-
-      oss << ii->m_id << '\t' << m_QueryId << '\t' << m_SubjId << '\t';
-      if(seg.m_exon) {
-        oss << seg.m_idty << '\t';
-      }
-      else {
-        oss << "-\t";
-      }
-      
-      oss << seg.m_len << '\t';
-      
-      if(ii->m_QueryStrand) {
-        oss << ii->m_qmin + seg.m_box[0] + 1 << '\t'
-            << ii->m_qmin + seg.m_box[1] + 1 << '\t';
-      }
-      else {
-        oss << ii->m_mrnasize - seg.m_box[0] << '\t'
-            << ii->m_mrnasize - seg.m_box[1] << '\t';
-      }
-      
-      if(seg.m_exon) {
+    ITERATE(vector<CSplign::SAlignedCompartment>, ii, acs) {
         
-        if(ii->m_SubjStrand) {
-          oss << ii->m_smin + seg.m_box[2] + 1 << '\t' 
-              << ii->m_smin + seg.m_box[3] + 1 << '\t';
-        }
-        else {
-          oss << ii->m_smax - seg.m_box[2] + 1 << '\t' 
-              << ii->m_smax - seg.m_box[3] + 1 << '\t';
-        }
-      }
-      else {
-        oss << "-\t-\t";
-      }
+        for(size_t i = 0, seg_dim = ii->m_segments.size(); i < seg_dim; ++i) {
+            
+            const CSplign::SSegment& seg = ii->m_segments[i];
+            
+            oss << ii->m_id << '\t' << m_QueryId << '\t' << m_SubjId << '\t';
+            if(seg.m_exon) {
+                oss << seg.m_idty << '\t';
+            }
+            else {
+                oss << "-\t";
+            }
+            
+            oss << seg.m_len << '\t'
+                << seg.m_box[0] + 1 << '\t' << seg.m_box[1] + 1 << '\t';
       
-      if(seg.m_exon) {
+            if(seg.m_exon) {
+                oss << seg.m_box[2] + 1 << '\t' << seg.m_box[3] + 1 << '\t';
+            }
+            else {
+                oss << "-\t-\t";
+            }
+            
+            if(seg.m_exon) {
+                
+                oss << seg.m_annot << '\t';
+                oss << RLE(seg.m_details);
+#ifdef GENOME_PIPELINE
+                oss << '\t' << ScoreByTranscript(*(m_splign->GetAligner()),
+                                                 seg.m_details.c_str());
+#endif
+            }
+            else {
+                if(i == 0) {
+                    oss << "<L-Gap>\t";
+                }
+                else if(i == seg_dim - 1) {
+                    oss << "<R-Gap>\t";
+                }
+                else {
+                    oss << "<M-Gap>\t";
+                }
+                oss << '-';
+#ifdef GENOME_PIPELINE
+                oss << "\t-";
+#endif
+            }
+            oss << endl;
+        }
         
-        oss << seg.m_annot << '\t';
-        oss << RLE(seg.m_details);
-#ifdef GENOME_PIPELINE
-        oss << '\t' << ScoreByTranscript(*(m_splign->GetAligner()),
-                                         seg.m_details.c_str());
-#endif
-      }
-      else {
-        if(i == 0) {
-          oss << "<L-Gap>\t";
-        }
-        else if(i == seg_dim - 1) {
-          oss << "<R-Gap>\t";
-        }
-        else {
-          oss << "<M-Gap>\t";
-        }
-        oss << '-';
-#ifdef GENOME_PIPELINE
-        oss << "\t-";
-#endif
-      }
-      oss << endl;
     }
-
-  }
-
-  return CNcbiOstrstreamToString(oss);
+    
+    return CNcbiOstrstreamToString(oss);
 }
 
 
@@ -149,24 +132,7 @@ CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(void) const
 
             if(seg.m_exon) {
                 
-                if(ii->m_QueryStrand) {
-                    boxes.push_back(ii->m_qmin + seg.m_box[0]);
-                    boxes.push_back(ii->m_qmin + seg.m_box[1]);
-                }
-                else {
-                    boxes.push_back(ii->m_mrnasize - seg.m_box[0] - 1);
-                    boxes.push_back(ii->m_mrnasize - seg.m_box[1] - 1);
-                }
-
-                if(ii->m_SubjStrand) {
-                    boxes.push_back(ii->m_smin + seg.m_box[2]);
-                    boxes.push_back(ii->m_smin + seg.m_box[3]);
-                }
-                else {
-                    boxes.push_back(ii->m_smax - seg.m_box[2]); 
-                    boxes.push_back(ii->m_smax - seg.m_box[3]);
-                }
-
+                copy(seg.m_box, seg.m_box + 4, back_inserter(boxes));
                 transcripts.push_back(seg.m_details);
                 scores.push_back(ScoreByTranscript(*(m_splign->GetAligner()),
                                                    seg.m_details.c_str()));
@@ -367,6 +333,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/06/03 19:29:07  kapustin
+ * Minor fixes
+ *
  * Revision 1.6  2004/05/24 16:13:57  gorelenk
  * Added PCH ncbi_pch.hpp
  *
