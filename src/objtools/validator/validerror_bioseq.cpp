@@ -550,6 +550,9 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     if ( !m_Imp.IsNoBioSource() ) { 
         CheckForBiosourceOnBioseq(seq);
     }
+    
+    // flag missing molinfo even if not in Sequin
+    CheckForMolinfoOnBioseq(seq);
 }
 
 
@@ -1114,15 +1117,8 @@ void CValidError_bioseq::ValidateNs(const CBioseq& seq)
     if ( !bsh ) {
         return;
     }
-    
-    
-    CBioseq_Handle::EVectorStrand strand = CBioseq_Handle::eStrand_Plus;
-    if ( inst.IsSetStrand()  &&  
-         inst.GetStrand() == CSeq_inst::eStrand_ds ) {
-        strand = CBioseq_Handle::eStrand_Minus;
-    }
 
-    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac, strand);
+    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     if ( (vec[0] == 'N')  ||  (vec[0] == 'n') ) {
         PostErr(eDiag_Warning, eErr_SEQ_INST_TerminalNs, 
@@ -1264,7 +1260,8 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
         }
 
         CSeqVector sv = 
-            m_Scope->GetBioseqHandle(seq).GetSeqVector(CBioseq_Handle::eCoding_NotSet);
+            m_Scope->GetBioseqHandle(seq).GetSeqVector();
+        sv.SetCoding(CSeq_data::e_Ncbieaa);
 
         size_t bad_cnt = 0;
         size_t seq_size = sv.size();
@@ -1700,6 +1697,16 @@ void CValidError_bioseq::CheckForBiosourceOnBioseq(const CBioseq& seq)
 }
 
 
+void CValidError_bioseq::CheckForMolinfoOnBioseq(const CBioseq& seq)
+{
+    CSeqdesc_CI sd(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_Molinfo);
+
+    if ( !sd ) {
+        m_Imp.AddBioseqWithNoMolinfo(seq);
+    }
+}
+
+
 void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
@@ -1772,8 +1779,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
     for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_not_set); fi; ++fi ) {
         
         CSeqFeatData::E_Choice ftype = fi->GetData().Which();
-        CSeqFeatData::ESubtype stype = fi->GetData().GetSubtype();
-        
+
         if ( seq.IsAa() ) {                // protein
             switch ( ftype ) {
             case CSeqFeatData::e_Prot:
@@ -2377,6 +2383,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/02/14 21:48:47  shomrat
+* Implemented check for Bioseqs with no MolInfo; Bug fix in use of CSeqVector
+*
 * Revision 1.16  2003/02/12 18:01:07  shomrat
 * Implemented ValidateSeqDescContext; and a few bug fixes
 *
