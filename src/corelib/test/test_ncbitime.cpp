@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 #include <stdio.h>
 
@@ -783,6 +784,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.22  2004/05/14 13:59:51  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 6.21  2004/03/25 17:35:17  ivanov
  * Added tests for 'z' time format
  *

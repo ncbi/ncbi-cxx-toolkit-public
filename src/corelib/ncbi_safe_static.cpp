@@ -34,6 +34,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
@@ -157,6 +158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/14 13:59:26  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.6  2002/09/19 20:05:42  vasilche
  * Safe initialization of static mutexes
  *

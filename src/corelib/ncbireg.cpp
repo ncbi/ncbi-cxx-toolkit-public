@@ -33,6 +33,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbimtx.hpp>
 
@@ -873,6 +874,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.38  2003/10/20 21:55:12  vakatov
  * CNcbiRegistry::GetComment() -- make it "const"
  *

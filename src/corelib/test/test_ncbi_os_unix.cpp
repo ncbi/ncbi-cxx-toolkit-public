@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_os_unix.hpp>
 #include <stdio.h>
@@ -59,6 +60,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/14 13:59:51  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.2  2003/10/01 12:04:29  ucko
  * +<stdio.h> for remove()
  *

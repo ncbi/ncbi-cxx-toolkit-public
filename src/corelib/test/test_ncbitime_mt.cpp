@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/test_mt.hpp>
@@ -443,6 +444,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2004/05/14 13:59:51  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 6.8  2003/11/25 20:03:56  ivanov
  * Fixed misspelled eTZPrecisionDefault
  *

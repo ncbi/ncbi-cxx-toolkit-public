@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
@@ -756,6 +757,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/05/14 13:59:51  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.37  2004/04/29 15:15:00  kuznets
  * Modifications of FindFile test
  *

@@ -31,6 +31,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <ctype.h>
@@ -372,6 +373,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.30  2003/09/05 16:01:37  ivanov
  * Added forgotten eof() check before set FAILBIT in the NcbiGetline()
  *

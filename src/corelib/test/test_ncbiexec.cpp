@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -236,6 +237,9 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.18  2004/05/14 13:59:51  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 6.17  2003/09/16 19:09:10  ivanov
  * Removed the code for location a current executable file using PATH env
  * variable. Use renewed GetProgramName() instead.

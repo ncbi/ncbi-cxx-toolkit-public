@@ -36,6 +36,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <errno.h>
 #include <string.h>
@@ -433,6 +434,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.37  2004/05/11 15:55:31  gouriano
  * Change GetErrCode method prototype to return TErrCode - to be able to
  * safely cast EErrCode to an eInvalid

@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_os_unix.hpp>
 #include <errno.h>
@@ -130,6 +131,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2004/05/14 13:59:26  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.1  2003/09/30 20:53:56  lavr
  * Initial revision
  *

@@ -28,6 +28,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbithr.hpp>
@@ -1564,6 +1565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.48  2004/03/26 16:05:29  ivanov
  * Format symbol 'z' and output time zone for AsString are unsupported
  * on NCBI_OS_DARWIN and NCBI_OS_BSD (problems with determinition daylight

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
 #if !defined(NCBI_OS_MAC)
@@ -2019,6 +2020,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.76  2004/04/29 15:14:34  kuznets
  * + Generic FindFile algorithm capable of recursive searches
  * CDir::GetEntries received additional parameter to ignore self

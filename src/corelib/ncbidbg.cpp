@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbithr.hpp>
 #include "ncbidbg_p.hpp"
@@ -73,6 +74,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.4  2002/09/24 18:27:18  vasilche
  * Removed redundant "extern" keyword
  *

@@ -45,6 +45,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <TextUtils.h>
 
 #include <corelib/ncbi_os_mac.hpp>
@@ -567,6 +568,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2004/05/14 13:59:26  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.7  2003/05/23 20:34:14  lavr
  * Show permitting Apple's notice about changes in original "MoreFiles" code
  *

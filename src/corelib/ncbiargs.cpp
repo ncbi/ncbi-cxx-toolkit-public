@@ -34,6 +34,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 #include <algorithm>
@@ -2153,6 +2154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2004/05/14 13:59:26  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.47  2003/09/16 19:51:36  rsmith
  * move CreateArgs definition to avoid new Codewarrior compiler bug.
  *

@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 #include <memory>
@@ -1482,6 +1483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.108  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.107  2004/03/11 18:49:48  gorelenk
  * Removed(condionaly) implementation of class CNcbiEmptyString.
  *

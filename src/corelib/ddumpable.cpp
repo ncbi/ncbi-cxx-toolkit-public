@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ddumpable.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -389,6 +390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/05/14 13:59:26  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.10  2003/12/09 21:13:49  ucko
  * Re-tweak logging of 64-bit numbers, as the previous revision broke
  * when __int64 and long long were synonymous.  (Now uses Int8/Uint8

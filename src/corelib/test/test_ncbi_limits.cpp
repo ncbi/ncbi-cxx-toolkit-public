@@ -26,6 +26,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -123,6 +124,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2004/05/14 13:59:51  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 6.4  2004/02/10 16:31:45  ucko
  * s_TestType: store the result of min() and max() in locals to work
  * around a platform-dependent GCC 2.95 bug.

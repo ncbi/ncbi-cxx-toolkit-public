@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
 
@@ -416,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/05/14 13:59:26  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.36  2004/02/11 18:06:28  lavr
  * Fix typo (nrproc->nproc)
  *

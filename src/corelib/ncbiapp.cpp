@@ -31,6 +31,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/metareg.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -913,6 +914,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2004/05/14 13:59:26  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.83  2004/03/02 15:57:34  ucko
  * Downgrade severity of missing Mac arguments file to Info, since Darwin
  * allows actual command lines.

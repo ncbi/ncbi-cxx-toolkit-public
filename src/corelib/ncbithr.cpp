@@ -41,6 +41,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_safe_static.hpp>
@@ -654,6 +655,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.29  2003/09/17 15:20:46  vasilche
  * Moved atomic counter swap functions to separate file.
  * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.

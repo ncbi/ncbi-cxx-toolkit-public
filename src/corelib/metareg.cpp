@@ -31,6 +31,7 @@
  * ===========================================================================
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/metareg.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
@@ -243,6 +244,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2004/05/14 13:59:26  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.11  2003/12/08 18:40:22  ucko
  * Use DEFINE_CLASS_STATIC_MUTEX to avoid possible premature locking.
  *

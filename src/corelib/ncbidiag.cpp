@@ -31,13 +31,9 @@
  */
 
 
-#include <ncbiconf.h>
+#include <ncbi_pch.hpp>
 
-#if defined(NCBI_OS_MSWIN)
-#  include <crtdbg.h>
-#  include <corelib/ncbi_os_mswin.hpp>
-#  undef _ASSERT
-#endif
+#include <ncbiconf.h>
 
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbithr.hpp>
@@ -1181,6 +1177,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.80  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.79  2004/03/18 20:19:20  gouriano
  * make it possible to convert multi-line diagnostic message into single-line
  *

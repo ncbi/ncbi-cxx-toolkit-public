@@ -32,6 +32,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbifile.hpp>
 #include <algorithm>
@@ -268,6 +269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.11  2004/01/07 14:26:40  dicuccio
  * Changed CErrnoTemplExceptionEx to CErrnoTempException in Set() to please
  * WorkShop

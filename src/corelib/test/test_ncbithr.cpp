@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
@@ -754,6 +755,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2004/05/14 13:59:51  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 6.6  2002/11/04 21:29:05  grichenk
  * Fixed usage of const CRef<> and CRef<> constructor
  *

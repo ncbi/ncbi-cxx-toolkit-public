@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #if NCBI_OS_MSWIN
@@ -126,6 +127,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2004/05/14 13:59:51  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 6.3  2002/04/16 18:49:06  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.

@@ -31,6 +31,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 
@@ -763,6 +764,9 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.44  2004/04/05 15:58:43  vakatov
  * CObject::InitCounter() -- ATTENTION:  this code can cause UMR -- it's okay
  *

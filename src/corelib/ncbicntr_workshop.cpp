@@ -32,12 +32,16 @@
 * =========================================================================== */
 
 #define NCBI_COUNTER_IMPLEMENTATION
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiatomic.hpp>
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/05/14 13:59:27  gorelenk
+* Added include of ncbi_pch.hpp
+*
 * Revision 1.3  2003/10/01 12:02:51  ucko
 * Fix header for SwapPointers
 *

@@ -31,6 +31,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiatomic.hpp>
 
 #ifdef NCBI_SLOW_ATOMIC_SWAP
@@ -56,6 +57,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.1  2003/09/17 15:20:46  vasilche
  * Moved atomic counter swap functions to separate file.
  * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.

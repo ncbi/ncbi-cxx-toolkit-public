@@ -31,6 +31,7 @@
  * ===========================================================================
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbidll.hpp>
 
@@ -300,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.5  2003/12/09 13:25:59  kuznets
  * Added DLL name based entry point names
  *

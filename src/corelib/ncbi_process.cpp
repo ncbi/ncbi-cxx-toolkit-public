@@ -28,6 +28,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_process.hpp>
@@ -381,6 +382,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/14 13:59:26  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.6  2004/03/04 19:08:36  ivanov
  * Fixed CProcess::IsAlive()
  *

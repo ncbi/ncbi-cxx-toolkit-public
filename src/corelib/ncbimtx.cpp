@@ -33,6 +33,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_limits.h>
 #include "ncbidbg_p.hpp"
@@ -1000,6 +1001,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.15  2003/09/29 20:45:54  ivanov
  * CAutoInitializeStatic[Fast]Mutex:  changed method of initialization for static mutexes on MS Windows (by Eugene Vasilchenko)
  *

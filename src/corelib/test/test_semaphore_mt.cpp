@@ -37,6 +37,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -191,6 +192,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2004/05/14 13:59:51  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 6.8  2003/05/14 16:26:23  ivanov
  * Changed Sleep() to SleepMilliSec()
  *

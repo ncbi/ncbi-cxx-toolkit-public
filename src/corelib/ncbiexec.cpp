@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <stdio.h>
 #include <stdarg.h>
 #include <corelib/ncbiexec.hpp>
@@ -322,6 +323,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.16  2003/10/01 20:22:05  ivanov
  * Formal code rearrangement
  *

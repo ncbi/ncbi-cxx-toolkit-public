@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbidll.hpp>
 #include <corelib/ncbifile.hpp>
 
@@ -310,6 +311,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.19  2004/02/05 18:41:25  ucko
  * GetEntryPoint: Darwin may or may not need a leading underscore, so try
  * it both ways.

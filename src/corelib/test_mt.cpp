@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/test_mt.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <test/test_assert.h>  /* This header must go last */
@@ -281,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/14 13:59:27  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 1.8  2003/12/12 23:41:29  vakatov
  * + cmd.-line arg `-repeats' to alternate the number of test execution repeats
  *   in single-thread mode

@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/test_mt.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <algorithm>
@@ -155,6 +156,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2004/05/14 13:59:51  gorelenk
+ * Added include of ncbi_pch.hpp
+ *
  * Revision 6.7  2003/05/17 15:00:39  grichenk
  * Fixed number of message lines
  *
