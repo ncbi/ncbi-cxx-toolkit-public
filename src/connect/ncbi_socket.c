@@ -1203,11 +1203,12 @@ static EIO_Status s_Connect(SOCK            sock,
 #ifdef NCBI_OS_UNIX
             if (status == eIO_Success  &&
                 (getsockopt(x_sock, SOL_SOCKET, SO_ERROR, &x_errno,&x_len) != 0
-                 ||  x_errno != 0))
+                 ||  x_errno != 0)) {
                 status = eIO_Unknown;
+            }
 #endif /*NCBI_OS_UNIX*/
             if (status != eIO_Success  ||  poll.revent != eIO_Write) {
-                if (status != eIO_Interrupt  ||  poll.revent != eIO_Write)
+                if (status == eIO_Success)
                     status = eIO_Unknown;
                 if ( !x_errno )
                     x_errno = SOCK_ERRNO;
@@ -2947,6 +2948,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.81  2003/01/17 15:56:05  lavr
+ * Keep as much status as possible in failed pending connect
+ *
  * Revision 6.80  2003/01/17 15:11:36  lavr
  * Update stat counters in s_Close() instead of s_Connect()
  *
