@@ -29,6 +29,7 @@
  *
  */
 
+
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
 #include <objtools/lds/lds_reader.hpp>
 #include <objtools/lds/lds_util.hpp>
@@ -150,25 +151,34 @@ private:
 };
 
 
+
+CLDS_DataLoader::CLDS_DataLoader()
+: m_LDS_db(0)
+{}
+
+
+
 CLDS_DataLoader::CLDS_DataLoader(CLDS_Database& lds_db,
                                  const string& dl_name)
  : CDataLoader(dl_name),
-   m_LDS_db(lds_db),
+   m_LDS_db(&lds_db),
    m_OwnDatabase(false)
-{}
+{
+}
+
 
 CLDS_DataLoader::CLDS_DataLoader(const string& db_path,
                                  const string& dl_name)
  : CDataLoader(dl_name),
-   m_LDS_db(*(new CLDS_Database(db_path, kEmptyStr))),
+   m_LDS_db(new CLDS_Database(db_path, kEmptyStr)),
    m_OwnDatabase(true)
 {
     try {
-        m_LDS_db.Open();
+        m_LDS_db->Open();
     } 
     catch(...)
     {
-        delete &m_LDS_db;
+        delete m_LDS_db;
         throw;
     }
 }
@@ -176,17 +186,28 @@ CLDS_DataLoader::CLDS_DataLoader(const string& db_path,
 CLDS_DataLoader::~CLDS_DataLoader()
 {
     if (m_OwnDatabase)
-        delete &m_LDS_db;
+        delete m_LDS_db;
 }
+
+
+void CLDS_DataLoader::SetDatabase(CLDS_Database& lds_db,
+                                  const string&  dl_name)
+{
+    if (m_LDS_db && m_OwnDatabase)
+        delete m_LDS_db;
+    m_LDS_db = &lds_db;
+    SetName(dl_name);
+}
+
 
 void CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
                                  EChoice choice)
 {
     CHandleRangeMap hrmap;
     hrmap.AddRange(idh, CRange<TSeqPos>::GetWhole(), eNa_strand_unknown);
-    CLDS_FindSeqIdFunc search_func(m_LDS_db.GetTables(), hrmap);
+    CLDS_FindSeqIdFunc search_func(m_LDS_db->GetTables(), hrmap);
     
-    SLDS_TablesCollection& db = m_LDS_db.GetTables();
+    SLDS_TablesCollection& db = m_LDS_db->GetTables();
 
     BDB_iterate_file(db.object_db, search_func);
 
@@ -205,7 +226,7 @@ void CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
         }
 
         CRef<CSeq_entry> seq_entry = 
-            LDS_LoadTSE(db, m_LDS_db.GetObjTypeMap(), object_id);
+            LDS_LoadTSE(db, m_LDS_db->GetObjTypeMap(), object_id);
 
         if (seq_entry) {
             CRef<CTSE_Info> tse_info = 
@@ -233,11 +254,45 @@ void CLDS_DataLoader::DropTSE(const CTSE_Info& tse_info)
 
 
 END_SCOPE(objects)
+
+// ===========================================================================
+
+USING_SCOPE(objects);
+
+class CLDS_DataLoaderCF : 
+  public CSimpleClassFactoryImpl<objects::CDataLoader, objects::CLDS_DataLoader>
+{
+public:
+    typedef CSimpleClassFactoryImpl<objects::CDataLoader, 
+                                    objects::CLDS_DataLoader>    TParent;
+
+    CLDS_DataLoaderCF() : TParent("CLDS_DataLoader")
+    {}
+};
+
+
+extern "C"
+{
+
+void NCBI_XLOADER_LDS_EXPORT 
+NCBI_EntryPoint_DataLoader_LDS(CPluginManager<CDataLoader>::TDriverInfoList&   info_list,
+                               CPluginManager<CDataLoader>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CLDS_DataLoaderCF>::NCBI_EntryPointImpl(info_list, method);
+}
+
+
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/12/16 17:55:22  kuznets
+ * Added plugin entry point
+ *
  * Revision 1.11  2003/11/28 13:41:10  dicuccio
  * Fixed to match new API in CDataLoader
  *
