@@ -144,7 +144,7 @@ inline bool CCompressionStreambuf::IsOkay(void) const
 }
 
 
-inline bool CCompressionStreambuf::IsStreamProcessorOkey(
+inline bool CCompressionStreambuf::IsStreamProcessorOkay(
             CCompressionStream::EDirection dir) const
 {
     CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
@@ -175,6 +175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/01/20 21:07:59  ucko
+ * Fix typo in previous revision.
+ *
  * Revision 1.6  2004/01/20 20:38:14  lavr
  * Proper Doxygen vs ncbi namespace group nesting
  *
