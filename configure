@@ -3842,7 +3842,7 @@ case "$host_os:$compiler" in
    ;;
 
  irix*:MIPSpro73 )
-   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared"
+   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared -TENV:large_got"
    # Warnings we disable (messages courtesy of "gettxt cc.cat.m:N")
    # 1107: A signed bit field has a length of 1 bit.
    # 1169: External/internal linkage conflicts with a previous declaration.
@@ -19115,7 +19115,7 @@ _ACEOF
    GIF_LIBS=$UNGIF_LIBS
 fi
 
-test -n "$x_includes"  &&  : ${XPM_PATH=`dirname "$x_includes"`}
+test -n "$x_libraries"  &&  : ${XPM_PATH=`dirname "$x_libraries"`}
 if test "$with_xpm" != "no"; then
     case "$with_xpm" in
        yes | "" ) ;;

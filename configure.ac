@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.286 2004/04/06 02:34:36 ucko Exp $
+#  $Id: configure.ac,v 1.287 2004/04/07 15:09:14 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -689,7 +689,7 @@ case "$host_os:$compiler" in
    ;;
 
  irix*:MIPSpro73 )
-   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared"
+   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared -TENV:large_got"
    # Warnings we disable (messages courtesy of "gettxt cc.cat.m:N")
    # 1107: A signed bit field has a length of 1 bit.
    # 1169: External/internal linkage conflicts with a previous declaration.
@@ -3368,7 +3368,7 @@ else
    GIF_LIBS=$UNGIF_LIBS
 fi
 
-test -n "$x_includes"  &&  : ${XPM_PATH=`dirname "$x_includes"`}
+test -n "$x_libraries"  &&  : ${XPM_PATH=`dirname "$x_libraries"`}
 NCBI_CHECK_THIRD_PARTY_LIB(Xpm,
  AC_LANG_PROGRAM([#include <X11/xpm.h>],
     [XpmImage image; XpmInfo info;
