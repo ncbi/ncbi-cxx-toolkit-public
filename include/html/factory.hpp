@@ -48,44 +48,46 @@ BEGIN_NCBI_SCOPE
 
 template <class Type>  // this is used to create the dispatch table
 struct SFactoryList {
-    Type * (* pFactory)(void);  // the function to create the object
-    char * MatchString;  // the string to match
+    Type* (*pFactory)(void);  // the function to create the object
+    const char* MatchString;  // the string to match
     int Style;  // optional flags
 };
 
 template <class Type>
 class CFactory {
 public:
-    int CgiFactory(TCgiEntries & Cgi, SFactoryList < Type > * List);
+    int CgiFactory(TCgiEntries& Cgi, SFactoryList<Type>* List);
 };
 
-
 template <class Type>
-int CFactory<Type>::CgiFactory(TCgiEntries & Cgi, SFactoryList <Type> * List)
+int CFactory<Type>::CgiFactory(TCgiEntries& Cgi, SFactoryList<Type>* List)
     // - List should always end with the m_MatchString = ""
     // (visual C 6.0 doesn't allow templates to find the size
     // of arrays).
 {
     int i = 0;
-    multimap < string, string >::iterator iRange, iPageCgi;
-    pair <multimap < string, string >::iterator, multimap < string, string >:: iterator > Range;
+    multimap<string, string>::iterator iRange, iPageCgi;
+    pair<multimap<string, string>::iterator, multimap<string, string>::iterator> Range;
     TCgiEntries PageCgi;
 
-    while(string(List[i].MatchString) != "") {
+    while ( !string(List[i].MatchString).empty() ) {
         PageCgi.erase(PageCgi.begin(), PageCgi.end());
         CCgiRequest::ParseEntries(List[i].MatchString, PageCgi);  // parse the MatchString
         bool ThisPage = true;
-        for (iPageCgi = PageCgi.begin(); iPageCgi != PageCgi.end(); iPageCgi++) { 
+        for ( iPageCgi = PageCgi.begin(); iPageCgi != PageCgi.end(); iPageCgi++) { 
             Range = Cgi.equal_range(iPageCgi->first);
-            for(iRange = Range.first; iRange != Range.second; iRange++) {
-                if( iRange->second == iPageCgi->second) goto equality;
-                if(iPageCgi->second == "") goto equality;  // wildcard
+            for ( iRange = Range.first; iRange != Range.second; iRange++ ) {
+                if ( iRange->second == iPageCgi->second)
+                    goto equality;
+                if ( iPageCgi->second == "")
+                    goto equality;  // wildcard
             }
             ThisPage = false;
         equality:  // ugh
             ; // double ugh
         }
-        if(ThisPage) break;
+        if ( ThisPage )
+            break;
         i++;
     }
     return i;

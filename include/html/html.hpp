@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1998/12/28 21:48:12  vasilche
+* Made Lewis's 'tool' compilable
+*
 * Revision 1.12  1998/12/28 16:48:05  vasilche
 * Removed creation of QueryBox in CHTMLPage::CreateView()
 * CQueryBox extends from CHTML_form
@@ -77,7 +80,6 @@
 */
 
 
-#include <ncbistd.h>
 #include <node.hpp>
 #include <map>
 

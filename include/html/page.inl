@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/28 21:48:14  vasilche
+* Made Lewis's 'tool' compilable
+*
 * Revision 1.4  1998/12/24 16:15:39  vasilche
 * Added CHTMLComment class.
 * Added TagMappers from static functions.
@@ -53,9 +56,9 @@
 static inline CHTMLBasicPage* CHTMLPage::New(void)
 {
     return new CHTMLPage;
-}  // for the page factory
+}
 
-inline CCgiApplication* CHTMLBasicPage::GetApplication(void)
+inline CCgiApplication* CHTMLBasicPage::GetApplication(void) const
 {
     return m_CgiApplication;
 }

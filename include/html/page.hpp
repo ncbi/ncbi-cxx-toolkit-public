@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1998/12/28 21:48:13  vasilche
+* Made Lewis's 'tool' compilable
+*
 * Revision 1.11  1998/12/24 16:15:38  vasilche
 * Added CHTMLComment class.
 * Added TagMappers from static functions.
@@ -108,9 +111,10 @@ class CHTMLBasicPage: public CNCBINode {
     typedef CNCBINode CParent;
 
 public: 
-    CHTMLBasicPage(CCgiApplication* application = 0, int style = 0);
+    CHTMLBasicPage(void);
+    CHTMLBasicPage(CCgiApplication* app, int style = 0);
 
-    virtual CCgiApplication * GetApplication(void);
+    virtual CCgiApplication * GetApplication(void) const;
     virtual void SetApplication(CCgiApplication * App);
 
     int GetStyle(void) const;
@@ -147,7 +151,8 @@ class CHTMLPage : public CHTMLBasicPage {
 public:
     ////////// 'tors
 
-    CHTMLPage(CCgiApplication* application = 0, int style = 0);
+    CHTMLPage(void);
+    CHTMLPage(CCgiApplication* app, int style = 0);
     static CHTMLBasicPage * New(void);
 
     ////////// flags
@@ -169,8 +174,12 @@ public:
     virtual CNCBINode* CreateTitle(void);
     virtual CNCBINode* CreateView(void);
 
+protected:
     // cloning
     virtual CNCBINode* CloneSelf() const;
+
+private:
+    void Init(void);
 };
 
 #include <page.inl>

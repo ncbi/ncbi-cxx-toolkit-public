@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1998/12/28 21:48:16  vasilche
+* Made Lewis's 'tool' compilable
+*
 * Revision 1.15  1998/12/28 16:48:09  vasilche
 * Removed creation of QueryBox in CHTMLPage::CreateView()
 * CQueryBox extends from CHTML_form
@@ -748,6 +751,12 @@ CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool che
 
 
 // radio tag 
+
+CHTML_radio::CHTML_radio(const string& name, const string& value)
+    : CParent(KHTMLInputTypeName_radio, name)
+{
+    SetAttribute(KHTMLAttributeName_value, value);
+}
 
 CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, const string& description)
     : CParent(KHTMLInputTypeName_radio, name)

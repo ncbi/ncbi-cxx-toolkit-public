@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/28 21:48:18  vasilche
+* Made Lewis's 'tool' compilable
+*
 * Revision 1.6  1998/12/28 16:48:10  vasilche
 * Removed creation of QueryBox in CHTMLPage::CreateView()
 * CQueryBox extends from CHTML_form
@@ -76,17 +79,10 @@ CPmFrontPage::CPmFrontPage()
     //    AddTagMap("QUERYBOX", CreateTagMapper(this, &CreateQueryBox));
 }
 
-/*
-CPmFrontPage::CPmFrontPage(const CPmFrontPage* origin)
-    : CParent(origin)
-{
-}
-
 CNCBINode* CPmFrontPage::CloneSelf(void) const
 {
-    return new CPmFrontPage(this);
+    return new CPmFrontPage(*this);
 }
-*/
 
 CNCBINode* CPmFrontPage::CreateView(void)
 {

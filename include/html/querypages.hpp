@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/28 21:48:14  vasilche
+* Made Lewis's 'tool' compilable
+*
 * Revision 1.6  1998/12/28 16:48:06  vasilche
 * Removed creation of QueryBox in CHTMLPage::CreateView()
 * CQueryBox extends from CHTML_form
@@ -74,6 +77,10 @@ public:
     static CHTMLBasicPage * New(void) { return new CPmFrontPage;}
 
     virtual CNCBINode* CreateView(void);
+
+protected:
+    // Clone support
+    CNCBINode* CloneSelf(void) const;
 };
 
 
@@ -93,6 +100,7 @@ public:
     static CHTMLBasicPage * New(void) { return new CPmDocSumPage;}
 
 protected:
+    // Clone support
     CNCBINode* CloneSelf(void) const;
 };
 

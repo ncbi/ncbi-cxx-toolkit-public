@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/28 21:48:17  vasilche
+* Made Lewis's 'tool' compilable
+*
 * Revision 1.7  1998/12/28 16:48:09  vasilche
 * Removed creation of QueryBox in CHTMLPage::CreateView()
 * CQueryBox extends from CHTML_form
@@ -59,25 +62,20 @@
 #include <ncbistd.hpp>
 #include <components.hpp>
 #include <page.hpp>
-//#include <nodemap.hpp>
+
 BEGIN_NCBI_SCOPE
  
 // CHTMLBasicPage
+
+CHTMLBasicPage::CHTMLBasicPage(void)
+    : m_CgiApplication(0), m_Style(0)
+{
+}
 
 CHTMLBasicPage::CHTMLBasicPage(CCgiApplication* application, int style)
     : m_CgiApplication(application), m_Style(style)
 {
 }
-
-/*
-CHTMLBasicPage::CHTMLBasicPage(const CHTMLBasicPage* origin)
-    : CParent(origin)
-{
-    m_CgiApplication = origin->m_CgiApplication;
-    m_Style = origin->m_Style;
-    m_TagMap = origin->m_TagMap;
-}
-*/
 
 CNCBINode* CHTMLBasicPage::CloneSelf() const
 {
@@ -113,22 +111,34 @@ void CHTMLBasicPage::AddTagMap(const string& name, BaseTagMapper* mapper)
 
 template class TagMapper<CHTMLPage>;
 
-CHTMLPage::CHTMLPage(CCgiApplication* application, int style)
-    : CParent(application, style),  m_PageName("PubMed"), m_TemplateFile("frontpage.html")
+CHTMLPage::CHTMLPage(void)
+    : m_PageName("PubMed"), m_TemplateFile("frontpage.html")
 {
-    AddTagMap("TEMPLATE", CreateTagMapper(this, &CreateTemplate));
+    Init();
+}
+
+CHTMLPage::CHTMLPage(CCgiApplication* application, int style)
+    : CParent(application, style)
+{
+    Init();
+}
+
+void CHTMLPage::Init(void)
+{
+    m_PageName = "PubMed";
+    m_TemplateFile = "frontpage.html";
     AddTagMap("TITLE", CreateTagMapper(this, &CreateTitle));
     AddTagMap("VIEW", CreateTagMapper(this, &CreateView));
 }
 
-CNCBINode* CHTMLPage::CloneSelf() const
+CNCBINode* CHTMLPage::CloneSelf(void) const
 {
     return new CHTMLPage(*this);
 }
 
 void CHTMLPage::CreateSubNodes(void)
 {
-    AppendChild(new CHTMLTagNode("TEMPLATE"));
+    AppendChild(CreateTemplate());
 }
 
 CNCBINode* CHTMLPage::CreateTemplate(void) 
