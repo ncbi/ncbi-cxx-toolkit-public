@@ -46,7 +46,9 @@
 #include <bdb/bdb_blobcache.hpp>
 #include <bdb/bdb_filedump.hpp>
 #include <bdb/bdb_trans.hpp>
+#include <bdb/bdb_query.hpp>
 
+#include <bdb/bdb_query_parser.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -421,6 +423,223 @@ static void s_TEST_BDB_IdTable_Fill(void)
     cout << "======== Id table filling test ok." << endl;
 
 
+}
+
+class CTestScanner : public CBDB_FileScanner
+{
+public:
+
+    CTestScanner(CBDB_File& db_file)
+    : CBDB_FileScanner(db_file)
+    {}
+
+    virtual EScanAction OnRecordFound()
+    {
+        return eContinue;
+    }
+
+protected:
+    
+};
+
+
+static void s_TEST_BDB_Query(void)
+{
+    bool bres;
+
+    cout << "======== Query test." << endl;
+
+    TestDBF1  dbf1;
+    dbf1.Open(s_TestFileName, CBDB_File::eReadOnly);
+
+    dbf1.IdKey = 1;
+    dbf1.Fetch();
+
+    CTestScanner  scanner(dbf1);
+    CBDB_Query    query;
+
+    {{
+        const char* ch = "  '2' And ((name3 OR 1) & name3)";
+        CBDB_Query    query;
+        BDB_ParseQuery(ch, &query);
+        BDB_PrintQueryTree(cout, query);
+    }}
+
+    // Testing the query evaluation logic
+    //
+
+    // "1" == "2" => false
+    {{
+    CBDB_Query::TQueryClause* eq_node = 
+          CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, "1", "2");
+    query.SetQueryClause(eq_node);
+
+    bres = scanner.StaticEvaluate(query);
+
+    assert(!bres);
+    BDB_PrintQueryTree(cout, query);
+    }}
+
+    {{    
+    const char* ch = "'1' = 2";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(!bres);
+    }}
+
+
+
+
+    // "2" == "2" => true
+    {{
+    CBDB_Query::TQueryClause* eq_node = 
+          CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, "2", "2");
+    query.SetQueryClause(eq_node);
+
+    bres = scanner.StaticEvaluate(query);
+
+    assert(bres);
+    }}
+
+    {{    
+    const char* ch = "2 = 2";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
+
+
+    // ("1" == "1" AND "2" == "2") => true
+    {{
+    CBDB_Query::TQueryClause* eq_node1 = 
+          CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, "2", "2");
+    CBDB_Query::TQueryClause* eq_node2 = 
+          CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, "1", "1");
+
+    CBDB_Query::TQueryClause* and_node =
+        new CBDB_Query::TQueryClause(CBDB_QueryNode::eAnd);
+    and_node->AddNode(eq_node1);
+    and_node->AddNode(eq_node2);
+
+    query.SetQueryClause(and_node);
+
+    bres = scanner.StaticEvaluate(query);
+
+    assert(bres);
+    }}
+
+    {{    
+    const char* ch = "(1=1 AND 2=2)";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
+
+    // ("1" == "1" AND "2" == "0") => false
+    {{
+    CBDB_Query::TQueryClause* eq_node1 = 
+          CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, "2", "0");
+    CBDB_Query::TQueryClause* eq_node2 = 
+          CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, "1", "1");
+
+    CBDB_Query::TQueryClause* and_node =
+        new CBDB_Query::TQueryClause(CBDB_QueryNode::eAnd);
+    and_node->AddNode(eq_node1);
+    and_node->AddNode(eq_node2);
+
+    query.SetQueryClause(and_node);
+
+    bres = scanner.StaticEvaluate(query);
+
+    assert(!bres);
+
+    BDB_PrintQueryTree(cout, query);
+    }}
+
+    {{
+    const char* ch = "('1'='1' AND '2'='0')";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(!bres);
+    }}
+
+    // ("1" == "1" OR "2" == "0") => true
+    {{
+    CBDB_Query::TQueryClause* eq_node1 = 
+          CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, "2", "0");
+    CBDB_Query::TQueryClause* eq_node2 = 
+          CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, "1", "1");
+
+    CBDB_Query::TQueryClause* and_node =
+        new CBDB_Query::TQueryClause(CBDB_QueryNode::eOr);
+    and_node->AddNode(eq_node1);
+    and_node->AddNode(eq_node2);
+
+    query.SetQueryClause(and_node);
+
+    bres = scanner.StaticEvaluate(query);
+
+    assert(bres);
+    }}
+
+    {{
+    const char* ch = "('1'='1' OR '2'='0')";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
+
+    
+    // Testing the query evaluation involving data fields
+    //
+
+    // (id = 1) =>true
+    {{
+    CBDB_Query::TQueryClause* eq_node = 
+          CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, "id", "1");
+    query.SetQueryClause(eq_node);
+
+    bres = scanner.StaticEvaluate(query);
+
+    assert(bres);
+    }}
+
+    {{
+    const char* ch = "id = '1'";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
+
+
+    // ("id" == "1" AND "idata" == "401") => true
+    {{
+    CBDB_Query::TQueryClause* eq_node1 = 
+          CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, "id", "1");
+    CBDB_Query::TQueryClause* eq_node2 = 
+          CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, "idata", "401");
+
+    CBDB_Query::TQueryClause* and_node =
+        new CBDB_Query::TQueryClause(CBDB_QueryNode::eAnd);
+    and_node->AddNode(eq_node1);
+    and_node->AddNode(eq_node2);
+
+    query.SetQueryClause(and_node);
+
+    bres = scanner.StaticEvaluate(query);
+
+    assert(bres);
+    BDB_PrintQueryTree(cout, query);
+    }}
+
+    {{
+    const char* ch = "id = '1' AND idata = '401'";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
+
+    cout << "======== Query test ok." << endl;
 }
 
 
@@ -1505,6 +1724,7 @@ int CBDB_Test::Run(void)
 
     try
     {
+
         s_TEST_BDB_Types();
 
         s_TEST_BDB_IdTable_Fill();
@@ -1532,6 +1752,8 @@ int CBDB_Test::Run(void)
         s_TEST_ICache();
 
         s_TEST_IntCache(); 
+
+        s_TEST_BDB_Query();
 
 
     }
@@ -1566,6 +1788,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/03/01 14:07:11  kuznets
+ * + test case for queries
+ *
  * Revision 1.36  2004/02/04 19:16:50  kuznets
  * Fixed compilation bug (Workshop)
  *
