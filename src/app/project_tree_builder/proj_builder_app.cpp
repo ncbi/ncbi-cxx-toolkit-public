@@ -138,9 +138,9 @@ int CProjBulderApp::Run(void)
     // Project requires are not provided
     EraseIf(projects_tree.m_Projects, PIsExcludedByRequires());
 
+
     // Projects
     CMsvcProjectGenerator prj_gen(GetRegSettings().m_ConfigInfo);
-
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
         prj_gen.Generate(p->second);
     }
@@ -416,6 +416,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/10 18:18:43  gorelenk
+ * Changed LOG_POST massages.
+ *
  * Revision 1.12  2004/02/06 23:14:59  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.
