@@ -454,7 +454,8 @@ method defined in</li>
 </ul>
 </ol>
 For a good example of using a <i>CReadClassMemberHook</i> object, see the
-<i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
+<i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i> and
+<i><a href="../lxr/source/src/serial/test/testserial.cpp">testserial.cpp</a></i>
 demo program.
 <p><a NAME="writehooks"></a>
 <h3>
@@ -492,7 +493,8 @@ the examples for read hooks then, we would have:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CSeq_entry::GetTypeInfo()->FindVariant("Bioseq")
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ->SetGlobalWriteChoiceVariantHook(myWriteBioseqHook);</font></pre>
-The <i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
+The <i><a href="../lxr/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i> and
+<i><a href="../lxr/source/src/serial/test/testserial.cpp">testserial.cpp</a></i>
 demo program also demonstrates the usage of the <i>CWriteClassMemberHook</i>
 class.
 <p><a NAME="copyhooks"></a>
@@ -545,6 +547,9 @@ implemented as <i>vector&lt;char&gt;</i> and <i>string</i> classes, which have
 no serailization type info, you can not install a read or write hook
 for these classes. The example also demonstrates how to process
 members of these types using the contaning class hook.
+Another example of using CharBlock with write hooks can be found in
+<i><a href="../lxr/source/src/serial/test/testserial.cpp">testserial.cpp</a></i>
+application.
 
 <pre><font color="#008080">
 

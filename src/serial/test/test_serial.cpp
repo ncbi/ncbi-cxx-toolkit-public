@@ -29,6 +29,209 @@ int main(int argc, char** argv)
 
 void PrintAsn(CNcbiOstream& out, const CConstObjectInfo& object);
 
+
+class CWriteSerialObjectHook : public CWriteObjectHook
+{
+public:
+    CWriteSerialObjectHook(CSerialObject* hooked)
+        : m_HookedObject(hooked) {}
+    void WriteObject(CObjectOStream& out,
+                     const CConstObjectInfo& object);
+private:
+    CSerialObject* m_HookedObject;
+};
+
+
+void CWriteSerialObjectHook::WriteObject(CObjectOStream& out,
+                                         const CConstObjectInfo& object)
+{
+    const CSerialObject& obj = *reinterpret_cast<const CSerialObject*>
+        (object.GetObjectPtr());
+    
+    if (&obj != m_HookedObject) {
+        // This is not the object we would like to process.
+        // Use default write method.
+        LOG_POST("CWriteSerialObjectHook::WriteObject()"
+            " -- using default writer");
+        object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
+        return;
+    }
+
+    // Special object processing
+    // Write object open tag
+    out.BeginClass(object.GetClassTypeInfo());
+    // Iterate object members
+    for (CConstObjectInfo::CMemberIterator member =
+        object.BeginMembers(); member; ++member) {
+        if (member.GetAlias() == "m_Name") {
+            // This member will be written using CharBlock instead of the
+            // default method.
+            LOG_POST("CWriteSerialObjectHook::WriteObject()"
+                " -- using CharBlock to write " << member.GetAlias());
+            // Write the special member
+            out.BeginClassMember(member.GetMemberInfo()->GetId());
+            // Start char block, specify output stream and block size
+            CObjectOStream::CharBlock cb(out, obj.m_Name.size());
+                cb.Write(obj.m_Name.c_str(), obj.m_Name.size());   
+            // End char block and member
+            cb.End();
+            out.EndClassMember();
+        }
+        else {
+            // Do not need special processing for this member -- use
+            // default write method. Do not write unset members (although
+            // it is possible).
+            if ( member.IsSet() ) {
+                LOG_POST("CWriteSerialObjectHook::WriteObject()"
+                    " -- using default member writer for " <<
+                    member.GetAlias());
+                out.WriteClassMember(member);
+            }
+        }
+    }
+    // Close the object
+    out.EndClass();
+}
+
+
+class CReadSerialObjectHook : public CReadObjectHook
+{
+public:
+    CReadSerialObjectHook(CSerialObject* hooked)
+        : m_HookedObject(hooked) {}
+    void ReadObject(CObjectIStream& in,
+                    const CObjectInfo& object);
+private:
+    CSerialObject* m_HookedObject;
+};
+
+
+void CReadSerialObjectHook::ReadObject(CObjectIStream& in,
+                                       const CObjectInfo& object)
+{
+    const CSerialObject& obj = *reinterpret_cast<const CSerialObject*>
+        (object.GetObjectPtr());
+    
+    if (&obj != m_HookedObject) {
+        // Use default read method.
+        LOG_POST("CReadSerialObjectHook::ReadObject()"
+            " -- using default reader");
+        object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
+        return;
+    }
+
+    LOG_POST("CReadSerialObjectHook::ReadObject()"
+        " -- using overloaded reader");
+    // Read the object manually, member by member.
+    for ( CIStreamClassMemberIterator i(in, object); i; ++i ) {
+        const CObjectTypeInfo::CMemberIterator& nextMember = *i;
+        LOG_POST("CReadSerialObjectHook::ReadObject()"
+            " -- using default member reader for " <<
+            nextMember.GetAlias());
+        // Special pre-read processing may be put here
+        in.ReadClassMember(CObjectInfoMI(object, nextMember.GetMemberIndex()));
+        // Special post-read processing may be put here
+    }
+}
+
+
+class CWriteSerialObject_NameHook : public CWriteClassMemberHook
+{
+public:
+    virtual void WriteClassMember(CObjectOStream& out,
+                                  const CConstObjectInfoMI& member);
+};
+
+void CWriteSerialObject_NameHook::WriteClassMember
+    (CObjectOStream& out, const CConstObjectInfoMI& member)
+{
+    // No special processing -- just report writing the member
+    const string& name = *static_cast<const string*>
+        (member.GetMember().GetObjectPtr());
+    LOG_POST("CWriteSerialObject_NameHook::WriteClassMember()"
+        " -- writing m_Name: " << name);
+    out.WriteClassMember(member);
+}
+
+
+class CReadSerialObject_NameHook : public CReadClassMemberHook
+{
+public:
+    virtual void ReadClassMember(CObjectIStream& in,
+                                 const CObjectInfoMI& member);
+};
+
+void CReadSerialObject_NameHook::ReadClassMember
+    (CObjectIStream& in, const CObjectInfoMI& member)
+{
+    // No special processing -- just report reading the member
+    in.ReadClassMember(member);
+    const string& name = *reinterpret_cast<const string*>
+        (member.GetMember().GetObjectPtr());
+    LOG_POST("CReadSerialObject_NameHook::ReadClassMember()"
+        " -- reading m_Name: " << name);
+}
+
+
+void TestHooks(CSerialObject& obj)
+{
+    // Test object hooks
+    char* buf = 0;
+    {{
+        CNcbiOstrstream ostrs;
+        auto_ptr<CObjectOStream> os(CObjectOStream::Open
+            (eSerial_AsnText, ostrs));
+        CObjectTypeInfo info = Type<CSerialObject>();
+        info.SetLocalWriteHook(*os, new CWriteSerialObjectHook(&obj));
+        *os << obj;
+        buf = ostrs.rdbuf()->str();
+    }}
+    {{
+        CNcbiIstrstream istrs(buf);
+        auto_ptr<CObjectIStream> is(CObjectIStream::Open
+            (eSerial_AsnText, istrs));
+        CSerialObject obj_copy;
+        CObjectTypeInfo info = Type<CSerialObject>();
+        info.SetLocalReadHook(*is, new CReadSerialObjectHook(&obj_copy));
+        *is >> obj_copy;
+#if HAVE_NCBI_C
+        // Can not use SerialEquals<> with C-objects
+#else
+        _ASSERT(SerialEquals<CSerialObject>(obj, obj_copy));
+#endif
+    }}
+    delete[] buf;
+
+    // Test member hooks
+    char* buf2 = 0;
+    {{
+        CNcbiOstrstream ostrs;
+        auto_ptr<CObjectOStream> os(CObjectOStream::Open
+            (eSerial_AsnText, ostrs));
+        CObjectTypeInfo info = Type<CSerialObject>();
+        info.FindMember("m_Name").SetLocalWriteHook(*os,
+            new CWriteSerialObject_NameHook);
+        *os << obj;
+        buf2 = ostrs.rdbuf()->str();
+    }}
+    {{
+        CNcbiIstrstream istrs(buf2);
+        auto_ptr<CObjectIStream> is(CObjectIStream::Open
+            (eSerial_AsnText, istrs));
+        CSerialObject obj_copy;
+        CObjectTypeInfo info = Type<CSerialObject>();
+        info.FindMember("m_Name").SetLocalReadHook(*is,
+            new CReadSerialObject_NameHook);
+        *is >> obj_copy;
+#if HAVE_NCBI_C
+        // Can not use SerialEquals<> with C-objects
+#else
+        _ASSERT(SerialEquals<CSerialObject>(obj, obj_copy));
+#endif
+    }}
+    delete[] buf2;
+}
+
 int CTestSerial::Run(void)
 {
     CNcbiOfstream diag("test.log");
@@ -129,6 +332,8 @@ int CTestSerial::Run(void)
         //        write1.m_Next = &write1;
         write1.m_WebEnv = 0;
         write1.m_Name2 = "name2";
+
+        TestHooks(write);
 
         const CSerialObject& cwrite = write;
 
