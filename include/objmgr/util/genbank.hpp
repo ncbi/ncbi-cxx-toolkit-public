@@ -54,7 +54,8 @@ public:
     CGenbankWriter(CNcbiOstream& stream, CScope& scope,
                    EFormat format = eFormat_Genbank,
                    EVersion version = eVersion_127) :
-        m_Formatter(*new CFlatTextOStream(stream), scope, eMode_Dump),
+        m_Formatter(*new CFlatTextOStream(stream), scope,
+                    IFlatFormatter::eMode_Dump),
         m_Format(format)
         { }
 
@@ -70,7 +71,8 @@ bool CGenbankWriter::Write(const CSeq_entry& entry) const
 {
     m_Formatter.Format
         (entry, m_Formatter,
-         m_Format == eFormat_Genpept ? fSkipNucleotides : fSkipProteins);
+         m_Format == eFormat_Genpept ? IFlatFormatter::fSkipNucleotides
+         : IFlatFormatter::fSkipProteins);
     return true;
 }
 
@@ -81,6 +83,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2003/07/16 19:01:56  ucko
+* Add IFlatFormatter:: where needed.
+*
 * Revision 1.12  2003/07/16 17:10:55  ucko
 * Replace with a trivial inline wrapper around the new formatter.
 *
