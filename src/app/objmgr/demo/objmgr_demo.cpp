@@ -135,6 +135,8 @@ void CDemoApp::Init(void)
 
 
     arg_desc->AddFlag("seq_map", "scan SeqMap on full depth");
+    arg_desc->AddFlag("whole_sequence", "load whole sequence");
+    arg_desc->AddFlag("whole_tse", "perform some checks on whole TSE");
     arg_desc->AddFlag("print_tse", "print TSE with sequence");
     arg_desc->AddFlag("print_descr", "print all found descriptors");
     arg_desc->AddFlag("print_features", "print all found features");
@@ -268,6 +270,8 @@ int CDemoApp::Run(void)
     bool nosnp = args["nosnp"];
     bool include_unnamed = args["unnamed"];
     bool include_allnamed = args["allnamed"];
+    bool whole_tse = args["whole_tse"];
+    bool whole_sequence = args["whole_sequence"];
     set<string> include_named;
     if ( args["named"] ) {
         string names = args["named"].AsString();
@@ -465,32 +469,56 @@ int CDemoApp::Run(void)
         int count;
         if ( !only_features ) {
             // List other sequences in the same TSE
-            NcbiCout << "TSE sequences:" << NcbiEndl;
-            CBioseq_CI bit;
-            bit = CBioseq_CI(scope, handle.GetTopLevelSeqEntry());
-            for ( ; bit; ++bit) {
-                NcbiCout << "    "<<bit->GetSeqId()->DumpAsFasta()<<NcbiEndl;
+            if ( whole_tse ) {
+                NcbiCout << "TSE sequences:" << NcbiEndl;
+                for ( CBioseq_CI bit(handle.GetTopLevelEntry()); bit; ++bit) {
+                    NcbiCout << "    "<<bit->GetSeqId()->DumpAsFasta()<<
+                        NcbiEndl;
+                }
+            }
+            else if ( 0 ) {
+                count = 0;
+                for ( CBioseq_CI bit(handle.GetTopLevelEntry()); bit; ++bit) {
+                    ++count;
+                }
+                NcbiCout << "TSE sequences: " << count << NcbiEndl;
             }
 
             // Get the bioseq
-            CConstRef<CBioseq> bioseq(&handle.GetBioseq());
+            CConstRef<CBioseq> bioseq(handle.GetBioseqCore());
             // -- use the bioseq: print the first seq-id
             NcbiCout << "First ID = " <<
                 (*bioseq->GetId().begin())->DumpAsFasta() << NcbiEndl;
 
             // Get the sequence using CSeqVector. Use default encoding:
             // CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
-            CSeqVector seq_vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+            CSeqVector seq_vect =
+                handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
             // -- use the vector: print length and the first 10 symbols
             NcbiCout << "Sequence: length=" << seq_vect.size();
             if (seq_vect.CanGetRange(0, seq_vect.size() - 1)) {
                 NcbiCout << " data=";
-                sout = "";
+                sout.erase();
                 for (TSeqPos i = 0; (i < seq_vect.size()) && (i < 10); i++) {
                     // Convert sequence symbols to printable form
                     sout += seq_vect[i];
                 }
                 NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
+
+                if ( whole_sequence ) {
+                    sout.erase();
+                    size_t size = seq_vect.size();
+                    seq_vect.GetSeqData(0, size, sout);
+                    NcbiCout << " data["<<size<<"] = ";
+                    size_t start = min(size, 10u);
+                    size_t end = min(size-start, 10u);
+                    NcbiCout << NStr::PrintableString(sout.substr(0, start));
+                    if ( start + end != size )
+                        NcbiCout << "..";
+                    NcbiCout << NStr::PrintableString(sout.substr(size-end,
+                                                                  end));
+                    NcbiCout << NcbiEndl;
+                }
             }
             else {
                 NcbiCout << " data unavailable" << NcbiEndl;
@@ -509,21 +537,45 @@ int CDemoApp::Run(void)
             NcbiCout << "Seqdesc count: " << count << NcbiEndl;
 
             count = 0;
-            for (CSeq_annot_CI ai(scope, handle.GetTopLevelSeqEntry());
-                 ai; ++ai) {
+            for ( CSeq_annot_CI ai(handle.GetParentEntry()); ai; ++ai) {
                 ++count;
             }
-            NcbiCout << "Seq_annot count (recursive): " << count << NcbiEndl;
-
+            NcbiCout << "Seq_annot count (recursive): "
+                     << count << NcbiEndl;
+            
             count = 0;
-            for (CSeq_annot_CI ai(scope,
-                                  handle.GetTopLevelSeqEntry(),
-                                  CSeq_annot_CI::eSearch_entry);
-                 ai; ++ai) {
+            for ( CSeq_annot_CI ai(handle.GetParentEntry(),
+                                   CSeq_annot_CI::eSearch_entry);
+                  ai; ++ai) {
                 ++count;
             }
             NcbiCout << "Seq_annot count (non-recursive): "
                      << count << NcbiEndl;
+
+            if ( whole_tse ) {
+                count = 0;
+                for ( CSeq_annot_CI ai(handle); ai; ++ai) {
+                    ++count;
+                }
+                NcbiCout << "Seq_annot count (up to TSE): "
+                         << count << NcbiEndl;
+
+                count = 0;
+                for (CSeq_annot_CI ai(handle.GetTopLevelEntry()); ai; ++ai) {
+                    ++count;
+                }
+                NcbiCout << "Seq_annot count (TSE, recursive): "
+                         << count << NcbiEndl;
+                
+                count = 0;
+                for (CSeq_annot_CI ai(handle.GetTopLevelEntry(),
+                                      CSeq_annot_CI::eSearch_entry);
+                     ai; ++ai) {
+                    ++count;
+                }
+                NcbiCout << "Seq_annot count (TSE, non-recursive): "
+                         << count << NcbiEndl;
+            }
         }
 
         // CSeq_feat iterator: iterates all features which can be found in the
@@ -746,12 +798,17 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
-    return CDemoApp().AppMain(argc, argv);
+    int ret = CDemoApp().AppMain(argc, argv);
+    NcbiCout << NcbiEndl;
+    return ret;
 }
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2004/07/12 17:08:01  vasilche
+* Allow limited processing to have benefits from split blobs.
+*
 * Revision 1.69  2004/06/30 22:15:20  vasilche
 * Removed obsolete code for old blob cache interface.
 *
