@@ -227,20 +227,22 @@ void CAppNWA::x_RunOnPair() const
     auto_ptr<ofstream> pofsFastA_seq2 (0);
 
     if(output_type1) {
-        pofs1 = open_ofstream (args["o1"].AsString());
+        pofs1.reset(open_ofstream (args["o1"].AsString()).release());
     }
 
     if(output_type2) {
-        pofs2 = open_ofstream (args["o2"].AsString());
+        pofs2.reset(open_ofstream (args["o2"].AsString()).release());
     }
 
     if(output_asn) {
-        pofsAsn = open_ofstream (args["asn"].AsString());
+        pofsAsn.reset(open_ofstream (args["asn"].AsString()).release());
     }
 
     if(output_fasta) {
-        pofsFastA_seq1 = open_ofstream (args["seq1"].AsString() + ".gfa");
-        pofsFastA_seq2 = open_ofstream (args["seq2"].AsString() + ".gfa");
+        pofsFastA_seq1.reset(open_ofstream (args["seq1"].AsString() + ".gfa")
+                             .release());
+        pofsFastA_seq2.reset(open_ofstream (args["seq2"].AsString() + ".gfa")
+                             .release());
     }
 
     int score = aligner->Run();
@@ -323,6 +325,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/01/24 19:43:03  ucko
+ * Change auto_ptr assignment to use release and reset rather than =,
+ * which not all compilers support.
+ *
  * Revision 1.7  2003/01/24 16:49:59  kapustin
  * Support different output formats
  *
