@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.150 2002/12/05 21:54:48 ucko Exp $
+#  $Id: configure.ac,v 1.151 2002/12/06 18:25:03 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -176,7 +176,9 @@ AC_ARG_WITH(app,
 AC_ARG_WITH(ctools,
    [ --without-ctools        do not build NCBI C Toolkit based projects])
 AC_ARG_WITH(gui,
-   [ --without-gui           do not build wxWindows based projects])
+   [ --without-gui           do not build FLTK-based projects])
+AC_ARG_WITH(algo,
+   [ --without-algo          do not build CPU-intensive algorithms])
 AC_ARG_WITH(internal,
    [ --with-internal         build all internal projects])
 
@@ -192,7 +194,7 @@ exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 sybase-new ftds orbacus fltk opengl \
-local-lbsm serial objects dbapi app ctools gui internal"
+local-lbsm serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -2752,6 +2754,29 @@ else
 fi
 
 
+## `algo' projects
+
+if test "$with_algo" = "no" ; then
+   NoConfProjects="$NoConfProjects algo"
+fi
+
+if test ! -f ${srcdir}/src/algo/Makefile.in  -o  ! -d ${srcdir}/include/algo
+then
+   if test "$with_algo" = "yes" ; then
+      AC_MSG_ERROR(["--with-algo:  ALGO sources are missing"])
+   fi
+   with_algo="no"
+fi
+
+if test "$with_algo" = "no" ; then
+   WithoutProjects="$WithoutProjects algo"
+   algo=
+else
+   WithProjects="$WithProjects algo"
+   algo="algo"
+fi
+
+
 ## `internal' project cluster
 
 if test "$with_internal" = "no" ; then
@@ -2993,6 +3018,7 @@ AC_SUBST(dbapi)
 AC_SUBST(objects)
 AC_SUBST(ctools)
 AC_SUBST(gui)
+AC_SUBST(algo)
 AC_SUBST(app)
 AC_SUBST(internal)
 

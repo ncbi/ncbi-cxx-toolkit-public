@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS_INCLUDE FTDS_LIBS freetds X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial dbapi objects ctools gui app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_POST_LINK WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS_INCLUDE FTDS_LIBS freetds X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_POST_LINK WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -906,7 +906,8 @@ Optional Packages:
  --without-dbapi         do not build NCBI portable database libraries
  --with-app              build standalone applications like ID1_FETCH
  --without-ctools        do not build NCBI C Toolkit based projects
- --without-gui           do not build wxWindows based projects
+ --without-gui           do not build FLTK-based projects
+ --without-algo          do not build CPU-intensive algorithms
  --with-internal         build all internal projects
 ***** See also HTML documentation in ./doc/index.html *****
   --with-x                use the X Window System
@@ -1692,6 +1693,12 @@ if test "${with_gui+set}" = set; then
 
 fi;
 
+# Check whether --with-algo or --without-algo was given.
+if test "${with_algo+set}" = set; then
+  withval="$with_algo"
+
+fi;
+
 # Check whether --with-internal or --without-internal was given.
 if test "${with_internal+set}" = set; then
   withval="$with_internal"
@@ -1714,7 +1721,7 @@ exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 sybase-new ftds orbacus fltk opengl \
-local-lbsm serial objects dbapi app ctools gui internal"
+local-lbsm serial objects dbapi app ctools gui algo internal"
 
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
 
@@ -11924,6 +11931,31 @@ else
 fi
 
 
+## `algo' projects
+
+if test "$with_algo" = "no" ; then
+   NoConfProjects="$NoConfProjects algo"
+fi
+
+if test ! -f ${srcdir}/src/algo/Makefile.in  -o  ! -d ${srcdir}/include/algo
+then
+   if test "$with_algo" = "yes" ; then
+      { { echo "$as_me:$LINENO: error: \"--with-algo:  ALGO sources are missing\"" >&5
+echo "$as_me: error: \"--with-algo:  ALGO sources are missing\"" >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+   with_algo="no"
+fi
+
+if test "$with_algo" = "no" ; then
+   WithoutProjects="$WithoutProjects algo"
+   algo=
+else
+   WithProjects="$WithProjects algo"
+   algo="algo"
+fi
+
+
 ## `internal' project cluster
 
 if test "$with_internal" = "no" ; then
@@ -16490,6 +16522,7 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -17227,6 +17260,7 @@ s,@dbapi@,$dbapi,;t t
 s,@objects@,$objects,;t t
 s,@ctools@,$ctools,;t t
 s,@gui@,$gui,;t t
+s,@algo@,$algo,;t t
 s,@app@,$app,;t t
 s,@internal@,$internal,;t t
 s,@check@,$check,;t t
