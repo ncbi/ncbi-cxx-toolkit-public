@@ -92,7 +92,7 @@ static const string s_ConvertComment(const string& comment,
     const char c_comment = is_file_comment ? '#' : ';';
 
     SIZE_TYPE endl_pos = 0;
-    for (SIZE_TYPE beg = 0;  endl_pos != comment.length();
+    for (SIZE_TYPE beg = 0;  beg < comment.length();
          beg = endl_pos + 1) {
         SIZE_TYPE pos = comment.find_first_not_of(" \t", beg);
         endl_pos = comment.find_first_of("\n", beg);
@@ -872,6 +872,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2003/06/26 18:54:48  rsmith
+ * fix bug where comments multiplied blank lines after them.
+ *
  * Revision 1.36  2003/06/25 20:05:57  rsmith
  * Fix small bugs setting comments
  *
