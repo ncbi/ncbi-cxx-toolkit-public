@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2004/06/18 15:27:35  gouriano
+* Improved diagnostics
+*
 * Revision 1.50  2004/05/17 21:03:13  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -784,8 +787,11 @@ CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)
 
 {
     if ( m_Name.empty() ) {
-        NCBI_THROW(CDatatoolException,eInvalidData,
-                     string("Unnamed member in ASN.1 specification"));
+        string loc("Unnamed member in ASN.1 specification");
+        if (type) {
+            loc += " (" + type->LocationString() + ")";
+        }
+        NCBI_THROW(CDatatoolException,eInvalidData, loc);
     }
     m_Type->SetDataMember(this);
 }
