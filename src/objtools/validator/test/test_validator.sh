@@ -1,4 +1,4 @@
 #! /bin/sh
 # $Id$
 
-test_validator "$@"
+test_validator ${1+"$@"}
