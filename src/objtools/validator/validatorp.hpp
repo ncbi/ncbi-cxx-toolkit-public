@@ -171,6 +171,7 @@ enum EErrType {
     eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
     eErr_SEQ_DESCR_RefGeneTrackingWithoutStatus,
     eErr_SEQ_DESCR_UnwantedCompleteFlag,
+    eErr_SEQ_DESCR_CollidingPublications,
 
     eErr_GENERIC_NonAsciiAsn,
     eErr_GENERIC_Spell,
@@ -681,6 +682,7 @@ private:
     void ValidateSecondaryAccConflict(const string& primary_acc,
         const CBioseq& seq, int choice);
     void ValidateIDSetAgainstDb(const CBioseq& seq);
+    void x_ValidateMultiplePubs(const CBioseq_Handle& bsh);
 
     void CheckForPubOnBioseq(const CBioseq& seq);
     void CheckForBiosourceOnBioseq(const CBioseq& seq);
@@ -710,7 +712,7 @@ private:
     bool x_IsActiveFin(const CBioseq& seq) const;
     bool x_IsMicroRNA(const CBioseq& seq) const;
     bool x_IsDeltaLitOnly(const CSeq_inst& inst) const;
-
+    
     size_t x_CountAdjacentNs(const CSeq_literal& lit);
 
     // data
@@ -930,6 +932,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2004/06/17 17:03:29  shomrat
+* Added CollidingPublications check
+*
 * Revision 1.64  2004/05/10 13:56:22  shomrat
 * Use CSeq_feat_Handle instead of FeatAnnotMap
 *

@@ -386,6 +386,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_DESCR_UnnecessaryBioSourceFocus",
     "SEQ_DESCR_RefGeneTrackingWithoutStatus",
     "SEQ_DESCR_UnwantedCompleteFlag",
+    "SEQ_DESCR_CollidingPublications",
 
     "GENERIC_NonAsciiAsn",
     "GENERIC_Spell",
@@ -759,6 +760,9 @@ BioSource feature.",
 //  SEQ_DESCR_UnwantedCompleteFlag
 "The Mol-info.completeness flag should not be set on a genomic sequence unless \
 the title also says it is a complete sequence or complete genome.",
+//  SEQ_DESCR_CollidingPublications
+"Multiple publication descriptors with the same PMID or MUID apply to a Bioseq. \
+The lower-level ones are redundant, and should be removed.",
 
 /* SEQ_GENERIC */
 
@@ -1163,6 +1167,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2004/06/17 17:03:53  shomrat
+* Added CollidingPublications check
+*
 * Revision 1.44  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *
