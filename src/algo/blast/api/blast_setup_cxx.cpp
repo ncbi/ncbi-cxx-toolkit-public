@@ -443,7 +443,9 @@ SetupSubjects(const TSeqLocVector& subjects,
         ++index;
 
         if (subj_is_na) {
-            BlastSeqBlkSetSequence(subj, seqbuf.first.release(), seqbuf.second);
+            BlastSeqBlkSetSequence(subj, seqbuf.first.release(), 
+                                   use_sentinels ? seqbuf.second - 2 :
+                                                   seqbuf.second);
 
             try {
                 // Get the compressed sequence
@@ -457,7 +459,8 @@ SetupSubjects(const TSeqLocVector& subjects,
                            "Gaps found in subject sequence");
             }
         } else {
-            BlastSeqBlkSetSequence(subj, seqbuf.first.release(), seqbuf.second);
+            BlastSeqBlkSetSequence(subj, seqbuf.first.release(), 
+                                   seqbuf.second - 2);
         }
 
         dblength += subj->length;
@@ -834,6 +837,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2003/10/31 19:45:03  camacho
+* Fix setting of subject sequence length
+*
 * Revision 1.45  2003/10/31 16:53:32  dondosha
 * Set length in query sequence block correctly
 *
