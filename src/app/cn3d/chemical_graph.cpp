@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/03/18 15:17:29  thiessen
+* fix minor omission
+*
 * Revision 1.31  2001/12/12 14:04:13  thiessen
 * add missing object headers after object loader change
 *
@@ -378,7 +381,7 @@ void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet
             CResidue_pntrs::TInterval::const_iterator i,
                 ie = f->GetObject().GetLocation().GetSubgraph().GetResidues().GetInterval().end();
             for (i=f->GetObject().GetLocation().GetSubgraph().GetResidues().GetInterval().begin(); i!=ie; i++) {
-                MoleculeMap::const_iterator m = molecules.find(i->GetObject().GetMolecule_id());
+                MoleculeMap::const_iterator m = molecules.find(i->GetObject().GetMolecule_id().Get());
                 if (m == molecules.end() ||
                     m->second->id !=    // check to make sure all intervals are on same molecule
                         f->GetObject().GetLocation().GetSubgraph().GetResidues().GetInterval().
@@ -433,7 +436,7 @@ void ChemicalGraph::UnpackSecondaryStructureFeatures(const CBiostruc_feature_set
             }
             const CResidue_interval_pntr& interval =
                 f->GetObject().GetLocation().GetSubgraph().GetResidues().GetInterval().front().GetObject();
-            MoleculeMap::const_iterator m = molecules.find(interval.GetMolecule_id());
+            MoleculeMap::const_iterator m = molecules.find(interval.GetMolecule_id().Get());
             if (m == molecules.end()) {
                 ERR_POST(Warning << "Bad moleculeID in sec. struc. interval");
                 continue;
