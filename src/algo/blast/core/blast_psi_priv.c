@@ -554,7 +554,7 @@ _PSIComputeAlignedRegionLengths(const PsiAlignmentData* alignment,
 
     for (i = 0; i < alignment->dimensions->query_sz; i++) {
         aligned_blocks->size[i] = aligned_blocks->pos_extnt[i].right - 
-                                   aligned_blocks->pos_extnt[i].left;
+                                   aligned_blocks->pos_extnt[i].left + 1;
     }
 
     query_seq = alignment->desc_matrix[kQueryIndex];
@@ -1525,6 +1525,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/06/17 20:47:21  camacho
+ * Minor fix to extent sizes
+ *
  * Revision 1.10  2004/06/16 15:22:47  camacho
  * Fixes to add new unit tests
  *
