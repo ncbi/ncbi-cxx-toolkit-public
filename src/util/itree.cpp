@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/05/30 15:59:28  vakatov
+* CIntervalTree::AllocNode[Intervals]() -- explicit cast of "0" to
+* make the ICC compiler understand what's going on
+*
 * Revision 1.4  2001/01/29 15:18:46  vasilche
 * Cleaned CRangeMap and CIntervalTree classes.
 *
@@ -229,7 +233,7 @@ CIntervalTree::IntervalsOverlapping(interval_type interval)
 
 CIntervalTree::TTreeNode* CIntervalTree::AllocNode(void)
 {
-    return m_NodeAllocator.allocate(1, 0);
+    return m_NodeAllocator.allocate(1, (TTreeNode*) 0);
 }
 
 void CIntervalTree::DeallocNode(TTreeNode* node)
@@ -239,7 +243,7 @@ void CIntervalTree::DeallocNode(TTreeNode* node)
 
 CIntervalTree::TTreeNodeInts* CIntervalTree::AllocNodeIntervals(void)
 {
-    return m_NodeIntervalsAllocator.allocate(1, 0);
+    return m_NodeIntervalsAllocator.allocate(1, (TTreeNodeInts*) 0);
 }
 
 void CIntervalTree::DeallocNodeIntervals(TTreeNodeInts* ptr)
