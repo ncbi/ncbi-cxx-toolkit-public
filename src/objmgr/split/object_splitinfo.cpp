@@ -291,6 +291,7 @@ CBioseq_SplitInfo::~CBioseq_SplitInfo(void)
 
 
 CSeq_descr_SplitInfo::CSeq_descr_SplitInfo(int gi,
+                                           TSeqPos seq_length,
                                            const CSeq_descr& descr,
                                            const SSplitterParams& params)
     : m_Descr(&descr)
@@ -298,6 +299,15 @@ CSeq_descr_SplitInfo::CSeq_descr_SplitInfo(int gi,
     m_Location.Add(gi, CRange<TSeqPos>::GetWhole());
     s_Sizer.Set(descr, params);
     m_Size = CSize(s_Sizer);
+    m_Priority = eAnnotPriority_regular;
+    /*
+    if ( seq_length <= 10000 || m_Size.GetZipSize() > 1000 ) {
+        m_Priority = eAnnotPriority_regular;
+    }
+    else {
+        m_Priority = eAnnotPriority_landmark;
+    }
+    */
 }
 
 
@@ -376,6 +386,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/08/04 14:48:21  vasilche
+* Added joining of very small chunks with skeleton.
+*
 * Revision 1.9  2004/07/01 15:42:59  vasilche
 * Put Seq-data of short sequences (proteins) tegether with annotations.
 *

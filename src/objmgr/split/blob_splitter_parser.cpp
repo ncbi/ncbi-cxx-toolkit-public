@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/split/blob_splitter_impl.hpp>
+#include <objmgr/split/split_exceptions.hpp>
 
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
@@ -111,6 +112,80 @@ void CBlobSplitterImpl::CopySkeleton(CSeq_entry& dst, const CSeq_entry& src)
 }
 
 
+TSeqPos CBlobSplitterImpl::GetLength(const CSeq_data& src) const
+{
+    switch ( src.Which() ) {
+    case CSeq_data::e_Iupacna:
+        return src.GetIupacna().Get().size();
+    case CSeq_data::e_Iupacaa:
+        return src.GetIupacaa().Get().size();
+    case CSeq_data::e_Ncbi2na:
+        return src.GetNcbi2na().Get().size()*4;
+    case CSeq_data::e_Ncbi4na:
+        return src.GetNcbi4na().Get().size()*2;
+    case CSeq_data::e_Ncbi8na:
+        return src.GetNcbi8na().Get().size();
+    case CSeq_data::e_Ncbi8aa:
+        return src.GetNcbi8aa().Get().size();
+    case CSeq_data::e_Ncbieaa:
+        return src.GetNcbieaa().Get().size();
+    default:
+        NCBI_THROW(CSplitException, eInvalidBlob,
+                   "Invalid Seq-data");
+    }
+}
+
+
+TSeqPos CBlobSplitterImpl::GetLength(const CDelta_seq& src) const
+{
+    switch ( src.Which() ) {
+    case CDelta_seq::e_Literal:
+        return src.GetLiteral().GetLength();
+    case CDelta_seq::e_Loc:
+        return src.GetLoc().GetInt().GetLength();
+    default:
+        NCBI_THROW(CSplitException, eInvalidBlob,
+                   "Delta-seq is unset");
+    }
+}
+
+
+TSeqPos CBlobSplitterImpl::GetLength(const CDelta_ext& src) const
+{
+    TSeqPos ret = 0;
+    ITERATE ( CDelta_ext::Tdata, it, src.Get() ) {
+        ret += GetLength(**it);
+    }
+    return ret;
+}
+
+
+TSeqPos CBlobSplitterImpl::GetLength(const CSeq_ext& src) const
+{
+    return GetLength(src.GetDelta());
+}
+
+
+TSeqPos CBlobSplitterImpl::GetLength(const CSeq_inst& src) const
+{
+    try {
+        if ( src.IsSetLength() ) {
+            return src.GetLength();
+        }
+        else if ( src.IsSetSeq_data() ) {
+            return GetLength(src.GetSeq_data());
+        }
+        else if ( src.IsSetExt() ) {
+            return GetLength(src.GetExt());
+        }
+    }
+    catch ( CException& exc ) {
+        ERR_POST("GetLength(CSeq_inst): exception: " << exc.GetMsg());
+    }
+    return kInvalidSeqPos;
+}
+
+
 void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
 {
     dst.Reset();
@@ -122,6 +197,8 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
         }
         dst.SetId().push_back(Ref(&NonConst(id)));
     }
+
+    TSeqPos seq_length = GetLength(src.GetInst());
 
     bool need_split_descr;
     if ( m_Params.m_DisableSplitDescriptions ) {
@@ -150,6 +227,15 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
                 const CSeq_ext& ext = inst.GetExt();
                 if ( ext.Which() == CSeq_ext::e_Delta ) {
                     need_split_inst = true;
+                    // check delta segments' lengths
+                    try {
+                        if ( seq_length != GetLength(ext) ) {
+                            need_split_inst = false;
+                        }
+                    }
+                    catch ( CException& /*exc*/ ) {
+                        need_split_inst = false;
+                    }
                 }
             }
         }
@@ -192,7 +278,7 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
     }
     
     if ( need_split_descr ) {
-        if ( !CopyDescr(*info, gi, src.GetDescr()) ) {
+        if ( !CopyDescr(*info, gi, seq_length, src.GetDescr()) ) {
             dst.SetDescr().Set() = src.GetDescr().Get();
         }
     }
@@ -203,7 +289,7 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
     }
 
     if ( need_split_inst ) {
-        CopySequence(*info, gi, dst.SetInst(), src.GetInst());
+        CopySequence(*info, gi, seq_length, dst.SetInst(), src.GetInst());
     }
     else {
         dst.SetInst(NonConst(src.GetInst()));
@@ -294,7 +380,7 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
 
 
     if ( need_split_descr ) {
-        if ( !CopyDescr(*info, id, src.GetDescr()) ) {
+        if ( !CopyDescr(*info, id, kInvalidSeqPos, src.GetDescr()) ) {
             dst.SetDescr().Set() = src.GetDescr().Get();
         }
     }
@@ -321,80 +407,27 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
 
 bool CBlobSplitterImpl::CopyDescr(CBioseq_SplitInfo& bioseq_info,
                                   int gi,
+                                  TSeqPos seq_length,
                                   const CSeq_descr& descr)
 {
     if ( gi <= 0 || !bioseq_info.m_Bioseq ) {
         // we will not split descriptors of Bioseq-sets
         return false;
     }
+    if ( seq_length != kInvalidSeqPos && seq_length > 100000 ) {
+        // we will not split descriptors of very long sequences
+        return false;
+    }
     _ASSERT(!bioseq_info.m_Descr);
-    bioseq_info.m_Descr = new CSeq_descr_SplitInfo(gi, descr, m_Params);
+    bioseq_info.m_Descr = new CSeq_descr_SplitInfo(gi, seq_length,
+                                                   descr, m_Params);
     return true;
-}
-
-
-TSeqPos GetLength(const CSeq_data& src)
-{
-    switch ( src.Which() ) {
-    case CSeq_data::e_Iupacna:
-        return src.GetIupacna().Get().size();
-    case CSeq_data::e_Iupacaa:
-        return src.GetIupacaa().Get().size();
-    case CSeq_data::e_Ncbi2na:
-        return src.GetNcbi2na().Get().size()*4;
-    case CSeq_data::e_Ncbi4na:
-        return src.GetNcbi4na().Get().size()*2;
-    case CSeq_data::e_Ncbi8na:
-        return src.GetNcbi8na().Get().size();
-    case CSeq_data::e_Ncbi8aa:
-        return src.GetNcbi8aa().Get().size();
-    case CSeq_data::e_Ncbieaa:
-        return src.GetNcbieaa().Get().size();
-    default:
-        return kInvalidSeqPos;
-    }
-}
-
-
-TSeqPos GetLength(const CSeq_ext& src)
-{
-    _ASSERT(src.Which() == CSeq_ext::e_Delta);
-    const CDelta_ext& src_delta = src.GetDelta();
-    TSeqPos ret = 0;
-    ITERATE ( CDelta_ext::Tdata, it, src_delta.Get() ) {
-        const CDelta_seq& src_seq = **it;
-        switch ( src_seq.Which() ) {
-        case CDelta_seq::e_Loc:
-            ret += src_seq.GetLoc().GetInt().GetLength();
-            break;
-        case CDelta_seq::e_Literal:
-            ret += src_seq.GetLiteral().GetLength();
-            break;
-        default:
-            break;
-        }
-    }
-    return ret;
-}
-
-
-TSeqPos GetLength(const CSeq_inst& src)
-{
-    if ( src.IsSetLength() ) {
-        return src.GetLength();
-    }
-    else if ( src.IsSetSeq_data() ) {
-        return GetLength(src.GetSeq_data());
-    }
-    else if ( src.IsSetExt() ) {
-        return GetLength(src.GetExt());
-    }
-    return kInvalidSeqPos;
 }
 
 
 bool CBlobSplitterImpl::CopySequence(CBioseq_SplitInfo& bioseq_info,
                                      int gi,
+                                     TSeqPos seq_length,
                                      CSeq_inst& dst,
                                      const CSeq_inst& src)
 {
@@ -406,7 +439,6 @@ bool CBlobSplitterImpl::CopySequence(CBioseq_SplitInfo& bioseq_info,
     dst.SetRepr(src.GetRepr());
     dst.SetMol(src.GetMol());
 
-    TSeqPos seq_length = GetLength(src);
     if ( seq_length != kInvalidSeqPos )
         dst.SetLength(seq_length);
     if ( src.IsSetFuzz() )
@@ -426,6 +458,9 @@ bool CBlobSplitterImpl::CopySequence(CBioseq_SplitInfo& bioseq_info,
         info.Add(data);
     }
     else {
+        if ( !src.IsSetExt() ) {
+            return false;
+        }
         _ASSERT(src.IsSetExt());
         const CSeq_ext& src_ext = src.GetExt();
         _ASSERT(src_ext.Which() == CSeq_ext::e_Delta);
@@ -434,19 +469,17 @@ bool CBlobSplitterImpl::CopySequence(CBioseq_SplitInfo& bioseq_info,
         TSeqPos pos = 0;
         ITERATE ( CDelta_ext::Tdata, it, src_delta.Get() ) {
             const CDelta_seq& src_seq = **it;
-            TSeqPos length;
+            TSeqPos length = GetLength(src_seq);
             CRef<CDelta_seq> new_seq;
             switch ( src_seq.Which() ) {
             case CDelta_seq::e_Loc:
                 new_seq = *it;
-                length = src_seq.GetLoc().GetInt().GetLength();
                 break;
             case CDelta_seq::e_Literal:
             {{
                 const CSeq_literal& src_lit = src_seq.GetLiteral();
                 new_seq.Reset(new CDelta_seq);
                 CSeq_literal& dst_lit = new_seq->SetLiteral();
-                length = src_lit.GetLength();
                 dst_lit.SetLength(length);
                 if ( src_lit.IsSetFuzz() )
                     dst_lit.SetFuzz(const_cast<CInt_fuzz&>(src_lit.GetFuzz()));
@@ -462,7 +495,6 @@ bool CBlobSplitterImpl::CopySequence(CBioseq_SplitInfo& bioseq_info,
             }}
             default:
                 new_seq.Reset(new CDelta_seq);
-                length = 0;
                 break;
             }
             dst_delta.Set().push_back(new_seq);
@@ -522,6 +554,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/08/04 14:48:21  vasilche
+* Added joining of very small chunks with skeleton.
+*
 * Revision 1.12  2004/07/12 19:04:10  vasilche
 * Fixed typo.
 *

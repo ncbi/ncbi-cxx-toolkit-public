@@ -49,8 +49,8 @@ SSplitterParams::SSplitterParams(void)
       m_Verbose(0),
       m_DisableSplitDescriptions(DISABLE_SPLIT_DESCRIPTIONS),
       m_DisableSplitSequence(false),
-      m_DisableSplitAnnotations(false)
-      
+      m_DisableSplitAnnotations(false),
+      m_JoinSmallChunks(true)
 {
     SetChunkSize(kDefaultChunkSize);
 }
@@ -172,6 +172,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/08/04 14:48:21  vasilche
+* Added joining of very small chunks with skeleton.
+*
 * Revision 1.11  2004/07/12 16:55:47  vasilche
 * Fixed split info for descriptions and Seq-data to load them properly.
 *

@@ -88,7 +88,7 @@ bool CBlobSplitterImpl::Split(const CSeq_entry& entry)
     // collect annot pieces separating annotations with different priorities
     CollectPieces();
 
-    if ( m_Pieces.size() < eAnnotPriority_skeleton ) {
+    if ( m_Pieces.size() <= eAnnotPriority_skeleton ) {
         return false;
     }
     
@@ -209,7 +209,8 @@ SChunkInfo* CBlobSplitterImpl::NextChunk(SChunkInfo* chunk, const CSize& size)
     if ( chunk ) {
         CSize::TDataSize cur_size = chunk->m_Size.GetZipSize();
         CSize::TDataSize new_size = cur_size + size.GetZipSize();
-        if ( cur_size <= m_Params.m_ChunkSize &&
+        if ( cur_size < m_Params.m_MinChunkSize ||
+             cur_size <= m_Params.m_ChunkSize &&
              new_size <= m_Params.m_MaxChunkSize ) {
             return chunk;
         }
@@ -244,6 +245,32 @@ void CBlobSplitterImpl::SplitPieces(void)
                 NcbiEndl;
         }
     }
+
+    SChunkInfo& main_chunk = m_Chunks[0];
+    if ( m_Params.m_JoinSmallChunks &&
+         main_chunk.m_Size.GetZipSize() < m_Params.m_MinChunkSize ) {
+        // attach too small chunks to the skeleton
+        typedef multimap<double, int> TSizes;
+        TSizes sizes;
+        ITERATE ( TChunks, it, m_Chunks ) {
+            if ( it->first != 0 ) {
+                sizes.insert(TSizes::value_type(it->second.m_Size.GetZipSize(),
+                                                it->first));
+            }
+        }
+        
+        if ( m_Params.m_Verbose ) {
+            LOG_POST("Joining small chunks");
+        }
+        ITERATE ( TSizes, it, sizes ) {
+            double new_size = main_chunk.m_Size.GetZipSize() + it->first;
+            if ( new_size > m_Params.m_MinChunkSize ) {
+                break;
+            }
+            main_chunk.Add(m_Chunks[it->second]);
+            m_Chunks.erase(it->second);
+        }
+    }
 }
 
 
@@ -273,6 +300,7 @@ void CBlobSplitterImpl::AddToSkeleton(CAnnotPieces& pieces)
 void CBlobSplitterImpl::SplitPieces(CAnnotPieces& pieces)
 {
     SChunkInfo* chunk = 0;
+    SChunkInfo* long_chunk = 0;
     
     // split ids with large amount of pieces
     while ( !pieces.empty() ) {
@@ -297,8 +325,28 @@ void CBlobSplitterImpl::SplitPieces(CAnnotPieces& pieces)
         }
 
         SIdAnnotPieces& objs = max_iter->second;
-        size_t max_piece_length; // too long annotations
-        {{
+        bool sequential = true;
+        TRange prevRange = TRange::GetEmpty();
+        ITERATE ( SIdAnnotPieces, it, objs ) {
+            const SAnnotPiece& piece = *it;
+            TRange range = piece.m_IdRange;
+            if ( range.Empty() ) {
+                continue;
+            }
+            if ( !prevRange.Empty() ) {
+                if ( range.GetFrom() < prevRange.GetFrom() ||
+                     (range.IntersectingWith(prevRange) &&
+                      range != prevRange) ) {
+                    sequential = false;
+                    break;
+                }
+            }
+            prevRange = range;
+        }
+        if ( !sequential ) {
+            // extract long annotations first
+
+            // calculate maximum piece length
             // how many chunks to make from these annotations
             size_t chunk_count =
                 size_t(double(objs.m_Size.GetZipSize())/m_Params.m_ChunkSize
@@ -308,10 +356,8 @@ void CBlobSplitterImpl::SplitPieces(CAnnotPieces& pieces)
             // estimated length of sequence covered by one chunk
             size_t chunk_length = whole_length / chunk_count;
             // maximum length of one piece over the sequence
-            max_piece_length = chunk_length / 4;
-        }}
+            size_t max_piece_length = chunk_length / 2;
 
-        {{
             // extract long pieces into main or next chunk
             vector<SAnnotPiece> pcs;
             CSize size;
@@ -320,13 +366,20 @@ void CBlobSplitterImpl::SplitPieces(CAnnotPieces& pieces)
                 if ( piece.m_IdRange.GetLength() > max_piece_length ) {
                     pcs.push_back(piece);
                     size += piece.m_Size;
+                    if ( m_Params.m_Verbose ) {
+                        LOG_POST(" long piece: "<<piece.m_IdRange.GetLength());
+                    }
                 }
             }
             if ( !pcs.empty() ) {
                 if ( m_Params.m_Verbose ) {
-                    LOG_POST("  "<<pcs.size()<<" long pieces");
+                    LOG_POST("  "<<pcs.size()<<" long pieces: "<<size);
+                    LOG_POST("  "
+                             " CC:"<<chunk_count<<
+                             " WL:"<<whole_length<<
+                             " CL:"<<chunk_length<<
+                             " ML:"<<max_piece_length);
                 }
-                SChunkInfo* long_chunk = 0;
                 ITERATE ( vector<SAnnotPiece>, it, pcs ) {
                     const SAnnotPiece& piece = *it;
                     long_chunk = NextChunk(long_chunk, piece.m_Size);
@@ -334,24 +387,22 @@ void CBlobSplitterImpl::SplitPieces(CAnnotPieces& pieces)
                     pieces.Remove(piece);
                 }
             }
-        }}
+        }
 
-        {{
-            // extract all other pieces
-            vector<SAnnotPiece> pcs;
-            ITERATE ( SIdAnnotPieces, it, objs ) {
-                pcs.push_back(*it);
-            }
-            ITERATE ( vector<SAnnotPiece>, it, pcs ) {
-                const SAnnotPiece piece = *it;
-                chunk = NextChunk(chunk, piece.m_Size);
-                chunk->Add(piece);
-                pieces.Remove(piece);
-            }
-            
-            _ASSERT(max_iter->second.empty());
-            pieces.erase(max_iter);
-        }}
+        // extract all other pieces
+        vector<SAnnotPiece> pcs;
+        ITERATE ( SIdAnnotPieces, it, objs ) {
+            pcs.push_back(*it);
+        }
+        ITERATE ( vector<SAnnotPiece>, it, pcs ) {
+            const SAnnotPiece piece = *it;
+            chunk = NextChunk(chunk, piece.m_Size);
+            chunk->Add(piece);
+            pieces.Remove(piece);
+        }
+        
+        _ASSERT(max_iter->second.empty());
+        pieces.erase(max_iter);
     }
     
     // combine ids with small amount of pieces
@@ -380,6 +431,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/08/04 14:48:21  vasilche
+* Added joining of very small chunks with skeleton.
+*
 * Revision 1.10  2004/06/30 23:27:59  ucko
 * Make sure to call max on identically-typed arguments.
 *

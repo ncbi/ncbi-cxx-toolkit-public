@@ -41,6 +41,24 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+void SChunkInfo::Add(const SChunkInfo& chunk)
+{
+    m_Size += chunk.m_Size;
+    m_Seq_descr.insert(chunk.m_Seq_descr.begin(), chunk.m_Seq_descr.end());
+    ITERATE ( TChunkAnnots, i, chunk.m_Annots ) {
+        TIdAnnots& id_annots = m_Annots[i->first];
+        ITERATE ( TIdAnnots, j, i->second ) {
+            TAnnotObjects& objs = id_annots[j->first];
+            objs.insert(objs.end(), j->second.begin(), j->second.end());
+        }
+    }
+    ITERATE ( TChunkSeq_data, i, chunk.m_Seq_data ) {
+        TSeq_data& seq_data = m_Seq_data[i->first];
+        seq_data.insert(seq_data.end(), i->second.begin(), i->second.end());
+    }
+}
+
+
 void SChunkInfo::Add(const CSeq_annot_SplitInfo& info)
 {
     _TRACE("SChunkInfo::Add(const CSeq_annot_SplitInfo&)");
@@ -140,6 +158,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/08/04 14:48:21  vasilche
+* Added joining of very small chunks with skeleton.
+*
 * Revision 1.6  2004/06/30 20:56:32  vasilche
 * Added splitting of Seqdesr objects (disabled yet).
 *

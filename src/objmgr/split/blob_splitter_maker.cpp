@@ -46,12 +46,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annot_id.hpp>
-#include <objects/seq/Annot_descr.hpp>
-#include <objects/seq/Annotdesc.hpp>
-#include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/seq__.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -64,6 +59,7 @@
 #include <objmgr/split/annot_piece.hpp>
 #include <objmgr/split/asn_sizer.hpp>
 #include <objmgr/split/chunk_info.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -224,7 +220,7 @@ struct SAllAnnots
 
 
 typedef set<int> TWhole_set;
-typedef set<CSeqsRange::TRange> TGiInt_set;
+typedef set<CBlobSplitterImpl::TRange> TGiInt_set;
 typedef map<int, TGiInt_set> TInt_set;
 
 
@@ -234,7 +230,7 @@ CRef<CID2_Seq_loc> MakeLoc(int gi, const TGiInt_set& int_set)
     if ( int_set.size() == 1 ) {
         CID2_Interval& interval = loc->SetInterval();
         interval.SetGi(gi);
-        const CSeqsRange::TRange& range = *int_set.begin();
+        const CBlobSplitterImpl::TRange& range = *int_set.begin();
         interval.SetStart(range.GetFrom());
         interval.SetLength(range.GetLength());
     }
@@ -243,7 +239,7 @@ CRef<CID2_Seq_loc> MakeLoc(int gi, const TGiInt_set& int_set)
         seq_ints.SetGi(gi);
         ITERATE ( TGiInt_set, it, int_set ) {
             CRef<CID2_Seq_range> add(new CID2_Seq_range);
-            const CSeqsRange::TRange& range = *it;
+            const CBlobSplitterImpl::TRange& range = *it;
             add->SetStart(range.GetFrom());
             add->SetLength(range.GetLength());
             seq_ints.SetIntervals().push_back(add);
@@ -349,17 +345,23 @@ TSeqPos CBlobSplitterImpl::GetGiLength(int gi) const
 }
 
 
+bool CBlobSplitterImpl::IsWholeGi(int gi, const TRange& range) const
+{
+    return range == range.GetWhole() ||
+        range.GetFrom() <= 0 && range.GetLength() >= GetGiLength(gi);
+}
+
+
 void CBlobSplitterImpl::MakeLoc(CID2_Seq_loc& loc,
-                                const CSeqsRange& range) const
+                                const CSeqsRange& ranges) const
 {
     TWhole_set whole_set;
     TInt_set int_set;
 
-    ITERATE ( CSeqsRange, it, range ) {
+    ITERATE ( CSeqsRange, it, ranges ) {
         int gi = it->first.GetGi();
-        CSeqsRange::TRange range = it->second.GetTotalRange();
-        if ( range == range.GetWhole() ||
-             range.GetFrom() == 0 && range.GetLength() == GetGiLength(gi) ) {
+        const TRange& range = it->second.GetTotalRange();
+        if ( IsWholeGi(gi, range) ) {
             whole_set.insert(gi);
             _ASSERT(int_set.count(gi) == 0);
         }
@@ -376,10 +378,36 @@ void CBlobSplitterImpl::MakeLoc(CID2_Seq_loc& loc,
 
 
 void CBlobSplitterImpl::MakeLoc(CID2_Seq_loc& loc,
-                                int gi, const CSeqsRange::TRange& range) const
+                                const CHandleRangeMap& ranges) const
 {
-    if ( range == range.GetWhole() ||
-         range.GetFrom() == 0 && range.GetLength() == GetGiLength(gi) ) {
+    TWhole_set whole_set;
+    TInt_set int_set;
+
+    ITERATE ( CHandleRangeMap, id_it, ranges ) {
+        int gi = id_it->first.GetGi();
+        ITERATE ( CHandleRange, it, id_it->second ) {
+            const TRange& range = it->first;
+            if ( IsWholeGi(gi, range) ) {
+                whole_set.insert(gi);
+                _ASSERT(int_set.count(gi) == 0);
+            }
+            else {
+                int_set[gi].insert(range);
+                _ASSERT(whole_set.count(gi) == 0);
+            }
+        }
+    }
+
+    AddLoc(loc, int_set);
+    AddLoc(loc, whole_set);
+    _ASSERT(loc.Which() != loc.e_not_set);
+}
+
+
+void CBlobSplitterImpl::MakeLoc(CID2_Seq_loc& loc,
+                                int gi, const TRange& range) const
+{
+    if ( IsWholeGi(gi, range) ) {
         loc.SetGi_whole(gi);
     }
     else {
@@ -400,7 +428,7 @@ CRef<CID2_Seq_loc> CBlobSplitterImpl::MakeLoc(const CSeqsRange& range) const
 
 
 CRef<CID2_Seq_loc>
-CBlobSplitterImpl::MakeLoc(int gi, const CSeqsRange::TRange& range) const
+CBlobSplitterImpl::MakeLoc(int gi, const TRange& range) const
 {
     CRef<CID2_Seq_loc> loc(new CID2_Seq_loc);
     MakeLoc(*loc, gi, range);
@@ -482,7 +510,7 @@ void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
     TPlaces all_annot_places;
     typedef map<CAnnotName, SAllAnnots> TAllAnnots;
     TAllAnnots all_annots;
-    CSeqsRange all_data;
+    CHandleRangeMap all_data;
 
     ITERATE ( SChunkInfo::TChunkSeq_descr, it, info.m_Seq_descr ) {
         int place_id = it->first;
@@ -509,6 +537,7 @@ void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
 
     ITERATE ( SChunkInfo::TChunkSeq_data, it, info.m_Seq_data ) {
         int gi = it->first;
+        CSeq_id_Handle gih = CSeq_id_Handle::GetGiHandle(gi);
         CID2S_Chunk_Data::TSeq_data& dst =
             GetChunkData(chunk_data, gi).SetSeq_data();
         CRef<CID2S_Sequence_Piece> piece;
@@ -516,11 +545,12 @@ void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
         TSeqPos p_end = kInvalidSeqPos;
         ITERATE ( SChunkInfo::TSeq_data, data_it, it->second ) {
             const CSeq_data_SplitInfo& data = *data_it;
-            CSeq_data_SplitInfo::TRange range = data.GetRange();
+            const TRange& range = data.GetRange();
             TSeqPos start = range.GetFrom(), length = range.GetLength();
             if ( !piece || start != p_end ) {
                 if ( piece ) {
-                    all_data.Add(gi, CSeqsRange::TRange(p_start, p_end-1));
+                    all_data.AddRange(gih, TRange(p_start, p_end-1),
+                                      eNa_strand_unknown);
                     dst.push_back(piece);
                 }
                 piece.Reset(new CID2S_Sequence_Piece);
@@ -534,7 +564,8 @@ void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
             p_end += length;
         }
         if ( piece ) {
-            all_data.Add(gi, CSeqsRange::TRange(p_start, p_end-1));
+            all_data.AddRange(gih, TRange(p_start, p_end-1),
+                              eNa_strand_unknown);
             dst.push_back(piece);
         }
     }
@@ -667,10 +698,12 @@ void CBlobSplitterImpl::AttachToSkeleton(const SChunkInfo& info)
         seq_it->second.m_Bioseq->
             SetDescr(const_cast<CSeq_descr&>(*desc.m_Descr));
     }
+
     ITERATE ( SChunkInfo::TChunkAnnots, it, info.m_Annots ) {
         TBioseqs::iterator seq_it = m_Bioseqs.find(it->first);
         _ASSERT(seq_it != m_Bioseqs.end());
-        _ASSERT(bool(seq_it->second.m_Bioseq) || bool(seq_it->second.m_Bioseq_set));
+        _ASSERT(bool(seq_it->second.m_Bioseq) ||
+                bool(seq_it->second.m_Bioseq_set));
         ITERATE ( SChunkInfo::TIdAnnots, annot_it, it->second ) {
             CRef<CSeq_annot> annot = MakeSeq_annot(*annot_it->first,
                                                    annot_it->second);
@@ -682,11 +715,50 @@ void CBlobSplitterImpl::AttachToSkeleton(const SChunkInfo& info)
             }
         }
     }
-    ITERATE ( SChunkInfo::TChunkSeq_data, it, info.m_Seq_data ) {
-        TBioseqs::iterator seq_it = m_Bioseqs.find(it->first);
+
+    ITERATE ( SChunkInfo::TChunkSeq_data, i, info.m_Seq_data ) {
+        TBioseqs::iterator seq_it = m_Bioseqs.find(i->first);
         _ASSERT(seq_it != m_Bioseqs.end());
         _ASSERT(seq_it->second.m_Bioseq);
-        _ASSERT(0 && "not implemented");
+        CSeq_inst& inst = seq_it->second.m_Bioseq->SetInst();
+
+        TSeqPos seq_length = GetLength(inst);
+        typedef map<TSeqPos, CRef<CSeq_literal> > TLiterals;
+        TLiterals literals;
+        if ( inst.IsSetExt() ) {
+            _ASSERT(inst.GetExt().Which() == CSeq_ext::e_Delta);
+            CDelta_ext& delta = inst.SetExt().SetDelta();
+            TSeqPos pos = 0;
+            NON_CONST_ITERATE ( CDelta_ext::Tdata, j, delta.Set() ) {
+                CDelta_seq& seg = **j;
+                if ( seg.Which() == CDelta_seq::e_Literal &&
+                     !seg.GetLiteral().IsSetSeq_data() ){
+                    literals[pos] = &seg.SetLiteral();
+                }
+                pos += GetLength(seg);
+            }
+            _ASSERT(pos == seq_length);
+        }
+        else {
+            _ASSERT(!inst.IsSetSeq_data());
+        }
+
+        ITERATE ( SChunkInfo::TSeq_data, j, i->second ) {
+            _ASSERT(j->GetGi() == i->first);
+            TRange range = j->GetRange();
+            CSeq_data& data = const_cast<CSeq_data&>(*j->m_Data);
+            if ( range.GetFrom() == 0 && range.GetLength() == seq_length ) {
+                _ASSERT(!inst.IsSetSeq_data());
+                inst.SetSeq_data(data);
+            }
+            else {
+                TLiterals::iterator iter = literals.find(range.GetFrom());
+                _ASSERT(iter != literals.end());
+                CSeq_literal& literal = *iter->second;
+                _ASSERT(!literal.IsSetSeq_data());
+                literal.SetSeq_data(data);
+            }
+        }
     }
 }
 
@@ -766,6 +838,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/08/04 14:48:21  vasilche
+* Added joining of very small chunks with skeleton.
+*
 * Revision 1.13  2004/07/12 16:55:47  vasilche
 * Fixed split info for descriptions and Seq-data to load them properly.
 *
