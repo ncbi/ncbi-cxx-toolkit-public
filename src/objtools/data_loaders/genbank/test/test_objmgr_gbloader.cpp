@@ -50,6 +50,7 @@
 #include <connect/ncbi_util.h>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/seqref.hpp>
 
 BEGIN_NCBI_SCOPE
 using namespace objects;
@@ -173,6 +174,12 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/08/04 14:55:18  vasilche
+* Changed TSE locking scheme.
+* TSE cache is maintained by CDataSource.
+* Added ID2 reader.
+* CSeqref is replaced by CBlobId.
+*
 * Revision 1.8  2004/07/26 14:13:32  grichenk
 * RegisterInObjectManager() return structure instead of pointer.
 * Added CObjectManager methods to manipuilate loaders.

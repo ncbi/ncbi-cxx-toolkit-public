@@ -32,6 +32,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <objtools/data_loaders/genbank/blob_id.hpp>
 #include <utility>
 #include <string>
 
@@ -41,28 +42,13 @@ BEGIN_SCOPE(objects)
 class NCBI_XREADER_EXPORT CSeqref : public CObject
 {
 public:
-    typedef TSeqPos TPos;
-    typedef unsigned TConn;
-
     typedef pair<pair<int, int>, int> TKeyByTSE;
 
-    enum FFlags {
-        fHasCore     = 1 << 0,
-        fHasDescr    = 1 << 1,
-        fHasSeqMap   = 1 << 2,
-        fHasSeqData  = 1 << 3,
-        fHasFeatures = 1 << 4,
-        fHasExternal = 1 << 5,
-        fHasAlign    = 1 << 6,
-        fHasGraph    = 1 << 7,
-
-        fHasAll      = (1 << 16)-1,
-        fHasAllLocal = fHasCore | fHasDescr | fHasSeqMap | fHasSeqData,
-
+    enum EBlobFlags {
         fPossible    = 1 << 16,
         fPrivate     = 1 << 17
     };
-    typedef int TFlags;
+    typedef TBlobContentsMask TFlags;
 
     enum ESat {
         eSat_SNP        = 15,
@@ -140,14 +126,32 @@ public:
             }
             return LessByTSE(seqRef);
         }
-
-    TFlags  GetFlags() const
+    bool operator<(const CSeqref& seqRef) const
+        {
+            if ( GetSat() != seqRef.GetSat() )
+                return GetSat() < seqRef.GetSat();
+            if ( GetSatKey() != seqRef.GetSatKey() )
+                return GetSatKey() < seqRef.GetSatKey();
+            return GetVersion() < seqRef.GetVersion();
+        }
+    
+    TFlags  GetFlags(void) const
         {
             return m_Flags;
         }
     void SetFlags(TFlags flags)
         {
             m_Flags = flags;
+        }
+
+    bool IsEmpty(void) const
+        {
+            return m_Sat < 0 && m_SatKey < 0;
+        }
+
+    bool IsMainBlob(void) const
+        {
+            return (GetFlags() & fBlobHasCore) != 0;
         }
 
     int GetVersion(void) const
@@ -175,6 +179,12 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2004/08/04 14:55:18  vasilche
+* Changed TSE locking scheme.
+* TSE cache is maintained by CDataSource.
+* Added ID2 reader.
+* CSeqref is replaced by CBlobId.
+*
 * Revision 1.2  2004/06/30 21:02:02  vasilche
 * Added loading of external annotations from 26 satellite.
 *

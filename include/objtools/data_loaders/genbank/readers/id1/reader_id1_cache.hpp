@@ -41,6 +41,7 @@ class IIntCache;
 class ICache;
 class IReader;
 class IWriter;
+class CByteSource;
 
 BEGIN_SCOPE(objects)
 
@@ -50,28 +51,27 @@ class CID2_Reply_Data;
 ///
 class NCBI_XREADER_ID1_EXPORT CCachedId1Reader : public CId1Reader
 {
+    typedef CId1Reader TParent;
 public:
-    CCachedId1Reader(TConn noConn = 5,
+    CCachedId1Reader(TConn noConn = 1,
                      ICache* blob_cache = 0,
                      ICache* id_cache = 0);
-    CCachedId1Reader(TConn noConn, 
-                     IBLOB_Cache* blob_cache,
-                     IIntCache* id_cache = 0);
     ~CCachedId1Reader();
+
+
+    //////////////////////////////////////////////////////////////////
+    // Setup methods:
 
     void SetBlobCache(ICache* blob_cache);
     void SetIdCache(ICache* id_cache);
 
-    void SetBlobCache(IBLOB_Cache* blob_cache);
-    void SetIdCache(IIntCache* id_cache);
 
-    int ResolveSeq_id_to_gi(const CSeq_id& id, TConn conn);
-    void RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
-    void PurgeSeqrefs(const TSeqrefs& srs, const CSeq_id& id);
+    //////////////////////////////////////////////////////////////////
+    // Keys manipulation methods:
 
-    /// Return BLOB cache key string based on CSeqref Sat() and SatKey()
-    /// @sa CSeqref::Sat(), CSeqref::SatKey()
-    string GetBlobKey(const CSeqref& seqref) const;
+    /// Return BLOB cache key string based on Sat() and SatKey()
+    string GetBlobKey(const CBlob_id& blob_id) const;
+
     /// BLOB cache subkeys:
     const char* GetSeqEntrySubkey(void) const;
     const char* GetSNPTableSubkey(void) const;
@@ -84,165 +84,121 @@ public:
     string GetIdKey(int gi) const;
 
     /// Id cache subkeys:
-    const char* GetSeqrefsSubkey(void) const; //Seq-id/gi -> seqrefs (5*N ints)
+    const char* GetBlob_idsSubkey(void) const;//Seq-id/gi -> blob_id (4*N ints)
     const char* GetGiSubkey(void) const;      //Seq-id -> gi (1 int)
 
-    // seqref -> blob version (1 int)
+    // blob_id -> blob version (1 int)
     const char* GetBlobVersionSubkey(void) const;
 
-    int GetBlobVersion(const CSeqref& seqref);
 
-    void GetTSEChunk(const CSeqref& seqref, CTSE_Chunk_Info& chunk_info,
-                     TConn conn);
+    //////////////////////////////////////////////////////////////////
+    // Overloaded loading methods:
+
+    int ResolveSeq_id_to_gi(const CSeq_id& id, TConn conn);
+    void ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn);
+    TBlobVersion GetVersion(const CBlob_id& blob_id, TConn = 0);
+
+    void GetTSEBlob(CTSE_Info& tse_info,
+                    const CBlob_id& blob_id,
+                    TConn conn);
+    void GetTSEChunk(CTSE_Chunk_Info& chunk_info,
+                     const CBlob_id& blob_id,
+                     TConn conn = 0);
+
+
+    //////////////////////////////////////////////////////////////////
+    // Id cache low level access methods:
+
+    bool LoadIds(int gi, CLoadLockBlob_ids& ids);
+    bool LoadIds(const CSeq_id& id, CLoadLockBlob_ids& ids);
+    bool LoadIds(const string& key, CLoadLockBlob_ids& ids);
+    void StoreIds(int gi, const CLoadLockBlob_ids& ids);
+    void StoreIds(const CSeq_id& id, const CLoadLockBlob_ids& ids);
+    void StoreIds(const string& key, const CLoadLockBlob_ids& ids);
+
+    bool LoadVersion(const string& key, TBlobVersion& version);
+    void StoreVersion(const string& key, TBlobVersion version);
+
+
+    //////////////////////////////////////////////////////////////////
+    // Blob cache low level access methods:
+
+    bool LoadBlob(CID1server_back& id1_reply,
+                  CRef<CID2S_Split_Info>& split_info,
+                  const CBlob_id& blob_id);
+    bool LoadWholeBlob(CTSE_Info& tse_info,
+                       const string& key, TBlobVersion version);
+    bool LoadSplitBlob(CTSE_Info& tse_info,
+                       const string& key, TBlobVersion version);
+
+    bool LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
+                      const string& key, TBlobVersion version);
+    void StoreSNPTable(const CSeq_annot_SNP_Info& snp_info,
+                       const string& key, TBlobVersion version);
+
+    size_t LoadData(const string& key, TBlobVersion version,
+                    const string& subkey,
+                    CID2_Reply_Data& data, int data_type);
 
 protected:
     
     void PrintStatistics(void) const;
 
-    typedef vector<int> TSeqrefsData;
+    void LogIdLoadStat(const char* type,
+                       const string& key,
+                       const string& subkey,
+                       CStopWatch& sw);
+    void LogIdStoreStat(const char* type,
+                        const string& key,
+                        const string& subkey,
+                        CStopWatch& sw);
 
-    bool x_GetIdCache(const string& key,
-                      const string& subkey,
-                      TSeqrefsData& ints);
-    bool x_GetIdCache(const string& key,
-                      const string& subkey,
-                      int& value);
+    typedef vector<int> TBlob_idsData;
+
+    bool x_LoadIdCache(const string& key,
+                       const string& subkey,
+                       TBlob_idsData& ints);
+    bool x_LoadIdCache(const string& key,
+                       const string& subkey,
+                       int& value);
     void x_StoreIdCache(const string& key,
                         const string& subkey,
-                        const TSeqrefsData& ints);
+                        const TBlob_idsData& ints);
     void x_StoreIdCache(const string& key,
                         const string& subkey,
                         const int& value);
-    bool x_DecodeSeqrefs(const TSeqrefsData& data, TSeqrefs& srs);
-    void x_EncodeSeqrefs(TSeqrefsData& data, const TSeqrefs& srs);
     
-    int x_GetVersion(const CSeqref& seqref, TConn conn);
-
-    void x_GetTSEBlob(CID1server_back& id1_reply,
-                      CRef<CID2S_Split_Info>& split_info,
-                      const CSeqref& seqref,
-                      TConn conn);
     void x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
-                       const CSeqref& seqref,
+                       const CBlob_id& blob_id,
                        TConn conn);
 
     void x_ReadTSEBlob(CID1server_back& id1_reply,
-                       const CSeqref&   seqref,
+                       const CBlob_id&  blob_id,
                        CNcbiIstream&    stream);
 
-    bool GetSeqrefs(int gi, TSeqrefs& srs);
-    void StoreSeqrefs(int gi, const TSeqrefs& srs);
+    void x_SetBlobRequest(CID1server_request& request,
+                          const CBlob_id& blob_id);
+    void x_ReadBlobReply(CID1server_back& reply,
+                         CObjectIStream& stream,
+                         const CBlob_id& blob_id);
 
-    bool GetSeqrefs(const CSeq_id& id, TSeqrefs& srs);
-    void StoreSeqrefs(const CSeq_id& id, const TSeqrefs& srs);
-
-    void StoreBlobVersion(const CSeqref& seqref, int version);
-
-    bool LoadBlob(CID1server_back& id1_reply,
-                  CRef<CID2S_Split_Info>& split_info,
-                  const CSeqref& seqref);
-    bool LoadWholeBlob(CID1server_back& id1_reply,
-                       const CSeqref& seqref);
-    bool LoadSplitBlob(CID1server_back& id1_reply,
-                       CRef<CID2S_Split_Info>& split_info,
-                       const CSeqref& seqref);
-
-    bool LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
-                      const CSeqref& seqref);
-    void StoreSNPTable(const CSeq_annot_SNP_Info& snp_info,
-                       const CSeqref& seqref);
-
-    bool LoadData(const string& key, int version, const char* suffix,
-                  CID2_Reply_Data& data);
-    bool LoadData(const string& key, const char* suffix,
-                  int version, CID2_Reply_Data& data);
+    void StoreBlob(const string& key, TBlobVersion version,
+                   CRef<CByteSource> bytes);
 
     CObjectIStream* OpenData(CID2_Reply_Data& data);
 
 private:
-
-    CCachedId1Reader(const CCachedId1Reader& );
-    CCachedId1Reader& operator=(const CCachedId1Reader&);
-
-private:
     ICache*   m_BlobCache;
     ICache*   m_IdCache;
-    IBLOB_Cache*   m_OldBlobCache;
-    IIntCache*     m_OldIdCache;
+
+private:
+    // to prevent copying
+    CCachedId1Reader(const CCachedId1Reader& );
+    CCachedId1Reader& operator=(const CCachedId1Reader&);
 };
 
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
-* $Log$
-* Revision 1.18  2004/06/30 21:02:02  vasilche
-* Added loading of external annotations from 26 satellite.
-*
-* Revision 1.17  2004/06/29 14:27:21  vasilche
-* Fixed enum values in ID2-Reply-Data (compression/type/format).
-* Added recognition of old & incorrect values.
-*
-* Revision 1.16  2004/04/28 17:06:25  vasilche
-* Load split blobs from new ICache.
-*
-* Revision 1.15  2004/01/20 16:56:04  vasilche
-* Allow storing version of any blob (not only SNP).
-*
-* Revision 1.14  2004/01/13 21:58:42  vasilche
-* Requrrected new version
-*
-* Revision 1.4  2003/12/30 22:14:40  vasilche
-* Updated genbank loader and readers plugins.
-*
-* Revision 1.12  2003/12/30 16:00:06  vasilche
-* Added support for new ICache (CBDB_Cache) interface.
-*
-* Revision 1.11  2003/11/26 18:59:46  ucko
-* Remove stray semicolon after BEGIN_SCOPE(objects) to fix the WorkShop build.
-*
-* Revision 1.10  2003/11/26 17:55:53  vasilche
-* Implemented ID2 split in ID1 cache.
-* Fixed loading of splitted annotations.
-*
-* Revision 1.9  2003/10/27 15:05:41  vasilche
-* Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
-* Added recognition of ID1 error codes: private, etc.
-* Some formatting of old code.
-*
-* Revision 1.8  2003/10/21 16:32:50  vasilche
-* Cleaned ID1 statistics messages.
-* Now by setting GENBANK_ID1_STATS=1 CId1Reader collects and displays stats.
-* And by setting GENBANK_ID1_STATS=2 CId1Reader logs all activities.
-*
-* Revision 1.7  2003/10/21 14:27:34  vasilche
-* Added caching of gi -> sat,satkey,version resolution.
-* SNP blobs are stored in cache in preprocessed format (platform dependent).
-* Limit number of connections to GenBank servers.
-* Added collection of ID1 loader statistics.
-*
-* Revision 1.6  2003/10/14 18:31:53  vasilche
-* Added caching support for SNP blobs.
-* Added statistics collection of ID1 connection.
-*
-* Revision 1.5  2003/10/08 18:57:49  kuznets
-* Implemeneted correct ID1 BLOB versions.
-*
-* Revision 1.4  2003/10/03 17:41:33  kuznets
-* Added an option, that cache is owned by the ID1 reader.
-* Cache destroyed with the reader.
-*
-* Revision 1.3  2003/10/02 19:28:34  kuznets
-* First working revision
-*
-* Revision 1.2  2003/10/01 19:32:01  kuznets
-* Work in progress
-*
-* Revision 1.1  2003/09/30 19:38:26  vasilche
-* Added support for cached id1 reader.
-*
-*/
 
 #endif // READER_ID1_CACHE__HPP_INCLUDED

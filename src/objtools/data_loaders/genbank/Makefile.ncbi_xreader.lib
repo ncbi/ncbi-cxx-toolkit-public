@@ -1,8 +1,8 @@
 # $Id$
 
-SRC = reader reader_snp seqref split_parser
+SRC = reader reader_snp seqref blob_id split_parser request_result
 
-ASN_DEP = id2
+ASN_DEP = seqsplit
 
 LIB = ncbi_xreader
 

@@ -1,0 +1,13 @@
+# $Id$
+
+SRC = reader_id2
+
+LIB = ncbi_xreader_id2
+
+ASN_DEP = id2
+
+# Build shared version when possible
+LIB_OR_DLL = both
+
+# Dependencies for shared library
+DLL_LIB = xconnect ncbi_xreader

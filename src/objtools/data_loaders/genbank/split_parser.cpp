@@ -245,7 +245,6 @@ void CSplitParser::x_ParseLocation(TLocationSet& vec,
         break;
     }
 
-
     case CID2_Seq_loc::e_Seq_loc:
     {
         CHandleRangeMap hrm;
@@ -315,6 +314,12 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.9  2004/08/04 14:55:18  vasilche
+ * Changed TSE locking scheme.
+ * TSE cache is maintained by CDataSource.
+ * Added ID2 reader.
+ * CSeqref is replaced by CBlobId.
+ *
  * Revision 1.8  2004/07/12 16:59:53  vasilche
  * Added parsing of information of where split data is to be inserted.
  *

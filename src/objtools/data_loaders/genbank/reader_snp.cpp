@@ -293,9 +293,9 @@ void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
 {
     snp_info.m_Seq_annot.Reset(new CSeq_annot); // Seq-annot object
 
-    CReader::SetSNPReadHooks(in);
+    CId1ReaderBase::SetSNPReadHooks(in);
 
-    if ( CReader::TrySNPTable() ) { // set SNP hook
+    if ( CId1ReaderBase::TrySNPTable() ) { // set SNP hook
         CObjectTypeInfo type = CType<CSeq_annot::TData>();
         CObjectTypeInfoVI ftable = type.FindVariant("ftable");
         ftable.SetLocalReadHook(in, new CSNP_Ftable_hook(snp_info));
@@ -308,6 +308,8 @@ void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
     snp_info.m_Alleles.ClearIndices();
 
     sort(snp_info.m_SNP_Set.begin(), snp_info.m_SNP_Set.end());
+    
+    snp_info.x_SetDirtyAnnotIndex();
 }
 
 
@@ -405,6 +407,12 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.13  2004/08/04 14:55:18  vasilche
+ * Changed TSE locking scheme.
+ * TSE cache is maintained by CDataSource.
+ * Added ID2 reader.
+ * CSeqref is replaced by CBlobId.
+ *
  * Revision 1.12  2004/05/21 21:42:52  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -42,6 +42,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+//========================================================================
 class NCBI_XLOADER_GENBANK_EXPORT CTimer
 {
 public:
@@ -61,6 +62,27 @@ private:
   
     time_t m_StartTime;
     CMutex m_TimerLock;
+};
+
+
+class CRefresher
+{
+public:
+    CRefresher(void)
+        : m_RefreshTime(0)
+        {
+        }
+
+    void Reset(CTimer &timer);
+    void Reset(void)
+        {
+            m_RefreshTime = 0;
+        }
+
+    bool NeedRefresh(CTimer &timer) const;
+
+private:
+    time_t m_RefreshTime;
 };
 
 
@@ -198,6 +220,12 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.3  2004/08/04 14:55:17  vasilche
+ * Changed TSE locking scheme.
+ * TSE cache is maintained by CDataSource.
+ * Added ID2 reader.
+ * CSeqref is replaced by CBlobId.
+ *
  * Revision 1.2  2003/12/30 22:14:39  vasilche
  * Updated genbank loader and readers plugins.
  *

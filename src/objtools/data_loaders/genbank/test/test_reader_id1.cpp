@@ -31,6 +31,7 @@
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
+#include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objmgr/impl/tse_info.hpp>
 
 #include <connect/ncbi_util.h>
@@ -54,14 +55,18 @@ int main()
 
     CId1Reader reader;
     for(int k = 0; k < 500; k++) {
-        vector< CRef<CSeqref> > sr;
-        reader.RetrieveSeqrefs(sr, gi, 0);
-        ITERATE ( vector< CRef<CSeqref> >, i, sr ) {
-            const CSeqref& seqRef = **i;
+        CSeq_id seq_id;
+        seq_id.SetGi(gi);
+        CReaderRequestResult request;
+        CLoadLockBlob_ids ids(request, seq_id);
+        reader.ResolveSeq_id(ids, seq_id, 0);
+        ITERATE ( CLoadInfoBlob_ids, i, *ids ) {
+            const CBlob_id& blob_id = i->first;
             cout << "K: " << k << " " << gi << endl;
 
-            CRef<CTSE_Info> se = reader.GetBlob(seqRef, 0);
-            if (!se) {
+            CLoadLockBlob blob(request, blob_id);
+            reader.LoadBlob(request, blob_id);
+            if ( !blob.IsLoaded() ) {
                 cout << "blob is not available\n";
                 continue;
             }
@@ -73,6 +78,12 @@ int main()
 
 /*
 * $Log$
+* Revision 1.4  2004/08/04 14:55:18  vasilche
+* Changed TSE locking scheme.
+* TSE cache is maintained by CDataSource.
+* Added ID2 reader.
+* CSeqref is replaced by CBlobId.
+*
 * Revision 1.3  2004/05/21 21:42:52  gorelenk
 * Added PCH ncbi_pch.hpp
 *

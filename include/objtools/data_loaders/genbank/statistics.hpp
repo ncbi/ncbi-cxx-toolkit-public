@@ -1,5 +1,5 @@
-#ifndef SEQREF_PUBSEQ__HPP_INCLUDED
-#define SEQREF_PUBSEQ__HPP_INCLUDED
+#ifndef READERS__ID1__STATISTICS__HPP_INCLUDED
+#define READERS__ID1__STATISTICS__HPP_INCLUDED
 
 /*  $Id$
 * ===========================================================================
@@ -24,43 +24,51 @@
 *  Please cite the author in any work or product based on this material.
 * ===========================================================================
 *
-*  Author:  Anton Butanaev, Eugene Vasilchenko
+*  Author:  Eugene Vasilchenko
 *
-*  File Description: support classes for data reader from Pubseq_OS
+*  File Description: Classes for gathering timing statistics.
 *
 */
 
-#include <corelib/ncbiobj.hpp>
+#define ID1_COLLECT_STATS 1
+#ifdef ID1_COLLECT_STATS
 
-#include <serial/serial.hpp>
-#include <serial/enumvalues.hpp>
-#include <serial/objistrasnb.hpp>
-#include <serial/objostrasnb.hpp>
-
-#include <util/bytesrc.hpp>
-
-#include <dbapi/driver/public.hpp>
-
-#include <memory>
-
+#include <corelib/ncbitime.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
 
-class NCBI_XREADER_PUBSEQOS_EXPORT CResultBtSrcRdr : public CByteSourceReader
+
+struct STimeStatistics
 {
-public:
-    CResultBtSrcRdr(CDB_Result* result);
-    ~CResultBtSrcRdr();
+    STimeStatistics(void) : count(0), time(0) {}
+    
+    void add(double t)
+        {
+            count += 1;
+            time += t;
+        }
 
-    virtual size_t Read(char* buffer, size_t bufferLength);
-
-private:
-    CDB_Result* m_Result;
+    size_t count;
+    double time;
 };
 
 
-END_SCOPE(objects)
+struct STimeSizeStatistics : public STimeStatistics
+{
+    STimeSizeStatistics(void) : size(0) {}
+    
+    void add(double t, size_t bytes)
+        {
+            STimeStatistics::add(t);
+            size += bytes;
+        }
+    
+    double size;
+};
+
+
 END_NCBI_SCOPE
 
-#endif//SEQREF_PUBSEQ__HPP_INCLUDED
+#endif
+
+#endif//READERS__ID1__STATISTICS__HPP_INCLUDED

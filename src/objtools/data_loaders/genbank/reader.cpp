@@ -29,6 +29,8 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/reader.hpp>
+#include <objtools/data_loaders/genbank/split_parser.hpp>
+#include <objtools/data_loaders/genbank/request_result.hpp>
 
 #include <serial/pack_string.hpp>
 #include <objmgr/annot_selector.hpp>
@@ -39,6 +41,8 @@
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 
+#include <objtools/data_loaders/genbank/seqref.hpp>
+
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -46,6 +50,7 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/id2/ID2_Blob_Id.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
@@ -87,25 +92,34 @@ bool CReader::s_GetEnvFlag(const char* env, bool def_val)
 }
 
 
-bool CReader::TrySNPSplit(void)
-{
-    static bool snp_split = s_GetEnvFlag(SNP_SPLIT_ENV, true);
-    return snp_split;
-}
-
-
-bool CReader::TrySNPTable(void)
-{
-    static bool snp_table = s_GetEnvFlag(SNP_TABLE_ENV, true);
-    return snp_table;
-}
-
-
 bool CReader::TryStringPack(void)
 {
     static bool use_string_pack =
         CPackString::TryStringPack() && s_GetEnvFlag(STRING_PACK_ENV, true);
     return use_string_pack;
+}
+
+
+void CReader::SetSeqEntryReadHooks(CObjectIStream& in)
+{
+    if ( !TryStringPack() ) {
+        return;
+    }
+
+    CObjectTypeInfo type;
+
+    type = CObjectTypeInfo(CType<CObject_id>());
+    type.FindVariant("str").SetLocalReadHook(in, new CPackStringChoiceHook);
+
+    type = CObjectTypeInfo(CType<CImp_feat>());
+    type.FindMember("key").SetLocalReadHook(in,
+                                            new CPackStringClassHook(32, 128));
+
+    type = CObjectTypeInfo(CType<CDbtag>());
+    type.FindMember("db").SetLocalReadHook(in, new CPackStringClassHook);
+
+    type = CType<CGb_qual>();
+    type.FindMember("qual").SetLocalReadHook(in, new CPackStringClassHook);
 }
 
 
@@ -137,104 +151,238 @@ void CReader::SetSNPReadHooks(CObjectIStream& in)
 }
 
 
-void CReader::SetSeqEntryReadHooks(CObjectIStream& in)
+void CReader::LoadBlobs(CReaderRequestResult& result,
+                        const string& seq_id,
+                        TContentsMask mask)
 {
-    if ( !TryStringPack() ) {
-        return;
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( !ids ) {
+        ResolveString(result, seq_id);
+        if ( !ids ) {
+            return;
+        }
     }
-
-    CObjectTypeInfo type;
-
-    type = CObjectTypeInfo(CType<CObject_id>());
-    type.FindVariant("str").SetLocalReadHook(in, new CPackStringChoiceHook);
-
-    type = CObjectTypeInfo(CType<CImp_feat>());
-    type.FindMember("key").SetLocalReadHook(in,
-                                            new CPackStringClassHook(32, 128));
-
-    type = CObjectTypeInfo(CType<CDbtag>());
-    type.FindMember("db").SetLocalReadHook(in, new CPackStringClassHook);
-
-    type = CType<CGb_qual>();
-    type.FindMember("qual").SetLocalReadHook(in, new CPackStringClassHook);
-}
-
-
-bool CReader::IsSNPSeqref(const CSeqref& seqref)
-{
-    return seqref.GetSat() == CSeqref::eSat_SNP;
-}
-
-
-void CReader::AddSNPSeqref(TSeqrefs& srs, int gi, CSeqref::TFlags flags)
-{
-    srs.push_back(Ref(new CSeqref(gi, CSeqref::eSat_SNP, gi,
-                                  CSeqref::eSubSat_main,
-                                  flags | CSeqref::fHasExternal)));
-}
-
-
-void CReader::ResolveSeq_id(TSeqrefs& srs, const CSeq_id& id, TConn conn)
-{
-    int gi;
-    if ( id.IsGi() ) {
-        gi = id.GetGi();
-    }
-    else {
-        gi = ResolveSeq_id_to_gi(id, conn);
-    }
-    if ( gi ) {
-        RetrieveSeqrefs(srs, gi, conn);
+    if ( ids->size() == 1 ) {
+        LoadBlobs(result, *ids->begin(), mask);
     }
 }
 
 
-void CReader::PurgeSeq_id_to_gi(const CSeq_id& /*id*/)
+void CReader::LoadBlobs(CReaderRequestResult& result,
+                        const CSeq_id_Handle& seq_id,
+                        TContentsMask mask)
+{
+    CLoadLockBlob_ids ids(result, seq_id);
+    if ( !ids ) {
+        ResolveSeq_id(result, seq_id);
+        if ( !ids ) {
+            return;
+        }
+    }
+    LoadBlobs(result, ids, mask);
+}
+
+
+void CReader::LoadBlobs(CReaderRequestResult& result,
+                        CLoadLockBlob_ids blobs,
+                        TContentsMask mask)
+{
+    ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
+        const CBlob_Info& info = it->second;
+        if ( (info.GetContentsMask() & mask) != 0 ) {
+            LoadBlob(result, it->first);
+        }
+    }
+}
+
+
+void CReader::LoadChunk(CReaderRequestResult& /*result*/,
+                        const TBlob_id& /*blob_id*/, TChunk_id /*chunk_id*/)
+{
+    NCBI_THROW(CLoaderException, eOtherError,
+               "unexpected chunk load request");
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CId1ReaderBase
+/////////////////////////////////////////////////////////////////////////////
+
+
+CId1ReaderBase::CId1ReaderBase(void)
 {
 }
 
 
-void CReader::PurgeSeqrefs(const TSeqrefs& /*srs*/,
-                           const CSeq_id& /*id*/)
+CId1ReaderBase::~CId1ReaderBase()
 {
 }
 
 
-CRef<CTSE_Info> CReader::GetBlob(const CSeqref& seqref,
-                                 TConn conn,
-                                 CTSE_Chunk_Info* chunk_info)
+bool CId1ReaderBase::TrySNPSplit(void)
 {
-    CRef<CTSE_Info> ret;
-    if ( chunk_info ) {
-        if ( IsSNPSeqref(seqref) && chunk_info->GetChunkId()==kSNP_ChunkId ) {
-            GetSNPChunk(seqref, *chunk_info, conn);
+    static bool snp_split = s_GetEnvFlag(SNP_SPLIT_ENV, true);
+    return snp_split;
+}
+
+
+bool CId1ReaderBase::TrySNPTable(void)
+{
+    static bool snp_table = s_GetEnvFlag(SNP_TABLE_ENV, true);
+    return snp_table;
+}
+
+
+void CId1ReaderBase::ResolveString(CReaderRequestResult& result,
+                                   const string& seq_id)
+{
+}
+
+
+void CId1ReaderBase::ResolveSeq_id(CReaderRequestResult& result,
+                                   const CSeq_id_Handle& seq_id)
+{
+    CLoadLockBlob_ids ids(result, seq_id);
+    if ( !ids.IsLoaded() ) {
+        CReaderRequestConn conn(result);
+        ResolveSeq_id(ids, *seq_id.GetSeqId(), conn);
+        ids.SetLoaded();
+    }
+}
+
+
+void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
+                              const TBlob_id& blob_id)
+{
+    CLoadLockBlob blob(result, blob_id);
+    if ( !blob.IsLoaded() ) {
+        try {
+            {{
+                CReaderRequestConn conn(result);
+                GetBlob(*blob, blob_id, conn);
+            }}
+            blob.SetLoaded();
+            result.AddTSE_Lock(blob);
+            result.UpdateLoadedSet();
+        }
+        catch ( CLoaderException& exc ) {
+            if ( exc.GetErrCode() == exc.ePrivateData ) {
+                blob->SetSuppressionLevel(CTSE_Info::eSuppression_private);
+                blob.SetLoaded();
+            }
+            else if ( exc.GetErrCode() == exc.eNoData ) {
+                blob->SetSuppressionLevel(CTSE_Info::eSuppression_withdrawn);
+                blob.SetLoaded();
+            }
+            else {
+                throw;
+            }
+        }
+    }
+}
+
+
+CReader::TBlobVersion
+CId1ReaderBase::GetBlobVersion(CReaderRequestResult& result,
+                               const TBlob_id& blob_id)
+{
+    CLoadLockBlob blob(result, blob_id);
+    try {
+        if ( blob->GetBlobVersion() < 0 ) {
+            CReaderRequestConn conn(result);
+            blob->SetBlobVersion(GetVersion(blob_id, conn));
+        }
+        return blob->GetBlobVersion();
+    }
+    catch ( CLoaderException& exc ) {
+        if ( exc.GetErrCode() == exc.ePrivateData ) {
+            return 0;
+        }
+        else if ( exc.GetErrCode() == exc.eNoData ) {
+            return 0;
         }
         else {
-            GetTSEChunk(seqref, *chunk_info, conn);
+            throw;
         }
     }
-    else {
-        if ( IsSNPSeqref(seqref) ) {
-            ret = GetSNPBlob(seqref, conn);
-        }
-        else {
-            ret = GetTSEBlob(seqref, conn);
-        }
-    }
-    return ret;
 }
 
 
-CRef<CTSE_Info> CReader::GetSNPBlob(const CSeqref& seqref, TConn /*conn*/)
+void CId1ReaderBase::LoadChunk(CReaderRequestResult& result,
+                               const TBlob_id& blob_id, TChunk_id chunk_id)
 {
-    _ASSERT(IsSNPSeqref(seqref));
+    CLoadLockBlob blob(result, blob_id);
+    _ASSERT(blob);
+    _ASSERT(blob.IsLoaded());
+    CTSE_Chunk_Info& chunk_info = blob->GetChunk(chunk_id);
+    if ( chunk_info.NotLoaded() ) {
+        CInitGuard init(chunk_info, result);
+        if ( init ) {
+            {{
+                CReaderRequestConn conn(result);
+                GetChunk(chunk_info, blob_id, conn);
+            }}
+            chunk_info.SetLoaded();
+        }
+    }
+}
+
+
+bool CId1ReaderBase::IsSNPBlob_id(const CBlob_id& blob_id)
+{
+    return blob_id.GetSat() == CSeqref::eSat_SNP &&
+        blob_id.GetSubSat() == CID2_Blob_Id::eSub_sat_snp;
+}
+
+
+void CId1ReaderBase::AddSNPBlob_id(CLoadLockBlob_ids& ids, int gi)
+{
+    CBlob_id blob_id;
+    blob_id.SetSat(CSeqref::eSat_SNP);
+    blob_id.SetSubSat(CID2_Blob_Id::eSub_sat_snp);
+    blob_id.SetSatKey(gi);
+    //blob_id.SetVersion(0);
+    ids.AddBlob_id(blob_id, fBlobHasExternal);
+}
+
+
+void CId1ReaderBase::GetBlob(CTSE_Info& tse_info,
+                             const CBlob_id& blob_id,
+                             TConn conn)
+{
+    if ( IsSNPBlob_id(blob_id) ) {
+        GetSNPBlob(tse_info, blob_id, conn);
+    }
+    else {
+        GetTSEBlob(tse_info, blob_id, conn);
+    }
+}
+
+
+void CId1ReaderBase::GetChunk(CTSE_Chunk_Info& chunk_info,
+                              const CBlob_id& blob_id,
+                              TConn conn)
+{
+    if ( IsSNPBlob_id(blob_id) && chunk_info.GetChunkId()==kSNP_ChunkId ) {
+        GetSNPChunk(chunk_info, blob_id, conn);
+    }
+    else {
+        GetTSEChunk(chunk_info, blob_id, conn);
+    }
+}
+
+
+void CId1ReaderBase::GetSNPBlob(CTSE_Info& tse_info,
+                                const CBlob_id& blob_id,
+                                TConn /*conn*/)
+{
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
     seq_entry->SetSet().SetSeq_set();
     seq_entry->SetSet().SetId().SetId(kSNP_EntryId);
 
     // create CTSE_Info
-    CRef<CTSE_Info> ret(new CTSE_Info(*seq_entry));
-    ret->SetName("SNP");
+    tse_info.SetSeq_entry(*seq_entry);
+    tse_info.SetName("SNP");
 
     CRef<CTSE_Chunk_Info> info(new CTSE_Chunk_Info(kSNP_ChunkId));
 
@@ -242,30 +390,29 @@ CRef<CTSE_Info> CReader::GetSNPBlob(const CSeqref& seqref, TConn /*conn*/)
 
     info->x_AddAnnotType(CAnnotName("SNP"),
                          SAnnotTypeSelector(CSeqFeatData::eSubtype_variation),
-                         CSeq_id_Handle::GetGiHandle(seqref.GetGi()),
+                         CSeq_id_Handle::GetGiHandle(blob_id.GetSatKey()),
                          CTSE_Chunk_Info::TLocationRange::GetWhole());
 
-    info->x_TSEAttach(*ret);
-    return ret;
+    info->x_TSEAttach(tse_info);
 }
 
 
-void CReader::GetTSEChunk(const CSeqref& /*seqref*/,
-                          CTSE_Chunk_Info& /*chunk_info*/,
-                          TConn /*conn*/)
+void CId1ReaderBase::GetTSEChunk(CTSE_Chunk_Info& /*chunk_info*/,
+                                 const CBlob_id& /*blob_id*/,
+                                 TConn /*conn*/)
 {
     NCBI_THROW(CLoaderException, eNoData,
                "Chunks are not implemented");
 }
 
 
-void CReader::GetSNPChunk(const CSeqref& seqref,
-                          CTSE_Chunk_Info& chunk,
-                          TConn conn)
+void CId1ReaderBase::GetSNPChunk(CTSE_Chunk_Info& chunk,
+                                 const CBlob_id& blob_id,
+                                 TConn conn)
 {
-    _ASSERT(IsSNPSeqref(seqref));
+    _ASSERT(IsSNPBlob_id(blob_id));
     _ASSERT(chunk.GetChunkId() == kSNP_ChunkId);
-    CRef<CSeq_annot_SNP_Info> snp_annot = GetSNPAnnot(seqref, conn);
+    CRef<CSeq_annot_SNP_Info> snp_annot = GetSNPAnnot(blob_id, conn);
     CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(*snp_annot));
     CTSE_Chunk_Info::TPlace place(CTSE_Chunk_Info::eBioseq_set, kSNP_EntryId);
     chunk.x_LoadAnnot(place, annot_info);
@@ -274,181 +421,3 @@ void CReader::GetSNPChunk(const CSeqref& seqref,
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-
-/*
- * $Log$
- * Revision 1.35  2004/06/30 21:02:02  vasilche
- * Added loading of external annotations from 26 satellite.
- *
- * Revision 1.34  2004/06/15 14:08:22  vasilche
- * Added parsing split info with split sequences.
- *
- * Revision 1.33  2004/05/21 21:42:52  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.32  2004/03/16 15:47:29  vasilche
- * Added CBioseq_set_Handle and set of EditHandles
- *
- * Revision 1.31  2004/02/18 14:01:25  dicuccio
- * Added new satellites for TRACE_ASSM, TR_ASSM_CH.  Added support for overloading
- * the ID1 named service
- *
- * Revision 1.30  2004/02/17 21:18:53  vasilche
- * Fixed 'unused argument' warnings.
- *
- * Revision 1.29  2004/01/22 20:10:35  vasilche
- * 1. Splitted ID2 specs to two parts.
- * ID2 now specifies only protocol.
- * Specification of ID2 split data is moved to seqsplit ASN module.
- * For now they are still reside in one resulting library as before - libid2.
- * As the result split specific headers are now in objects/seqsplit.
- * 2. Moved ID2 and ID1 specific code out of object manager.
- * Protocol is processed by corresponding readers.
- * ID2 split parsing is processed by ncbi_xreader library - used by all readers.
- * 3. Updated OBJMGR_LIBS correspondingly.
- *
- * Revision 1.28  2004/01/13 16:55:55  vasilche
- * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
- * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.
- *
- * Revision 1.27  2003/11/28 17:53:15  vasilche
- * Avoid calling CStreamUtils::Pushback() when constructing objects from text ASN.
- *
- * Revision 1.26  2003/11/26 17:55:58  vasilche
- * Implemented ID2 split in ID1 cache.
- * Fixed loading of splitted annotations.
- *
- * Revision 1.25  2003/10/27 15:05:41  vasilche
- * Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
- * Added recognition of ID1 error codes: private, etc.
- * Some formatting of old code.
- *
- * Revision 1.24  2003/10/08 14:16:13  vasilche
- * Added version of blobs loaded from ID1.
- *
- * Revision 1.23  2003/10/07 13:43:23  vasilche
- * Added proper handling of named Seq-annots.
- * Added feature search from named Seq-annots.
- * Added configurable adaptive annotation search (default: gene, cds, mrna).
- * Fixed selection of blobs for loading from GenBank.
- * Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
- * Fixed leaked split chunks annotation stubs.
- * Moved some classes definitions in separate *.cpp files.
- *
- * Revision 1.22  2003/09/30 16:22:02  vasilche
- * Updated internal object manager classes to be able to load ID2 data.
- * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
- * Scope caches results of requests for data to data loaders.
- * Optimized CSeq_id_Handle for gis.
- * Optimized bioseq lookup in scope.
- * Reduced object allocations in annotation iterators.
- * CScope is allowed to be destroyed before other objects using this scope are
- * deleted (feature iterators, bioseq handles etc).
- * Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
- * Added 'adaptive' option to objmgr_demo application.
- *
- * Revision 1.21  2003/08/27 14:25:22  vasilche
- * Simplified CCmpTSE class.
- *
- * Revision 1.20  2003/08/19 18:35:21  vasilche
- * CPackString classes were moved to SERIAL library.
- *
- * Revision 1.19  2003/08/14 20:05:19  vasilche
- * Simple SNP features are stored as table internally.
- * They are recreated when needed using CFeat_CI.
- *
- * Revision 1.18  2003/07/24 19:28:09  vasilche
- * Implemented SNP split for ID1 loader.
- *
- * Revision 1.17  2003/07/17 20:07:56  vasilche
- * Reduced memory usage by feature indexes.
- * SNP data is loaded separately through PUBSEQ_OS.
- * String compression for SNP data.
- *
- * Revision 1.16  2003/06/02 16:06:38  dicuccio
- * Rearranged src/objects/ subtree.  This includes the following shifts:
- *     - src/objects/asn2asn --> arc/app/asn2asn
- *     - src/objects/testmedline --> src/objects/ncbimime/test
- *     - src/objects/objmgr --> src/objmgr
- *     - src/objects/util --> src/objmgr/util
- *     - src/objects/alnmgr --> src/objtools/alnmgr
- *     - src/objects/flat --> src/objtools/flat
- *     - src/objects/validator --> src/objtools/validator
- *     - src/objects/cddalignview --> src/objtools/cddalignview
- * In addition, libseq now includes six of the objects/seq... libs, and libmmdb
- * replaces the three libmmdb? libs.
- *
- * Revision 1.15  2003/04/24 16:12:38  vasilche
- * Object manager internal structures are splitted more straightforward.
- * Removed excessive header dependencies.
- *
- * Revision 1.14  2003/04/15 16:25:39  vasilche
- * Added initialization of int members.
- *
- * Revision 1.13  2003/04/15 14:24:08  vasilche
- * Changed CReader interface to not to use fake streams.
- *
- * Revision 1.12  2003/03/28 03:27:24  lavr
- * CIStream::Eof() conditional compilation removed; code reformatted
- *
- * Revision 1.11  2003/03/26 22:12:11  lavr
- * Revert CIStream::Eof() to destructive test
- *
- * Revision 1.10  2003/03/26 20:42:50  lavr
- * CIStream::Eof() made (temporarily) non-destructive w/o get()
- *
- * Revision 1.9  2003/02/26 18:02:39  vasilche
- * Added istream error check.
- * Avoid use of string::c_str() method.
- *
- * Revision 1.8  2003/02/25 22:03:44  vasilche
- * Fixed identation.
- *
- * Revision 1.7  2002/11/27 21:09:43  lavr
- * Take advantage of CStreamUtils::Readsome() in CIStream::Read()
- * CIStream::Eof() modified to use get() instead of operator>>()
- *
- * Revision 1.6  2002/05/06 03:28:47  vakatov
- * OM/OM1 renaming
- *
- * Revision 1.5  2002/03/27 20:23:50  butanaev
- * Added connection pool.
- *
- * Revision 1.4  2002/03/27 18:06:08  kimelman
- * stream.read/write instead of << >>
- *
- * Revision 1.3  2002/03/21 19:14:54  kimelman
- * GB related bugfixes
- *
- * Revision 1.2  2002/03/20 04:50:13  kimelman
- * GB loader added
- *
- * Revision 1.1  2002/01/11 19:06:21  gouriano
- * restructured objmgr
- *
- * Revision 1.6  2001/12/13 00:19:25  kimelman
- * bugfixes:
- *
- * Revision 1.5  2001/12/12 21:46:40  kimelman
- * Compare interface fix
- *
- * Revision 1.4  2001/12/10 20:08:01  butanaev
- * Code cleanup.
- *
- * Revision 1.3  2001/12/07 21:24:59  butanaev
- * Interface development, code beautyfication.
- *
- * Revision 1.2  2001/12/07 16:43:58  butanaev
- * Fixed includes.
- *
- * Revision 1.1  2001/12/07 16:10:22  butanaev
- * Switching to new reader interfaces.
- *
- * Revision 1.2  2001/12/06 18:06:22  butanaev
- * Ported to linux.
- *
- * Revision 1.1  2001/12/06 14:35:22  butanaev
- * New streamable interfaces designed, ID1 reimplemented.
- *
- */

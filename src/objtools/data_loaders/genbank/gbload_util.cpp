@@ -42,6 +42,8 @@ BEGIN_SCOPE(objects)
 // Support Classes
 //
 
+
+/* =========================================================================== */
 //////////////////////////////////////////////////////////////////////////////
 //
 // CTimer 
@@ -107,7 +109,18 @@ bool CTimer::NeedCalibration(void)
 }
 
 
-/* =========================================================================== */
+void CRefresher::Reset(CTimer &timer)
+{
+    m_RefreshTime = timer.RetryTime();
+}
+
+
+bool CRefresher::NeedRefresh(CTimer &timer) const
+{
+    return timer.Time() > m_RefreshTime;
+}
+
+
 // MutexPool
 //
 
@@ -320,6 +333,12 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/08/04 14:55:18  vasilche
+* Changed TSE locking scheme.
+* TSE cache is maintained by CDataSource.
+* Added ID2 reader.
+* CSeqref is replaced by CBlobId.
+*
 * Revision 1.25  2004/05/21 21:42:52  gorelenk
 * Added PCH ncbi_pch.hpp
 *

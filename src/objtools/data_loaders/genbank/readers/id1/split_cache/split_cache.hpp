@@ -62,7 +62,7 @@ class CSeq_entry_Handle;
 class CDataLoader;
 class CCachedId1Reader;
 class CGBDataLoader;
-class CSeqref;
+class CBlob_id;
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -115,7 +115,10 @@ public:
 
     void ProcessSeqId(const CSeq_id& seq_id);
     void ProcessGi(int gi);
-    void ProcessBlob(const CSeq_entry_Handle& tse);
+    void ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh);
+
+    bool GetBioseqHandle(CBioseq_Handle& bh, const CSeq_id_Handle& idh);
+    void PrintVersion(int version);
 
     CNcbiOstream& Info(void) const;
 
@@ -144,9 +147,9 @@ public:
     }
 
 protected:
-    CConstRef<CSeqref> GetSeqref(CSeq_entry_Handle tse);
+    const CBlob_id& GetBlob_id(CSeq_entry_Handle tse);
 
-    typedef set<CSeqref::TKeyByTSE> TProcessedBlobs;
+    typedef set<CBlob_id> TProcessedBlobs;
     typedef set<CSeq_id_Handle> TProcessedIds;
 
 private:
@@ -178,6 +181,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/08/04 14:55:18  vasilche
+* Changed TSE locking scheme.
+* TSE cache is maintained by CDataSource.
+* Added ID2 reader.
+* CSeqref is replaced by CBlobId.
+*
 * Revision 1.13  2004/07/12 15:05:32  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *
