@@ -34,9 +34,15 @@
  *   single contiguous pieces of memory, which can be copied in whole
  *   with the use of 'SERV_SizeOfInfo' call. Dynamically allocated
  *   server infos can be freed with a direct call to 'free'.
+ *   Assumptions on the fields: all fields in the server info come in
+ *   host byte order except 'host', which comes in network byte order.
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2000/12/06 22:17:02  lavr
+ * Binary host addresses are now explicitly stated to be in network byte
+ * order, whereas binary port addresses now use native (host) representation
+ *
  * Revision 6.11  2000/10/20 17:05:48  lavr
  * TServType made 'unsigned'
  *
@@ -148,34 +154,34 @@ typedef union {
 } USERV_Info;
 
 typedef struct {
-    ESERV_Type     type;        /* type of server */
-    unsigned int   host;        /* host the server running on */
-    unsigned short port;        /* port the server running on */
-    unsigned short sful;        /* true if this is a stateful server */
-    ESERV_Flags    flag;        /* algorithm flag for the server */
-    time_t         time;        /* relaxation/expiration time/period */
-    double         rate;        /* rate of the server */
-    USERV_Info     u;           /* server type-specific data/params */
+    ESERV_Type     type;        /* type of server                           */
+    unsigned int   host;        /* host the server running on, network b.o. */
+    unsigned short port;        /* port the server running on, host b.o.    */
+    unsigned short sful;        /* true if this is a stateful server        */
+    ESERV_Flags    flag;        /* algorithm flag for the server            */
+    time_t         time;        /* relaxation/expiration time/period        */
+    double         rate;        /* rate of the server                       */
+    USERV_Info     u;           /* server type-specific data/params         */
 } SSERV_Info;
 
 
 /* Constructors for the various types of NCBI server meta-addresses
  */
 SSERV_Info* SERV_CreateNcbidInfo
-(unsigned int   host,
- unsigned short port,
+(unsigned int   host,           /* network byte order */
+ unsigned short port,           /* host byte order    */
  const char*    args
  );
 
 SSERV_Info* SERV_CreateStandaloneInfo
-(unsigned int   host,
- unsigned short port
+(unsigned int   host,           /* network byte order */
+ unsigned short port            /* host byte order    */
  );
 
 SSERV_Info* SERV_CreateHttpInfo
-(ESERV_Type     type,           /* Verified, must be one of fSERV_Http* */
- unsigned int   host,
- unsigned short port,
+(ESERV_Type     type,           /* verified, must be one of fSERV_Http* */
+ unsigned int   host,           /* network byte order */
+ unsigned short port,           /* host byte order    */
  const char*    path,
  const char*    args
  );
@@ -194,7 +200,7 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host);
  * (e.g. composed by SERV_WriteInfo). Result can be later freed by 'free()'.
  * If 'default_host' is not 0, the server info will be assigned this
  * value, and a host address should NOT be specified in the input textual
- * server representation.
+ * server representation. 'default_host' must be in network byte order.
  */
 SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host);
 

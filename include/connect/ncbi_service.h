@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2000/12/06 22:17:02  lavr
+ * Binary host addresses are now explicitly stated to be in network byte
+ * order, whereas binary port addresses now use native (host) representation
+ *
  * Revision 6.8  2000/10/20 17:03:49  lavr
  * Added 'const' to SConnNetInfo in 'SERV_OpenEx'
  *
@@ -78,27 +82,28 @@ typedef struct SSERV_IterTag* SERV_ITER;
  * not to make any network connections (only LBSMD will be consulted).
  * If info is not NULL, LBSMD is consulted first (unless info->lb_disable
  * is true, meaning to skip LBSMD on this step), and then DISPD is consulted
- * (unsing information provided) but only if mapping with LBSMD (if any)
+ * (using information provided) but only if mapping with LBSMD (if any)
  * failed. This scheme permits to use any combination of service mappers.
+ * NB: 'nbo' in comments denotes parameters coming in network byte order.
  */
 SERV_ITER SERV_OpenSimple
-(const char*         service        /* service name */
+(const char*         service        /* service name                          */
  );
 
 SERV_ITER SERV_Open
-(const char*         service,       /* service name */
- TSERV_Type          type,          /* mask of type of servers requested */
- unsigned int        preferred_host,/* preferred host to use service on */
- const SConnNetInfo* info           /* connection information */
+(const char*         service,       /* service name                          */
+ TSERV_Type          type,          /* mask of type of servers requested     */
+ unsigned int        preferred_host,/* preferred host to use service on, nbo */
+ const SConnNetInfo* info           /* connection information                */
  );
 
 SERV_ITER SERV_OpenEx
-(const char*         service,       /* service name */
- TSERV_Type          type,          /* mask of type of servers requested */
- unsigned int        preferred_host,/* preferred host to use service on */
- const SConnNetInfo* info,          /* connection information */
- const SSERV_Info**  skip,          /* array of servers NOT to select */
- size_t              n_skip         /* number of servers in preceding array */
+(const char*         service,       /* service name                          */
+ TSERV_Type          type,          /* mask of type of servers requested     */
+ unsigned int        preferred_host,/* preferred host to use service on, nbo */
+ const SConnNetInfo* info,          /* connection information                */
+ const SSERV_Info**  skip,          /* array of servers NOT to select        */
+ size_t              n_skip         /* number of servers in preceding array  */
  );
 
 

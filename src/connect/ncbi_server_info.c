@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2000/12/06 22:19:02  lavr
+ * Binary host addresses are now explicitly stated to be in network byte
+ * order, whereas binary port addresses now use native (host) representation
+ *
  * Revision 6.16  2000/12/04 17:34:19  beloslyu
  * the order of include files is important, especially on other Unixes! Look the man on inet_ntoa
  *
@@ -161,6 +165,8 @@ const char* SERV_ReadType(const char* str, ESERV_Type* type)
  * in which case the port number (with preceding ':') can be absent from the
  * string (return value in the case coincides with argument 'str', meaning no
  * information has been read, default value for the port number must be used).
+ * Both 'default_host' and 'host' are in network byte order; 'port' is in
+ * host (native) byte order.
  */
 static const char* s_Read_HostPort(const char* str, unsigned int default_host,
                                    unsigned int* host, unsigned short* port)
@@ -195,7 +201,7 @@ static const char* s_Read_HostPort(const char* str, unsigned int default_host,
     }
 
     *host = h;
-    *port = htons(p);
+    *port = p;
     return str + (int)(s - str) + n;
 }
 
@@ -205,7 +211,7 @@ static const char* s_Read_HostPort(const char* str, unsigned int default_host,
  */
 static int s_Write_HostPort(char *str, unsigned int host, unsigned short port)
 {
-    return sprintf(str, "%s:%hu", host ? my_ntoa(host) : "", ntohs(port));
+    return sprintf(str, "%s:%hu", host ? my_ntoa(host) : "", port);
 }
 
 #define N_FLAG_TAGS 2
@@ -257,9 +263,9 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
     /* detect server type */
     ESERV_Type  type;
     const char* str = SERV_ReadType(info_str, &type);
-    unsigned short port;
-    unsigned int host;
-    int default_port;
+    int/*bool*/ default_port;
+    unsigned short port;                /* host (native) byte order */
+    unsigned int host;                  /* network byte order       */
     SSERV_Info *info;
     const char *s;
     int n;
@@ -387,7 +393,7 @@ static SSERV_Info* s_Ncbid_Read(const char** str)
                 c++;
             break;
         }
-    if ((info = SERV_CreateNcbidInfo(0, htons(80), args)) != 0)
+    if ((info = SERV_CreateNcbidInfo(0, 80, args)) != 0)
         *str += c - args;
     free(args);
     return info;
@@ -520,7 +526,7 @@ static SSERV_Info* s_HttpAny_Read(ESERV_Type type, const char** str)
         *args++ = '\0';
     /* Sanity check: no parameter delimiter allowed within path */
     if (!strchr(path, '&') &&
-        (info = SERV_CreateHttpInfo(type, 0, htons(80), path, args)) != 0)
+        (info = SERV_CreateHttpInfo(type, 0, 80, path, args)) != 0)
         *str += c - path;
     else
         info = 0;
