@@ -26,7 +26,7 @@
 	 That means you must always catch exceptions, even those you don't handle,
 	 and delete everything you are using locally.
 	 In most cases it's very convenient and safe to use the
-	 <a href="http://www.cygnus.com/misc/wp/nov97/lib-utilities.html#lib.auto.ptr">auto_ptr</a>
+	 <a href="http://www.cygnus.com/misc/wp/dec96pub/lib-utilities.html#lib.auto.ptr">auto_ptr</a>
 	 template to ensure the freeing of temporary allocated dynamic
 	 memory for the case of exception. </p>
 
@@ -51,7 +51,7 @@
 	 inherits from abstract base classes with only pure virtual functions. </p>
 	 <p>
 	 Some people prefer the
-	 <a href="http://www.pureatria.com/uml/umlwp.html">Unified Modelling Language</a>
+	 <a href="http://www.rational.com/uml/index.jtmpl">Unified Modelling Language</a>
 	 to describe the relationships between objects.</p>
 
 	 <br>
@@ -85,20 +85,8 @@
 
 	 <p>
 	 The STL is a library included in ANSI/ISO C++ for stream, string, and
-	 container(linked lists, etc.) manipulation. For SunPro 4.2 we've working
-	 on installing a version from the
-	 <a href="http://corp.metabyte.com/~fbp/stl/index.html">
-		STL adaptation effort</a>
-	 plus a string library from
-	 <a href="http://corp.metabyte.com/~fbp/stl/components.html">
-		Moderna Software</a>.
-	 This library doesn't include a stream library -- with SunPro we are limited
-	 to the older iostream library sun provides, which doesn't have classes 
-	 like sstream.
-	 <p>
-	 In the future, we expect to use the version of STL included in the next
-	 version of SunPro. Microsoft Visual C++ has had STL since version 5.0.
-	 We haven't detected any non-configuration incompatibilities yet. 
+	 container(linked lists, etc.) manipulation.
+
 	 <p>
 
 	 <a name="STL_tips"></a>
@@ -111,12 +99,9 @@
 	 If you want to access the end element, use "--<i>container.end()</i>".
 	 <p>
 	 Iterator misuse causes the same problems as pointer misuse.
-	 There are
-	 <a href="http://corp.metabyte.com/~fbp/stl/effort.html#extensions">
-		versions of the STL</a>
-	 that flag incorrect use of iterators, including STL adaptation effort.
+	 There are versions of the STL that flag incorrect use of iterators.
 	 <p>
-	 Iterators are guarantee to remain valid after insertion and deletion
+	 Iterators are guaranteed to remain valid after insertion and deletion
 	 from list containers, but not vector containers.
 	 Check to see if the container you are using preserves iterators. 
 	 <p>
@@ -163,7 +148,7 @@
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:lewisg@ncbi.nlm.nih.gov">Lewis Geer</a></address></td>
-		  <td align=right>($Revision$)</td></tr>
+		  <td align=right>($Date$)</td></tr>
 	 </table>
   
 </body></html>
