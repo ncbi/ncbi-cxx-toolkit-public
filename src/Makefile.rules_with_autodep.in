@@ -39,14 +39,14 @@ endif
 ### Dependencies (GNU make only)
 DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	 | sed -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
+	 | sed -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
 	       -e 's%\$$(wildcard $*@obj_ext@) *:%$*@obj_ext@ $@ :%g' \
 	       -e 's%$(incdir)%$$(incdir)%g' \
 	       -e 's%$(includedir)%$$(includedir)%g' \
 	       -e 's%$(includedir0)%$$(includedir0)%g' $(FIXPCH) > $@_ \
 	  &&  test -s $@_  &&  mv -f $@_ $@
 D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	 | sed -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
+	 | sed -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
 	       -e 's%\$$(wildcard ncbi_pch@obj_ext@) *:%$$(incdir)/ncbi_pch.hpp.gch/$(PCHMODE) $@ :%g' \
 	       -e 's%$(incdir)%$$(incdir)%g' \
 	       -e 's%$(includedir)%$$(includedir)%g' \
