@@ -54,9 +54,20 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
 {
     m_CustomBuildCommand = "@echo on\n";
     m_CustomBuildCommand += "set _THE_PATH=" + m_OutputDir + "$(ConfigurationName)\n";
-    m_CustomBuildCommand += "copy /Y $(InputPath) $(InputDir)$(InputName).bat\n";
-    m_CustomBuildCommand += "call $(InputDir)$(InputName).bat\n";
-    m_CustomBuildCommand += "del /Q $(InputDir)$(InputName).bat\n";
+    m_CustomBuildCommand += "cd $(InputDir)\n";
+    m_CustomBuildCommand += "copy /Y $(InputFileName) $(InputName).bat\n";
+    m_CustomBuildCommand += "call $(InputName).bat\n";
+    m_CustomBuildCommand += "del /Q $(InputName).bat\n";
+
+
+//
+//    @echo on
+//    set _THE_PATH=E:\Users\gorelenk\c++\compilers\msvc7_prj\bin\$(ConfigurationName)
+//    cd $(InputDir)
+//    copy /Y $(InputFileName) $(InputName).bat
+//    call $(InputDir)$(InputName).bat
+//    del /Q $(InputName).bat
+
 }
 
 
@@ -65,7 +76,7 @@ CMsvcConfigureProjectGenerator::~CMsvcConfigureProjectGenerator(void)
 }
 
 
-void CMsvcConfigureProjectGenerator::SaveProject(const string& base_name)
+void CMsvcConfigureProjectGenerator::SaveProject()
 {
     CVisualStudioProject xmlprj;
     
@@ -179,11 +190,15 @@ void CMsvcConfigureProjectGenerator::SaveProject(const string& base_name)
     }}
 
 
-    string project_path = CDirEntry::ConcatPath(m_ProjectDir, base_name);
+    SaveIfNewer(GetPath(), xmlprj);
+}
 
-    project_path += ".vcproj";
 
-    SaveIfNewer(project_path, xmlprj);
+string CMsvcConfigureProjectGenerator::GetPath() const
+{
+    string project_path = CDirEntry::ConcatPath(m_ProjectDir, m_Name);
+    project_path += MSVC_PROJECT_FILE_EXT;
+    return project_path;
 }
 
 
@@ -219,6 +234,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/12 17:43:46  gorelenk
+ * Changed command line for project re-configure.
+ *
  * Revision 1.1  2004/02/12 16:24:59  gorelenk
  * Initial revision.
  *
