@@ -184,10 +184,8 @@ status/config.cache status/config.status"
 # Copy files to the install build dir...
 install_builddir="$install_dir/build"
 
-files="Makefile.* install.sh relocate.sh"
-
 mkdir "$install_builddir"  ||  Usage "Failed to create dir:  $install_builddir"
-for f in $files ; do
+for f in Makefile.* install.sh relocate.sh ; do
    cp -p $script_dir/$f "$install_builddir/$f"  ||  \
      Usage "Failed to copy makefile to:  $install_builddir/$f"
 done
