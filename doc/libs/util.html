@@ -40,30 +40,30 @@ I/O classes</h2>
 
 <ul>
 <li>
-CIStreamBuffer</li>
+<a href="util_io.html#CIStreamBuffer">CIStreamBuffer</a></li>
 
 <li>
-COStreamBuffer</li>
+<a href="util_io.html#COStreamBuffer">COStreamBuffer</a></li>
 
 <li>
-CByteSource</li>
+<a href="util_io.html#CByteSource">CByteSource</a></li>
 
 <ul>
 <li>
-CStreamByteSource</li>
+<a href="util_io.html#CStreamByteSource">CStreamByteSource</a></li>
 
 <li>
-CFStreamByteSource</li>
+<a href="util_io.html#CFStreamByteSource">CFStreamByteSource</a></li>
 
 <li>
-CFileByteSource</li>
+<a href="util_io.html#CFileByteSource">CFileByteSource</a></li>
 
 <li>
-CMemoryByteSource</li>
+<a href="util_io.html#CMemoryByteSource">CMemoryByteSource</a></li>
 </ul>
 
 <li>
-CByteSourceReader</li>
+<a href="util_io.html#CByteSourceReader">CByteSourceReader</a></li>
 
 <ul>
 <li>
@@ -80,7 +80,7 @@ CMemoryByteSourceReader</li>
 </ul>
 
 <li>
-CSubSourceCollector</li>
+<a href="util_io.html#CSubSourceCollector">CSubSourceCollector</a></li>
 
 <ul>
 <li>
@@ -99,7 +99,7 @@ Other classes</h2>
 <a href="#CLightString">CLightString</a></li>
 
 <li>
-CChecksum</li>
+<a href="#CChecksum">CChecksum</a></li>
 </ul>
 Exceptions
 <ul>
@@ -113,12 +113,14 @@ CEofException</li>
 <h1>
 Classes descriptions</h1>
 
+<hr WIDTH="100%">
 <h2>
 <a NAME="CWeakMapKey"></a>template&lt;typename Object> class CWeakMapKey</h2>
 
 <pre>&nbsp;&nbsp;&nbsp; #include &lt;util/weakmap.hpp></pre>
 This class is used in conjunction with <a href="#CWeakMap">CWeakMap</a>.
-<br>&nbsp;
+<br>
+<hr WIDTH="100%">
 <h2>
 <a NAME="CWeakMap"></a>template&lt;typename Object> class CWeakMap</h2>
 
@@ -195,6 +197,7 @@ map&lt;>.
 <br>They differ only in return type.</blockquote>
 </blockquote>
 
+<hr WIDTH="100%">
 <h2>
 <a NAME="CRange"></a>template&lt;typename Coordinate> class CRange</h2>
 Class for storing information about some interval (from:to).
@@ -275,18 +278,38 @@ CRange&lt;position_type>&amp; SetTo();</pre>
 <blockquote>check if intervals intersect</blockquote>
 </blockquote>
 
+<hr WIDTH="100%">
 <h3>
 <a NAME="CRangeMap"></a>template&lt;typename Object, typename Coordinate
 = int> class CRangeMap</h3>
-
+Class for storing and retrieving data using interval as key.
+<br>Also allows efficient iteration over intervals intersecting with specified
+interval.
+<br>Time of iteration is proportional to amount of intervals produced by
+iterator.
+<br>In some cases, algorithm is not so efficient and may slowdown.
+<br>
+<hr WIDTH="100%">
 <h3>
 <a NAME="CRangeMultiMap"></a>template&lt;typename Object, typename Coordinate
 = int> class CRangeMultiMap</h3>
 Almost the same as <a href="#CRangeMap">CRangeMap</a> but allows several
 values have the same key interval.
+<br>
+<hr WIDTH="100%">
 <h3>
 <a NAME="CIntervalTree"></a>class CIntervalTree</h3>
-
+Class with the same functionality as <a href="#CRangeMap">CRangeMap</a>
+but using different algorithm.
+<br>It is faster and its speed is not affected by type of data but it uses
+more memory (triple as <a href="#CRangeMap">CRangeMap</a>) and, as a result,
+less efficient when amount of interval in set is quite big.
+<br>It uses about 140 bytes per interval for 64 bit program so you can
+calculate if CIntervalTree is acceptable. For example, it becomes less
+efficient than <a href="#CRangeMap">CRangeMap</a> when total memory becomes
+greater than processor cache.
+<br>
+<hr WIDTH="100%">
 <h3>
 <a NAME="CLightString"></a>class CLightString</h3>
 Class for storing information about char strings. Unlike standard C++ string
@@ -294,6 +317,12 @@ class it doesn't take ownership over string contents. So, char array containing
 string value should exist for whole life of holding CLightString object.
 This char array should be deleted (if needed) after CLightString object
 destruction by some other mechanism.
+<br>
+<hr WIDTH="100%">
+<h3>
+<a NAME="CChecksum"></a>class CChecksum</h3>
+Class for CRC32 checksum calculation.
+<br>It also have methods for adding and checking checkum line in text files.
 <p>
 <hr>
 <address>

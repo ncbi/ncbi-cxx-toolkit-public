@@ -1,0 +1,110 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=koi8-r">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title>Input/Output utility classes</title>
+</head>
+<body>
+
+<h1>
+Input/Output utility classes</h1>
+
+<h2>
+I/O classes</h2>
+
+<ul>
+<li>
+<a href="#CIStreamBuffer">CIStreamBuffer</a></li>
+
+<li>
+<a href="#COStreamBuffer">COStreamBuffer</a></li>
+
+<li>
+<a href="#CByteSource">CByteSource</a></li>
+
+<ul>
+<li>
+<a href="#CStreamByteSource">CStreamByteSource</a></li>
+
+<li>
+<a href="#CFStreamByteSource">CFStreamByteSource</a></li>
+
+<li>
+<a href="#CFileByteSource">CFileByteSource</a></li>
+
+<li>
+<a href="#CMemoryByteSource">CMemoryByteSource</a></li>
+</ul>
+
+<li>
+<a href="#CByteSourceReader">CByteSourceReader</a></li>
+
+<ul>
+<li>
+CStreamByteSourceReader</li>
+
+<li>
+CFileByteSourceReader</li>
+
+<li>
+CSubFileByteSource</li>
+
+<li>
+CMemoryByteSourceReader</li>
+</ul>
+
+<li>
+<a href="#CSubSourceCollector">CSubSourceCollector</a></li>
+
+<ul>
+<li>
+CMemorySourceCollector</li>
+
+<li>
+CFileSourceCollector</li>
+</ul>
+</ul>
+
+<h3>
+<a NAME="CIStreamBuffer"></a>class CIStreamBuffer</h3>
+Class for additional buffering of standard C++ input streams (sometimes
+standard C++&nbsp;iostreams performance quite bad).
+<br>Uses <a href="#CByteSource">CByteSource</a> as data source.
+<h3>
+<a NAME="COStreamBuffer"></a>class COStreamBuffer</h3>
+Class for additional buffering of standard C++ output streams (sometimes
+standard C++&nbsp;iostreams performance quite bad).
+<h3>
+<a NAME="CByteSource"></a>class CByteSource</h3>
+Abtract class for abstract source of byte data (file, stream, memory etc.).
+<h3>
+<a NAME="CStreamByteSource"></a>class CStreamByteSource</h3>
+<a href="#CByteSource">CByteSource</a> subclass for reading from C++&nbsp;istream.
+<h3>
+<a NAME="CFStreamByteSource"></a>class CFStreamByteSource</h3>
+<a href="#CByteSource">CByteSource</a> subclass for reading from C++&nbsp;ifstream.
+<h3>
+<a NAME="CFileByteSource"></a>class CFileByteSource</h3>
+<a href="#CByteSource">CByteSource</a> subclass for reading from named
+file.
+<h3>
+<a NAME="CMemoryByteSource"></a>class CMemoryByteSource</h3>
+<a href="#CByteSource">CByteSource</a> subclass for reading from memory
+buffer.
+<h3>
+<a NAME="CByteSourceReader"></a>class CByteSourceReader</h3>
+Abtract class for reading data from <a href="#CByteSource">CByteSource</a>.
+<h3>
+<a NAME="CSubSourceCollector"></a>class CSubSourceCollector</h3>
+Abtract class for obtaining piece of <a href="#CByteSource">CByteSource</a>
+as separate source.
+<br>
+<hr>
+<address>
+<a href="mailto:vasilche@ncbi.nlm.nih.gov">Eugene Vasilchenko</a></address>
+
+<br><!-- Created: Mon Jan 29 15:14:14 EST 2001 --><!-- hhmts start -->Last
+modified: Mon Jan 29 15:14:16 EST 2001<!-- hhmts end -->
+</body>
+</html>
