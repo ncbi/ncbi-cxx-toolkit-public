@@ -389,24 +389,24 @@ CBlastOptionsLocal::Validate() const
 
     if (BlastScoringOptionsValidate(m_Program, m_ScoringOpts, &blmsg)) {
         msg = blmsg ? blmsg->message : "Scoring options validation failed";
-        NCBI_THROW(CBlastException, eBadParameter, msg.c_str());
     }
 
     if (LookupTableOptionsValidate(m_Program, m_LutOpts, &blmsg)) {
         msg = blmsg ? blmsg->message : "Lookup table options validation failed";
-        NCBI_THROW(CBlastException, eBadParameter, msg.c_str());
     }
 
     if (BlastHitSavingOptionsValidate(m_Program, m_HitSaveOpts, &blmsg)) {
         msg = blmsg ? blmsg->message : "Hit saving options validation failed";
-        NCBI_THROW(CBlastException, eBadParameter, msg.c_str());
     }
 
     if (BlastExtensionOptionsValidate(m_Program, m_ExtnOpts, &blmsg)) {
         msg = blmsg ? blmsg->message : "Extension options validation failed";
-        NCBI_THROW(CBlastException, eBadParameter, msg.c_str());
     }
 
+    Blast_MessageFree(blmsg);
+
+    if (msg != NcbiEmptyString)
+        NCBI_THROW(CBlastException, eBadParameter, msg.c_str());
     return true;
 }
 
@@ -593,6 +593,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2004/03/24 22:12:46  dondosha
+* Fixed memory leaks
+*
 * Revision 1.40  2004/03/19 19:22:55  camacho
 * Move to doxygen group AlgoBlast, add missing CVS logs at EOF
 *

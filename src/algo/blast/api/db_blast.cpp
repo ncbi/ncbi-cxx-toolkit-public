@@ -139,6 +139,7 @@ int CDbBlast::SetupSearch()
         if (status != 0) {
             string msg = blast_message ? blast_message->message : 
                 "BLAST_MainSetUp failed";
+            Blast_MessageFree(blast_message);
             NCBI_THROW(CBlastException, eInternal, msg.c_str());
         } else if (blast_message) {
             // Non-fatal error message; just save it.
@@ -316,6 +317,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2004/03/24 22:12:46  dondosha
+ * Fixed memory leaks
+ *
  * Revision 1.20  2004/03/17 14:51:33  camacho
  * Fix compiler errors
  *

@@ -257,7 +257,7 @@ static char* MultiSeqGetSeqIdStr(void* multiseq_handle, void* args)
     if (seqid_wrap->choice != BLAST_SEQSRC_CPP_SEQID)
         return NULL;
     seqid = (CSeq_id*) seqid_wrap->ptr;
-
+    ListNodeFree(seqid_wrap);
     if (seqid)
         seqid_str = strdup(seqid->GetSeqIdString().c_str());
 
@@ -442,6 +442,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2004/03/24 22:12:46  dondosha
+ * Fixed memory leaks
+ *
  * Revision 1.11  2004/03/24 19:14:48  dondosha
  * Fixed memory leaks
  *
