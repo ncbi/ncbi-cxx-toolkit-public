@@ -1,5 +1,5 @@
-#ifndef NCBI_CORE__H
-#define NCBI_CORE__H
+#ifndef CONNECT___NCBI_CORE__H
+#define CONNECT___NCBI_CORE__H
 
 /*  $Id$
  * ===========================================================================
@@ -465,6 +465,9 @@ extern void REG_Set
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.19  2002/09/19 18:00:33  lavr
+ * Header file guard macro changed
+ *
  * Revision 6.18  2002/08/13 19:26:39  lavr
  * Add eIO_Interrupt to EIO_Status
  *
@@ -525,4 +528,4 @@ extern void REG_Set
  * ===========================================================================
  */
 
-#endif /* NCBI_CORE__H */
+#endif /* CONNECT___NCBI_CORE__H */

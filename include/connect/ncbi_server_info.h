@@ -1,5 +1,5 @@
-#ifndef NCBI_SERVER_INFO__H
-#define NCBI_SERVER_INFO__H
+#ifndef CONNECT___NCBI_SERVER_INFO__H
+#define CONNECT___NCBI_SERVER_INFO__H
 
 /*  $Id$
  * ===========================================================================
@@ -40,6 +40,7 @@
  */
 
 #include <connect/ncbi_connutil.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -276,7 +277,7 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *           by respective hosts in order for this entry to be INACTIVE.
  *           Note that value 0 disables the quorum and the entry becomes
  *           effective immediately. The quorum flag is to create a backup
- *           configuration to become active in the case of multicast/daemon
+ *           configuration to be activated in case of multicast/daemon
  *           malfunction. Only static server specs can have this tag.
  *
  *    Reachability base rate:
@@ -358,6 +359,12 @@ int/*bool*/ SERV_EqualInfo(const SSERV_Info* info1, const SSERV_Info* info2);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2002/09/19 18:04:48  lavr
+ * Header file guard macro changed
+ *
+ * Revision 6.34  2002/09/19 18:01:24  lavr
+ * Header file guard macro changed; log moved to the end
+ *
  * Revision 6.33  2002/09/17 15:39:07  lavr
  * SSERV_Info::quorum moved past the reserved area
  *
@@ -467,4 +474,4 @@ int/*bool*/ SERV_EqualInfo(const SSERV_Info* info1, const SSERV_Info* info2);
  * ==========================================================================
  */
 
-#endif /* NCBI_SERVER_INFO__H */
+#endif /* CONNECT___NCBI_SERVER_INFO__H */

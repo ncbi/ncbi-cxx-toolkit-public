@@ -1,5 +1,5 @@
-#ifndef CONNECT___CONNECTION__H
-#define CONNECT___CONNECTION__H
+#ifndef CONNECT___NCBI_CONNECTION__H
+#define CONNECT___NCBI_CONNECTION__H
 
 /*  $Id$
  * ===========================================================================
@@ -263,6 +263,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/09/19 18:00:04  lavr
+ * Header file guard macro changed
+ *
  * Revision 6.11  2002/09/06 15:40:32  lavr
  * More comments and notes to the API
  *
@@ -302,4 +305,4 @@ extern EIO_Status CONN_WaitAsync
  * ===========================================================================
  */
 
-#endif /* CONNECT___CONNECTION__H */
+#endif /* CONNECT___NCBI_CONNECTION__H */

@@ -1,5 +1,5 @@
-#ifndef CONNECT___CONNECTOR__H
-#define CONNECT___CONNECTOR__H
+#ifndef CONNECT___NCBI_CONNECTOR__H
+#define CONNECT___NCBI_CONNECTOR__H
 
 /*  $Id$
  * ===========================================================================
@@ -272,6 +272,9 @@ typedef EIO_Status (*FConnectorWaitAsync)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/09/19 18:00:11  lavr
+ * Header file guard macro changed
+ *
  * Revision 6.10  2002/09/06 15:40:54  lavr
  * More comments and notes to the API; log moved to end
  *
@@ -309,4 +312,4 @@ typedef EIO_Status (*FConnectorWaitAsync)
  * ==========================================================================
  */
 
-#endif /* CONNECT___CONNECTOR__H */
+#endif /* CONNECT___NCBI_CONNECTOR__H */

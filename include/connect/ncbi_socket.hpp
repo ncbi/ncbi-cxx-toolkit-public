@@ -1,5 +1,5 @@
-#ifndef NCBI_SOCKET__HPP
-#define NCBI_SOCKET__HPP
+#ifndef CONNECT___NCBI_SOCKET__HPP
+#define CONNECT___NCBI_SOCKET__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -432,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/09/19 18:05:25  lavr
+ * Header file guard macro changed
+ *
  * Revision 6.9  2002/09/17 20:45:28  lavr
  * A typo corrected
  *
@@ -464,4 +467,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif /* NCBI_SOCKET__HPP */
+#endif /* CONNECT___NCBI_SOCKET__HPP */
