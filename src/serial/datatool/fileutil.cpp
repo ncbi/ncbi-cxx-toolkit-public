@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/02/02 20:50:35  vasilche
+* Fixed defines on Mac
+*
 * Revision 1.17  2001/02/02 16:20:00  vasilche
 * Fixed file path processing on Mac
 *
@@ -182,23 +185,27 @@ DestinationFile::~DestinationFile(void)
     }
 }
 
+// default parameters
 #undef DIR_SEPARATOR_CHAR
 #undef DIR_SEPARATOR_CHAR2
 #undef DISK_SEPARATOR_CHAR
 #undef ALL_SEPARATOR_CHARS
+#define PARENT_DIR ".."
 
 #ifdef NCBI_OS_WINDOWS
 #  define DIR_SEPARATOR_CHAR '\\'
 #  define DIR_SEPARATOR_CHAR2 '/'
 #  define DISK_SEPARATOR_CHAR ':'
 #  define ALL_SEPARATOR_CHARS ":/\\"
-#  define PARENT_DIR ".."
-#elifdef NCBI_OS_MAC
+#endif
+
+#ifdef NCBI_OS_MAC
 #  define DIR_SEPARATOR_CHAR ':'
-#  define PARENT_DIR ".."
-#else
+#  undef PARENT_DIR
+#endif
+
+#ifndef DIR_SEPARATOR_CHAR
 #  define DIR_SEPARATOR_CHAR '/'
-#  define PARENT_DIR ".."
 #endif
 
 #ifndef ALL_SEPARATOR_CHARS
