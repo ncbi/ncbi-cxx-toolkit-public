@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/30 21:50:27  vakatov
+* Got rid of some redundant headers
+*
 * Revision 1.5  1998/12/28 17:56:26  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -51,8 +54,6 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
 #include <corelib/ncbicgi.hpp>
 #include <list>
 #include <map>
@@ -158,7 +159,6 @@ protected:
 // All inline function implementations and internal data
 // types, etc. are in this file
 #include <corelib/ncbicgir.inl>
-
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
