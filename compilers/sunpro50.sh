@@ -19,7 +19,7 @@ NCBI_C_PATH="$NCBI/ver0.0/ncbi"
 
 
 CC="$CPATH/cc"
-CFLAGS="-Xc ${MT_FLAGS}"
+CFLAGS="${MT_FLAGS}"
 CXX="$CPATH/CC"
 CXXFLAGS="+w +w2 -DNCBI_USE_NEW_HEADERS ${MT_FLAGS}"
 AR="$CXX -xar -o"
