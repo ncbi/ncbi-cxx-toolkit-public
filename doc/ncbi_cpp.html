@@ -1,0 +1,120 @@
+<html>
+  <head>
+    <title> NCBI SWG C++ Style Conventions </title>
+  </head>
+
+  <h1> NCBI SWG C++ Style Conventions </h1>
+  <ul>
+    <li> <a href=#ref_About>About</a>
+    <li> <a href=#ref_FileExt>C++ file extensions</a>
+    <li> <a href=#ref_Indent>Code indentation and Bracing</a>
+    <li> <a href=#ref_Naming>Naming conventions</a>
+<ul>
+<li> <a href=#ref_NamingCPP>Preprocessor Define/Macro</a>
+<li> <a href=#ref_NamingTypes>Type Names</a>
+<li> <a href=#ref_NamingConst>Constants</a>
+<li> <a href=#ref_NamingVar>Variable scope</a>
+</ul>
+    <li> <a href=#ref_Remarks>Remarks</a>
+  </ul>
+  <hr>
+
+<a name=ref_About>
+    <h2> About </h2>
+
+    The formal rules only concern to the code appearance and designed to
+    make the code itself more uniform and readable.
+
+<a name=ref_FileExt>
+    <h2> C++ file extensions </h2>
+    <i>*.cpp, *.hpp</i>
+
+<a name=ref_Indent>
+    <h2> Code indentation and Bracing </h2>
+    4-spaces indentation only<br>
+    no '\t' allowed for indentation<p>
+
+    In "if", "for", "while", "do", "switch", "case", etc. and
+    type definition statements:
+    <pre>
+if (...) {
+    .....;
+} else if (...) {
+    .....;
+} else {
+    .....;
+}
+
+if|for|do|while (...) {
+    .....;
+}
+
+switch (...) {
+    case ...: {
+        .....;
+        break;
+    }
+}
+
+struct|union <[S|U]TypeName> {
+    .....;  // simple
+};
+
+class|struct <[C|S]TypeName>
+{
+public:
+    .....;  // complicated(having methods, access restrictions, etc.)
+};
+    </pre>
+
+
+<a name=ref_Naming>
+    <h2> Naming conventions </h2>
+
+    <table border=1 cellspacing=0>
+
+      <tr><th>Synopsis</th><th>Example</th></tr>
+
+<a name=ref_NamingCPP>
+      <tr><th>Preprocessor Define/Macro</th></tr>
+      <tr><td><i>MACRO_NAME</i></td><td>#define MY_DEFINE 12345</td></tr>
+      <tr><td><i>macro_arg_name</i></td><td>#define MY_MACRO(x, y) ((x + 1) < (y))</td></tr>
+
+<a name=ref_NamingTypes>
+      <tr><th>Type Names</th></tr>
+      <tr><td><i><b>C</b>ClassTypeName</i></td><td>class CMyClass { ..... };</td></tr>
+      <tr><td><i><b>S</b>StructTypeName</i></td><td>struct SMyStruct { ..... };</td></tr>
+      <tr><td><i><b>U</b>UnionTypeName</i></td><td>union UMyUnion { ..... };</td></tr>
+      <tr><td><i><b>E</b>EnumTypeName</i></td><td>enum EMyEnum { ..... };</td></tr>
+      <tr><td><i><b>F</b>FunctionTypeName</i></td><td>void (*FMyFunc)() { ..... };</td></tr>
+
+<a name=ref_NamingConst>
+      <tr><th>Constants</th></tr>
+      <tr><td><i><b>k</b>ConstantName</i></td><td>const Int2 kMyConst;</td></tr>
+      <tr><td><i><b>k</b>EnumConstantName</i></td>
+	<td>enum EMyEnum { <br>
+	     &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum1 = 11, <br>
+	      &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum2 = 22, <br>
+		&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum3 = 33 <br>
+		  };</td></tr>
+
+<a name=ref_NamingVar>
+      <tr><th>Variable scope</th></tr>
+      <tr><td><i><b>m_</b>ClassMemberName</i></td><td>Int1 m_MyClassData;</td></tr>
+      <tr><td><i><b>sm_</b>ClassStaticMemberName</i></td><td>Int4 sm_MyClassStaticData;</td></tr>
+      <tr><td><i><b>s_</b>StaticVarName</i></td><td>FloatLo s_MyStaticVar;</td></tr>
+      <tr><td><i><b>g_</b>GlobalVarName</i></td><td>FloatHi g_MyGlobalVar;</td></tr>
+
+    </table>
+
+<a name=ref_Remarks>
+      <br>
+      P.S. I wondered if we should follow so-called
+      <A HREF="http://ivory.lm.com/~gregleg/hungarian.html">Hungarian notation</A>
+      in the variable names;  it looks a bit "overkilling" though.
+
+      <hr>
+
+	<A HREF="mailto:vakatov@ncbi.nlm.nih.gov"> Denis Vakatov </A>
+	&nbsp; ($Revision$)
+</html>
