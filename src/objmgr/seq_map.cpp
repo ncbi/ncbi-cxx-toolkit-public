@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/03/08 21:36:21  gouriano
+* *** empty log message ***
+*
 * Revision 1.8  2002/03/08 21:24:35  gouriano
 * fixed errors with unresolvable references
 *
@@ -151,11 +154,8 @@ CSeqMap::CSegmentInfo CSeqMap::x_Resolve(int pos, CScope& scope)
                     m_Data[i]->m_RefLen = seq->GetInst().GetLength();
                     shift += m_Data[i]->m_RefLen;
                 }
-                else {
-                    iStillUnresolved = i;
-                }
             }
-            else {
+            if ((iStillUnresolved < 0) && !(m_Data[i]->m_Resolved)) {
                 iStillUnresolved = i;
             }
         }
