@@ -190,8 +190,7 @@ string CHTMLHelper::StripTags(const string& str)
             break;
         }
         if (pos < s.size()  &&
-            (isalpha((int)s[pos + 1]) || s[pos + 1 == '/'] )  &&
-            isalpha((int)s[pos_end - 1])) {
+            (isalpha((int)s[pos + 1]) || s[pos + 1 == '/'] )) {
             s.erase(pos, pos_end - pos + 1);
         }
         pos++;
@@ -243,6 +242,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/10/20 18:58:10  ivanov
+ * CHTMLHelper::StripTags() -- remove tag also if last symbol before tag
+ * closing is not an alpha.
+ *
  * Revision 1.18  2004/09/28 14:05:41  ivanov
  * Fixed CHTMLHelper::StripTags() to remove single closing tags
  *
