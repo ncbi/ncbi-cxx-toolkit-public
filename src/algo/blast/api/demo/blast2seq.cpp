@@ -418,10 +418,7 @@ int CBlast2seqApplication::Run(void)
         ENa_strand query_strand = eNa_strand_unknown;
         ENa_strand subject_strand = eNa_strand_unknown;
 
-        if (program == eBlastx) {
-            query_strand = eNa_strand_plus;
-        }
-        else if (program == eBlastn) { 
+        if (program == eBlastn || program == eBlastx) { 
             int cmdline_strand = args["strand"].AsInteger();
 
             if (cmdline_strand == 1)
@@ -495,6 +492,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/04/30 15:56:31  papadopo
+ * Plus/minus/both strands are acceptable for any blast program
+ * that takes a nucleotide query
+ *
  * Revision 1.42  2004/04/23 13:51:56  papadopo
  * handle strands for blastx correctly
  *

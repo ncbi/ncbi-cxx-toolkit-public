@@ -689,11 +689,9 @@ int CBlastApplication::Run(void)
     Int4 first_oid = 0;
     Int4 last_oid = 0;
 
-    if (program == eBlastx ||
+    if (program == eBlastn ||
+        program == eBlastx ||
         program == eRPSTblastn) {
-        strand = eNa_strand_plus;
-    }
-    else if (program == eBlastn) {
         if (strand_number == 1)
             strand = eNa_strand_plus;
         else if (strand_number == 2)
