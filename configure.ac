@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.142 2002/10/23 21:12:48 ucko Exp $
+#  $Id: configure.ac,v 1.143 2002/10/28 19:46:58 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2414,7 +2414,7 @@ CPPFLAGS="$orig_CPPFLAGS"
 
 ## `local_lbsm' support
 
-local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_service_lbsmd"
+local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd"
 
 # The IPC stuff doesn't build on Cygwin or Darwin.
 case "$host_os" in
@@ -2433,7 +2433,7 @@ done
 
 if test "$with_local_lbsm" = "no" ; then
    WithoutProjects="$WithoutProjects local_lbsm"
-   local_lbsm="ncbi_service_lbsmd_stub"
+   local_lbsm="ncbi_lbsmd_stub"
 else
    WithProjects="$WithProjects local_lbsm"
 fi
