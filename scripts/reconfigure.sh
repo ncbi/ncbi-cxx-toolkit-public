@@ -49,7 +49,8 @@ USAGE:  ./$script_name {recheck | reconf | update}
  "recheck"
     Exact equivalent of running the 'configure' script all over again,
     using just the same cmd.-line arguments as in the original 'configure'
-    run, and without using cached check results from that run.
+    run, and without using cached check results from that run (but inherit
+    the C and C++ compilers' path from the original 'configure' run).
 
  "reconf"
     Same as target "recheck" above, but do use cached check results
@@ -101,6 +102,13 @@ case "$method" in
     ;;
 
   recheck )
+    eval `sed '
+        s|.*s%@CC@%\([^%][^%]*\)%.*|CC=\1;|p
+        s|.*s%@CXX@%\([^%][^%]*\)%.*|CXX=\1|p
+        d
+    ' ${status_dir}/config.status`
+    export CC CXX
+
     cd ${top_srcdir}  && \
     rm -f config.status config.cache config.log  && \
     cp -p ${status_dir}/config.status .  && \
