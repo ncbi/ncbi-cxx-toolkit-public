@@ -196,12 +196,18 @@
  *  @ingroup CONNECT
  */
 
-/** @defgroup NetCacheClient Client API to NCBI NetCache
+
+/** @defgroup NetServices General Purpose Network Infrastructure Services
  *  @ingroup CONNECT
  */
 
+
+/** @defgroup NetCacheClient Client API to NCBI NetCache
+ *  @ingroup NetServices
+ */
+
 /** @defgroup NetScheduleClient Client API to NCBI NetSchedule
- *  @ingroup CONNECT
+ *  @ingroup NetServices
  */
 
 
