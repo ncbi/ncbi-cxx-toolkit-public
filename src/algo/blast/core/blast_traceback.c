@@ -766,7 +766,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
                /* Low level greedy algorithm ignores ambiguities, so the score
                   needs to be reevaluated. */
                Blast_HSPReevaluateWithAmbiguities(hsp, query, adjusted_subject,
-                  hit_options, score_params, query_info, sbp);
+                  hit_params, score_params, query_info, sbp);
             }
             
             keep = HSPSetScores(query_info, query, adjusted_subject, hsp, 

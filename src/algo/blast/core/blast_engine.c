@@ -742,7 +742,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
              (prelim_traceback || !gapped_calculation)) {
              status = 
                  Blast_HSPListReevaluateWithAmbiguities(hsp_list, query, 
-                    seq_arg.seq, hit_options, query_info, sbp, score_params, 
+                    seq_arg.seq, hit_params, query_info, sbp, score_params, 
                     seq_src);
                
              /* Check for HSP inclusion in a diagonal strip around another

@@ -194,7 +194,7 @@ void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp);
  * @param hsp The HSP structure [in] [out]
  * @param query_start Pointer to the start of the query sequence [in]
  * @param subject_start Pointer to the start of the subject sequence [in]
- * @param hit_options Hit saving options with e-value cut-off [in]
+ * @param hit_params Hit saving parameters containing score cut-off [in]
  * @param score_params Scoring parameters [in]
  * @param query_info Query information structure, containing effective search
  *                   space(s) [in]
@@ -204,7 +204,7 @@ void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp);
 NCBI_XBLAST_EXPORT
 Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp, 
            Uint1* query_start, Uint1* subject_start, 
-           const BlastHitSavingOptions* hit_options, 
+           const BlastHitSavingParameters* hit_params, 
            const BlastScoringParameters* score_params, 
            BlastQueryInfo* query_info, BlastScoreBlk* sbp);
 
@@ -356,7 +356,7 @@ Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list);
  * @param hsp_list The list of HSPs for one subject sequence [in] [out]
  * @param query_blk The query sequence [in]
  * @param subject_blk The subject sequence [in] [out]
- * @param hit_options The options related to saving hits [in]
+ * @param hit_params Hit saving parameters, including cutoff score [in]
  * @param query_info Auxiliary query information [in]
  * @param sbp The statistical information [in]
  * @param score_params Parameters related to scoring [in]
@@ -367,7 +367,7 @@ NCBI_XBLAST_EXPORT
 Int2 
 Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
-   const BlastHitSavingOptions* hit_options, BlastQueryInfo* query_info, 
+   const BlastHitSavingParameters* hit_params, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, const BlastScoringParameters* score_params, 
    const BlastSeqSrc* seq_src);
 
