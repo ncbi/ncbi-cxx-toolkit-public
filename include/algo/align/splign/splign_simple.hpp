@@ -52,9 +52,11 @@ public:
                   const objects::CSeq_loc &genomic,
                   objects::CScope&);
 
-    //Setters for customization; normally shouldn't need to adjust these
-    CSplign&        SetSplignObject(void) { return m_Splign; }
-    blast::CBl2Seq& SetBlastObject(void)  { return m_Blast; }
+    // Setters/Getters
+    CSplign&               SetSplignObject(void) { return m_Splign; }
+    const CSplign&         GetSplignObject(void) const { return m_Splign; }
+    blast::CBl2Seq&        SetBlastObject(void)  { return m_Blast; }
+    const blast::CBl2Seq&  GetBlastObject(void) const { return m_Blast; }
 
     const CSplign::TResults& Run(void);
 
@@ -74,6 +76,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/06/09 14:24:40  kapustin
+ * Add object getters
+ *
  * Revision 1.3  2004/05/04 20:49:03  johnson
  * return correct seq-ids in seq-align
  *
