@@ -121,7 +121,7 @@ fi
 # guess the make command, if it is not specified in the $MAKE env. variable
 if test -z "$MAKE" ; then
     case "`uname`" in
-      SunOS) MAKE=make;;
+      SunOS | Darwin) MAKE=make;;
       *) MAKE=gmake;;
     esac
 fi
