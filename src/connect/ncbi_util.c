@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/01/23 23:20:14  lavr
+ * Comments added to some "boolean" 1s and 0s
+ *
  * Revision 6.7  2001/01/12 23:50:38  lavr
  * "a+" -> "a" as a mode in fopen() for a logfile
  *
@@ -302,10 +305,10 @@ extern void LOG_ToFILE
         if ( auto_close ) {
             LOG_Reset(lg, fp, s_LOG_FileHandler, s_LOG_FileCleanup, 1/*true*/);
         } else {
-            LOG_Reset(lg, fp, s_LOG_FileHandler, 0, 0/*true*/);
+            LOG_Reset(lg, fp, s_LOG_FileHandler, 0, 1/*true*/);
         }
     } else {
-        LOG_Reset(lg, 0, 0, 0, 0/*true*/);
+        LOG_Reset(lg, 0, 0, 0, 1/*true - cleanup*/);
     }
 }
 
