@@ -716,7 +716,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-len3]";
         
         if ((s == "-nt3") || (s == "-nt3a")) {
-            bool approx = false;
+            approx = false;
             
             if (s == "-nt3a") {
                 approx = true;
@@ -1051,7 +1051,7 @@ int test1(int argc, char ** argv)
                         report_at = Uint4(i * 1.5);
                     
                         if (report_at > num_display) {
-                            report_at = num_display - 1;
+                            report_at = Uint4(num_display - 1);
                         }
                         
                         sampling += thislength;
