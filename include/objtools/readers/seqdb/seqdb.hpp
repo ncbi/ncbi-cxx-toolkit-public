@@ -351,6 +351,15 @@ public:
     /// @return
     ///   List of database names.
     const string & GetDBNameList(void) const;
+
+    /// Set upper limit on memory and mapping slice size.
+    /// 
+    /// This sets an approximate upper limit on memory used by CSeqDB.
+    /// This will not be exactly enforced, and the library will prefer
+    /// to exceed the bound if necessary rather than return an error.
+    /// Setting this to a very low value will probably cause bad
+    /// performance.
+    void SetMemoryBound(Uint8 membound, Uint8 slice_size);
     
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
