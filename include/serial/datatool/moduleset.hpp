@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/11/08 17:02:39  vasilche
+* Added generation of modular DTD files.
+*
 * Revision 1.4  2000/08/25 15:58:47  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -99,6 +102,7 @@ public:
 
     void PrintASN(CNcbiOstream& out) const;
     void PrintDTD(CNcbiOstream& out) const;
+    void PrintDTDModular(void) const;
 
     const string& GetSourceFileName(void) const;
     string GetFileNamePrefix(void) const;
@@ -146,6 +150,7 @@ public:
 
     void PrintASN(CNcbiOstream& out) const;
     void PrintDTD(CNcbiOstream& out) const;
+    void PrintDTDModular(void) const;
 
     CDataType* ExternalResolve(const string& moduleName,
                                const string& typeName,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/11/08 17:02:53  vasilche
+* Added generation of modular DTD files.
+*
 * Revision 1.16  2000/11/07 17:26:26  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 * Added possibility to set include directory for whole module
@@ -140,7 +143,7 @@ void CUniSequenceDataType::PrintDTD(CNcbiOstream& out) const
         out << ref->UserTypeXmlTagName();
     else
         out << data->XmlTagName();
-    out << "* ) >\n";
+    out << "* )>\n";
     if ( !ref ) {
         // array of internal type, we should generate tag for element type
         if ( GetParentType() == 0 )

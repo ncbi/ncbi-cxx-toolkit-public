@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/11/08 17:02:50  vasilche
+* Added generation of modular DTD files.
+*
 * Revision 1.26  2000/11/07 17:26:24  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 * Added possibility to set include directory for whole module
@@ -211,14 +214,16 @@ void CDataMemberContainerType::PrintDTD(CNcbiOstream& out) const
     const char* separator = XmlMemberSeparator();
     iterate ( TMembers, i, m_Members ) {
         if ( i != m_Members.begin() )
-            out << ' '<<separator<<'\n';
+            out <<separator<<'\n';
         out << "               "<<tag<<'_'<<(*i)->GetName();
         if ( (*i)->Optional() )
             out << '?';
     }
     out << " )>\n";
-    if ( GetParentType() == 0 )
-        out << '\n';
+    if ( GetParentType() == 0 ) {
+        out <<
+            "\n";
+    }
     iterate ( TMembers, j, m_Members ) {
         (*j)->GetType()->PrintDTD(out);
     }

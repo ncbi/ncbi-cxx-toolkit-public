@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/11/08 17:02:39  vasilche
+* Added generation of modular DTD files.
+*
 * Revision 1.4  2000/08/25 15:58:46  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -117,6 +120,9 @@ public:
 
     virtual void PrintASN(CNcbiOstream& out) const;
     virtual void PrintDTD(CNcbiOstream& out) const;
+    void PrintDTDModular(CNcbiOstream& out) const;
+    string GetDTDPublicName(void) const;
+    string GetDTDFileNameBase(void) const;
 
     bool Check();
     bool CheckNames();

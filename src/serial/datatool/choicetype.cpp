@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/11/08 17:02:50  vasilche
+* Added generation of modular DTD files.
+*
 * Revision 1.19  2000/11/07 17:26:25  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 * Added possibility to set include directory for whole module
@@ -181,7 +184,7 @@ void CChoiceDataType::FixTypeTree(void) const
 
 const char* CChoiceDataType::XmlMemberSeparator(void) const
 {
-    return "|";
+    return " |";
 }
 
 bool CChoiceDataType::CheckValue(const CDataValue& value) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/11/08 17:02:51  vasilche
+* Added generation of modular DTD files.
+*
 * Revision 1.42  2000/11/01 20:38:59  vasilche
 * OPTIONAL and DEFAULT are not permitted in CHOICE.
 * Fixed code generation for DEFAULT.
@@ -169,6 +172,7 @@ void Help(void)
         "  -i           ignore unresolved symbols (optional)\n"
         "  -f <file>    write ASN.1 module file (optional)\n"
         "  -fx <file>   write XML DTD file (optional)\n"
+        "  -fx m        write modular XML DTD file (optional)\n"
         "  -v <file>    read value in ASN.1 text format (optional)\n"
         "  -p <file>    write value in ASN.1 text format (optional)\n"
         "  -vx <file>   read value in XML format (optional)\n"
@@ -546,14 +550,19 @@ void LoadDefinitions(CFileSet& fileSet,
 
 void StoreDefinition(const CFileSet& fileSet, const FileInfo& file)
 {
-    DestinationFile out(file);
     switch ( file.type ) {
     case eSerial_AsnText:
     case eSerial_AsnBinary:
-        fileSet.PrintASN(out);
+        fileSet.PrintASN(DestinationFile(file));
         break;
     case eSerial_Xml:
-        fileSet.PrintDTD(out);
+        if ( file.name == "m" ) {
+            // modular
+            fileSet.PrintDTDModular();
+        }
+        else {
+            fileSet.PrintDTD(DestinationFile(file));
+        }
         break;
     default:
         break;

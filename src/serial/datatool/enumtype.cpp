@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/11/08 17:02:51  vasilche
+* Added generation of modular DTD files.
+*
 * Revision 1.14  2000/11/07 17:26:25  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 * Added possibility to set include directory for whole module
@@ -133,11 +136,10 @@ void CEnumDataType::PrintDTD(CNcbiOstream& out) const
     out <<
         "<!ELEMENT "<<tag<<" ";
     if ( IsInteger() )
-        out << "( %INTEGER; )";
+        out << "( %INTEGER; )>\n";
     else
-        out << "%ENUM;";
+        out << "%ENUM; >\n";
     out <<
-        " >\n"
         "<!ATTLIST "<<tag<<" value (\n";
     iterate ( TValues, i, m_Values ) {
         if ( i != m_Values.begin() )

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/11/08 17:02:51  vasilche
+* Added generation of modular DTD files.
+*
 * Revision 1.24  2000/09/26 17:38:26  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -153,9 +156,8 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
 
     if ( !m_Exports.empty() ) {
         out << "EXPORTS ";
-        for ( TExports::const_iterator begin = m_Exports.begin(),
-                  end = m_Exports.end(), i = begin; i != end; ++i ) {
-            if ( i != begin )
+        iterate ( TExports, i, m_Exports ) {
+            if ( i != m_Exports.begin() )
                 out << ", ";
             out << *i;
         }
@@ -166,17 +168,15 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
 
     if ( !m_Imports.empty() ) {
         out << "IMPORTS ";
-        for ( TImports::const_iterator mbegin = m_Imports.begin(),
-                  mend = m_Imports.end(), m = mbegin; m != mend; ++m ) {
-            if ( m != mbegin )
+        iterate ( TImports, m, m_Imports ) {
+            if ( m != m_Imports.begin() )
                 out <<
                     "\n"
                     "        ";
 
             const Import& imp = **m;
-            for ( list<string>::const_iterator begin = imp.types.begin(),
-                  end = imp.types.end(), i = begin; i != end; ++i ) {
-                if ( i != begin )
+            iterate ( list<string>, i, imp.types ) {
+                if ( i != imp.types.begin() )
                     out << ", ";
                 out << *i;
             }
@@ -187,8 +187,7 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
             "\n";
     }
 
-    for ( TDefinitions::const_iterator i = m_Definitions.begin();
-          i != m_Definitions.end(); ++i ) {
+    iterate ( TDefinitions, i, m_Definitions ) {
         out << i->first << " ::= ";
         i->second->PrintASN(out, 0);
         out <<
@@ -212,34 +211,125 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
         out <<
             "<!-- Elements used by other modules:\n";
 
-        for ( TExports::const_iterator begin = m_Exports.begin(),
-                  end = m_Exports.end(), i = begin; i != end; ++i ) {
-            if ( i != begin )
+        iterate ( TExports, i, m_Exports ) {
+            if ( i != m_Exports.begin() )
                 out << ",\n";
             out << "          " << *i;
         }
 
+        out << " -->\n"
+            "\n"
+            "\n";
+    }
+    if ( !m_Imports.empty() ) {
         out <<
-            " -->\n"
+            "<!-- Elements referenced from other modules:\n";
+        iterate ( TImports, i, m_Imports ) {
+            if ( i != m_Imports.begin() )
+                out << ",\n";
+            const Import* imp = i->get();
+            iterate ( list<string>, t, imp->types ) {
+                if ( t != imp->types.begin() )
+                    out << ",\n";
+                out <<
+                    "          " << *t;
+            }
+            out << " FROM "<< imp->moduleName;
+        }
+        out << " -->\n"
+            "\n"
             "\n";
     }
 
-    for ( TDefinitions::const_iterator i = m_Definitions.begin();
-          i != m_Definitions.end(); ++i ) {
+    out <<
+        "<!-- ============================================ -->\n";
+
+    iterate ( TDefinitions, i, m_Definitions ) {
+        out <<
+            "<!-- Definition of "<<i->first<<" -->\n"
+            "\n";
         i->second->PrintDTD(out);
-        out << "\n";
+        out <<
+            "\n"
+            "\n"
+            "\n";
     }
 
     out <<
         "\n"
+        "\n"
+        "\n"
         "\n";
+}
+
+static
+string DTDFileNameBase(const string& name)
+{
+    string res;
+    iterate ( string, i, name ) {
+        char c = *i;
+        if ( c == '-' )
+            res += '_';
+        else
+            res += c;
+    }
+    return res;
+}
+
+static
+string DTDPublicModuleName(const string& name)
+{
+    string res;
+    iterate ( string, i, name ) {
+        char c = *i;
+        if ( !isalnum(c) )
+            res += ' ';
+        else
+            res += c;
+    }
+    return res;
+}
+
+string CDataTypeModule::GetDTDPublicName(void) const
+{
+    return DTDPublicModuleName(GetName());
+}
+
+string CDataTypeModule::GetDTDFileNameBase(void) const
+{
+    return DTDFileNameBase(GetName());
+}
+
+static
+void PrintModularDTDModuleReference(CNcbiOstream& out, const string name)
+{
+    string fileName = DTDFileNameBase(name);
+    string pubName = DTDPublicModuleName(name);
+    out <<
+        "\n"
+        "<!ENTITY % "<<fileName<<"_module PUBLIC \"-//NCBI//"<<pubName<<" Module//EN\" \""<<fileName<<".mod\">\n"
+        "%"<<fileName<<"_module;\n";
+}
+
+void CDataTypeModule::PrintDTDModular(CNcbiOstream& out) const
+{
+    out <<
+        "<!-- "<<DTDFileNameBase(GetName())<<".dtd\n"
+        "  This file is built from a series of basic modules.\n"
+        "  The actual ELEMENT and ENTITY declarations are in the modules.\n"
+        "  This file is used to put them together.\n"
+        "-->\n";
+    PrintModularDTDModuleReference(out, "NCBI-Entity");
+    PrintModularDTDModuleReference(out, GetName());
+    iterate ( TImports, i, m_Imports ) {
+        PrintModularDTDModuleReference(out, (*i)->moduleName);
+    }
 }
 
 bool CDataTypeModule::Check()
 {
     bool ok = true;
-    for ( TDefinitions::const_iterator d = m_Definitions.begin();
-          d != m_Definitions.end(); ++d ) {
+    iterate ( TDefinitions, d, m_Definitions ) {
         if ( !d->second->Check() )
             ok = false;
     }
@@ -249,8 +339,7 @@ bool CDataTypeModule::Check()
 bool CDataTypeModule::CheckNames()
 {
     bool ok = true;
-    for ( TExports::const_iterator e = m_Exports.begin();
-          e != m_Exports.end(); ++e ) {
+    iterate ( TExports, e, m_Exports ) {
         const string& name = *e;
         TTypesByName::iterator it = m_LocalTypes.find(name);
         if ( it == m_LocalTypes.end() ) {
@@ -261,12 +350,10 @@ bool CDataTypeModule::CheckNames()
             m_ExportedTypes[name] = it->second;
         }
     }
-    for ( TImports::const_iterator i = m_Imports.begin();
-          i != m_Imports.end(); ++i ) {
+    iterate ( TImports, i, m_Imports ) {
         const Import& imp = **i;
         const string& module = imp.moduleName;
-        for ( list<string>::const_iterator t = imp.types.begin();
-              t != imp.types.end(); ++t ) {
+        iterate ( list<string>, t, imp.types ) {
             const string& name = *t;
             if ( m_LocalTypes.find(name) != m_LocalTypes.end() ) {
                 ERR_POST(Warning <<

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/11/08 17:02:52  vasilche
+* Added generation of modular DTD files.
+*
 * Revision 1.16  2000/11/07 17:26:26  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 * Added possibility to set include directory for whole module
@@ -193,7 +196,7 @@ void CBoolDataType::PrintDTD(CNcbiOstream& out) const
     string tag = XmlTagName();
     out <<
         "<!ELEMENT "<<tag<<" %BOOLEAN; >\n"
-        "<!ATTLIST "<<tag<<" value ( true | false )  #REQUIRED >\n"
+        "<!ATTLIST "<<tag<<" value ( true | false ) #REQUIRED >\n"
         "\n";
 }
 

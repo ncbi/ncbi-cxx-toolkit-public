@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/11/08 17:02:51  vasilche
+* Added generation of modular DTD files.
+*
 * Revision 1.25  2000/09/26 17:38:26  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -117,8 +120,7 @@ void CFileModules::AddModule(const AutoPtr<CDataTypeModule>& module)
 bool CFileModules::Check(void) const
 {
     bool ok = true;
-    for ( TModules::const_iterator mi = m_Modules.begin();
-          mi != m_Modules.end(); ++mi ) {
+    iterate ( TModules, mi, m_Modules ) {
         if ( !(*mi)->Check() )
             ok = false;
     }
@@ -128,8 +130,7 @@ bool CFileModules::Check(void) const
 bool CFileModules::CheckNames(void) const
 {
     bool ok = true;
-    for ( TModules::const_iterator mi = m_Modules.begin();
-          mi != m_Modules.end(); ++mi ) {
+    iterate ( TModules, mi, m_Modules ) {
         if ( !(*mi)->CheckNames() )
             ok = false;
     }
@@ -138,17 +139,36 @@ bool CFileModules::CheckNames(void) const
 
 void CFileModules::PrintASN(CNcbiOstream& out) const
 {
-    for ( TModules::const_iterator mi = m_Modules.begin();
-          mi != m_Modules.end(); ++mi ) {
+    iterate ( TModules, mi, m_Modules ) {
         (*mi)->PrintASN(out);
     }
 }
 
 void CFileModules::PrintDTD(CNcbiOstream& out) const
 {
-    for ( TModules::const_iterator mi = m_Modules.begin();
-          mi != m_Modules.end(); ++mi ) {
+    iterate ( TModules, mi, m_Modules ) {
         (*mi)->PrintDTD(out);
+    }
+}
+
+void CFileModules::PrintDTDModular(void) const
+{
+    iterate ( TModules, mi, m_Modules ) {
+        string fileNameBase = (*mi)->GetDTDFileNameBase();
+        {
+            string fileName = fileNameBase + ".mod";
+            CNcbiOfstream out(fileName.c_str());
+            (*mi)->PrintDTD(out);
+            if ( !out )
+                ERR_POST(Fatal << "Cannot write to file "<<fileName);
+        }
+        {
+            string fileName = fileNameBase + ".dtd";
+            CNcbiOfstream out(fileName.c_str());
+            (*mi)->PrintDTDModular(out);
+            if ( !out )
+                ERR_POST(Fatal << "Cannot write to file "<<fileName);
+        }
     }
 }
 
@@ -200,8 +220,7 @@ CDataType* CFileModules::ResolveInAnyModule(const string& typeName,
                                             bool allowInternal) const
 {
     CResolvedTypeSet types(typeName);
-    for ( TModules::const_iterator i = m_Modules.begin();
-          i != m_Modules.end(); ++i ) {
+    iterate ( TModules, i, m_Modules ) {
         try {
             types.Add((*i)->ExternalResolve(typeName, allowInternal));
         }
@@ -222,14 +241,14 @@ void CFileSet::AddFile(const AutoPtr<CFileModules>& moduleSet)
 
 void CFileSet::PrintASN(CNcbiOstream& out) const
 {
-    for ( TModuleSets::const_iterator i = m_ModuleSets.begin();
-          i != m_ModuleSets.end(); ++i ) {
+    iterate ( TModuleSets, i, m_ModuleSets ) {
         (*i)->PrintASN(out);
     }
 }
 
 void CFileSet::PrintDTD(CNcbiOstream& out) const
 {
+#if 0
     out <<
         "<!-- ======================== -->\n"
         "<!-- NCBI DTD                 -->\n"
@@ -245,10 +264,16 @@ void CFileSet::PrintDTD(CNcbiOstream& out) const
         "<!ENTITY % OCTETS '#PCDATA'>\n"
         "<!-- ============================================ -->\n"
         "\n";
-
-    for ( TModuleSets::const_iterator i = m_ModuleSets.begin();
-          i != m_ModuleSets.end(); ++i ) {
+#endif
+    iterate ( TModuleSets, i, m_ModuleSets ) {
         (*i)->PrintDTD(out);
+    }
+}
+
+void CFileSet::PrintDTDModular(void) const
+{
+    iterate ( TModuleSets, i, m_ModuleSets ) {
+        (*i)->PrintDTDModular();
     }
 }
 
@@ -256,8 +281,7 @@ CDataType* CFileSet::ExternalResolve(const string& module, const string& name,
                                      bool allowInternal) const
 {
     CResolvedTypeSet types(module, name);
-    for ( TModuleSets::const_iterator i = m_ModuleSets.begin();
-          i != m_ModuleSets.end(); ++i ) {
+    iterate ( TModuleSets, i, m_ModuleSets ) {
         try {
             types.Add((*i)->ExternalResolve(module, name, allowInternal));
         }
@@ -274,8 +298,7 @@ CDataType* CFileSet::ResolveInAnyModule(const string& name,
                                         bool allowInternal) const
 {
     CResolvedTypeSet types(name);
-    for ( TModuleSets::const_iterator i = m_ModuleSets.begin();
-          i != m_ModuleSets.end(); ++i ) {
+    iterate ( TModuleSets, i, m_ModuleSets ) {
         try {
             types.Add((*i)->ResolveInAnyModule(name, allowInternal));
         }
@@ -291,8 +314,7 @@ CDataType* CFileSet::ResolveInAnyModule(const string& name,
 bool CFileSet::Check(void) const
 {
     bool ok = true;
-    for ( TModuleSets::const_iterator mi = m_ModuleSets.begin();
-          mi != m_ModuleSets.end(); ++mi ) {
+    iterate ( TModuleSets, mi, m_ModuleSets ) {
         if ( !(*mi)->Check() )
             ok = false;
     }
@@ -302,8 +324,7 @@ bool CFileSet::Check(void) const
 bool CFileSet::CheckNames(void) const
 {
     bool ok = true;
-    for ( TModuleSets::const_iterator mi = m_ModuleSets.begin();
-          mi != m_ModuleSets.end(); ++mi ) {
+    iterate ( TModuleSets, mi, m_ModuleSets ) {
         if ( !(*mi)->CheckNames() )
             ok = false;
     }
