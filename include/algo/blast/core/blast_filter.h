@@ -81,17 +81,19 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
 
 /** This function takes the list of mask locations (i.e., regions that 
  * should not be searched or not added to lookup table) and makes up a set 
- * of SSeqRange*'s that should be searched (that is, takes the 
- * complement). If the entire sequence is filtered, then a SSeqRange is 
- * created and both of its elements (left and right) are set to -1 to indicate 
- * this. 
- * If any of the mask_loc's is NULL, a SSeqRange for full span of the 
+ * of SSeqRange*'s in the concatenated sequence built from a set of queries,
+ * that should be searched (that is, takes the complement). 
+ * If all sequences in the query set are completely filtered, then an
+ * SSeqRange is created and both of its elements (left and right) are set to 
+ * -1 to indicate this. 
+ * If any of the mask_loc's is NULL, an SSeqRange for the full span of the 
  * respective query sequence is created.
  * @param program_number Type of BLAST program [in]
  * @param query_info The query information structure [in]
  * @param mask_loc All mask locations [in]
- * @param complement_mask Linked list of SSeqRange*s with offsets. [out]
-*/
+ * @param complement_mask Linked list of SSeqRange*s in the concatenated 
+ *                        sequence to be indexed in the lookup table . [out]
+ */
 NCBI_XBLAST_EXPORT
 Int2 
 BLAST_ComplementMaskLocations(EBlastProgramType program_number, 
