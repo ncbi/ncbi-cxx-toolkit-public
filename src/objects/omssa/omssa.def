@@ -1,3 +1,6 @@
+[-]
+_export = NCBI_OMSSA_EXPORT
+
 [MSSpectrum]
 mz._type=vector
 abundance._type=vector
