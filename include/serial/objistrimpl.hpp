@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/11/20 17:24:36  vasilche
+* Added prototypes of internal functions.
+*
 * Revision 1.1  2000/09/18 20:00:05  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -47,6 +50,10 @@
 #include <vector>
 
 BEGIN_NCBI_SCOPE
+
+CObjectIStream* CreateObjectIStreamAsn(void);
+CObjectIStream* CreateObjectIStreamAsnBinary(void);
+CObjectIStream* CreateObjectIStreamXml(void);
 
 #include <serial/objistrimpl.inl>
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2000/11/20 17:24:36  vasilche
+* Added prototypes of internal functions.
+*
 * Revision 1.52  2000/10/20 19:29:15  vasilche
 * Adapted for MSVC which doesn't like explicit operator templates.
 *
@@ -646,6 +649,11 @@ public:
     CHookDataKey<CWriteClassMemberHook> m_ClassMemberHookKey;
     CHookDataKey<CWriteChoiceVariantHook> m_ChoiceVariantHookKey;
 };
+
+// internal functions
+CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out, bool deleteOut);
+CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& out, bool deleteOut);
+CObjectOStream* OpenObjectOStreamXml(CNcbiOstream& out, bool deleteOut);
 
 #include <serial/objostr.inl>
 
