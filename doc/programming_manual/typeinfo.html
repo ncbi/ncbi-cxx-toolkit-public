@@ -49,16 +49,16 @@ When accessing the object type information <i>per se </i>(without regard
 to any particular object instance), e.g. to dump it to a file as ASN.1
 or DTD <i>specifications</i> (not <i>data</i>)</li>
 </ol>
-In the cases <b>1</b>,<b>2</b>,<b>3</b> above, it is necessary to have
-the object itself <b>and</b> its runtime type information, because in these
-contexts the object is usually passed inside the generic functions as a
-pointer to its most base parent type <a href="http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/docxx/CObject.html">CObject</a>,
-and then the actual object's data members just could not be figured out
-and accessed without having the runtime information on the object's type
-(which describes the object's overall structure and location and names
-of its data members).
-<br>In case <b>4</b> above, the type information is used independent of
-any actual object instances.
+In the first three cases above, it is necessary to have both the object
+itself <i>as well as</i> its runtime type information.&nbsp; This is because
+in these contexts, the object is usually passed inside a generic function,
+as a pointer to its most base parent type <a href="http://www.ncbi.nlm.nih.gov/IEB/CPP_DOC/docxx/CObject.html">CObject.</a>
+The runtime type information is needed here, as there is no other way to
+ascertain the actual object's data members. In addition to providing this
+information, a runtime type information object provides an interface for
+accessing and modifying these data members.
+<p>In the last case (4) above, the type information is used independent
+of any actual object instances.
 <p>The NCBI C++ Toolkit uses two classes to support these requirements:
 <ul><a NAME="ctypeinfo"></a>
 <li>
@@ -233,7 +233,7 @@ enumeration:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; };</font></pre>
 Different queries become appropriate depending on the <i>ETypeFamily</i>
 of the object. For example, if the object is a container, one might need
-to determine the type of container (e.g. whether it is <i>list, map</i>
+to determine the type of container (e.g. whether it is a <i>list, map</i>
 etc.), and the type of element. Similarly, if an object is a primitive
 type (e.g. <i>int, float, string, </i>etc.), an appropriate query becomes
 what the value type is, and in the case of integer-valued types, whether
@@ -339,8 +339,8 @@ for the choice variant currently pointed to by the iterator.
 <i><a href="../docxx/CConstObjectInfo.html">CConstObjectInfo</a></i></h4>
 The <i>CConstObjectInfo</i> (derived from <i><a href="#objtype">CObjectTypeInfo</a></i>)
 adds an interface to access the particular <i>instance</i> of an object
-(in addition to the interface inherited from <i><a href="#objtype">CObjectTypeInfo</a></i>
-that allows to access object's <i>type</i> information). It is intended
+(in addition to the interface inherited from <i><a href="#objtype">CObjectTypeInfo,</a></i>
+which provides access to <b><i>type</i></b> information only). It is intended
 for usage with <i>const</i> instances of the object of interest, and therefore
 the interface does not permit any modifications to the object. The constructor
 for
@@ -531,7 +531,6 @@ ASN.1 binary format.
 <br>&nbsp;
 <br>&nbsp;
 <p><a href="cref.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp; <i><a href="../index.html">up&nbsp;</a></i>
-
 <i><a href="iterators.html">next</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
