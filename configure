@@ -64,7 +64,7 @@ ac_help="$ac_help
 ac_help="$ac_help
  --without-serial        do not build the serialization library and tools"
 ac_help="$ac_help
- --with-objects          do not generate/build serializeable objects from ASNs"
+ --without-objects       do not generate/build serializeable objects from ASNs"
 ac_help="$ac_help
  --without-ctools        do not build NCBI C Toolkit based projects"
 ac_help="$ac_help

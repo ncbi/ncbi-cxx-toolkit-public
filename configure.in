@@ -107,7 +107,7 @@ AC_ARG_WITH(sybase,
 AC_ARG_WITH(serial,
    [ --without-serial        do not build the serialization library and tools])
 AC_ARG_WITH(objects,
-   [ --with-objects          do not generate/build serializeable objects from ASNs])
+   [ --without-objects       do not generate/build serializeable objects from ASNs])
 AC_ARG_WITH(ctools,
    [ --without-ctools        do not build NCBI C Toolkit based projects])
 AC_ARG_WITH(gui,
