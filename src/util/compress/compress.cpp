@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 //
 
 CCompression::CCompression(ELevel level)
-    : m_Level(level), m_LastError(0)
+    : m_Level(level), m_ErrorCode(0), m_ErrorMsg(kEmptyStr)
 {
     return;
 }
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/15 15:50:50  ivanov
+ * Improved error diagnostics
+ *
  * Revision 1.4  2003/07/10 19:56:29  ivanov
  * Using classes CNcbi[I/O]fstream instead FILE* streams
  *
