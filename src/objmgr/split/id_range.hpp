@@ -120,6 +120,7 @@ public:
 
     CSeq_id_Handle GetSingleId(void) const;
 
+    void Add(const CSeq_id_Handle& id, const COneSeqRange& loc);
     void Add(const CSeqsRange& seqs_range);
 
     void Add(const CSeq_loc& loc);
@@ -153,6 +154,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/12/01 18:37:10  vasilche
+* Separate different annotation types in split info to reduce memory usage.
+*
 * Revision 1.2  2003/11/26 23:04:59  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *

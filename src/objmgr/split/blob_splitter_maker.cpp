@@ -131,15 +131,37 @@ void CBlobSplitterImpl::MakeID2SObjects(void)
 }
 
 
-struct SAnnotTypeLocation {
-    SAnnotTypeLocation(void)
-        : m_Align(false), m_Graph(false)
+struct SOneSeqAnnots
+{
+    typedef set<SAnnotTypeSelector> TTypeSet;
+    typedef COneSeqRange TTotalLocation;
+
+    void Add(const SAnnotTypeSelector& type, const COneSeqRange& loc)
         {
+            m_TotalType.insert(type);
+            m_TotalLocation.Add(loc);
         }
 
-    typedef CSeqsRange TTotalLocation;
-    typedef set<CSeqFeatData::ESubtype> TFeatSubtypes;
-    typedef map<CSeqFeatData::E_Choice, TFeatSubtypes> TFeatTypes;
+    TTypeSet m_TotalType;
+    TTotalLocation m_TotalLocation;
+};
+
+
+struct SSplitAnnotInfo
+{
+    typedef vector<SAnnotTypeSelector> TTypeSet;
+    typedef CSeqsRange TLocation;
+
+    TTypeSet m_TypeSet;
+    TLocation m_Location;
+};
+
+
+struct SAllAnnots
+{
+    typedef map<CSeq_id_Handle, SOneSeqAnnots> TAllAnnots;
+    typedef vector<SAnnotTypeSelector> TTypeSet;
+    typedef map<TTypeSet, CSeqsRange> TSplitAnnots;
 
     void Add(const CSeq_annot& annot)
         {
@@ -159,35 +181,54 @@ struct SAnnotTypeLocation {
 
     void Add(const CSeq_annot::C_Data::TGraph& objs)
         {
+            SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
             ITERATE ( CSeq_annot::C_Data::TGraph, it, objs ) {
-                m_Graph = true;
-                m_TotalLocation.Add(**it);
+                CSeqsRange loc;
+                loc.Add(**it);
+                Add(type, loc);
             }
         }
     void Add(const CSeq_annot::C_Data::TAlign& objs)
         {
+            SAnnotTypeSelector type(CSeq_annot::C_Data::e_Align);
             ITERATE ( CSeq_annot::C_Data::TAlign, it, objs ) {
-                m_Align = true;
-                m_TotalLocation.Add(**it);
+                CSeqsRange loc;
+                loc.Add(**it);
+                Add(type, loc);
             }
         }
     void Add(const CSeq_annot::C_Data::TFtable& objs)
         {
             ITERATE ( CSeq_annot::C_Data::TFtable, it, objs ) {
-                CSeqFeatData::E_Choice type = (*it)->GetData().Which();
-                CSeqFeatData::ESubtype subtype = (*it)->GetData().GetSubtype();
-                m_Feat[type].insert(subtype);
-                m_TotalLocation.Add(**it);
+                SAnnotTypeSelector type((*it)->GetData().GetSubtype());
+                CSeqsRange loc;
+                loc.Add(**it);
+                Add(type, loc);
             }
         }
 
-    bool m_Align;
-    bool m_Graph;
-    TFeatTypes m_Feat;
-    
-    TTotalLocation m_TotalLocation;
+    void Add(const SAnnotTypeSelector& sel, const CSeqsRange& loc)
+        {
+            ITERATE ( CSeqsRange, it, loc ) {
+                m_AllAnnots[it->first].Add(sel, it->second);
+            }
+        }
+
+    void SplitInfo(void)
+        {
+            ITERATE ( TAllAnnots, it, m_AllAnnots ) {
+                TTypeSet type_set;
+                ITERATE(SOneSeqAnnots::TTypeSet, tit, it->second.m_TotalType) {
+                    type_set.push_back(*tit);
+                }
+                m_SplitAnnots[type_set].Add(it->first,
+                                            it->second.m_TotalLocation);
+            }
+        }
+
+    TAllAnnots m_AllAnnots;
+    TSplitAnnots m_SplitAnnots;
 };
-typedef map<CAnnotName, SAnnotTypeLocation> TTotalAnnotLocation;
 
 
 typedef set<int> TWhole_set;
@@ -246,13 +287,35 @@ void AddLoc(CRef<CID2_Seq_loc>& loc, const TInt_set& int_set)
 }
 
 
-void AddLoc(CRef<CID2_Seq_loc>& loc, const TWhole_set& whole_set)
+void AddLoc(CRef<CID2_Seq_loc>& loc, int gi_start, int gi_count)
 {
-    ITERATE ( TWhole_set, it, whole_set ) {
+    if ( gi_count < 4 ) {
+        for ( int i = 0; i < gi_count; ++i ) {
+            CRef<CID2_Seq_loc> add(new CID2_Seq_loc);
+            add->SetWhole(gi_start + i);
+            AddLoc(loc, add);
+        }
+    }
+    else {
         CRef<CID2_Seq_loc> add(new CID2_Seq_loc);
-        add->SetWhole(*it);
+        add->SetWhole_range().SetStart(gi_start);
+        add->SetWhole_range().SetCount(gi_count);
         AddLoc(loc, add);
     }
+}
+
+void AddLoc(CRef<CID2_Seq_loc>& loc, const TWhole_set& whole_set)
+{
+    int gi_start = 0, gi_count = 0;
+    ITERATE ( TWhole_set, it, whole_set ) {
+        if ( gi_count == 0 || *it != gi_start + gi_count ) {
+            AddLoc(loc, gi_start, gi_count);
+            gi_start = *it;
+            gi_count = 0;
+        }
+        ++gi_count;
+    }
+    AddLoc(loc, gi_start, gi_count);
 }
 
 
@@ -288,7 +351,8 @@ void CBlobSplitterImpl::MakeID2Chunk(int id, const SChunkInfo& info)
     CRef<CID2S_Chunk_Info> chunk_info(new CID2S_Chunk_Info);
     chunk_info->SetId(CID2S_Chunk_Id(id));
 
-    TTotalAnnotLocation annot_loc;
+    typedef map<CAnnotName, SAllAnnots> TAllAnnots;
+    TAllAnnots all_annots;
 
     ITERATE ( SChunkInfo::TChunkAnnots, it, info.m_Annots ) {
         CRef<CID2S_Chunk_Data> data(new CID2S_Chunk_Data);
@@ -307,47 +371,70 @@ void CBlobSplitterImpl::MakeID2Chunk(int id, const SChunkInfo& info)
 
             // collect locations
             CAnnotName name = CSeq_annot_SplitInfo::GetName(*annot_it->first);
-            annot_loc[name].Add(*annot);
+            all_annots[name].Add(*annot);
         }
     }
 
-    ITERATE ( TTotalAnnotLocation, it, annot_loc ) {
-        CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
-        CID2S_Seq_annot_Info& annot_info = content->SetSeq_annot();
-        if ( it->first.IsNamed() ) {
-            annot_info.SetName(it->first.GetName());
-        }
-        if ( it->second.m_Graph ) {
-            annot_info.SetGraph();
-        }
-        if ( it->second.m_Align ) {
-            annot_info.SetAlign();
-        }
-        ITERATE ( SAnnotTypeLocation::TFeatTypes, ftit, it->second.m_Feat ) {
-            CSeqFeatData::E_Choice type = ftit->first;
-            CRef<CID2S_Feat_type_Info> type_info(new CID2S_Feat_type_Info);
-            type_info->SetType(type);
-            bool all_subtypes = true;
-            const SAnnotTypeLocation::TFeatSubtypes& subtypes = ftit->second;
-            for ( CSeqFeatData::ESubtype subtype = CSeqFeatData::eSubtype_bad;
-                  subtype <= CSeqFeatData::eSubtype_max;
-                  subtype = CSeqFeatData::ESubtype(subtype+1) ) {
-                if ( CSeqFeatData::GetTypeFromSubtype(subtype) == type &&
-                     subtypes.find(subtype) == subtypes.end() ) {
-                    all_subtypes = false;
+    NON_CONST_ITERATE ( TAllAnnots, nit, all_annots ) {
+        nit->second.SplitInfo();
+        const CAnnotName& annot_name = nit->first;
+        ITERATE ( SAllAnnots::TSplitAnnots, it, nit->second.m_SplitAnnots ) {
+            const SAllAnnots::TTypeSet& type_set = it->first;
+            const CSeqsRange& location = it->second;
+            CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
+            CID2S_Seq_annot_Info& annot_info = content->SetSeq_annot();
+            if ( annot_name.IsNamed() ) {
+                annot_info.SetName(annot_name.GetName());
+            }
+            typedef CSeqFeatData::ESubtype TSubtype;
+            typedef CSeqFeatData::E_Choice TFeatType;
+            typedef set<TSubtype> TSubtypes;
+            typedef map<TFeatType, TSubtypes> TFeatTypes;
+            TFeatTypes feat_types;
+            ITERATE ( SAllAnnots::TTypeSet, tit, type_set ) {
+                const SAnnotTypeSelector& t = *tit;
+                switch ( t.GetAnnotChoice() ) {
+                case CSeq_annot::C_Data::e_Align:
+                    annot_info.SetAlign();
+                    break;
+                case CSeq_annot::C_Data::e_Graph:
+                    annot_info.SetGraph();
+                    break;
+                case CSeq_annot::C_Data::e_Ftable:
+                    feat_types[t.GetFeatChoice()].insert(t.GetFeatSubtype());
                     break;
                 }
             }
-            if ( !all_subtypes ) {
-                ITERATE ( SAnnotTypeLocation::TFeatSubtypes, stit, subtypes ) {
-                    type_info->SetSubtypes().push_back(*stit);
+            ITERATE ( TFeatTypes, tit, feat_types ) {
+                TFeatType t = tit->first;
+                const TSubtypes& subtypes = tit->second;
+                bool all_subtypes =
+                    subtypes.find(CSeqFeatData::eSubtype_any) !=
+                    subtypes.end();
+                if ( !all_subtypes ) {
+                    all_subtypes = true;
+                    for ( TSubtype st = CSeqFeatData::eSubtype_bad;
+                          st <= CSeqFeatData::eSubtype_max;
+                          st = TSubtype(st+1) ) {
+                        if ( CSeqFeatData::GetTypeFromSubtype(st) == t &&
+                             subtypes.find(st) == subtypes.end() ) {
+                            all_subtypes = false;
+                            break;
+                        }
+                    }
                 }
+                CRef<CID2S_Feat_type_Info> type_info(new CID2S_Feat_type_Info);
+                type_info->SetType(t);
+                if ( !all_subtypes ) {
+                    ITERATE ( TSubtypes, stit, subtypes ) {
+                        type_info->SetSubtypes().push_back(*stit);
+                    }
+                }
+                annot_info.SetFeat().push_back(type_info);
             }
-            annot_info.SetFeat().push_back(type_info);
+            annot_info.SetSeq_loc(*MakeLoc(location));
+            chunk_info->SetContent().push_back(content);
         }
-        
-        annot_info.SetSeq_loc(*MakeLoc(it->second.m_TotalLocation));
-        chunk_info->SetContent().push_back(content);
     }
 
 #if 0
@@ -403,23 +490,23 @@ CBlobSplitterImpl::MakeSeq_annot(const CSeq_annot& src,
     switch ( src.GetData().Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
         ITERATE ( CLocObjects_SplitInfo, it, objs ) {
+            CObject& obj = NonConst(*it->m_Object);
             annot->SetData().SetFtable()
-                .push_back(Ref(&dynamic_cast<CSeq_feat&>
-                               (NonConst(*it->m_Object))));
+                .push_back(Ref(&dynamic_cast<CSeq_feat&>(obj)));
         }
         break;
     case CSeq_annot::C_Data::e_Align:
         ITERATE ( CLocObjects_SplitInfo, it, objs ) {
+            CObject& obj = NonConst(*it->m_Object);
             annot->SetData().SetAlign()
-                .push_back(Ref(&dynamic_cast<CSeq_align&>
-                               (NonConst(*it->m_Object))));
+                .push_back(Ref(&dynamic_cast<CSeq_align&>(obj)));
         }
         break;
     case CSeq_annot::C_Data::e_Graph:
         ITERATE ( CLocObjects_SplitInfo, it, objs ) {
+            CObject& obj = NonConst(*it->m_Object);
             annot->SetData().SetGraph()
-                .push_back(Ref(&dynamic_cast<CSeq_graph&>
-                               (NonConst(*it->m_Object))));
+                .push_back(Ref(&dynamic_cast<CSeq_graph&>(obj)));
         }
         break;
     }
@@ -453,6 +540,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/12/01 18:37:10  vasilche
+* Separate different annotation types in split info to reduce memory usage.
+*
 * Revision 1.3  2003/11/26 23:04:58  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *

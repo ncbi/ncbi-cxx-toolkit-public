@@ -101,6 +101,12 @@ CSeq_id_Handle CSeqsRange::GetSingleId(void) const
 }
 
 
+void CSeqsRange::Add(const CSeq_id_Handle& id, const COneSeqRange& loc)
+{
+    m_Ranges[id].Add(loc);
+}
+
+
 void CSeqsRange::Add(const CSeqsRange& range)
 {
     ITERATE ( CSeqsRange, it, range ) {
@@ -317,6 +323,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/12/01 18:37:10  vasilche
+* Separate different annotation types in split info to reduce memory usage.
+*
 * Revision 1.3  2003/11/26 23:04:59  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *

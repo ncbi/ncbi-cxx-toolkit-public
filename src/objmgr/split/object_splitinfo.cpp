@@ -161,7 +161,8 @@ bool CSeq_annot_SplitInfo::IsLandmark(const CAnnotObject_SplitInfo& obj) const
     if ( obj.m_ObjectType != CSeq_annot::C_Data::e_Ftable ) {
         return false;
     }
-    const CSeq_feat& feat = dynamic_cast<const CSeq_feat&>(*obj.m_Object);
+    const CObject& annot = *obj.m_Object;
+    const CSeq_feat& feat = dynamic_cast<const CSeq_feat&>(annot);
     switch ( feat.GetData().GetSubtype() ) {
     case CSeqFeatData::eSubtype_gene:
         return true;
@@ -268,6 +269,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/12/01 18:37:10  vasilche
+* Separate different annotation types in split info to reduce memory usage.
+*
 * Revision 1.2  2003/11/26 23:04:59  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *
