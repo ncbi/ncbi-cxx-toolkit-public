@@ -469,6 +469,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_MissingCDSproduct",
     "SEQ_FEAT_MissingLocation",
     "SEQ_FEAT_OnlyGeneXrefs",
+    "SEQ_FEAT_UTRdoesNotAbutCDS",
 
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
@@ -1016,6 +1017,8 @@ are exempt from needing a product.",
 "There are gene xrefs but no gene features.  Records should normally have  \
 single-interval gene features covering other biological features.  Gene \
 xrefs are used only to override the inheritance by overlap.",
+//  SEQ_FEAT_UTRdoesNotAbutCDS
+"The 5'UTR and 3'UTR features should exactly abut the CDS feature.",
 
 /* SEQ_ALIGN */
 
@@ -1133,6 +1136,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/10/27 14:54:11  shomrat
+* added SEQ_FEAT_UTRdoesNotAbutCDS
+*
 * Revision 1.31  2003/10/27 14:14:41  shomrat
 * added SEQ_INST_SeqLitGapLength0
 *
