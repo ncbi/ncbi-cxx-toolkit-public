@@ -45,10 +45,6 @@ BEGIN_NCBI_SCOPE
 //  CSocket::
 //
 
-const STimeout *const CSocket::kDefaultTimeout  = (const STimeout*)(-1);
-const STimeout *const CSocket::kInfiniteTimeout = (const STimeout*)( 0);
-
-
 CSocket::CSocket(void)
     : m_Socket(0),
       m_IsOwned(eTakeOwnership),
@@ -351,8 +347,6 @@ EIO_Status CDatagramSocket::Recv(void*           buf,
 //  CListeningSocket::
 //
 
-const STimeout *const CListeningSocket::kInfiniteTimeout = (const STimeout*) 0;
-
 CListeningSocket::CListeningSocket(void)
     : m_Socket(0),
       m_IsOwned(eTakeOwnership)
@@ -477,24 +471,32 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
                             const STimeout* timeout,
                             size_t*         n_ready)
 {
-    size_t      x_n     = polls.size();
-    SSOCK_Poll* x_polls = 0;
+    size_t          x_n     = polls.size();
+    SPOLLABLE_Poll* x_polls = 0;
 
-    if (x_n  &&  !(x_polls = new SSOCK_Poll[x_n]))
+    if (x_n  &&  !(x_polls = new SPOLLABLE_Poll[x_n]))
         return eIO_Unknown;
 
     for (size_t i = 0;  i < x_n;  i++) {
-        CSocket& s = polls[i].m_Socket;
-        if (s.GetStatus(eIO_Open) == eIO_Success) {
-            x_polls[i].sock  = s.GetSOCK();
-            x_polls[i].event = polls[i].m_Event;
-        } else {
-            x_polls[i].sock  = 0;
-        }
+        CPollable* p     = polls[i].m_Pollable;
+        EIO_Event  event = polls[i].m_Event;
+        if (p  &&  event) {
+            CSocket* s = dynamic_cast<CSocket*> (p);
+            if (!s) {
+                CListeningSocket* ls = dynamic_cast<CListeningSocket*> (p);
+                x_polls[i].poll = POLLABLE_FromLSOCK(ls ? ls->GetLSOCK() : 0);
+            } else {
+                x_polls[i].poll =
+                    POLLABLE_FromSOCK(s->GetStatus(eIO_Open) == eIO_Success ?
+                                      s->GetSOCK() : 0);
+            }
+            x_polls[i].event = event;
+        } else
+            x_polls[i].poll  = 0;
     }
 
     size_t x_ready;
-    EIO_Status status = SOCK_Poll(x_n, x_polls, timeout, &x_ready);
+    EIO_Status status = POLLABLE_Poll(x_n, x_polls, timeout, &x_ready);
 
     if (status == eIO_Success) {
         for (size_t i = 0;  i < x_n;  i++)
@@ -515,6 +517,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2003/08/25 14:42:42  lavr
+ * Employ new k..Timeout constants;  reimplement more generic form of Poll()
+ *
  * Revision 6.19  2003/07/15 19:04:04  lavr
  * Yet another fix for MS-Win compilation
  *
