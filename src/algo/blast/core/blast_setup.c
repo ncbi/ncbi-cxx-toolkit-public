@@ -179,7 +179,6 @@ BlastSetUp_GetSequence(SeqLocPtr slp, BlastQueryInfoPtr query_info,
 	SeqLocPtr	slp_var; /* loop variable */
 	SeqPortPtr	spp; /* Used to get sequence with SeqPortGetResidue. */
 	Uint1Ptr	buffer_var; /* buffer offset to be worked on. */
-   Boolean double_length = FALSE;
    Uint1 strand;
    Boolean is_na; /* Is sequence nucleotide? */
    Boolean use_blastna; /* If TRUE, use blastna alphabet */
@@ -898,7 +897,6 @@ BLAST_GetQuerySeqLoc(FILE *infp, Boolean query_is_na,
 Int2 BLAST_SetUpSubject(Uint1 program_number, 
         SeqLocPtr subject_slp, BLAST_SequenceBlkPtr PNTR subject)
 {
-   FILE *infp2;
    Int2 status = 0;
    Uint1Ptr subject_buffer = NULL; /* Buffer for the compressed subject 
                                       sequence in two sequences case */
