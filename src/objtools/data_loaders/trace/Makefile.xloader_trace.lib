@@ -3,6 +3,6 @@
 # Build library "xloader_trace"
 ###############################
 
-LIB = xloader_trace
+LIB = ncbi_xloader_trace
 SRC = trace_chgr
 
