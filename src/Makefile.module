@@ -20,6 +20,7 @@ clean_sources:
 
 purge_sources:
 	-rm $(FILES) *_.cpp $(INCLUDEDIR)/*_.hpp
+	-echo `grep -l '^[^"]*\$$Id\$$[^"]*$$' *.cpp $(INCLUDEDIR)/*.hpp`
 
 purge_all_sources:
 	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp
