@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/04/30 14:32:51  ucko
+* Have size() return int in keeping with its actual behavior; should cut
+* down on warnings about truncation of 64-bit integers.
+*
 * Revision 1.9  2002/04/29 16:23:25  grichenk
 * GetSequenceView() reimplemented in CSeqVector.
 * CSeqVector optimized for better performance.
@@ -90,7 +94,7 @@ public:
 
     CSeqVector& operator= (const CSeqVector& vec);
 
-    size_t size(void);
+    int size(void);
     // 0-based array of residues
     TResidue operator[] (int pos);
 
@@ -169,7 +173,7 @@ CSeqVector::CSeqVector(const CSeqVector& vec)
 }
 
 inline
-size_t CSeqVector::size(void)
+int CSeqVector::size(void)
 {
     if (m_RangeSize < 0)
         x_GetVisibleSize();
@@ -204,7 +208,7 @@ inline
 CSeqVector::TResidue CSeqVector::operator[] (int pos)
 {
     // Force size calculation
-    size_t seq_size = size();
+    int seq_size = size();
     // Convert position to destination strand
     if ( !m_PlusStrand ) {
         pos = seq_size - pos - 1;
