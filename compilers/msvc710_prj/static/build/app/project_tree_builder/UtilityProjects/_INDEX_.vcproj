@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject ProjectType="Visual C++" Version="7.10" Name=" INDEX, see here: " Keyword="ManagedCProj" RootNamespace="MasterProject">
+  <Platforms>
+    <Platform Name="Win32"></Platform>
+  </Platforms>
+  <Configurations>
+    <Configuration Name="Debug|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+    <Configuration Name="DebugDLL|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+    <Configuration Name="DebugMT|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+    <Configuration Name="Release|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+    <Configuration Name="ReleaseDLL|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+    <Configuration Name="ReleaseMT|Win32" OutputDirectory="$(SolutionDir)$(ConfigurationName)" IntermediateDirectory="$(ConfigurationName)" ConfigurationType="10" CharacterSet="2" ManagedExtensions="TRUE">
+      <Tool Name="VCCustomBuildTool"></Tool>
+      <Tool Name="VCMIDLTool"></Tool>
+      <Tool Name="VCPostBuildEventTool"></Tool>
+      <Tool Name="VCPreBuildEventTool"></Tool>
+    </Configuration>
+  </Configurations>
+  <References></References>
+  <Files></Files>
+  <Globals></Globals>
+</VisualStudioProject>
