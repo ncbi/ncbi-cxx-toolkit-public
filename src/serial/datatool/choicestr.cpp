@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/07/25 15:02:41  grichenk
+* Removed non-const GetXXX() method, use SetXXX() instead
+*
 * Revision 1.31  2002/05/15 20:22:04  grichenk
 * Added CSerialObject -- base class for all generated ASN.1 classes
 *
@@ -691,7 +694,6 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 "    const "<<cType<<"& Get"<<i->cName<<"(void) const;\n"
                 "\n";
             setters <<
-                "    "<<cType<<"& Get"<<i->cName<<"(void);\n"
                 "    "<<cType<<"& Set"<<i->cName<<"(void);\n";
             if ( i->memberType == eSimpleMember ||
                  i->memberType == eStringMember ||
@@ -742,18 +744,6 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             code.Methods(inl) <<
                 "    return "<<constMemberRef<<";\n"
-                "}\n"
-                "\n";
-            code.MethodStart(inl) <<
-                methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void)\n"
-                "{\n"
-                "    CheckSelected("STATE_PREFIX<<i->cName<<");\n";
-            if ( i->delayed ) {
-                code.Methods(inl) <<
-                    "    "DELAY_MEMBER".Update();\n";
-            }
-            code.Methods(inl) <<
-                "    return "<<memberRef<<";\n"
                 "}\n"
                 "\n";
             code.MethodStart(inl) <<
