@@ -521,11 +521,11 @@ const TTreeNode* TreeFindCommonParent(const TTreeNode& tree_node_a,
     const TTraceVector& ctr_a = trace_a;
     const TTraceVector& ctr_b = trace_b;
 
-    TTraceVector::const_reverse_iterator it_a = ctr_a.rbegin();
-    TTraceVector::const_reverse_iterator it_b = ctr_b.rbegin();
+    typename TTraceVector::const_reverse_iterator it_a = ctr_a.rbegin();
+    typename TTraceVector::const_reverse_iterator it_b = ctr_b.rbegin();
 
-    TTraceVector::const_reverse_iterator it_a_end = ctr_a.rend();
-    TTraceVector::const_reverse_iterator it_b_end = ctr_b.rend();
+    typename TTraceVector::const_reverse_iterator it_a_end = ctr_a.rend();
+    typename TTraceVector::const_reverse_iterator it_b_end = ctr_b.rend();
     
     for (;it_a != it_a_end || it_b != it_b_end; ++it_a, ++it_b) {
         const TTreeNode* node_a = *it_a;
@@ -785,6 +785,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/04/08 12:22:56  kuznets
+ * Fixed compilation warnings
+ *
  * Revision 1.25  2004/04/08 11:47:46  kuznets
  * + TreeFindCommonParent, + TreeTraceToRoot
  *
