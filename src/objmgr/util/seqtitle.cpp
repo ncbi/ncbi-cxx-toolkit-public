@@ -44,6 +44,7 @@
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <objects/seqblock/EMBL_block.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqblock/PDB_block.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -345,10 +346,23 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     {
         bool is_draft  = false;
         bool cancelled = false;
-        CSeqdesc_CI gb(hnd, CSeqdesc::e_Genbank);
-        for (;  gb;  ++gb) {
-            ITERATE (CGB_block::TKeywords, it,
-                     gb->GetGenbank().GetKeywords()) {
+        const CGB_block::TKeywords* keywords = 0;
+        for (CSeqdesc_CI gb(hnd, CSeqdesc::e_Genbank);  gb;  ++gb) {
+            if (gb->GetGenbank().IsSetKeywords()) {
+                keywords = &gb->GetGenbank().GetKeywords();
+            }
+            BREAK(gb);
+        }
+        if ( !keywords ) {
+            for (CSeqdesc_CI embl(hnd, CSeqdesc::e_Embl);  embl;  ++embl) {
+                if (embl->GetEmbl().IsSetKeywords()) {
+                    keywords = &embl->GetEmbl().GetKeywords();
+                }
+                BREAK(embl);
+            }
+        }
+        if (keywords) {
+            ITERATE (CGB_block::TKeywords, it, *keywords) {
                 if (NStr::Compare(*it, "HTGS_DRAFT", NStr::eNocase) == 0) {
                     is_draft = true;
                     break;
@@ -358,7 +372,6 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
                     break;
                 }
             }
-            BREAK(gb);
         }
         if (is_draft  &&  title.find("WORKING DRAFT") == NPOS) {
             suffix = ", WORKING DRAFT SEQUENCE";
@@ -839,6 +852,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.25  2003/07/24 16:36:57  ucko
+* As in the C version, check both GenBank and EMBL blocks for keywords
+* indicating HTGS sequencing progress.
+*
 * Revision 1.24  2003/06/23 15:35:03  kuznets
 * Fixed problem with calling CBioseq_Handle::TBioseqCore::GetDescr()
 * for descriptionless protein molecules (can come from hand made fasta files)
