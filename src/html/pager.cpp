@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/08/31 18:45:08  golikov
+* GetDisplayPage renamed to GetDisplayedPage
+* GetDisplayPage return now current page, not previous shown as before
+*
 * Revision 1.22  2000/05/24 20:57:14  vasilche
 * Use new macro _DEBUG_ARG to avoid warning about unused argument.
 *
@@ -132,14 +136,14 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
                 // previous pages
                 // round to previous page block
                 m_PageChanged = true;
-                int page = GetDisplayPage(request);
+                int page = GetDisplayedPage(request);
                 m_DisplayPage = page - page % m_PageBlockSize - 1;
             }
             else if ( i->second == KParam_NextPages ) {
                 // next pages
                 // round to next page block
                 m_PageChanged = true;
-                int page = GetDisplayPage(request);
+                int page = GetDisplayedPage(request);
                 m_DisplayPage = page - page % m_PageBlockSize + m_PageBlockSize;
             }
             else if ( NStr::StartsWith(i->second, KParam_Page) ) {
@@ -159,7 +163,7 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
     else {
         try {
             m_PageChanged = true;
-            int page = GetDisplayPage(request);
+            int page = GetDisplayedPage(request);
             TCgiEntriesCI oldPageSize = entries.find(KParam_ShownPageSize);
             if( !page || oldPageSize == entries.end() )
                 throw runtime_error("Error getting page params");
@@ -174,7 +178,7 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
          
     }
     if( !m_PageChanged )
-            m_DisplayPage = GetDisplayPage(request);
+            m_DisplayPage = GetDisplayedPage(request);
 
     m_PageBlockStart = m_DisplayPage - m_DisplayPage % m_PageBlockSize;
 }
@@ -211,7 +215,7 @@ bool CPager::IsPagerCommand(const CCgiRequest& request)
     return false;
 }
 
-int CPager::GetDisplayPage(CCgiRequest& request)
+int CPager::GetDisplayedPage(CCgiRequest& request)
 {
     const TCgiEntries& entries = request.GetEntries();
     TCgiEntriesCI entry = entries.find(KParam_DisplayPage);
@@ -221,9 +225,9 @@ int CPager::GetDisplayPage(CCgiRequest& request)
             int displayPage = NStr::StringToInt(entry->second);
             if ( displayPage >= 0 )
                 return displayPage;
-            _TRACE( "Negative page start in CPager::GetDisplayPage: " << displayPage );
+            _TRACE( "Negative page start in CPager::GetDisplayedPage: " << displayPage );
         } catch (exception& _DEBUG_ARG(e)) {
-            _TRACE( "Exception in CPager::GetDisplayPage " << e.what() );
+            _TRACE( "Exception in CPager::GetDisplayedPage " << e.what() );
         }
     }
 

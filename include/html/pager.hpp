@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/31 18:44:38  golikov
+* GetDisplayPage renamed to GetDisplayedPage
+* GetDisplayPage return now current page, not previous shown as before
+*
 * Revision 1.7  1999/09/15 20:33:33  golikov
 * GetPagerView defaults added
 *
@@ -96,7 +100,11 @@ public:
 
     // methods to retrieve page size and current page
     static int GetPageSize(CCgiRequest& request, int defaultPageSize = 10);
-    static int GetDisplayPage(CCgiRequest& request);
+    // gets page number previously displayed
+    static int GetDisplayedPage(CCgiRequest& request);
+    // get current page number
+    int GetDisplayPage(void)
+        { return m_DisplayPage; }
 
     // name of hidden value holding selected page size
     static const string KParam_PageSize;
