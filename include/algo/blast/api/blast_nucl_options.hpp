@@ -173,6 +173,7 @@ protected:
     virtual void SetInitialWordOptionsDefaults();
     virtual void SetMBInitialWordOptionsDefaults();
     virtual void SetGappedExtensionDefaults();
+    virtual void SetMBGappedExtensionDefaults();
     virtual void SetScoringOptionsDefaults();
     virtual void SetMBScoringOptionsDefaults();
     virtual void SetHitSavingOptionsDefaults();
@@ -190,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/10 19:48:07  dondosha
+ * Added SetMBGappedExtensionDefaults method
+ *
  * Revision 1.5  2004/01/16 20:42:59  bealer
  * - Add locality flag for blast options handle classes.
  *
