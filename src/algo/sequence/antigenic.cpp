@@ -40,7 +40,7 @@ USING_SCOPE(objects);
 
 
 // Antigenic propensities by NCBIstdaa:
-const double sm_Pa_table[26] =
+const double CAntigenic::sm_Pa_table[26] =
     {
         0,
         1.06383,  // A
@@ -72,8 +72,8 @@ const double sm_Pa_table[26] =
 
 
 template<class Seq>
-static void x_PredictSites(const Seq& seq, CAntigenic::TLocVec& results,
-                           int min_len)
+void x_PredictAGSites(const Seq& seq, CAntigenic::TLocVec& results,
+                      int min_len)
 {
 
 
@@ -84,15 +84,15 @@ static void x_PredictSites(const Seq& seq, CAntigenic::TLocVec& results,
     double local_sum = 0, global_sum = 0;
 
     for (int i = 0;  i < 7;  i++) {
-        local_sum += sm_Pa_table[seq[i]];
-        global_sum += sm_Pa_table[seq[i]];
+        local_sum += CAntigenic::sm_Pa_table[seq[i]];
+        global_sum += CAntigenic::sm_Pa_table[seq[i]];
     }
     Pa[3] = local_sum / 7;
     
     for (unsigned int i = 4;  i < seq.size() - 3;  i++) {
-        local_sum -= sm_Pa_table[seq[i-4]];
-        local_sum += sm_Pa_table[seq[i+3]];
-        global_sum += sm_Pa_table[seq[i+3]];
+        local_sum -= CAntigenic::sm_Pa_table[seq[i-4]];
+        local_sum += CAntigenic::sm_Pa_table[seq[i+3]];
+        global_sum += CAntigenic::sm_Pa_table[seq[i+3]];
         Pa[i] = local_sum / 7;
     }
 
@@ -133,7 +133,7 @@ void CAntigenic::PredictSites(const string& seq,
                               TLocVec& results,
                               unsigned int min_len)
 {
-    x_PredictSites(seq, results, min_len);
+    x_PredictAGSites(seq, results, min_len);
 }
 
 
@@ -141,7 +141,7 @@ void CAntigenic::PredictSites(const vector<char>& seq,
                               TLocVec& results,
                               unsigned int min_len)
 {
-    x_PredictSites(seq, results, min_len);
+    x_PredictAGSites(seq, results, min_len);
 }
 
 
@@ -153,7 +153,7 @@ void CAntigenic::PredictSites(const objects::CSeqVector& seq,
     CSeqVector vec(seq);
     vec.SetNcbiCoding();
     vec.GetSeqData(0, vec.size(), seq_ncbistdaa);
-    x_PredictSites(seq_ncbistdaa, results, min_len);
+    x_PredictAGSites(seq_ncbistdaa, results, min_len);
 }
 
 
@@ -163,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/10 16:20:40  ucko
+ * Tweak to avoid undefined symbols with WorkShop.
+ *
  * Revision 1.2  2003/09/09 16:09:38  dicuccio
  * Moved lookup table to implementation file
  *

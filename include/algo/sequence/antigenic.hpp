@@ -61,6 +61,13 @@ public:
     static void PredictSites(const objects::CSeqVector& seq,
                              TLocVec& results,
                              unsigned int min_len = 6);
+
+private:
+    static const double CAntigenic::sm_Pa_table[26];
+
+    template<class Seq>
+    friend void x_PredictAGSites(const Seq& seq, TLocVec& results,
+                                 int min_len);
 };
 
 
@@ -72,6 +79,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/10 16:20:35  ucko
+ * Tweak to avoid undefined symbols with WorkShop.
+ *
  * Revision 1.2  2003/09/09 16:08:20  dicuccio
  * Moved lookup table to implementation file
  *
