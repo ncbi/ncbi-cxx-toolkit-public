@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/04/24 21:24:59  lavr
+ * Make log flush in DEBUG mode
+ *
  * Revision 6.8  2001/01/23 23:20:14  lavr
  * Comments added to some "boolean" 1s and 0s
  *
@@ -280,6 +283,9 @@ static void s_LOG_FileHandler(void* user_data, SLOG_Handler* call_data)
         char* str = LOG_ComposeMessage(call_data, fLOG_Default);
         if ( str ) {
             fprintf(fp, "%s\n", str);
+#ifndef NDEBUG
+            fflush(fp);
+#endif
             free(str);
         }
     }
