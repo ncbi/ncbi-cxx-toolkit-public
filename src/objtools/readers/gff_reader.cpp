@@ -36,7 +36,7 @@
 
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiutil.hpp>
-
+#include <util/stream_utils.hpp>
 #include <serial/iterator.hpp>
 
 #include <objects/general/Date.hpp>
@@ -44,12 +44,17 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
+#include <objtools/readers/cigar.hpp>
+#include <objtools/readers/fasta.hpp>
 #include <objtools/readers/readfeat.hpp>
 
 #include <algorithm>
@@ -59,6 +64,33 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+static string& s_URLDecode(const string& s, string& out) {
+    SIZE_TYPE pos = 0;
+    out.erase();
+    out.reserve(s.size());
+    while (pos < s.size()) {
+        SIZE_TYPE pos2 = s.find_first_of("%" /* "+" */, pos);
+        out += s.substr(pos, pos2 - pos);
+        if (pos2 == NPOS) {
+            break;
+        } else if (s[pos2] == '+') { // disabled -- often used literally
+            out += ' ';
+            pos = pos2 + 1;
+        } else if (s[pos2] == '%') {
+            try {
+                out += (char)NStr::StringToInt(s.substr(pos2 + 1, 2), 16);
+                pos = pos2 + 3;
+            } catch (CStringException& e) {
+                // some sources neglect to encode % (!)
+                out += '%';
+                pos = pos2 + 1;
+            }
+        } else {
+            _TROUBLE;
+        }
+    }
+    return out;
+}
 
 
 CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
@@ -73,14 +105,20 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
             x_ParseStructuredComment(line);
         } else if (NStr::StartsWith(line, "#")) {
             // regular comment; ignore
+        } else if (NStr::StartsWith(line, ">")) {
+            // implicit ##FASTA
+            line += '\n';
+            CStreamUtils::Pushback(in, line.data(), line.size());
+            x_ReadFastaSequences(in);
         } else {
             CRef<SRecord> record = x_ParseFeatureInterval(line);
             if (record) {
                 string id = x_FeatureID(*record);
                 if (id.empty()) {
-                    x_PlaceFeature(*x_ParseRecord(*record), *record);
+                    x_ParseAndPlace(*record);
                 } else {
-                    CRef<SRecord>& match = m_DelayedFeats[id];
+                    CRef<SRecord>& match = m_DelayedRecords[id];
+                    // _TRACE(id << " -> " << match.GetPointer());
                     if (match) {
                         x_MergeRecords(*match, *record);
                     } else {
@@ -91,12 +129,13 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
         }
     }
 
-    ITERATE (TDelayedFeats, it, m_DelayedFeats) {
-        x_PlaceFeature(*x_ParseRecord(*it->second), *it->second);
+    ITERATE (TDelayedRecords, it, m_DelayedRecords) {
+        x_ParseAndPlace(*it->second);
     }
 
     CRef<CSeq_entry> tse(m_TSE); // need to save before resetting.
     x_Reset();
+
     return tse;
 }
 
@@ -116,9 +155,10 @@ void CGFFReader::x_Reset(void)
     m_TSE.Reset(new CSeq_entry);
     m_SeqNameCache.clear();
     m_SeqCache.clear();
-    m_DelayedFeats.clear();
+    m_DelayedRecords.clear();
     m_DefMol.erase();
     m_LineNumber = 0;
+    m_Version = 2;
 }
 
 
@@ -135,8 +175,12 @@ void CGFFReader::x_ParseStructuredComment(const string& line)
     NStr::Tokenize(line, "# \t", v, NStr::eMergeDelims);
     if (v[0] == "date"  &&  v.size() > 1) {
         x_ParseDateComment(v[1]);
-    } else if (v[0] == "type"  &&  v.size() > 1) {
+    } else if (v[0] == "Type"  &&  v.size() > 1) {
         x_ParseTypeComment(v[1], v.size() > 2 ? v[2] : kEmptyStr);
+    } else if (v[0] == "gff-version"  &&  v.size() > 1) {
+        m_Version = NStr::StringToInt(v[1]);
+    } else if (v[0] == "FASTA") {
+        x_ReadFastaSequences(*m_Stream);
     }
     // etc.
 }
@@ -149,7 +193,7 @@ void CGFFReader::x_ParseDateComment(const string& date)
         desc->SetUpdate_date().SetToTime(CTime(date, "Y-M-D"),
                                          CDate::ePrecision_day);
         m_TSE->SetSet().SetDescr().Set().push_back(desc);
-    } catch (CTimeException& e) {
+    } catch (exception& e) {
         x_Warn(string("Bad ISO date: ") + e.what(), x_GetLineNumber());
     }
 }
@@ -167,6 +211,28 @@ void CGFFReader::x_ParseTypeComment(const string& moltype,
 }
 
 
+void CGFFReader::x_ReadFastaSequences(CNcbiIstream& in)
+{
+    CRef<CSeq_entry> seqs = ReadFasta(in, fReadFasta_AssumeNuc);
+    for (CTypeIterator<CBioseq> it(*seqs);  it;  ++it) {
+        if (it->GetId().empty()) { // can this happen?
+            CRef<CSeq_entry> parent(new CSeq_entry);
+            parent->SetSeq(*it);
+            m_TSE->SetSet().SetSeq_set().push_back(parent);
+            continue;
+        }
+        CRef<CBioseq> our_bs = x_ResolveID(*it->GetId().front(), kEmptyStr);
+        // keep our annotations, but replace everything else.
+        // (XXX - should also keep mol)
+        our_bs->SetId() = it->GetId();
+        if (it->IsSetDescr()) {
+            our_bs->SetDescr(it->SetDescr());
+        }
+        our_bs->SetInst(it->SetInst());
+    }
+}
+
+
 CRef<CGFFReader::SRecord>
 CGFFReader::x_ParseFeatureInterval(const string& line)
 {
@@ -179,21 +245,21 @@ CGFFReader::x_ParseFeatureInterval(const string& line)
             x_Warn("Skipping line due to insufficient fields",
                    x_GetLineNumber());
             return null;
-        } else {
+        } else if (m_Version < 3) {
             x_Warn("Bad delimiters (should use tabs)", x_GetLineNumber());
             misdelimited = true;
         }
     } else {
         // XXX - warn about extra fields (if any), but only if they're
         // not comments
-        v.resize(9);
+        // v.resize(9);
     }
 
     CRef<SRecord> record(x_NewRecord());
     string        accession;
     TSeqPos       from = 0, to = numeric_limits<TSeqPos>::max();
     ENa_strand    strand = eNa_strand_unknown;
-    accession      = v[0];
+    s_URLDecode(v[0], accession);
     record->source = v[1];
     record->key    = v[2];
 
@@ -236,24 +302,201 @@ CGFFReader::x_ParseFeatureInterval(const string& line)
 
         record->loc.push_back(subloc);
     }}
-   
+
+    SIZE_TYPE i = 8;
+    if (m_Version >= 3) {
+        x_ParseV3Attributes(*record, v, i);
+    } else {
+        x_ParseV2Attributes(*record, v, i);
+    }
+
+    if ( !misdelimited  &&  (i > 9  ||  (i == 9  &&  v.size() > 9
+                                         &&  !NStr::StartsWith(v[9], "#") ))) {
+        x_Warn("Extra non-comment fields", x_GetLineNumber());
+    }
+
+    if (record->FindAttribute("Target") != record->attrs.end()) {
+        record->type = SRecord::eAlign;
+    } else {
+        record->type = SRecord::eFeat;
+    }
+
+    return record;
+}
+
+
+CRef<CSeq_feat> CGFFReader::x_ParseFeatRecord(const SRecord& record)
+{
+    CRef<CSeq_feat> feat(CFeature_table_reader::CreateSeqFeat
+                         (record.key, *x_ResolveLoc(record.loc),
+                          CFeature_table_reader::fKeepBadKey));
+    if (record.frame >= 0  &&  feat->GetData().IsCdregion()) {
+        feat->SetData().SetCdregion().SetFrame
+            (static_cast<CCdregion::EFrame>(record.frame + 1));
+    }
+    ITERATE (SRecord::TAttrs, it, record.attrs) {
+        string tag = it->front();
+        string value;
+        switch (it->size()) {
+        case 1:
+            break;
+        case 2:
+            value = (*it)[1];
+            break;
+        default:
+            x_Warn("Ignoring extra fields in value of " + tag, record.line_no);
+            value = (*it)[1];
+            break;
+        }
+        if (x_GetFlags() & fGBQuals) {
+            if ( !(x_GetFlags() & fNoGTF) ) { // translate
+                if (tag == "transcript_id") {
+                    //continue;
+                } else if (tag == "gene_id") {
+                    tag = "gene";
+                    SIZE_TYPE colon = value.find(':');
+                    if (colon != NPOS) {
+                        value.erase(0, colon + 1);
+                    }
+                } else if (tag == "exon_number") {
+                    tag = "number";
+                } else if (NStr::StartsWith(tag, "insd_")) {
+                    tag.erase(0, 5);
+                }
+            }
+            CFeature_table_reader::AddFeatQual
+                (feat, tag, value, CFeature_table_reader::fKeepBadKey);
+        } else { // don't attempt to parse, just treat as imported
+            CRef<CGb_qual> qual(new CGb_qual);
+            qual->SetQual(tag);
+            qual->SetVal(value);
+            feat->SetQual().push_back(qual);
+        }
+    }
+    return feat;
+}
+
+
+CRef<CSeq_align> CGFFReader::x_ParseAlignRecord(const SRecord& record)
+{
+    CRef<CSeq_align> align(new CSeq_align);
+    align->SetType(CSeq_align::eType_partial);
+    align->SetDim(2);
+    SRecord::TAttrs::const_iterator tgit = record.FindAttribute("Target");
+    vector<string> target;
+    if (tgit != record.attrs.end()) {
+        NStr::Tokenize((*tgit)[1], " +", target);
+    }
+    if (target.size() != 3) {
+        x_Warn("Bad Target attribute", record.line_no);
+        return align;
+    }
+    CRef<CSeq_id> tgid    = x_ResolveSeqName(target[0]);
+    TSeqPos       tgstart = NStr::StringToUInt(target[1]);
+    TSeqPos       tgstop  = NStr::StringToUInt(target[2]);
+    TSeqPos       tglen   = tgstop - tgstart + 1;
+
+    CRef<CSeq_loc> refloc = x_ResolveLoc(record.loc);
+    CRef<CSeq_id>  refid(&refloc->SetInt().SetId());
+    TSeqPos        reflen = 0;
+    for (CSeq_loc_CI it(*refloc);  it;  ++it) {
+        reflen += it.GetRange().GetLength();
+    }
+
+    CRef<CSeq_loc> tgloc(new CSeq_loc);
+    tgloc->SetInt().SetId(*tgid);
+    tgloc->SetInt().SetFrom(tgstart);
+    tgloc->SetInt().SetTo(tgstop);
+
+    SRecord::TAttrs::const_iterator gap_it = record.FindAttribute("Gap");
+    if (gap_it == record.attrs.end()) {
+        // single ungapped alignment
+        if (reflen == tglen  &&  refloc->IsInt()) {
+            CDense_seg& ds = align->SetSegs().SetDenseg();
+            ds.SetNumseg(1);
+            ds.SetIds().push_back(refid);
+            ds.SetIds().push_back(tgid);
+            ds.SetStarts().push_back(refloc->GetInt().GetFrom());
+            ds.SetStarts().push_back(tgstart);
+            ds.SetLens().push_back(reflen);
+            if (refloc->GetInt().IsSetStrand()) {
+                ds.SetStrands().push_back(refloc->GetInt().GetStrand());
+                ds.SetStrands().push_back(eNa_strand_plus);
+            }
+        } else {
+            if (reflen != tglen  &&  reflen != 3 * tglen) {
+                x_Warn("Reference and target locations have an irregular"
+                       " ratio.", record.line_no);
+            }
+            CRef<CStd_seg> ss(new CStd_seg);
+            ss->SetLoc().push_back(refloc);
+            ss->SetLoc().push_back(tgloc);
+            align->SetSegs().SetStd().push_back(ss);
+        }
+    } else {
+        SCigarAlignment cigar((*gap_it)[1]);
+        align = cigar(refloc->GetInt(), tgloc->GetInt());
+    }
+
+    try {
+        CRef<CScore> score(new CScore);
+        score->SetValue().SetReal(NStr::StringToDouble(record.score));
+        align->SetScore().push_back(score);
+    } catch (...) {
+    }
+
+    return align;
+}
+
+
+CRef<CSeq_loc> CGFFReader::x_ResolveLoc(const SRecord::TLoc& loc)
+{
+    CRef<CSeq_loc> seqloc(new CSeq_loc);
+    ITERATE (SRecord::TLoc, it, loc) {
+        CRef<CSeq_id> id = x_ResolveSeqName(it->accession);
+        ITERATE (set<TSeqRange>, range, it->ranges) {
+            CRef<CSeq_loc> segment(new CSeq_loc);
+            if (range->GetLength() == 1) {
+                CSeq_point& pnt = segment->SetPnt();
+                pnt.SetId   (*id);
+                pnt.SetPoint(range->GetFrom());
+                if (it->strand != eNa_strand_unknown) {
+                    pnt.SetStrand(it->strand);
+                }
+            } else {
+                CSeq_interval& si = segment->SetInt();
+                si.SetId  (*id);
+                si.SetFrom(range->GetFrom());
+                si.SetTo  (range->GetTo());
+                if (it->strand != eNa_strand_unknown) {
+                    si.SetStrand(it->strand);
+                }
+            }
+            if (IsReverse(it->strand)) {
+                seqloc->SetMix().Set().push_front(segment);
+            } else {
+                seqloc->SetMix().Set().push_back(segment);
+            }
+        }
+    }
+
+    if (seqloc->GetMix().Get().size() == 1) {
+        return seqloc->SetMix().Set().front();
+    } else {
+        return seqloc;
+    }
+}
+
+
+void CGFFReader::x_ParseV2Attributes(SRecord& record, const vector<string>& v,
+                                     SIZE_TYPE& i)
+{
     string         attr_last_value;
     vector<string> attr_values;
     char           quote_char = 0;
-    for (SIZE_TYPE i = 8;  i < v.size();  ++i) {
+
+    for (;  i < v.size();  ++i) {
         string s = v[i] + ' ';
-        if ( !misdelimited  &&  i > 8) {
-            SIZE_TYPE pos = s.find_first_not_of(" ");
-            if (pos != NPOS) {
-                if (s[pos] == '#') {
-                    break;
-                } else {
-                    x_Warn("Extra non-comment fields", x_GetLineNumber());
-                }
-            } else {
-                continue; // just spaces anyway...
-            }
-        }
         SIZE_TYPE pos = 0;
         while (pos < s.size()) {
             SIZE_TYPE pos2;
@@ -297,14 +540,13 @@ CGFFReader::x_ParseFeatureInterval(const string& line)
                     break;
 
                 case '#':
-                    i = v.size();
-                    break;
+                    return;
 
                 case ';':
                     if (attr_values.empty()) {
                         x_Warn("null attribute", x_GetLineNumber());
                     } else {
-                        x_AddAttribute(*record, attr_values);
+                        x_AddAttribute(record, attr_values);
                         attr_values.clear();
                     }
                     break;
@@ -324,98 +566,35 @@ CGFFReader::x_ParseFeatureInterval(const string& line)
 
     if ( !attr_values.empty() ) {
         x_Warn("unterminated attribute " + attr_values[0], x_GetLineNumber());
-        x_AddAttribute(*record, attr_values);
+        x_AddAttribute(record, attr_values);
     }
-
-    return record;
 }
 
 
-CRef<CSeq_feat> CGFFReader::x_ParseRecord(const SRecord& record)
+void CGFFReader::x_ParseV3Attributes(SRecord& record, const vector<string>& v,
+                                     SIZE_TYPE& i)
 {
-    CRef<CSeq_feat> feat(CFeature_table_reader::CreateSeqFeat
-                         (record.key, *x_ResolveLoc(record.loc),
-                          CFeature_table_reader::fKeepBadKey));
-    if (record.frame >= 0  &&  feat->GetData().IsCdregion()) {
-        feat->SetData().SetCdregion().SetFrame
-            (static_cast<CCdregion::EFrame>(record.frame + 1));
-    }
-    ITERATE (SRecord::TAttrs, it, record.attrs) {
-        string tag = it->front();
-        string value;
-        switch (it->size()) {
-        case 1:
-            break;
-        case 2:
-            value = (*it)[1];
-            break;
-        default:
-            x_Warn("Ignoring extra fields in value of " + tag, record.line_no);
-            value = (*it)[1];
-            break;
-        }
-        if (x_GetFlags() & fGBQuals) {
-            if ( !(x_GetFlags() & fNoGTF) ) { // translate
-                if (tag == "transcript_id") {
-                    //continue;
-                } else if (tag == "gene_id") {
-                    tag = "gene";
-                    SIZE_TYPE colon = value.find(':');
-                    if (colon != NPOS) {
-                        value.erase(0, colon + 1);
-                    }
-                } else if (tag == "exon_number") {
-                    tag = "number";
-                }
+    vector<string> v2, attr;
+    NStr::Tokenize(v[i], ";", v2, NStr::eMergeDelims);
+    ITERATE (vector<string>, it, v2) {
+        attr.clear();
+        string key, values;
+        if (NStr::SplitInTwo(*it, "=", key, values)) {
+            vector<string> vals;
+            attr.resize(2);
+            s_URLDecode(key, attr[0]);
+            NStr::Tokenize(values, ",", vals);
+            ITERATE (vector<string>, it2, vals) {
+                s_URLDecode(*it2, attr[1]);
+                x_AddAttribute(record, attr);
             }
-            CFeature_table_reader::AddFeatQual
-                (feat, tag, value, CFeature_table_reader::fKeepBadKey);
-        } else { // don't attempt to parse, just treat as imported
-            CRef<CGb_qual> qual(new CGb_qual);
-            qual->SetQual(tag);
-            qual->SetVal(value);
-            feat->SetQual().push_back(qual);
+        } else {
+            x_Warn("attribute without value: " + key, x_GetLineNumber());
+            attr.resize(1);
+            s_URLDecode(key, attr[0]);
+            x_AddAttribute(record, attr);
+            continue;
         }
-    }
-    return feat;
-}
-
-
-CRef<CSeq_loc> CGFFReader::x_ResolveLoc(const SRecord::TLoc& loc)
-{
-    CRef<CSeq_loc> seqloc(new CSeq_loc);
-    ITERATE (SRecord::TLoc, it, loc) {
-        CRef<CSeq_id> id = x_ResolveSeqName(it->accession);
-        ITERATE (set<TSeqRange>, range, it->ranges) {
-            CRef<CSeq_loc> segment(new CSeq_loc);
-            if (range->GetLength() == 1) {
-                CSeq_point& pnt = segment->SetPnt();
-                pnt.SetId   (*id);
-                pnt.SetPoint(range->GetFrom());
-                if (it->strand != eNa_strand_unknown) {
-                    pnt.SetStrand(it->strand);
-                }
-            } else {
-                CSeq_interval& si = segment->SetInt();
-                si.SetId  (*id);
-                si.SetFrom(range->GetFrom());
-                si.SetTo  (range->GetTo());
-                if (it->strand != eNa_strand_unknown) {
-                    si.SetStrand(it->strand);
-                }
-            }
-            if (IsReverse(it->strand)) {
-                seqloc->SetMix().Set().push_front(segment);
-            } else {
-                seqloc->SetMix().Set().push_back(segment);
-            }
-        }
-    }
-
-    if (seqloc->GetMix().Get().size() == 1) {
-        return seqloc->SetMix().Set().front();
-    } else {
-        return seqloc;
     }
 }
 
@@ -434,39 +613,38 @@ void CGFFReader::x_AddAttribute(SRecord& record, vector<string>& attr)
 
 string CGFFReader::x_FeatureID(const SRecord& record)
 {
-    if (x_GetFlags() & fNoGTF) {
+    if (record.type != SRecord::eFeat  ||  x_GetFlags() & fNoGTF) {
         return kEmptyStr;
     }
 
-    static const vector<string> sc_GeneId(1, "gene_id");
-    SRecord::TAttrs::const_iterator gene_it
-        = record.attrs.lower_bound(sc_GeneId);
+    if (m_Version == 3) {
+        SRecord::TAttrs::const_iterator id_it = record.FindAttribute("ID");
+        if (id_it != record.attrs.end()) {
+            return (*id_it)[1];
+        }
+        // otherwise, do something with Parent?
+    }
 
-    static const vector<string> sc_TranscriptId(1, "transcript_id");
+    SRecord::TAttrs::const_iterator gene_it = record.FindAttribute("gene_id");
     SRecord::TAttrs::const_iterator transcript_it
-        = record.attrs.lower_bound(sc_TranscriptId);
-
-    static const vector<string> sc_ProteinId(1, "protein_id");
+        = record.FindAttribute("transcript_id");
     SRecord::TAttrs::const_iterator protein_it
-        = record.attrs.lower_bound(sc_ProteinId);
+        = record.FindAttribute("protein_id");
 
     // concatenate our IDs from above, if found
     string id;
-    if (gene_it != record.attrs.end()  &&
-        gene_it->front() == "gene_id") {
+    if (gene_it != record.attrs.end()) {
         id += (*gene_it)[1];
     }
 
-    if (transcript_it != record.attrs.end()  &&
-        transcript_it->front() == "transcript_id") {
+    if (transcript_it != record.attrs.end()) {
         if ( !id.empty() ) {
             id += ' ';
         }
         id += (*transcript_it)[1];
     }
 
-    if (protein_it != record.attrs.end()  &&
-        protein_it->front() == "protein_id") {
+    if (protein_it != record.attrs.end()) {
         if ( !id.empty() ) {
             id += ' ';
         }
@@ -474,9 +652,8 @@ string CGFFReader::x_FeatureID(const SRecord& record)
     }
 
     // look for db xrefs
-    static const vector<string> sc_Dbxref(1, "db_xref");
     SRecord::TAttrs::const_iterator dbxref_it
-        = record.attrs.lower_bound(sc_Dbxref);
+        = record.FindAttribute("db_xref");
     for ( ; dbxref_it != record.attrs.end()  &&
             dbxref_it->front() == "db_xref";  ++dbxref_it) {
         if ( !id.empty() ) {
@@ -496,7 +673,21 @@ string CGFFReader::x_FeatureID(const SRecord& record)
                ||  NStr::FindNoCase(record.key, "rna") != NPOS) {
         //id += " " + record.key;
         id += record.key;
-    } else { // probably an intron, exon, or single site
+    } else if (record.key == "exon") {
+        // normally separate intervals, but may want to merge.
+        if (x_GetFlags() & fMergeExons) {
+            id += record.key;
+        } else {
+            SRecord::TAttrs::const_iterator it
+                = record.FindAttribute("exon_number");
+            if (it == record.attrs.end()) {
+                return kEmptyStr;
+            } else {
+                id += record.key + ' ' + (*it)[1];
+            }
+        }
+        return kEmptyStr;
+    } else { // probably an intron or single site
         return kEmptyStr;
     }
     _TRACE("id = " << id);
@@ -607,6 +798,7 @@ void CGFFReader::x_MergeAttributes(SRecord& dest, const SRecord& src)
                     ++dait;
                 }
                 dest.attrs.erase(dait_tag, dait);
+                dait_tag = dait_end;
             }
         } else {
             dest.attrs.insert(dait, *sait);
@@ -644,14 +836,58 @@ void CGFFReader::x_PlaceFeature(CSeq_feat& feat, const SRecord&)
 }
 
 
+void CGFFReader::x_PlaceAlignment(CSeq_align& align, const SRecord& record)
+{
+    CRef<CBioseq> seq;
+    try {
+        seq = x_ResolveID(align.GetSeq_id(0), kEmptyStr);
+    } catch (...) {
+    }
+    CBioseq::TAnnot& annots
+        = seq ? seq->SetAnnot() : m_TSE->SetSet().SetAnnot();
+    NON_CONST_ITERATE (CBioseq::TAnnot, it, annots) {
+        if ((*it)->GetData().IsAlign()) {
+            (*it)->SetData().SetAlign().push_back(CRef<CSeq_align>(&align));
+            return;
+        }
+    }
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    annot->SetData().SetAlign().push_back(CRef<CSeq_align>(&align));
+    annots.push_back(annot);
+}
+
+
+void CGFFReader::x_ParseAndPlace(const SRecord& record)
+{
+    switch (record.type) {
+    case SRecord::eFeat:
+        x_PlaceFeature(*x_ParseFeatRecord(record), record);
+        break;
+    case SRecord::eAlign:
+        x_PlaceAlignment(*x_ParseAlignRecord(record), record);
+        break;
+    default:
+        x_Warn("Unknown record type " + NStr::IntToString(record.type),
+               record.line_no);
+    }
+}
+
+
 CRef<CSeq_id> CGFFReader::x_ResolveSeqName(const string& name)
 {
     CRef<CSeq_id>& id = m_SeqNameCache[name];
+    if (id.NotEmpty()
+        &&  (id->Which() == CSeq_id::e_not_set
+             ||  static_cast<int>(id->Which()) >= CSeq_id::e_MaxChoice)) {
+        x_Warn("x_ResolveSeqName: invalid cache entry for " + name);
+        id.Reset();
+    }
     if ( !id ) {
         id.Reset(x_ResolveNewSeqName(name));
     }
-    if ( !id ) {
-        x_Warn("x_ResolveNewSeqName returned null for " + name);
+    if ( !id ||  id->Which() == CSeq_id::e_not_set
+        ||  static_cast<int>(id->Which()) >= CSeq_id::e_MaxChoice) {
+        x_Warn("x_ResolveNewSeqName returned null or invalid ID for " + name);
         id.Reset(new CSeq_id(CSeq_id::e_Local, name, name));
     }
     return id;
@@ -660,7 +896,12 @@ CRef<CSeq_id> CGFFReader::x_ResolveSeqName(const string& name)
 
 CRef<CSeq_id> CGFFReader::x_ResolveNewSeqName(const string& name)
 {
-    return CRef<CSeq_id>(new CSeq_id(name));
+    CRef<CSeq_id> id(new CSeq_id(name));
+    if (id->Which() == CSeq_id::e_not_set) {
+        // unrecognized; treat as local
+        id.Reset(new CSeq_id(CSeq_id::e_Local, name, name));
+    }
+    return id;
 }
 
 
@@ -724,6 +965,20 @@ void CGFFReader::x_PlaceSeq(CBioseq& seq)
 }
 
 
+CGFFReader::SRecord::TAttrs::const_iterator
+CGFFReader::SRecord::FindAttribute(const string& name, size_t min_values)
+const
+{
+    SRecord::TAttrs::const_iterator it
+        = attrs.lower_bound(vector<string>(1, name));
+    while (it != attrs.end()  &&  it->front() == name
+           &&  it->size() <= min_values) {
+        ++it;
+    }
+    return (it == attrs.end() || it->front() == name) ? it : attrs.end();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -731,6 +986,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/06/07 20:44:07  ucko
+* Add initial GFF 3 support, and make more robust in spots.
+*
 * Revision 1.6  2004/05/21 21:42:55  gorelenk
 * Added PCH ncbi_pch.hpp
 *
