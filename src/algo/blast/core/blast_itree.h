@@ -60,8 +60,8 @@ extern "C" {
     as tiebreakers for the query offsets. HSPs in a given midpoint tree 
     that straddle both subtrees are collected into a linked list */
 typedef struct SIntervalNode {
-    Int4 center;    /**< The center point of the region this node describes */
-    Int4 width;     /**< The distance from the region center to region edge */
+    Int4 leftend;   /**< The left endpoint of the region this node describes */
+    Int4 rightend;  /**< The right endpoint of the region this node describes */
     Int4 leftptr;   /**< Offset to the subtree describing the left half
                          of the region, OR the query start offset (leaf 
                          nodes only) */
