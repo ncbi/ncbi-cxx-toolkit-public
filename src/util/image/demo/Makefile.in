@@ -1,0 +1,10 @@
+# $Id$
+# Author:  Mike DiCuccio
+
+# Meta-makefile for image testapp
+#################################
+
+APP_PROJ = sub_image conv_image
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
