@@ -51,6 +51,13 @@ CBDB_Env::~CBDB_Env()
     /*int ret = */m_Env->close(m_Env, 0);
 }
 
+void CBDB_Env::SetCacheSize(unsigned int cache_size)
+{
+    int ret = m_Env->set_cachesize(m_Env, 0, cache_size, 1);
+    BDB_CHECK(ret, 0);
+}
+
+
 void CBDB_Env::Open(const char* db_home, int flags)
 {
     int ret = m_Env->open(m_Env, db_home, flags, 0664);
@@ -72,6 +79,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/10/20 15:23:55  kuznets
+ * Added cache management for BDB environment
+ *
  * Revision 1.2  2003/08/27 20:04:29  kuznets
  * Set the correct combination of open flags (CBDB_Env::OpenWithLocks)
  *

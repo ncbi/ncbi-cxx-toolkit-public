@@ -74,6 +74,10 @@ public:
 
     /// Return underlying DB_ENV structure pointer for low level access.
     DB_ENV* GetEnv() { return m_Env; }
+
+    /// Set cache size for the environment.
+    void SetCacheSize(unsigned int cache_size);
+
 private:
     CBDB_Env(const CBDB_Env&);
     CBDB_Env& operator=(const CBDB_Env&);
@@ -88,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/10/20 15:23:38  kuznets
+ * Added cache management for BDB environment
+ *
  * Revision 1.4  2003/09/29 14:30:22  kuznets
  * Comments doxygenification
  *
