@@ -1,4 +1,4 @@
---$Revision: 1.3 $ 
+--$Revision: 1.4 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -43,7 +43,7 @@ Entrezgene ::= SEQUENCE {
         protein-coding (8) ,
         orf (9) ,
         pseudo (10) ,
-        other (255) } OPTIONAL ,
+        other (255) } ,
     source BioSource , 
     gene Gene-ref , 
     prot Prot-ref OPTIONAL , 
@@ -54,8 +54,7 @@ Entrezgene ::= SEQUENCE {
     gene-source Gene-source OPTIONAL ,  -- NCBI source to Entrez 
     locus SEQUENCE OF Gene-commentary OPTIONAL ,     -- where is the gene on a chromosome 
     refgene SEQUENCE OF Gene-commentary OPTIONAL ,          -- NG for this? 
-    transcripts SEQUENCE OF Gene-commentary OPTIONAL ,   -- all the alternative splice forms 
-    products SEQUENCE OF Gene-commentary OPTIONAL ,         -- all the proteins 
+    products SEQUENCE OF Gene-commentary OPTIONAL ,         -- all the RNAs and or proteins 
     homology SEQUENCE OF Gene-commentary OPTIONAL , 
     comments SEQUENCE OF Gene-commentary OPTIONAL } 
  
@@ -74,12 +73,30 @@ Gene-source ::= SEQUENCE {
     extra-terms BOOLEAN DEFAULT FALSE } -- do we have a URL for extra indexing terms? 
  
 Gene-commentary ::= SEQUENCE { 
+    type INTEGER {            -- type of Gene Commentary
+        genomic (1) ,
+        pre-RNA (2) ,
+        mRNA (3) ,
+        rRNA (4) ,
+        tRNA (5) ,
+        snRNA (6) ,
+        scRNA (7) ,
+        peptide (8) ,
+        other-genetic (9) ,
+        genomic-mRNA (10) ,
+        cRNA (11) ,
+        mature-peptide (12) ,
+        pre-protein (13) ,
+        comment (254) ,
+        other (255) } ,
     heading VisibleString OPTIONAL ,  -- appears above text 
     label VisibleString OPTIONAL ,        -- occurs to left of text 
     text VisibleString OPTIONAL ,         -- block of text 
+    accession VisibleString OPTIONAL ,    -- accession for the gi in the seqloc
     refs SEQUENCE OF Pub OPTIONAL ,       -- refs for this 
     source SEQUENCE OF Other-source OPTIONAL ,   -- links and refs 
     seqs SEQUENCE OF Seq-loc OPTIONAL ,           -- referenced sequences 
+    products SEQUENCE OF Gene-commentary OPTIONAL ,
     comment SEQUENCE OF Gene-commentary OPTIONAL } 
  
 Other-source ::= SEQUENCE { 
