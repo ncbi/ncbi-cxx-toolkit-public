@@ -10,7 +10,9 @@
 #################################
 
 LIB_PROJ = connect
-SUB_PROJ = test daemons
+SUB_PROJ = test
+
+UNIX_SUB_PROJ = daemons
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
