@@ -102,6 +102,49 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-here]";
         
+        if (s == "-limit") {
+            {
+                CSeqDB db("/home/bealer/seqdb/tenth", 'p', true);
+            
+                cout << "Num oids: " << db.GetNumSeqs() << endl;
+            
+                db.SetOIDRange(10,20);
+            
+                CSeqDBIter i = db.Begin();
+            
+                while(i) {
+                    CRef<CBioseq> bs = db.GetBioseq(i.GetOID());
+                    
+                    cout << "-----seq "
+                         << i.GetOID() << " length "
+                         << i.GetLength() << "-------" << endl;
+                    
+                    ++i;
+                }
+            }
+            {
+                CSeqDB db("swissprot", 'p', true);
+            
+                cout << "Num oids: " << db.GetNumSeqs() << endl;
+            
+                db.SetOIDRange(135,174);
+            
+                CSeqDBIter i = db.Begin();
+            
+                while(i) {
+                    CRef<CBioseq> bs = db.GetBioseq(i.GetOID());
+                    
+                    cout << "-----seq "
+                         << i.GetOID() << " length "
+                         << i.GetLength() << "-------" << endl;
+                    
+                    ++i;
+                }
+            }
+            
+            return 0;
+        } else desc += " [-local]";
+        
         if (s == "-local") {
             CSeqDB nr("/home/bealer/seqdb/tenth", 'p', true);
             
