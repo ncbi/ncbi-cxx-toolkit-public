@@ -3,14 +3,20 @@
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #################################
 # This can be used to build/install/clean
-# a single(sic!) library [LIB] made of object files [OBJ]
-# (and [OBJ].o will be compiled from [OBJ].cpp or [OBJ].c)
+# a single(sic!) library [LIB] made of object files [LIBOBJ] and [LOBJ]
+# where [LIBOBJ].o will be automagically compiled from [LIBOBJ].cpp or
+# [LIBOBJ].c, and [LOBJ].o must have been already compiled by this time.
+# The [OBJ].o will be compiled (and also copied to the global library dir)
+# separately (they will not go to any library)
+#
 #
 # srcdir = @srcdir@
 # include @builddir@/Makefile.mk
 #
 # LIB     = p1
-# OBJ     = p1_src1 p1_src2
+# LIBOBJ  = p1_src1 p1_src2
+# LOBJ    = p1_myobj
+# OBJ     = some_src1 some_src2
 # .....
 # CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_P1_PROJECT
 # .....
@@ -20,14 +26,19 @@
 
 ### Add prefixes and extentions
 XLIBOBJ = $(LIBOBJ:=@obj_ext@)
+XLOBJ   = $(LOBJ:=@obj_ext@)
 XOBJ    = $(OBJ:=@obj_ext@)
 XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
 
 
 ### C/C++ source file compilation rules
 
+%@obj_ext@: ./%.cpp
+	$(CXX) @f_compile@ $(CXXFLAGS) $(CPPFLAGS) $< @f_outobj@$@
 %@obj_ext@: $(srcdir)/%.cpp
 	$(CXX) @f_compile@ $(CXXFLAGS) $(CPPFLAGS) $< @f_outobj@$@
+%@obj_ext@: ./%.c
+	$(CC)  @f_compile@ $(CFLAGS)   $(CPPFLAGS) $< @f_outobj@$@
 %@obj_ext@: $(srcdir)/%.c
 	$(CC)  @f_compile@ $(CFLAGS)   $(CPPFLAGS) $< @f_outobj@$@
 
@@ -35,7 +46,7 @@ XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
 ### The library build rule
 
 $(XLIB): $(XLIBOBJ)
-	$(AR) @f_outlib@$(XLIB) $(XLIBOBJ)
+	$(AR) @f_outlib@$(XLIB) $(XLIBOBJ) $(XLOBJ)
 	$(RANLIB) $(XLIB)
 
 
@@ -48,6 +59,7 @@ clean:
 	-$(RMDIR) SunWS_cache
 	-$(RM) .make.state
 	-$(RM) $(XLIBOBJ)
+	-$(RM) $(XLOBJ)
 	-$(RM) $(XLIB)
 	-$(RM) $(XOBJ)
 	-$(RM) *~
