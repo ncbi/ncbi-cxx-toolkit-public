@@ -93,10 +93,10 @@ void CVersionItem::x_GatherInfo(CBioseqContext& ctx)
         case CSeq_id::e_Tpg:
         case CSeq_id::e_Tpe:
         case CSeq_id::e_Tpd:
-            m_Accession = id.GetSeqIdString(true);
+            m_Accession = ctx.GetAccession();
             break;
         default:
-            m_Accession = kEmptyStr;
+            break;
         }        
     }
 
@@ -117,6 +117,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/06 18:01:29  shomrat
+* Get accession from context
+*
 * Revision 1.5  2004/04/22 15:52:35  shomrat
 * Changes in context
 *
