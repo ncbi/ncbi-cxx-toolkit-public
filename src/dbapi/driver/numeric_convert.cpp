@@ -37,7 +37,8 @@
 #include <stdio.h>
 
 
-USING_NCBI_SCOPE;
+/* USING_NCBI_SCOPE; */
+BEGIN_NCBI_SCOPE
 
 
 #define MAXPRECISION 		50
@@ -331,3 +332,5 @@ long long numeric_to_longlong(CS_NUMERIC* cs_num)
 
     return my_long;
 }
+
+END_NCBI_SCOPE
