@@ -8,58 +8,48 @@
 	 <h1>Starting new C++ project</h1>
 
 	 <ul>
-		<li> <a href="#ref_Structure">CVS tree structure for new C++ projects</a>
+		<li> <a href="#ref_Structure">CVS tree structure of NCBI C++ projects</a>
 		<li> <a href="#ref_Create">Adding CVS directory for a new C++ project</a>
 		<li> <a href="#ref_CVS">Using CVS</a>
 	 </ul>
 
 	 <br></br>
 
-	 <a name="ref_Structure">
-	 <h2>Overview of the C++ CVS tree structure</h2>
+	 <a name="ref_Structure"><h2>CVS tree structure of NCBI C++ projects</h2></a>
 
-	 The standard CVS location for the newcoming NCBI C++/STL projects is
-	 <i><b>$CVSROOT/internal/cpp/</b></i>. It has the following structure:
+	 (For the overall NCBI C++ CVS tree structure see in
+	 <a href="config.html#ref_Source">NCBI C++ source code</a>.)
 
-	 <p><i><b>doc/</b></i>
 	 <p>
-	 <i>"*.html"</i>, <i>"readme.*"</i>, <i>"*.txt"</i>, etc.<p>
-	 Here go the NCBI C++ style and naming conventions, as well as
-	 recommendations and directives of what features of C++ can be
-	 used(and how) -- for everybody writing on C++ in NCBI.
-	 Here may also be a list of referencies to the documentations
-	 in the <i>projects/*/doc/</i> dirs.
-  
-	 <p><i><b>projects/makefile.*</b></i>
-	 <p>
-	 Platform-specific makefiles that recursively build libs &amp; stuff
-	 in the <i>projects/*/</i> dirs using the project-related makefiles
-	 <i>"projects/*/makefile.*"</i>
+	 The standard CVS location for NCBI C++/STL projects is
+	 <i><b>"$CVSROOT/internal/cpp/projects/"</b></i>. It contains:
 
-	 <p><i><b>projects/*/makefile.*</b></i>
-	 <p>
-	 Platform-specific makefiles to build this particular project.
+	 <ul>
+		<li> <i><b>"/makefile.*"</b></i> --
+		Platform-specific makefiles that recursively build libs &amp; stuff
+		in the <i>"projects/*/"</i> dirs using the project-related makefiles
+		<i>"/*/makefile.*"</i>
 
+		<li> <i><b>"/*/makefile.*"</b></i> --
+		Platform-specific makefiles to build a particular project.
 
-	 <p><i><b>projects/*/doc/</b></i>
-	 <p>
-	 Documentation for this particular project.
+		<li> <i><b>"/*/doc/"</b></i> --
+		Documentation for this particular project.
 
-	 <p><i><b>projects/*/include/</b></i>
-	 <p>
-	 Externally used include files(<i>"*.hpp"</i> and <i>"*.inl"</i>)
-	 that describe the API provided by the project(included with
-	 <i>#include &lt;*.*&gt;</i>).
+		<li> <i><b>"/*/include/"</b></i> --
+		Externally used include files(<i>"*.hpp"</i> and <i>"*.inl"</i>)
+		that describe the API provided by the project(included with
+		<i>#include &lt;*.*&gt;</i>).
 
-	 <p><i><b>projects/*/src/</b></i>
-	 Source files(<i>"*.cpp"</i>) that implement the API;
-	 and, probably, some internally used include files
-	 (<i>"*.hpp" </i> and <i>"*.inl"</i>, included with <i>#include "*.*"</i>)
+		<li> <i><b>"/*/src/"</b></i>
+		Source files(<i>"*.cpp"</i>) that implement the API;
+		and, probably, some internally used include files
+		(<i>"*.hpp" </i> and <i>"*.inl"</i>, included with <i>#include "*.*"</i>)
+	 </ul>
 
 
-	 <br></br> <br></br>
-	 <a name="ref_Create">
-	 <h2>Adding CVS directory for a new C++ project</h2>
+	 <br></br>
+	 <a name="ref_Create"><h2>Adding CVS directory for a new C++ project</h2></a>
 
 	 <p>
 	 Create your new project directories in the NCBI CVS tree:
@@ -84,8 +74,7 @@ cd MyNewProject
 
 
 	 <br></br> <br></br>
-	 <a name="ref_CVS">
-	 <h2>Using CVS</h2>
+	 <a name="ref_CVS"><h2>Using CVS</h2></a>
 
 	 For the detailed info on CVS see
 	 <a href="http://www.cs.utah.edu/csinfo/texinfo/cvs/cvs_toc.html">
