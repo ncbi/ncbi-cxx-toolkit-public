@@ -101,6 +101,7 @@ void ValidateRecord(const TestDBF1& dbf1, unsigned int id)
 
 const char* s_TestFileName = "testbase.db";
 const char* s_TestFileName2= "testbase2.db";
+const char* s_TestFileName3= "testbase3.db";
 
 const unsigned int s_RecsInTable = 100;
 
@@ -729,7 +730,6 @@ static void s_TEST_BDB_IdTable_DeleteInsert(void)
 //
 
 
-
 static void s_TEST_BDB_StrTable_Fill(void)
 {
     cout << "======== StrKey table filling test." << endl;
@@ -780,8 +780,100 @@ static void s_TEST_BDB_StrTable_Fill(void)
 }
 
 
+//////////////////////////////////////////////////////////////////
+//
+// 
+// Database record structure to test with duplicate records
+//
+//
+
+struct TestDuplicateKeys : public CBDB_File
+{
+    CBDB_FieldInt4        idata;
+    CBDB_FieldString      str;
+
+    TestDuplicateKeys() 
+    : CBDB_File(CBDB_File::eDuplicatesEnable)
+    {
+        BindKey("idata", &idata);
+        BindData("str", &str, 256);
+    }
+};
+
+//////////////////////////////////////////////////////////////////
+//
+// 
+// BDB string key table fill test
+//
+//
 
 
+static void s_TEST_BDB_Duplicates(void)
+{
+    cout << "======== Duplicate keys test." << endl;
+
+    TestDuplicateKeys  dbf;
+
+    dbf.Open(s_TestFileName3, CBDB_File::eCreate);
+
+    // Fill the table
+
+    dbf.idata = 1;
+    dbf.str = "Str1";
+    EBDB_ErrCode ret = dbf.Insert();
+    assert (ret == eBDB_Ok);
+    
+    dbf.idata = 1;
+    dbf.str = "Str11";
+    ret = dbf.Insert();
+    assert (ret == eBDB_Ok);
+
+    dbf.idata = 10;
+    dbf.str = "Str100";
+    ret = dbf.Insert();
+    assert (ret == eBDB_Ok);
+
+    {{
+        CBDB_FileCursor cur(dbf);
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+
+        cur.From << 1;
+        unsigned int recs_fetched = 0;
+        while (cur.Fetch() == eBDB_Ok) {
+            unsigned idata = dbf.idata;
+            assert(idata == 1);
+
+            string str = dbf.str;
+            assert(str == "Str1" || str == "Str11");
+
+            ++recs_fetched;
+        }
+
+        assert(recs_fetched == 2);
+
+    }}
+
+    dbf.idata = 1;
+    ret = dbf.Delete();
+    assert (ret == eBDB_Ok);
+    {{
+        CBDB_FileCursor cur(dbf);
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+
+        cur.From << 1;
+        unsigned int recs_fetched = 0;
+        while (cur.Fetch() == eBDB_Ok) {
+            assert(0);
+            ++recs_fetched;
+        }
+        assert(recs_fetched == 0);
+
+    }}
+
+
+    cout << "======== Duplicate keys test ok." << endl;
+
+}
 
 ////////////////////////////////
 // Test application
@@ -827,6 +919,8 @@ int CBDB_Test::Run(void)
 
         s_TEST_BDB_StrTable_Fill();
 
+        s_TEST_BDB_Duplicates();
+
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -859,6 +953,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/07/09 14:29:47  kuznets
+ * Added DB_DUP mode test.
+ *
  * Revision 1.8  2003/05/27 18:05:08  kuznets
  * Fixed compilation warnings
  *
