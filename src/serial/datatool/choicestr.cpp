@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/03/10 21:21:10  gouriano
+* use CSerialException in generated code
+*
 * Revision 1.39  2003/03/10 18:55:18  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -443,7 +446,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "void "<<methodPrefix<<"SelectDelayBuffer("STATE_ENUM" index)\n"
             "{\n"
             "    if ( "STATE_MEMBER" != "STATE_NOT_SET" || "DELAY_MEMBER".GetIndex() != (index - 1))\n"
-            "        THROW1_TRACE(NCBI_NS_STD::runtime_error, \"illegal call\");\n"
+            "        NCBI_THROW(ncbi::CSerialException,eIllegalCall, \"illegal call\");\n"
             "    "STATE_MEMBER" = index;\n"
             "}\n"
             "\n";
