@@ -31,7 +31,7 @@
 	 All these macros gets disabled in the non-debug versions lest
 	 to affect the application performance and functionality;  to
 	 turn them on, one must <i>#define</i> the <i>"_DEBUG"</i> preprocessor
-	 variable. Also, the developer must be careful and not use
+	 variable. Developer must be careful and do not use
 	 any code with side effects in <i>_ASSERT</i> or <i>_TRACE</i>
 	 as this will cause a discrepancy in functionality between debug
 	 and non-debug code(e.g., <i>_ASSERT(a++)</i> and
@@ -48,17 +48,17 @@
 		application if <b><i>expr</i></b> resulted in zero(or <i>"false"</i>).
 
 		<li> <b><i>_VERIFY(expr)</i></b> --
-		Evaluate expression <b><i>expr</i></b> and, if <i>"_DEBUG"</i> is defined
+		Evaluate expression <b><i>expr</i></b>; if <i>"_DEBUG"</i> is defined
 		and <b><i>expr</i></b> resulted in zero(or <i>"false"</i>) then halt the
 		application.
 		
 		<li> <b><i>_TRACE(message)</i></b> --
 		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
 		otherwise, it outputs the <b><i>message</i></b> using
-		<a href="#ref_Message">Standard NCBI C++ message posting</a>:
+		<a href="#ref_Message">Standard NCBI C++ message posting</a>
 	 </ul> </ul>
 
-	 All these macros automatically add(prefix) file name and line
+	 All these macros automatically report the file name and line
 	 number to the diagnostics. For example, this code located in file
 	 <i>"somefile.cpp"</i> at line 333:
 <pre>
@@ -77,9 +77,17 @@ _TRACE( "x + 5 = "  <<  (x + 5) );
 	 <p> <i>#include &lt;ncbiexpt.hpp&gt;</i>
 
 	 <p>
-	 One must use one of
+	 One must use
 	 <a href="http://www.cygnus.com/misc/wp/dec96pub/lib-diagnostics.html#lib.std.exceptions">standard C++ exceptions</a>
-	 as much as possible.
+	 as much as possible. There is also a couple of auxiliary exception
+	 classes(derived from <i>std::runtime_error</i>):
+	 <ul>
+		<li> <i>CErrnoException</i> -- to report failure in a standard C library
+		function; it automatically appends to the user message a system-spefific
+		description reported by <b>errno</b>
+		<li> <i>CParseException</i> -- to report an erroneous position (passed in
+		the additional constructor parameter) along with the user message
+	 </ul>
 	 
 	 <p>
 	 Then, it is <b>strictly recommended</b> that when the basic functionality
@@ -87,40 +95,51 @@ _TRACE( "x + 5 = "  <<  (x + 5) );
 	 one must derive the new ad hoc exception classes from one of the
 	 standard exception classes.	-- This is to provide a more uniform way
 	 of exceprion handling, for we could smartly catch/handle most of
-	 thrown exceptions using a STD_CATCH macro like:
+	 thrown exceptions using <b><i>STD_CATCH(message)</i></b> and
+	 <b><i>STD_CATCH_ALL(message)</i></b> preprocessor macros.
 
-<pre>
-// Standard handling of "exception"-derived exceptions
-#define STD_CATCH(message) \
-catch (exception& e) { \
-    CNcbiDiag diag; \
-    diag << Error << "[" << message << "]" << "Exception: " << e.what(); \
-}
+	 <p>
+	 Use <b><i>STD_CATCH(message)</i></b> macro to catch any exception derived from
+	 the standard exception class (<i>std::exception</i>) and prints out "message"
+	 along with the info passed with the <i>std::exception::what()</i>.
+	 <b><i>STD_CATCH_ALL(message)</i></b> first tries to catch a
+	 <i>std::exception</i>-derived exception (with <b><i>STD_CATCH(message)</i></b>); and
+	 if the thrown exception is not "standard" then it posts the "message".
 
-// Standard handling of "exception"-derived and all other exceptions
-#define STD_CATCH_ALL(message) \
-STD_CATCH(message) \
-catch (...) { \
-    CNcbiDiag diag; \
-    diag << Error << "[" << message << "]" << "Unknown exception"; \
-}
-</pre>
+	 <p>
+	 The "message" argument can of any form acceptable by the
+	 <a href="#ref_Message">diagnostic class <i>CNcbiDiag</i></a>.
+	 
+
+	 <p>
 	 This way, the standard way of dealing with exception in the NCBI C++
 	 code will be like:
-<pre>
+	 <pre>
 class foreign_exception { ..... };
 class exception_derived_user : public exception { ..... };
 ...........
+char arg1 = "qqq";
+int  arg2 = 888;
 try {
-   SomeFunc("qq", 5);
+   SomeFunc(arg1, arg2);
 } catch (foreign_exception& fe) {
-   // do something special with some(not derived from "exception") exception
+   // do something special with the particular "non-standard"
+   // (not derived from "std::exception") exception "foreign_exception"
 } catch (exception_derived_user& eu)  {
-   // do something with "NCBI-standard"(derived from "exception") exception
+   // do something special with the particular "standard"
+   // (derived from "std::exception") exception "exception_derived_user"
 }
-// standard handling for all the rest "NCBI-standard" exceptions
-STD_CATCH("It happened inside SomeFunc()...");
-</pre>
+// handle all the rest "standard" exceptions in a uniform way
+STD_CATCH ( "in SomeFunc(" << arg1 << "," << arg2 << ")" );
+	 </pre>
+
+	 <p>
+	 Here, if <i>SomeFunc</i> do <i>throw std::runtime_error("Invalid Arg2");</i>
+	 then the application will print out (to its diagnostic stream)
+	 something like:
+	 <pre>
+Error: [in SomeFunc(qqq,888)] Exception: Invalid Arg2
+	 </pre>
 
 	 <p>
 	 One is encouraged to write
@@ -133,18 +152,18 @@ STD_CATCH("It happened inside SomeFunc()...");
 	 
 	 <p>
 	 Thus, you must use:
-<pre>
+	 <pre>
 void f1(int i) THROWS_NONE;
 int  f2(void) THROWS((e0));
 int  f3(long) THROWS((e1,e2));
-</pre>
+	 </pre>
 	 in the place of:
-<pre>
+	 <pre>
 void f1(int i) throw();
 int  f2(void)  throw(e0);
 int  f3(long)  throw(e1,e2);
-</pre>
-	 respectively. -- (Please note the double parenthesis for <i>THROWS()</i>.)
+	 </pre>
+	 respectively. -- Please note the double parenthesis for <i>THROWS()</i>.
 
 
 	 <br></br>
@@ -154,10 +173,89 @@ int  f3(long)  throw(e1,e2);
 	 <p> <i>#include &lt;ncbidiag.hpp&gt;</i>
 
 	 <p>
+	 Standard diagnostics is provided with the <b><i>CNcbiDiag</i></b> class.
+	 Given application can have as many objects of this class as
+	 needed. The trick is that each instance of the <b><i>CNcbiDiag</i></b> class
+	 actually stores (and allows to append to) only one message at a
+	 time. When the message controlled by an instance of <b><i>CNcbiDiag</i></b>
+	 is complete, <b><i>CNcbiDiag</i></b> calls a global callback function
+	 (of type <b><i>FDiagHandler</i></b>) and pass the message (along with its
+	 severity level) as the function arguments.
 
+	 <p>
+	 Usually, this global callback would merely dump the message to
+	 a diagnostic stream, and there is an auxiliary function
+	 <b><i>SetDiagStream()</i></b> to specify output stream for the diagnostics
+	 (one can call <b><i>SetDiagStream(NcbiCerr)</i></b> to dump the diagnostics to
+	 the standard error output stream):
+	 <pre>
+extern void SetDiagStream(CNcbiOstream* os, bool quick_flush=true);
+	 </pre>
 
+	 Using <b><i>SetDiagHandler()</i></b>, one can install his own callback function
+	 of type <b><i>FDiagHandler</i></b> to process messages posted via
+	 <b><i>CNcbiDiag</i></b>.
+	 The implementation of the <b><i>SetDiagStream()</i></b> in <i>"ncbidiag.cpp"</i>
+	 is a good example of how to do this.
+	 <pre>
+typedef void (*FDiagHandler)(EDiagSev    sev,
+                             const char* message_buf,
+                             size_t      message_len,
+                             void*       data);
+typedef void (*FDiagCleanup)(void* data);
+extern void SetDiagHandler(FDiagHandler func,
+                           void*        data,
+                           FDiagCleanup cleanup);
+	 </pre>
 
-	 <br></br>
+	 <p>
+	 To compose a diagnostic message with <b><i>CNcbiDiag</i></b> one must
+	 use formatting operator <b><<</b>. It works practically the same
+	 way as operator <b><<</b> for standard C++ output streams.
+	 <b><i>CNcbiDiag</i></b> class also has some <b><i>CNcbiDiag</i></b>-specific
+	 manipulators to control the message severity level:
+	 <ul>
+		<li> <i>Info</i> -- set severity level to <i>eDiag_Info</i>
+		<li> <i>Warning</i> -- set severity level to <i>eDiag_Warning</i>
+		<li> <i>Error</i> -- set severity level to <i>eDiag_Error</i> [default]
+		<li> <i>Fatal</i> -- set severity level to <i>eDiag_Fatal</i>
+		<li> <i>Trace</i> -- set severity level to <i>eDiag_Trace</i>
+	 </ul>
+	 NOTE: whenever the severity level is changed, <b><i>CNcbiDiag</i></b>
+	 also automatically executes two other manipulators:
+	 <ul>
+		<li> <i>Endm</i> -- means that the message is complete and to be
+		flushed(via the global callback as described above)
+		<li> <i>Reset</i> -- directs to discard the content of presently
+		composed message
+	 </ul>
+	 The <i>Endm</i> manipulator also gets executed on the
+	 <b><i>CNcbiDiag</i></b> object destruction.
+
+	 <p>
+	 For example, this code:
+	 <pre>
+int iii = 1234;
+CNcbiDiag diag1;
+
+diag1 << "Message1_Start " << iii;  // message 1 is started but not ready yet
+{ CNcbiDiag diag2;  diag2 << Info << "Message2"; } // message 2 flushed in destructor
+diag1 << "Message1_End" << Endm;  // message 1 finished and flushed by "Endm"
+diag1 << "Message1_1";  // will be flushed by the following "Warning"
+diag1 << Warning << "Discard this warning" << ++iii << Reset; // message discarded
+diag1 << "This is a warning " << iii;
+diag1 << Endm;
+	 </pre>
+	 will write to the diagnostic stream(if the latter was set with
+	 <b><i>SetDiagStream()</i></b>):
+	 <pre>
+Error: Message1_Start 1234
+Info: Message2
+Error: Message1_End
+Error: Message1_1
+Warning: This is a warning 12345
+	 </pre>
+
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
