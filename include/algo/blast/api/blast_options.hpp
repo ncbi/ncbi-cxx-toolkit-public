@@ -212,11 +212,11 @@ public:
     int GetMismatchPenalty() const;
     void SetMismatchPenalty(int p);
 
-    int GetGapOpeningPenalty() const;
-    void SetGapOpeningPenalty(int g);
+    int GetGapOpeningCost() const;
+    void SetGapOpeningCost(int g);
 
-    int GetGapExtensionPenalty() const;
-    void SetGapExtensionPenalty(int e);
+    int GetGapExtensionCost() const;
+    void SetGapExtensionCost(int e);
 
     int GetFrameShiftPenalty() const;
     void SetFrameShiftPenalty(int p);
@@ -879,25 +879,25 @@ CBlastOptions::SetMismatchPenalty(int p)
 }
 
 inline int 
-CBlastOptions::GetGapOpeningPenalty() const
+CBlastOptions::GetGapOpeningCost() const
 {
     return m_ScoringOpts->gap_open;
 }
 
 inline void 
-CBlastOptions::SetGapOpeningPenalty(int g)
+CBlastOptions::SetGapOpeningCost(int g)
 {
     m_ScoringOpts->gap_open = g;
 }
 
 inline int 
-CBlastOptions::GetGapExtensionPenalty() const
+CBlastOptions::GetGapExtensionCost() const
 {
     return m_ScoringOpts->gap_extend;
 }
 
 inline void 
-CBlastOptions::SetGapExtensionPenalty(int e)
+CBlastOptions::SetGapExtensionCost(int e)
 {
     m_ScoringOpts->gap_extend = e;
 }
@@ -1054,6 +1054,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/10/21 17:31:06  camacho
+* Renaming of gap open/extension accessors/mutators
+*
 * Revision 1.28  2003/10/21 15:36:25  camacho
 * Remove unnecessary side effect when setting frame shift penalty
 *

@@ -310,10 +310,10 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
     }
 
     if (args["gopen"].AsInteger()) {
-        opt.SetGapOpeningPenalty(args["gopen"].AsInteger());
+        opt.SetGapOpeningCost(args["gopen"].AsInteger());
     }
     if (args["gext"].AsInteger()) {
-        opt.SetGapExtensionPenalty(args["gext"].AsInteger());
+        opt.SetGapExtensionCost(args["gext"].AsInteger());
     }
 
     if (args["greedy"].AsBoolean()) {
@@ -506,6 +506,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/10/21 17:34:34  camacho
+ * Renaming of gap open/extension accessors/mutators
+ *
  * Revision 1.23  2003/10/17 18:22:28  dondosha
  * Use separate variables for different initial word extension options
  *
