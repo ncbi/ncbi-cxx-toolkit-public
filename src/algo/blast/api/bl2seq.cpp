@@ -253,8 +253,8 @@ CBl2Seq::SetupSearch()
 
     // Set the hitlist size to the total number of subject sequences, to 
     // make sure that no hits are discarded.
-    m_OptsHandle->SetHitlistSize(m_tSubjects.size());
-    m_OptsHandle->SetPrelimHitlistSize(m_tSubjects.size());
+    m_OptsHandle->SetHitlistSize((int) m_tSubjects.size());
+    m_OptsHandle->SetPrelimHitlistSize((int) m_tSubjects.size());
 }
 
 void 
@@ -368,6 +368,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.67  2005/02/08 18:50:29  bealer
+ * - Fix type truncation warnings.
+ *
  * Revision 1.66  2005/01/06 15:42:01  camacho
  * Make use of modified signature to SetupQueries
  *

@@ -395,7 +395,7 @@ CDbBlast::x_InitHSPStream()
             lock = Blast_CMT_LOCKInit();
         int num_results;
 
-        num_results = m_tQueries.size();
+        num_results = (int) m_tQueries.size();
 
         m_pHspStream = 
             Blast_HSPListCollectorInitMT(GetOptions().GetProgramType(), 
@@ -560,7 +560,7 @@ CDbBlast::GetResults()
         BlastHSPList* hsp_list = NULL;
         Int4 hitlist_size = GetOptionsHandle().GetHitlistSize();
 
-        m_ipResults = Blast_HSPResultsNew(GetQueries().size());
+        m_ipResults = Blast_HSPResultsNew((int) GetQueries().size());
         while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
                != kBlastHSPStream_Eof) {
             Blast_HSPResultsInsertHSPList(m_ipResults, hsp_list, hitlist_size);
@@ -671,6 +671,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.56  2005/02/08 18:50:29  bealer
+ * - Fix type truncation warnings.
+ *
  * Revision 1.55  2005/01/28 21:39:37  ucko
  * CPrelimBlastThread::Main: use long rather than intptr_t, which isn't
  * as widely available as one might like.

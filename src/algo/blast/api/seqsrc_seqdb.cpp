@@ -239,7 +239,7 @@ s_SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
         itr->current_pos = itr->oid_range[0];
     } else if (chunk_type == CSeqDB::eOidList) {
         itr->itr_type = eOidList;
-        itr->chunk_sz = oid_list.size();
+        itr->chunk_sz = (Uint4) oid_list.size();
         if (itr->chunk_sz == 0)
             return BLAST_SEQSRC_EOF;
         itr->current_pos = 0;
@@ -487,6 +487,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2005/02/08 18:50:29  bealer
+ * - Fix type truncation warnings.
+ *
  * Revision 1.27  2005/02/07 20:57:23  bealer
  * - Changes for Uint4->int usage in SeqDB.
  *

@@ -272,7 +272,7 @@ x_CreateDenseg(const CSeq_id* master, const CSeq_id* slave,
     dense_seg->SetLens() = lengths;
     dense_seg->SetStrands() = strands;
     dense_seg->SetStarts() = starts;
-    dense_seg->SetNumseg(lengths.size());
+    dense_seg->SetNumseg((int) lengths.size());
 
     return dense_seg;
 }
@@ -298,7 +298,7 @@ x_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
     ASSERT(slave);
 
     CSeq_align::C_Segs::TStd retval;
-    int nsegs = lengths.size();         // number of segments in alignment
+    int nsegs = (int) lengths.size();   // number of segments in alignment
     TSignedSeqPos m_start, m_stop;      // start and stop for master sequence
     TSignedSeqPos s_start, s_stop;      // start and stop for slave sequence
 
@@ -1202,6 +1202,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2005/02/08 18:50:29  bealer
+* - Fix type truncation warnings.
+*
 * Revision 1.51  2004/11/24 16:06:47  dondosha
 * Added and/or fixed doxygen comments
 *

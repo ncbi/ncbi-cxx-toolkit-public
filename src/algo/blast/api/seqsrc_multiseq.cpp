@@ -105,7 +105,7 @@ inline bool CMultiSeqInfo::GetIsProtein()
 /// Returns number of sequences
 inline Uint4 CMultiSeqInfo::GetNumSeqs()
 {
-    return m_ivSeqBlkVec.size();
+    return (Uint4) m_ivSeqBlkVec.size();
 }
 
 /// Returns sequence block structure for one of the sequences
@@ -449,6 +449,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2005/02/08 18:50:28  bealer
+ * - Fix type truncation warnings.
+ *
  * Revision 1.26  2005/02/02 05:04:47  dondosha
  * Doxygen comments
  *
