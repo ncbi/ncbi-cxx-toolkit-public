@@ -28,95 +28,6 @@
 * File Description:
 *   Base class for serializable objects
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.28  2004/11/30 15:06:04  dicuccio
-* Added #include for ncbithr.hpp
-*
-* Revision 1.27  2004/10/06 18:05:02  vasilche
-* Thread-safe initialization in s_SerFlags().
-*
-* Revision 1.26  2004/07/29 19:57:08  vasilche
-* Added operators to read/write CObjectInfo.
-*
-* Revision 1.25  2004/06/09 19:17:52  gouriano
-* Allow assignment of alias types
-*
-* Revision 1.24  2004/05/17 21:03:03  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.23  2004/03/25 15:57:08  gouriano
-* Added possibility to copy and compare serial object non-recursively
-*
-* Revision 1.22  2004/02/09 18:22:35  gouriano
-* enforced checking environment vars when setting initialization
-* verification parameters
-*
-* Revision 1.21  2004/01/16 19:56:09  gouriano
-* Added I/O stream manipulators for serializable objects
-*
-* Revision 1.20  2003/11/21 16:17:44  vasilche
-* Correct closing of ASN.1 stream in DebugDump.
-*
-* Revision 1.19  2003/11/17 22:13:23  gouriano
-* in CSerialObject::Assign: on self-assignment issue a warning only
-*
-* Revision 1.18  2003/11/17 14:39:15  gouriano
-* Prohibit assignment of a serial object to itself
-*
-* Revision 1.17  2003/11/13 14:07:38  gouriano
-* Elaborated data verification on read/write/get to enable skipping mandatory class data members
-*
-* Revision 1.16  2003/09/22 20:56:31  gouriano
-* Changed base type of AnyContent object to CSerialObject
-*
-* Revision 1.15  2003/09/16 14:48:36  gouriano
-* Enhanced AnyContent objects to support XML namespaces and attribute info items.
-*
-* Revision 1.14  2003/08/25 15:59:09  gouriano
-* added possibility to use namespaces in XML i/o streams
-*
-* Revision 1.13  2003/08/13 15:47:45  gouriano
-* implemented serialization of AnyContent objects
-*
-* Revision 1.12  2003/07/17 18:48:01  gouriano
-* re-enabled initialization verification
-*
-* Revision 1.11  2003/06/25 17:49:05  gouriano
-* fixed verification flag initialization, disabled verification
-*
-* Revision 1.10  2003/06/04 21:23:04  gouriano
-* changed the value of ms_UnassignedStr
-*
-* Revision 1.9  2003/05/21 16:12:04  vasilche
-* Correct index argument to ThrowUnassigned() to match index of GetItemInfo().
-*
-* Revision 1.8  2003/05/21 16:01:52  vasilche
-* Avoid failed assert while generating exception message.
-*
-* Revision 1.7  2003/04/29 18:30:37  gouriano
-* object data member initialization verification
-*
-* Revision 1.6  2003/01/22 18:54:09  gouriano
-* added unfreezing of the string stream
-*
-* Revision 1.5  2003/01/06 17:14:15  gouriano
-* corrected CSerialObject::DebugDump: disabled autoseparator in output stream
-*
-* Revision 1.4  2002/07/30 20:24:58  grichenk
-* Fixed error messages in Assign() and Equals()
-*
-* Revision 1.3  2002/05/30 14:16:44  gouriano
-* fix in debugdump: memory leak
-*
-* Revision 1.2  2002/05/29 21:19:17  gouriano
-* added debug dump
-*
-* Revision 1.1  2002/05/15 20:20:38  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
 */
 
 #include <ncbi_pch.hpp>
@@ -278,11 +189,9 @@ ESerialVerifyData CSerialObject::x_GetVerifyData(void)
     case eSerialVerifyData_No:
     case eSerialVerifyData_Never:
         return eSerialVerifyData_No;
-        break;
     case eSerialVerifyData_Yes:
     case eSerialVerifyData_Always:
         return eSerialVerifyData_Yes;
-        break;
     case eSerialVerifyData_DefValue:
     case eSerialVerifyData_DefValueAlways:
         return eSerialVerifyData_No;
@@ -598,3 +507,97 @@ CNcbiIstream& operator>> (CNcbiIstream& is, const CObjectInfo& obj)
 
 
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.29  2005/02/01 21:53:12  grichenk
+* Fixed warnings
+*
+* Revision 1.28  2004/11/30 15:06:04  dicuccio
+* Added #include for ncbithr.hpp
+*
+* Revision 1.27  2004/10/06 18:05:02  vasilche
+* Thread-safe initialization in s_SerFlags().
+*
+* Revision 1.26  2004/07/29 19:57:08  vasilche
+* Added operators to read/write CObjectInfo.
+*
+* Revision 1.25  2004/06/09 19:17:52  gouriano
+* Allow assignment of alias types
+*
+* Revision 1.24  2004/05/17 21:03:03  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.23  2004/03/25 15:57:08  gouriano
+* Added possibility to copy and compare serial object non-recursively
+*
+* Revision 1.22  2004/02/09 18:22:35  gouriano
+* enforced checking environment vars when setting initialization
+* verification parameters
+*
+* Revision 1.21  2004/01/16 19:56:09  gouriano
+* Added I/O stream manipulators for serializable objects
+*
+* Revision 1.20  2003/11/21 16:17:44  vasilche
+* Correct closing of ASN.1 stream in DebugDump.
+*
+* Revision 1.19  2003/11/17 22:13:23  gouriano
+* in CSerialObject::Assign: on self-assignment issue a warning only
+*
+* Revision 1.18  2003/11/17 14:39:15  gouriano
+* Prohibit assignment of a serial object to itself
+*
+* Revision 1.17  2003/11/13 14:07:38  gouriano
+* Elaborated data verification on read/write/get to enable skipping mandatory class data members
+*
+* Revision 1.16  2003/09/22 20:56:31  gouriano
+* Changed base type of AnyContent object to CSerialObject
+*
+* Revision 1.15  2003/09/16 14:48:36  gouriano
+* Enhanced AnyContent objects to support XML namespaces and attribute info items.
+*
+* Revision 1.14  2003/08/25 15:59:09  gouriano
+* added possibility to use namespaces in XML i/o streams
+*
+* Revision 1.13  2003/08/13 15:47:45  gouriano
+* implemented serialization of AnyContent objects
+*
+* Revision 1.12  2003/07/17 18:48:01  gouriano
+* re-enabled initialization verification
+*
+* Revision 1.11  2003/06/25 17:49:05  gouriano
+* fixed verification flag initialization, disabled verification
+*
+* Revision 1.10  2003/06/04 21:23:04  gouriano
+* changed the value of ms_UnassignedStr
+*
+* Revision 1.9  2003/05/21 16:12:04  vasilche
+* Correct index argument to ThrowUnassigned() to match index of GetItemInfo().
+*
+* Revision 1.8  2003/05/21 16:01:52  vasilche
+* Avoid failed assert while generating exception message.
+*
+* Revision 1.7  2003/04/29 18:30:37  gouriano
+* object data member initialization verification
+*
+* Revision 1.6  2003/01/22 18:54:09  gouriano
+* added unfreezing of the string stream
+*
+* Revision 1.5  2003/01/06 17:14:15  gouriano
+* corrected CSerialObject::DebugDump: disabled autoseparator in output stream
+*
+* Revision 1.4  2002/07/30 20:24:58  grichenk
+* Fixed error messages in Assign() and Equals()
+*
+* Revision 1.3  2002/05/30 14:16:44  gouriano
+* fix in debugdump: memory leak
+*
+* Revision 1.2  2002/05/29 21:19:17  gouriano
+* added debug dump
+*
+* Revision 1.1  2002/05/15 20:20:38  grichenk
+* Initial revision
+*
+* ===========================================================================
+*/
