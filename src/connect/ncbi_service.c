@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2001/09/29 19:33:04  lavr
+ * BUGFIX: SERV_Update() requires VT bound (was not the case in constructor)
+ *
  * Revision 6.29  2001/09/28 22:03:12  vakatov
  * Included missing <connect/ncbi_ansi_ext.h>
  *
@@ -294,13 +297,13 @@ int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 void SERV_Reset(SERV_ITER iter)
 {
     size_t i;
-    if (!iter || !iter->op)
+    if (!iter)
         return;
     for (i = 0; i < iter->n_skip; i++)
         free(iter->skip[i]);
     iter->n_skip = 0;
     iter->last = 0;
-    if (iter->op->Reset)
+    if (iter->op && iter->op->Reset)
         (*iter->op->Reset)(iter);
 }
 
@@ -309,9 +312,9 @@ void SERV_Close(SERV_ITER iter)
 {
     if (!iter)
         return;
+    SERV_Reset(iter);
     if (iter->op && iter->op->Close)
         (*iter->op->Close)(iter);
-    SERV_Reset(iter);
     iter->op = 0;
     if (iter->skip)
         free(iter->skip);

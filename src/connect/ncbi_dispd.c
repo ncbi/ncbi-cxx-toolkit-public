@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2001/09/29 19:33:04  lavr
+ * BUGFIX: SERV_Update() requires VT bound (was not the case in constructor)
+ *
  * Revision 6.31  2001/09/29 18:41:03  lavr
  * "Server-Keyed-Info:" removed from protocol
  *
@@ -254,10 +257,7 @@ extern "C" {
 static int/*bool*/ s_ParseHeader(const char* header, void *data,
                           int/*bool, ignored*/ server_error)
 {
-    SERV_ITER iter = (SERV_ITER) data;
-
-    if (header)
-        SERV_Update(iter, header);
+    SERV_Update((SERV_ITER) data, header);
     return 1/*header parsed okay*/;
 }
 
@@ -481,7 +481,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
     data->s_node = 0;
     iter->data = data;
 
+    iter->op = &s_op;
     if (!s_Resolve(iter)) {
+        iter->op = 0;
         s_Close(iter);
         return 0;
     }
