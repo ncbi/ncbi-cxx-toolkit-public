@@ -104,104 +104,90 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlkPtr subject,
 			      Int4 array_size,
 			      BlastInitHitListPtr ungapped_hsps)
 {
-LookupTablePtr lookup = lookup_wrap->lut;
-Int4 i;
-Int4 hits=0;
-Int4 totalhits=0;
-Int4 first_offset = 0;
-Int4 last_offset  = subject->length - lookup->wordsize;
-Int4 score;
-Int4 hsp_q, hsp_s, hsp_len;
-Int4 diff;
-Int4 window;
+   LookupTablePtr lookup = lookup_wrap->lut;
+   Int4 i;
+   Int4 hits=0;
+   Int4 totalhits=0;
+   Int4 first_offset = 0;
+   Int4 last_offset  = subject->length - lookup->wordsize;
+   Int4 score;
+   Int4 hsp_q, hsp_s, hsp_len;
+   Int4 window;
+   Int4 last_hit, level, diff;
+   Int4 diag_offset, diag_coord, diag_mask;
+   DiagStructPtr diag_array;
 
-if (diag == NULL)
-  window = 0;
-else
-  window = diag->window;
+   if (diag == NULL)
+      return -1;
 
-while(first_offset <= last_offset)
-    {
-      hits = BlastAaScanSubject(lookup_wrap,
-				subject,
-				&first_offset,
-				query_offsets,
-				subject_offsets,
-				array_size);
+   diag_offset = diag->offset;
+   diag_array = diag->diag_array;
+   diag_mask = diag->diag_mask;
+   window = diag->window;
+
+   while(first_offset <= last_offset) {
+      hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset, 
+                query_offsets, subject_offsets,	array_size);
 
       totalhits += hits;
-
       /* for each hit, */
-      i=0;
-      while(i<hits)
+      for (i = 0; i < hits; ++i)
       {
-	Int4 last_hit;
-        Int4 level_diff;
+         diag_coord = 
+            (subject_offsets[i]  - query_offsets[i]) & diag_mask;
+         level = diag_array[diag_coord].diag_level;
+         
+         last_hit = diag_array[diag_coord].last_hit - diag_offset;
+         diff = subject_offsets[i] - last_hit;
 
-	/* if we have previously extended past this hit, */
-
-	if ( (level_diff = DiagCheckLevel(diag, query_offsets[i],
-                                          subject_offsets[i])) < 0 )
-	  {
-	    /* skip it. */
-	    DiagSetLastHit(diag, query_offsets[i], subject_offsets[i]);
-	    i++;
-
-	    continue;
-	  }
-
-	/* if the last hit is within the window, */
-
-	last_hit = DiagGetLastHit(diag, query_offsets[i], subject_offsets[i]);
-
-	diff = subject_offsets[i] - last_hit;
-
-	if ( (window == 0) || 
-             ( (diff < window) && (level_diff >= lookup->wordsize )) )
-	  {
-	    hsp_len=0;
-	    
-	    /* initiate a two-hit extension. */
-	    score=BlastAaExtendTwoHit(diag,
-				      matrix,
-				      subject,
-				      query,
-				      last_hit,
-				      subject_offsets[i],
-				      query_offsets[i],
-				      dropoff,
-				      &hsp_q,
-				      &hsp_s,
-				      &hsp_len);
-
-
-	    /* if the hsp meets the score threshold, report it */
-	    
-            if (score > cutoff) {
-                BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s,
-                   query_offsets[i], subject_offsets[i], hsp_len, score);
+         if (level > 0) {
+            /* Previous hit already started on this diagonal, but not
+               extended yet */
+            if (diff < lookup->wordsize) {
+               /* New hit is too close to the previous, it does not 
+                  count as a second hit; update the level, so we know 
+                  where the last hit was */
+               diag_array[diag_coord].diag_level = diff + 1;
+            } else if (diff < window + level) {
+               /* Extend this pair of hits */
+               hsp_len = 0;
+               score = BlastAaExtendTwoHit(diag, matrix, subject, query,
+                          last_hit, subject_offsets[i], query_offsets[i],
+                          dropoff, &hsp_q, &hsp_s, &hsp_len);
+               /* if the hsp meets the score threshold, report it */
+               if (score > cutoff) {
+                  BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s,
+                     query_offsets[i], subject_offsets[i], hsp_len, score);
+               }
+               /* Update the last hit on this diagonal to the end of this 
+                  extension */
+               diag_array[diag_coord].last_hit = 
+                  hsp_s + hsp_len + diag_offset;
+               /* Reset level, so we know this hit has been extended */
+               diag_array[diag_coord].diag_level = 0;
+            } else {
+               /* New hit is too far away from the previous; discard 
+                  the previous hit and start a new one */
+               diag_array[diag_coord].last_hit = 
+                  subject_offsets[i] + diag_offset;
+               diag_array[diag_coord].diag_level = 1;
             }
-            /* end two-hit extension case */
-	  } else if (diff >= window) {
-             /* Update level, but only if it is a new hit */
-             DiagUpdateLevel(diag, query_offsets[i], subject_offsets[i], 
-                             subject_offsets[i]);
-          }
-	
-	
-	/* update the diagonal array to reflect this hit. */
-        DiagSetLastHit(diag, query_offsets[i], subject_offsets[i]);
-	i++;
-	
-      } /* end while - done with this batch of hits, call scansubject again. */
-            
-    } /* end while - done with the entire sequence. */
+         } else {
+            /* Previous hit already extended */
+            diag_array[diag_coord].last_hit = 
+               subject_offsets[i] + diag_offset;
+            /* Start a new hit only if this is not an immediate 
+               extension of a previous hit*/
+            if (diff > 1)
+               diag_array[diag_coord].diag_level = 1;
+         }
+      }/* end for - done with this batch of hits, call scansubject again. */
+   } /* end while - done with the entire sequence. */
  
-/* increment the offset in the diagonal array */
+   /* increment the offset in the diagonal array */
+   DiagUpdate(diag, subject->length + window); 
  
- DiagUpdate(diag, subject->length + diag->window); 
- 
- return totalhits;
+   return totalhits;
 }
 
 Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlkPtr subject,
@@ -216,21 +202,20 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlkPtr subject,
 			      Int4 array_size,
                               BlastInitHitListPtr ungapped_hsps)
 {
-LookupTablePtr lookup = lookup_wrap->lut;
-Int4 hits=0;
-Int4 totalhits=0;
-Int4 first_offset = 0;
-Int4 last_offset  = subject->length - lookup->wordsize;
-Int4 hsp_q, hsp_s, hsp_len;
-Int4 i;
-Int4 score;
-
- /* clear the diagonal array */
-
- DiagClear(diag);
-
-while(first_offset <= last_offset)
-    {
+   LookupTablePtr lookup = lookup_wrap->lut;
+   Int4 hits=0;
+   Int4 totalhits=0;
+   Int4 first_offset = 0;
+   Int4 last_offset  = subject->length - lookup->wordsize;
+   Int4 hsp_q, hsp_s, hsp_len;
+   Int4 i;
+   Int4 score;
+   
+   /* clear the diagonal array */
+   DiagClear(diag);
+   
+   while(first_offset <= last_offset)
+   {
       /* scan the subject sequence for hits */
 
       hits = BlastAaScanSubject(lookup_wrap,
@@ -241,36 +226,31 @@ while(first_offset <= last_offset)
 				array_size);
 
       totalhits += hits;
-
       /* for each hit, */
-      i=0;
-      while(i<hits)
-	{
-	  /* do an extension */
+      for (i = 0; i < hits; ++i) {
+         diag_coord = 
+            (subject_offsets[i]  - query_offsets[i]) & diag_mask;
+           
+         diff = subject_offsets[i] - 
+            (diag_array[diag_coord].last_hit - diag_offset);
 
-	  score=BlastAaExtendOneHit(diag,
-				    matrix,
-				    subject,
-				    query,
-				    subject_offsets[i],
-				    query_offsets[i],
-				    dropoff,
-				    &hsp_q,
-				    &hsp_s,
-				    &hsp_len);
+         /* do an extension, but only if we have not already extended
+            this far */
+         if (diff > 0) {
+            score=BlastAaExtendOneHit(diag, matrix, subject, query,
+                     subject_offsets[i], query_offsets[i], dropoff,
+                     &hsp_q, &hsp_s, &hsp_len);
 
-
-	/* if the hsp meets the score threshold, report it */
-          if (score > cutoff) {
-            BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s, query_offsets[i],
-               subject_offsets[i], hsp_len, score);
-          }
-          i++;
-	}
-
-    } /* end while */
-
- return totalhits;
+            /* if the hsp meets the score threshold, report it */
+            if (score > cutoff) {
+               BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s, 
+                  query_offsets[i], subject_offsets[i], hsp_len, score);
+            }
+            diag_array[diag_coord].last_hit = hsp_s + hsp_len;
+         }
+      } /* end for */
+   } /* end while */
+   return totalhits;
 }
 
 /** Given a hit, determine the diagonal on which that hit lies, and then determine the previous hit on that diagonal.
@@ -474,42 +454,33 @@ Int4 BlastAaExtendTwoHit(const BLAST_DiagTablePtr diag,
 			 Int4Ptr hsp_s,
 			 Int4Ptr hsp_len)
 {
-Int4 left_d, right_d; /* left and right displacements */
-Int4 left_score, right_score; /* left and right scores */
+   Int4 left_d, right_d = 0; /* left and right displacements */
+   Int4 left_score = 0, right_score = 0; /* left and right scores */
 
-/* first, try to extend left, from the second hit to the first hit. */
-
-left_score=BlastAaExtendLeft(matrix,
+   /* first, try to extend left, from the second hit to the first hit. */
+   left_score=BlastAaExtendLeft(matrix,
 			     subject,
 			     query,
 			     s_right_off,
 			     q_right_off,
 			     dropoff,
 			     &left_d);
- 
-/* if we didn't make it back to the first hit, don't bother extending to the right. */
- if (left_d < (s_right_off - s_left_off))
-   {
-     return 0;
+
+   /* Extend to the right only if left extension reached the first hit. */
+   if (left_d >= (s_right_off - s_left_off)) {
+      right_score=BlastAaExtendRight(matrix,
+                                     subject,
+                                     query,
+                                     s_right_off + 1,
+                                     q_right_off + 1,
+                                     dropoff,
+                                     &right_d);
    }
-
- /* otherwise, try to extend to the right. */
-
-right_score=BlastAaExtendRight(matrix,
-			       subject,
-			       query,
-			       s_right_off + 1,
-			       q_right_off + 1,
-			       dropoff,
-			       &right_d);
-
- *hsp_q = q_right_off - left_d;
- *hsp_s = s_right_off - left_d;
- *hsp_len = left_d + right_d;
-
- DiagUpdateLevel(diag, q_right_off, s_right_off, *hsp_s + *hsp_len);
-
-return left_score + right_score;
+   *hsp_q = q_right_off - left_d;
+   *hsp_s = s_right_off - left_d;
+   *hsp_len = left_d + right_d;
+   
+   return left_score + right_score;
 }
 
 /** Save the rightmost subject offset for this diagonal, so that
