@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/11 19:15:50  vasilche
+* Working binary serialization and deserialization of first test object.
+*
 * Revision 1.4  1999/06/10 21:06:42  vasilche
 * Working binary output and almost working binary input.
 *
@@ -149,7 +152,7 @@ protected:
             CObjectIStream::Block block(in);
             while ( block.Next() ) {
                 l.push_back(Data());
-                in.Read(&l.back(), GetDataTypeInfo());
+                in.RegisterAndRead(&l.back(), GetDataTypeInfo());
             }
         }
 };

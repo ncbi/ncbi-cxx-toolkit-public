@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/06/11 19:15:49  vasilche
+* Working binary serialization and deserialization of first test object.
+*
 * Revision 1.7  1999/06/09 19:58:31  vasilche
 * Added specialized templates for compilation in MS VS
 *
@@ -98,7 +101,7 @@ inline CTypeRef GetTypeRef(const T* const* object);
 inline
 CTypeRef GetTypeRef(const void*)
 {
-    NcbiCerr << "GetTypeRef(void)" << endl;
+    _TRACE("GetTypeRef(void)");
     return CTypeRef(typeid(void), CStdTypeInfo<void>::GetTypeInfo);
 }
 
@@ -106,7 +109,7 @@ template<typename T>
 inline
 CTypeRef GetStdTypeRef(const T* )
 {
-    NcbiCerr << "GetStdTypeRef(const T&) T: " << typeid(T).name() << endl;
+    _TRACE("GetStdTypeRef(const T&) T: " << typeid(T).name());
     return CTypeRef(typeid(T), CStdTypeInfo<T>::GetTypeInfo);
 }
 
@@ -131,21 +134,21 @@ CTypeRef GetTypeRef(const signed char* object)
 inline
 CTypeRef GetTypeRef(const int* object)
 {
-    NcbiCerr << "GetTypeRef(const int&)" << endl;
+    _TRACE("GetTypeRef(const int&)");
     return GetStdTypeRef(object);
 }
 
 inline
 CTypeRef GetTypeRef(const unsigned int* object)
 {
-    NcbiCerr << "GetTypeRef(const unsigned int&)" << endl;
+    _TRACE("GetTypeRef(const unsigned int&)");
     return GetStdTypeRef(object);
 }
 
 inline
 CTypeRef GetTypeRef(const string* object)
 {
-    NcbiCerr << "GetTypeRef(const string&)" << endl;
+    _TRACE("GetTypeRef(const string&)");
     return GetStdTypeRef(object);
 }
 
@@ -154,7 +157,7 @@ template<typename CLASS>
 inline
 CTypeRef GetTypeRef(const CLASS* )
 {
-    NcbiCerr << "GetTypeRef(const CLASS&) CLASS: " << typeid(CLASS).name() << endl;
+    _TRACE("GetTypeRef(const CLASS&) CLASS: " << typeid(CLASS).name());
     return CTypeRef(typeid(CLASS), CLASS::GetTypeInfo);
 }
 
@@ -162,16 +165,16 @@ template<typename Data>
 inline
 CTypeRef GetTypeRef(const list<Data>* )
 {
-    NcbiCerr << "GetTypeRef(const list<Data>&) Data: " << typeid(Data).name() << endl;
+    _TRACE("GetTypeRef(const list<Data>&) Data: " << typeid(Data).name());
     return CTypeRef(typeid(list<Data>),
                     CStlClassInfoList<Data>::GetTypeInfo);
 }
 
 template<typename Data>
 inline
-CTypeRef GetStlListRef(const list<Data>* )
+CTypeRef GetStlTypeRef(const list<Data>* )
 {
-    NcbiCerr << "GetListRef(const list<Data>&) Data: " << typeid(Data).name() << endl;
+    _TRACE("GetStlTypeRef(const list<Data>&) Data: " << typeid(Data).name());
     return CTypeRef(typeid(list<Data>),
                     CStlClassInfoList<Data>::GetTypeInfo);
 }
@@ -181,7 +184,7 @@ template<typename CLASS>
 inline
 CTypeRef GetTypeRef(const CLASS* const* object)
 {
-    NcbiCerr << "GetTypeRef(const CLASS*) CLASS: " << typeid(CLASS).name() << endl;
+    _TRACE("GetTypeRef(const CLASS*) CLASS: " << typeid(CLASS).name());
     return CTypeRef(CTypeInfo::GetPointerTypeInfo(typeid(CLASS*),
                                                   GetTypeRef(object)));
 }
@@ -238,6 +241,39 @@ CObjectIStream& operator>>(CObjectIStream& in, CLASS& object)
 {
     return Read(in, object);
 }
+
+template<typename T>
+inline
+CMemberInfo MemberInfo(const string& name, const T* member, const CTypeRef typeRef)
+{
+	return CMemberInfo(name, size_t(member), typeRef);
+}
+
+template<typename T>
+inline
+CMemberInfo MemberInfo(const string& name, const T* member)
+{
+	return MemberInfo(name, member, GetTypeRef(member));
+}
+
+template<typename T>
+inline
+CMemberInfo StlMemberInfo(const string& name, const T* member, const CTypeRef typeRef)
+{
+	return CMemberInfo(name, size_t(member), typeRef);
+}
+
+template<typename T>
+inline
+CMemberInfo StlMemberInfo(const string& name, const T* member)
+{
+	return StlMemberInfo(name, member, GetStlTypeRef(member));
+}
+
+#define ADD_CLASS_MEMBER(Member) \
+	AddMember(MemberInfo(#Member, &static_cast<const CClass*>(0)->Member))
+#define ADD_STL_CLASS_MEMBER(Member) \
+	AddMember(StlMemberInfo(#Member, &static_cast<const CClass*>(0)->Member))
 
 #include <serial/serial.inl>
 

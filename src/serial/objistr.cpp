@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/11 19:14:57  vasilche
+* Working binary serialization and deserialization of first test object.
+*
 * Revision 1.4  1999/06/10 21:06:46  vasilche
 * Working binary output and almost working binary input.
 *
@@ -53,11 +56,13 @@ BEGIN_NCBI_SCOPE
 // root reader
 void CObjectIStream::Read(TObjectPtr data, TTypeInfo typeInfo)
 {
+    RegisterObject(data, typeInfo);
     typeInfo->ReadData(*this, data);
 }
 
 void CObjectIStream::RegisterAndRead(TObjectPtr data, TTypeInfo typeInfo)
 {
+    RegisterObject(data, typeInfo);
     typeInfo->ReadData(*this, data);
 }
 

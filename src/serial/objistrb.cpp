@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/11 19:14:58  vasilche
+* Working binary serialization and deserialization of first test object.
+*
 * Revision 1.5  1999/06/10 21:06:46  vasilche
 * Working binary output and almost working binary input.
 *
@@ -215,7 +218,7 @@ public:
     static bool IsSigned(void)
         { return TYPE(-1) < TYPE(0); }
 
-    static TByte checkSign(TByte code, TByte highBit, bool sign)
+    static TYPE checkSign(TByte code, TByte highBit, bool sign)
         {
             // check if signed number is returned as unsigned
             if ( !IsSigned() &&
@@ -226,7 +229,7 @@ public:
             code &= (highBit << 1) - 1;
             if ( IsSigned() && sign ) {
                 // extend sign
-                return (code ^ highBit) - highBit;
+                return TYPE(code ^ highBit) - highBit;
             }
             else {
                 return code;
@@ -243,12 +246,25 @@ public:
                 data = 0;
                 return;
             case CObjectStreamBinaryDefs::eStd_sbyte:
-                if ( IsSigned() ) {
-                    data = ReadNumber(in, true);
+                {
+                    signed char value = in.ReadByte();
+                    if ( !IsSigned() && value < 0 ) {
+                        THROW1_TRACE(runtime_error,
+                            "cannot read signed byte to unsigned type");
+                        data = value;
+                    }
+                    return;
                 }
-                return;
             case CObjectStreamBinaryDefs::eStd_ubyte:
-                data = ReadNumber(in, false);
+                {
+                    unsigned char value = in.ReadByte();
+                    if ( IsSigned() && sizeof(TYPE) == 1 && value > 0x7f ) {
+                        THROW1_TRACE(runtime_error,
+                            "cannot read unsigned byte to signed type");
+                        data = value;
+                    }
+                    return;
+                }
                 return;
             case CObjectStreamBinaryDefs::eStd_sordinal:
                 data = ReadNumber(in, true);
@@ -270,12 +286,12 @@ TYPE CStdDataReader<TYPE>::ReadNumber(CObjectIStreamBinary& in, bool sign)
     TByte code = in.ReadByte();
     if ( !(code & 0x80) ) {
         // one byte: 0xxxxxxx
-        return TYPE(checkSign(code, 0x40, sign));
+        return checkSign(code, 0x40, sign);
     }
     else if ( !(code & 0x40) ) {
         // two bytes: 10xxxxxx xxxxxxxx
         TByte c0 = in.ReadByte();
-        TByte c1 = checkSign(code, 0x20, sign);
+        TYPE c1 = checkSign(code, 0x20, sign);
         if ( sizeof(TYPE) == 1 ) {
             // check for byte fit
             if ( !IsSigned() && (c1) ||
@@ -291,7 +307,7 @@ TYPE CStdDataReader<TYPE>::ReadNumber(CObjectIStreamBinary& in, bool sign)
         // three bytes: 110xxxxx xxxxxxxx xxxxxxxx
         TByte c1 = in.ReadByte();
         TByte c0 = in.ReadByte();
-        TByte c2 = checkSign(code, 0x10, sign);
+        TYPE c2 = checkSign(code, 0x10, sign);
         if ( sizeof(TYPE) == 1 ) {
             // check for byte fit
             if ( !IsSigned() && (c2 || c1) ||
@@ -308,7 +324,7 @@ TYPE CStdDataReader<TYPE>::ReadNumber(CObjectIStreamBinary& in, bool sign)
             return TYPE((c1 << 8) | c0);
         }
         else {
-            return TYPE((TYPE(c2) << 16) | (c1 << 8) | c0);
+            return TYPE((c2 << 16) | (c1 << 8) | c0);
         }
     }
     else if ( !(code & 0x10) ) {
@@ -316,7 +332,7 @@ TYPE CStdDataReader<TYPE>::ReadNumber(CObjectIStreamBinary& in, bool sign)
         TByte c2 = in.ReadByte();
         TByte c1 = in.ReadByte();
         TByte c0 = in.ReadByte();
-        TByte c3 = checkSign(code, 0x08, sign);
+        TYPE c3 = checkSign(code, 0x08, sign);
         if ( sizeof(TYPE) == 1 ) {
             // check for byte fit
             if ( !IsSigned() && (c3 || c2 || c1) ||
@@ -334,7 +350,7 @@ TYPE CStdDataReader<TYPE>::ReadNumber(CObjectIStreamBinary& in, bool sign)
                 throw overflow_error(typeid(TYPE), sign, code, c2, c1, c0);
             return TYPE((c1 << 8) | c0);
         }
-        return TYPE((TYPE(c3) << 24) | (TYPE(c2) << 16) | (c1 << 8) | c0);
+        return TYPE((c3 << 24) | (TYPE(c2) << 16) | (c1 << 8) | c0);
     }
     else {
         // 1111xxxx (xxxxxxxx)*
@@ -464,7 +480,16 @@ void CObjectIStreamBinary::ReadStd(double& )
 
 void CObjectIStreamBinary::ReadStd(string& data)
 {
-    data = ReadString();
+    switch ( ReadByte() ) {
+    case CObjectStreamBinaryDefs::eNull:
+        data.clear();
+        break;
+    case CObjectStreamBinaryDefs::eStd_string:
+        data = ReadString();
+        break;
+    default:
+        THROW1_TRACE(runtime_error, "invalid string code");
+    }
 }
 
 CObjectIStreamBinary::TIndex CObjectIStreamBinary::ReadIndex(void)
