@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/09/04 15:38:03  thiessen
+* switch red/blue charge colors
+*
 * Revision 1.13  2001/09/04 14:40:19  thiessen
 * add rainbow and charge coloring
 *
@@ -114,8 +117,8 @@ Colors::Colors(void)
     colors[eStrand].Set(.9, .7, .2);
     colors[eCoil].Set(.3, .9, .9);
 
-    colors[ePositive].Set(.9, .2, .2);
-    colors[eNegative].Set(.2, .3, 1.0);
+    colors[ePositive].Set(.2, .3, 1.0);
+    colors[eNegative].Set(.9, .2, .2);
     colors[eNeutral].Set(.6, .6, .6);
 
     colors[eNoDomain].Set(.4, .4, .4);
