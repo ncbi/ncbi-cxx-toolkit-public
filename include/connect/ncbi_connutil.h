@@ -64,6 +64,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2001/09/19 15:58:37  lavr
+ * Cut trailing blanks in blank lines
+ *
  * Revision 6.16  2001/09/10 21:14:47  lavr
  * Added functions: StringToHostPort()
  *                  HostPortToString()
@@ -180,40 +183,40 @@ typedef struct {
 /* Defaults and the registry entry names for "SConnNetInfo" fields
  */
 #define DEF_CONN_REG_SECTION      "CONN"
-                                  
+
 #define REG_CONN_HOST             "HOST"
 #define DEF_CONN_HOST             "www.ncbi.nlm.nih.gov"
-                                  
+
 #define REG_CONN_PORT             "PORT"
 #define DEF_CONN_PORT             80
-                                  
+
 #define REG_CONN_PATH             "PATH"
 #define DEF_CONN_PATH             "/Service/dispd.cgi"
-                                  
+
 #define REG_CONN_ARGS             "ARGS"
 #define DEF_CONN_ARGS             ""
 
 #define REG_CONN_REQ_METHOD       "REQ_METHOD"
 #define DEF_CONN_REQ_METHOD       "POST"
-                                  
+
 #define REG_CONN_TIMEOUT          "TIMEOUT"
 #define DEF_CONN_TIMEOUT          30.0
-                                  
+
 #define REG_CONN_MAX_TRY          "MAX_TRY"
 #define DEF_CONN_MAX_TRY          3
-                                  
+
 #define REG_CONN_HTTP_PROXY_HOST  "HTTP_PROXY_HOST"
 #define DEF_CONN_HTTP_PROXY_HOST  ""
-                                  
+
 #define REG_CONN_HTTP_PROXY_PORT  "HTTP_PROXY_PORT"
 #define DEF_CONN_HTTP_PROXY_PORT  80
-                                  
+
 #define REG_CONN_PROXY_HOST       "PROXY_HOST"
 #define DEF_CONN_PROXY_HOST       ""
-                                  
+
 #define REG_CONN_DEBUG_PRINTOUT   "DEBUG_PRINTOUT"
 #define DEF_CONN_DEBUG_PRINTOUT   ""
-                                  
+
 #define REG_CONN_STATELESS        "STATELESS"
 #define DEF_CONN_STATELESS        ""
 
