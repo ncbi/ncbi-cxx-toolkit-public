@@ -146,11 +146,13 @@ public:
       : m_Log(filename, limit)
     {}
 
-    void Put(const NetCache_RequestStat& stat)
+    void Put(const string& auth, const NetCache_RequestStat& stat)
     {
         string msg, tmp;
         CTime tm(stat.conn_time);
-        msg = tm.AsString();
+        msg += auth;
+        msg += ';';
+        msg += tm.AsString();
         msg += ';';
         msg += (char)stat.req_code;
         msg += ';';
@@ -448,7 +450,7 @@ void CNetCacheServer::Process(SOCK sock)
             stat.elapsed = sw.Elapsed();
             CNetCache_Logger* lg = GetLogger();
             _ASSERT(lg);
-            lg->Put(stat);
+            lg->Put(auth, stat);
         }
     } 
     catch (CNetCacheException &ex)
@@ -864,11 +866,11 @@ bool CNetCacheServer::x_CheckBlobId(CSocket&       sock,
 void CNetCacheServer::ProcessLog(CSocket&  sock, const Request&  req)
 {
     const char* str = req.req_id.c_str();
-    if (stricmp(str, "ON")==0) {
+    if (NStr::strcasecmp(str, "ON")==0) {
         CFastMutexGuard guard(x_NetCacheMutex);
         m_LogFlag = true;
     } 
-    if (stricmp(str, "OFF")==0) {
+    if (NStr::strcasecmp(str, "OFF")==0) {
         CFastMutexGuard guard(x_NetCacheMutex);
         m_LogFlag = false;
     }
@@ -1085,6 +1087,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/12/27 19:14:07  kuznets
+ * Use NStr::strcasecmp instead of stricmp
+ *
  * Revision 1.28  2004/12/27 16:31:32  kuznets
  * Implemented server side logging
  *
