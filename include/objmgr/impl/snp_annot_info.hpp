@@ -45,6 +45,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <objmgr/impl/tse_info_object.hpp>
+#include <objmgr/impl/snp_info.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -61,109 +62,6 @@ class CSeq_annot_Info;
 class CSeq_annot_SNP_Info;
 class CSeq_point;
 class CSeq_interval;
-
-struct NCBI_XOBJMGR_EXPORT SSNP_Info
-{
-public:
-    typedef CRange<TSeqPos> TRange;
-
-    TSeqPos GetFrom(void) const;
-    TSeqPos GetTo(void) const;
-    bool MinusStrand(void) const;
-
-    bool operator<(const SSNP_Info& snp) const;
-    bool operator<(TSeqPos end_position) const;
-
-    bool NoMore(const TRange& range) const;
-    bool NotThis(const TRange& range) const;
-
-    // type of SNP feature returned by parsing method
-    enum ESNP_Type {
-        eSNP_Simple,
-        eSNP_Bad_WrongMemberSet,
-        eSNP_Bad_WrongTextId,
-        eSNP_Complex_HasComment,
-        eSNP_Complex_LocationIsNotPoint,
-        eSNP_Complex_LocationIsNotGi,
-        eSNP_Complex_LocationGiIsBad,
-        eSNP_Complex_LocationStrandIsBad,
-        eSNP_Complex_IdCountTooLarge,
-        eSNP_Complex_IdCountIsNotOne,
-        eSNP_Complex_AlleleLengthBad,
-        eSNP_Complex_AlleleCountTooLarge,
-        eSNP_Complex_AlleleCountIsNonStandard,
-        eSNP_Complex_WeightBadValue,
-        eSNP_Complex_WeightCountIsNotOne,
-        eSNP_Type_last
-    };
-    // names of types for logging
-    static const char* const s_SNP_Type_Label[eSNP_Type_last];
-
-    // parser, if returned value is eSNP_Simple, then
-    // other members are filled and can be stored.
-    ESNP_Type ParseSeq_feat(const CSeq_feat& feat,
-                            CSeq_annot_SNP_Info& annot_info);
-    // restore Seq-feat object from parsed info.
-    CRef<CSeq_feat>
-    CreateSeq_feat(const CSeq_annot_SNP_Info& annot_info) const;
-
-    void UpdateSeq_feat(CRef<CSeq_feat>& seq_feat,
-                        const CSeq_annot_SNP_Info& annot_info) const;
-    void UpdateSeq_feat(CRef<CSeq_feat>& seq_feat,
-                        CRef<CSeq_point>& seq_point,
-                        CRef<CSeq_interval>& seq_interval,
-                        const CSeq_annot_SNP_Info& annot_info) const;
-    
-    CRef<CSeq_feat> x_CreateSeq_feat(void) const;
-    void x_UpdateSeq_featData(CSeq_feat& feat,
-                              const CSeq_annot_SNP_Info& annot_info) const;
-    void x_UpdateSeq_feat(CSeq_feat& feat,
-                          const CSeq_annot_SNP_Info& annot_info) const;
-    void x_UpdateSeq_feat(CSeq_feat& feat,
-                          CRef<CSeq_point>& seq_point,
-                          CRef<CSeq_interval>& seq_interval,
-                          const CSeq_annot_SNP_Info& annot_info) const;
-
-    typedef int TSNPId;
-    typedef Int1 TPositionDelta;
-    enum {
-        kMax_PositionDelta = kMax_I1
-    };
-    typedef Uint1 TCommentIndex;
-    enum {
-        kNo_CommentIndex   = kMax_UI1,
-        kMax_CommentIndex  = kNo_CommentIndex - 1,
-        kMax_CommentLength = 65530
-    };
-    typedef Uint1 TAlleleIndex;
-    enum {
-        kNo_AlleleIndex    = kMax_UI1,
-        kMax_AlleleIndex   = kNo_AlleleIndex - 1,
-        kMax_AlleleLength  = 5
-    };
-    enum {
-        kMax_AllelesCount  = 4
-    };
-    typedef Uint1 TWeight;
-    enum {
-        kMax_Weight        = kMax_I1
-    };
-    typedef Uint1 TFlags;
-    enum FFlags {
-        fMinusStrand = 1,
-        fQualReplace = 2,
-        fWeightQual  = 4
-    };
-
-    TSeqPos         m_ToPosition;
-    TSNPId          m_SNP_Id;
-    TFlags          m_Flags;
-    TPositionDelta  m_PositionDelta;
-    TCommentIndex   m_CommentIndex;
-    TWeight         m_Weight;
-    TAlleleIndex    m_AllelesIndices[kMax_AllelesCount];
-};
-
 
 class CIndexedStrings
 {
@@ -276,60 +174,6 @@ private:
     CIndexedStrings             m_Alleles;
     CConstRef<CSeq_annot>       m_Seq_annot;
 };
-
-
-/////////////////////////////////////////////////////////////////////////////
-// SSNP_Info
-/////////////////////////////////////////////////////////////////////////////
-
-inline
-TSeqPos SSNP_Info::GetFrom(void) const
-{
-    return m_ToPosition - m_PositionDelta;
-}
-
-
-inline
-TSeqPos SSNP_Info::GetTo(void) const
-{
-    return m_ToPosition;
-}
-
-
-inline
-bool SSNP_Info::MinusStrand(void) const
-{
-    return (m_Flags & fMinusStrand) != 0;
-}
-
-
-inline
-bool SSNP_Info::operator<(const SSNP_Info& snp) const
-{
-    return m_ToPosition < snp.m_ToPosition;
-}
-
-
-inline
-bool SSNP_Info::operator<(TSeqPos to_position) const
-{
-    return m_ToPosition < to_position;
-}
-
-
-inline
-bool SSNP_Info::NoMore(const TRange& range) const
-{
-    return GetTo() >= min(kInvalidSeqPos-kMax_PositionDelta,
-                          range.GetToOpen()) + kMax_PositionDelta;
-}
-
-
-inline
-bool SSNP_Info::NotThis(const TRange& range) const
-{
-    return GetFrom() >= range.GetToOpen();
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -449,6 +293,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/03/15 19:09:52  vasilche
+* SSNP_Info structure is defined in separate header.
+*
 * Revision 1.16  2004/08/12 14:17:30  vasilche
 * Understand "weight" param in qual field.
 *

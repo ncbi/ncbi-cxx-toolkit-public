@@ -39,7 +39,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objmgr/seq_annot_handle.hpp>
-#include <objmgr/impl/snp_annot_info.hpp>
+#include <objmgr/impl/snp_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -465,6 +465,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/03/15 19:10:11  vasilche
+* SSNP_Info structure is defined in separate header.
+*
 * Revision 1.12  2005/03/07 17:29:04  vasilche
 * Added "SNP" to names of SNP access methods
 *

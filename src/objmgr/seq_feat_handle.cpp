@@ -35,6 +35,7 @@
 #include <objmgr/seq_feat_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/snp_annot_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/annot_collector.hpp>
 
@@ -174,6 +175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/03/15 19:10:29  vasilche
+ * SSNP_Info structure is defined in separate header.
+ *
  * Revision 1.8  2005/03/07 17:29:04  vasilche
  * Added "SNP" to names of SNP access methods
  *
