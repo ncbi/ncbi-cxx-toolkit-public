@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.3  2001/01/11 17:22:41  thiessen
+* fix args copy in s_HttpConnectorBuilder()
+*
 * Revision 6.2  2001/01/10 21:41:10  lavr
 * Added classes: CConn_SocketStream, CConn_HttpStream, CConn_ServiceStream.
 * Everything is now wordly documented.
@@ -94,7 +97,7 @@ static CONNECTOR s_HttpConnectorBuilder(const char*    host,
     strncpy(info->path, path, sizeof(info->path) - 1);
     info->path[sizeof(info->path) - 1] = '\0';
     if (args) {
-        strncpy(info->args, path, sizeof(info->args) - 1);
+        strncpy(info->args, args, sizeof(info->args) - 1);
         info->args[sizeof(info->args) - 1] = '\0';
     } else {
         *info->args = '\0';
