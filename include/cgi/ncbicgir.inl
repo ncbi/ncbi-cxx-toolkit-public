@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/11 22:00:33  vasilche
+* Added raw CGI response
+*
 * Revision 1.3  1998/12/11 18:00:53  vasilche
 * Added cookies and output stream
 *
@@ -44,6 +47,16 @@
 *
 * ===========================================================================
 */
+
+inline void CCgiResponse::SetRawCgi(bool raw)
+{
+    m_RawCgi = raw;
+}
+
+inline bool CCgiResponse::IsRawCgi(void) const
+{
+    return m_RawCgi;
+}
 
 inline void CCgiResponse::SetContentType(const string& type)
 {

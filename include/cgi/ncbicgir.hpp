@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/11 22:00:32  vasilche
+* Added raw CGI response
+*
 * Revision 1.3  1998/12/11 18:00:52  vasilche
 * Added cookies and output stream
 *
@@ -66,6 +69,10 @@ public:
     CCgiResponse(const CCgiResponse& response);
     // Copy assignement operator
     CCgiResponse &operator=(const CCgiResponse& response);
+
+    // Set/query raw type of response
+    void SetRawCgi(bool raw);
+    bool IsRawCgi(void) const;
 
     // Header setters
     void SetHeaderValue(const string& name, const string& value);
@@ -121,17 +128,25 @@ public:
     CNcbiOstream& WriteHeader(CNcbiOstream& out) const;
 
 protected:
-
-    // String, containing
-    static const string sm_ContentTypeName;
-    static const string sm_ContentTypeDefault;
-    
     typedef map<string, string> TMap;
 
+    // Content type header name
+    static const string sm_ContentTypeName;
+    // Default content type
+    static const string sm_ContentTypeDefault;
+    // Default HTTP status line
+    static const string sm_HTTPStatusDefault;
+    
+    // Raw CGI flag
+    bool m_RawCgi;
+
+    // Header lines in alphabetical order
     TMap m_HeaderValues;
 
+    // Cookies
     CCgiCookies m_Cookies;
 
+    // Defalut output stream
     CNcbiOstream* m_Output;
 };
 

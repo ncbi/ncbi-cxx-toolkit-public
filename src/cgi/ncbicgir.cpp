@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/11 22:00:34  vasilche
+* Added raw CGI response
+*
 * Revision 1.3  1998/12/11 18:00:54  vasilche
 * Added cookies and output stream
 *
@@ -56,13 +59,13 @@
 // and to use NCBI C++ entities without the "ncbi::" prefix
 // USING_NCBI_SCOPE;
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
 static const tm kZeroTime = { 0 };
 
-const string CCgiResponse::sm_ContentTypeName = "Content-type";
+const string CCgiResponse::sm_ContentTypeName = "Content-Type";
 const string CCgiResponse::sm_ContentTypeDefault = "text/html";
+const string CCgiResponse::sm_HTTPStatusDefault = "HTTP/1.1 200 OK";
 
 inline bool s_ZeroTime(const tm& date)
 {
@@ -70,14 +73,16 @@ inline bool s_ZeroTime(const tm& date)
 }
 
 CCgiResponse::CCgiResponse()
-    : m_Output(0)
+    : m_RawCgi(false)
+    , m_Output(0)
 {
 }
 
 CCgiResponse::CCgiResponse(const CCgiResponse& response)
     : m_Output(0)
 {
-    m_HeaderValues = response.m_HeaderValues;
+    *this = response;
+    m_Output = 0;
 }
 
 CCgiResponse::~CCgiResponse()
@@ -86,7 +91,10 @@ CCgiResponse::~CCgiResponse()
 
 CCgiResponse& CCgiResponse::operator=(const CCgiResponse& response)
 {
+    m_RawCgi = response.m_RawCgi;
     m_HeaderValues = response.m_HeaderValues;
+    m_Cookies.Clear();
+    m_Cookies.Add(response.m_Cookies);
     return *this;
 }
 
@@ -142,19 +150,30 @@ CNcbiOstream& CCgiResponse::out(void) const
 
 CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& out) const
 {
+    if (IsRawCgi() ) {
+        // Write HTTP status line for raw CGI response
+        out << sm_HTTPStatusDefault << NcbiEndl;
+    }
+
+    // write default content type (if not set by user)
+    if ( !HaveHeaderValue(sm_ContentTypeName) ) {
+        out << sm_ContentTypeName << ": " << sm_ContentTypeDefault << NcbiEndl;
+    }
+
+    // write cookies
+    if ( HaveCookies() ) {
+        out << m_Cookies;
+    }
+
+    // Write all header lines in alphabetic order
     TMap& xx_HeaderValues = const_cast<TMap&>(m_HeaderValues); // BW_01
     for ( TMap::const_iterator i = xx_HeaderValues.begin();
           i != xx_HeaderValues.end(); ++i ) {
         out << i->first << ": " << i->second << NcbiEndl;
     }
-    if ( !HaveHeaderValue(sm_ContentTypeName) ) {
-        out << sm_ContentTypeName << ": " << sm_ContentTypeDefault << NcbiEndl;
-    }
-    if ( HaveCookies() ) {
-        out << m_Cookies;
-    }
+
+    // write empty line - end of header
     return out << NcbiEndl;
 }
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
