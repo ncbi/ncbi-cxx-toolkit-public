@@ -33,12 +33,19 @@
  *
  */
 
+#include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistl.hpp>
+#include <corelib/ncbistr.hpp>
 
 #if !defined(NCBI_OS_MAC)
 #  error "ncbi_os_mac.hpp must be used on MAC platforms only"
 #endif
 
+// If this variable gets set to true, then we should throw rather than exit() or abort().
+extern bool g_Mac_SpecialEnvironment;
+// Enable the coding style used by the special environment in question.
+#define gMacSpecialEnvironment g_Mac_SpecialEnvironment
 
 BEGIN_NCBI_SCOPE
 
@@ -59,13 +66,16 @@ public:
     const OSErr& GetOSErr(void) const THROWS_NONE { return m_OSErr; }
 };
 
-
 END_NCBI_SCOPE
 
 
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/12/03 22:00:34  juran
+ * Add g_Mac_SpecialEnvironment global.
+ * Include prerequisite corelib headers.
+ *
  * Revision 1.1  2001/11/19 18:06:58  juran
  * Mac OS-specific header.
  * Initial check-in.
