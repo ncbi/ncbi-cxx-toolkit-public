@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.77  2004/02/03 16:17:33  dondosha
+ * Require word size to be >= 12 with megablast lookup table
+ *
  * Revision 1.76  2004/02/02 18:49:32  dondosha
  * Fixes for minor compiler warnings
  *
@@ -1040,7 +1043,8 @@ LookupTableOptionsValidate(Uint1 program_number,
 
 	if (options->word_size <= 0)
 	{
-		Blast_MessageWrite(blast_msg, 2, code, subcode, "Word-size must be greater than zero");
+		Blast_MessageWrite(blast_msg, 2, code, subcode, 
+                         "Word-size must be greater than zero");
 		return (Int2) code;
 	} else if (program_number == blast_type_blastn && options->word_size < 7)
 	{
@@ -1061,6 +1065,13 @@ LookupTableOptionsValidate(Uint1 program_number,
 		Blast_MessageWrite(blast_msg, 2, code, subcode, "Megablast lookup table only supported with blastn");
 		return (Int2) code;
 	}
+
+   if (options->lut_type == MB_LOOKUP_TABLE && options->word_size < 12) {
+      Blast_MessageWrite(blast_msg, 2, code, subcode, 
+                         "Word size must be 12 or greater with megablast"
+                         " lookup table");
+      return (Int2) code;
+   }
 
    if (program_number == blast_type_blastn && 
        options->mb_template_length > 0) {
