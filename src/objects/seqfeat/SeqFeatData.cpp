@@ -42,6 +42,8 @@
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 
+#include <algorithm>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -134,6 +136,82 @@ string CSeqFeatData::GetKey(EVocabulary vocab) const
 }
 
 
+struct SImportEntry {
+    const char*            m_Name;
+    CSeqFeatData::ESubtype m_Subtype;
+
+    bool operator<(const SImportEntry& e) const {
+        return strcmp(m_Name, e.m_Name) < 0;
+    }
+};
+
+// NOTE: these must stay in ASCIIbetical order!
+static const SImportEntry kImportTable[] = {
+    { "-10_signal",          CSeqFeatData::eSubtype_10_signal },
+    { "-35_signal",          CSeqFeatData::eSubtype_35_signal },
+    { "3'UTR",               CSeqFeatData::eSubtype_3UTR },
+    { "3'clip",              CSeqFeatData::eSubtype_3clip },
+    { "5'UTR",               CSeqFeatData::eSubtype_5UTR },
+    { "5'clip",              CSeqFeatData::eSubtype_5clip },
+    { "CAAT_signal",         CSeqFeatData::eSubtype_CAAT_signal },
+    { "C_region",            CSeqFeatData::eSubtype_C_region },
+    { "D_loop",              CSeqFeatData::eSubtype_D_loop },
+    { "D_segment",           CSeqFeatData::eSubtype_D_segment },
+    { "GC_signal",           CSeqFeatData::eSubtype_GC_signal },
+    { "Imp_CDS",             CSeqFeatData::eSubtype_Imp_CDS },
+    { "J_segment",           CSeqFeatData::eSubtype_J_segment },
+    { "LTR",                 CSeqFeatData::eSubtype_LTR },
+    { "N_region",            CSeqFeatData::eSubtype_N_region },
+    { "RBS",                 CSeqFeatData::eSubtype_RBS },
+    { "STS",                 CSeqFeatData::eSubtype_STS },
+    { "S_region",            CSeqFeatData::eSubtype_S_region },
+    { "TATA_signal",         CSeqFeatData::eSubtype_TATA_signal },
+    { "V_region",            CSeqFeatData::eSubtype_V_region },
+    { "V_segment",           CSeqFeatData::eSubtype_V_segment },
+    { "allele",              CSeqFeatData::eSubtype_allele },
+    { "attenuator",          CSeqFeatData::eSubtype_attenuator },
+    { "conflict",            CSeqFeatData::eSubtype_conflict },
+    { "enhancer",            CSeqFeatData::eSubtype_enhancer },
+    { "exon",                CSeqFeatData::eSubtype_exon },
+    { "iDNA",                CSeqFeatData::eSubtype_iDNA },
+    { "intron",              CSeqFeatData::eSubtype_intron },
+    { "mat_peptide",         CSeqFeatData::eSubtype_mat_peptide },
+    { "misc_RNA",            CSeqFeatData::eSubtype_misc_RNA },
+    { "misc_binding",        CSeqFeatData::eSubtype_misc_binding },
+    { "misc_difference",     CSeqFeatData::eSubtype_misc_difference },
+    { "misc_feature",        CSeqFeatData::eSubtype_misc_feature },
+    { "misc_recomb",         CSeqFeatData::eSubtype_misc_recomb },
+    { "misc_signal",         CSeqFeatData::eSubtype_misc_signal },
+    { "misc_structure",      CSeqFeatData::eSubtype_misc_structure },
+    { "modified_base",       CSeqFeatData::eSubtype_modified_base },
+    { "mutation",            CSeqFeatData::eSubtype_mutation },
+    { "old_sequence",        CSeqFeatData::eSubtype_old_sequence },
+    { "polyA_signal",        CSeqFeatData::eSubtype_polyA_signal },
+    { "polyA_site",          CSeqFeatData::eSubtype_polyA_site },
+    { "precursor_RNA",       CSeqFeatData::eSubtype_precursor_RNA },
+    { "prim_transcript",     CSeqFeatData::eSubtype_prim_transcript },
+    { "primer_bind",         CSeqFeatData::eSubtype_primer_bind },
+    { "promoter",            CSeqFeatData::eSubtype_promoter },
+    { "protein_bind",        CSeqFeatData::eSubtype_protein_bind },
+    { "rep_origin",          CSeqFeatData::eSubtype_rep_origin },
+    { "repeat_region",       CSeqFeatData::eSubtype_repeat_region },
+    { "repeat_unit",         CSeqFeatData::eSubtype_repeat_unit },
+    { "satellite",           CSeqFeatData::eSubtype_satellite },
+    { "sig_peptide",         CSeqFeatData::eSubtype_sig_peptide },
+    { "site_ref",            CSeqFeatData::eSubtype_site_ref },
+    { "source",              CSeqFeatData::eSubtype_source },
+    { "stem_loop",           CSeqFeatData::eSubtype_stem_loop },
+    { "terminator",          CSeqFeatData::eSubtype_terminator },
+    { "transit_peptide",     CSeqFeatData::eSubtype_transit_peptide },
+    { "unsure",              CSeqFeatData::eSubtype_unsure },
+    { "variation",           CSeqFeatData::eSubtype_variation },
+    { "virion",              CSeqFeatData::eSubtype_virion }
+};
+
+static const SImportEntry* kImportTableEnd
+    = kImportTable + sizeof(kImportTable)/sizeof(SImportEntry);
+
+
 CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
 {
     if (m_Subtype == eSubtype_any) { // unknown
@@ -173,202 +251,17 @@ CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
             break;
         case e_Pub:        m_Subtype = eSubtype_pub;      break;
         case e_Seq:        m_Subtype = eSubtype_seq;      break;
-        case e_Imp: // XXX -- linear search isn't very efficient
+        case e_Imp:
         {
-            const string& key = GetImp().GetKey();
-            if      (key == "allele") {
-                m_Subtype = eSubtype_allele;
-            }
-            else if (key == "attenuator") {
-                m_Subtype = eSubtype_attenuator;
-            }
-            else if (key == "C_region") {
-                m_Subtype = eSubtype_C_region;
-            }
-            else if (key == "CAAT_signal") {
-                m_Subtype = eSubtype_CAAT_signal;
-            }
-            else if (key == "Imp_CDS") {
-                m_Subtype = eSubtype_Imp_CDS;
-            }
-            else if (key == "conflict") {
-                m_Subtype = eSubtype_conflict;
-            }
-            else if (key == "D_loop") {
-                m_Subtype = eSubtype_D_loop;
-            }
-            else if (key == "D_segment") {
-                m_Subtype = eSubtype_D_segment;
-            }
-            else if (key == "enhancer") {
-                m_Subtype = eSubtype_enhancer;
-            }
-            else if (key == "exon") {
-                m_Subtype = eSubtype_exon;
-            }
-            else if (key == "GC_signal") {
-                m_Subtype = eSubtype_GC_signal;
-            }
-            else if (key == "iDNA") {
-                m_Subtype = eSubtype_iDNA;
-            }
-            else if (key == "intron") {
-                m_Subtype = eSubtype_intron;
-            }
-            else if (key == "J_segment") {
-                m_Subtype = eSubtype_J_segment;
-            }
-            else if (key == "LTR") {
-                m_Subtype = eSubtype_LTR;
-            }
-            else if (key == "mat_peptide") {
-                m_Subtype = eSubtype_mat_peptide;
-            }
-            else if (key == "misc_binding") {
-                m_Subtype = eSubtype_misc_binding;
-            }
-            else if (key == "misc_difference") {
-                m_Subtype = eSubtype_misc_difference;
-            }
-            else if (key == "misc_feature") {
-                m_Subtype = eSubtype_misc_feature;
-            }
-            else if (key == "misc_recomb") {
-                m_Subtype = eSubtype_misc_recomb;
-            }
-            else if (key == "misc_RNA") {
-                m_Subtype = eSubtype_misc_RNA;
-            }
-            else if (key == "misc_signal") {
-                m_Subtype = eSubtype_misc_signal;
-            }
-            else if (key == "misc_structure") {
-                m_Subtype = eSubtype_misc_structure;
-            }
-            else if (key == "modified_base") {
-                m_Subtype = eSubtype_modified_base;
-            }
-            else if (key == "mutation") {
-                m_Subtype = eSubtype_mutation;
-            }
-            else if (key == "N_region") {
-                m_Subtype = eSubtype_N_region;
-            }
-            else if (key == "old_sequence") {
-                m_Subtype = eSubtype_old_sequence;
-            }
-            else if (key == "polyA_signal") {
-                m_Subtype = eSubtype_polyA_signal;
-            }
-            else if (key == "polyA_site") {
-                m_Subtype = eSubtype_polyA_site;
-            }
-            else if (key == "precursor_RNA") {
-                m_Subtype = eSubtype_precursor_RNA;
-            }
-            else if (key == "prim_transcript") {
-                m_Subtype = eSubtype_prim_transcript;
-            }
-            else if (key == "primer_bind") {
-                m_Subtype = eSubtype_primer_bind;
-            }
-            else if (key == "promoter") {
-                m_Subtype = eSubtype_promoter;
-            }
-            else if (key == "protein_bind") {
-                m_Subtype = eSubtype_protein_bind;
-            }
-            else if (key == "RBS") {
-                m_Subtype = eSubtype_RBS;
-            }
-            else if (key == "repeat_region") {
-                m_Subtype = eSubtype_repeat_region;
-            }
-            else if (key == "repeat_unit") {
-                m_Subtype = eSubtype_repeat_unit;
-            }
-            else if (key == "rep_origin") {
-                m_Subtype = eSubtype_rep_origin;
-            }
-            else if (key == "S_region") {
-                m_Subtype = eSubtype_S_region;
-            }
-            else if (key == "satellite") {
-                m_Subtype = eSubtype_satellite;
-            }
-            else if (key == "sig_peptide") {
-                m_Subtype = eSubtype_sig_peptide;
-            }
-            else if (key == "source") {
-                m_Subtype = eSubtype_source;
-            }
-            else if (key == "stem_loop") {
-                m_Subtype = eSubtype_stem_loop;
-            }
-            else if (key == "STS") {
-                m_Subtype = eSubtype_STS;
-            }
-            else if (key == "TATA_signal") {
-                m_Subtype = eSubtype_TATA_signal;
-            }
-            else if (key == "terminator") {
-                m_Subtype = eSubtype_terminator;
-            }
-            else if (key == "transit_peptide") {
-                m_Subtype = eSubtype_transit_peptide;
-            }
-            else if (key == "unsure") {
-                m_Subtype = eSubtype_unsure;
-            }
-            else if (key == "V_region") {
-                m_Subtype = eSubtype_V_region;
-            }
-            else if (key == "V_segment") {
-                m_Subtype = eSubtype_V_segment;
-            }
-            else if (key == "variation") {
-                m_Subtype = eSubtype_variation;
-            }
-            else if (key == "virion") {
-                m_Subtype = eSubtype_virion;
-            }
-            else if (key == "3'clip") {
-                m_Subtype = eSubtype_3clip;
-            }
-            else if (key == "3'UTR") {
-                m_Subtype = eSubtype_3UTR;
-            }
-            else if (key == "5'clip") {
-                m_Subtype = eSubtype_5clip;
-            }
-            else if (key == "5'UTR") {
-                m_Subtype = eSubtype_5UTR;
-            }
-            else if (key == "-10_signal") {
-                m_Subtype = eSubtype_10_signal;
-            }
-            else if (key == "-35_signal") {
-                m_Subtype = eSubtype_35_signal;
-            }
-            else if (key == "site_ref") {
-                m_Subtype = eSubtype_site_ref;
-            }
-#if 0
-            else if (key == "preprotein") {
-                m_Subtype = eSubtype_preprotein;
-            }
-            else if (key == "mat_peptide_aa") {
-                m_Subtype = eSubtype_mat_peptide_aa;
-            }
-            else if (key == "sig_peptide_aa") {
-                m_Subtype = eSubtype_sig_peptide_aa;
-            }
-            else if (key == "transit_peptide_aa") {
-                m_Subtype = eSubtype_transit_peptide_aa;
-            }
-#endif
-            else {
+            const string&       key    = GetImp().GetKey();
+            SImportEntry        key2   = { key.c_str(), eSubtype_imp };
+            const SImportEntry* result = lower_bound(kImportTable,
+                                                     kImportTableEnd,
+                                                     key2);
+            if (strcmp(key2.m_Name, result->m_Name)) {
                 m_Subtype = eSubtype_imp;
+            } else {
+                m_Subtype = result->m_Subtype;
             }
             break;
         }
@@ -453,6 +346,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.9  2003/06/02 18:06:10  ucko
+* GetSubtype: handle imported features more efficiently.
+*
 * Revision 6.8  2003/05/20 01:29:39  ucko
 * Added missing punctuation in imported keys' names.
 *
