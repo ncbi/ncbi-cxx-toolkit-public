@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ = pubseqos id1 id2
+SUB_PROJ = pubseqos id2 id1
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
