@@ -101,6 +101,32 @@ Int2
 BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int2 context,
 	BLAST_SequenceBlk* *seq_blk, Boolean buffer_allocated);
 
+/** Allocates a new sequence block structure. 
+ * @param retval Pointer to where the sequence block structure will be
+ * allocated [out]
+ */
+Int2 BlastSeqBlkNew(BLAST_SequenceBlk** retval);
+
+/** Stores the sequence in the sequence block structure.
+ * @param seq_blk The sequence block structure to modify [in/out]
+ * @param sequence Actual sequence buffer. The first byte must be a sentinel
+ * byte [in]
+ * @param seqlen Length of the sequence buffer above [in]
+ */
+Int2 BlastSeqBlkSetSequence(BLAST_SequenceBlk* seq_blk, 
+                            const Uint1* sequence,
+                            Int4 seqlen);
+
+/** Stores the compressed nucleotide sequence in the sequence block structure
+ * for the subject sequence when BLASTing 2 sequences. This sequence should be
+ * encoded in NCBI2NA_ENCODING and NOT have sentinel bytes.
+ * @param seq_blk The sequence block structure to modify [in/out]
+ * @param sequence Actual sequence buffer. [in]
+ */
+Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
+                                      const Uint1* sequence);
+                            
+
 /** Allocate and initialize the query information structure.
  * @param program_number Type of BLAST program [in]
  * @param num_queries Number of query sequences [in]

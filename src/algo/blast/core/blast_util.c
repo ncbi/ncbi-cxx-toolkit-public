@@ -67,6 +67,49 @@ BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int2 context,
    return 0;
 }
 
+Int2 BlastSeqBlkNew(BLAST_SequenceBlk** retval)
+{
+    if ( !retval ) {
+        return -1;
+    } else {
+        *retval = (BLAST_SequenceBlk*) calloc(1, sizeof(BLAST_SequenceBlk));
+        if ( !*retval ) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+Int2 BlastSeqBlkSetSequence(BLAST_SequenceBlk* seq_blk, 
+                            const Uint1* sequence,
+                            Int4 seqlen)
+{
+    if ( !seq_blk ) {
+        return -1;
+    }
+
+    seq_blk->sequence_start_allocated = TRUE;
+    seq_blk->sequence_start = (Uint1*) sequence;
+    seq_blk->sequence = (Uint1*) sequence + 1;
+    seq_blk->length = seqlen;
+
+    return 0;
+}
+
+Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk, 
+                                      const Uint1* sequence)
+{
+    if ( !seq_blk ) {
+        return -1;
+    }
+
+    seq_blk->sequence_allocated = TRUE;
+    seq_blk->sequence = (Uint1*) sequence;
+
+    return 0;
+}
+
 #if 0
 /** Create the subject sequence block given an ordinal id in a database */
 void
