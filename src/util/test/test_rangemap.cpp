@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/26 17:27:47  vasilche
+* Implemented CRangeMap<> template for sorting Seq-loc objects.
+*
 * Revision 1.1  2000/12/21 21:52:53  vasilche
 * Added CRangeMap<> template for sorting integral ranges (Seq-loc).
 *
@@ -54,14 +57,14 @@ public:
 };
 
 inline
-CNcbiOstream& operator<<(CNcbiOstream& out, pair<int, int> range)
+CNcbiOstream& operator<<(CNcbiOstream& out, CRange<int> range)
 {
-    return out << '(' << range.first << ',' << range.second << ")=" <<
-        (range.second - range.first + 1);
+    return out <<
+        '('<<range.GetFrom()<<','<<range.GetTo()<<")="<<range.GetLength();
 }
 
 inline
-string ToString(pair<int, int> range)
+string ToString(CRange<int> range)
 {
     CNcbiOstrstream b;
     b << range;
@@ -81,10 +84,7 @@ int CTestRangeMap::Run(void)
         range_type range;
         string s;
         do {
-            int pos = rand() % 100;
-            int len = rand() % 20 + 1;
-            int end = pos + len - 1;
-            range = range_type(pos, end);
+            range.SetFrom(rand() % 20).SetLength(rand() % 10 + 1);
             s = ToString(range);
         } while ( !rm.insert(TRangeMap::value_type(range, s)).second );
         NcbiCout << range << " = \"" << s << "\"" << NcbiEndl;
@@ -94,8 +94,9 @@ int CTestRangeMap::Run(void)
     iterate ( TRangeMap, i, rm ) {
         NcbiCout << i->first << " = \"" << i->second << "\"" << NcbiEndl;
     }
-    for ( int pos = 0; pos < 100; pos += 10 ) {
-        range_type range = range_type(pos, pos + 10 - 1);
+    for ( int pos = 0; pos <= 100; pos += 10 ) {
+        range_type range;
+        range.SetFrom(pos).SetLength(10);
         NcbiCout << "In range " << range << ":" << NcbiEndl;
         for ( TRangeMap::const_iterator i = rm.begin(range), end = rm.end();
               i != end; ++i ) {

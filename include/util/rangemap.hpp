@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/26 17:27:42  vasilche
+* Implemented CRangeMap<> template for sorting Seq-loc objects.
+*
 * Revision 1.1  2000/12/21 21:52:41  vasilche
 * Added CRangeMap<> template for sorting integral ranges (Seq-loc).
 *
@@ -44,61 +47,220 @@
 
 BEGIN_NCBI_SCOPE
 
-// compare function
-template<class Position>
-struct SRangeLess
-{
-    typedef Position position_type;
-    typedef pair<position_type, position_type> range_type;
-    
-    // r1 is less then r2 (for ordering)
-    bool operator()(range_type r1, range_type r2) const
-        {
-            return r1.first < r2.first ||
-                r1.first == r2.first && r1.second < r2.second;
-        }
-    
-    // normalized ranges r1 & r2 intersect
-    static bool intersect(range_type r1, range_type r2)
-        {
-            if ( r1.first <= r2.first ) {
-                return r1.second >= r2.first;
-            }
-            else {
-                return r1.first <= r2.second;
-            }
-        }
-    // any ranges r1 & r2 intersect
-    static bool intersect_long(range_type r1, range_type r2)
-        {
-            if ( r1.first <= r2.first ) {
-                return r1.second >= r2.first && r2.second >= r2.first;
-            }
-            else {
-                return r1.first <= r2.second && r1.first <= r1.second;
-            }
-        }
-};
-
-// iterators
-template<typename Mapped, typename Position,
-    typename ValueType, typename Level, typename Select,
-    typename LevelIter, typename SelectIter> class CRangeMapIterator;
-
 #if 1
+// for incomplete STL
 template<typename Num> class numeric_limits;
 
 template<>
 class numeric_limits<int>
 {
 public:
+    static int min() { return INT_MIN; }
     static int max() { return INT_MAX; }
 };
 #endif
 
+// forward template declarations
+template<typename Position> class CRange;
+template<typename Mapped, typename Position> class CRangeMap;
 template<typename Mapped, typename Position,
-    typename ValueType = pair<const pair<Position, Position>, Mapped>,
-    class Level = map<pair<Position, Position>, Mapped, SRangeLess<Position> >,
+    typename ValueType, typename Level, typename Select,
+    typename LevelIter, typename SelectIter> class CRangeMapIterator;
+
+// range
+template<class Position>
+class CRange
+{
+public:
+    typedef Position position_type;
+    typedef CRange<Position> TThisType;
+
+    // constructors
+    CRange(void)
+        {
+        }
+    CRange(position_type from, position_type to)
+        : m_From(from), m_To(to)
+        {
+        }
+    
+    // parameters
+    position_type GetFrom(void) const
+        {
+            return m_From;
+        }
+    position_type GetTo(void) const
+        {
+            return m_To;
+        }
+
+    // state
+    bool Empty(void) const
+        {
+            return GetTo() < GetFrom();
+        }
+    position_type GetLength(void) const
+        {
+            return GetTo() - GetFrom() + 1;
+        }
+
+    // modifiers
+    TThisType& SetFrom(position_type from)
+        {
+            m_From = from;
+            return *this;
+        }
+    TThisType& SetTo(position_type to)
+        {
+            m_To = to;
+            return *this;
+        }
+    TThisType& SetLength(position_type length)
+        {
+            SetTo(GetFrom() + length - 1);
+            return *this;
+        }
+    TThisType& SetLengthDown(position_type length)
+        {
+            SetFrom(GetTo() - length + 1);
+            return *this;
+        }
+
+    // comparison
+    bool operator==(TThisType range) const
+        {
+            return GetFrom() == range.GetFrom() && GetTo() == range.GetTo();
+        }
+    bool operator!=(TThisType range) const
+        {
+            return !(*this == range);
+        }
+    bool operator<(TThisType range) const
+        {
+            return GetFrom() < range.GetFrom() ||
+                GetFrom() == range.GetFrom() && GetTo() < range.GetTo();
+        }
+    bool operator<=(TThisType range) const
+        {
+            return GetFrom() < range.GetFrom() ||
+                GetFrom() == range.GetFrom() && GetTo() <= range.GetTo();
+        }
+    bool operator>(TThisType range) const
+        {
+            return GetFrom() > range.GetFrom() ||
+                GetFrom() == range.GetFrom() && GetTo() > range.GetTo();
+        }
+    bool operator>=(TThisType range) const
+        {
+            return GetFrom() > range.GetFrom() ||
+                GetFrom() == range.GetFrom() && GetTo() >= range.GetTo();
+        }
+
+    // check if intersected when ranges may be empty
+    bool IntersectingWithPossiblyEmpty(TThisType range) const
+        {
+            if ( GetFrom() <= range.GetFrom() )
+                return GetTo() >= range.GetFrom() && !range.Empty();
+            else
+                return GetFrom() <= range.GetTo() && !Empty();
+        }
+    // check if intersected when ranges are not empty
+    bool IntersectingWith(TThisType range) const
+        {
+            if ( GetFrom() <= range.GetFrom() )
+                return GetTo() >= range.GetFrom();
+            else
+                return GetFrom() <= range.GetTo();
+        }
+
+    // special values
+    static position_type PositionMin(void)
+        {
+            return numeric_limits<position_type>::min();
+        }
+    static position_type PositionMax(void)
+        {
+            return numeric_limits<position_type>::max();
+        }
+    static position_type WholeFrom(void)
+        {
+            return PositionMin();
+        }
+    static position_type WholeTo(void)
+        {
+            return PositionMax();
+        }
+    static position_type WholeLength(void)
+        {
+            return PositionMax();
+        }
+    static TThisType Whole(void)
+        {
+            return TThisType(WholeFrom(), WholeTo());
+        }
+    bool IsWholeFrom(void) const
+        {
+            return GetFrom() == WholeFrom();
+        }
+    bool IsWholeTo(void) const
+        {
+            return GetTo() == WholeTo();
+        }
+    bool IsWhole(void) const
+        {
+            return IsWholeTo() && IsWholeFrom();
+        }
+
+    // combine ranges
+    TThisType& CombineFrom(position_type from)
+        {
+            if ( from <= GetFrom() ) {
+                // from?
+                if ( from == WholeFrom() )
+                    return *this; // not
+            }
+            else {
+                // GetFrom()?
+                if ( !IsWholeFrom() )
+                    return *this; // yes
+            }
+            return SetFrom(from);
+        }
+    TThisType& CombineTo(position_type to)
+        {
+            if ( to <= GetTo() ) {
+                // to?
+                if ( to == WholeTo() )
+                    return *this; // not
+            }
+            else {
+                // GetTo()?
+                if ( !IsWholeTo() )
+                    return *this; // yes
+            }
+            return SetTo(to);
+        }
+    TThisType& operator+=(TThisType range)
+        {
+            if ( !range.Empty() ) {
+                if ( Empty() )
+                    *this = range;
+                else {
+                    CombineFrom(range.GetFrom());
+                    CombineTo(range.GetTo());
+                }
+            }
+            return *this;
+        }
+
+private:
+    position_type m_From, m_To;
+};
+
+// iterator
+template<typename Mapped, typename Position,
+    typename ValueType = pair<const CRange<Position>, Mapped>,
+    class Level = map<CRange<Position>, Mapped>,
     class Select = map<Position, Level>,
     typename LevelIter = typename Level::iterator,
     typename SelectIter = typename Select::iterator>
@@ -107,7 +269,7 @@ class CRangeMapIterator
 public:
     // typedefs
     typedef Position position_type;
-    typedef pair<position_type, position_type> range_type;
+    typedef CRange<position_type> range_type;
     typedef range_type key_type;
     typedef Mapped mapped_type;
     typedef pair<const key_type, mapped_type> value_type;
@@ -120,19 +282,24 @@ public:
     typedef CRangeMapIterator<Mapped, Position,
         ValueType, Level, Select, LevelIter, SelectIter> TThisType;
 
-    static range_type max_range(void)
-        {
-            return range_type(0, numeric_limits<position_type>::max());
-        }
-
     // constructors
     // singular
     CRangeMapIterator(void)
         {
         }
+    // begin(range)
+    CRangeMapIterator(TSelect& selectMap, range_type range)
+        : m_Range(range),
+          m_SelectIter(selectMap.begin()), m_SelectIterEnd(selectMap.end())
+        {
+            if ( !Finished() ) {
+                InitLevelIter();
+                Settle();
+            }
+        }
     // begin()
     CRangeMapIterator(TSelect& selectMap)
-        : m_Range(max_range()),
+        : m_Range(range_type::Whole()),
           m_SelectIter(selectMap.begin()), m_SelectIterEnd(selectMap.end())
         {
             if ( !Finished() ) {
@@ -140,32 +307,14 @@ public:
                 _ASSERT(m_LevelIter != GetLevel().end());
             }
         }
-    // begin(range)
-    CRangeMapIterator(TSelect& selectMap, range_type range)
-        : m_Range(range), m_SelectIterEnd(selectMap.end())
-        {
-            if ( range.second < range.first ) {
-                // empty region
-                m_SelectIter = m_SelectIterEnd;
-            }
-            else {
-                // range.first <= range.second
-                m_SelectIter = selectMap.begin();
-                if ( !Finished() ) {
-                    InitLevelIter();
-                    Settle();
-                }
-            }
-        }
     // find(key)
     CRangeMapIterator(TSelect& selectMap,
                       position_type selectKey, key_type key)
-        : m_Range(max_range()),
+        : m_Range(range_type::Whole()),
           m_SelectIter(selectMap.find(selectKey)),
           m_SelectIterEnd(selectMap.end())
         {
             if ( !Finished() ) {
-                _ASSERT(range.second >= range.first);
                 m_LevelIter = GetLevel().find(key);
                 if ( m_LevelIter == GetLevel().end() ) {
                     // not found: reset
@@ -176,7 +325,7 @@ public:
     // insert()
     CRangeMapIterator(TSelect& selectMap,
                       TSelectIter selectIter, TLevelIter levelIter)
-        : m_Range(max_range()),
+        : m_Range(range_type::Whole()),
           m_SelectIter(selectIter), m_SelectIterEnd(selectMap.end()),
           m_LevelIter(levelIter)
         {
@@ -268,23 +417,28 @@ private:
         }
     void InitLevelIter(void)
         {
-            // get maximum length of ranges in the level
-            position_type maxLength = m_SelectIter->first;
-            // starting level point
-            m_LevelIter = GetLevel().
-                lower_bound(range_type(m_Range.first - maxLength + 1,
-                                       maxLength));
+            position_type from = m_Range.GetFrom();
+            if ( from == range_type::WholeFrom() ) {
+                // special case: whole region
+                m_LevelIter = GetLevel().begin();
+            }
+            else {
+                // get maximum length of ranges in the level
+                position_type maxLength = m_SelectIter->first;
+                // starting level point
+                m_LevelIter = GetLevel().
+                    lower_bound(range_type(from - maxLength + 1, maxLength));
+            }
         }
     // stop at suitable point
     void Settle(void)
         {
             for ( ;; ) {
                 // scan level
-                while ( m_LevelIter != GetLevel().end() ) {
+                while ( m_LevelIter != GetLevel().end() &&
+                        m_LevelIter->first.GetFrom() <= m_Range.GetTo() ) {
                     // we need to check only right bound of current range
-                    if ( m_LevelIter->first.first >= m_Range.second )
-                        break; // out of limiting range
-                    if ( m_LevelIter->first.second >= m_Range.first )
+                    if ( m_LevelIter->first.GetTo() >= m_Range.GetFrom() )
                         return; // found intersecting range
                     ++m_LevelIter;
                 }
@@ -309,13 +463,13 @@ class CRangeMap
 public:
     // standard typedefs
     typedef Position position_type; // -1 means unlimited
-    typedef pair<position_type, position_type> range_type;
+    typedef CRange<position_type> range_type;
     typedef range_type key_type;
     typedef Mapped mapped_type;
     typedef pair<const key_type, mapped_type> value_type;
 
     // internal typedefs
-    typedef map<key_type, mapped_type, SRangeLess<position_type> > TLevelMap;
+    typedef map<key_type, mapped_type> TLevelMap;
     typedef typename TLevelMap::iterator TLevelMapI;
     typedef typename TLevelMap::const_iterator TLevelMapCI;
     typedef map<position_type, TLevelMap> TSelectMap;
@@ -331,7 +485,7 @@ public:
 
     // constructor
     explicit CRangeMap(void)
-        : m_TotalCount(0), m_TotalRange(0, 0)
+        : m_TotalCount(0), m_TotalRange(range_type::Whole())
         {
         }
     ~CRangeMap(void)
@@ -389,6 +543,26 @@ public:
         }
 
     // modification
+    void recalculate_total_from(void)
+        {
+            range_type total = range_type::Whole();
+            iterate ( TSelectMap, i, m_SelectMap ) {
+                const TLevelMap& level = i->second;
+                if ( !level.empty() )
+                    total.CombineFrom(level.front().first.GetFrom());
+            }
+            m_TotalRange.SetFrom(total.GetFrom());
+        }
+    void recalculate_total_to(void)
+        {
+            range_type total = range_type::Whole();
+            iterate ( TSelectMap, i, m_SelectMap ) {
+                const TLevelMap& level = i->second;
+                if ( !level.empty() ) {
+                }
+            }
+            m_TotalRange.SetTo(total.GetTo());
+        }
     iterator erase(iterator iter)
         {
             _ASSERT(iter != end());
@@ -403,16 +577,14 @@ public:
             levelIter = selectIter->second.erase(levelIter);
 
             // update total count
-            if ( --m_TotalCount == 0 ) {
-                m_TotalRange = range_type(0, 0);
-            }
-            else {
-                // update total range
-                if ( erased_key.first == m_TotalRange.first )
-                    update_total_from();
-                if ( erased_key.second == m_TotalRange.second )
-                    update_total_to();
-            }
+            --m_TotalCount;
+            // update total range
+            if ( erased_key.GetFrom() == m_TotalRange.GetFrom() &&
+                 !erased_key.IsWholeFrom() )
+                recalculate_total_from(); // update total from
+            if ( erased_key.GetTo() == m_TotalRange.GetTo() &&
+                 !erased_key.IsWholeTo() )
+                recalculate_total_to(); // update total to
 
             if ( levelIter == selectIter->second.end() ) {
                 // end of level
@@ -441,12 +613,12 @@ public:
         {
             m_SelectMap.clear();
             m_TotalCount = 0;
-            m_TotalRange = range_type(0, 0);
+            m_TotalRange = range_type::Whole();
         }
 
     pair<iterator, bool> insert(const value_type& value)
         {
-            if ( value.first.second < value.first.first )
+            if ( value.first.Empty() )
                 THROW1_TRACE(runtime_error, "empty key range");
             position_type selectKey = get_max_length(value.first);
             typedef typename TSelectMap::value_type select_value;
@@ -456,14 +628,8 @@ public:
                 selectInsert.first->second.insert(value);
             if ( levelInsert.second ) {
                 // new element
-                if ( ++m_TotalCount == 1 )
-                    m_TotalRange = value.first;
-                else {
-                    m_TotalRange.first =
-                        min(m_TotalRange.first, value.first.first);
-                    m_TotalRange.second =
-                        max(m_TotalRange.second, value.first.second);
-                }
+                ++m_TotalCount;
+                m_TotalRange += value.first;
             }
             return make_pair(iterator(m_SelectMap,
                                       selectInsert.first, levelInsert.first),
@@ -489,13 +655,16 @@ private:
 
     static position_type get_max_length(key_type key)
         {
-            _ASSERT(key.second >= key.first);
-            position_type len = key.second - key.first + 1;
+            _ASSERT(!key.Empty());
+            if ( key.IsWholeFrom() || key.IsWholeTo() )
+                return key.WholeLength();
+            position_type len = key.GetLength() - 1;
             len |= (len >> 16);
             len |= (len >> 8);
             len |= (len >> 4);
             len |= (len >> 2);
-            return len | (len >> 1);
+            len |= (len >> 1);
+            return len + 1;
         }
 
 private:
