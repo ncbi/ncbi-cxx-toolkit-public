@@ -115,8 +115,8 @@ private:
     /************ Internal data structures (m_i = internal members)***********/
     //< done once for every query
     bool                                mi_bQuerySetUpDone;
-    CBLAST_SequenceBlkPtr               mi_clsQueries;  // one for all queries
-    CBlastQueryInfoPtr                  mi_clsQueryInfo; // one for all queries
+    CBLAST_SequenceBlk               mi_clsQueries;  // one for all queries
+    CBlastQueryInfo                  mi_clsQueryInfo; // one for all queries
     vector<BLAST_SequenceBlk*>          mi_vSubjects; // should use structures?
     unsigned int                        mi_iMaxSubjLength; // should use int8?
 
@@ -124,12 +124,12 @@ private:
     LookupTableWrap*                    mi_pLookupTable; // one for all queries
     ListNode*                           mi_pLookupSegments;
 
-    CBlastInitialWordParametersPtr      mi_clsInitWordParams;
-    CBlastHitSavingParametersPtr        mi_clsHitSavingParams;
-    CBLAST_ExtendWordPtr                mi_clsExtnWord;
-    CBlastExtensionParametersPtr        mi_clsExtnParams;
-    CBlastGapAlignStructPtr             mi_clsGapAlign;
-    CBlastDatabaseOptionsPtr            mi_clsDbOptions;
+    CBlastInitialWordParameters      mi_clsInitWordParams;
+    CBlastHitSavingParameters        mi_clsHitSavingParams;
+    CBLAST_ExtendWord                mi_clsExtnWord;
+    CBlastExtensionParameters        mi_clsExtnParams;
+    CBlastGapAlignStruct             mi_clsGapAlign;
+    CBlastDatabaseOptions            mi_clsDbOptions;
 
     /// Vector of result structures, one per subject
     vector<BlastResults*>               mi_vResults;//should use structs?
@@ -248,6 +248,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/08/19 22:11:16  dondosha
+* Cosmetic changes
+*
 * Revision 1.14  2003/08/19 20:24:17  dondosha
 * Added TSeqAlignVector type as a return type for results-to-seqalign functions and input for formatting
 *

@@ -36,6 +36,8 @@
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 
+#include <algo/blast/core/blast_options.h>
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
@@ -259,31 +261,31 @@ protected:
     void SetMegablast();
 
     /// Query sequence settings
-    CQuerySetUpOptionsPtr            m_QueryOpts;
+    CQuerySetUpOptions            m_QueryOpts;
 
     /// Lookup table settings
-    CLookupTableOptionsPtr           m_LutOpts;
+    CLookupTableOptions           m_LutOpts;
 
     /// Word settings 
-    CBlastInitialWordOptionsPtr      m_InitWordOpts;
+    CBlastInitialWordOptions      m_InitWordOpts;
 
     /// Hit extension settings
-    CBlastExtensionOptionsPtr        m_ExtnOpts;
+    CBlastExtensionOptions        m_ExtnOpts;
 
     /// Hit saving settings
-    CBlastHitSavingOptionsPtr        m_HitSaveOpts;
+    CBlastHitSavingOptions        m_HitSaveOpts;
 
     /// PSI-Blast settings
-    CPSIBlastOptionsPtr              m_ProtOpts;
+    CPSIBlastOptions              m_ProtOpts;
 
     /// Blast database settings
-    CBlastDatabaseOptionsPtr         m_DbOpts;
+    CBlastDatabaseOptions         m_DbOpts;
 
     /// Scoring options
-    CBlastScoringOptionsPtr          m_ScoringOpts;
+    CBlastScoringOptions          m_ScoringOpts;
 
     /// Effective lengths options
-    CBlastEffectiveLengthsOptionsPtr m_EffLenOpts;
+    CBlastEffectiveLengthsOptions m_EffLenOpts;
 
     /// Blast program
     EProgram                             m_Program;
@@ -996,6 +998,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/08/19 22:11:16  dondosha
+* Cosmetic changes
+*
 * Revision 1.17  2003/08/19 20:22:05  dondosha
 * EProgram definition moved from CBlastOption clase to blast scope
 *

@@ -106,8 +106,8 @@ void
 CBl2Seq::x_ResetQueryDs()
 {
     mi_bQuerySetUpDone = false;
-    mi_clsQueries.CBLAST_SequenceBlkPtr::~CBLAST_SequenceBlkPtr();
-    mi_clsQueryInfo.CBlastQueryInfoPtr::~CBlastQueryInfoPtr();
+    mi_clsQueries.CBLAST_SequenceBlk::~CBLAST_SequenceBlk();
+    mi_clsQueryInfo.CBlastQueryInfo::~CBlastQueryInfo();
     mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
     mi_pLookupTable = BlastLookupTableDestruct(mi_pLookupTable);
     mi_pLookupSegments = ListNodeFreeData(mi_pLookupSegments);
@@ -611,11 +611,11 @@ CBl2Seq::x_Results2SeqAlign()
     }
 
     // Clean up structures
-    mi_clsInitWordParams.CBlastInitialWordParametersPtr::~CBlastInitialWordParametersPtr();
-    mi_clsHitSavingParams.CBlastHitSavingParametersPtr::~CBlastHitSavingParametersPtr();
-    mi_clsExtnWord.CBLAST_ExtendWordPtr::~CBLAST_ExtendWordPtr();
-    mi_clsExtnParams.CBlastExtensionParametersPtr::~CBlastExtensionParametersPtr();
-    mi_clsGapAlign.CBlastGapAlignStructPtr::~CBlastGapAlignStructPtr();
+    mi_clsInitWordParams.CBlastInitialWordParameters::~CBlastInitialWordParameters();
+    mi_clsHitSavingParams.CBlastHitSavingParameters::~CBlastHitSavingParameters();
+    mi_clsExtnWord.CBLAST_ExtendWord::~CBLAST_ExtendWord();
+    mi_clsExtnParams.CBlastExtensionParameters::~CBlastExtensionParameters();
+    mi_clsGapAlign.CBlastGapAlignStruct::~CBlastGapAlignStruct();
 
     return retval;
 }
@@ -627,6 +627,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2003/08/19 22:12:47  dondosha
+ * Cosmetic changes
+ *
  * Revision 1.22  2003/08/19 20:27:06  dondosha
  * EProgram enum type is no longer part of CBlastOption class
  *
