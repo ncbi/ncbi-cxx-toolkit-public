@@ -21,6 +21,10 @@
 # include "Web_Env.hpp"
 #endif
 
+#include <test/test_assert.h>  /* This header must go last */
+
+
+
 int main(int argc, char** argv)
 {
     CTestSerial().AppMain(argc, argv);
