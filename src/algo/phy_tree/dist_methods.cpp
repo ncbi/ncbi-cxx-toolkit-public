@@ -203,10 +203,17 @@ END_SCOPE(fastme)
 // Functions to convert from tree representation used by fastme code
 
 static void s_AddFastMeSubtree(fastme::meNode *me_node,
-                               CDistMethods::TTree* node)
+                               CDistMethods::TTree* node,
+                               const vector<string>& labels)
 {
     if (fastme::leaf(me_node)) {
-        node->GetValue().SetLabel() = me_node->label;
+        int id = NStr::StringToInt(me_node->label);
+        node->GetValue().SetId(id);
+        if (!labels.empty()) {
+            node->GetValue().SetLabel(labels[id]);
+        } else {
+            node->GetValue().SetLabel(me_node->label);
+        }
         return;
     }
 
@@ -214,23 +221,33 @@ static void s_AddFastMeSubtree(fastme::meNode *me_node,
     // first left
     CDistMethods::TTree* child_node = node->AddNode();
     child_node->GetValue().SetDist(me_node->leftEdge->distance);
-    s_AddFastMeSubtree(me_node->leftEdge->head, child_node);
+    s_AddFastMeSubtree(me_node->leftEdge->head, child_node, labels);
     // then right
     child_node = node->AddNode();
     child_node->GetValue().SetDist(me_node->rightEdge->distance);
-    s_AddFastMeSubtree(me_node->rightEdge->head, child_node);
+    s_AddFastMeSubtree(me_node->rightEdge->head, child_node, labels);
 }
 
 
-static CDistMethods::TTree* s_ConvertFastMeTree(fastme::meTree *me_tree) {
+static CDistMethods::TTree* s_ConvertFastMeTree(fastme::meTree *me_tree,
+                                                const vector<string>& labels) {
+
     CDistMethods::TTree *tree = new CDistMethods::TTree;
     fastme::meEdge *edge;
     edge = me_tree->root->leftEdge;
 
     CDistMethods::TTree *node = tree->AddNode();
     node->GetValue().SetDist(edge->distance);
-    node->GetValue().SetLabel() = me_tree->root->label;
-    s_AddFastMeSubtree(edge->head, tree);
+
+    int id = NStr::StringToInt(me_tree->root->label);
+    node->GetValue().SetId(id);
+    if (!labels.empty()) {
+        node->GetValue().SetLabel(labels[id]);
+    } else {
+        node->GetValue().SetLabel(me_tree->root->label);
+    }
+
+    s_AddFastMeSubtree(edge->head, tree, labels);
 
     return tree;
 }
@@ -251,19 +268,14 @@ CDistMethods::TTree *CDistMethods::FastMeTree(const TMatrix& dist_mat,
         }
     }
 
+    // leaf labels for fastme code; just pass in
+    // "0", "1", etc., and fill in real labels later
     char **clabels = new char*[dist_mat.GetRows()];
-    vector<string> slabels;
-    if (labels.empty()) {
-        // make up labels based on node id
-        slabels.resize(dist_mat.GetRows());
-        for (unsigned int i = 0;  i < dist_mat.GetRows();  ++i) {
-            slabels[i] = 'N' + NStr::IntToString(i);
-            clabels[i] = const_cast<char *>(slabels[i].c_str());
-        }
-    } else {
-        for (unsigned int i = 0;  i < dist_mat.GetRows();  ++i) {
-            clabels[i] = const_cast<char *>(labels[i].c_str());
-        }
+    vector<string> dummy_labels;
+    dummy_labels.resize(dist_mat.GetRows());
+    for (unsigned int i = 0;  i < dist_mat.GetRows();  ++i) {
+        dummy_labels[i] = NStr::IntToString(i);
+        clabels[i] = const_cast<char *>(dummy_labels[i].c_str());
     }
 
     fastme::meTree *me_out =
@@ -271,7 +283,7 @@ CDistMethods::TTree *CDistMethods::FastMeTree(const TMatrix& dist_mat,
                            btype, wtype, ntype);
     fastme::freeMatrix(dfme, dist_mat.GetRows());
     delete [] clabels;
-    TTree *me_tree = s_ConvertFastMeTree(me_out);
+    TTree *me_tree = s_ConvertFastMeTree(me_out, labels);
     fastme::freeTree(me_out);
     return me_tree;
 }
@@ -343,6 +355,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/17 17:57:48  jcherry
+ * Made fastme set the node ids of leaf nodes
+ *
  * Revision 1.6  2004/02/19 16:43:45  jcherry
  * Temporarily disable one form of Divergence() method
  *
