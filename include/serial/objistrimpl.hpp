@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/12/26 22:23:44  vasilche
+* Fixed errors of compilation on Mac.
+*
 * Revision 1.2  2000/11/20 17:24:36  vasilche
 * Added prototypes of internal functions.
 *
@@ -50,10 +53,6 @@
 #include <vector>
 
 BEGIN_NCBI_SCOPE
-
-CObjectIStream* CreateObjectIStreamAsn(void);
-CObjectIStream* CreateObjectIStreamAsnBinary(void);
-CObjectIStream* CreateObjectIStreamXml(void);
 
 #include <serial/objistrimpl.inl>
 

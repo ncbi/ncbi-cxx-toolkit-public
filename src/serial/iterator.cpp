@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/12/26 22:24:10  vasilche
+* Fixed errors of compilation on Mac.
+*
 * Revision 1.16  2000/11/09 16:38:40  vasilche
 * Fixed error on WorkShop compiler: static functions are unusable from templates.
 *
@@ -106,6 +109,11 @@
 #include <serial/iterator.hpp>
 
 BEGIN_NCBI_SCOPE
+
+struct SIteratorFunctions {
+    static bool s_ContainsType(const CConstObjectInfo& object,
+                               TTypeInfo needType);
+};
 
 class CTreeLevelIteratorOne : public CTreeLevelIterator
 {
@@ -258,8 +266,8 @@ bool CConstTreeLevelIterator::HaveChildren(const CConstObjectInfo& object)
     }
 }
 
-bool s_ContainsType(const CConstObjectInfo& object,
-                  TTypeInfo needType)
+bool SIteratorFunctions::s_ContainsType(const CConstObjectInfo& object,
+                                        TTypeInfo needType)
 {
     if ( object.GetTypeInfo()->IsType(needType) )
         return true;
@@ -471,7 +479,7 @@ template<class Parent>
 bool CLeafTypeIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
 {
     return CParent::CanSelect(object) &&
-        s_ContainsType(object, GetIteratorType());
+        SIteratorFunctions::s_ContainsType(object, GetIteratorType());
 }
 
 template<class Parent>

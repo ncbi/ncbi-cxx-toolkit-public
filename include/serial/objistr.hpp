@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2000/12/26 22:23:44  vasilche
+* Fixed errors of compilation on Mac.
+*
 * Revision 1.60  2000/12/26 17:26:09  vasilche
 * Added one more Read() interface method.
 *
@@ -710,6 +713,10 @@ private:
                                        unsigned openFlags = 0);
     static CRef<CByteSource> GetSource(CNcbiIstream& inStream,
                                        bool deleteInStream = false);
+
+    static CObjectIStream* CreateObjectIStreamAsn(void);
+    static CObjectIStream* CreateObjectIStreamAsnBinary(void);
+    static CObjectIStream* CreateObjectIStreamXml(void);
 
 protected:
     CIStreamBuffer m_Input;

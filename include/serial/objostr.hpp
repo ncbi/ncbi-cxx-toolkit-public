@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2000/12/26 22:23:45  vasilche
+* Fixed errors of compilation on Mac.
+*
 * Revision 1.55  2000/12/15 21:28:47  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -622,6 +625,13 @@ protected:
     // report error about unended object stack frame
     virtual void UnendedFrame(void);
 
+    static CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out,
+                                                bool deleteOut);
+    static CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& out,
+                                                      bool deleteOut);
+    static CObjectOStream* OpenObjectOStreamXml(CNcbiOstream& out,
+                                                bool deleteOut);
+
 protected:
     COStreamBuffer m_Output;
 
@@ -636,11 +646,6 @@ public:
     CHookDataKey<CWriteClassMemberHook> m_ClassMemberHookKey;
     CHookDataKey<CWriteChoiceVariantHook> m_ChoiceVariantHookKey;
 };
-
-// internal functions
-CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out, bool deleteOut);
-CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& out, bool deleteOut);
-CObjectOStream* OpenObjectOStreamXml(CNcbiOstream& out, bool deleteOut);
 
 #include <serial/objostr.inl>
 

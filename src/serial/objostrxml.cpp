@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/12/26 22:24:14  vasilche
+* Fixed errors of compilation on Mac.
+*
 * Revision 1.22  2000/12/15 15:38:45  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -158,7 +161,8 @@
 
 BEGIN_NCBI_SCOPE
 
-CObjectOStream* OpenObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
+CObjectOStream* CObjectOStream::OpenObjectOStreamXml(CNcbiOstream& out,
+                                                     bool deleteOut)
 {
     return new CObjectOStreamXml(out, deleteOut);
 }

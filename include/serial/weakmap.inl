@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/12/26 22:23:46  vasilche
+* Fixed errors of compilation on Mac.
+*
 * Revision 1.4  2000/10/20 15:51:28  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -140,42 +143,48 @@ void CWeakMap<Object>::Forget(key_type& key)
 
 template<class Object>
 inline
-CWeakMap<Object>::const_iterator CWeakMap<Object>::find(key_type& key) const
+typename CWeakMap<Object>::const_iterator
+CWeakMap<Object>::find(key_type& key) const
 {
     return m_Map.find(&key);
 }
 
 template<class Object>
 inline
-CWeakMap<Object>::iterator CWeakMap<Object>::find(key_type& key)
+typename CWeakMap<Object>::iterator
+CWeakMap<Object>::find(key_type& key)
 {
     return m_Map.find(&key);
 }
 
 template<class Object>
 inline
-CWeakMap<Object>::const_iterator CWeakMap<Object>::begin(void) const
+typename CWeakMap<Object>::const_iterator
+CWeakMap<Object>::begin(void) const
 {
     return m_Map.begin();
 }
 
 template<class Object>
 inline
-CWeakMap<Object>::iterator CWeakMap<Object>::begin(void)
+typename CWeakMap<Object>::iterator
+CWeakMap<Object>::begin(void)
 {
     return m_Map.begin();
 }
 
 template<class Object>
 inline
-CWeakMap<Object>::const_iterator CWeakMap<Object>::end(void) const
+typename CWeakMap<Object>::const_iterator
+CWeakMap<Object>::end(void) const
 {
     return m_Map.end();
 }
 
 template<class Object>
 inline
-CWeakMap<Object>::iterator CWeakMap<Object>::end(void)
+typename CWeakMap<Object>::iterator
+CWeakMap<Object>::end(void)
 {
     return m_Map.end();
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/12/26 22:24:12  vasilche
+* Fixed errors of compilation on Mac.
+*
 * Revision 1.16  2000/12/15 15:38:44  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -123,7 +126,7 @@
 
 BEGIN_NCBI_SCOPE
 
-CObjectIStream* CreateObjectIStreamXml()
+CObjectIStream* CObjectIStream::CreateObjectIStreamXml()
 {
     return new CObjectIStreamXml();
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2000/12/26 22:24:11  vasilche
+* Fixed errors of compilation on Mac.
+*
 * Revision 1.48  2000/12/15 21:29:02  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -245,7 +248,7 @@ using namespace NCBI_NS_NCBI::CObjectStreamAsnBinaryDefs;
 BEGIN_NCBI_SCOPE
 
 
-CObjectIStream* CreateObjectIStreamAsnBinary(void)
+CObjectIStream* CObjectIStream::CreateObjectIStreamAsnBinary(void)
 {
     return new CObjectIStreamAsnBinary();
 }

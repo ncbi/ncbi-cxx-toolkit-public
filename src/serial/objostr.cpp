@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2000/12/26 22:24:13  vasilche
+* Fixed errors of compilation on Mac.
+*
 * Revision 1.57  2000/12/15 22:07:02  vasilche
 * Fixed typo eNotOpen -> eNoError.
 *
@@ -286,10 +289,6 @@
 #endif
 
 BEGIN_NCBI_SCOPE
-
-CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out, bool deleteOut);
-CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& out, bool deleteOut);
-CObjectOStream* OpenObjectOStreamXml(CNcbiOstream& out, bool deleteOut);
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                      const string& fileName,

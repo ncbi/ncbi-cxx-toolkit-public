@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2000/12/26 22:24:14  vasilche
+* Fixed errors of compilation on Mac.
+*
 * Revision 1.54  2000/12/15 21:29:03  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -279,7 +282,8 @@ using namespace NCBI_NS_NCBI::CObjectStreamAsnBinaryDefs;
 
 BEGIN_NCBI_SCOPE
 
-CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& out, bool deleteOut)
+CObjectOStream* CObjectOStream::OpenObjectOStreamAsnBinary(CNcbiOstream& out,
+                                                           bool deleteOut)
 {
     return new CObjectOStreamAsnBinary(out, deleteOut);
 }
@@ -892,7 +896,12 @@ void CObjectOStreamAsnBinary::CopyEnum(const CEnumeratedTypeValues& values,
 void CObjectOStreamAsnBinary::WriteObjectReference(TObjectIndex index)
 {
     WriteTag(eApplication, false, eObjectReference);
-    WriteNumberValue(*this, index);
+    if ( sizeof(TObjectIndex) == sizeof(Int4) )
+        WriteNumberValue(*this, Int4(index));
+    else if ( sizeof(TObjectIndex) == sizeof(Int8) )
+        WriteNumberValue(*this, index);
+    else
+        ThrowError(eIllegalCall, "invalid size of TObjectIndex");
 }
 
 void CObjectOStreamAsnBinary::WriteNullPointer(void)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2000/12/26 22:24:13  vasilche
+* Fixed errors of compilation on Mac.
+*
 * Revision 1.59  2000/12/15 21:29:02  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -305,7 +308,8 @@
 
 BEGIN_NCBI_SCOPE
 
-CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out, bool deleteOut)
+CObjectOStream* CObjectOStream::OpenObjectOStreamAsn(CNcbiOstream& out,
+                                                     bool deleteOut)
 {
     return new CObjectOStreamAsn(out, deleteOut);
 }

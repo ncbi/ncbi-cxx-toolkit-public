@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2000/12/26 22:24:10  vasilche
+* Fixed errors of compilation on Mac.
+*
 * Revision 1.71  2000/12/26 17:26:16  vasilche
 * Added one more Read() interface method.
 *
@@ -336,10 +339,6 @@
 #endif
 
 BEGIN_NCBI_SCOPE
-
-CObjectIStream* CreateObjectIStreamAsn(void);
-CObjectIStream* CreateObjectIStreamAsnBinary(void);
-CObjectIStream* CreateObjectIStreamXml(void);
 
 CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
                                             const string& fileName,
