@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/28 17:56:36  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.5  1998/12/23 13:57:55  vasilche
 * Default output stream will be NcbiCout.
 *
@@ -48,8 +51,8 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
-#include <ncbicgir.hpp>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbicgir.hpp>
 #include <list>
 #include <map>
 #include <time.h>

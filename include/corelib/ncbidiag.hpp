@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/28 17:56:27  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.6  1998/11/06 22:42:37  vakatov
 * Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
 * API to namespace "ncbi::" and to use it by default, respectively
@@ -58,7 +61,7 @@
 * ==========================================================================
 */
 
-#include <ncbistre.hpp>
+#include <corelib/ncbistre.hpp>
 #include <stdlib.h>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
@@ -167,7 +170,7 @@ extern void SetDiagHandler(FDiagHandler func,
 ///////////////////////////////////////////////////////
 // All inline function implementations and internal data
 // types, etc. are in this file
-#include <ncbidiag.inl>
+#include <corelib/ncbidiag.inl>
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)

@@ -37,6 +37,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/28 17:56:27  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.6  1998/12/01 01:19:47  vakatov
 * Moved <string> and <stdexcept> after the <ncbidiag.hpp> to avoid weird
 * conflicts under MSVC++ 6.0
@@ -61,7 +64,7 @@
 * ==========================================================================
 */
 
-#include <ncbidiag.hpp>
+#include <corelib/ncbidiag.hpp>
 #include <string>
 #include <stdexcept>
 

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/28 17:56:39  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.4  1998/12/21 17:19:37  sandomir
 * VC++ fixes in ncbistd; minor fixes in Resource
 *
@@ -47,7 +50,7 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
+#include <corelib/ncbistd.hpp>
 #include <limits>
 #include <errno.h>
 #include <stdio.h>

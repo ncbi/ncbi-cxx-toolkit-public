@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1998/12/28 17:56:29  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.12  1998/12/21 17:19:36  sandomir
 * VC++ fixes in ncbistd; minor fixes in Resource
 *
@@ -55,10 +58,10 @@
 * ==========================================================================
 */
 
-#include <ncbitype.h>
-#include <ncbistl.hpp>
-#include <ncbidbg.hpp>
-#include <ncbiexpt.hpp>
+#include <corelib/ncbitype.h>
+#include <corelib/ncbistl.hpp>
+#include <corelib/ncbidbg.hpp>
+#include <corelib/ncbiexpt.hpp>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE

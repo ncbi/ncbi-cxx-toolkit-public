@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/28 17:56:37  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.7  1998/11/06 22:42:41  vakatov
 * Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
 * API to namespace "ncbi::" and to use it by default, respectively
@@ -59,7 +62,7 @@
 * ==========================================================================
 */
 
-#include <ncbidiag.hpp>
+#include <corelib/ncbidiag.hpp>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE

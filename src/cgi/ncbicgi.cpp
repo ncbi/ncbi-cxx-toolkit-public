@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1998/12/28 17:56:36  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.16  1998/12/04 23:38:35  vakatov
 * Workaround SunPro's "buggy const"(see "BW_01")
 * Renamed "CCgiCookies::Erase()" method to "...Clear()"
@@ -89,7 +92,7 @@
 * ==========================================================================
 */
 
-#include <ncbicgi.hpp>
+#include <corelib/ncbicgi.hpp>
 #include <time.h>
 
 

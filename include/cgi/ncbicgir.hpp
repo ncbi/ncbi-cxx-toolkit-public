@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/28 17:56:26  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.4  1998/12/11 22:00:32  vasilche
 * Added raw CGI response
 *
@@ -48,9 +51,9 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
-#include <ncbistre.hpp>
-#include <ncbicgi.hpp>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
+#include <corelib/ncbicgi.hpp>
 #include <list>
 #include <map>
 
@@ -154,7 +157,7 @@ protected:
 ///////////////////////////////////////////////////////
 // All inline function implementations and internal data
 // types, etc. are in this file
-#include <ncbicgir.inl>
+#include <corelib/ncbicgir.inl>
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)

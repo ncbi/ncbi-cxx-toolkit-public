@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/12/28 17:56:26  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.8  1998/11/19 22:17:41  vakatov
 * Forgot "()" in the _ASSERT macro
 *
@@ -52,7 +55,7 @@
 * ==========================================================================
 */
 
-#include <ncbidiag.hpp>
+#include <corelib/ncbidiag.hpp>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE

@@ -1,0 +1,15 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+
+# Build test CoreLib application "corelib"
+#################################
+
+srcdir = @srcdir@
+include @builddir@/Makefile.mk
+
+APP = coretest
+OBJ = coretest
+LIB = xncbi
+include @builddir@/Makefile.app

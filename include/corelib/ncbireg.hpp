@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/28 17:56:28  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.5  1998/12/10 22:59:46  vakatov
 * CNcbiRegistry:: API is ready(and by-and-large tested)
 *
@@ -56,7 +59,7 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
+#include <corelib/ncbistd.hpp>
 #include <list>
 #include <map>
 

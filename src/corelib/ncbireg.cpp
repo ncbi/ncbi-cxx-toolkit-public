@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/28 17:56:37  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.5  1998/12/10 22:59:47  vakatov
 * CNcbiRegistry:: API is ready(and by-and-large tested)
 *
@@ -53,7 +56,7 @@
 * ===========================================================================
 */
 
-#include <ncbireg.hpp>
+#include <corelib/ncbireg.hpp>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE

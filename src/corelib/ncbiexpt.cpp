@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/28 17:56:37  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.5  1998/11/26 00:03:52  vakatov
 * [_DEBUG] Do not catch OS exceptions in debug mode
 *
@@ -53,7 +56,7 @@
 * ===========================================================================
 */
 
-#include <ncbiexpt.hpp>
+#include <corelib/ncbiexpt.hpp>
 
 #if defined(NCBI_OS_UNIX)
 #  include <signal.h>

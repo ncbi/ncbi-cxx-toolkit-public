@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1998/12/28 17:56:43  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.28  1998/12/15 15:43:24  vasilche
 * Added utilities to convert string <> int.
 *
@@ -124,10 +127,10 @@
 #define _DEBUG
 #endif
 
-#include <cgiapp.hpp>
-#include <ncbireg.hpp>
-#include <ncbires.hpp>
-#include <ncbicgir.hpp>
+#include <corelib/cgiapp.hpp>
+#include <corelib/ncbireg.hpp>
+#include <corelib/ncbires.hpp>
+#include <corelib/ncbicgir.hpp>
 #include <algorithm>
 #include <time.h>
 

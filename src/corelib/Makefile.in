@@ -1,0 +1,11 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+
+# Meta-makefile
+#################################
+
+PROJECT = Makefile.corelib
+SUBPROJ = test
+include @builddir@/Makefile.meta

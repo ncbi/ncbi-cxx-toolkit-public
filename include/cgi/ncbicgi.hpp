@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1998/12/28 17:56:25  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.28  1998/12/14 20:25:35  sandomir
 * changed with Command handling
 *
@@ -101,7 +104,7 @@
 * ==========================================================================
 */
 
-#include <ncbistd.hpp>
+#include <corelib/ncbistd.hpp>
 #include <list>
 #include <map>
 
@@ -360,7 +363,7 @@ private:
 
 ///////////////////////////////////////////////////////
 // All inline function implementations are in this file
-#include <ncbicgi.inl>
+#include <corelib/ncbicgi.inl>
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)

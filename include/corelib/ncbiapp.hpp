@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/12/28 17:56:25  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.8  1998/12/09 17:30:12  sandomir
 * ncbicgi.hpp deleted from ncbiapp.hpp
 *
@@ -62,7 +65,7 @@
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 

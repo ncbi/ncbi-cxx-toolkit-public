@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1998/12/28 17:56:29  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
 * Revision 1.10  1998/12/03 18:56:12  vakatov
 * minor fixes
 *
@@ -54,7 +57,7 @@
 * ==========================================================================
 */
 
-#include <ncbistl.hpp>
+#include <corelib/ncbistl.hpp>
 
 
 // Determine which iostream library to use, include appropriate
