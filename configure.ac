@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.331 2004/11/18 19:13:34 ucko Exp $
+#  $Id: configure.ac,v 1.332 2004/11/18 20:05:06 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -790,11 +790,21 @@ case "$host_os:$compiler" in
       :
    elif test -f /sw/include/dlfcn.h; then
       CPPFLAGS="-I/sw/include $CPPFLAGS"
-      LIBS="-L/sw/lib $LIBS"
+      LDFLAGS="-L/sw/lib $LDFLAGS"
       test -f /sw/lib/libdb-4.1.dylib  &&  BERKELEYDB_PATH="/sw"
    else
       AC_MSG_WARN([No dlfcn.h in /usr/include or /sw/include.])
    fi
+   case "$CPPFLAGS $LIBS" in
+      *sw/*) ;;
+      *)
+         if test -d "$NCBI/safe-sw"; then
+             CPPFLAGS="-I$NCBI/safe-sw/include $CPPFLAGS"
+             LDFLAGS="-L$NCBI/safe-sw/lib $LDFLAGS"
+	 fi
+	 ;;
+   esac
+
    CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
    LIBS="-Wl,-framework,ApplicationServices $LIBS"
    ;;
@@ -814,7 +824,7 @@ changequote(, )dnl
    cat <<EOF
 
   Compiler $CXX $compiler_ver is not fully supported.
-  Consult doc/config.html#ref_Compilers for the list of
+  Consult doc/config.html\#ref_Compilers for the list of
   fully supported platforms/compilers.
   Do you still want to proceed (at your own risk)? [n/y]
 EOF
@@ -3597,7 +3607,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(png,
  AC_LANG_PROGRAM([#include <png.h>],
     [png_structp png_ptr
       = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
- ]), $Z_LIBS)
+ ]), $Z_LIBS, [], $Z_INCLUDE)
 
 : ${TIFF_PATH=/usr/sfw}
 NCBI_CHECK_THIRD_PARTY_LIB(tiff,
@@ -3628,7 +3638,9 @@ test -n "$x_libraries"  &&  : ${XPM_PATH=`dirname "$x_libraries"`}
 NCBI_CHECK_THIRD_PARTY_LIB(Xpm,
  AC_LANG_PROGRAM([#include <X11/xpm.h>],
     [XpmImage image; XpmInfo info;
-     XpmReadFileToXpmImage("foo", &image, &info);]), $X_LIBS -lX11)
+     XpmReadFileToXpmImage("foo", &image, &info);]), $X_LIBS -lX11, [],
+    $X_CFLAGS)
+# The use of X_CFLAGS is probably redundant, but shouldn't hurt.
 
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"

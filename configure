@@ -3978,12 +3978,22 @@ case "$host_os:$compiler" in
       :
    elif test -f /sw/include/dlfcn.h; then
       CPPFLAGS="-I/sw/include $CPPFLAGS"
-      LIBS="-L/sw/lib $LIBS"
+      LDFLAGS="-L/sw/lib $LDFLAGS"
       test -f /sw/lib/libdb-4.1.dylib  &&  BERKELEYDB_PATH="/sw"
    else
       { echo "$as_me:$LINENO: WARNING: No dlfcn.h in /usr/include or /sw/include." >&5
 echo "$as_me: WARNING: No dlfcn.h in /usr/include or /sw/include." >&2;}
    fi
+   case "$CPPFLAGS $LIBS" in
+      *sw/*) ;;
+      *)
+         if test -d "$NCBI/safe-sw"; then
+             CPPFLAGS="-I$NCBI/safe-sw/include $CPPFLAGS"
+             LDFLAGS="-L$NCBI/safe-sw/lib $LDFLAGS"
+	 fi
+	 ;;
+   esac
+
    CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
    LIBS="-Wl,-framework,ApplicationServices $LIBS"
    ;;
@@ -14768,7 +14778,7 @@ echo $ECHO_N "checking for libz$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_z+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$Z_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $Z_INCLUDE $orig_CPPFLAGS"
        LIBS="$Z_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -14820,6 +14830,7 @@ echo "${ECHO_T}$ncbi_cv_lib_z" >&6
     WithoutPackages="$WithoutPackages Z"
  else
     WithPackages="$WithPackages Z"
+    Z_INCLUDE=" $Z_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBZ 1
@@ -14864,7 +14875,7 @@ echo $ECHO_N "checking for libbz2$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_bz2+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$BZ2_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $BZ2_INCLUDE $orig_CPPFLAGS"
        LIBS="$BZ2_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -14917,6 +14928,7 @@ echo "${ECHO_T}$ncbi_cv_lib_bz2" >&6
     WithoutPackages="$WithoutPackages BZ2"
  else
     WithPackages="$WithPackages BZ2"
+    BZ2_INCLUDE=" $BZ2_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBBZ2 1
@@ -14969,7 +14981,7 @@ echo $ECHO_N "checking for libpcre$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_pcre+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$PCRE_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $PCRE_INCLUDE $orig_CPPFLAGS"
        LIBS="$PCRE_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -15021,6 +15033,7 @@ echo "${ECHO_T}$ncbi_cv_lib_pcre" >&6
     WithoutPackages="$WithoutPackages PCRE"
  else
     WithPackages="$WithPackages PCRE"
+    PCRE_INCLUDE=" $PCRE_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBPCRE 1
@@ -18615,7 +18628,7 @@ echo $ECHO_N "checking for libexpat$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_expat+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$EXPAT_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $EXPAT_INCLUDE $orig_CPPFLAGS"
        LIBS="$EXPAT_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -18667,6 +18680,7 @@ echo "${ECHO_T}$ncbi_cv_lib_expat" >&6
     WithoutPackages="$WithoutPackages EXPAT"
  else
     WithPackages="$WithPackages EXPAT"
+    EXPAT_INCLUDE=" $EXPAT_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBEXPAT 1
@@ -18701,7 +18715,7 @@ echo $ECHO_N "checking for libsablot$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_sablot+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$SABLOT_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $SABLOT_INCLUDE $orig_CPPFLAGS"
        LIBS="$SABLOT_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -18753,6 +18767,7 @@ echo "${ECHO_T}$ncbi_cv_lib_sablot" >&6
     WithoutPackages="$WithoutPackages SABLOT"
  else
     WithPackages="$WithPackages SABLOT"
+    SABLOT_INCLUDE=" $SABLOT_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBSABLOT 1
@@ -18789,7 +18804,7 @@ echo $ECHO_N "checking for libxml2$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_libxml+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$LIBXML_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $LIBXML_INCLUDE $orig_CPPFLAGS"
        LIBS="$LIBXML_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -18841,6 +18856,7 @@ echo "${ECHO_T}$ncbi_cv_lib_libxml" >&6
     WithoutPackages="$WithoutPackages LIBXML"
  else
     WithPackages="$WithPackages LIBXML"
+    LIBXML_INCLUDE=" $LIBXML_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBXML 1
@@ -18875,7 +18891,7 @@ echo $ECHO_N "checking for libsqlite$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_sqlite+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$SQLITE_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $SQLITE_INCLUDE $orig_CPPFLAGS"
        LIBS="$SQLITE_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -18927,6 +18943,7 @@ echo "${ECHO_T}$ncbi_cv_lib_sqlite" >&6
     WithoutPackages="$WithoutPackages SQLITE"
  else
     WithPackages="$WithPackages SQLITE"
+    SQLITE_INCLUDE=" $SQLITE_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBSQLITE 1
@@ -18964,7 +18981,7 @@ echo $ECHO_N "checking for liboechem$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_oechem+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$OECHEM_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $OECHEM_INCLUDE $orig_CPPFLAGS"
        LIBS="$OECHEM_LIBS $NETWORK_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -19016,6 +19033,7 @@ echo "${ECHO_T}$ncbi_cv_lib_oechem" >&6
     WithoutPackages="$WithoutPackages OECHEM"
  else
     WithPackages="$WithPackages OECHEM"
+    OECHEM_INCLUDE=" $OECHEM_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBOECHEM 1
@@ -19056,7 +19074,7 @@ echo $ECHO_N "checking for libjpeg$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_jpeg+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$JPEG_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $JPEG_INCLUDE $orig_CPPFLAGS"
        LIBS="$JPEG_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -19115,6 +19133,7 @@ echo "${ECHO_T}$ncbi_cv_lib_jpeg" >&6
     WithoutPackages="$WithoutPackages JPEG"
  else
     WithPackages="$WithPackages JPEG"
+    JPEG_INCLUDE=" $JPEG_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBJPEG 1
@@ -19148,7 +19167,7 @@ echo $ECHO_N "checking for libpng$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_png+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$PNG_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS="$Z_INCLUDE $PNG_INCLUDE $orig_CPPFLAGS"
        LIBS="$PNG_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -19202,6 +19221,7 @@ echo "${ECHO_T}$ncbi_cv_lib_png" >&6
     WithoutPackages="$WithoutPackages PNG"
  else
     WithPackages="$WithPackages PNG"
+    PNG_INCLUDE="$Z_INCLUDE $PNG_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBPNG 1
@@ -19235,7 +19255,7 @@ echo $ECHO_N "checking for libtiff$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_tiff+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$TIFF_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $TIFF_INCLUDE $orig_CPPFLAGS"
        LIBS="$TIFF_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -19287,6 +19307,7 @@ echo "${ECHO_T}$ncbi_cv_lib_tiff" >&6
     WithoutPackages="$WithoutPackages TIFF"
  else
     WithPackages="$WithPackages TIFF"
+    TIFF_INCLUDE=" $TIFF_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBTIFF 1
@@ -19322,7 +19343,7 @@ echo $ECHO_N "checking for libungif$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_ungif+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$UNGIF_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $UNGIF_INCLUDE $orig_CPPFLAGS"
        LIBS="$UNGIF_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -19376,6 +19397,7 @@ echo "${ECHO_T}$ncbi_cv_lib_ungif" >&6
     WithoutPackages="$WithoutPackages UNGIF"
  else
     WithPackages="$WithPackages UNGIF"
+    UNGIF_INCLUDE=" $UNGIF_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBUNGIF 1
@@ -19408,7 +19430,7 @@ echo $ECHO_N "checking for libgif$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_gif+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$GIF_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS=" $GIF_INCLUDE $orig_CPPFLAGS"
        LIBS="$GIF_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -19462,6 +19484,7 @@ echo "${ECHO_T}$ncbi_cv_lib_gif" >&6
     WithoutPackages="$WithoutPackages GIF"
  else
     WithPackages="$WithPackages GIF"
+    GIF_INCLUDE=" $GIF_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBGIF 1
@@ -19504,7 +19527,7 @@ echo $ECHO_N "checking for libXpm$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_xpm+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$XPM_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS="$X_CFLAGS $XPM_INCLUDE $orig_CPPFLAGS"
        LIBS="$XPM_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -19557,6 +19580,7 @@ echo "${ECHO_T}$ncbi_cv_lib_xpm" >&6
     WithoutPackages="$WithoutPackages XPM"
  else
     WithPackages="$WithPackages XPM"
+    XPM_INCLUDE="$X_CFLAGS $XPM_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBXPM 1
@@ -19566,6 +19590,7 @@ _ACEOF
 
 
 
+# The use of X_CFLAGS is probably redundant, but shouldn't hurt.
 
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
