@@ -147,6 +147,7 @@
 #ifdef NCBI_XALGO_EXPORTS
 #  define NCBI_XALGOALIGN_EXPORTS
 #  define NCBI_XALGOSEQ_EXPORTS
+#  define NCBI_XALGOGNOMON_EXPORTS
 #  define NCBI_XBLAST_EXPORTS
 #endif
 
@@ -261,6 +262,15 @@
 #  define NCBI_XALGOSEQ_EXPORT      __declspec(dllexport)
 #else
 #  define NCBI_XALGOSEQ_EXPORT      __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library xalgognomon
+ */
+#ifdef NCBI_XALGOGNOMON_EXPORTS
+#  define NCBI_XALGOGNOMON_EXPORT      __declspec(dllexport)
+#else
+#  define NCBI_XALGOGNOMON_EXPORT      __declspec(dllimport)
 #endif
 
 /*
@@ -1064,6 +1074,7 @@
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_VALIDATOR_EXPORT
 #  define NCBI_XALGOALIGN_EXPORT
+#  define NCBI_XALGOGNOMON_EXPORTS
 #  define NCBI_XALGOSEQ_EXPORT
 #  define NCBI_XALGO_EXPORT
 #  define NCBI_XALNMGR_EXPORT
@@ -1092,6 +1103,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.42  2003/10/24 15:17:15  dicuccio
+ * Added export specifier for gnomon
+ *
  * Revision 1.41  2003/10/20 18:38:02  dicuccio
  * Added export specifier for xloader_cdd
  *
