@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/03/13 01:25:06  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.1  2001/03/09 15:49:06  thiessen
 * major changes to add initial update viewer
 *
@@ -58,6 +61,8 @@ UpdateViewer::UpdateViewer(void) :
 
 UpdateViewer::~UpdateViewer(void)
 {
+    DestroyGUI();
+    ClearStacks();
 }
 
 void UpdateViewer::CreateUpdateWindow(void)
@@ -68,7 +73,7 @@ void UpdateViewer::CreateUpdateWindow(void)
         SequenceDisplay *display = GetCurrentDisplay();
         if (display) {
             if (!updateWindow) updateWindow = new UpdateViewerWindow(this);
-            updateWindow->NewDisplay(display);
+            updateWindow->NewDisplay(display, true);
             updateWindow->ScrollToColumn(display->GetStartingColumn());
             updateWindow->Show(true);
             // ScrollTo causes immediate redraw, so don't need a second one
@@ -82,27 +87,38 @@ void UpdateViewer::Refresh(void)
     if (updateWindow) updateWindow->Refresh();
 }
 
-void UpdateViewer::DisplayAlignments(const AlignmentList& alignmentList)
+void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
 {
-    ClearStacks();
-    alignments = alignmentList;
+    if (newAlignments.size() == 0) return;
 
-    SequenceDisplay *display = new SequenceDisplay(false, viewerWindow);
+    AlignmentList *alignments = (alignmentStack.size() > 0) ? &(alignmentStack.back()) : NULL;
+    SequenceDisplay *display = GetCurrentDisplay();
+    if (!display) display = new SequenceDisplay(true, viewerWindow);
 
-    // populate each line of the display with one alignment, with blank lines inbetween
-    AlignmentList::const_iterator a, ae = alignments.end();
-    for (a=alignments.begin(); a!=ae; a++) {
-        if (a != alignments.begin()) display->AddRowFromString("");
-        for (int row=0; row<(*a)->NRows(); row++)
+    // populate succesive lines of the display with each alignment, with blank lines inbetween
+    AlignmentList::const_iterator a, ae = newAlignments.end();
+    for (a=newAlignments.begin(); a!=ae; a++) {
+        if ((*a)->NRows() != 2) {
+            ERR_POST(Error << "UpdateViewer::AddAlignments() - got alignment with != 2 rows");
+            continue;
+        }
+
+        // add alignment to stack list
+        if (alignments) alignments->push_back(*a);
+
+        // add alignment to the display, including block row since editor is always on
+        if (display->NRows() != 0) display->AddRowFromString("");
+        display->AddBlockBoundaryRow(*a);
+        for (int row=0; row<2; row++)
             display->AddRowFromAlignment(row, *a);
     }
 
-    InitStacks(NULL, display);
+    // start undo stacks if this is the first set of alignments added
+    if (!GetCurrentDisplay())
+        InitStacks(&newAlignments, display);
 
-    if (updateWindow)
-        updateWindow->UpdateDisplay(display);
-    else
-        CreateUpdateWindow();
+    if (!updateWindow) CreateUpdateWindow();
+    PushAlignment();    // make this an undoable operation
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2001/03/13 01:25:05  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.44  2001/03/10 22:23:02  thiessen
 * damn wx/string problem again
 *
@@ -165,8 +168,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
 
 #include "cn3d/alignment_manager.hpp"
@@ -180,7 +181,6 @@
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/cn3d_threader.hpp"
 #include "cn3d/update_viewer.hpp"
-#include "cn3d/sequence_display.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -245,7 +245,7 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
 
 const BlockMultipleAlignment * AlignmentManager::GetCurrentMultipleAlignment(void) const
 {
-    return sequenceViewer->GetFirstCurrentAlignment();
+    return sequenceViewer->GetCurrentAlignments()->front();
 }
 
 static bool AlignedToAllSlaves(int masterResidue,
@@ -550,12 +550,11 @@ void AlignmentManager::ShowUpdateWindow(void) const
 void AlignmentManager::RealignSlaveSequences(
     BlockMultipleAlignment *multiple, const std::vector < bool >& selectedSlaves)
 {
-    if (!multiple) {
-        ERR_POST(Error << "AlignmentManager::RealignSlaveSequences() - NULL multiple alignment");
+    if (!multiple || multiple != sequenceViewer->GetCurrentAlignments()->front()) {
+        ERR_POST(Error << "AlignmentManager::RealignSlaveSequences() - wrong multiple alignment");
         return;
     }
-    if (selectedSlaves.size() != alignmentSet->alignments.size() ||
-        selectedSlaves.size() != multiple->NRows() - 1) {
+    if (selectedSlaves.size() != multiple->NRows() - 1) {
         ERR_POST(Error << "AlignmentManager::RealignSlaveSequences() - wrong size selection list");
         return;
     }
@@ -565,9 +564,9 @@ void AlignmentManager::RealignSlaveSequences(
     TESTMSG("extracting rows");
     if (multiple->ExtractRows(selectedSlaves, &alignments)) {
         TESTMSG("recreating display");
-        sequenceViewer->GetCurrentDisplay()->RecreateFromEditedMultiple(multiple);
-        TESTMSG("creating update window");
-        updateViewer->DisplayAlignments(alignments);
+        sequenceViewer->RecreateFromEditedMultiple(multiple);
+        TESTMSG("adding to update window");
+        updateViewer->AddAlignments(alignments);
         TESTMSG("done");
     }
 }

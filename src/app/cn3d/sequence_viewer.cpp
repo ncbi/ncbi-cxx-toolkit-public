@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2001/03/13 01:25:06  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.37  2001/03/09 15:49:04  thiessen
 * major changes to add initial update viewer
 *
@@ -174,7 +177,7 @@ void SequenceViewer::CreateSequenceWindow(void)
     SequenceDisplay *display = GetCurrentDisplay();
     if (display) {
         if (!sequenceWindow) sequenceWindow = new SequenceViewerWindow(this);
-        sequenceWindow->NewDisplay(display);
+        sequenceWindow->NewDisplay(display, true);
         sequenceWindow->ScrollToColumn(display->GetStartingColumn());
         sequenceWindow->Show(true);
         // ScrollTo causes immediate redraw, so don't need a second one
@@ -207,7 +210,7 @@ void SequenceViewer::SaveAlignment(void)
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(display->rows[i]);
         if (alnRow) rowOrder.push_back(alnRow->row);
     }
-    alignmentManager->SavePairwiseFromMultiple(alignmentStack.back(), rowOrder);
+    alignmentManager->SavePairwiseFromMultiple(alignmentStack.back().back(), rowOrder);
 }
 
 void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
@@ -221,7 +224,9 @@ void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
     // set starting scroll to a few residues left of the first aligned block
     display->SetStartingColumn(alignment->GetFirstAlignedBlockPosition() - 5);
 
-    InitStacks(alignment, display);
+    AlignmentList alignments;
+    alignments.push_back(alignment);
+    InitStacks(&alignments, display);
     if (sequenceWindow)
         sequenceWindow->UpdateDisplay(display);
     else
@@ -250,6 +255,11 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 void SequenceViewer::UpdateAfterEdit(const BlockMultipleAlignment *forAlignment)
 {
     GetCurrentDisplay()->UpdateAfterEdit(forAlignment);
+}
+
+void SequenceViewer::RecreateFromEditedMultiple(BlockMultipleAlignment *multiple)
+{
+    GetCurrentDisplay()->RecreateFromEditedMultiple(multiple);
 }
 
 END_SCOPE(Cn3D)

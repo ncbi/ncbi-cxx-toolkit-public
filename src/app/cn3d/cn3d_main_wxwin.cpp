@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/03/13 01:25:05  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.29  2001/03/09 15:49:04  thiessen
 * major changes to add initial update viewer
 *
@@ -189,12 +192,11 @@
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/cdd/Cdd.hpp>
 
-#include "cn3d/structure_set.hpp"
-#include "cn3d/opengl_renderer.hpp"
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/opengl_renderer.hpp"
 #include "cn3d/style_manager.hpp"
-#include "cn3d/sequence_viewer.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/alignment_manager.hpp"

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/03/13 01:25:06  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.1  2001/03/09 15:49:06  thiessen
 * major changes to add initial update viewer
 *
@@ -61,7 +64,11 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *parentUpdateViewer) :
     updateViewer(parentUpdateViewer)
 {
     menuBar->Enable(MID_SELECT_COLS, false);
-    EnableDerivedEditorMenuItems(false);
+
+    // editor always on
+    EnableBaseEditorMenuItems(true);
+    menuBar->Check(MID_ENABLE_EDIT, true);
+    menuBar->Enable(MID_ENABLE_EDIT, false);
 }
 
 UpdateViewerWindow::~UpdateViewerWindow(void)
@@ -80,11 +87,6 @@ void UpdateViewerWindow::OnCloseWindow(wxCloseEvent& event)
 
 void UpdateViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
 {
-}
-
-bool UpdateViewerWindow::RequestEditorEnable(bool enable)
-{
-    return true;
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/03/13 01:25:05  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.5  2001/03/09 15:49:04  thiessen
 * major changes to add initial update viewer
 *
@@ -58,6 +61,9 @@
 #include "cn3d/messenger.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/style_manager.hpp"
+#include "cn3d/sequence_viewer_window.hpp"
+#include "cn3d/sequence_viewer.hpp"
+#include "cn3d/alignment_manager.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -195,11 +201,11 @@ SequenceDisplay::~SequenceDisplay(void)
     for (int i=0; i<rows.size(); i++) delete rows[i];
 }
 
-SequenceDisplay * SequenceDisplay::Clone(BlockMultipleAlignment *newAlignment) const
+SequenceDisplay * SequenceDisplay::Clone(const Old2NewAlignmentMap& newAlignments) const
 {
     SequenceDisplay *copy = new SequenceDisplay(isEditable, viewerWindow);
     for (int row=0; row<rows.size(); row++)
-        copy->rows.push_back(rows[row]->Clone(newAlignment));
+        copy->rows.push_back(rows[row]->Clone(newAlignments));
     copy->startingColumn = startingColumn;
     copy->maxRowWidth = maxRowWidth;
     return copy;
@@ -368,45 +374,58 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             return false;
         }
 
-        if ((*viewerWindow)->DoDeleteRow()) {
-            if (row > 0) {
-                DisplayRowFromAlignment *selectedRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
-                if (!selectedRow || selectedRow->row == 0 ||
-                    !selectedRow->alignment || selectedRow->alignment->NRows() <= 2) {
-                    ERR_POST(Warning << "Can't delete that row...");
-                } else {
+        SequenceViewerWindow *sequenceWindow = dynamic_cast<SequenceViewerWindow*>(*viewerWindow);
+        if (sequenceWindow && row >= 0 &&
+            (sequenceWindow->DoRealignRow() || sequenceWindow->DoDeleteRow())) {
 
-                    // redraw molecule associated with removed row
-                    const Molecule *molecule =
-                        selectedRow->alignment->GetSequenceOfRow(selectedRow->row)->molecule;
-
-                    // delete row based on alignment row # (not display row #); redraw molecule
-                    if (selectedRow->alignment->DeleteRow(selectedRow->row)) {
-
-                        // delete this row from the display, and update higher row #'s
-                        RowVector::iterator r, re = rows.end(), toDelete;
-                        for (r=rows.begin(); r!=re; r++) {
-                            DisplayRowFromAlignment
-                                *currentARow = dynamic_cast<DisplayRowFromAlignment*>(*r);
-                            if (!currentARow)
-                                continue;
-                            else if (currentARow->row > selectedRow->row)
-                                (currentARow->row)--;
-                            else if (currentARow == selectedRow) {
-                                toDelete = r;
-                                delete *r;
-                            }
-                        }
-                        rows.erase(toDelete);
-
-                        (*viewerWindow)->DeleteRowOff();
-                        UpdateAfterEdit(selectedRow->alignment);
-                        if (molecule && (*viewerWindow)->AlwaysSyncStructures())
-                            GlobalMessenger()->PostRedrawMolecule(molecule);
-                    }
-                }
+            DisplayRowFromAlignment *selectedRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+            if (!selectedRow || selectedRow->row == 0 || !selectedRow->alignment) {
+                ERR_POST(Warning << "Can't delete/realign that row...");
+                return false;
             }
-            return false;
+
+            if (sequenceWindow->DoRealignRow()) {
+                std::vector < bool > selectedSlaves(alignment->NRows() - 1, false);
+                selectedSlaves[selectedRow->row - 1] = true;
+                sequenceWindow->sequenceViewer->alignmentManager->
+                    RealignSlaveSequences(alignment, selectedSlaves);
+                return false;
+            }
+
+            if (sequenceWindow->DoDeleteRow()) {
+                if (alignment->NRows() <= 2) {
+                    ERR_POST(Warning << "Can't delete that row...");
+                    return false;
+                }
+
+                // redraw molecule associated with removed row
+                const Molecule *molecule = alignment->GetSequenceOfRow(selectedRow->row)->molecule;
+
+                // delete row based on alignment row # (not display row #); redraw molecule
+                if (alignment->DeleteRow(selectedRow->row)) {
+
+                    // delete this row from the display, and update higher row #'s
+                    RowVector::iterator r, re = rows.end(), toDelete;
+                    for (r=rows.begin(); r!=re; r++) {
+                        DisplayRowFromAlignment
+                            *currentARow = dynamic_cast<DisplayRowFromAlignment*>(*r);
+                        if (!currentARow)
+                            continue;
+                        else if (currentARow->row > selectedRow->row)
+                            (currentARow->row)--;
+                        else if (currentARow == selectedRow)
+                            toDelete = r;
+                    }
+                    delete *toDelete;
+                    rows.erase(toDelete);
+
+                    sequenceWindow->DeleteRowOff();
+                    UpdateAfterEdit(alignment);
+                    if (molecule && sequenceWindow->AlwaysSyncStructures())
+                        GlobalMessenger()->PostRedrawMolecule(molecule);
+                }
+                return false;
+            }
         }
     }
 
@@ -561,6 +580,12 @@ DisplayRowFromString * SequenceDisplay::FindBlockBoundaryRow(const BlockMultiple
     return blockBoundaryRow;
 }
 
+static inline DisplayRowFromString * CreateBlockBoundaryRow(BlockMultipleAlignment *forAlignment)
+{
+    return new DisplayRowFromString("", Vector(0,0,0),
+        blockBoundaryStringTitle, true, Vector(0.8,0.8,1), forAlignment);
+}
+
 void SequenceDisplay::AddBlockBoundaryRows(void)
 {
     if (!IsEditable()) return;
@@ -572,16 +597,21 @@ void SequenceDisplay::AddBlockBoundaryRows(void)
         if (!alnRow || alnRow->row != 0 || !alnRow->alignment) continue;
 
         // insert block row there - and increment r a second time, since this is a vector
-        DisplayRowFromString *blockBoundaryRow =
-            new DisplayRowFromString("", Vector(0,0,0), blockBoundaryStringTitle,
-                true, Vector(0.8,0.8,1), alnRow->alignment);
+        DisplayRowFromString *blockBoundaryRow = CreateBlockBoundaryRow(alnRow->alignment);
         ri = r;
         rows.insert(ri, blockBoundaryRow);
         r++;
-        UpdateBlockBoundaryRow(blockBoundaryRow->alignment);
+        UpdateBlockBoundaryRow(blockBoundaryRow);
     }
 
-    (*viewerWindow)->UpdateDisplay(this);
+    if (*viewerWindow) (*viewerWindow)->UpdateDisplay(this);
+}
+
+void SequenceDisplay::AddBlockBoundaryRow(BlockMultipleAlignment *forAlignment)
+{
+    DisplayRowFromString *blockBoundaryRow = CreateBlockBoundaryRow(forAlignment);
+    AddRow(blockBoundaryRow);
+    UpdateBlockBoundaryRow(blockBoundaryRow);
 }
 
 void SequenceDisplay::UpdateBlockBoundaryRow(const BlockMultipleAlignment *forAlignment) const
@@ -589,6 +619,12 @@ void SequenceDisplay::UpdateBlockBoundaryRow(const BlockMultipleAlignment *forAl
     DisplayRowFromString *blockBoundaryRow;
     if (!IsEditable() || (blockBoundaryRow = FindBlockBoundaryRow(forAlignment)) == NULL ||
         !blockBoundaryRow->alignment) return;
+    UpdateBlockBoundaryRow(blockBoundaryRow);
+}
+
+void SequenceDisplay::UpdateBlockBoundaryRow(DisplayRowFromString *blockBoundaryRow) const
+{
+    if (!IsEditable() || !blockBoundaryRow || !blockBoundaryRow->alignment) return;
 
     int alignmentWidth = blockBoundaryRow->alignment->AlignmentWidth();
     blockBoundaryRow->theString.resize(alignmentWidth);
@@ -609,7 +645,7 @@ void SequenceDisplay::UpdateBlockBoundaryRow(const BlockMultipleAlignment *forAl
         } else
             blockBoundaryRow->theString[i] = ' ';
     }
-    GlobalMessenger()->PostRedrawSequenceViewer((*viewerWindow)->viewer);
+    if (*viewerWindow) GlobalMessenger()->PostRedrawSequenceViewer((*viewerWindow)->viewer);
 }
 
 template < class T >
@@ -655,7 +691,17 @@ void SequenceDisplay::RemoveBlockBoundaryRows(void)
     }
     VectorRemoveElements(rows, toRemove, nToRemove);
     UpdateMaxRowWidth();
-    (*viewerWindow)->UpdateDisplay(this);
+    if (*viewerWindow) (*viewerWindow)->UpdateDisplay(this);
+}
+
+void SequenceDisplay::GetSlaveSequences(SequenceList *seqs) const
+{
+    seqs->clear();
+    for (int row=0; row<rows.size(); row++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
+        if (alnRow && alnRow->row > 0)
+            seqs->push_back(alnRow->alignment->GetSequenceOfRow(alnRow->row));
+    }
 }
 
 END_SCOPE(Cn3D)

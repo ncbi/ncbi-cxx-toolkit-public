@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/03/13 01:24:16  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.17  2001/03/09 15:48:43  thiessen
 * major changes to add initial update viewer
 *
@@ -55,10 +58,12 @@ class Sequence;
 class AlignmentManager;
 class BlockMultipleAlignment;
 class SequenceViewerWindow;
+class SequenceDisplay;
 
 class SequenceViewer : public ViewerBase
 {
     friend class SequenceViewerWindow;
+    friend class SequenceDisplay;
 
 public:
 
@@ -76,6 +81,8 @@ public:
     // functions to save edited data
     void SaveDialog(void);
     void SaveAlignment(void);
+
+    void RecreateFromEditedMultiple(BlockMultipleAlignment *multiple);
 
 private:
 

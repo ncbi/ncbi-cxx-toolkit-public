@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/13 01:24:15  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.3  2001/03/09 15:48:43  thiessen
 * major changes to add initial update viewer
 *
@@ -46,6 +49,9 @@
 #define CN3D_SEQUENCE_DISPLAY__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistl.hpp>
+
+#include <map>
 
 #include "cn3d/sequence_viewer_widget.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
@@ -53,6 +59,8 @@
 
 
 BEGIN_SCOPE(Cn3D)
+
+typedef std::map < BlockMultipleAlignment *, BlockMultipleAlignment * > Old2NewAlignmentMap;
 
 ////////////////////////////////////////////////////////////////////////////////
 // The sequence view is composed of rows which can be from sequence, alignment,
@@ -70,7 +78,8 @@ public:
         const Sequence **sequence, int *index) const = 0;
     virtual const Sequence * GetSequence(void) const = 0;
     virtual void SelectedRange(int from, int to, BlockMultipleAlignment::eUnalignedJustification justification) const = 0;
-    virtual DisplayRow * Clone(BlockMultipleAlignment *newAlignment) const = 0;
+
+    virtual DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const = 0;
 
 protected:
     // can't instantiate base class
@@ -88,8 +97,8 @@ public:
 
     int Width(void) const { return alignment->AlignmentWidth(); }
 
-    DisplayRow * Clone(BlockMultipleAlignment *newAlignment) const
-        { return new DisplayRowFromAlignment(row, newAlignment); }
+    DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const
+        { return new DisplayRowFromAlignment(row, newAlignments.find(alignment)->second); }
 
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const;
@@ -121,7 +130,7 @@ public:
 
     int Width(void) const { return sequence->sequenceString.size(); }
 
-    DisplayRow * Clone(BlockMultipleAlignment *newAlignment) const
+    DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const
         { return new DisplayRowFromSequence(sequence); }
 
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
@@ -153,9 +162,10 @@ public:
 
     int Width(void) const { return theString.size(); }
 
-    DisplayRow * Clone(BlockMultipleAlignment *newAlignment) const
+    DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const
         { return new DisplayRowFromString(
-            theString, stringColor, title, hasBackgroundColor, backgroundColor, newAlignment); }
+            theString, stringColor, title, hasBackgroundColor, backgroundColor,
+            newAlignments.find(alignment)->second); }
 
     bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const;
@@ -194,8 +204,13 @@ public:
     // adds a string row to the alignment, that contains block boundary indicators
     DisplayRowFromString * FindBlockBoundaryRow(const BlockMultipleAlignment *forAlignment) const;
     void UpdateBlockBoundaryRow(const BlockMultipleAlignment *forAlignment) const;
+    void AddBlockBoundaryRow(BlockMultipleAlignment *forAlignment);  // adds to end of display!
     void AddBlockBoundaryRows(void);
     void RemoveBlockBoundaryRows(void);
+
+    // returns a list of all sequences in the display (in order) - useful for single alignments only!
+    typedef std::vector < const Sequence * > SequenceList;
+    void GetSlaveSequences(SequenceList *seqs) const;
 
     // recreate the display from the given alignment.
     // NOTE: this assumes the display is from only a single alignment, and will put the block
@@ -203,7 +218,7 @@ public:
     void RecreateFromEditedMultiple(BlockMultipleAlignment *multiple);
 
     // create a new copy of this object
-    SequenceDisplay * Clone(BlockMultipleAlignment *newAlignment) const;
+    SequenceDisplay * Clone(const Old2NewAlignmentMap& newAlignments) const;
 
 private:
     const bool isEditable;
@@ -211,6 +226,7 @@ private:
     // generic row manipulation functions
     void AddRow(DisplayRow *row);
     BlockMultipleAlignment * SequenceDisplay::GetAlignmentForRow(int row) const;
+    void UpdateBlockBoundaryRow(DisplayRowFromString *blockBoundaryRow) const;
 
     ViewerWindowBase* const *viewerWindow;
 
@@ -226,6 +242,7 @@ private:
 
 public:
 
+    int NRows(void) const { return rows.size(); }
     bool IsEditable(void) const { return isEditable; }
 
     // redraw all molecules associated with the SequenceDisplay

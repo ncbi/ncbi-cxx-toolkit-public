@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/03/13 01:25:07  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.5  2001/03/09 15:49:06  thiessen
 * major changes to add initial update viewer
 *
@@ -62,7 +65,7 @@ USING_NCBI_SCOPE;
 BEGIN_SCOPE(Cn3D)
 
 ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
-    const char* title, const wxPoint& pos, const wxSize& size) :
+        const char* title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, -1, title, pos, size),
     viewerWidget(NULL), viewer(parentViewer)
 {
@@ -117,7 +120,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
     currentJustification = BlockMultipleAlignment::eSplit;
     viewerWidget->TitleAreaOn();
     menuBar->Check(MID_SYNC_STRUCS_ON, true);
-    EnableEditorMenuItems(false);
+    EnableBaseEditorMenuItems(false);
 
     SetMenuBar(menuBar);
 }
@@ -127,7 +130,7 @@ ViewerWindowBase::~ViewerWindowBase(void)
     if (viewer) viewer->GUIDestroyed();
 }
 
-void ViewerWindowBase::EnableEditorMenuItems(bool enabled)
+void ViewerWindowBase::EnableBaseEditorMenuItems(bool enabled)
 {
     int i;
     for (i=MID_SPLIT_BLOCK; i<=MID_SYNC_STRUCS_ON; i++)
@@ -143,19 +146,12 @@ void ViewerWindowBase::EnableEditorMenuItems(bool enabled)
     EnableDerivedEditorMenuItems(enabled);
 }
 
-void ViewerWindowBase::NewDisplay(SequenceDisplay *display)
+void ViewerWindowBase::NewDisplay(SequenceDisplay *display, bool enableEditor)
 {
     viewerWidget->AttachAlignment(display);
-    if (display->IsEditable()) {
-        menuBar->Enable(MID_ENABLE_EDIT, true);
-        menuBar->EnableTop(1, true);    // edit menu
-        menuBar->EnableTop(3, true);    // justification menu
-    } else {
-        menuBar->Enable(MID_ENABLE_EDIT, false);
-        menuBar->EnableTop(1, false);
-        menuBar->EnableTop(3, false);
-    }
-    EnableEditorMenuItems(false); // start with editor off
+    if (!display->IsEditable()) enableEditor = false;
+    menuBar->EnableTop(1, enableEditor);    // edit menu
+    menuBar->EnableTop(3, enableEditor);    // justification menu
 }
 
 void ViewerWindowBase::UpdateDisplay(SequenceDisplay *display)
@@ -190,8 +186,8 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
                     break;
                 }
                 TESTMSG("turning on editor");
+                viewer->GetCurrentDisplay()->AddBlockBoundaryRows();    // add before push!
                 viewer->PushAlignment();    // keep copy of original at bottom of the stack
-                viewer->GetCurrentDisplay()->AddBlockBoundaryRows();
                 Command(MID_DRAG_HORIZ);    // switch to drag mode
             } else {
                 if (!RequestEditorEnable(false)) {   // cancelled
@@ -203,7 +199,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
                 if (!menuBar->IsChecked(MID_SELECT_COLS) || !menuBar->IsChecked(MID_SELECT_ROWS))
                     Command(MID_SELECT_RECT);
             }
-            EnableEditorMenuItems(turnEditorOn);
+            EnableBaseEditorMenuItems(turnEditorOn);
             break;
 
         case MID_UNDO:
@@ -216,7 +212,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
             if (DoCreateBlock()) CreateBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
             if (DoDeleteBlock()) DeleteBlockOff();
-            if (DoDeleteRow()) DeleteRowOff();
+            CancelDerivedSpecialModes();
             if (DoSplitBlock())
                 SetCursor(*wxCROSS_CURSOR);
             else
@@ -227,7 +223,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
             if (DoSplitBlock()) SplitBlockOff();
             if (DoCreateBlock()) CreateBlockOff();
             if (DoDeleteBlock()) DeleteBlockOff();
-            if (DoDeleteRow()) DeleteRowOff();
+            CancelDerivedSpecialModes();
             if (DoMergeBlocks()) {
                 SetCursor(*wxCROSS_CURSOR);
                 prevMouseMode = viewerWidget->GetMouseMode();
@@ -240,7 +236,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
             if (DoSplitBlock()) SplitBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
             if (DoDeleteBlock()) DeleteBlockOff();
-            if (DoDeleteRow()) DeleteRowOff();
+            CancelDerivedSpecialModes();
             if (DoCreateBlock()) {
                 SetCursor(*wxCROSS_CURSOR);
                 prevMouseMode = viewerWidget->GetMouseMode();
@@ -253,7 +249,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
             if (DoSplitBlock()) SplitBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
             if (DoCreateBlock()) CreateBlockOff();
-            if (DoDeleteRow()) DeleteRowOff();
+            CancelDerivedSpecialModes();
             if (DoDeleteBlock())
                 SetCursor(*wxCROSS_CURSOR);
             else
@@ -262,19 +258,6 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
 
         case MID_SYNC_STRUCS:
             viewer->GetCurrentDisplay()->RedrawAlignedMolecules();
-            break;
-
-        // for implementational reasons, this is left as part of the base class; but the 'delete row'
-        // menu item isn't included in the edit menu in the base class
-        case MID_DELETE_ROW:
-            if (DoSplitBlock()) SplitBlockOff();
-            if (DoMergeBlocks()) MergeBlocksOff();
-            if (DoCreateBlock()) CreateBlockOff();
-            if (DoDeleteBlock()) DeleteBlockOff();
-            if (DoDeleteRow())
-                SetCursor(*wxCROSS_CURSOR);
-            else
-                DeleteRowOff();
             break;
     }
 }

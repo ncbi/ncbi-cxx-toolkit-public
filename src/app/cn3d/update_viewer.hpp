@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/03/13 01:24:16  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.1  2001/03/09 15:48:44  thiessen
 * major changes to add initial update viewer
 *
@@ -64,12 +67,11 @@ public:
     void CreateUpdateWindow(void);  // (re)creates the window
 
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
-    void DisplayAlignments(const AlignmentList& alignmentList);
+    void AddAlignments(const AlignmentList& alignmentList);
 
 private:
 
     UpdateViewerWindow *updateWindow;
-    AlignmentList alignments;
 };
 
 END_SCOPE(Cn3D)

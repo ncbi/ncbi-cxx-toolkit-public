@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/13 01:25:06  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.3  2001/03/02 15:32:52  thiessen
 * minor fixes to save & show/hide dialogs, wx string headers
 *
@@ -44,6 +47,8 @@
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
+
+#include <map>
 
 #include "cn3d/viewer_base.hpp"
 #include "cn3d/viewer_window_base.hpp"
@@ -79,10 +84,13 @@ void ViewerBase::DestroyGUI(void)
     }
 }
 
-void ViewerBase::InitStacks(BlockMultipleAlignment *alignment, SequenceDisplay *display)
+void ViewerBase::InitStacks(const AlignmentList *alignments, SequenceDisplay *display)
 {
     ClearStacks();
-    if (alignment) alignmentStack.push_back(alignment);
+    if (alignments) {
+        alignmentStack.resize(alignmentStack.size() + 1);
+        alignmentStack.back() = *alignments;    // copy list
+    }
     displayStack.push_back(display);
 }
 
@@ -97,8 +105,18 @@ void ViewerBase::PushAlignment(void)
         return;
     }
 
-    alignmentStack.push_back(alignmentStack.back()->Clone());
-    displayStack.push_back(displayStack.back()->Clone(alignmentStack.back()));
+    // clone alignments
+    Old2NewAlignmentMap newAlignmentMap;
+    AlignmentList::const_iterator a = alignmentStack.back().begin(), ae = alignmentStack.back().end();
+    alignmentStack.resize(alignmentStack.size() + 1);
+    for (; a!=ae; a++) {
+        BlockMultipleAlignment *newAlignment = (*a)->Clone();
+        alignmentStack.back().push_back(newAlignment);
+        newAlignmentMap[*a] = newAlignment;
+    }
+
+    // clone and update display
+    displayStack.push_back(displayStack.back()->Clone(newAlignmentMap));
     if (*viewerWindow) {
         (*viewerWindow)->UpdateDisplay(displayStack.back());
         if (displayStack.size() > 2) (*viewerWindow)->EnableUndo(true);
@@ -107,10 +125,10 @@ void ViewerBase::PushAlignment(void)
     // trim the stack to some max size; but don't delete the bottom of the stack, which is
     // the original before editing was begun.
     if (MAX_UNDO_STACK_SIZE > 0 && alignmentStack.size() > MAX_UNDO_STACK_SIZE) {
-        AlignmentStack::iterator a = alignmentStack.begin();
-        a++;
-        delete *a;
-        alignmentStack.erase(a);
+        AlignmentStack::iterator al = alignmentStack.begin();
+        al++;
+        for (a=al->begin(), ae=al->end(); a!=ae; a++) delete *a;
+        alignmentStack.erase(al);
         DisplayStack::iterator d = displayStack.begin();
         d++;
         delete *d;
@@ -130,7 +148,8 @@ void ViewerBase::PopAlignment(void)
 
     // top two stack items are identical; delete both...
     for (int i=0; i<2; i++) {
-        delete alignmentStack.back();
+        AlignmentList::const_iterator a, ae = alignmentStack.back().end();
+        for (a=alignmentStack.back().begin(); a!=ae; a++) delete *a;
         alignmentStack.pop_back();
         delete displayStack.back();
         displayStack.pop_back();
@@ -138,7 +157,6 @@ void ViewerBase::PopAlignment(void)
 
     // ... then add a copy of what's underneath, making that copy the current data
     PushAlignment();
-//    if (!FindBlockBoundaryRow()) AddBlockBoundaryRow();
     if (*viewerWindow && displayStack.size() == 2)
         (*viewerWindow)->EnableUndo(false);
 }
@@ -146,7 +164,8 @@ void ViewerBase::PopAlignment(void)
 void ViewerBase::ClearStacks(void)
 {
     while (alignmentStack.size() > 0) {
-        delete alignmentStack.back();
+        AlignmentList::const_iterator a, ae = alignmentStack.back().end();
+        for (a=alignmentStack.back().begin(); a!=ae; a++) delete *a;
         alignmentStack.pop_back();
     }
     while (displayStack.size() > 0) {
@@ -159,7 +178,8 @@ void ViewerBase::RevertAlignment(void)
 {
     // revert to the bottom of the stack
     while (alignmentStack.size() > 1) {
-        delete alignmentStack.back();
+        AlignmentList::const_iterator a, ae = alignmentStack.back().end();
+        for (a=alignmentStack.back().begin(); a!=ae; a++) delete *a;
         alignmentStack.pop_back();
         delete displayStack.back();
         displayStack.pop_back();
@@ -175,7 +195,8 @@ void ViewerBase::KeepOnlyStackTop(void)
 {
     // keep only the top of the stack
     while (alignmentStack.size() > 1) {
-        delete alignmentStack.front();
+        AlignmentList::const_iterator a, ae = alignmentStack.front().end();
+        for (a=alignmentStack.front().begin(); a!=ae; a++) delete *a;
         alignmentStack.pop_front();
         delete displayStack.front();
         displayStack.pop_front();

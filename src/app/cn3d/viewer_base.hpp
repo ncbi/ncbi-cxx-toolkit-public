@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/03/13 01:24:16  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.2  2001/03/06 20:20:44  thiessen
 * progress towards >1 alignment in a SequenceDisplay ; misc minor fixes
 *
@@ -74,6 +77,8 @@ public:
     // tell viewer to save its data (does nothing unless overridden)
     virtual void SaveDialog(void) { }
 
+    typedef std::list < BlockMultipleAlignment * > AlignmentList;
+
 protected:
 
     // can't instantiate this base class
@@ -83,21 +88,21 @@ protected:
     // handle to the associated window
     ViewerWindowBase* *const viewerWindow;
 
-    typedef std::list < BlockMultipleAlignment * > AlignmentStack;
+    typedef std::list < AlignmentList > AlignmentStack;
     AlignmentStack alignmentStack;
 
     typedef std::list < SequenceDisplay * > DisplayStack;
     DisplayStack displayStack;
 
-    void InitStacks(BlockMultipleAlignment *alignment, SequenceDisplay *display);
+    void InitStacks(const AlignmentList *alignments, SequenceDisplay *display);
     void ClearStacks(void);
 
 public:
 
     void GUIDestroyed(void) { *viewerWindow = NULL; }
 
-    BlockMultipleAlignment * GetFirstCurrentAlignment(void) const
-        { return ((alignmentStack.size() > 0) ? alignmentStack.back() : NULL); }
+    const AlignmentList * GetCurrentAlignments(void) const
+        { return ((alignmentStack.size() > 0) ? &(alignmentStack.back()) : NULL); }
 
     SequenceDisplay * GetCurrentDisplay(void) const
         { return ((displayStack.size() > 0) ? displayStack.back() : NULL); }

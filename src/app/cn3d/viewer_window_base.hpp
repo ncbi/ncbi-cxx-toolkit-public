@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/13 01:24:17  thiessen
+* working undo system for >1 alignment (e.g., update window)
+*
 * Revision 1.3  2001/03/09 15:48:44  thiessen
 * major changes to add initial update viewer
 *
@@ -73,8 +76,8 @@ class ViewerWindowBase : public wxFrame
 
 public:
 
-    // displays a new alignment
-    void NewDisplay(SequenceDisplay *display);
+    // displays a new alignment, and whether to enable the editor
+    void NewDisplay(SequenceDisplay *display, bool enableEditor);
 
     // updates alignment (e.g. if width or # rows has changed); doesn't change scroll
     void UpdateDisplay(SequenceDisplay *display);
@@ -86,6 +89,9 @@ public:
     // should return true if derived class wants to allow the state change
     virtual bool RequestEditorEnable(bool enable) { return false; }
     virtual void EnableDerivedEditorMenuItems(bool enable) { }
+
+    // allows the derived class to set up special mouse/cursor modes, e.g. for delete row
+    virtual void CancelDerivedSpecialModes(void) { }
 
     // menu callbacks
     void OnTitleView(wxCommandEvent& event);
@@ -108,7 +114,6 @@ public:
         MID_DELETE_BLOCK,
         MID_SYNC_STRUCS,
         MID_SYNC_STRUCS_ON,
-        MID_DELETE_ROW,
 
         // mouse mode
         MID_SELECT_RECT,
@@ -136,7 +141,7 @@ protected:
     SequenceViewerWidget *viewerWidget;
     ViewerBase *viewer;
 
-    void EnableEditorMenuItems(bool enabled);
+    void EnableBaseEditorMenuItems(bool enabled);
 
     // so derived classes can add menu stuff
     wxMenuBar *menuBar;
@@ -170,10 +175,13 @@ protected:
         menuBar->Check(MID_DELETE_BLOCK, false);
         SetCursor(wxNullCursor);
     }
-    void DeleteRowOff(void)
+
+    void CancelBaseSpecialModes(void)
     {
-        menuBar->Check(MID_DELETE_ROW, false);
-        SetCursor(wxNullCursor);
+        if (DoSplitBlock()) SplitBlockOff();
+        if (DoMergeBlocks()) MergeBlocksOff();
+        if (DoCreateBlock()) CreateBlockOff();
+        if (DoDeleteBlock()) DeleteBlockOff();
     }
 
 public:
@@ -191,10 +199,6 @@ public:
     bool DoMergeBlocks(void) const { return menuBar->IsChecked(MID_MERGE_BLOCKS); }
     bool DoCreateBlock(void) const { return menuBar->IsChecked(MID_CREATE_BLOCK); }
     bool DoDeleteBlock(void) const { return menuBar->IsChecked(MID_DELETE_BLOCK); }
-
-    // for implementational convenience, this is left as part of the base class; but the 'delete row'
-    // menu item isn't included in the edit menu in the base class
-    bool DoDeleteRow(void) const { return menuBar->IsChecked(MID_DELETE_ROW); }
 
     void SyncStructures(void) { Command(MID_SYNC_STRUCS); }
     bool AlwaysSyncStructures(void) const { return menuBar->IsChecked(MID_SYNC_STRUCS_ON); }
