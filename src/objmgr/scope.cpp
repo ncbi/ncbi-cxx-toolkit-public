@@ -54,6 +54,7 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -1124,21 +1125,39 @@ CScope_Impl::x_GetSynonyms(CRef<CBioseq_ScopeInfo> info)
         if ( init ) {
             // It's OK to use CRef, at least one copy should be kept
             // alive by the id cache (for the ID requested).
-            CSeq_id_Mapper& mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
             CRef<CSynonymsSet> syn_set(new CSynonymsSet);
             //syn_set->AddSynonym(id);
             if ( info->HasBioseq() ) {
                 ITERATE(CBioseq_Info::TSynonyms, it,
                         info->GetBioseq_Info().m_Synonyms) {
-                    if ( mapper.HaveMatchingHandles(*it) ) {
-                        TSeq_id_HandleSet hset;
-                        mapper.GetMatchingHandles(*it, hset);
-                        ITERATE(TSeq_id_HandleSet, mit, hset) {
-                            x_AddSynonym(*it, *syn_set, *info);
+                    CSeq_id_Handle idh = *it;
+                    x_AddSynonym(idh, *syn_set, *info);
+                    CConstRef<CSeq_id> id = idh.GetSeqId();
+                    const CTextseq_id* text_id = id->GetTextseq_Id();
+                    if ( text_id ) {
+                        if ( text_id->IsSetVersion() ) {
+                            CRef<CSeq_id> id2(new CSeq_id);
+                            id2->Assign(*id);
+                            CTextseq_id* text_id2 =
+                                const_cast<CTextseq_id*>(id2->GetTextseq_Id());
+                            text_id2->ResetVersion();
+                            CSeq_id_Handle idh2 =
+                                CSeq_id_Handle::GetHandle(*id2);
+                            x_AddSynonym(idh2, *syn_set, *info);
                         }
-                    }
-                    else {
-                        x_AddSynonym(*it, *syn_set, *info);
+                        if ( text_id->IsSetName() &&
+                             (text_id->IsSetVersion() ||
+                              text_id->IsSetAccession()) ) {
+                            CRef<CSeq_id> id2(new CSeq_id);
+                            id2->Assign(*id);
+                            CTextseq_id* text_id2 =
+                                const_cast<CTextseq_id*>(id2->GetTextseq_Id());
+                            text_id2->ResetAccession();
+                            text_id2->ResetVersion();
+                            CSeq_id_Handle idh2 =
+                                CSeq_id_Handle::GetHandle(*id2);
+                            x_AddSynonym(idh2, *syn_set, *info);
+                        }
                     }
                 }
             }
@@ -1168,6 +1187,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.99  2004/02/09 14:42:46  vasilche
+* Temporary fix in GetSynonyms() to get accession without version.
+*
 * Revision 1.98  2004/02/02 14:46:43  vasilche
 * Several performance fixed - do not iterate whole tse set in CDataSource.
 *
