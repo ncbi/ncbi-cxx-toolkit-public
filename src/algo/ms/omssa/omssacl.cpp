@@ -83,7 +83,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(0, 9, 8));
+    SetVersion(CVersionInfo(0, 9, 10));
 }
 
 
@@ -211,7 +211,7 @@ void COMSSA::Init()
 			   CArgDescriptions::eInteger, "30");
     argDesc->AddDefaultKey("ht", "tophitnum", 
 			   "number of m/z values corresponding to the most intense peaks that must include one match to the theoretical peptide",
-			   CArgDescriptions::eInteger, "3");
+			   CArgDescriptions::eInteger, "20");
     argDesc->AddDefaultKey("hm", "minhit", 
 			   "the minimum number of m/z matches a sequence library peptide must have for the hit to the peptide to be recorded",
 			   CArgDescriptions::eInteger, "2");
@@ -522,6 +522,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.28  2005/03/15 20:47:55  lewisg
+  fix bug in pkl import
+
   Revision 1.27  2005/03/14 22:29:54  lewisg
   add mod file input
 

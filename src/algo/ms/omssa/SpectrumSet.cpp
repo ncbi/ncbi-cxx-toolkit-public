@@ -155,7 +155,6 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
                 }
             }
             getline(DTA, Line);
-            getline(DTA, Line);
             TInputPeaks InputPeaks;
 
             while (NStr::Compare(Line, 0, 5, "</dta") != 0) {
@@ -217,7 +216,6 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
                     else
                         return 1;
             }
-            getline(DTA, Line);
             getline(DTA, Line);
 
             if (!DTA || DTA.eof()) {
@@ -522,6 +520,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2005/03/15 20:47:55  lewisg
+ * fix bug in pkl import
+ *
  * Revision 1.17  2005/03/14 22:29:54  lewisg
  * add mod file input
  *
