@@ -94,6 +94,7 @@
 #include <objects/biblio/Title.hpp>
 #include <objects/biblio/Imprint.hpp>
 
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
@@ -1271,7 +1272,7 @@ bool CValidError_imp::IsFarLocation(const CSeq_loc& loc) const
     for ( CSeq_loc_CI citer(loc); citer; ++citer ) {
         bool found = false;
         const CSeq_id& id = citer.GetSeq_id();
-        iterate( set< CConstRef<CSeq_id> >, i,  m_InitialSeqIds ) {
+        iterate( vector< CConstRef<CSeq_id> >, i,  m_InitialSeqIds ) {
             if ( (*i)->Match(id) ) {
                 found = true;
                 break;
@@ -1300,7 +1301,7 @@ CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
         if ( fi ) {
             // return the first one (should be the one packaged on the
             // nuc-prot set).
-            feat.Reset(&(fi->GetMappedFeature()));
+            feat.Reset(&(fi->GetOriginalFeature()));
         }
     }
 
@@ -1324,6 +1325,26 @@ const CSeq_entry* CValidError_imp::GetAncestor
         }
     }
     return parent;
+}
+
+
+bool CValidError_imp::IsSerialNumberInComment(const string& comment)
+{
+    size_t pos = comment.find('[', 0);
+    while ( pos != string::npos ) {
+        ++pos;
+        if ( isdigit(comment[pos]) ) {
+            while ( isdigit(comment[pos]) ) {
+                ++pos;
+            }
+            if ( comment[pos] == ']' ) {
+                return true;
+            }
+        }
+
+        pos = comment.find('[', pos);
+    }
+    return false;
 }
 
 
@@ -1464,9 +1485,16 @@ void CValidError_imp::Setup(const CSeq_entry& se)
                 default:
                     break;
             }
-            // store the seq_id in the initial seq_entry
-            m_InitialSeqIds.insert(*id);
         }
+    }
+    
+    // store the seq-ids of the bioseqs contained in this record
+    // IMPORTANT: This is a temporary implementation to enable
+    // checks for far locations, should be changed once this
+    // check can be done through the object manager.
+    for ( CTypeConstIterator<CBioseq> bsi(se); bsi; ++bsi ) {
+        const list< CRef< CSeq_id > >& ids = bsi->GetId();
+        copy(ids.begin(), ids.end(), back_inserter(m_InitialSeqIds));
     }
 
     // Map features to their enclosing Seq_annot
@@ -1703,6 +1731,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/02/12 17:49:24  shomrat
+* Added implementation of IsSerialNumberInComment; Changed implementation of IsFarLocation
+*
 * Revision 1.15  2003/02/10 15:54:02  grichenk
 * Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
 *
