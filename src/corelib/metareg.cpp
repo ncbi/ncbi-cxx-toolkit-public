@@ -169,7 +169,10 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
     {{
         CNcbiApplication* the_app = CNcbiApplication::Instance();
         if (the_app) {
-            path.push_back(the_app->GetArguments().GetProgramDirname());
+            string dir = the_app->GetArguments().GetProgramDirname();
+            if (dir.size()) {
+                path.push_back(dir);
+            }
         }
     }}
 }
@@ -180,6 +183,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/05 20:28:51  ucko
+* CMetaRegistry::GetDefaultSearchPath: don't add the program's directory
+* if it's empty.
+*
 * Revision 1.1  2003/08/05 19:57:59  ucko
 * CMetaRegistry: Singleton class for loading CRegistry data from files;
 * keeps track of what it loaded from where, for potential reuse.
