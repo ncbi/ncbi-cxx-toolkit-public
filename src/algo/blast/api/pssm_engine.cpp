@@ -33,6 +33,9 @@ static char const rcsid[] =
  */
 
 #include <ncbi_pch.hpp>
+#include <sstream>
+
+#include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_psi.hpp>
 #include "blast_setup.hpp"
 
@@ -57,15 +60,14 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CPssmEngine::CPssmEngine(IPssmInputData* input)
-    : m_PssmInput(input), m_ScoreBlk(NULL)
+    : m_PssmInput(input)
 {
-    m_ScoreBlk = x_InitializeScoreBlock(m_PssmInput->GetQuery(),
-                                        m_PssmInput->GetQueryLength());
+    m_ScoreBlk.Reset(x_InitializeScoreBlock(m_PssmInput->GetQuery(),
+                                            m_PssmInput->GetQueryLength()));
 }
 
 CPssmEngine::~CPssmEngine()
 {
-    m_ScoreBlk = BlastScoreBlkFree(m_ScoreBlk);
 }
 
 // This method is the core of this class. It delegates the extraction of
@@ -79,18 +81,30 @@ CPssmEngine::Run()
 {
     m_PssmInput->Process();
 
-    // @todo need protocol to request diagnostics structure contents
-    PsiDiagnosticsResponse* diagnostics = NULL;
-    PsiMatrix* pssm = PSICreatePSSM(m_PssmInput->GetData(),
-                                    m_PssmInput->GetOptions(),
-                                    m_ScoreBlk, diagnostics);
+    // Note: currently there is no way for users to request diagnostics through
+    // this interface
+    PSIDiagnosticsRequest request;
+    memset((void*) &request, 0, sizeof(request));
+    request.residue_frequencies = true;
+
+    CPSIMatrix pssm;
+    CPSIDiagnosticsResponse diagnostics;
+    int status = PSICreatePssmWithDiagnostics(m_PssmInput->GetData(),
+                                              m_PssmInput->GetOptions(),
+                                              m_ScoreBlk, 
+                                              &request, 
+                                              &pssm, 
+                                              &diagnostics);
+    if (status) {
+        // FIXME: need to use core level perror-like facility
+        ostringstream os;
+        os << "Error code in PSSM engine: " << status;
+        NCBI_THROW(CBlastException, eInternal, os.str());
+    }
 
     // Convert core BLAST matrix structure into ASN.1 score matrix object
     CRef<CScore_matrix_parameters> retval(NULL);
-    if (pssm) {
-        retval = x_PsiMatrix2ScoreMatrix(pssm, diagnostics);
-        pssm = PSIMatrixFree(pssm);
-    }
+    retval = x_PSIMatrix2ScoreMatrix(pssm, m_ScoreBlk->name, diagnostics);
 
     return retval;
 }
@@ -199,70 +213,124 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
     return retval;
 }
 
+/// Auxiliary function to map the underlying scoring matrix name to an
+/// enumeration used in the CScore_matrix class
+/// @param matrix_name name of underlying scoring matrix [in]
+static CScore_matrix::EFreq_Ratios
+s_MatrixName2EFreq_Ratios(const string& matrix_name)
+{
+    string mtx(matrix_name);    
+    mtx = NStr::ToUpper(mtx); // save the matrix name in all capital letters
+
+    if (mtx == "BLOSUM62" || mtx == "BLOSUM62_20") {
+        return CScore_matrix::eFreq_Ratios_blosum62;
+    }
+
+    if (mtx == "BLOSUM45") {
+        return CScore_matrix::eFreq_Ratios_blosum45;
+    }
+
+    if (mtx == "BLOSUM80") {
+        return CScore_matrix::eFreq_Ratios_blosum80;
+    }
+
+    if (mtx == "BLOSUM50") {
+        return CScore_matrix::eFreq_Ratios_blosum50;
+    }
+
+    if (mtx == "BLOSUM90") {
+        return CScore_matrix::eFreq_Ratios_blosum90;
+    }
+
+    if (mtx == "PAM30") {
+        return CScore_matrix::eFreq_Ratios_pam30;
+    }
+
+    if (mtx == "PAM70") {
+        return CScore_matrix::eFreq_Ratios_pam70;
+    }
+
+    if (mtx == "PAM250") {
+        return CScore_matrix::eFreq_Ratios_pam250;
+    }
+
+    return CScore_matrix::eFreq_Ratios_other;
+}
+
 CRef<CScore_matrix_parameters>
-CPssmEngine::x_PsiMatrix2ScoreMatrix(const PsiMatrix* pssm,
-                                     const PsiDiagnosticsResponse* diagnostics)
+CPssmEngine::x_PSIMatrix2ScoreMatrix(const PSIMatrix* pssm,
+                                     const string& matrix_name,
+                                     const PSIDiagnosticsResponse* diagnostics)
 {
     ASSERT(pssm);
-    //ASSERT(diagnostics);
-    if (!diagnostics) {
-        NCBI_THROW(CBlastException, eInternal, "Unimplemented");
-    }
 
     CRef<CScore_matrix_parameters> retval(new CScore_matrix_parameters);
 
-    retval->SetLambda(diagnostics->lambda);
-    retval->SetKappa(diagnostics->kappa);
-    retval->SetH(diagnostics->h);
+    retval->SetLambda(pssm->lambda);
+    retval->SetKappa(pssm->kappa);
+    retval->SetH(pssm->h);
 
+    // FIXME: this field should be made optional
     CRef<CObject_id> pssm_id(new CObject_id);
     pssm_id->SetId(-1);     // FIXME: needs final decision on what goes here
 
     CScore_matrix& score_mat = retval->SetMatrix();
     score_mat.SetIs_protein(true);
     score_mat.SetIdentifier(*pssm_id);
-    score_mat.SetNrows(BLASTAA_SIZE);
     score_mat.SetNcolumns(pssm->ncols);
+    score_mat.SetNrows(pssm->nrows);
     score_mat.SetByrow(false);
+    score_mat.SetFreq_Ratios(s_MatrixName2EFreq_Ratios(matrix_name));
 
     for (unsigned int i = 0; i < pssm->ncols; i++) {
-        for (unsigned int j = 0; j < BLASTAA_SIZE; j++) {
+        for (unsigned int j = 0; j < pssm->nrows; j++) {
             score_mat.SetScores().push_back(pssm->pssm[i][j]);
         }
     }
 
-    if (diagnostics->res_freqs) {
+    /********** Collect information from diagnostics structure ************/
+    if ( !diagnostics ) {
+        return retval;
+    }
+
+    ASSERT(pssm->nrows == diagnostics->alphabet_size);
+    ASSERT(pssm->ncols == diagnostics->dimensions->query_length);
+
+    if (diagnostics->information_content) {
+        NCBI_THROW(CBlastException, eNotSupported, "Information content "
+                   "cannot be stored in Score-matrix-parameters ASN.1");
+    }
+
+    if (diagnostics->residue_frequencies) {
         for (unsigned int i = 0; i < pssm->ncols; i++) {
-            for (unsigned int j = 0; j < BLASTAA_SIZE; j++) {
-                score_mat.SetPosFreqs().push_back(pssm->res_freqs[i][j]);
+            for (unsigned int j = 0; j < pssm->nrows; j++) {
+                score_mat.SetPosFreqs().push_back(
+                    diagnostics->residue_frequencies[i][j]);
             }
         }
     }
  
-    /// FIXME: need to move sequence weights to diagnostics structure
-    if (diagnostics->sequence_weights) {
+    if (diagnostics->raw_residue_counts) {
+        for (unsigned int i = 0; i < pssm->ncols; i++) {
+            for (unsigned int j = 0; j < pssm->nrows; j++) {
+                score_mat.SetRawFreqs().push_back(
+                    diagnostics->raw_residue_counts[i][j]);
+            }
+        }
+    }
 
+    if (diagnostics->sequence_weights) {
         for (unsigned int i = 0; 
              i < diagnostics->dimensions->num_seqs + 1; 
              i++) {
             score_mat.SetWeights().push_back(diagnostics->sequence_weights[i]);
         }
-
     }
 
-#if 0
-    /// FIXME: need to move raw residue counts (frequencies) from
-    /// PsiAlignmentData structure to diagnostics structure
-    if (diagnostics->res_freqs) {
-
-        for (unsigned int i = 0; 
-             i < diagnostics->dimensions->num_seqs + 1; 
-             i++) {
-            score_mat.SetRawFreqs().push_back(diagnostics->res_counts[i]);
-        }
-
+    if (diagnostics->gapless_column_weights) {
+        NCBI_THROW(CBlastException, eNotSupported, "Gapless column weights "
+                   "cannot be stored in Score-matrix-parameters ASN.1");
     }
-#endif
 
     return retval;
 }
@@ -276,6 +344,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/08/04 20:27:04  camacho
+ * 1. Use of CPSIMatrix and CPSIDiagnosticsResponse classes instead of bare
+ *    pointers to C structures.
+ * 2. Completed population of CScore_matrix return value.
+ * 3. Better error handling.
+ *
  * Revision 1.8  2004/08/02 13:42:41  camacho
  * Fix warning
  *
