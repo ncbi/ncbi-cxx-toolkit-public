@@ -1,4 +1,4 @@
-/*  $Id: newick.lpp,v 1.1 2004/02/11 17:40:53 jcherry Exp $
+/*  $Id: newick.lpp,v 1.2 2004/02/11 22:18:16 ucko Exp $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -91,7 +91,7 @@ extern CNcbiIstream *g_NewickIstr;
 }
 
 ('[^']*')* {
-    g_Buffer.clear();
+    g_Buffer.erase();
     g_Buffer.reserve(strlen(yytext));
     for (unsigned int i = 1;  i < strlen(yytext) - 1; ++ i) {
         g_Buffer.push_back(yytext[i]);
@@ -123,6 +123,9 @@ void newick_flex_reset(void)
 /*
  * ===========================================================================
  * $Log: newick.lpp,v $
+ * Revision 1.2  2004/02/11 22:18:16  ucko
+ * erase() strings rather than clear()ing them for older compilers' sake.
+ *
  * Revision 1.1  2004/02/11 17:40:53  jcherry
  * Initial version
  *
