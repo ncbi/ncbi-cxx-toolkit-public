@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/08/30 16:52:10  thiessen
+* progress on trying to match scores with RPS-BLAST
+*
 * Revision 1.18  2002/08/15 22:13:13  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -195,16 +198,21 @@ BLAST_Matrix * BLASTer::CreateBLASTMatrix(const BlockMultipleAlignment *multiple
 #ifdef PRINT_PSSM
         fprintf(f, "matrix %i : ", i);
 #endif
-        // initialize all rows with custom score, or BLAST_SCORE_MIN; to match what Aron's function creates
-        for (j=0; j<matrix->columns; j++)
-            matrix->matrix[i][j] = (j == 21 ? -1 : (j == 25 ? -4 : BLAST_SCORE_MIN));
 
         // set scores from threader matrix
         if (i < seqMtf->n) {
+            // initialize all rows with custom score, or BLAST_SCORE_MIN; to match what Aron's function creates
+            for (j=0; j<matrix->columns; j++)
+                matrix->matrix[i][j] = (j == 21 ? -1 : (j == 25 ? -4 : BLAST_SCORE_MIN));
+
             for (j=0; j<seqMtf->AlphabetSize; j++) {
                 matrix->matrix[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
                     Round(((double) seqMtf->ww[i][j]) / Threader::SCALING_FACTOR);
             }
+        } else {
+            // initialize last row with BLAST_SCORE_MIN
+            for (j=0; j<matrix->columns; j++)
+                matrix->matrix[i][j] = BLAST_SCORE_MIN;
         }
 #ifdef PRINT_PSSM
         for (j=0; j<matrix->columns; j++)
@@ -222,6 +230,13 @@ BLAST_Matrix * BLASTer::CreateBLASTMatrix(const BlockMultipleAlignment *multiple
         }
     }
     fprintf(f, "}\n");
+    // for diffing with .mtx file
+    for (i=0; i<seqMtf->n; i++) {
+        for (j=0; j<matrix->columns; j++) {
+            fprintf(f, "%i  ", matrix->matrix[i][j]);
+        }
+        fprintf(f, "\n");
+    }
 #endif
 
 #ifdef _DEBUG
@@ -268,6 +283,8 @@ static BLAST_OptionsBlkPtr CreateBlastOptionsBlk(void)
 //    bob->is_rps_blast = TRUE;
 //    bob->no_check_score = FALSE;
 //    bob->discontinuous = TRUE;
+    bob->scalingFactor = 1.0;
+    bob->tweak_parameters = TRUE;   // causes score rescaling to occur
     return bob;
 }
 
