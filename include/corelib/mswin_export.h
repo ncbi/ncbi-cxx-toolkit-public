@@ -111,6 +111,7 @@
 #  define NCBI_XOBJREAD_EXPORTS
 #  define NCBI_XOBJUTIL_EXPORTS
 #  define NCBI_XOBJMANIP_EXPORTS
+#  define NCBI_FORMAT_EXPORTS
 #endif
 
 
@@ -325,6 +326,15 @@
 #  define NCBI_FLAT_EXPORT          __declspec(dllexport)
 #else
 #  define NCBI_FLAT_EXPORT          __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library objects_format
+ */
+#ifdef NCBI_FORMAT_EXPORTS
+#  define NCBI_FORMAT_EXPORT        __declspec(dllexport)
+#else
+#  define NCBI_FORMAT_EXPORT        __declspec(dllimport)
 #endif
 
 /*
@@ -1143,6 +1153,7 @@
 #  define NCBI_ENTREZGENE_EXPORT
 #  define NCBI_FEATDEF_EXPORT
 #  define NCBI_FLAT_EXPORT
+#  define NCBI_FORMAT_EXPORT
 #  define NCBI_GBSEQ_EXPORT
 #  define NCBI_GENERAL_EXPORT
 #  define NCBI_GUICORE_EXPORT
@@ -1235,6 +1246,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.53  2003/12/17 21:02:57  shomrat
+ * added export specifier for xformat library
+ *
  * Revision 1.52  2003/12/17 19:41:24  kuznets
  * Restored accidentally deleted NCBI_XLOADER_TABLE_EXPORT. Sorry.
  *
