@@ -31,16 +31,16 @@ License:  Unrestricted when distributed with the Toolkit;
           standalone, GNU General Public License [gpl.txt]
 
 Location: {src,include}/dbapi/driver/ftds*/freetds
-Authors:  See src/dbapi/driver/ftds/freetds/AUTHORS
+Authors:  See src/dbapi/driver/ftds*/freetds/AUTHORS
 License:  GNU Library/Lesser General Public License
-          [src/dbapi/driver/ftds/freetds/COPYING.LIB]
+          [src/dbapi/driver/ftds*/freetds/COPYING.LIB]
 
 Location: {src,include}/gui/widgets/Flek
 Authors:  Flek Group, http://www.carambadesigns.com/flek/
 License:  GNU LGPL
 
 Location: {src,include}/util/compress/bzip2
-Authors:  Julian R Seward
+Author:   Julian R Seward
 License:  BSDish [src/util/compress/bzip2/LICENSE]
 
 Location: {src,include}/util/compress/zlib
@@ -48,5 +48,5 @@ Authors:  Jean-loup Gailly and Mark Adler
 License:  BSDish [include/util/compress/zlib/zlib.h]
 
 Location: {src,include}/util/regexp
-Authors:  Philip Hazel
+Author:   Philip Hazel
 License:  BSDish [src/util/regexp/doc/LICENCE]
