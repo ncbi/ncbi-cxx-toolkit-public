@@ -37,6 +37,8 @@
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
 
+#include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
+
 #include <cspublic.h>
 #include <sybfront.h>
 #include <sybdb.h>
@@ -738,6 +740,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/10/16 20:48:42  vakatov
+ * +  #include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
+ * to allow the renaming (and the use of the renamed) DBLIB symbols in
+ * the built-in FreeTDS.
+ *
  * Revision 1.15  2003/12/18 19:00:55  soussov
  * makes FTDS_CreateContext return an existing context if reuse_context option is set
  *
