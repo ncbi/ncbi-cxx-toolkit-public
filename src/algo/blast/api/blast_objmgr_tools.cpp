@@ -706,8 +706,9 @@ x_GetSequenceLengthAndId(const IBlastSeqInfoSrc* seqinfo_src, // [in]
                          TSeqPos* length)            // [out]
 {
     ASSERT(length);
+    list<CRef<CSeq_id> > seqid_list = seqinfo_src->GetId(oid);
 
-    seqid.Reset(seqinfo_src->GetId(oid).front());
+    seqid.Reset(seqid_list.front());
     *length = seqinfo_src->GetLength(oid);
 
     return;
@@ -965,6 +966,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/10/06 18:42:08  dondosha
+* Cosmetic fix for SunOS compiler warning
+*
 * Revision 1.21  2004/10/06 14:55:49  dondosha
 * Use IBlastSeqInfoSrc interface to get ids and lengths of subject sequences
 *
