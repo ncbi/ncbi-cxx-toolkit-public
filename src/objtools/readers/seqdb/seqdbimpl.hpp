@@ -36,7 +36,7 @@
 /// is seperated from that class so that various implementation
 /// details of CSeqDB are kept from the public interface.
 
-#include "seqdbvol.hpp"
+#include "seqdbvolset.hpp"
 #include "seqdbalias.hpp"
 #include "seqdboidlist.hpp"
 
@@ -80,42 +80,9 @@ public:
     bool   GetNextOID(Uint4 & next_oid);
     
 private:
-    CSeqDBVol * x_FindVol(Uint4 oid, Uint4 & vol_oid)
-    {
-        for(Uint4 index = 0; index < m_Volumes.size(); index++) {
-            if ((m_VolStart[index] <= oid) &&
-                (m_VolEnd  [index] >  oid)) {
-                
-                m_RecentVol = index;
-                vol_oid = oid - m_VolStart[index];
-                return m_Volumes[index].GetNonNullPointer();
-            }
-        }
-        
-        return 0;
-    }
-    
-    void x_AddVolume(const string & nm, char pn, bool use_mm)
-    {
-        m_Volumes.push_back(CRef<CSeqDBVol>(new CSeqDBVol(nm, pn, use_mm)));
-        
-        Uint4 start = m_VolEnd.size() ? m_VolEnd.back() : 0;
-        
-        m_VolStart.push_back( start );
-        m_VolEnd.push_back( start + m_Volumes.back()->GetNumSeqs() );
-    }
-    
-    
-    // Data
-    
-    CSeqDBAliasFile           m_Aliases;
-    CRef<CSeqDBOIDSrc>        m_OIDList;
-    vector< CRef<CSeqDBVol> > m_Volumes;
-    vector<Uint4>             m_VolStart;
-    vector<Uint4>             m_VolEnd;
-    
-    // Used by RetSequence()
-    volatile Uint4            m_RecentVol;
+    CSeqDBAliasFile     m_Aliases;
+    CSeqDBVolSet        m_VolSet;
+    CRef<CSeqDBOIDSrc>  m_OIDList;
 };
 
 END_NCBI_SCOPE

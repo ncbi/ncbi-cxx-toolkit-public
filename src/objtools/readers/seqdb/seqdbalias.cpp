@@ -56,7 +56,7 @@ CSeqDBAliasNode::CSeqDBAliasNode(const string & dbpath,
 {
     set<string> recurse;
     
-    if (seqdb_debug_class && debug_alias) {
+    if (seqdb_debug_class & debug_alias) {
         cout << "user list((" << dbname_list << "))<>";
     }
     
@@ -88,7 +88,7 @@ CSeqDBAliasNode::CSeqDBAliasNode(const string & dbpath,
                                  set<string>    recurse)
     : m_DBPath(dbpath)
 {
-    if (seqdb_debug_class && debug_alias) {
+    if (seqdb_debug_class & debug_alias) {
         bool comma = false;
         
         cout << dbname << "<";
@@ -199,7 +199,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const string & this_name,
         }
         
         if ( CFile(new_db_loc).Exists() ) {
-            if (parens == false && seqdb_debug_class && debug_alias) {
+            if (parens == false && seqdb_debug_class & debug_alias) {
                 parens = true;
                 cout << " {" << endl;
             }
@@ -223,7 +223,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const string & this_name,
         }
     }
     
-    if (seqdb_debug_class && debug_alias) {
+    if (seqdb_debug_class & debug_alias) {
         if (parens) {
             cout << "}" << endl;
         } else {
@@ -258,43 +258,6 @@ void CSeqDBAliasNode::x_GetVolumeNames(set<string> & vols)
         m_SubNodes[i]->x_GetVolumeNames(vols);
     }
 }
-
-// Uint4 CSeqDBAliasNode::GetNumSeqs(vector< CRef<CSeqDBVol> > & vols)
-// {
-//     if (m_Values.find("NSEQ") != m_Values.end()) {
-//         return m_Values["NSEQ"];
-//     }
-    
-//     Uint4 nseqs = 0;
-    
-//     Uint4 i,j;
-    
-//     for(i = 0; i < m_SubNodes.size(); i++) {
-//         Uint4 node_nseqs = m_SubNodes[i]->GetNumSeqs(vols);
-        
-//         if (node_nseqs > 0) {
-//             nseqs += node_nseqs;
-//         }
-//     }
-    
-//     for(i = 0; i < m_VolNames.size(); i++) {
-//         string volnseqs = -1;
-        
-//         for(j = 0; j < vols.size(); j++) {
-//             // Find volume "j".
-//             if (vols[j]->GetVolName() == m_VolNames[i]) {
-//                 volnseqs = vols[j]->GetNumSeqs();
-//                 break;
-//             }
-//         }
-        
-//         if (volnseqs) {
-//             nseqs += nseqs;
-//         }
-//     }
-    
-//     return title;
-// }
 
 class CSeqDB_TitleWalker : public CSeqDB_AliasWalker {
 public:
@@ -336,6 +299,43 @@ private:
 // The working assumption then is that the specified databases are
 // disjoint.  This design should prevent undercounting but allows
 // overcounting in some cases.
+
+class CSeqDB_MaxLengthWalker : public CSeqDB_AliasWalker {
+public:
+    CSeqDB_MaxLengthWalker(void)
+    {
+        m_Value = 0;
+    }
+    
+    virtual const char * GetFileKey(void)
+    {
+        // This field is not overrideable.
+        
+        return "MAX_SEQ_LENGTH";
+    }
+    
+    virtual void Accumulate(CSeqDBVol & vol)
+    {
+        Uint4 new_max = vol.GetMaxLength();
+        
+        if (new_max > m_Value)
+            m_Value = new_max;
+    }
+    
+    virtual void AddString(const string & value)
+    {
+        m_Value = NStr::StringToUInt(value);
+    }
+    
+    Uint4 GetMaxLength(void)
+    {
+        return m_Value;
+    }
+    
+private:
+    Uint4 m_Value;
+};
+
 
 class CSeqDB_NSeqsWalker : public CSeqDB_AliasWalker {
 public:
@@ -400,8 +400,7 @@ private:
     Uint8 m_Value;
 };
 
-
-void CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker, vector< CRef<CSeqDBVol> > & vols)
+void CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker, CSeqDBVolSet & volset)
 {
     TVarList::iterator iter = m_Values.find(walker->GetFileKey());
     
@@ -410,76 +409,63 @@ void CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker, vector< CRef<CSeqDB
         return;
     }
     
-    Uint4 i,j;
+    Uint4 i;
     
     for(i = 0; i < m_SubNodes.size(); i++) {
-        m_SubNodes[i]->WalkNodes( walker, vols );
+        m_SubNodes[i]->WalkNodes( walker, volset );
     }
     
+    // For each volume name, try to find the corresponding volume and
+    // call Accumulate.
+    
     for(i = 0; i < m_VolNames.size(); i++) {
-        for(j = 0; j < vols.size(); j++) {
-            // Find volume "j".
-            if (vols[j]->GetVolName() == m_VolNames[i]) {
-                walker->Accumulate( *vols[j] );
-                break;
-            }
+        if (CSeqDBVol * vptr = volset.GetVol(m_VolNames[i])) {
+            walker->Accumulate( *vptr );
         }
     }
 }
 
-// Rather than m<s,s> ......
-
-
-// What is communicated here?  One of two things.  First, that an
-// OIDLIST subset of a volume should be used (specifically, combined
-// with existing subsets via OR).  Alternately, we can communicate
-// that a volume should be used, in its entirety.  So, a set of
-// combineable partial volumes, or a whole volume.
-
-// Thus, for each volume, there is either no filtering, or filtering
-// by an OR of a set of mask files.
-
-// volset.IncludeAll(volname);
-// volset.AddMask(volname, filename);
-
-void CSeqDBAliasNode::BuildMaskList(vector< CRef<CSeqDBVol> > & vols)
+void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
 {
     TVarList::iterator oid_iter = m_Values.find(string("OIDLIST"));
     TVarList::iterator db_iter  = m_Values.find(string("DBLIST"));
     
-    if (oid_iter != m_Values.end()) {
-        //walker->AddString( (*iter).second );
-        cout << "Mapping found: dbp(" << m_DBPath << "); DBLIST[" << (*db_iter).second << "], OIDLIST[" << (*oid_iter).second << "]" << endl;
+    if ((oid_iter != m_Values.end()) &&
+        (db_iter  != m_Values.end())) {
+        
+        string vol_path (SeqDB_CombinePath(m_DBPath, (*db_iter).second, '/'));
+        string mask_path(SeqDB_CombinePath(m_DBPath, (*oid_iter).second, '/'));
+        
+        volset.AddMaskedVolume(vol_path, mask_path);
+        
         return;
     }
     
-    Uint4 i,j;
+    Uint4 i;
     
     for(i = 0; i < m_SubNodes.size(); i++) {
-        m_SubNodes[i]->BuildMaskList( vols );
+        m_SubNodes[i]->SetMasks( volset );
     }
     
     for(i = 0; i < m_VolNames.size(); i++) {
-        for(j = 0; j < vols.size(); j++) {
-            // Find volume "j".
-            if (vols[j]->GetVolName() == m_VolNames[i]) {
-                cout << "Accumulate would be called: volume->GetVolName()=(" << vols[j]->GetVolName() << ")" << endl;
-                //walker->Accumulate( *vols[j] );
-                break;
-            }
+        if (CSeqDBVol * vptr = volset.GetVol(m_VolNames[i])) {
+            // We did NOT find an OIDLIST entry; therefore, any db
+            // volumes mentioned here are included unfiltered.
+            
+            volset.AddFullVolume(vptr->GetVolName());
         }
     }
 }
 
-string CSeqDBAliasNode::GetTitle(vector< CRef<CSeqDBVol> > & vols)
+string CSeqDBAliasNode::GetTitle(CSeqDBVolSet & volset)
 {
     CSeqDB_TitleWalker walk;
-    WalkNodes(& walk, vols);
+    WalkNodes(& walk, volset);
     
     return walk.GetTitle();
 }
 
-Uint4 CSeqDBAliasNode::GetNumSeqs(vector< CRef<CSeqDBVol> > & vols)
+Uint4 CSeqDBAliasNode::GetNumSeqs(CSeqDBVolSet & vols)
 {
     CSeqDB_NSeqsWalker walk;
     WalkNodes(& walk, vols);
@@ -487,10 +473,10 @@ Uint4 CSeqDBAliasNode::GetNumSeqs(vector< CRef<CSeqDBVol> > & vols)
     return walk.GetNumSeqs();
 }
 
-Uint8 CSeqDBAliasNode::GetTotalLength(vector< CRef<CSeqDBVol> > & vols)
+Uint8 CSeqDBAliasNode::GetTotalLength(CSeqDBVolSet & volset)
 {
     CSeqDB_TotalLengthWalker walk;
-    WalkNodes(& walk, vols);
+    WalkNodes(& walk, volset);
     
     return walk.GetTotalLength();
 }

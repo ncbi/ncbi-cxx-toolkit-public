@@ -33,51 +33,269 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDBOIDList::CSeqDBOIDList(const string & filename, bool use_mmap)
-    : m_RawFile(use_mmap),
-      m_NumOIDs(0),
-      m_Bits   (0),
-      m_BitEnd (0)
+CSeqDBOIDList::CSeqDBOIDList(CSeqDBVolSet & volset, bool use_mmap)
+    : m_NumOIDs (0),
+      m_Bits    (0),
+      m_BitEnd  (0),
+      m_HeldData(0)
 {
-    m_RawFile.Open(filename);
-    m_RawFile.ReadSwapped(& m_NumOIDs);
+    assert( volset.HasMask() );
     
-    Uint4 file_length = m_RawFile.GetFileLength();
-    
-    m_Bits   = m_RawFile.GetRegion(sizeof(Int4), file_length);
-    m_BitEnd = m_Bits + file_length - sizeof(Int4);
-    
-    {
-        Uint4 bits = 0;
-        const Uint4 * filep = (const Uint4 *) m_Bits;
-        const Uint4 * filee = (const Uint4 *) m_BitEnd;
-        
-        while (filep < filee) {
-            Uint4 x = *filep;
-            while(x) {
-                if (x & 1)
-                    bits++; 
-                x >>= 1;
-            }
-            filep++;
-        }
-        
-        cout << "Lots of bytes, total bits = " << bits << endl;
+    if (volset.HasSimpleMask()) {
+        x_Setup( volset.GetSimpleMask(), use_mmap );
+    } else {
+        x_Setup( volset, use_mmap );
     }
 }
 
 CSeqDBOIDList::~CSeqDBOIDList()
 {
+    if (m_HeldData) {
+        delete [] m_HeldData;
+    }
 }
 
-bool CSeqDBOIDList::x_IsSet(TOID oid)
+void CSeqDBOIDList::x_Setup(const string & filename, bool use_mmap)
 {
-    const char * bp = m_Bits + (oid >> 3);
+    m_RawFile.Reset( new CSeqDBRawFile(use_mmap) );
+    
+    m_RawFile->Open(filename);
+    m_RawFile->ReadSwapped(& m_NumOIDs);
+    
+    Uint4 file_length = m_RawFile->GetFileLength();
+    
+    m_Bits   = (unsigned char*) m_RawFile->GetRegion(sizeof(Int4), file_length);
+    m_BitEnd = m_Bits + file_length - sizeof(Int4);
+}
+
+// The general rule I am following in these methods is to use byte
+// computations except during actual looping.
+
+void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap)
+{
+    assert(volset.HasMask() && (! volset.HasSimpleMask()));
+    
+    // First, get the memory space, clear it.
+    
+    // Pad memory space to word boundary.
+    
+    Uint4 num_oids = volset.GetNumSeqs();
+    Uint4 byte_length = ((num_oids + 31) / 32) * 4;
+    
+    m_HeldData = m_Bits = new (unsigned char)[byte_length];
+    m_BitEnd   = m_Bits + byte_length;
+    
+    memset((void*) m_Bits, 0, byte_length);
+    
+    // Then get the list of filenames and offsets to overlay onto it.
+    
+    for(Uint4 i = 0; i < volset.GetNumVols(); i++) {
+        bool         all_oids (false);
+        list<string> mask_files;
+        Uint4        oid_start(0);
+        Uint4        oid_end  (0);
+        
+        volset.GetMaskFiles(i, all_oids, mask_files, oid_start, oid_end);
+        
+        if (all_oids) {
+            x_SetBitRange(oid_start, oid_end);
+        } else {
+            // For each file, copy bits into array.
+            
+            for(list<string>::iterator mask_iter = mask_files.begin();
+                mask_iter != mask_files.end();
+                ++mask_iter) {
+                
+                x_OrFileBits(*mask_iter, oid_start, oid_end, use_mmap);
+            }
+        }
+    }
+    
+    m_NumOIDs = num_oids;
+    
+    while(m_NumOIDs && (! x_IsSet(m_NumOIDs - 1))) {
+        -- m_NumOIDs;
+    }
+    
+    if (seqdb_debug_class & debug_oid) {
+        cout << "x_Setup: Dumping OID map data." << endl;
+    
+        unsigned cnt = 0;
+    
+        cout << hex;
+    
+        for(TCUC * bp = m_Bits; bp < m_BitEnd; bp ++) {
+            unsigned int ubp = (unsigned int)(*bp);
+        
+            if (ubp >= 16) {
+                cout << ubp << " ";
+            } else {
+                cout << "0" << ubp << " ";
+            }
+        
+            cnt++;
+        
+            if (cnt == 32) {
+                cout << "\n";
+                cnt = 0;
+            }
+        }
+    
+        cout << dec << "\n" << endl;
+    }
+}
+
+// oid_end is not used - it could be.  One use would be to trim the
+// "incoming bits" to that length; specifically, to assume that the
+// file may contain nonzero "junk data" after the official end point.
+//
+// This implies that two oid sets share the oid mask file, but one
+// used a smaller subset of that file.  That really should never
+// happen; it would be so unlikely for that optimization to "buy
+// anything" that the code would almost certainly never be written
+// that way.  For this reason, I have not yet implemented trimming.
+
+void CSeqDBOIDList::x_OrFileBits(const string & mask_fname,
+                                 Uint4          oid_start,
+                                 Uint4          /*oid_end*/,
+                                 bool           use_mmap)
+{
+    // Open file and get pointers
+    
+    TCUC* bitmap = 0;
+    TCUC* bitend = 0;
+    
+    CSeqDBRawFile volmask(use_mmap);
+    
+    {
+        Uint4 num_oids = 0;
+        
+        volmask.Open(mask_fname);
+        volmask.ReadSwapped(& num_oids);
+        
+        Uint4 file_length = volmask.GetFileLength();
+        
+        // Cast forces signed/unsigned conversion.
+        
+        bitmap = (TCUC*) volmask.GetRegion(sizeof(Int4), file_length);
+        //bitend = bitmap + file_length - sizeof(Int4);
+        bitend = bitmap + (((num_oids + 31) / 32) * 4);
+    }
+    
+    // Fold bitmap/bitend into m_Bits/m_BitEnd at bit offset oid_start.
+    
+    
+    if (0 == (oid_start & 31)) {
+        // If the new data is "word aligned", we can use a fast algorithm.
+        
+        TCUC * srcp = bitmap;
+        TUC  * locp = m_Bits + (oid_start / 8);
+        TUC  * endp = locp + (bitend-bitmap);
+        
+        assert(endp <= m_BitEnd);
+        
+        Uint4 * wsrcp = (Uint4*) srcp;
+        Uint4 * wlocp = (Uint4*) locp;
+        Uint4 * wendp = wlocp + ((bitend - bitmap) / 4);
+        
+        while(wlocp < wendp) {
+            *wlocp++ |= *wsrcp++;
+        }
+        
+        srcp = (TCUC*) wsrcp;
+        locp = (unsigned char*) wlocp;
+        
+        while(locp < endp) {
+            *locp++ |= *(srcp++);
+        }
+    } else if (0 == (oid_start & 7)) {
+        // If the new data is "byte aligned", we can use a less fast algorithm.
+        
+        TCUC * srcp = bitmap;
+        TUC  * locp = m_Bits + (oid_start / 8);
+        TUC  * endp = locp + (bitend-bitmap);
+        
+        assert(endp <= m_BitEnd);
+        
+        while(locp < endp) {
+            *locp++ |= *srcp++;
+        }
+    } else {
+        // Otherwise... we have to use a slower, byte splicing algorithm.
+        
+        Uint4 Rshift = oid_start & 7;
+        Uint4 Lshift = 8 - Rshift;
+        
+        TCUC * srcp = bitmap;
+        TUC  * locp = m_Bits + (oid_start / 8);
+        TUC  * endp = locp + (bitend-bitmap);
+        
+        assert(endp <= m_BitEnd);
+        
+        TCUC * endp2 = endp - 1;
+        
+        // This loop iterates over the source bytes.  Each byte is
+        // split over two destination bytes.
+        
+        while(locp < endp2) {
+            // Store left half of source char in one location.
+            TCUC source = *srcp;
+            *locp |= (source >> Rshift);
+            locp++;
+            
+            // Store right half of source in the next location.
+            *locp |= (source << Lshift);
+            srcp++;
+        }
+    }
+}
+
+void CSeqDBOIDList::x_SetBitRange(Uint4          oid_start,
+                                  Uint4          oid_end)
+{
+    // Set bits at the front and back, closing to a range of full-byte
+    // addresses.
+    
+    while((oid_start & 0x7) && (oid_start < oid_end)) {
+        x_SetBit(oid_start);
+        ++oid_start;
+    }
+    
+    while((oid_end & 0x7) && (oid_start < oid_end)) {
+        x_SetBit(oid_end - 1);
+        --oid_end;
+    }
+    
+    if (oid_start < oid_end) {
+        TUC * bp_start = m_Bits + (oid_start >> 3);
+        TUC * bp_end   = m_Bits + (oid_end   >> 3);
+        
+        assert(bp_end <= m_BitEnd);
+        assert(bp_start < bp_end);
+        
+        memset(bp_start, 0xFF, (bp_end - bp_start));
+    }
+}
+
+void CSeqDBOIDList::x_SetBit(TOID oid)
+{
+    TUC * bp = m_Bits + (oid >> 3);
     
     Int4 bitnum = (oid & 7);
     
     if (bp < m_BitEnd) {
-        if (((*bp) << bitnum) & 0x80) {
+        *bp |= (0x80 >> bitnum);
+    }
+}
+
+bool CSeqDBOIDList::x_IsSet(TOID oid)
+{
+    TCUC * bp = m_Bits + (oid >> 3);
+    
+    Int4 bitnum = (oid & 7);
+    
+    if (bp < m_BitEnd) {
+        if (*bp & (0x80 >> bitnum)) {
             return true;
         }
     }
@@ -111,14 +329,6 @@ bool CSeqDBOIDList::x_FindNext(TOID & oid)
             while((bp < ep) && (0 == *bp)) {
                 ++ bp;
                 oid += 32;
-            }
-        } else if ((oid & 7) == 0) {
-            const char * bp = ((const char*) m_Bits + (oid             >> 3));
-            const char * ep = ((const char*) m_Bits + (whole_word_oids >> 3));
-            
-            while((bp < ep) && (0 == *bp)) {
-                ++ bp;
-                oid += 8;
             }
         }
     }

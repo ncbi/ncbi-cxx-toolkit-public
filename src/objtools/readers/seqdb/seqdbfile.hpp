@@ -35,9 +35,10 @@
 /// These objects define access to the various database component
 /// files, such as name.pin, name.phr, name.psq, and so on.
 
+#include <corelib/ncbistr.hpp>
+#include <corelib/ncbifile.hpp>
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include <corelib/ncbi_bswap.hpp>
-#include <corelib/ncbifile.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <set>
 
@@ -49,7 +50,7 @@ BEGIN_NCBI_SCOPE
 /// the file, isolating higher levels from differences in handling
 /// mmapped vs opened files.
 
-class CSeqDBRawFile {
+class CSeqDBRawFile : public CObject {
 public:
     CSeqDBRawFile(bool use_mmap)
         : m_UseMMap(use_mmap),

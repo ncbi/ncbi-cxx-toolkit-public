@@ -38,22 +38,10 @@
 #include <iostream>
 
 #include <objtools/readers/seqdb/seqdb.hpp>
+#include "seqdboidlist.hpp"
 #include "seqdbfile.hpp"
 #include "seqdbvol.hpp"
-
-/*
-typedef struct _readdb_alias_file {
-    CharPtr title,        // title of the database. 
-        dblist,        // list of databases. 
-        gilist,        // a gilist to be used with the database. 
-        oidlist;    // an ordinal id list to be used with this database. 
-    Int8    len;        // length of the database 
-    Uint4    nseq;        // number of seqs of the database 
-        Int4    first_oid;      // ordinal id range 
-        Int4    last_oid;
-        Int4    membership;
-} ReadDBAlias, PNTR ReadDBAliasPtr;
-*/
+#include "seqdbvolset.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -82,19 +70,19 @@ public:
     
     // Compute title by recursive appending of subnodes values until
     // value specification or volume is reached.
-    string GetTitle(vector< CRef<CSeqDBVol> > & vols);
+    string GetTitle(CSeqDBVolSet & volset);
     
     // Compute sequence count by recursive appending of subnodes
     // values until value specification or volume is reached.
-    Uint4 GetNumSeqs(vector< CRef<CSeqDBVol> > & vols);
+    Uint4 GetNumSeqs(CSeqDBVolSet & volset);
     
     // Compute sequence count by recursive appending of subnodes
     // values until value specification or volume is reached.
-    Uint8 GetTotalLength(vector< CRef<CSeqDBVol> > & vols);
+    Uint8 GetTotalLength(CSeqDBVolSet & volset);
     
-    void WalkNodes(CSeqDB_AliasWalker * walker, vector< CRef<CSeqDBVol> > & vols);
+    void WalkNodes(CSeqDB_AliasWalker * walker, CSeqDBVolSet & volset);
     
-    void BuildMaskList(vector< CRef<CSeqDBVol> > & vols);
+    void SetMasks(CSeqDBVolSet & volset);
     
 private:
     // To be called only from this class.  Note that the recursion
@@ -143,11 +131,6 @@ class CSeqDBAliasFile {
 public:
     CSeqDBAliasFile(const string & dbpath, const string & name_list, char prot_nucl, bool use_mmap)
         : m_Node      (dbpath, name_list, prot_nucl, use_mmap)
-//           m_Len       (0),
-//           m_Nseq      (0),
-//           m_FirstOid  (0),
-//           m_LastOid   (0),
-//           m_Membership(0)
     {
         m_Node.GetVolumeNames(m_VolumeNames);
     }
@@ -158,44 +141,31 @@ public:
     }
     
     // Add our volumes and our subnode's volumes to the end of "vols".
-    string GetTitle(vector< CRef<CSeqDBVol> > & vols)
+    string GetTitle(CSeqDBVolSet & volset)
     {
-        return m_Node.GetTitle(vols);
+        return m_Node.GetTitle(volset);
     }
     
     // Add our volumes and our subnode's seq counts.
-    Uint4 GetNumSeqs(vector< CRef<CSeqDBVol> > & vols)
+    Uint4 GetNumSeqs(CSeqDBVolSet & volset)
     {
-        return m_Node.GetNumSeqs(vols);
+        return m_Node.GetNumSeqs(volset);
     }
     
     // Add our volumes and our subnode's base lengths.
-    Uint8 GetTotalLength(vector< CRef<CSeqDBVol> > & vols)
+    Uint8 GetTotalLength(CSeqDBVolSet & volset)
     {
-        return m_Node.GetTotalLength(vols);
+        return m_Node.GetTotalLength(volset);
     }
     
-    void BuildMaskList(vector< CRef<CSeqDBVol> > & vols)
+    void SetMasks(CSeqDBVolSet & volset)
     {
-        cout << "Walking volume list (size " << vols.size()
-             << "), using OIDLIST." << endl;
-        
-        m_Node.BuildMaskList(vols);
+        m_Node.SetMasks(volset);
     }
     
 private:
     CSeqDBAliasNode m_Node;
     vector<string>  m_VolumeNames;
-    
-//     string m_Dblist;
-//     string m_Gilist;
-//     string m_Oidlist;
-    
-//     Int8   m_Len;
-//     Uint4  m_Nseq;
-//     Int4   m_FirstOid;
-//     Int4   m_LastOid;
-//     Int4   m_Membership;
 };
 
 

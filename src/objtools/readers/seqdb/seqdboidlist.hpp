@@ -36,6 +36,7 @@
 
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include "seqdbfile.hpp"
+#include "seqdbvolset.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -53,7 +54,7 @@ public:
 
 class CSeqDBOIDList : public CSeqDBOIDSrc {
 public:
-    CSeqDBOIDList(const string & filename, bool use_mmap);
+    CSeqDBOIDList(CSeqDBVolSet & volumes, bool use_mmap);
     
     ~CSeqDBOIDList();
     
@@ -66,13 +67,26 @@ public:
     }
     
 private:
+    typedef const unsigned char TCUC;
+    typedef unsigned char TUC;
+    
     bool x_IsSet   (TOID   oid);
+    void x_SetBit  (TOID   oid);
     bool x_FindNext(TOID & oid);
     
-    CSeqDBRawFile   m_RawFile;
-    Uint4           m_NumOIDs;
-    const char    * m_Bits;
-    const char    * m_BitEnd;
+    void x_Setup(const string & filename, bool use_mmap);
+    void x_Setup(CSeqDBVolSet & volset, bool use_mmap);
+    void x_OrFileBits(const string & mask_fname, Uint4 oid_start, Uint4 oid_end, bool use_mmap);
+    void x_SetBitRange(Uint4 oid_start, Uint4 oid_end);
+    
+    // Data
+    
+    CRef<CSeqDBRawFile>   m_RawFile;
+    Uint4                 m_NumOIDs;
+    
+    TUC                 * m_Bits;
+    TUC                 * m_BitEnd;
+    TUC                 * m_HeldData;
 };
 
 

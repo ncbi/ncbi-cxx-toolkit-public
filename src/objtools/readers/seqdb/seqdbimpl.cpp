@@ -32,31 +32,14 @@
 BEGIN_NCBI_SCOPE
 
 CSeqDBImpl::CSeqDBImpl(const string & dbpath, const string & db_name_list, char prot_nucl, bool use_mmap)
-    : m_Aliases  (dbpath, db_name_list, prot_nucl, use_mmap),
-      m_RecentVol(0)
+    : m_Aliases (dbpath, db_name_list,               prot_nucl, use_mmap),
+      m_VolSet  (dbpath, m_Aliases.GetVolumeNames(), prot_nucl, use_mmap)
 {
-    const vector<string> & vols = m_Aliases.GetVolumeNames();
+    m_Aliases.SetMasks(m_VolSet);
     
-    for(Uint4 i = 0; i < vols.size(); i++) {
-        string volpath = SeqDB_CombinePath(dbpath, vols[i], '/');
-        
-        x_AddVolume(volpath, prot_nucl, use_mmap);
-        
-        ifdebug_alias << "Added Volume [" << volpath
-                      << "] start,end =(" << m_VolStart.back() << "," << m_VolEnd.back()
-                      << ")" << endl;
-        
-        if (prot_nucl == kSeqTypeUnkn) {
-            // Once one volume picks a prot/nucl type, enforce that
-            // for the rest of the volumes.  This should happen at
-            // most once.
-            
-            prot_nucl = m_Volumes.back()->GetSeqType();
-        }
+    if ( m_VolSet.HasMask() ) {
+        m_OIDList.Reset( new CSeqDBOIDList(m_VolSet, use_mmap) );
     }
-    
-//     string month_fname = SeqDB_CombinePath(dbpath, "swissprot.00.msk", '/');
-//     m_OIDList = new CSeqDBOIDList( month_fname, use_mmap );
 }
 
 CSeqDBImpl::~CSeqDBImpl(void)
@@ -76,7 +59,7 @@ Int4 CSeqDBImpl::GetSeqLength(Uint4 oid)
 {
     Uint4 vol_oid = 0;
     
-    if (CSeqDBVol * vol = x_FindVol(oid, vol_oid)) {
+    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSeqLength(vol_oid, false);
     }
     
@@ -87,7 +70,7 @@ Int4 CSeqDBImpl::GetSeqLengthApprox(Uint4 oid)
 {
     Uint4 vol_oid = 0;
     
-    if (CSeqDBVol * vol = x_FindVol(oid, vol_oid)) {
+    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSeqLength(vol_oid, true);
     }
     
@@ -101,7 +84,7 @@ CSeqDBImpl::GetBioseq(Int4 oid,
 {
     Uint4 vol_oid = 0;
     
-    if (CSeqDBVol * vol = x_FindVol(oid, vol_oid)) {
+    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetBioseq(vol_oid, use_objmgr, insert_ctrlA);
     }
     
@@ -110,17 +93,15 @@ CSeqDBImpl::GetBioseq(Int4 oid,
 
 void CSeqDBImpl::RetSequence(const char ** buffer)
 {
-    Uint4 recvol = m_RecentVol;
-    
-    if (m_Volumes.size() > recvol) {
-        if (m_Volumes[recvol]->RetSequence(buffer)) {
+    if (CSeqDBVol * vol = m_VolSet.GetRecentVol()) {
+        if (vol->RetSequence(buffer)) {
             return;
         }
     }
     
-    for(Uint4 i = 0; i < m_Volumes.size(); i++) {
-        if (m_Volumes[i]->RetSequence(buffer)) {
-            m_RecentVol = i;
+    for(Uint4 i = 0; i < m_VolSet.GetNumVols(); i++) {
+        if (m_VolSet.GetVol(i)->RetSequence(buffer)) {
+            m_VolSet.SetRecentVol(i);
             return;
         }
     }
@@ -129,7 +110,7 @@ void CSeqDBImpl::RetSequence(const char ** buffer)
 Int4 CSeqDBImpl::GetSequence(Int4 oid, const char ** buffer)
 {
     Uint4 vol_oid = 0;
-    if (CSeqDBVol * vol = x_FindVol(oid, vol_oid)) {
+    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetSequence(vol_oid, buffer);
     }
     
@@ -138,61 +119,40 @@ Int4 CSeqDBImpl::GetSequence(Int4 oid, const char ** buffer)
 
 Uint4 CSeqDBImpl::GetNumSeqs(void)
 {
-    //return (m_VolEnd.empty() ? 0 : m_VolEnd[m_VolEnd.size()-1]);
-    return m_Aliases.GetNumSeqs(m_Volumes);
+    return m_Aliases.GetNumSeqs(m_VolSet);
 }
 
 Uint8 CSeqDBImpl::GetTotalLength(void)
 {
-    //return (m_VolEnd.empty() ? 0 : m_VolEnd[m_VolEnd.size()-1]);
-    return m_Aliases.GetTotalLength(m_Volumes);
+    return m_Aliases.GetTotalLength(m_VolSet);
 }
-
-// Uint8 CSeqDBImpl::GetTotalLength(void)
-// {
-//     Uint8 total_length = 0;
-    
-//     for(Uint4 i = 0; i < m_Volumes.size(); i++) {
-//         total_length += m_Volumes[i]->GetTotalLength();
-        
-//         ifdebug_mvol << "name[" << i << "]='" << m_Volumes[i]->GetVolName()
-//                      << "', length[~]="       << m_Volumes[i]->GetTotalLength()
-//                      << ", running total = "  << total_length << endl;
-//     }
-    
-//     return total_length;
-// }
 
 string CSeqDBImpl::GetTitle(void)
 {
-//     if (m_VolList.empty()) {
-//         return string();
-//     }
-//     return m_VolList[0]->m_Vol.GetTitle();
-    return m_Aliases.GetTitle(m_Volumes);
+    return m_Aliases.GetTitle(m_VolSet);
 }
 
 char CSeqDBImpl::GetSeqType(void)
 {
-    if (m_Volumes.empty()) {
-        return kSeqTypeUnkn;
+    if (CSeqDBVol * vol = m_VolSet.GetVol(0)) {
+        return vol->GetSeqType();
     }
-    return m_Volumes[0]->GetSeqType();
+    return kSeqTypeUnkn;
 }
 
 string CSeqDBImpl::GetDate(void)
 {
-    if (m_Volumes.empty()) {
-        return string();
+    if (CSeqDBVol * vol = m_VolSet.GetVol(0)) {
+        return vol->GetDate();
     }
-    return m_Volumes[0]->GetDate();
+    return string();
 }
 
 CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(Uint4 oid)
 {
     Uint4 vol_oid = 0;
     
-    if (CSeqDBVol * vol = x_FindVol(oid, vol_oid)) {
+    if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         return vol->GetHdr(vol_oid);
     }
     
@@ -203,12 +163,11 @@ Uint4 CSeqDBImpl::GetMaxLength(void)
 {
     Uint4 max_len = 0;
     
-    for(Uint4 i = 0; i < m_Volumes.size(); i++) {
-        Uint4 max_this = m_Volumes[i]->GetMaxLength();
+    for(Uint4 i = 0; i < m_VolSet.GetNumVols(); i++) {
+        Uint4 new_max = m_VolSet.GetVol(i)->GetMaxLength();
         
-        if (max_this > max_len) {
-            max_len = max_this;
-        }
+        if (new_max > max_len)
+            max_len = new_max;
     }
     
     return max_len;
