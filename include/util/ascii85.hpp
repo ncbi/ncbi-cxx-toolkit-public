@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CAscii85
+class NCBI_XUTIL_EXPORT CAscii85
 {
 public:
     static size_t s_Encode(const char* src_buf, size_t src_len,
@@ -54,6 +54,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/07/16 21:56:12  meric
+ * Added NCBI_XUTIL_EXPORT qualifier to CAscii85
+ *
  * Revision 1.1  2003/07/16 20:07:31  meric
  * Initial version
  *
