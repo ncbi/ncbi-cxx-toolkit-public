@@ -50,20 +50,22 @@ CSeq_annot::~CSeq_annot(void)
 {
 }
 
-// Function used by list::remove_if to decide which 
-// CAnnotdesc objects are names
-static bool s_IsName(const CRef<CAnnotdesc> &desc)
-{
-    return desc->IsName();
-}
 
 void CSeq_annot::AddName(const string &name)
 {
-    SetDesc().Set().remove_if(s_IsName);
+    //NB: this used list::remove_if(), which is not portable to Windows
+    NON_CONST_ITERATE (TDesc::Tdata, iter, SetDesc().Set()) {
+        if ((*iter)->IsName()) {
+            iter = SetDesc().Set().erase(iter);
+            --iter;
+        }
+    }
+
     CRef<CAnnotdesc> desc(new CAnnotdesc());
     desc->SetName(name);
     SetDesc().Set().push_back(desc);
 }
+
 
 void CSeq_annot::AddTitle(const string &title)
 {
@@ -72,12 +74,14 @@ void CSeq_annot::AddTitle(const string &title)
     SetDesc().Set().push_back(desc);
 }
 
+
 void CSeq_annot::AddComment(const string &comment)
 {
     CRef<CAnnotdesc> desc(new CAnnotdesc());
     desc->SetComment(comment);
     SetDesc().Set().push_back(desc);
 }
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -88,6 +92,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/05/07 13:08:09  dicuccio
+* Alternate implementation of SetTitle() - work-around for MSVC's broken
+* implementation of list::remove_if()
+*
 * Revision 1.1  2003/05/07 10:57:29  clausen
 * Added AddName, AddTitle, AddComment
 *
