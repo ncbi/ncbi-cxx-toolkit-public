@@ -34,6 +34,7 @@
 #include <app/project_tree_builder/proj_utils.hpp>
 #include <app/project_tree_builder/resolver.hpp>
 #include <app/project_tree_builder/proj_datatool_generated_src.hpp>
+#include <app/project_tree_builder/proj_projects.hpp>
 
 #include <set>
 
@@ -373,27 +374,28 @@ public:
 
 
     /// Build project tree and include all projects this tree depends upon
-    static void BuildProjectTree(const string&      start_node_path,
-                                 const string&      root_src_path,
-                                 CProjectItemsTree* tree  );
+    static void BuildProjectTree(const IProjectFilter* filter,
+                                 const string&         root_src_path,
+                                 CProjectItemsTree*    tree  );
 private:
     /// Build one project tree and do not resolve (include) depends
-    static void BuildOneProjectTree(const string&      start_node_path,
-                                    const string&      root_src_path,
-                                    CProjectItemsTree* tree  );
+    static void BuildOneProjectTree(const IProjectFilter* filter,
+                                    const string&         root_src_path,
+                                    CProjectItemsTree*    tree  );
     
-    static void ProcessDir (const string& dir_name, 
-                            bool          is_root, 
-                            SMakeFiles*   make_files);
+    static void ProcessDir (const string&         dir_name, 
+                            bool                  is_root,
+                            const IProjectFilter* filter,
+                            SMakeFiles*           makefiles);
 
     static void ProcessMakeInFile (const string& file_name, 
-                                   SMakeFiles*   make_files);
+                                   SMakeFiles*   makefiles);
 
     static void ProcessMakeLibFile(const string& file_name, 
-                                   SMakeFiles*   make_files);
+                                   SMakeFiles*   makefiles);
 
     static void ProcessMakeAppFile(const string& file_name, 
-                                   SMakeFiles*   make_files);
+                                   SMakeFiles*   makefiles);
 
     static void ResolveDefs(CSymResolver& resolver, SMakeFiles& makefiles);
 
@@ -463,6 +465,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/02/26 21:24:03  gorelenk
+ * Declaration member-functions of class CProjectTreeBuilder:
+ * BuildProjectTree, BuildOneProjectTree and ProcessDir changed to use
+ * IProjectFilter* filter instead of const string& subtree_to_build.
+ *
  * Revision 1.11  2004/02/24 17:15:25  gorelenk
  * Added member m_NcbiCLibs to class CProjItem.
  * Added declaration of member function CreateNcbiCToolkitLibs
