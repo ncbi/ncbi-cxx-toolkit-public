@@ -38,6 +38,7 @@ Contents: C++ driver for running BLAST
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/metareg.hpp>
 
 #include <objects/seq/seq__.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -646,101 +647,76 @@ void CBlastApplication::FormatResults(const CDbBlast* blaster,
     }
 }
 
-static Int2 BLAST_FillRPSInfo( RPSInfo **ppinfo, Nlm_MemMap **rps_mmap,
-                               Nlm_MemMap **rps_pssm_mmap, const char* dbname )
+static Int2 x_FillRPSInfo( RPSInfo **ppinfo, CMemoryFile **rps_mmap,
+                           CMemoryFile **rps_pssm_mmap, string dbname )
 {
-   char pathname[PATH_MAX];
-   char filename[PATH_MAX];
-   RPSInfo *info;
-   FILE *auxfile;
-   Int4 i;
-   Int4 seq_size;
-   Int4 num_db_seqs;
-   Nlm_MemMapPtr lut_mmap;
-   Nlm_MemMapPtr pssm_mmap;
-   char buffer[PATH_MAX];
-
-   info = (RPSInfo *)malloc(sizeof(RPSInfo));
-   if (info == NULL) {
-       ERR_POST_EX(CBlastException::eOutOfMemory, 2,
-                  "Failed to allocate RPS information structure");
-       exit(CBlastException::eOutOfMemory);
-   }
+   RPSInfo *info = new RPSInfo;
+   if (info == NULL)
+      NCBI_THROW(CBlastException, eOutOfMemory, "RPSInfo");
 
    /* construct the full path to the DB file. Look in
-      the local directory, then BLASTDB environment 
-      variable (if any), then .ncbirc */
+      the local directory, then .ncbirc */
 
-   sprintf(filename, "%s.loo", dbname);
+   CFile LUTfile(dbname + ".loo");
 
-   if (FileLength(filename) > 0) {
-      strcpy(pathname, dbname);
-   } else {
-#ifdef OS_UNIX
-      if (getenv("BLASTDB"))
-         Nlm_GetAppParam("NCBI", "BLAST", "BLASTDB", 
-                         getenv("BLASTDB"), pathname, PATH_MAX);
-      else
-#endif
-         Nlm_GetAppParam ("NCBI", "BLAST", "BLASTDB", 
-                          BLASTDB_DIR, pathname, PATH_MAX);
-      sprintf(filename, "%s%s%s", pathname, DIRDELIMSTR, dbname);
-      strcpy(pathname, filename);
+   if (LUTfile.Exists() == false) {
+      CMetaRegistry::SEntry config = CMetaRegistry::Load("ncbi", 
+                                        CMetaRegistry::eName_RcOrIni);
+      string dbpath(config.registry->Get("BLAST", "BLASTDB"));
+      char c[2] = {0};
+      c[0] = CDirEntry::GetPathSeparator();
+      dbname = dbpath + string(c) + dbname;
    }
 
-   sprintf(filename, "%s.loo", pathname);
-   lut_mmap = Nlm_MemMapInit(filename);
-   if (lut_mmap == NULL) {
-       ERR_POST_EX(CBlastException::eOutOfMemory, 2,
-                  "Cannot map RPS BLAST lookup file");
-       exit(CBlastException::eOutOfMemory);
-   }
-   info->lookup_header = (RPSLookupFileHeader *)lut_mmap->mmp_begin;
+   CMemoryFile *lut_mmap = new CMemoryFile(dbname + ".loo");
+   if (lut_mmap == NULL)
+      NCBI_THROW(CBlastException, eBadParameter,
+                        "Cannot map RPS BLAST lookup file");
+   info->lookup_header = (RPSLookupFileHeader *)lut_mmap->GetPtr();
 
-   sprintf(filename, "%s.rps", pathname);
-   pssm_mmap = Nlm_MemMapInit(filename);
-   if (pssm_mmap == NULL) {
-       ERR_POST_EX(CBlastException::eOutOfMemory, 2,
-                  "Cannot map RPS BLAST profile file");
-       exit(CBlastException::eOutOfMemory);
-   }
-   info->profile_header = (RPSProfileHeader *)pssm_mmap->mmp_begin;
+   CMemoryFile *pssm_mmap = new CMemoryFile(dbname + ".rps");
+   if (pssm_mmap == NULL)
+      NCBI_THROW(CBlastException, eBadParameter,
+                        "Cannot map RPS BLAST profile file");
+   info->profile_header = (RPSProfileHeader *)pssm_mmap->GetPtr();
 
-   num_db_seqs = info->profile_header->num_profiles;
+   CNcbiIfstream auxfile( (dbname + ".aux").c_str() );
+   if (auxfile.bad() || auxfile.fail())
+      NCBI_THROW(CBlastException, eBadParameter,
+                        "Cannot open RPS BLAST parameters file");
 
-   sprintf(filename, "%s.aux", pathname);
-   auxfile = FileOpen(filename, "r");
-   if (auxfile == NULL) {
-       ERR_POST_EX(CBlastException::eBadParameter, 2,
-                  "Cannot open RPS BLAST parameters file");
-       exit(CBlastException::eBadParameter);
-   }
+   string matrix;
+   auxfile >> matrix;
+   info->aux_info.orig_score_matrix = strdup(matrix.c_str());
 
-   fscanf(auxfile, "%s", buffer);
-   info->aux_info.orig_score_matrix = strdup(buffer);
-   fscanf(auxfile, "%d", &info->aux_info.gap_open_penalty);
-   fscanf(auxfile, "%d", &info->aux_info.gap_extend_penalty);
-   fscanf(auxfile, "%le", &info->aux_info.ungapped_k);
-   fscanf(auxfile, "%le", &info->aux_info.ungapped_h);
-   fscanf(auxfile, "%d", &info->aux_info.max_db_seq_length);
-   fscanf(auxfile, "%d", &info->aux_info.db_length);
-   fscanf(auxfile, "%lf", &info->aux_info.scale_factor);
+   auxfile >> info->aux_info.gap_open_penalty;
+   auxfile >> info->aux_info.gap_extend_penalty;
+   auxfile >> info->aux_info.ungapped_k;
+   auxfile >> info->aux_info.ungapped_h;
+   auxfile >> info->aux_info.max_db_seq_length;
+   auxfile >> info->aux_info.db_length;
+   auxfile >> info->aux_info.scale_factor;
 
-   info->aux_info.karlin_k = (double *)malloc(num_db_seqs * sizeof(double));
-   for (i = 0; i < num_db_seqs && !feof(auxfile); i++) {
-      fscanf(auxfile, "%d", &seq_size); /* not used */
-      fscanf(auxfile, "%le", &info->aux_info.karlin_k[i]);
+   int num_db_seqs = info->profile_header->num_profiles;
+   info->aux_info.karlin_k = new double[num_db_seqs];
+   if (info->aux_info.karlin_k == NULL)
+      NCBI_THROW(CBlastException, eOutOfMemory, "karlin_k");
+   int i;
+
+   for (i = 0; i < num_db_seqs && !auxfile.eof(); i++) {
+      int seq_size;
+      auxfile >> seq_size;  // not used
+      auxfile >> info->aux_info.karlin_k[i];
    }
 
-   if (i < num_db_seqs) {
-       ERR_POST_EX(CBlastException::eBadParameter, 2,
-                  "Aux file missing Karlin parameters");
-       exit(CBlastException::eBadParameter);
-   }
-   FileClose(auxfile);
+   if (i < num_db_seqs)
+      NCBI_THROW(CBlastException, eBadParameter,
+                        "Missing Karlin parameters");
+
    *ppinfo = info;
    *rps_mmap = lut_mmap;
    *rps_pssm_mmap = pssm_mmap;
+
    return 0;
 }
 
@@ -822,13 +798,13 @@ int CBlastApplication::Run(void)
 
     CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(program);
 
-    Nlm_MemMapPtr rps_mmap = NULL;
-    Nlm_MemMapPtr rps_pssm_mmap = NULL;
+    CMemoryFile *rps_mmap = NULL;
+    CMemoryFile *rps_pssm_mmap = NULL;
     RPSInfo *rps_info = NULL;
     // Need to set up the RPS database information structure too
     if (program == eRPSBlast || program == eRPSTblastn) {
-        if (BLAST_FillRPSInfo(&rps_info, &rps_mmap,
-            &rps_pssm_mmap, args["db"].AsString().c_str()) != 0) 
+        if (x_FillRPSInfo(&rps_info, &rps_mmap,
+            &rps_pssm_mmap, args["db"].AsString()) != 0) 
         {
             ERR_POST_EX(CBlastException::eBadParameter, 2, 
                        "Cannot initialize RPS BLAST database");
@@ -892,11 +868,12 @@ int CBlastApplication::Run(void)
     BlastSeqSrcFree(seq_src);
 
     if (rps_info) {
-        Nlm_MemMapFini(rps_mmap);
-        Nlm_MemMapFini(rps_pssm_mmap);
-        sfree(rps_info->aux_info.karlin_k);
+        delete rps_mmap;
+        delete rps_pssm_mmap;
+        delete [] rps_info->aux_info.karlin_k;
         sfree(rps_info->aux_info.orig_score_matrix);
-        sfree(rps_info);
+        delete rps_info;
+        rps_info = NULL;
     }
 
     return status;
