@@ -56,6 +56,8 @@
 		<li> <a href="#ref_MsvcProj">
 		  MS Visual C++</a>
 	   <ul>
+		  <li> <a href="#ref_MsvcProjDownload">
+		    Getting the Toolkit sources</a>
 		  <li> <a href="#ref_MsvcProjTree">
 		    Building the whole NCBI C++ tree locally</a>
 		  <li> <a href="#ref_MsvcProjCXX">
@@ -928,20 +930,37 @@ directories.
 </a>
 
 <p>
+<a name="ref_MsvcProjDownload"><h4>Getting the Toolkit sources</h4>
+</a>
+
+<p>
+
+
+<p>
+Suppose you have deployed the NCBI C++ tree on your local PC, in directory
+<i><b>C:\cxx</b></i>. You can do it one of the following ways:
+<ul>
+		<li> do <a href="win_cvs.html">CVS checkout</a> of
+		  <i><b>internal/c++</b></i>. This can be done right on your
+		  PC, if you have installed CVS there:
+		  <br> <i>cvs checkout -d cxx internal/c++</i>
+		<li> checkout only the core sources on your UNIX workstation by running
+		  <br> <i>$NCBI/c++/scripts/cvs_core.sh cxx --without-cvs --with-objects --msvc</i>
+		  <br> and then copy the whole resultant directory
+		  <i><b>cxx</b></i> to your PC directory <i><b>C:\cxx</b></i>
+		<li> if you have the Toolkit sources in the publically distributed
+		  self-extracting archive, then just expand the archive.
+</ul>
+
+
+<p>
 <a name="ref_MsvcProjTree"><h4>Building the whole NCBI C++ tree locally</h4>
 </a>
 
 <p>
-Suppose you have deployed the NCBI C++ tree on your local PC, in directory
-<i><b>C:\foo</b></i> (you can do it by either performing the
-<a href="win_cvs.html">CVS checkout</a>
-of <i><b>internal/c++</b></i> or by expanding the distributed self-extracting
-NCBI C++ source archive), and you want to use MSVC++ to work with these
-sources.
-
-<p>
+Now, you want to use MS Visual C++ IDE to work with these sources.
 In order to adjust the MSVC++ project files for your local
-<i><b>C:\foo</b></i> you must do exactly the following:
+<i><b>C:\cxx</b></i> you must do exactly the following:
 <ol>
   <li> Go to directory <i><b>compilers/</b></i> and run script
 		<i><b>msvc_nt.bat</b></i>
@@ -950,10 +969,10 @@ In order to adjust the MSVC++ project files for your local
 		<li> go to <i>"Tools"/"Options"</i> form
 		<li> goto folder <i>"Directories"</i>
 		<li> choose option <i>"Include files"</i> in the <i>"Show directories for:"</i> option menu
-		<li> add "<i><b>C:\foo\include</b></i>" to the shown include directory list
+		<li> add "<i><b>C:\cxx\include</b></i>" to the shown include directory list
 		<li> if you want to use "internal" parts of the NCBI C++
 		     toolkit(such as <b>xhc</b> library) then add
-           "<i><b>C:\foo\include\internal</b></i>" to the shown include directory list
+           "<i><b>C:\cxx\include\internal</b></i>" to the shown include directory list
 	 </ul>
 </ol>
 
@@ -963,6 +982,9 @@ Now when the installation is complete you can load workspace
   <li> <b>all</b> -- everything
   <li> <b>core_all</b> -- all basic libraries and test applications
   <li> <b>core_lib</b> -- all basic libraries
+  <li> <b>core_objects_all</b> -- all serialization libraries (as of now,
+		  providing for the serialization of NCBI ASN.1 objects),
+		  and their test applications
   <li> any single library and/or application -- other projects in this
        workspace
 </ul>
