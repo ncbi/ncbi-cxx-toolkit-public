@@ -278,7 +278,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       }
 
       if (reverse) {
-         loc = BlastSeqLocFree(loc);
+         loc = ValNodeFree(loc);
       }
       
       if (last_interval_open) {
@@ -288,6 +288,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
             last_loc = ValNodeAddPointer(complement_mask, 0, double_int);
          else 
             last_loc = ValNodeAddPointer(&last_loc, 0, double_int);
+         last_interval_open = FALSE;
       }
    }
    return 0;
