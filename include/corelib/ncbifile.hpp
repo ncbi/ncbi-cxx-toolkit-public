@@ -40,6 +40,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_mask.hpp>
 #include <vector>
 
 #if defined(NCBI_OS_MAC)
@@ -277,7 +278,10 @@ public:
     //
 
     /// Match "name" against the filename "mask".
-    static bool MatchesMask(const char *name, const char *mask);
+    static bool MatchesMask(const char* name, const char* mask);
+
+    /// Match "name" against the set of "masks"
+    static bool MatchesMask(const char* name, const CMask& mask);
 
     /// Check existence of entry "path".
     virtual bool Exists(void) const;
@@ -340,8 +344,8 @@ public:
     ///   TRUE if time was acquired or FALSE otherwise.
     /// @sa
     ///   SetTime()
-    bool GetTime(CTime *modification, CTime *creation = 0, 
-                 CTime *last_access = 0) const;
+    bool GetTime(CTime* modification, CTime* creation = 0, 
+                 CTime* last_access = 0) const;
 
     /// Set time stamp on directory entry.
     ///
@@ -357,7 +361,7 @@ public:
     ///   TRUE if time was changed or FALSE otherwise.
     /// @sa
     ///   GetTime()
-    bool SetTime(CTime *modification = 0 , CTime *last_access = 0) const;
+    bool SetTime(CTime* modification = 0 , CTime* last_access = 0) const;
 
     //
     // Access permissions.
@@ -706,7 +710,7 @@ public:
     TEntries GetEntries(const string&   mask = kEmptyStr,
                         EGetEntriesMode mode = eAllEntries) const;
 
-    /// Get directory entries based on the specified set of"masks".
+    /// Get directory entries based on the specified set of "masks".
     ///
     /// @param mask
     ///   Use to select only files that match this set of masks.
@@ -714,6 +718,15 @@ public:
     ///   An array containing all directory entries.
     TEntries GetEntries(const vector<string>& masks,
                         EGetEntriesMode       mode = eAllEntries) const;
+
+    /// Get directory entries based on the specified set of "masks".
+    ///
+    /// @param mask
+    ///   Use to select only files that match this set of masks.
+    /// @return
+    ///   An array containing all directory entries.
+    TEntries GetEntries(const CMask&    masks,
+                        EGetEntriesMode mode = eAllEntries) const;
 
     /// Create the directory using "dirname" passed in the constructor.
     /// 
@@ -744,6 +757,12 @@ public:
 };
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  Find files algorithms
+//
+
 /// File finding flags
 enum EFindFiles {
     fFF_File       = (1<<0),             ///< find files
@@ -772,15 +791,13 @@ TFindFunc FindFilesInDir(const CDir&            dir,
             if (flags & fFF_Dir) {
                 find_func(dir_entry);
             }
-
             if (flags & fFF_Recursive) {
                 CDir nested_dir(dir_entry.GetPath());
                 find_func = 
                   FindFilesInDir(nested_dir, masks, find_func, flags);
             }
         }
-        else
-        if (dir_entry.IsFile() && (flags & fFF_File)) {
+        else if (dir_entry.IsFile() && (flags & fFF_File)) {
             find_func(dir_entry);
         }
     } // ITERATE
@@ -788,6 +805,38 @@ TFindFunc FindFilesInDir(const CDir&            dir,
 }
 
 
+/// Find files in the specified directory
+template<class TFindFunc>
+TFindFunc FindFilesInDir(const CDir&   dir,
+                         const CMask&  masks,
+                         TFindFunc     find_func,
+                         TFindFiles    flags = fFF_Default)
+{
+    CDir::TEntries contents = dir.GetEntries(masks, CDir::eIgnoreRecursive);
+
+    ITERATE(CDir::TEntries, it, contents) {
+        const CDirEntry& dir_entry = **it;
+
+        if (dir_entry.IsDir()) {
+            if (flags & fFF_Dir) {
+                find_func(dir_entry);
+            }
+            if (flags & fFF_Recursive) {
+                CDir nested_dir(dir_entry.GetPath());
+                find_func = 
+                  FindFilesInDir(nested_dir, masks, find_func, flags);
+            }
+        }
+        else if (dir_entry.IsFile() && (flags & fFF_File)) {
+            find_func(dir_entry);
+        }
+    } // ITERATE
+    return find_func;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// Generic algorithm for file search
 ///
 /// Algorithm scans the provided directories using iterators,
@@ -816,9 +865,37 @@ TFindFunc FindFiles(TPathIterator path_begin,
 
         CDir dir(dir_name);
         find_func = FindFilesInDir(dir, masks, find_func, flags);
-    } // for
+    }
     return find_func;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Generic algorithm for file search
+///
+/// Algorithm scans the provided directories using iterators,
+/// finds files to match the masks and stores all calls functor
+/// object for all found entries
+/// Functor call should match: void Functor(const CDirEntry& dir_entry)
+///
+
+template<class TPathIterator, 
+         class TFindFunc>
+TFindFunc FindFiles(TPathIterator path_begin,
+                    TPathIterator path_end,
+                    const CMask&  masks,
+                    TFindFunc     find_func,
+                    TFindFiles    flags = fFF_Default)
+{
+    for (; path_begin != path_end; ++path_begin) {
+        const string& dir_name = *path_begin;
+        CDir dir(dir_name);
+        find_func = FindFilesInDir(dir, masks, find_func, flags);
+    }
+    return find_func;
+}
+
 
 /// Functor for generic FindFiles, adds file name to the specified container
 template<class TNames>
@@ -843,10 +920,10 @@ protected:
 /// the container object.
 ///
 
-template<class TContainer, class It1>
+template<class TContainer, class TPathIterator>
 void FindFiles(TContainer&           out, 
-               It1                   first_path, 
-               It1                   last_path, 
+               TPathIterator         first_path, 
+               TPathIterator         last_path, 
                const vector<string>& masks,
                TFindFiles            flags = fFF_Default)
 {
@@ -856,6 +933,24 @@ void FindFiles(TContainer&           out,
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Utility algorithm scans the provided directories using iterators
+/// finds files to match the masks and stores all found files in 
+/// the container object.
+///
+
+template<class TContainer, class TPathIterator>
+void FindFiles(TContainer&    out, 
+               TPathIterator  first_path, 
+               TPathIterator  last_path, 
+               const CMask&   masks,
+               TFindFiles     flags = fFF_Default)
+{
+    CFindFileNamesFunc<TContainer> func(out);
+    FindFiles(first_path, last_path, masks, func, flags);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -864,13 +959,13 @@ void FindFiles(TContainer&           out,
 /// the container object.
 ///
 
-template<class TContainer, class It1, class It2>
-void FindFiles(TContainer&  out, 
-               It1          first_path,
-               It1          last_path, 
-               It2          first_mask,
-               It2          last_mask,
-               TFindFiles   flags = fFF_Default)
+template<class TContainer, class TPathIterator, class TMaskIterator>
+void FindFiles(TContainer&    out, 
+               TPathIterator  first_path,
+               TPathIterator  last_path, 
+               TMaskIterator  first_mask,
+               TMaskIterator  last_mask,
+               TFindFiles     flags = fFF_Default)
 {
     CFindFileNamesFunc<TContainer> func(out);
     FindFiles(first_path, last_path, 
@@ -1567,6 +1662,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/01/31 11:48:39  ivanov
+ * Added CMask versions of:
+ *     CDirEntries::MatchesMask(), CDirEntries::GetEntries()
+ *     FindFiles(), FindFilesInDir().
+ * Some cosmetics.
+ *
  * Revision 1.50  2004/10/08 12:43:45  ivanov
  * Moved CDirEntry::Reset() to .cpp file
  *
