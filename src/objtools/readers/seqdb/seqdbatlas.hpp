@@ -402,8 +402,11 @@ public:
     }
     
 private:
+    /// Prevent copy construction.
+    CSeqDBAtlas(const CSeqDBAtlas &);
+    
     typedef map<const char *, Uint4>::iterator TPoolIter;
-
+    
     // Assumes lock is held
     const char * x_FindRegion(Uint4            fid,
                               TIndx          & begin,
