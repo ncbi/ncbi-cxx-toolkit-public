@@ -50,7 +50,7 @@ const streamsize kCompressionDefaultOutBufSize = 16*1024;
 class CCompressionBaseStreambuf;
 
 // Compression underlying I/O stream
-typedef basic_ios< char, char_traits<char> > TCompressionUIOS;
+typedef CNcbiIos TCompressionUIOS;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -254,6 +254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/04 12:42:01  ucko
+ * Use our NcbiIos typedef for portability to old iostream implementations.
+ *
  * Revision 1.3  2003/06/03 20:09:54  ivanov
  * The Compression API redesign. Added some new classes, rewritten old.
  *
