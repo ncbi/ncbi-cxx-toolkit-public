@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_gui.bat,v 1.1 2004/04/06 12:22:19 ivanov Exp $
+REM $Id: all_gui.bat,v 1.2 2004/05/03 15:15:21 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -57,7 +57,7 @@ ECHO FATAL: Unknown configuration name %CFG%. Please correct.
 GOTO EXIT
 
 :CONTINUE
-ECHO INFO: Building "all - %CFG%"
+ECHO INFO: Building "static\gui\%CFG%"
 devenv gui\ncbi_gui.sln /build %CFG% /project "-BUILD-ALL-"
 IF ERRORLEVEL 1 GOTO ABORT
 

@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_gui.bat,v 1.2 2004/04/27 15:27:23 ivanov Exp $
+REM $Id: all_gui.bat,v 1.3 2004/05/03 15:15:05 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -53,10 +53,10 @@ ECHO FATAL: Unknown configuration name %CFG%. Please correct.
 GOTO EXIT
 
 :CONTINUE
-ECHO INFO: Building "all - %CFG%"
+ECHO INFO: Building "dll\gui\%CFG%"
 devenv gui\ncbi_gui_dll.sln /build %CFG% /project "-BUILD-ALL-"
 IF ERRORLEVEL 1 GOTO ABORT
-ECHO INFO: Installing GBENCH %CFG%
+ECHO INFO: Installing GBENCH "dll\gui\%CFG%"
 devenv gui\ncbi_gui_dll_gbench_install.sln /build %CFG% /project "-BUILD-ALL-"
 IF ERRORLEVEL 1 GOTO ABORT
 

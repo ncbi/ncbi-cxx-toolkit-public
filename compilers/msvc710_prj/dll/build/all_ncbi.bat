@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_ncbi.bat,v 1.2 2004/04/06 12:21:30 ivanov Exp $
+REM $Id: all_ncbi.bat,v 1.3 2004/05/03 15:15:05 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -53,7 +53,7 @@ ECHO FATAL: Unknown configuration name %CFG%. Please correct.
 GOTO EXIT
 
 :CONTINUE
-ECHO INFO: Building "all - %CFG%"
+ECHO INFO: Building "dll\ncbi\%CFG%"
 devenv ncbi_cpp_dll.sln /build %CFG% /project "-BUILD-ALL-"
 IF ERRORLEVEL 1 GOTO ABORT
 
