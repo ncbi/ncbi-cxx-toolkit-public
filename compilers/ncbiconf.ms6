@@ -1,4 +1,4 @@
-/* /cxx/msvc_nt/inc/ncbiconf.h.  Generated automatically by configure.  */
+/* /cxx/MSVC-Debug/inc/ncbiconf.h.  Generated automatically by configure.  */
 /* config.h.in.  Generated automatically from configure.in by autoheader.  */
 
 /* Define if type char is unsigned and you are not using gcc.  */
@@ -43,8 +43,20 @@
 /* "auto_ptr" template class is not implemented in <memory> */
 #define HAVE_NO_AUTO_PTR 1
 
+/* SYBASE libraries are available */
+/* #undef HAVE_LIBSYBASE */
+
+/* NCBI C Toolkit libs are available */
+/* #undef HAVE_NCBI_C */
+
 /* Fast-CGI library is available */
 /* #undef HAVE_LIBFASTCGI */
+
+/* NCBI SSS DB library is available */
+/* #undef HAVE_LIBSSSDB */
+
+/* NCBI PubMed libraries are available */
+/* #undef HAVE_PUBMED */
 
 /* New C++ streams dont have ios_base:: */
 /* #undef HAVE_NO_IOS_BASE */
