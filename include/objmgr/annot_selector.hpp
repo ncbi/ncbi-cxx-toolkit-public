@@ -97,10 +97,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     };
 
     SAnnotSelector(TAnnotType annot = CSeq_annot::C_Data::e_not_set,
-                   TFeatType  feat  = CSeqFeatData::e_not_set);
-    SAnnotSelector(TFeatType  feat);
-    SAnnotSelector(TAnnotType annot, TFeatType  feat, bool feat_product);
-    SAnnotSelector(TFeatType  feat, bool feat_product);
+                   TFeatType  feat  = CSeqFeatData::e_not_set,
+                   bool       feat_product = false);
+    SAnnotSelector(TFeatType  feat,
+                   bool       feat_product = false);
     SAnnotSelector(const SAnnotSelector& sel);
     SAnnotSelector& operator=(const SAnnotSelector& sel);
     ~SAnnotSelector(void);
@@ -409,6 +409,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/12/13 17:02:24  grichenk
+* Removed redundant constructors
+*
 * Revision 1.38  2004/11/22 16:04:06  grichenk
 * Fixed/added doxygen comments
 *

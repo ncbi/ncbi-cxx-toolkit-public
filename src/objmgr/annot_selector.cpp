@@ -54,45 +54,8 @@ BEGIN_SCOPE(objects)
 //
 
 SAnnotSelector::SAnnotSelector(TAnnotType annot,
-                               TFeatType feat)
-    : SAnnotTypeSelector(annot),
-      m_FeatProduct(false),
-      m_ResolveDepth(kMax_Int),
-      m_OverlapType(eOverlap_Intervals),
-      m_ResolveMethod(eResolve_TSE),
-      m_SegmentSelect(eSegmentSelect_All),
-      m_SortOrder(eSortOrder_Normal),
-      m_LimitObjectType(eLimit_None),
-      m_UnresolvedFlag(eIgnoreUnresolved),
-      m_MaxSize(kMax_UInt),
-      m_NoMapping(false),
-      m_AdaptiveDepth(false)
-{
-    if ( feat != CSeqFeatData::e_not_set ) {
-        SetFeatType(feat);
-    }
-}
-
-SAnnotSelector::SAnnotSelector(TFeatType feat)
-    : SAnnotTypeSelector(feat),
-      m_FeatProduct(false),
-      m_ResolveDepth(kMax_Int),
-      m_OverlapType(eOverlap_Intervals),
-      m_ResolveMethod(eResolve_TSE),
-      m_SegmentSelect(eSegmentSelect_All),
-      m_SortOrder(eSortOrder_Normal),
-      m_LimitObjectType(eLimit_None),
-      m_UnresolvedFlag(eIgnoreUnresolved),
-      m_MaxSize(kMax_UInt),
-      m_NoMapping(false),
-      m_AdaptiveDepth(false)
-{
-}
-
-
-SAnnotSelector::SAnnotSelector(TAnnotType annot,
-                               TFeatType feat,
-                               bool feat_product)
+                               TFeatType  feat,
+                               bool       feat_product)
     : SAnnotTypeSelector(annot),
       m_FeatProduct(feat_product),
       m_ResolveDepth(kMax_Int),
@@ -111,8 +74,9 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
     }
 }
 
+
 SAnnotSelector::SAnnotSelector(TFeatType feat,
-                               bool feat_product)
+                               bool      feat_product)
     : SAnnotTypeSelector(feat),
       m_FeatProduct(feat_product),
       m_ResolveDepth(kMax_Int),
@@ -632,6 +596,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/12/13 17:02:24  grichenk
+* Removed redundant constructors
+*
 * Revision 1.17  2004/11/04 19:21:18  grichenk
 * Marked non-handle versions of SetLimitXXXX as deprecated
 *
