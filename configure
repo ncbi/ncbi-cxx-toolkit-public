@@ -873,6 +873,7 @@ Optional Packages:
  --with-extra-action=    script to call after the configuration is complete
  --with-autodep          automatic generation of dependencies (GNU make)
  --with-build-root=DIR   specify a non-default build directory name
+ --with-fake-root=DIR    appear to have been built under DIR
  --without-suffix        no Release/Debug, MT or DLL sfx in the build dir name
  --with-hostspec         add full host specs to the build dir name
  --without-version       don't always include the cplr ver in the bd name
@@ -1025,11 +1026,12 @@ case $srcdir in
 esac
 # Don't blindly perform a `cd "$ac_dir"/$ac_foo && $smart_pwd` since $ac_foo can be
 # absolute.
-ac_abs_builddir=`cd "$ac_dir" && $smart_pwd`
-ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
-ac_builddir=$ac_abs_top_builddir/build # Much more useful than "."!
-ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
-ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
+ac_abs_builddir=`set -P 2>/dev/null; cd "$ac_dir" && $smart_pwd`
+ac_abs_top_builddir=`set -P 2>/dev/null; cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
+#ac_builddir=$ac_top_builddir/build # Much more useful than "."!
+ac_builddir=$builddir
+ac_abs_srcdir=`set -P 2>/dev/null; cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
+ac_abs_top_srcdir=`set -P 2>/dev/null; cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 
     cd $ac_dir
     # Check for guested configure; otherwise get Cygnus style configure.
@@ -1530,6 +1532,12 @@ fi;
 # Check whether --with-build-root or --without-build-root was given.
 if test "${with_build_root+set}" = set; then
   withval="$with_build_root"
+
+fi;
+
+# Check whether --with-fake-root or --without-fake-root was given.
+if test "${with_fake_root+set}" = set; then
+  withval="$with_fake_root"
 
 fi;
 
@@ -2084,7 +2092,7 @@ echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >
    { (exit 1); exit 1; }; }
       ;;
 
-      --with-extra-action=* | --with-build-root=* \
+      --with-extra-action=* | --with-build-root=* | --with-fake-root=* \
       | --with-projects=* | --with-check=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* \
@@ -5030,6 +5038,9 @@ case "${build_root}" in
    ;;
    *  ) build_root="`(cd ${build_root}; $smart_pwd)`" ;;
 esac
+if test -n "$with_fake_root"; then
+   build_root=$with_fake_root/`basename $build_root`
+fi
 
 
 #### Set runpath (may depend on build root)
@@ -5149,6 +5160,9 @@ case "${srcdir}" in
    ;;
    * ) srcdir="`(cd ${srcdir}; $smart_pwd)`" ;;
 esac
+if test -n "$with_fake_root"; then
+   srcdir=$build_root/..
+fi
 
 
 #### Source, include, and build directories
@@ -19808,7 +19822,7 @@ echo "$as_me: looking for configurables below $srcdir..." >&6;}
 excl_file="`pwd`/config.tmp.$$"
 echo "NoConfProjects $NoConfProjects" | sed 's% \([^ ][^ ]*\)%\
 ^\\./\1/%g' > $excl_file
-configurables=`cd "${srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
+configurables=`set -P 2>/dev/null; cd "${srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
 rm $excl_file
 
 if test -z "$configurables" ; then
@@ -21032,11 +21046,12 @@ case $srcdir in
 esac
 # Don't blindly perform a `cd "$ac_dir"/$ac_foo && $smart_pwd` since $ac_foo can be
 # absolute.
-ac_abs_builddir=`cd "$ac_dir" && $smart_pwd`
-ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
-ac_builddir=$ac_abs_top_builddir/build # Much more useful than "."!
-ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
-ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
+ac_abs_builddir=`set -P 2>/dev/null; cd "$ac_dir" && $smart_pwd`
+ac_abs_top_builddir=`set -P 2>/dev/null; cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
+#ac_builddir=$ac_top_builddir/build # Much more useful than "."!
+ac_builddir=$builddir
+ac_abs_srcdir=`set -P 2>/dev/null; cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
+ac_abs_top_srcdir=`set -P 2>/dev/null; cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 
 
   case $INSTALL in
@@ -21401,11 +21416,12 @@ case $srcdir in
 esac
 # Don't blindly perform a `cd "$ac_dir"/$ac_foo && $smart_pwd` since $ac_foo can be
 # absolute.
-ac_abs_builddir=`cd "$ac_dir" && $smart_pwd`
-ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
-ac_builddir=$ac_abs_top_builddir/build # Much more useful than "."!
-ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
-ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
+ac_abs_builddir=`set -P 2>/dev/null; cd "$ac_dir" && $smart_pwd`
+ac_abs_top_builddir=`set -P 2>/dev/null; cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
+#ac_builddir=$ac_top_builddir/build # Much more useful than "."!
+ac_builddir=$builddir
+ac_abs_srcdir=`set -P 2>/dev/null; cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
+ac_abs_top_srcdir=`set -P 2>/dev/null; cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 
 
   { echo "$as_me:$LINENO: executing $ac_dest commands" >&5

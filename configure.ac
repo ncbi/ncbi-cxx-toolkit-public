@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.306 2004/07/06 16:05:32 ucko Exp $
+#  $Id: configure.ac,v 1.307 2004/07/19 14:49:56 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -106,6 +106,8 @@ AC_ARG_WITH(autodep,
    [ --with-autodep          automatic generation of dependencies (GNU make)])
 AC_ARG_WITH(build-root,
    [ --with-build-root=DIR   specify a non-default build directory name])
+AC_ARG_WITH(fake-root,
+   [ --with-fake-root=DIR    appear to have been built under DIR])
 AC_ARG_WITH(suffix,
    [ --without-suffix        no Release/Debug, MT or DLL sfx in the build dir name])
 AC_ARG_WITH(hostspec,
@@ -323,7 +325,7 @@ for x_arg in "$@" ; do
       AC_MSG_ERROR(["  $x_arg:  requires value;  use --help to show usage"])
       ;;
 
-      --with-extra-action=* | --with-build-root=* \
+      --with-extra-action=* | --with-build-root=* | --with-fake-root=* \
       | --with-projects=* | --with-check=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* \
@@ -1416,6 +1418,9 @@ case "${build_root}" in
    ;;
    *  ) build_root="`(cd ${build_root}; $smart_pwd)`" ;;
 esac
+if test -n "$with_fake_root"; then
+   build_root=$with_fake_root/`basename $build_root`
+fi
 
 
 #### Set runpath (may depend on build root)
@@ -1533,6 +1538,9 @@ case "${srcdir}" in
    ;;
    * ) srcdir="`(cd ${srcdir}; $smart_pwd)`" ;;
 esac
+if test -n "$with_fake_root"; then
+   srcdir=$build_root/..
+fi
 
 
 #### Source, include, and build directories
@@ -3880,7 +3888,7 @@ changequote(<<, >>)dnl
 echo "NoConfProjects $NoConfProjects" | sed 's% \([^ ][^ ]*\)%\
 ^\\./\1/%g' > $excl_file
 changequote([, ])dnl
-configurables=`cd "${srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
+configurables=`set -P 2>/dev/null; cd "${srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
 rm $excl_file
 
 if test -z "$configurables" ; then
