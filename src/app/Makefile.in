@@ -3,7 +3,8 @@
 # Miscellaneous applications
 #################################
 
-SUB_PROJ = sample id1_fetch cn3d
+SUB_PROJ = sample id1_fetch
+EXPENDABLE_SUB_PROJ = cn3d
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
