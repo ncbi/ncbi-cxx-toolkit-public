@@ -186,17 +186,17 @@ int DPApp::Run(void)
             << " for " << alignment->nBlocks << " blocks");
         unsigned int block;
         for (block=alignment->firstBlock; block<alignment->firstBlock+alignment->nBlocks; block++) {
+            unsigned int
+                subjectStart = blocks->blockPositions[block],
+                queryStart = alignment->blockPositions[block - alignment->firstBlock],
+                blockSize = blocks->blockSizes[block];
             INFO_MESSAGE(
                 "Block " << (block + 1) << ", score " 
                 << ScoreByBlosum62(block, alignment->blockPositions[block]) << ":\n"
-                << "S: " << subject.substr(blocks->blockPositions[block], blocks->blockSizes[block])
-                << ' ' << (blocks->blockPositions[block] + 1) << '-'
-                << (blocks->blockPositions[block] + blocks->blockSizes[block]) << '\n'
-                << "Q: " << query.substr(
-                    alignment->blockPositions[block - alignment->firstBlock], 
-                    blocks->blockSizes[block - alignment->firstBlock])
-                << ' ' << (alignment->blockPositions[block - alignment->firstBlock] + 1) << '-'
-                << (alignment->blockPositions[block - alignment->firstBlock] + blocks->blockSizes[block])
+                << "S: " << subject.substr(subjectStart, blockSize)
+                << ' ' << (subjectStart + 1) << '-' << (subjectStart + blockSize) << '\n'
+                << "Q: " << query.substr(queryStart, blockSize)
+                << ' ' << (queryStart + 1) << '-' << (queryStart + blockSize)
             );
             
         }
@@ -233,6 +233,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/06/18 22:06:03  thiessen
+* simplify alignment printout code
+*
 * Revision 1.3  2003/06/18 21:46:10  thiessen
 * add traceback, alignment return structure
 *
