@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/09/06 13:25:36  vasilche
+* Fixed cast error on Sun
+*
 * Revision 1.27  2002/09/05 21:21:44  vasilche
 * Added mutex for items map
 *
@@ -265,10 +268,11 @@ CItemsInfo::GetItemsByOffset(void) const
 pair<TMemberIndex, const CItemsInfo::TItemsByTag*>
 CItemsInfo::GetItemsByTagInfo(void) const
 {
-    pair<TMemberIndex, const TItemsByTag*> ret(m_ZeroTagIndex, m_ItemsByTag.get());
+    typedef pair<TMemberIndex, const TItemsByTag*> TReturn;
+    TReturn ret(m_ZeroTagIndex, m_ItemsByTag.get());
     if ( ret.first == kInvalidMember && ret.second == 0 ) {
         CFastMutexGuard GUARD(s_ItemsMapMutex);
-        ret = make_pair(m_ZeroTagIndex, m_ItemsByTag.get());
+        ret = TReturn(m_ZeroTagIndex, m_ItemsByTag.get());
         if ( ret.first == kInvalidMember && ret.second == 0 ) {
             {
                 CIterator i(*this);
