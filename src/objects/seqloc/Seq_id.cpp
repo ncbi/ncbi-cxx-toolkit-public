@@ -981,6 +981,9 @@ CSeq_id::CSeq_id( const string& the_id )
         getline( myin, name_in );
         x_Init( the_type, acc_in, name_in );
         return;
+    } else if ( the_type == CSeq_id::e_Gi ) {
+        x_Init( the_type, acc_in );
+        return;
     }
 
     if ( getline(myin, name_in, '|') ) {
@@ -1343,6 +1346,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.60  2003/08/22 15:16:48  dondosha
+ * Correction in CSeq_id constructor, to allow id strings starting with a gi id
+ *
  * Revision 6.59  2003/08/11 14:37:20  ucko
  * IdentifyAccession: "CG" is GenBank GSS.
  *
