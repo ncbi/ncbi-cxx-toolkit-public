@@ -121,6 +121,7 @@ static const string k_StructureOverviewUrl = "<a href=\"http://www.ncbi.nlm.nih.
 
 static const string k_GeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=geo&term=%d[gi]\"><img border=0 height=16 width=16 src=\"/blast/images/G.gif\" alt=\"Geo\"></a>";
 
+static const string k_Bl2seqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/blast/bl2seq/wblast2.cgi?PROGRAM=tblastx&WORD=3&RID=%s&ONE=%s&TWO=%s\">Get TBLASTX alignments</a>";
 
 //Constructor
 CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, list <SeqlocInfo*>& maskSeqloc, list <FeatureInfo*>& externalFeature, const int matrix[][kPMatrixSize], CScope& scope) : m_SeqalignSetRef(&seqalign), m_Seqloc(maskSeqloc), m_QueryFeature(externalFeature), m_Scope(scope) {
@@ -352,7 +353,7 @@ static int s_getFrame (int start, ENa_strand strand, const CSeq_id& id, CScope& 
   if (strand == eNa_strand_plus) {
     frame = (start % 3) + 1;
   } else if (strand == eNa_strand_minus) {
-    frame = -((sp.GetBioseqHandle(id).GetBioseqCore()->GetInst().GetLength() - start - 1) % 3 + 1);
+    frame = -((sp.GetBioseqHandle(id).GetBioseqLength() - start - 1) % 3 + 1);
    
   }
   return frame;
@@ -956,8 +957,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
   if(!(m_AlignOption & eMasterAnchored) && (m_AlignOption & eShowCdsFeature || m_AlignOption & eShowGeneFeature)){
       m_FeatObj = CObjectManager::GetInstance();
       CGBDataLoader::RegisterInObjectManager(*m_FeatObj);
-    m_featScope = new CScope(*m_FeatObj);  //for seq feature fetch
-    m_featScope->AddDefaults();	     
+      m_featScope = new CScope(*m_FeatObj);  //for seq feature fetch
+      m_featScope->AddDefaults();	     
   }	
  
   setDbGi(); //for whether to add get sequence feature
@@ -1283,7 +1284,7 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, int u
                 if(m_AlignOption&eLinkout){
                     out <<" ";
                     AddLinkout(*(bspHandle.GetBioseqCore()), (**iter), firstGi, gi, out);
-                    if((int)bspHandle.GetBioseqCore()->GetInst().GetLength() > k_GetSubseqThreshhold){
+                    if((int)bspHandle.GetBioseqLength() > k_GetSubseqThreshhold){
                         string dumpGnlUrl = getDumpgnlLink((*iter)->GetSeqid(), 1, k_DumpGnlUrl);
                         out<<dumpGnlUrl<<"<img border=0 height=16 width=16 src=\"/blast/images/D.gif\" alt=\"Download subject sequence spanning the HSP\"></a>";
                     }
@@ -2006,16 +2007,29 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out, list<alnInfo*>& av
     const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
     if(isFirstAlnInList && (m_AlignOption&eShowBlastInfo)) {
       PrintDefLine(bsp_handle, (*iterAv)->use_this_gi, out);
-      out<<"          Length="<<bsp_handle.GetBioseqCore()->GetInst().GetLength()<<endl<<endl;
-      
+      out<<"          Length="<<bsp_handle.GetBioseqLength()<<endl;
+      if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo) && (m_AlignOption&eShowBl2seqLink)) {
+          const CBioseq_Handle& query_handle=m_AV->GetBioseqHandle(0);
+          const CBioseq_Handle& subject_handle=m_AV->GetBioseqHandle(1);
+          const CSeq_id& query_seqid = GetId(query_handle, eGetId_Best);
+          const CSeq_id& subject_seqid = GetId(subject_handle, eGetId_Best);
+          int query_gi = FindGi(query_handle.GetBioseqCore()->GetId());   
+          int subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
+          
+          char buffer[512];
+          
+          sprintf(buffer, k_Bl2seqUrl.c_str(), m_Rid.c_str(), query_gi > 0 ? NStr::IntToString(query_gi).c_str():query_seqid.AsFastaString().c_str(), subject_gi > 0 ? NStr::IntToString(subject_gi).c_str():subject_seqid.AsFastaString().c_str()); 
+          out << buffer << endl;
+      }
+      out << endl;
+    }
+
+    if (m_AlignOption&eShowBlastInfo) {
+        out<<" Score = "<<(*iterAv)->bits<<" ";
+        out<<"bits ("<<(*iterAv)->score<<"),"<<"  ";
+        out<<"Expect = "<<(*iterAv)->eValue<<endl;
     }
     
-    if (m_AlignOption&eShowBlastInfo) {
-      
-      out<<" Score = "<<(*iterAv)->bits<<" ";
-      out<<"bits ("<<(*iterAv)->score<<"),"<<"  ";
-      out<<"Expect = "<<(*iterAv)->eValue<<endl;
-    }
     DisplayAlnvec(out);
     out<<endl;
     isFirstAlnInList = false;
@@ -2029,6 +2043,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.39  2004/07/22 15:45:26  jianye
+*Added Bl2seq link
+*
 *Revision 1.38  2004/07/21 15:51:26  grichenk
 *CObjectManager made singleton, GetInstance() added.
 *CXXXXDataLoader constructors made private, added
