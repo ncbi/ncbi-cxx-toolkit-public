@@ -265,7 +265,7 @@ private:
         }
     };
 
-    friend CCacheTransaction;
+    friend class CCacheTransaction;
 
     /// Cache accession for internal in-memory storage
     ///
@@ -400,6 +400,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/08/09 15:12:51  vasilche
+ * Fixed syntax error.
+ *
  * Revision 1.25  2004/08/09 14:26:33  kuznets
  * Add delayed attribute update (performance opt.)
  *
