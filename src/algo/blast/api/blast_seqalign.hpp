@@ -52,22 +52,22 @@ USING_SCOPE(objects);
  * query concatenation).
  * @param results results from running the BLAST algorithm [in]
  * @param prog type of BLAST program [in]
- * @param query_seqids list of sequence identifiers (to allow query
- * concatenation) [in]
+ * @param query All query sequences [in]
  * @param bssp handle to BLAST Sequence Source ADT [in]
- * @param subject_seqid sequence identifier (for 2 sequences search) [in]
+ * @param subject Subject sequence (for 2 sequences search) [in]
  * @param score_options contains scoring options [in]
  * @param sbp scoring and statistical information [in]
+ * @param is_gapped Was this a gapped search? [in]
  * @return set of CSeq_align objects
  */
 CRef<CSeq_align_set>
-BLAST_Results2CppSeqAlign(const BlastResults* results, 
+BLAST_Results2CSeqAlign(const BlastResults* results, 
                           CBlastOption::EProgram prog,
-                          vector< CConstRef<CSeq_id> >& query_seqids, 
+                          TSeqLocVector &query, 
                           const BlastSeqSrc* bssp, 
-                          const CSeq_id* subject_seqid,
+                          const TSeqLoc* subject,
                           const BlastScoringOptions* score_options, 
-                          const BlastScoreBlk* sbp);
+                          const BlastScoreBlk* sbp, bool is_gapped);
 
 
 END_NCBI_SCOPE
@@ -76,6 +76,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/08/15 15:54:55  dondosha
+* Pass seqloc-scope pairs to results2seqalign conversion functions
+*
 * Revision 1.10  2003/08/12 19:18:45  dondosha
 * Use TSeqLocVector type in functions
 *
