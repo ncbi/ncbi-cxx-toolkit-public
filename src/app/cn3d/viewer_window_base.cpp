@@ -47,6 +47,7 @@
 #include "cn3d_threader.hpp"
 #include "alignment_manager.hpp"
 #include "cn3d_tools.hpp"
+#include "pattern_dialog.hpp"
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
@@ -356,16 +357,25 @@ void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
 {
     // remember previous pattern
     static wxString previousPattern;
+    static wxString previousMode("Replace");
 
     // get pattern from user
-    wxString pattern = wxGetTextFromUser("Enter a pattern using ProSite syntax:",
-        "Input pattern", previousPattern, this);
-    if (pattern.size() == 0) return;
+    PatternDialog dialog(this);
+    dialog.m_Pattern->SetValue(previousPattern);
+    dialog.m_Pattern->SetSelection(-1, -1);
+    dialog.m_Mode->SetStringSelection(previousMode);
+    int status = dialog.ShowModal();
+    wxString pattern = dialog.m_Pattern->GetValue();
+    if (status != wxID_OK || pattern.size() == 0)
+        return;
+
     // add trailing period if not present (convenience for the user)
     if (pattern[pattern.size() - 1] != '.') pattern += '.';
     previousPattern = pattern;
+    previousMode = dialog.m_Mode->GetStringSelection();
 
-    GlobalMessenger()->RemoveAllHighlights(true);
+    if (dialog.m_Mode->GetStringSelection() == "Replace")
+        GlobalMessenger()->RemoveAllHighlights(true);
 
     // highlight pattern from each (unique) sequence in the display
     map < const Sequence * , bool > usedSequences;
@@ -407,6 +417,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2004/10/01 15:13:20  thiessen
+* use new pattern dialog from DialogBlocks
+*
 * Revision 1.53  2004/09/27 21:40:46  thiessen
 * add highlight cache
 *

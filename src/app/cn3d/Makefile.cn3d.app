@@ -42,6 +42,7 @@ SRC = \
 	multitext_dialog \
 	object_3d \
 	opengl_renderer \
+	pattern_dialog \
 	periodic_table \
 	preferences_dialog \
 	progress_meter \
