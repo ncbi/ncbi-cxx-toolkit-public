@@ -126,15 +126,18 @@ void CGenbankFormatter::FormatLocus
     string topology = (locus.GetTopology() == CSeq_inst::eTopology_circular) ?
                 "circular" : "linear  ";
 
-    locus_line 
-        << left << setw(16) << locus.GetName()
-        << ' '
-        << right << setw(11) << locus.GetLength()
+    locus_line.setf(IOS_BASE::left, IOS_BASE::adjustfield);
+    locus_line << setw(16) << locus.GetName() << ' ';
+    locus_line.setf(IOS_BASE::right, IOS_BASE::adjustfield);
+    locus_line
+        << setw(11) << locus.GetLength()
         << ' '
         << units
         << ' '
-        << strands[locus.GetStrand()]
-        << left << setw(6) << s_GenbankMol[locus.GetBiomol()]
+        << strands[locus.GetStrand()];
+    locus_line.setf(IOS_BASE::left, IOS_BASE::adjustfield);
+    locus_line
+        << setw(6) << s_GenbankMol[locus.GetBiomol()]
         << "  "
         << topology
         << ' '              
@@ -726,6 +729,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/12/18 21:23:41  ucko
+* Avoid using LEFT and RIGHT manipulators lacking in GCC 2.9x.
+*
 * Revision 1.2  2003/12/18 17:43:34  shomrat
 * context.hpp moved
 *
