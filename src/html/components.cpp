@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/09 23:00:53  lewisg
+* use new cgiapp class
+*
 * Revision 1.3  1998/12/08 00:33:42  lewisg
 * cleanup
 *
@@ -50,13 +53,7 @@ BEGIN_NCBI_SCOPE
 
 
 
-CQueryBox::CQueryBox()
-{
-    m_Comments = NULL;
-}
-
-
-CQueryBox::~CQueryBox() { delete m_Comments; }
+CQueryBox::CQueryBox(): m_Comments(0) {}
 
 
 CHTMLNode * CQueryBox::CreateComments(void)
@@ -67,7 +64,7 @@ CHTMLNode * CQueryBox::CreateComments(void)
 
 void CQueryBox::InitMembers(int style)
 {  
-    m_Width = "400";
+    m_Width = 400;
     m_BgColor = "#CCCCCFF";
     m_DispMax = "dispmax";
     m_DefaultDispMax = "20";
@@ -123,7 +120,7 @@ void CQueryBox::Finish(int style)
 
    
 
-	CHTML_table * table = new CHTML_table(m_BgColor, m_Width, "0", "5", 1, 1);
+	CHTML_table * table = new CHTML_table(m_BgColor,CHTMLHelper::IntToString(m_Width), "0", "5", 1, 1);
 	form->AppendChild(table);
     
 	table->InsertInTable(1, 1, new CHTML_input("text", m_TermName, "", "30")); // todo: the width calculation
@@ -148,5 +145,62 @@ void CQueryBox::Finish(int style)
         throw;
     }
 }
+
+
+// pager
+
+void CButtonList::Finish(int Style)
+{
+    CHTML_select * Select = new CHTML_select(m_Select);
+    map < string, string >::iterator iMap;
+
+    try {
+	AppendChild(new CHTML_input("submit", m_Name));
+	AppendChild(Select);
+	for(iMap = m_List.begin(); iMap != m_List.end(); iMap++)
+	    Select->AppendOption((*iMap).second, iMap == m_List.begin(), (*iMap).first);
+    }
+    catch (...) {
+	delete Select;
+    }
+}
+
+
+void CPageList::Finish(int Style)
+{
+    map < int, string >::iterator iMap;
+
+    AppendChild(new CHTML_a(m_Backward, "&lt;&lt;"));
+    for(iMap = m_Pages.begin(); iMap != m_Pages.end(); iMap++)
+	AppendChild(new CHTML_a((*iMap).second, CHTMLHelper::IntToString((*iMap).first)));
+    AppendChild(new CHTML_a(m_Forward, "&gt;&gt;"));
+}
+
+
+CPagerBox::CPagerBox(): m_NumResults(0), m_Width(0), m_TopButton(0), m_LeftButton(0), m_RightButton(0),  m_PageList(0)  {}
+
+
+void CPagerBox::InitMembers(int)
+{
+    if(!m_TopButton)  m_TopButton = new CButtonList;
+    if(!m_LeftButton) m_LeftButton = new CButtonList;
+    if(!m_RightButton) m_RightButton = new CButtonList;
+    if(!m_PageList) m_PageList = new CPageList;
+}
+
+void CPagerBox::InitSubPages(int)
+{
+    if(m_TopButton)  m_TopButton->Create();
+    if(m_LeftButton) m_LeftButton->Create();
+    if(m_RightButton) m_RightButton->Create();
+    if(m_PageList) m_PageList->Create();
+}
+
+
+void CPagerBox::Finish(int)
+{
+
+}
+
 
 END_NCBI_SCOPE

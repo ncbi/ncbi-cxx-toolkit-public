@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/09 22:59:05  lewisg
+* use new cgiapp class
+*
 * Revision 1.6  1998/12/09 17:27:44  sandomir
 * tool should be changed to work with the new CCgiApplication
 *
@@ -83,6 +86,21 @@ protected:
   CNcbiIstream* m_Istr;
   bool          m_Iase; // indexes_as_entries
 };
+
+
+//
+// blame lewisg for the below
+//
+
+class CSimpleCgiApp: public CCgiApplication {
+public:
+    CSimpleCgiApp(int argc=0, char** argv=0,
+                  CNcbiIstream* istr=0, bool indexes_as_entries=true);
+    virtual void Init(void);
+    virtual int Run(void);  // to be defined by user
+    TCgiEntries m_CgiEntries;
+};
+
 
 END_NCBI_SCOPE
 

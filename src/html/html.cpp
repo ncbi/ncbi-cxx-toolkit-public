@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/09 23:00:54  lewisg
+* use new cgiapp class
+*
 * Revision 1.6  1998/12/08 00:33:43  lewisg
 * cleanup
 *
@@ -84,6 +87,16 @@ string & CHTMLHelper::HTMLEncode(string & input)
     }
     return input;
 }
+
+
+string CHTMLHelper::IntToString(int Input)
+{
+    CNcbiOstrstream ostream;
+    ostream << Input << '\0';
+    return ostream.str();
+}
+
+
 
 
 CHTMLNode::CHTMLNode(void): m_Name("") {}

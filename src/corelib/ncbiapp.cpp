@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1998/12/09 22:59:35  lewisg
+* use new cgiapp class
+*
 * Revision 1.9  1998/12/09 19:24:36  vakatov
 * typo fixed
 *
@@ -144,5 +147,19 @@ void CCgiApplication::Exit(void)
     CNcbiApplication::Exit();
 }
 
+//
+// Simple Cgi App
+//
+
+CSimpleCgiApp::CSimpleCgiApp(int argc, char ** argv, CNcbiIstream * istr,
+		       bool indexes_as_entries):
+    CCgiApplication(argc, argv, istr, indexes_as_entries)
+{}
+
+void CSimpleCgiApp::Init(void)
+{
+CCgiApplication::Init();
+m_CgiEntries = m_CgiRequest->GetEntries();
+}
 
 END_NCBI_SCOPE
