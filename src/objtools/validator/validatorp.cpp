@@ -418,7 +418,6 @@ void CValidError_imp::Validate(const CSeq_entry& se, const CCit_sub* cs)
     for (CTypeConstIterator <CSeq_descr> ei (se); ei; ++ei) {
         descr_validator.ValidateSeqDescr(*ei);
     }
-    
 }
 
 
@@ -1150,7 +1149,7 @@ void CValidError_imp::ValidateSeqLoc
     }
 
     // Check for mixed strand on segmented Bioseq
-    if ( IsMixedStrands(seq, loc) ) {
+    if ( IsMixedStrands(loc) ) {
         if (loc_lbl.empty()) {
             loc.GetLabel(&loc_lbl);
         }
@@ -1333,7 +1332,7 @@ const CSeq_entry* CValidError_imp::GetAncestor
 // =============================================================================
 
 
-bool CValidError_imp::IsMixedStrands(const CBioseq& seq, const CSeq_loc& loc)
+bool CValidError_imp::IsMixedStrands(const CSeq_loc& loc)
 {
     if ( SeqLocCheck(loc, m_Scope) == eSeqLocCheck_warning ) {
         return false;
@@ -1346,7 +1345,6 @@ bool CValidError_imp::IsMixedStrands(const CBioseq& seq, const CSeq_loc& loc)
     CSeq_loc_CI prev = curr;
     ++curr;
     
-
     while ( curr ) {
         ENa_strand curr_strand = curr.GetStrand();
         ENa_strand prev_strand = prev.GetStrand();
@@ -1705,6 +1703,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/02/07 21:14:01  shomrat
+* IsMixedStrands signature changed
+*
 * Revision 1.13  2003/02/04 01:41:24  ucko
 * Fix compilation errors caused by trying to return a pointer as a CRef
 * without explicit conversion (required these days).
