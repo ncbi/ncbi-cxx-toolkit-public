@@ -61,22 +61,14 @@ public:
     /// another version of it (not necessarily a newer one)
     /// @sa Store(), GetWriteStream()
     enum EKeepVersions {
-        // Do not delete other versions of the BLOB from the cache
+        /// Do not delete other versions of the BLOB from the cache
         eKeepAll,
-        // Delete the earlier (than the one being stored) versions of
-        // the BLOB
+        /// Delete the earlier (than the one being stored) versions of
+        /// the BLOB
         eDropOlder,
-        // Delete all versions of the BLOB, even those which are newer
-        // than the one being stored
+        /// Delete all versions of the BLOB, even those which are newer
+        /// than the one being stored
         eDropAll
-    };
-
-    /// If to keep at least the most recent version of the BLOB(s) being
-    /// purged -- even when it was last accessed earlier than the "access time"
-    /// @sa Purge()
-    enum EKeepLastVersion {
-        eKeepLast,  ///< Keep the most recent version of the BLOB, regardless
-        eDropAll    ///< Drop all versions last accessed before "access time"
     };
 
     /// Add or replace BLOB
@@ -156,7 +148,7 @@ public:
     /// newer than that which to keep in cache
     /// @param keep_last_version type of cleaning action
     virtual void Purge(time_t           access_time,
-                       EKeepLastVersion keep_last_version = eDropAll) = 0;
+                       EKeepVersions    keep_last_version = eDropAll) = 0;
     /// Delete BLOBs with access time older than specified
     /// 
     /// Function finds all BLOB versions with the specified key
@@ -167,14 +159,12 @@ public:
     /// @param keep_last_version type of cleaning action
     virtual void Purge(const string&    key,
                        time_t           access_time,
-                       EKeepLastVersion keep_last_version = eDropAll) = 0;
+                       EKeepVersions    keep_last_version = eDropAll) = 0;
 
 
     virtual ~IBLOB_Cache() {}
 };
 
-
-    virtual ~IBLOB_Cache(){}
 
 END_NCBI_SCOPE
 
@@ -182,6 +172,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/09/23 16:40:24  kuznets
+ * Fixed minor compilation errors
+ *
  * Revision 1.5  2003/09/23 16:20:31  kuznets
  * "Doxygenized" header comments.
  *
