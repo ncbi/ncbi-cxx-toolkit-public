@@ -277,7 +277,7 @@ CObject::~CObject(void)
 }
 
 
-void CObject::AddReferenceOverflow(TCount count) const
+void CObject::CheckReferenceOverflow(TCount count) const
 {
     if ( ObjectStateValid(count) ) {
         // counter overflow
@@ -398,6 +398,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2003/08/12 12:06:58  siyan
+ * Changed name of implementation for AddReferenceOverflow(). It is now
+ * CheckReferenceOverflow().
+ *
  * Revision 1.37  2003/07/17 23:01:32  vasilche
  * Added matching operator delete.
  *
