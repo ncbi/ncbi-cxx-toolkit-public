@@ -64,7 +64,18 @@ NCBI_XNCBI_EXPORT extern const char *const kEmptyCStr;
 
 
 /// Empty "C++" string.
-#ifndef NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN) || ( defined(NCBI_OS_LINUX)  &&  defined(NCBI_COMPILER_GCC) )
+class CNcbiEmptyString
+{
+public:
+    /// Get string.
+    static const string& Get(void)
+    {
+        static string empty_str;
+        return empty_str;
+    }
+};
+#else
 class NCBI_XNCBI_EXPORT CNcbiEmptyString
 {
 public:
@@ -76,23 +87,11 @@ private:
     static const string& FirstGet(void);
     static const string* m_Str;     ///< Null string pointer.
 };
-#else  // NCBI_OS_MSWIN 
-class CNcbiEmptyString
-{
-public:
-    /// Get string.
-    static const string& Get(void)
-    {
-        static string empty_str;
-        return empty_str;
-    }
-};
-#endif // NCBI_OS_MSWIN
-/// Empty string definition.
-#define NcbiEmptyString NCBI_NS_NCBI::CNcbiEmptyString::Get()
+#endif // NCBI_OS_MSWIN....
 
-/// Empty string definition.
-#define kEmptyStr       NcbiEmptyString
+
+#define NcbiEmptyString NCBI_NS_NCBI::CNcbiEmptyString::Get()
+#define kEmptyStr NcbiEmptyString
 
 
 // SIZE_TYPE and NPOS
@@ -2155,15 +2154,14 @@ bool AStrEquiv(const Arg1& x, const Arg2& y, Pred pr)
 /////////////////////////////////////////////////////////////////////////////
 //  CNcbiEmptyString::
 //
-#ifndef NCBI_OS_MSWIN
+#if !defined(NCBI_OS_MSWIN) && !( defined(NCBI_OS_LINUX)  &&  defined(NCBI_COMPILER_GCC) )
 inline
 const string& CNcbiEmptyString::Get(void)
 {
     const string* str = m_Str;
     return str ? *str: FirstGet();
 }
-#endif // NCBI_OS_MSWIN
-
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2598,6 +2596,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.76  2005/02/16 15:04:35  ssikorsk
+ * Tweaked kEmptyStr with Linux GCC
+ *
  * Revision 1.75  2005/01/05 16:54:50  ivanov
  * Added string version of NStr::MatchesMask()
  *

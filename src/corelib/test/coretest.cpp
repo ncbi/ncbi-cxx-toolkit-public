@@ -96,7 +96,7 @@ static void TestRegistry(void)
     assert( sections.empty() );
 
     list<string> entries;
-    reg.EnumerateEntries(NcbiEmptyString, &entries);
+    reg.EnumerateEntries(kEmptyStr, &entries);
     assert( entries.empty() );
 
     // Compose a test registry
@@ -891,6 +891,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.93  2005/02/16 15:04:35  ssikorsk
+ * Tweaked kEmptyStr with Linux GCC
+ *
  * Revision 1.92  2004/09/22 16:57:35  ucko
  * Tweak TestThrowTrace to avoid confusing older GCC versions.
  *

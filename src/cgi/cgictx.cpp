@@ -170,7 +170,7 @@ const CCgiEntry& CCgiContext::GetRequestValue(const string& name,
         if ( is_found ) {
             *is_found = false;
         }
-        static const CCgiEntry kEmptyCgiEntry(kEmptyStr);
+        static const CCgiEntry kEmptyCgiEntry = kEmptyStr;
         return kEmptyCgiEntry;
     }
 
@@ -288,6 +288,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.40  2005/02/16 15:04:35  ssikorsk
+* Tweaked kEmptyStr with Linux GCC
+*
 * Revision 1.39  2004/08/04 15:56:28  vakatov
 * CCgiContext::CCgiContext() -- if the construction of CCgiRequest has
 * failed do not try to construct and use a "semi-dummy" CCgiRequest.

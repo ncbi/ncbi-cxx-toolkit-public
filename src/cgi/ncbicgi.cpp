@@ -1036,7 +1036,7 @@ const string& CCgiRequest::GetRandomProperty(const string& key, bool http)
 const CCgiEntry& CCgiRequest::GetEntry(const string& name, bool* is_found)
     const
 {
-    static const CCgiEntry kEmptyEntry(kEmptyStr);
+    static const CCgiEntry kEmptyEntry = kEmptyStr;
     TCgiEntriesCI it = GetEntries().find(name);
     bool x_found = (it != GetEntries().end());
     if ( is_found ) {
@@ -1283,6 +1283,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.83  2005/02/16 15:04:35  ssikorsk
+* Tweaked kEmptyStr with Linux GCC
+*
 * Revision 1.82  2005/02/03 19:40:28  vakatov
 * fIgnoreQueryString to affect cmd.-line arg as well
 *

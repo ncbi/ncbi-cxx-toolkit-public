@@ -54,15 +54,15 @@ std::string::size_type s_DiffPtr(const char* end, const char* start)
 
 const char *const kEmptyCStr = "";
 
-#ifndef NCBI_OS_MSWIN
+
+#if !defined(NCBI_OS_MSWIN) && !( defined(NCBI_OS_LINUX)  &&  defined(NCBI_COMPILER_GCC) )
 const string* CNcbiEmptyString::m_Str = 0;
 const string& CNcbiEmptyString::FirstGet(void) {
     static const string s_Str = "";
     m_Str = &s_Str;
     return s_Str;
 }
-#endif // NCBI_OS_MSWIN
-
+#endif
 
 bool NStr::IsBlank(const string& str)
 {
@@ -1695,6 +1695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.133  2005/02/16 15:04:35  ssikorsk
+ * Tweaked kEmptyStr with Linux GCC
+ *
  * Revision 1.132  2005/02/01 21:47:14  grichenk
  * Fixed warnings
  *
