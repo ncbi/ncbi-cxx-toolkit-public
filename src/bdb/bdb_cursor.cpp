@@ -219,8 +219,13 @@ void CBDB_FileCursor::ReOpen(CBDB_Transaction* trans)
     }
     m_DBC = m_Dbf.CreateCursor(trans);
 
-    From.m_Condition.ResetUnassigned();
-    To.m_Condition.ResetUnassigned();
+    try {
+        From.m_Condition.ResetUnassigned();
+        To.m_Condition.ResetUnassigned();
+    } catch (exception& ex) {
+        Close();
+        throw;
+    }
 }
 
 bool CBDB_FileCursor::IsOpen() const
@@ -533,6 +538,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/02/23 18:36:05  kuznets
+ * Minor tweak for better exception safety in cursors
+ *
  * Revision 1.17  2005/02/22 14:08:04  kuznets
  * Added cursor reopen functions
  *
