@@ -139,14 +139,14 @@ CSeq_feat_Handle::TRange CSeq_feat_Handle::GetRange(void) const
 }
 
 
-CSeq_id::TGi CSeq_feat_Handle::GetGi(void) const
+CSeq_id::TGi CSeq_feat_Handle::GetSNPGi(void) const
 {
     _ASSERT(m_AnnotInfoType == eType_Seq_annot_SNP_Info);
     return x_GetSNP_annot_Info().GetGi();
 }
 
 
-size_t CSeq_feat_Handle::GetAllelesCount(void) const
+size_t CSeq_feat_Handle::GetSNPAllelesCount(void) const
 {
     const SSNP_Info& snp = x_GetSNP_Info();
     size_t count = 0;
@@ -159,13 +159,12 @@ size_t CSeq_feat_Handle::GetAllelesCount(void) const
 }
 
 
-string CSeq_feat_Handle::GetAllele(size_t index) const
+const string& CSeq_feat_Handle::GetSNPAllele(size_t index) const
 {
     _ASSERT(index < SSNP_Info::kMax_AllelesCount);
     const SSNP_Info& snp = x_GetSNP_Info();
     _ASSERT(snp.m_AllelesIndices[index] != SSNP_Info::kNo_AlleleIndex);
-    return x_GetSNP_annot_Info().
-        x_GetAllele(snp.m_AllelesIndices[index]);
+    return x_GetSNP_annot_Info().x_GetAllele(snp.m_AllelesIndices[index]);
 }
 
 
@@ -175,6 +174,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/03/07 17:29:04  vasilche
+ * Added "SNP" to names of SNP access methods
+ *
  * Revision 1.7  2005/02/24 19:13:34  grichenk
  * Redesigned CMappedFeat not to hold the whole annot collector.
  *

@@ -133,11 +133,11 @@ public:
     typedef SSNP_Info::TWeight TWeight;
 
     TSNPId GetSNPId(void) const;
-    CSeq_id::TGi GetGi(void) const;
-    bool IsMinusStrand(void) const;
-    TWeight GetWeight(void) const;
-    size_t GetAllelesCount(void) const;
-    string GetAllele(size_t index) const;
+    CSeq_id::TGi GetSNPGi(void) const;
+    bool IsSNPMinusStrand(void) const;
+    TWeight GetSNPWeight(void) const;
+    size_t GetSNPAllelesCount(void) const;
+    const string& GetSNPAllele(size_t index) const;
 
 private:
     friend class CMappedFeat;
@@ -202,7 +202,7 @@ bool CSeq_feat_Handle::IsTableSNP(void) const
 
 
 inline
-bool CSeq_feat_Handle::IsMinusStrand(void) const
+bool CSeq_feat_Handle::IsSNPMinusStrand(void) const
 {
     return x_GetSNP_Info().MinusStrand();
 }
@@ -216,7 +216,7 @@ CSeq_feat_Handle::TSNPId CSeq_feat_Handle::GetSNPId(void) const
 
 
 inline
-CSeq_feat_Handle::TWeight CSeq_feat_Handle::GetWeight(void) const
+CSeq_feat_Handle::TWeight CSeq_feat_Handle::GetSNPWeight(void) const
 {
     return x_GetSNP_Info().m_Weight;
 }
@@ -442,14 +442,18 @@ const string& CSeq_feat_Handle::GetExcept_text(void) const
 inline
 CSeqFeatData::E_Choice CSeq_feat_Handle::GetFeatType(void) const
 {
-    return x_GetSeq_feat().GetData().Which();
+    return IsTableSNP()?
+        CSeqFeatData::e_Imp:
+        x_GetSeq_feat().GetData().Which();
 }
 
 
 inline
 CSeqFeatData::ESubtype CSeq_feat_Handle::GetFeatSubtype(void) const
 {
-    return x_GetSeq_feat().GetData().GetSubtype();
+    return IsTableSNP()?
+        CSeqFeatData::eSubtype_variation:
+        x_GetSeq_feat().GetData().GetSubtype();
 }
 
 
@@ -461,6 +465,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/03/07 17:29:04  vasilche
+* Added "SNP" to names of SNP access methods
+*
 * Revision 1.11  2005/02/25 15:58:42  grichenk
 * Added IsSetData()
 *
