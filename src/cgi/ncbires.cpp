@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/03/19 00:41:48  vakatov
+* CNcbiRelocateCommand::Execute() -- set status to 301 (Moved)
+*
 * Revision 1.28  2000/08/28 16:22:28  golikov
 * some _TRACEs removed
 *
@@ -245,6 +248,7 @@ void CNcbiRelocateCommand::Execute( CCgiContext& ctx )
     try {
         string url = GetLink(ctx);
         _TRACE("CNcbiRelocateCommand::Execute changing location to:" << url);
+        ctx.GetResponse().SetStatus(301, "Moved");
         ctx.GetResponse().SetHeaderValue("Location", url);
         ctx.GetResponse().WriteHeader();
     }
