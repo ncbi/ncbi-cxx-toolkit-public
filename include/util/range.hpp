@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/01/22 21:14:52  vasilche
+* Added missing typename.
+*
 * Revision 1.10  2003/01/22 20:05:24  vasilche
 * Simplified CRange<> implementation.
 * Removed special handling of Empty & Whole bounds.
@@ -342,7 +345,7 @@ class CRange : public COpenRange<Position>
 {
     typedef COpenRange<Position> TParent;
 public:
-    typedef TParent::position_type position_type;
+    typedef typename TParent::position_type position_type;
     typedef CRange<Position> TThisType;
 
     // constructors
