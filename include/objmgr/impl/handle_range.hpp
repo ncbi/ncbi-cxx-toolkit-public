@@ -100,6 +100,10 @@ public:
                           ENa_strand strand = eNa_strand_unknown) const;
 
 private:
+    // Strand checking methods
+    bool x_IncludesPlus(const ENa_strand& strand) const;
+    bool x_IncludesMinus(const ENa_strand& strand) const;
+
     static bool x_IntersectingStrands(ENa_strand str1, ENa_strand str2);
 
     TRanges        m_Ranges;
@@ -155,6 +159,23 @@ bool CHandleRange::IsSingleStrand(void) const
 
 
 inline
+bool CHandleRange::x_IncludesPlus(const ENa_strand& strand) const
+{
+    // Anything but "minus" includes "plus"
+    return strand != eNa_strand_minus;
+}
+
+
+inline
+bool CHandleRange::x_IncludesMinus(const ENa_strand& strand) const
+{
+    return strand == eNa_strand_minus
+        ||  strand == eNa_strand_both
+        ||  strand == eNa_strand_both_rev;
+}
+
+
+inline
 CHandleRange::TTotalRangeFlags CHandleRange::GetStrandsFlag(void) const
 {
     TTotalRangeFlags ret = 0;
@@ -170,10 +191,10 @@ CHandleRange::TTotalRangeFlags CHandleRange::GetStrandsFlag(void) const
         }
     }
     else {
-        if ( !IsReverse(m_Ranges.front().second) ) {
+        if ( x_IncludesPlus(m_Ranges.front().second) ) {
             ret |= eStrandPlus;
         }
-        if ( !IsForward(m_Ranges.front().second) ) {
+        if ( x_IncludesMinus(m_Ranges.front().second) ) {
             ret |= eStrandMinus;
         }
     }
@@ -187,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.21  2004/08/25 21:55:25  grichenk
+ * Fixed ranges splitting by strand.
+ *
  * Revision 1.20  2004/08/17 19:05:14  vasilche
  * Removed redundant comma.
  *

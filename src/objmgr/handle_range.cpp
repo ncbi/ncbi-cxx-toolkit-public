@@ -88,13 +88,13 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand)
             // Reorganize total ranges by strand
             TRange total_range = m_TotalRanges[0];
             total_range += m_TotalRanges[1];
-            if ( !IsReverse(m_Ranges.front().second) ) {
+            if ( x_IncludesPlus(m_Ranges.front().second) ) {
                 m_TotalRanges[0] = total_range;
             }
             else {
                 m_TotalRanges[0] = TRange::GetEmpty();
             }
-            if ( !IsForward(m_Ranges.front().second) ) {
+            if ( x_IncludesMinus(m_Ranges.front().second) ) {
                 m_TotalRanges[1] = total_range;
             }
             else {
@@ -104,7 +104,7 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand)
         }
         else if ( !m_IsCircular ) {
             // Circular location?
-            if ( !IsReverse(strand) ) {
+            if ( x_IncludesPlus(strand) ) {
                 m_IsCircular =
                     range.GetFrom() < m_Ranges.back().first.GetFrom();
             }
@@ -124,10 +124,10 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand)
     m_Ranges.push_back(TRanges::value_type(range, strand));
     if ( !m_IsCircular ) {
         // Regular location
-        if ( !IsReverse(strand) ) {
+        if ( x_IncludesPlus(strand) ) {
             m_TotalRanges[0] += range;
         }
-        if ( !IsForward(strand) ) {
+        if ( x_IncludesMinus(strand) ) {
             m_TotalRanges[1] += range;
         }
     }
@@ -276,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/08/25 21:55:25  grichenk
+* Fixed ranges splitting by strand.
+*
 * Revision 1.22  2004/08/16 18:00:40  grichenk
 * Added detection of circular locations, improved annotation
 * indexing by strand.
