@@ -42,6 +42,7 @@
 
 #include <objects/objmgr/impl/priority.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/objmgr/bioseq_handle.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <set>
@@ -72,7 +73,7 @@ class CSeqMatch_Info;
 class CSynonymsSet;
 class CBioseq_Handle;
 class CHandleRangeMap;
-class SAnnotTypeSelector;
+struct SAnnotTypeSelector;
 
 typedef CRef<CObject> TBlob_ID;
 
@@ -275,6 +276,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/04/24 17:24:57  vasilche
+* SAnnotSelector is struct.
+* Added include required by MS VC.
+*
 * Revision 1.42  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.
