@@ -38,7 +38,7 @@ extract the <VAR>Object Manager</VAR> learning task folder
 <pre>
 mkdir ~/<i>omlab</i>
 cd ~/<i>omlab</i>
-$NCBI/c++/scripts/import_project.sh internal/objmgr_lab
+$NCBI/c++/scripts/import_project.sh internal/objmgr_lab/sample
 </pre>
 </p>
 
@@ -85,9 +85,9 @@ cvs add <i>userid</i>
 <p>
 4. Copy files from the sample project, and commit them to the CVS tree as well
 <pre>
-cp sample/Makefile.in sample/Makefile.task.app sample/task.cpp <i>userid</i>
+cp -p sample/Makefile.in sample/Makefile.task.app sample/task.cpp <i>userid</i>
 cd <i>userid</i>
-cvs add    -m 'C++ Object Manager learning task' *
+cvs add    -m 'C++ Object Manager learning task' *.*
 cvs commit -m 'Initial revision (a copy of the sample application)'
 </pre>
 </p>
