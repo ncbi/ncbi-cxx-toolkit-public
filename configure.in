@@ -518,6 +518,15 @@ else
    AC_DEFINE_UNQUOTED(NCBI_OS, "MAC")
 fi
 
+### <sys/sockio.h>
+AC_MSG_CHECKING(for sys/sockio.h)
+AC_TRY_COMPILE(
+   [#include <sys/sockio.h>],
+   ,
+   AC_DEFINE_UNQUOTED(HAVE_SYS_SOCKIO_H, 1)
+)
+AC_MSG_RESULT()
+
 
 ### Check for some library functions.
 AC_MSG_CHECKING(for gethostbyname_r)

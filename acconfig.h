@@ -18,6 +18,9 @@
 #undef NCBI_COMPILER_UNKNOWN
 #undef NCBI_COMPILER_VERSION
 
+/* <sys/sockio.h> */
+#undef HAVE_SYS_SOCKIO_H
+
 /* gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R
 
