@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.50 2002/03/25 17:07:20 ucko Exp $
+#  $Id: configure.ac,v 1.51 2002/03/25 18:05:25 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -477,7 +477,6 @@ case "$host_os:$compiler" in
    ;;
 
  linux* | osf*:GCC )
-   NETWORK_LIBS=${NETWORK_LIBS:=" "}
    ;;
 
  irix*:GCC )
@@ -512,7 +511,6 @@ case "$host_os:$compiler" in
    CXXCPP=${CXXCPP:="$CXX -E -LANG:std"}
    LDFLAGS="-LANG:std $LDFLAGS"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
-   NETWORK_LIBS=" "
    ;;
 
  cygwin32:GCC )
@@ -550,11 +548,6 @@ case "$host_os:$compiler" in
    CXXFLAGS="-qrtti=all $CXXFLAGS"
    DEPFLAGS="-E -M"
    DEPFLAGS_POST='>/dev/null 2>&1; (cat $*.u; rm -f $*.u)'
-   NETWORK_LIBS="-lnsl"
-   ;;
-
- aix*)
-   NETWORK_LIBS="-lnsl"
    ;;
 esac
 
@@ -1446,7 +1439,12 @@ AC_MSG_RESULT($stack_dir)
 
 
 ### Common-use system and miscellaneous libs
-NETWORK_LIBS=${NETWORK_LIBS:="-lsocket -lnsl"}
+if test -z "${NETWORK_LIBS+set}"; then
+   AC_CHECK_LIB(nsl, gethostbyname, [libnsl=-lnsl], [libnsl=])
+   AC_CHECK_LIB(socket, connect, [NETWORK_LIBS="-lsocket $libnsl"],
+      [NETWORK_LIBS=$libnsl])
+fi
+
 MATH_LIBS=${MATH_LIBS:="-lm"}
 
 
