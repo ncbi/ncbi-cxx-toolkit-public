@@ -30,8 +30,8 @@
  */
 
 
-#ifndef GUI_CORE_ALGO_BASIC___RESTRICTION__HPP
-#define GUI_CORE_ALGO_BASIC___RESTRICTION__HPP
+#ifndef ALGO_SEQUENCE___RESTRICTION__HPP
+#define ALGO_SEQUENCE___RESTRICTION__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -50,7 +50,7 @@ USING_SCOPE(objects);
 /// and vectors of cut sites on plus and minus strands.
 ///
 
-class CRSite
+class NCBI_XALGOSEQ_EXPORT CRSite
 {
 public:
     CRSite(int start, int end);
@@ -75,7 +75,7 @@ private:
     vector<int> m_MinusCuts;
 };
 
-ostream& operator<<(ostream& os, const CRSite& site);
+NCBI_XALGOSEQ_EXPORT ostream& operator<<(ostream& os, const CRSite& site);
 
 
 ///////////////////////////////////////////////////////////
@@ -157,7 +157,7 @@ int CRSite::GetEnd(void) const
 /// An enzyme may have more than one specificity (TaqII).
 ///
 
-class CRSpec
+class NCBI_XALGOSEQ_EXPORT CRSpec
 {
 public:
     // recognition sequence
@@ -251,7 +251,7 @@ const vector<int>& CRSpec::GetMinusCuts(void) const
 /// (an enzyme name and a vector of cleavage specificities)
 ///
 
-class CREnzyme
+class NCBI_XALGOSEQ_EXPORT CREnzyme
 {
 public:
     // name of enzyme
@@ -352,7 +352,7 @@ private:
     vector<CRSite> m_PossibleSites;
 };
 
-ostream& operator<<(ostream& os, const CREnzResult& er);
+NCBI_XALGOSEQ_EXPORT ostream& operator<<(ostream& os, const CREnzResult& er);
 
 
 ///////////////////////////////////////////////////////////
@@ -372,7 +372,7 @@ CREnzResult::CREnzResult(const string& enzyme_name,
 
 /// this class contains the static member functions Find,
 /// which find restriction sites in a sequence
-class CFindRSites
+class NCBI_XALGOSEQ_EXPORT CFindRSites
 {
 public:
     static void Find(const string& seq,
@@ -390,12 +390,15 @@ public:
 
 END_NCBI_SCOPE
 
-#endif   // GUI_CORE_ALGO_BASIC___RESTRICTION__HPP
+#endif   // ALGO_SEQUENCE___RESTRICTION__HPP
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/08/21 19:21:44  jcherry
+ * Moved restriction site finding to algo/sequence
+ *
  * Revision 1.11  2003/08/21 18:38:31  jcherry
  * Overloaded CFindRSites::Find to take several sequence containers.
  * Added option to lump together enzymes with identical specificities.

@@ -33,7 +33,8 @@
 #include <corelib/ncbistd.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <algorithm>
-#include "restriction.hpp"
+#include <algo/sequence/restriction.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -524,6 +525,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/08/21 19:22:47  jcherry
+ * Moved restriction site finding to algo/sequence
+ *
  * Revision 1.5  2003/08/21 18:38:31  jcherry
  * Overloaded CFindRSites::Find to take several sequence containers.
  * Added option to lump together enzymes with identical specificities.
