@@ -40,22 +40,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class CAppNWAException;
-
-class CAppNWA : public CNcbiApplication
-{
-public:
-    virtual void Init();
-    virtual int  Run();
-    virtual void Exit();
-
-private:
-    void x_RunOnPair() const throw(CAppNWAException);
-    bool x_ReadFastaFile(const string& filename,
-                         string*       seqname,
-                         vector<char>* sequence,
-                         int*          offset) const;
-};
 
 
 // Exceptions
@@ -79,6 +63,25 @@ public:
 };
 
 
+// application class
+//
+
+class CAppNWA : public CNcbiApplication
+{
+public:
+    virtual void Init();
+    virtual int  Run();
+    virtual void Exit();
+
+private:
+    void x_RunOnPair() const throw(CAppNWAException);
+    bool x_ReadFastaFile(const string& filename,
+                         string*       seqname,
+                         vector<char>* sequence,
+                         int*          offset) const;
+};
+
+
 END_NCBI_SCOPE
 
 
@@ -86,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/12/09 15:47:36  kapustin
+ * Declare exception class before the application
+ *
  * Revision 1.1  2002/12/06 17:44:26  ivanov
  * Initial revision
  *
