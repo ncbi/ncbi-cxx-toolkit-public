@@ -977,7 +977,7 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* new_hsp)
    if (hspcnt >= hsp_allocated-1 && hsp_list->do_not_reallocate == FALSE)
    {
       Int4 new_allocated = MIN(2*hsp_list->allocated, hsp_list->hsp_max);
-      if (new_allocated <= hsp_list->hsp_max) {
+      if (new_allocated > hsp_list->allocated) {
          hsp_array = (BlastHSP**)
             realloc(hsp_list->hsp_array, new_allocated*sizeof(BlastHSP*));
          if (hsp_array == NULL)
