@@ -3248,9 +3248,8 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
             }
             if (c != '\r')
                 cr_seen = 0/*false*/;
-            if (x_buf == w) {
+            if (x_buf == w)
                 buf[x_read] = c;
-            }
             x_read++;
         }
         if (i < x_size) {
@@ -3262,7 +3261,7 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
     }
     if (x_read < size)
         buf[x_read] = '\0';
-    if (n_read)
+    if ( n_read )
         *n_read = x_read;
     return status;
 }
@@ -4347,8 +4346,11 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.160  2004/11/09 21:27:01  lavr
+ * SOCK_ReadLine(): cleaned-up a little
+ *
  * Revision 6.159  2004/11/09 21:13:28  lavr
- * +ReadLine
+ * +SOCK_ReadLine()
  *
  * Revision 6.158  2004/10/26 20:27:10  ucko
  * Ensure that "sun" isn't defined as a macro.
