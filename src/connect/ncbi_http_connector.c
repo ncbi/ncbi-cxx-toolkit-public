@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2001/12/31 14:53:46  lavr
+ * #include <connect/ncbi_ansi_ext.h> for Mac to be happy (noted by J.Kans)
+ *
  * Revision 6.19  2001/12/30 20:00:00  lavr
  * Redirect on non-empty location only
  *
@@ -99,10 +102,11 @@
  * ==========================================================================
  */
 
-#include "ncbi_priv.h"
+#include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_buffer.h>
+#include "ncbi_priv.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
