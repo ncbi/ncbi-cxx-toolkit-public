@@ -1009,6 +1009,74 @@ void CLocalIdComment::x_GatherInfo(CBioseqContext&)
 }
 
 
+// --- CBarcodeComment
+
+CBarcodeComment::CBarcodeComment(CBioseqContext& ctx) :
+    CCommentItem(ctx, false)
+{
+    x_GatherInfo(ctx);
+}
+
+
+const string& CBarcodeComment::GetTaxname(void) const
+{
+    _ASSERT(m_BioSource);
+
+    if (m_BioSource->IsSetOrg()) {
+        const COrg_ref& org = m_BioSource->GetOrg();
+        if (org.IsSetTaxname()  &&  !NStr::IsBlank(org.GetTaxname())) {
+            return org.GetTaxname();
+        }
+    }
+    return kEmptyStr;
+}
+
+const string& CBarcodeComment::GetSubsource(CSubSource::TSubtype subtype) const
+{
+    _ASSERT(m_BioSource);
+    ITERATE (CBioSource::TSubtype, it, m_BioSource->GetSubtype()) {
+        const CSubSource& sub = **it;
+        if (sub.IsSetSubtype()  &&  sub.GetSubtype() == subtype  &&
+            sub.IsSetName()  &&  !NStr::IsBlank(sub.GetName())) {
+            return sub.GetName();
+        }
+    }
+    return kEmptyStr;
+}
+
+
+const string& CBarcodeComment::GetOrgmod(COrgMod::TSubtype subtype) const
+{
+    _ASSERT(m_BioSource);
+    if (m_BioSource->IsSetOrg()) {
+        const COrg_ref& org = m_BioSource->GetOrg();
+        if (org.IsSetOrgname()) {
+            ITERATE (COrgName::TMod, it, m_BioSource->GetOrg().GetOrgname().GetMod()) {
+                const COrgMod& omod = **it;
+                if (omod.IsSetSubtype()  &&  omod.GetSubtype() == subtype  &&
+                    omod.IsSetSubname()  &&  !NStr::IsBlank(omod.GetSubname())) {
+                    return omod.GetSubname();
+                }
+            }
+        }
+    }
+    return kEmptyStr;
+}
+
+
+void CBarcodeComment::x_GatherInfo(CBioseqContext& ctx)
+{
+    CSeqdesc_CI desc_it(ctx.GetHandle(), CSeqdesc::e_Source);
+    if (!desc_it) {
+        x_SetSkip();
+        return;
+    }
+
+    m_BioSource.Reset(&desc_it->GetSource());
+    x_SetObject(*m_BioSource);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -1017,6 +1085,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/03/29 18:16:31  shomrat
+* + CBarcodeComment
+*
 * Revision 1.17  2005/03/28 17:17:56  shomrat
 * Optimizing tilde expension
 *

@@ -37,6 +37,9 @@
 
 #include <objects/general/User_object.hpp>
 #include <objects/seq/Seq_hist.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objtools/format/items/item_base.hpp>
@@ -210,6 +213,25 @@ private:
 };
 
 
+// --- CBarcodeComment
+
+class CBarcodeComment : public CCommentItem
+{
+public:
+    CBarcodeComment(CBioseqContext& ctx);
+
+    const string& GetTaxname(void) const;
+    const string& GetSubsource(CSubSource::TSubtype subtype) const;
+    const string& GetOrgmod(COrgMod::TSubtype subtype) const;
+
+private:
+    void x_GatherInfo(CBioseqContext& ctx);
+
+    // data
+    CConstRef<CBioSource>   m_BioSource;
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  inline methods
 
@@ -249,6 +271,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/03/29 18:14:47  shomrat
+* + CBarcodeComment
+*
 * Revision 1.12  2005/02/09 14:52:03  shomrat
 * Initial support for HTML output
 *
