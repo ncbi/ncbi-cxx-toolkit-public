@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/03/16 17:27:02  vasilche
+* Added missing include <stdexcept>
+*
 * Revision 1.2  2000/03/15 21:23:59  vasilche
 * Error diagnostic about ambiguous types made more clear.
 *
@@ -50,6 +53,7 @@
 */
 
 #include <corelib/ncbiexpt.hpp>
+#include <stdexcept>
 #include <list>
 
 class CDataType;
