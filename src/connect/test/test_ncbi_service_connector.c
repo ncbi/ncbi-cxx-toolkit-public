@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/09/24 20:36:22  lavr
+ * Adjusted parameters in SERVICE_CreateConnectorEx()
+ *
  * Revision 6.14  2001/06/11 22:17:28  lavr
  * Wait-for-reading timeout made finite
  *
@@ -110,7 +113,7 @@ int main(int argc, const char* argv[])
         obuf[++n]              = 0;
     }
 
-    connector = SERVICE_CreateConnectorEx(service, fSERV_Any, info);
+    connector = SERVICE_CreateConnectorEx(service, fSERV_Any, info, 0);
     ConnNetInfo_Destroy(info);
 
     if (!connector)
