@@ -1,4 +1,4 @@
---$Revision: 1.8 $
+--$Revision: 1.9 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -36,7 +36,7 @@ IMPORTS  Date                 FROM NCBI-General
          Seq-loc              FROM NCBI-Seqloc
          Seq-feat             FROM NCBI-Seqfeat
          Score-set            FROM NCBI-Seqalign
-	 Cn3d-style-dictionary FROM NCBI-Cn3d;
+	 Cn3d-style-dictionary, Cn3d-user-annotations FROM NCBI-Cn3d;
 
 -- Cdd's should not exist without a unique accession, but alternative id's may
 -- be present as well. It is conceivable that a CD which is created as a merged
@@ -243,7 +243,8 @@ Cdd ::= SEQUENCE {
                                                    -- members, ignore in update
   master3d      SET OF Seq-id OPTIONAL, -- record if CD has a 3D representative
   alignannot    Align-annot-set OPTIONAL,          -- alignment annotation
-  style-dictionary Cn3d-style-dictionary OPTIONAL  -- record rendering styles
+  style-dictionary Cn3d-style-dictionary OPTIONAL, -- record rendering styles
+  user-annotations Cn3d-user-annotations OPTIONAL  -- user annotations in Cn3D
 }
 
 Cdd-set ::= SET OF Cdd
