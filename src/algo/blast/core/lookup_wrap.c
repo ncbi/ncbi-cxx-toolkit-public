@@ -78,9 +78,12 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
       is_na = (lookup_options->lut_type == PHI_NA_LOOKUP);
       PHILookupTableNew(lookup_options, 
                         (PHILookupTable* *) &(lookup_wrap->lut), is_na, sbp);
-      
-      PHIBlastIndexQuery((PHILookupTable*) lookup_wrap->lut, query,
-                         lookup_segments, is_na);
+      /* Initialize the "pattern space" by number of pattern occurrencies 
+         in query, effectively setting number of patterns in database to 1
+         at this time. */
+      sbp->effective_search_sp = 
+         PHIBlastIndexQuery((PHILookupTable*) lookup_wrap->lut, query,
+                            lookup_segments, is_na);
    default:
       {
          /* FIXME - emit error condition here */
