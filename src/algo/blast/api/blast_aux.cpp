@@ -313,6 +313,9 @@ void BlastMaskDNAToProtein(BlastMask** mask_ptr, const CSeq_loc &seqloc,
 
    mask_loc = *mask_ptr;
 
+   if (!mask_loc) 
+      return;
+
    dna_length = sequence::GetLength(seqloc, scope);
    /* Reproduce this mask for all 6 frames, with translated 
       coordinates */
