@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/01/04 16:26:09  golikov
+* fix
+*
 * Revision 1.4  1999/05/11 02:53:57  vakatov
 * Moved CGI API from "corelib/" to "cgi/"
 *
@@ -66,9 +69,12 @@ CSelection::CSelection(const CCgiRequest& request,
         Decode( found->second );
 
     // load checkboxes
-    for ( TCgiEntriesCI i = values.lower_bound(checkboxName),
-              end = values.upper_bound(checkboxName); i != end; ++i ) {
-        AddID(NStr::StringToInt(i->second));
+    found = values.find(checkboxName);
+    if ( found != values.end() ) {
+        for ( TCgiEntriesCI i = values.lower_bound(checkboxName),
+                  end = values.upper_bound(checkboxName); i != end; ++i ) {
+            AddID(NStr::StringToInt(i->second));
+        }
     }
 }
 
