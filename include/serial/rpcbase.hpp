@@ -153,9 +153,9 @@ inline
 EIO_Status CRPCClient<TRequest, TReply>::SetTimeout(const STimeout* timeout,
                                                     EIO_Event direction)
 {
-    CConn_IOStream conn_stream = dynamic_cast<CConn_IOStream*>(m_Stream);
+    CConn_IOStream* conn_stream = dynamic_cast<CConn_IOStream*>(m_Stream.get());
     if (conn_stream) {
-        return CONN_SetTimeout(conn_stream.GetCONN(), direction, timeout);
+        return CONN_SetTimeout(conn_stream->GetCONN(), direction, timeout);
     } else {
         return eIO_NotSupported;
     }
@@ -232,6 +232,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/03/16 19:41:41  gorelenk
+* Fixed errors inside implementation of
+* CRPCClient<TRequest, TReply>::SetTimeout .
+*
 * Revision 1.4  2003/12/16 20:55:32  dicuccio
 * Fixed compiler warning on MSVC - unreferenced exception variable removed
 *
