@@ -121,7 +121,7 @@ static void s_JpegReadInit(j_decompress_ptr cinfo)
 
 
 // grab data from the stream
-static unsigned char s_JpegReadBuffer(j_decompress_ptr cinfo)
+static boolean s_JpegReadBuffer(j_decompress_ptr cinfo)
 {
     struct SJpegInput* sptr = (SJpegInput*)cinfo->src;
 
@@ -172,7 +172,7 @@ static void s_JpegWriteInit(j_compress_ptr cinfo)
 
 
 // fill the input buffer
-static unsigned char s_JpegWriteBuffer(j_compress_ptr cinfo)
+static boolean s_JpegWriteBuffer(j_compress_ptr cinfo)
 {
     struct SJpegOutput* sptr = (SJpegOutput*)cinfo->dest;
 
@@ -662,6 +662,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/12/16 16:12:27  dicuccio
+ * Fixed compilation problems on Linux - return value of read function is not
+ * always unsigned char
+ *
  * Revision 1.5  2003/12/16 15:49:36  dicuccio
  * Large re-write of image handling.  Added improved error-handling and support
  * for streams-based i/o (via hooks into each client library).
