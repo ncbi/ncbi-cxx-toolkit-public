@@ -23,11 +23,11 @@
       </ul>
     </ul>
   </li>
-  <li> <a href="#macro"> Macros for standard C++ exception handling</a>
-  <li> <a href="#errno"> The CErrnoException Class </a>
-  <li> <a href="#parse"> The CParseException Class </a>
-  <li> <a href="#tracex"> Exception Tracing </a>
-  <li> <a href="../libs/err_msg.html#ref_Exception"> Reference Manual pages</a>
+  <li> <a href="#errno">The CErrnoException Class </a>
+  <li> <a href="#parse">The CParseException Class </a>
+  <li> <a href="#macro">Macros for standard C++ exception handling</a>
+  <li> <a href="#tracex">Exception Tracing </a>
+  <li> <a href="../libs/err_msg.html#ref_Exception">Reference Manual pages</a>
 </ul>
 
 
@@ -159,9 +159,9 @@ Each exception class defines its own error codes. So, the error code "by itself"
 is meaningless -- one should also know the the exception class, which produced it.
 <pre>
     // When throwing an exception initially, "prev_exception" must be 0
-    CNcbiException(const char* file, int line, EErrCode err_code,
-                   const string& message,
-                   const CNcbiException* prev_exception=0) throw();
+    CNcbiException(const char* file, int line,
+                   const CNcbiException* prev_exception, 
+                   EErrCode err_code,const string& message) throw();
 </pre>
 </p>
 
@@ -335,7 +335,7 @@ derivatives only.
 Another solution is to make sure that the exception in question does 
 belong to the desired class, not to any intermediate ones. Template
 function
-<var><a href="../lxr/ident?i=UppermostCast$d=smart">UppermostCast</a></var>
+<var><a href="../lxr/ident?i=UppermostCast">UppermostCast</a></var>
 does the trick. It utilizes the runtime
 information and dynamic cast conversion:
 <pre>
@@ -430,6 +430,44 @@ and is highly configurable.
 
 
 
+<a name="errno"></a>
+<a href="../docxx/CErrnoException.html"><h3>The CErrnoException Class</h3></a>
+<p>
+The <var>CErrnoException</var> class is derived from <var>CNcbiException</var>, and in addition to the
+description string, has an <i>int</i> data member called <var>m_Errno</var>.
+The constructor itself automatically adds information about the most recent error state as
+obtained via the global system variable <i>errno</i>. The <var>CErrnoException</var>
+has only one <a href="#ErrorCodes">error core</a> - <var>eErrno</var>. To analyze the
+actual reason of the exception one should use <var>GetErrno()</var> data access function:
+<pre>
+    int GetErrno(void) const;
+</pre>
+To throw a CErrnoException, the standard <var>NCBI_THROW</var> macro can be used:
+<pre>
+    NCBI_THROW(CErrnoException,eErrno,"Your message here");
+</pre>
+</p>
+
+
+
+<a name="parse"></a>
+<a href="../docxx/CParseException.html"><h3>The CParseException Class</h3></a>
+<p>
+The <var>CParseException</var> class is derived from <var>CNcbiException</var>,
+and includes an additional <i>int</i> data member, in this case called <var>m_Pos</var>.
+This class was specifically defined to support complex parsing tasks,
+and its constructor requires that positional information be supplied along with the
+description message. This makes it impossible to use the standard
+<var>NCBI_THROW</var> macro to throw it, so we defined two additional macros:
+<pre>
+// To throw exceptions with one more parameter (e.g. CParseException)
+#define NCBI_THROW2(exception_class, err_code, message, extra)
+#define NCBI_RETHROW2(prev_exception,exception_class,err_code,message,extra) \
+</pre>
+</p>
+
+
+
 
 
 <a name="macro"></a>
@@ -510,35 +548,14 @@ assume that <i>what()</i> has been defined for this object, and a default messag
 
 <center> <tt> Error: [</tt><i>catch-msg</i><tt>] Exception: Unknown exception </tt></center><p>
 
-<a name="errno"></a>
-<a href="../docxx/CErrnoException.html"><h3> The CErrnoException Class </h3></a>
-The <i>CErrnoException</i> class is derived from <i>std::runtime_error</i>, and in addition to the
-<i>desc</i> string, has an <i>int</i> data member called <i>m_Errno</i>.  Like its parent class,
-its constructor takes a single string argument which will be stored in <i>desc</i>. The constructor
-itself however, automagically adds information about the most recent error state as obtained via the
-global system variable <i>errno</i>:
-
-<pre>
-CErrnoException::CErrnoException(const string& what) THROWS_NONE
-    : runtime_error(what + ": " + ::strerror(errno)), m_Errno(errno)
-{
-}
-</pre>
-
-<a name="parse"></a>
-<a href="../docxx/CParseException.html"><h3> The CParseException Class </h3></a>
-Similar to <i>CErrnoException</i>, the <i>CParseException</i> class is derived from
-<i>std::runtime_error</i>, and includes an additional <i>int</i> data member, in this
-case called <i>m_Pos</i>. This class was specifically defined to support complex parsing tasks,
-and its constructor requires that positional information be supplied along with the message
-to be caught. Thus the call to instantiate a <i>CParseException</i> object is:
-<i>CParseException(msg, position)</i>.
 
 <a name="tracex"></a>
 <h3> Exception Tracing </h3>
 
-Knowing exactly where an exception first occurs can be very useful for debugging purposes. Standard
-C++ exception handling mechanisms do not have access to this information, but a set of
+Knowing exactly where an exception first occurs can be very useful for debugging purposes.
+<a href="#CNcbiException"><var>CNcbiException</var></a>
+class has this functionality built in, so it is highly recommended to use exceptions derived
+from it. In addition to this a set of
 <i>THROW*_TRACE()</i> macros defined in the NCBI C++ Toolkit combine exception handling with <a
 href="diag.html#trace"> <i>trace</i></a> mechanisms to provide such information.<p>
 
