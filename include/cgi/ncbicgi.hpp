@@ -282,6 +282,8 @@ class CCgiEntry
 public:
     CCgiEntry(const string& value, const string& filename = kEmptyStr)
         : m_Value(value), m_Filename(filename) { }
+    CCgiEntry(const char* value, const string& filename = kEmptyStr)
+        : m_Value(value), m_Filename(filename) { }
     CCgiEntry(const CCgiEntry& e)
         : m_Value(e.m_Value), m_Filename(e.m_Filename) { }
 
@@ -289,7 +291,8 @@ public:
     const string& GetFilename() const { return m_Filename; }
     
 private:
-    string m_Value, m_Filename;
+    string m_Value;
+    string m_Filename;
 };
 
 inline bool operator != (const CCgiEntry& e1, const CCgiEntry& e2)
@@ -615,6 +618,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.54  2002/07/05 07:03:29  vakatov
+* CCgiEntry::  added another constructor (for WorkShop)
+*
 * Revision 1.53  2002/07/03 20:24:30  ucko
 * Extend to support learning uploaded files' names; move CVS logs to end.
 *
