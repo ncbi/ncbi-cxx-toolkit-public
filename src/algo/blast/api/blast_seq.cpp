@@ -38,10 +38,10 @@
 #include <objmgr/seq_vector.hpp>
 
 #include <algo/blast/api/blast_types.hpp>
-#include <algo/blast/api/blast_setup.hpp>
 #include <algo/blast/api/blast_seq.hpp>
 /* From core BLAST library: for encodings definitions */
 #include <algo/blast/core/blast_util.h>
+#include "blast_setup.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
