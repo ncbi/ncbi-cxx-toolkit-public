@@ -5,22 +5,23 @@
 # Author: Anatoliy Kuznetsov
 
 
-script=`basename $0`
+script_name=`basename $0`
+script_dir=`dirname $0`
+script_dir=`(cd "${script_dir}" ; pwd)`
+
 
 Usage()
 {
     cat <<EOF 1>&2
-USAGE: $script [--copy] sourcedir targetdir
+USAGE: $script_name [--copy] sourcedir targetdir
 SYNOPSIS:
-   Creates Genome Workbench installation from the standars toolkit build.
+   Create Genome Workbench installation from the standard Toolkit build.
 ARGUMENTS:
-   --copy     -- When specified uses Unix cp command instead of ln -s
-   sourecdir  -- Path name to pre-build NCBI ToolKit
-   targetdir  -- Name of the target installation directory.
-                 Script creates gbench subdirectory there and installs all
-                 necessary files.   
+   --copy     -- use Unix 'cp' command instead of 'ln -s'.
+   sourcedir  -- path to the pre-built NCBI Toolkit.
+   targetdir  -- target installation directory.
 EOF
-    test -z "$1" || echo ERROR: $1 1>&2
+    test -z "$1"  ||  echo ERROR: $1 1>&2
     exit 1
 }
 
@@ -38,15 +39,16 @@ ParseInstallFile()
 {
     sed_cmd="s/^$1[^a-zA-Z]*=//g"
     while read line; do
-        case $line in 
-        ${1}*) 
-        pl=`echo "$line" | sed $sed_cmd`
-        echo $pl
-        continue;
-        ;;
+        case "$line" in 
+          ${1}* ) 
+            pl=`echo "$line" | sed "$sed_cmd"`
+            echo $pl
+            x_flag=yes
+            continue;
+            ;;
         esac
 
-        if [ -f tmptmp ]; then
+        if [ -n "$x_flag" ]; then
             if [ -z "$line" ]; then
                 break;
             fi
@@ -108,25 +110,25 @@ BIN_COPY_LIST=`ParseInstallFile BINS`
 # ---------------------------------
 # making target directory structure
 
-mkdir -p $target_dir/gbench
-mkdir -p $target_dir/gbench/bin
-mkdir -p $target_dir/gbench/lib
-mkdir -p $target_dir/gbench/etc
-mkdir -p $target_dir/gbench/plugins
+mkdir -p $target_dir
+mkdir -p $target_dir/bin
+mkdir -p $target_dir/lib
+mkdir -p $target_dir/etc
+mkdir -p $target_dir/plugins
 
 
 for x in $BIN_COPY_LIST; do
     echo copying: $x
-    mv -f $target_dir/gbench/bin/$x $target_dir/gbench/bin/$x.old  2>/dev/null
-    rm -f $target_dir/gbench/bin/$x $target_dir/gbench/bin/$x.old
-    cp -p $src_dir/bin/$x $target_dir/gbench/bin/ \
+    mv -f $target_dir/bin/$x $target_dir/bin/$x.old  2>/dev/null
+    rm -f $target_dir/bin/$x $target_dir/bin/$x.old
+    cp -p $src_dir/bin/$x $target_dir/bin/ \
       || Error "Cannot copy file $x"
 done
 
 for x in $PLUGIN_COPY_LIST; do
     echo copying plugin: $x
-    rm -f $target_dir/gbench/plugins/libgui_$x.so
-    $BINCOPY $src_dir/lib/libgui_$x.so $target_dir/gbench/plugins/ \
+    rm -f $target_dir/plugins/libgui_$x.so
+    $BINCOPY $src_dir/lib/libgui_$x.so $target_dir/plugins/ \
       || echo "Cannot copy plugin $x"
 done
 
@@ -134,8 +136,8 @@ for x in $src_dir/lib/libdbapi*.so; do
     if [ -f $x ]; then
         f=`basename $x`
         echo copying DB interface: $f
-        rm -f $target_dir/gbench/lib/$f
-        $BINCOPY $x $target_dir/gbench/lib/ \
+        rm -f $target_dir/lib/$f
+        $BINCOPY $x $target_dir/lib/ \
           ||  Error "Cannot copy $x"
     fi
 done
@@ -160,5 +162,7 @@ fi
 cp -p ${source_dir}/gbench.ini ${target_dir}/gbench/etc/  
 
 echo "Configuring plugin cache"
+. ${script_dir}/common.sh
+COMMON_AddRunpath ${target_dir}/lib
 ${target_dir}/gbench/bin/gbench_plugin_scan -dir ${target_dir}/gbench/plugins \
- || Error "Plugin scan failed"
+  || Error "Plugin scan failed"
