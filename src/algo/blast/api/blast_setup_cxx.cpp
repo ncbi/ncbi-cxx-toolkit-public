@@ -636,7 +636,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         break;
 
     /* Used only in Blast2Sequences for the subject sequence. 
-     * No sentinels are required. As in readdb, remainder 
+     * No sentinels can be used. As in readdb, remainder 
      * (sv.size()%COMPRESSION_RATIO != 0) goes in the last 2 bits of the 
      * last byte.
      */
@@ -847,6 +847,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2003/12/29 17:00:57  camacho
+* Update comment
+*
 * Revision 1.53  2003/12/15 19:55:14  camacho
 * Minor fix to ensure exception safety
 *
