@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.20  2003/07/17 18:34:11  kholodov
+* Modified: operator=(CVariant& ) uses now CDB_Object::AssignValue() method
+*
 * Revision 1.19  2003/06/25 22:24:21  kholodov
 * Added: GetBlobSize() method
 *
@@ -675,12 +678,9 @@ CVariant& CVariant::operator=(const CTime& v)
     return *this;
 }
 
-class CDB_Object;
-
 CVariant& CVariant::operator=(const CVariant& v)
 {
-    CVariant t(v);
-    swap(t.m_data, this->m_data);
+    this->m_data->AssignValue(*(v.m_data));
     return *this;
 }
 
