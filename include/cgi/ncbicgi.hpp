@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1998/12/01 15:39:35  sandomir
+* xmlstore.hpp|cpp moved to another dir
+*
 * Revision 1.24  1998/12/01 00:27:16  vakatov
 * Made CCgiRequest::ParseEntries() to read ISINDEX data, too.
 * Got rid of now redundant CCgiRequest::ParseIndexesAsEntries()
@@ -111,7 +114,7 @@ public:
     CCgiCookie(const string& name, const string& value);
 
     // The cookie name cannot be changed during its whole timelife
-    const string& GetName(void) const;
+    const string& GetName (void) const;
 
     // Compose and write to output stream "os":
     //   "Set-Cookie: name=value; expires=date; path=val_path; domain=dom_name;
