@@ -715,6 +715,31 @@ void CScope_Impl::RemoveBioseq_set(const CBioseq_set_EditHandle& seqset)
 CScope_Impl::TSeq_idMapValue&
 CScope_Impl::x_GetSeq_id_Info(const CSeq_id_Handle& id)
 {
+    TSeq_idMap::iterator it;
+    {{
+        TReadLockGuard guard(m_Seq_idMapLock);
+        it = m_Seq_idMap.lower_bound(id);
+        if ( it != m_Seq_idMap.end() && it->first == id )
+            return *it;
+    }}
+    {{
+        TWriteLockGuard guard(m_Seq_idMapLock);
+        it = m_Seq_idMap.insert(it,
+                                TSeq_idMapValue(id, SSeq_id_ScopeInfo()));
+        return *it;
+    }}
+/*
+    {{
+        TWriteLockGuard guard(m_Seq_idMapLock);
+        TSeq_idMap::iterator it = m_Seq_idMap.lower_bound(id);
+        if ( it == m_Seq_idMap.end() || it->first != id ) {
+            it = m_Seq_idMap.insert(it,
+                                    TSeq_idMapValue(id, SSeq_id_ScopeInfo()));
+        }
+        return *it;
+    }}
+*/
+/*
     {{
         TReadLockGuard guard(m_Seq_idMapLock);
         TSeq_idMap::iterator it = m_Seq_idMap.lower_bound(id);
@@ -726,6 +751,7 @@ CScope_Impl::x_GetSeq_id_Info(const CSeq_id_Handle& id)
         return *m_Seq_idMap.insert(
             TSeq_idMapValue(id, SSeq_id_ScopeInfo())).first;
     }}
+*/
 }
 
 
