@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/08/02 14:39:34  hurwitz
+ * many new features
+ *
  * Revision 1.4  2002/07/09 14:51:17  hurwitz
  * added function
  *
@@ -63,6 +66,7 @@
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
+#include <objects/seqalign/Seq_align.hpp>
 #include <objects/cdd/Feature_evidence.hpp>
 
 // generated classes
@@ -70,6 +74,8 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+const int ALIGN_ANNOTS_ALIGNED_FAILURE = 1;
 
 class CCdd : public CCdd_Base
 {
@@ -104,9 +110,11 @@ public:
     bool   GetPDB(int Row, const CPDB_seq_id*& pPDB); // get PDB ID of Row
     int    GetLowerBound(int Row);                    // get Row lower alignment bound
     int    GetUpperBound(int Row);                    // get Row upper alignment bound
+    int    GetReMasterFailureCode();                  // before re-mastering do this check
+    bool   AlignAnnotsAligned();                      // one of the checks for re-mastering
     bool   ReMaster(int Row);                         // make Row the new master
     bool   GetSeqID(int SeqIndex, CRef<CSeq_id>& SeqID);               // get SeqID from sequence list
-    bool   GetSeqIDs(int SeqIndex, list< CRef< CSeq_id > >& SeqIDs);       // get SeqIDs from sequence list
+    bool   GetSeqIDs(int SeqIndex, list< CRef< CSeq_id > >& SeqIDs);   // get SeqIDs from sequence list
     bool   GetSeqID(int Pair, int DenDiagRow, CRef<CSeq_id>& SeqID);   // get SeqID from alignment
     bool   GetSeqIDFromAlignment(int RowIndex, CRef<CSeq_id>& SeqID) { // get SeqID from alignment
       int  Pair = (RowIndex <= 1) ? 0 : RowIndex-1;
@@ -122,14 +130,18 @@ public:
     bool   SeqIdsMatch(CRef<CSeq_id>& ID1, CRef<CSeq_id>& ID2);  // see if ID's match
     bool   IsAMatchFor(CRef<CSeq_id>& ID);            // see if ID matches any ID in alignment
     void   EraseStructureEvidence();                  // scan structure-evidence, erase missing biostruc-ids
+    void   EraseUID();                                // erase CD's uid
     string GetDefline(int SeqIndex);                  // get description from sequence list
     string GetSpecies(int SeqIndex);                  // get species from sequence list
-    // convert sequences to ncbieaa (extended ASCII 1 letter aa code)
-    void ConvertSequences(std::deque< CRef< CSeq_data > >& ConvertedSequences);
+    // convert sequences to ncbieaa (extended ASCII 1 letter aa code) (return index of master)
+    int    ConvertSequences(std::deque< std::string >& ConvertedSequences);
     // get dense-diag info for one row
-    bool GetDenDiagSet(int Row, const TDendiag*& pDenDiagSet);
+    bool   GetDenDiagSet(int Row, const TDendiag*& pDenDiagSet);
     // get corresponding location on other row
-    int  GetSeqPosition(TDendiag* pDenDiagSet, int Position, bool OnMasterRow);
+    int    GetSeqPosition(TDendiag* pDenDiagSet, int Position, bool OnMasterRow);
+    // get the list of Seq-aligns
+    bool   IsSeqAligns();
+    const  list< CRef< CSeq_align > >& GetSeqAligns();
 
 private:
     // get dense-diag info for one row
@@ -139,6 +151,13 @@ private:
     // for erasing biostruc-ids that are no longer valid, from structure-evidence
     bool IsNoEvidenceFor(list<int>& MmdbIds, list< CRef< CFeature_evidence > >::iterator& FeatureIterator);
     list< CRef< CFeature_evidence > >& GetFeatureSet(list<int>& MmdbIds);
+    // copied from Paul.  for converting ncbistdaa sequences to ncbieaa sequences
+    static void StringFromStdaa(const std::vector < char >& vec, std::string *str) {
+      static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
+      str->resize(vec.size());
+      for (int i=0; i<vec.size(); i++)
+        str->at(i) = stdaaMap[vec[i]];
+    }
 
 private:
     // Prohibit copy constructor and assignment operator

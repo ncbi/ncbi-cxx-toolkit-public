@@ -62,7 +62,9 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_data.hpp>
-#include <objects/seq/seqport_util.hpp>
+#include <objects/seq/NCBIeaa.hpp>
+#include <objects/seq/NCBIstdaa.hpp>
+#include <objects/seq/IUPACaa.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -80,7 +82,6 @@
 #include <objects/mmdb1/Mmdb_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
-//#include <../src/internal/structure/CDTree/cdt_read_write_asn.hpp>
 
 // generated classes
 
@@ -345,7 +346,7 @@ void CCdd::EraseSequences() {
 // erase sequences not in alignment
 //-------------------------------------------------------------------------
   int  i, NumSequences;
-  CRef<CSeq_id>  ID;
+  CRef<CSeq_id>  ID(new CSeq_id);
 
   NumSequences = GetNumSequences();
   for (i=NumSequences-1; i>=0; i--) {
@@ -388,7 +389,7 @@ bool CCdd::IsAMatchFor(CRef<CSeq_id>& ID) {
 // look through each row of the alignment for a matching ID
 //-------------------------------------------------------------------------
   int  k, Pair, DenDiagRow, NumRows=GetNumRows();
-  CRef< CSeq_id >  TestID;
+  CRef< CSeq_id >  TestID(new CSeq_id);
 
   for (k=0; k<NumRows; k++) {
     Pair = (k <= 1) ? 0 : k-1;
@@ -486,6 +487,63 @@ bool CCdd::EraseRow(int RowIndex) {
 }
 
 
+int CCdd::GetReMasterFailureCode() {
+//-------------------------------------------------------------------------
+// return an error code indicating which, if any, checks went wrong.
+// return value of 0 indicates all checks were ok.
+//-------------------------------------------------------------------------
+  int RetVal = 0;
+
+  if (!AlignAnnotsAligned()) {
+    RetVal = RetVal | ALIGN_ANNOTS_ALIGNED_FAILURE;
+  }
+  return(RetVal);
+}
+
+
+bool CCdd::AlignAnnotsAligned() {
+//-------------------------------------------------------------------------
+// check if the alignannot's are covered by aligned blocks
+//-------------------------------------------------------------------------
+  int  From, To, NewFrom, NewTo;
+  TDendiag*  pDenDiagSet;
+  list< CRef< CAlign_annot > >::const_iterator  m;
+  list< CRef< CSeq_interval > >::const_iterator  n;
+
+  // get den-diag-set.  first row is master
+  GetDenDiagSet(0, pDenDiagSet);
+  // if there's an align-annot set
+  if (IsSetAlignannot()) {
+    // for each alignannot
+    for (m=GetAlignannot().Get().begin(); m!=GetAlignannot().Get().end(); m++) {
+      // if it's a from-to
+      if ((*m)->GetLocation().IsInt()) {
+        // update from and to with new master
+        From = (*m)->GetLocation().GetInt().GetFrom();
+        To = (*m)->GetLocation().GetInt().GetTo();
+        NewFrom = GetSeqPosition(pDenDiagSet, From, true);
+        NewTo = GetSeqPosition(pDenDiagSet, To, true);
+        if ((NewFrom<0) || (NewTo<0)) return(false);
+      }
+      // if it's a set of from-to's
+      else if ((*m)->GetLocation().IsPacked_int()) {
+        // for each from-to
+        for (n=(*m)->GetLocation().GetPacked_int().Get().begin();
+             n!=(*m)->GetLocation().GetPacked_int().Get().end(); n++) {
+          // update from and to with new master
+          From = (*n)->GetFrom();
+          To = (*n)->GetTo();
+          NewFrom = GetSeqPosition(pDenDiagSet, From, true);
+          NewTo = GetSeqPosition(pDenDiagSet, To, true);
+          if ((NewFrom<0) || (NewTo<0)) return(false);
+        }
+      }
+    }
+  }
+  return(true);
+}
+
+
 bool CCdd::ReMaster(int Row) {
 //-------------------------------------------------------------------------
 // make Row the new master of this CD.
@@ -495,9 +553,11 @@ bool CCdd::ReMaster(int Row) {
   TDendiag*  pDenDiagSet2;
   list< CRef< CDense_diag > >::iterator  i, ii;
   CDense_diag::TIds::iterator  j, jj;
-  CRef< CSeq_id >  pTempSeqId1, pTempSeqId2;
+  CRef< CSeq_id >  pTempSeqId1(new CSeq_id);
+  CRef< CSeq_id >  pTempSeqId2(new CSeq_id);
   list< TSeqPos >::iterator  k, kk;
-  int  TempStart1, TempStart2, RowIndex, From, To, NewFrom, NewTo;
+  int  TempStart1, TempStart2;
+  int  RowIndex, From, To, NewFrom, NewTo;
   list< CRef< CAlign_annot > >::iterator  m;
   list< CRef< CSeq_interval > >::iterator n;
 
@@ -513,15 +573,29 @@ bool CCdd::ReMaster(int Row) {
         jj = (*ii)->SetIds().begin();
         pTempSeqId1 = *j;
         pTempSeqId2 = *(++jj);
-        (*i)->SetIds().front() = pTempSeqId2;
-        (*ii)->SetIds().back() = pTempSeqId1;
+
+        // debugging...
+        int GI;
+        if (pTempSeqId1->IsGi()) {
+          GI = pTempSeqId1->GetGi();
+        }
+        if (pTempSeqId2->IsGi()) {
+          GI = pTempSeqId2->GetGi();
+        }
+
+        (*i)->SetIds().pop_front();
+        (*i)->SetIds().push_front(pTempSeqId2);
+        (*ii)->SetIds().pop_back();
+        (*ii)->SetIds().push_back(pTempSeqId1);
         // swap starts
         k = (*i)->SetStarts().begin();
         kk = (*ii)->SetStarts().begin();
         TempStart1 = *k;
         TempStart2 = *(++kk);
-        (*i)->SetStarts().front() = TempStart2;
-        (*ii)->SetStarts().back() = TempStart1;
+        (*i)->SetStarts().pop_front();
+        (*i)->SetStarts().push_front(TempStart2);
+        (*ii)->SetStarts().pop_back();
+        (*ii)->SetStarts().push_back(TempStart1);
         ii++;
       }
     }
@@ -538,10 +612,12 @@ bool CCdd::ReMaster(int Row) {
         for (i=pDenDiagSet1->begin(); i!=pDenDiagSet1->end(); i++) {
           // replace id of master with new-master id
           j =  (*i)->SetIds().begin();
-          (*ii)->SetIds().front() = *j;
+          (*ii)->SetIds().pop_front();
+          (*ii)->SetIds().push_front(*j);
           // replace start of master with new-master start
           k =  (*i)->SetStarts().begin();
-          (*ii)->SetStarts().front() = *k;
+          (*ii)->SetStarts().pop_front();
+          (*ii)->SetStarts().push_front(*k);
           ii++;
         }
       }
@@ -554,7 +630,7 @@ bool CCdd::ReMaster(int Row) {
     SetMaster3d().clear();
   }
   // if the new master has a pdb-id
-  CRef<CSeq_id>  SeqID;
+  CRef<CSeq_id>  SeqID(new CSeq_id);
   if (GetSeqID(0, 0, SeqID)) {
     if (SeqID->IsPdb()) {
       // make it the master3d
@@ -648,6 +724,33 @@ bool CCdd::GetDenDiagSet(int Row, const TDendiag*& pDenDiagSet) {
 }
 
 
+bool CCdd::IsSeqAligns() {
+//-------------------------------------------------------------------------
+// check if there are seq-aligns
+//-------------------------------------------------------------------------
+  list< CRef< CSeq_annot > >::iterator i;
+
+  if (IsSetSeqannot()) {
+    i = SetSeqannot().begin();
+    if ((*i)->GetData().IsAlign()) {
+      return(true);
+    }
+  }
+  return(false);
+}
+
+
+const list< CRef< CSeq_align > >& CCdd::GetSeqAligns() {
+//-------------------------------------------------------------------------
+// get the seq-aligns.  Must know they're present.
+//-------------------------------------------------------------------------
+  list< CRef< CSeq_annot > >::iterator i;
+
+  i = SetSeqannot().begin();
+  return((*i)->GetData().GetAlign());
+}
+
+
 bool CCdd::SetDenDiagSet(int Row, TDendiag*& pDenDiagSet) {
 //-------------------------------------------------------------------------
 // get a set of dense-diag's.  this is dense-diag info for a row.
@@ -707,7 +810,7 @@ int CCdd::GetSeqIndex(CRef<CSeq_id>& SeqID) {
 //  get the sequence index with given SeqID
 //-------------------------------------------------------------------------
   int  i, NumSequences = GetNumSequences();
-  CRef<CSeq_id> TrialSeqID;
+  CRef<CSeq_id> TrialSeqID(new CSeq_id);
 
   for (i=0; i<NumSequences; i++) {
     GetSeqID(i, TrialSeqID);
@@ -805,7 +908,7 @@ bool CCdd::GetSeqID(int Pair, int DenDiagRow, CRef<CSeq_id>& SeqID) {
 // get a SeqID.
 // first get the Pair'th DenDiag, then the DenDiagRow'th SeqID.
 //-------------------------------------------------------------------------
-  CRef< CDense_diag > DenDiag;
+  CRef< CDense_diag > DenDiag(new CDense_diag);
   CDense_diag::TIds IdsSet;
   CDense_diag::TIds::iterator i;
   int  Row;
@@ -827,7 +930,7 @@ bool CCdd::GetGI(int Row, int& GI) {
 //-------------------------------------------------------------------------
 // get the GI for Row
 //-------------------------------------------------------------------------
-  CRef< CSeq_id >  SeqID;
+  CRef< CSeq_id >  SeqID(new CSeq_id);
   int  Pair, DenDiagRow;
 
   Pair = (Row <= 1) ? 0 : Row-1;
@@ -845,7 +948,7 @@ bool CCdd::GetPDB(int Row, const CPDB_seq_id*& pPDB) {
 //-------------------------------------------------------------------------
 // get the PDB ID for Row
 //-------------------------------------------------------------------------
-  CRef< CSeq_id >  SeqID;
+  CRef< CSeq_id >  SeqID(new CSeq_id);
   int  Pair, DenDiagRow;
 
   Pair = (Row <= 1) ? 0 : Row-1;
@@ -863,7 +966,7 @@ int CCdd::GetLowerBound(int Row) {
 //-------------------------------------------------------------------------
 // get the lower alignment boundary for Row
 //-------------------------------------------------------------------------
-  CRef< CDense_diag > DenDiag;
+  CRef< CDense_diag > DenDiag(new CDense_diag);
   list< TSeqPos >::const_iterator  i;
 
   // get the first den-diag for row
@@ -879,7 +982,7 @@ int CCdd::GetUpperBound(int Row) {
 //-------------------------------------------------------------------------
 // get the upper alignment boundary for Row
 //-------------------------------------------------------------------------
-  CRef< CDense_diag > DenDiag;
+  CRef< CDense_diag > DenDiag(new CDense_diag);
   list< TSeqPos >::const_iterator  i;
 
   // get the last den-diag for row
@@ -888,19 +991,26 @@ int CCdd::GetUpperBound(int Row) {
   if (Row != 0) {
     i++;
   }
-  return(*i + DenDiag->GetLen());
+  return((*i + DenDiag->GetLen()) - 1);
 }
 
 
-void CCdd::ConvertSequences(std::deque< CRef < CSeq_data > >& ConvertedSequences) {
+int CCdd::ConvertSequences(std::deque< std::string >& ConvertedSequences) {
 //------------------------------------------------------------------------------
 // convert seq-data to common format (ncbieaa: extended ASCII 1 letter aa code)
+// 
+// return the index of the master sequence (in both the original sequences,
+// and the converted sequences)
 //------------------------------------------------------------------------------
   list< CRef< CSeq_entry > >::const_iterator  i;
-  CSeqportUtil  Conversion;
-  CRef< CSeq_data >  ConvertedSeqData = new CSeq_data;
-  string err;
+  CRef< CSeq_id >  MasterSeqID(new CSeq_id);
+  CRef< CSeq_id >  SeqID(new CSeq_id);
+  std::string      String, err;
+  int              RetVal=-1, SeqIndex=0;
 
+  // get SeqID of the master row
+  GetSeqIDFromAlignment(0, MasterSeqID);
+  
   ConvertedSequences.clear();
 
   if (IsSetSequences()) {
@@ -911,28 +1021,32 @@ void CCdd::ConvertSequences(std::deque< CRef < CSeq_data > >& ConvertedSequences
         if ((*i)->IsSeq()) {
           // if the sequence is present
           if ((*i)->GetSeq().GetInst().IsSetSeq_data()) {
-            // convert sequence to ncbieaa (extended ASCII 1 letter aa code)
-            if (((*i)->GetSeq().GetInst().GetSeq_data().IsIupacaa())  ||
-                ((*i)->GetSeq().GetInst().GetSeq_data().IsNcbistdaa())) {
-              Conversion.Convert((*i)->GetSeq().GetInst().GetSeq_data(),
-                                 ConvertedSeqData.GetPointer(), CSeq_data::e_Ncbieaa);
-              ConvertedSequences.push_back(ConvertedSeqData);
+            // for iupacaa and ncbieaa, get sequence
+            if ((*i)->GetSeq().GetInst().GetSeq_data().IsNcbieaa()) {
+              String = (*i)->GetSeq().GetInst().GetSeq_data().GetNcbieaa().Get();
             }
-            // if it's already ncbieaa make a copy of it
-            else if ((*i)->GetSeq().GetInst().GetSeq_data().IsNcbieaa()) {
-//              ConvertedSeqData = CopyASNObject((*i)->GetSeq().GetInst().GetSeq_data(), &err);
-              ConvertedSeqData = &((*i)->SetSeq().SetInst().SetSeq_data());
-              ConvertedSequences.push_back(ConvertedSeqData);
+            else if ((*i)->GetSeq().GetInst().GetSeq_data().IsIupacaa()) {
+              String = (*i)->GetSeq().GetInst().GetSeq_data().GetIupacaa().Get();
+            }
+            // for ncbistdaa, convert the sequence to ncbieaa
+            else if ((*i)->GetSeq().GetInst().GetSeq_data().IsNcbistdaa()) {
+              StringFromStdaa((*i)->GetSeq().GetInst().GetSeq_data().GetNcbistdaa().Get(), &String);
             }
             else {
               throw runtime_error("Requested conversion not implemented");
             }
+            ConvertedSequences.push_back(String);
           }
         }
+        GetSeqID(SeqIndex, SeqID);
+        if (SeqIdsMatch(MasterSeqID, SeqID)) RetVal = SeqIndex;
+        SeqIndex++;
       }
     }
   }
-  ConvertedSeqData.Reset();
+
+  // return the SeqIndex of the master row
+  return(RetVal);
 }
 
 
@@ -1102,6 +1216,21 @@ string CCdd::GetAccession(int& Version) {
 }
 
 
+void CCdd::EraseUID() {
+//-------------------------------------------------------------------------
+// erase CD's uid
+//-------------------------------------------------------------------------
+  CCdd_id_set::Tdata::iterator  i;
+
+  for (i=SetId().Set().begin(); i!=SetId().Set().end(); i++) {
+    if ((*i)->IsUid()) {
+      SetId().Set().erase(i);
+      return;
+    }
+  }
+}
+
+
 void CCdd::SetAccession(string Accession, int Version) {
 //-------------------------------------------------------------------------
 // set accession name of CD
@@ -1142,6 +1271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/08/02 14:40:01  hurwitz
+ * many new features
+ *
  * Revision 1.7  2002/07/09 14:50:37  hurwitz
  * added function
  *
