@@ -29,6 +29,7 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
+
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <corelib/ncbireg.hpp>
 #include <list>
@@ -36,6 +37,7 @@
 #include <app/project_tree_builder/proj_tree.hpp>
 
 #include <corelib/ncbienv.hpp>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -95,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/10/12 16:19:04  ivanov
+ * Cosmetics
+ *
  * Revision 1.8  2004/10/04 15:31:32  gouriano
  * Take into account LIB_OR_DLL Makefile parameter
  *

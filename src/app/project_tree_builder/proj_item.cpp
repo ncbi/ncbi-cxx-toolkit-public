@@ -31,11 +31,11 @@
 #include <app/project_tree_builder/proj_item.hpp>
 
 
-
 BEGIN_NCBI_SCOPE
 
 
 //-----------------------------------------------------------------------------
+
 CProjKey::CProjKey(void)
 :m_Type(eNoProj)
 {
@@ -191,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/10/12 16:17:33  ivanov
+ * Cosmetics
+ *
  * Revision 1.24  2004/08/04 13:27:24  gouriano
  * Added processing of EXPENDABLE projects
  *

@@ -34,6 +34,8 @@
 /// Utilits for Project Tree Builder:
 
 #include <corelib/ncbienv.hpp>
+
+
 BEGIN_NCBI_SCOPE
 
 /// Key Value struct
@@ -90,11 +92,15 @@ struct SProjectTreeInfo
 // Get parent directory
 string ParentDir (const string& dir_abs);
 
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/10/12 16:19:04  ivanov
+ * Cosmetics
+ *
  * Revision 1.14  2004/09/13 13:49:36  gouriano
  * Make it to rely more on UNIX makefiles
  *

@@ -57,7 +57,6 @@ public:
     void Generate(const CProjItem& prj);
 
 private:
-
     list<SConfigInfo> m_Configs;
 
     /// Prohibited to.
@@ -72,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/10/12 16:19:04  ivanov
+ * Cosmetics
+ *
  * Revision 1.11  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

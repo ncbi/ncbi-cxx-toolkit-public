@@ -41,8 +41,8 @@
 
 #include <corelib/ncbienv.hpp>
 
-
 BEGIN_NCBI_SCOPE
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -177,6 +177,7 @@ private:
     bool m_Expendable;
 };
 
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CMsvcPrjGeneralContext --
@@ -230,6 +231,7 @@ private:
 
     const CMsvcMetaMakefile& m_MsvcMetaMakefile;
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -443,6 +445,7 @@ struct IAuxiliaryManagedWrapperGeneratorTool : public ITool
     //Name : "VCAuxiliaryManagedWrapperGeneratorTool"
 };
 
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CMsvcTools --
@@ -517,12 +520,14 @@ private:
 };
 
 
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/10/12 16:19:04  ivanov
+ * Cosmetics
+ *
  * Revision 1.19  2004/10/12 13:27:02  gouriano
  * Added possibility to specify which headers to include into project
  *
