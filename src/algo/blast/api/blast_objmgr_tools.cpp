@@ -524,6 +524,9 @@ SetupSubjects(const TSeqLocVector& subjects,
     }
 }
 
+/// Tests if a number represents a valid residue
+/// @param res Value to test [in]
+/// @return TRUE if value is a valid residue ( < 26)
 static bool s_IsValidResidue(Uint1 res) { return res < 26; }
 
 SBlastSequence
@@ -953,6 +956,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2005/03/31 16:15:03  dondosha
+* Some doxygen fixes
+*
 * Revision 1.39  2005/03/07 20:55:23  dondosha
 * Detect invalid residues in GetSequence and throw exception: this should never happen in normal circumstances because invalid residues are skipped by ReadFasta API
 *

@@ -98,13 +98,14 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair* offset_pairs, Int4 num_hits,
                           BlastInitHitList* init_hitlist);
 
 /** Traditional Mega BLAST initial word extension
+ * @param offset_pairs Array of query/subject offset pairs to extend from [in]
+ * @param num_hits Size of the offset_pairs array [in]
  * @param query The query sequence [in]
  * @param subject The subject sequence [in]
  * @param lookup Lookup table structure [in]
  * @param word_params The parameters related to initial word extension [in]
  * @param matrix the substitution matrix for ungapped extension [in]
  * @param ewp The structure containing word extension information [in]
- * @param offset_pairs Array of query and subject offsets [in]
  * @param init_hitlist The structure containing information about all 
  *                     initial hits [in] [out]
  * @return Has this hit been extended? 

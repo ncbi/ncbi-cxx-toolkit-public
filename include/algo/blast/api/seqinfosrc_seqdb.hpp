@@ -63,7 +63,7 @@ public:
     Uint4 GetLength(Uint4 oid) const;
 
 private:
-    CRef<CSeqDB> m_iSeqDb;
+    CRef<CSeqDB> m_iSeqDb; ///< BLAST database object
 
 };
 
@@ -74,6 +74,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/03/31 16:17:26  dondosha
+ * Some doxygen fixes
+ *
  * Revision 1.5  2005/01/18 17:57:37  dicuccio
  * include blast_export.h
  *

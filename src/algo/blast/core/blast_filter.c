@@ -49,7 +49,7 @@ const Uint1 kNuclMask = 14;     /* N in BLASTNA */
 const Uint1 kProtMask = 21;     /* X in NCBISTDAA */
 
 
-
+/** Allowed length of the filtering options string. */
 #define BLASTOPTIONS_BUFFER_SIZE 128
 
 
@@ -106,6 +106,10 @@ s_LoadOptionsToBuffer(const char *instructions, char* buffer)
 	return ptr;
 }
 
+/** Parses repeat filtering options string.
+ * @param repeat_options Input character string [in]
+ * @dbname Database name for repeats filtering [out]
+ */
 static Int2  
 s_ParseRepeatOptions(const char* repeat_options, char** dbname)
 {
@@ -131,7 +135,6 @@ s_ParseRepeatOptions(const char* repeat_options, char** dbname)
  * @param ptr buffer containing instructions. [in]
  * @param level sets level for dust. [out]
  * @param window sets window for dust [out]
- * @param cutoff sets cutoff for dust. [out] 
  * @param linker sets linker for dust. [out]
 */
 static Int2
@@ -484,7 +487,7 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc)
 
 /** Calculates length of the DNA query from the BlastQueryInfo structure that 
  * contains context information for translated frames for a set of queries.
- * @param Query information containing data for all contexts [in]
+ * @param query_info Query information containing data for all contexts [in]
  * @param query_index Which query to find DNA length for?
  * @return DNA length of the query, calculated as sum of 3 protein frame lengths, 
  *         plus 2, because 2 last nucleotide residues do not have a 
@@ -632,6 +635,10 @@ static int s_SeqRangeSortByStartPosition(const void *vp1, const void *vp2)
       return 0;
 }
 
+/** Calculates number of links in a chain of BlastSeqLoc's.
+ * @param var Chain of BlastSeqLoc structures [in]
+ * @return Number of links in the chain.
+ */
 static Int4 s_BlastSeqLocLen(BlastSeqLoc* var)
 {
      Int4 count=0;
@@ -924,6 +931,11 @@ BlastSetUp_Filter(EBlastProgramType program_number, Uint1* sequence, Int4 length
 	return status;
 }
 
+/** Converts the reverse strand mask locations to forward strand coordinates.
+ * @param filter_out Mask locations in forward strand coordinates [out]
+ * @param filter_in Mask locations in reverse strand coordinates [in]
+ * @param query_length Length of the sequence [in]
+ */
 static Int2
 s_GetReversedLocation(BlastSeqLoc** filter_out, BlastSeqLoc* filter_in, Int4 query_length)
 {

@@ -976,8 +976,10 @@ s_DiagCompareHSPs(const void* v1, const void* v2)
 
 /** An auxiliary structure used for merging HSPs */
 typedef struct BlastHSPSegment {
-   Int4 q_start, q_end;
-   Int4 s_start, s_end;
+    Int4 q_start, /**< Start of segment in query. */
+        q_end;    /**< End of segment in query. */
+    Int4 s_start, /**< Start of segment in subject. */
+        s_end;    /**< End of segment in subject. */
    struct BlastHSPSegment* next;
 } BlastHSPSegment;
 

@@ -85,11 +85,11 @@ typedef union BlastOffsetPair {
     struct {
         Uint4 q_off;  /**< Query offset */
         Uint4 s_off;  /**< Subject offset */
-    } qs_offsets;     
+    } qs_offsets;     /**< Query/subject offset pair */
     struct {
         Uint4 s_start;/**< Start offset of pattern in subject */
         Uint4 s_end;  /**< End offset of pattern in subject */
-    } phi_offsets;
+    } phi_offsets;    /**< Pattern offsets in subject (PHI BLAST only) */
 } BlastOffsetPair;
 
 #ifdef __cplusplus

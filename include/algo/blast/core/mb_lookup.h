@@ -299,7 +299,8 @@ typedef struct BlastMBLookupTable {
    Uint1 second_template_type; /**< Type of the second discontiguous word 
                                   template */
    Int4 scan_step;     /**< Step size for scanning the database */
-   Boolean full_byte_scan; 
+   Boolean full_byte_scan; /**< In discontiguous case: is scanning done by full
+                              bytes or at each sequence base (2 bits)? */
    Int4* hashtable;   /**< Array of positions              */
    Int4* hashtable2;  /**< Array of positions for second template */
    Int4* next_pos;    /**< Extra positions stored here     */

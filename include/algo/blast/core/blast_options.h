@@ -214,6 +214,7 @@ typedef struct SRepeatFilterOptions {
     char* database;   /**< Nucleotide database for mini BLAST search. */
 } SRepeatFilterOptions;
 
+/** All filtering options */
 typedef struct SBlastFilterOptions {
     Boolean mask_at_hash;         /**< mask query only for lookup table creation */
     SDustOptions* dustOptions;    /**< low-complexity filtering for nucleotides. */
@@ -499,6 +500,7 @@ Int2 SRepeatFilterOptionsNew(SRepeatFilterOptions* *repeat_options);
  */
 SBlastFilterOptions* SBlastFilterOptionsFree(SBlastFilterOptions* filter_options);
 
+/** Types of filtering options. */
 typedef enum EFilterOptions {
     eSeg,            /**< low-complexity for proteins. */
     eDust,           /**< low-complexity for nucleotides. */

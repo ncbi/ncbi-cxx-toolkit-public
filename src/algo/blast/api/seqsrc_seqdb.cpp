@@ -315,9 +315,13 @@ public:
 
     /// Getter functions for the private fields
     const string GetDbName() const { return m_DbName; }
+    /// Returns database type: protein or nucleotide
     char GetDbType() const { return m_IsProtein ? 'p' : 'n'; }
+    /// Returns first database ordinal id covered by this BlastSeqSrc
     Uint4 GetFirstOid() const { return m_FirstDbSeq; }
+    /// Returns last database ordinal id covered by this BlastSeqSrc
     Uint4 GetFinalOid() const { return m_FinalDbSeq; }
+    /// Should memory mapping be used? Always returns true.
     bool GetUseMmap() const { return true; }
 
 private:
@@ -489,6 +493,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2005/03/31 16:15:03  dondosha
+ * Some doxygen fixes
+ *
  * Revision 1.29  2005/02/09 21:03:36  dondosha
  * Minor doxygen fixes
  *

@@ -953,7 +953,7 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp)
 
 /// Creates a Dense-diag object from HSP information and sequence identifiers
 /// for a non-translated ungapped search.
-/// @param An HSP structure [in]
+/// @param hsp An HSP structure [in]
 /// @param query_id Query sequence identifier [in]
 /// @param subject_id Subject sequence identifier [in]
 /// @param query_length Length of the query [in]
@@ -1003,7 +1003,7 @@ x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id,
 
 /// Creates a Std-seg object from HSP information and sequence identifiers
 /// for a translated ungapped search.
-/// @param An HSP structure [in]
+/// @param hsp An HSP structure [in]
 /// @param query_id Query sequence identifier [in]
 /// @param subject_id Subject sequence identifier [in]
 /// @param query_length Length of the query [in]
@@ -1211,6 +1211,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2005/03/31 16:15:03  dondosha
+* Some doxygen fixes
+*
 * Revision 1.53  2005/03/29 14:49:39  papadopo
 * encapsulate, within a discontinuous seqalign, all seqaligns for translated searches
 *

@@ -60,7 +60,8 @@ public:
     /// Retrieve sequence length given its index in the vector.
     Uint4 GetLength(Uint4 index) const;
 private:
-    TSeqLocVector m_SeqVec;
+    TSeqLocVector m_SeqVec; ///< Vector of subject sequence locations to get 
+                            /// information from
 
 };
 
@@ -71,6 +72,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/03/31 16:17:26  dondosha
+ * Some doxygen fixes
+ *
  * Revision 1.4  2004/10/18 20:33:24  dondosha
  * Pass TSeqLocVector to constructor by reference
  *
