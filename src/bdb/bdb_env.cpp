@@ -74,7 +74,7 @@ void CBDB_Env::Open(const char* db_home, int flags)
 
 void CBDB_Env::OpenWithLocks(const char* db_home)
 {
-    Open(db_home, DB_CREATE|DB_RECOVER|DB_INIT_LOCK|DB_INIT_MPOOL);
+    Open(db_home, DB_CREATE/*|DB_RECOVER*/|DB_INIT_LOCK|DB_INIT_MPOOL);
 }
 
 void CBDB_Env::OpenWithTrans(const char* db_home)
@@ -166,6 +166,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/03/12 15:09:57  kuznets
+ * OpenWithLocks removed DB_RECOVER flag
+ * (only applicable for transactional environments)
+ *
  * Revision 1.14  2004/02/06 16:23:31  kuznets
  * Simplified JoinEnv function to avoid misterious crash on some systems
  *
