@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/05/22 22:35:36  thiessen
+* remove SIZE_TYPE
+*
 * Revision 1.11  2000/11/13 18:05:58  thiessen
 * working structure re-superpositioning
 *
@@ -106,7 +109,7 @@ public:
     {
         return (a.x!=b.x || a.y!=b.y || a.z!=b.z);
     }
-    double& operator [] (SIZE_TYPE i)
+    double& operator [] (size_t i)
     {
 		static double err = 0.0;
         if (i == 0) return x;
@@ -115,7 +118,7 @@ public:
         else ERR_POST(ncbi::Error << "Vector operator [] access out of range : " << i);
         return err;
     }
-    double operator [] (SIZE_TYPE i) const
+    double operator [] (size_t i) const
     {
         if (i == 0) return x;
         else if (i == 1) return y;
@@ -219,7 +222,7 @@ public:
         for (int i=0; i<16; i++) m[i]=o.m[i];
         return *this;
     }
-    double& operator [] (SIZE_TYPE i)
+    double& operator [] (size_t i)
     {
 		static double err = 0.0;
         if (i > 15 || i < 0) {
@@ -228,7 +231,7 @@ public:
         }
         return m[i];
     }
-    double operator [] (SIZE_TYPE i) const
+    double operator [] (size_t i) const
     {
         if (i > 15 || i < 0) {
             ERR_POST(ncbi::Error << "Matrix operator [] access out of range : " << i);
