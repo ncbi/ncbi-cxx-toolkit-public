@@ -68,9 +68,6 @@ public:
 
     virtual ~CMMAligner() {}
 
-    // Run this algorithm, return the alignment's score
-    virtual TScore Run();
-
     void    EnableMultipleThreads(bool enable = true);
 
 protected:
@@ -78,6 +75,8 @@ protected:
     list<ETranscriptSymbol>  m_TransList;
     bool                     m_mt; // multiple threads
     unsigned int             m_maxthreads;
+
+    virtual TScore   x_Run();
     
     void x_DoSubmatrix(const SCoordRect& submatr,
                    list<ETranscriptSymbol>::iterator translist_pos,
@@ -142,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/04/14 18:56:56  kapustin
+ * Run() --> x_Run()
+ *
  * Revision 1.8  2003/04/10 19:12:07  kapustin
  * Modify algorithm's description
  *
