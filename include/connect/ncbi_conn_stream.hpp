@@ -281,6 +281,8 @@ public:
                        bool       pass_lk_ownership = true,
                        streamsize buf_size = kConn_DefaultBufSize);
 
+    string& ToString(string&);  // fill in the data, return the argument
+
 private:
     // Disable copy constructor and assignment.
     CConn_MemoryStream(const CConn_MemoryStream&);
@@ -349,6 +351,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.29  2004/10/26 20:30:41  lavr
+ * +CConn_MemoryStream::ToString()
+ *
  * Revision 6.28  2004/09/09 16:43:47  lavr
  * Introduce virtual helper base CConn_IOStreamBase for implicit CONNECT_Init()
  *

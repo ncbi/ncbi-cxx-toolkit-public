@@ -258,6 +258,22 @@ CConn_MemoryStream::CConn_MemoryStream(CRWLock*   lk,
 }
 
 
+string& CConn_MemoryStream::ToString(string& str)
+{
+    CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
+    size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
+    str.resize(size);
+    if (sb) {
+        if (CONN_Read(sb->GetCONN(), &str[0], size, &size, eIO_ReadPlain)
+            != eIO_Success) {
+            str.clear();
+        } else
+            str.resize(size);
+    }
+    return str;
+}
+
+
 CConn_PipeStream::CConn_PipeStream(const string&         cmd,
                                    const vector<string>& args,
                                    CPipe::TCreateFlags   create_flags,
@@ -297,6 +313,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2004/10/26 20:30:52  lavr
+ * +CConn_MemoryStream::ToString()
+ *
  * Revision 6.33  2004/09/09 16:44:22  lavr
  * Introduce virtual helper base CConn_IOStreamBase for implicit CONNECT_Init()
  *
