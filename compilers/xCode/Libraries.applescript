@@ -254,7 +254,7 @@ property ncbi_dbapi : {name:"ncbi_dbapi", libs:{dbapi}, dep:"ncbi_core ncbi_dbap
 property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core"}
 property ncbi_image : {name:"ncbi_image", libs:{ximage}, dep:"ncbi_core"}
 
-property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgoseq, blast, xblast, xalgognomon, xalgophytree, fastme}, dep:"ncbi_core ncbi_misc"} -- ncbi_misc added
+property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgoseq, blast, xblast, xalgognomon, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc"}
 property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general"}
 property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, id1, id1cli, id2, xnetblast, xnetblastcli, blastdb, taxon1, seqsplit, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub"}
@@ -333,6 +333,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/07 18:34:26  lebedev
+ * Datatool script build phase clean-up
+ *
  * Revision 1.5  2004/07/06 15:31:06  lebedev
  * pcassay and pcsubstance object libs added
  *

@@ -451,9 +451,9 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		
 		repeat with aPath in thePaths
 			set asnName to the last word of aPath
+			set posixPath to x_Replace(aPath, ":", "/")
 			
-			
-			set fullPath to TheNCBIPath & "/src/" & x_Replace(aPath, ":", "/")
+			set fullPath to TheNCBIPath & "/src/" & posixPath
 			set asnPath to fullPath & asnName
 			
 			set theScript to theScript & "echo Working in: " & fullPath & ret
@@ -473,10 +473,8 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 			set theScript to theScript & "  " & TheOUTPath & "/bin/datatool -oR " & TheNCBIPath
 			if asnName is "gui_project" then
 				set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"gui/core\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
-			else if asnName is "plugin" then
-				set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"gui/plugin\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
 			else
-				set theScript to theScript & " -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"objects/$m\" -oc \"$m\" -odi -od \"$m.def\"" & ret
+				set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"" & posixPath & "\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
 			end if
 			set theScript to theScript & "else" & ret
 			set theScript to theScript & "  echo ASN files are up to date" & ret
@@ -498,11 +496,28 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		
 		set theScript to theScript & "echo Copying GBench resources" & ret
 		
+		-- Create etc directory
 		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/etc ; then" & ret
 		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/etc" & ret
 		set theScript to theScript & "fi" & ret
 		
+		-- Create share directory
+		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/share ; then" & ret
+		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/share" & ret
+		set theScript to theScript & "fi" & ret
+		
+		-- Create executables directory
+		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/executables ; then" & ret
+		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/executables" & ret
+		set theScript to theScript & "fi" & ret
+		
+		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/plugins/algo/executables/* " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/executables" & ret
+		
+		-- copy png images
+		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/* " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/share" & ret
+		
 		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/plugins/algo/executables " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/executables" & ret
+		
 		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/gbench/patterns/ " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/etc/patterns" & ret
 		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/gbench/news.ini " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/etc" & ret
 		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/gbench/gbench.ini " & TheOUTPath & "/bin/gbench.app/Contents/MacOS/etc" & ret
@@ -516,6 +531,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/07 18:34:26  lebedev
+ * Datatool script build phase clean-up
+ *
  * Revision 1.4  2004/07/06 15:31:36  lebedev
  * Datatool script build phase fixed for gui/plugin
  *
