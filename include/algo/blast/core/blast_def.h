@@ -77,6 +77,9 @@ void __sfree(void** x); /* implemented in lib/util.c */
 #ifndef NUM_FRAMES
 #define NUM_FRAMES 6
 #endif
+#ifndef NUM_STRANDS
+#define NUM_STRANDS 2
+#endif
 
 /********************* Structure definitions ********************************/
 
@@ -140,26 +143,6 @@ typedef struct SSeqRange {
  * location interval in the sequence.
  */
 #define BlastSeqLoc ListNode
-
-/** Return statistics from the BLAST search */
-typedef struct BlastReturnStat {
-   Int8 db_hits; /**< Number of successful lookup table hits */
-   Int4 init_extends; /**< Number of initial words found and extended */
-   Int4 good_init_extends; /**< Number of successful initial extensions */
-   Int4 prelim_gap_no_contest; /**< Number of HSPs better than e-value 
-                                  threshold before gapped extension */
-   Int4 prelim_gap_passed; /**< Number of HSPs better than e-value threshold
-                              after preliminary gapped extension */
-   Int4 number_of_seqs_better_E; /**< Number of sequences with best HSP passing
-                                    the e-value threshold */
-   Int4 x_drop_ungapped; /**< Raw value of the x-dropoff for ungapped 
-                            extensions */
-   Int4 x_drop_gap; /**< Raw value of the x-dropoff for preliminary gapped 
-                       extensions */
-   Int4 x_drop_gap_final; /**< Raw value of the x-dropoff for gapped 
-                             extensions with traceback */
-   Int4 gap_trigger; /**< Minimal raw score for starting gapped extension */
-} BlastReturnStat;
 
 #ifdef __cplusplus
 }
