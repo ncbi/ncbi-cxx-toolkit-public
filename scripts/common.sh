@@ -137,7 +137,7 @@ COMMON_LimitTextFileSize()
     test $size -lt $maxsize  &&  return $size
 
     lines=`wc -l < $file_out`
-    sysdep="${NCBI:-/netopt/ncbi_tools}/c++.metastable/Debug/build/sysdep.sh"
+    sysdep="${NCBI:-/netopt/ncbi_tools}/c++.metastable/Release/build/sysdep.sh"
  
     while [ $size -ge $maxsize ]; do
         lines=`expr $lines / 2`
