@@ -60,9 +60,6 @@ public:
     void SetQueries(const TSeqLocVector& queries);
     const TSeqLocVector& GetQueries() const;
 
-    void SetProgram(EProgram p);
-    EProgram GetProgram() const;
-
     CBlastOptions& SetOptions();
     void SetOptions(const CBlastOptions& opts);
     const CBlastOptions& GetOptions() const;
@@ -80,8 +77,9 @@ public:
     const BlastMaskLoc* GetFilteredQueryRegions() const;
 
     BlastSeqSrc* GetSeqSrc() const;
-    
     BlastHSPResults* GetResults() const;
+    BlastReturnStat* GetReturnStats() const;
+    BlastScoreBlk* GetScoreBlk() const;
 
 protected:
     virtual int SetupSearch();
@@ -93,7 +91,6 @@ private:
     TSeqLocVector        m_tQueries;         //< query sequence(s)
     BlastSeqSrc*         m_pSeqSrc;          //< Subject sequences sorce
     CRef<CBlastOptionsHandle>  m_OptsHandle; //< Blast options
-    EProgram             m_eProgram;         //< Blast program FIXME ?needed?
 
     /// Prohibit copy constructor
     CDbBlast(const CDbBlast& rhs);
@@ -104,7 +101,7 @@ private:
     bool                mi_bQuerySetUpDone;
     CBLAST_SequenceBlk  mi_clsQueries;  // one for all queries
     CBlastQueryInfo     mi_clsQueryInfo; // one for all queries
-    BlastScoreBlk*      mi_pScoreBlock;
+    BlastScoreBlk*      mi_pScoreBlock; // Karlin-Altschul parameters
     LookupTableWrap*    mi_pLookupTable; // one for all queries
     ListNode*           mi_pLookupSegments; /* Intervals for which lookup 
                                                table is created: complement of
@@ -177,6 +174,16 @@ inline BlastHSPResults* CDbBlast::GetResults() const
     return mi_pResults;
 }
 
+inline BlastReturnStat* CDbBlast::GetReturnStats() const
+{
+    return mi_pReturnStats;
+}
+
+inline BlastScoreBlk* CDbBlast::GetScoreBlk() const
+{
+    return mi_pScoreBlock;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -184,6 +191,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/12/08 22:43:05  dondosha
+* Added getters for score block and return stats structures
+*
 * Revision 1.3  2003/12/03 16:36:07  dondosha
 * Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
 *
