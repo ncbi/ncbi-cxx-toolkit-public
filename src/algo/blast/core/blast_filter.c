@@ -42,14 +42,344 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_dust.h>
 #include <algo/blast/core/blast_seg.h>
 #include "blast_inline.h"
-#ifdef CC_FILTER_ALLOWED
-#include <algo/blast/core/urkpcc.h>
-#endif
 
 /****************************************************************************/
 /* Constants */
 const Uint1 kNuclMask = 14;     /* N in BLASTNA */
 const Uint1 kProtMask = 21;     /* X in NCBISTDAA */
+
+
+
+#define BLASTOPTIONS_BUFFER_SIZE 128
+
+
+/** Copies filtering commands for one filtering algorithm from "instructions" to
+ * "buffer". 
+ * ";" is a delimiter for the commands for different algorithms, so it stops
+ * copying when a ";" is found. 
+ * Example filtering string: "m L; R -d rodents.lib"
+ * @param instructions filtering commands [in] 
+ * @param buffer filled with filtering commands for one algorithm. [out]
+*/
+static const char *
+s_LoadOptionsToBuffer(const char *instructions, char* buffer)
+{
+	Boolean not_started=TRUE;
+	char* buffer_ptr;
+	const char *ptr;
+	Int4 index;
+
+	ptr = instructions;
+	buffer_ptr = buffer;
+	for (index=0; index<BLASTOPTIONS_BUFFER_SIZE && *ptr != NULLB; index++)
+	{
+		if (*ptr == ';')
+		{	/* ";" is a delimiter for different filtering algorithms. */
+			ptr++;
+			break;
+		}
+		/* Remove blanks at the beginning. */
+		if (not_started && *ptr == ' ')
+		{
+			ptr++;
+		}
+		else
+		{
+			not_started = FALSE;
+			*buffer_ptr = *ptr;
+			buffer_ptr++; ptr++;
+		}
+	}
+
+	*buffer_ptr = NULLB;
+
+	if (not_started == FALSE)
+	{	/* Remove trailing blanks. */
+		buffer_ptr--;
+		while (*buffer_ptr == ' ' && buffer_ptr > buffer)
+		{
+			*buffer_ptr = NULLB;
+			buffer_ptr--;
+		}
+	}
+
+	return ptr;
+}
+
+static Int2  
+s_ParseRepeatOptions(const char* repeat_options, char** dbname)
+{
+    char* ptr;
+
+    ASSERT(dbname);
+    *dbname = NULL;
+
+    if (!repeat_options || (*repeat_options != 'R')) {
+        return 0;
+    }
+    
+    ptr = strstr(repeat_options, "-d");
+    if (ptr) {
+        ptr += 2;
+        while (*ptr == ' ' || *ptr == '\t')
+            ++ptr;
+        *dbname = strdup(ptr);
+    }
+    return 0;
+}
+
+/** Parses options used for dust.
+ * @param ptr buffer containing instructions. [in]
+ * @param level sets level for dust. [out]
+ * @param window sets window for dust [out]
+ * @param cutoff sets cutoff for dust. [out] 
+ * @param linker sets linker for dust. [out]
+*/
+static Int2
+s_ParseDustOptions(const char *ptr, int* level, int* window, int* linker)
+
+{
+	char buffer[BLASTOPTIONS_BUFFER_SIZE];
+	int arg, index, index1, window_pri=-1, linker_pri=-1, level_pri=-1;
+
+	arg = 0;
+	index1 = 0;
+	for (index=0; index<BLASTOPTIONS_BUFFER_SIZE; index++)
+	{
+		if (*ptr == ' ' || *ptr == NULLB)
+		{
+	                long tmplong;
+			buffer[index1] = NULLB;
+			index1 = 0;
+			switch(arg) {
+				case 0:
+					sscanf(buffer, "%ld", &tmplong);
+					level_pri = tmplong;
+					break;
+				case 1:
+					sscanf(buffer, "%ld", &tmplong);
+					window_pri = tmplong;
+					break;
+				case 2:
+					sscanf(buffer, "%ld", &tmplong);
+					linker_pri = tmplong;
+					break;
+				default:
+					break;
+			}
+
+			arg++;
+			while (*ptr == ' ')
+				ptr++;
+
+			/* end of the buffer. */
+			if (*ptr == NULLB)
+				break;
+		}
+		else
+		{
+			buffer[index1] = *ptr; ptr++;
+			index1++;
+		}
+	}
+
+	*level = level_pri; 
+	*window = window_pri; 
+	*linker = linker_pri; 
+
+	return 0;
+}
+
+/** parses a string to set three seg options. 
+ * @param ptr buffer containing instructions [in]
+ * @param window returns "window" for seg algorithm. [out]
+ * @param locut returns "locut" for seg. [out]
+ * @param hicut returns "hicut" for seg. [out]
+*/
+static Int2
+s_ParseSegOptions(const char *ptr, Int4* window, double* locut, double* hicut)
+
+{
+	char buffer[BLASTOPTIONS_BUFFER_SIZE];
+	Int4 arg, index, index1; 
+
+	arg = 0;
+	index1 = 0;
+	for (index=0; index<BLASTOPTIONS_BUFFER_SIZE; index++)
+	{
+		if (*ptr == ' ' || *ptr == NULLB)
+		{
+	                long tmplong;
+	                double tmpdouble;
+			buffer[index1] = NULLB;
+			index1 = 0;
+			switch(arg) {
+				case 0:
+					sscanf(buffer, "%ld", &tmplong);
+					*window = tmplong;
+					break;
+				case 1:
+					sscanf(buffer, "%le", &tmpdouble);
+					*locut = tmpdouble;
+					break;
+				case 2:
+					sscanf(buffer, "%le", &tmpdouble);
+					*hicut = tmpdouble;
+					break;
+				default:
+					break;
+			}
+
+			arg++;
+			while (*ptr == ' ')
+				ptr++;
+
+			/* end of the buffer. */
+			if (*ptr == NULLB)
+				break;
+		}
+		else
+		{
+			buffer[index1] = *ptr; ptr++;
+			index1++;
+		}
+	}
+
+	return 0;
+}
+
+
+
+Int2
+BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* instructions, 
+       SBlastFilterOptions* *filtering_options, Blast_Message* *blast_message)
+{
+        Boolean mask_at_hash = FALSE; /* the default. */
+        char* buffer;
+        const char* ptr = instructions;
+        Int2 status = 0;
+        SSegOptions* segOptions = NULL;
+        SDustOptions* dustOptions = NULL;
+        SRepeatFilterOptions* repeatOptions = NULL;
+   
+        *filtering_options = NULL;
+        if (blast_message)
+            *blast_message = NULL;
+
+        if (instructions == NULL || strcasecmp(instructions, "F") == 0)
+        {
+             FilterSetUpOptionsNew(filtering_options, eEmpty);
+             return status;
+        }
+
+        buffer = (char*) calloc(strlen(instructions), sizeof(char));
+	/* allow old-style filters when m cannot be followed by the ';' */
+	if (ptr[0] == 'm' && ptr[1] == ' ')
+	{
+		mask_at_hash = TRUE;
+		ptr += 2;
+	}
+
+	while (*ptr != NULLB)
+	{
+		if (*ptr == 'S')
+		{
+                        if (program_number == eBlastTypeBlastn)
+                        {
+                            sfree(buffer);
+                            if (blast_message)
+                               Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
+                                  "SEG may not be used with BLASTN program");
+                            return 1;
+                        }
+                        SegSetUpOptionsNew(&segOptions);
+			ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
+			if (buffer[0] != NULLB)
+			{
+                                int window;
+                                double locut, hicut; 
+				s_ParseSegOptions(buffer, &window, &locut, &hicut);
+                                segOptions->window = window;
+                                segOptions->locut = locut;
+                                segOptions->hicut = hicut;
+			}
+		}
+		else if (*ptr == 'D')
+		{
+                        if (program_number != eBlastTypeBlastn)
+                        {
+                            sfree(buffer);
+                            if (blast_message)
+                                Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
+                                  "DUST may only be used with BLASTN program");
+                            return 1;
+                        }
+                        DustSetUpOptionsNew(&dustOptions);
+			ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
+			if (buffer[0] != NULLB)
+                        {
+                                int window, level, linker;
+				s_ParseDustOptions(buffer, &level, &window, &linker);
+                                dustOptions->level = level;
+                                dustOptions->window = window;
+                                dustOptions->linker = linker;
+                        }
+		}
+                else if (*ptr == 'R')
+                {
+                        if (program_number != eBlastTypeBlastn)
+                        {
+                            sfree(buffer);
+                            if (blast_message)
+                                Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
+                                  "Repeat filtering may only be used with BLASTN program");
+                            return 1;
+                        }
+                        RepeatSetUpOptionsNew(&repeatOptions);
+			ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
+			if (buffer[0] != NULLB)
+                        {
+                             char* dbname = NULL;
+                             s_ParseRepeatOptions(buffer, &dbname); 
+                             if (dbname)
+                             {
+                                 sfree(repeatOptions->database);
+                                 repeatOptions->database = dbname;
+                             }
+                        }
+                }
+		else if (*ptr == 'L' || *ptr == 'T')
+		{ /* do low-complexity filtering; dust for blastn, otherwise seg.*/
+                        if (program_number == eBlastTypeBlastn)
+                            DustSetUpOptionsNew(&dustOptions);
+                        else
+                            SegSetUpOptionsNew(&segOptions);
+			ptr++;
+		}
+		else if (*ptr == 'm')
+		{
+		        mask_at_hash = TRUE;
+                        ptr++;
+                }
+                else
+                {    /* Nothing applied */
+                         ptr++;
+                }
+	}
+        sfree(buffer);
+
+        status = FilterSetUpOptionsNew(filtering_options, eEmpty);
+        if (status)
+            return status;
+
+        (*filtering_options)->dustOptions = dustOptions;
+        (*filtering_options)->segOptions = segOptions;
+        (*filtering_options)->repeatFilterOptions = repeatOptions;
+        (*filtering_options)->mask_at_hash = mask_at_hash;
+
+        return status;
+}
+
 
 BlastSeqLoc* BlastSeqLocNew(BlastSeqLoc** head, Int4 from, Int4 to)
 {
@@ -523,525 +853,55 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
    return 0;
 }
 
-#define BLASTOPTIONS_BUFFER_SIZE 128
-
-/** Parses options used for dust.
- * @param ptr buffer containing instructions. [in]
- * @param level sets level for dust. [out]
- * @param window sets window for dust [out]
- * @param cutoff sets cutoff for dust. [out] 
- * @param linker sets linker for dust. [out]
-*/
-static Int2
-s_ParseDustOptions(const char *ptr, Int2* level, Int2* window,
-	Int2* cutoff, Int2* linker)
-
-{
-	char buffer[BLASTOPTIONS_BUFFER_SIZE];
-	Int4 arg, index, index1, window_pri=-1, linker_pri=-1, level_pri=-1, cutoff_pri=-1;
-	long	tmplong;
-
-	arg = 0;
-	index1 = 0;
-	for (index=0; index<BLASTOPTIONS_BUFFER_SIZE; index++)
-	{
-		if (*ptr == ' ' || *ptr == NULLB)
-		{
-			buffer[index1] = NULLB;
-			index1 = 0;
-			switch(arg) {
-				case 0:
-					sscanf(buffer, "%ld", &tmplong);
-					level_pri = tmplong;
-					break;
-				case 1:
-					sscanf(buffer, "%ld", &tmplong);
-					window_pri = tmplong;
-					break;
-				case 2:
-					sscanf(buffer, "%ld", &tmplong);
-					cutoff_pri = tmplong;
-					break;
-				case 3:
-					sscanf(buffer, "%ld", &tmplong);
-					linker_pri = tmplong;
-					break;
-				default:
-					break;
-			}
-
-			arg++;
-			while (*ptr == ' ')
-				ptr++;
-
-			/* end of the buffer. */
-			if (*ptr == NULLB)
-				break;
-		}
-		else
-		{
-			buffer[index1] = *ptr; ptr++;
-			index1++;
-		}
-	}
-
-	*level = level_pri; 
-	*window = window_pri; 
-	*cutoff = cutoff_pri; 
-	*linker = linker_pri; 
-
-	return 0;
-}
-
-/** parses a string to set three seg options. 
- * @param ptr buffer containing instructions [in]
- * @param window returns "window" for seg algorithm. [out]
- * @param locut returns "locut" for seg. [out]
- * @param hicut returns "hicut" for seg. [out]
-*/
-static Int2
-s_ParseSegOptions(const char *ptr, Int4* window, double* locut, double* hicut)
-
-{
-	char buffer[BLASTOPTIONS_BUFFER_SIZE];
-	Int4 arg, index, index1; 
-	long	tmplong;
-	double	tmpdouble;
-
-	arg = 0;
-	index1 = 0;
-	for (index=0; index<BLASTOPTIONS_BUFFER_SIZE; index++)
-	{
-		if (*ptr == ' ' || *ptr == NULLB)
-		{
-			buffer[index1] = NULLB;
-			index1 = 0;
-			switch(arg) {
-				case 0:
-					sscanf(buffer, "%ld", &tmplong);
-					*window = tmplong;
-					break;
-				case 1:
-					sscanf(buffer, "%le", &tmpdouble);
-					*locut = tmpdouble;
-					break;
-				case 2:
-					sscanf(buffer, "%le", &tmpdouble);
-					*hicut = tmpdouble;
-					break;
-				default:
-					break;
-			}
-
-			arg++;
-			while (*ptr == ' ')
-				ptr++;
-
-			/* end of the buffer. */
-			if (*ptr == NULLB)
-				break;
-		}
-		else
-		{
-			buffer[index1] = *ptr; ptr++;
-			index1++;
-		}
-	}
-
-	return 0;
-}
-
-#ifdef CC_FILTER_ALLOWED
-/** Coiled-coiled algorithm parameters. 
- * @param ptr buffer containing instructions. [in]
- * @param window returns window for coil-coiled algorithm. [out]
- * @param cutoff cutoff for coil-coiled algorithm [out]
- * @param linker returns linker [out]
-*/
-static Int2
-s_ParseCoilCoilOptions(const char *ptr, Int4* window, double* cutoff, Int4* linker)
-
-{
-	char buffer[BLASTOPTIONS_BUFFER_SIZE];
-	Int4 arg, index, index1;
-	long	tmplong;
-	double	tmpdouble;
-
-	arg = 0;
-	index1 = 0;
-	for (index=0; index<BLASTOPTIONS_BUFFER_SIZE; index++)
-	{
-		if (*ptr == ' ' || *ptr == NULLB)
-		{
-			buffer[index1] = NULLB;
-			index1 = 0;
-			switch(arg) {
-				case 0:
-					sscanf(buffer, "%ld", &tmplong);
-					*window = tmplong;
-					break;
-				case 1:
-					sscanf(buffer, "%le", &tmpdouble);
-					*cutoff = tmpdouble;
-					break;
-				case 2:
-					sscanf(buffer, "%ld", &tmplong);
-					*linker = tmplong;
-					break;
-				default:
-					break;
-			}
-
-			arg++;
-			while (*ptr == ' ')
-				ptr++;
-
-			/* end of the buffer. */
-			if (*ptr == NULLB)
-				break;
-		}
-		else
-		{
-			buffer[index1] = *ptr; ptr++;
-			index1++;
-		}
-	}
-
-	return 0;
-}
-#endif
-
-/** Copies filtering commands for one filtering algorithm from "instructions" to
- * "buffer". 
- * ";" is a delimiter for the commands for different algorithms, so it stops
- * copying when a ";" is found. 
- * Example filtering string: "m L; R -d rodents.lib"
- * @param instructions filtering commands [in] 
- * @param buffer filled with filtering commands for one algorithm. [out]
-*/
-static const char *
-s_LoadOptionsToBuffer(const char *instructions, char* buffer)
-{
-	Boolean not_started=TRUE;
-	char* buffer_ptr;
-	const char *ptr;
-	Int4 index;
-
-	ptr = instructions;
-	buffer_ptr = buffer;
-	for (index=0; index<BLASTOPTIONS_BUFFER_SIZE && *ptr != NULLB; index++)
-	{
-		if (*ptr == ';')
-		{	/* ";" is a delimiter for different filtering algorithms. */
-			ptr++;
-			break;
-		}
-		/* Remove blanks at the beginning. */
-		if (not_started && *ptr == ' ')
-		{
-			ptr++;
-		}
-		else
-		{
-			not_started = FALSE;
-			*buffer_ptr = *ptr;
-			buffer_ptr++; ptr++;
-		}
-	}
-
-	*buffer_ptr = NULLB;
-
-	if (not_started == FALSE)
-	{	/* Remove trailing blanks. */
-		buffer_ptr--;
-		while (*buffer_ptr == ' ' && buffer_ptr > buffer)
-		{
-			*buffer_ptr = NULLB;
-			buffer_ptr--;
-		}
-	}
-
-	return ptr;
-}
-
-#define CC_WINDOW 22
-#define CC_CUTOFF 40.0
-#define CC_LINKER 32
 
 Int2
 BlastSetUp_Filter(EBlastProgramType program_number, Uint1* sequence, Int4 length, 
-   Int4 offset, const char* instructions, Boolean *mask_at_hash, 
-   BlastSeqLoc* *seqloc_retval)
+   Int4 offset, const SBlastFilterOptions* filter_options, BlastSeqLoc* *seqloc_retval)
 {
-	Boolean do_default=FALSE, do_seg=FALSE, do_dust=FALSE; 
-	char* buffer=NULL;
-   const char *ptr;
-	Int2 seqloc_num;
+	Int2 seqloc_num=0;
 	Int2 status=0;		/* return value. */
-	Int2 window_dust, level_dust, minwin_dust, linker_dust;
-   BlastSeqLoc* dust_loc = NULL,* seg_loc = NULL;
-	SegParameters* sparamsp=NULL;
-#ifdef CC_FILTER_ALLOWED
-   Boolean do_coil_coil = FALSE;
-   BlastSeqLoc* cc_loc = NULL;
-	PccDatPtr pccp;
-   Int4 window_cc, linker_cc;
-	double cutoff_cc;
-#endif
-#ifdef TEMP_BLAST_OPTIONS
-   /* TEMP_BLAST_OPTIONS is set to zero until these are implemented. */
-   BlastSeqLoc* vs_loc = NULL,* repeat_loc = NULL;
-	BLAST_OptionsBlkPtr repeat_options, vs_options;
-	Boolean do_repeats=FALSE; 	/* screen for orgn. specific repeats. */
-	Boolean do_vecscreen=FALSE;	/* screen for vector contamination. */
-	Boolean myslp_allocated;
-	char* repeat_database=NULL,* vs_database=NULL,* error_msg;
-	SeqLocPtr repeat_slp=NULL, vs_slp=NULL;
-	SeqAlignPtr seqalign;
-	SeqLocPtr myslp, seqloc_var, seqloc_tmp;
-	ListNode* vnp=NULL,* vnp_var;
-#endif
+        BlastSeqLoc* dust_loc = NULL,* seg_loc = NULL;
 
-#ifdef CC_FILTER_ALLOWED
-	cutoff_cc = CC_CUTOFF;
-#endif
+        ASSERT(filter_options);
+        ASSERT(seqloc_retval);
 
-   if (!seqloc_retval) 
-      return -1;
+        *seqloc_retval = NULL;
 
-	/* FALSE is the default right now. */
-	if (mask_at_hash)
-      *mask_at_hash = FALSE;
-   
-   *seqloc_retval = NULL;
-
-	if (instructions == NULL || strcasecmp(instructions, "F") == 0)
-		return status;
-
-	/* parameters for dust. */
-	/* -1 indicates defaults. */
-	level_dust = -1;
-	window_dust = -1;
-	linker_dust = -1;
-	if (strcasecmp(instructions, "T") == 0)
-	{ /* do_default actually means seg for proteins and dust for nt. */
-		do_default = TRUE;
-	}
-	else
+	if (filter_options->segOptions)
 	{
-		buffer = (char*) calloc(strlen(instructions), sizeof(char));
-		ptr = instructions;
-		/* allow old-style filters when m cannot be followed by the ';' */
-		if (*ptr == 'm' && ptr[1] == ' ')
-		{
-			if (mask_at_hash)
-				*mask_at_hash = TRUE;
-			ptr += 2;
-		}
-		while (*ptr != NULLB)
-		{
-			if (*ptr == 'S')
-			{
-				sparamsp = SegParametersNewAa();
-				sparamsp->overlaps = TRUE;	/* merge overlapping segments. */
-				ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
-				if (buffer[0] != NULLB)
-				{
-					s_ParseSegOptions(buffer, &sparamsp->window, &sparamsp->locut, &sparamsp->hicut);
-				}
-				do_seg = TRUE;
-			}
-			else if (*ptr == 'C')
-			{
-#ifdef CC_FILTER_ALLOWED
-				ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
-				window_cc = CC_WINDOW;
-				cutoff_cc = CC_CUTOFF;
-				linker_cc = CC_LINKER;
-				if (buffer[0] != NULLB)
-					s_ParseCoilCoilOptions(buffer, &window_cc, &cutoff_cc, &linker_cc);
-				do_coil_coil = TRUE;
-#endif
-			}
-			else if (*ptr == 'D')
-			{
-				ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
-				if (buffer[0] != NULLB)
-					s_ParseDustOptions(buffer, &level_dust, &window_dust, &minwin_dust, &linker_dust);
-				do_dust = TRUE;
-			}
-#ifdef TEMP_BLAST_OPTIONS
-			else if (*ptr == 'R')
-			{
-				repeat_options = BLASTOptionNew("blastn", TRUE);
-				repeat_options->expect_value = 0.1;
-				repeat_options->penalty = -1;
-				repeat_options->wordsize = 11;
-				repeat_options->gap_x_dropoff_final = 90;
-				repeat_options->dropoff_2nd_pass = 40;
-				repeat_options->gap_open = 2;
-				repeat_options->gap_extend = 1;
-				ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
-				if (buffer[0] != NULLB)
-                                   parse_blast_options(repeat_options,
-                                      buffer, &error_msg, &repeat_database,
-                                      NULL, NULL);
-				if (repeat_database == NULL)
-                                   repeat_database = strdup("humlines.lib humsines.lib retrovir.lib");
-				do_repeats = TRUE;
-			}
-			else if (*ptr == 'V')
-			{
-				vs_options = VSBlastOptionNew();
-				ptr = s_LoadOptionsToBuffer(ptr+1, buffer);
-				if (buffer[0] != NULLB)
-                                   parse_blast_options(vs_options, buffer,
-                                      &error_msg, &vs_database, NULL, NULL); 
-				vs_options = BLASTOptionDelete(vs_options);
-				if (vs_database == NULL)
-                                   vs_database = strdup("UniVec_Core");
-				do_vecscreen = TRUE;
-			}
-#endif
-			else if (*ptr == 'L')
-			{ /* do low-complexity filtering; dust for blastn, otherwise seg.*/
-				do_default = TRUE;
-				ptr++;
-			}
-			else if (*ptr == 'm')
-			{
-				if (mask_at_hash)
-					*mask_at_hash = TRUE;
-				ptr++;
-			}
-			else
-			{	/* Nothing applied. */
-				ptr++;
-			}
-		}
-	        sfree(buffer);
-	}
+                SSegOptions* seg_options = filter_options->segOptions;
+	        SegParameters* sparamsp=NULL;
 
-	seqloc_num = 0;
-	if (program_number != eBlastTypeBlastn)
-	{
-		if (do_default || do_seg)
-		{
-			SeqBufferSeg(sequence, length, offset, sparamsp, &seg_loc);
-			SegParametersFree(sparamsp);
-			sparamsp = NULL;
-			seqloc_num++;
-		}
-#ifdef CC_FILTER_ALLOWED
-		if (do_coil_coil)
-		{
-			pccp = PccDatNew ();
-			pccp->window = window_cc;
-			ReadPccData (pccp);
-			scores = PredictCCSeqLoc(slp, pccp);
-			cc_slp = FilterCC(scores, cutoff_cc, length, linker_cc,
-                                          SeqIdDup(sip), FALSE);
-			sfree(scores);
-			PccDatFree (pccp);
-			seqloc_num++;
-		}
-#endif
+                sparamsp = SegParametersNewAa();
+                sparamsp->overlaps = TRUE;
+                if (seg_options->window > 0)
+                    sparamsp->window = seg_options->window;
+                if (seg_options->locut > 0.0)
+                    sparamsp->locut = seg_options->locut;
+                if (seg_options->hicut > 0.0)
+                    sparamsp->hicut = seg_options->hicut;
+
+		SeqBufferSeg(sequence, length, offset, sparamsp, &seg_loc);
+		SegParametersFree(sparamsp);
+		sparamsp = NULL;
+		seqloc_num++;
 	}
-	else
+	else if (filter_options->dustOptions)
 	{
-		if (do_default || do_dust)
-		{
-         SeqBufferDust(sequence, length, offset, level_dust, window_dust,
-                       linker_dust, &dust_loc);
+              SDustOptions* dust_options = filter_options->dustOptions;
+              SeqBufferDust(sequence, length, offset, dust_options->level, 
+                       dust_options->window, dust_options->linker, &dust_loc);
 			seqloc_num++;
-		}
-#ifdef TEMP_BLAST_OPTIONS
-		if (do_repeats)
-		{
-		/* Either the SeqLocPtr is SEQLOC_WHOLE (both strands) or SEQLOC_INT (probably 
-one strand).  In that case we make up a double-stranded one as we wish to look at both strands. */
-			myslp_allocated = FALSE;
-			if (slp->choice == SEQLOC_INT)
-			{
-				myslp = SeqLocIntNew(SeqLocStart(slp), SeqLocStop(slp), Seq_strand_both, SeqLocId(slp));
-				myslp_allocated = TRUE;
-			}
-			else
-			{
-				myslp = slp;
-			}
-start_timer;
-			repeat_slp = BioseqHitRangeEngineByLoc(myslp, "blastn", repeat_database, repeat_options, NULL, NULL, NULL, NULL, NULL, 0);
-stop_timer("after repeat filtering");
-			repeat_options = BLASTOptionDelete(repeat_options);
-			sfree(repeat_database);
-			if (myslp_allocated)
-				SeqLocFree(myslp);
-			seqloc_num++;
-		}
-		if (do_vecscreen)
-		{
-		/* Either the SeqLocPtr is SEQLOC_WHOLE (both strands) or SEQLOC_INT (probably 
-one strand).  In that case we make up a double-stranded one as we wish to look at both strands. */
-			myslp_allocated = FALSE;
-			if (slp->choice == SEQLOC_INT)
-			{
-				myslp = SeqLocIntNew(SeqLocStart(slp), SeqLocStop(slp), Seq_strand_both, SeqLocId(slp));
-				myslp_allocated = TRUE;
-			}
-			else
-			{
-				myslp = slp;
-			}
-			VSScreenSequenceByLoc(myslp, NULL, vs_database, &seqalign, &vnp, NULL, NULL);
-			vnp_var = vnp;
-			while (vnp_var)
-			{
-				seqloc_tmp = vnp_var->ptr;
-				if (vs_slp == NULL)
-				{
-					vs_slp = seqloc_tmp;
-				}
-				else
-				{
-					seqloc_var = vs_slp;
-					while (seqloc_var->next)
-						seqloc_var = seqloc_var->next;
-					seqloc_var->next = seqloc_tmp;
-				}
-				vnp_var->ptr = NULL;
-				vnp_var = vnp_var->next;
-			}
-			vnp = ListNodeFree(vnp);
-			seqalign = SeqAlignSetFree(seqalign);
-			sfree(vs_database);
-			if (myslp_allocated)
-				SeqLocFree(myslp);
-			seqloc_num++;
-		}
-#endif
 	}
 
 	if (seqloc_num)
 	{ 
-		BlastSeqLoc* seqloc_list=NULL;  /* Holds all SeqLoc's for
+	      BlastSeqLoc* seqloc_list=NULL;  /* Holds all SeqLoc's for
                                                       return. */
-#if 0
-		if (seg_slp)
-			ListNodeAddPointer(&seqloc_list, SEQLOC_MIX, seg_slp);
-		if (cc_slp)
-			ListNodeAddPointer(&seqloc_list, SEQLOC_MIX, cc_slp);
-		if (dust_slp)
-			ListNodeAddPointer(&seqloc_list, SEQLOC_MIX, dust_slp);
-		if (repeat_slp)
-			ListNodeAddPointer(&seqloc_list, SEQLOC_MIX, repeat_slp);
-		if (vs_slp)
-			ListNodeAddPointer(&seqloc_list, SEQLOC_MIX, vs_slp);
-#endif
-      if (dust_loc)
-         seqloc_list = dust_loc;
-      if (seg_loc)
-         seqloc_list = seg_loc;
+              if (dust_loc)
+                 seqloc_list = dust_loc;
+              if (seg_loc)
+                 seqloc_list = seg_loc;
 
 		*seqloc_retval = seqloc_list;
 	}
@@ -1075,14 +935,13 @@ s_GetReversedLocation(BlastSeqLoc** filter_out, BlastSeqLoc* filter_in, Int4 que
 }
 
 static Int2
-s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int2 context, EBlastProgramType program_number, const char* filter_string, BlastSeqLoc* *filter_out, Boolean* mask_at_hash)
+s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int2 context, EBlastProgramType program_number, const SBlastFilterOptions* filter_options, BlastSeqLoc* *filter_out)
 {
         Int2 status = 0;
         Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
         Int4 context_offset;
         BlastSeqLoc *lcase_mask_slp = NULL; /* Auxiliary locations for lower-case masking  */
         BlastSeqLoc *filter_slp = NULL;     /* SeqLocPtr computed for filtering. */
-        BlastSeqLoc *filter_slp_rev = NULL;     /* reversed SeqLocPtr (used only if minus strand) */
         BlastSeqLoc *filter_slp_combined;   /* Used to hold combined SeqLoc's */
         Uint1 *buffer;              /* holds sequence for plus strand or protein. */
 
@@ -1095,14 +954,13 @@ s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInf
         if ((query_length = query_info->contexts[context].query_length) <= 0)
            return 0;
 
-
         if ((status = BlastSetUp_Filter(program_number, buffer,
-                       query_length, 0, filter_string,
-                             mask_at_hash, &filter_slp))) 
+                       query_length, 0, filter_options, &filter_slp))) 
              return status;
 
         if (BlastIsReverseStrand(kIsNucl, context) == TRUE)
         {  /* Reverse this as it's on minus strand. */
+              BlastSeqLoc *filter_slp_rev = NULL;     /* reversed SeqLocPtr (used only if minus strand) */
               s_GetReversedLocation(&filter_slp_rev, filter_slp, query_length);
               filter_slp = BlastSeqLocFree(filter_slp);
               filter_slp = filter_slp_rev;
@@ -1145,7 +1003,7 @@ s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInf
 
 
 Int2
-BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, EBlastProgramType program_number, const char* filter_string, BlastMaskLoc** filter_maskloc, Boolean* mask_at_hash, Blast_Message * *blast_message)
+BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, EBlastProgramType program_number, const SBlastFilterOptions* filter_options, BlastMaskLoc** filter_maskloc, Blast_Message * *blast_message)
 {
 
     Int2 status = 0;
@@ -1177,7 +1035,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
         if (!reverse || no_forward_strand)
         {
             Int4 filter_index = BlastGetMaskLocIndexFromContext(kIsNucl, context);
-            if ((status=s_GetFilteringLocationsForOneContext(query_blk, query_info, context, program_number, filter_string, &filter_per_context, mask_at_hash)))
+            if ((status=s_GetFilteringLocationsForOneContext(query_blk, query_info, context, program_number, filter_options, &filter_per_context)))
             {
                Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
                   "Failure at filtering");
@@ -1264,52 +1122,3 @@ BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, B
 
     return 0;
 }
-
-char* Blast_GetRepeatsFilterOption(const char* filter_string)
-{
-    char* repeat_filter_string = NULL;
-    const char* kPtr;
-    
-    if (!filter_string)
-        return NULL;
-
-    kPtr = strchr(filter_string, 'R');
-
-    if (kPtr) {
-        const char* kEnd = strstr(kPtr, ";");
-        unsigned int length;
-        if (kEnd)
-            length = (unsigned int) (kEnd - kPtr);
-        else
-            length = strlen(kPtr);
-        repeat_filter_string = (char*) malloc(length+1);
-        strncpy(repeat_filter_string, kPtr, length);
-        repeat_filter_string[length] = NULLB;
-    }
-    
-    return repeat_filter_string;
-}
-
-void 
-Blast_ParseRepeatOptions(const char* repeat_options, char** dbname)
-{
-    char* ptr;
-
-    if (!dbname)
-        return;
-    if (!repeat_options || (*repeat_options != 'R')) {
-        *dbname = NULL;
-        return;
-    }
-    
-    ptr = strstr(repeat_options, "-d");
-    if (!ptr) {
-        *dbname = strdup("humrep");
-    } else {
-        ptr += 2;
-        while (*ptr == ' ' || *ptr == '\t')
-            ++ptr;
-        *dbname = strdup(ptr);
-    }
-}
-

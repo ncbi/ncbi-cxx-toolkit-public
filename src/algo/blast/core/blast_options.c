@@ -38,33 +38,172 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/blast_filter.h>
+
+
+SDustOptions* DustOptionsFree(SDustOptions* dust_options)
+{
+    if (dust_options)
+      sfree(dust_options);
+    return NULL;
+}
+
+Int2 DustSetUpOptionsNew(SDustOptions* *dust_options)
+{
+    if (dust_options == NULL)
+        return 1;
+
+    *dust_options = (SDustOptions*) malloc(sizeof(SDustOptions));
+    (*dust_options)->level = kDustLevel;
+    (*dust_options)->window = kDustWindow;
+    (*dust_options)->linker = kDustLinker;
+
+    return 0;
+}
+
+SSegOptions* SegOptionsFree(SSegOptions* seg_options)
+{
+    if (seg_options)
+      sfree(seg_options);
+    return NULL;
+}
+
+Int2 SegSetUpOptionsNew(SSegOptions* *seg_options)
+{
+    if (seg_options == NULL)
+        return 1;
+
+    *seg_options = (SSegOptions*) malloc(sizeof(SSegOptions));
+    (*seg_options)->window = kSegWindow;
+    (*seg_options)->locut = kSegLocut;
+    (*seg_options)->hicut = kSegHicut;
+
+    return 0;
+}
+
+SRepeatFilterOptions* RepeatOptionsFree(SRepeatFilterOptions* repeat_options)
+{
+    if (repeat_options)
+    {
+        sfree(repeat_options->database);
+        sfree(repeat_options);
+    }
+    return NULL;
+}
+
+Int2 RepeatSetUpOptionsNew(SRepeatFilterOptions* *repeat_options)
+{
+
+    const char* kRepeatDB = "humrep";
+    if (repeat_options == NULL)
+        return 1;
+
+    *repeat_options = (SRepeatFilterOptions*) calloc(1, sizeof(SRepeatFilterOptions));
+    if (*repeat_options == NULL)
+        return 1;
+
+    (*repeat_options)->database = strdup(kRepeatDB);
+
+    return 0;
+}
+
+Int2 RepeatOptionsResetDB(SRepeatFilterOptions* *repeat_options, const char* db)
+{
+    Int2 status=0;
+
+    if (*repeat_options == NULL)
+      status = RepeatSetUpOptionsNew(repeat_options);
+
+    if (status)
+      return status;
+
+    sfree((*repeat_options)->database);
+    (*repeat_options)->database = strdup(db);
+
+    return status;
+}
+
+SBlastFilterOptions* FilterOptionsFree(SBlastFilterOptions* filter_options)
+{
+    if (filter_options)
+    {
+        filter_options->dustOptions = DustOptionsFree(filter_options->dustOptions);
+        filter_options->segOptions = SegOptionsFree(filter_options->segOptions);
+        filter_options->repeatFilterOptions = RepeatOptionsFree(filter_options->repeatFilterOptions);
+        sfree(filter_options);
+    }
+
+    return NULL;
+}
+
+Int2 FilterSetUpOptionsNew(SBlastFilterOptions* *filter_options,  EFilterOptions type)
+{
+    Int2 status = 0;
+
+    if (filter_options)
+    {
+        *filter_options = (SBlastFilterOptions*) calloc(1, sizeof(SBlastFilterOptions));
+        (*filter_options)->mask_at_hash = FALSE;
+        if (type == eSeg)
+          SegSetUpOptionsNew(&((*filter_options)->segOptions)); 
+        if (type == eDust || type == eDustRepeats)
+          DustSetUpOptionsNew(&((*filter_options)->dustOptions)); 
+        if (type == eRepeats || type == eDustRepeats)
+          RepeatSetUpOptionsNew(&((*filter_options)->repeatFilterOptions)); 
+    }
+    else
+        status = 1;
+
+    return status;
+}
+
+Boolean FilterOptionsMaskAtHash(const SBlastFilterOptions* filter_options)
+{
+       if (filter_options == NULL)
+          return FALSE;
+      
+       return filter_options->mask_at_hash;
+}
+
 
 QuerySetUpOptions*
 BlastQuerySetUpOptionsFree(QuerySetUpOptions* options)
 
 {
-   sfree(options->filter_string);
-
-   sfree(options);
+   if (options)
+   {
+       sfree(options->filter_string);
+       options->filtering_options = FilterOptionsFree(options->filtering_options);
+       sfree(options);
+   }
    return NULL;
 }
 
 Int2
 BlastQuerySetUpOptionsNew(QuerySetUpOptions* *options)
 {
+   Int2 status = 0;
+
+   if (options == NULL)
+      return 1;
+
    *options = (QuerySetUpOptions*) calloc(1, sizeof(QuerySetUpOptions));
    
    if (*options == NULL)
       return 1;
-   
+
    (*options)->genetic_code = BLAST_GENETIC_CODE;
 
-   return 0;
+   status = FilterSetUpOptionsNew(&((*options)->filtering_options), eEmpty);
+   
+   return status;
 }
 
 Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
         EBlastProgramType program, const char *filter_string, Uint1 strand_option)
 {
+   Int2 status = 0;
+
    if (options == NULL)
       return 1;
    
@@ -77,14 +216,13 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
    if (filter_string) {
        /* Free whatever filter string has been set before. */
        sfree(options->filter_string);
-       if (!strcasecmp(filter_string, "T"))
-           /* "L" indicates low-complexity - seg for proteins, dust for 
-              nucleotides. */
-           options->filter_string = strdup("L");
-       else
-           options->filter_string = strdup(filter_string); 
+       /* Free whatever filtering options have been set. */
+       options->filtering_options =  FilterOptionsFree(options->filtering_options);
+       /* Parse the filter_string for options, do not save the string. */
+       status = BlastFilteringOptionsFromString(program, filter_string, 
+          &options->filtering_options, NULL);
    }
-   return 0;
+   return status;
 }
 
 BlastInitialWordOptions*
@@ -970,6 +1108,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.157  2005/02/24 13:43:04  madden
+ * Added new functions for structured filtering options
+ *
  * Revision 1.156  2005/02/22 22:48:02  camacho
  * + impala_scaling_factor, first cut
  *
