@@ -596,7 +596,7 @@ public:
             ret.second = levelIns.second;
             ret.first.m_Range = range_type::GetWhole();
             ret.first.m_SelectIter = selectIter;
-            ret.first.m_SelectIterEnd = m_SelectMap.end();
+            ret.first.m_SelectIterEnd = this->m_SelectMap.end();
             ret.first.m_LevelIter = levelIns.first;
             return ret;
         }
@@ -652,7 +652,7 @@ public:
             iterator ret;
             ret.m_Range = range_type::GetWhole();
             ret.m_SelectIter = insertLevel(selectKey);
-            ret.m_SelectIterEnd = m_SelectMap.end();
+            ret.m_SelectIterEnd = this->m_SelectMap.end();
             ret.m_LevelIter = ret.m_SelectIter->second.insert(value);
             return ret;
         }
@@ -669,6 +669,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/04/26 14:52:03  ucko
+* Add "this->" as needed to accommodate GCC 3.4's stricter treatment of
+* templates.
+*
 * Revision 1.23  2004/01/13 17:23:14  vasilche
 * Performance fix - do not create level node until it's really needed.
 *

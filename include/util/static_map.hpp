@@ -177,7 +177,7 @@ public:
     /// Return the key comparison object
     const key_compare& key_comp() const
     {
-        return value_comp().first_comp();
+        return this->value_comp().first_comp();
     }
 };
 
@@ -189,6 +189,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/04/26 14:52:14  ucko
+ * Add "this->" as needed to accommodate GCC 3.4's stricter treatment of
+ * templates.
+ *
  * Revision 1.3  2004/01/23 18:02:23  vasilche
  * Cleaned implementation of CStaticArraySet & CStaticArrayMap.
  * Added test utility test_staticmap.
