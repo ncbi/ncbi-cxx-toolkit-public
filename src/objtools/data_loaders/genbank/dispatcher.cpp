@@ -613,13 +613,16 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
             ++retry_count;
             try {
 #ifdef GB_COLLECT_STATS
-                CStopWatch sw(CollectStatistics() > 0);
+                bool stat = CollectStatistics() > 0;
+                CStopWatch sw(stat);
 #endif
                 if ( !command.Execute(reader) ) {
                     retry_count = kMax_Int;
                 }
 #ifdef GB_COLLECT_STATS
-                LogStat(command, sw);
+                if ( stat ) {
+                    LogStat(command, sw);
+                }
 #endif
             }
             catch ( CLoaderException& exc ) {
