@@ -7,7 +7,7 @@
 #
 #  Auxilary script -- to be called by "./Makefile.config"
 #
-#  Create the FreeTDS config file using "ncbiconf.h"
+#  Create the FreeTDS(8) config file using "ncbiconf.h"
 #
 ###########################################################################
 
@@ -25,7 +25,7 @@ tdsconf_dir="$srcdir/../../../../../include/dbapi/driver/ftds8/freetds"
 test -d $tdsconf_dir  ||  exit 0
 tdsconf="$tdsconf_dir/tds_config.h"
 
-DEF_NAME="DBAPI_DRIVER_FTDS_FREETDS___FTDS_CONFIG__H"
+DEF_NAME="DBAPI_DRIVER_FTDS8_FREETDS___FTDS_CONFIG__H"
 
 cat > $tdsconf <<EOF
 /*  Generated from "$1/ncbiconf.h"
