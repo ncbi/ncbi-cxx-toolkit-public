@@ -514,6 +514,8 @@ void CAlnMgrTestApp::View7()
 }
 
 
+// Demonstrate obtaining column vector in two alternative ways.
+// (Use numeric param n to choose alignment position)
 void CAlnMgrTestApp::View8(int aln_pos)
 {
     CAlnMap::TSignedRange rng;
@@ -601,6 +603,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/12/19 19:37:26  todorov
+* +comments
+*
 * Revision 1.15  2003/12/18 20:08:53  todorov
 * Demo GetColumnVector & CalculatePercentIdentity
 *
