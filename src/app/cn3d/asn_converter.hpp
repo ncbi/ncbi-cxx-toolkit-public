@@ -62,7 +62,7 @@ BEGIN_SCOPE(Cn3D)
 
 // a utility function for converting ASN data structures from C to C++
 template < class ASNClass >
-static bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass *to, std::string *err)
+bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass *to, std::string *err)
 {
     err->erase();
     Nlm_ByteStorePtr bsp = NULL;
@@ -110,7 +110,7 @@ static bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass 
 
 // a utility function for converting ASN data structures from C++ to C
 template < class ASNClass >
-static Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, std::string *err)
+Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, std::string *err)
 {
     err->erase();
     Pointer cObject = NULL;
@@ -140,7 +140,7 @@ static Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, 
 
 // create a new copy of a C++ ASN data object
 template < class ASNClass >
-static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err)
+ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err)
 {
     err->erase();
     NS_AUTO_PTR<ASNClass> newObject;
@@ -164,6 +164,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/08/22 14:33:38  thiessen
+* remove static decl from templates
+*
 * Revision 1.10  2003/03/19 14:43:49  thiessen
 * disable trace messages in object loaders for now
 *

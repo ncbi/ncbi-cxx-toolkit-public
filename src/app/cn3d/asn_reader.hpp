@@ -62,7 +62,7 @@ BEGIN_SCOPE(Cn3D)
 
 // a utility function for reading different types of ASN data from a file
 template < class ASNClass >
-static bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, std::string *err)
+bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBinary, std::string *err)
 {
     err->erase();
 
@@ -99,7 +99,7 @@ static bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBi
 
 // for writing ASN data
 template < class ASNClass >
-static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBinary,
+bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBinary,
     std::string *err, ncbi::EFixNonPrint fixNonPrint = ncbi::eFNP_Default)
 {
     err->erase();
@@ -138,7 +138,7 @@ static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool
 
 // for loading (binary) ASN data via HTTP connection
 template < class ASNClass >
-static bool GetAsnDataViaHTTP(
+bool GetAsnDataViaHTTP(
     const std::string& host, const std::string& path, const std::string& args,
     ASNClass *asnObject, std::string *err,
     bool binaryData = true, unsigned short port = 80)
@@ -180,6 +180,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/08/22 14:33:38  thiessen
+* remove static decl from templates
+*
 * Revision 1.15  2003/03/19 14:43:50  thiessen
 * disable trace messages in object loaders for now
 *
