@@ -219,6 +219,7 @@
  */
 #ifdef NCBI_GUIWIDGETSMISC_EXPORTS
 #  define NCBI_GUIWIDGETS_TAXPLOT_EXPORTS
+#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORTS
 #endif
 
 /*
@@ -1025,6 +1026,16 @@
 #  define NCBI_GUIWIDGETS_TAXPLOT_EXPORT     __declspec(dllimport)
 #endif
 
+/*
+ * Export specifier for library gui_widgets_taxplot3d
+ */
+#ifdef NCBI_GUIWIDGETS_PHYLO_TREE_EXPORTS
+#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORT     __declspec(dllimport)
+#endif
+
+
 
 /*
  * Export specifier for library objects_validator
@@ -1217,6 +1228,7 @@
 #  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORT
 #  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORT
 #  define NCBI_GUIWIDGETS_TAXPLOT_EXPORT
+#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORT
 #  define NCBI_GUIWIDGETS_EXPORT
 #  define NCBI_GUIWIDGETS_FLU_EXPORT
 #  define NCBI_GUIWIDGETS_FLTABLE_EXPORT
@@ -1297,6 +1309,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.60  2004/02/13 16:58:30  tereshko
+ * Added NCBI_GUIWIDGETS_PHYLO_TREE_EXPORT for Phylogenetic Tree widget / viewer
+ *
  * Revision 1.59  2004/02/10 19:55:21  ucko
  * Also add NCBI_XALGOPHYTREE_EXPORT to the empty define list....
  *
