@@ -1,0 +1,70 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>smart.cpp</title>
+  </head>
+  <body BGCOLOR="#FFFFFF">
+  <pre><font color = "red">// File name: smart.cpp
+// Description: Memory management using auto_ptr and CRef
+<font color = "green">
+#include &lt;corelib/ncbiapp.hpp&gt;
+#include &lt;corelib/ncbiobj.hpp&gt;
+<font color = "blue">
+BEGIN_NCBI_SCOPE
+<font color = "black">
+class CTestApp : public CNcbiApplication {
+public:
+    virtual int Run ();
+};
+
+<font color = "red">/////////////////////////////////////////////////////////////////
+//
+// 1. Install an auto_ptr to an int and make a copy - then try to 
+//    reference the value from the original auto_ptr.
+//
+// 2. Do the same thing using CRefs instead of auto_ptrs.
+//
+//////////////////////////////////////////////////////////////////
+<font color = "black">
+int CTestApp::Run()
+{
+    auto_ptr&lt;int&gt; orig_ap (new int (5));
+    {
+      auto_ptr&lt;int&gt; copy_ap;
+      copy_ap.reset (orig_ap.release());
+      
+      if (! orig_ap.get())
+          cout << "orig_ap no longer exists - copy_ap = " << *copy_ap << endl;
+    
+      else
+          cout  << "orig_ap = " << *orig_ap << ", copy_ap = " << *copy_ap << endl;
+    }
+    if (orig_ap.get())
+        cout << "orig_ap = " << *orig_ap << endl;
+
+      
+    CRef&lt; CObjectFor&lt; int &gt; &gt; orig = CObjectFor&lt;int&gt;::New();
+    *orig = 5;
+    {
+        CRef&lt; CObjectFor&lt;int&gt; &gt; copy = orig;
+    
+        if (! orig )
+            cout << "orig no longer exists - copy = " << *copy << endl;
+
+        else
+           cout  << "orig = " << *orig << ", copy = " << *copy<< endl;
+    }
+    if (orig)
+        cout << "orig = " << *orig << endl;
+}
+<font color = "blue">
+END_NCBI_SCOPE
+
+USING_NCBI_SCOPE;
+<font color = "black">
+int main(int argc, const char* argv[]) 
+{
+    CTestApp theTestApp;
+    return theTestApp.AppMain(argc, argv);
+}
+
