@@ -32,14 +32,26 @@
 #include <html/htmlhelper.hpp>
 #include <html/indentstream.hpp>
 #include <html/html_exception.hpp>
+#include <errno.h>
+#include <string.h>
 
 
 BEGIN_NCBI_SCOPE
 
 
-#define CHECK_STREAM_WRITE(out) \
-    if ( !out ) { \
-        NCBI_THROW(CHTMLException, eWrite, "write to stream failed"); \
+#define CHECK_STREAM_WRITE(out)                                               \
+    if ( !out ) {                                                             \
+        int x_errno = errno;                                                  \
+        string x_err("write to stream failed");                               \
+        if (x_errno != 0) {                                                   \
+            const char* x_strerror = strerror(x_errno);                       \
+            if ( !x_strerror ) {                                              \
+                x_strerror = "Error code is out of range";                    \
+            }                                                                 \
+            string x_strerrno = NStr::IntToString(x_errno);                   \
+            x_err += " {errno=" + x_strerrno + ',' + x_strerror + '}';        \
+        }                                                                     \
+        NCBI_THROW(CHTMLException, eWrite, x_err);                            \
     }
 
 
@@ -2272,6 +2284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.95  2004/01/30 14:03:50  lavr
+ * Print last errno along with "write failure" message
+ *
  * Revision 1.94  2004/01/26 16:26:47  ivanov
  * Added NOWRAP attribute support
  *
