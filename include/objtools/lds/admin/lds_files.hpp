@@ -56,11 +56,15 @@ public:
       m_MaxRecId(0)
     {}
 
-    // Scan the given directory, calculate timestamp and control sums for 
-    // every file, update "File" database table.
-    // Method returns set of row ids deleted from files, and set of row ids
-    // to be updated.
-    void SyncWithDir(const string& path, CLDS_Set* deleted, CLDS_Set* updated);
+    /// Scan the given directory, calculate timestamp and control sums for 
+    /// every file, update "File" database table.
+    /// Method returns set of row ids deleted from files, and set of row ids
+    /// to be updated.
+    void SyncWithDir(const string& path, 
+                     CLDS_Set* deleted, 
+                     CLDS_Set* updated,
+                     bool recurse_subdirs,
+                     bool compute_check_sum);
 
     // Delete all records with ids belonging to record_set
     void Delete(const CLDS_Set& record_set);
@@ -69,10 +73,18 @@ public:
                      const  string& file_name,
                      Uint4  crc,
                      int    timestamp,
-                     size_t file_size);
+                     size_t file_size,
+                     bool   compute_check_sum);
 
     // Return max record id. 0 if no record found.
     int FindMaxRecId();
+private:
+    void x_SyncWithDir(const string& path, 
+                       CLDS_Set*    deleted, 
+                       CLDS_Set*    updated,
+                       set<string>* scanned_files,
+                       bool recurse_subdirs,
+                       bool compute_check_sum);
 
 private:
     CLDS_File(const CLDS_File&);
@@ -91,6 +103,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/10/06 20:15:47  kuznets
+ * Added support for sub directories and option to disable CRC32 for files
+ *
  * Revision 1.6  2003/06/16 14:54:08  kuznets
  * lds splitted into "lds" and "lds_admin"
  *

@@ -48,16 +48,36 @@ class NCBI_LDS_EXPORT CLDS_Management
 public:
     CLDS_Management(CLDS_Database& db);
 
-    // Create the database. If the LDS database already exists all data will
-    // be cleaned up.
+    /// Create the database. If the LDS database already exists all data will
+    /// be cleaned up.
     void Create() { m_lds_db.Create(); }
 
-    // Syncronize LDS database content with directory. 
-    // The main workhorse function.
-    // Function will do format guessing, files parsing, etc
-    // Current implementation can work with only one directory.
-    // If file is removed all relevant objects are cleaned up too.
-    void SyncWithDir(const string& dir_name);
+    /// Recursive scanning of directories in LDS database
+    enum ERecurse {
+        eDontRecurse,
+        eRecurseSubDirs
+    };
+
+    /// CRC32 calculation mode
+    enum EComputeControlSum {
+        eNoControlSum,
+        eComputeControlSum
+    };
+
+    /// Syncronize LDS database content with directory. 
+    /// The main workhorse function.
+    /// Function will do format guessing, files parsing, etc
+    /// Current implementation can work with only one directory.
+    /// If file is removed all relevant objects are cleaned up too.
+    /// @param dir_name
+    ///   directory to syncronize with
+    /// @param recurse
+    ///   subdirectories recursion mode
+    /// @param control_sum
+    ///   control sum computation
+    void SyncWithDir(const string&      dir_name, 
+                     ERecurse           recurse = eRecurseSubDirs,
+                     EComputeControlSum control_sum = eComputeControlSum);
 
     // Function tries to open the database, if the database does not exist
     // creates it and loads all the data.
@@ -65,9 +85,12 @@ public:
     // (caller is responsible for the destruction).
     // is_created parameter receives TRUE if the database was created by 
     // the method.
-    static CLDS_Database* OpenCreateDB(const string& dir_name,
-                                       const string& db_name,
-                                       bool*         is_created);
+    static CLDS_Database* 
+        OpenCreateDB(const string& dir_name,
+                     const string& db_name,
+                     bool*         is_created,
+                     ERecurse recurse = eRecurseSubDirs,
+                     EComputeControlSum control_sum = eComputeControlSum);
 
 private:
     CLDS_Database&   m_lds_db; // LDS database object
@@ -80,6 +103,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/10/06 20:15:47  kuznets
+ * Added support for sub directories and option to disable CRC32 for files
+ *
  * Revision 1.4  2003/07/03 18:04:25  kuznets
  * + newline at the end of the file to make GCC happy
  *

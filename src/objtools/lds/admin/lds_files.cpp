@@ -47,8 +47,10 @@ BEGIN_SCOPE(objects)
 
 
 void CLDS_File::SyncWithDir(const string& path, 
-                            CLDS_Set* deleted, 
-                            CLDS_Set* updated)
+                            CLDS_Set*     deleted, 
+                            CLDS_Set*     updated, 
+                            bool          recurse_subdirs,
+                            bool          compute_check_sum)
 {
     CDir dir(path);
     if (!dir.Exists()) {
@@ -64,6 +66,56 @@ void CLDS_File::SyncWithDir(const string& path,
     set<string> files;
 
     // Scan the directory, compare it against File table
+    
+    x_SyncWithDir(path, 
+                  deleted, 
+                  updated,
+                  &files,
+                  recurse_subdirs,
+                  compute_check_sum);
+
+    // Scan the database, find deleted files
+
+    CBDB_FileCursor cur(m_FileDB);
+    cur.SetCondition(CBDB_FileCursor::eFirst);
+    while (cur.Fetch() == eBDB_Ok) {
+        string fname(m_FileDB.file_name);
+        set<string>::const_iterator fit = files.find(fname);
+        if (fit == files.end()) { // not found
+            deleted->insert(m_FileDB.file_id);
+
+            LOG_POST(Info << "LDS: File removed: " << fname);
+        }
+    } // while
+
+    Delete(*deleted);
+}
+
+
+void CLDS_File::x_SyncWithDir(const string& path, 
+                              CLDS_Set*     deleted, 
+                              CLDS_Set*     updated,
+                              set<string>*  scanned_files,
+                              bool          recurse_subdirs,
+                              bool          compute_check_sum)
+{
+    CDir dir(path);
+    if (!dir.Exists()) {
+        LOG_POST(Info << "LDS: Directory is not found or access denied:" << path);
+        return;
+    } else {
+        LOG_POST(Info << "LDS: scanning " << path);
+    }
+
+    CLDS_Query lds_query(m_db);
+    CChecksum checksum(CChecksum::eCRC32);
+
+
+    // Scan the directory, compare it against File table
+    // Here I intentionally take only files, skipping sub-directories,
+    // Second pass scans for sub-dirs and implements recursion
+
+    {{
 
     CDir::TEntries  content(dir.GetEntries());
     ITERATE(CDir::TEntries, i, content) {
@@ -87,14 +139,18 @@ void CLDS_File::SyncWithDir(const string& path,
 
         bool found = lds_query.FindFile(entry);
 
-        files.insert(entry);
+        scanned_files->insert(entry);
 
         if (!found) {  // new file arrived
             CFormatGuess fg;
 
-            checksum.Reset();
-            ComputeFileChecksum(entry, checksum);
-            Uint4 crc = checksum.GetChecksum();
+            Uint4 crc = 0;
+
+            if (compute_check_sum) {
+                checksum.Reset();
+                ComputeFileChecksum(entry, checksum);
+                crc = checksum.GetChecksum();
+            }
 
             CFormatGuess::EFormat format = fg.Format(entry);
 
@@ -119,37 +175,65 @@ void CLDS_File::SyncWithDir(const string& path,
 
         if (tm != m_FileDB.time_stamp || file_size != m_FileDB.file_size) {
             updated->insert(m_FileDB.file_id);
-            UpdateEntry(m_FileDB.file_id, entry, 0, tm, file_size);
+            UpdateEntry(m_FileDB.file_id, 
+                        entry, 
+                        0, 
+                        tm, 
+                        file_size, 
+                        compute_check_sum);
         } else {
 
-            checksum.Reset();
-            ComputeFileChecksum(entry, checksum);
-            Uint4 crc = checksum.GetChecksum();
+            Uint4 crc = 0;
+            if (compute_check_sum) {
+                checksum.Reset();
+                ComputeFileChecksum(entry, checksum);
+                crc = checksum.GetChecksum();
 
-            if (crc != m_FileDB.CRC) {
-                updated->insert(m_FileDB.file_id);
-                UpdateEntry(m_FileDB.file_id, entry, crc, tm, file_size);
+                if (crc != m_FileDB.CRC) {
+                    updated->insert(m_FileDB.file_id);
+                    UpdateEntry(m_FileDB.file_id, 
+                                entry, 
+                                crc, 
+                                tm, 
+                                file_size,
+                                compute_check_sum);
+                }
             }
         }
 
     } // ITERATE
 
+    }}
 
-    // Scan the database, find deleted files
+    if (!recurse_subdirs)
+        return;
 
-    CBDB_FileCursor cur(m_FileDB);
-    cur.SetCondition(CBDB_FileCursor::eFirst);
-    while (cur.Fetch() == eBDB_Ok) {
-        string fname(m_FileDB.file_name);
-        set<string>::const_iterator fit = files.find(fname);
-        if (fit == files.end()) { // not found
-            deleted->insert(m_FileDB.file_id);
+    // Scan sub-directories
 
-            LOG_POST(Info << "LDS: File removed: " << fname);
+    {{
+
+    CDir::TEntries  content(dir.GetEntries());
+    ITERATE(CDir::TEntries, i, content) {
+
+        if ((*i)->IsDir()) {
+            string name = (*i)->GetName();
+
+            if (name == "LDS" || name == "." || name == "..") {
+                continue;
+            }
+            string entry = (*i)->GetPath();
+            
+            x_SyncWithDir(entry, 
+                          deleted, 
+                          updated, 
+                          scanned_files, 
+                          recurse_subdirs,
+                          compute_check_sum);
+            
         }
-    } // while
+    } // ITERATE
 
-    Delete(*deleted);
+    }}
 }
 
 
@@ -159,6 +243,7 @@ void CLDS_File::Delete(const CLDS_Set& record_set)
         m_FileDB.file_id = *it;
         m_FileDB.Delete();
     }
+
 }
 
 
@@ -166,9 +251,10 @@ void CLDS_File::UpdateEntry(int    file_id,
                             const  string& file_name,
                             Uint4  crc,
                             int    time_stamp,
-                            size_t file_size)
+                            size_t file_size,
+                            bool   compute_check_sum)
 {
-    if (!crc) {
+    if (!crc && compute_check_sum) {
         crc = ComputeFileCRC32(file_name);
     }
 
@@ -211,6 +297,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/10/06 20:16:20  kuznets
+ * Added support for sub directories and option to disable CRC32 for files
+ *
  * Revision 1.5  2003/08/11 20:02:43  kuznets
  * Reworked CRC32 calculation in order to get better performance
  *

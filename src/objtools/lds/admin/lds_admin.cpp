@@ -41,14 +41,18 @@ CLDS_Management::CLDS_Management(CLDS_Database& db)
 {}
 
 
-void CLDS_Management::SyncWithDir(const string& dir_name)
+void CLDS_Management::SyncWithDir(const string& dir_name, 
+                                  ERecurse recurse,
+                                  EComputeControlSum control_sum)
 {
     CLDS_Set files_deleted;
     CLDS_Set files_updated;
     SLDS_TablesCollection& db = m_lds_db.GetTables();
 
     CLDS_File fl(db);
-    fl.SyncWithDir(dir_name, &files_deleted, &files_updated);
+    bool rec = (recurse == eRecurseSubDirs);
+    bool control = (control_sum == eComputeControlSum);
+    fl.SyncWithDir(dir_name, &files_deleted, &files_updated, rec, control);
 
     CLDS_Set objects_deleted;
     CLDS_Set annotations_deleted;
@@ -61,9 +65,11 @@ void CLDS_Management::SyncWithDir(const string& dir_name)
 
 
 CLDS_Database* 
-CLDS_Management::OpenCreateDB(const string& dir_name,
-                              const string& db_name,
-                              bool*         is_created)
+CLDS_Management::OpenCreateDB(const string&      dir_name,
+                              const string&      db_name,
+                              bool*              is_created,
+                              ERecurse           recurse,
+                              EComputeControlSum control_sum)
 {
     CLDS_Database* db = new CLDS_Database(dir_name, db_name);
     try {
@@ -78,7 +84,7 @@ CLDS_Management::OpenCreateDB(const string& dir_name,
 
         CLDS_Management admin(*db);
         admin.Create();
-        admin.SyncWithDir(dir_name);
+        admin.SyncWithDir(dir_name, recurse, control_sum);
         *is_created = true;
     }
     return db;
@@ -90,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/10/06 20:16:20  kuznets
+ * Added support for sub directories and option to disable CRC32 for files
+ *
  * Revision 1.5  2003/08/11 20:01:48  kuznets
  * Reflecting lds.hpp header change
  *
