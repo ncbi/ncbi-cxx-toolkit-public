@@ -14,6 +14,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.1  1999/07/06 12:58:51  kans
+* commented out chmod function
+*
 * Revision 6.0  1997/08/25 18:38:22  madden
 * Revision changed to 6.0
 *
@@ -394,6 +397,7 @@ char *getlogin()
 }
 #endif /* JAE */
 
+/* not needed, and now conflicts with CodeWarrior stub function
 int chmod(path, mode)
 	char *path;
 	int mode;
@@ -402,6 +406,7 @@ int chmod(path, mode)
 #pragma unused(mode)
 	return(0);
 }
+*/
 
 #if 0
 access(path, mode)
