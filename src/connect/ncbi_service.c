@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/05/31 23:12:23  lavr
+ * First try to assemble things together to get working service mapper
+ *
  * Revision 6.3  2000/05/22 16:53:11  lavr
  * Rename service_info -> server_info everywhere (including
  * file names) as the latter name is more relevant
@@ -88,7 +91,7 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info *info)
 
 SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
                       unsigned int preferred_host,
-                      const SSERV_Info *skip[], size_t n_skip)
+                      const SSERV_Info **skip, size_t n_skip)
 {
     size_t i;
     SERV_ITER iter;

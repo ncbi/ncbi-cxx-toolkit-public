@@ -37,6 +37,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2000/05/31 23:12:14  lavr
+ * First try to assemble things together to get working service mapper
+ *
  * Revision 6.7  2000/05/23 19:02:47  lavr
  * Server-info now includes rate; verbal representation changed
  *
@@ -78,6 +81,7 @@ typedef enum {
     fSERV_HttpGet    = 0x4,
     fSERV_HttpPost   = 0x8,
     fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost
+#define fSERV_StatelessOnly 0x80
 } ESERV_Type;
 typedef int TSERV_Type;  /* bit-wise OR of "ESERV_Type" flags */
 
@@ -138,6 +142,7 @@ typedef struct {
     ESERV_Type     type;        /* type of server */
     unsigned int   host;        /* host the server running on */
     unsigned short port;        /* port the server running on */
+    unsigned short stat;        /* true, when stateful connection only */
     ESERV_Flags    flag;        /* algorithm flag for the server */
     time_t         time;        /* relaxation/expiration time/period */
     double         rate;        /* rate of the server */

@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/05/31 23:12:17  lavr
+ * First try to assemble things together to get working service mapper
+ *
  * Revision 6.3  2000/05/22 16:53:07  lavr
  * Rename service_info -> server_info everywhere (including
  * file names) as the latter name is more relevant
@@ -60,21 +63,21 @@ typedef struct SSERV_IterTag* SERV_ITER;
 /* Create iterator for the iterative server lookup.
  */
 SERV_ITER SERV_OpenSimple
-(const char*       service         /* service name */
+(const char*       service          /* service name */
  );
 
 SERV_ITER SERV_Open
-(const char*       service,        /* service name */
- TSERV_Type        type,           /* mask of type of servers requested */
- unsigned int      preferred_host  /* preferred host to use service on */
+(const char*       service,         /* service name */
+ TSERV_Type        type,            /* mask of type of servers requested */
+ unsigned int      preferred_host   /* preferred host to use service on */
  );
 
 SERV_ITER SERV_OpenEx
-(const char*       service,        /* service name */
- TSERV_Type        type,           /* mask of type of servers requested */
- unsigned int      preferred_host, /* preferred host to use service on */
- const SSERV_Info* skip[],         /* servers NOT to select */
- size_t            n_skip          /* number of servers in preceding array */
+(const char*        service,        /* service name */
+ TSERV_Type         type,           /* mask of type of servers requested */
+ unsigned int       preferred_host, /* preferred host to use service on */
+ const SSERV_Info** skip,           /* array of servers NOT to select */
+ size_t             n_skip          /* number of servers in preceding array */
  );
 
 
@@ -83,7 +86,7 @@ SERV_ITER SERV_OpenEx
  * it will be freed automatically upon iterator destruction.
  */
 const SSERV_Info* SERV_GetNextInfo
-(SERV_ITER         iter            /* handle obtained via 'SERV_Open*' call */
+(SERV_ITER         iter             /* handle obtained via 'SERV_Open*' call */
  );
 
 
@@ -91,7 +94,7 @@ const SSERV_Info* SERV_GetNextInfo
  * Must be called to finish lookup process.
  */
 void SERV_Close
-(SERV_ITER         iter            /* handle obtained via 'SERV_Open*' call */
+(SERV_ITER         iter             /* handle obtained via 'SERV_Open*' call */
  );
 
 

@@ -30,11 +30,14 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2000/05/31 23:12:22  lavr
+ * First try to assemble things together to get working service mapper
+ *
  * Revision 6.11  2000/05/24 16:45:15  lavr
  * Introduced replacement for inet_ntoa: my_ntoa
  *
  * Revision 6.10  2000/05/23 21:05:33  lavr
- * Memory leaks fixed (appeared after recent server-info structure rearrangement)
+ * Memory leaks fixed (appeared after server-info structure rearrangement)
  *
  * Revision 6.9  2000/05/23 19:02:49  lavr
  * Server-info now includes rate; verbal representation changed
@@ -207,7 +210,7 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
 {
     const SSERV_Attr* attr = s_GetAttrByType(info->type);
     size_t reserve = attr->tag_len+1 + MAX_IP_ADDRESS_LEN+1 + 5+1 +
-        10+1/*algorithm*/ + 12+1/*time*/ + 12+1/*rate*/;
+        10+1/*algorithm*/ + 12+1/*time*/ + 12+1/*rate*/ + 6/*stat*/;
     char* str;
 
     /* write server-specific info */
@@ -228,7 +231,8 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
         assert(info->flag < N_FLAG_TAGS);
         if (k_FlagTag[info->flag])
             s += sprintf(s, "%s ", k_FlagTag[info->flag]);
-        sprintf(s, "T=%lu R=%.2f", (unsigned long)info->time, info->rate);
+        sprintf(s, "T=%lu R=%.2f S=%s", (unsigned long)info->time, info->rate,
+                info->stat ? "yes" : "no");
     }
     return str;
 }
@@ -268,6 +272,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
             if (*(str + 1) == '=') {
                 unsigned long time;
                 double rate;
+                char ans[4];
 
                 switch (toupper(*str++)) {
                 case 'T':
@@ -282,10 +287,20 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
                         info->rate = rate;
                     }
                     break;
+                case 'S':
+                    if (sscanf(str, "=%3s%n", ans, &n) >= 1) {
+                        if (strcasecmp(ans, "YES") == 0) {
+                            info->stat = 1 /*true */;
+                            str += n;
+                        } else if (strcasecmp(ans, "NO") == 0) {
+                            info->stat = 0 /* false */;
+                            str += n;
+                        }
+                    }
+                    break;
                 }
             } else {
                 size_t i;
-                
                 for (i = 0; i < N_FLAG_TAGS; i++) {
                     n = strlen(k_FlagTag[i]);
                     if (strncasecmp(str, k_FlagTag[i],n) == 0)
@@ -389,6 +404,7 @@ SSERV_Info* SERV_CreateNcbidInfo
         info->type         = fSERV_Ncbid;
         info->host         = host;
         info->port         = port;
+        info->stat         = 0;
         info->flag         = fSERV_Regular;
         info->time         = 0;
         info->rate         = 0;
@@ -443,6 +459,7 @@ SSERV_Info* SERV_CreateStandaloneInfo
         info->type = fSERV_Standalone;
         info->host = host;
         info->port = port;
+        info->stat = 0;
         info->flag = fSERV_Regular;
         info->time = 0;
         info->rate = 0;
@@ -547,6 +564,7 @@ SSERV_Info* SERV_CreateHttpInfo
         info->type        = type;
         info->host        = host;
         info->port        = port;
+        info->stat        = 0;
         info->flag        = fSERV_Regular;
         info->time        = 0;
         info->rate        = 0;

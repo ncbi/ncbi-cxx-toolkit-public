@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/05/31 23:12:32  lavr
+ * First try to assemble things together to get working service mapper
+ *
  * Revision 6.2  2000/05/16 15:21:03  lavr
  * Cleaned up with format - argument correspondence; #include <time.h> added
  *
@@ -46,6 +49,10 @@
 #include <unistd.h>
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static char *s_Expand(char *base, size_t size)
 {
     if (base && size)
@@ -56,6 +63,10 @@ static char *s_Expand(char *base, size_t size)
         free(base);
     return 0;
 }
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 
 int main(void)
