@@ -58,7 +58,7 @@
 // Messy system-specific details; they're mostly grouped together here
 // to ensure consistency.
 
-#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP) || defined(NCBI_COMPILER_ICC) || (defined(NCBI_COMPILER_KCC) && defined(NCBI_OS_LINUX))
+#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP) || (defined(NCBI_COMPILER_KCC) && defined(NCBI_OS_LINUX))
 #  define NCBI_COUNTER_ASM_OK
 #endif
 
@@ -273,6 +273,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/05/24 18:06:55  ucko
+* Inline assembly leads to ICC compiler errors in some cases, so stop
+* defining NCBI_COUNTER_ASM_OK for ICC.
+*
 * Revision 1.2  2002/05/24 14:20:04  ucko
 * Fix Intel extended assembly.
 * Drop use of FreeBSD <machine/atomic.h>; those functions return void.
