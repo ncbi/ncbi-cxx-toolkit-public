@@ -329,11 +329,10 @@ end script
 (*
  * ===========================================================================
  * $Log$
- * Revision 1.2  2004/06/25 15:11:52  lebedev
- * DEPLOYMENT_POSTPROCESSING set to YES in Deployment build. Missing space before -opm datatool flag added
+ * Revision 1.3  2004/06/25 15:15:38  lebedev
+ * Some unnessesary debug traces removed
  *
  * Revision 1.1  2004/06/23 17:09:52  lebedev
  * Initial revision
- *
  * ===========================================================================
  *)

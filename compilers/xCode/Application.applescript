@@ -294,9 +294,7 @@ end GetSourceFiles
 on x_GetFolderContent(folderName, excfileList)
 	set folderName to the characters 2 thru (length of folderName) of folderName as string -- remove the leading ":" from the folder path
 	
-	log folderName
 	set fileList to list folder folderName without invisibles
-	log "ddd2"
 	set fileList to my ExcludeFiles(fileList, excfileList)
 	set fileList to EndsWith(fileList, ".c") & EndsWith(fileList, ".cpp")
 	
@@ -424,11 +422,13 @@ end x_ShowAlert
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/06/25 15:15:38  lebedev
+ * Some unnessesary debug traces removed
+ *
  * Revision 1.2  2004/06/25 15:11:52  lebedev
  * DEPLOYMENT_POSTPROCESSING set to YES in Deployment build. Missing space before -opm datatool flag added
  *
  * Revision 1.1  2004/06/23 17:09:52  lebedev
  * Initial revision
- *
  * ===========================================================================
  *)
