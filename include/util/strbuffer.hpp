@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/08/30 18:14:23  gouriano
+* use CNcbiStreamoff instead of size_t for stream offset operations
+*
 * Revision 1.31  2004/05/24 18:12:44  gouriano
 * In text output files make indentation optional
 *
@@ -234,8 +237,8 @@ public:
 
     // return: current line counter
     size_t GetLine(void) const THROWS1_NONE;
-    size_t GetStreamOffset(void) const THROWS1_NONE;
-    void   SetStreamOffset(size_t pos);
+    CNcbiStreamoff GetStreamOffset(void) const THROWS1_NONE;
+    void   SetStreamOffset(CNcbiStreamoff pos);
     
     // action: read in buffer up to end of line
     size_t ReadLine(char* buff, size_t size)
@@ -268,7 +271,7 @@ private:
 
     const char* m_Error;
 
-    size_t m_BufferOffset; // offset of current buffer in source stream
+    CNcbiStreamoff m_BufferOffset; // offset of current buffer in source stream
     size_t m_BufferSize;      // buffer size
     char* m_Buffer;           // buffer pointer
     char* m_CurrentPos;       // current char position in buffer
@@ -294,7 +297,7 @@ public:
 
     // return: current line counter
     size_t GetLine(void) const THROWS1_NONE;
-    size_t GetStreamOffset(void) const THROWS1_NONE;
+    CNcbiStreamoff GetStreamOffset(void) const THROWS1_NONE;
 
     size_t GetCurrentLineLength(void) const THROWS1_NONE;
 
@@ -381,7 +384,7 @@ private:
 
     size_t m_IndentLevel;
 
-    size_t m_BufferOffset; // offset of current buffer in source stream
+    CNcbiStreamoff m_BufferOffset; // offset of current buffer in source stream
     char* m_Buffer;           // buffer pointer
     char* m_CurrentPos;       // current char position in buffer
     char* m_BufferEnd;       // end of valid content in buffer

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/08/30 18:14:23  gouriano
+* use CNcbiStreamoff instead of size_t for stream offset operations
+*
 * Revision 1.5  2004/05/24 18:12:44  gouriano
 * In text output files make indentation optional
 *
@@ -139,7 +142,7 @@ size_t CIStreamBuffer::GetLine(void) const
 }
 
 inline
-size_t CIStreamBuffer::GetStreamOffset(void) const
+CNcbiStreamoff CIStreamBuffer::GetStreamOffset(void) const
     THROWS1_NONE
 {
     return m_BufferOffset + (m_CurrentPos - m_Buffer);
@@ -171,7 +174,7 @@ size_t COStreamBuffer::GetLine(void) const
 }
 
 inline
-size_t COStreamBuffer::GetStreamOffset(void) const
+CNcbiStreamoff COStreamBuffer::GetStreamOffset(void) const
     THROWS1_NONE
 {
     return m_BufferOffset + (m_CurrentPos - m_Buffer);

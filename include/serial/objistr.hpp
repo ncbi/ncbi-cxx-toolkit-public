@@ -345,8 +345,8 @@ public:
     bool InGoodState(void);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const;
-    size_t GetStreamOffset(void) const;
-    void   SetStreamOffset(size_t pos);
+    CNcbiStreamoff GetStreamOffset(void) const;
+    void   SetStreamOffset(CNcbiStreamoff pos);
 
     void ThrowError1(const char* file, int line,
                      TFailFlags fail, const char* message);
@@ -671,6 +671,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.105  2004/08/30 18:13:24  gouriano
+* use CNcbiStreamoff instead of size_t for stream offset operations
+*
 * Revision 1.104  2004/08/17 14:36:23  dicuccio
 * Added export specifiers for nested classes
 *

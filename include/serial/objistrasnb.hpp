@@ -177,8 +177,8 @@ private:
     //                         -- after any of Peek?Tag or ExpectSysTag
     // 
     size_t m_CurrentTagLength;  // length of tag header (without length field)
-    size_t m_CurrentTagLimit;   // end of current tag data (INT_MAX if unlimited)
-    stack<size_t> m_Limits;
+    CNcbiStreamoff m_CurrentTagLimit;   // end of current tag data (INT_MAX if unlimited)
+    stack<CNcbiStreamoff> m_Limits;
     EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 
 #if CHECK_STREAM_INTEGRITY
@@ -244,6 +244,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/08/30 18:13:24  gouriano
+* use CNcbiStreamoff instead of size_t for stream offset operations
+*
 * Revision 1.44  2004/03/16 17:48:39  gouriano
 * make it possible to skip unknown data members
 *

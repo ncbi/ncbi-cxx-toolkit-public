@@ -68,10 +68,10 @@ public:
     struct SObjectDescription 
     {
         CObjectTypeInfo  info;            // Type information class
-        size_t           stream_offset;   // Offset in file
+        CNcbiStreamoff   stream_offset;   // Offset in file
 
         SObjectDescription(const CObjectTypeInfo& object_info,
-                           size_t offset)
+                           CNcbiStreamoff offset)
         : info(object_info),
           stream_offset(offset)
         {}
@@ -129,14 +129,14 @@ public:
 
     // Return stream offset of the most recently found top object.
     // Note: If the top object has not been found return value is undefined.
-    size_t GetStreamOffset() const { return m_StreamOffset; }
+    CNcbiStreamoff GetStreamOffset() const { return m_StreamOffset; }
 
     // Event handling virtual function, called when candidate is found but 
     // before deserialization. This function can be overloaded in child
     // classes to implement some custom actions. This function is called before
     // deserialization.
     virtual void OnObjectFoundPre(const CObjectInfo& object, 
-                                  size_t stream_offset);
+                                  CNcbiStreamoff stream_offset);
     
     // Event handling virtual function, called when candidate is found
     // and deserialized.
@@ -166,7 +166,7 @@ private:
     // Vector of level object descriptions
     TTopLevelMapVector  m_TopLevelMap;   
     // Stream offset of the top level object
-    size_t              m_StreamOffset;  
+    CNcbiStreamoff      m_StreamOffset;  
     // Flag indicates that current object should be discarded
     bool                m_DiscardCurrObj;
 };
@@ -199,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/08/30 18:15:09  gouriano
+ * use CNcbiStreamoff instead of size_t for stream offset operations
+ *
  * Revision 1.15  2003/10/07 20:42:04  kuznets
  * + virtual Reset() function.
  * Called when object scan fails because of the format error and the

@@ -171,7 +171,7 @@ private:
     void WriteNumberValue(Uint8 data);
 
 #if CHECK_STREAM_INTEGRITY
-    size_t m_CurrentPosition;
+    CNcbiStreamoff m_CurrentPosition;
     enum ETagState {
         eTagStart,
         eTagValue,
@@ -181,12 +181,12 @@ private:
         eData
     };
     ETagState m_CurrentTagState;
-    size_t m_CurrentTagPosition;
+    CNcbiStreamoff m_CurrentTagPosition;
     Uint1 m_CurrentTagCode;
     size_t m_CurrentTagLengthSize;
     size_t m_CurrentTagLength;
-    size_t m_CurrentTagLimit;
-    stack<size_t> m_Limits;
+    CNcbiStreamoff m_CurrentTagLimit;
+    stack<CNcbiStreamoff> m_Limits;
 
     void StartTag(Uint1 code);
     void EndTag(void);
@@ -209,6 +209,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/08/30 18:13:24  gouriano
+* use CNcbiStreamoff instead of size_t for stream offset operations
+*
 * Revision 1.44  2004/06/08 20:25:42  gouriano
 * Made functions, that are not visible from the outside, protected
 *

@@ -272,7 +272,7 @@ public:
     bool InGoodState(void);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const;
-    size_t GetStreamOffset(void) const;
+    CNcbiStreamoff GetStreamOffset(void) const;
 
     enum EFlags {
         fFlagNone                = 0,
@@ -526,6 +526,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2004/08/30 18:13:24  gouriano
+* use CNcbiStreamoff instead of size_t for stream offset operations
+*
 * Revision 1.87  2004/08/17 14:36:43  dicuccio
 * Added export specifiers for nested classes
 *

@@ -85,7 +85,7 @@ public:
 
     // Set reader current position, when possible
     // (default implementation throws an exception)
-    virtual void Seekg(size_t pos);
+    virtual void Seekg(CNcbiStreamoff pos);
 
 private:
     CByteSourceReader(const CByteSourceReader&);
@@ -188,7 +188,7 @@ public:
     size_t Read(char* buffer, size_t bufferLength);
     bool EndOfData(void) const;
     bool Pushback(const char* data, size_t size);
-    virtual void Seekg(size_t pos);
+    virtual void Seekg(CNcbiStreamoff pos);
 
 protected:
     CConstRef<CByteSource> m_Source;
@@ -474,6 +474,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2004/08/30 18:14:23  gouriano
+ * use CNcbiStreamoff instead of size_t for stream offset operations
+ *
  * Revision 1.24  2004/08/04 14:32:18  vasilche
  * Fixed bug detected by MSVC 7.
  *
