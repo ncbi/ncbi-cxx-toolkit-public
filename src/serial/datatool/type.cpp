@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/03/29 15:52:27  vasilche
+* Generated files names limited to 31 symbols due to limitations of Mac.
+* Removed unions with only one member.
+*
 * Revision 1.42  2000/03/07 14:06:33  vasilche
 * Added generation of reference counted objects.
 *
@@ -296,14 +300,19 @@ string CDataType::ClassName(void) const
 
 string CDataType::FileName(void) const
 {
-    const string& file = GetVar("_file");
-    if ( !file.empty() )
-        return file;
-    const CDataType* parent = GetParentType();
-    if ( parent ) {
-        return parent->FileName() + "_M";
+    if ( m_CachedFileName.empty() ) {
+        const string& file = GetVar("_file");
+        if ( !file.empty() ) {
+            m_CachedFileName = file;
+        }
+        else {
+            _ASSERT(!GetParentType()); // for non internal classes
+            m_CachedFileName =
+                Path(GetModule()->GetFileNamePrefix(),
+                     MakeFileName(m_MemberName, 5 /* strlen("_.cpp") */ ));
+        }
     }
-    return Path(GetModule()->GetFileNamePrefix(), Identifier(m_MemberName));
+    return m_CachedFileName;
 }
 
 string CDataType::Namespace(void) const

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/03/29 15:52:26  vasilche
+* Generated files names limited to 31 symbols due to limitations of Mac.
+* Removed unions with only one member.
+*
 * Revision 1.11  2000/03/17 16:49:55  vasilche
 * Added copyright message to generated files.
 * All objects pointers in choices now share the only CObject pointer.
@@ -478,8 +482,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             // generate getter
             code.ClassPublic() <<
                 "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const;\n";
-            code.InlineMethods() <<
-                "inline\n"
+            code.MethodStart(!i->ref) <<
                 "const "<<methodPrefix<<i->tName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
                 "{\n"
                 "    return "<<i->valueName<<";\n"

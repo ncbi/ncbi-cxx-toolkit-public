@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/03/29 15:52:27  vasilche
+* Generated files names limited to 31 symbols due to limitations of Mac.
+* Removed unions with only one member.
+*
 * Revision 1.7  2000/02/01 21:47:59  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -64,6 +68,10 @@
 
 #include <serial/tool/fileutil.hpp>
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbiutil.hpp>
+#include <set>
+
+USING_NCBI_SCOPE;
 
 static const int BUFFER_SIZE = 4096;
 
@@ -199,6 +207,110 @@ string Identifier(const string& typeName, bool capitalize)
         }
     }
     return s;
+}
+
+class SSubString
+{
+public:
+    SSubString(const string& value, size_t order)
+        : value(value), order(order)
+        {
+        }
+
+    struct ByOrder {
+        bool operator()(const SSubString& s1, const SSubString& s2) const
+            {
+                return s1.order < s2.order;
+            }
+    };
+    struct ByLength {
+        bool operator()(const SSubString& s1, const SSubString& s2) const
+            {
+                int sizeDiff = s1.value.size() - s2.value.size();
+                if ( sizeDiff > 0 )
+                    return true;
+                if ( sizeDiff < 0 )
+                    return false;
+                return s1.order < s2.order;
+            }
+    };
+    string value;
+    size_t order;
+};
+
+string MakeFileName(const string& s, size_t addLength)
+{
+    string name = Identifier(s);
+    int remove = name.size() + addLength - MAX_FILE_NAME_LENGTH;
+    if ( remove <= 0 )
+        return name;
+    // we'll have to truncate very long filename
+
+    _TRACE("MakeFileName(\""<<s<<"\", "<<addLength<<") remove="<<remove);
+    // 1st step: parse name dividing by '_' sorting elements by their size
+    int removeable = 0; // removeable part of string
+    typedef set<SSubString, SSubString::ByLength> TByLength;
+    TByLength byLength;
+    {
+        SIZE_TYPE curr = 0; // current element position in string
+        size_t order = 0; // current element order
+        for (;;) {
+            SIZE_TYPE und = name.find('_', curr);
+            if ( und == NPOS ) {
+                // end of string
+                break;
+            }
+            _TRACE("MakeFileName: \""<<name.substr(curr, und - curr)<<"\"");
+            removeable += (und - curr);
+            byLength.insert(SSubString(name.substr(curr, und - curr), order));
+            curr = und + 1;
+            ++order;
+        }
+        _TRACE("MakeFileName: \""<<name.substr(curr)<<"\"");
+        removeable += name.size() - curr;
+        byLength.insert(SSubString(name.substr(curr), order));
+    }
+    _TRACE("MakeFileName: removeable="<<removeable);
+
+    // if removeable part of string too small...
+    if ( removeable - remove < int(MAX_FILE_NAME_LENGTH - addLength) / 2 ) {
+        // we'll do plain truncate
+        _TRACE("MakeFileName: return \""<<name.substr(0, MAX_FILE_NAME_LENGTH - addLength)<<"\"");
+        return name.substr(0, MAX_FILE_NAME_LENGTH - addLength);
+    }
+    
+    // 2nd step: shorten elementes beginning with longest
+    while ( remove > 0 ) {
+        // extract most long element
+        SSubString s = *byLength.begin();
+        _TRACE("MakeFileName: shorten \""<<s.value<<"\"");
+        byLength.erase(byLength.begin());
+        // shorten it by one symbol
+        s.value = s.value.substr(0, s.value.size() - 1);
+        // insert it back
+        byLength.insert(s);
+        // decrement progress counter
+        remove--;
+    }
+    // 3rd step: reorder elements by their relative order in original string
+    typedef set<SSubString, SSubString::ByOrder> TByOrder;
+    TByOrder byOrder;
+    {
+        iterate ( TByLength, i, byLength ) {
+            byOrder.insert(*i);
+        }
+    }
+    // 4th step: join elements in resulting string
+    name.erase();
+    {
+        iterate ( TByOrder, i, byOrder ) {
+            if ( !name.empty() )
+                name += '_';
+            name += i->value;
+        }
+    }
+    _TRACE("MakeFileName: return \""<<name<<"\"");
+    return name;
 }
 
 CDelayedOfstream::CDelayedOfstream(const char* fileName)

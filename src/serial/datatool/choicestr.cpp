@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/03/29 15:52:25  vasilche
+* Generated files names limited to 31 symbols due to limitations of Mac.
+* Removed unions with only one member.
+*
 * Revision 1.10  2000/03/17 16:49:54  vasilche
 * Added copyright message to generated files.
 * All objects pointers in choices now share the only CObject pointer.
@@ -197,11 +201,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
         }
     }
-    bool haveUnion = havePointers || haveSimple || haveObjectPointer;
-    if ( haveUnion ) {
+    bool haveUnion = havePointers || haveSimple ||
+        (haveString && haveObjectPointer);
+    if ( haveString && haveUnion ) {
         // convert string member to pointer member
-        if ( haveString )
-            havePointers = true;
+        havePointers = true;
     }
 
     if ( HaveAssignment() ) {
@@ -460,7 +464,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         code.Methods() <<
             "void "<<methodPrefix<<"DoSelect("<<STATE_ENUM<<" index)\n"
             "{\n";
-        if ( haveUnion ) {
+        if ( haveUnion || haveObjectPointer ) {
             code.Methods() <<
                 "    switch ( index ) {\n";
             iterate ( TVariants, i, m_Variants ) {
@@ -681,11 +685,13 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             code.ClassPrivate() <<
                 "    };\n";
         }
-        else {
-            if ( haveString ) {
-                code.ClassPrivate() <<
-                    "    "<<STRING_TYPE<<' '<<STRING_MEMBER<<";\n";
-            }
+        else if ( haveString ) {
+            code.ClassPrivate() <<
+                "    "<<STRING_TYPE<<' '<<STRING_MEMBER<<";\n";
+        }
+        else if ( haveObjectPointer ) {
+            code.ClassPrivate() <<
+                "    "<<OBJECT_TYPE<<" *"<<OBJECT_MEMBER<<";\n";
         }
     }
 

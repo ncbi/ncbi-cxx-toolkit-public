@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/03/29 15:52:26  vasilche
+* Generated files names limited to 31 symbols due to limitations of Mac.
+* Removed unions with only one member.
+*
 * Revision 1.15  2000/03/17 17:05:59  vasilche
 * String literal split to avoid influence of cvs.
 *
@@ -102,27 +106,38 @@ CFileCode::~CFileCode(void)
 {
 }
 
-string CFileCode::GetHPPName(void) const
+string CFileCode::GetBaseFileBaseName(void) const
 {
-    return GetFileBaseName() + "_Base.hpp";
+    _ASSERT(BaseName(GetFileBaseName()).size() + 5 <= MAX_FILE_NAME_LENGTH);
+    return GetFileBaseName() + "_";
+}
+
+string CFileCode::GetUserFileBaseName(void) const
+{
+    return GetFileBaseName();
+}
+
+string CFileCode::GetBaseHPPName(void) const
+{
+    return GetBaseFileBaseName() + ".hpp";
 }
 
 string CFileCode::GetUserHPPName(void) const
 {
-    return GetFileBaseName() + ".hpp";
+    return GetUserFileBaseName() + ".hpp";
 }
 
-string CFileCode::GetCPPName(void) const
+string CFileCode::GetBaseCPPName(void) const
 {
-    return GetFileBaseName() + "_Base.cpp";
+    return GetBaseFileBaseName() + ".cpp";
 }
 
 string CFileCode::GetUserCPPName(void) const
 {
-    return GetFileBaseName() + ".cpp";
+    return GetUserFileBaseName() + ".cpp";
 }
 
-string CFileCode::GetBaseDefine(void) const
+string CFileCode::GetDefineBase(void) const
 {
     string s;
     iterate ( string, i, GetFileBaseName() ) {
@@ -137,14 +152,14 @@ string CFileCode::GetBaseDefine(void) const
     return s;
 }
 
-string CFileCode::GetHPPDefine(void) const
+string CFileCode::GetBaseHPPDefine(void) const
 {
-    return GetBaseDefine() + "_BASE_HPP";
+    return GetDefineBase() + "_BASE_HPP";
 }
 
 string CFileCode::GetUserHPPDefine(void) const
 {
-    return GetBaseDefine() + "_HPP";
+    return GetDefineBase() + "_HPP";
 }
 
 string CFileCode::Include(const string& s) const
@@ -210,8 +225,6 @@ void CFileCode::GenerateCode(void)
     }
     m_HPPIncludes.erase(NcbiEmptyString);
     m_CPPIncludes.erase(NcbiEmptyString);
-    m_HPPIncludes.erase(GetFileBaseName());
-    m_CPPIncludes.erase(GetFileBaseName());
 }
 
 CNcbiOstream& CFileCode::WriteCopyrightHeader(CNcbiOstream& out) const
@@ -295,14 +308,14 @@ CNcbiOstream& CFileCode::WriteUserCopyright(CNcbiOstream& out) const
 
 void CFileCode::GenerateHPP(const string& path) const
 {
-    string fileName = Path(path, GetHPPName());
+    string fileName = Path(path, GetBaseHPPName());
     CDelayedOfstream header(fileName.c_str());
     if ( !header ) {
         ERR_POST(Fatal << "Cannot create file: " << fileName);
         return;
     }
 
-    string hppDefine = GetHPPDefine();
+    string hppDefine = GetBaseHPPDefine();
     WriteCopyright(header) <<
         "\n"
         "#ifndef " << hppDefine << "\n"
@@ -372,7 +385,7 @@ void CFileCode::GenerateHPP(const string& path) const
 
 void CFileCode::GenerateCPP(const string& path) const
 {
-    string fileName = Path(path, GetCPPName());
+    string fileName = Path(path, GetBaseCPPName());
     CDelayedOfstream code(fileName.c_str());
     if ( !code ) {
         ERR_POST(Fatal << "Cannot create file: " << fileName);
@@ -429,7 +442,7 @@ bool CFileCode::GenerateUserHPP(const string& path) const
     header <<
         "\n"
         "// generated includes\n"
-        "#include <" << GetHPPName() << ">\n";
+        "#include <" << GetBaseHPPName() << ">\n";
     
     CNamespace ns(header);
     
