@@ -213,6 +213,9 @@ case "\$method" in
       ;;
 esac
 
+# Export some global vars
+top_srcdir="$x_root_dir"
+export top_srcdir
 
 # Add current, build and scripts directories to PATH
 PATH=".:${x_build_dir}:${x_root_dir}/scripts:\${PATH}"
@@ -249,6 +252,8 @@ ulimit -c 1000000
 ##  Run one test
 
 RunTest() {
+echo \$top_srcdir
+
    # Parameters
    x_work_dir_tail="\$1"
    x_work_dir="$x_compile_dir/\$x_work_dir_tail"
@@ -274,7 +279,7 @@ RunTest() {
 
       # Goto the test's directory 
       cd "\$x_work_dir"
-      x_cmd="[\$x_work_dir_tail] \$x_run"
+       x_cmd="[\$x_work_dir_tail] \$x_run"
 
       # And run test if it exist
       if [ -f "\$x_app" ]; then
