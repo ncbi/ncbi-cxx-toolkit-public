@@ -92,6 +92,8 @@ public:
 protected:
 
     void SetMBLookupTableDefaults();
+    void SetMBInitialWordOptionsDefaults();
+    void SetMBGappedExtensionDefaults();
 };
 
 END_SCOPE(blast)
@@ -104,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/17 21:48:30  dondosha
+ * Added custom SetMBInitialWordOptionsDefaults and SetMBGappedExtensionDefaults methods
+ *
  * Revision 1.4  2004/01/20 15:19:25  camacho
  * Provide missing default parameters to default ctor
  *

@@ -62,6 +62,26 @@ CDiscNucleotideOptionsHandle::SetMBLookupTableDefaults()
     SetScanStep(4);
 }
 
+void 
+CDiscNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
+{
+    SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_NUCL);
+    SetWindowSize(BLAST_WINDOW_SIZE_DISC);
+    SetSeedContainerType(eDiagArray);
+    SetVariableWordSize(BLAST_VARWORD_NUCL);
+    SetSeedExtensionMethod(eRight);
+    SetUngappedExtension();
+}
+
+void
+CDiscNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
+{
+    SetGapXDropoff(BLAST_GAP_X_DROPOFF_NUCL);
+    SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
+    SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
+    SetGapExtnAlgorithm(EXTEND_GREEDY);
+}
+
 void
 CDiscNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
 {
@@ -79,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/17 21:48:32  dondosha
+ * Added custom SetMBInitialWordOptionsDefaults and SetMBGappedExtensionDefaults methods
+ *
  * Revision 1.3  2004/02/03 18:36:10  dondosha
  * Reset the stride to 4 in SetMBLookupTableDefaults
  *
