@@ -147,7 +147,7 @@ inline
 typename CIntervalTreeIterator<Traits>::reference
 CIntervalTreeIterator<Traits>::GetValue(void) const
 {
-    return *GetTreeMapValue()->m_Value;
+    return GetTreeMapValue()->m_Value;
 }
 
 template<typename Traits>
@@ -372,6 +372,9 @@ void CIntervalTree::Assign(iterator& dst, const iterator& src)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/11/30 23:41:55  lewisg
+* get rid of dereference in GetValue
+*
 * Revision 1.6  2003/02/07 17:37:40  vasilche
 * Removed parameters' default values from method definition.
 *
