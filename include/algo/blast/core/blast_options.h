@@ -277,6 +277,7 @@ typedef struct BlastHitSavingParameters {
 typedef struct BlastScoringOptions {
    CharPtr matrix;   /**< Name of the matrix containing all scores: needed for
                         finding neighboring words */
+   CharPtr matrix_path; /**< Directory path to where matrices are stored. */
    Int2 reward;      /**< Reward for a match */
    Int2 penalty;     /**< Penalty for a mismatch */
    Boolean gapped_calculation; /**< Will a gapped extension be performed? */
