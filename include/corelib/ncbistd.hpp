@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/04/12 22:53:00  vakatov
+* Apply fix R1.50 only #if HAVE_NCBI_C
+*
 * Revision 1.50  2001/03/16 02:20:40  vakatov
 * [MSWIN]  Avoid the "Beep()" clash between MS-Win and C Toolkit headers
 *
@@ -426,7 +429,7 @@ extern char* strdup(const char* str);
 // Avoid a silly name clash between MS-Win and C Toolkit headers
 //
 
-#if defined(NCBI_OS_MSWIN)  &&  !defined(Beep)
+#if defined(HAVE_NCBI_C)  &&  defined(NCBI_OS_MSWIN)  &&  !defined(Beep)
 #  define Beep Beep
 #endif
 
