@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2001/06/01 18:43:44  vakatov
+ * Comment out excessive debug/trace printout
+ *
  * Revision 1.5  2001/05/16 17:55:37  grichenk
  * Redesigned support for non-blocking sream read operations
  *
@@ -149,9 +152,9 @@ int CId1FetchApp::Run(void)
     if ( args["log"] ) {
         SetDiagStream( &args["log"].AsOutputFile() );
     }
-    SetDiagTrace(eDT_Enable);
-    SetDiagPostLevel(eDiag_Info);
-    SetDiagPostFlag(eDPF_All);
+    // SetDiagTrace(eDT_Enable);
+    // SetDiagPostLevel(eDiag_Info);
+    // SetDiagPostFlag(eDPF_All);
 
     // Setup application registry and logs for CONNECT library
     CORE_SetLOG(LOG_cxx2c());
