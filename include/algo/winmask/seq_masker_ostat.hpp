@@ -41,7 +41,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CSeqMaskerOstat : public CObject
+class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstat : public CObject
 {
     public:
 
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/30 17:53:54  ivanov
+ * Added export specifiers
+ *
  * Revision 1.2  2005/03/29 13:29:25  dicuccio
  * Drop multiple copy ctors; hide assignment operator
  *

@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 class CSeqMaskerOstat;
 
-class CSeqMaskerOstatFactory
+class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstatFactory
 {
   public:
 
@@ -74,6 +74,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/30 17:53:54  ivanov
+ * Added export specifiers
+ *
  * Revision 1.1  2005/03/28 22:41:06  morgulis
  * Moved win_mask_ustat* files to library and renamed them.
  *
