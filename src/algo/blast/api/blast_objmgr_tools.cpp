@@ -737,6 +737,7 @@ x_RemapAlignmentCoordinates(CRef<CSeq_align> sar,
     // if the respective location starts not from 0.
     bool remap_subject =
         (subject && subject->seqloc->IsInt() &&
+         subject->seqloc->GetInt().CanGetStrand() &&
          subject->seqloc->GetInt().GetStrand() == eNa_strand_minus);
 
     TSeqPos q_shift = 0, s_shift = 0;
@@ -951,6 +952,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/06/21 15:28:16  jcherry
+* Guard against trying to access unset strand of a Seq-interval
+*
 * Revision 1.5  2004/06/15 22:14:23  dondosha
 * Correction in RemapToLoc call for subject Seq-loc on a minus strand
 *
