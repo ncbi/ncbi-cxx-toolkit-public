@@ -91,7 +91,6 @@ public:
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
-    virtual void SetPacketSize   (unsigned int packet_size);
 
     virtual CDB_Connection* Connect(const string&   srv_name,
                                     const string&   user_name,
@@ -664,6 +663,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/06 18:43:16  soussov
+ * Removes SetPacketSize()
+ *
  * Revision 1.3  2003/06/05 15:56:19  soussov
  * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface
  *
