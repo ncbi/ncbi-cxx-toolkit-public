@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/10/20 17:24:08  lavr
+ * 'SConnNetInfo' now passed as 'const' to 'SERV_DISPD_Open'
+ *
  * Revision 6.3  2000/10/05 22:36:21  lavr
  * Additional parameters in call to DISPD mapper
  *
@@ -55,7 +58,7 @@ extern "C" {
 #endif
 
 
-const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter, SConnNetInfo *info);
+const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter, const SConnNetInfo *info);
 
 
 #ifdef __cplusplus
@@ -63,4 +66,3 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter, SConnNetInfo *info);
 #endif
 
 #endif /* NCBI_SERVICEP_DISPD__H */
-
