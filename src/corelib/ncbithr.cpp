@@ -40,6 +40,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2001/12/11 22:58:16  vakatov
+ * [NCBI_POSIX_THREADS] CSemaphore::Post() -- avoid throwing exception
+ * without unlocking the embracing mutex first
+ *
  * Revision 1.11  2001/12/10 18:07:55  vakatov
  * Added class "CSemaphore" -- application-wide semaphore
  *
@@ -1266,10 +1270,17 @@ void CSemaphore::Post(unsigned int count)
 #if defined (NCBI_POSIX_THREADS)
     s_Verify(pthread_mutex_lock(&m_Sem->mutex) == 0,
              "CSemaphore::Post() -- pthread_mutex_lock() failed");
-    s_Verify(m_Sem->count <= kMax_UInt - count,
-             "CSemaphore::Post() -- would result in counter > MAX_UINT");
-    s_Verify(m_Sem->count + count <= m_Sem->max_count,
-             "CSemaphore::Post() -- attempt to exceed max_count");
+
+    if (m_Sem->count > kMax_UInt - count  ||
+        m_Sem->count + count > m_Sem->max_count) {
+        s_Verify(pthread_mutex_unlock(&m_Sem->mutex) == 0,
+                 "CSemaphore::Post() -- attempt to exceed max_count and "
+                 "pthread_mutex_unlock() failed");
+        s_Verify(m_Sem->count <= kMax_UInt - count,
+                 "CSemaphore::Post() -- would result in counter > MAX_UINT");
+        s_Verify(m_Sem->count + count <= m_Sem->max_count,
+                 "CSemaphore::Post() -- attempt to exceed max_count");
+    }
 
     // Signal some (or all) of the threads waiting on this semaphore
     int err_code = 0;
