@@ -42,7 +42,7 @@ generate_msvc7_error_check_file() {
         exit
       }
     }
-	EOF
+    EOF
 }
 
 
@@ -114,6 +114,7 @@ for cfg in $cfgs ; do
            exit 4
          fi
        fi
+       rm -f /tmp/build.$$ >/dev/null 2>&1
      done
   done
 done
