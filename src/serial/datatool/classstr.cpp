@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/03/08 14:40:00  vasilche
+* Renamed NewInstance() -> New().
+*
 * Revision 1.6  2000/03/07 20:05:00  vasilche
 * Added NewInstance method to generated classes.
 *
@@ -154,7 +157,7 @@ bool CClassTypeStrings::CanBeInSTL(void) const
 
 string CClassTypeStrings::NewInstance(const string& init) const
 {
-    return GetCType()+"::NewInstance("+init+')';
+    return GetCType()+"::New("+init+')';
 }
 
 bool CClassTypeStrings::IsObject(void) const
@@ -176,6 +179,49 @@ void CClassTypeStrings::SetParentClass(const string& className,
     m_ParentClassFileName = fileName;
 }
 
+static
+CNcbiOstream& DeclareStaticConstructor(CNcbiOstream& out,
+                                       const string className)
+{
+    return out <<
+        "    // constructor for static/automatic objects\n"
+        "    "<<className<<"(void);\n";
+}
+
+static
+CNcbiOstream& DeclareHeapConstructor(CNcbiOstream& out, const string className)
+{
+    return out <<
+        "    // hidden constructor for dynamic objects\n"
+        "    "<<className<<"(NCBI_NS_NCBI::CObject::ECanDelete);\n"
+        "\n";
+}
+
+static
+CNcbiOstream& DeclareDestructor(CNcbiOstream& out, const string className,
+                                bool virt)
+{
+    out <<
+        "    // destructor\n"
+        "    ";
+    if ( virt )
+        out << "virtual ";
+    return out << '~'<<className<<"(void);\n"
+        "\n";
+}
+
+static
+CNcbiOstream& GenerateNewMethod(CNcbiOstream& out, const string& className)
+{
+    return out <<
+        "    // create dynamically allocated object\n"
+        "    static "<<className<<"* New(void)\n"
+        "        {\n"
+        "            return new "<<className<<"(NCBI_NS_NCBI::CObject::eCanDelete);\n"
+        "        }\n"
+        "\n";
+}
+
 void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
     bool haveUserClass = HaveUserClass();
@@ -191,38 +237,12 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     }
     string methodPrefix = code.GetMethodPrefix();
 
-    // constructors
-    code.ClassPublic() <<
-        "    // constructor for static/automatic objects\n"
-        "    "<<codeClassName<<"(void);\n";
-
-    code.ClassProtected() <<
-        "    // hidden constructor for dynamic objects\n"
-        "    "<<codeClassName<<"(NCBI_NS_NCBI::CObject::ECanDelete);\n";
-
-    // destructor
-    code.ClassPublic() <<
-        "    // destructor\n"
-        "    ";
-    if ( haveUserClass )
-        code.ClassPublic() << "virtual ";
-    code.ClassPublic() <<
-        '~'<<codeClassName<<"(void);\n"
-        "\n";
+    DeclareStaticConstructor(code.ClassPublic(), codeClassName);
+    DeclareHeapConstructor(code.ClassProtected(), codeClassName);
+    DeclareDestructor(code.ClassPublic(), codeClassName, haveUserClass);
 
     if ( !haveUserClass ) {
-        code.ClassPublic() <<
-            "    // create dynamically allocated object\n"
-            "    static "<<codeClassName<<"* NewInstance(void);\n"
-            "\n";
-        code.InlineMethods() <<
-            "// create dynamically allocated object\n"
-            "inline\n"<<
-            ctx.GetMethodPrefix()<<codeClassName<<"* "<<methodPrefix<<"NewInstance(void)\n"
-            "{\n"
-            "    return new "<<codeClassName<<"(NCBI_NS_NCBI::CObject::eCanDelete);\n"
-            "}\n"
-            "\n";
+        GenerateNewMethod(code.ClassPublic(), codeClassName);
     }
 
     code.ClassPublic() <<
@@ -641,22 +661,14 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "class "<<GetClassName()<<" : public "<<GetClassName()<<"_Base\n"
         "{\n"
         "    typedef "<<GetClassName()<<"_Base Tparent;\n"
-        "public:\n"
-        "    // constructor for static/automatic objects\n"
-        "    "<<GetClassName()<<"(void);\n"
-        "    // destructor\n"
-        "    ~"<<GetClassName()<<"(void);\n"
-        "\n"
-        "    // create dynamically allocated object\n"
-        "    static "<<GetClassName()<<"* NewInstance(void)\n"
-        "        {\n"
-        "            return new "<<GetClassName()<<"(NCBI_NS_NCBI::CObject::eCanDelete);\n"
-        "        }\n"
-        "\n"
-        "protected:\n"
-        "    // hidden constructor for dynamic objects\n"
-        "    "<<GetClassName()<<"(NCBI_NS_NCBI::CObject::ECanDelete);\n"
-        "\n"
+        "public:\n";
+    DeclareStaticConstructor(out, GetClassName());
+    DeclareDestructor(out, GetClassName(), false);
+    GenerateNewMethod(out, GetClassName());
+    out <<
+        "protected:\n";
+    DeclareHeapConstructor(out, GetClassName());
+    out <<
         "};\n"
         "\n";
 }
@@ -724,7 +736,7 @@ bool CClassRefTypeStrings::CanBeInSTL(void) const
 
 string CClassRefTypeStrings::NewInstance(const string& init) const
 {
-    return GetCType()+"::NewInstance("+init+')';
+    return GetCType()+"::New("+init+')';
 }
 
 bool CClassRefTypeStrings::IsObject(void) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/03/08 14:40:00  vasilche
+* Renamed NewInstance() -> New().
+*
 * Revision 1.8  2000/03/07 20:04:59  vasilche
 * Added NewInstance method to generated classes.
 *
@@ -586,7 +589,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "// helper methods\n"
         "void* "<<methodPrefix<<"x_Create(void)\n"
         "{\n"
-        "    return "<<GetClassName()<<"::NewInstance();\n"
+        "    return "<<GetClassName()<<"::New();\n"
         "}\n"
         "\n"
         "int "<<methodPrefix<<"x_Selected(const void* object)\n"
