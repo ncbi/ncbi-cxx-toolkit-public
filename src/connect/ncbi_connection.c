@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/02/26 22:52:44  kans
+ * Initialize x_read in s_CONN_Read
+ *
  * Revision 6.9  2001/02/26 16:32:01  kans
  * Including string.h instead of cstring
  *
@@ -452,7 +455,7 @@ static EIO_Status s_CONN_Read
     
     /* read data from the connection */
     {{
-        size_t x_read;
+        size_t x_read = 0;
         /* call current connector's "READ" method */
         status = (*conn->meta.read)(conn->meta.c_read,
                                     buf, size, &x_read, conn->r_timeout);
