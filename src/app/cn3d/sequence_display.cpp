@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2002/08/15 22:13:16  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.55  2002/08/15 12:57:07  thiessen
 * fix highlight redraw bug
 *
@@ -198,7 +201,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistre.hpp>

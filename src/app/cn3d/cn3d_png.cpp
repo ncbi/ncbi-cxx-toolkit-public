@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/08/15 22:13:14  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.9  2002/04/21 12:21:21  thiessen
 * minor fixes for AIX
 *
@@ -63,7 +66,6 @@
 // must go first, because on Mac, some NCBI definitions cause conflicts
 #include <cn3d/png.h>
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
@@ -190,11 +192,8 @@ END_EVENT_TABLE()
 
 PNGOptionsDialog::PNGOptionsDialog(wxWindow *parent) :
     wxDialog(parent, -1, "Export Options", wxPoint(50, 50), wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU  // not resizable
-#if wxVERSION_NUMBER >= 2302
-            | wxFRAME_NO_TASKBAR
-#endif
-        ), dontProcessChange(false)
+        wxCAPTION | wxSYSTEM_MENU | wxFRAME_NO_TASKBAR), // not resizable
+    dontProcessChange(false)
 {
     // construct the panel
     wxPanel *panel = new wxPanel(this, -1);
@@ -633,7 +632,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         	    throw "aglCreateContext without shared lists failed";
         }
 
-        // attach off-screen buffer to this context 
+        // attach off-screen buffer to this context
         if (!aglSetOffScreen(ctx, outputWidth, bufferHeight, bytesPerPixel * outputWidth, base))
         	throw "aglSetOffScreen failed";
         if (!aglSetCurrentContext(ctx))

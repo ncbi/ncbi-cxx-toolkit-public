@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/08/15 22:13:14  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.5  2002/06/12 15:09:15  thiessen
 * kludge to avoid initial selected-all state
 *
@@ -48,7 +51,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
 #include "cn3d/multitext_dialog.hpp"
@@ -69,11 +71,7 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
         wxWindow* parent, wxWindowID id, const wxString& title,
         const wxPoint& pos, const wxSize& size) :
     wxDialog(parent, id, title, pos, size,
-        wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxDIALOG_MODELESS
-#if wxVERSION_NUMBER >= 2302
-            | wxFRAME_NO_TASKBAR
-#endif
-        ),
+        wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxDIALOG_MODELESS | wxFRAME_NO_TASKBAR),
     myOwner(owner)
 {
     textCtrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxHSCROLL);
@@ -116,7 +114,7 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
 
 MultiTextDialog::~MultiTextDialog(void)
 {
-    myOwner->DialogDestroyed(this);
+    if (myOwner) myOwner->DialogDestroyed(this);
 }
 
 void MultiTextDialog::OnCloseWindow(wxCloseEvent& event)
@@ -125,16 +123,17 @@ void MultiTextDialog::OnCloseWindow(wxCloseEvent& event)
 }
 
 // these two are possibly temporary kludges to keep text area from coming up initially all selected
-int MultiTextDialog::ShowModal(void)
+int MultiTextDialog::ShowModalDialog(void)
 {
+    Show(true);
     textCtrl->SetSelection(0, 0);
     textCtrl->SetInsertionPointEnd();
-    return wxDialog::ShowModal();
+    return ShowModal();
 }
 
-bool MultiTextDialog::Show(bool show)
+bool MultiTextDialog::ShowDialog(bool show)
 {
-    bool retval = wxDialog::Show(show);
+    bool retval = Show(show);
     textCtrl->SetSelection(0, 0);
     textCtrl->SetInsertionPointEnd();
     return retval;

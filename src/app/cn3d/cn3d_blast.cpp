@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/08/15 22:13:13  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.17  2002/08/01 12:51:36  thiessen
 * add E-value display to block aligner
 *
@@ -84,18 +87,18 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
-
-#if defined(__WXMSW__)
-#include <wx/msw/winundef.h>
-#endif
-#include <wx/wx.h>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
+
+#ifdef __WXMSW__
+#include <windows.h>
+#include <wx/msw/winundef.h>
+#endif
+#include <wx/wx.h>
 
 // C stuff
 #include <objseq.h>

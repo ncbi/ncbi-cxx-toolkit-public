@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/08/15 22:13:13  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.2  2002/04/09 23:59:09  thiessen
 * add cdd annotations read-only option
 *
@@ -42,14 +45,13 @@
 #ifndef CN3D_CDD_SPLASH_DIALOG__HPP
 #define CN3D_CDD_SPLASH_DIALOG__HPP
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 
-#if defined(__WXMSW__)
+#ifdef __WXMSW__
+#include <windows.h>
 #include <wx/msw/winundef.h>
 #endif
-
 #include <wx/wx.h>
 
 

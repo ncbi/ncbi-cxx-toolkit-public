@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/08/15 22:13:13  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.6  2002/03/07 15:45:45  thiessen
 * compile fix ; extra file load messages
 *
@@ -51,14 +54,13 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
-#if defined(__WXMSW__)
+// for file/directory manipulation stuff
+#ifdef __WXMSW__
+#include <windows.h>
 #include <wx/msw/winundef.h>
 #endif
-
-// for file/directory manipulation stuff
 #include <wx/wx.h>
 #include <wx/datetime.h>
 #include <wx/file.h>

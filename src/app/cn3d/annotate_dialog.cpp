@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/08/15 22:13:11  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.9  2001/12/06 23:13:44  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -60,7 +63,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
 #include "cn3d/annotate_dialog.hpp"

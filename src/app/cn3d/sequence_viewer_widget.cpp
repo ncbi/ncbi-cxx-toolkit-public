@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/08/15 22:13:16  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.34  2002/04/27 16:32:14  thiessen
 * fix small leaks/bugs found by BoundsChecker
 *
@@ -141,16 +144,11 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for name conflict
 #include <corelib/ncbidiag.hpp>
 
 #include "cn3d/sequence_viewer_widget.hpp"
 #include "cn3d/viewable_alignment.hpp"
 #include "cn3d/cn3d_tools.hpp"
-
-#if defined(__WXMSW__)
-#include <wx/msw/winundef.h>
-#endif
 
 USING_NCBI_SCOPE;
 

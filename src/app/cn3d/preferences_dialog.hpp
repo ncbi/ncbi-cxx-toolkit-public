@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/08/15 22:13:15  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.3  2002/04/27 16:32:13  thiessen
 * fix small leaks/bugs found by BoundsChecker
 *
@@ -45,13 +48,12 @@
 #ifndef CN3D_PREFERENCES_DIALOG__HPP
 #define CN3D_PREFERENCES_DIALOG__HPP
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
-#if defined(__WXMSW__)
+#ifdef __WXMSW__
+#include <windows.h>
 #include <wx/msw/winundef.h>
 #endif
-
 #include <wx/wx.h>
 
 

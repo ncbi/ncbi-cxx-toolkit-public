@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.152  2002/08/15 22:13:13  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.151  2002/08/09 18:24:08  thiessen
 * improve/add magic formula to avoid Windows symbol clashes
 *
@@ -549,23 +552,6 @@
 * ===========================================================================
 */
 
-#ifdef __WXMSW__
-#include <windows.h>
-#ifdef Yield
-#undef Yield
-#endif
-#ifdef DrawText
-#undef DrawText
-#endif
-#ifdef CreateDialog
-#undef CreateDialog
-#endif
-#ifdef GetCharWidth
-#undef GetCharWidth
-#endif
-#endif
-
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
@@ -577,6 +563,10 @@
 #include <objects/cdd/Cdd.hpp>
 #include <objects/cn3d/Cn3d_style_settings_set.hpp>
 
+#ifdef __WXMSW__
+#include <windows.h>
+#include <wx/msw/winundef.h>
+#endif
 #include <wx/wx.h>
 #include <wx/image.h>
 #include <wx/html/helpfrm.h>
@@ -587,9 +577,7 @@
 #include <wx/fontdlg.h>
 #include <wx/confbase.h>
 #include <wx/fileconf.h>
-#if wxVERSION_NUMBER >= 2302
 #include <wx/filename.h>
-#endif
 
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
@@ -709,7 +697,7 @@ public:
         const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize) :
         wxFrame(GlobalTopWindow(), wxID_HIGHEST + 5, title, pos, size,
             wxDEFAULT_FRAME_STYLE
-#if defined(__WXMSW__) && wxVERSION_NUMBER >= 2302
+#if defined(__WXMSW__)
                 | wxFRAME_TOOL_WINDOW | wxFRAME_NO_TASKBAR | wxFRAME_FLOAT_ON_PARENT
 #endif
             )
@@ -800,31 +788,18 @@ void RaiseLogWindow(void)
 }
 
 
-#ifdef TEST_WXGLAPP
 BEGIN_EVENT_TABLE(Cn3DApp, wxGLApp)
-#else
-BEGIN_EVENT_TABLE(Cn3DApp, wxApp)
-#endif
     EVT_IDLE(Cn3DApp::OnIdle)
 END_EVENT_TABLE()
 
-#ifdef TEST_WXGLAPP
 Cn3DApp::Cn3DApp() : wxGLApp()
-#else
-Cn3DApp::Cn3DApp() : wxApp()
-#endif
 {
     // setup the diagnostic stream
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info); // report all messages
     SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
 
-#ifdef TEST_WXGLAPP
     if (!InitGLVisual(NULL)) ERR_POST(Fatal << "InitGLVisual failed");
-#else
-    // try to force all windows to use best (TrueColor) visuals
-    SetUseBestVisual(true);
-#endif
 }
 
 void Cn3DApp::InitRegistry(void)
@@ -1572,11 +1547,7 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
     initialFontData.SetInitialFont(initialFont);
 
     // bring up font chooser dialog
-#if wxVERSION_NUMBER > 2302
     wxFontDialog dialog(this, initialFontData);
-#else
-    wxFontDialog dialog(this, &initialFontData);
-#endif
     int result = dialog.ShowModal();
 
     // if user selected a font
@@ -1733,7 +1704,7 @@ void Cn3DMainFrame::DialogTextChanged(const MultiTextDialog *changed)
 
 void Cn3DMainFrame::DialogDestroyed(const MultiTextDialog *destroyed)
 {
-    TESTMSG("destroying MultiTextDialog");
+    TESTMSG("MultiTextDialog destroyed");
     if (destroyed == cddNotesDialog) cddNotesDialog = NULL;
     if (destroyed == cddDescriptionDialog) cddDescriptionDialog = NULL;
 }
@@ -1741,8 +1712,8 @@ void Cn3DMainFrame::DialogDestroyed(const MultiTextDialog *destroyed)
 void Cn3DMainFrame::DestroyNonModalDialogs(void)
 {
     if (cddAnnotateDialog) cddAnnotateDialog->Destroy();
-    if (cddNotesDialog) cddNotesDialog->Destroy();
-    if (cddDescriptionDialog) cddDescriptionDialog->Destroy();
+    if (cddNotesDialog) cddNotesDialog->DestroyDialog();
+    if (cddDescriptionDialog) cddDescriptionDialog->DestroyDialog();
     if (cddRefDialog) cddRefDialog->Destroy();
     if (cddOverview) cddOverview->Destroy();
 }
@@ -1839,7 +1810,7 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
                 cddDescriptionDialog = new MultiTextDialog(this, line,
                     this, -1, "CDD Description", wxPoint(50, 50), wxSize(400, 200));
             }
-            cddDescriptionDialog->Show(true);
+            cddDescriptionDialog->ShowDialog(true);
             break;
 
         case MID_EDIT_CDD_NOTES:
@@ -1849,7 +1820,7 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
                 cddNotesDialog = new MultiTextDialog(this, lines,
                     this, -1, "CDD Notes", wxPoint(100, 100), wxSize(500, 400));
             }
-            cddNotesDialog->Show(true);
+            cddNotesDialog->ShowDialog(true);
             break;
 
         case MID_EDIT_CDD_REFERENCES:
@@ -2155,7 +2126,6 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
     wxString outputFolder = wxString(userDir.c_str(), userDir.size() - 1); // remove trailing /
     wxString outputFilename;
 
-#if wxVERSION_NUMBER >= 2302
     wxFileName fn(currentFile.c_str());
     wxFileDialog dialog(this, "Choose a filename for output", outputFolder,
 #ifdef __WXGTK__
@@ -2169,7 +2139,6 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
         (fn.GetExt() == "prt" ? 3 : 0)));
     if (dialog.ShowModal() == wxID_OK)
         outputFilename = dialog.GetPath();
-#endif
 
     TESTMSG("save file: '" << outputFilename.c_str() << "'");
 
@@ -2299,11 +2268,7 @@ bool Cn3DGLCanvas::MeasureText(const std::string& text, int *width, int *height,
     memoryDC.EndDrawing();
 
     // then convert bitmap to image so that we can read individual pixels (ugh...)
-#if wxVERSION_NUMBER >= 2303
     wxImage image(memoryBitmap.ConvertToImage());
-#else
-    wxImage image(memoryBitmap);
-#endif
 //    wxInitAllImageHandlers();
 //    image.SaveFile("text.png", wxBITMAP_TYPE_PNG); // for testing
 
@@ -2370,7 +2335,7 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
     SetCurrent();
 
 // in wxGTK >= 2.3.2, this causes a system crash on some Solaris machines...
-#if !defined(__WXGTK__) || wxVERSION_NUMBER < 2302
+#if !defined(__WXGTK__)
     // keep mouse focus while holding down button
     if (event.LeftDown()) CaptureMouse();
     if (event.LeftUp()) ReleaseMouse();

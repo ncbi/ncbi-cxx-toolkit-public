@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/08/15 22:13:12  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.3  2001/08/06 20:22:48  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -45,14 +48,13 @@
 #ifndef CN3D_ANNOTATE_DIALOG__HPP
 #define CN3D_ANNOTATE_DIALOG__HPP
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 
-#if defined(__WXMSW__)
+#ifdef __WXMSW__
+#include <windows.h>
 #include <wx/msw/winundef.h>
 #endif
-
 #include <wx/wx.h>
 
 #include <map>

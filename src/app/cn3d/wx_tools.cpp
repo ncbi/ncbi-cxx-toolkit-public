@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/08/15 22:13:19  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.13  2002/05/22 17:17:10  thiessen
 * progress on BLAST interface ; change custom spin ctrl implementation
 *
@@ -72,7 +75,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
@@ -83,11 +85,7 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-#if wxVERSION_NUMBER >= 2302
 const int WX_TOOLS_NOTIFY_CHANGED = wxNewEventType();
-#else
-const int WX_TOOLS_NOTIFY_CHANGED = wxEVT_USER_FIRST;
-#endif
 
 #define SEND_CHANGED_EVENT do { \
     wxCommandEvent notify(WX_TOOLS_NOTIFY_CHANGED); \

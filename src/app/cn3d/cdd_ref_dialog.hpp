@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/08/15 22:13:12  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.2  2002/04/09 14:38:23  thiessen
 * add cdd splash screen
 *
@@ -42,17 +45,16 @@
 #ifndef CN3D_CDD_REF_DIALOG__HPP
 #define CN3D_CDD_REF_DIALOG__HPP
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 
-#if defined(__WXMSW__)
+#include <objects/cdd/Cdd_descr_set.hpp>
+
+#ifdef __WXMSW__
+#include <windows.h>
 #include <wx/msw/winundef.h>
 #endif
-
 #include <wx/wx.h>
-
-#include <objects/cdd/Cdd_descr_set.hpp>
 
 
 BEGIN_SCOPE(Cn3D)

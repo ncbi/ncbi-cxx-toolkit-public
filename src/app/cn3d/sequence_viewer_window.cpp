@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/08/15 22:13:17  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.34  2002/06/13 14:54:07  thiessen
 * add sort by self-hit
 *
@@ -135,13 +138,12 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
-#if defined(__WXMSW__)
+#ifdef __WXMSW__
+#include <windows.h>
 #include <wx/msw/winundef.h>
 #endif
-
 #include <wx/wx.h>
 
 #include "cn3d/sequence_viewer_window.hpp"

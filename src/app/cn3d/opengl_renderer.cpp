@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2002/08/15 22:13:15  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.60  2002/03/04 15:52:14  thiessen
 * hide sequence windows instead of destroying ; add perspective/orthographic projection choice
 *
@@ -213,7 +216,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 

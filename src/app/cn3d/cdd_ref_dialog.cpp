@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/08/15 22:13:12  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.5  2002/04/09 23:59:09  thiessen
 * add cdd annotations read-only option
 *
@@ -48,7 +51,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
 #include <objects/cdd/Cdd_descr.hpp>

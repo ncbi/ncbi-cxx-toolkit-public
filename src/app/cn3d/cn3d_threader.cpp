@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/08/15 22:13:14  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.31  2002/07/26 15:28:47  thiessen
 * add Alejandro's block alignment algorithm
 *
@@ -209,6 +212,18 @@ Threader::~Threader(void)
 Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
     double weightPSSM, BLAST_KarlinBlkPtr karlinBlock)
 {
+    // special case for "PSSM" of single-row "alignment" - just use BLOSUM62 score
+    if (multiple->NRows() == 1) {
+        Seq_Mtf *seqMtf = NewSeqMtf(multiple->GetMaster()->Length(), ThreaderResidues.size());
+        for (int res=0; res<multiple->GetMaster()->Length(); res++)
+            for (int aa=0; aa<ThreaderResidues.size(); aa++)
+                seqMtf->ww[res][aa] = ThrdRound(
+                    weightPSSM * SCALING_FACTOR *
+                        GetBLOSUM62Score(multiple->GetMaster()->sequenceString[res],
+                                         ThreaderResidues[aa]));
+        return seqMtf;
+    }
+
     // convert all sequences to Bioseqs
     multiple->GetMaster()->parentSet->CreateAllBioseqs(multiple);
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/08/15 22:13:15  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.12  2002/06/04 12:48:56  thiessen
 * tweaks for release ; fill out help menu
 *
@@ -69,7 +72,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 
@@ -79,10 +81,6 @@
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/cn3d_cache.hpp"
-
-#if defined(__WXMSW__)
-#include <wx/msw/winundef.h>
-#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -377,13 +375,7 @@ void PreferencesDialog::OnButton(wxCommandEvent& event)
         case ID_B_CACHE_BROWSE: {
             DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tCache, ID_T_CACHE_FOLDER, wxTextCtrl)
             wxString path;
-#if wxVERSION_NUMBER >= 2302
             path = wxDirSelector("Select a cache folder:", tCache->GetValue());
-#else
-            wxDirDialog dirDialog(this, "Select a cache folder:", tCache->GetValue());
-            int result = dirDialog.ShowModal();
-            if (result == wxID_OK) path = dirDialog.GetPath();
-#endif
             if (path.size() > 0 && wxDirExists(path.c_str()))
                 tCache->SetValue(path);
             break;

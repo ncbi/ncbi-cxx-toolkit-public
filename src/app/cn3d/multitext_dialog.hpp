@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/08/15 22:13:15  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.6  2002/06/12 15:09:15  thiessen
 * kludge to avoid initial selected-all state
 *
@@ -54,14 +57,13 @@
 #ifndef CN3D_MULTITEXT_DIALOG__HPP
 #define CN3D_MULTITEXT_DIALOG__HPP
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 
-#if defined(__WXMSW__)
+#ifdef __WXMSW__
+#include <windows.h>
 #include <wx/msw/winundef.h>
 #endif
-
 #include <wx/wx.h>
 
 #include <map>
@@ -78,14 +80,14 @@ class MultiTextDialogOwner
 {
 public:
     virtual void DialogTextChanged(const MultiTextDialog *changed) = 0;
-    virtual void DialogDestroyed(const MultiTextDialog *changed) = 0;
+    virtual void DialogDestroyed(const MultiTextDialog *destroyed) = 0;
 };
 
 
-// this is intended to be used as a non-modal dialog; it calls its owner's DialogTextChanged()
-// method every time the user types something
+// this is really intended to be used as a non-modal dialog; it calls its owner's DialogTextChanged()
+// method every time the user types something. But it should function modally as well.
 
-class MultiTextDialog : public wxDialog
+class MultiTextDialog : private wxDialog
 {
 public:
     typedef std::vector < std::string > TextLines;
@@ -98,8 +100,9 @@ public:
     bool GetLines(TextLines *lines) const;
     bool GetLine(std::string *singleString) const;  // collapse all lines to single string
 
-    bool Show(bool);
-    int ShowModal(void);
+    bool ShowDialog(bool);
+    int ShowModalDialog(void);
+    bool DestroyDialog(void) { return Destroy(); }
 
 private:
     MultiTextDialogOwner *myOwner;

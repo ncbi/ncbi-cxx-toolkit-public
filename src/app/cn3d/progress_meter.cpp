@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/08/15 22:13:15  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.4  2001/10/25 17:17:23  thiessen
 * use wxYield + modal for wxMac, too
 *
@@ -45,7 +48,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
 #include "cn3d/progress_meter.hpp"
@@ -70,11 +72,7 @@ END_EVENT_TABLE()
 ProgressMeter::ProgressMeter(wxWindow *myParent,
         const wxString& message, const wxString& title, int maximumValue) :
     wxDialog(myParent, -1, title, wxPoint(50, 50), wxDefaultSize,
-        wxCAPTION | wxDIALOG_MODELESS   // not closeable or resizable
-#if wxVERSION_NUMBER >= 2302
-            | wxFRAME_NO_TASKBAR
-#endif
-        )
+        wxCAPTION | wxDIALOG_MODELESS | wxFRAME_NO_TASKBAR) // not closeable or resizable
 {
     // construct the panel
     wxPanel *parent = new wxPanel(this, -1);

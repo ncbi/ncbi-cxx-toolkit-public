@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/08/15 22:13:19  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.20  2002/06/05 15:59:38  thiessen
 * fix for Solaris
 *
@@ -96,13 +99,12 @@
 #ifndef CN3D_VIEWER_WINDOW_BASE__HPP
 #define CN3D_VIEWER_WINDOW_BASE__HPP
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
-#if defined(__WXMSW__)
+#ifdef __WXMSW__
+#include <windows.h>
 #include <wx/msw/winundef.h>
 #endif
-
 #include <wx/wx.h>
 
 #include "cn3d/block_multiple_alignment.hpp"

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/08/15 22:13:12  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.25  2002/04/09 23:59:08  thiessen
 * add cdd annotations read-only option
 *
@@ -108,7 +111,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
 #include <objects/cdd/Align_annot.hpp>
@@ -236,11 +238,7 @@ END_EVENT_TABLE()
 
 CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, CDDAnnotateDialog **handle, StructureSet *set) :
     wxDialog(parent, -1, "CDD Annotations", wxPoint(400, 100), wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU | wxDIALOG_MODELESS   // not resizable
-#if wxVERSION_NUMBER >= 2302
-            | wxFRAME_NO_TASKBAR
-#endif
-        ),
+        wxCAPTION | wxSYSTEM_MENU | wxDIALOG_MODELESS | wxFRAME_NO_TASKBAR),    // not resizable
     dialogHandle(handle), structureSet(set), annotSet(set->GetCDDAnnotSet())
 {
     if (annotSet.Empty()) {

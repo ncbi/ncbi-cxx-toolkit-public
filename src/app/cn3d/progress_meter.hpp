@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/08/15 22:13:16  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.2  2001/10/24 17:07:30  thiessen
 * add PNG output for wxGTK
 *
@@ -42,15 +45,14 @@
 #ifndef CN3D_PROGRESS_METER__HPP
 #define CN3D_PROGRESS_METER__HPP
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
 
-#if defined(__WXMSW__)
+#ifdef __WXMSW__
+#include <windows.h>
 #include <wx/msw/winundef.h>
 #endif
-
 #include <wx/wx.h>
 
 
@@ -64,7 +66,7 @@ public:
 
     // set gauge value
     void SetValue(int value, bool doYield = true);
-    
+
 private:
     void OnCloseWindow(wxCloseEvent& event);
     DECLARE_EVENT_TABLE()

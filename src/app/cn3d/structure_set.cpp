@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.107  2002/08/15 22:13:17  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.106  2002/07/12 13:24:10  thiessen
 * fixes for PSSM creation to agree with cddumper/RPSBLAST
 *
@@ -404,6 +407,7 @@
 #include "cn3d/cn3d_cache.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/residue.hpp"
+#include "cn3d/show_hide_dialog.hpp"
 
 #include <objseq.h>
 
@@ -540,6 +544,48 @@ bool StructureSet::MatchSequenceToMoleculeInObject(const Sequence *seq,
         }
     }
     return (m != me);
+}
+
+static void SetStructureRowFlags(const AlignmentSet *alignmentSet, int *structureLimit,
+    std::vector < bool > *dontLoadRowStructure)
+{
+    std::vector < std::string > titles;
+    std::vector < int > rows;
+
+    // find slave rows with associated structure
+    AlignmentSet::AlignmentList::const_iterator l, le = alignmentSet->alignments.end();
+    int row;
+    for (l=alignmentSet->alignments.begin(), row=0; l!=le; l++, row++) {
+        if ((*l)->slave->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET) {
+            titles.push_back((*l)->slave->identifier->ToString());
+            rows.push_back(row);
+        }
+    }
+
+    if (*structureLimit - 1 >= titles.size()) return;
+
+    // let user select which slaves to load
+    wxString *items = new wxString[titles.size()];
+    std::vector < bool > itemsOn(titles.size(), false);
+    for (row=0; row<titles.size(); row++) {
+        items[row] = titles[row].c_str();
+        if (row < *structureLimit - 1)      // by default, first N-1 are selected
+            itemsOn[row] = true;
+    }
+    ShowHideDialog dialog(items, &itemsOn, NULL, true, NULL, -1, "Choose structures:");
+
+    if (dialog.ShowModal() == wxOK) {
+        // figure out which rows the user selected, and adjust structureLimit accordingly
+        *structureLimit = 1;     // master always visible
+        for (row=0; row<itemsOn.size(); row++) {
+            if (itemsOn[row])
+                (*structureLimit)++;                        // structure should be loaded
+            else
+                (*dontLoadRowStructure)[rows[row]] = true;  // structure should not be loaded
+        }
+    }
+
+    delete items;
 }
 
 void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
@@ -716,6 +762,11 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
         // now loop through slave rows of the alignment; if the slave
         // sequence has an MMDB ID but no structure yet, then load it.
         if (objects.size() < structureLimit && (dataManager->IsCDD() || dataManager->IsGeneralMime())) {
+
+            // for CDD's, ask user which structures to load if structureLimit is low
+            if (dataManager->IsCDD())
+                SetStructureRowFlags(alignmentSet, &structureLimit, &loadedStructureForSlaveRow);
+
             for (l=alignmentSet->alignments.begin(), row=0; l!=le && objects.size()<structureLimit; l++, row++) {
 
                 if ((*l)->slave->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/08/15 22:13:18  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.33  2002/06/13 14:54:07  thiessen
 * add sort by self-hit
 *
@@ -132,7 +135,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
 #include "cn3d/viewer_window_base.hpp"
@@ -156,7 +158,7 @@ BEGIN_SCOPE(Cn3D)
 ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos, const wxSize& size) :
     wxFrame(GlobalTopWindow(), wxID_HIGHEST + 10, "", pos, size,
         wxDEFAULT_FRAME_STYLE
-#if defined(__WXMSW__) && wxVERSION_NUMBER >= 2302
+#if defined(__WXMSW__)
             | wxFRAME_TOOL_WINDOW
             | wxFRAME_NO_TASKBAR
             | wxFRAME_FLOAT_ON_PARENT

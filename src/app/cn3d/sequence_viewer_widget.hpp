@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/08/15 22:13:16  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.17  2002/02/05 18:53:25  thiessen
 * scroll to residue in sequence windows when selected in structure window
 *
@@ -93,10 +96,10 @@
 #ifndef WX_SEQUENCE_VIEWER_WIDGET__HPP
 #define WX_SEQUENCE_VIEWER_WIDGET__HPP
 
-#if defined(__WXMSW__)
+#ifdef __WXMSW__
+#include <windows.h>
 #include <wx/msw/winundef.h>
 #endif
-
 #include <wx/wx.h>
 #include <wx/splitter.h>
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2002/08/15 22:13:14  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.62  2002/06/05 14:28:39  thiessen
 * reorganize handling of window titles
 *
@@ -252,26 +255,16 @@
 #ifndef CN3D_MAIN__HPP
 #define CN3D_MAIN__HPP
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
-#if defined(__WXMSW__)
+#ifdef __WXMSW__
+#include <windows.h>
 #include <wx/msw/winundef.h>
 #endif
-
 #include <wx/wx.h>
-#if !wxUSE_GLCANVAS
-#error Please set wxUSE_GLCANVAS to 1 in setup.h.
-#endif
 #include <wx/glcanvas.h>
 #include <wx/html/helpctrl.h>
 #include <wx/fileconf.h>
-
-// for testing my new wxGLApp class
-#define TEST_WXGLAPP 1
-#if defined(TEST_WXGLAPP) && wxVERSION_NUMBER < 2302
-#undef TEST_WXGLAPP
-#endif
 
 #include "cn3d/multitext_dialog.hpp"
 
@@ -284,11 +277,7 @@ class OpenGLRenderer;
 class StructureSet;
 
 // Define a new application type
-#ifdef TEST_WXGLAPP
 class Cn3DApp: public wxGLApp
-#else
-class Cn3DApp: public wxApp
-#endif
 {
 public:
     Cn3DApp();

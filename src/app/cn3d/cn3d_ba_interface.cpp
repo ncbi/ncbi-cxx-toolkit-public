@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/08/15 22:13:13  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.10  2002/08/14 00:02:08  thiessen
 * combined block/global aligner from Alejandro
 *
@@ -60,23 +63,6 @@
 * ===========================================================================
 */
 
-#ifdef __WXMSW__
-#include <windows.h>
-#ifdef Yield
-#undef Yield
-#endif
-#ifdef DrawText
-#undef DrawText
-#endif
-#ifdef CreateDialog
-#undef CreateDialog
-#endif
-#ifdef GetCharWidth
-#undef GetCharWidth
-#endif
-#endif
-
-#include <wx/string.h>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
@@ -86,6 +72,10 @@
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 
+#ifdef __WXMSW__
+#include <windows.h>
+#include <wx/msw/winundef.h>
+#endif
 #include <wx/wx.h>
 
 #include "cn3d/cn3d_ba_interface.hpp"

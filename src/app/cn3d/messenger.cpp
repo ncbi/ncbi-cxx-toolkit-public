@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/08/15 22:13:14  thiessen
+* update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
+*
 * Revision 1.29  2002/07/02 16:13:49  thiessen
 * allow for NULL structureWindow
 *
@@ -121,7 +124,6 @@
 * ===========================================================================
 */
 
-#include <wx/string.h> // name conflict kludge
 #include <corelib/ncbistd.hpp>
 
 #include <objects/mmdb1/Biostruc_id.hpp>
