@@ -833,7 +833,7 @@ int CDemoApp::Run(void)
                 // Get seq vector filtered with the current feature location.
                 // e_ViewMerged flag forces each residue to be shown only once.
                 CSeqVector cds_vect
-                    (by_product? it->GetProduct(): it->GetLocation(),
+                    (!by_product? it->GetProduct(): it->GetLocation(),
                      scope,
                      CBioseq_Handle::eCoding_Iupac);
                 // Print first 10 characters of each cd-region
@@ -1027,6 +1027,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2004/12/21 18:57:35  vasilche
+* Display second location on cdregion features.
+*
 * Revision 1.92  2004/12/06 17:54:09  grichenk
 * Replaced calls to deprecated methods
 *
