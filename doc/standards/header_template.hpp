@@ -43,6 +43,13 @@
 #include <corelib/ncbistd.hpp>
 #include <dir/dir/dir/some_other_header.hpp>
 
+
+/** @addtogroup Miscellaneous
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -139,13 +146,15 @@ private:
 END_NCBI_SCOPE
 
 
+/* @} */
+
 
 /*
  * ===========================================================================
- *
  * $Log$
- * Revision 1.4  2003/09/22 20:23:03  vakatov
- * Minor adjustments
+ * Revision 1.5  2003/09/29 18:40:11  vakatov
+ * Add to a DOXYGEN group ("Miscellaneous" by default).
+ * Minor style adjustments.
  *
  * ===========================================================================
  */
