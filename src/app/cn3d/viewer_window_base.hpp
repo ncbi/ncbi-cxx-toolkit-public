@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/08/14 17:17:48  thiessen
+* add user font selection, store in registry
+*
 * Revision 1.14  2001/07/23 20:08:38  thiessen
 * add regex pattern search
 *
@@ -121,6 +124,9 @@ public:
     // scroll to specific column
     void ScrollToColumn(int column) { viewerWidget->ScrollTo(column, -1); }
     void ScrollToRow(int row) { viewerWidget->ScrollTo(-1, row); }
+
+    // set the font for the characters from registry values; refreshes automatically.
+    void SetupFontFromRegistry(void);
 
     // communicates to the derived class that the user wants to turn on/off the editor;
     // should return true if derived class wants to allow the state change

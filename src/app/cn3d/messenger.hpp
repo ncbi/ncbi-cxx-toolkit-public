@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/08/14 17:17:48  thiessen
+* add user font selection, store in registry
+*
 * Revision 1.15  2001/07/04 19:38:55  thiessen
 * finish user annotation system
 *
@@ -135,6 +138,8 @@ public:
     // called if the application is about to exit - tell sequence window(s) to save
     void SequenceWindowsSave(void);
 
+    // called to notify all sequence viewers that their font should be changed
+    void NewSequenceViewerFont(void);
 
     // these next few are related to highlighting:
 

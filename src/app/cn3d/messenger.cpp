@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/08/14 17:18:22  thiessen
+* add user font selection, store in registry
+*
 * Revision 1.19  2001/07/04 19:39:17  thiessen
 * finish user annotation system
 *
@@ -219,6 +222,13 @@ void Messenger::SequenceWindowsSave(void)
     SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
     for (q=sequenceViewers.begin(); q!=qe; q++)
         (*q)->SaveDialog();
+}
+
+void Messenger::NewSequenceViewerFont(void)
+{
+    SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
+    for (q=sequenceViewers.begin(); q!=qe; q++)
+        (*q)->NewFont();
 }
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/08/14 17:18:22  thiessen
+* add user font selection, store in registry
+*
 * Revision 1.21  2001/07/27 13:52:47  thiessen
 * make sure domains are assigned in order of molecule id; tweak pattern dialog
 *
@@ -128,11 +131,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
     SetStatusWidths(2, widths);
 
     viewerWidget = new SequenceViewerWidget(this);
-#if defined(__WXMSW__)
-    viewerWidget->SetCharacterFont(new wxFont(10, wxROMAN, wxNORMAL, wxNORMAL));
-#elif defined(__WXGTK__)
-    viewerWidget->SetCharacterFont(new wxFont(14, wxROMAN, wxNORMAL, wxNORMAL));
-#endif
+    SetupFontFromRegistry();
 
     menuBar = new wxMenuBar;
     viewMenu = new wxMenu;
@@ -184,6 +183,25 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
 ViewerWindowBase::~ViewerWindowBase(void)
 {
     if (viewer) viewer->GUIDestroyed();
+}
+
+void ViewerWindowBase::SetupFontFromRegistry(void)
+{
+    // get font info from registry, and create wxFont
+    int size, family, style, weight;
+    bool underlined;
+    wxFont *font;
+    if (!RegistryGetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, &size) ||
+        !RegistryGetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_FAMILY, &family) ||
+        !RegistryGetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_STYLE, &style) ||
+        !RegistryGetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_WEIGHT, &weight) ||
+        !RegistryGetBoolean(REG_SEQUENCE_FONT_SECTION, REG_FONT_UNDERLINED, &underlined) ||
+        !(font = new wxFont(size, family, style, weight, underlined)))
+    {
+        ERR_POST(Error << "ViewerWindowBase::SetupFontFromRegistry() - error setting up font");
+        return;
+    }
+    viewerWidget->SetCharacterFont(font);
 }
 
 void ViewerWindowBase::EnableBaseEditorMenuItems(bool enabled)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/08/14 17:17:48  thiessen
+* add user font selection, store in registry
+*
 * Revision 1.35  2001/08/10 15:02:03  thiessen
 * fill out shortcuts; add update show/hide menu
 *
@@ -234,6 +237,10 @@ public:
         // File menu
             MID_OPEN,
             MID_SAVE,
+            MID_PREFERENCES,
+            MID_FONTS,
+                MID_OPENGL_FONT,
+                MID_SEQUENCE_FONT,
             MID_LIMIT_STRUCT,
             MID_EXIT,
         // View menu
@@ -245,7 +252,6 @@ public:
             MID_FIRST_FRAME,
             MID_LAST_FRAME,
             MID_ALL_FRAMES,
-            MID_PREFERENCES,
         // Show/Hide menu
             MID_SHOW_HIDE,
             MID_SHOW_ALL,
@@ -315,6 +321,7 @@ public:
     void OnSelectFavorite(wxCommandEvent& event);
     void OnCDD(wxCommandEvent& event);
     void OnPreferences(wxCommandEvent& event);
+    void OnSetFont(wxCommandEvent& event);
 
 private:
 
@@ -340,12 +347,14 @@ public:
     wxFont *font;
 
     // public methods
+    void SetupFontFromRegistry(void);
+
+private:
     void OnPaint(wxPaintEvent& event);
     void OnSize(wxSizeEvent& event);
     void OnEraseBackground(wxEraseEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
 
-private:
     DECLARE_EVENT_TABLE()
 };
 

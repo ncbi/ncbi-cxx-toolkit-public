@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/08/14 17:17:48  thiessen
+* add user font selection, store in registry
+*
 * Revision 1.6  2001/08/13 22:30:51  thiessen
 * add structure window mouse drag/zoom; add highlight option to render settings
 *
@@ -112,7 +115,15 @@ static const std::string
     REG_QUALITY_WORM_SIDES = "WormSides",
     REG_QUALITY_WORM_SEGMENTS = "WormSegments",
     REG_QUALITY_HELIX_SIDES = "HelixSides",
-    REG_HIGHLIGHTS_ON = "HighlightsOn";
+    REG_HIGHLIGHTS_ON = "HighlightsOn",
+    // font settings
+    REG_OPENGL_FONT_SECTION = "Cn3D-4-Font-OpenGL",
+    REG_SEQUENCE_FONT_SECTION = "Cn3D-4-Font-Sequence",
+    REG_FONT_SIZE = "FontPointSize",
+    REG_FONT_FAMILY = "FontFamily",
+    REG_FONT_STYLE = "FontStyle",
+    REG_FONT_WEIGHT = "FontWeight",
+    REG_FONT_UNDERLINED = "FontUnderlined";
 
 END_SCOPE(Cn3D)
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2001/08/14 17:18:22  thiessen
+* add user font selection, store in registry
+*
 * Revision 1.65  2001/08/13 22:30:58  thiessen
 * add structure window mouse drag/zoom; add highlight option to render settings
 *
@@ -316,6 +319,7 @@
 #include "cn3d/preferences_dialog.hpp"
 
 #include <wx/file.h>
+#include <wx/fontdlg.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -499,13 +503,13 @@ Cn3DApp::Cn3DApp() : wxApp()
     SetUseBestVisual(true);
 }
 
-#define SET_DEFAULT_LONG_REGISTRY_VALUE(name, defval) \
-    if (!RegistryIsValidInteger(REG_QUALITY_SECTION, (name))) \
-        RegistrySetInteger(REG_QUALITY_SECTION, (name), (defval));
+#define SET_DEFAULT_INTEGER_REGISTRY_VALUE(section, name, defval) \
+    if (!RegistryIsValidInteger((section), (name))) \
+        RegistrySetInteger((section), (name), (defval));
 
-#define SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(name, defval) \
-    if (!RegistryIsValidBoolean(REG_QUALITY_SECTION, (name))) \
-        RegistrySetBoolean(REG_QUALITY_SECTION, (name), (defval), true);
+#define SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(section, name, defval) \
+    if (!RegistryIsValidBoolean((section), (name))) \
+        RegistrySetBoolean((section), (name), (defval), true);
 
 bool Cn3DApp::OnInit(void)
 {
@@ -547,13 +551,35 @@ bool Cn3DApp::OnInit(void)
     LoadFavorites();
 
     // initial quality settings if not already present in registry
-    SET_DEFAULT_LONG_REGISTRY_VALUE(REG_QUALITY_ATOM_SLICES, 10);
-    SET_DEFAULT_LONG_REGISTRY_VALUE(REG_QUALITY_ATOM_STACKS, 8);
-    SET_DEFAULT_LONG_REGISTRY_VALUE(REG_QUALITY_BOND_SIDES, 6);
-    SET_DEFAULT_LONG_REGISTRY_VALUE(REG_QUALITY_WORM_SIDES, 6);
-    SET_DEFAULT_LONG_REGISTRY_VALUE(REG_QUALITY_WORM_SEGMENTS, 6);
-    SET_DEFAULT_LONG_REGISTRY_VALUE(REG_QUALITY_HELIX_SIDES, 12);
-    SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(REG_HIGHLIGHTS_ON, true);
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, 10);
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_ATOM_STACKS, 8);
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_BOND_SIDES, 6);
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_WORM_SIDES, 6);
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_WORM_SEGMENTS, 6);
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_HELIX_SIDES, 12);
+    SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_HIGHLIGHTS_ON, true);
+
+    // initial font for OpenGL (structure window)
+#if defined(__WXMSW__)
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 12);
+#elif defined(__WXGTK__)
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 14);
+#endif
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_FAMILY, wxSWISS);
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_WEIGHT, wxBOLD);
+    SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_UNDERLINED, false);
+
+    // initial font for sequence viewers
+#if defined(__WXMSW__)
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 10);
+#elif defined(__WXGTK__)
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 14);
+#endif
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_FAMILY, wxROMAN);
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
+    SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_WEIGHT, wxNORMAL);
+    SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_UNDERLINED, false);
 
     // read dictionary
     wxString dictFile = wxString(dataDir.c_str()) + "bstdt.val";
@@ -612,7 +638,6 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU      (MID_EXIT,                                Cn3DMainFrame::OnExit)
     EVT_MENU      (MID_OPEN,                                Cn3DMainFrame::OnOpen)
     EVT_MENU      (MID_SAVE,                                Cn3DMainFrame::OnSave)
-    EVT_MENU      (MID_LIMIT_STRUCT,                        Cn3DMainFrame::OnLimit)
     EVT_MENU_RANGE(MID_ZOOM_IN,  MID_ALL_FRAMES,            Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED,       Cn3DMainFrame::OnShowHide)
     EVT_MENU      (MID_REFIT_ALL,                           Cn3DMainFrame::OnAlignStructures)
@@ -622,6 +647,8 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_SHOW_LOG,   MID_SHOW_SEQ_V,          Cn3DMainFrame::OnShowWindow)
     EVT_MENU_RANGE(MID_EDIT_CDD_DESCR, MID_ANNOT_CDD,       Cn3DMainFrame::OnCDD)
     EVT_MENU      (MID_PREFERENCES,                         Cn3DMainFrame::OnPreferences)
+    EVT_MENU_RANGE(MID_OPENGL_FONT, MID_SEQUENCE_FONT,      Cn3DMainFrame::OnSetFont)
+    EVT_MENU      (MID_LIMIT_STRUCT,                        Cn3DMainFrame::OnLimit)
 END_EVENT_TABLE()
 
 static void SetupFavoritesMenu(wxMenu *favoritesMenu)
@@ -650,6 +677,11 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_OPEN, "&Open");
     menu->Append(MID_SAVE, "&Save");
     menu->AppendSeparator();
+    menu->Append(MID_PREFERENCES, "&Preferences...");
+    wxMenu *subMenu = new wxMenu;
+    subMenu->Append(MID_OPENGL_FONT, "S&tructure Window");
+    subMenu->Append(MID_SEQUENCE_FONT, "Se&quence Windows");
+    menu->Append(MID_FONTS, "Set &Fonts...", subMenu);
     menu->Append(MID_LIMIT_STRUCT, "&Limit Structures");
     menu->AppendSeparator();
     menu->Append(MID_EXIT, "E&xit");
@@ -666,8 +698,6 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_FIRST_FRAME, "&First Frame\tDown");
     menu->Append(MID_LAST_FRAME, "&Last Frame\tUp");
     menu->Append(MID_ALL_FRAMES, "&All Frames\ta");
-    menu->AppendSeparator();
-    menu->Append(MID_PREFERENCES, "&Preferences...");
     menuBar->Append(menu, "&View");
 
     // Show-Hide menu
@@ -678,7 +708,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_SHOW_DOMAINS, "Show Aligned &Domains");
     menu->Append(MID_SHOW_ALIGNED, "Show &Aligned Residues");
     menu->Append(MID_SHOW_SELECTED, "Show &Selected Residues");
-    wxMenu *subMenu = new wxMenu;
+    subMenu = new wxMenu;
     subMenu->Append(MID_SHOW_UNALIGNED_ALL, "Show &All");
     subMenu->Append(MID_SHOW_UNALIGNED_ALN_DOMAIN, "Show in Aligned &Domains");
     menu->Append(MID_SHOW_UNALIGNED, "&Unaligned Residues", subMenu);
@@ -779,15 +809,8 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     GlobalMessenger()->AddStructureWindow(this);
     Show(true);
 
-    // set up font used by OpenGL
-    glCanvas->SetCurrent();
-#if defined(__WXMSW__)
-    glCanvas->font = new wxFont(12, wxSWISS, wxNORMAL, wxBOLD);
-    glCanvas->renderer->SetFont_Windows(glCanvas->font->GetHFONT());
-#elif defined(__WXGTK__)
-    glCanvas->font = new wxFont(14, wxSWISS, wxNORMAL, wxBOLD);
-    glCanvas->renderer->SetFont_GTK(glCanvas->font->GetInternalFont());
-#endif
+    // set initial font
+    glCanvas->SetupFontFromRegistry();
 }
 
 Cn3DMainFrame::~Cn3DMainFrame(void)
@@ -795,6 +818,63 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
     if (logFrame) {
         logFrame->Destroy();
         logFrame = NULL;
+    }
+}
+
+void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
+{
+    std::string section;
+    if (event.GetId() == MID_OPENGL_FONT)
+        section = REG_OPENGL_FONT_SECTION;
+    else if (event.GetId() == MID_SEQUENCE_FONT)
+        section = REG_SEQUENCE_FONT_SECTION;
+    else
+        return;
+
+    // get initial font info from registry, and create wxFont
+    int size, family, style, weight;
+    bool underlined;
+    if (!RegistryGetInteger(section, REG_FONT_SIZE, &size) ||
+        !RegistryGetInteger(section, REG_FONT_FAMILY, &family) ||
+        !RegistryGetInteger(section, REG_FONT_STYLE, &style) ||
+        !RegistryGetInteger(section, REG_FONT_WEIGHT, &weight) ||
+        !RegistryGetBoolean(section, REG_FONT_UNDERLINED, &underlined))
+    {
+        ERR_POST(Error << "Cn3DMainFrame::OnSetFont() - error setting up initial font");
+        return;
+    }
+    wxFont initialFont(size, family, style, weight, underlined);
+    wxFontData initialFontData;
+    initialFontData.SetInitialFont(initialFont);
+
+    // bring up font chooser dialog
+    wxFontDialog dialog(this, &initialFontData);
+    int result = dialog.ShowModal();
+
+    // if user selected a font
+    if (result == wxID_OK) {
+
+        // set registry values appropriately
+        wxFontData& fontData = dialog.GetFontData();
+        wxFont font = fontData.GetChosenFont();
+        if (!RegistrySetInteger(section, REG_FONT_SIZE, font.GetPointSize()) ||
+            !RegistrySetInteger(section, REG_FONT_FAMILY, font.GetFamily()) ||
+            !RegistrySetInteger(section, REG_FONT_STYLE, font.GetStyle()) ||
+            !RegistrySetInteger(section, REG_FONT_WEIGHT, font.GetWeight()) ||
+            !RegistrySetBoolean(section, REG_FONT_UNDERLINED, font.GetUnderlined(), true))
+        {
+            ERR_POST(Error << "Cn3DMainFrame::OnSetFont() - error setting registry data");
+            return;
+        }
+
+        // call font setup
+        TESTMSG("setting new font");
+        if (event.GetId() == MID_OPENGL_FONT) {
+            glCanvas->SetupFontFromRegistry();
+            GlobalMessenger()->PostRedrawAllStructures();
+        } else if (event.GetId() == MID_SEQUENCE_FONT) {
+            GlobalMessenger()->NewSequenceViewerFont();
+        }
     }
 }
 
@@ -1234,7 +1314,7 @@ END_EVENT_TABLE()
 
 Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, int *attribList) :
     wxGLCanvas(parent, -1, wxPoint(0, 0), wxDefaultSize, wxSUNKEN_BORDER, "Cn3DGLCanvas", attribList),
-    structureSet(NULL)
+    structureSet(NULL), font(NULL)
 {
     renderer = new OpenGLRenderer();
 }
@@ -1244,6 +1324,34 @@ Cn3DGLCanvas::~Cn3DGLCanvas(void)
     if (structureSet) delete structureSet;
     if (font) delete font;
     delete renderer;
+}
+
+void Cn3DGLCanvas::SetupFontFromRegistry(void)
+{
+    // delete old font
+    if (font) delete font;
+
+    // get font info from registry, and create wxFont
+    int size, family, style, weight;
+    bool underlined;
+    if (!RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, &size) ||
+        !RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_FAMILY, &family) ||
+        !RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_STYLE, &style) ||
+        !RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_WEIGHT, &weight) ||
+        !RegistryGetBoolean(REG_OPENGL_FONT_SECTION, REG_FONT_UNDERLINED, &underlined) ||
+        !(font = new wxFont(size, family, style, weight, underlined)))
+    {
+        ERR_POST(Error << "Cn3DGLCanvas::SetGLFont() - error setting up font");
+        return;
+    }
+
+    // set up font display lists in renderer (needs "native" font structure)
+    SetCurrent();
+#if defined(__WXMSW__)
+    renderer->SetFont_Windows(font->GetHFONT());
+#elif defined(__WXGTK__)
+    renderer->SetFont_GTK(font->GetInternalFont());
+#endif
 }
 
 void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)

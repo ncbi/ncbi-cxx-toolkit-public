@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/08/14 17:18:22  thiessen
+* add user font selection, store in registry
+*
 * Revision 1.26  2001/07/19 19:14:38  thiessen
 * working CDD alignment annotator ; misc tweaks
 *
@@ -1082,6 +1085,11 @@ void SequenceViewerWidget::SetCharacterFont(wxFont *font)
         wxITALIC, wxNORMAL, false, font->GetFaceName(), font->GetDefaultEncoding());
     titleArea->SetCharacterFont(newFont, sequenceArea->GetCellHeight());
     delete font;
+
+    // toggle title area twice to reset the sash to the right width - crude but effective
+    TitleAreaToggle();
+    TitleAreaToggle();
+    Refresh(true);
 }
 
 void SequenceViewerWidget::SetRubberbandColor(const wxColor& rubberbandColor)
@@ -1101,7 +1109,6 @@ void SequenceViewerWidget::GetScroll(int *vsX, int *vsY) const
 
 void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
 {
-//    TESTMSG("called SequenceViewerWidget::Refresh()");
     sequenceArea->Refresh(eraseBackground, rect);
     titleArea->Refresh(eraseBackground, rect);
 }

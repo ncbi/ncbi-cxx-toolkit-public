@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/08/14 17:17:48  thiessen
+* add user font selection, store in registry
+*
 * Revision 1.6  2001/06/14 18:59:27  thiessen
 * left out 'class' in 'friend ...' statments
 *
@@ -92,6 +95,9 @@ public:
 
     // tell viewer to save its data (does nothing unless overridden)
     virtual void SaveDialog(void) { }
+
+    // to be notified of font change
+    void NewFont(void);
 
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/08/14 17:18:22  thiessen
+* add user font selection, store in registry
+*
 * Revision 1.10  2001/05/31 18:47:11  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -223,6 +226,11 @@ void ViewerBase::KeepOnlyStackTop(void)
 bool ViewerBase::EditorIsOn(void) const
 {
     return (*viewerWindow && (*viewerWindow)->EditorIsOn());
+}
+
+void ViewerBase::NewFont(void)
+{
+    if (*viewerWindow) (*viewerWindow)->SetupFontFromRegistry();
 }
 
 END_SCOPE(Cn3D)
