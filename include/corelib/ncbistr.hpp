@@ -1098,6 +1098,22 @@ public:
     ///    CRegexp, CRegexpUtil
     static bool MatchesMask(const char *str, const char *mask);
 
+    /// Match "str" against the "mask".
+    ///
+    /// This function do not use regular expressions.
+    /// @param str
+    ///   String to match.
+    /// @param mask
+    ///   Mask used to match string "str". And can contains next
+    ///   wildcard characters:
+    ///     ? - matches to any one symbol in the string.
+    ///     * - matches to any number of symbols in the string. 
+    /// @return
+    ///   Return TRUE if "str" matches "mask", and FALSE otherwise.
+    /// @sa
+    ///    CRegexp, CRegexpUtil
+    static bool MatchesMask(const string& str, const string& mask);
+
     // The following 4 methods change the passed string, then return it
 
     /// Convert string to lower case -- string& version.
@@ -2582,6 +2598,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.75  2005/01/05 16:54:50  ivanov
+ * Added string version of NStr::MatchesMask()
+ *
  * Revision 1.74  2004/12/28 21:19:20  grichenk
  * Static strings changed to char*
  *

@@ -248,6 +248,12 @@ bool NStr::MatchesMask(const char* str, const char* mask)
 }
 
 
+bool NStr::MatchesMask(const string& str, const string& mask)
+{
+    return MatchesMask(str.c_str(), mask.c_str());
+}
+
+
 char* NStr::ToLower(char* str)
 {
     char* s;
@@ -1689,6 +1695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.131  2005/01/05 16:55:01  ivanov
+ * Added string version of NStr::MatchesMask()
+ *
  * Revision 1.130  2004/12/28 21:19:20  grichenk
  * Static strings changed to char*
  *
