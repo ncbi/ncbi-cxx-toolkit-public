@@ -1386,7 +1386,6 @@ static EIO_Status s_IsConnected(SOCK                  sock,
     SSOCK_Poll     poll;
 
     *x_errno = 0;
-    assert( sock->pending );
     if (sock->w_status == eIO_Closed)
         return eIO_Closed;
     if ( !writeable ) {
@@ -1496,7 +1495,6 @@ static EIO_Status s_Connect(SOCK            sock,
     sock->r_status  = eIO_Success;
     sock->eof       = 0/*false*/;
     sock->w_status  = eIO_Success;
-    sock->pending   = 1/*not yet connected*/;
     assert(sock->w_len == 0);
     if (connect(x_sock, (struct sockaddr*) &peer, sizeof(peer)) != 0) {
         if (SOCK_ERRNO != SOCK_EINTR  &&  SOCK_ERRNO != SOCK_EINPROGRESS  &&
@@ -1534,7 +1532,8 @@ static EIO_Status s_Connect(SOCK            sock,
                 return status;
             }
             sock->pending = 0/*connected*/;
-        }
+        } else
+            sock->pending = 1/*not yet connected*/;
     } else
         sock->pending = 0/*connected*/;
 
@@ -2474,17 +2473,17 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
 {
     char _id[32];
 
-    if (sock->type == eSOCK_Datagram) {
-        CORE_LOGF(eLOG_Error, ("%s[SOCK::Shutdown] "
-                               " Datagram socket", s_ID(sock, _id)));
-        assert(0);
-        return eIO_InvalidArg;
-    }
     if (sock->sock == SOCK_INVALID) {
         CORE_LOGF(eLOG_Error, ("%s[SOCK::Shutdown] "
                                " Invalid socket", s_ID(sock, _id)));
         assert(0);
         return eIO_Unknown;
+    }
+    if (sock->type == eSOCK_Datagram) {
+        CORE_LOGF(eLOG_Error, ("%s[SOCK::Shutdown] "
+                               " Datagram socket", s_ID(sock, _id)));
+        assert(0);
+        return eIO_InvalidArg;
     }
 
     return s_Shutdown(sock, how, sock->w_timeout);
@@ -2822,8 +2821,15 @@ extern EIO_Status SOCK_Write(SOCK            sock,
 
 extern EIO_Status SOCK_Abort(SOCK sock)
 {
+    char _id[32];
+
+    if (sock->sock == SOCK_INVALID) {
+        CORE_LOGF(eLOG_Error, ("%s[SOCK::Abort] "
+                               " Invalid socket", s_ID(sock, _id)));
+        assert(0);
+        return eIO_Unknown;
+    }
     if (sock->type == eSOCK_Datagram) {
-        char _id[32];
         CORE_LOGF(eLOG_Error, ("%s[SOCK::Abort]  Called for datagram socket",
                                s_ID(sock, _id)));
         assert(0);
@@ -2840,10 +2846,11 @@ extern EIO_Status SOCK_Abort(SOCK sock)
 extern EIO_Status SOCK_Status(SOCK      sock,
                               EIO_Event direction)
 {
-    if (!sock  ||  (direction != eIO_Read  &&  direction != eIO_Write))
+    if (direction != eIO_Read  &&  direction != eIO_Write)
         return eIO_InvalidArg;
 
-    return sock->sock == SOCK_INVALID ? eIO_Closed : s_Status(sock, direction);
+    return (sock->sock == SOCK_INVALID ? eIO_Closed :
+            sock->pending ? eIO_Timeout : s_Status(sock, direction));
 }
 
 
@@ -2856,7 +2863,6 @@ extern void SOCK_GetPeerAddress(SOCK            sock,
         *host = (unsigned int)
             (byte_order != eNH_HostByteOrder ? sock->host : ntohl(sock->host));
     }
-    
     if ( port ) {
         *port = (unsigned short)
             (byte_order != eNH_HostByteOrder ? sock->port : ntohs(sock->port));
@@ -3713,6 +3719,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.115  2003/06/09 19:47:52  lavr
+ * Few changes to relocate some arg checks and asserts
+ *
  * Revision 6.114  2003/06/04 20:59:14  lavr
  * s_Read() not to call s_Select() if read timeout is {0, 0}
  *
