@@ -102,7 +102,6 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
     CTSE_Info& tse_info = GetTSE_Info();
     CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
 
-    size_t objIndex = 0;
     SAnnotObject_Key key;
     SAnnotObject_Index annotRef;
     vector<CHandleRangeMap> hrmaps;
@@ -153,7 +152,6 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
     CTSE_Info& tse_info = GetTSE_Info();
     CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
 
-    size_t objIndex = 0;
     SAnnotObject_Key key;
     SAnnotObject_Index annotRef;
     vector<CHandleRangeMap> hrmaps;
@@ -204,7 +202,6 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs)
     CTSE_Info& tse_info = GetTSE_Info();
     CTSE_Info::TAnnotObjsLock::TWriteLockGuard guard(tse_info.m_AnnotObjsLock);
 
-    size_t objIndex = 0;
     SAnnotObject_Key key;
     SAnnotObject_Index annotRef;
     vector<CHandleRangeMap> hrmaps;
@@ -274,6 +271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/07/18 19:41:46  vasilche
+ * Removed unused variable.
+ *
  * Revision 1.5  2003/07/17 22:51:31  vasilche
  * Fixed unused variables warnings.
  *
