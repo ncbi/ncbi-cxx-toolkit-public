@@ -33,7 +33,6 @@
 
 /// Utilits for Project Tree Builder:
 
-
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
 
@@ -44,6 +43,17 @@ struct SKeyValue
     string m_Value;
 };
 
+/// Filter for projects in project tree
+class IProjectFilter
+{
+public:
+    virtual ~IProjectFilter(void)
+    {
+    }
+    virtual bool CheckProject(const string& project_base_dir) const = 0;
+    virtual bool PassAll     (void)                           const = 0;
+};
+
 
 /// Abstraction of project tree general information
 struct SProjectTreeInfo
@@ -52,7 +62,8 @@ struct SProjectTreeInfo
     string m_Root;
 
     /// Subtree to buil (default is m_Src).
-    string m_SubTree;
+    /// More enhanced version of "subtree to build"
+    auto_ptr<IProjectFilter> m_IProjectFilter;
 
     /// Branch of tree to be implicit exclude from build
     list<string> m_ImplicitExcludedAbsDirs;
@@ -78,6 +89,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/26 21:20:58  gorelenk
+ * Added declaration of IProjectFilter interface. auto_ptr<IProjectFilter>
+ * member used instead of m_Subtree in struct SProjectTreeInfo.
+ *
  * Revision 1.9  2004/02/18 23:33:35  gorelenk
  * Added m_Projects member to struct SProjectTreeInfo.
  *
