@@ -70,8 +70,8 @@ static Int4 trueCharPositions[20] =
  * @param lambda            Karlin-Altschul statistical parameter [in]
  * @param scoreDivisor      the value by which reported scores are to be
  */
-void
-HSPListRescaleScores(BlastHSPList * hsp_list,
+static void
+s_HSPListRescaleScores(BlastHSPList * hsp_list,
                      double lambda,
                      double logK,
                      double scoreDivisor)
@@ -252,12 +252,12 @@ Kappa_DistinctAlignmentsFree(Kappa_DistinctAlignment ** palign)
  * freed to ensure that there is no aliasing of fields between the
  * list of Kappa_DistinctAlignments and the new hitlist.
  *
- * @param search            general search information
- * @param alignments        a list of distinct alignments
+ * @param alignments A list of distinct alignments; freed before return [in]
+ * @param oid        Ordinal id of a database sequence [in]
+ * @return Allocated and filled BlastHSPList strucutre.
  */
-BlastHSPList *
-HSPListFromDistinctAlignments(
-  BlastScoreBlk* sbp,
+static BlastHSPList *
+s_HSPListFromDistinctAlignments(
   Kappa_DistinctAlignment ** alignments,
   int oid)
 {
@@ -852,7 +852,7 @@ SWheapPop(SWheap * self)
  *
  * @param self           a SWheap
  */
-void
+static void
 SWheapToFlatList(SWheap * self, BlastHSPResults * results, Int4 hitlist_size)
 {
   BlastHSPList* hsp_list;
@@ -2787,7 +2787,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
                   const PSIBlastOptions* psiOptions,
                   BlastHSPResults* results)
 {
-  Int4 cutoff_s;                /* minimum score that must be achieved
+  Int4 cutoff_s = 0;            /* minimum score that must be achieved
                                    by a newly-computed alignment */
   Boolean do_link_hsps;         /* if true, use BlastLinkHsps to
                                    compute e-values */
@@ -3087,8 +3087,8 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
                                 * alignments */
       double  bestEvalue; /* best evalue among alignments in the hitlist */
 
-      hsp_list = HSPListFromDistinctAlignments(sbp, &alignments,
-                                               matchingSeq.index);
+      hsp_list = s_HSPListFromDistinctAlignments(&alignments,
+                                                 matchingSeq.index);
 
       if(hsp_list->hspcnt > 1) { /* if there is more than one HSP, */
         /* then eliminate HSPs that are contained in a higher-scoring HSP. */
@@ -3123,7 +3123,7 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
 
         Blast_HSPListReapByEvalue(hsp_list, hitParams->options);
 
-        HSPListRescaleScores(hsp_list, kbp->Lambda, kbp->logK,
+        s_HSPListRescaleScores(hsp_list, kbp->Lambda, kbp->logK,
                                  localScalingFactor);
         Blast_HSPListSortByScore(hsp_list);
 
