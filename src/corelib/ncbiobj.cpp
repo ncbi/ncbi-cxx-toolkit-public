@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/10/17 17:59:08  vasilche
+* Detected misuse of CObject constructors will be reported via ERR_POST and will
+* not throw exception.
+*
 * Revision 1.8  2000/10/13 16:26:30  vasilche
 * Added heuristic for detection of CObject allocation in heap.
 *
@@ -82,24 +86,42 @@ const char* CNullPointerError::what() const
 }
 
 #if _DEBUG
-static bool PossiblyInStack(const void* object);
+inline
+bool PossiblyInStack(const void* object)
+{
+    enum {
+        KStackThreshold = 16*1024 // 16K
+    };
+
+    char stackObject;
+    const char* stackObjectPtr = &stackObject;
+    const char* objectPtr = static_cast<const char*>(object);
+    return objectPtr < stackObjectPtr + KStackThreshold &&
+        objectPtr > stackObjectPtr - KStackThreshold;
+}
 
 // initialization in debug mode
 void CObject::InitInStack(void)
 {
-    if ( m_Counter == eObjectNewInHeapValue && !PossiblyInStack(this) )
-        m_Counter = eObjectInHeapUnsure;
-    else
+    if ( m_Counter != eObjectNewInHeapValue || PossiblyInStack(this) ) {
+        // surely not in heap
         m_Counter = eObjectInStack;
+    }
+    else {
+        m_Counter = eObjectInStackUnsure;
+    }
 }
 
 void CObject::InitInHeap(void)
 {
     if ( m_Counter != eObjectNewInHeapValue || PossiblyInStack(this) ) {
-        THROW1_TRACE(runtime_error,
-                     "heap CObject: it's not allocated in heap");
+        // surely not in heap
+        ERR_POST("CObject not in heap: fix CObject() constructor arguments");
+        m_Counter = eObjectInHeapUnsure;
     }
-    m_Counter = eObjectInHeap;
+    else {
+        m_Counter = eObjectInHeap;
+    }
 }
 #endif
 
@@ -107,8 +129,12 @@ void CObject::InitInHeap(void)
 void* CObject::operator new(size_t size)
 {
     void* ptr = ::operator new(size);
-    CObject* objectPtr = static_cast<CObject*>(ptr);
-    objectPtr->m_Counter = eObjectNewInHeapValue;
+    if ( size < sizeof(CObject) ) {
+        ERR_POST("CObject::operator new(): size too small");
+    }
+    else {
+        static_cast<CObject*>(ptr)->m_Counter = eObjectNewInHeapValue;
+    }
     return ptr;
 }
 
@@ -212,17 +238,6 @@ void CObject::ReleaseReference(void) const
         InvalidObject();
     else
         THROW1_TRACE(runtime_error, "Illegal ReleaseReference to CObject");
-}
-
-static const int KStackThreshold = 16*1024; // 16K
-
-bool PossiblyInStack(const void* object)
-{
-    char stackObject;
-    const char* stackObjectPtr = &stackObject;
-    const char* objectPtr = static_cast<const char*>(object);
-    return objectPtr < stackObjectPtr + KStackThreshold &&
-        objectPtr > stackObjectPtr - KStackThreshold;
 }
 
 END_NCBI_SCOPE
