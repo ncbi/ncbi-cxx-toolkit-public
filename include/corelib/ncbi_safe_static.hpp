@@ -41,6 +41,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/08/24 13:42:37  grichenk
+ * Added CSafeStaticXXX::Set() methods for initialization with an
+ * existing object
+ *
  * Revision 1.4  2001/04/06 15:45:26  grichenk
  * Modified SelfCleanup() methods for more safety
  *
@@ -144,6 +148,26 @@ public:
     T* operator -> (void) { return &Get(); }
     T& operator *  (void) { return  Get(); }
 
+    // Initialize with an existing object. The object MUST be
+    // allocated with "new T" -- it will be destroyed with
+    // "delete object" in the end. Set() works only for
+    // not yet initialized safe-static variables.
+    void Set(T* object)
+    {
+        bool mutex_locked = false;
+        if ( Init_Lock(&mutex_locked) ) {
+            // Set the new object and register for cleanup
+            try {
+                m_Ptr = object;
+                CSafeStaticGuard::Get()->Register(this);
+            }
+            catch (...) {
+                Init_Unlock(mutex_locked);
+                throw;
+            }
+        }
+        Init_Unlock(mutex_locked);
+    }
 private:
     // Initialize the object
     void Init(void)
@@ -205,6 +229,25 @@ public:
     T* operator -> (void) { return &Get(); }
     T& operator *  (void) { return  Get(); }
 
+    // Initialize with an existing object. The object MUST be
+    // allocated with "new T" to avoid premature destruction.
+    // Set() works only for un-initialized safe-static variables.
+    void Set(T* object)
+    {
+        bool mutex_locked = false;
+        if ( Init_Lock(&mutex_locked) ) {
+            // Set the new object and register for cleanup
+            try {
+                m_Ptr = new CRef<T> (object);
+                CSafeStaticGuard::Get()->Register(this);
+            }
+            catch (...) {
+                Init_Unlock(mutex_locked);
+                throw;
+            }
+        }
+        Init_Unlock(mutex_locked);
+    }
 private:
     // Initialize the object and the reference
     void Init(void)
