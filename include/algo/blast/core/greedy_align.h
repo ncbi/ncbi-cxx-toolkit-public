@@ -97,11 +97,12 @@ MBGapEditScriptAppend(MBGapEditScript *dest_script,
 
 /* ----- pool allocator ----- */
 
-/** @todo FIXME Need to determine what the members of this structure mean.
- * Can these be combined with the BlastGapDP structure? @sa BlastGapDP
- */
+/** Bookkeeping structure that maintains the smallest distances
+    at an intermediate point in the greedy alignment */
 typedef struct SThreeVal {
-    Int4 I, C, D;
+    Int4 I;     /**< Best distance for a path ending in an insertion */
+    Int4 C;     /**< Best distance for a path ending in a match */
+    Int4 D;     /**< Best distance for a path ending in a deletion */
 } SThreeVal;
 
 /** Space structure for greedy alignment algorithm */
@@ -168,6 +169,8 @@ BLAST_GreedyAlign (const Uint1* seq1, Int4 len1,
  * @param xdrop_threshold X-dropoff value to use in extension [in]
  * @param match_cost Match score to use in extension [in]
  * @param mismatch_cost Mismatch score to use in extension [in]
+ * @param gap_open Gap opening penalty [in]
+ * @param gap_extend Gap extension penalty [in]
  * @param extent1 Length of extension on sequence 1 [out]
  * @param extent2 Length of extension on sequence 2 [out]
  * @param aux_data Structure containing all preallocated memory [in]

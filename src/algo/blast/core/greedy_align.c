@@ -114,9 +114,9 @@ edit_script_init(MBGapEditScript *script)
 /** Add a new operation to an edit script, possibly combining
     it with the last operation if the two operations are identical
 
-    @script The edit script to update [in/modified]
-    @op_type The operation type to add [in]
-    @num_ops The number of the specified type of operation to add [in]
+    @param script The edit script to update [in/modified]
+    @param op_type The operation type to add [in]
+    @param num_ops The number of the specified type of operation to add [in]
     @return 0 on success, nonzero otherwise
 */
 static Int2 
@@ -226,7 +226,7 @@ MBSpaceNew()
     return new_space;
 }
 
-/* Mark the input collection of space structures as unused
+/** Mark the input collection of space structures as unused
    @param space The space to mark
 */
 static void 
@@ -254,8 +254,8 @@ void MBSpaceFree(SMBSpace* space)
 /** Allocate a specified number of SThreeVal structures from
     a memory pool
 
-    @pool The memory pool [in]
-    @amount The number of structures to allocate [in]
+    @param pool The memory pool [in]
+    @param amount The number of structures to allocate [in]
     @return Pointer to the allocated memory, or NULL in case of error
 */
 static SThreeVal* 
