@@ -422,7 +422,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    Int4 num_query_frames, num_subject_frames;
 	Int4 *hp_frame_number;
 	Int4 gap_size, number_of_hsps, total_number_of_hsps;
-   Int4 query_length, subject_length;
+   Int4 query_length, subject_length, length_adjustment;
 	void* link;
 	Int4 H2_index,H_index;
 	Int4 i;
@@ -531,12 +531,15 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
       hp_frame_start[frame_index]->prev = &hp_start;
       number_of_hsps = hp_frame_number[frame_index];
       query_context = hp_start.next->context;
-      subject_length = 
-         MAX(subject->length - query_info->length_adjustments[query_context],
-             1);
+      length_adjustment = query_info->length_adjustments[query_context];
       query_length = BLAST_GetQueryLength(query_info, query_context);
-      query_length = 
-         MAX(query_length - query_info->length_adjustments[query_context], 1);
+      query_length = MAX(query_length - length_adjustment, 1);
+      /* If subject is translated, length adjustment is given in nucleotide
+         scale. */
+      if (program_number == blast_type_tblastn || 
+          program_number == blast_type_tblastx)
+         length_adjustment /= CODON_LENGTH;
+      subject_length = MAX(subject->length - length_adjustment, 1);
 
       lh_helper[0].ptr = &hp_start;
       lh_helper[0].q_off_trim = 0;
@@ -1026,7 +1029,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	}
 	
    /* The HSP's may be in a different order than they were before, 
-      but hsp contains the first one. */
+      but first_hsp contains the first one. */
    for (index = 0, H = first_hsp; index < hsp_list->hspcnt; index++) {
       hsp_list->hsp_array[index] = H;
       H = H->next;
