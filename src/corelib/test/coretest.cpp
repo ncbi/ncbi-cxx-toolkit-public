@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2001/06/22 21:46:15  ivanov
+* Added test for read/write the registry file with comments
+*
 * Revision 1.74  2001/06/13 23:19:39  vakatov
 * Revamped previous revision (prefix and error codes)
 *
@@ -514,6 +517,68 @@ static void TestRegistry(void)
 
     reg.Clear();
     _ASSERT( reg.Empty() );
+    
+    // Test read/write registry
+
+    NcbiCout << endl;
+    NcbiCout << "---------------------------------------------------" << endl;
+
+    CNcbiIstrstream is("\n\
+############################################\n\
+#\n\
+#  Registry file comment\n\
+#\n\
+############################################\n\
+\n\
+; comment for section1\n\
+\n\
+[section1]\n\
+; This is a comment for n11\n\
+#\n\
+#  File comment also\n\
+#\n\
+n11 = value11\n\
+\n\
+; This is a comment for n12 line 1\n\
+; This is a comment for n12 line 2\n\
+\n\
+n12 = value12\n\
+\n\
+; This is a comment for n13\n\
+n13 = value13\n\
+; new comment for n13\n\
+n13 = new_value13\n\
+\n\
+[ section2 ]\n\
+; This is a comment for n21\n\
+n21 = value21\n\
+   ; This is a comment for n22\n\
+n22 = value22\n\
+[section3]\n\
+n31 = value31\n\
+");
+
+
+    reg.Read(is);
+    reg.Write(NcbiCout);
+    NcbiCout << "---------------------------------------------------" << endl;
+    NcbiCout << "File comment:" << endl;
+    NcbiCout << reg.GetComment() << endl;
+    NcbiCout << "Section comment:" << endl;
+    NcbiCout << reg.GetComment("section1") << endl;
+    NcbiCout << "Entry comment:" << endl;
+    NcbiCout << reg.GetComment("section1","n12") << endl;
+
+    reg.SetComment(" new comment\n# for registry\n\n  # ...\n\n\n");
+    reg.SetComment(";new comment for section1\n","section1");
+    reg.SetComment("new comment for section3","section3");
+    reg.SetComment("new comment for entry n11","section1","n11");
+    reg.SetComment("  ; new comment for entry n31","section3","n31");
+    reg.SetComment("","section2","n21");
+
+    NcbiCout << "---------------------------------------------------" << endl;
+    reg.Write(NcbiCout);
+    NcbiCout << "---------------------------------------------------" << endl;
 }
 
 
