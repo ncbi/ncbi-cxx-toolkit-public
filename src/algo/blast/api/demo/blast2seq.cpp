@@ -305,8 +305,9 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
         switch(args["scantype"].AsInteger()) {
         case 1:
             opt.SetSeedExtensionMethod(eRightAndLeft);
-            opt.SetScanStep(GetDefaultStride(opt.GetWordSize(),
-                (Boolean)opt.GetVariableWordsize(), opt.GetLookupTableType()));
+            opt.SetScanStep(CalculateBestStride(opt.GetWordSize(),
+                                                opt.GetVariableWordsize(), 
+                                                opt.GetLookupTableType()));
             break;
         default:
             opt.SetSeedExtensionMethod(eRight);
@@ -521,6 +522,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/10/24 20:55:30  camacho
+ * Rename GetDefaultStride
+ *
  * Revision 1.26  2003/10/22 16:48:09  dondosha
  * Changed "ag" option to "scantype";
  * Use function from core library to calculate default value of stride if AG

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.68  2003/10/24 20:55:10  camacho
+ * Rename GetDefaultStride
+ *
  * Revision 1.67  2003/10/22 16:44:33  dondosha
  * Added function to calculate default stride value for AG method
  *
@@ -886,7 +889,7 @@ LookupTableOptionsNew(Uint1 program_number, LookupTableOptions* *options)
    return 0;
 }
 
-Int4 GetDefaultStride(Int4 word_size, Boolean var_words, Int4 lut_type)
+Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type)
 {
    Int4 lut_width;
    Int4 extra = 1;
@@ -898,8 +901,8 @@ Int4 GetDefaultStride(Int4 word_size, Boolean var_words, Int4 lut_type)
    else
       lut_width = 4;
 
-   if (var_words && ((word_size % 4) == 0) )
-      extra = 4;
+   if (var_words && ((word_size % COMPRESSION_RATIO) == 0) )
+      extra = COMPRESSION_RATIO;
 
    return word_size - lut_width + extra;
 }
@@ -934,8 +937,8 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
       if (!ag_blast) {
          options->scan_step = COMPRESSION_RATIO;
       } else {
-         options->scan_step = GetDefaultStride(word_size, variable_wordsize,
-                                               options->lut_type);
+         options->scan_step = CalculateBestStride(word_size, variable_wordsize,
+                                                  options->lut_type);
       }
    }
    return 0;
