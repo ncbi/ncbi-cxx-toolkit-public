@@ -2,18 +2,18 @@
 
 #define NLM_GENERATED_CODE_PROTO
 
-#include "webenv.h"
+#include <twebenv.h>
 
 static Boolean loaded = FALSE;
 
-#include "webenvasn.h"
+#include <twebenvasn.h>
 
 #ifndef NLM_EXTERN_LOADS
 #define NLM_EXTERN_LOADS {}
 #endif
 
 NLM_EXTERN Boolean LIBCALL
-webenvAsnLoad(void)
+twebenvAsnLoad(void)
 {
 
    if ( ! loaded) {
@@ -31,7 +31,7 @@ webenvAsnLoad(void)
 
 /**************************************************
 *    Generated object loaders for Module NCBI-Env
-*    Generated using ASNCODE Revision: 6.0 at Oct 1, 1999 11:11 AM
+*    Generated using ASNCODE Revision: 6.0 at Oct 4, 1999  4:26 PM
 *
 **************************************************/
 
@@ -89,7 +89,7 @@ WebEnvAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -172,7 +172,7 @@ WebEnvAsnWrite(WebEnvPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -258,7 +258,7 @@ ArgumentAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -334,7 +334,7 @@ ArgumentAsnWrite(ArgumentPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -427,7 +427,7 @@ DbEnvAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -517,7 +517,7 @@ DbEnvAsnWrite(DbEnvPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -608,7 +608,7 @@ QueryHistoryAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -698,7 +698,7 @@ QueryHistoryAsnWrite(QueryHistoryPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -797,7 +797,7 @@ WebSettingsAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -873,7 +873,7 @@ WebSettingsAsnWrite(WebSettingsPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -958,7 +958,7 @@ WebSavedAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -1034,7 +1034,7 @@ WebSavedAsnWrite(WebSavedPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -1120,7 +1120,7 @@ NamedQueryAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -1203,7 +1203,7 @@ NamedQueryAsnWrite(NamedQueryPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -1302,7 +1302,7 @@ NamedItemSetAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -1385,7 +1385,7 @@ NamedItemSetAsnWrite(NamedItemSetPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -1482,7 +1482,7 @@ FilterValueAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -1558,7 +1558,7 @@ FilterValueAsnWrite(FilterValuePtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -1649,7 +1649,7 @@ DbClipboardAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -1732,7 +1732,7 @@ DbClipboardAsnWrite(DbClipboardPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -1821,7 +1821,7 @@ TimeAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -1903,7 +1903,7 @@ TimeAsnWrite(TimePtr anp, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad())
+      if (! twebenvAsnLoad())
       return FALSE;
    }
 
@@ -2001,7 +2001,7 @@ QueryCommandAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -2084,7 +2084,7 @@ QueryCommandAsnWrite(QueryCommandPtr anp, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad())
+      if (! twebenvAsnLoad())
       return FALSE;
    }
 
@@ -2187,7 +2187,7 @@ QuerySearchAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -2291,7 +2291,7 @@ QuerySearchAsnWrite(QuerySearchPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -2391,7 +2391,7 @@ QuerySelectAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -2467,7 +2467,7 @@ QuerySelectAsnWrite(QuerySelectPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -2589,7 +2589,7 @@ QueryRelatedAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -2684,7 +2684,7 @@ Items_itemsAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -2763,7 +2763,7 @@ QueryRelatedAsnWrite(QueryRelatedPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -2829,7 +2829,7 @@ Items_itemsAsnWrite(Items_itemsPtr anp, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad())
+      if (! twebenvAsnLoad())
       return FALSE;
    }
 
@@ -2925,7 +2925,7 @@ ItemSetAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -3001,7 +3001,7 @@ ItemSetAsnWrite(ItemSetPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -3088,7 +3088,7 @@ FullTimeAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -3192,7 +3192,7 @@ FullTimeAsnWrite(FullTimePtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }
@@ -3287,7 +3287,7 @@ NameAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return NULL;
       }
    }
@@ -3363,7 +3363,7 @@ NameAsnWrite(NamePtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 
    if (! loaded)
    {
-      if (! webenvAsnLoad()) {
+      if (! twebenvAsnLoad()) {
          return FALSE;
       }
    }

@@ -1,9 +1,11 @@
 #include "serialobject.hpp"
 #include <serial/serial.hpp>
 #include <serial/classinfo.hpp>
-#include <asn.h>
+#id HAVE_NCBI_C
+# include <asn.h>
+#endif
 
-#include "webenv.h"
+#include <twebenv.h>
 
 BEGIN_CLASS_INFO(CSerialObject)
 {
@@ -16,17 +18,8 @@ BEGIN_CLASS_INFO(CSerialObject)
     ADD_M(m_Offsets, STL_vector, (STD, (short)));
     ADD_M(m_Names, STL_map, (STD, (long), STD, (string)));
     ADD_M(m_Next, POINTER, (CLASS, (CSerialObject)))->SetOptional();
-#ifdef HAVE_NCBI_C
+#if HAVE_NCBI_C
     ADD_OLD_ASN_MEMBER2("webEnv", m_WebEnv, "Web-Env", WebEnv)->SetOptional();
-/*
-	WebEnvPtr (__stdcall* n)(void) = &WebEnvNew;
-    info->AddMember("webEnv",
-					OldAsnMemberInfo(MEMBER_PTR(m_WebEnv), "Web-Env",
-									 &WebEnvNew, &WebEnvFree, 
-									 &WebEnvAsnRead, &WebEnvAsnWrite
-									 )
-					)->SetOptional();
-*/
 #endif
 
     ADD_SUB_CLASS(CSerialObject2);

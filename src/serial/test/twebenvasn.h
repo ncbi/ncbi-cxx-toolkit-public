@@ -9,7 +9,7 @@
 #include <asn.h>
 #endif
 
-static char * asnfilename = "webenvasn.h14";
+static char * asnfilename = "twebenvasn.h11";
 static AsnType atx[93] = {
   {401, "Web-Env" ,1,0,0,0,0,0,0,0,NULL,&atx[7],&atx[1],0,&atx[3]} ,
   {0, "arguments" ,128,0,0,1,0,0,0,0,NULL,&atx[8],&atx[2],0,&atx[9]} ,
@@ -106,7 +106,7 @@ static AsnType atx[93] = {
   {0, "item-Set" ,128,2,0,0,0,0,0,0,NULL,&atx[27],NULL,0,NULL} };
 
 static AsnModule ampx[1] = {
-  { "NCBI-Env" , "webenvasn.h14",&atx[0],NULL,NULL,0,0} };
+  { "NCBI-Env" , "twebenvasn.h11",&atx[0],NULL,NULL,0,0} };
 
 static AsnValxNodePtr avn = NULL;
 static AsnTypePtr at = atx;

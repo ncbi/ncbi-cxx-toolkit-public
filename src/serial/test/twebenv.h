@@ -1,5 +1,5 @@
-#ifndef _webenv_ 
-#define _webenv_ 
+#ifndef _twebenv_ 
+#define _twebenv_ 
 
 #undef NLM_EXTERN
 #ifdef NLM_IMPORT
@@ -17,12 +17,12 @@ extern "C" { /* } */
 /**************************************************
 *
 *    Generated objects for Module NCBI-Env
-*    Generated using ASNCODE Revision: 6.0 at Oct 1, 1999 11:11 AM
+*    Generated using ASNCODE Revision: 6.0 at Oct 4, 1999  4:26 PM
 *
 **************************************************/
 
 NLM_EXTERN Boolean LIBCALL
-webenvAsnLoad PROTO((void));
+twebenvAsnLoad PROTO((void));
 
 
 /**************************************************
@@ -380,7 +380,7 @@ NLM_EXTERN Boolean LIBCALL NameAsnWrite PROTO (( NamePtr , AsnIoPtr, AsnTypePtr)
 /* { */ }
 #endif
 
-#endif /* _webenv_ */
+#endif /* _twebenv_ */
 
 #undef NLM_EXTERN
 #ifdef NLM_EXPORT
