@@ -144,7 +144,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     x_CheckThrow(status, "underflow(): CONN_Read() failed");
     _ASSERT(n_read);
 
-    // update input buffer with the data we just read
+    // update input buffer with the data we have just read
     setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read/sizeof(CT_CHAR_TYPE));
 
     return CT_TO_INT_TYPE(*m_ReadBuf);
@@ -156,7 +156,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     defined(NCBI_COMPILER_MIPSPRO)
 streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
-    static const STimeout s_ZeroTimeout = {0, 0};
+    static const STimeout s_ZeroTmo = {0, 0};
 
     // flush output buffer, if tied up to it
     if ( m_Tie ) {
@@ -183,30 +183,31 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     /* Do not even try to read directly from the connection if it
      * can lead to waiting while we already have read at least some data.
      */
-    if (!n  ||  (n_read > 0  &&
-                 CONN_Wait(m_Conn, eIO_Read, &s_ZeroTimeout) != eIO_Success)) {
+    if (n == 0  ||  (n_read > 0  &&
+                     CONN_Wait(m_Conn, eIO_Read, &s_ZeroTmo) != eIO_Success)) {
         return (streamsize) n_read;
     }
 
-    size_t x_read;
+    size_t        x_read = n < (size_t) m_BufSize ? m_BufSize : n;
+    CT_CHAR_TYPE*  x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
     // read directly from the connection
-    if (n > (size_t) m_BufSize) {
-        CONN_Read(m_Conn, buf, n*sizeof(CT_CHAR_TYPE), &x_read, eIO_ReadPlain);
-        if (x_read /= sizeof(CT_CHAR_TYPE)) {
+    CONN_Read(m_Conn, x_buf, x_read*sizeof(CT_CHAR_TYPE),
+              &x_read, eIO_ReadPlain);
+    if (x_read /= sizeof(CT_CHAR_TYPE)) {
+        if (x_buf == buf) {
             // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
             *m_ReadBuf = buf[x_read - 1];
             setg(m_ReadBuf, m_ReadBuf + 1, m_ReadBuf + 1);
+        } else {
+            size_t xx_read = x_read;
+            if (x_read > n)
+                x_read = n;
+            memcpy(buf, m_ReadBuf, x_read*sizeof(CT_CHAR_TYPE));
+            setg(m_ReadBuf, m_ReadBuf + x_read, m_ReadBuf + xx_read);
         }
-    } else if (underflow() != CT_EOF) {
-        x_read = egptr() - gptr();
-        if (x_read > n)
-            x_read = n;
-        memcpy(buf, gptr(), x_read*sizeof(CT_CHAR_TYPE));
-        gbump((int) x_read);
-    } else
-        x_read = 0;
+    }
 
-    return (streamsize) (n_read + x_read);
+    return (streamsize)(n_read + x_read);
 }
 #endif
 
@@ -267,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2002/08/28 03:40:54  lavr
+ * Better buffer filling in xsgetn()
+ *
  * Revision 6.19  2002/08/27 20:27:36  lavr
  * xsgetn(): if reading from external source try to pull as much as possible
  *
