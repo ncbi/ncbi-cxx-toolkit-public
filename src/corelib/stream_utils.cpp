@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/12/13 17:21:27  vakatov
+ * [GCC, NCBI_COMPILER_VERSION > 2.95.X]  Use pubsync() rather than sync()
+ *
  * Revision 1.2  2001/12/09 06:31:52  vakatov
  * UTIL_StreamPushback() to return VOID rather than STREAMBUF*.
  * Got rid of a warning;  added comments;  use _ASSERT(), not assert().
@@ -45,7 +48,11 @@
 
 
 #ifdef NCBI_COMPILER_GCC
-#  define PUBSYNC sync
+#  if NCBI_COMPILER_VERSION < 300
+#    define PUBSYNC sync
+#  else
+#    define PUBSYNC pubsync
+#  endif
 #else
 #  define PUBSYNC pubsync
 #endif
