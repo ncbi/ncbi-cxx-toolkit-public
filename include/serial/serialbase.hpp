@@ -195,6 +195,103 @@ protected:
 
 /////////////////////////////////////////////////////////////////////
 //
+// Alias wrapper templates
+//
+
+template <class TPrim>
+class CAliasBase
+{
+    typedef CAliasBase<TPrim> TThis;
+public:
+    CAliasBase(void) {}
+    explicit CAliasBase(const TPrim& value)
+        : m_Data(value) {}
+
+    const TPrim& Get(void) const
+        {
+            return m_Data;
+        }
+    TPrim& Set(void)
+        {
+            return m_Data;
+        }
+    void Set(const TPrim& value)
+        {
+            m_Data = value;
+        }
+    operator TPrim(void) const
+        {
+            return m_Data;
+        }
+
+    TThis& operator*(void)
+        {
+            return *this;
+        }
+    TThis* operator->(void)
+        {
+            return this;
+        }
+
+    bool operator<(const TPrim& value) const
+        {
+            return m_Data < value;
+        }
+    bool operator>(const TPrim& value) const
+        {
+            return m_Data > value;
+        }
+    bool operator==(const TPrim& value) const
+        {
+            return m_Data == value;
+        }
+    bool operator!=(const TPrim& value) const
+        {
+            return m_Data != value;
+        }
+
+    static TPointerOffsetType GetDataPtr(const TThis* alias)
+        {
+            return TPointerOffsetType(&alias->m_Data);
+        }
+
+protected:
+    TPrim m_Data;
+};
+
+
+template <class TStd>
+class CStdAliasBase : public CAliasBase<TStd>
+{
+    typedef CAliasBase<TStd> TParent;
+    typedef CStdAliasBase<TStd> TThis;
+public:
+    CStdAliasBase(void)
+        {
+            m_Data = 0;
+        }
+    explicit CStdAliasBase(const TStd& value)
+        : TParent(value) {}
+};
+
+
+template <class TString>
+class CStringAliasBase : public CAliasBase<TString>
+{
+    typedef CAliasBase<TString> TParent;
+    typedef CStringAliasBase<TString> TThis;
+public:
+    CStringAliasBase(void)
+        {
+            m_Data.resize(0);
+        }
+    explicit CStringAliasBase(const TString& value)
+        : TParent(value) {}
+};
+
+
+/////////////////////////////////////////////////////////////////////
+//
 //  Assignment and comparison for serializable objects
 //
 
@@ -271,6 +368,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 #define DECLARE_INTERNAL_ENUM_INFO(EnumName) \
     static DECLARE_ENUM_INFO(EnumName)
 
+#define DECLARE_STD_ALIAS_TYPE_INFO() \
+    static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void)
+
 #if HAVE_NCBI_C
 
 #define ASN_STRUCT_NAME(AsnStructName) NCBI_NAME2(struct_, AsnStructName)
@@ -303,6 +403,11 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/10/21 13:48:47  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.23  2003/09/22 20:57:07  gouriano
 * Changed base type of AnyContent object to CSerialObject
 *

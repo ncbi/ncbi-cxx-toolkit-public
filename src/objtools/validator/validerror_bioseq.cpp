@@ -3240,13 +3240,15 @@ size_t CValidError_bioseq::x_CountAdjacentNs(const CSeq_literal& lit)
     CSeq_data data;
     CSeqportUtil::Convert(lit_data, &data, CSeq_data::e_Iupacna);
 
+    /* no more CanGet()
     if ( !data.GetIupacna().CanGet() ) {
         return 0;
     }
+    */
 
     size_t count = 0;
     size_t max = 0;
-    ITERATE(CIUPACna::Tdata, res, data.GetIupacna().Get() ) {
+    ITERATE(string, res, data.GetIupacna().Get() ) {
         if ( *res == 'N' ) {
             ++count;
             if ( count > max ) {
@@ -3284,6 +3286,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2003/10/21 13:48:50  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.49  2003/10/20 18:31:19  shomrat
 * suppress validator warning for synthetic sequences with molinfo other genetic when origin is artificial
 *

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/10/21 13:48:48  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.10  2003/04/29 18:29:34  gouriano
 * object data member initialization verification
 *
@@ -139,9 +144,9 @@ public:
     // for enum types
     virtual const string& GetEnumName(void) const;
 
-    bool CanBeKey(void) const;
-    bool CanBeCopied(void) const;
-    bool NeedSetFlag(void) const;
+    virtual bool CanBeKey(void) const;
+    virtual bool CanBeCopied(void) const;
+    virtual bool NeedSetFlag(void) const;
 
     static void AdaptForSTL(AutoPtr<CTypeStrings>& type);
 

@@ -380,7 +380,7 @@ int CId1FetchApp::Run(void)
             eb.SetReturn_UIDs(true);
             CEntrez2_boolean_exp& query = eb.SetQuery();
             query.SetExp().push_back(e2_element);
-            query.SetDb() = args["db"].AsString();
+            query.SetDb() = CEntrez2_db_id(args["db"].AsString());
             reply = m_E2Client.AskEval_boolean(eb);
         }}
         if ( !reply->GetCount() ) {
@@ -417,7 +417,7 @@ bool CId1FetchApp::LookUpGI(int gi)
         // Handling this here costs some efficiency when the GI came
         // from an Entrez query in the first place, but wins on generality.
         CEntrez2_id_list uids;
-        uids.SetDb() = args["db"].AsString();
+        uids.SetDb() = CEntrez2_db_id(args["db"].AsString());
         uids.SetNum(1);
         uids.SetUids().resize(uids.sm_UidSize);
         {{
@@ -744,6 +744,11 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/10/21 13:48:48  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.45  2003/06/02 16:06:16  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

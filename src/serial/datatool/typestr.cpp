@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/10/21 13:48:51  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.21  2003/04/29 18:31:09  gouriano
 * object data member initialization verification
 *
@@ -228,7 +233,9 @@ void CTypeStrings::AdaptForSTL(AutoPtr<CTypeStrings>& type)
         type.reset(new CRefTypeStrings(type.release()));
         break;
     default:
-        type.reset(new CPointerTypeStrings(type.release()));
+        if ( !type->CanBeCopied()  ||  !type->CanBeKey()) {
+            type.reset(new CPointerTypeStrings(type.release()));
+        }
         break;
     }
 }

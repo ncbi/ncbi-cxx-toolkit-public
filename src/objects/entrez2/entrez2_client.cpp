@@ -91,7 +91,7 @@ CRef<CEntrez2_link_set> CEntrez2Client::GetNeighbors(int query_uid,
                                                      const string& link_type)
 {
     CEntrez2_id_list uids;
-    uids.SetDb() = db;
+    uids.SetDb() = CEntrez2_db_id(db);
     uids.SetNum(1);
     uids.SetUids().resize(uids.sm_UidSize);
     CEntrez2_id_list::TUidIterator it = uids.GetUidIterator();
@@ -112,7 +112,7 @@ CEntrez2Client::GetNeighborCounts(int query_uid,
                                   const string& db)
 {
     CEntrez2_id uid;
-    uid.SetDb() = db;
+    uid.SetDb() = CEntrez2_db_id(db);
     uid.SetUid(query_uid);
     return AskGet_link_counts(uid);
 }
@@ -179,6 +179,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/10/21 13:48:49  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.5  2003/10/17 16:44:01  jcherry
 * Fixed behavior when Query finds nothing
 *

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2003/10/21 13:48:51  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.74  2003/10/02 19:40:14  gouriano
 * properly handle invalid enumeration values in ASN spec
 *
@@ -209,6 +214,7 @@
 #include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/module.hpp>
 #include <serial/datatool/classstr.hpp>
+#include <serial/datatool/aliasstr.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/reftype.hpp>
 #include <serial/datatool/unitype.hpp>
@@ -248,7 +254,7 @@ TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 CDataType::CDataType(void)
     : m_ParentType(0), m_Module(0), m_SourceLine(0),
       m_DataMember(0), m_TypeStr(0), m_Set(0), m_Choice(0), m_Checked(false),
-      m_Tag(eNoExplicitTag)
+      m_Tag(eNoExplicitTag), m_IsAlias(false)
 {
 }
 
@@ -663,18 +669,27 @@ CTypeInfo* CDataType::UpdateModuleName(CTypeInfo* typeInfo) const
 
 AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
 {
-    AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(GlobalName(),
-                                                          ClassName()));
-    AutoPtr<CTypeStrings> dType = GetFullCType();
-    bool nonempty = false;
-    const CUniSequenceDataType* uniseq =
-        dynamic_cast<const CUniSequenceDataType*>(this);
-    if (uniseq) {
-        nonempty = uniseq->IsNonEmpty();
+    if ( !IsAlias() ) {
+        AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(GlobalName(),
+                                                              ClassName()));
+        AutoPtr<CTypeStrings> dType = GetFullCType();
+        bool nonempty = false;
+        const CUniSequenceDataType* uniseq =
+            dynamic_cast<const CUniSequenceDataType*>(this);
+        if (uniseq) {
+            nonempty = uniseq->IsNonEmpty();
+        }
+        code->AddMember(dType, GetTag(), nonempty);
+        SetParentClassTo(*code);
+        return AutoPtr<CTypeStrings>(code.release());
     }
-    code->AddMember(dType, GetTag(), nonempty);
-    SetParentClassTo(*code);
-    return AutoPtr<CTypeStrings>(code.release());
+    else {
+        AutoPtr<CTypeStrings> dType = GetFullCType();
+        AutoPtr<CAliasTypeStrings> code(new CAliasTypeStrings(GlobalName(),
+                                                              ClassName(),
+                                                              *dType.release()));
+        return AutoPtr<CTypeStrings>(code.release());
+    }
 }
 
 void CDataType::SetParentClassTo(CClassTypeStrings& code) const
@@ -705,9 +720,19 @@ void CDataType::SetParentClassTo(CClassTypeStrings& code) const
 
 AutoPtr<CTypeStrings> CDataType::GetRefCType(void) const
 {
-    return AutoPtr<CTypeStrings>(new CClassRefTypeStrings(ClassName(),
-                                                          Namespace(),
-                                                          FileName()));
+    if ( !IsAlias() ) {
+        return AutoPtr<CTypeStrings>(new CClassRefTypeStrings(ClassName(),
+                                                              Namespace(),
+                                                              FileName()));
+    }
+    else {
+        AutoPtr<CTypeStrings> dType = GetFullCType();
+        AutoPtr<CAliasRefTypeStrings> code(new CAliasRefTypeStrings(ClassName(),
+                                                                    Namespace(),
+                                                                    FileName(),
+                                                                    *dType.release()));
+        return AutoPtr<CTypeStrings>(code.release());
+    }
 }
 
 AutoPtr<CTypeStrings> CDataType::GetFullCType(void) const
@@ -744,6 +769,41 @@ bool CDataType::IsPrimitive(void) const
         return true;
     }
     return false;
+}
+
+bool CDataType::IsStdType(void) const
+{
+    // Primitive (except enums) or string
+    const CStaticDataType* st = dynamic_cast<const CStaticDataType*>(this);
+    if (st) {
+        const CBoolDataType* b = dynamic_cast<const CBoolDataType*>(this);
+        if (b) {
+            return true;
+        }
+        const CIntDataType* i = dynamic_cast<const CIntDataType*>(this);
+        if (i) {
+            return true;
+        }
+        const CRealDataType* r = dynamic_cast<const CRealDataType*>(this);
+        if (r) {
+            return true;
+        }
+        const COctetStringDataType* o =
+            dynamic_cast<const COctetStringDataType*>(this);
+        if (o) {
+            return true;
+        }
+        const CStringDataType* s = dynamic_cast<const CStringDataType*>(this);
+        if (s) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CDataType::IsReference(void) const
+{
+    return dynamic_cast<const CReferenceDataType*>(this) != 0;
 }
 
 bool CDataType::x_IsSavedName(const string& name)

@@ -149,33 +149,6 @@ int CMemTestApp::Run(void)
                     cnt[obj] = c;
                     NcbiCout << "Entry at " << obj << " have counter " << c << NcbiEndl;
                 }
-                if ( run_iter ) {
-                    for ( CTypeConstIterator<TObject> it=ConstBegin(bh.GetTopLevelSeqEntry());
-                          it; ++it ) {
-                        const CObject* obj = &*it;
-                        int c = reinterpret_cast<const int*>(obj)[1];
-                        cnt[obj] = c;
-                        NcbiCout << "Object at " << obj << " have counter " << c << NcbiEndl;
-                    }
-                    for ( CTypeConstIterator<TObject> it=ConstBegin(bh.GetTopLevelSeqEntry());
-                          it; ++it ) {
-                        const CObject* obj = &*it;
-                        int c = reinterpret_cast<const int*>(obj)[1];
-                        if ( cnt[obj] != c ) {
-                            NcbiCout << "Object at " << obj << " changed counter, was " << cnt[obj] << " now " << c << NcbiEndl;
-                            cnt[obj] = c;
-                        }
-                    }
-                    for ( CTypeConstIterator<TObject> it=ConstBegin(bh.GetTopLevelSeqEntry());
-                          it; ++it ) {
-                        const CObject* obj = &*it;
-                        int c = reinterpret_cast<const int*>(obj)[1];
-                        if ( cnt[obj] != c ) {
-                            NcbiCout << "Object at " << obj << " changed counter, was " << cnt[obj] << " now " << c << NcbiEndl;
-                            cnt[obj] = c;
-                        }
-                    }
-                }
                 {
                     const CObject* obj = &entry;
                     int c = reinterpret_cast<const int*>(obj)[1];
@@ -239,6 +212,11 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/10/21 13:48:50  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.7  2003/06/02 16:06:39  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

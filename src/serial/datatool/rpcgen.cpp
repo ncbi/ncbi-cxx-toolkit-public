@@ -424,7 +424,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         const CDataType* rep_type = rm->second->GetType()->Resolve();
         string           rep_class;
         bool             use_cref = false;
-        if ( !rep_type->GetParentType() ) {
+        if ( !rep_type->GetParentType()  &&  !rep_type->IsStdType() ) {
             rep_class = "CRef<" + rep_type->ClassName() + '>';
             use_cref  = true;
             code.CPPIncludes().insert(rep_type->FileName());
@@ -471,6 +471,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/10/21 13:48:51  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.8  2003/04/08 20:40:08  ucko
 * Get client name(s) from [-]clients rather than hardcoding "client"
 *

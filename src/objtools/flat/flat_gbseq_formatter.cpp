@@ -162,16 +162,15 @@ void CFlatGBSeqFormatter::FormatHead(const CFlatHead& head)
 
     {{
         // why "other", then?
-        CRef<CGBSeqid> id
-            (new CGBSeqid(m_Context->GetPrimaryID().AsFastaString()));
+        CGBSeqid id(m_Context->GetPrimaryID().AsFastaString());
         m_Seq->SetOther_seqids().push_back(id);
     }}
     ITERATE (CBioseq::TId, it, head.GetOtherIDs()) {
-        CRef<CGBSeqid> id(new CGBSeqid((*it)->AsFastaString()));
+        CGBSeqid id((*it)->AsFastaString());
         m_Seq->SetOther_seqids().push_back(id);
     }
     ITERATE (list<string>, it, head.GetSecondaryIDs()) {
-        CRef<CGBSecondary_accn> accn(new CGBSecondary_accn(*it));
+        CGBSecondary_accn accn(*it);
         m_Seq->SetSecondary_accessions().push_back(accn);
     }
 
@@ -184,7 +183,7 @@ void CFlatGBSeqFormatter::FormatHead(const CFlatHead& head)
 void CFlatGBSeqFormatter::FormatKeywords(const CFlatKeywords& keys)
 {
     ITERATE (list<string>, it, keys.GetKeywords()) {
-        CRef<CGBKeyword> key(new CGBKeyword(*it));
+        CGBKeyword key(*it);
         m_Seq->SetKeywords().push_back(key);
     }
 }
@@ -217,7 +216,7 @@ void CFlatGBSeqFormatter::FormatReference(const CFlatReference& ref)
     gbref->SetReference(NStr::IntToString(ref.GetSerial())
                         + ref.GetRange(*m_Context));
     ITERATE (list<string>, it, ref.GetAuthors()) {
-        CRef<CGBAuthor> author(new CGBAuthor(*it));
+        CGBAuthor author(*it);
         gbref->SetAuthors().push_back(author);
     }
     if ( !ref.GetConsortium().empty() ) {
@@ -319,6 +318,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/10/21 13:48:50  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.5  2003/06/02 16:06:42  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

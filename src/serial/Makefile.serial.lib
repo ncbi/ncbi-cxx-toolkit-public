@@ -8,7 +8,7 @@ SRC = \
         typeref typemap \
         stdtypes enumerated ptrinfo autoptrinfo continfo stltypes \
 	memberid memberlist item classinfob member classinfo \
-	variant choice choiceptr \
+	variant choice choiceptr aliasinfo \
 	objistr objostr objcopy iterator \
 	serial delaybuf pack_string \
 	exception objhook objlist objstack \

@@ -701,8 +701,8 @@ void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
         if ((f->GetObject().GetId().Get() / 10) == (slaveDomainID / 10))
             slaveDomainID++;
     }
-    CRef<CBiostruc_feature_id> id(new CBiostruc_feature_id(slaveDomainID));
-    feature->SetId(*id);
+    CBiostruc_feature_id id(slaveDomainID);
+    feature->SetId(id);
 
     CRef<CBiostruc_feature> featureRef(feature);
     structureAlignments->SetFeatures().front().GetObject().SetFeatures().resize(
@@ -1476,6 +1476,11 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.135  2003/10/21 13:48:48  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.134  2003/07/17 20:13:51  thiessen
 * don't ask for filename on save/termination with -f; add eAnyAlignmentData flag
 *

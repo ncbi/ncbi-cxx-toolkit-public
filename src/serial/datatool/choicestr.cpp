@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/10/21 13:48:51  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.45  2003/10/06 18:40:15  grichenk
 * Added e_MaxChoice enum
 *
@@ -821,8 +826,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             setters <<
                 "    "<<tType<<"& Set"<<i->cName<<"(void);\n";
-            if ( i->memberType == eSimpleMember ||
-                i->memberType == eStringMember ) {
+            if ( i->type->CanBeCopied() ) {
                 if (i->attlist) {
                     setters <<
                         "    void Set"<<i->cName<<"("<<tType<<"& value);\n";
@@ -931,21 +935,18 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "    return "<<memberRef<<";\n"
                     "}\n"
                     "\n";
-                if ( i->memberType == eSimpleMember ||
-                     i->memberType == eStringMember ) {
-                    inlineMethods <<
-                        "inline\n"
-                        "void "<<methodPrefix<<"Set"<<i->cName<<"(";
-                    inlineMethods << "const " << rType << "&";
-                    inlineMethods <<
-                        " value)\n"
+                if ( i->type->CanBeCopied() ) {
+                    bool set_inl = i->dataType && i->dataType->IsPrimitive();
+                    code.MethodStart(set_inl) <<
+                        "void "<<methodPrefix<<"Set"<<i->cName<<"("
+                        "const " << rType << "&" << " value)\n"
                         "{\n"
                         "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
                     if ( i->delayed ) {
-                        inlineMethods <<
+                        code.Methods(set_inl) <<
                             "    "DELAY_MEMBER".Forget();\n";
                     }
-                    inlineMethods <<
+                    code.Methods(set_inl) <<
                         "    "<<memberRef<<" = value;\n"
                         "}\n"
                         "\n";

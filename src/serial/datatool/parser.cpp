@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/10/21 13:48:51  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.31  2003/05/22 20:10:25  gouriano
 * added UTF8 strings
 *
@@ -237,6 +242,9 @@ void ASNParser::ModuleType(CDataTypeModule& module, const string& name)
     AutoPtr<CDataType> type = Type();
     CopyLineComment(LastTokenLine(), type->Comments(),
                     eCombineNext);
+    if (type->IsStdType()  ||  type->IsReference()) {
+        type->SetIsAlias(true);
+    }
     module.AddDefinition(name, type);
 }
 

@@ -134,13 +134,13 @@ void CSeq_data::DoConstruct(const string& value, E_Choice index)
 
     switch (index) {
     case e_Iupacna:
-        SetIupacna() = value;
+        SetIupacna() = CIUPACna(value);
         break;
     case e_Iupacaa:
-        SetIupacaa() = value;
+        SetIupacaa() = CIUPACaa(value);
         break;
     case e_Ncbieaa:
-        SetNcbieaa() = value;
+        SetNcbieaa() = CNCBIeaa(value);
         break;
     default:
         // throw an error
@@ -189,6 +189,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/10/21 13:48:50  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.3  2003/01/03 02:56:05  ucko
 * Fixed spelling of DoConstruct in more places.
 *

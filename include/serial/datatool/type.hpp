@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/10/21 13:48:48  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.21  2003/06/16 14:40:15  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -335,6 +340,15 @@ public:
     }
 
     bool IsPrimitive(void) const;
+    bool IsStdType(void) const;
+    bool IsReference(void) const;
+
+    void SetIsAlias(bool value) {
+        m_IsAlias = value;
+    }
+    bool IsAlias(void) const {
+        return m_IsAlias;
+    }
 
     static void SetEnforcedStdXml(bool set = true) {
         sm_EnforcedStdXml = set;
@@ -369,6 +383,7 @@ private:
     mutable string m_CachedFileName;
     mutable auto_ptr<CNamespace> m_CachedNamespace;
     int m_Tag;
+    bool m_IsAlias;
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);

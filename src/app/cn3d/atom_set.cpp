@@ -152,7 +152,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
         if (haveOccup)
             atom->occupancy = (static_cast<double>(*(i_occup++)))/occupScale;
         if (haveAlt)
-            atom->altConfID = (*(i_alt++)).GetObject().Get()[0];
+            atom->altConfID = (i_alt++)->Get()[0];
         if (haveTemp) {
             if (coords.GetTemperature_factors().IsIsotropic()) {
                 atom->averageTemperature =
@@ -177,9 +177,9 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
 
         // store pointer in map - key+altConfID must be unique
         const AtomPntrKey& key = MakeKey(AtomPntr(
-            (i_mID++)->GetObject().Get(),
-            (i_rID++)->GetObject().Get(),
-            (i_aID++)->GetObject().Get()));
+            *(i_mID++),
+            *(i_rID++),
+            *(i_aID++)));
         if (atomMap.find(key) != atomMap.end()) {
             AtomAltList::const_iterator i_atom, e=atomMap[key].end();
             for (i_atom=atomMap[key].begin(); i_atom!=e; i_atom++) {
@@ -209,7 +209,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
                 e_altIDs = ensemble.GetAlt_conf_ids().end();
             for (i_altIDs=ensemble.GetAlt_conf_ids().begin();
                  i_altIDs!=e_altIDs; i_altIDs++) {
-                (*ensembleStr) += (i_altIDs->GetObject().Get())[0];
+                (*ensembleStr) += i_altIDs->Get()[0];
             }
             ensembles.push_back(ensembleStr);
             TRACEMSG("alt conf ensemble '" << (*ensembleStr) << "'");
@@ -287,6 +287,11 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/10/21 13:48:48  grichenk
+* Redesigned type aliases in serialization library.
+* Fixed the code (removed CRef-s, added explicit
+* initializers etc.)
+*
 * Revision 1.16  2003/02/03 19:20:00  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -494,6 +494,46 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 #define END_ENUM_IN_INFO END_ENUM_INFO_METHOD
 #define END_ENUM_INFO END_ENUM_INFO_METHOD
 
+// alias definition macros
+#define SERIAL_ALIAS(RefType) \
+    NCBI_NAME2(SERIAL_REF_, RefType)
+#define ALIASED_TYPE_INFO(RefType, RefCode) \
+    NCBI_NAME2(RefType, RefCode)
+#define BEGIN_ALIAS_INFO_METHOD(AliasName,ClassName,BaseClassName,SerialRef,Code) \
+const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
+{ \
+    static CAliasTypeInfo* volatile s_info = 0; \
+    CAliasTypeInfo* info = s_info; \
+    if ( !info ) { \
+        NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex()); \
+        info = s_info; \
+        if ( !info ) { \
+            typedef ClassName CClass; \
+            typedef BaseClassName CClass_Base; \
+            DECLARE_BASE_OBJECT(ClassName); \
+            typedef TTypeInfo (*TGetter)(void); \
+            TGetter getter = SerialRef Code; \
+            info = new CAliasTypeInfo(AliasName, getter()); \
+            NCBI_NS_NCBI::RegisterTypeInfoObject(info);
+#define BEGIN_ALIAS_INFO(AliasName,ClassName,RefType,RefCode) \
+    BEGIN_ALIAS_INFO_METHOD(AliasName, ClassName, \
+    NCBI_NAME2(ClassName,_Base), \
+    SERIAL_ALIAS(RefType), RefCode)
+#define SET_STD_ALIAS_DATA_PTR \
+    info->SetDataOffset(GetDataPtr(BASE_OBJECT()))
+#define SET_CLASS_ALIAS_DATA_PTR \
+    info->SetDataOffset(TPointerOffsetType(BASE_OBJECT()))
+#define END_ALIAS_INFO \
+            s_info = info; \
+        } \
+    } \
+    return info; \
+}
+#define SET_ALIAS_MODULE(ModuleName) \
+    NCBI_NS_NCBI::SetModuleName(info, ModuleName)
+
+
+
 NCBI_XSERIAL_EXPORT
 void SetModuleName(CTypeInfo* info, const char* name);
 
