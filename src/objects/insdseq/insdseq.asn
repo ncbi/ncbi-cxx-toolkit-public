@@ -1,0 +1,170 @@
+--$Revision: 1.1 $
+--************************************************************************
+--
+-- ASN.1 and XML for the components of a GenBank/EMBL/DDBJ sequence record
+-- The International Nucleotide Sequence Database (INSD) collaboration
+-- Version 1.1, 9 Apr 2004
+--
+--************************************************************************
+
+INSD-Seq DEFINITIONS ::=
+BEGIN
+
+--********
+--  INSD-Seq represents the elements in a GenBank/EMBL/DDBJ style report
+--    of a sequence with some small additions to structure and support
+--    for protein (GenPept) versions of flatfile format as seen in Entrez.
+--    While this represents the simplification, reduction of detail, and
+--    flattening to a single sequence perspective of the three flatfile
+--    formats, it is presented in ASN.1 or XML for automated parsing and
+--    processing. It is hoped that this compromise will be useful for
+--    those bulk processing at the flatfile format level of detail today.
+--    Since itis a compromise, a number of pragmatic decisions have been
+--    made.
+--
+--  In pursuit of simplicity and familiarity a number of fields do not
+--    have full substructure defined here where there is already a
+--    standard flatfile format string. For example:
+--
+--    Date  DD-Mon-YYYY
+--    Authors   LastName, Intials (with periods)
+--   Journal   JounalName Volume (issue), page-range (year)
+--   FeatureLocations as per flatfile feature table, but FeatureIntervals
+--    may also be provided as a convenience
+--   FeatureQualifiers  as per flatfile feature table
+--   Primary has a string that represents a table to construct
+--    a third party (TPA) sequence.
+--   other-seqids can have strings with the "vertical bar format" sequence
+--    identifiers used in BLAST for example, when they are non-genbank types.
+--    Currently in flatfile format you only see GI, but there are others, like
+--    patents, submitter clone names, etc which will appear here, as they
+--    always have in the ASN.1 format, and full XML format.
+--   source-db is a formatted text block for peptides in GenPept format that
+--    carries information from the source protein database.
+--
+--  There are also a number of elements that could have been more exactly
+--   specified, but in the interest of simplicity have been simply left as
+--   options. For example:
+--
+--  accession and accession.version will always appear in a public record
+--   they are optional because this format can also be used for non-public
+--   sequences, and in that case will have only "other-seqids".
+--
+--  sequences will normally all have "sequence" filled in. But contig records
+--    will have a "join" statement in the "contig" slot, and no "sequence".
+--    We also may consider a retrieval option with no sequence of any kind
+--     and no feature table to quickly check minimal values.
+--
+--  a reference may have an author list, or be from a consortium, or both.
+--
+--  some fields, such as taxonomy, do appear as separate elements in flatfile
+--    format but without a specific linetype (in GenBank format this comes
+--    under ORGANISM). Another example is the separation of primary accession
+--    from the list of secondary accessions. In flatfile format primary
+--    accession is just the first one on the list that includes all secondaries
+--    after it.
+--
+--  create-date deserves special comment. The date you see on the right hand
+--    side of the LOCUS line in GenBank format is actually the last date the
+--    the record was modified (or the update-date). The date the record was
+--    first submitted to the databases appears in the first submission citation
+--    in the reference section. Internally in the databases and ASN.1 NCBI keeps
+--    the first date the record was released into the sequence database at
+--    NCBI as create-date. For records from EMBL, which supports create-date,
+--    it is the date provided by EMBL. For DDBJ records, which do not supply
+--    a create-date (same as GenBank format) the create-date is the first date
+--    NCBI saw the record from DDBJ. For older GenBank records, before NCBI
+--    took responsibility for GenBank, it is just the first date NCBI saw the
+--    record. Create-date can be very useful, so we expose it here, but users
+--    must understand it is only an approximation and comes from many sources,
+--    and with many exceptions and caveats. It does NOT tell you the first
+--    date the public might have seen this record and thus is NOT an accurate
+--    measure for legal issues of precedence.
+--
+--********
+
+Seq ::= SEQUENCE {
+	locus VisibleString ,
+	length INTEGER ,
+	strandedness INTEGER {
+		not-set (0) ,
+		single-stranded (1) ,
+		double-stranded (2) ,
+		mixed-stranded (3) } DEFAULT not-set ,
+	moltype INTEGER {
+		nucleic-acid (0) ,
+		dna (1) ,
+		rna (2) ,
+		trna (3) ,
+		rrna (4) ,
+		mrna (5) ,
+		urna (6) ,
+		snrna (7) ,
+		snorna (8) ,
+		peptide (9) } DEFAULT nucleic-acid ,
+	topology INTEGER {
+		linear (1) ,
+		circular (2) } DEFAULT linear ,
+	division VisibleString ,
+	update-date VisibleString ,
+	create-date VisibleString ,
+	update-release VisibleString OPTIONAL ,
+	create-release VisibleString OPTIONAL ,
+	definition VisibleString ,
+	primary-accession VisibleString OPTIONAL ,
+	entry-version VisibleString OPTIONAL ,
+	accession-version VisibleString OPTIONAL ,
+	other-seqids SEQUENCE OF Seqid OPTIONAL ,
+	secondary-accessions SEQUENCE OF Secondary-accn OPTIONAL,
+	keywords SEQUENCE OF Keyword OPTIONAL ,
+	segment VisibleString OPTIONAL ,
+	source VisibleString OPTIONAL ,
+	organism VisibleString OPTIONAL ,
+	taxonomy VisibleString OPTIONAL ,
+	references SEQUENCE OF Reference OPTIONAL ,
+	comment VisibleString OPTIONAL ,
+	primary VisibleString OPTIONAL ,
+	source-db VisibleString OPTIONAL ,
+	database-reference VisibleString OPTIONAL ,
+	feature-table SEQUENCE OF Feature OPTIONAL ,
+	sequence VisibleString OPTIONAL ,  -- Optional for other dump forms
+	contig VisibleString OPTIONAL }
+
+	Secondary-accn ::= VisibleString
+
+	Seqid ::= VisibleString
+
+	Keyword ::= VisibleString
+
+	Reference ::= SEQUENCE {
+		reference VisibleString ,
+		authors SEQUENCE OF Author OPTIONAL ,
+		consortium VisibleString OPTIONAL ,
+		title VisibleString OPTIONAL ,
+		journal VisibleString ,
+		medline INTEGER OPTIONAL ,
+		pubmed INTEGER OPTIONAL ,
+		remark VisibleString OPTIONAL }
+
+	Author ::= VisibleString
+
+	Feature ::= SEQUENCE {
+		key VisibleString ,
+		location VisibleString ,
+		intervals SEQUENCE OF Interval OPTIONAL ,
+		quals SEQUENCE OF Qualifier OPTIONAL }
+
+	Interval ::= SEQUENCE {
+		from INTEGER OPTIONAL ,
+		to INTEGER OPTIONAL ,
+		point INTEGER OPTIONAL ,
+		accession VisibleString }
+
+	Qualifier ::= SEQUENCE {
+		name VisibleString ,
+		value VisibleString OPTIONAL }
+
+	Set ::= SEQUENCE OF Seq
+		
+END
+
