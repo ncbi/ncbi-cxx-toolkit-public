@@ -445,7 +445,7 @@ void CTextFsm<MatchType>::ComputeFail(void)
     
     // queue up states reached directly from state 0 (depth 1) 
     
-    ITERATE ( CState::TMapCharInt,
+    ITERATE ( typename CState::TMapCharInt,
               it, 
               m_States[GetInitialState()].GetTransitions() ) {
         s = it->second;
@@ -459,7 +459,8 @@ void CTextFsm<MatchType>::ComputeFail(void)
         
         // depth 1 states beget depth 2 states, etc. 
         
-        ITERATE ( CState::TMapCharInt, it, m_States[r].GetTransitions() ) {
+        ITERATE ( typename CState::TMapCharInt, it,
+                  m_States[r].GetTransitions() ) {
             s = it->second;
             QueueAdd(state_queue, qbeg, s);
             
@@ -535,6 +536,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/04/26 14:52:34  ucko
+* Add "typename" as needed to accommodate GCC 3.4's stricter treatment of
+* templates.
+*
 * Revision 1.17  2004/04/01 14:14:01  lavr
 * Spell "occurred", "occurrence", and "occurring"
 *
