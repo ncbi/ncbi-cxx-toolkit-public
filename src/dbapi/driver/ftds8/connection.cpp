@@ -240,8 +240,8 @@ void CTDS_Connection::Release()
 
 CTDS_Connection::~CTDS_Connection()
 {
-    if (!Refresh())
-        dbclose(m_Link);
+    Refresh();
+    dbclose(m_Link);
 }
 
 
@@ -448,6 +448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/08/23 16:32:11  soussov
+ * fixes bug in ~CTDS_Connection()
+ *
  * Revision 1.3  2002/03/26 15:35:10  soussov
  * new image/text operations added
  *
