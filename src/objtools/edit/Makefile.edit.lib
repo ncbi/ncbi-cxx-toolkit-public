@@ -1,0 +1,7 @@
+# $Id$
+
+# Build library "xobjedit"
+###############################
+
+SRC = seq_entry_edit promote
+LIB    = xobjedit
