@@ -145,9 +145,9 @@ void CScope_Impl::x_AttachToOM(CObjectManager& objmgr)
 
 void CScope_Impl::x_DetachFromOM(void)
 {
-    // Drop and release all TSEs
-    x_ResetHistory();
     if ( m_pObjMgr ) {
+        // Drop and release all TSEs
+        x_ResetHistory();
         m_pObjMgr->RevokeScope(*this);
         for (CPriority_I it(m_setDataSrc); it; ++it) {
             _ASSERT(it->m_DataSource);
@@ -478,7 +478,8 @@ void CScope_Impl::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
 void CScope_Impl::RemoveEntry(CSeq_entry& entry)
 {
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
-    CSeq_entry_Info& info = *x_GetSeq_entry_Info(entry);
+    CRef<CSeq_entry_Info> info_ref(x_GetSeq_entry_Info(entry));
+    CSeq_entry_Info& info = *info_ref;
     x_ClearCacheOnRemoveData(info);
     if ( info.GetParentSeq_entry_Info() ) {
         info.GetDataSource().RemoveEntry(info);
@@ -1169,6 +1170,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.101  2004/02/19 17:23:01  vasilche
+* Changed order of deletion of heap scope and scope impl objects.
+* Reduce number of calls to x_ResetHistory().
+*
 * Revision 1.100  2004/02/10 21:15:16  grichenk
 * Added reverse ID matching.
 *

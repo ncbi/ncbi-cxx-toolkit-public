@@ -399,8 +399,8 @@ private:
     friend class CBioseq_CI;
     friend class CHeapScope;
 
-    CRef<CScope_Impl> m_Impl;
     CRef<CScope>      m_HeapScope;
+    CRef<CScope_Impl> m_Impl;
 };
 
 
@@ -424,7 +424,6 @@ public:
     CHeapScope(CScope* scope)
         : m_Scope(scope ? scope->m_Impl->m_HeapScope : 0)
         {
-            // _ASSERT(m_Scope);
         }
 
     
@@ -623,6 +622,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2004/02/19 17:23:00  vasilche
+* Changed order of deletion of heap scope and scope impl objects.
+* Reduce number of calls to x_ResetHistory().
+*
 * Revision 1.70  2004/02/02 14:46:42  vasilche
 * Several performance fixed - do not iterate whole tse set in CDataSource.
 *
