@@ -867,26 +867,22 @@ static Int4 SEMI_G_ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N,
 
   tt = 0;  j = i;
   for (j_r = 1; j_r <= M; j_r++) {
-      if (!(gap_align->positionBased)){ /*AAS*/
+     if ((reverse_sequence && (A[M-j_r] == NULLB)) ||
+         (!reverse_sequence && (A[j_r] == NULLB)))
+        break;
+
+     if (!(gap_align->positionBased)){ /*AAS*/
         if(reverse_sequence)
-            wa = matrix[A[M-j_r]];
+           wa = matrix[A[M-j_r]];
         else
-            wa = matrix[A[j_r]];
-      }
-      else {
-	  if(reversed || reverse_sequence)
-	  {
-	      wa = gap_align->sbp->posMatrix[M - j_r];
-		if (A[M-j_r] == NULLB)  /* Prevents gapping through a NULL byte in rps-blast. */
-			break;
-	  }
-	  else
-	  {
-	      wa = gap_align->sbp->posMatrix[j_r + query_offset];
-		if (A[j_r] == NULLB)
-			break;
-	  }
-      }
+           wa = matrix[A[j_r]];
+     }
+     else {
+        if(reversed || reverse_sequence)
+           wa = gap_align->sbp->posMatrix[M - j_r];
+        else
+           wa = gap_align->sbp->posMatrix[j_r + query_offset];
+     }
       e = c =f = MININT;
       Bptr = &B[tt];
       if(reverse_sequence)
