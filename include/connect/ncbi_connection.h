@@ -1,5 +1,5 @@
-#ifndef NCBI_CONNECTION__H
-#define NCBI_CONNECTION__H
+#ifndef CONNECT___CONNECTION__H
+#define CONNECT___CONNECTION__H
 
 /*  $Id$
  * ===========================================================================
@@ -29,20 +29,19 @@
  * Author:  Denis Vakatov
  *
  * File Description:
- *   Generic API to open and handle connection to an abstract i/o service.
+ *   Generic API to open and handle connection to an abstract I/O service.
  *   Several methods can be used to establish the connection, and each of them
  *   yields in a simple handle(of type "CONN") that contains a handle(of type
- *   "CONNECTOR") to a data and methods implementing the generic connection i/o
+ *   "CONNECTOR") to a data and methods implementing the generic connection I/O
  *   operations. E.g. this API can be used to:
- *     1) connect using HTTPD-based dispatcher (to NCBI services only!);
+ *     1) connect using HTTPD-based dispatcher (e.g. to NCBI services);
  *     2) hit a CGI script;
  *     3) connect to a bare socket at some "host:port";
- *     4) whatever else can fit this paradigm -- see the
- *        SConnectorTag-related structures;  e.g. it could be a plain file i/o
- *        or even a memory area.
+ *     4) whatever else can fit this paradigm -- see the SConnectorTag-related
+ *        structures;  e.g. it could be a plain file I/O or even a memory area.
  *
  *  See in "ncbi_connector.h" for the detailed specification of the underlying
- *  connector("CONNECTOR", "SConnectorTag") methods and structures.
+ *  connector("CONNECTOR", "SConnectorTag") methods and data structures.
  *
  */
 
@@ -61,11 +60,13 @@ typedef struct SConnectionTag* CONN;      /* connection handle */
 /* Compose all data necessary to establish a new connection
  * (merely bind it to the specified connector). Unsuccessful completion
  * sets conn to 0, and leaves connector intact (can be used again).
- * NOTE:  The real connection will not be established right away. Instead,
- *        it will be established at the moment of the first call to one of
- *        "Wait", "WaitAsync", "Write" or "Read".
- * NOTE:  Initial timeout values are set to CONN_DEFAULT_TIMEOUT, meaning
- *        that connector-specific timeouts are in force for the connection.
+ * NOTE1:  The real connection will not be established right away. Instead,
+ *         it will be established at the moment of the first call to one of
+ *         "Flush", "Wait", "WaitAsync", "Write", or "Read" methods.
+ * NOTE2:  "Connection establishment" at this level of abstraction may differ
+ *         from actual link establishment at the underlying connector's level.
+ * NOTE3:  Initial timeout values are set to CONN_DEFAULT_TIMEOUT, meaning
+ *         that connector-specific timeouts are in force for the connection.
  */
 extern EIO_Status CONN_Create
 (CONNECTOR connector,  /* [in]  connector                        */
@@ -79,8 +80,7 @@ extern EIO_Status CONN_Create
  * If "connector" is NULL then close and destroy current connector, and leave
  * connection empty (effective way to destroy connector(s)).
  * NOTE:  Although it closes the previous connection immediately, however it
- *        does not establish the new connection right away -- it postpones
- *        until the first call to "Wait", "WaitAsync", "Write" or "Read".
+ *        does not open the new connection right away -- see notes to "Create".
  */
 extern EIO_Status CONN_ReInit
 (CONN      conn,      /* [in] connection handle */
@@ -88,27 +88,27 @@ extern EIO_Status CONN_ReInit
  );
 
 
-/* Specify timeout for the connection i/o (including "CONNECT" and "CLOSE").
- * This function can be called at any time during the connection lifetime.
- * NOTE: if "new_timeout" is NULL then set the timeout to the maximum.
- * NOTE: if "new_timeout" is CONN_DEFAULT_TIMEOUT then underlying
- *       connector-specific value is used (this is the default).
+/* Specify timeout for the connection I/O (including "Connect" (aka "Open")
+ * and "Close"). May be called at any time during the connection lifetime.
+ * NOTE1:  if "new_timeout" is NULL then set the timeout to be infinite.
+ * NOTE2:  if "new_timeout" is CONN_DEFAULT_TIMEOUT then underlying
+ *         connector-specific value is used (this is the default).
  */
 extern EIO_Status CONN_SetTimeout
 (CONN            conn,        /* [in] connection handle */
- EIO_Event       event,       /* [in] i/o direction     */
+ EIO_Event       event,       /* [in] I/O direction     */
  const STimeout* new_timeout  /* [in] new timeout       */
  );
 
 
 /* Retrieve current timeout (return NULL if it is infinite).
  * The returned pointer is guaranteed to point to the valid timeout structure
- * (or NULL, or CONN_DEFAULT_TIMEOUT) until the next CONN_SetTimeout or
- * CONN_Close function call.
+ * (or be either NULL or CONN_DEFAULT_TIMEOUT) until the next "SetTimeout"
+ * or "Close" method's call.
  */
 extern const STimeout* CONN_GetTimeout
-(CONN      conn,  /* [in]  connection handle                  */
- EIO_Event event  /* [in]  i/o direction, not "eIO_ReadWrite" */
+(CONN      conn,  /* [in] connection handle                  */
+ EIO_Event event  /* [in] I/O direction, not "eIO_ReadWrite" */
  );
 
 
@@ -138,7 +138,11 @@ extern EIO_Status CONN_Write
 
 
 /* Explicitly flush to the connection all data written by "CONN_Write()".
- * NOTE:  CONN_Close() and CONN_Read() always call CONN_Flush() before reading.
+ * NOTE1:  CONN_Flush() effectively opens connection (if it wasn't open yet).
+ * NOTE2:  Connection considered open if underlying connector's "Open" method
+ *         has successfully executed; actual data link may not yet exist.
+ * NOTE3:  CONN_Read() always calls CONN_Flush() before proceeding.
+ *         So does CONN_Close() but only if connection is was open before.
  */
 extern EIO_Status CONN_Flush
 (CONN conn  /* [in] connection handle */ 
@@ -150,11 +154,11 @@ extern EIO_Status CONN_Flush
  * If there is absolutely no data available to read and the timeout (see
  * CONN_SetTimeout()) is expired then return eIO_Timeout (and "*n_read" := 0).
  * The arg "how" means:
- *   eIO_ReadPlain  -- read presently available data only and return
- *   eIO_ReadPeek   -- eIO_ReadPlain but dont discard read data from inp. queue
- *   eIO_ReadPersist-- try to read exactly "n" bytes;  return eIO_Timeout if
- *                  could not read the requested # of bytes, and the timeout
- *                  has expired.
+ *   eIO_ReadPlain   -- read presently available data only and return
+ *   eIO_ReadPeek    -- eIO_ReadPlain but dont discard read data from inp.queue
+ *   eIO_ReadPersist -- try to read exactly "n" bytes;  return eIO_Timeout if
+ *                      could not read the requested # of bytes, and read
+ *                      timeout has expired.
  */
 extern EIO_Status CONN_Read
 (CONN           conn,   /* [in]  connection handle                  */
@@ -166,8 +170,8 @@ extern EIO_Status CONN_Read
 
 
 /* Obtain status of the last IO operation. This is NOT a completion
- * code of the last CONN-call, but rather a status from the low-level
- * connector layer.
+ * code of the last CONN-call, but rather a status from the lower level
+ * connector's layer.
  */
 extern EIO_Status CONN_Status
 (CONN      conn,   /* [in]  connection handle       */
@@ -176,8 +180,8 @@ extern EIO_Status CONN_Status
 
 
 /* Close the connection, destroy relevant internal data.
- * NOTE: whatever error code is returned, the connection handle "conn"
- *       will become invalid (so, you should not use it anymore).
+ * NOTE:  whatever error code is returned, the connection handle "conn"
+ *        will become invalid (so, you should not use it anymore).
  */
 extern EIO_Status CONN_Close
 (CONN conn  /* [in] connection handle */
@@ -186,7 +190,7 @@ extern EIO_Status CONN_Close
 
 /* Get a verbal connection type as a character string.
  * Note that the returned value is only valid until the next
- * I/O operation in the connection. Return value 0 denotes
+ * I/O operation in the connection. Return value NULL denotes
  * unknown connection type.
  */
 extern const char* CONN_GetType
@@ -223,11 +227,11 @@ EIO_Status CONN_SetCallback
 
 
 #ifdef IMPLEMENTED__CONN_WaitAsync
-/* Wait for an asynchronous i/o event, then call the specified handler.
+/* Wait for an asynchronous I/O event, then call the specified handler.
  * In the "handler" function:
- *   "event" - is the i/o direction where the async. event happened
- *   "status"    - must be "eIO_Success" if it is ready for i/o
- *   "data"      - callback data(passed as "data" in CONN_WaitAsync)
+ *   "event"  -- is the I/O direction where the async. event happened
+ *   "status" -- must be "eIO_Success" if it is ready for I/O
+ *   "data"   -- callback data (passed as "data" in CONN_WaitAsync())
  * If "handler" is NULL then discard the current handler, if any.
  * The "cleanup" function to be called right after the call to "handler" or
  * by CONN_Close(), or if the handler is reset by calling CONN_WaitAsync()
@@ -243,7 +247,7 @@ typedef void (*FConnAsyncCleanup)(void* data);
 
 extern EIO_Status CONN_WaitAsync
 (CONN              conn,      /* [in] connection handle */
- EIO_Event         event,     /* [in] i/o direction     */
+ EIO_Event         event,     /* [in] I/O direction     */
  FConnAsyncHandler handler,   /* [in] callback function */
  void*             data,      /* [in] callback data     */
  FConnAsyncCleanup cleanup    /* [in] cleanup procedure */
@@ -259,6 +263,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/09/06 15:40:32  lavr
+ * More comments and notes to the API
+ *
  * Revision 6.10  2002/08/07 16:27:33  lavr
  * EIO_ReadMethod enums changed accordingly; log moved to the bottom
  *
@@ -295,4 +302,4 @@ extern EIO_Status CONN_WaitAsync
  * ===========================================================================
  */
 
-#endif /* NCBI_CONNECTION__H */
+#endif /* CONNECT___CONNECTION__H */
