@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/01/03 22:40:24  lavr
+ * Minor adjustment
+ *
  * Revision 6.2  2000/12/29 18:25:27  lavr
  * More tests added (still not yet complete).
  *
@@ -50,7 +53,7 @@
 
 int main(int argc, const char* argv[])
 {
-    const char buffer[] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ";
+    const char buffer[] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
     CONNECTOR connector;
     STimeout  timeout;
     char buf[1024];
