@@ -15,10 +15,10 @@ SRC = \
 	atom_set \
 	block_multiple_alignment \
 	bond \
-	chemical_graph \
 	cdd_annot_dialog \
 	cdd_ref_dialog \
 	cdd_splash_dialog \
+	chemical_graph \
 	cn3d_ba_interface \
 	cn3d_blast \
 	cn3d_blockalign \
