@@ -272,6 +272,14 @@ public:
     }
     virtual string OutputFile(void) const
     {
+        string output_file = 
+            GetLinkerOpt(m_MsvcMetaMakefile,
+                         m_MsvcProjectMakefile,
+                         "OutputFile", 
+                         m_Config );
+        if( !output_file.empty() )
+            return output_file;
+
 	    return string("$(OutDir)/") + m_ProjectId + ConfTrait::TargetExtension();
     }
 
@@ -687,6 +695,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/21 13:45:41  gorelenk
+ * Changed implementation of class CLinkerToolImpl method OutputFile -
+ * allow to override linker Output File settings in user .msvc makefile.
+ *
  * Revision 1.11  2004/03/22 14:47:34  gorelenk
  * Changed definition of class CLibrarianToolImpl.
  *
