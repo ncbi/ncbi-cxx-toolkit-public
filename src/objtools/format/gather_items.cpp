@@ -24,6 +24,7 @@
 * ===========================================================================
 *
 * Author:  Aaron Ucko, NCBI
+*          Mati Shomrat, NCBI
 *
 * File Description:
 *   
@@ -223,6 +224,7 @@ void CFlatGatherer::x_GatherBioseq(const CBioseq_Handle& seq) const
         x_DoMultipleSections(seq);
     } else {
         // display as a single bioseq (single section)
+        m_Context->SetActiveBioseq(seq);
         x_DoSingleSection(seq);
     }   
 }
@@ -1203,6 +1205,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/03/31 17:16:04  shomrat
+* Set current bioseq once in calling function
+*
 * Revision 1.13  2004/03/30 20:31:09  shomrat
 * Bug fix
 *
