@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/04/05 17:00:55  grichenk
+* Fixed iterator flags
+*
 * Revision 1.1  2003/12/16 17:51:17  kuznets
 * Code reorganization
 *
@@ -310,7 +313,7 @@ bool CTestOM::Thread_Run(int idx)
                 for (CFeat_CI feat_it(scope, loc,
                                       CSeqFeatData::e_not_set,
                                       SAnnotSelector::eOverlap_Intervals,
-                                      CAnnotTypes_CI::eResolve_All);
+                                      SAnnotSelector::eResolve_All);
                      feat_it;  ++feat_it) {
                     count++;
                 }
