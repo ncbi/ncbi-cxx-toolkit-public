@@ -1,10 +1,10 @@
-<!--#set var="TITLE" value="NCBI DBAPI Middle Layer Docs" -->
+<!--#set var="TITLE" value="NCBI DBAPI User-Layer Docs" -->
 <!--#set var="DOCROOT" value=".." -->
 <!--#include virtual="../ssi/header.shtml" -->
 
 
 <!--<B><FONT FACE="Arial" SIZE=4><P>DBAPI Interface Overview.</P></B></FONT><P>&nbsp;</P>-->
-<h3>NCBI C++ Toolkit:  DBAPI Middle-Layer Interface Reference</h3>
+<h3>NCBI C++ Toolkit:  DBAPI User-Layer Interface Reference</h3>
 
 
 <!-- List of different sections to get indentation of text from heading
@@ -16,7 +16,7 @@
 <a name="ref_ObjHierarchy"></a>
 <dt><B><FONT FACE="Arial"><P>Object hierarchy</P></FONT></B></dt>
 	<dd>
-		<P><IMG SRC="dbapi_middle.gif" WIDTH=681 HEIGHT=464></P>
+		<P><IMG SRC="dbapi_user.gif" WIDTH=681 HEIGHT=464></P>
 	</dd>
 
 <P>&nbsp;</P>
@@ -35,25 +35,25 @@
 <a name="ref_Objects"></a>
 <dt><B><FONT FACE="Arial"><P>Objects</P></FONT></B></dt>
 	<dd>
-		<P>All objects are returned by pointers to respective
-		interfaces. The null (0) value is valid meaning that no object was
+		<P>All objects are returned by pointers to their respective
+		interfaces. The null (0) value is valid, meaning that no object was
 		returned.</P>
 	</dd>
 
 <a name="ref_ObjLifeCycle"></a>
 <dt><B><FONT FACE="Arial"><P>Object Life Cycle</P></FONT></B></dt>
 <dd>
-	<P>The general rule is that any child object is valid only in the
+	<P>In general, any child object is valid only in the
 	scope of its parent object. This is  because most of the objects share
 	the same internal structures. There is no need to delete every object
-	explicitly, all created objects will be deleted upon program exit.</P>
+	explicitly, as all created objects will be deleted upon program exit.</P>
 </dd>
 
 <a name="ref_CVariant"></a>
 <dt><B><FONT FACE="Arial"><P>CVariant type</P></FONT></B></dt>
 	<dd>
 		<P></P>
-		<a href="../docxx/CVariant.html"><tt>CVariant</tt></a> type is used to represent any database data
+		The <a href="../docxx/CVariant.html"><tt>CVariant</tt></a> type is used to represent any database data
 		type (except BLOBs). It is an object, not a pointer, so it behaves
 		like a primitive C++ type. Basic comparison operators are supported
 		<FONT FACE="Courier New">(==, !=, &lt; </FONT>)  for identical
@@ -65,19 +65,19 @@
 		<a href="../docxx/CVariantException.html"><tt>CVariantException</tt></a> is thrown.
 
 		<p></p>
-		There is a set of factory methods (static functions) for creating <a href="../docxx/CVariant.html"><tt>CVariant</tt></a> of a particular type, such as
+		There is a set of factory methods (static functions) for creating <a href="../docxx/CVariant.html"><tt>CVariant</tt></a> objects of a particular type, such as
 		<tt><a href="../docxx/CVariant.html">CVariant</a>::BigInt(), <a href="../docxx/CVariant.html">CVariant</a>::SmallDateTime(), <a href="../docxx/CVariant.html">CVariant</a>::VarBinary()</tt>,
-		etc. For more details please see comments in <a href="lxr/source/include/dbapi/variant.hpp">variant.hpp</a> file.
+		etc. For more details please see the comments in <a href="lxr/source/include/dbapi/variant.hpp">variant.hpp</a> file.
 		</dd>
 
 <P></P>
 <a name="ref_ChooseDriver"></a>
 <dt><B><FONT FACE="Arial"><P>Choosing the driver</P></FONT></B></dt>
 	<dd>
-		<P>There are several drivers for work with different SQL servers on
-		different platforms. The names of implemented ones are "ctlib"
-		(Sybase), "dblib"(MS SQL), "ftds" (cross platform). For static linkage
-		these drivers should be registered manually, for dynamic linkage this
+		<P>There are several drivers for working with different SQL servers on
+		different platforms.  The ones presently implemented are "<b>ctlib</b>"
+		(Sybase), "<b>dblib</b>"(MS SQL), "<b>ftds</b>" (cross platform). For static linkage
+		these drivers should be registered manually; for dynamic linkage this
 		is not necessary. The <a href="../docxx/CDriverManager.html"><tt>CDriverManager</tt></a> object maintains all registered
 		drivers.</P>
 
@@ -95,16 +95,16 @@ DBAPI_RegisterDriver_DBLIB(dm);
 <a name="ref_SrcCnxns"></a>
 <dt><B><FONT FACE="Arial"><P>Data Source and Connections</P></FONT></B></dt>
 	<dd>
-		<P>The <a href="../docxx/IDataSource.html"><tt>IDataSource</tt></a> interface defines the database platform with which to work.
-		To create the object, represented by this
-		interface, the method <tt>CreateDs(const string&amp; driver)</tt> is used.  An
+		<P>The <a href="../docxx/IDataSource.html"><tt>IDataSource</tt></a> interface defines the database platform.
+		To create an object implementing this
+		interface, use the method <tt>CreateDs(const string&amp; driver)</tt>.  An
 		<a href="../docxx/IDataSource.html"><tt>IDataSource</tt></a> can create objects represented by an
 		<a href="../docxx/IConnection.html"><tt>IConnection</tt></a> interface,
-		which are responsible for the connection to the database. It is highly
-		recommended to specify database name as argument to the
+		which is responsible for the connection to the database.  It is highly
+		recommended to specify the database name as an argument to the
 		<tt>CreateConnction()</tt> method, or use the <tt>SetDatabase()</tt> method of
 		a <a href="../docxx/CConnection.html"><tt>CConneciton</tt></a>
-		object instead of using reqular SQL statement, otherwise the library
+		object instead of using a reqular SQL statement.  In the later case, the library
 		won't be able to track the current database. </P>
 
 		<blockquote>
@@ -281,12 +281,12 @@ cur-&gt;Close();
 		<FONT FACE="Courier New">
 		</FONT><P>The following libraries should be used (the order is significant):</P>
 		<dl>
-			<dt><b>for ctlib</b> (Sybase):</dt>
+			<dt>for <b>ctlib</b> (Sybase):</dt>
 			<dd><FONT FACE="Courier New"><P>dbapi dbapi_driver_ctlib dbapi_driver</P>
 			</FONT><P>plus corresponding Sybase libraries.</P>
 			</dd>
 
-			<dt><b>for dblib</b> (MS SQL):</dt>
+			<dt>for <b>dblib</b> (MS SQL):</dt>
 			<dd><FONT FACE="Courier New"><P>dbapi dbapi_driver_dblib dbapi_driver </P>
 			</FONT><P>plus Sybase <FONT FACE="Courier New">sybdb</P></FONT>
 			</dd>
