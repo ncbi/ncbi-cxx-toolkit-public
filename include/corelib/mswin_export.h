@@ -173,72 +173,6 @@
 #  define NCBI_XOMSSA_EXPORTS
 #endif
 
-
-/*
- * Definitions for GUI_CORE.DLL
- */
-#ifdef NCBI_GUICORE_EXPORTS
-#  define NCBI_XGBPLUGIN_EXPORTS
-#endif
-
-
-#if 0
-/*
- * Definitions for GUI_UTILS.DLL
- */
-#ifdef NCBI_GUIUTILS_EXPORTS
-#  define NCBI_GUIOBJUTILS_EXPORTS
-#  define NCBI_GUIOPENGL_EXPORTS
-#  define NCBI_GUIMATH_EXPORTS
-#endif
-
-
-/*
- * Definitions for GUI_WIDGETS.DLL
- */
-#ifdef NCBI_GUIWIDGETS_EXPORTS
-#  define NCBI_GUIWIDGETS_FL_EXPORTS
-#  define NCBI_GUIWIDGETS_GL_EXPORTS
-#  define NCBI_GUIWIDGETS_FLTABLE_EXPORTS
-#  define NCBI_GUIWIDGETS_FLU_EXPORTS
-#  define NCBI_GUIWIDGETS_TABLE_EXPORTS
-#  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORTS
-#  define NCBI_GUIWIDGETS_WORKSPACE_EXPORTS
-#endif
-
-
-/*
- * Definitions for GUI_WIDGETS_ALN.DLL
- */
-#ifdef NCBI_GUIWIDGETSALN_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNCROSSALN_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNDOTMATRIX_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORTS
-#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORTS
-#endif
-
-
-/*
- * Definitions for GUI_WIDGETS_SEQ.DLL
- */
-#ifdef NCBI_GUIWIDGETSSEQ_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQ_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQGRAPHIC_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQICON_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQINFO_EXPORTS
-#endif
-
-/*
- * Definitions for GUI_WIDGETS_SEQ.DLL
- */
-#ifdef NCBI_GUIWIDGETSMISC_EXPORTS
-#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORTS
-#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORTS
-#endif
-
-#endif
-
 /* ------------------------------------------------- */
 /*
  * Individual Library Definitions
@@ -450,24 +384,6 @@
 #  define NCBI_GENERAL_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_GENERAL_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_config
- */
-#ifdef NCBI_GUICONFIG_EXPORTS
-#  define NCBI_GUICONFIG_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUICONFIG_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library gui_core
- */
-#ifdef NCBI_GUICORE_EXPORTS
-#  define NCBI_GUICORE_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_GUICORE_EXPORT __declspec(dllimport)
 #endif
 
 /*
@@ -821,6 +737,7 @@
 #  define NCBI_XCGI_REDIRECT_EXPORT __declspec(dllimport)
 #endif
 
+#if 0
 /*
  * Export specifier for library xgbplugin
  */
@@ -829,7 +746,7 @@
 #else
 #  define NCBI_XGBPLUGIN_EXPORT __declspec(dllimport)
 #endif
-
+#endif
 /*
  * Export specifier for library xhtml
  */
@@ -1077,8 +994,6 @@
 #  define NCBI_FORMAT_EXPORT
 #  define NCBI_GBSEQ_EXPORT
 #  define NCBI_GENERAL_EXPORT
-#  define NCBI_GUICONFIG_EXPORT
-#  define NCBI_GUICORE_EXPORT
 #  define NCBI_ID1_EXPORT
 #  define NCBI_ID2_EXPORT
 #  define NCBI_ID2_SPLIT_EXPORT
@@ -1121,7 +1036,6 @@
 #  define NCBI_XBLAST_EXPORT
 #  define NCBI_XCGI_EXPORT
 #  define NCBI_XCGI_REDIRECT_EXPORT
-#  define NCBI_XGBPLUGIN_EXPORT
 #  define NCBI_XHTML_EXPORT
 #  define NCBI_XIMAGE_EXPORT
 #  define NCBI_XLOADER_BLASTDB_EXPORT
@@ -1164,6 +1078,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.81  2004/08/12 17:33:27  dicuccio
+ * Expunged last bits of GUI export specifiers
+ *
  * Revision 1.80  2004/08/04 15:42:25  dicuccio
  * Moved most GUI export specifiers into gui_export; specifiers for GUICORE,
  * GUICONFIG, and XGBPLUGIN, as well as the GUICORE DLL cluster, remain here.
