@@ -97,7 +97,7 @@ extern "C" {
 CDBLibContext* CDBLibContext::m_pDBLibContext = 0;
 
 
-CDBLibContext::CDBLibContext(DBINT /*version*/) :
+CDBLibContext::CDBLibContext(DBINT version) :
     m_AppName("DBLibDriver"), m_HostName(""), m_PacketSize(0)
 {
     static CFastMutex xMutex;
@@ -110,9 +110,9 @@ CDBLibContext::CDBLibContext(DBINT /*version*/) :
     }
 
 #ifdef NCBI_OS_MSWIN
-    if (dbinit() == NULL)
+    if (dbinit() == NULL || version == 31415)
 #else
-    if (dbinit() != SUCCEED)
+    if (dbinit() != SUCCEED || dbsetversion(version) != SUCCEED)
 #endif
     {
         throw CDB_ClientEx(eDB_Fatal, 200001, "CDBLibContext::CDBLibContext",
@@ -476,6 +476,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2002/06/17 21:26:32  soussov
+ * dbsetversion added
+ *
  * Revision 1.13  2002/04/19 15:05:50  soussov
  * adds static mutex to Connect
  *
