@@ -239,6 +239,11 @@ enum EOverlapType {
 NCBI_XOBJUTIL_EXPORT
 int TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, EOverlapType type);
 
+CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
+                                            CSeqFeatData::E_Choice feat_type,
+                                            EOverlapType overlap_type,
+                                            CScope& scope);
+
 enum ESeqlocPartial {
     eSeqlocPartial_Complete   =   0,
     eSeqlocPartial_Start      =   1,
@@ -476,6 +481,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2002/12/26 21:45:28  grichenk
+* + GetBestOverlappingFeat()
+*
 * Revision 1.18  2002/12/26 12:44:39  dicuccio
 * Added Win32 export specifiers
 *
