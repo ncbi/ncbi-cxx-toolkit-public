@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/05/05 18:05:43  golikov
+* small change
+*
 * Revision 1.9  1999/08/11 18:33:02  sandomir
 * class CNcbiResource more logical (some functionality from CNcbiDbResource moved in CNcbiResource; CNcbiCommand get CNcbiResource in ctor
 *
@@ -402,7 +405,7 @@ public:
 
     virtual CNcbiDataObjectReport* Clone( void ) const = 0;
 
-    virtual CNCBINode* GetLogo( void ) const { return 0; }
+    virtual CNCBINode* GetLogo( const CCgiContext& ) const { return 0; }
     virtual string GetName( void ) const = 0;
 
     virtual bool IsRequested( const CCgiContext& ctx ) const;
