@@ -46,7 +46,6 @@
  *
  * - calculate pseuod-scores from p-values.
  *
- * @todo FIXME needs doxygen comments
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -76,8 +75,6 @@ static SBLASTMatrixStructure* BlastMatrixAllocate (Int2 alphabet_size);
 
 /* performs sump calculation, used by BlastSumPStd */
 static double BlastSumPCalc (int r, double s);
-
-#define BLAST_MAX_ALPHABET 40 /* ncbistdaa is only 26, this should be enough */
 
 #define BLAST_SCORE_RANGE_MAX   (BLAST_SCORE_MAX - BLAST_SCORE_MIN) /**< maximum allowed range of BLAST scores. */
 
@@ -863,7 +860,7 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     Int4 *  m;
     Int4 score;
     Uint4   a1cnt = 0, a2cnt = 0;
-    char    a1chars[BLAST_MAX_ALPHABET], a2chars[BLAST_MAX_ALPHABET];
+    char    a1chars[BLASTAA_SIZE], a2chars[BLASTAA_SIZE];
     long lineno = 0;
     double  xscore;
     register int  index1, index2;
@@ -1653,9 +1650,6 @@ BlastScoreFreqCalc(const BlastScoreBlk* sbp, Blast_ScoreFreq* sfp, Blast_ResFreq
 
 
 
-#define SMALL_LAMBDA_THRESHOLD 20 /*defines special case in K computation*/
-                                /*threshold is on exp(-Lambda)*/
-
 /** The following procedure computes K. The input includes Lambda, H,
  *  and an array of probabilities for each score.
  *  There are distinct closed form for three cases:
@@ -1853,13 +1847,8 @@ BlastKarlinLHtoK(Blast_ScoreFreq* sfp, double lambda, double H)
     }
 #endif
 
-    if (expMinusLambda <  SMALL_LAMBDA_THRESHOLD ) {
-        K = -exp((double)-2.0*outerSum) /
-            (firstTermClosedForm*(expMinusLambda - 1.0));
-    } else {
-        K = -exp((double)-2.0*outerSum) /
-            (firstTermClosedForm*BLAST_Expm1(-(double)lambda));
-    }
+    K = -exp((double)-2.0*outerSum) /
+             (firstTermClosedForm*BLAST_Expm1(-(double)lambda));
 
     if (alignmentScoreProbabilities != NULL)
         sfree(alignmentScoreProbabilities);
@@ -2811,11 +2800,6 @@ BLAST_PrintAllowedValues(const char *matrix_name, Int4 gap_open, Int4 gap_extend
 }
    
 
-/* Smallest float that might not cause a floating point exception in
-   S = (Int4) (ceil( log((double)(K * searchsp / E)) / Lambda ));
-below.
-*/
-#define BLASTKAR_SMALL_FLOAT 1.0e-297
 /** Calculates score from expect value and search space.
  * @param E expect value [in]
  * @param kbp contains Karlin-Altschul parameters [in]
@@ -2830,6 +2814,9 @@ BlastKarlinEtoS_simple(double E, /* Expect value */
 
    double   Lambda, K, H; /* parameters for Karlin statistics */
    Int4  S;
+/* Smallest float that might not cause a floating point exception in
+   S = (Int4) (ceil( log((double)(K * searchsp / E)) / Lambda )); below.  */
+   const double kSmallFloat = 1.0e-297;
 
    Lambda = kbp->Lambda;
    K = kbp->K;
@@ -2839,7 +2826,7 @@ BlastKarlinEtoS_simple(double E, /* Expect value */
       return BLAST_SCORE_MIN;
    }
 
-   E = MAX(E, BLASTKAR_SMALL_FLOAT);
+   E = MAX(E, kSmallFloat);
 
    S = (Int4) (ceil( log((double)(K * searchsp / E)) / Lambda ));
    return S;
@@ -2975,7 +2962,7 @@ static double  tab2[] = { /* table for r == 2 */
 0.01669,  0.0249,   0.03683,  0.05390,  0.07794,  0.1111,   0.1559,   0.2146,   
 0.2890,   0.3794,   0.4836,   0.5965,   0.7092,   0.8114,   0.8931,   0.9490,   
 0.9806,   0.9944,   0.9989
-      };
+      };  /** Values from eqn ? for two segments. */
 
 static double  tab3[] = { /* table for r == 3 */
 0.9806,   0.9944,   0.9989,   0.0001682,0.0002542,0.0003829,0.0005745,0.0008587,
@@ -2995,8 +2982,8 @@ static double  tab4[] = { /* table for r == 4 */
 0.8699,   0.9127,   0.9451,   0.9679,   0.9827,   0.9915,   0.9963
       };
 
-static double* table[] = { tab2, tab3, tab4 };
-static short tabsize[] = { DIM(tab2)-1, DIM(tab3)-1, DIM(tab4)-1 };
+static double* table[] = { tab2, tab3, tab4 }; /** all three tables for different segment values. */
+static short tabsize[] = { DIM(tab2)-1, DIM(tab3)-1, DIM(tab4)-1 };  /** sizes of tab2, tab3, tab4 */
 
 static double f (double,void*);
 static double g (double,void*);
@@ -3011,13 +2998,13 @@ static double g (double,void*);
 static double
 BlastSumP(Int4 r, double s)
 {
-   Int4     i, r1, r2;
-   double   a;
-
    if (r == 1)
       return -BLAST_Expm1(-exp(-s));
 
    if (r <= 4) {
+      Int4     r1;
+      double   a;
+
       if (r < 1)
          return 0.;
       r1 = r - 1;
@@ -3026,6 +3013,7 @@ BlastSumP(Int4 r, double s)
          return r * exp(r1*log(s)-s-a-a);
       }
       if (s > -2*r) {
+         Int4 i, r2;
          /* interpolate */
          i = (Int4) (a = s+s+(4*r));
          a -= i;
@@ -3123,12 +3111,12 @@ BlastSumPCalc(int r, double s)
       itmin = 2;
    }
 
-#define ARG_R args[0]
-#define ARG_R2 args[1]
+#define ARG_R args[0]    /**< number of HSPs */
+#define ARG_R2 args[1]   /**< number of HSPs - 2. */
 #define ARG_ADJ1 args[2]
-#define ARG_ADJ2 args[3]
-#define ARG_SDIVR args[4]
-#define ARG_EPS args[5]
+#define ARG_ADJ2 args[3]  
+#define ARG_SDIVR args[4]  /**< score divided by number of HSPs. */
+#define ARG_EPS args[5]    /**< Required accuracy of SumP calcs. */
 
    ARG_R = xr;
    ARG_R2 = xr2 = r - 2;
@@ -3383,22 +3371,23 @@ RPSfindUngappedLambda(const char *matrixName)
     }
 }
 
-/* matrix is a position-specific score matrix with matrixLength positions
-   queryProbArray is an array containing the probability of occurrence
-        of each residue in the query
-   scoreArray is an array of probabilities for each score that is
-        to be used as a field in return_sfp
-   return_sfp is a the structure to be filled in and returned
-   range is the size of scoreArray and is an upper bound on the
-        difference between maximum score and minimum score in the matrix
-   the routine fillSfp computes the probability of each score weighted
-        by the probability of each query residue and fills those probabilities
-        into scoreArray and puts scoreArray as a field in
-        that in the structure that is returned
-   for indexing convenience the field storing scoreArray points to the
-        entry for score 0, so that referring to the -k index corresponds to
-        score -k 
- FIXME: This can be replaced by _PSIComputeScoreProbabilities??
+/** 
+ *  the routine RPSFillScores computes the probability of each score weighted
+ *       by the probability of each query residue and fills those probabilities
+ *       into scoreArray and puts scoreArray as a field in
+ *       that in the structure that is returned
+ *  for indexing convenience the field storing scoreArray points to the
+ *       entry for score 0, so that referring to the -k index corresponds to
+ *       score -k 
+ *FIXME: This can be replaced by _PSIComputeScoreProbabilities??
+ * @param matrix a position-specific score matrix with matrixLength positions [in]
+ * @param queryProbArray an array containing the probability of occurrence
+ *       of each residue in the query [in]
+ * @param scoreArray an array of probabilities for each score that is
+ *       to be used as a field in return_sfp
+ * @param return_sfp a structure to be filled in and returned [in|out]
+ * @param range the size of scoreArray and is an upper bound on the
+ *       difference between maximum score and minimum score in the matrix [in]
 */
 
 static void
@@ -3644,6 +3633,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.109  2005/01/25 17:30:24  madden
+ * Doxygen fixes
+ *
  * Revision 1.108  2004/12/09 16:13:33  dondosha
  * Cast Uint1* to char* in call to Blast_ResFreqString, to remove SunOS compiler warning
  *
