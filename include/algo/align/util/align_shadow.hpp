@@ -49,7 +49,7 @@ END_SCOPE(objects)
 
 
 template<class TId>
-class NCBI_XALGOALIGN_EXPORT CAlignShadow: public CObject
+class CAlignShadow: public CObject
 {
 public:
 
@@ -139,6 +139,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/12/22 15:50:02  kapustin
+ * Drop dllexport specifier
+ *
  * Revision 1.1  2004/12/21 19:59:58  kapustin
  * Initial revision
  *
