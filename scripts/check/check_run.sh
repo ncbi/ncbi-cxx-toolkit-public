@@ -9,21 +9,23 @@
 # Scripts exit code is equival to count of tests, executed with errors.
 #
 # Usage: (Run only from Makefile.meta)
-#    check_run.sh <make_command_line>
+#    check_run.sh <build_dir> <make_command_line>
 #
 # Example:
-#    check_run.sh make check_add_r
+#    check_run.sh ~/c++/Debug/build make check_add_r
 #
 ###########################################################################
 
 
+build_dir=$1
+shift
 cmd=$*
 script_dir=`dirname $0`
 script_dir=`(cd "$script_dir"; pwd)`
 make_check_script="$script_dir/check_make_unix.sh"
 
 # Define name for the check script file
-script_name="check.sh"
+script_name="check.shcheck.sh"
 CHECK_RUN_FILE="`pwd`/$script_name"
 export CHECK_RUN_FILE
 CHECK_RUN_LIST="`pwd`/$script_name.list"
@@ -53,7 +55,7 @@ fi
 
 # Build script on base of check-list
 echo "Building check script..."
-$make_check_script $CHECK_RUN_LIST $CHECK_RUN_FILE
+$make_check_script "$CHECK_RUN_LIST" "$build_dir" "" "$CHECK_RUN_FILE"
 
 # Check script build result
 if test $? -ne 0 -o `tail -2 $CHECK_RUN_FILE | grep -c res_log` -ne 0 ; then
