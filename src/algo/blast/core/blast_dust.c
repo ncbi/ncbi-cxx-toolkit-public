@@ -39,7 +39,6 @@ static char const rcsid[] = "$Id";
 */
 
 #include <blast_dust.h>
-#include <blastkar.h>
 
 /* local, file scope, structures and variables */
 
