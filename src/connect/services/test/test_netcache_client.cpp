@@ -40,8 +40,7 @@
 #include <connect/services/netcache_client.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
-/* This header must go last */
-#include "test_assert.h"
+#include <test/test_assert.h>  /* This header must go last */
 
 
 USING_NCBI_SCOPE;
@@ -665,6 +664,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/03/22 19:22:27  kuznets
+ * Compilation fixed
+ *
  * Revision 1.31  2005/03/22 18:54:07  kuznets
  * Changed project tree layout
  *
