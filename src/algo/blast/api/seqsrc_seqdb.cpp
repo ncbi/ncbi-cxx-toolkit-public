@@ -48,9 +48,8 @@ USING_SCOPE(blast);
 
 extern "C" {
 
-/** Retrieves the length of the longest sequence in the BlastSeqSrc.
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- */
+/// Retrieves the length of the longest sequence in the BlastSeqSrc.
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 static Int4 
 s_SeqDbGetMaxLength(void* seqdb_handle, void*)
 {
@@ -58,9 +57,8 @@ s_SeqDbGetMaxLength(void* seqdb_handle, void*)
     return (*seqdb)->GetMaxLength();
 }
 
-/** Retrieves the number of sequences in the BlastSeqSrc.
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- */
+/// Retrieves the number of sequences in the BlastSeqSrc.
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 static Int4 
 s_SeqDbGetNumSeqs(void* seqdb_handle, void*)
 {
@@ -68,9 +66,8 @@ s_SeqDbGetNumSeqs(void* seqdb_handle, void*)
     return (*seqdb)->GetNumSeqs();
 }
 
-/** Retrieves the total length of all sequences in the BlastSeqSrc.
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- */
+/// Retrieves the total length of all sequences in the BlastSeqSrc.
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 static Int8 
 s_SeqDbGetTotLen(void* seqdb_handle, void*)
 {
@@ -78,10 +75,9 @@ s_SeqDbGetTotLen(void* seqdb_handle, void*)
     return (*seqdb)->GetTotalLength();
 }
 
-/** Retrieves the average length of sequences in the BlastSeqSrc.
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param ignoreme Unused by this implementation [in]
- */
+/// Retrieves the average length of sequences in the BlastSeqSrc.
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
+/// @param ignoreme Unused by this implementation [in]
 static Int4 
 s_SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
 {
@@ -91,9 +87,8 @@ s_SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
    return (Int4) (total_length/num_seqs);
 }
 
-/** Retrieves the name of the BLAST database.
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- */
+/// Retrieves the name of the BLAST database.
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 static const char* 
 s_SeqDbGetName(void* seqdb_handle, void*)
 {
@@ -101,9 +96,8 @@ s_SeqDbGetName(void* seqdb_handle, void*)
     return (*seqdb)->GetDBNameList().c_str();
 }
 
-/** Retrieves the date of the BLAST database.
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- */
+/// Retrieves the date of the BLAST database.
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 static Boolean 
 s_SeqDbGetIsProt(void* seqdb_handle, void*)
 {
@@ -112,11 +106,10 @@ s_SeqDbGetIsProt(void* seqdb_handle, void*)
     return ((*seqdb)->GetSeqType() == 'p');
 }
 
-/** Retrieves the sequence meeting the criteria defined by its second argument.
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param args Pointer to GetSeqArg structure [in]
- * @return return codes defined in blast_seqsrc.h
- */
+/// Retrieves the sequence meeting the criteria defined by its second argument.
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
+/// @param args Pointer to GetSeqArg structure [in]
+/// @return return codes defined in blast_seqsrc.h
 static Int2 
 s_SeqDbGetSequence(void* seqdb_handle, void* args)
 {
@@ -171,13 +164,12 @@ s_SeqDbGetSequence(void* seqdb_handle, void* args)
     return BLAST_SEQSRC_SUCCESS;
 }
 
-/** Returns the memory allocated for the sequence buffer to the CSeqDB 
- * interface.
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param args Pointer to the GetSeqArgs structure, containing sequence block
- *             with the buffer that needs to be deallocated. [in]
- * @return return codes defined in blast_seqsrc.h
- */
+/// Returns the memory allocated for the sequence buffer to the CSeqDB 
+/// interface.
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
+/// @param args Pointer to the GetSeqArgs structure, containing sequence block
+///             with the buffer that needs to be deallocated. [in]
+/// @return return codes defined in blast_seqsrc.h
 static Int2 
 s_SeqDbRetSequence(void* seqdb_handle, void* args)
 {
@@ -206,11 +198,10 @@ s_SeqDbRetSequence(void* seqdb_handle, void* args)
     return BLAST_SEQSRC_SUCCESS;
 }
 
-/** Retrieve length of a given database sequence.
- * @param seqdb_handle Pointer to initialized CSeqDB object [in]
- * @param args Pointer to integer indicating ordinal id [in]
- * @return Length of the database sequence or BLAST_SEQSRC_ERROR.
- */
+/// Retrieve length of a given database sequence.
+/// @param seqdb_handle Pointer to initialized CSeqDB object [in]
+/// @param args Pointer to integer indicating ordinal id [in]
+/// @return Length of the database sequence or BLAST_SEQSRC_ERROR.
 static Int4 
 s_SeqDbGetSeqLen(void* seqdb_handle, void* args)
 {
@@ -223,6 +214,10 @@ s_SeqDbGetSeqLen(void* seqdb_handle, void* args)
     return (*seqdb)->GetSeqLength(*oid);
 }
 
+/// Assigns next chunk of the database to the sequence source iterator.
+/// @param seqdb_handle Reference to the database object, cast to void* to 
+///                     satisfy the signature requirement. [in]
+/// @param itr Iterator over the database sequence source. [in|out]
 static Int2 
 s_SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
 {
@@ -256,6 +251,11 @@ s_SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
     return BLAST_SEQSRC_SUCCESS;
 }
 
+/// Finds the next not searched ordinal id in the iteration over BLAST database.
+/// @param ptr BlastSeqSrc pointer, cast to void* to satisfy uniform signature
+///            requirement. [in]
+/// @param itr Iterator of the BlastSeqSrc pointed by ptr. [in]
+/// @return Next ordinal id.
 static Int4 
 s_SeqDbIteratorNext(void* ptr, BlastSeqSrcIterator* itr)
 {
@@ -319,19 +319,18 @@ public:
     bool GetUseMmap() const { return true; }
 
 private:
-    string m_DbName;        /**< Database name */
-    bool m_IsProtein;       /**< Is this database protein? */
-    Uint4 m_FirstDbSeq;     /**< Ordinal id of the first sequence to search */
-    Uint4 m_FinalDbSeq;     /**< Ordinal id of the last sequence to search */
+    string m_DbName;        ///< Database name
+    bool m_IsProtein;       ///< Is this database protein?
+    Uint4 m_FirstDbSeq;     ///< Ordinal id of the first sequence to search
+    Uint4 m_FinalDbSeq;     ///< Ordinal id of the last sequence to search
 };
 
 extern "C" {
 
-/** SeqDb sequence source destructor: frees its internal data structure and the
- * BlastSeqSrc structure itself.
- * @param seq_src BlastSeqSrc structure to free [in]
- * @return NULL
- */
+/// SeqDb sequence source destructor: frees its internal data structure and the
+/// BlastSeqSrc structure itself.
+/// @param seq_src BlastSeqSrc structure to free [in]
+/// @return NULL
 static BlastSeqSrc* 
 s_SeqDbSrcFree(BlastSeqSrc* seq_src)
 {
@@ -343,11 +342,10 @@ s_SeqDbSrcFree(BlastSeqSrc* seq_src)
     return NULL;
 }
 
-/** SeqDb sequence source copier: creates a new reference to the CSeqDB object
- * and copies the rest of the BlastSeqSrc structure.
- * @param seq_src BlastSeqSrc structure to copy [in]
- * @return Pointer to the new BlastSeqSrc.
- */
+/// SeqDb sequence source copier: creates a new reference to the CSeqDB object
+/// and copies the rest of the BlastSeqSrc structure.
+/// @param seq_src BlastSeqSrc structure to copy [in]
+/// @return Pointer to the new BlastSeqSrc.
 static BlastSeqSrc* 
 s_SeqDbSrcCopy(BlastSeqSrc* seq_src)
 {
@@ -361,6 +359,10 @@ s_SeqDbSrcCopy(BlastSeqSrc* seq_src)
     return seq_src;
 }
 
+/// Initializes the data structure and function pointers in a SeqDb based 
+/// BlastSeqSrc.
+/// @param retval Structure to populate [in] [out]
+/// @param seqdb Reference to a CSeqDB object [in]
 static void 
 s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
 {
@@ -385,6 +387,11 @@ s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
     SetRetSequence   (retval, & s_SeqDbRetSequence);
 }
 
+/// Populates a BlastSeqSrc, creating a new reference to the already existing 
+/// SeqDb object.
+/// @param retval Original BlastSeqSrc [in]
+/// @param args Pointer to a reference to CSeqDB object [in]
+/// @return retval
 static BlastSeqSrc* 
 s_SeqDbSrcSharedNew(BlastSeqSrc* retval, void* args)
 {
@@ -400,12 +407,11 @@ s_SeqDbSrcSharedNew(BlastSeqSrc* retval, void* args)
     return retval;
 }
 
-/** SeqDb sequence source constructor 
- * @param seq_src BlastSeqSrc structure (already allocated) to populate [in]
- * @param args Pointer to internal CSeqDbSrcNewArgs structure (@sa
- * CSeqDbSrcNewArgs) [in]
- * @return Updated seq_src structure (with all function pointers initialized
- */
+/// SeqDb sequence source constructor 
+/// @param seq_src BlastSeqSrc structure (already allocated) to populate [in]
+/// @param args Pointer to internal CSeqDbSrcNewArgs structure (@sa
+/// CSeqDbSrcNewArgs) [in]
+/// @return Updated seq_src structure (with all function pointers initialized
 static BlastSeqSrc* 
 s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 {
@@ -481,6 +487,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2005/02/02 05:04:47  dondosha
+ * Doxygen comments
+ *
  * Revision 1.25  2005/01/26 21:03:29  dondosha
  * Made internal functions static, moved internal class from .hpp file
  *
