@@ -256,7 +256,7 @@ CBlastDatabaseOptionsPtr::DebugDump(CDebugDumpContext ddc, unsigned int depth) c
 
 
 BlastMask*
-CSeqLoc2BlastMask(CConstRef<CSeq_loc> sl, int index)
+CSeqLoc2BlastMask(CConstRef<CSeq_loc> slp, int index)
 {
     if (slp->IsNull())
         return NULL;
@@ -286,10 +286,10 @@ CSeqLoc2BlastMask(CConstRef<CSeq_loc> sl, int index)
 }
 
 //TODO
-CConstRef<CSeq_loc>
+CRef<CSeq_loc>
 BlastMask2CSeqLoc(BlastMask* mask)
 {
-    CConstRef<CSeq_loc> retval;
+    CRef<CSeq_loc> retval;
 
     if (!mask)
         return retval;
