@@ -1,8 +1,8 @@
 #! /bin/sh
 #############################################################################
 # Setup the local working environment for the "configure" script
-#   Compiler:   Intel C++ Version 7.0
-#   OS:         Linux RH6.2
+#   Compiler:   Intel C++ Version 8.0
+#   OS:         Linux
 #   Processor:  Intel X86
 #
 # $Revision$  // Dmitriy Beloslyudtsev, NCBI (beloslyu@ncbi.nlm.nih.gov)
