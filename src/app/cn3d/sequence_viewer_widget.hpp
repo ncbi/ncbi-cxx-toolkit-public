@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/09 14:35:35  thiessen
+* fix wxWin problem with large alignments
+*
 * Revision 1.2  2000/09/07 17:37:42  thiessen
 * minor fixes
 *
@@ -175,7 +178,7 @@ public:
     ///// everything else below here is part of the actual implementation /////
 private:
 
-    void OnDraw(wxDC& dc);
+    void OnPaint(wxPaintEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
 
     const ViewableAlignment *alignment;
@@ -188,7 +191,7 @@ private:
     int cellWidth, cellHeight;      // dimensions of cells in pixels
     int areaWidth, areaHeight;      // dimensions of the alignment (virtual area) in cells
 
-    void DrawCell(wxDC& dc, int x, int y, bool redrawBackground = false); // draw a single cell
+    void DrawCell(wxDC& dc, int x, int y, int vsX, int vsY, bool redrawBackground); // draw a single cell
 
     enum eRubberbandType {
         eSolid,
@@ -197,11 +200,11 @@ private:
     eRubberbandType currentRubberbandType;
     void DrawLine(wxDC& dc, int x1, int y1, int x2, int y2);
     void DrawRubberband(wxDC& dc,                           // draw rubber band around cells
-        int fromX, int fromY, int toX, int toY);
+        int fromX, int fromY, int toX, int toY, int vsX, int vsY);
     void MoveRubberband(wxDC &dc, int fromX, int fromY,     // change rubber band
-        int prevToX, int prevToY, int toX, int toY);
+        int prevToX, int prevToY, int toX, int toY, int vsX, int vsY);
     void RemoveRubberband(wxDC& dc, int fromX, int fromY,   // remove rubber band
-        int toX, int toY);
+        int toX, int toY, int vsX, int vsY);
 
     DECLARE_EVENT_TABLE()
 };

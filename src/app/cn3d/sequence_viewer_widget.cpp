@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/09 14:35:15  thiessen
+* fix wxWin problem with large alignments
+*
 * Revision 1.3  2000/09/07 21:41:40  thiessen
 * fix return type of min_max
 *
@@ -57,6 +60,7 @@ USING_NCBI_SCOPE;
 
 
 BEGIN_EVENT_TABLE(SequenceViewerWidget, wxScrolledWindow)
+    EVT_PAINT               (SequenceViewerWidget::OnPaint)
     EVT_MOUSE_EVENTS        (SequenceViewerWidget::OnMouseEvent)
 END_EVENT_TABLE()
 
@@ -145,9 +149,11 @@ void SequenceViewerWidget::SetMouseMode(eMouseMode mode)
     mouseMode = mode;
 }
 
-void SequenceViewerWidget::OnDraw(wxDC& dc)
+void SequenceViewerWidget::OnPaint(wxPaintEvent& event)
 {
-    int visX, visY, 
+    wxPaintDC dc(this);
+
+    int vsX, vsY, 
         updLeft, updRight, updTop, updBottom,
         firstCellX, firstCellY,
         lastCellX, lastCellY,
@@ -168,28 +174,25 @@ void SequenceViewerWidget::OnDraw(wxDC& dc)
 
     for (; upd; upd++) {
 
-        // figure out which cells contain the corners of the update region
-
-        // get upper left corner of visible area
-        GetViewStart(&visX, &visY);  // returns coordinates in scroll units (cells)
-        visX *= cellWidth;
-        visY *= cellHeight;
-
-        // get coordinates of update region corners relative to virtual area
-        updLeft = visX + upd.GetX();
-        updTop = visY + upd.GetY();
-        updRight = updLeft + upd.GetW() - 1;
-        updBottom = updTop + upd.GetH() - 1;
-
-        // draw background (dc.Clear() doesn't work on "virtual" areas like this -
-        // at least not on Windows)
+        // draw background
         dc.SetPen(*(wxThePenList->
             FindOrCreatePen(currentBackgroundColor, 1, wxSOLID)));
         dc.SetBrush(*(wxTheBrushList->
             FindOrCreateBrush(currentBackgroundColor, wxSOLID)));
-        dc.DrawRectangle(updLeft, updTop, upd.GetW(), upd.GetH());
+        dc.DrawRectangle(upd.GetX(), upd.GetY(), upd.GetW(), upd.GetH());
 
         if (!alignment) continue;
+
+        // figure out which cells contain the corners of the update region
+
+        // get upper left corner of visible area
+        GetViewStart(&vsX, &vsY);  // returns coordinates in scroll units (cells)
+
+        // get coordinates of update region corners relative to virtual area
+        updLeft = vsX*cellWidth + upd.GetX();
+        updTop = vsY*cellHeight + upd.GetY();
+        updRight = updLeft + upd.GetW() - 1;
+        updBottom = updTop + upd.GetH() - 1;
 
         // firstCell[X,Y] is upper leftmost cell to draw, and is the cell
         // that contains the upper left corner of the update region
@@ -208,9 +211,9 @@ void SequenceViewerWidget::OnDraw(wxDC& dc)
         if (lastCellY >= areaHeight) lastCellY = areaHeight - 1;
 
         // draw cells
-        for (x=firstCellX; x<=lastCellX; x++) {
-            for (y=firstCellY; y<=lastCellY; y++) {
-                DrawCell(dc, x, y);
+        for (y=firstCellY; y<=lastCellY; y++) {
+            for (x=firstCellX; x<=lastCellX; x++) {
+                DrawCell(dc, x, y, vsX, vsY, false);
             }
         }
     }
@@ -218,12 +221,16 @@ void SequenceViewerWidget::OnDraw(wxDC& dc)
     dc.EndDrawing();
 }
 
-void SequenceViewerWidget::DrawCell(wxDC& dc, int x, int y, bool redrawBackground)
+void SequenceViewerWidget::DrawCell(wxDC& dc, int x, int y, int vsX, int vsY, bool redrawBackground)
 {
 	char character;
     wxColor color;
     bool isHighlighted, drawChar;
     drawChar = alignment->GetCharacterTraitsAt(x, y, &character, &color, &isHighlighted);
+
+    // adjust x,y into visible area coordinates
+    x = (x - vsX) * cellWidth;
+    y = (y - vsY) * cellHeight;
 
     // if necessary, redraw background with appropriate color
     if (isHighlighted || redrawBackground) {
@@ -234,8 +241,7 @@ void SequenceViewerWidget::DrawCell(wxDC& dc, int x, int y, bool redrawBackgroun
             dc.SetPen(*(wxThePenList->FindOrCreatePen(currentBackgroundColor, 1, wxSOLID)));
             dc.SetBrush(*(wxTheBrushList->FindOrCreateBrush(currentBackgroundColor, wxSOLID)));
         }
-        dc.DrawRectangle(x*cellWidth, y*cellHeight,
-            cellWidth, cellHeight);
+        dc.DrawRectangle(x, y, cellWidth, cellHeight);
     }
 
     if (!drawChar) return;
@@ -250,8 +256,8 @@ void SequenceViewerWidget::DrawCell(wxDC& dc, int x, int y, bool redrawBackgroun
 
     // draw character in the middle of the cell
     dc.DrawText(buf,
-        x*cellWidth + (cellWidth - chW)/2,
-        y*cellHeight + (cellHeight - chH)/2
+        x + (cellWidth - chW)/2,
+        y + (cellHeight - chH)/2
     );
 }
 
@@ -287,7 +293,7 @@ void SequenceViewerWidget::DrawLine(wxDC& dc, int x1, int y1, int x2, int y2)
 }
 
 // draw a rubberband around the cells
-void SequenceViewerWidget::DrawRubberband(wxDC& dc, int fromX, int fromY, int toX, int toY)
+void SequenceViewerWidget::DrawRubberband(wxDC& dc, int fromX, int fromY, int toX, int toY, int vsX, int vsY)
 {
     // find upper-left and lower-right corners
     int minX, minY, maxX, maxY;
@@ -295,10 +301,10 @@ void SequenceViewerWidget::DrawRubberband(wxDC& dc, int fromX, int fromY, int to
     min_max(fromY, toY, &minY, &maxY);
 
     // convert to pixel coordinates of corners
-    minX *= cellWidth;
-    minY *= cellHeight;
-    maxX = maxX * cellWidth + cellWidth - 1;
-    maxY = maxY * cellHeight + cellHeight - 1;
+    minX = (minX - vsX) * cellWidth;
+    minY = (minY - vsY) * cellHeight;
+    maxX = (maxX - vsX) * cellWidth + cellWidth - 1;
+    maxY = (maxY - vsY) * cellHeight + cellHeight - 1;
 
     // set color
     dc.SetPen(*(wxThePenList->FindOrCreatePen(currentRubberbandColor, 1, wxSOLID)));
@@ -313,7 +319,7 @@ void SequenceViewerWidget::DrawRubberband(wxDC& dc, int fromX, int fromY, int to
 // move the rubber band to a new rectangle, erasing only the side(s) of the
 // rectangle that is changing
 void SequenceViewerWidget::MoveRubberband(wxDC &dc, int fromX, int fromY, 
-    int prevToX, int prevToY, int toX, int toY)
+    int prevToX, int prevToY, int toX, int toY, int vsX, int vsY)
 {
     int i;
 
@@ -322,14 +328,15 @@ void SequenceViewerWidget::MoveRubberband(wxDC &dc, int fromX, int fromY,
         (prevToY >= fromY && toY < fromY) ||
         (prevToY < fromY && toY >= fromY)) {
         // need to completely redraw if rectangle is "flipped"
-        RemoveRubberband(dc, fromX, fromY, prevToX, prevToY);
+        RemoveRubberband(dc, fromX, fromY, prevToX, prevToY, vsX, vsY);
 
     } else {
         int a, b;
+
         // erase moving bottom/top side if dragging up/down
         if (toY != prevToY) {
             min_max(fromX, prevToX, &a, &b);
-            for (i=a; i<=b; i++) DrawCell(dc, i, prevToY, true);
+            for (i=a; i<=b; i++) DrawCell(dc, i, prevToY, vsX, vsY, true);
         }
 
         // erase partial top and bottom if dragging left by more than one
@@ -342,14 +349,14 @@ void SequenceViewerWidget::MoveRubberband(wxDC &dc, int fromX, int fromY,
             b = toX - 1;
         }
         for (i=a; i<=b; i++) {
-            DrawCell(dc, i, fromY, true);
-            DrawCell(dc, i, prevToY, true);
+            DrawCell(dc, i, fromY, vsX, vsY, true);
+            DrawCell(dc, i, prevToY, vsX, vsY, true);
         }
 
         // erase moving left/right side
         if (toX != prevToX) {
             min_max(fromY, prevToY, &a, &b);
-            for (i=a; i<=b; i++) DrawCell(dc, prevToX, i, true);
+            for (i=a; i<=b; i++) DrawCell(dc, prevToX, i, vsX, vsY, true);
         }
 
         // erase partial left and right sides if dragging up/down by more than one
@@ -362,30 +369,31 @@ void SequenceViewerWidget::MoveRubberband(wxDC &dc, int fromX, int fromY,
             b = toY - 1;
         }
         for (i=a; i<=b; i++) {
-            DrawCell(dc, fromX, i, true);
-            DrawCell(dc, prevToX, i, true);
+            DrawCell(dc, fromX, i, vsX, vsY, true);
+            DrawCell(dc, prevToX, i, vsX, vsY, true);
         }
     }
 
     // redraw whole new one
-    DrawRubberband(dc, fromX, fromY, toX, toY);
+    DrawRubberband(dc, fromX, fromY, toX, toY, vsX, vsY);
 }
 
 // redraw only those cells necessary to remove rubber band
-void SequenceViewerWidget::RemoveRubberband(wxDC& dc, int fromX, int fromY, int toX, int toY)
+void SequenceViewerWidget::RemoveRubberband(wxDC& dc, int fromX, int fromY, int toX, int toY, int vsX, int vsY)
 {
     int i, min, max;
+
     // remove top and bottom
     min_max(fromX, toX, &min, &max);
     for (i=min; i<=max; i++) {
-        DrawCell(dc, i, fromY, true);
-        DrawCell(dc, i, toY, true);
+        DrawCell(dc, i, fromY, vsX, vsY, true);
+        DrawCell(dc, i, toY, vsX, vsY, true);
     }
     // remove left and right
     min_max(fromY, toY, &min, &max);
     for (i=min+1; i<=max-1; i++) {
-        DrawCell(dc, fromX, i, true);
-        DrawCell(dc, toX, i, true);
+        DrawCell(dc, fromX, i, vsX, vsY, true);
+        DrawCell(dc, toX, i, vsX, vsY, true);
     }
 }
 
@@ -407,10 +415,10 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
     event.GetPosition(&mX, &mY);
 
     // translate visible area coordinates to cell coordinates
-    int vX, vY, cellX, cellY, MOX, MOY;
-    GetViewStart(&vX, &vY);
-    cellX = MOX = vX + mX / cellWidth;
-    cellY = MOY = vY + mY / cellHeight;
+    int vsX, vsY, cellX, cellY, MOX, MOY;
+    GetViewStart(&vsX, &vsY);
+    cellX = MOX = vsX + mX / cellWidth;
+    cellY = MOY = vsY + mY / cellHeight;
 
     // if the mouse is leaving the window, use cell coordinates of most
     // recent known mouse-over cell
@@ -458,10 +466,9 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
         if (event.AltDown() || event.MetaDown()) controls |= ViewableAlignment::eAltOrMetaDown;
 
         wxClientDC dc(this);
-        PrepareDC(dc);
         dc.BeginDrawing();
         currentRubberbandType = (mouseMode == eSelect) ? eDot : eSolid;
-        DrawRubberband(dc, fromX, fromY, fromX, fromY);
+        DrawRubberband(dc, fromX, fromY, fromX, fromY, vsX, vsY);
         dc.EndDrawing();
     }
     
@@ -474,17 +481,16 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
         }
         dragging = false;
         wxClientDC dc(this);
-        PrepareDC(dc);
         dc.BeginDrawing();
         dc.SetFont(currentFont);
 
         // remove rubberband
         if (mouseMode == eSelect)
-            RemoveRubberband(dc, fromX, fromY, cellX, cellY);
+            RemoveRubberband(dc, fromX, fromY, cellX, cellY, vsX, vsY);
         else {
-            DrawCell(dc, fromX, fromY, true);
+            DrawCell(dc, fromX, fromY, vsX, vsY, true);
             if (cellX != fromX || cellY != fromY)
-                DrawCell(dc, cellX, cellY, true);
+                DrawCell(dc, cellX, cellY, vsX, vsY, true);
         }
         dc.EndDrawing();
 
@@ -503,17 +509,16 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
     // process continuation of selection - redraw rectangle
     else if (dragging && (cellX != prevToX || cellY != prevToY)) {
         wxClientDC dc(this);
-        PrepareDC(dc);
         dc.BeginDrawing();
         dc.SetFont(currentFont);
         currentRubberbandType = eDot;
         if (mouseMode == eSelect) {
-            MoveRubberband(dc, fromX, fromY, prevToX, prevToY, cellX, cellY);
+            MoveRubberband(dc, fromX, fromY, prevToX, prevToY, cellX, cellY, vsX, vsY);
         } else {
             if (prevToX != fromX || prevToY != fromY)
-                DrawCell(dc, prevToX, prevToY, true);
+                DrawCell(dc, prevToX, prevToY, vsX, vsY, true);
             if (cellX != fromX || cellY != fromY) {
-                DrawRubberband(dc, cellX, cellY, cellX, cellY);
+                DrawRubberband(dc, cellX, cellY, cellX, cellY, vsX, vsY);
             }
         }
         dc.EndDrawing();
