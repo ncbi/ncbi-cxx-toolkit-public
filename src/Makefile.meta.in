@@ -89,8 +89,8 @@ fi
 # definitions of $(MAKE_LIB).
 MAKE_LIB = $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
 LIBP_BRA = \
-+if test ! -z "$(LIB_PROJ)"  -o  ! -z "$(EXPENDABLE_LIB_PROJ)"  -o  ! -z "$(ASN_PROJ)"; then \
-   x_project="$(ASN_PROJ) $(LIB_PROJ) - $(EXPENDABLE_LIB_PROJ)" ; \
++if test ! -z "$(LIB_PROJ)$(EXPENDABLE_LIB_PROJ)$(ASN_PROJ)$(DTD_PROJ)"; then \
+   x_project="$(ASN_PROJ) $(DTD_PROJ) $(LIB_PROJ) - $(EXPENDABLE_LIB_PROJ)" ; \
    expendable=false ; \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
