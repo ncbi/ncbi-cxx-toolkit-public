@@ -3,6 +3,7 @@
 #################################
 
 LIB_PROJ = soap
+SUB_PROJ = sample
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
