@@ -54,10 +54,11 @@ bool CProjectOneNodeFilter::CheckProject(const string& project_base_dir, bool* w
                                     project_base_dir, 
                                     &project_path);
 
-    if (project_path.size() < m_SubtreePath.size())
+    if (project_path.size() < m_SubtreePath.size()) {
         if (!weak) {
             return false;
         }
+    }
 
     TPath::const_iterator i = project_path.begin();
     TPath::const_iterator p = m_SubtreePath.begin();
@@ -65,7 +66,7 @@ bool CProjectOneNodeFilter::CheckProject(const string& project_base_dir, bool* w
         const string& subtree_i  = *p;
         const string& project_i = *i;
         if (NStr::CompareNocase(subtree_i, project_i) != 0) {
-            if (weak) {weak=false;}
+            if (weak) {*weak=false;}
             return false;
         }
     }
@@ -123,10 +124,11 @@ bool CProjectsLstFileFilter::CmpLstElementWithPath(const SLstElement& elt,
             return false;
         }
 
-    if ( !elt.m_Recursive  && path.size() != elt.m_Path.size())
+    if ( !elt.m_Recursive  && path.size() != elt.m_Path.size()) {
         if (!weak) {
             return false;
         }
+    }
 
     TPath::const_iterator i = path.begin();
     TPath::const_iterator p = elt.m_Path.begin();
@@ -134,11 +136,14 @@ bool CProjectsLstFileFilter::CmpLstElementWithPath(const SLstElement& elt,
         const string& elt_i  = *p;
         const string& path_i = *i;
         if (NStr::CompareNocase(elt_i, path_i) != 0) {
-            if (weak) {weak=false;}
+            if (weak) {*weak=false;}
             return false;
         }
     }
     if (weak) {*weak = (i == path.end());}
+    if ( !elt.m_Recursive && path.size() > elt.m_Path.size()) {
+        return false;
+    }
     return p == elt.m_Path.end();
 }
 
@@ -156,6 +161,8 @@ bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool* 
         if ( CmpLstElementWithPath(elt, project_path, weak) ) {
             include_ok =  true;
             break;
+        } else if (weak && *weak) {
+            return false;
         }
     }
     if ( !include_ok )
@@ -177,6 +184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/12/20 15:29:39  gouriano
+ * Fixed errors in project list processing
+ *
  * Revision 1.9  2004/09/14 17:28:07  gouriano
  * Corrected ProjectsLstFileFilter
  *
