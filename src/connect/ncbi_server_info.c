@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2002/03/11 21:59:00  lavr
+ * Support for changes in ncbi_server_info.h: DNS server type added as
+ * well as support for MIME encoding in server specifications
+ *
  * Revision 6.34  2001/12/06 16:07:44  lavr
  * More accurate string length estimation in SERV_WriteInfo()
  *
@@ -243,7 +247,7 @@ char* SERV_WriteInfo(const SSERV_Info* info)
         info->mime_s != SERV_MIME_SUBTYPE_UNDEFINED) {
         char* p;
         if (!MIME_ComposeContentTypeEx(info->mime_t, info->mime_s,
-                                       eENCOD_None, c_t, sizeof(c_t)))
+                                       info->mime_e, c_t, sizeof(c_t)))
             return 0;
         assert(c_t[strlen(c_t) - 2] == '\r' && c_t[strlen(c_t) - 1] == '\n');
         c_t[strlen(c_t) - 2] = 0;
@@ -256,7 +260,7 @@ char* SERV_WriteInfo(const SSERV_Info* info)
     attr = s_GetAttrByType(info->type);
     reserve = attr->tag_len+1 + strlen(c_t)+3 + MAX_IP_ADDR_LEN + 5+1/*port*/ +
         10+1/*algorithm*/ + 12+1/*time*/ + 14+1/*rate*/ + 9+1/*coef*/ +
-        5+1/*locl*/ + 5+1/*sful*/ + 1/*EOL*/;
+        5+1/*locl*/ + 5+1/*priv*/ + 5+1/*sful*/ + 1/*EOL*/;
     /* write server-specific info */
     if ((str = attr->vtable.Write(reserve, &info->u)) != 0) {
         char* s = str;
@@ -277,9 +281,11 @@ char* SERV_WriteInfo(const SSERV_Info* info)
         if (k_FlagTag[info->flag] && *k_FlagTag[info->flag])
             s += sprintf(s, " %s", k_FlagTag[info->flag]);
         s += sprintf(s, " T=%lu R=%.2f B=%.2f L=%s", (unsigned long)info->time,
-                     info->rate, info->coef, info->locl ? "yes" : "no");
+                     info->rate, info->coef, info->locl & 0x0F ? "yes" : "no");
         if (!(info->type & fSERV_Http))
             s += sprintf(s, " S=%s", info->sful ? "yes" : "no");
+        if (info->locl & 0xF0)
+            s += sprintf(s, " P=yes");
     }
     return str;
 }
@@ -290,7 +296,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
     /* detect server type */
     ESERV_Type  type;
     const char* str = SERV_ReadType(info_str, &type);
-    int/*bool*/ mime, time, rate, coef, locl, sful;
+    int/*bool*/ mime, time, rate, coef, locl, priv, sful;
     unsigned short port;                /* host (native) byte order */
     unsigned int host;                  /* network byte order       */
     SSERV_Info *info;
@@ -310,24 +316,26 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
     info->host = host;
     if (port)
         info->port = port;
-    mime = time = rate = coef = locl = sful = 0; /* unassigned */
+    mime = time = rate = coef = locl = priv = sful = 0; /* unassigned */
     /* continue reading server info: optional parts: ... */
     while (*str && isspace((unsigned char)(*str)))
         str++;
     while (*str) {
         if (*(str + 1) == '=') {
-            EMIME_Type    mime_t;
-            EMIME_SubType mime_s;
-            unsigned long t;
-            char s[4];
-            double d;
+            double         d;
+            unsigned long  t;
+            char           s[4];
+            EMIME_Type     mime_t;
+            EMIME_SubType  mime_s;
+            EMIME_Encoding mime_e;
             
             switch (toupper(*str++)) {
             case 'C':
-                if (!mime && MIME_ParseContentTypeEx(str + 1,
-                                                     &mime_t, &mime_s, 0)) {
+                if (!mime && MIME_ParseContentTypeEx(str + 1, &mime_t,
+                                                     &mime_s, &mime_e)) {
                     info->mime_t = mime_t;
                     info->mime_s = mime_s;
+                    info->mime_e = mime_e;
                     mime = 1;
                     while (*str && !isspace((unsigned char)(*str)))
                         str++;
@@ -369,13 +377,26 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
             case 'L':
                 if (!locl && sscanf(str, "=%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
-                        info->locl = 1/*true*/;
+                        info->locl |=  0x01/*true in low nibble*/;
                         str += n;
                         locl = 1;
                     } else if (strcasecmp(s, "NO") == 0) {
-                        info->locl = 0/*false*/;
+                        info->locl &= ~0x0F/*false in low nibble*/;
                         str += n;
                         locl = 1;
+                    }
+                }
+                break;
+            case 'P':
+                if (!priv && sscanf(str, "=%3s%n", s, &n) >= 1) {
+                    if (strcasecmp(s, "YES") == 0) {
+                        info->locl |=  0x10;/*true in high nibble*/
+                        str += n;
+                        priv = 1;
+                    } else if (strcasecmp(s, "NO") == 0) {
+                        info->locl &= ~0xF0;/*false in high nibble*/
+                        str += n;
+                        priv = 1;
                     }
                 }
                 break;
@@ -498,13 +519,15 @@ SSERV_Info* SERV_CreateNcbidInfo
         info->host         = host;
         info->port         = port;
         info->sful         = 0;
-        info->locl         = s_LocalServerDefault;
-        info->flag         = SERV_DEFAULT_FLAG;
+        info->locl         = s_LocalServerDefault & 0x0F;
         info->time         = 0;
         info->coef         = 0.0;
         info->rate         = 0.0;
         info->mime_t       = SERV_MIME_TYPE_UNDEFINED;
         info->mime_s       = SERV_MIME_SUBTYPE_UNDEFINED;
+        info->mime_e       = eENCOD_None;
+        info->flag         = SERV_DEFAULT_FLAG;
+        memset(&info->reserved, 0, sizeof(info->reserved));
         info->u.ncbid.args = (TNCBI_Size) sizeof(info->u.ncbid);
         if (strcmp(args, "''") == 0) /* special case */
             args = 0;
@@ -559,13 +582,16 @@ SSERV_Info* SERV_CreateStandaloneInfo
         info->host   = host;
         info->port   = port;
         info->sful   = 0;
-        info->locl   = s_LocalServerDefault;
-        info->flag   = SERV_DEFAULT_FLAG;
+        info->locl   = s_LocalServerDefault & 0x0F;
         info->time   = 0;
         info->coef   = 0.0;
         info->rate   = 0.0;
         info->mime_t = SERV_MIME_TYPE_UNDEFINED;
         info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
+        info->mime_e = eENCOD_None;
+        info->flag   = SERV_DEFAULT_FLAG;
+        memset(&info->reserved, 0, sizeof(info->reserved));
+        memset(&info->u.standalone, 0, sizeof(info->u.standalone));
     }
     return info;
 }
@@ -668,13 +694,15 @@ SSERV_Info* SERV_CreateHttpInfo
         info->host        = host;
         info->port        = port;
         info->sful        = 0;
-        info->locl        = s_LocalServerDefault;
-        info->flag        = SERV_DEFAULT_FLAG;
+        info->locl        = s_LocalServerDefault & 0x0F;
         info->time        = 0;
         info->coef        = 0.0;
         info->rate        = 0.0;
         info->mime_t      = SERV_MIME_TYPE_UNDEFINED;
         info->mime_s      = SERV_MIME_SUBTYPE_UNDEFINED;
+        info->mime_e      = eENCOD_None;
+        info->flag        = SERV_DEFAULT_FLAG;
+        memset(&info->reserved, 0, sizeof(info->reserved));
         info->u.http.path = (TNCBI_Size) sizeof(info->u.http);
         info->u.http.args = (TNCBI_Size) (info->u.http.path +
                                           strlen(path ? path : "")+1);
@@ -733,18 +761,76 @@ SSERV_Info* SERV_CreateFirewallInfo(unsigned int host, unsigned short port,
         info->host   = host;
         info->port   = port;
         info->sful   = 0;
-        info->locl   = s_LocalServerDefault;
-        info->flag   = SERV_DEFAULT_FLAG;
+        info->locl   = s_LocalServerDefault & 0x0F;
         info->time   = 0;
         info->coef   = 0.0;
         info->rate   = 0.0;
         info->mime_t = SERV_MIME_TYPE_UNDEFINED;
         info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
+        info->mime_e = eENCOD_None;
+        info->flag   = SERV_DEFAULT_FLAG;
+        memset(&info->reserved, 0, sizeof(info->reserved));
         info->u.firewall.type = type;
     }
     return info;
 }
 
+
+
+/*****************************************************************************
+ *  DNS::   constructor and virtual functions
+ */
+
+static char* s_Dns_Write(size_t reserve, const USERV_Info* u_info)
+{
+    char* str = (char*) malloc(reserve + 1);
+
+    if (str)
+        str[reserve] = '\0';
+    return str;
+}
+
+
+static SSERV_Info* s_Dns_Read(const char** str)
+{
+    return SERV_CreateDnsInfo(0);
+}
+
+
+static size_t s_Dns_SizeOf(const USERV_Info* u)
+{
+    return sizeof(u->dns);
+}
+
+
+static int/*bool*/ s_Dns_Equal(const USERV_Info* u1, const USERV_Info* u2)
+{
+    return 1;
+}
+
+
+SSERV_Info* SERV_CreateDnsInfo(unsigned int host)
+{
+    SSERV_Info* info = (SSERV_Info*) malloc(sizeof(SSERV_Info));
+
+    if (info) {
+        info->type   = fSERV_Dns;
+        info->host   = host;
+        info->port   = 0;
+        info->sful   = 0;
+        info->locl   = 0x01;
+        info->time   = 0;
+        info->coef   = 0.0;
+        info->rate   = 0.0;
+        info->mime_t = SERV_MIME_TYPE_UNDEFINED;
+        info->mime_s = SERV_MIME_SUBTYPE_UNDEFINED;
+        info->mime_e = eENCOD_None;
+        info->flag   = SERV_DEFAULT_FLAG;
+        memset(&info->reserved, 0, sizeof(info->reserved));
+        memset(&info->u.dns.pad, 0, sizeof(info->u.dns.pad));
+    }
+    return info;
+}
 
 
 /*****************************************************************************
@@ -757,6 +843,7 @@ static const char kHTTP_GET  [] = "HTTP_GET";
 static const char kHTTP_POST [] = "HTTP_POST";
 static const char kHTTP      [] = "HTTP";
 static const char kFIREWALL  [] = "FIREWALL";
+static const char kDNS       [] = "DNS";
 
 
 /* Note: be aware of "prefixness" of tag constants and order of
@@ -792,7 +879,12 @@ static const SSERV_Attr s_SERV_Attr[] = {
     { fSERV_Firewall,
       kFIREWALL, sizeof(kFIREWALL) - 1,
       {s_Firewall_Write,    s_Firewall_Read,
-       s_Firewall_SizeOf,   s_Firewall_Equal} }
+       s_Firewall_SizeOf,   s_Firewall_Equal} },
+
+    { fSERV_Dns,
+      kDNS, sizeof(kDNS) - 1,
+      {s_Dns_Write,         s_Dns_Read,
+       s_Dns_SizeOf,        s_Dns_Equal} }
 };
 
 
