@@ -59,6 +59,7 @@ void COStreamTextOStream::AddParagraph
 (const list<string>& text,
  const CSerialObject* obj)
 {
+    const char* endl = Endl();
     ITERATE(list<string>, line, text) {
         m_Ostream << *line << endl;
     }
@@ -75,6 +76,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/03/31 21:15:38  vasilche
+* Do not flush after every line.
+*
 * Revision 1.3  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
