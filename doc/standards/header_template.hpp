@@ -35,8 +35,9 @@
 ///
 /// One or more detailed statements about file follow here. If you want, you
 /// can leave a blank comment line after the brief statement that ends in a
-/// period.
-/// Another detailed statement, etc.
+/// period. Another detailed statement, etc.
+/// Please note that you must replace header_template.hpp with the 
+/// actual name of your header file. 
 
 
 #include <corelib/ncbistd.hpp>
