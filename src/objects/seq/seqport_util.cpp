@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/03/27 19:53:18  grichenk
+ * Fixed CR/LF problem in the source
+ *
  * Revision 6.7  2002/01/12 07:40:22  vakatov
  * Fixed multiple dangerous typos ('&' instead of '&&' in IFs)
  *
@@ -1477,6 +1480,7 @@ CRef<CSeqportUtil_implementation::CFast_table2> CSeqportUtil_implementation::Ini
                     unsigned char chk = m_Ncbi2naNcbi4na->m_Table[k];
                     unsigned char chl = m_Ncbi2naNcbi4na->m_Table[l];
                     char *pt = 
+
                         reinterpret_cast<char*>(&fastTable->m_Table[aByte]);
                     *(pt++) = (chi << 4) | chj;
                     *pt = (chk << 4) | chl;
