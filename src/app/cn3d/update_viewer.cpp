@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/03/30 03:07:34  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.4  2001/03/22 00:33:17  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -82,7 +85,7 @@ void UpdateViewer::CreateUpdateWindow(void)
         if (display) {
             if (!updateWindow) updateWindow = new UpdateViewerWindow(this);
             if (displayStack.size() > 2) updateWindow->EnableUndo(true);
-            updateWindow->NewDisplay(display, true);
+            updateWindow->NewDisplay(display, true, false);
             updateWindow->ScrollToColumn(display->GetStartingColumn());
             updateWindow->Show(true);
             // ScrollTo causes immediate redraw, so don't need a second one

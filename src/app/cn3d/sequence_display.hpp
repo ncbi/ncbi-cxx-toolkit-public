@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/03/30 03:07:08  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.6  2001/03/22 00:32:36  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -219,8 +222,11 @@ public:
     typedef std::vector < const Sequence * > SequenceList;
     void GetSlaveSequences(SequenceList *seqs) const;
 
-    // sorting functions - only for single-alignment displays!
+    // row scoring and sorting functions - only for single-alignment displays!
+    // sorting always leave master at the top, regardless of scores
+    bool CalculateRowScoresWithThreader(double weightPSSM);
     void SortRowsByIdentifier(void);
+    void SortRowsByThreadingScore(double weightPSSM);
 
     // recreate the display from the given alignment.
     // NOTE: this assumes the display is from only a single alignment, and will put the block

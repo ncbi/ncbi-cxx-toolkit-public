@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2001/03/30 03:07:33  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.48  2001/03/22 18:14:49  thiessen
 * fix null-pointer error in alignment retrieval
 *
@@ -590,6 +593,11 @@ void AlignmentManager::TestThreader(void)
             GetCurrentMultipleAlignment(), updateViewer->GetCurrentAlignments(), &newAlignments)) {
         updateViewer->AddAlignments(newAlignments);
     }
+}
+
+void AlignmentManager::CalculateRowScoresWithThreader(double weightPSSM)
+{
+    threader->CalculateScores(GetCurrentMultipleAlignment(), weightPSSM);
 }
 
 END_SCOPE(Cn3D)

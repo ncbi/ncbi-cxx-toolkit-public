@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/03/30 03:07:09  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.6  2001/03/22 00:32:37  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -86,8 +89,8 @@ class ViewerWindowBase : public wxFrame
 
 public:
 
-    // displays a new alignment, and whether to enable the editor
-    void NewDisplay(SequenceDisplay *display, bool enableEditor);
+    // displays a new alignment, and whether to enable the editor and column selection
+    void NewDisplay(SequenceDisplay *display, bool enableEditor, bool enableSelectByColumn);
 
     // updates alignment (e.g. if width or # rows has changed); doesn't change scroll
     void UpdateDisplay(SequenceDisplay *display);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2001/03/30 03:07:34  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.38  2001/03/13 01:25:06  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -177,7 +180,7 @@ void SequenceViewer::CreateSequenceWindow(void)
     SequenceDisplay *display = GetCurrentDisplay();
     if (display) {
         if (!sequenceWindow) sequenceWindow = new SequenceViewerWindow(this);
-        sequenceWindow->NewDisplay(display, true);
+        sequenceWindow->NewDisplay(display, true, true);
         sequenceWindow->ScrollToColumn(display->GetStartingColumn());
         sequenceWindow->Show(true);
         // ScrollTo causes immediate redraw, so don't need a second one

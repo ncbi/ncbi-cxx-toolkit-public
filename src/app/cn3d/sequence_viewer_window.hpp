@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/03/30 03:07:09  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.4  2001/03/19 15:47:38  thiessen
 * add row sorting by identifier
 *
@@ -80,6 +83,7 @@ private:
         MID_DELETE_ROW,
         MID_SORT_ROWS,   // sort rows submenu
             MID_SORT_IDENT,
+            MID_SORT_THREADER,
         // mouse mode
         MID_MOVE_ROW,
         // update menu

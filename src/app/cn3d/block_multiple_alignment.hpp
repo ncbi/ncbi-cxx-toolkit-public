@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/03/30 03:07:08  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.8  2001/03/22 00:32:35  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -100,8 +103,16 @@ public:
     // and calculates conservation colors.
     bool UpdateBlockMapAndConservationColors(void);
 
-    // find out if a residue is aligned - only works for non-repeated sequences!
-    bool IsAligned(const Sequence *sequence, int seqIndex) const;
+    // find out if a residue is aligned, by row
+    bool IsAligned(int row, int seqIndex) const;
+
+    // find out if a residue is aligned, by Sequence - only works for non-repeated Sequences!
+    bool IsAligned(const Sequence *sequence, int seqIndex) const
+    {
+        int row = GetRowForSequence(sequence);
+        if (row < 0) return false;
+        return IsAligned(row, seqIndex);
+    }
 
     // stuff regarding master sequence
     const Sequence * GetMaster(void) const { return sequences->at(0); }
@@ -154,11 +165,17 @@ public:
     typedef std::list < const UngappedAlignedBlock * > UngappedAlignedBlockList;
     UngappedAlignedBlockList *GetUngappedAlignedBlocks(void) const;
 
+    // free color storage
+    void FreeColors(void);
+
 
     ///// editing functions /////
 
     // if in an aligned block, give block column and width of that position; otherwise, -1
     void GetAlignedBlockPosition(int alignmentIndex, int *blockColumn, int *blockWidth) const;
+
+    // get seqIndex of slave aligned to the given master seqIndex; -1 if master residue unaligned
+    int GetAlignedSlaveIndex(int masterSeqIndex, int slaveRow) const;
 
     // returns true if any boundary shift actually occurred
     bool MoveBlockBoundary(int columnFrom, int columnTo);
@@ -192,9 +209,6 @@ public:
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
     bool ExtractRows(const std::vector < bool >& removeSlaves, AlignmentList *pairwiseAlignments);
 
-    // free color storage
-    void FreeColors(void);
-
 private:
     ConservationColorer *conservationColorer;
 
@@ -227,7 +241,14 @@ private:
     // given a row and seqIndex, find block that contains that residue
     const Block * GetBlock(int row, int seqIndex) const;
 
+    // intended for volatile storage of row-associated doubles (e.g. for alignment scores, etc.)
+    mutable std::vector < double > rowDoubles;
+
 public:
+
+    double GetRowDouble(int row) const { return rowDoubles[row]; }
+    void SetRowDouble(int row, double value) const { rowDoubles[row] = value; }
+
     // NULL if block before is aligned; if NULL passed, retrieves last block (if unaligned; else NULL)
     const UnalignedBlock * GetUnalignedBlockBefore(const UngappedAlignedBlock *aBlock) const;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/03/30 03:07:34  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.8  2001/03/19 15:50:40  thiessen
 * add sort rows by identifier
 *
@@ -87,7 +90,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU      (MID_MOVE_ROW,                        SequenceViewerWindow::OnMoveRow)
     EVT_MENU      (MID_SHOW_UPDATES,                    SequenceViewerWindow::OnShowUpdates)
     EVT_MENU_RANGE(MID_REALIGN_ROW, MID_REALIGN_ROWS,   SequenceViewerWindow::OnRealign)
-    EVT_MENU      (MID_SORT_IDENT,                      SequenceViewerWindow::OnSort)
+    EVT_MENU_RANGE(MID_SORT_IDENT, MID_SORT_THREADER,   SequenceViewerWindow::OnSort)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
@@ -99,6 +102,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     editMenu->AppendSeparator();
     wxMenu *subMenu = new wxMenu;
     subMenu->Append(MID_SORT_IDENT, "By &Identifier");
+    subMenu->Append(MID_SORT_THREADER, "By &Score");
     editMenu->Append(MID_SORT_ROWS, "Sort &Rows", subMenu);
     editMenu->Append(MID_DELETE_ROW, "De&lete Row", "", true);
 
@@ -313,6 +317,9 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
     switch (event.GetId()) {
         case MID_SORT_IDENT:
             sequenceViewer->GetCurrentDisplay()->SortRowsByIdentifier();
+            break;
+        case MID_SORT_THREADER:
+            sequenceViewer->GetCurrentDisplay()->SortRowsByThreadingScore(0.5);
             break;
     }
 }

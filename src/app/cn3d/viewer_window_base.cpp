@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/03/30 03:07:35  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.7  2001/03/19 15:50:40  thiessen
 * add sort rows by identifier
 *
@@ -149,12 +152,16 @@ void ViewerWindowBase::EnableBaseEditorMenuItems(bool enabled)
     EnableDerivedEditorMenuItems(enabled);
 }
 
-void ViewerWindowBase::NewDisplay(SequenceDisplay *display, bool enableEditor)
+void ViewerWindowBase::NewDisplay(SequenceDisplay *display, bool enableEditor, bool enableSelectByColumn)
 {
     viewerWidget->AttachAlignment(display);
-    if (!display->IsEditable()) enableEditor = false;
+    if (!display->IsEditable()) {
+        enableEditor = false;
+        enableSelectByColumn = false;
+    }
     menuBar->EnableTop(1, enableEditor);    // edit menu
     menuBar->EnableTop(3, enableEditor);    // justification menu
+    menuBar->Enable(MID_SELECT_COLS, enableSelectByColumn);
 }
 
 void ViewerWindowBase::UpdateDisplay(SequenceDisplay *display)

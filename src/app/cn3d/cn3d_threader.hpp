@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/03/30 03:07:08  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.4  2001/03/28 23:01:38  thiessen
 * first working full threading
 *
@@ -89,6 +92,9 @@ public:
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
     bool Realign(const BlockMultipleAlignment *masterMultiple,
         const AlignmentList *originalAlignments, AlignmentList *newAlignments);
+
+    // calculate scores for each row in the alignment (and store them in the alignment itself)
+    bool CalculateScores(const BlockMultipleAlignment *multiple, double weightPSSM);
 
     // to hold virtual residue, sidechain positions
     enum { MISSING_COORDINATE = 0, VIRTUAL_RESIDUE, VIRTUAL_PEPTIDE };

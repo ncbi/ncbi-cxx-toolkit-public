@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/03/30 03:07:08  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.28  2001/03/09 15:48:42  thiessen
 * major changes to add initial update viewer
 *
@@ -186,6 +189,10 @@ public:
     void ShowUpdateWindow(void) const;
     void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < bool >& selectedSlaves);
     void TestThreader(void);
+
+    // calculates row scores using the threader
+    void CalculateRowScoresWithThreader(double weightPSSM);
+
 
 private:
     const SequenceSet *sequenceSet;

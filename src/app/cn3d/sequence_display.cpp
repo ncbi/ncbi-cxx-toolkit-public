@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/03/30 03:07:34  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.8  2001/03/22 00:33:17  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -757,11 +760,35 @@ static bool CompareRowsByIdentifier(const DisplayRowFromAlignment *a, const Disp
     return false;
 }
 
+static bool CompareRowsByScore(const DisplayRowFromAlignment *a, const DisplayRowFromAlignment *b)
+{
+    return (a->alignment->GetRowDouble(a->row) > b->alignment->GetRowDouble(b->row));
+}
+
 static CompareRows rowComparisonFunction = NULL;
 
 void SequenceDisplay::SortRowsByIdentifier(void)
 {
     rowComparisonFunction = CompareRowsByIdentifier;
+    SortRows();
+}
+
+bool SequenceDisplay::CalculateRowScoresWithThreader(double weightPSSM)
+{
+    if (isEditable) {
+        SequenceViewer *seqViewer = dynamic_cast<SequenceViewer*>((*viewerWindow)->viewer);
+        if (seqViewer) {
+            seqViewer->alignmentManager->CalculateRowScoresWithThreader(weightPSSM);
+            return true;
+        }
+    }
+    return false;
+}
+
+void SequenceDisplay::SortRowsByThreadingScore(double weightPSSM)
+{
+    if (!CalculateRowScoresWithThreader(weightPSSM)) return;;
+    rowComparisonFunction = CompareRowsByScore;
     SortRows();
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/03/30 03:07:33  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.10  2001/03/22 19:11:09  thiessen
 * don't allow drag of gaps
 *
@@ -82,6 +85,7 @@ BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList *sequenceList)
     sequences(sequenceList), conservationColorer(NULL)
 {
     InitCache();
+    rowDoubles.resize(sequenceList->size());
 
     // create conservation colorer
     conservationColorer = new ConservationColorer();
@@ -328,18 +332,6 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
     return prevRow;
 }
 
-bool BlockMultipleAlignment::IsAligned(const Sequence *sequence, int seqIndex) const
-{
-    int row = GetRowForSequence(sequence);
-    if (row < 0) return false;
-
-    const Block *block = GetBlock(row, seqIndex);
-    if (block && block->IsAligned())
-        return true;
-    else
-        return false;
-}
-
 const Vector * BlockMultipleAlignment::GetAlignmentColor(int row, int seqIndex) const
 {
     const UngappedAlignedBlock *block = dynamic_cast<const UngappedAlignedBlock*>(GetBlock(row, seqIndex));
@@ -400,12 +392,18 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(const Sequence *sequenc
     return GetAlignmentColor(row, seqIndex);
 }
 
+bool BlockMultipleAlignment::IsAligned(int row, int seqIndex) const
+{
+    const Block *block = GetBlock(row, seqIndex);
+    return (block && block->IsAligned());
+}
+
 const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
 {
     // make sure we're in range for this sequence
     if (seqIndex < 0 || seqIndex >= sequences->at(row)->sequenceString.size()) {
         ERR_POST(Error << "BlockMultipleAlignment::GetBlock() - seqIndex out of range");
-        return false;
+        return NULL;
     }
 
     const Block::Range *range;
@@ -441,6 +439,18 @@ int BlockMultipleAlignment::GetFirstAlignedBlockPosition(void) const
         return blocks.front()->width;
     else
         return -1;
+}
+
+int BlockMultipleAlignment::GetAlignedSlaveIndex(int masterSeqIndex, int slaveRow) const
+{
+    const UngappedAlignedBlock
+        *aBlock = dynamic_cast<const UngappedAlignedBlock*>(GetBlock(0, masterSeqIndex));
+    if (!aBlock) return -1;
+
+    const Block::Range
+        *masterRange = aBlock->GetRangeOfRow(0),
+        *slaveRange = aBlock->GetRangeOfRow(slaveRow);
+    return (slaveRange->from + masterSeqIndex - masterRange->from);
 }
 
 void BlockMultipleAlignment::SelectedRange(int row, int from, int to,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/03/30 03:07:34  thiessen
+* add threader score calculation & sorting
+*
 * Revision 1.6  2001/03/29 15:35:55  thiessen
 * remove GetAtom warnings
 *
@@ -397,6 +400,8 @@ static void ReadToRowOfEnergies(ifstream& InFile, int NumResTypes) {
     }
 }
 
+static const int NUM_RES_TYPES = 21;
+
 Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
 {
     Rcx_Ptl*  pmf;
@@ -406,7 +411,6 @@ Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
     Int4      i, j, k;
     double    temp;
 
-    static const int kNumResTypes = 21;
     static const int kNumDistances = 6;
     static const int kPeptideIndex = 20;
 
@@ -420,16 +424,16 @@ Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
         return NULL;
     }
 
-    pmf = NewRcxPtl(kNumResTypes, kNumDistances, kPeptideIndex);
+    pmf = NewRcxPtl(NUM_RES_TYPES, kNumDistances, kPeptideIndex);
 
     /* read in the contact potential */
     for (i=0; i<kNumDistances; i++) {
-        ReadToRowOfEnergies(*InFile, kNumResTypes);
+        ReadToRowOfEnergies(*InFile, NUM_RES_TYPES);
         if (InFile->eof()) goto error;
-        for (j=0; j<kNumResTypes; j++) {
+        for (j=0; j<NUM_RES_TYPES; j++) {
             InFile->getline(ResName, sizeof(ResName), ' ');  /* skip residue name */
             if (InFile->eof()) goto error;
-            for (k=0; k<kNumResTypes; k++) {
+            for (k=0; k<NUM_RES_TYPES; k++) {
                 *InFile >> temp;
                 if (InFile->eof()) goto error;
                 pmf->rre[i][j][k] = ThrdRound(temp*SCALING_FACTOR*weightContacts);
@@ -439,7 +443,7 @@ Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
 
     /* read in the hydrophobic energies */
     ReadToRowOfEnergies(*InFile, kNumDistances);
-    for (i=0; i<kNumResTypes; i++) {
+    for (i=0; i<NUM_RES_TYPES; i++) {
         InFile->getline(ResName, sizeof(ResName), ' ');  /* skip residue name */
         if (InFile->eof()) goto error;
         for (j=0; j<kNumDistances; j++) {
@@ -451,8 +455,8 @@ Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
 
     /* calculate sum of pair energies plus hydrophobic energies */
     for(i=0; i<kNumDistances; i++) {
-        for(j=0; j<kNumResTypes; j++) {
-            for(k=0; k<kNumResTypes; k++) {
+        for(j=0; j<NUM_RES_TYPES; j++) {
+            for(k=0; k<NUM_RES_TYPES; k++) {
                 pmf->rrt[i][j][k] = pmf->rre[i][j][k] + pmf->re[i][j] + pmf->re[i][k];
             }
         }
@@ -936,6 +940,122 @@ cleanup:
     if (gibScd) FreeGibScd(gibScd);
     if (trajectory) delete trajectory;
 
+    return retval;
+}
+
+static double CalculatePSSMScore(const BlockMultipleAlignment::UngappedAlignedBlockList *aBlocks,
+    int row, const std::vector < int >& residueNumbers, const Seq_Mtf *seqMtf)
+{
+    double score = 0.0;
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks->end();
+    const Block::Range *masterRange, *slaveRange;
+    int i;
+
+    for (b=aBlocks->begin(); b!=be; b++) {
+        masterRange = (*b)->GetRangeOfRow(0);
+        slaveRange = (*b)->GetRangeOfRow(row);
+        for (i=0; i<(*b)->width; i++)
+            score += seqMtf->ww[masterRange->from + i][residueNumbers[slaveRange->from + i]];
+    }
+
+//    TESTMSG("PSSM score for row " << row << ": " << score);
+    return score;
+}
+
+static double CalculateContactScore(const BlockMultipleAlignment *multiple,
+    int row, const std::vector < int >& residueNumbers, const Fld_Mtf *fldMtf, const Rcx_Ptl *rcxPtl)
+{
+    double score = 0.0;
+    int i, seqIndex1, seqIndex2, resNum1, resNum2, dist;
+
+    // for each res-res contact, convert seqIndexes of master into corresponding seqIndexes
+    // of slave if they're aligned; add contact energies if so
+    for (i=0; i<fldMtf->rrc.n; i++) {
+        seqIndex1 = multiple->GetAlignedSlaveIndex(fldMtf->rrc.r1[i], row);
+        if (seqIndex1 < 0) continue;
+        seqIndex2 = multiple->GetAlignedSlaveIndex(fldMtf->rrc.r2[i], row);
+        if (seqIndex2 < 0) continue;
+
+        resNum1 = residueNumbers[seqIndex1];
+        resNum2 = residueNumbers[seqIndex2];
+        if (resNum1 < 0 || resNum2 < 0) continue;
+
+        dist = fldMtf->rrc.d[i];
+        score += rcxPtl->rre[dist][resNum1][resNum2] + rcxPtl->re[dist][resNum1] + rcxPtl->re[dist][resNum2];
+    }
+
+    // ditto for res-pep contacts - except only one slave residue to look up; 2nd is always peptide group
+    for (i=0; i<fldMtf->rpc.n; i++) {
+        seqIndex1 = multiple->GetAlignedSlaveIndex(fldMtf->rpc.r1[i], row);
+        if (seqIndex1 < 0) continue;
+
+        // peptides are only counted if both contributing master residues are aligned
+        if (fldMtf->rpc.p2[i] >= multiple->GetMaster()->sequenceString.size() - 1 ||
+            !multiple->IsAligned(0, fldMtf->rpc.p2[i]) ||
+            !multiple->IsAligned(0, fldMtf->rpc.p2[i] + 1)) continue;
+
+        resNum1 = residueNumbers[seqIndex1];
+        if (resNum1 < 0) continue;
+        resNum2 = NUM_RES_TYPES - 1; // peptide group
+
+        dist = fldMtf->rpc.d[i];
+        score += rcxPtl->rre[dist][resNum1][resNum2] + rcxPtl->re[dist][resNum1] + rcxPtl->re[dist][resNum2];
+    }
+
+//    TESTMSG("Contact score for row " << row << ": " << score);
+    return score;
+}
+
+bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double weightPSSM)
+{
+    Seq_Mtf *seqMtf = NULL;
+    Rcx_Ptl *rcxPtl = NULL;
+    Fld_Mtf *fldMtf = NULL;
+    BlockMultipleAlignment::UngappedAlignedBlockList *aBlocks = NULL;
+    std::vector < int > residueNumbers;
+    bool retval = false;
+    int row;
+
+    // create PSSM
+    if (weightPSSM > 0.0 && !(seqMtf = CreateSeqMtf(multiple, weightPSSM))) goto cleanup;
+
+    // create potential
+    if (weightPSSM < 1.0 && !(rcxPtl = CreateRcxPtl(1.0 - weightPSSM))) goto cleanup;
+
+    // create contact lists
+    if (weightPSSM < 1.0 && (!multiple->GetMaster()->molecule ||
+            multiple->GetMaster()->molecule->parentSet->isAlphaOnly)) {
+        ERR_POST("Can't use contact potential on non-structured master, or alpha-only (virtual bond) models!");
+        goto cleanup;
+    }
+    if (weightPSSM < 1.0 && !(fldMtf = CreateFldMtf(multiple->GetMaster()))) goto cleanup;
+
+    // get aligned blocks
+    aBlocks = multiple->GetUngappedAlignedBlocks();
+
+    for (row=0; row<multiple->NRows(); row++) {
+
+        // get sequence's residue numbers
+        const Sequence *seq = multiple->GetSequenceOfRow(row);
+        residueNumbers.resize(seq->sequenceString.size());
+        for (int i=0; i<seq->sequenceString.size(); i++)
+            residueNumbers[i] = LookupResidueNumber(seq->sequenceString[i]);
+
+        // sum score types (weightPSSM already built into seqMtf & rcxPtl)
+        double
+            scorePSSM = (weightPSSM > 0.0) ?
+                CalculatePSSMScore(aBlocks, row, residueNumbers, seqMtf) : 0.0,
+            scoreContacts = (weightPSSM < 1.0) ?
+                CalculateContactScore(multiple, row, residueNumbers, fldMtf, rcxPtl) : 0.0;
+        multiple->SetRowDouble(row, (weightPSSM + scoreContacts) / SCALING_FACTOR);
+    }
+
+    retval = true;
+
+cleanup:
+    if (seqMtf) FreeSeqMtf(seqMtf);
+    if (rcxPtl) FreeRcxPtl(rcxPtl);
+    if (aBlocks) delete aBlocks;
     return retval;
 }
 
