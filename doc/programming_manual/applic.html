@@ -100,7 +100,7 @@ variables accessed by the C library routine <i>getenv()</i>. In this case
 the data structure is an associative array - a C++ map container, that
 allows <i>[]</i> access with string rather than integer indexes.
 <p><a NAME="CNcbiRegistry"></a>The
-<i><a href="../docxx/CNcbiRegistry.html">CNcbiRegistry
+<i><a href="registry.html">CNcbiRegistry
 </a></i>class
 is used to store, access, and modify runtime information read from a configuration
 file. Previously, these files were by convention named ".*rc" files on
@@ -116,7 +116,7 @@ with specific sections. Accordingly, the registry class's main data structure
 uses a map of maps, where the "containing" map is indexed by sections while
 the "contained" map is indexed by keywords.
 <p><a NAME="CNcbiDiag"></a>The
-<i><a href="../docxx/CNcbiDiag.html">CNcbiDiag
+<i><a href="diag.html">CNcbiDiag
 </a></i>class
 implements much of the functionality of the NCBI C Toolkit error processing
 mechanisms. Each instance of <i>CNcbiDiag</i> has a private buffer to handle
@@ -289,9 +289,9 @@ to point to the newly created object.</font>
 from the parent class. Although this function accepts up to six arguments,
 this example passes only the first two, with missing values supplied by
 defaults. The remaining four arguments specify (1) a string from which
-environment variable settigs can be read, (2) a diagnostic stream for message
-posting, (3) the name of a <i>.ini</i> configuration file, and (4) a program
-name (to be used in lieu of <i>argv[0]</i>). </font><font color="#008080">I</font><font color="#003300">n
+environment variable settings can be read, (2) a diagnostic stream for
+message posting, (3) the name of a <i>.ini</i> configuration file, and
+(4) a program name (to be used in lieu of <i>argv[0]</i>). </font><font color="#008080">I</font><font color="#003300">n
 order to avoid the display of a warning message when no configuration file
 is present, the <i>.ini</i> file should be explicitly specified as <i>NULL</i>,
 as in:</font>
@@ -316,7 +316,7 @@ that class is defined, <i>corelib/ncbiapp.hpp</i>, in the
 <i>include</i>
 directory. This header file in turn includes <i>corelib/ncbistd.hpp</i>,
 which should <i>always</i> be <i>#included</i>.</font>
-<p><font color="#000000"><i><a href="../index.html">up&nbsp;</a></i>&nbsp;
+<p><font color="#000000"><i><a href="../index.html">up&nbsp;</a></i> 
 <i><a href="argdescr.html">next&nbsp;</a></i></font>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
