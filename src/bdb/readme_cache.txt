@@ -157,12 +157,22 @@ Optional
 =========================================================================
 
 
+log_file_max : Integer
+Maximum size of transaction log file
+
+Optional
+=========================================================================
+
+
+
+
 Ini file example:
 
-[bdbcache]
+[bdb]
 path=e:/netcached_data
 name=nccache
 write_sync=false
+log_file_max=100M
 
 timeout=3600
 timestamp=subkey purge_on_startup check_expiration
