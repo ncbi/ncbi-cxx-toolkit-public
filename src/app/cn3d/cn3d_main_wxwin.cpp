@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.118  2002/01/18 15:41:36  thiessen
+* add Mac file type/creator to output files
+*
 * Revision 1.117  2002/01/18 13:55:29  thiessen
 * add help menu and viewer
 *
@@ -488,6 +491,7 @@
 #include <ncbienv.h>
 
 #ifdef __WXMAC__
+#include <wx/filename.h>
 #include "MoreCarbonAccessors.h"
 #endif
 
@@ -741,7 +745,7 @@ bool Cn3DApp::OnInit(void)
 #if wxUSE_STREAMS && wxUSE_ZIPSTREAM && wxUSE_ZLIB
     wxFileSystem::AddHandler(new wxZipFSHandler);
 #else
-#error Must turn on wxUSE_STREAMS && wxUSE_ZIPSTREAM && wxUSE_ZLIB for Cn3D's help system!
+#error Must turn on wxUSE_STREAMS && wxUSE_ZIPSTREAM && wxUSE_ZLIB for the Cn3D help system!
 #endif
 
     // set up working directories
@@ -1873,6 +1877,14 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 
     if (!outputFilename.IsEmpty()) {
         glCanvas->structureSet->SaveASNData(outputFilename.c_str(), (outputFilename.Right(4) == ".val"));
+
+#ifdef __WXMAC__
+        // set mac file type and creator
+        wxFileName wxfn(outputFilename);
+        if (wxfn.FileExists())
+            if (!wxfn.MacSetTypeAndCreator('TEXT', 'Cn3D'))
+                ERR_POST(Warning << "Unable to set Mac file type/creator");
+#endif
 
         // set path/name/title
         if (wxIsAbsolutePath(outputFilename))
