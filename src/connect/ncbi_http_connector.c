@@ -804,7 +804,7 @@ static EIO_Status s_VT_Read
     } else
         status = eIO_Success;
 
-    return status;
+    return *n_read ? eIO_Success : status;
 }
 
 
@@ -946,6 +946,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.51  2003/05/21 17:54:16  lavr
+ * s_VT_Read() to return eIO_Success if some data have been read
+ *
  * Revision 6.50  2003/05/20 23:54:00  lavr
  * Reinstate ConnNetInfo_Destroy() accidently deleted from s_Destroy()
  *
