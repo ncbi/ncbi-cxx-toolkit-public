@@ -174,6 +174,7 @@
  * Definitions for GUI_UTILS.DLL
  */
 #ifdef NCBI_GUIUTILS_EXPORTS
+#  define NCBI_GUIOBJUTILS_EXPORTS
 #  define NCBI_GUIOPENGL_EXPORTS
 #  define NCBI_GUIMATH_EXPORTS
 #endif
@@ -1016,6 +1017,15 @@
 #endif
 
 /*
+ * Export specifier for library gui_objutils
+ */
+#ifdef NCBI_GUIOBJUTILS_EXPORTS
+#  define NCBI_GUIOBJUTILS_EXPORT              __declspec(dllexport)
+#else
+#  define NCBI_GUIOBJUTILS_EXPORT              __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library gui_math
  */
 #ifdef NCBI_GUIMATH_EXPORTS
@@ -1399,6 +1409,7 @@
 #  define NCBI_GUIMATH_EXPORT
 #  define NCBI_GUIOPENGL_EXPORT
 #  define NCBI_GUIUTILS_EXPORT
+#  define NCBI_GUIOBJUTILS_EXPORTS
 #  define NCBI_GUIWIDGETSALN_EXPORT
 #  define NCBI_GUIWIDGETSSEQ_EXPORT
 #  define NCBI_GUIWIDGETS_ALNCROSSALN_EXPORT
@@ -1499,6 +1510,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.70  2004/05/03 12:36:36  dicuccio
+ * added export specifier for library gui_objutils
+ *
  * Revision 1.69  2004/04/13 20:10:40  ucko
  * New (shared) ASN.1 spec: insdseq
  *
