@@ -285,44 +285,43 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
             }
 #endif
         }
-        aln_seq->m_DS_Count++;
-        ds_seq.push_back(aln_seq);
-    }
 
-    // Preserve the row of the the original sequences if requested.
-    // This is mostly used to allow a sequence to itself.
-    if (m_AddFlags & fPreserveRows) {
-        for (CAlnMap::TNumrow row = 0;  row < dsp->GetDim();  row++) {
-            CRef<CAlnMixSeq>& row_seq = ds_seq[row];
-            int row_index = row_seq->m_RowIndex;
+        // Preserve the row of the the original sequences if requested.
+        // This is mostly used to allow a sequence to itself.
+        // Create an additional sequence, pointed by m_AntoherRow,
+        // if the row index differs.
+        if (m_AddFlags & fPreserveRows) {
+            int row_index = aln_seq->m_RowIndex;
             if (row_index == -1) {
                 // initialization
-                row_seq->m_RowIndex = row;
+                aln_seq->m_RowIndex = row;
             } else while (row_index != row) {
-                if (!row_seq->m_AnotherRow) {
-
+                if (aln_seq->m_AnotherRow) {
+                    aln_seq   = aln_seq->m_AnotherRow;
+                    row_index = aln_seq->m_RowIndex;
+                } else {
                     CRef<CAlnMixSeq> another_row (new CAlnMixSeq);
 
-                    another_row->m_BioseqHandle = row_seq->m_BioseqHandle;
-                    another_row->m_SeqId        = row_seq->m_SeqId;
-                    another_row->m_Width        = row_seq->m_Width;
-                    another_row->m_SeqIndex     = row_seq->m_SeqIndex;
+                    another_row->m_BioseqHandle = aln_seq->m_BioseqHandle;
+                    another_row->m_SeqId        = aln_seq->m_SeqId;
+                    another_row->m_Width        = aln_seq->m_Width;
+                    another_row->m_SeqIndex     = aln_seq->m_SeqIndex;
                     another_row->m_DSIndex      = ds_index;
                     another_row->m_RowIndex     = row;
 
                     m_Seqs.push_back(another_row);
 
-                    row_seq->m_AnotherRow = another_row;
-
-                    row_seq = row_seq->m_AnotherRow;
+                    aln_seq = aln_seq->m_AnotherRow = another_row;
 
                     break;
                 }
-                row_seq   = row_seq->m_AnotherRow;
-                row_index = row_seq->m_RowIndex;
             }
         }
+
+        aln_seq->m_DS_Count++;
+        ds_seq.push_back(aln_seq);
     }
+
 
     //record all alignment relations
     int              seg_off = 0;
@@ -994,6 +993,13 @@ void CAlnMix::x_Merge()
                 CAlnMixMatch tmp_match = *match;
                 match = &tmp_match; // point to the new tmp_match
 
+                if (second_row_fits == eFirstRowOverlapBelow  ||
+                    second_row_fits == eFirstRowOverlapAbove) {
+                    // try it again, it may fit this time
+                    // since the second row may have been
+                    // cut into smaller segments
+                    second_row_fits = x_SecondRowFits(match);
+                }
                 while (second_row_fits != eSecondRowFitsOk  &&
                        second_row_fits != eIgnoreMatch) {
                     if (!seq2->m_ExtraRow) {
@@ -2106,6 +2112,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.107  2004/09/23 18:55:31  todorov
+* 1) avoid an introduced m_DS_Count mismatch; 2) + reeval x_SecondRowFits for some cases
+*
 * Revision 1.106  2004/09/22 17:00:53  todorov
 * +CAlnMix::fPreserveRows
 *
