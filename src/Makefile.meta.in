@@ -123,7 +123,7 @@ if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
    expendable=false ; \
    for i in $$x_project ; do \
       if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
-      $(check_add) $(srcdir) $$i @signature@ @exe_ext@
+      $(check_add) `echo $(srcdir) | sed -e 's,^$(top_srcdir),$(abs_top_srcdir),'` $$i @signature@ @exe_ext@
 CHECK_ADD_KET = ||  exit 5 ; \
    done ; \
 fi
