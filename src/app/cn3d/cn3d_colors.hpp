@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/07/12 17:34:22  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
 * Revision 1.6  2001/05/11 02:10:04  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -81,6 +84,9 @@ public:
         eHelix,
         eStrand,
         eCoil,
+
+        // misc other colors
+        eNoDomain,
 
         eNumColors,
 

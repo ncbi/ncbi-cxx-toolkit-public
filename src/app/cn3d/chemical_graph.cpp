@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/07/12 17:35:15  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
 * Revision 1.26  2001/06/21 02:02:33  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -312,24 +315,22 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
         }
     }
 
-    // assign a domain ID to all protein or NA residues, i.e. when that molecule is not
-    // present in the domain feature list, or domain features don't cover the whole chain
+    // Assign a (new) domain ID to all residues in a chain, if there are not any domains
+    // already set; in other words, assume a chain with no given domain features is composed
+    // of a single domain.
     MoleculeMap::iterator m, me = molecules.end();
     for (m=molecules.begin(); m!=me; m++) {
         if (m->second->IsProtein() || m->second->IsNucleotide()) {
-            bool firstUnassigned = true;
-            int domainID = Molecule::NO_DOMAIN_SET;
-            for (int r=0; r<m->second->residues.size(); r++) {
-                if (m->second->residueDomains[r] == Molecule::NO_DOMAIN_SET) {
-                    if (firstUnassigned) {
-                        domainID = ++((const_cast<StructureSet*>(parentSet))->nDomains);
-                        (const_cast<Molecule*>(m->second))->nDomains++;
-                        (const_cast<StructureObject*>(object))->domainMap[domainID] = m->second;
-                        (const_cast<StructureObject*>(object))->domainID2MMDB[domainID] = -1;
-                        firstUnassigned = false;
-                    }
+            int r;
+            for (r=0; r<m->second->residues.size(); r++)
+                if (m->second->residueDomains[r] != Molecule::NO_DOMAIN_SET) break;
+            if (r == m->second->residues.size()) {
+                int domainID = ++((const_cast<StructureSet*>(parentSet))->nDomains);
+                (const_cast<Molecule*>(m->second))->nDomains++;
+                (const_cast<StructureObject*>(object))->domainMap[domainID] = m->second;
+                (const_cast<StructureObject*>(object))->domainID2MMDB[domainID] = -1;
+                for (r=0; r<m->second->residues.size(); r++)
                     (const_cast<Molecule*>(m->second))->residueDomains[r] = domainID;
-                }
             }
         }
     }

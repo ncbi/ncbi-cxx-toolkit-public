@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/07/12 17:34:22  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
 * Revision 1.30  2001/07/10 16:39:33  thiessen
 * change selection control keys; add CDD name/notes dialogs
 *
@@ -255,7 +258,8 @@ public:
             MID_SHOW_SEQ_V,
         // CDD menu
            MID_EDIT_CDD_DESCR,
-           MID_EDIT_CDD_NOTES
+           MID_EDIT_CDD_NOTES,
+           MID_ANNOT_CDD
     };
 
     void OnExit(wxCommandEvent& event);

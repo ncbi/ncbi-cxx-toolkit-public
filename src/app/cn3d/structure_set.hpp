@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/07/12 17:34:23  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
 * Revision 1.50  2001/07/10 16:39:34  thiessen
 * change selection control keys; add CDD name/notes dialogs
 *
@@ -197,6 +200,7 @@
 #include <objects/mmdb1/Biostruc.hpp>
 #include <objects/mmdb1/Biostruc_annot_set.hpp>
 #include <objects/mmdb3/Biostruc_feature.hpp>
+#include <objects/cdd/Align_annot_set.hpp>
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/vector_math.hpp"
@@ -338,6 +342,8 @@ public:
     typedef std::vector < std::string > TextLines;
     bool GetCDDNotes(TextLines *lines) const;
     bool SetCDDNotes(const TextLines& lines);
+    ncbi::objects::CAlign_annot_set * GetCopyOfCDDAnnotSet(void) const;
+    bool SetCDDAnnotSet(ncbi::objects::CAlign_annot_set *newAnnotSet);
 };
 
 class ChemicalGraph;

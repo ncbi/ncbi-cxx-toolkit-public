@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2001/07/12 17:35:15  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
 * Revision 1.57  2001/07/10 16:39:54  thiessen
 * change selection control keys; add CDD name/notes dialogs
 *
@@ -286,6 +289,7 @@
 #include "cn3d/show_hide_dialog.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/multitext_dialog.hpp"
+#include "cn3d/cdd_annot_dialog.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -473,7 +477,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_EDIT_STYLE, MID_ANNOTATE,            Cn3DMainFrame::OnSetStyle)
     EVT_MENU_RANGE(MID_QLOW,       MID_QHIGH,               Cn3DMainFrame::OnSetQuality)
     EVT_MENU_RANGE(MID_SHOW_LOG,   MID_SHOW_SEQ_V,          Cn3DMainFrame::OnShowWindow)
-    EVT_MENU_RANGE(MID_EDIT_CDD_DESCR, MID_EDIT_CDD_NOTES,  Cn3DMainFrame::OnCDD)
+    EVT_MENU_RANGE(MID_EDIT_CDD_DESCR, MID_ANNOT_CDD,       Cn3DMainFrame::OnCDD)
 END_EVENT_TABLE()
 
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
@@ -550,9 +554,11 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_SHOW_LOG, "Show Message &Log");
     menuBar->Append(menu, "&Window");
 
+    // CDD menu
     menu = new wxMenu;
     menu->Append(MID_EDIT_CDD_DESCR, "Edit &Description");
     menu->Append(MID_EDIT_CDD_NOTES, "Edit &Notes");
+    menu->Append(MID_ANNOT_CDD, "&Annotate");
     menuBar->Append(menu, "&CDD");
 
     SetMenuBar(menuBar);
@@ -647,7 +653,7 @@ bool Cn3DMainFrame::SaveDialog(bool canCancel)
 
 void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
 {
-    if (!glCanvas->structureSet) return;
+    if (!glCanvas->structureSet || !glCanvas->structureSet->IsCDD()) return;
     switch (event.GetId()) {
         case MID_EDIT_CDD_DESCR: {
             wxString newDescription = wxGetTextFromUser("Enter or edit the CDD description text:",
@@ -669,6 +675,11 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
                 if (!glCanvas->structureSet->SetCDDNotes(lines))
                     ERR_POST(Error << "Error saving CDD notes");
             }
+            break;
+        }
+        case MID_ANNOT_CDD: {
+            CDDAnnotateDialog dialog(this, glCanvas->structureSet);
+            dialog.ShowModal();
             break;
         }
     }

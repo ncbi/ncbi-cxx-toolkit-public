@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/07/12 17:35:15  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
 * Revision 1.13  2001/06/21 02:02:34  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -284,8 +287,8 @@ void ShowHideManager::ConstructShowHideArray(const StructureSet *structureSet)
                 info->parentIndexes.push_back(objectIndex);
                 structureInfo.push_back(info);
 
-                // if there is more than one domain, enumerate them
-                if (m->second->nDomains > 1) {
+                // if there at least one domain, enumerate them
+                if (m->second->nDomains >= 1) {
                     StructureObject::DomainMap::const_iterator d, de = (*o)->domainMap.end();
                     for (d=(*o)->domainMap.begin(); d!=de; d++) {
                         if (d->second == m->second) {

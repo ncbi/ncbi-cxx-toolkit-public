@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/07/12 17:34:22  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
 * Revision 1.2  2000/12/22 19:25:46  thiessen
 * write cdd output files
 *
@@ -119,6 +122,38 @@ static bool WriteASNToFile(const char *filename, ASNClass& mime, bool isBinary, 
     }
 
     return true;
+}
+
+// for copying ASN data
+template < class ASNClass >
+static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string& err)
+{
+    err.erase();
+    auto_ptr<ASNClass> newObject;
+
+    try {
+        // create output stream
+        ncbi::CNcbiStrstream asnIOstream;
+        ncbi::CObjectOStreamAsnBinary outObject(asnIOstream);
+
+        // load object into stream
+        outObject << originalObject;
+
+        // create input stream
+        ncbi::CObjectIStreamAsnBinary inObject(asnIOstream);
+
+        // create new object
+        newObject.reset(new ASNClass());
+
+        // load data into new object
+        inObject >> *newObject;
+
+    } catch (exception& e) {
+        err = e.what();
+        return NULL;
+    }
+
+    return newObject.release();
 }
 
 END_SCOPE(Cn3D)

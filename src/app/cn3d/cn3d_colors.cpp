@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/07/12 17:35:15  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
 * Revision 1.7  2001/05/11 02:10:41  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -81,6 +84,8 @@ Colors::Colors(void)
     colors[eHelix].Set(.1, .9, .1);
     colors[eStrand].Set(.9, .7, .2);
     colors[eCoil].Set(.3, .9, .9);
+
+    colors[eNoDomain].Set(.4, .4, .4);
 
     // colors for cycle1 (basically copied from Cn3D 3.0)
     cycle1[0].Set(1, 0, 1);

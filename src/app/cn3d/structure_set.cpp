@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2001/07/12 17:35:15  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
 * Revision 1.70  2001/07/10 16:39:55  thiessen
 * change selection control keys; add CDD name/notes dialogs
 *
@@ -1157,6 +1160,31 @@ bool StructureSet::SetCDDNotes(const TextLines& lines)
         scrapbook->push_back(lines[i]);
     dataChanged |= eOtherData;
 
+    return true;
+}
+
+ncbi::objects::CAlign_annot_set * StructureSet::GetCopyOfCDDAnnotSet(void) const
+{
+    if (cddData && cddData->IsSetAlignannot()) {
+        std::string err;
+        CAlign_annot_set *copy = CopyASNObject(cddData->GetAlignannot(), err);
+        if (copy)
+            return copy;
+        else
+            ERR_POST(Error << "StructureSet::GetCopyOfCDDAnnotSet() - error copying object:\n" << err);
+    }
+    return NULL;
+}
+
+bool StructureSet::SetCDDAnnotSet(ncbi::objects::CAlign_annot_set *newAnnotSet)
+{
+    if (!cddData) return false;
+    if (newAnnotSet) {
+        CRef < CAlign_annot_set > ref(newAnnotSet);
+        cddData->SetAlignannot(ref);
+    } else
+        cddData->ResetAlignannot();
+    dataChanged |= eOtherData;
     return true;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2001/07/12 17:35:15  thiessen
+* change domain mapping ; add preliminary cdd annotation GUI
+*
 * Revision 1.45  2001/07/04 19:39:17  thiessen
 * finish user annotation system
 *
@@ -649,9 +652,10 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             break;
 
         case StyleSettings::eDomain:
-            atomStyle->color = (molecule->residueDomains[residue->id - 1] == Molecule::NO_DOMAIN_SET) ?
-                GlobalColors()->Get(Colors::eCycle1, 0) :
-                GlobalColors()->Get(Colors::eCycle1, molecule->residueDomains[residue->id - 1]);
+            atomStyle->color =
+                (molecule->residueDomains[residue->id - 1] == Molecule::NO_DOMAIN_SET) ?
+                    GlobalColors()->Get(Colors::eNoDomain) :
+                    GlobalColors()->Get(Colors::eCycle1, molecule->residueDomains[residue->id - 1] - 1);
             break;
 
         case StyleSettings::eMolecule:
