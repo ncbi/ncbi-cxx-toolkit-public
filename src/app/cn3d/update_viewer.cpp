@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/01/24 20:07:57  thiessen
+* read multiple FAST sequences
+*
 * Revision 1.23  2002/01/02 02:08:29  thiessen
 * go back to viewer.cgi to test http/301 forwarding
 *
@@ -417,25 +420,33 @@ void UpdateViewer::ImportSequence(void)
         wxString fastaFile = wxFileSelector("Choose a FASTA file from which to import",
             "", "", "", "*.*", wxOPEN | wxFILE_MUST_EXIST, *viewerWindow);
         if (fastaFile.size() > 0) {
+            int nSequencesImported = 0;
             FILE *fp = FileOpen(fastaFile.c_str(), "r");
-            SeqEntry *sep = FastaToSeqEntry(fp, FALSE); // only reads first sequence... alternative?
-            FileClose(fp);
-            if (!sep) {
-                ERR_POST(Error << "UpdateViewer::ImportSequence() - error parsing FASTA file "
-                    << fastaFile.c_str());
-            } else {
-                // convert C to C++ SeqEntry
-                CSeq_entry se;
-                if (!ConvertAsnFromCToCPP(sep, (AsnWriteFunc) SeqEntryAsnWrite, &se, &err)) {
-                    ERR_POST(Error << "UpdateViewer::ImportSequence() - error converting to C++ object: "
-                        << err);
-                } else {
-                    // create Sequence - just one for now
-                    if (se.IsSeq())
-                        newSequences.push_back(master->parentSet->CreateNewSequence(se.GetSeq()));
+            if (fp) {
+                SeqEntry *sep = NULL;
+                while ((sep=FastaToSeqEntry(fp, FALSE)) != NULL) {
+                    // convert C to C++ SeqEntry
+                    CSeq_entry se;
+                    if (!ConvertAsnFromCToCPP(sep, (AsnWriteFunc) SeqEntryAsnWrite, &se, &err)) {
+                        ERR_POST(Error << "UpdateViewer::ImportSequence() - error converting to C++ object: "
+                            << err);
+                    } else {
+                        // create Sequence - just one for now
+                        if (se.IsSeq()) {
+                            newSequences.push_back(master->parentSet->CreateNewSequence(se.GetSeq()));
+                            nSequencesImported++;
+                        } else
+                            ERR_POST(Error << "FastaToSeqEntry() returned Bioseq-set in Seq-entry");
+                    }
+                    SeqEntryFree(sep);
                 }
-                SeqEntryFree(sep);
-            }
+                FileClose(fp);
+            } else
+                ERR_POST(Error << "Unable to open " << fastaFile.c_str());
+            if (nSequencesImported)
+                TESTMSG("imported " << nSequencesImported << " from " << fastaFile.c_str());
+            else
+                ERR_POST(Error << "No sequences could be read from " << fastaFile.c_str());
         }
     }
 
