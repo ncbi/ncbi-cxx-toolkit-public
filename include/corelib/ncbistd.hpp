@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/07/06 15:21:04  vakatov
+* + NStr::TruncateSpaces(const string& str, ETrunc where=eTrunc_Both)
+*
 * Revision 1.23  1999/06/21 15:59:40  vakatov
 * [auto_ptr] -- closer to standard:  added an ownership and
 * initialization/assignment with "auto_ptr<>&", made "release()" be "const"
@@ -149,6 +152,12 @@ struct NStr {
             Compare(str, pos, end.size(), end) == 0;
     }
 
+    enum ETrunc {
+        eTrunc_Begin,
+        eTrunc_End,
+        eTrunc_Both
+    };
+    static string TruncateSpaces(const string& str, ETrunc where=eTrunc_Both);
 }; // struct NStr
        
 // predicates

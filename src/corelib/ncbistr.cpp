@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/07/06 15:21:06  vakatov
+* + NStr::TruncateSpaces(const string& str, ETrunc where=eTrunc_Both)
+*
 * Revision 1.15  1999/06/15 20:50:05  vakatov
 * NStr::  +BoolToString, +StringToBool
 *
@@ -166,6 +169,26 @@ bool NStr::StringToBool(const string& str)
         return false;
     throw runtime_error("NStr::StringToBool(): cannot convert");
 }
+
+
+string NStr::TruncateSpaces(const string& str, ETrunc where)
+{
+    SIZE_TYPE beg = 0;
+    if (where == eTrunc_Begin  ||  where == eTrunc_Both) {
+        while (beg < str.length()  &&  isspace(str[beg]))
+            beg++;
+        if (beg == str.length())
+            return NcbiEmptyString;
+    }
+    SIZE_TYPE end = str.length() - 1;
+    if (where == eTrunc_End  ||  where == eTrunc_Both) {
+        while ( isspace(str[end]) )
+            end--;
+    }
+    _ASSERT( beg <= end );
+    return str.substr(beg, end - beg + 1);
+}
+
 
 
 // predicates
