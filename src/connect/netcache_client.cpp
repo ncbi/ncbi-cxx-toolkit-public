@@ -499,45 +499,22 @@ bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
 {
     _ASSERT(str);
 
-    str->erase();
-    char ch;
-    EIO_Status io_st;
-
-    char szBuf[257] = {0};
-    unsigned str_len = 0;
-    size_t n_read = 0;
-
-    for (bool flag = true; flag; ) {
-        io_st = sock.Read(szBuf, 256, &n_read, eIO_ReadPeek);
-        switch (io_st) 
+    EIO_Status io_st = sock.ReadLine(*str);
+    switch (io_st) 
+    {
+    case eIO_Success:
+        return true;
+    case eIO_Timeout:
         {
-        case eIO_Success:
-            flag = false;
-            break;
-        case eIO_Timeout:
-            {
-            string msg = "Communication timeout reading from server.";
-            NCBI_THROW(CNetCacheException, eTimeout, msg);
-            }
-            break;
-        default: // invalid socket or request, bailing out
-            return false;
-        };
-    }
-
-    for (str_len = 0; str_len < n_read; ++str_len) {
-        ch = szBuf[str_len];
-        if (ch == 0 || ch == '\n' || ch == 13) {
-            break;
+        string msg = "Communication timeout reading from server.";
+        NCBI_THROW(CNetCacheException, eTimeout, msg);
         }
-        *str += ch;
-    }
-
-    if (str_len == 0) {
+        break;
+    default: // invalid socket or request, bailing out
         return false;
-    }
-    io_st = sock.Read(szBuf, str_len + 2);
-    return true;
+    };
+
+    return true;    
 }
 
 
@@ -554,6 +531,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/11/16 14:00:04  kuznets
+ * Code cleanup: made use of CSocket::ReadLine() instead of ad-hoc code
+ *
  * Revision 1.23  2004/11/10 18:47:30  kuznets
  * fixed connection in IsAlive()
  *
