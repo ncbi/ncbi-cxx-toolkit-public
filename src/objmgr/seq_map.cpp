@@ -588,9 +588,9 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForSeq_loc(const CSeq_loc& loc,
 {
     CConstRef<CSeqMap> ret(new CSeqMap(loc));
     if ( scope ) {
-        CSeqMap::const_iterator i(
-            ret->BeginResolved(scope,
-                               SSeqMapSelector().SetFlags(fFindData)));
+        SSeqMapSelector sel;
+        sel.SetFlags(fFindData).SetResolveCount(kMax_UInt);
+        CSeqMap::const_iterator i(ret->BeginResolved(scope, sel));
         for ( ; i; ++i ) {
             _ASSERT(i.GetType() == eSeqData);
             switch ( i.GetRefData().Which() ) {
@@ -957,6 +957,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2004/12/21 18:11:35  vasilche
+* Fixed initialization of MolType in CreateSeqMapForSeq_loc().
+*
 * Revision 1.63  2004/12/14 17:41:03  grichenk
 * Reduced number of CSeqMap::FindResolved() methods, simplified
 * BeginResolved and EndResolved. Marked old methods as deprecated.
