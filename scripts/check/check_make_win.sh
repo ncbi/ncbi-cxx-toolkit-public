@@ -119,7 +119,6 @@ res_concat="\$res_script.out"
 res_concat_err="\$res_script.out_err"
 
 cfgs='Debug DebugDLL DebugMT Release ReleaseDLL ReleaseMT'
-permanent_features='mswin ODBC Sybase DBLib OpenGL serial objects dbapi app ctools gui algo'
 
 
 ##  Printout USAGE info and exit
@@ -285,7 +284,7 @@ RunTest() {
 
    # Check application requirements
    for x_req in \$x_requires; do
-      (echo " \$features " | grep " \$x_req " > /dev/null)  ||  return 0
+      (echo " \$FEATURES " | grep " \$x_req " > /dev/null)  ||  return 0
    done
 
    # Determine test application name
@@ -388,17 +387,12 @@ for build_tree in \$build_trees; do
    fi
 
    # Features detection
-   features="\$permanent_features"
-   if test \`echo \$x_conf | grep MT\`; then
-      features="MT \$features"
-   fi
-   if test \`echo \$x_conf | grep DLL\`; then
-      features="MT \$features"
-   fi
-   if test "\$build_tree" = "dll/"; then
-      features="DLL \$features"
-   fi
-   export features
+   fs=\`cat \${build_dir}/\${build_tree}/\${x_conf}/features_and_packages.txt\`
+   FEATURES=""
+   for f in \$fs; do
+      FEATURES="\$FEATURES\$f "
+   done
+   export FEATURES
 
    # Add current configuration's build and dll build directories to PATH
    PATH=".:\${build_dir}/\${build_tree}bin/\${x_conf}:\${build_dir}/\${build_tree}lib/\${x_conf}:\${build_dir}/dll/bin/\${x_conf}:\${saved_path}"
@@ -408,6 +402,7 @@ for build_tree in \$build_trees; do
    CFG_BIN="\${build_dir}/\${build_tree}bin/\${x_conf}"
    CFG_LIB="\${build_dir}/\${build_tree}lib/\${x_conf}"
    export CFG_BIN CFG_LIB
+
 EOF
 
 #//////////////////////////////////////////////////////////////////////////
