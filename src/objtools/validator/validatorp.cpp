@@ -814,7 +814,7 @@ void CValidError_imp::ValidatePubGen
         const string& cit = gen.GetCit();
         if ( (NStr::CompareNocase(cit, 0, 8,  "submitted") != 0)          &&
              (NStr::CompareNocase(cit, 0, 11, "unpublished") != 0)        &&
-             (NStr::CompareNocase(cit, 0, 18, "Online Publication") == 0) &&
+             (NStr::CompareNocase(cit, 0, 18, "Online Publication") != 0) &&
              (NStr::CompareNocase(cit, 0, 26, "Published Only in DataBase") != 0) ) {
             PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
                 "Unpublished citation text invalid", obj);
@@ -2349,6 +2349,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2003/05/14 22:10:43  shomrat
+* == -> !=
+*
 * Revision 1.32  2003/05/05 15:35:02  shomrat
 * eErr_GENERIC_BadPageNumbering dropped to eDiag_warning
 *
