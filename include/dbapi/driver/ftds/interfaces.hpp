@@ -101,6 +101,7 @@ typedef unsigned char CS_BIT;
 #  define DBBIT CS_BIT
 #endif
 
+#ifndef NCBI_FTDS
 extern "C" {
     BYTE *dbgetuserdata(DBPROCESS *dbproc);
     RETCODE dbsetuserdata(DBPROCESS *dbproc, BYTE *ptr);
@@ -110,6 +111,7 @@ extern "C" {
     STATUS dbreadtext(DBPROCESS *dbproc, void *buf, DBINT bufsize);
     int dbrettype(DBPROCESS *dbproc,int retnum);
 }
+#endif
 
 class CTDSContext;
 class CTDS_Connection;
@@ -725,6 +727,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/12/05 22:39:39  soussov
+ * Adapted for TDS8
+ *
  * Revision 1.7  2002/05/29 22:03:50  soussov
  * Makes BlobResult read ahead
  *
