@@ -1,4 +1,4 @@
---$Revision: 3.3 $
+--$Revision: 3.4 $
 --********************************************************************
 --
 --  Direct Submission of Sequence Data
@@ -46,8 +46,8 @@ Submit-block ::= SEQUENCE {
     comment VisibleString OPTIONAL } -- user comments/advice to database
 
 Contact-info ::= SEQUENCE {      -- who to contact to discuss the submission
-    name VisibleString ,
-    address SEQUENCE OF VisibleString ,  -- mailing address
+    name VisibleString OPTIONAL ,        -- OBSOLETE: will be removed
+    address SEQUENCE OF VisibleString OPTIONAL ,
     phone VisibleString OPTIONAL ,
     fax VisibleString OPTIONAL ,
     email VisibleString OPTIONAL ,
