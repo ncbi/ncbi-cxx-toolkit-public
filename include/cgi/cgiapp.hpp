@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/01/23 19:58:40  kuznets
+* CGI logging improvements
+*
 * Revision 1.27  2001/11/19 15:20:16  ucko
 * Switch CGI stuff to new diagnostics interface.
 *
@@ -132,6 +135,7 @@ BEGIN_NCBI_SCOPE
 
 class CCgiServerContext;
 class CNCBINode;
+class CTime;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -178,10 +182,18 @@ protected:
                                                CDiagFactory* fact);
     CDiagFactory*          FindDiagFactory(const string& key);
 
-    virtual void           ConfigureDiagnostics(CCgiContext& context);
+    virtual void           ConfigureDiagnostics    (CCgiContext& context);
     virtual void           ConfigureDiagDestination(CCgiContext& context);
-    virtual void           ConfigureDiagThreshold(CCgiContext& context);
-    virtual void           ConfigureDiagFormat(CCgiContext& context);
+    virtual void           ConfigureDiagThreshold  (CCgiContext& context);
+    virtual void           ConfigureDiagFormat     (CCgiContext& context);
+
+    // Analyze registry settings ([CGI] Log) and return current logging option
+    enum ELogOpt {
+        eNoLog,
+        eLog,
+        eLogOnError
+    };
+    ELogOpt GetLogOpt(void) const;
 
 private:
     // If FastCGI-capable, and run as a Fast-CGI then iterate through
@@ -189,7 +201,20 @@ private:
     // time after time; then return TRUE.
     // Return FALSE overwise.
     // In the "result", return exit code of the last CGI iteration run.
-    bool RunFastCGI(int* result, unsigned def_iter = 3);
+    bool x_RunFastCGI(int* result, unsigned int def_iter = 3);
+
+    // Logging
+    enum ELogPostFlags {
+        fBegin = 0x1,
+        fEnd   = 0x2
+    };
+    typedef int TLogPostFlags;  // binary OR of "ELogPostFlags"
+    void x_LogPost(const char*             msg_header,
+                   unsigned int            iteration,
+                   const CTime&            start_time,
+                   const CNcbiEnvironment* env,
+                   TLogPostFlags           flags)
+        const;
 
     CCgiContext&   x_GetContext (void) const;
     CNcbiResource& x_GetResource(void) const;

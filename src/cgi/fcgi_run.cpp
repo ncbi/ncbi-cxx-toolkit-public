@@ -48,6 +48,7 @@ bool CCgiApplication::RunFastCGI(int* /*result*/, unsigned /*def_iter*/)
 # include "fcgibuf.hpp"
 # include <corelib/ncbienv.hpp>
 # include <corelib/ncbireg.hpp>
+# include <corelib/ncbitime.hpp>
 # include <cgi/cgictx.hpp>
 
 # include <fcgiapp.h>
@@ -87,7 +88,7 @@ public:
     // ignores changes after the first LIMIT bytes
     CCgiWatchFile(const string& filename, int limit = 1024)
         : m_Filename(filename), m_Limit(limit), m_Buf(new char[limit])
-        { m_Count = x_Read(m_Buf.get()); }
+    { m_Count = x_Read(m_Buf.get()); }
 
     bool HasChanged(void);
 
@@ -107,7 +108,7 @@ inline
 bool CCgiWatchFile::HasChanged(void)
 {
     TBuf buf(new char[m_Limit]);
-    return (x_Read(buf.get()) != m_Count 
+    return (x_Read(buf.get()) != m_Count
             ||  memcmp(buf.get(), m_Buf.get(), m_Count) != 0);
 }
 
@@ -124,7 +125,7 @@ int CCgiWatchFile::x_Read(char* buf)
 }
 
 
-bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
+bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 {
     *result = -100;
 
@@ -134,30 +135,40 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
         return false;
     }
 
+    // Registry
+    const CNcbiRegistry& reg = GetConfig();
 
     // Max. number of the Fast-CGI loop iterations
-    int iterations;
-    string param = GetConfig().Get("FastCGI", "Iterations");
-    if ( param.empty() ) {
-        iterations = def_iter;
-    } else {
-        try {
-            iterations = NStr::StringToInt(param);
-        } catch (exception& e) {
-            ERR_POST("CCgiApplication::RunFastCGI:  invalid FastCGI:Iterations"
-                     " config.parameter value: " << param);
+    unsigned int iterations;
+    {{
+        int x_iterations =
+            reg.GetInt("FastCGI", "Iterations", (int) def_iter,
+                       CNcbiRegistry::eErrPost);
+
+        if (x_iterations > 0) {
+            iterations = (unsigned int) x_iterations;
+        } else {
+            ERR_POST("CCgiApplication::RunFastCGI:  invalid "
+                     "[FastCGI].Iterations config.parameter value: "
+                     << x_iterations);
+            _ASSERT(def_iter);
             iterations = def_iter;
         }
-    }
-    _TRACE("CCgiApplication::Run: FastCGI limited to "
-           << iterations << " iterations");
 
+        _TRACE("CCgiApplication::Run: FastCGI limited to "
+               << iterations << " iterations");
+    }}
+
+    // Logging options
+    ELogOpt logopt = GetLogOpt();
+
+    // Watcher file -- to allow for stopping the Fast-CGI "prematurely"
     auto_ptr<CCgiWatchFile> watcher(0);
     {{
-        string filename = GetConfig().Get("FastCGI", "WatchFile.Name");
+        const string& filename = GetConfig().Get("FastCGI", "WatchFile.Name");
         if ( !filename.empty() ) {
             int limit = NStr::StringToNumeric
-                        (GetConfig().Get("FastCGI", "WatchFile.Limit"));
+                (GetConfig().Get("FastCGI", "WatchFile.Limit"));
             if (limit <= 0) {
                 limit = 1024; // set a reasonable default
             }
@@ -167,11 +178,14 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
 
     // Main Fast-CGI loop
     time_t mtime = s_GetModTime( GetArguments().GetProgramName().c_str() );
-    for (int iteration = 0;  iteration < iterations;  ++iteration) {
+    for (unsigned int iteration = 0;  iteration < iterations;  ++iteration) {
+
+        CTime start_time(CTime::eCurrent);
+
         _TRACE("CCgiApplication::FastCGI: " << (iteration + 1)
                << " iteration of " << iterations);
 
-        // accept the next request and obtain its data
+        // Accept the next request and obtain its data
         FCGX_Stream *pfin, *pfout, *pferr;
         FCGX_ParamArray penv;
         if ( FCGX_Accept(&pfin, &pfout, &pferr, &penv) != 0 ) {
@@ -179,14 +193,19 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
             break;
         }
 
-        // default exit status (error)
+        // Default exit status (error)
         *result = -1;
         FCGX_SetExitStatus(-1, pfout);
 
-        // process the request
+        // Process the request
         try {
-            // initialize CGI context with the new request data
+            // Initialize CGI context with the new request data
             CNcbiEnvironment  env(penv);
+            if (logopt == eLog) {
+                x_LogPost("CCgiApplication::RunFastCGI ",
+                          iteration, start_time, &env, fBegin);
+            }
+
             CCgiObuffer       obuf(pfout, 512);
             CNcbiOstream      ostr(&obuf);
             CCgiIbuffer       ibuf(pfin);
@@ -195,10 +214,10 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
 
             m_Context.reset(CreateContext(&args, &env, &istr, &ostr));
 
-            // safely clear contex data and reset "m_Context" to zero
+            // Safely clear contex data and reset "m_Context" to zero
             CAutoCgiContext auto_context(m_Context);
 
-            // checking for exit request
+            // Checking for exit request
             if (m_Context->GetRequest().GetEntries().find("exitfastcgi") !=
                 m_Context->GetRequest().GetEntries().end()) {
                 ostr <<
@@ -213,19 +232,21 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
                 break;
             }
 
-            if ( !GetConfig().Get("FastCGI", "Debug").empty() ) {
+            // Debug message (if requested)
+            bool is_debug = reg.GetBool("FastCGI", "Debug", false,
+                                        CNcbiRegistry::eErrPost);
+            if ( is_debug ) {
                 m_Context->PutMsg
-                    ("FastCGI: " + NStr::IntToString(iteration + 1) +
+                    ("FastCGI: "      + NStr::IntToString(iteration + 1) +
                      " iteration of " + NStr::IntToString(iterations) +
-                     ", pid " + NStr::IntToString(getpid()));
+                     ", pid "         + NStr::IntToString(getpid()));
             }
 
             // Restore old diagnostic state when done.
             CDiagRestorer     diag_restorer;
-
             ConfigureDiagnostics(*m_Context);
 
-            // call ProcessRequest()
+            // Call ProcessRequest()
             _TRACE("CCgiApplication::Run: calling ProcessRequest()");
             *result = ProcessRequest(*m_Context);
             _TRACE("CCgiApplication::Run: flushing");
@@ -234,13 +255,34 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
             FCGX_SetExitStatus(*result, pfout);
         }
         catch (exception& e) {
-            ERR_POST("CCgiApplication::ProcessRequest() failed: " << e.what());
-            // (ignore the error, proceed with the next iteration anyway)
+            string msg = "CCgiApplication::ProcessRequest() failed: ";
+            msg += e.what();
+
+            if (logopt != eNoLog) {
+                x_LogPost(msg.c_str(), iteration, start_time, 0, fBegin|fEnd);
+            } else {
+                ERR_POST(msg);  // Post error notification even if no logging
+            }
+
+            bool is_stop_onfail = reg.GetBool("FastCGI", "StopIfFailed",
+                                              false, CNcbiRegistry::eErrPost);
+            if ( is_stop_onfail ) {     // configured to stop on error
+                // close current request
+                _TRACE("CCgiApplication::RunFastCGI: FINISHING (forced)");
+                FCGX_Finish();
+                break;
+            }
         }
 
-        // close current request
+        // Close current request
         _TRACE("CCgiApplication::RunFastCGI: FINISHING");
         FCGX_Finish();
+
+        // Logging
+        if (logopt == eLog) {
+            x_LogPost("CCgiApplication::RunFastCGI ",
+                      iteration, start_time, 0, fEnd);
+        }
 
         // check if this CGI executable has been changed
         time_t mtimeNew =
@@ -266,12 +308,17 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
 
 #endif /* HAVE_LIBFASTCGI */
 
+
 END_NCBI_SCOPE
 
+
+
 /*
- *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2003/01/23 19:59:02  kuznets
+ * CGI logging improvements
+ *
  * Revision 1.17  2002/12/19 21:23:26  ucko
  * Don't bother checking WatchFile.Limit unless WatchFile.Name is set.
  *

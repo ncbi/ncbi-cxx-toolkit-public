@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/01/23 19:59:02  kuznets
+* CGI logging improvements
+*
 * Revision 1.32  2002/08/02 20:13:53  gouriano
 * disable arg descriptions by default
 *
@@ -141,6 +144,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbitime.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
@@ -152,7 +156,7 @@ BEGIN_NCBI_SCOPE
 //
 
 CCgiApplication* CCgiApplication::Instance(void)
-{ 
+{
     return dynamic_cast<CCgiApplication*>(CParent::Instance());
 }
 
@@ -161,27 +165,63 @@ int CCgiApplication::Run(void)
 {
     int result;
 
-    // try to run as a Fast-CGI loop
-    if ( RunFastCGI(&result) ) {
+    // Try to run as a Fast-CGI loop
+    if ( x_RunFastCGI(&result) ) {
         return result;
     }
 
-    // run as a plain CGI application
-    _TRACE("CCgiApplication::Run: calling ProcessRequest");
-    m_Context.reset( CreateContext() );
-    // Restore old diagnostic state when done.
-    CDiagRestorer diag_restorer;
-    ConfigureDiagnostics(*m_Context);
-    result = ProcessRequest(*m_Context);
-    _TRACE("CCgiApplication::Run: flushing");
-    m_Context->GetResponse().Flush();
-    _TRACE("CCgiApplication::Run: return " << result);
+    // Run as a plain CGI application
+    ELogOpt logopt = GetLogOpt();
+    CTime start_time(CTime::eCurrent);
+
+    // Logging
+    if (logopt == eLog) {
+        x_LogPost("(plain CGI) CCgiApplication::Run ",
+                  0, start_time, &GetEnvironment(), fBegin);
+    }
+
+    try {
+        _TRACE("(plain CGI) CCgiApplication::Run: calling ProcessRequest");
+
+        m_Context.reset( CreateContext() );
+        // Restore old diagnostic state when done.
+        CDiagRestorer diag_restorer;
+        ConfigureDiagnostics(*m_Context);
+
+        result = ProcessRequest(*m_Context);
+        _TRACE("CCgiApplication::Run: flushing");
+        m_Context->GetResponse().Flush();
+        _TRACE("CCgiApplication::Run: return " << result);
+    }
+    catch (exception& e) {
+        string msg = "(plain CGI) CCgiApplication::ProcessRequest() failed: ";
+        msg += e.what();
+
+        if (logopt != eNoLog) {
+            x_LogPost(msg.c_str(), 0, start_time, 0, fBegin|fEnd);
+        } else {
+            ERR_POST(msg);  // Post error notification even if no logging
+        }
+
+        CException* ex = dynamic_cast<CException*> (&e);
+        if ( ex ) {
+            NCBI_RETHROW_SAME((*ex), "(plain CGI) CCgiApplication::Run");
+        }
+        throw;
+    }
+
+    // Logging
+    if (logopt == eLog) {
+        x_LogPost("(plain CGI) CCgiApplication::Run ",
+                  0, start_time, 0, fEnd);
+    }
+
     return result;
 }
 
 
 CCgiContext& CCgiApplication::x_GetContext( void ) const
-{ 
+{
     if ( !m_Context.get() ) {
         ERR_POST("CCgiApplication::GetContext: no context set");
         throw runtime_error("no context set");
@@ -191,7 +231,7 @@ CCgiContext& CCgiApplication::x_GetContext( void ) const
 
 
 CNcbiResource& CCgiApplication::x_GetResource( void ) const
-{ 
+{
     if ( !m_Resource.get() ) {
         ERR_POST("CCgiApplication::GetResource: no resource set");
         throw runtime_error("no resource set");
@@ -202,14 +242,14 @@ CNcbiResource& CCgiApplication::x_GetResource( void ) const
 
 void CCgiApplication::Init(void)
 {
-    CParent::Init();       
+    CParent::Init();
     m_Resource.reset(LoadResource());
 }
 
 
 void CCgiApplication::Exit(void)
 {
-    m_Resource.reset(0);    
+    m_Resource.reset(0);
     CParent::Exit();
 }
 
@@ -225,11 +265,11 @@ CCgiServerContext* CCgiApplication::LoadServerContext(CCgiContext& /*context*/)
     return 0;
 }
 
- 
+
 CCgiContext* CCgiApplication::CreateContext
 (CNcbiArguments*   args,
  CNcbiEnvironment* env,
- CNcbiIstream*     inp, 
+ CNcbiIstream*     inp,
  CNcbiOstream*     out,
  int               ifd,
  int               ofd)
@@ -238,9 +278,8 @@ CCgiContext* CCgiApplication::CreateContext
 }
 
 
-// Flexible diagnostics support added by Aaron Ucko in September 2001
+// Flexible diagnostics support
 //
-
 
 class CStderrDiagFactory : public CDiagFactory
 {
@@ -260,7 +299,7 @@ public:
         CDiagHandler* result   = new CStreamDiagHandler(&response.out());
         response.SetContentType("text/plain");
         response.WriteHeader();
-        response.SetOutput(NULL); // suppress normal output
+        response.SetOutput(0); // suppress normal output
         return result;
     }
 
@@ -298,7 +337,7 @@ CDiagFactory* CCgiApplication::FindDiagFactory(const string& key)
     if (it != m_DiagFactories.end()) {
         return it->second;
     } else {
-        return NULL;
+        return 0;
     }
 }
 
@@ -324,7 +363,7 @@ void CCgiApplication::ConfigureDiagDestination(CCgiContext& context)
 
     SIZE_TYPE colon = dest.find(':');
     CDiagFactory* factory = FindDiagFactory(dest.substr(0, colon));
-    if (factory != NULL) {
+    if ( factory ) {
         SetDiagHandler(factory->New(dest.substr(colon + 1)));
     }
 }
@@ -402,6 +441,86 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
         }
     }
     SetDiagPostAllFlags(new_flags);
+}
+
+
+CCgiApplication::ELogOpt CCgiApplication::GetLogOpt() const
+{
+    string log =
+        GetConfig().GetString("CGI", "Log", kEmptyStr, CNcbiRegistry::eReturn);
+
+    CCgiApplication::ELogOpt logopt = eNoLog;
+    if ((NStr::CompareNocase(log, "On") == 0) ||
+        (NStr::CompareNocase(log, "true") == 0)) {
+        logopt = eLog;
+    } else if (NStr::CompareNocase(log, "OnError") == 0) {
+        logopt = eLogOnError;
+    }
+#ifdef _DEBUG
+    else if (NStr::CompareNocase(log, "OnDebug") == 0) {
+        logopt = eLog;
+    }
+#endif
+
+    return logopt;
+}
+
+
+void CCgiApplication::x_LogPost(const char*             msg_header,
+                                unsigned int            iteration,
+                                const CTime&            start_time,
+                                const CNcbiEnvironment* env,
+                                TLogPostFlags           flags)
+    const
+{
+    CNcbiOstrstream msg;
+    const CNcbiRegistry& reg = GetConfig();
+
+    if ( msg_header ) {
+        msg << msg_header << NcbiEndl;
+    }
+
+    if ( flags & fBegin ) {
+        bool is_print_iter = reg.GetBool("FastCGI", "PrintIterNo",
+                                         false, CNcbiRegistry::eErrPost);
+        if ( is_print_iter ) {
+            msg << " Iteration = " << iteration << NcbiEndl;
+        }
+    }
+
+    bool is_timing =
+        reg.GetBool("CGI", "TimeStamp", false, CNcbiRegistry::eErrPost);
+    if ( is_timing ) {
+        msg << " start time = "  << start_time.AsString();
+
+        if ( flags & fEnd ) {
+            CTime end_time(CTime::eCurrent);
+            CTime elapsed = end_time - start_time;
+
+            msg << "    end time = " << end_time.AsString()
+                << "    elapsed = "  << elapsed.AsString();
+        }
+        msg << NcbiEndl;
+    }
+
+    if ((flags & fBegin)  &&  env) {
+        string print_env = reg.GetString("CGI", "PrintEnv", kEmptyStr,
+                                         CNcbiRegistry::eErrPost);
+        if ( !print_env.empty() ) {
+            if (NStr::CompareNocase(print_env, "all") == 0) {
+                // TODO
+                ERR_POST("CCgiApp::  [CGI].PrintEnv=all not implemented");
+            } else {  // list of variables
+                list<string> vars;
+                NStr::Split(print_env, ",; ", vars);
+                iterate (list<string>, i, vars) {
+                    msg << *i << "=" << env->Get(*i) << NcbiEndl;
+                }
+            }
+        }
+    }
+
+    ERR_POST( (string) CNcbiOstrstreamToString(msg) );
 }
 
 
