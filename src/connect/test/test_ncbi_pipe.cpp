@@ -176,13 +176,13 @@ int CTest::Run(void)
     args.clear();
     args.push_back("one_argument");
     pipe.Open(app.c_str(), args, CPipe::eText, CPipe::eDoNotUse);
-    s_WritePipe(pipe, "Child, are You ready?");
+    s_WritePipe(pipe, "Child, are you ready?");
     Delay();
     assert(pipe.Close() == TEST_RESULT);
 
     // Pipe for writing (iostream)
     pipe.Open(app.c_str(), args, CPipe::eText, CPipe::eDoNotUse);
-    s_WritePipe(pipe, "Child, are You ready?");
+    s_WritePipe(pipe, "Child, are you ready?");
     Delay();
     assert(pipe.Close() == TEST_RESULT);
     
@@ -192,7 +192,7 @@ int CTest::Run(void)
     args.push_back("arguments");
     pipe.Open(app.c_str(), args);
     Delay();
-    s_WritePipe(pipe, "Child, are You ready again?");
+    s_WritePipe(pipe, "Child, are you ready again?");
     Delay();
     str = s_ReadPipe(pipe);
     assert(str == "Ok. Test 2 running.");
@@ -239,18 +239,18 @@ int main(int argc, const char* argv[])
     if (argc == 2) {
         cerr << endl << "--- CPipe unidirectional test ---" << endl;
         command = s_ReadFile(stdin);
-        assert(command == "Child, are You ready?");
+        assert(command == "Child, are you ready?");
         cout << "Ok. Test 1 running." << endl;
-        exit(TEST_RESULT);
+        _exit(TEST_RESULT);
     }
 
     // Spawned process for bidirectional test (direct from pipe)
     if (argc == 3) {
         cerr << endl << "--- CPipe bidirectional test (pipe) ---" << endl;
         command = s_ReadFile(stdin);
-        assert(command == "Child, are You ready again?");
+        assert(command == "Child, are you ready again?");
         s_WriteFile(stdout, "Ok. Test 2 running.");
-        exit(TEST_RESULT);
+        _exit(TEST_RESULT);
     }
 
     // Spawned process for bidirectional test (iostream)
@@ -264,7 +264,7 @@ int main(int argc, const char* argv[])
             cout.flush();
         }
         cerr << "Done" << endl;
-        exit(TEST_RESULT);
+        _exit(TEST_RESULT);
     }
 
     // Execute main application function
@@ -275,6 +275,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2002/08/13 14:09:48  ivanov
+ * Changed exit() to _exit() in the child's branch of the test
+ *
  * Revision 6.6  2002/06/24 21:44:36  ivanov
  * Fixed s_ReadFile(), c_ReadStream()
  *

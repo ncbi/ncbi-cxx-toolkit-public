@@ -202,12 +202,12 @@ int main(int argc, const char* argv[], const char* envp[])
             if (!ptr || !*ptr) {
                 cout << "Environment variable TEST_NCBI_EXEC not found " << endl;
                 cout.flush();
-                exit(88);
+                _exit(88);
             } else {
                 cout << "TEST_NCBI_EXEC=" << ptr << endl;
             }
         }
-        exit(TEST_RESULT_C);
+        _exit(TEST_RESULT_C);
     }
     cout << "Start tests:" << endl << endl;
     // Execute main application function
@@ -218,6 +218,9 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2002/08/13 14:09:48  ivanov
+ * Changed exit() to _exit() in the child's branch of the test
+ *
  * Revision 6.9  2002/07/26 15:36:53  ivanov
  * Changed exit code in the Run()
  *
