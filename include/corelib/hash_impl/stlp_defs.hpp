@@ -171,6 +171,10 @@ NCBI_USING_NAMESPACE_STD;
 #    include <memory>
 #    define USE_NO_ALLOC_TRAITS
 #  endif
+#  if NCBI_COMPILER_VERSION < 304
+#    define NO_STD_CONSTRUCT
+#    define NO_STD_DESTROY
+#  endif
 #endif
 
 #ifdef NCBI_COMPILER_ICC
@@ -447,6 +451,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/02/09 21:29:14  grichenk
+ * Fixed GCC 2.9.5 options
+ *
  * Revision 1.5  2005/02/09 19:11:41  grichenk
  * Added CVS log
  *
