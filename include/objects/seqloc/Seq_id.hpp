@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2000/11/27 20:36:39  vasilche
+ * Enum should be defined in public area.
+ *
  * Revision 1.1  2000/11/21 18:58:12  vasilche
  * Added Match() methods for CSeq_id, CObject_id and CDbtag.
  *
@@ -58,12 +61,6 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CSeq_id : public CSeq_id_Base
 {
     typedef CSeq_id_Base Tparent;
-    enum E_SIC {   // Compare return values
-      e_error = 0 ,    // some problem
-      e_DIFF,          // different SeqId types-can't compare
-      e_NO,            // SeqIds compared, but are different
-      e_YES };         // SeqIds compared, are equivalent
-
 public:
     // constructor
     CSeq_id(void);
@@ -72,7 +69,13 @@ public:
 
     // Match() - TRUE if SeqIds are equivalent
     bool Match(const CSeq_id& sid2) const;
+
     // Compare() - more general
+    enum E_SIC {   // Compare return values
+      e_error = 0 ,    // some problem
+      e_DIFF,          // different SeqId types-can't compare
+      e_NO,            // SeqIds compared, but are different
+      e_YES };         // SeqIds compared, are equivalent
     E_SIC Compare(const CSeq_id& sid2) const;
     
 };
