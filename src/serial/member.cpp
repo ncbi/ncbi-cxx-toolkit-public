@@ -660,8 +660,27 @@ void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
     _ASSERT(!memberInfo->CanBeDelayed());
     _ASSERT(memberInfo->HaveSetFlag());
     memberInfo->UpdateSetFlagYes(classPtr);
-    in.ReadObject(memberInfo->GetItemPtr(classPtr),
-                  memberInfo->GetTypeInfo());
+    try {
+        in.ReadObject(memberInfo->GetItemPtr(classPtr),
+                      memberInfo->GetTypeInfo());
+    }
+    catch (CSerialException& e) {
+        if (e.GetErrCode() == CSerialException::eMissingValue) {
+            if ( memberInfo->Optional() && memberInfo->HaveSetFlag() ) {
+                in.SetFailFlags(CObjectIStream::fNoError,0);
+                if ( memberInfo->UpdateSetFlagNo(classPtr) ) {
+                    memberInfo->GetTypeInfo()->SetDefault(
+                        memberInfo->GetItemPtr(classPtr));
+                }
+            } else {
+                NCBI_RETHROW(e, CSerialException, eFormatError,
+                    "error while reading " + memberInfo->GetId().GetName());
+            }
+        } else {
+            NCBI_RETHROW_SAME(e,
+                "error while reading " + memberInfo->GetId().GetName());
+        }
+    }
 }
 
 void CMemberInfoFunctions::ReadLongMember(CObjectIStream& in,
@@ -1103,6 +1122,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.37  2004/01/22 20:45:41  gouriano
+* Corrected reading of class members with possibly empty contents (bool,enum)
+*
 * Revision 1.36  2004/01/05 14:25:20  gouriano
 * Added possibility to set serialization hooks by stack path
 *
