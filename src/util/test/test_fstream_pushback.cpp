@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/03/19 21:57:19  lavr
+ * +IOS_BASE::binary in file open
+ *
  * Revision 1.4  2002/02/05 21:45:19  lavr
  * Included header files rearranged
  *
@@ -59,7 +62,9 @@ int main(int argc, char* argv[])
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
 
-    fstream fs(filename, IOS_BASE::in | IOS_BASE::out | IOS_BASE::trunc);
+    fstream fs(filename,
+               IOS_BASE::in    | IOS_BASE::out   |
+               IOS_BASE::trunc | IOS_BASE::binary);
 
     int ret = TEST_StreamPushback(fs,
                                   argc > 1 ? (unsigned int) atoi(argv[1]) : 0,
