@@ -2,13 +2,13 @@
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
-property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
+property pFLTKRootFolder : "Users:rsmith:fltk" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
 property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
 property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
 
 -- do test/demo applications
-property pBuildDemos : false
+property pBuildDemos : true
 
 property pSaveContinueOnErrors : false
 -- true if we want to save compilation errors in a file and continue.
@@ -259,12 +259,12 @@ on SetProjectData()
 			"xncbi", "xser", "xutil", Â
 			"seqset", "seq", "seqres", "seqloc", Â
 			"seqcode", "seqalign", "seqfeat", "seqblock", "sequtil", Â
-			"pub", "medline", "biblio", "general", "submit", "biotree"}
+			"pub", "medline", "biblio", "general", "submit", "biotree", "gbseq"}
 		
 		set CompressLibs to {"z", "bz2", "xcompress"}
 		
 		set objMgrLibs to {Â
-			"seq", "seqcode", "cdd", "seqset", "sequtil", "seqsplit", "pub", "biblio", "pubmed", "medline", "general", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "ncbi_xloader_genbank", "ncbi_xreader_id1", "ncbi_xreader_id2", "biotree"} & CompressLibs
+			"seq", "seqcode", "cdd", "seqset", "sequtil", "seqsplit", "pub", "biblio", "pubmed", "medline", "general", "gbseq", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "xformat", "ncbi_xloader_genbank", "ncbi_xreader_id1", "ncbi_xreader_id2", "ncbi_xreader_cache", "biotree"} & CompressLibs
 		
 		-- datatool
 		set myName to "datatool"
@@ -295,6 +295,8 @@ on SetProjectData()
 	AddProject(datatoolData)
 	
 	---------- OBJECTS ----------	
+	AddProject(DataPlusLibs(SimpleProjectData("ini2reg", "gui:objutils:test", {"cmdline", "C++"}), objMgrLibs & {"gui_objutils", "gui_utils", "xalnmgr", "tables"}, {}))
+	
 	AddProject(DataPlusLibs(SimpleProjectData("asn2asn", "app:asn2asn", {"C++"}), commonObjLibs, {}))
 	
 	AddProject(DataPlusLibs(ComplexProjectData("testvalidator", "objtools:validator:test", {"C++", "sockets", "libdl"}, {"test_validator"}), Â
@@ -308,7 +310,7 @@ on SetProjectData()
 		AddAppProjectList("test_gui_registry", {"cmdline"}, "gui:objutils:test", {"test_gui_registry.cpp"}, {"gui_objutils", "gui_utils", "xalnmgr", "xobjutil", "tables"} & objMgrLibs, {})
 		
 		
-		AddAppProject("demo_seqgraphic", {"fltk", "libdl", "images"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
+		-- AddAppProject("demo_seqgraphic", {"fltk", "libdl", "images"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
 		
 		AddAppProjectList("demo_win_manager", {"fltk", "images"}, "gui:widgets:workspace:demo", {"demo_win_manager.cpp"}, {"w_workspace", "w_fltk", "w_flu", "gui_opengl", "gui_print", "gui_utils", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & commonObjLibs & CompressLibs, {})
 		
@@ -316,7 +318,7 @@ on SetProjectData()
 		
 		AddAppProject("bdbtest", {"bdb"}, "bdb:test", {"bdb", "libdb", "xncbi", "xutil"}, {})
 		
-		AddAppProject("demo_config_dlg", {"fltk", "images"}, "gui:widgets:config:demo", {"w_seq_graphic", "w_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils", "gui_objutils", "ximage"} & objMgrLibs, {})
+		AddAppProject("demo_config_dlg", {"fltk", "images"}, "gui:widgets:config:demo", {"test_config_dlg.cpp"}, {"w_seq_graphic", "w_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils", "gui_objutils", "ximage"} & objMgrLibs, {})
 		
 		AddAppProjectList("demo_timer", {"fltk", "images"}, "gui:widgets:fl:demo", {"timer_demo.cpp", "timer_demo_ui.cpp"}, {"gui_opengl", "gui_print", "w_fltk", "fltk", "gui_utils", "ximage", "xconnect", "xutil", "xncbi"} & CompressLibs, {})
 		(*

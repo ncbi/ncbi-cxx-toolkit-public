@@ -2,7 +2,7 @@
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
-property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
+property pFLTKRootFolder : "Users:rsmith:fltk" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
 property pSqliteRootFolder : "" -- full path of the Sqlite source folder. Optional
 property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
@@ -343,6 +343,7 @@ on SetProjectData()
 		AddSimpleProjectExceptFiles("xconnect", {}, "connect", Â
 			{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c", "threaded_server.cpp", "netcache_client_lb.cpp"})
 		AddSimpleProjectListFiles("xthrserv", {}, "connect", {"threaded_server.cpp"})
+		AddSimpleProject("xconnserv", {}, "connect:services")
 	end if
 	
 	if pCreateObjectLibs then
@@ -425,6 +426,7 @@ on SetProjectData()
 		AddSimpleProject("ncbi_xloader_genbank", {}, "objtools:data_loaders:genbank")
 		AddSimpleProject("ncbi_xreader_id1", {}, "objtools:data_loaders:genbank:readers:id1")
 		AddSimpleProject("ncbi_xreader_id2", {}, "objtools:data_loaders:genbank:readers:id2")
+		AddSimpleProject("ncbi_xreader_cache", {}, "objtools:data_loaders:genbank:readers:cache")
 		AddSimpleProject("ncbi_xreader_pubseqos", {}, "objtools:data_loaders:genbank:readers:pubseqos")
 		AddSimpleProject("xloader_cdd", {}, "objtools:data_loaders:cdd")
 		
@@ -438,8 +440,9 @@ on SetProjectData()
 		AddGuiProject("gui_utils", {}, "utils")
 		AddGuiProject("gui_objutils", {}, "objutils")
 		-- AddGuiProject("gui_config", {}, "config")
+		AddGuiProject("gui_math", {}, "math")
 		AddProject(ProjectData("gui_config", {"fltk"}, Â
-			{GuiFileDataList("config", {"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "config___.cpp", "config__.cpp"})}))
+			{GuiFileDataList("config", {"settings.cpp", "settings_set.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "config___.cpp", "config__.cpp"})}))
 		
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_dlg_edit", {}, "dialogs:edit")
@@ -457,11 +460,14 @@ on SetProjectData()
 		AddGuiProject("w_fltk", {}, "widgets:fl")
 		AddGuiProject("w_gl", {}, "widgets:gl")
 		AddGuiProject("w_aln_crossaln", {}, "widgets:aln_crossaln")
-		AddProject(ProjectData("w_aln_multi", {"fltk"}, Â
-			{GuiFileDataExcept("widgets:aln_multiple", {"alnmulti_base_pane.cpp", "alnmulti_edit_pane.cpp"})}))
+		AddGuiProject("w_aln_multi", {}, "widgets:aln_multiple")
+		-- AddProject(ProjectData("w_aln_multi", {"fltk"}, {GuiFileDataExcept("widgets:aln_multiple", {"alnmulti_base_pane.cpp", "alnmulti_edit_pane.cpp"})}))
 		AddGuiProject("w_aln_data", {}, "widgets:aln_data")
 		AddGuiProject("w_flu", {}, "widgets:FLU")
-		AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
+		-- AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
+		AddProject(ProjectData("w_seq_graphic", {"fltk"}, Â
+			{GuiFileDataExcept("widgets:seq_graphic", {"font_conf.cpp", "layout_conf.cpp", "render_policy_conf.cpp", "spacing_conf.cpp"})}))
+		
 		AddGuiProject("w_fltable", {}, "widgets:Fl_Table")
 		AddGuiProject("w_hit_matrix", {}, "widgets:hit_matrix")
 		AddGuiProject("w_taxtree", {}, "widgets:tax_tree")
@@ -472,7 +478,9 @@ on SetProjectData()
 		AddGuiProject("w_serial_browse", {}, "widgets:serial_browse")
 		AddGuiProject("w_feat_compare", {}, "widgets:feat_compare")
 		AddGuiProject("w_phylo_tree", {}, "widgets:phylo_tree")
+		
 		AddGuiProject("w_feat_table", {}, "widgets:feat_table")
+		AddGuiProject("w_controls", {}, "widgets:controls")
 		
 		-- FLTK library.
 		set saveCppExt to pCPlusPlusExt
@@ -495,10 +503,10 @@ on SetProjectData()
 		-- Plugins and DLL's must be after statics and DLL's they depend on.
 		
 		set SeqObjects to {"seq", "seqcode", "seqset", "sequtil", "seqsplit"}
-		set SomeObjects to {"biblio", "general", "medline", "pub", "entrez2", "entrez2cli"}
+		set SomeObjects to {"biblio", "general", "medline", "pub", "gbseq", "entrez2", "entrez2cli"}
 		set MostObjects to SeqObjects & SomeObjects & Â
-			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1", "ncbi_xreader_id2", "biotree"}
-		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "creaders", "xalnmgr", "regexp", "tables"}
+			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1", "ncbi_xreader_id2", "ncbi_xreader_cache", "biotree"}
+		set ObjTools to {"xncbi", "xconnect", "xthrserv", "xconnserv", "xser", "xutil", "xobjread", "creaders", "xalnmgr", "regexp", "tables", "xformat"}
 		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
 		
 		set CompressLibs to {"z", "bz2", "xcompress"}
@@ -509,7 +517,7 @@ on SetProjectData()
 		
 		-- gui_core ( contains:  xgbplugin, gui_core)
 		set gui_core_files to {Â
-			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "algo_factory", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "task_manager", "task_queue", "view_link"})}
+			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "algo_factory", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "task_manager", "task_queue", "view_link", "view_composite"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images"}, gui_core_files)
 		
 		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
@@ -518,7 +526,7 @@ on SetProjectData()
 		
 		-- Basic/Required plugins
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			{"xflat", "ncbi_xloader_lds", "gbseq", "entrezgene", "xalgophytree", "fastme", "xobjwrite"})
+			{"xflat", "ncbi_xloader_lds", "entrezgene", "xalgophytree", "fastme", "xobjwrite"})
 		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "ncbi_xloader_lds", "ncbi_xloader_trace", "gui_dlg_edit", "gui_dlg_seq_feat_edit", "w_serial_browse"}) -- "ncbi_xreader_id1c",
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xalgoseq", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
@@ -543,8 +551,7 @@ on SetProjectData()
 			{"xsqlite", "ncbi_xloader_table", "xobjmanip"})
 		
 		-- View plugins
-		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
-			{"w_aln_crossaln", "w_aln_multi", "w_aln_data", "gui_graph", "w_hit_matrix", "w_seq_graphic"})
+		AddPlugin("gui_view_align", {}, "plugins:view:align", {"w_aln_crossaln", "w_aln_multi", "w_aln_data", "gui_graph", "w_hit_matrix", "w_seq_graphic", "w_aln_table"})
 		
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
 			{"gui_dlg_feature", "w_seq_graphic", "gui_graph", "gui_dlg_feat_search", "gui_dlg_seq_goto"})
@@ -552,8 +559,9 @@ on SetProjectData()
 		AddPlugin("gui_view_taxplot", {}, "plugins:view:taxplot", {"w_taxplot3d", "gui_graph"})
 		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_aln_table", "w_feat_compare", "w_feat_table"})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
-			{"gbseq", "xflat", "xformat", "taxon1", "w_taxtree", "w_seq", "w_serial_browse"})
-		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xvalidate"})
+			{"xflat", "taxon1", "w_taxtree", "w_seq", "w_serial_browse"})
+		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"xvalidate"})
+		AddPlugin("gui_view_phylo_tree", {}, "plugins:view:phylo_tree", {"w_phylo_tree", "gui_graph", "gui_math", "xalgophytree", "fastme"})
 		
 	end if
 	
@@ -1072,6 +1080,7 @@ on SetupTarget(proj, targetIndex)
 				copy (POSIX path of pImageLibsFolder) & "lib/libpng.a" to end of filesToAdd
 				copy (POSIX path of pImageLibsFolder) & "lib/libjpeg.a" to end of filesToAdd
 				copy (POSIX path of pImageLibsFolder) & "lib/libtiff.a" to end of filesToAdd
+				copy (POSIX path of pImageLibsFolder) & "lib/libgif.a" to end of filesToAdd
 				-- copy (POSIX path of pImageLibsFolder) & "lib/libgif.a" to end of filesToAdd
 			end if
 		end if
