@@ -1,58 +1,61 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Authors:  Anton Lavrentiev,  Denis Vakatov
-*
-* File Description:
-*   CONN-based C++ streams
-*
-*   See file <connect/ncbi_conn_stream.hpp> for more detailed information.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 6.6  2001/09/24 20:26:17  lavr
-* +SSERVICE_Extra* parameter for CConn_ServiceStream::CConn_ServiceStream()
-*
-* Revision 6.5  2001/01/12 23:49:19  lavr
-* Timeout and GetCONN method added
-*
-* Revision 6.4  2001/01/11 23:04:06  lavr
-* Bugfixes; tie is now done at streambuf level, not in iostream
-*
-* Revision 6.3  2001/01/11 17:22:41  thiessen
-* fix args copy in s_HttpConnectorBuilder()
-*
-* Revision 6.2  2001/01/10 21:41:10  lavr
-* Added classes: CConn_SocketStream, CConn_HttpStream, CConn_ServiceStream.
-* Everything is now wordly documented.
-*
-* Revision 6.1  2001/01/09 23:35:25  vakatov
-* Initial revision (draft, not tested in run-time)
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Anton Lavrentiev,  Denis Vakatov
+ *
+ * File Description:
+ *   CONN-based C++ streams
+ *
+ *   See file <connect/ncbi_conn_stream.hpp> for more detailed information.
+ *
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.7  2001/12/07 22:58:01  lavr
+ * GetCONN(): throw exception if the underlying streambuf is not CONN-based
+ *
+ * Revision 6.6  2001/09/24 20:26:17  lavr
+ * +SSERVICE_Extra* parameter for CConn_ServiceStream::CConn_ServiceStream()
+ *
+ * Revision 6.5  2001/01/12 23:49:19  lavr
+ * Timeout and GetCONN method added
+ *
+ * Revision 6.4  2001/01/11 23:04:06  lavr
+ * Bugfixes; tie is now done at streambuf level, not in iostream
+ *
+ * Revision 6.3  2001/01/11 17:22:41  thiessen
+ * fix args copy in s_HttpConnectorBuilder()
+ *
+ * Revision 6.2  2001/01/10 21:41:10  lavr
+ * Added classes: CConn_SocketStream, CConn_HttpStream, CConn_ServiceStream.
+ * Everything is now wordly documented.
+ *
+ * Revision 6.1  2001/01/09 23:35:25  vakatov
+ * Initial revision (draft, not tested in run-time)
+ *
+ * ===========================================================================
+ */
 
 
 #include <connect/ncbi_conn_stream.hpp>
@@ -72,7 +75,12 @@ CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
 
 CONN CConn_IOStream::GetCONN() const
 {
-    return dynamic_cast<CConn_Streambuf*>(rdbuf())->GetCONN();
+    CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
+    if ( !sb ) {
+        THROW1_TRACE(runtime_error, "CConn_IOStream::GetCONN(): "
+                     "Stream buffer is not of type CConn_Streambuf");
+    }
+    return sb->GetCONN();
 }
 
 
