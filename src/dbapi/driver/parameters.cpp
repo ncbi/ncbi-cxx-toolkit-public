@@ -76,7 +76,7 @@ bool CDB_Params::BindParam(unsigned int param_no, const string& param_name,
             for(i= 0; i < m_NofParams; i++) {
                 t[i]= m_Params[i];
             }
-            delete m_Params;
+            delete [] m_Params;
         }
         m_Params= t;
         for(i= m_NofParams; i <= param_no; m_Params[i++].status = 0);
@@ -137,7 +137,7 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
             for(i= 0; i < m_NofParams; i++) {
                 t[i]= m_Params[i];
             }
-            delete m_Params;
+            delete [] m_Params;
         }
         m_Params= t;
         for(i= m_NofParams; i <= param_no; m_Params[i++].status = 0);
@@ -225,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/12/02 17:00:07  soussov
+ * replacing delete m_Params with delete [] m_Params
+ *
  * Revision 1.10  2002/11/27 19:26:10  soussov
  * fixes bug with erasing the empty strings
  *
