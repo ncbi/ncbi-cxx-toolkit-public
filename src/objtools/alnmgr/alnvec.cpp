@@ -52,6 +52,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 
+#include <util/tables/raw_scoremat.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -628,66 +629,7 @@ void CAlnVec::CreateConsensus(void)
 }
 
 
-#define BLOSUMSIZE 24
-
-static const char s_AlnVecBlosum62Fields[BLOSUMSIZE] =
-    { 'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K',
-      'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', 'B', 'Z', 'X', '*' };
-
-static const char s_AlnVecBlosum62Matrix[BLOSUMSIZE][BLOSUMSIZE] = {
-    /*       A,  R,  N,  D,  C,  Q,  E,  G,  H,  I,  L,  K,
-             M,  F,  P,  S,  T,  W,  Y,  V,  B,  Z,  X,  * */
-    /*A*/ {  4, -1, -2, -2,  0, -1, -1,  0, -2, -1, -1, -1,
-            -1, -2, -1,  1,  0, -3, -2,  0, -2, -1,  0, -4 },
-    /*R*/ { -1,  5,  0, -2, -3,  1,  0, -2,  0, -3, -2,  2,
-            -1, -3, -2, -1, -1, -3, -2, -3, -1,  0, -1, -4 },
-    /*N*/ { -2,  0,  6,  1, -3,  0,  0,  0,  1, -3, -3,  0,
-            -2, -3, -2,  1,  0, -4, -2, -3,  3,  0, -1, -4 },
-    /*D*/ { -2, -2,  1,  6, -3,  0,  2, -1, -1, -3, -4, -1,
-            -3, -3, -1,  0, -1, -4, -3, -3,  4,  1, -1, -4 },
-    /*C*/ {  0, -3, -3, -3,  9, -3, -4, -3, -3, -1, -1, -3,
-            -1, -2, -3, -1, -1, -2, -2, -1, -3, -3, -2, -4 },
-    /*Q*/ { -1,  1,  0,  0, -3,  5,  2, -2,  0, -3, -2,  1,
-             0, -3, -1,  0, -1, -2, -1, -2,  0,  3, -1, -4 },
-    /*E*/ { -1,  0,  0,  2, -4,  2,  5, -2,  0, -3, -3,  1,
-            -2, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1, -4 },
-    /*G*/ {  0, -2,  0, -1, -3, -2, -2,  6, -2, -4, -4, -2,
-            -3, -3, -2,  0, -2, -2, -3, -3, -1, -2, -1, -4 },
-    /*H*/ { -2,  0,  1, -1, -3,  0,  0, -2,  8, -3, -3, -1,
-            -2, -1, -2, -1, -2, -2,  2, -3,  0,  0, -1, -4 },
-    /*I*/ { -1, -3, -3, -3, -1, -3, -3, -4, -3,  4,  2, -3,
-             1,  0, -3, -2, -1, -3, -1,  3, -3, -3, -1, -4 },
-    /*L*/ { -1, -2, -3, -4, -1, -2, -3, -4, -3,  2,  4, -2,
-             2,  0, -3, -2, -1, -2, -1,  1, -4, -3, -1, -4 },
-    /*K*/ { -1,  2,  0, -1, -3,  1,  1, -2, -1, -3, -2,  5,
-            -1, -3, -1,  0, -1, -3, -2, -2,  0,  1, -1, -4 },
-    /*M*/ { -1, -1, -2, -3, -1,  0, -2, -3, -2,  1,  2, -1,
-             5,  0, -2, -1, -1, -1, -1,  1, -3, -1, -1, -4 },
-    /*F*/ { -2, -3, -3, -3, -2, -3, -3, -3, -1,  0,  0, -3,
-             0,  6, -4, -2, -2,  1,  3, -1, -3, -3, -1, -4 },
-    /*P*/ { -1, -2, -2, -1, -3, -1, -1, -2, -2, -3, -3, -1,
-            -2, -4,  7, -1, -1, -4, -3, -2, -2, -1, -2, -4 },
-    /*S*/ {  1, -1,  1,  0, -1,  0,  0,  0, -1, -2, -2,  0,
-            -1, -2, -1,  4,  1, -3, -2, -2,  0,  0,  0, -4 },
-    /*T*/ {  0, -1,  0, -1, -1, -1, -1, -2, -2, -1, -1, -1,
-            -1, -2, -1,  1,  5, -2, -2,  0, -1, -1,  0, -4 },
-    /*W*/ { -3, -3, -4, -4, -2, -2, -3, -2, -2, -3, -2, -3,
-            -1,  1, -4, -3, -2, 11,  2, -3, -4, -3, -2, -4 },
-    /*Y*/ { -2, -2, -2, -3, -2, -1, -2, -3,  2, -1, -1, -2,
-            -1,  3, -3, -2, -2,  2,  7, -1, -3, -2, -1, -4 },
-    /*V*/ {  0, -3, -3, -3, -1, -2, -2, -3, -3,  3,  1, -2,
-             1, -1, -2, -2,  0, -3, -1,  4, -3, -2, -1, -4 },
-    /*B*/ { -2, -1,  3,  4, -3,  0,  1, -1,  0, -3, -4,  0,
-            -3, -3, -2,  0, -1, -4, -3, -3,  4,  1, -1, -4 },
-    /*Z*/ { -1,  0,  0,  1, -3,  3,  4, -2,  0, -3, -3,  1,
-            -1, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1, -4 },
-    /*X*/ {  0, -1, -1, -1, -2, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -2,  0,  0, -2, -1, -1, -1, -1, -1, -4 },
-    /***/ { -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,
-            -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,  1 }
-};
-
-static map<char, map<char, int> >  s_AlnVecBlosum62Map;
+static SNCBIFullScoreMatrix s_FullScoreMatrix;
 
 int CAlnVec::CalculateScore(const string& s1, const string& s2,
                             bool s1_is_prot, bool s2_is_prot)
@@ -711,22 +653,16 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
     const char * end1 = res1 + s1.length();
     const char * end2 = res2 + s2.length();
     
+    static bool s_FullScoreMatrixInitialized = false;
     if (s1_is_prot  &&  s2_is_prot) {
-        if (s_AlnVecBlosum62Map.empty()) {
-            // initialize Blosum62Map
-            for (int row=0; row<BLOSUMSIZE; row++) {
-                for (int col=0; col<BLOSUMSIZE; col++) {
-                    s_AlnVecBlosum62Map
-                        [s_AlnVecBlosum62Fields[row]]
-                        [s_AlnVecBlosum62Fields[col]] =
-                        s_AlnVecBlosum62Matrix[row][col];
-                }
-            }
-        }            
-
+        if ( !s_FullScoreMatrixInitialized ) {
+            s_FullScoreMatrixInitialized = true;
+            NCBISM_Unpack(&NCBISM_Blosum62, &s_FullScoreMatrix);
+        }
+        
         // use BLOSUM62 matrix
         for ( ;  res1 != end1;  res1++, res2++) {
-            score += s_AlnVecBlosum62Map[*res1][*res2];
+            score += s_FullScoreMatrix.s[*res1][*res2];
         }
     } else if ( !s1_is_prot  &&  !s2_is_prot ) {
         // use match score/mismatch penalty
@@ -742,12 +678,12 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
         if (s1_is_prot) {
             TranslateNAToAA(s2, t);
             for ( ;  res1 != end1;  res1++, res2++) {
-                score += s_AlnVecBlosum62Map[*res1][*res2];
+                score += s_FullScoreMatrix.s[*res1][*res2];
             }
         } else {
             TranslateNAToAA(s1, t);
             for ( ;  res2 != end2;  res1++, res2++) {
-                score += s_AlnVecBlosum62Map[*res1][*res2];
+                score += s_FullScoreMatrix.s[*res1][*res2];
             }
         }
     }
@@ -841,6 +777,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2003/08/27 21:19:55  todorov
+* using raw_scoremat.h
+*
 * Revision 1.42  2003/08/25 16:34:59  todorov
 * exposed GetWidth
 *
