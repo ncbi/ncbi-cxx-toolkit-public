@@ -193,9 +193,7 @@ void CGenbankFormatter::FormatAccession
     string acc_line = x_FormatAccession(acc, ' ');
     if ( acc.IsSetRegion() ) {
         acc_line += " REGION: ";
-        acc_line += NStr::Int8ToString(acc.GetRegion().GetFrom());
-        acc_line += "..";
-        acc_line += NStr::Int8ToString(acc.GetRegion().GetTo());
+        acc_line += CFlatSeqLoc(acc.GetRegion(), *acc.GetContext()).GetString();
     }
     list<string> l;
     if (NStr::IsBlank(acc_line)) {
@@ -585,25 +583,40 @@ void CGenbankFormatter::FormatSequence
  IFlatTextOStream& text_os)
 {
     list<string> l;
-    CNcbiOstrstream seq_line;
+    char line[100];
 
     const CSeqVector& vec = seq.GetSequence();
-
-    TSeqPos base_count = seq.GetFrom();
+    TSeqPos from = seq.GetFrom();
+    TSeqPos to = seq.GetTo();
+    TSeqPos base_count = from;
+    TSeqPos total = to - from + 1;
+    
     CSeqVector::const_iterator iter = vec.begin();
-    while ( iter ) {
-        seq_line.setf(IOS_BASE::right, IOS_BASE::adjustfield);
-        seq_line << setw(9) << base_count;
-        for ( TSeqPos count = 0; count < 60  &&  iter; ++count, ++iter, ++base_count ) {
-            if ( count % 10 == 0 ) {
-                seq_line << ' ';
+    iter.SetPos(from - 1);
+    TSeqPos i = 0, j = 0;
+    char* linep;
+    while (iter  &&  total > 0) {
+        line[0] = '\0';
+        linep = line;
+
+        sprintf(line, "%9ld", (long)base_count);
+        linep += 9;
+        
+        // 60 bases in a line, a space between every 10 bases.
+        for (i = 0; iter  &&  total > 0  &&  i < 6; ++i) {
+            *linep = ' ';
+            ++linep;
+            for (j = 0; iter  &&  total > 0  &&  j < 10; ++j, ++iter, --total, ++linep) {
+                *linep = (char)tolower(*iter);
             }
-            seq_line << (char)tolower(*iter);
         }
-        seq_line << '\n';
+        *linep = '\0';
+        base_count += (i - 1) * 10 + j;
+        
+        l.push_back(line);
+        
     }
 
-    NStr::Split(CNcbiOstrstreamToString(seq_line), "\n", l);
     text_os.AddParagraph(l);
 }
 
@@ -766,6 +779,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2005/03/28 17:21:39  shomrat
+* Optimized sequence formatting
+*
 * Revision 1.27  2005/03/15 20:09:12  dicuccio
 * +algorithm for replace
 *
