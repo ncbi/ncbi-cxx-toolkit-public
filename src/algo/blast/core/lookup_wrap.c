@@ -134,9 +134,13 @@ Int4 GetOffsetArraySize(LookupTableWrap* lookup)
    case PHI_AA_LOOKUP: case PHI_NA_LOOKUP:
       offset_array_size = MIN_PHI_LOOKUP_SIZE;
       break;
-   case AA_LOOKUP_TABLE: case NA_LOOKUP_TABLE: case RPS_LOOKUP_TABLE:
+   case AA_LOOKUP_TABLE: case NA_LOOKUP_TABLE:
       offset_array_size = OFFSET_ARRAY_SIZE + 
          ((LookupTable*)lookup->lut)->longest_chain;
+      break;
+   case RPS_LOOKUP_TABLE:
+      offset_array_size = OFFSET_ARRAY_SIZE + 
+         ((RPSLookupTable*)lookup->lut)->longest_chain;
       break;
    default:
       offset_array_size = OFFSET_ARRAY_SIZE;
