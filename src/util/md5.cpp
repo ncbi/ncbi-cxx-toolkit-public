@@ -164,7 +164,7 @@ void CMD5::Finalize(unsigned char digest[16])
 string CMD5::GetHexSum(unsigned char digest[16])
 {
     CNcbiOstrstream oss;
-    for (size_t i = 0; i < sizeof(digest); ++i) {
+    for (size_t i = 0; i < 16; ++i) {
         oss << hex << setw(2) << setfill('0') << (int)digest[i];
     }
     return CNcbiOstrstreamToString(oss);
@@ -277,6 +277,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/07/29 23:57:33  ucko
+* CMD5::GetHexSum: go up to 16 rather than sizeof(digest), as the latter
+* is really just sizeof(unsigned char*) in this context.
+*
 * Revision 1.1  2003/07/29 21:29:26  ucko
 * Add MD5 support (cribbed from the C Toolkit)
 *
