@@ -280,7 +280,8 @@ public:
         if( !output_file.empty() )
             return output_file;
 
-	    return string("$(OutDir)\\") + m_ProjectId + ConfTrait::TargetExtension();
+//	    return string("$(OutDir)\\") + m_ProjectId + ConfTrait::TargetExtension();
+	    return string("$(OutDir)\\$(ProjectName)");
     }
 
 #define SUPPORT_LINKER_OPTION(opt) \
@@ -298,6 +299,7 @@ public:
     virtual string ProgramDatabaseFile(void) const
     {
 	    return string("$(OutDir)\\") + m_ProjectId + ".pdb";
+//	    return string("$(OutDir)\\$(ProjectName).pdb");
     }
 
     SUPPORT_LINKER_OPTION(SubSystem)
@@ -305,6 +307,7 @@ public:
     virtual string ImportLibrary(void) const
     {
 	    return string("$(OutDir)\\") + m_ProjectId + ".lib";
+//	    return string("$(OutDir)\\$(ProjectName).lib");
     }
 
     SUPPORT_LINKER_OPTION(TargetMachine)
@@ -411,7 +414,8 @@ public:
 
     virtual string OutputFile(void) const
     {
-	    return string("$(OutDir)\\") + m_ProjectId + ".lib";
+//	    return string("$(OutDir)\\") + m_ProjectId + ".lib";
+	    return string("$(OutDir)\\$(ProjectName)");
     }
 
 #define SUPPORT_LIBRARIAN_OPTION(opt) \
@@ -732,6 +736,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/10/13 13:37:39  gouriano
+ * a bit more parameterization in generated projects
+ *
  * Revision 1.18  2004/08/04 13:24:58  gouriano
  * Added processing of EXPENDABLE projects
  *
