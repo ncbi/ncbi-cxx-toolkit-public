@@ -504,8 +504,7 @@ Int2 Blast_HSPResultsReverseOrder(BlastHSPResults* results);
  *  Save the HSPs from an HSPList obtained on the preliminary stage of 
  * RPS BLAST to appropriate places in the results structure. Input HSPList
  * contains HSPs from a single query, but from all RPS BLAST database 
- * sequences. The HSPs in the list are not assumed to be sorted, because
- * e-values are not yet calculated.
+ * sequences. The HSPs in the list are assumed to be sorted by score.
  * @param program The type of BLAST search [in]
  * @param results The structure holding results for all queries [in] [out]
  * @param hsp_list The results for the current subject sequence; in case of 
@@ -521,7 +520,7 @@ Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* 
  *  Save the current HSP list to appropriate places in the results structure.
  * The input HSPList contains HSPs from a single BLAST database sequence, but
  * possibly from multiple queries. The HSPs in the list are assumed to be sorted
- * by e-value and score.
+ * by score.
  * @param program The type of BLAST search [in]
  * @param results The structure holding results for all queries [in] [out]
  * @param hsp_list The results for the current subject sequence; in case of 
@@ -535,8 +534,8 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
 
 /** Blast_HSPResultsSaveHSPList
  * Insert an HSP list to the appropriate place in the results structure.
- * All HSPs in this list must be from the same query, and the query index
- * must be set in the BlastHSPList input structure.
+ * All HSPs in this list must be from the same query and same subject; the oid
+ * and query_index fields must be set in the BlastHSPList input structure.
  * @param results The structure holding results for all queries [in] [out]
  * @param hsp_list The results for one query-subject sequence pair. [in]
  * @param hitlist_size Maximal allowed hit list size. [in]
