@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.44  2003/11/28 22:39:11  camacho
+ * + static keyword to BlastKarlinLtoH
+ *
  * Revision 1.43  2003/11/28 15:03:48  camacho
  * Added static keyword to BlastKarlinLtoH
  *
@@ -2011,7 +2014,7 @@ CleanUp:
  * y.
  */
 
-double 
+static double 
 NlmKarlinLambdaNR( double* probs, Int4 d, Int4 low, Int4 high, double lambda0, double tolx,
 									 Int4 itmax, Int4 maxNewton, Int4 * itn ) 
 {
