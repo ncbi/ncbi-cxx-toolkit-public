@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.13  2002/10/11 16:42:50  kholodov
+* Added: return Binary and Varbinary columns as CVariant::GetString()
+*
 * Revision 1.12  2002/09/16 21:04:02  kholodov
 * Modified: CVariant::Assign<> template removed
 *
@@ -199,7 +202,7 @@ CVariant::CVariant(EDB_Type type)
         m_data = new CDB_Char();
         return;  
     case eDB_VarBinary:
-        m_data = new CDB_Binary();
+        m_data = new CDB_VarBinary();
         return;  
     case eDB_Binary:
         m_data = new CDB_Binary();
@@ -338,6 +341,16 @@ string CVariant::GetString(void) const
         return ((CDB_Char*)GetData())->Value();
     case eDB_VarChar:
         return ((CDB_VarChar*)GetData())->Value();
+    case eDB_Binary:
+        {
+            CDB_Binary *b = (CDB_Binary*)GetData();
+            return string((char*)b->Value(), b->Size());
+        }
+    case eDB_VarBinary:
+        {
+            CDB_VarBinary *vb = (CDB_VarBinary*)GetData();
+            return string((char*)vb->Value(), vb->Size());
+        }
     case eDB_TinyInt:
         s << (int)GetByte(); 
         return CNcbiOstrstreamToString(s);
