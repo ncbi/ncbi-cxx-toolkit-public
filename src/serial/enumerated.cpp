@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/10/28 15:37:40  vasilche
+* Fixed null choice pointers handling.
+* Cleaned enumertion interface.
+*
 * Revision 1.3  1999/10/19 13:43:07  vasilche
 * Fixed error on IRIX
 *
@@ -50,7 +54,8 @@
 
 BEGIN_NCBI_SCOPE
 
-CEnumeratedTypeValues::CEnumeratedTypeValues(const string& name, bool isInteger)
+CEnumeratedTypeValues::CEnumeratedTypeValues(const string& name,
+                                             bool isInteger)
     : m_Name(name), m_Integer(isInteger)
 {
 }
@@ -121,7 +126,9 @@ pair<long, bool> CEnumeratedTypeValues::ReadEnum(CObjectIStream& in) const
 
 bool CEnumeratedTypeValues::WriteEnum(CObjectOStream& out, long value) const
 {
+    _TRACE(GetName() << ".WriteEnum(" << value << ")");
     const string& name = FindName(value, IsInteger());
+    _TRACE(GetName() << ".WriteEnum(" << value << ") = " << name);
     if ( name.empty() ) {
         // non enum value and (isInteger == true)
         return false;
@@ -131,18 +138,19 @@ bool CEnumeratedTypeValues::WriteEnum(CObjectOStream& out, long value) const
     return true;
 }
 
-TTypeInfo CreateEnumeratedTypeInfoForSize(size_t size, long /* dummy */,
-                                          const CEnumeratedTypeValues* enumInfo)
+TTypeInfo CEnumeratedTypeValues::GetTypeInfoForSize(size_t size,
+                                                    long /* dummy */) const
 {
     if ( size == sizeof(int) )
-        return new CEnumeratedTypeInfoTmpl<int>(enumInfo);
+        return new CEnumeratedTypeInfoTmpl<int>(this);
     if ( size == sizeof(short) )
-        return new CEnumeratedTypeInfoTmpl<short>(enumInfo);
-    if ( size == sizeof(char) )
-        return new CEnumeratedTypeInfoTmpl<char>(enumInfo);
+        return new CEnumeratedTypeInfoTmpl<short>(this);
+    if ( size == sizeof(signed char) )
+        return new CEnumeratedTypeInfoTmpl<signed char>(this);
     if ( size == sizeof(long) )
-        return new CEnumeratedTypeInfoTmpl<long>(enumInfo);
-    THROW1_TRACE(runtime_error, "Illegal enum size: " + NStr::UIntToString(size));
+        return new CEnumeratedTypeInfoTmpl<long>(this);
+    THROW1_TRACE(runtime_error,
+                 "Illegal enum size: " + NStr::UIntToString(size));
 }
 
 END_NCBI_SCOPE

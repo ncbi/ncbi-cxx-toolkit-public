@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/10/28 15:37:37  vasilche
+* Fixed null choice pointers handling.
+* Cleaned enumertion interface.
+*
 * Revision 1.2  1999/10/18 20:11:15  vasilche
 * Enum values now have long type.
 * Fixed template generation for enums.
@@ -85,6 +89,8 @@ public:
     // tries to write enum element. Returns success flag
     bool WriteEnum(CObjectOStream& out, long value) const;
 
+    TTypeInfo GetTypeInfoForSize(size_t size, long /* dummy */) const;
+
 private:
     string m_Name;
     bool m_Integer;
@@ -134,15 +140,12 @@ private:
     const CEnumeratedTypeValues& m_Values;
 };
 
-TTypeInfo CreateEnumeratedTypeInfoForSize(size_t size, long /* dummy */,
-                                          const CEnumeratedTypeValues* enumInfo);
-
 template<typename T>
 inline
 TTypeInfo CreateEnumeratedTypeInfo(const T& dummy,
-                                   const CEnumeratedTypeValues* enumInfo)
+                                   const CEnumeratedTypeValues* info)
 {
-    return CreateEnumeratedTypeInfoForSize(sizeof(T), dummy, enumInfo);
+    return info->GetTypeInfoForSize(sizeof(T), dummy);
 }
 
 // standard template for plain enums

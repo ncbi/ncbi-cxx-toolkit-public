@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/10/28 15:37:37  vasilche
+* Fixed null choice pointers handling.
+* Cleaned enumertion interface.
+*
 * Revision 1.12  1999/10/25 19:07:12  vasilche
 * Fixed coredump on non initialized choices.
 * Fixed compilation warning.
@@ -108,7 +112,7 @@ public:
     pair<TConstObjectPtr, TTypeInfo> GetSource(TConstObjectPtr object) const;
     
     virtual TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const;
-    virtual TTypeInfo GetTypeInfo(TConstObjectPtr object) const;
+    virtual TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;
     virtual void SetObjectPointer(TObjectPtr object, TObjectPtr pointer) const;
 
     virtual size_t GetSize(void) const;

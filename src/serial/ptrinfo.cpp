@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/10/28 15:37:41  vasilche
+* Fixed null choice pointers handling.
+* Cleaned enumertion interface.
+*
 * Revision 1.12  1999/10/25 19:07:15  vasilche
 * Fixed coredump on non initialized choices.
 * Fixed compilation warning.
@@ -87,10 +91,10 @@ pair<TConstObjectPtr, TTypeInfo>
 CPointerTypeInfo::GetSource(TConstObjectPtr object) const
 {
     TConstObjectPtr source = GetObjectPointer(object);
-    return make_pair(source, GetTypeInfo(source));
+    return make_pair(source, GetRealDataTypeInfo(source));
 }
 
-TTypeInfo CPointerTypeInfo::GetTypeInfo(TConstObjectPtr object) const
+TTypeInfo CPointerTypeInfo::GetRealDataTypeInfo(TConstObjectPtr object) const
 {
     TTypeInfo dataTypeInfo = GetDataTypeInfo();
     if ( object )

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/10/28 15:37:40  vasilche
+* Fixed null choice pointers handling.
+* Cleaned enumertion interface.
+*
 * Revision 1.4  1999/10/25 19:07:15  vasilche
 * Fixed coredump on non initialized choices.
 * Fixed compilation warning.
@@ -68,7 +72,7 @@ CChoicePointerTypeInfo::CChoicePointerTypeInfo(const string& name,
     Init();
 }
 
-TTypeInfo CChoicePointerTypeInfo::GetTypeInfo(TConstObjectPtr object) const
+TTypeInfo CChoicePointerTypeInfo::GetRealDataTypeInfo(TConstObjectPtr object) const
 {
     if ( !object )
         return 0;
