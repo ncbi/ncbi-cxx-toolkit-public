@@ -1178,14 +1178,15 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
 
 //-----------------------------------------------------------------------------
 void 
-CProjectTreeBuilder::BuildOneProjectTree(const string&       start_node_path,
-                                         const string&       root_src_path,
-                                         CProjectItemsTree*  tree  )
+CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
+                                         const string&         root_src_path,
+                                         CProjectItemsTree*    tree)
 {
     SMakeFiles subtree_makefiles;
 
-    ProcessDir(start_node_path, 
-               start_node_path == root_src_path,
+    ProcessDir(root_src_path, 
+               true,
+               filter,
                &subtree_makefiles);
 
     // Resolve macrodefines
@@ -1206,26 +1207,24 @@ CProjectTreeBuilder::BuildOneProjectTree(const string&       start_node_path,
 
 
 void 
-CProjectTreeBuilder::BuildProjectTree(const string&       start_node_path,
-                                      const string&       root_src_path,
-                                      CProjectItemsTree*  tree  )
+CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
+                                      const string&         root_src_path,
+                                      CProjectItemsTree*    tree)
 {
     // Bulid subtree
     CProjectItemsTree target_tree;
-    BuildOneProjectTree(start_node_path, root_src_path, &target_tree);
+    BuildOneProjectTree(filter, root_src_path, &target_tree);
 
     // Analyze subtree depends
     list<CProjKey> external_depends;
     target_tree.GetExternalDepends(&external_depends);
 
     // We have to add more projects to the target tree
-    // We'll consider whole tree
-    // If there are some external depends
-    // If we are creating whole tree it's unneccessary - we already got it
-    if ( !external_depends.empty()  &&  start_node_path != root_src_path) {
+    if ( !external_depends.empty()  &&  !filter->PassAll() ) {
         // Get whole project tree
         CProjectItemsTree whole_tree;
-        BuildOneProjectTree(root_src_path, root_src_path, &whole_tree);
+        CProjectDummyFilter pass_all_filter;
+        BuildOneProjectTree(&pass_all_filter, root_src_path, &whole_tree);
 
         list<CProjKey> depends_to_resolve = external_depends;
 
@@ -1262,9 +1261,10 @@ CProjectTreeBuilder::BuildProjectTree(const string&       start_node_path,
 }
 
 
-void CProjectTreeBuilder::ProcessDir(const string& dir_name, 
-                                     bool          is_root, 
-                                     SMakeFiles*   makefiles)
+void CProjectTreeBuilder::ProcessDir(const string&         dir_name, 
+                                     bool                  is_root,
+                                     const IProjectFilter* filter,
+                                     SMakeFiles*           makefiles)
 {
     // Do not collect makefile from root directory
     CDir dir(dir_name);
@@ -1277,7 +1277,10 @@ void CProjectTreeBuilder::ProcessDir(const string& dir_name,
         }
         string path = (*i)->GetPath();
 
-        if ( (*i)->IsFile()  &&  !is_root) {
+        if ( (*i)->IsFile()  &&  
+             !is_root        &&  
+             filter->CheckProject(CDirEntry(path).GetDir()) ) {
+
             if ( SMakeProjectT::IsMakeInFile(name) )
 	            ProcessMakeInFile(path, makefiles);
             else if ( SMakeProjectT::IsMakeLibFile(name) )
@@ -1285,8 +1288,10 @@ void CProjectTreeBuilder::ProcessDir(const string& dir_name,
             else if ( SMakeProjectT::IsMakeAppFile(name) )
 	            ProcessMakeAppFile(path, makefiles);
         } 
-        else if ( (*i)->IsDir() ) {
-            ProcessDir(path, false, makefiles);
+        else if ( (*i)->IsDir()  &&  
+                  filter->CheckProject(path)) {
+
+            ProcessDir(path, false, filter, makefiles);
         }
     }
 }
@@ -1475,6 +1480,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/02/26 21:29:04  gorelenk
+ * Changed implementations of member-functions of class CProjectTreeBuilder:
+ * BuildProjectTree, BuildOneProjectTree and ProcessDir because of use
+ * IProjectFilter* filter instead of const string& subtree_to_build.
+ *
  * Revision 1.18  2004/02/24 17:20:11  gorelenk
  * Added implementation of member-function CreateNcbiCToolkitLibs
  * of struct SAppProjectT.
