@@ -40,6 +40,7 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_data.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
 
@@ -119,6 +120,8 @@ size_t CSeq_annot_SplitInfo::CountAnnotObjects(const CSeq_annot& annot)
         return annot.GetData().GetAlign().size();
     case CSeq_annot::C_Data::e_Graph:
         return annot.GetData().GetGraph().size();
+    default:
+        _ASSERT("bad annot type" && 0);
     }
     return 0;
 }
@@ -153,6 +156,8 @@ void CSeq_annot_SplitInfo::SetSeq_annot(int id,
             Add(CAnnotObject_SplitInfo(**it, ratio));
         }
         break;
+    default:
+        _ASSERT("bad annot type" && 0);
     }
 }
 
@@ -264,12 +269,49 @@ CBioseq_SplitInfo::~CBioseq_SplitInfo(void)
 }
 
 
+void CSeq_data_SplitInfo::SetSeq_data(int gi,
+                                      const TRange& range,
+                                      const CSeq_data& data,
+                                      const SSplitterParams& params)
+{
+    m_Location.clear();
+    m_Location.Add(gi, range);
+    m_Data.Reset(&data);
+    s_Sizer.Set(data, params);
+    m_Size = CSize(s_Sizer);
+}
+
+
+int CSeq_data_SplitInfo::GetGi(void) const
+{
+    _ASSERT(m_Location.size() == 1);
+    _ASSERT(m_Location.begin()->first.IsGi());
+    return m_Location.begin()->first.GetGi();
+}
+
+
+CSeq_data_SplitInfo::TRange CSeq_data_SplitInfo::GetRange(void) const
+{
+    _ASSERT(m_Location.size() == 1);
+    return m_Location.begin()->second.GetTotalRange();
+}
+
+
+void CSeq_inst_SplitInfo::Add(const CSeq_data_SplitInfo& data)
+{
+    m_Seq_data.push_back(data);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/06/15 14:05:50  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.5  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *

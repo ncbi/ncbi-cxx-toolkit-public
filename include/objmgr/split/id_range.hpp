@@ -121,6 +121,7 @@ public:
     CSeq_id_Handle GetSingleId(void) const;
 
     void Add(const CSeq_id_Handle& id, const COneSeqRange& loc);
+    void Add(int gi, const TRange& range);
     void Add(const CSeqsRange& seqs_range);
 
     void Add(const CSeq_loc& loc);
@@ -154,6 +155,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/06/15 14:05:49  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.3  2003/12/01 18:37:10  vasilche
 * Separate different annotation types in split info to reduce memory usage.
 *

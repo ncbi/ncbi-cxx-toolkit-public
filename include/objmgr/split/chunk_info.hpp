@@ -52,6 +52,8 @@ class CAnnotObject_SplitInfo;
 class CLocObjects_SplitInfo;
 class CSeq_annot_SplitInfo;
 class CBioseq_SplitInfo;
+class CSeq_data_SplitInfo;
+class CSeq_inst_SplitInfo;
 
 struct SAnnotPiece;
 struct SIdAnnotPieces;
@@ -62,17 +64,22 @@ struct SChunkInfo
     typedef vector<CAnnotObject_SplitInfo> TAnnotObjects;
     typedef map<CConstRef<CSeq_annot>, TAnnotObjects> TIdAnnots;
     typedef map<int, TIdAnnots> TChunkAnnots;
+    typedef vector<CSeq_data_SplitInfo> TSeq_data;
+    typedef map<int, TSeq_data> TChunkSeq_data;
 
     void Add(const CSeq_annot_SplitInfo& info);
     void Add(TAnnotObjects& objs,
              const CLocObjects_SplitInfo& info);
     void Add(const SAnnotPiece& piece);
     void Add(const SIdAnnotPieces& pieces);
+    void Add(const CSeq_inst_SplitInfo& info);
+    void Add(const CSeq_data_SplitInfo& info);
 
     size_t CountAnnotObjects(void) const;
 
     CSize m_Size;
     TChunkAnnots m_Annots;
+    TChunkSeq_data m_Seq_data;
 };
 
 
@@ -82,6 +89,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/06/15 14:05:49  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.3  2004/01/07 17:36:20  vasilche
 * Moved id2_split headers to include/objmgr/split.
 * Fixed include path to genbank.

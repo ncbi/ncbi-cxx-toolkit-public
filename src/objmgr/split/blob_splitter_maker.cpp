@@ -51,6 +51,7 @@
 #include <objects/seq/Annot_id.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
+#include <objects/seq/Seq_literal.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -62,6 +63,8 @@
 #include <objects/seqsplit/ID2S_Chunk_Data.hpp>
 #include <objects/seqsplit/ID2S_Chunk_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk_Content.hpp>
+#include <objects/seqsplit/ID2S_Sequence_Piece.hpp>
+#include <objects/seqsplit/ID2S_Seq_data_Info.hpp>
 #include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
 #include <objects/seqsplit/ID2S_Feat_type_Info.hpp>
 #include <objects/seqsplit/ID2_Seq_loc.hpp>
@@ -176,6 +179,8 @@ struct SAllAnnots
             case CSeq_annot::C_Data::e_Graph:
                 Add(annot.GetData().GetGraph());
                 break;
+            default:
+                _ASSERT("bad annot type" && 0);
             }
         }
 
@@ -233,10 +238,8 @@ struct SAllAnnots
 
 
 typedef set<int> TWhole_set;
-TWhole_set seq_gis;
 typedef set<CSeqsRange::TRange> TGiInt_set;
 typedef map<int, TGiInt_set> TInt_set;
-TGiInt_set seq_ints;
 
 
 CRef<CID2_Seq_loc> MakeLoc(int gi, const TGiInt_set& int_set)
@@ -264,23 +267,48 @@ CRef<CID2_Seq_loc> MakeLoc(int gi, const TGiInt_set& int_set)
 }
 
 
-void AddLoc(CRef<CID2_Seq_loc>& loc, const CRef<CID2_Seq_loc>& add)
+static
+void AddLoc(CID2_Seq_loc& loc, CRef<CID2_Seq_loc> add)
 {
-    if ( !loc ) {
-        loc = add;
+    if ( loc.Which() == CID2_Seq_loc::e_not_set ) {
+        switch ( add->Which() ) {
+        case CID2_Seq_loc::e_Gi_whole:
+            loc.SetGi_whole(add->GetGi_whole());
+            break;
+        case CID2_Seq_loc::e_Interval:
+            loc.SetInterval(add->SetInterval());
+            break;
+        case CID2_Seq_loc::e_Packed_ints:
+            loc.SetPacked_ints(add->SetPacked_ints());
+            break;
+        case CID2_Seq_loc::e_Gi_whole_range:
+            loc.SetGi_whole_range(add->SetGi_whole_range());
+            break;
+        case CID2_Seq_loc::e_Loc_set:
+            loc.SetLoc_set() = add->GetLoc_set();
+            break;
+        case CID2_Seq_loc::e_Seq_loc:
+            loc.SetSeq_loc(add->SetSeq_loc());
+            break;
+        default:
+            _ASSERT(add->Which() == CID2_Seq_loc::e_not_set);
+            break;
+        }
     }
     else {
-        if ( !loc->IsLoc_set() ) {
-            CRef<CID2_Seq_loc> loc_set(new CID2_Seq_loc);
-            loc_set->SetLoc_set().push_back(loc);
-            loc = loc_set;
+        if ( loc.Which() != CID2_Seq_loc::e_Loc_set &&
+             loc.Which() != CID2_Seq_loc::e_not_set ) {
+            CRef<CID2_Seq_loc> copy(new CID2_Seq_loc);
+            AddLoc(*copy, Ref(&loc));
+            loc.SetLoc_set().push_back(copy);
         }
-        loc->SetLoc_set().push_back(add);
+        loc.SetLoc_set().push_back(add);
     }
 }
 
 
-void AddLoc(CRef<CID2_Seq_loc>& loc, const TInt_set& int_set)
+static
+void AddLoc(CID2_Seq_loc& loc, const TInt_set& int_set)
 {
     ITERATE ( TInt_set, it, int_set ) {
         AddLoc(loc, MakeLoc(it->first, it->second));
@@ -288,7 +316,8 @@ void AddLoc(CRef<CID2_Seq_loc>& loc, const TInt_set& int_set)
 }
 
 
-void AddLoc(CRef<CID2_Seq_loc>& loc, int gi_start, int gi_count)
+static
+void AddLoc(CID2_Seq_loc& loc, int gi_start, int gi_count)
 {
     if ( gi_count < 4 ) {
         for ( int i = 0; i < gi_count; ++i ) {
@@ -305,7 +334,9 @@ void AddLoc(CRef<CID2_Seq_loc>& loc, int gi_start, int gi_count)
     }
 }
 
-void AddLoc(CRef<CID2_Seq_loc>& loc, const TWhole_set& whole_set)
+
+static
+void AddLoc(CID2_Seq_loc& loc, const TWhole_set& whole_set)
 {
     int gi_start = 0, gi_count = 0;
     ITERATE ( TWhole_set, it, whole_set ) {
@@ -320,7 +351,20 @@ void AddLoc(CRef<CID2_Seq_loc>& loc, const TWhole_set& whole_set)
 }
 
 
-CRef<CID2_Seq_loc> MakeLoc(const CSeqsRange& range)
+TSeqPos CBlobSplitterImpl::GetGiLength(int gi) const
+{
+    TBioseqs::const_iterator iter = m_Bioseqs.find(gi);
+    if ( iter != m_Bioseqs.end() ) {
+        const CSeq_inst& inst = iter->second.m_Bioseq->GetInst();
+        if ( inst.IsSetLength() )
+            return inst.GetLength();
+    }
+    return kInvalidSeqPos;
+}
+
+
+void CBlobSplitterImpl::MakeLoc(CID2_Seq_loc& loc,
+                                const CSeqsRange& range) const
 {
     TWhole_set whole_set;
     TInt_set int_set;
@@ -328,7 +372,8 @@ CRef<CID2_Seq_loc> MakeLoc(const CSeqsRange& range)
     ITERATE ( CSeqsRange, it, range ) {
         int gi = it->first.GetGi();
         CSeqsRange::TRange range = it->second.GetTotalRange();
-        if ( range == range.GetWhole() ) {
+        if ( range == range.GetWhole() ||
+             range.GetFrom() == 0 && range.GetLength() == GetGiLength(gi) ) {
             whole_set.insert(gi);
             _ASSERT(int_set.count(gi) == 0);
         }
@@ -338,41 +383,114 @@ CRef<CID2_Seq_loc> MakeLoc(const CSeqsRange& range)
         }
     }
 
-    CRef<CID2_Seq_loc> loc;
     AddLoc(loc, int_set);
     AddLoc(loc, whole_set);
-    _ASSERT(loc);
+    _ASSERT(loc.Which() != loc.e_not_set);
+}
+
+
+void CBlobSplitterImpl::MakeLoc(CID2_Seq_loc& loc,
+                                int gi, const CSeqsRange::TRange& range) const
+{
+    if ( range == range.GetWhole() ||
+         range.GetFrom() == 0 && range.GetLength() == GetGiLength(gi) ) {
+        loc.SetGi_whole(gi);
+    }
+    else {
+        CID2_Interval& interval = loc.SetInterval();
+        interval.SetGi(gi);
+        interval.SetStart(range.GetFrom());
+        interval.SetLength(range.GetLength());
+    }
+}
+
+
+CRef<CID2_Seq_loc> CBlobSplitterImpl::MakeLoc(const CSeqsRange& range) const
+{
+    CRef<CID2_Seq_loc> loc(new CID2_Seq_loc);
+    MakeLoc(*loc, range);
     return loc;
 }
 
 
-void CBlobSplitterImpl::MakeID2Chunk(int id, const SChunkInfo& info)
+CRef<CID2_Seq_loc>
+CBlobSplitterImpl::MakeLoc(int gi, const CSeqsRange::TRange& range) const
 {
-    CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
-    CRef<CID2S_Chunk_Info> chunk_info(new CID2S_Chunk_Info);
-    chunk_info->SetId(CID2S_Chunk_Id(id));
+    CRef<CID2_Seq_loc> loc(new CID2_Seq_loc);
+    MakeLoc(*loc, gi, range);
+    return loc;
+}
+
+
+CID2S_Chunk_Data& CBlobSplitterImpl::GetChunkData(TChunkData& chunk_data,
+                                                  int id)
+{
+    CRef<CID2S_Chunk_Data>& data = chunk_data[id];
+    if ( !data ) {
+        data.Reset(new CID2S_Chunk_Data);
+        if ( id > 0 ) {
+            data->SetId().SetGi(id);
+        }
+        else {
+            data->SetId().SetBioseq_set(-id);
+        }
+    }
+    return *data;
+}
+
+
+void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
+{
+    TChunkData chunk_data;
+    TChunkContent chunk_content;
 
     typedef map<CAnnotName, SAllAnnots> TAllAnnots;
     TAllAnnots all_annots;
+    CSeqsRange all_data;
 
     ITERATE ( SChunkInfo::TChunkAnnots, it, info.m_Annots ) {
-        CRef<CID2S_Chunk_Data> data(new CID2S_Chunk_Data);
-        chunk->SetData().push_back(data);
-        CID2S_Chunk_Data::TId& id = data->SetId();
-        if ( it->first > 0 ) {
-            id.SetGi(it->first);
-        }
-        else {
-            id.SetBioseq_set(-it->first);
-        }
+        int place_id = it->first;
+        CID2S_Chunk_Data& data = GetChunkData(chunk_data, place_id);
         ITERATE ( SChunkInfo::TIdAnnots, annot_it, it->second ) {
             CRef<CSeq_annot> annot = MakeSeq_annot(*annot_it->first,
                                                    annot_it->second);
-            data->SetAnnots().push_back(annot);
+            data.SetAnnots().push_back(annot);
 
             // collect locations
             CAnnotName name = CSeq_annot_SplitInfo::GetName(*annot_it->first);
             all_annots[name].Add(*annot);
+        }
+    }
+
+    ITERATE ( SChunkInfo::TChunkSeq_data, it, info.m_Seq_data ) {
+        int gi = it->first;
+        CID2S_Chunk_Data::TSeq_data& dst =
+            GetChunkData(chunk_data, gi).SetSeq_data();
+        CRef<CID2S_Sequence_Piece> piece;
+        TSeqPos p_start = kInvalidSeqPos;
+        TSeqPos p_end = kInvalidSeqPos;
+        ITERATE ( SChunkInfo::TSeq_data, data_it, it->second ) {
+            const CSeq_data_SplitInfo& data = *data_it;
+            CSeq_data_SplitInfo::TRange range = data.GetRange();
+            TSeqPos start = range.GetFrom(), length = range.GetLength();
+            if ( !piece || start != p_end ) {
+                if ( piece ) {
+                    all_data.Add(gi, CSeqsRange::TRange(p_start, p_end-1));
+                    dst.push_back(piece);
+                }
+                piece.Reset(new CID2S_Sequence_Piece);
+                p_start = p_end = start;
+                piece->SetStart(p_start);
+            }
+            CRef<CSeq_literal> literal(new CSeq_literal);
+            literal->SetLength(length);
+            literal->SetSeq_data(const_cast<CSeq_data&>(*data.m_Data));
+            piece->SetData().push_back(literal);
+            p_end += length;
+        }
+        if ( piece ) {
+            all_data.Add(gi, CSeqsRange::TRange(p_start, p_end-1));
+            dst.push_back(piece);
         }
     }
 
@@ -404,6 +522,8 @@ void CBlobSplitterImpl::MakeID2Chunk(int id, const SChunkInfo& info)
                 case CSeq_annot::C_Data::e_Ftable:
                     feat_types[t.GetFeatType()].insert(t.GetFeatSubtype());
                     break;
+                default:
+                    _ASSERT("bad annot type" && 0);
                 }
             }
             ITERATE ( TFeatTypes, tit, feat_types ) {
@@ -434,8 +554,14 @@ void CBlobSplitterImpl::MakeID2Chunk(int id, const SChunkInfo& info)
                 annot_info.SetFeat().push_back(type_info);
             }
             annot_info.SetSeq_loc(*MakeLoc(location));
-            chunk_info->SetContent().push_back(content);
+            chunk_content.push_back(content);
         }
+    }
+
+    if ( !all_data.empty() ) {
+        CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
+        MakeLoc(content->SetSeq_data(), all_data);
+        chunk_content.push_back(content);
     }
 
 #if 0
@@ -443,7 +569,19 @@ void CBlobSplitterImpl::MakeID2Chunk(int id, const SChunkInfo& info)
         " in CID2S_Chunk: " << CountAnnotObjects(*chunk) << '\n';
 #endif
 
-    m_ID2_Chunks[CID2S_Chunk_Id(id)] = chunk;
+    CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
+    CID2S_Chunk::TData& dst_chunk_data = chunk->SetData();
+    ITERATE ( TChunkData, it, chunk_data ) {
+        dst_chunk_data.push_back(it->second);
+    }
+    m_ID2_Chunks[CID2S_Chunk_Id(chunk_id)] = chunk;
+
+    CRef<CID2S_Chunk_Info> chunk_info(new CID2S_Chunk_Info);
+    chunk_info->SetId(CID2S_Chunk_Id(chunk_id));
+    CID2S_Chunk_Info::TContent& dst_chunk_content = chunk_info->SetContent();
+    ITERATE ( TChunkContent, it, chunk_content ) {
+        dst_chunk_content.push_back(*it);
+    }
     m_Split_Info->SetChunks().push_back(chunk_info);
 }
 
@@ -510,6 +648,8 @@ CBlobSplitterImpl::MakeSeq_annot(const CSeq_annot& src,
                 .push_back(Ref(&dynamic_cast<CSeq_graph&>(obj)));
         }
         break;
+    default:
+        _ASSERT("bad annot type" && 0);
     }
     return annot;
 }
@@ -541,6 +681,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/06/15 14:05:50  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.10  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

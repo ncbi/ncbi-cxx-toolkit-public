@@ -55,6 +55,7 @@ class CAnnotObject_SplitInfo;
 class CLocObjects_SplitInfo;
 class CSeq_annot_SplitInfo;
 class CBioseq_SplitInfo;
+class CSeq_data_SplitInfo;
 
 struct SChunkInfo;
 
@@ -67,37 +68,27 @@ struct SAnnotPiece
     SAnnotPiece(const SAnnotPiece& piece, const COneSeqRange& range);
     SAnnotPiece(const CAnnotObject_SplitInfo& obj,
                 const CSeq_annot_SplitInfo& annot);
-    SAnnotPiece(const CSeq_annot_SplitInfo& annot);
+    explicit SAnnotPiece(const CSeq_annot_SplitInfo& annot);
+    explicit SAnnotPiece(const CSeq_data_SplitInfo& data);
 
     // sort by location first, than by Seq-annot ptr, than by object ptr.
-    bool operator<(const SAnnotPiece& piece) const
-        {
-            if ( m_IdRange != piece.m_IdRange ) {
-                return m_IdRange < piece.m_IdRange;
-            }
-            if ( m_Seq_annot != piece.m_Seq_annot ) {
-                return m_Seq_annot < piece.m_Seq_annot;
-            }
-            return m_Object < piece.m_Object;
-        }
-    bool operator==(const SAnnotPiece& piece) const
-        {
-            return m_IdRange == piece.m_IdRange &&
-                m_Seq_annot == piece.m_Seq_annot &&
-                m_Object == piece.m_Object;
-        }
-    bool operator!=(const SAnnotPiece& piece) const
-        {
-            return m_IdRange != piece.m_IdRange ||
-                m_Seq_annot != piece.m_Seq_annot ||
-                m_Object != piece.m_Object;
-        }
+    bool operator<(const SAnnotPiece& piece) const;
+    bool operator==(const SAnnotPiece& piece) const;
+    bool operator!=(const SAnnotPiece& piece) const;
 
     CSize m_Size;
     CSeqsRange m_Location;
     TRange m_IdRange;
-    const CAnnotObject_SplitInfo* m_Object;
+    enum PieceType {
+        empty,
+        annot_object,
+        seq_annot,
+        seq_data
+    };
+    PieceType m_Type;
+    const CAnnotObject_SplitInfo* m_Annot_object;
     const CSeq_annot_SplitInfo* m_Seq_annot;
+    const CSeq_data_SplitInfo* m_Seq_data;
 };
 
 
@@ -218,6 +209,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/06/15 14:05:49  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.3  2004/01/07 17:36:18  vasilche
 * Moved id2_split headers to include/objmgr/split.
 * Fixed include path to genbank.

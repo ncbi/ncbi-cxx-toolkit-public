@@ -42,9 +42,13 @@ BEGIN_SCOPE(objects)
 
 struct SSplitterParams
 {
+    SSplitterParams(void);
+
     enum {
         kDefaultChunkSize = 20 * 1024
     };
+
+    void SetChunkSize(size_t size);
 
     enum ECompression
     {
@@ -52,21 +56,6 @@ struct SSplitterParams
         eCompression_nlm_zip,
         eCompression_gzip
     };
-
-    SSplitterParams(void)
-        {
-            SetChunkSize(kDefaultChunkSize);
-            m_Compression = eCompression_none;
-            m_Verbose = 0;
-        }
-
-
-    void SetChunkSize(size_t size)
-        {
-            m_ChunkSize = size;
-            m_MinChunkSize = size_t(double(size) * 0.8);
-            m_MaxChunkSize = size_t(double(size) * 1.2);
-        }
 
     typedef int TVerbose;
 
@@ -76,6 +65,10 @@ struct SSplitterParams
     size_t       m_MaxChunkSize;
     ECompression m_Compression;
     TVerbose     m_Verbose;
+
+    bool         m_DisableSplitDescriptions;
+    bool         m_DisableSplitSequence;
+    bool         m_DisableSplitAnnotations;
 };
 
 
@@ -85,6 +78,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/06/15 14:05:49  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.6  2004/03/05 17:40:34  vasilche
 * Added 'verbose' option to splitter parameters.
 *

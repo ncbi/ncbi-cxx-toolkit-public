@@ -56,6 +56,9 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 class CBioseq;
 class CBioseq_set;
+class CSeq_descr;
+class CSeqdesc;
+class CSeq_inst;
 class CSeq_annot;
 class CSeq_feat;
 class CSeq_align;
@@ -63,6 +66,9 @@ class CSeq_graph;
 class CID2S_Split_Info;
 class CID2S_Chunk_Id;
 class CID2S_Chunk;
+class CID2S_Chunk_Data;
+class CID2S_Chunk_Content;
+class CID2_Seq_loc;
 class CBlobSplitter;
 class CBlobSplitterImpl;
 class CAnnotObject_SplitInfo;
@@ -97,6 +103,10 @@ public:
     void CopySkeleton(CSeq_entry& dst, const CSeq_entry& src);
     void CopySkeleton(CBioseq_set& dst, const CBioseq_set& src);
     void CopySkeleton(CBioseq& dst, const CBioseq& src);
+
+    bool CopyDesc(CBioseq_SplitInfo& bioseq_info, const CSeqdesc& desc);
+    bool CopySequence(CBioseq_SplitInfo& bioseq_info, int gi,
+                      CSeq_inst& dst, const CSeq_inst& src);
     bool CopyAnnot(CBioseq_SplitInfo& bioseq_info, const CSeq_annot& annot);
 
     void CollectPieces(void);
@@ -109,11 +119,25 @@ public:
     static size_t CountAnnotObjects(const CID2S_Chunk& chunk);
     static size_t CountAnnotObjects(const TID2Chunks& chunks);
 
+    TSeqPos GetGiLength(int gi) const;
+    void MakeLoc(CID2_Seq_loc& loc, const CSeqsRange& range) const;
+    void MakeLoc(CID2_Seq_loc& loc,
+                 int gi, const CSeqsRange::TRange& range) const;
+    CRef<CID2_Seq_loc> MakeLoc(const CSeqsRange& range) const;
+    CRef<CID2_Seq_loc> MakeLoc(int gi, const CSeqsRange::TRange& range) const;
+
     typedef vector<CAnnotObject_SplitInfo> TAnnotObjects;
     CRef<CSeq_annot> MakeSeq_annot(const CSeq_annot& src,
                                    const TAnnotObjects& objs);
+    
+    typedef map<int, CRef<CID2S_Chunk_Data> > TChunkData;
+    typedef vector< CRef<CID2S_Chunk_Content> > TChunkContent;
+    
+    CID2S_Chunk_Data& GetChunkData(TChunkData& chunk_data, int id);
+
     void MakeID2Chunk(int id, const SChunkInfo& info);
 
+    SChunkInfo* NextChunk(void);
     SChunkInfo* NextChunk(SChunkInfo* chunk, const CSize& size);
 
 private:
@@ -144,6 +168,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/06/15 14:05:49  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.6  2004/01/07 17:36:19  vasilche
 * Moved id2_split headers to include/objmgr/split.
 * Fixed include path to genbank.

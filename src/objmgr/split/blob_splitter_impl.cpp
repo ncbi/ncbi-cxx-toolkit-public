@@ -156,6 +156,14 @@ void CBlobSplitterImpl::CollectPieces(void)
 }
 
 
+SChunkInfo* CBlobSplitterImpl::NextChunk(void)
+{
+    _ASSERT(!m_Chunks.empty());
+    int chunk_id = m_Chunks.size();
+    return &m_Chunks[chunk_id];
+}
+
+
 SChunkInfo* CBlobSplitterImpl::NextChunk(SChunkInfo* chunk, const CSize& size)
 {
     if ( chunk ) {
@@ -166,9 +174,7 @@ SChunkInfo* CBlobSplitterImpl::NextChunk(SChunkInfo* chunk, const CSize& size)
             return chunk;
         }
     }
-    _ASSERT(!m_Chunks.empty());
-    int chunk_id = m_Chunks.size();
-    return &m_Chunks[chunk_id];
+    return NextChunk();
 }
 
 
@@ -226,36 +232,52 @@ void CBlobSplitterImpl::SplitPieces(void)
             max_piece_length = chunk_length / 4;
         }}
 
-        // extract long pieces into chunk 0
-        vector<SAnnotPiece> pieces;
-        ITERATE ( SIdAnnotPieces, it, objs ) {
-            const SAnnotPiece& piece = *it;
-            if ( piece.m_IdRange.GetLength() > max_piece_length ) {
-                pieces.push_back(piece);
+        {{
+            // extract long pieces into main or next chunk
+            vector<SAnnotPiece> pieces;
+            CSize size;
+            ITERATE ( SIdAnnotPieces, it, objs ) {
+                const SAnnotPiece& piece = *it;
+                if ( piece.m_IdRange.GetLength() > max_piece_length ) {
+                    pieces.push_back(piece);
+                    size += piece.m_Size;
+                }
             }
-        }
-        if ( m_Params.m_Verbose && !pieces.empty() ) {
-            LOG_POST("  "<<pieces.size()<<" long pieces");
-        }
-        ITERATE ( vector<SAnnotPiece>, it, pieces ) {
-            const SAnnotPiece& piece = *it;
-            main_chunk.Add(piece);
-            m_Pieces->Remove(piece);
-        }
+            if ( !pieces.empty() ) {
+                if ( m_Params.m_Verbose ) {
+                    LOG_POST("  "<<pieces.size()<<" long pieces");
+                }
+                SChunkInfo* long_chunk;
+                if ( size.GetZipSize() < m_Params.m_ChunkSize/2 )
+                    long_chunk = &main_chunk;
+                else
+                    long_chunk = 0;
+                ITERATE ( vector<SAnnotPiece>, it, pieces ) {
+                    const SAnnotPiece& piece = *it;
+                    if ( long_chunk != &main_chunk )
+                        long_chunk = NextChunk(long_chunk, piece.m_Size);
+                    long_chunk->Add(piece);
+                    m_Pieces->Remove(piece);
+                }
+            }
+        }}
 
-        pieces.clear();
-        ITERATE ( SIdAnnotPieces, it, objs ) {
-            pieces.push_back(*it);
-        }
-        ITERATE ( vector<SAnnotPiece>, it, pieces ) {
-            const SAnnotPiece piece = *it;
-            chunk = NextChunk(chunk, piece.m_Size);
-            chunk->Add(piece);
-            m_Pieces->Remove(piece);
-        }
-
-        _ASSERT(max_iter->second.empty());
-        m_Pieces->erase(max_iter);
+        {{
+            // extract all other pieces
+            vector<SAnnotPiece> pieces;
+            ITERATE ( SIdAnnotPieces, it, objs ) {
+                pieces.push_back(*it);
+            }
+            ITERATE ( vector<SAnnotPiece>, it, pieces ) {
+                const SAnnotPiece piece = *it;
+                chunk = NextChunk(chunk, piece.m_Size);
+                chunk->Add(piece);
+                m_Pieces->Remove(piece);
+            }
+            
+            _ASSERT(max_iter->second.empty());
+            m_Pieces->erase(max_iter);
+        }}
     }
     
     // combine ids with small amount of pieces
@@ -314,6 +336,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/06/15 14:05:50  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.7  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

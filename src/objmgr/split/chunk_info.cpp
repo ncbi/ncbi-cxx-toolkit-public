@@ -67,13 +67,16 @@ void SChunkInfo::Add(const SAnnotPiece& piece)
 {
     _TRACE("SChunkInfo::Add(const SAnnotPiece&)");
     const CSeq_annot_SplitInfo& info = *piece.m_Seq_annot;
-    if ( piece.m_Object ) {
+    if ( piece.m_Type == SAnnotPiece::annot_object ) {
         TAnnotObjects& objs = m_Annots[info.m_Id][info.m_Src_annot];
-        objs.push_back(*piece.m_Object);
+        objs.push_back(*piece.m_Annot_object);
         m_Size += piece.m_Size;
     }
-    else {
+    else if ( piece.m_Type == SAnnotPiece::seq_annot ) {
         Add(info);
+    }
+    else if ( piece.m_Type == SAnnotPiece::seq_data ) {
+        Add(*piece.m_Seq_data);
     }
 }
 
@@ -84,6 +87,21 @@ void SChunkInfo::Add(const SIdAnnotPieces& pieces)
     ITERATE ( SIdAnnotPieces, it, pieces ) {
         Add(*it);
     }
+}
+
+
+void SChunkInfo::Add(const CSeq_inst_SplitInfo& info)
+{
+    ITERATE ( CSeq_inst_SplitInfo::TSeq_data, it, info.m_Seq_data ) {
+        Add(*it);
+    }
+}
+
+
+void SChunkInfo::Add(const CSeq_data_SplitInfo& info)
+{
+    m_Seq_data[info.GetGi()].push_back(info);
+    m_Size += info.m_Size;
 }
 
 
@@ -105,6 +123,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/06/15 14:05:50  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.4  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *

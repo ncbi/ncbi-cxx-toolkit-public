@@ -11,7 +11,8 @@ ASN_DEP  = seq
 
 SRC = 	blob_splitter blob_splitter_params split_blob \
 	blob_splitter_impl blob_splitter_parser blob_splitter_maker \
-	id_range object_splitinfo asn_sizer annot_piece chunk_info size
+	id_range object_splitinfo asn_sizer annot_piece chunk_info size \
+	split_exceptions
 LIB = id2_split
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE)

@@ -41,8 +41,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 SAnnotPiece::SAnnotPiece(void)
-    : m_Object(0),
-      m_Seq_annot(0)
+    : m_Type(empty),
+      m_Annot_object(0),
+      m_Seq_annot(0),
+      m_Seq_data(0)
 {
 }
 
@@ -52,8 +54,10 @@ SAnnotPiece::SAnnotPiece(const SAnnotPiece& piece,
     : m_Size(piece.m_Size),
       m_Location(piece.m_Location),
       m_IdRange(range.GetTotalRange()),
-      m_Object(piece.m_Object),
-      m_Seq_annot(piece.m_Seq_annot)
+      m_Type(piece.m_Type),
+      m_Annot_object(piece.m_Annot_object),
+      m_Seq_annot(piece.m_Seq_annot),
+      m_Seq_data(piece.m_Seq_data)
 {
 }
 
@@ -63,8 +67,10 @@ SAnnotPiece::SAnnotPiece(const CAnnotObject_SplitInfo& obj,
     : m_Size(obj.m_Size),
       m_Location(obj.m_Location),
       m_IdRange(TRange::GetEmpty()),
-      m_Object(&obj),
-      m_Seq_annot(&annot)
+      m_Type(annot_object),
+      m_Annot_object(&obj),
+      m_Seq_annot(&annot),
+      m_Seq_data(0)
 {
 }
 
@@ -73,13 +79,70 @@ SAnnotPiece::SAnnotPiece(const CSeq_annot_SplitInfo& annot)
     : m_Size(annot.m_ComplexLocObjects.m_Size),
       m_Location(annot.m_ComplexLocObjects.m_Location),
       m_IdRange(TRange::GetEmpty()),
-      m_Object(0),
-      m_Seq_annot(&annot)
+      m_Type(seq_annot),
+      m_Annot_object(0),
+      m_Seq_annot(&annot),
+      m_Seq_data(0)
 {
     ITERATE ( TSimpleLocObjects, it, annot.m_SimpleLocObjects ) {
         m_Size += it->second.m_Size;
         m_Location.Add(it->second.m_Location);
     }
+}
+
+
+SAnnotPiece::SAnnotPiece(const CSeq_data_SplitInfo& data)
+    : m_Size(data.m_Size),
+      m_Location(data.m_Location),
+      m_IdRange(TRange::GetEmpty()),
+      m_Type(seq_data),
+      m_Annot_object(0),
+      m_Seq_annot(0),
+      m_Seq_data(&data)
+{
+}
+
+
+bool SAnnotPiece::operator<(const SAnnotPiece& piece) const
+{
+    if ( m_IdRange != piece.m_IdRange ) {
+        return m_IdRange < piece.m_IdRange;
+    }
+    if ( m_Type != piece.m_Type ) {
+        return m_Type < piece.m_Type;
+    }
+    if ( m_Seq_annot != piece.m_Seq_annot ) {
+        return m_Seq_annot < piece.m_Seq_annot;
+    }
+    if ( m_Annot_object != piece.m_Annot_object ) {
+        return m_Annot_object < piece.m_Annot_object;
+    }
+    if ( m_Seq_data != m_Seq_data ) {
+        return m_Seq_data < piece.m_Seq_data;
+    }
+    return false;
+}
+
+
+bool SAnnotPiece::operator==(const SAnnotPiece& piece) const
+{
+    return
+        m_IdRange == piece.m_IdRange &&
+        m_Type == piece.m_Type &&
+        m_Seq_annot == piece.m_Seq_annot &&
+        m_Annot_object == piece.m_Annot_object &&
+        m_Seq_data == piece.m_Seq_data;
+}
+
+
+bool SAnnotPiece::operator!=(const SAnnotPiece& piece) const
+{
+    return
+        m_IdRange != piece.m_IdRange ||
+        m_Type != piece.m_Type ||
+        m_Seq_annot != piece.m_Seq_annot ||
+        m_Annot_object != piece.m_Annot_object ||
+        m_Seq_data != piece.m_Seq_data;
 }
 
 
@@ -122,11 +185,17 @@ CAnnotPieces::~CAnnotPieces(void)
 }
 
 
-void CAnnotPieces::Add(const CBioseq_SplitInfo& bioseq_info,
+void CAnnotPieces::Add(const CBioseq_SplitInfo& info,
                        SChunkInfo& main_chunk)
 {
-    ITERATE ( CBioseq_SplitInfo::TSeq_annots, it, bioseq_info.m_Seq_annots ) {
+    ITERATE ( CBioseq_SplitInfo::TSeq_annots, it, info.m_Seq_annots ) {
         Add(it->second, main_chunk);
+    }
+    if ( info.m_Seq_inst ) {
+        ITERATE ( CSeq_inst_SplitInfo::TSeq_data, it,
+                  info.m_Seq_inst->m_Seq_data ) {
+            Add(SAnnotPiece(*it));
+        }
     }
 }
 
@@ -194,12 +263,19 @@ size_t CAnnotPieces::CountAnnotObjects(void) const
         ITERATE ( SIdAnnotPieces, j, pp ) {
             const SAnnotPiece& p = *j;
             size_t cnt;
-            if ( p.m_Object ) {
+            switch ( p.m_Type ) {
+            case SAnnotPiece::annot_object:
                 cnt = 1;
-            }
-            else {
+                break;
+            case SAnnotPiece::seq_annot:
                 cnt = CSeq_annot_SplitInfo::
                     CountAnnotObjects(*p.m_Seq_annot->m_Src_annot);
+                break;
+            case SAnnotPiece::seq_data:
+                cnt = 1;
+                break;
+            default:
+                cnt = 0;
             }
             size_t id_refs = p.m_Location.size();
             ref_count += double(cnt) / id_refs;
@@ -215,6 +291,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/06/15 14:05:50  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.4  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

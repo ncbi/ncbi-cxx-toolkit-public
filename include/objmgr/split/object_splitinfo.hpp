@@ -38,6 +38,10 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_data.hpp>
+
 #include <objmgr/annot_selector.hpp> // for CAnnotName
 #include <objmgr/seq_id_handle.hpp>
 
@@ -61,6 +65,8 @@ class CSeq_annot;
 class CSeq_feat;
 class CSeq_align;
 class CSeq_graph;
+class CSeq_data;
+class CSeq_inst;
 class CID2S_Split_Info;
 class CID2S_Chunk_Id;
 class CID2S_Chunk;
@@ -166,6 +172,34 @@ public:
 };
 
 
+class CSeq_data_SplitInfo
+{
+public:
+    typedef CRange<TSeqPos> TRange;
+    void SetSeq_data(int gi, const TRange& range,
+                     const CSeq_data& data, const SSplitterParams& params);
+
+    int GetGi(void) const;
+    TRange GetRange(void) const;
+
+    CSeqsRange m_Location;
+    CConstRef<CSeq_data> m_Data;
+    CSize m_Size;
+};
+
+
+class CSeq_inst_SplitInfo : public CObject
+{
+public:
+    typedef vector<CSeq_data_SplitInfo> TSeq_data;
+
+    void Add(const CSeq_data_SplitInfo& data);
+
+    CConstRef<CSeq_inst> m_Seq_inst;
+    TSeq_data m_Seq_data;
+};
+
+
 typedef CSeq_annot_SplitInfo::TSimpleLocObjects TSimpleLocObjects;
 
 
@@ -188,6 +222,7 @@ public:
     CRef<CBioseq> m_Bioseq;
     CRef<CBioseq_set> m_Bioseq_set;
     TSeq_annots m_Seq_annots;
+    CRef<CSeq_inst_SplitInfo> m_Seq_inst;
 };
 
 
@@ -197,6 +232,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/06/15 14:05:49  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.3  2004/01/07 17:36:20  vasilche
 * Moved id2_split headers to include/objmgr/split.
 * Fixed include path to genbank.

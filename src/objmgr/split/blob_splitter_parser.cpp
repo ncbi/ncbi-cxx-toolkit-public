@@ -42,11 +42,20 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annot_id.hpp>
 #include <objects/seq/Annot_descr.hpp>
@@ -135,37 +144,100 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq& dst, const CBioseq& src)
         }
         dst.SetId().push_back(Ref(&NonConst(id)));
     }
-    if ( src.IsSetDescr() ) {
-        dst.SetDescr(NonConst(src.GetDescr()));
-    }
-    dst.SetInst(NonConst(src.GetInst()));
 
-    if ( src.GetAnnot().empty() ) {
-        return;
+    bool need_split_descr;
+    if ( m_Params.m_DisableSplitDescriptions ) {
+        need_split_descr = false;
+    }
+    else {
+        need_split_descr = src.IsSetDescr() && !src.GetDescr().Get().empty();
     }
 
-    if ( gi <= 0 ) {
-        ERR_POST("Bioseq doesn't have gi");
-        dst.SetAnnot() = src.GetAnnot();
-        return;
+    bool need_split_inst;
+    if ( m_Params.m_DisableSplitSequence ) {
+        need_split_inst = false;
+    }
+    else {
+        need_split_inst = false;
+        const CSeq_inst& inst = src.GetInst();
+        if ( inst.IsSetSeq_data() && inst.IsSetExt() ) {
+            // both data and ext
+            need_split_inst = false;
+        }
+        else {
+            if ( inst.IsSetSeq_data() ) {
+                need_split_inst = true;
+            }
+            if ( inst.IsSetExt() ) {
+                const CSeq_ext& ext = inst.GetExt();
+                if ( ext.Which() == CSeq_ext::e_Delta ) {
+                    need_split_inst = true;
+                }
+            }
+        }
+    }
+
+    bool need_split_annot;
+    if ( m_Params.m_DisableSplitAnnotations ) {
+        need_split_annot = false;
+    }
+    else {
+        need_split_annot = !src.GetAnnot().empty();
+    }
+
+    bool need_split = need_split_descr || need_split_inst || need_split_annot;
+    CBioseq_SplitInfo* info = 0;
+
+    if ( need_split ) {
+        if ( gi <= 0 ) {
+            ERR_POST("Bioseq doesn't have gi");
+        }
+        else {
+            info = &m_Bioseqs[gi];
+            
+            if ( info->m_Id != 0 ) {
+                ERR_POST("Several Bioseqs with the same gi: " << gi);
+                info = 0;
+            }
+            else {
+                _ASSERT(info->m_Id == 0);
+                _ASSERT(!info->m_Bioseq);
+                _ASSERT(!info->m_Bioseq_set);
+                info->m_Id = gi;
+                info->m_Bioseq.Reset(&dst);
+            }
+        }
+        
+        if ( !info ) {
+            need_split_descr = need_split_inst = need_split_annot = false;
+        }
     }
     
-    CBioseq_SplitInfo& info = m_Bioseqs[gi];
-    if ( info.m_Id != 0 ) {
-        ERR_POST("Several Bioseqs with the same gi: " << gi);
-        dst.SetAnnot() = src.GetAnnot();
-        return;
+    if ( need_split_descr ) {
+        ITERATE ( CBioseq::TDescr::Tdata, it, src.GetDescr().Get() ) {
+            if ( !CopyDesc(*info, **it) ) {
+                dst.SetDescr().Set().push_back(*it);
+            }
+        }
     }
-    
-    _ASSERT(info.m_Id == 0);
-    _ASSERT(!info.m_Bioseq);
-    _ASSERT(!info.m_Bioseq_set);
-    info.m_Id = gi;
-    info.m_Bioseq.Reset(&dst);
+    else {
+        if ( src.IsSetDescr() ) {
+            dst.SetDescr().Set() = src.GetDescr().Get();
+        }
+    }
 
-    ITERATE ( CBioseq::TAnnot, it, src.GetAnnot() ) {
-        if ( !CopyAnnot(info, **it) ) {
-            dst.SetAnnot().push_back(Ref(&NonConst(**it)));
+    if ( need_split_inst ) {
+        CopySequence(*info, gi, dst.SetInst(), src.GetInst());
+    }
+    else {
+        dst.SetInst(NonConst(src.GetInst()));
+    }
+
+    if ( need_split_annot ) {
+        ITERATE ( CBioseq::TAnnot, it, src.GetAnnot() ) {
+            if ( !CopyAnnot(*info, **it) ) {
+                dst.SetAnnot().push_back(*it);
+            }
         }
     }
 }
@@ -200,56 +272,185 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
     if ( src.IsSetDate() ) {
         dst.SetDate(NonConst(src.GetDate()));
     }
-    if ( src.IsSetDescr() ) {
-        dst.SetDescr(NonConst(src.GetDescr()));
+
+    bool need_split_descr;
+    if ( m_Params.m_DisableSplitDescriptions ) {
+        need_split_descr = false;
+    }
+    else {
+        need_split_descr = src.IsSetDescr() && !src.GetDescr().Get().empty();
+    }
+
+    bool need_split_annot;
+    if ( m_Params.m_DisableSplitAnnotations ) {
+        need_split_annot = false;
+    }
+    else {
+        need_split_annot = !src.GetAnnot().empty();
+    }
+
+    bool need_split = need_split_descr || need_split_annot;
+    CBioseq_SplitInfo* info = 0;
+
+    if ( need_split ) {
+        if ( id <= 0 ) {
+            ERR_POST("Bioseq_set doesn't have integer id");
+        }
+        else {
+            info = &m_Bioseqs[-id];
+            if ( info->m_Id != 0 ) {
+                ERR_POST("Several Bioseqs with the same gi: " << id);
+                info = 0;
+            }
+            else {
+                _ASSERT(info->m_Id == 0);
+                _ASSERT(!info->m_Bioseq);
+                _ASSERT(!info->m_Bioseq_set);
+                info->m_Id = -id;
+                info->m_Bioseq_set.Reset(&dst);
+            }
+        }
+
+        if ( !info ) {
+            need_split_descr = need_split_annot = 0;
+        }
+    }
+
+
+    if ( need_split_descr ) {
+        ITERATE ( CBioseq_set::TDescr::Tdata, it, src.GetDescr().Get() ) {
+            if ( !CopyDesc(*info, **it) ) {
+                dst.SetDescr().Set().push_back(*it);
+            }
+        }
+    }
+    else {
+        if ( src.IsSetDescr() ) {
+            dst.SetDescr().Set() = src.GetDescr().Get();
+        }
+    }
+
+    if ( need_split_annot ) {
+        ITERATE ( CBioseq_set::TAnnot, it, src.GetAnnot() ) {
+            if ( !CopyAnnot(*info, **it) ) {
+                dst.SetAnnot().push_back(*it);
+            }
+        }
     }
 
     ITERATE ( CBioseq_set::TSeq_set, it, src.GetSeq_set() ) {
         dst.SetSeq_set().push_back(Ref(new CSeq_entry));
         CopySkeleton(*dst.SetSeq_set().back(), **it);
     }
+}
 
-    if ( src.GetAnnot().empty() ) {
-        return;
+
+bool CBlobSplitterImpl::CopyDesc(CBioseq_SplitInfo& /*bioseq_info*/,
+                                 const CSeqdesc& /*desc*/)
+{
+    return false;
+}
+
+
+TSeqPos GetLength(const CSeq_loc& loc)
+{
+    _ASSERT(loc.Which() == CSeq_loc::e_Int);
+    return loc.GetInt().GetLength();
+}
+
+
+bool CBlobSplitterImpl::CopySequence(CBioseq_SplitInfo& bioseq_info,
+                                     int gi,
+                                     CSeq_inst& dst,
+                                     const CSeq_inst& src)
+{
+    _ASSERT(!bioseq_info.m_Seq_inst);
+    bioseq_info.m_Seq_inst.Reset(new CSeq_inst_SplitInfo);
+    CSeq_inst_SplitInfo& info = *bioseq_info.m_Seq_inst;
+    info.m_Seq_inst.Reset(&src);
+
+    dst.SetRepr(src.GetRepr());
+    dst.SetMol(src.GetMol());
+    if ( src.IsSetLength() )
+        dst.SetLength(src.GetLength());
+    if ( src.IsSetFuzz() )
+        dst.SetFuzz(const_cast<CInt_fuzz&>(src.GetFuzz()));
+    if ( src.IsSetTopology() )
+        dst.SetTopology(src.GetTopology());
+    if ( src.IsSetStrand() )
+        dst.SetStrand(src.GetStrand());
+    if ( src.IsSetHist() )
+        dst.SetHist(const_cast<CSeq_hist&>(src.GetHist()));
+
+    if ( src.IsSetSeq_data() ) {
+        CSeq_data_SplitInfo data;
+        CRange<TSeqPos> range;
+        range.SetFrom(0).SetLength(src.GetLength());
+        data.SetSeq_data(gi, range, src.GetSeq_data(), m_Params);
+        info.Add(data);
     }
-
-    if ( id <= 0 ) {
-        ERR_POST("Bioseq_set doesn't have integer id");
-        dst.SetAnnot() = src.GetAnnot();
-        return;
-    }
-
-    CBioseq_SplitInfo& info = m_Bioseqs[-id];
-    if ( info.m_Id != 0 ) {
-        ERR_POST("Several Bioseqs with the same gi: " << id);
-        dst.SetAnnot() = src.GetAnnot();
-        return;
-    }
-    
-    _ASSERT(info.m_Id == 0);
-    _ASSERT(!info.m_Bioseq);
-    _ASSERT(!info.m_Bioseq_set);
-    info.m_Id = -id;
-    info.m_Bioseq_set.Reset(&dst);
-
-    ITERATE ( CBioseq_set::TAnnot, it, src.GetAnnot() ) {
-        if ( !CopyAnnot(info, **it) ) {
-            dst.SetAnnot().push_back(Ref(&NonConst(**it)));
+    else {
+        _ASSERT(src.IsSetExt());
+        const CSeq_ext& src_ext = src.GetExt();
+        _ASSERT(src_ext.Which() == CSeq_ext::e_Delta);
+        const CDelta_ext& src_delta = src_ext.GetDelta();
+        CDelta_ext& dst_delta = dst.SetExt().SetDelta();
+        TSeqPos pos = 0;
+        ITERATE ( CDelta_ext::Tdata, it, src_delta.Get() ) {
+            const CDelta_seq& src_seq = **it;
+            TSeqPos length;
+            CRef<CDelta_seq> new_seq;
+            switch ( src_seq.Which() ) {
+            case CDelta_seq::e_Loc:
+                new_seq = *it;
+                length = GetLength(src_seq.GetLoc());
+                break;
+            case CDelta_seq::e_Literal:
+            {{
+                const CSeq_literal& src_lit = src_seq.GetLiteral();
+                new_seq.Reset(new CDelta_seq);
+                CSeq_literal& dst_lit = new_seq->SetLiteral();
+                length = src_lit.GetLength();
+                dst_lit.SetLength(length);
+                if ( src_lit.IsSetFuzz() )
+                    dst_lit.SetFuzz(const_cast<CInt_fuzz&>(src_lit.GetFuzz()));
+                if ( src_lit.IsSetSeq_data() ) {
+                    CSeq_data_SplitInfo data;
+                    CRange<TSeqPos> range;
+                    range.SetFrom(pos).SetLength(length);
+                    data.SetSeq_data(gi, range,
+                                     src_lit.GetSeq_data(), m_Params);
+                    info.Add(data);
+                }
+                break;
+            }}
+            default:
+                new_seq.Reset(new CDelta_seq);
+                length = 0;
+                break;
+            }
+            dst_delta.Set().push_back(new_seq);
+            pos += length;
         }
     }
+    return false;
 }
 
 
 bool CBlobSplitterImpl::CopyAnnot(CBioseq_SplitInfo& bioseq_info,
                                   const CSeq_annot& annot)
 {
+    if ( m_Params.m_DisableSplitAnnotations ) {
+        return false;
+    }
+
     switch ( annot.GetData().Which() ) {
     case CSeq_annot::TData::e_Ftable:
     case CSeq_annot::TData::e_Align:
     case CSeq_annot::TData::e_Graph:
         break;
     default:
-        ERR_POST(Info << "Bad type of Seq-annot: skipping.");
+        // we don't split other types of Seq-annot
         return false;
     }
 
@@ -291,6 +492,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/06/15 14:05:50  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.8  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *

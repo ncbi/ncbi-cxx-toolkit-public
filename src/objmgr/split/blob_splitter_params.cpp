@@ -34,12 +34,31 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/split/blob_splitter_params.hpp>
 #include <objmgr/split/id2_compress.hpp>
-
-#include <objmgr/objmgr_exception.hpp>
+#include <objmgr/split/split_exceptions.hpp>
 #include <util/compress/zlib.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+SSplitterParams::SSplitterParams(void)
+    : m_Compression(eCompression_none),
+      m_Verbose(0),
+      m_DisableSplitDescriptions(false),
+      m_DisableSplitSequence(false),
+      m_DisableSplitAnnotations(false)
+      
+{
+    SetChunkSize(kDefaultChunkSize);
+}
+
+
+void SSplitterParams::SetChunkSize(size_t size)
+{
+    m_ChunkSize = size;
+    m_MinChunkSize = size_t(double(size) * 0.8);
+    m_MaxChunkSize = size_t(double(size) * 1.2);
+}
 
 
 static const size_t kChunkSize = 32*1024;
@@ -92,8 +111,8 @@ void CId2Compressor::CompressChunk(const SSplitterParams& params,
         if ( !compr.CompressBuffer(data, size,
                                    &dst[pos+8], dst.size()-(pos+8),
                                    &real_size) ) {
-            NCBI_THROW(CLoaderException, eCompressionError,
-                "zip compression failed");
+            NCBI_THROW(CSplitException, eCompressionError,
+                       "zip compression failed");
         }
         for ( size_t i = 0, s = real_size; i < 4; ++i, s <<= 8 ) {
             dst[pos+i] = char(s >> 24);
@@ -105,8 +124,8 @@ void CId2Compressor::CompressChunk(const SSplitterParams& params,
         break;
     }}
     default:
-        NCBI_THROW(CLoaderException, eCompressionError,
-            "compression method is not implemented");
+        NCBI_THROW(CSplitException, eNotImplemented,
+                   "compression method is not implemented");
     }
 }
 
@@ -122,8 +141,8 @@ void CId2Compressor::CompressHeader(const SSplitterParams& params,
         sx_Append(dst, "ZIP", 4);
         break;
     default:
-        NCBI_THROW(CLoaderException, eCompressionError,
-            "compression method is not implemented");
+        NCBI_THROW(CSplitException, eNotImplemented,
+                   "compression method is not implemented");
     }
 }
 
@@ -150,6 +169,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/06/15 14:05:50  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.8  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -108,6 +108,12 @@ void CSeqsRange::Add(const CSeq_id_Handle& id, const COneSeqRange& loc)
 }
 
 
+void CSeqsRange::Add(int gi, const TRange& range)
+{
+    m_Ranges[CSeq_id_Handle::GetGiHandle(gi)].Add(range);
+}
+
+
 void CSeqsRange::Add(const CSeqsRange& range)
 {
     ITERATE ( CSeqsRange, it, range ) {
@@ -153,6 +159,8 @@ void CSeqsRange::Add(const CSeq_loc& loc)
         if ( loc.GetBond().IsSetB() ) {
             Add(loc.GetBond().GetB());
         }
+        break;
+    default:
         break;
     }
 }
@@ -224,6 +232,8 @@ void CSeqsRange::Add(const CSeq_align& obj)
         ITERATE ( CSeq_align_set::Tdata, it, segs.GetDisc().Get() ) {
             Add(**it);
         }
+        break;
+    default:
         break;
     }
 }
@@ -324,6 +334,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/06/15 14:05:50  vasilche
+* Added splitting of sequence.
+*
 * Revision 1.6  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *
