@@ -55,9 +55,9 @@ enum EMode {
 enum EStyle {
     // determines handling of segmented records
     eStyle_Normal,  // default -- show segments iff they're near
-        eStyle_Segment, // always show segments
-        eStyle_Master,  // merge segments into a single virtual record
-        eStyle_Contig   // just an index of segments -- no actual sequence
+    eStyle_Segment, // always show segments
+    eStyle_Master,  // merge segments into a single virtual record
+    eStyle_Contig   // just an index of segments -- no actual sequence
 };
 
 enum EFlags {
@@ -110,6 +110,9 @@ typedef EFilterFlags    TFilter;
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/05 18:53:08  shomrat
+* fixed indentation
+*
 * Revision 1.2  2004/02/19 17:56:49  shomrat
 * add flag for skipping gathering of source features
 *
