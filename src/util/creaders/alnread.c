@@ -4380,6 +4380,9 @@ static void s_InsertNewOffsets
                     num_chars += strlen (lip->data);
                     lip = lip->next;
                 }
+                if (lip == NULL) {
+                  return;
+                }
                 /* set new offset at first line of next pattern */
                 line_diff ++;
                 lip = lip->next;
@@ -5172,6 +5175,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/09 21:27:39  bollin
+ * in s_InsertNewOffsets, if the list ends while searching for the next pattern, exit immediately (prevents NULL pointer access)
+ *
  * Revision 1.6  2004/03/04 19:15:07  bollin
  * file reading now skips over multi-line bracketed comments
  *
