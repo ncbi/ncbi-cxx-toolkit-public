@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Exception handling in the NCBI C++ Toolkit</title>
+  </head>
+  <body bgcolor = white>
+  <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbiexpt.hpp">
+    <h1> Exception handling </a> in the NCBI C++ Toolkit </h1>
+
+<ul>
+  <li> <a href="#macro"> Macros for standard C++ exception handling</a>
+  <li> <a href="#errno"> The CErrnoException Class </a>
+  <li> <a href="#parse"> The CParseException Class </a>
+  <li> <a href="#tracex"> Exception Tracing </a>
+</ul>
+
+<a name="macro"> <h3> Macros for standard C++ exception handling</h3>
+
+The following preprocessor macros have been defined in the NCBI C++ Toolkit to support 
+standard C++ exception handling:<p>
+
+<table border=1 width=700 cellspacing=1>
+  <caption></caption>
+  <tr>
+	 <th>Macro</th>
+	 <th>C++ Equivalent </th>
+	 <th>Synopsis </th>
+  </tr>
+
+  <tr>
+	 <td><i>THROWS((types)) </i></td>
+    <td><i> throw (types)  </i></td>
+	 <td> Defines the type of exceptions thrown by the given function. <i>types</i> may be a single
+	 object type or a comma delimited list.    </td>
+  </tr>
+
+  <tr>
+	 <td><i> THROWS_NONE </i></td>
+    <td><i> throw ()    </i></td>
+	 <td> Specifies that the given function throws no exceptions.     </td>
+  </tr>
+
+  <tr>
+	 <td><i>STD_CATCH(message)</i></td>
+	 <td><i> catch(std::exception)</i></td>
+	 <td> Provides uniform handling of all exceptions derived from <i>std::exception</i>. </td>
+  </tr>
+
+  <tr>
+	 <td><i> STD_CATCH_ALL(message)</i></td>
+	 <td><i> catch(...)</i></td>
+	 <td> Applies <i>STD_CATCH()</i> to <i>std::exception</i> derived objects;
+	 catches non-standard exceptions and generates an "Unknown exception" message.
+    </td>
+  </tr>
+</table>
+<p>
+
+Exception specifications cause <i>std::unexpected()</i> to be raised when
+undeclared exceptions are thrown. Because various compilers handle these events differently, the
+first two macros (<i>THROWS(()), THROWS_NONE</i>) were designed to support platform-independent
+exception specifications.<p>
+
+The <i> catch</i> macros provide uniform, routine exception handling with minimal effort from
+the programmer.  The <i>STD_CATCH()</i> macro prints formatted messages to the application's <a
+href="diag.html"> <i> diagnostic stream</i></a>. For example, if <i> F() </i> throws an
+exception of the form: 
+
+<center> <tt> throw std::runtime_error(</tt><i>throw-msg</i>)</center> <br>
+
+then <tt>STD_CATCH(</tt><i>catch-msg</i>) will generate a message of the form:<p>
+
+<center> <tt> Error: [</tt><i>catch-msg</i><tt>] Exception: </tt><i>throw-msg</i></center><br>
+
+In this example, the generated message starts with the <i>Error</i> tag, as that is the <a
+href="diag.html#severity"> severity level</a> for the default diagnostic stream.  User-defined
+classes that are derived from <i>std::exception</i> will be treated uniformly in the same
+manner. The <i>throw</i> clause in this case creates a new instance of
+<i>std::runtime_error</i> whose data member <i>desc</i> is initialized to
+<i>throw-msg</i>. When the exception is then caught, the exception's member function
+<i>what()</i> is used to access that message.<p>
+
+The <i>STD_CATCH_ALL</i> macro catches all exceptions. If however, the exception
+caught is <i>not</i> derived from <i>std::exception</i>, then the <i>catch</i> clause cannot
+assume that <i>what()</i> has been defined for this object, and a default message is generated:<p>
+
+<center> <tt> Error: [</tt><i>catch-msg</i><tt>] Exception: Unknown exception </tt></center><p>
+
+<a name="errno"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CErrnoException.html">
+<h3> The CErrnoException Class </h3></a>
+The <i>CErrnoException</i> class is derived from <i>std::runtime_error</i>, and in addition to the
+<i>desc</i> string, has an <i>int</i> data member called <i>m_Errno</i>.  Like its parent class, 
+its constructor takes a single string argument which will be stored in <i>desc</i>. The constructor
+itself however, adds information about the most recent error state via the global system variable
+<i>errno</i>:
+
+<pre>
+CErrnoException::CErrnoException(const string& what) THROWS_NONE
+    : runtime_error(what + ": " + ::strerror(errno)), m_Errno(errno)
+{
+}
+</pre>
+
+<a name="parse"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CParseException.html">
+<h3> The CParseException Class </h3></a>
+Similar to <i>CErrnoException</i>, the <i>CParseException</i> class is derived from 
+<i>std::runtime_error</i>, and includes an additional <i>int</i> data member, in this
+case called <i>m_Pos</i>. This class was specifically defined to support complex parsing tasks,
+and its constructor requires that positional information be supplied along with the message
+to be caught. Thus the call to instantiate a <i>CParseException</i> object is:  
+<i>CParseException(msg, position)</i>.
+
+<a name="tracex"> <h3> Exception Tracing </h3>
+
+During devleopment it is often useful to have direct feedback with respect to where
+an exception is thrown, but in general this is not possible. A set of macros are
+defined in <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbiexpt.hpp">
+<i> ncbiexpt.hpp </i></a> that in addtion to throwing the requested exception object, generate a detailed
+<a href="diag.html#severity">trace</a> message:
+
+<ul>
+ <li><i> THROW0_TRACE(exception_object) </i>
+ <li><i> THROW0p_TRACE(exception_object) </i>
+ <li><i> THROW0np_TRACE(exception_object) </i>
+ <li><i> THROW1_TRACE(exception_class, exception_arg) </i>
+ <li><i> THROW1p_TRACE(exception_class, exception_arg)</i>
+ <li><i> THROW1np_TRACE(exception_class, exception_arg) </i>
+ <li><i> THROW_TRACE(exception_class, exception_args) </i>
+ <li><i> THROWp_TRACE(exception_class, exception_args) </i>
+ <li><i> THROWnp_TRACE(exception_class, exception_args) </i>
+</ul>
+
+The first of these takes a single argument, which may be a newly constructed exception, as
+in:<p> <center><i>THROW0_TRACE(runtime_error("message"))</i></center><p> or simply a string, as
+in: <i>THROW0_TRACE("message")</i>. Note however, that as <i>string</i> is not a
+<i>std::exception</i>, you will need to use <i>STD_CATCH_ALL</i> to catch the thrown object in
+this case.  The second macro also takes a single argument and can accept printable objects that
+are neither <i>std::exception</i>s nor strings, such as <i>complex(1,3)</i>. Any object with a
+defined output operator is, of course, printable.  The third macro generalizes this one step
+further, and accepts arguments such as <i>vector&lt;T&gt;()</i>, where <i>T</i> is a printable
+object. <p>
+
+The next three macros accept two arguments: an "exception" class name and an initialization
+argument.  The class argument need not actually be derived from <i>std::exception</i>, as the
+pre-processor simply uses the class name to construct a new object of that type using the
+initialization argument.  An implicit assumption however, is that there is a single initialization
+argument. Both arguments are also passed to the trace message. As in the first three macros,
+<i>THROW1_TRACE()</i>, THROW1p_TRACE()</i> and <i>THROW1np_TRACE()</i> specialize in different
+types of printable objects, ranging from exceptions and numeric and character types, to
+aggregate and container types. <p>
+
+The last three macros parallel the previous two sets of macros in their specializations, and
+may be applied where the exception object's constructor takes multiple arguments. See also the
+discussion of <a href="../libs/err_msg.html#ref_Exception">Exception handling</a> in the Reference Manual. 
+	  <p>
+
+  </body>
+<a href="diag.html"> <i> previous</i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="../index.html"> <i> up </i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="cgi.html"> <i> next</i> </a>
+</html>
+
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+		  <!-- <td align=center><i>$Revision$</i></td> -->
+		  <td align=right><i>$Date$</i></td>
+	 </table>
