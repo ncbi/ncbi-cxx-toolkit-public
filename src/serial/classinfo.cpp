@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2000/04/10 19:32:52  vakatov
+* Get rid of a minor compiler warning
+*
 * Revision 1.39  2000/04/10 18:01:56  vasilche
 * Added Erase() for STL types in type iterators.
 *
@@ -485,7 +488,7 @@ size_t CClassInfoTmpl::GetSize(void) const
     return m_Size;
 }
 
-void CClassInfoTmpl::UpdateClassInfo(const CObject* object)
+void CClassInfoTmpl::UpdateClassInfo(const CObject* /* object */)
 {
     SetParentClass(CObject::GetTypeInfo());
 }

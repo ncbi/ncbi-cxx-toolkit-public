@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/04/10 19:34:02  vakatov
+* Get rid of a minor compiler warning
+*
 * Revision 1.9  2000/04/07 19:26:27  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -244,9 +247,9 @@ public:
     size_t order;
 };
 
-string MakeFileName(const string& s, size_t addLength)
+string MakeFileName(const string& fname, size_t addLength)
 {
-    string name = Identifier(s);
+    string name = Identifier(fname);
     int remove = name.size() + addLength - MAX_FILE_NAME_LENGTH;
     if ( remove <= 0 )
         return name;

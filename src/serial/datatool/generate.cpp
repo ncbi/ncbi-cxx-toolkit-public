@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/04/10 19:33:22  vakatov
+* Get rid of a minor compiler warning
+*
 * Revision 1.28  2000/04/07 19:26:27  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -341,7 +344,7 @@ bool CCodeGenerator::Imported(const CDataType* type) const
     return true;
 }
 
-void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
+void CCodeGenerator::CollectTypes(const CDataType* type, EContext /*context*/)
 {
     if ( type->GetParentType() == 0 ) {
         if ( !AddType(type) )
