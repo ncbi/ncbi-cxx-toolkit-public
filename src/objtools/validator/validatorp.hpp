@@ -244,6 +244,7 @@ enum EErrType {
     eErr_SEQ_FEAT_BadProductSeqId,
     eErr_SEQ_FEAT_RnaProductMismatch,
     eErr_SEQ_FEAT_DifferntIdTypesInSeqLoc,
+    eErr_SEQ_FEAT_MissingCDSproduct,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -691,6 +692,7 @@ private:
 
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
     void ValidateCdTrans(const CSeq_feat& feat);
+    void ValidateCdsProductId(const CSeq_feat& feat);
     void ReportCdTransErrors(const CSeq_feat& feat,
         bool show_stop, bool got_stop, bool no_end, int ragged);
     void ValidateSplice(const CSeq_feat& feat, bool check_all);
@@ -866,6 +868,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/05/05 15:35:45  shomrat
+* Added ValidateCdsProductId
+*
 * Revision 1.27  2003/04/29 14:55:09  shomrat
 * Added SeqAlign validation
 *
