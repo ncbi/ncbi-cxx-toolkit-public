@@ -170,6 +170,9 @@ void CDemoApp::Init(void)
 
     arg_desc->AddFlag("cache",
                       "use BDB cache");
+    arg_desc->AddDefaultKey("id_cache_days", "id_cache_days",
+                            "number of days to keep gi->sat/satkey cache",
+                            CArgDescriptions::eInteger, "1");
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -769,7 +772,8 @@ int CDemoApp::Run(void)
                     bdb_cache->Purge(age);
                 }
 
-                bdb_cache->GetIntCache()->SetExpirationTime(24*60*60);
+                int id_days = args["id_cache_days"].AsInteger();
+                bdb_cache->GetIntCache()->SetExpirationTime(id_days*24*60*60);
                 id1_reader.reset(new CCachedId1Reader(5,
                                                       bdb_cache.get(),
                                                       bdb_cache->GetIntCache()));
@@ -1124,6 +1128,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/10/27 15:06:31  vasilche
+* Added option to set ID1 cache keep time.
+*
 * Revision 1.44  2003/10/21 14:27:35  vasilche
 * Added caching of gi -> sat,satkey,version resolution.
 * SNP blobs are stored in cache in preprocessed format (platform dependent).
