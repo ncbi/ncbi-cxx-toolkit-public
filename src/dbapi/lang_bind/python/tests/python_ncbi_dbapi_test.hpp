@@ -33,7 +33,12 @@
 #ifndef PYTHON_NCBI_DBAPI_TEST_H
 #define PYTHON_NCBI_DBAPI_TEST_H
 
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiargs.hpp>
+#include <corelib/ncbienv.hpp>
+
 #include <cppunit/extensions/HelperMacros.h>
+
 #include "../pythonpp/pythonpp_emb.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -82,6 +87,17 @@ private:
     pythonpp::CEngine m_Engine;
 };
 
+class CUnitTestApp : public CNcbiApplication
+{
+public:
+    virtual ~CUnitTestApp(void);
+
+private:
+    virtual void Init(void);
+    virtual int  Run(void);
+    virtual void Exit(void);
+};
+
 END_NCBI_SCOPE
 
 #endif  // PYTHON_NCBI_DBAPI_TEST_H
@@ -89,6 +105,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/02/17 14:03:36  ssikorsk
+ * Added database parameters to the unit-test (handled via CNcbiApplication)
+ *
  * Revision 1.3  2005/02/10 20:13:48  ssikorsk
  * Improved 'simple mode' test
  *

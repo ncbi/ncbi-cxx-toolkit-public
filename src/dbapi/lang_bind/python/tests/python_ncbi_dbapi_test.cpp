@@ -40,10 +40,77 @@
 
 BEGIN_NCBI_SCOPE
 
+///////////////////////////////////////////////////////////////////////////////
 // Registers the fixture into the 'registry'
 CPPUNIT_TEST_SUITE_REGISTRATION( CPythonDBAPITest );
 
+///////////////////////////////////////////////////////////////////////////////
+enum EServerType {
+    eUnknown,   //< Server type is not known
+    eSybase,    //< Sybase server
+    eMsSql,     //< Microsoft SQL server
+    eOracle,    //< ORACLE server
+    eMySql,     //< MySQL server
+    eSqlite     //< SQLITE server
+};
 
+string DriverName;
+string ServerName;
+string UserName;
+string UserPassword;
+
+string GetDriverName(void)
+{
+    return DriverName;
+}
+
+string GetServerName(void)
+{
+    return ServerName;
+}
+
+string GetUserName(void)
+{
+    return UserName;
+}
+
+string GetUserPassword(void)
+{
+    return UserPassword;
+}
+
+EServerType
+GetServerType(void)
+{
+    if ( GetServerName() == "STRAUSS"  ||  GetServerName() == "MOZART" ) {
+        return eSybase;
+    } else if ( GetServerName().substr(0, 6) == "MS_DEV" ) {
+        return eMsSql;
+    }
+
+    return eUnknown;
+}
+
+string
+GetServerTypeStr(void)
+{
+    switch ( GetServerType() ) {
+    case eSybase :
+        return "SYBASE";
+    case eMsSql :
+        return "MSSQL";
+    case eOracle :
+        return "ORACLE";
+    case eMySql :
+        return "MYSQL";
+    case eSqlite :
+        return "SQLITE";
+    }
+
+    return "none";
+}
+
+///////////////////////////////////////////////////////////////////////////////
 CPythonDBAPITest::CPythonDBAPITest()
 {
 }
@@ -61,11 +128,14 @@ CPythonDBAPITest::tearDown()
 }
 
 
-void 
+void
 CPythonDBAPITest::MakeTestPreparation()
 {
-    m_Engine.ExecuteStr("connection = python_ncbi_dbapi.connect('ftds', 'ms_sql', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed', True)\n");
-    m_Engine.ExecuteStr("conn_simple = python_ncbi_dbapi.connect('ftds', 'ms_sql', 'MS_DEV2', '', 'anyone', 'allowed')\n");
+    string connection_str( "connection = python_ncbi_dbapi.connect('" + GetDriverName() + "', '" + GetServerTypeStr() + "', '" + GetServerName() + "', 'DBAPI_Sample', '" + GetUserName() + "', '" + GetUserPassword() + "', True)\n");
+    string conn_simple_str( "conn_simple = python_ncbi_dbapi.connect('" + GetDriverName() + "', '" + GetServerTypeStr() + "', '" + GetServerName() + "', 'DBAPI_Sample', '" + GetUserName() + "', '" + GetUserPassword() + "')\n");
+
+    m_Engine.ExecuteStr( connection_str.c_str() );
+    m_Engine.ExecuteStr( conn_simple_str.c_str() );
 
     m_Engine.ExecuteStr("cursor_simple = conn_simple.cursor() \n");
     m_Engine.ExecuteStr("cursor_simple.execute('CREATE TABLE #t ( vkey int)') \n");
@@ -217,34 +287,124 @@ CPythonDBAPITest::CreateTestTable()
 }
 
 
-END_NCBI_SCOPE
+///////////////////////////////////////////////////////////////////////////////
+CUnitTestApp::~CUnitTestApp(void)
+{
+    return ;
+}
+
+void
+CUnitTestApp::Init(void)
+{
+    // Create command-line argument descriptions class
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    // Specify USAGE context
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "python_ncbi_dbapi_test");
+
+    // Describe the expected command-line arguments
+#if defined(NCBI_OS_MSWIN)
+#define DEF_SERVER    "MS_DEV1"
+#define DEF_DRIVER    "ftds"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "odbc", "mysql", "oracle", "msdblib", "gateway"
+#else
+#define DEF_SERVER    "STRAUSS"
+#define DEF_DRIVER    "ctlib"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "odbc", "mysql", "oracle", "gateway"
+#endif
+
+    arg_desc->AddDefaultKey("S", "server",
+                            "Name of the SQL server to connect to",
+                            CArgDescriptions::eString, DEF_SERVER);
+
+    arg_desc->AddDefaultKey("d", "driver",
+                            "Name of the DBAPI driver to use",
+                            CArgDescriptions::eString,
+                            DEF_DRIVER);
+    arg_desc->SetConstraint("d", &(*new CArgAllow_Strings, ALL_DRIVERS));
+
+    arg_desc->AddDefaultKey("U", "username",
+                            "User name",
+                            CArgDescriptions::eString, "anyone");
+
+    arg_desc->AddDefaultKey("P", "password",
+                            "Password",
+                            CArgDescriptions::eString, "allowed");
+
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(arg_desc.release());
+}
 
 int
-main(int argc, char *argv[])
+CUnitTestApp::Run(void)
 {
-    // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample1.py");
-    // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample5.py");
-    // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\tests\\python_ncbi_dbapi_test.py");
+    const CArgs& args = GetArgs();
 
-  // Get the top level suite from the registry
-  CPPUNIT_NS::Test *suite = CPPUNIT_NS::TestFactoryRegistry::getRegistry().makeTest();
+    // Get command-line arguments ...
+    DriverName      = args["d"].AsString();
+    ServerName      = args["S"].AsString();
+    UserName        = args["U"].AsString();
+    UserPassword    = args["P"].AsString();
 
-  // Adds the test to the list of test to run
-  CPPUNIT_NS::TextUi::TestRunner runner;
-  runner.addTest( suite );
+    // Get the top level suite from the registry
+    CPPUNIT_NS::Test *suite = CPPUNIT_NS::TestFactoryRegistry::getRegistry().makeTest();
 
-  // Change the default outputter to a compiler error format outputter
-  runner.setOutputter( new CPPUNIT_NS::CompilerOutputter( &runner.result(), std::cerr ) );
-  // Run the test.
-  bool wasSucessful = runner.run();
+    // Adds the test to the list of test to run
+    CPPUNIT_NS::TextUi::TestRunner runner;
+    runner.addTest( suite );
 
-  // Return error code 1 if the one of test failed.
-  return wasSucessful ? 0 : 1;
+    // Change the default outputter to a compiler error format outputter
+    runner.setOutputter( new CPPUNIT_NS::CompilerOutputter( &runner.result(),   std::cerr ) );
+    // Run the test.
+    bool wasSucessful = runner.run();
+
+    // Return error code 1 if the one of test failed.
+    return wasSucessful ? 0 : 1;
+}
+
+void
+CUnitTestApp::Exit(void)
+{
+    return ;
+}
+
+END_NCBI_SCOPE
+
+//int
+//main(int argc, char *argv[])
+//{
+//    // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample1.py");
+//    // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\samples\\sample5.py");
+//    // m_Engine.ExecuteFile("E:\\home\\nih\\c++\\src\\dbapi\\lang_bind\\python\\tests\\python_ncbi_dbapi_test.py");
+
+//  // Get the top level suite from the registry
+//  CPPUNIT_NS::Test *suite = CPPUNIT_NS::TestFactoryRegistry::getRegistry().makeTest();
+
+//  // Adds the test to the list of test to run
+//  CPPUNIT_NS::TextUi::TestRunner runner;
+//  runner.addTest( suite );
+
+//  // Change the default outputter to a compiler error format outputter
+//  runner.setOutputter( new CPPUNIT_NS::CompilerOutputter( &runner.result(), std::cerr ) );
+//  // Run the test.
+//  bool wasSucessful = runner.run();
+
+//  // Return error code 1 if the one of test failed.
+//  return wasSucessful ? 0 : 1;
+//}
+
+int main(int argc, const char* argv[])
+{
+    return ncbi::CUnitTestApp().AppMain(argc, argv);
 }
 
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/02/17 14:03:36  ssikorsk
+* Added database parameters to the unit-test (handled via CNcbiApplication)
+*
 * Revision 1.5  2005/02/10 20:13:48  ssikorsk
 * Improved 'simple mode' test
 *
