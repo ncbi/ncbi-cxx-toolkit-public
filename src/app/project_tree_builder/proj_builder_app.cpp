@@ -251,11 +251,11 @@ static
 void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles)
 {
    if ( cycles.empty() ) {
-        LOG_POST(Info << "Ok. No dependencies cycles found.");
+        LOG_POST(Info << "No dependency cycles found.");
     } else {
         ITERATE(CCyclicDepends::TDependsCycles, p, cycles) {
             const CCyclicDepends::TDependsChain& cycle = *p;
-            LOG_POST(Error << "Dependencies cycle found :");
+            LOG_POST(Error << "Dependency cycle found :");
             ITERATE(CCyclicDepends::TDependsChain, n, cycle) {
                 const CProjKey& proj_id = *n;
                 LOG_POST(Error << "Cycle with project :" + proj_id.Id());
@@ -285,13 +285,14 @@ int CProjBulderApp::Run(void)
                         GetProjectTreeInfo().m_Root);
 
     // Build projects tree
+    LOG_POST(Info << "*** Analyzing subtree makefiles ***");
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
     CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_IProjectFilter.get(), 
                                           GetProjectTreeInfo().m_Src, 
                                           &projects_tree);
     
     // Analyze tree for dependencies cycles
-    LOG_POST(Info << "Checking projects inter-dependencies... .");
+    LOG_POST(Info << "*** Checking projects inter-dependencies ***");
     CCyclicDepends::TDependsCycles cycles;
     CCyclicDepends::FindCycles(projects_tree.m_Projects, &cycles);
     s_ReportDependenciesStatus(cycles);
@@ -327,9 +328,16 @@ int CProjBulderApp::Run(void)
 
     }}
 
+    LOG_POST(Info << "*** Generating MSVC projects ***");
     if (GetBuildType().GetType() == CBuildType::eStatic) {
         
         // Static build
+        LOG_POST(Info << "Static build");
+        string str_log("Configurations: ");
+        ITERATE(list<SConfigInfo>, p , GetRegSettings().m_ConfigInfo) {
+            str_log += p->m_Name + " ";
+        }
+        LOG_POST(Info << str_log);
         
         // Projects
         CMsvcProjectGenerator prj_gen(GetRegSettings().m_ConfigInfo);
@@ -404,10 +412,18 @@ int CProjBulderApp::Run(void)
     if (GetBuildType().GetType() == CBuildType::eDll) {
 
         //Dll build
+        LOG_POST(Info << "DLL build");
 
         list<SConfigInfo> dll_configs;
         GetDllsInfo().GetBuildConfigs(&dll_configs);
 
+        string str_log("Configurations: ");
+        ITERATE(list<SConfigInfo>, p , dll_configs) {
+            str_log += p->m_Name + " ";
+        }
+        LOG_POST(Info << str_log);
+
+        LOG_POST(Info << "Assembling DLLs:");
         CProjectItemsTree dll_projects_tree;
         CreateDllBuildTree(projects_tree, &dll_projects_tree);
 
@@ -747,13 +763,12 @@ CMsvcDllsInfo& CProjBulderApp::GetDllsInfo(void)
 const CProjectItemsTree& CProjBulderApp::GetWholeTree(void)
 {
     if ( !m_WholeTree.get() ) {
+        LOG_POST(Info << "*** Analyzing the whole tree makefiles ***");
         m_WholeTree.reset(new CProjectItemsTree);
-
         CProjectDummyFilter pass_all_filter;
         CProjectTreeBuilder::BuildProjectTree(&pass_all_filter, 
                                               GetProjectTreeInfo().m_Src, 
                                               m_WholeTree.get());
-
     }    
     return *m_WholeTree;
 }
@@ -822,6 +837,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.47  2004/11/09 17:39:03  gouriano
  * Changed generation rules for ncbiconf_msvc_site.h
  *

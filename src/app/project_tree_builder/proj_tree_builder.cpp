@@ -83,8 +83,8 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
             (base_dir, fname + ".msvcproj")).Exists() )
         return CProjKey::eMsvc;
 
-    LOG_POST(Error << "No .lib or .app projects for : " + projname +
-                    " in directory: " + base_dir);
+    LOG_POST(Warning << "Makefile not found: project " << projname
+                     << " at " << base_dir);
     return CProjKey::eNoProj;
 }
 
@@ -425,8 +425,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     CProjectItemsTree::TFiles::const_iterator m = makeapp.find(applib_mfilepath);
     if (m == makeapp.end()) {
 
-        LOG_POST(Info << "No Makefile.*.app for Makefile.in:  "
-                  + applib_mfilepath);
+        LOG_POST(Info << "App Makefile not found: " << applib_mfilepath);
         return CProjKey();
     }
     
@@ -436,8 +435,8 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
         makefile.m_Contents.find("SRC");
     if (k == makefile.m_Contents.end()) {
 
-        LOG_POST(Warning << "No SRC key in Makefile.*.app :"
-                  + applib_mfilepath);
+        LOG_POST(Info << "No SRC specified in Makefile." << proj_name
+                      << ".app  at " << applib_mfilepath);
         return CProjKey();
     }
 
@@ -488,9 +487,8 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     k = makefile.m_Contents.find("APP");
     if (k == makefile.m_Contents.end()  ||  
                                            k->second.empty()) {
-
-        LOG_POST(Error << "No APP key or empty in Makefile.*.app :"
-                  + applib_mfilepath);
+        LOG_POST(Info << "No APP specified in Makefile." << proj_name
+                      << ".app  at " << applib_mfilepath);
         return CProjKey();
     }
     string proj_id = k->second.front();
@@ -578,8 +576,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     TFiles::const_iterator m = makelib.find(applib_mfilepath);
     if (m == makelib.end()) {
 
-        LOG_POST(Info << "No Makefile.*.lib for Makefile.in :"
-                  + applib_mfilepath);
+        LOG_POST(Info << "Lib Makefile not found: " << applib_mfilepath);
         return CProjKey();
     }
 
@@ -587,8 +584,8 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         m->second.m_Contents.find("SRC");
     if (k == m->second.m_Contents.end()) {
 
-        LOG_POST(Warning << "No SRC key in Makefile.*.lib :"
-                  + applib_mfilepath);
+        LOG_POST(Info << "No SRC specified in Makefile." << proj_name
+                      << ".lib  at " << applib_mfilepath);
         return CProjKey();
     }
 
@@ -617,9 +614,8 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     k = m->second.m_Contents.find("LIB");
     if (k == m->second.m_Contents.end()  ||  
                                            k->second.empty()) {
-
-        LOG_POST(Error << "No LIB key or empty in Makefile.*.lib :"
-                  + applib_mfilepath);
+        LOG_POST(Info << "No LIB specified in Makefile." << proj_name
+                      << ".lib  at " << applib_mfilepath);
         return CProjKey();
     }
     string proj_id = k->second.front();
@@ -709,8 +705,6 @@ CProjKey SAsnProjectT::DoCreate(const string& source_base_dir,
                                               makelib, 
                                               tree, expendable);
     }
-
-    LOG_POST(Error << "Unsupported ASN project" + NStr::IntToString(asn_type));
     return CProjKey();
 }
 
@@ -736,8 +730,6 @@ SAsnProjectT::TAsnType SAsnProjectT::GetAsnProjectType(const string& applib_mfil
         else
             return eSingle;
     }
-
-    LOG_POST(Error << "Can not define ASN project: " + applib_mfilepath);
     return eNoAsn;
 }
 
@@ -765,7 +757,7 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
     
     TProjects::iterator p = tree->m_Projects.find(proj_id);
     if (p == tree->m_Projects.end()) {
-        LOG_POST(Error << "Can not find ASN project with id : " + proj_id.Id());
+        LOG_POST(Error << "ASN project not found: " + proj_id.Id());
         return CProjKey();
     }
     CProjItem& project = p->second;
@@ -807,8 +799,7 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     TFiles::const_iterator m = makefile.find(applib_mfilepath);
     if (m == makefile.end()) {
 
-        LOG_POST(Info << "No Makefile.*.lib/app  for Makefile.in :"
-                  + applib_mfilepath);
+        LOG_POST(Info << "AsnProject Makefile not found: " << applib_mfilepath);
         return CProjKey();
     }
     const CSimpleMakeFileContents& fc = m->second;
@@ -818,8 +809,8 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
         fc.m_Contents.find("ASN");
     if (k == fc.m_Contents.end()) {
 
-        LOG_POST(Error << "No ASN key in multiple ASN  project:"
-                  + applib_mfilepath);
+        LOG_POST(Info << "No ASN specified in Makefile: project " << proj_name
+                      << "  at " << applib_mfilepath);
         return CProjKey();
     }
     const list<string> asn_names = k->second;
@@ -850,8 +841,8 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     k = fc.m_Contents.find("SRC");
     if (k == fc.m_Contents.end()) {
 
-        LOG_POST(Error << "No SRC key in multiple ASN  project:"
-                  + applib_mfilepath);
+        LOG_POST(Info << "No SRC specified in Makefile: project " << proj_name
+                      << "  at " << applib_mfilepath);
         return CProjKey();
     }
     const list<string> src_list = k->second;
@@ -873,7 +864,8 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
     
     TProjects::iterator p = tree->m_Projects.find(proj_id);
     if (p == tree->m_Projects.end()) {
-        LOG_POST(Error << "Can not find ASN project with id : " +proj_id.Id());
+        LOG_POST(Error << "ASN project not found: " << proj_id.Id()
+                       << " at " << applib_mfilepath);
         return CProjKey();
     }
     CProjItem& project = p->second;
@@ -923,8 +915,7 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
     TFiles::const_iterator m = makemsvc.find(applib_mfilepath);
     if (m == makemsvc.end()) {
 
-        LOG_POST(Info << "No User makefile.*.* for Makefile.in :"
-                  + applib_mfilepath);
+        LOG_POST(Info << "MsvcProject Makefile not found: " << applib_mfilepath);
         return CProjKey();
     }
 
@@ -933,8 +924,8 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
         m->second.m_Contents.find("VCPROJ");
     if (k == m->second.m_Contents.end()) {
 
-        LOG_POST(Warning << "No VCPROJ key in User Makefile.*.* :"
-                  + applib_mfilepath);
+        LOG_POST(Info << "No VCPROJ specified in Makefile: project " << proj_name
+                      << "  at " << applib_mfilepath);
         return CProjKey();
     }
     list<string> sources = k->second;
@@ -981,8 +972,8 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
     if (k == m->second.m_Contents.end()  ||  
                                            k->second.empty()) {
 
-        LOG_POST(Error << "No LIB key or empty in Makefile.*.lib :"
-                  + applib_mfilepath);
+        LOG_POST(Info << "No MSVC_PROJ specified in Makefile: project " << proj_name
+                      << "  at " << applib_mfilepath);
         return CProjKey();
     }
     string proj_id = k->second.front();
@@ -1042,11 +1033,11 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
                                       const string&         root_src_path,
                                       CProjectItemsTree*    tree)
 {
-    // Bulid subtree
+    // Build subtree
     CProjectItemsTree target_tree;
     BuildOneProjectTree(filter, root_src_path, &target_tree);
 
-    // Analyze subtree depends
+    // Analyze subtree dependencies
     list<CProjKey> external_depends;
     target_tree.GetExternalDepends(&external_depends);
 
@@ -1058,27 +1049,27 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
         while ( !depends_to_resolve.empty() ) {
             bool modified = false;
             ITERATE(list<CProjKey>, p, depends_to_resolve) {
-                // id of project we have to resolve
+                // id of the project we have to resolve
                 const CProjKey& prj_id = *p;
                 CProjectItemsTree::TProjects::const_iterator n = 
                                GetApp().GetWholeTree().m_Projects.find(prj_id);
 
                 if (n != GetApp().GetWholeTree().m_Projects.end()) {
-                    //insert this project to target_tree
+                    //insert this project into the target_tree
                     target_tree.m_Projects[prj_id] = n->second;
                     modified = true;
                 } else {
-                    LOG_POST (Error << "No project with id : " + prj_id.Id());
+                    LOG_POST (Error << "Project not found: " + prj_id.Id());
                 }
             }
 
             if (!modified) {
-                //we done - no more projects was added to target_tree
+                //done - no projects has been added to target_tree
                 AddDatatoolSourcesDepends(&target_tree);
                 *tree = target_tree;
                 return;
             } else {
-                //continue resolving dependences
+                //continue resolving dependencies
                 target_tree.GetExternalDepends(&depends_to_resolve);
             }
         }
@@ -1263,7 +1254,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
 void CProjectTreeBuilder::ProcessMakeInFile(const string& file_name, 
                                             SMakeFiles*   makefiles)
 {
-    LOG_POST(Info << "Processing MakeIn: " + file_name);
+    LOG_POST(Info << "MakeIn : " + file_name);
 
     CSimpleMakeFileContents fc(file_name);
     if ( !fc.m_Contents.empty() )
@@ -1274,7 +1265,7 @@ void CProjectTreeBuilder::ProcessMakeInFile(const string& file_name,
 void CProjectTreeBuilder::ProcessMakeLibFile(const string& file_name, 
                                              SMakeFiles*   makefiles)
 {
-    LOG_POST(Info << "Processing MakeLib: " + file_name);
+    LOG_POST(Info << "MakeLib: " + file_name);
 
     CSimpleMakeFileContents fc(file_name);
     if ( !fc.m_Contents.empty() )
@@ -1285,7 +1276,7 @@ void CProjectTreeBuilder::ProcessMakeLibFile(const string& file_name,
 void CProjectTreeBuilder::ProcessMakeAppFile(const string& file_name, 
                                              SMakeFiles*   makefiles)
 {
-    LOG_POST(Info << "Processing MakeApp: " + file_name);
+    LOG_POST(Info << "MakeApp: " + file_name);
 
     CSimpleMakeFileContents fc(file_name);
     if ( !fc.m_Contents.empty() )
@@ -1296,7 +1287,7 @@ void CProjectTreeBuilder::ProcessMakeAppFile(const string& file_name,
 void CProjectTreeBuilder::ProcessUserProjFile(const string& file_name, 
                                              SMakeFiles*   makefiles)
 {
-    LOG_POST(Info << "Processing MakeApp: " + file_name);
+    LOG_POST(Info << "UserPrj: " + file_name);
 
     CSimpleMakeFileContents fc(file_name);
     if ( !fc.m_Contents.empty() )
@@ -1420,6 +1411,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.19  2004/11/23 20:12:12  gouriano
  * Tune libraries with the choice for each configuration independently
  *

@@ -127,8 +127,7 @@ void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
                 }
             }
         } else {
-            LOG_POST(Warning << "Can not find file : " 
-                                + module_path + " for datatool source");
+            LOG_POST(Info << "Datatool module file not found: " + module_path);
         }
     }}
 
@@ -182,8 +181,7 @@ void CDataToolGeneratedSrc::LoadFrom(const string&          source_file_path,
             if (p != fc.m_Contents.end())
                 src->m_SkippedCppLocal = p->second;
         } else {
-            LOG_POST(Warning << "Can not find file : " 
-                                + files_path + " for datatool source");
+            LOG_POST(Info << "Datatool-generated file not found: " + files_path);
         }
 
 
@@ -239,6 +237,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.6  2004/11/17 19:54:30  gouriano
  * Ignore missing module file
  *

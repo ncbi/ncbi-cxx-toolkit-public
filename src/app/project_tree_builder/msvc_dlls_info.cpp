@@ -222,7 +222,7 @@ static void s_InitalizeDllProj(const string&                  dll_id,
                  (GetApp().GetWholeTree().m_Projects.find(depend_key))->second;
 
             } else  {
-                LOG_POST(Error << "Can not find project : " + depend_id);
+                LOG_POST(Error << "Project not found: " + depend_id);
             }
         }
     }
@@ -462,13 +462,13 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
 
         bool is_empty = true;
         CProjectItemsTree::TProjects::const_iterator k;
+        string str_log;
         ITERATE(list<string>, n, dll_info.m_Hosting) {
             const string& lib_id = *n;
             k = GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eLib,
                                                                  lib_id));
             if (k == GetApp().GetWholeTree().m_Projects.end()) {
-                LOG_POST(Error << "No project " +
-                                   lib_id + " hosted in dll : " + dll_id);
+                str_log += " " + lib_id;
                 continue;
                 //LOG_POST(Error << "DLL " + dll_id + " generation skipped");
                 //complete = false; // do not create incomplete DLLs
@@ -486,8 +486,14 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         }
         if ( !is_empty ) {
             tree_dst->m_Projects[CProjKey(CProjKey::eDll, dll_id)] = dll;
+            if (str_log.empty()) {
+                LOG_POST(Info << "Ok: " << dll_id);
+            } else {
+                LOG_POST(Info << "Reduced: " << dll_id
+                              << ":     not found: " << str_log);
+            }
         } else {
-            LOG_POST(Info << "Skipping empty DLL project: " + dll_id);
+            LOG_POST(Info << "Skipped empty: " << dll_id);
         }
     }
 }
@@ -557,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.24  2004/12/01 15:28:38  gouriano
  * Skip empty DLL projects
  *

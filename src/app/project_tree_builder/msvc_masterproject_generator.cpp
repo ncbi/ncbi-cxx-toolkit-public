@@ -178,7 +178,7 @@ CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>&   filter,
                                    build_info);
 
     } else {
-        LOG_POST(Error << "No project with id : " + project_id.Id());
+        LOG_POST(Error << "Project not found: " + project_id.Id());
     }
 }
 
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.15  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *

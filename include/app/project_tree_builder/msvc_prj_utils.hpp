@@ -69,7 +69,7 @@ void SaveIfNewer    (const string&               file_path,
                      const CVisualStudioProject& project);
 
 /// Consider promotion candidate to present 
-void PromoteIfDifferent(const string& present_path, 
+bool PromoteIfDifferent(const string& present_path, 
                         const string& candidate_path);
 
 
@@ -465,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/12/06 18:12:40  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.25  2004/10/12 16:19:53  ivanov
  * + CSrcToFilterInserterWithPch::InsertFile()
  *

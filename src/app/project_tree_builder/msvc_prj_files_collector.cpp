@@ -245,7 +245,7 @@ CMsvcPrjFilesCollector::CollectSources(void)
                 CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
                                               abs_path + ".cpp"));
         } else {
-            LOG_POST(Warning <<"Can not resolve/find source file : " + abs_path);
+            LOG_POST(Warning <<"Cannot resolve/find source file: " + abs_path);
         }
     }
     m_SourceFiles.sort(s_FileName_less);
@@ -376,6 +376,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.10  2004/11/17 19:52:14  gouriano
  * Corrected to take into account DTD_PROJ
  *

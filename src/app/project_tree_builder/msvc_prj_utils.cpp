@@ -78,7 +78,7 @@ void SaveToXmlFile(const string&               file_path,
 }
 
 
-void PromoteIfDifferent(const string& present_path, 
+bool PromoteIfDifferent(const string& present_path, 
                         const string& candidate_path)
 {
     // Open both files
@@ -87,7 +87,7 @@ void PromoteIfDifferent(const string& present_path,
     if ( !ifs_present ) {
         CDirEntry(present_path).Remove();
         CDirEntry(candidate_path).Rename(present_path);
-        return;
+        return true;
     }
 
     ifs_present.seekg(0, ios::end);
@@ -110,7 +110,7 @@ void PromoteIfDifferent(const string& present_path,
         ifs_new.close();
         CDirEntry(present_path).Remove();
         CDirEntry(candidate_path).Rename(present_path);
-        return;
+        return true;
     }
 
     // Load both to memory
@@ -128,10 +128,11 @@ void PromoteIfDifferent(const string& present_path,
     if (memcmp(buf_present.get(), buf_new.get(), file_length_present) != 0) {
         CDirEntry(present_path).Remove();
         CDirEntry(candidate_path).Rename(present_path);
-        return;
+        return true;
     } else {
         CDirEntry(candidate_path).Remove();
     }
+    return false;
 }
 
 
@@ -141,13 +142,18 @@ void SaveIfNewer(const string&               file_path,
     // If no such file then simple write it
     if ( !CDirEntry(file_path).Exists() ) {
         SaveToXmlFile(file_path, project);
+        LOG_POST(Info << "Created    : " << project.GetAttlist().GetName());
         return;
     }
 
     // Save new file to tmp path.
     string candidate_file_path = file_path + ".candidate";
     SaveToXmlFile(candidate_file_path, project);
-    PromoteIfDifferent(file_path, candidate_file_path);
+    if (PromoteIfDifferent(file_path, candidate_file_path)) {
+        LOG_POST(Info << "Modified   : " << project.GetAttlist().GetName());
+    } else {
+        LOG_POST(Info << "Left intact: " << project.GetAttlist().GetName());
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1047,6 +1053,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.33  2004/10/26 14:40:31  gouriano
  * Update ncbicfg.*.c only when needed
  *

@@ -117,7 +117,7 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
                                const list<SConfigInfo>& configs,
                                const string&            root_dir)
 {
-    LOG_POST(Info << "Starting configure.");
+    LOG_POST(Info << "*** Analyzing 3rd party libraries availability ***");
     
     InitializeFrom(site);
     site.ProcessMacros(configs);
@@ -132,8 +132,8 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
     ITERATE(list<SConfigInfo>, p, dlls) {
         AnalyzeDefines( site, root_dir, *p, dll_build);
     }
-    LOG_POST(Info << "Configure finished.");
 
+    LOG_POST(Info << "*** Creating Makefile.third_party.mk files ***");
     // Write makefile uses to install 3-rd party dlls
     list<string> third_party_to_install;
     site.GetThirdPartyLibsToInstall(&third_party_to_install);
@@ -165,17 +165,18 @@ void CMsvcConfigure::InitializeFrom(const CMsvcSite& site)
     m_ConfigureDefinesPath = site.GetConfigureDefinesPath();
     if ( m_ConfigureDefinesPath.empty() )
         NCBI_THROW(CProjBulderAppException, 
-           eConfigureDefinesPath, ""); //TODO - message
-    else
-        LOG_POST(Info  << "Path to configure defines file is: " +
-                           m_ConfigureDefinesPath);
+           eConfigureDefinesPath,
+           "Configure defines file name is not specified");
 
     site.GetConfigureDefines(&m_ConfigureDefines);
-    if( m_ConfigureDefines.empty() )
-        LOG_POST(Warning << "No configure defines.");
-    else
-        LOG_POST(Info    << "Configure defines: " + 
-                            NStr::Join(m_ConfigureDefines, ", ") );
+    if( m_ConfigureDefines.empty() ) {
+        LOG_POST(Warning << "No configurable macrodefinitions specified.");
+    } else {
+        LOG_POST(Info    << "Configurable macrodefinitions: ");
+        ITERATE(list<string>, p, m_ConfigureDefines) {
+            LOG_POST(Info    << *p);
+        }
+    }
 }
 
 
@@ -184,7 +185,7 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
                                    const SConfigInfo& config) const
 {
     if ( !site.IsDescribed(define) ) {
-        LOG_POST(Info << "Not defined in site: " + define);
+        LOG_POST(Error << "Macro not described: " + define);
         return false;
     }
     list<string> components;
@@ -203,30 +204,36 @@ void CMsvcConfigure::AnalyzeDefines(
     CMsvcSite& site, const string& root_dir,
     const SConfigInfo& config, const CBuildType&  build_type)
 {
-    m_ConfigSite.clear();
-
-    ITERATE(list<string>, p, m_ConfigureDefines) {
-        const string& define = *p;
-        if( ProcessDefine(define, site, config) ) {
-            LOG_POST(Info << config.m_Name + ": " + define + " enabled");
-            m_ConfigSite[define] = '1';
-        } else {
-            LOG_POST(Info << config.m_Name + ": " + define + " disabled");
-            m_ConfigSite[define] = '0';
-        }
-    }
     string ncbi_conf_msvc_site_path = 
         CDirEntry::ConcatPath(root_dir, m_ConfigureDefinesPath);
     string dir, base, ext;
     CDirEntry::SplitPath(ncbi_conf_msvc_site_path, &dir, &base, &ext);
     string filename = CDirEntry::ConcatPath( dir, base) + "." + config.m_Name + ext;
-    LOG_POST(Info << "Creating MSVC site configuration in: "  + filename);
-    string candidate_path = filename + ".candidate";
 
+    LOG_POST(Info << "Configuration " << config.m_Name << ":");
+
+    m_ConfigSite.clear();
+
+    ITERATE(list<string>, p, m_ConfigureDefines) {
+        const string& define = *p;
+        if( ProcessDefine(define, site, config) ) {
+            LOG_POST(Info << "Ok  " << define);
+            m_ConfigSite[define] = '1';
+        } else {
+            LOG_POST(Info << "Failed " << define);
+            m_ConfigSite[define] = '0';
+        }
+    }
+
+    string candidate_path = filename + ".candidate";
     CDirEntry::SplitPath(filename, &dir);
     CDir(dir).CreatePath();
     WriteNcbiconfMsvcSite(candidate_path);
-    PromoteIfDifferent(filename, candidate_path);
+    if (PromoteIfDifferent(filename, candidate_path)) {
+        LOG_POST(Info << "File "  << filename << ": modified");
+    } else {
+        LOG_POST(Info << "File "  << filename << ": left intact");
+    }
 }
 
 void CMsvcConfigure::WriteNcbiconfMsvcSite(const string& full_path) const
@@ -292,6 +299,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.19  2004/11/29 14:18:50  gouriano
  * Minor fix to make it compile on GCC 3.4.3
  *

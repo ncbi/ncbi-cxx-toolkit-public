@@ -44,23 +44,23 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
     CVisualStudioProject xmlprj;
 
     // Checking configuration availability:
+    string str_log;
     list<SConfigInfo> project_configs;
     ITERATE(list<SConfigInfo>, p , m_Configs) {
         const SConfigInfo& cfg_info = *p;
         // Check config availability
         if ( !project_context.IsConfigEnabled(cfg_info) ) {
-            LOG_POST(Info << "Configuration "
-                          << cfg_info.m_Name
-                          << " disabled in project "
-                          << project_context.ProjectId());
+            str_log += " " + cfg_info.m_Name;
         } else {
             project_configs.push_back(cfg_info);
         }
     }
     if (project_configs.empty()) {
-        LOG_POST(Info << "WARNING: Project " << project_context.ProjectId()
-                      << "skipped: all configurations are disabled");
+        LOG_POST(Info << prj.m_Name << ": skipped (all configurations are disabled)");
         return;
+    }
+    if (!str_log.empty()) {
+        LOG_POST(Info << prj.m_Name << ": disabled configurations: " << str_log);
     }
     
     // Attributes:
@@ -459,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.38  2004/10/13 13:36:38  gouriano
  * add dependency on datatool to ASN projects
  *

@@ -39,7 +39,6 @@ BEGIN_NCBI_SCOPE
 bool CreateConfigurableFile(const string& src_path, const string& dst_path,
                             const string& config_name)
 {
-    LOG_POST(Info << "Preparing configurable file: " << dst_path);
     string dst(dst_path);
     dst += ".candidate";
 
@@ -99,7 +98,14 @@ bool CreateConfigurableFile(const string& src_path, const string& dst_path,
         NCBI_THROW(CProjBulderAppException, eFileCreation, dst_path);
     }
     os.close();
-    PromoteIfDifferent(dst_path,dst);
+    string str_log("Configurable file ");
+    str_log += dst_path;
+    if (PromoteIfDifferent(dst_path,dst)) {
+        str_log += ": modified";
+    } else {
+        str_log += ": left intact";
+    }
+    LOG_POST(Info << str_log);
     return true;
 }
 
@@ -117,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.2  2004/10/26 14:40:31  gouriano
  * Update ncbicfg.*.c only when needed
  *

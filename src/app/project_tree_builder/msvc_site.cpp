@@ -370,14 +370,14 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
     if ( !lib_info.m_IncludeDir.empty() &&
          !CDirEntry(lib_info.m_IncludeDir).Exists() ) {
         if (!silent) {
-            LOG_POST(Warning << "No LIB INCLUDE dir : " + lib_info.m_IncludeDir);
+            LOG_POST(Warning << "No LIB INCLUDE: " + lib_info.m_IncludeDir);
         }
         return false;
     }
     if ( !lib_info.m_LibPath.empty() &&
          !CDirEntry(lib_info.m_LibPath).Exists() ) {
         if (!silent) {
-            LOG_POST(Warning << "No LIBPATH : " + lib_info.m_LibPath);
+            LOG_POST(Warning << "No LIBPATH: " + lib_info.m_LibPath);
         }
         return false;
     }
@@ -388,7 +388,7 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
             if ( !lib_path_abs.empty() &&
                 !CDirEntry(lib_path_abs).Exists() ) {
                 if (!silent) {
-                    LOG_POST(Warning << "No LIB : " + lib_path_abs);
+                    LOG_POST(Warning << "No LIB: " + lib_path_abs);
                 }
                 return false;
             }
@@ -408,7 +408,7 @@ void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
         const string& macro = *m;
         if (!IsDescribed(macro)) {
             // add empty value
-            LOG_POST(Info << "Macro " << macro << " is not defined in site");
+            LOG_POST(Info << "Macro " << macro << " is not described");
         }
         list<string> components;
         GetComponents(macro, &components);
@@ -441,6 +441,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.23  2004/11/30 17:21:05  gouriano
  * Resolve Macros on per-configuration basis
  *

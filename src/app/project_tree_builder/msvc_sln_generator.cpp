@@ -265,8 +265,8 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
                 << prj_i.m_GUID << endl;
         } else {
 
-            LOG_POST(Warning << "Project: " + 
-                      project.m_ProjectName + " depends on missing project: " + id.Id());
+            LOG_POST(Warning << "Project " + 
+                      project.m_ProjectName + " depends on missing project " + id.Id());
         }
     }
     ofs << '\t' << "EndProjectSection" << endl;
@@ -403,6 +403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.20  2004/11/23 20:12:12  gouriano
  * Tune libraries with the choice for each configuration independently
  *

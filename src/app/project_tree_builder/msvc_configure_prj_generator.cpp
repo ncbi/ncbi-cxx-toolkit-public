@@ -111,6 +111,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     // Make *.bat file from source file of this custom build.
     // This file ( see CreateProjectFileItem below )
     // will use defines PTB_PATH, TREE_ROOT and SLN_PATH mentioned above
+    m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
     m_CustomBuildCommand += "cd $(InputDir)\n";
     m_CustomBuildCommand += "copy /Y $(InputFileName) $(InputName).bat\n";
     m_CustomBuildCommand += "call $(InputName).bat\n";
@@ -222,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.13  2004/11/18 16:35:21  gouriano
  * Changed configure._ to report configuration result
  *

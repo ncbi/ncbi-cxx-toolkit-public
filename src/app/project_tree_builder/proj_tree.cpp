@@ -282,7 +282,7 @@ void CCyclicDepends::AnalyzeProjItem(const CProjKey&  proj_id,
 {
     TProjects::const_iterator p = tree.find(proj_id);
     if (p == tree.end()) {
-        LOG_POST( Error << "Unknown project: " << proj_id.Id() );
+        LOG_POST( Error << "Undefined project: " << proj_id.Id() );
         return;
     }
     
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/12/06 18:12:20  gouriano
+ * Improved diagnostics
+ *
  * Revision 1.5  2004/09/13 13:49:08  gouriano
  * Make it to rely more on UNIX makefiles
  *
