@@ -77,7 +77,7 @@ class CFastLocalTime;
 /// CTimeException inherits its basic functionality from CCoreException
 /// and defines additional error codes.
 
-class CTimeException : public CCoreException
+class NCBI_XNCBI_EXPORT CTimeException : public CCoreException
 {
 public:
     /// Error types that CTime can generate.
@@ -174,7 +174,7 @@ public:
         eAbbr         ///< Use abbreviated name.
     };
 
-    // Month names.
+    /// Month names.
     enum EMonth {
         eJanuary = 1,
         eFebruary,
@@ -190,7 +190,7 @@ public:
         eDecember
     };
 
-    // Day of week names.
+    /// Day of week names.
     enum EDayOfWeek {
         eSunday = 0,
         eMonday,
@@ -1148,6 +1148,9 @@ public:
     ///   The double representation of the time span is aproximate.
     double GetAsDouble(void) const;
 
+    /// Return TRUE is an object keep zero time span.
+    bool IsEmpty(void);
+
     //
     // Arithmetic
     //
@@ -1836,6 +1839,9 @@ double CTimeSpan::GetAsDouble(void) const
 }
 
 inline
+bool CTimeSpan::IsEmpty(void) { return m_Sec == 0  &&  m_NanoSec == 0; }
+
+inline
 CTimeSpan& CTimeSpan::operator= (const CTimeSpan& t)
 {
     m_Sec = t.m_Sec;
@@ -1991,6 +1997,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/03/01 19:40:34  ivanov
+ * + CTimeSpan::IsEmpty()
+ *
  * Revision 1.45  2005/02/17 20:16:46  ivanov
  * Improved CFastLocalTime work in MT environment -- do not block all
  * other threads while one call Tuneup().
