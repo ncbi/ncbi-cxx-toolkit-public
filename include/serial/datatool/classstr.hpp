@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/03/14 18:32:54  vasilche
+* Fixed class includes generation.
+*
 * Revision 1.4  2000/03/07 20:04:56  vasilche
 * Added NewInstance method to generated classes.
 *
@@ -91,7 +94,10 @@ public:
         AutoPtr<CTypeStrings> type; // value type
         string ptrType; // "*" or "NCBI_NS_NCBI::CRef"
         string valueName; // value name (mName or '*'+mName)
-        bool optional; // have OPTIONAL or DEFAULT attribute
+        bool optional;  // have OPTIONAL or DEFAULT attribute
+        bool ref;       // implement member via CRef
+        bool haveFlag;  // need additional boolean flag 'isSet'
+        bool canBeNull; // pointer type can be NULL pointer
         string defaultValue; // DEFAULT value code
         SMemberInfo(const string& name, AutoPtr<CTypeStrings> type,
                     const string& pointerType,
