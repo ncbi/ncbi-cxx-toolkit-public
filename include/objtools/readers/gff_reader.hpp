@@ -80,9 +80,9 @@ public:
     {
         struct SSubLoc
         {
-            string                    accession;
-            ENa_strand                strand;
-            CRangeCollection<TSeqPos> ranges;
+            string         accession;
+            ENa_strand     strand;
+            set<TSeqRange> ranges;
         };
 
         typedef set<vector<string> > TAttrs;
@@ -177,6 +177,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/08 12:14:16  dicuccio
+ * Use set<TRange> instead of CRangeCollection<>
+ *
  * Revision 1.3  2004/01/27 17:12:34  ucko
  * Make SRecord public to resolve visibility errors on IBM VisualAge C++.
  *
