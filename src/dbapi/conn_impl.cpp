@@ -242,6 +242,12 @@ void CConnection::Close()
     FreeResources();
 }
 
+void CConnection::Abort()
+{
+    m_connection->Abort();
+    FreeResources();
+}
+
 void CConnection::FreeResources() 
 {
     delete m_connection;
@@ -505,6 +511,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.37  2005/02/24 19:51:03  kholodov
+* Added: CConnection::Abort() method
+*
 * Revision 1.36  2004/11/16 19:59:46  kholodov
 * Added: GetBlobOStream() with explicit connection
 *

@@ -93,7 +93,7 @@ public:
                                           unsigned int nof_cols);
 
     virtual void Close();
-
+    virtual void Abort();
 
     virtual CDB_Connection* GetCDB_Connection();
 
@@ -157,6 +157,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.19  2005/02/24 19:51:03  kholodov
+* Added: CConnection::Abort() method
+*
 * Revision 1.18  2004/11/16 19:59:46  kholodov
 * Added: GetBlobOStream() with explicit connection
 *
