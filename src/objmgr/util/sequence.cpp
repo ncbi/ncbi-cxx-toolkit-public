@@ -448,30 +448,35 @@ CConstRef<CSeq_feat> x_GetBestOverlappingFeat(const CSeq_loc& loc,
         _TRACE("test for circularity failed: " << e.GetMsg());
     }
 
-    CFeat_CI feat_it(scope, loc, SAnnotSelector()
-        .SetFeatType(feat_type)
-        .SetFeatSubtype(feat_subtype)
-        .SetOverlapType(annot_overlap_type)
-        .SetResolveTSE());
-    for ( ; feat_it; ++feat_it) {
-        // treat subset as a special case
-        Int8 cur_diff = ( !revert_locations ) ?
-            TestForOverlap(loc,
-                           feat_it->GetLocation(),
-                           overlap_type,
-                           circular_length,
-                           &scope) :
-            TestForOverlap(feat_it->GetLocation(),
-                           loc,
-                           overlap_type,
-                           circular_length,
-                           &scope);
-        if (cur_diff < 0)
-            continue;
-        if ( cur_diff < diff  ||  diff < 0 ) {
-            diff = cur_diff;
-            feat_ref = &feat_it->GetMappedFeature();
+    try {
+        CFeat_CI feat_it(scope, loc, SAnnotSelector()
+            .SetFeatType(feat_type)
+            .SetFeatSubtype(feat_subtype)
+            .SetOverlapType(annot_overlap_type)
+            .SetResolveTSE());
+        for ( ; feat_it; ++feat_it) {
+            // treat subset as a special case
+            Int8 cur_diff = ( !revert_locations ) ?
+                TestForOverlap(loc,
+                            feat_it->GetLocation(),
+                            overlap_type,
+                            circular_length,
+                            &scope) :
+                TestForOverlap(feat_it->GetLocation(),
+                            loc,
+                            overlap_type,
+                            circular_length,
+                            &scope);
+            if (cur_diff < 0)
+                continue;
+            if ( cur_diff < diff  ||  diff < 0 ) {
+                diff = cur_diff;
+                feat_ref = &feat_it->GetMappedFeature();
+            }
         }
+    }
+    catch (CException&) {
+        _TRACE("x_GetBestOverlappingFeat(): error: feature iterator failed");
     }
     return feat_ref;
 }
@@ -2608,6 +2613,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.117  2005/02/07 14:15:53  dicuccio
+* Bug fix: trap exceptions from CFeat_CI in x_GetBestOverlappingFeat(); return
+* NULL CRef<> in such cases
+*
 * Revision 1.116  2005/02/02 19:49:55  grichenk
 * Fixed more warnings
 *
