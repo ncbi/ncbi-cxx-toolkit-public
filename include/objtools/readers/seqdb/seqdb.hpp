@@ -53,12 +53,10 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CSeqDBIter --
-///
+/// CSeqDBIter
+/// 
 /// Small class to iterate over a seqdb database.
-///
+/// 
 /// This serves something of the same role for a CSeqDB object that a
 /// vector iterator might serve in the standard template library.
 
@@ -66,8 +64,10 @@ class CSeqDB;
 
 class NCBI_XOBJREAD_EXPORT CSeqDBIter {
 public:
+    /// Defines the type used to select which sequence to get.
     typedef Uint4 TOID;
     
+    /// Destructor
     virtual ~CSeqDBIter()
     {
         x_RetSeq();
@@ -127,8 +127,7 @@ private:
     Uint4              m_Length;
 };
 
-/////////////////////////////////////////////////////////////////////////////
-///
+
 /// CSeqDB --
 ///
 /// User interface class for blast databases.
@@ -162,7 +161,6 @@ public:
     /// @param prot_nucl
     ///   Either kSeqTypeProt for a protein database, or kSeqTypeNucl
     ///   for nucleotide.  These can also be specified as 'p' or 'n'.
-    
     CSeqDB(const string & dbname, char prot_nucl);
     
     /// Constructor with MMap Flag and OID Range.
@@ -404,8 +402,6 @@ private:
 };
 
 
-/////////////////////////////////////////////////////////////////////////////
-///
 /// CSeqDBSequence --
 ///
 /// Small class to implement RIAA for sequences.
@@ -419,9 +415,11 @@ private:
 /// CSeqDB::RetSequence.  The data referred to by this object is not
 /// modifyable, and is memory mapped (read only) where supported.
 
-class CSeqDBSequence {
-    typedef CSeqDB::TOID TOID;
+class NCBI_XOBJREAD_EXPORT CSeqDBSequence {
 public:
+    /// Defines the type used to select which sequence to get.
+    typedef CSeqDB::TOID TOID;
+    
     /// Get a hold a database sequence.
     CSeqDBSequence(CSeqDB * db, TOID oid)
         : m_DB    (db),

@@ -30,6 +30,14 @@
  *
  */
 
+/// @file seqdbcommon.hpp
+/// Defines exception class and several constants for SeqDB.
+/// 
+/// Defines classes:
+///     CSeqDBException
+/// 
+/// Implemented for: UNIX, MS-Windows
+
 #include <ncbiconf.h>
 #include <corelib/ncbiobj.hpp>
 
@@ -39,43 +47,57 @@ BEGIN_NCBI_SCOPE
 
 class CSeqDBException : public CException {
 public:
+    /// Errors are classified into one of three types.
     enum EErrCode {
         eArgErr,
         eFileErr,
         eMemErr
     };
     
-    virtual const char* GetErrCodeString(void) const {
+    /// Get a message describing the situation leading to the throw.
+    virtual const char* GetErrCodeString() const
+    {
         switch ( GetErrCode() ) {
-        case eArgErr:         return "eArgErr";
-        case eFileErr:        return "eFileErr";
-        case eMemErr:         return "eMemErr";
-        default:              return CException::GetErrCodeString();
+        case eArgErr:  return "eArgErr";
+        case eFileErr: return "eFileErr";
+        case eMemErr:  return "eMemErr";
+        default:       return CException::GetErrCodeString();
         }
     }
     
     NCBI_EXCEPTION_DEFAULT(CSeqDBException,CException);
 };
 
-// Protein / Nucleotide / Unknown are represented by 'p', 'n', and '-'.
 
+/// Used to indicate protein sequences.
 const char kSeqTypeProt = 'p';
+
+/// Used to indicate nucleotide sequences.
 const char kSeqTypeNucl = 'n';
+
+/// Used to indicate that sequence type should be selected by SeqDB;
+/// this is no longer supported and will probably be removed soon.
 const char kSeqTypeUnkn = '-';
 
-// Two output formats, used by CSeqDB::GetAmbigSeq(...)
 
+/// Used to request ambiguities in Ncbi/NA8 format.
 const Uint4 kSeqDBNuclNcbiNA8  = 0;
+
+/// Used to request ambiguities in BLAST/NA8 format.
 const Uint4 kSeqDBNuclBlastNA8 = 1;
 
-// Flag specifying whether to use memory mapping.
 
+/// Used to request that memory mapping be used.
 const bool kSeqDBMMap   = true;
+
+/// Used to request that memory mapping not be used.
 const bool kSeqDBNoMMap = false;
 
-// Certain methods have an "Alloc" version; if this is used, the
-// following can be used to indicate how to allocate returned data, so
-// that the user can use corresponding methods to delete the data.
+
+/// Certain methods have an "Alloc" version.  When these methods are
+/// used, the following constants can be specified to indicate which
+/// libraries to use to allocate returned data, so the corresponding
+/// calls (delete[] vs. free()) can be used to delete the data.
 
 enum ESeqDBAllocType {
     eMalloc = 1,
