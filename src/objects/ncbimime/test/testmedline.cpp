@@ -24,8 +24,11 @@
 #include <serial/objostrasn.hpp>
 
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
+using namespace objects;
+
+extern "C"
 int main(void)
 {
     SetDiagStream(&NcbiCerr);
@@ -65,3 +68,5 @@ int main(void)
         ERR_POST("Exception: " << exc.what());
     }
 }
+
+END_NCBI_SCOPE
