@@ -394,7 +394,8 @@ int CSeq_id::BestRank(const CRef<CSeq_id>& id)
     switch (id->Which()) {
     case e_not_set:                               return 83;
     case e_General: case e_Local:                 return 80;
-    case e_Giim:                                  return 70;
+    case e_Gibbsq: case e_Gibbmt: case e_Giim:    return 70;
+    case e_Patent:                                return 67;
     case e_Other:
         if (id->GetOther().IsSetVersion()) {
             return 64;
@@ -411,8 +412,6 @@ int CSeq_id::BestRank(const CRef<CSeq_id>& id)
              }
              return 60;
          }}
-    case e_Gibbmt:                                return 56;
-    case e_Gibbsq: case e_Patent:                 return 55;
     case e_Gi:                                    return 51;
     default:                                      return 5;
     }
@@ -458,6 +457,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.43  2004/03/30 20:46:08  ucko
+ * BestRank: demote gibb* and patent to 70 and 67 respectively per the C Toolkit.
+ *
  * Revision 1.42  2004/03/25 15:58:41  gouriano
  * Added possibility to copy and compare serial object non-recursively
  *
