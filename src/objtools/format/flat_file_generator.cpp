@@ -120,6 +120,8 @@ void CFlatFileGenerator::Generate
         NCBI_THROW(CFlatException, eInternal, "Unable to initialize gatherer");
     }
     gatherer->Gather(*m_Ctx, item_os);
+
+    m_Ctx->Reset();
 }
 
 
@@ -137,9 +139,15 @@ void CFlatFileGenerator::Generate
     // this is not the case. A submission should only have a single Top-level
     // Seq-entry
     CRef<CSeq_entry> e(submit.SetData().SetEntrys().front());
-    if ( e ) {
-        CSeq_entry_Handle entry = scope.AddTopLevelSeqEntry(*e);
+    if (e.NotEmpty()) {
+        // get Seq_entry_Handle from scope
+        CSeq_entry_Handle entry = scope.GetSeq_entryHandle(*e);
+        if (!entry) {  // add to scope if not already in it
+            entry = scope.AddTopLevelSeqEntry(*e);
+        }
+        // "remember" the submission block
         m_Ctx->SetSubmit(submit.GetSub());
+
         Generate(entry, item_os);
     }
 }
@@ -256,6 +264,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/02/11 15:29:45  shomrat
+* Cleanup after execution; avoid duplicate entries in scope
+*
 * Revision 1.11  2005/02/07 14:58:48  shomrat
 * unconst Seq-submit objcets
 *
