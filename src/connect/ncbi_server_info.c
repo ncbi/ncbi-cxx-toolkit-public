@@ -647,7 +647,7 @@ static SSERV_Info* s_Firewall_Read(const char** str)
     ESERV_Type type;
     const char* s;
     if (!(s = SERV_ReadType(*str, &type)))
-        type = fSERV_Any;
+        type = (ESERV_Type) fSERV_Any;
     else
         *str = s;
     return SERV_CreateFirewallInfo(0, 0, type);
@@ -835,6 +835,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.49  2003/04/25 15:21:05  lavr
+ * Explicit cast to avoid int->enum warning
+ *
  * Revision 6.48  2003/03/13 19:08:26  lavr
  * Allow missing type in Firewall server info specification
  *
