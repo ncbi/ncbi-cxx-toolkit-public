@@ -626,7 +626,6 @@ Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding,
    Int4 new_length = length/COMPRESSION_RATIO + 1;
    Uint1* new_buffer = (Uint1*) malloc(new_length);
    Int4 index, new_index;
-   Uint1 remainder;
    Uint1 shift;     /* bit shift to pack bases */
 
    for (index=0, new_index=0; new_index < new_length-1; 
