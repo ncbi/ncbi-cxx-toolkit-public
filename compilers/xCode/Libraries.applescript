@@ -108,6 +108,7 @@ property id1 : {name:"id1", path:"objects:id1", inc:{"id1__.cpp", "id1___.cpp"},
 property id1cli : {name:"id1cli", path:"objects:id1", inc:{"id1_client.cpp", "id1_client_.cpp"}, asn1:true}
 property id2 : {name:"id2", path:"objects:id2", inc:{"id2__.cpp", "id2___.cpp"}, asn1:true}
 property id2cli : {name:"id2cli", path:"objects:id2", inc:{"id2_client.cpp", "id2_client_.cpp"}, asn1:true}
+property insdseq : {name:"insdseq", path:"objects:insdseq", inc:{"insdseq__.cpp", "insdseq___.cpp"}, asn1:true}
 property medlars : {name:"medlars", path:"objects:medlars", inc:{"medlars__.cpp", "medlars___.cpp"}, asn1:true}
 property medline : {name:"medline", path:"objects:medline", inc:{"medline__.cpp", "medline___.cpp"}, asn1:true}
 property mim : {name:"mim", path:"objects:mim", inc:{"mim__.cpp", "mim___.cpp"}, asn1:true}
@@ -260,9 +261,8 @@ property ncbi_dbapi_driver : {name:"ncbi_dbapi_driver", libs:{dbapi_driver}, dep
 property ncbi_dbapi : {name:"ncbi_dbapi", libs:{dbapi, dbapi_cache}, dep:"ncbi_core ncbi_dbapi_driver"}
 property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core"}
 property ncbi_image : {name:"ncbi_image", libs:{ximage}, dep:"ncbi_core"}
-
 property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgoseq, blast, xblast, xalgognomon, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc"}
-property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}}
+property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, insdseq, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general"}
 property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, taxon1, seqsplit, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub"}
 property ncbi_mmdb : {name:"ncbi_mmdb", libs:{cdd, cn3d, ncbimime, mmdb1, mmdb2, mmdb3}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq"}
@@ -294,6 +294,7 @@ property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_
 -- PLUG-INS
 property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_bdb ncbi_core" & gui2link, bundle:true}
 property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_cdd" & gui2link, bundle:true}
+
 property algo_cn3d : {name:"algo_cn3d", libs:{gui_algo_cn3d}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_mmdb" & gui2link, bundle:true}
 property algo_external : {name:"algo_external", libs:{gui_algo_external, gui_algo_external_out}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web" & gui2link, bundle:true}
 property algo_gnomon : {name:"algo_gnomon", libs:{gui_algo_gnomon}, dep:"gui_core gui_dialogs gui_utils gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext" & gui2link, bundle:true}
@@ -340,6 +341,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/08/13 11:40:39  lebedev
+ * new libraries added
+ *
  * Revision 1.19  2004/08/12 15:04:03  lebedev
  * algo_align links to gui_widgets_seq (for SerialBrowser)
  *
