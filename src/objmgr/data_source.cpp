@@ -59,8 +59,6 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 
-#include <algorithm>
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -198,7 +196,7 @@ void CDataSource::DropAllTSEs(void)
     {{
         TAnnotWriteLockGuard guard2(m_DSAnnotLock);
         m_TSE_annot.clear();
-        m_TSE_annot_is_dirty.clear();
+        m_DirtyAnnot_TSEs.clear();
     }}
 }
 
@@ -437,12 +435,7 @@ void CDataSource::x_DropTSE(CTSE_Info& info)
     info.x_DSDetach(this);
     {{
         TAnnotWriteLockGuard guard2(m_DSAnnotLock);
-        NON_CONST_ITERATE ( TTSE_annot_is_dirty, iter, m_TSE_annot_is_dirty ) {
-            if ( *iter == &info ) {
-                m_TSE_annot_is_dirty.erase(iter);
-                break;
-            }
-        }
+        m_DirtyAnnot_TSEs.erase(&info);
     }}
 }
 
@@ -821,22 +814,30 @@ void PrintSeqMap(const string& /*id*/, const CSeqMap& /*smap*/)
 
 void CDataSource::x_SetDirtyAnnotIndex(CTSE_Info* tse_info)
 {
+    _ASSERT(tse_info->x_DirtyAnnotIndex());
     TAnnotWriteLockGuard guard(m_DSAnnotLock);
-    _ASSERT(find(m_TSE_annot_is_dirty.begin(),
-                  m_TSE_annot_is_dirty.end(),
-                  tse_info) == m_TSE_annot_is_dirty.end());
-    m_TSE_annot_is_dirty.push_back(tse_info);
+    _VERIFY(m_DirtyAnnot_TSEs.insert(tse_info).second);
+}
+
+
+void CDataSource::x_ResetDirtyAnnotIndex(CTSE_Info* tse_info)
+{
+    _ASSERT(!tse_info->x_DirtyAnnotIndex());
+    _VERIFY(m_DirtyAnnot_TSEs.erase(tse_info));
 }
 
 
 void CDataSource::UpdateAnnotIndex(void)
 {
     TMainWriteLockGuard guard(m_DSMainLock);
-    ITERATE( TTSE_annot_is_dirty, iter, m_TSE_annot_is_dirty ) {
-        _ASSERT(x_FindTSE_Info((*iter)->GetTSE()));
-        (*iter)->UpdateAnnotIndex();
+    while ( !m_DirtyAnnot_TSEs.empty() ) {
+        CTSE_Info* tse_info = *m_DirtyAnnot_TSEs.begin();
+        _ASSERT(x_FindTSE_Info(tse_info->GetTSE()) == tse_info);
+        tse_info->UpdateAnnotIndex();
+        _ASSERT(m_DirtyAnnot_TSEs.empty() ||
+                *m_DirtyAnnot_TSEs.begin() != tse_info);
+
     }
-    m_TSE_annot_is_dirty.clear();
 }
 
 
@@ -995,11 +996,8 @@ void CDataSource::x_IndexAnnotTSEs(CTSE_Info* tse_info)
     ITERATE ( CTSE_Info::TSeqIdToNames, it, tse_info->m_SeqIdToNames ) {
         x_IndexTSE(m_TSE_annot, it->first, tse_info);
     }
-    if ( tse_info->m_DirtyAnnotIndex ) {
-        _ASSERT(find(m_TSE_annot_is_dirty.begin(),
-                     m_TSE_annot_is_dirty.end(),
-                     tse_info) == m_TSE_annot_is_dirty.end());
-        m_TSE_annot_is_dirty.push_back(tse_info);
+    if ( tse_info->x_DirtyAnnotIndex() ) {
+        _VERIFY(m_DirtyAnnot_TSEs.insert(tse_info).second);
     }
 }
 
@@ -1226,6 +1224,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.127  2004/02/03 19:02:17  vasilche
+* Fixed broken 'dirty annot index' state after RemoveEntry().
+*
 * Revision 1.126  2004/02/02 15:27:20  dicuccio
 * +<algorithm> for find
 *

@@ -141,7 +141,9 @@ protected:
     void x_UpdateAnnotIndex(void);
     void x_UpdateAnnotIndexContents(void);
 
+    bool x_DirtyAnnotIndex(void) const;
     void x_SetDirtyAnnotIndex(void);
+    void x_ResetDirtyAnnotIndex(void);
 
     // Seq-entry pointer
     CRef<CSeq_entry>      m_Seq_entry;
@@ -241,12 +243,22 @@ void CSeq_entry_Info::x_DSDetach(void)
 }
 
 
+inline
+bool CSeq_entry_Info::x_DirtyAnnotIndex(void) const
+{
+    return m_DirtyAnnotIndex;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/02/03 19:02:16  vasilche
+* Fixed broken 'dirty annot index' state after RemoveEntry().
+*
 * Revision 1.7  2003/12/18 16:38:06  grichenk
 * Added CScope::RemoveEntry()
 *

@@ -275,7 +275,7 @@ public:
     typedef map<const CBioseq*, CBioseq_Info*>       TBioseq_InfoMap;
     typedef map<const CObject*, CAnnotObject_Info* > TAnnotObject_InfoMap;
     typedef CPriorityNode::TPriority                 TPriority;
-    typedef vector<CTSE_Info*>                       TTSE_annot_is_dirty;
+    typedef set<CTSE_Info*>                          TDirtyAnnot_TSEs;
 
     void UpdateAnnotIndex(void);
     void UpdateAnnotIndex(const CSeq_entry_Info& entry_info);
@@ -398,6 +398,7 @@ private:
 
     void x_IndexAllAnnots(CSeq_entry_Info& entry_info);
     void x_SetDirtyAnnotIndex(CTSE_Info* tse_info);
+    void x_ResetDirtyAnnotIndex(CTSE_Info* tse_info);
 
     void x_IndexTSE(TTSEMap& tse_map,
                     const CSeq_id_Handle& id, CTSE_Info* tse_info);
@@ -455,7 +456,7 @@ private:
     TTSEMap               m_TSE_seq;           // id -> TSE with bioseq
     TTSEMap               m_TSE_annot;         // id -> TSE with annots
     // TSE with annotations need to be indexed.
-    TTSE_annot_is_dirty   m_TSE_annot_is_dirty;
+    TDirtyAnnot_TSEs      m_DirtyAnnot_TSEs;
 
     // Default priority for the datasource
     TPriority             m_DefaultPriority;
@@ -508,6 +509,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2004/02/03 19:02:16  vasilche
+* Fixed broken 'dirty annot index' state after RemoveEntry().
+*
 * Revision 1.69  2004/02/02 14:46:42  vasilche
 * Several performance fixed - do not iterate whole tse set in CDataSource.
 *

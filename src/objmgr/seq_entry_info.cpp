@@ -286,7 +286,7 @@ void CSeq_entry_Info::x_TSEAttachSeq_annots(TSeq_annots& annots)
 
 void CSeq_entry_Info::x_SetDirtyAnnotIndex(void)
 {
-    if ( !m_DirtyAnnotIndex ) {
+    if ( !x_DirtyAnnotIndex() ) {
         m_DirtyAnnotIndex = true;
         if ( m_Parent ) {
             m_Parent->x_SetDirtyAnnotIndex();
@@ -299,20 +299,32 @@ void CSeq_entry_Info::x_SetDirtyAnnotIndex(void)
 }
 
 
+void CSeq_entry_Info::x_ResetDirtyAnnotIndex(void)
+{
+    if ( x_DirtyAnnotIndex() ) {
+        m_DirtyAnnotIndex = false;
+        if ( !m_Parent && HaveDataSource() ) {
+            _ASSERT(m_TSE_Info == this);
+            GetDataSource().x_ResetDirtyAnnotIndex(m_TSE_Info);
+        }
+    }
+}
+
+
 void CSeq_entry_Info::UpdateAnnotIndex(void) const
 {
-    if ( m_DirtyAnnotIndex ) {
+    if ( x_DirtyAnnotIndex() ) {
         GetTSE_Info().UpdateAnnotIndex(*this);
-        _ASSERT(!m_DirtyAnnotIndex);
+        _ASSERT(!x_DirtyAnnotIndex());
     }
 }
 
 
 void CSeq_entry_Info::x_UpdateAnnotIndex(void)
 {
-    if ( m_DirtyAnnotIndex ) {
+    if ( x_DirtyAnnotIndex() ) {
         x_UpdateAnnotIndexContents();
-        m_DirtyAnnotIndex = false;
+        x_ResetDirtyAnnotIndex();
     }
 }
 
@@ -463,6 +475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/03 19:02:18  vasilche
+ * Fixed broken 'dirty annot index' state after RemoveEntry().
+ *
  * Revision 1.9  2004/02/02 14:46:44  vasilche
  * Several performance fixed - do not iterate whole tse set in CDataSource.
  *

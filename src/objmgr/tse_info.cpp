@@ -103,7 +103,7 @@ void CTSE_Info::SetName(const CAnnotName& name)
 
 bool CTSE_Info::HasAnnot(const CAnnotName& name) const
 {
-    _ASSERT(!m_DirtyAnnotIndex);
+    _ASSERT(!x_DirtyAnnotIndex());
     return m_NamedAnnotObjs.find(name) != m_NamedAnnotObjs.end();
 }
 
@@ -328,7 +328,7 @@ void CTSE_Info::x_ResetBioseq_setId(int key,
 void CTSE_Info::UpdateAnnotIndex(void) const
 {
     const_cast<CTSE_Info*>(this)->UpdateAnnotIndex();
-    _ASSERT(!m_DirtyAnnotIndex);
+    _ASSERT(!x_DirtyAnnotIndex());
 }
 
 
@@ -336,7 +336,7 @@ void CTSE_Info::UpdateAnnotIndex(const CSeq_entry_Info& entry_info) const
 {
     const_cast<CTSE_Info*>(this)->
         UpdateAnnotIndex(const_cast<CSeq_entry_Info&>(entry_info));
-    _ASSERT(!entry_info.m_DirtyAnnotIndex);
+    _ASSERT(!entry_info.x_DirtyAnnotIndex());
 }
 
 
@@ -362,7 +362,7 @@ void CTSE_Info::UpdateAnnotIndex(CSeq_entry_Info& entry_info)
         it->second->x_UpdateAnnotIndex();
     }
     entry_info.x_UpdateAnnotIndex();
-    _ASSERT(!entry_info.m_DirtyAnnotIndex);
+    _ASSERT(!entry_info.x_DirtyAnnotIndex());
 }
 
 
@@ -867,6 +867,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/02/03 19:02:19  vasilche
+* Fixed broken 'dirty annot index' state after RemoveEntry().
+*
 * Revision 1.37  2004/01/22 20:10:41  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.
