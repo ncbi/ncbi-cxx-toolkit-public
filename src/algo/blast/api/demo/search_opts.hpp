@@ -236,6 +236,9 @@ public:                                        \
     template<class ValT, class OptsT>          \
     void Set(OptsT & opts, ValT & V)           \
     {                                          \
+        /*cerr << "In ["              */       \
+        /*     << __PRETTY_FUNCTION__ */       \
+        /*     << "]:\n";             */       \
         throw runtime_error                    \
             ("program / parm mismatch");       \
     }
@@ -291,6 +294,16 @@ OPT_HANDLER_SUPPORT(CTBlastnOptionsHandle); \
 OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle); \
 OPT_HANDLER_END();
 
+// CRemoteBlast option .. i.e. a program option rather than an
+// algorithmic option.  Because it is sent to CRemoteBlast, it does
+// not need to deal with Protein vs. Nucleot; rather, it needs to
+// support only the CRemoteBlast type.  Only EXPR type is defined.
+
+#define OPT_HANDLER_RB_EXPR(NAME,EXPR) \
+OPT_HANDLER_START(NAME, EXPR);         \
+OPT_HANDLER_SUPPORT(CRemoteBlast);     \
+OPT_HANDLER_END();
+
 
 // CBlastOptions based handlers
 
@@ -313,7 +326,7 @@ OPT_HANDLER_SUPPORT_NUCL(MatchReward);
 
 // CBlast4Options based handlers
 
-OPT_HANDLER_SUPPORT_ALL(EntrezQuery);
+OPT_HANDLER_RB_EXPR(EntrezQuery, V.c_str());
 
 
 class CNetblastSearchOpts
@@ -539,6 +552,10 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/02/18 18:29:59  bealer
+ * - Fix entrez query and add support (to Apply) for Remote Blast program
+ *   options.
+ *
  * Revision 1.1  2004/02/18 17:04:43  bealer
  * - Adapt blast_client code for Remote Blast API, merging code into the
  *   remote_blast demo application.
