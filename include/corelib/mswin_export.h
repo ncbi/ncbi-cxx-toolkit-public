@@ -1076,6 +1076,7 @@
 #  define NCBI_GUIWIDGETS_FLEK_EXPORT
 #  define NCBI_GUIWIDGETS_FLTABLE_EXPORT
 #  define NCBI_GUIWIDGETS_FL_EXPORT
+#  define NCBI_GUIWIDGETS_GL_EXPORT
 #  define NCBI_GUIWIDGETS_SEQGRAPHIC_EXPORT
 #  define NCBI_GUIWIDGETS_SEQICON_EXPORT
 #  define NCBI_GUIWIDGETS_SEQINFO_EXPORT
@@ -1142,6 +1143,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.46  2003/10/30 15:45:44  ivanov
+ * Add NCBI_GUIWIDGETS_GL_EXPORT to the null define list
+ *
  * Revision 1.45  2003/10/29 23:05:30  yazhuk
  * Added NCBI_GUIWIDGETS_GL_EXPORT macros
  *
@@ -1230,7 +1234,8 @@
  * Moved BLAST object files into ncbi_seqext.dll
  *
  * Revision 1.19  2003/04/14 19:37:42  ivanov
- * Added master export group NCBI_SEQEXT_EXPORTS. Moved a part code from NCBI_SEQ.DLL to NCBI_SEQEXT.DLLmswin_export.h
+ * Added master export group NCBI_SEQEXT_EXPORTS. Moved a part code from NCBI_SEQ.DLL
+ * to NCBI_SEQEXT.DLLmswin_export.h
  *
  * Revision 1.18  2003/04/10 13:31:40  dicuccio
  * Added BLAST objects to NCBI_SEQ
@@ -1255,7 +1260,8 @@
  * Added export specifiers for XALGO, XGBPLUGIN
  *
  * Revision 1.11  2003/02/12 22:02:29  coremake
- * Added export specifiers NCBI_DBAPIDRIVER_*_EXPORT for ctlib, dblib, msdblib and odbc DBAI driver libraries
+ * Added export specifiers NCBI_DBAPIDRIVER_*_EXPORT for ctlib, dblib, msdblib
+ * and odbc DBAI driver libraries
  *
  * Revision 1.10  2003/02/06 18:49:58  dicuccio
  * Added NCBI_TAXON1_EXPORT specifier
