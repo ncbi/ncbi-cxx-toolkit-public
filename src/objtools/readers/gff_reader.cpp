@@ -57,6 +57,7 @@
 #include <objtools/readers/cigar.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/readfeat.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <algorithm>
 #include <ctype.h>
@@ -162,6 +163,9 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
             }
         }
 
+        if (rec.key == "exon") {
+            rec.key = "mRNA";
+        }
         x_ParseAndPlace(rec);
     }
 
@@ -169,35 +173,114 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
     x_Reset();
 
     // promote transcript_id and protein_id to products
-    CTypeIterator<CSeq_feat> feat_iter(*tse);
-    for ( ;  feat_iter;  ++feat_iter) {
-        CSeq_feat& feat = *feat_iter;
+    if (flags & fSetProducts) {
+        CTypeIterator<CSeq_feat> feat_iter(*tse);
+        for ( ;  feat_iter;  ++feat_iter) {
+            CSeq_feat& feat = *feat_iter;
 
-        string qual_name;
-        switch (feat.GetData().GetSubtype()) {
-        case CSeqFeatData::eSubtype_cdregion:
-            qual_name = "protein_id";
-            break;
+            string qual_name;
+            switch (feat.GetData().GetSubtype()) {
+            case CSeqFeatData::eSubtype_cdregion:
+                qual_name = "protein_id";
+                break;
 
-        case CSeqFeatData::eSubtype_mRNA:
-            qual_name = "transcript_id";
-            break;
+            case CSeqFeatData::eSubtype_mRNA:
+                qual_name = "transcript_id";
+                break;
 
-        default:
-            continue;
-            break;
-        }
+            default:
+                continue;
+                break;
+            }
 
-        string id_str = feat.GetNamedQual(qual_name);
-        if ( !id_str.empty() ) {
-            try {
-                CSeq_id id(id_str);
-                if (id.Which() != CSeq_id::e_not_set) {
-                    feat.SetProduct().SetWhole().Assign(id);
+            string id_str = feat.GetNamedQual(qual_name);
+            if ( !id_str.empty() ) {
+                CRef<CSeq_id> id(new CSeq_id(id_str));
+                if (id->Which() != CSeq_id::e_not_set) {
+                    feat.SetProduct().SetWhole(*id);
                 }
             }
-            catch (...) {
-                /// bad 
+        }
+    }
+
+    if (flags & fCreateGeneFeats) {
+        CTypeIterator<CSeq_annot> annot_iter(*tse);
+        for ( ;  annot_iter;  ++annot_iter) {
+            CSeq_annot& annot = *annot_iter;
+            if (annot.GetData().Which() != CSeq_annot::TData::e_Ftable) {
+                continue;
+            }
+
+            // we work within the scope of one annotation
+            CSeq_annot::TData::TFtable::iterator feat_iter = 
+                annot.SetData().SetFtable().begin();
+            CSeq_annot::TData::TFtable::iterator feat_end = 
+                annot.SetData().SetFtable().end();
+
+            /// we plan to create a series of gene features, one for each gene
+            /// identified above
+            /// genes are identified via a 'gene_id' marker
+            typedef map<string, CRef<CSeq_feat> > TGeneMap;
+            TGeneMap genes;
+            for (bool has_genes = false;  feat_iter != feat_end  &&  !has_genes;  ++feat_iter) {
+                CSeq_feat& feat = **feat_iter;
+
+                switch (feat.GetData().GetSubtype()) {
+                case CSeqFeatData::eSubtype_gene:
+                    /// we already have genes, so don't add any more
+                    has_genes = true;
+                    genes.clear();
+                    break;
+
+                case CSeqFeatData::eSubtype_mRNA:
+                case CSeqFeatData::eSubtype_cdregion:
+                    /// for mRNA and CDS features, create a gene
+                    /// this is only done if the gene_id parameter was set
+                    /// in parsing, we promote gene_id to a gene xref
+                    if ( !feat.GetGeneXref() ) {
+                        continue;
+                    }
+                    {{
+                        string gene_id;
+                        feat.GetGeneXref()->GetLabel(&gene_id);
+                        _ASSERT( !gene_id.empty() );
+                        TSeqRange range = feat.GetLocation().GetTotalRange();
+                        ENa_strand strand = sequence::GetStrand(feat.GetLocation());
+                        const CSeq_id& id =
+                            sequence::GetId(feat.GetLocation(), NULL);
+
+                        TGeneMap::iterator iter = genes.find(gene_id);
+                        if (iter == genes.end()) {
+                            /// new gene feature
+                            CRef<CSeq_feat> gene(new CSeq_feat());
+                            gene->SetData().SetGene().Assign(*feat.GetGeneXref());
+
+                            gene->SetLocation().SetInt().SetFrom(range.GetFrom());
+                            gene->SetLocation().SetInt().SetTo  (range.GetTo());
+                            gene->SetLocation().SetId(id);
+                            if (strand == eNa_strand_minus) {
+                                gene->SetLocation().SetInt().SetStrand(strand);
+                            } else {
+                                gene->SetLocation().SetInt().SetStrand(eNa_strand_plus);
+                            }
+                            genes[gene_id] = gene;
+                        } else {
+                            /// we agglomerate the old location
+                            CRef<CSeq_feat> gene = iter->second;
+                            range += gene->GetLocation().GetTotalRange();
+                            gene->SetLocation().SetInt().SetFrom(range.GetFrom());
+                            gene->SetLocation().SetInt().SetTo  (range.GetTo());
+                        }
+                    }}
+                    break;
+
+                default:
+                    break;
+                }
+            }
+
+            ITERATE (TGeneMap, iter, genes) {
+                annot.SetData().SetFtable().push_back(iter->second);
             }
         }
     }
@@ -735,7 +818,6 @@ string CGFFReader::x_FeatureID(const SRecord& record)
                 id += record.key + ' ' + (*it)[1];
             }
         }
-        return kEmptyStr;
     } else if (x_GetFlags() & fMergeOnyCdsMrna) {
         return kEmptyStr;
     }
@@ -1034,6 +1116,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/03/02 15:01:34  dicuccio
+* - Implemented fCreateGeneFeats
+* - Only promote products if fSetProducts was provided
+* - Bug fix: x_FeatureID(): make sure to return IDs for gene_id
+* - Bug fix: 'exon' means mRNA in GFF/GTF, so create mRNA not exon features
+*
 * Revision 1.12  2005/01/18 17:56:17  dicuccio
 * Added additional flags: permit merging of intervals in non-CDS and non-mRNA
 * features.  Added enum for default options.
