@@ -48,15 +48,16 @@ public:
     // data types
     typedef unsigned int TSegTypeFlags; // binary OR of ESegTypeFlags
     enum ESegTypeFlags {
-        fSeq                     = 0x01,
-        fNotAlignedToSeqOnAnchor = 0x02,
+        fSeq                     = 0x0001,
+        fNotAlignedToSeqOnAnchor = 0x0002,
         fInsert                  = fSeq | fNotAlignedToSeqOnAnchor,
-        fUnalignedOnRight        = 0x04, // unaligned region on the right
-        fUnalignedOnLeft         = 0x08,
-        fNoSeqOnRight            = 0x10, // maybe gaps on the right but no seq
-        fNoSeqOnLeft             = 0x20,
-        fEndOnRight              = 0x40, // this is the last segment
-        fEndOnLeft               = 0x80,
+        fUnalignedOnRight        = 0x0004, // unaligned region on the right
+        fUnalignedOnLeft         = 0x0008,
+        fNoSeqOnRight            = 0x0010, // maybe gaps on the right but no seq
+        fNoSeqOnLeft             = 0x0020,
+        fEndOnRight              = 0x0040, // this is the last segment
+        fEndOnLeft               = 0x0080,
+        fUnaligned               = 0x0100, // this is an unaligned region
         // reserved for internal use
         fTypeIsSet            = (TSegTypeFlags) 0x80000000
     };
@@ -95,7 +96,13 @@ public:
 
         // preserve the wholeness of the segments when intersecting
         // with the given range instead of truncating them
-        fDoNotTruncateSegs   = 0x0200
+        fDoNotTruncateSegs   = 0x0200,
+
+        // In adition to other chunks, intoduce chunks representing
+        // regions of sequence which are implicit inserts but are
+        // not tecnically present in the underlying alignment,
+        // AKA "unaligned regions"
+        fAddUnalignedChunks  = 0x0400
     };
     typedef int TGetChunkFlags; // binary OR of EGetChunkFlags
 
@@ -671,6 +678,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2004/09/15 20:07:29  todorov
+* Added fUnaligned and fAddUnalignedChunks
+*
 * Revision 1.38  2004/06/30 16:52:09  ivanov
 * Rollback to R1.35 -- MSVC6 compile errors
 *
