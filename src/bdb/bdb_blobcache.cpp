@@ -1628,6 +1628,7 @@ public:
 
 static const string kCFParam_path           = "path";
 static const string kCFParam_name           = "name";
+static const string kCFParam_page_size      = "page_size";
 
 static const string kCFParam_lock           = "lock";
 static const string kCFParam_lock_default   = "no_lock";
@@ -1674,6 +1675,8 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         GetParam(params, kCFParam_name, false, "lcache");
     const string& locking = 
         GetParam(params, kCFParam_lock, false, kCFParam_lock_default);
+    const string& page_size = 
+        GetParam(params, kCFParam_page_size, false, kEmptyStr);
 
     CBDB_Cache::ELockMode lock = CBDB_Cache::eNoLock;
     if (NStr::CompareNocase(locking, kCFParam_lock_pid_lock) == 0) {
@@ -1683,6 +1686,12 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     const string& mem_size_str =
         GetParam(params, kCFParam_mem_size, false, kEmptyStr);
     unsigned mem_size = NStr::StringToUInt(mem_size_str);
+
+    if (!page_size.empty()) {
+        if (NStr::CompareNocase(page_size, "small") == 0) {
+            drv->SetPageSize(CBDB_Cache::eSmall);
+        } // any other variant makes deafult (large) page size
+    }
 
     const string& read_only =
         GetParam(params, kCFParam_read_only, false, kEmptyStr);
@@ -1742,6 +1751,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2004/08/24 15:13:07  kuznets
+ * + page_size parameter to the BDB class factory
+ *
  * Revision 1.70  2004/08/24 15:04:51  kuznets
  * Improved page size control
  *
