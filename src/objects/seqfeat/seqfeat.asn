@@ -1,4 +1,4 @@
---$Revision: 1.10 $
+--$Revision: 1.11 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -69,17 +69,30 @@ SeqFeatData ::= CHOICE {
         xlink (3) ,
         thioether (4) ,
         other (255) } ,
-    site ENUMERATED {
-        active (1) ,
-        binding (2) ,
-        cleavage (3) ,
-        inhibit (4) ,
-        modified (5),
-        glycosylation (6) ,
-        myristoylation (7) ,
-        mutagenized (8) ,
-        metal-binding (9) ,
-        other (255) } ,
+	site ENUMERATED {
+		active (1) ,
+		binding (2) ,
+		cleavage (3) ,
+		inhibit (4) ,
+		modified (5),
+		glycosylation (6) ,
+		myristoylation (7) ,
+		mutagenized (8) ,
+		metal-binding (9) ,
+		phosphorylation (10) ,
+		acetylation (11) ,
+		amidation (12) ,
+		methylation (13) ,
+		hydroxylation (14) ,
+		sulfatation (15) ,
+		oxidative-deamination (16) ,
+		pyrrolidone-carboxylic-acid (17) ,
+		gamma-carboxyglutamic-acid (18) ,
+		blocked (19) ,
+		lipid-binding (20) ,
+		np-binding (21) ,
+		dna-binding (22) ,
+		other (255) } ,
     rsite Rsite-ref ,       -- restriction site  (for maps really)
     user User-object ,      -- user defined structure
     txinit Txinit }         -- transcription initiation
