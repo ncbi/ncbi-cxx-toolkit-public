@@ -1,4 +1,4 @@
-# $Id: ignore.lst,v 1.10 2004/03/15 18:51:26 ivanov Exp $
+# $Id: ignore.lst,v 1.11 2004/03/15 20:14:07 ivanov Exp $
 #
 # List of pairs "test/signature" that will not be checked
 #
@@ -49,8 +49,5 @@ util/test/test_resize_iter  KCC_400-Release--i686-pc-linux-gnuaout
 ; objects/objmgr/test/test_objmgr_data_mt  GCC_300-DebugMT--i686-pc-linux-gnu
 ; objects/objmgr/test/test_objmgr_data_mt  GCC_300-ReleaseMT--i686-pc-linux-gnu
 ; objects/objmgr/test/test_objmgr_data_mt  WorkShop53_530-ReleaseMT--i386-pc-solaris2.7
-
-objtools/test/objmgr/test_objmgr_data  GCC_295-Release--i686-pc-linux-gnu
-objtools/test/objmgr/test_objmgr_data_mt  GCC_295-Release--i686-pc-linux-gnu
 
 ; Other
