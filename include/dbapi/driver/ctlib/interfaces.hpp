@@ -52,6 +52,7 @@ class CTL_RowResult;
 class CTL_ParamResult;
 class CTL_ComputeResult;
 class CTL_StatusResult;
+class CTL_CursorResult;
 
 
 
@@ -317,18 +318,18 @@ protected:
 
 private:
     bool x_AssignParams(bool just_declare = false);
-    I_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
-    CTL_Connection* m_Connect;
-    CS_COMMAND*     m_Cmd;
-    string          m_Name;
-    string          m_Query;
-    CDB_Params      m_Params;
-    unsigned int    m_FetchSize;
-    bool            m_IsOpen;
-    bool            m_HasFailed;
-    bool            m_Used;
-    I_Result*       m_Res;
-    int             m_RowCount;
+    I_ITDescriptor*   x_GetITDescriptor(unsigned int item_num);
+    CTL_Connection*   m_Connect;
+    CS_COMMAND*       m_Cmd;
+    string            m_Name;
+    string            m_Query;
+    CDB_Params        m_Params;
+    unsigned int      m_FetchSize;
+    bool              m_IsOpen;
+    bool              m_HasFailed;
+    bool              m_Used;
+    CTL_CursorResult* m_Res;
+    int               m_RowCount;
 };
 
 
@@ -543,6 +544,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/03/28 00:37:01  vakatov
+ * CTL_CursorCmd::  use CTL_CursorResult rather than I_Result (fix access)
+ *
  * Revision 1.9  2002/03/26 15:26:02  soussov
  * new image/text operations added
  *
