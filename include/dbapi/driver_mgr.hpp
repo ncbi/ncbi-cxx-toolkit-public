@@ -58,10 +58,10 @@ BEGIN_NCBI_SCOPE
 // Forward declaration
 class IDataSource;
 
+template <typename T> class CSafeStaticPtr;
+
 class NCBI_DBAPI_EXPORT CDriverManager : public C_DriverMgr
 {
-    template<class T> friend class CSafeStaticPtr;
-
 public:
     // Get a single instance of CDriverManager
     static CDriverManager& GetInstance();
@@ -97,6 +97,8 @@ private:
     // This function will just call the delete operator.
     static void DeleteDs(const IDataSource* const ds);
 
+    friend class CSafeStaticPtr<CDriverManager>;
+
 // DEPRECATED. Will be removed in next version.
 private:
     static CDriverManager* sm_Instance;
@@ -112,6 +114,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/04/04 19:39:52  ucko
+ * Predeclare CSafeStaticPtr<> outside CDriverManager to avoid confusing
+ * WorkShop, and limit CDriverManager's friendship to the relevant
+ * instantiation.
+ *
  * Revision 1.11  2005/04/04 13:03:02  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *
