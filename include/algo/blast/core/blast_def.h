@@ -103,6 +103,13 @@ typedef struct DoubleInt {
    Int4 i2;
 } DoubleInt, PNTR DoubleIntPtr;
 
+/** BlastSeqLoc is a ValNode with choice equal to the sequence local id,
+ * and data->ptrvalue pointing to a DoubleInt structure defining the 
+ * location interval in the sequence.
+ */
+#define BlastSeqLoc ValNode
+#define BlastSeqLocPtr ValNodePtr
+
 typedef struct BlastThrInfo {
     TNlmMutex db_mutex;  /**< Lock for access to database*/
     TNlmMutex results_mutex; /**< Lock for storing results */
@@ -134,6 +141,13 @@ typedef struct BlastReturnStat {
    Int4 number_of_seqs_better_E; /**< Number of sequences with best HSP passing
                                     the e-value threshold */
 } BlastReturnStat, PNTR BlastReturnStatPtr;
+
+/** Structure for keeping the query masking information */
+typedef struct BlastMask {
+   Int4 index; /**< Index of the query sequence this mask is applied to */
+   ValNodePtr loc_list; /**< List of mask locations */
+   struct BlastMask PNTR next; /**< Pointer to the next query mask */
+} BlastMask, PNTR BlastMaskPtr;
 
 #define COMPRESSION_RATIO 4
 
