@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/11/17 14:39:15  gouriano
+* Prohibit assignment of a serial object to itself
+*
 * Revision 1.17  2003/11/13 14:07:38  gouriano
 * Elaborated data verification on read/write/get to enable skipping mandatory class data members
 *
@@ -107,6 +110,10 @@ CSerialObject::~CSerialObject()
 
 void CSerialObject::Assign(const CSerialObject& source)
 {
+    if (this == &source) {
+        NCBI_THROW(CSerialException,eIllegalCall,
+                   "Cannot assign a serial object to itself");
+    }
     if ( typeid(source) != typeid(*this) ) {
         ERR_POST(Fatal <<
             "CSerialObject::Assign() -- Assignment of incompatible types: " <<
