@@ -48,11 +48,12 @@ BEGIN_NCBI_SCOPE
 class NCBI_XSERIAL_EXPORT COStreamFrame
 {
 public:
-    COStreamFrame(CObjectOStream& stream);
-    ~COStreamFrame(void);
 
     CObjectOStream& GetStream(void) const;
 
+protected:
+    COStreamFrame(CObjectOStream& stream);
+    ~COStreamFrame(void);
     bool Good(void) const;
 
 private:
@@ -68,11 +69,11 @@ private:
 class NCBI_XSERIAL_EXPORT CIStreamFrame
 {
 public:
-    CIStreamFrame(CObjectIStream& stream);
-    ~CIStreamFrame(void);
-
     CObjectIStream& GetStream(void) const;
 
+protected:
+    CIStreamFrame(CObjectIStream& stream);
+    ~CIStreamFrame(void);
     bool Good(void) const;
 
 private:
@@ -278,6 +279,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/06/08 20:25:42  gouriano
+* Made functions, that are not visible from the outside, protected
+*
 * Revision 1.7  2003/10/24 15:54:27  grichenk
 * Removed or blocked exceptions in destructors
 *

@@ -366,8 +366,7 @@ void CObjectOStreamAsnBinary::CopyAnyContentObject(CObjectIStream& )
         "unable to copy AnyContent object in ASN");
 }
 
-static
-void WriteNumberValue(CObjectOStreamAsnBinary& out, Int4 data)
+void CObjectOStreamAsnBinary::WriteNumberValue(Int4 data)
 {
     size_t length;
     if ( data >= Int4(-0x80) && data <= Int4(0x7f) ) {
@@ -386,12 +385,11 @@ void WriteNumberValue(CObjectOStreamAsnBinary& out, Int4 data)
         // full length signed
         length = sizeof(data);
     }
-    out.WriteShortLength(length);
-    WriteBytesOf(out, data, length);
+    WriteShortLength(length);
+    WriteBytesOf(*this, data, length);
 }
 
-static
-void WriteNumberValue(CObjectOStreamAsnBinary& out, Int8 data)
+void CObjectOStreamAsnBinary::WriteNumberValue(Int8 data)
 {
     size_t length;
     if ( data >= -Int8(0x80) && data <= Int8(0x7f) ) {
@@ -414,12 +412,11 @@ void WriteNumberValue(CObjectOStreamAsnBinary& out, Int8 data)
         // full length signed
         length = sizeof(data);
     }
-    out.WriteShortLength(length);
-    WriteBytesOf(out, data, length);
+    WriteShortLength(length);
+    WriteBytesOf(*this, data, length);
 }
 
-static
-void WriteNumberValue(CObjectOStreamAsnBinary& out, Uint4 data)
+void CObjectOStreamAsnBinary::WriteNumberValue(Uint4 data)
 {
     size_t length;
     if ( data <= 0x7fU ) {
@@ -441,9 +438,9 @@ void WriteNumberValue(CObjectOStreamAsnBinary& out, Uint4 data)
         // check for high bit to avoid storing unsigned data as negative
         if ( (data & (Uint4(1) << (sizeof(data) * 8 - 1))) != 0 ) {
             // full length unsigned - and doesn't fit in signed place
-            out.WriteShortLength(sizeof(data) + 1);
-            out.WriteByte(0);
-            WriteBytesOf(out, data, sizeof(data));
+            WriteShortLength(sizeof(data) + 1);
+            WriteByte(0);
+            WriteBytesOf(*this, data, sizeof(data));
             return;
         }
         else {
@@ -451,12 +448,11 @@ void WriteNumberValue(CObjectOStreamAsnBinary& out, Uint4 data)
             length = sizeof(data);
         }
     }
-    out.WriteShortLength(length);
-    WriteBytesOf(out, data, length);
+    WriteShortLength(length);
+    WriteBytesOf(*this, data, length);
 }
 
-static
-void WriteNumberValue(CObjectOStreamAsnBinary& out, Uint8 data)
+void CObjectOStreamAsnBinary::WriteNumberValue(Uint8 data)
 {
     size_t length;
     if ( data <= 0x7fUL ) {
@@ -478,9 +474,9 @@ void WriteNumberValue(CObjectOStreamAsnBinary& out, Uint8 data)
         // check for high bit to avoid storing unsigned data as negative
         if ( (data & (Uint8(1) << (sizeof(data) * 8 - 1))) != 0 ) {
             // full length unsigned - and doesn't fit in signed place
-            out.WriteShortLength(sizeof(data) + 1);
-            out.WriteByte(0);
-            WriteBytesOf(out, data, sizeof(data));
+            WriteShortLength(sizeof(data) + 1);
+            WriteByte(0);
+            WriteBytesOf(*this, data, sizeof(data));
             return;
         }
         else {
@@ -488,8 +484,8 @@ void WriteNumberValue(CObjectOStreamAsnBinary& out, Uint8 data)
             length = sizeof(data);
         }
     }
-    out.WriteShortLength(length);
-    WriteBytesOf(out, data, length);
+    WriteShortLength(length);
+    WriteBytesOf(*this, data, length);
 }
 
 void CObjectOStreamAsnBinary::WriteBool(bool data)
@@ -509,25 +505,25 @@ void CObjectOStreamAsnBinary::WriteChar(char data)
 void CObjectOStreamAsnBinary::WriteInt4(Int4 data)
 {
     WriteSysTag(eInteger);
-    WriteNumberValue(*this, data);
+    WriteNumberValue(data);
 }
 
 void CObjectOStreamAsnBinary::WriteUint4(Uint4 data)
 {
     WriteSysTag(eInteger);
-    WriteNumberValue(*this, data);
+    WriteNumberValue(data);
 }
 
 void CObjectOStreamAsnBinary::WriteInt8(Int8 data)
 {
     WriteSysTag(eInteger);
-    WriteNumberValue(*this, data);
+    WriteNumberValue(data);
 }
 
 void CObjectOStreamAsnBinary::WriteUint8(Uint8 data)
 {
     WriteSysTag(eInteger);
-    WriteNumberValue(*this, data);
+    WriteNumberValue(data);
 }
 
 static const size_t kMaxDoubleLength = 64;
@@ -712,7 +708,7 @@ void CObjectOStreamAsnBinary::WriteEnum(const CEnumeratedTypeValues& values,
         values.FindName(value, false); // check value
         WriteSysTag(eEnumerated);
     }
-    WriteNumberValue(*this, value);
+    WriteNumberValue(value);
 }
 
 void CObjectOStreamAsnBinary::CopyEnum(const CEnumeratedTypeValues& values,
@@ -723,16 +719,16 @@ void CObjectOStreamAsnBinary::CopyEnum(const CEnumeratedTypeValues& values,
         WriteSysTag(eInteger);
     else
         WriteSysTag(eEnumerated);
-    WriteNumberValue(*this, value);
+    WriteNumberValue(value);
 }
 
 void CObjectOStreamAsnBinary::WriteObjectReference(TObjectIndex index)
 {
     WriteTag(eApplication, false, eObjectReference);
     if ( sizeof(TObjectIndex) == sizeof(Int4) )
-        WriteNumberValue(*this, Int4(index));
+        WriteNumberValue(Int4(index));
     else if ( sizeof(TObjectIndex) == sizeof(Int8) )
-        WriteNumberValue(*this, Int8(index));
+        WriteNumberValue(Int8(index));
     else
         ThrowError(fIllegalCall, "invalid size of TObjectIndex"
             "must be either sizeof(Int4) or sizeof(Int4)");
@@ -1140,6 +1136,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.89  2004/06/08 20:26:05  gouriano
+* Made functions, that are not visible from the outside, protected
+*
 * Revision 1.88  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

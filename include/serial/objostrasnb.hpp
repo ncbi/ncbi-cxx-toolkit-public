@@ -71,22 +71,9 @@ public:
     virtual void WriteAnyContentObject(const CAnyContentObject& obj);
     virtual void CopyAnyContentObject(CObjectIStream& in);
 
-    void WriteByte(Uint1 byte);
-    void WriteBytes(const char* bytes, size_t size);
-
-    void WriteTag(EClass c, bool constructed, TTag index);
-    void WriteShortTag(EClass c, bool constructed, TTag index);
     void WriteLongTag(EClass c, bool constructed, TTag index);
-    void WriteSysTag(ETag index);
     void WriteClassTag(TTypeInfo typeInfo);
-
-    void WriteLength(size_t length);
-    void WriteShortLength(size_t length);
     void WriteLongLength(size_t length);
-    void WriteIndefiniteLength(void);
-
-    void WriteEndOfContent(void);
-
     EFixNonPrint FixNonPrint(EFixNonPrint how)
         {
             EFixNonPrint tmp = m_FixMethod;
@@ -94,7 +81,17 @@ public:
             return tmp;
         }
 
+    void WriteByte(Uint1 byte);
 protected:
+    void WriteBytes(const char* bytes, size_t size);
+    void WriteShortTag(EClass c, bool constructed, TTag index);
+    void WriteSysTag(ETag index);
+    void WriteTag(EClass c, bool constructed, TTag index);
+    void WriteIndefiniteLength(void);
+    void WriteShortLength(size_t length);
+    void WriteLength(size_t length);
+    void WriteEndOfContent(void);
+
     virtual void WriteBool(bool data);
     virtual void WriteChar(char data);
     virtual void WriteInt4(Int4 data);
@@ -168,6 +165,10 @@ protected:
 #endif
 
 private:
+    void WriteNumberValue(Int4 data);
+    void WriteNumberValue(Int8 data);
+    void WriteNumberValue(Uint4 data);
+    void WriteNumberValue(Uint8 data);
 
 #if CHECK_STREAM_INTEGRITY
     size_t m_CurrentPosition;
@@ -208,6 +209,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/06/08 20:25:42  gouriano
+* Made functions, that are not visible from the outside, protected
+*
 * Revision 1.43  2003/11/26 19:59:39  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid

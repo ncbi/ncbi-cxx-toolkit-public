@@ -61,7 +61,6 @@ public:
                            TEnumValueType value);
     virtual void CopyEnum(const CEnumeratedTypeValues& values,
                           CObjectIStream& in);
-    void WriteEnum(TEnumValueType value, const string& valueName);
     EFixNonPrint FixNonPrint(EFixNonPrint how)
         {
             EFixNonPrint tmp = m_FixMethod;
@@ -70,6 +69,7 @@ public:
         }
 
 protected:
+    void WriteEnum(TEnumValueType value, const string& valueName);
     virtual void WriteBool(bool data);
     virtual void WriteChar(char data);
     virtual void WriteInt4(Int4 data);
@@ -172,6 +172,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2004/06/08 20:25:42  gouriano
+* Made functions, that are not visible from the outside, protected
+*
 * Revision 1.47  2003/11/26 19:59:39  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid
