@@ -125,36 +125,11 @@ protected:
                     bool                           mandatory,
                     int                            default_value) const
     {
-        const string& param = 
-            TParent::GetParam(m_DriverName, 
-                              params, param_name, mandatory, kEmptyStr);
-        if (param.empty()) {
-            if (mandatory) {
-                string msg = 
-                    "Cannot init " + m_DriverName 
-                                    + ", empty parameter:" + param_name;
-                NCBI_THROW(CPluginManagerException, eParameterMissing, msg);
-            } else {
-                return default_value;
-            }
-        }
-        int value;
-        try {
-            value = NStr::StringToInt(param);
-        }
-        catch (exception&)
-        {
-            if (mandatory) {
-                string msg = 
-                    "Cannot init " + m_DriverName 
-                                   + ", incorrect parameter format:" 
-                                   + param_name  + " : " + param;
-                NCBI_THROW(CPluginManagerException, eParameterMissing, msg);
-            } else {
-                return default_value;
-            }
-        }
-        return value;
+        return ParamTree_GetInt(m_DriverName,
+                                params,
+                                param_name,
+                                eConfErr_NoThrow,
+                                default_value);
     }
 
     /// Utility function to get an bool of parameter tree
@@ -165,36 +140,11 @@ protected:
                       bool                           mandatory,
                       bool                           default_value) const
     {
-        const string& param = 
-            TParent::GetParam(m_DriverName, 
-                              params, param_name, mandatory, kEmptyStr);
-        if (param.empty()) {
-            if (mandatory) {
-                string msg = 
-                    "Cannot init " + m_DriverName 
-                                    + ", empty parameter:" + param_name;
-                NCBI_THROW(CPluginManagerException, eParameterMissing, msg);
-            } else {
-                return default_value;
-            }
-        }
-        bool value;
-        try {
-            value = NStr::StringToBool(param);
-        }
-        catch (exception&)
-        {
-            if (mandatory) {
-                string msg = 
-                    "Cannot init " + m_DriverName 
-                                   + ", incorrect parameter format:" 
-                                   + param_name  + " : " + param;
-                NCBI_THROW(CPluginManagerException, eParameterMissing, msg);
-            } else {
-                return default_value;
-            }
-        }
-        return value;
+        return ParamTree_GetBool(m_DriverName,
+                                 params,
+                                 param_name,
+                                 eConfErr_NoThrow,
+                                 default_value);
     }
 
 
@@ -292,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/09/23 13:49:20  kuznets
+ * Some functions reimplemented using ncbi_config.hpp
+ *
  * Revision 1.7  2004/09/21 14:09:56  kuznets
  * +CSimpleClassFactoryImpl::GetParamBool
  *

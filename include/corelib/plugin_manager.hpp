@@ -94,7 +94,6 @@ BEGIN_NCBI_SCOPE
 class CPluginManagerException : public CCoreException
 {
 public:
-    /// Error types that CTime can generate.
     enum EErrCode {
         eResolveFailure,       ///< Cannot resolve interface driver
         eParameterMissing      ///< Missing mandatory parameter
@@ -812,7 +811,6 @@ CPluginManager<TClass, TIfVer>::~CPluginManager()
 
 
 
-
 template <class TClass, class TIfVer >
 const string& 
 IClassFactory<TClass, TIfVer>::GetParam(
@@ -822,19 +820,11 @@ IClassFactory<TClass, TIfVer>::GetParam(
                         bool                           mandatory,
                         const string&                  default_value) const
 {
-    const TPluginManagerParamTree* tn = params->FindSubNode(param_name);
-
-    if (tn == 0 || tn->GetValue().empty()) {
-        if (mandatory) {
-            string msg = 
-                "Cannot init " + driver_name 
-                                + ", missing parameter:" + param_name;
-            NCBI_THROW(CPluginManagerException, eParameterMissing, msg);
-        } else {
-            return default_value;
-        }
-    }
-    return tn->GetValue();        
+    return ParamTree_GetString(driver_name, 
+                               params, 
+                               param_name, 
+                               mandatory ? eConfErr_Throw : eConfErr_NoThrow, 
+                               default_value);
 }
 
 
@@ -845,6 +835,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/09/23 13:48:40  kuznets
+ * Some functions reimplemented using ncbi_config.hpp
+ *
  * Revision 1.34  2004/09/22 15:33:30  kuznets
  * MAGIC: rename ncbi_paramtree->ncbi_config
  *
