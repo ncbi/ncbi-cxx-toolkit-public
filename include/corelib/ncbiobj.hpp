@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/06/21 15:17:42  kholodov
+* Added: null special value, support for null in CRef classes, equality
+* operators.
+*
 * Revision 1.24  2001/06/13 14:19:54  grichenk
 * Added operators == and != for C(Const)Ref
 *
@@ -127,6 +131,9 @@
 
 BEGIN_NCBI_SCOPE
 
+enum ENull {
+    null = 0
+};
 
 class CNullPointerError : public exception
 {
@@ -222,7 +229,6 @@ private:
 };
 
 
-
 template<class C>
 class CRefBase
 {
@@ -258,6 +264,11 @@ public:
         : m_Ptr(0)
         {
         }
+    inline
+    CRef(ENull /*null*/) THROWS_NONE
+        : m_Ptr(0)
+        {
+        }
     CRef(TObjectType* ptr)
         {
             if ( ptr )
@@ -286,6 +297,10 @@ public:
     bool NotEmpty(void) const THROWS_NONE
         {
             return m_Ptr != 0;
+        }
+    bool IsNull(void) const THROWS_NONE
+        {
+            return m_Ptr == 0;
         }
 
     // test
@@ -358,6 +373,11 @@ public:
             Reset(ptr);
             return *this;
         }
+    CRef<C>& operator=(ENull /*null*/)
+        {
+            Reset(0);
+            return *this;
+        }
 
     // getters
     inline
@@ -416,6 +436,11 @@ public:
         : m_Ptr(0)
         {
         }
+    inline
+    CConstRef(ENull /*null*/) THROWS_NONE
+        : m_Ptr(0)
+        {
+        }
     CConstRef(TObjectType* ptr)
         {
             if ( ptr )
@@ -451,6 +476,10 @@ public:
     bool NotEmpty(void) const THROWS_NONE
         {
             return m_Ptr != 0;
+        }
+    bool IsNull(void) const THROWS_NONE
+        {
+            return m_Ptr == 0;
         }
 
     // test
@@ -528,6 +557,11 @@ public:
             Reset(ptr);
             return *this;
         }
+    CConstRef<C>& operator=(ENull /*null*/)
+        {
+            Reset(0);
+            return *this;
+        }
 
     // getters
     inline
@@ -583,9 +617,57 @@ bool operator< (const CRef<T>& r1, const CRef<T>& r2)
 }
 
 template<class T>
+bool operator== (const CRef<T>& r1, ENull /*null*/)
+{
+    return r1.IsNull();
+}
+
+template<class T>
+bool operator== (ENull /*null*/, const CRef<T>& r1)
+{
+    return r1.IsNull();
+}
+
+template<class T>
+bool operator!= (const CRef<T>& r1, ENull /*null*/)
+{
+    return !r1.IsNull();
+}
+
+template<class T>
+bool operator!= (ENull /*null*/, const CRef<T>& r1)
+{
+    return !r1.IsNull();
+}
+
+template<class T>
 bool operator< (const CConstRef<T>& r1, const CConstRef<T>& r2)
 {
     return r1.GetPointer() < r2.GetPointer();
+}
+
+template<class T>
+bool operator== (const CConstRef<T>& r1, ENull /*null*/)
+{
+    return r1.IsNull();
+}
+
+template<class T>
+bool operator== (ENull /*null*/, const CConstRef<T>& r1)
+{
+    return r1.IsNull();
+}
+
+template<class T>
+bool operator!= (const CConstRef<T>& r1, ENull /*null*/)
+{
+    return !r1.IsNull();
+}
+
+template<class T>
+bool operator!= (ENull /*null*/, const CConstRef<T>& r1)
+{
+    return !r1.IsNull();
 }
 
 template<class T>
@@ -635,6 +717,8 @@ bool operator!= (const CRef<T>& r1, const CConstRef<T>& r2)
 {
     return r1.GetPointer() != r2.GetPointer();
 }
+
+
 
 
 template<typename T>
