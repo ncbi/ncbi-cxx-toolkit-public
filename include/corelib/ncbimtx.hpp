@@ -145,6 +145,8 @@ public:
 //    SSystemMutex
 //
 
+class CFastMutex;
+class CFastMutexGuard;
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -213,6 +215,9 @@ protected:
     friend class CSafeStaticPtr_Base;
 };
 
+
+class CMutex;
+class CMutexGuard;
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -442,6 +447,9 @@ public:
     // Close mutex handle (no checks if it's still acquired)
     ~CFastMutex(void);
 
+    typedef CFastMutexGuard TReadLockGuard;
+    typedef CFastMutexGuard TWriteLockGuard;
+
     // Acquire mutex for the current thread (no nesting checks)
     void Lock(void);
     // Release mutex (no owner or nesting checks)
@@ -481,6 +489,7 @@ private:
 class NCBI_XNCBI_EXPORT CFastMutexGuard
 {
 public:
+    CFastMutexGuard(void);
     // Register the mutex to be released by the guard destructor.
     CFastMutexGuard(SSystemFastMutex& mtx);
 
@@ -532,6 +541,9 @@ public:
     // Report error if the mutex is locked
     ~CMutex(void);
 
+    typedef CMutexGuard TReadLockGuard;
+    typedef CMutexGuard TWriteLockGuard;
+
     // for CMutexGuard
     operator SSystemMutex&(void);
 
@@ -575,6 +587,7 @@ private:
 class NCBI_XNCBI_EXPORT CMutexGuard
 {
 public:
+    CMutexGuard(void);
     // Acquire the mutex;  register it to be released by the guard destructor.
     CMutexGuard(SSystemMutex& mtx);
 
@@ -611,6 +624,8 @@ private:
 
 // Forward declaration of internal (platform-dependent) RW-lock representation
 class CInternalRWLock;
+class CReadLockGuard;
+class CWriteLockGuard;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -634,6 +649,9 @@ public:
     // 'ctors
     CRWLock(void);
     ~CRWLock(void);
+
+    typedef CReadLockGuard TReadLockGuard;
+    typedef CWriteLockGuard TWriteLockGuard;
 
     // Acquire the R-lock. If W-lock is already acquired by
     // another thread, then wait until it is released.
@@ -798,6 +816,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/06/19 18:21:15  vasilche
+ * Added default constructors to CFastMutexGuard and CMutexGuard.
+ * Added typedefs TReadLockGuard and TWriteLockGuard to mutexes and rwlock.
+ *
  * Revision 1.21  2003/03/31 13:30:31  siyan
  * Minor changes to doxygen support
  *
