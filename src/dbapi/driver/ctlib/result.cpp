@@ -874,12 +874,11 @@ EDB_ResType CTL_CursorResult::ResultType() const
 
 CTL_CursorResult::~CTL_CursorResult()
 {
-    if ( !m_EOR ) {
+    if (m_EOR) { // this is not a bug.
         CS_INT res_type;
         while (ct_results(m_Cmd, &res_type) == CS_SUCCEED) {
             continue;
         }
-	m_EOR= true;
     }
 }
 
@@ -903,6 +902,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2001/10/02 22:14:50  soussov
+ * fixed bug in ~CTL_CursorResult()
+ *
  * Revision 1.6  2001/10/01 19:27:40  soussov
  * Fixed typo in ~CTL_CursorResult
  *
