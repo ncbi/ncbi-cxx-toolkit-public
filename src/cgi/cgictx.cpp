@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/10/21 16:10:53  vasilche
+* Fixed memory leak in CNcbiOstrstream::str()
+*
 * Revision 1.13  1999/10/01 14:21:40  golikov
 * Now messages in context are html nodes
 *
@@ -98,7 +101,7 @@ CCgiContext::CCgiContext( CCgiApplication& app, CNcbiEnvironment* env,
         _TRACE( "CCgiContext::CCgiContext: " << e.what() );
         PutMsg( "Bad request" );
         string buf;
-        CNcbiIstrstream dummy( buf.c_str() );
+        CNcbiIstrstream dummy( buf.data(), buf.size() );
         m_request.reset( new CCgiRequest( 0, 0, 0, &dummy, 
                                           CCgiRequest::fIgnoreQueryString ) );
     }
