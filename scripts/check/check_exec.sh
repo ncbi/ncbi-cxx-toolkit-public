@@ -25,8 +25,7 @@
 
 
 # Get parameters
-timeout="$CHECK_TIMEOUT"
-test -z $timeout  &&  timeout=200
+timeout="${CHECK_TIMEOUT:-200}"
 script_dir=`dirname $0`
 script_dir=`(cd "$script_dir"; pwd)`
 
