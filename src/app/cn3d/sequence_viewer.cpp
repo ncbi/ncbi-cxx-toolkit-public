@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/07 17:37:35  thiessen
+* minor fixes
+*
 * Revision 1.3  2000/09/03 18:46:49  thiessen
 * working generalized sequence viewer
 *
@@ -127,6 +130,8 @@ public:
     ~SequenceViewerWindow(void);
 
     void NewAlignment(const ViewableAlignment *newAlignment);
+
+    void OnMouseMode(wxCommandEvent& event);
 
     DECLARE_EVENT_TABLE()
 
@@ -410,10 +415,7 @@ bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
     }
 
     // set highlighting
-    if (cell.character != '~')
-        *isHighlighted = true;
-    else
-        *isHighlighted = false;
+    *isHighlighted = false;
 
     return true;
 }
@@ -439,8 +441,15 @@ void SequenceDisplay::MouseOver(int column, int row) const
     }
 }
 
+enum {
+    MID_SELECT,
+    MID_DRAG,
+    MID_DRAG_H,
+    MID_DRAG_V
+};
 
 BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
+    EVT_MENU_RANGE(MID_SELECT,   MID_DRAG_V,      SequenceViewerWindow::OnMouseMode)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
@@ -453,6 +462,16 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     SetStatusWidths(2, widths);
 
     viewerWidget = new SequenceViewerWidget(this);
+
+    wxMenuBar *menuBar = new wxMenuBar;
+    wxMenu *menu = new wxMenu;
+    menu->Append(MID_SELECT, "&Select");
+    menu->Append(MID_DRAG, "&Drag");
+    menu->Append(MID_DRAG_H, "Drag &Horizontal");
+    menu->Append(MID_DRAG_V, "Drag &Vertical");
+    menuBar->Append(menu, "&Mouse Mode");
+
+    SetMenuBar(menuBar);
 }
 
 SequenceViewerWindow::~SequenceViewerWindow(void)
@@ -465,6 +484,20 @@ void SequenceViewerWindow::NewAlignment(const ViewableAlignment *newAlignment)
 {
     viewerWidget->AttachAlignment(newAlignment);
     Show(true);
+}
+
+void SequenceViewerWindow::OnMouseMode(wxCommandEvent& event)
+{
+    switch (event.GetId()) {
+        case MID_SELECT:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelect); break;
+        case MID_DRAG:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eDrag); break;
+        case MID_DRAG_H:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eDragHorizontal); break;
+        case MID_DRAG_V:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eDragVertical); break;
+    }
 }
 
 END_SCOPE(Cn3D)

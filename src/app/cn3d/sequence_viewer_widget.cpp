@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/07 17:37:35  thiessen
+* minor fixes
+*
 * Revision 1.1  2000/09/03 18:46:49  thiessen
 * working generalized sequence viewer
 *
@@ -78,7 +81,7 @@ SequenceViewerWidget::SequenceViewerWidget(
     mouseMode = eSelect;
 
     // set default rubber band color
-    currentRubberBandColor = *wxRED;
+    currentRubberbandColor = *wxRED;
 }
 
 bool SequenceViewerWidget::AttachAlignment(const ViewableAlignment *newAlignment)
@@ -90,11 +93,14 @@ bool SequenceViewerWidget::AttachAlignment(const ViewableAlignment *newAlignment
         alignment->GetSize(&areaWidth, &areaHeight);
         if (areaWidth <= 0 || areaHeight <= 0) return false;
 
+        // "+1" to make sure last real column and row are always visible, even 
+        // if visible area isn't exact multiple of cell size
         SetScrollbars(
             cellWidth, cellHeight, 
-            areaWidth, areaHeight + 1); // extra "row" to make sure last real row is always visible
+            areaWidth + 1, areaHeight + 1);
 
         alignment->MouseOver(-1, -1);
+
     } else {
         // remove scrollbars
         SetScrollbars(0, 0, 0, 0);
@@ -259,9 +265,9 @@ static inline int min_max(int a, int b, int *c, int *d)
 
 void SequenceViewerWidget::DrawLine(wxDC& dc, int x1, int y1, int x2, int y2)
 {
-    if (currentRubberBandType == eSolid) {
+    if (currentRubberbandType == eSolid) {
         dc.DrawLine(x1, y1, x2, y2);
-    } else {
+    } else { // short-dashed line
         int i, ie;
         if (x1 == x2) { // vertical line
             min_max(y1, y2, &i, &ie);
@@ -277,8 +283,8 @@ void SequenceViewerWidget::DrawLine(wxDC& dc, int x1, int y1, int x2, int y2)
     }
 }
 
-// draw a rubberband around the cells, with slightly rounded corners
-void SequenceViewerWidget::DrawRubberBand(wxDC& dc, int fromX, int fromY, int toX, int toY)
+// draw a rubberband around the cells
+void SequenceViewerWidget::DrawRubberband(wxDC& dc, int fromX, int fromY, int toX, int toY)
 {
     // find upper-left and lower-right corners
     int minX, minY, maxX, maxY;
@@ -292,7 +298,7 @@ void SequenceViewerWidget::DrawRubberBand(wxDC& dc, int fromX, int fromY, int to
     maxY = maxY * cellHeight + cellHeight - 1;
 
     // set color
-    dc.SetPen(*(wxThePenList->FindOrCreatePen(currentRubberBandColor, 1, wxSOLID)));
+    dc.SetPen(*(wxThePenList->FindOrCreatePen(currentRubberbandColor, 1, wxSOLID)));
 
     // draw sides
     DrawLine(dc, minX, minY, maxX, minY);   // top
@@ -303,7 +309,7 @@ void SequenceViewerWidget::DrawRubberBand(wxDC& dc, int fromX, int fromY, int to
 
 // move the rubber band to a new rectangle, erasing only the side(s) of the
 // rectangle that is changing
-void SequenceViewerWidget::MoveRubberBand(wxDC &dc, int fromX, int fromY, 
+void SequenceViewerWidget::MoveRubberband(wxDC &dc, int fromX, int fromY, 
     int prevToX, int prevToY, int toX, int toY)
 {
     int i;
@@ -313,7 +319,7 @@ void SequenceViewerWidget::MoveRubberBand(wxDC &dc, int fromX, int fromY,
         (prevToY >= fromY && toY < fromY) ||
         (prevToY < fromY && toY >= fromY)) {
         // need to completely redraw if rectangle is "flipped"
-        RemoveRubberBand(dc, fromX, fromY, prevToX, prevToY);
+        RemoveRubberband(dc, fromX, fromY, prevToX, prevToY);
 
     } else {
         int a, b;
@@ -359,11 +365,11 @@ void SequenceViewerWidget::MoveRubberBand(wxDC &dc, int fromX, int fromY,
     }
 
     // redraw whole new one
-    DrawRubberBand(dc, fromX, fromY, toX, toY);
+    DrawRubberband(dc, fromX, fromY, toX, toY);
 }
 
 // redraw only those cells necessary to remove rubber band
-void SequenceViewerWidget::RemoveRubberBand(wxDC& dc, int fromX, int fromY, int toX, int toY)
+void SequenceViewerWidget::RemoveRubberband(wxDC& dc, int fromX, int fromY, int toX, int toY)
 {
     int i, min, max;
     // remove top and bottom
@@ -451,8 +457,8 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
         wxClientDC dc(this);
         PrepareDC(dc);
         dc.BeginDrawing();
-        currentRubberBandType = (mouseMode == eSelect) ? eDot : eSolid;
-        DrawRubberBand(dc, fromX, fromY, fromX, fromY);
+        currentRubberbandType = (mouseMode == eSelect) ? eDot : eSolid;
+        DrawRubberband(dc, fromX, fromY, fromX, fromY);
         dc.EndDrawing();
     }
     
@@ -471,7 +477,7 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
 
         // remove rubberband
         if (mouseMode == eSelect)
-            RemoveRubberBand(dc, fromX, fromY, cellX, cellY);
+            RemoveRubberband(dc, fromX, fromY, cellX, cellY);
         else {
             DrawCell(dc, fromX, fromY, true);
             if (cellX != fromX || cellY != fromY)
@@ -497,14 +503,14 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
         PrepareDC(dc);
         dc.BeginDrawing();
         dc.SetFont(currentFont);
-        currentRubberBandType = eDot;
+        currentRubberbandType = eDot;
         if (mouseMode == eSelect) {
-            MoveRubberBand(dc, fromX, fromY, prevToX, prevToY, cellX, cellY);
+            MoveRubberband(dc, fromX, fromY, prevToX, prevToY, cellX, cellY);
         } else {
             if (prevToX != fromX || prevToY != fromY)
                 DrawCell(dc, prevToX, prevToY, true);
             if (cellX != fromX || cellY != fromY) {
-                DrawRubberBand(dc, cellX, cellY, cellX, cellY);
+                DrawRubberband(dc, cellX, cellY, cellX, cellY);
             }
         }
         dc.EndDrawing();

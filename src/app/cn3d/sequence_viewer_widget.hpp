@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/07 17:37:42  thiessen
+* minor fixes
+*
 * Revision 1.1  2000/09/03 18:45:57  thiessen
 * working generalized sequence viewer
 *
@@ -145,10 +148,10 @@ public:
     // down will cause a rubberband to be drawn around a block of characters,
     // and the ViewableAlignment's SelectedRectangle() callback will be called
     // upon button-up. If eDrag, two individual cells are rubberbanded: one where
-    // the mouse was when upon button-down, and one where the mouse is while
+    // the mouse was upon button-down, and one where the mouse is while
     // being dragged; DraggedCell() will be called upon button-up. In any case,
-    // selection is limited to coordinates given by ViewavleAlignment's GetSize(),
-    // even if window is larger.
+    // selection is limited to coordinates given by ViewableAlignment's GetSize(),
+    // even if the window is larger.
     enum eMouseMode {
         eSelect,            // select rectangle of cells
         eDrag,              // move one cell
@@ -157,18 +160,17 @@ public:
     };
     void SetMouseMode(eMouseMode mode);
 
-    // sets the background color for the window
+    // sets the background color for the window after refresh
     void SetBackgroundColor(const wxColor& backgroundColor);
 
-    // set the background color for highlighted characters; does not refresh -
-    // must refresh manually to see immediate change
+    // set the background color for highlighted characters after refresh
     void SetHighlightColor(const wxColor& highlightColor);
 
-    // set the font for the characters; refreshes immediately
+    // set the font for the characters; refreshes automatically
     void SetCharacterFont(const wxFont& font);
 
-    // set the rubber band color
-    void SetRubberBandColor(const wxColor& rubberBandColor);
+    // set the rubber band color after refresh
+    void SetRubberbandColor(const wxColor& rubberbandColor);
     
     ///// everything else below here is part of the actual implementation /////
 private:
@@ -181,27 +183,27 @@ private:
     wxFont currentFont;             // character font
     wxColor currentBackgroundColor; // background for whole window
     wxColor currentHighlightColor;  // background for highlighted chars
-    wxColor currentRubberBandColor; // color of rubber band
+    wxColor currentRubberbandColor; // color of rubber band
     eMouseMode mouseMode;           // mouse mode
     int cellWidth, cellHeight;      // dimensions of cells in pixels
     int areaWidth, areaHeight;      // dimensions of the alignment (virtual area) in cells
 
-    enum eRubberBandType {
+    void DrawCell(wxDC& dc, int x, int y, bool redrawBackground = false); // draw a single cell
+
+    enum eRubberbandType {
         eSolid,
         eDot
     };
-    eRubberBandType currentRubberBandType;
+    eRubberbandType currentRubberbandType;
     void DrawLine(wxDC& dc, int x1, int y1, int x2, int y2);
-
-    void DrawCell(wxDC& dc, int x, int y, bool redrawBackground = false); // draw a single cell
-    void DrawRubberBand(wxDC& dc,                           // draw rubber band around cells
+    void DrawRubberband(wxDC& dc,                           // draw rubber band around cells
         int fromX, int fromY, int toX, int toY);
-    void MoveRubberBand(wxDC &dc, int fromX, int fromY,     // change rubber band
+    void MoveRubberband(wxDC &dc, int fromX, int fromY,     // change rubber band
         int prevToX, int prevToY, int toX, int toY);
-    void RemoveRubberBand(wxDC& dc, int fromX, int fromY,   // remove rubber band
+    void RemoveRubberband(wxDC& dc, int fromX, int fromY,   // remove rubber band
         int toX, int toY);
 
     DECLARE_EVENT_TABLE()
 };
 
-#endif // WX_SEQUENCE_VIEWER_GUI__HPP
+#endif // WX_SEQUENCE_VIEWER_WIDGET__HPP
