@@ -36,6 +36,7 @@
  */
 
 #include <connect/ncbi_server_info.h>
+#include <connect/ncbi_host_info.h>
 
 
 #ifdef __cplusplus
@@ -94,21 +95,20 @@ SERV_ITER SERV_OpenEx
 /* Get the next server meta-address, optionally accompanied by host
  * environment, specified in LBSMD configuration file on that host.
  * Return 0 if no more servers were found for the service requested
- * (parameter 'env' remains untouched in this case).
+ * (parameter 'host_info' remains untouched in this case).
  * Only when completing successfully, i.e. returning non-NULL info,
- * this function can also provide the host environment as follows:
- * when 'env' parameter is passed as a non-NULL pointer, then a copy of
- * the host environment is allocated, and pointer to it is stored in *env.
- * Environment is a set of pairs in the form "name=value" separated by
- * '\n' from each other. NULL value stored if no environment is available
- * for the host, which is referred to by returned server info.
+ * this function can also provide the host information as follows: if
+ * 'host_info' parameter is passed as a non-NULL pointer, then a copy of the
+ * host information is allocated, and pointer to it is stored in 'host_info'.
+ * Using this information, various host parameters like load, host
+ * environment, number of CPUs can be retrieved (see ncbi_host_info.h).
  * NOTE that an application program should NOT destroy returned server info:
  * it will be freed automatically upon iterator destruction. On the other hand,
- * environment has to be explicitly free()'d when no longer needed.
+ * host information has to be explicitly free()'d when no longer needed.
  */
 const SSERV_Info* SERV_GetNextInfoEx
 (SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
- char**              env            /* ptr to copy of host envir to store in */
+ HOST_INFO*          host_info      /* ptr to store host info to [may be 0]  */
  );
 
 #define SERV_GetNextInfo(iter)  SERV_GetNextInfoEx(iter, 0)
@@ -129,7 +129,7 @@ SSERV_Info* SERV_GetInfoEx
  const SConnNetInfo* net_info,      /* connection information                */
  const SSERV_Info*   const skip[],  /* array of servers NOT to select        */
  size_t              n_skip,        /* number of servers in preceding array  */
- char**              env            /* environment to store into             */
+ HOST_INFO*          host_info      /* ptr to store host info to [may be 0]  */
  );
 
 
@@ -170,6 +170,9 @@ void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2002/10/28 20:12:20  lavr
+ * +ncbi_host_info.h
+ *
  * Revision 6.26  2002/09/19 18:05:00  lavr
  * Header file guard macro changed; log moved to end
  *
