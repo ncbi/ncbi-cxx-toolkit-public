@@ -838,6 +838,111 @@ CTaxon1::SetLastError( const char* pchErr )
         m_sLastError.erase();
 }
 
+static void s_StoreResidueTaxid( CTreeIterator* pIt, CTaxon1::TTaxIdList& lTo )
+{
+    CTaxon1Node* pNode =  static_cast<CTaxon1Node*>( pIt->GetNode() );
+    if( !pNode->IsTerminal() ) {
+	lTo.push_back( pNode->GetTaxId() );
+    }
+    if( pIt->GoChild() ) {
+	do {
+	    s_StoreResidueTaxid( pIt, lTo );
+	} while( pIt->GoSibling() );
+	pIt->GoParent();
+    }
+}
+//--------------------------------------------------
+// This function constructs minimal common tree from the gived tax id
+// set (ids_in) treated as tree's leaves. It then returns a residue of 
+// this tree node set and the given tax id set in ids_out.
+// Returns: false if some error
+//          true  if Ok
+///
+bool
+CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
+{
+    if( ids_in.size() > 0 ) {
+	CTaxon1Node *pParent = 0, *pNode = 0;
+	CTreeCont tPartTree; // Partial tree
+	CTreeIterator* pIt = tPartTree.GetIterator();
+	// Build the partial tree
+	CTaxon1_req  req;
+	CTaxon1_resp resp;
+	bool bHasSiblings;
+	int tax_id;
+	for( TTaxIdList::const_iterator ci = ids_in.begin();
+	     ci != ids_in.end();
+	     ++ci ) {
+            req.SetTaxalineage( *ci );
+	    pIt->GoRoot();
+            if( SendRequest( req, resp ) ) {
+                if( resp.IsTaxalineage() ) {
+                    // Correct response, return object
+                    CTaxon1_resp::TTaxalineage& lLin = resp.SetTaxalineage();
+                    CTaxon1_resp::TTaxalineage::reverse_iterator i;
+                    // Fill in storage
+		    if( pIt->GetNode() == NULL ) { // No root set yet
+			tPartTree.SetRoot( new CTaxon1Node( lLin.back() ) );
+			pIt->GoRoot();
+		    }
+                    for( i = lLin.rbegin(); i != lLin.rend(); ++i ) {
+			pNode = static_cast<CTaxon1Node*>( pIt->GetNode() );
+			bHasSiblings = true;
+			tax_id = (*i)->GetTaxid();
+                        while( tax_id != pNode->GetTaxId() ) {
+			    bHasSiblings = pIt->GoSibling();
+			    if( bHasSiblings ) {
+				pNode = static_cast<CTaxon1Node*>
+				    ( pIt->GetNode() );
+			    } else {
+				pIt->GoParent();
+				break;
+			    }
+			}
+			if( !bHasSiblings ) { // Found first new node
+                            break;
+                        } else {
+                            if( !pIt->GoChild() ) {
+				++i;
+				break;
+			    }
+                        }
+                    }
+                    // Tree iterator points to the parent node
+                    for( ; i != lLin.rend(); ++i ) {
+                        pNode = new CTaxon1Node(*i);
+                        pIt->AddChild( pNode );
+                        pIt->GoNode( pNode );
+                    }
+		    pNode->SetTerminal();
+                } else { // Internal: wrong respond type
+                    SetLastError( "Unable to get node lineage:"
+					 "Response type is not Taxalineage" );
+                    return false;
+                }
+            } else { // Unable to send request
+		return false;
+	    }
+        }
+	// Partial tree is build, make a residue
+	pIt->GoRoot();
+	bHasSiblings = true;
+	if( pIt->GoChild() ) {
+	    while( !pIt->GoSibling() ) {
+		pNode = static_cast<CTaxon1Node*>( pIt->GetNode() );
+		if( pNode->IsTerminal() || !pIt->GoChild() ) {
+		    bHasSiblings = false;
+		    break;
+		}
+	    }
+	    if( bHasSiblings ) {
+		pIt->GoParent();
+	    }
+	    s_StoreResidueTaxid( pIt, ids_out );
+	}	
+    }
+    return true;
+}
 
 END_objects_SCOPE
 END_NCBI_SCOPE
@@ -846,6 +951,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.10  2003/01/10 19:58:46  domrach
+ * Function GetPopsetJoin() added to CTaxon1 class
+ *
  * Revision 6.9  2002/11/08 20:55:58  ucko
  * CConstRef<> now requires an explicit constructor.
  *

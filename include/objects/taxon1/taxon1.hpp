@@ -228,6 +228,15 @@ public:
     bool GetBlastName(int tax_id, string& blast_name_out);
 
     //--------------------------------------------------
+    // This function constructs minimal common tree from the gived tax id
+    // set (ids_in) treated as tree's leaves. It then returns a residue of 
+    // this tree node set and the given tax id set in ids_out.
+    // Returns: false if some error
+    //          true  if Ok
+    ///
+    bool GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out );
+
+    //--------------------------------------------------
     // Get error message after latest erroneous operation
     // Returns: error message, or empty string if no error occured
     ///
@@ -269,6 +278,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.6  2003/01/10 19:58:47  domrach
+// Function GetPopsetJoin() added to CTaxon1 class
+//
 // Revision 1.5  2002/11/08 14:39:51  domrach
 // Member function GetSuperkingdom() added
 //

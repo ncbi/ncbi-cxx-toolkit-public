@@ -187,7 +187,7 @@ class CTaxon1Node : public CTreeContNodeBase
 {
 public:
     CTaxon1Node( const CRef< CTaxon1_name >& ref )
-        : m_ref( ref ), m_cacheEntry( NULL ) {}
+        : m_ref( ref ), m_cacheEntry( NULL ), m_bTerm( false ) {}
 
     int                GetTaxId() const { return m_ref->GetTaxid(); }
     const string&      GetName() const { return m_ref->GetOname(); }
@@ -202,6 +202,9 @@ public:
 
     COrgRefCache::SCacheEntry* GetEntry() { return m_cacheEntry; }
 
+    bool               IsTerminal() const { return m_bTerm; }
+    void               SetTerminal() { m_bTerm = true; }
+
     CTaxon1Node*               GetParent()
     { return static_cast<CTaxon1Node*>(Parent()); }
 private:
@@ -209,6 +212,7 @@ private:
     CRef< CTaxon1_name >       m_ref;
 
     COrgRefCache::SCacheEntry* m_cacheEntry;
+    bool                       m_bTerm;
 };
 
 
@@ -219,6 +223,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.6  2003/01/10 19:58:46  domrach
+ * Function GetPopsetJoin() added to CTaxon1 class
+ *
  * Revision 6.5  2002/11/08 14:39:52  domrach
  * Member function GetSuperkingdom() added
  *
