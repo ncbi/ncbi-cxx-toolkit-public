@@ -193,6 +193,7 @@ enum EErrType {
 
     eErr_SEQ_FEAT_InvalidForType,
     eErr_SEQ_FEAT_PartialProblem,
+    eErr_SEQ_FEAT_PartialsInconsistent,
     eErr_SEQ_FEAT_InvalidType,
     eErr_SEQ_FEAT_Range,
     eErr_SEQ_FEAT_MixedStrand,
@@ -926,6 +927,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2004/03/19 14:48:14  shomrat
+* + SEQ_FEAT_PartialsInconsistent
+*
 * Revision 1.58  2004/03/10 21:23:09  shomrat
 * + SEQ_DESCR_UnwantedCompleteFlag
 *

@@ -409,6 +409,7 @@ const string CValidErrItem::sm_Terse [] = {
 
     "SEQ_FEAT_InvalidForType",
     "SEQ_FEAT_PartialProblem",
+    "SEQ_FEAT_PartialsInconsistent",
     "SEQ_FEAT_InvalidType",
     "SEQ_FEAT_Range",
     "SEQ_FEAT_MixedStrand",
@@ -820,6 +821,9 @@ as either partial or complete. In this entry, these settings are \
 inconsistent. Make sure that the location and product Seq-locs, the \
 Bioseqs, and the SeqFeat partial flag all agree in describing this \
 SeqFeat as partial or complete.",
+// SEQ_FEAT_PartialsInconsistent
+"This segmented sequence is described as complete or incomplete in several \
+places, but these settings are inconsistent.",
 //  SEQ_FEAT_InvalidType
 "A feature with an invalid type has been detected. This is most likely a \
 software problem.",
@@ -1154,6 +1158,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2004/03/19 14:47:56  shomrat
+* + SEQ_FEAT_PartialsInconsistent
+*
 * Revision 1.41  2004/03/10 21:22:35  shomrat
 * + SEQ_DESCR_UnwantedCompleteFlag
 *
