@@ -132,7 +132,7 @@ private:
 };
 
 
-class CPriority_I
+class NCBI_XOBJMGR_EXPORT CPriority_I
 {
 public:
     CPriority_I(void);
@@ -271,6 +271,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/03/29 19:21:56  jcherry
+* Added export specifiers
+*
 * Revision 1.17  2005/03/29 16:04:50  grichenk
 * Optimized annotation retrieval (reduced nuber of seq-ids checked)
 *

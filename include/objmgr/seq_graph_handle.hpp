@@ -57,7 +57,7 @@ class CMappedGraph;
 ///  Proxy to access seq-graph objects data
 ///
 
-class CSeq_graph_Handle
+class NCBI_XOBJMGR_EXPORT CSeq_graph_Handle
 {
 public:
     CSeq_graph_Handle(void);
@@ -241,6 +241,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/03/29 19:22:12  jcherry
+* Added export specifiers
+*
 * Revision 1.7  2005/01/26 19:11:57  grichenk
 * Added IsSetLoc()
 *

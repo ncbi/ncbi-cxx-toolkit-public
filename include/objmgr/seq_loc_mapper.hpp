@@ -65,7 +65,7 @@ class CSeqMap;
 class CSeqMap_CI;
 
 
-class CMappingRange : public CObject
+class NCBI_XOBJMGR_EXPORT CMappingRange : public CObject
 {
 public:
     CMappingRange(CSeq_id_Handle    src_id,
@@ -550,6 +550,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/03/29 19:22:12  jcherry
+* Added export specifiers
+*
 * Revision 1.25  2005/03/01 22:22:10  grichenk
 * Added strand to index conversion macro, changed strand index type to size_t.
 *

@@ -111,7 +111,7 @@ private:
 };
 
 
-class CTSE_ScopeUserLock
+class NCBI_XOBJMGR_EXPORT CTSE_ScopeUserLock
 {
 public:
     typedef CTSE_ScopeInfo TObject;

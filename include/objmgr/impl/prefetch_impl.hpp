@@ -103,7 +103,7 @@ private:
 };
 
 
-class CPrefetchThread : public CThread
+class NCBI_XOBJMGR_EXPORT CPrefetchThread : public CThread
 {
 public:
     CPrefetchThread(CDataSource& data_source);
@@ -137,6 +137,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/03/29 19:21:56  jcherry
+* Added export specifiers
+*
 * Revision 1.8  2005/01/25 14:34:23  vasilche
 * Moved bool operator to public section.
 *

@@ -48,9 +48,9 @@ class CSeq_align_set;
 class CMappingRange;
 class CSeq_loc_Mapper;
 
-struct SAlignment_Segment
+struct NCBI_XOBJMGR_EXPORT SAlignment_Segment
 {
-    struct SAlignment_Row
+    struct NCBI_XOBJMGR_EXPORT SAlignment_Row
     {
         SAlignment_Row(void);
 
@@ -95,7 +95,7 @@ struct SAlignment_Segment
 };
 
 
-class CSeq_align_Mapper : public CObject
+class NCBI_XOBJMGR_EXPORT CSeq_align_Mapper : public CObject
 {
 public:
     typedef CSeq_align::C_Segs::TDendiag TDendiag;
@@ -222,6 +222,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/03/29 19:21:56  jcherry
+* Added export specifiers
+*
 * Revision 1.9  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *
