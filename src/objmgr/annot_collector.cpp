@@ -670,9 +670,6 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
                 }
             }
         }
-        sort(m_AnnotSet.begin(), m_AnnotSet.end());
-        TAnnotSet::iterator new_end = unique(m_AnnotSet.begin(), m_AnnotSet.end());
-        m_AnnotSet.resize(new_end - m_AnnotSet.begin());
         NON_CONST_ITERATE(CAnnotMappingCollector::TAnnotMappingSet, amit,
             m_MappingCollector->m_AnnotMappingSet) {
             CAnnotObject_Ref annot_ref = amit->first;
@@ -1136,7 +1133,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Lock&      tse,
 {
     _ASSERT(objs);
 
-    CHandleRange::TRange range = hr.GetOverlappingRange();
+    // CHandleRange::TRange range = hr.GetOverlappingRange();
 
     m_TSE_LockSet.insert(tse);
     CSeq_entry_Handle seh;
@@ -1149,168 +1146,176 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Lock&      tse,
         }
         const CTSE_Info::TRangeMap& rmap = objs->x_GetRangeMap(index);
 
-        for ( CTSE_Info::TRangeMap::const_iterator aoit(rmap.begin(range));
-              aoit; ++aoit ) {
-            const CAnnotObject_Info& annot_info =
-                *aoit->second.m_AnnotObject_Info;
+        ITERATE(CHandleRange, rg_it, hr) {
+            CHandleRange::TRange range = rg_it->first;
 
-            if ( annot_info.IsChunkStub() ) {
-                const CTSE_Chunk_Info& chunk = annot_info.GetChunk_Info();
-                if ( chunk.NotLoaded() ) {
-                    // New annot objects are to be loaded,
-                    // so we'll need to restart scan of current range.
+            for ( CTSE_Info::TRangeMap::const_iterator aoit(rmap.begin(range));
+                aoit; ++aoit ) {
+                const CAnnotObject_Info& annot_info =
+                    *aoit->second.m_AnnotObject_Info;
 
-                    // Forget already found object
-                    // as they will be found again:
-                    m_AnnotSet.resize(start_size);
+                if ( annot_info.IsChunkStub() ) {
+                    const CTSE_Chunk_Info& chunk = annot_info.GetChunk_Info();
+                    if ( chunk.NotLoaded() ) {
+                        // New annot objects are to be loaded,
+                        // so we'll need to restart scan of current range.
 
-                    CAnnotName name(annot_name);
+                        // Forget already found object
+                        // as they will be found again:
+                        m_AnnotSet.resize(start_size);
 
-                    // Release lock for tse update:
-                    guard.Release();
-                        
-                    // Load the stub:
-                    chunk.Load();
+                        CAnnotName name(annot_name);
 
-                    // Acquire the lock again:
-                    guard.Guard(tse->GetAnnotLock());
+                        // Release lock for tse update:
+                        guard.Release();
+                            
+                        // Load the stub:
+                        chunk.Load();
 
-                    // Reget range map pointer as it may change:
-                    objs = tse->x_GetIdObjects(name, id);
-                    _ASSERT(objs);
+                        // Acquire the lock again:
+                        guard.Guard(tse->GetAnnotLock());
 
-                    // Restart this index again:
-                    --index;
-                    break;
-                }
-                else {
-                    // Skip chunk stub
-                    continue;
-                }
-            }
+                        // Reget range map pointer as it may change:
+                        objs = tse->x_GetIdObjects(name, id);
+                        _ASSERT(objs);
 
-            if ( annot_info.IsLocs() ) {
-                const CSeq_loc& ref_loc = annot_info.GetLocs();
-
-                // Check if the stub has been already processed
-                if ( m_AnnotLocsSet.get() ) {
-                    CConstRef<CSeq_loc> ploc(&ref_loc);
-                    TAnnotLocsSet::const_iterator found =
-                        m_AnnotLocsSet->find(ploc);
-                    if (found != m_AnnotLocsSet->end()) {
-                        continue;
+                        // Restart this index again:
+                        --index;
+                        break;
                     }
-                }
-                else {
-                    m_AnnotLocsSet.reset(new TAnnotLocsSet);
-                }
-                m_AnnotLocsSet->insert(ConstRef(&ref_loc));
-
-                // Search annotations on the referenced location
-                if ( !ref_loc.IsInt() ) {
-                    ERR_POST("CAnnot_Collector: "
-                             "Seq-annot.locs is not Seq-interval");
-                    continue;
-                }
-                const CSeq_interval& ref_int = ref_loc.GetInt();
-                const CSeq_id& ref_id = ref_int.GetId();
-                CSeq_id_Handle ref_idh = CSeq_id_Handle::GetHandle(ref_id);
-                // check ResolveTSE limit
-                if ( m_Selector.m_ResolveMethod ==
-                     SAnnotSelector::eResolve_TSE ) {
-                    if ( !seh ) {
-                        seh = m_Scope->GetSeq_entryHandle(tse);
-                        _ASSERT(seh);
-                    }
-                    if ( !m_Scope->GetBioseqHandleFromTSE(ref_idh, seh) ) {
+                    else {
+                        // Skip chunk stub
                         continue;
                     }
                 }
 
-                // calculate ranges
-                TSeqPos ref_from = ref_int.GetFrom();
-                TSeqPos ref_to = ref_int.GetTo();
-                bool ref_minus = ref_int.IsSetStrand()?
-                    IsReverse(ref_int.GetStrand()) : false;
-                TSeqPos loc_from = aoit->first.GetFrom();
-                TSeqPos loc_to = aoit->first.GetTo();
-                TSeqPos loc_view_from = max(range.GetFrom(), loc_from);
-                TSeqPos loc_view_to = min(range.GetTo(), loc_to);
+                if ( annot_info.IsLocs() ) {
+                    const CSeq_loc& ref_loc = annot_info.GetLocs();
 
-                CHandleRangeMap ref_rmap;
-                CHandleRange::TRange ref_search_range;
-                if ( !ref_minus ) {
-                    ref_search_range.Set(ref_from + (loc_view_from - loc_from),
-                                         ref_to + (loc_view_to - loc_to));
-                }
-                else {
-                    ref_search_range.Set(ref_from - (loc_view_to - loc_to),
-                                         ref_to - (loc_view_from - loc_from));
-                }
-                ref_rmap.AddRanges(ref_idh).AddRange(ref_search_range,
-                                                     eNa_strand_unknown);
-
-                if (m_Selector.m_NoMapping) {
-                    x_Search(ref_rmap, 0);
-                }
-                else {
-                    CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
-                    master_loc_empty->SetEmpty(
-                        const_cast<CSeq_id&>(*id.GetSeqId()));
-                    CRef<CSeq_loc_Conversion> locs_cvt(new CSeq_loc_Conversion(
-                            *master_loc_empty,
-                            id,
-                            aoit->first,
-                            ref_idh,
-                            ref_from,
-                            ref_minus,
-                            m_Scope));
-                    if ( cvt ) {
-                        locs_cvt->CombineWith(*cvt);
+                    // Check if the stub has been already processed
+                    if ( m_AnnotLocsSet.get() ) {
+                        CConstRef<CSeq_loc> ploc(&ref_loc);
+                        TAnnotLocsSet::const_iterator found =
+                            m_AnnotLocsSet->find(ploc);
+                        if (found != m_AnnotLocsSet->end()) {
+                            continue;
+                        }
                     }
-                    x_Search(ref_rmap, &*locs_cvt);
+                    else {
+                        m_AnnotLocsSet.reset(new TAnnotLocsSet);
+                    }
+                    m_AnnotLocsSet->insert(ConstRef(&ref_loc));
+
+                    // Search annotations on the referenced location
+                    if ( !ref_loc.IsInt() ) {
+                        ERR_POST("CAnnot_Collector: "
+                                "Seq-annot.locs is not Seq-interval");
+                        continue;
+                    }
+                    const CSeq_interval& ref_int = ref_loc.GetInt();
+                    const CSeq_id& ref_id = ref_int.GetId();
+                    CSeq_id_Handle ref_idh = CSeq_id_Handle::GetHandle(ref_id);
+                    // check ResolveTSE limit
+                    if ( m_Selector.m_ResolveMethod ==
+                        SAnnotSelector::eResolve_TSE ) {
+                        if ( !seh ) {
+                            seh = m_Scope->GetSeq_entryHandle(tse);
+                            _ASSERT(seh);
+                        }
+                        if ( !m_Scope->GetBioseqHandleFromTSE(ref_idh, seh) ) {
+                            continue;
+                        }
+                    }
+
+                    // calculate ranges
+                    TSeqPos ref_from = ref_int.GetFrom();
+                    TSeqPos ref_to = ref_int.GetTo();
+                    bool ref_minus = ref_int.IsSetStrand()?
+                        IsReverse(ref_int.GetStrand()) : false;
+                    TSeqPos loc_from = aoit->first.GetFrom();
+                    TSeqPos loc_to = aoit->first.GetTo();
+                    TSeqPos loc_view_from = max(range.GetFrom(), loc_from);
+                    TSeqPos loc_view_to = min(range.GetTo(), loc_to);
+
+                    CHandleRangeMap ref_rmap;
+                    CHandleRange::TRange ref_search_range;
+                    if ( !ref_minus ) {
+                        ref_search_range.Set(ref_from + (loc_view_from - loc_from),
+                                            ref_to + (loc_view_to - loc_to));
+                    }
+                    else {
+                        ref_search_range.Set(ref_from - (loc_view_to - loc_to),
+                                            ref_to - (loc_view_from - loc_from));
+                    }
+                    ref_rmap.AddRanges(ref_idh).AddRange(ref_search_range,
+                                                        eNa_strand_unknown);
+
+                    if (m_Selector.m_NoMapping) {
+                        x_Search(ref_rmap, 0);
+                    }
+                    else {
+                        CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
+                        master_loc_empty->SetEmpty(
+                            const_cast<CSeq_id&>(*id.GetSeqId()));
+                        CRef<CSeq_loc_Conversion> locs_cvt(new CSeq_loc_Conversion(
+                                *master_loc_empty,
+                                id,
+                                aoit->first,
+                                ref_idh,
+                                ref_from,
+                                ref_minus,
+                                m_Scope));
+                        if ( cvt ) {
+                            locs_cvt->CombineWith(*cvt);
+                        }
+                        x_Search(ref_rmap, &*locs_cvt);
+                    }
+                    continue;
                 }
-                continue;
-            }
 
-            _ASSERT(m_Selector.MatchType(annot_info));
+                _ASSERT(m_Selector.MatchType(annot_info));
 
-            if ( !x_MatchLimitObject(annot_info) ) {
-                continue;
-            }
-                
-            if ( !x_MatchRange(hr, aoit->first, aoit->second) ) {
-                continue;
-            }
-
-            CAnnotObject_Ref annot_ref(annot_info);
-            if (!cvt  &&  annot_info.GetMultiIdFlags()) {
-                // Create self-conversion, add to conversion set
-                CRef<CSeq_loc_Conversion> cvt_ref
-                    (new CSeq_loc_Conversion(id, m_Scope));
-                if (x_AddObjectMapping(annot_ref,
-                    &*cvt_ref, aoit->second.m_AnnotLocationIndex)) {
-                    return;
+                if ( !x_MatchLimitObject(annot_info) ) {
+                    continue;
                 }
-            }
-            else {
-                if (cvt  &&  !annot_ref.IsAlign() ) {
-                    cvt->Convert
-                        (annot_ref,
-                         m_Selector.m_FeatProduct ?
-                         CSeq_loc_Conversion::eProduct :
-                         CSeq_loc_Conversion::eLocation);
+                    
+                if ( !x_MatchRange(hr, aoit->first, aoit->second) ) {
+                    continue;
+                }
+
+                CAnnotObject_Ref annot_ref(annot_info);
+                if (!cvt  &&  annot_info.GetMultiIdFlags()) {
+                    // Create self-conversion, add to conversion set
+                    CRef<CSeq_loc_Conversion> cvt_ref
+                        (new CSeq_loc_Conversion(id, m_Scope));
+                    if (x_AddObjectMapping(annot_ref,
+                        &*cvt_ref, aoit->second.m_AnnotLocationIndex)) {
+                        return;
+                    }
                 }
                 else {
-                    annot_ref.SetAnnotObjectRange(aoit->first,
-                                                  m_Selector.m_FeatProduct);
-                }
-                if ( x_AddObject(annot_ref, cvt,
-                    aoit->second.m_AnnotLocationIndex) ) {
-                    return;
+                    if (cvt  &&  !annot_ref.IsAlign() ) {
+                        cvt->Convert
+                            (annot_ref,
+                            m_Selector.m_FeatProduct ?
+                            CSeq_loc_Conversion::eProduct :
+                            CSeq_loc_Conversion::eLocation);
+                    }
+                    else {
+                        annot_ref.SetAnnotObjectRange(aoit->first,
+                                                    m_Selector.m_FeatProduct);
+                    }
+                    if ( x_AddObject(annot_ref, cvt,
+                        aoit->second.m_AnnotLocationIndex) ) {
+                        return;
+                    }
                 }
             }
         }
+        TAnnotSet::iterator first_added = m_AnnotSet.begin() + start_size;
+        sort(first_added, m_AnnotSet.end());
+        TAnnotSet::iterator new_end = unique(first_added, m_AnnotSet.end());
+        m_AnnotSet.resize(new_end - m_AnnotSet.begin());
     }
 }
 
@@ -1755,6 +1760,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/10/21 18:55:31  grichenk
+* Fixed searching by several ranges in TotalRange mode.
+* Fixed filtering of duplicates.
+*
 * Revision 1.30  2004/10/20 15:33:51  vasilche
 * Reset PARTIAL field if necessary.
 * Fixed source code formatting.
