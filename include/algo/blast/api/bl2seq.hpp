@@ -49,17 +49,16 @@ BEGIN_SCOPE(blast)
 class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
 {
 public:
-    typedef EProgram          TProgram;
 
     /// Constructor to compare 2 sequences
-    CBl2Seq(SSeqLoc& query, SSeqLoc& subject, TProgram p);
+    CBl2Seq(SSeqLoc& query, SSeqLoc& subject, EProgram p);
 
     /// Constructor to compare query against all subject sequences
-    CBl2Seq(SSeqLoc& query, const TSeqLocVector& subjects, TProgram p);
+    CBl2Seq(SSeqLoc& query, const TSeqLocVector& subjects, EProgram p);
 
     /// Contructor to allow query concatenation
     CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
-            TProgram p);
+            EProgram p);
 
     virtual ~CBl2Seq();
 
@@ -75,8 +74,8 @@ public:
     void SetSubjects(const TSeqLocVector& subjects);
     const TSeqLocVector& GetSubjects() const;
 
-    void SetProgram(TProgram p);
-    TProgram GetProgram() const;
+    void SetProgram(EProgram p);
+    EProgram GetProgram() const;
 
     CBlastOption& SetOptions();
     void SetOptions(const CBlastOption& opts);
@@ -102,7 +101,7 @@ private:
     TSeqLocVector        m_tQueries;         //< query sequence(s)
     TSeqLocVector        m_tSubjects;        //< sequence(s) to BLAST against
     CBlastOption*        m_pOptions;         //< Blast options
-    TProgram             m_eProgram;         //< Blast program FIXME ?needed?
+    EProgram             m_eProgram;         //< Blast program FIXME ?needed?
 
     ///< Common initialization code for all c-tors
     void x_Init(const TSeqLocVector& queries, const TSeqLocVector& subjects);
@@ -149,14 +148,14 @@ private:
 };
 
 inline void
-CBl2Seq::SetProgram(TProgram p)
+CBl2Seq::SetProgram(EProgram p)
 {
     m_eProgram = p;  // FIXME: we could just store the program in options obj
     m_pOptions->SetProgram(p);
     mi_bQuerySetUpDone = false;
 }
 
-inline CBl2Seq::TProgram
+inline EProgram
 CBl2Seq::GetProgram() const
 {
     return m_eProgram;   // FIXME: return m_pOptions->GetProgram();
@@ -248,6 +247,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/08/25 17:15:33  camacho
+* Removed redundant typedef
+*
 * Revision 1.15  2003/08/19 22:11:16  dondosha
 * Cosmetic changes
 *

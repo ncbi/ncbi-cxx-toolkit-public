@@ -57,7 +57,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CBl2Seq::CBl2Seq(SSeqLoc& query, SSeqLoc& subject, TProgram p)
+CBl2Seq::CBl2Seq(SSeqLoc& query, SSeqLoc& subject, EProgram p)
     : m_pOptions(new CBlastOption(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
 {
     TSeqLocVector queries;
@@ -68,7 +68,7 @@ CBl2Seq::CBl2Seq(SSeqLoc& query, SSeqLoc& subject, TProgram p)
     x_Init(queries, subjects);
 }
 
-CBl2Seq::CBl2Seq(SSeqLoc& query, const TSeqLocVector& subjects, TProgram p)
+CBl2Seq::CBl2Seq(SSeqLoc& query, const TSeqLocVector& subjects, EProgram p)
     : m_pOptions(new CBlastOption(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
 {
     TSeqLocVector queries;
@@ -78,7 +78,7 @@ CBl2Seq::CBl2Seq(SSeqLoc& query, const TSeqLocVector& subjects, TProgram p)
 }
 
 CBl2Seq::CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
-                 TProgram p)
+                 EProgram p)
     : m_pOptions(new CBlastOption(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
 {
     x_Init(queries, subjects);
@@ -106,6 +106,7 @@ void
 CBl2Seq::x_ResetQueryDs()
 {
     mi_bQuerySetUpDone = false;
+    // should be changed if derived classes are created
     mi_clsQueries.CBLAST_SequenceBlk::~CBLAST_SequenceBlk();
     mi_clsQueryInfo.CBlastQueryInfo::~CBlastQueryInfo();
     mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
@@ -627,6 +628,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2003/08/25 17:15:49  camacho
+ * Removed redundant typedef
+ *
  * Revision 1.23  2003/08/19 22:12:47  dondosha
  * Cosmetic changes
  *
