@@ -282,5 +282,57 @@
 			} else {
 				AdjustLocalSiteStatic(oShell, oTree, oTask);
 			}
-		}						
+		}
+		
+		// Get value of boolean argument set by command line flag
+		function GetFlagValue(oArgs, flag, default_val)
+		{
+			for(var arg_i = 0; arg_i < oArgs.length; arg_i++) {
+				if (oArgs.item(arg_i) == flag) {
+					return true;
+				}
+			}
+			return default_val;
+		}
+		// Position value must not be empty 
+		// and must not starts from '-' (otherwise it is flag)
+		function IsPositionalValue(str_value)
+		{
+			if(str_value.length == 0)
+				return false;
+			if(str_value.charAt(0) == "-")
+				return false;
+			
+			return true;
+		}
+		// Get value of positional argument 
+		function GetOptionalPositionalValue(oArgs, position, default_value)
+		{
+			var pos_count = 0;
+			for(var arg_i = 0; arg_i < oArgs.length; arg_i++) {
+				var arg = oArgs.item(arg_i);
+				if (IsPositionalValue(arg)) {
+					if (pos_count == position) {
+						return arg;
+					}
+					pos_count++;
+				}
+			}
+			return default_value;
+		}
+		function GetPositionalValue(oArgs, position)
+		{
+			return GetOptionalPositionalValue(oArgs, position, "");
+		}
+		
+		// Configuration of pre-built C++ toolkit
+		function GetDefaultCXX_ToolkitFolder()
+		{
+			return "\\\\snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\msvc71";
+		}
+		function GetDefaultCXX_ToolkitSubFolder()
+		{
+			return "cxx.current";
+		}
+								
 		
