@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/05/09 14:16:29  grichenk
+* sm_SizeUnknown -> kPosUnknown, minor fixes for unsigned positions
+*
 * Revision 1.13  2002/05/06 03:30:36  vakatov
 * OM/OM1 renaming
 *
@@ -166,7 +169,7 @@ private:
     // End of visible segment on the original sequence
     TSeqPos            m_OrgTo;
 
-    static const TSeqPos sm_SizeUnknown;
+    static const TSeqPos kPosUnknown;
 };
 
 
@@ -186,7 +189,7 @@ CSeqVector::CSeqVector(const CSeqVector& vec)
 inline
 TSeqPos CSeqVector::size(void)
 {
-    if (m_RangeSize == sm_SizeUnknown)
+    if (m_RangeSize == kPosUnknown)
         x_GetVisibleSize();
     return m_RangeSize;
 }

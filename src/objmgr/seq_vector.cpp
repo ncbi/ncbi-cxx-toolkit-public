@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/05/09 14:16:31  grichenk
+* sm_SizeUnknown -> kPosUnknown, minor fixes for unsigned positions
+*
 * Revision 1.21  2002/05/06 03:28:47  vakatov
 * OM/OM1 renaming
 *
@@ -125,7 +128,7 @@ BEGIN_SCOPE(objects)
 //
 
 
-const TSeqPos CSeqVector::sm_SizeUnknown = numeric_limits<TSeqPos>::max();
+const TSeqPos CSeqVector::kPosUnknown = numeric_limits<TSeqPos>::max();
 
 CSeqVector::CSeqVector(const CBioseq_Handle& handle,
                        bool use_iupac_coding,
@@ -135,17 +138,17 @@ CSeqVector::CSeqVector(const CBioseq_Handle& handle,
     : m_Scope(&scope),
       m_Handle(handle),
       m_PlusStrand(plus_strand),
-      m_Size(sm_SizeUnknown),
+      m_Size(kPosUnknown),
       m_CachedData(""),
-      m_CachedPos(0),
+      m_CachedPos(kPosUnknown),
       m_CachedLen(0),
       m_Coding(CSeq_data::e_not_set),
-      m_RangeSize(sm_SizeUnknown),
-      m_CurFrom(0),
+      m_RangeSize(kPosUnknown),
+      m_CurFrom(kPosUnknown),
       m_CurTo(0),
       m_OrgTo(0)
 {
-    m_CurData.dest_start = 0;
+    m_CurData.dest_start = kPosUnknown;
     m_CurData.length = 0;
     m_SeqMap.Reset(&m_Handle.x_GetDataSource().GetSeqMap(m_Handle));
     if ( view_loc ) {
@@ -181,9 +184,9 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
     m_SeqMap = vec.m_SeqMap;
     m_Size = vec.m_Size;
     m_Coding = vec.m_Coding;
-    m_CachedPos = 0;
-    m_CachedLen = 0;
-    m_CachedData = "";
+    m_CachedPos = vec.m_CachedPos;
+    m_CachedLen = vec.m_CachedLen;
+    m_CachedData = vec.m_CachedData;
     m_Ranges.clear();
     m_SelRange = m_Ranges.end();
     iterate(TRanges, rit, vec.m_Ranges) {
@@ -219,7 +222,7 @@ void CSeqVector::x_SetVisibleArea(const CSeq_loc& view_loc)
 
 TSeqPos CSeqVector::x_GetTotalSize(void)
 {
-    if (m_Size == sm_SizeUnknown) {
+    if (m_Size == kPosUnknown) {
         // Calculate total sequence size
         m_Size = 0;
         for (size_t i = 0; i < m_SeqMap->size(); i++) {
@@ -268,9 +271,9 @@ TSeqPos CSeqVector::x_GetTotalSize(void)
 
 TSeqPos CSeqVector::x_GetVisibleSize(void)
 {
-    if (m_Size == sm_SizeUnknown)
+    if (m_Size == kPosUnknown)
         x_GetTotalSize();
-    if (m_RangeSize == sm_SizeUnknown) {
+    if (m_RangeSize == kPosUnknown) {
         // Calculate the visible area size
         m_RangeSize = 0;
         iterate (TRanges, rit, m_Ranges) {
@@ -318,7 +321,8 @@ void CSeqVector::x_UpdateSeqData(TSeqPos pos)
 {
     m_CurData.src_data = 0; // Reset data
     m_Scope->x_GetSequence(m_Handle, pos, &m_CurData);
-    m_CachedLen = 0; // Reset cached data
+    m_CachedPos = kPosUnknown; // Reset cached data
+    m_CachedLen = 0;
     m_CachedData = "";
 }
 
@@ -361,15 +365,14 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos)
 {
     // The cache must be initialized and include the point requested
     if (m_CachedLen <= 0  ||  m_CachedPos > pos
-        ||  m_CachedPos+m_CachedLen <= pos) {
+        ||  m_CachedPos + m_CachedLen <= pos) {
         // Select cache position and length to cover maximum of
         // kCacheSize*2 characters around pos.
         m_CachedPos = pos - min(pos, kCacheSize);
-        TSeqPos cend = m_CachedPos + kCacheSize*2;
         if (m_CachedPos < m_CurData.dest_start) {
             m_CachedPos = m_CurData.dest_start;
-            cend = m_CachedPos + kCacheSize*2;
         }
+        TSeqPos cend = m_CachedPos + kCacheSize*2;
         if (cend > m_CurData.dest_start + m_CurData.length) {
             cend = m_CurData.dest_start + m_CurData.length;
             m_CachedPos = cend - min(cend, kCacheSize*2);
@@ -513,7 +516,8 @@ void CSeqVector::SetIupacCoding(void)
     size();
     m_CurData.src_data = 0; // Reset data
     m_Scope->x_GetSequence(m_Handle, 0, &m_CurData);
-    m_CachedLen = 0; // Reset cached data
+    m_CachedPos = kPosUnknown; // Reset cached data
+    m_CachedLen = 0;
     m_CachedData = "";
 
     // Check sequence type
