@@ -78,6 +78,7 @@ bool CDB_Params::BindParam(unsigned int param_no, const string& param_name,
             }
             delete m_Params;
         }
+        m_Params= t;
         for(i= m_NofParams; i <= param_no; m_Params[i++].status = 0);
         m_NofParams= param_no + 1;
     }
@@ -94,7 +95,10 @@ bool CDB_Params::BindParam(unsigned int param_no, const string& param_name,
                 m_Params[param_no].name = param_name;
             }
         } else {
-            m_Params[param_no].name.erase();
+            if(m_Params[param_no].status) {
+                string n= m_Params[param_no].name;
+                if(!n.empty()) m_Params[param_no].name.erase();
+            }
         }
         m_Params[param_no].param = param;
         m_Params[param_no].status |= fBound | (is_out ? fOutput : 0) ;
@@ -135,6 +139,7 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
             }
             delete m_Params;
         }
+        m_Params= t;
         for(i= m_NofParams; i <= param_no; m_Params[i++].status = 0);
         m_NofParams= param_no + 1;
     }
@@ -161,7 +166,7 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
             }
         }
         else {
-            m_Params[param_no].name.erase();
+            if(!m_Params[param_no].name.empty()) m_Params[param_no].name.erase();
         }
         m_Params[param_no].status |= fSet | (is_out ? fOutput : 0);
         return true;
@@ -220,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/11/27 19:26:10  soussov
+ * fixes bug with erasing the empty strings
+ *
  * Revision 1.9  2002/11/26 17:49:03  soussov
  * reallocation if more than declared parameters added
  *
