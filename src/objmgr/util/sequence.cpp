@@ -249,11 +249,13 @@ static ENa_strand s_GetStrand(const CSeq_loc& loc)
                 return eNa_strand_other;
             }
         }
+        return strand;
     }
     default:
         return eNa_strand_unknown;
     }
 }
+
 
 ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope)
 {
@@ -1377,11 +1379,9 @@ void ChangeSeqId(CSeq_id* id, bool best, CScope* scope)
 
     // Get pointer to the best/worst id of *seq
     const CSeq_id* tmp_id;
-    if (best) {
-        // tmp_id = seq->GetBestId();
+    if (!best) {
         tmp_id = FindBestChoice(seq->GetId(), CSeq_id::BestRank).GetPointer();
     } else {
-        // tmp_id = seq->GetWorstId();
         tmp_id = FindBestChoice(seq->GetId(), CSeq_id::WorstRank).GetPointer();
     }
 
@@ -1389,6 +1389,7 @@ void ChangeSeqId(CSeq_id* id, bool best, CScope* scope)
     id->Reset();
     SerialAssign(*id, *tmp_id);
 }
+
 
 void ChangeSeqLocId(CSeq_loc* loc, bool best, CScope* scope)
 {
@@ -1412,10 +1413,10 @@ bool BadSeqLocSortOrder
         return false;
     }
 
-    if (SeqLocCheck(loc, scope) == eSeqLocCheck_warning) {
-        return false;
-    }
-
+    // Check that loc in contained in seq
+    
+    
+    // Check that loc segments are in order
     CSeq_loc::TRange last_range;
     bool first = true;
     for (CSeq_loc_CI lit(loc); lit; ++lit) {
@@ -1441,28 +1442,32 @@ bool BadSeqLocSortOrder
 
 ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope)
 {
-    bool first = true;
     ESeqLocCheck rtn = eSeqLocCheck_ok;
 
-    ENa_strand last_strand, curr_strand;
+    ENa_strand strand = GetStrand(loc, scope);
+    if (strand == eNa_strand_unknown  ||  strand == eNa_strand_other) {
+        rtn = eSeqLocCheck_warning;
+    }
+
     CTypeConstIterator<CSeq_loc> lit(ConstBegin(loc));
     for (;lit; ++lit) {
-        curr_strand = GetStrand(*lit, scope);
-        if (!first) {
-            if (curr_strand != last_strand) {
-                ERR_POST(Warning << "Mixed strand location");
-                rtn = eSeqLocCheck_warning;
-            }
-            first = false;
-        }
-        last_strand = curr_strand;
-
         switch (lit->Which()) {
         case CSeq_loc::e_Int:
             if (!IsValid(lit->GetInt(), scope)) {
                 rtn = eSeqLocCheck_error;
             }
             break;
+        case CSeq_loc::e_Packed_int:
+        {
+            CTypeConstIterator<CSeq_interval> sit(ConstBegin(*lit));
+            for(;sit; ++sit) {
+                if (!IsValid(*sit, scope)) {
+                    rtn = eSeqLocCheck_error;
+                    break;
+                }
+            }
+            break;
+        }
         case CSeq_loc::e_Pnt:
             if (!IsValid(lit->GetPnt(), scope)) {
                 rtn = eSeqLocCheck_error;
@@ -1948,6 +1953,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2002/10/08 12:35:37  clausen
+* Fixed bugs in GetStrand(), ChangeSeqId() & SeqLocCheck()
+*
 * Revision 1.10  2002/10/07 17:11:16  ucko
 * Fix usage of ERR_POST (caught by KCC)
 *
