@@ -76,14 +76,13 @@ void CCachedId1Reader::SetCache(IBLOB_Cache* cache, EOwnership take_ownership)
     m_OwnCache = take_ownership;
 }
 
-IReader* CCachedId1Reader::OpenBlob(const CSeqref& seqref)
+IReader* CCachedId1Reader::OpenBlob(const CSeqref& seqref, 
+                                    int version)
 {
     if (!m_Cache) 
         return 0;
 
     string blob_key = x_GetBlobKey(seqref);
-
-    int version = 0; // TODO: set the correct version
 
     IReader* reader = 
        m_Cache->GetReadStream(blob_key, version); 
@@ -95,14 +94,13 @@ IReader* CCachedId1Reader::OpenBlob(const CSeqref& seqref)
     return reader;
 }
 
-IWriter* CCachedId1Reader::StoreBlob(const CSeqref& seqref)
+IWriter* CCachedId1Reader::StoreBlob(const CSeqref& seqref,
+                                     int   version)
 {
     if (!m_Cache) 
         return 0;
 
     string blob_key = x_GetBlobKey(seqref);
-
-    int version = 0; // TODO: set the correct version
 
     IWriter* writer = 
         m_Cache->GetWriteStream(blob_key, version);
@@ -130,7 +128,8 @@ void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
                                   const CSeqref& seqref,
                                   TConn conn)
 {
-    auto_ptr<IReader> reader(OpenBlob(seqref));
+    int version = GetVersion(seqref, conn);
+    auto_ptr<IReader> reader(OpenBlob(seqref, version));
     if ( reader.get() ) {
 
         CIRByteSourceReader rd(reader.get());
@@ -145,7 +144,7 @@ void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
         CConn_ServiceStream* stream = x_GetConnection(conn);
         x_SendRequest(seqref, stream, false);
 
-        x_ReadBlob(id1_reply, seqref, *stream);
+        x_ReadBlob(id1_reply, seqref, version, *stream);
     }
 }
 
@@ -153,9 +152,10 @@ void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
 
 void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
                                   const CSeqref& seqref,
+                                  int version,
                                   CNcbiIstream& stream)
 {
-    IWriter* wr = StoreBlob(seqref);
+    IWriter* wr = StoreBlob(seqref, version);
     auto_ptr<IWriter> writer(wr);
     if ( writer.get() ) {
         try {
@@ -228,6 +228,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.5  2003/10/08 18:58:23  kuznets
+ * Implemented correct ID1 BLOB versions
+ *
  * Revision 1.4  2003/10/03 17:41:44  kuznets
  * Added an option, that cache is owned by the ID1 reader.
  *
