@@ -38,4 +38,9 @@ done
 
 DATATOOL=`ls -Ltr $p/*/bin/datatool $p/bin/datatool 2>/dev/null 2>/dev/null | tail -1`
 
-gmake -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "top_srcdir=$p" "DATATOOL=$DATATOOL" "$@"
+case `uname` in
+    SunOS) make=make;;
+    *) make=gmake;;
+esac
+
+$make -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "top_srcdir=$p" "DATATOOL=$DATATOOL" "$@"
