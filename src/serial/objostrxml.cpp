@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2003/01/22 21:03:16  gouriano
+* remove trailing zeros when writing a float value
+*
 * Revision 1.47  2003/01/22 20:53:09  gouriano
 * more control on how a float value is to be written
 *
@@ -484,6 +487,14 @@ void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
             precision = 64;
         width = NStr::DoubleToString(data, (unsigned int)precision,
                                     buffer, sizeof(buffer));
+        if (precision != 0) {
+            while (buffer[width-1] == '0') {
+                --width;
+            }
+            if (buffer[width-1] == '.') {
+                --width;
+            }
+        }
     } else {
         width = sprintf(buffer, "%.*g", digits, data);
     }
