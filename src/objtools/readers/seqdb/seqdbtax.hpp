@@ -88,6 +88,14 @@ private:
 
 class CSeqDBTaxId {
 public:
+    // This class should not be constructed - it exists only to
+    // describe the memory layout of the data in the database.
+    
+    CSeqDBTaxId()
+    {
+        _ASSERT(0);
+    }
+    
     // Swaps and returns the tax id field.
     Int4 GetTaxId()
     {
