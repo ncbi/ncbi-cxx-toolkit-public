@@ -109,8 +109,8 @@ static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
  */
 static char* SeqDbGetName(void* seqdb_handle, void*)
 {
-    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
 #if 0 // FIXME: GetName method not implemented in CSeqDb!!!
+    CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
     return strdup(seqdb->GetName().c_str());
 #else
     return NULL;
@@ -470,6 +470,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/05/17 15:49:07  dondosha
+ * Removed local variable declaration in empty SeqDbGetName method, to eliminate compiler warning
+ *
  * Revision 1.6  2004/05/17 15:43:21  dondosha
  * Return NULL from SeqDbGetName until CSeqDB gets a GetName method
  *
