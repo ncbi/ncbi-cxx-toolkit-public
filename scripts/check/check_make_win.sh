@@ -340,12 +340,20 @@ RunTest() {
    CHECK_TIMEOUT="\$x_timeout"
    export CHECK_TIMEOUT
    check_exec="\$root_dir/scripts/check/check_exec.sh"
-   \$check_exec \`eval echo \$x_run_fix\` > \$x_test_out.\$\$ 2>&1
+   \$check_exec time.exe -p \`eval echo \$x_run_fix\` > \$x_test_out.\$\$ 2>&1
    result=\$?
+
    sed -e '/ ["][$][@]["].*\$/ {
       s/^.*: //
       s/ ["][$][@]["].*$//
       }' \$x_test_out.\$\$ >> \$x_test_out
+
+   # Get application execution time
+   exec_time=\`tail -3 \$x_test_out.\$\$\`
+   exec_time=\`echo \$exec_time | tr '\n' '?'\`
+   exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
+   rm -f $x_tmp/\$\$.out
+
    rm -f \$x_test_out.\$\$
 
    # Write result of the test into the his output file
@@ -355,12 +363,12 @@ RunTest() {
    # And write result also on the screen and into the log
    x_cmd="\$x_cmd \$x_run"
    if test \$result -eq 0; then
-      echo "OK  --  \$x_cmd"
-      echo "OK  --  \$x_cmd" >> \$res_log
+      echo "OK  --  \$x_cmd     (\$exec_time)"
+      echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
       count_ok=\`expr \$count_ok + 1\`
    else
-      echo "ERR --  \$x_cmd"
-      echo "ERR [\$result] --  \$x_cmd" >> \$res_log
+      echo "ERR --  \$x_cmd     (\$exec_time)"
+      echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
       count_err=\`expr \$count_err + 1\`
    fi
 }
