@@ -239,7 +239,7 @@ int FetchResults (CDB_Connection* con, const string& table_name, bool readItems)
               while( j == r->CurrentItemNo() ) {
                 sz+=r->ReadItem(buf, sizeof(buf), &isNull);
               }
-              cout << j << " " << sz << (j == r->NofItems()-1 ? "\n" : ", ");
+              // cout << j << " " << sz << (j == r->NofItems()-1 ? "\n" : ", ");
               continue;
             }
 
@@ -351,12 +351,11 @@ int FetchFile(CDB_Connection* con, const string& table_name, bool readItems)
             {
               bool isNull=false;
               char txt_buf[10240];
-              // while( j == r->CurrentItemNo() )
-              cout<< "j=" << j
-                  << " CurrentItemNo()=" << r->CurrentItemNo() << "\n";
+              // cout<< "j=" << j
+              //    << " CurrentItemNo()=" << r->CurrentItemNo() << "\n";
               for(;;) {
                 int len_txt = r->ReadItem(txt_buf, sizeof(txt_buf), &isNull);
-                cout << "len_txt=" << len_txt << " isNull=" << isNull << "\n";
+                //cout << "len_txt=" << len_txt << " isNull=" << isNull << "\n";
                 if(isNull || len_txt<=0) break;
                 f.write(txt_buf, len_txt);
               }
@@ -381,7 +380,7 @@ int FetchFile(CDB_Connection* con, const string& table_name, bool readItems)
               }
               else {
                 char txt_buf[10240];
-                cout << "text_val.Size()=" << text_val.Size() << "\n";
+                //cout << "text_val.Size()=" << text_val.Size() << "\n";
                 for(;;) {
                   int len_txt = text_val.Read( txt_buf, sizeof(txt_buf) );
                   if(len_txt<=0) break;

@@ -266,13 +266,13 @@ int main (int argc, char* argv[])
       while( f.good() && !f.eof() ) {
         f.read( buf, sizeof(buf) );
         sz = f.gcount();
-        cout << sz << "\n";
+        // cout << sz << "\n";
         if( sz <= 0 ) break;
         pTxt.Append(buf, sz);
         if( sz != sizeof(buf) ) break;
       }
       f.close();
-      cout << "pTxt.Size()=" << pTxt.Size() << "\n";
+      // cout << "pTxt.Size()=" << pTxt.Size() << "\n";
 
       col_count=5;
       row_count=1;
