@@ -110,6 +110,9 @@ public:
     // 0-based array of residues
     TResidue operator[] (TSeqPos pos) const;
 
+    // true if sequence at 0-based position 'pos' has gap
+    bool IsInGap(TSeqPos pos) const;
+
     // Fill the buffer string with the sequence data for the interval
     // [start, stop).
     void GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const;
@@ -230,6 +233,13 @@ CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos) const
 
 
 inline
+bool CSeqVector::IsInGap(TSeqPos pos) const
+{
+    return m_Iterator.SetPos(pos).IsInGap();
+}
+
+
+inline
 bool CSeqVector::empty(void) const
 {
     return m_Size == 0;
@@ -342,6 +352,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2004/10/27 14:17:33  vasilche
+* Implemented CSeqVector::IsInGap() and CSeqVector_CI::IsInGap().
+*
 * Revision 1.52  2004/10/01 19:52:50  kononenk
 * Added doxygen formatting
 *

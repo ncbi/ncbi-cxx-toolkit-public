@@ -96,6 +96,9 @@ public:
     TResidue operator*(void) const;
     operator bool(void) const;
 
+    // true if current position of CSeqVector_CI is inside of sequence gap
+    bool IsInGap(void) const;
+
     CSeqVector_CI& operator+=(TSeqPos value);
     CSeqVector_CI& operator-=(TSeqPos value);
 
@@ -326,6 +329,13 @@ CSeqVector_CI::TResidue CSeqVector_CI::operator*(void) const
 
 
 inline
+bool CSeqVector_CI::IsInGap(void) const
+{
+    return m_Seg.GetType() == CSeqMap::eSeqGap;
+}
+
+
+inline
 CSeqVector_CI& CSeqVector_CI::operator++(void)
 {
     _ASSERT(*this);
@@ -439,6 +449,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/10/27 14:17:33  vasilche
+* Implemented CSeqVector::IsInGap() and CSeqVector_CI::IsInGap().
+*
 * Revision 1.21  2004/10/01 19:52:50  kononenk
 * Added doxygen formatting
 *
