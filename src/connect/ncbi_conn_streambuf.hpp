@@ -73,6 +73,10 @@ protected:
     // this method is declared here to be disabled (exception) at run-time
     virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
+    // only seekoff(0, IOS_BASE::cur, IOS_BASE::out) is permitted
+    virtual CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
+                                IOS_BASE::openmode which =
+                                IOS_BASE::in | IOS_BASE::out);
 private:
     CONN                m_Conn;      // underlying connection handle
 
@@ -81,7 +85,8 @@ private:
     streamsize          m_BufSize;   // of m_ReadBuf, m_WriteBuf(if buffered)
 
     bool                m_Tie;       // always flush before reading
-    CT_CHAR_TYPE        x_Buf;       // Default m_ReadBuf for unbuffered stream
+    CT_CHAR_TYPE        x_Buf;       // default m_ReadBuf for unbuffered stream
+    CT_POS_TYPE         x_Pos;       // put position [for istream.tellp()]
 
     EIO_Status          x_LogIfError(const char* file, int line,
                                      EIO_Status status, const string& msg);
@@ -94,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2004/01/14 20:24:29  lavr
+ * CConnStreambuf::seekoff(0, cur, out) added and implemented
+ *
  * Revision 6.29  2004/01/09 17:39:15  lavr
  * Define and use internal 1-byte buffer for unbuffered streams' get ops
  *

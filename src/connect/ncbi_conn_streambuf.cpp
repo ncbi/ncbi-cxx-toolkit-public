@@ -43,7 +43,8 @@ BEGIN_NCBI_SCOPE
 
 CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                                  streamsize buf_size, bool tie)
-    : m_Conn(0), m_ReadBuf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie)
+    : m_Conn(0), m_ReadBuf(0), m_BufSize(buf_size ? buf_size : 1),
+      m_Tie(tie), x_Pos((CT_OFF_TYPE)(0))
 {
     if ( !connector ) {
         ERR_POST("CConn_Streambuf::CConn_Streambuf(): NULL connector");
@@ -101,6 +102,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
                 memmove(m_WriteBuf, m_WriteBuf + n_written,
                         (n_write - n_written)*sizeof(CT_CHAR_TYPE));
             }
+            x_Pos += (CT_OFF_TYPE)(n_written);
             setp(m_WriteBuf + n_write - n_written, m_WriteBuf + m_BufSize);
         }
 
@@ -263,6 +265,16 @@ CNcbiStreambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 }
 
 
+CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
+                                     IOS_BASE::openmode which =
+                                     IOS_BASE::in | IOS_BASE::out)
+{
+    if (off == 0  &&  whence == IOS_BASE::cur  &&  which == IOS_BASE::out)
+        return x_Pos + (CT_OFF_TYPE)(pptr() ? pptr() - m_WriteBuf : 0);
+    return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
+}
+
+
 EIO_Status CConn_Streambuf::x_LogIfError(const char* file, int line,
                                          EIO_Status status, const string& msg)
 {
@@ -280,6 +292,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.43  2004/01/14 20:24:29  lavr
+ * CConnStreambuf::seekoff(0, cur, out) added and implemented
+ *
  * Revision 6.42  2004/01/09 17:39:15  lavr
  * Define and use internal 1-byte buffer for unbuffered streams' get ops
  *
