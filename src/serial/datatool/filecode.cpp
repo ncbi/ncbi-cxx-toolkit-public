@@ -31,6 +31,7 @@
 */
 
 #include <corelib/ncbifile.hpp>
+#include <serial/datatool/generate.hpp>
 #include <serial/datatool/filecode.hpp>
 #include <serial/datatool/type.hpp>
 #include <serial/datatool/typestr.hpp>
@@ -43,8 +44,9 @@
 BEGIN_NCBI_SCOPE
 
 
-CFileCode::CFileCode(const string& baseName)
-    : m_BaseName(baseName)
+CFileCode::CFileCode(const CCodeGenerator* codeGenerator,
+                     const string& baseName)
+    : m_CodeGenerator(codeGenerator),m_BaseName(baseName)
 {
     m_UseQuotedForm = false;
     return;
@@ -54,6 +56,13 @@ CFileCode::CFileCode(const string& baseName)
 CFileCode::~CFileCode(void)
 {
     return;
+}
+
+
+const string& CFileCode::ChangeFileBaseName(void)
+{
+    m_BaseName += "x";
+    return GetFileBaseName();
 }
 
 
@@ -436,7 +445,9 @@ void CFileCode::GenerateCPP(const string& path, string& fileName) const
     if ( !m_CPPIncludes.empty() ) {
         iterate ( TIncludes, i, m_CPPIncludes ) {
             code <<
-                "#include " << Include(*i, true) << "\n";
+                "#include " <<
+                Include(m_CodeGenerator->ResolveFileName(*i), true) <<
+                "\n";
         }
     }
 
@@ -726,6 +737,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.38  2002/12/17 16:22:48  gouriano
+* separated class name from the name of the file in which it will be written
+*
 * Revision 1.37  2002/10/25 16:13:04  ucko
 * Tweak CFileCode::Include to avoid segfaulting when built with KCC
 * (presumably due to a compiler bug)

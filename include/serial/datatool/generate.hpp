@@ -125,6 +125,7 @@ public:
                                   bool allowInternal = false) const;
 
     CDataType* ResolveMain(const string& fullName) const;
+    const string& ResolveFileName(const string& name) const;
 
 protected:
 
@@ -165,6 +166,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2002/12/17 16:21:20  gouriano
+* separated class name from the name of the file in which it will be written
+*
 * Revision 1.7  2002/11/13 00:46:06  ucko
 * Add RPC client generator; CVS logs to end in generate.?pp
 *

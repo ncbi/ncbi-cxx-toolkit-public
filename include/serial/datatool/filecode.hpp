@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 
 class CDataType;
 class CTypeStrings;
+class CCodeGenerator;
 
 class CFileCode : public CClassContext
 {
@@ -65,7 +66,7 @@ public:
     };
     typedef list< SClassInfo > TClasses;
 
-    CFileCode(const string& baseName);
+    CFileCode(const CCodeGenerator* codeGenerator,const string& baseName);
     ~CFileCode(void);
 
     const CNamespace& GetNamespace(void) const;
@@ -77,6 +78,7 @@ public:
         {
             return m_BaseName;
         }
+    const string& ChangeFileBaseName(void);
     const string& GetHeaderPrefix(void) const
         {
             return m_HeaderPrefix;
@@ -113,6 +115,7 @@ public:
     CNcbiOstream& WriteLogKeyword(CNcbiOstream& out) const;
 
 private:
+    const CCodeGenerator* m_CodeGenerator;
     bool m_UseQuotedForm;
     // file names
     string m_BaseName;
@@ -147,6 +150,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2002/12/17 16:21:20  gouriano
+* separated class name from the name of the file in which it will be written
+*
 * Revision 1.13  2002/10/22 15:07:01  gouriano
 * added possibillity to use quoted syntax form for generated include files
 *

@@ -195,6 +195,13 @@ CDataType* CCodeGenerator::ResolveMain(const string& fullName) const
     }
 }
 
+const string& CCodeGenerator::ResolveFileName(const string& name) const
+{
+    TOutputFiles::const_iterator i = m_Files.find(name);
+    _ASSERT(i != m_Files.end());
+    return i->second->GetFileBaseName();
+}
+
 void CCodeGenerator::IncludeAllMainTypes(void)
 {
     iterate ( CFileSet::TModuleSets, msi, m_MainFiles.GetModuleSets() ) {
@@ -245,13 +252,34 @@ void CCodeGenerator::IncludeTypes(const string& typeList)
     GetTypes(m_GenerateTypes, typeList);
 }
 
+struct string_nocase_less
+{
+    bool operator()(const string& s1, const string& s2) const
+    {
+        return (NStr::CompareNocase(s1, s2) < 0);
+    }
+};
+
 void CCodeGenerator::GenerateCode(void)
 {
     // collect types
     iterate ( TTypeNames, ti, m_GenerateTypes ) {
         CollectTypes(ResolveMain(*ti), eRoot);
     }
-    
+
+    {
+        set<string,string_nocase_less> names;
+        iterate ( TOutputFiles, filei, m_Files ) {
+            CFileCode* code = filei->second.get();
+            string fname;
+            for ( fname = code->GetFileBaseName();
+                  names.find(fname) != names.end();) {
+                fname = code->ChangeFileBaseName();
+            }
+            names.insert(fname);
+        }
+    }    
+
     // generate output files
     list<string> listGenerated, listUntouched;
     iterate ( TOutputFiles, filei, m_Files ) {
@@ -284,14 +312,15 @@ void CCodeGenerator::GenerateCode(void)
         fileList << "GENFILES =";
         {
             iterate ( TOutputFiles, filei, m_Files ) {
-                fileList << ' ' << filei->first;
+                fileList << ' ' << filei->second->GetFileBaseName();
             }
         }
         fileList << "\n";
         fileList << "GENFILES_LOCAL =";
         {
             iterate ( TOutputFiles, filei, m_Files ) {
-                fileList << ' ' << BaseName(filei->first);
+                fileList << ' ' << BaseName(
+                    filei->second->GetFileBaseName());
             }
         }
         fileList << "\n";
@@ -348,7 +377,8 @@ void CCodeGenerator::GenerateCode(void)
                 ERR_POST(Fatal << "Cannot create file: "<<fileName);
             
             iterate ( TOutputFiles, filei, m_Files ) {
-                out << "#include \""<<BaseName(filei->first)<<
+                out << "#include \""<<BaseName(
+                    filei->second->GetFileBaseName())<<
                     suffix<<"\"\n";
             }
 
@@ -369,7 +399,8 @@ void CCodeGenerator::GenerateCode(void)
 
         iterate ( TOutputFiles, filei, m_Files ) {
             out << "#include " << (m_UseQuotedForm ? '\"' : '<') << GetStdPath(
-                Path(m_FileNamePrefix, BaseName(filei->first)) + suffix) <<
+                Path(m_FileNamePrefix, BaseName(
+                    filei->second->GetFileBaseName())) + suffix) <<
                 (m_UseQuotedForm ? '\"' : '>') << "\n";
         }
 
@@ -387,7 +418,7 @@ bool CCodeGenerator::GenerateClientCode(void)
     if (class_name.empty()) {
         return false; // not configured
     }
-    CFileCode code(Path(m_FileNamePrefix, "client"));
+    CFileCode code(this,Path(m_FileNamePrefix, "client"));
     code.UseQuotedForm(m_UseQuotedForm);
     code.AddType(new CClientPseudoDataType(*this, class_name));
     code.GenerateCode();
@@ -404,7 +435,7 @@ bool CCodeGenerator::AddType(const CDataType* type)
     string fileName = type->FileName();
     AutoPtr<CFileCode>& file = m_Files[fileName];
     if ( !file )
-        file = new CFileCode(fileName);
+        file = new CFileCode(this,fileName);
     return file->AddType(type);
 }
 
@@ -599,6 +630,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2002/12/17 16:22:47  gouriano
+* separated class name from the name of the file in which it will be written
+*
 * Revision 1.44  2002/11/13 00:46:07  ucko
 * Add RPC client generator; CVS logs to end in generate.?pp
 *
