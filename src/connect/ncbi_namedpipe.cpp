@@ -629,7 +629,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                     status = eIO_Interrupt;
                 }
                 throw string("UNIX socket connect() failed: ")
-                    + strerror(errno);
+                    + strerror(x_errno);
             }
 
             if (!timeout  ||  timeout->sec  ||  timeout->usec) {
@@ -1219,6 +1219,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/12/02 19:16:20  ivanov
+ * Fixed typo -- use x_errno instead errno
+ *
  * Revision 1.20  2003/12/02 17:50:46  ivanov
  * throw/catch strings exceptions instead char*
  *
