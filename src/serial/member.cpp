@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/02/01 21:47:22  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.6  1999/09/14 18:54:17  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -62,6 +68,7 @@
 
 BEGIN_NCBI_SCOPE
 
+#if 0
 CMemberInfo::~CMemberInfo(void)
 {
 }
@@ -126,5 +133,6 @@ TTypeInfo CTypedMemberAliasInfo::GetTypeInfo(void) const
 {
     return m_Type.Get();
 }
+#endif
 
 END_NCBI_SCOPE

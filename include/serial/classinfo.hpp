@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/02/01 21:44:34  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.23  2000/01/10 19:46:30  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -140,8 +146,6 @@ class CClassInfoTmpl : public CTypeInfo {
     typedef CTypeInfo CParent;
 public:
     typedef CMembers::TIndex TIndex;
-    typedef vector<CMemberInfo*> TMembersInfo;
-    typedef map<size_t, TIndex> TMembersByOffset;
     typedef vector<pair<CMemberId, CTypeRef> > TSubClasses;
 
     CClassInfoTmpl(const type_info& ti, size_t size);
@@ -155,7 +159,8 @@ public:
     virtual size_t GetSize(void) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
+    virtual bool Equals(TConstObjectPtr object1,
+                        TConstObjectPtr object2) const;
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
@@ -163,12 +168,14 @@ public:
     static TTypeInfo GetPointerTypeInfo(const type_info& id,
                                         const CTypeRef& typeRef);
 
-    // AddMember will take ownership of member
-    CMemberInfo* AddMember(const CMemberId& id, CMemberInfo* member);
-    CMemberInfo* AddMember(const char* name, const void* member,
-                           TTypeInfo type);
-    CMemberInfo* AddMember(const char* name, const void* member,
-                           const CTypeRef& type);
+    CMembersInfo& GetMembers(void)
+        {
+            return m_Members;
+        }
+    const CMembersInfo& GetMembers(void) const
+        {
+            return m_Members;
+        }
 
     bool RandomOrder(void) const
         {
@@ -189,9 +196,6 @@ public:
             m_Implicit = implicit;
             return this;
         }
-
-    const TMembersByOffset& GetMembersByOffset(void) const;
-    size_t GetFirstMemberOffset(void) const;
 
     virtual TMemberIndex FindMember(const string& name) const;
     virtual TMemberIndex LocateMember(TConstObjectPtr object,
@@ -218,11 +222,6 @@ public:
 
     virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
 
-    const CMembers& GetMembers(void) const
-        {
-            return m_Members;
-        }
-
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
@@ -242,9 +241,7 @@ private:
     bool m_RandomOrder;
     bool m_Implicit;
 
-    CMembers m_Members;
-    TMembersInfo m_MembersInfo;
-    mutable auto_ptr<TMembersByOffset> m_MembersByOffset;
+    CMembersInfo m_Members;
 
     auto_ptr<TSubClasses> m_SubClasses;
 

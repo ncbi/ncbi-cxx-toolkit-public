@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/02/01 21:44:35  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.6  2000/01/10 19:46:31  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -85,9 +91,13 @@ public:
     CMembers(void);
     ~CMembers(void);
 
+    size_t GetSize(void) const
+        {
+            return m_Members.size();
+        }
     bool Empty(void) const
         {
-            return m_Members.size() == 0;
+            return m_Members.empty();
         }
 
     const TMembers& GetMembers(void) const
@@ -128,6 +138,35 @@ private:
 
     CMembers(const CMembers&);
     CMembers& operator=(const CMembers&);
+};
+
+class CMembersInfo : public CMembers
+{
+public:
+    typedef vector<CMemberInfo*> TMembersInfo;
+    typedef map<size_t, TIndex> TMembersByOffset;
+
+    CMembersInfo(void);
+    ~CMembersInfo(void);
+
+    // AddMember will take ownership of member
+    CMemberInfo* AddMember(const CMemberId& id, CMemberInfo* member);
+    CMemberInfo* AddMember(const char* name, const void* member,
+                           TTypeInfo type);
+    CMemberInfo* AddMember(const char* name, const void* member,
+                           const CTypeRef& type);
+
+    const TMembersByOffset& GetMembersByOffset(void) const;
+    size_t GetFirstMemberOffset(void) const;
+
+    const CMemberInfo* GetMemberInfo(TIndex index) const
+        {
+            return m_MembersInfo[index];
+        }
+
+private:
+    TMembersInfo m_MembersInfo;
+    mutable auto_ptr<TMembersByOffset> m_MembersByOffset;
 };
 
 //#include <serial/memberlist.inl>

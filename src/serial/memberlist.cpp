@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/02/01 21:47:22  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.7  2000/01/10 19:46:39  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -61,6 +67,8 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/memberid.hpp>
+#include <serial/member.hpp>
+#include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -205,6 +213,82 @@ CMembers::TIndex CMembers::FindMember(TTag tag, TIndex pos) const
             return i;
     }
     return -1;
+}
+
+CMembersInfo::CMembersInfo(void)
+{
+}
+
+CMembersInfo::~CMembersInfo(void)
+{
+    DeleteElements(m_MembersInfo);
+}
+
+CMemberInfo* CMembersInfo::AddMember(const CMemberId& id,
+                                     CMemberInfo* member)
+{
+    m_MembersByOffset.reset(0);
+    CMembers::AddMember(id);
+    m_MembersInfo.push_back(member);
+    return member;
+}
+
+CMemberInfo* CMembersInfo::AddMember(const char* name, const void* member,
+                                     TTypeInfo type)
+{
+    return AddMember(name, new CRealMemberInfo(size_t(member), type));
+}
+
+CMemberInfo* CMembersInfo::AddMember(const char* name, const void* member,
+                                     const CTypeRef& type)
+{
+    return AddMember(name, new CRealMemberInfo(size_t(member), type));
+}
+
+size_t CMembersInfo::GetFirstMemberOffset(void) const
+{
+    size_t offset = INT_MAX;
+    for ( TMembersInfo::const_iterator i = m_MembersInfo.begin();
+          i != m_MembersInfo.end();
+          ++i ) {
+        offset = min(offset, (*i)->GetOffset());
+    }
+    return offset;
+}
+
+const CMembersInfo::TMembersByOffset&
+CMembersInfo::GetMembersByOffset(void) const
+{
+    TMembersByOffset* members = m_MembersByOffset.get();
+    if ( !members ) {
+        // create map
+        m_MembersByOffset.reset(members = new TMembersByOffset);
+        // fill map
+        
+        for ( TIndex i = 0, size = m_MembersInfo.size();
+              i != size; ++i ) {
+            const CMemberInfo& info = *m_MembersInfo[i];
+            size_t offset = info.GetOffset();
+            if ( !members->insert(TMembersByOffset::
+                                  value_type(offset, i)).second ) {
+                THROW1_TRACE(runtime_error,
+                             "conflict member offset: " +
+                             NStr::UIntToString(offset));
+            }
+        }
+        // check overlaps
+        size_t nextOffset = 0;
+        for ( TMembersByOffset::const_iterator m = members->begin();
+              m != members->end(); ++m ) {
+            size_t offset = m->first;
+            if ( offset < nextOffset ) {
+                THROW1_TRACE(runtime_error,
+                             "overlapping members");
+            }
+            nextOffset = offset + m_MembersInfo[m->second]->GetSize();
+        }
+    }
+    return *members;
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/02/01 21:44:35  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.22  2000/01/10 20:12:37  vasilche
 * Fixed duplicate argument names.
 * Fixed conflict between template and variable name.
@@ -128,9 +134,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
 #include <serial/objistr.hpp>
-
+#include <serial/strbuffer.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -141,10 +146,6 @@ public:
 
     CObjectIStreamAsn(CNcbiIstream& in);
 
-    int GetLine(void) const
-        {
-            return m_Line;
-        }
     virtual unsigned SetFailFlags(unsigned flags);
 
     virtual string ReadTypeName(void);
@@ -159,10 +160,13 @@ public:
 
 protected:
     TIndex ReadIndex(void);
-    void ReadId(void); // read id into local buffer
-    const char* IdBuffer(void) const;
-    void ResetIdBuffer(void);
-    void AddToIdBuffer(char c);
+
+    void MarkBuffer(void); // mark start of some position
+    const char* GetMark(void) const; // return marked position
+    size_t GetMarkOffset(void) const; // return offset of marked position
+    // before current
+
+    size_t ReadId(void); // read id into local buffer, returns ID length
 
     virtual bool ReadBool(void);
     virtual char ReadChar(void);
@@ -204,8 +208,7 @@ private:
 public:
     // low level methods
     char GetChar(void);
-    char GetChar0(void); // get char after call to UngetChar
-    void UngetChar(char c);
+    void UngetChar(void);
 
 	// parse methods
     char GetChar(bool skipWhiteSpace);
@@ -219,16 +222,12 @@ private:
     static bool IdChar(char c);
 
     void SkipEndOfLine(char c);
-    char SkipWhiteSpace(void);
+    char SkipWhiteSpaceAndGetChar(void);
     void SkipComments(void);
     void SkipString(void);
     void SkipBitString(void);
 
-    CNcbiIstream& m_Input;
-    int m_Line;
-	int m_UngetChar;
-    int m_UngetChar1;
-    vector<char> m_IdBuffer;
+    CStreamBuffer m_Input;
 };
 
 //#include <objistrb.inl>

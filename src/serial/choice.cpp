@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/02/01 21:47:21  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.4  2000/01/10 19:46:38  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -56,8 +62,12 @@
 #include <serial/choice.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
+#include <serial/memberid.hpp>
+#include <serial/member.hpp>
 
 BEGIN_NCBI_SCOPE
+
+typedef CChoiceTypeInfoBase::TMemberIndex TMemberIndex;
 
 CChoiceTypeInfoBase::CChoiceTypeInfoBase(const string& name)
     : CParent(name)
@@ -76,8 +86,7 @@ CChoiceTypeInfoBase::~CChoiceTypeInfoBase(void)
 void CChoiceTypeInfoBase::AddVariant(const CMemberId& id,
                                      const CTypeRef& typeRef)
 {
-    m_Variants.AddMember(id);
-    m_VariantTypes.push_back(typeRef);
+    m_Members.AddMember(id, new CRealMemberInfo(0, typeRef.Get()));
 }
 
 void CChoiceTypeInfoBase::AddVariant(const string& name,
@@ -90,6 +99,16 @@ void CChoiceTypeInfoBase::AddVariant(const char* name,
                                      const CTypeRef& typeRef)
 {
     AddVariant(CMemberId(name), typeRef);
+}
+
+TMemberIndex CChoiceTypeInfoBase::GetVariantsCount(void) const
+{
+    return m_Members.GetSize();
+}
+
+TTypeInfo CChoiceTypeInfoBase::GetVariantTypeInfo(TMemberIndex index) const
+{
+    return m_Members.GetMemberInfo(index)->GetTypeInfo();
 }
 
 bool CChoiceTypeInfoBase::IsDefault(TConstObjectPtr object) const
@@ -106,8 +125,8 @@ bool CChoiceTypeInfoBase::Equals(TConstObjectPtr object1,
     if ( index == -1 )
         return true;
     if ( index >= 0 && index < GetVariantsCount() ) {
-        return GetVariantTypeInfo(index)->Equals(GetData(object1),
-                                                 GetData(object2));
+        return GetVariantTypeInfo(index)->Equals(GetData(object1, index),
+                                                 GetData(object2, index));
     }
     return index == -1;
 }
@@ -122,7 +141,8 @@ void CChoiceTypeInfoBase::Assign(TObjectPtr dst, TConstObjectPtr src) const
     TMemberIndex index = GetIndex(src);
     SetIndex(dst, index);
     if ( index >= 0 && index < GetVariantsCount() ) {
-        GetVariantTypeInfo(index)->Assign(GetData(dst), GetData(src));
+        GetVariantTypeInfo(index)->Assign(GetData(dst, index),
+                                          GetData(src, index));
     }
 }
 
@@ -131,7 +151,8 @@ void CChoiceTypeInfoBase::CollectExternalObjects(COObjectList& l,
 {
     TMemberIndex index = GetIndex(object);
     if ( index >= 0 && index < GetVariantsCount() )
-        GetVariantTypeInfo(index)->CollectExternalObjects(l, GetData(object));
+        GetVariantTypeInfo(index)->
+            CollectExternalObjects(l, GetData(object, index));
 }
 
 void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
@@ -139,17 +160,68 @@ void CChoiceTypeInfoBase::WriteData(CObjectOStream& out,
 {
     TMemberIndex index = GetIndex(object);
     if ( index >= 0 && index < GetVariantsCount() ) {
-        CObjectOStream::Member m(out, m_Variants, index);
-        GetVariantTypeInfo(index)->WriteData(out, GetData(object));
+        CObjectOStream::Member m(out, GetMembers(), index);
+        GetVariantTypeInfo(index)->
+            WriteData(out, GetData(object, index));
     }
 }
 
 void CChoiceTypeInfoBase::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
-    CObjectIStream::Member m(in, m_Variants);
-    SetIndex(object, m.GetIndex());
-    GetVariantTypeInfo(m.GetIndex())->ReadData(in, GetData(object));
+    CObjectIStream::Member m(in, GetMembers());
+    TMemberIndex index = m.GetIndex();
+    SetIndex(object, index);
+    GetVariantTypeInfo(index)->
+        ReadData(in, GetData(object, index));
+}
+
+CGeneratedChoiceTypeInfo::CGeneratedChoiceTypeInfo(const char* name,
+                                                   size_t size,
+                                                   TCreateFunction cF,
+                                                   TGetIndexFunction gIF,
+                                                   TSetIndexFunction sIF)
+    : CParent(name), m_Size(size),
+      m_CreateFunction(cF), m_GetIndexFunction(gIF), m_SetIndexFunction(sIF)
+{
+}
+
+CGeneratedChoiceTypeInfo::~CGeneratedChoiceTypeInfo(void)
+{
+}
+
+size_t CGeneratedChoiceTypeInfo::GetSize(void) const
+{
+    return m_Size;
+}
+
+TObjectPtr CGeneratedChoiceTypeInfo::Create(void) const
+{
+    return m_CreateFunction();
+}
+
+TMemberIndex CGeneratedChoiceTypeInfo::GetIndex(TConstObjectPtr object) const
+{
+    return m_GetIndexFunction(object);
+}
+
+void CGeneratedChoiceTypeInfo::SetIndex(TObjectPtr object,
+                                        TMemberIndex index) const
+{
+    m_SetIndexFunction(object, index);
+}
+
+TObjectPtr CGeneratedChoiceTypeInfo::x_GetData(TObjectPtr object,
+                                               TMemberIndex index) const
+{
+    _ASSERT(object != 0);
+    const CMemberInfo* info = GetMembers().GetMemberInfo(index);
+    TObjectPtr memberPtr = info->GetMember(object);
+    if ( info->IsPointer() ) {
+        memberPtr = CType<TObjectPtr>::Get(memberPtr);
+        _ASSERT(memberPtr != 0 );
+    }
+    return memberPtr;
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/02/01 21:47:23  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.6  1999/12/28 21:04:25  vasilche
 * Removed three more implicit virtual destructors.
 *
@@ -57,7 +63,7 @@
 #include <serial/ptrinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/memberlist.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -119,68 +125,68 @@ void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type)
 
 // one argument:
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter f)
 {
-    return info->AddMember(name, member, CTypeRef(f));
+    return info.AddMember(name, member, CTypeRef(f));
 }
 
 // two arguments:
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter1 f, TTypeInfo t)
 {
-    return info->AddMember(name, member, CTypeRef(f, t));
+    return info.AddMember(name, member, CTypeRef(f, t));
 }
 
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter1 f, TTypeInfoGetter f1)
 {
-    return info->AddMember(name, member, CTypeRef(f, f1));
+    return info.AddMember(name, member, CTypeRef(f, f1));
 }
 
 // three arguments:
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfo t1)
 {
-    return info->AddMember(name, member, CTypeRef(f, CTypeRef(f1, t1)));
+    return info.AddMember(name, member, CTypeRef(f, CTypeRef(f1, t1)));
 }
 
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfoGetter f11)
 {
-    return info->AddMember(name, member, CTypeRef(f, CTypeRef(f1, f11)));
+    return info.AddMember(name, member, CTypeRef(f, CTypeRef(f1, f11)));
 }
 
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfo t2)
 {
-    return info->AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, t1, t2)));
+    return info.AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, t1, t2)));
 }
 
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfo t2)
 {
-    return info->AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, f1, t2)));
+    return info.AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, f1, t2)));
 }
 
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfoGetter f2)
 {
-    return info->AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, t1, f2)));
+    return info.AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, t1, f2)));
 }
 
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfoGetter f2)
 {
-    return info->AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, f1, f2)));
+    return info.AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, f1, f2)));
 }
 
 END_NCBI_SCOPE

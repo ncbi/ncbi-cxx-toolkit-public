@@ -99,6 +99,10 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 #define SERIAL_REF_ENUM(Type, Name) \
     NCBI_NS_NCBI::CreateEnumeratedTypeInfo(Type(0), NCBI_NAME2(GetEnumInfo_,Name)())
 
+#define SERIAL_TYPE_ENUM2(Type, Namespace, Name) Type
+#define SERIAL_REF_ENUM2(Type, Namespace, Name) \
+    NCBI_NS_NCBI::CreateEnumeratedTypeInfo(Type(0), Namespace NCBI_NAME2(GetEnumInfo_,Name)())
+
 #define SERIAL_TYPE_POINTER(Type,Args) SERIAL_TYPE(Type)Args*
 #define SERIAL_REF_POINTER(Type,Args) \
     &NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo, SERIAL_REF(Type)Args
@@ -253,11 +257,11 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
     NCBI_NAME2(GetEnumInfo_, Type)())
     
 #define ADD_N_M(Name,Mem,Type,Args) \
-    NCBI_NS_NCBI::AddMember(info,Name,M(Mem,Type,Args))
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),Name,M(Mem,Type,Args))
 #define ADD_N_STD_M(Name,Mem) \
-    NCBI_NS_NCBI::AddMember(info,Name,STD_M(Mem))
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),Name,STD_M(Mem))
 #define ADD_N_ENUM_M(Name,Mem,Type) \
-    NCBI_NS_NCBI::AddMember(info,Name,ENUM_M(Mem,Type))
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),Name,ENUM_M(Mem,Type))
 #define ADD_M(Name,Type,Args) ADD_N_M(#Name,Name,Type,Args)
 #define ADD_STD_M(Name) ADD_N_STD_M(#Name,Name)
 #define ADD_ENUM_M(Name,Type) ADD_N_ENUM_M(#Name,Name,Type)
@@ -503,41 +507,41 @@ const VariantClass* NCBI_NAME2(BaseClass,_Base)::NCBI_NAME2(Get,Name)(void) cons
 
 inline
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfo typeInfo)
 {
-    return info->AddMember(name, member, typeInfo);
+    return info.AddMember(name, member, typeInfo);
 }
 
 // one argument:
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter f);
 // two arguments:
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter1 f, TTypeInfo t);
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter1 f, TTypeInfoGetter f1);
 // three arguments:
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfo t1);
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfoGetter f11);
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfo t2);
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfo t2);
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfoGetter f2);
 CMemberInfo*
-AddMember(CClassInfoTmpl* info, const char* name, const void* member,
+AddMember(CMembersInfo& info, const char* name, const void* member,
           TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfoGetter f2);
 
 END_NCBI_SCOPE

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/02/01 21:44:34  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.4  1999/12/28 18:55:39  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -54,9 +60,8 @@
 
 #include <serial/typeinfo.hpp>
 #include <serial/typeref.hpp>
-#include <serial/memberid.hpp>
+//#include <serial/memberid.hpp>
 #include <serial/memberlist.hpp>
-#include <vector>
 
 BEGIN_NCBI_SCOPE
 
@@ -76,23 +81,30 @@ public:
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
-    TMemberIndex GetVariantsCount(void) const
-        { return m_VariantTypes.size(); }
+    TMemberIndex GetVariantsCount(void) const;
+    TTypeInfo GetVariantTypeInfo(TMemberIndex index) const;
 
-    TTypeInfo GetVariantTypeInfo(TMemberIndex index) const
-        { return m_VariantTypes[index].Get(); }
+    CMembersInfo& GetMembers(void)
+        {
+            return m_Members;
+        }
+    const CMembersInfo& GetMembers(void) const
+        {
+            return m_Members;
+        }
 
 protected:
     virtual TMemberIndex GetIndex(TConstObjectPtr object) const = 0;
     virtual void SetIndex(TObjectPtr object, TMemberIndex index) const = 0;
-    virtual TObjectPtr x_GetData(TObjectPtr object) const = 0;
-    TConstObjectPtr GetData(TConstObjectPtr object) const
+    virtual TObjectPtr x_GetData(TObjectPtr object,
+                                 TMemberIndex index) const = 0;
+    TConstObjectPtr GetData(TConstObjectPtr object, TMemberIndex index) const
         {
-            return x_GetData(const_cast<TObjectPtr>(object));
+            return x_GetData(const_cast<TObjectPtr>(object), index);
         }
-    TObjectPtr GetData(TObjectPtr object) const
+    TObjectPtr GetData(TObjectPtr object, TMemberIndex index) const
         {
-            return x_GetData(object);
+            return x_GetData(object, index);
         }
 
     virtual void CollectExternalObjects(COObjectList& list,
@@ -103,8 +115,38 @@ protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
 private:
-    CMembers m_Variants;
-    vector<CTypeRef> m_VariantTypes;
+    CMembersInfo m_Members;
+};
+
+class CGeneratedChoiceTypeInfo : public CChoiceTypeInfoBase
+{
+    typedef CChoiceTypeInfoBase CParent;
+public:
+    typedef int TChoiceIndex;
+    typedef TObjectPtr (*TCreateFunction)(void);
+    typedef TChoiceIndex (*TGetIndexFunction)(TConstObjectPtr);
+    typedef void (*TSetIndexFunction)(TObjectPtr, TChoiceIndex);
+
+    CGeneratedChoiceTypeInfo(const char* name,
+                             size_t size,
+                             TCreateFunction createFunction,
+                             TGetIndexFunction getIndexFunction,
+                             TSetIndexFunction setIndexFunction);
+    ~CGeneratedChoiceTypeInfo(void);
+    
+protected:
+    size_t GetSize(void) const;
+    TObjectPtr Create(void) const;
+
+    TMemberIndex GetIndex(TConstObjectPtr object) const;
+    void SetIndex(TObjectPtr object, TMemberIndex index) const;
+    TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
+
+private:
+    size_t m_Size;
+    TCreateFunction m_CreateFunction;
+    TGetIndexFunction m_GetIndexFunction;
+    TSetIndexFunction m_SetIndexFunction;
 };
 
 END_NCBI_SCOPE

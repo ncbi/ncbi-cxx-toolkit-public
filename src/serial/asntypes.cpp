@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/02/01 21:47:21  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.31  1999/12/28 18:55:49  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -212,7 +218,7 @@ void CSequenceOfTypeInfo::Init(void)
         else if ( dynamic_cast<const CClassInfoTmpl*>(asnType) != 0 ) {
             // user types
             if ( dynamic_cast<const CClassInfoTmpl*>(asnType)->
-                 GetFirstMemberOffset() < sizeof(void*) ) {
+                 GetMembers().GetFirstMemberOffset() < sizeof(void*) ) {
                 THROW1_TRACE(runtime_error,
                              "CSequenceOfTypeInfo: incompatible type: " +
                              type->GetName() + ": " + typeid(*type).name() +
@@ -454,7 +460,7 @@ void CChoiceTypeInfo::SetIndex(TObjectPtr object, TMemberIndex index) const
     Get(object).choice = index + 1;
 }
 
-TObjectPtr CChoiceTypeInfo::x_GetData(TObjectPtr object) const
+TObjectPtr CChoiceTypeInfo::x_GetData(TObjectPtr object, TMemberIndex ) const
 {
     return &Get(object).data;
 }

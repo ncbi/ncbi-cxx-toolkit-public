@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/02/01 21:47:23  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.31  2000/01/11 14:16:46  vasilche
 * Fixed pow ambiguity.
 *
@@ -344,7 +350,7 @@ void CObjectOStreamAsn::WriteOther(TConstObjectPtr object, TTypeInfo typeInfo)
 
 void CObjectOStreamAsn::WriteNewLine(void)
 {
-    m_Output << endl;
+    m_Output << "\n";
     for ( int i = 0; i < m_Ident; ++i )
         m_Output << "  ";
 }

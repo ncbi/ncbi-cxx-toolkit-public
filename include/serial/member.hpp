@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/02/01 21:44:35  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.5  1999/09/01 17:38:00  vasilche
 * Fixed vector<char> implementation.
 * Added explicit naming of class info.
@@ -58,38 +64,127 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/typeref.hpp>
+#include <serial/typeinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
 class CMemberInfo {
 public:
-    CMemberInfo(void);
-    virtual ~CMemberInfo(void);
+    CMemberInfo(size_t offset, const CTypeRef& type)
+        : m_Optional(false), m_Pointer(false),
+          m_Offset(offset), m_Type(type),
+          m_SetFlagOffset(size_t(-1)), m_Default(0)
+        {
+        }
+    ~CMemberInfo(void)
+        {
+        }
 
-    bool Optional(void) const;
-    CMemberInfo* SetOptional(void);
-    TConstObjectPtr GetDefault(void) const;
-    CMemberInfo* SetDefault(TConstObjectPtr def);
+    bool Optional(void) const
+        {
+            return m_Optional;
+        }
+    CMemberInfo* SetOptional(void)
+        {
+            m_Optional = true;
+            return this;
+        }
+    bool IsPointer(void) const
+        {
+            return m_Pointer;
+        }
+    CMemberInfo* SetPointer(void)
+        {
+            m_Pointer = true;
+            return this;
+        }
+    TConstObjectPtr GetDefault(void) const
+        {
+            return m_Default;
+        }
+    CMemberInfo* SetDefault(TConstObjectPtr def)
+        {
+            m_Optional = true;
+            m_Default = def;
+            return this;
+        }
 
-    virtual size_t GetOffset(void) const = 0;
+    size_t GetOffset(void) const
+        {
+            return m_Offset;
+        }
 
-    virtual TTypeInfo GetTypeInfo(void) const = 0;
+    TTypeInfo GetTypeInfo(void) const
+        {
+            return m_Type.Get();
+        }
 
-    size_t GetSize(void) const;
+    size_t GetSize(void) const
+        {
+            return GetTypeInfo()->GetSize();
+        }
 
-    TObjectPtr GetMember(TObjectPtr object) const;
-    TConstObjectPtr GetMember(TConstObjectPtr object) const;
-    TObjectPtr GetContainer(TObjectPtr object) const;
-    TConstObjectPtr GetContainer(TConstObjectPtr object) const;
+    bool HaveSetFlag(void) const
+        {
+            return m_SetFlagOffset != size_t(-1);
+        }
+    size_t GetSetFlagOffset(void) const
+        {
+            return m_SetFlagOffset;
+        }
+    bool GetSetFlag(TConstObjectPtr object) const
+        {
+            return CType<bool>::Get(Add(object, GetSetFlagOffset()));
+        }
+    bool& GetSetFlag(TObjectPtr object) const
+        {
+            return CType<bool>::Get(Add(object, GetSetFlagOffset()));
+        }
+    CMemberInfo* SetSetFlag(const bool* setFlag)
+        {
+            m_SetFlagOffset = size_t(setFlag);
+            return this;
+        }
 
-    size_t GetEndOffset(void) const;
-
+    TObjectPtr GetMember(TObjectPtr object) const
+        {
+            return Add(object, GetOffset());
+        }
+    TConstObjectPtr GetMember(TConstObjectPtr object) const
+        {
+            return Add(object, GetOffset());
+        }
+    TObjectPtr GetContainer(TObjectPtr object) const
+        {
+            return Add(object, -GetOffset());
+        }
+    TConstObjectPtr GetContainer(TConstObjectPtr object) const
+        {
+            return Add(object, -GetOffset());
+        }
+    size_t GetEndOffset(void) const
+        {
+            return GetOffset() + GetSize();
+        }
+    
 private:
+    // is optional
     bool m_Optional;
+    // is pointer in choice
+    bool m_Pointer;
+    // offset of member inside object
+    size_t m_Offset;
+    // type of member
+    CTypeRef m_Type;
+    // offset of 'SET' flag inside object
+    size_t m_SetFlagOffset;
     // default value
     TConstObjectPtr m_Default;
 };
 
+#if 1
+# define CRealMemberInfo CMemberInfo
+#else
 class CRealMemberInfo : public CMemberInfo {
 public:
     // common member
@@ -100,8 +195,6 @@ public:
 
 private:
     // physical description
-    size_t m_Offset;
-    CTypeRef m_Type;
 };
 
 class CMemberAliasInfo : public CMemberInfo {
@@ -136,6 +229,7 @@ private:
     // physical description
     CTypeRef m_Type;
 };
+#endif
 
 #include <serial/member.inl>
 

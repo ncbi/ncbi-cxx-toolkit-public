@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/02/01 21:44:34  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.5  2000/01/10 19:46:31  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -155,10 +161,10 @@ private:
 
 template<typename T>
 inline
-TTypeInfo CreateEnumeratedTypeInfo(const T& dummy,
+TTypeInfo CreateEnumeratedTypeInfo(const T& ,
                                    const CEnumeratedTypeValues* info)
 {
-    return info->GetTypeInfoForSize(sizeof(T), dummy);
+    return info->GetTypeInfoForSize(sizeof(T), T(0));
 }
 
 // standard template for plain enums

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/02/01 21:44:35  vasilche
+* Added CGeneratedChoiceTypeInfo for generated choice classes.
+* Added buffering to CObjectIStreamAsn.
+* Removed CMemberInfo subclasses.
+* Added support for DEFAULT/OPTIONAL members.
+*
 * Revision 1.5  1999/09/01 17:38:01  vasilche
 * Fixed vector<char> implementation.
 * Added explicit naming of class info.
@@ -55,6 +61,7 @@
 * ===========================================================================
 */
 
+#if 0
 inline
 CMemberInfo::CMemberInfo(void)
     : m_Optional(false), m_Default(0)
@@ -117,5 +124,5 @@ CTypedMemberAliasInfo::CTypedMemberAliasInfo(const CTypeRef& type,
     : CMemberAliasInfo(containerType, memberName), m_Type(type)
 {
 }
-
+#endif
 #endif /* def MEMBER__HPP  &&  ndef MEMBER__INL */
