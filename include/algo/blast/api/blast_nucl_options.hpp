@@ -72,7 +72,10 @@ public:
     int GetLookupTableType() const { return m_Opts->GetLookupTableType(); }
     /// Sets LookupTableType
     /// @param type LookupTableType [in]
-    void SetLookupTableType(int type) { m_Opts->SetLookupTableType(type); }
+    void SetLookupTableType(int type) 
+    { 
+        m_Opts->SetLookupTableType(type); 
+    }
 
     /// Returns ScanStep
     unsigned char GetScanStep() const { return m_Opts->GetScanStep(); }
@@ -84,7 +87,19 @@ public:
     short GetWordSize() const { return m_Opts->GetWordSize(); }
     /// Sets WordSize
     /// @param ws WordSize [in]
-    void SetWordSize(short ws) { m_Opts->SetWordSize(ws); }
+    void SetWordSize(short ws) 
+    { 
+        if (GetLookupTableType() == MB_LOOKUP_TABLE && 
+            ws % COMPRESSION_RATIO != 0)
+            SetVariableWordSize(false);
+
+        unsigned int s = CalculateBestStride(GetWordSize(), 
+                                             GetVariableWordSize(), 
+                                             GetLookupTableType());
+
+        SetScanStep(s);
+        m_Opts->SetWordSize(ws); 
+    }
 
     /******************* Query setup options ************************/
     /// Returns StrandOption
@@ -126,7 +141,7 @@ public:
     /// @param sem SeedExtensionMethod [in]
     void SetSeedExtensionMethod(SeedExtensionMethod sem) {
         switch (sem) {
-        case eRight: 
+        case eRight: case eUpdateDiag:
             SetScanStep(COMPRESSION_RATIO);
             break;
         case eRightAndLeft:
@@ -178,13 +193,32 @@ public:
     EBlastPrelimGapExt GetGapExtnAlgorithm() const { return m_Opts->GetGapExtnAlgorithm(); }
     /// Sets GapExtnAlgorithm
     /// @param algo GapExtnAlgorithm [in]
-    void SetGapExtnAlgorithm(EBlastPrelimGapExt algo) { m_Opts->SetGapExtnAlgorithm(algo); }
+    void SetGapExtnAlgorithm(EBlastPrelimGapExt algo) 
+    {
+        if (algo != GetGapExtnAlgorithm() ) {
+            if (algo == eGreedyExt || algo == eGreedyWithTracebackExt) {
+                SetGapOpeningCost(BLAST_GAP_OPEN_MEGABLAST);
+                SetGapExtensionCost(BLAST_GAP_EXTN_MEGABLAST);
+            } else {
+                SetGapOpeningCost(BLAST_GAP_OPEN_NUCL);
+                SetGapExtensionCost(BLAST_GAP_EXTN_NUCL);
+            }
+            m_Opts->SetGapExtnAlgorithm(algo); 
+        }
+    }
 
     /// Returns GapTracebackAlgorithm
     EBlastTbackExt GetGapTracebackAlgorithm() const { return m_Opts->GetGapTracebackAlgorithm(); }
     /// Sets GapTracebackAlgorithm
     /// @param algo GapTracebackAlgorithm [in]
-    void SetGapTracebackAlgorithm(EBlastTbackExt algo) { m_Opts->SetGapTracebackAlgorithm(algo); }
+    void SetGapTracebackAlgorithm(EBlastTbackExt algo) 
+    {
+        if (algo != GetGapTracebackAlgorithm() && algo != eGreedyTbck) {
+            SetGapOpeningCost(BLAST_GAP_OPEN_NUCL);
+            SetGapExtensionCost(BLAST_GAP_EXTN_NUCL);
+        }
+        m_Opts->SetGapTracebackAlgorithm(algo); 
+    }
 
     /************************ Scoring options ************************/
     /// Returns MatchReward
@@ -295,6 +329,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/08/03 20:20:30  dondosha
+ * Added some option dependencies to setter methods
+ *
  * Revision 1.14  2004/08/02 15:01:36  bealer
  * - Distinguish between blastn and megablast (for remote blast).
  *
