@@ -58,7 +58,6 @@ void CWriteSerialObjectHook::WriteObject(CObjectOStream& out,
         // Use default write method.
         LOG_POST("CWriteSerialObjectHook::WriteObject()"
             " -- using default writer");
-//        object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
         DefaultWrite(out, object);
         return;
     }
@@ -122,7 +121,6 @@ void CReadSerialObjectHook::ReadObject(CObjectIStream& in,
         // Use default read method.
         LOG_POST("CReadSerialObjectHook::ReadObject()"
             " -- using default reader");
-//        object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
         DefaultRead(in, object);
         return;
     }
@@ -157,7 +155,6 @@ void CWriteSerialObject_NameHook::WriteClassMember
         (member.GetMember().GetObjectPtr());
     LOG_POST("CWriteSerialObject_NameHook::WriteClassMember()"
         " -- writing m_Name: " << name);
-//    out.WriteClassMember(member);
     DefaultWrite(out, member);
 }
 
@@ -173,7 +170,6 @@ void CReadSerialObject_NameHook::ReadClassMember
     (CObjectIStream& in, const CObjectInfoMI& member)
 {
     // No special processing -- just report reading the member
-//    in.ReadClassMember(member);
     DefaultRead(in, member);
     const string& name = *reinterpret_cast<const string*>
         (member.GetMember().GetObjectPtr());
@@ -190,8 +186,6 @@ void TestHooks(CTestSerialObject& obj)
         CNcbiOstrstream ostrs;
         auto_ptr<CObjectOStream> os(CObjectOStream::Open
             (eSerial_AsnText, ostrs));
-//        CObjectTypeInfo info = CType<CTestSerialObject>();
-//        info.SetLocalWriteHook(*os, new CWriteSerialObjectHook(&obj));
         CObjectHookGuard<CTestSerialObject> w_hook
             (*(new CWriteSerialObjectHook(&obj)), &(*os));
         *os << obj;
@@ -202,8 +196,6 @@ void TestHooks(CTestSerialObject& obj)
         auto_ptr<CObjectIStream> is(CObjectIStream::Open
             (eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
-//        CObjectTypeInfo info = CType<CTestSerialObject>();
-//        info.SetLocalReadHook(*is, new CReadSerialObjectHook(&obj_copy));
         CObjectHookGuard<CTestSerialObject> r_hook
             (*(new CReadSerialObjectHook(&obj_copy)), &(*is));
         *is >> obj_copy;
@@ -221,9 +213,6 @@ void TestHooks(CTestSerialObject& obj)
         CNcbiOstrstream ostrs;
         auto_ptr<CObjectOStream> os(CObjectOStream::Open
             (eSerial_AsnText, ostrs));
-//        CObjectTypeInfo info = CType<CTestSerialObject>();
-//        info.FindMember("m_Name").SetLocalWriteHook(*os,
-//            new CWriteSerialObject_NameHook);
         CObjectHookGuard<CTestSerialObject> w_hook
             ("m_Name", *(new CWriteSerialObject_NameHook), &(*os));
         *os << obj;
@@ -234,9 +223,6 @@ void TestHooks(CTestSerialObject& obj)
         auto_ptr<CObjectIStream> is(CObjectIStream::Open
             (eSerial_AsnText, istrs));
         CTestSerialObject obj_copy;
-//        CObjectTypeInfo info = CType<CTestSerialObject>();
-//        info.FindMember("m_Name").SetLocalReadHook(*is,
-//            new CReadSerialObject_NameHook);
         CObjectHookGuard<CTestSerialObject> r_hook
             ("m_Name", *(new CReadSerialObject_NameHook), &(*is));
         *is >> obj_copy;
