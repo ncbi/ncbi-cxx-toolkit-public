@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.56 2002/04/11 21:05:37 ucko Exp $
+#  $Id: configure.ac,v 1.57 2002/04/11 21:30:30 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1848,6 +1848,7 @@ else
          ],
          [
            with_sssutils="no"
+           with_sss="no"
            LIBSSSUTILS=""
            WithoutPackages="$WithoutPackages SSSUTILS"
          ]
@@ -1871,6 +1872,7 @@ else
          ],
          [
            with_sssdb="no"
+           with_sss="no"
            LIBSSSDB=""
            WithoutPackages="$WithoutPackages SSSDB"
          ]
@@ -2259,10 +2261,26 @@ fi
 
 if test "$with_internal" = "yes" ; then
    OPT_GROUPS="$OPT_GROUPS internal"
-   if test "$with_sybase" = "no"  -o  "$with_ncbi_c" = "no"  -o  \
-           "$with_sss" = "no"  -o  "$with_pubmed" = "no"
-   then
-      AC_MSG_ERROR(["--with-internal:  Cannot build INTERNAL projects"])
+   reason=""
+   sep=
+   if test "$with_sybase" = "no"; then
+     reason="$reason${sep}Sybase"
+     sep=", "
+   fi
+   if test "$with_ncbi_C" = "no"; then
+     reason="$reason${sep}C-Toolkit"
+     sep=", "
+   fi
+   if test "$with_sss" = "no"; then
+     reason="$reason${sep}SSS"
+     sep=", "
+   fi
+   if test "$with_pubmed" = "no"; then
+     reason="$reason${sep}PubMed"
+     sep=", "
+   fi
+   if test -n "$reason"; then
+      AC_MSG_ERROR(["--with-internal:  Cannot build INTERNAL projects: missing $reason"])
    fi
 else
    WithoutProjects="$WithoutProjects internal"

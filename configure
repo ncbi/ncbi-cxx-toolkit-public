@@ -7586,6 +7586,7 @@ else
 cat conftest.$ac_ext >&5
 
            with_sssutils="no"
+           with_sss="no"
            LIBSSSUTILS=""
            WithoutPackages="$WithoutPackages SSSUTILS"
 
@@ -7646,6 +7647,7 @@ else
 cat conftest.$ac_ext >&5
 
            with_sssdb="no"
+           with_sss="no"
            LIBSSSDB=""
            WithoutPackages="$WithoutPackages SSSDB"
 
@@ -8176,11 +8178,27 @@ fi
 
 if test "$with_internal" = "yes" ; then
    OPT_GROUPS="$OPT_GROUPS internal"
-   if test "$with_sybase" = "no"  -o  "$with_ncbi_c" = "no"  -o  \
-           "$with_sss" = "no"  -o  "$with_pubmed" = "no"
-   then
-      { { echo "$as_me:$LINENO: error: \"--with-internal:  Cannot build INTERNAL projects\"" >&5
-echo "$as_me: error: \"--with-internal:  Cannot build INTERNAL projects\"" >&2;}
+   reason=""
+   sep=
+   if test "$with_sybase" = "no"; then
+     reason="$reason${sep}Sybase"
+     sep=", "
+   fi
+   if test "$with_ncbi_C" = "no"; then
+     reason="$reason${sep}C-Toolkit"
+     sep=", "
+   fi
+   if test "$with_sss" = "no"; then
+     reason="$reason${sep}SSS"
+     sep=", "
+   fi
+   if test "$with_pubmed" = "no"; then
+     reason="$reason${sep}PubMed"
+     sep=", "
+   fi
+   if test -n "$reason"; then
+      { { echo "$as_me:$LINENO: error: \"--with-internal:  Cannot build INTERNAL projects: missing $reason\"" >&5
+echo "$as_me: error: \"--with-internal:  Cannot build INTERNAL projects: missing $reason\"" >&2;}
    { (exit 1); exit 1; }; }
    fi
 else
