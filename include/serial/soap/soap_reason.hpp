@@ -1,4 +1,3 @@
-
 /* $Id$
  * ===========================================================================
  *
@@ -27,59 +26,53 @@
  * Author: Andrei Gourianov
  *
  * File Description:
- *   Holds SOAP message contents
-*/
+ *   SOAP Reason object
+ *
+ * ===========================================================================
+ */
 
-#ifndef SOAP_ENVELOPE_HPP
-#define SOAP_ENVELOPE_HPP
+#ifndef SOAP_REASON_HPP
+#define SOAP_REASON_HPP
 
 // standard includes
 #include <serial/serialbase.hpp>
 
-BEGIN_NCBI_SCOPE
+// generated includes
+#include <list>
 
+
+BEGIN_NCBI_SCOPE
 // forward declarations
-class CSoapBody;
-class CSoapHeader;
+class CSoapText;
+
 
 // generated classes
 
-class CSoapEnvelope : public CSerialObject
+class CSoapReason : public CSerialObject
 {
     typedef CSerialObject Tparent;
 public:
     // constructor
-    CSoapEnvelope(void);
+    CSoapReason(void);
     // destructor
-    virtual ~CSoapEnvelope(void);
+    virtual ~CSoapReason(void);
 
     // type info
     DECLARE_INTERNAL_TYPE_INFO();
 
     // types
-    typedef CSoapHeader TSoapHeader;
-    typedef CSoapBody TSoapBody;
+    typedef std::list< CRef< CSoapText > > TSoapText;
 
     // getters
     // setters
 
-    // optional
-    // typedef CSoapHeader TSoapHeader
-    bool IsSetHeader(void) const;
-    bool CanGetHeader(void) const;
-    void ResetHeader(void);
-    const TSoapHeader& GetHeader(void) const;
-    void SetHeader(TSoapHeader& value);
-    TSoapHeader& SetHeader(void);
-
     // mandatory
-    // typedef CSoapBody TSoapBody
-    bool IsSetBody(void) const;
-    bool CanGetBody(void) const;
-    void ResetBody(void);
-    const TSoapBody& GetBody(void) const;
-    void SetBody(TSoapBody& value);
-    TSoapBody& SetBody(void);
+    // typedef std::list< CRef< CSoapText > > TSoapText
+    bool IsSetSoapText(void) const;
+    bool CanGetSoapText(void) const;
+    void ResetSoapText(void);
+    const TSoapText& GetSoapText(void) const;
+    TSoapText& SetSoapText(void);
 
     // reset whole object
     virtual void Reset(void);
@@ -87,64 +80,45 @@ public:
 
 private:
     // Prohibit copy constructor and assignment operator
-    CSoapEnvelope(const CSoapEnvelope&);
-    CSoapEnvelope& operator=(const CSoapEnvelope&);
+    CSoapReason(const CSoapReason&);
+    CSoapReason& operator=(const CSoapReason&);
 
     // data
-    CRef< TSoapHeader > m_Header;
-    CRef< TSoapBody > m_Body;
+    Uint4 m_set_State[1];
+    TSoapText m_SoapText;
 };
+
+
+
+
 
 
 ///////////////////////////////////////////////////////////
 ///////////////////// inline methods //////////////////////
 ///////////////////////////////////////////////////////////
 inline
-bool CSoapEnvelope::IsSetHeader(void) const
+bool CSoapReason::IsSetSoapText(void) const
 {
-    return m_Header;
+    return ((m_set_State[0] & 0x3) != 0);
 }
 
 inline
-bool CSoapEnvelope::CanGetHeader(void) const
+bool CSoapReason::CanGetSoapText(void) const
 {
-    return IsSetHeader();
+    return true;
 }
 
 inline
-const CSoapHeader& CSoapEnvelope::GetHeader(void) const
+const std::list< CRef< CSoapText > >& CSoapReason::GetSoapText(void) const
 {
-    if (!CanGetHeader()) {
-        ThrowUnassigned(0);
-    }
-    return (*m_Header);
+    return m_SoapText;
 }
 
 inline
-bool CSoapEnvelope::IsSetBody(void) const
+std::list< CRef< CSoapText > >& CSoapReason::SetSoapText(void)
 {
-    return m_Body;
-}
-
-inline
-bool CSoapEnvelope::CanGetBody(void) const
-{
-    return IsSetBody();
-}
-
-inline
-const CSoapBody& CSoapEnvelope::GetBody(void) const
-{
-    if (!CanGetBody()) {
-        ThrowUnassigned(1);
-    }
-    return (*m_Body);
-}
-
-inline
-CSoapBody& CSoapEnvelope::SetBody(void)
-{
-    return (*m_Body);
+    m_set_State[0] |= 0x1;
+    return m_SoapText;
 }
 
 ///////////////////////////////////////////////////////////
@@ -153,11 +127,11 @@ CSoapBody& CSoapEnvelope::SetBody(void)
 END_NCBI_SCOPE
 
 
-#endif // SOAP_ENVELOPE_HPP
+#endif // SOAP_REASON_HPP
 
 /* --------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2003/09/25 19:45:33  gouriano
+* Revision 1.1  2003/09/25 19:46:21  gouriano
 * Added soap Fault object
 *
 *

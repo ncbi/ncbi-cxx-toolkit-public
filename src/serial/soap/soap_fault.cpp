@@ -26,7 +26,7 @@
  * Author: Andrei Gourianov
  *
  * File Description:
- *   Holds SOAP message Body contents
+ *   SOAP Fault object
  *
  * ===========================================================================
  */
@@ -35,66 +35,90 @@
 #include <serial/serialimpl.hpp>
 
 // generated includes
-#include "soap_body.hpp"
+#include <serial/soap/soap_fault.hpp>
 
 BEGIN_NCBI_SCOPE
 // generated classes
 
-void CSoapBody::C_E::ResetAnyContent(void)
+void CSoapFault::ResetSoapCode(void)
 {
-    (*m_AnyContent).Reset();
+    (*m_SoapCode).Reset();
 }
 
-void CSoapBody::C_E::SetAnyContent(CAnyContentObject& value)
+void CSoapFault::SetSoapCode(CSoapCode& value)
 {
-    m_AnyContent.Reset(&value);
+    m_SoapCode.Reset(&value);
 }
 
-void CSoapBody::C_E::Reset(void)
+void CSoapFault::ResetSoapReason(void)
 {
-    ResetAnyContent();
+    (*m_SoapReason).Reset();
 }
 
-BEGIN_NAMED_CLASS_INFO("", CSoapBody::C_E)
+void CSoapFault::SetSoapReason(CSoapReason& value)
 {
-    ADD_NAMED_REF_MEMBER("AnyContent", m_AnyContent, CAnyContentObject)->SetNoPrefix()->SetNotag()->SetAnyContent();
-}
-END_CLASS_INFO
-
-// constructor
-CSoapBody::C_E::C_E(void)
-    : m_AnyContent(0/*new CAnyContentObject()*/)
-{
+    m_SoapReason.Reset(&value);
 }
 
-// destructor
-CSoapBody::C_E::~C_E(void)
+void CSoapFault::ResetSoapNode(void)
 {
+    m_SoapNode.erase();
+    m_set_State[0] &= ~0x30;
 }
 
-
-void CSoapBody::Reset(void)
+void CSoapFault::ResetSoapRole(void)
 {
-    m_data.clear();
-    m_set_State[0] &= ~0x3;
+    m_SoapRole.erase();
+    m_set_State[0] &= ~0xc0;
 }
 
-BEGIN_NAMED_IMPLICIT_CLASS_INFO("Body", CSoapBody)
+void CSoapFault::ResetSoapDetail(void)
+{
+    m_SoapDetail.Reset();
+}
+
+void CSoapFault::SetSoapDetail(CSoapDetail& value)
+{
+    m_SoapDetail.Reset(&value);
+}
+
+CSoapDetail& CSoapFault::SetSoapDetail(void)
+{
+    if ( !m_SoapDetail )
+        m_SoapDetail.Reset(new CSoapDetail());
+    return (*m_SoapDetail);
+}
+
+void CSoapFault::Reset(void)
+{
+    ResetSoapCode();
+    ResetSoapReason();
+    ResetSoapNode();
+    ResetSoapRole();
+    ResetSoapDetail();
+}
+
+BEGIN_NAMED_CLASS_INFO("Fault", CSoapFault)
 {
     SET_CLASS_MODULE("soap");
-    ADD_NAMED_MEMBER("", m_data, STL_list, (STL_CRef, (CLASS, (C_E))))->SetSetFlag(MEMBER_PTR(m_set_State[0]));
+    ADD_NAMED_REF_MEMBER("Code", m_SoapCode, CSoapCode)->SetNoPrefix();
+    ADD_NAMED_REF_MEMBER("Reason", m_SoapReason, CSoapReason)->SetNoPrefix();
+    ADD_NAMED_STD_MEMBER("Node", m_SoapNode)->SetOptional()->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix();
+    ADD_NAMED_STD_MEMBER("Role", m_SoapRole)->SetOptional()->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix();
+    ADD_NAMED_REF_MEMBER("Detail", m_SoapDetail, CSoapDetail)->SetOptional()->SetNoPrefix();
     info->RandomOrder();
 }
 END_CLASS_INFO
 
 // constructor
-CSoapBody::CSoapBody(void)
+CSoapFault::CSoapFault(void)
+    : m_SoapCode(new CSoapCode()), m_SoapReason(new CSoapReason())
 {
     memset(m_set_State,0,sizeof(m_set_State));
 }
 
 // destructor
-CSoapBody::~CSoapBody(void)
+CSoapFault::~CSoapFault(void)
 {
 }
 
@@ -102,7 +126,7 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2003/09/25 19:45:33  gouriano
+* Revision 1.1  2003/09/25 19:45:33  gouriano
 * Added soap Fault object
 *
 *

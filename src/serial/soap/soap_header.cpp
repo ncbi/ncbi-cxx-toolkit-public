@@ -37,6 +37,7 @@
 // generated includes
 #include "soap_header.hpp"
 
+BEGIN_NCBI_SCOPE
 // generated classes
 
 void CSoapHeader::C_E::ResetAnyContent(void)
@@ -44,7 +45,7 @@ void CSoapHeader::C_E::ResetAnyContent(void)
     (*m_AnyContent).Reset();
 }
 
-void CSoapHeader::C_E::SetAnyContent(ncbi::CAnyContentObject& value)
+void CSoapHeader::C_E::SetAnyContent(CAnyContentObject& value)
 {
     m_AnyContent.Reset(&value);
 }
@@ -56,13 +57,13 @@ void CSoapHeader::C_E::Reset(void)
 
 BEGIN_NAMED_CLASS_INFO("", CSoapHeader::C_E)
 {
-    ADD_NAMED_REF_MEMBER("AnyContent", m_AnyContent, ncbi::CAnyContentObject)->SetNoPrefix()->SetNotag()->SetAnyContent();
+    ADD_NAMED_REF_MEMBER("AnyContent", m_AnyContent, CAnyContentObject)->SetNoPrefix()->SetNotag()->SetAnyContent();
 }
 END_CLASS_INFO
 
 // constructor
 CSoapHeader::C_E::C_E(void)
-    : m_AnyContent(0/*new ncbi::CAnyContentObject()*/)
+    : m_AnyContent(0/*new CAnyContentObject()*/)
 {
 }
 
@@ -96,5 +97,13 @@ CSoapHeader::~CSoapHeader(void)
 {
 }
 
+END_NCBI_SCOPE
 
-
+/* --------------------------------------------------------------------------
+* $Log$
+* Revision 1.2  2003/09/25 19:45:33  gouriano
+* Added soap Fault object
+*
+*
+* ===========================================================================
+*/

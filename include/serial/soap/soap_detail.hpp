@@ -26,13 +26,13 @@
  * Author: Andrei Gourianov
  *
  * File Description:
- *   Holds SOAP message Header contents
+ *   SOAP Detail object
  *
  * ===========================================================================
  */
 
-#ifndef SOAP_HEADER_HPP
-#define SOAP_HEADER_HPP
+#ifndef SOAP_DETAIL_HPP
+#define SOAP_DETAIL_HPP
 
 // standard includes
 #include <serial/serialbase.hpp>
@@ -42,16 +42,17 @@
 
 
 BEGIN_NCBI_SCOPE
+
 // generated classes
 
-class CSoapHeader : public CSerialObject
+class CSoapDetail : public CSerialObject
 {
     typedef CSerialObject Tparent;
 public:
     // constructor
-    CSoapHeader(void);
+    CSoapDetail(void);
     // destructor
-    virtual ~CSoapHeader(void);
+    virtual ~CSoapDetail(void);
 
     // type info
     DECLARE_INTERNAL_TYPE_INFO();
@@ -103,6 +104,8 @@ public:
 
     // mandatory
     // typedef std::list< CRef< C_E > > Tdata
+
+protected:
     bool IsSet(void) const;
     bool CanGet(void) const;
     void Reset(void);
@@ -111,35 +114,40 @@ public:
     operator const Tdata& (void) const;
     operator Tdata& (void);
 
-
 private:
     // Prohibit copy constructor and assignment operator
-    CSoapHeader(const CSoapHeader&);
-    CSoapHeader& operator=(const CSoapHeader&);
+    CSoapDetail(const CSoapDetail&);
+    CSoapDetail& operator=(const CSoapDetail&);
 
     // data
     Uint4 m_set_State[1];
     Tdata m_data;
+
+    friend class CSoapMessage;
 };
+
+
+
+
 
 
 ///////////////////////////////////////////////////////////
 ///////////////////// inline methods //////////////////////
 ///////////////////////////////////////////////////////////
 inline
-bool CSoapHeader::C_E::IsSetAnyContent(void) const
+bool CSoapDetail::C_E::IsSetAnyContent(void) const
 {
     return m_AnyContent;
 }
 
 inline
-bool CSoapHeader::C_E::CanGetAnyContent(void) const
+bool CSoapDetail::C_E::CanGetAnyContent(void) const
 {
     return IsSetAnyContent();
 }
 
 inline
-const CAnyContentObject& CSoapHeader::C_E::GetAnyContent(void) const
+const CAnyContentObject& CSoapDetail::C_E::GetAnyContent(void) const
 {
     if (!CanGetAnyContent()) {
         ThrowUnassigned(0);
@@ -148,44 +156,44 @@ const CAnyContentObject& CSoapHeader::C_E::GetAnyContent(void) const
 }
 
 inline
-CAnyContentObject& CSoapHeader::C_E::SetAnyContent(void)
+CAnyContentObject& CSoapDetail::C_E::SetAnyContent(void)
 {
     return (*m_AnyContent);
 }
 
 inline
-bool CSoapHeader::IsSet(void) const
+bool CSoapDetail::IsSet(void) const
 {
     return ((m_set_State[0] & 0x3) != 0);
 }
 
 inline
-bool CSoapHeader::CanGet(void) const
+bool CSoapDetail::CanGet(void) const
 {
     return true;
 }
 
 inline
-const std::list< CRef< CSoapHeader::C_E > >& CSoapHeader::Get(void) const
+const std::list< CRef< CSoapDetail::C_E > >& CSoapDetail::Get(void) const
 {
     return m_data;
 }
 
 inline
-std::list< CRef< CSoapHeader::C_E > >& CSoapHeader::Set(void)
+std::list< CRef< CSoapDetail::C_E > >& CSoapDetail::Set(void)
 {
     m_set_State[0] |= 0x1;
     return m_data;
 }
 
 inline
-CSoapHeader::operator const std::list< CRef< CSoapHeader::C_E > >& (void) const
+CSoapDetail::operator const std::list< CRef< CSoapDetail::C_E > >& (void) const
 {
     return m_data;
 }
 
 inline
-CSoapHeader::operator std::list< CRef< CSoapHeader::C_E > >& (void)
+CSoapDetail::operator std::list< CRef< CSoapDetail::C_E > >& (void)
 {
     m_set_State[0] |= 0x1;
     return m_data;
@@ -194,13 +202,15 @@ CSoapHeader::operator std::list< CRef< CSoapHeader::C_E > >& (void)
 ///////////////////////////////////////////////////////////
 ////////////////// end of inline methods //////////////////
 ///////////////////////////////////////////////////////////
+
+
 END_NCBI_SCOPE
 
-#endif // SOAP_HEADER_HPP
+#endif // SOAP_DETAIL_HPP
 
 /* --------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2003/09/25 19:45:33  gouriano
+* Revision 1.1  2003/09/25 19:46:21  gouriano
 * Added soap Fault object
 *
 *

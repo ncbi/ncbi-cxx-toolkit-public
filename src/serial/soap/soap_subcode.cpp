@@ -26,69 +26,66 @@
  * Author: Andrei Gourianov
  *
  * File Description:
- *   Holds SOAP message contents
+ *   SOAP Subcode object
+ *
+ * ===========================================================================
  */
 
 // standard includes
 #include <serial/serialimpl.hpp>
 
 // generated includes
-#include "soap_envelope.hpp"
-#include "soap_body.hpp"
-#include "soap_header.hpp"
+#include <serial/soap/soap_subcode.hpp>
 
 BEGIN_NCBI_SCOPE
 // generated classes
 
-void CSoapEnvelope::ResetHeader(void)
+void CSoapSubcode::ResetSoapValue(void)
 {
-    m_Header.Reset();
+    m_SoapValue.erase();
+    m_set_State[0] &= ~0x3;
 }
 
-void CSoapEnvelope::SetHeader(CSoapHeader& value)
+void CSoapSubcode::ResetSoapSubcode(void)
 {
-    m_Header.Reset(&value);
+    m_SoapSubcode.Reset();
 }
 
-CSoapHeader& CSoapEnvelope::SetHeader(void)
+void CSoapSubcode::SetSoapSubcode(CSoapSubcode& value)
 {
-    if ( !m_Header )
-        m_Header.Reset(new CSoapHeader());
-    return (*m_Header);
+    m_SoapSubcode.Reset(&value);
 }
 
-void CSoapEnvelope::ResetBody(void)
+CSoapSubcode& CSoapSubcode::SetSoapSubcode(void)
 {
-    (*m_Body).Reset();
+    if ( !m_SoapSubcode )
+        m_SoapSubcode.Reset(new CSoapSubcode());
+    return (*m_SoapSubcode);
 }
 
-void CSoapEnvelope::SetBody(CSoapBody& value)
+void CSoapSubcode::Reset(void)
 {
-    m_Body.Reset(&value);
+    ResetSoapValue();
+    ResetSoapSubcode();
 }
 
-void CSoapEnvelope::Reset(void)
-{
-    ResetHeader();
-    ResetBody();
-}
-
-BEGIN_NAMED_CLASS_INFO("Envelope", CSoapEnvelope)
+BEGIN_NAMED_CLASS_INFO("Subcode", CSoapSubcode)
 {
     SET_CLASS_MODULE("soap");
-    ADD_NAMED_REF_MEMBER("Header", m_Header, CSoapHeader)->SetOptional()->SetNoPrefix();
-    ADD_NAMED_REF_MEMBER("Body", m_Body, CSoapBody)->SetNoPrefix();
+    ADD_NAMED_STD_MEMBER("Value", m_SoapValue)->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix();
+    ADD_NAMED_REF_MEMBER("Subcode", m_SoapSubcode, CSoapSubcode)->SetOptional()->SetNoPrefix();
+    info->RandomOrder();
 }
 END_CLASS_INFO
 
 // constructor
-CSoapEnvelope::CSoapEnvelope(void)
-    : m_Body(new CSoapBody())
+CSoapSubcode::CSoapSubcode(void)
 {
+    memset(m_set_State,0,sizeof(m_set_State));
 }
 
 // destructor
-CSoapEnvelope::~CSoapEnvelope(void)
+CSoapSubcode::~CSoapSubcode(void)
 {
 }
 
@@ -96,7 +93,7 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2003/09/25 19:45:33  gouriano
+* Revision 1.1  2003/09/25 19:45:33  gouriano
 * Added soap Fault object
 *
 *

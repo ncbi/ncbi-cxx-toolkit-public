@@ -35,6 +35,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostrxml.hpp>
 #include <serial/soap/soap_message.hpp>
+#include <serial/soap/soap_fault.hpp>
 #include "soap_envelope.hpp"
 #include "soap_body.hpp"
 #include "soap_header.hpp"
@@ -50,6 +51,7 @@ const string& CSoapMessage::ms_SoapNamespace =
 CSoapMessage::CSoapMessage(void)
     : m_Prefix("env")
 {
+    RegisterObjectType(CSoapFault::GetTypeInfo);
 }
 
 CSoapMessage::~CSoapMessage(void)
@@ -77,8 +79,10 @@ void CSoapMessage::AddObject(const CSerialObject& obj,
 {
     if (eDestination == eMsgHeader) {
         m_Header.push_back( CConstRef<CSerialObject>(&obj));
-    } else {
+    } else if (eDestination == eMsgBody) {
         m_Body.push_back( CConstRef<CSerialObject>(&obj));
+    } else {
+        m_FaultDetail.push_back( CConstRef<CSerialObject>(&obj));
     }
 }
 
@@ -87,6 +91,7 @@ void CSoapMessage::Write(CObjectOStream& out) const
 {
     CObjectOStreamXml* os = 0;
     bool schema = false, loc = false;
+    string ns_default;
     ESerialDataFormat fmt = out.GetDataFormat();
     if (fmt == eSerial_Xml) {
         os = dynamic_cast<CObjectOStreamXml*>(&out);
@@ -95,6 +100,8 @@ void CSoapMessage::Write(CObjectOStream& out) const
             os->SetReferenceSchema();
             loc = os->GetUseSchemaLocation();
             os->SetUseSchemaLocation(false);
+            ns_default = os->GetDefaultSchemaNamespace();
+            os->SetDefaultSchemaNamespace(GetSoapNamespace());
         }
     }
 
@@ -116,17 +123,38 @@ void CSoapMessage::Write(CObjectOStream& out) const
     h->SetAnyContent(*(new CAnyContentObject));
     env.SetBody().Set().push_back(h);
 
+    CSoapFault* flt = 0;
+    if (!m_FaultDetail.empty()) {
+// This is to make the stream think the Detail was not empty.
+// Since Detail is optional, we do not have to make it *always*
+        flt = dynamic_cast<CSoapFault*>(const_cast<CSerialObject*>(
+            GetSerialObject("Fault", eMsgBody).GetPointer()));
+        if (!flt) {
+// throw exception here (?)
+        }
+        CRef<CSoapDetail::C_E> h(new CSoapDetail::C_E);
+        h->SetAnyContent(*(new CAnyContentObject));
+        flt->SetSoapDetail().Set().push_back(h);
+    }
+
     CObjectTypeInfo typeH = CType<CSoapHeader::C_E>();
     typeH.SetLocalWriteHook(out, new CSoapWriteHook(m_Header));
 
     CObjectTypeInfo typeB = CType<CSoapBody::C_E>();
     typeB.SetLocalWriteHook(out, new CSoapWriteHook(m_Body));
 
+    CObjectTypeInfo typeF = CType<CSoapDetail::C_E>();
+    typeF.SetLocalWriteHook(out, new CSoapWriteHook(m_FaultDetail));
+
     out << env;
 
+    if (flt) {
+        flt->SetSoapDetail().Set().clear();
+    }
     if (os) {
         os->SetReferenceSchema(schema);
         os->SetUseSchemaLocation(loc);
+        os->SetDefaultSchemaNamespace(ns_default);
     }
 }
 
@@ -141,6 +169,9 @@ void CSoapMessage::Read(CObjectIStream& in)
 
     CObjectTypeInfo typeB = CType<CSoapBody::C_E>();
     typeB.SetLocalReadHook(in, new CSoapReadHook(m_Body,m_Types));
+
+    CObjectTypeInfo typeF = CType<CSoapDetail::C_E>();
+    typeF.SetLocalReadHook(in, new CSoapReadHook(m_FaultDetail,m_Types));
 
     in >> env;
 }
@@ -168,6 +199,7 @@ void CSoapMessage::Reset(void)
 {
     m_Header.clear();
     m_Body.clear();
+    m_FaultDetail.clear();
 }
 
 const CSoapMessage::TSoapContent&
@@ -175,8 +207,10 @@ CSoapMessage::GetContent(EMessagePart eSource) const
 {
     if (eSource == eMsgHeader) {
         return m_Header;
-    } else {
+    } else if (eSource == eMsgBody) {
         return m_Body;
+    } else {
+        return m_FaultDetail;
     }
 }
 
@@ -217,6 +251,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/09/25 19:45:33  gouriano
+* Added soap Fault object
+*
 * Revision 1.1  2003/09/22 21:00:04  gouriano
 * Initial revision
 *

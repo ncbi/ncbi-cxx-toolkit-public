@@ -1,4 +1,3 @@
-
 /* $Id$
  * ===========================================================================
  *
@@ -27,59 +26,64 @@
  * Author: Andrei Gourianov
  *
  * File Description:
- *   Holds SOAP message contents
-*/
+ *   SOAP Subcode object
+ *
+ * ===========================================================================
+ */
 
-#ifndef SOAP_ENVELOPE_HPP
-#define SOAP_ENVELOPE_HPP
+#ifndef SOAP_SUBCODE_HPP
+#define SOAP_SUBCODE_HPP
 
 // standard includes
 #include <serial/serialbase.hpp>
 
-BEGIN_NCBI_SCOPE
+// generated includes
+#include <string>
 
+
+BEGIN_NCBI_SCOPE
 // forward declarations
-class CSoapBody;
-class CSoapHeader;
+//class CSoapSubcode;
+
 
 // generated classes
 
-class CSoapEnvelope : public CSerialObject
+class CSoapSubcode : public CSerialObject
 {
     typedef CSerialObject Tparent;
 public:
     // constructor
-    CSoapEnvelope(void);
+    CSoapSubcode(void);
     // destructor
-    virtual ~CSoapEnvelope(void);
+    virtual ~CSoapSubcode(void);
 
     // type info
     DECLARE_INTERNAL_TYPE_INFO();
 
     // types
-    typedef CSoapHeader TSoapHeader;
-    typedef CSoapBody TSoapBody;
+    typedef std::string TSoapValue;
+    typedef CSoapSubcode TSoapSubcode;
 
     // getters
     // setters
 
-    // optional
-    // typedef CSoapHeader TSoapHeader
-    bool IsSetHeader(void) const;
-    bool CanGetHeader(void) const;
-    void ResetHeader(void);
-    const TSoapHeader& GetHeader(void) const;
-    void SetHeader(TSoapHeader& value);
-    TSoapHeader& SetHeader(void);
-
     // mandatory
-    // typedef CSoapBody TSoapBody
-    bool IsSetBody(void) const;
-    bool CanGetBody(void) const;
-    void ResetBody(void);
-    const TSoapBody& GetBody(void) const;
-    void SetBody(TSoapBody& value);
-    TSoapBody& SetBody(void);
+    // typedef std::string TSoapValue
+    bool IsSetSoapValue(void) const;
+    bool CanGetSoapValue(void) const;
+    void ResetSoapValue(void);
+    const TSoapValue& GetSoapValue(void) const;
+    void SetSoapValue(const TSoapValue& value);
+    TSoapValue& SetSoapValue(void);
+
+    // optional
+    // typedef CSoapSubcode TSoapSubcode
+    bool IsSetSoapSubcode(void) const;
+    bool CanGetSoapSubcode(void) const;
+    void ResetSoapSubcode(void);
+    const TSoapSubcode& GetSoapSubcode(void) const;
+    void SetSoapSubcode(TSoapSubcode& value);
+    TSoapSubcode& SetSoapSubcode(void);
 
     // reset whole object
     virtual void Reset(void);
@@ -87,64 +91,82 @@ public:
 
 private:
     // Prohibit copy constructor and assignment operator
-    CSoapEnvelope(const CSoapEnvelope&);
-    CSoapEnvelope& operator=(const CSoapEnvelope&);
+    CSoapSubcode(const CSoapSubcode&);
+    CSoapSubcode& operator=(const CSoapSubcode&);
 
     // data
-    CRef< TSoapHeader > m_Header;
-    CRef< TSoapBody > m_Body;
+    Uint4 m_set_State[1];
+    TSoapValue m_SoapValue;
+    CRef< TSoapSubcode > m_SoapSubcode;
 };
+
+
+
+
 
 
 ///////////////////////////////////////////////////////////
 ///////////////////// inline methods //////////////////////
 ///////////////////////////////////////////////////////////
 inline
-bool CSoapEnvelope::IsSetHeader(void) const
+bool CSoapSubcode::IsSetSoapValue(void) const
 {
-    return m_Header;
+    return ((m_set_State[0] & 0x3) != 0);
 }
 
 inline
-bool CSoapEnvelope::CanGetHeader(void) const
+bool CSoapSubcode::CanGetSoapValue(void) const
 {
-    return IsSetHeader();
+    return IsSetSoapValue();
 }
 
 inline
-const CSoapHeader& CSoapEnvelope::GetHeader(void) const
+const std::string& CSoapSubcode::GetSoapValue(void) const
 {
-    if (!CanGetHeader()) {
+    if (!CanGetSoapValue()) {
         ThrowUnassigned(0);
     }
-    return (*m_Header);
+    return m_SoapValue;
 }
 
 inline
-bool CSoapEnvelope::IsSetBody(void) const
+void CSoapSubcode::SetSoapValue(const std::string& value)
 {
-    return m_Body;
+    m_SoapValue = value;
+    m_set_State[0] |= 0x3;
 }
 
 inline
-bool CSoapEnvelope::CanGetBody(void) const
+std::string& CSoapSubcode::SetSoapValue(void)
 {
-    return IsSetBody();
+#ifdef _DEBUG
+    if (!IsSetSoapValue()) {
+        m_SoapValue = ms_UnassignedStr;
+    }
+#endif
+    m_set_State[0] |= 0x1;
+    return m_SoapValue;
 }
 
 inline
-const CSoapBody& CSoapEnvelope::GetBody(void) const
+bool CSoapSubcode::IsSetSoapSubcode(void) const
 {
-    if (!CanGetBody()) {
+    return m_SoapSubcode;
+}
+
+inline
+bool CSoapSubcode::CanGetSoapSubcode(void) const
+{
+    return IsSetSoapSubcode();
+}
+
+inline
+const CSoapSubcode& CSoapSubcode::GetSoapSubcode(void) const
+{
+    if (!CanGetSoapSubcode()) {
         ThrowUnassigned(1);
     }
-    return (*m_Body);
-}
-
-inline
-CSoapBody& CSoapEnvelope::SetBody(void)
-{
-    return (*m_Body);
+    return (*m_SoapSubcode);
 }
 
 ///////////////////////////////////////////////////////////
@@ -153,11 +175,12 @@ CSoapBody& CSoapEnvelope::SetBody(void)
 END_NCBI_SCOPE
 
 
-#endif // SOAP_ENVELOPE_HPP
+
+#endif // SOAP_SUBCODE_HPP
 
 /* --------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2003/09/25 19:45:33  gouriano
+* Revision 1.1  2003/09/25 19:46:21  gouriano
 * Added soap Fault object
 *
 *

@@ -47,7 +47,8 @@ public:
 
     enum EMessagePart {
         eMsgHeader,
-        eMsgBody
+        eMsgBody,
+        eFaultDetail
     };
 
 // attributes
@@ -79,6 +80,7 @@ private:
     string m_Prefix;
     TSoapContent m_Header;
     TSoapContent m_Body;
+    TSoapContent m_FaultDetail;
     vector< const CTypeInfo* >  m_Types;
 
     static const string& ms_SoapNamespace;
@@ -106,6 +108,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/09/25 19:46:21  gouriano
+* Added soap Fault object
+*
 * Revision 1.1  2003/09/22 20:58:20  gouriano
 * Initial revision
 *

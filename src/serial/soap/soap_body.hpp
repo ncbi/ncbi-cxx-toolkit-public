@@ -41,11 +41,12 @@
 #include <list>
 
 
+BEGIN_NCBI_SCOPE
 // generated classes
 
-class CSoapBody : public ncbi::CSerialObject
+class CSoapBody : public CSerialObject
 {
-    typedef ncbi::CSerialObject Tparent;
+    typedef CSerialObject Tparent;
 public:
     // constructor
     CSoapBody(void);
@@ -55,9 +56,9 @@ public:
     // type info
     DECLARE_INTERNAL_TYPE_INFO();
 
-    class C_E : public ncbi::CSerialObject
+    class C_E : public CSerialObject
     {
-        typedef ncbi::CSerialObject Tparent;
+        typedef CSerialObject Tparent;
     public:
         // constructor
         C_E(void);
@@ -68,13 +69,13 @@ public:
         DECLARE_INTERNAL_TYPE_INFO();
     
         // types
-        typedef ncbi::CAnyContentObject TAnyContent;
+        typedef CAnyContentObject TAnyContent;
     
         // getters
         // setters
     
         // mandatory
-        // typedef ncbi::CAnyContentObject TAnyContent
+        // typedef CAnyContentObject TAnyContent
         bool IsSetAnyContent(void) const;
         bool CanGetAnyContent(void) const;
         void ResetAnyContent(void);
@@ -92,16 +93,16 @@ public:
         C_E& operator=(const C_E&);
     
         // data
-        ncbi::CRef< TAnyContent > m_AnyContent;
+        CRef< TAnyContent > m_AnyContent;
     };
     // types
-    typedef std::list< ncbi::CRef< C_E > > Tdata;
+    typedef std::list< CRef< C_E > > Tdata;
 
     // getters
     // setters
 
     // mandatory
-    // typedef std::list< ncbi::CRef< C_E > > Tdata
+    // typedef std::list< CRef< C_E > > Tdata
     bool IsSet(void) const;
     bool CanGet(void) const;
     void Reset(void);
@@ -110,8 +111,6 @@ public:
     operator const Tdata& (void) const;
     operator Tdata& (void);
 
-    // reset whole object
-    
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -140,7 +139,7 @@ bool CSoapBody::C_E::CanGetAnyContent(void) const
 }
 
 inline
-const ncbi::CAnyContentObject& CSoapBody::C_E::GetAnyContent(void) const
+const CAnyContentObject& CSoapBody::C_E::GetAnyContent(void) const
 {
     if (!CanGetAnyContent()) {
         ThrowUnassigned(0);
@@ -149,7 +148,7 @@ const ncbi::CAnyContentObject& CSoapBody::C_E::GetAnyContent(void) const
 }
 
 inline
-ncbi::CAnyContentObject& CSoapBody::C_E::SetAnyContent(void)
+CAnyContentObject& CSoapBody::C_E::SetAnyContent(void)
 {
     return (*m_AnyContent);
 }
@@ -167,33 +166,44 @@ bool CSoapBody::CanGet(void) const
 }
 
 inline
-const std::list< ncbi::CRef< CSoapBody::C_E > >& CSoapBody::Get(void) const
+const std::list< CRef< CSoapBody::C_E > >& CSoapBody::Get(void) const
 {
     return m_data;
 }
 
 inline
-std::list< ncbi::CRef< CSoapBody::C_E > >& CSoapBody::Set(void)
+std::list< CRef< CSoapBody::C_E > >& CSoapBody::Set(void)
 {
     m_set_State[0] |= 0x1;
     return m_data;
 }
 
 inline
-CSoapBody::operator const std::list< ncbi::CRef< CSoapBody::C_E > >& (void) const
+CSoapBody::operator const std::list< CRef< CSoapBody::C_E > >& (void) const
 {
     return m_data;
 }
 
 inline
-CSoapBody::operator std::list< ncbi::CRef< CSoapBody::C_E > >& (void)
+CSoapBody::operator std::list< CRef< CSoapBody::C_E > >& (void)
 {
     m_set_State[0] |= 0x1;
     return m_data;
 }
+
 
 ///////////////////////////////////////////////////////////
 ////////////////// end of inline methods //////////////////
 ///////////////////////////////////////////////////////////
+END_NCBI_SCOPE
 
 #endif // SOAP_BODY_HPP
+
+/* --------------------------------------------------------------------------
+* $Log$
+* Revision 1.2  2003/09/25 19:45:33  gouriano
+* Added soap Fault object
+*
+*
+* ===========================================================================
+*/

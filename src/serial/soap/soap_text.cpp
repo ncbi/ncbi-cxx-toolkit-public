@@ -26,69 +26,95 @@
  * Author: Andrei Gourianov
  *
  * File Description:
- *   Holds SOAP message contents
+ *   SOAP Text object
+ *
+ * ===========================================================================
  */
 
 // standard includes
 #include <serial/serialimpl.hpp>
 
 // generated includes
-#include "soap_envelope.hpp"
-#include "soap_body.hpp"
-#include "soap_header.hpp"
+#include <serial/soap/soap_text.hpp>
 
 BEGIN_NCBI_SCOPE
 // generated classes
 
-void CSoapEnvelope::ResetHeader(void)
+void CSoapText::C_Attlist::ResetXmllang(void)
 {
-    m_Header.Reset();
+    m_Xmllang.erase();
+    m_set_State[0] &= ~0x3;
 }
 
-void CSoapEnvelope::SetHeader(CSoapHeader& value)
+void CSoapText::C_Attlist::Reset(void)
 {
-    m_Header.Reset(&value);
+    ResetXmllang();
 }
 
-CSoapHeader& CSoapEnvelope::SetHeader(void)
+BEGIN_NAMED_CLASS_INFO("", CSoapText::C_Attlist)
 {
-    if ( !m_Header )
-        m_Header.Reset(new CSoapHeader());
-    return (*m_Header);
-}
-
-void CSoapEnvelope::ResetBody(void)
-{
-    (*m_Body).Reset();
-}
-
-void CSoapEnvelope::SetBody(CSoapBody& value)
-{
-    m_Body.Reset(&value);
-}
-
-void CSoapEnvelope::Reset(void)
-{
-    ResetHeader();
-    ResetBody();
-}
-
-BEGIN_NAMED_CLASS_INFO("Envelope", CSoapEnvelope)
-{
-    SET_CLASS_MODULE("soap");
-    ADD_NAMED_REF_MEMBER("Header", m_Header, CSoapHeader)->SetOptional()->SetNoPrefix();
-    ADD_NAMED_REF_MEMBER("Body", m_Body, CSoapBody)->SetNoPrefix();
+    ADD_NAMED_STD_MEMBER("xml:lang", m_Xmllang)->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix();
+    info->SetRandomOrder(true);
 }
 END_CLASS_INFO
 
 // constructor
-CSoapEnvelope::CSoapEnvelope(void)
-    : m_Body(new CSoapBody())
+CSoapText::C_Attlist::C_Attlist(void)
 {
+    memset(m_set_State,0,sizeof(m_set_State));
 }
 
 // destructor
-CSoapEnvelope::~CSoapEnvelope(void)
+CSoapText::C_Attlist::~C_Attlist(void)
+{
+}
+
+
+void CSoapText::ResetAttlist(void)
+{
+    (*m_Attlist).Reset();
+}
+
+void CSoapText::SetAttlist(CSoapText::C_Attlist& value)
+{
+    m_Attlist.Reset(&value);
+}
+
+void CSoapText::ResetSoapText(void)
+{
+    m_SoapText.erase();
+    m_set_State[0] &= ~0xc;
+}
+
+void CSoapText::Reset(void)
+{
+    ResetAttlist();
+    ResetSoapText();
+}
+
+BEGIN_NAMED_CLASS_INFO("Text", CSoapText)
+{
+    SET_CLASS_MODULE("soap");
+    ADD_NAMED_REF_MEMBER("Attlist", m_Attlist, C_Attlist)->SetNoPrefix()->SetAttlist();
+    ADD_NAMED_STD_MEMBER("Text", m_SoapText)->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix()->SetNotag();
+    info->RandomOrder();
+}
+END_CLASS_INFO
+
+// constructor
+CSoapText::CSoapText(void)
+    : m_Attlist(new C_Attlist())
+{
+    memset(m_set_State,0,sizeof(m_set_State));
+}
+
+CSoapText::CSoapText(const std::string& value)
+{
+    SetSoapText(value);
+}
+
+// destructor
+CSoapText::~CSoapText(void)
 {
 }
 
@@ -96,7 +122,7 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2003/09/25 19:45:33  gouriano
+* Revision 1.1  2003/09/25 19:45:33  gouriano
 * Added soap Fault object
 *
 *

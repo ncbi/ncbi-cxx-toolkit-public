@@ -26,69 +26,75 @@
  * Author: Andrei Gourianov
  *
  * File Description:
- *   Holds SOAP message contents
+ *   SOAP Detail object
+ *
+ * ===========================================================================
  */
 
 // standard includes
 #include <serial/serialimpl.hpp>
 
 // generated includes
-#include "soap_envelope.hpp"
-#include "soap_body.hpp"
-#include "soap_header.hpp"
+#include <serial/soap/soap_detail.hpp>
 
 BEGIN_NCBI_SCOPE
 // generated classes
 
-void CSoapEnvelope::ResetHeader(void)
+void CSoapDetail::C_E::ResetAnyContent(void)
 {
-    m_Header.Reset();
+    (*m_AnyContent).Reset();
 }
 
-void CSoapEnvelope::SetHeader(CSoapHeader& value)
+void CSoapDetail::C_E::SetAnyContent(CAnyContentObject& value)
 {
-    m_Header.Reset(&value);
+    m_AnyContent.Reset(&value);
 }
 
-CSoapHeader& CSoapEnvelope::SetHeader(void)
+void CSoapDetail::C_E::Reset(void)
 {
-    if ( !m_Header )
-        m_Header.Reset(new CSoapHeader());
-    return (*m_Header);
+    ResetAnyContent();
 }
 
-void CSoapEnvelope::ResetBody(void)
+BEGIN_NAMED_CLASS_INFO("", CSoapDetail::C_E)
 {
-    (*m_Body).Reset();
-}
-
-void CSoapEnvelope::SetBody(CSoapBody& value)
-{
-    m_Body.Reset(&value);
-}
-
-void CSoapEnvelope::Reset(void)
-{
-    ResetHeader();
-    ResetBody();
-}
-
-BEGIN_NAMED_CLASS_INFO("Envelope", CSoapEnvelope)
-{
-    SET_CLASS_MODULE("soap");
-    ADD_NAMED_REF_MEMBER("Header", m_Header, CSoapHeader)->SetOptional()->SetNoPrefix();
-    ADD_NAMED_REF_MEMBER("Body", m_Body, CSoapBody)->SetNoPrefix();
+    ADD_NAMED_REF_MEMBER("AnyContent", m_AnyContent, CAnyContentObject)->SetNoPrefix()->SetNotag()->SetAnyContent();
 }
 END_CLASS_INFO
 
 // constructor
-CSoapEnvelope::CSoapEnvelope(void)
-    : m_Body(new CSoapBody())
+CSoapDetail::C_E::C_E(void)
+    : m_AnyContent(0/*new CAnyContentObject()*/)
 {
 }
 
 // destructor
-CSoapEnvelope::~CSoapEnvelope(void)
+CSoapDetail::C_E::~C_E(void)
+{
+}
+
+
+void CSoapDetail::Reset(void)
+{
+    m_data.clear();
+    m_set_State[0] &= ~0x3;
+}
+
+BEGIN_NAMED_IMPLICIT_CLASS_INFO("Detail", CSoapDetail)
+{
+    SET_CLASS_MODULE("soap");
+    ADD_NAMED_MEMBER("", m_data, STL_list, (STL_CRef, (CLASS, (C_E))))->SetSetFlag(MEMBER_PTR(m_set_State[0]));
+    info->RandomOrder();
+}
+END_CLASS_INFO
+
+// constructor
+CSoapDetail::CSoapDetail(void)
+{
+    memset(m_set_State,0,sizeof(m_set_State));
+}
+
+// destructor
+CSoapDetail::~CSoapDetail(void)
 {
 }
 
@@ -96,7 +102,7 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2003/09/25 19:45:33  gouriano
+* Revision 1.1  2003/09/25 19:45:33  gouriano
 * Added soap Fault object
 *
 *

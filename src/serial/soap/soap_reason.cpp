@@ -26,69 +26,48 @@
  * Author: Andrei Gourianov
  *
  * File Description:
- *   Holds SOAP message contents
+ *   SOAP Reason object
+ *
+ * ===========================================================================
  */
 
 // standard includes
 #include <serial/serialimpl.hpp>
 
 // generated includes
-#include "soap_envelope.hpp"
-#include "soap_body.hpp"
-#include "soap_header.hpp"
+#include <serial/soap/soap_reason.hpp>
+#include <serial/soap/soap_text.hpp>
 
 BEGIN_NCBI_SCOPE
 // generated classes
 
-void CSoapEnvelope::ResetHeader(void)
+void CSoapReason::ResetSoapText(void)
 {
-    m_Header.Reset();
+    m_SoapText.clear();
+    m_set_State[0] &= ~0x3;
 }
 
-void CSoapEnvelope::SetHeader(CSoapHeader& value)
+void CSoapReason::Reset(void)
 {
-    m_Header.Reset(&value);
+    ResetSoapText();
 }
 
-CSoapHeader& CSoapEnvelope::SetHeader(void)
-{
-    if ( !m_Header )
-        m_Header.Reset(new CSoapHeader());
-    return (*m_Header);
-}
-
-void CSoapEnvelope::ResetBody(void)
-{
-    (*m_Body).Reset();
-}
-
-void CSoapEnvelope::SetBody(CSoapBody& value)
-{
-    m_Body.Reset(&value);
-}
-
-void CSoapEnvelope::Reset(void)
-{
-    ResetHeader();
-    ResetBody();
-}
-
-BEGIN_NAMED_CLASS_INFO("Envelope", CSoapEnvelope)
+BEGIN_NAMED_CLASS_INFO("Reason", CSoapReason)
 {
     SET_CLASS_MODULE("soap");
-    ADD_NAMED_REF_MEMBER("Header", m_Header, CSoapHeader)->SetOptional()->SetNoPrefix();
-    ADD_NAMED_REF_MEMBER("Body", m_Body, CSoapBody)->SetNoPrefix();
+    ADD_NAMED_MEMBER("Text", m_SoapText, STL_list, (STL_CRef, (CLASS, (CSoapText))))->SetSetFlag(MEMBER_PTR(m_set_State[0]))->SetNoPrefix();
+    info->RandomOrder();
 }
 END_CLASS_INFO
 
 // constructor
-CSoapEnvelope::CSoapEnvelope(void)
-    : m_Body(new CSoapBody())
+CSoapReason::CSoapReason(void)
 {
+    memset(m_set_State,0,sizeof(m_set_State));
 }
 
 // destructor
-CSoapEnvelope::~CSoapEnvelope(void)
+CSoapReason::~CSoapReason(void)
 {
 }
 
@@ -96,7 +75,7 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2003/09/25 19:45:33  gouriano
+* Revision 1.1  2003/09/25 19:45:33  gouriano
 * Added soap Fault object
 *
 *
