@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/09/06 18:15:44  thiessen
+* fix OpenGL window initialization/OnSize to work on Mac
+*
 * Revision 1.50  2001/08/24 18:53:42  thiessen
 * add filename to sequence viewer window titles
 *
@@ -458,13 +461,6 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
 
     glMultMatrixd(viewMatrix);
     glGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);
-}
-
-void OpenGLRenderer::SetSize(int width, int height) const
-{
-    glViewport(0, 0, width, height);
-//    TESTMSG("viewport " << width << ' ' << height);
-    NewView();
 }
 
 void OpenGLRenderer::PushMatrix(const Matrix* m)

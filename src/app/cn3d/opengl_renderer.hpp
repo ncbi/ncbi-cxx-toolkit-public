@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/09/06 18:17:01  thiessen
+* fix OpenGL window initialization/OnSize to work on Mac
+*
 * Revision 1.32  2001/08/24 00:40:57  thiessen
 * tweak conservation colors and opengl font handling
 *
@@ -168,10 +171,8 @@ public:
     // the rendering context is established and the renderer made current)
     void Init(void) const;
 
-    // sets the size of the viewport
-    void SetSize(int width, int height) const;
-
-    // tells the renderer that new camera settings need to be applied
+    // tells the renderer that new camera settings need to be applied - should also
+    // be called after window resize
     void NewView(int selectX = -1, int selectY = -1) const;
 
     // get the name

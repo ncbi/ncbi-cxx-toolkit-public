@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2001/09/06 18:15:44  thiessen
+* fix OpenGL window initialization/OnSize to work on Mac
+*
 * Revision 1.77  2001/09/06 13:10:10  thiessen
 * tweak show hide dialog layout
 *
@@ -421,6 +424,8 @@ public:
     ~MsgFrame(void) { logFrame = NULL; logText = NULL; }
     wxTextCtrl *logText;
 private:
+    // need to define a custom close window handler, so that window isn't actually destroyed,
+    // just hidden when user closes it with system close button
     void OnCloseWindow(wxCloseEvent& event);
     DECLARE_EVENT_TABLE()
 };
@@ -457,10 +462,11 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
         // seems to be some upper limit on size, at least under MSW - so delete top of log if too big
         if (logFrame->logText->GetLastPosition() > 30000) logFrame->logText->Clear();
 #ifdef __WXMAC__
-        // wxTextCtrl doesn't like regular '\n' newlines...
+        // wxTextCtrl on Mac doesn't like regular '\n' newlines... ugh
         if (errMsg[errMsg.size() - 1] < ' ') errMsg[errMsg.size() - 1] = '\r';
 #endif
         *(logFrame->logText) << errMsg.c_str();
+        logFrame->logText->ShowPosition(logFrame->logText->GetLastPosition());
     }
 }
 
@@ -599,9 +605,13 @@ bool Cn3DApp::OnInit(void)
     // create the main frame window
     structureWindow = new Cn3DMainFrame("Cn3D++", wxPoint(0,0), wxSize(500,500));
     SetTopWindow(structureWindow);
+    structureWindow->Show(true);
 
     TESTMSG("Welcome to Cn3D++! (built " << __DATE__ << ')');
+#ifndef __WXMAC__
+    // Mac version does weird things when messag log is present at startup
     RaiseLogWindow();
+#endif
 
     // set up working directories
     workingDir = userDir = wxGetCwd().c_str();
@@ -645,6 +655,8 @@ bool Cn3DApp::OnInit(void)
     else
         structureWindow->glCanvas->renderer->AttachStructureSet(NULL);
 
+    structureWindow->Raise();
+    structureWindow->SetFocus();
     return true;
 }
 
@@ -719,8 +731,9 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     glCanvas(NULL), structureLimit(UNLIMITED_STRUCTURES)
 {
     topWindow = this;
-    SetSizeHints(150, 150); // min size
+    GlobalMessenger()->AddStructureWindow(this);
     timer.SetOwner(this, MID_ANIMATE);
+    SetSizeHints(150, 150); // min size
 
     // File menu
     menuBar = new wxMenuBar;
@@ -783,9 +796,9 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_EDIT_STYLE, "Edit &Global Style");
     // favorites
     favoritesMenu = new wxMenu;
-    favoritesMenu->Append(Cn3DMainFrame::MID_ADD_FAVORITE, "&Add/Replace");
-    favoritesMenu->Append(Cn3DMainFrame::MID_REMOVE_FAVORITE, "&Remove");
-    favoritesMenu->Append(Cn3DMainFrame::MID_FAVORITES_FILE, "&Change File");
+    favoritesMenu->Append(MID_ADD_FAVORITE, "&Add/Replace");
+    favoritesMenu->Append(MID_REMOVE_FAVORITE, "&Remove");
+    favoritesMenu->Append(MID_FAVORITES_FILE, "&Change File");
     favoritesMenu->AppendSeparator();
     SetupFavoritesMenu(favoritesMenu);
     menu->Append(MID_FAVORITES, "&Favorites", favoritesMenu);
@@ -855,20 +868,14 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 #elif defined(__WXGTK__)
     int *attribList = NULL;
 #elif defined(__WXMAC__)
-//	int *attribList = NULL;
-    int attribList[20] = {
-        //WX_GL_DOUBLEBUFFER,
-        WX_GL_RGBA, WX_GL_MIN_RED, 1, WX_GL_MIN_GREEN, 1, WX_GL_MIN_BLUE, 1,
-        /*WX_GL_ALPHA_SIZE, 0,*/ WX_GL_DEPTH_SIZE, 0,
-        0
-    };
+    int *attribList = NULL;
 #endif
     glCanvas = new Cn3DGLCanvas(this, attribList);
 
-    GlobalMessenger()->AddStructureWindow(this);
-    Show(true);
-
     // set initial font
+#ifdef __WXGTK__
+    Show(true); // on X, need to establish gl context first, which requires visible window
+#endif
     glCanvas->SetGLFontFromRegistry();
 }
 
@@ -1461,6 +1468,10 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(void)
 
     // set up font display lists in dc and renderer
     SetCurrent();
+    if (!memoryDC.Ok()) {
+        wxBitmap bitmap(1, 1, -1);
+        memoryDC.SelectObject(bitmap);
+    }
     memoryDC.SetFont(font);
 
 #if defined(__WXMSW__)
@@ -1506,11 +1517,8 @@ void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
 
 void Cn3DGLCanvas::OnSize(wxSizeEvent& event)
 {
-    if (!GetContext() || !renderer) return;
-    SetCurrent();
-    int width, height;
-    GetClientSize(&width, &height);
-    renderer->SetSize(width, height);
+    wxGLCanvas::OnSize(event);
+    renderer->NewView();
 }
 
 void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
