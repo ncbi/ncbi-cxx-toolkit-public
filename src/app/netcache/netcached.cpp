@@ -241,6 +241,7 @@ public:
         x_CreateLog();
 
         s_netcache_server = this;
+        m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
     }
 
     virtual ~CNetCacheServer() {}
@@ -269,7 +270,6 @@ public:
     {
         m_ThrdSrvAcceptTimeout.sec = 0;
         m_ThrdSrvAcceptTimeout.usec = 500;
-        m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
     }
 
 protected:
@@ -558,7 +558,7 @@ void CNetCacheServer::ProcessShutdown()
 
 void CNetCacheServer::ProcessVersion(CSocket& sock, const Request& req)
 {
-    WriteMsg(sock, "OK:", "NCBI NetCache server version=1.2.2");
+    WriteMsg(sock, "OK:", "NCBI NetCache server version=1.2.3");
 }
 
 void CNetCacheServer::ProcessRemove(CSocket& sock, const Request& req)
@@ -1248,6 +1248,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/03/21 20:12:05  kuznets
+ * Fixed race condition with setting accept timeout
+ *
  * Revision 1.44  2005/03/17 21:34:24  kuznets
  * Use CFastLocalTime
  *
