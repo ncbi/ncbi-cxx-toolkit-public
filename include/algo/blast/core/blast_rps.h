@@ -45,31 +45,31 @@ extern "C" {
 #define RPS_MAGIC_NUM 0x1e16    /* RPS data files contain this number */
 #define NUM_EXPANSION_WORDS 3
 
-/* header of RPS blast '.loo' file */
+/** header of RPS blast '.loo' file */
 
 typedef struct RPSLookupFileHeader {
-    Int4 magic_number;               /* value should be RPS_MAGIC_NUM */
-    Int4 num_lookup_tables;          /* hardwired to 1 at present */
-    Int4 num_hits;                   /* number of hits in the lookup table */
-    Int4 num_filled_backbone_cells;  /* backbone cells that contain hits */
-    Int4 overflow_hits;              /* number of hits in overflow array */
-    Int4 unused[NUM_EXPANSION_WORDS];/* empty space in the on-disk format */
-    Int4 start_of_backbone;          /* byte offset of start of backbone */
-    Int4 end_of_overflow;            /* byte offset to end of overflow array */
+    Int4 magic_number;               /**< value should be RPS_MAGIC_NUM */
+    Int4 num_lookup_tables;          /**< hardwired to 1 at present */
+    Int4 num_hits;                   /**< number of hits in the lookup table */
+    Int4 num_filled_backbone_cells;  /**< backbone cells that contain hits */
+    Int4 overflow_hits;              /**< number of hits in overflow array */
+    Int4 unused[NUM_EXPANSION_WORDS];/**< empty space in the on-disk format */
+    Int4 start_of_backbone;          /**< byte offset of start of backbone */
+    Int4 end_of_overflow;            /**< byte offset to end of overflow array */
 } RPSLookupFileHeader;
 
-/* header of RPS blast '.rps' file */
+/** header of RPS blast '.rps' file */
 
 typedef struct RPSProfileHeader {
-    Int4 magic_number;     /* value should be RPS_MAGIC_NUM */
-    Int4 num_profiles;     /* number of PSSMs in the file */
-    Int4 start_offsets[1]; /* start of an Int4 array that gives the starting */
-                           /* byte offset of each RPS DB sequence. There */
-                           /* are num_profiles+1 entries in the list, and*/
-                           /* the last entry effectively contains the length */
-                           /* of all protein sequences combined. Note that */
-                           /* the length of each sequence includes one byte */
-                           /* at the end for an end-of-sequence sentinel */
+    Int4 magic_number;     /**< value should be RPS_MAGIC_NUM */
+    Int4 num_profiles;     /**< number of PSSMs in the file */
+    Int4 start_offsets[1]; /**< start of an Int4 array that gives the starting 
+                              byte offset of each RPS DB sequence. There
+                              are num_profiles+1 entries in the list, and
+                              the last entry effectively contains the length
+                              of all protein sequences combined. Note that
+                              the length of each sequence includes one byte
+                              at the end for an end-of-sequence sentinel */
 
     /* After the list of sequence start offsets comes the list
        of PSSM rows. There is one row for each letter in the RPS
@@ -79,30 +79,32 @@ typedef struct RPSProfileHeader {
 
 } RPSProfileHeader;
 
-/* information derived from RPS blast '.aux' file */
+/** information derived from RPS blast '.aux' file */
 
 typedef struct RPSAuxInfo {
-    char* orig_score_matrix; /* score matrix used to derive PSSMs */
-    Int4 gap_open_penalty;    /* gap penalties used in deriving PSSMs */
-    Int4 gap_extend_penalty;
-    double ungapped_k;        /* ungapped Karlin values for orig_score_matrix */
-    double ungapped_h;
-    Int4 max_db_seq_length;
-    Int4 db_length;
-    double scale_factor;      /* the PSSMs are scaled by this amount, and so */
-                              /* all scores and all cutoff values must be */
-                              /* similarly scaled during the search */
-    double *karlin_k;         /* one Karlin value for each DB sequence */
+    char* orig_score_matrix; /**< score matrix used to derive PSSMs */
+    Int4 gap_open_penalty;   /**< gap open penalty used in deriving PSSMs */
+    Int4 gap_extend_penalty; /**< gap extend penalty used in deriving PSSMs */
+    double ungapped_k;       /**< ungapped Karlin value for orig_score_matrix
+                                  (not used) */
+    double ungapped_h;       /**< ungapped Karlin value for orig_score_matrix
+                                  (not used) */
+    Int4 max_db_seq_length;  /**< maximum DB sequence length (not used) */
+    Int4 db_length;          /**< RPS DB search space (not used) */
+    double scale_factor;     /**< the PSSMs are scaled by this amount, and so
+                                  all scores and all cutoff values must be
+                                  similarly scaled during the search */
+    double *karlin_k;        /**< one Karlin value for each DB sequence */
 } RPSAuxInfo;
 
-/* The RPS engine uses this structure to access all of the
-   RPS blast related data (assumed to be collected in an 
-   implementation-specific manner). */
-
+/** The RPS engine uses this structure to access all of the
+ *  RPS blast related data (assumed to be collected in an 
+ *  implementation-specific manner). 
+ */
 typedef struct RPSInfo {
-    RPSLookupFileHeader *lookup_header;
-    RPSProfileHeader *profile_header;
-    RPSAuxInfo aux_info;
+    RPSLookupFileHeader *lookup_header; /**< for '.loo' file */
+    RPSProfileHeader *profile_header;   /**< for '.rps' file */
+    RPSAuxInfo aux_info;                /**< for '.aux' file */
 } RPSInfo;
 
 #ifdef __cplusplus
