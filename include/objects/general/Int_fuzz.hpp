@@ -103,20 +103,21 @@ CInt_fuzz::CInt_fuzz(void)
 
 
 inline
-void CInt_fuzz::Subtract(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
-                         ECombine mode)
-{
-    Add(*f2.Negative(n2), n1, n2, mode);
-}
-
-
-inline
 CRef<CInt_fuzz> CInt_fuzz::Negative(TSeqPos n) const
 {
     CRef<CInt_fuzz> result(new CInt_fuzz);
     result->Assign(*this);
     result->Negate(n);
     return result;
+}
+
+
+inline
+void CInt_fuzz::Subtract(const CInt_fuzz& f2, TSeqPos& n1, TSeqPos n2,
+                         ECombine mode)
+{
+    CRef<CInt_fuzz> neg(f2.Negative(n2));
+    Add(*neg, n1, n2, mode);
 }
 
 
@@ -131,6 +132,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/02/17 21:10:07  vasilche
+ * Fixed 'non-const reference to temp var' warning.
+ * Reordered inlined method to allow inlining.
+ *
  * Revision 1.4  2003/10/15 15:42:58  ucko
  * Add more operations: AssignTranslated, Add, Subtract, and Negate/Negative.
  *
