@@ -30,9 +30,9 @@
  *
  */
 
-#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -238,6 +238,10 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2004/01/27 17:06:45  ucko
+ * Reorder headers to ensure hitting the conflicting LOG_DATA definitions
+ * in the right order on AIX.
+ *
  * Revision 6.30  2004/01/14 20:25:36  lavr
  * Added test of isstream::tellp()
  *
