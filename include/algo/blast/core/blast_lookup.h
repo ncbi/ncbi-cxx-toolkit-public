@@ -25,8 +25,9 @@
  */
 
 /** @file blast_lookup.h
+ *  Routines for creating protein and nucleotide BLAST lookup tables.
  *  Contains definitions and prototypes for the lookup table
- *  construction and scanning phase of blastn, blastp, RPS blast
+ *  construction and scanning phase of blastn, blastp, and RPS blast.
  * @todo: Re-examine code here and in unit tests for 32/64 bit portability.
  */
 

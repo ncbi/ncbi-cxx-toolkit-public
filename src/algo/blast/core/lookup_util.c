@@ -25,7 +25,7 @@
  */
 
 /** @file lookup_util.c
- * @todo FIXME needs file description
+ *  Utility functions for lookup table generation.
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING

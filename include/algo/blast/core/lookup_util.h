@@ -25,7 +25,7 @@
  */
 
 /** @file lookup_util.h
- * @todo FIXME: need description
+ *  Utility functions for lookup table generation.
  */
 
 #include <algo/blast/core/blast_def.h>
