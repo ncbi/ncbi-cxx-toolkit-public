@@ -221,7 +221,7 @@ if [ -n "$x_conf_dir"  -a  -d "$x_conf_dir/lib" ];  then
    cat >> $x_out <<EOF
 # Adjust PATH and LD_LIBRARY_PATH for running tests
 if [ -n "\$LD_LIBRARY_PATH" ]; then
-   LD_LIBRARY_PATH="${x_conf_dir/lib}:\${LD_LIBRARY_PATH}"
+   LD_LIBRARY_PATH="${x_conf_dir}/lib:\${LD_LIBRARY_PATH}"
 else
    LD_LIBRARY_PATH="$x_conf_dir/lib"
 fi
