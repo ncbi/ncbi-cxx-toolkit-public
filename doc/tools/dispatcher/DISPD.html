@@ -199,16 +199,11 @@ can narrow the server search; for example, by choosing
   switch into stateless mode.
 
   <p>
-  <tt><font color="#009900">Request-Failed: <i>&lt;reason></i></font></tt>
-  <br>the tag (if present) means mapping failure with an explanation in the tag value.<br>
-  <u>Note</u>: Dispatching failure is also indicated by an unsuccessful HTTP completion code.
-  Reply body contains the error message, too.
-
-  <p>
   <tt><font color="#009900">Dispatcher-Failures: <i>&lt;failures></i></font></tt>
   <br>the tag value lists all transient failures, which dispatcher might have expirienced while
-  processing request. Fatal error may or may not appear as the last failure in the list,
-  but is always mentioned in <tt>Request-Failed:</tt> tag if caused by a mapping failure.
+  processing request. Fatal error (if any) always appears as the last failure in the list.
+  In this case, the reply body would contain a copy of the message, too.
+  <u>Note</u>: Fatal dispatching failure is also indicated by an unsuccessful HTTP completion code.
 
 </ul>
 
