@@ -958,7 +958,7 @@ AC_MSG_CHECKING(if SYBASE libraries are available)
 if test "$with_sybase" != "no" ; then
    SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
    SYBASE_INCLUDE="-I$SYBASE_PATH/include"
-   SYBASE_LIBLIST="-lblk -lct -lcs -ltcl -lcomn -lintl"
+   SYBASE_LIBLIST="-lblk -lct -lcs -ltcl -lcomn -lintl -ltli"
    changequote(<<, >>)dnl
    if test "$with_mt" = "yes" ; then
       SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z]*\)/\1_r/g'`
