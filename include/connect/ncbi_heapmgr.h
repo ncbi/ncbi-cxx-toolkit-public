@@ -97,7 +97,12 @@ extern NCBI_XCONNECT_EXPORT HEAP HEAP_Create
 /* Attach to an already existing heap (in read-only mode).
  */
 extern NCBI_XCONNECT_EXPORT HEAP HEAP_Attach
-(void* base                /* base of the heap to attach to */
+(const void* base          /* base of the heap to attach to */
+ );
+
+extern NCBI_XCONNECT_EXPORT HEAP HEAP_AttachEx
+(const void* base,
+ TNCBI_Size  size
  );
 
 
@@ -189,6 +194,9 @@ extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/09/23 21:00:53  lavr
+ * +HEAP_AttachEx()
+ *
  * Revision 6.18  2003/09/02 20:45:45  lavr
  * -<connect/connect_export.h> -- now included from <connect/ncbi_types.h>
  *
