@@ -316,7 +316,7 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config) const
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, config, &lib_info);
         
-        if ( lib_info.m_LibPath.empty() ) 
+        if ( lib_info.IsEmpty() ) 
             continue;
 
         if ( !GetApp().GetSite().IsLibEnabledInConfig(requires, config) )
@@ -733,6 +733,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/02/26 15:15:38  gorelenk
+ * Changed implementation of CMsvcPrjProjectContext::IsConfigEnabled.
+ *
  * Revision 1.16  2004/02/24 20:54:26  gorelenk
  * Added implementation of member-function bool IsConfigEnabled
  * of class CMsvcPrjProjectContext.
