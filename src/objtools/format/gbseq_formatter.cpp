@@ -79,7 +79,7 @@ static void s_GBSeqStringCleanup(string& str, bool location = false)
     if ( location ) {
         str = NStr::Replace(str, ", ", ",");
     }
-    str = NStr::TruncateSpaces(str);
+    NStr::TruncateSpaces(str);
 }
 
 
@@ -88,12 +88,8 @@ static void s_GBSeqQualCleanup(string& val)
     
     val = NStr::Replace(val, "\"", " ");
     s_GBSeqStringCleanup(val);
-    /*
-    if ( NStr::EndsWith(val, ".") ) {
-        val.erase(val.length() - 1);
-    }
-    */
 }
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Public
@@ -601,6 +597,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/10/05 16:04:22  shomrat
+* Use non-const TruncateSpaces
+*
 * Revision 1.5  2004/10/05 15:44:23  shomrat
 * Use more efficient NStr::EndsWith function
 *
