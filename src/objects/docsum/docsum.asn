@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.14 2001/03/23 16:17:44 sherry Exp $
+-- $Id: docsum.asn,v 1.15 2001/04/09 14:21:31 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.15  2001/04/09 14:21:31  sherry
+-- additional documentation regarding refSNP flanking sequence: lowercase for repetititve regions and segmentation of long flanking sequences
+--
 -- Revision 1.14  2001/03/23 16:17:44  sherry
 -- removed unnecessary samplesize from NSE-Pop.. data in NSE-ss-popinfo
 --
@@ -224,7 +227,10 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure that summarizes a refSN
 	seq-5 SEQUENCE OF VisibleString,	-- 5' sequence that flanks the variation
 	seq-3 SEQUENCE OF VisibleString,	-- 3' sequence that flanks the variation
 						-- all sequences are in forward orientation, complete sequence
+						-- lower case letters indicate repetetitive or low-complexity sequence by RepeatMasker
 						-- should be assembled as seq-5 + observed + seq-3
+						-- flanking sequence is reported in strings of 255 b.p. and multiple strings
+						-- should be concatenated in order to reconstruct the complete flanking sequence
 	num-chr-hits INTEGER OPTIONAL,		-- total number of distinct chromosomes in genome-mapset
 	num-ctg-hits INTEGER OPTIONAL,		-- total number of distinct contig-ids in genome-mapset
 	num-seq-loc INTEGER OPTIONAL,		-- total number of distinct seq-loc's in genome-mapset
