@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.13  2004/04/12 14:25:33  kholodov
+* Modified: resultset caching scheme, fixed single connection handling
+*
 * Revision 1.12  2004/04/08 15:56:58  kholodov
 * Multiple bug fixes and optimizations
 *
@@ -106,8 +109,8 @@ CCursor::CCursor(const string& name,
 
 CCursor::~CCursor()
 {
-    FreeResources();
     Notify(CDbapiClosedEvent(this));
+    FreeResources();
     Notify(CDbapiDeletedEvent(this));
     _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
 }
@@ -176,8 +179,8 @@ ostream& CCursor::GetBlobOStream(unsigned int col,
 
 void CCursor::Close()
 {
-    FreeResources();
     Notify(CDbapiClosedEvent(this));
+    FreeResources();
 }
 
 void CCursor::FreeResources() 
@@ -194,10 +197,10 @@ void CCursor::FreeResources()
     delete m_ostr;
     m_ostr = 0;
     if( m_conn != 0 && m_conn->IsAux() ) {
-	delete m_conn;
-	m_conn = 0;
-	Notify(CDbapiAuxDeletedEvent(this));
-   }
+	    delete m_conn;
+	    m_conn = 0;
+	    Notify(CDbapiAuxDeletedEvent(this));
+    }
   
 }
 

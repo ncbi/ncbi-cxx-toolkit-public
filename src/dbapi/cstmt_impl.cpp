@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.13  2004/04/12 14:25:33  kholodov
+* Modified: resultset caching scheme, fixed single connection handling
+*
 * Revision 1.12  2004/04/08 15:56:58  kholodov
 * Multiple bug fixes and optimizations
 *
@@ -160,8 +163,8 @@ int CCallableStatement::GetReturnStatus()
 
 void CCallableStatement::Close()
 {
-    FreeResources();
     Notify(CDbapiClosedEvent(this));
+    FreeResources();
 }    
 
 END_NCBI_SCOPE

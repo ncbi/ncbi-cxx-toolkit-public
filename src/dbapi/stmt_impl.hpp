@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.11  2004/04/12 14:25:33  kholodov
+* Modified: resultset caching scheme, fixed single connection handling
+*
 * Revision 1.10  2004/04/08 15:56:58  kholodov
 * Multiple bug fixes and optimizations
 *
@@ -122,9 +125,7 @@ public:
         return m_conn;
     }
 
-    CDB_Result* GetCDB_Result() {
-        return m_rs;
-    }
+    CDB_Result* GetCDB_Result();
 
     CDB_LangCmd* GetLangCmd();
     
@@ -136,7 +137,7 @@ protected:
     void SetBaseCmd(I_BaseCmd *cmd) { m_cmd = cmd; }
     I_BaseCmd* GetBaseCmd() { return m_cmd; }
 
-    void SetCDB_Result(CDB_Result *rs);
+    void CacheResultSet(CDB_Result *rs);
 
     void SetFailed(bool f) {
         m_failed = f;
@@ -147,7 +148,7 @@ protected:
 private:
     class CConnection* m_conn;
     I_BaseCmd *m_cmd;
-    CDB_Result *m_rs;
+    //CDB_Result *m_rs;
     int m_rowCount;
     bool m_failed;
     typedef map<string, CVariant*> ParamList;

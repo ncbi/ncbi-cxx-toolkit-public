@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.30  2004/04/12 14:25:33  kholodov
+* Modified: resultset caching scheme, fixed single connection handling
+*
 * Revision 1.29  2004/04/08 15:56:58  kholodov
 * Multiple bug fixes and optimizations
 *
@@ -388,8 +391,8 @@ void CResultSet::Close()
 void CResultSet::FreeResources()
 {
     //_TRACE("CResultSet::Close(): deleting CDB_Result " << (void*)m_rs);
-    delete m_rs;
-    m_rs = 0;
+    Invalidate();
+
     delete m_istr;
     m_istr = 0;
     delete m_ostr;
@@ -402,17 +405,11 @@ void CResultSet::Action(const CDbapiEvent& e)
               << ": '" << e.GetName() 
               << "' received from " << e.GetSource()->GetIdent());
     
-    CStatement *stmt;
-        
-    if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 
-    || dynamic_cast<const CDbapiNewResultEvent*>(&e) != 0 ) {
-           
-        if( (stmt = dynamic_cast<CStatement*>(e.GetSource())) != 0 ) {
+    if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
+        if( dynamic_cast<CStatement*>(e.GetSource()) != 0 ) {
             if( m_rs != 0 ) {
-                Notify(CDbapiNewResultEvent(this));
                 _TRACE("Discarding old CDB_Result " << (void*)m_rs);
-                delete m_rs;
-                m_rs = 0;
+                Invalidate();
             }
         }
     }

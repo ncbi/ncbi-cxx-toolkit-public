@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.15  2004/04/12 14:25:33  kholodov
+* Modified: resultset caching scheme, fixed single connection handling
+*
 * Revision 1.14  2004/04/08 15:56:58  kholodov
 * Multiple bug fixes and optimizations
 *
@@ -139,6 +142,10 @@ public:
         return m_rs;
     }
 
+    void Invalidate() {
+        delete m_rs;
+        m_rs = 0;
+    }
 
 protected:
     

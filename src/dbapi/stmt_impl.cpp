@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.19  2004/04/12 14:25:33  kholodov
+* Modified: resultset caching scheme, fixed single connection handling
+*
 * Revision 1.18  2004/04/08 15:56:58  kholodov
 * Multiple bug fixes and optimizations
 *
@@ -108,7 +111,7 @@ BEGIN_NCBI_SCOPE
 
 // implementation
 CStatement::CStatement(CConnection* conn)
-    : m_conn(conn), m_cmd(0), m_rs(0), m_rowCount(-1), m_failed(false),
+    : m_conn(conn), m_cmd(0), m_rowCount(-1), m_failed(false),
       m_irs(0)
 {
     SetIdent("CStatement");
@@ -127,31 +130,26 @@ IConnection* CStatement::GetParentConn()
     return m_conn;
 }
 
-void CStatement::SetCDB_Result(CDB_Result *rs) 
+void CStatement::CacheResultSet(CDB_Result *rs) 
 { 
-    if( m_rs != 0 ) {
-        _TRACE("CStatement::SetCDB_Result(): Deleting unrequested CDB_Result " << (void*)m_rs);
-        delete m_rs;
+    if( m_irs != 0 ) {
+        _TRACE("CStatement::CacheResultSet(): Invalidating cached CResultSet " << (void*)m_irs);
+        m_irs->Invalidate();
     }
-    m_rs = rs;
+    if( rs != 0 ) {
+        m_irs = new CResultSet(m_conn, rs);
+        m_irs->AddListener(this);
+        AddListener(m_irs);
+        _TRACE("CStatement::CacheResultSet(): Created new CResultSet " << (void*)m_irs
+            << " with CDB_Result " << (void*)rs);
+    }
+    else
+        m_irs = 0;
 }
 
 IResultSet* CStatement::GetResultSet()
 {
-    if( m_rs == 0 )
-        return 0;
-    
-    if( m_irs == 0 || (m_irs != 0 && m_irs->GetCDB_Result() == 0) ) {
-        _TRACE("CStatement::GetResultSet(): CDB_Result " << (void*)m_rs << " requested");
-        CResultSet *ri = new CResultSet(m_conn, m_rs);
-        ri->AddListener(this);
-        AddListener(ri);
-        //m_requestedRsList.insert(m_rs);
-        m_irs = ri;
-        return ri;
-    }
-    else
-        return m_irs;
+   return m_irs;
 }
 
 bool CStatement::HasMoreResults() 
@@ -163,12 +161,13 @@ bool CStatement::HasMoreResults()
             SetFailed(true);
             return false;
         }
-        Notify(CDbapiNewResultEvent(this));
-        SetCDB_Result(GetBaseCmd()->Result()); 
-        _TRACE("CStatement::HasMoreResults(): CDB_Result " 
-               << (void*)m_rs << " obtained");
-        if( m_rs == 0 )
+        //Notify(CDbapiNewResultEvent(this));
+        CDB_Result *rs = GetBaseCmd()->Result();
+        CacheResultSet(rs); 
+        if( rs == 0 ) {
             m_rowCount = GetBaseCmd()->RowCount();
+        }
+
     }
     return more;
 }
@@ -230,7 +229,11 @@ void CStatement::ExecuteLast()
 
 bool CStatement::HasRows() 
 {
-    return m_rs != 0;
+    return m_irs != 0;
+}
+
+CDB_Result* CStatement::GetCDB_Result() {
+    return m_irs == 0 ? 0 : m_irs->GetCDB_Result();
 }
 
 bool CStatement::Failed() 
@@ -251,17 +254,13 @@ void CStatement::Close()
 
 void CStatement::FreeResources() 
 {
-    if( m_rs != 0 ) {
-	_TRACE("CStatement::FreeResources(): deleting CDB_Result " << (void*)m_rs);
-	delete m_rs;
-    }
     delete m_cmd;
     m_cmd = 0;
     m_rowCount = -1;
     if( m_conn != 0 && m_conn->IsAux() ) {
-	delete m_conn;
-	m_conn = 0;
-	Notify(CDbapiAuxDeletedEvent(this));
+	    delete m_conn;
+	    m_conn = 0;
+	    Notify(CDbapiAuxDeletedEvent(this));
     }
 
     ClearParamList();
@@ -288,7 +287,7 @@ void CStatement::Action(const CDbapiEvent& e)
     CResultSet *rs;
 
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
-	RemoveListener(e.GetSource());
+	    RemoveListener(e.GetSource());
         if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
             _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
@@ -299,15 +298,6 @@ void CStatement::Action(const CDbapiEvent& e)
                 m_irs = 0;
             }
         } 
-    }
-    else if( dynamic_cast<const CDbapiNewResultEvent*>(&e) != 0
-    || dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
-        if( m_rs != 0 && (rs = dynamic_cast<CResultSet*>(e.GetSource())) != 0 ) {
-            if( rs->GetCDB_Result() == m_rs ) {
-                _TRACE("Clearing cached CDB_Result " << (void*)m_rs); 
-                m_rs = 0;
-            }
-        }
     }
 }
 

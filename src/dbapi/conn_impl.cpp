@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.27  2004/04/12 14:25:33  kholodov
+* Modified: resultset caching scheme, fixed single connection handling
+*
 * Revision 1.26  2004/04/08 15:56:58  kholodov
 * Multiple bug fixes and optimizations
 *
@@ -447,6 +450,9 @@ void CConnection::Action(const CDbapiEvent& e)
                 m_bulkInsert = 0;
             }
         }
+
+        if( m_connCounter == 1 )
+            m_connUsed = false;
     }
     else if(dynamic_cast<const CDbapiAuxDeletedEvent*>(&e) != 0 ) {
         if( m_connCounter > 1 ) {
