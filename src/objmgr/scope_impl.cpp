@@ -77,7 +77,7 @@ BEGIN_SCOPE(objects)
 
 
 CScope_Impl::CScope_Impl(CObjectManager& objmgr)
-    : m_HeapScope(0), m_pObjMgr(0)
+    : m_HeapScope(0), m_ObjMgr(0)
 {
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
     x_AttachToOM(objmgr);
@@ -100,26 +100,26 @@ CScope& CScope_Impl::GetScope(void)
 
 void CScope_Impl::x_AttachToOM(CObjectManager& objmgr)
 {
-    if ( m_pObjMgr != &objmgr ) {
+    if ( m_ObjMgr != &objmgr ) {
         x_DetachFromOM();
         
-        m_pObjMgr = &objmgr;
-        m_pObjMgr->RegisterScope(*this);
+        m_ObjMgr.Reset(&objmgr);
+        m_ObjMgr->RegisterScope(*this);
     }
 }
 
 
 void CScope_Impl::x_DetachFromOM(void)
 {
-    if ( m_pObjMgr ) {
+    if ( m_ObjMgr ) {
         // Drop and release all TSEs
         x_ResetHistory();
-        m_pObjMgr->RevokeScope(*this);
+        m_ObjMgr->RevokeScope(*this);
         m_DSMap.clear();
         for (CPriority_I it(m_setDataSrc); it; ++it) {
-            it->DetachFromOM(*m_pObjMgr);
+            it->DetachFromOM(*m_ObjMgr);
         }
-        m_pObjMgr = 0;
+        m_ObjMgr.Reset();
     }
 }
 
@@ -127,7 +127,7 @@ void CScope_Impl::x_DetachFromOM(void)
 void CScope_Impl::AddDefaults(TPriority priority)
 {
     CObjectManager::TDataSourcesLock ds_set;
-    m_pObjMgr->AcquireDefaultDataSources(ds_set);
+    m_ObjMgr->AcquireDefaultDataSources(ds_set);
 
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
     NON_CONST_ITERATE( CObjectManager::TDataSourcesLock, it, ds_set ) {
@@ -141,7 +141,7 @@ void CScope_Impl::AddDefaults(TPriority priority)
 
 void CScope_Impl::AddDataLoader(const string& loader_name, TPriority priority)
 {
-    CRef<CDataSource> ds = m_pObjMgr->AcquireDataLoader(loader_name);
+    CRef<CDataSource> ds = m_ObjMgr->AcquireDataLoader(loader_name);
 
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
     m_setDataSrc.Insert(*this, *ds,
@@ -154,7 +154,7 @@ void CScope_Impl::AddDataLoader(const string& loader_name, TPriority priority)
 CSeq_entry_Handle CScope_Impl::AddTopLevelSeqEntry(CSeq_entry& top_entry,
                                                    TPriority priority)
 {
-    CRef<CDataSource> ds = m_pObjMgr->AcquireTopLevelSeqEntry(top_entry);
+    CRef<CDataSource> ds = m_ObjMgr->AcquireTopLevelSeqEntry(top_entry);
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
     m_setDataSrc.Insert(*this, *ds,
                         (priority == kPriority_NotSet) ?

@@ -366,14 +366,14 @@ private:
                         const TTSE_MatchSet& match);
 
 private:
-    CScope*         m_HeapScope;
+    CScope*              m_HeapScope;
 
-    CObjectManager* m_pObjMgr;
-    CPriorityTree   m_setDataSrc; // Data sources ordered by priority
+    CRef<CObjectManager> m_ObjMgr;
+    CPriorityTree        m_setDataSrc; // Data sources ordered by priority
 
-    TDSMap          m_DSMap;
+    TDSMap               m_DSMap;
 
-    CInitMutexPool  m_MutexPool;
+    CInitMutexPool       m_MutexPool;
 
     typedef CRWLock                  TRWLock;
     typedef TRWLock::TReadLockGuard  TReadLockGuard;
