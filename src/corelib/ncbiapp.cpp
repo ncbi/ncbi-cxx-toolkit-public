@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/03/26 20:07:40  vakatov
+* [NCBI_OS_MAC]  Use argv[0] (if available) as basename for ".args"
+*
 * Revision 1.29  2001/02/02 16:19:27  vasilche
 * Fixed reading program arguments on Mac
 *
@@ -232,31 +235,37 @@ int CNcbiApplication::AppMain
     // So we turn off sync_with_stdio here:
     IOS_BASE::sync_with_stdio(false);
 
-#if defined(NCBI_OS_MAC)
-    // We don't know standard way of passing arguments to C++ program
-    // so we'll read arguments from special file having extension ".args"
+    // We do not know standard way of passing arguments to C++ program on Mac,
+    // so we will read arguments from special file having extension ".args"
     // and name equal to name of program (name argument of AppMain).
-#define MAX_ARGC 256
-#define MAX_ARG_LEN 1024
-    if ( argc <= 1 ) {
+#if defined(NCBI_OS_MAC)
+#  define MAX_ARGC 256
+#  define MAX_ARG_LEN 1024
+    if (argc <= 1) {
         string fileName = name;
+        if (fileName.empty()  &&  argc > 0) {
+            fileName = argv[0];
+        }
         fileName += ".args";
+
         CNcbiIfstream in(fileName.c_str());
         if ( in ) {
             int c = 1;
             const char** v = new const char*[MAX_ARGC];
             v[0] = strdup(name.c_str()); // program name
             char arg[MAX_ARG_LEN];
-            while ( in.getline(arg, sizeof(arg)) || in.gcount() ) {
-                if ( in.eof() )
+            while (in.getline(arg, sizeof(arg))  ||  in.gcount()) {
+                if ( in.eof() ) {
                     ERR_POST(Warning << fileName << ", line " << c << ": " <<
                              "unfinished last line");
-                else if ( in.fail() )
+                } else if ( in.fail() ) {
                     ERR_POST(Fatal << fileName << ", line " << c << ": " <<
                              "too long argument: " << arg);
-                if ( c >= MAX_ARGC )
+                }
+                if (c >= MAX_ARGC) {
                     ERR_POST(Fatal << fileName << ", line " << c << ": " <<
                              "too many arguments");
+                }
                 v[c++] = strdup(arg);
             }
             argc = c;
@@ -267,6 +276,7 @@ int CNcbiApplication::AppMain
         }
     }
 #endif
+
     // Reset command-line args and application name
     m_Arguments->Reset(argc, argv, name);
 
