@@ -55,19 +55,26 @@ D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 
 %.d: ./%.cpp
 	@echo Updating dependency information for $<.
-	@$(CXX_WRAPPER) $(CXX) $(D_TAIL)
+	@$(CXX_WRAPPER) $(CXX) $(D_TAIL)  ||  \
+	    (echo "FAILED COMMAND: $(CXX_WRAPPER) $(CXX) $(DEPFLAGS_ALL)" \
+                  "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
 %.d: $(srcdir)/%.cpp
 	@echo Updating dependency information for $<.
-	@$(CXX_WRAPPER) $(CXX) $(D_TAIL)
+	@$(CXX_WRAPPER) $(CXX) $(D_TAIL)  ||  \
+	    (echo "FAILED COMMAND: $(CXX_WRAPPER) $(CXX) $(DEPFLAGS_ALL)" \
+                  "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
 %.d: ./%.c
 	@echo Updating dependency information for $<.
-	@$(CC_WRAPPER) $(CC)   $(D_TAIL)
+	@$(CC_WRAPPER) $(CC)   $(D_TAIL)  ||  \
+	    (echo "FAILED COMMAND: $(CC_WRAPPER) $(CC) $(DEPFLAGS_ALL)" \
+                  "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
 %.d: $(srcdir)/%.c
 	@echo Updating dependency information for $<.
-	@$(CC_WRAPPER) $(CC)   $(D_TAIL)
+	@$(CC_WRAPPER) $(CC)   $(D_TAIL)  ||  \
+	    (echo "FAILED COMMAND: $(CC_WRAPPER) $(CC) $(DEPFLAGS_ALL)" \
+                  "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
 $(builddir)/corelib/ncbi_pch.hpp.d.$(PCHMODE): $(pchsrc)
-	@echo Updating dependency information for $<.
-	@$(CXX_WRAPPER) $(CXX) $(D_TAIL_PCH)
+	$(CXX_WRAPPER) $(CXX) $(D_TAIL_PCH)
 
 .d .o:
 	@echo "*** $(TMPL): Illegal whitespace detected at the end of"
