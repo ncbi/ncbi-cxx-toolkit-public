@@ -125,7 +125,7 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
         is.get(buf, sizeof(buf), delim);
         str.append(buf, is.gcount());
     }
-    if ( str.empty() ) {
+    if ( str.empty()  &&  is.eof() ) {
         is.setstate(NcbiFailbit);
     }
     return is;
@@ -372,6 +372,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/09/05 16:01:37  ivanov
+ * Added forgotten eof() check before set FAILBIT in the NcbiGetline()
+ *
  * Revision 1.29  2003/09/05 15:56:00  ivanov
  * Fix for R2.8 -- only set FAILBIT if no symbols have been read
  *
