@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2002/07/25 13:59:35  lavr
+ * More diagnostic messages added
+ *
  * Revision 6.28  2002/06/19 18:08:02  lavr
  * Fixed some wrong assumptions on use of s_PreRead(); more comments added
  *
@@ -192,6 +195,7 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu, char** redirect)
             free(*redirect);
             *redirect = 0;
         }
+        CORE_LOG(eLOG_Error, "[HTTP]  Too many failed attempts, giving up");
         return 0/*failure*/;
     }
     /* adjust info before another connection attempt */
@@ -199,13 +203,17 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu, char** redirect)
         int status = ConnNetInfo_ParseURL(uuu->net_info, *redirect);
         free(*redirect);
         *redirect = 0;
-        if (!status)
+        if (!status) {
+            CORE_LOG(eLOG_Error, "[HTTP]  Unable to parse redirect");
             return 0/*failure*/;
+        }
     } else if (!uuu->adjust_net_info ||
                !uuu->adjust_net_info(uuu->net_info,
                                      uuu->adjust_data,
-                                     uuu->failure_count))
-               return 0/*failure*/;
+                                     uuu->failure_count)) {
+        CORE_LOG(eLOG_Error, "[HTTP]  Retry attempt(s) exhaused, giving up");
+        return 0/*failure*/;
+    }
 
     ConnNetInfo_AdjustForHttpProxy(uuu->net_info);
 
@@ -233,8 +241,10 @@ static void s_DropConnection(SHttpConnector* uuu, const STimeout* timeout)
 static EIO_Status s_Connect(SHttpConnector* uuu)
 {
     assert(!uuu->sock);
-    if (uuu->can_connect == eCC_None)
+    if (uuu->can_connect == eCC_None) {
+        CORE_LOG(eLOG_Error, "[HTTP]  Connector is not longer usable");
         return eIO_Closed;
+    }
 
     /* the re-try loop... */
     for (;;) {
@@ -298,8 +308,11 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
                 size_t len = BUF_PeekAt(uuu->obuf, off, buf, sizeof(buf));
 
                 status = SOCK_Write(uuu->sock, buf, len, &n_written);
-                if (status != eIO_Success)
+                if (status != eIO_Success) {
+                    CORE_LOGF(eLOG_Error,  ("[HTTP]  Error writing body at "
+                                            "offset %lu", (unsigned long)off));
                     break;
+                }
                 off += n_written;
             } while (off < size);
         }
@@ -347,13 +360,15 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
     /* line by line input */
     for (;;) {
         status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &uuu->http, 0);
-        if (status != eIO_Success)
+        if (status != eIO_Success) {
+            CORE_LOG(eLOG_Error, "[HTTP]  Error reading header");
             return status;
+        }
 
         size = BUF_Size(uuu->http);
         if (!(header = (char*) malloc(size + 1))) {
-            CORE_LOGF(eLOG_Error, ("Cannot allocate HTTP header (%ld byte(s))",
-                                   (long) size));
+            CORE_LOGF(eLOG_Error, ("[HTTP]  Cannot allocate header, %lu bytes",
+                                   (unsigned long) size));
             return eIO_Unknown;
         }
         verify(BUF_Peek(uuu->http, header, size) == size);
@@ -421,14 +436,14 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         status = SOCK_StripToPattern(uuu->sock, 0, 0, &buf, 0);
         assert(status != eIO_Success); /* cause reading until EOF */
         if (!(size = BUF_Size(buf)))
-            CORE_LOG(eLOG_Trace, "No HTTP body received with this error");
+            CORE_LOG(eLOG_Trace, "[HTTP]  No body received along with error");
         else if ((body = (char*) malloc(size + 1)) != 0) {
             BUF_Read(buf, body, size);
-            CORE_DATA(body, size, "Server error");
+            CORE_DATA(body, size, "HTTP server error");
             free(body);
         } else
-            CORE_LOGF(eLOG_Error, ("Cannot allocate HTTP body (%ld byte(s))",
-                                   (long) size));
+            CORE_LOGF(eLOG_Error, ("[HTTP]  Cannot allocate body, %lu bytes)",
+                                   (unsigned long) size));
         BUF_Destroy(buf);
     }
 
@@ -492,9 +507,8 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
 {
     assert(uuu->sock);
     /* just read, with no URL-decoding */
-    if (!(uuu->flags & fHCC_UrlDecodeInput)) {
+    if (!(uuu->flags & fHCC_UrlDecodeInput))
         return SOCK_Read(uuu->sock, buf, size, n_read, eIO_Plain);
-    }
 
     /* read and URL-decode */
     {{
@@ -518,15 +532,14 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
                 SOCK_Read(uuu->sock, peek_buf, n_decoded, &x_read, eIO_Plain);
                 assert(x_read == n_decoded);
                 status = eIO_Success;
-            } else if (SOCK_Status(uuu->sock, eIO_Read) == eIO_Closed) {
+            } else if (SOCK_Status(uuu->sock, eIO_Read) == eIO_Closed)
                 /* we are at EOF, and the remaining data cannot be decoded */
                 status = eIO_Unknown;
-            } 
         } else
             status = eIO_Unknown;
-
+        
         if (status != eIO_Success)
-            CORE_LOG(eLOG_Error, "[HTTP_SockRead]  Cannot URL-decode data");
+            CORE_LOG(eLOG_Error, "[HTTP]  Cannot URL-decode data");
 
         free(peek_buf);
         return status;
