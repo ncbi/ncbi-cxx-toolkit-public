@@ -259,11 +259,23 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
     filter->SetFF().SetFF().push_back(ce);
 }
 
+
+void GetComponents(const string& entry, list<string>* components)
+{
+    components->clear();
+    string comp_str = GetApp().GetConfig().GetString(entry, "component", "");
+    NStr::Split(comp_str, " ,\t", *components);
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/03 17:19:04  gorelenk
+ * Changed implementation of class CMsvc7RegSettings.
+ * Added implementation of function GetComponents.
+ *
  * Revision 1.6  2004/01/30 20:46:55  gorelenk
  * Added support of ASN projects.
  *
