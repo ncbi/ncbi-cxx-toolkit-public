@@ -1253,84 +1253,84 @@ bool CBioseqContext::IsTPA(void) const
 inline
 bool CBioseqContext::IsRSCompleteGenomic(void)  const
 {
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_chromosome) != 0;  // NC_
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_chromosome;  // NC_
 }
 
 
 inline
 bool CBioseqContext::IsRSIncompleteGenomic(void)  const
 {
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_genomic) != 0;  // NG_
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_genomic;  // NG_
 }
 
 
 inline
 bool CBioseqContext::IsRSMRna(void)  const
 {
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_mrna) != 0;  // NM_
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_mrna;  // NM_
 }
 
 
 inline
 bool CBioseqContext::IsRSNonCodingRna(void)  const
 {
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_ncrna) != 0;  // NR_
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_ncrna;  // NR_
 }
 
 
 inline
 bool CBioseqContext::IsRSProtein(void)  const
 {
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_prot) != 0;  // NP_
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_prot;  // NP_
 }
 
 
 inline
 bool CBioseqContext::IsRSContig(void)  const
 {
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_contig) != 0;  // NT_
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_contig;  // NT_
 }
 
 
 inline
 bool CBioseqContext::IsRSIntermedWGS(void)  const
 {
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_wgs_intermed) != 0;  // NW_
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_wgs_intermed;  // NW_
 }
 
 
 inline
 bool CBioseqContext::IsRSPredictedMRna(void)  const
 {
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_mrna_predicted) != 0;  // XM_
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_mrna_predicted;  // XM_
 }
 
 
 inline
 bool CBioseqContext::IsRSPredictedNCRna(void)  const
 {
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_ncrna_predicted) != 0;  // XR_
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_ncrna_predicted;  // XR_
 }
 
 
 inline
 bool CBioseqContext::IsRSPredictedProtein(void)  const
 {
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_prot_predicted) != 0;  // XP_
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_prot_predicted;  // XP_
 }
 
 
 inline
 bool CBioseqContext::IsRSWGSNuc(void)  const
 {
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_wgs_nuc) != 0;  // NZ_
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_wgs_nuc;  // NZ_
 }
 
 
 inline
 bool CBioseqContext::IsRSWGSProt(void)  const
 {
-    return (m_RefseqInfo & CSeq_id::eAcc_refseq_wgs_prot) != 0;  // ZP_
+    return m_RefseqInfo == CSeq_id::eAcc_refseq_wgs_prot;  // ZP_
 }
 
 
@@ -1432,6 +1432,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/10 21:38:01  shomrat
+* Fixed usage of m_RefseqInfo
+*
 * Revision 1.6  2004/03/05 18:53:34  shomrat
 * added customization flags
 *
