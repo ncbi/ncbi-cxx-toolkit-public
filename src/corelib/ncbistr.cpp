@@ -1338,6 +1338,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
     string        hyphen; // "-" or empty
     bool          is_html  = flags & fWrap_HTMLPre ? true : false;
     bool          do_flat = (flags & fWrap_FlatFile) != 0;
+    string        line;
 
     enum EScore { // worst to best
         eForced,
@@ -1353,7 +1354,15 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         // the next line will start at best_pos
         SIZE_TYPE best_pos   = NPOS;
         EScore    best_score = eForced;
-        for (SIZE_TYPE pos2 = pos;  pos2 < len && column <= width;
+        SIZE_TYPE pos0       = pos;
+        SIZE_TYPE nl_pos     = str.find('\n', pos);
+        if (nl_pos == NPOS) {
+            nl_pos = len;
+        }
+        if (column + nl_pos <= width) {
+            pos0 = nl_pos;
+        }
+        for (SIZE_TYPE pos2 = pos0;  pos2 < len  &&  column <= width;
              ++pos2, ++column) {
             EScore    score     = eForced;
             SIZE_TYPE score_pos = pos2;
@@ -1418,7 +1427,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         }
         arr.push_back(*pfx);
         {{ // eat backspaces and the characters (if any) that precede them
-            string    line(str, pos, best_pos - pos);
+            line.assign(str, pos, best_pos - pos);
             SIZE_TYPE bs = 0;
             while ((bs = line.find('\b', bs)) != NPOS) {
                 if (bs > 0) {
@@ -1700,6 +1709,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.135  2005/03/24 16:40:36  ucko
+ * Streamline Wrap a bit more.
+ *
  * Revision 1.134  2005/03/16 15:28:30  ivanov
  * MatchesMask(): Added parameter for case sensitive/insensitive matching
  *
