@@ -62,6 +62,90 @@ CCompression::ELevel CCompression::GetLevel(void) const
 }
 
 
+bool CCompression::x_CompressFile(const string&     src_file,
+                                  CCompressionFile& dst_file,
+                                  size_t            buf_size)
+{
+    if ( !buf_size ) {
+        return false;
+    }
+    char* buffer = 0;
+    FILE* file   = 0;
+    try {
+        buffer = new char[buf_size];
+        if ( !buffer ) {
+            throw;
+        }
+        file = fopen(src_file.c_str(),"rb");
+        if ( !file ) {
+            throw;
+        }
+        size_t nread, nwritten;
+        while ( (nread = fread(buffer, 1, buf_size, file)) > 0 ) {
+            nwritten = dst_file.Write(buffer, nread); 
+            if (nwritten != nread) {
+                throw;
+            }
+        }
+        delete buffer;
+        fclose(file);
+
+    } catch (...) {
+        if ( buffer ) {
+            delete buffer;
+        }
+        if ( file ) {
+            fclose(file);
+        }
+        return false;
+    }
+    return true;
+}
+
+
+bool CCompression::x_DecompressFile(CCompressionFile& src_file,
+                                    const string&     dst_file,
+                                    size_t            buf_size)
+{
+    if ( !buf_size ) {
+        return false;
+    }
+    char* buffer = 0;
+    FILE* file   = 0;
+    try {
+        buffer = new char[buf_size];
+        if ( !buffer ) {
+            throw;
+        }
+        file = fopen(dst_file.c_str(),"wb");
+        if ( !file ) {
+            throw;
+        }
+        int    nread;
+        size_t nwritten;
+        while ( (nread = src_file.Read(buffer, buf_size)) > 0 ) {
+            nwritten = fwrite(buffer, 1, nread, file);
+            if (nwritten != (size_t)nread) {
+                throw;
+            }
+        }
+        delete buffer;
+        fclose(file);
+
+    } catch (...) {
+        if ( buffer ) {
+            delete buffer;
+        }
+        if ( file ) {
+            fclose(file);
+        }
+        return false;
+    }
+    return true;
+}
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // CCompressionProcessor
@@ -104,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/07/10 16:24:26  ivanov
+ * Added auxiliary file compression/decompression functions.
+ *
  * Revision 1.2  2003/06/03 20:09:16  ivanov
  * The Compression API redesign. Added some new classes, rewritten old.
  *
