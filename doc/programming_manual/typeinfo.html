@@ -46,12 +46,13 @@ return a pointer to this statically created local object. Because <i>GetTypeInfo
 itself a static class method, a single invocation initializes the <i>CTypeInfo</i> object for
 all instances of that class.<p>
 
-All of the automatically generated classes defined in the C++ Toolkit's <i>objects</i> directory have a static
-<i>GetTypeInfo()</i> member function. In order to make type information about user-defined
-classes accessible to your application, these classes must also implement a static
-<i>GetTypeInfo()</i> method. A set of preprocessor <a href="#macros"> macros</a> is available, which greatly
-simplifies this effort. A pre-requisite to using these macros however, is that the class definition must
-include the following line:<p>
+All of the automatically generated classes defined in the C++ Toolkit's <i>objects</i> directory
+already have a static <i>GetTypeInfo()</i> member function. In order to make type information about
+<i>user-defined</i> classes accessible to your application, the user-defined classes must also
+implement a static <i>GetTypeInfo()</i> method. A set of preprocessor <a href="#macros"> macros</a>
+is available, which greatly simplifies this effort. A pre-requisite to using these macros however,
+is that the class definition must include the following line:<p>
+
 <center><pre>static const CTypeInfo* GetTypeInfo(void);
 </pre></center>
 
