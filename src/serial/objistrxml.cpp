@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2004/01/22 20:50:17  gouriano
+* corrected reading of undefined attributes, of boolean values, of tags with empty content
+*
 * Revision 1.53  2004/01/12 16:52:58  gouriano
 * Corrected reading EMPTY tag value. Added skipping undescribed class member attributes.
 *
@@ -339,6 +342,12 @@ bool IsWhiteSpace(char c)
     return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 }
 
+static inline
+bool IsEndOfTagChar(char c)
+{
+    return c == '>' || c == '/';
+}
+
 char CObjectIStreamXml::SkipWS(void)
 {
     _ASSERT(InsideTag());
@@ -435,7 +444,10 @@ void CObjectIStreamXml::EndTag(void)
         }
     }
     if ( c != '>' ) {
-        ThrowError(fFormatError, "'>' expected");
+        c = ReadUndefinedAttributes();
+        if ( c != '>' ) {
+            ThrowError(fFormatError, "'>' expected");
+        }
     }
     m_Input.SkipChar();
     Found_gt();
@@ -458,8 +470,17 @@ bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
         return true;
     }
 
-    if ( c != '>' )
-        ThrowError(fFormatError, "end of tag expected");
+    if ( c != '>' ) {
+        c = ReadUndefinedAttributes();
+        if ( c == '/' && m_Input.PeekChar(1) == '>' ) {
+            // end of self closed tag
+            m_Input.SkipChars(2);
+            Found_slash_gt();
+            return true;
+        }
+        if ( c != '>' )
+            ThrowError(fFormatError, "end of tag expected");
+    }
 
     // end of open tag
     m_Input.SkipChar(); // '>'
@@ -536,7 +557,7 @@ CLightString CObjectIStreamXml::ReadName(char c)
             m_NsPrefixToName[m_LastTag] = value;
             m_NsNameToPrefix[value] = m_LastTag;
             char ch = SkipWS();
-            return (ch == '>') ? CLightString() : ReadName(ch);
+            return IsEndOfTagChar(ch) ? CLightString() : ReadName(ch);
         } else if (ns_prefix == "xml") {
             iColon = 0;
         } else {
@@ -545,7 +566,7 @@ CLightString CObjectIStreamXml::ReadName(char c)
                     string value;
                     ReadAttributeValue(value, true);
                     char ch = SkipWS();
-                    return (ch == '>') ? CLightString() : ReadName(ch);
+                    return IsEndOfTagChar(ch) ? CLightString() : ReadName(ch);
                 }
             } else {
                 m_CurrNsPrefix = ns_prefix;
@@ -813,11 +834,40 @@ void CObjectIStreamXml::ReadAttributeValue(string& value, bool skipClosing)
     }
 }
 
+char CObjectIStreamXml::ReadUndefinedAttributes(void)
+{
+    char c;
+    m_Attlist = true;
+    for (;;) {
+        c = SkipWS();
+        if (IsEndOfTagChar(c)) {
+            m_Attlist = false;
+            break;
+        }
+        CLightString tagName = ReadName(c);
+        if (tagName.GetLength()) {
+            string value;
+            ReadAttributeValue(value, true);
+        }
+    }
+    return c;
+}
+
 bool CObjectIStreamXml::ReadBool(void)
 {
-    CLightString attr = ReadAttributeName();
-    if ( attr != "value" )
-        ThrowError(fFormatError, "attribute 'value' expected: "+string(attr));
+    CLightString attr;
+    while (HasAttlist()) {
+        attr = ReadAttributeName();
+        if ( attr == "value" ) {    
+            break;
+        }
+        string value;
+        ReadAttributeValue(value);
+    }
+    if ( attr != "value" ) {
+        EndOpeningTagSelfClosed();
+        ThrowError(fMissingValue,"attribute 'value' is missing");
+    }
     string sValue;
     ReadAttributeValue(sValue);
     bool value;
@@ -830,7 +880,7 @@ bool CObjectIStreamXml::ReadBool(void)
         }
         value = false;
     }
-    if ( !EndOpeningTagSelfClosed() )
+    if ( !EndOpeningTagSelfClosed() && !NextTagIsClosing() )
         ThrowError(fFormatError, "boolean tag must have empty contents");
     return value;
 }
@@ -886,8 +936,12 @@ void CObjectIStreamXml::ReadNull(void)
 }
 
 void CObjectIStreamXml::ReadAnyContentTo(
-    string& value, const CLightString& tagName)
+    const string& ns_prefix, string& value, const CLightString& tagName)
 {
+    if (ThisTagIsSelfClosed()) {
+        EndSelfClosedTag();
+        return;
+    }
     while (!NextTagIsClosing()) {
         while (NextIsTag()) {
             CLightString tagAny;
@@ -899,16 +953,22 @@ void CObjectIStreamXml::ReadAnyContentTo(
                 if (attribName.empty()) {
                     break;
                 }
-                value += " ";
-                value += attribName;
-                value += "=\"";
-                string attribValue;
-                ReadAttributeValue(attribValue, true);
-                value += attribValue;
-                value += "\"";
+                if (m_CurrNsPrefix == ns_prefix) {
+                    value += " ";
+                    value += attribName;
+                    value += "=\"";
+                    string attribValue;
+                    ReadAttributeValue(attribValue, true);
+                    value += attribValue;
+                    value += "\"";
+                } else {
+                    // skip attrib from different namespaces
+                    string attribValue;
+                    ReadAttributeValue(attribValue, true);
+                }
             }
             value += '>';
-            ReadAnyContentTo(value,tagAny);
+            ReadAnyContentTo(ns_prefix, value,tagAny);
             value += "</";
             value += tagAny;
             value += '>';
@@ -941,7 +1001,7 @@ void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
     obj.SetNamespacePrefix(ns_prefix);
     obj.SetNamespaceName(m_NsPrefixToName[ns_prefix]);
     string value;
-    ReadAnyContentTo(value,tagName);
+    ReadAnyContentTo(ns_prefix,value,tagName);
     obj.SetValue(value);
     END_OBJECT_FRAME();
 }
@@ -1029,7 +1089,7 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
     TEnumValueType value;
     if ( InsideOpeningTag() ) {
         // try to read attribute 'value'
-        if ( SkipWS() == '>' ) {
+        if ( IsEndOfTagChar( SkipWS()) ) {
             // no attribute
             if ( !values.IsInteger() )
                 ThrowError(fFormatError, "attribute 'value' expected");
@@ -1044,10 +1104,19 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
                 ReadAttributeValue(valueName);
                 value = values.FindValue(valueName);
             } else {
-                CLightString attr = ReadAttributeName();
-                if ( attr != "value" )
-                    ThrowError(fFormatError,
-                        "attribute 'value' expected: "+string(attr));
+                CLightString attr;
+                while (HasAttlist()) {
+                    attr = ReadAttributeName();
+                    if ( attr == "value" ) {    
+                        break;
+                    }
+                    string value;
+                    ReadAttributeValue(value);
+                }
+                if ( attr != "value" ) {
+                    EndOpeningTagSelfClosed();
+                    ThrowError(fMissingValue,"attribute 'value' is missing");
+                }
                 string valueName;
                 ReadAttributeValue(valueName);
                 value = values.FindValue(valueName);
@@ -1247,8 +1316,7 @@ bool CObjectIStreamXml::WillHaveName(TTypeInfo elementType)
 bool CObjectIStreamXml::HasAttlist(void)
 {
     if (InsideTag()) {
-        char c = SkipWS();
-        return (c != '>') && (c != '/');
+        return !IsEndOfTagChar( SkipWS() );
     }
     return false;
 }
@@ -1656,7 +1724,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
             if (HasAttlist()) {
                 for (;;) {
                     char ch = SkipWS();
-                    if (ch == '>' || ch == '/') {
+                    if (IsEndOfTagChar(ch)) {
                         return kInvalidMember;
                     }
                     tagName = ReadName(ch);
@@ -1684,19 +1752,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                     }
 // if class spec defines no attributes, but there are some - skip them
                     if (HasAttlist()) {
-                        m_Attlist = true;
-                        for (;;) {
-                            char ch = SkipWS();
-                            if (ch == '>') {
-                                m_Attlist = false;
-                                break;
-                            }
-                            tagName = ReadName(ch);
-                            if (tagName.GetLength()) {
-                                string value;
-                                ReadAttributeValue(value, true);
-                            }
-                        }
+                        ReadUndefinedAttributes();
                     }
                 }
             }
@@ -1821,19 +1877,7 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
             }
 // if spec defines no attributes, but there are some - skip them
             if (HasAttlist()) {
-                m_Attlist = true;
-                for (;;) {
-                    char ch = SkipWS();
-                    if (ch == '>') {
-                        m_Attlist = false;
-                        break;
-                    }
-                    tagName = ReadName(ch);
-                    if (tagName.GetLength()) {
-                        string value;
-                        ReadAttributeValue(value, true);
-                    }
-                }
+                ReadUndefinedAttributes();
             }
         }
         m_Attlist = false;
