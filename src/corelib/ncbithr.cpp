@@ -40,6 +40,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/03/26 21:45:29  vakatov
+ * Workaround static initialization/destruction traps:  provide better
+ * timing control, and allow safe use of the objects which are
+ * either not yet initialized or already destructed. (with A.Grichenko)
+ *
  * Revision 1.4  2001/03/13 22:43:20  vakatov
  * Full redesign.
  * Implemented all core functionality.
@@ -58,6 +63,7 @@
  */
 
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <algorithm>
 #include <assert.h>
 
@@ -93,13 +99,23 @@ void s_Verify(bool state, const char* message)
 //
 
 
+// Flag and function to report s_Tls_TlsSet destruction
+static bool s_TlsSetDestroyed = false;
+
+static void s_TlsSetCleanup(void* /* ptr */)
+{
+    s_TlsSetDestroyed = true;
+}
+
+
 // Set of all TLS objects -- to prevent memory leaks due to
 // undestroyed TLS objects, and to avoid premature TLS destruction.
 typedef set< CRef<CTlsBase> > TTls_TlsSet;
-static TTls_TlsSet s_Tls_TlsSet;
+static CSafeStaticPtr<TTls_TlsSet> s_Tls_TlsSet(s_TlsSetCleanup);
+
 
 // Protects "s_Tls_TlsSet"
-static CFastMutex  s_TlsMutex;
+static CFastMutex s_TlsMutex;
 
 
 CTlsBase::CTlsBase(void)
@@ -117,41 +133,50 @@ CTlsBase::CTlsBase(void)
     m_Key = 0;
 #endif
 
-    {{
+    m_Initialized = true;
+    // Add to the cleanup set if it still exists
+    if ( !s_TlsSetDestroyed ) {
         CFastMutexGuard guard(s_TlsMutex);
-        // Add to the cleanup set
-        s_Tls_TlsSet.insert( CRef<CTlsBase> (this) );
-    }}
+        s_Tls_TlsSet->insert(CRef<CTlsBase> (this));
+    }
 }
 
 
 CTlsBase::~CTlsBase(void)
 {
     x_Reset();
+    m_Initialized = false;
 
     // Destroy system TLS key
 #if defined(NCBI_WIN32_THREADS)
     if ( TlsFree(m_Key) ) {
+        m_Key = 0;
         return;
     }
+    assert(0);
 #elif defined(NCBI_POSIX_THREADS)
     if (pthread_key_delete(m_Key) == 0) {
+        m_Key = 0;
         return;
     }
+    assert(0);
 #else
+    m_Key = 0;
     return;
 #endif
-
-    assert(0);
 }
 
 
 void CTlsBase::x_Discard(void)
 {
+    if ( s_TlsSetDestroyed ) {
+        return;  // Nothing to do - the TLS set has been destroyed
+    }
+
     CFastMutexGuard guard(s_TlsMutex);
-    non_const_iterate(TTls_TlsSet, it, s_Tls_TlsSet) {
+    non_const_iterate(TTls_TlsSet, it, *s_Tls_TlsSet) {
         if (it->GetPointer() == this) {
-            s_Tls_TlsSet.erase(it);
+            s_Tls_TlsSet->erase(it);
             break;
         }
     }
@@ -177,6 +202,10 @@ void CTlsBase::x_SetValue(void*        value,
                           FCleanupBase cleanup,
                           void*        cleanup_data)
 {
+    if ( !m_Initialized ) {
+        return;
+    }
+
     // Get previously stored data
     STlsData* tls_data = static_cast<STlsData*> (x_GetTlsData());
 
@@ -211,6 +240,10 @@ void CTlsBase::x_SetValue(void*        value,
 
 void CTlsBase::x_Reset(void)
 {
+    if ( !m_Initialized ) {
+        return;
+    }
+
     // Get previously stored data
     STlsData* tls_data = static_cast<STlsData*> (x_GetTlsData());
     if ( !tls_data ) {
@@ -240,8 +273,23 @@ static CFastMutex s_ThreadMutex;
 static CFastMutex s_TlsCleanupMutex;
 
 
-// Internal storage for thread objects
-CRef< CTls<CThread> > CThread::sm_ThreadsTls(new CTls<CThread>);
+// Internal storage for thread objects and related variables/functions
+CTls<CThread>* CThread::sm_ThreadsTls;
+
+
+void s_CleanupThreadsTls(void* /* ptr */)
+{
+    CThread::sm_ThreadsTls = 0;  // Indicate that the TLS is destroyed
+}
+
+
+void CThread::CreateThreadsTls(void)
+{
+    static CSafeStaticRef< CTls<CThread> >
+        s_ThreadsTlsRef(s_CleanupThreadsTls);
+
+    sm_ThreadsTls = &s_ThreadsTlsRef.Get();
+}
 
 
 TWrapperRes CThread::Wrapper(TWrapperArg arg)
@@ -259,7 +307,7 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
         thread_obj->m_ID = s_ThreadCount;
         s_Verify(thread_obj->m_ID != 0,
                  "CThread::Wrapper() -- error assigning thread ID");
-        sm_ThreadsTls->SetValue(thread_obj);
+        GetThreadsTls().SetValue(thread_obj);
     }}
 
     // Run user-provided thread main function here
@@ -423,7 +471,7 @@ void CThread::Join(void** exit_data)
 void CThread::Exit(void* exit_data)
 {
     // Don't exit from the main thread
-    CThread* x_this = sm_ThreadsTls->GetValue();
+    CThread* x_this = GetThreadsTls().GetValue();
     s_Verify(x_this != 0,
              "CThread::Exit() -- attempt to call it for the main thread");
 
@@ -491,41 +539,10 @@ void CThread::AddUsedTls(CTlsBase* tls)
     CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
 
     // Get current thread object
-    CThread* x_this = sm_ThreadsTls->GetValue();
+    CThread* x_this = GetThreadsTls().GetValue();
     if ( x_this ) {
         x_this->m_UsedTls.insert(tls);
     }
-}
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-//  CInternalMutex::
-//
-
-CInternalMutex::CInternalMutex(void)
-{
-    // Create platform-dependent mutex handle
-#if defined(NCBI_WIN32_THREADS)
-    s_Verify((m_Handle = CreateMutex(NULL, FALSE, NULL)) != NULL,
-             "CInternalMutex::CInternalMutex() -- error creating mutex");
-#elif defined(NCBI_POSIX_THREADS)
-    s_Verify(pthread_mutex_init(&m_Handle, 0) == 0,
-             "CInternalMutex::CInternalMutex() -- error creating mutex");
-#endif
-    return;
-}
-
-
-CInternalMutex::~CInternalMutex(void)
-{
-    // Destroy system mutex handle
-#if defined(NCBI_WIN32_THREADS)
-    verify(CloseHandle(m_Handle) != 0);
-#elif defined(NCBI_POSIX_THREADS)
-    verify(pthread_mutex_destroy(&m_Handle) == 0);
-#endif
-    return;
 }
 
 
@@ -570,6 +587,7 @@ public:
     pthread_cond_t m_Rcond;
     pthread_cond_t m_Wcond;
 #endif
+    bool m_Initialized;
 };
 
 
@@ -577,6 +595,7 @@ public:
 inline
 CInternalRWLock::CInternalRWLock(void)
 {
+    m_Initialized = true;
     // Create system handles
 #if defined(NCBI_WIN32_THREADS)
     if ((m_Rsema = CreateSemaphore(NULL, 1, 1, NULL)) != NULL) {
@@ -585,6 +604,9 @@ CInternalRWLock::CInternalRWLock(void)
         }
         CloseHandle(m_Rsema);
     }
+    m_Initialized = false;
+    s_Verify(0,
+             "CInternalRMLock::InternalRWLock() -- initialization error");
 #elif defined(NCBI_POSIX_THREADS)
     if (pthread_cond_init(&m_Rcond, 0) == 0) {
         if (pthread_cond_init(&m_Wcond, 0) == 0) {
@@ -592,12 +614,12 @@ CInternalRWLock::CInternalRWLock(void)
         }
         pthread_cond_destroy(&m_Rcond);
     }
+    m_Initialized = false;
+    s_Verify(0,
+             "CInternalRMLock::InternalRWLock() -- initialization error");
 #else
     return;
 #endif
-
-    s_Verify(0,
-             "CInternalRMLock::InternalRWLock() -- initialization error");
 }
 
 
@@ -611,6 +633,7 @@ CInternalRWLock::~CInternalRWLock(void)
     verify(pthread_cond_destroy(&m_Rcond) == 0);
     verify(pthread_cond_destroy(&m_Wcond) == 0);
 #endif
+    m_Initialized = false;
 }
 
 
@@ -639,6 +662,10 @@ CRWLock::~CRWLock(void)
 
 void CRWLock::ReadLock(void)
 {
+    if ( !m_RW->m_Initialized ) {
+        return;
+    }
+
     // Lock mutex now, unlock before exit.
     // (in fact, it will be unlocked by the waiting function for a while)
     CMutexGuard guard(m_Mutex);
@@ -719,6 +746,10 @@ void CRWLock::ReadLock(void)
 
 void CRWLock::WriteLock(void)
 {
+    if ( !m_RW->m_Initialized ) {
+        return;
+    }
+
     CMutexGuard guard(m_Mutex);
     CThread::TID self_id = CThread::GetSelf();
 
@@ -781,6 +812,10 @@ void CRWLock::WriteLock(void)
 
 bool CRWLock::TryReadLock(void)
 {
+    if ( !m_RW->m_Initialized ) {
+        return true;
+    }
+
     CMutexGuard guard(m_Mutex);
     CThread::TID self_id = CThread::GetSelf();
 
@@ -818,6 +853,10 @@ bool CRWLock::TryReadLock(void)
 
 bool CRWLock::TryWriteLock(void)
 {
+    if ( !m_RW->m_Initialized ) {
+        return true;
+    }
+
     CMutexGuard guard(m_Mutex);
     CThread::TID self_id = CThread::GetSelf();
 
@@ -861,6 +900,10 @@ bool CRWLock::TryWriteLock(void)
 
 void CRWLock::Unlock(void)
 {
+    if ( !m_RW->m_Initialized ) {
+        return;
+    }
+
     CMutexGuard guard(m_Mutex);
     CThread::TID self_id = CThread::GetSelf();
 

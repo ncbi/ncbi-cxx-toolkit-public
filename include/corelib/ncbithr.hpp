@@ -52,6 +52,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/03/26 21:45:28  vakatov
+ * Workaround static initialization/destruction traps:  provide better
+ * timing control, and allow safe use of the objects which are
+ * either not yet initialized or already destructed. (with A.Grichenko)
+ *
  * Revision 1.3  2001/03/13 22:43:19  vakatov
  * Full redesign.
  * Implemented all core functionality.
@@ -66,7 +71,6 @@
  * ===========================================================================
  */
 
-#include <corelib/ncbimtx.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <memory>
 #include <set>
@@ -147,6 +151,7 @@ protected:
 
 private:
     TTlsKey m_Key;
+    bool    m_Initialized;
 
     // Internal structure to store all three pointers in the same TLS
     struct STlsData {
@@ -164,7 +169,8 @@ class CTls : public CTlsBase
 public:
     // Get the pointer previously stored by SetValue().
     // Return 0 if no value has been stored, or if Reset() was last called.
-    TValue* GetValue(void) const {
+    TValue* GetValue(void) const
+    {
         return reinterpret_cast<TValue*> (x_GetValue());
     }
 
@@ -173,7 +179,8 @@ public:
     // destroy the new "value" in the next call to SetValue() or Reset().
     // Do not cleanup if the new value is equal to the old one.
     typedef void (*FCleanup)(TValue* value, void* cleanup_data);
-    void SetValue(TValue* value, FCleanup cleanup=0, void* cleanup_data=0) {
+    void SetValue(TValue* value, FCleanup cleanup = 0, void* cleanup_data = 0)
+    {
         x_SetValue(value,
                    reinterpret_cast<FCleanupBase> (cleanup), cleanup_data);
     }
@@ -271,7 +278,19 @@ private:
     static TWrapperRes Wrapper(TWrapperArg arg);
 
     // To store "CThread" object related to the current (running) thread
-    static CRef< CTls<CThread> > sm_ThreadsTls;
+    static CTls<CThread>* sm_ThreadsTls;
+    // Safe access to "sm_ThreadsTls"
+    static CTls<CThread>& GetThreadsTls(void)
+    {
+        if ( !sm_ThreadsTls ) {
+            CreateThreadsTls();
+        }
+        return *sm_ThreadsTls;
+    }
+
+    // sm_ThreadsTls initialization and cleanup functions
+    static void CreateThreadsTls(void);
+    friend void s_CleanupThreadsTls(void* /* ptr */);
 
     // Keep all TLS references to clean them up in Exit()
     typedef set< CRef<CTlsBase> > TTlsSet;
@@ -567,6 +586,10 @@ inline
 CTlsBase::STlsData* CTlsBase::x_GetTlsData(void)
 const
 {
+    if ( !m_Initialized ) {
+        return 0;
+    }
+
     void* tls_data;
 
 #if defined(NCBI_WIN32_THREADS)
@@ -601,12 +624,8 @@ const
 inline
 CThread::TID CThread::GetSelf(void)
 {
-    if (sm_ThreadsTls == 0) {
-        return 0;
-    }
-
-    // Try to get pointer to the current thread object
-    CThread* thread_ptr = static_cast<CThread*>(sm_ThreadsTls->GetValue());
+    // Get pointer to the current thread object
+    CThread* thread_ptr = GetThreadsTls().GetValue();
 
     // If zero, it is main thread which has no CThread object
     return thread_ptr ? thread_ptr->m_ID : 0/*main thread*/;
@@ -625,6 +644,10 @@ const CThread::TID kThreadID_None = 0xFFFFFFFF;
 inline
 void CMutex::Lock(void)
 {
+    if ( !m_Mtx.m_Initialized ) {
+        return;
+    }
+
     CThread::TID owner = CThread::GetSelf();
     if (owner == m_Owner) {
         // Don't lock twice, just increase the counter
@@ -642,6 +665,10 @@ void CMutex::Lock(void)
 inline
 bool CMutex::TryLock(void)
 {
+    if ( !m_Mtx.m_Initialized ) {
+        return true;
+    }
+
     CThread::TID owner = CThread::GetSelf();
     if (owner == m_Owner) {
         // Don't lock twice, just increase the counter
@@ -656,6 +683,7 @@ bool CMutex::TryLock(void)
         return true;
     }
 
+    // Cannot lock right now
     return false;
 }
 
@@ -663,6 +691,10 @@ bool CMutex::TryLock(void)
 inline
 void CMutex::Unlock(void)
 {
+    if ( !m_Mtx.m_Initialized ) {
+        return;
+    }
+
     // No unlocks by threads other than owner.
     // This includes no unlocks of unlocked mutex.
     if (m_Owner != CThread::GetSelf()) {
