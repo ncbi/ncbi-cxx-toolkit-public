@@ -35,6 +35,8 @@
 #include <objects/objmgr/scope.hpp>
 #include <serial/iterator.hpp>
 #include <objects/biblio/Id_pat.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -65,7 +67,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-static string s_TitleFromBioSource (const CBioSource&    source);
+static string s_TitleFromBioSource (const CBioSource&    source,
+                                    const string&        suffix = kEmptyStr);
 static string s_TitleFromChromosome(const CBioSource&    source,
                                     const CMolInfo&      mol_info);
 static string s_TitleFromProtein   (const CBioseq_Handle& handle,
@@ -82,10 +85,12 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
     CConstRef<CTextseq_id>    tsid        = NULL;
     CConstRef<CPDB_seq_id>    pdb_id      = NULL;
     CConstRef<CPatent_seq_id> pat_id      = NULL;
+    CConstRef<CDbtag>         general_id  = NULL;
     CConstRef<CBioSource>     source      = NULL;
     CConstRef<CMolInfo>       mol_info    = NULL;
     bool                      third_party = false;
     bool                      is_nc       = false;
+    bool                      wgs_master  = false;
     CMolInfo::TTech           tech        = CMolInfo::eTech_unknown;
     bool                      htg_tech    = false;
     bool                      use_biosrc  = false;
@@ -101,6 +106,22 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
                                      NStr::eNocase)) {
                 is_nc = true;
             }
+            break;
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Embl:
+        case CSeq_id::e_Ddbj:
+        {
+            const CTextseq_id& t = *(*id)->GetTextseq_Id();
+            if (t.IsSetAccession()) {
+                const string& acc = t.GetAccession();
+                if (acc.size() == 12  &&  NStr::EndsWith(acc, "000000")) {
+                    wgs_master = true;
+                }
+            }
+            break;
+        }
+        case CSeq_id::e_General:
+            general_id = &(*id)->GetGeneral();
             break;
         case CSeq_id::e_Tpg:
         case CSeq_id::e_Tpe:
@@ -175,7 +196,13 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
     }
 
     if (title.empty()  &&  use_biosrc  &&  source.NotEmpty()) {
-        title = s_TitleFromBioSource(*source);
+        if (tech == CMolInfo::eTech_wgs  &&  !wgs_master
+            &&  general_id.NotEmpty()  &&  general_id->GetTag().IsStr()) {
+            title = s_TitleFromBioSource(*source,
+                                         general_id->GetTag().GetStr());
+        } else {
+            title = s_TitleFromBioSource(*source);
+        }
         flags &= ~fGetTitle_Organism;
     }
 
@@ -277,17 +304,17 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
         if (core->GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
             // We need the full bioseq here...
             const CBioseq& seq = GetBioseq();
-            unsigned int pieces = 0;
+            unsigned int pieces = 1;
             iterate (CDelta_ext::Tdata, it,
                      seq.GetInst().GetExt().GetDelta().Get()) {
                 switch ((*it)->Which()) {
                 case CDelta_seq::e_Loc:
-                    if ( !(*it)->GetLoc().IsNull() ) {
+                    if ( (*it)->GetLoc().IsNull() ) {
                         pieces++;
                     }
                     break;
                 case CDelta_seq::e_Literal:
-                    if ((*it)->GetLiteral().IsSetSeq_data()) {
+                    if ( !(*it)->GetLiteral().IsSetSeq_data() ) {
                         pieces++;
                     }
                     break;
@@ -320,8 +347,14 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
         break;
 
     case CMolInfo::eTech_wgs:
-        if (title.find("whole genome shotgun sequence") == NPOS) {
-            suffix = ", whole genome shotgun sequence";
+        if (wgs_master) {
+            if (title.find("whole genome shotgun sequencing project") == NPOS){
+                suffix = ", whole genome shotgun sequencing project";
+            }            
+        } else {
+            if (title.find("whole genome shotgun sequence") == NPOS) {
+                suffix = ", whole genome shotgun sequence";
+            }
         }
         break;
     }
@@ -350,9 +383,10 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
 }
 
 
-static string s_TitleFromBioSource(const CBioSource& source)
+static string s_TitleFromBioSource(const CBioSource& source,
+                                   const string&     suffix)
 {
-    string          name, chromosome, clone, map_, strain;
+    string          name, chromosome, clone, map_, strain, sfx;
     const COrg_ref& org = source.GetOrg();
 
     if (org.IsSetTaxname()) {
@@ -384,7 +418,11 @@ static string s_TitleFromBioSource(const CBioSource& source)
         }
     }
 
-    return name + chromosome + clone + map_ + strain;
+    if (suffix.size() > 0) {
+        sfx = ' ' + suffix;
+    }
+
+    return name + chromosome + clone + map_ + strain + sfx;
 }
 
 
@@ -710,6 +748,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2002/05/08 19:26:53  ucko
+* More changes from C version: give more info about WGS sequences,
+* fix count of segments to use #gaps + 1 rather than # non-gap pieces.
+*
 * Revision 1.11  2002/05/06 03:28:46  vakatov
 * OM/OM1 renaming
 *
