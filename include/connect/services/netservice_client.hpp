@@ -114,7 +114,7 @@ public:
     {
         return m_ClientNameComment;
     }
-
+    const string& GetClientName() const { return m_ClientName; }
 protected:
     bool ReadStr(CSocket& sock, string* str);
     void WriteStr(const char* str, size_t len);
@@ -185,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/21 16:42:45  didenko
+ * +GetClientName()
+ *
  * Revision 1.3  2005/03/17 17:16:59  kuznets
  * +Connect()
  *
