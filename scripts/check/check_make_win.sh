@@ -16,7 +16,7 @@
 #                       (default: "<build_dir>/check.sh.list")
 #    out_check_script - full path to the output test script
 #                       (default: "<build_dir>/check.sh")
-#    build_dir        - path to MSVC build tree like".../msvc_prj/..."
+#    build_dir        - path to MSVC build tree like".../msvc_prj"
 #                       (default: will try determine path from current work
 #                       directory -- root of build tree ) 
 #    cfgs             - list of tests configurations 
@@ -55,7 +55,7 @@ if test ! -z "$x_build_dir"; then
    x_build_dir=`(cd "$x_build_dir"; pwd | sed -e 's/\/$//g')`
 else
    # Get build dir name from current work directory
-   x_build_dir=`pwd | sed -e 's%/msvc_prj.*$%%'`/msvc_prj
+   x_build_dir=`pwd`
 fi
 
 x_root_dir=`echo "$x_build_dir" | sed -e 's%/compilers/.*$%%'`
@@ -98,13 +98,14 @@ for d in $script_dirs; do
 done
 
 
+
 #//////////////////////////////////////////////////////////////////////////
 
 cat > $x_out <<EOF
 #! /bin/sh
 
 root_dir="$x_root_dir"
-build_dir="\$root_dir/compilers/msvc_prj"
+build_dir="$x_build_dir"
 src_dir="\$root_dir/src"
 
 res_script="$x_out"
