@@ -30,6 +30,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  1999/01/04 22:41:44  vakatov
+* Do not use so-called "hardware-exceptions" as these are not supported
+* (on the signal level) by UNIX
+* Do not "set_unexpected()" as it works differently on UNIX and MSVC++
+*
 * Revision 1.29  1998/12/28 17:56:43  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -326,12 +331,8 @@ static void TE_logic(void) THROWS((runtime_error,logic_error)) {
     throw logic_error("TE_logic::logic_error");
 }
 
-static void TE_unexpected(void) THROWS((logic_error)) {
-    throw runtime_error("TE_unexpected::runtime_error");
-}
 
-
-static void TestException_Soft(void)
+static void TestException_Std(void)
 {
     try { TE_runtime(); }
     catch (runtime_error& e) {
@@ -358,17 +359,6 @@ static void TestException_Soft(void)
     catch (logic_error& e) {
         NcbiCerr << "CATCH TE_logic " << e.what() << NcbiEndl; }
     STD_CATCH_ALL ("try { TE_logic(); }  SOMETHING IS WRONG!");
-
-    try { // Unexpected
-        TE_unexpected();
-    }
-    catch (logic_error& e) {
-        NcbiCerr << "CATCH logic " << e.what() << NcbiEndl; }
-    catch (runtime_error& e) {
-        NcbiCerr << "CATCH runtime " << e.what() << NcbiEndl; }
-    catch (bad_exception&) {
-        NcbiCerr << "CATCH bad " << NcbiEndl; }
-    STD_CATCH_ALL ("try { TE_unexpected(); }");
 }
 
 
@@ -388,46 +378,12 @@ static void TestException_Aux(void)
 }
 
 
-static void TestException_Hard(void)
-{
-#if defined(NCBI_OS_MSWIN)  &&  defined(TEST_OS_EXCEPTIONS)
-    try { // Memory Access Violation
-        int* i_ptr = 0;
-        int i_val = *i_ptr;
-        i_val++;
-    } catch (CMemException& e) {
-        NcbiCerr << e.what() << NcbiEndl;
-    }
-
-    try { // Bad Instruction
-        static int i_arr[32];
-        void *i_arr_ptr = i_arr;
-        memset((void*)i_arr, '\0xFF', sizeof(i_arr)/2);
-        typedef void (*TBadFunc)(void);
-        TBadFunc bad_func = 0;
-        memcpy((void*)&bad_func, i_arr_ptr, sizeof(i_arr_ptr));
-        bad_func();
-    } catch (COSException& e) {
-        NcbiCerr << e.what() << NcbiEndl;
-    }
-
-    try { // Divide by Zero
-        int i1 = 1;
-        i1 /= (i1 - i1);
-    } catch (exception& e) {
-        NcbiCerr << e.what() << NcbiEndl;
-    }
-#endif  /* NCBI_OS_MSWIN */
-}
-
 static void TestException(void)
 {
     SetDiagStream(&NcbiCout);
-    COSException::Initialize();
 
-    TestException_Soft();
+    TestException_Std();
     TestException_Aux();
-    TestException_Hard();
 }
 
 /////////////////////////////////

@@ -26,17 +26,20 @@
 *
 * ===========================================================================
 *
-* Authors:  Denis Vakatov, Vsevolod Sandomirskiy
+* Author:  Denis Vakatov
 *
 * File Description:
 *   NCBI C++ exception handling
 *   Includes auxiliary ad hoc macros to "catch" and macros
-*   for C++ exception specification
-*   Also specifies a restricted set of portable hardware exceptions
-*   (only synchroneous ones) -- see "COSException"-derived classes
+*   for the C++ exception specification
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/01/04 22:41:41  vakatov
+* Do not use so-called "hardware-exceptions" as these are not supported
+* (on the signal level) by UNIX
+* Do not "set_unexpected()" as it works differently on UNIX and MSVC++
+*
 * Revision 1.7  1998/12/28 17:56:27  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -124,50 +127,6 @@ public:
     // Report "pos" along with "what"
     CParseException(const string& what, SIZE_TYPE pos) throw();
     SIZE_TYPE GetPos(void) const THROWS_NONE { return m_Pos; }
-};
-
-
-/////////////////////////////////
-// Classes for the portable "hardware exceptions"
-//
-
-// Base hardware exception class
-class COSException : public exception {
-public:
-    // Inherited from "exception"
-    COSException(const string& what) throw()
-        : m_What(what) {}
-    virtual const char *what(void) const throw() {
-        return m_What.c_str();
-    }
-
-    // OS depenedent initialization(setups the catcher/handler)
-    static void Initialize(void) THROWS((runtime_error));
-    
-protected:
-    string m_What;
-};
-
-
-// Memory-related exception
-class CMemException : public COSException {
-public:
-    CMemException(const string& what) throw()
-        : COSException(what) {}
-};
-
-// Portable FPE-related exception
-class CFPEException : public COSException {
-public:
-    CFPEException(const string& what) throw()
-        : COSException(what) {}
-};
-
-// Portable other exception
-class CSystemException : public COSException {
-public:
-    CSystemException(const string& what) throw()
-        : COSException(what) {}
 };
 
 
