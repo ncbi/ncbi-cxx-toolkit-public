@@ -43,6 +43,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include <stdio.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -1318,3 +1319,14 @@ void CHitParser::x_Combine(double dProximity)
 }
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.3  2003/12/10 20:59:33  ucko
+* +<stdio.h> for sprintf(); add CVS log at end
+*
+*
+* ===========================================================================
+*/
