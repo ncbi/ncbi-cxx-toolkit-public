@@ -32,6 +32,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/24 14:58:55  grichenk
+* Fixed Empty() for unsigned intervals
+* SerialAssign<>() -> CSerialObject::Assign()
+* Improved performance for eResolve_None case
+*
 * Revision 1.6  2002/05/09 14:18:55  grichenk
 * Fixed "unused variable" warnings
 *
@@ -159,7 +164,7 @@ bool CHandleRange::IntersectingWith(const CHandleRange& hloc) const
 
 void CHandleRange::x_CombineRanges(TRange& dest, const TRange& src)
 {
-    if ( src.IsEmptyFrom()  ||  src.IsEmptyTo() ) {
+    if ( src.Empty() ) {
         return;
     }
     if ( !dest.IsWholeFrom() ) {

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/05/24 14:58:53  grichenk
+* Fixed Empty() for unsigned intervals
+* SerialAssign<>() -> CSerialObject::Assign()
+* Improved performance for eResolve_None case
+*
 * Revision 1.15  2002/05/06 03:30:35  vakatov
 * OM/OM1 renaming
 *
@@ -169,7 +174,7 @@ private:
     typedef set< CRef<CAnnotObject> >         TAnnotSet;
 
     // Initialize the iterator
-    void x_Initialize(const CSeq_loc& loc, EResolveMethod resolve);
+    void x_Initialize(const CSeq_loc& loc);
     // Search the location for annotations, add all to the annot-set,
     // lock all TSEs found. Do nothing with the convertions map.
     void x_SearchLocation(CHandleRangeMap& loc);
@@ -181,8 +186,7 @@ private:
                              CSeq_id_Handle ref_idh,    // ref. id
                              TSeqPos rmin, TSeqPos rmax,// ref. interval
                              ENa_strand strand,         // ref. strand
-                             TSignedSeqPos shift,       // shift to master
-                             EResolveMethod resolve);
+                             TSignedSeqPos shift);      // shift to master
     // Convert an annotation to the master location coordinates
     CAnnotObject* x_ConvertAnnotToMaster(const CAnnotObject& annot_obj) const;
     // Convert seq-loc to the master location coordinates, return true
@@ -203,6 +207,8 @@ private:
     mutable CRef<CScope>         m_Scope;
     // If non-zero, search annotations in the "native" TSE only
     CRef<CTSE_Info>              m_NativeTSE;
+    // Reference resolving method
+    EResolveMethod               m_ResolveMethod;
 };
 
 
