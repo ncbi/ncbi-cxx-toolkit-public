@@ -189,7 +189,7 @@ void CValidError_bioseq::ValidateSeqIds
                 unsigned int num_digits = 0;
                 unsigned int num_letters = 0;
                 bool letter_after_digit = false;
-                bool bad_id_chars = false;
+                bool bad_id_chars = false;       
                     
                 iterate (string, s, acc) {
                     if (isupper(*s)) {
@@ -338,7 +338,8 @@ void CValidError_bioseq::ValidateSeqIds
     }
 
     // Check that a sequence with a gi number has exactly one accession
-    if (gi_count > 0  &&  accn_count == 0) {
+    if ( gi_count > 0  &&  accn_count == 0  &&  !m_Imp.IsPDB()  &&  
+         seq.GetInst().GetRepr() != CSeq_inst::eRepr_virtual ) {
         PostErr(eDiag_Error, eErr_SEQ_INST_GiWithoutAccession,
             "No accession on sequence with gi number", seq);
     }
@@ -458,9 +459,14 @@ void CValidError_bioseq::ValidateInst(const CBioseq& seq)
         ValidateSeqParts(seq);
     }
 
-    if (seq.IsAa()) {
+    if ( seq.IsAa() ) {
         // Validate protein title (amino acids only)
         ValidateProteinTitle(seq);
+    }
+
+    if ( seq.IsNa() ) {
+        // check for N bases at start or stop of sequence
+        ValidateNs(seq);
     }
 
     // Validate sequence length
@@ -908,10 +914,18 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
         return;
     }
 
-    CTypeConstIterator<CMolInfo> mi = ConstBegin(seq);
-    if (inst.GetRepr() == CSeq_inst::eRepr_delta) {
-        if ( mi  &&  mi->IsSetTech()  &&  m_Imp.IsGED() ) {
-            CMolInfo::TTech tech = mi->GetTech();
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( !bsh ) {
+        return;
+    }
+    CSeqdesc_CI desc( bsh, CSeqdesc::e_Molinfo );
+    const CMolInfo* mi = desc ? &(desc->GetMolinfo()) : 0;
+
+    if ( inst.GetRepr() == CSeq_inst::eRepr_delta ) {
+        if ( mi  &&  m_Imp.IsGED() ) {
+            CMolInfo::TTech tech = mi->IsSetTech() ? 
+                mi->GetTech() : CMolInfo::eTech_unknown;
+
             if (tech == CMolInfo::eTech_htgs_0  ||
                 tech == CMolInfo::eTech_htgs_1  ||
                 tech == CMolInfo::eTech_htgs_2)
@@ -942,10 +956,10 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
                 }
             }
         }
-
-    } else if (inst.GetRepr() == CSeq_inst::eRepr_raw) {
-        if (mi  &&  mi->IsSetTech()) {
-            CMolInfo::TTech tech = mi->GetTech();
+    } else if ( inst.GetRepr() == CSeq_inst::eRepr_raw ) {
+        if ( mi ) {
+            CMolInfo::TTech tech = mi->IsSetTech() ? 
+                mi->GetTech() : CMolInfo::eTech_unknown;
             if (tech == CMolInfo::eTech_htgs_0  ||
                 tech == CMolInfo::eTech_htgs_1  ||
                 tech == CMolInfo::eTech_htgs_2)
@@ -963,6 +977,9 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
                 PostErr (eDiag_Warning, eErr_SEQ_INST_SequenceExceeds350kbp,
                     "Length of sequence exceeds 350kbp limit", seq);
             }
+        }  else {
+            PostErr (eDiag_Warning, eErr_SEQ_INST_SequenceExceeds350kbp,
+                "Length of sequence exceeds 350kbp limit", seq);
         }
     }
 }
@@ -1066,6 +1083,40 @@ void CValidError_bioseq::ValidateProteinTitle(const CBioseq& seq)
         PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
             "Instantiated protein title does not match automatically "
             "generated title", seq);
+    }
+}
+
+
+void CValidError_bioseq::ValidateNs(const CBioseq& seq)
+{
+    const CSeq_inst& inst = seq.GetInst();
+    if ( (inst.GetRepr() != CSeq_inst::eRepr_raw)  ||
+         (inst.IsSetLength() && inst.GetLength() <= 5) ) {
+        return;
+    }
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( !bsh ) {
+        return;
+    }
+    
+    
+    CBioseq_Handle::EVectorStrand strand = CBioseq_Handle::eStrand_Plus;
+    if ( inst.IsSetStrand()  &&  
+         inst.GetStrand() == CSeq_inst::eStrand_ds ) {
+        strand = CBioseq_Handle::eStrand_Minus;
+    }
+
+    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac, strand);
+
+    if ( (vec[0] == 'N')  ||  (vec[0] == 'n') ) {
+        PostErr(eDiag_Warning, eErr_SEQ_INST_TerminalNs, 
+            "N at beginning of sequence", seq);
+    }
+
+    if ( (vec[vec.size() - 1] == 'N')  ||  (vec[vec.size() - 1] == 'n') ) {
+        PostErr(eDiag_Warning, eErr_SEQ_INST_TerminalNs, 
+            "N at end of sequence", seq);
     }
 }
 
@@ -1262,7 +1313,7 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                 nuc->GetLabel(&plbl, CBioseq::eContent);
             }
             if ( IsBlankString(plbl) ) {
-                plbl == "prot?";
+                plbl = "prot?";
             }
 
             PostErr(eDiag_Error, eErr_SEQ_INST_StopInProtein,
@@ -2077,6 +2128,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/02/07 21:22:12  shomrat
+* Implemented eErr_SEQ_INST_TerminalNs and bug fixes
+*
 * Revision 1.13  2003/02/03 18:01:43  shomrat
 * Minor fixes & style improvments
 *
