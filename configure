@@ -305,7 +305,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS_INCLUDE FTDS_LIBS freetds PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial objects dbapi app check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS NCBI_C_INCLUDE NCBI_C_LIBPATH FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_POST_LINK WXWIN_INCLUDE WXWIN_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS_INCLUDE FTDS_LIBS freetds PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial dbapi objects ctools gui app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS NCBI_C_INCLUDE NCBI_C_LIBPATH FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_POST_LINK WXWIN_INCLUDE WXWIN_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -8923,7 +8923,7 @@ fi
 ## daemons under 'connect' don't build on Darwin (MacOS X)
 case "$host_os" in
   darwin* ) daemons= ;;
-  *)        daemons=daemons ;;
+  *)        daemons="daemons" ;;
 esac
 
 
@@ -9054,23 +9054,24 @@ fi
 if test "$with_ctools" = "no" ; then
    WithoutProjects="$WithoutProjects ctools"
 else
+   ctools="ctools"
    OPT_GROUPS="$OPT_GROUPS ctools"
 fi
 
 
-## `gui' project cluster
+## `gui' projects
 
 if test "$with_gui" = "no" ; then
    NoConfProjects="$NoConfProjects gui"
 fi
 
 if test ! -f ${srcdir}/src/gui/Makefile.in  -o  \
-        ! -d ${srcdir}/include/gui  -o  "$with_wxwin" = "no"
+        ! -d ${srcdir}/include/gui  -o  "$with_fltk" = "no"
 then
    if test "$with_gui" = "yes" ; then
-      if test "$with_wxwin" = "no" ; then
-         { { echo "$as_me:$LINENO: error: \"--with-gui:  wxWindows package is missing\"" >&5
-echo "$as_me: error: \"--with-gui:  wxWindows package is missing\"" >&2;}
+      if test "$with_fltk" = "no" ; then
+         { { echo "$as_me:$LINENO: error: \"--with-gui:  FLTK package is missing\"" >&5
+echo "$as_me: error: \"--with-gui:  FLTK package is missing\"" >&2;}
    { (exit 1); exit 1; }; }
       else
          { { echo "$as_me:$LINENO: error: \"--with-gui:  GUI sources are missing\"" >&5
@@ -9083,8 +9084,10 @@ fi
 
 if test "$with_gui" = "no" ; then
    WithoutProjects="$WithoutProjects gui"
+   gui=
 else
-   OPT_GROUPS="$OPT_GROUPS gui"
+   WithProjects="$WithProjects gui"
+   gui="gui"
 fi
 
 
@@ -9096,6 +9099,7 @@ fi
 
 if test "$with_internal" = "yes" ; then
    OPT_GROUPS="$OPT_GROUPS internal"
+   internal="internal"
    reason=""
    sep=
    if test "$with_sybase" = "no"; then
@@ -9126,6 +9130,7 @@ echo "$as_me: WARNING: \"--with-internal:  Cannot build all INTERNAL projects: m
    fi
 else
    WithoutProjects="$WithoutProjects internal"
+   internal=
 fi
 
 
@@ -12844,6 +12849,9 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -13550,9 +13558,12 @@ s,@OPT_GROUPS@,$OPT_GROUPS,;t t
 s,@local_lbsm@,$local_lbsm,;t t
 s,@daemons@,$daemons,;t t
 s,@serial@,$serial,;t t
-s,@objects@,$objects,;t t
 s,@dbapi@,$dbapi,;t t
+s,@objects@,$objects,;t t
+s,@ctools@,$ctools,;t t
+s,@gui@,$gui,;t t
 s,@app@,$app,;t t
+s,@internal@,$internal,;t t
 s,@check@,$check,;t t
 s,@CHECK_ARG@,$CHECK_ARG,;t t
 s,@script_shell@,$script_shell,;t t

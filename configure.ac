@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.128 2002/09/24 20:41:24 ucko Exp $
+#  $Id: configure.ac,v 1.129 2002/10/01 19:14:43 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2360,7 +2360,7 @@ fi
 ## daemons under 'connect' don't build on Darwin (MacOS X)
 case "$host_os" in
   darwin* ) daemons= ;;
-  *)        daemons=daemons ;;
+  *)        daemons="daemons" ;;
 esac
 
 
@@ -2479,22 +2479,23 @@ fi
 if test "$with_ctools" = "no" ; then
    WithoutProjects="$WithoutProjects ctools"
 else
+   ctools="ctools"
    OPT_GROUPS="$OPT_GROUPS ctools"
 fi
 
 
-## `gui' project cluster
+## `gui' projects
 
 if test "$with_gui" = "no" ; then
    NoConfProjects="$NoConfProjects gui"
 fi
 
 if test ! -f ${srcdir}/src/gui/Makefile.in  -o  \
-        ! -d ${srcdir}/include/gui  -o  "$with_wxwin" = "no"
+        ! -d ${srcdir}/include/gui  -o  "$with_fltk" = "no"
 then
    if test "$with_gui" = "yes" ; then
-      if test "$with_wxwin" = "no" ; then
-         AC_MSG_ERROR(["--with-gui:  wxWindows package is missing"])
+      if test "$with_fltk" = "no" ; then
+         AC_MSG_ERROR(["--with-gui:  FLTK package is missing"])
       else
          AC_MSG_ERROR(["--with-gui:  GUI sources are missing"])
       fi
@@ -2504,8 +2505,10 @@ fi
 
 if test "$with_gui" = "no" ; then
    WithoutProjects="$WithoutProjects gui"
+   gui=
 else
-   OPT_GROUPS="$OPT_GROUPS gui"
+   WithProjects="$WithProjects gui"
+   gui="gui"
 fi
 
 
@@ -2517,6 +2520,7 @@ fi
 
 if test "$with_internal" = "yes" ; then
    OPT_GROUPS="$OPT_GROUPS internal"
+   internal="internal"
    reason=""
    sep=
    if test "$with_sybase" = "no"; then
@@ -2544,6 +2548,7 @@ if test "$with_internal" = "yes" ; then
    fi
 else
    WithoutProjects="$WithoutProjects internal"
+   internal=
 fi
 
 
@@ -2737,9 +2742,12 @@ AC_SUBST(OPT_GROUPS)
 AC_SUBST(local_lbsm)
 AC_SUBST(daemons)
 AC_SUBST(serial)
-AC_SUBST(objects)
 AC_SUBST(dbapi)
+AC_SUBST(objects)
+AC_SUBST(ctools)
+AC_SUBST(gui)
 AC_SUBST(app)
+AC_SUBST(internal)
 
 AC_SUBST(check)
 AC_SUBST(CHECK_ARG)
