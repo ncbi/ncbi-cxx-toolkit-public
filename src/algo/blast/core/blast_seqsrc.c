@@ -32,7 +32,6 @@
 
 static char const rcsid[] = "$Id$";
 
-#include <blast_util.h>
 #include <blast_seqsrc.h>
 
 /** Complete type definition of Blast Sequence Source ADT */
