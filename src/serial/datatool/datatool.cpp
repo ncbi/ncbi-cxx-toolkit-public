@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/11/08 17:50:18  vasilche
+* Fixed compilation error on MSVC.
+*
 * Revision 1.43  2000/11/08 17:02:51  vasilche
 * Added generation of modular DTD files.
 *
@@ -553,7 +556,10 @@ void StoreDefinition(const CFileSet& fileSet, const FileInfo& file)
     switch ( file.type ) {
     case eSerial_AsnText:
     case eSerial_AsnBinary:
-        fileSet.PrintASN(DestinationFile(file));
+		{
+			DestinationFile out(file);
+			fileSet.PrintASN(out);
+		}
         break;
     case eSerial_Xml:
         if ( file.name == "m" ) {
@@ -561,7 +567,8 @@ void StoreDefinition(const CFileSet& fileSet, const FileInfo& file)
             fileSet.PrintDTDModular();
         }
         else {
-            fileSet.PrintDTD(DestinationFile(file));
+			DestinationFile out(file);
+            fileSet.PrintDTD(out);
         }
         break;
     default:
