@@ -1159,7 +1159,7 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbi
 	} else{
 	  out << " ";
 	}
-
+	const CRef<CSeq_id> wid2 = FindBestChoice((*iter)->GetSeqid(), CSeq_id::WorstRank);
 	int gi =  GetGiForSeqIdList((*iter)->GetSeqid());
 	if(isFirst){
 	  firstGi = gi;
@@ -1180,7 +1180,7 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbi
 	  out<<"gi|"<<gi<<"|";
 	}       
    
-	wid->WriteAsFasta(out);
+	wid2->WriteAsFasta(out);
 	if(m_AlignOption&eHtml){
 	  if(urlLink != NcbiEmptyString){
 	    out<<"</a>";
@@ -1188,7 +1188,7 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbi
 	  if(gi != 0){
 	    out<<"<a name="<<gi<<"></a>";
 	  } else {
-	    out<<"<a name="<<wid->GetSeqIdString()<<"></a>";
+	    out<<"<a name="<<wid2->GetSeqIdString()<<"></a>";
 	  }
 	  if(m_AlignOption&eLinkout){
 	    out <<" ";
@@ -1938,6 +1938,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.20  2003/12/04 22:27:34  jianye
+*Fixed accession problem for redundat hits
+*
 *Revision 1.19  2003/12/01 23:15:45  jianye
 *Added showing CDR product
 *
