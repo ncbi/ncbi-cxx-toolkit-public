@@ -87,7 +87,8 @@ void* MultiSeqInfo::GetSeqLoc(int index)
  * @param multiseq_handle Pointer to the structure containing sequences [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static Int4 MultiSeqGetMaxLength(void* multiseq_handle, void* ignoreme)
+extern "C" {
+static Int4 MultiSeqGetMaxLength(void* multiseq_handle, void*)
 {
     Int4 retval = 0;
     Uint4 index;
@@ -109,7 +110,7 @@ static Int4 MultiSeqGetMaxLength(void* multiseq_handle, void* ignoreme)
  * @param multiseq_handle Pointer to the structure containing sequences [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static Int4 MultiSeqGetAvgLength(void* multiseq_handle, void* ignoreme)
+static Int4 MultiSeqGetAvgLength(void* multiseq_handle, void*)
 {
     Int8 total_length = 0;
     Uint4 num_seqs = 0;
@@ -136,7 +137,7 @@ static Int4 MultiSeqGetAvgLength(void* multiseq_handle, void* ignoreme)
  * @param multiseq_handle Pointer to the structure containing sequences [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static Int4 MultiSeqGetNumSeqs(void* multiseq_handle, void* ignoreme)
+static Int4 MultiSeqGetNumSeqs(void* multiseq_handle, void*)
 {
     MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
 
@@ -148,7 +149,7 @@ static Int4 MultiSeqGetNumSeqs(void* multiseq_handle, void* ignoreme)
  * @param multiseq_handle Pointer to the structure containing sequences [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static Int8 MultiSeqGetTotLen(void* multiseq_handle, void* ignoreme)
+static Int8 MultiSeqGetTotLen(void* /*multiseq_handle*/, void*)
 {
     return 0;
 }
@@ -157,7 +158,7 @@ static Int8 MultiSeqGetTotLen(void* multiseq_handle, void* ignoreme)
  * @param multiseq_handle Pointer to the structure containing sequences [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static char* MultiSeqGetName(void* multiseq_handle, void* ignoreme)
+static char* MultiSeqGetName(void* /*multiseq_handle*/, void*)
 {
     return NULL;
 }
@@ -166,7 +167,7 @@ static char* MultiSeqGetName(void* multiseq_handle, void* ignoreme)
  * @param multiseq_handle Pointer to the structure containing sequences [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static char* MultiSeqGetDefinition(void* multiseq_handle, void* ignoreme)
+static char* MultiSeqGetDefinition(void* /*multiseq_handle*/, void*)
 {
     return NULL;
 }
@@ -175,7 +176,7 @@ static char* MultiSeqGetDefinition(void* multiseq_handle, void* ignoreme)
  * @param multiseq_handle Pointer to the structure containing sequences [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static char* MultiSeqGetDate(void* multiseq_handle, void* ignoreme)
+static char* MultiSeqGetDate(void* /*multiseq_handle*/, void*)
 {
     return NULL;
 }
@@ -184,7 +185,7 @@ static char* MultiSeqGetDate(void* multiseq_handle, void* ignoreme)
  * @param multiseq_handle Pointer to the structure containing sequences [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static Boolean MultiSeqGetIsProt(void* multiseq_handle, void* ignoreme)
+static Boolean MultiSeqGetIsProt(void* multiseq_handle, void*)
 {
     MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
 
@@ -351,7 +352,7 @@ static Int2 MultiSeqGetNextChunk(void* multiseq_handle,
     return BLAST_SEQSRC_SUCCESS;
 }
 
-ListNode* MultiSeqGetErrorMessage(void* multiseq_handle, void* args)
+ListNode* MultiSeqGetErrorMessage(void* multiseq_handle, void*)
 {
     MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
     Blast_Message* error_msg = seq_info->GetErrorMessage();
@@ -396,6 +397,8 @@ BlastSeqSrc* MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
 
     return retval;
 }
+
+} // extern "C"
 
 BlastSeqSrc* MultiSeqSrcFree(BlastSeqSrc* seq_src)
 {
