@@ -51,7 +51,7 @@ CSeqMaskerOstatAscii::CSeqMaskerOstatAsciiException::GetErrCodeString() const
 
 //------------------------------------------------------------------------------
 CSeqMaskerOstatAscii::CSeqMaskerOstatAscii( const string & name )
-    : CSeqMaskerOstat( name.empty() ? NcbiCout 
+    : CSeqMaskerOstat( name.empty() ? static_cast<CNcbiOstream&>(NcbiCout)
                                   : *new CNcbiOfstream( name.c_str() ) )
 {}
 
@@ -99,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/29 01:37:53  ucko
+ * Tweak constructor to avoid confusing GCC 2.95.
+ *
  * Revision 1.1  2005/03/28 22:41:06  morgulis
  * Moved win_mask_ustat* files to library and renamed them.
  *
