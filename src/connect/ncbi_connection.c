@@ -393,9 +393,13 @@ extern EIO_Status CONN_Write
                            conn->meta.default_timeout : conn->w_timeout)
         : eIO_NotSupported;
 
-    if (status != eIO_Success)
-        CONN_LOG(eLOG_Error, "[CONN_Write]  Write error");
-
+    if (status != eIO_Success) {
+        if ( *n_written ) {
+            CONN_LOG(eLOG_Trace, "[CONN_Write]  Write error");
+            status = eIO_Success;
+        } else  if ( size )
+            CONN_LOG(eLOG_Error, "[CONN_Write]  Cannot write data");
+    }
     return status;
 }
 
@@ -488,7 +492,8 @@ static EIO_Status s_CONN_Read
             CONN_LOG(eLOG_Trace, "[CONN_Read]  Read error");
             status = eIO_Success;
         } else  if ( size ) {
-            CONN_LOG((status == eIO_Closed ? eLOG_Trace : eLOG_Warning),
+            CONN_LOG(status == eIO_Closed ? eLOG_Trace :
+                     (status == eIO_Timeout ? eLOG_Warning : eLOG_Error),
                      "[CONN_Read]  Cannot read data");
         }
     }
@@ -715,6 +720,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2003/05/20 21:21:45  lavr
+ * CONN_Write(): log with different log levels on write errors
+ *
  * Revision 6.33  2003/05/19 16:43:40  lavr
  * Bugfix in CONN_SetTimeout();  better close callback sequence
  *
