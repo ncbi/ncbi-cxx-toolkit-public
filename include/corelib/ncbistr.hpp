@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/08/30 17:03:59  thiessen
+* remove class name from NStr member function declaration
+*
 * Revision 1.7  2001/08/30 00:39:29  vakatov
 * + NStr::StringToNumeric()
 * Moved all of "ncbistr.inl" code to here.
@@ -110,7 +113,7 @@ public:
     /// convert "str" to a (non-negative) "int" value.
     /// return "-1" if "str" contains any symbols other than [0-9], or
     /// if it represents a number that does not fit into "int".
-    static int NStr::StringToNumeric(const string& str);
+    static int StringToNumeric(const string& str);
 
     /// String-to-X conversion functions (throw exception if conversion error)
     static int           StringToInt    (const string& str, int base = 10);
