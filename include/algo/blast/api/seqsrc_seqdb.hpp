@@ -58,28 +58,28 @@ struct SSeqDbSrcNewArgs {
 extern "C" {
 
 /** SeqDb sequence source constructor 
- * @param bssp BlastSeqSrc structure (already allocated) to populate [in]
+ * @param seq_src BlastSeqSrc structure (already allocated) to populate [in]
  * @param args Pointer to SSeqDbSrcNewArgs structure above [in]
- * @return Updated bssp structure (with all function pointers initialized
+ * @return Updated seq_src structure (with all function pointers initialized
  */
 NCBI_XBLAST_EXPORT
-BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* bssp, void* args);
+BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* seq_src, void* args);
 
 /** SeqDb sequence source destructor: frees its internal data structure and the
  * BlastSeqSrc structure itself.
- * @param bssp BlastSeqSrc structure to free [in]
+ * @param seq_src BlastSeqSrc structure to free [in]
  * @return NULL
  */
 NCBI_XBLAST_EXPORT
-BlastSeqSrc* SeqDbSrcFree(BlastSeqSrc* bssp);
+BlastSeqSrc* SeqDbSrcFree(BlastSeqSrc* seq_src);
 
 /** SeqDb sequence source copier: creates a new reference to the CSeqDB object
  * and copies the rest of the BlastSeqSrc structure.
- * @param bssp BlastSeqSrc structure to copy [in]
+ * @param seq_src BlastSeqSrc structure to copy [in]
  * @return Pointer to the new BlastSeqSrc.
  */
 NCBI_XBLAST_EXPORT
-BlastSeqSrc* SeqDbSrcCopy(BlastSeqSrc* bssp);
+BlastSeqSrc* SeqDbSrcCopy(BlastSeqSrc* seq_src);
 
 }
 
@@ -105,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/10/06 14:49:55  dondosha
+ * Cosmetic change in parameter name
+ *
  * Revision 1.6  2004/08/11 11:59:07  ivanov
  * Added export specifier NCBI_XBLAST_EXPORT
  *
