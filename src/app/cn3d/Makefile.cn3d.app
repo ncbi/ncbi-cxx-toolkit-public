@@ -68,9 +68,12 @@ WX_CONFIG = $(HOME)/Programs/wxGTK-2.2.7/install/bin/wxgtk-config
 WX_CPPFLAGS = $(shell $(WX_CONFIG) --cppflags)
 WX_LIBS = $(shell $(WX_CONFIG) --libs)
 
+GTK_CONFIG = $(HOME)/Programs/GTK-1.2/install/bin/gtk-config
+GTK_CFLAGS = $(shell $(GTK_CONFIG) --cflags)
+
 CPPFLAGS = $(ORIG_CPPFLAGS) \
 	-I$(includedir)/gui_ctools \
-	$(WX_CPPFLAGS) \
+	$(WX_CPPFLAGS) $(GTK_CFLAGS) \
 	$(NCBI_C_INCLUDE)
 
 LIBS = $(ORIG_LIBS) \
