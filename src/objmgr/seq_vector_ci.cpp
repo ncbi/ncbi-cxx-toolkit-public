@@ -191,8 +191,9 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
 
 
 CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
-    : m_SeqMap(seq_vector.m_SeqMap),
-      m_Scope(seq_vector.m_Scope),
+    : m_Scope(seq_vector.m_Scope),
+      m_SeqMap(seq_vector.m_SeqMap),
+      m_TSE(seq_vector.m_TSE),
       m_Strand(seq_vector.m_Strand),
       m_Coding(seq_vector.m_Coding),
       m_Cache(0),
@@ -223,8 +224,9 @@ void CSeqVector_CI::x_SetVector(CSeqVector& seq_vector)
         x_ResetBackup();
     }
 
-    m_SeqMap = seq_vector.m_SeqMap;
     m_Scope  = seq_vector.m_Scope;
+    m_SeqMap = seq_vector.m_SeqMap;
+    m_TSE = seq_vector.m_TSE;
     m_Strand = seq_vector.m_Strand;
     m_Coding = seq_vector.m_Coding;
     m_CachePos = seq_vector.size();
@@ -242,11 +244,9 @@ TSeqPos CSeqVector_CI::x_GetSize(void) const
 inline
 void CSeqVector_CI::x_InitSeg(TSeqPos pos)
 {
-    m_Seg = m_SeqMap->FindResolved(m_Scope.GetScopeOrNull(),
-                                   pos,
-                                   SSeqMapSelector()
-                                   .SetResolveCount(size_t(-1))
-                                   .SetStrand(m_Strand));
+    SSeqMapSelector sel(CSeqMap::fDefaultFlags, kMax_UInt);
+    sel.SetStrand(m_Strand).SetLinkUsedTSE(m_TSE);
+    m_Seg = CSeqMap_CI(m_SeqMap, m_Scope.GetScopeOrNull(), sel, pos);
 }
 
 
@@ -257,7 +257,9 @@ void CSeqVector_CI::SetCoding(TCoding coding)
         x_ResetCache();
         x_ResetBackup();
         m_Coding = coding;
-        x_SetPos(pos);
+        if ( m_Seg ) {
+            x_SetPos(pos);
+        }
     }
 }
 
@@ -320,6 +322,7 @@ CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
 
     m_Scope = sv_it.m_Scope;
     m_SeqMap = sv_it.m_SeqMap;
+    m_TSE = sv_it.m_TSE;
     m_Strand = sv_it.m_Strand;
     m_Coding = sv_it.GetCoding();
     m_Seg = sv_it.m_Seg;
@@ -770,6 +773,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/12/22 15:56:18  vasilche
+* Added CTSE_Handle.
+* Allow used TSE linking.
+*
 * Revision 1.38  2004/12/14 17:41:03  grichenk
 * Reduced number of CSeqMap::FindResolved() methods, simplified
 * BeginResolved and EndResolved. Marked old methods as deprecated.

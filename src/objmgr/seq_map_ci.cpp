@@ -35,9 +35,11 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seq_map.hpp>
+#include <objmgr/tse_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/impl/scope_impl.hpp>
-#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/scope.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -48,24 +50,66 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 
 
+SSeqMapSelector::SSeqMapSelector(void)
+    : m_Position(0),
+      m_Length(kInvalidSeqPos),
+      m_MinusStrand(false),
+      m_LinkUsedTSE(true),
+      m_MaxResolveCount(0),
+      m_Flags(CSeqMap::fDefaultFlags)
+{
+}
+
+
+SSeqMapSelector::SSeqMapSelector(CSeqMap::EFlags flags, size_t resolve_count)
+    : m_Position(0),
+      m_Length(kInvalidSeqPos),
+      m_MinusStrand(false),
+      m_LinkUsedTSE(true),
+      m_MaxResolveCount(resolve_count),
+      m_Flags(flags)
+{
+}
+
+
 SSeqMapSelector& SSeqMapSelector::SetLimitTSE(const CSeq_entry* tse)
 {
-    m_TSE.Reset(tse);
-    m_TSE_Lock.Reset();
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+    m_LimitTSEObject.Reset(tse);
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
+    m_LimitTSE.Reset();
     return *this;
 }
 
+
 SSeqMapSelector& SSeqMapSelector::SetLimitTSE(const CSeq_entry_Handle& tse)
 {
-    if ( tse ) {
-        m_TSE_Lock = tse.GetTSE_Lock();
-        m_TSE = tse.GetSeq_entryCore();
-    }
-    else {
-        m_TSE_Lock.Reset();
-        m_TSE.Reset();
-    }
+    m_LimitTSE = tse.GetTSE_Handle();
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+    m_LimitTSEObject.Reset();
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
     return *this;
+}
+
+
+const CTSE_Handle& SSeqMapSelector::x_GetLimitTSE(CScope* scope) const
+{
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+    if ( !m_LimitTSE ) {
+        _ASSERT(m_LimitTSEObject);
+        if ( !scope ) {
+            NCBI_THROW(CSeqMapException, eNullPointer,
+                       "Cannot find limit TSE: null scope pointer");
+        }
+        const_cast<SSeqMapSelector*>(this)->m_LimitTSE =
+            scope->GetTSE_Handle(*m_LimitTSEObject);
+    }
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
+    _ASSERT(m_LimitTSE);
+    return m_LimitTSE;
 }
 
 
@@ -109,19 +153,28 @@ bool CSeqMap_CI::x_Push(TSeqPos pos)
 
 CSeqMap_CI::CSeqMap_CI(void)
 {
-    m_Selector.SetPosition(kInvalidSeqPos)
-        .SetResolveCount(0)
-        .SetFlags(CSeqMap::fDefaultFlags);
+    m_Selector.SetPosition(kInvalidSeqPos);
 }
 
 
 CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
-                       CScope*                   scope,
-                       const SSeqMapSelector&    selector,
-                       TSeqPos                   pos)
+                       CScope* scope,
+                       const SSeqMapSelector& sel,
+                       TSeqPos pos)
     : m_Scope(scope)
 {
-    x_Select(seqMap, selector, pos);
+    x_Select(seqMap, sel, pos);
+}
+
+
+CSeqMap_CI::CSeqMap_CI(const CBioseq_Handle& bioseq,
+                       const SSeqMapSelector& sel,
+                       TSeqPos pos)
+    : m_Scope(&bioseq.GetScope())
+{
+    SSeqMapSelector tse_sel(sel);
+    tse_sel.SetLinkUsedTSE(bioseq.GetTSE_Handle());
+    x_Select(ConstRef(&bioseq.GetSeqMap()), tse_sel, pos);
 }
 
 
@@ -146,7 +199,7 @@ void CSeqMap_CI::x_Select(const CConstRef<CSeqMap>& seqMap,
     else if ( pos > m_Selector.m_Position + m_Selector.m_Length ) {
         pos = m_Selector.m_Position + m_Selector.m_Length;
     }
-    x_Push(seqMap,
+    x_Push(seqMap, m_Selector.m_TopTSE,
            m_Selector.m_Position,
            m_Selector.m_Length,
            m_Selector.m_MinusStrand,
@@ -201,7 +254,7 @@ CSeq_id_Handle CSeqMap_CI::GetRefSeqid(void) const
         NCBI_THROW(CSeqMapException, eOutOfRange,
                    "Iterator out of range");
     }
-    return CSeq_id_Mapper::GetInstance()->
+    return CSeq_id_Handle::
         GetHandle(x_GetSeqMap().x_GetRefSeqid(x_GetSegment()));
 }
 
@@ -249,24 +302,11 @@ TSeqPos CSeqMap_CI::x_GetTopOffset(void) const
 
 bool CSeqMap_CI::x_RefTSEMatch(const CSeqMap::CSegment& seg) const
 {
-    _ASSERT(m_Selector.m_TSE);
+    _ASSERT(m_Selector.x_HasLimitTSE());
     _ASSERT(CSeqMap::ESegmentType(seg.m_SegType) == CSeqMap::eSeqRef);
-    CSeq_id_Handle id = CSeq_id_Mapper::GetInstance()->
+    CSeq_id_Handle id = CSeq_id_Handle::
         GetHandle(x_GetSeqMap().x_GetRefSeqid(seg));
-    CSeq_entry_Handle tse_info;
-    CScope& scope = *m_Scope;
-    if ( m_Selector.m_TSE_Lock ) {
-        tse_info =
-            CSeq_entry_Handle(scope,
-                              *m_Selector.m_TSE_Lock,
-                              m_Selector.m_TSE_Lock);
-    }
-    else {
-        tse_info = scope.GetSeq_entryHandle(*m_Selector.m_TSE);
-        const_cast<SSeqMapSelector&>(m_Selector).m_TSE_Lock =
-            tse_info.GetTSE_Lock();
-    }
-    return scope.GetBioseqHandleFromTSE(id, tse_info);
+    return m_Selector.x_GetLimitTSE(GetScope()).GetBioseqHandle(id);
 }
 
 
@@ -274,7 +314,7 @@ inline
 bool CSeqMap_CI::x_CanResolve(const CSeqMap::CSegment& seg) const
 {
     return m_Selector.CanResolve() &&
-        (!m_Selector.m_TSE || x_RefTSEMatch(seg));
+        (!m_Selector.x_HasLimitTSE() || x_RefTSEMatch(seg));
 }
 
 
@@ -286,15 +326,56 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
     }
     const CSeqMap::CSegment& seg = info.x_GetSegment();
     CSeqMap::ESegmentType type = CSeqMap::ESegmentType(seg.m_SegType);
-    if ( !(type == CSeqMap::eSeqSubMap  ||
-           type == CSeqMap::eSeqRef  &&  resolveExternal) ) {
+
+    CConstRef<CSeqMap> push_map;
+    CTSE_Handle push_tse;
+
+    switch ( type ) {
+    case CSeqMap::eSeqSubMap:
+        push_map = 
+            static_cast<const CSeqMap*>(info.m_SeqMap->x_GetObject(seg));
+        // copy old m_TSE
+        push_tse = info.m_TSE;
+        break;
+    case CSeqMap::eSeqRef:
+        if ( !resolveExternal ) {
+            return false;
+        }
+        else {
+            const CSeq_id& seq_id =
+                static_cast<const CSeq_id&>(*info.m_SeqMap->x_GetObject(seg));
+            CBioseq_Handle bh;
+            if ( m_Selector.x_HasLimitTSE() ) {
+                // Check TSE limit
+                bh = m_Selector.x_GetLimitTSE().GetBioseqHandle(seq_id);
+                if ( !bh ) {
+                    return false;
+                }
+            }
+            else {
+                if ( !GetScope() ) {
+                    NCBI_THROW(CSeqMapException, eNullPointer,
+                               "Cannot resolve "+
+                               seq_id.AsFastaString()+": null scope pointer");
+                }
+                bh = GetScope()->GetBioseqHandle(seq_id);
+                if ( !bh ) {
+                    NCBI_THROW(CSeqMapException, eFail,
+                               "Cannot resolve "+
+                               seq_id.AsFastaString()+": unknown");
+                }
+            }
+            push_map = &bh.GetSeqMap();
+            push_tse = bh.GetTSE_Handle();
+            if ( info.m_TSE ) {
+                info.m_TSE.AddUsedTSE(push_tse);
+            }
+        }
+        break;
+    default:
         return false;
     }
-    // Check TSE limit
-    if ( bool(m_Selector.m_TSE)  &&  !x_RefTSEMatch(seg) ) {
-        return false;
-    }
-    x_Push(info.m_SeqMap->x_GetSubSeqMap(seg, GetScope(), resolveExternal),
+    x_Push(push_map, push_tse,
            GetRefPosition(), GetLength(), GetRefMinusStrand(), pos);
     if ( type == CSeqMap::eSeqRef ) {
         m_Selector.PushResolve();
@@ -304,12 +385,14 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
 
 
 void CSeqMap_CI::x_Push(const CConstRef<CSeqMap>& seqMap,
+                        const CTSE_Handle& tse,
                         TSeqPos from, TSeqPos length,
                         bool minusStrand,
                         TSeqPos pos)
 {
     TSegmentInfo push;
     push.m_SeqMap = seqMap;
+    push.m_TSE = tse;
     push.m_LevelRangePos = from;
     push.m_LevelRangeEnd = from + length;
     push.m_MinusStrand = minusStrand;
@@ -520,11 +603,9 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
         "                    TSeqPos pos,\n"
         "                    size_t maxResolveCount,\n"
         "                    TFlags flags)\n");
-    x_Select(seqMap,
-             SSeqMapSelector().
-             SetResolveCount(maxResolveCount).
-             SetFlags(flags),
-             pos);
+    SSeqMapSelector sel;
+    sel.SetResolveCount(maxResolveCount).SetFlags(flags);
+    x_Select(seqMap, sel, pos);
 }
 
 
@@ -544,12 +625,25 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
         "                    ENa_strand strand,\n"
         "                    size_t maxResolveCount,\n"
         "                    TFlags flags)\n");
-    x_Select(seqMap,
-             SSeqMapSelector().
-             SetStrand(strand).
-             SetResolveCount(maxResolveCount).
-             SetFlags(flags),
-             pos);
+    SSeqMapSelector sel;
+    sel.SetStrand(strand).SetResolveCount(maxResolveCount).SetFlags(flags);
+    x_Select(seqMap, sel, pos);
+}
+
+
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
+                       CScope* scope,
+                       TSeqPos pos,
+                       const SSeqMapSelector& sel)
+    : m_Scope(scope)
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,\n"
+        "                       CScope* scope,\n"
+        "                       TSeqPos pos,\n"
+        "                       const SSeqMapSelector& sel)\n");
+    x_Select(seqMap, sel, pos);
 }
 
 
@@ -563,6 +657,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/12/22 15:56:16  vasilche
+* Added CTSE_Handle.
+* Allow used TSE linking.
+*
 * Revision 1.32  2004/12/14 17:41:03  grichenk
 * Reduced number of CSeqMap::FindResolved() methods, simplified
 * BeginResolved and EndResolved. Marked old methods as deprecated.
@@ -692,7 +790,7 @@ END_NCBI_SCOPE
 * CSeqMap_CI now supports resolution and iteration over sequence range.
 * Added several caches to CScope.
 * Optimized CSeqVector().
-* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Added serveral variants of CBioseq_Handle::GetSeqVector().
 * Tried to optimize annotations iterator (not much success).
 * Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
 *

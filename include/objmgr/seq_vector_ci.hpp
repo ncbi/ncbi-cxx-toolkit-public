@@ -155,8 +155,9 @@ private:
     typedef char* TCacheData;
     typedef char* TCache_I;
 
-    CConstRef<CSeqMap>       m_SeqMap;
     CHeapScope               m_Scope;
+    CConstRef<CSeqMap>       m_SeqMap;
+    CTSE_Handle              m_TSE;
     ENa_strand               m_Strand;
     TCoding                  m_Coding;
     // Current CSeqMap segment
@@ -466,6 +467,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/12/22 15:56:18  vasilche
+* Added CTSE_Handle.
+* Allow used TSE linking.
+*
 * Revision 1.25  2004/12/09 20:36:41  grichenk
 * Throw exception from operator*() if the iterator is out of range
 *
