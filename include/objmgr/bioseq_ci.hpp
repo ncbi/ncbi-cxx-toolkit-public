@@ -81,6 +81,8 @@ public:
     /// Create an iterator that enumerates bioseqs
     /// from the entry taken from the scope. Use optional
     /// filter to iterate over selected bioseq types only.
+    /// Filter value eMol_na may be used to include both
+    /// dna and rna bioseqs.
     CBioseq_CI(const CSeq_entry_Handle& entry,
                CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
                EBioseqLevelFlag level = eLevel_All);
@@ -92,6 +94,8 @@ public:
     /// Create an iterator that enumerates bioseqs
     /// from the entry taken from the given scope. Use optional
     /// filter to iterate over selected bioseq types only.
+    /// Filter value eMol_na may be used to include both
+    /// dna and rna bioseqs.
     CBioseq_CI(CScope& scope, const CSeq_entry& entry,
                CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
                EBioseqLevelFlag level = eLevel_All);
@@ -117,6 +121,7 @@ private:
     void x_Initialize(const CSeq_entry_Handle& entry);
     void x_SetEntry(const CSeq_entry_Handle& entry);
     void x_Settle(void);
+    bool x_IsValidMolType(const CBioseq_Info& seq) const;
 
     typedef stack<CSeq_entry_CI> TEntryStack;
 
@@ -160,6 +165,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/03/18 16:14:26  grichenk
+* Iterator with CSeq_inst::eMol_na includes both dna and rna.
+*
 * Revision 1.20  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *

@@ -41,6 +41,21 @@ BEGIN_SCOPE(objects)
 
 
 inline
+bool CBioseq_CI::x_IsValidMolType(const CBioseq_Info& seq) const
+{
+    switch (m_Filter) {
+    case CSeq_inst::eMol_not_set:
+        return true;
+    case CSeq_inst::eMol_na:
+        return seq.IsNa();
+    default:
+        break;
+    }
+    return seq.GetInst_Mol() == m_Filter;
+}
+
+
+inline
 void CBioseq_CI::x_SetEntry(const CSeq_entry_Handle& entry)
 {
     m_CurrentEntry = entry;
@@ -58,8 +73,7 @@ void CBioseq_CI::x_Settle(void)
             // Single bioseq
             const CBioseq_Info& seq = m_CurrentEntry.x_GetInfo().GetSeq();
             if (m_Level != eLevel_Parts  ||  m_InParts > 0) {
-                if (m_Filter == CSeq_inst::eMol_not_set ||
-                    seq.GetInst_Mol() == m_Filter) {
+                if ( x_IsValidMolType(seq) ) {
                     m_CurrentBioseq = m_CurrentEntry.GetSeq();
                     return; // valid bioseq found
                 }
@@ -212,6 +226,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/03/18 16:14:26  grichenk
+* Iterator with CSeq_inst::eMol_na includes both dna and rna.
+*
 * Revision 1.5  2005/01/18 14:58:58  grichenk
 * Added constructor accepting CBioseq_set_Handle
 *
