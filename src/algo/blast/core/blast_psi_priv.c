@@ -36,6 +36,7 @@ static char const rcsid[] =
  */
 
 #include "blast_psi_priv.h"
+#include "blast_posit.h"
 #include <algo/blast/core/blast_util.h>
 
 /****************************************************************************/
@@ -1953,8 +1954,6 @@ _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
  * @param query_length length of the query sequence above [in]
  * @param std_probs array containing the standard background residue 
  * probabilities [in]
- * @param initial_lambda_guess value to be used when calculating lambda if this
- * is not null [in]
  * @param sbp Score block structure where the calculated lambda and K will be
  * returned [in|out]
  */
@@ -1963,7 +1962,6 @@ _PSIUpdateLambdaK(const int** pssm,
                   const Uint1* query,
                   Uint4 query_length,
                   const double* std_probs,
-                  double* initial_lambda_guess,
                   BlastScoreBlk* sbp);
 
 /* FIXME: change so that only lambda is calculated inside the loop that scales
@@ -1973,7 +1971,6 @@ _PSIUpdateLambdaK(const int** pssm,
 int
 _PSIScaleMatrix(const Uint1* query,
                 const double* std_probs,
-                double* scaling_factor,
                 _PSIInternalPssmData* internal_pssm,
                 BlastScoreBlk* sbp)
 {
@@ -2003,8 +2000,6 @@ _PSIScaleMatrix(const Uint1* query,
     ideal_lambda = sbp->kbp_ideal->Lambda;
     query_length = internal_pssm->ncols;
 
-    /* FIXME: need to take scaling_factor into account */
-
     factor = 1.0;
     for ( ; ; ) {
         Uint4 i = 0;
@@ -2020,16 +2015,8 @@ _PSIScaleMatrix(const Uint1* query,
                 }
             }
         }
-
-        if (scaling_factor) {
-            double init_lambda_guess = 
-                sbp->kbp_psi[0]->Lambda / *scaling_factor;
-            _PSIUpdateLambdaK((const int**)pssm, query, query_length, 
-                              std_probs, &init_lambda_guess, sbp);
-        } else {
-            _PSIUpdateLambdaK((const int**)pssm, query, query_length, 
-                              std_probs, NULL, sbp);
-        }
+        _PSIUpdateLambdaK((const int**)pssm, query, query_length, 
+                          std_probs, sbp);
 
         new_lambda = sbp->kbp_psi[0]->Lambda;
 
@@ -2083,15 +2070,8 @@ _PSIScaleMatrix(const Uint1* query,
             }
         }
 
-        if (scaling_factor) {
-            double init_lambda_guess = 
-                sbp->kbp_psi[0]->Lambda / *scaling_factor;
-            _PSIUpdateLambdaK((const int**)pssm, query, query_length, 
-                              std_probs, &init_lambda_guess, sbp);
-        } else {
-            _PSIUpdateLambdaK((const int**)pssm, query, query_length, 
-                              std_probs, NULL, sbp);
-        }
+        _PSIUpdateLambdaK((const int**)pssm, query, query_length, 
+                          std_probs, sbp);
 
         new_lambda = sbp->kbp_psi[0]->Lambda;
 
@@ -2103,6 +2083,50 @@ _PSIScaleMatrix(const Uint1* query,
     }
 
     return PSI_SUCCESS;
+}
+
+int
+_IMPALAScaleMatrix(const Uint1* query, const double* std_probs,
+                   _PSIInternalPssmData* internal_pssm, 
+                   BlastScoreBlk* sbp,
+                   double scaling_factor)
+{
+    Kappa_posSearchItems *posSearch = NULL;
+    Kappa_compactSearchItems* compactSearch = NULL;
+    int retval = PSI_SUCCESS;
+
+    posSearch = Kappa_posSearchItemsNew(internal_pssm->ncols,
+                                        sbp->name, 
+                                        internal_pssm->scaled_pssm,
+                                        internal_pssm->freq_ratios);
+    compactSearch = Kappa_compactSearchItemsNew(query, internal_pssm->ncols,
+                                                sbp);
+
+    retval = Kappa_impalaScaling(posSearch, compactSearch,
+                                 scaling_factor, TRUE, sbp);
+
+    /* FIXME: there are differences between this and what formatrspdb's scaling
+     * produces */
+    {
+        int i, j;
+        FILE* fp = fopen("scaled_pssm.txt", "w");
+        for (i = 0; i < internal_pssm->ncols; i++) {
+            for (j = 0; j < internal_pssm->nrows; j++) {
+                fprintf(fp, "%d ", internal_pssm->scaled_pssm[i][j]);
+            }
+            fprintf(fp, "\n");
+        }
+        fclose(fp);
+    }
+
+    /* Overwrite unscaled PSSM with scaled PSSM */
+    _PSICopyMatrix_int(internal_pssm->pssm, internal_pssm->scaled_pssm,
+                       internal_pssm->ncols, internal_pssm->nrows);
+
+    posSearch = Kappa_posSearchItemsFree(posSearch);
+    compactSearch = Kappa_compactSearchItemsFree(compactSearch);
+
+    return retval;
 }
 
 Uint4
@@ -2138,8 +2162,8 @@ _PSIComputeScoreProbabilities(const int** pssm,                     /* [in] */
     Uint4 p = 0;                                /* index on positions */
     Uint4 r = 0;                                /* index on residues */
     int s = 0;                                  /* index on scores */
-    int min_score = 0;                          /* minimum score in pssm */
-    int max_score = 0;                          /* maximum score in pssm */
+    int min_score = BLAST_SCORE_MAX;            /* minimum score in pssm */
+    int max_score = BLAST_SCORE_MIN;            /* maximum score in pssm */
     Blast_ScoreFreq* score_freqs = NULL;        /* score frequencies */
 
     ASSERT(pssm);
@@ -2169,6 +2193,8 @@ _PSIComputeScoreProbabilities(const int** pssm,                     /* [in] */
             min_score = MIN(kScore, min_score);
         }
     }
+    ASSERT(min_score != BLAST_SCORE_MAX);
+    ASSERT(max_score != BLAST_SCORE_MIN);
 
     score_freqs = Blast_ScoreFreqNew(min_score, max_score);
     if ( !score_freqs ) {
@@ -2209,34 +2235,24 @@ _PSIUpdateLambdaK(const int** pssm,              /* [in] */
                   const Uint1* query,            /* [in] */
                   Uint4 query_length,            /* [in] */
                   const double* std_probs,       /* [in] */
-                  double* initial_lambda_guess,  /* [in] */
                   BlastScoreBlk* sbp)            /* [in|out] */
 {
     Blast_ScoreFreq* score_freqs = 
         _PSIComputeScoreProbabilities(pssm, query, query_length, 
                                       std_probs, sbp);
 
-    if (initial_lambda_guess) {
-        sbp->kbp_psi[0]->Lambda = Blast_KarlinLambdaNR(score_freqs, 
-                                                       *initial_lambda_guess);
+    /* Calculate lambda and K */
+    Blast_KarlinBlkUngappedCalc(sbp->kbp_psi[0], score_freqs);
 
-        /* what about K? */
-    } else {
-        /* Calculate lambda and K */
-        Blast_KarlinBlkUngappedCalc(sbp->kbp_psi[0], score_freqs);
+    /* Shouldn't this be in a function? */
+    ASSERT(sbp->kbp_ideal);
+    ASSERT(sbp->kbp_psi[0]);
+    ASSERT(sbp->kbp_gap_std[0]);
+    ASSERT(sbp->kbp_gap_psi[0]);
 
-        /* Shouldn't this be in a function? */
-        ASSERT(sbp->kbp_ideal);
-        ASSERT(sbp->kbp_psi[0]);
-        ASSERT(sbp->kbp_gap_std[0]);
-        ASSERT(sbp->kbp_gap_psi[0]);
-
-        sbp->kbp_gap_psi[0]->K = 
-            sbp->kbp_psi[0]->K * sbp->kbp_gap_std[0]->K / sbp->kbp_ideal->K;
-        sbp->kbp_gap_psi[0]->logK = log(sbp->kbp_gap_psi[0]->K);
-
-        /* what about Lambda? */
-    }
+    sbp->kbp_gap_psi[0]->K = 
+        sbp->kbp_psi[0]->K * sbp->kbp_gap_std[0]->K / sbp->kbp_ideal->K;
+    sbp->kbp_gap_psi[0]->logK = log(sbp->kbp_gap_psi[0]->K);
 
     score_freqs = Blast_ScoreFreqFree(score_freqs);
 }
@@ -2378,6 +2394,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/02/22 22:49:55  camacho
+ * + impala_scaling_factor, first cut
+ *
  * Revision 1.47  2005/02/14 14:07:49  camacho
  * Changes to use SBlastScoreMatrix
  *

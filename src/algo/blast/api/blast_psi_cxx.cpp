@@ -354,6 +354,11 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
             asn1_pssm.SetFinalData().SetScores().push_back(pssm->pssm[i][j]);
         }
     }
+    /* FIXME: use a constant here? */
+    if (opts->impala_scaling_factor != 1.0) {
+        asn1_pssm.SetFinalData().
+            SetScalingFactor(static_cast<int>(opts->impala_scaling_factor));
+    }
 
     /********** Collect information from diagnostics structure ************/
     if ( !diagnostics ) {
@@ -415,6 +420,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2005/02/22 22:50:23  camacho
+ * + impala_scaling_factor, first cut
+ *
  * Revision 1.29  2005/02/08 18:33:45  dondosha
  * Use BlastScoringOptionsSetMatrix to set matrix name
  *

@@ -830,6 +830,7 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
    options->use_best_alignment = TRUE;
 
    options->nsg_compatibility_mode = FALSE;
+   options->impala_scaling_factor = 1.0;    /* 1.0 indicates not to use this */
    
    return 0;
 }
@@ -969,6 +970,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.156  2005/02/22 22:48:02  camacho
+ * + impala_scaling_factor, first cut
+ *
  * Revision 1.155  2005/02/17 17:49:22  camacho
  * fix to BlastScoringOptionsSetMatrix
  *

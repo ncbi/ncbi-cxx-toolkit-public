@@ -161,9 +161,15 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
         return status;
     }
 
-    /* FIXME: instead of NULL pass options->scaling_factor */
-    status = _PSIScaleMatrix(msa->query, seq_weights->std_prob, NULL, 
-                             internal_pssm, sbp);
+    /* FIXME: Use a constant here? */
+    if (options->impala_scaling_factor == 1.0) {
+        status = _PSIScaleMatrix(msa->query, seq_weights->std_prob,
+                                 internal_pssm, sbp);
+    } else {
+        status = _IMPALAScaleMatrix(msa->query, seq_weights->std_prob,
+                                    internal_pssm, sbp,
+                                    options->impala_scaling_factor);
+    }
     if (status != PSI_SUCCESS) {
         s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);

@@ -383,6 +383,14 @@ typedef struct PSIBlastOptions {
      */
     Boolean nsg_compatibility_mode;
 
+    /** Scaling factor as used in IMPALA to do the matrix rescaling. Default
+     * value of 1.0 means not to use it. Makemat/formatrpsdb set this value to
+     * 100 by default, Kappa_RedoAlignmentCore uses 32. Provided so that the
+     * NCBI structure group can create scaled PSSMs as the output of the PSSM
+     * engine. Do not change this unless you know what you are doing.
+     */
+    double impala_scaling_factor;
+
 } PSIBlastOptions;
 
 /** Options used to create the ReadDBFILE structure 

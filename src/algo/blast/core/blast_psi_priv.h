@@ -407,9 +407,6 @@ _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
  * sequence is read from internal_pssm->ncols [in]
  * @param std_probs array containing the standard background residue 
  * probabilities [in]
- * @param scaling_factor if not null, use this value to further scale the
- * matrix (default is kPSIScaleFactor). Useful for composition based statistics
- * [in] optional 
  * @param internal_pssm PSSM being computed [in|out]
  * @param sbp score block structure initialized for the scoring system used
  * with the query sequence [in|out]
@@ -419,12 +416,24 @@ _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
 int
 _PSIScaleMatrix(const Uint1* query,
                 const double* std_probs,
-                double* scaling_factor,
                 _PSIInternalPssmData* internal_pssm,
                 BlastScoreBlk* sbp);
 
 /****************************************************************************/
 /* Function prototypes for auxiliary functions for the stages above */
+
+/** Provides a similar function to _PSIScaleMatrix but it performs the scaling
+ * as IMPALA did, i.e.: allowing the specification of a scaling factor and when
+ * calculating the score probabilities, the query length includes 'X' residues.
+ * @todo Ideally all scaling code should be refactored so that it is
+ * consolidated, eliminating the need for blast_posit.[hc]. Please note that
+ * blast_kappa.c's scalePosMatrix also does something very similar.
+ */
+int
+_IMPALAScaleMatrix(const Uint1* query, const double* std_probs,
+                   _PSIInternalPssmData* internal_pssm, 
+                   BlastScoreBlk* sbp,
+                   double scaling_factor);
 
 /** Marks the (start, stop] region corresponding to sequence seq_index in
  * alignment so that it is not further considered for PSSM calculation.
@@ -556,6 +565,9 @@ __printMsa(const char* filename, const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2005/02/22 22:49:34  camacho
+ * + impala_scaling_factor, first cut
+ *
  * Revision 1.22  2005/01/31 16:50:21  camacho
  * 1. Moved constants to private header.
  * 2. Changed signature of functions to copy matrices.
