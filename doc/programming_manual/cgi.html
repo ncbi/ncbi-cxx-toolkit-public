@@ -6,7 +6,7 @@
   <body bgcolor = white>
     <h1>Developing CGI applications  </h1>
 
-Although CGI programs are invariably run as web applications with HTML
+Although CGI programs are generally run as web applications with HTML
 interfaces, this section of the Programming Manual considers only the CGI side of
 the implementation. Similarly, the section on <a href="webpgs.html"> Generating
 Web pages</a> discusses only those aspects which concern formatting HTML pages. The
@@ -17,16 +17,17 @@ Developing Web-based Applications</a>.
   <li> <a href="#overview"> Overview of the CGI classes </a>
   <li> <a href="#ccgiapp"> The CCgiApplication class </a>
   <li> <a href="#cncbires"> The CNcbiResource and CNcbiCommand classes </a>
-  <li> <a href="#ccgires"> The CCgiResponse class </a>
   <li> <a href="#ccgireq"> The CCgiRequest class </a>
+  <li> <a href="#ccgires"> The CCgiResponse class </a>
   <li> <a href="#ccgicoo"> The CCgiCookie class </a>
+  <li> <a href="#cookies"> The CCgiCookies class </a>
   <li> <a href="#ccgictx"> The CCgiContext class </a>
 </ul>
 
 <a name="overview"> <h3> Overview of the CGI classes </h3>
 Figure 1 illustrates the layered design of the CGI classes. 
 
-<center><img SRC="cgi.gif"> <br> Figure 1</center>
+<center><img SRC="cgi.gif"> <br> Figure 1</center><br>
 
 This design is best described by starting with a consideration of the capabilities 
 one might need to implement a CGI program, including:
@@ -41,7 +42,7 @@ one might need to implement a CGI program, including:
 
 The <i>CCgiContext</i> class unifies these diverse capabilities under one aggregate
 structure. As their names suggest, the <i>CCgiRequest</i> class receives and parses the
-request, and the <i>CCgiResponse</i> class outputs a response on
+request, and the <i>CCgiResponse</i> class outputs the response on
 an output stream. All incoming <i>CCgiCookie</i>s are also parsed and stored by the
 <i>CCgiRequest</i> object, and the outgoing cookies are sent along with the response
 by the <i>CCgiResponse</i> object. The request is actually processed by the application's
@@ -227,109 +228,128 @@ method is invoked.
 <h3> The CCgiRequest class </h3></a>
 
 <i>The CCgiRequest</i> class serves as an interface between the user's query and the CGI
-program. The query may have been submitted as part of the command line, as part of a URL
-(METHOD=GET), or on the input stream (METHOD=POST). Arguments to the constructor include
-the <i>CNcbiArguments, CNcbiEnvironment, CNcbiIstream, </i> and a set of flags. The 
-constructor uses the environment passed in to cache network information as "gettable"
-properties. These properties include:
+program. Arguments to the constructor include a <i>CNcbiArguments</i> object, a
+<i>CNcbiEnvironment</i> object, and a <i>CNcbiIstream</i> object. The
+constructors themselves do little other than invoke <i>CCgiRequest::x_Init()</i>, where
+the actual initialization takes place. <p>
+
+<i>x_Init()</i> begins by examining the environment argument, and if it is <i>NULL</i>,
+<i>m_OwnEnv</i> (an <i>auto_ptr</i>) is reset to a dummy environment. Otherwise,
+<i>m_OwnEnv</i> is reset to the passed environment, making the request object the
+effective owner of that environment. The environment is then used to cache network
+information as "gettable" properties. Cached properties include:
 
 <ul>
-     // server properties
-353     eCgi_ServerSoftware = 0,
-354     eCgi_ServerName,
-355     eCgi_GatewayInterface,
-356     eCgi_ServerProtocol,
-357     eCgi_ServerPort,        // see also "GetServerPort()"
-358 
-359     // client properties
-360     eCgi_RemoteHost,
-361     eCgi_RemoteAddr,        // see also "GetRemoteAddr()"
-362 
-363     // client data properties
-364     eCgi_ContentType,
-365     eCgi_ContentLength,     // see also "GetContentLength()"
-366 
-367     // request properties
-368     eCgi_RequestMethod,
-369     eCgi_PathInfo,
-370     eCgi_PathTranslated,
-371     eCgi_ScriptName,
-372     eCgi_QueryString,
-373 
-374     // authentication info
-375     eCgi_AuthType,
-376     eCgi_RemoteUser,
-377     eCgi_RemoteIdent,
-378 
-379     // semi-standard properties(from HTTP header)
-380     eCgi_HttpAccept,
-381     eCgi_HttpCookie,
-382     eCgi_HttpIfModifiedSince,
-383     eCgi_HttpReferer,
-384     eCgi_HttpUserAgent,
-385 
-386     // # of CCgiRequest-supported standard properties
-387     // for internal use only!
-388     eCgi_NProperties
-389 };  // ECgiProp
-390 
+  <li> server properties such as the server name, gateway interface, and server port
 
-    // Startup initialization:
-    //   retrieve request's properties and cookies from environment
-    //   retrieve request's entries from "$QUERY_STRING"
-    // If "$REQUEST_METHOD" == "POST" then add entries from stream "istr"
-    // If "$REQUEST_METHOD" is undefined then try to retrieve the request's
-    // entries from the 1st cmd.-line argument, and do not use "$QUERY_STRING"
-    // and "istr" at all
+  <li> client properties: the remote host and remote address  
 
-Flags   // dont handle indexes as regular FORM entries with empty value
-        // do not parse $QUERY_STRING
-        // own the passed "env" (and destroy them it in destructor)
+  <li> client data properties: content type and content length
 
-</pre>
+  <li> request properties including the request method, query string, and path information
+
+  <li> authentication information such as the remote user and remote identity
+
+  <li> standard HTTP properties (from the HTTP header) 
+</ul>
+These properties are keyed to an enumeration named 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/ECgiProp.html">
+<i>ECgiProp</i></a>, and can be retrieved using the request object's <i>GetProperty()</i>
+member function.  For example, <i>GetProperty(eCgi_HttpCookie)</i> is used to access
+cookies from the HTTP Header, and <i> GetProperty(eCgi_RequestMethod)</i> is used to
+determine where the query string should be read from. <p>
+
 <font color = "#000080"> <pre>
 class CCgiRequest {
 public:
-    typedef int TFlags;
-
-    enum Flags {
-        fIndexesNotEntries  = 0x1,
-        fIgnoreQueryString  = 0x2,
-        fOwnEnvironment     = 0x4
-    };
 
     CCgiRequest(const CNcbiArguments*, const CNcbiEnvironment*, CNcbiIstream*, TFlags);
 
-    static const string& GetPropertyName(ECgiProp prop);    // name (not value)
-    const string& GetProperty(ECgiProp prop) const;         // value
-    const string& GetRandomProperty(const string& key, bool http=true) const;
+    static const string& GetPropertyName(ECgiProp prop);    
+    const string& GetProperty(ECgiProp prop) const;         
     size_t GetContentLength(void) const;
     const CCgiCookies& GetCookies(void) const;
     const TCgiEntries& GetEntries(void) const;
-    const TCgiIndexes& GetIndexes(void) const;
     static SIZE_TYPE ParseEntries(const string& str, TCgiEntries& entries);
-    static SIZE_TYPE ParseIndexes(const string& str, TCgiIndexes& indexes);
 
 private:
 
     const CNcbiEnvironment*    m_Env;
     auto_ptr&lt;CNcbiEnvironment> m_OwnEnv;
     TCgiEntries m_Entries;
-    TCgiIndexes m_Indexes;
     CCgiCookies m_Cookies;
-
-    const string& x_GetPropertyByName(const string& name) const;    // retrieve/cache the property
 };  
 </pre> </font>
-
+This abbreviated definition of the <i>CCgiRequest</i> class highlights its primary
+functionalities:
+<ol>
+<li> to parse and store the &lt;<i>key=value</i>> pairs contained in the query
+string in <i>m_Entries</i>
+<li> to parse and store the cookies contained in the HTTP header in 
+<i>m_Cookies</i>
+</ol>
+As implied by the "T" prefix,
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=TCgiEntries">
+<i>TCgiEntries</i></a> is a type defintion, and defines <i>m_Entries</i> to be an STL
+multimap of <i>&lt;string,string></i> pairs. The <i>CCgiCookies</i> class (described 
+<a href="#cookies"> below</a>) contains an STL set of <i>CCgiCookie</i>, and implements
+an interface to this set.
 
 <a name="ccgires"> 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiResponse.html">
 <h3> The CCgiResponse class </h3></a>
+<font color = "#000080"> <pre>
+class CCgiResponse {
+public:
+
+    CCgiResponse(CNcbiOstream* out = 0);
+
+    // Set/query raw type of response
+    void SetRawCgi(bool raw);
+    bool IsRawCgi(void) const;
+
+    void SetHeaderValue(const string& name, const string& value);
+    void SetHeaderValue(const string& name, const tm& value);
+    void RemoveHeaderValue(const string& name);
+    void SetContentType(const string &type);
+
+    string GetHeaderValue(const string& name) const;
+    bool HaveHeaderValue(const string& name) const;
+    string GetContentType(void) const;
+
+    CCgiCookies& Cookies(void);		        // Get cookies set
+
+    CNcbiOstream* SetOutput(CNcbiOstream* out); // Set default output stream
+
+    CNcbiOstream* GetOutput(void) const;        // Query output stream
+
+    CNcbiOstream& out(void) const;	        // Conversion to ostream to enable <<
+
+    void Flush() const;			        // Flushes output stream
+
+    CNcbiOstream& WriteHeader(void) const;      // Write HTTP response header
+    CNcbiOstream& WriteHeader(CNcbiOstream& out) const;
+
+protected:
+
+    typedef map<string, string> TMap;
+    static const string sm_ContentTypeName;
+    static const string sm_ContentTypeDefault;
+    static const string sm_HTTPStatusDefault;
+    bool m_RawCgi;
+    CCgiCookies m_Cookies;
+    TMap m_HeaderValues;       // Header lines in alphabetical order
+    CNcbiOstream* m_Output;    // Default output stream
+};
+</font></pre>
 
 <a name="ccgicoo"> 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiCookie.html">
 <h3> The CCgiCookie class </h3></a>
+
+<a name="cookies"> 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiCookies.html">
+<h3> The CCgiCookies class </h3></a>
 
 <a name="ccgictx">
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiContext.html">
