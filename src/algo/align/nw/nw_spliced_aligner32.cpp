@@ -37,13 +37,13 @@
 
 BEGIN_NCBI_SCOPE
 
-static unsigned char donor[splice_type_count_32][2] = {
+unsigned char g_nwspl32_donor[splice_type_count_32][2] = {
     {'G','T'}, // donor type 1 in CDonorAcceptorMatrix coding
     {'G','C'}, // 2
     {'A','T'}  // 3
 };
 
-static unsigned char acceptor[splice_type_count_32][2] = {
+unsigned char g_nwspl32_acceptor[splice_type_count_32][2] = {
     {'A','G'}, // 1
     {'A','G'}, // 2
     {'A','C'}  // 3
@@ -51,11 +51,10 @@ static unsigned char acceptor[splice_type_count_32][2] = {
 
 
 // Transcript coding
-// (lower bits contain jump value for dels and introns)
-const Uint4 kTypeD = 0x00000000; // match or mismatch
-const Uint4 kTypeE = 0x40000000; // del in seq 1
-const Uint4 kTypeF = 0x80000000; // del in seq 2
-const Uint4 kTypeI = 0xC0000000; // intron
+// (lower bits contain jump value for gaps and introns)
+const Uint4 kTypeDiag   = 0x00000000;  // single match or mismatch
+const Uint4 kTypeGap    = 0x40000000;  // gap - any type
+const Uint4 kTypeIntron = 0x80000000;  // intron
 
 
 // Donor-acceptor static object used
@@ -93,8 +92,10 @@ private:
     Uint1 m_matrix [256][256];
 };
 
-static CDonorAcceptorMatrix g_dnr_acc_matrix;
 
+namespace {
+    CDonorAcceptorMatrix g_dnr_acc_matrix;
+}
 
 CSplicedAligner32::CSplicedAligner32():
       m_Wd1(GetDefaultWd1()),
@@ -177,14 +178,20 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
     TScore  vBestDonor   [splice_type_count_32];
     size_t  jBestDonor   [splice_type_count_32];
 
+    // place to store gap opening starts
+    size_t ins_start;
+    vector<size_t> stl_del_start(N2);
+    size_t* del_start = &stl_del_start[0];
+
     // donor/acceptor matrix
     const Uint1 * dnr_acc_matrix = g_dnr_acc_matrix.GetMatrix();
 
-    // fake row
+    // fake row (above lambda)
     rowV[0] = kInfMinus;
     size_t k;
     for (k = 0; k < N2; k++) {
         rowV[k] = rowF[k] = kInfMinus;
+	del_start[k] = k;
     }
     k = 0;
 
@@ -194,8 +201,8 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
 
         V = i > 0? (V0 += wsleft2) : 0;
         E = kInfMinus;
-        k0 = k;
-        backtrace_matrix[k++] = kTypeF | 1;
+        ins_start = k0 = k;
+        backtrace_matrix[k++] = kTypeGap; // | del_start[0]
         ci = i > 0? seq1[i]: 'N';
 
         for(unsigned char st = 0; st < splice_type_count_32; ++st) {
@@ -218,7 +225,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
                 jAllDonors[st][jTail[st]] = j;
                 if(dnr_type & (0x10 << st)) {
                     vAllDonors[st][jTail[st]] = 
-                        ( c1 == donor[st][0] && c2 == donor[st][1] ) ?
+                        ( c1 == g_nwspl32_donor[st][0] && c2 == g_nwspl32_donor[st][1] ) ?
                         V: (V + m_Wd1);
                 }
                 else { // both chars distorted
@@ -239,6 +246,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
             }
             else {
                 E = n0 + ws1;  // open a new gap
+		ins_start = k-1;
             }
 
             if(j == N2 - 1 && bFreeGapRight2) {
@@ -250,26 +258,27 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
             }
             else {
                 rowF[j] = n0 + ws2;
+		del_start[j] = k-N2;
             }
 
             // evaluate the score (V)
             if (E >= rowF[j]) {
                 if(E >= G) {
                     V = E;
-                    type = kTypeE;
+                    type = kTypeGap | ins_start;
                 }
                 else {
                     V = G;
-                    type = kTypeD;
+                    type = kTypeDiag;
                 }
             } else {
                 if(rowF[j] >= G) {
                     V = rowF[j];
-                    type = kTypeF;
+                    type = kTypeGap | del_start[j];
                 }
                 else {
                     V = G;
-                    type = kTypeD;
+                    type = kTypeDiag;
                 }
             }
 
@@ -288,13 +297,13 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
             }
                 
             // check splice signal
-            size_t dnr_pos = 0;
+            Uint4 dnr_pos = kMax_UI4;
             unsigned char c1 = seq2[j-1], c2 = seq2[j];
             Uint1 acc_mask = 0x0F & dnr_acc_matrix[(size_t(c1)<<8)|c2];
             for(Uint1 st = 0; st < splice_type_count_32; ++st ) {
                 if(acc_mask & (0x01 << st)) {
                     TScore vAcc = vBestDonor[st] + m_Wi[st];
-                    if( c1 != acceptor[st][0] || c2 != acceptor[st][1] ) {
+                    if( c1 != g_nwspl32_acceptor[st][0] || c2 != g_nwspl32_acceptor[st][1] ) {
                         vAcc += m_Wd1;
                     }
                     if(vAcc > V) {
@@ -311,8 +320,8 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
                 }
             }
             
-            if(dnr_pos > 0) {
-                type = kTypeI | dnr_pos;
+            if(dnr_pos != kMax_UI4) {
+                type = kTypeIntron | dnr_pos;
             }
 
             backtrace_matrix[k] = type;
@@ -323,7 +332,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
                 Uint1 dnr_mask = 0xF0 & dnr_acc_matrix[(size_t(c1)<<8)|c2];
                 for(Uint1 st = 0; st < splice_type_count_32; ++st ) {
                     if( dnr_mask & (0x10 << st) ) {
-                        if( c1 == donor[st][0] && c2 == donor[st][1] ) {
+                        if( c1 == g_nwspl32_donor[st][0] && c2 == g_nwspl32_donor[st][1] ) {
                             if(V > vBestDonor[st]) {
                                 jAllDonors[st][jTail[st]] = j;
                                 vAllDonors[st][jTail[st]] = V;
@@ -360,8 +369,13 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
 
     }
 
+    try {
     x_DoBackTrace(backtrace_matrix, N1, N2, transcript);
-
+    }
+    catch(exception&) { // GCC hack
+      throw;
+    }
+    
     return V;
 }
 
@@ -375,7 +389,7 @@ void CSplicedAligner32::x_DoBackTrace ( const Uint4* backtrace_matrix,
     transcript->clear();
     transcript->reserve(N1 + N2);
 
-    const Uint4 mask_jump = 0x0FFFFFFF;
+    const Uint4 mask_jump = 0x3FFFFFFF;
     const Uint4 mask_type = ~mask_jump;
 
     size_t k = N1*N2 - 1;
@@ -384,30 +398,55 @@ void CSplicedAligner32::x_DoBackTrace ( const Uint4* backtrace_matrix,
         Uint4 Key = backtrace_matrix[k];
         Uint4 type = Key & mask_type;
 
-        if(type == kTypeI) {  // intron
-	    size_t k2 = (Key & mask_jump);
-	    if( k2 > k || k - k2 > k % N2 ) {
+	if(type == kTypeDiag) {
+	    transcript->push_back(eTS_Match);
+	    k -= N2 + 1;
+	}
+	else {
+	  Uint4 k2 = (Key & mask_jump);
+	  if(k2 >= k) {
 	        NCBI_THROW(
 		    CAlgoAlignException,
 		    eInternal,
 		    "Incorrect backtrace jump detected");
+	  }
+
+	  ETranscriptSymbol ts;
+	  Uint4 decr;
+	  if(type == kTypeIntron) {
+	    ts = eTS_Intron;
+	    decr = 1;
+	  }
+	  else {
+	    Uint4 kdel = k / N2, k2del = k2 / N2;
+	    Uint4 kmod = k % N2, k2mod = k2 % N2;
+	    if(kdel == k2del) {
+	      ts = eTS_Insert;
+	      decr = 1;
 	    }
-            for(; k != k2; --k) {
-                transcript->push_back(eTS_Intron);
-            }
-        }
-        else if (type == kTypeD) {
-            transcript->push_back(eTS_Match); // could be eReplace actually
-            k -= N2 + 1;
-        }
-        else if (type == kTypeE) {
-            transcript->push_back(eTS_Insert);
-            --k;
-        }
-        else {
-            transcript->push_back(eTS_Delete);
-            k -= N2;
-        }
+	    else if(kmod == k2mod) {
+	      ts = eTS_Delete;
+	      decr = N2;
+	    }
+	    else {
+	      // ts = eTS_DiagSpace;
+	      NCBI_THROW(
+			 CAlgoAlignException,
+			 eInternal,
+			 "Diag spaces not yet supported");
+	    }
+	  }
+
+	  for(; k > k2; k -= decr) {
+	    transcript->push_back(ts);
+	  }
+	  if(k != k2) {
+	      NCBI_THROW(
+			 CAlgoAlignException,
+			 eInternal,
+			 "Backtrace jump failed");
+	  }
+	}
     } // while
 }
 
@@ -487,7 +526,7 @@ CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
 
             if(state1 != 2) {
                 for(unsigned char i = 0; i < splice_type_count_32; ++i) {
-                    if(*p2 == donor[i][0] && *(p2 + 1) == donor[i][1]) {
+                    if(*p2 == g_nwspl32_donor[i][0] && *(p2 + 1) == g_nwspl32_donor[i][1]) {
                         score += m_Wi[i];
                         break;
                     }
@@ -558,6 +597,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/10/14 19:31:52  kapustin
+ * Use one flag for all gap types
+ *
  * Revision 1.6  2003/09/30 19:50:04  kapustin
  * Make use of standard score matrix interface
  *
