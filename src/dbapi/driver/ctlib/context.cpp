@@ -199,6 +199,9 @@ CDB_Connection* CTLibContext::Connect(const string&   srv_name,
                                       bool            reusable,
                                       const string&   pool_name)
 {
+    static CFastMutex xMutex;
+    CFastMutexGuard mg(xMutex);
+
     if (reusable  &&  m_NotInUse.NofItems() > 0) {
         // try to get a connection from the pot
         if ( !pool_name.empty() ) {
@@ -828,6 +831,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/04/19 15:01:28  soussov
+ * adds static mutex to Connect
+ *
  * Revision 1.12  2002/04/12 18:50:25  soussov
  * static mutex in context constructor added
  *

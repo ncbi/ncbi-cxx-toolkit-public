@@ -160,6 +160,9 @@ CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
 {
     CDBL_Connection* t_con;
 
+    static CFastMutex xMutex;
+    CFastMutexGuard mg(xMutex);
+
     if (reusable  &&  m_NotInUse.NofItems() > 0) { // try to reuse connection
         if (!pool_name.empty()) { // try to use pool name
             int n = m_NotInUse.NofItems();
@@ -473,6 +476,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/04/19 15:05:50  soussov
+ * adds static mutex to Connect
+ *
  * Revision 1.12  2002/04/12 22:13:09  soussov
  * mutex protection for contex constructor added
  *

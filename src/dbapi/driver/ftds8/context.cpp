@@ -131,6 +131,9 @@ CDB_Connection* CTDSContext::Connect(const string&   srv_name,
 {
     CTDS_Connection* t_con;
 
+    static CFastMutex xMutex;
+    CFastMutexGuard mg(xMutex);
+
     if (reusable  &&  m_NotInUse.NofItems() > 0) { // try to reuse connection
         if (!pool_name.empty()) { // try to use pool name
             int n = m_NotInUse.NofItems();
@@ -434,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/04/19 15:08:06  soussov
+ * adds static mutex to Connect
+ *
  * Revision 1.9  2002/04/12 22:13:01  soussov
  * mutex protection for contex constructor added
  *
