@@ -1174,13 +1174,18 @@ Int4 BlastNaLookupIndexQuery(BlastLookupTable* lookup, BLAST_SequenceBlk* query,
 			BlastSeqLoc* location)
 {
   BlastSeqLoc* loc;
-  Int4 from, to;
   Int4 offset;
   Uint1* sequence;
 
   for(loc=location; loc; loc=loc->next) {
-     from = loc->ssr->left;
-     to = loc->ssr->right + 1;
+     Int4 from = loc->ssr->left;
+     Int4 to = loc->ssr->right + 1;
+
+     /* If the line below is not true we can never find an exact match of lookup->word_length
+     bases to initiate an extension.  This happens when the user specified word length is longer
+     than the one used for the lookup table. */
+     if (lookup->word_length > (to - from))
+         continue;  
      
      sequence = query->sequence + from;
      /* Last offset is such that full word fits in the sequence */

@@ -382,8 +382,12 @@ s_FillContigMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 {
    BlastSeqLoc* loc;
    const Uint1 kNucMask = 0xfc;
-   Int4 word_length;
-   Int4 mask;
+   /* 12-mers (or perhaps 8-mers) are used to build the lookup table and this is what kWordLength specifies. */
+   const Int4 kWordLength = COMPRESSION_RATIO*width;   
+   /* The user probably specified a much larger word size (like 28) and this is what full_word_size is. */
+   Int4 full_word_size;
+   const Int4 kMask = (1 << (8*width - 2)) - 1;;
+   const Int4 kCompressionFactor=2048; /* compress helper_array by factor of 2048. */
    PV_ARRAY_TYPE *pv_array=NULL;
    Int4 pv_array_bts;
    /* The calculation of the longest chain can be cpu intensive for long queries or sets of queries. 
@@ -392,16 +396,13 @@ s_FillContigMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
       not seem to affect the overall performance of the rest of the program. */
    Uint4 longest_chain=0;
    Uint4* helper_array;     /* Helps to estimate longest chain. */
-   const Int4 kCompressionFactor=2048; /* compress helper_array by factor of 2048. */
 
 
    ASSERT(mb_lt);
 
    mb_lt->compressed_wordsize = width;
-   word_length = COMPRESSION_RATIO*width;
-   mb_lt->word_length = lookup_options->word_size;
+   full_word_size = mb_lt->word_length = lookup_options->word_size;
    mb_lt->mask = mb_lt->hashsize - 1;
-   mask = (1 << (8*width - 2)) - 1;
 
    pv_array = mb_lt->pv_array;
    pv_array_bts = mb_lt->pv_array_bts;
@@ -416,30 +417,33 @@ s_FillContigMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
          word length from the loop boundaries. 
       */
       Int4 from = loc->ssr->left;
-      Int4 to = loc->ssr->right - word_length;
+      Int4 to = loc->ssr->right - kWordLength;
       Int4 ecode = 0;
       Int4 last_offset;
       Int4 index;
       Uint1* pos;
       Uint1* seq;
       Uint1 val;
+     
+      if (full_word_size > (loc->ssr->right - loc->ssr->left + 1))
+         continue; /* case of unmasked region >=  kWordLength but < full_word_size  so no hits should be generated. */
 
       seq = query->sequence_start + from;
-      pos = seq + word_length;
+      pos = seq + kWordLength;
       
       /* Also add 1 to all indices, because lookup table indices count 
          from 1. */
-      from -= word_length - 2;
+      from -= kWordLength - 2;
       last_offset = to + 2;
 
       for (index = from; index <= last_offset; index++) {
          val = *++seq;
          if ((val & kNucMask) != 0) { /* ambiguity or gap */
             ecode = 0;
-            pos = seq + word_length;
+            pos = seq + kWordLength;
          } else {
             /* get next base */
-            ecode = ((ecode & mask) << 2) + val;
+            ecode = ((ecode & kMask) << 2) + val;
             if (seq >= pos) {
                   if (mb_lt->hashtable[ecode] == 0)
                   {
