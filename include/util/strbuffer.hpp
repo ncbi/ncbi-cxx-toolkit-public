@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/12/31 20:52:17  gouriano
+* added possibility to seek (when possible) in CByteSourceReader
+*
 * Revision 1.29  2003/04/17 17:50:32  siyan
 * Added doxygen support
 *
@@ -229,6 +232,7 @@ public:
     // return: current line counter
     size_t GetLine(void) const THROWS1_NONE;
     size_t GetStreamOffset(void) const THROWS1_NONE;
+    void   SetStreamOffset(size_t pos);
     
     // action: read in buffer up to end of line
     size_t ReadLine(char* buff, size_t size)

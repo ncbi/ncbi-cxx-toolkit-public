@@ -88,6 +88,11 @@ bool CByteSourceReader::Pushback(const char* /*data*/, size_t size)
     return true;
 }
 
+void CByteSourceReader::Seekg(size_t pos)
+{
+    NCBI_THROW(CUtilException,eWrongCommand,"CByteSourceReader::Seekg: unable to seek");
+}
+
 
 CRef<CSubSourceCollector>
 CByteSourceReader::SubSource(size_t /*prevent*/,
@@ -190,6 +195,10 @@ bool CStreamByteSourceReader::Pushback(const char* data, size_t size)
     return true;
 }
 
+void CStreamByteSourceReader::Seekg(size_t pos)
+{
+    m_Stream->seekg(pos);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CIRByteSourceReader
@@ -655,6 +664,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/12/31 20:51:33  gouriano
+ * added possibility to seek (when possible) in CByteSourceReader
+ *
  * Revision 1.31  2003/11/19 15:40:09  vasilche
  * Added possibility to pushback data to CByteSourceReader.
  *

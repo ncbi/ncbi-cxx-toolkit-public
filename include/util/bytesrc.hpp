@@ -83,6 +83,10 @@ public:
     // push back some data in source, return true if successful
     virtual bool Pushback(const char* data, size_t size);
 
+    // Set reader current position, when possible
+    // (default implementation throws an exception)
+    virtual void Seekg(size_t pos);
+
 private:
     CByteSourceReader(const CByteSourceReader&);
     CByteSourceReader& operator=(const CByteSourceReader&);
@@ -184,6 +188,7 @@ public:
     size_t Read(char* buffer, size_t bufferLength);
     bool EndOfData(void) const;
     bool Pushback(const char* data, size_t size);
+    virtual void Seekg(size_t pos);
 
 protected:
     CConstRef<CByteSource> m_Source;
@@ -466,6 +471,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2003/12/31 20:52:17  gouriano
+ * added possibility to seek (when possible) in CByteSourceReader
+ *
  * Revision 1.22  2003/11/19 15:40:09  vasilche
  * Added possibility to pushback data to CByteSourceReader.
  *

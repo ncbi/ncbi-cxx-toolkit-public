@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/12/31 20:51:33  gouriano
+* added possibility to seek (when possible) in CByteSourceReader
+*
 * Revision 1.38  2003/11/19 15:41:11  vasilche
 * Pushback unused data in destructor of CIStreamBuffer.
 *
@@ -549,6 +552,15 @@ void CIStreamBuffer::BadNumber(void)
 //    THROW1_TRACE(runtime_error, "bad number in line " + NStr::UIntToString(GetLine()));
     NCBI_THROW(CIOException,eRead,
         "bad number in line " + NStr::UIntToString(GetLine()));
+}
+
+void CIStreamBuffer::SetStreamOffset(size_t pos)
+{
+    m_Input->Seekg(pos);
+    m_BufferOffset = pos;
+    m_DataEndPos = m_Buffer;
+    m_CurrentPos = m_Buffer;
+    m_Line = 1;
 }
 
 Int4 CIStreamBuffer::GetInt4(void)
