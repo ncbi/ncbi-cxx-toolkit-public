@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/05/27 16:32:26  vakatov
+* In debug-mode(#_DEBUG), set the default post severity level to
+* "Warning" (yet, it is "Error" in non-debug mode)
+*
 * Revision 1.9  1999/04/30 19:21:04  vakatov
 * Added more details and more control on the diagnostics
 * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
@@ -84,8 +88,13 @@ eDPF_Prefix | eDPF_Severity;
 
 char* CDiagBuffer::sm_PostPrefix = 0;
 
-EDiagSev CDiagBuffer::sm_PostSeverity = eDiag_Error;
-EDiagSev CDiagBuffer::sm_DieSeverity  = eDiag_Fatal;
+EDiagSev CDiagBuffer::sm_PostSeverity =
+#if defined(_DEBUG)
+eDiag_Warning;
+#else
+eDiag_Error;
+#endif
+EDiagSev CDiagBuffer::sm_DieSeverity = eDiag_Fatal;
 
 const char* CDiagBuffer::SeverityName[eDiag_Trace+1] = {
     "Info", "Warning", "Error", "Fatal", "Trace"
