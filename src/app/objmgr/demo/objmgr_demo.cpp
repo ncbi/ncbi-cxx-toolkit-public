@@ -66,7 +66,10 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/seqref.hpp>
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
-#include <bdb/bdb_blobcache.hpp>
+
+#ifdef HAVE_BERKELEY_DB
+# include <bdb/bdb_blobcache.hpp>
+#endif
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -85,9 +88,11 @@ public:
     virtual int  Run (void);
 
     CRef<CGBDataLoader> gb_loader;
+#ifdef HAVE_BERKELEY_DB
 //    auto_ptr<CBDB_BLOB_Cache> bdb_cache;
     auto_ptr<CBDB_Cache> blob_cache;
     auto_ptr<CBDB_Cache> id_cache;
+#endif
 };
 
 
@@ -177,6 +182,7 @@ void CDemoApp::Init(void)
                             "Subtype of features to select",
                             CArgDescriptions::eInteger, "-1");
 
+#ifdef HAVE_BERKELEY_DB
     arg_desc->AddFlag("cache",
                       "use BDB cache");
 /*	
@@ -190,6 +196,7 @@ void CDemoApp::Init(void)
     arg_desc->AddDefaultKey("id_cache_days", "id_cache_days",
                             "number of days to keep gi->sat/satkey cache",
                             CArgDescriptions::eInteger, "1");
+#endif
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -297,6 +304,7 @@ int CDemoApp::Run(void)
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
 
+#ifdef HAVE_BERKELEY_DB
     if ( args["cache"] ) {
         // caching options
         CNcbiRegistry& reg = GetConfig();
@@ -372,7 +380,8 @@ int CDemoApp::Run(void)
 
         gb_loader = new CGBDataLoader("GenBank", id1_reader.release(), 2);
     }
-    else {
+#endif
+    if ( !gb_loader ) {
         // Create genbank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader
         // must be included in scopes during the CScope::AddDefaults() call
@@ -806,6 +815,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2004/07/13 14:04:28  vasilche
+* Optional compilation with Berkley DB.
+*
 * Revision 1.71  2004/07/12 19:21:14  ucko
 * Don't assume that size_t == unsigned.
 *
