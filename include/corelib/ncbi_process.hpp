@@ -145,7 +145,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CPIDGuard --
+/// CPIDGuardException --
 ///
 
 class NCBI_XNCBI_EXPORT CPIDGuardException
@@ -176,20 +176,30 @@ public:
           m_PID(pid)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CPIDGuardException, CException);
 
-public: // lost by N_E_D_I
+public:
     virtual void ReportExtra(ostream& out) const
-        { out << "pid " << m_PID; }
-    TPid GetPID(void) const throw()
-        { return m_PID; }
+    {
+        out << "pid " << m_PID;
+    }
+
+    TPid GetPID(void) const throw() { return m_PID; }
 
 protected:
-    void x_Assign(const CPIDGuardException& src)
-        { CException::x_Assign(src);  m_PID = src.m_PID; }
+    virtual void x_Assign(const CException& src)
+    {
+        CException::x_Assign(src);
+        m_PID = dynamic_cast<const CPIDGuardException&>(src).m_PID;
+    }
 
 private:
     TPid  m_PID;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CPIDGuard --
+///
 
 class NCBI_XNCBI_EXPORT CPIDGuard
 {
@@ -229,6 +239,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/12/23 19:05:24  ivanov
+ * Get rid of Sun Workshop compilation warning about x_Assign
+ *
  * Revision 1.4  2003/12/04 18:45:06  ivanov
  * Added helper constructor for MS Windows to avoid cast from HANDLE to long
  *
