@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/08/01 01:55:16  thiessen
+* add block aligner options dialog
+*
 * Revision 1.26  2002/07/26 15:28:49  thiessen
 * add Alejandro's block alignment algorithm
 *
@@ -156,6 +159,7 @@ private:
         MID_THREAD_ALL,
         MID_BLAST_ONE,
         MID_BLAST_PSSM_ONE,
+        MID_BLOCKALIGN_OPTIONS,
         MID_BLOCKALIGN_ONE,
         MID_SET_REGION,
         MID_MERGE_ONE,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/08/01 01:55:16  thiessen
+* add block aligner options dialog
+*
 * Revision 1.4  2002/07/29 19:22:46  thiessen
 * another blockalign bug fix; set better parameters to block aligner
 *
@@ -47,6 +50,7 @@
 
 #include <wx/string.h>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.h>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -54,12 +58,15 @@
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include <wx/wx.h>
+
 #include "cn3d/cn3d_ba_interface.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/asn_converter.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/wx_tools.hpp"
 
 // necessary C-toolkit headers
 #include <ncbi.h>
@@ -97,6 +104,33 @@ USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
+
+class BlockAlignerOptionsDialog : public wxDialog
+{
+public:
+    BlockAlignerOptionsDialog(wxWindow* parent, const BlockAligner::BlockAlignerOptions& init);
+    bool GetValues(BlockAligner::BlockAlignerOptions *options);
+
+private:
+    IntegerSpinCtrl *iSingle, *iMultiple, *iExtend, *iSize;
+    FloatingPointSpinCtrl *fpPercent, *fpLambda, *fpK;
+
+    void OnCloseWindow(wxCloseEvent& event);
+    void OnButton(wxCommandEvent& event);
+    DECLARE_EVENT_TABLE()
+};
+
+BlockAligner::BlockAligner(void)
+{
+    // default options
+    currentOptions.singleBlockThreshold = 7;
+    currentOptions.multipleBlockThreshold = 7;
+    currentOptions.allowedGapExtension = 10;
+    currentOptions.gapLengthPercentile = 0.6;
+    currentOptions.lambda = 0.0;
+    currentOptions.K = 0.0;
+    currentOptions.searchSpaceSize = 0;
+}
 
 // from cn3d_blast.cpp
 extern BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleForPSSM);
@@ -213,21 +247,20 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
     SeqIdPtr subject_id;
     SeqIdPtr query_id;
     Int4 bestFirstBlock, bestLastBlock;
-    Int4 searchSpaceSize;
     SeqAlignPtr results;
     SeqAlignPtr listOfSeqAligns;
+
     // the following would be command-line arguments to Alejandro's standalone program
-    BLAST_Score scoreThresholdSingleBlock = 7;
-    BLAST_Score scoreThresholdMultipleBlock = 7;
-    Nlm_FloatHi Lambda = 0.0;
-    Nlm_FloatHi K = 0.0;
-    Nlm_FloatHi percentile = 0.6;
-    Int4 gapAddition = 10;
+    BLAST_Score scoreThresholdSingleBlock = currentOptions.singleBlockThreshold;
+    BLAST_Score scoreThresholdMultipleBlock = currentOptions.multipleBlockThreshold;
+    Nlm_FloatHi Lambda = currentOptions.lambda;
+    Nlm_FloatHi K = currentOptions.K;
+    Nlm_FloatHi percentile = currentOptions.gapLengthPercentile;
+    Int4 gapAddition = currentOptions.allowedGapExtension;
+    Int4 searchSpaceSize = currentOptions.searchSpaceSize;
     Nlm_FloatHi scaleMult = 1.0;
     Int4 startQueryPosition;
     Int4 endQueryPosition;
-
-    searchSpaceSize = 0;
 
     newAlignments->clear();
     auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
@@ -328,6 +361,180 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
     MemFree(masterSequence);
     freeAlignPieceLists(numBlocks);
     freeBestScores(numBlocks);
+}
+
+void BlockAligner::SetOptions(wxWindow* parent)
+{
+    BlockAlignerOptionsDialog dialog(parent, currentOptions);
+    if (dialog.ShowModal() == wxOK)
+        if (!dialog.GetValues(&currentOptions))
+            ERR_POST(Error << "Error getting options from dialog!");
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+////// BlockAlignerOptionsDialog stuff
+////// taken (and modified) from block_aligner_dialog.wdr code
+/////////////////////////////////////////////////////////////////////////////////////
+
+#define ID_TEXT 10000
+#define ID_T_SINGLE 10001
+#define ID_S_SINGLE 10002
+#define ID_T_MULT 10003
+#define ID_S_MULT 10004
+#define ID_T_EXT 10005
+#define ID_S_EXT 10006
+#define ID_T_PERCENT 10007
+#define ID_S_PERCENT 10008
+#define ID_T_LAMBDA 10009
+#define ID_S_LAMBDA 10010
+#define ID_T_K 10011
+#define ID_S_K 10012
+#define ID_T_SIZE 10013
+#define ID_S_SIZE 10014
+#define ID_B_OK 10015
+#define ID_B_CANCEL 10016
+
+BEGIN_EVENT_TABLE(BlockAlignerOptionsDialog, wxDialog)
+    EVT_BUTTON(-1,  BlockAlignerOptionsDialog::OnButton)
+    EVT_CLOSE (     BlockAlignerOptionsDialog::OnCloseWindow)
+END_EVENT_TABLE()
+
+BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
+    wxWindow* parent, const BlockAligner::BlockAlignerOptions& init) :
+        wxDialog(parent, -1, "Set Block Aligner Options", wxDefaultPosition, wxDefaultSize,
+            wxCAPTION | wxSYSTEM_MENU) // not resizable
+{
+    wxPanel *panel = new wxPanel(this, -1);
+    wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
+    wxStaticBox *item2 = new wxStaticBox( panel, -1, "Block Aligner Options" );
+    wxStaticBoxSizer *item1 = new wxStaticBoxSizer( item2, wxVERTICAL );
+    wxFlexGridSizer *item3 = new wxFlexGridSizer( 3, 0, 0 );
+    item3->AddGrowableCol( 1 );
+
+    wxStaticText *item4 = new wxStaticText( panel, ID_TEXT, "Single block score threshold:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item4, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    iSingle = new IntegerSpinCtrl(panel,
+        0, 100, 1, init.singleBlockThreshold,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item3->Add(iSingle->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item3->Add(iSingle->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    wxStaticText *item7 = new wxStaticText( panel, ID_TEXT, "Multiple block score threshold:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item7, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    iMultiple = new IntegerSpinCtrl(panel,
+        0, 100, 1, init.multipleBlockThreshold,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item3->Add(iMultiple->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item3->Add(iMultiple->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    wxStaticText *item10 = new wxStaticText( panel, ID_TEXT, "Allowed gap extension:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item10, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    iExtend = new IntegerSpinCtrl(panel,
+        0, 100, 1, init.allowedGapExtension,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item3->Add(iExtend->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item3->Add(iExtend->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    wxStaticText *item13 = new wxStaticText( panel, ID_TEXT, "Gap length percentile:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item13, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    fpPercent = new FloatingPointSpinCtrl(panel,
+        0.0, 1.0, 0.1, init.gapLengthPercentile,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item3->Add(fpPercent->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item3->Add(fpPercent->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item3->Add( 5, 5, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxStaticText *item16 = new wxStaticText( panel, ID_TEXT, "Lambda:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item16, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    fpLambda = new FloatingPointSpinCtrl(panel,
+        0.0, 1000.0, 1.0, init.lambda,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item3->Add(fpLambda->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item3->Add(fpLambda->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    wxStaticText *item19 = new wxStaticText( panel, ID_TEXT, "K:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item19, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    fpK = new FloatingPointSpinCtrl(panel,
+        0.0, 10.0, 0.1, init.K,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item3->Add(fpK->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item3->Add(fpK->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    wxStaticText *item22 = new wxStaticText( panel, ID_TEXT, "Search space size:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item22, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    iSize = new IntegerSpinCtrl(panel,
+        0, kMax_Int, 1000, init.searchSpaceSize,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item3->Add(iSize->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item3->Add(iSize->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    item1->Add( item3, 0, wxALIGN_CENTRE, 5 );
+
+    item0->Add( item1, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxBoxSizer *item25 = new wxBoxSizer( wxHORIZONTAL );
+
+    wxButton *item26 = new wxButton( panel, ID_B_OK, "OK", wxDefaultPosition, wxDefaultSize, 0 );
+    item25->Add( item26, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item25->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item27 = new wxButton( panel, ID_B_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
+    item25->Add( item27, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item0->Add( item25, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    panel->SetAutoLayout(true);
+    panel->SetSizer(item0);
+    item0->Fit(this);
+    item0->Fit(panel);
+    item0->SetSizeHints(this);
+}
+
+bool BlockAlignerOptionsDialog::GetValues(BlockAligner::BlockAlignerOptions *options)
+{
+    return (
+        iSingle->GetInteger(&(options->singleBlockThreshold)) &&
+        iMultiple->GetInteger(&(options->multipleBlockThreshold)) &&
+        iExtend->GetInteger(&(options->allowedGapExtension)) &&
+        iSize->GetInteger(&(options->searchSpaceSize)) &&
+        fpPercent->GetDouble(&(options->gapLengthPercentile)) &&
+        fpLambda->GetDouble(&(options->lambda)) &&
+        fpK->GetDouble(&(options->K))
+    );
+}
+
+void BlockAlignerOptionsDialog::OnCloseWindow(wxCloseEvent& event)
+{
+    EndModal(wxCANCEL);
+}
+
+void BlockAlignerOptionsDialog::OnButton(wxCommandEvent& event)
+{
+    if (event.GetId() == ID_B_OK) {
+		BlockAligner::BlockAlignerOptions dummy;
+        if (GetValues(&dummy))  // can't successfully quit if values aren't valid
+            EndModal(wxOK);
+        else
+            wxBell();
+    } else if (event.GetId() == ID_B_CANCEL) {
+        EndModal(wxCANCEL);
+    } else {
+        event.Skip();
+    }
 }
 
 END_SCOPE(Cn3D)

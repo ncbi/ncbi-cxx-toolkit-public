@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/08/01 01:55:16  thiessen
+* add block aligner options dialog
+*
 * Revision 1.1  2002/07/26 15:28:45  thiessen
 * add Alejandro's block alignment algorithm
 *
@@ -43,6 +46,8 @@
 
 #include <list>
 
+class wxWindow;
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -51,7 +56,7 @@ class BlockMultipleAlignment;
 class BlockAligner
 {
 public:
-    BlockAligner(void) { }
+    BlockAligner(void);
     ~BlockAligner(void) { }
 
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
@@ -61,6 +66,22 @@ public:
     // align the new sequence, it will include a null-alignment for that sequence.
     void CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultipleAlignment *multiple,
         const AlignmentList& toRealign, AlignmentList *newAlignments);
+
+    // brings up a dialog that lets the user set block aligner options
+    void SetOptions(wxWindow* parent);
+
+    typedef struct {
+        int singleBlockThreshold;
+        int multipleBlockThreshold;
+        int allowedGapExtension;
+        double gapLengthPercentile;
+        double lambda;
+        double K;
+        int searchSpaceSize;
+    } BlockAlignerOptions;
+
+private:
+    struct BlockAlignerOptions currentOptions;
 };
 
 END_SCOPE(Cn3D)

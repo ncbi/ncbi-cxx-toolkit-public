@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2002/08/01 01:55:16  thiessen
+* add block aligner options dialog
+*
 * Revision 1.45  2002/07/26 15:28:48  thiessen
 * add Alejandro's block alignment algorithm
 *
@@ -187,6 +190,7 @@
 #include "cn3d/wx_tools.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/cn3d_ba_interface.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -203,7 +207,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_IMPORT_SEQUENCES, MID_IMPORT_STRUCTURE,  UpdateViewerWindow::OnImport)
     EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_PSSM_ONE,   UpdateViewerWindow::OnRunBlast)
     EVT_MENU      (MID_SET_REGION,                      UpdateViewerWindow::OnSetRegion)
-    EVT_MENU      (MID_BLOCKALIGN_ONE,                  UpdateViewerWindow::OnBlockAlign)
+    EVT_MENU_RANGE(MID_BLOCKALIGN_OPTIONS, MID_BLOCKALIGN_ONE,  UpdateViewerWindow::OnBlockAlign)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
@@ -232,6 +236,7 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     menu->Append(MID_BLAST_ONE, "&BLAST Single", "", true);
     menu->Append(MID_BLAST_PSSM_ONE, "BLAST/&PSSM Single", "", true);
     menu->AppendSeparator();
+    menu->Append(MID_BLOCKALIGN_OPTIONS, "Block Aligner &Options...");
     menu->Append(MID_BLOCKALIGN_ONE, "B&lock Align Single", "", true);
     menu->AppendSeparator();
     menu->Append(MID_SET_REGION, "Set &Region", "", true);
@@ -340,7 +345,7 @@ void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
             if (currentUpdates) {
                 ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
                 for (u=currentUpdates->begin(); u!=ue; u++) all[*u] = true;
-                UpdateViewerWindow::updateViewer->alignmentManager->MergeUpdates(all);
+                updateViewer->alignmentManager->MergeUpdates(all);
             }
             break;
         }
@@ -439,6 +444,10 @@ void UpdateViewerWindow::OnBlockAlign(wxCommandEvent& event)
             SetCursor(*wxCROSS_CURSOR);
         else
             BlockAlignSingleOff();
+    }
+
+    else if (event.GetId() == MID_BLOCKALIGN_OPTIONS) {
+        updateViewer->alignmentManager->blockAligner->SetOptions(this);
     }
 }
 
