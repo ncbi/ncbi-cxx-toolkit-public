@@ -573,7 +573,8 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
 static Int2 BLAST_FillRPSInfo( RPSInfo **ppinfo, Nlm_MemMap **rps_mmap,
                                Nlm_MemMap **rps_pssm_mmap, const char* dbname )
 {
-   char filename[256];
+   char pathname[PATH_MAX];
+   char filename[PATH_MAX];
    RPSInfo *info;
    FILE *auxfile;
    Int4 i;
@@ -587,13 +588,34 @@ static Int2 BLAST_FillRPSInfo( RPSInfo **ppinfo, Nlm_MemMap **rps_mmap,
    if (info == NULL)
       ErrPostEx(SEV_FATAL, 1, 0, "Memory allocation failed");
 
+   /* construct the full path to the DB file. Look in
+      the local directory, then BLASTDB environment 
+      variable (if any), then .ncbirc */
+
    sprintf(filename, "%s.loo", dbname);
+
+   if (FileLength(filename) > 0) {
+      strcpy(pathname, dbname);
+   } else {
+#ifdef OS_UNIX
+      if (getenv("BLASTDB"))
+         Nlm_GetAppParam("NCBI", "BLAST", "BLASTDB", 
+                         getenv("BLASTDB"), pathname, PATH_MAX);
+      else
+#endif
+         Nlm_GetAppParam ("NCBI", "BLAST", "BLASTDB", 
+                          BLASTDB_DIR, pathname, PATH_MAX);
+      sprintf(filename, "%s%s%s", pathname, DIRDELIMSTR, dbname);
+      strcpy(pathname, filename);
+   }
+
+   sprintf(filename, "%s.loo", pathname);
    lut_mmap = Nlm_MemMapInit(filename);
    if (lut_mmap == NULL)
       ErrPostEx(SEV_FATAL, 1, 0, "Cannot map RPS BLAST lookup file");
    info->lookup_header = (RPSLookupFileHeader *)lut_mmap->mmp_begin;
 
-   sprintf(filename, "%s.rps", dbname);
+   sprintf(filename, "%s.rps", pathname);
    pssm_mmap = Nlm_MemMapInit(filename);
    if (pssm_mmap == NULL)
       ErrPostEx(SEV_FATAL, 1, 0, "Cannot map RPS BLAST profile file");
@@ -601,7 +623,7 @@ static Int2 BLAST_FillRPSInfo( RPSInfo **ppinfo, Nlm_MemMap **rps_mmap,
 
    num_db_seqs = info->profile_header->num_profiles;
 
-   sprintf(filename, "%s.aux", dbname);
+   sprintf(filename, "%s.aux", pathname);
    auxfile = FileOpen(filename, "r");
    if (auxfile == NULL)
       ErrPostEx(SEV_FATAL, 1, 0,"Cannot open RPS BLAST parameters file");
