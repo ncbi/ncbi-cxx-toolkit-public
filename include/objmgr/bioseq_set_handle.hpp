@@ -43,6 +43,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/** @addtogroup ObjectManagerHandles
+ *
+ * @{
+ */
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_entry_Handle
 /////////////////////////////////////////////////////////////////////////////
@@ -67,24 +73,39 @@ class CSeq_annot_EditHandle;
 
 class CBioseq_set_Info;
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CBioseq_set_Handle --
+///
+///  Proxy to access the bioseq_set objects
+///
+
 class NCBI_XOBJMGR_EXPORT CBioseq_set_Handle
 {
 public:
     // Default constructor
     CBioseq_set_Handle(void);
 
-    // Get scope this handle belongs to
+    /// Get scope this handle belongs to
     CScope& GetScope(void) const;
 
-    // owner Seq-entry
+    /// Return a handle for the parent seq-entry of the bioseq
     CSeq_entry_Handle GetParentEntry(void) const;
+    
+    /// Return a handle for the top-level seq-entry
     CSeq_entry_Handle GetTopLevelEntry(void) const;
 
-    // Get 'edit' version of handle
+    /// Get 'edit' version of handle
     CBioseq_set_EditHandle GetEditHandle(void) const;
 
-    // Get controlled object
+    /// Return the complete bioseq-set object. 
+    /// Any missing data will be loaded and put in the bioseq members.
     CConstRef<CBioseq_set> GetCompleteBioseq_set(void) const;
+
+    /// Return core data for the bioseq-set. 
+    /// The object is guaranteed to have basic information loaded. 
+    /// Some information may be not loaded yet.
     CConstRef<CBioseq_set> GetBioseq_setCore(void) const;
 
     // member access
@@ -126,17 +147,31 @@ public:
     // Utility methods/operators
     operator bool(void) const;
     bool operator!(void) const;
+
     CBioseq_set_Handle& operator=(const CBioseq_set_Handle& bsh);
+
     void Reset(void);
 
+    /// Check if handles point to the same bioseq
+    ///
+    /// @sa
+    ///     operator!=()
     bool operator ==(const CBioseq_set_Handle& handle) const;
+
+    // Check if handles point to different bioseqs
+    ///
+    /// @sa
+    ///     operator==()
     bool operator !=(const CBioseq_set_Handle& handle) const;
+
+    /// For usage in containers
     bool operator <(const CBioseq_set_Handle& handle) const;
 
-    // Go up to a certain complexity level (or the nearest level of the same
-    // priority if the required class is not found).
+    /// Go up to a certain complexity level (or the nearest level of the same
+    /// priority if the required class is not found).
     CSeq_entry_Handle GetComplexityLevel(CBioseq_set::EClass cls) const;
-    // Return level with exact complexity, or empty handle if not found.
+
+    /// Return level with exact complexity, or empty handle if not found.
     CSeq_entry_Handle GetExactComplexityLevel(CBioseq_set::EClass cls) const;
 
 protected:
@@ -168,13 +203,20 @@ public: // non-public section
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CBioseq_set_EditHandle --
+///
+///  Proxy to access and edit the bioseq_set objects
+///
+
 class NCBI_XOBJMGR_EXPORT CBioseq_set_EditHandle : public CBioseq_set_Handle
 {
 public:
     // Default constructor
     CBioseq_set_EditHandle(void);
 
-    // Navigate object tree
+    /// Navigate object tree
     CSeq_entry_EditHandle GetParentEntry(void) const;
 
     // Member modification
@@ -202,27 +244,159 @@ public:
     bool RemoveDesc(CSeqdesc& v) const;
     void AddAllDescr(CSeq_descr& v) const;
 
-    // Modify object tree
+    /// Create new empty seq-entry
+    ///
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    /// 
+    /// @return 
+    ///  Edit handle to the new seq-entry
+    ///
+    /// @sa
+    ///  AttachEntry()
+    ///  CopyEntry()
+    ///  TakeEntry()
     CSeq_entry_EditHandle AddNewEntry(int index) const;
 
+    /// Attach an annotation
+    ///
+    /// @param annot
+    ///  Reference to this annotation will be attached
+    ///
+    /// @return
+    ///  Edit handle to the attached annotation
+    ///
+    /// @sa
+    ///  CopyAnnot()
+    ///  TakeAnnot()
     CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot) const;
+
+    /// Attach a copy of the annotation
+    ///
+    /// @param annot
+    ///  Copy of the annotation pointed by this handle will be attached
+    ///
+    /// @return
+    ///  Edit handle to the attached annotation
+    ///
+    /// @sa
+    ///  AttachAnnot()
+    ///  TakeAnnot()
     CSeq_annot_EditHandle CopyAnnot(const CSeq_annot_Handle&annot) const;
+
+    /// Remove the annotation from its location and attach to current one
+    ///
+    /// @param annot
+    ///  An annotation  pointed by this handle will be removed and attached
+    ///
+    /// @return
+    ///  Edit handle to the attached annotation
+    ///
+    /// @sa
+    ///  AttachAnnot()
+    ///  CopyAnnot()
     CSeq_annot_EditHandle TakeAnnot(const CSeq_annot_EditHandle& annot) const;
 
+    /// Attach a bioseq
+    ///
+    /// @param seq
+    ///  Reference to this bioseq will be attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached bioseq
+    ///
+    /// @sa
+    ///  CopyBioseq()
+    ///  TakeBioseq()
     CBioseq_EditHandle AttachBioseq(CBioseq& seq,
                                     int index = -1) const;
+
+    /// Attach a copy of the bioseq
+    ///
+    /// @param seq
+    ///  Copy of the bioseq pointed by this handle will be attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached bioseq
+    ///
+    /// @sa
+    ///  AttachBioseq()
+    ///  TakeBioseq()
     CBioseq_EditHandle CopyBioseq(const CBioseq_Handle& seq,
                                   int index = -1) const;
+
+    /// Remove bioseq from its location and attach to current one
+    ///
+    /// @param seq
+    ///  bioseq pointed by this handle will be removed and attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached bioseq
+    ///
+    /// @sa
+    ///  AttachBioseq()
+    ///  CopyBioseq()
     CBioseq_EditHandle TakeBioseq(const CBioseq_EditHandle& seq,
                                   int index = -1) const;
 
+    /// Attach an existing seq-entry
+    ///
+    /// @param entry
+    ///  Reference to this seq-entry will be attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached seq-entry
+    ///
+    /// @sa
+    ///  AddNewEntry()
+    ///  CopyEntry()
+    ///  TakeEntry()
     CSeq_entry_EditHandle AttachEntry(CSeq_entry& entry,
                                       int index = -1) const;
+
+    /// Attach a copy of the existing seq-entry
+    ///
+    /// @param entry
+    ///  Copy of this seq-entry will be attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached seq-entry
+    ///
+    /// @sa
+    ///  AddNewEntry()
+    ///  AttachEntry()
+    ///  TakeEntry()
     CSeq_entry_EditHandle CopyEntry(const CSeq_entry_Handle& entry,
                                     int index = -1) const;
+
+    /// Remove seq-entry from its location and attach to current one
+    ///
+    /// @param entry
+    ///  seq-entry pointed by this handle will be removed and attached
+    /// @param index
+    ///  Start index is 0 and -1 means end
+    ///
+    /// @return 
+    ///  Edit handle to the attached seq-entry
+    ///
+    /// @sa
+    ///  AddNewEntry()
+    ///  AttachEntry()
+    ///  CopyEntry()
     CSeq_entry_EditHandle TakeEntry(const CSeq_entry_EditHandle& entry,
                                     int index = -1) const;
 
+    /// Remove current seqset-entry from its location
     void Remove(void) const;
 
 protected:
@@ -344,12 +518,18 @@ CBioseq_set_Info& CBioseq_set_EditHandle::x_GetInfo(void) const
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/09/28 15:25:26  kononenk
+* Added doxygen formatting
+*
 * Revision 1.10  2004/08/05 18:28:17  vasilche
 * Fixed order of CRef<> release in destruction and assignment of handles.
 *
