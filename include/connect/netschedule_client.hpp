@@ -41,6 +41,7 @@
 #include <connect/ncbi_types.h>
 #include <connect/netservice_client.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/plugin_manager.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -352,6 +353,12 @@ public:
     static
     string StatusToString(EJobStatus status);
 
+    /// Return Queue name
+    const string& GetQueueName() const { return m_Queue; }
+
+    /// Return Client name
+    using CNetServiceClient::GetClientName;
+
 protected:
 
     /// Shutdown the server daemon.
@@ -538,6 +545,7 @@ private:
 };
 
 
+NCBI_DECLARE_INTERFACE_VERSION(CNetScheduleClient,  "xnetschedule", 1, 1, 0);
 
 
 /// NetSchedule internal exception
@@ -603,6 +611,19 @@ const unsigned int kNetScheduleMaxDataSize = 512;
 /// @internal
 const unsigned int kNetScheduleMaxErrSize = 1024;
 
+extern NCBI_XCONNECT_EXPORT const char* kNetScheduleDriverName;
+
+
+extern "C" 
+{
+
+void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetschedule(
+     CPluginManager<CNetScheduleClient>::TDriverInfoList&   info_list,
+     CPluginManager<CNetScheduleClient>::EEntryPointRequest method);
+
+
+} // extern C
+
 
 /* @} */
 
@@ -613,6 +634,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/03/21 16:53:31  didenko
+ * + creating from PluginManager
+ *
  * Revision 1.14  2005/03/21 13:05:25  kuznets
  * +PrintStatistics
  *

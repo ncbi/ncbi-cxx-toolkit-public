@@ -42,6 +42,7 @@
 #include <connect/netservice_client.hpp>
 #include <connect/ncbi_conn_reader_writer.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/plugin_manager.hpp>
 #include <util/reader_writer.hpp>
 
 
@@ -323,6 +324,7 @@ private:
     bool          m_StickToHost;
 };
 
+NCBI_DECLARE_INTERFACE_VERSION(CNetCacheClient,  "xnetcache", 1, 1, 0);
 
 
 /// NetCache internal exception
@@ -396,6 +398,18 @@ public:
     void OwnSocket();
 };
 
+extern NCBI_XCONNECT_EXPORT const char* kNetCacheDriverName;
+
+
+extern "C" 
+{
+
+void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetcache(
+     CPluginManager<CNetCacheClient>::TDriverInfoList&   info_list,
+     CPluginManager<CNetCacheClient>::EEntryPointRequest method);
+
+
+} // extern C
 
 /* @} */
 
@@ -406,6 +420,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/03/21 16:53:31  didenko
+ * + creating from PluginManager
+ *
  * Revision 1.24  2005/02/15 15:20:05  kuznets
  * IsAlive made protected
  *
