@@ -65,14 +65,17 @@ class CNetCacheServer : public CThreadedServer
 {
 public:
     CNetCacheServer(unsigned int port,
-                    ICache*      cache) 
+                    ICache*      cache,
+                    unsigned     max_threads,
+                    unsigned     init_threads) 
         : CThreadedServer(port),
           m_MaxId(0),
           m_Cache(cache),
           m_Shutdown(false)
     {
-        m_MaxThreads = 25;
-        m_InitThreads = 10;
+        m_MaxThreads = max_threads ? max_threads : 25;
+        m_InitThreads = init_threads ? 
+            (init_threads < m_MaxThreads ? init_threads : 2)  : 10;
         m_QueueSize = m_MaxThreads + 2;
     }
 
@@ -718,7 +721,13 @@ int CNetCacheDApp::Run(void)
         LOG_POST(Info << "Running server on port " << port);
         m_PurgeThread->Run();
 
-        CNetCacheServer* thr_srv = new CNetCacheServer(port, cache.get());
+        unsigned max_threads =
+            reg.GetInt("server", "max_threads", 25, CNcbiRegistry::eReturn);
+        unsigned init_threads =
+            reg.GetInt("server", "init_threads", 5, CNcbiRegistry::eReturn);
+
+        auto_ptr<CNetCacheServer> thr_srv(
+            new CNetCacheServer(port, cache.get(), max_threads, init_threads));
         thr_srv->Run();
 
         LOG_POST(Info << "Stopping cache maintanace thread...");
@@ -730,8 +739,6 @@ int CNetCacheDApp::Run(void)
         m_PurgeThread->Join();
         LOG_POST(Info << "Stopped.");
         
-        delete thr_srv;
-
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -756,6 +763,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/10/21 13:39:27  kuznets
+ * New parameters max_threads, init_threads
+ *
  * Revision 1.11  2004/10/20 21:21:02  ucko
  * Make CNetCacheServer::ERequestType public so that struct Request can
  * make use of it when building with WorkShop.
