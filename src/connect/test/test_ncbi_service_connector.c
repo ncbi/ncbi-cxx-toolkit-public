@@ -45,6 +45,7 @@ int main(int argc, const char* argv[])
     const char* host = argc > 2 ? argv[2] : "www.ncbi.nlm.nih.gov";
     CONNECTOR connector;
     SConnNetInfo *info;
+    EIO_Status status;
     STimeout  timeout;
     char ibuf[1024];
     CONN conn;
@@ -86,14 +87,16 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Fatal, "Error waiting for reading");
     }
 
-    if (CONN_Read(conn, ibuf, n, &n, eIO_ReadPersist) != eIO_Success) {
-        CONN_Close(conn);
+    status = CONN_Read(conn, ibuf, n, &n, eIO_ReadPersist);
+    if (status != eIO_Success) {
+        if (!n)
+            CONN_Close(conn);
         CORE_LOG(n ? eLOG_Error : eLOG_Fatal, "Error reading from connection");
     }
 
     CORE_LOGF(eLOG_Note,
               ("%d bytes read from service (%s):\n%.*s",
-               (int)n, CONN_GetType(conn), (int)n, ibuf));
+               (int) n, CONN_GetType(conn), (int) n, ibuf));
     CONN_Close(conn);
 
 #if 0
@@ -131,6 +134,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2002/09/24 15:10:09  lavr
+ * Fix test not to dereference NULL pointer resulting from failed connection
+ *
  * Revision 6.20  2002/08/07 16:38:08  lavr
  * EIO_ReadMethod enums changed accordingly; log moved to end
  *
