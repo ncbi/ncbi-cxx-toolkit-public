@@ -48,6 +48,7 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/primary_item.hpp>
 #include <objtools/format/context.hpp>
+#include "utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -140,6 +141,7 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
     
     string str;
     string s;
+    CConstRef<CSeq_id> other_id;
 
     ITERATE (TDense_seg_Map, it, segmap) {
         s.erase();
@@ -148,33 +150,41 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
         s += NStr::IntToString(alnmap.GetSeqStart(0) + 1) + '-' +
              NStr::IntToString(alnmap.GetSeqStop(0) + 1);
         s.resize(20, ' ');
-        const CSeq_id* other_id = &alnmap.GetSeqId(1);
-        if ( other_id->IsGi() ) {
-            // !!! Change implementation to fetch only ids (not entire bioseq)
-            // !!! when it is available.
-            CBioseq_Handle bsh = ctx.GetScope().GetBioseqHandle(*other_id);
-            if ( !bsh ) {
+        other_id.Reset(&alnmap.GetSeqId(1));
+        if (!other_id) {
+            continue;
+        }
+        if (other_id->IsGi()) {
+            other_id =
+                FindBestId(ctx.GetScope().GetIds(*other_id), CSeq_id::Score);
+            if (other_id->IsGi()) {
                 continue;
             }
-            other_id = &GetId(bsh, eGetId_Best);
-            if ( other_id ->IsGi() ) {
-                continue;
+        }
+        if (other_id->IsGeneral()) {
+            const CDbtag& dbt = other_id->GetGeneral();
+            if (dbt.IsSetDb()  &&  NStr::EqualNocase(dbt.GetDb(), "TI")) {
+                s += "TI";
             }
         }
         s += other_id->GetSeqIdString(true);
         s.resize(39, ' ');
         s += NStr::IntToString(alnmap.GetSeqStart(1) + 1) + '-' +
             NStr::IntToString(alnmap.GetSeqStop(1) + 1);
-        if ( alnmap.IsNegativeStrand(1) ) {
-            s.resize(59, ' ');
-            s += 'c';
+        if (alnmap.IsNegativeStrand(0)  ||  alnmap.IsNegativeStrand(1)) {
+            if (!(alnmap.IsNegativeStrand(0)  &&  alnmap.IsNegativeStrand(1))) {
+                s.resize(59, ' ');
+                s += 'c';
+            }
         }
 
-        str += '\n';
-        str+= s;
+        if (!s.empty()) {
+            str += '\n';
+            str+= s;
+        }
     }
 
-    if ( !str.empty() ) {
+    if (!str.empty()) {
         m_Str = s_PrimaryHeader(ctx.IsRefSeq());
         m_Str += str;
     }
@@ -218,6 +228,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/10/05 15:47:28  shomrat
+*  USe CScope::GetIds
+*
 * Revision 1.5  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
