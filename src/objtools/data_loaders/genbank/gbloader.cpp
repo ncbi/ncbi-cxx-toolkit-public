@@ -268,12 +268,12 @@ CGBDataLoader::x_UpdateDropList(STSEinfo *tse)
   // Unlink from current place
   if(tse->prev) tse->prev->next=tse->next;
   if(tse->next) tse->next->prev=tse->prev;
-  tse->prev = tse->next=0;
   if(tse == m_UseListHead )
     {
       _VERIFY(tse->next);
       m_UseListHead = tse->next;
     }
+  tse->prev = tse->next=0;
   if(m_UseListTail)
     {
       tse->prev = m_UseListTail;
@@ -633,6 +633,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/03/22 18:56:05  kimelman
+* GC list fix
+*
 * Revision 1.10  2002/03/22 18:51:18  kimelman
 * stream WS skipping fix
 *
