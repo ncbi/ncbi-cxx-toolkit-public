@@ -49,7 +49,7 @@ public:
     /// General flags
     enum EFlags {
         fPrivate = 0x1, ///< Do not cache, or support automatic saving.
-        fDontOwn = 0x2, ///< Do not attempt to delete on destruction.
+        fDontOwn = 0x2  ///< Do not attempt to delete on destruction.
     };
     typedef int TFlags; ///< Binary OR of "EFlags"
 
@@ -204,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/08/18 19:48:28  ucko
+* Remove stray comma at end of enum list in EFlags.
+*
 * Revision 1.5  2003/08/15 03:44:57  ucko
 * Add export specifier.
 *
