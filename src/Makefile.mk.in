@@ -163,6 +163,7 @@ MATH_LIBS    = @MATH_LIBS@
 KSTAT_LIBS   = @KSTAT_LIBS@
 RPCSVC_LIBS  = @RPCSVC_LIBS@
 CRYPT_LIBS   = @CRYPT_LIBS@
+DL_LIBS      = @DL_LIBS@
 
 
 #################################

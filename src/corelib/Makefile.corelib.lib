@@ -5,3 +5,5 @@ SRC = ncbithr ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbiargs \
       ncbidbg ncbidll
 
 LIB = xncbi
+
+LIBS = $(DL_LIBS)
