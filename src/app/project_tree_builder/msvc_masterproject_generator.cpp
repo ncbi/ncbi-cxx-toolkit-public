@@ -52,7 +52,7 @@ CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
      m_Configs       (configs),
 	 m_Name          ("_MasterProject"),
      m_ProjectDir    (project_dir),
-     m_ProjectItemExt(".build")
+     m_ProjectItemExt("._")
 {
     m_CustomBuildCommand  = "@echo on\n";
     m_CustomBuildCommand += "devenv "\
@@ -267,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/03 17:21:59  gorelenk
+ * Changed implementation of class CMsvcMasterProjectGenerator constructor.
+ *
  * Revision 1.5  2004/01/30 20:45:50  gorelenk
  * Changed procedure of folders generation.
  *
