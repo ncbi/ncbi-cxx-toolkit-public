@@ -85,6 +85,7 @@ public:
 
     TMemberIndex Find(const CLightString& name) const;
     TMemberIndex FindDeep(const CLightString& name) const;
+    TMemberIndex FindEmpty(void) const;
     TMemberIndex Find(const CLightString& name, TMemberIndex pos) const;
     TMemberIndex Find(TTag tag) const;
     TMemberIndex Find(TTag tag, TMemberIndex pos) const;
@@ -152,6 +153,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/01/08 17:37:33  gouriano
+* Added possibility to search for container members, that could be empty
+*
 * Revision 1.25  2003/09/16 14:49:15  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *

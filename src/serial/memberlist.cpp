@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/01/08 17:37:04  gouriano
+* Added possibility to search for container members, that could be empty
+*
 * Revision 1.34  2003/03/26 16:14:22  vasilche
 * Removed TAB symbols. Some formatting.
 *
@@ -378,6 +381,32 @@ TMemberIndex CItemsInfo::FindDeep(const CLightString& name) const
     return kInvalidMember;
 }
 
+TMemberIndex CItemsInfo::FindEmpty(void) const
+{
+    for (CIterator item(*this); item.Valid(); ++item) {
+        const CItemInfo* info = GetItemInfo(item);
+        if (info->GetId().IsAttlist()) {
+            continue;
+        }
+        const CTypeInfo* type;
+        for (type = info->GetTypeInfo();;) {
+            if (type->GetTypeFamily() == eTypeFamilyContainer) {
+                // container may be empty
+                return *item;
+            } else if (type->GetTypeFamily() == eTypeFamilyPointer) {
+                const CPointerTypeInfo* ptr =
+                    dynamic_cast<const CPointerTypeInfo*>(type);
+                if (ptr) {
+                    type = ptr->GetPointedType();
+                }
+            } else {
+                break;
+            }
+        }
+    }
+    return kInvalidMember;
+}
+
 TMemberIndex CItemsInfo::Find(const CLightString& name, TMemberIndex pos) const
 {
     for ( CIterator i(*this, pos); i.Valid(); ++i ) {
@@ -421,5 +450,6 @@ TMemberIndex CItemsInfo::Find(TTag tag, TMemberIndex pos) const
         return kInvalidMember;
     }
 }
+
 
 END_NCBI_SCOPE
