@@ -403,8 +403,6 @@ BlastSeqSrc* MultiSeqSrcFree(BlastSeqSrc* seq_src)
     return NULL;
 }
 
-/// @bug There is no guarantee that error_msg->code maps to a 
-/// CBlastException error code, this could be meaningless
 BlastSeqSrc*
 MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
 {
@@ -441,6 +439,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/03/23 14:13:52  camacho
+ * Moved doxygen comment to header
+ *
  * Revision 1.7  2004/03/22 16:15:21  camacho
  * doxygen fix
  *
