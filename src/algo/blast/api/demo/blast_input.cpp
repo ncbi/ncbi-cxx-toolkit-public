@@ -41,13 +41,13 @@
 
 BEGIN_NCBI_SCOPE
 
-CBl2Seq::TSeqLocVector
+TSeqLocVector*
 BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope, 
     ENa_strand strand, int from, int to, int *counter, 
     BlastMask** lcase_mask)
 {
     _ASSERT(scope);
-    CBl2Seq::TSeqLocVector retval;
+    TSeqLocVector *retval = new TSeqLocVector();
     CRef<CSeq_entry> seq_entry;
     vector <CConstRef<CSeq_loc> > mask_loc;
 
@@ -59,14 +59,15 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
             throw runtime_error("Could not retrieve seq entry");
     }
 
+    scope->AddTopLevelSeqEntry(*seq_entry);
+
     for (CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry)); itr; ++itr) {
 
-        CSeq_loc *seqloc = new CSeq_loc();
+        CRef<CSeq_loc> seqloc(new CSeq_loc());
         if (strand == eNa_strand_plus || strand == eNa_strand_minus || 
             from > 0 || 
             (to > 0 && to < sequence::GetLength(*itr->GetId().front(), scope)-1))
         {
-            //CSeq_interval seq_int = seqloc->SetInt();
             seqloc->SetInt().SetFrom(from);
             seqloc->SetInt().SetTo(to);
             seqloc->SetInt().SetStrand(strand);
@@ -74,20 +75,16 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
         } else {
             seqloc->SetWhole(*(const_cast<CSeq_id*>(&*itr->GetId().front())));
         }
-        retval.push_back(make_pair(static_cast<const CSeq_loc*>(seqloc), scope));
+        retval->push_back(make_pair(seqloc, scope));
 
-        // Check if this seqentry has been added to the scope already
-        CBioseq_Handle bh = scope->GetBioseqHandle(*seqloc);
-        if (!bh) {
-            scope->AddTopLevelSeqEntry(*seq_entry);
-        }
+        // Add this seqentry to the scope
     }
 
     if (lcase_mask) {
         *lcase_mask = NULL;
         BlastMask* last_mask = NULL, *new_mask = NULL;
 
-        for (unsigned int i = 0; i < retval.size(); i++) {
+        for (unsigned int i = 0; i < retval->size(); i++) {
             new_mask = CSeqLoc2BlastMask(mask_loc[i], i);
             if ( !last_mask )
                 *lcase_mask = last_mask = new_mask;
