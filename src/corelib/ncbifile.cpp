@@ -30,13 +30,15 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2001/11/19 23:38:44  vakatov
+ * Fix to compile with SUN WorkShop (and maybe other) compiler(s)
+ *
  * Revision 1.7  2001/11/19 18:10:13  juran
  * Whitespace.
  *
  * Revision 1.6  2001/11/15 16:34:12  ivanov
  * Moved from util to corelib
  *
- * ---------------------------------------------------------------------------
  * Revision 1.5  2001/11/06 14:34:11  ivanov
  * Fixed compile errors in CDir::Contents() under MS Windows
  *
@@ -742,7 +744,7 @@ static const CDirEntry& MacGetIndexedItem(const CDir& container, SInt16 index)
 CDir::TEntries CDir::GetEntries(const string& mask) const
 {
     TEntries contents;
-    string x_mask = mask.empty() ? "*" : mask;
+    string x_mask = mask.empty() ? string("*") : mask;
 
 #if defined NCBI_OS_MSWIN
     // Append to the "path" mask for all files in directory
