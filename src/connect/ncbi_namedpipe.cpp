@@ -671,8 +671,6 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
             eIO_Success) {
             throw "UNIX socket cannot convert to SOCK";
         }
-        m_ReadStatus  = eIO_Success;
-        m_WriteStatus = eIO_Success;
     }
     catch (const char* what) {
         if (sock >= 0) {
@@ -736,8 +734,6 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
                   fcntl(m_LSocket, F_GETFL, 0) | O_NONBLOCK) == -1) {
             throw "UNIX socket set to non-blocking failed";
         }
-        m_ReadStatus  = eIO_Success;
-        m_WriteStatus = eIO_Success;
     }
     catch (const char* what) {
         Close();
@@ -916,7 +912,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
 EIO_Status CNamedPipeHandle::Status(EIO_Event direction)
 {
     if ( !m_IoSocket ) {
-        return eIO_Unknown;
+        return eIO_Closed;
     }
     return SOCK_Status(m_IoSocket, direction);
 }
@@ -1150,6 +1146,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/09/03 14:48:32  ivanov
+ * Fix for previous commit
+ *
  * Revision 1.11  2003/09/03 14:29:58  ivanov
  * Set r/w status to eIO_Success in the CNamedPipeHandle::Open/Create
  *
