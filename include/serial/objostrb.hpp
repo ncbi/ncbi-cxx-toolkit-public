@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/07/02 21:31:48  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.4  1999/06/16 20:35:25  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -76,7 +79,6 @@ public:
     virtual void WriteStd(const float& data);
     virtual void WriteStd(const double& data);
     virtual void WriteStd(const string& data);
-    virtual void WriteStd(char* const& data);
     virtual void WriteStd(const char* const& data);
 
     void WriteNull(void);
@@ -97,6 +99,7 @@ protected:
     virtual void FBegin(Block& block);
     virtual void VNext(const Block& block);
     virtual void VEnd(const Block& block);
+    virtual void StartMember(Member& member, const CMemberId& id);
 
 private:
     TStrings m_Strings;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/02 21:31:47  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.6  1999/07/01 17:55:20  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -89,7 +92,6 @@ public:
     virtual void WriteStd(const float& data);
     virtual void WriteStd(const double& data);
     virtual void WriteStd(const string& data);
-    virtual void WriteStd(char* const& data);
     virtual void WriteStd(const char* const& data);
 
 protected:
@@ -102,7 +104,6 @@ protected:
     virtual void WriteId(const string& str);
 
     void WriteNull(void);
-    void WriteIndex(TIndex index);
     void WriteEscapedChar(char c);
 
     virtual void VBegin(Block& block);

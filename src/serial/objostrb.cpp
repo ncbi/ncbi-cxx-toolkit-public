@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/02 21:32:01  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.9  1999/06/30 16:05:02  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -268,17 +271,6 @@ void CObjectOStreamBinary::WriteStd(const string& data)
     }
 }
 
-void CObjectOStreamBinary::WriteStd(char* const& data)
-{
-    if ( data == 0 ) {
-        WriteNull();
-    }
-    else {
-        WriteByte(CObjectStreamBinaryDefs::eStd_string);
-        WriteString(data);
-    }
-}
-
 void CObjectOStreamBinary::WriteStd(const char* const& data)
 {
     if ( data == 0 ) {
@@ -361,6 +353,11 @@ void CObjectOStreamBinary::VNext(const Block& )
 void CObjectOStreamBinary::VEnd(const Block& )
 {
     WriteByte(CObjectStreamBinaryDefs::eEndOfElements);
+}
+
+void CObjectOStreamBinary::StartMember(Member& , const CMemberId& id)
+{
+    WriteId(id.GetName());
 }
 
 END_NCBI_SCOPE

@@ -1,3 +1,6 @@
+#ifndef OBJSTRASNB__HPP
+#define OBJSTRASNB__HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -30,57 +33,69 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/07/02 21:31:54  vasilche
+* Revision 1.1  1999/07/02 21:31:49  vasilche
 * Implemented reading from ASN.1 binary format.
-*
-* Revision 1.1  1999/06/30 16:04:51  vasilche
-* Added support for old ASN.1 structures.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/memberid.hpp>
 
 BEGIN_NCBI_SCOPE
 
-void CMemberId::SetName(const string& name)
+class CObjectStreamAsnBinaryDefs
 {
-    m_Name = name;
-}
+public:
+    typedef unsigned char TByte;
+    typedef int TTag;
 
-CMemberId* CMemberId::SetTag(TTag tag)
-{
-    m_Tag = tag;
-    return this;
-}
+    enum EClass {
+        eUniversal,
+        eApplication,
+        eContextSpecific,
+        ePrivate
+    };
 
-void CMemberId::SetNext(const CMemberId& id)
-{
-    m_Name = id.GetName();
-    int tag = id.GetTag();
-    if ( tag < 0 ) {
-        ++m_Tag;
-    }
-    else {
-        m_Tag = tag;
-    }
-}
+    enum ETag {
+        eNone = 0,
+        eBoolean = 1,
+        eInteger = 2,
+        eBitString = 3,
+        eOctetString = 4,
+        eNull = 5,
+        eObjectIdentifier = 6,
+        eObjectDescriptor = 7,
+        eExternal = 8,
+        eReal = 9,
+        eEnumerated = 10,
 
-bool CMemberId::operator==(const CMemberId& id) const
-{
-    if ( id.GetTag() < 0 )
-        return GetName() == id.GetName();
-    else
-        return GetTag() == id.GetTag();
-}
+        eSequence = 16,
+        eSequenceOf = eSequence,
+        eSet = 17,
+        eSetOf = eSet,
+        eNumericString = 18,
+        ePrintableString = 19,
+        eTeletextString = 20,
+        eT61String = 20,
+        eVideotextString = 21,
+        eIA5String = 22,
 
-string CMemberId::ToString(void) const
-{
-    if ( m_Name.empty() )
-        return '[' + NStr::IntToString(m_Tag) + ']';
-    else
-        return m_Name;
-}
+        eUTCTime = 23,
+        eGeneralizedTime = 24,
+
+        eGraphicString = 25,
+        eVisibleString = 26,
+        eISO646String = 26,
+        eGeneralString = 27,
+
+        eLongTag = 31
+    };
+
+    enum ERealRadix {
+        eDecimal = 0
+    };
+};
 
 END_NCBI_SCOPE
+
+#endif  /* OBJSTRASNB__HPP */

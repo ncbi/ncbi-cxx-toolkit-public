@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/02 21:31:57  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.12  1999/07/01 17:55:31  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -567,6 +570,11 @@ bool CObjectIStreamBinary::VNext(const Block& )
     }
 }
 
+void CObjectIStreamBinary::StartMember(Member& member)
+{
+    member.SetName(ReadId());
+}
+
 TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStreamBinary::ReadPointer(" << declaredType->GetName() << ")");
@@ -724,7 +732,7 @@ void CObjectIStreamBinary::SkipObjectData(void)
 {
     Block block(*this);
     while ( block.Next() ) {
-        ReadMember();
+        Member m(*this);
         SkipValue();
     }
 }

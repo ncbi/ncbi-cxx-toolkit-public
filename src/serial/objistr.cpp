@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/02 21:31:54  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.10  1999/07/01 17:55:29  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -122,6 +125,10 @@ void CObjectIStream::VEnd(const Block& )
 {
 }
 
+void CObjectIStream::EndMember(const Member& )
+{
+}
+
 CObjectIStream::Block::Block(CObjectIStream& in)
     : m_In(in), m_Fixed(false), m_RandomOrder(false),
       m_Finished(false), m_NextIndex(0), m_Size(0)
@@ -203,11 +210,6 @@ void CObjectIStream::ReadStd(const char*& data)
 string CObjectIStream::ReadId(void)
 {
     return ReadString();
-}
-
-CMemberId CObjectIStream::ReadMember(void)
-{
-    return CMemberId(ReadId());
 }
 
 CObjectIStream::TIndex CObjectIStream::RegisterObject(TObjectPtr object,

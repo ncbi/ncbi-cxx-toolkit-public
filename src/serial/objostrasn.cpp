@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/02 21:31:59  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.7  1999/07/01 17:55:34  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -187,16 +190,6 @@ void CObjectOStreamAsn::WriteStd(const string& data)
     WriteString(data);
 }
 
-void CObjectOStreamAsn::WriteStd(char* const& data)
-{
-    if ( data == 0 ) {
-        WriteNull();
-    }
-    else {
-        WriteString(data);
-    }
-}
-
 void CObjectOStreamAsn::WriteStd(const char* const& data)
 {
     if ( data == 0 ) {
@@ -210,11 +203,6 @@ void CObjectOStreamAsn::WriteStd(const char* const& data)
 void CObjectOStreamAsn::WriteNull(void)
 {
     m_Output << "null";
-}
-
-void CObjectOStreamAsn::WriteIndex(TIndex index)
-{
-    m_Output << index;
 }
 
 void CObjectOStreamAsn::WriteString(const string& str)

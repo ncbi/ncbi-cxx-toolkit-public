@@ -1,5 +1,5 @@
-#ifndef OBJISTRB__HPP
-#define OBJISTRB__HPP
+#ifndef OBJISTRASNB__HPP
+#define OBJISTRASNB__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,44 +33,23 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.7  1999/07/02 21:31:45  vasilche
+* Revision 1.1  1999/07/02 21:31:45  vasilche
 * Implemented reading from ASN.1 binary format.
-*
-* Revision 1.6  1999/06/30 16:04:29  vasilche
-* Added support for old ASN.1 structures.
-*
-* Revision 1.5  1999/06/16 20:35:23  vasilche
-* Cleaned processing of blocks of data.
-* Added input from ASN.1 text format.
-*
-* Revision 1.4  1999/06/15 16:20:02  vasilche
-* Added ASN.1 object output stream.
-*
-* Revision 1.3  1999/06/10 21:06:38  vasilche
-* Working binary output and almost working binary input.
-*
-* Revision 1.2  1999/06/04 20:51:32  vasilche
-* First compilable version of serialization.
-*
-* Revision 1.1  1999/05/19 19:56:25  vasilche
-* Commit just in case.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
 #include <serial/objistr.hpp>
-#include <vector>
+#include <serial/objstrasnb.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CObjectIStreamBinary : public CObjectIStream
+class CObjectIStreamAsnBinary : public CObjectIStream,
+                                public CObjectStreamAsnBinaryDefs
 {
 public:
-    typedef unsigned char TByte;
-
-    CObjectIStreamBinary(CNcbiIstream& in);
+    CObjectIStreamAsnBinary(CNcbiIstream& in);
 
     virtual void ReadStd(char& data);
     virtual void ReadStd(unsigned char& data);
@@ -90,16 +69,37 @@ public:
 
     virtual void SkipValue(void);
 
-    TByte ReadByte(void);
-    void ReadBytes(TByte* bytes, unsigned size);
-    TIndex ReadIndex(void);
-    unsigned ReadSize(void);
+    unsigned char ReadByte(void);
+    signed char ReadSByte(void);
+    void ReadBytes(char* bytes, unsigned size);
     virtual string ReadString(void);
 
+    void ExpectByte(TByte byte);
+
+    ETag ReadSysTag(bool allowLong = false);
+    void BackSysTag(void);
+    void FlushSysTag(bool constructed = false);
+    TTag ReadTag(void);
+
+    ETag ReadSysTag(EClass c, bool constructed);
+    TTag ReadTag(EClass c, bool constructed);
+
+    void ExpectSysTag(ETag tag);
+    void ExpectSysTag(EClass c, bool constructed, ETag tag);
+    bool LastTagWas(EClass c, bool constructed);
+
+    size_t ReadShortLength(void);
+    size_t ReadLength(void);
+
+    void ExpectShortLength(size_t length);
+    void ExpectIndefiniteLength(void);
+    void ExpectEndOfContent(void);
+
 protected:
-    virtual void FBegin(Block& block);
+    virtual void VBegin(Block& block);
     virtual bool VNext(const Block& block);
     virtual void StartMember(Member& member);
+    virtual void EndMember(const Member& member);
 
 private:
     CIObjectInfo ReadObjectPointer(void);
@@ -108,13 +108,21 @@ private:
     void SkipObjectPointer(void);
     void SkipBlock(void);
 
-    vector<string> m_Strings;
-
     CNcbiIstream& m_Input;
+
+    TByte m_LastTagByte;
+    enum ELastTagState {
+        eNoTagRead,
+        eSysTagRead,
+        eLongTagRead,
+        eSysTagBack,
+        eLongTagBack
+    };
+    ELastTagState m_LastTagState;
 };
 
-//#include <objistrb.inl>
+//#include <serial/objistrasnb.inl>
 
 END_NCBI_SCOPE
 
-#endif  /* OBJISTRB__HPP */
+#endif  /* OBJISTRASNB__HPP */

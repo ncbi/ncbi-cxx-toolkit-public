@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/07/02 21:31:51  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.3  1999/07/01 17:55:25  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -374,7 +377,7 @@ void CChoiceValNodeInfo::WriteData(CObjectOStream& out,
 void CChoiceValNodeInfo::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
-    CMemberId id = in.ReadMember();
+    CObjectIStream::Member id(in);
     TMemberIndex index = m_Variants.FindMember(id);
     if ( index < 0 ) {
         THROW1_TRACE(runtime_error,

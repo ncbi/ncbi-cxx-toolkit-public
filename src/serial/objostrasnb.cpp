@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/07/02 21:32:00  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.3  1999/07/01 17:55:35  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -214,6 +217,13 @@ void WriteStdNumber(CObjectOStreamAsnBinary& out, const T& data)
         out.WriteByte(data >> 8);
         out.WriteByte(data);
     }
+    else if ( data >= -0x800000 && data < 0x800000 ) {
+        // three bytes
+        out.WriteShortLength(3);
+        out.WriteByte(data >> 16);
+        out.WriteByte(data >> 8);
+        out.WriteByte(data);
+    }
     else if ( T(-1) >= 0 && (data & (1 << (sizeof(T) * 8 - 1))) != 0 ) {
         // full length unsigned - and doesn't fit in signed place
         out.WriteShortLength(sizeof(data) + 1);
@@ -281,7 +291,7 @@ void CObjectOStreamAsnBinary::WriteStd(const float& data)
     sprintf(buffer, "%.7g", data);
     size_t length = strlen(buffer);
     WriteShortLength(length + 1);
-    WriteByte(0); // decimal
+    WriteByte(eDecimal);
     WriteBytes(buffer, length);
 }
 
@@ -292,7 +302,7 @@ void CObjectOStreamAsnBinary::WriteStd(const double& data)
     sprintf(buffer, "%.15g", data);
     size_t length = strlen(buffer);
     WriteShortLength(length + 1);
-    WriteByte(0); // decimal
+    WriteByte(eDecimal);
     WriteBytes(buffer, length);
 }
 
@@ -310,11 +320,6 @@ void CObjectOStreamAsnBinary::WriteStd(const string& data)
 }
 
 void CObjectOStreamAsnBinary::WriteStd(const char* const& data)
-{
-    WriteString(data);
-}
-
-void CObjectOStreamAsnBinary::WriteStd(char* const& data)
 {
     WriteString(data);
 }
@@ -357,7 +362,7 @@ void CObjectOStreamAsnBinary::WriteOtherTypeReference(TTypeInfo typeInfo)
 
 void CObjectOStreamAsnBinary::VBegin(Block& block)
 {
-    WriteTag(eUniversal, true, block.RandomOrder()? eSet: eSequence);
+    WriteShortTag(eUniversal, true, block.RandomOrder()? eSet: eSequence);
     WriteIndefiniteLength();
 }
 

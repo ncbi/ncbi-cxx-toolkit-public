@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/02 21:31:58  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.10  1999/07/01 17:55:33  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -179,14 +182,14 @@ void CObjectOStream::WriteThisTypeReference(TTypeInfo )
 {
 }
 
+void CObjectOStream::WriteStd(char* const& data)
+{
+    WriteStd(static_cast<const char* const&>(data));
+}
+
 void CObjectOStream::WriteId(const string& id)
 {
     WriteString(id);
-}
-
-void CObjectOStream::StartMember(Member& , const CMemberId& id)
-{
-    WriteId(id.GetName());
 }
 
 void CObjectOStream::EndMember(const Member& )

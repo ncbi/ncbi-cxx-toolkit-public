@@ -1,11 +1,12 @@
 #include "testserial.hpp"
 #include "serialobject.hpp"
 #include <serial/serial.hpp>
-#include <serial/objostrb.hpp>
 #include <serial/objistrb.hpp>
+#include <serial/objostrb.hpp>
+#include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
-#include <serial/objostrasn.hpp>
 #include <serial/objistrasn.hpp>
+#include <serial/objostrasn.hpp>
 #include "webenv.hpp"
 
 #include <asn.h>
@@ -35,10 +36,12 @@ int CTestSerial::Run(void)
                     Write(&env, GetSequenceTypeRef(&env).Get());
             }
             {
-/*
-                CObjectIStreamAsnBinary(ofstream("webenv.bini")).
+                CObjectIStreamAsnBinary(ifstream("webenv.bin")).
                     Read(&env, GetSequenceTypeRef(&env).Get());
-*/
+            }
+            {
+                CObjectOStreamAsn(ofstream("webenv.ento")).
+                    Write(&env, GetSequenceTypeRef(&env).Get());
             }
         }
         

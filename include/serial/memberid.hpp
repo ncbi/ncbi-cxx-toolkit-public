@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/07/02 21:31:43  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.1  1999/06/30 16:04:23  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -54,6 +57,7 @@ public:
     string ToString(void) const;
 
     const string& GetName(void) const;
+    void SetName(const string& name);
 
     TTag GetTag(void) const;
     CMemberId* SetTag(TTag tag);

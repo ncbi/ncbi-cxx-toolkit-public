@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/02 21:31:52  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.13  1999/07/01 17:55:26  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -168,7 +171,7 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
     if ( RandomOrder() ) {
         set<TMemberIndex> read;
         while ( block.Next() ) {
-            CMemberId memberId = in.ReadMember();
+            CObjectIStream::Member memberId(in);
             TMemberIndex index = m_Members.FindMember(memberId);
             if ( index < 0 ) {
                 ERR_POST("unknown member: " +
@@ -212,7 +215,7 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
         TMemberIndex currentIndex = 0, size = m_MembersInfo.size();
         CMemberId currentId;
         while ( block.Next() ) {
-            CMemberId memberId = in.ReadMember();
+            CObjectIStream::Member memberId(in);
             // find desired member
             const CMemberInfo* memberInfo;
             TTypeInfo typeInfo;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/02 21:31:46  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.10  1999/07/01 17:55:20  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -100,8 +103,8 @@ public:
     virtual void WriteStd(const float& data) = 0;
     virtual void WriteStd(const double& data) = 0;
     virtual void WriteStd(const string& data) = 0;
-    virtual void WriteStd(char* const& data) = 0;
     virtual void WriteStd(const char* const& data) = 0;
+    virtual void WriteStd(char* const& data);
 
     // object level writers
     void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
@@ -200,7 +203,7 @@ protected:
     virtual void FEnd(const Block& block);
     virtual void VEnd(const Block& block);
     // write member name
-    virtual void StartMember(Member& member, const CMemberId& id);
+    virtual void StartMember(Member& member, const CMemberId& id) = 0;
     virtual void EndMember(const Member& member);
 
     // low level writers

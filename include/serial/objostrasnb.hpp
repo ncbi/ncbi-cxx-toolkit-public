@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/07/02 21:31:47  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.3  1999/07/01 17:55:21  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -48,15 +51,14 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objstrasnb.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CObjectOStreamAsnBinary : public CObjectOStream
+class CObjectOStreamAsnBinary : public CObjectOStream,
+                                public CObjectStreamAsnBinaryDefs
 {
 public:
-    typedef unsigned char TByte;
-    typedef int TTag;
-
     CObjectOStreamAsnBinary(CNcbiOstream& out);
     virtual ~CObjectOStreamAsnBinary(void);
 
@@ -73,52 +75,11 @@ public:
     virtual void WriteStd(const float& data);
     virtual void WriteStd(const double& data);
     virtual void WriteStd(const string& data);
-    virtual void WriteStd(char* const& data);
     virtual void WriteStd(const char* const& data);
 
     void WriteNull(void);
     void WriteByte(TByte byte);
     void WriteBytes(const char* bytes, size_t size);
-
-    enum EClass {
-        eUniversal,
-        eApplication,
-        eContextSpecific,
-        ePrivate
-    };
-
-    enum ETag {
-        eNone = 0,
-        eBoolean = 1,
-        eInteger = 2,
-        eBitString = 3,
-        eOctetString = 4,
-        eNull = 5,
-        eObjectIdentifier = 6,
-        eObjectDescriptor = 7,
-        eExternal = 8,
-        eReal = 9,
-        eEnumerated = 10,
-
-        eSequence = 16,
-        eSequenceOf = eSequence,
-        eSet = 17,
-        eSetOf = eSet,
-        eNumericString = 18,
-        ePrintableString = 19,
-        eTeletextString = 20,
-        eT61String = 20,
-        eVideotextString = 21,
-        eIA5String = 22,
-
-        eUTCTime = 23,
-        eGeneralizedTime = 24,
-
-        eGraphicString = 25,
-        eVisibleString = 26,
-        eISO646String = 26,
-        eGeneralString = 27
-    };
 
     void WriteTag(EClass c, bool constructed, TTag index);
     void WriteShortTag(EClass c, bool constructed, TTag index);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/02 21:31:43  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.10  1999/07/01 17:55:19  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -129,14 +132,25 @@ public:
 
     virtual void SkipValue(void);
 
-    virtual CMemberId ReadMember(void);
-
+    class Member : public CMemberId {
+    public:
+        Member(CObjectIStream& in)
+            : m_In(in)
+            {
+                in.StartMember(*this);
+            }
+        ~Member(void)
+            {
+                m_In.EndMember(*this);
+            }
+    private:
+        CObjectIStream& m_In;
+    };
     // block interface
     enum EFixed {
         eFixed
     };
-    class Block
-    {
+    class Block {
     public:
         Block(CObjectIStream& in);
         Block(CObjectIStream& in, EFixed eFixed);
@@ -206,6 +220,7 @@ public:
 protected:
     // block interface
     friend class Block;
+    friend class Member;
     static void SetNonFixed(Block& block)
         {
             block.m_Fixed = false;
@@ -222,6 +237,8 @@ protected:
     virtual bool VNext(const Block& block);
     virtual void FEnd(const Block& block);
     virtual void VEnd(const Block& block);
+    virtual void StartMember(Member& member) = 0;
+    virtual void EndMember(const Member& member);
 
 protected:
     // low level readers

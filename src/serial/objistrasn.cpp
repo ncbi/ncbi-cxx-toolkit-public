@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/07/02 21:31:55  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.8  1999/07/01 17:55:30  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -460,6 +463,11 @@ bool CObjectIStreamAsn::VNext(const Block& block)
     else {
         return Expect(',', '}', true);
     }
+}
+
+void CObjectIStreamAsn::StartMember(Member& member)
+{
+    member.SetName(ReadId());
 }
 
 TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)

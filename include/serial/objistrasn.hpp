@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/07/02 21:31:44  vasilche
+* Implemented reading from ASN.1 binary format.
+*
 * Revision 1.5  1999/06/30 16:04:28  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -106,6 +109,7 @@ public:
 protected:
     virtual void VBegin(Block& block);
     virtual bool VNext(const Block& block);
+    virtual void StartMember(Member& member);
 
 private:
     CIObjectInfo ReadObjectPointer(void);
