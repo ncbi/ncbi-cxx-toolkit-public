@@ -40,6 +40,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_seg.h>
 #include <algo/blast/core/blast_filter.h>
 
+/** Natural log of factorials: 0!, 1!, 2!, 3! */
 double lnfact[] = 
   {
    0.000000, 0.000000, 0.693147, 1.791759, 3.178054, 4.787492, 6.579251, 8.525161, 
@@ -1296,7 +1297,7 @@ double lnfact[] =
   }; 
 
 
-#define AA20    2
+#define AA20    2  /** #define identifying protein alphabet */
 
 
 
@@ -1317,16 +1318,18 @@ typedef struct Alpha
 /** General sequence information */
 typedef struct SSequence
   {
-   struct SSequence* parent;
+   struct SSequence* parent;   /**< SSequence window that encompasses the current one */
    char* seq;                  /**< sequence in ncbistdaa. */
    Alpha* palpha;              /**< alphabet information */
    Int4 start;                 /**< starting offset to seg. */
    Int4 length;                /**< Length of sequence to be segged. */
-   Int4 bogus;                 
-   Boolean punctuation;
-   Int4* composition;
-   Int4* state;
-   double entropy;
+   Int4 bogus;                 /**< tracks number of non-allowed residues (e.g., X) */
+   Boolean punctuation;        /**< FIXME: always FALSE, never set to TRUE? */
+   Int4* composition;          /**< totals number of each type of residue */
+   Int4* state;                /**< "state vector as described on pg. 151 of Wootton and Federhen
+                                  (Comput. Chem. 17, 149 (1993)).  Tracks number of each residue, 
+                                  like composition, but without gaps in array. */
+   double entropy;             /**< entropy of what this array refers to. */
 } SSequence;
 
 /** List of sequence segments (hits) */
@@ -1337,9 +1340,8 @@ typedef struct SSeg
    struct SSeg *next;  /**< next object in linked list */
   } SSeg;
 
-/*---------------------------------------------------------------(SeqNew)---*/
 /** Initializes SSequence structure */
-static SSequence* SeqNew(void)
+static SSequence* SSequenceNew(void)
 {
    SSequence* seq;
 
@@ -1531,24 +1533,18 @@ static SSequence* openwin(SSequence* parent, Int4 start, Int4 length)
       return((SSequence*) NULL);
      }
 
-   win = (SSequence*) calloc(1, sizeof(SSequence));
+      win = (SSequence*) calloc(1, sizeof(SSequence));
 
 /*---                                          ---[set links, up and down]---*/
 
-   win->parent = parent;
-   win->palpha = parent->palpha;
+      win->parent = parent;
+      win->palpha = parent->palpha;
 
 /*---                          ---[install the local copy of the sequence]---*/
 
-   win->start = start;
-   win->length = length;
-#if 0                                                    /* Hi Warren! */
-   win->seq = (char*) calloc(length + 1, sizeof(char));
-   memcpy(win->seq, (parent->seq)+start, length);
-   win->seq[length] = '\0';
-#else
+      win->start = start;
+      win->length = length;
 	win->seq = parent->seq + start;
-#endif
 
         win->bogus = 0;
 	win->punctuation = FALSE;
@@ -1593,6 +1589,14 @@ static double entropy(Int4* sv)
 
 /*----------------------------------------------------------(decrementsv)---*/
 
+
+
+/** Decrements the value in the Int4 array for every element that matches class.
+ * There is also another criteria that the next element must have a vlaue
+ * less than class.
+ * @param sv the array to be examined and decremented [in|out]
+ * @param class criteria for decrementing an element [in]
+ */
 static void decrementsv(Int4* sv, Int4 class)
 
 {
@@ -1606,8 +1610,10 @@ static void decrementsv(Int4* sv, Int4 class)
 	}
 }
 
-/*----------------------------------------------------------(incrementsv)---*/
-
+/** Increments the value in the Int4 array for every element that matches class.
+ * @param sv the array to be examined and incremented [in|out]
+ * @param class criteria for incrementing an element [in]
+ */
 static void incrementsv(Int4* sv, Int4 class)
 
 {
@@ -1809,15 +1815,20 @@ static Int4 findhi(Int4 i, Int4 limit, double hicut, double* H)
    return(j-1);
   }
 
-/*---------------------------------------------------------------(lnperm)---*/
 
-static double lnperm(Int4* sv, Int4 tot)
+/** calculate "K2" entroy per equation 3 of Wootton and Federhen
+ * (Comput. Chem. 17, 149 (1993).
+ * @param sv state vector [in]
+ * @param window_length length of window being examined
+ * @return K2
+ */ 
+static double lnperm(const Int4* sv, Int4 window_length)
 
   {
    double ans;
    Int4 i;
 
-   ans = lnfact[tot];
+   ans = lnfact[window_length];
 
    for (i=0; sv[i]!=0; i++) 
      {
@@ -1827,9 +1838,15 @@ static double lnperm(Int4* sv, Int4 tot)
    return(ans);
   }
 
-/*----------------------------------------------------------------(lnass)---*/
 
-static double lnass(Int4* sv, Int4 alphasize)
+/** Calculates natural log of "Farben" which is the number of compositions
+ * in any complexity state.  See equation 1 of Wootton and Federhen
+ * (Comput. Chem. 17, 149 (1993)).
+ * @param sv state vector [in]
+ * @param alphasize total letters in alphabet [in]
+ * @return number of compositions as described above
+ */
+static double lnass(const Int4* sv, Int4 alphasize)
 
 {
 	double	ans;
@@ -1871,9 +1888,15 @@ static double lnass(Int4* sv, Int4 alphasize)
 	return ans;
 }
 
-/*--------------------------------------------------------------(getprob)---*/
 
-static double getprob(Int4* sv, Int4 total, Alpha* palpha)
+/** This function calculates the natural log of the value P sub 0 from 
+ * equation 3 of Wootton and Federhen (Methods Enzymol. 1996;266:554-71).
+ * @param sv state vector [in]
+ * @param total window length of area examined [in]
+ * @param palpha structure for alphabet information [in]
+ * @return log of P sub 0 as mentioned above
+ */
+static double getprob(const Int4* sv, Int4 total, const Alpha* palpha)
 
   {
    double ans, ans1, ans2 = 0, totseq;
@@ -2153,9 +2176,7 @@ static Alpha* AA20alpha_std (void)
    return (palpha);
 }
 
-/** Allocated SeqParameter struct for proteins and fills with default values.
- * @return pointer to SegParameters
- */
+/* Comments in blast_seg.h */
 SegParameters* SegParametersNewAa (void)
 {
    SegParameters* sparamsp;
@@ -2201,10 +2222,7 @@ static void SegParametersCheck (SegParameters* sparamsp)
    return;
 }
 
-/** Free SegParameters structure
- * @param sparamsp object to be freed [in]
- */
-
+/* Comments in blast_seg.h */
 void SegParametersFree(SegParameters* sparamsp)
 {
    if (!sparamsp) 
@@ -2213,6 +2231,7 @@ void SegParametersFree(SegParameters* sparamsp)
    return;
 }
 
+/* comments in blast_seg.h */
 Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
                      SegParameters* sparamsp, BlastSeqLoc** seg_locs)
 {
@@ -2239,7 +2258,7 @@ Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
    
    /* make an old-style genwin sequence window object */
     
-   seqwin = SeqNew();
+   seqwin = SSequenceNew();
    seqwin->seq = (char*) sequence;
    seqwin->length = length;
    seqwin->palpha = AA20alpha_std();
