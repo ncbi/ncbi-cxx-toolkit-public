@@ -73,9 +73,6 @@ static char const rcsid[] =
  */
 static SBLASTMatrixStructure* BlastMatrixAllocate (Int2 alphabet_size);
 
-/* performs sump calculation, used by BlastSumPStd */
-static double BlastSumPCalc (int r, double s);
-
 #define BLAST_SCORE_RANGE_MAX   (BLAST_SCORE_MAX - BLAST_SCORE_MIN) /**< maximum allowed range of BLAST scores. */
 
 /****************************************************************************
@@ -93,13 +90,11 @@ of K, so high accuracy is generally unwarranted.
 #define BLAST_KARLIN_LAMBDA0_DEFAULT    0.5 /**< Initial guess for the value of Lambda in BlastKarlinLambdaNR */
 
 #define BLAST_KARLIN_K_ITER_MAX 100 /**< upper limit on iterations for BlastKarlinLHtoK */
-#define BLAST_SUMP_EPSILON_DEFAULT 0.002 /**< accuracy for SumP calculations */
 
 
 typedef double array_of_8[8]; /**< Holds values (gap-opening, extension, etc.) for a matrix. */
 
 /** Used to temporarily store matrix values for retrieval. */
-
 typedef struct MatrixInfo {
    char*    name;       /**< name of matrix (e.g., BLOSUM90). */
    array_of_8  *values;    /**< The values (gap-opening, extension etc.). */
@@ -2958,36 +2953,160 @@ BlastKarlinPtoE(double p)
         return -BLAST_Log1p(-p);
 }
 
-static double  tab2[] = { /* table for r == 2 */
-0.01669,  0.0249,   0.03683,  0.05390,  0.07794,  0.1111,   0.1559,   0.2146,   
-0.2890,   0.3794,   0.4836,   0.5965,   0.7092,   0.8114,   0.8931,   0.9490,   
-0.9806,   0.9944,   0.9989
-      };  /** Values from eqn ? for two segments. */
+/** Internal data structure used by Romberg integration callbacks. */
+typedef struct SRombergCbackArgs {
+   int num_hsps;          /**< number of HSPs */
+   int num_hsps_minus_2;  /**< number of HSPs minus 2 */
+   double adj1;              /**< Nat log of r**(r-2)/((r-1)! (r-2)!) */
+   double adj2;              /**< adj1 - score */
+   double sdvir;             /**< score divided by number of HSPs. */
+   double epsilon;           /**< convergence criteria for Romberg integration. */
+} SRombergCbackArgs;
 
-static double  tab3[] = { /* table for r == 3 */
-0.9806,   0.9944,   0.9989,   0.0001682,0.0002542,0.0003829,0.0005745,0.0008587,
-0.001278, 0.001893, 0.002789, 0.004088, 0.005958, 0.008627, 0.01240,  0.01770,  
-0.02505,  0.03514,  0.04880,  0.06704,  0.09103,  0.1220,   0.1612,   0.2097,   
-0.2682,   0.3368,   0.4145,   0.4994,   0.5881,   0.6765,   0.7596,   0.8326,   
-0.8922,   0.9367,   0.9667,   0.9846,   0.9939,   0.9980
-      };
 
-static double  tab4[] = { /* table for r == 4 */
-2.658e-07,4.064e-07,6.203e-07,9.450e-07,1.437e-06,2.181e-06,3.302e-06,4.990e-06,
-7.524e-06,1.132e-05,1.698e-05,2.541e-05,3.791e-05,5.641e-05,8.368e-05,0.0001237,
-0.0001823,0.0002677,0.0003915,0.0005704,0.0008275,0.001195, 0.001718, 0.002457,
-0.003494, 0.004942, 0.006948, 0.009702, 0.01346,  0.01853,  0.02532,  0.03431,
-0.04607,  0.06128,  0.08068,  0.1051,   0.1352,   0.1719,   0.2157,   0.2669,
-0.3254,   0.3906,   0.4612,   0.5355,   0.6110,   0.6849,   0.7544,   0.8168,
-0.8699,   0.9127,   0.9451,   0.9679,   0.9827,   0.9915,   0.9963
-      };
+/** Callback for the Romberg integration function.
+ *  This is the second of the double integrals that  
+ *  BlastSumPCalc calculates This is eqn. 4 of Karlin 
+ *  and Altschul, PNAS USA, 90, 5873-5877 (1993).
+ * 
+ * @param x variable to integrate over [in]
+ * @parm vp pointer to parameters [in]
+ * @return value of integrand
+ */  
+static double
+s_OuterIntegralCback(double x, void* vp)
+{
+   SRombergCbackArgs* callback_args = (SRombergCbackArgs*) vp;
+   double y = exp(x - callback_args->sdvir);
 
-static double* table[] = { tab2, tab3, tab4 }; /** all three tables for different segment values. */
-static short tabsize[] = { DIM(tab2)-1, DIM(tab3)-1, DIM(tab4)-1 };  /** sizes of tab2, tab3, tab4 */
+   if (y == BLASTKAR_HUGE_VAL)
+      return 0.;
 
-static double f (double,void*);
-static double g (double,void*);
+   if (callback_args->num_hsps_minus_2 == 0)
+      return exp(callback_args->adj2 - y);
+   if (x == 0.)
+      return 0.;
+   return exp((callback_args->num_hsps_minus_2)*log(x) + callback_args->adj2 - y);
+}
 
+/** Callback for the Romberg integration function.
+ *  This is the first of the double integrals that  
+ *  BlastSumPCalc calculates.  This is the integral 
+ *  described in the paragraph after eqn. 4 of Karlin 
+ *  and Altschul, PNAS USA, 90, 5873-5877 (1993).
+ * 
+ * @param s variable to integrate over [in]
+ * @parm vp pointer to parameters [in]
+ * @return value of integrand
+ */  
+static double
+s_InnerIntegralCback(double s, void* vp)
+{
+   double   mx;
+   SRombergCbackArgs* callback_args = (SRombergCbackArgs*) vp;
+   
+   callback_args->adj2 = callback_args->adj1 - s;
+   callback_args->sdvir = s / callback_args->num_hsps;
+   mx = (s > 0. ? callback_args->sdvir + 3. : 3.);
+   return BLAST_RombergIntegrate(s_OuterIntegralCback, vp, 0., mx, callback_args->epsilon, 0, 1);
+}
+
+/**
+ *
+ *   Evaluate the following double integral, where r = number of segments
+ *
+ *   and s = the adjusted score in nats:
+ *
+ *                   (r-2)         oo           oo
+ *    Prob(r,s) =   r              -            -   (r-2)
+ *                -------------   |   exp(-y)  |   x   exp(-exp(x - y/r)) dx dy
+ *                (r-1)! (r-2)!  U            U
+ *                               s            0
+ * @param r number of segments
+ * @param s adjusted score in nats
+ * @return P value
+ */
+static double
+s_BlastSumPCalc(int r, double s)
+{
+   int      r1, itmin;
+   double   t, d;
+   double   mean, stddev, stddev4;
+   double   logr;
+   SRombergCbackArgs callback_args;
+   const double kSumpEpsilon = 0.002;
+
+   if (r == 1) {
+      if (s > 8.)
+         return exp(-s);
+      return -BLAST_Expm1(-exp(-s));
+   }
+   if (r < 1)
+      return 0.;
+
+   if (r < 8) {
+      if (s <= -2.3*r)
+         return 1.;
+   }
+   else if (r < 15) {
+         if (s <= -2.5*r)
+            return 1.;
+   }
+   else if (r < 27) {
+         if (s <= -3.0*r)
+            return 1.;
+   }
+   else if (r < 51) {
+         if (s <= -3.4*r)
+            return 1.;
+   }
+   else if (r < 101) {
+         if (s <= -4.0*r)
+            return 1.;
+   }
+
+   /* stddev in the limit of infinite r, but quite good for even small r */
+   stddev = sqrt(r);
+   stddev4 = 4.*stddev;
+   r1 = r - 1;
+
+   if (r > 100) {
+      /* Calculate lower bound on the mean using inequality log(r) <= r */
+      double est_mean = -r * r1;
+      if (s <= est_mean - stddev4)
+         return 1.;
+   }
+
+   /* mean is rather close to the mode, and the mean is readily calculated */
+   /* mean in the limit of infinite r, but quite good for even small r */
+   logr = log(r);
+   mean = r * (1. - logr) - 0.5;
+   if (s <= mean - stddev4)
+      return 1.;
+
+   if (s >= mean) {
+      t = s + 6.*stddev;
+      itmin = 1;
+   }
+   else {
+      t = mean + 6.*stddev;
+      itmin = 2;
+   }
+
+   memset((void *)&callback_args, 0, sizeof(callback_args));
+   callback_args.num_hsps = r;
+   callback_args.num_hsps_minus_2 = r - 2;
+   callback_args.adj1 = callback_args.num_hsps_minus_2*logr - BLAST_LnGammaInt(r1) - BLAST_LnGammaInt(r);
+   callback_args.epsilon = kSumpEpsilon;
+
+   do {
+      d = BLAST_RombergIntegrate(s_InnerIntegralCback, &callback_args, s, t, callback_args.epsilon, 0, itmin);
+      if (d == BLASTKAR_HUGE_VAL)
+         return d;
+   } while (s < mean && d < 0.4 && itmin++ < 4);
+
+   return (d < 1. ? d : 1.);
+}
 
 /** Estimate the Sum P-value by calculation or interpolation, as appropriate.
  * Approx. 2-1/2 digits accuracy minimum throughout the range of r, s.
@@ -2996,8 +3115,32 @@ static double g (double,void*);
  * @return p-value 
 */
 static double
-BlastSumP(Int4 r, double s)
+s_BlastSumP(Int4 r, double s)
 {
+    static const double  kTab2[] = { /* table for r == 2 */
+         0.01669,  0.0249,   0.03683,  0.05390,  0.07794,  0.1111,   0.1559,   0.2146,   
+         0.2890,   0.3794,   0.4836,   0.5965,   0.7092,   0.8114,   0.8931,   0.9490,   
+         0.9806,   0.9944,   0.9989
+         };  
+    static const double  kTab3[] = { /* table for r == 3 */
+         0.9806,   0.9944,   0.9989,   0.0001682,0.0002542,0.0003829,0.0005745,0.0008587,
+         0.001278, 0.001893, 0.002789, 0.004088, 0.005958, 0.008627, 0.01240,  0.01770,  
+         0.02505,  0.03514,  0.04880,  0.06704,  0.09103,  0.1220,   0.1612,   0.2097,   
+         0.2682,   0.3368,   0.4145,   0.4994,   0.5881,   0.6765,   0.7596,   0.8326,   
+         0.8922,   0.9367,   0.9667,   0.9846,   0.9939,   0.9980
+         };
+   static const double  kTab4[] = { /* table for r == 4 */
+         2.658e-07,4.064e-07,6.203e-07,9.450e-07,1.437e-06,2.181e-06,3.302e-06,4.990e-06,
+         7.524e-06,1.132e-05,1.698e-05,2.541e-05,3.791e-05,5.641e-05,8.368e-05,0.0001237,
+         0.0001823,0.0002677,0.0003915,0.0005704,0.0008275,0.001195, 0.001718, 0.002457,
+         0.003494, 0.004942, 0.006948, 0.009702, 0.01346,  0.01853,  0.02532,  0.03431,
+         0.04607,  0.06128,  0.08068,  0.1051,   0.1352,   0.1719,   0.2157,   0.2669,
+         0.3254,   0.3906,   0.4612,   0.5355,   0.6110,   0.6849,   0.7544,   0.8168,
+         0.8699,   0.9127,   0.9451,   0.9679,   0.9827,   0.9915,   0.9963
+         };
+   const double* kTable[] = { kTab2, kTab3, kTab4 }; 
+   const int kTabsize[] = { DIM(kTab2)-1, DIM(kTab3)-1, DIM(kTab4)-1 };  /* sizes of tab2, tab3, tab4 */
+
    if (r == 1)
       return -BLAST_Expm1(-exp(-s));
 
@@ -3017,147 +3160,13 @@ BlastSumP(Int4 r, double s)
          /* interpolate */
          i = (Int4) (a = s+s+(4*r));
          a -= i;
-         i = tabsize[r2 = r - 2] - i;
-         return a*table[r2][i-1] + (1.-a)*table[r2][i];
+         i = kTabsize[r2 = r - 2] - i;
+         return a*kTable[r2][i-1] + (1.-a)*kTable[r2][i];
       }
       return 1.;
    }
 
-   return BlastSumPCalc(r, s);
-}
-
-/**
- *
- *   Evaluate the following double integral, where r = number of segments
- *
- *   and s = the adjusted score in nats:
- *
- *                   (r-2)         oo           oo
- *    Prob(r,s) =   r              -            -   (r-2)
- *                -------------   |   exp(-y)  |   x   exp(-exp(x - y/r)) dx dy
- *                (r-1)! (r-2)!  U            U
- *                               s            0
- * @param r number of segments
- * @param s adjusted score in nats
- * @return P value
- */
-static double
-BlastSumPCalc(int r, double s)
-{
-   int      r1, itmin;
-   double   t, d, epsilon;
-   double   est_mean, mean, stddev, stddev4;
-   double   xr, xr1, xr2, logr;
-   double   args[6];
-
-   epsilon = BLAST_SUMP_EPSILON_DEFAULT; /* accuracy for SumP calcs. */
-
-   if (r == 1) {
-      if (s > 8.)
-         return exp(-s);
-      return -BLAST_Expm1(-exp(-s));
-   }
-   if (r < 1)
-      return 0.;
-
-   xr = r;
-
-   if (r < 8) {
-      if (s <= -2.3*xr)
-         return 1.;
-   }
-   else if (r < 15) {
-         if (s <= -2.5*xr)
-            return 1.;
-   }
-   else if (r < 27) {
-         if (s <= -3.0*xr)
-            return 1.;
-   }
-   else if (r < 51) {
-         if (s <= -3.4*xr)
-            return 1.;
-   }
-   else if (r < 101) {
-         if (s <= -4.0*xr)
-            return 1.;
-   }
-
-   /* stddev in the limit of infinite r, but quite good for even small r */
-   stddev = sqrt(xr);
-   stddev4 = 4.*stddev;
-   xr1 = r1 = r - 1;
-
-   if (r > 100) {
-      /* Calculate lower bound on the mean using inequality log(r) <= r */
-      est_mean = -xr * xr1;
-      if (s <= est_mean - stddev4)
-         return 1.;
-   }
-
-   /* mean is rather close to the mode, and the mean is readily calculated */
-   /* mean in the limit of infinite r, but quite good for even small r */
-   logr = log(xr);
-   mean = xr * (1. - logr) - 0.5;
-   if (s <= mean - stddev4)
-      return 1.;
-
-   if (s >= mean) {
-      t = s + 6.*stddev;
-      itmin = 1;
-   }
-   else {
-      t = mean + 6.*stddev;
-      itmin = 2;
-   }
-
-#define ARG_R args[0]    /**< number of HSPs */
-#define ARG_R2 args[1]   /**< number of HSPs - 2. */
-#define ARG_ADJ1 args[2]
-#define ARG_ADJ2 args[3]  
-#define ARG_SDIVR args[4]  /**< score divided by number of HSPs. */
-#define ARG_EPS args[5]    /**< Required accuracy of SumP calcs. */
-
-   ARG_R = xr;
-   ARG_R2 = xr2 = r - 2;
-   ARG_ADJ1 = xr2*logr - BLAST_LnGammaInt(r1) - BLAST_LnGammaInt(r);
-   ARG_EPS = epsilon;
-
-   do {
-      d = BLAST_RombergIntegrate(g, args, s, t, epsilon, 0, itmin);
-      if (d == BLASTKAR_HUGE_VAL)
-         return d;
-   } while (s < mean && d < 0.4 && itmin++ < 4);
-
-   return (d < 1. ? d : 1.);
-}
-
-static double
-g(double s, void* vp)
-{
-   register double*  args = vp;
-   double   mx;
-   
-   ARG_ADJ2 = ARG_ADJ1 - s;
-   ARG_SDIVR = s / ARG_R;  /* = s / r */
-   mx = (s > 0. ? ARG_SDIVR + 3. : 3.);
-   return BLAST_RombergIntegrate(f, vp, 0., mx, ARG_EPS, 0, 1);
-}
-
-static double
-f(double x, void* vp)
-{
-   register double*  args = vp;
-   register double   y;
-
-   y = exp(x - ARG_SDIVR);
-   if (y == BLASTKAR_HUGE_VAL)
-      return 0.;
-   if (ARG_R2 == 0.)
-      return exp(ARG_ADJ2 - y);
-   if (x == 0.)
-      return 0.;
-   return exp(ARG_R2*log(x) + ARG_ADJ2 - y);
+   return s_BlastSumPCalc(r, s);
 }
 
 /*
@@ -3202,7 +3211,7 @@ BLAST_SmallGapSumE(
 
         xsum -= BLAST_LnFactorial((double) num);
 
-        sum_p = BlastSumP(num, xsum);
+        sum_p = s_BlastSumP(num, xsum);
         sum_e = BlastKarlinPtoE(sum_p) *
             ((double) searchsp_eff / (double) pair_search_space);
     }
@@ -3260,7 +3269,7 @@ BLAST_UnevenGapSumE(Int4 query_start_points, Int4 subject_start_points,
                      log((double) subject_start_points));
         xsum -= BLAST_LnFactorial((double) num);
 
-        sum_p = BlastSumP(num, xsum);
+        sum_p = s_BlastSumP(num, xsum);
         sum_e = BlastKarlinPtoE(sum_p) *
             ((double) searchsp_eff / (double) pair_search_space);
     }
@@ -3309,7 +3318,7 @@ BLAST_LargeGapSumE(
       xsum -= num*log(lcl_subject_length*lcl_query_length)
         - BLAST_LnFactorial((double) num);
       
-      sum_p = BlastSumP(num, xsum);
+      sum_p = s_BlastSumP(num, xsum);
       
       sum_e = BlastKarlinPtoE(sum_p) *
           ((double) searchsp_eff / (lcl_query_length * lcl_subject_length));
@@ -3633,6 +3642,15 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.110  2005/01/27 13:17:16  madden
+ * 1.) moved #define BLAST_SUMP_EPSILON_DEFAULT to a const variable within s_BlastSumPCalc.
+ * 2.) made static arrays tab[234] etc. const static arrays within one function.
+ * 3.) introduced structure SRombergCbackArgs to replace confusing use of #defines starting with ARG_
+ * 4.) renamed Romberg callbacks f and g to s_OuterIntegralCback and s_InnerIntegralCback
+ * 5.) cleaned up and removed extra variables from s_BlastSumPCalc
+ * 6.) renamed some static functions to start with s_ per C++ toolkit naming convention.
+ * 7.) added doxygen comments
+ *
  * Revision 1.109  2005/01/25 17:30:24  madden
  * Doxygen fixes
  *
