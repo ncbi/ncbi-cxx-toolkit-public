@@ -14083,11 +14083,14 @@ done
 
 ncbicfg="$builddir/corelib/ncbicfg.c"
 if test -f "$ncbicfg.last" && cmp -s "$ncbicfg.last" "$ncbicfg"; then
-   echo "$ncbicfg" is unchanged.
+   echo "$ncbicfg" is unchanged
    touch -r "$ncbicfg.last" "$ncbicfg"
-else
+elif test -f "$ncbicfg"; then
+   echo "$ncbicfg" is updated
    rm -f "$ncbicfg.last"
    cp -p "$ncbicfg" "$ncbicfg.last"
+else
+   echo "$ncbicfg" is not present
 fi
 
 if test -n "$with_extra_action" ; then

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.91 2002/06/10 21:20:44 ucko Exp $
+#  $Id: configure.ac,v 1.92 2002/06/11 18:13:01 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2773,11 +2773,14 @@ done
 dnl Avoid gratuitous relinking
 ncbicfg="$builddir/corelib/ncbicfg.c"
 if test -f "$ncbicfg.last" && cmp -s "$ncbicfg.last" "$ncbicfg"; then
-   echo "$ncbicfg" is unchanged.
+   echo "$ncbicfg" is unchanged
    touch -r "$ncbicfg.last" "$ncbicfg"
-else
+elif test -f "$ncbicfg"; then
+   echo "$ncbicfg" is updated
    rm -f "$ncbicfg.last"
    cp -p "$ncbicfg" "$ncbicfg.last"
+else
+   echo "$ncbicfg" is not present
 fi
 
 dnl execute extra-action
