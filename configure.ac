@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.153 2002/12/12 19:39:31 ucko Exp $
+#  $Id: configure.ac,v 1.154 2002/12/12 19:59:08 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1543,7 +1543,7 @@ fi
 
 AC_LANG_PUSH(C)
 # some of these can lose in C++ due to the way autoconf works
-AC_CHECK_FUNCS(strcasecmp strdup sysmp timegm atoll vasprintf)
+AC_CHECK_FUNCS(strcasecmp strdup sysmp timegm atoll vasprintf getpagesize)
 AC_LANG_POP(C)
 
 AC_CACHE_CHECK([for Linux-like sysinfo with 1 arg], ncbi_cv_func_sysinfo_1,

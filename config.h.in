@@ -38,6 +38,9 @@
 /* Define to 1 if you have the `getnameinfo' function. */
 #undef HAVE_GETNAMEINFO
 
+/* Define to 1 if you have the `getpagesize' function. */
+#undef HAVE_GETPAGESIZE
+
 /* If you have the `getservbyname_r' function, define to the number of
    arguments it takes (normally 4, 5 or 6). */
 #undef HAVE_GETSERVBYNAME_R
