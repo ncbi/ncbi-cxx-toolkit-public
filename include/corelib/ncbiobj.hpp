@@ -112,16 +112,19 @@ protected:
 /// CObject inherits from CDebugDumpable the ability to "dump" diagnostic
 /// information useful for debugging.
 
-class NCBI_XNCBI_EXPORT CObject : public CDebugDumpable
+class CObject : public CDebugDumpable
 {
 public:
     /// Constructor.
+    NCBI_XNCBI_EXPORT
     CObject(void);
 
     /// Copy constructor.
+    NCBI_XNCBI_EXPORT
     CObject(const CObject& src);
 
     /// Destructor.
+    NCBI_XNCBI_EXPORT
     virtual ~CObject(void);
 
     /// Assignment operator.
@@ -143,42 +146,53 @@ public:
     void RemoveReference(void) const;
 
     /// Remove reference without deleting object.
+    NCBI_XNCBI_EXPORT
     void ReleaseReference(void) const;
 
     /// Mark this object as not allocated in heap --  do not delete this
     /// object.
+    NCBI_XNCBI_EXPORT
     virtual void DoNotDeleteThisObject(void);
 
     /// Mark this object as allocated in heap -- object can be deleted.
+    NCBI_XNCBI_EXPORT
     virtual void DoDeleteThisObject(void);
 
     // operators new/delete for additional checking in debug mode
 
     /// Define new operator for memory allocation.
+    NCBI_XNCBI_EXPORT
     void* operator new(size_t size);
 
     /// Define new[] operator for 'array' memory allocation.
+    NCBI_XNCBI_EXPORT
     void* operator new[](size_t size);
 
     /// Define delete operator for memory deallocation.
+    NCBI_XNCBI_EXPORT
     void operator delete(void* ptr);
 
     /// Define delete[] operator for memory deallocation.
+    NCBI_XNCBI_EXPORT
     void operator delete[](void* ptr);
 
     /// Define new operator.
+    NCBI_XNCBI_EXPORT
     void* operator new(size_t size, void* place);
 
     /// Define delete operator.
+    NCBI_XNCBI_EXPORT
     void operator delete(void* ptr, void* place);
 
     /// Define method for dumping debug information.
+    NCBI_XNCBI_EXPORT
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
     /// Define method to throw null pointer exception.
     ///
     /// Static method through which all CRef<> / CConstRef<> null pointer
     /// throws travel.  This is done to avoid an inline throw.
+    NCBI_XNCBI_EXPORT
     static void ThrowNullPointerException(void);
 
 private:
@@ -1332,6 +1346,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2004/03/10 17:34:05  gorelenk
+ * Removed NCBI_XNCBI_EXPORT prefix for classes members-functions
+ * that are implemented as a inline functions.
+ *
  * Revision 1.53  2003/10/20 20:07:10  siyan
  * Added CORELIB___ prefix in conditional includes.
  *

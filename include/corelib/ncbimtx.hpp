@@ -226,8 +226,9 @@ class CFastMutexGuard;
 /// Internal platform-dependent fast mutex implementation to be used by CMutex
 /// and CFastMutex only.
 
-struct NCBI_XNCBI_EXPORT SSystemFastMutex
+struct SSystemFastMutex
 {
+    NCBI_XNCBI_EXPORT
     TSystemMutex m_Handle;      ///< Mutex handle
 
     /// Initialization flag values.
@@ -235,6 +236,7 @@ struct NCBI_XNCBI_EXPORT SSystemFastMutex
         eMutexUninitialized = 0,        ///< Uninitialized value.
         eMutexInitialized = 0x2487adab  ///< Magic initialized value,
     };
+    NCBI_XNCBI_EXPORT
     volatile EMagic m_Magic;    ///< Magic flag
 
     /// Acquire mutex for the current thread with no nesting checks.
@@ -255,15 +257,19 @@ struct NCBI_XNCBI_EXPORT SSystemFastMutex
     // Methods for throwing exceptions, to make inlined methods lighter
 
     /// Throw uninitialized ("eUninitialized") exception.
+    NCBI_XNCBI_EXPORT
     static void ThrowUninitialized(void);
 
     /// Throw lock failed("eLocked") exception.
+    NCBI_XNCBI_EXPORT
     static void ThrowLockFailed(void);
 
     /// Throw unlock failed("eUnlocked") exception.
+    NCBI_XNCBI_EXPORT
     static void ThrowUnlockFailed(void);
 
     /// Throw try lock failed("eTryLock") exception.
+    NCBI_XNCBI_EXPORT
     static void ThrowTryLockFailed(void);
 
 #if !defined(NCBI_OS_MSWIN)
@@ -286,6 +292,7 @@ protected:
     /// Initialize static mutex. 
     ///
     /// Must be called only once.
+    NCBI_XNCBI_EXPORT
     void InitializeStatic(void);
 
     /// Initialize dynamic mutex.
@@ -293,19 +300,23 @@ protected:
     /// Initialize mutex if it located in heap or stack. This must be called
     /// only once.  Do not count on zeroed memory values for initializing
     /// mutex values.
+    NCBI_XNCBI_EXPORT
     void InitializeDynamic(void);
 
     /// Destroy mutex.
+    NCBI_XNCBI_EXPORT
     void Destroy(void);
 
     /// Initialize mutex handle.
     ///
     /// Must be called only once.
+    NCBI_XNCBI_EXPORT
     void InitializeHandle(void);
 
     /// Destroy mutex handle.
     ///
     /// Must be called only once.
+    NCBI_XNCBI_EXPORT
     void DestroyHandle(void);
 
     friend struct SSystemMutex;
@@ -332,10 +343,15 @@ class CMutexGuard;
 /// Internal platform-dependent mutex implementation to be used by CMutex
 /// and CFastMutex only.
 
-struct NCBI_XNCBI_EXPORT SSystemMutex
+struct SSystemMutex
 {
+    NCBI_XNCBI_EXPORT
     SSystemFastMutex m_Mutex; ///< Mutex value
+
+    NCBI_XNCBI_EXPORT
     volatile CThreadSystemID m_Owner; ///< Platform-dependent owner thread ID
+
+    NCBI_XNCBI_EXPORT
     volatile int m_Count; ///< # of recursive (in the same thread) locks
 
     /// Acquire mutex for the current thread.
@@ -354,6 +370,7 @@ struct NCBI_XNCBI_EXPORT SSystemMutex
     // throw exception eOwner
 
     /// Throw not owned("eOwner") exception.
+    NCBI_XNCBI_EXPORT
     static void ThrowNotOwned(void);
 
 #if !defined(NCBI_OS_MSWIN)
@@ -384,6 +401,7 @@ protected:
     void InitializeDynamic(void);
 
     /// Destroy mutex.
+    NCBI_XNCBI_EXPORT
     void Destroy(void);
 
     friend class CAutoInitializeStaticMutex;
@@ -473,7 +491,7 @@ NCBI_NS_NCBI::CAutoInitializeStaticMutex id
 /// Needed on platforms where system mutex struct cannot be initialized at
 /// compile time (e.g. Win32).
 
-class NCBI_XNCBI_EXPORT CAutoInitializeStaticFastMutex
+class CAutoInitializeStaticFastMutex
 {
 public:
     typedef SSystemFastMutex TObject; ///< Simplified alias name for fast mutex
@@ -495,6 +513,7 @@ protected:
     ///
     /// This method can be called many times it will return only after
     /// successful initialization of m_Mutex.
+    NCBI_XNCBI_EXPORT
     void Initialize(void);
 
     /// Get initialized mutex object.
@@ -515,7 +534,7 @@ private:
 /// Needed on platforms where system mutex struct cannot be initialized at
 /// compile time (e.g. Win32).
 
-class NCBI_XNCBI_EXPORT CAutoInitializeStaticMutex
+class CAutoInitializeStaticMutex
 {
 public:
     typedef SSystemMutex TObject;   ///< Simplified alias name for fast mutex
@@ -537,6 +556,7 @@ protected:
     ///
     /// This method can be called many times it will return only after
     /// successful initialization of m_Mutex.
+    NCBI_XNCBI_EXPORT
     void Initialize(void);
 
     /// Get initialized mutex object.
@@ -568,7 +588,7 @@ private:
 /// there is no nesting. This mutex does not check nesting or owner.
 /// It has better performance than CMutex, but is less secure.
 
-class NCBI_XNCBI_EXPORT CFastMutex
+class CFastMutex
 {
 public:
     /// Constructor.
@@ -632,7 +652,7 @@ private:
 ///
 /// For acquiring fast mutex, then guaranting its release.
 
-class NCBI_XNCBI_EXPORT CFastMutexGuard
+class CFastMutexGuard
 {
 public:
     /// Constructor.
@@ -694,7 +714,7 @@ private:
 /// @sa
 ///   http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowSection&rid=toolkit.section.threads#CMutex
 
-class NCBI_XNCBI_EXPORT CMutex
+class CMutex
 {
 public:
     /// Constructor.
@@ -765,7 +785,7 @@ private:
 ///
 /// Acquires the mutex and then gurantees its release.
 
-class NCBI_XNCBI_EXPORT CMutexGuard
+class CMutexGuard
 {
 public:
     /// Constructor.
@@ -914,7 +934,7 @@ private:
 ///
 /// Acts in a way like "auto_ptr<>": guarantees RW-Lock release.
 
-class NCBI_XNCBI_EXPORT CAutoRW
+class CAutoRW
 {
 public:
     /// Constructor.
@@ -965,7 +985,7 @@ protected:
 ///
 /// Acquire the R-lock, then guarantee for its release.
 
-class NCBI_XNCBI_EXPORT CReadLockGuard : public CAutoRW
+class CReadLockGuard : public CAutoRW
 {
 public:
     /// Constructor.
@@ -1010,7 +1030,7 @@ private:
 ///
 /// Acquire the W-lock, then guarantee for its release.
 
-class NCBI_XNCBI_EXPORT CWriteLockGuard : public CAutoRW
+class CWriteLockGuard : public CAutoRW
 {
 public:
     /// Constructor.
@@ -1112,6 +1132,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/03/10 17:34:05  gorelenk
+ * Removed NCBI_XNCBI_EXPORT prefix for classes members-functions
+ * that are implemented as a inline functions.
+ *
  * Revision 1.32  2003/10/30 14:56:27  siyan
  * Added a test for @sa hyperlink.
  *

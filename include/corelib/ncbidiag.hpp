@@ -208,7 +208,6 @@ public:
              );
 
     /// Destructor.
-    NCBI_XNCBI_EXPORT
     ~CNcbiDiag(void);
 
     /// Put object to be formatted to diagnostic stream.
@@ -888,6 +887,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.66  2004/03/10 17:34:05  gorelenk
+ * Removed NCBI_XNCBI_EXPORT prefix for classes members-functions
+ * that are implemented as a inline functions.
+ *
  * Revision 1.65  2004/01/28 14:49:04  ivanov
  * Added export specifier to SDiagErrCodeDescription
  *
