@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/02/01 13:55:31  thiessen
+* fix labeling bug when domain hidden
+*
 * Revision 1.35  2002/02/01 00:41:21  thiessen
 * tweaks
 *
@@ -440,6 +443,7 @@ bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
                     resInc = startTerminus ? 1 : -1;
 
                 // find coordinates of two terminal alpha atoms
+                const Residue *termRes = NULL;
                 for (; res!=resEnd; res+=resInc) {
                     const Residue *residue = residues.find(res)->second;
                     if (residue->alphaID != Residue::NO_ALPHA_ID) {
@@ -449,6 +453,7 @@ bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
                         if (atom) {
                             if (!alphaPos) {
                                 alphaPos = &(atom->site);
+                                termRes = residue;
                             } else if (!prevPos) {
                                 prevPos = &(atom->site);
                                 break;
@@ -461,6 +466,7 @@ bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
                         << "can't get two terminal alpha coords");
                     continue;
                 }
+                if (!parentSet->showHideManager->IsVisible(termRes)) continue;
                 Vector labelPosition = *alphaPos + 0.5 * (*alphaPos - *prevPos);
 
                 // determine label text
