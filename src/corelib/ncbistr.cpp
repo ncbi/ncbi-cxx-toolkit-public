@@ -476,6 +476,65 @@ string NStr::PrintableString(const string& str)
 }
 
 
+// Determines the end of an HTML <...> tag, accounting for attributes
+// and comments (the latter allowed only within <!...>).
+SIZE_TYPE s_EndOfTag(const string& str, SIZE_TYPE start)
+{
+    _ASSERT(start < str.size()  &&  str[start] == '<');
+    bool comments_ok = (start + 1 < str.size()  &&  str[start + 1] == '!');
+    for (SIZE_TYPE pos = start + 1;  pos < str.size();  ++pos) {
+        switch (str[pos]) {
+        case '>': // found the end
+            return pos;
+
+        case '\"': // start of "string"; advance to end
+            pos = str.find('\"', pos + 1);
+            if (pos == NPOS) {
+                NCBI_THROW2(CParseException, eErr,
+                            "Unclosed string in HTML tag", start);
+                // return pos;
+            }
+            break;
+
+        case '-': // possible start of -- comment --; advance to end
+            if (comments_ok  &&  pos + 1 < str.size()
+                &&  str[pos + 1] == '-') {
+                pos = str.find("--", pos + 2);
+                if (pos == NPOS) {
+                    NCBI_THROW2(CParseException, eErr,
+                                "Unclosed comment in HTML tag", start);
+                    // return pos;
+                } else {
+                    ++pos;
+                }
+            }
+        }
+    }
+    NCBI_THROW2(CParseException, eErr, "Unclosed HTML tag", start);
+    // return NPOS;
+}
+
+
+// Determines the end of an HTML &foo; character/entity reference
+// (which might not actually end with a semicolon :-/)
+SIZE_TYPE s_EndOfReference(const string& str, SIZE_TYPE start)
+{
+    _ASSERT(start < str.size()  &&  str[start] == '&');
+#ifdef NCBI_STRICT_HTML_REFS
+    return str.find(';', start + 1);
+#else
+    SIZE_TYPE pos = str.find_first_not_of
+        ("#0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+         start + 1);
+    if (pos == NPOS  ||  str[pos] == ';') {
+        return pos;
+    } else {
+        return pos - 1;
+    }
+#endif
+}
+
+
 list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                          list<string>& arr, NStr::TWrapFlags flags,
                          const string* prefix, const string* prefix1)
@@ -501,7 +560,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
         SIZE_TYPE best_pos   = NPOS;
         EScore    best_score = eForced;
         for (SIZE_TYPE pos2 = pos;  pos2 < len && column <= width;
-             pos2++, column++) {
+             ++pos2, ++column) {
             EScore score = eForced;
             char   c     = str[pos2];
 
@@ -514,6 +573,13 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
                     continue; // take the first space of a group
                 }
                 score = eSpace;
+            } else if ((flags & fWrap_HTMLPre)  &&  c == '<') {
+                // treat tags as zero-width...
+                pos2 = s_EndOfTag(str, pos2);
+                --column;
+            } else if ((flags & fWrap_HTMLPre)  &&  c == '&') {
+                // ...and references as single characters
+                pos2 = s_EndOfReference(str, pos2);
             } else if (ispunct(c)) {
                 score = ePunct;
             }
@@ -561,8 +627,36 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
     string        s        = *pfx;
     bool          at_start = true;
     iterate (list<string>, it, l) {
+        SIZE_TYPE term_width;
+        if (flags & fWrap_HTMLPre) {
+            term_width = 0;
+            SIZE_TYPE pos = 0;
+            for (;;) {
+                SIZE_TYPE pos2 = it->find_first_of("<&", pos);
+                if (pos2 == NPOS) {
+                    term_width += it->size() - pos;
+                    break;
+                } else {
+                    term_width += pos2 - pos;
+                    if ((*it)[pos2] == '&') {
+                        ++term_width;
+                        pos = s_EndOfReference(*it, pos);
+                    } else {
+                        pos = s_EndOfTag(*it, pos);
+                    }
+                    if (pos == NPOS) {
+                        break;
+                    } else {
+                        ++pos;
+                    }
+                }
+            }
+        } else {
+            term_width = it->size();
+        }
+
         if (at_start) {
-            if (s.size() + it->size() <= width) {
+            if (s.size() + term_width <= width) {
                 s += *it;
                 at_start = false;
             } else {
@@ -572,7 +666,7 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
                 s        = *prefix;
                 at_start = true;
             }
-        } else if (s.size() + delim.size() + it->size() <= width) {
+        } else if (s.size() + delim.size() + term_width <= width) {
             s += delim;
             s += *it;
             at_start = false;
@@ -610,6 +704,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2002/10/16 19:30:36  ucko
+ * Add support for wrapping HTML <PRE> blocks.  (Not yet tested, but
+ * behavior without fWrap_HTMLPre should stay the same.)
+ *
  * Revision 1.54  2002/10/11 19:41:48  ucko
  * Clean up NStr::Wrap a bit more, doing away with the "limit" variables
  * for ease of potential extension.
