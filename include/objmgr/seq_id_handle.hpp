@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/29 17:06:12  grichenk
+* + operator !()
+*
 * Revision 1.1  2002/01/23 21:56:35  grichenk
 * Splitted id_handles.hpp
 *
@@ -74,6 +77,7 @@ public:
 
     // Check if the handle is a valid or an empty one
     operator bool(void) const;
+    bool operator! (void) const;
 
     // Reset the handle (remove seq-id reference)
     void Reset(void);
@@ -148,6 +152,12 @@ inline
 CSeq_id_Handle::operator bool (void) const
 {
     return !m_SeqId.Empty();
+}
+
+inline
+bool CSeq_id_Handle::operator! (void) const
+{
+    return m_SeqId.Empty();
 }
 
 inline
