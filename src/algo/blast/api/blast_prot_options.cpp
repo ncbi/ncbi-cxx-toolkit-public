@@ -59,7 +59,6 @@ CBlastProteinOptionsHandle::SetLookupTableDefaults()
     m_Opts->SetLookupTableType(AA_LOOKUP_TABLE);
     SetWordSize(BLAST_WORDSIZE_PROT);
     SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP);
-    SetAlphabetSize(BLASTAA_SIZE);
     m_Opts->SetUsePssm(false);
 }
 
@@ -75,7 +74,6 @@ CBlastProteinOptionsHandle::SetInitialWordOptionsDefaults()
 {
     SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_PROT);
     SetWindowSize(BLAST_WINDOW_SIZE_PROT);
-    // FIXME: extend_word_method is missing
     m_Opts->SetUngappedExtension();
 }
 
@@ -152,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/01/10 13:36:50  madden
+ * call to SetAlphabetSize as it has been removed
+ *
  * Revision 1.13  2004/12/20 20:12:01  camacho
  * + option to set use of pssm in lookup table
  *
