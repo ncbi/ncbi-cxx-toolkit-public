@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/03/14 19:48:25  gouriano
+ * changed sNumThreads = 36:
+ * in test_semaphore_mt number of threads must be even
+ *
  * Revision 6.2  2002/03/13 05:50:19  vakatov
  * sNumThreads = 35;  sSpawnBy = 6;  (to work on SCHROEDER)
  *
@@ -49,7 +53,7 @@ static CFastMutex    s_GlobalLock;
 static CThreadedApp* s_Application;
 
 // Default values
-unsigned int  s_NumThreads    = 35;
+unsigned int  s_NumThreads    = 34;
 int           s_SpawnBy       = 6;
 
 // Next test thread index
