@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/06/02 17:22:58  thiessen
+* fixes for GCC
+*
 * Revision 1.16  2001/06/01 13:35:39  thiessen
 * add aligned block number to status line
 *
@@ -145,14 +148,14 @@ public:
     }
 
     // stuff regarding master sequence
-    const Sequence * GetMaster(void) const { return sequences->at(0); }
-    bool IsMaster(const Sequence *sequence) const { return (sequence == sequences->at(0)); }
+    const Sequence * GetMaster(void) const { return (*sequences)[0]; }
+    bool IsMaster(const Sequence *sequence) const { return (sequence == (*sequences)[0]); }
 
     // return sequence for given row
     const Sequence * GetSequenceOfRow(int row) const
     {
         if (row >= 0 && row < sequences->size())
-            return sequences->at(row);
+            return (*sequences)[row];
         else
             return NULL;
     }

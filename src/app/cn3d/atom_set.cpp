@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/06/02 17:22:45  thiessen
+* fixes for GCC
+*
 * Revision 1.12  2001/05/31 18:47:06  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -250,7 +253,7 @@ AtomSet::~AtomSet(void)
 
 const double AtomCoord::NO_TEMPERATURE = -1.0;
 const double AtomCoord::NO_OCCUPANCY = -1.0;
-const double AtomCoord::NO_ALTCONFID = '-';
+const char AtomCoord::NO_ALTCONFID = '-';
 
 bool AtomSet::SetActiveEnsemble(const std::string *ensemble)
 {

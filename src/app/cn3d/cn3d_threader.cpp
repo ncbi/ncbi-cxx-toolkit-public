@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/06/02 17:22:45  thiessen
+* fixes for GCC
+*
 * Revision 1.20  2001/06/01 21:48:26  thiessen
 * add terminal cutoff to threading
 *
@@ -95,6 +98,7 @@
 
 // C-toolkit stuff
 #include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
+#include <corelib/ncbistl.hpp>
 #include <ctools/ctools.h>
 #include <objseq.h>
 #include <objalign.h>
@@ -102,6 +106,8 @@
 #include <thrddecl.h>
 #include <cddutil.h>
 #include <ncbistr.h>
+
+#include <memory>
 
 #include "cn3d/cn3d_threader.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
@@ -721,10 +727,10 @@ static void GetVirtualCoordinates(const Molecule *mol, const AtomSet *atomSet,
     for (r=mol->residues.begin(); r!=re; r++) {
         if (prevResidue)
             GetVirtualPeptide(atomSet, mol,
-                prevResidue, r->second, &(virtualCoordinates->at(i++)));
+                prevResidue, r->second, &((*virtualCoordinates)[i++]));
         prevResidue = r->second;
         GetVirtualResidue(atomSet, mol,
-            r->second, &(virtualCoordinates->at(i++)));
+            r->second, &((*virtualCoordinates)[i++]));
     }
 }
 
@@ -1307,7 +1313,7 @@ bool Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
 
             // violation found
             if (nextRange->from - thisRange->to - 1 < fldMtf->mll[nextMaster->from][thisMaster->to]) {
-                violations->at(row).push_back(std::make_pair(thisRange->to, nextRange->from));
+                (*violations)[row].push_back(std::make_pair(thisRange->to, nextRange->from));
                 nViolations++;
             }
         }

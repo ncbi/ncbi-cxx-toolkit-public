@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2001/06/02 17:22:45  thiessen
+* fixes for GCC
+*
 * Revision 1.60  2001/05/31 18:47:05  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -215,6 +218,9 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbistl.hpp>
+
+#include <memory>
 
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/sequence_set.hpp"
@@ -529,7 +535,7 @@ void AlignmentManager::GetAlignmentSetSlaveSequences(std::vector < const Sequenc
     AlignmentSet::AlignmentList::const_iterator a, ae = alignmentSet->alignments.end();
     int i = 0;
     for (a=alignmentSet->alignments.begin(); a!=ae; a++, i++) {
-        sequences->at(i) = (*a)->slave;
+        (*sequences)[i] = (*a)->slave;
     }
 }
 
@@ -613,7 +619,7 @@ bool AlignmentManager::IsInAlignment(const Sequence *sequence) const
     const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
     if (currentAlignment) {
         for (int i=0; i<currentAlignment->sequences->size(); i++) {
-            if (currentAlignment->sequences->at(i) == sequence)
+            if ((*(currentAlignment->sequences))[i] == sequence)
                 return true;
         }
     }

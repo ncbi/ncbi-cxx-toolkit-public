@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/06/02 17:22:45  thiessen
+* fixes for GCC
+*
 * Revision 1.13  2001/05/31 18:47:08  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -378,7 +381,7 @@ void ConservationColorer::GetProfileIndexAndResidue(
     int *profileIndex, char *residue) const
 {
     BlockMap::const_iterator b = blocks.find(block);
-    *profileIndex = b->second.at(blockColumn);
+    *profileIndex = b->second[blockColumn];
     *residue = toupper(b->first->GetCharacterAt(blockColumn, row));
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/06/02 17:22:46  thiessen
+* fixes for GCC
+*
 * Revision 1.11  2001/05/31 18:47:09  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -300,8 +303,8 @@ void ShowHideManager::GetShowHideInfo(
     names->resize(structureInfo.size());
     visibilities->resize(structureInfo.size());
     for (int i=0; i<structureInfo.size(); i++) {
-        structureInfo[i]->GetLabel(&(names->at(i)));
-        visibilities->at(i) = structureInfo[i]->IsVisible(this);
+        structureInfo[i]->GetLabel(&((*names)[i]));
+        (*visibilities)[i] = structureInfo[i]->IsVisible(this);
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/06/02 17:22:45  thiessen
+* fixes for GCC
+*
 * Revision 1.19  2001/05/31 18:47:06  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -90,6 +93,7 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistl.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -98,6 +102,7 @@
 #include <objects/seqloc/Textseq_id.hpp>
 
 #include <map>
+#include <memory>
 
 #include "cn3d/alignment_set.hpp"
 #include "cn3d/sequence_set.hpp"

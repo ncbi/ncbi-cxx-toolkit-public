@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/06/02 17:22:58  thiessen
+* fixes for GCC
+*
 * Revision 1.6  2001/03/22 00:32:36  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -92,7 +95,7 @@ private:
     BlockMap blocks;
 
     int GetProfileIndex(const UngappedAlignedBlock *block, int blockColumn) const
-        { return blocks.find(block)->second.at(blockColumn); }
+        { return blocks.find(block)->second[blockColumn]; }
     void GetProfileIndexAndResidue(const UngappedAlignedBlock *block, int blockColumn, int row,
         int *profileIndex, char *residue) const;
 

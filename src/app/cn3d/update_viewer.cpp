@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/06/02 17:22:46  thiessen
+* fixes for GCC
+*
 * Revision 1.11  2001/05/17 18:34:26  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -68,11 +71,14 @@
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistl.hpp>
 
 #include <objects/cdd/Cdd.hpp>
 #include <objects/cdd/Update_align.hpp>
 #include <objects/cdd/Update_comment.hpp>
 #include <objects/seq/Seq_annot.hpp>
+
+#include <memory>
 
 #include "cn3d/update_viewer.hpp"
 #include "cn3d/update_viewer_window.hpp"

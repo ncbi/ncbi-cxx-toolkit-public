@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/06/02 17:22:45  thiessen
+* fixes for GCC
+*
 * Revision 1.21  2001/06/01 13:35:58  thiessen
 * add aligned block number to status line
 *
@@ -417,7 +420,7 @@ bool BlockMultipleAlignment::GetSequenceAndIndexAt(
     int alignmentColumn, int row, eUnalignedJustification requestedJustification,
     const Sequence **sequence, int *index, bool *isAligned) const
 {
-    if (sequence) *sequence = sequences->at(row);
+    if (sequence) *sequence = (*sequences)[row];
 
     const BlockInfo& blockInfo = blockMap[alignmentColumn];
 
@@ -447,9 +450,9 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
         return -1;
     }
 
-    if (prevRow < 0 || sequence != sequences->at(prevRow)) {
+    if (prevRow < 0 || sequence != (*sequences)[prevRow]) {
         int row;
-        for (row=0; row<NRows(); row++) if (sequences->at(row) == sequence) break;
+        for (row=0; row<NRows(); row++) if ((*sequences)[row] == sequence) break;
         if (row == NRows()) {
 //            ERR_POST(Error << "BlockMultipleAlignment::GetRowForSequence() - can't find given Sequence");
             return -1;
@@ -467,7 +470,7 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(int row, int seqIndex) 
         return NULL;
     }
 
-    const Sequence *sequence = sequences->at(row);
+    const Sequence *sequence = (*sequences)[row];
     StyleSettings::eColorScheme colorScheme;
     if (sequence->molecule) {
         const StructureObject *object;
@@ -528,7 +531,7 @@ bool BlockMultipleAlignment::IsAligned(int row, int seqIndex) const
 const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
 {
     // make sure we're in range for this sequence
-    if (seqIndex < 0 || seqIndex >= sequences->at(row)->Length()) {
+    if (seqIndex < 0 || seqIndex >= (*sequences)[row]->Length()) {
         ERR_POST(Error << "BlockMultipleAlignment::GetBlock() - seqIndex out of range");
         return NULL;
     }
@@ -1305,7 +1308,7 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
     rowDoubles.resize(rowDoubles.size() + nNewRows);
     rowStrings.resize(rowStrings.size() + nNewRows);
     for (i=0; i<nNewRows; i++) {
-        modSequences->at(modSequences->size() + i - nNewRows) = newAlignment->sequences->at(i + 1);
+        (*modSequences)[modSequences->size() + i - nNewRows] = (*(newAlignment->sequences))[i + 1];
         SetRowDouble(NRows() + i - nNewRows, newAlignment->GetRowDouble(i + 1));
         SetRowStatusLine(NRows() + i - nNewRows, newAlignment->GetRowStatusLine(i + 1));
     }
@@ -1442,7 +1445,7 @@ bool BlockMultipleAlignment::ClearMarks(void)
 
 char UngappedAlignedBlock::GetCharacterAt(int blockColumn, int row) const
 {
-    return parentAlignment->sequences->at(row)->sequenceString[GetIndexAt(blockColumn, row)];
+    return (*(parentAlignment->sequences))[row]->sequenceString[GetIndexAt(blockColumn, row)];
 }
 
 Block * UngappedAlignedBlock::Clone(const BlockMultipleAlignment *newMultiple) const

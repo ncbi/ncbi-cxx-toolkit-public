@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/06/02 17:22:58  thiessen
+* fixes for GCC
+*
 * Revision 1.13  2001/05/31 18:46:25  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -106,7 +109,7 @@ public:
     char altConfID;
     static const double NO_TEMPERATURE;
     static const double NO_OCCUPANCY;
-    static const double NO_ALTCONFID;
+    static const char NO_ALTCONFID;
 
     // public methods
     bool HasTemp(void) const { return (averageTemperature!=NO_TEMPERATURE); }

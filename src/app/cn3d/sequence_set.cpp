@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/06/02 17:22:46  thiessen
+* fixes for GCC
+*
 * Revision 1.29  2001/05/31 18:47:09  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -152,6 +155,9 @@
 #include <objects/seqblock/PDB_block.hpp>
 
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbistl.hpp>
+
+#include <memory>
 
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"
