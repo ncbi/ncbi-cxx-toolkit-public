@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2004/01/29 20:48:07  gouriano
+* Corrected handling of white spaces in XML tags: preserve insignificant
+* white spaces inside the tag.
+* Corrected reading of AnyContent object attributes and tags with empty content
+*
 * Revision 1.54  2004/01/22 20:50:17  gouriano
 * corrected reading of undefined attributes, of boolean values, of tags with empty content
 *
@@ -572,6 +577,8 @@ CLightString CObjectIStreamXml::ReadName(char c)
                 m_CurrNsPrefix = ns_prefix;
             }
         }
+    } else {
+        m_CurrNsPrefix.erase();
     }
 #if defined(NCBI_SERIAL_IO_TRACE)
     cout << ", Read= " << m_LastTag;
@@ -953,7 +960,7 @@ void CObjectIStreamXml::ReadAnyContentTo(
                 if (attribName.empty()) {
                     break;
                 }
-                if (m_CurrNsPrefix == ns_prefix) {
+                if (m_CurrNsPrefix.empty() || m_CurrNsPrefix == ns_prefix) {
                     value += " ";
                     value += attribName;
                     value += "=\"";
@@ -967,13 +974,21 @@ void CObjectIStreamXml::ReadAnyContentTo(
                     ReadAttributeValue(attribValue, true);
                 }
             }
-            value += '>';
-            ReadAnyContentTo(ns_prefix, value,tagAny);
-            value += "</";
-            value += tagAny;
-            value += '>';
+            string value2;
+            ReadAnyContentTo(ns_prefix, value2,tagAny);
+            if (value2.empty()) {
+                value += "/>";
+            } else {
+                value += '>';
+                value += value2;
+                value += "</";
+                value += tagAny;
+                value += '>';
+            }
         }
-        ReadTagData(value);
+        string data;
+        ReadTagData(data);
+        value += data;
     }
     CloseTag(tagName);
 }
@@ -1047,33 +1062,22 @@ char* CObjectIStreamXml::ReadCString(void)
 void CObjectIStreamXml::ReadTagData(string& str)
 {
     BeginData();
-    char prev = str.empty() ? 0 : *(str.end()-1);
+    bool first_space = IsWhiteSpace(m_Input.PeekChar());
+    bool last_space = false;
     for ( ;; ) {
-        char now = m_Input.PeekChar();
-        if (IsWhiteSpace(prev)) {
-            if (IsWhiteSpace(now)) {
-                m_Input.SkipChar();
-                continue;
-            }
-        }
         int c = ReadEscapedChar(m_Attlist ? '\"' : '<');
         if ( c < 0 ) {
-            if (IsWhiteSpace(prev)) {
-                str.erase( str.end() - 1);
-            }
             break;
         }
-        if (char(c) == now && IsWhiteSpace(c)) {
-            c = ' ';
-            prev = char(c);
-        } else {
-            prev = 0;
-        }
+        last_space = IsWhiteSpace(c);
         str += char(c);
         // pre-allocate memory for long strings
         if ( str.size() > 128  &&  double(str.capacity())/(str.size()+1.0) < 1.1 ) {
             str.reserve(str.size()*2);
         }
+    }
+    if (first_space || last_space) {
+        str = NStr::TruncateSpaces(str);
     }
     str.reserve(str.size());
 }
