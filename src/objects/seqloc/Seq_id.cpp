@@ -376,10 +376,46 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         return eAcc_unknown;
     }
 }
+
+
+CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
+{
+    EAccessionInfo type = (EAccessionInfo)Which();
+    switch (type) {
+    case CSeq_id::e_Pir: case CSeq_id::e_Swissprot: case CSeq_id::e_Prf:
+    case CSeq_id::e_Pdb:
+        return (EAccessionInfo)(type | fAcc_prot); // always just protein
+        
+    case CSeq_id::e_Genbank: case CSeq_id::e_Embl: case CSeq_id::e_Ddbj:
+    case CSeq_id::e_Tpg:     case CSeq_id::e_Tpe:  case CSeq_id::e_Tpd:
+    case CSeq_id::e_Other:
+    {
+        const CTextseq_id* tsid = GetTextseq_Id();
+        if (tsid->IsSetAccession()) {
+            EAccessionInfo ai = IdentifyAccession(tsid->GetAccession());
+            if ((ai & eAcc_type_mask) == e_not_set) {
+                // We *know* what the type should be....
+                return (EAccessionInfo)((ai & eAcc_flag_mask) | type);
+            } else if ((ai & eAcc_type_mask) == type) {
+                return ai;
+            } else { // misidentified or mislabeled; assume the former
+                return type;
+            }
+        } else {
+            return type;
+        }
+    }
+    
+    default:
+        return type;
+    }
+}
+
+
 /*Return seqid string with optional version for text seqid type 
 (default no version).*/ 
 const string CSeq_id::GetSeqIdString(bool with_version) const {
-    const CTextseq_id* tsid=GetTextseq_Id();
+    const CTextseq_id* tsid = GetTextseq_Id();
     //text id
     if (tsid) {
         if (tsid->IsSetAccession()) {
@@ -901,6 +937,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.40  2002/10/23 18:23:07  ucko
+ * Add self-classification (using known type information).
+ *
  * Revision 6.39  2002/10/22 20:19:14  jianye
  * Added GetSeqIdString()
  *
