@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/02/02 19:08:20  vasilche
+* Fixed variable conflict in generated files on MSVC.
+*
 * Revision 1.2  2000/02/02 18:54:15  vasilche
 * Fixed variable coflict in MSVC.
 * Added missing #include <serial/choice.hpp>
@@ -326,14 +329,17 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 				}
 			}
         }
-		{
-			iterate ( TMembers, i, m_Members ) {
-		        string init = i->defaultValue;
-			    if ( init.empty() )
-				    init = i->type->GetInitializer();
-	            code.AddInitializer(i->mName, init);
-		        code.AddDestructionCode(i->type->GetDestructionCode(i->mName));
-			}
+        {
+            iterate ( TMembers, i, m_Members ) {
+                string init = i->defaultValue;
+                if ( init.empty() )
+                    init = i->type->GetInitializer();
+                if ( !init.empty() )
+                    code.AddInitializer(i->mName, init);
+                string del = i->type->GetDestructionCode(i->mName);
+                if ( !del.empty() )
+                    code.AddDestructionCode(del);
+            }
         }
     }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/02/02 19:08:20  vasilche
+* Fixed variable conflict in generated files on MSVC.
+*
 * Revision 1.2  2000/02/02 14:57:06  vasilche
 * Added missing NCBI_NS_NSBI and NSBI_NS_STD macros to generated code.
 *
@@ -261,7 +264,7 @@ string CSetTypeStrings::GetDestructionCode(const string& expr) const
     try {
         level++;
         iter = "setIter"+NStr::IntToString(level);
-        code = Tabbed(GetArg1Type()->GetDestructionCode('*'+iter));
+        code = Tabbed(GetArg1Type()->GetDestructionCode('*'+iter), "        ");
     }
     catch (...) {
         level--;
@@ -271,8 +274,10 @@ string CSetTypeStrings::GetDestructionCode(const string& expr) const
     if ( code.empty() )
         return string();
     return
-        "for ( "+GetCType()+"::iterator "+iter+" = ("+expr+").begin(); "+iter+" != ("+expr+").end(); ++"+iter+" ) {\n"
+        "{\n"
+        "    for ( "+GetCType()+"::iterator "+iter+" = ("+expr+").begin(); "+iter+" != ("+expr+").end(); ++"+iter+" ) {\n"
         +code+
+        "    }\n"
         "}\n";
 }
 
@@ -307,7 +312,7 @@ string CListTypeStrings::GetDestructionCode(const string& expr) const
     try {
         level++;
         iter = "listIter"+NStr::IntToString(level);
-        code = Tabbed(GetArg1Type()->GetDestructionCode('*'+iter));
+        code = Tabbed(GetArg1Type()->GetDestructionCode('*'+iter), "        ");
     }
     catch (...) {
         level--;
@@ -317,8 +322,10 @@ string CListTypeStrings::GetDestructionCode(const string& expr) const
     if ( code.empty() )
         return string();
     return
-        "for ( "+GetCType()+"::iterator "+iter+" = ("+expr+").begin(); "+iter+" != ("+expr+").end(); ++"+iter+" ) {\n"
+        "{\n"
+        "    for ( "+GetCType()+"::iterator "+iter+" = ("+expr+").begin(); "+iter+" != ("+expr+").end(); ++"+iter+" ) {\n"
         +code+
+        "    }\n"
         "}\n";
 }
 
@@ -346,8 +353,9 @@ string CMapTypeStrings::GetDestructionCode(const string& expr) const
     try {
         level++;
         iter = "mapIter"+NStr::IntToString(level);
-        code = Tabbed(GetArg1Type()->GetDestructionCode(iter+"->first") +
-                      GetArg2Type()->GetDestructionCode(iter+"->second"));
+        code = Tabbed(GetArg1Type()->GetDestructionCode(iter+"->first")+
+                      GetArg2Type()->GetDestructionCode(iter+"->second"),
+                      "        ");
     }
     catch (...) {
         level--;
@@ -357,8 +365,10 @@ string CMapTypeStrings::GetDestructionCode(const string& expr) const
     if ( code.empty() )
         return string();
     return
-        "for ( "+GetCType()+"::iterator "+iter+" = ("+expr+").begin(); "+iter+" != ("+expr+").end(); ++"+iter+" ) {\n"
+        "{\n"
+        "    for ( "+GetCType()+"::iterator "+iter+" = ("+expr+").begin(); "+iter+" != ("+expr+").end(); ++"+iter+" ) {\n"
         +code+
+        "    }\n"
         "}\n";
 }
 
