@@ -1427,19 +1427,14 @@ void CValidError_imp::ValidateCitSub
                 break;
 
             case CAffil::e_Std:
-#define HAS_VALUE(o, x) (o.CanGet##x()  &&  !IsBlankString(o.Get##x()))
                 {{
                     const CAffil::TStd& std = affil.GetStd();
-                    if ( HAS_VALUE(std, Affil)    ||
-                         HAS_VALUE(std, Div)      ||
-                         HAS_VALUE(std, City)     ||
-                         HAS_VALUE(std, Sub)      ||
-                         HAS_VALUE(std, Country)  ||
-                         HAS_VALUE(std, Street)   ||
-                         HAS_VALUE(std, Email)    ||
-                         HAS_VALUE(std, Fax)      ||
-                         HAS_VALUE(std, Phone)    ||
-                         HAS_VALUE(std, Postal_code) ) {
+#define HAS_VALUE(x) (std.CanGet##x()  &&  !IsBlankString(std.Get##x()))
+                    if ( HAS_VALUE(Affil)    ||  HAS_VALUE(Div)      ||
+                         HAS_VALUE(City)     ||  HAS_VALUE(Sub)      ||
+                         HAS_VALUE(Country)  ||  HAS_VALUE(Street)   ||
+                         HAS_VALUE(Email)    ||  HAS_VALUE(Fax)      ||
+                         HAS_VALUE(Phone)    ||  HAS_VALUE(Postal_code) ) {
                         has_affil = true;
                     }
                 }}
@@ -1458,7 +1453,8 @@ void CValidError_imp::ValidateCitSub
             "Submission citation has no author names", obj);
     }
     if ( !has_affil ) {
-        PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+        EDiagSev sev = IsRefSeq() ? eDiag_Warning : eDiag_Error;
+        PostErr(sev, eErr_GENERIC_MissingPubInfo,
             "Submission citation has no affiliation", obj);
     }
 }
@@ -2470,6 +2466,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2004/08/03 13:31:12  shomrat
+* eErr_GENERIC_MissingPubInfo missing cit-sub affil is down to warning if refseq
+*
 * Revision 1.55  2004/07/29 17:09:04  shomrat
 * + IsTransgenic()
 *
