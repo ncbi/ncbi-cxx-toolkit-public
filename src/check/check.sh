@@ -7,6 +7,9 @@
 #
 #  Auxilary script -- to be called by "./Makefile.check"
 #
+#  Command line:
+#     check.sh <signature> [reporting args]
+#
 #  Reporting mode and addresses' args:
 #     file:[full:]/abs_fname
 #     file:[full:]rel_fname
@@ -15,8 +18,10 @@
 #     stat:addr1,addr2,...
 #     watch:addr1,addr2,...
 #     debug
+#     sendonly
 #
 ###########################################################################
+
 
 ####  ERROR STREAM
 
@@ -36,22 +41,6 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 . ${script_dir}/../../scripts/common.sh
 
 
-####  DEBUG
-
-n_arg=0
-for arg in "$@" ; do
-   n_arg=`expr $n_arg + 1`
-   test $n_arg -lt 6  &&  continue
-
-   if test "$arg" = "debug" ; then
-      set -xv
-      debug="yes"
-      run_script="/bin/sh -xv"
-      break
-   fi
-done
-
-
 ####  MISC
 
 script_name=`basename $0`
@@ -65,7 +54,6 @@ if test -x /usr/sbin/sendmail; then
 else
     sendmail="/usr/lib/sendmail -oi"
 fi
-
 
 ####  ERROR REPORT
 
@@ -86,57 +74,71 @@ EOF
    exit 1
 }
 
+ 
+####  SPECIAL ARGUMENTS (DEBUG, SENDONLY)
+
+debug="no"
+need_check="yes"
+
+for arg in "$@" ; do
+   case "$arg" in
+    debug )
+      set -xv
+      debug="yes"
+      run_script="/bin/sh -xv"
+      ;;
+    sendonly )
+      need_check="no"
+      if test ! -f $summary_res -o ! -f $error_res ; then
+         Error "Missing check result files"
+      fi
+      ;;
+   esac
+done
+
 
 ####  ARGS
 
-# Files with check results already prepared and standing in the 
-# current directory. Parameters are <signature> and <destination>.
+signature="$1"
+shift
+
+# If "$need_check" = "no" that files with check results already
+# prepared and standing in the current directory. 
 # Only post results in this case.
 
-if test $# -eq 2 ; then
-  need_check="no"
-  signature="$1"
+if test "$need_check" = "yes" ; then
+   # Default check
+   test $# -gt 3  ||  Error "Wrong number of args:  $#"
+   make="$1"
+   builddir="$2"
+   action="$3"
 
-  if test ! -f $summary_res -o ! -f $error_res ; then
-     Error "Missing check result files"
-  fi
+   shift
+   shift
+   shift
 
-# Default check
-else
-  test $# -gt 3  ||  Error "Wrong number of args:  $#"
-  need_check="yes"
-  signature="$1"
-  make="$2"
-  builddir="$3"
-  action="$4"
+   test -d "$builddir"  &&  cd "$builddir"  ||  \
+     Error "Cannot CHDIR to directory:  $builddir"
 
-  shift
-  shift
-  shift
-  shift
+   case "$action" in
+    all )
+      # continue
+      ;;
+    clean | purge )
+      test -x ./check.sh  &&  $run_script ./check.sh clean
+      exit 0
+      ;;
+    * )
+      Error "Invalid action: $action"
+      ;;
+   esac
 
-  test -d "$builddir"  &&  cd "$builddir"  ||  \
-    Error "Cannot CHDIR to directory:  $builddir"
+   ####  RUN CHECKS
 
-  case "$action" in
-   all )
-     # continue
-     ;;
-   clean | purge )
-     test -x ./check.sh  &&  $run_script ./check.sh clean
-     exit 0
-     ;;
-   * )
-     Error "Invalid action: $action"
-     ;;
-  esac
-
-  ####  RUN CHECKS
-
-  export MAKEFLAGS
-  MAKEFLAGS=
-  "$make" check_r RUN_CHECK=N  ||  Error "MAKE CHECK_R failed"
-  $run_script ./check.sh run
+   export MAKEFLAGS
+   MAKEFLAGS=
+   "$make" check_r RUN_CHECK=N  ||  Error "MAKE CHECK_R failed"
+   $run_script ./check.sh run
 fi
 
 
@@ -174,7 +176,7 @@ for dest in "$@" ; do
       loc=`echo "$loc" | sed 's/,/ /g'`
       watch_list="$watch_list $loc"
       ;;
-    debug )
+    debug | sendonly )
       ;;
     * )
       err_list="$err_list BAD_TYPE:\"$dest\""
