@@ -43,6 +43,7 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <util/strsearch.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -181,6 +182,15 @@ enum EGetIdType {
 NCBI_XOBJUTIL_EXPORT
 const CSeq_id& GetId(const CBioseq_Handle& handle,
                      EGetIdType type = eGetId_Default);
+
+NCBI_XOBJUTIL_EXPORT
+const CSeq_id& GetId(const CSeq_id& id, CScope& scope,
+                     EGetIdType type = eGetId_Default);
+
+NCBI_XOBJUTIL_EXPORT
+const CSeq_id& GetId(const CSeq_id_Handle& id, CScope& scope,
+                     EGetIdType type = eGetId_Default);
+
 
 
 // Change a CSeq_id to the one for the CBioseq that it represents
@@ -723,6 +733,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.47  2004/10/12 18:57:57  dicuccio
+* Added variant of sequence::GetId() that takes a seq-id instead of a bioseq
+* handle
+*
 * Revision 1.46  2004/10/12 13:57:21  dicuccio
 * Added convenience routines for finding: best mRNA for CDS feature; best gene
 * for mRNA; best gene for CDS; all mRNAs for a gene; all CDSs for a gene.  Added

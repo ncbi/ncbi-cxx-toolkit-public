@@ -270,6 +270,55 @@ public:
 };
 
 
+int ScoreSeqIdHandle(const CSeq_id_Handle& idh)
+{
+    CConstRef<CSeq_id> id = idh.GetSeqId();
+    CRef<CSeq_id> id_non_const
+        (const_cast<CSeq_id*>(id.GetPointer()));
+    return CSeq_id::Score(id_non_const);
+}
+
+const CSeq_id& GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
+{
+    switch (type) {
+    case eGetId_ForceGi:
+        if (id.IsGi()) {
+            return id;
+        }
+        {{
+            CScope::TIds ids = scope.GetIds(id);
+            ITERATE (CScope::TIds, iter, ids) {
+                if (iter->IsGi()) {
+                    return *iter->GetSeqId();
+                }
+            }
+        }}
+        break;
+
+    case eGetId_Best:
+        {{
+            CScope::TIds ids = scope.GetIds(id);
+            CSeq_id_Handle idh = FindBestChoice(ids, ScoreSeqIdHandle);
+            return *idh.GetSeqId();
+        }}
+        break;
+
+    default:
+        return id;
+    }
+
+    NCBI_THROW(CSeqIdFromHandleException, eRequestedIdNotFound,
+               "No best seq-id could be found");
+}
+
+
+const CSeq_id& GetId(const CSeq_id_Handle& idh, CScope& scope,
+                     EGetIdType type)
+{
+    return GetId(*idh.GetSeqId(), scope, type);
+}
+
+
 const CSeq_id& GetId(const CBioseq_Handle& handle,
                      EGetIdType type)
 {
@@ -318,7 +367,7 @@ const CSeq_id& GetId(const CBioseq_Handle& handle,
             CConstRef<CSeq_id> best_id = FindBestChoice(ids, CSeq_id::Score);
             if (best_id) {
                 return *best_id;
-            }
+			}
         }}
         break;
 
@@ -4747,6 +4796,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.96  2004/10/12 18:57:57  dicuccio
+* Added variant of sequence::GetId() that takes a seq-id instead of a bioseq
+* handle
+*
 * Revision 1.95  2004/10/12 13:57:21  dicuccio
 * Added convenience routines for finding: best mRNA for CDS feature; best gene
 * for mRNA; best gene for CDS; all mRNAs for a gene; all CDSs for a gene.  Added
