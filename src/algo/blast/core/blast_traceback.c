@@ -42,8 +42,8 @@ Detailed Contents:
 
 static char const rcsid[] = "$Id$";
 
-extern Int4 LIBCALL HspArrayPurge PROTO((BlastHSPPtr PNTR hsp_array, 
-                       Int4 hspcnt, Boolean clear_num));
+extern Int4 HspArrayPurge (BlastHSPPtr PNTR hsp_array, 
+                       Int4 hspcnt, Boolean clear_num);
 
 #define WINDOW_SIZE 20
 static FloatHi 
@@ -96,7 +96,7 @@ SumHSPEvalue(Uint1 program_number, BLAST_ScoreBlkPtr sbp,
 /** Sort the HSP's by starting position of the query.  Called by HeapSort.  
  *	The first function sorts in forward, the second in reverse order.
 */
-static int LIBCALLBACK
+static int
 fwd_compare_hsps(VoidPtr v1, VoidPtr v2)
 
 {
@@ -129,7 +129,7 @@ fwd_compare_hsps(VoidPtr v1, VoidPtr v2)
 }
 
 /* Comparison function based on end position in the query */
-static int LIBCALLBACK
+static int
 end_compare_hsps(VoidPtr v1, VoidPtr v2)
 
 {
@@ -161,7 +161,7 @@ end_compare_hsps(VoidPtr v1, VoidPtr v2)
 	return 0;
 }
 
-static int LIBCALLBACK
+static int
 sumscore_compare_hsps(VoidPtr v1, VoidPtr v2)
 
 {
@@ -499,7 +499,7 @@ BlastLinkHsps(Uint1 program_number, BlastHSPListPtr hsp_list,
 /** Comparison function for sorting HSPs by score. 
  * Ties are broken based on subject sequence offsets.
  */
-static int LIBCALLBACK
+static int
 score_compare_hsps(VoidPtr v1, VoidPtr v2)
 {
    BlastHSPPtr h1, h2;
