@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 // define cut-off strategy at the terminii
 static const size_t kMinTermExonSize = 45; // strategy applies below this limit
 static const double kMinTermExonIdty = 0.95; 
-static const size_t kIntronPerTermExon = 600;
+static const size_t kIntronPerTermExon = 300;
 
 
 CSplign::CSplign( void )
@@ -963,13 +963,14 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
     // First go from the ends and see if we
     // can improve boundary exons
     size_t k0 = 0;
+    const double min_idty = max(m_minidty, kMinTermExonIdty);
     while(k0 < seg_dim) {
         SSegment& s = segments[k0];
         if(s.m_exon) {
-            if(s.m_idty < m_minidty || m_endgaps) {
+            if(s.m_idty < min_idty || m_endgaps) {
                 s.ImproveFromLeft(Seq1, Seq2);
             }
-            if(s.m_idty >= m_minidty) {
+            if(s.m_idty >= min_idty) {
                 break;
             }
         }
@@ -997,10 +998,10 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
     while(k1 >= int(k0)) {
         SSegment& s = segments[k1];
         if(s.m_exon) {
-            if(s.m_idty < m_minidty || m_endgaps) {
+            if(s.m_idty < min_idty || m_endgaps) {
 	            s.ImproveFromRight(Seq1, Seq2);
             }
-            if(s.m_idty >= m_minidty) {
+            if(s.m_idty >= min_idty) {
 	            break;
             }
         }
@@ -1041,11 +1042,7 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
     }
 
-//#define CLEAVE_WEAK_TERMINAL_EXONS
-#ifdef CLEAVE_WEAK_TERMINAL_EXONS
-
-    // turn to gaps terminal exons
-    // that are too short/too distant/low-identity
+    // turn to gaps short weak terminal exons
     {{
         // find the two leftmost exons
         size_t exon_count = 0;
@@ -1063,11 +1060,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         if(exon_count == 2) {
             size_t exon_size = 1 + term_segs[0]->m_box[1] -
                 term_segs[0]->m_box[0];
-            size_t intron_size = term_segs[1]->m_box[2] - 
-                term_segs[0]->m_box[3] - 1;
             if(exon_size < kMinTermExonSize) {
-                if(kIntronPerTermExon*exon_size < intron_size ||
-                   term_segs[0]->m_idty < kMinTermExonIdty) {
+                if(term_segs[0]->m_idty < kMinTermExonIdty) {
 
                     // turn this to a gap
                     SSegment& s = *(term_segs[0]);
@@ -1097,11 +1091,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         if(exon_count == 2) {
             size_t exon_size = 1 + term_segs[0]->m_box[1]
                 - term_segs[0]->m_box[0];
-            size_t intron_size = term_segs[0]->m_box[2] - 
-                term_segs[1]->m_box[3] - 1;
             if(exon_size < kMinTermExonSize) {
-                if(kIntronPerTermExon*exon_size < intron_size
-                   || term_segs[0]->m_idty < kMinTermExonIdty) {
+                if(term_segs[0]->m_idty < kMinTermExonIdty) {
 
                     // turn this to a gap
                     SSegment& s = *(term_segs[0]);
@@ -1114,8 +1105,6 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
             }
         }
     }}
-
-#endif
 
     // turn to gaps extra-short exons preceeded/followed by gaps
     bool gap_prev = false;
@@ -1443,6 +1432,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/06/21 18:43:20  kapustin
+ * Tweak seg-level post-processing to reconcile boundary identity improvement with rterm-exon cutting
+ *
  * Revision 1.15  2004/06/16 21:02:43  kapustin
  * Set lower length limit for gaps treated as poly-A parts
  *
