@@ -30,57 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2002/11/14 20:44:48  gouriano
-* added AddMember method
-*
-* Revision 1.9  2001/10/22 15:16:19  grichenk
-* Optimized CTypeInfo::IsCObject()
-*
-* Revision 1.8  2000/10/13 16:28:29  vasilche
-* Reduced header dependency.
-* Avoid use of templates with virtual methods.
-* Reduced amount of different maps used.
-* All this lead to smaller compiled code size (libraries and programs).
-*
-* Revision 1.7  2000/10/03 17:22:30  vasilche
-* Reduced header dependency.
-* Reduced size of debug libraries on WorkShop by 3 times.
-* Fixed tag allocation for parent classes.
-* Fixed CObject allocation/deallocation in streams.
-* Moved instantiation of several templates in separate source file.
-*
-* Revision 1.6  2000/09/18 20:00:00  vasilche
-* Separated CVariantInfo and CMemberInfo.
-* Implemented copy hooks.
-* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
-* Most type specific functions now are implemented via function pointers instead of virtual functions.
-*
-* Revision 1.5  2000/09/01 13:15:58  vasilche
-* Implemented class/container/choice iterators.
-* Implemented CObjectStreamCopier for copying data without loading into memory.
-*
-* Revision 1.4  2000/08/15 19:44:38  vasilche
-* Added Read/Write hooks:
-* CReadObjectHook/CWriteObjectHook for objects of specified type.
-* CReadClassMemberHook/CWriteClassMemberHook for specified members.
-* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
-* CReadContainerElementHook/CWriteContainerElementsHook for containers.
-*
-* Revision 1.3  2000/07/11 20:34:51  vasilche
-* File included in all generated headers made lighter.
-* Nonnecessary code moved to serialimpl.hpp.
-*
-* Revision 1.2  2000/07/03 18:42:33  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* Revision 1.1  2000/06/16 16:31:04  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -163,7 +112,6 @@ protected:
 
 private:
     const type_info* m_Id;
-    bool m_IsCObject;
 
     CItemsInfo m_Items;
 
@@ -190,5 +138,64 @@ private:
 #include <serial/classinfob.inl>
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.11  2002/12/12 17:58:16  ucko
+* Stop shadowing CTypeInfo::m_IsCObject, which had made IsCObject always
+* return false.
+* Move CVS log to end.
+*
+* Revision 1.10  2002/11/14 20:44:48  gouriano
+* added AddMember method
+*
+* Revision 1.9  2001/10/22 15:16:19  grichenk
+* Optimized CTypeInfo::IsCObject()
+*
+* Revision 1.8  2000/10/13 16:28:29  vasilche
+* Reduced header dependency.
+* Avoid use of templates with virtual methods.
+* Reduced amount of different maps used.
+* All this lead to smaller compiled code size (libraries and programs).
+*
+* Revision 1.7  2000/10/03 17:22:30  vasilche
+* Reduced header dependency.
+* Reduced size of debug libraries on WorkShop by 3 times.
+* Fixed tag allocation for parent classes.
+* Fixed CObject allocation/deallocation in streams.
+* Moved instantiation of several templates in separate source file.
+*
+* Revision 1.6  2000/09/18 20:00:00  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
+* Revision 1.5  2000/09/01 13:15:58  vasilche
+* Implemented class/container/choice iterators.
+* Implemented CObjectStreamCopier for copying data without loading into memory.
+*
+* Revision 1.4  2000/08/15 19:44:38  vasilche
+* Added Read/Write hooks:
+* CReadObjectHook/CWriteObjectHook for objects of specified type.
+* CReadClassMemberHook/CWriteClassMemberHook for specified members.
+* CReadChoiceVariantHook/CWriteChoiceVariant for specified choice variants.
+* CReadContainerElementHook/CWriteContainerElementsHook for containers.
+*
+* Revision 1.3  2000/07/11 20:34:51  vasilche
+* File included in all generated headers made lighter.
+* Nonnecessary code moved to serialimpl.hpp.
+*
+* Revision 1.2  2000/07/03 18:42:33  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
+* Revision 1.1  2000/06/16 16:31:04  vasilche
+* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+*
+* ===========================================================================
+*/
 
 #endif  /* CLASSINFOB__HPP */
