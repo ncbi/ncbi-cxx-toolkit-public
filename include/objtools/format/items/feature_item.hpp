@@ -168,7 +168,8 @@ private:
     void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddGoQuals(const CUser_object& uo) const;
     void x_AddExceptionQuals(CBioseqContext& ctx) const;
-    void x_ImportQuals(const CSeq_feat::TQual& quals) const;
+    void x_ImportQuals(const CSeq_feat::TQual& quals, CBioseqContext& ctx) const;
+    void x_AddRptUnitQual(const string& rpt_unit) const;
     void x_CleanQuals(void) const;
     const CFlatStringQVal* x_GetStringQual(EFeatureQualifier slot) const;
     CFlatStringListQVal* x_GetStringListQual(EFeatureQualifier slot) const;
@@ -194,9 +195,8 @@ private:
     
     // typdef
     typedef CQualContainer<EFeatureQualifier> TQuals;
-    typedef TQuals::iterator TQI;
-    typedef TQuals::const_iterator TQCI;
-
+    typedef TQuals::iterator                  TQI;
+    typedef TQuals::const_iterator            TQCI;
     
     // qualifiers container
     void x_AddQual(EFeatureQualifier slot, const IFlatQVal* value) const {
@@ -258,9 +258,7 @@ public:
     string GetKey(void) const { return "source"; }
 
 private:
-    void x_GatherInfo(CBioseqContext& ctx) {
-        x_AddQuals(ctx);
-    }
+    void x_GatherInfo(CBioseqContext& ctx);
 
     void x_AddQuals(CBioseqContext& ctx);
     void x_AddQuals(const CBioSource& src, CBioseqContext& ctx) const;
@@ -287,7 +285,7 @@ private:
             IFlatQVal::TFlags flags = 0) const {
         x_FormatQual(slot, name, qvec, add_period, flags | IFlatQVal::fIsNote); 
     }
-
+    
     typedef CQualContainer<ESourceQualifier> TQuals;
     typedef TQuals::const_iterator           TQCI;
 
@@ -303,6 +301,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/10/05 15:32:56  shomrat
+* Changed CSourceFeatureItem::x_GatherInfo implementation
+*
 * Revision 1.18  2004/08/30 13:34:37  shomrat
 * Add site feature qualifiers
 *
