@@ -1,4 +1,4 @@
---$Revision: 1.18 $ 
+--$Revision: 1.19 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -50,7 +50,9 @@ Entrezgene ::= SEQUENCE {
     summary VisibleString OPTIONAL ,    -- short summary 
     location SEQUENCE OF Maps OPTIONAL,
     gene-source Gene-source OPTIONAL ,             -- NCBI source to Entrez 
-    locus SEQUENCE OF Gene-commentary OPTIONAL ,   -- where is the gene on a chromosome 
+    locus SEQUENCE OF Gene-commentary OPTIONAL ,   -- location of gene on chromosome (if known)
+                                                   -- and all information about products
+						   -- (mRNA, proteins and so on)
     properties SEQUENCE OF Gene-commentary OPTIONAL , 
     refgene SEQUENCE OF Gene-commentary OPTIONAL , -- NG for this? 
     homology SEQUENCE OF Gene-commentary OPTIONAL , 
