@@ -90,7 +90,7 @@ void CMsvcConfigure::operator() (const CMsvcSite&         site,
         makefile_path = CDirEntry::ConcatPath(makefile_path, "dll");
         makefile_path = CDirEntry::ConcatPath(makefile_path, config.m_Name);
         makefile_path = CDirEntry::ConcatPath(makefile_path, 
-                                              "makefile_third_party.mk");
+                                              "Makefile.third_party.mk");
         // Create dir if no such dir...
         string dir;
         CDirEntry::SplitPath(makefile_path, &dir);
@@ -239,6 +239,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/27 13:43:52  gorelenk
+ * Changed name of generated makefile for auto third-parties install to
+ * 'Makefile.third_party.mk'.
+ *
  * Revision 1.9  2004/05/24 15:14:07  gorelenk
  * Changed implementation of CMsvcConfigure::operator().
  *
