@@ -808,11 +808,11 @@ BLAST_SearchEngine(Uint1 program_number,
    BLAST_GapAlignStructFree(gap_align);
    BlastCoreAuxStructFree(aux_struct);
 
-   sfree(score_params);
-   sfree(hit_params);
-   sfree(ext_params);
-   sfree(word_params);
-   sfree(eff_len_params);
+   word_params = BlastInitialWordParametersFree(word_params);
+   score_params = BlastScoringParametersFree(score_params);
+   hit_params = BlastHitSavingParametersFree(hit_params);
+   ext_params = BlastExtensionParametersFree(ext_params);
+   eff_len_params = BlastEffectiveLengthsParametersFree(eff_len_params);
 
    return status;
 }
