@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/09/26 19:29:17  vasilche
+* Removed experimental choice pointer stuff.
+*
 * Revision 1.21  2000/09/26 17:39:02  vasilche
 * Updated hooks implementation.
 *
@@ -236,15 +239,15 @@ int CAsn2Asn::Run(void)
                 copier.Copy(Type<CSeq_entry>());
             }
             else {
-                CRef<CSeq_entry> entry;
+                CSeq_entry entry;
                 if ( displayMessages )
                     NcbiCerr << "Reading Seq-entry..." << NcbiEndl;
-                in->Read(&entry, CSeq_entry::GetRefChoiceTypeInfo());
-                SeqEntryProcess(*entry);     /* do any processing */
+                *in >> entry;
+                SeqEntryProcess(entry);     /* do any processing */
                 if ( haveOutput ) {
                     if ( displayMessages )
                         NcbiCerr << "Writing Seq-entry..." << NcbiEndl;
-                    out->Write(&entry, CSeq_entry::GetRefChoiceTypeInfo());
+                    *out << entry;
                 }
             }
         }
@@ -266,12 +269,12 @@ int CAsn2Asn::Run(void)
                     NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
                 if ( readHook ) {
                     CObjectTypeInfo bioseqSetType = Type<CBioseq_set>();
-                    CObjectTypeInfo::CMemberIterator member =
+                    CObjectTypeInfo::CMemberIterator seqSetMember =
                         bioseqSetType.FindMember("seq-set");
                     CReadSeqSetHook hook;
-                    const_cast<CMemberInfo*>(member.GetMemberInfo())->SetLocalReadHook(*in, &hook);
+                    seqSetMember.SetLocalReadHook(*in, &hook);
                     *in >> entries;
-                    const_cast<CMemberInfo*>(member.GetMemberInfo())->ResetLocalReadHook(*in);
+                    seqSetMember.ResetLocalReadHook(*in);
                 }
                 else {
                     *in >> entries;
@@ -327,7 +330,7 @@ void CReadSeqSetHook::
 CReadSeqEntryHook::ReadContainerElement(CObjectIStream& in,
                                         const CObjectInfo& /*cont*/)
 {
-    CRef<CSeq_entry> entry;
-    in.ReadSeparateObject(CObjectInfo(&entry, CSeq_entry::GetRefChoiceTypeInfo()));
-    SeqEntryProcess(*entry);
+    CSeq_entry entry;
+    in.ReadSeparateObject(ObjectInfo(entry));
+    SeqEntryProcess(entry);
 }
