@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2001/06/13 23:19:39  vakatov
+* Revamped previous revision (prefix and error codes)
+*
 * Revision 1.73  2001/06/13 20:50:00  ivanov
 * Added test for stack post prefix messages and ErrCode manipulator.
 *
@@ -633,21 +636,26 @@ static void TestDiag(void)
     UnsetDiagPostFlag(eDPF_LongFilename);
 
     PushDiagPostPrefix("Prefix1");
-    ERR_POST("Message");
+    ERR_POST("Message with prefix");
     PushDiagPostPrefix("Prefix2");
-    ERR_POST("Message");
+    ERR_POST("Message with prefixes");
     PushDiagPostPrefix("Prefix3");
-    ERR_POST("Message");
+    ERR_POST("Message with prefixes");
     PopDiagPostPrefix();
-    ERR_POST("Message");
+    ERR_POST("Message with prefixes");
     PopDiagPostPrefix();
     PopDiagPostPrefix();
     PopDiagPostPrefix();
-    ERR_POST("Message");
+    ERR_POST_EX(8, 0, "Message without prefix");
     SetDiagPostPrefix(0);
 
-    ERR_POST_EX("Message",1,2);
-    diag << Error << ErrCode(3,4) << "Message with error code" << Endm;
+    PushDiagPostPrefix("ERROR");
+    PopDiagPostPrefix();
+    ERR_POST_EX(1, 2, "Message with error code, without prefix");
+
+    PushDiagPostPrefix("ERROR");
+    SetDiagPostPrefix(0);
+    diag << Error << ErrCode(3, 4) << "Message with error code" << Endm;
 }
 
 

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/06/13 23:19:36  vakatov
+* Revamped previous revision (prefix and error codes)
+*
 * Revision 1.20  2001/06/13 20:51:52  ivanov
 * + PushDiagPostPrefix(), PopPushDiagPostPrefix() - stack post prefix messages.
 * + ERR_POST_EX, LOG_POST_EX - macros for posting with error codes.
@@ -147,13 +150,14 @@ public:
     const CNcbiDiag* m_Diag;    // present user
     CNcbiOstream*    m_Stream;  // storage for the diagnostic message
   
-    typedef list<string> TPrefixList;
-    typedef TPrefixList::const_iterator TPrefixListCI;
-    TPrefixList m_PrefixList;   // list string's to add to each posted message
-
     // user-specified string to add to each posted message
-    // (can be constructed from m_PrefixList after push/pop operations)
-    char* m_PostPrefix;
+    // (can be constructed from "m_PrefixList" after push/pop operations)
+    string m_PostPrefix;
+
+    // list of prefix strings to compose the "m_PostPrefix" from
+    typedef list<string> TPrefixList;
+    TPrefixList m_PrefixList;
+
 
     CDiagBuffer(void);
 
@@ -183,8 +187,8 @@ private:
     // flush & detach the current user
     void Detach(const CNcbiDiag* diag);
 
-    // compose post prefix on base list "m_PrefixList"
-    void MakePrefix(void);
+    // compose the post prefix using "m_PrefixList"
+    void UpdatePrefix(void);
 
     // the bitwise OR combination of "EDiagPostFlag"
     static unsigned int sm_PostFlags;
@@ -412,17 +416,18 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
                            const char* buf, size_t len,
                            void* data, const char* file, size_t line,
                            unsigned int flags, const char* prefix,
-                           int err_code, int err_subcode) {
+                           int err_code, int err_subcode)
+{
     m_Severity   = severity;
     m_Buffer     = buf;
     m_BufferLen  = len;
     m_Data       = data;
     m_File       = file;
     m_Line       = line;
-    m_ErrCode    = err_code;
-    m_ErrSubCode = err_subcode;
     m_Flags      = flags;
     m_Prefix     = prefix;
+    m_ErrCode    = err_code;
+    m_ErrSubCode = err_subcode;
 }
 
 #endif /* def NCBIDIAG__HPP  &&  ndef NCBIDIAG__INL */

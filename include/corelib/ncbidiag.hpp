@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/06/13 23:19:36  vakatov
+* Revamped previous revision (prefix and error codes)
+*
 * Revision 1.25  2001/06/13 20:51:52  ivanov
 * + PushDiagPostPrefix(), PopPushDiagPostPrefix() - stack post prefix messages.
 * + ERR_POST_EX, LOG_POST_EX - macros for posting with error codes.
@@ -130,7 +133,6 @@
 #include <list>
 
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
 
@@ -138,13 +140,14 @@ BEGIN_NCBI_SCOPE
 #define ERR_POST(message) \
     ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << message << NCBI_NS_NCBI::Endm )
 
-#define ERR_POST_EX(message, err_code, err_subcode) \
-    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << NCBI_NS_NCBI::ErrCode(err_code, err_subcode) << message << NCBI_NS_NCBI::Endm )
-
 #define LOG_POST(message) \
     ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log) << message << NCBI_NS_NCBI::Endm )
 
-#define LOG_POST_EX(message, err_code, err_subcode) \
+// ...with error codes
+#define ERR_POST_EX(err_code, err_subcode, message) \
+    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << NCBI_NS_NCBI::ErrCode(err_code, err_subcode) << message << NCBI_NS_NCBI::Endm )
+
+#define LOG_POST_EX(err_code, err_subcode, message) \
     ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log) << NCBI_NS_NCBI::ErrCode(err_code, err_subcode) << message << NCBI_NS_NCBI::Endm )
 
 
@@ -161,10 +164,12 @@ enum EDiagSev {
 
 // Which parts of the diagnostic context should be posted, and which are not...
 // The generic appearance of the posted message is as follows:
-//   "<file>", line <line>: <severity>: [<prefix>] <message>
+//   "<file>", line <line>: <severity>: (<err_code>.<err_subcode>)
+//    [<prefix1>::<prefix2>::<prefixN>] <message>
+//
 // e.g. if all flags are set, and prefix string is set to "My prefix", and
 // ERR_POST(eDiag_Warning, "Take care!"):
-//   "/home/iam/myfile.cpp", line 33: Warning: [My prefix] Take care!
+//   "/home/iam/myfile.cpp", line 33: Warning: (2.11) [aa::bb::cc] Take care!
 // See also SDiagMessage::Compose().
 enum EDiagPostFlag {
     eDPF_File         = 0x1,  // set by default #if _DEBUG;  else -- not set
@@ -212,9 +217,9 @@ public:
 #endif
 
 #if defined(NCBI_COMPILER_GCC)
-    // GCC compiler bug. Compiler not see "operator<<" for output manipulator 
-    // "ErrCode" and try apply for it 
-    // template<class X> CNcbiDiag& operator<< (const X& x).
+    // GCC compiler bug. Compiler apparently does not use out-of-class
+    // "operator<<" for "ErrCode". Instead, it tries to use
+    // template<class X> CNcbiDiag& CNcbiDiag::operator<< (const X& x).
     CNcbiDiag& operator<< (const class ErrCode& err_code);
 #endif
 
@@ -297,10 +302,9 @@ extern void UnsetDiagPostFlag(EDiagPostFlag flag);
 // Specify a string to prefix all subsequent error postings with
 extern void SetDiagPostPrefix(const char* prefix);
 
-// Push/pop a string to/from end list of prefix messages, adding to 
-// prefix all subsequent error
+// Push/pop a string to/from the list of message prefixes
 extern void PushDiagPostPrefix(const char* prefix);
-extern void PopDiagPostPrefix();
+extern void PopDiagPostPrefix(void);
 
 // Do not post messages which severity is less than "min_sev"
 // Return previous post-level
@@ -392,8 +396,6 @@ extern bool IsDiagStream(const CNcbiOstream* os);
 #include <corelib/ncbidiag.inl>
 
 
-
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
 
 #endif  /* NCBIDIAG__HPP */
