@@ -35,7 +35,7 @@
 /// @file bdb_blobcache.hpp
 /// IBLOB_Cache interface implemented on top of Berkeley DB
 
-
+#include <corelib/ncbiobj.hpp>
 #include <util/cache/icache.hpp>
 #include <util/cache/blob_cache.hpp>
 #include <util/cache/int_cache.hpp>
@@ -354,6 +354,31 @@ void NCBI_BDB_EXPORT NCBI_BDB_ICacheEntryPoint(
 } // extern C
 
 
+
+///
+/// Class container for BDB cache objects.
+///
+/// @internal
+
+class NCBI_BDB_EXPORT CBDB_CacheHolder : public CObject
+{
+public:
+    CBDB_CacheHolder(ICache* blob_cache, ICache* id_cache); 
+    ~CBDB_CacheHolder();
+
+    ICache* GetBlobCache() { return m_BlobCache; }
+    ICache* GetIdCache() { return m_IdCache; }
+
+private:
+    CBDB_CacheHolder(const CBDB_CacheHolder&);
+    CBDB_CacheHolder& operator=(const CBDB_CacheHolder&);
+
+private:
+    ICache*           m_BlobCache;
+    ICache*           m_IdCache;
+};
+
+
 /* @} */
 
 
@@ -362,6 +387,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/27 17:29:05  kuznets
+ * +CBDB_CacheHolder
+ *
  * Revision 1.12  2004/01/13 16:37:27  vasilche
  * Removed extra comma.
  *

@@ -2003,13 +2003,25 @@ void NCBI_BDB_ICacheEntryPoint(
 }
 
 
+CBDB_CacheHolder::CBDB_CacheHolder(ICache* blob_cache, ICache* id_cache) 
+: m_BlobCache(blob_cache),
+  m_IdCache(id_cache)
+{}
 
+CBDB_CacheHolder::~CBDB_CacheHolder()
+{
+    delete m_BlobCache;
+    delete m_IdCache;
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/02/27 17:29:50  kuznets
+ * +CBDB_CacheHolder
+ *
  * Revision 1.42  2004/02/06 16:16:40  vasilche
  * Fixed delete m_Buffer -> delete[] m_Buffer.
  *
