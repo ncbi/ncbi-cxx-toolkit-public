@@ -800,9 +800,20 @@ public:
 
 
 // Some implementations return char*, so strict compilers may refuse
-// to let them satisfy TStrerror without a wrapper.
+// to let them satisfy TStrerror without a wrapper.  However, they
+// don't all agree on what form the wrapper should take. :-/
+#ifdef NCBI_COMPILER_GCC
 inline
 const char* NcbiStrerror(int errnum) { return ::strerror(errnum); }
+#  define NCBI_STRERROR_WRAPPER NCBI_NS_NCBI::NcbiStrerror
+#else
+class CStrErrAdapt
+{
+public:
+    static const char* strerror(int errnum) { return ::strerror(errnum); }
+};
+#  define NCBI_STRERROR_WRAPPER NCBI_NS_NCBI::CStrErrAdapt::strerror
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -822,7 +833,7 @@ typedef const char* (*TStrerror)(int errnum);
 ///
 /// Define template class for easy generation of Errno-like exception classes.
 
-template <class TBase, TStrerror PErrstr=ncbi::NcbiStrerror >
+template <class TBase, TStrerror PErrstr=NCBI_STRERROR_WRAPPER >
 class CErrnoTemplExceptionEx : EXCEPTION_VIRTUAL_BASE public TBase
 {
 public:
@@ -930,11 +941,11 @@ private:
 /// Define template class for easy generation of Errno-like exception classes.
 
 template<class TBase> class CErrnoTemplException :
-                        public CErrnoTemplExceptionEx<TBase, ncbi::NcbiStrerror>
+                        public CErrnoTemplExceptionEx<TBase, NCBI_STRERROR_WRAPPER>
 {
 public:
     /// Parent class type.
-    typedef CErrnoTemplExceptionEx<TBase, ncbi::NcbiStrerror> CParent;
+    typedef CErrnoTemplExceptionEx<TBase, NCBI_STRERROR_WRAPPER> CParent;
 
     /// Constructor.
     CErrnoTemplException<TBase>(const char* file,int line,
@@ -988,6 +999,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2004/04/26 19:17:06  ucko
+ * Some compilers specifically preferred wrapping strerror with a class,
+ * so conditionalize use of a simple function on NCBI_COMPILER_GCC.
+ *
  * Revision 1.51  2004/04/26 14:43:56  ucko
  * Handle GCC 3.4's stricter treatment of templates:
  * - Wrap strerror with an ordinary function rather than a static method.
