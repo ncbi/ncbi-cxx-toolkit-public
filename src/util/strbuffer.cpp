@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2004/08/04 14:33:27  vasilche
+* Avoid copying of the whole buffer if possible.
+*
 * Revision 1.42  2004/05/24 18:13:01  gouriano
 * In text output files make indentation optional
 *
@@ -380,26 +383,29 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
     _ASSERT(pos >= m_DataEndPos);
     // remove unused portion of buffer at the beginning
     _ASSERT(m_CurrentPos >= m_Buffer);
-    size_t erase = m_CurrentPos - m_Buffer;
-    if ( erase > 0 ) {
-        char* newPos = m_CurrentPos - erase;
-        if ( m_Collector ) {
-            _ASSERT(m_CollectPos);
-            size_t count = m_CurrentPos - m_CollectPos;
-            if ( count > 0 )
-                m_Collector->AddChunk(m_CollectPos, count);
-            m_CollectPos = newPos;
+    size_t newPosOffset = pos - m_Buffer;
+    if ( newPosOffset >= m_BufferSize ) {
+        size_t erase = m_CurrentPos - m_Buffer;
+        if ( erase > 0 ) {
+            char* newPos = m_CurrentPos - erase;
+            if ( m_Collector ) {
+                _ASSERT(m_CollectPos);
+                size_t count = m_CurrentPos - m_CollectPos;
+                if ( count > 0 )
+                    m_Collector->AddChunk(m_CollectPos, count);
+                m_CollectPos = newPos;
+            }
+            size_t copy_count = m_DataEndPos - m_CurrentPos;
+            if ( copy_count )
+                memmove(newPos, m_CurrentPos, copy_count);
+            m_CurrentPos = newPos;
+            m_DataEndPos -= erase;
+            m_BufferOffset += erase;
+            pos -= erase;
+            newPosOffset -= erase;
         }
-        size_t copy_count = m_DataEndPos - m_CurrentPos;
-        if ( copy_count )
-            memmove(newPos, m_CurrentPos, copy_count);
-        m_CurrentPos = newPos;
-        m_DataEndPos -= erase;
-        m_BufferOffset += erase;
-        pos -= erase;
     }
     size_t dataSize = m_DataEndPos - m_Buffer;
-    size_t newPosOffset = pos - m_Buffer;
     if ( newPosOffset >= m_BufferSize ) {
         // reallocate buffer
         size_t newSize = BiggerBufferSize(m_BufferSize);
