@@ -75,6 +75,11 @@
 #  define NDEBUG
 #endif
 #include <assert.h>
+/* The following 2 headers are actually only required for Codewarrior
+ * on Mac to prototype printf() and abort() respectively :-/
+ */
+#include <stdio.h>
+#include <stdlib.h>
 #if defined(NDEBUG)
 #  define verify(expr)  (void)(expr)
 #else
@@ -466,6 +471,9 @@ extern NCBI_XCONNECT_EXPORT void REG_Set
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.21  2003/03/06 01:42:14  lavr
+ * Include <stdio.h> and <stdlib.h> required by <assert.h> under Codewarrior
+ *
  * Revision 6.20  2003/01/08 01:59:32  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *
