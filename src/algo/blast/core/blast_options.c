@@ -1132,7 +1132,8 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number,
 
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
-                           double evalue, Int4 hitlist_size)
+                           double evalue, Int4 hitlist_size,
+                           Boolean is_gapped)
 {
    if (!options)
       return 1;
@@ -1141,6 +1142,8 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
       options->hitlist_size = options->prelim_hitlist_size = hitlist_size;
    if (evalue)
       options->expect_value = evalue;
+   if(!is_gapped)
+     options->hsp_num_max = 400;
 
    return 0;
 
@@ -1570,8 +1573,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
 
 	/* Do this for the first context, should this be changed?? */
 	kbp = sbp->kbp[query_info->first_context];
-	window_size = link_hsp_params->gap_size + link_hsp_params->overlap_size + 1;
-	gap_prob = link_hsp_params->gap_prob;
+	window_size
+        = link_hsp_params->gap_size + link_hsp_params->overlap_size + 1;
+    gap_prob = link_hsp_params->gap_prob = BLAST_GAP_PROB;
 	gap_decay_rate = link_hsp_params->gap_decay_rate;
    /* Use average query length */
 	query_length = 
@@ -1619,7 +1623,6 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
       link_hsp_params->cutoff_small_gap = 
          MAX(ext_params->gap_trigger, 
              (Int4) floor((log(x_variable)/kbp->Lambda)) + 1);
-      link_hsp_params->gap_prob = BLAST_GAP_PROB;
    } else {
       link_hsp_params->cutoff_big_gap = 
          (Int4) floor((log(x_variable)/kbp->Lambda)) + 1;
@@ -1638,6 +1641,13 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.138  2004/11/01 18:37:23  madden
+ *    - In BLAST_FillHitSavingOption, set hsp_num_max to a finite value
+ *      (400) for ungapped searches.
+ *
+ *    - In CalculateLinkHSPCutoffs reset gap_prob for each subject
+ *      sequence before the value of gap_prob is used.
+ *
  * Revision 1.137  2004/10/25 16:27:49  coulouri
  * include the length of the reverse complement strand for blastn
  *
