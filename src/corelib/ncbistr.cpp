@@ -570,27 +570,36 @@ string NStr::Replace(const string& src,
 
 
 list<string>& NStr::Split(const string& str, const string& delim,
-                          list<string>& arr)
+                          list<string>& arr, EMergeDelims merge)
 {
     for (size_t pos = 0; ; ) {
-        size_t not_pos = str.find_first_not_of(delim, pos);
-        pos = str.find_first_of(delim, not_pos);
-        if (pos == not_pos) // both are NPOS or 0 (for an empty string)
+        size_t prev_pos = (merge == eMergeDelims
+                           ? str.find_first_not_of(delim, pos)
+                           : pos);
+        if (prev_pos == NPOS) {
             break;
-        arr.push_back(str.substr(not_pos, pos - not_pos));
+        }
+        pos = str.find_first_of(delim, prev_pos);
+        if (pos == NPOS) {
+            arr.push_back(str.substr(prev_pos));
+            break;
+        } else {
+            arr.push_back(str.substr(prev_pos, pos - prev_pos));
+            ++pos;
+        }
     }
     return arr;
 }
 
 vector<string>& NStr::Tokenize(const string& str, const string& delim,
-                               vector<string>& arr)
+                               vector<string>& arr, EMergeDelims merge)
 {
     if (delim.empty()) {
         arr.push_back(str);
         return arr;
     }
 
-    size_t pos, prev_pos, len;
+    size_t pos, prev_pos;
 
     // Count number of tokens to determine the array size
     size_t tokens = 0;
@@ -604,19 +613,21 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
     arr.reserve(arr.size() + tokens + 1);
 
     // Tokenization
-    for (pos = prev_pos = 0; pos < str.length(); ++pos) {
-        char c = str[pos];
-        size_t dpos = delim.find(c);
-        if (dpos == string::npos) continue;
-
-        len = pos - prev_pos;
-        arr.push_back(len ? str.substr(prev_pos, len) : kEmptyStr);
-
-        prev_pos = pos + 1;
+    for (pos = 0; ; ) {
+        prev_pos = (merge == eMergeDelims ? str.find_first_not_of(delim, pos)
+                    : pos);
+        if (prev_pos == NPOS) {
+            break;
+        }
+        pos = str.find_first_of(delim, prev_pos);
+        if (pos == NPOS) {
+            arr.push_back(str.substr(prev_pos));
+            break;
+        } else {
+            arr.push_back(str.substr(prev_pos, pos - prev_pos));
+            ++pos;
+        }
     }
-
-    len = pos - prev_pos;
-    arr.push_back(len ? str.substr(prev_pos, len) : kEmptyStr);
 
     return arr;
 }
@@ -851,14 +862,12 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 {
     const string* pfx      = prefix1 ? prefix1 : prefix;
     string        s        = *pfx;
-    SIZE_TYPE     column   = s_VisibleWidth(s,
-                                            (flags & fWrap_HTMLPre)!=0);
-    SIZE_TYPE     delwidth = s_VisibleWidth(delim,
-                                            (flags & fWrap_HTMLPre)!=0);
+    bool          is_html  = flags & fWrap_HTMLPre;
+    SIZE_TYPE     column   = s_VisibleWidth(s,     is_html);
+    SIZE_TYPE     delwidth = s_VisibleWidth(delim, is_html);
     bool          at_start = true;
     iterate (list<string>, it, l) {
-        SIZE_TYPE term_width = s_VisibleWidth(*it,
-                                              (flags & fWrap_HTMLPre)!=0);
+        SIZE_TYPE term_width = s_VisibleWidth(*it, is_html);
         if (at_start) {
             if (column + term_width <= width) {
                 s += *it;
@@ -869,7 +878,7 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
                 Wrap(*it, width, arr, flags, prefix, pfx);
                 pfx      = prefix;
                 s        = *prefix;
-                column   = s_VisibleWidth(s, (flags & fWrap_HTMLPre)!=0);
+                column   = s_VisibleWidth(s, is_html);
                 at_start = true;
             }
         } else if (column + delwidth + term_width <= width) {
@@ -882,7 +891,7 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
             arr.push_back(s);
             pfx      = prefix;
             s        = *prefix;
-            column   = s_VisibleWidth(s, (flags & fWrap_HTMLPre)!=0);
+            column   = s_VisibleWidth(s, is_html);
             at_start = true;
             --it;
         }
@@ -912,6 +921,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2003/01/24 16:59:27  ucko
+ * Add an optional parameter to Split and Tokenize indicating whether to
+ * merge adjacent delimiters; clean up WrapList slightly.
+ *
  * Revision 1.67  2003/01/21 23:22:22  vakatov
  * NStr::Tokenize() to return reference, and not a new "vector<>".
  *
