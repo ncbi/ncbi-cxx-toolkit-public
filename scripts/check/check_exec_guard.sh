@@ -14,7 +14,7 @@
 # 
 # Note:
 #    If process with "pid" still execute after "timeout" seconds, that 
-#    it will be killed and exit code from this script will be 255. 
+#    it will be killed and exit code from this script will be 1. 
 #    Otherwise exit code 0 will be returned to parent shell.
 #
 ###########################################################################
@@ -41,4 +41,4 @@ kill $pid > /dev/null 2>&1
 sleep $sleep_time
 kill -9 $pid > /dev/null 2>&1
 
-exit 0
+exit 1
