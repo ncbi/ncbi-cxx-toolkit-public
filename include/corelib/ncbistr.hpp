@@ -249,7 +249,13 @@ public:
     /// Make a printable version of "str". The non-printable characters will
     /// be represented as "\r", "\n", "\v", "\t", "\0", "\\", or
     /// "\xDD" where DD is the character's code in hexadecimal.
-    static string PrintableString(const string& str);
+    enum ENewLineMode {
+        eNewLine_Quote,         // display "\n" instead of actual linebreak
+        eNewLine_Passthru       // break the line on every "\n" occurrance
+    };
+
+    static string PrintableString(const string& str,
+                                  ENewLineMode  nl_mode = eNewLine_Quote);
 
     enum EWrapFlags {
         fWrap_Hyphenate  = 0x1, // add a hyphen when breaking words?
@@ -638,6 +644,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2002/10/18 20:48:41  lavr
+ * +ENewLine_Mode and '\n' translation in NStr::PrintableString()
+ *
  * Revision 1.23  2002/10/16 19:29:17  ucko
  * +fWrap_HTMLPre
  *

@@ -445,7 +445,8 @@ string NStr::Join(const list<string>& arr, const string& delim)
 }
 
 
-string NStr::PrintableString(const string& str)
+string NStr::PrintableString(const string&      str,
+                             NStr::ENewLineMode nl_mode)
 {
     string s;
     iterate (string, it, str) {
@@ -454,7 +455,7 @@ string NStr::PrintableString(const string& str)
         } else if (*it == '\\') {
             s += "\\\\";
         } else if (*it == '\n') {
-            s += "\\n";
+            s += nl_mode == eNewLine_Quote ? "\\n" : "\n";
         } else if (*it == '\t') {
             s += "\\t";
         } else if (*it == '\r') {
@@ -714,6 +715,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2002/10/18 20:48:56  lavr
+ * +ENewLine_Mode and '\n' translation in NStr::PrintableString()
+ *
  * Revision 1.56  2002/10/17 14:41:20  ucko
  * * Make s_EndOf{Tag,Reference} actually static (oops).
  * * Pull width-determination code from WrapList into a separate function
