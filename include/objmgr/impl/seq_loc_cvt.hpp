@@ -274,6 +274,8 @@ public:
 private:
     friend class CSeq_align_Mapper;
 
+    void x_Add(CSeq_loc_Conversion& cvt, unsigned int loc_index);
+
     bool ConvertPoint(const CSeq_point& src,
                       CRef<CSeq_loc>* dst,
                       unsigned int loc_index);
@@ -374,6 +376,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/10/27 15:51:49  vasilche
+* Fixed single conversion in CSeq_loc_Conversion_Set::Add().
+* Use list::splice() instead of list::merge().
+*
 * Revision 1.25  2004/10/26 15:46:59  vasilche
 * Fixed processing of partial intervals in feature mapping.
 *

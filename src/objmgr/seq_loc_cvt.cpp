@@ -900,12 +900,15 @@ void CSeq_loc_Conversion_Set::Add(CSeq_loc_Conversion& cvt,
         return;
     }
     else if ( m_CvtByIndex.empty() ) {
-        TIdMap& id_map = m_CvtByIndex[m_SingleIndex];
-        TRangeMap& ranges = id_map[m_SingleConv->m_Src_id_Handle];
-        ranges.insert(TRangeMap::value_type
-                      (TRange(cvt.m_Src_from, cvt.m_Src_to),
-                       m_SingleConv));
+        x_Add(*m_SingleConv, m_SingleIndex);
     }
+    x_Add(cvt, loc_index);
+}
+
+
+void CSeq_loc_Conversion_Set::x_Add(CSeq_loc_Conversion& cvt,
+                                    unsigned int loc_index)
+{
     TIdMap& id_map = m_CvtByIndex[loc_index];
     TRangeMap& ranges = id_map[cvt.m_Src_id_Handle];
     ranges.insert(TRangeMap::value_type(TRange(cvt.m_Src_from, cvt.m_Src_to),
@@ -1167,8 +1170,7 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
     CRef<CSeq_loc> tmp(new CSeq_loc);
     CPacked_seqint::Tdata& ints = tmp->SetPacked_int().Set();
     TRange total_range(TRange::GetEmpty());
-    bool revert_order = (src.IsSetStrand()
-        && src.GetStrand() == eNa_strand_minus);
+    bool revert_order = (src.IsSetStrand() && IsReverse(src.GetStrand()));
     bool res = false;
     TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetId()),
         src.GetFrom(), src.GetTo(), loc_index);
@@ -1216,8 +1218,8 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_int(const CSeq_loc& src,
                 dst_ints.push_back(CRef<CSeq_interval>(&dst_int->SetInt()));
             }
             else if ( dst_int->IsPacked_int() ) {
-                CPacked_seqint::Tdata& splitted = dst_int->SetPacked_int().Set();
-                dst_ints.merge(splitted);
+                dst_ints.splice(dst_ints.end(),
+                                dst_int->SetPacked_int().Set());
             }
             else {
                 _ASSERT("this cannot happen" && 0);
@@ -1483,6 +1485,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/10/27 15:51:49  vasilche
+* Fixed single conversion in CSeq_loc_Conversion_Set::Add().
+* Use list::splice() instead of list::merge().
+*
 * Revision 1.41  2004/10/26 15:46:59  vasilche
 * Fixed processing of partial intervals in feature mapping.
 *
