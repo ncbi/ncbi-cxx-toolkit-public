@@ -911,7 +911,6 @@ inline void
 CBlastOptions::SetFrameShiftPenalty(int p)
 {
     m_ScoringOpts->shift_pen = p;
-    m_ScoringOpts->is_ooframe = TRUE;
 }
 
 inline int 
@@ -935,11 +934,6 @@ CBlastOptions::GetOutOfFrameMode() const
 inline void 
 CBlastOptions::SetOutOfFrameMode(bool m)
 {
-#if 0
-    if (m_Program != eBlastx && m == true)
-        NCBI_THROW(CBlastException, eBadParameter, 
-                "Out-of-Frame only allowed for blastx");
-#endif
     m_ScoringOpts->is_ooframe = m;
 }
 
@@ -1054,6 +1048,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2003/11/12 18:41:02  camacho
+* Remove side effects from mutators
+*
 * Revision 1.32  2003/11/04 17:13:01  dondosha
 * Set boolean is_ooframe option when needed
 *
