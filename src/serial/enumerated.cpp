@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/09/26 18:09:48  vasilche
+* Fixed some warnings.
+*
 * Revision 1.13  2000/09/18 20:00:21  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -222,7 +225,7 @@ void CEnumeratedTypeInfo::SetValueULong(TObjectPtr objectPtr,
 {
     if ( long(value) < 0 )
         THROW1_TRACE(runtime_error, "overflow error");
-    Values().FindName(value, Values().IsInteger());
+    Values().FindName(long(value), Values().IsInteger());
     m_ValueType->SetValueULong(objectPtr, value);
 }
 
