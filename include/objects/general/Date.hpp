@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/01/10 19:46:44  clausen
+ * Added GetDate
+ *
  * Revision 1.1  2001/11/16 20:54:50  ucko
  * Added comparison for dates.
  *
@@ -71,6 +74,12 @@ public:
         eCompare_unknown
     };
     ECompare Compare(const CDate& date) const;
+    
+    // Appends a date as a string to label. If internally, the date
+    // is a string, the string is just returned. If internally the date
+    // is a CDate_std and year_only is false, then the date is returned 
+    // as mm-dd-yyyy if possible else, just year is returned
+    void GetDate(string* label, bool year_only = false) const;
 
 private:
     // Prohibit copy constructor and assignment operator

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/01/10 19:44:09  clausen
+ * Added GetDate
+ *
  * Revision 6.1  2001/11/16 20:54:51  ucko
  * Added comparison for dates.
  *
@@ -71,6 +74,32 @@ CDate::ECompare CDate::Compare(const CDate& date) const
         return eCompare_unknown;
     }
 }
+
+void CDate::GetDate(string* label, bool year_only) const
+{
+    // Ensure that date exists
+    if (!label) {
+        return;
+    }
+    
+    switch (Which()) {
+    case e_Str:
+        *label += GetStr();
+        return;
+    case e_Std:
+        if (GetStd().IsSetMonth() && GetStd().IsSetDay() && !year_only) {
+            *label += NStr::IntToString(GetStd().GetMonth());
+            *label += "-"; 
+            *label += NStr::IntToString(GetStd().GetDay()); 
+            *label += "-";
+        }
+        *label += NStr::IntToString(GetStd().GetYear());
+        return;
+    default:
+        return;
+    }
+}
+        
 
 
 END_objects_SCOPE // namespace ncbi::objects::
