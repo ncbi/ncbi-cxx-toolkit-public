@@ -54,6 +54,11 @@ CPSIBlastOptionsHandle::CPSIBlastOptionsHandle(EAPILocality locality)
     m_Opts->SetProgram(ePSIBlast);
 }
 
+void CPSIBlastOptionsHandle::SetLookupTableDefaults(void)
+{
+    m_Opts->SetUsePssm(true);
+}
+
 void CPSIBlastOptionsHandle::SetPSIBlastDefaults(void)
 {
     m_Opts->SetInclusionThreshold( PSI_INCLUSION_ETHRESH );
@@ -70,6 +75,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/12/20 20:12:01  camacho
+ * + option to set use of pssm in lookup table
+ *
  * Revision 1.3  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *

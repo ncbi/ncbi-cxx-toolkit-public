@@ -60,6 +60,7 @@ CBlastProteinOptionsHandle::SetLookupTableDefaults()
     SetWordSize(BLAST_WORDSIZE_PROT);
     SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP);
     SetAlphabetSize(BLASTAA_SIZE);
+    m_Opts->SetUsePssm(false);
 }
 
 void
@@ -151,6 +152,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/12/20 20:12:01  camacho
+ * + option to set use of pssm in lookup table
+ *
  * Revision 1.12  2004/08/03 21:10:42  dondosha
  * Set DbSeqNum option to 0 by default - the real value is set in parameter structure
  *
