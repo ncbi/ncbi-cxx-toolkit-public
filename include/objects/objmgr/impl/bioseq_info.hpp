@@ -55,7 +55,7 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 class CSeq_id_Handle;
 
-class CBioseq_Info : public CObject
+class NCBI_XOBJMGR_EXPORT CBioseq_Info : public CObject
 {
 public:
     typedef set<CSeq_id_Handle> TSynonyms;
@@ -93,6 +93,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/12/26 21:03:33  dicuccio
+* Added Win32 export specifier.  Moved file from src/objects/objmgr to
+* include/objects/objmgr.
+*
 * Revision 1.5  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

@@ -34,7 +34,7 @@
 */
 
 
-#include "bioseq_info.hpp"
+#include <objects/objmgr/bioseq_info.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <util/rangemap.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -60,7 +60,7 @@ class CBioseq;
 class CAnnotObject;
 
 
-class CTSE_Info : public CObject, public CMutableAtomicCounter
+class NCBI_XOBJMGR_EXPORT CTSE_Info : public CObject, public CMutableAtomicCounter
 {
 public:
     // 'ctors
@@ -185,6 +185,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/12/26 21:03:33  dicuccio
+* Added Win32 export specifier.  Moved file from src/objects/objmgr to
+* include/objects/objmgr.
+*
 * Revision 1.12  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *
