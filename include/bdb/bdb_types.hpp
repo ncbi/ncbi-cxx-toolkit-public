@@ -228,6 +228,7 @@ private:
     // Friends
     friend class CBDB_BufferManager;
     friend class CBDB_File;
+    friend class CBDB_BLobFile;
 };
 
 
@@ -641,6 +642,7 @@ private:
 
 private:
     friend class CBDB_Field;
+    friend class CBDB_BLobFile;
     friend class CBDB_File;
     friend class CBDB_FileCursor;
     friend class CBDB_FC_Condition;
@@ -1165,6 +1167,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/05 20:14:41  kuznets
+ * Added CBDB_BLobFile, CBDB_File changed to support more flexible data record
+ * management.
+ *
  * Revision 1.2  2003/04/29 16:48:31  kuznets
  * Fixed minor warnings in Sun Workshop compiler
  *

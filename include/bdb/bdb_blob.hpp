@@ -38,21 +38,50 @@
 
 BEGIN_NCBI_SCOPE
 
+//////////////////////////////////////////////////////////////////
+//
+// Berkeley DB BLob File class. 
+//
+//
+
+class CBDB_BLobFile : public CBDB_File
+{
+public:
+
+    CBDB_BLobFile();
+
+    EBDB_ErrCode Insert(const void* data, size_t size);
+
+    // Fetches the record corresponding to the current key value.
+    EBDB_ErrCode Fetch();
+
+    // Fetch LOB record directly into the provided '*buf'.
+    // If size of the LOB is greater than 'buf_size', then
+    // if reallocation is allowed -- '*buf' will be reallocated
+    // to fit the LOB size; otherwise, a exception will be thrown.
+    EBDB_ErrCode Fetch(void**       buf, 
+                       size_t       buf_size, 
+                       EReallocMode allow_realloc);
+
+    // Get LOB size. Becomes available right after successfull Fetch.
+    size_t LobSize() const { return m_DBT_Data.size; }
+
+    // Copy LOB data into the 'buf'.
+    // Throw an exception if buffer size 'size' is less than LOB size. 
+    EBDB_ErrCode GetData(void* buf, size_t size);
+
+};
+
 
 //////////////////////////////////////////////////////////////////
 //
 // Berkeley DB Large OBject File class. 
-// Implements simple BLOB storage.
+// Implements simple BLOB storage based on single unsigned integer key
 //
 
 class CBDB_LobFile : public CBDB_RawFile
 {
 public:
-    enum EReallocMode {
-        eReallocAllowed,
-        eReallocForbidden
-    };
-
     CBDB_LobFile();
 
     EBDB_ErrCode Insert(unsigned int lob_id, const void* data, size_t size);
@@ -125,6 +154,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/05 20:14:41  kuznets
+ * Added CBDB_BLobFile, CBDB_File changed to support more flexible data record
+ * management.
+ *
  * Revision 1.2  2003/04/29 16:48:31  kuznets
  * Fixed minor warnings in Sun Workshop compiler
  *

@@ -94,6 +94,11 @@ public:
         eCreate      = DB_CREATE  // implies 'eReadWrite' too
     };
 
+    enum EReallocMode {
+        eReallocAllowed,
+        eReallocForbidden
+    };
+
 public:
     CBDB_RawFile();
     ~CBDB_RawFile();
@@ -251,6 +256,12 @@ protected:
     // Throw an exception if constraint check failed.
     void CheckNullDataConstraint() const;
 
+    // Function disables processing of m_DBT_data. 
+    // This function can be used when creating custom BDB file
+    // data structures (BLOB storage, etc.) Caller takes full
+    // responsibility for filling m_DBT_Data with correct values.
+    void DisableDataBufProcessing() { m_DataBufDisabled = true; }
+
 private:
     CBDB_File(const CBDB_File&);
     CBDB_File& operator= (const CBDB_File&);
@@ -271,6 +282,7 @@ private:
     auto_ptr<CBDB_BufferManager>   m_DataBuf;
     bool                           m_BufsAttached;
     bool                           m_BufsCreated;
+    bool                           m_DataBufDisabled;
 
     friend class CBDB_FileCursor;
 };
@@ -369,6 +381,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/05/05 20:14:41  kuznets
+ * Added CBDB_BLobFile, CBDB_File changed to support more flexible data record
+ * management.
+ *
  * Revision 1.3  2003/05/02 14:14:18  kuznets
  * new method UpdateInsert
  *
