@@ -47,7 +47,8 @@
 BEGIN_NCBI_SCOPE
 
 const string& CSoapMessage::ms_SoapNamespace =
-    "http://www.w3.org/2002/12/soap-envelope";
+//    "http://www.w3.org/2003/05/soap-envelope";
+    "http://schemas.xmlsoap.org/soap/envelope/";   // v1.1
 
 CSoapMessage::CSoapMessage(void)
     : m_Prefix("env")
@@ -252,6 +253,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/06/18 18:17:59  gouriano
+* Use SOAP v1.1 namespace for envelope
+*
 * Revision 1.4  2004/05/17 21:03:24  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
