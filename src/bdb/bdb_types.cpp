@@ -222,7 +222,7 @@ void CBDB_BufferManager::Bind(CBDB_Field* field, ENullable is_nullable)
     m_Fields.push_back(field);
     m_Ptrs.push_back(0);
 
-    unsigned field_idx = m_Fields.size() - 1;
+    unsigned field_idx = (unsigned)(m_Fields.size() - 1);
     field->SetBufferIdx(field_idx);
 
     if ( !m_Packable ) {
@@ -253,7 +253,7 @@ void CBDB_BufferManager::CheckNullConstraint() const
 
     for (size_t i = 0;  i < m_Fields.size();  ++i) {
         const CBDB_Field& fld = *m_Fields[i];
-        if (!fld.IsNullable()  &&  TestNullBit(i)) {
+        if (!fld.IsNullable()  &&  TestNullBit((unsigned)i)) {
             string message("NULL field in database operation.");
             const string& field_name = fld.GetName();
             if ( !field_name.empty() ) {
@@ -337,10 +337,10 @@ unsigned int CBDB_BufferManager::Pack()
 {
     _ASSERT(m_Fields.size());
     if (m_PackedSize != 0)
-        return m_PackedSize;
+        return (unsigned)m_PackedSize;
     if ( !IsPackable() ) {
         m_PackedSize = m_BufferSize;
-        return m_PackedSize;
+        return (unsigned)m_PackedSize;
     }
 
     char* new_ptr = m_Buffer.get();
@@ -358,7 +358,7 @@ unsigned int CBDB_BufferManager::Pack()
         }
 
         if ( m_NullSetSize ) {
-            if (df.IsVariableLength()  &&  TestNullBit(i)) {
+            if (df.IsVariableLength()  &&  TestNullBit((unsigned)i)) {
                 actual_len = 1;
                 *new_ptr = '\0'; // for string it will guarantee it is empty
             }
@@ -368,7 +368,7 @@ unsigned int CBDB_BufferManager::Pack()
         m_PackedSize += actual_len;
     }
 
-    return m_PackedSize;
+    return (unsigned)m_PackedSize;
 }
 
 
@@ -376,10 +376,10 @@ unsigned int CBDB_BufferManager::Unpack()
 {
     _ASSERT(m_Fields.size());
     if (m_PackedSize == 0)
-        return m_BufferSize;
+        return (unsigned)m_BufferSize;
     if ( !IsPackable() ) {
         m_PackedSize = 0;
-        return m_PackedSize;
+        return (unsigned)m_PackedSize;
     }
 
     _ASSERT(!m_Fields.empty());
@@ -401,20 +401,20 @@ unsigned int CBDB_BufferManager::Unpack()
     m_PackedSize -= m_NullSetSize;
 
     _ASSERT(m_PackedSize == 0);
-    return m_BufferSize;
+    return (unsigned)m_BufferSize;
 }
 
 void CBDB_BufferManager::PrepareDBT_ForWrite(DBT* dbt)
 {
     Pack();
     dbt->data = m_Buffer.get();
-    dbt->size = m_PackedSize;
+    dbt->size = (unsigned)m_PackedSize;
 }
 
 void CBDB_BufferManager::PrepareDBT_ForRead(DBT* dbt)
 {
     dbt->data = m_Buffer.get();
-    dbt->size = dbt->ulen = m_BufferSize;
+    dbt->size = dbt->ulen = (unsigned)m_BufferSize;
     dbt->flags = DB_DBT_USERMEM;
 }
 
@@ -459,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/09/29 16:27:06  kuznets
+ * Cleaned up 64-bit compilation warnings
+ *
  * Revision 1.12  2003/09/17 13:31:12  kuznets
  * Implemented Int2Compare family of functions
  *

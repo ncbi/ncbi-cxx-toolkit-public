@@ -57,7 +57,7 @@ EBDB_ErrCode CBDB_BLobFile::Fetch(void**       buf,
                                   EReallocMode allow_realloc)
 {
     m_DBT_Data->data = buf ? *buf : 0;
-    m_DBT_Data->ulen = buf_size;
+    m_DBT_Data->ulen = (unsigned)buf_size;
     m_DBT_Data->size = 0;
 
     if (allow_realloc == eReallocForbidden) {
@@ -93,7 +93,7 @@ EBDB_ErrCode CBDB_BLobFile::GetData(void* buf, size_t size)
 EBDB_ErrCode CBDB_BLobFile::Insert(const void* data, size_t size)
 {
     m_DBT_Data->data = const_cast<void*> (data);
-    m_DBT_Data->size = m_DBT_Data->ulen = size;
+    m_DBT_Data->size = m_DBT_Data->ulen = (unsigned)size;
 
     EBDB_ErrCode ret = CBDB_File::Insert();
     return ret;
@@ -137,8 +137,8 @@ void CBDB_BLobStream::Read(void *buf, size_t buf_size, size_t *bytes_read)
     m_DBT_Data->flags = DB_DBT_USERMEM | DB_DBT_PARTIAL;
 
     m_DBT_Data->data = buf;
-    m_DBT_Data->ulen = buf_size;
-    m_DBT_Data->dlen = buf_size;
+    m_DBT_Data->ulen = (unsigned)buf_size;
+    m_DBT_Data->dlen = (unsigned)buf_size;
     m_DBT_Data->doff = m_Pos;
     m_DBT_Data->size = 0;
     
@@ -161,10 +161,10 @@ void CBDB_BLobStream::Write(const void* buf, size_t buf_size)
         m_DBT_Data->flags = DB_DBT_USERMEM | DB_DBT_PARTIAL;
 
     m_DBT_Data->data = const_cast<void*> (buf);
-    m_DBT_Data->size = buf_size;
-    m_DBT_Data->ulen = buf_size;
+    m_DBT_Data->size = (unsigned)buf_size;
+    m_DBT_Data->ulen = (unsigned)buf_size;
     m_DBT_Data->doff = m_Pos;
-    m_DBT_Data->dlen = buf_size;
+    m_DBT_Data->dlen = (unsigned)buf_size;
 
     int ret = m_DB->put(m_DB,
                         0,         // DB_TXN*
@@ -173,7 +173,7 @@ void CBDB_BLobStream::Write(const void* buf, size_t buf_size)
                         0);
     BDB_CHECK(ret, "BLOBStream");
 
-    m_Pos += buf_size;
+    m_Pos += (unsigned)buf_size;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -185,8 +185,8 @@ CBDB_LobFile::CBDB_LobFile()
  : m_LobKey(0)
 {
     m_DBT_Key->data = &m_LobKey;
-    m_DBT_Key->size = sizeof(m_LobKey);
-    m_DBT_Key->ulen = sizeof(m_LobKey);
+    m_DBT_Key->size = (unsigned)sizeof(m_LobKey);
+    m_DBT_Key->ulen = (unsigned)sizeof(m_LobKey);
     m_DBT_Key->flags = DB_DBT_USERMEM;
 }
 
@@ -206,7 +206,7 @@ EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
     m_LobKey = lob_id;
 
     m_DBT_Data->data = const_cast<void*> (data);
-    m_DBT_Data->size = m_DBT_Data->ulen = size;
+    m_DBT_Data->size = m_DBT_Data->ulen = (unsigned)size;
 
     int ret = m_DB->put(m_DB,
                         0,     // DB_TXN*
@@ -243,7 +243,7 @@ EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id,
     // error message (ignored)
 
     m_DBT_Data->data = buf ? *buf : 0;
-    m_DBT_Data->ulen = buf_size;
+    m_DBT_Data->ulen = (unsigned)buf_size;
     m_DBT_Data->size = 0;
 
     if (m_DBT_Data->data == 0  &&  m_DBT_Data->ulen != 0) {
@@ -299,7 +299,7 @@ EBDB_ErrCode CBDB_LobFile::GetData(void* buf, size_t size)
     _ASSERT(m_DBT_Key->flags == DB_DBT_USERMEM);
 
     m_DBT_Data->data  = buf;
-    m_DBT_Data->ulen  = size;
+    m_DBT_Data->ulen  = (unsigned)size;
     m_DBT_Data->flags = DB_DBT_USERMEM;
 
     int ret = m_DB->get(m_DB,
@@ -327,6 +327,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/09/29 16:27:06  kuznets
+ * Cleaned up 64-bit compilation warnings
+ *
  * Revision 1.10  2003/09/26 18:48:30  kuznets
  * Removed dead SetCmp function
  *
