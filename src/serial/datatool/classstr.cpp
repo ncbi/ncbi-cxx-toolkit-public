@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/12/07 18:56:15  grichenk
+* Most generated class members are stored in CRef<>-s by default
+*
 * Revision 1.34  2001/06/25 16:36:23  grichenk
 * // Hide -> // Prohibit
 *
@@ -253,17 +256,20 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
     }
 
     bool haveDefault = !defaultValue.empty();
-    if ( optional && !haveDefault ) {
-        // true optional CObject type should be implemented as CRef
-        if ( type->GetKind() == eKindObject && ptrType.empty() ) {
+//    if ( optional && !haveDefault ) {
+//    }
+    // true [optional] CObject type should be implemented as CRef
+    if ( ptrType.empty() ) {
+        if ( type->GetKind() == eKindObject )
             ptrType = "Ref";
-        }
+        else
+            ptrType = "false";
     }
-    
+
     if ( ptrType == "Ref" ) {
         ref = true;
     }
-    else if ( ptrType.empty() ) {
+    else if ( /*ptrType.empty()  ||*/ ptrType == "false" ) {
         ref = false;
     }
     else {
@@ -716,8 +722,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     inlineMethods <<
                         "    "DELAY_PREFIX<<i->cName<<".Update();\n";
                 }
+                inlineMethods << "    return ";
+                if ( i->ref )
+                    inlineMethods << "*";
                 inlineMethods <<
-                    "    return "<<i->mName<<";\n"
+                    i->mName<<";\n"
                     "}\n"
                     "\n"
                     "inline\n"<<
@@ -727,8 +736,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     inlineMethods <<
                         "    "DELAY_PREFIX<<i->cName<<".Update();\n";
                 }
+                inlineMethods << "    return ";
+                if ( i->ref )
+                    inlineMethods << "*";
                 inlineMethods <<
-                    "    return "<<i->mName<<";\n"
+                    i->mName<<";\n"
                     "}\n"
                     "\n";
             }
