@@ -15,3 +15,9 @@ clean_sources:
 	for i in $(MODULES); do \
 		rm -f $$i/$$i.files; \
 	done
+
+ASNFILES = $(MODULES:%=%/%.asn)
+
+all.asn: $(ASNFILES)
+	cat $(ASNFILES) >$@
+
