@@ -622,14 +622,6 @@ SIZE_TYPE NStr::FindCase(const string& str, const string& pattern,
     }
 }
 
-inline
-SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
-                           SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
-{
-    string str2 = str, pat2 = pattern;
-    return FindCase(ToLower(str2), ToLower(pat2), start, end, where);
-}
-
 
 inline
 list<string>& NStr::Wrap(const string& str, SIZE_TYPE width, list<string>& arr,
@@ -737,6 +729,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.41  2003/05/14 21:51:54  ucko
+ * Move FindNoCase out of line and reimplement it to avoid making
+ * lowercase copies of both strings.
+ *
  * Revision 1.40  2003/03/31 13:31:06  siyan
  * Minor changes to doxygen support
  *

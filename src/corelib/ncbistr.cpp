@@ -572,6 +572,34 @@ bool NStr::StringToBool(const string& str)
 }
 
 
+SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
+                           SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
+{
+    string    pat(pattern, 0, 1);
+    SIZE_TYPE l = pattern.size();
+    if (isupper(pat[0])) {
+        pat += (char)tolower(pat[0]);
+    } else if (islower(pat[0])) {
+        pat += (char)toupper(pat[0]);
+    }
+    if (where == eFirst) {
+        SIZE_TYPE pos = str.find_first_of(pat);
+        while (pos != NPOS  &&  pos <= end
+               &&  CompareNocase(str, pos, l, pattern) != 0) {
+            pos = str.find_first_of(pat, pos + 1);
+        }
+        return pos > end ? NPOS : pos;
+    } else { // eLast
+        SIZE_TYPE pos = str.find_last_of(pat);
+        while (pos != NPOS  &&  pos >= start
+               &&  CompareNocase(str, pos, l, pattern) != 0) {
+            pos = str.find_last_of(pat, pos - 1);
+        }
+        return pos < start ? NPOS : pos;
+    }
+}
+
+
 string NStr::TruncateSpaces(const string& str, ETrunc where)
 {
     SIZE_TYPE beg = 0;
@@ -1012,6 +1040,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.91  2003/05/14 21:52:09  ucko
+ * Move FindNoCase out of line and reimplement it to avoid making
+ * lowercase copies of both strings.
+ *
  * Revision 1.90  2003/03/25 22:15:40  lavr
  * NStr::PrintableString():: Print NUL char as \x00 instead of \0
  *
