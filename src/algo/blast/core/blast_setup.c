@@ -35,11 +35,10 @@ $Revision$
 ******************************************************************************/
 
 /*
- *
-* Revision 1.29  2003/01/22 20:49:19  dondosha
-* Set the ambiguous residue before the ScoreBlk is filled
-*
 * $Log$
+* Revision 1.2  2003/04/01 17:45:54  dondosha
+* Corrections for filtering with translated queries
+*
 * Revision 1.1  2003/03/31 18:22:30  camacho
 * Moved from parent directory
 *
@@ -117,6 +116,9 @@ $Revision$
 *
 * Revision 1.30  2003/01/28 15:14:21  madden
 * BlastSetUp_Main gets additional args for parameters
+*
+* Revision 1.29  2003/01/22 20:49:19  dondosha
+* Set the ambiguous residue before the ScoreBlk is filled
 *
 * Revision 1.28  2003/01/10 21:25:42  dondosha
 * Corrected buffer length for sequence block in case of multiple queries/strands
@@ -348,22 +350,20 @@ BlastSetUp_TranslateDNASeqLoc(SeqLocPtr slp, Int2 frame, Int4 full_length,
             return 1;
         
         seq_int = slp->data.ptrvalue;
-        from = seq_int->from;
-        to = seq_int->to;
         
         if (frame < 0) 
 	{
-            	from = (full_length + frame - to)/CODON_LENGTH;
-            	to = (full_length + frame - from)/CODON_LENGTH;
+            	from = (full_length + frame - seq_int->to)/CODON_LENGTH;
+            	to = (full_length + frame - seq_int->from)/CODON_LENGTH;
 		ValNodeLink(&seqloc_new, 
-			SeqLocIntNew(from, to, Seq_strand_minus, SeqIdDup(seqid)));
+                   SeqLocIntNew(from, to, Seq_strand_minus, SeqIdDup(seqid)));
         } 
 	else 
 	{
-            	from = (from - frame + 1)/CODON_LENGTH;
-            	to = (to-frame + 1)/CODON_LENGTH;
+            	from = (seq_int->from - frame + 1)/CODON_LENGTH;
+            	to = (seq_int->to - frame + 1)/CODON_LENGTH;
 		ValNodeLink(&seqloc_new, 
-			SeqLocIntNew(from, to, Seq_strand_plus, SeqIdDup(seqid)));
+                   SeqLocIntNew(from, to, Seq_strand_plus, SeqIdDup(seqid)));
         }
         slp = slp->next;
     }
@@ -1403,7 +1403,7 @@ BLAST_SetUpQueryInfo(Uint1 prog_number, SeqLocPtr query_slp,
          query_info->context_offsets[index+1] =
             query_info->context_offsets[index] + query_length + 1;
          if ((index % 6) == 0) {
-            query_info->qid_array[index] = (SeqLocId(slp))->next;
+            query_info->qid_array[index/6] = (SeqLocId(slp))->next;
          }
       }
       break;
@@ -1575,7 +1575,11 @@ Blast_MessagePtr *blast_message
 	Int2 total_num_contexts=0;		/* number of different strands, sequences, etc. */
 	Int2 status=0;				/* return value */
 	Int2 total_iterations;			/* loop variable for different strands. */
-	Int4 query_length=0;			/* Length of query described by SeqLocPtr. */
+	Int4 query_length=0;			/* Length of query described by
+                                                   SeqLocPtr. */
+        Int4 dna_length;     /* Length of the underlying nucleotide sequence if
+                                queries are translated */
+                                                   
 	Int4 double_int_offset=0;		/* passed to BlastSetUp_CreateDoubleInt */
 	SeqLocPtr filter_slp=NULL;		/* SeqLocPtr computed for filtering. */
 	SeqLocPtr filter_slp_combined;		/* Used to hold combined SeqLoc's */
@@ -1706,19 +1710,26 @@ Blast_MessagePtr *blast_message
 	   			++buffer_var;
 		}
 
-		query_length = SeqLocLen(slp);
-
-		if((status=BlastSetUp_Filter(slp, qsup_options->filter_string, &mask_at_hash, &filter_slp)))
+		if((status=BlastSetUp_Filter(slp, qsup_options->filter_string, 
+                                             &mask_at_hash, &filter_slp)))
 			return status;
+
+                query_length = SeqLocLen(slp);
+
+                /* Retrieve the id of the query sequence. If this id is for a 
+                   translated sequence, get the underlying query id in the next 
+                   pointer, and correct the ids in the filter SeqLoc */ 
+                seqid = SeqLocId(slp);
+                if (seqid->next) {
+                   SeqLocPtr dna_seqloc = NULL;
+                   seqid = seqid->next;
+                   ValNodeAddPointer(&dna_seqloc, SEQLOC_WHOLE, seqid);
+                   dna_length = SeqLocLen(dna_seqloc);
+                }
 
                 /* Extract the mask location corresponding to this 
                    query, detach it from other queries' masks */
                 if (mask_slp || next_mask_slp) {
-                   seqid = SeqLocId(slp);
-                   /* If this id is for a translated sequence, get the
-                      underlying query id in the next pointer */ 
-                   if (seqid->next)
-                      seqid = seqid->next;
                    /* If previous mask is from this query, which can only 
                       happen when it's a different frame of the same query,
                       use it again, else go to the next mask */
@@ -1740,7 +1751,7 @@ Blast_MessagePtr *blast_message
                       if (frame) {
                          tmp_slp = NULL;
                          BlastSetUp_TranslateDNASeqLoc(mask_slp, 
-                            frame[context], full_dna_length, seqid, 
+                            frame[context], dna_length, seqid, 
                             &tmp_slp);
                          ValNodeAddPointer(&filter_slp, SEQLOC_MIX, 
                                            tmp_slp);
@@ -1761,8 +1772,8 @@ Blast_MessagePtr *blast_message
 			if ((frame && StringCmp("blastx", program) == 0) || StringCmp("tblastx", program) == 0)
 			{
 				SeqLocPtr filter_slp_converted=NULL;
-				BlastSetUp_ConvertProteinSeqLoc(filter_slp_combined, frame[context], full_dna_length, &filter_slp_converted);
-				
+				BlastSetUp_ConvertProteinSeqLoc(filter_slp_combined, frame[context], dna_length, &filter_slp_converted);
+                                HackSeqLocId(filter_slp_converted, seqid);
 				ValNodeAddPointer(filter_slp_out, FrameToDefine(frame[context]), filter_slp_converted);
 			}
 			else
