@@ -1748,6 +1748,13 @@ else
 fi
 
 
+## `gui_ctools' project cluster (part 1)
+
+if test "$with_ctools" = "no"  -o  "$with_gui" = "no" ; then
+   NoConfProjects="$NoConfProjects gui_ctools"
+fi
+
+
 ## `ctools' project cluster
 
 if test "$with_ctools" = "no" ; then
@@ -1800,11 +1807,7 @@ else
 fi
 
 
-## `gui_ctools' project cluster
-
-if test "$with_ctools" = "no"  -o  "$with_gui" = "no" ; then
-   NoConfProjects="$NoConfProjects gui_ctools"
-fi
+## `gui_ctools' project cluster (part 2)
 
 if test -f ${srcdir}/src/gui_ctools/Makefile.in  -a  \
         -d ${srcdir}/include/gui_ctools  -a  \
