@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/06/21 19:47:37  grichenk
+ * Copy constructor and operator=() moved to "private" section
+ *
  * Revision 1.1  2001/06/13 14:51:18  grichenk
  * Initial revision - Seq-entry tree structure support
  *
@@ -67,6 +70,10 @@ public:
     void Parentize(void);
     CSeq_entry* GetParentEntry(void) const;
 private:
+    // Hide copy constructor and assignment operator
+    CSeq_entry(const CSeq_entry& value);
+    CSeq_entry& operator= (const CSeq_entry& value);
+
     // Upper-level Seq-entry
     void SetParentEntry(CSeq_entry* entry);
     CSeq_entry* m_ParentEntry;

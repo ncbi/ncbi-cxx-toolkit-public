@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/06/21 19:47:34  grichenk
+ * Copy constructor and operator=() moved to "private" section
+ *
  * Revision 1.1  2001/06/13 15:00:06  grichenk
  * Initial revision
  *
@@ -68,6 +71,10 @@ public:
     // Manage Seq-entry tree structure
     CSeq_entry* GetParentEntry(void) const;
 private:
+    // Hide copy constructor and assignment operator
+    CBioseq(const CBioseq& value);
+    CBioseq& operator= (const CBioseq& value);
+
     // Seq-entry containing the Bioseq
     void SetParentEntry(CSeq_entry* entry);
     CSeq_entry* m_ParentEntry;

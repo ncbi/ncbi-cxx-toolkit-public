@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/06/21 19:47:39  grichenk
+* Copy constructor and operator=() moved to "private" section
+*
 * Revision 1.32  2001/06/13 14:40:02  grichenk
 * Modified class and choice info generation code to avoid warnings
 *
@@ -735,6 +738,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     // generate member data
     {
         code.ClassPrivate() <<
+            "    // Hide copy constructor and assignment operator\n" <<
+            "    " << code.GetClassName() <<
+            "(const " << code.GetClassName() << "&);\n" <<
+            "    " << code.GetClassName() << "& operator=(const " <<
+            code.GetClassName() << "&);\n" <<
+            "\n";
+        code.ClassPrivate() <<
             "    // members' data\n";
 		{
 	        iterate ( TMembers, i, m_Members ) {
@@ -1015,6 +1025,12 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "    "<<GetClassName()<<"& operator=(const "<<cType<<"& value);\n"
             "\n";
     }
+    out << "private:\n" <<
+        "    // Hide copy constructor and assignment operator\n"
+        "    "<<GetClassName()<<"(const "<<GetClassName()<<"& value);\n"
+        "    "<<GetClassName()<<"& operator=(const "<<GetClassName()<<
+        "& value);\n"
+        "\n";
 
     out <<
         "};\n"

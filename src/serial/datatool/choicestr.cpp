@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/06/21 19:47:39  grichenk
+* Copy constructor and operator=() moved to "private" section
+*
 * Revision 1.28  2001/06/13 14:40:02  grichenk
 * Modified class and choice info generation code to avoid warnings
 *
@@ -290,13 +293,17 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     string ncbiNamespace =
         code.GetNamespace().GetNamespaceRef(CNamespace::KNCBINamespace);
 
-    if ( HaveAssignment() ) {
-        code.ClassPublic() <<
-            "    // copy constructor and assignment operator\n"
-            "    "<<codeClassName<<"(const "<<codeClassName<<"& src);\n"
-            "    "<<codeClassName<<"& operator=(const "<<codeClassName<<"& src);\n"
-            "\n";
-    }
+    CNcbiOstream* copy_out = HaveAssignment() ?
+        &code.ClassPublic() : &code.ClassPrivate();
+    string param_name = HaveAssignment() ?
+        "src" : "";
+    *copy_out <<
+        "    // copy constructor and assignment operator\n"
+        "    "<<codeClassName<<"(const "<<codeClassName<<"& " <<param_name<<
+        ");\n"
+        "    "<<codeClassName<<"& operator=(const "<<codeClassName<<"& "<<
+        param_name<<");\n"
+        "\n";
 
     // generated choice enum
     {
