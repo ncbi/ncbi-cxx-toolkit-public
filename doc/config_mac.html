@@ -1,0 +1,46 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>Installation and configuration</title>
+</head>
+
+<body>
+
+<a name="ref_MacProjTree"><h4>Building the whole NCBI C++ tree locally</h4>
+</a>
+
+<p>We have built the NCBI C++ toolkit with Metrowerks CodeWarrior Pro 6.  Other compilers or versions of CodeWarrior have not been tested.</p>
+
+<p>The build script is currently using a hard-coded search path for the source tree.</p>
+<ul>
+	<li>The original location requires renaming <b>c++</b> to <b>cxx</b> and moving it to the folder <b>Metrowerks CodeWarrior 6.0</b> at the root level of the startup disk.  (Whether this is actually an installation of CodeWarrior or an otherwise empty folder doesn't matter, as long as you have CodeWarrior installed somewhere.)
+	<li>An alternate location is the following:  <i>&lt;startup-disk&gt;</i><b>:Development:Trees:NCBI:ncbi.vault:internal:c++</b>.  In this case, any of these folders can may be replaced with an alias to a folder.  This arrangement is intended to complement the use of a <a href="mac_cvs.html">Mac CVS client</a>.
+</ul>
+
+<p>To build the toolkit libraries and test programs:
+<ol>
+	<li>Open the folder <b>mac_prj</b>, which is in the folder <b>compilers</b> (inside <b>c++</b>).
+	<li>Open the file <b>makelibs.met</b> with Script Editor (e.g. by dragging the file's icon onto an icon for Script Editor).  Click <b>Run</b>.  There may be some compiler warnings in CodeWarrior, but this is not a problem.  A beep signals completion of the script.
+	<li>Then do the same thing with <b>maketests.met</b>.
+</ol>
+
+<hr>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:juran@ncbi.nlm.nih.gov">Joshua Juran</a></address>
+</td>
+<!-- <td align=center><i>$Revision$</i></td> -->
+
+<td align=right><i>$Date$</i></td>
+</tr>
+<!--
+<tr>
+<td align=left>
+  <address><a href="mailto:lavr@ncbi.nlm.nih.gov">Anton Lavrentiev</a> (Part of MSVC++ support)</address> 
+</td>
+</tr>
+-->
+</table>
+</body>
+</html>
