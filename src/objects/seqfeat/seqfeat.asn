@@ -1,4 +1,4 @@
---$Revision: 1.14 $
+--$Revision: 1.15 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -16,7 +16,7 @@ IMPORTS Gene-ref FROM NCBI-Gene
         Org-ref FROM NCBI-Organism
         RNA-ref FROM NCBI-RNA
         Seq-loc, Giimport-id FROM NCBI-Seqloc
-        Pubdesc FROM NCBI-Sequence
+        Pubdesc, Numbering, Heterogen FROM NCBI-Sequence
         Rsite-ref FROM NCBI-Rsite
         Txinit FROM NCBI-TxInit
         Pub-set FROM NCBI-Pub
@@ -95,7 +95,16 @@ SeqFeatData ::= CHOICE {
 		other (255) } ,
     rsite Rsite-ref ,       -- restriction site  (for maps really)
     user User-object ,      -- user defined structure
-    txinit Txinit }         -- transcription initiation
+    txinit Txinit ,         -- transcription initiation
+	num Numbering ,         -- a numbering system
+	psec-str ENUMERATED {   -- protein secondary structure
+		helix (1) ,         -- any helix
+		sheet (2) ,         -- beta sheet
+		turn  (3) } ,       -- beta or gamma turn
+	non-std-residue VisibleString ,  -- non-standard residue here in seq
+	het Heterogen }         -- cofactor, prosthetic grp, etc, bound to seq
+	
+		
 
 --*** CdRegion ***********************************************
 --*
@@ -121,22 +130,24 @@ Cdregion ::= SEQUENCE {
                     -- each code is 64 cells long, in the order where
                     -- A=0,G=1,C=2,T=3, AAA=0, AAG=1, AGA=4, etc
                     -- the value in each cell is the AA coded for
+                    -- start= AA coded only if first in peptide
 
 Genetic-code ::= SET OF CHOICE {
     name VisibleString ,               -- name of a code
     id INTEGER ,                       -- id in dbase
-    iupacaa VisibleString ,            -- indexed to IUPAC aas
     ncbieaa VisibleString ,            -- indexed to IUPAC extended
     ncbi8aa OCTET STRING ,             -- indexed to NCBI8aa
-	ncbistdaa OCTET STRING }           -- indexed to NCBIstdaa
+	ncbistdaa OCTET STRING ,           -- indexed to NCBIstdaa
+    sncbieaa VisibleString ,            -- start, indexed to IUPAC extended
+    sncbi8aa OCTET STRING ,             -- start, indexed to NCBI8aa
+	sncbistdaa OCTET STRING }           -- start, indexed to NCBIstdaa
 
 Code-break ::= SEQUENCE {              -- specific codon exceptions
     loc Seq-loc ,                      -- location of exception
     aa CHOICE {                        -- the amino acid
-        iupacaa INTEGER ,              -- ASCII value of iupacaa code
         ncbieaa INTEGER ,              -- ASCII value of NCBIeaa code
         ncbi8aa INTEGER ,              -- NCBI8aa code
-		ncbistdaa INTEGER }}           -- NCBIstdaa code
+		ncbistdaa INTEGER } }           -- NCBIstdaa code
 
 Code-table ::= SET OF Genetic-code     -- table of genetic codes
 
@@ -153,7 +164,6 @@ Imp-feat ::= SEQUENCE {
 Gb-qual ::= SEQUENCE {
     qual VisibleString ,
     val VisibleString }
-
 
 END 
 

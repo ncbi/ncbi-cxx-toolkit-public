@@ -1,4 +1,4 @@
---$Revision: 1.7 $
+--$Revision: 1.8 $
 --**********************************************************************
 --
 --  NCBI Sequence location and identifier elements
@@ -12,7 +12,7 @@ BEGIN
 EXPORTS Seq-id, Seq-loc, Seq-interval, Packed-seqint, Seq-point, Packed-seqpnt,
         Na-strand, Giimport-id;
 
-IMPORTS Object-id, Int-fuzz, Dbtag FROM NCBI-General
+IMPORTS Object-id, Int-fuzz, Dbtag, Date FROM NCBI-General
         Id-pat FROM NCBI-Biblio
         Feat-id FROM NCBI-Seqfeat;
 
@@ -32,7 +32,9 @@ Seq-id ::= CHOICE {
     other Textseq-id ,       -- catch all
     general Dbtag ,          -- for other databases
     gi INTEGER ,             -- GenInfo Integrated Database
-	ddbj Textseq-id }        -- DDBJ
+	ddbj Textseq-id ,        -- DDBJ
+	prf Textseq-id ,         -- PRF SEQDB
+	pdb PDB-seq-id }         -- PDB sequence
 
 Patent-seq-id ::= SEQUENCE {
     seqid INTEGER ,         -- number of sequence in patent
@@ -49,7 +51,13 @@ Giimport-id ::= SEQUENCE {
     db VisibleString OPTIONAL ,  -- dbase used in
     release VisibleString OPTIONAL }   -- the release
 
+PDB-seq-id ::= SEQUENCE {
+	mol PDB-mol-id ,          -- the molecule name
+	chain INTEGER DEFAULT 32 ,-- a single ASCII character, chain id
+    rel Date OPTIONAL }   -- release date, month and year
 
+PDB-mol-id ::= VisibleString  -- name of mol, 4 chars
+	
 --*** Sequence locations **********************************
 --*
 

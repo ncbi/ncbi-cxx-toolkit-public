@@ -1,4 +1,4 @@
---$Revision: 1.13 $
+--$Revision: 1.14 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -9,7 +9,7 @@
 NCBI-Sequence DEFINITIONS ::=
 BEGIN
 
-EXPORTS Bioseq, Seq-annot, Pubdesc, Seq-descr;
+EXPORTS Bioseq, Seq-annot, Pubdesc, Seq-descr, Numbering, Heterogen;
 
 IMPORTS Date, Int-fuzz, Dbtag, Object-id, User-object FROM NCBI-General
         Seq-align FROM NCBI-Seqalign
@@ -22,7 +22,9 @@ IMPORTS Date, Int-fuzz, Dbtag, Object-id, User-object FROM NCBI-General
 		GB-block FROM GenBank-General
 		PIR-block FROM PIR-General
         EMBL-block FROM EMBL-General
-		SP-block FROM SP-General;
+		SP-block FROM SP-General
+		PRF-block FROM PRF-General
+		PDB-block FROM PDB-General;
 
 --*** Sequence ********************************
 --*
@@ -55,7 +57,10 @@ Seq-descr ::= SET OF CHOICE {
     neighbors Link-set ,         -- neighboring information
     embl EMBL-block ,            -- EMBL specific information
 	create-date Date ,           -- date entry first created/released
-	update-date Date }           -- date of last update
+	update-date Date ,           -- date of last update
+	prf PRF-block ,				 -- PRF specific information
+	pdb PDB-block ,              -- PDB specific information
+	het Heterogen }              -- cofactor, etc associated but not bound
 
 GIBB-mol ::= ENUMERATED {       -- type of molecule represented
     unknown (0) ,
@@ -69,7 +74,6 @@ GIBB-mol ::= ENUMERATED {       -- type of molecule represented
     peptide (8) ,
 	other-genetic (9) ,      -- other genetic material
 	genomic-mRNA (10) ,      -- reported a mix of genomic and cdna sequence
-    index-seq (11) ,         -- GenInfo Backbone index sequence
     other (255) }
     
 GIBB-mod ::= ENUMERATED {        -- GenInfo Backbone modifiers
@@ -91,33 +95,33 @@ GIBB-mod ::= ENUMERATED {        -- GenInfo Backbone modifiers
     insertion-seq (15) ,
 	no-left (16) ,    -- missing left end (5' for na, NH2 for aa)
 	no-right (17) ,   -- missing right end (3' or COOH)
+	macronuclear (18) ,
+	proviral (19) ,
     other (255) }
 
 GIBB-method ::= ENUMERATED {        -- sequencing methods
-    concept-trans (1) ,
-    seq-pept (2) ,
-    both (3) ,
+    concept-trans (1) ,    -- conceptual translation
+    seq-pept (2) ,         -- peptide was sequenced
+    both (3) ,             -- concept transl. w/ partial pept. seq.
 	seq-pept-homol (4) ,   -- sequenced peptide, ordered by homology
 	seq-pept-overlap (5) , -- sequenced peptide, ordered by overlap
+	concept-trans-a (6) ,  -- conceptual transl. supplied by author
     other (255) }
     
 Numbering ::= CHOICE {           -- any display numbering system
     cont Num-cont ,              -- continuous numbering
     enum Num-enum ,              -- enumerated names for residues
     ref Num-ref ,                -- by reference to another sequence
-    real Num-real ,              -- supports mapping to a float system
-    mix SEQUENCE OF Numbering }  -- absolutely anything
+    real Num-real }              -- supports mapping to a float system
     
 Num-cont ::= SEQUENCE {          -- continuous display numbering system
     refnum INTEGER DEFAULT 1,         -- number assigned to first residue
     has-zero BOOLEAN DEFAULT FALSE ,  -- 0 used?
-    ascending BOOLEAN DEFAULT TRUE ,  -- ascending numbers?
-    loc Seq-loc OPTIONAL }            -- region to apply numbers over
+    ascending BOOLEAN DEFAULT TRUE }  -- ascending numbers?
 
 Num-enum ::= SEQUENCE {          -- any tags to residues
     num INTEGER ,                        -- number of tags to follow
-    names SEQUENCE OF VisibleString ,    -- the tags
-    loc Seq-loc OPTIONAL }               -- region to cover
+    names SEQUENCE OF VisibleString }    -- the tags
 
 Num-ref ::= SEQUENCE {           -- by reference to other sequences
     type ENUMERATED {            -- type of reference
@@ -129,8 +133,7 @@ Num-ref ::= SEQUENCE {           -- by reference to other sequences
 Num-real ::= SEQUENCE {          -- mapping to floating point system
     a REAL ,                     -- from an integer system used by Bioseq
     b REAL ,                     -- position = (a * int_position) + b
-    units VisibleString OPTIONAL ,
-    loc Seq-loc OPTIONAL }       -- region to cover
+    units VisibleString OPTIONAL }
 
 Pubdesc ::= SEQUENCE {              -- how sequence presented in pub
     pub Pub-equiv ,                 -- the citation(s)
@@ -142,12 +145,9 @@ Pubdesc ::= SEQUENCE {              -- how sequence presented in pub
     maploc VisibleString OPTIONAL , -- map location reported in paper
     seq-raw StringStore OPTIONAL ,  -- original sequence from paper
     align-group INTEGER OPTIONAL ,  -- this seq aligned with others in paper
-    index-seqs SET OF Bioseq OPTIONAL ,     -- index sequences
-	status ENUMERATED {             -- publication status at this time
-		in-preparation (1) ,
-		submitted (2) ,
-		accepted (3) ,
-		published (4) } OPTIONAL }
+	comment VisibleString OPTIONAL }-- any comment on this pub in context
+
+Heterogen ::= VisibleString       -- cofactor, prosthetic group, inibitor, etc
 
 --*** Instances of sequences *******************************
 --*
