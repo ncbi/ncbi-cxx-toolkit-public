@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/11/05 00:00:42  vakatov
+* Fix in CDiagBuffer::Reset() to avoid "!=" ambiguity when using
+* new(templated) streams
+*
 * Revision 1.6  1998/11/04 23:46:36  vakatov
 * Fixed the "ncbidbg/diag" header circular dependencies
 *
@@ -252,7 +256,7 @@ inline void CDiagBuffer::Flush(void) {
 
 inline void CDiagBuffer::Reset(const CNcbiDiag& diag) {
     if (&diag == m_Diag  &&
-        m_Stream.rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out) != 0)
+        m_Stream.rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out))
         abort();
 }
 
