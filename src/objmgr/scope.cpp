@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/04/17 21:09:40  grichenk
+* Fixed annotations loading
+*
 * Revision 1.16  2002/03/28 14:02:31  grichenk
 * Added scope history checks to CDataSource::x_FindBestTSE()
 *
@@ -296,11 +299,12 @@ CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
 
 
 void CScope::x_PopulateTSESet(CHandleRangeMap& loc,
+                              CSeq_annot::C_Data::E_Choice sel,
                               CAnnotTypes_CI::TTSESet& tse_set)
 {
     CMutexGuard guard(sm_Scope_Mutex);
     iterate (set<CDataSource*>, it, m_setDataSrc) {
-        (*it)->PopulateTSESet(loc, tse_set, m_History);
+        (*it)->PopulateTSESet(loc, tse_set, sel, m_History);
     }
     //### Filter the set depending on the requests history?
     iterate (CAnnotTypes_CI::TTSESet, tse_it, tse_set) {

@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/04/17 21:09:38  grichenk
+* Fixed annotations loading
+*
 * Revision 1.12  2002/04/08 19:14:15  gouriano
 * corrected comment to AddDefaults()
 *
@@ -161,6 +164,7 @@ private:
 
     // Get TSEs containing annotations for the given location
     void x_PopulateTSESet(CHandleRangeMap& loc,
+                          CSeq_annot::C_Data::E_Choice sel,
                           CAnnotTypes_CI::TTSESet& tse_set);
 
     bool x_GetSequence(const CBioseq_Handle& handle,
