@@ -28,8 +28,7 @@
  *
  * Author:  Anatoliy Kuznetsov
  *   
- * File Description: Berkeley DB support library. 
- *                   Berkeley DB Cursor.
+ * File Description: Berkeley DB Cursor.
  *
  */
 
@@ -193,6 +192,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/10 20:07:27  kuznets
+ * Fixed header files not to repeat information from the README file
+ *
  * Revision 1.3  2003/06/03 18:50:09  kuznets
  * Added dll export/import specifications
  *

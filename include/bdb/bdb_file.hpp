@@ -28,8 +28,7 @@
  *
  * Author:  Anatoliy Kuznetsov
  *   
- * File Description: Berkeley DB support library. 
- *                   Berkeley DB File classes.
+ * File Description: Berkeley DB File classes.
  *
  */
 
@@ -47,16 +46,16 @@ extern "C"
 
 // Simple and fast comparison function for tables with 
 // non-segmented "unsigned int" keys
-int bdb_uint_cmp(DB*, const DBT* val1, const DBT* val2);
+int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2);
 
 
 // Simple and fast comparison function for tables with 
 // non-segmented "int" keys
-int bdb_int_cmp(DB*, const DBT* val1, const DBT* val2);
+int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
 
 
 // General purpose DBD comparison function
-int bdb_cmp(DB* db, const DBT* val1, const DBT* val2);
+int BDB_Compare(DB* db, const DBT* val1, const DBT* val2);
 
 } // extern "C"
 
@@ -308,7 +307,7 @@ public:
 
     virtual void SetCmp(DB* db)
     {
-        int ret = db->set_bt_compare(db, bdb_int_cmp);
+        int ret = db->set_bt_compare(db, BDB_IntCompare);
         BDB_CHECK(ret, 0);
     }
     
@@ -381,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/06/10 20:07:27  kuznets
+ * Fixed header files not to repeat information from the README file
+ *
  * Revision 1.6  2003/06/03 18:50:09  kuznets
  * Added dll export/import specifications
  *

@@ -28,8 +28,7 @@
  *
  * Author:  Anatoliy Kuznetsov
  *   
- * File Description: Berkeley DB support library. 
- *                   Field types classes.
+ * File Description: Field types classes.
  *
  */
 
@@ -1166,6 +1165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/06/10 20:07:27  kuznets
+ * Fixed header files not to repeat information from the README file
+ *
  * Revision 1.6  2003/06/03 18:50:09  kuznets
  * Added dll export/import specifications
  *

@@ -28,7 +28,7 @@
  *
  * Author:  Anatoliy Kuznetsov
  *   
- * File Description: Berkeley DB utilities. 
+ * File Description: BDB library utilities. 
  *                   
  *
  */
@@ -55,6 +55,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/10 20:07:27  kuznets
+ * Fixed header files not to repeat information from the README file
+ *
  * Revision 1.1  2003/06/06 16:34:57  kuznets
  * Initial revision
  *
