@@ -1,5 +1,5 @@
-#ifndef STREAM_PUSHBACK__HPP
-#define STREAM_PUSHBACK__HPP
+#ifndef UTIL___STREAM_PUSHBACK__HPP
+#define UTIL___STREAM_PUSHBACK__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -29,23 +29,8 @@
  * Authors:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
- *   Push an arbitrary block of data back to a C++ input stream.
+ *   Push an arbitrary block of data back to C++ input stream.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.4  2002/10/29 22:06:22  ucko
- * Make *buf const in the copying version of UTIL_StreamPushback.
- *
- * Revision 1.3  2002/02/05 19:37:04  lavr
- * List of included header files revised
- *
- * Revision 1.2  2002/02/04 20:20:28  lavr
- * Notes about stream repositioning added
- *
- * Revision 1.1  2001/12/09 06:28:59  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistre.hpp>
@@ -60,14 +45,14 @@ BEGIN_NCBI_SCOPE
 // passed data is all read from the stream, or if the stream is destroyed.
 // Until all of the passed data is read from the stream, this block of
 // data may be used by the input stream.
-// NOTE 1:  at the function discretion, a copy of the data can be created and
-//          used instead of the original [buf, buf+buf_size) area.
+// NOTE 1:  at the function's discretion, a copy of the data can be created
+//          and used instead of the original [buf, buf+buf_size) area.
 // NOTE 2:  this data does not go to the original streambuf of "is".
 // NOTE 3:  it's okay if "is" is actually a duplex stream (iostream).
 // NOTE 4:  after a pushback "is" is not allowed to do stream positioning
 //          relative to current position (ios::cur); only direct-access
-//          (ios::beg, ios::end) seeks are okay.
-// NOTE 4:  stream re-positioning made after pushback clears all pushback data.
+//          (ios::beg, ios::end) seeks are okay (if permitted by "is").
+// NOTE 5:  stream re-positioning made after pushback clears all pushback data.
 extern void UTIL_StreamPushback(istream&      is,
                                 CT_CHAR_TYPE* buf,
                                 streamsize    buf_size,
@@ -85,4 +70,25 @@ extern void UTIL_StreamPushback(istream&            is,
 END_NCBI_SCOPE
 
 
-#endif  /* STREAM_PUSHBACK__HPP */
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 1.5  2002/11/06 03:50:39  lavr
+ * Correct duplicated NOTE 4; move log to end; change guard macro
+ *
+ * Revision 1.4  2002/10/29 22:06:22  ucko
+ * Make *buf const in the copying version of UTIL_StreamPushback.
+ *
+ * Revision 1.3  2002/02/05 19:37:04  lavr
+ * List of included header files revised
+ *
+ * Revision 1.2  2002/02/04 20:20:28  lavr
+ * Notes about stream repositioning added
+ *
+ * Revision 1.1  2001/12/09 06:28:59  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
+
+#endif  /* UTIL___STREAM_PUSHBACK__HPP */
