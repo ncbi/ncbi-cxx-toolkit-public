@@ -754,7 +754,6 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
    Uint4 query_offset, subject_offset;
    Int4 word, index, index2=0;
    BlastMBLookupTable* mb_lt;
-   Uint4* q_ptr = q_offsets,* s_ptr = s_offsets;
    Boolean two_templates;
    Uint1 template_type;
    Uint1 second_template_type;
@@ -797,6 +796,10 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
           query_offset = mb_lt->hashtable[index];
           subject_offset = 
              ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
+
+          /* test for completion before the current chain has
+             been added. This test counts for both templates
+             (they both add hits or neither one does) */
           if (query_offset && (hitsfound >= max_hits))
              break;
           while (query_offset) {
@@ -809,8 +812,6 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
           query_offset = mb_lt->hashtable2[index2];
           subject_offset = 
              ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
-          if (query_offset && (hitsfound >= max_hits))
-             break;
           while (query_offset) {
              q_offsets[hitsfound] = query_offset - 1;
              s_offsets[hitsfound++] = subject_offset;
@@ -844,6 +845,9 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
             subject_offset = 
                ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
                + bit/2;
+            /* test for completion before the current chain has
+               been added. This test counts for both templates
+               (they both add hits or neither one does) */
             if (query_offset && (hitsfound >= max_hits))
                break;
             while (query_offset) {
@@ -857,8 +861,6 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
             subject_offset = 
                ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
                + bit/2;
-            if (query_offset && (hitsfound >= max_hits))
-               break;
             while (query_offset) {
                q_offsets[hitsfound] = query_offset - 1;
                s_offsets[hitsfound++] = subject_offset;
