@@ -437,6 +437,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
             x_AddLBCookie();
 
+            m_ArgContextSync = false;
             // Call ProcessRequest()
             _TRACE("CCgiApplication::Run: calling ProcessRequest()");
             int x_result = ProcessRequest(*m_Context);
@@ -548,6 +549,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.51  2004/12/01 13:50:13  kuznets
+ * Changes to make CGI parameters available as arguments
+ *
  * Revision 1.50  2004/11/22 17:21:22  vakatov
  * Do not honor 'exitfastcgi' request unless it is explicitly allowed (via
  * the application's configuration)

@@ -98,6 +98,16 @@ public:
     /// @sa CCgiRequest::Flags
     void SetRequestFlags(int flags) { m_RequestFlags = flags; }
 
+    void SetupArgDescriptions(CArgDescriptions* arg_desc);
+
+    /// Get parsed command line arguments extended with CGI parameters
+    ///
+    /// @return
+    ///   The CArgs object containing parsed cmd.-line arguments and
+    ///   CGI parameters
+    ///
+    const CArgs& GetArgs(void) const;
+
 protected:
     // Factory method for the Context object construction
     virtual CCgiContext*   CreateContext(CNcbiArguments*   args = 0,
@@ -185,6 +195,9 @@ private:
 
     /// Bit flags for CCgiRequest
     int                       m_RequestFlags;
+    /// Flag, indicates arguments are in sync with CGI context
+    /// (becomes TRUE on first call of GetArgs()
+    mutable bool              m_ArgContextSync;
 
     // forbidden
     CCgiApplication(const CCgiApplication&);
@@ -249,6 +262,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2004/12/01 13:49:13  kuznets
+* Changes to make CGI parameters available as arguments
+*
 * Revision 1.41  2004/05/11 12:43:29  kuznets
 * Changes to control HTTP parsing (CCgiRequest flags)
 *

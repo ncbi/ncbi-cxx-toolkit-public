@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov, Vsevolod Sandomirskiy
+ * Authors:  Denis Vakatov, Vsevolod Sandomirskiy, Anatoliy Kuznetsov
  *
  *
  */
@@ -332,6 +332,10 @@ protected:
     /// or if SetupArgDescriptions() is called again.
     void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
+    /// Get argument descriptions (set by SetupArgDescriptions)
+    const CArgDescriptions* GetArgDescriptions(void) const 
+                                            { return m_ArgDesc.get(); }
+
     /// Setup the application diagnostic stream.
     /// @return
     ///   TRUE if successful,  FALSE otherwise.
@@ -534,6 +538,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2004/12/01 13:48:03  kuznets
+ * Changes to make CGI parameters available as arguments
+ *
  * Revision 1.47  2004/10/20 14:16:41  gouriano
  * Give access to logfile name
  *

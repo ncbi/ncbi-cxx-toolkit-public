@@ -1073,6 +1073,7 @@ CArgs::TArgsCI CArgs::x_Find(const string& name) const
 }
 
 
+
 bool CArgs::Exist(const string& name) const
 {
     return (x_Find(name) != m_Args.end());
@@ -1144,8 +1145,14 @@ string& CArgs::Print(string& str) const
     return str;
 }
 
+void CArgs::Remove(const string& name)
+{
+    CArgs::TArgsI it = 
+        m_Args.find(CRef<CArgValue> (new CArg_NoValue(name)));
+    m_Args.erase(it);
+}
 
-void CArgs::Add(CArgValue* arg)
+void CArgs::Add(CArgValue* arg, bool update)
 {
     // special case:  add an "extra" arg (generate virtual name for it)
     bool is_extra = false;
@@ -1157,8 +1164,12 @@ void CArgs::Add(CArgValue* arg)
     // check-up
     _ASSERT(CArgDescriptions::VerifyName(arg->GetName(), true));
     if ( Exist(arg->GetName()) ) {
-        NCBI_THROW(CArgException,eSynopsis,
-            "Argument with this name is defined already: " + arg->GetName());
+        if (update) {
+            Remove(arg->GetName());
+        } else {
+            NCBI_THROW(CArgException,eSynopsis,
+             "Argument with this name is defined already: " + arg->GetName());
+        }
     }
 
     // add
@@ -1184,7 +1195,8 @@ bool CArgs::IsEmpty(void) const
 
 
 CArgDescriptions::CArgDescriptions(bool auto_help)
-    : m_nExtra(0),
+    : m_ArgsType(eRegularArgs),
+      m_nExtra(0),
       m_nExtraOpt(0),
       m_AutoHelp(auto_help),
       m_UsageIfNoArgs(false)
@@ -1200,6 +1212,37 @@ CArgDescriptions::CArgDescriptions(bool auto_help)
 CArgDescriptions::~CArgDescriptions(void)
 {
     return;
+}
+
+void CArgDescriptions::SetArgsType(EArgSetType args_type)
+{
+    m_ArgsType = args_type;
+
+    // Run args check for a CGI application
+    if (m_ArgsType == eCgiArgs) {
+        if (!m_PosArgs.empty()) {
+            NCBI_THROW(CArgException, eInvalidArg,
+                "CGI application cannot have positional arguments.");
+        }
+        ITERATE (TArgs, it, m_Args) {
+            const CArgDesc* arg = it->get();
+            if (s_IsFlag(*arg)) {
+                const string& name = arg->GetName();
+
+                if (name == "h")  // help
+                    continue;
+
+                string err = 
+                    "CGI application cannot have flag arguments.";
+                err += "Offending flag:";
+                err += name;
+
+                NCBI_THROW(CArgException, eInvalidArg, err);
+            }
+        } // ITERATE
+    }
+
+
 }
 
 
@@ -1547,13 +1590,28 @@ bool CArgDescriptions::x_CreateArg
         }
     }
 
+    arg2_used = x_CreateArg(arg1, name, have_arg2, arg2, *n_plain, args);
+
+    // Success (also indicate whether one or two "raw" args have been used)
+    return arg2_used;
+}
+
+bool CArgDescriptions::x_CreateArg(const string& arg1,
+                                   const string& name, 
+                                   bool          have_arg2,
+                                   const string& arg2,
+                                   unsigned      n_plain,
+                                   CArgs&        args,
+                                   bool          update) const
+{
+    bool arg2_used = false;
     // Get arg. description
     TArgsCI it = x_Find(name);
     if (it == m_Args.end()) {
         if ( name.empty() ) {
             NCBI_THROW(CArgException,eInvalidArg,
                 "Unexpected extra argument, at position # " +
-                NStr::UIntToString(*n_plain));
+                NStr::UIntToString(n_plain));
         } else {
             NCBI_THROW(CArgException,eInvalidArg,
                 "Unknown argument: "+ name);
@@ -1568,6 +1626,16 @@ bool CArgDescriptions::x_CreateArg
     if ( s_IsKey(arg) ) {
         // <key> <value> arg  -- advance from the arg.name to the arg.value
         if ( !have_arg2 ) {
+
+            // if update specified we try to add default value
+            //  (mandatory throws an exception out of the ProcessDefault())
+            if (update) {
+                CRef<CArgValue> arg_value(arg.ProcessDefault());
+                // Add the value to "args"
+                args.Add(arg_value, update);
+                return arg2_used;
+            }
+
             NCBI_THROW(CArgException,eNoValue,s_ArgExptMsg(arg1,
                 "Value is missing", kEmptyStr));
         }
@@ -1581,11 +1649,11 @@ bool CArgDescriptions::x_CreateArg
     CRef<CArgValue> arg_value(arg.ProcessArgument(*value));
 
     // Add the argument value to "args"
-    args.Add(arg_value);
+    args.Add(arg_value, update);
 
-    // Success (also indicate whether one or two "raw" args have been used)
     return arg2_used;
 }
+
 
 
 void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
@@ -1627,10 +1695,19 @@ void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
         }
 
         // Use default argument value
-        CRef<CArgValue> arg_value(arg.ProcessDefault());
-
-        // Add the value to "args"
-        args.Add(arg_value);
+        try {
+            CRef<CArgValue> arg_value(arg.ProcessDefault());
+            // Add the value to "args"
+            args.Add(arg_value);
+        } 
+        catch (CArgException&)
+        {
+            // mandatory argument, for CGI is taken not from the
+            // command line but from the request
+            if (GetArgsType() != eCgiArgs) {
+                throw; // non-CGI application, error!
+            }
+        }
     }
 }
 
@@ -1847,7 +1924,23 @@ string& CArgDescriptions::PrintUsage(string& str) const
 
     // SYNOPSIS
     arr.push_back("USAGE");
-    {{
+
+    if (m_ArgsType == eCgiArgs) {
+        list<string> syn;
+        for (it = args.begin();  it != args.end();  ++it) {
+            const CArgDescSynopsis* as = 
+                dynamic_cast<const CArgDescSynopsis*>(&**it);
+
+            if (as) {
+                const string& name  = (*it)->GetName();
+                const string& synopsis  = as->GetSynopsis();
+                syn.push_back(name+"="+synopsis);
+            }
+        } // for
+        NStr::WrapList(
+            syn, m_UsageWidth, "&", arr, 0, "?", "  "+m_UsageName+"?");
+
+    } else { // regular application
         list<string> syn;
         syn.push_back(m_UsageName);
         for (it = args.begin();  it != args.end();  ++it) {
@@ -1858,9 +1951,9 @@ string& CArgDescriptions::PrintUsage(string& str) const
             } else {
                 syn.push_back((*it)->GetUsageSynopsis());
             }
-        }
+        } // for
         NStr::WrapList(syn, m_UsageWidth, " ", arr, 0, "    ", "  ");
-    }}
+    }
 
     // DESCRIPTION
     arr.push_back(kEmptyStr);
@@ -2204,6 +2297,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2004/12/01 13:48:29  kuznets
+ * Changes to make CGI parameters available as arguments
+ *
  * Revision 1.50  2004/09/27 23:25:50  vakatov
  * [MSWIN]  CArg_***File::  set standard I/O streams to "binary" mode if so
  *          specified by arg description

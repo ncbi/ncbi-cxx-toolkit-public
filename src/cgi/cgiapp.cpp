@@ -127,7 +127,12 @@ int CCgiApplication::Run(void)
         {{
             CException* ex = dynamic_cast<CException*> (&e);
             if ( ex ) {
-                NCBI_RETHROW_SAME((*ex), "(CGI) CCgiApplication::Run");
+                // kuznets: re-throw commented out (11/29/2004), 
+                // in CGI it's better just to report like in FCGI
+                // NCBI_RETHROW_SAME((*ex), "(CGI) CCgiApplication::Run");
+
+                NCBI_REPORT_EXCEPTION("(CGI) CCgiApplication::Run", *ex);
+
             }
         }}
     }
@@ -145,6 +150,13 @@ int CCgiApplication::Run(void)
     }
 
     return result;
+}
+
+void CCgiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
+{
+    arg_desc->SetArgsType(CArgDescriptions::eCgiArgs);
+
+    CParent::SetupArgDescriptions(arg_desc);
 }
 
 
@@ -259,7 +271,8 @@ private:
 CCgiApplication::CCgiApplication(void) 
  : m_HostIP(0), 
    m_Iteration(0),
-   m_RequestFlags(0)
+   m_RequestFlags(0),
+   m_ArgContextSync(false)
 {
     SetStdioFlags(fBinaryCin | fBinaryCout);
     DisableArgDescriptions();
@@ -294,6 +307,15 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
     os << "ERROR:  " << status_str << " " HTTP_EOL HTTP_EOL;
     os << e.what();
 
+    if ( dynamic_cast<CArgException*> (&e) ) {
+        string ustr;
+        const CArgDescriptions* descr = GetArgDescriptions();
+        if (descr) {
+            os << descr->PrintUsage(ustr) << HTTP_EOL HTTP_EOL;
+        }
+    }
+    
+
     // Check for problems in sending the response
     if ( !os.good() ) {
         ERR_POST("CCgiApplication::OnException() failed to send error page"
@@ -302,6 +324,33 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
     }
     return 0;
 }
+
+const CArgs& CCgiApplication::GetArgs(void) const
+{
+    CArgs& args = const_cast<CArgs&>(CParent::GetArgs());
+    
+    if (m_ArgContextSync) {
+        return args;
+    }
+    
+    const CCgiContext& ctx = GetContext();  
+    const CCgiRequest& req  = ctx.GetRequest();
+    const TCgiEntries& cgi_entries = req.GetEntries(); 
+
+    const CArgDescriptions* arg_desc = GetArgDescriptions();
+
+    if (!arg_desc) {
+        return args;
+    }
+
+    arg_desc->ConvertKeys(&args, cgi_entries, true /*update=yes*/);
+
+    m_ArgContextSync = true;
+
+    return args;
+}
+
+
 
 
 void CCgiApplication::RegisterDiagFactory(const string& key,
@@ -743,6 +792,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.58  2004/12/01 13:50:13  kuznets
+* Changes to make CGI parameters available as arguments
+*
 * Revision 1.57  2004/09/25 17:59:22  vakatov
 * Standard I/O streams to work in binary mode (to override MS-Win default
 * that opens these in text mode)

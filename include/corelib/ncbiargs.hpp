@@ -330,14 +330,18 @@ public:
     /// Add new argument name and value.
     ///
     /// Throw an exception if the "name" is not an empty string, and if
-    /// there is an argument with this name already.
+    /// there is an argument with this name already and "update" parameter is 
+    /// not set.
     ///
     /// HINT: Use empty "name" to add extra (unnamed) args, and they will be
     /// automagically assigned with the virtual names: "#1", "#2", "#3", etc.
-    void Add(CArgValue* arg);
+    void Add(CArgValue* arg, bool update = false);
 
     /// Check if there are no arguments in this container.
     bool IsEmpty(void) const;
+
+    /// Remove argument
+    void Remove(const string& name);
 
 private:
     typedef set< CRef<CArgValue> >  TArgs;   ///< Type for arguments
@@ -381,6 +385,21 @@ public:
 
     /// Destructor.
     virtual ~CArgDescriptions(void);
+
+    /// Type of CArgDescriptions
+    /// For a CGI application positional argumants and flags does not make
+    /// sense (this sintax cannot be expressed by CGI protocol)
+    enum EArgSetType {
+        eRegularArgs,  ///< Regular application
+        eCgiArgs       ///< CGI application
+    };
+
+    /// Set type of argument set.
+    /// Method performs verisifation of arguments, 
+    /// throws an exception if positional args were set for a CGI
+    void SetArgsType(EArgSetType args_type);
+
+    EArgSetType GetArgsType() const { return m_ArgsType; }
 
     /// Available argument types.
     enum EType {
@@ -618,6 +637,35 @@ public:
     /// underscore ('_'), or be empty.
     static bool VerifyName(const string& name, bool extended = false);
 
+    /// Convert argument map (key-value pairs) into arguments in accordance
+    /// with the argument description
+    template<class T>
+    void ConvertKeys(CArgs* args, const T& arg_map, bool update) const
+    {
+        ITERATE(TKeyFlagArgs, it, m_KeyFlagArgs) {
+            const string& param_name = *it;
+            typename T::const_iterator vit = arg_map.find(param_name);
+            if (vit != arg_map.end()) {
+                const string& v = vit->second;
+                x_CreateArg(param_name, param_name, 
+                            true, /* value is present */
+                            v,
+                            1,
+                            *args,
+                            update);
+            } else {
+                x_CreateArg(param_name, param_name, 
+                            false, /* value is not present */
+                            kEmptyStr,
+                            1,
+                            *args,
+                            update);
+            }
+
+
+        } // ITERATE
+    }
+
 private:
     typedef set< AutoPtr<CArgDesc> >  TArgs;    ///< Argument descr. type
     typedef TArgs::iterator           TArgsI;   ///< Arguments iterator
@@ -625,6 +673,8 @@ private:
     typedef /*deque*/vector<string>   TPosArgs; ///< Positional arg. vector
     typedef list<string>              TKeyFlagArgs; ///< List of flag arguments
 
+private:
+    EArgSetType  m_ArgsType;  ///< Type of arguments
     TArgs        m_Args;      ///< Assoc.map of arguments' name/descr
     TPosArgs     m_PosArgs;   ///< Pos. args, ordered by position in cmd.-line
     TKeyFlagArgs m_KeyFlagArgs; ///< Key/flag args, in order of insertion
@@ -669,6 +719,16 @@ private:
                         unsigned* n_plain,  ///< Indicates number of args 
                         CArgs& args         ///< Contains processed args
                        ) const;
+
+    /// @return
+    ///   TRUE if specified "arg2" was used.
+    bool x_CreateArg(const string& arg1,
+                     const string& name, 
+                     bool          have_arg2,
+                     const string& arg2,
+                     unsigned      n_plain,
+                     CArgs&        args,
+                     bool          update = false) const;
 
     /// Helper method for doing post-processing consistency checks.
     void    x_PostCheck(CArgs& args, unsigned n_plain) const;
@@ -1051,6 +1111,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/12/01 13:48:03  kuznets
+ * Changes to make CGI parameters available as arguments
+ *
  * Revision 1.36  2004/08/19 13:01:51  dicuccio
  * Dropped unnecessary export specifier on exceptions
  *
