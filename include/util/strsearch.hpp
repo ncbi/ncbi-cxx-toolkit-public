@@ -172,9 +172,9 @@ public:
     ///    Length of text
     /// @return 
     ///    the position at which the pattern was found, -1 otherwise.
-    size_t Search(const char*  text, 
-                     size_t pos,
-                     size_t text_len) const;
+    SIZE_TYPE Search(const char*  text, 
+                     SIZE_TYPE pos,
+                     SIZE_TYPE text_len) const;
     
 private:
     // Constants
@@ -185,13 +185,13 @@ private:
     /// Check if the pattern at position pos in the text lies on a
     /// whole word boundry.
     bool IsWholeWord(const char*   text,
-                     size_t     pos,
-                     size_t     text_len) const;
+                     SIZE_TYPE     pos,
+                     SIZE_TYPE     text_len) const;
 
     void x_InitPattern(void);
 private:    
     string                  m_Pattern;  
-    size_t                  m_PatLen;
+    SIZE_TYPE               m_PatLen;
     NStr::ECase             m_CaseSensitive;
     unsigned int            m_WholeWord;
     vector<size_t>          m_LastOccurrence;
@@ -536,6 +536,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/05/27 13:41:16  kuznets
+* Fixed warnings (GCC 3.4)
+*
 * Revision 1.18  2004/04/26 14:52:34  ucko
 * Add "typename" as needed to accommodate GCC 3.4's stricter treatment of
 * templates.

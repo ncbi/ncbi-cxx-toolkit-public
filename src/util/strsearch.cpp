@@ -171,14 +171,15 @@ void CBoyerMooreMatcher::x_InitPattern(void)
     
     // compute right-most occurrence
     for ( int j = 0;  j < (int)m_PatLen - 1;  ++j ) {
-        int lo = m_LastOccurrence[(int)m_Pattern[j]] = m_PatLen - j - 1;
+        /* int lo = */
+		m_LastOccurrence[(int)m_Pattern[j]] = m_PatLen - j - 1;
    }
 }
 
 
-size_t CBoyerMooreMatcher::Search(const char*  text, 
-                                  SIZE_TYPE shift,
-                                  SIZE_TYPE text_len) const
+SIZE_TYPE CBoyerMooreMatcher::Search(const char*  text, 
+                                     SIZE_TYPE shift,
+                                     SIZE_TYPE text_len) const
 {
     // Implementation note.
     // Case sensitivity check has been taken out of loop. 
@@ -186,7 +187,7 @@ size_t CBoyerMooreMatcher::Search(const char*  text,
     // (Anatoliy)
     if (m_CaseSensitive == NStr::eCase) {
         while (shift + m_PatLen <= text_len) {
-            SIZE_TYPE j = (int)m_PatLen - 1;
+            int j = (int)m_PatLen - 1;
 
             for(char text_char = text[shift + j];
                 j >= 0 && m_Pattern[j]==(text_char=text[shift + j]);
@@ -214,7 +215,7 @@ size_t CBoyerMooreMatcher::Search(const char*  text,
             }
         }
     }
-    return -1;
+    return (SIZE_TYPE)-1;
 }
 
 
@@ -260,6 +261,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/05/27 13:40:58  kuznets
+* Fixed warnings (GCC 3.4)
+*
 * Revision 1.16  2004/05/17 21:06:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
