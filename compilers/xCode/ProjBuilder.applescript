@@ -41,6 +41,8 @@ global newProject
 global TheNCBIPath, TheFLTKPath, TheBDBPath, TheSQLPath, ThePCREPath, TheOUTPath
 global libTypeDLL, cpuOptimization, zeroLink, fixContinue
 
+(**)
+
 (* Hold keys and values for object dictionary of the project *)
 global objValues
 global objKeys
@@ -130,6 +132,7 @@ script ProjBuilder
 		if cpuOptimization then
 			log "Getting CPU type"
 			set cpuType to do shell script "/usr/sbin/ioreg | grep PowerPC | awk '{print $3}'| cut -c 9-10"
+			
 			if cpuType contains "G5" then
 				set |GCC_MODEL_TUNING| of buildSettingsDevelopment to "G5"
 				set |GCC_MODEL_CPU| of buildSettingsDevelopment to "G5"
@@ -389,6 +392,22 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		copy "TARGET__BUILD_ALL" to the beginning of |targets| of rootObject
 		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
 		
+		
+		(* Genome Workbench Disk Image *)
+		(* Add a shell script only target to create a standalone disk image for distribution *)
+		set out_dir to x_Replace(TheOUTPath, "/", "\\/")
+		set shellScript to do shell script "sed 's/@out_path@/" & out_dir & "/' <" & TheNCBIPath & "/compilers/xCode/diskimage.tmpl"
+		
+		copy "TARGET__GBENCH_DISK" to the end of |targets| of rootObject
+		set scriptPhaseName to "SCRIPTPHASE__GBENCH"
+		set aScriptPhase to {isa:"PBXShellScriptBuildPhase", |files|:{}, |inputPaths|:{}, |outputPaths|:{}, |runOnlyForDeploymentPostprocessing|:1, |shellPath|:"/bin/sh", |shellScript|:shellScript}
+		
+		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{none:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
+		copy scriptPhaseName to the beginning of |buildPhases| of theTarget
+		addPair(aScriptPhase, scriptPhaseName)
+		addPair(theTarget, "TARGET__GBENCH_DISK")
+		
+		
 		(* add frameworks*)
 		-- Carbon
 		copy "FW_CARBON" to the end of children of fworks
@@ -589,6 +608,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/03/21 19:22:51  lebedev
+ * Build phase for generating release GBench disk images added
+ *
  * Revision 1.22  2005/03/10 14:22:55  lebedev
  * Link warnings fixed (no more pcre multiple defined symbols)
  *

@@ -493,7 +493,6 @@ on ValidatePaths()
 		do shell script "mkdir " & TheOUTPath & "/cfg"
 		set lib_dir to TheOUTPath & "/lib"
 		set lib_dir to x_Replace(lib_dir, "/", "\\/")
-		--set ncbicfg to "sed 's/@ncbi_runpath@/" & lib_dir & "/' <" & TheNCBIPath & "/src/corelib/ncbicfg.c.in >" & TheNCBIPath & "/src/corelib/ncbicfg.c"
 		set ncbicfg to "sed 's/@ncbi_runpath@/" & lib_dir & "/' <" & TheNCBIPath & "/src/corelib/ncbicfg.c.in >" & TheOUTPath & "/cfg/ncbicfg.c"
 		
 		do shell script ncbicfg
@@ -544,6 +543,9 @@ end x_SaveTableData
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/03/21 19:22:51  lebedev
+ * Build phase for generating release GBench disk images added
+ *
  * Revision 1.13  2005/03/21 12:27:34  lebedev
  * Fix to handle new plugins registration in the Toolkit
  *
