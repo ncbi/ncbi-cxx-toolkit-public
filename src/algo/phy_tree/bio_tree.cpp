@@ -191,7 +191,11 @@ void PrintNode(CNcbiOstream& os, const CBioTreeDynamic& tree,
             if (it != node.SubNodeBegin()) {
                 os << ", ";
             }
-            PrintNode(os, tree, **it);
+
+            const CBioTreeDynamic::TBioTreeNode::TParent* p = *it;
+            const CBioTreeDynamic::TBioTreeNode* pp = 
+                (const CBioTreeDynamic::TBioTreeNode*)p;
+            PrintNode(os, tree, *pp);
         }
         os << ')';
     }
@@ -261,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/08/18 12:16:21  kuznets
+ * Type cast for CBioTree node compatibility
+ *
  * Revision 1.6  2004/08/03 16:16:21  jcherry
  * Added Newick and Nexus format writing for CBioTreeDynamic.
  * Made CBioTreeFeatureDictionary::HasFeature const.
