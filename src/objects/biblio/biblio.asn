@@ -1,4 +1,4 @@
---$Revision: 6.0 $
+--$Revision: 6.1 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -9,6 +9,7 @@
 --      ANSI Z39.29-1977
 --  Version 3.0 - June 1994
 --  PubMedId added in 1996
+--  ArticleIds and eprint elements added in 1999
 --
 --****************************************************************
 
@@ -18,10 +19,53 @@ BEGIN
 EXPORTS Cit-art, Cit-jour, Cit-book, Cit-pat, Cit-let, Id-pat, Cit-gen,
         Cit-proc, Cit-sub, Title, Author, PubMedId;
 
-IMPORTS Person-id, Date FROM NCBI-General;
+IMPORTS Person-id, Date, Dbtag FROM NCBI-General;
 
-PubMedId ::= INTEGER                    -- Id from the PubMed database at NCBI
+    -- Article Ids
 
+ArticleId ::= CHOICE {         -- can be many ids for an article
+	pubmed PubMedId ,      -- see types below
+	medline MedlineUID ,
+	doi DOI ,
+	pii PII ,
+	pmcid PmcID ,
+	pmcpid PmcPid ,
+        pmpid PmPid ,
+        other Dbtag  }    -- generic catch all
+    
+PubMedId ::= INTEGER           -- Id from the PubMed database at NCBI
+MedlineUID ::= INTEGER         -- Id from MEDLINE
+DOI ::= VisibleString          -- Document Object Identifier
+PII ::= VisibleString          -- Controlled Publisher Identifier
+PmcID ::= INTEGER              -- PubMed Central Id
+PmcPid ::= VisibleString       -- Publisher Id supplied to PubMed Central
+PmPid ::= VisibleString        -- Publisher Id supplied to PubMed
+
+ArticleIdSet ::= SET OF ArticleId
+
+    -- Status Dates
+
+PubStatus ::= INTEGER {            -- points of publication
+    received  (1) ,            -- date manuscript received for review
+    accepted  (2) ,            -- accepted for publication
+    epublish  (3) ,            -- published electronically by publisher
+    ppublish  (4) ,            -- published in print by publisher
+    revised   (5) ,            -- article revised by publisher/author
+    pmc       (6) ,            -- article first appeared in PubMed Central
+    pmcr      (7) ,            -- article revision in PubMed Central
+    pubmed    (8) ,            -- article citation first appeared in PubMed
+    pubmedr   (9) ,            -- article citation revision in PubMed
+    aheadofprint (10),         -- epublish, but will be followed by print
+    premedline (11),           -- date into PreMedline status
+    medline    (12),           -- date made a MEDLINE record
+    other    (255) }
+
+PubStatusDate ::= SEQUENCE {   -- done as a structure so fields can be added
+    pubstatus PubStatus ,
+    date Date }                -- time may be added later
+
+PubStatusDateSet ::= SET OF PubStatusDate
+    
     -- Citation Types
 
 Cit-art ::= SEQUENCE {                  -- article in journal or book
@@ -30,7 +74,8 @@ Cit-art ::= SEQUENCE {                  -- article in journal or book
     from CHOICE {                       -- journal or book
         journal Cit-jour ,
         book Cit-book ,
-        proc Cit-proc } }
+        proc Cit-proc } ,
+    ids ArticleIdSet OPTIONAL }         -- lots of ids
 
 Cit-jour ::= SEQUENCE {             -- Journal citation
     title Title ,                   -- title of journal
@@ -181,7 +226,9 @@ Imprint ::= SEQUENCE {                  -- Imprint group
         in-press (2) ,                      -- accepted, not published
         other (255)  } OPTIONAL ,
     part-supi VisibleString OPTIONAL ,      -- part/sup on issue
-    retract CitRetract OPTIONAL }  -- retraction info
+    retract CitRetract OPTIONAL ,           -- retraction info
+    pubstatus PubStatus OPTIONAL ,          -- current status of this publication
+    history PubStatusDateSet OPTIONAL }     -- dates for this record
 
 CitRetract ::= SEQUENCE {
     type ENUMERATED {                    -- retraction of an entry
