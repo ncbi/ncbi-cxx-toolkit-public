@@ -48,6 +48,9 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CSeq_id;
+
+
 class NCBI_SEQLOC_EXPORT CSeq_loc_mix : public CSeq_loc_mix_Base
 {
     typedef CSeq_loc_mix_Base Tparent;
@@ -103,6 +106,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2004/08/19 13:05:36  dicuccio
+ * Added missing predeclaration for CSeq_id
+ *
  * Revision 1.15  2004/05/06 16:54:41  shomrat
  * Added methods to set partial left and right
  *
