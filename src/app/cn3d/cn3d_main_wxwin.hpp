@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/05/21 22:06:56  thiessen
+* fix initial glcanvas size bug
+*
 * Revision 1.24  2001/05/17 18:34:00  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -252,7 +255,7 @@ private:
 class Cn3DGLCanvas: public wxGLCanvas
 {
 public:
-    Cn3DGLCanvas(wxWindow *parent, const wxPoint& pos, const wxSize& size, int *attribList);
+    Cn3DGLCanvas(wxWindow *parent, int *attribList);
     ~Cn3DGLCanvas(void);
 
     // public data

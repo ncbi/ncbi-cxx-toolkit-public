@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2001/05/21 22:06:51  thiessen
+* fix initial glcanvas size bug
+*
 * Revision 1.41  2001/05/18 19:17:22  thiessen
 * get gl context working in GTK
 *
@@ -491,16 +494,16 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 #if defined(__WXMSW__)
     int *attribList = NULL;
 #elif defined(__WXGTK__)
-    int attribList[20] = { 
-        WX_GL_DOUBLEBUFFER, 
-        WX_GL_RGBA, WX_GL_MIN_RED, 1, WX_GL_MIN_GREEN, 1, WX_GL_MIN_BLUE, 1, 
-        WX_GL_DEPTH_SIZE, 1, 
-        None 
+    int attribList[20] = {
+        WX_GL_DOUBLEBUFFER,
+        WX_GL_RGBA, WX_GL_MIN_RED, 1, WX_GL_MIN_GREEN, 1, WX_GL_MIN_BLUE, 1,
+        WX_GL_DEPTH_SIZE, 1,
+        None
     };
 #else
 #error need to define GL attrib list
 #endif
-    glCanvas = new Cn3DGLCanvas(this, wxPoint(0, 0), wxSize(400, 400), attribList);
+    glCanvas = new Cn3DGLCanvas(this, attribList);
     glCanvas->SetCurrent();
 
     GlobalMessenger()->AddStructureWindow(this);
@@ -806,15 +809,20 @@ BEGIN_EVENT_TABLE(Cn3DGLCanvas, wxGLCanvas)
     EVT_ERASE_BACKGROUND    (Cn3DGLCanvas::OnEraseBackground)
 END_EVENT_TABLE()
 
-Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent,
-        const wxPoint& pos, const wxSize& size, int *attribList) :
-    wxGLCanvas(parent, -1, pos, size, wxSUNKEN_BORDER, "Cn3DGLCanvas", attribList),
+Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, int *attribList) :
+    wxGLCanvas(parent, -1, wxPoint(0, 0), wxDefaultSize, wxSUNKEN_BORDER, "Cn3DGLCanvas", attribList),
     structureSet(NULL)
 {
     // must create window and establish context before creating OpenGLRenderer
-    parent->Show(true); 
-    SetCurrent();
+    parent->Show(true);
     renderer = new OpenGLRenderer();
+
+    // set initial size to fill parent window's client area
+    int width, height;
+    GetClientSize(&width, &height);
+    renderer->SetSize(width, height);
+
+    // set up font used by OpenGL
     font = new wxFont(12, wxSWISS, wxNORMAL, wxBOLD);
 
 #ifdef __WXMSW__
