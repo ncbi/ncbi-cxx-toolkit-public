@@ -50,6 +50,10 @@
 #   define  INTERNAL_MUTEX_DEBUG
 #endif
 
+/** @addtogroup Threads
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 
@@ -779,6 +783,7 @@ private:
 };
 
 
+/* @} */
 
 #include <corelib/ncbimtx.inl>
 
@@ -790,6 +795,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/03/31 13:09:19  siyan
+ * Added doxygen support
+ *
  * Revision 1.19  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
