@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/03/06 23:55:37  lavr
+ * SOCK_gethostaddr -> SOCK_gethostbyname
+ *
  * Revision 6.11  2001/03/02 20:10:07  lavr
  * Typo fixed
  *
@@ -128,7 +131,7 @@ static const char* s_VT_GetType
 
 static int/*bool*/ s_OpenDispatcher(SServiceConnector* uuu)
 {
-    unsigned int addr = SOCK_gethostaddr(0);
+    unsigned int addr = SOCK_gethostbyname(0);
     if (!addr || !(uuu->iter = SERV_OpenEx(uuu->serv, uuu->type,
                                            addr, uuu->info, 0, 0))) {
         return 0/*false*/;
@@ -183,7 +186,7 @@ static int/*bool*/ s_ParseHeader(const char* header, void* data,
                 return 0/*failed*/;
             o1 = i1; o2 = i2; o3 = i3; o4 = i4;
             sprintf(host, "%d.%d.%d.%d", o1, o2, o3, o4);
-            uuu->host = SOCK_gethostaddr(host);
+            uuu->host = SOCK_gethostbyname(host);
             uuu->tckt = SOCK_htonl(temp);
             SOCK_ntoa(uuu->host, host, sizeof(host));
             break;

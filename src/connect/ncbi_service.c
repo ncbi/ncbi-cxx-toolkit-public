@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2001/03/06 23:55:25  lavr
+ * SOCK_gethostaddr -> SOCK_gethostbyname
+ *
  * Revision 6.15  2001/03/05 23:10:29  lavr
  * SERV_WriteInfo takes only one argument now
  *
@@ -147,7 +150,7 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
     iter->type = type;
     iter->preferred_host =
         preferred_host == SERV_LOCALHOST ?
-        SOCK_gethostaddr(0) : preferred_host;
+        SOCK_gethostbyname(0) : preferred_host;
     iter->n_skip = iter->n_max_skip = 0;
     iter->skip = 0;
     iter->op = 0;
