@@ -211,7 +211,12 @@ public:
     /// allocated memory and this method frees that memory.
     void RetSequence(const char ** buffer);
     
-
+    /// Gets a list of sequence identifiers.
+    /// 
+    /// This returns the list of CSeq_id identifiers associated with
+    /// the sequence specified by the given OID.
+    list< CRef<CSeq_id> > GetSeqIDs(TOID oid);
+    
     /// Returns the type of database opened - protein or nucleotide.
     /// 
     /// This uses the same constants as the constructor.
