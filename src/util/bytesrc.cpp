@@ -328,39 +328,39 @@ CRef<CByteSource> CMemorySourceCollector::GetSource(void)
 }
 
 
-CIWriterSourceCollector::CIWriterSourceCollector(IWriter*    writer, 
-                                                 EOwnership  own, 
+CWriterSourceCollector::CWriterSourceCollector(IWriter*    writer, 
+                                               EOwnership  own, 
                                        CRef<CSubSourceCollector>  parent)
     : CSubSourceCollector(parent),
-      m_IWriter(writer),
+      m_Writer(writer),
       m_Own(own)
 {
 }
 
 
-CIWriterSourceCollector::~CIWriterSourceCollector()
+CWriterSourceCollector::~CWriterSourceCollector()
 {
     if (m_Own)
-        delete m_IWriter;
+        delete m_Writer;
 }
 
 
-void CIWriterSourceCollector::SetWriter(IWriter*   writer, 
-                                        EOwnership own)
+void CWriterSourceCollector::SetWriter(IWriter*   writer, 
+                                       EOwnership own)
 {
     if (m_Own)
-        delete m_IWriter;
-    m_IWriter = writer;
+        delete m_Writer;
+    m_Writer = writer;
     m_Own = own;    
 }
 
-void CIWriterSourceCollector::AddChunk(const char* buffer, size_t bufferLength)
+void CWriterSourceCollector::AddChunk(const char* buffer, size_t bufferLength)
 {
     size_t written;
-    m_IWriter->Write(buffer, bufferLength, &written);
+    m_Writer->Write(buffer, bufferLength, &written);
 }
 
-CRef<CByteSource> CIWriterSourceCollector::GetSource(void)
+CRef<CByteSource> CWriterSourceCollector::GetSource(void)
 {
     // Return NULL byte source, this happens because we cannot derive
     // any readers from IWriter (one way interface)
@@ -370,12 +370,12 @@ CRef<CByteSource> CIWriterSourceCollector::GetSource(void)
 
 
 CRef<CSubSourceCollector> 
-CIWriterByteSourceReader::SubSource(size_t prepend, 
+CWriterByteSourceReader::SubSource(size_t prepend, 
                                     CRef<CSubSourceCollector> parent)
 {
     return 
      CRef<CSubSourceCollector>(
-        new CIWriterSourceCollector(m_Writer, eNoOwnership, parent));
+        new CWriterSourceCollector(m_Writer, eNoOwnership, parent));
 }
 
 
@@ -386,6 +386,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.25  2003/09/30 20:37:54  kuznets
+ * Class names clean up (Removed I from CI prefix for classes based in
+ * interfaces)
+ *
  * Revision 1.24  2003/09/30 20:24:03  kuznets
  * +CIWriterByteSourceReader
  *

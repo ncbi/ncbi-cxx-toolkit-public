@@ -181,11 +181,11 @@ protected:
 /// Stream based byte source reader 
 /// 
 /// Class works as a virtual class factory to create 
-/// CIWriterSourceCollector. see SubSource()
+/// CWriterSourceCollector. see SubSource()
 ///
 /// One of the projected uses is to update local BLOB cache
 
-class NCBI_XUTIL_EXPORT CIWriterByteSourceReader 
+class NCBI_XUTIL_EXPORT CWriterByteSourceReader 
                                         : public CStreamByteSourceReader
 {
 public:
@@ -193,14 +193,14 @@ public:
     ///
     /// @param stream readers source 
     /// @param writer destination interface pointer
-    CIWriterByteSourceReader(CNcbiIstream* stream, IWriter* writer)
+    CWriterByteSourceReader(CNcbiIstream* stream, IWriter* writer)
     : CStreamByteSourceReader(0 /*CByteSource* */, stream),
       m_Writer(writer)
     {
         _ASSERT(writer);
     }
 
-    /// Create CIWriterSourceCollector
+    /// Create CWriterSourceCollector
     virtual CRef<CSubSourceCollector> 
         SubSource(size_t prepend, CRef<CSubSourceCollector> parent);
 
@@ -299,7 +299,7 @@ private:
 };
 
 /// Class adapter IWriter - CSubSourceCollector
-class NCBI_XUTIL_EXPORT CIWriterSourceCollector : public CSubSourceCollector
+class NCBI_XUTIL_EXPORT CWriterSourceCollector : public CSubSourceCollector
 {
 public:
     /// Constructor
@@ -308,10 +308,10 @@ public:
     /// @param own flag to take ownership on the writer 
     /// (delete on destruction)
     /// @param parent chained sub-source
-    CIWriterSourceCollector(IWriter*                    writer, 
-                            EOwnership                  own, 
-                            CRef<CSubSourceCollector>   parent);
-    virtual ~CIWriterSourceCollector();
+    CWriterSourceCollector(IWriter*                    writer, 
+                           EOwnership                  own, 
+                           CRef<CSubSourceCollector>   parent);
+    virtual ~CWriterSourceCollector();
 
     /// Reset the destination IWriter interface
     ///
@@ -328,8 +328,8 @@ public:
     virtual CRef<CByteSource> GetSource(void);
 
 private:
-    IWriter*    m_IWriter; //!< Destination interface pointer
-    EOwnership  m_Own;     //!< Flag to delete IWriter on destruction
+    IWriter*    m_Writer; //!< Destination interface pointer
+    EOwnership  m_Own;    //!< Flag to delete IWriter on destruction
 };
 
 class NCBI_XUTIL_EXPORT CFileSourceCollector : public CSubSourceCollector
@@ -410,6 +410,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/09/30 20:37:35  kuznets
+* Class names clean up (Removed I from CI prefix for classes based in
+* interfaces)
+*
 * Revision 1.17  2003/09/30 20:23:39  kuznets
 * +CIWriterByteSourceReader
 *
