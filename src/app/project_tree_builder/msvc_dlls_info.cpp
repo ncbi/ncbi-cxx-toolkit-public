@@ -308,6 +308,34 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
     dll->m_Defines.sort();
     dll->m_Defines.unique();
 
+    {{
+        string makefile_name = 
+            SMakeProjectT::CreateMakeAppLibFileName(lib.m_SourcesBaseDir,
+                                                    lib.m_Name);
+        CSimpleMakeFileContents makefile
+                                 (CDirEntry::ConcatPath(lib.m_SourcesBaseDir,
+                                                        makefile_name));
+        CSimpleMakeFileContents::TContents::const_iterator p = 
+            makefile.m_Contents.find("NCBI_C_LIBS");
+
+        list<string> ncbi_clibs;
+        if (p != makefile.m_Contents.end()) {
+            SAppProjectT::CreateNcbiCToolkitLibs(makefile, &ncbi_clibs);
+
+            dll->m_Libs3Party.push_back("NCBI_C_LIBS");
+            dll->m_Libs3Party.sort();
+            dll->m_Libs3Party.unique();
+
+            copy(ncbi_clibs.begin(),
+                 ncbi_clibs.end(),
+                 back_inserter(dll->m_NcbiCLibs));
+            dll->m_NcbiCLibs.sort();
+            dll->m_NcbiCLibs.unique();
+
+        }
+
+
+    }}
     // m_NcbiCLibs
     copy(lib.m_NcbiCLibs.begin(), 
          lib.m_NcbiCLibs.end(), back_inserter(dll->m_NcbiCLibs));
@@ -465,6 +493,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/03/16 23:51:43  gorelenk
+ * Changed implementation of s_AddProjItemToDll .
+ *
  * Revision 1.9  2004/03/16 17:43:33  gorelenk
  * Addition of dllmain moved from s_AddProjItemToDll to s_InitalizeDllProj .
  *
