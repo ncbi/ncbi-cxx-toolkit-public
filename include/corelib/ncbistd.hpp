@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1999/11/17 22:05:02  vakatov
+* [!HAVE_STRDUP]  Emulate "strdup()" -- it's missing on some platforms
+*
 * Revision 1.28  1999/10/26 18:10:24  vakatov
 * [auto_ptr] -- simpler and more standard
 *
@@ -250,6 +253,11 @@ inline const T& max(const T& a, const T& b) {
   return  a < b ? b : a;
 }
 #endif /* min && max */
+
+// strdup()
+#if !defined(HAVE_STRDUP)
+extern char* strdup(const char* str);
+#endif
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)

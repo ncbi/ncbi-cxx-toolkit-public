@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/11/17 22:05:04  vakatov
+* [!HAVE_STRDUP]  Emulate "strdup()" -- it's missing on some platforms
+*
 * Revision 1.18  1999/10/13 16:30:30  vasilche
 * Fixed bug in PNocase which appears under GCC implementation of STL.
 *
@@ -216,6 +219,19 @@ bool PNocase::operator() (const string& x, const string& y) const
     }
     return y_ptr != y.end();
 }
+
+
+#if !defined(HAVE_STRDUP)
+extern char* strdup(const char* str)
+{
+    if ( !str )
+        return 0;
+
+    size_t size   = ::strlen(str) + 1;
+    void*  result = ::malloc(size);
+    return (char*) (result ? ::memcpy(result, str, size) : 0);
+}
+#endif
 
 
 END_NCBI_SCOPE
