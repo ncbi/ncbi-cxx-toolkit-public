@@ -39,7 +39,8 @@ Detailed Contents:
 #ifndef __BLAST_DEF__
 #define __BLAST_DEF__
 
-#include <ncbi.h>
+
+#include <ncbi_std.h>
 #if THREADS_IMPLEMENTED
 #include <ncbithr.h>
 #endif
