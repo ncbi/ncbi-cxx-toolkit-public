@@ -215,6 +215,7 @@ case "\$method" in
             x_tests=\`grep "\[\$dir/\$cfg/" \$res_log | grep 'ERR \['\`
             if [ -n "\$x_tests" ]; then  
             ( 
+            grep "\[\$dir/\$cfg/" \$res_log > \$res_script.\${dir}_\${cfg}.log
             grep "\[\$dir/\$cfg/" \$res_log | grep 'ERR \['
             x_files=\`grep "/\$dir/check/\$cfg/" \$res_journal | sed -e 's/ /%gj_s4%/g'\`
             for x_file in \$x_files; do
