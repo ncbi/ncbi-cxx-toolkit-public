@@ -153,6 +153,7 @@ CFeat_CI::CFeat_CI(const CSeq_entry_Handle& entry,
 
 CMappedFeat::CMappedFeat(void)
 {
+    m_MappingInfoPtr = &m_MappingInfoObj;
 }
 
 
@@ -166,7 +167,8 @@ CMappedFeat& CMappedFeat::operator=(const CMappedFeat& feat)
 {
     if ( this != &feat ) {
         m_OriginalFeat = feat.m_OriginalFeat;
-        m_MappingInfo = feat.m_MappingInfo;
+        m_MappingInfoObj = *feat.m_MappingInfoPtr;
+        m_MappingInfoPtr = &m_MappingInfoObj;
         m_MappedFeat = feat.m_MappedFeat;
         m_OriginalSeq_feat_Lock.Reset();
     }
@@ -194,7 +196,8 @@ CSeq_annot_Handle CMappedFeat::GetAnnot(void) const
 void CMappedFeat::Reset(void)
 {
     m_OriginalFeat = CSeq_feat_Handle();
-    m_MappingInfo.Reset();
+    m_MappingInfoObj.Reset();
+    m_MappingInfoPtr = &m_MappingInfoObj;
     m_MappedFeat.ResetRefs();
     m_OriginalSeq_feat_Lock.Reset();
 }
@@ -205,7 +208,7 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
 {
     m_OriginalSeq_feat_Lock.Reset();
 
-    CAnnotObject_Ref feat_ref = *annot;
+    const CAnnotObject_Ref& feat_ref = *annot;
     _ASSERT(feat_ref.IsFeat());
     m_OriginalFeat = CSeq_feat_Handle(collector.GetAnnot(feat_ref),
         feat_ref.IsSNPFeat() ?
@@ -213,7 +216,7 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
         CSeq_feat_Handle::eType_Seq_annot_Info,
         feat_ref.GetAnnotObjectIndex(),
         *collector.m_CreatedOriginal);
-    m_MappingInfo = feat_ref.GetMappingInfo();
+    m_MappingInfoPtr = &feat_ref.GetMappingInfo();
     m_MappedFeat.ResetRefs();
     return *this;
 }
@@ -223,7 +226,7 @@ const CSeq_feat& CMappedFeat::GetMappedFeature(void) const
 {
     CRef<CSeq_loc> mapped_location(&const_cast<CSeq_loc&>(GetLocation()));
     return *m_MappedFeat.MakeMappedFeature(m_OriginalFeat,
-                                           m_MappingInfo,
+                                           *m_MappingInfoPtr,
                                            *mapped_location);
 }
 
@@ -234,6 +237,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/02/24 20:38:28  grichenk
+* Optimized mapping info in CMappedFeat.
+*
 * Revision 1.39  2005/02/24 19:13:34  grichenk
 * Redesigned CMappedFeat not to hold the whole annot collector.
 *

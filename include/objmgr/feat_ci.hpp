@@ -73,7 +73,7 @@ public:
 
     /// Fast way to check if mapped feature is different from the original one
     bool IsMapped(void) const
-        { return m_MappingInfo.IsMapped(); }
+        { return m_MappingInfoPtr->IsMapped(); }
 
     /// Feature mapped to the master sequence.
     /// WARNING! The function is rather slow and should be used with care.
@@ -88,9 +88,9 @@ public:
         { return GetOriginalFeature().GetData(); }
 
     bool IsSetPartial(void) const
-        { return m_MappingInfo.IsPartial(); }
+        { return m_MappingInfoPtr->IsPartial(); }
     bool GetPartial(void) const
-        { return m_MappingInfo.IsPartial(); }
+        { return m_MappingInfoPtr->IsPartial(); }
 
     bool IsSetExcept(void) const
         { return GetOriginalFeature().IsSetExcept(); }
@@ -106,13 +106,13 @@ public:
         { return GetOriginalFeature().IsSetProduct(); }
     const CSeq_loc& GetProduct(void) const
         {
-            return m_MappingInfo.IsMappedProduct()?
+            return m_MappingInfoPtr->IsMappedProduct()?
                 GetMappedLocation(): GetOriginalFeature().GetProduct();
         }
 
     const CSeq_loc& GetLocation(void) const
         {
-            return m_MappingInfo.IsMappedLocation()?
+            return m_MappingInfoPtr->IsMappedLocation()?
                 GetMappedLocation(): GetOriginalFeature().GetLocation();
         }
 
@@ -177,7 +177,12 @@ private:
     const CSeq_loc& GetMappedLocation(void) const;
 
     CSeq_feat_Handle             m_OriginalFeat;
-    CAnnotMapping_Info           m_MappingInfo;
+    // Pointer is used with annot collector to avoid copying of the
+    // mapping info. The structure is copied only when the whole
+    // mapped feat is copied.
+    CAnnotMapping_Info*          m_MappingInfoPtr;
+    CAnnotMapping_Info           m_MappingInfoObj;
+
     // CMappedFeat does not re-use objects
     mutable CCreatedFeat_Ref     m_MappedFeat;
     // Original feature is not locked by handle, lock here.
@@ -336,7 +341,7 @@ const CSeq_feat& CMappedFeat::GetOriginalFeature(void) const
 inline
 const CSeq_loc& CMappedFeat::GetMappedLocation(void) const
 {
-    return *m_MappedFeat.MakeMappedLocation(m_MappingInfo);
+    return *m_MappedFeat.MakeMappedLocation(*m_MappingInfoPtr);
 }
 
 
@@ -349,6 +354,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2005/02/24 20:38:28  grichenk
+* Optimized mapping info in CMappedFeat.
+*
 * Revision 1.50  2005/02/24 19:13:34  grichenk
 * Redesigned CMappedFeat not to hold the whole annot collector.
 *
