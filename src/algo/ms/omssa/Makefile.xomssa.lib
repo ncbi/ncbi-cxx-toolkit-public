@@ -4,6 +4,8 @@
 # Build library "xomssa"
 #################################
 
+NCBI_C_LIBS =  -lncbitool -lncbiobj -lncbi
+
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 
 SRC = SpectrumSet msladder msms mspeak omssa Mod

@@ -4,9 +4,11 @@
 # Build application "omssacl"
 #################################
 
-LIBS =  $(ORIG_LIBS) $(NCBI_C_LIBPATH) -lncbitool -lncbiobj -lncbi
+NCBI_C_LIBS =  -lncbitool -lncbiobj -lncbi
 
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir) $(NCBI_C_INCLUDE)
+LIBS =  $(ORIG_LIBS) $(NCBI_C_LIBPATH) $(NCBI_C_LIBS)
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 
 APP = omssacl
 
