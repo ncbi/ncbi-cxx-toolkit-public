@@ -30,6 +30,8 @@
 *
 */
 
+#include <stddef.h>
+
 
 /** @addtogroup CookieAffinity
  *
@@ -71,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/05/28 19:57:38  lavr
+ * +<stddef.h> for size_t
+ *
  * Revision 1.5  2003/05/19 22:14:39  vakatov
  * CCookieAffinity_Plain::GetHostIP() -- use SIZE_T for the buf.size arg.
  * Get the code into accordance with the C++ Toolkit coding style.
