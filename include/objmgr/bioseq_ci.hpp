@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CBioseq_CI
+class NCBI_XOBJMGR_EXPORT CBioseq_CI
 {
 public:
     // 'ctors
@@ -61,8 +61,6 @@ public:
     const CBioseq_Handle* operator-> (void) const;
 
 private:
-    CBioseq_CI operator++ (int);
-
     typedef set<CBioseq_Handle>              TBioseqHandleSet;
     typedef TBioseqHandleSet::const_iterator THandleIterator;
 
@@ -151,6 +149,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/12/26 20:42:55  dicuccio
+* Added Win32 export specifier.  Removed unimplemented (private) operator++(int)
+*
 * Revision 1.4  2002/12/05 19:28:29  grichenk
 * Prohibited postfix operator ++()
 *

@@ -72,7 +72,7 @@ class CTSE_Info;
 
 // General annotation iterator. Public interfaces should use
 // CFeat_CI, CGraph_CI and CAlign_CI instead.
-class CAnnot_CI
+class NCBI_XOBJMGR_EXPORT CAnnot_CI
 {
 public:
     typedef CRange<TSeqPos>                                          TRange;
@@ -99,7 +99,6 @@ public:
     CAnnotObject* operator-> (void) const;
 
 private:
-    CAnnot_CI operator++ (int);
 
     typedef TRangeMap::iterator     TRangeIter;
 
@@ -158,6 +157,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/12/26 20:42:55  dicuccio
+* Added Win32 export specifier.  Removed unimplemented (private) operator++(int)
+*
 * Revision 1.13  2002/12/20 20:54:23  grichenk
 * Added optional location/product switch to CFeat_CI
 *

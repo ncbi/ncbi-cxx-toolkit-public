@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CDesc_CI
+class NCBI_XOBJMGR_EXPORT CDesc_CI
 {
 public:
     CDesc_CI(void);
@@ -56,8 +56,6 @@ public:
     const CSeq_descr* operator-> (void) const;
 
 private:
-    CDesc_CI operator++ (int);
-
     // Move to the next entry containing a descriptor
     void x_Walk(void);
 
@@ -73,6 +71,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/12/26 20:42:55  dicuccio
+* Added Win32 export specifier.  Removed unimplemented (private) operator++(int)
+*
 * Revision 1.7  2002/12/05 19:28:29  grichenk
 * Prohibited postfix operator ++()
 *
