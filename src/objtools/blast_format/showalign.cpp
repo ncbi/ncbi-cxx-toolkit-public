@@ -210,7 +210,7 @@ static void AddSpace(CNcbiOstream& out, int number);
 static string GetTaxNames(const CBioseq& cbsp, int taxid);
 
 static string getNameInitials(string& name);
-static string GetSeqForm(char* formName, bool dbIsNa);
+static string GetSeqForm(char* formName, bool dbIsNa, int queryNumber);
 static const string GetSeqIdStringByFastaOrder(const CSeq_id& id, CScope& sp, bool with_version);
 static int GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids);
 
@@ -479,10 +479,10 @@ void CDisplaySeqalign::AddLinkout(const CBioseq& cbsp, const CBlast_def_line& bd
 }
 
 //return the get sequence table for html display
-static string GetSeqForm(char* formName, bool dbIsNa){
+static string GetSeqForm(char* formName, bool dbIsNa, int queryNumber){
   char buf[2048] = {""};
   if(formName){
-    sprintf(buf, "<table border=\"0\"><tr><td><FORM  method=\"post\" action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" name=\"%s\"><input type=button value=\"Get selected sequences\" onClick=\"finalSubmit(%d, 'getSeqAlignment', 'getSeqGi', '%s')\"><input type=\"hidden\" name=\"db\" value=\"\"><input type=\"hidden\" name=\"term\" value=\"\"><input type=\"hidden\" name=\"doptcmdl\" value=\"docsum\"><input type=\"hidden\" name=\"cmd\" value=\"search\"></form></td><td><FORM><input type=\"button\" value=\"Select all\" onClick=\"handleCheckAll('select', 'getSeqAlignment', 'getSeqGi')\"></form></td><td><FORM><input type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', 'getSeqAlignment', 'getSeqGi')\"></form></td></tr></table>", formName, dbIsNa?1:0, formName);
+    sprintf(buf, "<table border=\"0\"><tr><td><FORM  method=\"post\" action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" name=\"%s\"><input type=button value=\"Get selected sequences\" onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s')\"><input type=\"hidden\" name=\"db\" value=\"\"><input type=\"hidden\" name=\"term\" value=\"\"><input type=\"hidden\" name=\"doptcmdl\" value=\"docsum\"><input type=\"hidden\" name=\"cmd\" value=\"search\"></form></td><td><FORM><input type=\"button\" value=\"Select all\" onClick=\"handleCheckAll('select', 'getSeqAlignment%d', 'getSeqGi')\"></form></td><td><FORM><input type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', 'getSeqAlignment%d', 'getSeqGi')\"></form></td></tr></table>", formName, dbIsNa?1:0, queryNumber, formName, queryNumber, queryNumber);
    
   }
   return buf;
@@ -732,7 +732,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	}
         if(row == 0&&(m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign) && (m_AlignOption&eSequenceRetrieval && m_IsDbGi)){
           char checkboxBuf[200];
-          sprintf(checkboxBuf, "<input type=\"checkbox\" name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment', 'getSeqMaster')\">");
+          sprintf(checkboxBuf, "<input type=\"checkbox\" name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment%d', 'getSeqMaster')\">", m_QueryNumber);
           out << checkboxBuf;
         }
         string urlLink;
@@ -748,7 +748,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
           //get sequence checkbox
           if(m_AlignOption&eSequenceRetrieval && m_IsDbGi){
             char checkBoxBuf[512];
-            sprintf(checkBoxBuf, "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%d\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment', 'getSeqGi', this.checked)\">", gi);
+            sprintf(checkBoxBuf, "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%d\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment%d', 'getSeqGi', this.checked)\">", gi, m_QueryNumber);
             out << checkBoxBuf;        
           }
           urlLink = getUrl(m_AV->GetBioseqHandle(row).GetBioseq().GetId(), row);         
@@ -786,7 +786,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	    if(!insertAlready){
 	      if((m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign) && (m_AlignOption&eSequenceRetrieval && m_IsDbGi)){
 		char checkboxBuf[200];
-		sprintf(checkboxBuf, "<input type=\"checkbox\" name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment', 'getSeqMaster')\">");
+		sprintf(checkboxBuf, "<input type=\"checkbox\" name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment%d', 'getSeqMaster')\">", m_QueryNumber);
 		out << checkboxBuf;
 	      }
 	      AddSpace(out, maxIdLen+m_IdStartMargin+maxStartLen+m_StartSequenceMargin);
@@ -794,7 +794,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	    }
 	    if((m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign) && (m_AlignOption&eSequenceRetrieval && m_IsDbGi)){
 	      char checkboxBuf[200];
-	      sprintf(checkboxBuf, "<input type=\"checkbox\" name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment', 'getSeqMaster')\">");
+	      sprintf(checkboxBuf, "<input type=\"checkbox\" name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment%d', 'getSeqMaster')\">", m_QueryNumber);
 	      out << checkboxBuf;
 	    }
 	    AddSpace(out, maxIdLen+m_IdStartMargin+maxStartLen+m_StartSequenceMargin);
@@ -809,7 +809,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	  if ( curRange.IntersectingWith((*iter)->alnRange)){  
 	    if((m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign) && (m_AlignOption&eSequenceRetrieval && m_IsDbGi)){
 	      char checkboxBuf[200];
-	      sprintf(checkboxBuf, "<input type=\"checkbox\" name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment', 'getSeqMaster')\">");
+	      sprintf(checkboxBuf, "<input type=\"checkbox\" name=\"getSeqMaster\" value=\"\" onClick=\"uncheckable('getSeqAlignment%d', 'getSeqMaster')\">", m_QueryNumber);
 	      out << checkboxBuf;
 	    }
 	    out<<(*iter)->feature->featureId;
@@ -883,8 +883,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
   }
    //get sequence 
   if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_IsDbGi){ 
-        out<<GetSeqForm((char*)"submitterTop", m_IsDbNa);
-        out<<"<form name=\"getSeqAlignment\">\n";
+        out<<GetSeqForm((char*)"submitterTop", m_IsDbNa, m_QueryNumber);
+        out<<"<form name=\"getSeqAlignment"<<m_QueryNumber<<"\">\n";
       }
 
   //begin to display
@@ -1060,7 +1060,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
   }
   if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_IsDbGi){
     out<<"</form>\n";
-    out<<GetSeqForm((char*)"submitterBottom", m_IsDbNa);
+    out<<GetSeqForm((char*)"submitterBottom", m_IsDbNa, m_QueryNumber);
   }
 }
 
@@ -1133,7 +1133,7 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbi
 	}
 	if ((m_AlignOption&eSequenceRetrieval) && (m_AlignOption&eHtml) && m_IsDbGi && isFirst) {
 	  char buf[512];
-	  sprintf(buf, "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%d\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment', 'getSeqGi', this.checked)\">", gi);
+	  sprintf(buf, "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%d\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment%d', 'getSeqGi', this.checked)\">", gi, m_QueryNumber);
 	  out << buf;
 	}
  
@@ -1807,6 +1807,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.18  2003/11/26 17:57:04  jianye
+*Handling query set case for get sequence feature
+*
 *Revision 1.17  2003/10/28 22:41:06  jianye
 *Added downloading sub seq capability for long seq
 *
