@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+SUB_PROJ = basic cgi objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
