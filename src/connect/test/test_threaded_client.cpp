@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.2  2002/01/07 17:08:44  ucko
+* Display progress.
+*
 * Revision 6.1  2001/12/11 19:55:24  ucko
 * Introduce thread-pool-based servers.
 *
@@ -58,6 +61,9 @@
 
 BEGIN_NCBI_SCOPE
 
+static          unsigned int s_Requests;
+static volatile unsigned int s_Processed = 0;
+static CFastMutex            s_Mutex;
 
 class CConnectionRequest : public CStdRequest
 {
@@ -85,6 +91,11 @@ void CConnectionRequest::Process(void)
     stream >> junk;
     stream << "Hello!" << endl;
     stream >> junk;
+
+    {{
+        CFastMutexGuard guard(s_Mutex);
+        cerr << "Processed " << ++s_Processed << "/" << s_Requests << endl;
+    }}
 }
 
 
@@ -135,14 +146,14 @@ void CThreadedClientApp::Init(void)
 int CThreadedClientApp::Run(void)
 {
     const CArgs& args = GetArgs();
-    unsigned int requests = args["requests"].AsInteger();
+    s_Requests = args["requests"].AsInteger();
 
-    CStdPoolOfThreads pool(args["maxThreads"].AsInteger(), requests);
+    CStdPoolOfThreads pool(args["maxThreads"].AsInteger(), s_Requests);
     CRandom rng;
 
     pool.Spawn(args["threads"].AsInteger());
 
-    for (unsigned int i = 0;  i < requests;  ++i) {
+    for (unsigned int i = 0;  i < s_Requests;  ++i) {
         X_SLEEP(rng.GetRand(0, 9));
         pool.AcceptRequest(new CConnectionRequest(args["host"].AsString(),
                                                   args["port"].AsInteger(),
