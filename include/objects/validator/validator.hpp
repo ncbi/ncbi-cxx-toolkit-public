@@ -51,7 +51,7 @@ class CObjectManager;
 BEGIN_SCOPE(validator)
 
 
-class CValidErrItem : public CObject 
+class NCBI_VALIDATOR_EXPORT CValidErrItem : public CObject 
 {
 public:
     // constructor
@@ -64,8 +64,8 @@ public:
 
     // access functions
     EDiagSev                GetSeverity (void) const;
+    const string&           GetMsg      (void) const;
     const string&           GetErrCode  (void) const;
-    const string&           GetMessage  (void) const;
     const string&           GetVerbose  (void) const;
     const CConstObjectInfo& GetObject   (void) const;
 
@@ -87,7 +87,7 @@ private:
 typedef vector < CRef < CValidErrItem > > TErrs;
 
 
-class CValidError
+class NCBI_VALIDATOR_EXPORT CValidError
 {
 public:
 
@@ -129,7 +129,7 @@ private:
 };
 
 
-class CValidError_CI
+class NCBI_VALIDATOR_EXPORT CValidError_CI
 {
 public:
     CValidError_CI(void);
@@ -166,6 +166,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/01/07 19:57:03  shomrat
+* Added Win32 export specifier; Memebr GetMessage() changed to GetMsg() due to conflict
+*
 * Revision 1.1  2002/12/19 20:54:23  shomrat
 * From /objects/util/validate.hpp
 *
