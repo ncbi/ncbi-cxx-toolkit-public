@@ -67,12 +67,6 @@ static char const rcsid[] =
 #endif
 
 
-/** Allocates and Deallocates the two-dimensional matrix. 
- * @param alphabet_size the number of letters in the alphabet
- * @return the allocated matrix
- */
-static SBLASTMatrixStructure* BlastMatrixAllocate (Int2 alphabet_size);
-
 #define BLAST_SCORE_RANGE_MAX   (BLAST_SCORE_MAX - BLAST_SCORE_MIN) /**< maximum allowed range of BLAST scores. */
 
 /****************************************************************************
@@ -554,6 +548,100 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL
 };  /**< Quality values for BLOSUM62_20 matrix, each element corresponds to same element number in array blosum62_20_values */
 
+/** Deallocates SBlastScoreMatrix structure
+ * @param matrix structure to deallocate [in]
+ * @return NULL
+ */
+static SBlastScoreMatrix*
+SBlastScoreMatrixFree(SBlastScoreMatrix* matrix)
+{
+    if ( !matrix ) {
+        return NULL;
+    }
+
+    if (matrix->data) {
+        matrix->data = (int**) _PSIDeallocateMatrix((void**) matrix->data, 
+                                                    matrix->ncols);
+    }
+
+    sfree(matrix);
+    return NULL;
+}
+
+/** Allocates a new SBlastScoreMatrix structure of the specified dimensions.
+ * @param ncols number of columns [in]
+ * @param nrows number of rows [in]
+ * @return NULL in case of memory allocation failure, else new
+ * SBlastScoreMatrix structure
+ */
+static SBlastScoreMatrix*
+SBlastScoreMatrixNew(size_t ncols, size_t nrows)
+{
+    SBlastScoreMatrix* retval = NULL;
+
+    retval = (SBlastScoreMatrix*) calloc(1, sizeof(SBlastScoreMatrix));
+    if ( !retval ) {
+        return SBlastScoreMatrixFree(retval);
+    }
+
+    retval->data = (int**) _PSIAllocateMatrix(ncols, nrows, sizeof(int));
+    if ( !retval->data ) {
+        return SBlastScoreMatrixFree(retval);
+    }
+    retval->ncols = ncols;
+    retval->nrows = nrows;
+    return retval;
+}
+
+SPsiBlastScoreMatrix*
+SPsiBlastScoreMatrixFree(SPsiBlastScoreMatrix* matrix)
+{
+    if ( !matrix ) {
+        return NULL;
+    }
+
+    if (matrix->freq_ratios) {
+        matrix->freq_ratios = (double**) _PSIDeallocateMatrix((void**)
+                                                   matrix->freq_ratios,
+                                                   matrix->pssm->ncols);
+    }
+
+    matrix->pssm = SBlastScoreMatrixFree(matrix->pssm);
+    matrix->kbp = Blast_KarlinBlkFree(matrix->kbp);
+    sfree(matrix);
+    return NULL;
+}
+
+SPsiBlastScoreMatrix*
+SPsiBlastScoreMatrixNew(size_t ncols)
+{
+    SPsiBlastScoreMatrix* retval = NULL;
+
+    retval = (SPsiBlastScoreMatrix*) calloc(1, sizeof(SPsiBlastScoreMatrix));
+    if ( !retval ) {
+        return SPsiBlastScoreMatrixFree(retval);
+    }
+
+    retval->pssm = SBlastScoreMatrixNew(ncols, BLASTAA_SIZE);
+
+    if ( !retval->pssm ) {
+        return SPsiBlastScoreMatrixFree(retval);
+    }
+
+    retval->freq_ratios = (double**) _PSIAllocateMatrix(ncols, BLASTAA_SIZE,
+                                                        sizeof(double));
+    if ( !retval->freq_ratios ) {
+        return SPsiBlastScoreMatrixFree(retval);
+    }
+
+    retval->kbp = Blast_KarlinBlkNew();
+    if ( !retval->kbp ) {
+        return SPsiBlastScoreMatrixFree(retval);
+    }
+
+    return retval;
+}
+
 /*
    Allocates memory for the BlastScoreBlk*.
 */
@@ -589,12 +677,10 @@ BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
         break;
     }
 
-    sbp->matrix_struct = BlastMatrixAllocate(sbp->alphabet_size);
-    if (sbp->matrix_struct == NULL) {
-        sbp = BlastScoreBlkFree(sbp);
-        return sbp;
+    sbp->matrix = SBlastScoreMatrixNew(sbp->alphabet_size, sbp->alphabet_size);
+    if (sbp->matrix == NULL) {
+        return BlastScoreBlkFree(sbp);
     }
-    sbp->matrix = sbp->matrix_struct->matrix;
     sbp->scale_factor = 1.0;
     sbp->number_of_contexts = number_of_contexts;
     sbp->sfp = (Blast_ScoreFreq**) 
@@ -635,28 +721,11 @@ Blast_KarlinBlkFree(Blast_KarlinBlk* kbp)
    return kbp;
 }
 
-/** Deallocates the SBLASTMatrix structure. 
- * @param matrix_struct the object to be deallocated [in]
- * @return NULL;
- */
-static SBLASTMatrixStructure*
-BlastMatrixDestruct(SBLASTMatrixStructure* matrix_struct)
-
-{
-
-   if (matrix_struct == NULL)
-      return NULL;
-
-   sfree(matrix_struct);
-
-   return matrix_struct;
-}
-
 BlastScoreBlk*
 BlastScoreBlkFree(BlastScoreBlk* sbp)
 
 {
-    Int4 index, rows;
+    Int4 index;
     if (sbp == NULL)
         return NULL;
     
@@ -679,27 +748,11 @@ BlastScoreBlkFree(BlastScoreBlk* sbp)
     sfree(sbp->kbp_psi);
     sfree(sbp->kbp_gap_std);
     sfree(sbp->kbp_gap_psi);
-    sbp->matrix_struct = BlastMatrixDestruct(sbp->matrix_struct);
+    sbp->matrix = SBlastScoreMatrixFree(sbp->matrix);
     sbp->comments = ListNodeFreeData(sbp->comments);
     sfree(sbp->name);
+    sbp->psi_matrix = SPsiBlastScoreMatrixFree(sbp->psi_matrix);
     sfree(sbp->ambiguous_res);
-    
-    /* Removing posMatrix and posFreqs if any */
-    rows = sbp->query_length + 1;
-    if(sbp->posMatrix != NULL) {
-        for (index=0; index < rows; index++) {
-            sfree(sbp->posMatrix[index]);
-        }
-        sfree(sbp->posMatrix);
-    }
-    
-    if(sbp->posFreqs != NULL) {
-        for (index = 0; index < rows; index++) {
-            sfree(sbp->posFreqs[index]);
-        }
-        sfree(sbp->posFreqs);
-    }
-    
     sfree(sbp);
     
     return NULL;
@@ -754,87 +807,80 @@ BLAST_ScoreSetAmbigRes(BlastScoreBlk* sbp, char ambiguous_res)
  * The query sequence alphabet is blastna, the subject sequence
  * is ncbi2na.  The alphabet blastna is defined in blast_stat.h
  * and the first four elements of blastna are identical to ncbi2na.
- * if sbp->matrix==NULL, it is allocated.
  * @param sbp the BlastScoreBlk on which reward, penalty, and matrix will be set [in|out]
  * @return zero on success.
 */
 
 Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp)
 {
+    Int2  index1, index2, degen;
+    Int2 degeneracy[BLASTNA_SIZE+1];
+    Int4 reward; /* reward for match of bases. */
+    Int4 penalty; /* cost for mismatch of bases. */
+    Int4** matrix; /* matrix to be populated. */
+    /* How many of the first bases are ambiguous (four, of course). */
+    const int k_number_non_ambig_bp = 4; 
 
-   Int2  index1, index2, degen;
-   Int2 degeneracy[BLASTNA_SIZE+1];
-        Int4 reward; /* reward for match of bases. */
-        Int4 penalty; /* cost for mismatch of bases. */
-        Int4** matrix; /* matrix to be populated. */
-        const int k_number_non_ambig_bp = 4; /* How many of the first bases are ambiguous (four, of course). */
+    ASSERT(sbp);
+    ASSERT(sbp->alphabet_size == BLASTNA_SIZE);
+    ASSERT(sbp->matrix);
+    ASSERT(sbp->matrix->ncols == BLASTNA_SIZE);
+    ASSERT(sbp->matrix->nrows == BLASTNA_SIZE);
 
-        ASSERT(sbp);
+    reward = sbp->reward;
+    penalty = sbp->penalty;
+    matrix = sbp->matrix->data;
 
-        reward = sbp->reward;
-        penalty = sbp->penalty;
-        matrix = sbp->matrix;
-   
-        if(!matrix) {
-            SBLASTMatrixStructure* matrix_struct;
-            matrix_struct =BlastMatrixAllocate((Int2) BLASTNA_SIZE);
-            matrix = sbp->matrix = matrix_struct->matrix;
+    for (index1 = 0; index1<BLASTNA_SIZE; index1++)
+        for (index2 = 0; index2<BLASTNA_SIZE; index2++)
+            matrix[index1][index2] = 0;
+
+    /* In blastna the 1st four bases are A, C, G, and T, exactly as it is 
+       ncbi2na. */
+    /* ncbi4na gives them the value 1, 2, 4, and 8.  */
+    /* Set the first four bases to degen. one */
+    for (index1=0; index1<k_number_non_ambig_bp; index1++)
+        degeneracy[index1] = 1;
+
+    for (index1=k_number_non_ambig_bp; index1<BLASTNA_SIZE; index1++) {
+        degen=0;
+        for (index2=0; index2<k_number_non_ambig_bp; index2++) /* ncbi2na */
+        {
+            if (BLASTNA_TO_NCBI4NA[index1] & BLASTNA_TO_NCBI4NA[index2])
+                degen++;
         }
-
-   for (index1 = 0; index1<BLASTNA_SIZE; index1++) /* blastna */
-      for (index2 = 0; index2<BLASTNA_SIZE; index2++) /* blastna */
-         matrix[index1][index2] = 0;
-
-   /* In blastna the 1st four bases are A, C, G, and T, exactly as it is ncbi2na. */
-   /* ncbi4na gives them the value 1, 2, 4, and 8.  */
-
-   /* Set the first four bases to degen. one */
-   for (index1=0; index1<k_number_non_ambig_bp; index1++)
-      degeneracy[index1] = 1;
-
-   for (index1=k_number_non_ambig_bp; index1<BLASTNA_SIZE; index1++) /* blastna */
-   {
-      degen=0;
-      for (index2=0; index2<k_number_non_ambig_bp; index2++) /* ncbi2na */
-      {
-         if (BLASTNA_TO_NCBI4NA[index1] & BLASTNA_TO_NCBI4NA[index2])
-            degen++;
-      }
-      degeneracy[index1] = degen;
-   }
+        degeneracy[index1] = degen;
+    }
 
 
-   for (index1=0; index1<BLASTNA_SIZE; index1++) /* blastna */
-   {
-      for (index2=index1; index2<BLASTNA_SIZE; index2++) /* blastna */
-      {
-         if (BLASTNA_TO_NCBI4NA[index1] & BLASTNA_TO_NCBI4NA[index2])
-         { /* round up for positive scores, down for negatives. */
-            matrix[index1][index2] = BLAST_Nint( (double) ((degeneracy[index2]-1)*penalty + reward))/degeneracy[index2];
-            if (index1 != index2)
-            {
-                  matrix[index2][index1] = matrix[index1][index2];
+    for (index1=0; index1<BLASTNA_SIZE; index1++) {
+        for (index2=index1; index2<BLASTNA_SIZE; index2++) {
+            if (BLASTNA_TO_NCBI4NA[index1] & BLASTNA_TO_NCBI4NA[index2]) { 
+                /* round up for positive scores, down for negatives. */
+                matrix[index1][index2] = 
+                    BLAST_Nint( (double) ((degeneracy[index2]-1)*penalty + 
+                                          reward))/degeneracy[index2];
+                if (index1 != index2)
+                {
+                      matrix[index2][index1] = matrix[index1][index2];
+                }
             }
-         }
-         else
-         {
-            matrix[index1][index2] = penalty;
-            matrix[index2][index1] = penalty;
-         }
-      }
-   }
+            else
+            {
+                matrix[index1][index2] = penalty;
+                matrix[index2][index1] = penalty;
+            }
+        }
+    }
 
-        /* The value of 15 is a gap, which is a sentinel between strands in 
-           the ungapped extension algorithm */
-   for (index1=0; index1<BLASTNA_SIZE; index1++) /* blastna */
-           matrix[BLASTNA_SIZE-1][index1] = INT4_MIN / 2;
-   for (index1=0; index1<BLASTNA_SIZE; index1++) /* blastna */
-           matrix[index1][BLASTNA_SIZE-1] = INT4_MIN / 2;
+    /* The value of 15 is a gap, which is a sentinel between strands in 
+    the ungapped extension algorithm */
+    for (index1=0; index1<BLASTNA_SIZE; index1++)
+        matrix[BLASTNA_SIZE-1][index1] = INT4_MIN / 2;
+    for (index1=0; index1<BLASTNA_SIZE; index1++)
+        matrix[index1][BLASTNA_SIZE-1] = INT4_MIN / 2;
 
-   sbp->mat_dim1 = BLASTNA_SIZE;
-   sbp->mat_dim2 = BLASTNA_SIZE;
-
-   return 0;
+    return 0;
 }
 
 /** Read in the matrix from the FILE *fp.
@@ -845,7 +891,7 @@ Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp)
 */
 
 static Int2
-BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
+BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
 {
     char buf[512+3];
     char temp[512];
@@ -862,7 +908,12 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     const char kCommentChar = '#';
     const char* kTokenStr = " \t\n\r";
     
-    matrix = sbp->matrix;  
+    ASSERT(sbp->alphabet_size == BLASTAA_SIZE);
+    ASSERT(sbp->matrix);
+    ASSERT(sbp->matrix->ncols == BLASTAA_SIZE);
+    ASSERT(sbp->matrix->nrows == BLASTAA_SIZE);
+
+    matrix = sbp->matrix->data;  
     
     if (sbp->alphabet_code != BLASTNA_SEQ_CODE) {
         for (index1 = 0; index1 < sbp->alphabet_size; index1++)
@@ -907,9 +958,6 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
         return 2;
     }
 
-    if (sbp->alphabet_code != BLASTNA_SEQ_CODE) {
-        sbp->mat_dim2 = sbp->alphabet_size;
-    }
     while (fgets(buf, sizeof(buf), fp) != NULL)  {
         ++lineno;
         if ((cp = strchr(buf, '\n')) == NULL) {
@@ -968,10 +1016,6 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
         return 2;
     }
     
-    if (sbp->alphabet_code != BLASTNA_SEQ_CODE) {
-        sbp->mat_dim1 = sbp->alphabet_size;
-    }
-    
     return 0;
 }
 
@@ -985,15 +1029,15 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
 static Int2
 BlastScoreBlkMaxScoreSet(BlastScoreBlk* sbp)
 {
-   Int4 score;
-   Int4 ** matrix; 
-   Int2 index1, index2;
+    Int4 score;
+    Int4 ** matrix; 
+    Int2 index1, index2;
 
-   sbp->loscore = BLAST_SCORE_MAX;
-        sbp->hiscore = BLAST_SCORE_MIN;
-   matrix = sbp->matrix;
-   for (index1=0; index1<sbp->alphabet_size; index1++)
-   {
+    sbp->loscore = BLAST_SCORE_MAX;
+    sbp->hiscore = BLAST_SCORE_MIN;
+    matrix = sbp->matrix->data;
+    for (index1=0; index1<sbp->alphabet_size; index1++)
+    {
       for (index2=0; index2<sbp->alphabet_size; index2++)
       {
          score = matrix[index1][index2];
@@ -1004,27 +1048,38 @@ BlastScoreBlkMaxScoreSet(BlastScoreBlk* sbp)
          if (sbp->hiscore < score)
             sbp->hiscore = score;
       }
-   }
-/* If the lo/hi-scores are BLAST_SCORE_MIN/BLAST_SCORE_MAX, (i.e., for
-gaps), then use other scores. */
+    }
+    /* If the lo/hi-scores are BLAST_SCORE_MIN/BLAST_SCORE_MAX, (i.e., for
+    gaps), then use other scores. */
 
-   if (sbp->loscore < BLAST_SCORE_MIN)
+    if (sbp->loscore < BLAST_SCORE_MIN)
       sbp->loscore = BLAST_SCORE_MIN;
-   if (sbp->hiscore > BLAST_SCORE_MAX)
+    if (sbp->hiscore > BLAST_SCORE_MAX)
       sbp->hiscore = BLAST_SCORE_MAX;
 
-   return 0;
+    return 0;
 }
 
-Int2
-BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
+/** Sets sbp->matrix->data field using sbp->name field using
+ * the matrices in the toolkit (util/tables/raw_scoremat.h).
+ * @param sbp the object containing matrix and name [in|out]
+ * @return 0 on success, 1 if matrix could not be loaded 
+ */
+static Int2
+BlastScoreBlkProteinMatrixLoad(BlastScoreBlk* sbp)
 {
     Int2 status = 0;
     SNCBIPackedScoreMatrix* psm;
-    Int4** matrix = sbp->matrix;
+    Int4** matrix = NULL;
     int i, j;   /* loop indices */
 
     ASSERT(sbp);
+    ASSERT(sbp->alphabet_size == BLASTAA_SIZE);
+    ASSERT(sbp->matrix);
+    ASSERT(sbp->matrix->ncols == BLASTAA_SIZE);
+    ASSERT(sbp->matrix->nrows == BLASTAA_SIZE);
+
+    matrix = sbp->matrix->data;
 
     if (strcasecmp(sbp->name, "BLOSUM62") == 0) {
         psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum62;
@@ -1062,8 +1117,6 @@ BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
                                            i, j);
         }
     }
-    /* Sets dimensions of matrix. */
-    sbp->mat_dim1 = sbp->mat_dim2 = sbp->alphabet_size;
 
     return status;
 }
@@ -1100,14 +1153,14 @@ Blast_ScoreBlkMatrixFill(BlastScoreBlk* sbp, char* matrix_path)
             }
             sfree(full_matrix_path);
 
-            if ( (status=BlastScoreBlkMatRead(sbp, fp)) != 0) {
+            if ( (status=BlastScoreBlkProteinMatrixRead(sbp, fp)) != 0) {
                fclose(fp);
                return status;
             }
             fclose(fp);
 
         } else {
-            if ( (status = BlastScoreBlkMatrixLoad(sbp)) !=0) {
+            if ( (status = BlastScoreBlkProteinMatrixLoad(sbp)) !=0) {
                 return status;
             }
         }
@@ -1395,7 +1448,7 @@ BlastResCompNew(const BlastScoreBlk* sbp)
 
 /* comp0 has zero offset, comp starts at 0, only one 
 array is allocated.  */
-   rcp->comp0 = (Int4*) calloc(BLAST_MATRIX_SIZE, sizeof(Int4));
+   rcp->comp0 = (Int4*) calloc(sbp->alphabet_size, sizeof(Int4));
    if (rcp->comp0 == NULL) 
    {
       rcp = BlastResCompDestruct(rcp);
@@ -1598,7 +1651,7 @@ BlastScoreFreqCalc(const BlastScoreBlk* sbp, Blast_ScoreFreq* sfp, Blast_ResFreq
    for (score = sfp->score_min; score <= sfp->score_max; score++)
       sfp->sprob[score] = 0.0;
 
-   matrix = sbp->matrix;
+   matrix = sbp->matrix->data;
 
    alphabet_start = sbp->alphabet_start;
    alphabet_end = alphabet_start + sbp->alphabet_size;
@@ -2201,7 +2254,7 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
       return status;
 
    /* Set ungapped Blast_KarlinBlk* alias */
-   sbp->kbp = sbp->kbp_std;
+   sbp->kbp = (program == eBlastTypePsiBlast) ? sbp->kbp_psi : sbp->kbp_std;
 
    return status;
 }
@@ -2257,29 +2310,6 @@ Int2 Blast_KarlinBlkCopy(Blast_KarlinBlk* kbp_to, Blast_KarlinBlk* kbp_from)
    kbp_to->H = kbp_from->H;
    kbp_to->paramC = kbp_from->paramC;
    return 0;
-}
-
-static SBLASTMatrixStructure*
-BlastMatrixAllocate(Int2 alphabet_size)
-
-{
-   SBLASTMatrixStructure* matrix_struct;
-   Int2 index;
-
-   if (alphabet_size <= 0 || alphabet_size >= BLAST_MATRIX_SIZE)
-      return NULL;
-
-   matrix_struct =   (SBLASTMatrixStructure*) calloc(1, sizeof(SBLASTMatrixStructure));
-
-   if (matrix_struct == NULL)
-      return NULL;
-
-   for (index=0; index<BLAST_MATRIX_SIZE-1; index++)
-   {
-      matrix_struct->matrix[index] = matrix_struct->long_matrix + index*BLAST_MATRIX_SIZE;
-   }
-
-   return matrix_struct;
 }
 
 /** Deallocates MatrixInfo as well as name string.
@@ -3443,18 +3473,10 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
         return_sfp->score_avg += i * return_sfp->sprob[i];
 }
 
-/* Calculate a new PSSM, using composition-based statistics, for use
-   with RPS BLAST. This function produces a PSSM for a single RPS DB
-   sequence (of size db_seq_length) and incorporates information from 
-   the RPS blast query. Each individual database sequence must call this
-   function to retrieve its own PSSM. The matrix is returned (and must
-   be freed elsewhere). posMatrix is the portion of the complete 
-   concatenated PSSM that is specific to this DB sequence */
-
 Int4 **
-RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length, 
-                   const Uint1* rps_query_seq, Int4 db_seq_length, 
-                   Int4 **posMatrix, const char *matrix_name)
+RPSRescalePssm(double scalingFactor, Int4 rps_query_length, 
+               const Uint1* rps_query_seq, Int4 db_seq_length, 
+               Int4 **posMatrix, const char *matrix_name)
 {
     double *scoreArray;         /*array of score probabilities*/
     double *resProb;            /*array of probabilities for each residue*/
@@ -3641,6 +3663,13 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.114  2005/02/14 14:09:00  camacho
+ * Replaced SBLASTMatrixStructure by SBlastScoreMatrix.
+ * Added SPsiBlastScoreMatrix structure to support PSSMs.
+ * Removed obsolete fields from the BlastScoreBlk.
+ * Renamed RPSCalculatePSSM to RPSRescalePssm.
+ * Renamed functions to read/load protein scoring matrices.
+ *
  * Revision 1.113  2005/01/31 16:59:19  dondosha
  * Bug fix in BlastKarlinLHtoK when penalty == -reward
  *
