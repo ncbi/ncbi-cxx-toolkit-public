@@ -51,7 +51,7 @@ CCpGIslands::CCpGIslands(const char *seq, TSeqPos length,
 // POST: islands recalculated for new params
 void CCpGIslands::Calc(int window, int minLen, double GC, double CpG)
 {
-    clear();//clear old islands
+    m_Isles.clear();//clear old islands
 
     m_WindowSize = window;
     m_MinIsleLen = minLen;
@@ -63,7 +63,7 @@ void CCpGIslands::Calc(int window, int minLen, double GC, double CpG)
 
     while (x_SlideToHit(isle)) {
         if (x_ExtendHit(isle)) {
-            push_back(isle);
+            m_Isles.push_back(isle);
         }
         isle.m_Start = isle.m_Stop + 1;
     }
@@ -198,14 +198,14 @@ bool CCpGIslands::x_ExtendHit(SCpGIsland &isle)
 // POST: any adjacent islands within the specified range are merged
 void CCpGIslands::MergeIslesWithin(TSeqPos range)
 {
-    iterator prev = end();
+    TIsles::iterator prev = m_Isles.end();
 
-    for (iterator i = begin(); i != end(); ++i) {
-        if (prev != end()  &&
+    NON_CONST_ITERATE(TIsles, i, m_Isles) {
+        if (prev != m_Isles.end()  &&
             i->m_Start - prev->m_Stop <= range) {
             i->m_Start = prev->m_Start;
             x_CalcWindowStats(*i);
-            erase(prev);
+            m_Isles.erase(prev);
         }
         prev = i;
     }
@@ -215,6 +215,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.3  2003/12/12 20:05:19  johnson
+* refactoring to accommodate MSVC 7
+*
 * Revision 1.2  2003/07/21 15:53:35  johnson
 * added reference in header comment
 *

@@ -51,15 +51,21 @@ struct NCBI_XALGOSEQ_EXPORT SCpGIsland {
 
 /*---------------------------------------------------------------------------*/
 
-class NCBI_XALGOSEQ_EXPORT CCpGIslands : public list<SCpGIsland>
+class NCBI_XALGOSEQ_EXPORT CCpGIslands
 {
 public:
+    typedef list<SCpGIsland> TIsles;
+
     CCpGIslands(const char* seq, TSeqPos seqLength, int window = 200,
                 int minLen = 200, double GC = 0.5, double CpG = 0.6);
     void Calc(int windowSize, int minLen, double GC, double CpG);
     void MergeIslesWithin(unsigned int range);
 
+    const TIsles& GetIsles(void) const;
+        
 private:
+    TIsles m_Isles;
+
     const char* m_Seq;
     TSeqPos m_SeqLength;
 
@@ -83,6 +89,15 @@ private:
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// PRE : none
+// POST: list of islands
+inline
+const CCpGIslands::TIsles& CCpGIslands::GetIsles(void) const
+{
+    return m_Isles;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // PRE : island structure filled
 // POST: whether or not we consider this to be a CpG island
 inline
@@ -101,6 +116,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.4  2003/12/12 20:05:18  johnson
+* refactoring to accommodate MSVC 7
+*
 * Revision 1.3  2003/08/04 15:43:20  dicuccio
 * Modified export specifiers to be more flexible
 *
