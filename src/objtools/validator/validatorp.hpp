@@ -679,6 +679,7 @@ private:
     bool IsSynthetic(const CBioseq& seq) const;
     bool x_IsActiveFin(const CBioseq& seq) const;
     bool x_IsMicroRNA(const CBioseq& seq) const;
+    bool x_IsDeltaLitOnly(const CSeq_inst& inst) const;
 
     const CBioseq* GetNucGivenProt(const CBioseq& prot);
 
@@ -882,6 +883,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2003/09/23 13:25:55  shomrat
+* Added IsDeltaSeqOnly test
+*
 * Revision 1.39  2003/09/22 20:23:33  shomrat
 * Added x_IsMicroRNA
 *
