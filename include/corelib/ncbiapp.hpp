@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/11/24 23:33:10  vakatov
+* CNcbiApplication::  added SetupArgDescriptions() and GetArgs() to
+* setup cmd.-line argument description, and then to retrieve their
+* values, respectively. Also implements internal error handling and
+* printout of USAGE for the described arguments.
+*
 * Revision 1.14  2000/01/20 17:51:16  vakatov
 * Major redesign and expansion of the "CNcbiApplication" class to
 *  - embed application arguments   "CNcbiArguments"
@@ -93,9 +99,13 @@ BEGIN_NCBI_SCOPE
 // CNcbiApplication
 //
 
-class CNcbiArguments;
+
+// Some forward declarations
 class CNcbiEnvironment;
 class CNcbiRegistry;
+class CNcbiArguments;
+class CArgDescriptions;
+class CArgs;
 
 
 // Where to write the application's diagnostics to
@@ -143,6 +153,10 @@ public:
     // Get the application's cached command-line arguments
     const CNcbiArguments& GetArguments(void) const;
 
+    // Get cmd.-line arguments parsed according to the arg descriptions set by
+    // SetArgDescriptions(). Throw exception if no descriptions have been set.
+    const CArgs& GetArgs(void) const;
+
     // Get the application's cached environment
     const CNcbiEnvironment& GetEnvironment(void) const;
 
@@ -163,6 +177,11 @@ public:
 
 
 protected:
+    // Setup cmd.-line argument descriptions. Call it from Init(). The passed
+    // "arg_desc" will be owned by this class, and it'll be deleted
+    // by ~CNcbiApplication(), or if SetupArgDescriptions() is called again.
+    void SetupArgDescriptions(CArgDescriptions* arg_desc);
+
     // Setup app. diagnostic stream
     bool SetupDiag(EAppDiagStream diag);
 
@@ -190,10 +209,12 @@ protected:
 
 private:
     static CNcbiApplication*   m_Instance;   // current app.instance
-    auto_ptr<CNcbiArguments>   m_Args;       // command-line arguments
     auto_ptr<CNcbiEnvironment> m_Environ;    // cached application environment
     auto_ptr<CNcbiRegistry>    m_Config;     // (guaranteed to be non-NULL)
     auto_ptr<CNcbiOstream>     m_DiagStream; // opt., aux., see "eDS_ToMemory"
+    auto_ptr<CNcbiArguments>   m_Arguments;  // command-line arguments
+    auto_ptr<CArgDescriptions> m_ArgDesc;    // cmd.-line arg descriptions
+    auto_ptr<CArgs>            m_Args;       // parsed cmd.-line args
 };
 
 
@@ -201,14 +222,24 @@ private:
 // Inline (getters)
 
 inline const CNcbiArguments& CNcbiApplication::GetArguments(void) const {
+    return *m_Arguments;
+}
+
+inline const CArgs& CNcbiApplication::GetArgs(void) const {
+    if ( !m_Args.get() ) {
+        throw runtime_error("CNcbiApplication::GetArgs() -- unset args");
+    }
     return *m_Args;
 }
+
 inline const CNcbiEnvironment& CNcbiApplication::GetEnvironment(void) const {
     return *m_Environ;
 }
+
 inline const CNcbiRegistry& CNcbiApplication::GetConfig(void) const {
     return *m_Config;
 }
+
 inline CNcbiRegistry& CNcbiApplication::GetConfig(void) {
     return *m_Config;
 }

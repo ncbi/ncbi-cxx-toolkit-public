@@ -31,6 +31,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/11/24 23:33:12  vakatov
+* CNcbiApplication::  added SetupArgDescriptions() and GetArgs() to
+* setup cmd.-line argument description, and then to retrieve their
+* values, respectively. Also implements internal error handling and
+* printout of USAGE for the described arguments.
+*
 * Revision 1.24  2000/11/01 20:37:15  vasilche
 * Fixed detection of heap objects.
 * Removed ECanDelete enum and related constructors.
@@ -110,6 +116,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbiargs.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -137,7 +144,7 @@ CNcbiApplication::CNcbiApplication() -- cannot create second instance");
     m_Instance = this;
 
     // Create empty application arguments & name
-    m_Args.reset(new CNcbiArguments(0,0));
+    m_Arguments.reset(new CNcbiArguments(0,0));
 
     // Create empty application environment
     m_Environ.reset(new CNcbiEnvironment);
@@ -154,11 +161,14 @@ CNcbiApplication::~CNcbiApplication(void)
 }
 
 
-void CNcbiApplication::Init(void) {
+void CNcbiApplication::Init(void)
+{
     return;
 }
 
-void CNcbiApplication::Exit(void) {
+
+void CNcbiApplication::Exit(void)
+{
     return;
 }
 
@@ -211,7 +221,7 @@ int CNcbiApplication::AppMain
     IOS_BASE::sync_with_stdio(false);
 
     // Reset command-line args and application name
-    m_Args->Reset(argc, argv, name);
+    m_Arguments->Reset(argc, argv, name);
 
     // Reset application environment
     m_Environ->Reset(envp);
@@ -259,20 +269,38 @@ int CNcbiApplication::AppMain
     }
 
     // Init application
+    int exit_code = 1;
     try {
         Init();
-    } catch (exception& e) {
+    }
+    catch (CArgHelpException&) {
+        // Print USAGE
+        string str;
+        ERR_POST("\n" << m_ArgDesc->PrintUsage(str));
+        exit_code = 0;
+    }
+    catch (CArgException& e) {
+        // Print USAGE and the exception error message
+        string str;
+        ERR_POST("\n" << string(72, '~') <<
+                 "\n" << m_ArgDesc->PrintUsage(str) <<
+                 string(72, '=') << "\n ERROR:  " << e.what());
+        exit_code = -1;
+    }
+    catch (exception& e) {
         ERR_POST("CNcbiApplication::Init() failed: " << e.what());
-        return -1;
+        exit_code = -2;
     }
 
     // Run application
-    int exit_code;
-    try {
-        exit_code = Run();
-    } catch (exception& e) {
-        ERR_POST("CNcbiApplication::Run() failed: " << e.what());
-        exit_code = -1;
+    if (exit_code == 1) {
+        try {
+            exit_code = Run();
+        }
+        catch (exception& e) {
+            ERR_POST("CNcbiApplication::Run() failed: " << e.what());
+            exit_code = -3;
+        }
     }
 
     // Close application
@@ -294,6 +322,18 @@ static void s_DiagToStdlog_Cleanup(void* data)
 }
 
 
+void CNcbiApplication::SetupArgDescriptions(CArgDescriptions* arg_desc)
+{
+    m_ArgDesc.reset(arg_desc);
+
+    if ( arg_desc ) {
+        m_Args.reset(arg_desc->CreateArgs(GetArguments()));
+    } else {
+        m_Args.reset();
+    }
+}
+
+
 bool CNcbiApplication::SetupDiag(EAppDiagStream diag)
 {
     // Setup diagnostic stream
@@ -308,7 +348,7 @@ bool CNcbiApplication::SetupDiag(EAppDiagStream diag)
     }
     case eDS_ToStdlog: {
         // open log.file
-        string log = m_Args->GetProgramName() + ".log";
+        string log = m_Arguments->GetProgramName() + ".log";
         auto_ptr<CNcbiOfstream> os(new CNcbiOfstream(log.c_str()));
         if ( !os->good() ) {
             _TRACE("CNcbiApplication() -- cannot open log file: " << log);
@@ -410,9 +450,10 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
             x_conf = *conf;
         } else {
             // path relative to the program location
-            SIZE_TYPE base_pos = m_Args->GetProgramName().find_last_of("/\\:");
+            SIZE_TYPE base_pos =
+                m_Arguments->GetProgramName().find_last_of("/\\:");
             if (base_pos != NPOS) {
-                x_conf = m_Args->GetProgramName().substr(0, base_pos+1);
+                x_conf = m_Arguments->GetProgramName().substr(0, base_pos+1);
             }
             x_conf += *conf; 
         }
@@ -427,7 +468,7 @@ CNcbiApplication::LoadConfig() -- cannot open registry file: " + x_conf);
     }
 
     // try to derive conf.file name from the application name (in the same dir)
-    string    fileName = NStr::TruncateSpaces(m_Args->GetProgramName());
+    string    fileName = NStr::TruncateSpaces(m_Arguments->GetProgramName());
     SIZE_TYPE base_pos = fileName.find_last_of("/\\:");
     if (base_pos == NPOS)
       base_pos = 0;
