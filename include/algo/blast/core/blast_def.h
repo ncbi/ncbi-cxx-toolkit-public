@@ -48,14 +48,6 @@ Detailed Contents:
 extern "C" {
 #endif
 
-#ifndef NCBI_INLINE
-#   ifdef _MSC_VER
-#       define NCBI_INLINE __inline
-#   else
-#       define NCBI_INLINE inline
-#   endif
-#endif
-
 /* Belongs to a higher level header */
 #ifndef sfree
 #define sfree(x) __sfree((void**)&(x))
