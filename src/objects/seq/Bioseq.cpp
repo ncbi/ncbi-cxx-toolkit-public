@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/10/04 19:11:54  ucko
+ * Centralize (rudimentary) code to get a sequence's title.
+ *
  * Revision 6.3  2001/07/16 16:20:19  grichenk
  * Initial revision
  *
@@ -46,6 +49,8 @@
 
 // generated includes
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
 
 // generated classes
 
@@ -69,6 +74,20 @@ bool CBioseq::Equals(const CSerialUserOp& object) const
     const CBioseq& obj = dynamic_cast<const CBioseq&>(object);
     return m_ParentEntry == obj.m_ParentEntry;
 }
+
+string CBioseq::GetTitle(void) const
+{
+    // XXX - should include customary information from other fields
+    if (IsSetDescr()) {
+        iterate (CSeq_descr::Tdata, it, GetDescr().Get()) {
+            if ((*it)->IsTitle()) {
+                return (*it)->GetTitle();
+            }
+        }
+    }
+    return kEmptyStr;
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

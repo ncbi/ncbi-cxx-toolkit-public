@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2001/10/04 19:11:56  ucko
+ * Centralize (rudimentary) code to get a sequence's title.
+ *
  * Revision 1.15  2001/09/25 20:31:13  ucko
  * Work around bug in Workshop's handling of declarations in for-loop
  * initializers.
@@ -764,8 +767,7 @@ void CId1FetchApp::WriteFastaIDs(const CID1server_back::TIds& ids)
 void CId1FetchApp::WriteFastaEntry(const CID1server_back& id1_reply)
 {
     for (CTypeConstIterator<CBioseq> it = ConstBegin(id1_reply);  it;  ++it) {
-        // Print the identifier(s) and description.  (idfetch produces
-        // more complete descriptions, but this should be good enough for now.)
+        // Print the identifier(s) and description.
         *m_OutputFile << '>';
         WriteFastaIDs(it->GetId());
         if (it->IsSetDescr()) {
@@ -774,12 +776,9 @@ void CId1FetchApp::WriteFastaEntry(const CID1server_back& id1_reply)
                     *m_OutputFile << ' ' << (*it2)->GetName();
                     break;
                 }
-                if ((*it2)->IsTitle()) {
-                    *m_OutputFile << ' ' << (*it2)->GetTitle();
-                    break;
-                }
             }
         }
+        *m_OutputFile << ' ' << it->GetTitle();
 
         // Now print the actual sequence in an appropriate ASCII format.
         {{

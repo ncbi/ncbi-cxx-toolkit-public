@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/10/04 19:11:55  ucko
+* Centralize (rudimentary) code to get a sequence's title.
+*
 * Revision 1.2  2001/10/02 19:23:30  ucko
 * Avoid dereferencing NULL pointers.
 *
@@ -481,17 +484,10 @@ bool CGenbankWriter::WriteLocus(const CBioseq& seq, const CDescList& descs)
 }
 
 
-bool CGenbankWriter::WriteDefinition(const CBioseq& /* seq */,
-                                     const CDescList& descs)
+bool CGenbankWriter::WriteDefinition(const CBioseq& seq,
+                                     const CDescList& /* descs */)
 {
-    string definition;
-    for (CTypeConstIterator<CSeqdesc> it = ConstBegin(descs);  it;  ++it) {
-        if (it->IsTitle()) {
-            definition = it->GetTitle();
-            break;
-        }
-    }
-                
+    string definition = seq.GetTitle();
     if (definition.empty()  ||  definition[definition.size()-1] != '.') {
         definition += '.';
     }

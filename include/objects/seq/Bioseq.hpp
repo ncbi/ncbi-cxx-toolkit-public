@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2001/10/04 19:11:54  ucko
+ * Centralize (rudimentary) code to get a sequence's title.
+ *
  * Revision 1.5  2001/07/25 19:11:07  grichenk
  * Equals() and Assign() re-declared as protected
  *
@@ -81,6 +84,9 @@ public:
     ~CBioseq(void);
     // Manage Seq-entry tree structure
     CSeq_entry* GetParentEntry(void) const;
+
+    // Title of sequence (used in various human-friendly output formats)
+    string GetTitle(void) const;
 
 protected:
     // From CSerialUserOp
