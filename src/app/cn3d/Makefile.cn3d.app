@@ -78,7 +78,7 @@ ifeq ($(CURRENT_PLATFORM), SunOS)
 endif
 ifeq ($(CURRENT_PLATFORM), Linux)
         EXTRA_LIBS = \
-		-Wl,-Bstatic -lpng -lz -ljpeg -Wl,-Bdynamic \
+		-Wl,-Bstatic -lpng -lz -ljpeg -ltiff -Wl,-Bdynamic \
 		-lpthread
 endif
 
