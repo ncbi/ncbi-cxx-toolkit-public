@@ -414,7 +414,7 @@ void CBioseqContext::x_SetId(const CBioseq& seq)
         // RefSeq
         case CSeq_id::e_Other:
             m_IsRefSeq = true;
-            m_RefseqInfo = acc_type;
+            m_RefseqInfo = acc_info;
             break;
         // Gi
         case CSeq_id::e_Gi:
@@ -723,6 +723,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/10 21:25:42  shomrat
+* Fix m_RefseqInfo initialization
+*
 * Revision 1.7  2004/03/05 18:46:26  shomrat
 * Added customization flags
 *
