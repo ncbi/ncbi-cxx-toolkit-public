@@ -1639,7 +1639,7 @@ public:
     typedef ncbi::objects::CBlast4_parameters TBlast4Opts;
     TBlast4Opts * GetBlast4AlgoOpts()
     {
-        TBlast4Opts * result(0);
+        TBlast4Opts * result = 0;
         
         if (m_Remote) {
             result = m_Remote->GetBlast4AlgoOpts();
@@ -2414,6 +2414,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2004/01/17 02:38:23  ucko
+* Initialize variables with = rather than () when possible to avoid
+* confusing MSVC's parser.
+*
 * Revision 1.40  2004/01/17 00:52:18  ucko
 * Remove excess comma at the end of EBlastOptIdx (problematic on WorkShop)
 *

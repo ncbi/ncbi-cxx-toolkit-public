@@ -88,7 +88,7 @@ CBlastProteinOptionsHandle::SetGappedExtensionDefaults()
 void
 CBlastProteinOptionsHandle::SetScoringOptionsDefaults()
 {
-    const char * mname("BLOSUM62");
+    const char * mname = "BLOSUM62";
     SetMatrixName(mname);
     SetMatrixPath(FindMatrixPath(mname, true).c_str());
     SetGapOpeningCost(BLAST_GAP_OPEN_PROT);
@@ -147,6 +147,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/01/17 02:38:30  ucko
+ * Initialize variables with = rather than () when possible to avoid
+ * confusing MSVC's parser.
+ *
  * Revision 1.2  2004/01/16 21:49:26  bealer
  * - Add locality flag for Blast4 API
  *
