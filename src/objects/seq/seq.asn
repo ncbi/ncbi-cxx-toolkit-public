@@ -1,4 +1,4 @@
---$Revision: 6.8 $
+--$Revision: 6.9 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -124,6 +124,7 @@ MolInfo ::= SEQUENCE {
         htgs-0 (18) ,           -- single genomic reads for coordination
         htc (19) ,              -- high throughput cDNA
         wgs (20) ,              -- whole genome shotgun sequencing
+        barcode (21) ,          -- barcode of life project
         other (255) }           -- use Source.techexp
                DEFAULT unknown ,
     techexp VisibleString OPTIONAL ,   -- explanation if tech not enough
