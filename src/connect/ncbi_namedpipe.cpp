@@ -43,6 +43,7 @@
 #  include <errno.h>
 #  include <sys/socket.h>
 #  include <sys/stat.h>
+#  include <sys/types.h>
 #  include <sys/time.h>
 #  include <sys/un.h>
 #  include <connect/ncbi_socket.h>
@@ -85,12 +86,14 @@ static string s_FormatErrorMessage(const string& where, const string& what)
 }
 
 
-inline void s_AdjustPipeBufSize(size_t* bufsize) {
+inline void s_AdjustPipeBufSize(size_t* bufsize)
+{
     if (*bufsize == 0)
         *bufsize = kDefaultPipeBufSize;
     else if (*bufsize == (size_t)kMax_Int)
         *bufsize = 0 /* use system default buffer size */;
 }
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -191,7 +194,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         DWORD x_timeout = TimeoutToMSec(timeout);
         do {
             // Open existing pipe
-            m_Pipe = CreateFile(pipename.c_str(),
+            m_Pipe = CreateFile(m_PipeName.c_str(),
                                 GENERIC_READ | GENERIC_WRITE,
                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
                                 &attr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
@@ -241,7 +244,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
 
         // Create pipe
         m_Pipe = CreateNamedPipe(
-                 pipename.c_str(),              // pipe name 
+                 m_PipeName.c_str(),            // pipe name 
                  PIPE_ACCESS_DUPLEX,            // read/write access 
                  PIPE_TYPE_BYTE | PIPE_NOWAIT,  // byte-type, nonblocking mode 
                  1,                             // one instance only 
@@ -251,7 +254,7 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
                  &attr);                        // security attributes
 
         if (m_Pipe == INVALID_HANDLE_VALUE) {
-            throw "Create named pipe \"" + pipename + "\" failed";
+            throw "Create named pipe \"" + m_PipeName + "\" failed";
         }
         m_ReadStatus  = eIO_Success;
         m_WriteStatus = eIO_Success;
@@ -1125,6 +1128,36 @@ const STimeout* CNamedPipe::GetTimeout(EIO_Event event) const
 }
 
 
+void CNamedPipe::x_SetPipeName(const string& pipename)
+{
+    const char* separators = ":/\\";
+    if ( pipename.find_first_of(separators) != NPOS ) {
+        m_PipeName = pipename;
+	return;
+    }
+#  if defined(NCBI_OS_MSWIN)
+    m_PipeName = "\\\\.\\pipe\\" + pipename;
+    
+#  elif defined(NCBI_OS_UNIX)
+    static const mode_t k_writeable = S_IWUSR | S_IWGRP | S_IWOTH;
+    struct stat st;
+    int    err;
+    
+    char*  pipedir = "/var/tmp";
+    if ((err = lstat(pipedir, &st)) != 0  ||
+        !(S_ISDIR(st.st_mode)  &&  (st.st_mode & k_writeable))) {
+        pipedir = "/tmp";
+        if ((err = lstat(pipedir, &st)) != 0  ||
+            !(S_ISDIR(st.st_mode)  &&  (st.st_mode & k_writeable))) {
+	    pipedir = ".";
+	}
+    }
+    m_PipeName = string(pipedir) + "/" + pipename;
+#  endif
+}
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // CNamedPipeClient
@@ -1153,12 +1186,11 @@ EIO_Status CNamedPipeClient::Open(const string&    pipename,
         return eIO_Unknown;
     }
     s_AdjustPipeBufSize(&pipebufsize);
-
-    m_PipeName    = pipename;
+    x_SetPipeName(pipename);
     m_PipeBufSize = pipebufsize;
 
     SetTimeout(eIO_Open, timeout);
-    return m_NamedPipeHandle->Open(pipename, m_OpenTimeout, m_PipeBufSize);
+    return m_NamedPipeHandle->Open(m_PipeName, m_OpenTimeout, m_PipeBufSize);
 }
 
 
@@ -1198,12 +1230,11 @@ EIO_Status CNamedPipeServer::Create(const string&   pipename,
         return eIO_Unknown;
     }
     s_AdjustPipeBufSize(&pipebufsize);
-
-    m_PipeName    = pipename;
+    x_SetPipeName(pipename);
     m_PipeBufSize = pipebufsize;
 
     SetTimeout(eIO_Open, timeout);
-    return m_NamedPipeHandle->Create(pipename, pipebufsize);
+    return m_NamedPipeHandle->Create(m_PipeName, pipebufsize);
 }
 
 
@@ -1235,6 +1266,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/12/06 17:45:37  ivanov
+ * Allow using simple pipe names (without pah information).
+ * The OS-specific pipe name will be automaticaly generated for it.
+ *
  * Revision 1.26  2004/05/17 20:58:13  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

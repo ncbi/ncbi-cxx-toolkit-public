@@ -88,6 +88,12 @@ class CNamedPipeHandle;
 ///
 /// For UNIXs the pipe name is a generic file name (with or without path).
 ///
+/// If pipe name is specified as base file name, for example "pipe_name",
+/// without path, that CNamedPipe* classes automaticaly convert it to
+/// OS-specific default pipe name:
+//      \\.\pipe\pipe_name,       (MS Windows)
+//      /tmp/pipe_name,           (UNIX)
+///
 /// Initially all timeouts are infinite.
 ///
 /// @sa
@@ -184,6 +190,10 @@ public:
     bool IsServerSide(void) const;
 
 protected:
+    // Set pipe name (expand it if necessary)
+    void x_SetPipeName(const string& pipename);
+
+protected:
     string            m_PipeName;          ///< pipe name 
     CNamedPipeHandle* m_NamedPipeHandle;   ///< os-specific handle
     size_t            m_PipeBufSize;       ///< pipe buffer size
@@ -225,6 +235,7 @@ public:
     ///
     /// This constructor just calls Open().
     /// NOTE: Timeout from the argument becomes new open timeout.
+    ///       See CNamedPipe class description about pipe names.
     CNamedPipeClient(const string&   pipename,
                      const STimeout* timeout     = kDefaultTimeout,
                      size_t          pipebufsize = 0 /* use default */);
@@ -266,6 +277,7 @@ public:
     ///
     /// This constructor just calls Create().
     /// NOTES:
+    ///   - See CNamedPipe class description about pipe names;
     ///   - Timeout from the argument becomes new timeout for a listening;
     ///   - The "pipebufsize" specify a maxium size of data block that can
     ///     be transmitted through the pipe. The actual buffer size reserved
@@ -334,6 +346,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/12/06 17:46:18  ivanov
+ * Allow using simple pipe names (without pah information).
+ * The OS-specific pipe name will be automaticaly generated for it.
+ *
  * Revision 1.8  2004/03/22 17:03:00  ivanov
  * Replaced static member CNamedPipe::kDefaultPipeSize with enum values
  * for default and system pipe buffer size (by Denis Vakatov).
