@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2001/03/01 18:48:19  lavr
+ * NCBID allowed to have '' (special case) as an empty argument
+ *
  * Revision 6.19  2001/01/03 22:34:44  lavr
  * MAX_IP_ADDRESS_LEN -> MAX_IP_ADDR_LEN (as everywhere else)
  *
@@ -391,10 +394,11 @@ int/*bool*/ SERV_EqualInfo(const SSERV_Info *i1, const SSERV_Info *i2)
 static char* s_Ncbid_Write(size_t reserve, const USERV_Info* u)
 {
     const SSERV_NcbidInfo* info = &u->ncbid;
-    char* str = (char*) malloc(reserve + strlen(SERV_NCBID_ARGS(info))+1);
+    char* str = (char*) malloc(reserve + strlen(SERV_NCBID_ARGS(info))+3);
     
     if (str)
-        sprintf(str + reserve, "%s", SERV_NCBID_ARGS(info));
+        sprintf(str + reserve, "%s",
+                *SERV_NCBID_ARGS(info) ? SERV_NCBID_ARGS(info) : "''");
     return str;
 }
 
@@ -449,6 +453,8 @@ SSERV_Info* SERV_CreateNcbidInfo
         info->time         = 0;
         info->rate         = 0;
         info->u.ncbid.args = sizeof(info->u.ncbid);
+        if (strcmp(args, "''") == 0) /* special case */
+            args = 0;
         strcpy(SERV_NCBID_ARGS(&info->u.ncbid), args ? args : "");
     }
     return info;
@@ -533,7 +539,7 @@ static SSERV_Info* s_HttpAny_Read(ESERV_Type type, const char** str)
     SSERV_Info*    info;
     char           *path, *args, *c;
 
-    if (!(path = strdup(*str)))
+    if (!**str || !(path = strdup(*str)))
         return 0;
     for (c = path; *c; c++)
         if (isspace((unsigned char)(*c))) {
@@ -676,10 +682,12 @@ static const SSERV_Attr* s_GetAttrByType(ESERV_Type type)
 
 static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 {
-    size_t i;
-    for (i = 0;  i < N_SERV_ATTR;  i++) {
-        if (strncmp(s_SERV_Attr[i].tag, tag, s_SERV_Attr[i].tag_len) == 0)
-            return &s_SERV_Attr[i];
+    if (tag) {
+        size_t i;
+        for (i = 0;  i < N_SERV_ATTR;  i++) {
+            if (strncmp(s_SERV_Attr[i].tag, tag, s_SERV_Attr[i].tag_len) == 0)
+                return &s_SERV_Attr[i];
+        }
     }
     return 0;
 }
