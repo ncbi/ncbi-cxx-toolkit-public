@@ -510,6 +510,8 @@ public:
     CHTMLListElement* SetType(const char* type);
     CHTMLListElement* SetType(const string& type);
     CHTMLListElement* SetCompact(void);
+
+    CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
 };
 
 
@@ -1244,7 +1246,7 @@ DECLARE_HTML_ELEMENT( pnop,       CHTMLOpenElement);
 DECLARE_HTML_ELEMENT( pre,        CHTMLBlockElement);
 DECLARE_HTML_ELEMENT( dt,         CHTMLElement);
 DECLARE_HTML_ELEMENT( dd,         CHTMLElement);
-DECLARE_HTML_ELEMENT( li,         CHTMLElement);
+DECLARE_HTML_ELEMENT( li,         CHTMLBlockElement);
 DECLARE_HTML_ELEMENT( caption,    CHTMLElement);
 DECLARE_HTML_ELEMENT( col,        CHTMLElement);
 DECLARE_HTML_ELEMENT( colgroup,   CHTMLElement);
@@ -1295,6 +1297,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2003/02/14 16:18:29  ucko
+ * Override CHTMLListItem::PrintChildren (so we can indent them in text
+ * mode); make <li> a block element for proper text display.
+ *
  * Revision 1.62  2002/12/24 14:56:20  ivanov
  * Fix for R1.76:  HTML classes for tags <h1-6>, <p>, <div>. <pre>, <blockquote>
  * now inherits from CHTMLBlockElement (not CHTMElement as before)
