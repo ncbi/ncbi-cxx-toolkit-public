@@ -332,22 +332,22 @@ CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
             else if (key == "virion") {
                 m_Subtype = eSubtype_virion;
             }
-            else if (key == "3clip") {
+            else if (key == "3'clip") {
                 m_Subtype = eSubtype_3clip;
             }
-            else if (key == "3UTR") {
+            else if (key == "3'UTR") {
                 m_Subtype = eSubtype_3UTR;
             }
-            else if (key == "5clip") {
+            else if (key == "5'clip") {
                 m_Subtype = eSubtype_5clip;
             }
-            else if (key == "5UTR") {
+            else if (key == "5'UTR") {
                 m_Subtype = eSubtype_5UTR;
             }
-            else if (key == "10_signal") {
+            else if (key == "-10_signal") {
                 m_Subtype = eSubtype_10_signal;
             }
-            else if (key == "35_signal") {
+            else if (key == "-35_signal") {
                 m_Subtype = eSubtype_35_signal;
             }
             else if (key == "site_ref") {
@@ -453,6 +453,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.8  2003/05/20 01:29:39  ucko
+* Added missing punctuation in imported keys' names.
+*
 * Revision 6.7  2003/05/19 18:21:32  ucko
 * Add "break" statement accidentally dropped in last change.
 *
