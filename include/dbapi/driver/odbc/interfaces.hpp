@@ -37,9 +37,9 @@
 #ifdef NCBI_OS_MSWIN
 #include <windows.h>
 #endif
-#include <Sql.h>
-#include <Sqlext.h>
-#include <Sqltypes.h>
+#include <sql.h>
+#include <sqlext.h>
+#include <sqltypes.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -555,6 +555,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/05/05 20:45:51  ucko
+ * Lowercase header names for compatibility with Unix.
+ *
  * Revision 1.3  2003/02/13 15:43:44  ivanov
  * Added export specifier NCBI_DBAPIDRIVER_ODBC_EXPORT for class definitions
  *
