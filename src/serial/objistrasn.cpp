@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2002/12/23 18:41:49  dicuccio
+* Minor tweaks to avoid warnings in MSVC
+*
 * Revision 1.77  2002/11/18 19:49:36  grichenk
 * More details in error messages
 *
@@ -521,6 +524,7 @@ char CObjectIStreamAsn::SkipWhiteSpace(void)
     } catch (CEofException& e) {
         // There should be no eof here, report as an error
         ThrowError(fEOF, e.what());
+		return '\0';
     }
 }
 
@@ -612,13 +616,13 @@ CLightString CObjectIStreamAsn::ReadNumber(void)
 inline
 CLightString CObjectIStreamAsn::ReadUCaseId(char c)
 {
-    return ScanEndOfId(isupper(c));
+    return ScanEndOfId(isupper(c) != 0);
 }
 
 inline
 CLightString CObjectIStreamAsn::ReadLCaseId(char c)
 {
-    return ScanEndOfId(islower(c));
+    return ScanEndOfId(islower(c) != 0);
 }
 
 inline
@@ -641,7 +645,7 @@ CLightString CObjectIStreamAsn::ReadMemberId(char c)
         }
     }
 	else {
-        return ScanEndOfId(islower(c));
+        return ScanEndOfId(islower(c) != 0);
     }
 }
 
