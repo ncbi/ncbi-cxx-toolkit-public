@@ -186,7 +186,6 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
 
 Int4 BlastPSSMExtendLeft(Int4 ** matrix,
 		       const BLAST_SequenceBlk* subject,
-		       Int4 query_size,
 		       Int4 s_off,
 		       Int4 q_off,
 		       Int4 dropoff,

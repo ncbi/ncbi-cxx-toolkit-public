@@ -476,7 +476,7 @@ _PSIGetRightExtents(const PsiAlignmentData* alignment, Uint4 seq_index)
     const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
     PsiDesc* sequence_position = NULL;
     Uint4 last = 0;      /* index for the last position */
-    Uint4 curr = 0;      /* index for the current position */
+    Int4 curr = 0;      /* index for the current position */
 
     ASSERT(alignment);
     ASSERT(seq_index < alignment->dimensions->num_seqs + 1);
@@ -1366,7 +1366,7 @@ _PSIComputeScoreProbabilities(const int** pssm,                     /* [in] */
         }
 
         for (c = 0; c < (Uint4) sbp->alphabet_size; c++) {
-            const Uint4 kScore = pssm[p][aa_alphabet[c]];
+            const int kScore = pssm[p][aa_alphabet[c]];
 
             if (kScore <= BLAST_SCORE_MIN || kScore >= BLAST_SCORE_MAX) {
                 continue;
@@ -1508,6 +1508,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/06/08 17:30:06  dondosha
+ * Compiler warnings fixes
+ *
  * Revision 1.7  2004/06/07 14:18:24  dondosha
  * Added some variables initialization, to remove compiler warnings
  *

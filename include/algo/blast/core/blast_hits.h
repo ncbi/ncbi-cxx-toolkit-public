@@ -264,14 +264,13 @@ Blast_HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list,
  * the sum statistics. In case of multiple queries, the offsets are assumed 
  * to be already adjusted to individual query coordinates, and the contexts 
  * are set for each HSP.
- * @param program The integer BLAST program index [in]
  * @param query_info Auxiliary query information - needed only for effective
  *                   search space calculation if it is not provided [in]
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
  * @param gapped_calculation Is this for a gapped or ungapped search? [in]
  * @param sbp Structure containing statistical information [in]
  */
-Int2 Blast_HSPListGetEvalues(Uint1 program, BlastQueryInfo* query_info,
+Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
         BlastHSPList* hsp_list, Boolean gapped_calculation, 
         BlastScoreBlk* sbp);
 

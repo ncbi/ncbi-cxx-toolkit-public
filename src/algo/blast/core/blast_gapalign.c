@@ -535,7 +535,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align)
 Int2
 BLAST_GapAlignStructNew(const BlastScoringParameters* score_params, 
    const BlastExtensionParameters* ext_params, 
-   Uint4 max_subject_length, Int4 query_length, 
+   Uint4 max_subject_length,
    BlastScoreBlk* sbp, BlastGapAlignStruct** gap_align_ptr)
 {
    Int2 status = 0;
@@ -605,7 +605,7 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
 #define SCRIPT_INS_COL  0x40
 #define SCRIPT_DEL_COL  0x80
 
-Int4
+static Int4
 ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset, 
 	Int4* b_offset, Int4** sapp, BlastGapAlignStruct* gap_align, 
 	const BlastScoringParameters* score_params, Int4 query_offset, 
@@ -3397,18 +3397,9 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
    return 0;
 }
 
-/** Copy of the TracebackToGapXEditBlock function from gapxdrop.c, only 
- * without 2 unused arguments 
- * @param S The traceback obtained from ALIGN [in]
- * @param M Length of alignment in query [in]
- * @param N Length of alignment in subject [in]
- * @param start1 Starting query offset [in]
- * @param start2 Starting subject offset [in]
- * @param edit_block The constructed edit block [out]
- */
 Int2 
 BLAST_TracebackToGapEditBlock(Int4* S, Int4 M, Int4 N, Int4 start1, 
-                               Int4 start2, GapEditBlock** edit_block)
+                              Int4 start2, GapEditBlock** edit_block)
 {
 
   Int4 i, j, op, number_of_subs, number_of_decline;
@@ -3707,8 +3698,7 @@ GetPatternLengthFromGapAlignStruct(BlastGapAlignStruct* gap_align)
    return gap_align->query_stop;
 }
 
-Int2 PHIGappedAlignmentWithTraceback(Uint1 program, 
-        Uint1* query, Uint1* subject, 
+Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject, 
         BlastGapAlignStruct* gap_align, 
         const BlastScoringParameters* score_params,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length)
@@ -3836,17 +3826,18 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
 /** Performs gapped extension for PHI BLAST, given two
  * sequence blocks, scoring and extension options, and an initial HSP 
  * with information from the previously performed ungapped extension
- * @param program BLAST program [in]
  * @param query_blk The query sequence block [in]
  * @param subject_blk The subject sequence block [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_params Parameters related to scoring [in]
  * @param init_hsp The initial HSP information [in]
  */
-static Int2 PHIGappedAlignment(Uint1 program, 
-   BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
-   BlastGapAlignStruct* gap_align,
-   const BlastScoringParameters* score_params, BlastInitHSP* init_hsp)
+static Int2 
+PHIGappedAlignment(BLAST_SequenceBlk* query_blk, 
+                   BLAST_SequenceBlk* subject_blk, 
+                   BlastGapAlignStruct* gap_align,
+                   const BlastScoringParameters* score_params, 
+                   BlastInitHSP* init_hsp)
 {
    Boolean found_start, found_end;
    Int4 q_length=0, s_length=0, score_right, score_left;
@@ -3964,8 +3955,8 @@ Int2 PHIGetGappedScore (Uint1 program_number,
          individual query sequence */
       GetRelativeCoordinates(query, query_info, init_hsp, &query_tmp, 
                              NULL, &context);
-      status =  PHIGappedAlignment(program_number, &query_tmp, 
-                   subject, gap_align, score_params, init_hsp);
+      status =  PHIGappedAlignment(&query_tmp, subject, gap_align, 
+                                   score_params, init_hsp);
 
       if (status) {
          sfree(init_hsp_array);

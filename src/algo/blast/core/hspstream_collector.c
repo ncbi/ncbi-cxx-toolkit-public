@@ -41,7 +41,8 @@ static char const rcsid[] =
 
 /** Default hit saving stream methods */
 
-BlastHSPStream* BlastHSPListCollectorFree(BlastHSPStream* hsp_stream) 
+static BlastHSPStream* 
+BlastHSPListCollectorFree(BlastHSPStream* hsp_stream) 
 {
    BlastHSPListCollectorData* stream_data = 
       (BlastHSPListCollectorData*) GetData(hsp_stream);
@@ -51,7 +52,8 @@ BlastHSPStream* BlastHSPListCollectorFree(BlastHSPStream* hsp_stream)
    return NULL;
 }
 
-void BlastHSPListCollectorClose(BlastHSPStream* hsp_stream)
+static void 
+BlastHSPListCollectorClose(BlastHSPStream* hsp_stream)
 {
    BlastHSPListCollectorData* stream_data = 
       (BlastHSPListCollectorData*) GetData(hsp_stream);
@@ -65,7 +67,8 @@ void BlastHSPListCollectorClose(BlastHSPStream* hsp_stream)
    stream_data->results_sorted = TRUE;
 }
 
-int BlastHSPListCollectorRead(BlastHSPStream* hsp_stream, 
+static int 
+BlastHSPListCollectorRead(BlastHSPStream* hsp_stream, 
                               BlastHSPList** hsp_list_out) 
 {
    BlastHSPListCollectorData* stream_data = 
@@ -117,7 +120,8 @@ int BlastHSPListCollectorRead(BlastHSPStream* hsp_stream,
    return kBlastHSPStream_Success;
 }
 
-int BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream, 
+static int 
+BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream, 
                               BlastHSPList** hsp_list)
 {
    BlastHSPListCollectorData* stream_data = 
@@ -157,7 +161,7 @@ int BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream,
    return kBlastHSPStream_Success;
 }
 
-BlastHSPStream* 
+static BlastHSPStream* 
 BlastHSPListCollectorNew(BlastHSPStream* hsp_stream, void* args) 
 {
     BlastHSPStreamFunctionPointerTypes fnptr;

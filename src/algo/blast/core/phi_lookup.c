@@ -415,8 +415,8 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
              patternSearchItems* *pattern_info,
              Blast_Message* *error_msg)
 {
-    Uint4 i; /*index over string describing the pattern*/
-    Uint4 j; /*index for position in pattern*/
+    Int4 i; /*index over string describing the pattern*/
+    Int4 j; /*index for position in pattern*/
     Int4 charIndex; /*index over characters in alphabet*/
     Int4 secondIndex; /*second index into pattern*/
     Int4 numIdentical; /*number of consec. positions with identical specification*/
@@ -426,7 +426,7 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
                         set of characters*/
     Int4 minWildcard, maxWildcard; /*used for variable number of wildcard
                                      positions*/
-    Uint4  tj=0; /*temporary copy of j*/
+    Int4  tj=0; /*temporary copy of j*/
     Int4 tempInputPatternMasked[MaxP]; /*local copy of parts
             of inputPatternMasked*/
     Uint1 c;  /*character occurring in pattern*/
@@ -460,7 +460,7 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
       patternSearch->inputPatternMasked[i] = 0; 
       localPattern[i] = 0;
     }
-    for (i = 0, j = 0; i < strlen((Char *) pattern); i++) {
+    for (i = 0, j = 0; i < (Int4)strlen((Char *) pattern); i++) {
       if ((c=pattern[i]) == '-' || c == '\n' || c == '.' || c =='>' || c ==' ' 
 || c == '<')  /*spacers that mean nothing*/
 	continue;
@@ -621,7 +621,7 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
       that character can occur in*/
     for (charIndex = 0; charIndex < ALPHABET_SIZE; charIndex++) {
       thisMask = 0;
-      for (charSetMask = 0; charSetMask < j; charSetMask++) {
+      for (charSetMask = 0; charSetMask < (Uint4)j; charSetMask++) {
 	if ((1<< charIndex) & patternSearch->inputPatternMasked[charSetMask]) 
 	  thisMask |= (1 << charSetMask);
       }

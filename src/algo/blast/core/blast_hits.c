@@ -992,7 +992,7 @@ Blast_HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list,
    }
 }
 
-Int2 Blast_HSPListGetEvalues(Uint1 program, BlastQueryInfo* query_info,
+Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
         BlastHSPList* hsp_list, Boolean gapped_calculation, 
         BlastScoreBlk* sbp)
 {

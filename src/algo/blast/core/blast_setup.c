@@ -682,8 +682,7 @@ BLAST_GapAlignSetUp(Uint1 program_number,
    max_subject_length = BLASTSeqSrcGetMaxSeqLen(seq_src);
 
    if ((status = BLAST_GapAlignStructNew(*score_params, *ext_params, 
-                    max_subject_length, query_info->max_length, sbp, 
-                    gap_align)) != 0) {
+                    max_subject_length, sbp, gap_align)) != 0) {
       return status;
    }
 

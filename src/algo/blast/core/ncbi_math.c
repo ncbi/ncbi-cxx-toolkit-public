@@ -335,7 +335,7 @@ extern double BLAST_Factorial(Int4 n)
         if (n >= 0) {
                 if (n <= nlim)
                         return precomputed[n];
-                if (n < DIM(precomputed)) {
+                if ((Uint4)n < DIM(precomputed)) {
                         for (x = precomputed[m = nlim]; m < n; ) {
                                 ++m;
                                 precomputed[m] = (x *= m);
@@ -358,7 +358,7 @@ extern double BLAST_LnGammaInt(Int4 n)
 	if (n >= 0) {
 		if (n <= nlim)
 			return precomputed[n];
-		if (n < DIM(precomputed)) {
+		if ((Uint4)n < DIM(precomputed)) {
 			for (m = nlim; m < n; ++m) {
 				precomputed[m+1] = log(BLAST_Factorial(m));
 			}
@@ -540,6 +540,9 @@ extern double BLAST_LnFactorial (double x) {
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/06/08 17:30:07  dondosha
+ * Compiler warnings fixes
+ *
  * Revision 1.8  2004/05/19 14:52:03  camacho
  * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
  * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i

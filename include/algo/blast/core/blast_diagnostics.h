@@ -85,7 +85,7 @@ typedef struct BlastDiagnostics {
 BlastDiagnostics* Blast_DiagnosticsFree(BlastDiagnostics* diagnostics);
 
 /** Initialize the BlastDiagnostics structure and all its substructures. */
-BlastDiagnostics* Blast_DiagnosticsInit();
+BlastDiagnostics* Blast_DiagnosticsInit(void);
 
 /** Fill data in the ungapped hits diagnostics structure */
 void Blast_UngappedStatsUpdate(BlastUngappedStats* ungapped_stats, 

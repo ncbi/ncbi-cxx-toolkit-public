@@ -157,7 +157,7 @@ static void TranslateHSPsToDNAPCoord(Uint1 program,
  *                   for the preliminary stage of the BLAST search [in]
  * @param hsp_list_out List of HSPs found for a given subject sequence [in]
  */
-Int2
+static Int2
 BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
    LookupTableWrap* lookup, BlastGapAlignStruct* gap_align, 
@@ -342,9 +342,8 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          requires precomputation that has not been done yet */
       if (program_number != blast_type_rpsblast &&
           program_number != blast_type_rpstblastn)
-         status = Blast_HSPListGetEvalues(program_number, query_info, 
-                     hsp_list, score_options->gapped_calculation, 
-                     gap_align->sbp);
+         status = Blast_HSPListGetEvalues(query_info, hsp_list, 
+                     score_options->gapped_calculation, gap_align->sbp);
    }
    
    /* Discard HSPs that don't pass the e-value test */

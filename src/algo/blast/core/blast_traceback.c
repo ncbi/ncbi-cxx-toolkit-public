@@ -710,9 +710,8 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
          if (hit_options->phi_align) {
             Int4 pat_length = GetPatternLengthFromBlastHSP(hsp);
             SavePatternLengthInGapAlignStruct(pat_length, gap_align);
-            PHIGappedAlignmentWithTraceback(program_number, query, subject,
-               gap_align, score_params, q_start, s_start, query_length, 
-               subject_length);
+            PHIGappedAlignmentWithTraceback(query, subject, gap_align, 
+               score_params, q_start, s_start, query_length, subject_length);
          } else {
             if (!kTranslateSubject) {
                AdjustSubjectRange(&s_start, &adjusted_s_length, q_start, 

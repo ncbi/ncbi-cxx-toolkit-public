@@ -79,15 +79,14 @@ typedef struct BlastGapAlignStruct {
  * @param ext_params parameters related to gapped extension [in]
  * @param max_subject_length Maximum length of any subject sequence (needed 
  *        for greedy extension allocation only) [in]
- * @param query_length The length of the query sequence [in]
  * @param sbp The scoring information block [in]
  * @param gap_align_ptr The BlastGapAlignStruct structure [out]
 */
 Int2
 BLAST_GapAlignStructNew(const BlastScoringParameters* score_params, 
    const BlastExtensionParameters* ext_params, 
-   Uint4 max_subject_length, Int4 query_length, 
-   BlastScoreBlk* sbp, BlastGapAlignStruct** gap_align_ptr);
+   Uint4 max_subject_length, BlastScoreBlk* sbp, 
+   BlastGapAlignStruct** gap_align_ptr);
 
 /** Deallocates memory in the BlastGapAlignStruct structure */
 BlastGapAlignStruct* 
@@ -197,7 +196,6 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
    Int4 q_off, Int4 s_off, Boolean compressed_subject, Boolean do_traceback);
 
 /** Perform a gapped alignment with traceback for PHI BLAST
- * @param program Type of BLAST program [in]
  * @param query The query sequence [in]
  * @param subject The subject sequence [in]
  * @param gap_align The gapped alignment structure [in] [out]
@@ -207,8 +205,7 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
  * @param query_length Maximal allowed extension in query [in]
  * @param subject_length Maximal allowed extension in subject [in]
  */
-Int2 PHIGappedAlignmentWithTraceback(Uint1 program, 
-        Uint1* query, Uint1* subject, 
+Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject, 
         BlastGapAlignStruct* gap_align, 
         const BlastScoringParameters* score_params,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length);

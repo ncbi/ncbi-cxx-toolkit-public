@@ -92,6 +92,18 @@ GapEditBlock* GapEditBlockDelete (GapEditBlock* edit_block);
 GapStateArrayStruct* 
 GapStateFree(GapStateArrayStruct* state_struct);
 
+/** Convert internal traceback integer array into a GapEditBlock structure.
+ * @param S The traceback obtained from ALIGN [in]
+ * @param M Length of alignment in query [in]
+ * @param N Length of alignment in subject [in]
+ * @param start1 Starting query offset [in]
+ * @param start2 Starting subject offset [in]
+ * @param edit_block The constructed edit block [out]
+ */
+Int2
+BLAST_TracebackToGapEditBlock(Int4* S, Int4 M, Int4 N, Int4 start1,
+                               Int4 start2, GapEditBlock** edit_block);
+
 #ifdef __cplusplus
 }
 #endif

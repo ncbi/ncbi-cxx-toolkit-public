@@ -2506,8 +2506,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
   }
 
   if ((status=BLAST_GapAlignStructNew(scoringParams, extendParams,
-                    BLASTSeqSrcGetMaxSeqLen(seqSrc), queryLength, sbp,
-                    &gapAlign)) != 0) 
+                 BLASTSeqSrcGetMaxSeqLen(seqSrc), sbp, &gapAlign)) != 0) 
       return status;
 
   if(positionBased) {

@@ -413,7 +413,6 @@ Int4 BlastPSSMExtendRight(Int4 ** matrix,
 
 Int4 BlastPSSMExtendLeft(Int4 ** matrix,
 		       const BLAST_SequenceBlk* subject,
-		       Int4 query_size,
 		       Int4 s_off,
 		       Int4 q_off,
 		       Int4 dropoff,
@@ -459,7 +458,7 @@ Int4 BlastAaExtendOneHit(Int4 ** matrix,
   Int4 left_disp, right_disp;
 
   if (use_pssm) {
-     left_score = BlastPSSMExtendLeft(matrix, subject, query->length, 
+     left_score = BlastPSSMExtendLeft(matrix, subject, 
                            s_off, q_off, dropoff, &left_disp);
      right_score = BlastPSSMExtendRight(matrix, subject, query->length, 
                            s_off+1, q_off+1, dropoff, &right_disp, 
@@ -524,7 +523,7 @@ BlastAaExtendTwoHit(Int4 ** matrix,
 
    /* first, try to extend left, from the second hit to the first hit. */
    if (use_pssm)
-      left_score = BlastPSSMExtendLeft(matrix, subject, query->length,
+      left_score = BlastPSSMExtendLeft(matrix, subject,
     			     s_right_off, q_right_off, dropoff, &left_d);
    else
       left_score = BlastAaExtendLeft(matrix, subject, query,
