@@ -120,6 +120,10 @@ struct NCBI_XOBJMGR_EXPORT SSeqrefs : public CObject
     CSeq_id_Handle  m_Handle;
     TSeqrefs        m_Sr;
     CRefresher      m_Timer;
+
+private:
+    SSeqrefs(const SSeqrefs&);
+    SSeqrefs operator=(const SSeqrefs&);
 };
 
 
@@ -218,6 +222,9 @@ private:
     void            x_Check(const STSEinfo* me = 0);
 
     CRef<STSEinfo> GetTSEinfo(const CTSE_Info& tse_info);
+
+    CGBDataLoader(const CGBDataLoader&);
+    CGBDataLoader& operator=(const CGBDataLoader&);
 };
 
 
@@ -228,6 +235,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.44  2003/11/26 20:56:21  vasilche
+ * Added declaration of private constructors for MSVC DLL.
+ *
  * Revision 1.43  2003/11/26 17:55:53  vasilche
  * Implemented ID2 split in ID1 cache.
  * Fixed loading of splitted annotations.
