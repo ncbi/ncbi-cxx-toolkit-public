@@ -179,6 +179,19 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
        offset_array_size= MAX(1024, lut->longest_chain);
      wordfinder = BlastAaWordFinder;
 
+#ifndef DIAG_ARRAY_SIZE_CORRECTION_MADE  
+     { 
+        Int4 max_len = readdb_get_maxlen(db);
+        if (2*max_len > ewp->diag_table->diag_array_length) {
+           ewp->diag_table->diag_array = 
+              Realloc(ewp->diag_table->diag_array, 2*max_len*sizeof(DiagStruct));
+           ewp->diag_table->diag_array_length = 2*max_len;
+           DiagClear(ewp->diag_table);
+        }
+     }
+     
+#endif     
+
      }
 
    query_offsets = Malloc(offset_array_size * sizeof(Uint4));
