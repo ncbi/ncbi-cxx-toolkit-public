@@ -13,6 +13,7 @@
   <li>Using the <a href="#ncbipage"> <i>CHTMLPage</i></a> class with template files 
   <li>The <a href="#tag"> <i>CHTMLTagNode</i> </a> class
   <li>The <a href="#htmnode"> <i>CHTMLNode</i> </a> class
+  <li>The <a href="#htmdualnode"> <i>CHTMLDualNode</i> </a> class
   <li>Using the HTML classes with a <a href="#cgiapp"> <i>CCgiApplication</i></a> object
   <li><a href="#appendix"> Appendix</a>
   <ul>
@@ -127,12 +128,13 @@ A slice of the NCBI C++ Toolkit class hierarchy rooted at the
      <ul> <li> <a href="#CSmallPagerBox"><i>CSmallPagerBox</i></a> 
           <li> <a href="#CSelection">    <i>CSelection</i></a>	
 	  <li> <a href="#CPagerBox">     <i>CPagerBox</i></a>	
-	  <li> <a href="#CPager">	   <i>CPager</i></a>	
-	  <li> <a href="#text">				   <i>CHTMLText</i></a>
-	  <li> <a href="#tag">				   <i>CHTMLTagNode</i></a>
-	  <li> <a href="#text">				   <i>CHTMLPlainText</i></a>
-	  <li> <a href="#htmnode">			   <i>CHTMLNode</i></a>
-	  <li> <a href="#ncbipage">			   <i>CHTMLBasicPage</i></a>
+	  <li> <a href="#CPager">	 <i>CPager</i></a>	
+	  <li> <a href="#text">		 <i>CHTMLText</i></a>
+	  <li> <a href="#tag">		 <i>CHTMLTagNode</i></a>
+	  <li> <a href="#text">		 <i>CHTMLPlainText</i></a>
+	  <li> <a href="#htmnode">	 <i>CHTMLNode</i></a>
+	  <li> <a href="#htmdualnode">	 <i>CHTMLDualNode</i></a>
+	  <li> <a href="#ncbipage">	 <i>CHTMLBasicPage</i></a>
 	  <li> <a href="#CButtonList">   <i>CButtonList</i></a>
      </ul>
 </ul>
@@ -218,7 +220,7 @@ from <a href="#node"><i>CNCBINode</i></a>, three new private data members are de
  <li> <i>m_CgiApplication</i> - a pointer to the <i>CCgiApplication</i>
  <li> <i>m_Style</i> - an integer flag indicating subcomponents to display/suppress (e.g., <i>Title</i>)
  <li> <i>m_TagMap</i> (see discussion)
-</ul>
+</ol>
 
 In effect, <i>m_TagMap</i> is used to map <i>string</i>s to tagged subcomponents of the page -
 some of which may not have been instantiated yet. Specifically, <i>m_TagMap</i> is defined as a
@@ -550,6 +552,39 @@ include: <i>class, style, id, width, height, size, alignment, color, title, acce
 All of the <i>SetXxx()</i> functions which set these attributes return a <i>this</i> pointer, cast as 
 <i>CHTMLNode*</i>.<p>
 
+
+<a name="htmdualnode"> <h3> The <a href="../docxx/CHTMLDualNode.html"><i>CHTMLDualNode</i></a> class </h3>
+<i>CHTMLDualNode</i> is derived directly from the <i>CNCBINode</i> class, and provides the base class
+for all elements requiring different means for displaying data in <a href="#appendix" ><i>eHTML</i></a>
+and <a href="#appendix" ><i>ePlainText</i></a> modes.<p>
+
+This class interface includes several constructors, all of which expect the second argument to specify 
+the alternative text, displaying vice encoded HTML text in <i>ePlainText</i> mode. This argument is 
+used by the constructor to set the <i>m_Plain</i> data member. First argument of constructors expect 
+HTML text by way of string, reference to any object of CNCBINode class or same inherited from it class.
+This parameter appended to the node using <i>AppendChild()</i> method.
+In <i>eHTML</i> mode print become standard mean, using method <i>PrintChildren()</i> to HTML-subnodes. 
+And in <i>ePlainText</i> mode always print only text of data <i>m_Plain</i>.
+For example:
+
+<pre>
+    (new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout);
+</pre>
+will generate the output:
+<pre>
+    &lt;p&gt;text&lt;/p&gt;
+</pre>
+
+whereas:
+<pre>
+    (new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout, CNCBINode::ePlainText);
+</pre>
+will generate:
+<pre>
+    \n TEXT \n
+</pre>
+
+
 <a name="cgiapp"> <h3>Using the HTML classes with a <i>CCgiApplication</i> object</h3> 
 
 The previous chapter described the NCBI C++ Toolkit's <a href="cgi.html"> CGI</a> classes, with
@@ -718,6 +753,10 @@ NCBI <a href="#tagmap"> Page</a> classes. <p>
    	</ul>
 <li><a href="#CHTMLPlainText">   <i>CHTMLPlainText</i></a>
 <li><a href="#CHTMLTagNode">	 <i>CHTMLTagNode</i></a>
+<li><a href="#CHTMLDualNode">	 <i>CHTMLDualNode</i></a>
+	<ul>
+    	<li><a href="#CHTMLSpecialChar"><i>CHTMLSpecialChar</i></a>
+        </ul>
 <li><a href="#CHTMLText">	 <i>CHTMLText</i></a>
 <li><a href="#CPager">		 <i>CPager</i></a>
 <li><a href="#CPagerBox">	 <i>CPagerBox</i></a>
@@ -1181,12 +1220,35 @@ by a browser (may require encoding). The constructor takes two arguments: the te
 (<i>char*</i> or <i>string</i>) and a Boolean (default <i>false</i>) indicating that the
 output <i>should</i> be encoded. See also <a href="CHTMLText"> <i>CHTMLText</i></a>.<p>
 
-
 <dt><a name="CHTMLTagNode"> <a href="../docxx/CHTMLTagNode.html">
 <i>CHTMLTagNode</i></a>
 <dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>; defined in
 <a href="../lxr/ident?i=CHTMLTagNode">
 <i>html.hpp</i></a>.
+<p>
+
+<dt><a name="CHTMLDualNode"> <a href="../docxx/CHTMLDualNode.html">
+<i>CHTMLDualNode</i></a>
+<dd>Derived from <a href="#CNCBINode"><i>CNCBINode</i></a>, defined in
+<a href="../lxr/ident?i=CHTMLDualNode">
+<i>html.hpp</i></a> - 
+A class for elements requiring different means for displaying data in eHTML and ePlainText modes.
+The constructor takes a 2 arguments, data for output in HTML - version (string with HTML code or 
+a pointer to a CNCBINode. ) and text for output in ePlainText mode.
+<p>
+
+<dt><a name="CHTMLSpecialChar"> <a href="../docxx/CHTMLSpecialChar.html">
+<i>CHTMLSpecialChar</i></a>
+<dd>Derived from <a href="#CHTMLDualNode"><i>CHTMLDualNode</i></a>, defined in
+<a href="../lxr/ident?i=CHTMLSpecialChar">
+<i>html.hpp</i></a> - 
+A class for HTML special chars like <i>&amp;nbsp</i>, <i>&amp;copy</i>  and etc.
+Elements of this class have two variants for output, in eHTML and ePlainText modes.
+For example: <i>&amp;nbsp</i> have plain text variant - "&nbsp;", and <i>&amp;copy</i> - "(c)".
+<i>html.hpp</i> has several predefined simple classes, based on this class, for any special chars. It is 
+<i>CHTML_nbsp</i>, <i>CHTML_gt</i>, <i>CHTML_lt</i>, <i>CHTML_quot</i>, <i>CHTML_amp</i>,
+<i>CHTML_copy</i> and <i>CHTML_reg</i>. Each have one optional arqument, which specify number 
+chars for output. 
 <p>
 
 <dt><a name="CHTMLText"> <a href="../docxx/CHTMLText.html">
