@@ -5,3 +5,4 @@ SRC = socket_io_bouncer
 LIB = connect
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
+#LINK = purify $(ORIG_LINK)
