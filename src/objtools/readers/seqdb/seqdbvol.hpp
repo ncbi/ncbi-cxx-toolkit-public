@@ -59,8 +59,11 @@ USING_SCOPE(objects);
 
 class CSeqDBVol {
 public:
-    /// Import TIndx definitions from the atlas class.
-    typedef CSeqDBAtlas::TIndx TIndx;
+    /// Type for elements of optional GI list.
+    typedef CSeqDBGiList::SGiOid TGiOid;
+    
+    /// Import TIndx definition from the CSeqDBAtlas class.
+    typedef CSeqDBAtlas::TIndx   TIndx;
     
     /// Constructor
     ///
@@ -136,6 +139,33 @@ public:
     /// @return
     ///   The set of blast-def-lines describing this sequence
     CRef<CBlast_def_line_set> GetHdr(int oid, CSeqDBLockHold & locked) const;
+
+    /// Get filtered sequence header information
+    /// 
+    /// This method returns the set of Blast-def-line objects stored
+    /// for each sequence.  These contain descriptive information
+    /// related to the sequence.  If have_oidlist is true, and
+    /// memb_bit is nonzero, only deflines with that membership bit
+    /// set will be returned.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @param have_oidlist
+    ///   True if the database is filtered
+    /// @param membership_bit
+    ///   Membership bit to filter deflines
+    /// @param locked
+    ///   The lock holder object for this thread
+    /// @param gi_list
+    ///   If specified, will be used to filter the deflines by GI.
+    /// @return
+    ///   The set of blast-def-lines describing this sequence
+    CRef<CBlast_def_line_set>
+    GetFilteredHeader(int                  oid,
+                      bool                 have_oidlist,
+                      int                  membership_bit,
+                      CRef<CSeqDBGiList>   gi_list,
+                      CSeqDBLockHold     & locked) const;
     
     /// Get the sequence type stored in this database
     /// 
@@ -169,6 +199,8 @@ public:
     ///   If specified, only deflines containing this GI will be returned
     /// @param tax_info
     ///   The taxonomy database object
+    /// @param gi_list
+    ///   If specified, will be used to filter the deflines by GI.
     /// @param locked
     ///   The lock holder object for this thread
     /// @return
@@ -179,6 +211,7 @@ public:
               int                   memb_bit,
               int                   pref_gi,
               CRef<CSeqDBTaxInfo>   tax_info,
+              CRef<CSeqDBGiList>    gi_list,
               CSeqDBLockHold      & locked) const;
     
     /// Get the sequence data
@@ -248,14 +281,17 @@ public:
     ///   True if the database is filtered
     /// @param membership_bit
     ///   Membership bit to filter deflines
+    /// @param gi_list
+    ///   If specified, will be used to filter the list of SeqIDs by GI.
     /// @param locked
     ///   The lock holder object for this thread
     /// @return
     ///   The list of Seq-id objects for this sequences
-    list< CRef<CSeq_id> > GetSeqIDs(int              oid,
-                                    bool             have_oidlist,
-                                    int              membership_bit,
-                                    CSeqDBLockHold & locked) const;
+    list< CRef<CSeq_id> > GetSeqIDs(int                  oid,
+                                    bool                 have_oidlist,
+                                    int                  membership_bit,
+                                    CRef<CSeqDBGiList>   gi_list,
+                                    CSeqDBLockHold     & locked) const;
     
     /// Get the volume title
     string GetTitle() const;
@@ -398,6 +434,24 @@ public:
     ///   The OID of the sequence nearest the specified residue
     int GetOidAtOffset(int first_seq, Uint8 residue) const;
     
+    /// Translate Gis to Oids for the given vector of Gi/Oid pairs.
+    ///
+    /// This method iterates over a vector of Gi/Oid pairs.  For each
+    /// pair where OID is -1, the GI will be looked up in the ISAM
+    /// file, and (if found) the correct OID will be stored (otherwise
+    /// the -1 will remain).  This method will normally be called once
+    /// for each volume.
+    ///
+    /// @param vol_start
+    ///   The starting OID of this volume.
+    /// @param gis
+    ///   The set of GI-OID pairs.
+    /// @param locked
+    ///   The lock holder object for this thread
+    void GisToOids(int              vol_start,
+                   CSeqDBGiList   & gis,
+                   CSeqDBLockHold & locked) const;
+    
 private:
     /// Get sequence header object
     /// 
@@ -442,14 +496,17 @@ private:
     ///   True if the database is filtered
     /// @param membership_bit
     ///   Membership bit to filter deflines
+    /// @param gi_list
+    ///   If specified, will be used to filter the deflines by GI.
     /// @param locked
     ///   The lock holder object for this thread
     void
-    x_GetHdrBinaryMembBit(int              oid,
-                          vector<char>   & hdr_data,
-                          bool             have_oidlist,
-                          int              membership_bit,
-                          CSeqDBLockHold & locked) const;
+    x_GetFilteredBinaryHeader(int              oid,
+                              vector<char>   & hdr_data,
+                              bool             have_oidlist,
+                              int              membership_bit,
+                              CRef<CSeqDBGiList>   gi_list,
+                              CSeqDBLockHold & locked) const;
     
     /// Get sequence header information
     /// 
@@ -465,15 +522,18 @@ private:
     ///   True if the database is filtered
     /// @param membership_bit
     ///   Membership bit to filter deflines
+    /// @param gi_list
+    ///   If specified, will be used to filter the deflines by GI.
     /// @param locked
     ///   The lock holder object for this thread
     /// @return
     ///   The set of blast-def-lines describing this sequence
     CRef<CBlast_def_line_set>
-    x_GetHdrMembBit(int              oid,
-                    bool             have_oidlist,
-                    int              membership_bit,
-                    CSeqDBLockHold & locked) const;
+    x_GetFilteredHeader(int                  oid,
+                        bool                 have_oidlist,
+                        int                  membership_bit,
+                        CRef<CSeqDBGiList>   gi_list,
+                        CSeqDBLockHold     & locked) const;
     
     /// Get sequence header information structures
     /// 
@@ -488,14 +548,17 @@ private:
     ///   True if the database is filtered
     /// @param membership_bit
     ///   Membership bit to filter deflines
+    /// @param gi_list
+    ///   If specified, will be used to filter the deflines by GI.
     /// @param locked
     ///   The lock holder object for this thread
     /// @return
     ///   The CSeqdesc to include in the CBioseq
-    CRef<CSeqdesc> x_GetAsnDefline(int              oid,
-                                   bool             have_oidlist,
-                                   int              membership_bit,
-                                   CSeqDBLockHold & locked) const;
+    CRef<CSeqdesc> x_GetAsnDefline(int                  oid,
+                                   bool                 have_oidlist,
+                                   int                  membership_bit,
+                                   CRef<CSeqDBGiList>   gi_list,
+                                   CSeqDBLockHold     & locked) const;
     
     /// Returns 'p' for protein databases, or 'n' for nucleotide.
     char x_GetSeqType() const;
@@ -614,16 +677,19 @@ private:
     ///     Specify the value of the membership bit if one exists
     /// @param preferred_gi
     ///     This GI's defline (if found) will be put at the front of the list
+    /// @param gi_list
+    ///   If specified, will be used to filter the deflines by GI.
     /// @param locked
     ///     The lock holder object for this thread
     /// @return
     ///     The defline set for the specified oid
     CRef<CBlast_def_line_set>
-    x_GetTaxDefline(int              oid,
-                    bool             have_oidlist,
-                    int              membership_bit,
-                    int              preferred_gi,
-                    CSeqDBLockHold & locked) const;
+    x_GetTaxDefline(int                  oid,
+                    bool                 have_oidlist,
+                    int                  membership_bit,
+                    int                  preferred_gi,
+                    CRef<CSeqDBGiList>   gi_list,
+                    CSeqDBLockHold     & locked) const;
     
     /// Get taxonomic descriptions of a sequence
     ///
@@ -645,6 +711,8 @@ private:
     ///     This GI's defline (if found) will be put at the front of the list
     /// @param tax_info
     ///     Taxonomic info to encode
+    /// @param gi_list
+    ///     If specified, will be used to filter the deflines by GI.
     /// @param locked
     ///     The lock holder object for this thread
     /// @return
@@ -655,6 +723,7 @@ private:
                   int                   membership_bit,
                   int                   preferred_gi,
                   CRef<CSeqDBTaxInfo>   tax_info,
+                  CRef<CSeqDBGiList>    gi_list,
                   CSeqDBLockHold      & locked) const;
     
     /// Returns the base-offset of the specified oid

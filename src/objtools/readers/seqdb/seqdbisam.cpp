@@ -1504,6 +1504,32 @@ CSeqDBIsam::TryToSimplifyAccession(const string & acc,
     return result;
 }
 
-END_NCBI_SCOPE
+void CSeqDBIsam::GisToOids(int              vol_start,
+                           CSeqDBGiList   & gis,
+                           CSeqDBLockHold & locked)
+{
+    gis.InsureOrder(CSeqDBGiList::eGi);
+    
+    int gis_size = (int) gis.Size();
+    
+    for(int i = 0; i < gis_size; i++) {
+        CSeqDBGiList::SGiOid gi_oid = gis[i];
+        
+        // For multivolume cases, each subsequent call to this code
+        // will skip already translated elements.
+        
+        if (gi_oid.oid == -1) {
+            int oid(-1);
+            
+            if (GiToOid(gi_oid.gi, oid, locked)) {
+                _ASSERT(oid != -1);
+                gis.SetTranslation(i, oid + vol_start);
+            } else {
+                _ASSERT(oid == -1);
+            }
+        }
+    }
+}
 
+END_NCBI_SCOPE
 

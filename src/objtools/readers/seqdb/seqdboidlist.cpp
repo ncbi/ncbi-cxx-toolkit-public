@@ -40,6 +40,7 @@ BEGIN_NCBI_SCOPE
 
 CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas        & atlas,
                              const CSeqDBVolSet & volset,
+                             CRef<CSeqDBGiList> & gi_list,
                              CSeqDBLockHold     & locked)
     : m_Atlas   (atlas),
       m_Lease   (atlas),
@@ -48,12 +49,12 @@ CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas        & atlas,
       m_BitEnd  (0),
       m_BitOwner(false)
 {
-    _ASSERT( volset.HasFilter() );
+    _ASSERT( volset.HasFilter() || gi_list);
     
-    if (volset.HasSimpleMask()) {
+    if (volset.HasSimpleMask() && gi_list.Empty()) {
         x_Setup( volset.GetSimpleMask(), locked );
     } else {
-        x_Setup( volset, locked );
+        x_Setup( volset, gi_list, locked );
     }
 }
 
@@ -84,9 +85,10 @@ void CSeqDBOIDList::x_Setup(const string   & filename,
 // computations except during actual looping.
 
 void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
+                            CRef<CSeqDBGiList> & gi_list,
                             CSeqDBLockHold     & locked)
 {
-    _ASSERT(volset.HasFilter() && (! volset.HasSimpleMask()));
+    _ASSERT((volset.HasFilter() && (! volset.HasSimpleMask())) || gi_list.NotEmpty());
     
     // First, get the memory space and clear it.
     
@@ -102,6 +104,7 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
     m_Bits   = (TUC*) m_Atlas.Alloc(byte_length, locked);
     m_BitEnd = m_Bits + byte_length;
     m_BitOwner = true;
+    m_NumOIDs = num_oids;
     
     try {
         memset((void*) m_Bits, 0, byte_length);
@@ -121,6 +124,10 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
                 x_ApplyFilter(v2, v1, locked);
             }
         }
+        
+        if (gi_list.NotEmpty()) {
+            x_ApplyUserGiList(volset, *gi_list, locked);
+        }
     }
     catch(...) {
         if (m_Bits) {
@@ -128,8 +135,6 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet & volset,
         }
         throw;
     }
-    
-    m_NumOIDs = num_oids;
     
     while(m_NumOIDs && (! x_IsSet(m_NumOIDs - 1))) {
         -- m_NumOIDs;
@@ -186,6 +191,97 @@ void CSeqDBOIDList::x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
         x_SetBitRange(start_g, end_g);
     }
 }
+
+class SeqDB_SortPairBySecondDesc {
+public:
+    int operator()(const pair<int,int> & lhs, const pair<int,int> & rhs)
+    {
+        return lhs.second > rhs.second;
+    }
+};
+
+void CSeqDBOIDList::x_ApplyUserGiList(const CSeqDBVolSet & volset,
+                                      CSeqDBGiList       & gis,
+                                      CSeqDBLockHold     & locked)
+{
+    int gis_size = gis.Size();
+    
+    if (0 == gis_size) {
+        return;
+    }
+    
+    // pair = volume index, number of oids
+    vector< pair<int,int> > OidsPerVolume;
+    
+    // Build a list of volumes sorted by OID count.
+    
+    for(int i = 0; i < volset.GetNumVols(); i++) {
+        const CSeqDBVolEntry * vol = volset.GetVolEntry(i);
+        
+        pair<int,int> vol_oids;
+        vol_oids.first = i;
+        vol_oids.second = vol->OIDEnd() - vol->OIDStart();
+        
+        OidsPerVolume.push_back(vol_oids);
+    }
+    
+    // The largest volumes should be used first, to minimize the
+    // number of failed GI->OID conversion attempts.  Searching input
+    // GIs against larger volumes first should eliminate most of the
+    // GIs by the time smaller volumes are searched, thus reducing the
+    // total number of lookups.
+    
+    SeqDB_SortPairBySecondDesc vol_sorter;
+    sort(OidsPerVolume.begin(), OidsPerVolume.end(), vol_sorter);
+    
+    for(int i = 0; i < (int)OidsPerVolume.size(); i++) {
+        int vol_idx = OidsPerVolume[i].first;
+        
+        const CSeqDBVolEntry * vol = volset.GetVolEntry(vol_idx);
+        int vol_start = vol->OIDStart();
+        
+        // Note: The implied ISAM lookups will sort by GI.
+        
+        vol->Vol()->GisToOids(vol_start, gis, locked);
+    }
+    
+    // Sort resulting array by OID.  This is not for performance
+    // reasons, but rather is necessary due to the way in which the
+    // AND operation is accomplished.
+    
+    gis.InsureOrder(CSeqDBGiList::eOid);
+    
+    // Clear and OID bits between the valid OIDs.
+    
+    if (gis[gis_size-1].oid != -1) {
+        int prev_oid = -1;
+        
+        for(int j = 0; j < gis_size; j++) {
+            int this_oid = gis[j].oid;
+            
+            if (this_oid == -1) {
+                // 1. All -1s should be at start.
+                
+                _ASSERT(prev_oid == -1);
+                continue;
+            }
+            
+            if ((this_oid - prev_oid) > 1) {
+                x_ClearBitRange(prev_oid + 1, this_oid);
+            }
+            
+            prev_oid = this_oid;
+        }
+        
+        prev_oid = gis[gis_size-1].oid;
+        
+        if ((m_NumOIDs - prev_oid) > 1) {
+            x_ClearBitRange(prev_oid + 1, m_NumOIDs);
+            m_NumOIDs = prev_oid + 1;
+        }
+    }
+}
+
 
 // This does not implement OID ranges yet.  To do so, it will be
 // necessary to modify the loops below, which are complex enough that
@@ -523,7 +619,7 @@ void CSeqDBOIDList::x_OrGiFileBits(const string    & gilist_fname,
         // Now we have either a text or binary GI file -- read in the gis.
         
         vector<int> gis;
-    
+        
         if (is_binary) {
             gis.reserve(num_gis);
             x_ReadBinaryGiList(gilist, lease, num_gis, gis, locked);
@@ -589,6 +685,33 @@ void CSeqDBOIDList::x_SetBitRange(int oid_start,
     }
 }
 
+void CSeqDBOIDList::x_ClearBitRange(int oid_start,
+                                    int oid_end)
+{
+    // Clear bits at the front and back, closing to a range of
+    // full-byte addresses.
+    
+    while((oid_start & 0x7) && (oid_start < oid_end)) {
+        x_ClearBit(oid_start);
+        ++oid_start;
+    }
+    
+    while((oid_end & 0x7) && (oid_start < oid_end)) {
+        x_ClearBit(oid_end - 1);
+        --oid_end;
+    }
+    
+    if (oid_start < oid_end) {
+        TUC * bp_start = m_Bits + (oid_start >> 3);
+        TUC * bp_end   = m_Bits + (oid_end   >> 3);
+        
+        _ASSERT(bp_end   <= m_BitEnd);
+        _ASSERT(bp_start <  bp_end);
+        
+        memset(bp_start, 0x00, (bp_end - bp_start));
+    }
+}
+
 void CSeqDBOIDList::x_SetBit(TOID oid)
 {
     TUC * bp = m_Bits + (oid >> 3);
@@ -597,6 +720,17 @@ void CSeqDBOIDList::x_SetBit(TOID oid)
     
     if (bp < m_BitEnd) {
         *bp |= (0x80 >> bitnum);
+    }
+}
+
+void CSeqDBOIDList::x_ClearBit(TOID oid)
+{
+    TUC * bp = m_Bits + (oid >> 3);
+    
+    Int4 bitnum = (oid & 7);
+    
+    if (bp < m_BitEnd) {
+        *bp &= ((0xFF) ^ (0x80 >> bitnum));
     }
 }
 

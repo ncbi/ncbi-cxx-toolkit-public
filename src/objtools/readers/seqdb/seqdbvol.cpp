@@ -817,11 +817,12 @@ s_SeqDB_SeqIdIn(const list< CRef< CSeq_id > > & seqids, const CSeq_id & target)
 }
 
 CRef<CBlast_def_line_set>
-CSeqDBVol::x_GetTaxDefline(int              oid,
-                           bool             have_oidlist,
-                           int              membership_bit,
-                           int              preferred_gi,
-                           CSeqDBLockHold & locked) const
+CSeqDBVol::x_GetTaxDefline(int                  oid,
+                           bool                 have_oidlist,
+                           int                  membership_bit,
+                           int                  preferred_gi,
+                           CRef<CSeqDBGiList>   gi_list,
+                           CSeqDBLockHold     & locked) const
 {
     typedef list< CRef<CBlast_def_line> > TBDLL;
     typedef TBDLL::iterator               TBDLLIter;
@@ -830,7 +831,7 @@ CSeqDBVol::x_GetTaxDefline(int              oid,
     // 1. read a defline set w/ gethdr, filtering by membership bit
     
     CRef<CBlast_def_line_set> BDLS =
-        x_GetHdrMembBit(oid, have_oidlist, membership_bit, locked);
+        x_GetFilteredHeader(oid, have_oidlist, membership_bit, gi_list, locked);
     
     // 2. if there is a preferred gi, bump it to the top.
     
@@ -863,6 +864,7 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
                          int                   membership_bit,
                          int                   preferred_gi,
                          CRef<CSeqDBTaxInfo>   tax_info,
+                         CRef<CSeqDBGiList>    gi_list,
                          CSeqDBLockHold      & locked) const
 {
     const bool provide_old_taxonomy_info = false;
@@ -880,6 +882,7 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
                         have_oidlist,
                         membership_bit,
                         preferred_gi,
+                        gi_list,
                         locked);
     
     if (bdls.Empty()) {
@@ -1007,17 +1010,23 @@ CSeqDBVol::x_GetTaxonomy(int                   oid,
 }
 
 CRef<CSeqdesc>
-CSeqDBVol::x_GetAsnDefline(int              oid,
-                           bool             have_oidlist,
-                           int              memb_bit,
-                           CSeqDBLockHold & locked) const
+CSeqDBVol::x_GetAsnDefline(int                  oid,
+                           bool                 have_oidlist,
+                           int                  memb_bit,
+                           CRef<CSeqDBGiList>   gi_list,
+                           CSeqDBLockHold     & locked) const
 {
     const char * ASN1_DEFLINE_LABEL = "ASN1_BlastDefLine";
     
     CRef<CSeqdesc> asndef;
     
     vector<char> hdr_data;
-    x_GetHdrBinaryMembBit(oid, hdr_data, have_oidlist, memb_bit, locked);
+    x_GetFilteredBinaryHeader(oid,
+                              hdr_data,
+                              have_oidlist,
+                              memb_bit,
+                              gi_list,
+                              locked);
     
     if (! hdr_data.empty()) {
         CRef<CUser_object> uobj(new CUser_object);
@@ -1053,6 +1062,7 @@ CSeqDBVol::GetBioseq(int                   oid,
                      int                   memb_bit,
                      int                   target_gi,
                      CRef<CSeqDBTaxInfo>   tax_info,
+                     CRef<CSeqDBGiList>    gi_list,
                      CSeqDBLockHold      & locked) const
 {
     typedef list< CRef<CBlast_def_line> > TDeflines;
@@ -1064,7 +1074,8 @@ CSeqDBVol::GetBioseq(int                   oid,
     
     // Get the defline set
     
-    defline_set = x_GetHdrMembBit(oid, have_oidlist, memb_bit, locked);
+    defline_set =
+        x_GetFilteredHeader(oid, have_oidlist, memb_bit, gi_list, locked);
     
     if (target_gi != 0) {
         CSeq_id seqid(CSeq_id::e_Gi, target_gi);
@@ -1090,16 +1101,17 @@ CSeqDBVol::GetBioseq(int                   oid,
     }
     
     if (defline_set.Empty() ||
-        (! defline_set->CanGet())) {
+        (! defline_set->CanGet()) ||
+        (0 == defline_set->Get().size())) {
         return null_result;
     }
-        
+    
     defline = defline_set->Get().front();
-        
+    
     if (! defline->CanGetSeqid()) {
         return null_result;
     }
-        
+    
     seqids = defline->GetSeqid();
     
     // Get length & sequence.
@@ -1172,7 +1184,11 @@ CSeqDBVol::GetBioseq(int                   oid,
         CRef<CSeqdesc> desc1(new CSeqdesc);
         desc1->SetTitle().swap(description);
         
-        CRef<CSeqdesc> desc2( x_GetAsnDefline(oid, have_oidlist, memb_bit, locked) );
+        CRef<CSeqdesc> desc2( x_GetAsnDefline(oid,
+                                              have_oidlist,
+                                              memb_bit,
+                                              gi_list,
+                                              locked) );
         
         CSeq_descr & seq_desc_set = bioseq->SetDescr();
         seq_desc_set.Set().push_back(desc1);
@@ -1188,6 +1204,7 @@ CSeqDBVol::GetBioseq(int                   oid,
                       memb_bit,
                       target_gi,
                       tax_info,
+                      gi_list,
                       locked);
     
     ITERATE(list< CRef<CSeqdesc> >, iter, tax) {
@@ -1356,15 +1373,16 @@ int CSeqDBVol::x_GetSequence(int              oid,
     return length;
 }
 
-list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int              oid,
-                                           bool             have_oidlist,
-                                           int              membership_bit,
-                                           CSeqDBLockHold & locked) const
+list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int                  oid,
+                                           bool                 have_oidlist,
+                                           int                  membership_bit,
+                                           CRef<CSeqDBGiList>   gi_list,
+                                           CSeqDBLockHold     & locked) const
 {
     list< CRef< CSeq_id > > seqids;
     
     CRef<CBlast_def_line_set> defline_set =
-        x_GetHdrMembBit(oid, have_oidlist, membership_bit, locked);
+        x_GetFilteredHeader(oid, have_oidlist, membership_bit, gi_list, locked);
     
     if ((! defline_set.Empty()) && defline_set->CanGet()) {
         ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
@@ -1393,10 +1411,25 @@ CSeqDBVol::GetHdr(int oid, CSeqDBLockHold & locked) const
 }
 
 CRef<CBlast_def_line_set>
-CSeqDBVol::x_GetHdrMembBit(int              oid,
-                           bool             have_oidlist,
-                           int              membership_bit,
-                           CSeqDBLockHold & locked) const
+CSeqDBVol::GetFilteredHeader(int                  oid,
+                             bool                 have_oidlist,
+                             int                  membership_bit,
+                             CRef<CSeqDBGiList>   gi_list,
+                             CSeqDBLockHold     & locked) const
+{
+    return x_GetFilteredHeader(oid,
+                               have_oidlist,
+                               membership_bit,
+                               gi_list,
+                               locked);
+}
+
+CRef<CBlast_def_line_set>
+CSeqDBVol::x_GetFilteredHeader(int                  oid,
+                               bool                 have_oidlist,
+                               int                  membership_bit,
+                               CRef<CSeqDBGiList>   gi_list,
+                               CSeqDBLockHold     & locked) const
 {
     typedef list< CRef<CBlast_def_line> > TBDLL;
     typedef TBDLL::iterator               TBDLLIter;
@@ -1405,7 +1438,7 @@ CSeqDBVol::x_GetHdrMembBit(int              oid,
     
     // 2. filter based on "rdfp->membership_bit" or similar.
     
-    if (have_oidlist && (membership_bit != 0)) {
+    if (gi_list.NotEmpty() || (have_oidlist && (membership_bit != 0))) {
         // Create the memberships mask (should this be fixed to allow
         // membership bits greater than 32?)
         
@@ -1416,16 +1449,47 @@ CSeqDBVol::x_GetHdrMembBit(int              oid,
         for(TBDLLIter iter = dl.begin(); iter != dl.end(); ) {
             const CBlast_def_line & defline = **iter;
             
-            bool have_memb =
-                defline.CanGetMemberships() &&
-                defline.IsSetMemberships() &&
-                (! defline.GetMemberships().empty());
+            bool have_memb = true;
             
-            if (have_memb) {
-                int bits = defline.GetMemberships().front();
+            if (have_oidlist && (membership_bit != 0)) {
+                have_memb =
+                    defline.CanGetMemberships() &&
+                    defline.IsSetMemberships() &&
+                    (! defline.GetMemberships().empty());
                 
-                if ((bits & memb_mask) == 0) {
-                    have_memb = false;
+                if (have_memb) {
+                    int bits = defline.GetMemberships().front();
+                    
+                    if ((bits & memb_mask) == 0) {
+                        have_memb = false;
+                    }
+                }
+            }
+            
+            if (have_memb && gi_list.NotEmpty() && defline.CanGetSeqid()) {
+                vector<int> oids(1);
+                vector<int> gis;
+                
+                oids[0] = oid;
+                gi_list->FindGis(oids, gis);
+                
+                ITERATE(list< CRef<CSeq_id> >, seqid, defline.GetSeqid()) {
+                    if ((**seqid).IsGi()) {
+                        int defline_gi = (**seqid).GetGi();
+                        bool found = false;
+                        
+                        ITERATE(vector<int>, oid_gi, gis) {
+                            if (*oid_gi == defline_gi) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        
+                        if (! found) {
+                            have_memb = false;
+                            break;
+                        }
+                    }
                 }
             }
             
@@ -1478,14 +1542,15 @@ CSeqDBVol::x_GetHdrAsn1(int oid, CSeqDBLockHold & locked) const
 }
 
 void
-CSeqDBVol::x_GetHdrBinaryMembBit(int              oid,
-                                 vector<char>   & hdr_data,
-                                 bool             have_oidlist,
-                                 int              membership_bit,
-                                 CSeqDBLockHold & locked) const
+CSeqDBVol::x_GetFilteredBinaryHeader(int                  oid,
+                                     vector<char>       & hdr_data,
+                                     bool                 have_oidlist,
+                                     int                  memb_bit,
+                                     CRef<CSeqDBGiList>   gi_list,
+                                     CSeqDBLockHold     & locked) const
 {
     CRef<CBlast_def_line_set> dls =
-        x_GetHdrMembBit(oid, have_oidlist, membership_bit, locked);
+        x_GetFilteredHeader(oid, have_oidlist, memb_bit, gi_list, locked);
     
     // Get the data as a string, then as a stringstream, then build
     // the actual asn.1 object.  How much 'extra' work is done here?
@@ -1504,7 +1569,9 @@ CSeqDBVol::x_GetHdrBinaryMembBit(int              oid,
     hdr_data.assign(str.data(), str.data() + str.length());
 }
 
-void CSeqDBVol::x_GetAmbChar(int oid, vector<Int4> & ambchars, CSeqDBLockHold & locked) const
+void CSeqDBVol::x_GetAmbChar(int oid,
+                             vector<Int4> & ambchars,
+                             CSeqDBLockHold & locked) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
@@ -1612,6 +1679,17 @@ bool CSeqDBVol::GiToOid(int gi, int & oid, CSeqDBLockHold & locked) const
     }
     
     return m_IsamGi->GiToOid(gi, oid, locked);
+}
+
+void CSeqDBVol::GisToOids(int              vol_start,
+                          CSeqDBGiList   & gis,
+                          CSeqDBLockHold & locked) const
+{
+    if (m_IsamGi.Empty()) {
+        return;
+    }
+    
+    m_IsamGi->GisToOids(vol_start, gis, locked);
 }
 
 bool CSeqDBVol::GetGi(int oid, int & gi, CSeqDBLockHold & locked) const

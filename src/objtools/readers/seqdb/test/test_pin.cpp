@@ -261,6 +261,67 @@ static void s_MutateString(string & s_in)
     s_in = s;
 }
 
+/// A simple fixed value GI list class.
+
+class CGiOidList : public CSeqDBGiList {
+public:
+    /// Build a GI list with three elements.
+    CGiOidList()
+    {
+        m_GisOids.push_back(129295);
+        m_GisOids.push_back(129297);
+        m_GisOids.push_back(1071922);
+    }
+};
+
+
+/// A simple vector based GI list class.
+
+class CVectorGiList : public CSeqDBGiList {
+public:
+    /// Build a GI list from a vector.
+    CVectorGiList(const vector<int> & v)
+    {
+        m_GisOids.resize(v.size());
+        
+        for(int i = 0; i<(int)v.size(); i++) {
+            m_GisOids[i].gi = v[i];
+        }
+    }
+};
+
+
+/// Helper class for event timing.
+
+class CTimedTask {
+public:
+    /// Start timing.
+    /// @param msg Message to output at beginning and Mark().
+    CTimedTask(string msg)
+        : m_Msg(msg)
+    {
+        cout << "Executing task [" << m_Msg << "]..." << endl;
+        m_E1 = m_Watch.Elapsed();
+    }
+    
+    /// Write timing output.
+    void Mark()
+    {
+        double e2 = m_Watch.Elapsed();
+        cout << "Completed task [" << m_Msg << "] in " << (e2-m_E1) << " seconds.\n" << endl;
+    }
+    
+private:
+    /// Stop watch to keep time.
+    CStopWatch m_Watch;
+    
+    /// Start time.
+    double m_E1;
+    
+    /// Message for this task.
+    string m_Msg;
+};
+
 int test1(int argc, char ** argv)
 {
     string dbpath = "/net/fridge/vol/export/blast/db/blast";
@@ -539,7 +600,7 @@ int test1(int argc, char ** argv)
             e[2] = sw.Elapsed();
             
             CSeqDB::FindVolumePaths(dbname, seqtype, paths2);
-
+            
             e[3] = sw.Elapsed();
             
             cout << "\n-- non-static method "
@@ -2333,6 +2394,128 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-lib]";
         
+        if (s == "-ugl-timing") {
+            int STEP = 10000;
+            
+            if (! args.empty()) {
+                string step_value = args.front();
+                args.pop_front(); 
+                
+                int sv = atoi(step_value.c_str());
+                
+                STEP = (sv > 1) ? sv : 1;
+            }
+            
+            cout << "STEP at " << STEP << endl;
+            
+            vector<int> gi_vec;
+            vector<int> oid_vec;
+            CRef<CSeqDBGiList> gi_list;
+            
+            {
+//                 CTimedTask t1("build first seqdb object");
+//                 CSeqDB db1(dbname, seqtype, 0, 0, use_mm, gi_list);
+//                 t1.Mark();
+                
+//                 CTimedTask t2("build gi vector");
+//                 int num_oids = db1.GetNumOIDs();
+                
+//                 // four on, four off.
+//                 int pieces_of_eight = 0;
+                
+//                 for(int i = 0; i < num_oids; i += STEP) {
+//                     list< CRef<CSeq_id> > ids = db1.GetSeqIDs(i);
+                    
+//                     ITERATE(list< CRef<CSeq_id> >, seqid, ids) {
+//                         if ((**seqid).IsGi()) {
+//                             pieces_of_eight++;
+                            
+//                             if (pieces_of_eight & 4) {
+//                                 gi_vec.push_back((**seqid).GetGi());
+//                             }
+//                         }
+//                     }
+//                 }
+//                 t2.Mark();
+                
+                
+                CTimedTask t2b("build gi vector");
+                string seqletter((seqtype == CSeqDB::eProtein) ? "p" : "n");
+                SeqDB_ReadBinaryGiList("/net/fridge/vol/export/blast/db/blast/Eukaryota." + seqletter + ".gil", gi_vec);
+                t2b.Mark();
+                
+                cout << "Total accumulated GIs: " << gi_vec.size() << endl << endl;
+            }
+            
+            {
+                CTimedTask t3("build gi list object");
+                gi_list.Reset(new CVectorGiList(gi_vec));
+                t3.Mark();
+            }
+            
+            {
+                CTimedTask t4("build seqdb with gilist");
+                CSeqDB db2(dbname, seqtype, 0, 0, use_mm, gi_list);
+                t4.Mark();
+                
+                int oid(0);
+                
+                CTimedTask t5("find one id");
+                if (db2.CheckOrFindOID(oid)) {
+                    oid_vec.push_back(oid++);
+                }
+                t5.Mark();
+                
+                CTimedTask t6("rest of iteration");
+                if (oid) {
+                    while(db2.CheckOrFindOID(oid)) {
+                        oid_vec.push_back(oid++);
+                    }
+                }
+                t6.Mark();
+                cout << "Total accumulated OIDs: " << oid_vec.size() << endl;
+            }
+            
+            return 0;
+        } else desc += " [-ugl-timing]";
+        
+        if (s == "-user-gi-list") {
+            int gi = 129295;
+            
+            CRef<CSeqDBGiList> gi_list(new CGiOidList);
+            
+            CSeqDB db(dbname, seqtype, 0, 0, use_mm, gi_list);
+            
+            cout << "Phase 1: Check filtering of Bioseq deflines.\n" << endl;
+            
+            CRef<CBioseq> bioseq = db.GiToBioseq(gi);
+            
+            auto_ptr<CObjectOStream> outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+            
+            cout << "--- Seq #" << gi << "---" << endl;
+            *outpstr << *bioseq;
+            
+            cout << "\nPhase 2: Check filtering of OID list.\n" << endl;
+            
+            int num_found = 0;
+            
+            for(int oid = 0; db.CheckOrFindOID(oid); oid++) {
+                cout << "\n--- Oid # " << oid << " ---" << endl;
+                bioseq = db.GetBioseq(oid);
+                
+                _ASSERT(bioseq.NotEmpty());
+                
+                *outpstr << *bioseq;
+                
+                if (++num_found > 10) {
+                    cout << "Found too many.\n" << endl;
+                    break;
+                }
+            }
+            
+            return 0;
+        } else desc += " [-user-gi-list]";
+        
         if (s == "-summary") {
             CSeqDB phil(dbname, seqtype);
             cout << "dbpath: " << dbpath            << endl;
@@ -3224,6 +3407,13 @@ int main(int argc, char ** argv)
         cout << "--three--" << endl;
         cout << "Caught a SeqDB exception: {" << e.GetErrCodeString() << "}" << endl;
         cout << "Actual Message : " << e.GetMsg() << endl;
+        rc = 1;
+        cout << "--four--" << endl;
+    }
+    catch(CException & e) {
+        cout << "--three--" << endl;
+        cout << "Caught an NCBI exception: {" << e.GetErrCodeString() << "}" << endl;
+        cout << "Report All: {" << e.ReportAll() << "}" << endl;
         rc = 1;
         cout << "--four--" << endl;
     }

@@ -130,11 +130,14 @@ public:
     ///   attempted.  If kSeqDBNoMMap is specified, memory mapping
     ///   fails, or this platform does not support it, the less
     ///   efficient read and write calls are used instead.
+    /// @param gi_list
+    ///   If not null, will be used to filter deflines and OIDs.
     CSeqDBImpl(const string & db_name_list,
                char           prot_nucl,
                int            oid_begin,
                int            oid_end,
-               bool           use_mmap);
+               bool           use_mmap,
+               CSeqDBGiList * gi_list);
     
     /// Destructor
     ~CSeqDBImpl();
@@ -544,6 +547,9 @@ private:
     
     /// True if OID list setup is done (or was not required).
     mutable bool m_OidListSetup;
+    
+    /// True if OID list setup is done (or was not required).
+    mutable CRef<CSeqDBGiList> m_UserGiList;
 };
 
 END_NCBI_SCOPE

@@ -35,6 +35,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
+#include "seqdbgeneral.hpp"
 #include "seqdbatlas.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -238,6 +239,169 @@ void SeqDB_JoinDelim(string & a, const string & b, const string & delim)
     a.reserve(a.length() + b.length() + delim.length());
     a += delim;
     a += b;
+}
+
+
+CSeqDBGiList::CSeqDBGiList()
+    : m_CurrentOrder(eNone)
+{
+}
+
+class CSeqDB_SortOidLessThan {
+public:
+    int operator()(const CSeqDBGiList::SGiOid & lhs,
+                   const CSeqDBGiList::SGiOid & rhs)
+    {
+        return lhs.oid < rhs.oid;
+    }
+};
+
+class CSeqDB_SortGiLessThan {
+public:
+    int operator()(const CSeqDBGiList::SGiOid & lhs,
+                   const CSeqDBGiList::SGiOid & rhs)
+    {
+        return lhs.gi < rhs.gi;
+    }
+};
+
+void CSeqDBGiList::InsureOrder(ESortOrder order)
+{
+    // Code depends on OID order after translation, because various
+    // methods of SeqDB use this class for filtering purposes.
+    
+    if ((order < m_CurrentOrder) || (order == eNone)) {
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Out of sequence sort order requested.");
+    }
+    
+    // Input is usually sorted by GI, so we first test for sortedness.
+    // If it will fail it will probably do so almost immediately.
+    
+    if (order != m_CurrentOrder) {
+        switch(order) {
+        case eNone:
+            break;
+            
+        case eGi:
+            {
+                bool already = true;
+                
+                for(int i = 1; i < (int) m_GisOids.size(); i++) {
+                    if (m_GisOids[i].gi < m_GisOids[i-1].gi) {
+                        already = false;
+                        break;
+                    }
+                }
+                
+                if (! already) {
+                    CSeqDB_SortGiLessThan sorter;
+                    sort(m_GisOids.begin(), m_GisOids.end(), sorter);
+                }
+            }
+            break;
+            
+        case eOid:
+            {
+                CSeqDB_SortOidLessThan sorter;
+                sort(m_GisOids.begin(), m_GisOids.end(), sorter);
+            }
+            break;
+        }
+        
+        m_CurrentOrder = order;
+    }
+}
+
+void CSeqDBGiList::x_FindOid(int oid, int & indexB, int & indexE)
+{
+    // This approach chosen for this problem is a single binary search
+    // followed by expansion of the matching region, because there are
+    // only a few OIDs per GI.
+    // 
+    // If each OID had many GIs, two binary searches would be used to
+    // find the two boundaries between the three regions (<, =, >).
+    
+    int b(0), e(m_GisOids.size());
+    
+    while(1) {
+        int m((b+e) >> 1);
+        int oid_m = m_GisOids[m].oid;
+        
+        if (oid_m == oid) {
+            indexB = m;
+            indexE = m + 1;
+            break;
+        } else {
+            if (b == e) {
+                break;
+            }
+            
+            if (oid_m > oid) {
+                e = m;
+            } else {
+                b = m + 1;
+            }
+        }
+    }
+    
+    if (indexB != indexE) {
+        while(indexB > 0 && m_GisOids[indexB-1].oid == oid) {
+            -- indexB;
+        }
+        while(indexE < (int)m_GisOids.size() && m_GisOids[indexE].oid == oid) {
+            ++ indexE;
+        }
+    }
+}
+
+void CSeqDBGiList::FindGis(const vector<int> & oids, vector<int> & gis)
+{
+    gis.clear();
+    gis.reserve(oids.size());
+    
+    ITERATE(vector<int>, oid, oids) {
+        int b(0), e(0);
+        
+        x_FindOid(*oid, b, e);
+        
+        for(int i = b; i<e; i++) {
+            gis.push_back(m_GisOids[i].gi);
+        }
+    }
+}
+
+void CSeqDBGiList::SetTranslation(int index, int oid)
+{
+    _ASSERT(m_CurrentOrder != eOid);
+    m_GisOids[index].oid = oid;
+}
+
+void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
+{
+    CMemoryFile mfile(fname);
+    
+    Int4 * beginp = (Int4*) mfile.GetPtr();
+    Int4 * endp   = (Int4*) (((char*)mfile.GetPtr()) + mfile.GetSize());
+    
+    Int4 num_gis = endp-beginp-2;
+    
+    gis.clear();
+    
+    if (((endp - beginp) < 2) ||
+        (beginp[0] != -1) ||
+        (SeqDB_GetStdOrd(beginp + 1) != num_gis)) {
+        NCBI_THROW(CSeqDBException,
+                   eFileErr,
+                   "Specified file is not a valid binary GI file.");
+    }
+    
+    gis.reserve(num_gis);
+    
+    for(Int4 * elem = beginp + 2; elem < endp; elem ++) {
+        gis.push_back((int) SeqDB_GetStdOrd(elem));
+    }
 }
 
 END_NCBI_SCOPE

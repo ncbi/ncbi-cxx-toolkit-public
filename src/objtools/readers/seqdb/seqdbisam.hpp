@@ -59,6 +59,9 @@ USING_SCOPE(objects);
 
 class CSeqDBIsam : public CObject {
 public:
+    /// Import the type representing one GI, OID association.
+    typedef CSeqDBGiList::SGiOid TGiOid;
+    
     /// Identifier formats used by this class.
     enum EIdentType {
         eGi,       /// Genomic ID is a relatively stable numeric identifier for sequences.
@@ -157,6 +160,24 @@ public:
         _ASSERT(m_IdentType == eGi);
         return x_IdentToOid(gi, oid, locked);
     }
+    
+    /// Translate Gis to Oids for the given vector of Gi/Oid pairs.
+    ///
+    /// This method iterates over a vector of Gi/Oid pairs.  For each
+    /// pair where OID is -1, the GI will be looked up in the ISAM
+    /// file, and (if found) the correct OID will be stored (otherwise
+    /// the -1 will remain).  This method will normally be called once
+    /// for each volume.
+    ///
+    /// @param vol_start
+    ///   The starting OID of this volume.
+    /// @param gis
+    ///   The set of GI-OID pairs.
+    /// @param locked
+    ///   The lock holder object for this thread
+    void GisToOids(int              vol_start,
+                   CSeqDBGiList   & gis,
+                   CSeqDBLockHold & locked);
     
     /// String translation
     /// 

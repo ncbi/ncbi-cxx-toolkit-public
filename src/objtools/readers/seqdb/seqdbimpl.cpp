@@ -41,7 +41,8 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
                        char           prot_nucl,
                        int            oid_begin,
                        int            oid_end,
-                       bool           use_mmap)
+                       bool           use_mmap,
+                       CSeqDBGiList * gi_list)
     : m_Atlas        (use_mmap, & m_FlushCB),
       m_DBNames      (db_name_list),
       m_Aliases      (m_Atlas, db_name_list, prot_nucl),
@@ -54,10 +55,11 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
       m_TotalLength  (0),
       m_VolumeLength (0),
       m_SeqType      (prot_nucl),
-      m_OidListSetup (false)
+      m_OidListSetup (false),
+      m_UserGiList   (gi_list)
 {
     m_Aliases.SetMasks(m_VolSet);
-    m_OidListSetup = ! m_VolSet.HasFilter();
+    m_OidListSetup = ! (m_VolSet.HasFilter() || gi_list);
     
     if ((oid_begin == 0) && (oid_end == 0)) {
         m_RestrictEnd = m_VolSet.GetNumOIDs();
@@ -112,7 +114,10 @@ void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked) const
         m_Atlas.Lock(locked);
         
         if (m_OIDList.Empty()) {
-            m_OIDList.Reset( new CSeqDBOIDList(m_Atlas, m_VolSet, locked) );
+            m_OIDList.Reset( new CSeqDBOIDList(m_Atlas,
+                                               m_VolSet,
+                                               m_UserGiList,
+                                               locked) );
         }
         
         m_OidListSetup = true;
@@ -289,6 +294,7 @@ CSeqDBImpl::GetBioseq(int oid, int target_gi) const
                               memb_bit,
                               target_gi,
                               m_TaxInfo,
+                              m_UserGiList,
                               locked);
     }
     
@@ -352,7 +358,11 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid) const
         bool have_oidlist = m_OIDList.NotEmpty();
         int memb_bit    = m_Aliases.GetMembBit(m_VolSet);
         
-        return vol->GetSeqIDs(vol_oid, have_oidlist, memb_bit, locked);
+        return vol->GetSeqIDs(vol_oid,
+                              have_oidlist,
+                              memb_bit,
+                              m_UserGiList,
+                              locked);
     }
     
     NCBI_THROW(CSeqDBException,
@@ -438,7 +448,14 @@ CRef<CBlast_def_line_set> CSeqDBImpl::GetHdr(int oid) const
     int vol_oid = 0;
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetHdr(vol_oid, locked);
+        bool have_oidlist = m_OIDList.NotEmpty();
+        Uint4 memb_bit = m_Aliases.GetMembBit(m_VolSet);
+        
+        return vol->GetFilteredHeader(vol_oid,
+                                      have_oidlist,
+                                      memb_bit,
+                                      m_UserGiList,
+                                      locked);
     }
     
     NCBI_THROW(CSeqDBException,

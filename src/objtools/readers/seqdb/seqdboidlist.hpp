@@ -83,6 +83,7 @@ public:
     ///   The lock holder object for this thread.
     CSeqDBOIDList(CSeqDBAtlas        & atlas,
                   const CSeqDBVolSet & volumes,
+                  CRef<CSeqDBGiList> & gi_list,
                   CSeqDBLockHold     & locked);
     
     /// Destructor
@@ -143,11 +144,19 @@ private:
     
     /// Include the specified oid.
     /// 
-    /// Set the inclusion bit for the specified oid to true.
-    ///
+    /// Set the inclusion bit for the specified oid.
+    /// 
     /// @param oid
     ///   The oid to adjust.
     void x_SetBit(TOID oid);
+    
+    /// Exclude the specified oid.
+    /// 
+    /// Clear the inclusion bit for the specified oid.
+    /// 
+    /// @param oid
+    ///   The oid to adjust.
+    void x_ClearBit(TOID oid);
     
     /// Find the next OID.
     /// 
@@ -195,9 +204,12 @@ private:
     /// 
     /// @param volset
     ///   The set of volumes to build an oid mask for.
+    /// @param gi_list
+    ///   Gi list object.
     /// @param locked
     ///   The lock holder object for this thread.
     void x_Setup(const CSeqDBVolSet & volset,
+                 CRef<CSeqDBGiList> & gi_list,
                  CSeqDBLockHold     & locked);
     
     /// Copy data from an OID mask into the bit array.
@@ -303,6 +315,18 @@ private:
     ///   The volume's ending oid.
     void x_SetBitRange(int oid_start, int oid_end);
     
+    /// Clear all bits in a range.
+    /// 
+    /// This method turns off all bits in the specified oid range.  It
+    /// is used after alias file processing to turn off bit ranges
+    /// that are masked by a user specified GI list.
+    /// 
+    /// @param oid_start
+    ///   The volume's starting oid.
+    /// @param oid_end
+    ///   The volume's ending oid.
+    void x_ClearBitRange(int oid_start, int oid_end);
+    
     /// Apply a filter to a volume
     ///
     /// This method applies the specified filter to a database volume.
@@ -321,6 +345,24 @@ private:
     void x_ApplyFilter(CRef<CSeqDBVolFilter>   filter,
                        const CSeqDBVolEntry  * vol,
                        CSeqDBLockHold        & locked);
+    
+    /// Apply a user GI list to a volume
+    ///
+    /// This method applies a user-specified filter to the OID list.
+    /// Unlike x_ApplyFilter, which turns on the bits of the filter,
+    /// this method turns OFF the disincluded bits.  It is therefore
+    /// an AND operation between the user filter and the (already
+    /// applied) alias file filters.
+    ///
+    /// @param filter
+    ///   The object specifying the filtering options.
+    /// @param vol
+    ///   The volume entry describing the volume to work with.
+    /// @param locked
+    ///   The lock holder object for this thread.
+    void x_ApplyUserGiList(const CSeqDBVolSet & volumes,
+                           CSeqDBGiList       & gis,
+                           CSeqDBLockHold     & locked);
     
     /// The memory management layer object.
     CSeqDBAtlas    & m_Atlas;

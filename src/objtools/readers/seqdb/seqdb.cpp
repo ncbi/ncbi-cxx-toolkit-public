@@ -90,7 +90,8 @@ s_SeqDBInit(const string & dbname,
             char           prot_nucl,
             int            oid_begin,
             int            oid_end,
-            bool           use_mmap)
+            bool           use_mmap,
+            CSeqDBGiList * gi_list)
 {
     CSeqDBImpl * impl = 0;
     
@@ -101,7 +102,8 @@ s_SeqDBInit(const string & dbname,
                                   prot_nucl,
                                   oid_begin,
                                   oid_end,
-                                  use_mmap);
+                                  use_mmap,
+                                  gi_list);
         }
         catch(CSeqDBException &) {
             prot_nucl = 'n';
@@ -113,7 +115,8 @@ s_SeqDBInit(const string & dbname,
                               prot_nucl,
                               oid_begin,
                               oid_end,
-                              use_mmap);
+                              use_mmap,
+                              gi_list);
     }
     
     _ASSERT(impl);
@@ -127,7 +130,8 @@ CSeqDB::CSeqDB(const string & dbname, char seqtype)
                          seqtype,
                          0,
                          0,
-                         true);
+                         true,
+                         0);
 }
 
 CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype)
@@ -136,7 +140,8 @@ CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype)
                          s_GetSeqTypeChar(seqtype),
                          0,
                          0,
-                         true);
+                         true,
+                         0);
 }
 
 CSeqDB::CSeqDB(const string & dbname,
@@ -149,20 +154,23 @@ CSeqDB::CSeqDB(const string & dbname,
                          seqtype,
                          oid_begin,
                          oid_end,
-                         use_mmap);
+                         use_mmap,
+                         0);
 }
 
 CSeqDB::CSeqDB(const string & dbname,
                ESeqType       seqtype,
                int            oid_begin,
                int            oid_end,
-               bool           use_mmap)
+               bool           use_mmap,
+               CSeqDBGiList * gi_list)
 {
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          oid_begin,
                          oid_end,
-                         use_mmap);
+                         use_mmap,
+                         gi_list);
 }
 
 int CSeqDB::GetSeqLength(int oid) const

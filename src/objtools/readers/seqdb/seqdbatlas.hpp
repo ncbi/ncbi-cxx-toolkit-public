@@ -741,7 +741,7 @@ class CSeqDBAtlas {
     /// Default slice sizes and limits used by the atlas.
     enum {
         eTriggerGC         = 1024 * 1024 * 128,
-        eDefaultBound      = 1024 * 1024 * 512,
+        eDefaultBound      = 1024 * 1024 * (512+256),
         eDefaultSliceSize  = 1024 * 1024 * 128,
         eDefaultOverhang   = 1024 * 1024 * 4,
         eMaxOpenRegions    = 500,
