@@ -120,26 +120,28 @@ LDFLAGS  = $(CONF_LDFLAGS)
 LIBS     = $(CONF_LIBS)
 PRE_LIBS =
 
-# Debug for debugging, Release for release
+### Debug/release suffixes
+# "Debug" for debugging, "Release" for release
 DEBUG_SFX = @DEBUG_SFX@
-# d for debugging, empty for release
+# 'd' for debugging, empty for release
 D_SFX=@D_SFX@
 
 ### DLL specifics
+# whether to build the lib as static or dynamic
 LIB_OR_DLL = @LIB_OR_DLL@
+# library name suffix; either "-static" or empty
 STATIC     = @STATIC@
-# library name suffix; either -static or empty
 
 LINK_DLL     = @LINK_DLL@
 CFLAGS_DLL   = @CFLAGS_DLL@
 CXXFLAGS_DLL = @CXXFLAGS_DLL@
 LDFLAGS_DLL  = $(LDFLAGS)
 
-# To enable extra, potentially unsafe, optimization
-CFAST = @CFAST@
-CXXFAST = @CXXFAST@
+### To enable extra, potentially unsafe, optimization
+FAST_CFLAGS   = @FAST_CFLAGS@
+FAST_CXXFLAGS = @FAST_CXXFLAGS@
 
-# For platform-specific includes
+### For platform-specific includes
 COMPILER = @COMPILER@
 OSTYPE   = @OSTYPE@
 

@@ -301,9 +301,24 @@ during the configuration process:
   </tr>
 
   <tr>
+	 <td><b>FAST_CFLAGS</b></td>
+	 <td><i>$FAST_CFLAGS</i></td>
+	 <td><a href="#ref_MakeProjMk_FAST">(*)</a>
+			 C compiler flags to generate faster code
+    </td>
+  </tr>
+
+  <tr>
 	 <td><b>CXXFLAGS</b></td>
 	 <td><i>$CXXFLAGS</i></td>
 	 <td>C++ compiler flags</td>
+  </tr>
+
+  <tr>
+	 <td><b>FAST_CXXFLAGS</b></td>
+	 <td><i>$FAST_CXXFLAGS</i></td>
+	 <td><a href="#ref_MakeProjMk_FAST">(*)</a>
+			 C++ compiler flags to generate faster code</td>
   </tr>
 
   <tr>
@@ -325,6 +340,16 @@ during the configuration process:
 	 <a href="#ref_MakeProjApp">below</a>)</td>
   </tr>
 </table>
+
+<br></br>
+<a name="ref_MakeProjMk_FAST"></a>
+(*) The values of user-specified environment variables
+    <i>$FAST_CFLAGS, $FAST_CXXFLAGS</i> will substitute the regular
+    optimization flag <tt>-O</tt> (or <tt>-O2</tt>, etc.).
+    For example, if in the environment:
+    <i>$FAST_CXXFLAGS</i><tt>=-fast -speedy</tt> and
+    <i>$CXXFLAGS</i>=<tt>-warn -O3 -std</tt>, then in makefile:
+    <b>$(FAST_CXXFLAGS)</b><tt>=-warn -fast -speedy -std</tt>.
 
 
 <br></br>
@@ -620,7 +645,7 @@ SRC      = xmy_src1 xmy_src2
 OBJ      = some_obj1
 REQUIRES = xrequirement
 CFLAGS   = $(ORIG_CFLAGS)   -abc -DFOOBAR_NOT_CPLUSPLUS
-CXXFLAGS = $(ORIG_CXXFLAGS) -xyz
+CXXFLAGS = $(FAST_CXXFLAGS) -xyz
 CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)</pre>
 
 <ul>
@@ -628,14 +653,13 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)</pre>
        (<a href="#ref_Packages">an optional package or project</a>)
        is disabled or unavailable
   <li> Compile <i><b>xmy_src1.cpp</b></i> using the C++ compiler
-       <b>$(CXX)</b> with the flags <b>$(CXXFLAGS) $(CPPFLAGS)</b>
-       (which are the original C++ and preprocessor flags,
-       <b>$(ORIG_*FLAGS)</b>, plus some additional flags specified by
-       the user)
+       <b>$(CXX)</b> with the flags <b>$(FAST_CXXFLAGS)  -xyz $(CPPFLAGS)</b>,
+       which are the C++ flags for faster code, some additional flags
+       specified by the user, and original preprocessor flags
   <li> Compile <i><b>xmy_src2.c</b></i> using the C compiler <b>CC</b>
-       with the flags <b>$(CFLAGS) $(CPPFLAGS)</b> (which are the
-       original C and preprocessor flags, <b>$(ORIG_*FLAGS)</b>,
-       plus some additional flags specified by the user)
+       with the flags <b>$(CFLAGS) -abc -DFOOBAR_NOT_CPLUSPLUS $(CPPFLAGS)</b>,
+       which are the original C flags, some additional flags
+       specified by the user, and original preprocessor flags
   <li> Using <b>$(AR)</b> and <b>$(RANLIB)</b> [<b>$(LINK_DLL)</b> if
        building a shared library], compose the
        library <i><b>libxmylib.a</b></i> [<i><b>libxmylib.so</b></i>]

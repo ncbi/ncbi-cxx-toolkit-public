@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.30 2002/02/01 15:40:54 ucko Exp $
+#  $Id: configure.ac,v 1.31 2002/02/08 00:08:25 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -603,37 +603,40 @@ CFLAGS="$ARCH_CFLAGS $CFLAGS"
 CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
 LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 
+
 #### Flags to enable (potentially unsafe) extra optimization.
-if test -z "${CFAST+set}"; then
+if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
    case "$compiler" in
       GCC )
-        CFAST="-O9 -fomit-frame-pointer -finline-functions"
-        CFAST="$CFAST -ffast-math -fstrict-aliasing"
+        DEF_FAST_FLAGS="-O9 -fomit-frame-pointer -finline-functions"
+        DEF_FAST_FLAGS="$DEF_FAST_FLAGS -ffast-math -fstrict-aliasing"
         ;;
       WorkShop* )
         # Include ARCH_CFLAGS here because -fast implies -xtarget=native.
-        CFAST="-fast $ARCH_CFLAGS"
+        DEF_FAST_FLAGS="-fast"
         ;;
       KCC )
-        CFAST="+K3"
+        DEF_FAST_FLAGS="+K3"
         case "$host_os" in
-           solaris* )  CFAST="$CFAST -fast $ARCH_CFLAGS" ;;
+           solaris* )  DEF_FAST_FLAGS="$DEF_FAST_FLAGS -fast" ;;
         esac
         ;;
       ICC )
-        CFAST="-O3 -axW -ip"
+        DEF_FAST_FLAGS="-O3 -axW -ip"
         ;;
       MIPSpro* )
-        CFAST="-O3 -Ofast"
+        DEF_FAST_FLAGS="-O3 -Ofast"
         ;;
       * )
-        CFAST="-O"
+        DEF_FAST_FLAGS="-O"
         ;;
    esac
+else
+   DEF_FAST_FLAGS="-O"
 fi
-: ${CXXFAST='$(CFAST)'}
-AC_SUBST(CFAST)
-AC_SUBST(CXXFAST)
+
+: ${FAST_CFLAGS="$DEF_FAST_FLAGS"}
+: ${FAST_CXXFLAGS="$DEF_FAST_FLAGS"}
 
 
 #### DLLs
@@ -977,9 +980,9 @@ changequote(, )dnl
 if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" ; then
       with_optimization=${with_optimization:="yes"}
-      CFLAGS=`echo $CFLAGS     | sed 's/-g[0-9]*//g'`
-      CXXFLAGS=`echo $CXXFLAGS | sed 's/-g[0-9]*//g'`
-      LDFLAGS=`echo $LDFLAGS   | sed 's/-g[0-9]*//g'`
+      CFLAGS=`  echo $CFLAGS    | sed 's/-g[0-9]*//g'`
+      CXXFLAGS=`echo $CXXFLAGS  | sed 's/-g[0-9]*//g'`
+      LDFLAGS=` echo $LDFLAGS   | sed 's/-g[0-9]*//g'`
    else
       with_optimization=${with_optimization:="no"}
       if echo "$CFLAGS"   |grep -v >/dev/null '\-g' ; then
@@ -994,14 +997,18 @@ if test "$compiler" != "MSVC" ; then
    fi
 
    if test "$with_optimization" = "no" ; then
-      CFLAGS=`echo $CFLAGS     | sed 's/-O[0-9]*//g'`
-      CXXFLAGS=`echo $CXXFLAGS | sed 's/-O[0-9]*//g'`
-      LDFLAGS=`echo $LDFLAGS   | sed 's/-O[0-9]*//g'`
+      CFLAGS=`  echo $CFLAGS    | sed 's/-O[0-9]*//g'`
+      CXXFLAGS=`echo $CXXFLAGS  | sed 's/-O[0-9]*//g'`
+      LDFLAGS=` echo $LDFLAGS   | sed 's/-O[0-9]*//g'`
+      FAST_CFLAGS="$CFLAGS" 
+      FAST_CXXFLAGS="$CXXFLAGS" 
    else
-      if echo "$CXXFLAGS" |grep -v >/dev/null '\-O' ; then
-         CXXFLAGS="$CXXFLAGS -O" ; fi
+      FAST_CFLAGS="`  echo $CFLAGS   | sed 's/-O[0-9]*//g'` $FAST_CFLAGS"
+      FAST_CXXFLAGS="`echo $CXXFLAGS | sed 's/-O[0-9]*//g'` $FAST_CXXFLAGS"
       if echo "$CFLAGS"   |grep -v >/dev/null '\-O' ; then
          CFLAGS="$CFLAGS -O" ; fi
+      if echo "$CXXFLAGS" |grep -v >/dev/null '\-O' ; then
+         CXXFLAGS="$CXXFLAGS -O" ; fi
       CPPFLAGS="-DNDEBUG $CPPFLAGS"
       if echo "$LDFLAGS"  |grep -v >/dev/null '\-O' ; then
          LDFLAGS="$LDFLAGS -O" ; fi
@@ -2308,7 +2315,9 @@ AC_SUBST(RANLIB)
 AC_SUBST(STRIP)
 
 AC_SUBST(CFLAGS)
+AC_SUBST(FAST_CFLAGS)
 AC_SUBST(CXXFLAGS)
+AC_SUBST(FAST_CXXFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(DEPFLAGS)
 AC_SUBST(LDFLAGS)
