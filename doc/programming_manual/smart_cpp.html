@@ -5,7 +5,7 @@
   </head>
   <body BGCOLOR="#FFFFFF">
   <pre><font color = "red">// File name: smart.cpp
-// Description: Memory management using auto_ptr and CRef
+// Description: Memory management using auto_ptr versus CRef
 <font color = "green">
 #include &lt;corelib/ncbiapp.hpp&gt;
 #include &lt;corelib/ncbiobj.hpp&gt;
@@ -14,7 +14,7 @@ USING_NCBI_SCOPE;
 <font color = "black">
 class CTestApp : public CNcbiApplication {
 public:
-    virtual int Run ();
+    virtual int Run(void);
 };
 
 <font color = "red">/////////////////////////////////////////////////////////////////
@@ -28,32 +28,33 @@ public:
 <font color = "black">
 int CTestApp::Run()
 {
-<a name="orig">    auto_ptr&lt;int&gt; orig_ap = new int (5);
+<a name="orig">    auto_ptr&lt;int&gt; orig_ap = new int(5);
     {
         auto_ptr&lt;int&gt; copy_ap = orig_ap;
         
-        if (! orig_ap.get()) {
+        if ( !orig_ap.get() ) {
             cout << "orig_ap no longer exists - copy_ap = " << *copy_ap << endl;
         } else {
-            cout  << "orig_ap = " << *orig_ap << ", copy_ap = " << *copy_ap << endl;
+            cout  << "orig_ap = " << *orig_ap << ", copy_ap = "
+				    << *copy_ap << endl;
         }
     }
-    if (orig_ap.get())
+    if ( orig_ap.get() ) {
         cout << "orig_ap = " << *orig_ap << endl;
-
+    }
       
-    CRef&lt; CObjectFor&lt; int &gt; &gt; orig = CObjectFor&lt;int&gt;::New();
+    CRef&lt; CObjectFor&lt;int&gt; &gt; orig = CObjectFor&lt;int&gt;::New();
     *orig = 5;
     {
         CRef&lt; CObjectFor&lt;int&gt; &gt; copy = orig;
     
-        if (! orig ) {
+        if ( !orig ) {
             cout << "orig no longer exists - copy = " << *copy << endl;
         } else {
-            cout  << "orig = " << *orig << ", copy = " << *copy<< endl;
+            cout  << "orig = " << *orig << ", copy = " << *copy << endl;
         }
     }
-    if (orig) {
+    if ( orig ) {
         cout << "orig = " << *orig << endl;
     }
 }
