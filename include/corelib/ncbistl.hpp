@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/10/12 21:46:31  vakatov
+* Assume all supported compilers are namespace-capable and have "std::"
+*
 * Revision 1.12  1999/05/13 16:43:29  vakatov
 * Added Mac(#NCBI_OS_MAC) to the list of supported platforms
 * Also, use #NCBI_OS to specify a string representation of the
@@ -67,45 +70,12 @@
 * Introduced THROWS_NONE and THROWS(x) macros for the exception
 * specifications
 * Other fixes and rearrangements throughout the most of "corelib" code
-*
 * ==========================================================================
 */
 
-/////////////////////////////////////////////////////////////////////////////
-// Effective preprocessor switches:
-//
-//   NCBI_SGI_STL_PORT  -- use the STLport package based on SGI STL
-//                         ("http://corp.metabyte.com/~fbp/stl/effort.html")
-//   NCBI_NO_NAMESPACES -- assume no namespace support
-//
-/////////////////////////////////////////////////////////////////////////////
-
-
 #include <ncbiconf.h>
 
-// Deduce the generic platform if not defined yet
-#  if defined(NCBI_OS_MAC)
-#    define NCBI_OS "MAC"
-#  elif defined(HAVE_WINDOWS_H)
-#    define NCBI_OS_MSWIN
-#    define NCBI_OS "WINDOWS"
-#  elif defined(HAVE_UNISTD_H)
-#    define NCBI_OS_UNIX
-#    define NCBI_OS "UNIX"
-#  else
-#    error "Unknown platform(must be one of:  UNIX, MS-Windows, Mac)!"
-#  endif
-
-
-// Use of the STLport package("http://corp.metabyte.com/~fbp/stl/effort.html")
-#if defined(NCBI_SGI_STL_PORT)
-#  include <stl_config.h>
-#  if !defined(NCBI_NO_NAMESPACES)  &&  (!defined(__STL_NAMESPACES)  ||  defined(__STL_NO_NAMESPACES))
-#    define NCBI_NO_NAMESPACES
-#  endif
-#endif
-
-// get rid of some warnings in MSVC++ 6.00 and higher
+// Get rid of some warnings in MSVC++ 6.00
 #if (_MSC_VER >= 1200)
 // too long identificator name in the debug info;  truncated
 #  pragma warning(disable: 4786)
@@ -119,47 +89,28 @@
 #  pragma warning(disable: 4097)
 #endif /* _MSC_VER >= 1200 */
 
-// Check if this compiler supports namespaces at all... (see in <ncbiconf.h>)
-#if !defined(NCBI_NO_NAMESPACES)  &&  defined(HAVE_NO_NAMESPACE)
-#  define NCBI_NO_NAMESPACES
-#endif
+
+// Using STD and NCBI namespaces
+#define NCBI_NS_STD  std
+#define NCBI_USING_NAMESPACE_STD using namespace NCBI_NS_STD
+
+#define NCBI_NS_NCBI ncbi
+#define BEGIN_NCBI_SCOPE namespace NCBI_NS_NCBI {
+#define END_NCBI_SCOPE }
+#define USING_NCBI_SCOPE using namespace NCBI_NS_NCBI
 
 
-// Using the STD and NCBI namespaces
-// To avoid the annoying(and potentially dangerous -- e.g. when dealing with a
-// non-namespace-capable compiler) use of "std::" prefix in NCBI header files
-// and "std::" and/or "ncbi::" prefixes in the source files
-#if defined(HAVE_NO_STD)
-#  define NCBI_NS_STD
-#  define NCBI_USING_NAMESPACE_STD
-#else
-#  define NCBI_NS_STD  std
-#  define NCBI_USING_NAMESPACE_STD using namespace NCBI_NS_STD
-#endif
-
-#if defined(NCBI_NO_NAMESPACES)
-#  define NCBI_NS_NCBI
-#  define BEGIN_NCBI_SCOPE
-#  define END_NCBI_SCOPE
-#  define USING_NCBI_SCOPE
-#else
-#  define NCBI_NS_NCBI ncbi
-#  define BEGIN_NCBI_SCOPE namespace NCBI_NS_NCBI {
-#  define END_NCBI_SCOPE }
-#  define USING_NCBI_SCOPE using namespace NCBI_NS_NCBI
-#  if !defined(HAVE_NO_STD)
 // Magic spells ;-) needed for some weird compilers... very empiric
 namespace NCBI_NS_STD  { /* the fake one */ }
 namespace NCBI_NS_NCBI { /* the fake one, +"std" */ NCBI_USING_NAMESPACE_STD; }
 namespace NCBI_NS_NCBI { /* the fake one */ }
-#  endif
-#endif
 
 
-// These two macros are used in STLport's Modena string library
+// SIZE_TYPE and NPOS 
 #if !defined(SIZE_TYPE)
 #  define SIZE_TYPE NCBI_NS_STD::string::size_type
 #endif
+
 #if !defined(NPOS)
 #  define NPOS NCBI_NS_STD::string::npos
 #endif
