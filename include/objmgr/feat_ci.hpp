@@ -58,6 +58,10 @@ public:
     // Original feature handle
     CSeq_feat_Handle GetSeq_feat_Handle(void) const;
 
+    // Fast way to check if mapped feature is different from the original one
+    bool IsMapped(void) const
+        { return m_FeatRef->IsMapped(); }
+
     // Feature mapped to the master sequence.
     // WARNING! The function is rather slow and should be used with care.
     const CSeq_feat& GetMappedFeature(void) const;
@@ -362,6 +366,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/09/07 14:10:53  grichenk
+* Added IsMapped()
+*
 * Revision 1.41  2004/05/04 18:08:47  grichenk
 * Added CSeq_feat_Handle, CSeq_align_Handle and CSeq_graph_Handle
 *
