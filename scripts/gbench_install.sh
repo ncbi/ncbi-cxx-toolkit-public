@@ -300,6 +300,7 @@ COMMON_ExecRB cp ${source_dir}/gbench_install/run-gbench.sh ${target_dir}/bin/ru
 chmod 755 ${target_dir}/bin/run-gbench.sh
 
 COMMON_ExecRB cp ${source_dir}/gbench_install/gbench_remote_template.sh ${target_dir}/bin/gbench_remote_template.sh
+COMMON_ExecRB cp ${source_dir}/gbench_install/gbench_noremote_template.sh ${target_dir}/bin/gbench_noremote_template.sh
 
 COMMON_ExecRB cp -p ${source_dir}/gbench.ini ${target_dir}/etc/
 
@@ -346,11 +347,3 @@ done
 # Do this last, to be sure the symlink doesn't end up dangling.
 rm -f ${src_dir}/bin/gbench
 ln -s ${target_dir}/bin/run-gbench.sh ${src_dir}/bin/gbench
-
-for ftype in auto asntext asnbin xml fasta newick textalign; do
-	 rm -f ${src_dir}/bin/gbench_remote_$ftype
-	 ln -s ${target_dir}/bin/gbench_remote_$ftype ${src_dir}/bin
-done
-
-rm -f ${src_dir}/bin/gbench_remote
-ln -s ${src_dir}/bin/gbench_remote_auto ${src_dir}/bin/gbench_remote
