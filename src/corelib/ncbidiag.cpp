@@ -257,7 +257,7 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
 #else
         tm = localtime(&t);
 #endif /*HAVE_LOCALTIME_R*/
-        strftime(datetime, sizeof(datetime), timefmt, tm);
+        NStr::strftime(datetime, sizeof(datetime), timefmt, tm);
         os << datetime;
     }
     // "<file>"
@@ -665,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.54  2002/06/18 17:07:12  lavr
+ * Take advantage of NStr:strftime()
+ *
  * Revision 1.53  2002/05/14 16:47:27  ucko
  * Conditionalize usage of pthread_atfork, which doesn't seem to exist at
  * all on FreeBSD.
