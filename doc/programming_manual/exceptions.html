@@ -47,14 +47,14 @@ place where a particular exception can be thrown and only one place
 where it can be caught. What the standard mechanism lacks is backlog,
 history of unfinished tasks and its consequences. Say for instance,
 a program tries to load some data from a database. An exception occurs,
-which says a connection to some port could not be created - so what?
+which says a connection to some port could not be created -- so what?
 How meaningfull is it? What did the program try to do? Where did the request
 for the connection come from?
 </p>
 <p>
 Another problem is analyzing and handling exceptions in a program.
 When an exception is caught,
-what is known for sure is only that something bad has happened - but
+what is known for sure is only that something bad has happened -- but
 what exactly? The standard exception has only type (exception class)
 and a text message. The latter probably makes sense for a human, but not for
 a program. The former does not seem to be clear enough.
@@ -67,13 +67,13 @@ a program. The former does not seem to be clear enough.
 <ul>
   <li>
   Exception should contain information about where exactly has it
-  been thrown - for a human.
+  been thrown -- for a human.
   </li>
   <li>
-  Exception should have a numeric id - for a program.
+  Exception should have a numeric id -- for a program.
   </li>
   <li>
-  It should be possible to create a stack of exceptions - to accumulate
+  It should be possible to create a stack of exceptions -- to accumulate
   a backlog of events (unfinished jobs) which caused the problem. Still, for a client,
   it should look like a single exception. That is, a client should be able
   to ignore completely the compound structure of the exception being thrown
@@ -104,13 +104,13 @@ Each exception has a numeric id, which is unique throughout the subsystem.
 Such an id gives an unambiguous description of the problem occured.
 Each id is associated with a text message. Strictly speaking, there is only
 one message associated with a given id, so there is no need to include the
-message in the exception itself - it could be taken from an external source.
-Still, we suggest using the message - it serves as an additional comment.
+message in the exception itself -- it could be taken from an external source.
+Still, we suggest using the message -- it serves as an additional comment.
 Also, it does not restrict us from using an external source of messages
 in the future.
 </p>
 <p>
-Each exception has information about location where it has been thrown - file
+Each exception has information about location where it has been thrown -- file
 name and line number.
 </p>
 <p>
@@ -128,7 +128,7 @@ which would accept the exception from the lower level as one of its
 parameters.
 </p>
 <p>
-NCBI exception has a sophisticated reporting mechanism - the standard
+NCBI exception has a sophisticated reporting mechanism -- the standard
 <tt>exception::what()</tt> function is definitely not enough. There are three
 groups of reporting mechanisms:
 </p>
@@ -147,8 +147,8 @@ groups of reporting mechanisms:
 <a name="CNcbiException"></a>
 <h5>CNcbiException.</h5>
 <p>
-There is a single system-wide exception base class -
-<var><a href="http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/lxr/ident?i=CNcbiException">CNcbiException</a></var>.
+There is a single system-wide exception base class --
+<var><a href="../lxr/ident?i=CNcbiException&d=C">CNcbiException</a></var>.
 Each subsystem <em>must</em> implement its own type of exceptions, which must be
 be derived from this class. The class defines basic requirements of an exception
 construction, backlog and reporting mechanisms.
@@ -156,7 +156,7 @@ construction, backlog and reporting mechanisms.
 <p>
 Constructor includes location information, exception id and a message.
 Each exception class defines its own error codes. So, the error code "by itself"
-is meaningless - one should also know the the exception class, which produced it.
+is meaningless -- one should also know the the exception class, which produced it.
 <pre>
     // When throwing an exception initially, "prev_exception" must be 0
     CNcbiException(const char* file, int line, EErrCode err_code,
@@ -230,7 +230,7 @@ from a program:
 The only requirement for a derived exception is to define error codes
 as well as its textual representation. Implementation of several other
 functions (e.g. constructors) are, in general case,
-pretty straightforward - so we put it into a macro definition.
+pretty straightforward -- so we put it into a macro definition.
 Please note, this macro can only be used when the derived class has
 no additional data members.
 Here is an example of an exception declaration:
@@ -254,7 +254,7 @@ public:
 };
 </pre>
 In case the derived exception has data members not found in the base class,
-it should also impelement its own <var>ReportExtra</var> method - to report
+it should also impelement its own <var>ReportExtra</var> method -- to report
 this non-standard data.
 </p>
 
@@ -264,7 +264,7 @@ this non-standard data.
 One of possible ways to report an exception is to use an external "reporter".
 Reporter is an object that formats exception data and sends it to its own output
 channel. Client can install its own, custom exception reporter (this is not
-required though - in case the default was not set,
+required though -- in case the default was not set,
 the standard NCBI diagnostic mechanism is used).<br />
 <var>CExceptionReporter</var> is an abstract class, which defines reporter interface:
 <pre>
@@ -297,8 +297,8 @@ as numbers. So, same number can be interpreted incorrectly,
 as soon as we somehow misinterpret the exception class.
 <br />
 Say for instance, there is an exception class, which is derived from
-<var><a href="#DerivedExceptions">CExceptSubsystem</a></var> - let us call
-it <var>CExceptSupersystem</var> - which also defines two error codes:
+<var><a href="#DerivedExceptions">CExceptSubsystem</a></var> -- let us call
+it <var>CExceptSupersystem</var> -- which also defines two error codes:
 <var>eSuper1</var> and <var>eSuper2</var>:
 <pre>
 class CExceptSupersystem : public CExceptSubsystem
@@ -327,14 +327,16 @@ completely meaningless: the error code of <var>CExceptSupersystem</var>
 cannot be interpreted in terms of <var>CExceptSubsystem</var>.
 <br />
 One reasonable solution seems to be isolating error codes of different
-exception classes  - by assigning different numeric values to them
-(there is only one person, who can do this - a developer).
+exception classes  -- by assigning different numeric values to them
+(there is only one person, who can do this -- a developer).
 Apparently, such isolation should only be done within each branch of
 derivatives only.
 <br />
 Another solution is to make sure that the exception in question does 
 belong to the desired class, not to any intermediate ones. Template
-function <var>UppermostCast</var> does the trick. It utilizes the runtime
+function
+<var><a href="../lxr/ident?i=UppermostCast$d=smart">UppermostCast</a></var>
+does the trick. It utilizes the runtime
 information and dynamic cast conversion:
 <pre>
     try {
