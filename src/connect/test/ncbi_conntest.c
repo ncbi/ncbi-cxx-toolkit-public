@@ -342,12 +342,17 @@ extern void CONN_TestConnector
     /* And CLOSE the connection...
      */
     assert(CONN_Close(conn) == eIO_Success);
+
+    TEST_LOG(status, "Test completed successfully");
 }
 
 
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2003/02/10 15:57:35  lavr
+ * Announce successful test completion
+ *
  * Revision 6.7  2002/08/07 16:38:08  lavr
  * EIO_ReadMethod enums changed accordingly; log moved to end
  *
