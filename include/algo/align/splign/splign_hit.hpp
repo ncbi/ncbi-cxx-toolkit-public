@@ -88,7 +88,8 @@ public:
         return m_Score == h.m_Score;
     }
 
-    friend ostream& operator << (ostream&, const CHit&);
+    friend NCBI_XALGOALIGN_EXPORT
+    ostream& operator << (ostream&, const CHit&);
 
     unsigned CalcSize() {
         return sizeof(CHit) + m_Query.size() + m_Subj.size();
