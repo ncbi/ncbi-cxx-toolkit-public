@@ -168,7 +168,11 @@ public:
         }
     bool IsEmpty(void) const
         {
-            return m_Indices.empty();
+            return m_Strings.empty();
+        }
+    size_t GetSize(void) const
+        {
+            return m_Strings.size();
         }
 
     size_t GetIndex(const string& s, size_t max_index);
@@ -408,6 +412,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/10/21 16:29:14  vasilche
+* Added check for errors in SNP table loaded from cache.
+*
 * Revision 1.7  2003/10/21 14:27:35  vasilche
 * Added caching of gi -> sat,satkey,version resolution.
 * SNP blobs are stored in cache in preprocessed format (platform dependent).

@@ -156,24 +156,27 @@ void CIndexedStrings::LoadFrom(CNcbiIstream& stream,
                                size_t max_index,
                                size_t max_length)
 {
+    Clear();
     unsigned size;
     stream.read(reinterpret_cast<char*>(&size), sizeof(size));
     if ( !stream || (size > unsigned(max_index+1)) ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "Incompatible version of SNP table");
+                   "Bad format of SNP table");
     }
     m_Strings.resize(size);
     AutoPtr<char, ArrayDeleter<char> > buf(new char[max_length]);
     NON_CONST_ITERATE ( TStrings, it, m_Strings ) {
         stream.read(reinterpret_cast<char*>(&size), sizeof(size));
         if ( !stream || (size > max_length) ) {
+            Clear();
             NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Incompatible version of SNP table");
+                       "Bad format of SNP table");
         }
         stream.read(buf.get(), size);
         if ( !stream ) {
+            Clear();
             NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Incompatible version of SNP table");
+                       "Bad format of SNP table");
         }
         it->assign(buf.get(), buf.get()+size);
     }
@@ -268,6 +271,8 @@ void CSeq_annot_SNP_Info::StoreTo(CNcbiOstream& stream) const
 
 void CSeq_annot_SNP_Info::LoadFrom(CNcbiIstream& stream)
 {
+    Reset();
+
     // header
     unsigned magic;
     stream.read(reinterpret_cast<char*>(&magic), sizeof(magic));
@@ -293,6 +298,26 @@ void CSeq_annot_SNP_Info::LoadFrom(CNcbiIstream& stream)
         stream.read(reinterpret_cast<char*>(&*m_SNP_Set.begin()),
                     size*sizeof(SSNP_Info));
     }
+    size_t comments_size = m_Comments.GetSize();
+    size_t alleles_size = m_Alleles.GetSize();
+    ITERATE ( TSNP_Set, it, m_SNP_Set ) {
+        size_t index = it->m_CommentIndex;
+        if ( index != SSNP_Info::kNo_CommentIndex &&
+             index >= comments_size ) {
+            m_SNP_Set.clear();
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Bad format of SNP table");
+        }
+        for ( size_t i = 0; i < SSNP_Info::kMax_AllelesCount; ++i ) {
+            index = it->m_AllelesIndices[i];
+            if ( index != SSNP_Info::kNo_AlleleIndex &&
+                 index >= alleles_size ) {
+                m_SNP_Set.clear();
+                NCBI_THROW(CLoaderException, eLoaderFailed,
+                           "Bad format of SNP table");
+            }
+        }
+    }
 
     // complex SNPs
     CObjectIStreamAsnBinary obj_stream(stream);
@@ -302,8 +327,9 @@ void CSeq_annot_SNP_Info::LoadFrom(CNcbiIstream& stream)
     obj_stream >> *m_Seq_annot;
 
     if ( !stream ) {
+        m_Seq_annot.Reset();
         NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "Incompatible version of SNP table");
+                   "Bad format of SNP table");
     }
 }
 
@@ -409,6 +435,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.7  2003/10/21 16:29:13  vasilche
+ * Added check for errors in SNP table loaded from cache.
+ *
  * Revision 1.6  2003/10/21 15:21:21  vasilche
  * Avoid use of non-constant array sizes of stack arrays.
  *
