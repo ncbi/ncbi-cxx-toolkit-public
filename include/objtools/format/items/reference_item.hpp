@@ -98,26 +98,27 @@ public:
     //void GetTitles(string& title, string& journal, const CBioseqContext& ctx)
     //    const;
         
-    const CPubdesc&     GetPubdesc   (void) const { return *m_Pubdesc;   }
+    const CPubdesc&     GetPubdesc   (void) const { return *m_Pubdesc;        }
     CPubdesc::TReftype  GetReftype   (void) const { return GetPubdesc().GetReftype(); }
-    TCategory           GetCategory  (void) const { return m_Category;   }
-    const CDate*        GetDate      (void) const { return m_Date;       }
-    CImprint::TPrepub   GetPrepub    (void) const { return m_Prepub;     }
-    int                 GetSerial    (void) const { return m_Serial;     }
-    const CSeq_loc*     GetLoc       (void) const { return m_Loc;        }
-    const CAuth_list*   GetAuthors   (void) const { return m_Authors;    }
-    const string&       GetConsortium(void) const { return m_Consortium; }
-    const string&       GetTitle     (void) const { return m_Title;      }
-    const string&       GetJournal   (void) const { return m_Journal;    }
-    const int           GetPMID      (void) const { return m_PMID;       }
-    const int           GetMUID      (void) const { return m_MUID;       }
-    const string&       GetRemark    (void) const { return m_Remark;     }
-    const string&       GetVolume    (void) const { return m_Volume;     }
-    const string&       GetPages     (void) const { return m_Pages;      }
-    const string&       GetIssue     (void) const { return m_Issue;      }
-    const CCit_book*    GetBook      (void) const { return m_Book;       }
-    bool                JustUids     (void) const { return m_JustUids;   }
-    const string&       GetUniqueStr (void) const { return m_UniqueStr;  }
+    TCategory           GetCategory  (void) const { return m_Category;        }
+    const CDate*        GetDate      (void) const { return m_Date;            }
+    CImprint::TPrepub   GetPrepub    (void) const { return m_Prepub;          }
+    int                 GetSerial    (void) const { return m_Serial;          }
+    const CSeq_loc*     GetLoc       (void) const { return m_Loc;             }
+    const CAuth_list*   GetAuthors   (void) const { return m_Authors;         }
+    const string&       GetConsortium(void) const { return m_Consortium;      }
+    const string&       GetTitle     (void) const { return m_Title;           }
+    const string&       GetJournal   (void) const { return m_Journal;         }
+    const int           GetPMID      (void) const { return m_PMID;            }
+    const int           GetMUID      (void) const { return m_MUID;            }
+    const string&       GetRemark    (void) const { return m_Remark;          }
+    const string&       GetVolume    (void) const { return m_Volume;          }
+    const string&       GetPages     (void) const { return m_Pages;           }
+    const string&       GetIssue     (void) const { return m_Issue;           }
+    const CCit_book*    GetBook      (void) const { return m_Book;            }
+    bool                JustUids     (void) const { return m_JustUids;        }
+    const string&       GetUniqueStr (void) const { return m_UniqueStr;       }
+    bool                IsEPublish   (void) const { return m_IsElectronicPub; }
     
     static string GetAuthString(const CAuth_list* alp);
     static void GetAuthNames(list<string>& authors, const CAuth_list* alp);
@@ -172,6 +173,7 @@ private:
     CImprint::TPrepub     m_Prepub;
     string                m_UniqueStr;
     bool                  m_UseDate;
+    bool                  m_IsElectronicPub;
 };
 
 
@@ -194,6 +196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/10/18 18:45:25  shomrat
+* Indicate if electronic publication
+*
 * Revision 1.11  2004/10/05 15:30:41  shomrat
 * + UseData()
 *
