@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/05/05 13:08:21  vasilche
+* Simplified CTypesIterator interface.
+*
 * Revision 1.4  2000/05/04 16:23:12  vasilche
 * Updated CTypesIterator and CTypesConstInterator interface.
 *
@@ -56,16 +59,17 @@
 
 BEGIN_NCBI_SCOPE
 
-template<class Iterator>
-CTreeIteratorBase<Iterator>::~CTreeIteratorBase(void)
+template<class Iterator, class BeginInfo>
+CTreeIteratorBase<Iterator, BeginInfo>::~CTreeIteratorBase(void)
 {
     Reset();
 }
 
-template<class Iterator>
-void CTreeIteratorBase<Iterator>::Reset(void)
+template<class Iterator, class BeginInfo>
+void CTreeIteratorBase<Iterator, BeginInfo>::Reset(void)
 {
     m_CurrentObject.Reset();
+    m_VisitedObjects.reset(0);
     m_Valid = false;
     m_SkipSubTree = false;
     while ( m_Stack ) {
@@ -76,14 +80,16 @@ void CTreeIteratorBase<Iterator>::Reset(void)
     _ASSERT(End());
 }
 
-template<class Iterator>
-void CTreeIteratorBase<Iterator>::x_Begin(const TObjectInfo& info)
+template<class Iterator, class BeginInfo>
+void CTreeIteratorBase<Iterator, BeginInfo>::Begin(const TBeginInfo& beginInfo)
 {
     Reset();
-    if ( !info )
+    if ( !beginInfo.GetObjectPtr() )
         return;
-    m_CurrentObject = info;
-    if ( CanSelect(info.GetTypeInfo()) ) {
+    m_CurrentObject.Set(beginInfo.GetObjectPtr(), beginInfo.GetTypeInfo());
+    if ( beginInfo.DetectLoops() )
+        m_VisitedObjects.reset(new TVisitedObjects);
+    if ( CanSelectCurrentObject() ) {
         m_Valid = true;
     }
     else {
@@ -92,8 +98,8 @@ void CTreeIteratorBase<Iterator>::x_Begin(const TObjectInfo& info)
     }
 }
 
-template<class Iterator>
-void CTreeIteratorBase<Iterator>::Next(void)
+template<class Iterator, class BeginInfo>
+void CTreeIteratorBase<Iterator, BeginInfo>::Next(void)
 {
     // cache object/type
     if ( End() )
@@ -101,7 +107,7 @@ void CTreeIteratorBase<Iterator>::Next(void)
     m_Valid = false;
     // traverse through tree
     for (;;) {
-        if ( CanEnter(m_CurrentObject.GetTypeInfo()) ) {
+        if ( CanEnterCurrentObject() ) {
             // go to child
             _TRACE("Children of "<<m_CurrentObject.GetTypeInfo()->GetName());
             m_Stack = new CTreeLevel(m_CurrentObject, m_Stack);
@@ -138,7 +144,7 @@ void CTreeIteratorBase<Iterator>::Next(void)
             m_CurrentObject.GetTypeInfo()->GetPointedObject(m_CurrentObject);
             _TRACE("Ptr: "<<m_CurrentObject.GetTypeInfo()->GetName());
         }
-        if ( m_CurrentObject && CanSelect(m_CurrentObject.GetTypeInfo()) ) {
+        if ( m_CurrentObject && CanSelectCurrentObject() ) {
             m_Valid = true;
             _TRACE("Good!");
             return;
@@ -146,22 +152,29 @@ void CTreeIteratorBase<Iterator>::Next(void)
     }
 }
 
-template<class Iterator>
-bool CTreeIteratorBase<Iterator>::CanSelect(TTypeInfo /*info*/) const
+template<class Iterator, class BeginInfo>
+bool CTreeIteratorBase<Iterator, BeginInfo>::CanSelectCurrentObject(void)
 {
-	return false;
+    TVisitedObjects* visitedObjects = m_VisitedObjects.get();
+    if ( visitedObjects ) {
+        TConstObjectPtr object = m_CurrentObject.GetObjectPtr();
+        if ( !visitedObjects->insert(object).second ) {
+            // already visited
+            return false;
+        }
+    }
+	return true;
 }
 
-template<class Iterator>
-bool CTreeIteratorBase<Iterator>::CanEnter(TTypeInfo /*info*/) const
+template<class Iterator, class BeginInfo>
+bool CTreeIteratorBase<Iterator, BeginInfo>::CanEnterCurrentObject(void)
 {
-    const TObjectInfo& obj = m_CurrentObject;
-    return !m_SkipSubTree && obj &&
-        obj.GetTypeInfo()->HaveChildren(obj.GetObjectPtr());
+    return !m_SkipSubTree && m_CurrentObject &&
+        GetCurrentTypeInfo()->HaveChildren(m_CurrentObject.GetObjectPtr());
 }
 
-template class CTreeIteratorBase<CConstChildrenIterator>;
-template class CTreeIteratorBase<CChildrenIterator>;
+template class CTreeIteratorBase<CConstChildrenIterator, CConstBeginInfo>;
+template class CTreeIteratorBase<CChildrenIterator, CBeginInfo>;
 
 void CTreeIterator::Erase(void)
 {
@@ -175,27 +188,39 @@ void CTreeIterator::Erase(void)
     m_SkipSubTree = true;
 }
 
-template<class Iterator>
-bool CTypeIteratorBase<Iterator>::CanSelect(TTypeInfo info) const
+bool CTypeIteratorBase::CanSelectCurrentObject(void)
 {
-    return info->IsType(m_NeedType);
+    return CParent::CanSelectCurrentObject() &&
+        GetCurrentTypeInfo()->IsType(m_NeedType);
+}
+
+bool CTypeIteratorBase::CanEnterCurrentObject(void)
+{
+    return CParent::CanEnterCurrentObject() &&
+        GetCurrentTypeInfo()->MayContainType(m_NeedType);
+}
+
+bool CTypeConstIteratorBase::CanSelectCurrentObject(void)
+{
+    return CParent::CanSelectCurrentObject() &&
+        GetCurrentTypeInfo()->IsType(m_NeedType);
+}
+
+bool CTypeConstIteratorBase::CanEnterCurrentObject(void)
+{
+    return CParent::CanEnterCurrentObject() &&
+        GetCurrentTypeInfo()->MayContainType(m_NeedType);
 }
 
 template<class Iterator>
-bool CTypeIteratorBase<Iterator>::CanEnter(TTypeInfo info) const
+bool CTypesIteratorBase<Iterator>::CanSelectCurrentObject(void)
 {
-    return CParent::CanEnter(info) && info->MayContainType(m_NeedType);
-}
-
-template class CTypeIteratorBase<CTreeIterator>;
-template class CTypeIteratorBase<CTreeConstIterator>;
-
-template<class Iterator>
-bool CTypesIteratorBase<Iterator>::CanSelect(TTypeInfo info) const
-{
+    if ( !CParent::CanSelectCurrentObject() )
+        return false;
     m_MatchType = 0;
+    TTypeInfo type = GetCurrentTypeInfo();
     iterate ( TTypeList, i, GetTypeList() ) {
-        if ( info->IsType(*i) ) {
+        if ( type->IsType(*i) ) {
             m_MatchType = *i;
             return true;
         }
@@ -204,12 +229,13 @@ bool CTypesIteratorBase<Iterator>::CanSelect(TTypeInfo info) const
 }
 
 template<class Iterator>
-bool CTypesIteratorBase<Iterator>::CanEnter(TTypeInfo info) const
+bool CTypesIteratorBase<Iterator>::CanEnterCurrentObject(void)
 {
-    if ( !CParent::CanEnter(info) )
+    if ( !CParent::CanEnterCurrentObject() )
         return false;
+    TTypeInfo type = GetCurrentTypeInfo();
     iterate ( TTypeList, i, GetTypeList() ) {
-        if ( info->MayContainType(*i) )
+        if ( type->MayContainType(*i) )
             return true;
     }
     return false;
