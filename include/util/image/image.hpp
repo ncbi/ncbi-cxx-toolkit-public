@@ -124,6 +124,11 @@ public:
     // initialize this image
     void Init(size_t width, size_t height, size_t depth);
 
+    // flip the image top -> bottom.  This is necessary because some image
+    // formats are explicitly inverted, and many (most? all?) frane buffers are
+    // flipped as well.
+    void Flip(void);
+
 private:
     size_t m_Width;
     size_t m_Height;
@@ -193,6 +198,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/12 19:44:39  dicuccio
+ * Added function to flip an image along the y-axis
+ *
  * Revision 1.3  2003/06/09 19:17:32  dicuccio
  * Added GetAspectRatio()
  *
