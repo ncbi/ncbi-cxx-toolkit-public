@@ -1198,7 +1198,7 @@ void CQueueDataBase::CQueue::NotifyListeners()
         host = ql->host;
         port = ql->port;
 
-        EIO_Status status = 
+        //EIO_Status status = 
             udp_socket.Send(msg, msg_len, CSocketAPI::ntoa(host), port);
         // check if we have no more jobs left
         if ((i % 10 == 0) &&
@@ -1316,6 +1316,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/03/09 17:40:08  kuznets
+ * Fixed GCC warning
+ *
  * Revision 1.11  2005/03/09 17:37:16  kuznets
  * Added node notification thread and execution control timeline
  *
