@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.15 2001/04/09 14:21:31 sherry Exp $
+-- $Id: docsum.asn,v 1.16 2001/04/30 15:21:21 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.16  2001/04/30 15:21:21  sherry
+-- added reference fxn-class if SNP allele is observed on reference contig sequence
+--
 -- Revision 1.15  2001/04/09 14:21:31  sherry
 -- additional documentation regarding refSNP flanking sequence: lowercase for repetititve regions and segmentation of long flanking sequences
 --
@@ -341,11 +344,13 @@ NSE-FxnSet ::= SEQUENCE {
 	prot-acc VisibleString OPTIONAL,	-- protein accession if variation in coding region interval	SNPContigLocusId.protein_acc
 	fxn-class ENUMERATED {
 		locus-region (1),		-- variation in region of gene, but not in transcript		SNPContigLocusId.fxn_class
-		coding-synon (3),		-- no change in peptide for allele with respect to contig seq
-		coding-nonysynon (4),		-- change in peptide with respect to contig sequence
+		coding (2),				-- variation in coding region of gene, assigned if allele-specific class unknown 
+		coding-synon (3),		-- no change in peptide for allele with respect to contig seq 	**allele-specific class**
+		coding-nonysynon (4),	-- change in peptide with respect to contig sequence 			**allele-specific class**
 		mrna-utr (5),			-- variation in transcript, but not in coding region interval
-		intron (6),			-- variation in intron, but not in first 2 or last 2 bases of intron
-		splice-site (7) 		-- variation in first 2 or last to bases of intron
+		intron (6),				-- variation in intron, but not in first 2 or last 2 bases of intron
+		splice-site (7), 		-- variation in first 2 or last to bases of intron
+		reference (8) 			-- allele observed in reference contig sequence 				**allele-specific class**
 	} ,
 	reading-frame INTEGER OPTIONAL,		-- position of variation in reading frame of transcript		SNPContigLocusId.reading_Frame
 	allele VisibleString OPTIONAL,		-- allele, * denotes allele observed in contig sequence		SNPContigLocusId.allele
@@ -390,11 +395,12 @@ NSE-rsLocusID ::= SEQUENCE {
 	fxn-class ENUMERATED {
 		locus-region	(1),
 		coding		(2),
-		coding-syn	(3),
-		coding-nonsyn	(4),
-		transcribed-UTR	(5),
+		coding-synon	(3),
+		coding-nonsynon	(4),
+		mrna-UTR	(5),
 		intron		(6),
-		splice		(7) 
+		splice-site	(7),
+		reference	(8) 
 	} OPTIONAL
 }
 
