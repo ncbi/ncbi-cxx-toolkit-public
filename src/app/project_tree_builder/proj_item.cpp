@@ -633,17 +633,43 @@ string SAppProjectT::DoCreate(const string& source_base_dir,
         SMakeProjectT::CreateDefines(cpp_flags, &defines);
     }
 
+    CProjItem project(CProjItem::eApp, 
+                      proj_name, 
+                      proj_id,
+                      source_base_dir,
+                      sources, 
+                      adj_depends,
+                      requires,
+                      libs_3_party,
+                      include_dirs,
+                      defines);
 
-    tree->m_Projects[proj_id] =  CProjItem(CProjItem::eApp, 
-                                           proj_name, 
-                                           proj_id,
-                                           source_base_dir,
-                                           sources, 
-                                           adj_depends,
-                                           requires,
-                                           libs_3_party,
-                                           include_dirs,
-                                           defines);
+    //DATATOOL_SRC
+    k = m->second.m_Contents.find("DATATOOL_SRC");
+    if ( k != m->second.m_Contents.end() ) {
+        //Add depends from datatoool for ASN projects
+        project.m_Depends.push_back(GetApp().GetDatatoolId());
+        const list<string> datatool_src_list = k->second;
+        ITERATE(list<string>, i, datatool_src_list) {
+
+            const string& src = *i;
+            //Will process .asn or .dtd files
+            string source_file_path = CDirEntry::ConcatPath(source_base_dir, src);
+            source_file_path = CDirEntry::NormalizePath(source_file_path);
+            if ( CDirEntry(source_file_path + ".asn").Exists() )
+                source_file_path += ".asn";
+            else if ( CDirEntry(source_file_path + ".dtd").Exists() )
+                source_file_path += ".dtd";
+
+            CDataToolGeneratedSrc data_tool_src;
+            CDataToolGeneratedSrc::LoadFrom(source_file_path, &data_tool_src);
+            if ( !data_tool_src.IsEmpty() )
+                project.m_DatatoolSources.push_back(data_tool_src);
+        }
+    }
+
+    tree->m_Projects[proj_id] = project;
+
     return proj_id;
 }
 
@@ -1207,6 +1233,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/02/10 21:20:44  gorelenk
+ * Added support of DATATOOL_SRC tag.
+ *
  * Revision 1.11  2004/02/10 18:17:05  gorelenk
  * Added support of depends fine-tuning.
  *
