@@ -476,7 +476,7 @@ void CMSPeak::InitHitList(void)
 {
     int iCharges;
     for(iCharges = 0; iCharges < GetNumCharges(); iCharges++) {
-	LastHitNum[iCharges] = MSHITMIN;
+	LastHitNum[iCharges] = MSHITMIN - 1;
 	HitListIndex[iCharges] = 0;
 	HitList[iCharges] = new CMSHit[HitListSize];
 	PeptidesExamined[iCharges] = 0;

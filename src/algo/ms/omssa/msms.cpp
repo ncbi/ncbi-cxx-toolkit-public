@@ -133,14 +133,13 @@ void CTrypsin::Cleave(char *Seq, int SeqLen, TCleave& Positions)
 bool CTrypsin::CalcAndCut(const char *SeqStart, 
 			  const char *SeqEnd,  // the end, not beyond the end
 			  const char **PepStart,  // return value
-			  int **Masses,
-			  int NumCleave,
+			  int *Masses,
 			  int& NumMod,
 			  int MaxNumMod,
 			  int *EndMasses,
 			  CMSMod &VariableMods,
-			  //			 vector <EMSMod>& VariableMods,
-			  //			 vector <EMSMod>& FixedMods,
+			  const char **Site,
+			  int *DeltaMass,
 			  const int *IntCalcMass  // array of int AA masses
 			  )
 {
@@ -152,7 +151,7 @@ bool CTrypsin::CalcAndCut(const char *SeqStart,
 
     // iterate through sequence
     // note that this loop doesn't check at the end of the sequence
-    for(;*PepStart < SeqEnd; (*PepStart)++) {
+    for(; *PepStart < SeqEnd; (*PepStart)++) {
 	SeqChar = **PepStart;
 
 	// check for mods that are type AA only
@@ -160,10 +159,9 @@ bool CTrypsin::CalcAndCut(const char *SeqStart,
 	    iMods !=  VariableMods.GetAAMods(eModAA).end(); iMods++) {
 	    for(iChar = 0; iChar < NumModChars[*iMods]; iChar++) {
 		if (SeqChar == ModChar[iChar][*iMods] && NumMod < MaxNumMod) {
-		    NumMod++;
-		    Masses[NumCleave][NumMod-1] = 
-			Masses[NumCleave][NumMod-2] +
-			ModMass[*iMods];
+		    Site[NumMod] = *PepStart;
+		    DeltaMass[NumMod] = ModMass[*iMods];
+		    NumMod++; 
 		}
 	    }
 	}
@@ -173,25 +171,21 @@ bool CTrypsin::CalcAndCut(const char *SeqStart,
 	//		16*MSSCALE;
 	//	}
 
-	CalcMass(SeqChar, Masses, NumCleave, NumMod, IntCalcMass);
+	CalcMass(SeqChar, Masses, IntCalcMass);
 
 	// check for cleavage point
 	if(SeqChar == CleaveAt[0] ||  
-	   SeqChar == CleaveAt[1] ||
-	   SeqChar == CleaveAt[2] ||
-	   SeqChar == CleaveAt[3]
-	   ) { 
-	    if(*(*PepStart+1) == 'P' ||
-	       *(*PepStart+1) == '\x0e' )  continue;  // not before proline
-	    EndMass(EndMasses, NumCleave);
+	   SeqChar == CleaveAt[1] ) { 
+	    if(*(*PepStart+1) == '\x0e' )  continue;  // not before proline
+	    EndMass(EndMasses);
 	    return false;
 	}
     }
 
     // todo: deal with mods on the end
 
-    CalcMass(**PepStart, Masses, NumCleave, NumMod, IntCalcMass);
-    EndMass(EndMasses, NumCleave);
+    CalcMass(**PepStart, Masses, IntCalcMass);
+    EndMass(EndMasses);
     return true;  // end of sequence
 }
 
@@ -274,6 +268,9 @@ void CMassArray::Init(const CMSRequest::TFixed &Mods,
 
 /*
   $Log$
+  Revision 1.5  2004/03/30 19:36:59  lewisg
+  multiple mod code
+
   Revision 1.4  2004/03/16 20:18:54  gorelenk
   Changed includes of private headers.
 

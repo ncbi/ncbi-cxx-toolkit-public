@@ -144,7 +144,7 @@ int COMSSA::Run()
     CSearch Search;
     int retval = Search.InitBlast(args["d"].AsString().c_str(), false);
     if(retval) {
-	ERR_POST(Fatal << "ommsatest: unable to initialize blastdb, error " <<
+	ERR_POST(Fatal << "ommsacl: unable to initialize blastdb, error " <<
 	    retval);
 	return 1;
     }
@@ -154,20 +154,28 @@ int COMSSA::Run()
     if(args["m"].AsString().size() != 0) {
 	ifstream PeakFile(args["m"].AsString().c_str());
 	if(!PeakFile) {
-	    ERR_POST(Fatal <<" omssatest: not able to open spectrum file " <<
+	    ERR_POST(Fatal <<" omssacl: not able to open spectrum file " <<
 		args["m"].AsString());
 	    return 1;
 	}
-	Spectrumset->LoadMultDTA(PeakFile);
+	if(Spectrumset->LoadMultDTA(PeakFile) != 0) {
+	    ERR_POST(Fatal <<" omssacl: error reading spectrum file " <<
+		     args["m"].AsString());
+	    return 1;
+	}
     }
     else if(args["f"].AsString().size() != 0) {
 	ifstream PeakFile(args["f"].AsString().c_str());
 	if(!PeakFile) {
-	    ERR_POST(Fatal << "omssatest: not able to open spectrum file " <<
+	    ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
 		args["f"].AsString());
 	    return 1;
 	}
-	Spectrumset->LoadDTA(PeakFile);
+	if(Spectrumset->LoadDTA(PeakFile) != 0) {
+	    ERR_POST(Fatal << "omssacl: not able to read spectrum file " <<
+		args["f"].AsString());
+	    return 1;
+	}
     }
     else {
 	ERR_POST(Fatal << "omssatest: input file not given.");
@@ -258,6 +266,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.11  2004/03/30 19:36:59  lewisg
+  multiple mod code
+
   Revision 1.10  2004/03/16 22:09:11  gorelenk
   Changed include for private header.
 

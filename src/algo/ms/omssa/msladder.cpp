@@ -96,6 +96,7 @@ CLadder::~CLadder()
 }
 
 
+
 // creates ladder
 // note that mass input is only used later on in another routine
 // to calculate score.
@@ -103,7 +104,9 @@ bool CLadder::CreateLadder(int IonType, int ChargeIn, char *Sequence,
 			   int SeqIndex,
 			   int start, int stop, int mass,
 			   CMassArray& MassArray, CAA &AA,
-			   bool *ModMask,
+			   unsigned ModMask,
+			   const char **Site,
+			   int *DeltaMass,
 			   int NumMod)
 {
     Charge = ChargeIn;
@@ -120,25 +123,42 @@ bool CLadder::CreateLadder(int IonType, int ChargeIn, char *Sequence,
     Mass = static_cast <int> (mass - Charge*kProton*MSSCALE);
 
     int delta;
-    int ModIndex(0);  // index into number of possible mod sites
+    int ModIndex;  // index into number of possible mod sites
+    if(kIonDirection[IonType] == 1) ModIndex = 0;
+    else ModIndex = NumMod - 1;
+
     LadderIndex = stop - start;
     for(i = 0; i < LadderIndex; i++) {
 	Hit[i] = 0;
 	if(kIonDirection[IonType] == 1) {
 	    delta = IntMassArray[AAMap[Sequence[start + i]]];
 	    if(!delta) return false; // unusable char (-BXZ*)
-	    if(NumMod > 1 && (Sequence[start + i] == 'M' || Sequence[start + i] == '\x0c')) {
-		if(ModMask[ModIndex]) delta += 16*MSSCALE;
+
+	    
+	    if(NumMod > 0 && ModIndex < NumMod && Site[ModIndex] == &(Sequence[start + i])) {
+		if (MaskSet(ModMask, ModIndex)) delta += DeltaMass[ModIndex];
 		ModIndex++;
 	    }
+	 
+	    //	    if(NumMod > 1 && (Sequence[start + i] == 'M' || Sequence[start + i] == '\x0c')) {
+	    //		if(ModMask[ModIndex]) delta += 16*MSSCALE;
+	    //		ModIndex++;
+	    //	    }
 	}
 	else {
 	    delta = IntMassArray[AAMap[Sequence[stop - i]]];
 	    if(!delta) return false; // unusable char (-BXZ*)
-	    if(NumMod > 1 && (Sequence[stop - i] == 'M' || Sequence[stop - i] == '\x0c')) {
-		if(ModMask[NumMod - ModIndex - 2]) delta += 16*MSSCALE;
-		ModIndex++;
+
+	    if(NumMod > 0 && ModIndex >= 0 && Site[ModIndex] == &(Sequence[stop - i])) {
+		if (MaskSet(ModMask, ModIndex)) delta += DeltaMass[ModIndex];
+		ModIndex--;
 	    }
+
+
+	    //	    if(NumMod > 1 && (Sequence[stop - i] == 'M' || Sequence[stop - i] == '\x0c')) {
+	    //		if(ModMask[NumMod - ModIndex - 2]) delta += 16*MSSCALE;
+	    //		ModIndex++;
+	    //	    }
 	}
 	ion += delta/Charge;
 	Ladder[i] = ion;

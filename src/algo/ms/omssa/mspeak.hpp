@@ -279,8 +279,13 @@ inline CMZI::CMZI(double MZIn, double IntensityIn)
 // for containing hits in mspeak class
 // first index is charge
 typedef CMSHit * TMSHitList;
+
 // min number of peaks to be considered a hit
-#define MSHITMIN 5
+#define MSHITMIN 6
+
+// min number of peaks to consider a spectra
+// two is absolute minimum in order to get m/z range
+#define MSPEAKMIN 5
 
 // size of histogram bin in Daltons
 #define MSBIN 100
@@ -701,6 +706,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.12  2004/03/30 19:36:59  lewisg
+  multiple mod code
+
   Revision 1.11  2004/03/16 20:18:54  gorelenk
   Changed includes of private headers.
 

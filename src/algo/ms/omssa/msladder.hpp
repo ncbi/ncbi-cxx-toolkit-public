@@ -80,9 +80,13 @@ public:
     bool CreateLadder(int IonType, int Charge, char *Sequence, int SeqIndex,
 		      int start, int stop, int mass,
 		      CMassArray& MassArray, CAA &AA,
-		      bool *ModMask,
+		      unsigned ModMask,
+		      const char **Site,
+		      int *DeltaMass,
 		      int NumMod);
-    
+    // check if modification mask position is set
+    bool MaskSet(unsigned ModMask, int ModIndex);
+
     // getter setters
     THit GetHit(void);
     int GetStart(void);
@@ -194,6 +198,11 @@ inline void CLadder::ClearHits(void)
 	Hit[i] = 0;
 }
 
+inline bool CLadder::MaskSet(unsigned ModMask, int ModIndex)
+{
+    return (bool) (ModMask & (1 << ModIndex));
+}
+
 
 /////////////////// end of CLadder inline methods
 
@@ -205,6 +214,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.7  2004/03/30 19:36:59  lewisg
+  multiple mod code
+
   Revision 1.6  2004/03/16 20:18:54  gorelenk
   Changed includes of private headers.
 

@@ -68,12 +68,17 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA)
     int iIndex(-1); // the spectrum index
     string Line;
     double dummy;
+    bool GotOne(false);  // has a spectrum been read?
     try{
 	do {
 	    do {
 		getline(DTA, Line);
 	    } while(NStr::Compare(Line, 0, 4, "<dta") != 0 && DTA && !DTA.eof());
-	    if(!DTA || DTA.eof()) break;
+	    if(!DTA || DTA.eof()) {
+		if(GotOne) return 0;
+		else return 1;
+	    }
+	    GotOne = true;
     
 	    MySpectrum = new CMSSpectrum;
 	    CRegexp RxpGetNum("\\sid\\s*=\\s*(\"(\\S+)\"|(\\S+)\b)");
@@ -135,6 +140,7 @@ int CSpectrumSet::LoadDTA(std::istream& DTA)
     CRef <CMSSpectrum> MySpectrum(new CMSSpectrum);
     MySpectrum->SetNumber(1);
     MySpectrum->SetScale(MSSCALE);
+    bool GotOne(false);  // has a spectrum been read?
 
     double dummy;
     DTA >> dummy;
@@ -151,10 +157,12 @@ int CSpectrumSet::LoadDTA(std::istream& DTA)
 	DTA >> dummy;
 	if(dummy > kMax_UInt) dummy = kMax_UInt/MSSCALE;
 	MySpectrum->SetAbundance().push_back(static_cast <int> (dummy*MSSCALE));
+	GotOne = true;
     } 
 
     Set().push_back(MySpectrum);
-    return 0;
+    if(GotOne) return 0;
+    else return 1;
 }
 
 
@@ -167,6 +175,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/03/30 19:36:59  lewisg
+ * multiple mod code
+ *
  * Revision 1.5  2004/03/16 20:18:54  gorelenk
  * Changed includes of private headers.
  *

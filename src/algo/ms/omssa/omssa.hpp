@@ -49,9 +49,10 @@ BEGIN_SCOPE(omssa)
 // max number missed cleavages + 1
 #define MAXMISSEDCLEAVE 4
 // max variable mods in peptide
-#define MAXMOD 5
-// number of possible ladders -- 2^MAXMOD
-#define MAXMOD2 32
+// should be no bigger than the number of bits in unsigned
+#define MAXMOD 32
+// maximum number of calculable ladders
+#define MAXMOD2 64
 
 // for holding hits sorted by score
 typedef multimap <double, CMSHit *> TScoreList;
@@ -78,11 +79,13 @@ public:
     // create the ladders from sequence
     int CreateLadders(unsigned char *Sequence, int iSearch, int position,
 		      int endposition,
-		      int **Masses, int iMissed, CAA& AA, 
+		      int *Masses, int iMissed, CAA& AA, 
 		      CLadder& BLadder,
 		      CLadder& YLadder, CLadder& B2Ladder,
 		      CLadder& Y2Ladder,
-		      bool *ModMask,
+		      unsigned ModMask,
+		      const char **Site,
+		      int *DeltaMass,
 		      int NumMod);
 
     // compare ladders to experiment
@@ -95,7 +98,8 @@ public:
 		       CLadder& Y2Ladder, CMSPeak *Peaks,
 		       TMassPeak *MassPeak);
 
-    void InitModIndex(int *ModIndex, int& iMod, int& NumMod);
+    void InitModIndex(int *ModIndex, int& iMod);
+    unsigned MakeBoolMask(int *ModIndex, int& iMod);
     void MakeBoolMap(bool *ModMask, int *ModIndex, int& iMod, int& NumMod);
     bool CalcModIndex(int *ModIndex, int& iMod, int& NumMod);
     unsigned MakeIntFromBoolMap(bool *ModMask,  int& NumMod);
@@ -129,11 +133,11 @@ private:
 
 // ModIndex contains the positions of the modified sites (aka set bits).
 // InitModIndex points ModIndex to all of the lower sites.
-inline void CSearch::InitModIndex(int *ModIndex, int& iMod, int& NumMod)
+inline void CSearch::InitModIndex(int *ModIndex, int& iMod)
 {
     // pack all the mods to the first possible sites
     int j;
-    for(j = 0; j < iMod; j++) ModIndex[j] = j;
+    for(j = 0; j <= iMod; j++) ModIndex[j] = j;
 }
 
 // makes a bool map where each bit represents a site that can be modified
@@ -147,6 +151,17 @@ inline void CSearch::MakeBoolMap(bool *ModMask, int *ModIndex, int& iMod, int& N
     // mask at the possible sites according to the index
     for(j = 0; j < iMod; j++) 
 	ModMask[ModIndex[j]] = true;
+}
+
+// makes a bool mask  where each bit represents a site that can be modified
+inline unsigned CSearch::MakeBoolMask(int *ModIndex, int& iMod)
+{
+    int j(0);
+    unsigned retval(0);
+    // mask at the possible sites according to the index
+    for(; j <= iMod; j++) 
+	retval |= 1 << ModIndex[j];
+    return retval;
 }
 
 // creates a unique int for a given mod map.  used to track ladders
@@ -164,8 +179,8 @@ inline bool CSearch::CalcModIndex(int *ModIndex, int& iMod, int& NumMod)
 {
     int j;
     // iterate over indices
-    for(j = iMod - 1; j >= 0; j--) {
-	if(ModIndex[j] < NumMod - 2 - j) {
+    for(j = iMod; j >= 0; j--) {
+	if(ModIndex[j] < NumMod - (iMod - j) - 1) {
 	    ModIndex[j]++;
 	    return true;
 	}
@@ -175,6 +190,19 @@ inline bool CSearch::CalcModIndex(int *ModIndex, int& iMod, int& NumMod)
 
 /////////////////// end of CSearch inline methods
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  TMassMask::
+//
+//  Handy container for holding masses and modification masks
+//
+
+typedef struct _MassMask {
+    unsigned Mass, Mask;
+} TMassMask;
+
+
 END_SCOPE(omssa)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -183,6 +211,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.9  2004/03/30 19:36:59  lewisg
+  multiple mod code
+
   Revision 1.8  2004/03/16 20:18:54  gorelenk
   Changed includes of private headers.
 

@@ -186,25 +186,22 @@ public:
     virtual bool CalcAndCut(const char *SeqStart, 
 			    const char *SeqEnd,  // the end, not beyond the end
 			    const char **PepStart,  // return value
-			    int **Masses,  // Masses, indexed by miss cleav, mods
-			    int NumCleave, // num missed cleave
+			    int *Masses,  // Masses, indexed by miss cleav, mods
 			    int& NumMod,   // num Mods
 			    int MaxNumMod, // max num mods 
 			    int *EndMasses,
 			    CMSMod &VariableMods,
-			    //			 vector <EMSMod>& FixedMods,
+			    const char **Site,
+			    int *DeltaMass,
 			    const int *IntCalcMass  // array of int AA masses
 			    ) { return false; }
     
     void CalcMass(char SeqChar,
-		  int **Masses,
-		  int NumCleave,
-		  int NumMod,
+		  int *Masses,
 		  const int *IntCalcMass
 		  );
     
-    void EndMass(int *Masses,
-		 int NumCleave
+    void EndMass(int *Masses
 		 );
     int findfirst(char* Seq, int Pos, int SeqLen);
 
@@ -225,26 +222,23 @@ protected:
 
 inline
 void CCleave::CalcMass(char SeqChar,
-		       int **Masses,
-		       int NumCleave,
-		       int NumMod,
+		       int *Masses,
 		       const int *IntCalcMass
 		       )
 {
-    int j;
+    //    int j;
     //  for(i = 0; i < NumMasses; i++)
-    for(j = 0; j < NumMod; j++)
-	Masses[NumCleave][j] += IntCalcMass[Reverse[SeqChar]];
+    //    for(j = 0; j < NumMod; j++)
+    *Masses += IntCalcMass[Reverse[SeqChar]];
 }
 
 inline
-void CCleave::EndMass( int *EndMasses,
-		       int NumCleave
+void CCleave::EndMass( int *EndMasses
 		       )
 {
     //  int i;
     //  for(i = 0; i < NumEndMasses; i++)   
-    EndMasses[NumCleave] = TermMass;
+    *EndMasses = TermMass;
 }
 
 /////////////////// end of CCleave inline methods
@@ -262,8 +256,8 @@ public:
 
 inline CCNBr::CCNBr() 
 {
-    CleaveAt = "M\x0c";
-    kCleave = 2;
+    CleaveAt = "\x0c";
+    kCleave = 1;
 }
 
 inline CCNBr::~CCNBr() 
@@ -284,8 +278,8 @@ public:
 
 inline CFormicAcid::CFormicAcid()
 {
-    CleaveAt = "D\x04";
-    kCleave = 2;
+    CleaveAt = "\x04";
+    kCleave = 1;
 }
 
 inline CFormicAcid::~CFormicAcid()
@@ -303,14 +297,13 @@ public:
     virtual bool CalcAndCut(const char *SeqStart, 
 			    const char *SeqEnd,  // the end, not beyond the end
 			    const char **PepStart,  // return value
-			    int **Masses,
-			    int NumCleave,
+			    int *Masses,
 			    int& NumMod,
 			    int MaxNumMod,
 			    int *EndMasses,
 			    CMSMod &VariableMods,
-			    //			 vector <EMSMod>& VariableMods,
-			    //			 vector <EMSMod>& FixedMods,
+			    const char **Site,
+			    int *DeltaMass,
 			    const int *IntCalcMass  // array of int AA masses
 			    );
 };
@@ -319,8 +312,8 @@ public:
 
 inline CTrypsin::CTrypsin() 
 {
-    CleaveAt = "KR\x0a\x10";
-    kCleave = 4;
+    CleaveAt = "\x0a\x10";
+    kCleave = 2;
 }
 
 inline CTrypsin::~CTrypsin()
@@ -341,6 +334,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.6  2004/03/30 19:36:59  lewisg
+  multiple mod code
+
   Revision 1.5  2004/03/16 20:18:54  gorelenk
   Changed includes of private headers.
 

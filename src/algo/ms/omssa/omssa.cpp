@@ -94,28 +94,34 @@ int CSearch::InitBlast(const char *blastdb, bool InitDb)
 // create the ladders from sequence
 
 int CSearch::CreateLadders(unsigned char *Sequence, int iSearch, int position,
-						   int endposition,
-						   int **Masses, int iMissed, CAA& AA, 
-						   CLadder& BLadder,
-						   CLadder& YLadder, CLadder& B2Ladder,
-						   CLadder& Y2Ladder,
-						   bool *ModMask,
-						   int NumMod)
+			   int endposition,
+			   int *Masses, int iMissed, CAA& AA, 
+			   CLadder& BLadder,
+			   CLadder& YLadder, CLadder& B2Ladder,
+			   CLadder& Y2Ladder,
+			   unsigned ModMask,
+			   const char **Site,
+			   int *DeltaMass,
+			   int NumMod)
 {
     if(!BLadder.CreateLadder(kBIon, 1, (char *)Sequence, iSearch,
-			     position, endposition, Masses[iMissed][0], 
-			     MassArray, AA, ModMask, NumMod)) return 1;
+			     position, endposition, Masses[iMissed], 
+			     MassArray, AA, ModMask, Site, DeltaMass,
+			     NumMod)) return 1;
     if(!YLadder.CreateLadder(kYIon, 1, (char *)Sequence, iSearch,
-			 position, endposition, Masses[iMissed][0], 
-			     MassArray, AA, ModMask, NumMod)) return 1;
+			 position, endposition, Masses[iMissed], 
+			     MassArray, AA, ModMask, Site, DeltaMass,
+			     NumMod)) return 1;
     B2Ladder.CreateLadder(kBIon, 2, (char *)Sequence, iSearch,
 			  position, endposition, 
-			  Masses[iMissed][0], 
-			  MassArray, AA, ModMask, NumMod);
+			  Masses[iMissed], 
+			  MassArray, AA, ModMask, Site, DeltaMass,
+			  NumMod);
     Y2Ladder.CreateLadder(kYIon, 2, (char *)Sequence, iSearch,
 			  position, endposition,
-			  Masses[iMissed][0], 
-			  MassArray, AA, ModMask, NumMod);
+			  Masses[iMissed], 
+			  MassArray, AA, ModMask, Site, DeltaMass,
+			  NumMod);
     
     return 0;
 }
@@ -164,7 +170,7 @@ bool CSearch::CompareLaddersTop(CLadder& BLadder,
 }
 
 #ifdef _DEBUG
-// #define CHECKGI
+#define CHECKGI
 #ifdef CHECKGI
 bool CheckGi(int gi)
 {
@@ -204,7 +210,7 @@ void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet)
 		       MyRequest.GetDoublewin(), MyRequest.GetSinglenum(),
 		       MyRequest.GetDoublenum());
 		
-	if(Peaks->GetNum(MSCULLED1) < MSHITMIN)  {
+	if(Peaks->GetNum(MSCULLED1) < MSPEAKMIN)  {
 	    ERR_POST(Info << "omssa: not enough peaks in spectra");
 	    Peaks->SetError(eMSHitError_notenuffpeaks);
 	}
@@ -215,6 +221,14 @@ void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet)
 	
 }
 
+// compares TMassMasks.  Lower m/z first in sort.
+struct CMassMaskCompare {
+    bool operator() (const TMassMask& x, const TMassMask& y)
+    {
+	if(x.Mass < y.Mass) return true;
+	return false;
+    }
+};
 
 int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 {
@@ -238,18 +252,32 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
     const int *IntMassArray = MassArray.GetIntMass();
     const char *PepStart[MAXMISSEDCLEAVE];
     const char *PepEnd[MAXMISSEDCLEAVE];
+
+    // the position within the peptide of a variable modification
+    const char *Site[MAXMISSEDCLEAVE][MAXMOD];
+    // the modification mass at the Site
+    int DeltaMass[MAXMISSEDCLEAVE][MAXMOD];
+    // the number of modified sites + 1 unmodified
+    int NumMod[MAXMISSEDCLEAVE];
+
+
+    // calculated masses and masks
+    TMassMask MassAndMask[MAXMISSEDCLEAVE][MAXMOD2];
+    // the number of masses and masks for each peptide
+    unsigned NumMassAndMask[MAXMISSEDCLEAVE];
 	
-    // set up mass array, currently indexed by missed cleavage and mods
+    // set up mass array, indexed by missed cleavage
     // note that EndMasses is the end mass of peptide, kept separate to allow
     // reuse of Masses array in missed cleavage calc
-    int **Masses = imatrix(0, MAXMISSEDCLEAVE, 0, MAXMOD);
+    int Masses[MAXMISSEDCLEAVE];
     int EndMasses[MAXMISSEDCLEAVE];
-    int NumMod[MAXMISSEDCLEAVE];         // number of current mods + 1 unmodified
+
+
     int iMod;   // used to iterate thru modifications
-    bool ModMask[MAXMOD]; // mask used to determine if mod should be added
+    //    bool ModMask[MAXMOD]; // mask used to determine if mod should be added
     int ModIndex[MAXMOD]; // ring changes for mod
     int ModMax;
-    unsigned LadderVal;  // use to keep track of ladders
+    //    unsigned LadderVal;  // use to keep track of ladders
 	
     bool SequenceDone;  // are we done iterating through the sequences?
     int taxid;
@@ -271,7 +299,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 						    iSearch);
 	header = 0;
 #ifdef CHECKGI
-	    int testgi;
+	int testgi;
 #endif 
 	while(readdb_get_header_ex(rdfp, iSearch, &header, &sip,
 				   &blastdefline, &taxid, NULL, NULL)) {
@@ -302,84 +330,171 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	for(iMissed = 0; iMissed < Missed; iMissed++) {
 	    PepStart[iMissed] = (const char *)-1; // mark start
 	    PepEnd[iMissed] = (const char *)Sequence;
-	    Masses[iMissed][0] = 0;
+	    Masses[iMissed] = 0;
 	    EndMasses[iMissed] = 0;
-	    NumMod[iMissed] = 1;
+	    NumMod[iMissed] = 0;
+
+	    DeltaMass[iMissed][0] = 0;
+	    Site[iMissed][0] = (const char *)-1;
 	}
 	PepStart[Missed - 1] = (const char *)Sequence;
 		
+	// iterate thru the sequence by digesting it
 	while(!SequenceDone) {
 			
 	    // zero out no missed cleavage peptide mass and mods
 	    // note that Masses and EndMass are separate to reuse
 	    // masses during the missed cleavage calculation
-	    Masses[Missed - 1][0] = 0;
+	    Masses[Missed - 1] = 0;
 	    EndMasses[Missed - 1] = 0;
-	    NumMod[Missed - 1] = 1;
+	    NumMod[Missed - 1] = 0;
+	    // init no modification elements
+	    Site[Missed - 1][0] = (const char *)-1;
+	    DeltaMass[Missed - 1][0] = 0;
 			
 	    // calculate new stop and mass
 	    SequenceDone = 
 		trypsin.CalcAndCut((const char *)Sequence,
 				   (const char *)Sequence + length - 1, 
 				   &(PepEnd[Missed - 1]),
-				   Masses,
-				   Missed - 1, 
+				   &(Masses[Missed - 1]),
 				   NumMod[Missed - 1],
 				   MAXMOD,
-				   EndMasses,
+				   &(EndMasses[Missed - 1]),
 				   VariableMods,
+				   Site[Missed - 1],
+				   DeltaMass[Missed - 1],
 				   IntMassArray);
 			
+
 	    // update the longer peptides to add the new peptide (Missed-1) on the end
 	    for(iMissed = 0; iMissed < Missed - 1; iMissed++) {
+		// skip start
+		if(PepStart[iMissed] == (const char *)-1) continue;
 		// reset the end sequences
 		PepEnd[iMissed] = PepEnd[Missed - 1];
 				
 		// update new mod masses to add in any new mods from new peptide
-		if(NumMod[iMissed] + NumMod[Missed-1] > MAXMOD)
+
+		// first determine the maximum value for updated mod list
+		if(NumMod[iMissed] + NumMod[Missed-1] >= MAXMOD)
 		    ModMax = MAXMOD - NumMod[iMissed];
-		else ModMax = NumMod[Missed-1] - 1;
+		else ModMax = NumMod[Missed-1];
+
+		// now interatu thru the new entries
 		for(iMod = NumMod[iMissed]; 
 		    iMod < NumMod[iMissed] + ModMax;
-		    iMod++)
-		    Masses[iMissed][iMod] = 
-			Masses[Missed-1][iMod - NumMod[iMissed] + 1] +
-			Masses[iMissed][NumMod[iMissed] - 1];
+		    iMod++) {
+		    Site[iMissed][iMod] = 
+			Site[Missed-1][iMod - NumMod[iMissed]];
+
+		    DeltaMass[iMissed][iMod] = 
+			DeltaMass[Missed-1][iMod - NumMod[iMissed]];
+
+		    //		    Masses[iMissed][iMod] = 
+		    //			Masses[Missed-1][iMod - NumMod[iMissed] + 1] +
+		    //			Masses[iMissed][NumMod[iMissed] - 1];
+		}
 				
-		// update old mod masses
-		for(iMod = 0; iMod < NumMod[iMissed]; iMod++)
-		    Masses[iMissed][iMod] += Masses[Missed - 1][0];
-				
-		NumMod[iMissed] += ModMax;
+		// update old masses
+		Masses[iMissed] += Masses[Missed - 1];
 				
 		// update end masses
 		EndMasses[iMissed] = EndMasses[Missed - 1];
+			
+		// update number of Mods
+		NumMod[iMissed] += ModMax;
 	    }	    
 			
+
+	    // need to iterate thru combinations that have iMod.
+	    // i.e. iMod = 3 and NumMod=5
+	    // 00111, 01011, 10011, 10101, 11001, 11010, 11100, 01101,
+	    // 01110
+	    // i[0] = 0 --> 5-3, i[1] = i[0]+1 -> 5-2, i[3] = i[1]+1 -> 5-1
+	    // then construct bool mask
+	    
+	    // holders for calculated modification mask and modified peptide masses
+	    unsigned Mask, MassOfMask;
+	    // iterate thru active mods
+	    int iiMod;
+	    // keep track of the number of unique masks created.  each corresponds to a ladder
+	    int iModCount;
+
+	    // go thru missed cleaves
+	    for(iMissed = 0; iMissed < Missed; iMissed++) {
+		// skip start
+		if(PepStart[iMissed] == (const char *)-1) continue;
+		iModCount = 0;
+
+		// set up non-modified mass
+		MassAndMask[iMissed][iModCount].Mass = 
+		    Masses[iMissed] + EndMasses[iMissed];
+		MassAndMask[iMissed][iModCount].Mask = 0;
+		iModCount++;
+		
+		// go thru number of mods allowed
+		for(iMod = 0; iMod < NumMod[iMissed] && iModCount < MAXMOD2; iMod++) {
+		    
+		    // initialize ModIndex that points to mod sites
+		    InitModIndex(ModIndex, iMod);
+		    do {
+			
+			// calculate mass
+			MassOfMask = Masses[iMissed] + EndMasses[iMissed];
+			for(iiMod = 0; iiMod <= iMod; iiMod++ ) 
+			    MassOfMask += DeltaMass[iMissed][ModIndex[iiMod]];
+			// make bool mask
+			Mask = MakeBoolMask(ModIndex, iMod);
+			// put mass and mask into storage
+			MassAndMask[iMissed][iModCount].Mass = MassOfMask;
+			MassAndMask[iMissed][iModCount].Mask = Mask;
+			// keep track of the  number of ladders
+			iModCount++;
+
+		    } while(iModCount < MAXMOD2 &&
+			    CalcModIndex(ModIndex, iMod, NumMod[iMissed]));
+		} // iMod
+
+		// sort mask and mass by mass
+		sort(MassAndMask[iMissed], MassAndMask[iMissed] + iModCount,
+		     CMassMaskCompare());
+		// keep track of number of MassAndMask
+		NumMassAndMask[iMissed] = iModCount;
+
+	    } // iMissed
+	    
+
+	    int OldMass;  // keeps the old peptide mass for comparison
+
 	    for(iMissed = 0; iMissed < Missed; iMissed++) {	    
 		if(PepStart[iMissed] == (const char *)-1) continue;  // skip start
 				
 		// get the start and stop position, inclusive, of the peptide
 		position =  PepStart[iMissed] - (const char *)Sequence;
 		endposition = PepEnd[iMissed] - (const char *)Sequence;
-				
+		
+		// init bool for "Has ladder been calculated?"
 		for(iMod = 0; iMod < MAXMOD2; iMod++) LadderCalc[iMod] = false;
-				
-				
+		
+		OldMass = 0;			
 				
 		// go thru total number of mods
-		for(iMod = 0; iMod < NumMod[iMissed]; iMod++) {
-					
+		for(iMod = 0; iMod < NumMassAndMask[iMissed]; iMod++) {
+		    
+		    // have we seen this mass before?
+		    if(MassAndMask[iMissed][iMod].Mass == OldMass) continue;
+
+		    OldMass = MassAndMask[iMissed][iMod].Mass;
 		    // return peak where theoretical mass is < precursor mass + tol
-		    MassPeak = PeakSet.GetIndexLo(Masses[iMissed][iMod] + 
-						  EndMasses[iMissed]);
+		    MassPeak = PeakSet.GetIndexLo(OldMass);
 					
 		    for(;MassPeak < PeakSet.GetEndMassPeak() && 
-			    Masses[iMissed][iMod] +	EndMasses[iMissed] >
-			    MassPeak->Mass - MassPeak->Peptol;
+			    OldMass > MassPeak->Mass - MassPeak->Peptol;
 			MassPeak++) {
 			Peaks = MassPeak->Peak;
-						
+			// make sure we look thru other mod masks with the same mass
+			OldMass = 0; 
 						
 #ifdef CHECKGI
 			SeqId *bestid;
@@ -393,50 +508,43 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 			MemFree(blastdefline);
 			SeqIdSetFree(sip);
 #endif
-			// need to iterate thru combinations that have iMod.
-			// i.e. iMod = 3 and NumMod=5
-			// 00111, 01011, 10011, 10101, 11001, 11010, 11100, 01101,
-			// 01110
-			// blech.
-			// i[0] = 0 --> 5-3, i[1] = i[0]+1 -> 5-2, i[3] = i[1]+1 -> 5-1
-			// construct bool map
-			// pass to ladder
 						
 						
-			InitModIndex(ModIndex, iMod, NumMod[iMissed]);
-			do {
-			    MakeBoolMap(ModMask, ModIndex, iMod,
-					NumMod[iMissed]);
-			    LadderVal = MakeIntFromBoolMap(ModMask, 
-							   NumMod[iMissed]);
-			    if(!LadderCalc[LadderVal]) {
-				LadderCalc[LadderVal] = true;	
-				if(CreateLadders(Sequence, iSearch, position,
-						 endposition,
-						 Masses,
-						 iMissed, AA,
-						 BLadder[LadderVal],
-						 YLadder[LadderVal],
-						 B2Ladder[LadderVal],
-						 Y2Ladder[LadderVal],
-						 ModMask, NumMod[iMissed]) != 
-				   0) continue;
-				// continue to next sequence if ladders not successfully made
-			    }
-			    else {
-				BLadder[LadderVal].ClearHits();
-				YLadder[LadderVal].ClearHits();
-				B2Ladder[LadderVal].ClearHits();
-				Y2Ladder[LadderVal].ClearHits();
-			    }
+			//			MakeBoolMap(ModMask, ModIndex, iMod,
+			//    NumMod[iMissed]);
+			//LadderVal = MakeIntFromBoolMap(ModMask, 
+			//		       NumMod[iMissed]);
+			if(!LadderCalc[iMod]) {
+			    LadderCalc[iMod] = true;	
+			    if(CreateLadders(Sequence, iSearch, position,
+					     endposition,
+					     Masses,
+					     iMissed, AA,
+					     BLadder[iMod],
+					     YLadder[iMod],
+					     B2Ladder[iMod],
+					     Y2Ladder[iMod],
+					     MassAndMask[iMissed][iMod].Mask,
+					     Site[iMissed],
+					     DeltaMass[iMissed],
+					     NumMod[iMissed]) != 
+			       0) continue;
+			    // continue to next sequence if ladders not successfully made
+			}
+			else {
+			    BLadder[iMod].ClearHits();
+			    YLadder[iMod].ClearHits();
+			    B2Ladder[iMod].ClearHits();
+			    Y2Ladder[iMod].ClearHits();
+			}
 				
-			    //start of new addition
-			    if(CompareLaddersTop(BLadder[LadderVal], 
-						 YLadder[LadderVal],
-						 B2Ladder[LadderVal], 
-						 Y2Ladder[LadderVal],
-						 Peaks, MassPeak)) {
-				// end of new addition
+			//start of new addition
+			if(CompareLaddersTop(BLadder[iMod], 
+					     YLadder[iMod],
+					     B2Ladder[iMod], 
+					     Y2Ladder[iMod],
+					     Peaks, MassPeak)) {
+			    // end of new addition
 
 
 			    Peaks->SetPeptidesExamined(MassPeak->Charge)++;
@@ -445,16 +553,16 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 			    //			    cout << testgi << " " << position << " " << endposition << endl;
 #endif
 			    Peaks->ClearUsedAll();
-			    CompareLadders(BLadder[LadderVal], 
-					   YLadder[LadderVal],
-					   B2Ladder[LadderVal], 
-					   Y2Ladder[LadderVal],
+			    CompareLadders(BLadder[iMod], 
+					   YLadder[iMod],
+					   B2Ladder[iMod], 
+					   Y2Ladder[iMod],
 					   Peaks, false, MassPeak);
-			    hits = BLadder[LadderVal].HitCount() + 
-				YLadder[LadderVal].HitCount() +
-				B2Ladder[LadderVal].HitCount() +
-				Y2Ladder[LadderVal].HitCount();
-			    if(hits > MSHITMIN) {
+			    hits = BLadder[iMod].HitCount() + 
+				YLadder[iMod].HitCount() +
+				B2Ladder[iMod].HitCount() +
+				Y2Ladder[iMod].HitCount();
+			    if(hits >= MSHITMIN) {
 				// need to save mods.  bool map?
 				NewHit.SetHits(hits);	
 				NewHit.SetCharge(MassPeak->Charge);
@@ -467,15 +575,14 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 				    // record the hits
 				    Peaks->ClearUsedAll();
 				    NewHitOut->
-					RecordMatches(BLadder[LadderVal],
-						      YLadder[LadderVal],
-						      B2Ladder[LadderVal], 
-						      Y2Ladder[LadderVal],
+					RecordMatches(BLadder[iMod],
+						      YLadder[iMod],
+						      B2Ladder[iMod], 
+						      Y2Ladder[iMod],
 						      Peaks);
 				}
 			    }
-			    } // new addition
-			} while(CalcModIndex(ModIndex, iMod, NumMod[iMissed]));
+			} // new addition
 		    } // MassPeak
 		} //iMod
 	    } // iMissed
@@ -484,9 +591,17 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 		for(iMissed = 0; iMissed < Missed - 1; iMissed++) {
 		    // move masses to next missed cleavage
 		    NumMod[iMissed] = NumMod[iMissed + 1];
-		    for(iMod = 0; iMod < NumMod[iMissed]; iMod++)
-			Masses[iMissed][iMod] = Masses[iMissed + 1][iMod];
-				
+		    Masses[iMissed] = Masses[iMissed + 1];
+		    // don't move EndMasses as they are recalculated
+
+		    // move the modification data
+		    for(iMod = 0; iMod < NumMod[iMissed]; iMod++) {
+			DeltaMass[iMissed][iMod] = 
+			    DeltaMass[iMissed + 1][iMod];
+			Site[iMissed][iMod] = 
+			    Site[iMissed + 1][iMod];
+		    }
+
 		    // copy starts to next missed cleavage
 		    PepStart[iMissed] = PepStart[iMissed + 1];
 		}
@@ -500,7 +615,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	}
     }
 	
-    free_imatrix(Masses, 0, MAXMISSEDCLEAVE, 0, MAXMOD);
+    //    free_imatrix(Masses, 0, MAXMISSEDCLEAVE, 0, MAXMOD);
 	
     // read out hits
     SetResult(PeakSet, MyResponse, MyRequest.GetCutlo(), 
@@ -844,6 +959,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.15  2004/03/30 19:36:59  lewisg
+multiple mod code
+
 Revision 1.14  2004/03/16 20:18:54  gorelenk
 Changed includes of private headers.
 
