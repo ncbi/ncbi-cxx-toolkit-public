@@ -55,9 +55,12 @@ public:
 
 public:
 
-    CLDS_Database(const string& db_name)
-    : m_LDS_DbName(db_name)
-    {}
+    CLDS_Database(const string& db_dir_name, 
+                  const string& db_name);
+
+    CLDS_Database(const string& db_dir_name);
+
+    ~CLDS_Database();
 
     // Create the database. If the LDS database already exists all data will
     // be cleaned up.
@@ -77,6 +80,7 @@ private:
     CLDS_Database(const CLDS_Database&);
     CLDS_Database& operator=(const CLDS_Database&);
 private:
+    string                 m_LDS_DirName;
     string                 m_LDS_DbName;
 
     SLDS_TablesCollection  m_db;
@@ -108,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/08/11 19:58:27  kuznets
+ * Code clean-up: separated dir name and database name
+ *
  * Revision 1.12  2003/07/31 20:00:08  kuznets
  * + CLDS_DatabaseHolder (CObject compatible vehicle for CLDs_Database)
  *
