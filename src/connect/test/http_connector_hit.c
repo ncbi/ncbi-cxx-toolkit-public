@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/05/30 23:24:40  vakatov
+ * Cosmetic fix for the C++ compilation
+ *
  * Revision 6.1  2000/04/21 19:56:28  vakatov
  * Initial revision
  *
@@ -59,6 +62,13 @@ static struct {
 
 /* Getter for the pseudo-registry
  */
+#if defined(__cplusplus)
+extern "C" {
+    static void s_REG_Get(const char* section, const char* name,
+                          char* value, size_t value_size);
+}
+#endif /* __cplusplus */
+
 static void s_REG_Get
 (const char* section,
  const char* name,
