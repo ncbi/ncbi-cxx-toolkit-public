@@ -97,6 +97,15 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
         fields.clear();
         NStr::Tokenize(line, "\t", fields);
 
+        // eliminate any empty fields at the end of the line
+        int index;
+        for (index = (int) fields.size() - 1;  index > 0;  --index) {
+            if (!fields[index].empty()) {
+                break;
+            }
+        }
+        fields.resize(index + 1);
+
         // Number of fields can be 9 or 8, but 8 is valid
         // only if field[4] == "N".
         if (fields.size() != 9) {
@@ -218,6 +227,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.7  2004/06/14 18:16:28  jcherry
+ * Tolerate tabs at ends of lines
+ *
  * Revision 1.6  2004/05/25 20:49:58  jcherry
  * Let the last column of an "N" line be missing, not just empty
  *
