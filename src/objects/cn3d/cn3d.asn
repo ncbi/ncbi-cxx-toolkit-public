@@ -1,4 +1,4 @@
---$Revision: 1.9 $
+--$Revision: 1.10 $
 --**********************************************************************
 --
 --  Definitions for Cn3D-specific data (rendering settings,
@@ -191,12 +191,34 @@ Cn3d-user-annotation ::= SEQUENCE {
     is-on BOOLEAN   -- whether this annotation is to be turned on in Cn3D
 }
 
+-- a GL-ordered transformation matrix
+Cn3d-GL-matrix ::= SEQUENCE {
+    m0  REAL, m1  REAL, m2  REAL, m3  REAL,
+    m4  REAL, m5  REAL, m6  REAL, m7  REAL,
+    m8  REAL, m9  REAL, m10 REAL, m11 REAL,
+    m12 REAL, m13 REAL, m14 REAL, m15 REAL
+}
+
+-- parameters used to set up the camera in Cn3D
+Cn3d-view-settings ::= SEQUENCE {
+    camera-distance REAL,       -- camera on +Z axis this distance from origin
+    camera-angle-rad REAL,      -- camera angle
+    camera-look-at-X REAL,      -- X,Y of point in Z=0 plane camera points at
+    camera-look-at-Y REAL,
+    camera-clip-near REAL,      -- distance of clipping planes from camera
+    camera-clip-far REAL,
+    matrix Cn3d-GL-matrix       -- transformation of objects in the scene
+}
+
 -- The list of annotations for a given CDD/mime. If residue regions overlap
 -- between annotations that are turned on, the last annotation in this list
 -- that contains these residues will be used as the display style for these
 -- residues.
+--   Also contains the current viewpoint, so that user's camera angle
+-- can be stored and reproduced, for illustrations, on-line figures, etc.
 Cn3d-user-annotations ::= SEQUENCE {
-    annotations SEQUENCE OF Cn3d-user-annotation
+    annotations SEQUENCE OF Cn3d-user-annotation OPTIONAL,
+    view Cn3d-view-settings OPTIONAL
 }
 
 END
