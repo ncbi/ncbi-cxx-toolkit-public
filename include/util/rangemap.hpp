@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/01/16 21:37:22  vasilche
+* Fixed warning.
+*
 * Revision 1.10  2001/01/16 20:52:24  vasilche
 * Simplified some CRangeMap code.
 *
@@ -288,10 +291,7 @@ public:
     static position_type get_max_length(range_type key)
         {
             position_type len = get_key_length(key);
-            if ( sizeof(position_type) > 4 )
-                len |= (len >> 32);
-            if ( sizeof(position_type) > 2 )
-                len |= (len >> 16);
+            len |= (len >> 16);
             len |= (len >> 8);
             len |= (len >> 4);
             len |= (len >> 2);
