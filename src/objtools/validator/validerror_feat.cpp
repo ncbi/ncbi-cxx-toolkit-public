@@ -1357,6 +1357,12 @@ void CValidError_feat::ValidateCommonCDSProduct
         if ( m_Imp.GetTSE().IsSeq() ) {
             return;
         }
+
+        // or in a standalone Seq-annot
+        if ( m_Imp.IsStandaloneAnnot() ) {
+            return;
+        }
+
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_MultipleCDSproducts,
             "Unable to find product Bioseq from CDS feature", feat);
         return;
@@ -2156,6 +2162,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/03/20 18:56:44  shomrat
+* Supress error in case of Seq-annot validation
+*
 * Revision 1.19  2003/03/18 21:48:37  grichenk
 * Removed obsolete class CAnnot_CI
 *
