@@ -29,10 +29,13 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *    Send mail
+ *    Send mail (with accordance to RFC821 [protocol] and RFC822 [headers])
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/02/28 18:13:02  lavr
+ * Heavily documented
+ *
  * Revision 6.1  2001/02/28 00:52:37  lavr
  * Initial revision
  *
@@ -47,30 +50,54 @@ extern "C" {
 #endif
 
 
+/* Default values for the structure below */
 #define MX_HOST         "ncbi"
 #define MX_PORT         25
 #define MX_TIMEOUT      120
 
 
+/* Define optional parameters for communication with sendmail
+ */
 typedef struct {
-    unsigned int magic_number;
-    const char*  cc;
-    const char*  bcc;
-    char         from[1024];
-    const char*  header;
-    const char*  mx_host;
-    short        mx_port;
-    STimeout     mx_timeout;
+    unsigned int magic_number;  /* Filled in by SendMailInfo_Init        */
+    const char*  cc;            /* Carbon copy recipient(s)              */
+    const char*  bcc;           /* Blind carbon copy recipient(s)        */
+    char         from[1024];    /* Originator address                    */
+    const char*  header;        /* Custom header fields ('\n'-separated) */
+    const char*  mx_host;       /* Host to contact sendmail at           */
+    short        mx_port;       /* Port to contact sendmail at           */
+    STimeout     mx_timeout;    /* Timeout for all network transactions  */
 } SSendMailInfo;
 
+/* Init passed structure, setting:
+ *   'magic_number' to proper value (verified by CORE_SendMailEx);
+ *   'cc', 'bcc', 'header' to NULL (means no recipients/additional headers);
+ *   'from' is filled out using current user name (if discovered, 'anonymous'
+ *          otherwise) and host in the form: username@hostname; may be reset
+ *          to "" by application for sending no-return messages
+ *          (aka MAILER-DAEMON);
+ *   'mx_*' filled out with accordance to corresponding macros defined above;
+ *          application may choose different values afterwards.
+ */
 SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info);
 
 
-/* 0 - Ok, "Error message" */
+/* Send a simple message to recipient defined in 'to',
+ * and having subject 'subject', which can be empty (both NULL and "" treated
+ * as having empty subject), and message body 'body' (may be NULL/empty).
+ * Return value 0 means success; otherwise descriptive error message
+ * gets returned. Communicaiton parameters for connection with sendmail
+ * are set using default values as described in SendMailInfo_Init().
+ */
 extern const char* CORE_SendMail(const char* to,
                                  const char* subject,
                                  const char* body);
 
+/* Send message as in CORE_SendMail but with specifying explicitly
+ * all additional parameters of the message and communication via
+ * 'info'. In case of 'info' == NULL, the call is completely
+ * equivalent to CORE_SendMail().
+ */
 extern const char* CORE_SendMailEx(const char* to,
                                    const char* subject,
                                    const char* body,
