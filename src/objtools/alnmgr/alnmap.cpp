@@ -301,6 +301,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
             }
             if (sseq_pos > start) {
                 btm = cur + 1;
+                cur_btm = cur;
             } else {
                 top = mid - 1;
                 cur_top = cur;
@@ -324,6 +325,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
                 cur_btm = cur;
             } else {
                 top = cur - 1;
+                cur_top = cur;
             }
             continue;
         }
@@ -333,9 +335,9 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
         if (dir == eNone) {
             return -1;
         } else if (dir == eBackwards  ||  dir == (plus ? eLeft : eRight)) {
-            return cur_btm;
+            return (plus ? cur_btm : last - cur_btm);
         } else if (dir == eForward  ||  dir == (plus ? eRight : eLeft)) {
-            return cur_top;
+            return (plus ? cur_top : last - cur_top);
         }
     }        
     return -1; /* No match found */
@@ -364,10 +366,19 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
             return -1;
         } 
     } else {
-        // check if within unaligned region or an insert
+        // check if within unaligned region
+        // if seq_pos outside the segment returned by GetRawSeg
+        // then return the edge alnpos
+        if ((plus ? seq_pos < start : seq_pos > stop)) {
+            return GetAlnStart(seg.GetAlnSeg());
+        }
+        if ((plus ? seq_pos > stop : seq_pos < start)) {
+            return GetAlnStop(seg.GetAlnSeg());
+        }
 
-        if ((plus ? seq_pos < start : seq_pos > stop)  ||
-            seg.GetOffset()  &&  
+
+        // check if within an insert
+        if (seg.GetOffset()  &&  
             (dir == eRight  ||
              dir == (plus ? eForward : eBackwards))) {
 
@@ -381,8 +392,7 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
             }
 
         }
-        if ((plus ? seq_pos > stop : seq_pos < start)  ||
-            seg.GetOffset()  &&
+        if (seg.GetOffset()  &&
             (dir == eLeft  ||
              dir == (plus ? eBackwards : eForward))) {
             
@@ -887,6 +897,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2003/11/04 19:37:38  todorov
+* Fixed GetRawSeg and GetAlnPosFromSeqPos in case of unaligned region
+*
 * Revision 1.40  2003/09/18 23:05:18  todorov
 * Optimized GetSeqAln{Start,Stop}
 *
