@@ -59,6 +59,17 @@ void CMMAligner::EnableMultipleThreads(bool allow)
 
 CNWAligner::TScore CMMAligner::x_Run()
 {
+    m_terminate = false;
+    if(m_prg_callback) {
+        m_prg_info.m_iter_total = 2*m_SeqLen1*m_SeqLen2;
+        m_prg_info.m_iter_done = 0;
+        m_terminate = m_prg_callback(&m_prg_info);
+    }
+
+    if(m_terminate) {
+        return m_score = 0;
+    }
+    
     m_score = kMin_Int;
     m_TransList.clear();
     m_TransList.push_back(eNone);
@@ -66,9 +77,12 @@ CNWAligner::TScore CMMAligner::x_Run()
     SCoordRect m (0, 0, m_SeqLen1 - 1, m_SeqLen2 - 1);
     x_DoSubmatrix(m, m_TransList.end(), false, false); // top-level call
 
+    if(m_terminate) {
+        return m_score = 0;
+    }
+
     // reverse_copy not supported by some compilers
-    list<ETranscriptSymbol>::const_iterator ib = m_TransList.begin(),
-        ie = m_TransList.end(), ii = ib;
+    list<ETranscriptSymbol>::const_iterator ii = m_TransList.begin();
     size_t nsize = m_TransList.size() - 1;
     m_Transcript.clear();
     m_Transcript.resize(nsize);
@@ -95,6 +109,11 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     list<ETranscriptSymbol>::iterator translist_pos,
     bool left_top, bool right_bottom )
 {
+
+    if( m_terminate ) {
+        return;
+    }
+
     const int dimI = submatr.i2 - submatr.i1 + 1;
     const int dimJ = submatr.j2 - submatr.j1 + 1;
     if(dimI < 1 || dimJ < 1) return;
@@ -136,6 +155,10 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     else {
         x_RunTop(rtop, vEtop, vFtop, vGtop, trace_top, left_top);
         x_RunBtm(rbtm, vEbtm, vFbtm, vGbtm, trace_btm, right_bottom);
+    }
+
+    if( m_terminate ) {
+        return;
     }
 
     // locate the transition point
@@ -351,8 +374,6 @@ size_t CMMAligner::x_ExtendSubpath (
     bool direction,
     list<ETranscriptSymbol>& subpath ) const
 {
-    vector<unsigned char>::const_iterator ti0 = trace_it;
-
     subpath.clear();
     size_t step_counter = 0;
     if(direction) {
@@ -420,10 +441,20 @@ size_t CMMAligner::x_ExtendSubpath (
     return step_counter;
 }
 
+
+#ifdef NCBI_THREADS
+DEFINE_STATIC_FAST_MUTEX (progress_mutex);
+#endif
+
+
 void CMMAligner::x_RunTop ( const SCoordRect& rect,
              vector<TScore>& vE, vector<TScore>& vF, vector<TScore>& vG,
              vector<unsigned char>& trace, bool lt ) const
 {
+    if( m_terminate ) {
+        return;
+    }
+
     const size_t dim1 = rect.i2 - rect.i1 + 1;
     const size_t dim2 = rect.j2 - rect.j1 + 1;
     const size_t N1   = dim1 + 1;
@@ -440,6 +471,10 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
     bool bFreeGapLeft1  = m_esf_L1 && rect.i1 == 0;
     bool bFreeGapLeft2  = m_esf_L2 && rect.j1 == 0;
     bool bFreeGapRight2  = m_esf_R2 && rect.j2 == m_SeqLen2 - 1;
+
+    // progress reporting
+    const size_t prg_rep_rate = 100;
+    const size_t prg_rep_increment = prg_rep_rate*N2;
 
     // first row
 
@@ -494,10 +529,21 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
             V = (E >= rowF[j])? (E >= G? E: G): (rowF[j] >= G? rowF[j]: G);
         }
         pV[j] = V;
+
+        if( m_prg_callback && i % prg_rep_rate == 0 ) {
+#ifdef NCBI_THREADS
+            CFastMutexGuard guard (progress_mutex);
+#endif
+            m_prg_info.m_iter_done += prg_rep_increment;
+            if( m_terminate = m_prg_callback(&m_prg_info) ) {
+                break;
+            }
+        }
     }
 
     // the last row (i == N1 - 1)
-    {
+    if(!m_terminate) {
+
         vG[0] = vE[0] = E = kInfMinus;
         vF[0] = V = V0 += ws;
         trace[0] = kMaskFc;
@@ -557,7 +603,15 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
             trace[j] = tracer;
         }
     }
-    
+
+    if( m_prg_callback ) {
+#ifdef NCBI_THREADS
+        CFastMutexGuard guard (progress_mutex);
+#endif
+        m_prg_info.m_iter_done += (i % prg_rep_rate)*N2;
+        m_terminate = m_prg_callback(&m_prg_info);
+    }
+
     delete[] rowV;
     delete[] rowF;
 }
@@ -567,6 +621,10 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
              vector<TScore>& vE, vector<TScore>& vF, vector<TScore>& vG,
              vector<unsigned char>& trace, bool rb) const
 {
+    if( m_terminate ) {
+        return;
+    }
+
     const size_t dim1 = rect.i2 - rect.i1 + 1;
     const size_t dim2 = rect.j2 - rect.j1 + 1;
     const size_t N1   = dim1 + 1;
@@ -583,6 +641,11 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
     bool bFreeGapRight1  = m_esf_R1 && rect.i2 == m_SeqLen1 - 1;
     bool bFreeGapRight2  = m_esf_R2 && rect.j2 == m_SeqLen2 - 1;
     bool bFreeGapLeft2  =  m_esf_L2 && rect.j1 == 0;
+
+    // progress reporting
+
+    const size_t prg_rep_rate = 100;
+    const size_t prg_rep_increment = prg_rep_rate*N2;
 
     // bottom row
 
@@ -637,12 +700,22 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
 
             V = (E >= rowF[j])? (E >= G? E: G): (rowF[j] >= G? rowF[j]: G);
         }
-
         pV[j] = V;
+
+        if( m_prg_callback && (N1 - i) % prg_rep_rate == 0 ) {
+#ifdef NCBI_THREADS
+            CFastMutexGuard guard (progress_mutex);
+#endif
+            m_prg_info.m_iter_done += prg_rep_increment;
+            if( m_terminate = m_prg_callback(&m_prg_info) ) {
+                break;
+            }
+        }
     }
 
     // the top row (i == 0)
-    {
+    if(!m_terminate) {
+
         vF[N2-1] = V = V0 += ws;
         vG[N2-1] = vE[N2-1] = E = kInfMinus;
         trace[N2-1] = kMaskFc;
@@ -702,6 +775,14 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
             trace[j] = tracer;
         }
     }
+
+    if( m_prg_callback ) {
+#ifdef NCBI_THREADS
+        CFastMutexGuard guard (progress_mutex);
+#endif
+        m_prg_info.m_iter_done += (N1 - i) % prg_rep_rate;
+        m_terminate = m_prg_callback(&m_prg_info);
+    }
     
     delete[] rowV;
     delete[] rowF;
@@ -712,6 +793,10 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
                                          bool left_top, bool right_bottom,
                                          list<ETranscriptSymbol>& subpath)
 {
+    if( m_terminate ) {
+        return 0;
+    }
+
     const int N1 = rect.i2 - rect.i1 + 2;
     const int N2 = rect.j2 - rect.j1 + 2;
 
@@ -869,6 +954,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/06/02 14:04:49  kapustin
+ * Progress indication-related updates
+ *
  * Revision 1.9  2003/05/23 18:26:38  kapustin
  * Use weak comparisons in core recurrences.
  *

@@ -119,8 +119,8 @@ public:
         char   m_text_buffer [1024];
     };
 
-    typedef bool (*ProgressCallback_t) (SProgressInfo*);
-    void SetProgressCallback ( ProgressCallback_t prg_callback, void* data );
+    typedef bool (*FProgressCallback) (SProgressInfo*);
+    void SetProgressCallback ( FProgressCallback prg_callback, void* data );
 
     // Getters
     static TScore GetDefaultWm  () { return  1; }
@@ -161,9 +161,11 @@ protected:
     void x_LoadScoringMatrix();
 
     // progress callback (true return value indicates exit request)
-    ProgressCallback_t    m_prg_callback;
+    FProgressCallback     m_prg_callback;
     // progress status
-    SProgressInfo         m_prg_info;
+    mutable SProgressInfo m_prg_info;
+    // termination flag
+    mutable  bool         m_terminate;
 
     // Source sequences
     string                m_Seq1Id;
@@ -214,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/06/02 14:04:25  kapustin
+ * Progress indication-related updates
+ *
  * Revision 1.20  2003/05/23 18:23:40  kapustin
  * Introduce a generic splice type. Make transcript symbol to be more specific about type of the intron.
  *

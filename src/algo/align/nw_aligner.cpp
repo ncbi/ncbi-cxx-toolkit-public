@@ -185,20 +185,19 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
     TScore* rowV    = new TScore [N2];
     TScore* rowF    = new TScore [N2];
 
-    // index calculation: [i,j] = i*n2 + j
-    unsigned char* backtrace_matrix = new unsigned char [N1*N2];
-
     TScore* pV = rowV - 1;
 
     const char* seq1 = seg1 - 1;
     const char* seq2 = seg2 - 1;
 
-    bool bNowExit = false;
+    m_terminate = false;
 
     if(m_prg_callback) {
         m_prg_info.m_iter_total = N1*N2;
         m_prg_info.m_iter_done = 0;
-        bNowExit = m_prg_callback(&m_prg_info);
+        if(m_terminate = m_prg_callback(&m_prg_info)) {
+	  return 0;
+	}
     }
 
     bool bFreeGapLeft1  = m_esf_L1 && seg1 == m_Seq1;
@@ -210,21 +209,22 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
     TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
     TScore wg1 = m_Wg, ws1 = m_Ws;
 
+    // index calculation: [i,j] = i*n2 + j
+    unsigned char* backtrace_matrix = new unsigned char [N1*N2];
+
     // first row
     size_t k;
-    if(!bNowExit) {
-        rowV[0] = wgleft1;
-        for (k = 1; k < N2; k++) {
-            rowV[k] = pV[k] + wsleft1;
-            rowF[k] = kInfMinus;
-            backtrace_matrix[k] = kMaskE | kMaskEc;
-        }
-        rowV[0] = 0;
+    rowV[0] = wgleft1;
+    for (k = 1; k < N2; k++) {
+        rowV[k] = pV[k] + wsleft1;
+        rowF[k] = kInfMinus;
+        backtrace_matrix[k] = kMaskE | kMaskEc;
     }
-
+    rowV[0] = 0;
+	
     if(m_prg_callback) {
         m_prg_info.m_iter_done = k;
-        bNowExit = m_prg_callback(&m_prg_info);
+        m_terminate = m_prg_callback(&m_prg_info);
     }
 
     // recurrences
@@ -236,7 +236,7 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
     unsigned char tracer;
 
     size_t i, j;
-    for(i = 1;  i < N1 && !bNowExit;  ++i) {
+    for(i = 1;  i < N1 && !m_terminate;  ++i) {
         
         V = V0 += wsleft2;
         E = kInfMinus;
@@ -301,12 +301,14 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
 
         if(m_prg_callback) {
             m_prg_info.m_iter_done = k;
-            bNowExit = m_prg_callback(&m_prg_info);
+            if(m_terminate = m_prg_callback(&m_prg_info)) {
+                break;
+            }
         }
        
     }
 
-    if(!bNowExit) {
+    if(!m_terminate) {
         x_DoBackTrace(backtrace_matrix, N1, N2, transcript);
     }
 
@@ -320,7 +322,6 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
 
 CNWAligner::TScore CNWAligner::Run()
 {
-    
     if(!x_CheckMemoryLimit()) {
         NCBI_THROW(
                    CNWAlignerException,
@@ -765,8 +766,8 @@ string CNWAligner::GetTranscript() const
     return s;
 }
 
-void CNWAligner::SetProgressCallback ( ProgressCallback_t prg_callback,
-                                       void* data )
+void CNWAligner::SetProgressCallback ( FProgressCallback prg_callback,
+				       void* data )
 {
     m_prg_callback = prg_callback;
     m_prg_info.m_data = data;
@@ -994,6 +995,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/06/02 14:04:49  kapustin
+ * Progress indication-related updates
+ *
  * Revision 1.25  2003/05/23 18:27:02  kapustin
  * Use weak comparisons in core recurrences. Adjust for new transcript identifiers.
  *

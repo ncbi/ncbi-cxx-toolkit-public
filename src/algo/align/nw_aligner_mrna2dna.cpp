@@ -80,7 +80,7 @@ CNWAligner::TScore CNWAlignerMrna2Dna::GetDefaultWi(unsigned char splice_type)
 
 void CNWAlignerMrna2Dna::SetWi  (unsigned char splice_type, TScore value) {
 
-    if(0 <= splice_type && splice_type < splice_type_count) {
+    if(splice_type < splice_type_count) {
         m_Wi[splice_type]  = value;
     }
     else {
@@ -433,9 +433,6 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
         }
     }
 
-    TScore L1 = 0, R1 = 0, L2 = 0, R2 = 0;
-    bool   bL1 = false, bR1 = false, bL2 = false, bR2 = false;
-    
     for(int i = dim - 1; i >= 0; --i) {
 
         char c1 = m_Seq1? *p1: 0;
@@ -813,6 +810,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/06/02 14:04:49  kapustin
+ * Progress indication-related updates
+ *
  * Revision 1.17  2003/05/23 18:27:57  kapustin
  * Use weak comparisons in core recurrences. Adjust for new transcript identifiers. Introduce new (generic) splice type.
  *
