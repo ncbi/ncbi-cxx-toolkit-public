@@ -864,7 +864,6 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     long	lineno = 0;
     double	xscore;
     register int	index1, index2;
-    Int2 status;
     const char k_comment_chr = '#';
     const char* k_token_str = " \t\n\r";
     
@@ -3594,6 +3593,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.90  2004/08/03 21:06:15  dondosha
+ * Removed unused variable
+ *
  * Revision 1.89  2004/08/03 20:12:57  dondosha
  * Renamed BlastScoreBlkMatCreate to BlastScoreBlkNuclMatrixCreate and made it public
  *
