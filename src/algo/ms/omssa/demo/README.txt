@@ -1,4 +1,19 @@
 ==============================================
+omssacl: ms/ms search algorithm
+==============================================
+
+Homepage: http://www.ncbi.nlm.nih.gov/Structure/OMSSA/
+
+For more information on command line parameters, see http://www.ncbi.nlm.nih.gov/Structure/OMSSA/run.htm
+
+For information on setting up sequence libraries, see http://www.ncbi.nlm.nih.gov/Structure/OMSSA/blastdb.htm
+
+For a description of the algorithm, see http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=pubmed&dopt=Abstract&list_uids=15473683
+preprint at: http://arxiv.org/abs/q-bio.QM/0406002
+
+
+
+==============================================
 dta_merge_OMSSA.pl: concatenating DTA files
 ==============================================
 
@@ -9,7 +24,6 @@ To run the concatenation script use:
 perl dta_merge_OMSSA.pl -i <input path> -o <output path> -s <batch size> -n <output file name root>
 
 If the program complains that there are too many dta files, try increasing the batch size or breaking your dta file sets into smaller groups.
-
 
 
 
