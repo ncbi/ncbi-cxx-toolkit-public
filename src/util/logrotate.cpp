@@ -41,7 +41,7 @@ CRotatingLogStreamBuf::CRotatingLogStreamBuf(CRotatingLogStream* stream,
                                              const string& filename,
                                              CT_POS_TYPE limit,
                                              IOS_BASE::openmode mode)
-    : m_Stream(stream), m_FileName(filename), m_Limit(limit), m_Mode(mode)
+    : m_Stream(stream), m_FileName(filename), m_Size(0), m_Limit(limit), m_Mode(mode)
 {
     open(m_FileName.c_str(), m_Mode);
     m_Size = seekoff(0, IOS_BASE::cur, IOS_BASE::out);
@@ -121,6 +121,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/03/26 18:45:16  kans
+* add initialize default for m_Size (RS)
+*
 * Revision 1.4  2003/02/13 01:00:04  ucko
 * Limit CT_POS_TYPE operations to += and -=.  (Sigh.)
 *
