@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1998/12/04 23:38:34  vakatov
+* Workaround SunPro's "buggy const"(see "BW_01")
+* Renamed "CCgiCookies::Erase()" method to "...Clear()"
+*
 * Revision 1.25  1998/12/01 15:39:35  sandomir
 * xmlstore.hpp|cpp moved to another dir
 *
@@ -192,7 +196,7 @@ public:
     CCgiCookie* Find(const string& name) const;  // return zero if can not find
     bool Empty(void) const;  // "true" if contains no cookies
     bool Remove(const string& name);  // return "false" if can not find
-    void Erase(void);  // remove all stored cookies
+    void Clear(void);  // remove all stored cookies
 
     // Printout all cookies into the stream "os"(see also CCgiCookie::Write())
     CNcbiOstream& Write(CNcbiOstream& os) const;

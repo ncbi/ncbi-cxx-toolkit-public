@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1998/12/04 23:38:35  vakatov
+* Workaround SunPro's "buggy const"(see "BW_01")
+* Renamed "CCgiCookies::Erase()" method to "...Clear()"
+*
 * Revision 1.15  1998/12/01 00:27:19  vakatov
 * Made CCgiRequest::ParseEntries() to read ISINDEX data, too.
 * Got rid of now redundant CCgiRequest::ParseIndexesAsEntries()
@@ -287,18 +291,19 @@ CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os) const
     return os;
 }
 
-CCgiCookies::TCookies::iterator CCgiCookies::x_Find(const string& name) const
+CCgiCookies::TCookies::iterator CCgiCookies::x_Find(const string& name)
+const
 {
-    TCookies* cookies = const_cast<TCookies*>(&m_Cookies);
-    for (TCookies::iterator iter = cookies->begin();
-         iter != cookies->end();  iter++) {
+    TCookies& xx_Cookies = const_cast<TCookies&>(m_Cookies); //BW_01
+    for (TCookies::iterator iter = xx_Cookies.begin();
+         iter != xx_Cookies.end();  iter++) {
         if (name.compare((*iter)->GetName()) == 0)
             return iter;
     }
-    return cookies->end();
+    return xx_Cookies.end();
 }
 
-void CCgiCookies::Erase(void) {
+void CCgiCookies::Clear(void) {
     for (TCookies::const_iterator iter = m_Cookies.begin();
          iter != m_Cookies.end();  iter++) {
         delete *iter;
@@ -445,7 +450,7 @@ static SIZE_TYPE s_ParseIsIndex(const string& str,
         if ( indexes ) {
             indexes->push_back(name);
         } else {
-            pair<const string, string> entry(name, "");
+            pair<const string, string> entry(name, NcbiEmptyString);
             entries->insert(entry);
         }
 
@@ -534,19 +539,20 @@ const string& CCgiRequest::x_GetPropertyByName(const string& name)
     const char* env_str = ::getenv(name.c_str());
     pair<TCgiProperties::iterator, bool> ins_pair =
         m_Properties.insert(TCgiProperties::value_type
-                            (name, env_str ? env_str : ""));
+                            (name, env_str ? env_str : NcbiEmptyCStr));
     _ASSERT( ins_pair.second );
     return (*ins_pair.first).second;
 }
 
 
-const string& CCgiRequest::GetProperty(ECgiProp property) const
+const string& CCgiRequest::GetProperty(ECgiProp property)
+const
 {
     // This does not work on SunPro 5.0 by some reason:
     //    return m_Properties.find(GetPropName(property)))->second;
-    // and this is the workaround:
-    return (*const_cast<TCgiProperties*>(&m_Properties)->
-            find(GetPropertyName(property))).second;
+    // and this is the workaround [BW_01]:
+    TCgiProperties& xx_Properties = const_cast<TCgiProperties&>(m_Properties);
+    return xx_Properties.find(GetPropertyName(property))->second;
 }
 
 
