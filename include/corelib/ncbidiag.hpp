@@ -223,15 +223,17 @@ public:
 
     // display error message
     NCBI_XNCBI_EXPORT
-    static void DiagFatal(const char* file, size_t line, const char* message);
+    static void DiagFatal   (const char* file, size_t line,
+                             const char* message);
     NCBI_XNCBI_EXPORT
-    static void DiagTrouble(const char* file, size_t line);
+    static void DiagTrouble (const char* file, size_t line);
     NCBI_XNCBI_EXPORT
-    static void DiagAssert(const char* file, size_t line, const char* expression);
+    static void DiagAssert  (const char* file, size_t line,
+                             const char* expression);
     NCBI_XNCBI_EXPORT
     static void DiagValidate(const char* file, size_t line,
-                                          const char* expression, const char* message);
-    
+                             const char* expression, const char* message);
+
 private:
     mutable EDiagSev       m_Severity;   // severity level of current message
     mutable char           m_File[256];  // file name
@@ -592,6 +594,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.56  2003/04/11 17:55:44  lavr
+ * Proper indentation of some fragments
+ *
  * Revision 1.55  2003/03/31 15:36:51  siyan
  * Added doxygen support
  *

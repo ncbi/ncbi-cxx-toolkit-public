@@ -68,8 +68,7 @@
 BEGIN_NCBI_SCOPE
 
 
-// Forward declaration
-class CConn_Streambuf;
+class CConn_Streambuf; // Forward declaration
 
 
 const streamsize kConn_DefBufSize = 4096;
@@ -234,6 +233,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/04/11 17:55:30  lavr
+ * Proper indentation of some fragments
+ *
  * Revision 6.18  2003/04/09 17:58:42  siyan
  * Added doxygen support
  *
