@@ -785,7 +785,6 @@ string& CAlnVec::GetColumnVector(string& buffer,
 
         } else {
             // it's a gap or endchar
-            buffer[row] = GetGapChar(row);
             
             if (GetEndChar() != (buffer[row] = GetGapChar(row))) {
                 // need to check the where the segment is
@@ -834,6 +833,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2004/03/30 16:39:09  todorov
+* -redundant statement
+*
 * Revision 1.57  2003/12/22 19:14:12  todorov
 * Only left constructors that accept CScope&
 *
