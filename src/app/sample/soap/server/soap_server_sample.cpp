@@ -97,7 +97,7 @@ bool CSampleSoapServerApplication::GetVersion(
     CConstRef<CVersion> req = SOAP_GetKnownObject<CVersion>(request);
     CRef<CVersionResponse> resp(new CVersionResponse);
     // Just bounce ClientID
-    resp->SetVersionStruct().SetClientID(bool(req) ? req->GetClientID() : "unknown clientid");
+    resp->SetVersionStruct().SetClientID(req ? req->GetClientID() : "unknown clientid");
     resp->SetVersionStruct().SetMajor("1");
     resp->SetVersionStruct().SetMinor("0");
     response.AddObject(*resp,CSoapMessage::eMsgBody);
@@ -147,6 +147,9 @@ int main(int argc, const char* argv[])
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/01/12 17:25:25  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.1  2004/11/17 19:45:09  gouriano
 * Initial revision
 *

@@ -162,12 +162,12 @@ int CSampleSoapClientApplication::Run(void)
     try {
 
         CConstRef<CDescriptionText> v1 = ws.GetDescription();
-        if (bool(v1)) {
+        if (v1) {
             cout << v1->GetText() << endl;
         }
 
         CConstRef<CVersionResponse> v2 = ws.GetVersion("C++ SOAP client");
-        if (bool(v2)) {
+        if (v2) {
             cout << v2->GetVersionStruct().GetMajor() << "." <<
                     v2->GetVersionStruct().GetMinor() << ":  " <<
                     v2->GetVersionStruct().GetClientID() << endl;
@@ -186,7 +186,7 @@ int CSampleSoapClientApplication::Run(void)
         ops.SetOperand().push_back(op2);
 
         CConstRef<CMathResponse> v3 = ws.DoMath(ops);
-        if (bool(v3)) {
+        if (v3) {
             CMathResponse::TMathResult::const_iterator i;
             for (i = v3->GetMathResult().begin();
                  i != v3->GetMathResult().end(); ++i) {
@@ -216,6 +216,9 @@ int main(int argc, const char* argv[])
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/01/12 17:25:25  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.1  2004/11/17 19:44:34  gouriano
 * Initial revision
 *

@@ -1463,7 +1463,7 @@ static bool s_IsRefSeqInSep(const CSeq_entry& se, CScope& scope)
 {
     for (CBioseq_CI it(scope, se); it; ++it) {
         ITERATE (CBioseq_Handle::TId, id, it->GetId()) {
-            if (bool(id->GetSeqId()) &&  id->GetSeqId()->IsOther()) {
+            if (id->GetSeqId() &&  id->GetSeqId()->IsOther()) {
                 const CTextseq_id* tsip = id->GetSeqId()->GetTextseq_Id();
                 if (tsip != NULL  &&  tsip->IsSetAccession()) {
                     return true;
@@ -1999,7 +1999,7 @@ CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
     // In case of a NT bioseq limit the search to features packaged on the 
     // NT (we assume features have been pulled from the segments to the NT).
     CSeq_entry_Handle limit;
-    if ( IsNT()  &&  bool(m_TSE) ) {
+    if ( IsNT()  &&  m_TSE ) {
         limit = m_Scope->GetSeq_entryHandle(*m_TSE);
     }
 
@@ -2591,6 +2591,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2005/01/12 17:24:26  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.63  2005/01/05 21:38:04  grichenk
 * Replaced calls to deprecated methods (SetLimit...)
 *

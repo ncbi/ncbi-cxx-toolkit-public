@@ -268,7 +268,7 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
     m_Value = ExpandTildes(m_Value, tilde_style);
 
     TFlatQual qual = x_AddFQ(q, (s_IsNote(flags) ? "note" : name), m_Value, m_Style);
-    if ((flags & fAddPeriod)  &&  bool(qual)) {
+    if ((flags & fAddPeriod)  &&  qual) {
         qual->SetAddPeriod();
     }
 }
@@ -548,7 +548,7 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
             } else {
                 qual = x_AddFQ(q, "note", name + ": " + subname);
             }
-            if (add_period  &&  bool(qual)) {
+            if (add_period  &&  qual) {
                 qual->SetAddPeriod();
             }
         }
@@ -653,7 +653,7 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
             } else {
                 qual = x_AddFQ(q, "note", name + ": " + subname);        
             }
-            if (add_period  &&  bool(qual)) {
+            if (add_period  &&  qual) {
                 qual->SetAddPeriod();
             }
         }
@@ -883,6 +883,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/01/12 17:24:26  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.23  2004/12/09 14:47:17  shomrat
 * Added CFlatSiteQVal
 *

@@ -100,7 +100,7 @@ const CSerialObject* CFlatItem::GetObject(void) const
 inline
 bool CFlatItem::IsSetObject(void) const
 {
-    return m_Object; 
+    return m_Object.NotEmpty(); 
 }
 
 
@@ -171,6 +171,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/01/12 17:24:26  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.5  2004/04/22 15:37:04  shomrat
 * Changes in context
 *

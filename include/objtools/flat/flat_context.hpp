@@ -78,7 +78,7 @@ public:
     const CSeq_loc&    GetLocation    (void) const { return *m_Location;      }
     bool               AdjustCoords   (void) const { return m_AdjustCoords;   }
     const CBioseq_Handle& GetHandle   (void) const { return m_Handle;         }
-    bool               InSegSet       (void) const { return m_SegMaster;      }
+    bool               InSegSet       (void) const { return m_SegMaster.NotEmpty();      }
     const CBioseq*     GetSegMaster   (void) const { return m_SegMaster;      }
     unsigned int       GetSegmentNum  (void) const { return m_SegmentNum;     }
     unsigned int       GetSegmentCount(void) const { return m_SegmentCount;   }
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/01/12 17:24:26  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.4  2003/10/08 21:09:58  ucko
 * For segmented sequences, find and note the "master" sequence rather
 * than just setting a flag.

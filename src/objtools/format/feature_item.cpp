@@ -151,7 +151,7 @@ static bool s_CheckQuals_cdregion(const CSeq_feat& feat, CBioseqContext& ctx)
                     ITERATE (CBioseq_Handle::TId, it, prod.GetId()) {
                         if (s_ValidId(*it->GetSeqId())) {
                             CConstRef<CTextseq_id> tsip(it->GetSeqId()->GetTextseq_Id());
-                            if (bool(tsip)  &&  tsip->IsSetAccession()  &&
+                            if (tsip  &&  tsip->IsSetAccession()  &&
                                 IsValidAccession(tsip->GetAccession())) {
                                 return true;
                             }
@@ -170,7 +170,7 @@ static bool s_CheckQuals_cdregion(const CSeq_feat& feat, CBioseqContext& ctx)
                 }
             } else if (s_ValidId(*id)) {
                 CConstRef<CTextseq_id> tsip(id->GetTextseq_Id());
-                if (bool(tsip)  &&  tsip->IsSetAccession()  &&
+                if (tsip  &&  tsip->IsSetAccession()  &&
                     IsValidAccession(tsip->GetAccession())) {
                     return true;
                 }
@@ -1715,7 +1715,7 @@ void CFeatureItem::x_AddProtQuals
                                    CSeqFeatData::e_Prot,
                                    eOverlap_Simple,
                                    ctx.GetScope());
-        if ( (bool)prot  &&  prot->CanGetComment() ) {
+        if ( prot  &&  prot->CanGetComment() ) {
             precursor_comment = prot->GetComment();
         }
     }
@@ -3498,6 +3498,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2005/01/12 17:24:26  vasilche
+* Avoid performance warning on MSVC.
+*
 * Revision 1.39  2005/01/12 16:47:23  shomrat
 * more fixes to feature formatting
 *
