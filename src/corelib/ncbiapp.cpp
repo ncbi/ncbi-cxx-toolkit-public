@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/06/09 18:41:04  vakatov
+* FlushDiag() -- check for empty diag.buffer
+*
 * Revision 1.22  2000/04/04 22:33:35  vakatov
 * Auto-set the tracing and the "abort-on-throw" debugging features
 * basing on the application environment and/or registry
@@ -166,8 +169,10 @@ SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool close_diag)
 
     // dump all content to "os"
     SIZE_TYPE n_write = 0;
-    if ( os ) {
+    if ( os )
         n_write = ostr->pcount();
+
+    if ( n_write ) {
         os->write(ostr->str(), n_write);
         ostr->rdbuf()->freeze(0);
     }
