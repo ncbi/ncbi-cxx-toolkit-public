@@ -527,16 +527,20 @@ double SERV_Preference(double pref, double gap, unsigned int n)
     assert(n >= 2);
     if (gap >= pref)
         return gap;
-    else if (gap >= 0.75*(1.0/(double) n))
+    double spread = 14.0/(n + 12.0);
+    if (gap >= spread*(1.0/(double) n))
         return pref;
     else
-        return 2.5*gap*pref;
+        return 2.0/spread*gap*pref;
 }
 
 
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.56  2005/01/05 17:39:07  lavr
+ * SERV_Preference() modified to use better load distribution
+ *
  * Revision 6.55  2004/08/19 15:48:35  lavr
  * SERV_ITER::type renamed into SERV_ITER::types to reflect its bitmask nature
  *
