@@ -91,6 +91,8 @@ typedef struct LinkHSPStruct {
    Int4 s_end_trim;        /**< End of trimmed HSP in subject */
 } LinkHSPStruct;
 
+
+
 #define WINDOW_SIZE 20
 static double 
 SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp, 
@@ -124,11 +126,12 @@ SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp,
       MAX(head_hsp->hsp->score, head_hsp->sumscore);
    score_prime = *sumscore * sbp->kbp_gap[context]->Lambda;
 
-   sum_evalue =  
-      BLAST_UnevenGapSumE(sbp->kbp_gap[context], 2*WINDOW_SIZE, 
-         hit_params->options->longest_intron + WINDOW_SIZE, 
-         gap_prob, gap_decay_rate, num, score_prime, 
-         query_eff_length, subject_eff_length);
+   sum_evalue =
+       BLAST_UnevenGapSumE(sbp->kbp_gap[context], 2*WINDOW_SIZE,
+                           hit_params->options->longest_intron + WINDOW_SIZE,
+                           num, score_prime,
+                           query_eff_length, subject_eff_length,
+                           BLAST_GapDecayDivisor(gap_decay_rate, num));
 
    eff_searchsp = ((double) subject_eff_length) * query_eff_length;
    
@@ -968,36 +971,53 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
          if (!ignore_small_gaps)
          {
             /* Select the best ordering method.
-               First we add back in the value cutoff[index] * the number 
+               First we add back in the value cutoff[index] * the number
                of links, as this was subtracted out for purposes of the
                comparison above. */
-            best[0]->hsp_link.sum[0] += 
+            best[0]->hsp_link.sum[0] +=
                (best[0]->hsp_link.num[0])*cutoff[0];
-            
-            prob[0] = BLAST_SmallGapSumE(kbp[query_context], 
-                         gap_size, gap_prob, gap_decay_rate, 
-                         best[0]->hsp_link.num[0], best[0]->hsp_link.xsum[0], 
-                         query_length, subject_length);
-            prob[1] = BLAST_LargeGapSumE(kbp[query_context], 
-                         gap_prob, gap_decay_rate, best[1]->hsp_link.num[1],
-                         best[1]->hsp_link.xsum[1], 
-                         query_length, subject_length);
 
-            ordering_method = 
+            prob[0] = BLAST_SmallGapSumE(kbp[query_context],
+                         gap_size,
+                         best[0]->hsp_link.num[0], best[0]->hsp_link.xsum[0],
+                         query_length, subject_length,
+                         BLAST_GapDecayDivisor(gap_decay_rate,
+                                              best[0]->hsp_link.num[0]) );
+
+            /* Adjust the e-value because we are performing multiple tests */
+            if( best[0]->hsp_link.num[0] > 1 ) {
+              if( gap_prob == 0 || (prob[0] /= gap_prob) > INT4_MAX ) {
+                prob[0] = INT4_MAX;
+              }
+            }
+
+            prob[1] = BLAST_LargeGapSumE(kbp[query_context],
+                         best[1]->hsp_link.num[1],
+                         best[1]->hsp_link.xsum[1],
+                         query_length, subject_length,
+                         BLAST_GapDecayDivisor(gap_decay_rate,
+                                              best[1]->hsp_link.num[0]));
+
+            if( best[1]->hsp_link.num[1] > 1 ) {
+              if( 1 - gap_prob == 0 || (prob[1] /= 1 - gap_prob) > INT4_MAX ) {
+                prob[1] = INT4_MAX;
+              }
+            }
+            ordering_method =
                prob[0]<=prob[1] ? BLAST_SMALL_GAPS : BLAST_LARGE_GAPS;
          }
          else
          {
             /* We only consider the case of big gaps. */
-            best[1]->hsp_link.sum[1] += 
+            best[1]->hsp_link.sum[1] +=
                (best[1]->hsp_link.num[1])*cutoff[1];
-            /* gap_prob=0 here as small gaps are NOT considered. */
-            
-            prob[1] = BLAST_LargeGapSumE(kbp[query_context], 0.0, 
-                         gap_decay_rate, best[1]->hsp_link.num[1],
-                         best[1]->hsp_link.xsum[1], 
-                         query_length, subject_length);
 
+            prob[1] = BLAST_LargeGapSumE(kbp[query_context],
+                         best[1]->hsp_link.num[1],
+                         best[1]->hsp_link.xsum[1],
+                         query_length, subject_length,
+                         BLAST_GapDecayDivisor(gap_decay_rate,
+                                              best[1]->hsp_link.num[1]));
             ordering_method = BLAST_LARGE_GAPS;
          }
 
