@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.333 2004/11/22 22:32:10 ucko Exp $
+#  $Id: configure.ac,v 1.334 2004/11/29 15:50:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3088,6 +3088,12 @@ else
    FLTK_LIBS_GL=`$FLTK_CONFIG --ldflags --use-gl`
    FLTK_LIBS_IMAGES=`$FLTK_CONFIG --ldflags --use-images`
    FLTK_LIBS_ALL=`$FLTK_CONFIG --ldflags --use-gl --use-images`
+   # Also supply static versions for use in CGIs to be deployed to servers
+   # without access to the shared libraries.
+   FLTK_STATIC_LIBS=`$FLTK_CONFIG --ldstaticflags`
+   FLTK_STATIC_LIBS_GL=`$FLTK_CONFIG --ldstaticflags --use-gl`
+   FLTK_STATIC_LIBS_IMAGES=`$FLTK_CONFIG --ldstaticflags --use-images`
+   FLTK_STATIC_LIBS_ALL=`$FLTK_CONFIG --ldstaticflags --use-gl --use-images`
    AC_DEFINE(HAVE_FLTK, 1, [Define to 1 if FLTK is available.])
 fi
 
@@ -4168,6 +4174,10 @@ AC_SUBST(FLTK_LIBS)
 AC_SUBST(FLTK_LIBS_GL)
 AC_SUBST(FLTK_LIBS_IMAGES)
 AC_SUBST(FLTK_LIBS_ALL)
+AC_SUBST(FLTK_STATIC_LIBS)
+AC_SUBST(FLTK_STATIC_LIBS_GL)
+AC_SUBST(FLTK_STATIC_LIBS_IMAGES)
+AC_SUBST(FLTK_STATIC_LIBS_ALL)
 AC_SUBST(FLTK_CONFIG)
 AC_SUBST(WXWIN_INCLUDE)
 AC_SUBST(WXWIN_LIBS)

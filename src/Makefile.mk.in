@@ -316,6 +316,12 @@ FLTK_LIBS_ALL    = @FLTK_LIBS_ALL@
 # Assign FLTK_POST_LINK to POST_LINK when building FLTK apps.
 FLTK_CONFIG      = @FLTK_CONFIG@
 FLTK_POST_LINK   = $(FLTK_CONFIG) --post
+# Variants of FLTK_LIBS_* for use in applications (typically CGIs) that
+# will run without FLTK's shared libraries available.
+FLTK_STATIC_LIBS        = @FLTK_STATIC_LIBS@
+FLTK_STATIC_LIBS_GL     = @FLTK_STATIC_LIBS_GL@
+FLTK_STATIC_LIBS_IMAGES = @FLTK_STATIC_LIBS_IMAGES@
+FLTK_STATIC_LIBS_ALL    = @FLTK_STATIC_LIBS_ALL@
 
 # Fast-CGI lib:  headers and libs
 FASTCGI_INCLUDE = @FASTCGI_INCLUDE@
