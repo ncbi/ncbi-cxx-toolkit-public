@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
 * Revision 1.21  2002/05/28 18:00:43  gouriano
 * DebugDump added
 *
@@ -133,12 +136,7 @@ CScope::CScope(CObjectManager& objmgr)
 
 CScope::~CScope(void)
 {
-    // Drop and release all TSEs
-    iterate(TRequestHistory, it, m_History) {
-        (*it)->Unlock();
-    }
-    m_pObjMgr->RevokeScope(*this);
-    m_pObjMgr->ReleaseDataSources(m_setDataSrc);
+    x_DetachFromOM();
 }
 
 void CScope::AddDefaults(void)
@@ -404,7 +402,7 @@ void CScope::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     ddc.SetFrame("CScope");
     CObject::DebugDump( ddc, depth);
 
-    ddc.Log("m_pObjMgr", m_pObjMgr.GetPointer(),0);
+    ddc.Log("m_pObjMgr", m_pObjMgr,0);
     if (depth == 0) {
         DebugDumpValue(ddc,"m_setDataSrc.size()", m_setDataSrc.size());
         DebugDumpValue(ddc,"m_History.size()", m_History.size());
@@ -420,6 +418,25 @@ void CScope::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     DebugDumpValue(ddc,"m_FindMode", m_FindMode);
 }
 
+void
+CScope::x_DetachFromOM(void)
+{
+    CMutexGuard guard(sm_Scope_Mutex);
+    // Drop and release all TSEs
+    if(!m_History.empty())
+      {
+        iterate(TRequestHistory, it, m_History) {
+          (*it)->Unlock();
+        }
+        m_History.clear();
+      }
+    if(m_pObjMgr)
+      {
+        m_pObjMgr->ReleaseDataSources(m_setDataSrc);
+        m_pObjMgr->RevokeScope(*this);
+        m_pObjMgr=0;
+      }
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

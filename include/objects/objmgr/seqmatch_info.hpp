@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/06/04 17:18:32  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
 * Revision 1.3  2002/05/06 03:30:36  vakatov
 * OM/OM1 renaming
 *
@@ -80,7 +83,7 @@ public:
 
     CSeq_id_Handle    m_Handle;     // best id handle, matching the request
     CRef<CTSE_Info>   m_TSE;        // TSE, containing the best match
-    CRef<CDataSource> m_DataSource; // Data source, containing the match
+    CDataSource      *m_DataSource; // Data source, containing the match
 };
 
 

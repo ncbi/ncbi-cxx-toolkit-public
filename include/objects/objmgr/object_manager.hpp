@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/06/04 17:18:32  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
 * Revision 1.6  2002/05/28 18:01:10  gouriano
 * DebugDump added
 *
@@ -82,6 +85,7 @@ class CSeq_id_Mapper;
 // CObjectManager
 
 class CObjectManager : public CObject
+//class CObjectManager : virtual public CDebugDumpable
 {
 public:
     CObjectManager(void);
@@ -159,7 +163,10 @@ private:
 
 // these are for Object Manager itself
 // nobody else should use it
+    void x_RegisterTSE(CSeq_entry& top_entry);
+    bool x_RegisterLoader(CDataLoader& loader,EIsDefault   is_default = eNonDefault);
     CDataLoader* x_GetLoaderByName(const string& loader_name) const;
+    
     void x_AddDataSource(
         set< CDataSource* >& sources, CDataSource* source) const;
     void x_ReleaseDataSource(CDataSource* source);

@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/06/04 17:18:32  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
 * Revision 1.17  2002/05/28 18:01:11  gouriano
 * DebugDump added
 *
@@ -168,6 +171,7 @@ public:
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
 private:
+    void x_DetachFromOM(void);
     // Get requests history (used by data sources to process requests)
     const TRequestHistory& x_GetHistory(void);
     // Add an entry to the requests history, lock the TSE by default
@@ -196,7 +200,7 @@ private:
                          const CSeqMatch_Info& info1,
                          const CSeqMatch_Info& info2) const;
 
-    CRef<CObjectManager> m_pObjMgr;
+    CObjectManager      *m_pObjMgr;
     set<CDataSource*>    m_setDataSrc;
 
     EFindMode m_FindMode;

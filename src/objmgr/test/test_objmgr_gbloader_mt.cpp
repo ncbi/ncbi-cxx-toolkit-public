@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
 * Revision 1.13  2002/05/08 22:23:49  kimelman
 * MT fixes
 *
@@ -125,33 +128,41 @@ using namespace objects;
 class CTestThread : public CThread
 {
 public:
-    CTestThread(unsigned id, CObjectManager& objmgr, CScope& scope,int start,int stop);
+  CTestThread(unsigned id, CObjectManager& objmgr, CScope& scope,int start,int stop);
+  virtual ~CTestThread();
   
 protected:
     virtual void* Main(void);
 
 private:
-  unsigned m_mode;
-  CRef<CScope> m_Scope;
-  CRef<CObjectManager> m_ObjMgr;
-  int m_Start;
-  int m_Stop;
+  unsigned        m_mode;
+  CScope         *m_Scope;
+  CObjectManager *m_ObjMgr;
+  int             m_Start;
+  int             m_Stop;
 };
 
 CTestThread::CTestThread(unsigned id, CObjectManager& objmgr, CScope& scope,int start,int stop)
     : m_mode(id), m_Scope(&scope), m_ObjMgr(&objmgr), m_Start(start), m_Stop(stop)
 {
-    //### Initialize the thread
+  LOG_POST("Thread " << start << " - " << stop << " - started");
+}
+
+CTestThread::~CTestThread()
+{
+  LOG_POST("Thread " << m_Start << " - " << m_Stop << " - completed");
 }
 
 void* CTestThread::Main(void)
 {
   CObjectManager om;
-  om.RegisterDataLoader(*new CGBDataLoader("ID",0,2),CObjectManager::eDefault);
   CObjectManager *pom=0;
   switch((m_mode>>2)&1) {
   case 1: pom =  &*m_ObjMgr; break;
-  case 0: pom =  &om;        break;
+  case 0:
+    pom =  &om;
+    om.RegisterDataLoader(*new CGBDataLoader("ID",0,2),CObjectManager::eDefault);
+    break;
   }
   
   CScope scope1(*pom);
@@ -211,38 +222,42 @@ const unsigned c_GI_count = c_TestTo - c_TestFrom;
 
 int CTestApplication::Test(const unsigned test_mode,const unsigned thread_count)
 {
-  CRef<CTestThread>  *thr = new CRef<CTestThread>[thread_count];
   int step= c_GI_count/thread_count;
+  CObjectManager Om;
+  {
+    CScope         scope(Om);
+    CTestThread  **thr = new (CTestThread*)[thread_count];
   
-  CRef< CObjectManager> pOm = new CObjectManager;
-  
-  // CRef< CGBDataLoader> pLoader = new CGBDataLoader;
-  // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
-  pOm->RegisterDataLoader(*new CGBDataLoader("ID", 0,1+2*thread_count),
-                          CObjectManager::eDefault);
-  
-  CRef<CScope> scope = new CScope(*pOm);
-
-  scope->AddDefaults();
-  
-  for (unsigned i=0; i<thread_count; ++i)
-    {
-      thr[i] = new CTestThread(test_mode, *pOm, *scope,c_TestFrom+i*step,c_TestFrom+(i+1)*step);
-      thr[i]->Run();
+    // CRef< CGBDataLoader> pLoader = new CGBDataLoader;
+    // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
+    if(((test_mode>>2)&1)==1)
+      {
+        Om.RegisterDataLoader(*new CGBDataLoader("ID", 0,1+2*thread_count),
+                              CObjectManager::eDefault);
+        scope.AddDefaults();
+      }
+    
+    for (unsigned i=0; i<thread_count; ++i)
+      {
+        thr[i] = new CTestThread(test_mode, Om, scope,c_TestFrom+i*step,c_TestFrom+(i+1)*step);
+        thr[i]->Run();
+      }
+    
+    for (unsigned i=0; i<thread_count; i++) {
+      LOG_POST("Thread " << i << " @join");
+      thr[i]->Join();
     }
-  
-  for (unsigned i=0; i<thread_count; i++) {
-    thr[i]->Join();
+    
+#if 0 
+    // Destroy all threads : has already been destroyed by join
+    for (unsigned i=0; i<thread_count; i++) {
+      LOG_POST("Thread " << i << " @delete");
+      delete thr[i];
+    }
+#endif
+    
+    delete [] thr;
   }
-  
-  scope->ResetHistory();
-  
-  // Destroy all threads
-  for (unsigned i=0; i<thread_count; i++) {
-    thr[i].Reset();
-  }
-  
-  delete [] thr;
   return 0;
 }
 
@@ -255,12 +270,21 @@ int CTestApplication::Run()
   
   CORE_SetLOCK(MT_LOCK_cxx2c());
   CORE_SetLOG(LOG_cxx2c());
-  
-  LOG_POST("START: " << time(0) );;
+
+  {
+    time_t x = time(0);
+    LOG_POST("START: " << time(0) );
+#if defined(HAVE_PUBSEQ_OS)
+    {
+      CGBDataLoader preload_ctlib_("ID", 0,1);
+    }
+    LOG_POST("CTLIB loaded: " << time(0)-x  );
+#endif
+  }
   
   for(unsigned thr=tc,i=0 ; thr > 0 ; --thr)
-    for(unsigned global_om=0;global_om<=(thr>1?1:0); ++global_om)
-      for(unsigned global_scope=0;global_scope<=(thr==1?1:(global_om==0?1:2)); ++global_scope)
+    for(unsigned global_om=0;global_om<=(thr>1U?1U:0U); ++global_om)
+      for(unsigned global_scope=0;global_scope<=(thr==1U?1U:(global_om==0U?1U:2U)); ++global_scope)
         {
           unsigned mode = (global_om<<2) + global_scope ;
           LOG_POST("TEST: threads:" << thr << ", om=" << (global_om?"global":"local ") <<

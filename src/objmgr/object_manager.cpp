@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
 * Revision 1.10  2002/05/28 18:00:43  gouriano
 * DebugDump added
 *
@@ -83,33 +86,38 @@ static CMutex s_OM_Mutex;
 CObjectManager::CObjectManager(void)
     : m_IdMapper(new CSeq_id_Mapper)
 {
+  //LOG_POST("CObjectManager - new :" << this );
 }
 
 
 CObjectManager::~CObjectManager(void)
 {
+  //LOG_POST("~CObjectManager - delete " << this );
     // delete scopes
-    while (!m_setScope.empty()) {
-        // this will cause calling RegisterScope and changing m_setScope
-        // be careful with data access synchronization
-        delete *(m_setScope.begin());
-    }
+    if(!m_setScope.empty())
+      {
+        ERR_POST("Attempt to delete Object Manager with open scopes");
+        while (!m_setScope.empty()) {
+          // this will cause calling RegisterScope and changing m_setScope
+          // be careful with data access synchronization
+          (*m_setScope.begin())->x_DetachFromOM();
+        }
+      }
+    CMutexGuard guard(s_OM_Mutex);
     // release data sources
+    
     CDataSource* pSource;
     while (!m_mapLoaderToSource.empty()) {
-        // we only reference Sources
-        // it is up to Source to release Loader
         pSource = m_mapLoaderToSource.begin()->second;
-        m_mapLoaderToSource.erase(m_mapLoaderToSource.begin());
-        pSource->RemoveReference();
+        _VERIFY(pSource->ReferencedOnlyOnce());
+        x_ReleaseDataSource(pSource);
     }
     while (!m_mapEntryToSource.empty()) {
-        // we only reference Sources
-        // it is up to Source to release Loader
         pSource = m_mapEntryToSource.begin()->second;
-        m_mapEntryToSource.erase(m_mapEntryToSource.begin());
-        pSource->RemoveReference();
+        _VERIFY(pSource->ReferencedOnlyOnce());
+        x_ReleaseDataSource(pSource);
     }
+    // LOG_POST("~CObjectManager - delete " << this << "  done");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -119,34 +127,8 @@ CObjectManager::~CObjectManager(void)
 void CObjectManager::RegisterDataLoader( CDataLoader& loader,
                                          EIsDefault   is_default)
 {
-    string loader_name = loader.GetName();
-    _ASSERT(!loader_name.empty());
-
-    // if already registered
-    CDataLoader* my_loader = x_GetLoaderByName(loader_name);
-    if (my_loader) {
-        // must be the same object
-        // there should be NO different loaders with the same name
-        if (my_loader != &loader) {
-            THROW1_TRACE(runtime_error,
-                "CObjectManager::RegisterDataLoader() -- "
-                "Attempt to register different data loaders with the same name");
-        }
-        ERR_POST(Warning <<
-            "CObjectManager::RegisterDataLoader() -- data loader " <<
-            loader_name << " already registered");
-        return;
-    }
-    // register
     CMutexGuard guard(s_OM_Mutex);
-    m_mapNameToLoader[ loader_name] = &loader;
-    // create data source
-    CDataSource* source = new CDataSource(loader, *this);
-    m_mapLoaderToSource[&loader] = source;
-    source->AddReference();
-    if (is_default == eDefault) {
-        m_setDefaultSource.insert(source);
-    }
+    x_RegisterLoader(loader,is_default);
 }
 
 
@@ -168,7 +150,7 @@ void CObjectManager::RegisterDataLoader(CDataLoaderFactory& factory,
     // create loader
     CDataLoader* loader = factory.Create();
     // register
-    RegisterDataLoader(*loader, is_default);
+    x_RegisterLoader(*loader, is_default);
 }
 
 
@@ -188,7 +170,7 @@ void CObjectManager::RegisterDataLoader(
     CDataLoader* loader = CREATE_AUTOCREATE(CDataLoader,factory);
     loader->SetName(loader_name);
     // register
-    RegisterDataLoader(*loader, is_default);
+    x_RegisterLoader(*loader, is_default);
 }
 
 
@@ -237,9 +219,7 @@ bool CObjectManager::RevokeDataLoader(const string& loader_name)
 void CObjectManager::RegisterTopLevelSeqEntry(CSeq_entry& top_entry)
 {
     CMutexGuard guard(s_OM_Mutex);
-    if (m_mapEntryToSource.find(&top_entry) == m_mapEntryToSource.end()) {
-        m_mapEntryToSource[ &top_entry] = new CDataSource(top_entry, *this);
-    }
+    x_RegisterTSE(top_entry);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -276,25 +256,7 @@ void CObjectManager::AddDataLoader(
     set< CDataSource* >& sources, CDataLoader& loader)
 {
     CMutexGuard guard(s_OM_Mutex);
-    string loader_name = loader.GetName();
-    _ASSERT(!loader_name.empty());
-
-    CDataLoader* my_loader = x_GetLoaderByName(loader_name);
-    if (my_loader) {
-        // must be the same object
-        // there should be NO different loaders with the same name
-        if (my_loader != &loader) {
-            THROW1_TRACE(runtime_error,
-                "CObjectManager::AddDataLoader() -- "
-                "Attempt to register different data loaders with the same name");
-        }
-    }
-    else {
-        // register
-        m_mapNameToLoader[loader_name] = &loader;
-        // create data source
-        m_mapLoaderToSource[&loader] = new CDataSource(loader, *this);
-    }
+    x_RegisterLoader(loader);
     x_AddDataSource(sources, m_mapLoaderToSource[&loader]);
 }
 
@@ -313,50 +275,11 @@ void CObjectManager::AddDataLoader(
     }
 }
 
-
-/*
-    it could be very tricky to remove a data loader once it is added
-    user is supposed to delete the whole scope instead
-
-void CObjectManager::RemoveDataLoader(
-    set< CDataSource* >& sources, CDataLoader& loader)
-{
-    string loader_name = loader.GetName();
-    _ASSERT(!loader_name.empty());
-
-    CDataLoader* my_loader = x_GetLoaderByName(loader_name);
-    if (my_loader) {
-        // must be the same object
-        // there should be NO different loaders with the same name
-        _ASSERT(my_loader == &loader);
-        CDataSource* source = m_mapLoaderToSource[ &loader];
-        if (sources.find(source) != sources.end()) {
-            sources.erase(source);
-            x_ReleaseDataSource(source);
-        }
-    }
-}
-
-
-void CObjectManager::RemoveDataLoader (
-    set< CDataSource* >& sources, const string& loader_name)
-{
-    CDataLoader* loader = x_GetLoaderByName(loader_name);
-    if (loader) {
-        RemoveDataLoader(sources, *loader);
-    }
-}
-*/
-
-
 void CObjectManager::AddTopLevelSeqEntry(
     set< CDataSource* >& sources, CSeq_entry& top_entry)
 {
     CMutexGuard guard(s_OM_Mutex);
-    if (m_mapEntryToSource.find(&top_entry) == m_mapEntryToSource.end()) {
-        m_mapEntryToSource[ &top_entry] =
-            new CDataSource(top_entry, *this);
-    }
+    x_RegisterTSE(top_entry);
     x_AddDataSource(sources, m_mapEntryToSource[ &top_entry]);
 }
 
@@ -396,6 +319,49 @@ void CObjectManager::ReleaseDataSources(set< CDataSource* >& sources)
 // private functions
 
 
+bool CObjectManager::x_RegisterLoader( CDataLoader& loader,EIsDefault   is_default)
+{
+    string loader_name = loader.GetName();
+    _ASSERT(!loader_name.empty());
+
+    // if already registered
+    CDataLoader* my_loader = x_GetLoaderByName(loader_name);
+    if (my_loader) {
+        // must be the same object
+        // there should be NO different loaders with the same name
+        if (my_loader != &loader) {
+            THROW1_TRACE(runtime_error,
+                "CObjectManager::RegisterDataLoader() -- "
+                "Attempt to register different data loaders with the same name");
+        }
+        ERR_POST(Warning <<
+            "CObjectManager::RegisterDataLoader() -- data loader " <<
+            loader_name << " already registered");
+        return false;
+    }
+    m_mapNameToLoader[ loader_name] = &loader;
+    // create data source
+    CDataSource* source = new CDataSource(loader, *this);
+    source->DoDeleteThisObject();
+    source->AddReference();
+    m_mapLoaderToSource[&loader] = source;
+    if (is_default == eDefault) {
+        m_setDefaultSource.insert(source);
+    }
+    return true;
+}
+
+void CObjectManager::x_RegisterTSE(CSeq_entry& top_entry)
+{
+    if (m_mapEntryToSource.find(&top_entry) == m_mapEntryToSource.end())
+      {
+        CDataSource *source = new CDataSource(top_entry, *this);
+        source->DoDeleteThisObject();
+        source->AddReference();
+        m_mapEntryToSource[ &top_entry] = source ;
+      }
+}
+
 CDataLoader* CObjectManager::x_GetLoaderByName(
     const string& loader_name) const
 {
@@ -425,6 +391,7 @@ void CObjectManager::x_AddDataSource(
 void CObjectManager::x_ReleaseDataSource(CDataSource* pSource)
 {
     if (pSource->ReferencedOnlyOnce()) {
+      // LOG_POST("CObjectManager - trying to remove DS " << pSource);
         CDataLoader* pLoader = pSource->GetDataLoader();
         if (pLoader) {
             m_mapLoaderToSource.erase(pLoader);
@@ -459,6 +426,7 @@ void CObjectManager::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
         DebugDumpValue(ddc,"m_mapEntryToSource.size()", m_mapEntryToSource.size());
         DebugDumpValue(ddc,"m_setScope.size()",         m_setScope.size());
     } else {
+        
         DebugDumpRangePtr(ddc,"m_setDefaultSource",
             m_setDefaultSource.begin(), m_setDefaultSource.end(), depth);
         DebugDumpPairsValuePtr(ddc,"m_mapNameToLoader",

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
 * Revision 1.6  2002/05/14 20:06:28  grichenk
 * Improved CTSE_Info locking by CDataSource and CDataLoader
 *
@@ -105,9 +108,9 @@ NcbiCout << "1.1.1 Creating CScope ==============================" << NcbiEndl;
     {
         CRef< CObjectManager> pOm = new CObjectManager;
         {
-            CRef< CTestDataLoader> pLoader1 = new CTestDataLoader( name1);
+            CTestDataLoader *pLoader1 = new CTestDataLoader( name1);
             pOm->RegisterDataLoader( *pLoader1, CObjectManager::eNonDefault);
-            CRef< CTestDataLoader> pLoader2 = new CTestDataLoader( name2);
+            CTestDataLoader *pLoader2 = new CTestDataLoader( name2);
             pOm->RegisterDataLoader( *pLoader2, CObjectManager::eDefault);
 
             // scope in CRef container
@@ -152,7 +155,7 @@ NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
     {
         CRef< CObjectManager> pOm = new CObjectManager;
         {
-            CRef< CTestDataLoader> pLoader1 = new CTestDataLoader( name1);
+            CTestDataLoader *pLoader1 = new CTestDataLoader( name1);
             CScope* pScope1 = new CScope(*pOm);
             pScope1->AddDefaults(); // nothing added
             // must throw an exception: dataloader1 not found

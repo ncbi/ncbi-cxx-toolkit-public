@@ -159,6 +159,7 @@ public:
                   const TTSESet&        tse_set);
   
   virtual void GC(void);
+  virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
   
 private:
   class CCmpTSE
@@ -252,6 +253,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.22  2002/06/04 17:18:32  kimelman
+ * memory cleanup :  new/delete/Cref rearrangements
+ *
  * Revision 1.21  2002/05/14 20:06:23  grichenk
  * Improved CTSE_Info locking by CDataSource and CDataLoader
  *

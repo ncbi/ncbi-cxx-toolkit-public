@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
 * Revision 1.21  2002/05/09 22:26:11  kimelman
 * test more than one record
 *
@@ -137,13 +140,18 @@ int CTestApplication::Run()
     NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
     CORE_SetLOG(LOG_cxx2c());
 
-    CRef< CObjectManager> pOm = new CObjectManager;
+    {{
+      CObjectManager *x = new CObjectManager;
+      // x->DoDeleteThisObject();
+      CRef< CObjectManager> pOm = x;
+    }}
+    CObjectManager Om, *pOm=&Om;
 
     // CRef< CGBDataLoader> pLoader = new CGBDataLoader;
     // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
     pOm->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),CObjectManager::eDefault);
 
-    for (int i = 1;  i < 50;  i++) {
+    for (int i = 1;  i < 2;  i++) {
         CScope scope(*pOm);
         scope.AddDefaults();
         int gi = i  + 18565551 - 5  ; 

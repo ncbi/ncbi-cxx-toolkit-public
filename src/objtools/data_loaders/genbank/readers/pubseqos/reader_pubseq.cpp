@@ -104,18 +104,21 @@ CPubseqReader::CPubseqReader(unsigned noConn,const string& server,const string& 
 #endif
   for(unsigned i = 0; i < noConn; ++i)
     m_Pool.push_back(NewConn());
+  // LOG_POST("opened " << m_Pool.size() << " new connections");
 }
 
 CPubseqReader::~CPubseqReader()
 {
+  // LOG_POST("closed " << m_Pool.size() << " connections");
+  for(unsigned i = 0; i < m_Pool.size(); ++i)
+    delete m_Pool[i];
+
 #if !defined(HAVE_SYBASE_REENTRANT) && defined(_REENTRANT)
   {{
     CMutexGuard g(s_readers_mutex);
     s_pubseq_readers--;
   }}
 #endif
-  for(unsigned i = 0; i < m_Pool.size(); ++i)
-    delete m_Pool[i];
 }
 
 size_t CPubseqReader::GetParallelLevel(void) const
@@ -164,6 +167,7 @@ CDB_Connection *CPubseqReader::NewConn()
 
 void CPubseqReader::Reconnect(size_t conn)
 {
+  LOG_POST("Reconnect");
   conn = conn % m_Pool.size();
   delete m_Pool[conn];
   m_Pool[conn] = NewConn();
@@ -282,6 +286,7 @@ CSeqref *CPubseqReader::RetrieveSeqref(istream &is)
 struct CPubseqStreamBuf : public streambuf
 {
   CPubseqStreamBuf(CPubseqSeqref &pubseqSeqref, CDB_Connection *conn);
+  virtual ~CPubseqStreamBuf() {}
   CT_INT_TYPE underflow();
 
   enum EStatus {eInit, eNewRow, eBlob};
@@ -409,6 +414,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.13  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
 * Revision 1.12  2002/05/09 21:40:59  kimelman
 * MT tuning
 *

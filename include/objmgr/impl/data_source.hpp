@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
 * Revision 1.24  2002/05/31 17:53:00  grichenk
 * Optimized for better performance (CTSE_Info uses atomic counter,
 * delayed annotations indexing, no location convertions in
@@ -315,17 +318,17 @@ private:
 
     static CMutex sm_DataSource_Mutex;
 
-    CRef<CDataLoader>    m_Loader;
-    CRef<CSeq_entry>     m_pTopEntry;
-    CObjectManager* m_ObjMgr;
+    CDataLoader          *m_Loader;
+    CRef<CSeq_entry>      m_pTopEntry;
+    CObjectManager*       m_ObjMgr;
 
-    TEntries             m_Entries;   // All known seq-entries and their TSEs
-    TTSEMap              m_TSE_seq;   // id -> TSEs with bioseq
-    TTSEMap              m_TSE_ref;   // id -> TSEs with references to id
-    TSeqMaps             m_SeqMaps;   // Sequence maps for bioseqs
+    TEntries              m_Entries;   // All known seq-entries and their TSEs
+    TTSEMap               m_TSE_seq;   // id -> TSEs with bioseq
+    TTSEMap               m_TSE_ref;   // id -> TSEs with references to id
+    TSeqMaps              m_SeqMaps;   // Sequence maps for bioseqs
     // "true" if annotations need to be indexed immediately, "false" while
     // delayed indexing is allowed.
-    bool m_IndexedAnnot;
+    bool                  m_IndexedAnnot;
 
     friend class CAnnot_CI;
     friend class CAnnotTypes_CI; // using mutex etc.
@@ -337,6 +340,7 @@ inline
 CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
     : m_Loader(&loader), m_pTopEntry(0), m_ObjMgr(&objmgr)
 {
+    //LOG_POST("CDataSource(" << loader.GetName() << ") " << this);
     m_Loader->SetTargetDataSource(*this);
 }
 
@@ -345,17 +349,20 @@ CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
     : m_Loader(0), m_pTopEntry(&entry), m_ObjMgr(&objmgr),
       m_IndexedAnnot(false)
 {
+    //LOG_POST("CDataSource(seq_entry)");
     x_AddToBioseqMap(entry, false, 0);
 }
 
 inline
 CDataSource::~CDataSource(void)
 {
+    //LOG_POST("~CDataSource " << this );
     // Find and drop each TSE
     while (m_Entries.size() > 0) {
         _ASSERT( !m_Entries.begin()->second->Locked() );
         DropTSE(*(m_Entries.begin()->second->m_TSE));
     }
+    if(m_Loader) delete m_Loader;
 }
 
 inline

@@ -797,6 +797,15 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
   return new_tse;
 }
 
+void
+CGBDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+  ddc.SetFrame("CGBLoader");
+  // CObject::DebugDump( ddc, depth);
+  DebugDumpValue(ddc,"m_TseCount", m_TseCount);
+  DebugDumpValue(ddc,"m_TseGC_Threshhold", m_TseGC_Threshhold);
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -804,6 +813,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
 * Revision 1.37  2002/05/14 20:06:26  grichenk
 * Improved CTSE_Info locking by CDataSource and CDataLoader
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2002/06/04 17:18:33  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
 * Revision 1.49  2002/05/31 17:53:00  grichenk
 * Optimized for better performance (CTSE_Info uses atomic counter,
 * delayed annotations indexing, no location convertions in
@@ -215,7 +218,6 @@ BEGIN_SCOPE(objects)
 
 CMutex CDataSource::sm_DataSource_Mutex;
 
-
 CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
                                       const CScope::TRequestHistory& history) const
 {
@@ -261,7 +263,7 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
         // There is only one live TSE -- ok to use it
         return *live.begin();
     }
-    else if ((live.size() == 0)  &&  m_Loader.GetPointer()) {
+    else if ((live.size() == 0)  &&  m_Loader) {
         // No live TSEs -- try to select the best dead TSE
         CTSE_Info* best = m_Loader->ResolveConflict(handle, *p_tse_set);
         if ( best ) {
@@ -1843,7 +1845,7 @@ void CDataSource::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     ddc.SetFrame("CDataSource");
     CObject::DebugDump( ddc, depth);
 
-    ddc.Log("m_Loader", m_Loader.GetPointer(),0);
+    ddc.Log("m_Loader", m_Loader,0);
     ddc.Log("m_pTopEntry", m_pTopEntry.GetPointer(),0);
     ddc.Log("m_ObjMgr", m_ObjMgr,0);
 
