@@ -2028,6 +2028,7 @@ TDSSOCKET *tds;
 
 		do {
 			marker = tds_get_byte(tds);
+			if(marker == 0 && tds->s == 0) return FAIL;
 			tds_process_default_tokens(tds, marker);
 		} while (marker!=TDS_DONE_TOKEN);
 
