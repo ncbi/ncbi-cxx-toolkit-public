@@ -100,27 +100,6 @@ void SSystemFastMutex::InitializeStatic(void)
 void SSystemFastMutex::InitializeDynamic(void)
 {
 #if !defined(NCBI_NO_THREADS)
-    bool is_initialized = IsInitialized();
-    if ( is_initialized ) {
-        char stack_object;
-        const char* stack_object_ptr = &stack_object;
-        const char* object_ptr = reinterpret_cast<const char*>(this);
-        bool in_stack =
-#  ifdef STACK_GROWS_UP
-            (object_ptr < stack_object_ptr) &&
-#  else
-            (object_ptr < stack_object_ptr + STACK_THRESHOLD) &&
-#  endif
-#  ifdef STACK_GROWS_DOWN
-            (object_ptr > stack_object_ptr)
-#  else
-            (object_ptr > stack_object_ptr - STACK_THRESHOLD)
-#  endif
-            ;
-        is_initialized = !in_stack;
-    }
-    xncbi_Validate(!is_initialized, "Double initialization of mutex");
-
     InitializeHandle();
 #endif
 
@@ -1001,6 +980,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/06/02 16:27:06  ucko
+ * SSystemFastMutex::InitializeDynamic: drop gratuituous and potentially
+ * error-prone check for double initialization after discussion with
+ * Eugene Vasilchenko.
+ *
  * Revision 1.16  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *
