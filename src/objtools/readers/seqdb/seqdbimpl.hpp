@@ -84,28 +84,132 @@ private:
 
 class CSeqDBImpl {
 public:
+    /// Numeric type that can span all OIDs for one instance of SeqDB.
     typedef Uint4 TOID;
     
+    /// Constructor
+    ///
+    /// This builds a CSeqDBImpl object from the provided parameters,
+    /// which correspond to those of the longer CSeqDB constructor.
+    ///
+    /// @param db_name_list
+    ///   A list of database or alias names, seperated by spaces.
+    /// @param prot_nucl
+    ///   Either kSeqTypeProt for a protein database, or kSeqTypeNucl
+    ///   for nucleotide.  These can also be specified as 'p' or 'n'.
+    /// @param oid_begin
+    ///   Iterator will skip OIDs less than this value.  Only OIDs
+    ///   found in the OID lists (if any) will be returned.
+    /// @param oid_end
+    ///   Iterator will return up to (but not including) this OID.
+    /// @param use_mmap
+    ///   If kSeqDBMMap is specified (the default), memory mapping is
+    ///   attempted.  If kSeqDBNoMMap is specified, memory mapping
+    ///   fails, or this platform does not support it, the less
+    ///   efficient read and write calls are used instead.
     CSeqDBImpl(const string & db_name_list,
                char           prot_nucl,
                Uint4          oid_begin,
                Uint4          oid_end,
                bool           use_mmap);
     
+    /// Destructor
     ~CSeqDBImpl();
     
+    /// Get the sequence length.
+    ///
+    /// This computes and returns the exact sequence length for the
+    /// indicated sequence.
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @return
+    ///   The length of the sequence in bases.
     Uint4 GetSeqLength(Uint4 oid) const;
     
+    /// Get the approximate sequence length.
+    ///
+    /// This computes and returns the approximate sequence length for
+    /// the indicated sequence.
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @return
+    ///   The approximate length of the sequence in bases.
     Uint4 GetSeqLengthApprox(Uint4 oid) const;
     
+    /// Get the sequence header data.
+    ///
+    /// This builds and returns the header data corresponding to the
+    /// indicated sequence as a Blast-def-line-set.
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @return
+    ///   The length of the sequence in bases.
     CRef<CBlast_def_line_set> GetHdr(Uint4 oid) const;
     
+    /// Get the sequence type.
+    ///
+    /// Return an enumerated value indicating which type of sequence
+    /// data this instance of SeqDB stores.
+    ///
+    /// @return
+    ///   The type of sequences stored here, either kSeqTypeProt or kSeqTypeNucl.
     char GetSeqType() const;
     
+    /// Get a CBioseq for a sequence.
+    ///
+    /// This builds and returns the header and sequence data
+    /// corresponding to the indicated sequence as a CBioseq.  If
+    /// target_gi is non-null, the header information will be filtered
+    /// to only include the defline associated with that gi.
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param target_gi
+    ///   The target gi to filter the header information by.
+    /// @return
+    ///   A CBioseq object corresponding to the sequence.
     CRef<CBioseq> GetBioseq(Uint4 oid, Uint4 target_gi) const;
     
+    /// Get the sequence data for a sequence.
+    ///
+    /// Get the raw sequence (strand data).  When done, resources
+    /// should be returned with RetSequence.  This data pointed to
+    /// by *buffer is in read-only memory (where supported).
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param buffer
+    ///   A returned pointer to the data in the sequence.
+    /// @return
+    ///   The return value is the sequence length (in base pairs or
+    ///   residues).  In case of an error, an exception is thrown.
     Uint4 GetSequence(Uint4 oid, const char ** buffer) const;
     
+    /// Get a pointer to sequence data with embedded ambiguities.
+    ///
+    /// This is like GetAmbigSeq(), but the allocated object should be
+    /// deleted by the caller.  This is intended for users who are
+    /// going to modify the sequence data, or are going to mix the
+    /// data into a container with other data, and who are mixing data
+    /// from multiple sources and want to free the data in the same
+    /// way.  The fourth parameter should be given one of the values
+    /// from EAllocStrategy; the corresponding method should be used
+    /// to delete the object.  Note that "delete[]" should be used
+    /// instead of "delete"
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param buffer
+    ///   A returned pointer to the data in the sequence.
+    /// @param nucl_code
+    ///   The encoding to use for the returned sequence data.
+    /// @param strategy
+    ///   Selects which function is used to allocate the buffer.
+    /// @return
+    ///   The return value is the sequence length (in base pairs or
+    ///   residues).  In case of an error, an exception is thrown.
     Uint4 GetAmbigSeq(Uint4           oid,
                       char         ** buffer,
                       Uint4           nucl_code,
