@@ -8,5 +8,7 @@ REQUIRES = bdb
 LIB = lds
 SRC = lds lds_reader lds_query 
 
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)
+
 # Dependencies for shared library
 DLL_LIB = bdb
