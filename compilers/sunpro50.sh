@@ -37,5 +37,5 @@ FASTCGI_LIBS="-lfcgi5.0"
 
 KeepStateTarget=".KEEP_STATE:"
 
-shift
+if test $# -gt 0; then shift ; fi
 sh configure --exec_prefix=${USR_BUILD_DIR:=$DEF_BUILD_DIR} $*
