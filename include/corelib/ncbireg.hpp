@@ -36,6 +36,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/09/11 00:46:56  vakatov
+* Fixes to R1.14:
+*   Renamed HasChanged() to Modified(), refined and extended its functionality
+*   Made Write() be "const" again
+*
 * Revision 1.14  2001/09/10 16:35:02  ivanov
 * Added method HasChanged()
 *
@@ -98,7 +103,7 @@ name6 = invalid backslash \in the middle
 [ section2.9-bis ]
 ; This is an entry comment...
 name1 = value1
-.............. 
+..............
 ***/
 
 
@@ -142,8 +147,11 @@ public:
     // Return TRUE if the registry contains no entries
     bool Empty(void) const;
 
-    // Return TRUE if some persisent value in r`the registry was changed 
-    bool HasChanged(void) const;
+    // Return TRUE if the persistent part of the registry (i.e. persistent
+    // value(s) and the all-registry comment) was modified since:
+    //  a) the last successful Write(), or
+    //  b) the registry creation and maybe immediate read after the creation.
+    bool Modified(void) const;
 
     // Parse the stream "is" and merge its content to current entries.
     //
@@ -156,7 +164,7 @@ public:
     void Read(CNcbiIstream& is, TFlags flags = 0);
 
     // Dump the registry content(non-transient entries only!) to "os"
-    bool Write(CNcbiOstream& os);
+    bool Write(CNcbiOstream& os) const;
 
     // Reset the whole registry content
     void Clear(void);
@@ -189,14 +197,14 @@ public:
     // If "section" is empty string, then set as the registry comment.
     // Return FALSE if "section" and/or "name" do not exist in registry.
     bool SetComment(const string& comment,  // kEmptyStr to delete the comment
-                    const string& section = kEmptyStr, 
+                    const string& section = kEmptyStr,
                     const string& name    = kEmptyStr);
 
     // Get comment of the registry entry "section:name".
     // If "name" is empty string, then get "section"'s comment.
     // If "section" is empty string, then get the registry's comment.
     // Return empty string if the "section:name" entry not found.
-    const string& GetComment(const string& section = kEmptyStr, 
+    const string& GetComment(const string& section = kEmptyStr,
                              const string& name    = kEmptyStr);
 
     // These two functions:  first erase the passed list, then fill it out by:
@@ -213,18 +221,24 @@ private:
     };
     typedef map<string, TRegEntry,   PNocase>  TRegSection;
     typedef map<string, TRegSection, PNocase>  TRegistry;
-    TRegistry m_Registry;
-    string    m_Comment;    // registry comment
-    bool      m_HasChanged; // some persisent value was changed
+    TRegistry    m_Registry;
+
+    string       m_Comment;   // all-registry comment
+
+    mutable bool m_Modified;  // persistent value(s) changed
+    mutable bool m_Written;   // method Write() was called at least once
 
 
     // Valid flags := { ePersistent, eTruncate }
-    static void x_SetValue(TRegEntry& entry, const string& value,
-                           TFlags flags, const string& comment); 
+    void x_SetValue(TRegEntry& entry, const string& value,
+                    TFlags flags, const string& comment);
+
+    // Check if the registry contains only transient entries and comments
+    bool x_IsAllTransient(void) const;
 
     // prohibit default initialization and assignment
     CNcbiRegistry(const CNcbiRegistry&);
-    CNcbiRegistry& operator=(const CNcbiRegistry&);
+    CNcbiRegistry& operator= (const CNcbiRegistry&);
 };  // CNcbiRegistry
 
 
