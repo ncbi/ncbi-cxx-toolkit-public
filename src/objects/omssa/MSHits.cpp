@@ -58,12 +58,12 @@ CMSHits::~CMSHits(void)
 ///
 ///  Makes a string of mods, positions for display purposes
 ///  
-void CMSHits::MakeModString(string& StringOut)
+void CMSHits::MakeModString(string& StringOut) const
 {
     StringOut.erase();
     if(CanGetMods()) {
         ITERATE(TMods, i, GetMods()) {
-            if(!StringOut.empty()) StringOut += ",";
+            if(!StringOut.empty()) StringOut += " ,";
             if((*i)->GetModtype() < eMSMod_max) StringOut += kModNames[(*i)->GetModtype()];
             else StringOut += NStr::IntToString((*i)->GetModtype());
             StringOut += ":" + NStr::IntToString((*i)->GetSite());
@@ -75,7 +75,7 @@ void CMSHits::MakeModString(string& StringOut)
 ///
 ///  Makes a peptide AA string, lower case for mods
 ///  
-void CMSHits::MakePepString(string& StringOut)
+void CMSHits::MakePepString(string& StringOut) const
 {    
     StringOut.erase();
     if(CanGetPepstring()) {
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/12/08 19:12:43  lewisg
+* const
+*
 * Revision 1.2  2004/12/08 02:00:08  ucko
 * Use string::erase() rather than string::clear(), which is not 100%
 * portable.  (GCC 2.95.x continues not to support it....)

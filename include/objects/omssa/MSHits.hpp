@@ -62,12 +62,12 @@ public:
     ///
     ///  Makes a string of mods, positions for display purposes
     ///  
-    void MakeModString(string& StringOut);
+    void MakeModString(string& StringOut) const;
 
     ///
     ///  Makes a peptide AA string, lower case for mods
     ///  
-    void MakePepString(string& StringOut);
+    void MakePepString(string& StringOut) const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -97,6 +97,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/12/08 19:12:43  lewisg
+* const
+*
 * Revision 1.1  2004/12/07 23:38:22  lewisg
 * add modification handling code
 *
