@@ -448,7 +448,7 @@ CBDB_Cache::CBDB_Cache()
   m_CacheAttrDB(0),
   m_VersionFlag(eDropOlder),
   m_PageSizeHint(eLarge),
-  m_WSync(eWriteSync)
+  m_WSync(eWriteNoSync)
 {
     m_TimeStampFlag = fTimeStampOnRead | 
                       fExpireLeastFrequentlyUsed |
@@ -1787,6 +1787,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2004/09/16 13:09:16  kuznets
+ * async write mode default
+ *
  * Revision 1.74  2004/09/03 14:13:48  kuznets
  * supported write_sync CF parameter
  *
