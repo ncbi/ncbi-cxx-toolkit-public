@@ -733,7 +733,7 @@ BLAST_SearchEngine(Uint1 program_number,
       status = 
          BLAST_ComputeTraceback(program_number, results, query, query_info,
             seq_src, gap_align, score_params, ext_params, hit_params,
-            eff_len_params, db_options);
+            eff_len_params, db_options, psi_options);
    }
 
    /* Do not destruct score block here */
