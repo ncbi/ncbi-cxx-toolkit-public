@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/02/03 21:58:30  vasilche
+* Fixed tipo leading to memory leak in generated files.
+*
 * Revision 1.3  2000/02/03 20:16:15  vasilche
 * Fixed bug in type info generation for templates.
 *
@@ -139,7 +142,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate variants code
     {
         iterate ( TVariants, i, m_Variants ) {
-            if ( i->memberType != ePointerMember ) {
+            if ( i->memberType == ePointerMember ) {
                 i->type->GeneratePointerTypeCode(code);
                 havePointers = true;
             }
