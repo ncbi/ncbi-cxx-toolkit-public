@@ -1,4 +1,4 @@
---$Revision: 6.6 $
+--$Revision: 6.7 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -11,7 +11,7 @@ NCBI-Sequence DEFINITIONS ::=
 BEGIN
 
 EXPORTS Bioseq, Seq-annot, Pubdesc, Seq-descr, Seqdesc, Numbering, Heterogen,
-        Seq-hist, GIBB-mol;
+        Seq-hist, GIBB-mol, Seq-literal;
 
 IMPORTS Date, Int-fuzz, Dbtag, Object-id, User-object FROM NCBI-General
         Seq-align FROM NCBI-Seqalign
