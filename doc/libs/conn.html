@@ -33,6 +33,7 @@ inside NCBI users at:
 <p>
 <hr>
 
+
 <a name="ref_Overview"></a><h2>Overview</h2>
 
 NCBI C++ platform-independent
@@ -93,7 +94,7 @@ header files, like <a href="../lxr/source/include/connect/ncbi_socket_connector.
 <p>
 After successful creation with <i><b>CONN_Create()</b></i>, the following
 calls from <tt>CONN</tt> API
-<a href="../lxr/source/include/connect/ncbi_connection.h"><i><b>connect/ncbi_connection.h</b></i></a>become available.
+<a href="../lxr/source/include/connect/ncbi_connection.h"><i><b>connect/ncbi_connection.h</b></i></a> become available.
 All calls (except <a href="#CONN_GetTimeout"><i><b>CONN_GetTimeout()</b></i></a> and <a href="#CONN_GetType"><i><b>CONN_GetType()</b></i></a>)
 return I/O completion status of type <a href="../lxr/ident?i=EIO_Status"><i><b>EIO_Status</b></i></a>.
 Normal completion has code <i><b>eIO_Success</b></i>.
@@ -111,7 +112,7 @@ Read or peek data, depending on read method <tt>how</tt>, up to <tt>bufsize</tt>
 Return value other than <i><b>eIO_Success</b></i> means trouble.
 Specifically, return value <i><b>eIO_Timeout</b></i> indicates that the operation could not
 be completed within the preset amount of time; but some data may, however,
-be available in the buffer (e.g. in case of persistent reading, with <i><b>eIO_Persist</b></i>), and this is actually true for any return code.
+be available in the buffer (e.g. in case of persistent reading, with <i><b>eIO_Persist</b></i>), and this is actually the case for any return code.
 
 <li> <a href="../lxr/ident?i=CONN_Write"><i><b>CONN_Write</b></i></a>&nbsp;<tt>(CONN conn, const void* buf, size_t bufsize, size_t* n_written);</tt><br>
 Write the specified number of bytes <tt>bufsize</tt> from the buffer <tt>buf</tt> to the connection. Return (via <tt>n_written</tt>)
@@ -125,7 +126,7 @@ Set the timeout on the specified I/O action, <a href="../lxr/ident?i=EIO_Event">
 <i><b>eIO_ReadWrite</b></i>, <i><b>eIO_Open</b></i>, and <i><b>eIO_Close</b></i>. The latter 2 actions are
 used in a phase of opening and closing the link, respectively: if connection
 cannot be established (closed) within the specified period, <i><b>eIO_Timeout</b></i> would result.
-<i><b>eIO_Timeout</b></i> would result if reading/writing could not
+<i><b>eIO_Timeout</b></i> results if reading/writing could not
 be completed within specified time range, correspondingly. A timeout can be passed as
 the <tt>NULL</tt>-pointer. This special case denotes an infinite value for that timeout.
 Also, a special value <tt>CONN_DEFAULT_TIMEOUT</tt> may be used for any timeout.
@@ -193,7 +194,7 @@ following prototype:
 When called, both <tt>type</tt> of callback and <tt>data</tt> pointer
 are supplied. The only callback type defined as of writing of
 this note is <a href="../lxr/ident?i=ECONN_Callback"><b><i>eCONN_OnClose</i></b></a>.
-Callback function is always called prior to the event to happed, e.g. close callback is
+Callback function is always called prior to the event to happen, e.g. close callback is
 called when the connection is about to close.
 </ul>
 
@@ -271,6 +272,16 @@ takes three more arguments: a pointer to data (of type <i><b>void*</b></i>),
 data size (bytes) to specify the data to be sent as soon as
 the link has been established, and flags, which presently can only
 be used to turn debugging information on.
+
+<p>
+<tt>CONN</tt> library defines two more constructors, which build SOCKET connectors
+on top of existing <a href="../lxr/source/include/connect/ncbi_socket.h"><b><i>SOCK</i></b></a>
+objects:
+<a href="../lxr/ident?i=SOCK_CreateConnectorOnTop"><i><b>SOCK_CreateConnectorOnTop()</b></i></a> and
+<a href="../lxr/ident?i=SOCK_CreateConnectorOnTopEx"><i><b>SOCK_CreateConnectorOnTopEx()</b></i></a>,
+the description of which is intentionally omitted here as <tt>SOCK</tt>
+is not discussed either. Please refer to
+<a href="../lxr/source/include/connect/ncbi_socket_connector.h">description</a> in the Tookit code.
 
 <p>
 <hr>
@@ -544,7 +555,7 @@ argument. The callback return value <tt>true</tt> (non-zero) means successful ad
 <tt>false</tt> (zero) stops gives up connection tryings and returns an error to the application.
 
 <p>
-When connector is been destroyed, the custom object <tt>adjust_data</tt> can be
+When connector is being destroyed, the custom object <tt>adjust_data</tt> can be
 destroyed in the callback, specified as the last argument of the
 extended constructor.
 
@@ -669,13 +680,6 @@ should be of stateless (HTTP-alike) type only, and it is the client which is res
 track of the logical sequence of transactions.
 
 <p>
-Normally the last parameter of <b><i>SERVICE_CreateConnectorEx()</i></b> is left <tt>NULL</tt>, which
-sets all additional parameters to their default values. Among others, default procedure of choosing
-an appropriate server is used by the connector when looking for mapping of name into server address.
-To see how this parameter can be used to change the mapping procedure
-please refer to a <a href="#ref_ServiceAPI">later section</a>.
-
-<p>
 The following code fragment establishes service connection to
 the named service <tt>"io_bounce"</tt>, using only stateless servers:
 <pre>
@@ -706,7 +710,7 @@ in the request/reply mode of one-shot transactions. If necessary,
 such wrapping would have been made by the dispatching facility as well.
 
 <p>
-The last parameter of the extended constructor is the network info,
+The last but one parameter of the extended constructor is the network info,
 described in section devoted to <a href="#ref_HTTPConnector">HTTP connector</a>.
 Service connector uses all fields of this structure, except for
 <a href="#ref_HttpUserHeader"><tt>http_user_header</tt></a>,
@@ -735,6 +739,13 @@ via dispatcher if stateless server is used;
 As with HTTP connector, if network information structure is specified as
 <tt>NULL</tt>, default values are obtained as described above, as with the call to
 <a href="#ref_ConnNetInfo_Create"><i><b>ConnNetInfo_Create(</b></i><tt>service_name</tt><i><b>)</b></i></a>.
+
+<p>
+Normally the last parameter of <b><i>SERVICE_CreateConnectorEx()</i></b> is left <tt>NULL</tt>, which
+sets all additional parameters to their default values. Among others, default procedure of choosing
+an appropriate server is used by the connector when looking for mapping of name into server address.
+To see how this parameter can be used to change the mapping procedure
+please refer to a <a href="#ref_ServiceAPI">later section</a>.
 
 <p>
 Library provides additional <a href="#ref_ServiceAPI">interface to named service mapper</a>, which
@@ -1027,7 +1038,7 @@ int main(int argc, char* argv[])
     <a href="../lxr/ident?i=CONNECTOR">CONNECTOR</a> c;
     <a href="../lxr/ident?i=CONN">CONN</a> conn;
 
-    memset(&params, 0, sizeof(params));
+    memset(&amp;params, 0, sizeof(params));
     params.data = db_name;                /* custom data, anything       */
     params.cleanup = s_CleanupData;       /* cleanup routine, may be NULL*/
     params.get_net_info = s_GetNextInfo;  /* custom iterator routine     */
@@ -1057,6 +1068,10 @@ int main(int argc, char* argv[])
 </pre>
 <u>Note</u>: No network (indirect) mapping occurs in the above example because <tt>net_info</tt> is passed as <tt>NULL</tt>
 to the connector's constructor.
+
+<p>
+<hr>
+
 
 <a name="ref_ThreadedServer"></a><h2>Threaded Server Support</h2>
 This library also provides
