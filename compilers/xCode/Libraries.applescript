@@ -84,6 +84,7 @@ property creaders : {name:"creaders", path:"util:creaders"}
 property xalgoalign : {name:"xalgoalign", path:"algo:align"}
 property xalgosplign : {name:"xalgosplign", path:"algo:align:splign"}
 property xalgoseq : {name:"xalgoseq", path:"algo:sequence"}
+property xalgoseqqa : {name:"xalgoseqqa", path:"algo:seqqa"}
 property blast : {name:"blast", path:"algo:blast:core"}
 property xblast : {name:"xblast", path:"algo:blast:api"}
 property xalgognomon : {name:"xalgognomon", path:"algo:gnomon"}
@@ -251,7 +252,7 @@ property ncbi_dbapi_driver : {name:"ncbi_dbapi_driver", libs:{dbapi_driver}, dep
 property ncbi_dbapi : {name:"ncbi_dbapi", libs:{dbapi, dbapi_cache}, dep:"ncbi_core ncbi_dbapi_driver", req:true}
 property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core", req:true}
 property ncbi_image : {name:"ncbi_image", libs:{ximage}, dep:"ncbi_core", req:true}
-property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgoseq, blast, xblast, xalgognomon, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc", req:true}
+property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgoseq, xalgoseqqa, blast, xblast, xalgognomon, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc", req:true}
 property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, insdseq, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}, req:true}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general", req:true}
 property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, taxon1, seqsplit, seqtest, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", req:true}
@@ -390,6 +391,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/10/07 10:48:13  lebedev
+ * Added xalgoseqqa to ncbi_algo
+ *
  * Revision 1.27  2004/10/01 17:42:09  lebedev
  * w_feat_table added
  *
