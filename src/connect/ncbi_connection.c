@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/01/03 22:29:59  lavr
+ * CONN_Status implemented
+ *
  * Revision 6.2  2000/12/29 17:52:59  lavr
  * Adapted to use new connector structure; modified to have
  * Internal tri-state {Unusable | Open | Closed }.
@@ -486,6 +489,24 @@ extern EIO_Status CONN_Read
         return s_CONN_ReadPersist(conn, buf, size, n_read);
     }
     return eIO_Unknown;
+}
+
+
+extern EIO_Status CONN_Status(CONN conn, EIO_Event dir)
+{
+    if (conn->state == eCONN_Unusable)
+        return eIO_Unknown;
+
+    if (dir != eIO_Read && dir != eIO_Write)
+        return eIO_InvalidArg;
+
+    if (conn->state == eCONN_Closed)
+        return eIO_Closed;
+
+    if (!conn->meta.status)
+        return eIO_NotSupported;
+
+    return (*conn->meta.status)(conn->meta.c_status, dir);
 }
 
 
