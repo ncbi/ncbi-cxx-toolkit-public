@@ -45,7 +45,7 @@ extern "C" {
 
 /** header of RPS blast '.loo' file */
 
-typedef struct RPSLookupFileHeader {
+typedef struct BlastRPSLookupFileHeader {
     Int4 magic_number;               /**< value should be RPS_MAGIC_NUM */
     Int4 num_lookup_tables;          /**< hardwired to 1 at present */
     Int4 num_hits;                   /**< number of hits in the lookup table */
@@ -54,11 +54,11 @@ typedef struct RPSLookupFileHeader {
     Int4 unused[NUM_EXPANSION_WORDS];/**< empty space in the on-disk format */
     Int4 start_of_backbone;          /**< byte offset of start of backbone */
     Int4 end_of_overflow;            /**< byte offset to end of overflow array */
-} RPSLookupFileHeader;
+} BlastRPSLookupFileHeader;
 
 /** header of RPS blast '.rps' file */
 
-typedef struct RPSProfileHeader {
+typedef struct BlastRPSProfileHeader {
     Int4 magic_number;     /**< value should be RPS_MAGIC_NUM */
     Int4 num_profiles;     /**< number of PSSMs in the file */
     Int4 start_offsets[1]; /**< start of an Int4 array that gives the starting 
@@ -75,11 +75,11 @@ typedef struct RPSProfileHeader {
        Because there is a sentinel byte at the end of each sequence,
        there is also a PSSM row for each sentinel byte */
 
-} RPSProfileHeader;
+} BlastRPSProfileHeader;
 
 /** information derived from RPS blast '.aux' file */
 
-typedef struct RPSAuxInfo {
+typedef struct BlastRPSAuxInfo {
     char* orig_score_matrix; /**< score matrix used to derive PSSMs */
     Int4 gap_open_penalty;   /**< gap open penalty used in deriving PSSMs */
     Int4 gap_extend_penalty; /**< gap extend penalty used in deriving PSSMs */
@@ -93,17 +93,17 @@ typedef struct RPSAuxInfo {
                                   all scores and all cutoff values must be
                                   similarly scaled during the search */
     double *karlin_k;        /**< one Karlin value for each DB sequence */
-} RPSAuxInfo;
+} BlastRPSAuxInfo;
 
 /** The RPS engine uses this structure to access all of the
  *  RPS blast related data (assumed to be collected in an 
  *  implementation-specific manner). 
  */
-typedef struct RPSInfo {
-    RPSLookupFileHeader *lookup_header; /**< for '.loo' file */
-    RPSProfileHeader *profile_header;   /**< for '.rps' file */
-    RPSAuxInfo aux_info;                /**< for '.aux' file */
-} RPSInfo;
+typedef struct BlastRPSInfo {
+    BlastRPSLookupFileHeader *lookup_header; /**< for '.loo' file */
+    BlastRPSProfileHeader *profile_header;   /**< for '.rps' file */
+    BlastRPSAuxInfo aux_info;                /**< for '.aux' file */
+} BlastRPSInfo;
 
 #ifdef __cplusplus
 }

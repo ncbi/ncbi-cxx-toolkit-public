@@ -81,12 +81,12 @@ Int4 BlastAaLookupNew(const LookupTableOptions* opt,
   return LookupTableNew(opt, lut, TRUE);
 }
 
-Int4 RPSLookupTableNew(const RPSInfo *info,
+Int4 RPSLookupTableNew(const BlastRPSInfo *info,
 		      BlastRPSLookupTable* * lut)
 {
    Int4 i;
-   RPSLookupFileHeader *lookup_header;
-   RPSProfileHeader *profile_header;
+   BlastRPSLookupFileHeader *lookup_header;
+   BlastRPSProfileHeader *profile_header;
    BlastRPSLookupTable* lookup = *lut = 
       (BlastRPSLookupTable*) calloc(1, sizeof(BlastRPSLookupTable));
    Int4* pssm_start;
@@ -101,7 +101,7 @@ Int4 RPSLookupTableNew(const RPSInfo *info,
    if (lookup_header->magic_number != RPS_MAGIC_NUM)
       return -1;
 
-   lookup->rps_aux_info = (RPSAuxInfo *)(&info->aux_info);
+   lookup->rps_aux_info = (BlastRPSAuxInfo *)(&info->aux_info);
    lookup->wordsize = BLAST_WORDSIZE_PROT;
    lookup->alphabet_size = BLASTAA_SIZE;
    lookup->charsize = ilog2(lookup->alphabet_size) + 1;

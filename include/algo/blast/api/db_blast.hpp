@@ -201,7 +201,7 @@ private:
                                              performed? Allows setup to recognize
                                              that lookup table need not be 
                                              created. */
-    RPSInfo*            m_ipRpsInfo;      ///< RPS BLAST database information
+    BlastRPSInfo*       m_ipRpsInfo;      ///< RPS BLAST database information
     CMemoryFile*        m_ipRpsMmap;      ///< Memory mapped RPS lookup table file
     CMemoryFile*        m_ipRpsPssmMmap;  ///< Memory mapped RPS PSSM file
 };
@@ -307,6 +307,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2004/11/04 15:51:59  papadopo
+* prepend 'Blast' to RPSInfo and related structures
+*
 * Revision 1.26  2004/10/26 15:30:26  dondosha
 * Removed RPSInfo argument from constructors;
 * RPSInfo is now initialized inside the CDbBlast class if RPS search is requested;

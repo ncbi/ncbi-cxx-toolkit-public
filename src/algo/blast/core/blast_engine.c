@@ -532,7 +532,7 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    BlastRPSLookupTable *lookup = (BlastRPSLookupTable *)lookup_wrap->lut;
    BLAST_SequenceBlk concat_db;
    BlastQueryInfo concat_db_info;
-   RPSAuxInfo *rps_info;
+   BlastRPSAuxInfo *rps_info;
    BlastRawCutoffs* raw_cutoffs = NULL;
    BlastQueryInfo* one_query_info = NULL;
    BLAST_SequenceBlk* one_query = NULL;

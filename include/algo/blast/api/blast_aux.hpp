@@ -116,7 +116,7 @@ FindGeneticCode(int genetic_code);
  * @param rps_pssm_mmap Memory mapped file structure for the RPS BLAST PSSM. [out]
  * @param dbname Name of the RPS BLAST database [in]
  */
-Int2 Blast_FillRPSInfo( RPSInfo **ppinfo, CMemoryFile **rps_mmap,
+Int2 Blast_FillRPSInfo( BlastRPSInfo **ppinfo, CMemoryFile **rps_mmap,
                         CMemoryFile **rps_pssm_mmap, string dbname );
 
 
@@ -193,6 +193,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2004/11/04 15:51:59  papadopo
+* prepend 'Blast' to RPSInfo and related structures
+*
 * Revision 1.44  2004/10/26 15:29:03  dondosha
 * Added function Blast_FillRPSInfo, previously static in demo/blast_app.cpp
 *

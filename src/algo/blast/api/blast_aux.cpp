@@ -408,10 +408,10 @@ EProgram ProgramNameToEnum(const std::string& program_name)
     NCBI_THROW(CBlastException, eNotSupported, program_name + " not supported");
 }
 
-Int2 Blast_FillRPSInfo( RPSInfo **ppinfo, CMemoryFile **rps_mmap,
+Int2 Blast_FillRPSInfo( BlastRPSInfo **ppinfo, CMemoryFile **rps_mmap,
                         CMemoryFile **rps_pssm_mmap, string dbname )
 {
-   RPSInfo *info = new RPSInfo;
+   BlastRPSInfo *info = new BlastRPSInfo;
    if (info == NULL) {
       NCBI_THROW(CBlastException, eOutOfMemory, 
                  "RPSInfo allocation failed");
@@ -458,14 +458,14 @@ Int2 Blast_FillRPSInfo( RPSInfo **ppinfo, CMemoryFile **rps_mmap,
        NCBI_THROW(CBlastException, eBadParameter,
                    "Cannot map RPS BLAST lookup file");
    }
-   info->lookup_header = (RPSLookupFileHeader *)lut_mmap->GetPtr();
+   info->lookup_header = (BlastRPSLookupFileHeader *)lut_mmap->GetPtr();
 
    CMemoryFile *pssm_mmap = new CMemoryFile(dbname + ".rps");
    if (pssm_mmap == NULL) {
        NCBI_THROW(CBlastException, eBadParameter,
                    "Cannot map RPS BLAST profile file");
    }
-   info->profile_header = (RPSProfileHeader *)pssm_mmap->GetPtr();
+   info->profile_header = (BlastRPSProfileHeader *)pssm_mmap->GetPtr();
 
    CNcbiIfstream auxfile( (dbname + ".aux").c_str() );
    if (auxfile.bad() || auxfile.fail()) {
@@ -520,6 +520,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.54  2004/11/04 15:51:02  papadopo
+ * prepend 'Blast' to RPSInfo and related structures
+ *
  * Revision 1.53  2004/11/02 18:26:17  madden
  * Remove gap_trigger
  *
