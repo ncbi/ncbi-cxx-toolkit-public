@@ -2,7 +2,7 @@
 
 APP = demo1
 SRC = demo1
-LIB = bdb xncbi
+LIB = bdb xncbi xutil
 LIBS = $(BERKELEYDB_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)
