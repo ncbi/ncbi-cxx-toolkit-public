@@ -135,8 +135,6 @@ private:
     TSeqPos            m_CurTo;     // visible segment end
     // End of visible segment on the original sequence
     TSeqPos            m_OrgTo;
-
-    static const TSeqPos kPosUnknown;
 };
 
 
@@ -150,7 +148,7 @@ private:
 inline
 TSeqPos CSeqVector::size(void) const
 {
-    if (m_RangeSize == kPosUnknown)
+    if (m_RangeSize == kInvalidSeqPos)
         x_GetVisibleSize();
     return m_RangeSize;
 }
@@ -210,6 +208,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/01/03 19:45:44  dicuccio
+* Replaced kPosUnknwon with kInvalidSeqPos (non-static variable; work-around for
+* MSVC)
+*
 * Revision 1.21  2002/12/26 20:51:36  dicuccio
 * Added Win32 export specifier
 *
