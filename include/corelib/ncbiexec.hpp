@@ -92,6 +92,9 @@ public:
 /// Define portable exec class.
 ///
 /// Defines the different ways a process can be spawned.
+/// NOTE:  In the eNoWait and eDetach modes Spawn functions returns a process
+///        handle. On MS Windows it is a real process handle of type HANDLE.
+///        On UNIX it is a process identifier (pid).
 
 class NCBI_XNCBI_EXPORT CExec
 {
@@ -141,9 +144,9 @@ public:
     ///   Argument vector.
     /// @return 
     ///   On success, return:
-    ///     - exit code   - in eWait mode.
-    ///     - process pid - in eNoWait and eDetach modes.
-    ///     - nothing     - in eOverlay mode.   
+    ///     - exit code      - in eWait mode.
+    ///     - process handle - in eNoWait and eDetach modes.
+    ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), 
@@ -180,9 +183,9 @@ public:
     ///   NULL, const char* envp[]
     /// @return 
     ///   On success, return:
-    ///     - exit code   - in eWait mode.
-    ///     - process pid - in eNoWait and eDetach modes.
-    ///     - nothing     - in eOverlay mode.   
+    ///     - exit code      - in eWait mode.
+    ///     - process handle - in eNoWait and eDetach modes.
+    ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), 
@@ -220,9 +223,9 @@ public:
     ///   NULL
     /// @return 
     ///   On success, return:
-    ///     - exit code   - in eWait mode.
-    ///     - process pid - in eNoWait and eDetach modes.
-    ///     - nothing     - in eOverlay mode.   
+    ///     - exit code      - in eWait mode.
+    ///     - process handle - in eNoWait and eDetach modes.
+    ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), 
@@ -266,9 +269,9 @@ public:
     ///   NULL, const char* envp[]
     /// @return 
     ///   On success, return:
-    ///     - exit code   - in eWait mode.
-    ///     - process pid - in eNoWait and eDetach modes.
-    ///     - nothing     - in eOverlay mode.   
+    ///     - exit code      - in eWait mode.
+    ///     - process handle - in eNoWait and eDetach modes.
+    ///     - nothing        - in eOverlay mode.   
     ///    Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnV(), SpawnVE(), SpawnVP(), 
@@ -280,8 +283,8 @@ public:
     ///
     /// In the SpawnV() version, the command-line arguments are a variable
     /// number. The array of pointers to arguments must have a length of 1 or
-    /// more and you must assign parameters for the new process beginning from
-    /// 1.
+    /// more and you must assign parameters for the new process beginning
+    /// from 1.
     ///
     /// Meaning of the suffix "V" in method name:
     /// - The letter "V" as suffix refers to the fact that the number of
@@ -298,9 +301,9 @@ public:
     ///   Argument vector.
     /// @return 
     ///   On success, return:
-    ///     - exit code   - in eWait mode.
-    ///     - process pid - in eNoWait and eDetach modes.
-    ///     - nothing     - in eOverlay mode.   
+    ///     - exit code      - in eWait mode.
+    ///     - process handle - in eNoWait and eDetach modes.
+    ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnVE(), SpawnVP(), 
@@ -336,9 +339,9 @@ public:
     ///   Argument vector.
     /// @return 
     ///   On success, return:
-    ///     - exit code   - in eWait mode.
-    ///     - process pid - in eNoWait and eDetach modes.
-    ///     - nothing     - in eOverlay mode.   
+    ///     - exit code      - in eWait mode.
+    ///     - process handle - in eNoWait and eDetach modes.
+    ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVP(), 
@@ -375,9 +378,9 @@ public:
     ///   NULL, const char* envp[]
     /// @return 
     ///   On success, return:
-    ///     - exit code   - in eWait mode.
-    ///     - process pid - in eNoWait and eDetach modes.
-    ///     - nothing     - in eOverlay mode.   
+    ///     - exit code      - in eWait mode.
+    ///     - process handle - in eNoWait and eDetach modes.
+    ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), 
@@ -418,9 +421,9 @@ public:
     ///   Argument vector.
     /// @return 
     ///   On success, return:
-    ///     - exit code   - in eWait mode.
-    ///     - process pid - in eNoWait and eDetach modes.
-    ///     - nothing     - in eOverlay mode.   
+    ///     - exit code      - in eWait mode.
+    ///     - process handle - in eNoWait and eDetach modes.
+    ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(),
@@ -430,14 +433,17 @@ public:
 
     /// Wait until child process terminates.
     ///
-    /// Wait until the child process with "pid" terminates, and return
+    /// Wait until the child process with "handle" terminates, and return
     /// immeditately if the specifed child process has already terminated.
-    /// @param pid
-    ///   Wait on child process "pid".
+    /// @param handle
+    ///   Wait on child process with identifier "handle", returned by one 
+    ///   of the Spawn* function in eNoWait and eDetach modes.
+    /// @param timeout
+    ///   Time-out interval. By default it is infinite.
     /// @return
     ///   - Exit code of child process, if no errors.
     ///   - (-1), if error has occured.
-    static int Wait(int pid, unsigned long timeout = kMax_ULong);
+    static int Wait(int handle, unsigned long timeout = kMax_ULong);
 };
 
 
@@ -450,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/09/25 17:59:12  ivanov
+ * Comment changes
+ *
  * Revision 1.11  2003/09/25 17:19:05  ucko
  * CExec::Wait: add an optional timeout argument per the new (forwarding)
  * implementation.
