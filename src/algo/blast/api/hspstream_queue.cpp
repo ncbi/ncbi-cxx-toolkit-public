@@ -147,7 +147,7 @@ void BlastHSPListCQueueClose(BlastHSPStream* hsp_stream)
    stream_data->Close();
 }
 
-BlastHSPStream* 
+extern "C" BlastHSPStream* 
 BlastHSPListCQueueNew(BlastHSPStream* hsp_stream, void* args) 
 {
     BlastHSPStreamFunctionPointerTypes fnptr;
