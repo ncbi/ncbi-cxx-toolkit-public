@@ -44,8 +44,15 @@
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/seq_id_handle.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/format/formatter.hpp>
@@ -57,7 +64,6 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-USING_SCOPE(sequence);
 
 
 CDBSourceItem::CDBSourceItem(CBioseqContext& ctx) :
@@ -76,9 +82,10 @@ void CDBSourceItem::Format
 }
 
 
-inline
-static int s_ScoreForDBSource(const CRef<CSeq_id>& x) {
-    switch (x->Which()) {
+static int s_ScoreForDBSource(const CSeq_id_Handle& idh)
+{
+    CConstRef<CSeq_id> id = idh.GetSeqId();
+    switch (id->Which()) {
     case CSeq_id::e_not_set:                        return kMax_Int;
     case CSeq_id::e_Gi:                             return 31;
     case CSeq_id::e_Giim:                           return 30;
@@ -92,38 +99,71 @@ static int s_ScoreForDBSource(const CRef<CSeq_id>& x) {
 }
 
 
+static const CSeq_id_Handle s_FindBestChoiceForDbsource(const CSeq_id_Handle& idh, CScope& scope)
+{
+    return FindBestChoice(scope.GetIds(idh), s_ScoreForDBSource);
+}
+
+
+static void s_AddToUniqueIdList(const CSeq_id_Handle& idh, vector<CSeq_id_Handle>& unique_ids)
+{
+    ITERATE (vector<CSeq_id_Handle>, it, unique_ids) {
+        if (idh == *it) {
+            return;
+        }
+    }
+    unique_ids.push_back(idh);
+}
+
+
+static bool s_HasLocalBioseq(const CSeq_loc& loc, const CSeq_entry_Handle& tse)
+{
+    CScope& scope = tse.GetScope();
+    for (CSeq_loc_CI li(loc); li; ++li) {
+        CBioseq_Handle local = 
+            scope.GetBioseqHandleFromTSE(li.GetSeq_id(), tse);
+        if (local) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    const CBioseq::TId& ids = ctx.GetBioseqIds();
-    CConstRef<CSeq_id> id = FindBestChoice(ids, s_ScoreForDBSource);
+    const CBioseq_Handle& seq = ctx.GetHandle();
+    const CBioseq_Handle::TId& ids = seq.GetId();
+    CSeq_id_Handle idh = FindBestChoice(ids, s_ScoreForDBSource);
 
-    if ( !id ) {
+    if (!idh) {
         m_DBSource.push_back("UNKNOWN");
         return;
     }
-    switch ( id->Which() ) {
+
+    switch (idh.Which()) {
     case CSeq_id::e_Pir:
-        m_DBSource.push_back(x_FormatDBSourceID(*id));
+        m_DBSource.push_back(x_FormatDBSourceID(idh));
         x_AddPIRBlock(ctx);
         break;
 
     case CSeq_id::e_Swissprot:
-        m_DBSource.push_back(x_FormatDBSourceID(*id));
+        m_DBSource.push_back(x_FormatDBSourceID(idh));
         x_AddSPBlock(ctx);
         break;
 
     case CSeq_id::e_Prf:
-        m_DBSource.push_back(x_FormatDBSourceID(*id));
+        m_DBSource.push_back(x_FormatDBSourceID(idh));
         x_AddPRFBlock(ctx);
         break;
 
     case CSeq_id::e_Pdb:
-        m_DBSource.push_back(x_FormatDBSourceID(*id));
+        m_DBSource.push_back(x_FormatDBSourceID(idh));
         x_AddPDBBlock(ctx);
         break;
 
     case CSeq_id::e_General:
-        if ( !NStr::StartsWith(id->GetGeneral().GetDb(), "PID") ) {
+        if (!NStr::StartsWith(idh.GetSeqId()->GetGeneral().GetDb(), "PID")) {
             m_DBSource.push_back("UNKNOWN");
             break;
         }
@@ -133,38 +173,39 @@ void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
     case CSeq_id::e_Gi: case CSeq_id::e_Ddbj:
     case CSeq_id::e_Tpg: case CSeq_id::e_Tpe: case CSeq_id::e_Tpd:
     {
-        set<CBioseq_Handle> sources;
         CScope& scope = ctx.GetScope();
-        const CSeq_feat* feat = GetCDSForProduct(ctx.GetHandle());
-        if ( feat == 0 ) {
-            // may also be protein product of mature peptide feature
-            feat = GetPROTForProduct(ctx.GetHandle());
-        }
-        if ( feat != 0 ) {
-            const CSeq_loc& loc = feat->GetLocation();
-            CBioseq_Handle nuc = scope.GetBioseqHandle(loc);
-            if ( nuc ) {
-                for ( CSeq_loc_CI li(loc); li; ++li ) {
-                    CBioseq_Handle bsh = scope.GetBioseqHandle(li.GetSeq_id());
-                    if ( bsh ) {
-                        sources.insert(bsh);
-                    }
-                }
+        vector<CSeq_id_Handle> unique_ids;
 
+        // find generating feature
+        const CSeq_feat* feat = sequence::GetCDSForProduct(seq);
+        if (feat == NULL) {
+            // may also be protein product of mature peptide feature
+            feat = sequence::GetPROTForProduct(seq);
+        }
+
+        if (feat != NULL) {
+            const CSeq_loc& loc = feat->GetLocation();
+            if (s_HasLocalBioseq(loc, seq.GetTopLevelEntry())) {
+                for (CSeq_loc_CI li(loc); li; ++li) {
+                    s_AddToUniqueIdList(li.GetSeq_id_Handle(), unique_ids);
+                }
             }
         }
-        ITERATE (set<CBioseq_Handle>, it, sources) {
-            CConstRef<CSeq_id> id2 = FindBestChoice(it->GetBioseqCore()->GetId(),
-                s_ScoreForDBSource);
-            if ( id2 != 0 ) {
-                string str = x_FormatDBSourceID(*id2);
-                if ( !str.empty() ) {
+
+        string str;
+        ITERATE (vector<CSeq_id_Handle>, it, unique_ids) {
+            CSeq_id_Handle idh2 = s_FindBestChoiceForDbsource(*it, scope);
+            if (idh2) {
+                str.erase();
+                str = x_FormatDBSourceID(idh2);
+                if (!NStr::IsBlank(str)) {
                     m_DBSource.push_back(str);
                 }
             }
         }
-        if ( sources.empty() ) {
-            m_DBSource.push_back(x_FormatDBSourceID(*id));
+
+        if (m_DBSource.empty()) {
+            m_DBSource.push_back(x_FormatDBSourceID(idh));
         }
         break;
     }
@@ -408,20 +449,31 @@ void CDBSourceItem::x_AddPDBBlock(CBioseqContext& ctx)
 }
 
 
-string CDBSourceItem::x_FormatDBSourceID(const CSeq_id& id) {
-    switch ( id.Which() ) {
+string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
+{
+    CConstRef<CSeq_id> id;
+    if (idh) {
+        id = idh.GetSeqId();
+    }
+    if (!id) {
+        return kEmptyStr;
+    }
+
+    CSeq_id::E_Choice choice = id->Which();
+
+    switch (choice) {
     case CSeq_id::e_Local:
         {{
-            const CObject_id& oi = id.GetLocal();
+            const CObject_id& oi = id->GetLocal();
             return (oi.IsStr() ? oi.GetStr() : NStr::IntToString(oi.GetId()));
         }}
     case CSeq_id::e_Gi:
         {{
-            return "gi: " + NStr::IntToString(id.GetGi());
+            return "gi: " + NStr::IntToString(id->GetGi());
         }}
     case CSeq_id::e_Pdb:
         {{
-            const CPDB_seq_id& pdb = id.GetPdb();
+            const CPDB_seq_id& pdb = id->GetPdb();
             string s("pdb: "), sep;
             if ( !pdb.GetMol().Get().empty() ) {
                 s += "molecule " + pdb.GetMol().Get();
@@ -440,12 +492,12 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id& id) {
         }}
     default:
         {{
-            const CTextseq_id* tsid = id.GetTextseq_Id();
-            if ( !tsid ) {
+            const CTextseq_id* tsid = id->GetTextseq_Id();
+            if (tsid == NULL) {
                 return kEmptyStr;
             }
             string s, sep, comma;
-            switch (id.Which()) {
+            switch (choice) {
             case CSeq_id::e_Embl:       s = "embl ";        comma = ",";  break;
             case CSeq_id::e_Other:      s = "REFSEQ: ";                   break;
             case CSeq_id::e_Swissprot:  s = "swissprot: ";  comma = ",";  break;
@@ -453,7 +505,7 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id& id) {
             case CSeq_id::e_Prf:        s = "prf: ";                      break;
             default:                    break;
             }
-            if ( tsid->CanGetName() ) {
+            if (tsid->CanGetName()) {
                 s += "locus " + tsid->GetName();
                 sep = " ";
             } else {
@@ -470,12 +522,14 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id& id) {
             if (tsid->CanGetRelease()) {
                 s += sep + "release " + tsid->GetRelease();
             }
-            if (id.IsSwissprot()) {
+            if (id->IsSwissprot()) {
                 s += ';';
             }
             return s;
         }}
     }
+
+    return kEmptyStr;
 }
 
 
@@ -487,6 +541,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/12/06 17:23:45  shomrat
+* Fixed ID order
+*
 * Revision 1.6  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
