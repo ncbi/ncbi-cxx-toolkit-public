@@ -734,18 +734,25 @@ size_t CBDB_IntCache::GetSize(int key1, int key2)
 
 bool CBDB_IntCache::Read(int key1, int key2, vector<int>& value)
 {
+    EBDB_ErrCode ret;
     CTime time_stamp(CTime::eCurrent);
 
     CFastMutexGuard guard(x_BDB_IntCacheMutex);
 
-    m_IntCacheDB.key1 = key1;
-    m_IntCacheDB.key2 = key2;
+    unsigned ts = 0; 
 
-    EBDB_ErrCode ret = m_IntCacheDB.Fetch();
-    if (ret != eBDB_Ok) {
+    CBDB_FileCursor cur(m_IntCacheDB);
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+
+    cur.From << key1 << key2;
+
+    if (cur.Fetch() != eBDB_Ok) {
         value.resize(0);
         return false;
+    } else {
+        ts = (unsigned)m_IntCacheDB.time_stamp;
     }
+
     size_t data_size = (m_IntCacheDB.LobSize() / sizeof(vector<int>::value_type));
 
     if (data_size == 0) {
@@ -755,7 +762,6 @@ bool CBDB_IntCache::Read(int key1, int key2, vector<int>& value)
 
     // Expiration control
 
-    unsigned ts = (unsigned)m_IntCacheDB.time_stamp;
     time_t curr = (unsigned)time_stamp.GetTimeT();
 
     if (ts + m_ExpirationTime <  curr) {
@@ -829,6 +835,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/10/20 20:15:30  kuznets
+ * Fixed bug with expiration time retrieval
+ *
  * Revision 1.15  2003/10/20 19:58:26  kuznets
  * Fixed bug in int cache expiration algorithm
  *
