@@ -33,6 +33,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <vector>
 
 
@@ -74,6 +75,29 @@ public:
                          TLocVec& results,
                          unsigned int min_length_bp = 3,
                          int genetic_code = 1);
+
+    /// This version returns an annot full of CDS features.
+    /// Optionally takes a CSeq_id (by CRef) for use in
+    /// the feature table; otherwise ids are left unset.
+    template<class Seq>
+    static CRef<objects::CSeq_annot>
+    FindOrfs(const Seq& seq,
+             unsigned int min_length_bp = 3,
+             int genetic_code = 1,
+             CRef<objects::CSeq_id> id = CRef<objects::CSeq_id>())
+    {
+        // place to store orfs
+        TLocVec orfs;
+        FindOrfs(seq, orfs, min_length_bp, genetic_code);
+        return MakeCDSAnnot(orfs, genetic_code, id);
+    }
+
+    /// Build an annot full of CDS features from CSeq_loc's.
+    /// Optionally takes a CSeq_id (by CRef) for use in
+    /// the feature table; otherwise ids are left unset.
+    static CRef<objects::CSeq_annot>
+    MakeCDSAnnot(const TLocVec& orfs, int genetic_code = 1,
+                 CRef<objects::CSeq_id> id = CRef<objects::CSeq_id>());
 };
 
 
@@ -84,6 +108,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/09/04 19:27:53  jcherry
+ * Made an ORF include the stop codon, and marked certain ORFs as
+ * partial.  Put ability to construct a feature table into COrf.
+ *
  * Revision 1.13  2003/08/21 12:13:10  dicuccio
  * Moved templated implementation into a private file.  Changed API to provide entry points for common sequence containers
  *

@@ -35,6 +35,10 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seq/seqport_util.hpp>
+#include <objects/general/Int_fuzz.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <algorithm>
 
 
@@ -45,6 +49,8 @@ USING_SCOPE(objects);
 /// Find all ORFs in forward orientation with
 /// length in *base pairs* >= min_length_bp.
 /// seq must be in iupac.
+/// Returned range does not include the
+/// stop codon.
 template<class Seq>
 void x_FindForwardOrfs(const Seq& seq, COrf::TRangeVec& ranges,
                        unsigned int min_length_bp = 3,
@@ -113,7 +119,7 @@ void x_FindForwardOrfs(const Seq& seq, COrf::TRangeVec& ranges,
 
 
 /// Find all ORFs in both orientations that
-/// are at least min_length_bp long.
+/// are at least min_length_bp long (not including the stop).
 /// Report results as Seq-locs.
 /// seq must be in iupac.
 template<class Seq>
@@ -124,15 +130,27 @@ void x_FindOrfs(const Seq& seq, COrf::TLocVec& results,
     COrf::TRangeVec ranges;
 
     // This code might be sped up by a factor of two
-    // by use of a state machine that does all sixs frames
+    // by use of a state machine that does all six frames
     // in a single pass.
 
     // find ORFs on the forward sequence and report them as-is
     x_FindForwardOrfs(seq, ranges, min_length_bp, genetic_code);
     ITERATE (COrf::TRangeVec, iter, ranges) {
         CRef<objects::CSeq_loc> orf(new objects::CSeq_loc());
-        orf->SetInt().SetFrom  (iter->GetFrom());
-        orf->SetInt().SetTo    (iter->GetTo());
+        orf->SetInt().SetFrom(iter->GetFrom());
+        if (iter->GetFrom() < 3) {
+            // "beginning" of ORF at beginning of sequence
+            orf->SetInt().SetFuzz_from().SetLim(objects::CInt_fuzz::eLim_lt);
+        }
+        unsigned int to = iter->GetTo();
+        if (to + 3 >= seq.size()) {
+            // "end" of ORF is really end of sequence
+            orf->SetInt().SetFuzz_to().SetLim(objects::CInt_fuzz::eLim_gt);
+        } else {
+            // ORF was ended by a stop, rather than end of sequence
+            to += 3;
+        }
+        orf->SetInt().SetTo(to);
         orf->SetInt().SetStrand(objects::eNa_strand_plus);
         results.push_back(orf);
     }
@@ -145,16 +163,28 @@ void x_FindOrfs(const Seq& seq, COrf::TLocVec& results,
     // this should be replaced with new Seqport_util call
     reverse(comp.begin(), comp.end());
     NON_CONST_ITERATE (typename Seq, i, comp) {
-        *i =
-            objects::CSeqportUtil::GetIndexComplement(objects::eSeq_code_type_iupacna,
-                                                      *i);
+        *i = objects::CSeqportUtil
+            ::GetIndexComplement(objects::eSeq_code_type_iupacna, *i);
     }
 
     x_FindForwardOrfs(comp, ranges, min_length_bp, genetic_code);
     ITERATE (COrf::TRangeVec, iter, ranges) {
         CRef<objects::CSeq_loc> orf(new objects::CSeq_loc);
-        orf->SetInt().SetFrom  (comp.size() - iter->GetTo() - 1);
-        orf->SetInt().SetTo    (comp.size() - iter->GetFrom() - 1);
+        unsigned int from = comp.size() - iter->GetTo() - 1;
+        if (from < 3) {
+            // "end" of ORF is beginning of sequence
+            orf->SetInt().SetFuzz_from().SetLim(objects::CInt_fuzz::eLim_lt);
+        } else {
+            // ORF was ended by a stop, rather than beginning of sequence
+            from -= 3;
+        }
+        orf->SetInt().SetFrom(from);
+        unsigned int to = comp.size() - iter->GetFrom() - 1;
+        if (to + 3 >= comp.size()) {
+            // "beginning" of ORF is really end of sequence
+            orf->SetInt().SetFuzz_to().SetLim(objects::CInt_fuzz::eLim_gt);
+        }
+        orf->SetInt().SetTo(to);
         orf->SetInt().SetStrand(objects::eNa_strand_minus);
         results.push_back(orf);
     }
@@ -198,11 +228,48 @@ void COrf::FindOrfs(const CSeqVector& orig_vec,
 }
 
 
+// build an annot representing CDSs
+CRef<CSeq_annot>
+COrf::MakeCDSAnnot(const TLocVec& orfs, int genetic_code = 1,
+                   CRef<CSeq_id> id)
+{
+    CRef<CSeq_annot> annot(new CSeq_annot());
+
+    ITERATE (vector<CRef<CSeq_loc> >, orf, orfs) {
+        // create feature
+        CRef<CSeq_feat> feat(new CSeq_feat());
+
+        // confess the fact that it's just a computed ORF
+        feat->SetExp_ev(CSeq_feat::eExp_ev_not_experimental);
+        feat->SetData().SetCdregion().SetOrf(true);  // just an ORF
+        // they're all frame 1 in this sense of 'frame'
+        feat->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+        feat->SetTitle("ORF");
+
+        // set up the location
+        feat->SetLocation().Assign(**orf);
+        if (id) {
+            feat->SetLocation().SetInt().SetId(*id);
+        }
+
+        // save in annot
+        annot->SetData().SetFtable().push_back(feat);
+    }
+    return annot;
+}
+
+
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/04 19:27:53  jcherry
+ * Made an ORF include the stop codon, and marked certain ORFs as
+ * partial.  Put ability to construct a feature table into COrf.
+ *
  * Revision 1.2  2003/08/21 13:39:53  dicuccio
  * Fixed compilation error - dependent type 'Seq' must be a typename
  *
