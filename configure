@@ -1103,7 +1103,7 @@ case "$host:$compiler" in
 
  i*86*-pc-cygwin32:GCC )
    with_dll="no"
-   NETWORK_LIBS=${NETWORK_LIBS:=" "}
+   NETWORK_LIBS=${NETWORK_LIBS:="-lwsock32"}
    CONF_exe_ext=".exe"
    ;;
 
