@@ -1410,7 +1410,7 @@ case "$host:$compiler" in
 
  mips-sgi-irix6\.*:GCC )
    if test "$with_debug" != "no" ; then
-      LDFLAGS="-LD_LAYOUT:lgot_buffer=20 $LDFLAGS"
+      LDFLAGS="-LD_LAYOUT:lgot_buffer=24 $LDFLAGS"
    fi
    ;;
 
