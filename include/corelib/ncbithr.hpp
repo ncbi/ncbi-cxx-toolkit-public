@@ -62,6 +62,11 @@
 #include <set>
 #include <list>
 
+/** @addtogroup Threads
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -265,7 +270,7 @@ private:
     static void AddUsedTls(CTlsBase* tls);
 };
 
-
+/* @} */
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -337,9 +342,13 @@ const CThread::TID kThreadID_None = 0xFFFFFFFF;
 END_NCBI_SCOPE
 
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/03/31 13:02:47  siyan
+ * Added doxygen support
+ *
  * Revision 1.15  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
