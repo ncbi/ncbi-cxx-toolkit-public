@@ -53,48 +53,69 @@ char CSeqDBVol::x_GetSeqType(void) const
     return m_Idx.GetSeqType();
 }
 
-Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx, CSeqDBLockHold & locked) const
+Int4 CSeqDBVol::GetSeqLengthProt(Uint4 oid) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
     
-    Int4 length = -1;
-    
-    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset /*, locked*/))
+    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
         return -1;
     
-    char seqtype = m_Idx.GetSeqType();
-    
-    if (kSeqTypeProt == seqtype) {
-        // Subtract one, for the inter-sequence null.
-        length = end_offset - start_offset - 1;
-    } else if (kSeqTypeNucl == seqtype) {
-        Int4 whole_bytes = Int4(end_offset - start_offset - 1);
-        
-        if (approx) {
-            // Same principle as below - but use lower bits of oid
-            // instead of fetching the actual last byte.  this should
-            // correct for bias, unless sequence length modulo 4 has a
-            // significant statistical bias, which seems unlikely to
-            // me.
-            
-            length = (whole_bytes * 4) + (oid & 0x03);
-        } else {
-            // The last byte is partially full; the last two bits of
-            // the last byte store the number of nucleotides in the
-            // last byte (0 to 3).
-            
-            char amb_char = 0;
-            
-            m_Seq.ReadBytes(& amb_char, end_offset - 1, end_offset, locked);
-            
-            Int4 remainder = amb_char & 3;
-            length = (whole_bytes * 4) + remainder;
-        }
-    }
-    
-    return length;
+    _ASSERT(kSeqTypeProt == m_Idx.GetSeqType());
+
+    // Subtract one, for the inter-sequence null.
+    return end_offset - start_offset - 1;
 }
+
+
+// Assumes locked.
+
+Int4 CSeqDBVol::GetSeqLengthExact(Uint4 oid) const
+{
+    TIndx start_offset = 0;
+    TIndx end_offset   = 0;
+    
+    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
+        return -1;
+    
+    _ASSERT(m_Idx.GetSeqType() == kSeqTypeNucl);
+    
+    Int4 whole_bytes = Int4(end_offset - start_offset - 1);
+    
+    // The last byte is partially full; the last two bits of
+    // the last byte store the number of nucleotides in the
+    // last byte (0 to 3).
+    
+    char amb_char = 0;
+    
+    m_Seq.ReadBytes(& amb_char, end_offset - 1, end_offset);
+    
+    Int4 remainder = amb_char & 3;
+    return (whole_bytes * 4) + remainder;
+}
+
+
+Int4 CSeqDBVol::GetSeqLengthApprox(Uint4 oid) const
+{
+    TIndx start_offset = 0;
+    TIndx end_offset   = 0;
+    
+    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
+        return -1;
+    
+    _ASSERT(m_Idx.GetSeqType() == kSeqTypeNucl);
+    
+    Int4 whole_bytes = Int4(end_offset - start_offset - 1);
+    
+    // Same principle as below - but use lower bits of oid
+    // instead of fetching the actual last byte.  this should
+    // correct for bias, unless sequence length modulo 4 has a
+    // significant statistical bias, which seems unlikely to
+    // me.
+    
+    return (whole_bytes * 4) + (oid & 0x03);
+}
+
 
 static CMutex s_MapNaMutex;
 

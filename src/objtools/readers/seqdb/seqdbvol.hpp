@@ -64,7 +64,13 @@ public:
               const string  & name,
               char            prot_nucl);
     
-    Int4 GetSeqLength(Uint4 oid, bool approx, CSeqDBLockHold & locked) const;
+    Int4 GetSeqLengthProt(Uint4 oid) const;
+    
+    Int4 GetSeqLengthApprox(Uint4 oid) const;
+    
+    // Assumes locked.
+
+    Int4 GetSeqLengthExact(Uint4 oid) const;
     
     CRef<CBlast_def_line_set> GetHdr(Uint4 oid, CSeqDBLockHold & locked) const;
     
