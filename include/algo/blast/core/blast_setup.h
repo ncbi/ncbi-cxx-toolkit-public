@@ -167,6 +167,11 @@ BlastScoreBlkMatrixInit(Uint1 program_number,
    BlastScoreBlk* sbp);
 
 
+Int2
+BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, 
+    const BlastScoringOptions* scoring_options, Uint1 program_number, Boolean phi_align, 
+    BlastScoreBlk* *sbpp, Blast_Message* *blast_message);
+
 #ifdef __cplusplus
 }
 #endif
@@ -175,6 +180,9 @@ BlastScoreBlkMatrixInit(Uint1 program_number,
 /*
  *
 * $Log$
+* Revision 1.36  2004/03/30 15:49:07  madden
+* Add prototype for BlastSetup_GetScoreBlock
+*
 * Revision 1.35  2004/03/16 18:55:36  camacho
 * Moved log to end of file
 *
