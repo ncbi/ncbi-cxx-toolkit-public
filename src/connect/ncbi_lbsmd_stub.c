@@ -30,11 +30,11 @@
  *
  */
 
-#include "ncbi_servicep_lbsmd.h"
+#include "ncbi_lbsmd.h"
 
 
 const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
-                                    SSERV_Info** info, char** env)
+                                    SSERV_Info** info, HOST_INFO* hinfo)
 {
     return 0;
 }
@@ -46,9 +46,42 @@ char* SERV_LBSMD_GetConfig(void)
 }
 
 
+int LBSM_HINFO_CpuCount(const void* load_ptr)
+{
+    return -1;
+}
+
+
+int LBSM_HINFO_TaskCount(const void* load_ptr)
+{
+    return -1;
+}
+
+
+int/*bool*/ LBSM_HINFO_LoadAverage(const void* load_ptr, double lavg[2])
+{
+    return 0/*failure*/;
+}
+
+
+int/*bool*/ LBSM_HINFO_Status(const void* load_ptr, double status[2])
+{
+    return 0/*failure*/;
+}
+
+
+int/*bool*/ LBSM_HINFO_BLASTParams(const void* load_ptr, unsigned int blast[8])
+{
+    return 0/*failure*/;
+}
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/10/28 20:12:57  lavr
+ * Module renamed and host info API included
+ *
  * Revision 6.4  2002/10/11 19:52:57  lavr
  * +SERV_LBSMD_GetConfig()
  *

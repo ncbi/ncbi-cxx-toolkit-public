@@ -1,5 +1,5 @@
-#ifndef CONNECT___NCBI_SERVICEP_DISPD__H
-#define CONNECT___NCBI_SERVICEP_DISPD__H
+#ifndef CONNECT___NCBI_DISPD__H
+#define CONNECT___NCBI_DISPD__H
 
 /*  $Id$
  * ===========================================================================
@@ -45,7 +45,7 @@ extern "C" {
 
 const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
                                     const SConnNetInfo *net_info,
-                                    SSERV_Info** info, char** env);
+                                    SSERV_Info** info, HOST_INFO* host_info);
 
 
 #ifdef __cplusplus
@@ -56,6 +56,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/10/28 20:12:56  lavr
+ * Module renamed and host info API included
+ *
  * Revision 6.10  2002/09/19 18:08:56  lavr
  * Header file guard macro changed; log moved to end
  *
@@ -91,4 +94,4 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
  * ==========================================================================
  */
 
-#endif /* CONNECT___NCBI_SERVICEP_DISPD__H */
+#endif /* CONNECT___NCBI_DISPD__H */

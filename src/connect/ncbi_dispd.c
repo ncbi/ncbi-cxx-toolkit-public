@@ -33,8 +33,8 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_comm.h"
+#include "ncbi_dispd.h"
 #include "ncbi_priv.h"
-#include "ncbi_servicep_dispd.h"
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_http_connector.h>
 #include <ctype.h>
@@ -52,7 +52,7 @@
 extern "C" {
 #endif
     static void        s_Reset      (SERV_ITER);
-    static SSERV_Info* s_GetNextInfo(SERV_ITER, char**);
+    static SSERV_Info* s_GetNextInfo(SERV_ITER, HOST_INFO*);
     static int/*bool*/ s_Update     (SERV_ITER, TNCBI_Time, const char*);
     static void        s_Close      (SERV_ITER);
 
@@ -249,7 +249,7 @@ static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
 }
 
 
-static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env)
+static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 {
     double total = 0.0, point = -1.0, access = 0.0, p = 0.0, status;
     SDISPD_Data* data = (SDISPD_Data*) iter->data;
@@ -300,8 +300,8 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env)
         memmove(data->s_node + i, data->s_node + i + 1,
                 (data->n_node - i)*sizeof(*data->s_node));
     }
-    if (env)
-        *env = 0;
+    if (host_info)
+        *host_info = 0;
 
     return info;
 }
@@ -338,7 +338,7 @@ static void s_Close(SERV_ITER iter)
 
 const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
                                     const SConnNetInfo* net_info,
-                                    SSERV_Info** info, char** env/*unused*/)
+                                    SSERV_Info** info, HOST_INFO* u/*unused*/)
 {
     SDISPD_Data* data;
 
@@ -375,6 +375,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2002/10/28 20:12:56  lavr
+ * Module renamed and host info API included
+ *
  * Revision 6.47  2002/10/28 15:46:21  lavr
  * Use "ncbi_ansi_ext.h" privately
  *

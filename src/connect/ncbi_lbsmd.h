@@ -1,5 +1,5 @@
-#ifndef CONNECT___NCBI_SERVICEP_LBSMD__H
-#define CONNECT___NCBI_SERVICEP_LBSMD__H
+#ifndef CONNECT___NCBI_LBSMD__H
+#define CONNECT___NCBI_LBSMD__H
 
 /*  $Id$
  * ===========================================================================
@@ -43,10 +43,25 @@ extern "C" {
 
 
 const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
-                                    SSERV_Info** info, char** env);
+                                    SSERV_Info** info, HOST_INFO* host_info);
 
 
 char* SERV_LBSMD_GetConfig(void);
+
+
+int LBSM_HINFO_CpuCount(const void* load);
+
+
+int LBSM_HINFO_TaskCount(const void* load);
+
+
+int/*bool*/ LBSM_HINFO_LoadAverage(const void* load, double lavg[2]);
+
+
+int/*bool*/ LBSM_HINFO_Status(const void* load, double status[2]);
+
+
+int/*bool*/ LBSM_HINFO_BLASTParams(const void* load, unsigned int blast[8]);
 
 
 #ifdef __cplusplus
@@ -57,6 +72,9 @@ char* SERV_LBSMD_GetConfig(void);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/10/28 20:12:57  lavr
+ * Module renamed and host info API included
+ *
  * Revision 6.7  2002/10/11 19:52:45  lavr
  * +SERV_LBSMD_GetConfig()
  *
@@ -82,4 +100,4 @@ char* SERV_LBSMD_GetConfig(void);
  * ==========================================================================
  */
 
-#endif /* CONNECT___NCBI_SERVICEP_LBSMD__H */
+#endif /* CONNECT___NCBI_LBSMD__H */
