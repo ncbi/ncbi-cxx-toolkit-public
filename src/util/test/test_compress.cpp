@@ -113,14 +113,14 @@ void CTestCompressor<TCompression, TCompressionFile,
 
         result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
                                   &out_len);
-        PrintResult(eCompress, c.GetLastError(), kDataLen, kBufLen, out_len);
+        PrintResult(eCompress, c.GetErrorCode(), kDataLen, kBufLen, out_len);
         assert(result);
 
         // Decompress data
         dst_len = out_len;
         result = c.DecompressBuffer(dst_buf, dst_len, cmp_buf, kBufLen,
                                     &out_len);
-        PrintResult(eDecompress, c.GetLastError(), dst_len, kBufLen,out_len);
+        PrintResult(eDecompress, c.GetErrorCode(), dst_len, kBufLen,out_len);
         assert(result);
         assert(out_len == kDataLen);
 
@@ -139,7 +139,7 @@ void CTestCompressor<TCompression, TCompressionFile,
         dst_len = 100;
         result = c.CompressBuffer(src_buf, kDataLen, dst_buf, dst_len,
                                   &out_len);
-        PrintResult(eCompress, c.GetLastError(), kDataLen, dst_len, out_len);
+        PrintResult(eCompress, c.GetErrorCode(), kDataLen, dst_len, out_len);
         assert(!result);
         assert(out_len == dst_len);
         OK;
@@ -228,7 +228,7 @@ void CTestCompressor<TCompression, TCompressionFile,
         TCompression c;
         result = c.DecompressBuffer(dst_buf, dst_len, cmp_buf, kBufLen,
                                     &out_len);
-        PrintResult(eDecompress, c.GetLastError(), dst_len, kBufLen, out_len);
+        PrintResult(eDecompress, c.GetErrorCode(), dst_len, kBufLen, out_len);
         assert(result);
 
         // Compare original and uncompressed data
@@ -248,7 +248,7 @@ void CTestCompressor<TCompression, TCompressionFile,
         TCompression c;
         result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
                                   &out_len);
-        PrintResult(eCompress, c.GetLastError(), kDataLen, kBufLen, out_len);
+        PrintResult(eCompress, c.GetErrorCode(), kDataLen, kBufLen, out_len);
         assert(result);
 
         // Read decompressed data from stream
@@ -293,7 +293,7 @@ void CTestCompressor<TCompression, TCompressionFile,
         TCompression c;
         result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen,
                                     &out_len);
-        PrintResult(eDecompress, c.GetLastError(), os_str_len, kBufLen,
+        PrintResult(eDecompress, c.GetErrorCode(), os_str_len, kBufLen,
                     out_len);
         assert(result);
 
@@ -315,7 +315,7 @@ void CTestCompressor<TCompression, TCompressionFile,
         TCompression c;
         result = c.CompressBuffer(src_buf, kDataLen, dst_buf, kBufLen,
                                   &out_len);
-        PrintResult(eCompress, c.GetLastError(), kDataLen, kBufLen, out_len);
+        PrintResult(eCompress, c.GetErrorCode(), kDataLen, kBufLen, out_len);
         assert(result);
 
         // Write compressed data to decompressing stream
@@ -387,14 +387,14 @@ void CTestCompressor<TCompression, TCompressionFile,
                                           new TStreamCompressor());
 
             int v;
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 1000; i++) {
                  v = i * 2;
                  zip << v << endl;
             }
             zip.Finalize(CCompressionStream::eWrite);
             zip.clear();
 
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 1000; i++) {
                  zip >> v;
                  assert(!zip.eof());
                  assert(v == i * 2);
@@ -517,6 +517,7 @@ int CTest::Run(void)
         ::Run(src_buf);
 
     cout << "--------------- Zlib ---------------\n\n";
+    
     CTestCompressor<CZipCompression, CZipCompressionFile,
                     CZipStreamCompressor, CZipStreamDecompressor>
         ::Run(src_buf);
@@ -543,6 +544,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/15 15:54:43  ivanov
+ * GetLastError() -> GetErrorCode() renaming
+ *
  * Revision 1.4  2003/06/17 15:53:31  ivanov
  * Changed tests accordingly the last Compression API changes.
  * Some tests rearrangemets.
