@@ -87,10 +87,11 @@ below</a>) to the default value <tt>CONN_DEFAULT_TIMEOUT</tt>.
 <p>
 After successful creation with <i><b>CONN_Create()</b></i>, the following
 calls from CONN API become available (all declared and documented in
-<i><b>include/connect/ncbi_connection.h</b></i>). All calls (except <a
-href="#CONN_GetTimeout"><i><b>CONN_GetTimeout()</b></i></a> and <a
-href="#CONN_GetType"><i><b>CONN_GetType()</b></i></a>) return I/O completion status of type
-<a href="../lxr/ident?i=EIO_Status"><i><b>EIO_Status</b></i></a>. Normal completion has code <i><b>eIO_Success</b></i>.
+<a
+href="../lxr/src/include/connect/ncbi_connection.h"><i><b>connect/ncbi_connection.h</b></i></a>). All calls (except
+<a href="#CONN_GetTimeout"><i><b>CONN_GetTimeout()</b></i></a> and <a href="#CONN_GetType"><i><b>CONN_GetType()</b></i></a>)
+return I/O completion status of type <a href="../lxr/ident?i=EIO_Status"><i><b>EIO_Status</b></i></a>.
+Normal completion has code <i><b>eIO_Success</b></i>.
 <ul>
 
 <li> <a name="CONN_Read"><a href="../lxr/ident?i=CONN_Read"><i><b>CONN_Read</i></b></a>&nbsp;<tt>(CONN conn, void* buf, size_t bufsize, size_t* n_read, EIO_ReadMethod how);</tt></a><br>
@@ -810,16 +811,16 @@ If the server descriptor was obtained using dispatching CGI (<a href="#ref_Direc
 host enrivonment is always returned as 0.
 
 <p>
-<a name="ref_DirectIndirect">The</a> back end of the service API is split into 2 independent parts: direct access to
-<a href="../tools/dispatcher/LBSMD.html">LBSMD</a>, if one is both available on the current host, and not
-disabled by parameter <a href="#lb_disable"><b><i>lb_disable</i></b></a> at the iterator opening. If neither LBSMD available
-nor enabled, the second part of the back-end API is used, which tries to connect to <a href="../tools/dispatcher/DISPD.html">dispatching CGI</a>,
-which in turn connects to LBSMD in order to carry out the request. Attempt to use the CGI is only done, if
-<a href="../lxr/ident?i=SERV_OpenEx"><b><i>net_info</i></b></a> argument is provided non-zero in the
+<a name="ref_DirectIndirect">The</a> back end of the service API is split into 2 independent parts: <i><u>direct</u></i> access to
+<a href="../tools/dispatcher/LBSMD.html"><tt>LBSMD</tt></a>, if one is both available on the current host and is not
+disabled by parameter <a href="#lb_disable"><b><i>lb_disable</i></b></a> at the iterator opening. If neither <tt>LBSMD</tt> available
+nor enabled, the second (<u><i>indirect</i></u>) part of the back-end API is used, which involves connection to
+<a href="../tools/dispatcher/DISPD.html">dispatching CGI</a>, which in turn connects to <tt>LBSMD</tt> in order to carry out the request.
+Attempt to use the CGI is only done, if <a href="../lxr/ident?i=SERV_OpenEx"><b><i>net_info</i></b></a> argument is provided non-zero in the
 calls to <b><i>SERV_Open</i></b> or <b><i>SERV_OpenEx</i></b> (note that in the call to <b><i>SERV_OpenSimple</i></b>,
 <b><i>net_info</i></b> gets created before upcall to <b><i>SERV_Open</i></b> and thus CGI dispatching is likely to happen, unless
 <b><i>net_info</i></b> could not be constructed from the environment). In the above conditions, the network service resolution
-is also undertaken if service name could not be resolved (due to service inexistence or other error) with the use of locally found LBSMD.
+is also undertaken if service name could not be resolved (due to service inexistence or other error) with the use of locally found <tt>LBSMD</tt>.
 
 <p>
 <hr>
