@@ -16,8 +16,10 @@
 USING_NCBI_SCOPE;
 
 CCodeGenerator::CCodeGenerator(void)
-    : m_MainFiles(*this), m_ImportFiles(*this), m_ExcludeRecursion(false)
+    : m_ExcludeRecursion(false)
 {
+	m_MainFiles.SetModuleContainer(this);
+	m_ImportFiles.SetModuleContainer(this); 
 }
 
 CCodeGenerator::~CCodeGenerator(void)
@@ -236,7 +238,7 @@ bool CCodeGenerator::Imported(const CDataType* type) const
         
         return false;
     }
-    catch ( CTypeNotFound& exc ) {
+    catch ( CTypeNotFound& /* ignored */ ) {
     }
     return true;
 }

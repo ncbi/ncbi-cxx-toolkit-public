@@ -97,10 +97,10 @@ CDataType* CModuleSet::ResolveInAnyModule(const string& typeName,
             type = i->second->ExternalResolve(typeName, allowInternal);
             count += 1;
         }
-        catch ( CAmbiguiousTypes& exc ) {
+        catch ( CAmbiguiousTypes& /* ignored */ ) {
             count += 2;
         }
-        catch ( CTypeNotFound& exc ) {
+        catch ( CTypeNotFound& /* ignored */ ) {
         }
     }
     switch ( count ) {
@@ -114,8 +114,8 @@ CDataType* CModuleSet::ResolveInAnyModule(const string& typeName,
     }
 }
 
-CFileSet::CFileSet(const CModuleContainer& container)
-    : m_Parent(container)
+CFileSet::CFileSet(void)
+    : m_Parent(0)
 {
 }
 
@@ -127,18 +127,18 @@ void CFileSet::AddFile(const AutoPtr<CModuleSet>& moduleSet)
 
 const CNcbiRegistry& CFileSet::GetConfig(void) const
 {
-    return m_Parent.GetConfig();
+    return GetModuleContainer().GetConfig();
 }
 
 const string& CFileSet::GetSourceFileName(void) const
 {
-    return m_Parent.GetSourceFileName();
+    return GetModuleContainer().GetSourceFileName();
 }
 
 CDataType* CFileSet::InternalResolve(const string& module,
                                      const string& type) const
 {
-    return m_Parent.InternalResolve(module, type);
+    return GetModuleContainer().InternalResolve(module, type);
 }
 
 void CFileSet::PrintASN(CNcbiOstream& out) const
@@ -160,10 +160,10 @@ CDataType* CFileSet::ExternalResolve(const string& module, const string& name,
             type = (*i)->ExternalResolve(module, name, allowInternal);
             count += 1;
         }
-        catch ( CAmbiguiousTypes& exc ) {
+        catch ( CAmbiguiousTypes& /* ignored */ ) {
             count += 2;
         }
-        catch ( CTypeNotFound& exc ) {
+        catch ( CTypeNotFound& /* ignored */ ) {
         }
     }
     switch ( count ) {
@@ -188,10 +188,10 @@ CDataType* CFileSet::ResolveInAnyModule(const string& name,
             type = (*i)->ResolveInAnyModule(name, allowInternal);
             count += 1;
         }
-        catch ( CAmbiguiousTypes& exc ) {
+        catch ( CAmbiguiousTypes& /* ignored */ ) {
             count += 2;
         }
-        catch ( CTypeNotFound& exc ) {
+        catch ( CTypeNotFound& /* ignored */ ) {
         }
     }
     switch ( count ) {

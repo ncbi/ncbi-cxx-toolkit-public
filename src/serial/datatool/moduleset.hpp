@@ -42,7 +42,18 @@ class CFileSet : public CModuleContainer
 public:
     typedef list< AutoPtr< CModuleSet > > TModuleSets;
 
-    CFileSet(const CModuleContainer& parent);
+    CFileSet(void);
+	
+	const CModuleContainer& GetModuleContainer(void) const
+		{
+			_ASSERT(m_Parent != 0);
+			return *m_Parent;
+		}
+	void SetModuleContainer(const CModuleContainer* parent)
+		{
+			_ASSERT(m_Parent == 0 && parent != 0);
+			m_Parent = parent;
+		}
 
     void AddFile(const AutoPtr<CModuleSet>& moduleSet);
 
@@ -72,7 +83,7 @@ public:
                                   bool allowInternal = false) const;
 
 private:
-    const CModuleContainer& m_Parent;
+    const CModuleContainer* m_Parent;
     TModuleSets m_ModuleSets;
 };
 
