@@ -1,5 +1,5 @@
 # $Id$
 
-LIBOBJ = checksum bytesrc strbuffer
+LIBOBJ = checksum bytesrc strbuffer itree
 
 LIB    = xutil

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/01/11 15:00:39  vasilche
+* Added CIntervalTree for seraching on set of intervals.
+*
 * Revision 1.8  2001/01/05 20:08:53  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -179,7 +182,7 @@ private:
                 position_type maxLength = m_SelectIter->first;
                 // starting level point
                 m_LevelIter = m_SelectIter->second.
-                    lower_bound(range_type(from - maxLength + 1, maxLength));
+                    lower_bound(range_type(from - maxLength + 1, from));
             }
         }
     // stop at suitable point
