@@ -67,6 +67,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.1  2003/03/11 21:35:13  ivanov
+ * Renaming check_dbapi_driver -> dbapi_driver_check
+ *
  * Revision 1.1  2003/03/11 17:29:52  ivanov
  * Initial revision
  *

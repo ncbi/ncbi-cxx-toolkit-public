@@ -49,7 +49,7 @@ for driver in $driver_list ; do
 ******************* DRIVER:  $driver ************************
 
 EOF
-  if check_dbapi_driver $driver ; then
+  if dbapi_driver_check $driver ; then
     for server in $server_list ; do
       if test $driver = "ctlib"  -a  $server = $server_mssql ; then
          continue

@@ -1,7 +1,7 @@
 # $Id$
 
-APP = check_dbapi_driver
-SRC = check_dbapi_driver
+APP = dbapi_driver_check
+SRC = dbapi_driver_check
 
 LIB  = dbapi_driver xncbi
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
