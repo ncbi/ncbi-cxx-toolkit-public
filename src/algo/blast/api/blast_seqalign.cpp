@@ -1182,7 +1182,7 @@ x_RemapAlignmentCoordinates(CRef<CSeq_align> sar,
                             const SSeqLoc* query,
                             const SSeqLoc* subject = NULL)
 {
-    ASSERT(sar);
+    _ASSERT(sar);
     ASSERT(query);
     const int query_dimension = 0;
     const int subject_dimension = 1;
@@ -1292,6 +1292,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/11/24 20:59:12  ucko
+* Change one ASSERT to _ASSERT (probably more appropriate in general)
+* due to MSVC brokenness.
+*
 * Revision 1.25  2003/11/24 17:14:58  camacho
 * Remap alignment coordinates to original Seq-locs
 *
