@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/10/01 22:35:52  vakatov
+* *** empty log message ***
+*
 * Revision 1.7  1998/10/01 21:36:03  vakatov
 * Renamed everything to the "message handling"(rather than "error handling")
 *
@@ -77,19 +80,28 @@ namespace ncbi_msg {
         friend CMessage& Error  (CMessage& msg); /// severity for the next
         friend CMessage& Fatal  (CMessage& msg); /// message
 
-        // write the error diagnostics to output stream "os"
-        static void f_SetStream(ostream& os=cerr);
-        // do not post messages which severity is less than "min_sev"
-        static EMsgSeverity f_SetPostLevel(EMsgSeverity min_sev=eM_Error);
-        // abrupt the application if severity is >= "max_sev"
-        static EMsgSeverity f_SetDieLevel(EMsgSeverity max_sev=eM_Fatal);
-
     private:
         EMsgSeverity  m_Severity;  // severity level for the current message
         CMsgBuffer&   m_Buffer;    // this thread's error message buffer
     };
 
 
+    // ATTENTION:  the following functions are application-wide, i.e they
+    //             are not local for a particular thread
+    //
+
+    // Do not post messages which severity is less than "min_sev"
+    // Return previous post-level
+    extern EMsgSeverity g_SetMessagePostLevel(EMsgSeverity min_sev=eM_Error);
+
+    // Abrupt the application if severity is >= "max_sev"
+    // Return previous die-level
+    extern EMsgSeverity g_SetMessageDieLevel(EMsgSeverity die_sev=eM_Fatal);
+
+    // Write the error diagnostics to output stream "os"
+    // (this uses the g_SetMessageHandler() functionality)
+    // Return previous output stream, if any
+    extern ostream* g_SetMessageStream(ostream* os);
 
     // Set new message handler("func"), data("data") and destructor("cleanup").
     // "func(..., data)" is to be called when any instance of "CMessageBuffer"

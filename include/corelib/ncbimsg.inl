@@ -33,15 +33,33 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.7  1998/10/01 21:36:04  vakatov
-* Renamed everything to the "message handling"(rather than "error handling")
+* Revision 1.8  1998/10/01 22:35:53  vakatov
+* *** empty log message ***
 *
 * ==========================================================================
 */
 
+/////////////////////////////////////////////////////////////////////////////
+// WARNING -- all the above is for INTERNAL "ncbimsg" use only,
+//            and any classes, typedefs and even "extern" functions and
+//            variables declared in this file should not be used anywhere
+//            but inside "ncbimsg.inl" and/or "ncbimsg.cpp"!!!
+/////////////////////////////////////////////////////////////////////////////
+
+
+// These two dont need to be protected by mutexes
+// because that is not critical while not having a mutex around would
+// save us a little performance
+extern EMsgSeverity s_MessagePostSeverity;
+extern EMsgSeverity s_MessageDieSeverity;
+
+
+
 //////////////////////////////////////////////////////////////////
-// CMsgBuffer -- FOR INTERNAL USE ONLY
+// CMsgBuffer
 // (can be accessed only by "CMessage" and created only by g_GetMsgBuffer())
+//
+
 class CMsgBuffer {
     friend class CMessage;
     friend CMsgBuffer& g_GetMsgBuffer(void);
@@ -143,6 +161,9 @@ inline CMsgBuffer::~CMsgBuffer(void) {
 }
 
 template<class X> void CMsgBuffer::f_Put(const CMessage& msg, X& x) {
+    if (msg.f_GetSeverity() < s_MessagePostLevel)
+        return;
+
     if (m_Msg != &msg) {
         if ( m_Stream.pcount() )
             f_Flush();
@@ -161,7 +182,7 @@ inline void CMsgBuffer::f_Flush(void) {
         m_Stream.freeze(false);
         f_Reset(m_Msg);
     }
-    if (sev == eM_Fatal)
+    if (sev >= s_MessageDieLevel)
         abort();
 }
 
