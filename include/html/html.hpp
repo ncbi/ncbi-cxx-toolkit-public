@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/01/11 22:05:48  vasilche
+* Fixed CHTML_font size.
+* Added CHTML_image input element.
+*
 * Revision 1.18  1999/01/11 15:13:32  vasilche
 * Fixed CHTML_font size.
 * CHTMLHelper extracted to separate file.
@@ -596,6 +600,17 @@ class CHTML_hidden : public CHTML_input
 
 public:
     CHTML_hidden(const string& name, const string& value);
+
+    static const string& s_GetInputType(void);
+};
+
+// input type=image tag
+class CHTML_image : public CHTML_input
+{
+    typedef CHTML_input CParent;
+
+public:
+    CHTML_image(const string& name, const string& src);
 
     static const string& s_GetInputType(void);
 };

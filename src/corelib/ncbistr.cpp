@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/01/11 22:05:50  vasilche
+* Fixed CHTML_font size.
+* Added CHTML_image input element.
+*
 * Revision 1.5  1998/12/28 17:56:39  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -99,6 +103,13 @@ string IntToString(int value)
 {
     char buffer[64];
     snprintf(buffer, sizeof(buffer), "%d", value);
+    return buffer;
+}
+
+string IntToString(int value, bool sign)
+{
+    char buffer[64];
+    snprintf(buffer, sizeof(buffer), sign? "%+d": "%d", value);
     return buffer;
 }
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/01/11 22:05:52  vasilche
+* Fixed CHTML_font size.
+* Added CHTML_image input element.
+*
 * Revision 1.21  1999/01/11 15:13:35  vasilche
 * Fixed CHTML_font size.
 * CHTMLHelper extracted to separate file.
@@ -783,6 +787,7 @@ const string KHTMLInputTypeName_text = "TEXT";
 const string KHTMLInputTypeName_radio = "RADIO";
 const string KHTMLInputTypeName_checkbox = "CHECKBOX";
 const string KHTMLInputTypeName_hidden = "HIDDEN";
+const string KHTMLInputTypeName_image = "IMAGE";
 const string KHTMLInputTypeName_submit = "SUBMIT";
 const string KHTMLInputTypeName_reset = "RESET";
 
@@ -804,6 +809,11 @@ const string& CHTML_checkbox::s_GetInputType(void)
 const string& CHTML_hidden::s_GetInputType(void)
 {
     return KHTMLInputTypeName_hidden;
+}
+
+const string& CHTML_image::s_GetInputType(void)
+{
+    return KHTMLInputTypeName_image;
 }
 
 const string& CHTML_submit::s_GetInputType(void)
@@ -844,6 +854,14 @@ CHTML_checkbox::CHTML_checkbox(const string& name, const string& value, bool che
     AppendHTMLText(description);  // adds the description at the end
 }
 
+
+// image tag 
+
+CHTML_image::CHTML_image(const string& name, const string& src)
+    : CParent(s_GetInputType(), name)
+{
+    SetAttribute(KHTMLAttributeName_src, src);
+}
 
 // radio tag 
 
@@ -966,14 +984,8 @@ CHTML_dl* CHTML_dl::AppendTerm(CNCBINode* term, CNCBINode* definition)
 
 void CHTML_font::SetRelativeSize(int size)
 {
-    if ( size == 0 )
-        return;
-
-    string value = IntToString(size);
-    if ( size > 0 )
-        value.insert(0, '+');
-
-    SetAttribute(KHTMLAttributeName_size, value);
+    if ( size != 0 )
+        SetAttribute(KHTMLAttributeName_size, IntToString(size, true));
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/01/11 22:05:45  vasilche
+* Fixed CHTML_font size.
+* Added CHTML_image input element.
+*
 * Revision 1.13  1998/12/28 17:56:29  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -74,6 +78,7 @@ extern int StringToInt(const string& str);
 extern unsigned int StringToUInt(const string& str);
 extern double StringToDouble(const string& str);
 extern string IntToString(int value);
+extern string IntToString(int value, bool sign);
 extern string UIntToString(unsigned int value);
 extern string DoubleToString(double value);
 
