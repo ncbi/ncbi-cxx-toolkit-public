@@ -1,4 +1,4 @@
---$Revision: 1.10 $
+--$Revision: 1.11 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -89,7 +89,7 @@ ID2-Request-Get-Blob-Id ::= SEQUENCE {
         -- return id of blob with sequence
         sources         SEQUENCE OF VisibleString OPTIONAL,
 
-        -- return Blob-Ids with external references to this Seq-id
+        -- return Blob-Ids with external features on this Seq-id
         external        NULL OPTIONAL
 }
 
@@ -213,7 +213,19 @@ ID2-Reply ::= SEQUENCE {
                 reget-blob      ID2-Reply-ReGet-Blob,
                 get-split-info  ID2S-Reply-Get-Split-Info,
                 get-chunk       ID2S-Reply-Get-Chunk
-        }
+        },
+
+        -- additional error flag if the reply is broken in the middle
+        -- of transfer.
+        -- 'last-octet-string', and 'nothing' mean that
+        -- client may use ReGet request to get the remaining data.
+        discard         ENUMERATED {
+                reply             (0),  -- whole reply should be discarded
+                last-octet-string (1),  -- all data in embedded ID2-Reply-Data
+                                        -- except last OCTET STRING is correct
+                nothing           (2)   -- all data in embedded ID2-Reply-Data
+                                        -- is correct, but is incomplete
+        } OPTIONAL
 }
 
 
