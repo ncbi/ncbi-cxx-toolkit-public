@@ -575,9 +575,8 @@ CBDB_FieldLString::GetLString(const unsigned char* str,
                               int*                 str_len) const
 {
     size_t DBT_size = m_BufferManager->GetDBT_Size();
-    _ASSERT(DBT_size);
 
-    if (DBT_size <= 4) {  // looks like legacy C-string
+    if (DBT_size > 0 && DBT_size <= 4) {  // looks like legacy C-string
         _ASSERT(check_legacy);
         *str_len = (int)::strlen((const char*)str);
     } else {
@@ -586,7 +585,7 @@ CBDB_FieldLString::GetLString(const unsigned char* str,
     return str;
 }
 
-
+/*
 CBDB_FieldLString::operator const char* () const
 {
     const unsigned char* str = (const unsigned char*)GetBuffer();
@@ -603,7 +602,7 @@ CBDB_FieldLString::operator const char* () const
     }
     return (const char*) str;
 }
-
+*/
 
 const CBDB_FieldLString& 
 CBDB_FieldLString::operator=(const CBDB_FieldLString& str)
@@ -835,6 +834,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/02/04 17:03:39  kuznets
+ * Fixed bug in LString manipulation.
+ *
  * Revision 1.16  2003/12/22 18:54:14  kuznets
  * Implemeneted length prefixed string field (CBDB_FieldLString)
  *
