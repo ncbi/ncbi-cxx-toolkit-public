@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/12 14:10:44  thiessen
+* added initial OpenGL rendering engine
+*
 * Revision 1.2  2000/07/12 02:00:39  thiessen
 * add basic wxWindows GUI
 *
@@ -44,14 +47,14 @@
 // For now, this module will contain a simple wxWindows + wxGLCanvas interface
 
 #include <wx/wx.h>
+
 #if !wxUSE_GLCANVAS
 #error Please set wxUSE_GLCANVAS to 1 in setup.h.
 #endif
-
 #include <wx/glcanvas.h>
-#include <GL/gl.h>
 
 #include "cn3d/structure_set.hpp"
+#include "cn3d/opengl_renderer.hpp"
 
 using namespace Cn3D;
 
@@ -74,7 +77,8 @@ public:
     ~Cn3DGLCanvas(void);
 
     // public data
-    GLfloat xrot, yrot;
+    StructureSet *structureSet;
+    OpenGLRenderer renderer;
 
     // public methods
     void OnPaint(wxPaintEvent& event);
@@ -94,7 +98,6 @@ public:
     ~Cn3DMainFrame();
 
     // public data
-    StructureSet *structureSet;
     Cn3DGLCanvas *glCanvas;
     wxMenuBar *menuBar;
     wxMenu *menu1;

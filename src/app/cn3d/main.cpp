@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/12 14:11:29  thiessen
+* added initial OpenGL rendering engine
+*
 * Revision 1.6  2000/07/12 02:00:14  thiessen
 * add basic wxWindows GUI
 *
@@ -102,7 +105,7 @@ bool Cn3DApp::OnInit(void)
 
     // Create the main frame window
     frame = new Cn3DMainFrame(NULL, "Cn3D++", wxPoint(50, 50), wxSize(400, 400),
-        wxMINIMIZE_BOX | wxSYSTEM_MENU | wxCAPTION);
+        wxDEFAULT_FRAME_STYLE);
 
     // get file name from command line for now
     if (argc > 2)
@@ -122,9 +125,9 @@ END_EVENT_TABLE()
 // frame constructor
 Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoint& pos,
     const wxSize& size, long style) :
-    wxFrame(frame, -1, title, pos, size, style | wxTHICK_FRAME), structureSet(NULL)
+    wxFrame(frame, -1, title, pos, size, style | wxTHICK_FRAME)
 {
-    SetSizeHints(150, 150);
+    SetSizeHints(150, 150); // min size
 
     // Make a menubar
     menuBar = new wxMenuBar;
@@ -148,11 +151,9 @@ Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoin
         new Cn3DGLCanvas(this, -1, wxPoint(0, 0), wxSize(400, 400), 0, "Cn3DGLCanvas", gl_attrib);
     glCanvas->SetCurrent();
 
-    // Show the frame
-    Show(TRUE);
-
-    // Centre frame on the screen.
+    // center and Show the frame
     Centre(wxBOTH);
+    Show(TRUE);
 }
 
 void Cn3DMainFrame::OnExit(wxCommandEvent& event)
@@ -162,7 +163,6 @@ void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 
 Cn3DMainFrame::~Cn3DMainFrame(void)
 {
-    if (structureSet) delete structureSet;
     delete glCanvas;
     if (logFrame) {
         delete logText;
@@ -175,16 +175,19 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
 void Cn3DMainFrame::LoadFile(const char *filename)
 {
     // clear old data
-    if (structureSet) {
-        delete structureSet;
-        structureSet = NULL;
+    if (glCanvas->structureSet) {
+        delete glCanvas->structureSet;
+        glCanvas->structureSet = NULL;
+        glCanvas->renderer.AttachStructureSet(NULL);
     }
 
     // initialize the binary input stream 
     auto_ptr<CNcbiIstream> inStream;
     inStream.reset(new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
-    if ( !*inStream )
-        ERR_POST(Fatal << "Cannot open input file '" << filename << "'");
+    if (!(*inStream)) {
+        ERR_POST(Error << "Cannot open input file '" << filename << "'");
+        return;
+    }
 
     // Associate ASN.1 binary serialization methods with the input 
     auto_ptr<CObjectIStream> inObject;
@@ -195,7 +198,8 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     *inObject >> mime;
 
     // Create StructureSet from mime data
-    structureSet = new StructureSet(mime);
+    glCanvas->structureSet = new StructureSet(mime);
+    glCanvas->renderer.AttachStructureSet(glCanvas->structureSet);
 }
 
 void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
@@ -220,14 +224,15 @@ END_EVENT_TABLE()
 
 Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, wxWindowID id,
     const wxPoint& pos, const wxSize& size, long style, const wxString& name, int *gl_attrib) :
-    wxGLCanvas(parent, id, pos, size, style, name, gl_attrib)
+    wxGLCanvas(parent, id, pos, size, style, name, gl_attrib), 
+    structureSet(NULL)
 {
-    parent->Show(TRUE);
     SetCurrent();
 }
 
 Cn3DGLCanvas::~Cn3DGLCanvas(void)
 {
+    if (structureSet) delete structureSet;
 }
 
 void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
@@ -240,6 +245,8 @@ void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
     if (!GetContext()) return;
 #endif
 
+    SetCurrent();
+    renderer.Display();
     SwapBuffers();
 }
 
@@ -252,26 +259,30 @@ void Cn3DGLCanvas::OnSize(wxSizeEvent& event)
     SetCurrent();
     int width, height;
     GetClientSize(&width, &height);
-    glViewport(0, 0, static_cast<GLint>(width), static_cast<GLint>(height));
+    renderer.SetSize(width, height);
 }
 
 void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
 {
-    static int dragging = 0;
-    static float last_x, last_y;
+    static bool dragging = false;
+    static long last_x, last_y;
+
+#ifndef __WXMOTIF__
+    if (!GetContext()) return;
+#endif
 
     if (event.LeftIsDown()) {
         if (!dragging) {
-            dragging = 1;
+            dragging = true;
         } else {
-            yrot += (event.GetX() - last_x)*1.0;
-            xrot += (event.GetY() - last_y)*1.0;
+            renderer.MouseDragged(
+                event.GetX()-last_x, event.GetY()-last_y);
             Refresh(FALSE);
         }
         last_x = event.GetX();
         last_y = event.GetY();
     } else
-        dragging = 0;
+        dragging = false;
 }
 
 void Cn3DGLCanvas::OnEraseBackground(wxEraseEvent& event)
