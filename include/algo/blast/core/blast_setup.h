@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.16  2003/06/19 18:58:21  dondosha
+* Moved all functions dealing with SeqLocs to blast_seq.h
+*
 * Revision 1.15  2003/06/17 21:09:26  dondosha
 * Moved file reading from BLAST_SetUpSubject to Main
 *
@@ -180,48 +183,6 @@ BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp,
 const BlastScoringOptionsPtr scoring_options, const Uint1 program_name);
 
 
-/** Get the subject sequence from its SeqLoc for the two sequences case 
- * @param subject_slp The subject SeqLoc [in]
- * @param buffer Buffer containing sequence; compressed if nucleotide [out]
- * @param buffer_length Length of the sequence buffer [out]
- * @param encoding What type of sequence encoding to use? [in]
- */
-Int2 BLAST_GetSubjectSequence(SeqLocPtr subject_slp, Uint1Ptr *buffer,
-                              Int4 *buffer_length, Uint1 encoding);
-
-/** Read the query sequences from a file, return a SeqLoc list.
- * @param infp The input file [in]
- * @param query_is_na Are sequences nucleotide (or protein)? [in]
- * @param lcase_mask The lower case masking locations (no lower case masking 
- *                   if NULL [out]
- * @param query_slp List of query SeqLocs [out]
- * @param ctr_start Number from which to start counting local ids [in]
- * @param num_queries Number of sequences read [out]
- * @return Have all sequences been read?
- */
-Boolean
-BLAST_GetQuerySeqLoc(FILE *infp, Boolean query_is_na, 
-   BlastMaskPtr PNTR lcase_mask, SeqLocPtr PNTR query_slp, Int4 ctr_start,
-   Int4Ptr num_queries);
-
-/** Given a list of nucleotide SeqLoc's, create a list of SeqLocs for their 
- * translations. 
- * @param query_slp List of nucleotide query SeqLocs [in]
- * @param genetic_code Genetic code to use for translation [in]
- * @param protein_slp_head Pointer to start of the list of translated 
- *                         SeqLocs [out]
- */
-Int2 BLAST_GetTranslatedSeqLoc(SeqLocPtr query_slp, 
-        Int4 genetic_code, SeqLocPtr PNTR protein_slp_head);
-
-/** Set up the subject sequence block in case of two sequences BLAST.
- * @param program_number Type of BLAST program [in]
- * @param subject_slp SeqLoc for the subject sequence [in]
- * @param subject Subject sequence block [out]
- */
-Int2 BLAST_SetUpSubject(Uint1 program_number, 
-        SeqLocPtr subject_slp, BLAST_SequenceBlkPtr PNTR subject);
-
 /** "Main" setup routine for BLAST. Calculates all information for BLAST search
  * that is dependent on the ASN.1 structures.
  * @param program_number Type of BLAST program (0=blastn, ...). [in]
@@ -247,18 +208,6 @@ Int2 BLAST_MainSetUp(const Uint1 program_number,
         BlastMaskPtr *filter_slp_out,
         BLAST_ScoreBlkPtr *sbpp, Blast_MessagePtr *blast_message);
 
-/** Given a list of query SeqLoc's, create the sequence block and the query
- * info structure. This is the last time SeqLoc is needed before formatting.
- * @param query_slp List of query SeqLoc's [in]
- * @param num_queries Number of query sequences [in]
- * @param program_number Type of BLAST program [in]
- * @param query_blk Query block, containing (concatenated) sequence [out]
- * @param query_info Query information structure, containing offsets into 
- *                   the concatenated sequence [out]
- */
-Int2 BLAST_SetUpQuery(SeqLocPtr query_slp, Int4 num_queries, 
-        const Uint1 program_number,
-        BLAST_SequenceBlkPtr *query_blk, BlastQueryInfoPtr *query_info);
 #ifdef __cplusplus
 }
 #endif
