@@ -73,6 +73,10 @@ int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2);
 
 
 /// Simple and fast comparison function for tables with 
+/// non-segmented "Int8" keys
+int BDB_Int8Compare(DB*, const DBT* val1, const DBT* val2);
+
+/// Simple and fast comparison function for tables with 
 /// non-segmented "int" keys
 int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
 
@@ -114,6 +118,11 @@ int BDB_Compare(DB* db, const DBT* val1, const DBT* val2);
 /// Used when the data file is in a different byte order architecture.
 int BDB_ByteSwap_UintCompare(DB*, const DBT* val1, const DBT* val2);
 
+
+/// Simple and fast comparison function for tables with 
+/// non-segmented "Int8" keys
+/// Used when the data file is in a different byte order architecture.
+int BDB_ByteSwap_Int8Compare(DB*, const DBT* val1, const DBT* val2);
 
 /// Simple and fast comparison function for tables with 
 /// non-segmented "int" keys
@@ -523,6 +532,81 @@ public:
 };
 
 
+///  Int8 field type
+///
+
+class NCBI_BDB_EXPORT CBDB_FieldInt8 : public CBDB_FieldSimpleInt<Int8>
+{
+public:
+    const CBDB_FieldInt8& operator= (Int8 val)
+    {
+        Set(val);
+        return *this;
+    }
+
+    const CBDB_FieldInt8& operator= (const CBDB_FieldInt8& val)
+    {
+        Set(val);
+        return *this;
+    }
+
+    virtual CBDB_Field* Construct(size_t /*buf_size*/) const
+    {
+        return new CBDB_FieldInt8();
+    }
+
+    Int8 Get() const
+    {
+        Int8  v;
+        if (IsByteSwapped()) {
+            v = CByteSwap::GetInt8((unsigned char*)GetBuffer());
+        } else {
+            ::memcpy(&v, GetBuffer(), sizeof(Int8));
+        }
+        return v;
+    }
+
+    virtual string GetString() const
+    {
+        Int8  v = Get();
+        return NStr::Int8ToString(v);
+    }
+
+    virtual void ToString(string& str) const
+    {
+        Int8 v = Get();
+        NStr::Int8ToString(str, v);
+    }
+
+    operator Int8() const 
+    { 
+        return Get(); 
+    }
+
+    virtual BDB_CompareFunction GetCompareFunction(bool byte_swapped) const
+    {
+        if (byte_swapped)
+            return BDB_ByteSwap_Int8Compare;
+        return BDB_Int8Compare;
+    } 
+
+    virtual int Compare(const void* p1, 
+                        const void* p2,
+                        bool byte_swapped) const
+    {
+        if (!byte_swapped)
+            return CBDB_FieldSimpleInt<Int8>::Compare(p1, p2, byte_swapped);
+
+        Int8 v1, v2;
+        v1 = CByteSwap::GetInt8((unsigned char*)p1);
+        v2 = CByteSwap::GetInt8((unsigned char*)p2);
+        if (v1 < v2) return -1;
+        if (v2 < v1) return 1;
+        return 0;
+    }
+
+};
+
 
 ///  Int4 field type
 ///
@@ -739,6 +823,40 @@ public:
         const unsigned char& c2 = *(const unsigned char *)p2;
         
         return (c1 < c2) ? -1 : (c1 > c2) ? 1 : 0;
+    }
+};
+
+/// UInt1 field type
+///
+
+class CBDB_FieldUInt1:public CBDB_FieldUChar
+{
+public:
+    const CBDB_FieldUChar& operator = (unsigned char val) 
+    { 
+        Set(val); 
+        return *this; 
+    }
+
+    const CBDB_FieldUChar& operator = (const CBDB_FieldUChar& val) 
+    { 
+        Set(val); 
+        return *this; 
+    }
+
+    virtual CBDB_Field * Construct(size_t) const
+    { 
+        return new CBDB_FieldUInt1(); 
+    }
+    
+    virtual string GetString() const  
+    { 
+        return NStr::UIntToString(Get()); 
+    }
+
+    virtual void ToString(string& s) const 
+    { 
+	s = GetString();
     }
 };
 
@@ -1344,6 +1462,7 @@ public:
 		
 		eString,
 		eLString,
+		eInt8,
 		eInt4,
 		eUint4,
 		eInt2,
@@ -1893,6 +2012,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/06/24 20:52:24  rotmistr
+ * Added Int8 and UInt1 field types.
+ *
  * Revision 1.40  2004/06/24 19:25:32  kuznets
  * Added ASSERT when somebody gets a NULL field
  *

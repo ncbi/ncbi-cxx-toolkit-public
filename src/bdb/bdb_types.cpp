@@ -105,6 +105,15 @@ int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2)
                      : ((v2 < v1) ? 1 : 0);
 }
 
+int BDB_Int8Compare(DB*, const DBT* val1, const DBT* val2)
+{
+    Int8 v1, v2;
+    ::memcpy(&v1, val1->data, sizeof(Int8));
+    ::memcpy(&v2, val2->data, sizeof(Int8));
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
 int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2)
 {
     int v1, v2;
@@ -226,6 +235,15 @@ int BDB_ByteSwap_UintCompare(DB*, const DBT* val1, const DBT* val2)
     unsigned int v1, v2;
     v1 = (unsigned int) CByteSwap::GetInt4((unsigned char*)val1->data);
     v2 = (unsigned int) CByteSwap::GetInt4((unsigned char*)val2->data);
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+int BDB_ByteSwap_Int8Compare(DB*, const DBT* val1, const DBT* val2)
+{
+    Int8 v1, v2;
+    v1 = CByteSwap::GetInt8((unsigned char*)val1->data);
+    v2 = CByteSwap::GetInt8((unsigned char*)val2->data);
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
@@ -896,6 +914,9 @@ CBDB_FieldFactory::EType CBDB_FieldFactory::GetType(const string& type) const
 	if (NStr::CompareNocase(type, "lstring")==0) {
 		return eLString;
 	} else 
+	if (NStr::CompareNocase(type, "int8")==0) {
+		return eInt8;		
+	} else 
 	if (NStr::CompareNocase(type, "int4")==0) {
 		return eInt4;		
 	} else 
@@ -932,6 +953,8 @@ CBDB_Field* CBDB_FieldFactory::Create(EType etype) const
 		return new CBDB_FieldString();
 	case eLString:
 		return new CBDB_FieldLString();
+	case eInt8:
+		return new CBDB_FieldInt8();
 	case eInt4:
 		return new CBDB_FieldInt4();
 	case eInt2:
@@ -969,6 +992,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/06/24 20:52:25  rotmistr
+ * Added Int8 and UInt1 field types.
+ *
  * Revision 1.27  2004/06/24 19:25:11  kuznets
  * Added ASSERT when somebody gets a NULL field
  *
