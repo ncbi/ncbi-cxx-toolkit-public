@@ -5,7 +5,7 @@ using namespace std;
 
 int initRTTI()
 {
-	int r;
+	int r = 0;
 	r += typeid(void).name()[0];
 	r += typeid(void*).name()[0];
 	r += typeid(const void*).name()[0];
