@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/02/11 22:45:04  thiessen
+ * put outside NCBI namespace, since it requires C linkage
+ *
  * Revision 1.3  2001/02/11 02:15:39  lavr
  * extern "C" replaced with reinterpret_cast to accepted by MSVC
  *
@@ -44,8 +47,9 @@
 
 #include <corelib/ncbistd.hpp>  // C++ Toolkit stuff, must go first!
 #include <ncbimsg.h>            // C   Toolkit error and message posting
+#include <ctools/ctools.h>
 
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 
 
 static int s_ErrorHandler(const ErrDesc* err)
@@ -73,7 +77,7 @@ static int s_ErrorHandler(const ErrDesc* err)
         level = eDiag_Fatal;
         break;
     }
-    
+
     try {
         CNcbiDiag diag(level, eDPF_Default);
         if (*err->srcfile)
@@ -94,7 +98,7 @@ static int s_ErrorHandler(const ErrDesc* err)
         _ASSERT(0);
         return ANS_NONE;
     }
-    
+
     return ANS_OK;
 }
 
@@ -109,5 +113,3 @@ void SetupCToolkitErrPost(void)
     Nlm_ErrSetHandler(reinterpret_cast<ErrHookProc>(s_c2cxxErrorHandler));
 }
 
-
-END_NCBI_SCOPE
