@@ -42,7 +42,7 @@ class CID2S_Seq_annot_Info;
 class CID2S_Seq_annot_place_Info;
 class CID2_Seq_loc;
 
-class CSplitParser
+class NCBI_XREADER_EXPORT CSplitParser
 {
 public:
 
@@ -74,6 +74,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2004/01/22 22:28:31  vasilche
+* Added export specifier.
+*
 * Revision 1.1  2004/01/22 20:10:33  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.
