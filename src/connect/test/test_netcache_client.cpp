@@ -158,7 +158,7 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
     }
     double avg, avg_conn, avg_tran;
     avg = sum / double(log.size());
-    if (avg_conn > 0.0000001) {
+    if (avg > 0.0000001) {
         avg_conn = sum_conn / double(log.size());
     } else {
         avg_conn = 0;
@@ -492,6 +492,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/12/21 16:02:21  dicuccio
+ * Bug fix: don't depend on uninitialized value for if/then
+ *
  * Revision 1.16  2004/12/20 17:59:28  kuznets
  * Improved statistics collection(added read stats)
  *
