@@ -1,4 +1,4 @@
---$Revision: 6.9 $
+--$Revision: 6.10 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -437,11 +437,6 @@ BioSource ::= SEQUENCE {
         proplastid (18) ,
         endogenous-virus (19)
       } DEFAULT unknown ,
-                                       -- 4 more genome values coming
-                                       -- nucleomorph (15)
-                                       -- apicoplast (16)
-                                       -- leucoplast (17)
-                                       -- proplastid (18)
     origin INTEGER {
       unknown (0) ,
       natural (1) ,                    -- normal biological entity
@@ -484,6 +479,12 @@ SubSource ::= SEQUENCE {
         transgenic (26) ,
         environmental-sample (27) ,
         isolation-source (28) ,
+        lat-lon (29) ,          -- +/- decimal degrees
+        collection-date (30) ,  -- DD-MMM-YYYY format
+        collected-by (31) ,     -- name of person who collected the sample
+        identified-by (32) ,    -- name of person who identified the sample
+        left-primer (33) ,      -- sequence (possibly more than one; semicolon-separated)
+        right-primer (34) ,     -- sequence (possibly more than one; semicolon-separated)
         other (255) } ,
     name VisibleString ,
     attrib VisibleString OPTIONAL }    -- attribution/source of this name
