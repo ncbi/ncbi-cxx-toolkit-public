@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/05/08 19:10:21  kuznets
+* + ComputeFileCRC32 function
+*
 * Revision 1.5  2003/04/17 17:50:13  siyan
 * Added doxygen support
 *
@@ -109,6 +112,11 @@ private:
 
 inline
 CNcbiOstream& operator<<(CNcbiOstream& out, const CChecksum& checksum);
+
+
+// Function computes CRC32 control sum for the given file.
+
+Uint4 NCBI_XUTIL_EXPORT ComputeFileCRC32(const string& path);
 
 
 /* @} */
