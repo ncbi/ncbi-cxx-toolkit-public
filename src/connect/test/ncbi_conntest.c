@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/12/29 18:25:06  lavr
+ * CONN Reconnect replaced with ReInit.
+ *
  * Revision 6.2  2000/04/21 19:53:11  vakatov
  * Minor cosmetic changes
  *
@@ -325,7 +328,7 @@ extern void CONN_TestConnector
     CONN_SetTimeout(conn, eIO_ReadWrite, timeout);
     CONN_SetTimeout(conn, eIO_Close,     timeout);
 
-    assert(CONN_Reconnect(conn, connector) == eIO_Success);
+    assert(CONN_ReInit(conn, connector) == eIO_Success);
 
     CONN_SetTimeout(conn, eIO_Write, timeout);
 
