@@ -46,6 +46,8 @@
 #include <sqldb.h>
 
 #define DBVERSION_UNKNOWN DBUNKNOWN
+#define DBVERSION_46 DBVER42
+#define DBVERSION_100 DBVER60
 #define DBCOLINFO    DBCOL
 // Other constants and types remapped in interfaces_p.hpp
 
@@ -664,6 +666,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/06/21 14:33:19  soussov
+ * defines version for microsoft
+ *
  * Revision 1.11  2002/06/19 16:46:31  soussov
  * changes default version from unknown to 46
  *
