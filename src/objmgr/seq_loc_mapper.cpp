@@ -1210,7 +1210,9 @@ void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map,
 {
     CSeqMap::const_iterator seg_it =
         seq_map.BeginResolved(m_Scope.GetPointerOrNull(),
-                              SSeqMapSelector().SetFlags(CSeqMap::fFindRef));
+                              SSeqMapSelector()
+                              .SetResolveCount(size_t(-1))
+                              .SetFlags(CSeqMap::fFindRef));
 
     TSeqPos top_start = kInvalidSeqPos;
     TSeqPos top_stop = kInvalidSeqPos;
@@ -2018,6 +2020,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/12/15 16:26:21  grichenk
+* Fixed resolve count in seq-map iterator
+*
 * Revision 1.32  2004/12/14 17:41:03  grichenk
 * Reduced number of CSeqMap::FindResolved() methods, simplified
 * BeginResolved and EndResolved. Marked old methods as deprecated.
