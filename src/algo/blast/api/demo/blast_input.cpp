@@ -96,7 +96,7 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
         // Add this seqentry to the scope
         try {
             CBioseq_Handle bh = scope->GetBioseqHandle(*seqloc);
-        } catch (CException& e) {
+        } catch (CException&) {
             scope->AddTopLevelSeqEntry(*seq_entry);
         }
     }

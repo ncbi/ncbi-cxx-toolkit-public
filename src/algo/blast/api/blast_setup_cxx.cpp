@@ -609,7 +609,7 @@ FindGeneticCode(int genetic_code)
 
     try {
         retval = new Uint1[nconv];
-    } catch (bad_alloc& ba) {
+    } catch (bad_alloc&) {
         return NULL;
     }
 
@@ -759,6 +759,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2003/10/16 13:38:54  coulouri
+* use anonymous exceptions to fix unreferenced variable compiler warning
+*
 * Revision 1.39  2003/10/15 18:18:00  camacho
 * Fix to setup query info structure for proteins
 *
