@@ -164,65 +164,6 @@
 #endif
 
 /*
- * Definitions for GUI_UTILS.DLL
- */
-#ifdef NCBI_GUIUTILS_EXPORTS
-#  define NCBI_GUIOPENGL_EXPORTS
-#endif
-
-
-/*
- * Definitions for GUI_CORE.DLL
- */
-#ifdef NCBI_GUICORE_EXPORTS
-#  define NCBI_XGBPLUGIN_EXPORTS
-#endif
-
-
-/*
- * Definitions for GUI_WIDGETS.DLL
- */
-#ifdef NCBI_GUIWIDGETS_EXPORTS
-#  define NCBI_GUIWIDGETS_FL_EXPORTS
-#  define NCBI_GUIWIDGETS_GL_EXPORTS
-#  define NCBI_GUIWIDGETS_FLTABLE_EXPORTS
-#  define NCBI_GUIWIDGETS_FLU_EXPORTS
-#  define NCBI_GUIWIDGETS_TABLE_EXPORTS
-#  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORTS
-#endif
-
-
-/*
- * Definitions for GUI_WIDGETS_ALN.DLL
- */
-#ifdef NCBI_GUIWIDGETSALN_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNCROSSALN_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNDOTMATRIX_EXPORTS
-#  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORTS
-#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORTS
-#endif
-
-
-/*
- * Definitions for GUI_WIDGETS_SEQ.DLL
- */
-#ifdef NCBI_GUIWIDGETSSEQ_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQ_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQGRAPHIC_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQICON_EXPORTS
-#  define NCBI_GUIWIDGETS_SEQINFO_EXPORTS
-#endif
-
-/*
- * Definitions for GUI_WIDGETS_SEQ.DLL
- */
-#ifdef NCBI_GUIWIDGETSMISC_EXPORTS
-#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORTS
-#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORTS
-#endif
-
-/*
  * Definitions for NCBI_ALGO_MS.DLL
  */
 #ifdef NCBI_ALGOMS_EXPORTS
@@ -810,6 +751,214 @@
 
 
 /*
+ * Export specifier for library objects_validator
+ */
+#ifdef NCBI_VALIDATOR_EXPORTS
+#  define NCBI_VALIDATOR_EXPORT         __declspec(dllexport)
+#else
+#  define NCBI_VALIDATOR_EXPORT         __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library bdb
+ */
+#ifdef NCBI_BDB_EXPORTS
+#  define NCBI_BDB_EXPORT               __declspec(dllexport)
+#else
+#  define NCBI_BDB_EXPORT               __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library lds
+ */
+#ifdef NCBI_LDS_EXPORTS
+#  define NCBI_LDS_EXPORT               __declspec(dllexport)
+#else
+#  define NCBI_LDS_EXPORT               __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library xloader_lds
+ */
+#ifdef NCBI_XLOADER_LDS_EXPORTS
+#  define NCBI_XLOADER_LDS_EXPORT       __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_LDS_EXPORT       __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library xloader_cdd
+ */
+#ifdef NCBI_XLOADER_CDD_EXPORTS
+#  define NCBI_XLOADER_CDD_EXPORT       __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_CDD_EXPORT       __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library ncbi_xloader_table
+ */
+#ifdef NCBI_XLOADER_TABLE_EXPORTS
+#  define NCBI_XLOADER_TABLE_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_TABLE_EXPORT     __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library ncbi_xloader_genbank
+ */
+#ifdef NCBI_XLOADER_GENBANK_EXPORTS
+#  define NCBI_XLOADER_GENBANK_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_GENBANK_EXPORT     __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library ncbi_xreader
+ */
+#ifdef NCBI_XREADER_EXPORTS
+#  define NCBI_XREADER_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XREADER_EXPORT     __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library ncbi_xreader_id1
+ */
+#ifdef NCBI_XREADER_ID1_EXPORTS
+#  define NCBI_XREADER_ID1_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XREADER_ID1_EXPORT     __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library ncbi_xreader_id2
+ */
+#ifdef NCBI_XREADER_ID2_EXPORTS
+#  define NCBI_XREADER_ID2_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XREADER_ID2_EXPORT     __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library ncbi_xreader_pubseqos
+ */
+#ifdef NCBI_XREADER_PUBSEQOS_EXPORTS
+#  define NCBI_XREADER_PUBSEQOS_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XREADER_PUBSEQOS_EXPORT     __declspec(dllimport)
+#endif
+
+
+
+/*
+ * Export specifier for library xobjmanip
+ */
+#ifdef NCBI_XOBJMANIP_EXPORTS
+#  define NCBI_XOBJMANIP_EXPORT         __declspec(dllexport)
+#else
+#  define NCBI_XOBJMANIP_EXPORT         __declspec(dllimport)
+#endif
+
+
+/*
+ * Export specifier for library xsqlite
+ */
+#ifdef NCBI_XSQLITE_EXPORTS
+#  define NCBI_XSQLITE_EXPORT           __declspec(dllexport)
+#else
+#  define NCBI_XSQLITE_EXPORT           __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library blastdb_reader
+ */
+#ifdef NCBI_XLOADER_BLASTDB_EXPORTS
+#  define NCBI_XLOADER_BLASTDB_EXPORT   __declspec(dllexport)
+#else
+#  define NCBI_XLOADER_BLASTDB_EXPORT   __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library xomssa
+ */
+#ifdef NCBI_XOMSSA_EXPORTS
+#  define NCBI_XOMSSA_EXPORT            __declspec(dllexport)
+#else
+#  define NCBI_XOMSSA_EXPORT            __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library omssa
+ */
+#ifdef NCBI_OMSSA_EXPORTS
+#  define NCBI_OMSSA_EXPORT             __declspec(dllexport)
+#else
+#  define NCBI_OMSSA_EXPORT             __declspec(dllimport)
+#endif
+
+
+/*
+ * Definitions for GUI_UTILS.DLL
+ */
+#ifdef NCBI_GUIUTILS_EXPORTS
+#  define NCBI_GUIOPENGL_EXPORTS
+#  define NCBI_GUIMATH_EXPORTS
+#endif
+
+
+/*
+ * Definitions for GUI_CORE.DLL
+ */
+#ifdef NCBI_GUICORE_EXPORTS
+#  define NCBI_XGBPLUGIN_EXPORTS
+#endif
+
+
+/*
+ * Definitions for GUI_WIDGETS.DLL
+ */
+#ifdef NCBI_GUIWIDGETS_EXPORTS
+#  define NCBI_GUIWIDGETS_FL_EXPORTS
+#  define NCBI_GUIWIDGETS_GL_EXPORTS
+#  define NCBI_GUIWIDGETS_FLTABLE_EXPORTS
+#  define NCBI_GUIWIDGETS_FLU_EXPORTS
+#  define NCBI_GUIWIDGETS_TABLE_EXPORTS
+#  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORTS
+#endif
+
+
+/*
+ * Definitions for GUI_WIDGETS_ALN.DLL
+ */
+#ifdef NCBI_GUIWIDGETSALN_EXPORTS
+#  define NCBI_GUIWIDGETS_ALNCROSSALN_EXPORTS
+#  define NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORTS
+#  define NCBI_GUIWIDGETS_ALNDOTMATRIX_EXPORTS
+#  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORTS
+#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORTS
+#endif
+
+
+/*
+ * Definitions for GUI_WIDGETS_SEQ.DLL
+ */
+#ifdef NCBI_GUIWIDGETSSEQ_EXPORTS
+#  define NCBI_GUIWIDGETS_SEQ_EXPORTS
+#  define NCBI_GUIWIDGETS_SEQGRAPHIC_EXPORTS
+#  define NCBI_GUIWIDGETS_SEQICON_EXPORTS
+#  define NCBI_GUIWIDGETS_SEQINFO_EXPORTS
+#endif
+
+/*
+ * Definitions for GUI_WIDGETS_SEQ.DLL
+ */
+#ifdef NCBI_GUIWIDGETSMISC_EXPORTS
+#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORTS
+#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORTS
+#endif
+
+/*
  * Export specifier for library gui_core
  */
 #ifdef NCBI_GUICORE_EXPORTS
@@ -844,6 +993,15 @@
 #  define NCBI_GUIUTILS_EXPORT              __declspec(dllexport)
 #else
 #  define NCBI_GUIUTILS_EXPORT              __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library gui_math
+ */
+#ifdef NCBI_GUIMATH_EXPORTS
+#  define NCBI_GUIMATH_EXPORT              __declspec(dllexport)
+#else
+#  define NCBI_GUIMATH_EXPORT              __declspec(dllimport)
 #endif
 
 /*
@@ -1036,7 +1194,6 @@
 #endif
 
 
-
 /*
  * Export specifier for library objects_validator
  */
@@ -1188,7 +1345,12 @@
 /*
  * Static library test_mt.lib
  */
-#define NCBI_TEST_MT_EXPORT
+#ifdef NCBI_TEST_MT_EXPORTS
+#  define NCBI_TEST_MT_EXPORT             __declspec(dllexport)
+#else
+#  define NCBI_TEST_MT_EXPORT             __declspec(dllimport)
+#endif
+
 
 
 #else  /*  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)  */
@@ -1204,14 +1366,14 @@
 #  define NCBI_BLAST_EXPORT
 #  define NCBI_CDD_EXPORT
 #  define NCBI_CN3D_EXPORT
-#  define NCBI_DBAPI_EXPORT
-#  define NCBI_DBAPI_EXPORT
 #  define NCBI_DBAPIDRIVER_CTLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_DBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_EXPORT
 #  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_MYSQL_EXPORT
 #  define NCBI_DBAPIDRIVER_ODBC_EXPORT
+#  define NCBI_DBAPI_EXPORT
+#  define NCBI_DBAPI_EXPORT
 #  define NCBI_DOCSUM_EXPORT
 #  define NCBI_ENTREZ2_EXPORT
 #  define NCBI_ENTREZGENE_EXPORT
@@ -1220,10 +1382,11 @@
 #  define NCBI_FORMAT_EXPORT
 #  define NCBI_GBSEQ_EXPORT
 #  define NCBI_GENERAL_EXPORT
-#  define NCBI_GUICORE_EXPORT
 #  define NCBI_GUICONFIG_EXPORT
+#  define NCBI_GUICORE_EXPORT
 #  define NCBI_GUIDIALOGS_EXPORT
 #  define NCBI_GUIGRAPH_EXPORT
+#  define NCBI_GUIMATH_EXPORT
 #  define NCBI_GUIOPENGL_EXPORT
 #  define NCBI_GUIUTILS_EXPORT
 #  define NCBI_GUIWIDGETSALN_EXPORT
@@ -1232,19 +1395,19 @@
 #  define NCBI_GUIWIDGETS_ALNDOTMATRIX_EXPORT
 #  define NCBI_GUIWIDGETS_ALNMULTIPLE_EXPORT
 #  define NCBI_GUIWIDGETS_ALNTEXTALN_EXPORT
-#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORT
-#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORT
-#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORT
 #  define NCBI_GUIWIDGETS_EXPORT
-#  define NCBI_GUIWIDGETS_FLU_EXPORT
 #  define NCBI_GUIWIDGETS_FLTABLE_EXPORT
+#  define NCBI_GUIWIDGETS_FLU_EXPORT
 #  define NCBI_GUIWIDGETS_FL_EXPORT
 #  define NCBI_GUIWIDGETS_GL_EXPORT
+#  define NCBI_GUIWIDGETS_HIT_MATRIX_EXPORT
+#  define NCBI_GUIWIDGETS_PHYLO_TREE_EXPORT
 #  define NCBI_GUIWIDGETS_SEQGRAPHIC_EXPORT
 #  define NCBI_GUIWIDGETS_SEQICON_EXPORT
 #  define NCBI_GUIWIDGETS_SEQINFO_EXPORT
 #  define NCBI_GUIWIDGETS_SEQ_EXPORT
 #  define NCBI_GUIWIDGETS_TABLE_EXPORT
+#  define NCBI_GUIWIDGETS_TAXPLOT_EXPORT
 #  define NCBI_GUIWIDGETS_TOPLEVEL_EXPORT
 #  define NCBI_ID1_EXPORT
 #  define NCBI_ID2_EXPORT
@@ -1258,6 +1421,7 @@
 #  define NCBI_MMDB3_EXPORT
 #  define NCBI_NCBIMIME_EXPORT
 #  define NCBI_OBJPRT_EXPORT
+#  define NCBI_OMSSA_EXPORT
 #  define NCBI_PUBMED_EXPORT
 #  define NCBI_PUB_EXPORT
 #  define NCBI_SCOREMAT_EXPORT
@@ -1272,6 +1436,7 @@
 #  define NCBI_SEQ_EXPORT
 #  define NCBI_SUBMIT_EXPORT
 #  define NCBI_TAXON1_EXPORT
+#  define NCBI_TEST_MT_EXPORT
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_VALIDATOR_EXPORT
 #  define NCBI_XALGOALIGN_EXPORT
@@ -1289,24 +1454,22 @@
 #  define NCBI_XIMAGE_EXPORT
 #  define NCBI_XLOADER_BLASTDB_EXPORT
 #  define NCBI_XLOADER_CDD_EXPORT
+#  define NCBI_XLOADER_GENBANK_EXPORT
 #  define NCBI_XLOADER_LDS_EXPORT
 #  define NCBI_XLOADER_TABLE_EXPORT
-#  define NCBI_XLOADER_GENBANK_EXPORT
 #  define NCBI_XNCBI_EXPORT
 #  define NCBI_XOBJMANIP_EXPORT
 #  define NCBI_XOBJMGR_EXPORT
 #  define NCBI_XOBJREAD_EXPORT
 #  define NCBI_XOBJUTIL_EXPORT
-#  define NCBI_XSERIAL_EXPORT
-#  define NCBI_XSQLITE_EXPORT
-#  define NCBI_XUTIL_EXPORT
-#  define NCBI_OMSSA_EXPORT
 #  define NCBI_XOMSSA_EXPORT
 #  define NCBI_XREADER_EXPORT
 #  define NCBI_XREADER_ID1_EXPORT
 #  define NCBI_XREADER_ID2_EXPORT
 #  define NCBI_XREADER_PUBSEQOS_EXPORT
-#  define NCBI_TEST_MT_EXPORT
+#  define NCBI_XSERIAL_EXPORT
+#  define NCBI_XSQLITE_EXPORT
+#  define NCBI_XUTIL_EXPORT
 
 #endif
 
@@ -1316,6 +1479,10 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.62  2004/03/11 12:49:41  dicuccio
+ * Rearranged GUI export specifiers (regrouped at end).  Added export specifier
+ * for GUIMATH library.  Corrected NCBI_TEST_MT_EXPORT.
+ *
  * Revision 1.61  2004/03/10 20:21:33  gorelenk
  * Added defines for NCBI_TEST_MT_EXPORT (static lib test_mt.lib) .
  *
