@@ -158,9 +158,9 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    Uint1 program_number = gap_align->program;
    Boolean translated_subject;
    Int2 frame, frame_min, frame_max;
-   Int4 nucl_length;
-   Uint1Ptr nucl_sequence, translation_buffer;
-   Uint1Ptr translation_table, translation_table_rc;
+   Int4 nucl_length = 0;
+   Uint1Ptr nucl_sequence = NULL, translation_buffer = NULL;
+   Uint1Ptr translation_table = NULL, translation_table_rc = NULL;
    
    /* search prologue */
 

@@ -442,7 +442,7 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
    Boolean hsp_start_is_contained, hsp_end_is_contained, do_not_do;
    BlastHSPPtr hsp, hsp1=NULL, hsp2;
    Uint1Ptr query, subject, subject_start = NULL;
-   Int4 query_length, subject_length, subject_length_orig;
+   Int4 query_length, subject_length, subject_length_orig=0;
    Int4 max_start = MAX_DBSEQ_LEN / 2, start_shift;
    BlastHSPPtr PNTR hsp_array;
    Int4 q_start, s_start, max_offset;
@@ -462,10 +462,10 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
       (gap_align->program == blast_type_tblastn ||
        gap_align->program == blast_type_psitblastn);   
    Uint1Ptr PNTR translated_sequence = NULL, PNTR translated_sequence_orig;
-   Int4Ptr translated_length, translated_length_orig;
-   Uint1Ptr nucl_sequence;
-   Int4 nucl_length;
-   CharPtr genetic_code;
+   Int4Ptr translated_length = 0, translated_length_orig;
+   Uint1Ptr nucl_sequence = NULL;
+   Int4 nucl_length = 0;
+   CharPtr genetic_code = NULL;
 
    if (hsp_list->hspcnt == 0) {
       *head = NULL;
