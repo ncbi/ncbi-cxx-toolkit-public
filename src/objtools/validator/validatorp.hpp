@@ -138,6 +138,7 @@ enum EErrType {
     eErr_SEQ_INST_UnexpectedIdentifierChange,
     eErr_SEQ_INST_InternalNsInSeqLit,
     eErr_SEQ_INST_SeqLitGapLength0,
+    eErr_SEQ_INST_TpaAssmeblyProblem,
 
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
@@ -618,6 +619,9 @@ public:
     void ValidateBioseqContext(const CBioseq& seq);
     void ValidateHistory(const CBioseq& seq);
 
+    size_t GetTpaWithHistory(void)    const { return m_TpaWithHistory;    }
+    size_t GetTpaWithoutHistory(void) const { return m_TpaWithoutHistory; }
+
 private:
     static const size_t scm_AdjacentNsThreshold; // = 80
     
@@ -662,6 +666,7 @@ private:
     void CheckForPubOnBioseq(const CBioseq& seq);
     void CheckForBiosourceOnBioseq(const CBioseq& seq);
     void CheckForMolinfoOnBioseq(const CBioseq& seq);
+    void CheckTpaHistory(const CBioseq& seq);
 
     TSeqPos GetDataLen(const CSeq_inst& inst);
     bool CdError(const CBioseq& seq);
@@ -690,6 +695,10 @@ private:
     const CBioseq* GetNucGivenProt(const CBioseq& prot);
 
     size_t x_CountAdjacentNs(const CSeq_literal& lit);
+
+    // data
+    size_t m_TpaWithHistory;
+    size_t m_TpaWithoutHistory;
 };
 
 
@@ -898,6 +907,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2003/11/14 15:55:48  shomrat
+* added TPA history check
+*
 * Revision 1.49  2003/11/12 20:30:24  shomrat
 * added error code for multiple cds on mRNA bioseq
 *
