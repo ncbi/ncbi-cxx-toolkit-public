@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.149 2002/12/03 21:46:00 ucko Exp $
+#  $Id: configure.ac,v 1.150 2002/12/05 21:54:48 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -189,6 +189,7 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
+check \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 sybase-new ftds orbacus fltk opengl \
 local-lbsm serial objects dbapi app ctools gui internal"
@@ -380,6 +381,10 @@ else
           compiler="WorkShop53"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.3" ;;
+        *Forte*7*5\.4* )
+          compiler="WorkShop54"
+          ncbi_compiler="WORKSHOP"
+          ncbi_compiler_ver="5.4" ;;
       esac ;;
 
     irix* )
@@ -695,7 +700,7 @@ if test "$with_64" = "yes" ; then
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS"
       ;;
 changequote(, )dnl
-    sparc-sun-solaris*:WorkShop5[23] )
+    sparc-sun-solaris*:WorkShop5[234] )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.
@@ -732,7 +737,7 @@ else
       MATH_LIBS=" "
       ;;
 changequote(, )dnl
-    solaris*:WorkShop5[23] )
+    solaris*:WorkShop5[234] )
       # MATH_LIBS=" "
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.
@@ -1668,11 +1673,13 @@ esac
 AC_CACHE_CHECK([whether FIONBIO requires BSD_COMP to be defined],
    ncbi_cv_decl_fionbio_needs_bsd_comp,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[ #include <sys/ioctl.h> ]],
+       [[ #include <sys/types.h>
+          #include <sys/ioctl.h> ]],
        [[ int request = FIONBIO; ]])],
        [ncbi_cv_decl_fionbio_needs_bsd_comp=no],
        [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
            [[ #define BSD_COMP 1
+              #include <sys/types.h>
               #include <sys/ioctl.h> ]],
            [[ int request = FIONBIO; ]])],
            [ncbi_cv_decl_fionbio_needs_bsd_comp=yes],
