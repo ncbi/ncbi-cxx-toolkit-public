@@ -218,7 +218,7 @@
 #endif
 
 /*
- * Export specifier for library objects_seq
+ * Export specifier for library objects_seqalign
  */
 #ifdef NCBI_SEQALIGN_EXPORTS
 #  define NCBI_SEQALIGN_EXPORT      __declspec(dllexport)
@@ -226,12 +226,14 @@
 #  define NCBI_SEQALIGN_EXPORT      __declspec(dllimport)
 #endif
 
+/*
+ * Export specifier for library objects_seq
+ */
 #ifdef NCBI_SEQ_EXPORTS
 #  define NCBI_SEQ_EXPORT           __declspec(dllexport)
 #else
 #  define NCBI_SEQ_EXPORT           __declspec(dllimport)
 #endif
-
 
 /*
  * Export specifier for library objects_seqcode
@@ -506,6 +508,15 @@
 #endif
 
 /*
+ * Export specifier for library gui_dialogs
+ */
+#ifdef NCBI_GUIDIALOGS_EXPORTS
+#  define NCBI_GUIDIALOGS_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_GUIDIALOGS_EXPORT     __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library gui_widgets
  */
 #ifdef NCBI_GUIWIDGETS_EXPORTS
@@ -583,6 +594,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2003/01/16 18:23:15  dicuccio
+ * Added export specifiers for library GUI_DIALOGS.DLL
+ *
  * Revision 1.6  2003/01/07 22:17:25  lavr
  * Move '#include <connect/connect_export.h>' up
  *
