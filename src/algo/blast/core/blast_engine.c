@@ -555,9 +555,11 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
       return status;
 
    BlastInitialWordParametersNew(program_number, word_options, 
-      hit_params, sbp, query_info, BLASTSeqSrcGetAvgSeqLen(seq_src), &word_params);
+      hit_params, sbp, query_info, BLASTSeqSrcGetAvgSeqLen(seq_src), 
+      &word_params);
    /* Update the parameters for linking HSPs, if necessary. */
-   BlastLinkHSPParametersUpdate(word_params, hit_params, score_options->gapped_calculation);
+   BlastLinkHSPParametersUpdate(word_params, hit_params, 
+                                score_options->gapped_calculation);
       
    /* modify scoring and gap alignment structures for
       use with RPS blast. */
@@ -610,10 +612,11 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
                                     query_info, query, index) != 0)
            return -1;
 
-       s_BlastSearchEngineCore(program_number, &concat_db, one_query_info, 
-          one_query, lookup_wrap, gap_align, score_params, 
-          word_params, ext_params, hit_params, db_options, 
-          diagnostics, aux_struct, &hsp_list);
+       status = (Int4)
+          s_BlastSearchEngineCore(program_number, &concat_db, one_query_info, 
+             one_query, lookup_wrap, gap_align, score_params, 
+             word_params, ext_params, hit_params, db_options, 
+             diagnostics, aux_struct, &hsp_list);
 
        /* Save the resulting list of HSPs. 'query' and 'subject' are
           still reversed */
@@ -631,7 +634,8 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    if (diagnostics->cutoffs)
       raw_cutoffs = diagnostics->cutoffs;
 
-   s_FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, hit_params);
+   s_FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, 
+                           hit_params);
 
    /* Do the traceback. After this call, query and 
       subject have reverted to their traditional meanings. */
@@ -752,13 +756,16 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
       if (hsp_list && hsp_list->hspcnt > 0) {
          if (!gapped_calculation || prelim_traceback) {
-            /* @todo FIXME: The following must be performed for any ungapped
-               search with a nucleotide database, not just blastn. */
-            if (program_number == eBlastTypeBlastn) {
+            /* The following must be performed for any ungapped search with a 
+               nucleotide database. */
+            if (program_number == eBlastTypeBlastn ||
+                program_number == eBlastTypeTblastn ||
+                program_number == eBlastTypeTblastx) {
                status = 
-                  Blast_HSPListReevaluateWithAmbiguities(hsp_list, query, 
-                     seq_arg.seq, word_params, hit_params, query_info, sbp, 
-                     score_params, seq_src);
+                  Blast_HSPListReevaluateWithAmbiguities(program_number, 
+                     hsp_list, query, seq_arg.seq, word_params, hit_params, 
+                     query_info, sbp, score_params, seq_src, 
+                     db_options->gen_code_string);
                /* Relink HSPs if sum statistics is used, because scores might
                   have changed after reevaluation with ambiguities, and there
                   will be no traceback stage where relinking is done normally. */
@@ -780,6 +787,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 	 /* Save the results. */
 	 BlastHSPStreamWrite(hsp_stream, &hsp_list);
       }
+      
       BLASTSeqSrcRetSequence(seq_src, (void*) &seq_arg);
    }
    
@@ -790,7 +798,8 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    if (diagnostics && diagnostics->cutoffs)
       raw_cutoffs = diagnostics->cutoffs;
 
-   s_FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, hit_params);
+   s_FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, 
+                         hit_params);
 
    if (hit_options->phi_align) {
       /* Save the product of effective occurrencies of pattern in query and
@@ -844,10 +853,11 @@ BLAST_SearchEngine(EBlastProgramType program_number,
            &gap_align)) != 0)
       return status;
       
-   if ((status=BLAST_PreliminarySearchEngine(program_number, query, query_info, seq_src, 
-      gap_align, score_params, lookup_wrap, word_options, ext_params, 
-      hit_params, eff_len_params, psi_options, db_options, hsp_stream, 
-      diagnostics)) != 0)
+   if ((status=
+        BLAST_PreliminarySearchEngine(program_number, query, query_info, 
+           seq_src, gap_align, score_params, lookup_wrap, word_options, 
+           ext_params, hit_params, eff_len_params, psi_options, 
+           db_options, hsp_stream, diagnostics)) != 0)
       return status;
 
    /* Prohibit any subsequent writing to the HSP stream. */
