@@ -1230,14 +1230,17 @@ CHTML_table::TIndex CHTML_table::CalculateNumberOfRows(void) const
 
 CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
 {
-    if ( mode == ePlainText  &&  HaveChildren() ) {
-        size_t seplen = 0;
-        CHTML_tr* tr = dynamic_cast<CHTML_tr*>(&**Children().begin());
-        if ( tr ) {
-            seplen = tr->GetTextLength(mode);
-        }
-        if (seplen > m_ColSepL.length() + m_ColSepR.length() &&
-            m_IsRowSep == ePrintRowSep) {
+    if ( mode == ePlainText ) {
+        out << CHTMLHelper::GetNL();
+        if ( m_IsRowSep == ePrintRowSep ) {
+            size_t seplen = 0;
+            // Find length of first non-empty row
+            non_const_iterate ( TChildren, i, Children() ) {
+                if ( (seplen = dynamic_cast<CHTML_tr*>(&**i)->GetTextLength(mode)) > 0 ) {
+                    break;
+                }
+            }
+            if (!seplen) seplen = 1;
             out << string(seplen, m_RowSepChar) << CHTMLHelper::GetNL();
         }
     }
@@ -1985,6 +1988,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2002/01/30 19:54:51  ivanov
+ * CHTML_table::PrintBegin - determination length of prior table's separator
+ * as length of first none empty table's row. Added new line at printing
+ * table in plain text mode.
+ *
  * Revision 1.72  2002/01/29 20:01:46  ivanov
  * (plain text) CHTML_table:: set def. medium sep. to " " instead of "\t"
  *
