@@ -36,6 +36,7 @@
 
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
+#include <objmgr/impl/seq_align_mapper.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -132,6 +133,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/03/30 15:42:33  grichenk
+* Moved alignment mapper to separate file, added alignment mapping
+* to CSeq_loc_Mapper.
+*
 * Revision 1.22  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

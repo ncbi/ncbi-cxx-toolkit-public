@@ -38,6 +38,8 @@
 #include <util/range.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -67,7 +69,10 @@ public:
 
     typedef CRange<TSeqPos> TRange;
 
-    bool CanMap(TSeqPos from, TSeqPos to, bool is_set_strand, ENa_strand strand);
+    bool CanMap(TSeqPos from,
+                TSeqPos to,
+                bool is_set_strand,
+                ENa_strand strand) const;
     TSeqPos Map_Pos(TSeqPos pos) const;
     TRange Map_Range(TSeqPos from, TSeqPos to) const;
     bool Map_Strand(bool is_set_strand, ENa_strand src, ENa_strand* dst) const;
@@ -83,6 +88,7 @@ private:
     bool                m_Reverse;
 
     friend class CSeq_loc_Mapper;
+    friend class CSeq_align_Mapper;
 };
 
 
@@ -137,15 +143,6 @@ public:
                     const CSeq_id* src_id = 0,
                     CScope*        scope = 0);
 
-/*
-    // Mapping from master sequence to its segments, restricted
-    // by target segment ID.
-    CSeq_loc_Mapper(CScope&        scope,
-                    const CSeq_id& source_id,
-                    const CSeq_id& target_id,
-                    TFlags         flags = fDefaultFlags);
-*/
-
     ~CSeq_loc_Mapper(void);
 
     // Intervals' merging mode
@@ -154,7 +151,8 @@ public:
     CSeq_loc_Mapper& SetMergeAll(void);
 
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
-    // CRef<CSeq_align> Map(const CSeq_align& src_align);
+    CRef<CSeq_align> Map(const CSeq_align& src_align);
+
     // Check if the last mapping resulted in partial location
     bool             LastIsPartial(void);
 
@@ -273,6 +271,14 @@ private:
 
     CRef<CSeq_loc> x_GetMappedSeq_loc(void);
 
+/*
+    // Alignment mappings
+    CRef<CSeq_align> x_MapDendiag(const TDendiag& dendiag);
+    CRef<CSeq_align> x_MapDenseg(const CDense_seg& denseg);
+    CRef<CSeq_align> x_MapStd(const TStd& std);
+    CRef<CSeq_align> x_MapPacked(const CPacked_seg& packed);
+*/
+
     CRef<CScope>    m_Scope;
     // CSeq_loc_Conversion_Set m_Cvt;
     EMergeFlags     m_MergeFlag;
@@ -325,6 +331,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/30 15:42:33  grichenk
+* Moved alignment mapper to separate file, added alignment mapping
+* to CSeq_loc_Mapper.
+*
 * Revision 1.4  2004/03/29 15:13:56  grichenk
 * Added mapping down to segments of a bioseq or a seqmap.
 * Fixed: preserve ranges already on the target bioseq(s).

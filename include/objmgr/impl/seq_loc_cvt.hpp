@@ -47,7 +47,7 @@
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
-#include <objects/seqalign/Seq_align.hpp>
+//#include <objects/seqalign/Seq_align.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -228,86 +228,6 @@ private:
 };
 
 
-struct SAlignment_Segment
-{
-    struct SAlignment_Row
-    {
-        SAlignment_Row(const CSeq_id& id,
-                       int start,
-                       bool is_set_strand,
-                       ENa_strand strand,
-                       int width);
-
-        void SetMapped(void);
-
-        CSeq_id_Handle m_Id;
-        TSeqPos        m_Start;
-        bool           m_IsSetStrand;
-        ENa_strand     m_Strand;
-        int            m_Width; // not stored in ASN.1, width of a character
-        bool           m_Mapped;
-    };
-    typedef vector<SAlignment_Row> TRows;
-
-    SAlignment_Segment(int len);
-
-    SAlignment_Row& AddRow(const CSeq_id& id,
-                           int start,
-                           bool is_set_strand,
-                           ENa_strand strand,
-                           int width);
-
-    typedef vector<SAlignment_Segment> TSegments;
-
-    int       m_Len;
-    TRows     m_Rows;
-    bool      m_HaveStrands;
-    TSegments m_Mappings;
-};
-
-
-class CSeq_align_Mapper : public CObject
-{
-public:
-    typedef CSeq_align::C_Segs::TDendiag TDendiag;
-    typedef CSeq_align::C_Segs::TStd TStd;
-
-    CSeq_align_Mapper(const CSeq_align& align);
-    ~CSeq_align_Mapper(void) {}
-
-    void Convert(CSeq_loc_Conversion& cvt);
-
-    CRef<CSeq_align> GetDstAlign(void) const;
-
-private:
-    typedef SAlignment_Segment::TSegments TSegments;
-
-    void x_Init(const TDendiag& diags);
-    void x_Init(const CDense_seg& denseg);
-    void x_Init(const TStd& sseg);
-    void x_Init(const CPacked_seg& pseg);
-    void x_Init(const CSeq_align_set& align_set);
-
-    void x_MapSegment(SAlignment_Segment& sseg,
-                      size_t row_idx,
-                      CSeq_loc_Conversion& cvt);
-    bool x_ConvertSegments(TSegments& segs, CSeq_loc_Conversion& cvt);
-    void x_GetDstSegments(const TSegments& ssegs, TSegments& dsegs) const;
-
-    // Used for e_Disc alignments
-    typedef vector<CSeq_align_Mapper>  TSubAligns;
-
-    static bool x_IsValidAlign(TSegments segments);
-
-    CConstRef<CSeq_align>        m_OrigAlign;
-    mutable CRef<CSeq_align>     m_DstAlign;
-    TSegments                    m_SrcSegs;
-    mutable TSegments            m_DstSegs;
-    TSubAligns                   m_SubAligns;
-    bool                         m_HaveStrands;
-};
-
-
 inline
 bool CSeq_loc_Conversion::IsSpecialLoc(void) const
 {
@@ -380,58 +300,16 @@ bool CSeq_loc_Conversion::ConvertInterval(const CSeq_interval& src)
 }
 
 
-inline
-SAlignment_Segment::SAlignment_Segment(int len)
-    : m_Len(len),
-      m_HaveStrands(false)
-{
-    return;
-}
-
-
-inline
-SAlignment_Segment::SAlignment_Row::SAlignment_Row(const CSeq_id& id,
-                                                   int start,
-                                                   bool is_set_strand,
-                                                   ENa_strand strand,
-                                                   int width)
-    : m_Id(CSeq_id_Handle::GetHandle(id)),
-      m_Start(start),
-      m_IsSetStrand(is_set_strand),
-      m_Strand(strand),
-      m_Width(width),
-      m_Mapped(false)
-{
-    return;
-}
-
-
-inline
-void SAlignment_Segment::SAlignment_Row::SetMapped(void)
-{
-    m_Mapped = true;
-}
-
-
-inline
-SAlignment_Segment::SAlignment_Row& SAlignment_Segment::AddRow(const CSeq_id& id,
-                                                               int start,
-                                                               bool is_set_strand,
-                                                               ENa_strand strand,
-                                                               int width)
-{
-    m_Rows.push_back(SAlignment_Row(id, start, is_set_strand, strand, width));
-    m_HaveStrands |= is_set_strand;
-    return m_Rows.back();
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/03/30 15:42:33  grichenk
+* Moved alignment mapper to separate file, added alignment mapping
+* to CSeq_loc_Mapper.
+*
 * Revision 1.13  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

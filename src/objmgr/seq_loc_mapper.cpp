@@ -36,6 +36,7 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/impl/synonyms.hpp>
+#include <objmgr/impl/seq_align_mapper.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
@@ -88,7 +89,7 @@ inline
 bool CMappingRange::CanMap(TSeqPos from,
                            TSeqPos to,
                            bool is_set_strand,
-                           ENa_strand strand)
+                           ENa_strand strand) const
 {
     if (from > m_Src_to || to < m_Src_from) {
         return false;
@@ -1207,14 +1208,12 @@ CRef<CSeq_loc> CSeq_loc_Mapper::Map(const CSeq_loc& src_loc)
 }
 
 
-/*
 CRef<CSeq_align> CSeq_loc_Mapper::Map(const CSeq_align& src_align)
 {
     m_Dst_loc.Reset();
     m_Partial = false; // reset for each location
     return x_MapSeq_align(src_align);
 }
-*/
 
 
 void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
@@ -1546,24 +1545,73 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
 }
 
 
+/*
+CRef<CSeq_align> CSeq_loc_Mapper::x_MapDendiag(const TDendiag& dendiag)
+{
+    return 0;
+}
+
+
+CRef<CSeq_align> CSeq_loc_Mapper::x_MapDenseg(const CDense_seg& denseg)
+{
+    return 0;
+}
+
+
+CRef<CSeq_align> CSeq_loc_Mapper::x_MapStd(const TStd& std)
+{
+    return 0;
+}
+
+
+CRef<CSeq_align> CSeq_loc_Mapper::x_MapPacked(const CPacked_seg& packed)
+{
+    return 0;
+}
+*/
+
+
 CRef<CSeq_align> CSeq_loc_Mapper::x_MapSeq_align(const CSeq_align& src_align)
 {
-    CRef<CSeq_align> dst_align(new CSeq_align);
+    CSeq_align_Mapper aln_mapper(src_align);
+    ITERATE(TIdMap, id_it, m_IdMap) {
+        ITERATE(TRangeMap, rg_it, id_it->second) {
+            aln_mapper.Convert(*rg_it->second);
+        }
+    }
+    return aln_mapper.GetDstAlign();
+/*
     switch ( src_align.GetSegs().Which() ) {
     case CSeq_align::C_Segs::e_Dendiag:
+        return x_MapDendiag(src_align.GetSegs().GetDendiag());
         break;
     case CSeq_align::C_Segs::e_Denseg:
+        return x_MapDenseg(src_align.GetSegs().GetDenseg());
         break;
     case CSeq_align::C_Segs::e_Std:
+        return x_MapStd(src_align.GetSegs().GetStd());
         break;
     case CSeq_align::C_Segs::e_Packed:
+        return x_MapPacked(src_align.GetSegs().GetPacked());
         break;
     case CSeq_align::C_Segs::e_Disc:
-        break;
+        {
+            CRef<CSeq_align> dst_align(new CSeq_align);
+            CSeq_align_set::Tdata& disc = dst_align->SetSegs().SetDisc().Set();
+            ITERATE (CSeq_align_set::Tdata, aln,
+                src_align.GetSegs().GetDisc().Get()) {
+                disc.push_back(x_MapSeq_align(**aln));
+            }
+            return dst_align;
+            break;
+        }
     default:
+        NCBI_THROW(CLocMapperException, eBadAlignment,
+                   "Unsupported alignment type");
         break;
     }
-    return dst_align;
+    return 0;
+*/
 }
 
 
@@ -1573,6 +1621,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/03/30 15:42:34  grichenk
+* Moved alignment mapper to separate file, added alignment mapping
+* to CSeq_loc_Mapper.
+*
 * Revision 1.7  2004/03/29 15:13:56  grichenk
 * Added mapping down to segments of a bioseq or a seqmap.
 * Fixed: preserve ranges already on the target bioseq(s).
