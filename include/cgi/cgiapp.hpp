@@ -31,100 +31,6 @@
 *
 * File Description:
 *   Base class for (Fast-)CGI applications
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.29  2003/02/04 21:27:13  kuznets
-* + Implementation of statistics logging
-*
-* Revision 1.28  2003/01/23 19:58:40  kuznets
-* CGI logging improvements
-*
-* Revision 1.27  2001/11/19 15:20:16  ucko
-* Switch CGI stuff to new diagnostics interface.
-*
-* Revision 1.26  2001/10/31 15:30:19  golikov
-* warning removed
-*
-* Revision 1.25  2001/10/17 14:18:04  ucko
-* Add CCgiApplication::SetCgiDiagHandler for the benefit of derived
-* classes that overload ConfigureDiagDestination.
-*
-* Revision 1.24  2001/10/05 14:56:20  ucko
-* Minor interface tweaks for CCgiStreamDiagHandler and descendants.
-*
-* Revision 1.23  2001/10/04 18:17:51  ucko
-* Accept additional query parameters for more flexible diagnostics.
-* Support checking the readiness of CGI input and output streams.
-*
-* Revision 1.22  2001/06/13 21:04:35  vakatov
-* Formal improvements and general beautifications of the CGI lib sources.
-*
-* Revision 1.21  2001/01/12 21:58:25  golikov
-* cgicontext available from cgiapp
-*
-* Revision 1.20  2000/01/20 17:54:55  vakatov
-* CCgiApplication:: constructor to get CNcbiArguments, and not raw argc/argv.
-* SetupDiag_AppSpecific() to override the one from CNcbiApplication:: -- lest
-* to write the diagnostics to the standard output.
-*
-* Revision 1.19  1999/12/17 04:06:20  vakatov
-* Added CCgiApplication::RunFastCGI()
-*
-* Revision 1.18  1999/11/15 15:53:19  sandomir
-* Registry support moved from CCgiApplication to CNcbiApplication
-*
-* Revision 1.17  1999/05/14 19:21:48  pubmed
-* myncbi - initial version; minor changes in CgiContext, history, query
-*
-* Revision 1.15  1999/05/06 20:32:47  pubmed
-* CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
-*
-* Revision 1.14  1999/04/30 16:38:08  vakatov
-* #include <ncbireg.hpp> to provide CNcbiRegistry class definition(see R1.13)
-*
-* Revision 1.13  1999/04/27 17:01:23  vakatov
-* #include <ncbires.hpp> to provide CNcbiResource class definition
-* for the "auto_ptr<CNcbiResource>" (required by "delete" under MSVC++)
-*
-* Revision 1.12  1999/04/27 14:49:46  vasilche
-* Added FastCGI interface.
-* CNcbiContext renamed to CCgiContext.
-*
-* Revision 1.11  1999/02/22 21:12:37  sandomir
-* MsgRequest -> NcbiContext
-*
-* Revision 1.10  1998/12/28 23:28:59  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.9  1998/12/28 15:43:09  sandomir
-* minor fixed in CgiApp and Resource
-*
-* Revision 1.8  1998/12/10 17:36:54  sandomir
-* ncbires.cpp added
-*
-* Revision 1.7  1998/12/09 22:59:05  lewisg
-* use new cgiapp class
-*
-* Revision 1.6  1998/12/09 17:27:44  sandomir
-* tool should be changed to work with the new CCgiApplication
-*
-* Revision 1.5  1998/12/09 16:49:55  sandomir
-* CCgiApplication added
-*
-* Revision 1.1  1998/12/03 21:24:21  sandomir
-* NcbiApplication and CgiApplication updated
-*
-* Revision 1.3  1998/12/01 19:12:36  lewisg
-* added CCgiApplication
-*
-* Revision 1.2  1998/11/05 21:45:13  sandomir
-* std:: deleted
-*
-* Revision 1.1  1998/11/02 22:10:12  sandomir
-* CNcbiApplication added; netest sample updated
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbiapp.hpp>
@@ -243,7 +149,7 @@ private:
 
 class CCgiStatistics
 {
-    friend CCgiApplication;
+    friend class CCgiApplication;
 public:
     virtual ~CCgiStatistics();
 
@@ -282,5 +188,105 @@ protected:
 
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.30  2003/02/05 01:21:43  ucko
+* "friend" -> "friend class" for GCC 3; CVS log -> end.
+*
+* Revision 1.29  2003/02/04 21:27:13  kuznets
+* + Implementation of statistics logging
+*
+* Revision 1.28  2003/01/23 19:58:40  kuznets
+* CGI logging improvements
+*
+* Revision 1.27  2001/11/19 15:20:16  ucko
+* Switch CGI stuff to new diagnostics interface.
+*
+* Revision 1.26  2001/10/31 15:30:19  golikov
+* warning removed
+*
+* Revision 1.25  2001/10/17 14:18:04  ucko
+* Add CCgiApplication::SetCgiDiagHandler for the benefit of derived
+* classes that overload ConfigureDiagDestination.
+*
+* Revision 1.24  2001/10/05 14:56:20  ucko
+* Minor interface tweaks for CCgiStreamDiagHandler and descendants.
+*
+* Revision 1.23  2001/10/04 18:17:51  ucko
+* Accept additional query parameters for more flexible diagnostics.
+* Support checking the readiness of CGI input and output streams.
+*
+* Revision 1.22  2001/06/13 21:04:35  vakatov
+* Formal improvements and general beautifications of the CGI lib sources.
+*
+* Revision 1.21  2001/01/12 21:58:25  golikov
+* cgicontext available from cgiapp
+*
+* Revision 1.20  2000/01/20 17:54:55  vakatov
+* CCgiApplication:: constructor to get CNcbiArguments, and not raw argc/argv.
+* SetupDiag_AppSpecific() to override the one from CNcbiApplication:: -- lest
+* to write the diagnostics to the standard output.
+*
+* Revision 1.19  1999/12/17 04:06:20  vakatov
+* Added CCgiApplication::RunFastCGI()
+*
+* Revision 1.18  1999/11/15 15:53:19  sandomir
+* Registry support moved from CCgiApplication to CNcbiApplication
+*
+* Revision 1.17  1999/05/14 19:21:48  pubmed
+* myncbi - initial version; minor changes in CgiContext, history, query
+*
+* Revision 1.15  1999/05/06 20:32:47  pubmed
+* CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
+*
+* Revision 1.14  1999/04/30 16:38:08  vakatov
+* #include <ncbireg.hpp> to provide CNcbiRegistry class definition(see R1.13)
+*
+* Revision 1.13  1999/04/27 17:01:23  vakatov
+* #include <ncbires.hpp> to provide CNcbiResource class definition
+* for the "auto_ptr<CNcbiResource>" (required by "delete" under MSVC++)
+*
+* Revision 1.12  1999/04/27 14:49:46  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
+* Revision 1.11  1999/02/22 21:12:37  sandomir
+* MsgRequest -> NcbiContext
+*
+* Revision 1.10  1998/12/28 23:28:59  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
+* Revision 1.9  1998/12/28 15:43:09  sandomir
+* minor fixed in CgiApp and Resource
+*
+* Revision 1.8  1998/12/10 17:36:54  sandomir
+* ncbires.cpp added
+*
+* Revision 1.7  1998/12/09 22:59:05  lewisg
+* use new cgiapp class
+*
+* Revision 1.6  1998/12/09 17:27:44  sandomir
+* tool should be changed to work with the new CCgiApplication
+*
+* Revision 1.5  1998/12/09 16:49:55  sandomir
+* CCgiApplication added
+*
+* Revision 1.1  1998/12/03 21:24:21  sandomir
+* NcbiApplication and CgiApplication updated
+*
+* Revision 1.3  1998/12/01 19:12:36  lewisg
+* added CCgiApplication
+*
+* Revision 1.2  1998/11/05 21:45:13  sandomir
+* std:: deleted
+*
+* Revision 1.1  1998/11/02 22:10:12  sandomir
+* CNcbiApplication added; netest sample updated
+*
+* ===========================================================================
+*/
 
 #endif // NCBI_CGI_APP__HPP
