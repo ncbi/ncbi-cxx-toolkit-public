@@ -61,6 +61,7 @@ enum EFeatureQualifier {
     eFQ_direction,
     eFQ_EC_number,
     eFQ_encodes,
+    eFQ_estimated_length,
     eFQ_evidence,
     eFQ_exception,
     eFQ_exception_note,
@@ -231,6 +232,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/11/24 16:45:15  shomrat
+* + estimated_length qualifier
+*
 * Revision 1.4  2004/08/19 16:24:40  shomrat
 * Added qualifiers compare and old_locus_tag
 *
