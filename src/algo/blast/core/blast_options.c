@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.27  2003/06/17 20:42:43  camacho
+ * Moved comments to header file, fixed includes
+ *
  * Revision 1.26  2003/06/11 16:14:53  dondosha
  * Added initialization of PSI-BLAST and database options
  *
@@ -201,20 +204,9 @@
 
 static char const rcsid[] = "$Id$";
 
-#include <blast_options.h>
-#include <blast_def.h>
-#include <blast_message.h>
 #include <readdb.h>
-#include <blast_extend.h>
+#include <blast_options.h>
 #include <blast_gapalign.h>
-#include <blastkar.h>
-#include <mb_lookup.h>
-
-/**************************************************************************
-
-	Deallocate memory for QuerySetUpOptions.
-
-*****************************************************************************/
 
 QuerySetUpOptionsPtr
 BlastQuerySetUpOptionsFree(QuerySetUpOptionsPtr options)
@@ -225,14 +217,6 @@ BlastQuerySetUpOptionsFree(QuerySetUpOptionsPtr options)
 
 	return NULL;
 }
-
-
-
-/**************************************************************************
-
-	Allocate memory for QuerySetUpOptions and fill with default values.
-
-*****************************************************************************/
 
 Int2
 BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options)
@@ -270,12 +254,6 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
    return 0;
 }
 
-/**************************************************************************
-
-	Deallocate memory for BlastInitialWordOptions.
-
-*****************************************************************************/
-
 BlastInitialWordOptionsPtr
 BlastInitialWordOptionsFree(BlastInitialWordOptionsPtr options)
 
@@ -286,12 +264,6 @@ BlastInitialWordOptionsFree(BlastInitialWordOptionsPtr options)
 	return NULL;
 }
 
-
-/**************************************************************************
-
-	Allocate memory for BlastInitialWordOptions and fill with default values.
-
-*****************************************************************************/
 
 Int2
 BlastInitialWordOptionsNew(const Uint1 program, 
@@ -349,12 +321,6 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptionsPtr options,
 
 
 
-/*************************************************************************
-
-        Deallocate memory for BlastInitialWordParameters.
-
-*************************************************************************/
-
 BlastInitialWordParametersPtr
 BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters)
 
@@ -364,14 +330,6 @@ BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters)
 
 }
 
-
-/**************************************************************************
-
-	Calling BlastInitialWordParametersNew calculates the
-	raw x_dropoff from the bit x_dropoff and puts it into
-	the x_dropoff field of BlastInitialWordParametersPtr.
-
-*****************************************************************************/
 
 Int2
 BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options, 
@@ -432,15 +390,6 @@ BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options,
    return 0;
 }
 
-
-
-
-/**************************************************************************
-
-	Deallocate memory for BlastExtensionOptions.
-
-*****************************************************************************/
-
 BlastExtensionOptionsPtr
 BlastExtensionOptionsFree(BlastExtensionOptionsPtr options)
 
@@ -452,12 +401,6 @@ BlastExtensionOptionsFree(BlastExtensionOptionsPtr options)
 }
 
 
-
-/**************************************************************************
-
-	Allocate memory for BlastExtensionOptions and fill with default values.
-
-*****************************************************************************/
 
 Int2
 BlastExtensionOptionsNew(const Uint1 program, 
@@ -515,10 +458,6 @@ BLAST_FillExtensionOptions(BlastExtensionOptionsPtr options,
    return 0;
 
 }
-
-/*
-        Validate Extension options.
-*/
 
 Int2 
 BlastExtensionOptionsValidate(BlastExtensionOptionsPtr options, Blast_MessagePtr *blast_msg)
@@ -585,12 +524,6 @@ BlastExtensionParametersFree(BlastExtensionParametersPtr parameters)
 }
 
 
-/**************************************************************************
-
-	Deallocate memory for BlastScoringOptions.
-
-*****************************************************************************/
-
 BlastScoringOptionsPtr
 BlastScoringOptionsFree(BlastScoringOptionsPtr options)
 
@@ -604,12 +537,6 @@ BlastScoringOptionsFree(BlastScoringOptionsPtr options)
 
 	return NULL;
 }
-
-/******************************************************************************
-
-	Allocate memory for BlastScoringOptions and fill with default values.
-
-*******************************************************************************/
 
 Int2 
 BlastScoringOptionsNew(const Uint1 program, BlastScoringOptionsPtr *options)
@@ -670,10 +597,6 @@ BLAST_FillScoringOptions(BlastScoringOptionsPtr options, const Uint1 program,
 
    return 0;
 }
-
-/*
-        Validate Scoring options. 
-*/
 
 Int2 
 BlastScoringOptionsValidate(BlastScoringOptionsPtr options, Blast_MessagePtr *blast_msg)
@@ -740,11 +663,6 @@ BlastScoringOptionsValidate(BlastScoringOptionsPtr options, Blast_MessagePtr *bl
 
 }
 
-/**************************************************************************
-
-	Deallocate memory for BlastEffectiveLengthsOptionsPtr.
-
-*****************************************************************************/
 
 BlastEffectiveLengthsOptionsPtr
 BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptionsPtr options)
@@ -755,11 +673,6 @@ BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptionsPtr options)
 	return NULL;
 }
 
-/******************************************************************************
-
-	Allocate memory for BlastEffectiveLengthsOptionsPtr and fill with default values.
-
-*******************************************************************************/
 
 Int2 
 BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptionsPtr *options)
@@ -811,12 +724,6 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptionsPtr options,
    return 0;
 }
 
-/*******************************************************************************
-
-	Deallocates memory for LookupTableOptionsPtr
-
-*********************************************************************************/
-
 LookupTableOptionsPtr
 LookupTableOptionsFree(LookupTableOptionsPtr options)
 
@@ -829,12 +736,6 @@ LookupTableOptionsFree(LookupTableOptionsPtr options)
 
 	return (LookupTableOptionsPtr) MemFree(options);
 }
-
-/******************************************************************************
-
-	Allocate memory for LookUpTableOptionsPtr and fill with default values.
-
-*******************************************************************************/
 
 Int2 
 LookupTableOptionsNew(const Uint1 program, LookupTableOptionsPtr *options)
@@ -909,10 +810,6 @@ BLAST_FillLookupTableOptions(LookupTableOptionsPtr options,
    return 0;
 }
 
-/**********************************************************
-	Validate LookupTableOptions.
-**********************************************************/
-
 Int2 
 LookupTableOptionsValidate(LookupTableOptionsPtr options, Blast_MessagePtr *blast_msg)
 
@@ -976,12 +873,6 @@ LookupTableOptionsValidate(LookupTableOptionsPtr options, Blast_MessagePtr *blas
 	return 0;
 }
 
-/*************************************************************************
-
-        Deallocate memory for BlastHitSavingOptions.
-
-*************************************************************************/
-
 BlastHitSavingOptionsPtr
 BlastHitSavingOptionsFree(BlastHitSavingOptionsPtr options)
 
@@ -989,12 +880,6 @@ BlastHitSavingOptionsFree(BlastHitSavingOptionsPtr options)
 	return MemFree(options);
 }
 
-
-/**************************************************************************
-
-        Allocate memory for BlastHitSavingOptions.
-
-*****************************************************************************/
 
 Int2 BlastHitSavingOptionsNew(const Uint1 program, 
         BlastHitSavingOptionsPtr *options)
@@ -1064,12 +949,6 @@ BlastHitSavingOptionsValidate(BlastHitSavingOptionsPtr options,
 }
 
 
-/*************************************************************************
-
-        Deallocate memory for BlastHitSavingParameters.
-
-*************************************************************************/
-
 BlastHitSavingParametersPtr
 BlastHitSavingParametersFree(BlastHitSavingParametersPtr parmameters)
 
@@ -1077,16 +956,6 @@ BlastHitSavingParametersFree(BlastHitSavingParametersPtr parmameters)
 	return MemFree(parmameters);
 }
 
-
-/**************************************************************************
-
-	BlastHitSavingParametersNew calculates
-	the (raw) score cutoff given an expect value and puts
-	it in the "cutoff_score" field of the returned
-	BlastHitSavingParametersPtr
-	
-
-*****************************************************************************/
 
 Int2
 BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options, 
