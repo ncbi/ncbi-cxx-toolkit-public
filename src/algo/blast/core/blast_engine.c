@@ -723,7 +723,6 @@ BLAST_SearchEngine(Uint1 program_number,
    /* iterate over all subject sequences */
    while ( (seq_arg.oid = BlastSeqSrcIteratorNext(seq_src, itr)) 
            != BLAST_SEQSRC_EOF) {
-      BlastSequenceBlkClean(seq_arg.seq);
       if (BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg) < 0)
           continue;
 
@@ -774,6 +773,7 @@ BLAST_SearchEngine(Uint1 program_number,
          /* Save the results. */
          BlastHSPStreamWrite(hsp_stream, &hsp_list);
       }
+      BLASTSeqSrcRetSequence(seq_src, (void*) &seq_arg);
    }
    
    itr = BlastSeqSrcIteratorFree(itr);
