@@ -39,6 +39,12 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup ObjectManagerIterators
+ *
+ * @{
+ */
+
+
 class CRandom;
 
 BEGIN_SCOPE(objects)
@@ -424,12 +430,18 @@ CSeqVector_CI::TCoding CSeqVector_CI::x_GetCoding(TCoding cacheCoding,
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/10/01 19:52:50  kononenk
+* Added doxygen formatting
+*
 * Revision 1.20  2004/06/14 18:30:08  grichenk
 * Added ncbi2na randomizer to CSeqVector
 *

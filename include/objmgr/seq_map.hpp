@@ -49,6 +49,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+/** @addtogroup ObjectManagerSequenceRep
+ *
+ * @{
+ */
+
+
 class CBioseq;
 class CDelta_seq;
 class CSeq_loc;
@@ -66,13 +73,6 @@ class CTSE_Chunk_Info;
 typedef TSeqPos TSeqPosition;
 typedef TSeqPos TSeqLength;
 
-
-////////////////////////////////////////////////////////////////////
-//  CSeqMap::
-//     Formal sequence map -- to describe sequence parts in general --
-//     location and type only, without providing real data
-
-
 class CScope;
 class CBioseq_Handle;
 class CSegmentPtr;
@@ -80,6 +80,14 @@ class CSeqMap_CI;
 class CSeqMap_CI_SegmentInfo;
 class CSeqMap_Delta_seqs;
 struct SSeqMapSelector;
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeqMap --
+///
+///  Formal sequence map -- to describe sequence parts in general --
+///  location and type only, without providing real data
 
 class NCBI_XOBJMGR_EXPORT CSeqMap : public CObject
 {
@@ -314,12 +322,18 @@ protected:
 #include <objmgr/seq_map.inl>
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2004/10/01 19:52:50  kononenk
+* Added doxygen formatting
+*
 * Revision 1.51  2004/09/30 18:36:11  vasilche
 * Added methods to work with end segments.
 *

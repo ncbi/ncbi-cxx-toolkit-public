@@ -45,6 +45,16 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+/** @addtogroup ObjectManagerIterators
+ *
+ * @{
+ */
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CMappedGraph --
+///
+
 class NCBI_XOBJMGR_EXPORT CMappedGraph
 {
 public:
@@ -168,6 +178,11 @@ private:
     mutable CConstRef<CSeq_loc>     m_MappedLoc;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CGraph_CI --
+///
 
 class NCBI_XOBJMGR_EXPORT CGraph_CI : public CAnnotTypes_CI
 {
@@ -320,12 +335,19 @@ const CMappedGraph* CGraph_CI::operator-> (void) const
     return &m_Graph;
 }
 
+
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/10/01 19:52:50  kononenk
+* Added doxygen formatting
+*
 * Revision 1.36  2004/05/04 18:08:47  grichenk
 * Added CSeq_feat_Handle, CSeq_align_Handle and CSeq_graph_Handle
 *

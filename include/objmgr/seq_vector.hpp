@@ -42,6 +42,11 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup ObjectManagerSequenceRep
+ *
+ * @{
+ */
+
 class CRandom;
 
 BEGIN_SCOPE(objects)
@@ -53,13 +58,24 @@ class CSeq_data;
 class CSeqVector_CI;
 class CNcbi2naRandomizer;
 
-// Sequence data
+/////////////////////////////////////////////////////////////////////////////
+///
+///  SSeqData --
+///
+///  Sequence data
+
 struct NCBI_XOBJMGR_EXPORT SSeqData {
     TSeqPos              length;      /// Length of the sequence data piece
     TSeqPos              dest_start;  /// Starting pos in the dest. Bioseq
     TSeqPos              src_start;   /// Starting pos in the source Bioseq
     CConstRef<CSeq_data> src_data;    /// Source sequence data
 };
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeqVector --
+///
+///  Provide sequence data in the selected coding
 
 class NCBI_XOBJMGR_EXPORT CSeqVector : public CObject
 {
@@ -166,6 +182,12 @@ private:
 
 const size_t kRandomizerPosMask = 0x3f;
 const size_t kRandomDataSize    = kRandomizerPosMask + 1;
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CNcbi2naRandomizer --
+///
 
 class CNcbi2naRandomizer : public CObject
 {
@@ -311,12 +333,18 @@ void CSeqVector::GetSeqData(const const_iterator& start,
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2004/10/01 19:52:50  kononenk
+* Added doxygen formatting
+*
 * Revision 1.51  2004/06/14 18:30:08  grichenk
 * Added ncbi2na randomizer to CSeqVector
 *

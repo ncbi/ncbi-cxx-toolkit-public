@@ -42,6 +42,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+/** @addtogroup ObjectManagerIterators
+ *
+ * @{
+ */
+
+
 class CScope;
 class CSeqMap;
 class CSeq_entry;
@@ -294,12 +301,19 @@ private:
 
 #include <objmgr/seq_map_ci.inl>
 
+
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/10/01 19:52:50  kononenk
+* Added doxygen formatting
+*
 * Revision 1.16  2004/09/30 15:03:41  grichenk
 * Fixed segments resolving
 *
