@@ -50,6 +50,98 @@ BEGIN_NCBI_SCOPE
 //  General purpose tree algorithms
 //
 
+/// Compare two trees using comparison functor where order of children matters
+/// 
+/// @param tree1
+///    First tree
+/// @param tree2
+///    Second tree
+/// @param func
+///    Comparison functor (operates on 2 node-value types and returns bool)
+template<class TTreeNode, class TCompFun>
+bool TreeCompare(const TTreeNode& tree1, const TTreeNode& tree2, TCompFun func) 
+{
+  
+  const TTreeNode* t1 = &tree1;
+  const TTreeNode* t2 = &tree2;
+  if(!func(t1->GetValue(), t2->GetValue())) // roots not the same
+    return false;
+  if(t1->IsLeaf() && t2->IsLeaf()) // both single-node, roots same
+    return true;
+  
+  typedef typename TTreeNode::TNodeList_CI CTreeNodeIterator;
+
+  CTreeNodeIterator it1 = t1->SubNodeBegin();
+  CTreeNodeIterator it1_end = t1->SubNodeEnd();
+  CTreeNodeIterator it2 = t2->SubNodeBegin();
+  CTreeNodeIterator it2_end = t2->SubNodeEnd();
+
+  queue<CTreeNodeIterator> t1_queue;
+  queue<CTreeNodeIterator> t2_queue;
+
+  // push the children of the roots onto the queues
+  // keep track of the number of children
+  int children1 = 0;
+  while(it1 != it1_end) {
+    t1_queue.push(it1++);
+    children1++;
+  }
+  int children2 = 0;
+  while(it2 != it2_end) {
+    t2_queue.push(it2++);
+    children2++;
+  }
+
+  // if roots do not have same number of children, trees are not equal
+  if(children1 != children2) 
+    return false;
+
+  // go through nodes in order
+  while(!t1_queue.empty() && !t2_queue.empty()) {
+
+    // get the oldest nodes off the queues
+    it1 = t1_queue.front(); 
+    t1 = *it1;
+    it2 = t2_queue.front();
+    t2 = *it2;
+    t1_queue.pop();
+    t2_queue.pop();
+
+    if(t1 && t2) {
+      // test if nodes have same value
+      if(!func(t1->GetValue(), t2->GetValue()))
+	return false;
+      // add children (if any) of nodes to queue
+      children1 = 0;
+      if(!t1->IsLeaf()) {
+	it1 = t1->SubNodeBegin();
+	it1_end = t1->SubNodeEnd();
+	while(it1 != it1_end) {
+	  t1_queue.push(it1++);
+	  children1++;
+	}
+      } 
+      children2 = 0;
+      if(!t2->IsLeaf()) {
+	it2 = t2->SubNodeBegin();
+	it2_end = t2->SubNodeEnd();
+	while(it2 != it2_end) { 
+	  t2_queue.push(it2++);
+	  children2++;
+	}
+      } 
+      if(children1 != children2)
+	return false;
+    } // end if
+
+  } // end while
+
+  // if both queues are now empty, trees are the same
+  if(t1_queue.empty() && t2_queue.empty())
+    return true;
+  return false;
+
+}
 
 /// Visit every parent of the specified node
 /// 
@@ -126,7 +218,6 @@ void TreeReRoot(TTreeNode& new_root_node)
 {
     vector<const TTreeNode*> trace;
     TreeTraceToRoot(new_root_node, trace);
-
     TTreeNode* local_root = &new_root_node;
     ITERATE(typename vector<const TTreeNode*>, it, trace) {
         TTreeNode* node = const_cast<TTreeNode*>(*it);
@@ -855,6 +946,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/06/15 13:03:53  ckenny
+ * + TreeCompare function
+ *
  * Revision 1.7  2004/04/27 12:39:34  kuznets
  * Minimal set changed to work with ignore list of ids
  *
