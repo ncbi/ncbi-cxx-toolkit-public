@@ -43,11 +43,10 @@ const string kJSMenuDefaultURL_Smith
 
 // Sergey Kurdin's menu
 const string kJSMenuDefaultURL_Kurdin  // URL base
-    = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/popupmenu2";
-const string kJSMenuDefaultURL_Kurdin_files[3] = {
+    = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2";
+const string kJSMenuDefaultURL_Kurdin_files[2] = {
     "popupmenu2_styles.css",    // styles
-    "popupmenu2.js",            // main menu script
-    "popupmenu2_layers.js"      // auxiliary script
+    "popupmenu2_1.js"           // main menu script
 };
  
 
@@ -320,9 +319,7 @@ string CHTMLPopupMenu::GetCodeHead(EType type, const string& menu_lib_url)
         code = "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + url + 
                     kJSMenuDefaultURL_Kurdin_files[0] + "\">\n" \
                "<script language=\"JavaScript1.2\" src=\"" + url + 
-                    kJSMenuDefaultURL_Kurdin_files[1] + "\"></script>\n" \
-               "<script language=\"JavaScript1.2\" src=\"" + url + 
-                    kJSMenuDefaultURL_Kurdin_files[2] + "\"></script>\n";
+                    kJSMenuDefaultURL_Kurdin_files[1] + "\"></script>\n";
         break;
     }
     return code;
@@ -371,6 +368,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2003/04/29 16:28:13  ivanov
+ * Use one JS Script for Kurdin's menu
+ *
  * Revision 1.11  2003/04/01 16:35:29  ivanov
  * Changed path for the Kurdin's popup menu
  *
