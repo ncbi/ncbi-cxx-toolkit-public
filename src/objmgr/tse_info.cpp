@@ -342,6 +342,19 @@ void CTSE_Info::x_UnindexAnnotTSE(const CAnnotName& name,
 }
 
 
+void CTSE_Info::x_DoUpdate(TNeedUpdateFlags flags)
+{
+    if ( flags & (fNeedUpdate_core|fNeedUpdate_children_core) ) {
+        ITERATE ( TBioseqs, it, m_Bioseqs ) {
+            if ( !it->second.first ) {
+                GetChunk(it->second.second).Load();
+            }
+        }
+    }
+    TParent::x_DoUpdate(flags);
+}
+
+
 bool CTSE_Info::ContainsSeqid(const CSeq_id_Handle& id) const
 {
     return m_Bioseqs.find(id) != m_Bioseqs.end();
@@ -365,6 +378,7 @@ CConstRef<CBioseq_Info> CTSE_Info::FindBioseq(const CSeq_id_Handle& id) const
 
 void CTSE_Info::x_SetBioseqChunk(const CSeq_id_Handle& id, TChunkId chunk_id)
 {
+    x_SetNeedUpdate(fNeedUpdate_core);
     x_SetBioseqInfo(id, TBioseqInfo(0, chunk_id));
 }
 

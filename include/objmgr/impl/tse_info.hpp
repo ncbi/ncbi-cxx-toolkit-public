@@ -278,6 +278,8 @@ private:
     void x_IndexAnnotTSE(const CAnnotName& name, const CSeq_id_Handle& id);
     void x_UnindexAnnotTSE(const CAnnotName& name, const CSeq_id_Handle& id);
 
+    void x_DoUpdate(TNeedUpdateFlags flags);
+
     friend class CTSE_Lock;
     friend class CTSE_LoadLock;
 
