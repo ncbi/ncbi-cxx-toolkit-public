@@ -42,6 +42,8 @@ function print_if_interesting()
   }
 
   if (0 ||
+      m ~ /Warning: ".+" is too large and will not be expanded inline\./ ||
+      m ~ /Warning: ".+" is too large to generate inline, consider writing it yourself./ ||
       m ~ /Warning: Could not find source for ncbi::CTreeIteratorTmpl<ncbi::C(Const)?TreeLevelIterator>::/ ||
       m ~ /Warning: Could not find source for ncbi::CTypes?IteratorBase<ncbi::CTreeIterator(Tmpl<ncbi::C(Const)?TreeLevelIterator>)?>::/ ||
       m ~ /Where: While instantiating "(__rw)?std::.*<.*>::__(de)?allocate_.*()"/ ||
