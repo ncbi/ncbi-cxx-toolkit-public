@@ -40,32 +40,50 @@ $Revision$
 #include <blast_filter.h>
 
 /* BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
- *	Should be moved to blastkar.c (or it's successor) in the future.
 */
 Int2 
 BlastScoreBlkGappedFill(BLAST_ScoreBlkPtr sbp, 
    const BlastScoringOptionsPtr scoring_options, Uint1 program)
 {
+   Int2 status;
 
 	if (sbp == NULL || scoring_options == NULL)
 		return 1;
 
-
 	if (program == blast_type_blastn)
 	{
+      Char buffer[50];
+     
+      if (scoring_options->matrix_path && 
+          *scoring_options->matrix_path != NULLB)
+         sbp->read_in_matrix = TRUE;
+      else
+         sbp->read_in_matrix = FALSE;
+      BlastScoreSetAmbigRes(sbp, 'N');
 		sbp->penalty = scoring_options->penalty;
 		sbp->reward = scoring_options->reward;
-        BlastScoreBlkMatFill(sbp, scoring_options->matrix);
+      sprintf(buffer, "blastn matrix:%ld %ld", 
+              (long) sbp->reward, (long) sbp->penalty);
+      sbp->name = strdup(buffer);
+      status = BlastScoreBlkMatFill(sbp, scoring_options->matrix);
 	}
 	else
 	{
 		Int2 tmp_index;	/* loop variable. */
 
 		sbp->read_in_matrix = TRUE;
-		if (scoring_options->matrix)
-			BlastScoreBlkMatFill(sbp, scoring_options->matrix);
-		else
-			BlastScoreBlkMatFill(sbp, "BLOSUM62");
+      BlastScoreSetAmbigRes(sbp, 'X');
+      if (!scoring_options->matrix)
+         scoring_options->matrix = strdup("BLOSUM62");
+      sbp->name = strdup(scoring_options->matrix);
+		if (scoring_options->matrix_path) {
+			status = BlastScoreBlkMatFill(sbp, scoring_options->matrix_path);
+		} else {
+			status = BlastScoreBlkMatFill(sbp, scoring_options->matrix);
+      }
+
+      if (status)
+         return status;
 
 		for (tmp_index=0; tmp_index<sbp->number_of_contexts; tmp_index++)
 		{
@@ -174,19 +192,6 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
          sbp = BLAST_ScoreBlkNew(BLASTNA_SEQ_CODE, total_num_contexts);
       else
          sbp = BLAST_ScoreBlkNew(BLASTAA_SEQ_CODE, total_num_contexts);
-      
-      /* Set the ambiguous residue before the ScoreBlk is filled. */
-      if (is_na) {
-         if (scoring_options->matrix && scoring_options->matrix[0] != NULLB) {
-            sbp->read_in_matrix = TRUE;
-         } else {
-            sbp->read_in_matrix = FALSE;
-         }
-         BlastScoreSetAmbigRes(sbp, 'N');
-      } else {
-         sbp->read_in_matrix = TRUE;
-         BlastScoreSetAmbigRes(sbp, 'X');
-      }
       
       /* Fills in block for gapped blast. */
       status = BlastScoreBlkGappedFill(sbp, scoring_options, program_number);
