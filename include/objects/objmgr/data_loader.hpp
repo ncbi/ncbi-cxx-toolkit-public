@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/03/30 19:37:05  kimelman
+* gbloader MT test
+*
 * Revision 1.6  2002/03/20 04:50:34  kimelman
 * GB loader added
 *
@@ -125,7 +128,9 @@ public:
     virtual CTSE_Info*
       ResolveConflict(const CSeq_id_Handle&,
                       const TTSESet&) { return 0; } //### = 0;
-    
+
+    virtual void GC(void) = 0;
+
 protected:
     void SetName(const string& loader_name);
     CDataSource* GetDataSource(void);

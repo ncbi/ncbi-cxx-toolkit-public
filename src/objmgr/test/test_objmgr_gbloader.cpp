@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/03/30 19:37:07  kimelman
+* gbloader MT test
+*
 * Revision 1.10  2002/03/29 02:47:07  kimelman
 * gbloader: MT scalability fixes
 *
@@ -111,9 +114,7 @@ int CTestApplication::Run()
     for (int i = 1;  i < 500;  i++) {
         CScope scope(*pOm);
         scope.AddDefaults();
-
-        NcbiCout << "gi " << i << NcbiEndl;
-
+        
         CSeq_id x;
         x.SetGi(i);
         CObjectOStreamAsn oos(NcbiCout);
@@ -126,13 +127,11 @@ int CTestApplication::Run()
                //NcbiCout << NcbiEndl;
                ;
            }
+           LOG_POST("Gi (" << i << "):: OK");
         }
-        NcbiCout << NcbiEndl;
     }
 
-
-    NcbiCout << "=================================================="
-             << NcbiEndl;
+    NcbiCout << "==================================================" << NcbiEndl;
     NcbiCout << "Test completed" << NcbiEndl;
     return 0;
 }

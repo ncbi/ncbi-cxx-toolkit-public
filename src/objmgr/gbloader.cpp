@@ -47,6 +47,8 @@ BEGIN_SCOPE(objects)
 //=======================================================================
 //   GBLoader sub classes 
 //
+
+
 struct CGBDataLoader::STSEinfo
 {
   typedef set<TSeq_id_Key>  TSeqids;
@@ -59,7 +61,16 @@ struct CGBDataLoader::STSEinfo
   
   TSeqids           m_SeqIds;
   CTSEUpload        m_upload;
-  STSEinfo() : next(0), prev(0), m_upload() { };
+  
+  STSEinfo() : next(0), prev(0), m_upload(),key(0),m_SeqIds()
+    {
+      //LOG_POST("new tse(" << (void*)this << ")");
+    };
+  ~STSEinfo()
+    {
+      //LOG_POST("delete tse(" << (void*)this << ")");
+    }
+  static void check(STSEinfo *b,STSEinfo *e,int count,STSEinfo *me=0,int t2t_cnt=-1);
 };
 
 struct CGBDataLoader::SSeqrefs
@@ -132,8 +143,8 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice)
           CBlob_I it = CSeqref.getBlobs(range.min,range.max,choice,subtree_id);
          }
       }
-   */
-  x_GC();
+  */
+  GC();
   iterate (TLocMap, hrange, hrmap.GetMap() )
     {
       //LOG_POST( "GetRecords-0" );
@@ -147,7 +158,7 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice)
 bool
 CGBDataLoader::DropTSE(const CSeq_entry *sep)
 {
-  m_LookupMutex.Lock();
+  m_LookupMutex.Lock("drop_tse");
   TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(sep);
   if (it == m_Tse2TseInfo.end())
     {
@@ -156,16 +167,34 @@ CGBDataLoader::DropTSE(const CSeq_entry *sep)
       return true;
     }
   STSEinfo *tse = it->second;
-  if(m_SlowTraverseMode>0) m_Pool.GetMutex(tse).Lock();
+  if(m_SlowTraverseMode>0) m_Pool.Lock(tse);
   
   m_Tse2TseInfo.erase(it);
   _VERIFY(tse);
   x_DropTSEinfo(tse);
-  if(m_SlowTraverseMode>0) m_Pool.GetMutex(tse).Unlock();
+  if(m_SlowTraverseMode>0) m_Pool.Unlock(tse);
   m_LookupMutex.Unlock();
   return true;
 }
-  
+
+void
+CGBDataLoader::STSEinfo::check(STSEinfo *b,STSEinfo *e,int count,STSEinfo *me,int t2t_cnt)
+{
+  int c = 0;
+  bool tse_found=false;
+  STSEinfo *tse2 =  b, *t1=0;
+  while(tse2) { c++; if(tse2==me) tse_found = true; t1=tse2; tse2=tse2->next; }
+  _VERIFY(t1 == e);
+  _VERIFY(c  == count);
+  _VERIFY(t2t_cnt  <= count);
+  if(me)
+   {
+     //LOG_POST("check tse " << me << " by " << CThread::GetSelf() );
+     _VERIFY(tse_found);
+   }
+}
+
+
 CTSE_Info*
 CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_set)
 {
@@ -175,28 +204,41 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_s
   bool         conflict=false;
   
   LOG_POST( "ResolveConflict" );
-  do m_LookupMutex.Lock();
+  do m_LookupMutex.Lock("ResolveConflict");
   while (!x_ResolveHandle(sih,sr));
   iterate(TTSESet, sit, tse_set)
     {
       CTSE_Info *ti = *sit;
-      TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(ti->m_TSE);
+      const CSeq_entry *sep = ti->m_TSE;
+      TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(sep);
       if(it==m_Tse2TseInfo.end()) continue;
-      if(it->second->mode.test(STSEinfo::eDead) && !ti->m_Dead)
+      STSEinfo *tse = it->second;
+      
+      STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
+      
+      if(m_SlowTraverseMode>0) m_Pool.Lock(tse);
+
+      if(tse->mode.test(STSEinfo::eDead) && !ti->m_Dead)
         ti->m_Dead=true;
-      if(it->second->m_SeqIds.find(sih)==it->second->m_SeqIds.end()) // not listed for given TSE
-        continue;
-      if(!best)
-        { best=ti; conflict=false; }
-      else if(!ti->m_Dead && best->m_Dead)
-        { best=ti; conflict=false; }
-      else if(ti->m_Dead && best->m_Dead)
-        { conflict=true; }
-      else if(ti->m_Dead && !best->m_Dead)
-        continue;
-      else
-        _VERIFY(ti->m_Dead || best->m_Dead);
+      if(tse->m_SeqIds.find(sih)!=tse->m_SeqIds.end()) // listed for given TSE
+        {
+          if(!best)
+            { best=ti; conflict=false; }
+          else if(!ti->m_Dead && best->m_Dead)
+            { best=ti; conflict=false; }
+          else if(ti->m_Dead && best->m_Dead)
+            { conflict=true; }
+          else if(ti->m_Dead && !best->m_Dead)
+            ;
+          else
+            {
+              conflict=true;
+              //_VERIFY(ti->m_Dead || best->m_Dead);
+            }
+        }
+      if(m_SlowTraverseMode>0) m_Pool.Unlock(tse);
     }
+
   if(best && !conflict)
     {
       m_LookupMutex.Unlock();
@@ -268,13 +310,7 @@ CGBDataLoader::x_UpdateDropList(STSEinfo *tse)
       _VERIFY(m_UseListHead==0);
       m_UseListHead = m_UseListTail = tse; 
     }
-  {{ 
-    int c = 0;
-    STSEinfo *tse2 =  m_UseListHead, *t1=0;
-    while(tse2) { c++; t1=tse2; tse2=tse2->next; }
-    _VERIFY(t1== m_UseListTail);
-    _VERIFY(c ==  m_TseCount);
-  }}
+  STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,0,m_Tse2TseInfo.size());
 }
 
 void
@@ -300,28 +336,14 @@ CGBDataLoader::x_DropTSEinfo(STSEinfo *tse)
   if(tse->prev) tse->prev->next=tse->next;
   delete tse;
   m_TseCount --;
-  {{ 
-    int c = 0;
-    STSEinfo *tse2 =  m_UseListHead, *t1=0;
-    while(tse2) { c++; t1=tse2; tse2=tse2->next; }
-    _VERIFY(t1== m_UseListTail);
-    _VERIFY(c ==  m_TseCount);
-  }}
+  STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,0,m_Tse2TseInfo.size());
 }
 
 void
-CGBDataLoader::x_GC(void)
+CGBDataLoader::GC(void)
 {
   // LOG_POST( "X_GC " << m_TseCount << "," << m_TseGC_Threshhold << "," << m_InvokeGC);
   // dirty read - but that ok for garbage collector
-  {{ 
-    CMutexGuard x(m_LookupMutex);
-    int c = 0;
-    STSEinfo *tse =  m_UseListHead, *t1=0;
-    while(tse) { c++; t1=tse; tse=tse->next; }
-    _VERIFY(t1== m_UseListTail);
-    _VERIFY(c ==  m_TseCount);
-  }}
   if(m_TseCount<m_TseGC_Threshhold) return;
   if(!m_InvokeGC) return ;
   LOG_POST( "X_GC " << m_TseCount);
@@ -329,8 +351,9 @@ CGBDataLoader::x_GC(void)
 
 //#if 0
   int skip=0;
-  CMutexGuard x(m_LookupMutex);
-  while(skip+1<m_TseCount - 0.9*m_TseGC_Threshhold)
+  m_LookupMutex.Lock("GC");
+  STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,0,m_Tse2TseInfo.size());
+  while(skip<m_TseCount && skip<0.9*m_TseGC_Threshhold && m_TseCount > 0.9*m_TseGC_Threshhold)
     {
       int i=skip;
       STSEinfo *tse_to_drop=m_UseListHead;
@@ -338,22 +361,34 @@ CGBDataLoader::x_GC(void)
         tse_to_drop = tse_to_drop->next;
       _VERIFY(tse_to_drop);
       const CSeq_entry *sep=tse_to_drop->m_upload.m_tse;
-      if(!sep)
+      bool do_call_drop = true;
+      if(m_SlowTraverseMode>0) m_Pool.Lock(tse_to_drop);
+      if(!sep && tse_to_drop->m_upload.m_mode != CTSEUpload::eNone)
         {
-          if(m_SlowTraverseMode>0) m_Pool.GetMutex(tse_to_drop).Lock();
           x_DropTSEinfo(tse_to_drop);
-          if(m_SlowTraverseMode>0) m_Pool.GetMutex(tse_to_drop).Unlock();
+          do_call_drop = false;
         }
+      else if(m_Tse2TseInfo.find(sep) == m_Tse2TseInfo.end())
+        { 
+	  skip++;
+          do_call_drop = false;
+        }
+      if(m_SlowTraverseMode>0) m_Pool.Unlock(tse_to_drop);
+      if(!do_call_drop) 
+        continue ;
+          
+      //char b[100];
+      // LOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE(b,sizeof(b)) << ")");
+      CConstRef<CSeq_entry> se = sep;
+      m_LookupMutex.Unlock();
+      if(GetDataSource()->DropTSE(*se))
+        m_InvokeGC=false;
       else
-        {
-          char b[100];
-          LOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE(b,sizeof(b)) << ")");
-          if(!GetDataSource()->DropTSE(*sep))
-            skip++;
-        }
-    }
+        skip++;
+      m_LookupMutex.Lock("GC lock again");
+   }
 //#endif
-  m_InvokeGC=false;
+  m_LookupMutex.Unlock();
   //LOG_POST( "X_GC " << m_TseCount);
 }
 
@@ -391,7 +426,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
   SSeqrefs*    sr=0;
   
   //LOG_POST( "x_GetRecords" );
-  m_LookupMutex.Lock();
+  m_LookupMutex.Lock("x_GetRecords");
   if(!x_ResolveHandle(sih,sr))
     return false;// mutex has already been unlocked
 
@@ -433,7 +468,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
       
       bool use_global_lock=true;
       bool use_local_lock=m_SlowTraverseMode>0;
-      if(use_local_lock) m_Pool.GetMutex(tse).Lock();
+      if(use_local_lock) m_Pool.Lock(tse);
       {{ // make sure we have reverse reference to handle
         STSEinfo::TSeqids &sid = tse->m_SeqIds;
         if (sid.find(sih) == sid.end())
@@ -466,7 +501,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
               m_LookupMutex.Unlock();
               if(!use_local_lock)
                 {
-                  m_Pool.GetMutex(tse).Lock();
+                  m_Pool.Lock(tse);
                   use_local_lock=true;
                 }
             }
@@ -479,18 +514,26 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
                       blob_mask
                       );
         }
-      if(use_local_lock) m_Pool.GetMutex(tse).Unlock();
+      if(use_local_lock) m_Pool.Unlock(tse);
       if(!use_global_lock)
         { // uploaded some data
-          m_LookupMutex.Lock();
+          m_LookupMutex.Lock("x_GetRecords - back_to_global");
           m_SlowTraverseMode--;
           if(new_tse)
-            m_Tse2TseInfo[tse->m_upload.m_tse]=tse;
+            {
+              STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
+              m_Tse2TseInfo[tse->m_upload.m_tse]=tse;
+              STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
+            }
           m_LookupMutex.Unlock();
           return false; // restrart traverse to make sure seqrefs list are the same we started from
         }
       if(new_tse)
-        m_Tse2TseInfo[tse->m_upload.m_tse]=tse;
+        {
+          STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
+          m_Tse2TseInfo[tse->m_upload.m_tse]=tse;
+          STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
+        }
     } // iterate seqrefs
   m_LookupMutex.Unlock();
   return true;
@@ -510,16 +553,16 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
     sr = bsit->second;
 
   bool local_lock=m_SlowTraverseMode>0;
-  if(local_lock) m_Pool.GetMutex(sr).Lock();
+  if(local_lock) m_Pool.Lock(sr);
   if(!sr->m_Timer.NeedRefresh(m_Timer))
     {
-      if(local_lock) m_Pool.GetMutex(sr).Unlock();
+      if(local_lock) m_Pool.Unlock(sr);
       return true;
     }
   // update required
   m_SlowTraverseMode++;
   m_LookupMutex.Unlock();
-  if(!local_lock) m_Pool.GetMutex(sr).Lock();
+  if(!local_lock) m_Pool.Lock(sr);
 
   //LOG_POST( "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) );
   
@@ -537,8 +580,8 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   if(calibrating) m_Timer.Stop();
   sr->m_Timer.Reset(m_Timer);
   
-  m_Pool.GetMutex(sr).Unlock();
-  m_LookupMutex.Lock();
+  m_Pool.Unlock(sr);
+  m_LookupMutex.Lock("ResolveHandle");
   m_SlowTraverseMode--;
   local_lock=m_SlowTraverseMode>0;
   
@@ -573,12 +616,12 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
               
               // update TSE info 
               STSEinfo *tse = tsep->second;
-              if(local_lock) m_Pool.GetMutex(tse).Lock();
+              if(local_lock) m_Pool.Lock(tse);
               bool mark_dead  = tse->mode.test(STSEinfo::eDead);
               if(mark_dead) tse->mode.set(STSEinfo::eDead);
               tse->m_SeqIds.erase(h); // drop h as refewrenced seqid
-              if(local_lock) m_Pool.GetMutex(tse).Unlock();
-              if(mark_dead)
+              if(local_lock) m_Pool.Unlock(tse);
+              if(mark_dead && tse->m_upload.m_tse)
                 { // inform data_source :: make sure to avoid deadlocks
                   GetDataSource()->x_UpdateTSEStatus(*(tse->m_upload.m_tse),true);
                 }
@@ -677,6 +720,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/03/30 19:37:06  kimelman
+* gbloader MT test
+*
 * Revision 1.17  2002/03/29 02:47:04  kimelman
 * gbloader: MT scalability fixes
 *

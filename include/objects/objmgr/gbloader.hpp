@@ -102,8 +102,17 @@ public:
   template<class A> int  Select(A *a) { return (((unsigned)(a))/sizeof(A)) % m_size ; }
   template<class A> CMutex& GetMutex(A *a) { return GetMutex(Select(a)); }
 
-  template<class A> void Lock  (A* a) { GetMutex(a).Lock();   }
-  template<class A> void Unlock(A* a) { GetMutex(a).Unlock(); }
+  template<class A> void Lock  (A* a)
+    {
+      //LOG_POST("PoolLock  ("<< Select(a) <<") tried  by " << CThread::GetSelf());
+      GetMutex(a).Lock();
+      //LOG_POST("PoolLock  ("<< Select(a) <<") locked by " << CThread::GetSelf() );
+    }
+  template<class A> void Unlock(A* a)
+    {
+      //LOG_POST("PoolUnlock("<< Select(a) <<") unlocked  " << CThread::GetSelf() );
+      GetMutex(a).Unlock();
+    }
 
 private:
   int             m_size;
@@ -130,6 +139,8 @@ public:
   virtual CTSE_Info*
   ResolveConflict(const CSeq_id_Handle& handle,
                   const TTSESet&        tse_set);
+  
+  virtual void GC(void);
   
 private:
   class CCmpTSE
@@ -163,8 +174,27 @@ private:
   
   CTimer          m_Timer;
 
+  class MyMutex {
+  private:
+    CMutex   m_;
+  public:
+    MyMutex(void) : m_() {};
+    ~MyMutex(void) {};
+    void Lock(const string& loc)
+      {
+        //LOG_POST("MyLock  tried  by " << CThread::GetSelf() << " at "  << loc);
+        m_.Lock();
+        //LOG_POST("MyLock  locked by " << CThread::GetSelf());
+      }
+    void Unlock(void)
+      {
+        //LOG_POST("MyLock unlocked   " << CThread::GetSelf());
+        m_.Unlock();
+      }
+  };
+
   int             m_SlowTraverseMode;
-  CMutex          m_LookupMutex;
+  MyMutex         m_LookupMutex;
   CMutexPool      m_Pool;
 
   STSEinfo       *m_UseListHead;
@@ -173,7 +203,6 @@ private:
   int             m_TseGC_Threshhold;
   bool            m_InvokeGC;
   void            x_UpdateDropList(STSEinfo *p);
-  void            x_GC(void);
   void            x_DropTSEinfo(STSEinfo *tse);
   
   //
@@ -200,6 +229,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.9  2002/03/30 19:37:05  kimelman
+ * gbloader MT test
+ *
  * Revision 1.8  2002/03/29 02:47:01  kimelman
  * gbloader: MT scalability fixes
  *
