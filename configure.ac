@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.14 2001/10/12 22:29:43 vakatov Exp $
+#  $Id: configure.ac,v 1.15 2001/10/19 01:00:37 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1996,13 +1996,6 @@ else
 fi
 
 
-## `gui_ctools' project cluster (part 1)
-
-if test "$with_ctools" = "no"  -o  "$with_gui" = "no" ; then
-   NoConfProjects="$NoConfProjects gui_ctools"
-fi
-
-
 ## `ctools' project cluster
 
 if test "$with_ctools" = "no" ; then
@@ -2052,17 +2045,6 @@ if test "$with_gui" = "no" ; then
    WithoutProjects="$WithoutProjects gui"
 else
    OPT_GROUPS="$OPT_GROUPS gui"
-fi
-
-
-## `gui_ctools' project cluster (part 2)
-
-if test -f ${srcdir}/src/gui_ctools/Makefile.in  -a  \
-        -d ${srcdir}/include/gui_ctools  -a  \
-        "$with_ctools" != "no"  -a  "$with_gui" != "no" ; then
-   OPT_GROUPS="$OPT_GROUPS gui_ctools"
-else
-   WithoutProjects="$WithoutProjects gui_ctools"
 fi
 
 
