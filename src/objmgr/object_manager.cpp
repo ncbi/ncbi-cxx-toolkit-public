@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/04/22 20:04:11  grichenk
+* Fixed TSE dropping
+*
 * Revision 1.6  2002/02/21 19:27:06  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -352,6 +355,8 @@ void CObjectManager::RemoveTopLevelSeqEntry(
     CMutexGuard guard(s_OM_Mutex);
     if (m_mapEntryToSource.find(&top_entry) != m_mapEntryToSource.end()) {
         CDataSource* source = m_mapEntryToSource[ &top_entry];
+
+        source->DropTSE(top_entry);
 
         // Do not destroy datasource if it's not empty
         if ( !source->IsEmpty() )
