@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/05/04 00:03:18  vakatov
+* Removed the redundant severity arg from macro ERR_POST()
+*
 * Revision 1.10  1999/04/30 19:21:08  vakatov
 * Added more details and more control on the diagnostics
 * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
@@ -238,7 +241,7 @@ CNcbiOstream& CNCBINode::Print(CNcbiOstream& out)
         PrintChildren(out);
     }
     catch (...) {
-        ERR_POST(eDiag_Error, "\
+        ERR_POST("\
 CNCBINode::Print: exception in PrintChildren, trying to PrintEnd");
         PrintEnd(out);
         throw;

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/05/04 00:03:07  vakatov
+* Removed the redundant severity arg from macro ERR_POST()
+*
 * Revision 1.9  1999/04/30 19:20:58  vakatov
 * Added more details and more control on the diagnostics
 * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
@@ -283,7 +286,7 @@ inline CDiagBuffer::CDiagBuffer(void) {
 
 inline CDiagBuffer::~CDiagBuffer(void) {
     if (m_Diag  ||  m_Stream.pcount())
-        abort();
+        ::abort();
 }
 
 inline void CDiagBuffer::Flush(void) {
@@ -302,13 +305,13 @@ inline void CDiagBuffer::Flush(void) {
     }
 
     if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace)
-        abort();
+        ::abort();
 }
 
 inline void CDiagBuffer::Reset(const CNcbiDiag& diag) {
     if (&diag == m_Diag  &&
         m_Stream.rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out))
-        abort();
+        ::abort();
 }
 
 inline void CDiagBuffer::EndMess(const CNcbiDiag& diag) {

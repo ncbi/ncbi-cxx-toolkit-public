@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/05/04 00:03:11  vakatov
+* Removed the redundant severity arg from macro ERR_POST()
+*
 * Revision 1.4  1999/04/30 19:21:02  vakatov
 * Added more details and more control on the diagnostics
 * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
@@ -86,7 +89,7 @@ int CCgiApplication::Run(void)
                     iterations = NStr::StringToInt(param);
                 }
                 catch ( exception e ) {
-                    ERR_POST(eDiag_Error, "\
+                    ERR_POST("\
 CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
                     iterations = 2;
                 }
@@ -115,8 +118,8 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
                 _TRACE("arg[" << i << "]=\"" << env[i] << "\"");
                 if ( putenv(env[i]) != 0 ) {
                     // error
-                    ERR_POST(eDiag_Error, "\
-CCgiApplication::Run: cannot set env: " << env[i]);
+                    ERR_POST("CCgiApplication::Run: cannot set env: "
+                             << env[i]);
                     FCGX_Finish();
                     return 1;
                 }
@@ -148,8 +151,7 @@ CCgiApplication::Run: cannot set env: " << env[i]);
                 FCGX_SetExitStatus(ProcessRequest(ctx), fout);
             }
             catch (exception e) {
-                ERR_POST(eDiag_Error,
-                         "CCgiApplication::ProcessCGIRequest() failed: "
+                ERR_POST("CCgiApplication::ProcessCGIRequest() failed: "
                          << e.what());
                 // ignore for next iteration
             }
@@ -179,7 +181,7 @@ CCgiApplication::Run: cannot set env: " << env[i]);
 CNcbiResource& CCgiApplication::x_GetResource( void ) const
 { 
     if ( !m_resource.get() ) {
-        ERR_POST(eDiag_Error, "CCgiApplication::GetResource: no resource set");
+        ERR_POST("CCgiApplication::GetResource: no resource set");
         throw runtime_error("no resource set");
     }
     return *m_resource;
@@ -207,8 +209,7 @@ CNcbiRegistry* CCgiApplication::LoadConfig(void)
     string fileName = string(m_Argv[0]) + ".ini";
     CNcbiIfstream is(fileName.c_str());
     if ( !is ) {
-        ERR_POST(eDiag_Error,
-                 "CCgiApplication::LoadConfig: cannot load registry file: "
+        ERR_POST("CCgiApplication::LoadConfig: cannot load registry file: "
                  << fileName);
     }
     else {

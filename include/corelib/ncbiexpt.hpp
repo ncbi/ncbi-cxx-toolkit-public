@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/05/04 00:03:07  vakatov
+* Removed the redundant severity arg from macro ERR_POST()
+*
 * Revision 1.9  1999/01/07 16:15:09  vakatov
 * Explicitely specify "NCBI_NS_NCBI::" in the preprocessor macros
 *
@@ -79,9 +82,11 @@
 BEGIN_NCBI_SCOPE
 
 
+/////////////////////////////////////////////////////////////////////////////
 // The use of C++ exception specification mechanism, like:
 //   "f(void) throw();"       <==  "f(void) THROWS_NONE;"
 //   "g(void) throw(e1,e2);"  <==  "f(void) THROWS((e1,e2));"
+
 #if defined(NCBI_USE_THROW_SPEC)
 #  define THROWS_NONE throw()
 #  define THROWS(x) throw x
@@ -91,7 +96,71 @@ BEGIN_NCBI_SCOPE
 #endif
 
 
+/////////////////////////////////////////////////////////////////////////////
+// Macro to trace the exceptions being thrown(for the -D_DEBUG mode only):
+//   RETHROW_TRACE
+//   THROW0_TRACE
+//   THROW1_TRACE
+//   THROW_TRACE
+
+#if defined(_DEBUG)
+
+// Specify if to call "abort()" inside the DoThrowTraceAbort()
+// NOTE:  if SetThrowTraceAbort() is not called then the program
+//        checks if the env. variable $ABORT_ON_THROW is set
+//        (if it is set then call "abort()" on throw, else -- dont call) 
+extern void SetThrowTraceAbort(bool abort_on_throw_trace);
+
+// "abort()" the program if set by SetThrowTraceAbort() or $ABORT_ON_THROW
+extern void DoThrowTraceAbort(void);
+
+// Example:  RETHROW_TRACE;
+#  define RETHROW_TRACE do { \
+    _TRACE("EXCEPTION: re-throw"); \
+    DoThrowTraceAbort(); \
+    throw; \
+} while(0)
+
+// Example:  THROW0_TRACE("Throw just a string");
+#  define THROW0_TRACE(exception_class) do { \
+    _TRACE("EXCEPTION: " << #exception_class);\
+    DoThrowTraceAbort(); \
+    throw exception_class; \
+} while(0)
+
+// Example:  THROW1_TRACE(runtime_error, "Something is weird...");
+#  define THROW1_TRACE(exception_class, exception_arg) do { \
+    _TRACE("EXCEPTION: " << #exception_class << "(" << #exception_arg << ")");\
+    DoThrowTraceAbort(); \
+    throw exception_class(exception_arg); \
+} while(0)
+
+// Example:  THROW_TRACE(bad_alloc, ());
+// Example:  THROW_TRACE(runtime_error, ("Something is weird..."));
+// Example:  THROW_TRACE(CParseExceprion, ("Some parse error", 123));
+#  define THROW_TRACE(exception_class, exception_args) do { \
+    _TRACE("EXCEPTION: " << #exception_class << #exception_args); \
+    DoThrowTraceAbort(); \
+    throw exception_class exception_args; \
+} while(0)
+
+#else  /* _DEBUG */
+
+#  define RETHROW_TRACE \
+    throw
+#  define THROW0_TRACE(exception_class) \
+    throw exception_class
+#  define THROW1_TRACE(exception_class, exception_arg) \
+    throw exception_class(exception_arg)
+#  define THROW_TRACE(exception_class, exception_args) \
+    throw exception_class exception_args
+
+#endif  /* else!_DEBUG */
+
+
+/////////////////////////////////////////////////////////////////////////////
 // Standard handling of "exception"-derived exceptions
+
 #define STD_CATCH(message) \
 catch (NCBI_NS_STD::exception& e) \
 { \
@@ -100,6 +169,8 @@ catch (NCBI_NS_STD::exception& e) \
            << "Exception: " << e.what(); \
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
 // Standard handling of "exception"-derived and all other exceptions
 #define STD_CATCH_ALL(message) \
 STD_CATCH(message) \
@@ -111,8 +182,8 @@ STD_CATCH(message) \
 }
 
 
-/////////////////////////////////
-// Auxiliary exception classes
+/////////////////////////////////////////////////////////////////////////////
+// Auxiliary exception classes:
 //   CErrnoException
 //   CParseException
 //

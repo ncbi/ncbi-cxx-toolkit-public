@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/05/04 00:03:12  vakatov
+* Removed the redundant severity arg from macro ERR_POST()
+*
 * Revision 1.27  1999/05/03 20:32:29  vakatov
 * Use the (newly introduced) macro from <corelib/ncbidbg.h>:
 *   RETHROW_TRACE,
@@ -689,8 +692,7 @@ CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
 
     if ( m_Entries.find(NcbiEmptyString) != m_Entries.end() ) {
         // there is already empty name key
-                ERR_POST(eDiag_Error,
-                 "empty key name: we'll not check for IMAGE names");
+        ERR_POST("empty key name: we'll not check for IMAGE names");
         return;
     }
 
@@ -713,8 +715,7 @@ CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
                 }
                 else {
                     // is't second name - error: we will not change anything
-                    ERR_POST(eDiag_Error,
-                             "duplicated IMAGE name: \"" << imageName <<
+                    ERR_POST("duplicated IMAGE name: \"" << imageName <<
                              "\" and \"" << name << "\"");
                     return;
                 }

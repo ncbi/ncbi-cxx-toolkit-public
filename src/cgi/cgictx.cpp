@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/05/04 00:03:11  vakatov
+* Removed the redundant severity arg from macro ERR_POST()
+*
 * Revision 1.3  1999/04/30 19:21:02  vakatov
 * Added more details and more control on the diagnostics
 * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
@@ -78,8 +81,7 @@ CCgiServerContext& CCgiContext::x_GetServCtx( void ) const
     if ( !context ) {
         context = m_app.LoadServerContext(const_cast<CCgiContext&>(*this));
         if ( !context ) {
-            ERR_POST(eDiag_Error,
-                     "CCgiContext::GetServCtx: no server context set");
+            ERR_POST("CCgiContext::GetServCtx: no server context set");
             throw runtime_error("no server context set");
         }
         const_cast<CCgiContext&>(*this).m_srvCtx.reset(context);

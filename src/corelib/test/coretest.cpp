@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  1999/05/04 00:03:16  vakatov
+* Removed the redundant severity arg from macro ERR_POST()
+*
 * Revision 1.40  1999/05/03 20:32:31  vakatov
 * Use the (newly introduced) macro from <corelib/ncbidbg.h>:
 *   RETHROW_TRACE,
@@ -341,8 +344,7 @@ static void TestDiag(void)
 
     SetDiagStream(&NcbiCerr);
     diag <<   "[Set Diag Stream(cerr)]  Diagnostics double = " << d << Endm;
-    ERR_POST(eDiag_Error,
-             "[Set Diag Stream(cerr)]  Std.Diag. double = "    << d );
+    ERR_POST("[Set Diag Stream(cerr)]  Std.Diag. double = "    << d );
     _TRACE  ( "[Set Diag Stream(cerr)]  Trace double = "       << d );
 
     CNcbiTestDiag cntd;
@@ -356,21 +358,21 @@ static void TestDiag(void)
 
     SetDiagPostFlag(eDPF_All);
     SetDiagPostPrefix("Foo-Prefix");
-    ERR_POST(eDiag_Error, "This is the most detailed " << "error posting");
+    ERR_POST("This is the most detailed " << "error posting");
     SetDiagPostPrefix(0);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_LongFilename);
-    ERR_POST(eDiag_Error, "No line #, " << "Short filename, " << "No prefix");
+    ERR_POST(Warning << "No line #, " << "Short filename, " << "No prefix");
     _TRACE("_TRACE:  must have all possible info in the posted message");
     UnsetDiagPostFlag(eDPF_Severity);
-    ERR_POST(eDiag_Error, "...and no severity");
+    ERR_POST("...and no severity");
     SetDiagPostFlag(eDPF_Line);
     SetDiagPostFlag(eDPF_Severity);
     SetDiagPostPrefix("Bad!!! No Prefix!!!");
     UnsetDiagPostFlag(eDPF_Prefix);
-    ERR_POST(eDiag_Error, "Short filename, " << "No prefix");
+    ERR_POST("Short filename, " << "No prefix");
     UnsetDiagPostFlag(eDPF_All);
-    ERR_POST(eDiag_Error, "This is the least detailed error posting");
+    ERR_POST("This is the least detailed error posting");
     SetDiagPostFlag(eDPF_All);
     SetDiagPostPrefix(0);
 }

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/05/04 00:03:13  vakatov
+* Removed the redundant severity arg from macro ERR_POST()
+*
 * Revision 1.8  1999/04/14 19:53:29  vakatov
 * + <stdio.h>
 *
@@ -64,6 +67,31 @@
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
+
+
+/////////////////////////////////
+// SetThrowTraceAbort
+// DoThrowTraceAbort
+
+static bool s_DoThrowTraceAbort = false; //if to abort() in DoThrowTraceAbort()
+static bool s_DTTA_Initialized  = false; //if s_DoThrowTraceAbort is init'd
+
+extern void SetThrowTraceAbort(bool abort_on_throw_trace)
+{
+    s_DTTA_Initialized = true;
+    s_DoThrowTraceAbort = abort_on_throw_trace;
+}
+
+extern void DoThrowTraceAbort(void)
+{
+    if ( !s_DTTA_Initialized ) {
+        s_DoThrowTraceAbort = ::getenv("ABORT_ON_THROW") ? true : false;
+        s_DTTA_Initialized  = true;
+    }
+
+    if ( s_DoThrowTraceAbort )
+        ::abort();
+}
 
 
 /////////////////////////////////

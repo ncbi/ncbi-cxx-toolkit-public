@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/05/04 00:03:13  vakatov
+* Removed the redundant severity arg from macro ERR_POST()
+*
 * Revision 1.11  1999/04/22 14:19:04  vasilche
 * Added _TRACE_THROW() macro which can be configured to make coredump at some poin
 * t fo throwing exception.
@@ -155,10 +158,5 @@ bool PNocase::operator() ( const string& x, const string& y ) const
   return toupper(*p) < toupper(*q);
 }
 
-int TraceThrow(void)
-{
-    static int i = getenv("COREDUMP_ON_THROW")? 0: 1;
-    return 1 / i;
-}
 
 END_NCBI_SCOPE

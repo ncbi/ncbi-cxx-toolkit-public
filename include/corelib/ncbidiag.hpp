@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/05/04 00:03:06  vakatov
+* Removed the redundant severity arg from macro ERR_POST()
+*
 * Revision 1.11  1999/04/30 19:20:57  vakatov
 * Added more details and more control on the diagnostics
 * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
@@ -94,8 +97,8 @@ typedef enum {
 } EDiagSev;
 
 // Auxiliary macros for a "standard" error posting
-#define ERR_POST(severity, message)  do { \
-    NCBI_NS_NCBI::CNcbiDiag _diag_(severity); \
+#define ERR_POST(message)  do { \
+    NCBI_NS_NCBI::CNcbiDiag _diag_; \
     _diag_.SetFile(__FILE__).SetLine(__LINE__) << message; \
 } while(0)
 

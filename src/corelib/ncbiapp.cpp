@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/05/04 00:03:12  vakatov
+* Removed the redundant severity arg from macro ERR_POST()
+*
 * Revision 1.16  1999/04/30 19:21:03  vakatov
 * Added more details and more control on the diagnostics
 * See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
@@ -139,7 +142,7 @@ int CNcbiApplication::AppMain(int argc, char** argv)
         Init();
     }
     catch (exception e) {
-        ERR_POST(eDiag_Error, "CCgiApplication::Init() failed: " << e.what());
+        ERR_POST("CCgiApplication::Init() failed: " << e.what());
         return -1;
     }
 
@@ -149,7 +152,7 @@ int CNcbiApplication::AppMain(int argc, char** argv)
         res = Run();
     }
     catch (exception e) {
-        ERR_POST(eDiag_Error, "CCgiApplication::Run() failed: " << e.what());
+        ERR_POST("CCgiApplication::Run() failed: " << e.what());
         res = -1;
     }
 
@@ -158,7 +161,7 @@ int CNcbiApplication::AppMain(int argc, char** argv)
         Exit();
     }
     catch (exception e) {
-        ERR_POST(eDiag_Error, "CCgiApplication::Exit() failed: " << e.what());
+        ERR_POST("CCgiApplication::Exit() failed: " << e.what());
     }
 
     return res;
