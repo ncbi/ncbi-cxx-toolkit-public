@@ -8,7 +8,7 @@
 srcdir = @srcdir@
 include @builddir@/Makefile.mk
 
-LIBOBJ  = node html page nodemap components querypages
+LIBOBJ  = node html htmlhelper page nodemap components querypages
 LIB     = xhtml
 OBJ     = 
 
