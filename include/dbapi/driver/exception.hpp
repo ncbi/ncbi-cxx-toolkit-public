@@ -208,7 +208,7 @@ public:
     virtual ~CDB_MultiEx() throw();
 
 private:
-    class CDB_MultiExStorage
+    class NCBI_DBAPIDRIVER_EXPORT CDB_MultiExStorage
     {
     public:
         void AddRef() {
@@ -300,6 +300,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/02/12 22:07:44  coremake
+ * Added export specifier NCBI_DBAPIDRIVER_EXPORT to the CDB_MultiExStorage class declaration
+ *
  * Revision 1.12  2002/12/26 19:29:12  dicuccio
  * Added Win32 export specifier for base DBAPI library
  *
