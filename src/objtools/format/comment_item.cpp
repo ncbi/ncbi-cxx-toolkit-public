@@ -648,9 +648,8 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
         {{
             str = desc.GetComment();
             TrimSpacesAndJunkFromEnds(str);
-            if (!str.empty()  &&  !NStr::EndsWith(str, '.')) {
-                str += '.';
-            }
+            ConvertQuotes(str);
+            ncbi::objects::AddPeriod(str);
         }}
         break;
 
@@ -905,6 +904,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/10/18 18:54:34  shomrat
+* cleanup desc comments
+*
 * Revision 1.12  2004/10/05 15:36:56  shomrat
 * Fixed comment generation
 *
