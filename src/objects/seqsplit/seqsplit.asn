@@ -1,4 +1,4 @@
---$Revision: 1.3 $
+--$Revision: 1.4 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -124,8 +124,14 @@ ID2S-Chunk-Data ::= SEQUENCE {
         descrs          SET OF Seq-descr OPTIONAL,
         annots          SET OF Seq-annot OPTIONAL,
         assembly        SET OF Seq-align OPTIONAL,
-        seq-map         SEQUENCE OF Seq-literal OPTIONAL,
-        seq-data        SEQUENCE OF Seq-literal OPTIONAL
+        seq-map         SEQUENCE OF ID2S-Sequence-Piece OPTIONAL,
+        seq-data        SEQUENCE OF ID2S-Sequence-Piece OPTIONAL
+}
+
+
+ID2S-Sequence-Piece ::= SEQUENCE {
+        start           INTEGER,  -- start position on sequence
+        data            SEQUENCE OF Seq-literal
 }
 
 
