@@ -79,23 +79,24 @@ CIndentingStreambuf::CIndentingStreambuf(CNcbiStreambuf* real_buf,
     m_ISB = dynamic_cast<CIndentingStreambuf*>(real_buf);
     if (m_ISB != 0) { // optimize
         m_ISB->overflow();
-        m_Buf    = m_ISB->m_Buf;
-        m_Indent = m_ISB->m_Indent;        
+        m_Buf        = m_ISB->m_Buf;
+        m_Indent     = m_ISB->m_Indent;
+        m_NeedIndent = m_ISB->m_NeedIndent;
     } else {
-        m_Buf = real_buf;
+        m_Buf        = real_buf;
+        m_NeedIndent = true;
     }
     m_Indent.append(indent, ' ');
     setp(m_PutArea, m_PutArea + sizeof(m_PutArea));
-    xsputn(m_Indent.data(), m_Indent.size()); // assume at start of line now
 }
 
 
 CIndentingStreambuf::~CIndentingStreambuf()
 {
     overflow();
-    if (m_NeedIndent  &&  m_ISB) {
+    if (m_ISB) {
         // make sure not to lose the information
-        m_ISB->m_NeedIndent = true;
+        m_ISB->m_NeedIndent = m_NeedIndent;
     }
 }
 
@@ -197,6 +198,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/02/24 18:10:55  ucko
+* Avoid spurious indentation in some cases.
+*
 * Revision 1.1  2003/02/14 16:16:57  ucko
 * Introduce CIndentingOstream, and the underlying CIndentingStreambuf.
 *
