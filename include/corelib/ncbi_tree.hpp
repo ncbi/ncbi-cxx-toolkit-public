@@ -806,7 +806,7 @@ void CTreeNode<TValue>::RemoveAllSubNodes(EDeletePolicy del)
 }
 
 template<class TValue>
-const CTreeNode<TValue>::TTreeType* CTreeNode<TValue>::GetRoot() const
+const typename CTreeNode<TValue>::TTreeType* CTreeNode<TValue>::GetRoot() const
 {
     const TTreeType* node_ptr = this;
     while (true) {
@@ -820,7 +820,7 @@ const CTreeNode<TValue>::TTreeType* CTreeNode<TValue>::GetRoot() const
 }
 
 template<class TValue>
-CTreeNode<TValue>::TTreeType* CTreeNode<TValue>::GetRoot()
+typename CTreeNode<TValue>::TTreeType* CTreeNode<TValue>::GetRoot()
 {
     TTreeType* node_ptr = this;
     while (true) {
@@ -943,6 +943,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/04/09 15:27:30  gorelenk
+ * Added missed 'typename' (s) .
+ *
  * Revision 1.28  2004/04/09 14:25:56  kuznets
  * + TreeReRoot, improved internal data integrity diagnostics
  *
