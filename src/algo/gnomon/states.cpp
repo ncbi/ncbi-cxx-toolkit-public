@@ -42,111 +42,85 @@ bool Lorentz::Init(CNcbiIstream& from, const string& label)
 {
     string s;
     from >> s;
-    if (s != label) {
-        return false;
-    }
+    if(s != label) return false;
 
     from >> s;
-    if (s != "A:") {
-        return false;
-    }
-    if ( !(from >> A) ) {
-        return false;
-    }
+    if(s != "A:") return false;
+    if(!(from >> A)) return false;
 
     from >> s;
-    if (s != "L:") {
-        return false;
-    }
-    if ( !(from >> L) ) {
-        return false;
-    }
+    if(s != "L:") return false;
+    if(!(from >> L)) return false;
 
     from >> s;
-    if (s != "MinL:") {
-        return false;
-    }
-    if ( !(from >> minl) ) {
-        return false;
-    }
+    if(s != "MinL:") return false;
+    if(!(from >> minl)) return false;
 
     from >> s;
-    if (s != "MaxL:") {
-        return false;
-    }
-    if ( !(from >> maxl) ) {
-        return false;
-    }
+    if(s != "MaxL:") return false;
+    if(!(from >> maxl)) return false;
 
     from >> s;
-    if (s != "Step:") {
-        return false;
-    }
-    if ( !(from >> step) ) {
-        return false;
-    }
+    if(s != "Step:") return false;
+    if(!(from >> step)) return false;
 
-    int num = (maxl - 1) / step + 1;
-    try {
+    int num = (maxl-1)/step+1;
+    try
+    {
         score.resize(num,0);
         clscore.resize(num,0);
     }
-    catch(bad_alloc&) {
-        NCBI_THROW(CGnomonException, eGenericError,
-                   "GNOMON: out of memory in Lorentz");
+    catch(bad_alloc)
+    {
+        cerr << "No memory in Lorentz\n";
+        exit(1);
     }
 
     int i = 0;
-    while (from >> score[i]) {
-        if ((i + 1) * step < minl) {
-            score[i] = 0;
-        }
+    while(from >> score[i]) 
+    {
+        if((i+1)*step < minl) score[i] = 0;
         i++;
     }
     from.clear();
-    while (i < num) {
-        score[i] = A / (L * L+pow((i + 0.5) * step,2));
+    while(i < num) 
+    {
+        score[i] = A/(L*L+pow((i+0.5)*step,2));
         i++;
     }
 
     double sum = 0;
     avlen = 0;
-    for (int l = minl;  l <= maxl;  ++l) {
-        double scr = score[(l - 1) / step];
+    for(int l = minl; l <= maxl; ++l) 
+    {
+        double scr = score[(l-1)/step];
         sum += scr;
-        avlen += l * scr;
+        avlen += l*scr;
     }
 
     avlen /= sum;
-    for (int i = 0;  i < num;  ++i) {
-        score[i] /= sum;
-    }
+    for(int i = 0; i < num; ++i) score[i] /= sum;
 
-    clscore[num - 1] = 0;
-    for (int i = num - 2;  i >= 0;  --i) {
-        clscore[i] = clscore[i + 1]+score[i + 1]*step;
-    }
+    clscore[num-1] = 0;
+    for(int i = num-2; i >= 0; --i) clscore[i] = clscore[i+1]+score[i+1]*step;
 
-    for (int i = 0;  i < num;  ++i) {
-        score[i] = (score[i] == 0) ? BadScore : log(score[i]);
-    }
+    for(int i = 0; i < num; ++i) score[i] = (score[i] == 0) ? BadScore : log(score[i]);
 
     return true;
 }
 
-
 double Lorentz::Through(int seqlen) const
 {
     double through = 0;
-    for (int l = seqlen + 1;  l <= MaxLen();  ++l) {
-        int i = (l - 1) / step;
-        int delx = min((i + 1) * step,MaxLen()) - l;
-        double dely = (i == 0 ? 1 : clscore[i - 1]) - clscore[i];
-        through += dely / step * delx + clscore[i];
+    for(int l = seqlen+1; l <= MaxLen(); ++l) 
+    {
+        int i = (l-1)/step;
+        int delx = min((i+1)*step,MaxLen())-l;
+        double dely = (i == 0 ? 1 : clscore[i-1])-clscore[i];
+        through += dely/step*delx+clscore[i];
     }
     return through;
 }
-
 
 double Exon::firstphase[3], Exon::internalphase[3][3];
 Lorentz Exon::firstlen, Exon::internallen, Exon::lastlen, Exon::singlelen; 
@@ -155,53 +129,39 @@ bool Exon::initialised = false;
 void Exon::Init(const string& file, int cgcontent)
 {
     string label = "[Exon]";
-    CNcbiIfstream from(file.c_str());
+    ifstream from(file.c_str());
     pair<int,int> cgrange = FindContent(from,label,cgcontent);
-    if (cgrange.first < 0) {
-        Error(label+" 1");
-    }
+    if(cgrange.first < 0) Error(label+" 1");
 
     string str;
     from >> str;
-    if (str != "FirstExonPhase:") {
-        Error(label+" 2");
-    }
-    for (int i = 0;  i < 3;  ++i) {
+    if(str != "FirstExonPhase:") Error(label+" 2");
+    for(int i = 0; i < 3; ++i) 
+    {
         from >> firstphase[i];
-        if ( !from ) {
-            Error(label);
-        }
+        if(!from) Error(label);
         firstphase[i] = log(firstphase[i]);
     }
 
     from >> str;
-    if (str != "InternalExonPhase:") {
-        Error(label+" 3");
-    }
-    for (int i = 0;  i < 3;  ++i) {
-        for (int j = 0;  j < 3;  ++j) {
+    if(str != "InternalExonPhase:") Error(label+" 3");
+    for(int i = 0; i < 3; ++i)
+    {
+        for(int j = 0; j < 3; ++j) 
+        {
             from >> internalphase[i][j];
-            if ( !from ) {
-                Error(label+" 4");
-            }
+            if(!from) Error(label+" 4");
             internalphase[i][j] = log(internalphase[i][j]);
         }
     }
 
-    if ( !firstlen.Init(from,"FirstExonDistribution:") ) {
-        Error(label+" 5");
-    }
-    if ( !internallen.Init(from,"InternalExonDistribution:") ) {
-        Error(label+" 6");
-    }
-    if ( !lastlen.Init(from,"LastExonDistribution:") ) {
-        Error(label+" 7");
-    }
-    if ( !singlelen.Init(from,"SingleExonDistribution:") ) {
-        Error(label+" 8");
-    }
+    if(!firstlen.Init(from,"FirstExonDistribution:")) Error(label+" 5");
+    if(!internallen.Init(from,"InternalExonDistribution:")) Error(label+" 6");
+    if(!lastlen.Init(from,"LastExonDistribution:")) Error(label+" 7");
+    if(!singlelen.Init(from,"SingleExonDistribution:")) Error(label+" 8");
 
     initialised = true;
+    from.close();
 }
 
 
@@ -213,48 +173,38 @@ bool Intron::initialised = false;
 void Intron::Init(const string& file, int cgcontent, int seqlen)
 {
     string label = "[Intron]";
-    CNcbiIfstream from(file.c_str());
+    ifstream from(file.c_str());
     pair<int,int> cgrange = FindContent(from,label,cgcontent);
-    if (cgrange.first < 0) {
-        Error(label);
-    }
+    if(cgrange.first < 0) Error(label);
 
     string str;
     from >> str;
-    if (str != "InitP:") {
-        Error(label);
-    }
+    if(str != "InitP:") Error(label);
     double initp, phasep[3];
     from >> initp >> phasep[0] >> phasep[1] >> phasep[2];
-    if ( !from ) {
-        Error(label);
-    }
-    initp = initp / 2;      // two strands
+    if(!from) Error(label);
+    initp = initp/2;      // two strands
 
     from >> str;
-    if (str != "toTerm:") {
-        Error(label);
-    }
+    if(str != "toTerm:") Error(label);
     double toterm;
     from >> toterm;
-    if ( !from ) {
-        Error(label);
-    }
+    if(!from) Error(label);
     lnTerminal = log(toterm);
-    lnInternal = log(1 - toterm);
+    lnInternal = log(1-toterm);
 
-    if ( !intronlen.Init(from,"IntronDistribution:") ) {
-        Error(label);
-    }
+    if(!intronlen.Init(from,"IntronDistribution:")) Error(label);
 
     double lnthrough = intronlen.Through(seqlen);
     lnthrough = (lnthrough == 0) ? BadScore : log(lnthrough);
-    for (int i = 0;  i < 3;  ++i) {
-        lnDen[i] = log(initp * phasep[i]/intronlen.AvLen());
+    for(int i = 0; i < 3; ++i)
+    {
+        lnDen[i] = log(initp*phasep[i]/intronlen.AvLen());
         lnThrough[i] = (lnthrough == BadScore) ? BadScore : lnDen[i]+lnthrough;
     }
 
     initialised = true;
+    from.close();
 }
 
 
@@ -267,47 +217,37 @@ bool Intergenic::initialised = false;
 void Intergenic::Init(const string& file, int cgcontent, int seqlen)
 {
     string label = "[Intergenic]";
-    CNcbiIfstream from(file.c_str());
+    ifstream from(file.c_str());
     pair<int,int> cgrange = FindContent(from,label,cgcontent);
-    if (cgrange.first < 0) {
-        Error(label);
-    }
+    if(cgrange.first < 0) Error(label);
 
     string str;
     from >> str;
-    if (str != "InitP:") {
-        Error(label);
-    }
+    if(str != "InitP:") Error(label);
     double initp;
     from >> initp;
-    if ( !from ) {
-        Error(label);
-    }
-    initp = initp / 2;      // two strands
+    if(!from) Error(label);
+    initp = initp/2;      // two strands
 
     from >> str;
-    if (str != "toSingle:") {
-        Error(label);
-    }
+    if(str != "toSingle:") Error(label);
     double tosingle;
     from >> tosingle;
-    if ( !from ) {
-        Error(label);
-    }
+    if(!from) Error(label);
     lnSingle = log(tosingle);
-    lnMulti = log(1 - tosingle);
+    lnMulti = log(1-tosingle);
 
-    if ( !intergeniclen.Init(from,"IntergenicDistribution:") ) {
-        Error(label);
-    }
+    if(!intergeniclen.Init(from,"IntergenicDistribution:")) Error(label);
 
     double lnthrough = intergeniclen.Through(seqlen);
     lnthrough = (lnthrough == 0) ? BadScore : log(lnthrough);
-    lnDen = log(initp / intergeniclen.AvLen());
-    lnThrough = (lnthrough == BadScore) ? BadScore : lnDen + lnthrough;
+    lnDen = log(initp/intergeniclen.AvLen());
+    lnThrough = (lnthrough == BadScore) ? BadScore : lnDen+lnthrough;
 
     initialised = true;
+    from.close();
 }
+
 
 
 END_NCBI_SCOPE
@@ -315,6 +255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/28 12:33:19  dicuccio
+ * Sync with Sasha's working tree
+ *
  * Revision 1.3  2004/05/21 21:41:03  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -37,18 +37,18 @@
 
 BEGIN_NCBI_SCOPE
 
-inline double AddProbabilities(double score1, double score2)
+inline double AddProbabilities(double scr1, double scr2)
 {
-    if(score1 == BadScore) return score2;
-    else if(score2 == BadScore) return score1;
-    else if(score1 >= score2)  return score1+log(1+exp(score2-score1));
-    else return score2+log(1+exp(score1-score2));
+    if(scr1 == BadScore) return scr2;
+    else if(scr2 == BadScore) return scr1;
+    else if(scr1 >= scr2)  return scr1+log(1+exp(scr2-scr1));
+    else return scr2+log(1+exp(scr1-scr2));
 }
 
-inline double AddScores(double score1, double score2)
+inline double AddScores(double scr1, double scr2)
 {
-    if(score1 == BadScore || score2 == BadScore) return BadScore;
-    else return score1+score2;
+    if(scr1 == BadScore || scr2 == BadScore) return BadScore;
+    else return scr1+scr2;
 }
 
 template<class State> inline void EvaluateInitialScore(State& r)
@@ -103,13 +103,10 @@ inline double Lorentz::ClosingScore(int l) const
 
 }
 
-inline HMM_State::HMM_State(int strn, int point) : strand(strn), stop(point), 
-leftstate(0), score(BadScore), terminal(0) 
+inline HMM_State::HMM_State(int strn, int point) : stop(point), strand(strn), 
+score(BadScore), leftstate(0), terminal(0) 
 {
-    if(seqscr == 0) {
-        NCBI_THROW(CGnomonException, eGenericError,
-                   "GNOMON: seqscr is not initialised in HMM_State");
-    }
+    if(seqscr == 0) { cerr << "seqscr is not initialised in HMM_State\n"; exit(1); }
 }
 
 inline int HMM_State::MinLen() const
@@ -445,13 +442,6 @@ inline bool Intergenic::OpenRgn() const
     return seqscr->OpenIntergenicRegion(Start(),Stop());
 }
 
-inline bool Intergenic::InAlignment() const
-{
-    if(NoRightEnd() || NoLeftEnd()) return false;     // takes care of alignment extending to the edge
-    else if(isPlus()) return seqscr->InAlignment(Start(),Stop()-3);   // start codon is included in intergenic
-    else return seqscr->InAlignment(Start()+3,Stop());   // start codon is included in intergenic
-}
-
 inline double Intergenic::RgnScore() const
 {
     return seqscr->IntergenicScore(RegionStart(),RegionStop(),Strand());
@@ -490,11 +480,15 @@ inline double Intergenic::BranchScore(const SingleExon& next) const
     else return BadScore;
 }
 
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/07/28 12:33:19  dicuccio
+ * Sync with Sasha's working tree
+ *
  * Revision 1.1  2003/10/24 15:07:25  dicuccio
  * Initial revision
  *

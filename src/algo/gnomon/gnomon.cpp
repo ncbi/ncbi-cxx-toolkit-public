@@ -312,7 +312,7 @@ void CGnomon::Run(void)
                 mrna_vec.back().second = b;
             } 
 
-            if (exon.Type() == ExonData::Cds) {
+            if (exon.Type().find("Cds") == 0) {
                 cds_vec.push_back(IPair(a,b));
             }
         }
@@ -378,6 +378,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/07/28 12:33:19  dicuccio
+ * Sync with Sasha's working tree
+ *
  * Revision 1.6  2004/06/17 00:47:03  ucko
  * Remember to #include <stdio.h> due to use of sprintf().
  * Indent with spaces, not tabs.

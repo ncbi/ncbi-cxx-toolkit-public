@@ -46,7 +46,8 @@
 BEGIN_NCBI_SCOPE
 
 
-typedef vector<char> CVec;
+typedef char SeqType;
+typedef vector<SeqType> CVec;
 typedef vector<int> IVec;
 typedef vector<double> DVec;
 
@@ -56,6 +57,7 @@ struct IPair : pair<int,int>
     bool operator<(const IPair& p) const { return second < p.first; }
     bool operator>(const IPair& p) const { return first > p.second; }
     bool Intersect(const IPair& p) const { return !(*this < p || *this > p); }
+    bool Include(const IPair& p) const { return (p.first >= first && p.second <= second); }
     bool Include(int i) const { return (i >= first && i <= second); }
 };
 
@@ -65,21 +67,24 @@ enum { Plus, Minus };
 extern const double BadScore;
 extern const double LnHalf;
 extern const double LnThree;
-extern const int toMinus[5];
+extern const SeqType toMinus[5];
 extern const int TooFarLen;
 extern const char* aa_table;
 
 template<int order> class MarkovChain
 {
 public:
-    void InitScore(CNcbiIfstream& from);
-    double Score(const int* seq) const { return next[*(seq-order)].Score(seq); }
-private:
     typedef MarkovChain<order> Type;
-    friend class MarkovChain<order+1>;
-    void Init(CNcbiIfstream& from);
+    void InitScore(ifstream& from);
+    double& Score(const SeqType* seq) { return next[*(seq-order)].Score(seq); }
+    const double& Score(const SeqType* seq) const { return next[*(seq-order)].Score(seq); }
+    MarkovChain<order-1>& SubChain(int i) { return next[i]; }
     void Average(Type& mc0, Type& mc1, Type& mc2, Type& mc3);
     void toScore();
+
+private:
+    friend class MarkovChain<order+1>;
+    void Init(ifstream& from);
 
     MarkovChain<order-1> next[5];
 };
@@ -87,14 +92,16 @@ private:
 template<> class MarkovChain<0>
 {
 public:
-    void InitScore(CNcbiIfstream& from);
-    double Score(const int* seq) const { return score[*seq]; }
-private:
     typedef MarkovChain<0> Type;
-    friend class MarkovChain<1>;
-    void Init(CNcbiIfstream& from);
+    void InitScore(ifstream& from);
+    double& Score(const SeqType* seq) { return score[*seq]; }
+    const double& Score(const SeqType* seq) const { return score[*seq]; }
+    double& SubChain(int i) { return score[i]; }
     void Average(Type& mc0, Type& mc1, Type& mc2, Type& mc3);
     void toScore();
+private:
+    friend class MarkovChain<1>;
+    void Init(ifstream& from);
 
     double score[5];
 };
@@ -102,8 +109,8 @@ private:
 template<int order> class MarkovChainArray
 {
 public:
-    void InitScore(int l, CNcbiIfstream& from);
-    double Score(const int* seq) const;
+    void InitScore(int l, ifstream& from);
+    double Score(const SeqType* seq) const;
 private:
     int length;
     vector< MarkovChain<order> > mc;
@@ -115,10 +122,8 @@ public:
     virtual ~InputModel() = 0;
 
 protected:
-    static void Error(const string& label) {
-        NCBI_THROW(CGnomonException, eGenericError, label);
-    }
-    static pair<int,int> FindContent(CNcbiIfstream& from, const string& label, int cgcontent);
+    static void Error(const string& label) { cerr << label << " initialisation error\n"; exit(1); }
+    static pair<int,int> FindContent(ifstream& from, const string& label, int cgcontent);
 };
 
 //Terminal's score is located on the last position of the left state
@@ -129,18 +134,19 @@ public:
     int InIntron() const { return inintron; }
     int Left() const { return left; }
     int Right() const { return right; }
-    virtual double Score(const IVec& seq, int i) const = 0;
+    virtual double Score(const CVec& seq, int i) const = 0;
     ~Terminal() {}
 
 protected:
     int inexon, inintron, left, right;
 };
 
+
 class MDD_Donor : public Terminal
 {
 public:
     MDD_Donor(const string& file, int cgcontent);
-    double Score(const IVec& seq, int i) const;
+    double Score(const CVec& seq, int i) const;
 
 private:
     IVec position, consensus;
@@ -151,7 +157,7 @@ template<int order> class WAM_Donor : public Terminal
 {
 public:
     WAM_Donor(const string& file, int cgcontent);
-    double Score(const IVec& seq, int i) const;
+    double Score(const CVec& seq, int i) const;
 
 private:
     MarkovChainArray<order> matrix;
@@ -161,7 +167,7 @@ template<int order> class WAM_Acceptor : public Terminal
 {
 public:
     WAM_Acceptor(const string& file, int cgcontent);
-    double Score(const IVec& seq, int i) const;
+    double Score(const CVec& seq, int i) const;
 
 private:
     MarkovChainArray<order> matrix;
@@ -172,7 +178,7 @@ class WMM_Start : public Terminal
 {
 public:
     WMM_Start(const string& file, int cgcontent);
-    double Score(const IVec& seq, int i) const;
+    double Score(const CVec& seq, int i) const;
 
 private:
     MarkovChainArray<0> matrix;
@@ -182,7 +188,7 @@ class WAM_Stop : public Terminal
 {
 public:
     WAM_Stop(const string& file, int cgcontent);
-    double Score(const IVec& seq, int i) const;
+    double Score(const CVec& seq, int i) const;
 
 private:
     MarkovChainArray<1> matrix;
@@ -191,7 +197,7 @@ private:
 class CodingRegion : public InputModel
 {
 public:
-    virtual double Score(const IVec& seq, int i, int codonshift) const = 0;
+    virtual double Score(const CVec& seq, int i, int codonshift) const = 0;
     ~CodingRegion() {}
 };
 
@@ -199,7 +205,7 @@ template<int order> class MC3_CodingRegion : public CodingRegion
 {
 public:
     MC3_CodingRegion(const string& file, int cgcontent);
-    double Score(const IVec& seq, int i, int codonshift) const;
+    double Score(const CVec& seq, int i, int codonshift) const;
 
 private:
     MarkovChain<order> matrix[3];
@@ -208,7 +214,7 @@ private:
 class NonCodingRegion : public InputModel
 {
 public:
-    virtual double Score(const IVec& seq, int i) const = 0;
+    virtual double Score(const CVec& seq, int i) const = 0;
     ~NonCodingRegion() {}
 };
 
@@ -216,7 +222,7 @@ template<int order> class MC_NonCodingRegion : public NonCodingRegion
 {
 public:
     MC_NonCodingRegion(const string& file, int cgcontent);
-    double Score(const IVec& seq, int i) const;
+    double Score(const CVec& seq, int i) const;
 
 private:
     MarkovChain<order> matrix;
@@ -225,7 +231,7 @@ private:
 class NullRegion : public NonCodingRegion
 {
 public:
-    double Score(const IVec& seq, int i) const { return 0; };
+    double Score(const CVec& seq, int i) const { return 0; };
 };
 
 class AlignVec : public vector<IPair>
@@ -236,49 +242,61 @@ public:
 
     enum { Prot, EST, mRNA, RefSeq, RefSeqBest, Wall};
     AlignVec(int s = Plus, int i = 0, int t = EST, IPair cdl = IPair(-1,-1)) : type(t), strand(s), id(i), 
-    limits(numeric_limits<int>::max(),0), cds_limits(cdl), score(BadScore) {}
+    limits(numeric_limits<int>::max(),0), cds_limits(cdl), score(BadScore), full_cds(false) {}
     void Insert(IPair p);
     void Erase(int i);
     IPair Limits() const { return limits; }
-    IPair CdsLimits() const { return cds_limits; }
+    IPair CdsLimits() const { return cds_limits; }   // notincluding start/stop
     void SetCdsLimits(IPair p) { cds_limits = p; }
+    IPair RealCdsLimits() const;     // including start/stop
     bool Intersect(const AlignVec& a) const 
     {
         return limits.Intersect(a.limits); 
     }
+    bool IdenticalAlign(const AlignVec& a) const { return *this == a; }
+    bool SubAlign(const AlignVec& a) const;
+    bool MutualExtension(const AlignVec& a) const;
     void SetStrand(int s) { strand = s; }
     int Strand() const { return strand; }
     void SetType(int t) { type = t; }
     int Type() const { return type; }
     void SetID(int i) { id = i; }
     int ID() const { return id; }
+    //        const set<string>& Evidence() const { return evidence; }
+    //        set<string>& Evidence() { return evidence; }
     bool operator<(const AlignVec& a) const { return limits < a.limits; }
     void Init();
     void SetScore(double s) { score = s; }
     double Score() const { return score; }
-    void Extend(const AlignVec& a); 
+    void Extend(const AlignVec& a);
+    int AlignLen() const ;
+    int CdsLen() const ;
+    bool FullCds() const { return full_cds; }
+    void SetFullCds(bool f) { full_cds = f; }
 
 private:
     int type, strand, id;
     IPair limits, cds_limits;
     double score;
+    bool full_cds;
+    //        set<string> evidence;
 };
 
-CNcbiIstream& operator>>(CNcbiIstream& s, AlignVec& a);
-CNcbiOstream& operator<<(CNcbiOstream& s, const AlignVec& a);
+istream& operator>>(istream& s, AlignVec& a);
+ostream& operator<<(ostream& s, const AlignVec& a);
 
 
-class CCluster : public list<AlignVec>
+class Cluster : public list<AlignVec>
 {
 public:
     typedef list<AlignVec>::iterator It;
     typedef list<AlignVec>::const_iterator ConstIt;
-    CCluster(int f = numeric_limits<int>::max(), int s = 0, int t = AlignVec::Prot) : limits(f,s), type(t) {}
+    Cluster(int f = numeric_limits<int>::max(), int s = 0, int t = AlignVec::Prot) : limits(f,s), type(t) {}
     void Insert(const AlignVec& a);
-    void Insert(const CCluster& c);
+    void Insert(const Cluster& c);
     IPair Limits() const { return limits; }
     int Type() const { return type; }
-    bool operator<(const CCluster& c) const { return limits < c.limits; }
+    bool operator<(const Cluster& c) const { return limits < c.limits; }
     void Init(int first, int second, int t);
 
 private:
@@ -286,19 +304,19 @@ private:
     int type;
 };
 
-CNcbiIstream& operator>>(CNcbiIstream& s, CCluster& c);
-CNcbiOstream& operator<<(CNcbiOstream& s, const CCluster& c);
+istream& operator>>(istream& s, Cluster& c);
+ostream& operator<<(ostream& s, const Cluster& c);
 
 
-class CClusterSet : public set<CCluster>
+class CClusterSet : public set<Cluster>
 {
 public:
-    typedef set<CCluster>::iterator It;
-    typedef set<CCluster>::const_iterator ConstIt;
+    typedef set<Cluster>::iterator It;
+    typedef set<Cluster>::const_iterator ConstIt;
     CClusterSet() {}
     CClusterSet(string c) : contig(c) {}
     void InsertAlignment(const AlignVec& a);
-    void InsertCluster(CCluster c);
+    void InsertCluster(Cluster c);
     string Contig() const { return contig; }
     void Init(string cnt);
 
@@ -306,8 +324,8 @@ private:
     string contig;
 };
 
-CNcbiIstream& operator>>(CNcbiIstream& s, CClusterSet& cls);
-CNcbiOstream& operator<<(CNcbiOstream& s, const CClusterSet& cls);
+istream& operator>>(istream& s, CClusterSet& cls);
+ostream& operator<<(ostream& s, const CClusterSet& cls);
 
 
 class CFrameShiftInfo
@@ -326,7 +344,7 @@ private:
     char insert_value;
 };
 
-typedef vector<CFrameShiftInfo> TFrameShifts;
+typedef vector<CFrameShiftInfo> FrameShifts;
 
 
 class SeqScores
@@ -335,7 +353,7 @@ public:
     SeqScores (Terminal& a, Terminal& d, Terminal& stt, Terminal& stp, 
                CodingRegion& cr, NonCodingRegion& ncr, NonCodingRegion& ing, 
                CVec& sequence, int from, int to, const CClusterSet& cls, 
-               const TFrameShifts& initial_fshifts,	bool repeats, bool leftwall, 
+               const FrameShifts& initial_fshifts,	bool repeats, bool leftwall, 
                bool rightwall, string cntg);
 
     int Shift() const { return shift; }
@@ -352,7 +370,7 @@ public:
     Terminal& Start() const { return start; }
     Terminal& Stop() const { return stop; }
     const CClusterSet& Alignments() const { return cluster_set; }
-    const TFrameShifts& SeqFrameShifts() const { return fshifts; }
+    const FrameShifts& SeqFrameShifts() const { return fshifts; }
     string Contig() const { return contig; }
     bool StopInside(int a, int b, int strand, int frame) const;
     bool OpenCodingRegion(int a, int b, int strand, int frame) const;
@@ -360,17 +378,17 @@ public:
     bool OpenNonCodingRegion(int a, int b, int strand) const;
     double NonCodingScore(int a, int b, int strand) const;
     bool OpenIntergenicRegion(int a, int b) const;
-    bool InAlignment(int a, int b) const;
+    int LeftAlignmentBoundary(int b) const { return inalign[b]; }
     double IntergenicScore(int a, int b, int strand) const;
-    int SeqLen() const { return seq[0].size(); }
+    int SeqLen() const { return (int)seq[0].size(); }
     bool SplittedStop(int id, int ia, int strand, int ph) const 
-    { return (dsplit[strand][ph][id]&asplit[strand][ph][ia]) ? true : false; }
+    { return (dsplit[strand][ph][id]&asplit[strand][ph][ia]) != 0; }
     bool isStart(int i, int strand) const;
     bool isStop(int i, int strand) const;
     bool isAG(int i, int strand) const;
     bool isGT(int i, int strand) const;
     bool isConsensusIntron(int i, int j, int strand) const;
-    const int* SeqPtr(int i, int strand) const;
+    const SeqType* SeqPtr(int i, int strand) const;
     int SeqMap(int i, bool forwrd) const;  // maps new coordinates to old coordinates,
     // if insertion gives next or previous point
     // depending on forwrd
@@ -379,12 +397,14 @@ public:
     // depending on forwrd
 
 private:
+    SeqScores& operator=(const SeqScores&);
     Terminal &acceptor, &donor, &start, &stop;
     CodingRegion &cdr;
     NonCodingRegion &ncdr, &intrg;
     const CClusterSet& cluster_set;
-    TFrameShifts fshifts;
-    IVec seq[2], laststop[2][3], notinexon[2][3], notinintron[2], notining;
+    FrameShifts fshifts;
+    CVec seq[2];
+    IVec laststop[2][3], notinexon[2][3], notinintron[2], notining;
     IVec seq_map, rev_seq_map;
     DVec ascr[2], dscr[2], sttscr[2], stpscr[2], ncdrscr[2], ingscr[2], cdrscr[2][3];
     IVec asplit[2][2], dsplit[2][2];
@@ -427,7 +447,7 @@ template<class State> StateScores CalcStateScores(const State& st)
 class Lorentz
 {
 public:
-    bool Init(CNcbiIstream& from, const string& label);
+    bool Init(istream& from, const string& label);
     double Score(int l) const { return score[(l-1)/step]; }
     double ClosingScore(int l) const;
     int MinLen() const { return minl; }
@@ -452,7 +472,6 @@ public:
     int MaxLen() const { return numeric_limits<int>::max(); };
     int MinLen() const;
     bool StopInside() const { return false; }
-    bool InAlignment() const { return false; }
     int Strand() const { return strand; }
     bool isPlus() const { return (strand == Plus); }
     bool isMinus() const { return (strand == Minus); }
@@ -460,19 +479,19 @@ public:
     int Start() const { return leftstate ? leftstate->stop+1 : 0; }
     bool NoRightEnd() const { return stop < 0; }
     bool NoLeftEnd() const { return leftstate == 0; }
-    int Stop() const  { return NoRightEnd() ? seqscr->SeqLen()-1 : stop; }
+    int Stop() const  { return NoRightEnd() ? (int)seqscr->SeqLen()-1 : stop; }
     int RegionStart() const;
     int RegionStop() const;
     virtual StateScores GetStateScores() const = 0;
     virtual string GetStateName() const = 0;
     static void SetSeqScores(const SeqScores& s) { seqscr = &s; }
+    static const SeqScores* GetSeqScores() { return seqscr; }
 
 protected:
     int stop, strand;
     double score;
     const HMM_State* leftstate;
     const Terminal* terminal;
-
     static const SeqScores* seqscr;
 };
 
@@ -485,7 +504,7 @@ public:
     static void Init(const string& file, int cgcontent);
     Exon(int strn, int point, int ph) : HMM_State(strn,point), phase(ph), 
     prevexon(0), mscore(BadScore) {}
-    int Phase() const { return phase; }
+    int Phase() const { return phase; }  // frame of right exon end relatively start-codon
     bool StopInside() const;
     bool OpenRgn() const;
     double RgnScore() const;
@@ -579,6 +598,7 @@ public:
     ~Intron() {}
     Intron(int strn, int ph, int point);
     static int MinIntron() { return intronlen.MinLen(); }   // used for introducing frameshifts
+    static int MaxIntron() { return intronlen.MaxLen(); }
     int MinLen() const { return intronlen.MinLen(); }
     int MaxLen() const { return intronlen.MaxLen(); }
     int Phase() const { return phase; }
@@ -624,7 +644,6 @@ public:
     double BranchScore(const HMM_State& next) const { return BadScore; }
     double BranchScore(const FirstExon& next) const; 
     double BranchScore(const SingleExon& next) const;
-    bool InAlignment() const; 
     StateScores GetStateScores() const { return CalcStateScores(*this); }
     string GetStateName() const { return "Intergenic"; }
 
@@ -649,13 +668,13 @@ class Parse
 public:
     Parse(const SeqScores& ss);
     const HMM_State* Path() const { return path; }
-    int PrintGenes(CNcbiOstream& to = cout, CNcbiOstream& toprot = cout,
-                   bool complete = false) const;
+    int PrintGenes(ostream& to = cout, ostream& toprot = cout, bool complete = false) const;
     void PrintInfo() const;
     list<Gene> GetGenes() const;
-    //typedef list<Gene>::iterator GenIt;
+    typedef list<Gene>::iterator GenIt;
 
 private:
+    Parse& operator=(const Parse&);
     const SeqScores& seqscr;
     const HMM_State* path;
 
@@ -671,20 +690,22 @@ class ExonData
 {
     friend list<Gene> Parse::GetGenes() const;
 public:
-    ExonData(int stt, int stp, int tp) : start(stt), stop(stp), type(tp) {} 
+    ExonData(int stt, int stp, int lf, int rf, string tp) : start(stt), stop(stp), lframe(lf), rframe(rf), type(tp) {} 
     int Start() const { return start; }
     int Stop() const { return stop; }
-    int Type() const { return type; }
+    string Type() const { return type; }
+    int lFrame() const { return lframe; }
+    int rFrame() const { return rframe; }
     const set<int>& ChainID() const { return chain_id; }
     const set<int>& ProtID() const { return prot_id; }
-    const TFrameShifts& ExonFrameShifts() const { return fshifts; }
+    const FrameShifts& ExonFrameShifts() const { return fshifts; }
     bool Identical(const ExonData& ed) const { return (ed.start == start && ed.stop == stop); }
     bool operator<(const ExonData& ed) const { return (stop < ed.start); }
-    enum {Cds, Utr};
 private:
-    int start, stop, type;
+    int start, stop, lframe, rframe;
+    string type;
     set<int> chain_id, prot_id;
-    TFrameShifts fshifts;
+    FrameShifts fshifts;
 };
 
 class Gene : public vector<ExonData>
@@ -692,17 +713,17 @@ class Gene : public vector<ExonData>
     friend list<Gene> Parse::GetGenes() const;
 public:
     Gene(int s, bool l = true, bool r = true, int csf = 0) : 
-        strand(s), leftend(l), rightend(r), cds_shift(csf) {}
+        strand(s), cds_shift(csf), leftend(l), rightend(r) {}
     int Strand() const { return strand; }
-    int CDS_Shift() const { return cds_shift; }
-    const IVec& CDS() const { return cds; }
+    int CDS_Shift() const { return cds_shift; }   // first complete codon for partial CDS
+    const CVec& CDS() const { return cds; }
     bool LeftComplete() const { return leftend; }
     bool RightComplete() const { return rightend; }
     bool Complete() const { return (leftend && rightend); }
 private:
     int strand, cds_shift;
     bool leftend, rightend;
-    IVec cds;
+    CVec cds;
 };
 
 void LogicalCheck(const HMM_State& st, const SeqScores& ss);
@@ -716,6 +737,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/07/28 12:33:18  dicuccio
+ * Sync with Sasha's working tree
+ *
  * Revision 1.2  2003/11/06 15:02:21  ucko
  * Use iostream interface from ncbistre.hpp for GCC 2.95 compatibility.
  *

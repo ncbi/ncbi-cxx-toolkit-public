@@ -38,13 +38,13 @@
 BEGIN_NCBI_SCOPE
 
 
-template<int order> void MarkovChain<order>::InitScore(CNcbiIfstream& from)
+template<int order> void MarkovChain<order>::InitScore(ifstream& from)
 {
     Init(from);
     if(from) toScore();
 }
 
-template<int order> void MarkovChain<order>::Init(CNcbiIfstream& from)
+template<int order> void MarkovChain<order>::Init(ifstream& from)
 {
     next[nA].Init(from);
     next[nC].Init(from);
@@ -71,7 +71,7 @@ template<int order> void MarkovChain<order>::toScore()
     next[nN].toScore();
 }
 
-template<int order> inline double MarkovChainArray<order>::Score(const int* seq) const
+template<int order> inline double MarkovChainArray<order>::Score(const SeqType* seq) const
 {
     double score = 0;
     for(int i = 0; i < length; ++i)
@@ -83,7 +83,7 @@ template<int order> inline double MarkovChainArray<order>::Score(const int* seq)
     return score;
 }
 
-template<int order> void MarkovChainArray<order>::InitScore(int l, CNcbiIfstream& from)
+template<int order> void MarkovChainArray<order>::InitScore(int l, ifstream& from)
 {
     length = l;
     mc.resize(length);
@@ -91,12 +91,13 @@ template<int order> void MarkovChainArray<order>::InitScore(int l, CNcbiIfstream
 }
 
 template<int order>
-double WAM_Donor<order>::Score(const IVec& seq, int i) const
+double WAM_Donor<order>::Score(const CVec& seq, int i) const
 {
     int first = i-left+1;
     int last = i+right;
-    if(first-order < 0 || last >= seq.size()) return BadScore;    // out of range
-    if(seq[i+1] != nG || seq[i+2] != nT) return BadScore;   // no GT
+    if(first-order < 0 || last >= (int)seq.size()) return BadScore;    // out of range
+    if(seq[i+1] != nG || (seq[i+2] != nT && seq[i+2] != nC)) return BadScore;   // no GT/GC
+    //	if(seq[i+1] != nG || seq[i+2] != nT) return BadScore;   // no GT
 
     return matrix.Score(&seq[first]);
 }
@@ -106,8 +107,8 @@ WAM_Donor<order>::WAM_Donor(const string& file, int cgcontent)
 {
     CNcbiOstrstream ost;
     ost << "[WAM_Donor_" << order << "]";
-    string label = CNcbiOstrstreamToString(ost);
-    CNcbiIfstream from(file.c_str());
+    string label = ost.str();
+    ifstream from(file.c_str());
     pair<int,int> cgrange = FindContent(from,label,cgcontent);
     if(cgrange.first < 0) Error(label);
 
@@ -130,11 +131,11 @@ WAM_Donor<order>::WAM_Donor(const string& file, int cgcontent)
 
 
 template<int order>
-double WAM_Acceptor<order>::Score(const IVec& seq, int i) const
+double WAM_Acceptor<order>::Score(const CVec& seq, int i) const
 {
     int first = i-left+1;
     int last = i+right;
-    if(first-order < 0 || last >= seq.size()) return BadScore;  // out of range
+    if(first-order < 0 || last >= (int)seq.size()) return BadScore;  // out of range
     if(seq[i-1] != nA || seq[i] != nG) return BadScore;   // no AG
 
     return matrix.Score(&seq[first]);
@@ -145,8 +146,8 @@ WAM_Acceptor<order>::WAM_Acceptor(const string& file, int cgcontent)
 {
     CNcbiOstrstream ost;
     ost << "[WAM_Acceptor_" << order << "]";
-    string label = CNcbiOstrstreamToString(ost);
-    CNcbiIfstream from(file.c_str());
+    string label = ost.str();
+    ifstream from(file.c_str());
     pair<int,int> cgrange = FindContent(from,label,cgcontent);
     if(cgrange.first < 0) Error(label);
 
@@ -173,8 +174,8 @@ MC3_CodingRegion<order>::MC3_CodingRegion(const string& file, int cgcontent)
 {
     CNcbiOstrstream ost;
     ost << "[MC3_CodingRegion_" << order << "]";
-    string label = CNcbiOstrstreamToString(ost);
-    CNcbiIfstream from(file.c_str());
+    string label = ost.str();
+    ifstream from(file.c_str());
     pair<int,int> cgrange = FindContent(from,label,cgcontent);
     if(cgrange.first < 0) Error(label);
 
@@ -185,7 +186,7 @@ MC3_CodingRegion<order>::MC3_CodingRegion(const string& file, int cgcontent)
 }
 
 template<int order>
-double MC3_CodingRegion<order>::Score(const IVec& seq, int i, int codonshift) const
+double MC3_CodingRegion<order>::Score(const CVec& seq, int i, int codonshift) const
 {
     if(i-order < 0) return BadScore;  // out of range
     else if(seq[i] == nN) return -2.;  // discourage making exons of Ns
@@ -197,8 +198,8 @@ MC_NonCodingRegion<order>::MC_NonCodingRegion(const string& file, int cgcontent)
 {
     CNcbiOstrstream ost;
     ost << "[MC_NonCodingRegion_" << order << "]";
-    string label = CNcbiOstrstreamToString(ost);
-    CNcbiIfstream from(file.c_str());
+    string label = ost.str();
+    ifstream from(file.c_str());
     pair<int,int> cgrange = FindContent(from,label,cgcontent);
     if(cgrange.first < 0) Error(label);
 
@@ -207,7 +208,7 @@ MC_NonCodingRegion<order>::MC_NonCodingRegion(const string& file, int cgcontent)
 }
 
 template<int order>
-double MC_NonCodingRegion<order>::Score(const IVec& seq, int i) const
+double MC_NonCodingRegion<order>::Score(const CVec& seq, int i) const
 {
     if(i-order < 0) return BadScore;  // out of range
     return matrix.Score(&seq[i]);
@@ -215,7 +216,7 @@ double MC_NonCodingRegion<order>::Score(const IVec& seq, int i) const
 
 inline bool SeqScores::isStart(int i, int strand) const
 {
-    const IVec& ss = seq[strand];
+    const CVec& ss = seq[strand];
     int ii = (strand == Plus) ? i : SeqLen()-1-i;
     if(ii < 0 || ii+2 >= SeqLen()) return false;  //out of range
     else if(ss[ii] != nA || ss[ii+1] != nT || ss[ii+2] != nG) return false;
@@ -224,7 +225,7 @@ inline bool SeqScores::isStart(int i, int strand) const
 
 inline bool SeqScores::isStop(int i, int strand) const
 {
-    const IVec& ss = seq[strand];
+    const CVec& ss = seq[strand];
     int ii = (strand == Plus) ? i : SeqLen()-1-i;
     if(ii < 0 || ii+2 >= SeqLen()) return false;  //out of range
     if((ss[ii] != nT || ss[ii+1] != nA || ss[ii+2] != nA) &&
@@ -235,7 +236,7 @@ inline bool SeqScores::isStop(int i, int strand) const
 
 inline bool SeqScores::isAG(int i, int strand) const
 {
-    const IVec& ss = seq[strand];
+    const CVec& ss = seq[strand];
     int ii = (strand == Plus) ? i : SeqLen()-1-i;
     if(ii-1 < 0 || ii >= SeqLen()) return false;  //out of range
     if(ss[ii-1] != nA || ss[ii] != nG) return false;
@@ -244,7 +245,7 @@ inline bool SeqScores::isAG(int i, int strand) const
 
 inline bool SeqScores::isGT(int i, int strand) const
 {
-    const IVec& ss = seq[strand];
+    const CVec& ss = seq[strand];
     int ii = (strand == Plus) ? i : SeqLen()-1-i;
     if(ii < 0 || ii+1 >= SeqLen()) return false;  //out of range
     if(ss[ii] != nG || ss[ii+1] != nT) return false;
@@ -259,9 +260,9 @@ inline bool SeqScores::isConsensusIntron(int i, int j, int strand) const
     //	else return isAG(i,strand) && isGT(j,strand);
 }
 
-inline const int* SeqScores::SeqPtr(int i, int strand) const
+inline const SeqType* SeqScores::SeqPtr(int i, int strand) const
 {
-    const IVec& ss = seq[strand];
+    const CVec& ss = seq[strand];
     int ii = (strand == Plus) ? i : SeqLen()-1-i;
     return &ss.front()+ii;
 }
@@ -301,11 +302,6 @@ inline bool SeqScores::OpenIntergenicRegion(int a, int b) const
     return (a > notining[b]);
 } 
 
-inline bool SeqScores::InAlignment(int a, int b) const
-{
-    return (inalign[b] >=0 && a >= inalign[b]);
-} 
-
 inline double SeqScores::IntergenicScore(int a, int b, int strand) const
 {
     double score = ingscr[strand][b];
@@ -336,7 +332,7 @@ inline int SeqScores::RevSeqMap(int i, bool forwrd) const
 }
 
 
-inline int ACGT(int c)
+inline int ACGT(SeqType c)
 {
     switch(c)
     {
@@ -362,6 +358,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/07/28 12:33:19  dicuccio
+ * Sync with Sasha's working tree
+ *
  * Revision 1.1  2003/10/24 15:07:25  dicuccio
  * Initial revision
  *
