@@ -616,7 +616,7 @@ void CSeqVector_CI::x_PrevCacheSeg()
     }
     else {
         while ( m_Seg.GetPosition() > pos ) {
-            _ASSERT(m_Seg);
+            _ASSERT(m_Seg || m_Seg.GetPosition() == x_GetSize());
             --m_Seg;
         }
     }
@@ -642,6 +642,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/04/09 20:34:50  vasilche
+* Fixed wrong assertion.
+*
 * Revision 1.28  2003/11/07 17:00:13  vasilche
 * Added check for out of bounds withing CSeq_inst to avoid coredump.
 *
