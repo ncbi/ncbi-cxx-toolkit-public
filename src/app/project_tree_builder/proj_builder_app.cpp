@@ -326,12 +326,13 @@ int CProjBulderApp::Run(void)
         output_dir = CDirEntry::ConcatPath(output_dir, "bin");
         output_dir = CDirEntry::AddTrailingPathSeparator(output_dir);
         CMsvcConfigureProjectGenerator configure_generator
-                                          (output_dir,
-                                           GetRegSettings().m_ConfigInfo,
-                                           utility_projects_dir,
-                                           GetProjectTreeInfo().m_Root,
-                                           GetArgs()["subtree"].AsString(),
-                                           m_Solution);
+                                              (output_dir,
+                                               GetRegSettings().m_ConfigInfo,
+                                               false,
+                                               utility_projects_dir,
+                                               GetProjectTreeInfo().m_Root,
+                                               GetArgs()["subtree"].AsString(),
+                                               m_Solution);
         configure_generator.SaveProject();
 
         // INDEX dummy project
@@ -397,6 +398,24 @@ int CProjBulderApp::Run(void)
                                                    utility_projects_dir);
         master_prj_gen.SaveProject();
 
+        // ConfigureProject
+        string output_dir = GetProjectTreeInfo().m_Compilers;
+        output_dir = CDirEntry::ConcatPath(output_dir, 
+                                           GetRegSettings().m_CompilersSubdir);
+        output_dir = CDirEntry::ConcatPath(output_dir, 
+                                           "static");
+        output_dir = CDirEntry::ConcatPath(output_dir, "bin");
+        output_dir = CDirEntry::AddTrailingPathSeparator(output_dir);
+        CMsvcConfigureProjectGenerator configure_generator
+                              (output_dir,
+                               dll_configs,
+                               true,
+                               utility_projects_dir,
+                               GetProjectTreeInfo().m_Root,
+                               GetArgs()["subtree"].AsString(),
+                               m_Solution);
+        configure_generator.SaveProject();
+
         // INDEX dummy project
         CVisualStudioProject index_xmlprj;
         CreateUtilityProject(" INDEX, see here: ", 
@@ -425,6 +444,7 @@ int CProjBulderApp::Run(void)
             sln_gen.AddProject(p->second);
         }
         sln_gen.AddUtilityProject (master_prj_gen.GetPath());
+        sln_gen.AddUtilityProject (configure_generator.GetPath());
         sln_gen.AddUtilityProject (index_prj_path);
         sln_gen.AddBuildAllProject(build_all_prj_path);
         sln_gen.SaveSolution(m_Solution);
@@ -724,6 +744,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/03/10 21:29:27  gorelenk
+ * Changed implementation of CProjBulderApp::Run.
+ *
  * Revision 1.32  2004/03/10 16:50:13  gorelenk
  * Separated static build and dll build processing inside CProjBulderApp::Run.
  *
