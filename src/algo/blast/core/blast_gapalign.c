@@ -43,7 +43,6 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/greedy_align.h>
 #include "blast_gapalign_pri.h"
-#include "greedy_align_pri.h"
 
 static Int2 s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk, 
    BLAST_SequenceBlk* subject_blk, BlastGapAlignStruct* gap_align, 
@@ -457,7 +456,7 @@ s_BlastGreedyAlignMemAlloc(const BlastScoringParameters* score_params,
       max_d_1 = max_d;
       max_d *= GE_cost;
       max_cost = MAX(Mis_cost, gap_open+GE_cost);
-      gd = BLAST_gdb3(&Mis_cost, &gap_open, &GE_cost);
+      gd = BLAST_Gdb3(&Mis_cost, &gap_open, &GE_cost);
       d_diff = ICEIL(Xdrop+reward/2, gd);
       gamp->uplow_free = (Int4*) calloc(2*(max_d+1+max_cost), sizeof(Int4));
       gamp->flast_d_affine = (SThreeVal**) 

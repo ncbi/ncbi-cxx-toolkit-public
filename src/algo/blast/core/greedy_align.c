@@ -40,7 +40,6 @@ static char const rcsid[] =
 
 #include <algo/blast/core/greedy_align.h>
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
-#include "greedy_align_pri.h"
 
 /** Constants used during greedy alignment */
 enum {
@@ -285,37 +284,6 @@ s_GetMBSpace(SMBSpace* pool, Int4 num_alloc)
     pool->space_used += num_alloc;
     
     return out_ptr;
-}
-
-Int4 
-BLAST_gcd(Int4 a, Int4 b)
-{
-    Int4 c;
-    if (a < b) {
-        c = a;
-        a = b; b = c;
-    }
-    while ((c = a % b) != 0) {
-        a = b; b = c;
-    }
-
-    return b;
-}
-
-Int4 
-BLAST_gdb3(Int4* a, Int4* b, Int4* c)
-{
-    Int4 g;
-    if (*b == 0) 
-        g = BLAST_gcd(*a, *c);
-    else 
-        g = BLAST_gcd(*a, BLAST_gcd(*b, *c));
-    if (g > 1) {
-        *a /= g;
-        *b /= g;
-        *c /= g;
-    }
-    return g;
 }
 
 /** During the traceback for a greedy affine alignment,
@@ -761,7 +729,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     Mis_cost = mismatch_score + match_score;
     GO_cost = gap_open;
     GE_cost = gap_extend + match_score_half;
-    gd = BLAST_gdb3(&Mis_cost, &GO_cost, &GE_cost);
+    gd = BLAST_Gdb3(&Mis_cost, &GO_cost, &GE_cost);
     D_diff = ICEIL(xdrop_threshold + match_score_half, gd);
     
     MAX_D = (Int4) (len1/GREEDY_MAX_COST_FRACTION + 1);
