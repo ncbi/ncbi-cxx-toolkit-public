@@ -119,7 +119,7 @@ res_concat="\$res_script.out"
 res_concat_err="\$res_script.out_err"
 
 cfgs='Debug DebugDLL DebugMT Release ReleaseDLL ReleaseMT'
-permanent_features='ODBC Sybase DBLib OpenGL serial objects dbapi app ctools gui algo'
+permanent_features='mswin ODBC Sybase DBLib OpenGL serial objects dbapi app ctools gui algo'
 
 
 ##  Printout USAGE info and exit
