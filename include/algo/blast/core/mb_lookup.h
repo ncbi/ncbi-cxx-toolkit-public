@@ -52,12 +52,6 @@ extern "C" {
 /* Mask to determine whether a residue is an ambiguity */
 #define NUC_MASK 0xfc
 
-/* Bit that is set in all indices corresponding to the second discontiguous
-   word template with weight 11, to distinguish them from the first template
-   indices 
-*/
-#define SECOND_TEMPLATE_BIT 0x00800000
-
 /* Pack a nucleotide value into an integer index */
 #define PACK_EXTRA_CODE(ecode,val,mask) {ecode = ((ecode<<2) & mask) | val;}
 
