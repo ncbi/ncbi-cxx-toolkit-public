@@ -231,7 +231,7 @@ on SetProjectData()
 		set objMgrLibs to {Â
 			"seq", "seqcode", "cdd", "seqset", Â
 			"pub", "biblio", "pubmed", "medline", Â
-			"general", "submit", "xobjmgr", "id1", "xser", "xobjutil", "xutil", "xconnect", "xncbi"}
+			"general", "submit", "xobjmgr", "id1", "xser", "xobjutil", "xutil", "xconnect", "xncbi", "z", "bz2", "xcompress"}
 		
 		-- datatool
 		set myName to "datatool"
@@ -254,7 +254,7 @@ on SetProjectData()
 	
 	---------- GENOME WORK BENCH ----------
 	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", Â
-		{"w_flek", "w_table"}, {"gui_core"})
+		{"w_flek", "w_table", "w_fltable"}, {"gui_core"})
 	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
 		{}, {"gui_core"})
 	

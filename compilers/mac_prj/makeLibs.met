@@ -148,12 +148,19 @@ on GuiFileData(section)
 	return fileData
 end GuiFileData
 
+on GuiFileDataList(section, fileList)
+	if section does not start with "gui:" then
+		set section to "gui:" & section
+	end if
+	-- Get all the files, minus those whose basename ends with an underscore.
+	return mkFileDataListFiles(gSourceDir & section, fileList)
+end GuiFileDataList
+
 on GuiProjectData(projName, features, section)
-	set fileData to GuiFileData(section)
 	if features does not contain "fltk" then
 		copy "fltk" to end of features
 	end if
-	return (ProjectData(projName, features, {fileData}))
+	return (ProjectData(projName, features, {GuiFileData(section)}))
 end GuiProjectData
 
 on AddGuiProject(projName, features, section)
@@ -309,11 +316,13 @@ on SetProjectData()
 			ObjectFileData("seqres", {})}
 		AddProject(ProjectData("seq", {}, seqFileData))
 		
+		(* 
 		AddObject("seqalign")
 		AddObject("seqblock")
 		AddProject(ObjectData("seqfeat", {"readfeat"}))
 		AddObject("seqloc")
 		AddObject("seqres")
+		*)
 		
 		AddObject("seqset")
 		AddObject("seqcode")
@@ -341,6 +350,7 @@ on SetProjectData()
 		AddGuiProject("gui_utils", {}, "utils")
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_dlg_feature", {}, "dialogs:feature")
+		AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
 		-- AddGuiProject("gui_dlg_general", {}, "dialogs:general") -- currently empty?
 		AddGuiProject("gui_opengl", {}, "opengl")
 		
@@ -348,13 +358,15 @@ on SetProjectData()
 		AddGuiProject("w_aln_crossaln", {}, "widgets:aln_crossaln")
 		AddGuiProject("w_aln_dotmatrix", {}, "widgets:aln_dotmatrix")
 		AddGuiProject("w_aln_text", {}, "widgets:aln_textaln")
-		AddGuiProject("w_flek", {}, "widgets:Flek")
+		AddProject(ProjectData("w_flek", {"fltk"}, {GuiFileDataList("widgets:Flek", Â
+			{"Fl_Toggle_Node", "Fl_Toggle_Tree"})}))
 		AddGuiProject("w_seq", {}, "widgets:seq")
 		AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
 		AddGuiProject("w_seq_icon", {}, "widgets:seq_icon")
 		AddGuiProject("w_seq_info", {}, "widgets:seq_info")
-		AddGuiProject("w_table", {}, "widgets:table")
+		AddProject(ProjectData("w_table", {"fltk"}, {GuiFileDataList("widgets:table", {"colselect_dlg.cpp"})}))
 		AddGuiProject("w_toplevel", {}, "widgets:toplevel")
+		AddGuiProject("w_fltable", {}, "widgets:Fl_Table")
 		
 		-- FLTK library.
 		set saveCppExt to pCPlusPlusExt
@@ -395,23 +407,25 @@ on SetProjectData()
 		-- PLUGINS --
 		
 		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign"})
-		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", {"xalgoseq"})
+		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
+			{"xalgoseq", "gui_multi_col_dlg", "w_fltable"})
 		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {})
 		AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", Â
 			{"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
 		
-		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", {"submit"})
+		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
+			{"submit", "w_fltable", "entrez2", "entrez2cli"})
 		AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
 		
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
-			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info"})
+			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "w_fltable"})
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
-			{"gui_dlg_feature", "w_flek", "w_seq_icon", "w_seq_info", "w_seq_graphic"})
+			{"gui_dlg_feature", "w_flek", "w_seq_icon", "w_seq_info", "w_seq_graphic", "w_fltable"})
 		AddPlugin("gui_view_sequence", {}, "plugins:view:sequence", Â
 			{"w_seq", "w_seq_icon", "w_seq_info"})
 		AddPlugin("gui_view_table", {}, "plugins:view:table", Â
-			{"w_flek", "w_table"})
+			{"w_flek", "w_table", "w_fltable"})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
 			{"gbseq", "xflat"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xvalidate"})
