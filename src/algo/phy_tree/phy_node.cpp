@@ -71,6 +71,14 @@ CNcbiOstream& operator<<(CNcbiOstream& os, const TPhyTreeNode& tree)
 };
 
 
+void WriteNexusTree(CNcbiOstream& os, const TPhyTreeNode& tree,
+                    const string& tree_name)
+{
+    os << "#nexus\n\nbegin trees;\ntree " << tree_name << " = "
+       << tree << "\nend;" << endl;
+};
+
+
 // Encode a label for Newick format: enclose it in single quotes,
 // but first escape any single quotes by doubling them.
 // e.g., "This 'label'" -> "'This ''label'''"
@@ -100,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/11 21:50:23  jcherry
+ * Added Nexus format output
+ *
  * Revision 1.2  2004/02/10 17:01:42  dicuccio
  * Use basic_string::append() instead of push_back, as the latter isn't found on
  * MSVC
