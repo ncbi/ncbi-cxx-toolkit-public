@@ -91,7 +91,7 @@ void CDataTool::Init(void)
                       "write DTD file (\"-fx m\" writes modular DTD file)",
                       CArgDescriptions::eOutputFile);
     d->AddOptionalKey("fxs", "XMLSchemaFile",
-                      "write XML Schema file (\"-fxs m\" writes XML Schema file)",
+                      "write XML Schema file",
                       CArgDescriptions::eOutputFile);
 
     // data arguments
@@ -530,6 +530,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2004/03/19 15:45:19  gouriano
+* corrected fxs argument description
+*
 * Revision 1.67  2003/06/16 14:41:05  gouriano
 * added possibility to convert DTD to XML schema
 *
