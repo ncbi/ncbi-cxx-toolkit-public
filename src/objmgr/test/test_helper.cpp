@@ -928,7 +928,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             break;
         case CSeqMap::eSeqRef:
             _TRACE('@'<<len<<": seqRef("<<seg.GetLength()<<", id="<<seg.GetRefSeqid().AsString()<<", pos="<<seg.GetRefPosition()<<", minus="<<seg.GetRefMinusStrand()<<")");
-            len += seg.GetLength();
+            _ASSERT("Unexpected REF segment" && 0);
+            //len += seg.GetLength();
             break;
         case CSeqMap::eSeqGap:
             _TRACE('@'<<len<<": seqGap("<<seg.GetLength()<<")");
@@ -1269,6 +1270,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2003/05/28 16:20:16  vasilche
+* Added check for REF segments.
+*
 * Revision 1.36  2003/05/27 19:44:07  grichenk
 * Added CSeqVector_CI class
 *
