@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_gui.bat,v 1.4 2004/05/06 15:09:05 ivanov Exp $
+REM $Id: all_gui.bat,v 1.5 2004/06/03 15:51:17 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -39,6 +39,7 @@ CALL %0 Debug DebugDLL Release ReleaseDLL
 GOTO EXIT
 
 :CONFIG
+ECHO INFO: Configure "static\gui"
 devenv gui\ncbi_gui.sln /build DebugDLL /project "-CONFIGURE-"
 IF ERRORLEVEL 1 GOTO ABORT
 

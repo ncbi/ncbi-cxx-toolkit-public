@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_gbench.bat,v 1.1 2004/05/11 18:22:09 ivanov Exp $
+REM $Id: all_gbench.bat,v 1.2 2004/06/03 15:51:38 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -39,6 +39,7 @@ CALL %0 DebugDLL ReleaseDLL
 GOTO EXIT
 
 :CONFIG
+ECHO INFO: Configue "dll\gbench"
 devenv gbench\ncbi_gbench.sln /rebuild DebugDLL /project "-CONFIGURE-"
 IF ERRORLEVEL 1 GOTO ABORT
 
