@@ -48,15 +48,26 @@ CRequestThrottler::CRequestThrottler(
     CTimeSpan       per_period,
     CTimeSpan       min_time_between_requests,
     EThrottleAction throttle_action)
-
-    : m_NumRequestsAllowed(num_requests_allowed),
-      m_PerPeriod(per_period),
-      m_MinTimeBetweenRequests(min_time_between_requests),
-      m_ThrottleAction(throttle_action),
-      m_LastApproved(CTime::eEmpty, CTime::eGmt),
-      m_NumRequests(0)
 {
-    return;
+    Reset(num_requests_allowed, per_period, min_time_between_requests,
+          throttle_action);
+}
+
+
+void CRequestThrottler::Reset(
+    unsigned int    num_requests_allowed,
+    CTimeSpan       per_period,
+    CTimeSpan       min_time_between_requests,
+    EThrottleAction throttle_action)
+{
+    m_NumRequestsAllowed     = num_requests_allowed;
+    m_PerPeriod              = per_period;
+    m_MinTimeBetweenRequests = min_time_between_requests;
+    m_ThrottleAction         = throttle_action;
+
+    m_NumRequests = 0;
+    m_LastApproved.Clear();
+    m_TimeLine.clear();
 }
 
 
@@ -152,8 +163,8 @@ bool CRequestThrottler::Approve(EThrottleAction action)
             SleepSec(sec);
         } else {
             unsigned long ms;
-	    ms = sec * kMicroSecondsPerSecond +
-	         (sleep_time.GetNanoSecondsAfterSecond() + 500)/ 1000;
+            ms = sec * kMicroSecondsPerSecond +
+	            (sleep_time.GetNanoSecondsAfterSecond() + 500)/ 1000;
             SleepMicroSec(ms);
         }
         now.SetCurrent();
@@ -200,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/02 15:52:11  ivanov
+ * + CRequestThrottler::Reset()
+ *
  * Revision 1.1  2005/03/02 13:53:06  ivanov
  * Initial revision
  *

@@ -99,7 +99,18 @@ public:
 
     /// Constructor.
     ///
-    /// Construct class object.
+    /// Construct class object. Run Reset() method.
+    ///
+    /// @sa 
+    ///   Reset
+    CRequestThrottler
+              (unsigned int     num_requests_allowed,
+               CTimeSpan        per_period                = CTimeSpan(1,0),
+               CTimeSpan        min_time_between_requests = CTimeSpan(0,0),
+               EThrottleAction  throttle_action           = eDefault);
+
+    /// Set new restriction for throttling mechanism.
+    ///
     /// Zero values for time spans 'per_period' or 'min_time_between_requests'
     /// means no rate restriction for that throttling mechanism, respectively.
     ///
@@ -112,10 +123,10 @@ public:
     ///   Minimum time between two succesful consecutive requests.
     /// @param throttle_action
     ///   Set throttle action by default. The eDefault means eSleep here.
-    CRequestThrottler(unsigned int num_requests_allowed,
-                      CTimeSpan    per_period                = CTimeSpan(1,0),
-                      CTimeSpan    min_time_between_requests = CTimeSpan(0,0),
-                      EThrottleAction  throttle_action       = eDefault);
+    void Reset(unsigned int     num_requests_allowed,
+               CTimeSpan        per_period                = CTimeSpan(1,0),
+               CTimeSpan        min_time_between_requests = CTimeSpan(0,0),
+               EThrottleAction  throttle_action           = eDefault);
 
     /// Approve a request.
     ///
@@ -143,7 +154,7 @@ private:
     void x_CleanTimeLine(CTime& now);
 
 private:
-    // Saved parameters from constructor
+    // Saved parameters
     unsigned int     m_NumRequestsAllowed;
     CTimeSpan        m_PerPeriod;
     CTimeSpan        m_MinTimeBetweenRequests;
@@ -168,6 +179,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/02 15:52:19  ivanov
+ * + CRequestThrottler::Reset()
+ *
  * Revision 1.1  2005/03/02 13:53:18  ivanov
  * Initial revision
  *
