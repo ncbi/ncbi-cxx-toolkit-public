@@ -81,8 +81,15 @@ bool CLoadInfoSeq_ids::IsLoadedGi(void)
     if ( !m_GiLoaded ) {
         if ( IsLoaded() ) {
             ITERATE ( CLoadInfoSeq_ids, it, *this ) {
-                if ( it->IsGi() ) {
-                    SetLoadedGi(it->GetGi());
+                if ( it->Which() == CSeq_id::e_Gi ) {
+                    int gi;
+                    if ( it->IsGi() ) {
+                        gi = it->GetGi();
+                    }
+                    else {
+                        gi = it->GetSeqId()->GetGi();
+                    }
+                    SetLoadedGi(gi);
                     break;
                 }
             }
@@ -117,10 +124,10 @@ CLoadInfoBlob_ids::~CLoadInfoBlob_ids(void)
 
 
 CLoadInfoBlob_ids::TBlob_Info&
-CLoadInfoBlob_ids::AddBlob_id(const TBlob_id& id, const TBlob_Info& info)
+CLoadInfoBlob_ids::AddBlob_id(const TBlobId& id, const TBlob_Info& info)
 {
     _ASSERT(!IsLoaded());
-    return m_Blob_ids.insert(TBlob_ids::value_type(id, info))
+    return m_Blob_ids.insert(TBlobIds::value_type(id, info))
         .first->second;
 }
 
@@ -129,7 +136,7 @@ CLoadInfoBlob_ids::AddBlob_id(const TBlob_id& id, const TBlob_Info& info)
 // CLoadInfoBlob
 /////////////////////////////////////////////////////////////////////////////
 #if 0
-CLoadInfoBlob::CLoadInfoBlob(const TBlob_id& id)
+CLoadInfoBlob::CLoadInfoBlob(const TBlobId& id)
     : m_Blob_id(id),
       m_Blob_State(eState_normal)
 {
@@ -315,7 +322,35 @@ CLoadLockBlob::CLoadLockBlob(CReaderRequestResult& src,
 
 CLoadLockBlob::TBlobState CLoadLockBlob::GetBlobState(void) const
 {
-    return bool(*this) ? (**this).GetBlobState() : 0;
+    return *this ? (**this).GetBlobState() : 0;
+}
+
+
+void CLoadLockBlob::SetBlobState(TBlobState state)
+{
+    if ( *this ) {
+        (**this).SetBlobState(state);
+    }
+}
+
+
+bool CLoadLockBlob::IsSetBlobVersion(void) const
+{
+    return *this && (**this).GetBlobVersion() >= 0;
+}
+
+
+CLoadLockBlob::TBlobVersion CLoadLockBlob::GetBlobVersion(void) const
+{
+    return (**this).GetBlobVersion();
+}
+
+
+void CLoadLockBlob::SetBlobVersion(TBlobVersion version)
+{
+    if ( *this ) {
+        (**this).SetBlobVersion(version);
+    }
 }
 
 
@@ -325,13 +360,14 @@ CLoadLockBlob::TBlobState CLoadLockBlob::GetBlobState(void) const
 
 
 CReaderRequestResult::CReaderRequestResult(void)
+    : m_ActionResult(eActionNoData), m_ProcessedBy(eProcessedByNone),
+      m_Level(0), m_Cached(false)
 {
 }
 
 
 CReaderRequestResult::~CReaderRequestResult(void)
 {
-    UpdateLoadedSet();
     _ASSERT(m_LockMap.empty());
 }
 
@@ -438,17 +474,8 @@ TTSE_Lock CReaderRequestResult::AddTSE(CRef<CTSE_Info> /*tse*/,
 }
 #endif
 
-void CReaderRequestResult::SetLoaded(CLoadLock_Base& lock, CObject* object)
-{
-    CRef<CLoadInfoLock> ref = lock.GetLock();
-    _ASSERT(ref);
-    m_LoadedSet[ref] = object;
-}
-
-
 void CReaderRequestResult::SaveLocksTo(TTSE_LockSet& locks)
 {
-    UpdateLoadedSet();
     ITERATE ( TTSE_LockSet, it, GetTSE_LockSet() ) {
         locks.insert(*it);
     }
@@ -461,31 +488,7 @@ void CReaderRequestResult::ReleaseLocks(void)
         it->second->ReleaseLock();
     }
     m_BlobLoadLocks.clear();
-    m_LoadedSet.clear();
     m_TSE_LockSet.clear();
-}
-
-
-void CReaderRequestResult::ResetLoadedSet(void)
-{
-    m_LoadedSet.clear();
-}
-
-
-void CReaderRequestResult::UpdateLoadedSet(const TLoadedSet& ls)
-{
-    ITERATE ( TLoadedSet, it, ls ) {
-        CRef<CLoadInfoLock> lock = it->first;
-        CRef<CObject> obj = it->second;
-        lock->SetLoaded(obj);
-    }
-}
-
-
-void CReaderRequestResult::UpdateLoadedSet(void)
-{
-    UpdateLoadedSet(m_LoadedSet);
-    ResetLoadedSet();
 }
 
 

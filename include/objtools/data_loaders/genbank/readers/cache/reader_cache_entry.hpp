@@ -1,5 +1,5 @@
-#ifndef SEQREF_PUBSEQ__HPP_INCLUDED
-#define SEQREF_PUBSEQ__HPP_INCLUDED
+#ifndef READER_CACHE_ENTRY__HPP_INCLUDED
+#define READER_CACHE_ENTRY__HPP_INCLUDED
 
 /*  $Id$
 * ===========================================================================
@@ -24,43 +24,31 @@
 *  Please cite the author in any work or product based on this material.
 * ===========================================================================
 *
-*  Author:  Anton Butanaev, Eugene Vasilchenko
+*  Author:  Eugene Vasilchenko, Anatoliy Kuznetsov
 *
-*  File Description: support classes for data reader from Pubseq_OS
+*  File Description: Cache data reader entry point
 *
 */
 
-#include <corelib/ncbiobj.hpp>
-
-#include <serial/serial.hpp>
-#include <serial/enumvalues.hpp>
-#include <serial/objistrasnb.hpp>
-#include <serial/objostrasnb.hpp>
-
-#include <util/bytesrc.hpp>
-
-#include <dbapi/driver/public.hpp>
-
-#include <memory>
-
+#include <objtools/data_loaders/genbank/reader_interface.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
 
-class NCBI_XREADER_PUBSEQOS_EXPORT CResultBtSrcRdr : public CByteSourceReader
+extern "C" 
 {
-public:
-    CResultBtSrcRdr(CDB_Result* result);
-    ~CResultBtSrcRdr();
 
-    virtual size_t Read(char* buffer, size_t bufferLength);
+NCBI_XREADER_CACHE_EXPORT
+void NCBI_EntryPoint_CacheReader(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method);
 
-private:
-    CDB_Result* m_Result;
-};
+NCBI_XREADER_CACHE_EXPORT
+void NCBI_EntryPoint_xreader_cache(
+     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
+     CPluginManager<objects::CReader>::EEntryPointRequest method);
 
+} // extern C
 
-END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif//SEQREF_PUBSEQ__HPP_INCLUDED
+#endif//READER_CACHE_ENTRY__HPP_INCLUDED

@@ -32,17 +32,15 @@
 #include <corelib/ncbi_config_value.hpp>
 
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
-#include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
+#include <objtools/data_loaders/genbank/readers/id1/reader_id1_entry.hpp>
+#include <objtools/data_loaders/genbank/readers/id1/reader_id1_params.h>
+#include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 
-#include <objtools/data_loaders/genbank/reader_snp.hpp>
-#include <objtools/data_loaders/genbank/split_parser.hpp>
-
-#include <corelib/ncbistre.hpp>
 #include <corelib/ncbimtx.hpp>
 
 #include <objtools/data_loaders/genbank/readers/id1/statistics.hpp>
@@ -52,32 +50,22 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seq/Seq_annot.hpp>
 #include <objects/id1/id1__.hpp>
-#include <objects/seqsplit/ID2S_Split_Info.hpp>
 
-#include <serial/enumvalues.hpp>
-#include <serial/iterator.hpp>
 #include <serial/objistrasnb.hpp>
-#include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
 
 #include <connect/ncbi_conn_stream.hpp>
-
-#include <util/compress/reader_zlib.hpp>
-#include <util/stream_utils.hpp>
 #include <util/static_map.hpp>
-#include <corelib/plugin_manager_store.hpp>
-#include <util/cache/icache.hpp>
 
-#include <memory>
-#include <algorithm>
+#include <corelib/plugin_manager_store.hpp>
+
 #include <iomanip>
 
 //#define GENBANK_ID1_RANDOM_FAILS 1
+#define GENBANK_ID1_RANDOM_FAILS_FREQUENCY 1
+#define GENBANK_ID1_RANDOM_FAILS_RECOVER 2
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -118,32 +106,14 @@ enum EDebugLevel
 };
 
 
-DEFINE_STATIC_FAST_MUTEX(sx_FirstConnectionMutex);
-
-
-CId1Reader::CId1Reader(TConn noConn)
-    : m_NoMoreConnections(false)
+CId1Reader::CId1Reader(int max_connections)
 {
-#if !defined(NCBI_THREADS)
-    noConn=1;
-#else
-    //noConn=1; // limit number of simultaneous connections to one
-#endif
-    try {
-        SetParallelLevel(noConn);
-        m_FirstConnection.reset(x_NewConnection());
-    }
-    catch ( ... ) {
-        // close all connections before exiting
-        SetParallelLevel(0);
-        throw;
-    }
+    SetMaximumConnections(max_connections);
 }
 
 
 CId1Reader::~CId1Reader()
 {
-    SetParallelLevel(0);
 #ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() ) {
         PrintStatistics();
@@ -287,111 +257,69 @@ void CId1Reader::PrintStatistics(void) const
 }
 
 
-CReader::TConn CId1Reader::GetParallelLevel(void) const
+int CId1Reader::GetMaximumConnectionsLimit(void) const
 {
-    return m_Pool.size();
+#ifdef NCBI_THREADS
+    return 3;
+#else
+    return 1;
+#endif
 }
 
 
-void CId1Reader::SetParallelLevel(TConn size)
+void CId1Reader::x_Connect(TConn conn)
 {
-    size_t oldSize = m_Pool.size();
-    for (size_t i = size; i < oldSize; ++i) {
-        delete m_Pool[i];
-        m_Pool[i] = 0;
-    }
+    _ASSERT(!m_Connections.count(conn));
+    m_Connections[conn];
+}
 
-    m_Pool.resize(size);
 
-    if ( m_FirstConnection.get() ) { // check if we should close 'first' conn
-        for ( size_t i = 0; i < size; ++i ) {
-            if ( m_Pool[i] == 0 ) { // there is empty slot, so let it live
-                return;
-            }
-        }
-        m_FirstConnection.reset();
-    }
+void CId1Reader::x_Disconnect(TConn conn)
+{
+    _VERIFY(m_Connections.erase(conn));
+}
+
+
+void CId1Reader::x_Reconnect(TConn conn)
+{
+    _ASSERT(m_Connections.count(conn));
+    ERR_POST("CId1Reader: ID1 GenBank connection failed: reconnecting...");
+    m_Connections[conn].reset();
 }
 
 
 CConn_ServiceStream* CId1Reader::x_GetConnection(TConn conn)
 {
-    _ASSERT(conn < m_Pool.size());
-    CConn_ServiceStream* ret = m_Pool[conn];
-    if ( !ret ) {
-        ret = x_NewConnection();
-
-        if ( !ret ) {
-            NCBI_THROW(CLoaderException, eNoConnection,
-                       "too many connections failed: probably server is dead");
-        }
-
-        m_Pool[conn] = ret;
+    _VERIFY(m_Connections.count(conn));
+    AutoPtr<CConn_ServiceStream>& stream = m_Connections[conn];
+    if ( !stream.get() ) {
+        stream.reset(x_NewConnection(conn));
     }
-    return ret;
+    return stream.get();
 }
 
 
-void CId1Reader::Reconnect(TConn conn)
+CConn_ServiceStream* CId1Reader::x_NewConnection(TConn conn)
 {
-    _TRACE("Reconnect(" << conn << ")");
-    _ASSERT(conn < m_Pool.size());
-    if ( m_Pool[conn] ) {
-        if ( GetDebugLevel() >= eTraceConn ) {
-            NcbiCout << "CId1Reader(" << conn << "): "
-                "Closing connection..." << NcbiEndl;
-        }
-        delete m_Pool[conn];
-        m_Pool[conn] = 0;
-        if ( GetDebugLevel() >= eTraceConn ) {
-            NcbiCout << "CId1Reader(" << conn << "): "
-                "Connection closed." << NcbiEndl;
-        }
+    static string id1_svc = GetConfigString("NCBI", "SERVICE_NAME_ID1", "ID1");
+
+    STimeout tmout;
+    tmout.sec = 20;
+    tmout.usec = 0;
+    
+    AutoPtr<CConn_ServiceStream> stream
+        (new CConn_ServiceStream(id1_svc, fSERV_Any, 0, 0, &tmout));
+
+    if ( stream->bad() ) {
+        NCBI_THROW(CLoaderException, eNoConnection, "connection failed");
     }
-}
-
-
-CConn_ServiceStream* CId1Reader::x_NewConnection(void)
-{
-    if ( m_FirstConnection.get() ) {
-        CFastMutexGuard guard(sx_FirstConnectionMutex);
-        if ( m_FirstConnection.get() ) {
-            return m_FirstConnection.release();
-        }
+    
+    if ( GetDebugLevel() >= eTraceConn ) {
+        NcbiCout << "CId1Reader: New connection " << conn 
+                 << " to " << id1_svc << " opened." << NcbiEndl;
     }
-    for ( int i = 0; !m_NoMoreConnections && i < 3; ++i ) {
-        try {
-            _TRACE("CId1Reader(" << this << ")->x_NewConnection()");
 
-            static string id1_svc = GetConfigString("NCBI",
-                                                    "SERVICE_NAME_ID1",
-                                                    "ID1");
-
-            if ( GetDebugLevel() >= eTraceConn ) {
-                NcbiCout << "CId1Reader: New connection to " <<
-                    id1_svc << "..." << NcbiEndl;
-            }
-            STimeout tmout;
-            tmout.sec = 20;
-            tmout.usec = 0;
-            auto_ptr<CConn_ServiceStream> stream
-                (new CConn_ServiceStream(id1_svc, fSERV_Any, 0, 0, &tmout));
-            if ( !stream->bad() ) {
-                if ( GetDebugLevel() >= eTraceConn ) {
-                    NcbiCout << "CId1Reader: New connection to " <<
-                        id1_svc << " opened." << NcbiEndl;
-                }
-                return stream.release();
-            }
-            ERR_POST("CId1Reader::x_NewConnection: cannot connect.");
-        }
-        catch ( CException& exc ) {
-            ERR_POST("CId1Reader::x_NewConnection: cannot connect: " <<
-                     exc.what());
-        }
-    }
-    m_NoMoreConnections = true;
-    return 0;
+    return stream.release();
 }
 
 
@@ -403,7 +331,7 @@ static const TSI sc_SatIndex[] = {
     TSI("ANNOT:MGC",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_MGC)),
     TSI("ANNOT:SNP",  TSK(TRDR::eSat_ANNOT,      TRDR::eSubSat_SNP)),
     TSI("ANNOT:SNP GRAPH",TSK(TRDR::eSat_ANNOT,  TRDR::eSubSat_SNP_graph)),
-    TSI("SNP",        TSK(TRDR::eSat_SNP,        TRDR::eSubSat_main)),
+    //TSI("SNP",        TSK(TRDR::eSat_SNP,        TRDR::eSubSat_main)),
     TSI("ti",         TSK(TRDR::eSat_TRACE,      TRDR::eSubSat_main)),
     TSI("TR_ASSM_CH", TSK(TRDR::eSat_TR_ASSM_CH, TRDR::eSubSat_main)),
     TSI("TRACE_ASSM", TSK(TRDR::eSat_TRACE_ASSM, TRDR::eSubSat_main)),
@@ -413,132 +341,189 @@ typedef CStaticArrayMap<const char*, TSK, PNocase> TSatMap;
 static const TSatMap sc_SatMap(sc_SatIndex, sizeof(sc_SatIndex));
 
 
-void CId1Reader::ResolveSeq_id(CReaderRequestResult& result,
-                               CLoadLockBlob_ids& ids,
-                               const CSeq_id& id,
-                               TConn conn)
+bool CId1Reader::LoadSeq_idGi(CReaderRequestResult& result,
+                              const CSeq_id_Handle& seq_id)
 {
-    if ( id.IsGi() ) {
-        ResolveGi(ids, id.GetGi(), conn);
-        return;
+    CLoadLockSeq_ids ids(result, seq_id);
+    if ( ids->IsLoadedGi() || ids.IsLoaded() ) {
+        return true;
     }
 
-    if ( id.IsGeneral()  &&  id.GetGeneral().GetTag().IsId() ) {
-        const CDbtag& dbtag = id.GetGeneral();
-        const string& db = dbtag.GetDb();
-        int num = dbtag.GetTag().GetId();
-        if ( num != 0 ) {
-            TSatMap::const_iterator iter = sc_SatMap.find(db.c_str());
-            if ( iter != sc_SatMap.end() ) {
-                CBlob_id blob_id;
-                blob_id.SetSat(iter->second.first);
-                blob_id.SetSatKey(num);
-                blob_id.SetSubSat(iter->second.second);
-                ids.AddBlob_id(blob_id, fBlobHasAllLocal);
-                return;
-            }
-            /*
-              numeric value in place of DB will not work anyway
-            else {
-                try {
-                    CBlob_id blob_id;
-                    blob_id.SetSat(NStr::StringToInt(db));
-                    blob_id.SetSatKey(num);
-                    ids.AddBlob_id(blob_id, fBlobHasAllLocal);
-                    return;
-                }
-                catch (...) {
-                }
-            }
-            */
-        }
-    }
-
-    CLoadLockSeq_ids seq_ids(result, id);
-    if ( !seq_ids->IsLoadedGi() ) {
-        seq_ids->SetLoadedGi(ResolveSeq_id_to_gi(id, conn));
-    }
-    int gi = seq_ids->GetGi();
-    if ( !gi ) {
-        return;
-    }
-
-    CLoadLockBlob_ids gi_ids(result, CSeq_id_Handle::GetGiHandle(gi));
-    if ( !gi_ids.IsLoaded() ) {
-        ResolveGi(gi_ids, gi, conn);
-        gi_ids.SetLoaded();
-    }
-
-    // copy info from gi to original seq-id
-    ITERATE ( CLoadInfoBlob_ids, it, *gi_ids ) {
-        ids.AddBlob_id(it->first, it->second);
-        ids->SetState(gi_ids->GetState());
-    }
-}
-
-
-void CId1Reader::ResolveSeq_id(CReaderRequestResult& result,
-                               CLoadLockSeq_ids& ids,
-                               const CSeq_id& id,
-                               TConn conn)
-{
-    if ( id.IsGi() ) {
-        ResolveGi(ids, id.GetGi(), conn);
-        return;
-    }
-
-    if ( id.IsGeneral()  &&  id.GetGeneral().GetTag().IsId() ) {
-        const CDbtag& dbtag = id.GetGeneral();
-        const string& db = dbtag.GetDb();
-        int num = dbtag.GetTag().GetId();
-        if ( num != 0 ) {
-            TSatMap::const_iterator iter = sc_SatMap.find(db.c_str());
-            if ( iter != sc_SatMap.end() ) {
-                ids.AddSeq_id(id);
-                return;
-            }
-        }
-    }
-
-    CLoadLockSeq_ids seq_ids(result, id);
-    if ( !ids->IsLoadedGi() ) {
-        ids->SetLoadedGi(ResolveSeq_id_to_gi(id, conn));
-    }
-    int gi = seq_ids->GetGi();
-
-    CLoadLockSeq_ids gi_ids(result, CSeq_id_Handle::GetGiHandle(gi));
-    if ( !gi_ids.IsLoaded() ) {
-        ResolveGi(gi_ids, gi, conn);
-        gi_ids.SetLoaded();
-    }
-
-    // copy info from gi to original seq-id
-    ITERATE ( CLoadInfoSeq_ids, it, *gi_ids ) {
-        ids.AddSeq_id(*it);
-        ids->SetState(gi_ids->GetState());
-    }
-}
-
-
-int CId1Reader::ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn)
-{
     CID1server_request id1_request;
-    id1_request.SetGetgi(const_cast<CSeq_id&>(seqId));
+    id1_request.SetGetgi(const_cast<CSeq_id&>(*seq_id.GetSeqId()));
 
     CID1server_back id1_reply;
-    x_ResolveId(id1_reply, id1_request, conn);
+    x_ResolveId(id1_reply, id1_request);
 
-    return id1_reply.IsGotgi()? id1_reply.GetGotgi(): 0;
+    int gi;
+    if ( id1_reply.IsGotgi() ) {
+        gi = id1_reply.GetGotgi();
+    }
+    else {
+        gi = 0;
+    }
+    SetAndSaveSeq_idGi(result, seq_id, ids, gi);
+    return true;
+}
+
+
+void CId1Reader::GetSeq_idSeq_ids(CReaderRequestResult& result,
+                                  CLoadLockSeq_ids& ids,
+                                  const CSeq_id_Handle& seq_id)
+{
+    if ( ids.IsLoaded() ) {
+        return;
+    }
+
+    if ( seq_id.Which() == CSeq_id::e_Gi ) {
+        GetGiSeq_ids(result, seq_id, ids);
+        return;
+    }
+
+    if ( seq_id.Which() == CSeq_id::e_General ) {
+        CConstRef<CSeq_id> id_ref = seq_id.GetSeqId();
+        const CSeq_id& id = *id_ref;
+        if ( id.GetGeneral().GetTag().IsId() ) {
+            const CDbtag& dbtag = id.GetGeneral();
+            const string& db = dbtag.GetDb();
+            int num = dbtag.GetTag().GetId();
+            if ( num != 0 ) {
+                TSatMap::const_iterator iter = sc_SatMap.find(db.c_str());
+                if ( iter != sc_SatMap.end() ) {
+                    // only one source Seq-id and no synonyms
+                    ids.AddSeq_id(id);
+                    return;
+                }
+            }
+        }
+    }
+    
+    m_Dispatcher->LoadSeq_idGi(result, seq_id);
+    int gi = ids->GetGi();
+    if ( !gi ) {
+        // no gi -> no Seq-ids
+        return;
+    }
+
+    CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi);
+    m_Dispatcher->LoadSeq_idSeq_ids(result, gi_handle);
+
+    // copy Seq-id list from gi to original seq-id
+    CLoadLockSeq_ids gi_ids(result, gi_handle);
+    ids->m_Seq_ids = gi_ids->m_Seq_ids;
+    ids->SetState(gi_ids->GetState());
+}
+
+
+void CId1Reader::GetSeq_idBlob_ids(CReaderRequestResult& result,
+                                   CLoadLockBlob_ids& ids,
+                                   const CSeq_id_Handle& seq_id)
+{
+    if ( ids.IsLoaded() ) {
+        return;
+    }
+
+    if ( seq_id.Which() == CSeq_id::e_Gi ) {
+        GetGiBlob_ids(result, seq_id, ids);
+        return;
+    }
+
+    if ( seq_id.Which() == CSeq_id::e_General ) {
+        CConstRef<CSeq_id> id_ref = seq_id.GetSeqId();
+        const CSeq_id& id = *id_ref;
+        if ( id.GetGeneral().GetTag().IsId() ) {
+            const CDbtag& dbtag = id.GetGeneral();
+            const string& db = dbtag.GetDb();
+            int num = dbtag.GetTag().GetId();
+            if ( num != 0 ) {
+                TSatMap::const_iterator iter = sc_SatMap.find(db.c_str());
+                if ( iter != sc_SatMap.end() ) {
+                    CBlob_id blob_id;
+                    blob_id.SetSat(iter->second.first);
+                    blob_id.SetSatKey(num);
+                    blob_id.SetSubSat(iter->second.second);
+                    ids.AddBlob_id(blob_id, fBlobHasAllLocal);
+                    SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
+                    return;
+                }
+            }
+        }
+    }
+
+    m_Dispatcher->LoadSeq_idGi(result, seq_id);
+    CLoadLockSeq_ids seq_ids(result, seq_id);
+    int gi = seq_ids->GetGi();
+    if ( !gi ) {
+        // no gi -> no blobs
+        SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
+        return;
+    }
+
+    CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi);
+    m_Dispatcher->LoadSeq_idBlob_ids(result, gi_handle);
+
+    // copy Seq-id list from gi to original seq-id
+    CLoadLockBlob_ids gi_ids(result, gi_handle);
+    ids->m_Blob_ids = gi_ids->m_Blob_ids;
+    ids->SetState(gi_ids->GetState());
+    SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
+}
+
+
+void CId1Reader::GetGiSeq_ids(CReaderRequestResult& result,
+                              const CSeq_id_Handle& seq_id,
+                              CLoadLockSeq_ids& ids)
+{
+    _ASSERT(seq_id.Which() == CSeq_id::e_Gi);
+    int gi;
+    if ( seq_id.IsGi() ) {
+        gi = seq_id.GetGi();
+    }
+    else {
+        gi = seq_id.GetSeqId()->GetGi();
+    }
+    if ( gi == 0 ) {
+        return;
+    }
+
+    CID1server_request id1_request;
+    {{
+        id1_request.SetGetseqidsfromgi(gi);
+    }}
+    
+    CID1server_back id1_reply;
+    x_ResolveId(id1_reply, id1_request);
+
+    if ( !id1_reply.IsIds() ) {
+        return;
+    }
+
+    const CID1server_back::TIds& seq_ids = id1_reply.GetIds();
+    ITERATE(CID1server_back::TIds, it, seq_ids) {
+        ids.AddSeq_id(**it);
+    }
 }
 
 
 const int kSat_BlobError = -1;
 
-void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
+void CId1Reader::GetGiBlob_ids(CReaderRequestResult& result,
+                               const CSeq_id_Handle& seq_id,
+                               CLoadLockBlob_ids& ids)
 {
+    _ASSERT(seq_id.Which() == CSeq_id::e_Gi);
+    int gi;
+    if ( seq_id.IsGi() ) {
+        gi = seq_id.GetGi();
+    }
+    else {
+        gi = seq_id.GetSeqId()->GetGi();
+    }
     if ( gi == 0 ) {
+        SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
         return;
     }
+
     CID1server_request id1_request;
     {{
         CID1server_maxcomplex& blob = id1_request.SetGetblobinfo();
@@ -547,7 +532,7 @@ void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
     }}
     
     CID1server_back id1_reply;
-    x_ResolveId(id1_reply, id1_request, conn);
+    x_ResolveId(id1_reply, id1_request);
 
     if ( !id1_reply.IsGotblobinfo() ) {
         CBlob_id blob_id;
@@ -572,6 +557,7 @@ void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
             }
         }
         ids->SetState(state);
+        SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
         return;
     }
 
@@ -583,6 +569,7 @@ void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
         ids.AddBlob_id(blob_id, 0);
         ids->SetState(CBioseq_Handle::fState_withdrawn|
                       CBioseq_Handle::fState_no_data);
+        SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
         return;
     }
     if (info.GetConfidential() > 0) {
@@ -592,6 +579,7 @@ void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
         ids.AddBlob_id(blob_id, 0);
         ids->SetState(CBioseq_Handle::fState_confidential|
                       CBioseq_Handle::fState_no_data);
+        SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
         return;
     }
     if ( info.GetSat() < 0 || info.GetSat_key() < 0 ) {
@@ -602,9 +590,10 @@ void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
         ids.AddBlob_id(blob_id, 0);
         ids->SetState(CBioseq_Handle::fState_other_error|
                       CBioseq_Handle::fState_no_data);
+        SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
         return;
     }
-    if ( TrySNPSplit() ) {
+    if ( CProcessor::TrySNPSplit() ) {
         {{
             // add main blob
             CBlob_id blob_id;
@@ -641,60 +630,39 @@ void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
         }
         ids.AddBlob_id(blob_id, fBlobHasAllLocal);
     }
+    SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
 }
 
 
-void CId1Reader::ResolveGi(CLoadLockSeq_ids& ids, int gi, TConn conn)
-{
-    if ( gi == 0 ) {
-        return;
-    }
-    CID1server_request id1_request;
-    {{
-        id1_request.SetGetseqidsfromgi(gi);
-    }}
-    
-    CID1server_back id1_reply;
-    x_ResolveId(id1_reply, id1_request, conn);
-
-    if ( !id1_reply.IsIds() ) {
-        return;
-    }
-
-    const CID1server_back::TIds& seq_ids = id1_reply.GetIds();
-    ITERATE(CID1server_back::TIds, it, seq_ids) {
-        ids.AddSeq_id(**it);
-    }
-}
-
-
-CReader::TBlobVersion CId1Reader::GetVersion(const CBlob_id& blob_id,
-                                             TConn conn)
+void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
+                                const CBlob_id& blob_id)
 {
     CID1server_request id1_request;
     x_SetParams(id1_request.SetGetblobinfo(), blob_id);
     
     CID1server_back    id1_reply;
-    x_ResolveId(id1_reply, id1_request, conn);
-    
-    if ( id1_reply.IsGotblobinfo() ) {
-        return abs(id1_reply.GetGotblobinfo().GetBlob_state());
+    x_ResolveId(id1_reply, id1_request);
+
+    TBlobVersion version = x_GetVersion(id1_reply);
+    if ( version >= 0 ) {
+        SetAndSaveBlobVersion(result, blob_id, version);
     }
-    return 0;
 }
 
 
 void CId1Reader::x_ResolveId(CID1server_back& reply,
-                             const CID1server_request& request,
-                             TConn conn)
+                             const CID1server_request& request)
 {
 #ifdef ID1_COLLECT_STATS
     CStopWatch sw(CollectStatistics()>0);
 #endif
 
-    CConn_ServiceStream* stream = x_GetConnection(conn);
-    x_SendRequest(stream, request);
-    x_ReceiveReply(stream, reply);
+    {{
+        CConn conn(this);
+        x_SendRequest(conn, request);
+        x_ReceiveReply(conn, reply);
+        conn.Release();
+    }}
 
 #ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() ) {
@@ -730,144 +698,36 @@ void CId1Reader::x_ResolveId(CID1server_back& reply,
 }
 
 
-void CId1Reader::GetTSEBlob(CTSE_Info& tse_info,
-                            const CBlob_id& blob_id,
-                            TConn conn)
-{
-    CID1server_back id1_reply;
-    TSNP_InfoMap snps;
-    GetSeq_entry(id1_reply, snps, blob_id, conn);
-    SetSeq_entry(tse_info, id1_reply, snps);
-}
-
-
-void CId1Reader::GetSeq_entry(CID1server_back& id1_reply,
-                              TSNP_InfoMap& snps,
-                              const CBlob_id& blob_id,
-                              TConn conn)
+void CId1Reader::GetBlob(CReaderRequestResult& result,
+                         const TBlobId& blob_id,
+                         TChunkId chunk_id)
 {
 #ifdef ID1_COLLECT_STATS
     CStopWatch sw(CollectStatistics()>0);
 #endif
-    CConn_ServiceStream* stream = x_GetConnection(conn);
+
+    CConn conn(this);
     {{
         CID1server_request request;
         x_SetBlobRequest(request, blob_id);
-        x_SendRequest(stream, request);
+        x_SendRequest(conn, request);
     }}
-    size_t size;
-    {{
-        CObjectIStreamAsnBinary obj_stream(*stream);
-#ifdef GENBANK_USE_SNP_SATELLITE_15
-        x_ReadBlobReply(id1_reply, obj_stream, blob_id);
-#else
-        if ( blob_id.GetSubSat() == eSubSat_SNP ) {
-            x_ReadBlobReply(id1_reply, snps, obj_stream, blob_id);
-        }
-        else {
-            x_ReadBlobReply(id1_reply, obj_stream, blob_id);
-            if ( GetDebugLevel() >= eTraceConn   ) {
-                NcbiCout << "CId1Reader("<<conn<<"): Received";
-                if ( GetDebugLevel() >= eTraceASNData ||
-                     GetDebugLevel() >= eTraceASN &&
-                     !(id1_reply.IsGotseqentry() ||
-                       id1_reply.IsGotdeadseqentry() ||
-                       id1_reply.IsGotsewithinfo()) ) {
-                    NcbiCout << ": " << MSerial_AsnText << id1_reply;
-                }
-                else {
-                    NcbiCout << " ID1server-back.";
-                }
-                NcbiCout << NcbiEndl;
-            }
-        }
-#endif
-        size = obj_stream.GetStreamOffset();
-    }}
+    CProcessor::EType processor_type;
+    if ( blob_id.GetSubSat() == eSubSat_SNP ) {
+        processor_type = CProcessor::eType_ID1_SNP;
+    }
+    else {
+        processor_type = CProcessor::eType_ID1;
+    }
+    m_Dispatcher->GetProcessor(processor_type)
+        .ProcessStream(result, blob_id, chunk_id, *x_GetConnection(conn));
+    conn.Release();
+
 #ifdef ID1_COLLECT_STATS
     if ( CollectStatistics() ) {
-        LogStat("CId1Reader: read blob", blob_id, main_read, sw, size);
+        LogStat("CId1Reader: read blob", blob_id, main_read, sw, 0);
     }
 #endif
-}
-
-
-void CId1Reader::SetSeq_entry(CTSE_Info& tse_info,
-                              CID1server_back& id1_reply,
-                              const TSNP_InfoMap& snps)
-{
-    CRef<CSeq_entry> seq_entry;
-    switch ( id1_reply.Which() ) {
-    case CID1server_back::e_Gotseqentry:
-        seq_entry.Reset(&id1_reply.SetGotseqentry());
-        break;
-    case CID1server_back::e_Gotdeadseqentry:
-        tse_info.SetBlobState(CBioseq_Handle::fState_dead);
-        seq_entry.Reset(&id1_reply.SetGotdeadseqentry());
-        break;
-    case CID1server_back::e_Gotsewithinfo:
-    {{
-        const CID1blob_info& info =
-            id1_reply.GetGotsewithinfo().GetBlob_info();
-        if ( info.GetBlob_state() < 0 ) {
-            tse_info.SetBlobState(CBioseq_Handle::fState_dead);
-        }
-        if ( id1_reply.GetGotsewithinfo().IsSetBlob() ) {
-            seq_entry.Reset(&id1_reply.SetGotsewithinfo().SetBlob());
-        }
-        else {
-            // no Seq-entry in reply, probably private data
-            tse_info.SetBlobState(CBioseq_Handle::fState_no_data);
-        }
-        if ( info.GetSuppress() ) {
-            tse_info.SetBlobState(
-                (info.GetSuppress() & 4)
-                ? CBioseq_Handle::fState_suppress_temp
-                : CBioseq_Handle::fState_suppress_perm);
-        }
-        if ( info.GetWithdrawn() ) {
-            tse_info.SetBlobState(CBioseq_Handle::fState_withdrawn|
-                                  CBioseq_Handle::fState_no_data);
-        }
-        if ( info.GetConfidential() ) {
-            tse_info.SetBlobState(CBioseq_Handle::fState_confidential|
-                                  CBioseq_Handle::fState_no_data);
-        }
-        break;
-    }}
-    case CID1server_back::e_Error:
-    {{
-        int error = id1_reply.GetError();
-        switch ( error ) {
-        case 1:
-            tse_info.SetBlobState(CBioseq_Handle::fState_withdrawn|
-                                  CBioseq_Handle::fState_no_data);
-            break;
-        case 2:
-            tse_info.SetBlobState(CBioseq_Handle::fState_confidential|
-                                  CBioseq_Handle::fState_no_data);
-            break;
-        case 10:
-            tse_info.SetBlobState(CBioseq_Handle::fState_no_data);
-            break;
-        default:
-            ERR_POST("CId1Reader::GetMainBlob: ID1server-back.error "<<error);
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "ID1server-back.error "+NStr::IntToString(error));
-        }
-        break;
-    }}
-    default:
-        // no data
-        NCBI_THROW(CLoaderException, eLoaderFailed, "bad ID1server-back type");
-    }
-    if ( seq_entry ) {
-        tse_info.SetSeq_entry(*seq_entry, snps);
-        TBlobVersion version = x_GetVersion(id1_reply);
-        if ( version >= 0 ) {
-            tse_info.SetBlobVersion(version);
-        }
-    }
 }
 
 
@@ -888,85 +748,6 @@ void CId1Reader::x_SetBlobRequest(CID1server_request& request,
                                   const CBlob_id& blob_id)
 {
     x_SetParams(request.SetGetsewithinfo(), blob_id);
-    //x_SetParams(request.SetGetsefromgi(), blob_id);
-}
-
-
-void CId1Reader::x_ReadBlobReply(CID1server_back& reply,
-                                 CObjectIStream& stream,
-                                 const CBlob_id& /*blob_id*/)
-{
-    CReader::SetSeqEntryReadHooks(stream);
-    stream >> reply;
-}
-
-
-void CId1Reader::x_ReadBlobReply(CID1server_back& reply,
-                                 TSNP_InfoMap& snps,
-                                 CObjectIStream& stream,
-                                 const CBlob_id& /*blob_id*/)
-{
-    CSeq_annot_SNP_Info_Reader::Parse(stream, Begin(reply), snps);
-}
-
-
-static void Id1ReaderSkipBytes(CByteSourceReader& reader, size_t to_skip)
-{
-    // skip 2 bytes of hacked header
-    const size_t kBufferSize = 128;
-    char buffer[kBufferSize];
-    while ( to_skip ) {
-        size_t cnt = reader.Read(buffer, min(to_skip, sizeof(buffer)));
-        if ( cnt == 0 ) {
-            NCBI_THROW(CEofException, eEof,
-                       "unexpected EOF while skipping ID1 SNP wrapper bytes");
-        }
-        to_skip -= cnt;
-    }
-}
-
-
-CRef<CSeq_annot_SNP_Info> CId1Reader::GetSNPAnnot(const CBlob_id& blob_id,
-                                                  TConn conn)
-{
-    CRef<CSeq_annot_SNP_Info> snp_annot_info;
-#ifdef ID1_COLLECT_STATS
-    CStopWatch sw(CollectStatistics()>0);
-#endif
-    CConn_ServiceStream* stream = x_GetConnection(conn);
-    x_SendRequest(blob_id, stream);
-
-#ifdef ID1_COLLECT_STATS
-    size_t size;
-#endif
-    {{
-        const size_t kSkipHeader = 2, kSkipFooter = 2;
-        
-        CStreamByteSourceReader src(0, stream);
-        
-        Id1ReaderSkipBytes(src, kSkipHeader);
-        
-        CNlmZipBtRdr src2(&src);
-        
-        {{
-            CObjectIStreamAsnBinary in(src2);
-                
-            snp_annot_info = CSeq_annot_SNP_Info_Reader::ParseAnnot(in);
-        }}
-
-#ifdef ID1_COLLECT_STATS
-        size = src2.GetCompressedSize();
-#endif
-            
-        Id1ReaderSkipBytes(src, kSkipFooter);
-    }}
-
-#ifdef ID1_COLLECT_STATS
-    if ( CollectStatistics() ) {
-        LogStat("CId1Reader: read SNP blob", blob_id, snp_read, sw, size);
-    }
-#endif
-    return snp_annot_info;
 }
 
 
@@ -987,26 +768,40 @@ void CId1Reader::x_SetParams(CID1server_maxcomplex& params,
 }
 
 
-void CId1Reader::x_SendRequest(const CBlob_id& blob_id,
-                               CConn_ServiceStream* stream)
+void CId1Reader::x_SendRequest(const CBlob_id& blob_id, TConn conn)
 {
     CID1server_request id1_request;
     x_SetParams(id1_request.SetGetsefromgi(), blob_id);
-    x_SendRequest(stream, id1_request);
+    x_SendRequest(conn, id1_request);
 }
 
+#if GENBANK_ID1_RANDOM_FAILS
+static void SetRandomFail(CConn_ServiceStream& stream)
+{
+    static int fail_recover = 0;
+    if ( fail_recover > 0 ) {
+        --fail_recover;
+        return;
+    }
+    if ( random() % GENBANK_ID1_RANDOM_FAILS_FREQUENCY == 0 ) {
+        fail_recover = GENBANK_ID1_RANDOM_FAILS_RECOVER;
+        stream.setstate(ios::badbit);
+    }
+}
+#else
+# define SetRandomFail(stream)
+#endif
 
-void CId1Reader::x_SendRequest(CConn_ServiceStream* stream,
+
+void CId1Reader::x_SendRequest(TConn conn,
                                const CID1server_request& request)
 {
+    CConn_ServiceStream* stream = x_GetConnection(conn);
+
 #if GENBANK_ID1_RANDOM_FAILS
-    if ( random() % 64 == 0 ) {
-        stream->setstate(ios::badbit);
-    }
+    SetRandomFail(*stream);
 #endif
-    TConn conn = 0;
     if ( GetDebugLevel() >= eTraceConn ) {
-        conn = find(m_Pool.begin(), m_Pool.end(), stream) - m_Pool.begin();
         NcbiCout << "CId1Reader("<<conn<<"): Sending";
         if ( GetDebugLevel() >= eTraceASN ) {
             NcbiCout << ": " << MSerial_AsnText << request;
@@ -1026,22 +821,15 @@ void CId1Reader::x_SendRequest(CConn_ServiceStream* stream,
 }
 
 
-void CId1Reader::x_ReceiveReply(CConn_ServiceStream* stream,
+void CId1Reader::x_ReceiveReply(TConn conn,
                                 CID1server_back& reply)
 {
+    CConn_ServiceStream* stream = x_GetConnection(conn);
+
 #if GENBANK_ID1_RANDOM_FAILS
-    if ( random() % 64 == 0 ) {
-        stream->setstate(ios::badbit);
-    }
+    SetRandomFail(*stream);
 #endif
-    int conn = -1;
     if ( GetDebugLevel() >= eTraceConn ) {
-        ITERATE ( vector<CConn_ServiceStream*>, it, m_Pool ) {
-            if ( *it == stream ) {
-                conn = it - m_Pool.begin();
-                break;
-            }
-        }
         NcbiCout << "CId1Reader("<<conn<<"): "
             "Receiving ID1server-back..." << NcbiEndl;
     }
@@ -1070,12 +858,6 @@ void GenBankReaders_Register_Id1(void)
 }
 
 
-const string kId1ReaderDriverName("id1");
-const string kId1Reader_NoConn("no_conn");
-const string kId1Reader_BlobCacheSection("blob_cache");
-const string kId1Reader_IdCacheSection("id_cache");
-const string kId1Reader_DriverKey("driver");
-
 /// Class factory for ID1 reader
 ///
 /// @internal
@@ -1087,12 +869,9 @@ public:
     typedef 
       CSimpleClassFactoryImpl<objects::CReader, objects::CId1Reader> TParent;
 public:
-    CId1ReaderCF() : TParent(kId1ReaderDriverName, 0)
-        {
-        }
-    ~CId1ReaderCF()
-        {
-        }
+    CId1ReaderCF()
+        : TParent(NCBI_GBLOADER_READER_ID1_DRIVER_NAME, 0) {}
+    ~CId1ReaderCF() {}
 
     objects::CReader* 
     CreateInstance(const string& driver  = kEmptyStr,
@@ -1108,31 +887,10 @@ public:
                             != CVersionInfo::eNonCompatible) {
             objects::CReader::TConn noConn = GetParamDataSize(
                 params,
-                kId1Reader_NoConn,
+                NCBI_GBLOADER_READER_ID1_PARAM_NUM_CONN,
                 false,
                 3);
-            typedef CPluginManager<ICache> TCacheManager;
-            typedef CPluginManagerStore::CPMMaker<ICache> TCacheManagerStore;
-            CRef<TCacheManager> CacheManager(TCacheManagerStore::Get());
-            _ASSERT(CacheManager);
-            const TPluginManagerParamTree* blob_params = params ?
-                params->FindNode(kId1Reader_BlobCacheSection) : 0;
-            const TPluginManagerParamTree* id_params = params ?
-                params->FindNode(kId1Reader_IdCacheSection) : 0;
-            ICache* blob_cache = CacheManager->CreateInstanceFromKey(
-                blob_params,
-                kId1Reader_DriverKey);
-            ICache* id_cache = CacheManager->CreateInstanceFromKey(
-                id_params,
-                kId1Reader_DriverKey);
-            if ( blob_cache  ||  id_cache ) {
-                drv = new objects::CCachedId1Reader(noConn,
-                                                    blob_cache,
-                                                    id_cache);
-            }
-            else {
-                drv = new objects::CId1Reader(noConn);
-            }
+            drv = new objects::CId1Reader(noConn);
         }
         return drv;
     }

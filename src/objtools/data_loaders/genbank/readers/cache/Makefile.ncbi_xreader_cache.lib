@@ -1,15 +1,13 @@
 # $Id$
 
-SRC = reader_id1
+SRC = reader_cache writer_cache
 
-LIB = ncbi_xreader_id1
-
-ASN_DEP = id1 id2
+LIB = ncbi_xreader_cache
 
 # Build shared version when possible
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = xconnect ncbi_xreader
+DLL_LIB = ncbi_xreader
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE)

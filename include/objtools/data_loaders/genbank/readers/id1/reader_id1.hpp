@@ -30,8 +30,7 @@
 *
 */
 
-#include <objtools/data_loaders/genbank/reader.hpp>
-#include <objtools/data_loaders/genbank/reader_snp.hpp>
+#include <objtools/data_loaders/genbank/reader_id1_base.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -49,62 +48,52 @@ class CID1server_request;
 class CID1server_maxcomplex;
 class CID1blob_info;
 class CID2S_Split_Info;
-
+class CLoadLockSeq_ids;
+class CLoadLockBlob_ids;
 
 class NCBI_XREADER_ID1_EXPORT CId1Reader : public CId1ReaderBase
 {
 public:
-    CId1Reader(TConn noConn = 3);
+    CId1Reader(int max_connections = 3);
     ~CId1Reader();
 
-
-    //////////////////////////////////////////////////////////////////
-    // Setup methods:
-
-    virtual TConn GetParallelLevel(void) const;
-    virtual void SetParallelLevel(TConn noConn);
-    virtual void Reconnect(TConn conn);
-
+    int GetMaximumConnectionsLimit(void) const;
 
     //////////////////////////////////////////////////////////////////
     // Id resolution methods:
 
-    virtual void ResolveSeq_id(CReaderRequestResult& result,
-                               CLoadLockBlob_ids& ids, const CSeq_id& id,
-                               TConn conn);
-    virtual void ResolveSeq_id(CReaderRequestResult& result,
-                               CLoadLockSeq_ids& ids, const CSeq_id& id,
-                               TConn conn);
-    virtual int ResolveSeq_id_to_gi(const CSeq_id& seqId,
-                                    TConn conn);
-    virtual void ResolveGi(CLoadLockBlob_ids& ids, int gi,
-                           TConn conn);
-    virtual void ResolveGi(CLoadLockSeq_ids& ids, int gi,
-                           TConn conn);
-    virtual TBlobVersion GetVersion(const CBlob_id& blob_id,
-                                    TConn conn);
+    bool LoadSeq_idGi(CReaderRequestResult& result,
+                      const CSeq_id_Handle& seq_id);
 
+    void GetBlobVersion(CReaderRequestResult& result,
+                        const CBlob_id& blob_id);
+    void GetSeq_idSeq_ids(CReaderRequestResult& result,
+                          CLoadLockSeq_ids& ids,
+                          const CSeq_id_Handle& id);
+    void GetSeq_idBlob_ids(CReaderRequestResult& result,
+                           CLoadLockBlob_ids& ids,
+                           const CSeq_id_Handle& id);
+    void GetGiSeq_ids(CReaderRequestResult& result,
+                      const CSeq_id_Handle& seq_id,
+                      CLoadLockSeq_ids& ids);
+    void GetGiBlob_ids(CReaderRequestResult& result,
+                       const CSeq_id_Handle& seq_id,
+                       CLoadLockBlob_ids& ids);
 
     //////////////////////////////////////////////////////////////////
     // Blob loading methods:
 
-    virtual void GetTSEBlob(CTSE_Info& tse_info, const CBlob_id& blob_id,
-                            TConn conn);
-    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CBlob_id& blob_id,
-                                                  TConn conn);
-
-    typedef CSeq_annot_SNP_Info_Reader::TSNP_InfoMap TSNP_InfoMap;
-    void GetSeq_entry(CID1server_back& id1_reply,
-                      TSNP_InfoMap& snps,
-                      const CBlob_id& blob_id,
-                      TConn conn);
-    void SetSeq_entry(CTSE_Info& tse_info,
-                      CID1server_back& id1_reply,
-                      const TSNP_InfoMap& snps);
+    void GetBlob(CReaderRequestResult& result,
+                 const TBlobId& blob_id,
+                 TChunkId chunk_id);
 
 protected:
+    virtual void x_Connect(TConn conn);
+    virtual void x_Disconnect(TConn conn);
+    virtual void x_Reconnect(TConn conn);
+
     CConn_ServiceStream* x_GetConnection(TConn conn);
-    CConn_ServiceStream* x_NewConnection(void);
+    CConn_ServiceStream* x_NewConnection(TConn conn);
 
     static int CollectStatistics(void); // 0 - no stats, >1 - verbose
     void PrintStatistics(void) const;
@@ -132,59 +121,28 @@ protected:
                         size_t size);
 
     void x_ResolveId(CID1server_back& id1_reply,
-                     const CID1server_request& id1_request,
-                     TConn conn);
+                     const CID1server_request& id1_request);
 
-    void x_SendRequest(CConn_ServiceStream* stream,
-                       const CID1server_request& request);
-    void x_ReceiveReply(CConn_ServiceStream* stream,
-                        CID1server_back& reply);
-
-    void x_SendRequest(const CBlob_id& blob_id,
-                       CConn_ServiceStream* stream);
+    void x_SendRequest(TConn conn, const CID1server_request& request);
+    void x_ReceiveReply(TConn conn, CID1server_back& reply);
+    void x_SendRequest(const CBlob_id& blob_id, TConn conn);
 
     void x_SetParams(CID1server_maxcomplex& params,
                      const CBlob_id& blob_id);
-    virtual void x_SetBlobRequest(CID1server_request& request,
-                                  const CBlob_id& blob_id);
-    virtual void x_ReadBlobReply(CID1server_back& reply,
-                                 CObjectIStream& stream,
-                                 const CBlob_id& blob_id);
-    virtual void x_ReadBlobReply(CID1server_back& reply,
-                                 TSNP_InfoMap& snps,
-                                 CObjectIStream& stream,
-                                 const CBlob_id& blob_id);
-    TBlobVersion x_GetVersion(const CID1server_back& reply);
+    void x_SetBlobRequest(CID1server_request& request,
+                          const CBlob_id& blob_id);
+    static TBlobVersion x_GetVersion(const CID1server_back& reply);
 
 private:
 
     CRef<CTSE_Info> x_ReceiveMainBlob(CConn_ServiceStream* stream);
 
-    vector<CConn_ServiceStream *>   m_Pool;
-    auto_ptr<CConn_ServiceStream>   m_FirstConnection;
-    bool                            m_NoMoreConnections;
+    typedef map< TConn, AutoPtr<CConn_ServiceStream> > TConnections;
+    TConnections m_Connections;
 };
 
 
 END_SCOPE(objects)
-
-extern NCBI_XREADER_ID1_EXPORT const string kId1ReaderDriverName;
-
-extern "C" 
-{
-
-NCBI_XREADER_ID1_EXPORT
-void NCBI_EntryPoint_Id1Reader(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method);
-
-NCBI_XREADER_ID1_EXPORT
-void NCBI_EntryPoint_xreader_id1(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method);
-
-} // extern C
-
 END_NCBI_SCOPE
 
 #endif // READER_ID1__HPP_INCLUDED

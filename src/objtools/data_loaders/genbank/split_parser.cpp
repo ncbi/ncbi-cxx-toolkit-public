@@ -47,6 +47,11 @@ BEGIN_SCOPE(objects)
 
 void CSplitParser::Attach(CTSE_Info& tse, const CID2S_Split_Info& split)
 {
+    if ( !tse.HasSeq_entry() ) {
+        if ( split.IsSetSkeleton() ) {
+            tse.SetSeq_entry(const_cast<CSeq_entry&>(split.GetSkeleton()));
+        }
+    }
     ITERATE ( CID2S_Split_Info::TChunks, it, split.GetChunks() ) {
         CRef<CTSE_Chunk_Info> chunk = Parse(**it);
         tse.GetSplitInfo().AddChunk(*chunk);
@@ -422,6 +427,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.14  2005/03/10 20:55:07  vasilche
+ * New CReader/CWriter schema of CGBDataLoader.
+ *
  * Revision 1.13  2004/10/18 14:01:28  vasilche
  * Updated split parser for new SeqSplit specs.
  *

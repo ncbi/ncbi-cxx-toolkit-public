@@ -166,10 +166,10 @@ class NCBI_XREADER_EXPORT CLoadInfoBlob_ids : public CLoadInfo
 public:
     typedef CSeq_id_Handle TSeq_id;
     typedef TSeq_id TKey;
-    typedef CBlob_id TBlob_id;
+    typedef CBlob_id TBlobId;
     typedef CBlob_Info TBlob_Info;
-    typedef map<TBlob_id, TBlob_Info> TBlob_ids;
-    typedef TBlob_ids::const_iterator const_iterator;
+    typedef map<TBlobId, TBlob_Info> TBlobIds;
+    typedef TBlobIds::const_iterator const_iterator;
 
     CLoadInfoBlob_ids(const TSeq_id& id);
     ~CLoadInfoBlob_ids(void);
@@ -192,7 +192,7 @@ public:
             return m_Blob_ids.empty();
         }
 
-    TBlob_Info& AddBlob_id(const TBlob_id& id, const TBlob_Info& info);
+    TBlob_Info& AddBlob_id(const TBlobId& id, const TBlob_Info& info);
 
     typedef int TState;
     TState GetState(void) const
@@ -206,7 +206,7 @@ public:
 
 public:
     TSeq_id     m_Seq_id;
-    TBlob_ids   m_Blob_ids;
+    TBlobIds    m_Blob_ids;
     TState      m_State;
 
     // lock/refresh support
@@ -218,13 +218,13 @@ public:
 class NCBI_XREADER_EXPORT CLoadInfoBlob : public CLoadInfo
 {
 public:
-    typedef CBlob_id TBlob_id;
-    typedef TBlob_id TKey;
+    typedef CBlob_id TBlobId;
+    typedef TBlobId TKey;
 
-    CLoadInfoBlob(const TBlob_id& id);
+    CLoadInfoBlob(const TBlobId& id);
     ~CLoadInfoBlob(void);
 
-    const TBlob_id& GetBlob_id(void) const
+    const TBlobId& GetBlob_id(void) const
         {
             return m_Blob_id;
         }
@@ -252,7 +252,7 @@ public:
         }
 
 public:
-    TBlob_id m_Blob_id;
+    TBlobId    m_Blob_id;
 
     EBlobState m_Blob_State;
 
@@ -280,6 +280,10 @@ public:
 
     void ReleaseLock(void);
     void SetLoaded(CObject* obj = 0);
+    const CLoadInfo& GetLoadInfo(void) const
+        {
+            return *m_Info;
+        }
 
 protected:
     friend class CReaderRequestResult;
@@ -420,7 +424,13 @@ public:
     CLoadLockBlob(CReaderRequestResult& src, const CBlob_id& blob_id);
 
     typedef int TBlobState;
+    typedef int TBlobVersion;
+
     TBlobState GetBlobState(void) const;
+    void SetBlobState(TBlobState state);
+    bool IsSetBlobVersion(void) const;
+    TBlobVersion GetBlobVersion(void) const;
+    void SetBlobVersion(TBlobVersion);
 };
 
 /*
@@ -467,6 +477,21 @@ public:
 class NCBI_XREADER_EXPORT CReaderRequestResult
 {
 public:
+    enum EActionResult {
+        eActionFailed,
+        eActionNoData,
+        eActionRetry,
+        eActionSuccess
+    };
+        
+    enum EProcessedBy {
+        eProcessedByNone,
+        eProcessedById1,
+        eProcessedById2,
+        eProcessedByCache,
+        eProcessedByPubSeqos
+    };
+
     CReaderRequestResult(void);
     virtual ~CReaderRequestResult(void);
     
@@ -479,6 +504,7 @@ public:
     typedef CTSE_Lock TTSE_Lock;
     //typedef CLoadInfoBlob TInfoBlob;
     typedef CLoadLockBlob TLockBlob;
+    typedef int TLevel;
 
     virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids& seq_id) = 0;
     virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids2& seq_id) = 0;
@@ -511,24 +537,16 @@ public:
     virtual operator CInitMutexPool&(void) = 0;
     CRef<CLoadInfoLock> GetLoadLock(const CRef<CLoadInfo>& info);
 
-    typedef map<CRef<CLoadInfoLock>, CRef<CObject> > TLoadedSet;
-
-    void SetLoaded(CLoadLock_Base& lock, CObject* object = 0);
-    void ResetLoadedSet(void);
-    const TLoadedSet& GetLoadedSet(void)
-        {
-            return m_LoadedSet;
-        }
-    void UpdateLoadedSet(const TLoadedSet& ls);
-    void UpdateLoadedSet(void);
-
     typedef int TConn;
 
-protected:
-    friend class CReaderRequestConn;
-
-    virtual TConn GetConn(void) = 0;
-    virtual void ReleaseConn(void) = 0;
+    EActionResult GetActionResult() const { return m_ActionResult; };
+    EProcessedBy  GetProcessedBy()  const { return m_ProcessedBy; }
+    TLevel GetLevel() const { return m_Level; }
+    void SetLevel(TLevel level) { m_Level = level; }
+    bool IsCached() const { return m_Cached; }
+    void SetCached() { m_Cached = true; }
+    void SetActionResult(EActionResult res, EProcessedBy proc) 
+    { m_ActionResult = res; m_ProcessedBy = proc; }
 
 private:
     friend class CLoadInfoLock;
@@ -540,8 +558,11 @@ private:
     
     TLockMap        m_LockMap;
     TTSE_LockSet    m_TSE_LockSet;
-    TLoadedSet      m_LoadedSet;
     TBlobLoadLocks  m_BlobLoadLocks;
+    EActionResult   m_ActionResult;
+    EProcessedBy    m_ProcessedBy;
+    TLevel          m_Level;
+    bool            m_Cached;
 
 private: // hide methods
     CReaderRequestResult(const CReaderRequestResult&);
@@ -568,6 +589,8 @@ public:
     virtual TConn GetConn(void);
     virtual void ReleaseConn(void);
 
+    EActionResult m_ActionResult;
+
     CInitMutexPool    m_MutexPool;
 
     CRef<CDataSource> m_DataSource;
@@ -575,37 +598,6 @@ public:
     map<TKeySeq_ids, CRef<TInfoSeq_ids> >   m_InfoSeq_ids;
     map<TKeySeq_ids2, CRef<TInfoSeq_ids> >  m_InfoSeq_ids2;
     map<TKeyBlob_ids, CRef<TInfoBlob_ids> > m_InfoBlob_ids;
-};
-
-
-class CReaderRequestConn
-{
-public:
-    typedef CReaderRequestResult::TConn TConn;
-
-    explicit CReaderRequestConn(CReaderRequestResult& result)
-        : m_Result(result)
-        {
-        }
-    ~CReaderRequestConn(void)
-        {
-            m_Result.ReleaseConn();
-        }
-
-    TConn GetConn(void) const
-        {
-            return m_Result.GetConn();
-        }
-    operator TConn(void) const
-        {
-            return GetConn();
-        }
-
-private:
-    CReaderRequestConn(const CReaderRequestConn&);
-    CReaderRequestConn& operator=(const CReaderRequestConn&);
-
-    CReaderRequestResult& m_Result;
 };
 
 

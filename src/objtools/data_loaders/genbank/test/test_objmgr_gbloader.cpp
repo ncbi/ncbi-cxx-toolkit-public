@@ -166,13 +166,17 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
-    return CTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestApplication().AppMain(argc, argv, 0, eDS_Default, 
+                                      "test_objmgr_gbloader.ini");
 }
 
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/03/10 20:55:07  vasilche
+* New CReader/CWriter schema of CGBDataLoader.
+*
 * Revision 1.10  2004/11/01 19:33:09  grichenk
 * Removed deprecated methods
 *

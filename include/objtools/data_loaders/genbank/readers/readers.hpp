@@ -35,10 +35,11 @@
 
 BEGIN_NCBI_SCOPE
 
-extern void GenBankReaders_Register_Id1         (void);
-extern void GenBankReaders_Register_CachedId1   (void);
-extern void GenBankReaders_Register_Id2         (void);
-extern void GenBankReaders_Register_Pubseq      (void);
+extern void GenBankReaders_Register_Id1     (void);
+extern void GenBankReaders_Register_Id2     (void);
+extern void GenBankReaders_Register_Pubseq  (void);
+extern void GenBankReaders_Register_Cache   (void);
+extern void GenBankWriters_Register_Cache   (void);
 
 
 END_NCBI_SCOPE
@@ -47,6 +48,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/10 20:55:06  vasilche
+ * New CReader/CWriter schema of CGBDataLoader.
+ *
  * Revision 1.1  2004/12/22 19:30:36  grichenk
  * Initial revision
  *

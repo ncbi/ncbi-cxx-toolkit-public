@@ -1,6 +1,7 @@
 # $Id$
 
-SRC = reader reader_snp seqref blob_id split_parser request_result
+SRC = dispatcher reader writer processors \
+    reader_snp seqref blob_id split_parser request_result reader_id1_base
 
 ASN_DEP = seqsplit
 

@@ -61,10 +61,14 @@
 #include <objtools/data_loaders/genbank/blob_id.hpp>
 #include <objtools/data_loaders/genbank/gbload_util.hpp>
 
+#define GENBANK_NEW_READER_WRITER
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CReadDispatcher;
 class CReader;
+class CWriter;
 class CSeqref;
 class CBlob_id;
 class CHandleRange;
@@ -93,62 +97,7 @@ class CLoadInfoBlob;
 
 class CGBReaderRequestResult;
 
-class CMutexArray
-{
-public:
-    typedef CMutex TMutex;
-
-    CMutexArray(void)
-        : m_Size(0), m_Mutexes(0)
-        {
-        }
-    ~CMutexArray(void)
-        {
-            Reset();
-        }
-
-    void SetSize(size_t size)
-        {
-            Reset();
-            m_Mutexes = new TMutex[size];
-            m_Size = size;
-        }
-    size_t GetSize(void) const
-        {
-            return m_Size;
-        }
-
-    void Reset(void)
-        {
-            m_Size = 0;
-            delete[] m_Mutexes;
-            m_Mutexes = 0;
-        }
-
-    TMutex& operator[](size_t index)
-        {
-            _ASSERT(index < m_Size);
-            return m_Mutexes[index];
-        }
-
-private:
-    CMutexArray(const CMutexArray&);
-    CMutexArray& operator=(const CMutexArray&);
-
-    size_t  m_Size;
-    TMutex* m_Mutexes;
-};
-
-
 // Parameter names used by loader factory
-
-const string kCFParam_GB_ReaderPtr  = "ReaderPtr";  // = CReader*
-const string kCFParam_GB_ReaderName = "ReaderName"; // = string
-
-
-// string: any value except "TakeOwnership" results in eNoOwnership
-const string kCFParam_GB_Ownership = "Ownership";
-
 
 class NCBI_XLOADER_GENBANK_EXPORT CGBDataLoader : public CDataLoader
 {
@@ -185,7 +134,7 @@ public:
         CReader* driver = 0,
         CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
-    static string GetLoaderNameFromArgs(CReader* driver = 0);
+        static string GetLoaderNameFromArgs(CReader* driver = 0);
 
     // Select reader by name. If failed, select default reader.
     // Reader name may be the same as in environment: PUBSEQOS, ID1 etc.
@@ -225,12 +174,32 @@ public:
     CRef<CLoadInfoSeq_ids> GetLoadInfoSeq_ids(const string& key);
     CRef<CLoadInfoSeq_ids> GetLoadInfoSeq_ids(const CSeq_id_Handle& key);
     CRef<CLoadInfoBlob_ids> GetLoadInfoBlob_ids(const CSeq_id_Handle& key);
-    //CRef<CLoadInfoBlob> GetLoadInfoBlob(const CBlob_id& key);
+
+    // params modifying access methods
+    // argument params should be not-null
+    // returned value is not null - subnode will be created if necessary
+    static TParamTree* GetParamsSubnode(TParamTree* params,
+                                        const string& subnode_name);
+    static TParamTree* GetLoaderParams(TParamTree* params);
+    static TParamTree* GetReaderParams(TParamTree* params,
+                                       const string& reader_name);
+    static void SetParam(TParamTree* params,
+                         const string& param_name,
+                         const string& param_value);
+    // params non-modifying access methods
+    // argument params may be null
+    // returned value may be null if params argument is null
+    // or if subnode is not found
+    static const TParamTree* GetParamsSubnode(const TParamTree* params,
+                                              const string& subnode_name);
+    static const TParamTree* GetLoaderParams(const TParamTree* params);
+    static const TParamTree* GetReaderParams(const TParamTree* params,
+                                             const string& reader_name);
+    static string GetParam(const TParamTree* params,
+                           const string& param_name);
 
 protected:
     friend class CGBReaderRequestResult;
-    void AllocateConn(CGBReaderRequestResult& result);
-    void FreeConn(CGBReaderRequestResult& result);
 
     TBlobContentsMask x_MakeContentMask(EChoice choice) const;
     TBlobContentsMask x_MakeContentMask(const SRequestDetails& details) const;
@@ -261,7 +230,6 @@ private:
     typedef map<string, CRef<CLoadInfoSeq_ids> >            TLoadMapSeq_ids;
     typedef map<CSeq_id_Handle, CRef<CLoadInfoSeq_ids> >    TLoadMapSeq_ids2;
     typedef map<CSeq_id_Handle, CRef<CLoadInfoBlob_ids> >   TLoadMapBlob_ids;
-    //typedef map<CBlob_id, CRef<CLoadInfoBlob> >             TLoadMapBlob;
 
     typedef CRWLock                     TRWLock;
     typedef TRWLock::TReadLockGuard     TReadLockGuard;
@@ -269,15 +237,13 @@ private:
 
     
     CInitMutexPool          m_MutexPool;
-    CMutexArray             m_ConnMutexes;
 
-    CRef<CReader>           m_Driver;
+    CRef<CReadDispatcher>   m_Dispatcher;
 
     TRWLock                 m_LoadMap_Lock;
     TLoadMapSeq_ids         m_LoadMapSeq_ids;
     TLoadMapSeq_ids2        m_LoadMapSeq_ids2;
     TLoadMapBlob_ids        m_LoadMapBlob_ids;
-    //TLoadMapBlob            m_LoadMapBlob;
     
     CTimer                  m_Timer;
 
@@ -285,11 +251,24 @@ private:
     // private code
     //
     
-    void     x_CreateDriver(const string& driver_name = kEmptyStr,
-                            const TParamTree* params = 0);
-    CReader* x_CreateReader(const string& names,
-                            const TParamTree* params = 0);
+    void x_CreateDriver(CReader* reader);
+    void x_CreateDriver(const string& reader_name);
+    void x_CreateDriver(const TParamTree* params);
 
+    bool x_CreateReaders(const TParamTree* params);
+    void x_CreateWriters(const TParamTree* params);
+    bool x_CreateReaders(const string& str, const TParamTree* params);
+    void x_CreateWriters(const string& str, const TParamTree* params);
+    CReader* x_CreateReader(const string& names, const TParamTree* params = 0);
+    CWriter* x_CreateWriter(const string& names, const TParamTree* params = 0);
+
+    typedef CPluginManager<CReader> TReaderManager;
+    typedef CPluginManager<CWriter> TWriterManager;
+
+    static CRef<TReaderManager> x_GetReaderManager(void);
+    static CRef<TWriterManager> x_GetWriterManager(void);
+
+private:
     CGBDataLoader(const CGBDataLoader&);
     CGBDataLoader& operator=(const CGBDataLoader&);
 };
@@ -297,8 +276,6 @@ private:
 
 END_SCOPE(objects)
 
-
-extern NCBI_XLOADER_GENBANK_EXPORT const string kDataLoader_GB_DriverName;
 
 extern "C"
 {

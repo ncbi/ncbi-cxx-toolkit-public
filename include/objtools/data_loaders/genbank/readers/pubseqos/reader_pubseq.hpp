@@ -30,15 +30,14 @@
 *
 */
 
-#include <objtools/data_loaders/genbank/reader.hpp>
-#include <memory>
+#include <objtools/data_loaders/genbank/reader_id1_base.hpp>
 
 BEGIN_NCBI_SCOPE
 
 class CDB_Connection;
-class CDB_RPCCmd;
 class CDB_Result;
 class I_DriverContext;
+class I_BaseCmd;
 
 BEGIN_SCOPE(objects)
 
@@ -50,74 +49,63 @@ class CPubseqBlob;
 class NCBI_XREADER_PUBSEQOS_EXPORT CPubseqReader : public CId1ReaderBase
 {
 public:
-    CPubseqReader(TConn parallelLevel = 2,
+    CPubseqReader(int max_connections = 2,
                   const string& server = "PUBSEQ_OS",
                   const string& user="anyone",
                   const string& pswd = "allowed");
 
     ~CPubseqReader();
 
-    virtual void ResolveSeq_id(CReaderRequestResult& result,
-                               CLoadLockBlob_ids& ids,
-                               const CSeq_id& id, TConn conn);
-    virtual void ResolveSeq_id(CReaderRequestResult& result,
-                               CLoadLockSeq_ids& ids, const CSeq_id& id,
-                               TConn conn);
-    virtual TBlobVersion GetVersion(const CBlob_id& blob_id, TConn conn);
+    int GetMaximumConnectionsLimit(void) const;
 
-    virtual void GetTSEBlob(CTSE_Info& tse_info,
-                            const CBlob_id& blob_id,
-                            TConn conn);
-    virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CBlob_id& blob_id,
-                                                  TConn conn);
+    bool LoadSeq_idGi(CReaderRequestResult& result,
+                      const CSeq_id_Handle& seq_id);
 
-    virtual TConn GetParallelLevel(void) const;
-    virtual void SetParallelLevel(TConn);
-    CDB_Connection* GetConnection(TConn);
-    virtual void Reconnect(TConn);
+    void GetSeq_idSeq_ids(CReaderRequestResult& result,
+                          CLoadLockSeq_ids& ids,
+                          const CSeq_id_Handle& seq_id);
+    void GetGiSeq_ids(CReaderRequestResult& result,
+                      const CSeq_id_Handle& seq_id,
+                      CLoadLockSeq_ids& ids);
 
-private:
+    void GetSeq_idBlob_ids(CReaderRequestResult& result,
+                           CLoadLockBlob_ids& ids,
+                           const CSeq_id_Handle& seq_id);
+    void GetBlobVersion(CReaderRequestResult& result,
+                        const CBlob_id& blob_id);
+
+    void GetBlob(CReaderRequestResult& result,
+                 const TBlobId& blob_id,
+                 TChunkId chunk_id);
+
+protected:
+    void x_Connect(TConn conn);
+    void x_Disconnect(TConn conn);
+    void x_Reconnect(TConn conn);
+
     CDB_Connection* x_GetConnection(TConn conn);
     CDB_Connection* x_NewConnection(void);
 
+    I_BaseCmd* x_SendRequest(const CBlob_id& blob_id,
+                             CDB_Connection* db_conn,
+                             const char* rpc);
+    CDB_Result* x_ReceiveData(CReaderRequestResult& result,
+                              const TBlobId& blob_id,
+                              I_BaseCmd& cmd,
+                              bool force_blob);
 
-    CDB_RPCCmd* x_SendRequest(const CBlob_id& blob_id,
-                              CDB_Connection* db_conn);
-    CDB_Result* x_ReceiveData(CTSE_Info* tse_info, CDB_RPCCmd& cmd);
-
-    void x_ReceiveMainBlob(CTSE_Info& tse_info,
-                           const CBlob_id& blob_id,
-                           CDB_Result& result);
-    CRef<CSeq_annot_SNP_Info> x_ReceiveSNPAnnot(CDB_Result& result);
-    
+private:
     string                    m_Server;
     string                    m_User;
     string                    m_Password;
+
     I_DriverContext*          m_Context;
-    vector<CDB_Connection *>  m_Pool;
-    bool                      m_NoMoreConnections;
+    typedef map< TConn, AutoPtr<CDB_Connection> > TConnections;
+    TConnections              m_Connections;
 };
 
 
 END_SCOPE(objects)
-
-extern NCBI_XREADER_PUBSEQOS_EXPORT const string kPubseqReaderDriverName;
-
-extern "C" 
-{
-
-NCBI_XREADER_PUBSEQOS_EXPORT
-void NCBI_EntryPoint_ReaderPubseqos(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method);
-
-NCBI_XREADER_PUBSEQOS_EXPORT
-void NCBI_EntryPoint_xreader_pubseqos(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method);
-
-} // extern C
-
 END_NCBI_SCOPE
 
 #endif // READER_PUBSEQ__HPP_INCLUDED

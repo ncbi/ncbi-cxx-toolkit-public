@@ -58,7 +58,7 @@ int main()
         CStandaloneRequestResult request;
         CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
         CLoadLockBlob_ids ids(request, seq_id);
-        reader.CId1ReaderBase::ResolveSeq_id(request, seq_id);
+        reader.LoadSeq_idSeq_ids(request, seq_id);
         ITERATE ( CLoadInfoBlob_ids, i, *ids ) {
             const CBlob_id& blob_id = i->first;
             cout << "K: " << k << " " << gi << endl;
@@ -77,6 +77,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.8  2005/03/10 20:55:07  vasilche
+* New CReader/CWriter schema of CGBDataLoader.
+*
 * Revision 1.7  2004/12/22 15:56:41  vasilche
 * Updated for changed in readers API.
 *

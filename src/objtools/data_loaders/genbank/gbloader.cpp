@@ -32,14 +32,17 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_config_value.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/reader.hpp>
+#include <objtools/data_loaders/genbank/gbloader_params.h>
+#include <objtools/data_loaders/genbank/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
 
-// TODO: remove the following two includes
-# include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
-# include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
-#if defined(HAVE_PUBSEQ_OS)
-# include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp>
+#include <objtools/data_loaders/genbank/reader_interface.hpp>
+#include <objtools/data_loaders/genbank/writer_interface.hpp>
+
+// TODO: remove the following includes
+//#define REGISTER_READER_ENTRY_POINTS 1
+#ifdef REGISTER_READER_ENTRY_POINTS
+# include <objtools/data_loaders/genbank/readers/readers.hpp>
 #endif
 
 #include <objtools/data_loaders/genbank/seqref.hpp>
@@ -76,9 +79,6 @@ static const char* const DEFAULT_DRV_ORDER = "PUBSEQOS:ID1";
 #else
 static const char* const DEFAULT_DRV_ORDER = "ID1";
 #endif
-//static const char* const DRV_PUBSEQOS = "PUBSEQOS";
-//static const char* const DRV_ID1 = "ID1";
-//static const char* const DRV_ID2 = "ID2";
 
 class CGBReaderRequestResult : public CReaderRequestResult
 {
@@ -92,21 +92,20 @@ public:
             return *m_Loader;
         }
     
-    virtual TConn GetConn(void);
-    virtual void ReleaseConn(void);
+    //virtual TConn GetConn(void);
+    //virtual void ReleaseConn(void);
     virtual CRef<CLoadInfoSeq_ids> GetInfoSeq_ids(const string& id);
     virtual CRef<CLoadInfoSeq_ids> GetInfoSeq_ids(const CSeq_id_Handle& id);
     virtual CRef<CLoadInfoBlob_ids> GetInfoBlob_ids(const CSeq_id_Handle& id);
     virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id);
-    virtual operator CInitMutexPool&(void);
+    virtual operator CInitMutexPool&(void) { return GetMutexPool(); }
 
-    CInitMutexPool& GetMutexPool(void);
+    CInitMutexPool& GetMutexPool(void) { return m_Loader->m_MutexPool; }
 
     friend class CGBDataLoader;
 
 private:
     CRef<CGBDataLoader> m_Loader;
-    TConn               m_Conn;
 };
 
 
@@ -164,137 +163,287 @@ string CGBDataLoader::GetLoaderNameFromArgs(const TParamTree& /* params */)
 }
 
 
-CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver)
-  : CDataLoader(loader_name),
-    m_Driver(driver)
+CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *reader)
+  : CDataLoader(loader_name)
 {
     GBLOG_POST( "CGBDataLoader");
-    if ( !m_Driver ) {
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        auto_ptr<CConfig> cfg;
-        const TParamTree* params = 0;
-        if ( app ) {
-            cfg.reset(new CConfig(app->GetConfig()));
-            params = cfg->GetTree();
-        }
-        x_CreateDriver(kEmptyStr, params);
-    }
-    if ( m_Driver ) {
-        m_ConnMutexes.SetSize(m_Driver->GetParallelLevel());
-    }
+    x_CreateDriver(reader);
 }
 
 
 CGBDataLoader::CGBDataLoader(const string& loader_name,
                              const string& reader_name)
-  : CDataLoader(loader_name),
-    m_Driver(0)
+  : CDataLoader(loader_name)
 {
     GBLOG_POST( "CGBDataLoader");
-    CNcbiApplication* app = CNcbiApplication::Instance();
-    auto_ptr<CConfig> cfg;
-    const TParamTree* params = 0;
-    if ( app ) {
-        cfg.reset(new CConfig(app->GetConfig()));
-        params = cfg->GetTree();
-    }
-    x_CreateDriver(reader_name, params);
-    if ( m_Driver ) {
-        m_ConnMutexes.SetSize(m_Driver->GetParallelLevel());
-    }
+    x_CreateDriver(reader_name);
 }
 
 
 CGBDataLoader::CGBDataLoader(const string&     loader_name,
                              const TParamTree& params)
-  : CDataLoader(loader_name),
-    m_Driver(0)
+  : CDataLoader(loader_name)
 {
     GBLOG_POST( "CGBDataLoader");
-    x_CreateDriver(kEmptyStr, &params);
-    if ( m_Driver ) {
-        m_ConnMutexes.SetSize(m_Driver->GetParallelLevel());
-    }
+    x_CreateDriver(GetLoaderParams(&params));
+}
+
+
+CGBDataLoader::~CGBDataLoader(void)
+{
+    GBLOG_POST( "~CGBDataLoader");
+
+    m_LoadMapBlob_ids.clear();
+    m_LoadMapSeq_ids.clear();
 }
 
 
 const CGBDataLoader::TParamTree*
-CGBDataLoader::x_GetLoaderParams(const TParamTree* params) const
+CGBDataLoader::GetParamsSubnode(const TParamTree* params,
+                                const string& subnode_name)
 {
-    if ( !params ) {
-        return 0;
+    const TParamTree* subnode = 0;
+    if ( params ) {
+        if ( NStr::CompareNocase(params->GetId(), subnode_name) == 0 ) {
+            subnode = params;
+        }
+        else {
+            subnode = params->FindSubNode(subnode_name);
+        }
     }
-
-    const TParamTree* gb_params = 0;
-    // GB loader params may be in a subnode
-    const string& tree_id = params->GetId();
-    if (NStr::CompareNocase(tree_id, kDataLoader_GB_DriverName) != 0) {
-        gb_params = params->FindNode(kDataLoader_GB_DriverName);
-    }
-
-    // Try to use global params if nothing was found
-    return gb_params ? gb_params : params;
+    return subnode;
 }
 
 
-string CGBDataLoader::x_GetReaderName(const TParamTree* params) const
+CGBDataLoader::TParamTree*
+CGBDataLoader::GetParamsSubnode(TParamTree* params,
+                                const string& subnode_name)
 {
-    const TPluginManagerParamTree::TPairTreeType* node =
-        params ? params->FindNode(kCFParam_GB_ReaderName) : 0;
-    return node ? node->GetValue() : kEmptyStr;
+    _ASSERT(params);
+    TParamTree* subnode = 0;
+    if ( NStr::CompareNocase(params->GetId(), subnode_name) == 0 ) {
+        subnode = params;
+    }
+    else {
+        subnode = const_cast<TParamTree*>(params->FindSubNode(subnode_name));
+        if ( !subnode ) {
+            subnode = params->AddNode(subnode_name, kEmptyStr);
+        }
+    }
+    return subnode;
 }
 
 
-void CGBDataLoader::x_CreateDriver(const string&     driver_name,
-                                   const TParamTree* params)
+const CGBDataLoader::TParamTree*
+CGBDataLoader::GetLoaderParams(const TParamTree* params)
 {
-    const TParamTree* gb_params = x_GetLoaderParams(params);
+    return GetParamsSubnode(params, NCBI_GBLOADER_DRIVER_NAME);
+}
 
-    string driver_order = driver_name.empty() ? "*" : driver_name;
-    SIZE_TYPE ast = NStr::Find(driver_order, "*");
-    if (ast != NPOS) {
-        // Add drivers from environment and registry
-        static string add_drivers = GetConfigString("GENBANK",
-                                                    "LOADER_METHOD",
-                                                    DEFAULT_DRV_ORDER);
-        add_drivers += ":" + x_GetReaderName(gb_params);
-        driver_order = NStr::Replace(driver_order, "*", add_drivers, ast);
-    }
-    // Convert driver names to lower case
-    NStr::ToLower(driver_order);
 
-    m_Driver = x_CreateReader(driver_order, gb_params);
-    if (!m_Driver) {
-        NCBI_THROW(CLoaderException, eNoConnection,
-                   "Could not create drivers: " + driver_order);
+const CGBDataLoader::TParamTree*
+CGBDataLoader::GetReaderParams(const TParamTree* params,
+                               const string& reader_name)
+{
+    return GetParamsSubnode(GetLoaderParams(params), reader_name);
+}
+
+
+CGBDataLoader::TParamTree*
+CGBDataLoader::GetLoaderParams(TParamTree* params)
+{
+    return GetParamsSubnode(params, NCBI_GBLOADER_DRIVER_NAME);
+}
+
+
+CGBDataLoader::TParamTree*
+CGBDataLoader::GetReaderParams(TParamTree* params,
+                               const string& reader_name)
+{
+    return GetParamsSubnode(GetLoaderParams(params), reader_name);
+}
+
+
+void CGBDataLoader::SetParam(TParamTree* params,
+                             const string& param_name,
+                             const string& param_value)
+{
+    TParamTree* subnode =
+        const_cast<TParamTree*>(params->FindSubNode(param_name));
+    if ( !subnode ) {
+        params->AddNode(param_name, param_value);
     }
+    else {
+        subnode->SetValue(param_value);
+    }
+}
+
+
+string CGBDataLoader::GetParam(const TParamTree* params,
+                               const string& param_name)
+{
+    if ( params ) {
+        TParamTree* subnode =
+            const_cast<TParamTree*>(params->FindSubNode(param_name));
+        if ( subnode ) {
+            return subnode->GetValue();
+        }
+    }
+    return kEmptyStr;
+}
+
+
+void CGBDataLoader::x_CreateDriver(CReader* reader)
+{
+    if ( reader ) {
+        m_Dispatcher = new CReadDispatcher;
+        m_Dispatcher->InsertReader(1, Ref(reader));
+    }
+    else {
+        x_CreateDriver(kEmptyStr);
+    }
+}
+
+
+void CGBDataLoader::x_CreateDriver(const string& reader_name)
+{
+    auto_ptr<TParamTree> app_params;
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if ( app ) {
+        app_params.reset(CConfig::ConvertRegToTree(app->GetConfig()));
+    }
+    else if ( !reader_name.empty() ) {
+        app_params.reset(new TParamTree);
+    }
+    if ( !reader_name.empty() ) {
+        SetParam(GetLoaderParams(app_params.get()),
+                 NCBI_GBLOADER_PARAM_READER_NAME,
+                 reader_name);
+    }
+    x_CreateDriver(app_params.get());
+}
+
+
+void CGBDataLoader::x_CreateDriver(const TParamTree* params)
+{
+    params = GetLoaderParams(params);
+    m_Dispatcher = new CReadDispatcher;
+
+    if ( x_CreateReaders(params) ) {
+        x_CreateWriters(params);
+    }
+}
+
+
+bool CGBDataLoader::x_CreateReaders(const TParamTree* params)
+{
+    string str;
+    if ( str.empty() ) {
+        // try config first
+        static string env_reader = GetConfigString("GENBANK",
+                                                   "LOADER_METHOD",
+                                                   0);
+        str = env_reader;
+    }
+    if ( str.empty() ) {
+        str = GetParam(params, NCBI_GBLOADER_PARAM_READER_NAME);
+    }
+    if ( str.empty() ) {
+        // fall back default reader list
+        str = DEFAULT_DRV_ORDER;
+    }
+    NStr::ToLower(str);
+    return x_CreateReaders(str, params);
+}
+
+
+void CGBDataLoader::x_CreateWriters(const TParamTree* params)
+{
+    string str = GetParam(params, NCBI_GBLOADER_PARAM_WRITER_NAME);
+    NStr::ToLower(str);
+    x_CreateWriters(str, params);
+}
+
+
+bool CGBDataLoader::x_CreateReaders(const string& str,
+                                    const TParamTree* params)
+{
+    vector<string> str_list;
+    NStr::Tokenize(str, ";", str_list, NStr::eNoMergeDelims);
+    bool need_writer = false;
+    for ( size_t i = 0; i < str_list.size(); ++i ) {
+        CRef<CReader> reader(x_CreateReader(str_list[i], params));
+        if( reader ) {
+            if ( i > 0 ) {
+                need_writer = true;
+            }
+            m_Dispatcher->InsertReader(i, reader);
+        }
+    }
+    return need_writer;
+}
+
+
+void CGBDataLoader::x_CreateWriters(const string& str,
+                                    const TParamTree* params)
+{
+    vector<string> str_list;
+    NStr::Tokenize(str, ";", str_list, NStr::eNoMergeDelims);
+    for ( size_t i = 0; i < str_list.size(); ++i ) {
+        CRef<CWriter> writer(x_CreateWriter(str_list[i], params));
+        if( writer ) {
+            m_Dispatcher->InsertWriter(i, writer);
+        }
+    }
+}
+
+
+CRef<CPluginManager<CReader> > CGBDataLoader::x_GetReaderManager(void)
+{
+    typedef CPluginManagerStore::CPMMaker<CReader> TManagerStore;
+    
+    bool created = false;
+    CRef<TReaderManager> manager(TManagerStore::Get(&created));
+    _ASSERT(manager);
+
+    if ( created ) {
+#ifdef REGISTER_READER_ENTRY_POINTS
+        GenBankReaders_Register_Id1();
+        GenBankReaders_Register_Id2();
+        GenBankReaders_Register_Cache();
+# ifdef HAVE_PUBSEQ_OS
+        GenBankReaders_Register_Pubseq();
+# endif
+#endif
+    }
+
+    return manager;
+}
+
+
+CRef<CPluginManager<CWriter> > CGBDataLoader::x_GetWriterManager(void)
+{
+    typedef CPluginManagerStore::CPMMaker<CWriter> TManagerStore;
+
+    bool created = false;
+    CRef<TWriterManager> manager(TManagerStore::Get(&created));
+    _ASSERT(manager);
+
+    if ( created ) {
+#ifdef REGISTER_READER_ENTRY_POINTS
+        GenBankWriters_Register_Cache();
+#endif
+    }
+    
+    return manager;
 }
 
 
 CReader* CGBDataLoader::x_CreateReader(const string& names,
                                        const TParamTree* params)
 {
-    typedef CPluginManager<CReader> TReaderManager;
-    typedef CPluginManagerStore::CPMMaker<CReader> TReaderManagerStore;
-    bool created = false;
-    CRef<TReaderManager> ReaderManager(TReaderManagerStore::Get(&created));
-    _ASSERT(ReaderManager);
-
-    if ( created ) {
-#define REGISTER_READER_ENTRY_POINTS
-#if defined(REGISTER_READER_ENTRY_POINTS)
-        ReaderManager->RegisterWithEntryPoint(NCBI_EntryPoint_Id1Reader);
-        ReaderManager->RegisterWithEntryPoint(NCBI_EntryPoint_Id2Reader);
-
-#if defined(HAVE_PUBSEQ_OS)
-        ReaderManager->RegisterWithEntryPoint(NCBI_EntryPoint_ReaderPubseqos);
-#endif // HAVE_PUBSEQ_OS
-
-#endif // REGISTER_READER_ENTRY_POINTS
-    }
-
     try {
-        return ReaderManager->CreateInstanceFromList(params, names);
+        return x_GetReaderManager()->CreateInstanceFromList(params, names);
     }
     catch ( exception& e ) {
         LOG_POST(names << " readers are not available ::" << e.what());
@@ -302,20 +451,23 @@ CReader* CGBDataLoader::x_CreateReader(const string& names,
     catch ( ... ) {
         LOG_POST(names << " reader unable to init ");
     }
-
     return 0;
 }
 
 
-CGBDataLoader::~CGBDataLoader(void)
+CWriter* CGBDataLoader::x_CreateWriter(const string& names,
+                                       const TParamTree* params)
 {
-    GBLOG_POST( "~CGBDataLoader");
-    m_Driver.Reset();
-    m_ConnMutexes.Reset();
-
-    //m_LoadMapBlob.clear();
-    m_LoadMapBlob_ids.clear();
-    m_LoadMapSeq_ids.clear();
+    try {
+        return x_GetWriterManager()->CreateInstanceFromList(params, names);
+    }
+    catch ( exception& e ) {
+        LOG_POST(names << " writers are not available ::" << e.what());
+    }
+    catch ( ... ) {
+        LOG_POST(names << " writer unable to init ");
+    }
+    return 0;
 }
 
 
@@ -324,9 +476,7 @@ CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id_Handle& sih)
     TBlobId id = GetBlobId(sih);
     if ( id ) {
         CBlob_id blob_id = GetBlobId(id);
-        return ConstRef(new CSeqref(0,
-                                    blob_id.GetSat(),
-                                    blob_id.GetSatKey()));
+        return ConstRef(new CSeqref(0, blob_id.GetSat(), blob_id.GetSatKey()));
     }
     return CConstRef<CSeqref>();
 }
@@ -340,66 +490,50 @@ CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id& id)
 
 CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
 {
-    for ( int attempt_count = 0; attempt_count < 3; ++attempt_count ) {
-        CGBReaderRequestResult result(this);
-        CLoadLockBlob_ids blobs(result, sih);
-        if ( !blobs.IsLoaded() ) {
-            CLoadLockSeq_ids ids(result, sih);
-            if ( ids.IsLoaded() &&
-                 (ids->GetState() & CBioseq_Handle::fState_no_data) ) {
-                blobs->SetState(ids->GetState());
-                blobs.SetLoaded();
-            }
-            else {
-                m_Driver->ResolveSeq_id(result, sih);
-            }
-            if ( !blobs.IsLoaded() ) {
-                continue; // retry
-            }
+    CGBReaderRequestResult result(this);
+    CLoadLockBlob_ids blobs(result, sih);
+    if ( !blobs.IsLoaded() ) {
+        CLoadLockSeq_ids ids(result, sih);
+        if ( ids.IsLoaded() &&
+             (ids->GetState() & CBioseq_Handle::fState_no_data) ) {
+            blobs->SetState(ids->GetState());
+            blobs.SetLoaded();
         }
-        ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
-            const CBlob_Info& info = it->second;
-            if ( info.GetContentsMask() & fBlobHasCore ) {
-                return TBlobId(&it->first);
-            }
+        else {
+            m_Dispatcher->LoadSeq_idBlob_ids(result, sih);
         }
-        return TBlobId();
     }
-    NCBI_THROW(CLoaderException, eOtherError,
-               "cannot resolve Seq-id "+sih.AsString()+": too many attempts");
+        
+    ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
+        const CBlob_Info& info = it->second;
+        if ( info.GetContentsMask() & fBlobHasCore ) {
+            return TBlobId(&it->first);
+        }
+    }
+    return TBlobId();
 }
 
 
 void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
-    for ( int attempt_count = 0; attempt_count < 3; ++attempt_count ) {
-        CGBReaderRequestResult result(this);
-        CLoadLockSeq_ids seq_ids(result, idh);
-        if ( !seq_ids.IsLoaded() ) {
-            m_Driver->ResolveSeq_ids(result, idh);
-            if ( !seq_ids.IsLoaded() ) {
-                continue; // retry
-            }
-        }
-        ids = seq_ids->m_Seq_ids;
-        return;
+    CGBReaderRequestResult result(this);
+    CLoadLockSeq_ids seq_ids(result, idh);
+    if ( !seq_ids.IsLoaded() ) {
+        m_Dispatcher->LoadSeq_idSeq_ids(result, idh);
     }
-    NCBI_THROW(CLoaderException, eOtherError,
-               "cannot get synonyms for "+idh.AsString()+
-               ": too many attempts");
+    ids = seq_ids->m_Seq_ids;
 }
 
 
 CDataLoader::TBlobVersion CGBDataLoader::GetBlobVersion(const TBlobId& id)
 {
     const CBlob_id& blob_id = dynamic_cast<const CBlob_id&>(*id);
-    for ( int attempt_count = 0; attempt_count < 3; ++attempt_count ) {
-        CGBReaderRequestResult result(this);
-        return m_Driver->GetBlobVersion(result, blob_id);
+    CGBReaderRequestResult result(this);
+    CLoadLockBlob blob(result, blob_id);
+    if ( !blob.IsSetBlobVersion() ) {
+        m_Dispatcher->LoadBlobVersion(result, blob_id);
     }
-    NCBI_THROW(CLoaderException, eOtherError,
-               "cannot get blob version "+blob_id.ToString()+
-               ": too many attempts");
+    return blob.GetBlobVersion();
 }
 
 
@@ -606,20 +740,13 @@ CDataLoader::TTSE_Lock
 CGBDataLoader::GetBlobById(const TBlobId& id)
 {
     CBlob_id blob_id = GetBlobId(id);
-    for ( int attempt_count = 0; attempt_count < 3; ++attempt_count ) {
-        CGBReaderRequestResult result(this);
-        CLoadLockBlob blob(result, blob_id);
-        if ( !blob.IsLoaded() ) {
-            m_Driver->LoadBlob(result, blob_id);
-            if ( !blob.IsLoaded() ) {
-                continue;
-            }
-        }
-        return blob;
-    }
-    NCBI_THROW(CLoaderException, eOtherError,
-               "cannot get load blob "+blob_id.ToString()+
-               ": too many attempts");
+
+    CGBReaderRequestResult result(this);
+    CLoadLockBlob blob(result, blob_id);
+    if ( !blob.IsLoaded() ) 
+        m_Dispatcher->LoadBlob(result, blob_id);
+
+    return blob;
 }
 
 
@@ -707,68 +834,52 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
     
     GC();
 
-    for ( int attempt_count = 0; attempt_count < 3; ++attempt_count ) {
-        CGBReaderRequestResult result(this);
-        CLoadLockBlob_ids blobs(result, sih);
-        if ( !blobs.IsLoaded() ) {
-            CLoadLockSeq_ids ids(result, sih);
-            if ( ids.IsLoaded() &&
-                 (ids->GetState() & CBioseq_Handle::fState_no_data) ) {
-                blobs->SetState(ids->GetState());
-                blobs.SetLoaded();
-            }
-            else {
-                m_Driver->LoadBlobs(result, sih, mask);
-            }
-            if ( !blobs.IsLoaded() ) {
-                continue; // retry
-            }
+    CGBReaderRequestResult result(this);
+    CLoadLockBlob_ids blobs(result, sih);
+    if ( !blobs.IsLoaded() ) {
+        CLoadLockSeq_ids ids(result, sih);
+        if ( ids.IsLoaded() &&
+             (ids->GetState() & CBioseq_Handle::fState_no_data) ) {
+            blobs->SetState(ids->GetState());
+            blobs.SetLoaded();
         }
-        if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
-            NCBI_THROW2(CBlobStateException, eBlobStateError,
-                "blob state error", blobs->GetState());
+        else {
+            m_Dispatcher->LoadBlobs(result, sih, mask);
         }
-        bool done = true;
-        ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
-            const CBlob_Info& info = it->second;
-            if( (info.GetContentsMask() & mask) == 0 ) {
-                continue;
-            }
+    }
+    _ASSERT(blobs.IsLoaded());
+    
+    if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
+        NCBI_THROW2(CBlobStateException, eBlobStateError,
+                    "blob state error", blobs->GetState());
+    }
+    
+    ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
+        const CBlob_Info& info = it->second;
+        if ( info.GetContentsMask() & mask ) {
             CLoadLockBlob blob(result, it->first);
             if ( !blob.IsLoaded() ) {
-                m_Driver->LoadBlob(result, it->first);
-                if ( !blob.IsLoaded() ) {
-                    done = false;
-                }
+                m_Dispatcher->LoadBlob(result, it->first);
             }
+            _ASSERT(blob.IsLoaded());
             if ((blob.GetBlobState() & CBioseq_Handle::fState_no_data) != 0) {
                 NCBI_THROW2(CBlobStateException, eBlobStateError,
                     "blob state error", blob.GetBlobState());
             }
         }
         result.SaveLocksTo(locks);
-        if ( done ) {
-            return locks;
-        }
     }
-    NCBI_THROW(CLoaderException, eOtherError,
-               "cannot get records for Seq-id "+sih.AsString()+
-               ": too many attempts");
+    result.SaveLocksTo(locks);
+    return locks;
 }
 
 
 void CGBDataLoader::GetChunk(TChunk chunk)
 {
-    for ( int retry = 0; !chunk->IsLoaded() && retry < 3; ++retry ) {
-        CGBReaderRequestResult result(this);
-        m_Driver->LoadChunk(result,
+    CGBReaderRequestResult result(this);
+    m_Dispatcher->LoadChunk(result,
                             GetBlobId(chunk->GetBlobId()),
                             chunk->GetChunkId());
-    }
-    if ( !chunk->IsLoaded() ) {
-        NCBI_THROW(CLoaderException, eOtherError,
-                   "cannot load chunk : too many attempts");
-    }
 }
 
 
@@ -814,40 +925,6 @@ CBlob_id CGBDataLoader::GetBlobId(const CTSE_Info& tse_info) const
     return GetBlobId(tse_info.GetBlobId());
 }
 
-
-void CGBDataLoader::AllocateConn(CGBReaderRequestResult& result)
-{
-    TConn conn;
-#ifdef NCBI_NO_THREADS
-    conn = 0;
-#else
-    static bool single_conn = GetConfigFlag("GENBANK", "SINGLE_CONN");
-    if ( single_conn ) {
-        conn = 0;
-    }
-    else {
-        TThreadSystemID thread_id = 0;
-        CThread::GetSystemID(&thread_id);
-        conn = TConn((size_t)thread_id % m_ConnMutexes.GetSize());
-    }
-    //ERR_POST("AllocateConn() thread: "<<thread_id<<" conn: "<<conn);
-    m_ConnMutexes[conn].Lock();
-
-#endif
-    result.m_Conn = conn;
-}
-
-
-void CGBDataLoader::FreeConn(CGBReaderRequestResult& result)
-{
-#ifdef NCBI_NO_THREADS
-    result.m_Conn = -1;
-#else
-    TConn conn = result.m_Conn;
-    result.m_Conn = -1;
-    m_ConnMutexes[conn].Unlock();
-#endif
-}
 
 
 void CGBDataLoader::DropTSE(CRef<CTSE_Info> /* tse_info */)
@@ -919,56 +996,15 @@ CGBDataLoader::GetLoadInfoBlob_ids(const CSeq_id_Handle& key)
     }}
 }
 
-/*
-CRef<CLoadInfoBlob>
-CGBDataLoader::GetLoadInfoBlob(const CBlob_id& key)
-{
-    {{
-        TReadLockGuard guard(m_LoadMap_Lock);
-        TLoadMapBlob::iterator iter = m_LoadMapBlob.find(key);
-        if ( iter != m_LoadMapBlob.end() ) {
-            return iter->second;
-        }
-    }}
-    {{
-        TWriteLockGuard guard(m_LoadMap_Lock);
-        CRef<CLoadInfoBlob>& ret = m_LoadMapBlob[key];
-        if ( !ret ) {
-            ret = new CLoadInfoBlob(key);
-        }
-        return ret;
-    }}
-}
-*/
 
 CGBReaderRequestResult::CGBReaderRequestResult(CGBDataLoader* loader)
-    : m_Loader(loader), m_Conn(-1)
+    : m_Loader(loader)
 {
 }
 
 
 CGBReaderRequestResult::~CGBReaderRequestResult(void)
 {
-    ReleaseConn();
-}
-
-
-void CGBReaderRequestResult::ReleaseConn(void)
-{
-    if ( m_Conn >= 0 ) {
-        GetLoader().FreeConn(*this);
-        _ASSERT(m_Conn < 0);
-    }
-}
-
-
-CReaderRequestResult::TConn CGBReaderRequestResult::GetConn(void)
-{
-    if ( m_Conn < 0 ) {
-        GetLoader().AllocateConn(*this);
-        _ASSERT(m_Conn >= 0);
-    }
-    return m_Conn;
 }
 
 
@@ -1000,19 +1036,6 @@ CTSE_LoadLock CGBReaderRequestResult::GetTSE_LoadLock(const TKeyBlob& blob_id)
 }
 
 
-CInitMutexPool& CGBReaderRequestResult::GetMutexPool(void)
-{
-    //GetConn(); // allocate connection
-    return GetLoader().m_MutexPool;
-}
-
-
-CGBReaderRequestResult::operator CInitMutexPool&(void)
-{
-    return GetMutexPool();
-}
-
-
 bool CGBDataLoader::LessBlobId(const TBlobId& id1, const TBlobId& id2) const
 {
     const CBlob_id& bid1 = dynamic_cast<const CBlob_id&>(*id1);
@@ -1040,13 +1063,11 @@ void DataLoaders_Register_GenBank(void)
 }
 
 
-const string kDataLoader_GB_DriverName("genbank");
-
 class CGB_DataLoaderCF : public CDataLoaderFactory
 {
 public:
     CGB_DataLoaderCF(void)
-        : CDataLoaderFactory(kDataLoader_GB_DriverName) {}
+        : CDataLoaderFactory(NCBI_GBLOADER_DRIVER_NAME) {}
     virtual ~CGB_DataLoaderCF(void) {}
 
 protected:
@@ -1065,19 +1086,6 @@ CDataLoader* CGB_DataLoaderCF::CreateAndRegister(
         return CGBDataLoader::RegisterInObjectManager(om).GetLoader();
     }
     // Parse params, select constructor
-    const string& reader_ptr_str =
-        GetParam(GetDriverName(), params,
-                 kCFParam_GB_ReaderPtr, false, "0");
-    CReader* reader = dynamic_cast<CReader*>(
-        static_cast<CObject*>(
-            const_cast<void*>(NStr::StringToPtr(reader_ptr_str))));
-    if ( reader ) {
-        return CGBDataLoader::RegisterInObjectManager(
-            om,
-            reader,
-            GetIsDefault(params),
-            GetPriority(params)).GetLoader();
-    }
     if ( params ) {
         // Let the loader detect driver from params
         return CGBDataLoader::RegisterInObjectManager(
@@ -1098,7 +1106,8 @@ void NCBI_EntryPoint_DataLoader_GB(
     CPluginManager<CDataLoader>::TDriverInfoList&   info_list,
     CPluginManager<CDataLoader>::EEntryPointRequest method)
 {
-    CHostEntryPointImpl<CGB_DataLoaderCF>::NCBI_EntryPointImpl(info_list, method);
+    CHostEntryPointImpl<CGB_DataLoaderCF>::NCBI_EntryPointImpl(info_list,
+                                                               method);
 }
 
 void NCBI_EntryPoint_xloader_genbank(

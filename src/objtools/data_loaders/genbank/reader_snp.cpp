@@ -31,8 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_config_value.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
-
-#include <objtools/data_loaders/genbank/reader.hpp>
+#include <objtools/data_loaders/genbank/processor.hpp> //for hooks
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
@@ -241,9 +240,9 @@ void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
                                        const CObjectInfo& object,
                                        TSNP_InfoMap& snps)
 {
-    CReader::SetSNPReadHooks(in);
+    CProcessor::SetSNPReadHooks(in);
     
-    if ( CId1ReaderBase::TrySNPTable() ) { // set SNP hook
+    if ( CProcessor::TrySNPTable() ) { // set SNP hook
         CRef<CSNP_Ftable_hook> hook(new CSNP_Ftable_hook);
 
         CObjectTypeInfo seq_annot_type = CType<CSeq_annot>();
@@ -436,7 +435,7 @@ void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
         TAnnotToIndex::const_iterator iter = hook->m_Index.find(it->first);
         if ( iter == hook->m_Index.end() ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Orfan CSeq_annot_SNP_Info");
+                       "Orphan CSeq_annot_SNP_Info");
         }
         write_unsigned(stream, iter->second);
         x_Write(stream, *it->second);
@@ -459,7 +458,7 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
         CObjectIStreamAsnBinary obj_stream(stream);
         CObjectTypeInfo type = CType<CSeq_annot>();
         type.SetLocalReadHook(obj_stream, hook);
-        //CReader::SetSNPReadHooks(obj_stream);
+        //CProcessor::SetSNPReadHooks(obj_stream);
         obj_stream.Read(object);
     }}
 
@@ -468,7 +467,7 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
         unsigned index = read_unsigned(stream);
         if ( index >= hook->m_Index.size() ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Orfan CSeq_annot_SNP_Info");
+                       "Orphan CSeq_annot_SNP_Info");
         }
         TAnnotRef annot = hook->m_Index[index];
         _ASSERT(annot);
@@ -504,7 +503,7 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
     CRef<CSeq_annot> annot(new CSeq_annot);
     {{
         CObjectIStreamAsnBinary obj_stream(stream);
-        CReader::SetSNPReadHooks(obj_stream);
+        CProcessor::SetSNPReadHooks(obj_stream);
         obj_stream >> *annot;
     }}
     if ( !stream ) {
@@ -590,6 +589,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.19  2005/03/10 20:55:07  vasilche
+ * New CReader/CWriter schema of CGBDataLoader.
+ *
  * Revision 1.18  2005/02/23 21:15:38  vasilche
  * Do not flush in the middle of SNP table.
  *
