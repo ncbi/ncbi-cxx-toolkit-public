@@ -166,6 +166,11 @@ BlastSeqSrcIterator* BlastSeqSrcIteratorNew(unsigned int chunk_sz);
  * @return NULL
  */
 BlastSeqSrcIterator* BlastSeqSrcIteratorFree(BlastSeqSrcIterator* itr);
+
+/** Increments the BlastSeqSrcIterator.
+ * @param itr the BlastSeqSrcIterator to increment.
+ * @param seq_src the underlying BlastSeqSrc
+ */
 Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* seq_src, BlastSeqSrcIterator* itr);
 
 /** Function pointer typedef to obtain the next ordinal id to fetch from the
@@ -248,7 +253,7 @@ BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* seq_src);
 #define BLASTSeqSrcRetSequence(seq_src, arg) \
     (*GetRetSequence(seq_src))(GetDataStructure(seq_src), arg)
 
-
+#ifndef SKIP_DOXYGEN_PROCESSING
 #define DECLARE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
 DECLARE_ACCESSOR(member_type, member, data_structure_type); \
 DECLARE_MUTATOR(member_type, member, data_structure_type)
@@ -267,66 +272,58 @@ DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcCopier, CopyFnPtr, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*);
 
+DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetAvgSeqLen, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetName, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, RetSequence, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetErrorFnPtr, GetError, BlastSeqSrc*);
+#endif
+
 /*!\fn BLASTSeqSrcGetMaxSeqLen(seq_src)
    \brief Get the length of the longest sequence in the sequence source.
 */
-
-DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*);
 
 /*!\fn BLASTSeqSrcGetAvgSeqLen(seq_src)
    \brief Get the average length of all sequences in the sequence source.
 */
 
-DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetAvgSeqLen, BlastSeqSrc*);
-
 /*!\fn BLASTSeqSrcGetTotLen(seq_src)
    \brief Get the total length of all sequences in the sequence source.
 */
-
-DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*);
 
 /*!\fn BLASTSeqSrcGetName(seq_src)
    \brief Get the database name.
 */
 
-DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetName, BlastSeqSrc*);
-
 /*!\fn BLASTSeqSrcGetIsProt(seq_src)
    \brief Find if the database is protein or nucleotide.
 */
-
-DECLARE_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt, BlastSeqSrc*);
 
 /*!\fn BLASTSeqSrcGetSequence(seq_src,arg)
    \brief Retrieve an individual sequence.
 */
 
-DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*);
-
 /*!\fn BLASTSeqSrcGetSeqLen(seq_src,arg)
    \brief Retrieve sequence length.
 */
-
-DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*);
 
 /*!\fn BLASTSeqSrcGetNextChunk(seq_src,iterator)
    \brief Get next chunk of sequence indices.
 */
 
-DECLARE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*);
-DECLARE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*);
-
 /*!\fn BLASTSeqSrcRetSequence(seq_src,arg)
    \brief Deallocate individual sequence buffer if necessary.
 */
 
-DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, RetSequence, BlastSeqSrc*);
-
-
-/*!\fn BlasteqSrcGetError(seq_src)
+/*!\fn BLASTSeqSrcGetError(seq_src)
    \brief Retrieves error message, if defined.
 */
-DECLARE_MEMBER_FUNCTIONS(GetErrorFnPtr, GetError, BlastSeqSrc*);
 
 #ifdef __cplusplus
 }

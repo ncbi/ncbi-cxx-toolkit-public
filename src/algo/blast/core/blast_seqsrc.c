@@ -32,8 +32,10 @@
  * Definition of ADT to retrieve sequences for the BLAST engine
  */
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] = 
     "$Id$";
+#endif
 
 #include <algo/blast/core/blast_seqsrc.h>
 
@@ -184,6 +186,8 @@ Int4 BlastSeqSrcIteratorNext(const BlastSeqSrc* seq_src, BlastSeqSrcIterator* it
 
 /*****************************************************************************/
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+
 #define DEFINE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
 DEFINE_ACCESSOR(member_type, member, data_structure_type) \
 DEFINE_MUTATOR(member_type, member, data_structure_type)
@@ -200,6 +204,8 @@ member_type Get##member(const data_structure_type var) \
 #define DEFINE_MUTATOR(member_type, member, data_structure_type) \
 void Set##member(data_structure_type var, member_type arg) \
 { if (var) var->member = arg; }
+
+#endif
 
 /* Note there's no ; after these macros! */
 DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrc*)
