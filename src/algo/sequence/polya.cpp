@@ -122,9 +122,10 @@ EPolyTail FindPolyTail(const char* seq, TSignedSeqPos &cleavageSite,
         return ePolyTail_A3;
     } else {
         TSeqPos seqLen = strlen(seq);
-        AutoPtr<char, ArrayDeleter<char> > otherStrand(new char[seqLen]);
+        AutoPtr<char, ArrayDeleter<char> > otherStrand(new char[seqLen+1]);
         CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna, 0, seqLen,
                                      otherStrand.get());
+        otherStrand[seqLen] = '\0';
 
         cleavageSite = FindPolyA(otherStrand.get(), (possCleavageSite5p >= 0) ?
                                  seqLen - possCleavageSite5p - 1 : -1);
@@ -141,6 +142,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.5  2004/01/02 20:19:32  johnson
+* null terminate opposite strand string
+*
 * Revision 1.4  2003/12/31 20:41:40  johnson
 * FindPolySite takes cleavage prompt for both 3' poly-A and 5' poly-T
 *
