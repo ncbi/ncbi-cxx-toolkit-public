@@ -42,9 +42,9 @@
  * @{
  */
 
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-BEGIN_SCOPE(blast)
+USING_SCOPE(blast);
 
 extern "C" {
 
@@ -350,6 +350,14 @@ static Int4 SeqDbIteratorNext(void* seqsrc, BlastSeqSrcIterator* itr)
     return retval;
 }
 
+}
+
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+BEGIN_SCOPE(blast)
+
+extern "C" {
+
 BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 {
     SSeqDbSrcNewArgs* rargs = (SSeqDbSrcNewArgs*) args;
@@ -432,6 +440,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/04/12 14:58:42  ucko
+ * Avoid placing static C functions inside namespace blocks to keep the
+ * SGI MIPSpro compiler from segfaulting in Scope Setup.
+ *
  * Revision 1.3  2004/04/08 14:45:48  camacho
  * 1. Added missing extern "C" declarations
  * 2. Removed compiler warnings about unused parameters.
