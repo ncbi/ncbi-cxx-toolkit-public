@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  1999/12/30 22:11:59  vakatov
+* Fixed and added comments.
+* CCgiCookie::GetExpDate() -- use a more standard time string format.
+*
 * Revision 1.39  1999/11/02 20:35:38  vakatov
 * Redesigned of CCgiCookie and CCgiCookies to make them closer to the
 * cookie standard, smarter, and easier in use
@@ -160,7 +164,9 @@ public:
 
     // Throw the "invalid_argument" if "name" or "value" have invalid format
     //  - the "name" must not be empty; it must not contain '='
-    //  - both "name" and "value" must not contain: ";, "
+    //  - "name", "value", "domain" -- must consist of printable ASCII
+    //    characters, and not: semicolons(;), commas(,), or space characters.
+    //  - "path" -- can have space characters.
     CCgiCookie(const string& name, const string& value,
                const string& domain = NcbiEmptyString,
                const string& path   = NcbiEmptyString);
@@ -170,8 +176,8 @@ public:
 
     // Compose and write to output stream "os":
     //   "Set-Cookie: name=value; expires=date; path=val_path; domain=dom_name;
-    //    expires\n"
-    // (here, only "name=value" is mandatory)
+    //    secure\n"
+    // Here, only "name=value" is mandatory, and other parts are optional
     CNcbiOstream& Write(CNcbiOstream& os) const;
 
     // Reset everything(but name!) to default state like CCgiCookie(m_Name, "")
@@ -186,7 +192,7 @@ public:
     void SetValue  (const string& str);
     void SetDomain (const string& str);  // not spec'd by default
     void SetPath   (const string& str);  // not spec'd by default
-    void SetExpDate(const tm& exp_date); // infinite by default
+    void SetExpDate(const tm& exp_date); // GMT time (infinite if all zeros)
     void SetSecure (bool secure);        // "false" by default
 
     // All "const string& GetXXX(...)" methods beneath return reference
@@ -194,6 +200,7 @@ public:
     const string& GetValue  (void) const;
     const string& GetDomain (void) const;
     const string& GetPath   (void) const;
+    // Day, dd-Mon-yyyy hh:mm:ss GMT  (return empty string if not set)
     string        GetExpDate(void) const;
     // If exp.date is not set then return "false" and dont assign "*exp_date"
     bool GetExpDate(tm* exp_date) const;
@@ -215,7 +222,7 @@ private:
     string m_Value;
     string m_Domain;
     string m_Path;
-    tm     m_Expires;
+    tm     m_Expires;  // GMT time zone
     bool   m_Secure;
 
     static void x_CheckField(const string& str, const char* banned_symbols);
