@@ -75,7 +75,7 @@ public:
         int object_id = dbf.object_id;
         int tse_id = dbf.TSE_object_id;
 
-        string seq_id_str = dbf.primary_seqid;
+        string seq_id_str(dbf.primary_seqid);
         if (seq_id_str.empty())
             return;
 
@@ -108,7 +108,7 @@ public:
             return;
         }
 
-        string attr_seq_ids = m_db.object_attr_db.seq_ids;
+        string attr_seq_ids(m_db.object_attr_db.seq_ids);
         vector<string> seq_id_arr;
         
         NStr::Tokenize(attr_seq_ids, " ", seq_id_arr, NStr::eMergeDelims);
@@ -182,7 +182,7 @@ bool CLDS_Query::FindFile(const string& path)
     CBDB_FileCursor cur(m_db.file_db);
     cur.SetCondition(CBDB_FileCursor::eFirst);
     while (cur.Fetch() == eBDB_Ok) {
-        string fname = m_db.file_db.file_name;
+        string fname(m_db.file_db.file_name);
         if (fname == path) {
             return true;
         }
@@ -203,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/27 14:36:45  kuznets
+ * Fixed compilation problem with GCC
+ *
  * Revision 1.4  2003/06/24 18:32:39  kuznets
  * Code clean up. Improved sequence id comparison.
  *
