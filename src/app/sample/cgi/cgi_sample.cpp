@@ -30,7 +30,10 @@
  *
  *   USAGE:  sample.cgi?message=Some+Message
  *
- *   NOTE:  needs HTML template file "cgi_sample.html" in curr. dir to run!
+ *   NOTE:
+ *     1) needs HTML template file "cgi_sample.html" in curr. dir to run,
+ *     2) on most systems, you must make sure the executable's extension
+ *        is '.cgi'.
  *
  */
 
@@ -138,6 +141,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/18 14:55:42  vakatov
+ * Mention that '.cgi' extension is needed on most systems for the
+ * executable to be recognized as CGI.
+ *
  * Revision 1.1  2002/04/18 16:05:10  ucko
  * Add centralized tree for sample apps.
  *
