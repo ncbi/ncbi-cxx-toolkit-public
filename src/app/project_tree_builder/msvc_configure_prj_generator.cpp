@@ -193,10 +193,25 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
     if ( m_DllBuild )
         ofs << " -dll";
 
-    ofs << " -logfile out.log"
+    ofs << " -logfile %SLN_PATH%_configuration_log.txt"
         << " -conffile %PTB_PATH%\\..\\..\\..\\project_tree_builder.ini "
-        << "%TREE_ROOT%" << " " << m_SubtreeToBuild << " " << "%SLN_PATH%" ;
-
+        << "%TREE_ROOT%" << " " << m_SubtreeToBuild << " " << "%SLN_PATH%" << endl;
+    ofs << "@echo off" << endl
+        << "if errorlevel 1 goto report_error" << endl
+        << endl
+        << "echo ******************************************************************************" << endl
+        << "echo -CONFIGURE- has succeeded" << endl
+        << "echo Configuration log was saved at \"%SLN_PATH%_configuration_log.txt\"" << endl
+        << "echo ******************************************************************************" << endl
+        << "exit 0" << endl
+        << endl
+        << ":report_error" << endl
+        << "echo ******************************************************************************" << endl
+        << "echo -CONFIGURE- has failed" << endl
+        << "echo Configuration log was saved at \"%SLN_PATH%_configuration_log.txt\"" << endl
+        << "echo ******************************************************************************" << endl
+        << "\"%SLN_PATH%_configuration_log.txt\"" << endl
+        << "exit 1" << endl;
 }
 
 
@@ -207,6 +222,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/11/18 16:35:21  gouriano
+ * Changed configure._ to report configuration result
+ *
  * Revision 1.12  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
