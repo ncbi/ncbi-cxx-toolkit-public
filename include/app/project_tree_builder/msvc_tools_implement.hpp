@@ -386,15 +386,11 @@ private:
 class CLibrarianToolImpl : public ILibrarianTool
 {
 public:
-    CLibrarianToolImpl( const string& additional_options,
-                        const string& additional_library_directories,
-                        const string& project_id,
+    CLibrarianToolImpl( const string& project_id,
                         const CMsvcProjectMakefile& project_makefile,
                         const CMsvcMetaMakefile&    meta_makefile,
                         const SConfigInfo&          config)
-	    :m_AdditionalOptions    (additional_options),
-         m_AdditionalLibraryDirectories(additional_library_directories),
-	     m_ProjectId            (project_id),
+        :m_ProjectId            (project_id),
          m_MsvcProjectMakefile  (project_makefile),
          m_MsvcMetaMakefile     (meta_makefile),
          m_Config               (config)
@@ -405,10 +401,6 @@ public:
 	    return "VCLibrarianTool";
     }
 
-    virtual string AdditionalOptions(void) const
-    {
-	    return m_AdditionalOptions;
-    }
     virtual string OutputFile(void) const
     {
 	    return string("$(OutDir)/") + m_ProjectId + ".lib";
@@ -422,18 +414,13 @@ public:
                             #opt, \
                             m_Config ); \
     }
-    
+    SUPPORT_LIBRARIAN_OPTION(AdditionalOptions)
+    SUPPORT_LIBRARIAN_OPTION(AdditionalLibraryDirectories)
     SUPPORT_LIBRARIAN_OPTION(IgnoreAllDefaultLibraries)
     SUPPORT_LIBRARIAN_OPTION(IgnoreDefaultLibraryNames)
 
-    virtual string AdditionalLibraryDirectories(void) const
-    {
-	    return m_AdditionalLibraryDirectories;
-    }
 
 private:
-    string      m_AdditionalOptions;
-    string      m_AdditionalLibraryDirectories;
     string      m_ProjectId;
     SConfigInfo m_Config;
    
@@ -700,6 +687,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/03/22 14:47:34  gorelenk
+ * Changed definition of class CLibrarianToolImpl.
+ *
  * Revision 1.10  2004/03/10 16:47:01  gorelenk
  * Changed definitions of classes CCompilerToolImpl and CLinkerToolImpl.
  *
