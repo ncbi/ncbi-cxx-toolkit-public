@@ -3,8 +3,7 @@
 # Meta-makefile (tests for biotree)
 #################################
 
-#APP_PROJ = 
-#	test_biotree
+APP_PROJ = test_biotree
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
