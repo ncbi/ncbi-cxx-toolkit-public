@@ -196,13 +196,13 @@ struct SAsnProjectT : public SMakeProjectT
                              const TFiles&      makeapp, 
                              const TFiles&      makelib, 
                              CProjectItemsTree* tree,
-                             EMakeFileType maketype);
+                             EMakeFileType      maketype);
     
-    typedef enum {
-            eNoAsn,
-            eSingle,
-            eMultiple,
-        } TAsnType;
+    enum TAsnType {
+        eNoAsn,
+        eSingle,
+        eMultiple
+    };
 
     static TAsnType GetAsnProjectType(const string& applib_mfilepath,
                                       const TFiles& makeapp,
@@ -339,6 +339,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/02/14 18:09:11  vakatov
+ * Get rid of trailing comma in TAsnType definition
+ *
  * Revision 1.10  2005/01/31 16:38:00  gouriano
  * Keep track of subproject types and propagate it down the project tree
  *
