@@ -343,6 +343,39 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
     identifier = MoleculeIdentifier::GetIdentifier(this, pdbID, pdbChain, mmdbID, gi, accession);
 }
 
+void Sequence::AddMMDBAnnotTag(int mmdbID) const
+{
+    CBioseq::TAnnot::const_iterator a, ae = bioseqASN->GetAnnot().end();
+    CSeq_annot::C_Data::TIds::const_iterator i, ie;
+    bool found = false;
+    for (a=bioseqASN->GetAnnot().begin(); a!=ae; ++a) {
+        if ((*a)->GetData().IsIds()) {
+            for (i=(*a)->GetData().GetIds().begin(), ie=(*a)->GetData().GetIds().end(); i!=ie; ++i) {
+                if ((*i)->IsGeneral() && (*i)->GetGeneral().GetDb() == "mmdb" &&
+                    (*i)->GetGeneral().GetTag().IsId())
+                {
+                    found = true;
+                    TRACEMSG("mmdb link already present in sequence " << identifier->ToString());
+                    if ((*i)->GetGeneral().GetTag().GetId() != mmdbID ||
+                            (identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&
+                                identifier->mmdbID != mmdbID))
+                        ERRORMSG("Sequence::AddMMDBAnnotTag() - mmdbID mismatch");
+                    break;
+                }
+            }
+        }
+        if (found) break;
+    }
+    if (!found) {
+        CRef < CSeq_id > seqid(new CSeq_id());
+        seqid->SetGeneral().SetDb("mmdb");
+        seqid->SetGeneral().SetTag().SetId(mmdbID);
+        CRef < CSeq_annot > annot(new CSeq_annot());
+        annot->SetData().SetIds().push_back(seqid);
+        (const_cast<Sequence*>(this))->bioseqASN->SetAnnot().push_back(annot);
+    }
+}
+
 CSeq_id * Sequence::CreateSeqId(void) const
 {
     CSeq_id *sid = new CSeq_id();
@@ -626,6 +659,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2004/05/21 17:29:51  thiessen
+* allow conversion of mime to cdd data
+*
 * Revision 1.66  2004/03/15 18:27:12  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

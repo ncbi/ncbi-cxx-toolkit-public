@@ -145,6 +145,9 @@ public:
     typedef std::list < const Sequence * > SequenceList;
     void RemoveUnusedSequences(const AlignmentSet *alignmentSet, const SequenceList& updateSequences);
 
+    // convert underlying data from mime to cdd
+    bool ConvertMimeDataToCDD(const std::string& cddName);
+
     // CDD-specific data accessors
     bool IsCDD(void) const;
     bool IsCDDInMime(void) const;
@@ -173,6 +176,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/05/21 17:29:51  thiessen
+* allow conversion of mime to cdd data
+*
 * Revision 1.13  2004/02/19 17:04:55  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

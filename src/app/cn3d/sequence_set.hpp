@@ -85,6 +85,7 @@ public:
 
     int Length(void) const { return sequenceString.size(); }
     int GetOrSetMMDBLink(void) const;
+    void AddMMDBAnnotTag(int mmdbID) const;
 
     // Seq-id stuff (C++ and C)
     ncbi::objects::CSeq_id * CreateSeqId(void) const;
@@ -106,6 +107,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/05/21 17:29:51  thiessen
+* allow conversion of mime to cdd data
+*
 * Revision 1.31  2004/02/19 17:05:07  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

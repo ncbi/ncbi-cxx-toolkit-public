@@ -1071,6 +1071,27 @@ void StructureSet::ShowRejects(void) const
     }
 }
 
+bool StructureSet::ConvertMimeDataToCDD(const std::string& cddName)
+{
+    if (!dataManager->ConvertMimeDataToCDD(cddName))
+        return false;
+
+    // make sure all structured sequences have MMDB annot tags
+    SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
+    for (s=sequenceSet->sequences.begin(); s!=se; ++s) {
+        if ((*s)->molecule) {
+            if ((*s)->identifier->mmdbID == MoleculeIdentifier::VALUE_NOT_SET) {
+                ERRORMSG("sequence " << (*s)->identifier->ToString()
+                    << " has associated molecule but no MMDB id");
+                return false;
+            }
+            (*s)->AddMMDBAnnotTag((*s)->identifier->mmdbID);
+        }
+    }
+
+    return true;
+}
+
 // trivial methods...
 bool StructureSet::IsMultiStructure(void) const { return !dataManager->IsSingleStructure(); }
 bool StructureSet::HasDataChanged(void) const { return dataManager->HasDataChanged(); }
@@ -1085,6 +1106,7 @@ bool StructureSet::GetCDDNotes(StructureSet::TextLines *lines) const { return da
 bool StructureSet::SetCDDNotes(const StructureSet::TextLines& lines) { return dataManager->SetCDDNotes(lines); }
 ncbi::objects::CCdd_descr_set * StructureSet::GetCDDDescrSet(void) { return dataManager->GetCDDDescrSet(); }
 ncbi::objects::CAlign_annot_set * StructureSet::GetCDDAnnotSet(void) { return dataManager->GetCDDAnnotSet(); }
+
 
 
 ///// StructureObject stuff /////
@@ -1496,6 +1518,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.140  2004/05/21 17:29:51  thiessen
+* allow conversion of mime to cdd data
+*
 * Revision 1.139  2004/03/15 18:32:04  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

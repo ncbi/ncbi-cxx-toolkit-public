@@ -1490,6 +1490,7 @@ void StructureWindow::OnSave(wxCommandEvent& event)
 
     wxString outputFolder = wxString(userDir.c_str(), userDir.size() - 1); // remove trailing /
     wxString outputFilename;
+    bool outputBinary;
 
     // don't ask for filename if Save As is disabled
     if ((prompt && fileMenu->IsEnabled(MID_SAVE_AS)) || currentFile.size() == 0) {
@@ -1506,17 +1507,34 @@ void StructureWindow::OnSave(wxCommandEvent& event)
             (fn.GetExt() == "prt" ? 3 : 0)));
         if (dialog.ShowModal() == wxID_OK)
             outputFilename = dialog.GetPath();
-    } else
+        outputBinary = (dialog.GetFilterIndex() == 1);
+    } else {
         outputFilename = (userDir + currentFile).c_str();
+        outputBinary = (outputFilename.Right(4) == ".val");
+    }
 
     INFOMSG("save file: '" << outputFilename.c_str() << "'");
 
     if (!outputFilename.IsEmpty()) {
 
+        // convert mime to cdd if specified
+        if (outputFilename.Right(4) == ".acd" &&
+            (!glCanvas->structureSet->IsCDD() || glCanvas->structureSet->IsCDDInMime()))
+        {
+            string cddName;
+            if (glCanvas->structureSet->IsCDDInMime() && glCanvas->structureSet->GetCDDName().size() > 0)
+                cddName = glCanvas->structureSet->GetCDDName();
+            else
+                cddName = wxGetTextFromUser("Enter a name for this CD", "Input Name");
+            if (cddName.size() == 0 || !glCanvas->structureSet->ConvertMimeDataToCDD(cddName.c_str())) {
+                ERRORMSG("Conversion to Cdd failed");
+                return;
+            }
+        }
+
         // save and send FileSaved command
         unsigned int changeFlags;
-        if (glCanvas->structureSet->SaveASNData(
-                outputFilename.c_str(), (outputFilename.Right(4) == ".val"), &changeFlags) &&
+        if (glCanvas->structureSet->SaveASNData(outputFilename.c_str(), outputBinary, &changeFlags) &&
             IsFileMessengerActive())
         {
             string data(outputFilename.c_str());
@@ -1561,6 +1579,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/05/21 17:29:51  thiessen
+* allow conversion of mime to cdd data
+*
 * Revision 1.30  2004/04/22 00:05:03  thiessen
 * add seclect molecule
 *

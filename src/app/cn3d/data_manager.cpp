@@ -48,6 +48,9 @@
 #include <objects/mmdb3/Biostruc_feature_set.hpp>
 #include <objects/cdd/Cdd_descr_set.hpp>
 #include <objects/cdd/Cdd_descr.hpp>
+#include <objects/cdd/Cdd_id.hpp>
+#include <objects/cdd/Global_id.hpp>
+#include <objects/cdd/Cdd_id_set.hpp>
 
 #include "asn_reader.hpp"
 #include "data_manager.hpp"
@@ -246,6 +249,56 @@ void ASNDataManager::Load(void)
             sequenceAlignments->front()->SetData().SetAlign() = validAlignments;
         }
     }
+}
+
+bool ASNDataManager::ConvertMimeDataToCDD(const std::string& cddName)
+{
+    // if we have CDD data already, this is really easy
+    if (IsCDDInMime()) {
+        cddData.Reset(GetInternalCDDData());
+    }
+    else if (IsCDD()){
+        return true;    // nothing to do
+    }
+
+    // otherwise, splice together from mime data
+    else {
+        CRef < CCdd > cdd(new CCdd());
+        cdd->SetName(cddName);
+
+        // make up a local id
+        static int localID = 1;
+        CRef < CCdd_id > id(new CCdd_id());
+        cdd->SetId().Set().push_back(id);
+        CNcbiOstrstream oss;
+        oss << "loc" << localID++ << '\0';
+        auto_ptr<char> accession(oss.str());
+        id->SetGid().SetAccession(accession.get());
+
+        // fill in data
+        if (!seqEntryList) {
+            ERRORMSG("can't find sequences to put into new Cdd");
+            return false;
+        }
+        cdd->SetSequences().SetSet().SetSeq_set() = *seqEntryList;
+        if (!sequenceAlignments) {
+            ERRORMSG("can't find sequence alignments to put into new Cdd");
+            return false;
+        }
+        cdd->SetSeqannot() = *sequenceAlignments;
+        if (structureAlignments)
+            cdd->SetFeatures(*structureAlignments);
+        if (cddUpdates)
+            cdd->SetPending() = *cddUpdates;
+        if (bundleImportsFaked.size() > 0)
+            cdd->SetPending().splice(cdd->SetPending().end(), bundleImportsFaked);
+
+        cddData.Reset(cdd.GetPointer());
+    }
+
+    mimeData.Reset();
+    Load();
+    return true;
 }
 
 ASNDataManager::SeqAnnotList * ASNDataManager::GetOrCreateSequenceAlignments(void)
@@ -757,6 +810,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/05/21 17:29:51  thiessen
+* allow conversion of mime to cdd data
+*
 * Revision 1.21  2004/03/15 18:25:36  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

@@ -190,6 +190,9 @@ public:
     ncbi::objects::CCdd_descr_set * GetCDDDescrSet(void);
     ncbi::objects::CAlign_annot_set * GetCDDAnnotSet(void);
 
+    // convert underlying data from mime to cdd
+    bool ConvertMimeDataToCDD(const std::string& cddName);
+
     // writes data to a file; returns true on success
     bool SaveASNData(const char *filename, bool doBinary, unsigned int *changeFlags);
 
@@ -302,6 +305,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2004/05/21 17:29:51  thiessen
+* allow conversion of mime to cdd data
+*
 * Revision 1.78  2004/02/19 17:05:15  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
