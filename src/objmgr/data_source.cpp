@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/03/05 18:44:55  grichenk
+* +x_UpdateTSEStatus()
+*
 * Revision 1.18  2002/03/05 16:09:10  grichenk
 * Added x_CleanupUnusedEntries()
 *
@@ -168,6 +171,7 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle) const
             return *tse;
         }
     }
+    //### Try to resolve the conflict with the help of loader
     throw runtime_error(
         "Multiple seq-id matches found -- can not resolve to a TSE");
 }
@@ -1109,6 +1113,7 @@ without the sequence but with references to the id and all dead TSEs
             tse_set.insert(*selected_with_seq.begin());
         }
         else if (selected_with_seq.size() > 1) {
+            //### Try to resolve the conflict with the help of loader
             throw runtime_error(
                 "CDataSource: ambigous request -- multiple TSEs found, "
                 "can not select the best one");
@@ -1400,6 +1405,15 @@ void CDataSource::x_CleanupUnusedEntries(void)
             DropTSE(*it->first);
         }
     }
+}
+
+
+void CDataSource::x_UpdateTSEStatus(CSeq_entry& tse, bool dead)
+{
+    TEntries::iterator tse_it = m_Entries.find(&tse);
+    _ASSERT(tse_it != m_Entries.end());
+    tse_it->second->m_Dead = dead;
+    //### Anything else?
 }
 
 

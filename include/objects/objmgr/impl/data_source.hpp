@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/03/05 18:44:55  grichenk
+* +x_UpdateTSEStatus()
+*
 * Revision 1.13  2002/03/05 16:09:10  grichenk
 * Added x_CleanupUnusedEntries()
 *
@@ -239,6 +242,9 @@ private:
 
     // Global cleanup -- search for unlocked TSEs and drop them.
     void x_CleanupUnusedEntries(void);
+
+    // Change live/dead status of a TSE
+    void x_UpdateTSEStatus(CSeq_entry& tse, bool dead);
 
     // Replace initial handle range map with the new one, containing duplicate
     // range sets for each synonym of each handle
