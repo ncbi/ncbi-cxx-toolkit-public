@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.282 2004/03/31 21:40:47 ucko Exp $
+#  $Id: configure.ac,v 1.283 2004/04/01 21:34:27 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -139,7 +139,7 @@ AC_ARG_WITH(sssutils,
 AC_ARG_WITH(sssdb,
    [ --without-sssdb         do not use NCBI SSS DB library])
 AC_ARG_WITH(included-sss,
-   [ --without-included-sss  do not use the in-tree copy of SSS])
+   [ --with-included-sss     use the in-tree copy of SSS (experimental)])
 AC_ARG_WITH(geo,
    [ --without-geo           do not use NCBI GEO libraries])
 AC_ARG_WITH(pubmed,
@@ -2916,7 +2916,7 @@ fi
 
 if test "$with_sss" != "no" ; then
    local_sss=${srcdir}/src/internal/sss
-   if test "${with_included_sss-yes}" = "yes" -a -z "$NCBI_SSS_PATH" \
+   if test "${with_included_sss-no}" = "yes" -a -z "$NCBI_SSS_PATH" \
        -a -f "$local_sss/utils/sssdebug.hpp"; then
       with_included_sss=yes
       NCBI_SSS_PATH=$local_sss
