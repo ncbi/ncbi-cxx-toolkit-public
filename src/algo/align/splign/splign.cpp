@@ -35,6 +35,7 @@
 #include "splign_compartment_finder.hpp"
 #include "splign_util.hpp"
 
+#include <algo/align/nw_spliced_aligner16.hpp>
 #include <algo/align/splign/splign.hpp>
 #include <algo/align/nw_formatter.hpp>
 #include <algo/align/align_exception.hpp>
@@ -63,20 +64,19 @@ CSplign::CSplign( void )
     m_model_id = 0;
 }
 
-
-void CSplign::SetAligner( CRef<CSplicedAligner>& aligner ) {
-    m_aligner = aligner;
-}
-
-const CRef<CSplicedAligner>& CSplign::GetAligner( void ) const {
+CRef<CSplign::TAligner>& CSplign::SetAligner( void ) {
     return m_aligner;
 }
 
-void CSplign::SetSeqAccessor( CRef<CSplignSeqAccessor>& sa ) {
-    m_sa = sa;
+CConstRef<CSplign::TAligner> CSplign::GetAligner( void ) const {
+    return m_aligner;
 }
 
-const CRef<CSplignSeqAccessor>& CSplign::GetSeqAccessor( void ) const {
+CRef<CSplign::TSeqAccessor>& CSplign::SetSeqAccessor( void ) {
+    return m_sa;
+}
+
+CConstRef<CSplign::TSeqAccessor> CSplign::GetSeqAccessor( void ) const {
     return m_sa;
 }
 
@@ -1440,6 +1440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/06/29 20:51:52  kapustin
+ * Use CRef to access CObject-derived members
+ *
  * Revision 1.17  2004/06/23 18:56:38  kapustin
  * Increment model id for models with exceptions
  *

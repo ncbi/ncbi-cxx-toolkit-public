@@ -111,17 +111,39 @@ protected:
 CSplignSimple::CSplignSimple(const CSeq_loc &transcript,
                              const CSeq_loc &genomic,
                              CScope& scope) :
-    m_Blast(blast::SSeqLoc(transcript, scope),
-            blast::SSeqLoc(genomic, scope), blast::eMegablast),
+    m_Splign(new CSplign),
+    m_Blast(new blast::CBl2Seq(blast::SSeqLoc(transcript, scope),
+                               blast::SSeqLoc(genomic, scope),
+                               blast::eMegablast)),
     m_TranscriptId(&sequence::GetId(transcript)),
     m_GenomicId   (&sequence::GetId(genomic))
-{
+{    
     CRef<CSplicedAligner> aligner(new CSplicedAligner16);
+    m_Splign->SetAligner() = aligner;
+
     CRef<CSplignSeqAccessor> accessor
         (new CSplignObjMgrAccessor(*m_TranscriptId, *m_GenomicId, scope));
-    m_Splign.SetAligner(aligner);
-    m_Splign.SetSeqAccessor(accessor);
+    m_Splign->SetSeqAccessor() = accessor;
+}
 
+CRef<CSplign>& CSplignSimple::SetSplign(void) 
+{
+    return m_Splign;
+}
+
+CConstRef<CSplign> CSplignSimple::GetSplign(void) const
+{
+    return m_Splign;
+}
+
+CRef<blast::CBl2Seq>& CSplignSimple::SetBlast(void)
+{
+    return m_Blast;
+}
+
+CConstRef<blast::CBl2Seq> CSplignSimple::GetBlast(void) const
+{
+    return m_Blast;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -130,7 +152,7 @@ CSplignSimple::CSplignSimple(const CSeq_loc &transcript,
 const CSplign::TResults& CSplignSimple::Run(void)
 {
     string res;
-    blast::TSeqAlignVector blastRes(m_Blast.Run());
+    blast::TSeqAlignVector blastRes(m_Blast->Run());
 
     if (!blastRes.empty()  &&
         blastRes.front().NotEmpty()  &&
@@ -145,9 +167,9 @@ const CSplign::TResults& CSplignSimple::Run(void)
             hits.push_back(CHit(**saI));
         }
 
-        m_Splign.Run(&hits);
+        m_Splign->Run(&hits);
 
-        const CSplign::TResults &splignRes = m_Splign.GetResult();        
+        const CSplign::TResults &splignRes = m_Splign->GetResult();        
         ITERATE(CSplign::TResults, resI, splignRes) {
             if (resI->m_error) {
                 NCBI_THROW(CException, eUnknown, resI->m_msg);
@@ -155,7 +177,7 @@ const CSplign::TResults& CSplignSimple::Run(void)
         }
     }
 
-    return m_Splign.GetResult();
+    return m_Splign->GetResult();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -163,7 +185,7 @@ const CSplign::TResults& CSplignSimple::Run(void)
 // POST: splign results (if any) as Seq_align_set
 CRef<CSeq_align_set> CSplignSimple::GetResultsAsAln(void) const
 {
-    CRef<CSeq_align_set> sas(CSplignFormatter(m_Splign).AsSeqAlignSet());
+    CRef<CSeq_align_set> sas(CSplignFormatter(*m_Splign).AsSeqAlignSet());
 
     CRef<CSeq_id> si;
 
@@ -188,6 +210,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.7  2004/06/29 20:51:52  kapustin
+* Use CRef to access CObject-derived members
+*
 * Revision 1.6  2004/05/24 16:13:57  gorelenk
 * Added PCH ncbi_pch.hpp
 *

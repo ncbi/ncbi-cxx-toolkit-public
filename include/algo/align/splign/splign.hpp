@@ -57,6 +57,7 @@ public:
 class NCBI_XALGOALIGN_EXPORT CSplign: public CObject
 {
 public:
+
     // a segment can represent an exon or an unaligning piece of mRna (a gap)
     struct SSegment {
         bool   m_exon; // false if gap
@@ -103,11 +104,13 @@ public:
 
     // setters and getters
 
-    void   SetAligner( CRef<CSplicedAligner>& aligner);
-    const  CRef<CSplicedAligner>& GetAligner(void) const;
+    typedef CSplicedAligner TAligner;
+    CRef<TAligner>&     SetAligner(void);
+    CConstRef<TAligner> GetAligner(void) const;
 
-    void   SetSeqAccessor(CRef<CSplignSeqAccessor>& sa);
-    const  CRef<CSplignSeqAccessor>& GetSeqAccessor(void) const;
+    typedef CSplignSeqAccessor TSeqAccessor;
+    CRef<TSeqAccessor>&      SetSeqAccessor(void);
+    CConstRef<TSeqAccessor>  GetSeqAccessor(void) const;
 
     void   SetEndGapDetection(bool on);
     bool   GetEndGapDetection(void) const;
@@ -125,7 +128,7 @@ public:
     double GetMinQueryCoverage(void) const;
 
     void   SetCompartmentPenalty(double penalty);
-    double GetCompartmentPenalty(void) const; 
+    double GetCompartmentPenalty(void) const;
 
     void   SetMinExonIdentity(double idty);
     double GetMinExonIdentity(void) const;
@@ -146,10 +149,10 @@ public:
 protected:
 
     // active ingredient :-)
-    CRef<CSplicedAligner> m_aligner;
+    CRef<TAligner> m_aligner;
 
     // access to sequence data
-    CRef<CSplignSeqAccessor> m_sa;
+    CRef<TSeqAccessor> m_sa;
 
     // alignment pattern
     vector<size_t> m_pattern;
@@ -206,6 +209,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2004/06/29 20:48:18  kapustin
+ * Use CRef to access CObject-derived members
+ *
  * Revision 1.13  2004/06/23 18:55:34  kapustin
  * GetLastModel() --> GetNextModel()
  *

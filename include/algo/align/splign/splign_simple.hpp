@@ -48,23 +48,25 @@ END_SCOPE(objects)
 
 class NCBI_XALGOALIGN_EXPORT CSplignSimple {
 public:
+
     CSplignSimple(const objects::CSeq_loc &transcript,
                   const objects::CSeq_loc &genomic,
                   objects::CScope&);
 
     // Setters/Getters
-    CSplign&               SetSplignObject(void) { return m_Splign; }
-    const CSplign&         GetSplignObject(void) const { return m_Splign; }
-    blast::CBl2Seq&        SetBlastObject(void)  { return m_Blast; }
-    const blast::CBl2Seq&  GetBlastObject(void) const { return m_Blast; }
+    CRef<CSplign>&            SetSplign(void);
+    CConstRef<CSplign>        GetSplign(void) const;
+    CRef<blast::CBl2Seq>&     SetBlast(void);
+    CConstRef<blast::CBl2Seq> GetBlast(void) const;
 
-    const CSplign::TResults& Run(void);
+    const CSplign::TResults&  Run(void);
 
     CRef<objects::CSeq_align_set> GetResultsAsAln(void) const;
 
 protected:
-    CSplign                m_Splign;
-    blast::CBl2Seq         m_Blast;
+
+    CRef<CSplign>               m_Splign;
+    CRef<blast::CBl2Seq>        m_Blast;
 
     CConstRef<objects::CSeq_id> m_TranscriptId;
     CConstRef<objects::CSeq_id> m_GenomicId;
@@ -76,6 +78,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/06/29 20:48:18  kapustin
+ * Use CRef to access CObject-derived members
+ *
  * Revision 1.4  2004/06/09 14:24:40  kapustin
  * Add object getters
  *
