@@ -1,4 +1,3 @@
-
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -12,6 +11,7 @@ property pSaveContinueOnErrors : false
 -- false if we want to stop on an error.
 
 property pProjectFileExt : ".mcp"
+property pAppExt : ".app"
 property pCPlusPlusExt : ".cpp"
 property pStaticLibExt : ".lib"
 property pPluginExt : ".so"
@@ -61,8 +61,8 @@ global gProjectData
 
 on ProjectData(projName, features, aFileData)
 	
-	if (count characters of projName) > 18 then
-		set projName to characters 1 through 18 of projName as string
+	if (count characters of projName) > 25 then
+		set projName to characters 1 through 25 of projName as string
 	end if
 	
 	tell application "CodeWarrior IDE"
@@ -537,7 +537,6 @@ on SetGlobals()
 		set gBdbRootFolder to my FindSpecialFolder(pBdbRootFolder, "dbinc/db_int.in")
 		if gBdbRootFolder is "" then
 			display dialog "Can't find bdb. (download from http://www.sleepycat.com/ into your home directory). Some libraries will fail to build." with icon caution
-			
 		end if
 	end tell
 end SetGlobals
@@ -601,7 +600,7 @@ on CopyHeaders()
 		set prefixFolder to folder "mac_prj" of confFolder
 		
 		my UpdateRenameHeader("ncbiconf.mac", confFolder, "ncbiconf.h", "")
-		if pCreateGuiLibs then
+		if gFLTKRootFolder is not "" then
 			my UpdateRenameHeader("fltk-config.h", prefixFolder, "config.h", folder gFLTKRootFolder)
 		end if
 		
@@ -1034,30 +1033,8 @@ on GetStationeryName(proj)
 			duplicate file (stationeryName) of folder gRsrcsDir to folder stationeryDir
 		end if
 	end tell
-	(*
-	my CleanupFolder(stationeryDir, stationeryName)
-	try
-		tell application "Finder" to delete file (stationeryDir & ".DS_Store")
-	end try
-	*)
 	return (stationeryDir & stationeryName)
 end GetStationeryName
-
-(*
--- Delete everything in the folder 'thePath' except the saveFile.
-on CleanupFolder(thePath, saveFile)
-	repeat with f in list folder (thePath) with invisibles
-		if (f as string is not saveFile) then
-			try
-				tell application "Finder" to delete folder (thePath & f)
-			end try
-			try
-				tell application "Finder" to delete file (thePath & f)
-			end try
-		end if
-	end repeat
-end CleanupFolder
-*)
 
 on CleanupFiles(thePath)
 	-- get rid of all the files and folders starting with 'trashme' in thePath
