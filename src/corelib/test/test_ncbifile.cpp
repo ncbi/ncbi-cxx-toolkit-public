@@ -530,6 +530,39 @@ static void s_TEST_Dir(void)
     string homedir = CDir::GetHome();
     assert ( !homedir.empty() );
     cout << homedir << endl;
+
+    // Creation of relative path from 2 absolute pathes:
+    string rel_path;
+
+#if defined(NCBI_OS_MSWIN)
+    assert(CDirEntry::CreateRelativePath(
+        "C:\\x\\y\\z\\",
+        "C:\\x\\a\\b\\", rel_path));
+    assert(rel_path == string("..\\..\\a\\b\\"));
+
+    assert(CDirEntry::CreateRelativePath(
+        "C:\\x\\y\\z\\", 
+        "C:\\x\\y\\z\\", rel_path));
+    assert(rel_path.empty());
+    
+    assert(CDirEntry::CreateRelativePath(
+        "C:\\x\\y\\z\\", 
+        "C:\\x\\y\\a\\", rel_path));
+    assert(rel_path == string("..\\a\\"));
+
+#elif defined(NCBI_OS_UNIX )
+//    assert(CDirEntry::CreateRelativePath("/usr/bin/", "/usr/",
+//                                         rel_path));
+//    assert(rel_path == string("../"));
+//    assert(CDirEntry::CreateRelativePath("/usr/bin/", "/usr/",
+//                                         rel_path));
+//    assert(rel_path == string("../"));
+//    assert(CDirEntry::CreateRelativePath("/usr/bin/", "/usr/",
+//                                         rel_path));
+//    assert(rel_path == string("../"));
+#elif defined(NCBI_OS_MAC)
+    // NOT implemented!
+#endif
 }
 
 
@@ -689,6 +722,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/01/05 20:05:06  gorelenk
+ * + Test for CDirEntry::CreateRelativePath()
+ *
  * Revision 1.32  2003/12/15 15:42:48  ivanov
  * Removed incorrect last access time check
  *
