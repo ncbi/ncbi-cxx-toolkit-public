@@ -401,7 +401,6 @@ bool CCachedId1Reader::LoadIds(const string& key,
         id.SetSatKey(data[i+2]);
         ids.AddBlob_id(id, data[i+3]);
     }
-    ids.SetLoaded();
     return true;
 }
 
