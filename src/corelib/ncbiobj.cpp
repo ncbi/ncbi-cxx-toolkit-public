@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/06/16 16:29:51  vasilche
+* Added SetCanDelete() method to allow to change CObject 'in heap' status immediately after creation.
+*
 * Revision 1.5  2000/06/07 19:44:22  vasilche
 * Removed unneeded THROWS declaration - they lead to encreased code size.
 *
@@ -75,7 +78,7 @@ const char* CNullPointerError::what() const
 CObject::~CObject(void)
 {
     if ( Referenced() )
-        throw runtime_error("delete referenced CObject object");
+        THROW1_TRACE(runtime_error, "delete referenced CObject object");
 }
 
 void CObject::RemoveLastReference(void) const
@@ -90,7 +93,7 @@ void CObject::RemoveLastReference(void) const
         break;
     default:
         m_Counter++;
-        throw runtime_error("RemoveReference() without AddReference()");
+        THROW1_TRACE(runtime_error, "RemoveReference() without AddReference()");
     }
 }
 
@@ -100,7 +103,7 @@ void CObject::ReleaseReference(void) const
         m_Counter = 0;
     }
     else {
-        throw runtime_error("Illegal CObject::ReleaseReference() call");
+        THROW1_TRACE(runtime_error, "Illegal CObject::ReleaseReference() call");
     }
 }
 

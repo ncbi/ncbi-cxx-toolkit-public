@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/06/16 16:29:42  vasilche
+* Added SetCanDelete() method to allow to change CObject 'in heap' status immediately after creation.
+*
 * Revision 1.9  2000/06/07 19:44:16  vasilche
 * Removed unneeded THROWS declaration - they lead to encreased code size.
 *
@@ -111,6 +114,12 @@ protected:
 
 public:
     inline
+    bool CanBeDeleted(void) const THROWS_NONE
+        {
+            return (m_Counter & eDoNotDelete) == 0;
+        }
+
+    inline
     unsigned ReferenceCount(void) const THROWS_NONE
         {
             return (m_Counter & ~eDoNotDelete);
@@ -138,6 +147,13 @@ public:
 
     // remove reference without deleting object
     void ReleaseReference(void) const;
+
+    // set flag eCanDelete meaning that object was allocated in heap
+    void SetCanDelete(void)
+        {
+            _ASSERT(m_Counter == unsigned(eDoNotDelete));
+            m_Counter = 0;
+        }
 
 private:
     void RemoveLastReference(void) const;
