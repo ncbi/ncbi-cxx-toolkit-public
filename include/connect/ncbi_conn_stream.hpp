@@ -173,7 +173,10 @@ private:
  * More elaborate specification of the server can be done via
  * SConnNetInfo structure, which otherwise will be created with the
  * use of a standard registry section to obtain default values
- * (details: <connect/ncbi_connutil.h>).
+ * (details: <connect/ncbi_connutil.h>).  No user header is added if
+ * the argument is passed as default (or empty string).  To make
+ * sure the user header is passed empty, delete it from net_info
+ * by ConnNetInfo_DeleteUserHeader(net_info).
  *
  * THCC_Flags and other details: <connect/ncbi_http_connector.h>.
  *
@@ -333,6 +336,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.27  2004/06/22 16:51:22  lavr
+ * Note handling of user_header in HTTP stream ctor's
+ *
  * Revision 6.26  2004/03/22 16:54:05  ivanov
  * Cosmetic changes
  *
