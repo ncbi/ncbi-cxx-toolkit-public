@@ -54,7 +54,7 @@ BEGIN_SCOPE(objects)
 
 
 CMutexPool_Base<CScope> CScope::sm_Scope_MP;
-
+CMutex CMutexPool_Base<CScope>::sm_Pool[kMutexPoolSize];
 
 CScope::CScope(CObjectManager& objmgr)
     : m_pObjMgr(&objmgr), m_FindMode(eFirst)
@@ -373,6 +373,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/08/07 18:21:57  ucko
+* Explicitly instantiate CMutexPool_Base<CScope>::sm_Pool
+*
 * Revision 1.23  2002/07/08 20:51:02  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex
