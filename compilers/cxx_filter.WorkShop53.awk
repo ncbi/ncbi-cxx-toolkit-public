@@ -16,7 +16,7 @@
     m = $0;
   }
 }
-END { print_if_interesting() }
+END { if (length(m)) print_if_interesting(); }
 
 
 # Set exit status based on the presence of error messages.
@@ -49,12 +49,14 @@ function print_if_interesting()
       m ~ /^".*\/include\/CC\/Cstd\/\.\/deque", line (639|671|679): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/fstream", line (277|321|364): .*::rdbuf hides/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/list", line (543|544): .*non-const reference/ ||
-      m ~ /^".*\/include\/CC\/Cstd\/\.\/sstream", line 165: .*::rdbuf hides/ ||
+      m ~ /^".*\/include\/CC\/Cstd\/\.\/ostream", line 331: Warning: The else-branch should return a value/ ||
+      m ~ /^".*\/include\/CC\/Cstd\/\.\/sstream", line (165|207): .*::rdbuf hides/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/string", line (1622|1640): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/vector", line (147|156|161|268|273|310|318|399|463|472|483|513|1146): .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/Cstd\/\.\/vector.cc", line 113: .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/std\/errno\.h", line 20: .*extra text on this line/ ||
       m ~ /^".*\/include\/html\/jsmenu\.hpp", line [0-9]+: Warning: ncbi::CHTMLPopupMenu::SetAttribute hides the function ncbi::CNCBINode::SetAttribute/ ||
+      m ~ /^".*\/include\/internal\/idx\/idcont.hpp", line [0-9]+: Warning: ncbi::CPmDbIdContainerUid::(Unc|C)ompress hides the virtual function ncbi::CPmDbIdContainer::/ ||
       m ~ /^".*\/include\/internal\/webenv2\/[a-z]+\.hpp", line [0-9]+: Warning: ncbi::CQ[A-Za-z]+::FromAsn hides the function/ ||
       m ~ /^".*\/include\/sybdb\.h".*two consecutive underbars in "db__.*"\./ ||
       m ~ /^".*\/include\/serial\/objostr[a-z]+\.hpp".*hides the function ncbi::CObjectOStream::WriteClassMember/ ||
