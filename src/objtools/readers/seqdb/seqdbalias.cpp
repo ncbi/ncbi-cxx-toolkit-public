@@ -619,6 +619,18 @@ void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset)
     vector<string> gils;
     NStr::Tokenize(m_Values["GILIST"], " ", gils, NStr::eMergeDelims);
     
+    // This enforces our restriction that only one GILIST may be
+    // applied to any particular volume.  We do not check if the
+    // existing one is the same as what we have...
+    
+    if (gils.size() != 1) {
+        string msg =
+            string("Alias file (") + m_DBPath +
+            ") has multiple GI lists (" + m_Values["GILIST"] + ").";
+        
+        NCBI_THROW(CSeqDBException, eFileErr, msg);
+    }
+    
     ITERATE(vector<string>, iter, gils) {
         SeqDB_JoinDelim(resolved_gilist,
                         SeqDB_CombinePath(m_DBPath, *iter),
@@ -628,6 +640,10 @@ void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset)
     ITERATE(TVolNames, vn, m_VolNames) {
         volset.AddGiListVolume(*vn, resolved_gilist);
     }
+    
+    // This "join" should not be needed - an assignment would be just
+    // as good - as long as the multi-gilist exception above is
+    // enforeced.
     
     NON_CONST_ITERATE(TSubNodeList, an, m_SubNodes) {
         SeqDB_JoinDelim((**an).m_Values["GILIST"],
