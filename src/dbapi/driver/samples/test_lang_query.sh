@@ -2,7 +2,7 @@
 # $Id$
 
 driver_list="ctlib dblib ftds"
-server_list="MS_DEV2 STRAUSS MOZART"
+server_list="MS_DEV2 BARTOK MOZART"
 server_mssql="MS_DEV2"
 
 res_file="/tmp/$0.$$"
