@@ -212,9 +212,11 @@ int CTest_validatorApplication::Run(void)
         }
     }
 
-
+    
     unsigned int result = 0;
-    result = PrintValidError(*eval, args);
+    if ( eval ) {
+        result = PrintValidError(*eval, args);
+    }
     
     return result;
 }
@@ -377,7 +379,7 @@ unsigned int CTest_validatorApplication::PrintValidError
     EDiagSev show = static_cast<EDiagSev>(args["q"].AsInteger());
     EDiagSev count = static_cast<EDiagSev>(args["r"].AsInteger());
     
-    CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &cout;
+    CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &NcbiCout;
 
     if ( errors.TotalSize() == 0 ) {
         *os << "All entries are OK!" << endl;
@@ -436,6 +438,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2003/04/15 14:56:52  shomrat
+ * cout -> NcbiCout; test before derefernce
+ *
  * Revision 1.17  2003/04/15 14:22:42  vasilche
  * Added missing includes.
  *
