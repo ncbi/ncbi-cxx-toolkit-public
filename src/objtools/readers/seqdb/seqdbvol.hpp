@@ -85,7 +85,10 @@ public:
     
     Int4 GetSequence(Int4 oid, const char ** buffer);
     
-    Int4 GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code);
+    Int4 GetAmbigSeq(Int4            oid,
+                     char         ** buffer,
+                     Uint4           nucl_code,
+                     ESeqDBAllocType alloc_type);
     
     list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid);
     
@@ -106,10 +109,20 @@ public:
     
 private:
     CRef<CBlast_def_line_set> x_GetHdr(Uint4 oid);
-    char x_GetSeqType(void);
-    bool x_GetAmbChar(Uint4 oid, vector<Int4> ambchars);
-    Int4 x_GetSequence(Int4 oid, const char ** buffer);
-    Int4 x_GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code);
+
+    char   x_GetSeqType(void);
+
+    bool   x_GetAmbChar(Uint4 oid, vector<Int4> ambchars);
+
+    Int4   x_GetSequence(Int4 oid, const char ** buffer);
+
+    Int4   x_GetAmbigSeq(Int4            oid,
+                         char         ** buffer,
+                         Uint4           nucl_code,
+                         ESeqDBAllocType alloc_type);
+    
+    char * x_AllocType(Uint4           length,
+                       ESeqDBAllocType alloc_type);
     
     CSeqDBMemPool & m_MemPool;
     string          m_VolName;

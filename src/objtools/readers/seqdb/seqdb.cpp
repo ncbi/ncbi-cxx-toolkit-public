@@ -83,7 +83,16 @@ Int4 CSeqDB::GetSequence(TOID oid, const char ** buffer)
 
 Int4 CSeqDB::GetAmbigSeq(TOID oid, const char ** buffer, Uint4 nucl_code)
 {
-    return m_Impl->GetAmbigSeq(oid, buffer, nucl_code);
+    return m_Impl->GetAmbigSeq(oid, (char **)buffer, nucl_code, (ESeqDBAllocType) 0);
+}
+
+Int4 CSeqDB::GetAmbigSeqAlloc(TOID            oid,
+                              char         ** buffer,
+                              Uint4           nucl_code,
+                              ESeqDBAllocType strategy)
+{
+    assert(strategy);
+    return m_Impl->GetAmbigSeq(oid, buffer, nucl_code, strategy);
 }
 
 string CSeqDB::GetTitle(void)

@@ -102,6 +102,25 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-here]";
         
+        if (s == "-dyn") {
+            CSeqDB db("nr", 'p', true);
+            
+            cout << "Num oids: " << db.GetNumSeqs() << endl;
+            
+            char * buf1 = 0;
+            
+            Int4 len = db.GetAmbigSeqAlloc(10,
+                                           & buf1,
+                                           kSeqDBNuclBlastNA8,
+                                           eNew);
+            
+            cout << "Length (10): " << len << endl;
+            
+            delete[] buf1;
+            
+            return 0;
+        } else desc += " [-dyn]";
+        
         if (s == "-limit") {
             {
                 CSeqDB db("/home/bealer/seqdb/tenth", 'p', true);
@@ -124,13 +143,13 @@ int test1(int argc, char ** argv)
             }
             {
                 CSeqDB db("swissprot", 'p', true);
-            
+                
                 cout << "Num oids: " << db.GetNumSeqs() << endl;
-            
+                
                 db.SetOIDRange(135,174);
-            
+                
                 CSeqDBIter i = db.Begin();
-            
+                
                 while(i) {
                     CRef<CBioseq> bs = db.GetBioseq(i.GetOID());
                     

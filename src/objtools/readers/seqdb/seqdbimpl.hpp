@@ -65,7 +65,10 @@ public:
     
     Int4 GetSequence(Int4 oid, const char ** buffer);
     
-    Int4 GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code);
+    Int4 GetAmbigSeq(Int4            oid,
+                     char         ** buffer,
+                     Uint4           nucl_code,
+                     ESeqDBAllocType strategy);
     
     void RetSequence(const char ** buffer);
     

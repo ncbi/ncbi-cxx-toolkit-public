@@ -135,11 +135,14 @@ Int4 CSeqDBImpl::GetSequence(Int4 oid, const char ** buffer)
     return -1;
 }
 
-Int4 CSeqDBImpl::GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code)
+Int4 CSeqDBImpl::GetAmbigSeq(Int4            oid,
+                             char         ** buffer,
+                             Uint4           nucl_code,
+                             ESeqDBAllocType alloc_type)
 {
     Uint4 vol_oid = 0;
     if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetAmbigSeq(vol_oid, buffer, nucl_code);
+        return vol->GetAmbigSeq(vol_oid, buffer, nucl_code, alloc_type);
     }
     
     return -1;

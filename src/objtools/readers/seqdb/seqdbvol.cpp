@@ -711,19 +711,73 @@ Int4 CSeqDBVol::GetSequence(Int4 oid, const char ** buffer)
     return x_GetSequence(oid, buffer);
 }
 
-Int4 CSeqDBVol::GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code)
+char * CSeqDBVol::x_AllocType(Uint4 length, ESeqDBAllocType alloc_type)
 {
-    CFastMutexGuard guard(m_Lock);
-    return x_GetAmbigSeq(oid, buffer, nucl_code);
+    // Specifying an allocation type of zero, uses the memory pool to
+    // do the allocation.  This is not intended to be visible to the
+    // end user, so it is not enumerated in seqdbcommon.hpp.
+    
+    char * retval = 0;
+    
+    switch(alloc_type) {
+    case eMalloc:
+        retval = (char*) malloc(length);
+        break;
+        
+// MemNew is not available yet.
+//     case eMemNew:
+//         retval = (char*) MemNew(length);
+//         break;
+        
+    case eNew:
+        retval = new char[length];
+        break;
+        
+    default:
+        retval = (char*) m_MemPool.Alloc(length);
+    }
+    
+    return retval;
 }
 
-Int4 CSeqDBVol::x_GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code)
+Int4 CSeqDBVol::GetAmbigSeq(Int4            oid,
+                            char         ** buffer,
+                            Uint4           nucl_code,
+                            ESeqDBAllocType alloc_type)
 {
+    CFastMutexGuard guard(m_Lock);
+    
+    char * buf1 = 0;
+    Int4 baselen = x_GetAmbigSeq(oid, & buf1, nucl_code, alloc_type);
+    
+    *buffer = buf1;
+    return baselen;
+}
+
+Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
+                              char         ** buffer,
+                              Uint4           nucl_code,
+                              ESeqDBAllocType alloc_type)
+{
+    Int4 base_length = -1;
+    
     if (kSeqTypeProt == m_Idx.GetSeqType()) {
-        return x_GetSequence(oid, buffer);
+        const char * buf2 = 0;
+        
+        base_length = x_GetSequence(oid, & buf2);
+        
+        if (alloc_type == ESeqDBAllocType(0)) {
+            *buffer = (char*) buf2;
+        } else {
+            char * obj = x_AllocType(base_length, alloc_type);
+            
+            memcpy(obj, buf2, base_length);
+            m_MemPool.Free((void*) buf2);
+            
+            *buffer = obj;
+        }
     } else {
         vector<char> buffer_na8;
-        Int4 base_length = -1;
         
         {
             // The code in this block is a few excerpts from
@@ -767,16 +821,16 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code)
         // I don't want to bundle any more in this checkin. (kmb)
         
         int bytelen = buffer_na8.size();
-        char * uncomp_buf = (char*) m_MemPool.Alloc(bytelen);
+        char * uncomp_buf = x_AllocType(bytelen, alloc_type);
         
         for(int i = 0; i < bytelen; i++) {
             uncomp_buf[i] = buffer_na8[i];
         }
         
         *buffer = uncomp_buf;
-        
-        return base_length;
     }
+    
+    return base_length;
 }
 
 Int4 CSeqDBVol::x_GetSequence(Int4 oid, const char ** buffer)
