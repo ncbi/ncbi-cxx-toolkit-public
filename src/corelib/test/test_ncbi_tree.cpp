@@ -83,10 +83,10 @@ bool TestFunctor3(int a, int b)
   return (a == b);
 }
 
-static string s_IntToStr(int i)
-{
-    return NStr::IntToString(i);
-}
+// static string s_IntToStr(int i)
+// {
+//     return NStr::IntToString(i);
+// }
 
 
 
@@ -206,6 +206,7 @@ static void s_TEST_Tree()
     cout << endl;
 
     delete str;
+    str = tr5 = tr4 = tr6;  // just to eliminate "unused var" warning
 }
 
 struct IdValue
@@ -219,10 +220,10 @@ struct IdValue
     int GetId() const { return id; }
 };
 
-static string s_IdValueToStr(const IdValue& idv)
-{
-    return NStr::IntToString(idv.id);
-}
+// static string s_IdValueToStr(const IdValue& idv)
+// {
+//     return NStr::IntToString(idv.id);
+// }
 
 
 
@@ -269,6 +270,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.22  2004/07/22 15:50:47  vakatov
+ * Get rid of "unused var" warning
+ *
  * Revision 1.21  2004/07/22 01:24:38  ucko
  * Oops, the correct node to delete is str, since tr gets reassigned...
  *
