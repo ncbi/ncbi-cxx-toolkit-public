@@ -31,7 +31,7 @@
  */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
-#include <utilities.hpp>
+#include "utilities.hpp"
 
 #include <serial/enumvalues.hpp>
 #include <serial/serialimpl.hpp>
@@ -85,40 +85,23 @@ BEGIN_NAMED_ENUM_IN_INFO("", CGbqualType::, EType, false)
     ADD_ENUM_VALUE("bad",               e_Bad);
     ADD_ENUM_VALUE("allele",            e_Allele);
     ADD_ENUM_VALUE("anticodon",         e_Anticodon);
-    ADD_ENUM_VALUE("bond_type",         e_Bond_type);
     ADD_ENUM_VALUE("bound_moiety",      e_Bound_moiety);
-    ADD_ENUM_VALUE("cds_product",       e_Cds_product);
     ADD_ENUM_VALUE("citation",          e_Citation);
     ADD_ENUM_VALUE("clone",             e_Clone);
-    ADD_ENUM_VALUE("coded_by",          e_Coded_by);
     ADD_ENUM_VALUE("codon",             e_Codon);
     ADD_ENUM_VALUE("codon_start",       e_Codon_start);
     ADD_ENUM_VALUE("cons_splice",       e_Cons_splice);
-    ADD_ENUM_VALUE("db_xref",           e_Db_xref);
     ADD_ENUM_VALUE("direction",         e_Direction);
     ADD_ENUM_VALUE("EC_number",         e_EC_number);
     ADD_ENUM_VALUE("evidence",          e_Evidence);
     ADD_ENUM_VALUE("exception",         e_Exception);
-    ADD_ENUM_VALUE("exception_note",    e_Exception_note);
-    ADD_ENUM_VALUE("figure",            e_Figure);
     ADD_ENUM_VALUE("frequency",         e_Frequency);
     ADD_ENUM_VALUE("function",          e_Function);
     ADD_ENUM_VALUE("gene",              e_Gene);
-    ADD_ENUM_VALUE("gene_desc",         e_Gene_desc);
-    ADD_ENUM_VALUE("gene_allele",       e_Gene_allele);
-    ADD_ENUM_VALUE("gene_map",          e_Gene_map);
-    ADD_ENUM_VALUE("gene_syn",          e_Gene_syn);
-    ADD_ENUM_VALUE("gene_note",         e_Gene_note);
-    ADD_ENUM_VALUE("gene_xref",         e_Gene_xref);
-    ADD_ENUM_VALUE("heterogen",         e_Heterogen);
-    ADD_ENUM_VALUE("illegal_qual",      e_Illegal_qual);
-    ADD_ENUM_VALUE("insertion_seq",     e_Insertion_seq);
     ADD_ENUM_VALUE("label",             e_Label);
     ADD_ENUM_VALUE("locus_tag",         e_Locus_tag);
     ADD_ENUM_VALUE("map",               e_Map);
-    ADD_ENUM_VALUE("maploc",            e_Maploc);
     ADD_ENUM_VALUE("mod_base",          e_Mod_base);
-    ADD_ENUM_VALUE("modelev",           e_Modelev);
     ADD_ENUM_VALUE("note",              e_Note);
     ADD_ENUM_VALUE("number",            e_Number);
     ADD_ENUM_VALUE("organism",          e_Organism);
@@ -126,41 +109,17 @@ BEGIN_NAMED_ENUM_IN_INFO("", CGbqualType::, EType, false)
     ADD_ENUM_VALUE("PCR_conditions",    e_PCR_conditions);
     ADD_ENUM_VALUE("phenotype",         e_Phenotype);
     ADD_ENUM_VALUE("product",           e_Product);
-    ADD_ENUM_VALUE("product_quals",     e_Product_quals);
-    ADD_ENUM_VALUE("prot_activity",     e_Prot_activity);
-    ADD_ENUM_VALUE("prot_comment",      e_Prot_comment);
-    ADD_ENUM_VALUE("prot_EC_number",    e_Prot_EC_number);
-    ADD_ENUM_VALUE("prot_note",         e_Prot_note);
-    ADD_ENUM_VALUE("prot_method",       e_Prot_method);
-    ADD_ENUM_VALUE("prot_conflict",     e_Prot_conflict);
-    ADD_ENUM_VALUE("prot_desc",         e_Prot_desc);
-    ADD_ENUM_VALUE("prot_missing",      e_Prot_missing);
-    ADD_ENUM_VALUE("prot_name",         e_Prot_name);
-    ADD_ENUM_VALUE("prot_names",        e_Prot_names);
-    ADD_ENUM_VALUE("protein_id",        e_Protein_id);
-    ADD_ENUM_VALUE("pseudo",            e_Pseudo);
-    ADD_ENUM_VALUE("region",            e_Region);
-    ADD_ENUM_VALUE("region_name",       e_Region_name);
     ADD_ENUM_VALUE("replace",           e_Replace);
     ADD_ENUM_VALUE("rpt_family",        e_Rpt_family);
     ADD_ENUM_VALUE("rpt_type",          e_Rpt_type);
     ADD_ENUM_VALUE("rpt_unit",          e_Rpt_unit);
-    ADD_ENUM_VALUE("rrna_its",          e_Rrna_its);
-    ADD_ENUM_VALUE("sec_str_type",      e_Sec_str_type);
-    ADD_ENUM_VALUE("selenocysteine",    e_Selenocysteine);
-    ADD_ENUM_VALUE("seqfeat_note",      e_Seqfeat_note);
     ADD_ENUM_VALUE("site",              e_Site);
     ADD_ENUM_VALUE("site_type",         e_Site_type);
     ADD_ENUM_VALUE("standard_name",     e_Standard_name);
-    ADD_ENUM_VALUE("transcript_id",     e_Transcript_id);
     ADD_ENUM_VALUE("transl_except",     e_Transl_except);
     ADD_ENUM_VALUE("transl_table",      e_Transl_table);
     ADD_ENUM_VALUE("translation",       e_Translation);
-    ADD_ENUM_VALUE("transposon",        e_Transposon);
-    ADD_ENUM_VALUE("trna_aa",           e_Trna_aa);
-    ADD_ENUM_VALUE("trna_codons",       e_Trna_codons);
     ADD_ENUM_VALUE("usedin",            e_Usedin);
-    ADD_ENUM_VALUE("xtra_prod_quals",   e_Xtra_prod_quals);
 }
 END_ENUM_INFO
 
@@ -544,14 +503,12 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
 
     // repeat_region
     ASSOCIATE( eSubtype_repeat_region, e_Function );
-    ASSOCIATE( eSubtype_repeat_region, e_Insertion_seq );
     ASSOCIATE( eSubtype_repeat_region, e_Label );
     ASSOCIATE( eSubtype_repeat_region, e_Map );
     ASSOCIATE( eSubtype_repeat_region, e_Rpt_family );
     ASSOCIATE( eSubtype_repeat_region, e_Rpt_type );
     ASSOCIATE( eSubtype_repeat_region, e_Rpt_unit );
     ASSOCIATE( eSubtype_repeat_region, e_Standard_name );
-    ASSOCIATE( eSubtype_repeat_region, e_Transposon );
     ASSOCIATE( eSubtype_repeat_region, e_Usedin );
 
     // repeat_unit
@@ -1087,6 +1044,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/12/24 16:50:15  shomrat
+* Removal of redundant GBQual types
+*
 * Revision 1.1  2002/12/23 20:13:18  shomrat
 * Initial submission after splitting former implementation
 *
