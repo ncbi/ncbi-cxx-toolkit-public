@@ -40,9 +40,6 @@
 #ifdef NCBI_COMPILER_MIPSPRO
 #  include <util/stream_utils.hpp>
 #  define CConn_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
-#elif defined(NCBI_COMPILER_GCC) && defined(NO_PUBSYNC)
-#  include <util/stream_utils.hpp>
-#  define CConn_StreambufBase CShowmanycStreambuf
 #else
 #  if defined(NCBI_COMPILER_WORKSHOP) && defined(_MT)
 #    ifdef HAVE_IOS_XALLOC
@@ -97,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2003/12/29 15:17:41  lavr
+ * Rollback to R6.26
+ *
  * Revision 6.27  2003/12/18 13:25:19  ucko
  * Renamed CGCC_ShowmanycStreambuf to CShowmanycStreambuf.
  *
