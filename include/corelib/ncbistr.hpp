@@ -974,7 +974,8 @@ public:
     /// @return 
     ///   The strings in "arr" are joined into a single string, separated
     ///   with "delim".
-    static string Join(const list<string>& arr, const string& delim);
+    static string Join(const list<string>& arr,   const string& delim);
+    static string Join(const vector<string>& arr, const string& delim);
 
     /// How to display new line characters.
     ///
@@ -987,7 +988,7 @@ public:
     /// Get a printable version of the specified string. 
     ///
     /// The non-printable characters will be represented as "\r", "\n", "\v",
-    /// "\t", "\0", "\\", or "\xDD" where DD is the character's code in
+    /// "\t", "\"", "\\", or "\xDD" where DD is the character's code in
     /// hexadecimal.
     ///
     /// @param str
@@ -997,9 +998,15 @@ public:
     ///   eNewLine_Quote displays the new line as "\n". If set to
     ///   eNewLine_Passthru, a line break is used instead.
     /// @return
-    ///   Return a printable version of "str". 
+    ///   Return a printable version of "str".
+    /// @sa
+    ///   ParseEscapes
     static string PrintableString(const string& str,
                                   ENewLineMode  nl_mode = eNewLine_Quote);
+
+    /// Parse C-style escape sequences in the specified string, including
+    /// all those produced by PrintableString.
+    static string ParseEscapes(const string& str);
 
     /// How to wrap the words in a string to a new line.
     enum EWrapFlags {
@@ -1812,6 +1819,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.47  2003/12/01 20:45:25  ucko
+ * Extend Join to handle vectors as well as lists.
+ * Add ParseEscapes (inverse of PrintableString).
+ *
  * Revision 1.46  2003/11/18 11:57:37  siyan
  * Changed so @addtogroup does not cross namespace boundary
  *
