@@ -12,9 +12,9 @@ ASNFILE = $(MODULE_ASN)
 IMPFILES = $(MODULE_IMPORT:=.asn)
 FILES = $(MODULE).files
 
-all: sources makefiles
+all: sources # makefiles
 
-all_files: sources makefiles
+all_files: sources # makefiles
 
 sources: $(FILES) #$(FULL_MODULE) $(FULL_MODULE_BASE)
 
@@ -33,7 +33,7 @@ purge_all_files:
 
 .NO_PARALLEL:
 $(FILES): $(ASNFILE) $(DATATOOL) $(MODULE).def $(IMPDEPS)
-	$(DATATOOL) -oR $(top_srcdir) -opm $(MODULE_SEARCH) -m $(ASNFILE) -M "$(IMPFILES)" -oA -oc $(MODULE) -or $(MODULE_PATH) -odi -od $(MODULE).def -oex ''
+	$(DATATOOL) -oR $(top_srcdir) -opm $(MODULE_SEARCH) -m $(ASNFILE) -M "$(IMPFILES)" -oA -oc $(MODULE) -or $(MODULE_PATH) -odi -od $(MODULE).def -oex '' -ocvs
 
 makefiles: Makefile.in Makefile.$(MODULE).lib
 
@@ -41,7 +41,7 @@ Makefile.in:
 	@if test ! -f $@ ; then echo Creating $@ ;  ( echo "ASN_PROJ = $(MODULE)"; echo "srcdir = @srcdir@"; echo "include @builddir@/Makefile.meta"; ) > $@ ; fi
 
 Makefile.$(MODULE).lib:
-	@if test ! -f $@ ; then echo Creating $@ ; ( echo 'LIB = $$(TMPL)'; echo 'SRC = $$(LIB)__ $$(LIB)___'; ) > $@ ; fi
+	@if test ! -f $@ ; then echo Creating $@ ; ( echo 'LIB = $(MODULE)'; echo 'SRC = $(MODULE)__ $(MODULE)___'; ) > $@ ; fi
 
 $(MODULE).def:
 	@touch $@
