@@ -138,10 +138,10 @@ public:
 
     CPoolOfThreads(unsigned int max_threads, unsigned int queue_size,
                    int spawn_threshold = 1)
-        : m_ThreadCount(0), m_MaxThreads(max_threads),
-          m_Delta(0), m_Threshold(spawn_threshold), m_Queue(queue_size)
-        {}
-    virtual ~CPoolOfThreads(void) {}
+        : m_MaxThreads(max_threads), m_Threshold(spawn_threshold),
+          m_Queue(queue_size)
+        { m_ThreadCount.Set(0);  m_Delta.Set(0); }
+    virtual ~CPoolOfThreads(void);
 
     void Spawn(unsigned int num_threads);
     void AcceptRequest(const TRequest& req);
@@ -151,11 +151,11 @@ public:
 protected:
     virtual TThread* NewThread(void) = 0;
 
-    volatile unsigned int    m_ThreadCount;
+    CAtomicCounter           m_ThreadCount;
     volatile unsigned int    m_MaxThreads;
-    volatile int             m_Delta;     // # unfinished requests - # threads
+    CAtomicCounter           m_Delta;     // # unfinished requests - # threads
     int                      m_Threshold; // for delta
-    CMutex                   m_Mutex;     // for volatile counters
+    CMutex                   m_Mutex;     // for m_MaxThreads
     CBlockingQueue<TRequest> m_Queue;
 };
 
@@ -305,10 +305,7 @@ void* CThreadInPool<TRequest>::Main(void)
     Init();
 
     for (;;) {
-        {{
-            CMutexGuard guard(m_Pool->m_Mutex);
-            m_Pool->m_Delta--;
-        }}
+        m_Pool->m_Delta.Add(-1);
         ProcessRequest(m_Pool->m_Queue.Get());
     }
 
@@ -324,8 +321,7 @@ void CThreadInPool<TRequest>::OnExit(void)
     } catch (...) {
         // Ignore exceptions; there's nothing useful we can do anyway
     }
-    CMutexGuard guard(m_Pool->m_Mutex);
-    m_Pool->m_ThreadCount--;
+    m_Pool->m_ThreadCount.Add(-1);
 }
 
 
@@ -334,14 +330,21 @@ void CThreadInPool<TRequest>::OnExit(void)
 //
 
 template <typename TRequest>
+CPoolOfThreads<TRequest>::~CPoolOfThreads(void)
+{
+    CAtomicCounter::TValue n = m_ThreadCount.Get();
+    if (n) {
+        ERR_POST(Warning << "CPoolOfThreads<>::~CPoolOfThreads: "
+                 << n << " thread(s) still active");
+    }
+}
+
+template <typename TRequest>
 void CPoolOfThreads<TRequest>::Spawn(unsigned int num_threads)
 {
     for (unsigned int i = 0; i < num_threads; i++)
     {
-        {{
-            CMutexGuard guard(m_Mutex);
-            m_ThreadCount++;
-        }}
+        m_ThreadCount.Add(1);
         NewThread()->Run();
     }
 }
@@ -354,9 +357,10 @@ void CPoolOfThreads<TRequest>::AcceptRequest(const TRequest& req)
     {{
         CMutexGuard guard(m_Mutex);
         m_Queue.Put(req);
-        if (++m_Delta >= m_Threshold  &&  m_ThreadCount < m_MaxThreads) {
+        if (static_cast<int>(m_Delta.Add(1)) >= m_Threshold
+            &&  m_ThreadCount.Get() < m_MaxThreads) {
             // Add another thread to the pool because they're all busy.
-            m_ThreadCount++;
+            m_ThreadCount.Add(1);
             new_thread = true;
         }
     }}
@@ -376,6 +380,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/06/02 17:49:08  ucko
+* CPoolOfThreads: change type of m_Delta and m_ThreadCount to
+* CAtomicCounter to reduce need for m_Mutex; warn if any threads are
+* still active when the destructor runs.
+*
 * Revision 1.11  2003/04/17 17:50:37  siyan
 * Added doxygen support
 *
