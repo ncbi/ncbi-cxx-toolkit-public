@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/10/28 13:37:49  vasilche
+* Fixed small memory leak.
+*
 * Revision 1.9  1999/10/01 14:22:04  golikov
 * Now messages in context are html nodes
 *
@@ -189,7 +192,7 @@ private:
     CCgiResponse m_response; // CGI response information
 
     //head of message tree
-    CNCBINode* m_msg;
+    auto_ptr<CNCBINode> m_msg;
 
     // server context will be obtained from CCgiApp::LoadServerContext()
     auto_ptr<CCgiServerContext> m_srvCtx; // application defined context
