@@ -9,7 +9,7 @@
 REQUIRES = BerkeleyDB
 
 LIB_PROJ = bdb
-EXPENDABLE_SUB_PROJ = test demo
+EXPENDABLE_SUB_PROJ = test demo dumper
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
