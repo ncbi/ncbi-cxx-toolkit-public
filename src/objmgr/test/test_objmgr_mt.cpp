@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/07/12 18:34:56  grichenk
+* m_ObjMgr member should live longer than m_Scope - fixed
+*
 * Revision 1.16  2002/05/09 14:21:50  grichenk
 * Turned GetTitle() test on, removed unresolved seq-map test
 *
@@ -125,8 +128,8 @@ protected:
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
 
-    CRef<CScope> m_Scope;
     CRef<CObjectManager> m_ObjMgr;
+    CRef<CScope> m_Scope;
 };
 
 
