@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/09/28 20:50:41  lavr
+ * Update VT method changed - now called on per-line basis
+ *
  * Revision 6.12  2001/09/24 20:23:39  lavr
  * Reset() method added to VT
  *
@@ -89,7 +92,7 @@ extern "C" {
 typedef struct {
     void        (*Reset)(SERV_ITER iter);
     SSERV_Info* (*GetNextInfo)(SERV_ITER iter, char** env);
-    int/*bool*/ (*Update)(SERV_ITER iter, const char* text);
+    int/*bool*/ (*Update)(SERV_ITER iter, TNCBI_Time now, const char* text);
     int/*bool*/ (*Penalize)(SERV_ITER iter, double penalty);
     void        (*Close)(SERV_ITER iter);
     const char* name;
