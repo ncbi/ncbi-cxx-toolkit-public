@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/11/16 18:21:15  thiessen
+* fix for Mac/CodeWarrior
+*
 * Revision 1.17  2001/11/09 20:04:04  ucko
 * Tweak p_equal_to for portability.  (Tested with GCC, WorkShop,
 * MIPSpro, and MSVC.)
@@ -146,7 +149,7 @@ template <class T>
 struct p_equal_to : public binary_function
 <const T*, const T*, bool>
 {
-#ifdef NCBI_COMPILER_MIPSPRO
+#if defined(NCBI_COMPILER_MIPSPRO) || defined(NCBI_OS_MAC)
     // fails to define these
     typedef const T* first_argument_type;
     typedef const T* second_argument_type;
