@@ -186,8 +186,8 @@ CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
                             EChoice choice)
 {
     TTSE_LockSet locks;
-    if ( choice < eExtFeatures ) {
-        // external annotations only
+    if ( choice < eOrphanAnnot ) {
+        // orphan annotations only - no Bioseqs in this DB
         return locks;
     }
     string acc_col = "col" + NStr::IntToString(m_ColIdx[eAccession]);
@@ -406,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/10/25 16:53:52  vasilche
+ * Sage features are orphan, not external.
+ *
  * Revision 1.11  2004/08/10 16:56:11  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *
