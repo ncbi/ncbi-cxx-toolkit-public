@@ -112,6 +112,8 @@
       <File RelativePath="..\..\..\..\src\app\project_tree_builder\proj_builder_app.cpp"></File>
       <File RelativePath="..\..\..\..\src\app\project_tree_builder\proj_datatool_generated_src.cpp"></File>
       <File RelativePath="..\..\..\..\src\app\project_tree_builder\proj_item.cpp"></File>
+      <File RelativePath="..\..\..\..\src\app\project_tree_builder\proj_tree.cpp"></File>
+      <File RelativePath="..\..\..\..\src\app\project_tree_builder\proj_tree_builder.cpp"></File>
       <File RelativePath="..\..\..\..\src\app\project_tree_builder\proj_src_resolver.cpp"></File>
       <File RelativePath="..\..\..\..\src\app\project_tree_builder\proj_utils.cpp"></File>
       <File RelativePath="..\..\..\..\src\app\project_tree_builder\resolver.cpp"></File>
@@ -154,6 +156,8 @@
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\proj_item.hpp"></File>
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\proj_projects.hpp"></File>
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\proj_src_resolver.hpp"></File>
+      <File RelativePath="..\..\..\..\include\app\project_tree_builder\proj_tree.hpp"></File>
+      <File RelativePath="..\..\..\..\include\app\project_tree_builder\proj_tree_builder.hpp"></File>
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\proj_utils.hpp"></File>
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\resolver.hpp"></File>
       <File RelativePath="..\..\..\..\include\app\project_tree_builder\stl_msvc_usage.hpp"></File>
