@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/01/10 14:17:47  vasilche
+* Fixed usage of different types in ?: statement.
+*
 * Revision 1.2  2000/01/06 21:28:04  vasilche
 * Fixed for variable scope.
 *
@@ -104,13 +107,13 @@ static
 void PrintUsage(void)
 {
     NcbiCout <<
-        "Arguments:" << NcbiEndl <<
-        "  -i  Filename for asn.1 input" << NcbiEndl <<
-        "  -e  Input is a Seq-entry" << NcbiEndl <<
-        "  -b  Input asnfile in binary mode" << NcbiEndl <<
-        "  -o  Filename for asn.1 output" << NcbiEndl <<
-        "  -s  Output asnfile in binary mode" << NcbiEndl <<
-        "  -l  Log errors to file named";
+        "Arguments:\n" <<
+        "  -i  Filename for asn.1 input\n" <<
+        "  -e  Input is a Seq-entry\n" <<
+        "  -b  Input asnfile in binary mode\n" <<
+        "  -o  Filename for asn.1 output\n" <<
+        "  -s  Output asnfile in binary mode\n" <<
+        "  -l  Log errors to file named\n";
     exit(1);
 }
 
@@ -207,9 +210,11 @@ int CAsn2Asn::Run(void)
         if ( !*inStream )
             ERR_POST(Fatal << "Cannot open file: " << inFile);
     }
-    auto_ptr<CObjectIStream> inObject(inBinary?
-                                      new CObjectIStreamAsnBinary(*inStream):
-                                      new CObjectIStreamAsn(*inStream));
+    auto_ptr<CObjectIStream> inObject;
+    if ( inBinary )
+        inObject.reset(new CObjectIStreamAsnBinary(*inStream));
+    else
+        inObject.reset(new CObjectIStreamAsn(*inStream));
 
     auto_ptr<CNcbiOstream> outFStream;
     CNcbiOstream* outStream;
@@ -224,10 +229,13 @@ int CAsn2Asn::Run(void)
         if ( !*outStream )
             ERR_POST(Fatal << "Cannot open file: " << outFile);
     }
-    auto_ptr<CObjectOStream> outObject(!outStream? 0:
-                                       outBinary?
-                                       new CObjectOStreamAsnBinary(*outStream):
-                                       new CObjectOStreamAsn(*outStream));
+    auto_ptr<CObjectOStream> outObject;
+    if ( outStream ) {
+        if ( outBinary )
+            outObject.reset(new CObjectOStreamAsnBinary(*outStream));
+        else
+            outObject.reset(new CObjectOStreamAsn(*outStream));
+    }
 
     if ( inSeqEntry ) { /* read one Seq-entry */
         Seq_entry* entry = 0;
