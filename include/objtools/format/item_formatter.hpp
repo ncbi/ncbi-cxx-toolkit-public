@@ -139,6 +139,7 @@ protected:
     void x_FormatRefLocation(CNcbiOstrstream& os, const CSeq_loc& loc,
         const string& to, const string& delim,
         bool is_prot, CScope& scope) const;
+    void x_FormatRefJournal(string& journal, const CReferenceItem& ref) const;
     string x_FormatAccession(const CAccessionItem& acc, char separator) const;
 
     void x_GetKeywords(const CKeywordsItem& kws, const string& prefix,
@@ -166,6 +167,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/04/13 16:43:41  shomrat
+* + x_FormatRefJournal()
+*
 * Revision 1.5  2004/03/18 15:31:19  shomrat
 * Changed default width value
 *
