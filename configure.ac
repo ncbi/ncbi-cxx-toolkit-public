@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.172 2003/03/12 18:19:39 ucko Exp $
+#  $Id: configure.ac,v 1.173 2003/03/12 22:06:13 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1837,7 +1837,15 @@ AC_LANG_PUSH(C)
 # multiple extern "C" declarations of setkey.
 NCBI_CHECK_LIBS(CRYPT, crypt crypt_i, setkey)
 AC_LANG_POP(C)
+case "$host_os:$compiler" in
+     solaris*:GCC ) ac_cv_search_dlopen="-ldl" ;;
+esac
 NCBI_CHECK_LIBS(DL, dl, dlopen)
+# Normally redundant, but needed --with-static-exe.
+# (Too bad there's no libdl.a.)
+case "$host_os:$libnsl" in
+     solaris*:-lnsl ) NETWORK_LIBS="$NETWORK_LIBS $DL_LIBS" ;;
+esac
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
 # For FreeTDS, which normally uses a somewhat more elaborate test
 NCBI_CHECK_LIBS(ICONV, iconv, iconv)
