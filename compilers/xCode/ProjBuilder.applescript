@@ -463,14 +463,19 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 			set theScript to theScript & "if ! test -e " & asnName & ".files || find . -newer " & asnName & ".files | grep '.asn'; then" & ret
 			set theScript to theScript & "  m=\"" & asnName & "\"" & ret
 			
+			set theScript to theScript & "  echo Running Datatool" & ret
 			if asnName is "gui_project" then -- Should use sed properly here (but how?)
 				set theScript to theScript & "  M=\"$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\\([/a-z0-9]*\\)/\\1.asn/g')\"" & ret
 			else
 				set theScript to theScript & "  M=\"$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\\(objects[/a-z0-9]*\\)/\\1.asn/g')\"" & ret
 			end if
-			set theScript to theScript & "  echo Running Datatool" & ret
+			
 			set theScript to theScript & "  " & TheOUTPath & "/bin/datatool -oR " & TheNCBIPath
-			set theScript to theScript & " -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"objects/$m\" -oc \"$m\" -odi -od \"$m.def\"" & ret
+			if asnName is "gui_project" then
+				set theScript to theScript & "-opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"gui/core\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
+			else
+				set theScript to theScript & " -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"objects/$m\" -oc \"$m\" -odi -od \"$m.def\"" & ret
+			end if
 			set theScript to theScript & "else" & ret
 			set theScript to theScript & "  echo ASN files are up to date" & ret
 			set theScript to theScript & "fi" & ret & ret
@@ -509,6 +514,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/06/24 15:32:51  lebedev
+ * datatool generation parameters changed for gui_project
+ *
  * Revision 1.1  2004/06/23 17:09:52  lebedev
  * Initial revision
  *
