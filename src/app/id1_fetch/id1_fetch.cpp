@@ -319,6 +319,8 @@ int CId1FetchApp::Run(void)
     // Set up object manager
     m_ObjMgr = new CObjectManager;
     m_Scope = new CScope(*m_ObjMgr);
+    m_ObjMgr->RegisterDataLoader( *new CGBDataLoader("GENBANK"));
+    m_Scope->AddDataLoader("GENBANK");
 
     if (args["gi"]) {
         if ( !LookUpGI(args["gi"].AsInteger()) )
@@ -346,6 +348,9 @@ int CId1FetchApp::Run(void)
             int    gi;
 
             is >> id;
+            if (id.empty()) {
+                break;
+            }
             if (id.find('|') != NPOS) {
                 gi = LookUpFastaSeqID(id);
             } else if (id.find_first_of(":=(") != NPOS) {
@@ -436,9 +441,6 @@ bool CId1FetchApp::LookUpGI(int gi)
     bool                 using_id1_server = true;
     const string&        fmt              = args["fmt"].AsString();
     const string&        lt               = args["lt"].AsString();
-
-    m_ObjMgr->RegisterDataLoader( *new CGBDataLoader("GENBANK"));
-    m_Scope->AddDataLoader("GENBANK");
 
     // Compose request to appropriate server
     CID1server_request id1_request;
@@ -909,6 +911,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/08/14 20:28:02  ucko
+* Fix behavior when given a list of IDs.
+*
 * Revision 1.36  2002/07/11 14:23:48  gouriano
 * exceptions replaced by CNcbiException-type ones
 *
