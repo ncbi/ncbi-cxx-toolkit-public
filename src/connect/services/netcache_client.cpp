@@ -45,11 +45,33 @@
 
 BEGIN_NCBI_SCOPE
 
-CNetCacheClient::CNetCacheClient(CSocket* sock, const char* client_name)
+CNetCacheClient::CNetCacheClient(const string& host,
+                                 unsigned      port,
+                                 const string& client_name)
+ : m_Sock(0),
+   m_ClientName(client_name),
+   m_Host(host),
+   m_Port(port)
+{
+    m_Sock = new CSocket(m_Host, m_Port);
+    m_OwnSocket = true;
+}
+
+
+CNetCacheClient::CNetCacheClient(CSocket*      sock, 
+                                 const string& client_name)
 : m_Sock(sock),
-  m_ClientName(client_name)
+  m_ClientName(client_name),
+  m_OwnSocket(false)
 {
 }
+
+CNetCacheClient::~CNetCacheClient()
+{
+    if (m_OwnSocket)
+        delete m_Sock;
+}
+
 
 string CNetCacheClient::PutData(void*        buf, 
                                 size_t       size, 
@@ -57,15 +79,7 @@ string CNetCacheClient::PutData(void*        buf,
 {
     string blob_id;
 
-    const char* client = m_ClientName ? m_ClientName : "noname";
-    unsigned client_len = strlen(client);
-
-    if (!client_len)
-        return kEmptyStr;
-
-    ++client_len; // to send ending 0
-
-    WriteStr(client, client_len);
+    SendClientName();
 
     string request = "PUT ";
     if (time_to_live) {
@@ -109,6 +123,18 @@ void CNetCacheClient::WriteStr(const char* str, size_t len)
     } // while
 
 }
+void CNetCacheClient::SendClientName()
+{
+    const char* client = 
+        !m_ClientName.empty() ? m_ClientName.c_str() : "noname";
+    unsigned client_len = strlen(client);
+
+    if (!client_len)
+        return;
+    ++client_len; // to send ending 0
+
+    WriteStr(client, client_len);
+}
 
 IReader* CNetCacheClient::GetData(const string& key)
 {
@@ -116,14 +142,7 @@ IReader* CNetCacheClient::GetData(const string& key)
     EIO_Status io_st;
     string blob_id;
 
-    const char* client = m_ClientName ? m_ClientName : "noname";
-    unsigned client_len = strlen(client);
-
-    if (!client_len)
-        return 0;
-    ++client_len; // to send ending 0
-
-    WriteStr(client, client_len);
+    SendClientName();
 
     string request = "GET ";
     request += key;
@@ -184,6 +203,15 @@ CNetCacheClient::GetData(const string&  key,
     return CNetCacheClient::eReadPart;
 }
 
+void CNetCacheClient::ShutdownServer()
+{
+    SendClientName();
+    const char* command = "SHUTDOWN";
+    unsigned len = ::strlen(command) + 1;
+    WriteStr(command, len);
+
+    m_Sock->Close();
+}
 
 bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
 {
@@ -236,12 +264,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/10/05 19:02:05  kuznets
+ * Implemented ShutdownServer()
+ *
  * Revision 1.2  2004/10/05 18:18:46  kuznets
  * +GetData, fixed bugs in protocol
  *
  * Revision 1.1  2004/10/04 18:44:59  kuznets
  * Initial revision
- *
  *
  * ===========================================================================
  */

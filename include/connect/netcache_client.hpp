@@ -52,12 +52,19 @@ class CSocket;
 class NCBI_XCONNECT_EXPORT CNetCacheClient
 {
 public:
+    CNetCacheClient(const string& host,
+                    unsigned      port,
+                    const string& client_name = kEmptyStr);
+
     /// Construction.
     /// @param sock
     ///    Connected socket to the server
     /// @param client_name
     ///    Identification name of connecting client
-    CNetCacheClient(CSocket* sock, const char* client_name=0);
+    CNetCacheClient(CSocket*      sock, 
+                    const string& client_name = kEmptyStr);
+
+    ~CNetCacheClient();
 
     /// Put BLOB to server
     ///
@@ -93,6 +100,9 @@ public:
                         size_t         buf_size, 
                         size_t*        n_read = 0);
 
+    /// Shutdown the server daemon.
+    void ShutdownServer();
+
 protected:
 
     bool ReadStr(CSocket& sock, string* str);
@@ -100,9 +110,14 @@ protected:
 
     void WriteStr(const char* str, size_t len);
 
+    void SendClientName();
+
 private:
     CSocket*    m_Sock;
-    const char* m_ClientName;
+    string      m_ClientName;
+    bool        m_OwnSocket;
+    string      m_Host;
+    unsigned    m_Port;
 };
 
 
@@ -112,6 +127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/10/05 19:01:59  kuznets
+ * Implemented ShutdownServer()
+ *
  * Revision 1.2  2004/10/05 18:17:58  kuznets
  * comments, added GetData
  *
