@@ -1543,7 +1543,7 @@ Int2  Main(void)
    Int4 *allowedGaps;
    SeqAlignPtr results; /*holds the list of matches as alignments*/
    SeqAnnotPtr  seqannot = NULL; /*annotated version of results*/
-   BlastPruneSapStructPtr prune; /*stores possibly-reduced  of sequence
+   /*BlastPruneSapStructPtr prune; /*stores possibly-reduced  of sequence
                                    alignments for output*/
 /*   Uint1 featureOrder[FEATDEF_ANY]; /*dummy argument for alignment display*/
 /*   Uint1 groupOrder[FEATDEF_ANY]; /*dummy argument for alignment display*/
