@@ -144,6 +144,13 @@ typedef struct BlastReturnStat {
                               after preliminary gapped extension */
    Int4 number_of_seqs_better_E; /**< Number of sequences with best HSP passing
                                     the e-value threshold */
+   Int4 x_drop_ungapped; /**< Raw value of the x-dropoff for ungapped 
+                            extensions */
+   Int4 x_drop_gap; /**< Raw value of the x-dropoff for preliminary gapped 
+                       extensions */
+   Int4 x_drop_gap_final; /**< Raw value of the x-dropoff for gapped 
+                             extensions with traceback */
+   FloatHi gap_trigger; /**< Minimal raw score for starting gapped extension */
 } BlastReturnStat, PNTR BlastReturnStatPtr;
 
 /** Structure for keeping the query masking information */
