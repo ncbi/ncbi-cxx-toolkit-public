@@ -576,7 +576,6 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    BlastExtensionParameters* ext_params;
    BlastHitSavingParameters* hit_params;
    BlastGapAlignStruct* gap_align;
-   GetSeqArg seq_arg;
    Int2 status = 0;
 
    BlastHitSavingOptions *internal_hit_options = 
