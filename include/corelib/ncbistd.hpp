@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/12/04 23:36:30  vakatov
+* + NcbiEmptyCStr and NcbiEmptyString (const)
+*
 * Revision 1.8  1998/11/06 22:42:38  vakatov
 * Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
 * API to namespace "ncbi::" and to use it by default, respectively
@@ -47,5 +50,15 @@
 #include <ncbistl.hpp>
 #include <ncbidbg.hpp>
 #include <ncbiexpt.hpp>
+
+
+// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+BEGIN_NCBI_SCOPE
+
+const char   NcbiEmptyCStr[] = "";
+const string NcbiEmptyString;
+
+// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+END_NCBI_SCOPE
 
 #endif /* NCBISTD__HPP */
