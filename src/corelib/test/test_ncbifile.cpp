@@ -557,10 +557,10 @@ static void s_TEST_Dir(void)
             "\\x\\y\\") == "..\\" );
 
 #elif defined(NCBI_OS_UNIX )
-
-// TODO
-//    assert( CDirEntry::CreateRelativePath(
-//            "/usr/bin/", "/usr/" ) == "../" );
+    assert( CDirEntry::CreateRelativePath(
+            "/usr/bin/", "/usr/" ) == "../" );
+    assert( CDirEntry::CreateRelativePath(
+            "/usr/bin/", "/etc/" ) == "../../etc/" );
 
 #elif defined(NCBI_OS_MAC)
     // NOT implemented!
@@ -724,6 +724,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/01/05 22:10:33  gorelenk
+ * += UNIX test for CDirEntry::CreateRelativePath()
+ *
  * Revision 1.34  2004/01/05 21:41:26  gorelenk
  * += Exception throwing in CDirEntry::CreateRelativePath()
  *
