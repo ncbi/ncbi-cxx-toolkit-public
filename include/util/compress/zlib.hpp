@@ -139,6 +139,10 @@ public:
     );
     
 protected:
+    // Format string with last error description
+    string FormatErrorMessage(string where, bool use_stream_data = true) const;
+
+protected:
     z_stream  m_Stream;         // Compressor stream
     int       m_WindowBits;     // The base two logarithm of the window size
                                 // (the size of the history buffer). 
@@ -317,6 +321,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/15 15:45:45  ivanov
+ * Improved error diagnostics
+ *
  * Revision 1.4  2003/07/10 16:22:27  ivanov
  * Added buffer size parameter into [De]CompressFile() functions.
  * Cosmetic changes.

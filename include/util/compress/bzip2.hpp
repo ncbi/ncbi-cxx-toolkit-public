@@ -140,6 +140,13 @@ public:
     );
 
 protected:
+    // Get error description for specified error code
+    const char* GetBZip2ErrorDescription(int errcode);
+
+    // Format string with last error description
+    string FormatErrorMessage(string where, bool use_stream_data = true) const;
+
+protected:
     bz_stream  m_Stream;         // Compressor stream
     int        m_Verbosity;      // Verbose monitoring/debugging output level
     int        m_WorkFactor;     // See description above
@@ -317,6 +324,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/15 15:45:45  ivanov
+ * Improved error diagnostics
+ *
  * Revision 1.4  2003/07/10 16:22:27  ivanov
  * Added buffer size parameter into [De]CompressFile() functions.
  * Cosmetic changes.
