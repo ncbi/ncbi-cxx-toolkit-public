@@ -1450,7 +1450,7 @@ ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope)
         curr_strand = GetStrand(*lit, scope);
         if (!first) {
             if (curr_strand != last_strand) {
-                ERR_POST("Mixed strand location" << eDiag_Warning);
+                ERR_POST(Warning << "Mixed strand location");
                 rtn = eSeqLocCheck_warning;
             }
             first = false;
@@ -1948,6 +1948,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2002/10/07 17:11:16  ucko
+* Fix usage of ERR_POST (caught by KCC)
+*
 * Revision 1.9  2002/10/03 18:44:09  clausen
 * Removed extra whitespace
 *

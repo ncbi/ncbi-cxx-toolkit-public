@@ -3178,7 +3178,7 @@ void CValidError_impl::Validate(const CSeq_entry& se, const CCit_sub* cs)
 
     // Check that CSeq_entry has data
     if (se.Which() == CSeq_entry::e_not_set) {
-        ERR_POST("Seq_entry not set: " << eDiag_Warning);
+        ERR_POST(Warning << "Seq_entry not set");
         return;
     }
 
@@ -3388,10 +3388,10 @@ void CValidError_impl::ValidateSeqParts(const CBioseq& seq)
                         "packaging order", seq);
                 }
             } catch (const CNotUnique&) {
-                ERR_POST("Seq-loc not for unique sequence" << eDiag_Error);
+                ERR_POST("Seq-loc not for unique sequence");
                 return;
             } catch (...) {
-                ERR_POST("Unknown error" << eDiag_Error);
+                ERR_POST("Unknown error");
                 return;
             }
         } else {
@@ -3804,7 +3804,7 @@ void CValidError_impl::ValidateSegRef(const CBioseq& seq)
                 seq);
         }
     } catch (const CNoLength&) {
-        ERR_POST("Unable to calculate length: " << eDiag_Critical);
+        ERR_POST(Critical << "Unable to calculate length: ");
     }
 
     // Check for multiple references to the same Bioseq
@@ -4098,6 +4098,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2002/10/07 17:11:16  ucko
+* Fix usage of ERR_POST (caught by KCC)
+*
 * Revision 1.4  2002/10/04 14:39:41  ucko
 * Use TSmap::value_type's constructor directly rather than via make_pair,
 * as the latter fails under WorkShop.
