@@ -184,10 +184,10 @@ void PrintPhoneBookRecord(SPhoneBookDB& dbf, int person_id)
 
 
 ////////////////////////////////
-// Demo1 application
+// Demo2 application
 //
 
-class CBDB_PhoneBookDemo1 : public CNcbiApplication
+class CBDB_PhoneBookDemo2 : public CNcbiApplication
 {
 public:
     void Init(void);
@@ -195,18 +195,18 @@ public:
 };
 
 
-void CBDB_PhoneBookDemo1::Init(void)
+void CBDB_PhoneBookDemo2::Init(void)
 {
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostFlag(eDPF_File);
     SetDiagPostFlag(eDPF_Line);
     auto_ptr<CArgDescriptions> d(new CArgDescriptions);
-    d->SetUsageContext("bdb demo1",
-                       "Demo1 application for BDB library");
+    d->SetUsageContext("bdb demo2",
+                       "Demo2 application for BDB library");
     SetupArgDescriptions(d.release());
 }
 
-int CBDB_PhoneBookDemo1::Run(void)
+int CBDB_PhoneBookDemo2::Run(void)
 {
     try
     {
@@ -241,12 +241,15 @@ int CBDB_PhoneBookDemo1::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CBDB_PhoneBookDemo1().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CBDB_PhoneBookDemo2().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/02 16:23:13  kuznets
+ * Cosmetic fixes
+ *
  * Revision 1.2  2003/04/30 15:59:51  kuznets
  * Fixed typo
  *

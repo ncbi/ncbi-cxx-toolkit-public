@@ -123,10 +123,10 @@ void PrintBLOB_Table()
 
 
 ////////////////////////////////
-// Demo1 application
+// BLob Demo application
 //
 
-class CBDB_PhoneBookDemo1 : public CNcbiApplication
+class CBDB_BLobDemo1 : public CNcbiApplication
 {
 public:
     void Init(void);
@@ -134,7 +134,7 @@ public:
 };
 
 
-void CBDB_PhoneBookDemo1::Init(void)
+void CBDB_BLobDemo1::Init(void)
 {
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostFlag(eDPF_File);
@@ -145,7 +145,7 @@ void CBDB_PhoneBookDemo1::Init(void)
     SetupArgDescriptions(d.release());
 }
 
-int CBDB_PhoneBookDemo1::Run(void)
+int CBDB_BLobDemo1::Run(void)
 {
     try
     {
@@ -169,12 +169,15 @@ int CBDB_PhoneBookDemo1::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CBDB_PhoneBookDemo1().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CBDB_BLobDemo1().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/05/02 16:23:14  kuznets
+ * Cosmetic fixes
+ *
  * Revision 1.1  2003/05/01 19:51:46  kuznets
  * Initial revision
  *
