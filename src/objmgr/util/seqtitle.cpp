@@ -424,7 +424,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
 
     case CMolInfo::eTech_est:
         if (title.find("mRNA sequence") == NPOS) {
-            suffix = ", MRNA sequence";
+            suffix = ", mRNA sequence";
         }
         break;
 
@@ -882,6 +882,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.32  2004/03/18 21:08:03  lkhotoml
+* Fixed letter case in title MRNA -> mRNA
+*
 * Revision 1.31  2004/01/22 20:37:20  vasilche
 * Added missing return statement.
 *
