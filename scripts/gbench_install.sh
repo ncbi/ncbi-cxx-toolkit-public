@@ -28,9 +28,6 @@ for t in algo doc view; do
 done
 
 BINS='gbench-bin gbench_plugin_scan'
-LIBS='gui_core gui_utils xgbplugin'
-OPT_LIBS='bdb lds lds_admin xobjread ncbi_xloader_lds ncbi_xloader_trace ncbi_xloader_table'
-
 
 Usage()
 {
@@ -149,7 +146,18 @@ DoCopy()
     case `uname`:$1 in
         Darwin*:*.so)
         dylib_file=`echo $1 | sed "s,\.so$,.dylib",`
-        COMMON_ExecRB $BINCOPY $dylib_file $2
+        RelativeCP $dylib_file $2
+        ;;
+    esac
+}
+
+DoMove()
+{
+    $BINMOVE $1 $2
+    case `uname`:$1 in
+        Darwin*:*.so)
+        dylib_file=`echo $1 | sed "s,\.so$,.dylib",`
+        $BINMOVE $dylib_file $2
         ;;
     esac
 }
@@ -171,11 +179,10 @@ CopyFiles()
         fi
     done
 
-    for x in $LIBS; do
-        echo copying: lib$x.so
-        src_file=$src_dir/lib/lib$x.so
+    for src_file in $src_dir/lib/lib*.so; do
+        echo copying: `basename $src_file`
         if [ -f $src_file ]; then
-            rm -f $target_dir/lib/lib$x.so
+            rm -f $target_dir/lib/`basename $src_file`
             DoCopy $src_file $target_dir/lib/
         else
             $x_common_rb
@@ -183,19 +190,10 @@ CopyFiles()
         fi
     done
 
-    for x in $OPT_LIBS; do
-        src_file=$src_dir/lib/lib$x.so
-        if [ -f $src_file ]; then
-            echo copying: lib$x.so
-            rm -f $target_dir/lib/lib$x.so
-            DoCopy $src_file $target_dir/lib/
-        fi
-    done
-
     for x in $PLUGINS; do
-        echo copying plugin: $x
+        echo installing plugin: $x
         rm -f $target_dir/plugins/libgui_$x.so
-        DoCopy $src_dir/lib/libgui_$x.so $target_dir/plugins/
+        DoMove $target_dir/lib/libgui_$x.so $target_dir/plugins/
     done
 
     for x in $src_dir/lib/lib*dbapi*.so; do
@@ -221,13 +219,17 @@ fi
 copy_all="no"
 setup_src="no"
 BINCOPY="ln -sf"
+BINMOVE="mv -f"
 MAC_BINCOPY=
+MAC_BINCOPY_OPTS=
+MAC_BINMOVE="/Developer/Tools/MvMac"
 while :; do
     case "$1" in
         --copy)
             copy_all="yes"
             BINCOPY="cp -pf"
-            MAC_BINCOPY="/Developer/Tools/CpMac -p"
+            MAC_BINCOPY="/Developer/Tools/CpMac"
+            MAC_BINCOPY_OPTS="-p"
             ;;
         --hardlink)
             copy_all="yes"
@@ -250,8 +252,9 @@ done
 src_dir=$1
 target_dir=$2
 
-if test "`uname`" = Darwin -a -x "$MAC_BINCOPY"; then
-    BINCOPY=$MAC_BINCOPY
+if test "`uname`" = Darwin; then
+    test -x "$MAC_BINCOPY"  &&  BINCOPY="$MAC_BINCOPY $MAC_BINCOPY_OPTS"
+    test -x "$MAC_BINMOVE"  &&  BINMOVE=$MAC_BINMOVE
 fi
 
 
