@@ -322,7 +322,7 @@ void CDllResolver::AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
 
     // Add hardcoded runpath
 
-#if defined(NCBI_OS_UNIX)
+#if defined(NCBI_OS_UNIX)  &&  ! defined(NCBI_COMPILER_METROWERKS)
     if ((which & fToolkitDllPath) != 0) {
         const char* runpath = NCBI_GetRunpath();
         if (runpath  &&  *runpath) {
@@ -377,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/10/12 19:46:08  rsmith
+ * Do not call NCBI_GetRunpath when compiling with Codewarrior.
+ *
  * Revision 1.23  2004/08/09 15:36:56  kuznets
  * CDllResolver added support of driver name
  *
