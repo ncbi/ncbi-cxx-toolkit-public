@@ -1,34 +1,34 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Christiam Camacho
-*
-* File Description:
-*   Class to encapsulate all NewBlast options
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Christiam Camacho
+ *
+ * File Description:
+ *   Class to encapsulate all NewBlast options
+ *
+ */
 
 #ifndef BLAST_OPTION__HPP
 #define BLAST_OPTION__HPP
@@ -182,7 +182,7 @@ public:
 
     double GetSingleHSPEvalueThreshold() const;
     void SetSingleHSPEvalueThreshold(double e);
-    
+
     int GetSingleHSPCutoffScore() const;
     void SetSingleHSPCutoffScore(int s);
 
@@ -912,7 +912,7 @@ CBlastOption::SetOutOfFrameMode(bool m)
 #if 0
     if (m_Program != CBlastOption::eBlastx && m == true)
         NCBI_THROW(CBlastException, eBadParameter, 
-                "Out-of-Frame only allowed for blastx");
+                   "Out-of-Frame only allowed for blastx");
 #endif
     m_ScoringOpts->is_ooframe = m;
 }
@@ -947,7 +947,7 @@ CBlastOption::GetEffectiveSearchSpace() const
 {
     return m_EffLenOpts->searchsp_eff;
 }
- 
+
 inline void 
 CBlastOption::SetEffectiveSearchSpace(Int8 eff)
 {
@@ -996,51 +996,54 @@ CBlastOption::SetDbGeneticCodeStr(const unsigned char* gc_str)
 END_NCBI_SCOPE
 
 /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.4  2003/08/04 16:14:10  dicuccio
-* Truly unimplement the private forbidden copy ctor
-*
-* Revision 1.3  2003/08/04 15:42:56  dicuccio
-* Added export specifiers
-*
-* Revision 1.2  2003/08/04 15:14:19  dicuccio
-* Changed #includes to catch the correct C++ files.  Fixed some compiler warnings
-* abouR char -> bool conversion
-*
-* Revision 1.1  2003/08/04 14:22:58  dicuccio
-* Initial import into the C++ toolkit
-*
-* Revision 1.9  2003/08/01 22:34:11  camacho
-* Added accessors/mutators/defaults for matrix_path
-*
-* Revision 1.8  2003/07/31 19:45:33  camacho
-* Eliminate Ptr notation
-*
-* Revision 1.7  2003/07/30 19:56:19  coulouri
-* remove matrixname
-*
-* Revision 1.6  2003/07/30 15:00:01  camacho
-* Do not use Malloc/MemNew/MemFree
-*
-* Revision 1.5  2003/07/30 13:55:09  coulouri
-* use strdup()
-*
-* Revision 1.4  2003/07/23 21:29:37  camacho
-* Update BlastDatabaseOptions
-*
-* Revision 1.3  2003/07/16 19:51:12  camacho
-* Removed logic of default setting from mutator member functions
-*
-* Revision 1.2  2003/07/14 22:17:17  camacho
-* Convert CSeq_loc to BlastMaskPtr
-*
-* Revision 1.1  2003/07/10 18:34:19  camacho
-* Initial revision
-*
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.5  2003/08/04 16:20:14  dicuccio
+ * Minor indentation reformatting
+ *
+ * Revision 1.4  2003/08/04 16:14:10  dicuccio
+ * Truly unimplement the private forbidden copy ctor
+ *
+ * Revision 1.3  2003/08/04 15:42:56  dicuccio
+ * Added export specifiers
+ *
+ * Revision 1.2  2003/08/04 15:14:19  dicuccio
+ * Changed #includes to catch the correct C++ files.  Fixed some compiler warnings
+ * abouR char -> bool conversion
+ *
+ * Revision 1.1  2003/08/04 14:22:58  dicuccio
+ * Initial import into the C++ toolkit
+ *
+ * Revision 1.9  2003/08/01 22:34:11  camacho
+ * Added accessors/mutators/defaults for matrix_path
+ *
+ * Revision 1.8  2003/07/31 19:45:33  camacho
+ * Eliminate Ptr notation
+ *
+ * Revision 1.7  2003/07/30 19:56:19  coulouri
+ * remove matrixname
+ *
+ * Revision 1.6  2003/07/30 15:00:01  camacho
+ * Do not use Malloc/MemNew/MemFree
+ *
+ * Revision 1.5  2003/07/30 13:55:09  coulouri
+ * use strdup()
+ *
+ * Revision 1.4  2003/07/23 21:29:37  camacho
+ * Update BlastDatabaseOptions
+ *
+ * Revision 1.3  2003/07/16 19:51:12  camacho
+ * Removed logic of default setting from mutator member functions
+ *
+ * Revision 1.2  2003/07/14 22:17:17  camacho
+ * Convert CSeq_loc to BlastMaskPtr
+ *
+ * Revision 1.1  2003/07/10 18:34:19  camacho
+ * Initial revision
+ *
+ *
+ * ===========================================================================
+ */
 
 #endif  /* BLAST_OPTION__HPP */

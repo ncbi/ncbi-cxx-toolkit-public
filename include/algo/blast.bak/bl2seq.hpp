@@ -1,34 +1,34 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Christiam Camacho
-*
-* File Description:
-*   Blast2Sequences class interface
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Christiam Camacho
+ *
+ * File Description:
+ *   Blast2Sequences class interface
+ *
+ */
 
 #ifndef BL2SEQ__HPP
 #define BL2SEQ__HPP
@@ -216,39 +216,42 @@ CBl2Seq::GetFilteredQueryRegions() const
 END_NCBI_SCOPE
 
 /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2003/08/04 15:42:56  dicuccio
-* Added export specifiers
-*
-* Revision 1.2  2003/08/04 15:14:19  dicuccio
-* Changed #includes to catch the correct C++ files.  Fixed some compiler warnings
-* abouR char -> bool conversion
-*
-* Revision 1.1  2003/08/04 14:22:58  dicuccio
-* Initial import into the C++ toolkit
-*
-* Revision 1.6  2003/08/01 17:40:56  dondosha
-* Use renamed functions and structures from local blastkar.h
-*
-* Revision 1.5  2003/07/31 19:45:33  camacho
-* Eliminate Ptr notation
-*
-* Revision 1.4  2003/07/30 19:58:02  coulouri
-* use ListNode
-*
-* Revision 1.3  2003/07/30 15:00:01  camacho
-* Do not use Malloc/MemNew/MemFree
-*
-* Revision 1.2  2003/07/14 22:16:37  camacho
-* Added interface to retrieve masked regions
-*
-* Revision 1.1  2003/07/10 18:34:19  camacho
-* Initial revision
-*
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.4  2003/08/04 16:20:14  dicuccio
+ * Minor indentation reformatting
+ *
+ * Revision 1.3  2003/08/04 15:42:56  dicuccio
+ * Added export specifiers
+ *
+ * Revision 1.2  2003/08/04 15:14:19  dicuccio
+ * Changed #includes to catch the correct C++ files.  Fixed some compiler warnings
+ * abouR char -> bool conversion
+ *
+ * Revision 1.1  2003/08/04 14:22:58  dicuccio
+ * Initial import into the C++ toolkit
+ *
+ * Revision 1.6  2003/08/01 17:40:56  dondosha
+ * Use renamed functions and structures from local blastkar.h
+ *
+ * Revision 1.5  2003/07/31 19:45:33  camacho
+ * Eliminate Ptr notation
+ *
+ * Revision 1.4  2003/07/30 19:58:02  coulouri
+ * use ListNode
+ *
+ * Revision 1.3  2003/07/30 15:00:01  camacho
+ * Do not use Malloc/MemNew/MemFree
+ *
+ * Revision 1.2  2003/07/14 22:16:37  camacho
+ * Added interface to retrieve masked regions
+ *
+ * Revision 1.1  2003/07/10 18:34:19  camacho
+ * Initial revision
+ *
+ *
+ * ===========================================================================
+ */
 
 #endif  /* BL2SEQ__HPP */
