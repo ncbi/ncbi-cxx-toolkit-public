@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/04/16 18:32:37  grichenk
+* +feature iterator tests
+*
 * Revision 1.16  2002/04/10 22:47:58  kimelman
 * added pubseq_reader as default one
 *
@@ -85,12 +88,14 @@
 #include <corelib/ncbiapp.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 #include <objects/objmgr1/object_manager.hpp>
 #include <objects/objmgr1/scope.hpp>
 #include <objects/objmgr1/gbloader.hpp>
 #include <objects/objmgr1/reader_id1.hpp>
 #include <objects/objmgr1/seq_vector.hpp>
+#include <objects/objmgr1/feat_ci.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>
@@ -128,7 +133,7 @@ int CTestApplication::Run()
     for (int i = 1;  i < 500;  i++) {
         CScope scope(*pOm);
         scope.AddDefaults();
-        int gi = i; //  + 18565551 - 2  ; 
+        int gi = i  + 18565551 - i  ; 
         CSeq_id x;
         x.SetGi(gi);
         CObjectOStreamAsn oos(NcbiCout);
@@ -146,9 +151,31 @@ int CTestApplication::Run()
           v.SetIupacCoding();
           LOG_POST("Vector size = " << v.size());
           string vs = "";
-          for (unsigned cc = 0; cc < v.size(); cc++)
+          for (unsigned cc = 0; cc < v.size(); cc++) {
               vs += v[cc];
+              if (cc > 40) break;
+          }
           LOG_POST("Data: " << NStr::PrintableString(vs.substr(0, 40)));
+          CRef<CSeq_loc> loc = new CSeq_loc;
+          loc->SetWhole().SetGi(gi);
+          int fcount = 0;
+          {{ // Creating a block to destroy the iterator after using it
+              CFeat_CI feat_it1(scope, *loc, CSeqFeatData::e_Cdregion);
+              LOG_POST("Iterating CDS features, no references resolving");
+              for ( ; feat_it1;  ++feat_it1) {
+                  fcount++;
+              }
+          }}
+          LOG_POST("CDS count (non-resolved) = " << fcount);
+          fcount = 0;
+          {{ // Creating a block to destroy the iterator after using it
+              CFeat_CI feat_it2(scope, *loc, CSeqFeatData::e_Cdregion, CFeat_CI::eResolve_All);
+              LOG_POST("Iterating CDS features, resolving references");
+              for ( ; feat_it2;  ++feat_it2) {
+                  fcount++;
+              }
+          }}
+          LOG_POST("CDS count (resolved) = " << fcount);
           LOG_POST("Gi (" << gi << "):: OK");
         }
     }
