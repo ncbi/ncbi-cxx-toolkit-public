@@ -849,15 +849,19 @@ dbapi_driver_ctlib
 <span class="ncbi_term">Sybase CTLIB</span> libraries and headers used by the driver (MS Windows)
 <dt>
 <dd>
-You will need Sybase OpenClient package installed on your PC.
-</dd>
-<dd>
 Libraries: LIBCT.LIB LIBCS.LIB LIBBLK.LIB
 </dd>
 <dd>
-In MSVC++, go to <span class="ncbi_menu">"Tools" / "Options..." / "Directories"</span>
+You will need Sybase OpenClient package installed on your PC.
+In MSVC++, go to
+<span class="ncbi_menu">"Tools" / "Options..." / "Directories"</span>
 and set up the path to Sybase OpenClient libraries and headers
-(for example "C:\Sybase\lib" and "C:\Sybase\include" respectively)
+(for example, "C:\Sybase\lib" and "C:\Sybase\include", respectively).
+To run the application, you must set environment variable %SYBASE%
+to the Sybase OpenClient root directory (e.g. "C:\Sybase"), and also to have
+your interface file there, in <span class="ncbi_file">INI/sql.ini</span>.
+In NCBI, we have the Sybase OpenClient libs installed in
+<ncbi_dir>\\DIZZY\public\Sybase</ncbi_dir>.
 </dd>
 </dt></li>
 
@@ -934,16 +938,11 @@ dbapi_driver_dblib
 <span class="ncbi_term">Sybase DBLIB</span> libraries and headers used by the driver (MS Windows)
 <dt>
 <dd>
-You will need Sybase OpenClient package installed on your PC.
-</dd>
-<dd>
 Libraries: LIBSYBDB.LIB
 </dd>
 <dd>
-In MSVC++, go to <span class="ncbi_menu">"Tools" / "Options..." / "Directories"</span>
-and set up the path to Sybase OpenClient libraries and headers
-(for example "C:\Sybase\lib" and "C:\Sybase\include" respectively)
-</dd>
+See Sybase OpenClient installation and usage instructions in
+the <a href="#ref_DriversCTLIB">Sybase CTLIB</a> section (just above).</dd>
 </dt></li>
 
 <li>
