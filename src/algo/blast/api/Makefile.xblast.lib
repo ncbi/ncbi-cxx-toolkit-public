@@ -10,13 +10,14 @@ tblastx_options \
 tblastn_options \
 blast_nucl_options \
 disc_nucl_options \
-remote_blast
+remote_blast \
+db_traceback
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
 LIB = xblast
 
-CFLAGS   = $(FAST_CFLAGS)
+CFLAGS   = $(FAST_CFLAGS) -fno-strict-aliasing
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
