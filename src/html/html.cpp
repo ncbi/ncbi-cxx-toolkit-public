@@ -25,14 +25,13 @@
  *
  * Author:  Lewis Geer
  *
- * File Description:  code for CHTMLNode
+ * File Description:  Code for CHTMLNode
  *
  */
 
 
 #include <html/html.hpp>
 #include <html/htmlhelper.hpp>
-#include <html/jsmenu.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -163,70 +162,74 @@ void CHTMLNode::AppendHTMLText(const char* appendstring)
         AppendChild(new CHTMLText(appendstring));
 }
 
-void CHTMLNode::SetEventHandler(const EHTML_EH_Attribute name,
+string CHTMLNode::GetEventHandlerName(const EHTML_EH_Attribute name) const
+{
+    switch (name) {
+
+    case eHTML_EH_Blur:
+        return "onBlur";
+    case eHTML_EH_Change:
+        return "onChange";
+    case eHTML_EH_Click:
+        return "onClick";
+    case eHTML_EH_DblClick:
+        return "onDblClick";
+    case eHTML_EH_Focus:
+        return "onFocus";
+    case eHTML_EH_Load:
+        return "onLoad";
+    case eHTML_EH_Unload:
+        return "onUnload";
+    case eHTML_EH_MouseDown:
+        return "onMouseDown";
+    case eHTML_EH_MouseUp:
+        return "onMouseUp";
+    case eHTML_EH_MouseMove:
+        return "onMouseMove";
+    case eHTML_EH_MouseOver:
+        return "onMouseOver";
+    case eHTML_EH_MouseOut:
+        return "onMouseOut";
+    case eHTML_EH_Select:
+        return "onSelect";
+    case eHTML_EH_Submit:
+        return "onSubmit";
+    case eHTML_EH_KeyDown:
+        return "onKeyDown";
+    case eHTML_EH_KeyPress:
+        return "onKeyPress";
+    case eHTML_EH_KeyUp:
+        return "onKeyUp";
+    }
+    _TROUBLE;
+    return kEmptyStr;
+}
+
+
+void CHTMLNode::SetEventHandler(const EHTML_EH_Attribute event,
                                 const string& value)
 {
     if ( value.empty() )
         return;
+    SetAttribute(GetEventHandlerName(event), value);
+}
 
-    string handler_name;
 
-    switch (name) {
+void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu, EHTML_EH_Attribute event)
+{
+    if ( !menu )
+        return;
+    switch (menu->GetType()) {
+    case CHTMLPopupMenu::eSmith: 
+        SetEventHandler(event, menu->ShowMenu());
+        return;
 
-    case eHTML_EH_Blur:
-        handler_name = "onBlur";
-        break;
-    case eHTML_EH_Change:
-        handler_name = "onChange";
-        break;
-    case eHTML_EH_Click:
-        handler_name = "onClick";
-        break;
-    case eHTML_EH_DblClick:
-        handler_name = "onDblClick";
-        break;
-    case eHTML_EH_Focus:
-        handler_name = "onFocus";
-        break;
-    case eHTML_EH_Load:
-        handler_name = "onLoad";
-        break;
-    case eHTML_EH_Unload:
-        handler_name = "onUnload";
-        break;
-    case eHTML_EH_MouseDown:
-        handler_name = "onMouseDown";
-        break;
-    case eHTML_EH_MouseUp:
-        handler_name = "onMouseUp";
-        break;
-    case eHTML_EH_MouseMove:
-        handler_name = "onMouseMove";
-        break;
-    case eHTML_EH_MouseOver:
-        handler_name = "onMouseOver";
-        break;
-    case eHTML_EH_MouseOut:
-        handler_name = "onMouseOut";
-        break;
-    case eHTML_EH_Select:
-        handler_name = "onSelect";
-        break;
-    case eHTML_EH_Submit:
-        handler_name = "onSubmit";
-        break;
-    case eHTML_EH_KeyDown:
-        handler_name = "onKeyDown";
-        break;
-    case eHTML_EH_KeyPress:
-        handler_name = "onKeyPress";
-        break;
-    case eHTML_EH_KeyUp:
-        handler_name = "onKeyUp";
-        break;
+    case CHTMLPopupMenu::eKurdin: 
+        SetEventHandler(eHTML_EH_MouseOver, menu->ShowMenu());
+        SetEventHandler(eHTML_EH_MouseOut, "PopUpMenu2_Hide()");
+        return;
     }
-
-    SetAttribute(handler_name, value);
+    _TROUBLE;
 }
 
 
@@ -533,36 +536,42 @@ CHTML_html::~CHTML_html(void)
 {
 }
 
+
 void CHTML_html::Init(void)
 {
-    m_UsePopupMenu = false;
-    m_UsePopupMenuDynamic = false;
-    m_PopupMenuLibUrl = kEmptyStr;
 }
 
 
-void CHTML_html::EnablePopupMenu(const string& menu_script_url,
+void CHTML_html::EnablePopupMenu(CHTMLPopupMenu::EType type,
+                                 const string& menu_script_url,
                                  bool use_dynamic_menu)
 {
-    m_UsePopupMenu = true;
-    m_PopupMenuLibUrl = menu_script_url;
-    m_UsePopupMenuDynamic = use_dynamic_menu;
+    SPopupMenuInfo info(menu_script_url, use_dynamic_menu);
+    m_PopupMenus[type] = info;
 }
 
 
-static bool s_CheckUsePopupMenus(const CNCBINode* node)
+static bool s_CheckUsePopupMenus(const CNCBINode* node, 
+                                 CHTMLPopupMenu::EType type)
 {
+    if ( !node  ||  !node->HaveChildren() ) {
+        return false;
+    }
     iterate ( CNCBINode::TChildren, i, node->Children() ) {
         const CNCBINode* cnode = node->Node(i);
         if ( dynamic_cast<const CHTMLPopupMenu*>(cnode) ) {
-            return true;
+            const CHTMLPopupMenu* menu = 
+                dynamic_cast<const CHTMLPopupMenu*>(cnode);
+            if ( menu->GetType() == type )
+                return true;
         }
-        if ( cnode->HaveChildren()  &&  s_CheckUsePopupMenus(cnode)) {
+        if ( cnode->HaveChildren()  &&  s_CheckUsePopupMenus(cnode, type)) {
             return true;
         }
     }
     return false;
 }
+
 
 CNcbiOstream& CHTML_html::PrintChildren(CNcbiOstream& out, TMode mode)
 {
@@ -570,24 +579,49 @@ CNcbiOstream& CHTML_html::PrintChildren(CNcbiOstream& out, TMode mode)
     if ( mode != eHTML ) {
         return CParent::PrintChildren(out, mode);
     }
+    
     // Check for use popup menus
-    if ( !m_UsePopupMenu ) {
-        m_UsePopupMenu = s_CheckUsePopupMenus(this);
+    bool use_popup_menus = false;
+    for (int t = CHTMLPopupMenu::ePMFirst; t <= CHTMLPopupMenu::ePMLast; t++ )    {
+        CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
+        if ( m_PopupMenus.find(type) == m_PopupMenus.end() ) {
+            if ( s_CheckUsePopupMenus(this, type) ) {
+                EnablePopupMenu(type);
+                use_popup_menus = true;
+            }
+        } else {
+            use_popup_menus = true;
+        }
     }
 
-    if ( !m_UsePopupMenu  ||  !HaveChildren() ) {
+    if ( !use_popup_menus  ||  !HaveChildren() ) {
         return CParent::PrintChildren(out, mode);
     }
 
     non_const_iterate ( TChildren, i, Children() ) {
-
         if ( dynamic_cast<CHTML_head*>(Node(i)) ) {
-            Node(i)->AppendChild(new CHTMLText(
-                     CHTMLPopupMenu::GetCodeHead(m_PopupMenuLibUrl)));
-        } else {
-            if ( dynamic_cast<CHTML_body*>(Node(i)) ) {
-                Node(i)->AppendChild(new CHTMLText(
-                         CHTMLPopupMenu::GetCodeBody(m_UsePopupMenuDynamic)));
+            for (int t = CHTMLPopupMenu::ePMFirst;
+                 t <= CHTMLPopupMenu::ePMLast; t++ ) {
+                CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
+                TPopupMenus::const_iterator info = m_PopupMenus.find(type);
+                if ( info != m_PopupMenus.end() ) {
+                    Node(i)->AppendChild(new CHTMLText(
+                        CHTMLPopupMenu::GetCodeHead(type,info->second.m_Url)));
+                }
+            }
+        } else if ( dynamic_cast<CHTML_body*>(Node(i)) ) {
+            for (int t = CHTMLPopupMenu::ePMFirst;
+                 t <= CHTMLPopupMenu::ePMLast; t++ ) {
+                CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
+                TPopupMenus::const_iterator info = m_PopupMenus.find(type);
+                if ( info != m_PopupMenus.end() ) {
+                    Node(i)->AppendChild(new CHTMLText(
+                        CHTMLPopupMenu::GetCodeBody(type, info->second.m_UseDynamicMenu)));
+                    if ( CHTMLPopupMenu::GetCodeBodyTagHandler(type) != kEmptyStr ) {
+                        Node(i)->SetAttribute(CHTMLPopupMenu::GetCodeBodyTagHandler(type),
+                                              CHTMLPopupMenu::GetCodeBodyTagAction(type));
+                    }
+                }
             }
         }
     }
@@ -1991,6 +2025,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2002/12/09 22:11:33  ivanov
+ * Added support for Sergey Kurdin's popup menu.
+ * Added CHTMLNode::AttachPopupMenu().
+ *
  * Revision 1.75  2002/09/25 01:24:56  dicuccio
  * Added CHTMLHelper::StripTags() - strips HTML comments and tags from any
  * string.  Implemented CHTMLText::PrintBegin() for mode = ePlainText

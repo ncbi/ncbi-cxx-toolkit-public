@@ -35,15 +35,16 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <html/node.hpp>
+#include <html/jsmenu.hpp>
 #include <html/htmlhelper.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
-
 // Macro for declare html elements
 
 #define CHTML_NAME(Tag) NCBI_NAME2(CHTML_, Tag)
+
 
 #define DECLARE_HTML_ELEMENT_CONSTRUCTORS(Tag, Parent) \
     CHTML_NAME(Tag)(void) \
@@ -115,8 +116,7 @@ public: \
 }
 
 
-
-// event tag handler type 
+// Event tag handler type 
 //
 // NOTE: Availability of realization event-handlers for some tags
 //       stand on from browser's type! Set of event-handlers for tags can 
@@ -144,7 +144,7 @@ enum EHTML_EH_Attribute {
 };
 
 
-// base class for html node
+// Base class for html node
 class CHTMLNode : public CNCBINode
 {
     typedef CNCBINode CParent;
@@ -189,7 +189,7 @@ public:
     }
     ~CHTMLNode(void);
 
-    // convenient way to set some common attributes
+    // Convenient way to set some common attributes
     CHTMLNode* SetClass(const string& class_name);
     CHTMLNode* SetStyle(const string& style);
     CHTMLNode* SetId(const string& id);
@@ -207,14 +207,23 @@ public:
     CHTMLNode* SetTitle(const string& title);
     CHTMLNode* SetAccessKey(char key);
 
-    // convenient way to add CHTMLPlainText or CHTMLText
+    // Convenient way to add CHTMLPlainText or CHTMLText
     void AppendPlainText(const char* text, bool noEncode = false);
     void AppendPlainText(const string& text, bool noEncode = false);
     void AppendHTMLText (const char* text);
     void AppendHTMLText (const string& text);
 
-    // set tag event handler
-    void SetEventHandler(const EHTML_EH_Attribute name, const string& value);
+    // Get event handler name
+    string GetEventHandlerName(const EHTML_EH_Attribute event) const;
+    // Set tag event handler
+    void SetEventHandler(const EHTML_EH_Attribute event, const string& value);
+
+    // Attach the specified popup menu to HTML node. Popup menu will be shown 
+    // when the "event" occures. 
+    // NOTE: For eKurdin menu type the parameter "event" will be ignored and
+    //       an eHTML_EH_MouseOver value will be used always.
+    void AttachPopupMenu(const CHTMLPopupMenu* menu, 
+                         EHTML_EH_Attribute event = eHTML_EH_MouseOver);
 };
 
 
@@ -499,8 +508,9 @@ class CHTML_html : public CHTMLElement
     //          value for it, then we can skip call this function.
     //       2) Dynamic menu work only in new browsers. They use one container
     //          for all menus instead of separately container for each menu in 
-    //          nondynamic mode.
-    void EnablePopupMenu(const string& menu_script_url = kEmptyStr,
+    //          nondynamic mode. This parameter have effect only with eSmith menu type.
+    void EnablePopupMenu(CHTMLPopupMenu::EType type = CHTMLPopupMenu::eSmith,
+                         const string& menu_script_url = kEmptyStr,
                          bool use_dynamic_menu = false);
 
 private:
@@ -511,10 +521,21 @@ private:
     // popup menus, if it need )
     virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
 
-    // Popup menu variables
-    string m_PopupMenuLibUrl;
-    bool   m_UsePopupMenu;
-    bool   m_UsePopupMenuDynamic;
+    // The popup menu info structure
+    struct SPopupMenuInfo {
+        SPopupMenuInfo() {
+            m_UseDynamicMenu = false;
+        };
+        SPopupMenuInfo(const string& url, bool use_dynamic_menu) {
+            m_Url = url;
+            m_UseDynamicMenu = use_dynamic_menu;
+        }
+        string m_Url;
+        bool   m_UseDynamicMenu; // Only for eSmith menu type
+    };
+    // The popup menus usage info
+    typedef map<CHTMLPopupMenu::EType, SPopupMenuInfo> TPopupMenus;
+    TPopupMenus m_PopupMenus;
 };
 
 
@@ -1237,6 +1258,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2002/12/09 22:12:25  ivanov
+ * Added support for Sergey Kurdin's popup menu.
+ * Added CHTMLNode::AttachPopupMenu().
+ *
  * Revision 1.59  2002/09/25 01:24:29  dicuccio
  * Added CHTMLHelper::StripTags() - strips HTML comments and tags from any
  * string
