@@ -1,5 +1,5 @@
 [-]
-_export =
+_export = NCBI_PCSUBSTANCE_EXPORT
 
 [PC-InfoData]
 value.bvec._type = vector
