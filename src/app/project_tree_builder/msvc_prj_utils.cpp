@@ -89,7 +89,7 @@ void PromoteIfDifferent(const string& present_path,
     }
 
     ifs_present.seekg(0, ios::end);
-    size_t file_length_present = ifs_present.tellg();
+    streampos file_length_present = ifs_present.tellg();
     ifs_present.seekg(0, ios::beg);
 
     CNcbiIfstream ifs_new (candidate_path.c_str(), 
@@ -99,7 +99,7 @@ void PromoteIfDifferent(const string& present_path,
     }
 
     ifs_new.seekg(0, ios::end);
-    size_t file_length_new = ifs_new.tellg();
+    streampos file_length_new = ifs_new.tellg();
     ifs_new.seekg(0, ios::beg);
 
     if (file_length_present != file_length_new) {
@@ -1027,6 +1027,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/06/14 18:02:29  gorelenk
+ * Changed size_t to streampos in PromoteIfDifferent .
+ *
  * Revision 1.26  2004/06/08 16:32:25  gorelenk
  * Added static functions s_IsPrivateHeader and s_IsImplHeader.
  * Changed imlementation of SFiltersItem ( to take into account
