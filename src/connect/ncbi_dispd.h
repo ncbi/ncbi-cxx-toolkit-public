@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/04/13 06:40:16  lavr
+ * Few tweaks to reduce the number of syscalls made
+ *
  * Revision 6.8  2002/02/05 22:04:13  lavr
  * Included header files rearranged
  *
@@ -71,7 +74,9 @@ extern "C" {
 #endif
 
 
-const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter, const SConnNetInfo *info);
+const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
+                                    const SConnNetInfo *net_info,
+                                    SSERV_Info** info, char** env);
 
 
 #ifdef __cplusplus

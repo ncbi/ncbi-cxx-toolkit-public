@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2002/04/13 06:40:05  lavr
+ * Few tweaks to reduce the number of syscalls made
+ *
  * Revision 6.35  2002/03/11 22:01:47  lavr
  * Threshold for choosing a local server explained better
  *
@@ -348,24 +351,27 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
 static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
 {
     double status = 0.0, total = 0.0;
-    TNCBI_Time t = (TNCBI_Time) time(0);
-    size_t i = 0;
 
-    while (i < data->n_node) {
-        SSERV_Info* info = data->s_node[i].info;
+    if (data->n_node) {
+        TNCBI_Time t = (TNCBI_Time) time(0);
+        size_t i = 0;
+        while (i < data->n_node) {
+            SSERV_Info* info = data->s_node[i].info;
 
-        total += info->rate;
-        if (info->time < t) {
-            if (i < --data->n_node)
-                memmove(data->s_node + i, data->s_node + i + 1,
-                        (data->n_node - i)*sizeof(*data->s_node));
-            free(info);
-        } else {
-            status += info->rate;
-            i++;
+            total += info->rate;
+            if (info->time < t) {
+                if (i < --data->n_node)
+                    memmove(data->s_node + i, data->s_node + i + 1,
+                            (data->n_node - i)*sizeof(*data->s_node));
+                free(info);
+            } else {
+                status += info->rate;
+                i++;
+            }
         }
     }
-    return total != 0.0 ? (status/total < SERV_DISPD_STALE_RATIO_OK) : 1;
+
+    return total == 0.0 ? 1 : (status/total < SERV_DISPD_STALE_RATIO_OK);
 }
 
 
@@ -457,7 +463,8 @@ static void s_Close(SERV_ITER iter)
  ***********************************************************************/
 
 const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
-                                    const SConnNetInfo* net_info)
+                                    const SConnNetInfo* net_info,
+                                    SSERV_Info** info, char** env)
 {
     SDISPD_Data* data;
 
@@ -484,5 +491,10 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
         return 0;
     }
 
+    /* call GetNextInfo if info is needed */
+    if (info)
+        *info = 0;
+    if (env)
+        *env = 0;
     return &s_op;
 }

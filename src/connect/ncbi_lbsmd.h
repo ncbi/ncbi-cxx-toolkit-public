@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/04/13 06:40:28  lavr
+ * Few tweaks to reduce the number of syscalls made
+ *
  * Revision 6.4  2001/04/24 21:31:22  lavr
  * SERV_LBSMD_LOCAL_SVC_BONUS moved to .c file
  *
@@ -57,7 +60,8 @@ extern "C" {
 #endif
 
 
-const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter);
+const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
+                                    SSERV_Info** info, char** env);
 
 
 #ifdef __cplusplus

@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/04/13 06:40:44  lavr
+ * Few tweaks to reduce the number of syscalls made
+ *
  * Revision 6.2  2001/09/10 21:25:35  lavr
  * Unimportant code style compliance change
  *
@@ -41,7 +44,9 @@
 
 #include "ncbi_servicep_lbsmd.h"
 
-const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter)
+
+const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
+                                    SSERV_Info** info, char** env)
 {
     return 0;
 }
