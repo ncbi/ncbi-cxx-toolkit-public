@@ -2475,7 +2475,7 @@ int test1(int argc, char ** argv)
             Uint8 vleng = dbi.GetVolumeLength();
             
             if ((num_display <= 0) || (Uint4(num_display) > nseqs)) {
-                num_display = nseqs;
+                num_display = noids;
             }
             
             if (show_progress)
