@@ -365,6 +365,11 @@ void CSeqMap_CI::x_Push(const CConstRef<CSeqMap>& seqMap,
     push.m_TSE = tse;
     push.m_LevelRangePos = from;
     push.m_LevelRangeEnd = from + length;
+    if (push.m_LevelRangeEnd < push.m_LevelRangePos) {
+        // Detect (from + length) overflow
+        NCBI_THROW(CSeqMapException, eDataError,
+                   "Sequence position overflow");
+    }
     push.m_MinusStrand = minusStrand;
     TSeqPos findOffset = !minusStrand? pos: length - 1 - pos;
     push.m_Index = seqMap->x_FindSegment(from + findOffset, GetScope());
@@ -563,6 +568,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/03/18 16:16:13  grichenk
+* Throw exception on TSeqPos overflow
+*
 * Revision 1.36  2005/02/02 19:49:55  grichenk
 * Fixed more warnings
 *

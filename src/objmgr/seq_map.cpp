@@ -187,7 +187,10 @@ TSeqPos CSeqMap::x_ResolveSegmentLength(size_t index, CScope* scope) const
         else if ( seg.m_SegType == eSeqRef ) {
             length = x_GetBioseqHandle(seg, scope).GetBioseqLength();
         }
-        _ASSERT(length != kInvalidSeqPos);
+        if (length == kInvalidSeqPos) {
+            NCBI_THROW(CSeqMapException, eDataError,
+                    "Invalid sequence length");
+        }
         seg.m_Length = length;
     }
     return length;
@@ -205,7 +208,12 @@ TSeqPos CSeqMap::x_ResolveSegmentPosition(size_t index, CScope* scope) const
         return x_GetSegment(index).m_Position;
     TSeqPos resolved_pos = x_GetSegment(resolved).m_Position;
     do {
+        TSeqPos seg_pos = resolved_pos;
         resolved_pos += x_GetSegmentLength(resolved, scope);
+        if (resolved_pos < seg_pos  ||  resolved_pos == kInvalidSeqPos) {
+            NCBI_THROW(CSeqMapException, eDataError,
+                    "Sequence position overflow");
+        }
         m_Segments[++resolved].m_Position = resolved_pos;
     } while ( resolved < index );
     {{
@@ -228,7 +236,12 @@ size_t CSeqMap::x_FindSegment(TSeqPos pos, CScope* scope) const
                 m_Resolved = resolved;
                 return size_t(-1);
             }
+            TSeqPos seg_pos = resolved_pos;
             resolved_pos += x_GetSegmentLength(resolved, scope);
+            if (resolved_pos < seg_pos  ||  resolved_pos == kInvalidSeqPos) {
+                NCBI_THROW(CSeqMapException, eDataError,
+                        "Sequence position overflow");
+            }
             m_Segments[++resolved].m_Position = resolved_pos;
         } while ( resolved_pos <= pos );
         {{
