@@ -1734,6 +1734,8 @@ static EIO_Status s_Connect(SOCK            sock,
 #ifdef HAVE_SIN_LEN
             addr.sin.sin_len = sizeof(addr.sin);
 #endif /*HAVE_SIN_LEN*/
+            sock->host = x_host;
+            sock->port = x_port;
             c = HostPortToString(x_host, x_port, s, sizeof(s)) ? s : "???";
         }
 
@@ -4306,6 +4308,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.157  2004/10/26 17:47:51  lavr
+ * Store socket's host:port when connecting (fallen out during UNIX mods)
+ *
  * Revision 6.156  2004/10/26 16:17:07  lavr
  * Fix SOCK_IsUNIX() (preprocessor macro check reversed)
  *
