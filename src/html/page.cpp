@@ -313,7 +313,7 @@ static bool s_CheckUsePopupMenus(const CNCBINode* node, CHTMLPopupMenu::EType ty
     if ( !node  ||  !node->HaveChildren() ) {
         return false;
     }
-    iterate ( CNCBINode::TChildren, i, node->Children() ) {
+    ITERATE ( CNCBINode::TChildren, i, node->Children() ) {
         const CNCBINode* cnode = node->Node(i);
         if ( dynamic_cast<const CHTMLPopupMenu*>(cnode) ) {
             const CHTMLPopupMenu* menu = dynamic_cast<const CHTMLPopupMenu*>(cnode);
@@ -358,6 +358,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.32  2003/03/11 15:28:57  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 1.31  2002/12/09 22:11:59  ivanov
  * Added support for Sergey Kurdin's popup menu
  *

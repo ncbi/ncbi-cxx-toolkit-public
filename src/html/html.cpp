@@ -593,7 +593,7 @@ static bool s_CheckUsePopupMenus(const CNCBINode* node,
     if ( !node  ||  !node->HaveChildren() ) {
         return false;
     }
-    iterate ( CNCBINode::TChildren, i, node->Children() ) {
+    ITERATE ( CNCBINode::TChildren, i, node->Children() ) {
         const CNCBINode* cnode = node->Node(i);
         if ( dynamic_cast<const CHTMLPopupMenu*>(cnode) ) {
             const CHTMLPopupMenu* menu = 
@@ -634,7 +634,7 @@ CNcbiOstream& CHTML_html::PrintChildren(CNcbiOstream& out, TMode mode)
         return CParent::PrintChildren(out, mode);
     }
 
-    non_const_iterate ( TChildren, i, Children() ) {
+    NON_CONST_ITERATE ( TChildren, i, Children() ) {
         if ( dynamic_cast<CHTML_head*>(Node(i)) ) {
             for (int t = CHTMLPopupMenu::ePMFirst;
                  t <= CHTMLPopupMenu::ePMLast; t++ ) {
@@ -845,7 +845,7 @@ CNcbiOstream& CHTML_tr::PrintChildren(CNcbiOstream& out, TMode mode)
 
     out << m_Parent->m_ColSepL;
 
-    non_const_iterate ( TChildren, i, Children() ) {
+    NON_CONST_ITERATE ( TChildren, i, Children() ) {
         if ( i != Children().begin() ) {
             out << m_Parent->m_ColSepM;
         }
@@ -866,7 +866,7 @@ size_t CHTML_tr::GetTextLength(TMode mode)
     CNcbiOstrstream sout;
     size_t cols = 0;
 
-    non_const_iterate ( TChildren, i, Children() ) {
+    NON_CONST_ITERATE ( TChildren, i, Children() ) {
         Node(i)->Print(sout, mode);
         cols++;
     }
@@ -1308,7 +1308,7 @@ CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
         if ( m_IsRowSep == ePrintRowSep ) {
             size_t seplen = 0;
             // Find length of first non-empty row
-            non_const_iterate ( TChildren, i, Children() ) {
+            NON_CONST_ITERATE ( TChildren, i, Children() ) {
                 if ( (seplen = dynamic_cast<CHTML_tr*>(&**i)->GetTextLength(mode)) > 0 ) {
                     break;
                 }
@@ -2062,6 +2062,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.81  2003/03/11 15:28:57  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 1.80  2003/02/14 16:19:32  ucko
  * Indent the children of CHTMLListElement in plain-text mode.
  * Avoid redundant newlines in CHTMLBlockElement::PrintEnd.

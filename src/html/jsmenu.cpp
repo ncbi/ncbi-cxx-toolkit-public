@@ -246,7 +246,7 @@ string CHTMLPopupMenu::GetCodeMenuItems(void) const
             code = "window." + m_Name + " = new Menu();\n";
 
             // Write menu items
-            iterate (TItems, i, m_Items) {
+            ITERATE (TItems, i, m_Items) {
                 if ( (i->title).empty() ) {
                     code += m_Name + ".addMenuSeparator();\n";
                 }
@@ -260,7 +260,7 @@ string CHTMLPopupMenu::GetCodeMenuItems(void) const
                 }
             }
             // Write properties
-            iterate (TAttributes, i, m_Attrs) {
+            ITERATE (TAttributes, i, m_Attrs) {
                 string name  = GetMenuAttributeName(i->first);
                 string value = i->second;
                 code += m_Name + "." + name + " = \"" + value + "\";\n";
@@ -272,7 +272,7 @@ string CHTMLPopupMenu::GetCodeMenuItems(void) const
         {
             code = "var " + m_Name + " = [\n";
             // Write menu items
-            iterate (TItems, i, m_Items) {
+            ITERATE (TItems, i, m_Items) {
                 if ( i != m_Items.begin()) {
                     code += ",\n";
                 }
@@ -371,6 +371,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2003/03/11 15:28:57  kuznets
+ * iterate -> ITERATE
+ *
  * Revision 1.9  2002/12/12 17:20:46  ivanov
  * Renamed GetAttribute() -> GetMenuAttributeValue,
  *         GetAttributeName() -> GetMenuAttributeName().

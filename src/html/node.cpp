@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/03/11 15:28:57  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.25  2002/11/04 21:29:07  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -305,7 +308,7 @@ CNcbiOstream& CNCBINode::PrintEnd(CNcbiOstream& out, TMode)
 CNcbiOstream& CNCBINode::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     if ( HaveChildren() ) {
-        non_const_iterate ( TChildren, i, Children() ) {
+        NON_CONST_ITERATE ( TChildren, i, Children() ) {
             Node(i)->Print(out, mode);
         }
     }

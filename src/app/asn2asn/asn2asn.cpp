@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/03/11 15:30:29  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.44  2002/09/19 20:05:44  vasilche
 * Safe initialization of static mutexes
 *
@@ -541,7 +544,7 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                 }
                 else {
                     *in >> entries;
-                    non_const_iterate ( CBioseq_set::TSeq_set, seqi,
+                    NON_CONST_ITERATE ( CBioseq_set::TSeq_set, seqi,
                                         entries.SetSeq_set() ) {
                         SeqEntryProcess(**seqi);     /* do any processing */
                     }
