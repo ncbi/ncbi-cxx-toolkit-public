@@ -352,6 +352,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_INST_HistAssemblyMissing",
     "SEQ_INST_TerminalNs",
     "SEQ_INST_UnexpectedIdentifierChange",
+    "SEQ_INST_InternalNsInSeqLit",
 
     "SEQ_DESCR_BioSourceMissing",
     "SEQ_DESCR_InvalidForType",
@@ -636,6 +637,8 @@ block visible in the flatfile.",
 //  SEQ_INST_UnexpectedIdentifierChange
 "The set of sequence identifiers on a Bioseq are not consistent with the \
 previous version of the record in the database.",
+//  SEQ_INST_InternalNsInSeqLit
+"There are runs of many Ns inside the SeqLit component of a delta Bioseq.",
 
 /* SEQ_DESCR */
 
@@ -1115,6 +1118,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/08/06 15:04:30  shomrat
+* Added SEQ_INST_InternalNsInSeqLit
+*
 * Revision 1.26  2003/07/21 21:17:45  shomrat
 * Added SEQ_FEAT_MissingLocation
 *
