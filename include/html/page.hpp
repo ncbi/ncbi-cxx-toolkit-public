@@ -126,7 +126,8 @@ public:
     virtual void CreateSubNodes(void);
 
     // Create the static part of the page(here - read it from <m_TemplateFile>)
-    virtual CNCBINode* CreateTemplate(void);
+    virtual CNCBINode* CreateTemplate(CNcbiOstream* out = 0,
+                                      TMode mode = eHTML);
 
     // Tag substitution callbacks
     virtual CNCBINode* CreateTitle(void);  // def for tag "@TITLE@" - <m_Title>
@@ -158,13 +159,17 @@ public:
     virtual void AddTagMap(const string& name, BaseTagMapper* mapper);
     virtual void AddTagMap(const string& name, CNCBINode*     node);
 
+    // overridden to reduce latency
+    CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
+
 private:
     void Init(void);
 
     // Create the static part of the page(here - read it from <m_TemplateFile>)
     // this is an internal version that gets around some issues with local
     // versus externally-supplied streams
-    CNCBINode* x_CreateTemplate(CNcbiIstream& is);
+    CNCBINode* x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
+                                TMode mode);
 
     string   m_Title;
 
@@ -284,6 +289,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/05/14 21:53:02  ucko
+* Adjust interface to allow automatic streaming of large templates when
+* not using JavaScript menus.
+*
 * Revision 1.27  2003/05/13 15:44:19  ucko
 * Make reading large templates more efficient.
 *
