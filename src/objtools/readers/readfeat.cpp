@@ -228,7 +228,9 @@ auto_ptr<CFeature_table_reader_imp> CFeature_table_reader::sm_Implementation;
 
 void CFeature_table_reader::x_InitImplementation()
 {
-    static CFastMutex s_Implementation_mutex;
+    // mutex guarding access to our images
+    DEFINE_STATIC_FAST_MUTEX(s_Implementation_mutex);
+
     CFastMutexGuard   LOCK(s_Implementation_mutex);
     if ( !sm_Implementation.get() ) {
         sm_Implementation.reset(new CFeature_table_reader_imp());
