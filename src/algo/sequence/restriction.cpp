@@ -269,8 +269,8 @@ void x_FindRSite(const Seq& seq, const vector<CREnzyme>& enzymes,
             // to avoid combinatorial explosion,
             // if there are more than two Ns only use
             // part of pattern before first N
-            SIZE_TYPE fsm_pat_size = pat.find_first_of(0x0f);
             CSeqMatch::IupacToNcbi8na(spec->GetSeq(), pat);
+            SIZE_TYPE fsm_pat_size = pat.find_first_of(0x0f);
             {{
                 SIZE_TYPE pos = pat.find_first_of(0x0f, fsm_pat_size + 1);
                 if (pos == NPOS
@@ -531,6 +531,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/08/28 15:49:43  jcherry
+ * Fixed problem with x_FindRSite; pattern was being searched before
+ * it was read.
+ *
  * Revision 1.9  2003/08/22 14:25:58  ucko
  * Fix for MSVC, which seems to have problems with member templates.
  *
