@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/08/22 16:25:39  vasilche
+* Avoid internal error of Forte compiler.
+*
 * Revision 1.19  2000/07/18 17:21:40  vasilche
 * Added possibility to force output of empty attribute value.
 * Added caching to CHTML_table, now large tables work much faster.
@@ -140,7 +143,13 @@ void CNCBINode::RemoveAllChildren(void)
 
 bool CNCBINode::HaveAttribute(const string& name) const
 {
-    return HaveAttributes() && Attributes().find(name) != Attributes().end();
+    if ( HaveAttributes() ) {
+        TAttributes::const_iterator ptr = Attributes().find(name);
+        if ( ptr != Attributes().end() ) {
+            return true;
+        }
+    }
+    return false;
 }
 
 const string& CNCBINode::GetAttribute(const string& name) const
