@@ -105,7 +105,7 @@ private:
     
     friend class CSeqDB;
     
-    CSeqDBIter(const CSeqDB *, Uint4 oid);
+    CSeqDBIter(const CSeqDB *, TOID oid);
     
     const CSeqDB     * m_DB;
     TOID               m_OID;
@@ -159,8 +159,8 @@ public:
     
     CSeqDB(const string & dbname,
            char           prot_nucl,
-           Uint4          oid_begin,
-           Uint4          oid_end,
+           TOID           oid_begin,
+           TOID           oid_end,
            bool           use_mmap);
     
     /// Destructor.
@@ -333,8 +333,9 @@ private:
 /// modifyable, and is memory mapped (read only) where supported.
 
 class CSeqDBSequence {
+    typedef CSeqDB::TOID TOID;
 public:
-    CSeqDBSequence(CSeqDB * db, Uint4 oid)
+    CSeqDBSequence(CSeqDB * db, TOID oid)
         : m_DB    (db),
           m_Data  (0),
           m_Length(0)
