@@ -122,7 +122,9 @@ static const string k_StructureUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Stru
 
 static const string k_StructureOverviewUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&blast_CD_RID=%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>";
 
-static const string k_GeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=geo&term=%d[gi]\"><img border=0 height=16 width=16 src=\"/blast/images/G.gif\" alt=\"Geo\"></a>";
+static const string k_GeoUrl =  "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=geo&term=%d[gi]\"><img border=0 height=16 width=16 src=\"/blast/images/E.gif\" alt=\"Geo\"></a>";
+
+static const string k_GeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=search&term=%d[%s]\"><img border=0 height=16 width=16 src=\"/blast/images/G.gif\" alt=\"Gene info\"></a>";
 
 static const string k_Bl2seqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/blast/bl2seq/wblast2.cgi?PROGRAM=tblastx&WORD=3&RID=%s&ONE=%s&TWO=%s\">Get TBLASTX alignments</a>";
 
@@ -487,10 +489,7 @@ void CDisplaySeqalign::AddLinkout(const CBioseq& cbsp, const CBlast_def_line& bd
   if (bdl.IsSetLinks()){
     for (list< int >::const_iterator iter = bdl.GetLinks().begin(); iter != bdl.GetLinks().end(); iter ++){
       char buf[1024];
-      if((*iter) & eLocuslink){
-        sprintf(buf, k_LocusLinkUrl.c_str(), gi, molType);
-        out << buf;
-      }
+    
       if ((*iter) & eUnigene) {
 	sprintf(buf, k_UnigeneUrl.c_str(),  gi);
 	out << buf;
@@ -502,6 +501,10 @@ void CDisplaySeqalign::AddLinkout(const CBioseq& cbsp, const CBlast_def_line& bd
       if ((*iter) & eGeo){
          sprintf(buf, k_GeoUrl.c_str(), gi);
          out << buf;
+      }
+      if((*iter) & eGene){
+          sprintf(buf, k_GeneUrl.c_str(), gi, cbsp.IsAa() ? "PUID" : "NUID");
+          out << buf;
       }
     }
   }
@@ -2136,6 +2139,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.43  2004/09/09 19:36:58  jianye
+*Added Gene linkout
+*
 *Revision 1.42  2004/08/10 17:27:08  jianye
 *Added dynamic feature link
 *
