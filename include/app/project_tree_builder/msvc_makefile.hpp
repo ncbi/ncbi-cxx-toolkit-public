@@ -87,8 +87,14 @@ public:
     void GetAdditionalSourceFiles(const SConfigInfo& config, 
                                   list<string>*      files) const;
 
+    void GetAdditionalLIB        (const SConfigInfo& config, 
+                                  list<string>*      lib_ids) const;
+
     void GetExcludedSourceFiles  (const SConfigInfo& config, 
                                   list<string>*      files) const;
+
+    void GetExcludedLIB          (const SConfigInfo& config, 
+                                  list<string>*      lib_ids) const;
     
     void GetAdditionalIncludeDirs(const SConfigInfo& config, 
                                   list<string>*      files) const;
@@ -104,7 +110,10 @@ private:
 };
 
 /// Create project makefile name
+string CreateMsvcProjectMakefileName(const string&        project_name,
+                                     CProjItem::TProjType type);
 string CreateMsvcProjectMakefileName(const CProjItem& project);
+
 
 
 /// Get option with taking into account 2 makefiles : matafile and project_file
@@ -133,6 +142,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/10 18:02:01  gorelenk
+ * + GetAdditionalLIB.
+ * + GetExcludedLIB - customization of depends.
+ *
  * Revision 1.2  2004/01/28 17:55:04  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,

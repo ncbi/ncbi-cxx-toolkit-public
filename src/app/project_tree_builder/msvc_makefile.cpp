@@ -51,37 +51,6 @@ bool CMsvcMetaMakefile::IsEmpty(void) const
 }
 
 
-static string s_Config(bool debug)
-{
-    return debug? "Debug" : "Release";
-}
-
-
-string CreateMsvcProjectMakefileName(const CProjItem& project)
-{
-    string name("Makefile.");
-    
-    name += project.m_Name + '.';
-    
-    switch (project.m_ProjType) {
-    case CProjItem::eApp:
-        name += "app.";
-        break;
-    case CProjItem::eLib:
-        name += "lib.";
-        break;
-    default:
-        NCBI_THROW(CProjBulderAppException, 
-                   eProjectType, 
-                   NStr::IntToString(project.m_ProjType));
-        break;
-    }
-
-    name += "msvc";
-    return name;
-}
-
-
 string CMsvcMetaMakefile::GetCompilerOpt(const string& opt, 
                                          const SConfigInfo& config) const
 {
@@ -100,6 +69,40 @@ string CMsvcMetaMakefile::GetLibrarianOpt(const string& opt,
                                           const SConfigInfo& config) const
 {
     return GetOpt(m_MakeFile, "Librarian", opt, config);
+}
+
+
+//-----------------------------------------------------------------------------
+string CreateMsvcProjectMakefileName(const string&        project_name,
+                                     CProjItem::TProjType type)
+{
+    string name("Makefile.");
+    
+    name += project_name + '.';
+    
+    switch (type) {
+    case CProjItem::eApp:
+        name += "app.";
+        break;
+    case CProjItem::eLib:
+        name += "lib.";
+        break;
+    default:
+        NCBI_THROW(CProjBulderAppException, 
+                   eProjectType, 
+                   NStr::IntToString(type));
+        break;
+    }
+
+    name += "msvc";
+    return name;
+}
+
+
+string CreateMsvcProjectMakefileName(const CProjItem& project)
+{
+    return CreateMsvcProjectMakefileName(project.m_Name, 
+                                         project.m_ProjType);
 }
 
 
@@ -131,6 +134,16 @@ void CMsvcProjectMakefile::GetAdditionalSourceFiles(const SConfigInfo& config,
 }
 
 
+void CMsvcProjectMakefile::GetAdditionalLIB(const SConfigInfo& config, 
+                                            list<string>*      lib_ids) const
+{
+    string lib_string = 
+        GetOpt(m_MakeFile, "AddToProject", "LIB", config);
+    
+    NStr::Split(lib_string, LIST_SEPARATOR, *lib_ids);
+}
+
+
 void CMsvcProjectMakefile::GetExcludedSourceFiles(const SConfigInfo& config,  
                                                   list<string>* files) const
 {
@@ -139,6 +152,17 @@ void CMsvcProjectMakefile::GetExcludedSourceFiles(const SConfigInfo& config,
                "ExcludedFromProject", "SourceFiles", config);
     
     NStr::Split(files_string, LIST_SEPARATOR, *files);
+}
+
+
+void CMsvcProjectMakefile::GetExcludedLIB(const SConfigInfo& config, 
+                                          list<string>*      lib_ids) const
+{
+    string lib_string = 
+        GetOpt(m_MakeFile, 
+               "ExcludedFromProject", "LIB", config);
+    
+    NStr::Split(lib_string, LIST_SEPARATOR, *lib_ids);
 }
 
 
@@ -227,6 +251,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/10 18:02:46  gorelenk
+ * + GetAdditionalLIB.
+ * + GetExcludedLIB - customization of depends.
+ *
  * Revision 1.3  2004/02/06 23:14:59  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.
