@@ -148,6 +148,7 @@ enum EErrType {
     eErr_SEQ_INST_MissingGaps,
     eErr_SEQ_INST_CompleteTitleProblem,
     eErr_SEQ_INST_CompleteCircleProblem,
+    eErr_SEQ_INST_BadHTGSeq,
     ERR_CODE_END(SEQ_INST),
 
     ERR_CODE_BEGIN(SEQ_DESCR),
@@ -981,6 +982,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.78  2004/09/22 13:47:59  shomrat
+* + eErr_SEQ_INST_BadHTGSeq
+*
 * Revision 1.77  2004/09/21 19:08:31  shomrat
 * + eErr_SEQ_FEAT_MrnaTransFail
 *
