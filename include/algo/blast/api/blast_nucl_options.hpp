@@ -48,6 +48,12 @@ BEGIN_SCOPE(blast)
 /// Adapter class for nucleotide-nucleotide BLAST comparisons.
 /// Exposes an interface to allow manipulation the options that are relevant to
 /// this type of search.
+/// 
+/// NB: By default, traditional megablast defaults are used. If blastn defaults
+/// are desired, please call the appropriate member function:
+///
+///    void SetTraditionalBlastnDefaults();
+///    void SetTraditionalMegablastDefaults();
 
 class NCBI_XBLAST_EXPORT CBlastNucleotideOptionsHandle : 
                                             public CBlastOptionsHandle
@@ -191,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/10 18:00:54  camacho
+ * Added comment explaining defaults
+ *
  * Revision 1.2  2003/12/09 12:40:22  camacho
  * Added windows export specifiers
  *
