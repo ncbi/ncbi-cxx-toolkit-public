@@ -65,8 +65,33 @@ BEGIN_SCOPE(blast)
 CPssmEngine::CPssmEngine(IPssmInputData* input)
     : m_PssmInput(input)
 {
+    x_CheckAgainstNullData();
     m_ScoreBlk.Reset(x_InitializeScoreBlock(m_PssmInput->GetQuery(),
                                             m_PssmInput->GetQueryLength()));
+}
+
+void
+CPssmEngine::x_CheckAgainstNullData()
+{
+    if ( !m_PssmInput ) {
+        NCBI_THROW(CBlastException, eBadParameter,
+           "IPssmInputData is NULL");
+    }
+
+    if ( !m_PssmInput->GetOptions() ) {
+        NCBI_THROW(CBlastException, eBadParameter,
+           "IPssmInputData returns NULL PSIBlastOptions");
+    }
+
+    if ( !m_PssmInput->GetQuery() ) {
+        NCBI_THROW(CBlastException, eBadParameter, 
+           "IPssmInputData returns NULL query sequence");
+    }
+
+    if (m_PssmInput->GetQueryLength() == 0) {
+        NCBI_THROW(CBlastException, eBadParameter, 
+           "Query length provided by IPssmInputData is 0");
+    }
 }
 
 CPssmEngine::~CPssmEngine()
@@ -83,7 +108,6 @@ CRef<CPssmWithParameters>
 CPssmEngine::Run()
 {
     m_PssmInput->Process();
-
     x_Validate();
 
     // Note: currently there is no way for users to request diagnostics through
@@ -158,10 +182,6 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
                                     unsigned int query_length)
 {
     ASSERT(query);
-    if (query_length == 0) {
-        NCBI_THROW(CBlastException, eBadParameter, 
-                   "Query length provided by PssmInput interface is 0");
-    }
 
     // This program type will need to be changed when psi-tblastn is
     // implemented
@@ -225,8 +245,14 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
 void
 CPssmEngine::x_Validate()
 {
+    if ( !m_PssmInput->GetData() ) {
+        NCBI_THROW(CBlastException, eBadParameter,
+           "IPssmInputData returns NULL multiple sequence alignment");
+    }
+
     x_ValidateNoFlankingGaps();
     x_ValidateNoGapsInQuery();
+    x_ValidateAlignedColumns();
 }
 
 void
@@ -239,7 +265,9 @@ CPssmEngine::x_ValidateNoFlankingGaps()
     ASSERT(msa);
 
     // Look for starting gaps in alignments
-    for (unsigned int i = 0; i < msa->dimensions->num_seqs + 1; i++) {
+    unsigned int i = 
+        m_PssmInput->GetOptions()->ignore_consensus == TRUE ? 1 : 0;
+    for ( ; i < msa->dimensions->num_seqs + 1; i++) {
         // find the first aligned residue
         for (unsigned int j = 0; j < m_PssmInput->GetQueryLength(); j++) {
             if (msa->data[i][j].is_aligned) {
@@ -253,6 +281,7 @@ CPssmEngine::x_ValidateNoFlankingGaps()
     }
 
     // Look for ending gaps in alignments
+    i = m_PssmInput->GetOptions()->ignore_consensus == TRUE ? 1 : 0;
     for (unsigned int i = 0; i < msa->dimensions->num_seqs + 1; i++) {
         // find the last aligned residue
         for (unsigned int j = m_PssmInput->GetQueryLength() - 1; j >= 0; j--) {
@@ -274,6 +303,10 @@ CPssmEngine::x_ValidateNoFlankingGaps()
 void
 CPssmEngine::x_ValidateNoGapsInQuery()
 {
+    if (m_PssmInput->GetOptions()->ignore_consensus) {
+        return;
+    }
+
     const PSIMsa* msa = m_PssmInput->GetData();
     const Uint1 GAP = AMINOACID_TO_NCBISTDAA[(Uint1)'-'];
     ostringstream os;
@@ -286,6 +319,42 @@ CPssmEngine::x_ValidateNoGapsInQuery()
             msa->data[kQueryIndex][i].letter == GAP) {
             os << "Found GAP at query position " << i << endl;
             break;
+        }
+    }
+
+    if (os.str().length() != 0) {
+        NCBI_THROW(CBlastException, eBadParameter, os.str().c_str());
+    }
+}
+
+void
+CPssmEngine::x_ValidateAlignedColumns()
+{
+    const PSIMsa* msa = m_PssmInput->GetData();
+    const Uint1 GAP = AMINOACID_TO_NCBISTDAA[(Uint1)'-'];
+    ostringstream os;
+
+    for (unsigned int i = 0; i < m_PssmInput->GetQueryLength(); i++) {
+        bool found_aligned_sequence = false;
+        bool found_non_gap_residue = false;
+
+        unsigned int j = 
+            m_PssmInput->GetOptions()->ignore_consensus == TRUE ? 1 : 0;
+        for ( ; j < msa->dimensions->num_seqs + 1; j++) {
+            if (msa->data[j][i].is_aligned) {
+                found_aligned_sequence = true;
+                if (msa->data[j][i].letter != GAP) {
+                    found_non_gap_residue = true;
+                    break;
+                }
+            }
+        }        
+        if (!found_aligned_sequence) {
+            os << "Found completely unaligned column at position " << i << endl;
+            continue;
+        }
+        if (!found_non_gap_residue) {
+            os << "Found column of all GAP residues at position " << i << endl;
         }
     }
 
@@ -334,7 +403,7 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
 
     if (diagnostics->information_content) {
         NCBI_THROW(CBlastException, eNotSupported, "Information content "
-                   "cannot be stored in Score-matrix-parameters ASN.1");
+                   "cannot be stored in PssmWithParameters ASN.1");
     }
 
     if (diagnostics->residue_freqs) {
@@ -369,7 +438,7 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
 
     if (diagnostics->gapless_column_weights) {
         NCBI_THROW(CBlastException, eNotSupported, "Gapless column weights "
-                   "cannot be stored in Score-matrix-parameters ASN.1");
+                   "cannot be stored in PssmWithParameters ASN.1");
     }
 
     return retval;
@@ -384,6 +453,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2004/10/13 15:44:47  camacho
+ * + validation for columns in multiple sequence alignment
+ *
  * Revision 1.15  2004/10/12 21:22:59  camacho
  * + validation methods
  *

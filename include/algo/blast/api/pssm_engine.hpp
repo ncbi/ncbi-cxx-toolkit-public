@@ -115,8 +115,15 @@ private:
     x_InitializeScoreBlock(const unsigned char* query,
                            unsigned int query_length);
 
+    /// Checks that no data returned by the IPssmInputData interface is NULL
+    /// @throws CBlastException if validation fails. Does not test the
+    /// GetData() method as this is only populated after Process() is called.
+    void
+    x_CheckAgainstNullData();
+
     /// Performs validation on data provided before invoking the CORE PSSM
-    /// engine.
+    /// engine. Should be called after invoking Process() on the
+    /// IPssmInputData.
     /// @throws CBlastException if validation fails
     void
     x_Validate();
@@ -131,6 +138,12 @@ private:
     /// @throws CBlastException if validation fails
     void
     x_ValidateNoGapsInQuery();
+
+    /// Make sure that there are no columns where no sequences are aligned or
+    /// where all aligned sequences contain gaps.
+    /// @throws CBlastException if validation fails
+    void
+    x_ValidateAlignedColumns();
 
     /// Converts the PSIMatrix structure into a ASN.1 CPssmWithParameters object
     /// @param pssm input PSIMatrix structure [in]
@@ -164,6 +177,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2004/10/13 15:44:21  camacho
+ * + validation for columns in multiple sequence alignment
+ *
  * Revision 1.13  2004/10/12 21:22:00  camacho
  * + validation methods
  *
