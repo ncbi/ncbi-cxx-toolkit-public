@@ -92,20 +92,32 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
 }
 
 
-static CONNECTOR s_HttpConnectorBuilder(const char*    host,
-                                        unsigned short port,
-                                        const char*    path,
-                                        const char*    args,
-                                        const char*    user_hdr,
-                                        THCC_Flags     flags)
+static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* net_info_in,
+                                        const char*         host,
+                                        unsigned short      port,
+                                        const char*         path,
+                                        const char*         args,
+                                        const char*         user_hdr,
+                                        THCC_Flags          flags,
+                                        const STimeout*     timeout)
 {
-    SConnNetInfo* net_info = ConnNetInfo_Create(0);
+    SConnNetInfo* net_info = net_info_in ?
+        ConnNetInfo_Clone(net_info_in) : ConnNetInfo_Create(0);
     if (!net_info)
         return 0;
-    strncpy0(net_info->host, host, sizeof(net_info->host) - 1);
-    net_info->port = port;
-    strncpy0(net_info->path, path, sizeof(net_info->path) - 1);
-    strncpy0(net_info->args, args, sizeof(net_info->args) - 1);
+    if (host) {
+        strncpy0(net_info->host, host, sizeof(net_info->host) - 1);
+        net_info->port = port;
+    }
+    if (path)
+        strncpy0(net_info->path, path, sizeof(net_info->path) - 1);
+    if (args)
+        strncpy0(net_info->args, args, sizeof(net_info->args) - 1);
+    if (timeout && timeout != CONN_DEFAULT_TIMEOUT) {
+        net_info->tmo     = *timeout;
+        net_info->timeout = &net_info->tmo;
+    } else if (!timeout)
+        net_info->timeout = 0;
     CONNECTOR c = HTTP_CreateConnector(net_info, user_hdr, flags);
     ConnNetInfo_Destroy(net_info);
     return c;
@@ -120,12 +132,14 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                    THCC_Flags      flags,
                                    const STimeout* timeout,
                                    streamsize      buf_size)
-    : CConn_IOStream(s_HttpConnectorBuilder(host.c_str(),
+    : CConn_IOStream(s_HttpConnectorBuilder(0,
+                                            host.c_str(),
                                             port,
                                             path.c_str(),
                                             args.c_str(),
                                             user_header.c_str(),
-                                            flags),
+                                            flags,
+                                            timeout),
                      timeout, buf_size)
 {
     return;
@@ -137,12 +151,38 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                    THCC_Flags          flags,
                                    const STimeout*     timeout,
                                    streamsize          buf_size)
-    : CConn_IOStream(HTTP_CreateConnector(net_info,
-                                          user_header.c_str(),
-                                          flags),
+    : CConn_IOStream(s_HttpConnectorBuilder(net_info,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            user_header.c_str(),
+                                            flags,
+                                            timeout),
                      timeout, buf_size)
 {
     return;
+}
+
+
+static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
+                                           TSERV_Type            types,
+                                           const SConnNetInfo*   net_info_in,
+                                           const SSERVICE_Extra* params,
+                                           const STimeout*       timeout)
+{
+    SConnNetInfo* net_info = net_info_in ?
+        ConnNetInfo_Clone(net_info_in) : ConnNetInfo_Create(service);
+    if (!net_info)
+        return 0;
+    if (timeout && timeout != CONN_DEFAULT_TIMEOUT) {
+        net_info->tmo     = *timeout;
+        net_info->timeout = &net_info->tmo;
+    } else if (!timeout)
+        net_info->timeout = 0;
+    CONNECTOR c = SERVICE_CreateConnectorEx(service, types, net_info, params);
+    ConnNetInfo_Destroy(net_info);
+    return c;
 }
 
 
@@ -152,10 +192,11 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                          const SSERVICE_Extra* params,
                                          const STimeout*       timeout,
                                          streamsize            buf_size)
-    : CConn_IOStream(SERVICE_CreateConnectorEx(service.c_str(),
+    : CConn_IOStream(s_ServiceConnectorBuilder(service.c_str(),
                                                types,
                                                net_info,
-                                               params),
+                                               params,
+                                               timeout),
                      timeout, buf_size)
 {
     return;
@@ -179,6 +220,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2003/03/25 22:17:18  lavr
+ * Set timeouts from ctors in SConnNetInfo, too, for display unambigously
+ *
  * Revision 6.15  2002/10/28 15:42:18  lavr
  * Use "ncbi_ansi_ext.h" privately and use strncpy0()
  *
