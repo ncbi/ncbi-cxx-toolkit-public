@@ -123,7 +123,7 @@ private:
 
     BLAST_ScoreBlkPtr                   mi_Sbp;
     LookupTableWrapPtr                  mi_LookupTable;
-    ValNodePtr                          mi_LookupSegments;
+    ListNode *                          mi_LookupSegments;
 
     CBlastInitialWordParametersPtr      mi_InitWordParams;
     CBlastHitSavingParametersPtr        mi_HitSavingParams;
@@ -219,6 +219,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/07/30 19:58:02  coulouri
+* use ListNode
+*
 * Revision 1.3  2003/07/30 15:00:01  camacho
 * Do not use Malloc/MemNew/MemFree
 *

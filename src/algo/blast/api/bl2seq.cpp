@@ -110,7 +110,7 @@ CBl2Seq::x_ResetQueryDs()
     mi_QueryInfo.CBlastQueryInfoPtr::~CBlastQueryInfoPtr();
     if (mi_LookupTable)
         mi_LookupTable = BlastLookupTableDestruct(mi_LookupTable);
-    mi_LookupSegments = ValNodeFreeData(mi_LookupSegments);
+    mi_LookupSegments = ListNodeFreeData(mi_LookupSegments);
     m_QuerySetUpDone = false;
 }
 
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/07/30 19:58:02  coulouri
+* use ListNode
+*
 * Revision 1.7  2003/07/30 15:00:01  camacho
 * Do not use Malloc/MemNew/MemFree
 *
