@@ -8,7 +8,7 @@
 <body bgcolor="#FFFFFF">
 
 <h1>
-Command-line arguments -- parsing, validation, and access to</h1>
+Parsing, validating, and accessing command line arguments</h1>
 
 <ul>
 <li>
@@ -131,11 +131,13 @@ description</li>
 and <i>CArgValue</i> classes</h4>
 The <i><a href="#argdescr">CArgDescriptions</a></i> class provides an interface
 to describe the data type and attributes of&nbsp; command-line arguments,
-via a set of <i>Add</i> methods. The <i>CreateArgs()
-</i>method is used
-to read the command line arguments at runtime, verifying their overall
-syntactic structure and matching their values against the stored descriptions.
-If the arguments are parsed successfully,&nbsp; a new <i><a href="#cargs">CArgs</a></i>
+via a set of <i>Add</i> methods.&nbsp; Additional constraints on the number
+of arguments and their acceptable ranges of values can be imposed using
+the Allow() and SetConstraints() methods.&nbsp; The <i>CreateArgs()
+</i>method
+is used to read the command line arguments at runtime, verifying their
+overall syntactic structure and matching their values against the stored
+descriptions. If the arguments are parsed successfully,&nbsp; a new <i><a href="#cargs">CArgs</a></i>
 object is returned by <i>CreateArgs()</i>.
 <p>The resulting
 <i><a href="#cargs">CArgs</a></i> object will contain
@@ -146,22 +148,11 @@ object),&nbsp; and the returned&nbsp; <i>CArgValue</i> object can then
 be safely type-cast to the right C++ type (<i>int</i>, <i>string</i>, <i>stream</i>,
 etc.). These class relations and methods can be summarized <font color="#003300">schematically</font>
 as:
-<ul>
-<li>
-CArgDescriptions::AddXxx(),&nbsp; CArgDescriptions::SetConstraint(), CArgDescriptions::Allow()</li>
-
-<li>
-CArgDescriptions::CreateArgs(argc, argv)&nbsp; --->&nbsp; CArgs</li>
-
-<li>
-CArgs["some_arg_name"]&nbsp; --->&nbsp; CArgValue</li>
-
-<li>
-CArgValue::AsDouble()&nbsp; --->&nbsp; <i>double</i>,&nbsp;&nbsp;&nbsp;
-CArgValue::AsString()&nbsp; --->&nbsp; <i>string</i>,&nbsp;&nbsp;&nbsp;
-etc.</li>
-</ul>
-
+<center><img SRC="flow.gif" height=288 width=612></center>
+The last statement in this example implicitly references a <i>CArgValue</i>
+object, in the value returned when the [] operator is applied to <i>myArgs</i>.&nbsp;
+The method <i>CArgValue::AsDouble() </i>is then applied to this object
+to retrieve a<i> float.</i>
 <h4>
 <a NAME="ref_Overview_Structure"></a>The generic structure of the command
 line, and available argument types</h4>
@@ -230,7 +221,8 @@ to be used there, as in: &lt;<i>-name valu</i>e> or &lt;<i>-name</i>></dd>
 The automatically generated <i><a href="#ref_CArgDescriptions_Usage">usage</a></i>
 messages include a description for each argument, with the format:</dd>
 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
 <i>-name [synopsis] type [mandatory | optional]</i>
 <dt>
 <i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -454,11 +446,11 @@ follows:
 </table></center>
 
 <p>A single shared description can also be&nbsp; registered for all additional
-<i>unnamed</i> positional arguments,&nbsp; using the <i>AddExtra()</i>
-method. By default, unnamed positional arguments are always optional, unless
-a constraint policy has been explicitly set which requires them. We consider
-next how the number of named and unnamed positional arguments must together
-satisfy the constraints.
+<i>unnamed</i>
+positional arguments,&nbsp; using the <i>AddExtra()</i> method. By default,
+unnamed positional arguments are always optional, unless a constraint policy
+has been explicitly set which requires them. We consider next how the number
+of named and unnamed positional arguments must together satisfy the constraints.
 <p>The <i>unnamed</i> positional arguments must always follow the named
 positional arguments. The first <i>N</i> positional arguments will be associated
 with the first <i>N</i> named descriptions that were registered using <i>AddPlain()</i>.
@@ -538,8 +530,8 @@ from its description. In this example, the input file argument's description
 was registered as:
 <pre><font color="#008080">argDesc.AddKey("i", "InputFile", "Input data file", CArgDescriptions::eInputFile, 0);</font></pre>
 The information generated for each argument is displayed in the format:
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<i>-name [synopsis] type [mandatory | optional]</i>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <i>-name
+[synopsis] type [mandatory | optional]</i>
 <br><i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 comment</i>
 <p><a NAME="ref_CArgs"></a>
@@ -567,8 +559,8 @@ a <i>CArgs</i> object is created.&nbsp; Each argument value is internally
 represented as a <i>CArgValue</i> object, and is added to a container managed
 by the CArgs object.&nbsp; All <i>named</i> arguments can be accessed&nbsp;
 using the [] operator, as in: <i>myCArgs["f"]</i>, where "f" is the name
-registered for that argument. There are two ways to access the&nbsp; <i>Nt</i>h<i>
-</i>unnamed positional argument: <i>myCArgs["#N"] </i>and <i>myCArgs[N]</i>.
+registered for that argument. There are two ways to access the&nbsp; <i>Nt</i>hunnamed
+positional argument: <i>myCArgs["#N"] </i>and <i>myCArgs[N]</i>.
 <p><a NAME="ref_CArgValue"></a>
 <h3>
 <i>CArgValue</i> class:&nbsp; the internal representation of argument values</h3>
@@ -576,8 +568,7 @@ The internal representation of an argument value - as it is stored and
 retrieved from its <i>CArgs</i> container - is an instance of a
 <i><a href="../docxx/CArgValue.html">CArgValue</a></i>.
 The primary purpose of this class is to provide type-validated loading
-through a set
- of <i>AsXxx()</i> methods:
+through a set of <i>AsXxx()</i> methods:
 <pre><font color="#008080">class CArgValue : public CObject
 {
 public:
