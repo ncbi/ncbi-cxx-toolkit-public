@@ -283,7 +283,7 @@ void CImageIOGif::WriteImage(const CImage& image, const string& file)
     //
 
     // open our file
-    GifFileType* fp = EGifOpenFileName(file.c_str(), false);
+    GifFileType* fp = EGifOpenFileName(const_cast<char*> (file.c_str()), false);
     if ( !fp ) {
         free(cmap);
 
@@ -446,6 +446,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/09 19:28:17  dicuccio
+ * Fixed compilation error - conversion from const char* to char* required for
+ * gif_lib
+ *
  * Revision 1.1  2003/06/03 15:17:13  dicuccio
  * Initial revision of image library
  *
