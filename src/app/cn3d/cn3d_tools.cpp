@@ -55,7 +55,6 @@
 #include <wx/file.h>
 
 #include "cn3d/cn3d_tools.hpp"
-#include "cn3d/asn_reader.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -258,6 +257,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/03/19 14:44:56  thiessen
+* remove header dependency
+*
 * Revision 1.2  2003/03/13 22:48:43  thiessen
 * fixes for Mac/OSX/gcc
 *
