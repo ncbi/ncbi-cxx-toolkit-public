@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/09/15 20:27:31  vasilche
+* Removed wrong assertion.
+*
 * Revision 1.8  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -93,7 +96,6 @@ void CDelayBuffer::SetData(const CItemInfo* itemInfo, TObjectPtr object,
 
 void CDelayBuffer::Forget(void)
 {
-    _ASSERT(m_Info.get() != 0);
     m_Info.reset(0);
 }
 
@@ -108,7 +110,7 @@ void CDelayBuffer::DoUpdate(void)
         info.m_ItemInfo->UpdateDelayedBuffer(*in, info.m_Object);
     }
 
-    Forget();
+    m_Info.reset(0);
 }
 
 TMemberIndex CDelayBuffer::GetIndex(void) const
