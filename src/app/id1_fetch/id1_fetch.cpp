@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2001/09/05 14:44:37  ucko
+ * Use NStr::IntToString instead of Stringify.
+ *
  * Revision 1.8  2001/09/04 16:20:53  ucko
  * Dramatically fleshed out id1_fetch
  *
@@ -804,12 +807,12 @@ void CId1FetchApp::WriteHistoryTable(const CID1server_back& id1_reply)
                 if (tag.IsStr()) {
                     number = tag.GetStr();
                 } else {
-                    number = Stringify(tag.GetId());
+                    number = NStr::IntToString(tag.GetId());
                 }
             }
         }
 
-        gis.Add(Stringify(gi));
+        gis.Add(NStr::IntToString(gi));
         dbs.Add(dbname);
         numbers.Add(number);
     }
@@ -833,7 +836,7 @@ void CId1FetchApp::WriteQualityScores(const CID1server_back& id1_reply)
 
     for (CTypeConstIterator<CTextseq_id> it = ConstBegin(id1_reply);
          it;  ++it) {
-        id = it->GetAccession() + '.' + Stringify(it->GetVersion());
+        id = it->GetAccession() + '.' + NStr::IntToString(it->GetVersion());
         break;
     }
     for (CTypeConstIterator<CSeq_graph> it = ConstBegin(id1_reply);

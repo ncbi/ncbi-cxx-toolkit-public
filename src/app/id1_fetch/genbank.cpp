@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/09/05 14:44:59  ucko
+* Use NStr::IntToString instead of Stringify.
+*
 * Revision 1.1  2001/09/04 16:20:53  ucko
 * Dramatically fleshed out id1_fetch
 *
@@ -936,14 +939,16 @@ SReference::SReference(const CPubdesc& desc, const CSeq_loc& loc,
                 if (it != loc.GetMix().Get().begin()) {
                     location += "; ";
                 }
-                location += (Stringify(s_FirstLocation(**it) + 1)
-                             + " to " + Stringify(s_LastLocation(**it) + 1));
+                location += (NStr::IntToString(s_FirstLocation(**it) + 1)
+                             + " to "
+                             + NStr::IntToString(s_LastLocation(**it) + 1));
             }
             break;
         }
         default:
-            location = (length_unit + ' ' + Stringify(s_FirstLocation(loc) + 1)
-                        + " to " + Stringify(s_LastLocation(loc) + 1));
+            location = (length_unit + ' '
+                        + NStr::IntToString(s_FirstLocation(loc) + 1)
+                        + " to " + NStr::IntToString(s_LastLocation(loc) + 1));
             break;
         }
         break;
@@ -1227,7 +1232,7 @@ bool CGenbankWriter::WriteReference(const CBioseq& seq, const CDescList& descs)
                     for (CTypeConstIterator<CPatent_seq_id> psid
                              = ConstBegin(seq);
                          psid;  ++psid) {
-                        journal += ' ' + Stringify(psid->GetSeqid());
+                        journal += ' ' + NStr::IntToString(psid->GetSeqid());
                     }
                     if (pat.IsSetDate_issue()) {
                         journal += ' ' + s_FormatDate(pat.GetDate_issue());
@@ -1329,7 +1334,7 @@ static string s_FormatDbtag(const CDbtag& dbtag)
         result += dbtag.GetTag().GetStr();
         break;
     case CObject_id::e_Id:
-        result += Stringify(dbtag.GetTag().GetId());
+        result += NStr::IntToString(dbtag.GetTag().GetId());
         break;
     default:
         break;
@@ -1604,14 +1609,16 @@ bool CGenbankWriter::WriteFeatures(const CBioseq& seq, const CDescList& descs)
             const CCdregion& region = (*feat)->GetData().GetCdregion();
             if (region.IsSetFrame()) {
                 WriteFeatureQualifier("codon_start",
-                                      Stringify(region.GetFrame()), false);
+                                      NStr::IntToString(region.GetFrame()),
+                                      false);
             }
             if (region.IsSetCode()) {
                 iterate (CGenetic_code::Tdata, it, region.GetCode().Get()) {
                     if ((*it)->IsId()) {
                         // XXX -- deal with other types
                         WriteFeatureQualifier("transl_table",
-                                              Stringify((*it)->GetId()),
+                                              NStr::IntToString
+                                              ((*it)->GetId()),
                                               false);
                     }
                 }
@@ -1711,7 +1718,8 @@ bool CGenbankWriter::WriteFeatures(const CBioseq& seq, const CDescList& descs)
                  it;  ++it) {
                 if (it->IsSetSerial_number()) {
                     WriteFeatureQualifier("/citation=["
-                                          + Stringify(it->GetSerial_number())
+                                          + (NStr::IntToString
+                                             (it->GetSerial_number()))
                                           + ']');
                 }
                 // XXX - try to find citation if no serial number
@@ -1892,12 +1900,14 @@ bool CGenbankWriter::WriteFeatures(const CBioseq& seq, const CDescList& descs)
                     if ((tsid = (*it)->GetTextseq_Id()) != NULL) {
                         WriteFeatureQualifier("protein_id",
                                               tsid->GetAccession() + '.'
-                                              + Stringify(tsid->GetVersion()),
+                                              + (NStr::IntToString
+                                                 (tsid->GetVersion())),
                                               true);
                     } else if ((*it)->IsGi()) {
                         WriteFeatureQualifier("db_xref",
                                               "GI:"
-                                              + Stringify((*it)->GetGi()),
+                                              + (NStr::IntToString
+                                                 ((*it)->GetGi())),
                                               true);
                     }
                 }
@@ -1937,7 +1947,8 @@ bool CGenbankWriter::WriteFeatures(const CBioseq& seq, const CDescList& descs)
                  it;  ++it) {
                 if (it->IsSetSerial_number()) {
                     WriteFeatureQualifier("/citation=["
-                                          + Stringify(it->GetSerial_number())
+                                          + (NStr::IntToString
+                                             (it->GetSerial_number()))
                                           + ']');
                 }
                 // otherwise, track down...could be in descs OR

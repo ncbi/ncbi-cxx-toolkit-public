@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/09/05 14:44:47  ucko
+* Use NStr::IntToString instead of Stringify.
+*
 * Revision 1.1  2001/09/04 16:20:54  ucko
 * Dramatically fleshed out id1_fetch
 *
@@ -59,17 +62,6 @@ typedef CSeq_vector TASCIISeqData;
 typedef string TASCIISeqData;
 TASCIISeqData ToASCII(const CSeq_inst& seq_inst);
 #endif
-
-
-inline string Stringify(int n)
-{
-    CNcbiOstrstream oss;
-
-    oss << n;
-    string result(oss.str(), oss.pcount());
-    oss.freeze(0);
-    return result;
-}
 
 
 // (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
