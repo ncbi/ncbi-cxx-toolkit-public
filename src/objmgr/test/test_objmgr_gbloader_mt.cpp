@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/04/02 17:24:54  gouriano
+* skip useless test passes
+*
 * Revision 1.2  2002/04/02 16:02:33  kimelman
 * MT testing
 *
@@ -116,8 +119,8 @@ void* CTestThread::Main(void)
   om.RegisterDataLoader(*new CGBDataLoader("ID", new CId1Reader(1),2),CObjectManager::eDefault);
   CObjectManager *pom=0;
   switch((m_mode>>2)&1) {
-  case 0: pom =  &*m_ObjMgr; break;
-  case 1: pom =  &om;        break;
+  case 1: pom =  &*m_ObjMgr; break;
+  case 0: pom =  &om;        break;
   }
   
   CScope scope1(*pom);
@@ -129,9 +132,9 @@ void* CTestThread::Main(void)
 
     CScope *s;
     switch(m_mode&3) {
-    case 0: s =  &*m_Scope; break;
+    case 2: s =  &*m_Scope; break;
     case 1: s =  &scope1;   break;
-    case 2: s =  &scope2;   break;
+    case 0: s =  &scope2;   break;
     default:
       throw runtime_error("unexpected mode");
     }
@@ -218,23 +221,23 @@ int CTestApplication::Run()
   LOG_POST("START: " << time(0) );;
   
   for(int thr=tc-1,i=0 ; thr >= 0 ; --thr)
-    for(int global_om=0;global_om<=1 ; ++global_om)
-      for(int global_scope=0;global_scope<=2 ; ++global_scope)
+    for(int global_om=(thr>0?0:1);global_om<=1; ++global_om)
+      for(int global_scope=(thr>0?0:2);global_scope<=2 ; ++global_scope)
         {
-          int mode = global_om<<2 + global_scope ;
+          int mode = (global_om<<2) + global_scope ;
           LOG_POST("Test(" << i << ") # threads = " << thr );
           time_t start=time(0);
-          Test(mode,thr);
+          Test(mode,thr+1);
           timing[thr][global_om][global_scope] = time(0)-start ;
           LOG_POST("==================================================");
           LOG_POST("Test(" << i++ << ") completed  ===============");
         }
   
   for(int thr=tc-1 ; thr >= 0 ; --thr)
-    for(int global_om=0;global_om<=1 ; ++global_om)
-      for(int global_scope=0;global_scope<=2 ; ++global_scope)
+    for(int global_om=(thr>0?0:1);global_om<=1 ; ++global_om)
+      for(int global_scope=(thr>0?0:2);global_scope<=2 ; ++global_scope)
         {
-          LOG_POST("TEST: threads:" << thr << ", om=" << (global_om?"global":"local") <<
+          LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local") <<
                    ", scope=" << (global_scope==0?"auto":(global_scope==1?"per thread":"global")) <<
                    " ==>> " << timing[thr][global_om][global_scope] << " sec");
         }
