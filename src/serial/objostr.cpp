@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2002/11/14 20:59:48  gouriano
+* added BeginChoice/EndChoice methods
+*
 * Revision 1.68  2002/11/04 21:29:20  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -918,6 +921,12 @@ void CObjectOStream::CopyClassSequential(const CClassTypeInfo* classType,
     END_OBJECT_2FRAMES_OF(copier);
 }
 
+void CObjectOStream::BeginChoice(const CChoiceTypeInfo* /*choiceType*/)
+{
+}
+void CObjectOStream::EndChoice(void)
+{
+}
 void CObjectOStream::EndChoiceVariant(void)
 {
 }
@@ -926,6 +935,7 @@ void CObjectOStream::WriteChoice(const CChoiceTypeInfo* choiceType,
                                  TConstObjectPtr choicePtr)
 {
     BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
+    BeginChoice(choiceType);
     TMemberIndex index = choiceType->GetIndex(choicePtr);
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
@@ -935,7 +945,7 @@ void CObjectOStream::WriteChoice(const CChoiceTypeInfo* choiceType,
 
     EndChoiceVariant();
     END_OBJECT_FRAME();
-
+    EndChoice();
     END_OBJECT_FRAME();
 }
 
@@ -944,6 +954,8 @@ void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
 {
     BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameChoice, choiceType);
 
+    BeginChoice(choiceType);
+    copier.In().BeginChoice(choiceType);
     TMemberIndex index = copier.In().BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember ) {
         copier.ThrowError(CObjectIStream::fFormatError,
@@ -960,7 +972,8 @@ void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
     EndChoiceVariant();
     copier.In().EndChoiceVariant();
     END_OBJECT_2FRAMES_OF(copier);
-
+    copier.In().EndChoice();
+    EndChoice();
     END_OBJECT_2FRAMES_OF(copier);
 }
 

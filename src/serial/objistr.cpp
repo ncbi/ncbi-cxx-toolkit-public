@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2002/11/14 20:58:19  gouriano
+* added BeginChoice/EndChoice methods
+*
 * Revision 1.95  2002/11/04 21:29:20  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -1144,6 +1147,12 @@ void CObjectIStream::SkipClassSequential(const CClassTypeInfo* classType)
     END_OBJECT_FRAME();
 }
 
+void CObjectIStream::BeginChoice(const CChoiceTypeInfo* /*choiceType*/)
+{
+}
+void CObjectIStream::EndChoice(void)
+{
+}
 void CObjectIStream::EndChoiceVariant(void)
 {
 }
@@ -1152,7 +1161,7 @@ void CObjectIStream::ReadChoice(const CChoiceTypeInfo* choiceType,
                                 TObjectPtr choicePtr)
 {
     BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
-
+    BeginChoice(choiceType);
     TMemberIndex index = BeginChoiceVariant(choiceType);
     _ASSERT(index != kInvalidMember);
 
@@ -1163,14 +1172,14 @@ void CObjectIStream::ReadChoice(const CChoiceTypeInfo* choiceType,
 
     EndChoiceVariant();
     END_OBJECT_FRAME();
-
+    EndChoice();
     END_OBJECT_FRAME();
 }
 
 void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
 {
     BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
-
+    BeginChoice(choiceType);
     TMemberIndex index = BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
         ThrowError(fFormatError, "choice variant id expected");
@@ -1182,7 +1191,7 @@ void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
 
     EndChoiceVariant();
     END_OBJECT_FRAME();
-
+    EndChoice();
     END_OBJECT_FRAME();
 }
 

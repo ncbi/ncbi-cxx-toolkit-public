@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2002/11/14 20:59:48  gouriano
+* added BeginChoice/EndChoice methods
+*
 * Revision 1.72  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -905,7 +908,7 @@ void CObjectOStreamAsn::CopyChoice(const CChoiceTypeInfo* choiceType,
                                    CObjectStreamCopier& copier)
 {
     BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameChoice, choiceType);
-
+    copier.In().BeginChoice(choiceType);
     TMemberIndex index = copier.In().BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember ) {
         copier.ThrowError(CObjectIStream::fFormatError,
@@ -921,7 +924,7 @@ void CObjectOStreamAsn::CopyChoice(const CChoiceTypeInfo* choiceType,
 
     copier.In().EndChoiceVariant();
     END_OBJECT_2FRAMES_OF(copier);
-
+    copier.In().EndChoice();
     END_OBJECT_FRAME_OF(copier.In());
 }
 #endif
