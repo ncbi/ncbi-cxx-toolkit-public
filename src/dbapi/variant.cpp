@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.17  2003/01/10 14:23:33  kholodov
+* Modified: GetString() uses NStr::<...> type conversion
+*
 * Revision 1.16  2003/01/09 19:59:29  kholodov
 * Fixed: operator=(CVariant&) rewritten using copy ctor
 *
@@ -94,7 +97,7 @@
 #include <dbapi/variant.hpp>
 #include <algorithm>
 //#include "basetmpl.hpp"
-//#include <corelib/ncbistd.hpp>
+//#include <corelib/ncbistr.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -365,26 +368,19 @@ string CVariant::GetString(void) const
             return string((char*)vb->Value(), vb->Size());
         }
     case eDB_TinyInt:
-        s << (int)GetByte(); 
-        return CNcbiOstrstreamToString(s);
+        return NStr::IntToString((long)GetByte()); 
     case eDB_SmallInt:      
-        s << GetInt2(); 
-        return CNcbiOstrstreamToString(s);
+        return NStr::IntToString(GetInt2()); 
     case eDB_Int:
-        s << GetInt4(); 
-        return CNcbiOstrstreamToString(s);
+        return NStr::IntToString(GetInt4()); 
     case eDB_BigInt:
-        s << GetInt8(); 
-        return CNcbiOstrstreamToString(s);
+        return NStr::Int8ToString(GetInt8()); 
     case eDB_Float:
-        s << GetFloat(); 
-        return CNcbiOstrstreamToString(s);
+        return NStr::DoubleToString(GetFloat()); 
     case eDB_Double:
-        s << GetDouble(); 
-        return CNcbiOstrstreamToString(s);
+        return NStr::DoubleToString(GetDouble()); 
     case eDB_Bit:
-        s << GetBit(); 
-        return CNcbiOstrstreamToString(s);
+        return NStr::BoolToString(GetBit()); 
     case eDB_Numeric:
         return ((CDB_Numeric*)GetData())->Value(); 
     case eDB_DateTime:
