@@ -278,7 +278,8 @@ char* SERV_WriteInfo(const SSERV_Info* info);
  *           Note that value 0 disables the quorum and the entry becomes
  *           effective immediately. The quorum flag is to create a backup
  *           configuration to be activated in case of multicast/daemon
- *           malfunction. Only static server specs can have this tag.
+ *           malfunction.
+ *           Only static and non-FIREWALL server specs can have this tag.
  *
  *    Reachability base rate:
  *       R=double       [0.0 = default]
@@ -359,6 +360,9 @@ int/*bool*/ SERV_EqualInfo(const SSERV_Info* info1, const SSERV_Info* info2);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2002/11/01 20:10:40  lavr
+ * Note that FIREWALL server specs cannot have Q flag set
+ *
  * Revision 6.34  2002/09/19 18:04:48  lavr
  * Header file guard macro changed
  *
