@@ -161,11 +161,8 @@ public:
     
     bool operator<(const CVariant& v) const;
 
-    // Assign template
-    template<class I, class T>
-    void Assign(const T& v);
 
-    // Get pointer to the data buffer
+   // Get pointer to the data buffer
     // NOTE: internal use only!
     CDB_Object* GetData() const;
 
@@ -226,6 +223,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.9  2002/09/16 21:04:03  kholodov
+ * Modified: CVariant::Assign<> template removed
+ *
  * Revision 1.8  2002/09/16 19:31:08  kholodov
  * Added: Numeric datatype support
  * Added: CVariant::operator=() methods for working with bulk insert

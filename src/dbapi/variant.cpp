@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.12  2002/09/16 21:04:02  kholodov
+* Modified: CVariant::Assign<> template removed
+*
 * Revision 1.11  2002/09/16 20:22:44  kholodov
 * Fixed: return statement for the void function
 *
@@ -532,65 +535,60 @@ void CVariant::Truncate(size_t len)
     return;
 }
 
-template<class I, class T>
-void CVariant::Assign(const T& v)
-{
-    *((I*)GetData()) = v;
-}
 
 CVariant& CVariant::operator=(const Int8& v)
 {
     VerifyType(GetType() == eDB_BigInt);
-    Assign<CDB_BigInt>(v);
+    *((CDB_BigInt*)GetData()) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const Int4& v)
 {
     VerifyType(GetType() == eDB_Int);
-    Assign<CDB_Int>(v);
+    *((CDB_Int*)GetData()) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const Int2& v)
 {
     VerifyType(GetType() == eDB_SmallInt);
-    Assign<CDB_SmallInt>(v);
+    *((CDB_SmallInt*)GetData()) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const Uint1& v)
 {
     VerifyType(GetType() == eDB_TinyInt);
-    Assign<CDB_TinyInt>(v);
+    *((CDB_TinyInt*)GetData()) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const float& v)
 {
     VerifyType(GetType() == eDB_Float);
-    Assign<CDB_Float>(v);
+    *((CDB_Float*)GetData()) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const double& v)
 {
     VerifyType(GetType() == eDB_Double);
-    Assign<CDB_Double>(v);
+    *((CDB_Double*)GetData()) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const string& v)
 {
     VerifyType(GetType() == eDB_VarChar);
-    Assign<CDB_VarChar>(v);
+    *((CDB_VarChar*)GetData()) = v;
     return *this;
 }
 
 CVariant& CVariant::operator=(const bool& v)
 {
     VerifyType(GetType() == eDB_Bit);
-    Assign<CDB_Bit>(v ? 1 : 0);
+    *((CDB_Bit*)GetData()) = v ? 1 : 0;
     return *this;
 }
 
@@ -598,10 +596,10 @@ CVariant& CVariant::operator=(const CTime& v)
 {
     switch(GetType()) {
     case eDB_DateTime:
-        Assign<CDB_DateTime>(v);
+        *((CDB_DateTime*)GetData()) = v;
         break;
     case eDB_SmallDateTime:
-        Assign<CDB_SmallDateTime>(v);
+        *((CDB_SmallDateTime*)GetData()) = v;
         break;
     default:
         VerifyType(false);
