@@ -451,6 +451,7 @@ public:
     typedef CSeq_id_Handle TKeyBlob_ids;
     typedef CLoadInfoBlob_ids TInfoBlob_ids;
     typedef CBlob_id TKeyBlob;
+    typedef CTSE_Lock TTSE_Lock;
     //typedef CLoadInfoBlob TInfoBlob;
     typedef CLoadLockBlob TLockBlob;
 
