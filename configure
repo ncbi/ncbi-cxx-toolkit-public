@@ -3761,8 +3761,8 @@ if test "$compiler" = "KCC" ; then
       solaris* )  CPPFLAGS="-D__EXTENSIONS__ -D__STDC__=0 $CPPFLAGS" ;;
    esac
    # Often hangs for no good reason :-/; limit time to ~17 minutes per instance
-   if test -x scripts/check/check_exec.sh; then
-      wrap="scripts/check/check_exec.sh 999"
+   if test -x compilers/wrapper.KCC.sh; then
+      wrap="compilers/wrapper.KCC.sh"
       CC="$wrap $CC"
       CXX="$wrap $CXX"
       AR="$wrap $AR"
@@ -14024,11 +14024,11 @@ if test "$ICC" = "yes"  -a  -n "$icc_license" ; then
    CXX="$icc_CXX"
 fi
 
-### Adjust paths to check_exec_guard.sh
-case "$CC"     in scripts/*)     CC="\$(top_srcdir)/$CC"     ;; esac
-case "$CXX"    in scripts/*)    CXX="\$(top_srcdir)/$CXX"    ;; esac
-case "$CXXCPP" in scripts/*) CXXCPP="\$(top_srcdir)/$CXXCPP" ;; esac
-case "$AR"     in scripts/*)     AR="\$(top_srcdir)/$AR"     ;; esac
+### Adjust paths to wrapper.*.sh
+case "$CC"     in compilers/*)     CC="\$(top_srcdir)/$CC"     ;; esac
+case "$CXX"    in compilers/*)    CXX="\$(top_srcdir)/$CXX"    ;; esac
+case "$CXXCPP" in compilers/*) CXXCPP="\$(top_srcdir)/$CXXCPP" ;; esac
+case "$AR"     in compilers/*)     AR="\$(top_srcdir)/$AR"     ;; esac
 
 ### Get Insure++ to honor the top-level .psrc file
 case "$CC" in
