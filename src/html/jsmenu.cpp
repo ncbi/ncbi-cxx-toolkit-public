@@ -44,7 +44,7 @@ const string kJSMenuDefaultURL_Smith
 
 // Sergey Kurdin's menu
 const string kJSMenuDefaultURL_Kurdin
- = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_2.js";
+ = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_3.js";
 
  
 
@@ -360,6 +360,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2003/09/03 20:21:35  ivanov
+ * Updated Sergey Kurdin's popup menu to v2.3
+ *
  * Revision 1.16  2003/07/08 17:13:53  gouriano
  * changed thrown exceptions to CException-derived ones
  *
