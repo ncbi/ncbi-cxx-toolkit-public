@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/06/30 20:58:07  vasilche
+* Added option to test list of Seq-ids from file.
+*
 * Revision 1.5  2004/05/21 21:42:55  gorelenk
 * Added PCH ncbi_pch.hpp
 *
@@ -180,12 +183,11 @@ protected:
     CRef<CScope> m_Scope;
     CRef<CObjectManager> m_ObjMgr;
 
-    map<int, int> m_mapGiToDesc;
-    map<int, int> m_mapGiToFeat0;
-    map<int, int> m_mapGiToFeat1;
+    map<CSeq_id_Handle, int> m_mapGiToDesc;
+    map<CSeq_id_Handle, int> m_mapGiToFeat0;
+    map<CSeq_id_Handle, int> m_mapGiToFeat1;
 
-    int  m_gi_from;
-    int  m_gi_to;
+    vector<CSeq_id_Handle> m_Ids;
     int  m_pause;
     bool m_prefetch;
 };
@@ -228,18 +230,18 @@ void CTestOM::Exit(void)
 
 bool CTestOM::Thread_Run(int idx)
 {
-// initialize scope
+    // initialize scope
     CScope scope(*m_ObjMgr);
     scope.AddDefaults();
 
     int from, to;
     // make them go in opposite directions
     if (idx % 2 == 0) {
-        from = m_gi_from;
-        to = m_gi_to;
+        from = 0;
+        to = m_Ids.size()-1;
     } else {
-        from = m_gi_to;
-        to = m_gi_from;
+        from = m_Ids.size()-1;
+        to = 0;
     }
     int delta = (to > from) ? 1 : -1;
     int pause = m_pause;
@@ -248,52 +250,40 @@ bool CTestOM::Thread_Run(int idx)
     if (m_prefetch) {
         LOG_POST("Using prefetch");
         // Initialize prefetch token;
-        CPrefetchToken::TIds ids;
-        for ( int i = from, end = to+delta; i != min(from+10, end); i += delta ) {
-            ids.push_back(CSeq_id_Handle::GetGiHandle(i));
-        }
-        token = CPrefetchToken(scope, ids);
+        token = CPrefetchToken(scope, m_Ids);
     }
 
     bool ok = true;
-    const int kMaxErrorCount = 3;
+    const int kMaxErrorCount = 30;
     int error_count = 0;
     for ( int i = from, end = to+delta; i != end; i += delta ) {
+        CSeq_id_Handle sih = m_Ids[i];
         if ( i != from && pause ) {
             SleepSec(pause);
         }
         try {
-// load sequence
-            CSeq_id sid;
-            sid.SetGi(i);
+            // load sequence
             CBioseq_Handle handle;
             if (m_prefetch) {
                 if (!token) {
-                    LOG_POST("T" << idx << ": gi = " << i
-                             << ": INVALID PREFETCH TOKEN");
+                    LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                             ": INVALID PREFETCH TOKEN");
                     continue;
                 }
                 handle = token.NextBioseqHandle(scope);
-                if ( !token ) {
-                    // Start next token
-                    CPrefetchToken::TIds ids;
-                    for ( int idx = i+1, end = to+delta; idx != min(i+10, end); idx += delta ) {
-                        ids.push_back(CSeq_id_Handle::GetGiHandle(idx));
-                    }
-                    token = CPrefetchToken(scope, ids);
-                }
             }
             else {
-                handle = scope.GetBioseqHandle(sid);
+                handle = scope.GetBioseqHandle(sih);
             }
             if (!handle) {
-                LOG_POST("T" << idx << ": gi = " << i << ": INVALID HANDLE");
+                LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                         ": INVALID HANDLE");
                 continue;
             }
 
             int count = 0, count_prev;
 
-// check CSeqMap_CI
+            // check CSeqMap_CI
             {{
                 /*
                 CSeqMap_CI it =
@@ -312,7 +302,7 @@ bool CTestOM::Thread_Run(int idx)
                 }
             }}
 
-// check seqvector
+            // check seqvector
             if ( 0 ) {{
                 string buff;
                 CSeqVector sv =
@@ -331,25 +321,25 @@ bool CTestOM::Thread_Run(int idx)
                 //cout << "NEG: " << buff << endl;
             }}
 
-// enumerate descriptions
+            // enumerate descriptions
             // Seqdesc iterator
             for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
                 count++;
             }
-// verify result
+            // verify result
             {
                 CFastMutexGuard guard(s_GlobalLock);
-                if (m_mapGiToDesc.find(i) != m_mapGiToDesc.end()) {
-                    count_prev = m_mapGiToDesc[i];
-                    _ASSERT( m_mapGiToDesc[i] == count);
+                if (m_mapGiToDesc.find(sih) != m_mapGiToDesc.end()) {
+                    count_prev = m_mapGiToDesc[sih];
+                    _ASSERT( m_mapGiToDesc[sih] == count);
                 } else {
-                    m_mapGiToDesc[i] = count;
+                    m_mapGiToDesc[sih] = count;
                 }
             }
 
-// enumerate features
+            // enumerate features
             CSeq_loc loc;
-            loc.SetWhole(sid);
+            loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
             count = 0;
             if ( idx%2 == 0 ) {
                 for (CFeat_CI feat_it(scope, loc,
@@ -359,15 +349,19 @@ bool CTestOM::Thread_Run(int idx)
                      feat_it;  ++feat_it) {
                     count++;
                 }
-// verify result
+                // verify result
                 {
                     CFastMutexGuard guard(s_GlobalLock);
-                    if (m_mapGiToFeat0.find(i) != m_mapGiToFeat0.end()) {
-                        count_prev = m_mapGiToFeat0[i];
-                        _ASSERT( m_mapGiToFeat0[i] == count);
+                    if (m_mapGiToFeat0.find(sih) != m_mapGiToFeat0.end()) {
+                        count_prev = m_mapGiToFeat0[sih];
+                        _ASSERT( m_mapGiToFeat0[sih] == count);
                     } else {
-                        m_mapGiToFeat0[i] = count;
+                        m_mapGiToFeat0[sih] = count;
                     }
+                }
+                if ( false && idx == 0 ) {
+                    NcbiCout << "feat_count_0("<<sih.AsString()<<") = " <<
+                        count << NcbiEndl;
                 }
             }
             else {
@@ -375,21 +369,21 @@ bool CTestOM::Thread_Run(int idx)
                      feat_it;  ++feat_it) {
                     count++;
                 }
-// verify result
+                // verify result
                 {
                     CFastMutexGuard guard(s_GlobalLock);
-                    if (m_mapGiToFeat1.find(i) != m_mapGiToFeat1.end()) {
-                        count_prev = m_mapGiToFeat1[i];
-                        _ASSERT( m_mapGiToFeat1[i] == count);
+                    if (m_mapGiToFeat1.find(sih) != m_mapGiToFeat1.end()) {
+                        count_prev = m_mapGiToFeat1[sih];
+                        _ASSERT( m_mapGiToFeat1[sih] == count);
                     } else {
-                        m_mapGiToFeat1[i] = count;
+                        m_mapGiToFeat1[sih] = count;
                     }
                 }
             }
         }
         catch (CLoaderException& e) {
-            LOG_POST("T" << idx << ": gi = " << i 
-                << ": EXCEPTION = " << e.what());
+            LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                     ": EXCEPTION = " << e.what());
             ok = false;
             if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
                 break;
@@ -399,8 +393,8 @@ bool CTestOM::Thread_Run(int idx)
             }
         }
         catch (exception& e) {
-            LOG_POST("T" << idx << ": gi = " << i 
-                     << ": EXCEPTION = " << e.what());
+            LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                     ": EXCEPTION = " << e.what());
             ok = false;
             if ( ++error_count > kMaxErrorCount ) {
                 break;
@@ -429,6 +423,10 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
         ("togi", "ToGi",
          "Process sequences in the interval TO this Gi",
          CArgDescriptions::eInteger, NStr::IntToString(g_gi_to));
+    args.AddOptionalKey
+        ("idlist", "IdList",
+         "File with list of Seq-ids to test",
+         CArgDescriptions::eInputFile);
     args.AddDefaultKey
         ("pause", "Pause",
          "Pause between requests in seconds",
@@ -443,18 +441,45 @@ bool CTestOM::TestApp_Init(void)
     CORE_SetLOG(LOG_cxx2c());
 
     const CArgs& args = GetArgs();
-    m_gi_from  = args["fromgi"].AsInteger();
-    m_gi_to    = args["togi"].AsInteger();
+    if ( args["idlist"] ) {
+        CNcbiIstream& file = args["idlist"].AsInputFile();
+        string line;
+        while ( getline(file, line) ) {
+            size_t comment = line.find('#');
+            if ( comment != NPOS ) {
+                line.erase(comment);
+            }
+            line = NStr::TruncateSpaces(line);
+            if ( line.empty() ) {
+                continue;
+            }
+            
+            CSeq_id sid(line);
+            CSeq_id_Handle sih = CSeq_id_Handle::GetHandle(sid);
+            if ( !sih ) {
+                continue;
+            }
+            m_Ids.push_back(sih);
+        }
+        
+        NcbiCout << "Testing ObjectManager (" <<
+            m_Ids.size() << " Seq-ids from file)..." << NcbiEndl;
+    }
+    if ( m_Ids.empty() ) {
+        int gi_from  = args["fromgi"].AsInteger();
+        int gi_to    = args["togi"].AsInteger();
+        NcbiCout << "Testing ObjectManager ("
+            "gi from " << gi_from << " to " << gi_to << ")..." << NcbiEndl;
+        for ( int gi = gi_from; gi <= gi_to; ++gi ) {
+            m_Ids.push_back(CSeq_id_Handle::GetGiHandle(gi));
+        }
+    }
     m_pause    = args["pause"].AsInteger();
     m_prefetch = args["prefetch"];
 
-    NcbiCout << "Testing ObjectManager ("
-        << "gi from "
-        << m_gi_from << " to " << m_gi_to << ")..." << NcbiEndl;
-
     m_ObjMgr = new CObjectManager;
-    m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID"),CObjectManager::eDefault);
-
+    m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID"),
+                                 CObjectManager::eDefault);
 
     // Scope shared by all threads
 /*
@@ -470,7 +495,7 @@ bool CTestOM::TestApp_Exit(void)
     map<int, int>::iterator it;
     for (it = m_mapGiToDesc.begin(); it != m_mapGiToDesc.end(); ++it) {
         LOG_POST(
-            "gi = "         << it->first
+            "id = "         << it->first.AsString()
             << ": desc = "  << it->second
             << ", feat0 = " << m_mapGiToFeat0[it->first]
             << ", feat1 = " << m_mapGiToFeat1[it->first]

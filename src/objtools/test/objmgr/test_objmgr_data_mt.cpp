@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/06/30 20:58:11  vasilche
+* Added option to test list of Seq-ids from file.
+*
 * Revision 1.3  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *
@@ -235,7 +238,7 @@ bool CTestOM::Thread_Run(int idx)
                 continue;
             }
 
-            if ( m_load_only ) {
+            if ( !m_load_only ) {
                 int count = 0;
 
 // enumerate descriptions
