@@ -741,11 +741,12 @@ string s_CreateHistCommentString
  const string& suffix,
  const CSeq_hist_rec& hist)
 {
-    _ASSERT(hist.CanGetDate());
-    _ASSERT(hist.CanGetIds());
+    if (!hist.CanGetDate()  ||  !hist.CanGetIds()) {
+        return "???";
+    }
 
     string date;
-    hist.GetDate().GetDate(&date, "%3N %2D, %4Y");
+    hist.GetDate().GetDate(&date, "%3N %D, %4Y");
 
     vector<int> gis;
     ITERATE (CSeq_hist_rec::TIds, id, hist.GetIds()) {
@@ -850,6 +851,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/08/12 15:48:42  shomrat
+* do not force 2 digit day in date format
+*
 * Revision 1.8  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
