@@ -1,4 +1,4 @@
---$Revision: 1.17 $
+--$Revision: 1.18 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -129,9 +129,15 @@ Cdregion ::= SEQUENCE {
     stops INTEGER OPTIONAL }           -- number of stop codons on above
 
                     -- each code is 64 cells long, in the order where
-                    -- A=0,G=1,C=2,T=3, AAA=0, AAG=1, AGA=4, etc
+                    -- T=0,C=1,A=2,G=3, TTT=0, TTC=1, TCA=4, etc
+                    -- NOTE: this order does NOT corresspond to a Seq-data
+                    -- encoding.  It is "natural" to codon usage instead.
                     -- the value in each cell is the AA coded for
                     -- start= AA coded only if first in peptide
+                    --   in start array, if codon is not a legitimate start
+                    --   codon, that cell will have the "gap" symbol for
+                    --   that alphabet.  Otherwise it will have the AA
+                    --   encoded when that codon is used at the start.
 
 Genetic-code ::= SET OF CHOICE {
     name VisibleString ,               -- name of a code
@@ -150,7 +156,7 @@ Code-break ::= SEQUENCE {              -- specific codon exceptions
         ncbi8aa INTEGER ,              -- NCBI8aa code
 		ncbistdaa INTEGER } }           -- NCBIstdaa code
 
-Code-table ::= SET OF Genetic-code     -- table of genetic codes
+Genetic-code-table ::= SET OF Genetic-code     -- table of genetic codes
 
 --*** Import ***********************************************
 --*
