@@ -2697,7 +2697,7 @@ case "$host_os:$compiler" in
       LDFLAGS="-s $LDFLAGS"
    fi
    RANLIB=":"
-   CXX_FILTER="2>&1 | $(top_srcdir)/compilers/cxx_filter.$compiler.sh"
+   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    serial_ws50_rtti_kludge="rtti"
    ;;
 

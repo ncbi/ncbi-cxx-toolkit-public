@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.21 2001/11/19 19:04:48 ucko Exp $
+#  $Id: configure.ac,v 1.22 2001/12/04 19:47:26 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -455,7 +455,7 @@ case "$host_os:$compiler" in
       LDFLAGS="-s $LDFLAGS"
    fi
    RANLIB=":"
-   CXX_FILTER="2>&1 | $(top_srcdir)/compilers/cxx_filter.$compiler.sh"
+   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    serial_ws50_rtti_kludge="rtti"
    ;;
 
