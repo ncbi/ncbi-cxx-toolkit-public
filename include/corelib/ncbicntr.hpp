@@ -39,7 +39,7 @@
 #include <corelib/ncbiexpt.hpp>
 
 #ifdef HAVE_SCHED_YIELD
-#include <sched.h>
+#  include <sched.h>
 #endif
 
 #ifdef NCBI_COMPILER_GCC
@@ -91,11 +91,6 @@
 #  include <sys/atomic_op.h>
    typedef int TNCBIAtomicValue;
 #  define NCBI_COUNTER_ADD(p, d) fetch_and_add(p, d) + d
-#elif defined(__FreeBSD__) // NCBI_OS_BSD is too weak; NetBSD lacks this.
-#  include <machine/atomic.h>
-   typedef u_int TNCBIAtomicValue;
-#  define NCBI_COUNTER_UNSIGNED 1
-#  define NCBI_COUNTER_ADD(p, d) atomic_add_int(p, d)
 #elif defined(NCBI_OS_DARWIN)
 #  include <libkern/OSAtomic.h>
    typedef SInt32 TNCBIAtomicValue;
@@ -245,8 +240,8 @@ THROWS_NONE
 #    ifdef NCBI_COMPILER_WORKSHOP
     result = NCBICORE_asm_lock_xaddl(nv_value_p, delta) + delta;
 #    else
-    asm volatile("lock; xaddl %1, %0" : "+m" (*nv_value_p), "=r" (result)
-                 : "0" (delta));
+    asm volatile("lock; xaddl %1, %0" : "=m" (*nv_value_p), "=r" (result)
+                 : "1" (delta), "m" (*nv_value_p));
     result += delta;
 #    endif
 #  else
@@ -260,14 +255,15 @@ THROWS_NONE
 inline
 CAtomicCounter::TValue CAtomicCounter::Add(int delta) THROWS_NONE
 {
-    TValue* nc_value_p = const_cast<TValue*>(&m_Value);
 #ifdef NCBI_COUNTER_ADD
-    return NCBI_COUNTER_ADD(nc_value_p, delta);
+    TValue* nv_value_p = const_cast<TValue*>(&m_Value);
+    return NCBI_COUNTER_ADD(nv_value_p, delta);
 #elif defined(NCBI_COUNTER_USE_ASM)
     return x_Add(&m_Value, delta);
 #else // Use the global lock; relatively inefficient, but at least safe.
+    TValue* nv_value_p = const_cast<TValue*>(&m_Value);
     CFastMutexGuard LOCK(sm_Mutex);
-    return (*nc_value_p) += delta;
+    return (*nv_value_p) += delta;
 #endif
 }
 
@@ -277,6 +273,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/05/24 14:20:04  ucko
+* Fix Intel extended assembly.
+* Drop use of FreeBSD <machine/atomic.h>; those functions return void.
+* Fix name of "nv_value_p" in Add(), and declare it only when needed.
+*
 * Revision 1.1  2002/05/23 22:24:21  ucko
 * Use low-level atomic operations for reference counts
 *
