@@ -3818,8 +3818,11 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.120  2003/07/18 20:05:49  lavr
+ * Fix log message of the previous check-in
+ *
  * Revision 6.119  2003/07/18 20:04:49  lavr
- * Close all preprocessor conditional with #endif showing the condition
+ * Close all preprocessor conditionals with #endif's showing the conditions
  *
  * Revision 6.118  2003/07/17 18:28:50  lavr
  * On I/O errors in connected socket: modify only direction affected, not both
