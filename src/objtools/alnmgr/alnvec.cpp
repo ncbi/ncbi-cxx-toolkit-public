@@ -143,46 +143,6 @@ CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
 }
 
 
-string CAlnVec::GetAlnSeqString(TNumrow row, const TSignedRange& aln_rng) const
-{
-    string str, str_buff;
-    
-    // get the chunks which are aligned to seq on anchor
-    CRef<CAlnMap::CAlnChunkVec> chunk_vec = 
-        GetAlnChunks(row, aln_rng, fSkipInserts | fSkipUnalignedGaps);
-    
-    // for each chunk
-    for (int i=0; i<chunk_vec->size(); i++) {
-        CConstRef<CAlnMap::CAlnChunk> chunk = (*chunk_vec)[i];
-                
-        if (chunk->GetType() & fSeq) {
-            // add the sequence string
-            x_GetSeqVector(row).GetSeqData(chunk->GetRange().GetFrom(),
-                                           chunk->GetRange().GetTo()+1,
-                                           str_buff);
-
-            str += str_buff;
-        } else {
-            // add appropriate number of gap/end chars
-            const int n = chunk->GetAlnRange().GetLength();
-            char* ch_buff = new char[n+1];
-            char fill_ch;
-            if (chunk->GetType() & fNoSeqOnLeft  ||
-                chunk->GetType() & fNoSeqOnRight) {
-                fill_ch = GetEndChar();
-            } else {
-                fill_ch = GetGapChar(row);
-            }
-            memset(ch_buff, fill_ch, n);
-            ch_buff[n] = 0;
-            str += ch_buff;
-            delete ch_buff;
-        }
-    }
-    return str;
-}
-
-
 string& CAlnVec::GetAlnSeqString(string& buffer,
                                  TNumrow row,
                                  const TSignedRange& aln_rng) const
@@ -625,6 +585,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/01/23 21:31:08  todorov
+* Removed the original, inefficient GetXXXString methods
+*
 * Revision 1.17  2003/01/23 16:31:34  todorov
 * Added calc score methods
 *
