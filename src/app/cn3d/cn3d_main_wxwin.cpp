@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2001/05/18 19:17:22  thiessen
+* get gl context working in GTK
+*
 * Revision 1.40  2001/05/17 18:34:25  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -488,7 +491,12 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 #if defined(__WXMSW__)
     int *attribList = NULL;
 #elif defined(__WXGTK__)
-    int attribList[20] = { GLX_RGBA, GLX_DOUBLEBUFFER, NULL };
+    int attribList[20] = { 
+        WX_GL_DOUBLEBUFFER, 
+        WX_GL_RGBA, WX_GL_MIN_RED, 1, WX_GL_MIN_GREEN, 1, WX_GL_MIN_BLUE, 1, 
+        WX_GL_DEPTH_SIZE, 1, 
+        None 
+    };
 #else
 #error need to define GL attrib list
 #endif
@@ -803,9 +811,10 @@ Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent,
     wxGLCanvas(parent, -1, pos, size, wxSUNKEN_BORDER, "Cn3DGLCanvas", attribList),
     structureSet(NULL)
 {
-    renderer = new OpenGLRenderer;
-    parent->Show(true);
+    // must create window and establish context before creating OpenGLRenderer
+    parent->Show(true); 
     SetCurrent();
+    renderer = new OpenGLRenderer();
     font = new wxFont(12, wxSWISS, wxNORMAL, wxBOLD);
 
 #ifdef __WXMSW__
@@ -826,10 +835,7 @@ void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
     // OnPaint handlers must always create a wxPaintDC.
     wxPaintDC dc(this);
 
-#ifndef __WXMOTIF__
-    if (!GetContext()) return;
-#endif
-
+    if (!GetContext() || !renderer) return;
     SetCurrent();
     renderer->Display();
     SwapBuffers();
@@ -837,10 +843,7 @@ void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
 
 void Cn3DGLCanvas::OnSize(wxSizeEvent& event)
 {
-#ifndef __WXMOTIF__
-    if (!GetContext()) return;
-#endif
-
+    if (!GetContext() || !renderer) return;
     SetCurrent();
     int width, height;
     GetClientSize(&width, &height);
@@ -852,9 +855,7 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
     static bool dragging = false;
     static long last_x, last_y;
 
-#ifndef __WXMOTIF__
-    if (!GetContext()) return;
-#endif
+    if (!GetContext() || !renderer) return;
     SetCurrent();
 
     // keep mouse focus while holding down button
@@ -884,9 +885,7 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
 
 void Cn3DGLCanvas::OnChar(wxKeyEvent& event)
 {
-#ifndef __WXMOTIF__
-    if (!GetContext()) return;
-#endif
+    if (!GetContext() || !renderer) return;
     SetCurrent();
 
     switch (event.KeyCode()) {
