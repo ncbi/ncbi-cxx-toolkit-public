@@ -70,6 +70,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <util/strsearch.hpp>
 
+#include <list>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
@@ -3025,6 +3026,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.59  2003/07/17 21:00:50  vasilche
+* Added missing include <list>
+*
 * Revision 1.58  2003/06/19 17:11:43  ucko
 * SRelLoc::SRelLoc: remember to update the base position when skipping
 * parent ranges whose IDs don't match.
