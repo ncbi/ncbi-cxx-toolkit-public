@@ -99,11 +99,8 @@ void CSampleObjmgrApplication::Init(void)
 
 int CSampleObjmgrApplication::Run(void)
 {
-    // Setup application registry and logs for CONNECT library
-    CORE_SetLOG(LOG_cxx2c());
-    CORE_SetREG(REG_cxx2c(&GetConfig(), false));
-    // Setup MT-safety for CONNECT library
-    // CORE_SetLOCK(MT_LOCK_cxx2c());
+    // Setup application registry, error log, and MT-lock for CONNECT library
+    CONNECT_Init(&GetConfig());
 
     // Process command line args:  get GI to load
     const CArgs& args = GetArgs();
@@ -264,6 +261,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2002/06/12 18:35:16  ucko
+ * Take advantage of new CONNECT_Init() function.
+ *
  * Revision 1.4  2002/05/31 13:51:31  grichenk
  * Added comment about iterate()
  *
