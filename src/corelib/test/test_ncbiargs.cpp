@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2000/11/20 19:49:40  vakatov
+ * Test0::  printout all arg values
+ *
  * Revision 6.10  2000/11/17 22:04:31  vakatov
  * CArgDescriptions::  Switch the order of optional args in methods
  * AddOptionalKey() and AddPlain(). Also, enforce the default value to
@@ -92,7 +95,7 @@ static CArgs* s_Test0(CArgDescriptions& arg_desc, int argc, const char* argv[])
     arg_desc.AddOptionalKey
         ("ko2", "OptionalKey2",
          "This is another optional key argument",
-         CArgDescriptions::eBoolean, "True");
+         CArgDescriptions::eBoolean, "T");
 
     arg_desc.AddFlag
         ("f1",
@@ -131,15 +134,24 @@ static CArgs* s_Test0(CArgDescriptions& arg_desc, int argc, const char* argv[])
     CArgs& args = *arg_desc.CreateArgs(argc, argv);
 
 
-    // Print all extra (unnamed positional) arguments
+    // Printout argument values
     if ( args.IsProvided("logfile") ) {
-        cout << "Printing unnamed positional arguments to file `"
+        cout << "Printing arguments to file `"
              << args["logfile"].AsString() << "'..." << endl;
 
         ostream& os = args["logfile"].AsOutputFile();
+
+        os << "k:         " << args["k"].AsString() << endl;
+        os << "ko:        " << args["ko"].AsInteger() << endl;
+        os << "ko2:       " << NStr::BoolToString(args["ko2"].AsBoolean())
+           << endl;
+        os << "barfooetc: " << args["barfooetc"].AsString() << endl;
+        os << "logfile:   " << args["logfile"].AsString() << endl;
+
+        // Extra (unnamed positional) arguments
         if ( args.GetNExtra() ) {
             for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
-                os << "#" << extra << ":  "
+                os << "#" << extra << ":        "
                    << NStr::BoolToString(args[extra].AsBoolean())
                    << "   (passed as `" << args[extra].AsString() << "')"
                    << endl;
