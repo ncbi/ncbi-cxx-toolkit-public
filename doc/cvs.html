@@ -8,7 +8,9 @@
 <a name="ref_CVSTop"></a>
 <b>Path to the NCBI C++ Toolkit's CVS Repository:</b>&nbsp;&nbsp; <font size=+1><i>$CVSROOT/internal/c++</i></font>
 <font size=-1><br>
-<i>Note:</i> For a detailed description of the CVS utility see <a href="http://www.cs.utah.edu/csinfo/texinfo/cvs/cvs_toc.html">
+<i>Note 1:</i>Some links on this page will be non-functional outside of NCBI.
+<br>
+<i>Note 2:</i> For a detailed description of the CVS utility see <a href="http://www.cs.utah.edu/csinfo/texinfo/cvs/cvs_toc.html">
 the CVS online manual</a> or run the commands <nobr><i>"man cvs"</i></nobr> or <nobr><i>"cvs --help"</i></nobr>
 on your Unix workstation.
 </font>
@@ -38,7 +40,9 @@ Select the instructions appropriate for your <b>development</b> environment.
 							<li>
 							<a href="#ref_CVS_CoreContents"> Contents of the Portable Core</a></li>
 							<li>
-							<a href="#ref_CVS_CoreOptions"> Supplement Contents Using the <tt>cvs_core.sh</tt> Options</a></li>
+							<a href="#ref_CVS_CoreOptions">Supplement Contents Using the <tt>cvs_core.sh</tt> Options</a></li>
+                            <li>
+                            <a href="cvs_core_msvc.html">MSVC++-Related Options</a></li>
 						</ul>
 					</li>
 
@@ -69,16 +73,20 @@ Select the instructions appropriate for your <b>development</b> environment.
 				</ul>
 			</li>
 			<li>
-			CVS-Related Shell Script Reference</li>
+
+<!-- NOTE:  not using SSI 'if expr' directives to disable links in order to minimize 
+                the use of server-specific regex outside the ssi files themselves -->
+                
+            CVS-Related Shell Script Reference</li>
 				<ul>
 					<li>
 					<i>cvs_core.sh</i> &nbsp; [<a href="scripts_usage.html#ref_CVS_CoreUsage">Usage</a> |
-					<a href="./lxr/source/scripts/cvs_core.sh">Source</a>]
+					<a href="./lxr/source/scripts/cvs_core.sh">Source</a> (NCBI only)]
 					</li>
 
 					<li>
 					<i>import_project.sh </i> &nbsp; [<a href="scripts_usage.html#ref_Import_ProjectUsage">Usage</a> |
-					 <a href="./lxr/source/scripts/import_project.sh">Source</a>]
+					 <a href="./lxr/source/scripts/import_project.sh">Source</a> (NCBI only)]
 					 </li>
 
 					<li>
@@ -108,7 +116,7 @@ Select the instructions appropriate for your <b>development</b> environment.
 			CVS-Related Shell Script Reference</li>
 				<ul>
 					<li>
-					<i>cvs_core.bat</i></a> (Windows) &nbsp; [<a href="#ref_CVS_Core_Bat">Usage</a> | <a href="./lxr/source/scripts/cvs_core.bat">Source</a>] </li>
+					<i>cvs_core.bat</i> (Windows) &nbsp;[Usage | <a href="./lxr/source/scripts/cvs_core.bat">Source</a> (NCBI only)] </li>
 				</ul>
 			</li>
 		</ul>
@@ -162,7 +170,7 @@ in the $NCBI<tt>/c++/scripts</tt> directory.
 
 <p>
 The auxiliary scripts <a href="#ref_CVS_Core"><tt>cvs_core.sh</tt></a> and
-<a href="#ref_CVS_Core_Bat"><tt>cvs_core.bat</tt></a> checkout only the core
+<tt>cvs_core.bat</tt> checkout only the core
 (basic and portable) NCBI C++ Toolkit sources for a desired platform.  A similar auxiliary
 script exists to import the source from a single project (<a href="#ref_Import_Project"><tt>import_project.sh</tt></a>).  To facilitate the creation of a new project, use the script
 (<a href="#ref_New_Project"><tt>new_project.sh</tt></a>), which
@@ -647,9 +655,11 @@ project called "<tt>name</tt>" which uses the NCBI C++ Toolkit (and possibly the
 well).  For new libraries, <tt>type=lib</tt> while for new applications <tt>type=app</tt>.
 
 <p></p>
-Sample code will be included in the project directory for new applications; different samples
-are available for <tt>type=app[/basic]</tt> (a command-line argument demo application based on the <tt>corelib</tt> library),
-<tt>type=app/cgi</tt> (for a CGI or Fast-CGI application), and <tt>type=app/objects</tt>
+Sample code will be included in the project directory for new applications.  Different samples
+are available for <tt>type=app[/basic]</tt> (a command-line argument demo application based
+on the <a href="libs.html#ref_SumXNCBI"><tt>corelib</tt></a> library),
+<tt>type=app/cgi</tt> (for a <a href="libs.html#ref_SumXCGI">CGI or Fast-CGI</a> application),
+<tt>type=app/objmgr</tt> (for an application using the <i>Object Manager</i>) and <tt>type=app/objects</tt>
 (for an application using ASN.1 objects).
 
 <p></p>
