@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2002/06/04 12:48:55  thiessen
+* tweaks for release ; fill out help menu
+*
 * Revision 1.60  2002/04/09 23:59:10  thiessen
 * add cdd annotations read-only option
 *
@@ -415,8 +418,10 @@ public:
             MID_CDD_REJECT_SEQ,
         // Help menu
             MID_HELP_COMMANDS,
+            MID_ONLINE_HELP,
+            MID_ABOUT = wxID_ABOUT,     // special case so that this comes under Apple menu on Mac
 
-        // not actually a menu item, but used to enumerate style favorites list
+        // not actually menu items, but used to enumerate style favorites list
             MID_FAVORITES_BEGIN = 100,
             MID_FAVORITES_END   = 149
     };

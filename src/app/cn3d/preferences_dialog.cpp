@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/06/04 12:48:56  thiessen
+* tweaks for release ; fill out help menu
+*
 * Revision 1.11  2002/05/22 17:17:09  thiessen
 * progress on BLAST interface ; change custom spin ctrl implementation
 *
@@ -178,7 +181,7 @@ END_EVENT_TABLE()
     } while (0)
 
 PreferencesDialog::PreferencesDialog(wxWindow *parent) :
-    wxDialog(parent, -1, "Cn3D++ Preferences", wxPoint(400, 100), wxDefaultSize,
+    wxDialog(parent, -1, "Preferences", wxPoint(400, 100), wxDefaultSize,
         wxCAPTION | wxSYSTEM_MENU) // not resizable
 {
     // construct the panel

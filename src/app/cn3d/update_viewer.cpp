@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/06/04 12:48:56  thiessen
+* tweaks for release ; fill out help menu
+*
 * Revision 1.35  2002/05/22 17:17:09  thiessen
 * progress on BLAST interface ; change custom spin ctrl implementation
 *
@@ -347,7 +350,7 @@ void UpdateViewer::SaveAlignments(void)
 
             // add a text comment
             CUpdate_comment *comment = new CUpdate_comment();
-            comment->SetComment("Created by demotion or import in Cn3D++");
+            comment->SetComment("Created by demotion or import in Cn3D 4.0");
             updateAlign->SetDescription().resize(updateAlign->GetDescription().size() + 1);
             updateAlign->SetDescription().back().Reset(comment);
 

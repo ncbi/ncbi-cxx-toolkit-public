@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.141  2002/06/04 12:48:55  thiessen
+* tweaks for release ; fill out help menu
+*
 * Revision 1.140  2002/05/31 14:51:31  thiessen
 * small tweaks
 *
@@ -716,7 +719,7 @@ void RaiseLogWindow(void)
 {
 #ifndef CN3D_DONT_USE_MESSAGE_LOG
     if (!logFrame) {
-        logFrame = new MsgFrame("Cn3D++ Message Log", wxPoint(500, 0), wxSize(500, 500));
+        logFrame = new MsgFrame("Cn3D Message Log", wxPoint(500, 0), wxSize(500, 500));
 #ifdef __WXMAC__
         // make empty menu for this window
         wxMenuBar *menuBar = new wxMenuBar;
@@ -908,7 +911,7 @@ bool Cn3DApp::OnInit(void)
     LoadFavorites();
 
     // create the main frame window - must be first window created by the app
-    structureWindow = new Cn3DMainFrame("Cn3D++", wxPoint(0,0), wxSize(500,500));
+    structureWindow = new Cn3DMainFrame("Cn3D 4.0", wxPoint(0,0), wxSize(500,500));
     SetTopWindow(structureWindow);
     topWindow = structureWindow;
 
@@ -1107,7 +1110,8 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU      (MID_LIMIT_STRUCT,                        Cn3DMainFrame::OnLimit)
     EVT_MENU_RANGE(MID_PLAY, MID_SET_DELAY,                 Cn3DMainFrame::OnAnimate)
     EVT_TIMER     (MID_ANIMATE,                             Cn3DMainFrame::OnTimer)
-    EVT_MENU      (MID_HELP_COMMANDS,                       Cn3DMainFrame::OnHelp)
+    EVT_MENU_RANGE(MID_HELP_COMMANDS, MID_ONLINE_HELP,      Cn3DMainFrame::OnHelp)
+    EVT_MENU      (MID_ABOUT,                               Cn3DMainFrame::OnHelp)
 END_EVENT_TABLE()
 
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
@@ -1274,6 +1278,8 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     // Help menu
     menu = new wxMenu;
     menu->Append(MID_HELP_COMMANDS, "&Commands");
+    menu->Append(MID_ONLINE_HELP, "&Online Help...");
+    menu->Append(MID_ABOUT, "&About");
     menuBar->Append(menu, "&Help");
 
     // accelerators for special keys
@@ -1372,6 +1378,21 @@ void Cn3DMainFrame::OnHelp(wxCommandEvent& event)
         }
         if (event.GetId() == MID_HELP_COMMANDS)
             helpController->Display("Cn3D Commands");
+    }
+
+    else if (event.GetId() == MID_ONLINE_HELP) {
+        LaunchWebPage("http://www.ncbi.nlm.nih.gov/Structure/CN3D/cn3d.shtml");
+    }
+
+    else if (event.GetId() == MID_ABOUT) {
+        wxString message(
+            "Cn3D version 4.0\n\n"
+            "Produced by the National Center for Biotechnology Information\n"
+            "     http://www.ncbi.nlm.nih.gov\n\n"
+            "Please direct all questions and comments to:\n"
+            "     info@ncbi.nlm.nih.gov"
+        );
+        wxMessageBox(message, "About Cn3D", wxOK | wxICON_INFORMATION, this);
     }
 }
 
@@ -2031,7 +2052,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         return;
     }
 
-    SetTitle(wxString(currentFile.c_str()) + " - Cn3D++");
+    SetTitle(wxString(currentFile.c_str()) + " - Cn3D 4.0");
     menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());
     glCanvas->structureSet->SetCenter();
     glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);
@@ -2084,7 +2105,7 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
         else
             userDir = workingDir + wxPathOnly(outputFilename).c_str() + wxFILE_SEP_PATH;
         currentFile = wxFileNameFromPath(outputFilename);
-        SetTitle(wxString(currentFile.c_str()) + " - Cn3D++");
+        SetTitle(wxString(currentFile.c_str()) + " - Cn3D 4.0");
         GlobalMessenger()->SetSequenceViewerTitles(currentFile);
     }
 }
