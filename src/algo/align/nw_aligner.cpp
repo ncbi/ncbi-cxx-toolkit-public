@@ -255,7 +255,7 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
             pV[j] = V;
 
             n0 = V + wg1;
-            if(E > n0) {
+            if(E >= n0) {
                 E += ws1;      // continue the gap
                 tracer = kMaskEc;
             }
@@ -268,7 +268,7 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
                 wg2 = ws2 = 0;
             }
             n0 = rowV[j] + wg2;
-            if(rowF[j] > n0) {
+            if(rowF[j] >= n0) {
                 rowF[j] += ws2;
                 tracer |= kMaskFc;
             }
@@ -508,13 +508,13 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
             ii;
         
         ETranscriptSymbol ts = *ib;
-        char seg_type0 = ((ts == eInsert || ts == eIntron)? 1:
+        char seg_type0 = ((ts == eInsert || (ts & eIntron_GT_AG))? 1:
                           (ts == eDelete)? 2: 0);
         size_t seg_len = 0;
 
         for (ii = ib;  ii != ie; ++ii) {
             ts = *ii;
-            char seg_type = ((ts == eInsert || ts == eIntron)? 1:
+            char seg_type = ((ts == eInsert || (ts & eIntron_GT_AG))? 1:
                              (ts == eDelete)? 2: 0);
 
             if(seg_type0 != seg_type) {
@@ -711,7 +711,10 @@ size_t CNWAligner::x_ApplyTranscript(vector<char>* pv1, vector<char>* pv2)
             c1 = *iv1++;
             c2 = *iv2++;
             break;
-        case eIntron:
+        case eIntron_GT_AG:
+        case eIntron_GC_AG:
+        case eIntron_AT_AC:
+        case eIntron_Generic:
             c1 = '+';
             c2 = *iv2++;
             break;
@@ -740,7 +743,13 @@ string CNWAligner::GetTranscript() const
         case eMatch:   c = 'M';  break;
         case eReplace: c = 'R';  break;
         case eDelete:  c = 'D';  break;
-        case eIntron:  c = '+';  break;
+
+        case eIntron_GT_AG:
+        case eIntron_GC_AG:
+        case eIntron_AT_AC:
+        case eIntron_Generic:
+            c = '+';  break;
+
         default:       c = '?';  break;
         }
         s += c;
@@ -985,6 +994,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/05/23 18:27:02  kapustin
+ * Use weak comparisons in core recurrences. Adjust for new transcript identifiers.
+ *
  * Revision 1.24  2003/04/17 14:44:40  kapustin
  * A few changes to eliminate gcc warnings
  *
