@@ -333,10 +333,10 @@ public:
     static string       gethostbyaddr(unsigned int  host);  // empty str on err
     static unsigned int gethostbyname(const string& hostname);  // 0 on error
 
-    static unsigned int HostToNetLong (unsigned int   value);
-    static unsigned int NetToHostLong (unsigned int   value);
-    static unsigned int HostToNetShort(unsigned short value);
-    static unsigned int NetToHostShort(unsigned short value);
+    static unsigned int   HostToNetLong (unsigned int   value);
+    static unsigned int   NetToHostLong (unsigned int   value);
+    static unsigned short HostToNetShort(unsigned short value);
+    static unsigned short NetToHostShort(unsigned short value);
 };
 
 
@@ -554,13 +554,13 @@ inline unsigned int CSocketAPI::NetToHostLong(unsigned int value)
 }
 
 
-inline unsigned int CSocketAPI::HostToNetShort(unsigned short value)
+inline unsigned short CSocketAPI::HostToNetShort(unsigned short value)
 {
     return SOCK_HostToNetShort(value);
 }
 
 
-inline unsigned int CSocketAPI::NetToHostShort(unsigned short value)
+inline unsigned short CSocketAPI::NetToHostShort(unsigned short value)
 {
     return SOCK_NetToHostShort(value);
 }
@@ -575,6 +575,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2003/05/31 05:12:09  lavr
+ * Fix return value type of HostToNetShort and NetToHostShort
+ *
  * Revision 6.26  2003/05/21 17:51:50  lavr
  * SOCK_Abort() redeclared protected in CDatagramSocket
  *
