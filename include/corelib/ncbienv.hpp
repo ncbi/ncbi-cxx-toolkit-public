@@ -35,6 +35,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/04/12 22:56:58  vakatov
+* [HAVE_NCBI_C]  Handle #GetProgramName and #SetProgramName to avoid
+*                name clash with the NCBI C Toolkit
+*
 * Revision 1.3  2000/08/31 23:50:04  vakatov
 * CNcbiArguments:: Inlined Size() and operator[];   use <deque>
 *
@@ -52,6 +56,19 @@
 #include <corelib/ncbistd.hpp>
 #include <map>
 #include <deque>
+
+// Avoid name clash with the NCBI C Toolkit
+#if defined(HAVE_NCBI_C)
+#  if defined(GetProgramName)
+#    undef GetProgramName
+#  endif
+#  define GetProgramName GetProgramName
+#  if defined(SetProgramName)
+#    undef SetProgramName
+#  endif
+#  define SetProgramName SetProgramName
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
