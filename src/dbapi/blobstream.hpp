@@ -33,6 +33,9 @@
 * File Description: stream implementation for reading and writing BLOBs
 *
 * $Log$
+* Revision 1.5  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
+*
 * Revision 1.4  2002/08/26 15:35:56  kholodov
 * Added possibility to disable transaction log
 * while updating BLOBs
@@ -51,6 +54,7 @@
 */
 
 #include "bytestreambuf.hpp"
+#include <dbapi/driver/public.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -58,7 +62,7 @@ class CBlobIStream : public istream
 {
 public:
     
-    CBlobIStream(CDB_Result* rs, streamsize bufsize = 0);
+    CBlobIStream(CResultSet* rs, streamsize bufsize = 0);
     
     virtual ~CBlobIStream();
 };
@@ -69,16 +73,16 @@ class CBlobOStream : public ostream
 public:
     
     CBlobOStream(CDB_Connection* connAux,
-	       I_ITDescriptor* desc,
-           size_t datasize, 
+	             I_ITDescriptor* desc,
+                 size_t datasize, 
                  streamsize bufsize,
-           bool log_it);
+                 bool log_it);
     
     CBlobOStream(CDB_CursorCmd* curCmd,
-	       unsigned int item_num,
-           size_t datasize, 
-           streamsize bufsize,
-           bool log_it);
+	             unsigned int item_num,
+                 size_t datasize, 
+                 streamsize bufsize,
+                 bool log_it);
     
     virtual ~CBlobOStream();
     

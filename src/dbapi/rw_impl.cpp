@@ -1,6 +1,3 @@
-#ifndef _BYTESTREAMBUF_HPP_
-#define _BYTESTREAMBUF_HPP_
-
 /* $Id$
 * ===========================================================================
 *
@@ -26,68 +23,96 @@
 *
 * ===========================================================================
 *
-* File Name:  $Id$
+* File Name:  rw_impl.cpp
 *
 * Author:  Michael Kholodov
 *   
-* File Description:  streambuf implementation for BLOBs
-*
-*
-* $Log$
-* Revision 1.4  2004/07/20 17:49:17  kholodov
-* Added: IReader/IWriter support for BLOB I/O
-*
-* Revision 1.3  2002/05/14 19:51:48  kholodov
-* Fixed: incorrect column no handling for detecting end of column
-*
-* Revision 1.2  2002/05/13 19:11:53  kholodov
-* Modified: added proper handling of EOFs while reading column data using CDB_Result::CurrentItemNo().
-*
-* Revision 1.1  2002/01/30 14:51:22  kholodov
-* User DBAPI implementation, first commit
-*
+* File Description:  Reader/writer implementation
 *
 *
 */
-
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
-//#include <iostream>
+#include <ncbi_pch.hpp>
+#include "rw_impl.hpp"
+#include "rs_impl.hpp"
+#include <dbapi/driver/public.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CByteStreamBuf : public streambuf
+CBlobReader::CBlobReader(CResultSet *rs) 
+: m_rs(rs)
 {
-public:
-    CByteStreamBuf(streamsize bufsize);
-    virtual ~CByteStreamBuf();
 
-    void SetCmd(class CDB_SendDataCmd* cmd);
-    void SetRs(class CResultSet* rs);
+}
 
-protected:
-    virtual streambuf* setbuf(CT_CHAR_TYPE* p, streamsize n);
-    virtual CT_INT_TYPE underflow();
-    virtual streamsize showmanyc();
+CBlobReader::~CBlobReader()
+{
 
-    virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
-    virtual int sync();
+}
   
+ERW_Result CBlobReader::Read(void*   buf,
+                            size_t  count,
+                            size_t* bytes_read)
+{
+    size_t bRead = m_rs->Read(buf, count);
 
-private:
+    if( bytes_read != 0 ) {
+        *bytes_read = bRead;
+    }
 
-    CT_CHAR_TYPE* getGBuf();
-    CT_CHAR_TYPE* getPBuf();
+    if( bRead != 0 ) {
+        return eRW_Success;
+    }
+    else {
+        return eRW_Eof;
+    }
 
-    CT_CHAR_TYPE* m_buf;
-    size_t m_size;
-    //streamsize m_len;
-    class CResultSet* m_rs;
-    class CDB_SendDataCmd* m_cmd;
-    //int m_column;
+}
 
-};
+ERW_Result CBlobReader::PendingCount(size_t* /* count */)
+{
+    return eRW_NotImplemented;
+}
+
+//------------------------------------------------------------------------------------------------
+
+CBlobWriter::CBlobWriter(CDB_CursorCmd* curCmd,
+                         unsigned int item_num,
+                         size_t datasize, 
+                         bool log_it) 
+{
+    dataCmd = curCmd->SendDataCmd(item_num, datasize, log_it);
+}
+
+ERW_Result CBlobWriter::Write(const void* buf,
+                              size_t      count,
+                              size_t*     bytes_written)
+{
+    size_t bPut = dataCmd->SendChunk(buf, count);
+
+    if( bytes_written != 0 )
+        *bytes_written = bPut;
+
+    if( bPut == 0 )
+        return eRW_Eof;
+    else
+        return eRW_Success;
+}
+
+ERW_Result CBlobWriter::Flush()
+{
+    return eRW_NotImplemented;
+}
+
+CBlobWriter::~CBlobWriter()
+{
+    delete dataCmd;
+}
+
 
 END_NCBI_SCOPE
-//=================================================================
-#endif // _BYTESTREAMBUF_HPP_
+/*
+* $Log$
+* Revision 1.1  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
+*
+*/

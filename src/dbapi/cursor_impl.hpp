@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.9  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
+*
 * Revision 1.8  2004/04/22 14:22:25  kholodov
 * Added: Cancel()
 *
@@ -71,6 +74,7 @@
 #include <corelib/ncbistre.hpp>
 #include "dbexception.hpp"
 #include "blobstream.hpp"
+#include "rw_impl.hpp"
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -95,6 +99,11 @@ public:
                             size_t blob_size, 
                             EAllowLog log_it,
                             size_t buf_size);
+
+    virtual IWriter* CCursor::GetBlobWriter(unsigned int col,
+                                            size_t blob_size, 
+                                            EAllowLog log_it);
+
     virtual void Update(const string& table, const string& updateSql);
     virtual void Delete(const string& table);
     virtual void Cancel();
@@ -118,6 +127,7 @@ private:
     CDB_CursorCmd* m_cmd;
     CConnection* m_conn;
     ostream *m_ostr;
+    class CBlobWriter* m_wr;
   
 };
 

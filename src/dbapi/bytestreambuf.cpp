@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
+*
 * Revision 1.9  2004/05/17 21:10:28  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -67,9 +70,8 @@
 #include <exception>
 #include <algorithm>
 #include "bytestreambuf.hpp"
-#include <dbapi/driver/exception.hpp>
-#include <dbapi/driver/interfaces.hpp>
 #include <dbapi/driver/public.hpp>
+#include "rs_impl.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -78,7 +80,7 @@ static const streamsize DEF_BUFSIZE = 2048;
 CByteStreamBuf::CByteStreamBuf(streamsize bufsize)
     : m_buf(0), 
     m_size(bufsize > 0 ? bufsize : DEF_BUFSIZE), 
-    m_len(0), m_rs(0), m_cmd(0), m_column(-1)
+    /* m_len(0),*/ m_rs(0), m_cmd(0) //, m_column(-1)
 { 
     m_buf = new CT_CHAR_TYPE[m_size * 2]; // read and write buffer in one
     setg(0, 0, 0); // call underflow on the first read
@@ -113,17 +115,18 @@ void CByteStreamBuf::SetCmd(CDB_SendDataCmd* cmd) {
     m_cmd = cmd;
 }
 
-void CByteStreamBuf::SetRs(CDB_Result* rs) {
-    delete m_rs;
+void CByteStreamBuf::SetRs(CResultSet* rs) {
+    //delete m_rs;
     m_rs = rs;
-    m_column = m_rs->CurrentItemNo();
+    //m_column = m_rs->CurrentItemNo();
 }
 
 CT_INT_TYPE CByteStreamBuf::underflow()
 {
     if( m_rs == 0 )
-        throw runtime_error("CByteStreamBuf::underflow(): CDB_Result* is null");
+        throw runtime_error("CByteStreamBuf::underflow(): CResultSet* is null");
   
+#if 0
     static size_t total = 0;
 
     if( m_column < 0 || m_column != m_rs->CurrentItemNo() ) {
@@ -141,14 +144,17 @@ CT_INT_TYPE CByteStreamBuf::underflow()
         return CT_EOF;
     }
     else {
-        m_len = m_rs->ReadItem(getGBuf(), m_size);
-        _TRACE("Column: " << m_column << ", Bytes read to buffer: " << m_len);
-        if( m_len == 0 )
+#endif
+        size_t len = m_rs->Read(getGBuf(), m_size);
+        _TRACE("Column: " << m_rs->GetColumnNo() << ", Bytes read to buffer: " << len);
+        if( len == 0 )
             return CT_EOF;
-        total += m_len;
-        setg(getGBuf(), getGBuf(), getGBuf() + m_len);
+        //total += len;
+        setg(getGBuf(), getGBuf(), getGBuf() + len);
         return CT_TO_INT_TYPE(*getGBuf());
+#if 0
     }
+#endif
     
 }
 

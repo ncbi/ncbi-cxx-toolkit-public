@@ -35,6 +35,9 @@
 *
 *
 * $Log$
+* Revision 1.9  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
+*
 * Revision 1.8  2004/04/08 15:56:58  kholodov
 * Multiple bug fixes and optimizations
 *
@@ -117,6 +120,15 @@ public:
         : CDbapiEvent(src, "CDbapiNewResultEvent") {}
 
     virtual ~CDbapiNewResultEvent() {}
+};
+
+class CDbapiFetchCompletedEvent : public CDbapiEvent
+{
+public:
+    CDbapiFetchCompletedEvent(CActiveObject* src)
+        : CDbapiEvent(src, "CDbapiFetchCompletedEvent") {}
+
+    virtual ~CDbapiFetchCompletedEvent() {}
 };
 
 class CDbapiClosedEvent : public CDbapiEvent

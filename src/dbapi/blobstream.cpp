@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.8  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
+*
 * Revision 1.7  2004/05/17 21:10:28  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -58,13 +61,12 @@
 #include <ncbi_pch.hpp>
 #include "blobstream.hpp"
 
-#include <dbapi/driver/exception.hpp>
-#include <dbapi/driver/interfaces.hpp>
 #include <dbapi/driver/public.hpp>
+#include "rs_impl.hpp"
 
 BEGIN_NCBI_SCOPE
 
-CBlobIStream::CBlobIStream(CDB_Result* rs, streamsize bufsize)
+CBlobIStream::CBlobIStream(CResultSet* rs, streamsize bufsize)
 : istream(new CByteStreamBuf(bufsize))
 {
     ((CByteStreamBuf*)rdbuf())->SetRs(rs);

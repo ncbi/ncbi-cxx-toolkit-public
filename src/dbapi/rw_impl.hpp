@@ -1,5 +1,5 @@
-#ifndef _BYTESTREAMBUF_HPP_
-#define _BYTESTREAMBUF_HPP_
+#ifndef _RW_IMPL_HPP_
+#define _RW_IMPL_HPP_
 
 /* $Id$
 * ===========================================================================
@@ -26,68 +26,66 @@
 *
 * ===========================================================================
 *
-* File Name:  $Id$
+* File Name:  rw_impl.cpp
 *
 * Author:  Michael Kholodov
 *   
-* File Description:  streambuf implementation for BLOBs
-*
-*
-* $Log$
-* Revision 1.4  2004/07/20 17:49:17  kholodov
-* Added: IReader/IWriter support for BLOB I/O
-*
-* Revision 1.3  2002/05/14 19:51:48  kholodov
-* Fixed: incorrect column no handling for detecting end of column
-*
-* Revision 1.2  2002/05/13 19:11:53  kholodov
-* Modified: added proper handling of EOFs while reading column data using CDB_Result::CurrentItemNo().
-*
-* Revision 1.1  2002/01/30 14:51:22  kholodov
-* User DBAPI implementation, first commit
-*
+* File Description:  Reader/writer implementation
 *
 *
 */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
-//#include <iostream>
+#include <dbapi/dbapi.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CByteStreamBuf : public streambuf
+class CBlobReader : public IReader
 {
 public:
-    CByteStreamBuf(streamsize bufsize);
-    virtual ~CByteStreamBuf();
+    CBlobReader(class CResultSet *rs);
 
-    void SetCmd(class CDB_SendDataCmd* cmd);
-    void SetRs(class CResultSet* rs);
-
-protected:
-    virtual streambuf* setbuf(CT_CHAR_TYPE* p, streamsize n);
-    virtual CT_INT_TYPE underflow();
-    virtual streamsize showmanyc();
-
-    virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
-    virtual int sync();
+    virtual ~CBlobReader();
   
+    virtual ERW_Result Read(void*   buf,
+                            size_t  count,
+                            size_t* bytes_read = 0);
+
+    virtual ERW_Result PendingCount(size_t* count);
+
+private:
+    
+    class CResultSet *m_rs;
+};
+
+class CBlobWriter : public IWriter
+{
+public:
+
+    CBlobWriter(CDB_CursorCmd* curCmd,
+                unsigned int item_num,
+                size_t datasize, 
+                bool log_it);
+
+    virtual ERW_Result Write(const void* buf,
+                             size_t      count,
+                             size_t*     bytes_written = 0);
+
+    virtual ERW_Result Flush(void);
+
+    virtual ~CBlobWriter();
 
 private:
 
-    CT_CHAR_TYPE* getGBuf();
-    CT_CHAR_TYPE* getPBuf();
-
-    CT_CHAR_TYPE* m_buf;
-    size_t m_size;
-    //streamsize m_len;
-    class CResultSet* m_rs;
-    class CDB_SendDataCmd* m_cmd;
-    //int m_column;
-
+    class CDB_SendDataCmd *dataCmd;
 };
 
 END_NCBI_SCOPE
-//=================================================================
-#endif // _BYTESTREAMBUF_HPP_
+
+#endif // _RW_IMPL_HPP_
+
+/*
+* $Log$
+* Revision 1.1  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
+*
+*/

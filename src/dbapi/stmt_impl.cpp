@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.24  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
+*
 * Revision 1.23  2004/07/19 15:51:57  kholodov
 * Fixed: unwanted resultset cleanup while calling ExecuteUpdate()
 *
@@ -177,10 +180,11 @@ bool CStatement::HasMoreResults()
         //Notify(CDbapiNewResultEvent(this));
         CDB_Result *rs = GetBaseCmd()->Result();
         CacheResultSet(rs); 
+#if 0
         if( rs == 0 ) {
             m_rowCount = GetBaseCmd()->RowCount();
         }
-
+#endif
     }
     return more;
 }
@@ -317,6 +321,15 @@ void CStatement::Action(const CDbapiEvent& e)
            << "' received from " << e.GetSource()->GetIdent());
 
     CResultSet *rs;
+
+    if(dynamic_cast<const CDbapiFetchCompletedEvent*>(&e) != 0 ) {
+        if( m_irs != 0 && (rs = dynamic_cast<CResultSet*>(e.GetSource())) != 0 ) {
+            if( rs == m_irs ) {
+                m_rowCount = GetBaseCmd()->RowCount();
+                _TRACE("Updating rowcount: " << m_rowCount); 
+            }
+        } 
+    }
 
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
 	    RemoveListener(e.GetSource());

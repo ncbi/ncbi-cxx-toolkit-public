@@ -27,12 +27,358 @@
 *
 * Author:  Michael Kholodov
 *   
-* File Description:  Base class for database access
+* File Description:  Resultset implementation
 *
-*
+*/
+
+#include <ncbi_pch.hpp>
+#include "stmt_impl.hpp"
+#include "cstmt_impl.hpp"
+#include "conn_impl.hpp"
+#include "cursor_impl.hpp"
+#include "rs_impl.hpp"
+#include "rsmeta_impl.hpp"
+#include "dbexception.hpp"
+
+#include <dbapi/driver/public.hpp>
+#include <dbapi/driver/exception.hpp>
+
+#include <corelib/ncbistr.hpp>
+
+#include <typeinfo>
+
+
+BEGIN_NCBI_SCOPE
+
+CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
+    : m_conn(conn),
+      m_rs(rs), m_istr(0), m_ostr(0), m_column(-1),
+      m_bindBlob(false), m_disableBind(false), m_wasNull(true),
+      m_rd(0)
+{
+    SetIdent("CResultSet");
+
+    if( m_rs == 0 ) {
+        _TRACE("CResultSet::ctor(): null CDB_Result* object");
+        _ASSERT(0);
+    }
+    else {
+        Init();
+    }
+}
+
+
+void CResultSet::Init() 
+{
+    // Reserve storage for column data
+    EDB_Type type;
+    for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
+        type = m_rs->ItemDataType(i);
+        switch( type ) {
+        case eDB_Char:
+            m_data.push_back(CVariant::Char(m_rs->ItemMaxSize(i), 0));
+            break;
+        case eDB_Binary:
+            m_data.push_back(CVariant::Binary(m_rs->ItemMaxSize(i), 0, 0));
+            break;
+        case eDB_LongChar:
+            m_data.push_back(CVariant::LongChar(0, m_rs->ItemMaxSize(i)));
+            break;
+        case eDB_LongBinary:
+            m_data.push_back(CVariant::LongBinary(m_rs->ItemMaxSize(i), 0, 0));
+            break;
+        default:
+            m_data.push_back(CVariant(type));
+            break;
+        }
+    }
+
+    _TRACE("CResultSet::Init(): Space reserved for " << m_data.size() 
+           << " columns");
+
+}
+
+CResultSet::~CResultSet()
+{
+    Notify(CDbapiClosedEvent(this));
+    FreeResources();
+    Notify(CDbapiDeletedEvent(this));
+    _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+}
+
+const CVariant& CResultSet::GetVariant(unsigned int idx) 
+{
+    CheckIdx(idx);
+    return m_data[idx-1];
+}
+
+const CVariant& CResultSet::GetVariant(const string& name) 
+{
+    int zIdx = GetColNum(name);
+
+    CheckIdx(zIdx);
+
+    return m_data[zIdx-1];
+}
+
+
+const IResultSetMetaData* CResultSet::GetMetaData() 
+{
+    CResultSetMetaData *md = new CResultSetMetaData(m_rs);
+    md->AddListener(this);
+    AddListener(md);
+    return md;
+}
+
+EDB_ResType CResultSet::GetResultType() 
+{
+    return m_rs->ResultType();
+}
+
+void CResultSet::BindBlobToVariant(bool b) 
+{
+    m_bindBlob = b;
+}
+
+void CResultSet::DisableBind(bool b) 
+{
+    m_disableBind = b;
+}
+
+bool CResultSet::Next() 
+{
+
+    bool more = false;
+    EDB_Type type = eDB_UnsupportedType;
+
+    more = m_rs->Fetch();
+    if( more && !IsDisableBind() ) {
+
+        for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
+            
+            type = m_rs->ItemDataType(i);
+            
+            if( !IsBindBlob() ) {
+                if( type == eDB_Text || type == eDB_Image )  {
+                    m_column = m_rs->CurrentItemNo();
+                    break;
+                }
+            }
+            else {
+                switch(type) {
+                case eDB_Text:
+                    ((CDB_Text*)m_data[i].GetNonNullData())->Truncate();
+                    break;
+                case eDB_Image:
+                    ((CDB_Image*)m_data[i].GetNonNullData())->Truncate();
+                    break;
+                }
+            }
+
+            
+            m_rs->GetItem(m_data[i].GetNonNullData());
+        }
+
+    } 
+
+    if( !more ) {
+        if( m_ostr ) {
+            _TRACE("CResulstSet: deleting BLOB output stream...");
+                   delete m_ostr;
+                   m_ostr = 0;
+        }
+        if( m_istr ) {
+            _TRACE("CResulstSet: deleting BLOB input stream...");
+            delete m_istr;
+            m_istr = 0;
+        }
+        if( m_rd ) {
+            _TRACE("CResulstSet: deleting BLOB reader...");
+            delete m_rd;
+            m_rd = 0;
+        }
+
+        Notify(CDbapiFetchCompletedEvent(this));
+    }
+  
+    return more;
+}
+
+size_t CResultSet::Read(void* buf, size_t size)
+{
+
+    if( m_column < 0 ) {
+        _TRACE("CResulstSet: Column for raw Read not set, current column: "
+                << m_rs->CurrentItemNo());
+#ifdef _DEBUG
+        _ASSERT(0);
+#else   
+        throw CDbapiException("Column for BLOB I/O is not initialized");
+#endif
+    }
+    else {
+        _TRACE("Last column: " << m_column);
+    }
+
+    if( m_column != m_rs->CurrentItemNo() ) {
+
+        m_column = m_rs->CurrentItemNo();
+        return 0;
+    }
+    else {
+        return m_rs->ReadItem(buf, size, &m_wasNull);
+    }
+}
+
+bool CResultSet::WasNull()
+{
+    return m_wasNull;
+}
+
+
+int CResultSet::GetColumnNo()
+{
+    int col = m_rs->CurrentItemNo();
+
+    return col >= 0 ? col + 1 : -1;
+}
+
+unsigned int CResultSet::GetTotalColumns()
+{
+    return m_rs->NofItems();
+}
+
+istream& CResultSet::GetBlobIStream(size_t buf_size)
+{
+#if 0
+    if( m_istr == 0 ) {
+        m_istr = new CBlobIStream(this, buf_size);
+    }
+#endif
+    delete m_istr;
+    m_istr = new CBlobIStream(this, buf_size);
+ 
+    return *m_istr;
+}
+
+IReader* CResultSet::GetBlobReader()
+{
+    delete m_rd;
+    m_rd = new CBlobReader(this);
+ 
+    return m_rd;
+}
+
+ostream& CResultSet::GetBlobOStream(size_t blob_size, 
+                                    EAllowLog log_it,
+                                    size_t buf_size)
+{
+    // GetConnAux() returns pointer to pooled CDB_Connection.
+    // we need to delete it every time we request new one.
+    // The same with ITDescriptor
+    delete m_ostr;
+
+    // Call ReadItem(0, 0) before getting text/image descriptor
+    m_rs->ReadItem(0, 0);
+
+    
+    I_ITDescriptor* desc = m_rs->GetImageOrTextDescriptor();
+    if( desc == 0 ) {
+#ifdef _DEBUG
+        NcbiCerr << "CResultSet::GetBlobOStream(): zero IT Descriptor" << endl;
+        _ASSERT(0);
+#else
+        throw CDbapiException("CResultSet::GetBlobOStream(): Invalid IT Descriptor");
+#endif
+    }
+
+    m_ostr = new CBlobOStream(m_conn->CloneCDB_Conn(),
+                              desc,
+                              blob_size,
+                              buf_size,
+                              log_it == eEnableLog);
+    return *m_ostr;
+}
+
+void CResultSet::Close()
+{
+    Notify(CDbapiClosedEvent(this));
+    FreeResources();
+}
+
+void CResultSet::FreeResources()
+{
+    //_TRACE("CResultSet::Close(): deleting CDB_Result " << (void*)m_rs);
+    Invalidate();
+
+    delete m_istr;
+    m_istr = 0;
+    delete m_ostr;
+    m_ostr = 0;
+    delete m_rd;
+    m_rd = 0;
+}
+  
+void CResultSet::Action(const CDbapiEvent& e) 
+{
+    _TRACE(GetIdent() << " " << (void*)this 
+              << ": '" << e.GetName() 
+              << "' received from " << e.GetSource()->GetIdent());
+    
+    if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
+        if( dynamic_cast<CStatement*>(e.GetSource()) != 0
+            || dynamic_cast<CCallableStatement*>(e.GetSource()) != 0 ) {
+            if( m_rs != 0 ) {
+                _TRACE("Discarding old CDB_Result " << (void*)m_rs);
+                Invalidate();
+            }
+        }
+    }
+    else if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
+
+        RemoveListener(e.GetSource());
+
+        if(dynamic_cast<CStatement*>(e.GetSource()) != 0
+           || dynamic_cast<CCursor*>(e.GetSource()) != 0
+           || dynamic_cast<CCallableStatement*>(e.GetSource()) != 0 ) {
+            _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
+            delete this;
+        }
+    }
+}
+
+
+int CResultSet::GetColNum(const string& name) {
+    
+    unsigned int i = 0;
+    for( ; i < m_rs->NofItems(); ++i ) {
+        
+        if( !NStr::Compare(m_rs->ItemName(i), name) )
+            return i+1;
+    }
+
+    throw CDbapiException("CResultSet::GetColNum(): invalid column name ["
+                          + name + "]");
+}
+
+void CResultSet::CheckIdx(unsigned int idx) 
+{
+    if( idx > m_data.size() ) {
+#ifdef _DEBUG
+        NcbiCerr << "CResultSet::CheckIdx(): Column index " << idx << " out of range" << endl;
+        _ASSERT(0);
+#else
+        throw CDbapiException("CResultSet::CheckIdx(): Column index" 
+                              + NStr::IntToString(idx) + " out of range");
+#endif
+    }
+}
+
+END_NCBI_SCOPE
+/*
 * $Log$
-* Revision 1.32  2004/05/17 21:10:28  gorelenk
-* Added include of PCH ncbi_pch.hpp
+* Revision 1.33  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
 *
 * Revision 1.31  2004/04/26 14:14:27  kholodov
 * Added: ExecteQuery() method
@@ -144,323 +490,4 @@
 * Snapshot of the first draft of dbapi lib
 *
 *
-*
 */
-
-#include <ncbi_pch.hpp>
-#include "stmt_impl.hpp"
-#include "cstmt_impl.hpp"
-#include "conn_impl.hpp"
-#include "cursor_impl.hpp"
-#include "rs_impl.hpp"
-#include "rsmeta_impl.hpp"
-#include "dbexception.hpp"
-
-#include <dbapi/driver/public.hpp>
-#include <dbapi/driver/exception.hpp>
-
-#include <corelib/ncbistr.hpp>
-
-#include <typeinfo>
-
-
-BEGIN_NCBI_SCOPE
-
-CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
-    : m_conn(conn),
-      m_rs(rs), m_istr(0), m_ostr(0), m_column(-1),
-      m_bindBlob(false), m_disableBind(false), m_wasNull(true)
-{
-    SetIdent("CResultSet");
-
-    if( m_rs == 0 ) {
-        _TRACE("CResultSet::ctor(): null CDB_Result* object");
-        _ASSERT(0);
-    }
-    else {
-        Init();
-    }
-}
-
-
-void CResultSet::Init() 
-{
-    // Reserve storage for column data
-    EDB_Type type;
-    for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
-        type = m_rs->ItemDataType(i);
-        switch( type ) {
-        case eDB_LongChar:
-            m_data.push_back(CVariant::LongChar(0, m_rs->ItemMaxSize(i)));
-            break;
-        case eDB_LongBinary:
-            m_data.push_back(CVariant::LongBinary(m_rs->ItemMaxSize(i), 0, 0));
-            break;
-        default:
-            m_data.push_back(CVariant(type));
-            break;
-        }
-    }
-
-    _TRACE("CResultSet::Init(): Space reserved for " << m_data.size() 
-           << " columns");
-
-}
-
-CResultSet::~CResultSet()
-{
-    Notify(CDbapiClosedEvent(this));
-    FreeResources();
-    Notify(CDbapiDeletedEvent(this));
-    _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
-}
-
-const CVariant& CResultSet::GetVariant(unsigned int idx) 
-{
-    CheckIdx(idx - 1);
-    return m_data[idx-1];
-}
-
-const CVariant& CResultSet::GetVariant(const string& name) 
-{
-    int zIdx = GetColNum(name);
-
-    CheckIdx(zIdx);
-
-    return m_data[zIdx];
-}
-
-
-const IResultSetMetaData* CResultSet::GetMetaData() 
-{
-    CResultSetMetaData *md = new CResultSetMetaData(m_rs);
-    md->AddListener(this);
-    AddListener(md);
-    return md;
-}
-
-EDB_ResType CResultSet::GetResultType() 
-{
-    return m_rs->ResultType();
-}
-
-void CResultSet::BindBlobToVariant(bool b) 
-{
-    m_bindBlob = b;
-}
-
-void CResultSet::DisableBind(bool b) 
-{
-    m_disableBind = b;
-}
-
-bool CResultSet::Next() 
-{
-
-    bool more = false;
-    EDB_Type type = eDB_UnsupportedType;
-
-    more = m_rs->Fetch();
-    if( more && !IsDisableBind() ) {
-
-        for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
-            
-            type = m_rs->ItemDataType(i);
-            
-            if( !IsBindBlob() ) {
-                if( type == eDB_Text || type == eDB_Image )  {
-                    m_column = m_rs->CurrentItemNo();
-                    break;
-                }
-            }
-            else {
-                switch(type) {
-                case eDB_Text:
-                    ((CDB_Text*)m_data[i].GetNonNullData())->Truncate();
-                    break;
-                case eDB_Image:
-                    ((CDB_Image*)m_data[i].GetNonNullData())->Truncate();
-                    break;
-                }
-            }
-
-            
-            m_rs->GetItem(m_data[i].GetNonNullData());
-        }
-
-    } 
-
-    if( !more ) {
-        if( m_ostr ) {
-            _TRACE("CResulstSet: deleting BLOB output stream...");
-                   delete m_ostr;
-                   m_ostr = 0;
-        }
-        if( m_istr ) {
-            _TRACE("CResulstSet: deleting BLOB input stream...");
-            delete m_istr;
-            m_istr = 0;
-        }
-    }
-  
-    return more;
-}
-
-size_t CResultSet::Read(void* buf, size_t size)
-{
-
-    if( m_column < 0 || m_column != m_rs->CurrentItemNo() ) {
-        if( m_column < 0 ) {
-            _TRACE("CResulstSet: Column for raw Read not set, current column: "
-                   << m_rs->CurrentItemNo());
-#ifdef _DEBUG
-            _ASSERT(0);
-#endif
-        }
-        else
-            _TRACE("Last column: " << m_column);
-
-        m_column = m_rs->CurrentItemNo();
-        return 0;
-    }
-    else {
-        return m_rs->ReadItem(buf, size, &m_wasNull);
-    }
-}
-
-bool CResultSet::WasNull()
-{
-    return m_wasNull;
-}
-
-
-int CResultSet::GetColumnNo()
-{
-    int col = m_rs->CurrentItemNo();
-
-    return col >= 0 ? col + 1 : -1;
-}
-
-unsigned int CResultSet::GetTotalColumns()
-{
-    return m_rs->NofItems();
-}
-
-istream& CResultSet::GetBlobIStream(size_t buf_size)
-{
-#if 0
-    if( m_istr == 0 ) {
-        m_istr = new CBlobIStream(m_rs, buf_size);
-    }
-#endif
-    delete m_istr;
-    m_istr = new CBlobIStream(m_rs, buf_size);
- 
-    return *m_istr;
-}
-
-ostream& CResultSet::GetBlobOStream(size_t blob_size, 
-                                    EAllowLog log_it,
-                                    size_t buf_size)
-{
-    // GetConnAux() returns pointer to pooled CDB_Connection.
-    // we need to delete it every time we request new one.
-    // The same with ITDescriptor
-    delete m_ostr;
-
-    // Call ReadItem(0, 0) before getting text/image descriptor
-    m_rs->ReadItem(0, 0);
-
-    
-    I_ITDescriptor* desc = m_rs->GetImageOrTextDescriptor();
-    if( desc == 0 ) {
-        _TRACE("CResultSet::GetBlobOStream(): zero IT Descriptor");
-#ifdef _DEBUG
-        _ASSERT(0);
-#else
-        throw CDbapiException("CResultSet::GetBlobOStream(): Invalid IT Descriptor");
-#endif
-    }
-
-    m_ostr = new CBlobOStream(m_conn->CloneCDB_Conn(),
-                              desc,
-                              blob_size,
-                              buf_size,
-                              log_it == eEnableLog);
-    return *m_ostr;
-}
-
-void CResultSet::Close()
-{
-    Notify(CDbapiClosedEvent(this));
-    FreeResources();
-}
-
-void CResultSet::FreeResources()
-{
-    //_TRACE("CResultSet::Close(): deleting CDB_Result " << (void*)m_rs);
-    Invalidate();
-
-    delete m_istr;
-    m_istr = 0;
-    delete m_ostr;
-    m_ostr = 0;
-}
-  
-void CResultSet::Action(const CDbapiEvent& e) 
-{
-    _TRACE(GetIdent() << " " << (void*)this 
-              << ": '" << e.GetName() 
-              << "' received from " << e.GetSource()->GetIdent());
-    
-    if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
-        if( dynamic_cast<CStatement*>(e.GetSource()) != 0
-            || dynamic_cast<CCallableStatement*>(e.GetSource()) != 0 ) {
-            if( m_rs != 0 ) {
-                _TRACE("Discarding old CDB_Result " << (void*)m_rs);
-                Invalidate();
-            }
-        }
-    }
-    else if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
-
-        RemoveListener(e.GetSource());
-
-        if(dynamic_cast<CStatement*>(e.GetSource()) != 0
-           || dynamic_cast<CCursor*>(e.GetSource()) != 0
-           || dynamic_cast<CCallableStatement*>(e.GetSource()) != 0 ) {
-            _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
-            delete this;
-        }
-    }
-}
-
-
-int CResultSet::GetColNum(const string& name) {
-    
-    unsigned int i = 0;
-    for( ; i < m_rs->NofItems(); ++i ) {
-        
-        if( !NStr::Compare(m_rs->ItemName(i), name) )
-            return i;
-    }
-
-    throw CDbapiException("CResultSet::GetColNum(): invalid column name ["
-                          + name + "]");
-}
-
-void CResultSet::CheckIdx(unsigned int idx) 
-{
-    if( idx >= m_data.size() ) {
-#ifdef _DEBUG
-        NcbiCerr << "CResultSet::CheckIdx(): Column index " 
-                 << idx << " out of range" << endl;
-        _ASSERT(0);
-#else
-        throw CDbapiException("CResultSet::CheckIdx(): Column index" 
-                              + NStr::IntToString(idx) + " out of range");
-#endif
-    }
-}
-
-END_NCBI_SCOPE

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.30  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
+*
 * Revision 1.29  2004/05/17 21:10:28  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -506,8 +509,8 @@ float CVariant::GetFloat() const
     switch( GetType() ) {
     case eDB_Float:
         return ((CDB_Float*)GetData())->Value();
-    case eDB_Int:
-        return ((CDB_Int*)GetData())->Value();
+    //case eDB_Int:
+    //    return ((CDB_Int*)GetData())->Value();
     case eDB_SmallInt:
         return ((CDB_SmallInt*)GetData())->Value();
     case eDB_TinyInt:

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.17  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
+*
 * Revision 1.16  2004/05/17 21:10:28  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -109,7 +112,7 @@ CCursor::CCursor(const string& name,
                  int nofArgs,
                  int batchSize,
                  CConnection* conn)
-    : m_nofArgs(nofArgs), m_cmd(0), m_conn(conn), m_ostr(0)
+    : m_nofArgs(nofArgs), m_cmd(0), m_conn(conn), m_ostr(0), m_wr(0)
 {
     SetIdent("CCursor");
 
@@ -187,6 +190,19 @@ ostream& CCursor::GetBlobOStream(unsigned int col,
     return *m_ostr;
 }
 
+IWriter* CCursor::GetBlobWriter(unsigned int col,
+                                size_t blob_size, 
+                                EAllowLog log_it)
+{
+    // Delete previous writer
+    delete m_wr;
+
+    m_wr = new CBlobWriter(GetCursorCmd(),
+                           col - 1,
+                           blob_size,
+                           log_it == eEnableLog);
+    return m_wr;
+}
 void CCursor::Cancel()
 {
     if( GetCursorCmd() != 0 )

@@ -33,7 +33,105 @@
 * File Description:  Resultset implementation
 *
 *
+*
+*/
+
+#include <dbapi/dbapi.hpp>
+
+#include "rw_impl.hpp"
+#include "active_obj.hpp"
+//#include "array.hpp"
+//#include "dbexception.hpp"
+#include "blobstream.hpp"
+
+#include <vector>
+
+BEGIN_NCBI_SCOPE
+
+class CResultSet : public CActiveObject, 
+                   public IResultSet
+{
+public:
+    CResultSet(class CConnection* conn, CDB_Result *rs);
+
+    virtual ~CResultSet();
+  
+    void Init();
+    virtual EDB_ResType GetResultType();
+
+    virtual bool Next();
+
+    virtual const CVariant& GetVariant(unsigned int idx);
+    virtual const CVariant& GetVariant(const string& colName);
+
+    virtual void DisableBind(bool b);
+    virtual void BindBlobToVariant(bool b);
+  
+    virtual size_t Read(void* buf, size_t size);
+    virtual bool WasNull();
+    virtual int GetColumnNo();
+    virtual unsigned int GetTotalColumns();
+
+    virtual void Close();
+    virtual const IResultSetMetaData* GetMetaData();
+    virtual istream& GetBlobIStream(size_t buf_size);
+    virtual ostream& GetBlobOStream(size_t blob_size, 
+                                    EAllowLog log_it,
+                                    size_t buf_size);
+
+    virtual IReader* GetBlobReader();
+
+    // Interface IEventListener implementation
+    virtual void Action(const CDbapiEvent& e);
+
+    CDB_Result* GetCDB_Result() {
+        return m_rs;
+    }
+
+    void Invalidate() {
+        delete m_rs;
+        m_rs = 0;
+    }
+
+protected:
+    
+    int GetColNum(const string& name);
+    void CheckIdx(unsigned int idx);
+
+    bool IsBindBlob() {
+        return m_bindBlob;
+    }
+
+    bool IsDisableBind() {
+        return m_disableBind;
+    }
+
+    void FreeResources();
+
+private:
+    
+    class CConnection* m_conn;
+    CDB_Result *m_rs;
+    //CResultSetMetaDataImpl *m_metaData;
+    vector<CVariant> m_data;
+    CBlobIStream *m_istr;
+    CBlobOStream *m_ostr;
+    int m_column;
+    bool m_bindBlob;
+    bool m_disableBind;
+    bool m_wasNull;
+    CBlobReader *m_rd;
+
+};
+
+//====================================================================
+
+END_NCBI_SCOPE
+/*
 * $Log$
+* Revision 1.16  2004/07/20 17:49:17  kholodov
+* Added: IReader/IWriter support for BLOB I/O
+*
 * Revision 1.15  2004/04/12 14:25:33  kholodov
 * Modified: resultset caching scheme, fixed single connection handling
 *
@@ -89,96 +187,5 @@
 * User DBAPI implementation, first commit
 *
 *
-*
 */
-
-//#include <vector>
-#include <dbapi/dbapi.hpp>
-
-#include "active_obj.hpp"
-//#include "array.hpp"
-//#include "dbexception.hpp"
-#include "blobstream.hpp"
-
-#include <vector>
-
-BEGIN_NCBI_SCOPE
-
-class CResultSet : public CActiveObject, 
-                   public IResultSet
-{
-public:
-    CResultSet(class CConnection* conn, CDB_Result *rs);
-
-    virtual ~CResultSet();
-  
-    void Init();
-    virtual EDB_ResType GetResultType();
-
-    virtual bool Next();
-
-    virtual const CVariant& GetVariant(unsigned int idx);
-    virtual const CVariant& GetVariant(const string& colName);
-
-    virtual void DisableBind(bool b);
-    virtual void BindBlobToVariant(bool b);
-  
-    virtual size_t Read(void* buf, size_t size);
-    virtual bool WasNull();
-    virtual int GetColumnNo();
-    virtual unsigned int GetTotalColumns();
-
-    virtual void Close();
-    virtual const IResultSetMetaData* GetMetaData();
-    virtual istream& GetBlobIStream(size_t buf_size);
-    virtual ostream& GetBlobOStream(size_t blob_size, 
-                                    EAllowLog log_it,
-                                    size_t buf_size);
-
-    // Interface IEventListener implementation
-    virtual void Action(const CDbapiEvent& e);
-
-    CDB_Result* GetCDB_Result() {
-        return m_rs;
-    }
-
-    void Invalidate() {
-        delete m_rs;
-        m_rs = 0;
-    }
-
-protected:
-    
-    int GetColNum(const string& name);
-    void CheckIdx(unsigned int idx);
-
-    bool IsBindBlob() {
-        return m_bindBlob;
-    }
-
-    bool IsDisableBind() {
-        return m_disableBind;
-    }
-
-    void FreeResources();
-
-private:
-    
-    class CConnection* m_conn;
-    CDB_Result *m_rs;
-    //CResultSetMetaDataImpl *m_metaData;
-    vector<CVariant> m_data;
-    CBlobIStream *m_istr;
-    CBlobOStream *m_ostr;
-    int m_column;
-    bool m_bindBlob;
-    bool m_disableBind;
-    bool m_wasNull;
-
-};
-
-//====================================================================
-
-END_NCBI_SCOPE
-
 #endif // _RS_IMPL_HPP_
