@@ -1,6 +1,6 @@
---$Id: blastxml.asn,v 6.6 2001/05/03 17:52:16 shavirin Exp $
+--$Id: blastxml.asn,v 6.7 2002/07/17 22:28:13 dondosha Exp $
 --
---$Revision: 6.6 $
+--$Revision: 6.7 $
 --**********************************************************************
 --
 --  ASN.1 for simplified BLAST output in XML
@@ -8,6 +8,9 @@
 --
 --
 -- $Log: blastxml.asn,v $
+-- Revision 6.7  2002/07/17 22:28:13  dondosha
+-- Added support for megablast XML output
+--
 -- Revision 6.6  2001/05/03 17:52:16  shavirin
 -- Adopted for usage with mani-iterational XML definition.
 --
@@ -41,13 +44,17 @@ BlastOutput ::= SEQUENCE {
 	query-len INTEGER ,		-- length of query sequence
 	query-seq VisibleString OPTIONAL ,	-- query sequence itself
 	param Parameters,		-- search parameters
-        iterations SEQUENCE OF Iteration
+        iterations SEQUENCE OF Iteration,
+        mbstat Statistics OPTIONAL        -- Mega BLAST search statistics
 }
 Iteration ::= SEQUENCE {
-	iter-num INTEGER ,	        -- iteration number
-	hits SEQUENCE OF Hit OPTIONAL,	-- Hits one for every db sequence
-	stat Statistics OPTIONAL,	-- search statistics            
-        message VisibleString OPTIONAL  -- Some (error?) information
+	iter-num INTEGER ,	         -- iteration number
+	query-ID VisibleString OPTIONAL, -- SeqId of query
+	query-def VisibleString OPTIONAL,-- Definition line of query
+	query-len INTEGER OPTIONAL ,	 -- length of query sequence
+	hits SEQUENCE OF Hit OPTIONAL,	 -- Hits one for every db sequence
+	stat Statistics OPTIONAL,	 -- search statistics            
+        message VisibleString OPTIONAL   -- Some (error?) information
 }
 Parameters ::= SEQUENCE {
 	matrix VisibleString OPTIONAL ,	-- Matrix used (-M)
