@@ -425,6 +425,7 @@ void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
     CRef<CSeq_annot_WriteHook> hook(new CSeq_annot_WriteHook);
     {{
         CObjectOStreamAsnBinary obj_stream(stream);
+        obj_stream.SetFlags(CObjectOStream::fFlagNoAutoFlush);
         CObjectTypeInfo type = CType<CSeq_annot>();
         type.SetLocalWriteHook(obj_stream, hook);
         obj_stream.Write(object);
@@ -589,6 +590,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.18  2005/02/23 21:15:38  vasilche
+ * Do not flush in the middle of SNP table.
+ *
  * Revision 1.17  2005/01/05 18:46:13  vasilche
  * Added GetConfigXxx() functions.
  *
