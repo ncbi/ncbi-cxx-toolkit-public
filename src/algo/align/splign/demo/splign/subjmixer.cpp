@@ -33,6 +33,7 @@
 #include "subjmixer.hpp"
 #include "splign_app_exception.hpp"
 
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -106,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/20 17:58:20  kapustin
+ * Make the code msvc6.0-friendly
+ *
  * Revision 1.1  2003/10/30 19:37:20  kapustin
  * Initial toolkit revision
  *

@@ -34,7 +34,6 @@
 */
 
 
-#include <vector>
 #include "splign.hpp"
 #include "hf_hit.hpp"
 
@@ -71,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/20 17:58:21  kapustin
+ * Make the code msvc6.0-friendly
+ *
  * Revision 1.3  2003/11/05 20:24:21  kapustin
  * Update fasta indexing routine
  *

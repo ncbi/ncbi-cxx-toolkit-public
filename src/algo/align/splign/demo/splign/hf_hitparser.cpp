@@ -33,8 +33,7 @@
 
 #include "hf_hitparser.hpp"
 
-#include <math.h>
-
+#include <corelib/ncbi_limits.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/gbloader.hpp>
 #include <objmgr/reader_id1.hpp>
@@ -42,9 +41,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/seq/Bioseq.hpp>
 
-#include <map>
-#include <queue>
-#include <list>
+#include <algorithm>
 #include <numeric>
 
 

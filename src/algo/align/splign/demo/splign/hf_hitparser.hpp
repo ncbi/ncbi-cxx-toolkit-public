@@ -34,9 +34,8 @@
 */
 
 
-#include <corelib/ncbistd.hpp>
-
 #include "hf_hit.hpp"
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 

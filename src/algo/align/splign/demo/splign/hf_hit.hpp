@@ -36,12 +36,6 @@
 
 #include <corelib/ncbistd.hpp>
 
-#include <vector>
-#include <string>
-#include <functional>
-#include <algorithm>
-#include <map>
-
 BEGIN_NCBI_SCOPE
 
 // single hit representation

@@ -33,9 +33,6 @@
 #include "seq_loader.hpp"
 #include "splign_app_exception.hpp"
 
-#include <corelib/ncbi_limits.hpp>
-
-#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -239,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/11/20 17:58:20  kapustin
+ * Make the code msvc6.0-friendly
+ *
  * Revision 1.6  2003/11/14 13:13:29  ucko
  * Fix #include directives: +<memory> for auto_ptr; -<fstream>
  * (redundant, and seq_loader.hpp should be the first anyway)

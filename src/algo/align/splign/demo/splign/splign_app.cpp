@@ -29,21 +29,22 @@
  *                   
 */
 
-#include <algorithm>
-#include <iterator>
-#include <iostream>
-
-#include <corelib/ncbistd.hpp>
-#include <algo/align/nw_spliced_aligner16.hpp>
-#include <algo/align/nw_spliced_aligner32.hpp>
 #include "splign.hpp"
 #include "splign_app.hpp"
 #include "splign_app_exception.hpp"
 #include "seq_loader.hpp"
 #include "subjmixer.hpp"
+#include "hf_hitparser.hpp"
 #include "util.hpp"
 
-#include "hf_hitparser.hpp"
+#include <corelib/ncbistd.hpp>
+#include <algo/align/nw_spliced_aligner16.hpp>
+#include <algo/align/nw_spliced_aligner32.hpp>
+
+#include <algorithm>
+#include <iterator>
+#include <iostream>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -410,8 +411,7 @@ string CSplignApp::x_RunOnPair( vector<CHit>* hits )
       // resize
       s.m_box[1] += sh;
       s.m_box[3] += sh;
-      vector<char> v (sh, 'M');
-      copy(v.begin(), v.end(), back_inserter(s.m_details));
+      s.m_details.append(sh, 'M');
       s.RestoreIdentity();
 
       // correct annotation
@@ -568,6 +568,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/11/20 17:58:20  kapustin
+ * Make the code msvc6.0-friendly
+ *
  * Revision 1.5  2003/11/20 14:38:10  kapustin
  * Add -nopolya flag to suppress Poly(A) detection.
  *

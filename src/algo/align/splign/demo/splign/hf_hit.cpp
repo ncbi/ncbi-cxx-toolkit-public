@@ -30,12 +30,12 @@
 *
 */
 
-#include <stdio.h>
-#include <math.h>
-#include <sstream>
-
-#include "splign_app_exception.hpp"
 #include "hf_hit.hpp"
+#include "splign_app_exception.hpp"
+
+#include <algorithm>
+#include <sstream>
+#include <math.h>
 
 
 BEGIN_NCBI_SCOPE

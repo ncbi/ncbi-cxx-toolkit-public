@@ -31,10 +31,10 @@
 */
 
 
-#include <corelib/ncbi_limits.hpp>
-
 #include "util.hpp"
 #include "hf_hitparser.hpp"
+
+#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
@@ -160,7 +160,7 @@ string RLE(const string& in)
   }
   const char* p = in.c_str();
   char c0 = p[0];
-  out.push_back(c0);
+  out.append(1, c0);
   size_t count = 1;
   char buf[100];
   for(size_t k = 1; k < dim; ++k) {
@@ -172,7 +172,7 @@ string RLE(const string& in)
 	out += buf;
       }
       count = 1;
-      out.push_back(c0);
+      out.append(1, c0);
     }
     else {
       ++count;
@@ -222,6 +222,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/11/20 17:58:21  kapustin
+ * Make the code msvc6.0-friendly
+ *
  * Revision 1.4  2003/11/05 20:24:21  kapustin
  * Update fasta indexing routine
  *

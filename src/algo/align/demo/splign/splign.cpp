@@ -234,244 +234,235 @@ double CSplign::x_EvalMinExonIdty(size_t q0, size_t q1, size_t s0, size_t s1)
 
 const vector<CSplign::SSegment>* CSplign::Run(void)
 {
-  if(!m_Seq1 || !m_Seq2) {
+    if(!m_Seq1 || !m_Seq2) {
     NCBI_THROW( CSplignException,
-		eNotInitialized,
-		"One or both sequences not set" );
-  }
-  if(!m_aligner) {
+        eNotInitialized,
+        "One or both sequences not set" );
+    }
+    if(!m_aligner) {
     NCBI_THROW( CSplignException,
-		eNotInitialized,
-		"Spliced aligner object not set" );
-  }
+        eNotInitialized,
+        "Spliced aligner object not set" );
+    }
 
-  deque<SSegment> segments;
-  for(size_t i = 0, map_dim = m_alnmap.size(); i < map_dim; ++i) {
+    deque<SSegment> segments;
+    for(size_t i = 0, map_dim = m_alnmap.size(); i < map_dim; ++i) {
 
-    const SAlnMapElem& zone = m_alnmap[i];
+        const SAlnMapElem& zone = m_alnmap[i];
 
-      // setup sequences
-    m_aligner->SetSequences(m_Seq1 + zone.m_box[0],
-			    zone.m_box[1] - zone.m_box[0] + 1,
-			    m_Seq2 + zone.m_box[2],
-			    zone.m_box[3] - zone.m_box[2] + 1,
-			    false);
+        // setup sequences
+        m_aligner->SetSequences(m_Seq1 + zone.m_box[0],
+            zone.m_box[1] - zone.m_box[0] + 1,
+            m_Seq2 + zone.m_box[2],
+            zone.m_box[3] - zone.m_box[2] + 1,
+            false);
 
-    // prepare the pattern
-    vector<size_t> pattern;
-    if(zone.m_pattern_start >= 0) {
-      copy(m_pattern.begin() + zone.m_pattern_start,
-	   m_pattern.begin() + zone.m_pattern_end + 1,
-	   back_inserter(pattern));
-      for(size_t j = 0, pt_dim = pattern.size(); j < pt_dim; j += 4) {
-	pattern[j]   -= zone.m_box[0];
-	pattern[j+1] -= zone.m_box[0];
-	pattern[j+2] -= zone.m_box[2];
-	pattern[j+3] -= zone.m_box[2];
-      }
-      if(pattern.size()) {
-	m_aligner->SetPattern(pattern);
-      }
-      
-      // setup esf
-      m_aligner->SetEndSpaceFree(true, true, true, true);
+        // prepare the pattern
+        vector<size_t> pattern;
+        if(zone.m_pattern_start >= 0) {
 
-      // align
-      m_aligner->Run();
-
-      // #define DBG_DUMP_TYPE2
+            copy(m_pattern.begin() + zone.m_pattern_start,
+            m_pattern.begin() + zone.m_pattern_end + 1,
+            back_inserter(pattern));
+            for(size_t j = 0, pt_dim = pattern.size(); j < pt_dim; j += 4) {
+                pattern[j]   -= zone.m_box[0];
+                pattern[j+1] -= zone.m_box[0];
+                pattern[j+2] -= zone.m_box[2];
+                pattern[j+3] -= zone.m_box[2];
+            }
+            if(pattern.size()) {
+                m_aligner->SetPattern(pattern);
+            }
+          
+            // setup esf
+            m_aligner->SetEndSpaceFree(true, true, true, true);
+    
+            // align
+            m_aligner->Run();
+    
+// #define DBG_DUMP_TYPE2
 #ifdef  DBG_DUMP_TYPE2
-	{{
-	CNWFormatter fmt (*m_aligner);
-	string txt;
-	fmt.AsText(&txt, CNWFormatter::eFormatType2);
-	cerr << txt;
-	}}
+            {{
+            CNWFormatter fmt (*m_aligner);
+            string txt;
+            fmt.AsText(&txt, CNWFormatter::eFormatType2);
+            cerr << txt;
+            }}  
 #endif
 
-      // create list of segments
-      CNWFormatter formatter (*m_aligner);
-      string exons;
-      formatter.AsText(&exons, CNWFormatter::eFormatExonTableEx);      
-      CNcbiIstrstream iss_exons (exons.c_str());
-      while(iss_exons) {
-	string id1, id2, txt, repr;
-	size_t q0, q1, s0, s1, size;
-	double idty;
-	iss_exons >> id1 >> id2 >> idty >> size
-		  >> q0 >> q1 >> s0 >> s1 >> txt >> repr;
-	if(!iss_exons) break;
-	q0 += zone.m_box[0];
-	q1 += zone.m_box[0];
-	s0 += zone.m_box[2];
-	s1 += zone.m_box[2];
-	SSegment e;
-	e.m_exon = true;
-	e.m_idty = idty;
-	e.m_len = size;
-	e.m_box[0] = q0; e.m_box[1] = q1;
-	e.m_box[2] = s0; e.m_box[3] = s1;
-	e.m_annot = txt;
-	e.m_details = repr;
-	segments.push_back(e);
-      }
+            // create list of segments
+            CNWFormatter formatter (*m_aligner);
+            string exons;
+            formatter.AsText(&exons, CNWFormatter::eFormatExonTableEx);      
+            CNcbiIstrstream iss_exons (exons.c_str());
+            while(iss_exons) {
+                string id1, id2, txt, repr;
+                size_t q0, q1, s0, s1, size;
+                double idty;
+                iss_exons >> id1 >> id2 >> idty >> size
+                >> q0 >> q1 >> s0 >> s1 >> txt >> repr;
+                if(!iss_exons) break;
+                q0 += zone.m_box[0];
+                q1 += zone.m_box[0];
+                s0 += zone.m_box[2];
+                s1 += zone.m_box[2];
+                SSegment e;
+                e.m_exon = true;
+                e.m_idty = idty;
+                e.m_len = size;
+                e.m_box[0] = q0; e.m_box[1] = q1;
+                e.m_box[2] = s0; e.m_box[3] = s1;
+                e.m_annot = txt;
+                e.m_details = repr;
+                segments.push_back(e);
+            }
 
-      // append a gap
-      if(i + 1 < map_dim) {
+            // append a gap
+            if(i + 1 < map_dim) {
+                SSegment g;
+                g.m_exon = false;
+                g.m_box[0] = zone.m_box[1] + 1;
+                g.m_box[1] = m_alnmap[i+1].m_box[0] - 1;
+                g.m_box[2] = zone.m_box[3] + 1;
+                g.m_box[3] = m_alnmap[i+1].m_box[2] - 1;
+                g.m_idty = 0;
+                g.m_len = g.m_box[1] - g.m_box[0] + 1;
+                g.m_annot = "<GAP>";
+                g.m_details.append(m_Seq1 + g.m_box[0],
+                    g.m_box[1] - g.m_box[0] + 1);
+                segments.push_back(g);
+            }
+        }
+    }
+
+    // Do some post-processing:
+    // walk through exons and maybe turn some of
+    // them into gaps.
+
+    size_t seg_dim = segments.size();
+
+    // First go from the ends end see if we
+    // can improve boundary exons
+    size_t k0 = 0;
+    while(k0 < seg_dim) {
+        SSegment& s = segments[k0];
+        if(s.m_exon) {
+            if(s.m_idty < m_minidty || m_endgaps) {
+                s.ImproveFromLeft(m_aligner, m_Seq1, m_Seq2);
+            }
+            if(s.m_idty >= m_minidty) {
+                break;
+            }
+        }
+        ++k0;
+    }
+
+    // fill the left-hand gap, if any
+    if(segments[0].m_exon && segments[0].m_box[0] > 0) {
+
         SSegment g;
-	g.m_exon = false;
-	g.m_box[0] = zone.m_box[1] + 1;
-	g.m_box[1] = m_alnmap[i+1].m_box[0] - 1;
-	g.m_box[2] = zone.m_box[3] + 1;
-	g.m_box[3] = m_alnmap[i+1].m_box[2] - 1;
-	g.m_idty = 0;
-	g.m_len = g.m_box[1] - g.m_box[0] + 1;
-	g.m_annot = "<GAP>";
-	copy( m_Seq1 + g.m_box[0],
-	      m_Seq1 + g.m_box[1] + 1,
-	      back_inserter(g.m_details) );
-	segments.push_back(g);
-      }
+        g.m_exon = false;
+        g.m_box[0] = 0;
+        g.m_box[1] = segments[0].m_box[0] - 1;
+        g.m_box[2] = 0;
+        g.m_box[3] = segments[0].m_box[2] - 1;
+        g.m_idty = 0;
+        g.m_len = segments[0].m_box[0];
+        g.m_annot = "<GAP>";
+        g.m_details.append( m_Seq1 + g.m_box[0],
+                            g.m_box[1] + 1 - g.m_box[0]);
+        segments.push_front(g);
+        ++seg_dim;
+        ++k0;
     }
-  }
 
-  // Do some post-processing:
-  // walk through exons and maybe turn some of
-  // them into gaps.
-
-  size_t seg_dim = segments.size();
-
-  // First go from the ends end see if we
-  // can improve boundary exons
-  size_t k0 = 0;
-  while(k0 < seg_dim) {
-    SSegment& s = segments[k0];
-    if(s.m_exon) {
-      if(s.m_idty < m_minidty || m_endgaps) {
-	s.ImproveFromLeft(m_aligner, m_Seq1, m_Seq2);
-      }
-      if(s.m_idty >= m_minidty) {
-	break;
-      }
+    int k1 = int(seg_dim - 1);
+    while(k1 >= int(k0)) {
+        SSegment& s = segments[k1];
+        if(s.m_exon) {
+            if(s.m_idty < m_minidty || m_endgaps) {
+	            s.ImproveFromRight(m_aligner, m_Seq1, m_Seq2);
+            }
+            if(s.m_idty >= m_minidty) {
+	            break;
+            }
+        }
+        --k1;
     }
-    ++k0;
-  }
 
-  // fill the left-hand gap, if any
-  if(segments[0].m_exon && segments[0].m_box[0] > 0) {
+    // fill the right-hand gap, if any
+    if( segments[seg_dim - 1].m_exon && 
+        segments[seg_dim - 1].m_box[1] < m_SeqLen1 - 1) {
 
-    SSegment g;
-    g.m_exon = false;
-    g.m_box[0] = 0;
-    g.m_box[1] = segments[0].m_box[0] - 1;
-    g.m_box[2] = 0;
-    g.m_box[3] = segments[0].m_box[2] - 1;
-    g.m_idty = 0;
-    g.m_len = segments[0].m_box[0];
-    g.m_annot = "<GAP>";
-    copy( m_Seq1 + g.m_box[0],
-	  m_Seq1 + g.m_box[1] + 1,
-	  back_inserter(g.m_details) );
-    segments.push_front(g);
-    ++seg_dim;
-    ++k0;
-  }
-
-  int k1 = int(seg_dim - 1);
-  while(k1 >= int(k0)) {
-    SSegment& s = segments[k1];
-    if(s.m_exon) {
-      if(s.m_idty < m_minidty || m_endgaps) {
-	s.ImproveFromRight(m_aligner, m_Seq1, m_Seq2);
-      }
-      if(s.m_idty >= m_minidty) {
-	break;
-      }
+        SSegment g;
+        g.m_exon = false;
+        g.m_box[0] = segments[seg_dim - 1].m_box[1] + 1;
+        g.m_box[1] = m_SeqLen1 - 1;
+        g.m_box[2] = segments[seg_dim - 1].m_box[3] + 1;
+        g.m_box[3] = m_SeqLen2 - 1;
+        g.m_idty = 0;
+        g.m_len = g.m_box[1] - g.m_box[0] + 1;
+        g.m_annot = "<GAP>";
+        g.m_details.append(m_Seq1 + g.m_box[0], g.m_box[1] + 1 - g.m_box[0]);
+        segments.push_back(g);
+        ++seg_dim;
     }
-    --k1;
-  }
 
-  // fill the right-hand gap, if any
-  if(segments[seg_dim - 1].m_exon && 
-     segments[seg_dim - 1].m_box[1] < m_SeqLen1 - 1) {
-
-    SSegment g;
-    g.m_exon = false;
-    g.m_box[0] = segments[seg_dim - 1].m_box[1] + 1;
-    g.m_box[1] = m_SeqLen1 - 1;
-    g.m_box[2] = segments[seg_dim - 1].m_box[3] + 1;
-    g.m_box[3] = m_SeqLen2 - 1;
-    g.m_idty = 0;
-    g.m_len = g.m_box[1] - g.m_box[0] + 1;
-    g.m_annot = "<GAP>";
-    copy( m_Seq1 + g.m_box[0],
-	  m_Seq1 + g.m_box[1] + 1,
-	  back_inserter(g.m_details) );
-    segments.push_back(g);
-    ++seg_dim;
-  }
-
-  for(size_t k = 0; k < seg_dim; ++k) {
-    SSegment& s = segments[k];
-    if(s.m_exon && s.m_idty < m_minidty) {
-      s.m_exon = false;
-      s.m_idty = 0;
-      s.m_len = s.m_box[1] - s.m_box[0] + 1;
-      s.m_annot = "<GAP>";
-      s.m_details.clear();
-      copy( m_Seq1 + s.m_box[0],
-	    m_Seq1 + s.m_box[1] + 1,
-	    back_inserter(s.m_details) );
+    for(size_t k = 0; k < seg_dim; ++k) {
+        SSegment& s = segments[k];
+        if(s.m_exon && s.m_idty < m_minidty) {
+            s.m_exon = false;
+            s.m_idty = 0;
+            s.m_len = s.m_box[1] - s.m_box[0] + 1;
+            s.m_annot = "<GAP>";
+            s.m_details.resize(0);
+            s.m_details.append(m_Seq1 + s.m_box[0], s.m_box[1] + 1 - s.m_box[0]);
+        }
     }
-  }
 
-  // now merge all adjacent gaps
-  m_out.clear();
-  int gap_start_idx = -1;
-  if(segments.size() && segments[0].m_exon == false) {
-    gap_start_idx = 0;
-  }
-  size_t segs_dim = segments.size();
-  for(size_t k = 0; k < segs_dim; ++k) {
-    SSegment& s = segments[k];
-    if(!s.m_exon) {
-      if(gap_start_idx == -1) {
-	gap_start_idx = int(k);
-	if(k > 0) {
-	  s.m_box[0] = segments[k-1].m_box[1] + 1;
-	  s.m_box[2] = segments[k-1].m_box[3] + 1;
-	}
-      }
+    // now merge all adjacent gaps
+    m_out.clear();
+    int gap_start_idx = -1;
+    if(segments.size() && segments[0].m_exon == false) {
+        gap_start_idx = 0;
     }
-    else {
-      if(gap_start_idx >= 0) {
-	SSegment& g = segments[gap_start_idx];
-	g.m_box[1] = s.m_box[0] - 1; //segments[k-1].m_box[1];
-	g.m_box[3] = s.m_box[2] - 1; //segments[k-1].m_box[3];
-	g.m_len = g.m_box[1] - g.m_box[0] + 1;
-	g.m_details.clear();
-	copy( m_Seq1 + g.m_box[0],
-	      m_Seq1 + g.m_box[1] + 1,
-	      back_inserter(g.m_details) );
-	m_out.push_back(g);
-	gap_start_idx = -1;
-      }
-      m_out.push_back(s);
+    size_t segs_dim = segments.size();
+    for(size_t k = 0; k < segs_dim; ++k) {
+        SSegment& s = segments[k];
+        if(!s.m_exon) {
+            if(gap_start_idx == -1) {
+                gap_start_idx = int(k);
+                if(k > 0) {
+                    s.m_box[0] = segments[k-1].m_box[1] + 1;
+                    s.m_box[2] = segments[k-1].m_box[3] + 1;
+                }
+            }
+        }
+        else {
+           if(gap_start_idx >= 0) {
+               SSegment& g = segments[gap_start_idx];
+               g.m_box[1] = s.m_box[0] - 1;
+               g.m_box[3] = s.m_box[2] - 1;
+               g.m_len = g.m_box[1] - g.m_box[0] + 1;
+               g.m_details.resize(0);
+               g.m_details.append(m_Seq1 + g.m_box[0], g.m_box[1] + 1 - g.m_box[0]);
+               m_out.push_back(g);
+               gap_start_idx = -1;
+           }
+           m_out.push_back(s);
+        } 
     }
-  }
-  if(gap_start_idx >= 0) {
-    SSegment& g = segments[gap_start_idx];
-    g.m_box[1] = segments[segs_dim-1].m_box[1];
-    g.m_box[3] = segments[segs_dim-1].m_box[3];
-    g.m_len = g.m_box[1] - g.m_box[0] + 1;
-    g.m_details.clear();
-    copy( m_Seq1 + g.m_box[0],
-	  m_Seq1 + g.m_box[1] + 1,
-	  back_inserter(g.m_details) );
-    m_out.push_back(g);
-  }
+    if(gap_start_idx >= 0) {
+        SSegment& g = segments[gap_start_idx];
+        g.m_box[1] = segments[segs_dim-1].m_box[1];
+        g.m_box[3] = segments[segs_dim-1].m_box[3];
+        g.m_len = g.m_box[1] - g.m_box[0] + 1;
+        g.m_details.resize(0);
+        g.m_details.append(m_Seq1 + g.m_box[0], g.m_box[1] + 1 - g.m_box[0]);
+        m_out.push_back(g);
+    }
 
-  return &m_out;
+    return &m_out;
 }
 
 
@@ -695,6 +686,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/11/20 17:58:20  kapustin
+ * Make the code msvc6.0-friendly
+ *
  * Revision 1.4  2003/11/20 14:33:42  kapustin
  * Increase space allowance for gap pre-alignment
  *
