@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/05 13:20:22  vasilche
+* Fixed bug on 64 bit compilers.
+*
 * Revision 1.3  2000/07/03 20:47:22  vasilche
 * Removed unused variables/functions.
 *
@@ -84,10 +87,10 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(const string& current,
 {
 }
 
-CInvalidChoiceSelection::CInvalidChoiceSelection(unsigned currentIndex,
-                                                 unsigned mustBeIndex,
+CInvalidChoiceSelection::CInvalidChoiceSelection(size_t currentIndex,
+                                                 size_t mustBeIndex,
                                                  const char* const names[],
-                                                 unsigned namesCount) THROWS_NONE
+                                                 size_t namesCount) THROWS_NONE
     : runtime_error(string("Invalid choice selection: ")+
                     GetName(currentIndex, names, namesCount)+". "
                     "Expected: "+
@@ -95,9 +98,9 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(unsigned currentIndex,
 {
 }
 
-const char* CInvalidChoiceSelection::GetName(unsigned index,
+const char* CInvalidChoiceSelection::GetName(size_t index,
                                              const char* const names[],
-                                             unsigned namesCount)
+                                             size_t namesCount)
 {
     if ( index > namesCount )
         return "?unknown?";
