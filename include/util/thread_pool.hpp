@@ -267,6 +267,12 @@ void CBlockingQueue<TRequest>::WaitForRoom(unsigned int timeout_sec,
 {
     // Make sure there's room, but don't actually consume anything
     if (m_PutSem.TryWait(timeout_sec, timeout_nsec)) {
+        // We couldn't acquire the mutex previously without risk of
+        // deadlock, so we acquire it now and ensure that the
+        // semaphore's still down before attempting to raise it, to
+        // prevent races with Get().
+        CMutexGuard guard(m_Mutex);
+        m_PutSem.TryWait();
         m_PutSem.Post();
     } else {
         NCBI_THROW(CBlockingQueueException, eTimedOut,
@@ -334,9 +340,7 @@ void CThreadInPool<TRequest>::OnExit(void)
 {
     try {
         x_OnExit();
-    } catch (...) {
-        // Ignore exceptions; there's nothing useful we can do anyway
-    }
+    } STD_CATCH_ALL("x_OnExit")
     m_Pool->m_Delta.Add(-1);
     m_Pool->m_ThreadCount.Add(-1);
 }
@@ -397,6 +401,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/10/19 15:32:00  ucko
+* CBlockingQueue<>::WaitForRoom: guard against possible races with Get().
+* CThreadInPool<>::OnExit: report exceptions from x_OnExit rather than
+* discarding them altogether.
+*
 * Revision 1.16  2004/10/18 14:43:19  ucko
 * Add a little more documentation.
 *
