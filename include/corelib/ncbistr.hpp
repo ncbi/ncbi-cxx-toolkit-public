@@ -938,6 +938,34 @@ public:
                                     vector<string>& arr,
                                     EMergeDelims    merge = eNoMergeDelims);
 
+    /// Split a string into two pieces using the specified delimiters
+    ///
+    ///
+    /// @param str 
+    ///   String to be split.
+    /// @param delim
+    ///   Delimiters used to split string "str".
+    /// @param str1
+    ///   The sub-string of "str" before the first character of "delim".
+    ///   It will not contain any characters in "delim".
+    ///   Will be empty if "str" begin with a "delim" character.
+    /// @param str2
+    ///   The sub-string of "str" after the first character of "delim" found.
+    ///   May contain "delim" characters.
+    ///   Will be empty if "str" had no "delim" characters or ended
+    ///   with the first "delim" charcter.
+    /// @return
+    ///   true if a symbol from "delim" was found in "str", false if not.
+    ///   This lets you distinguish when there were no delimiters and when
+    ///   the very last character was the first delimiter.
+    /// @sa
+    ///   Split()
+    static bool SplitInTwo(const string& str, 
+                           const string& delim,
+                           string& str1,
+                           string& str2);
+                         
+
     /// Join strings using the specified delimiter.
     ///
     /// @param arr
@@ -1785,6 +1813,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.44  2003/08/19 15:17:20  rsmith
+ * Add NStr::SplitInTwo() function.
+ *
  * Revision 1.43  2003/08/15 18:14:54  siyan
  * Added documentation.
  *

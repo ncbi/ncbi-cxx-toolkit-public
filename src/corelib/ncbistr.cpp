@@ -719,6 +719,21 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
 }
 
 
+bool NStr::SplitInTwo(const string& str, const string& delim, string& str1, string& str2)
+{
+    SIZE_TYPE delim_pos = str.find_first_of(delim);
+    if (NPOS == delim_pos) {   // only one piece.
+        str1 = str;
+        str2 = kEmptyStr;
+        return false;
+    }
+    str1 = str.substr(0, delim_pos);
+    str2 = str.substr(delim_pos + 1); // skip only one delimiter character.
+
+    return true;
+}
+
+
 string NStr::Join(const list<string>& arr, const string& delim)
 {
     if (arr.empty()) {
@@ -1220,6 +1235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.94  2003/08/19 15:17:20  rsmith
+ * Add NStr::SplitInTwo() function.
+ *
  * Revision 1.93  2003/06/16 15:19:03  ucko
  * FindNoCase: always honor both start and end (oops).
  *

@@ -584,6 +584,42 @@ int CTestApplication::Run(void)
     NcbiCout << " completed successfully!" << NcbiEndl;
 
 
+    // NStr::SplitInTwo()
+    NcbiCout << NcbiEndl << "NStr::SplitInTwo() tests...";
+
+
+    static const struct {
+        const char* str;
+        const char* delim;
+        const char* expected_str1;
+        const char* expected_str2;
+        bool    expected_ret;
+    }  s_SplitInTwoTest[] = {
+        { "ab+cd+ef", "+", "ab", "cd+ef", true },
+        { "aaAAabBbbb", "AB", "aa", "AabBbbb", true },
+        { "aaCAabBCbbb", "ABC", "aa", "AabBCbbb", true },
+        { "-beg-delim-", "-", "", "beg-delim-", true },
+        { "end-delim:", ":", "end-delim", "", true },
+        { "nodelim", ".,:;-+", "nodelim", "", false },
+        { "emptydelim", "", "emptydelim", "", false },
+        { "", "emtpystring", "", "", false },
+        { "", "", "", "", false }
+    };
+
+
+    {{
+        string  string1, string2;
+        bool    result;
+        for (size_t i = 0; i < sizeof(s_SplitInTwoTest) / sizeof(s_SplitInTwoTest[0]); i++) {
+            result = NStr::SplitInTwo(s_SplitInTwoTest[i].str, s_SplitInTwoTest[i].delim, string1, string2);
+            assert(s_SplitInTwoTest[i].expected_ret == result);
+            assert(s_SplitInTwoTest[i].expected_str1 == string1);
+            assert(s_SplitInTwoTest[i].expected_str2 == string2);
+        }
+    }}
+    
+    NcbiCout << " completed successfully!" << NcbiEndl;
+
 
     NcbiCout << NcbiEndl << "NStr::ToLower/ToUpper() tests...";
 
@@ -768,6 +804,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2003/08/19 15:17:20  rsmith
+ * Add NStr::SplitInTwo() function.
+ *
  * Revision 6.22  2003/07/23 17:49:55  vasilche
  * Commented out memory usage test.
  *
