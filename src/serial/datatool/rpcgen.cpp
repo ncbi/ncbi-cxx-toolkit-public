@@ -375,7 +375,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         string           method   = "Ask" + Identifier(name);
         const CDataType* req_type = (*it)->GetType()->Resolve();
         string           req_class;
-        if (dynamic_cast<const CDataMemberContainerType*>(req_type)) {
+        if ( !req_type->GetParentType() ) {
             req_class = req_type->ClassName();
         } else {
             TTypeStr typestr = req_type->GetFullCType();
@@ -386,8 +386,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         const CDataType* rep_type = rm->second->GetType()->Resolve();
         string           rep_class;
         bool             use_cref = false;
-        if (dynamic_cast<const CDataMemberContainerType*>(rep_type)) {
-            // normal heterogeneous SET/SEQUENCE/CHOICE
+        if ( !rep_type->GetParentType() ) {
             rep_class = "CRef<" + rep_type->ClassName() + '>';
             use_cref  = true;
             code.CPPIncludes().insert(rep_type->FileName());
@@ -434,6 +433,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/11/13 19:55:11  ucko
+* Distinguish between named and anonymous types rather than between
+* heterogeneous containers and everything else -- fixes handling of aliases.
+*
 * Revision 1.1  2002/11/13 00:46:08  ucko
 * Add RPC client generator; CVS logs to end in generate.?pp
 *
