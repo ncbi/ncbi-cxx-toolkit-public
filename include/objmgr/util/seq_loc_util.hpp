@@ -115,19 +115,25 @@ CSeq_id_Handle GetIdHandle(const CSeq_loc& loc, CScope* scope);
 NCBI_XOBJUTIL_EXPORT
 ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope = 0);
 
-/// If only one CBioseq is represented by CSeq_loc, returns the lowest residue
-/// position represented. If not null, scope is used to determine if two
+/// If only one CBioseq is represented by CSeq_loc, returns the position at the
+/// start of the location. By defulat this is the lowest residue position
+/// represented by the location.
+/// If not null, scope is used to determine if two
 /// CSeq_ids represent the same CBioseq. Throws CObjmgrUtilException if
 /// CSeq_loc does not represent one CBioseq.
 NCBI_XOBJUTIL_EXPORT
-TSeqPos GetStart(const CSeq_loc& loc, CScope* scope);
+TSeqPos GetStart(const CSeq_loc& loc, CScope* scope,
+                 ESeqLocExtremes ext = eExtreme_Positional);
 
-/// If only one CBioseq is represented by CSeq_loc, returns the highest residue
-/// position represented. If not null, scope is used to determine if two
+/// If only one CBioseq is represented by CSeq_loc, returns the position at the
+/// stop of the location. By defualt this is the highest residue position
+/// represented by the location.
+/// If not null, scope is used to determine if two
 /// CSeq_ids represent the same CBioseq. Throws CObjmgrUtilException exception
 /// if CSeq_loc does not represent one CBioseq.
 NCBI_XOBJUTIL_EXPORT
-TSeqPos GetStop(const CSeq_loc& loc, CScope* scope);
+TSeqPos GetStop(const CSeq_loc& loc, CScope* scope,
+                ESeqLocExtremes ext = eExtreme_Positional);
 
 
 /// SeqLocCheck results
@@ -328,6 +334,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2005/02/18 15:01:32  shomrat
+* Changes to GetStop/GetStart
+*
 * Revision 1.8  2004/12/10 16:52:55  shomrat
 * Restore previous semantics for IsSameBioseq()
 *
