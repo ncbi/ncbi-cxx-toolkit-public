@@ -39,3 +39,7 @@ Makefile.$(MODULE).lib: $(MODULEFILE)
 	) > $@
 
 $(MODULEFILE):
+
+directories:
+	mkdir -p $(top_srcdir)/src/$(MODULE_PATH)
+	mkdir -p $(top_srcdir)/include/$(MODULE_PATH)
