@@ -1,4 +1,4 @@
---$Revision: 1.26 $ 
+--$Revision: 1.27 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -14,7 +14,7 @@
 NCBI-Entrezgene DEFINITIONS ::= 
 BEGIN 
  
-EXPORTS Entrezgene; 
+EXPORTS Entrezgene, Entrezgene-Set; 
  
 IMPORTS Gene-ref FROM NCBI-Gene 
     Prot-ref FROM NCBI-Protein 
@@ -62,7 +62,9 @@ Entrezgene ::= SEQUENCE {
     xtra-properties SEQUENCE OF Xtra-Terms OPTIONAL ,     -- see note 2
     xtra-iq SEQUENCE OF Xtra-Terms OPTIONAL,              -- see note 2
     non-unique-keys SEQUENCE OF Dbtag OPTIONAL }
-    
+
+Entrezgene-Set ::= SET OF Entrezgene
+
 Gene-track ::= SEQUENCE { 
     geneid INTEGER ,     -- required unique document id 
     status INTEGER {
