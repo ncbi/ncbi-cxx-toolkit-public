@@ -63,7 +63,131 @@ void CUser_object::GetLabel(string* label) const
         (*label) += GetType().GetStr();
     }
 }
-        
+
+
+// add a data field to the user object that holds a given value
+CUser_object& CUser_object::AddField(const string& label,
+                                    const string& value)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetNum(1);
+    field->SetData().SetStr(value);
+
+    SetData().push_back(field);
+    return *this;
+}
+
+
+CUser_object& CUser_object::AddField(const string& label,
+                                    int           value)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetNum(1);
+    field->SetData().SetInt(value);
+
+    SetData().push_back(field);
+    return *this;
+}
+
+
+CUser_object& CUser_object::AddField(const string& label,
+                                    double        value)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetNum(1);
+    field->SetData().SetReal(value);
+
+    SetData().push_back(field);
+    return *this;
+}
+
+
+CUser_object& CUser_object::AddField(const string& label,
+                                    bool          value)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetNum(1);
+    field->SetData().SetBool(value);
+
+    SetData().push_back(field);
+    return *this;
+}
+
+
+CUser_object& CUser_object::AddField(const string& label,
+                                    CUser_object& object)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetNum(1);
+    field->SetData().SetObject(object);
+
+    SetData().push_back(field);
+    return *this;
+}
+
+
+CUser_object& CUser_object::AddField(const string& label,
+                                    const vector<string>& value)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetNum(value.size());
+    ITERATE (vector<string>, iter, value) {
+        field->SetData().SetStrs().push_back(*iter);
+    }
+
+    SetData().push_back(field);
+    return *this;
+}
+
+
+CUser_object& CUser_object::AddField(const string& label,
+                                    const vector<int>&    value)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetNum(value.size());
+    ITERATE (vector<int>, iter, value) {
+        field->SetData().SetInts().push_back(*iter);
+    }
+
+    SetData().push_back(field);
+    return *this;
+}
+
+
+CUser_object& CUser_object::AddField(const string& label,
+                                    const vector<double>& value)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetNum(value.size());
+    ITERATE (vector<double>, iter, value) {
+        field->SetData().SetReals().push_back(*iter);
+    }
+
+    SetData().push_back(field);
+    return *this;
+}
+
+
+CUser_object& CUser_object::AddField(const string& label,
+                                    const list< CRef<CUser_object> >& objects)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetNum(objects.size());
+    field->SetData().SetObjects() = objects;
+
+    SetData().push_back(field);
+    return *this;
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -74,6 +198,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2003/06/19 01:05:51  dicuccio
+* Added interfaces for adding key/value items to a user object as a nested
+* CUser_field object
+*
 * Revision 6.1  2002/10/03 17:02:45  clausen
 * Added GetLabel()
 *
