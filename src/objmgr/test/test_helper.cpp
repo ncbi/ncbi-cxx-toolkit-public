@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/03/18 21:47:15  grichenk
+* Moved most includes to test_helper.cpp
+* Added test for CBioseq::ConstructExcludedSequence()
+*
 * Revision 1.1  2002/03/13 18:06:31  gouriano
 * restructured MT test. Put common functions into a separate file
 *
@@ -38,6 +42,44 @@
 */
 
 #include "test_helper.hpp"
+#include <objects/seqloc/Seq_point.hpp>
+#include <serial/object.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
+#include <serial/objcopy.hpp>
+#include <serial/objectinfo.hpp>
+#include <serial/iterator.hpp>
+#include <serial/objectiter.hpp>
+#include <serial/serial.hpp>
+
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/IUPACna.hpp>
+#include <objects/seq/NCBIeaa.hpp>
+#include <objects/seq/NCBI2na.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seg_ext.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
+#include <objects/seqalign/Dense_diag.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/objmgr1/bioseq_handle.hpp>
+#include <objects/objmgr1/seq_vector.hpp>
+#include <objects/objmgr1/desc_ci.hpp>
+#include <objects/objmgr1/feat_ci.hpp>
+#include <objects/objmgr1/align_ci.hpp>
+#include <objects/seq/seqport_util.hpp>
+#include <objects/general/Date.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -57,7 +99,7 @@ BEGIN_SCOPE(objects)
             second - for the whole seq, GI Seq_id
     one sub-entry has also an alignment annotation
 ************************************************************************/
-CRef<CSeq_entry> CDataGenerator::CreateTestEntry1(int index)
+CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
 {
     // create top level seq entry
     CRef<CSeq_entry> entry(new CSeq_entry);
@@ -269,7 +311,7 @@ CRef<CSeq_entry> CDataGenerator::CreateTestEntry1(int index)
         seq_set.push_back(sub_entry);
     }}
 
-    return entry;
+    return *entry.Release();
 }
 
 
@@ -280,7 +322,7 @@ CRef<CSeq_entry> CDataGenerator::CreateTestEntry1(int index)
         two Seq_ids: local and GI, (local ids = 11+1000i, 12+1000i)
     No descriptions, No annotations
 ************************************************************************/
-CRef<CSeq_entry> CDataGenerator::CreateTestEntry1a(int index)
+CSeq_entry& CDataGenerator::CreateTestEntry1a(int index)
 {
     // create top level seq entry
     CRef<CSeq_entry> entry(new CSeq_entry);
@@ -350,7 +392,7 @@ CRef<CSeq_entry> CDataGenerator::CreateTestEntry1a(int index)
         seq_set.push_back(sub_entry);
     }}
 
-    return entry;
+    return *entry.Release();
 }
 
 
@@ -376,7 +418,7 @@ CRef<CSeq_entry> CDataGenerator::CreateTestEntry1a(int index)
         continuous sequence
         conversion from one seq.data format to another
 ************************************************************************/
-CRef<CSeq_entry> CDataGenerator::CreateTestEntry2(int index)
+CSeq_entry& CDataGenerator::CreateTestEntry2(int index)
 {
     // create top level seq entry
     CRef<CSeq_entry> entry(new CSeq_entry);
@@ -602,7 +644,7 @@ CRef<CSeq_entry> CDataGenerator::CreateTestEntry2(int index)
     }}
     set_annot_list.push_back(annot);
 
-    return entry;
+    return *entry.Release();
 }
 
 /************************************************************************
@@ -611,7 +653,7 @@ CRef<CSeq_entry> CDataGenerator::CreateTestEntry2(int index)
     TSE
         only contains references to other sequences
 ************************************************************************/
-CRef<CSeq_entry> CDataGenerator::CreateConstructedEntry(int idx, int index)
+CSeq_entry& CDataGenerator::CreateConstructedEntry(int idx, int index)
 {
     CSeq_loc constr_loc;
     list< CRef<CSeq_interval> >& int_list = constr_loc.SetPacked_int();
@@ -636,11 +678,64 @@ CRef<CSeq_entry> CDataGenerator::CreateConstructedEntry(int idx, int index)
         "constructed"+NStr::IntToString(index)));
     CRef<CSeq_entry> constr_entry(new CSeq_entry);
     constr_entry->SetSeq(*constr_seq);
-    return constr_entry;
+    return *constr_entry.Release();
 }
 
 
-CRef<CSeq_annot> CDataGenerator::CreateAnnotation1(int index)
+/************************************************************************
+    1.2.1.4. Bio sequences for testing
+    Test entry = 1 top-level entry
+    TSE
+        Construct bioseq by excluding the seq-loc
+************************************************************************/
+CSeq_entry& CDataGenerator::CreateConstructedExclusionEntry(int idx, int index)
+{
+    CSeq_loc loc;
+    CSeq_loc_mix::Tdata& mix = loc.SetMix().Set();
+    CRef<CSeq_loc> sl;
+
+    sl.Reset(new CSeq_loc);
+    sl->SetPnt().SetId().SetGi(11+idx*1000);
+    sl->SetPnt().SetPoint(0);
+    mix.push_back(sl);
+
+    sl.Reset(new CSeq_loc);
+    sl->SetInt().SetId().SetGi(11+idx*1000);
+    sl->SetInt().SetFrom(0);
+    sl->SetInt().SetTo(4);
+    mix.push_back(sl);
+
+    sl.Reset(new CSeq_loc);
+    sl->SetInt().SetId().SetGi(11+idx*1000);
+    sl->SetInt().SetFrom(10);
+    sl->SetInt().SetTo(15);
+    mix.push_back(sl);
+
+    sl.Reset(new CSeq_loc);
+    sl->SetInt().SetId().SetGi(11+idx*1000);
+    sl->SetInt().SetFrom(8);
+    sl->SetInt().SetTo(18);
+    mix.push_back(sl);
+
+    sl.Reset(new CSeq_loc);
+    sl->SetPnt().SetId().SetGi(11+idx*1000);
+    sl->SetPnt().SetPoint(20);
+    mix.push_back(sl);
+
+    sl.Reset(new CSeq_loc);
+    sl->SetPnt().SetId().SetGi(11+idx*1000);
+    sl->SetPnt().SetPoint(39);
+    mix.push_back(sl);
+
+    CRef<CBioseq> constr_ex_seq(&CBioseq::ConstructExcludedSequence(loc, 40,
+        "construct_exclusion"+NStr::IntToString(index)));
+    CRef<CSeq_entry> constr_ex_entry(new CSeq_entry);
+    constr_ex_entry->SetSeq(*constr_ex_seq);
+    return *constr_ex_entry.Release();
+}
+
+
+CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
     list< CRef<CSeq_feat> >& ftable = annot->SetData().SetFtable();
@@ -658,9 +753,8 @@ CRef<CSeq_annot> CDataGenerator::CreateAnnotation1(int index)
         feat->SetLocation().SetWhole().SetGi(11+index*1000);
         ftable.push_back(feat);
     }}
-    return annot;
+    return *annot.Release();
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
