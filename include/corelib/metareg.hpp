@@ -70,9 +70,7 @@ public:
 
     /// m_ActualName is always an absolute path (or empty)
     struct SEntry {
-        string         requested_name;
         string         actual_name;
-        ENameStyle     style;
         TFlags         flags;
         TRegFlags      reg_flags;
         CNcbiRegistry* registry;
@@ -132,14 +130,28 @@ private:
                   const string& name0, ENameStyle style0);
 
     const TSearchPath& x_GetSearchPath(void) const { return m_SearchPath; }
-    TSearchPath&       x_SetSearchPath(void)       { return m_SearchPath; }
+    TSearchPath&       x_SetSearchPath(void)
+        { CMutexGuard GUARD(sm_Mutex); m_Index.clear(); return m_SearchPath; }
 
     /// Members
     static auto_ptr<CMetaRegistry> sm_Instance;
     static CMutex                  sm_Mutex;
 
+    struct SKey {
+        string     requested_name;
+        ENameStyle style;
+        TFlags     flags;
+        TRegFlags  reg_flags;
+
+        SKey(string n, ENameStyle s, TFlags f, TRegFlags rf)
+            : requested_name(n), style(s), flags(f), reg_flags(rf) { }
+        bool operator <(const SKey& k) const;
+    };
+    typedef map<SKey, unsigned int> TIndex;
+
     vector<SEntry> m_Contents;
     TSearchPath    m_SearchPath;
+    TIndex         m_Index;
 
     friend class auto_ptr<CMetaRegistry>;
 };
@@ -204,6 +216,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/09/30 21:05:56  ucko
+* Refactored cache to allow flushing of path searches when the search
+* path changes.
+*
 * Revision 1.6  2003/08/18 19:48:28  ucko
 * Remove stray comma at end of enum list in EFlags.
 *
