@@ -70,7 +70,7 @@ extern "C" {
 CTDSContext* CTDSContext::m_pTDSContext = 0;
 
 
-CTDSContext::CTDSContext(DBINT version) :
+CTDSContext::CTDSContext(DBINT /*version*/) :
     m_AppName("TDSDriver"), m_HostName(""), m_PacketSize(0)
 {
     static CFastMutex xMutex;
@@ -269,9 +269,9 @@ bool CTDSContext::TDS_SetMaxNofConns(int n)
 
 
 int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
-                                       int           dberr,    int oserr,
-                                       const string& dberrstr,
-                                       const string& oserrstr)
+                                   int           dberr,    int /*oserr*/,
+                                   const string& dberrstr,
+                                   const string& /*oserrstr*/)
 {
     CTDS_Connection* link = dblink ?
         reinterpret_cast<CTDS_Connection*> (dbgetuserdata(dblink)) : 0;
@@ -327,11 +327,12 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
 
 
 void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
-                                        int           msgstate, int   severity,
-                                        const string& msgtxt,
-                                        const string& srvname,
-                                        const string& procname,
-                                        int           line)
+                                    int         /*msgstate*/,
+                                    int           severity,
+                                    const string& msgtxt,
+                                    const string& srvname,
+                                    const string& procname,
+                                    int           line)
 {
     if ((severity == 0 && msgno == 0)  ||  msgno == 5701  ||  msgno == 5703)
         return;
@@ -437,6 +438,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/09/04 22:19:53  vakatov
+ * Get rid of comp.warnings
+ *
  * Revision 1.10  2002/04/19 15:08:06  soussov
  * adds static mutex to Connect
  *

@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi language call
 * $Log$
+* Revision 1.2  2002/09/04 22:20:41  vakatov
+* Get rid of comp.warnings
+*
 * Revision 1.1  2002/07/18 15:49:39  starchen
 * first entry
 *
@@ -92,9 +95,8 @@ int main(int argc, char* argv[])
         //    Change default database:
         CDB_LangCmd* lcmd = con->LangCmd("use DBAPI_Sample");
         lcmd->Send();
-        CDB_Result* r;
         while (lcmd->HasMoreResults()) {
-            r = lcmd->Result();
+            CDB_Result* r = lcmd->Result();
             if (!r) {
                 continue;
             }

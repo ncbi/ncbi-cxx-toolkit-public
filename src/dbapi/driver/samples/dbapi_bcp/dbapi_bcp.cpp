@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi BCP 
 * $Log$
+* Revision 1.2  2002/09/04 22:20:39  vakatov
+* Get rid of comp.warnings
+*
 * Revision 1.1  2002/07/18 15:48:21  starchen
 * first entry
 *
@@ -131,7 +134,6 @@ int main (int argc, char* argv[])
         //"Bulk copy in" command
  	     bcp = con->BCPIn("BcpSample", 5);
 
-        char num[32];
   	     CDB_Int int_val;
         CDB_Float fl_val;
         CDB_DateTime date_val;

@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.3  2002/09/04 22:20:40  vakatov
+* Get rid of comp.warnings
+*
 * Revision 1.2  2002/07/18 19:51:04  starchen
 * fixed some error
 *
@@ -201,7 +204,6 @@ int CreateTable (CDB_Connection* con)
         delete lcmd;
 	     bcp = con->BCPIn("CursorSample", 5);
 
-        char num[32];
   	     CDB_Int int_val;
         CDB_Float fl_val;
         CDB_DateTime date_val;
