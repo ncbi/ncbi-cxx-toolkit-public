@@ -43,7 +43,8 @@ const size_t CSeqUtil::kNumCodings = 10;
 
 CSeqUtil::ECodingType CSeqUtil::GetCodingType(TCoding coding)
 {
-    switch ( coding ) {
+    switch ( coding )
+        {
         case e_Iupacna:
         case e_Ncbi2na:
         case e_Ncbi2na_expand:
@@ -57,7 +58,10 @@ CSeqUtil::ECodingType CSeqUtil::GetCodingType(TCoding coding)
         case e_Ncbieaa:
         case e_Ncbistdaa:
             return e_CodingType_Aa;
-    }
+
+        case e_not_set:
+            break;
+        }
 
     NCBI_THROW(CSeqUtilException, eBadParameter, "");
 }
@@ -71,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/08/11 15:24:31  vakatov
+* Compilation warning fix (unhandled variant in switch, e_not_set)
+*
 * Revision 1.2  2004/05/17 21:08:53  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
