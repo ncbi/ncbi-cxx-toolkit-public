@@ -65,14 +65,15 @@ TTypeInfo CItemInfo::GetTypeInfo(void) const
 inline
 TObjectPtr CItemInfo::GetItemPtr(TObjectPtr classPtr) const
 {
-    return Add(classPtr, GetOffset());
+    return CRawPointer::Add(classPtr, GetOffset());
 }
 
 inline
 TConstObjectPtr CItemInfo::GetItemPtr(TConstObjectPtr classPtr) const
 {
-    return Add(classPtr, GetOffset());
+    return CRawPointer::Add(classPtr, GetOffset());
 }
+
 
 #endif /* def ITEM__HPP  &&  ndef ITEM__INL */
 
@@ -80,6 +81,10 @@ TConstObjectPtr CItemInfo::GetItemPtr(TConstObjectPtr classPtr) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/12/01 19:04:21  grichenk
+* Moved Add and Sub from serialutil to ncbimisc, made them methods
+* of CRawPointer class.
+*
 * Revision 1.4  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

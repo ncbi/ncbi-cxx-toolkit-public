@@ -118,12 +118,17 @@ bool CTypeInfo::IsCObject(void) const
     return m_IsCObject;
 }
 
+
 #endif /* def TYPEINFO__HPP  &&  ndef TYPEINFO__INL */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/12/01 19:04:22  grichenk
+* Moved Add and Sub from serialutil to ncbimisc, made them methods
+* of CRawPointer class.
+*
 * Revision 1.10  2003/11/24 14:10:04  grichenk
 * Changed base class for CAliasTypeInfo to CPointerTypeInfo
 *

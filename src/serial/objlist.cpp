@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/12/01 19:04:23  grichenk
+* Moved Add and Sub from serialutil to ncbimisc, made them methods
+* of CRawPointer class.
+*
 * Revision 1.26  2003/03/10 18:54:26  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -179,7 +183,7 @@ void CWriteObjectList::RegisterObject(TTypeInfo typeInfo)
 static inline
 TConstObjectPtr EndOf(TConstObjectPtr objectPtr, TTypeInfo objectType)
 {
-    return Add(objectPtr, TPointerOffsetType(objectType->GetSize()));
+    return CRawPointer::Add(objectPtr, TPointerOffsetType(objectType->GetSize()));
 }
 
 const CWriteObjectInfo*

@@ -395,6 +395,37 @@ const TSeqPos kInvalidSeqPos = ((TSeqPos) (-1));
 /// Use this typedef rather than its expansion, which may change.
 typedef int TSignedSeqPos;
 
+/// Helper address class
+class CRawPointer
+{
+public:
+    /// add offset to object reference (to get object's member)
+    static void* Add(void* object, ssize_t offset);
+    static const void* Add(const void* object, ssize_t offset);
+    /// calculate offset inside object
+    static ssize_t Sub(const void* first, const void* second);
+};
+
+
+inline
+void* CRawPointer::Add(void* object, ssize_t offset)
+{
+    return static_cast<char*> (object) + offset;
+}
+
+inline
+const void* CRawPointer::Add(const void* object, ssize_t offset)
+{
+    return static_cast<const char*> (object) + offset;
+}
+
+inline
+ssize_t CRawPointer::Sub(const void* first, const void* second)
+{
+    return
+        static_cast<const char*> (first) - static_cast<const char*> (second);
+}
+
 
 END_NCBI_SCOPE
 
@@ -405,6 +436,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2003/12/01 19:04:20  grichenk
+ * Moved Add and Sub from serialutil to ncbimisc, made them methods
+ * of CRawPointer class.
+ *
  * Revision 1.67  2003/10/02 17:43:43  vakatov
  * The code extracted from NCBISTD.HPP. -- The latter is a "pure virtual"
  * header now.

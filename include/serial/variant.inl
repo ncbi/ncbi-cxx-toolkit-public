@@ -115,13 +115,13 @@ bool CVariantInfo::CanBeDelayed(void) const
 inline
 CDelayBuffer& CVariantInfo::GetDelayBuffer(TObjectPtr object) const
 {
-    return CTypeConverter<CDelayBuffer>::Get(Add(object, m_DelayOffset));
+    return CTypeConverter<CDelayBuffer>::Get(CRawPointer::Add(object, m_DelayOffset));
 }
 
 inline
 const CDelayBuffer& CVariantInfo::GetDelayBuffer(TConstObjectPtr object) const
 {
-    return CTypeConverter<const CDelayBuffer>::Get(Add(object, m_DelayOffset));
+    return CTypeConverter<const CDelayBuffer>::Get(CRawPointer::Add(object, m_DelayOffset));
 }
 
 inline
@@ -194,6 +194,10 @@ void CVariantInfo::DefaultCopyVariant(CObjectStreamCopier& stream) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/12/01 19:04:23  grichenk
+* Moved Add and Sub from serialutil to ncbimisc, made them methods
+* of CRawPointer class.
+*
 * Revision 1.11  2003/07/29 18:47:47  vasilche
 * Fixed thread safeness of object stream hooks.
 *

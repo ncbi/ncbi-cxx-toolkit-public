@@ -123,28 +123,6 @@ public:
         }
 };
 
-// helper address functions:
-// add offset to object reference (to get object's member)
-inline
-TObjectPtr Add(TObjectPtr object, TPointerOffsetType offset)
-{
-    return static_cast<char*>(object) + offset;
-}
-
-inline
-TConstObjectPtr Add(TConstObjectPtr object, TPointerOffsetType offset)
-{
-    return static_cast<const char*>(object) + offset;
-}
-
-// calculate offset of member inside object
-inline
-TPointerOffsetType Sub(TConstObjectPtr first, TConstObjectPtr second)
-{
-    return static_cast<const char*>(first) - static_cast<const char*>(second);
-}
-
-
 /* @} */
 
 
@@ -158,6 +136,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/12/01 19:04:22  grichenk
+* Moved Add and Sub from serialutil to ncbimisc, made them methods
+* of CRawPointer class.
+*
 * Revision 1.4  2003/04/15 16:18:55  siyan
 * Added doxygen support
 *

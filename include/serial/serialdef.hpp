@@ -148,17 +148,6 @@ enum EStringType {
 //type used for indexing class members and choice variants
 typedef size_t TMemberIndex;
 
-//type used for memory offsets/addresses
-#if SIZEOF_VOIDP == 4
-typedef Uint4 TPointerValueType;
-typedef Int4 TPointerOffsetType;
-#elif SIZEOF_VOIDP == 8
-typedef Uint8 TPointerValueType;
-typedef Int8 TPointerOffsetType;
-#else
-# error "Invalid pointer size"
-#endif
-
 typedef int TEnumValueType;
 
 // start if member indexing
@@ -167,6 +156,8 @@ const TMemberIndex kFirstMemberIndex = 1;
 const TMemberIndex kInvalidMember = kFirstMemberIndex - 1;
 // special value for marking empty choice
 const TMemberIndex kEmptyChoice = kInvalidMember;
+
+typedef ssize_t TPointerOffsetType;
 
 
 /* @} */
@@ -182,6 +173,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/12/01 19:04:22  grichenk
+* Moved Add and Sub from serialutil to ncbimisc, made them methods
+* of CRawPointer class.
+*
 * Revision 1.26  2003/11/13 14:06:44  gouriano
 * Elaborated data verification on read/write/get to enable skipping mandatory class data members
 *

@@ -87,19 +87,21 @@ public:
         }
     TObjectPtr& NextNode(TObjectPtr object) const
         {
-            return CTypeConverter<TObjectPtr>::Get(Add(object, m_NextOffset));
+            return CTypeConverter<TObjectPtr>::Get
+                (CRawPointer::Add(object, m_NextOffset));
         }
     TObjectPtr NextNode(TConstObjectPtr object) const
         {
-            return CTypeConverter<TObjectPtr>::Get(Add(object, m_NextOffset));
+            return CTypeConverter<TObjectPtr>::Get
+                (CRawPointer::Add(object, m_NextOffset));
         }
     TObjectPtr Data(TObjectPtr object) const
         {
-            return Add(object, m_DataOffset);
+            return CRawPointer::Add(object, m_DataOffset);
         }
     TConstObjectPtr Data(TConstObjectPtr object) const
         {
-            return Add(object, m_DataOffset);
+            return CRawPointer::Add(object, m_DataOffset);
         }
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
@@ -236,6 +238,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.40  2003/12/01 19:04:21  grichenk
+ * Moved Add and Sub from serialutil to ncbimisc, made them methods
+ * of CRawPointer class.
+ *
  * Revision 1.39  2003/04/15 14:14:51  siyan
  * Added doxygen support
  *
