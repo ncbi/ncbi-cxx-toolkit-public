@@ -67,13 +67,11 @@ static CObject_id::TId s_GetTaxid(const CSeq_id& id, CScope& scope) {
     CBioseq_Handle hand = scope.GetBioseqHandle(id);
     CSeqdesc_CI desc(hand, CSeqdesc::e_Source);
     while (desc) {
-        if (desc->IsSource()) {
-            const vector<CRef<CDbtag> >& db
-                = desc->GetSource().GetOrg().GetDb();
-            ITERATE (vector<CRef<CDbtag> >, dbtag, db) {
-                if ((*dbtag)->GetDb() == "taxon") {
-                    return (*dbtag)->GetTag().GetId();
-                }
+        const vector<CRef<CDbtag> >& db
+            = desc->GetSource().GetOrg().GetDb();
+        ITERATE (vector<CRef<CDbtag> >, dbtag, db) {
+            if ((*dbtag)->GetDb() == "taxon") {
+                return (*dbtag)->GetTag().GetId();
             }
         }
         ++desc;
@@ -121,17 +119,17 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
     int length_top_match;
     ITERATE (list<CRef<CSeq_align> >, aln, annot->GetData().GetAlign()) {
         const CSeq_id& match_id = *(*aln)->GetSegs().GetDenseg().GetIds()[1];
-        CObject_id::TId hit_taxid = s_GetTaxid(match_id, scope);
-        if (hit_taxid == prod_taxid || hit_taxid == 0) {
-            // ignore matches from same organism (same taxid)
-            // and those with no taxid
-            continue;
-        }
         if (!(*aln)->GetNamedScore("score", score)) {
             // yikes, no blast score
             throw runtime_error("No BLAST score found");
         }
         if (score > top_score) {
+            CObject_id::TId hit_taxid = s_GetTaxid(match_id, scope);
+            if (hit_taxid == prod_taxid || hit_taxid == 0) {
+                // ignore matches from same organism (same taxid)
+                // and those with no taxid
+                continue;
+            }
             top_score = score;
             length_top_match =
                 scope.GetBioseqHandle(match_id).GetBioseqLength();
@@ -163,6 +161,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/10/25 14:29:39  jcherry
+ * Don't get taxid of a hit (expensive) unless its score is the
+ * highest seen yet.  Don't do pointless check that descriptor
+ * has type "source".
+ *
  * Revision 1.3  2004/10/21 20:38:16  jcherry
  * Don't throw when a matched protein lacks a taxid; just ignore it.
  *
