@@ -190,9 +190,13 @@ CConstRef<CUser_field> CUser_field::GetFieldRef(const string& str,
 
     ITERATE (list<string>, iter, toks) {
         CConstRef<CUser_field> new_f;
+        if ( !f->GetData().IsFields() ) {
+            return new_f; // null, at this point...
+        }
         ITERATE (TData::TFields, field_iter, f->GetData().GetFields()) {
             const CUser_field& field = **field_iter;
-            if (field.GetLabel().GetStr() == *iter) {
+            if (field.GetLabel().IsStr()
+                &&  field.GetLabel().GetStr() == *iter) {
                 if (iter != last  &&  field.GetData().IsFields()) {
                     new_f = *field_iter;
                     break;
@@ -281,6 +285,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/12/06 23:00:39  ucko
+* GetFieldRef: when encountering unexpected structures, return null
+* rather than generating CInvalidChoiceSelection.
+*
 * Revision 1.2  2004/11/24 15:55:19  dicuccio
 * Fixed bugs in identifying last iterator; fixed handling of tail fields (favor
 * tags not fields)
