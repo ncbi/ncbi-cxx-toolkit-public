@@ -159,6 +159,12 @@ public:
     /// Force remove BDB environment.
     void ForceRemove();
 
+    /// Try to Remove the environment, if DB_ENV::remove returns 0, but fails
+    /// files ramain on disk anyway calls ForceRemove
+    /// @return
+    ///   FALSE if environment is busy and cannot be deleted
+    bool CheckRemove();
+
     /// Close the environment;
     void Close();
     
@@ -184,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/08/24 14:06:13  kuznets
+ * Added CBDB_ENv::CheckRemove()
+ *
  * Revision 1.17  2004/08/13 15:56:19  kuznets
  * +eRunRecoveryFatal
  *

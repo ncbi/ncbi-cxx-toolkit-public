@@ -90,8 +90,8 @@ int CBDB_Env::x_Open(const char* db_home, int flags)
 {
     int ret = m_Env->open(m_Env, db_home, flags, 0664);
     if (ret == DB_RUNRECOVERY) {
-        if (flags & DB_JOINENV) {
-            flags &= ~DB_JOINENV;
+        if (flags & DB_JOINENV) {  // join do not attempt recovery
+            return ret;
         }
         int recover_flag;
         
@@ -279,7 +279,25 @@ void CBDB_Env::ForceRemove()
     BDB_CHECK(ret, "DB_ENV::remove");
 }
 
+bool CBDB_Env::CheckRemove()
+{
+    if (Remove()) {
+        // Remove returned OK, but BerkeleyDB has a bug(?)
+        // that it does not even try to remove environment
+        // when it cannot attach to it. 
+        // In case of Windows and opening was made using DB_SYSTEM_MEM
+        // it does not remove files.
 
+        // so we check that and force the removal
+        CDir dir(m_HomePath);
+        CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
+        if (!fl.empty()) {
+            ForceRemove();
+        }
+        return true;
+    }
+    return false;
+}
 
 DB_TXN* CBDB_Env::CreateTxn(DB_TXN* parent_txn, unsigned int flags)
 {
@@ -370,6 +388,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/08/24 14:06:28  kuznets
+ * Added CBDB_ENv::CheckRemove()
+ *
  * Revision 1.26  2004/08/16 18:24:06  kuznets
  * code cleanup
  *
