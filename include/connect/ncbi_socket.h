@@ -614,8 +614,11 @@ extern char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2003/01/07 22:01:43  lavr
+ * ChangeLog message corrected
+ *
  * Revision 6.26  2003/01/07 21:58:24  lavr
- * Initial revision
+ * Draft DSOCK interface added
  *
  * Revision 6.25  2002/12/05 21:44:50  lavr
  * Retire SOCK_Create() as a macro; reinstate as a regular call

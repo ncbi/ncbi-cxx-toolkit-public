@@ -432,8 +432,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2003/01/07 22:01:43  lavr
+ * ChangeLog message corrected
+ *
  * Revision 6.14  2003/01/07 21:58:24  lavr
- * Initial revision
+ * Comment corrected
  *
  * Revision 6.13  2002/12/19 14:51:48  dicuccio
  * Added export specifier for Win32 DLL builds.
