@@ -187,6 +187,11 @@ static char* s_ComposeFrom(char* buf, size_t buf_size)
 #else
     /* Temporary solution for login name */
     const char* login_name = "anonymous";
+#  ifdef NCBI_OS_MSWIN
+    const char* user_name = getenv("USERNAME");
+    if (user_name)
+        login_name = user_name;
+#  endif
 #endif
     strncpy0(buf, login_name, buf_size - 1);
 #ifdef NCBI_OS_UNIX
@@ -503,6 +508,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2004/01/07 19:51:36  lavr
+ * Try to obtain user name from USERNAME env.var. on Windows, else fallback
+ *
  * Revision 6.21  2003/12/09 15:38:39  lavr
  * Take advantage of SSendMailInfo::body_size;  few little makeup changes
  *
