@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/07/29 20:36:48  vasilche
+* Fixed warnings on Windows.
+*
 * Revision 1.6  2003/07/29 18:59:21  vasilche
 * Fixed compilation errors.
 *
@@ -162,10 +165,10 @@ CHookDataBase::~CHookDataBase(void)
 void CHookDataBase::SetLocalHook(TLocalHooks& key, THook* hook)
 {
     _ASSERT(hook);
-    _ASSERT(m_HookCount.Get() >= bool(m_GlobalHook));
+    _ASSERT(m_HookCount.Get() >= (m_GlobalHook? 1: 0));
     key.SetHook(this, hook);
     m_HookCount.Add(1);
-    _ASSERT(m_HookCount.Get() > bool(m_GlobalHook));
+    _ASSERT(m_HookCount.Get() > (m_GlobalHook? 1: 0));
     _ASSERT(!Empty());
 }
 
@@ -173,20 +176,20 @@ void CHookDataBase::SetLocalHook(TLocalHooks& key, THook* hook)
 void CHookDataBase::ResetLocalHook(TLocalHooks& key)
 {
     _ASSERT(!Empty());
-    _ASSERT(m_HookCount.Get() > bool(m_GlobalHook));
+    _ASSERT(m_HookCount.Get() > (m_GlobalHook? 1: 0));
     key.ResetHook(this);
     m_HookCount.Add(-1);
-    _ASSERT(m_HookCount.Get() >= bool(m_GlobalHook));
+    _ASSERT(m_HookCount.Get() >= (m_GlobalHook? 1: 0));
 }
 
 
 void CHookDataBase::ForgetLocalHook(TLocalHooks& _DEBUG_ARG(key))
 {
     _ASSERT(!Empty());
-    _ASSERT(m_HookCount.Get() > bool(m_GlobalHook));
+    _ASSERT(m_HookCount.Get() > (m_GlobalHook? 1: 0));
     _ASSERT(key.GetHook(this) != 0);
     m_HookCount.Add(-1);
-    _ASSERT(m_HookCount.Get() >= bool(m_GlobalHook));
+    _ASSERT(m_HookCount.Get() >= (m_GlobalHook? 1: 0));
 }
 
 
