@@ -1,0 +1,17 @@
+# $Id$
+#
+# XCONNECT -- includes:
+#    CONNECT API (C-only, sources shared with the C Toolkit), plus
+#    auxiliary C++ API to use CONNECT API from the C++ Toolkit
+
+
+include $(srcdir)/Makefile.connect.lib
+
+LIBOBJ = $(LIBOBJ_C) \
+      ncbi_conn_streambuf ncbi_conn_stream ncbi_core_cxx
+
+UNIX_SRC = ncbi_service_lbsmd ncbi_lbsm ncbi_lbsm_ipc
+
+LIB    = xconnect
+
+LIBS   = $(NETWORK_LIBS)
