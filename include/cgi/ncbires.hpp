@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/14 20:25:36  sandomir
+* changed with Command handling
+*
 * Revision 1.5  1998/12/11 15:57:31  sandomir
 * CNcbiDatabase: public keyword added
 *
@@ -95,6 +98,8 @@ public:
   const TCmdList& GetCmdList( void ) const
     { return m_cmd; }
 
+  virtual CNcbiCommand* GetDefaultCommand( void ) const = 0;
+
   virtual void HandleRequest( const CCgiRequest& request );
 
 protected:
@@ -135,7 +140,7 @@ public:
 
   virtual void Execute( const CCgiRequest& request ) = 0;
 
-  virtual bool IsRequested( const CCgiRequest& request ) const = 0;
+  virtual bool IsRequested( const CCgiRequest& request ) const;
 
   // inner class CFind to be used to find command(s) corresponding to the request
   // TCmdList l; 
@@ -152,6 +157,8 @@ public:
   }; // class CFind 
     
 protected:
+
+  static string GetEntry();
 
   const CNcbiResource& m_resource;
 };

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/14 20:25:37  sandomir
+* changed with Command handling
+*
 * Revision 1.3  1998/12/14 15:30:08  sandomir
 * minor fixes in CNcbiApplication; command handling fixed
 *
@@ -70,12 +73,13 @@ void CNcbiResource::HandleRequest( const CCgiRequest& request )
       throw runtime_error( "unknown command" );
 
     } else for( ; it != m_cmd.end(); it++ ) {
-      CNcbiCommand* cmd = (*it)->Clone();
+      auto_ptr<CNcbiCommand> cmd( (*it)->Clone() );
       cmd->Execute( request );
-      delete cmd;
     } // else
 
   } catch( exception& e ) {
+    auto_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
+    cmd->Execute( request );
   }
 }
 
@@ -89,6 +93,28 @@ CNcbiCommand::CNcbiCommand( const CNcbiResource& resource )
 
 CNcbiCommand::~CNcbiCommand( void )
 {}
+
+bool CNcbiCommand::IsRequested( const CCgiRequest& request ) const
+{
+  const string value = GetName();
+  
+  TCgiEntries& entries = const_cast<TCgiEntries&>( request.GetEntries() );
+  pair<TCgiEntriesI,TCgiEntriesI> it = entries.equal_range( 
+                                          CNcbiCommand::GetEntry() );
+
+  for( TCgiEntriesI itCmd = it.first; itCmd != it.second; itCmd++ ) {
+    if( value == itCmd->second ) {
+      return true;
+    } // if
+  } // for
+
+  return false;
+}
+
+string CNcbiCommand::GetEntry()
+{
+  return "cmd";
+}
 
 //
 // class CNcbiDatabase

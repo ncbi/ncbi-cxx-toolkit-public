@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1998/12/14 20:25:35  sandomir
+* changed with Command handling
+*
 * Revision 1.27  1998/12/09 19:25:32  vakatov
 * Made CCgiRequest::GetRandomProperty() look "const"
 *
@@ -270,6 +273,7 @@ enum ECgiProp {
 // Typedefs
 typedef map<string, string>      TCgiProperties;
 typedef multimap<string, string> TCgiEntries;
+typedef TCgiEntries::iterator    TCgiEntriesI;
 typedef list<string>             TCgiIndexes;
 
 
