@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2002/01/28 21:29:25  lavr
+ * Use iostream(0) as a base class constructor
+ *
  * Revision 6.9  2002/01/28 20:19:11  lavr
  * Clean destruction of streambuf sub-object; no exception throw in GetCONN()
  *
@@ -73,7 +76,7 @@ BEGIN_NCBI_SCOPE
 
 CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
                                streamsize buf_size, bool do_tie) :
-    m_CSb(0)
+    iostream(0), m_CSb(0)
 {
     auto_ptr<CConn_Streambuf>
         csb(new CConn_Streambuf(connector, timeout, buf_size, do_tie));
