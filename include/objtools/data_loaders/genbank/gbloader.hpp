@@ -37,6 +37,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/plugin_manager.hpp>
 
 #if !defined(NDEBUG) && defined(DEBUG_SYNC)
 // for GBLOG_POST()
@@ -135,10 +136,17 @@ public:
     typedef vector< CRef<CSeqref> > TSeqrefs;
     typedef pair<int, int> TKeyByTSE;
     typedef int TMask;
+    typedef CPluginManager<CReader>   TReader_PluginManager;
 
     CGBDataLoader(const string& loader_name="GENBANK",
                   CReader *driver=0,
                   int gc_threshold=100);
+
+    CGBDataLoader(const string& loader_name/* ="GENBANK"*/,
+                  TReader_PluginManager *plugin_manager /*=0*/,
+                  EOwnership  take_plugin_manager /*= eNoOwnership */,
+                  int gc_threshold);
+
     virtual ~CGBDataLoader(void);
   
     virtual void DropTSE(const CTSE_Info& tse_info);
@@ -184,7 +192,10 @@ private:
     typedef map<TKeyByTSE, CRef<STSEinfo> >    TSr2TSEinfo;
     typedef map<CSeq_id_Handle, CRef<SSeqrefs> >        TSeqId2Seqrefs;
   
-    CRef<CReader>   m_Driver;
+    CRef<CReader>           m_Driver;
+    TReader_PluginManager*  m_ReaderPluginManager;
+    EOwnership              m_OwnReaderPluginManager;
+
     TSr2TSEinfo     m_Sr2TseInfo;
   
     TSeqId2Seqrefs  m_Bs2Sr;
@@ -220,6 +231,9 @@ private:
     void            x_GetChunk(CRef<STSEinfo> tse,
                                CTSE_Chunk_Info& chunk_info);
     void            x_Check(const STSEinfo* me = 0);
+    void            x_CreateReaderPluginManager(void);
+    CReader*        x_CreateReader(const string& env);
+    void            x_CreateDriver(void);
 
     CRef<STSEinfo> GetTSEinfo(const CTSE_Info& tse_info);
 
@@ -235,6 +249,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.45  2003/12/03 15:13:38  kuznets
+ * CReader management re-written to use plugin manager
+ *
  * Revision 1.44  2003/11/26 20:56:21  vasilche
  * Added declaration of private constructors for MSVC DLL.
  *

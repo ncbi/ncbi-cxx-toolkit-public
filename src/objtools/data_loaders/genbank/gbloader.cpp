@@ -106,6 +106,7 @@ CGBDataLoader::STSEinfo::~STSEinfo()
 
 
 // Create driver specified in "env"
+/*
 CReader* s_CreateReader(string env)
 {
 #if defined(HAVE_PUBSEQ_OS)
@@ -128,17 +129,21 @@ CReader* s_CreateReader(string env)
     }
     return 0;
 }
-
+*/
 
 CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
                              int gc_threshold)
   : CDataLoader(loader_name),
     m_Driver(driver),
+    m_ReaderPluginManager(0),
     m_UseListHead(0),
     m_UseListTail(0)
 {
     GBLOG_POST( "CGBDataLoader");
     if ( !m_Driver ) {
+        x_CreateDriver();
+// Commented out by kuznets Dec 03, 2003
+/*
         const char* env = ::getenv(DRV_ENV_VAR);
         if (!env) {
             env = DEFAULT_DRV_ORDER; // default drivers' order
@@ -154,6 +159,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
             NCBI_THROW(CLoaderException, eNoConnection,
                        "Could not create driver: " + string(env));
         }
+*/
     }
   
     size_t i = m_Driver->GetParallelLevel();
@@ -164,6 +170,116 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
     m_TseGC_Threshhold=gc_threshold;
     m_InvokeGC=false;
     //GBLOG_POST( "CGBDataLoader("<<loader_name<<"::" <<gc_threshold << ")" );
+}
+
+CGBDataLoader::CGBDataLoader(const string& loader_name,
+                             TReader_PluginManager *plugin_manager,
+                             EOwnership  take_plugin_manager,
+                             int gc_threshold)
+  : CDataLoader(loader_name),
+    m_Driver(0),
+    m_ReaderPluginManager(plugin_manager),
+    m_OwnReaderPluginManager(take_plugin_manager),
+    m_UseListHead(0),
+    m_UseListTail(0)
+{
+    GBLOG_POST( "CGBDataLoader");
+    if (!m_ReaderPluginManager) {
+        x_CreateReaderPluginManager();
+    }
+    x_CreateDriver();
+
+    size_t i = m_Driver->GetParallelLevel();
+    m_Locks.m_Pool.SetSize(i<=0?10:i);
+    m_Locks.m_SlowTraverseMode=0;
+  
+    m_TseCount=0;
+    m_TseGC_Threshhold=gc_threshold;
+    m_InvokeGC=false;
+}
+
+void CGBDataLoader::x_CreateReaderPluginManager(void)
+{
+    if (m_OwnReaderPluginManager == eTakeOwnership) {
+        delete m_ReaderPluginManager;
+        m_ReaderPluginManager = 0;
+    }
+
+    m_ReaderPluginManager = new TReader_PluginManager;
+    m_OwnReaderPluginManager = eTakeOwnership;
+
+    TReader_PluginManager::FNCBI_EntryPoint ep1 = NCBI_Id1ReaderEntryPoint;
+    m_ReaderPluginManager->RegisterWithEntryPoint(ep1);
+
+#if defined(HAVE_PUBSEQ_OS)
+    TReader_PluginManager::FNCBI_EntryPoint ep2 = NCBI_Pubseq_ReaderEntryPoint;
+    m_ReaderPluginManager->RegisterWithEntryPoint(ep2);
+#endif
+
+}
+
+
+void CGBDataLoader::x_CreateDriver(void)
+{
+    if (!m_ReaderPluginManager) {
+        x_CreateReaderPluginManager();
+        _ASSERT(m_ReaderPluginManager);
+    }
+
+    const char* env = ::getenv(DRV_ENV_VAR);
+    if (!env) {
+        env = DEFAULT_DRV_ORDER; // default drivers' order
+    }
+    list<string> drivers;
+    NStr::Split(env, ":", drivers);
+    ITERATE ( list<string>, drv, drivers ) {
+        m_Driver = x_CreateReader(*drv);
+        if ( m_Driver )
+            break;
+    }
+
+    if (!m_Driver) {
+        NCBI_THROW(CLoaderException, eNoConnection,
+                   "Could not create driver: " + string(env));
+    }
+
+}
+
+
+CReader* CGBDataLoader::x_CreateReader(const string& env)
+{
+    _ASSERT(m_ReaderPluginManager);
+
+#if defined(HAVE_PUBSEQ_OS)
+    if (env == DRV_PUBSEQOS) {
+        try {
+            return m_ReaderPluginManager->CreateInstance("pubseq_reader");
+        }
+        catch(exception& e) {
+            GBLOG_POST("CPubseqReader is not available ::" << e.what());
+            return 0;
+        }
+        catch(...) {
+            LOG_POST("CPubseqReader:: unable to init ");
+            return 0;
+        }
+    }
+#endif
+    if (env == DRV_ID1) {
+        try {
+            return m_ReaderPluginManager->CreateInstance("id1_reader");
+        }
+        catch(exception& e) {
+            GBLOG_POST("CId1Reader is not available ::" << e.what());
+            return 0;
+        }
+        catch(...) {
+            LOG_POST("CId1Reader:: unable to init ");
+            return 0;
+        }
+    }
+    return 0;
+
 }
 
 
@@ -179,6 +295,9 @@ CGBDataLoader::~CGBDataLoader(void)
         x_DropTSEinfo(m_UseListHead);
     }
     m_Bs2Sr.clear();
+    if (m_OwnReaderPluginManager == eTakeOwnership) {
+        delete m_ReaderPluginManager;
+    }
 }
 
 
@@ -1084,6 +1203,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.94  2003/12/03 15:14:05  kuznets
+* CReader management re-written to use plugin manager
+*
 * Revision 1.93  2003/12/02 23:17:34  vasilche
 * Fixed exception in ID1 reader when invalid Seq-id is supplied.
 *
