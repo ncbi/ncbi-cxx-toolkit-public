@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.30  2004/03/09 18:39:35  dondosha
+* Pass around effective lengths parameters instead of options; added BLAST_OneSubjectUpdateParameters to recalculate cutoffs and eff. lengths when each subject is an individual sequence
+*
 * Revision 1.29  2004/02/27 15:56:35  papadopo
 * Mike Gertz' modifications to unify handling of gapped Karlin blocks for protein and nucleotide searches. Also modified BLAST_MainSetUp to allocate gapped Karlin blocks last
 *
@@ -246,14 +249,14 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
  * effective search space. 
  * @param program_number blastn, blastp, blastx, etc. [in]
  * @param scoring_options options for scoring. [in]
- * @param eff_len_options used to calc. effective lengths [in]
+ * @param eff_len_params Used to calculate effective lengths [in]
  * @param sbp Karlin-Altschul parameters [out]
  * @param query_info The query information block, which stores the effective
  *                   search spaces for all queries [in] [out]
 */
 Int2 BLAST_CalcEffLengths (Uint1 program_number, 
    const BlastScoringOptions* scoring_options,
-   const BlastEffectiveLengthsOptions* eff_len_options, 
+   BlastEffectiveLengthsParameters* eff_len_params, 
    const BlastScoreBlk* sbp, BlastQueryInfo* query_info);
 
 /** Set up the auxiliary structures for gapped alignment / traceback only 
@@ -261,7 +264,8 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
  * @param seq_src Sequence source information, with callbacks to get 
  *                sequences, their lengths, etc. [in]
  * @param scoring_options options for scoring. [in]
- * @param eff_len_options  used to calculta effective lengths [in]
+ * @param eff_len_options Options overriding real database sizes for
+ *                        calculating effective lengths [in]
  * @param ext_options options for gapped extension. [in]
  * @param hit_options options for saving hits. [in]
  * @param query The query sequence block [in]
@@ -271,6 +275,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
  *                       sequences case [in]
  * @param ext_params Parameters for gapped extension [out]
  * @param hit_params Parameters for saving hits [out]
+ * @param eff_len_params Parameters for search space calculations [out]
  * @param gap_align Gapped alignment information and allocated memory [out]
  */
 Int2 
@@ -284,7 +289,32 @@ BLAST_GapAlignSetUp(Uint1 program_number,
    BlastScoreBlk* sbp, Uint4 subject_length, 
    BlastExtensionParameters** ext_params,
    BlastHitSavingParameters** hit_params,
+   BlastEffectiveLengthsParameters** eff_len_params,
    BlastGapAlignStruct** gap_align);
+
+/** Recalculates the parameters that depend on an individual sequence, if
+ * this is not a database search.
+ * @param program_number BLAST program [in]
+ * @param subject_length Length of the current subject sequence [in]
+ * @param scoring_options Scoring options [in]
+ * @param query_info The query information structure. Effective lengths
+ *                   are recalculated here. [in] [out]
+ * @param sbp Scoring statistical parameters [in]
+ * @param ext_params Parameters for gapped extensions. [in]
+ * @param hit_params Parameters for saving hits. Score cutoffs are recalculated
+ *                   here [in] [out]
+ * @param word_params Parameters for ungapped extension. Score cutoffs are
+ *                    recalculated here [in] [out]
+ */
+Int2 BLAST_OneSubjectUpdateParameters(Uint1 program_number,
+                    Uint4 subject_length,
+                    const BlastScoringOptions* scoring_options,
+                    BlastQueryInfo* query_info, 
+                    BlastScoreBlk* sbp, 
+                    BlastExtensionParameters* ext_params,
+                    BlastHitSavingParameters* hit_params,
+                    BlastInitialWordParameters* word_params,
+                    BlastEffectiveLengthsParameters* eff_len_params);
 
 /** BlastScoreBlkMatrixInit, fills score matrix parameters in the ScoreBlkPtr
  *      Should be moved to blastkar.c (or it's successor) in the future.
