@@ -408,7 +408,6 @@ int CBlast2seqApplication::Run(void)
     if (args["trace"])
         SetDiagTrace(eDT_Enable);
 
-    CNcbiOstream& out = args["out"].AsOutputFile();
     int counter = 0;
 
     // Retrieve input sequences
@@ -534,6 +533,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/12/04 17:07:51  camacho
+ * Remove yet another unused variable
+ *
  * Revision 1.31  2003/11/26 18:36:45  camacho
  * Renaming blast_option*pp -> blast_options*pp
  *
