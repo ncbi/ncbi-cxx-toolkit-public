@@ -208,12 +208,14 @@ public:
             SetReadWriteMethods(info);
             return info;
         }
+#ifdef HAVE_NCBI_C
     static CClassTypeInfo* CreateAsnStructInfo(const char* name)
         {
             return CParent::CreateAsnStructInfo(name,
                                                 sizeof(CClassType),
                                                 typeid(CClassType));
         }
+#endif
 
 private:
     static CClassTypeInfo* CreateClassInfo(const char* name,
@@ -264,6 +266,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/05/06 13:26:35  ucko
+* Conditionalize CClassInfoHelper<>::CreateAsnStructInfo on
+* HAVE_NCBI_C, since it otherwise has no base method to call.
+*
 * Revision 1.10  2004/04/26 16:40:59  ucko
 * Tweak for GCC 3.4 compatibility.
 *
