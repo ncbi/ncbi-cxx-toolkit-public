@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/03/15 14:18:39  vasilche
+* Forgot to fix _ASSERT() expression.
+*
 * Revision 1.9  2000/03/14 18:32:58  vasilche
 * Fixed class includes generation.
 *
@@ -502,7 +505,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
                 if ( i->canBeNull ) {
                     // we have to init ref before returning
-                    _ASSERT(!haveFlag);
+                    _ASSERT(!i->haveFlag);
                     code.Methods() <<
                         methodPrefix<<i->tName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
                         "{\n"
