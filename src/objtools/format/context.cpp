@@ -510,7 +510,7 @@ void CMasterContext::x_SetNumParts(void)
 
 static void s_GetNameForBioseq(const CBioseq_Handle& seq, string& name)
 {
-    name.clear();
+    name.erase();
 
     CConstRef<CSeq_id> sip;
     ITERATE (CBioseq_Handle::TId, it, seq.GetId()) {
@@ -587,6 +587,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/08/19 20:32:30  ucko
+* Substitute string::erase() for string::clear(), which still isn't
+* portable (to gcc 2.95).
+*
 * Revision 1.19  2004/08/19 16:28:45  shomrat
 * Implemented GetBaseName
 *
