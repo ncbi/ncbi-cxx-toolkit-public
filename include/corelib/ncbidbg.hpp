@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/11/03 20:44:53  vakatov
+* Fixed _TRACE macro
+*
 * Revision 1.3  1998/10/30 20:08:15  vakatov
 * Fixes to (first-time) compile and test-run on MSVS++
 *
@@ -73,7 +76,7 @@
 
 #else  /* _DEBUG */
 
-#  define _TRACE
+#  define _TRACE(message)  ((void)0)
 #  define _TROUBLE
 #  define _ASSERT(expr) ((void)0)
 #  define _VERIFY(expr) ((void)(expr))
