@@ -45,10 +45,11 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
-
+#include <objects/pub/Pub.hpp>
+#include <objects/pub/Pub_equiv.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
-
+#include <objects/biblio/PubMedId.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -74,6 +75,7 @@
 #include <objects/seq/NCBIpna.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
 #include <objects/seq/GIBB_mol.hpp>
+#include <objects/seq/Pubdesc.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -658,6 +660,57 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     if ( IsMrna(bsh) ) {
         ValidatemRNABioseqContext(bsh);
     }
+
+    // check for multiple publications with identical identifiers
+    x_ValidateMultiplePubs(bsh);
+}
+
+
+void CValidError_bioseq::x_ValidateMultiplePubs(const CBioseq_Handle& bsh)
+{
+    vector<int> muids;
+    vector<int> pmids;
+
+    for (CSeqdesc_CI it(bsh, CSeqdesc::e_Pub); it; ++it) {
+        int muid = 0;
+        int pmid = 0;
+        bool otherpub = false;
+        ITERATE (CPubdesc::TPub::Tdata, pub, it->GetPub().GetPub().Get()) {
+            switch ( (*pub)->Which() ) {
+            case CPub::e_Muid:
+                muid = (*pub)->GetMuid();
+                break;
+            case CPub::e_Pmid:
+                pmid = (*pub)->GetPmid();
+                break;
+            default:
+                otherpub = true;
+                break;
+            } 
+        }
+    
+        if ( otherpub ) {
+            bool collision = false;
+            if ( muid > 0 ) {
+                if ( binary_search(muids.begin(), muids.end(), muid) ) {
+                    collision = true;
+                } else {
+                    muids.push_back(muid);
+                }
+            }
+            if ( pmid > 0 ) {
+                if ( binary_search(pmids.begin(), pmids.end(), pmid) ) {
+                    collision = true;
+                } else {
+                    pmids.push_back(pmid);
+                }
+            }
+            if ( collision ) {
+                PostErr(eDiag_Warning, eErr_SEQ_DESCR_CollidingPublications,
+                    "Multiple publications with same identifier", *it);
+            }
+        }
+    }
 }
 
 
@@ -1057,7 +1110,8 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
                 NStr::IntToString(len) + " residue(s) long", seq);
         }
     }
-
+    
+    /*
     if ( (len <= 350000)  ||  m_Imp.IsNC()  ||  m_Imp.IsNT() ) {
         return;
     }
@@ -1130,6 +1184,7 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
                 "Length of sequence exceeds 350kbp limit", seq);
         }
     }
+    */
 }
 
 
@@ -2544,9 +2599,12 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
 
 bool CValidError_bioseq::IsFlybaseDbxrefs(const TDbtags& dbxrefs)
 {
-    ITERATE( TDbtags, db, dbxrefs ) {
-        if ( NStr::CompareNocase((*db)->GetDb(), "FLYBASE") == 0 ) {
-            return true;
+    ITERATE (TDbtags, db, dbxrefs) {
+        if ( (*db)->CanGetDb() ) {
+            if ( NStr::EqualCase((*db)->GetDb(), "FLYBASE") ||
+                 NStr::EqualCase((*db)->GetDb(), "FlyBase") ) {
+                return true;
+            }
         }
     }
     return false;
@@ -3582,12 +3640,6 @@ size_t CValidError_bioseq::x_CountAdjacentNs(const CSeq_literal& lit)
     CSeq_data data;
     CSeqportUtil::Convert(lit_data, &data, CSeq_data::e_Iupacna);
 
-    /* no more CanGet()
-    if ( !data.GetIupacna().CanGet() ) {
-        return 0;
-    }
-    */
-
     size_t count = 0;
     size_t max = 0;
     ITERATE(string, res, data.GetIupacna().Get() ) {
@@ -3661,6 +3713,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.80  2004/06/17 17:07:47  shomrat
+* TGA can be used for Selenocysteine without needing modified codon recognition exception; stopped checking for length >350000
+*
 * Revision 1.79  2004/05/26 14:53:30  shomrat
 * removed non-preferred variants ribosome slippage, trans splicing, alternate processing, and non-consensus splice site
 *
