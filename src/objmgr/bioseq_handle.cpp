@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/04/11 12:07:30  grichenk
+* Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
+*
 * Revision 1.8  2002/03/19 19:16:28  gouriano
 * added const qualifier to GetTitle and GetSeqVector
 *
@@ -152,6 +155,12 @@ void CBioseq_Handle::x_ResolveTo(
         m_TSE->Unlock();
     m_TSE = &tse;
     m_TSE->Lock();
+}
+
+
+const CSeqMap& CBioseq_Handle::GetResolvedSeqMap(void) const
+{
+    return x_GetDataSource().GetResolvedSeqMap(*this);
 }
 
 

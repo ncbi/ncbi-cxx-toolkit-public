@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/04/11 12:07:28  grichenk
+* Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
+*
 * Revision 1.11  2002/03/19 19:17:33  gouriano
 * added const qualifier to GetTitle and GetSeqVector
 *
@@ -129,6 +132,11 @@ public:
     // Get sequence map. References to the whole bioseqs may have
     // length of 0 unless GetSequence() has been called for the handle.
     virtual const CSeqMap& GetSeqMap(void) const;
+    // Get sequence map with resolved multi-level references.
+    // The resulting map should contain regions of literals, gaps
+    // and references to literals only (but not gaps or refs) of other
+    // sequences.
+    virtual const CSeqMap& GetResolvedSeqMap(void) const;
 
     // Get sequence: Iupacna or Iupacaa
     virtual CSeqVector GetSeqVector(bool plus_strand = true) const;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/04/11 12:07:28  grichenk
+* Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
+*
 * Revision 1.9  2002/04/05 21:26:16  grichenk
 * Enabled iteration over annotations defined on segments of a
 * delta-sequence.
@@ -124,43 +127,55 @@ protected:
     CAnnotObject* Get(void) const;
 
 private:
-    struct SAnnotSearchData {
-        // TSEs to search for annotations
-        TTSESet                     m_Entries;
-        // Locations to search
+    struct SConvertionRec : public CObject {
+        // Locations to search: must contain a single id. Locations
+        // on this seq will be converted to locations on the master seq.
         auto_ptr<CHandleRangeMap>   m_Location;
         // Shift to the master sequence position:
         //   master_pos = annotation_pos + m_RefShift
         int                         m_RefShift;
         // Min/max position allowed for features (to fit the map segment)
-        // -1 means there is no limit
+        // -1 means there is no limit. The positions are in the referenced
+        // sequence coordinates.
         int                         m_RefMin;
         int                         m_RefMax;
-        // Upper level location id: only intervals referencing this id
-        // must be converted using the shift.
-        CSeq_id_Handle              m_RefId;
         // Convert references to this id
         CSeq_id_Handle              m_MasterId;
-        // Master/segment flag
+        // Master/segment flag. Do not convert references if this flag is set.
         bool                        m_Master;
     };
+    typedef list< CRef<SConvertionRec> >      TIdConvList;
+    typedef map<CSeq_id_Handle, TIdConvList>  TConvMap;
+    typedef set< CRef<CAnnotObject> >         TAnnotSet;
 
-    void x_PopTSESet(void);
-    void x_ResolveReferences(CHandleRangeMap& loc,
-                             int shift,
-                             int min, int max,
-                             CSeq_id_Handle* master_id = 0);
-    CAnnotObject* x_ConvertAnnotToMaster(CAnnotObject& annot_obj,
-        const SAnnotSearchData& sdata) const;
-    void x_ConvertLocToMaster(CSeq_loc& loc,
-        const SAnnotSearchData& sdata) const;
+    // Initialize the iterator
+    void x_Initialize(const CSeq_loc& loc, EResolveMethod resolve);
+    // Search the location for annotations, add all to the annot-set,
+    // lock all TSEs found. Do nothing with the convertions map.
+    void x_SearchLocation(CHandleRangeMap& loc);
+    // Process the location, resolve references, add information
+    // to the convertions map, search for annotations on references.
+    // The master location needs to be mapped too, since iterations are made
+    // over the map.
+    void x_ResolveReferences(CSeq_id_Handle master_idh, // master id
+                             CSeq_id_Handle ref_idh,    // ref. id
+                             int rmin, int rmax,        // ref. interval
+                             int shift,                 // shift to master
+                             bool resolve);
+    // Convert an annotation to the master location coordinates
+    CAnnotObject* x_ConvertAnnotToMaster(CAnnotObject& annot_obj) const;
+    // Convert seq-loc to the master location coordinates
+    void x_ConvertLocToMaster(CSeq_loc& loc) const;
 
-    typedef deque< AutoPtr<SAnnotSearchData> > TAnnotSearchQueue;
-
-    TAnnotSearchQueue            m_SearchQueue;
-    TTSESet::const_iterator      m_CurrentTSE;
     SAnnotSelector               m_Selector;
-    CAnnot_CI                    m_CurrentAnnot;
+    // Map of all convertions from references to the master location
+    TConvMap                     m_ConvMap;
+    // Set of all the annotations found
+    TAnnotSet                    m_AnnotSet;
+    // TSE set to keep all the TSEs locked
+    TTSESet                      m_TSESet;
+    // Current annotation
+    TAnnotSet::const_iterator    m_CurAnnot;
     // Copy of the annot object (feature etc.) converted to the master seq
     mutable CRef<CAnnotObject>   m_AnnotCopy;
     mutable CRef<CScope>         m_Scope;

@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/04/11 12:07:28  grichenk
+* Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
+*
 * Revision 1.12  2002/04/05 21:26:17  grichenk
 * Enabled iteration over annotations defined on segments of a
 * delta-sequence.
@@ -200,6 +203,7 @@ private:
     int m_FirstUnresolvedPos;
 
     friend class CDataSource;
+    friend class CAnnotTypes_CI;
 };
 
 /////////////////////////////////////////////////////////////////////

@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/04/11 12:07:30  grichenk
+* Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
+*
 * Revision 1.12  2002/04/04 21:33:55  grichenk
 * Fixed x_FindSegment() for sequences with unresolved segments
 *
@@ -124,7 +127,7 @@ int CSeqMap::x_FindSegment(int pos)
     size_t seg_idx = 0;
     // Ignore eSeqEnd
     for ( ; seg_idx+1 < m_Data.size(); seg_idx++) {
-        int cur_pos = m_Data[seg_idx]->m_Position;
+        // int cur_pos = m_Data[seg_idx]->m_Position;
         int next_pos = m_Data[seg_idx+1]->m_Position;
         // The commented part was used to get the first of all matching
         // segments. It looks better to use the last one.

@@ -8,8 +8,7 @@
 *  terms of the United States Copyright Act.  It was written as part of
 *  the author's official duties as a United States Government employee and
 *  thus cannot be copyrighted.  This software/database is freely available
-*  to the public
- for use. The National Library of Medicine and the U.S.
+*  to the public for use. The National Library of Medicine and the U.S.
 *  Government have not placed any restriction on its use or reproduction.
 *
 *  Although all reasonable efforts have been taken to ensure the accuracy
@@ -31,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/04/11 12:07:29  grichenk
+* Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
+*
 * Revision 1.11  2002/04/05 21:26:19  grichenk
 * Enabled iteration over annotations defined on segments of a
 * delta-sequence.
@@ -84,6 +86,9 @@
 #include <objects/seqloc/Seq_bond.hpp>
 #include <serial/typeinfo.hpp>
 
+#include <serial/serial.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -103,36 +108,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
       m_AnnotCopy(0),
       m_Scope(&scope)
 {
-    AutoPtr<SAnnotSearchData> sdata(new SAnnotSearchData);
-    sdata->m_Location.reset(new CHandleRangeMap(m_Scope->x_GetIdMapper()));
-    sdata->m_Location->AddLocation(loc);
-    m_SearchQueue.push_back(sdata);
-
-    if (resolve == eResolve_All)
-        x_ResolveReferences(*sdata->m_Location, 0, -1, -1);
-
-    sdata->m_Master = true;
-    // Search all possible TSEs
-    // PopulateTSESet must be called AFTER resolving
-    // references -- otherwise duplicate features may be
-    // found.
-    m_Scope->x_PopulateTSESet(*sdata->m_Location, sdata->m_Entries);
-    non_const_iterate(TTSESet, tse_it, sdata->m_Entries) {
-        (*tse_it)->Lock();
-    }
-
-    while ( !m_SearchQueue.empty() ) {
-        m_CurrentTSE = m_SearchQueue.front()->m_Entries.begin();
-        for ( ; m_CurrentTSE != m_SearchQueue.front()->m_Entries.end(); ++m_CurrentTSE) {
-            m_CurrentAnnot = CAnnot_CI(**m_CurrentTSE,
-                *m_SearchQueue.front()->m_Location, m_Selector);
-            if ( m_CurrentAnnot )
-                break;
-        }
-        if ( m_CurrentAnnot )
-            break;
-        x_PopTSESet();
-    }
+    x_Initialize(loc, resolve);
 }
 
 
@@ -144,8 +120,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CBioseq_Handle& bioseq,
       m_AnnotCopy(0),
       m_Scope(bioseq.m_Scope)
 {
-    AutoPtr<SAnnotSearchData> sdata(new SAnnotSearchData);
-    sdata->m_Location.reset(new CHandleRangeMap(m_Scope->x_GetIdMapper()));
+    // Convert interval to the seq-loc
     CRef<CSeq_loc> loc(new CSeq_loc);
     CRef<CSeq_id> id(new CSeq_id);
     SerialAssign<CSeq_id>(*id, *bioseq.GetSeqId());
@@ -157,56 +132,37 @@ CAnnotTypes_CI::CAnnotTypes_CI(CBioseq_Handle& bioseq,
         loc->SetInt().SetFrom(start);
         loc->SetInt().SetTo(stop);
     }
-    sdata->m_Location->AddLocation(*loc);
-    sdata->m_Master = true;
-    bioseq.m_TSE->Lock();
-    sdata->m_Entries.insert(bioseq.m_TSE);
-    m_SearchQueue.push_back(sdata);
+    x_Initialize(*loc, resolve);
+}
 
-    if (resolve == eResolve_All)
-        x_ResolveReferences(*sdata->m_Location, 0, -1, -1);
-
-    while ( !m_SearchQueue.empty() ) {
-        m_CurrentTSE = m_SearchQueue.front()->m_Entries.begin();
-        for ( ; m_CurrentTSE != m_SearchQueue.front()->m_Entries.end(); ++m_CurrentTSE) {
-            m_CurrentAnnot = CAnnot_CI(**m_CurrentTSE,
-                *m_SearchQueue.front()->m_Location, m_Selector);
-            if ( m_CurrentAnnot )
-                break;
+void CAnnotTypes_CI::x_Initialize(const CSeq_loc& loc, EResolveMethod resolve)
+{
+    CHandleRangeMap master_loc(m_Scope->x_GetIdMapper());
+    master_loc.AddLocation(loc);
+    iterate(CHandleRangeMap::TLocMap, id_it, master_loc.GetMap()) {
+        // Iterate intervals for the current id, resolve each interval
+        iterate(CHandleRange::TRanges, rit, id_it->second.GetRanges()) {
+            // Resolve the master location
+            x_ResolveReferences(id_it->first,             // master id
+                id_it->first,                             // id to resolve
+                rit->first.GetFrom(), rit->first.GetTo(), // ref. interval
+                0, resolve == eResolve_All);              // no shift
         }
-        if ( m_CurrentAnnot )
-            break;
-        x_PopTSESet();
     }
+    m_CurAnnot = m_AnnotSet.begin();
 }
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(const CAnnotTypes_CI& it)
-    : m_Selector(it.m_Selector),
-      m_CurrentAnnot(it.m_CurrentAnnot),
-      m_AnnotCopy(0)
 {
-    iterate (TAnnotSearchQueue, qit, it.m_SearchQueue) {
-        AutoPtr<SAnnotSearchData> sdata(new SAnnotSearchData);
-        sdata->m_Location.reset(new CHandleRangeMap(*(*qit)->m_Location));
-        sdata->m_RefShift = (*qit)->m_RefShift;
-        sdata->m_RefId = (*qit)->m_RefId;
-        sdata->m_Master = (*qit)->m_Master;
-        iterate (TTSESet, itr, (*qit)->m_Entries) {
-            TTSESet::const_iterator cur = sdata->m_Entries.insert(*itr).first;
-            (*cur)->Lock();
-            if (*itr == *it.m_CurrentTSE)
-                m_CurrentTSE = cur;
-        }
-        m_SearchQueue.push_back(sdata);
-    }
+    *this = it;
 }
 
 
 CAnnotTypes_CI::~CAnnotTypes_CI(void)
 {
-    while ( !m_SearchQueue.empty() ) {
-        x_PopTSESet();
+    non_const_iterate (TTSESet, tse_it, m_TSESet) {
+        (*tse_it)->Unlock();
     }
 }
 
@@ -215,56 +171,70 @@ CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 {
     {{
         CMutexGuard guard(CDataSource::sm_DataSource_Mutex);
-        while ( !m_SearchQueue.empty() ) {
-            x_PopTSESet();
+        non_const_iterate (TTSESet, tse_it, m_TSESet) {
+            (*tse_it)->Unlock();
         }
     }}
     m_Selector = it.m_Selector;
-    m_CurrentAnnot = it.m_CurrentAnnot;
-    m_AnnotCopy.Reset();
-    iterate (TAnnotSearchQueue, qit, it.m_SearchQueue) {
-        AutoPtr<SAnnotSearchData> sdata(new SAnnotSearchData);
-        sdata->m_Location.reset(new CHandleRangeMap(*(*qit)->m_Location));
-        sdata->m_RefShift = (*qit)->m_RefShift;
-        sdata->m_RefId = (*qit)->m_RefId;
-        sdata->m_Master = (*qit)->m_Master;
-        iterate (TTSESet, itr, (*qit)->m_Entries) {
-            TTSESet::const_iterator cur = sdata->m_Entries.insert(*itr).first;
-            (*cur)->Lock();
-            if (*itr == *it.m_CurrentTSE)
-                m_CurrentTSE = cur;
+    m_Scope = it.m_Scope;
+
+    // Copy TSE list, set TSE locks
+    iterate (TTSESet, tse_it, it.m_TSESet) {
+        m_TSESet.insert(*tse_it);
+        (*tse_it)->Lock();
+    }
+    // Copy annotations (non_const to compare iterators)
+    iterate (TAnnotSet, an_it, it.m_AnnotSet) {
+        TAnnotSet::iterator cur = m_AnnotSet.insert(*an_it).first;
+        if (it.m_CurAnnot == an_it) {
+            m_CurAnnot = cur;
         }
-        m_SearchQueue.push_back(sdata);
+    }
+    // Copy convertions map
+    iterate (TConvMap, cm_it, it.m_ConvMap) {
+        TIdConvList& lst = m_ConvMap[cm_it->first];
+        iterate (TIdConvList, cl_it, cm_it->second) {
+            lst.insert(lst.end(), *cl_it);
+        }
     }
     return *this;
 }
 
 
+void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
+{
+    // Search all possible TSEs
+    // PopulateTSESet must be called AFTER resolving
+    // references -- otherwise duplicate features may be
+    // found.
+    TTSESet entries;
+    m_Scope->x_PopulateTSESet(loc, entries);
+    non_const_iterate(TTSESet, tse_it, entries) {
+        if ( m_TSESet.insert(*tse_it).second ) {
+            (*tse_it)->Lock();
+            CAnnot_CI annot_it(**tse_it, loc, m_Selector);
+            for ( ; annot_it; annot_it++ ) {
+                m_AnnotSet.insert(&(*annot_it));
+            }
+        }
+    }
+}
+
+
 bool CAnnotTypes_CI::IsValid(void) const
 {
-    return ( !m_SearchQueue.empty()  &&  m_CurrentAnnot );
+    return m_CurAnnot != m_AnnotSet.end();
 }
 
 
 void CAnnotTypes_CI::Walk(void)
 {
-    _ASSERT(m_CurrentAnnot);
     CMutexGuard guard(CScope::sm_Scope_Mutex);
     m_AnnotCopy.Reset();
-    ++m_CurrentAnnot;
-    if ( m_CurrentAnnot )
-        return; // Found the next annotation
-    while ( !m_CurrentAnnot  &&  !m_SearchQueue.empty() ) {
-        // Search for the next data source with annots
-        ++m_CurrentTSE;
-        while (m_CurrentTSE == m_SearchQueue.front()->m_Entries.end()) {
-            x_PopTSESet();
-            if ( m_SearchQueue.empty() )
-                return;
-            m_CurrentTSE = m_SearchQueue.front()->m_Entries.begin();
-        }
-        m_CurrentAnnot = CAnnot_CI(**m_CurrentTSE,
-            *m_SearchQueue.front()->m_Location, m_Selector);
+    // Find the next annot + conv. id + conv. rec. combination
+    while (m_CurAnnot != m_AnnotSet.end()) {
+        ++m_CurAnnot;
+        return; //??? Anything else?
     }
 }
 
@@ -272,90 +242,76 @@ void CAnnotTypes_CI::Walk(void)
 CAnnotObject* CAnnotTypes_CI::Get(void) const
 {
     _ASSERT( IsValid() );
-    if ( m_SearchQueue.front()->m_Master )
-        return &*m_CurrentAnnot;
-    return x_ConvertAnnotToMaster(*m_CurrentAnnot, *m_SearchQueue.front());
+    return x_ConvertAnnotToMaster(**m_CurAnnot);
 }
 
 
 const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
 {
     _ASSERT( IsValid() );
-    return m_CurrentAnnot->GetSeq_annot();
+    return (*m_CurAnnot)->GetSeq_annot();
 }
 
 
-void CAnnotTypes_CI::x_PopTSESet(void)
-{
-    if ( m_SearchQueue.empty() )
-        return;
-    non_const_iterate(TTSESet, tse_it, m_SearchQueue.front()->m_Entries) {
-        (*tse_it)->Unlock();
-    }
-    m_SearchQueue.pop_front();
-}
-
-
-void CAnnotTypes_CI::x_ResolveReferences(CHandleRangeMap& loc,
+void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
+                                         CSeq_id_Handle ref_idh,
+                                         int rmin, int rmax,
                                          int shift,
-                                         int min, int max,
-                                         CSeq_id_Handle* master_id)
+                                         bool resolve)
 {
+    // Create a new entry in the convertions map
+    CRef<SConvertionRec> rec = new SConvertionRec;
+    rec->m_Location.reset
+        (new CHandleRangeMap(m_Scope->x_GetIdMapper()));
+    CHandleRange hrg(ref_idh);
+    //### Strand not implemented
+    hrg.AddRange(CHandleRange::TRange(rmin, rmax), eNa_strand_unknown);
+    // Create the location on the referenced sequence
+    rec->m_Location->AddRanges(ref_idh, hrg);
+    rec->m_RefShift = shift;
+    rec->m_RefMin = rmin; //???
+    rec->m_RefMax = rmax; //???
+    rec->m_MasterId = master_idh;
+    rec->m_Master = master_idh == ref_idh;
+    m_ConvMap[ref_idh].push_back(rec);
+    // Search for annotations
+    x_SearchLocation(*rec->m_Location);
+    if ( !resolve )
+        return;
     // Resolve references for a segmented bioseq, get features for
     // the segments.
-    iterate(CHandleRangeMap::TLocMap, hit, loc.GetMap()) {
-        // Process each seq-id handle
-        CSeq_id_Handle h = hit->first;
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(
-            m_Scope->x_GetIdMapper().GetSeq_id(h));
-        const CSeqMap& smap = bsh.GetSeqMap();
-        iterate(CHandleRange::TRanges, rit, hit->second.GetRanges()) {
-            for (size_t i = 0; i < smap.size(); i++) {
-                CHandleRange::TRange rg(smap[i].m_Position,
-                    smap[i].m_Position + smap[i].m_Length - 1);
-                if (rg.IntersectingWithPossiblyEmpty(rit->first)  &&
-                    smap[i].m_SegType == CSeqMap::eSeqRef) {
-                    int rmin = min > rg.GetFrom() ? min : rg.GetFrom();
-                    // rg may not have infinite end values since it's
-                    // constructed from the map
-                    int rmax = (max < 0 || max > rg.GetTo()) ? rg.GetTo() : max;
-                    AutoPtr<SAnnotSearchData> sdata(new SAnnotSearchData);
-                    sdata->m_Location.reset(new CHandleRangeMap(
-                        m_Scope->x_GetIdMapper()));
-                    CRef<CSeq_loc> seqloc = new CSeq_loc;
-                    SerialAssign<CSeq_id>(seqloc->SetInt().SetId(),
-                        m_Scope->x_GetIdMapper().GetSeq_id(smap[i].m_RefSeq));
-                    seqloc->SetInt().SetFrom(rg.GetFrom());
-                    seqloc->SetInt().SetTo(rg.GetTo());
-                    sdata->m_Location->AddLocation(*seqloc);
-                    sdata->m_Master = false;
-                    int dshift = smap[i].m_Position - smap[i].m_RefPos;
-                    sdata->m_RefShift = shift + dshift;
-                    // rmin && rmax must be converted to the reference coordinates
-                    sdata->m_RefMin = rmin - dshift;
-                    sdata->m_RefMax = rmax - dshift;
-                    sdata->m_MasterId = *(master_id ? master_id : &smap[i].m_RefSeq);
-                    sdata->m_RefId = smap[i].m_RefSeq;
-                    m_SearchQueue.push_back(sdata);
-                    x_ResolveReferences(*sdata->m_Location,
-                        sdata->m_RefShift, sdata->m_RefMin, sdata->m_RefMax,
-                        &sdata->m_MasterId);
-                    // PopulateTSESet must be called AFTER resolving
-                    // references -- otherwise duplicate features may be
-                    // found.
-                    m_Scope->x_PopulateTSESet(*sdata->m_Location, sdata->m_Entries);
-                    non_const_iterate(TTSESet, tse_it, sdata->m_Entries) {
-                        (*tse_it)->Lock();
-                    }
-                }
-            }
+    CBioseq_Handle ref_seq = m_Scope->GetBioseqHandle(
+            m_Scope->x_GetIdMapper().GetSeq_id(ref_idh));
+    CSeqMap& ref_map = ref_seq.x_GetDataSource().x_GetSeqMap(ref_seq);
+    ref_map.x_Resolve(rmax, *m_Scope);
+    for (size_t i = ref_map.x_FindSegment(rmin); i < ref_map.size(); i++) {
+        // Check each map segment for intersections with the range
+        const CSeqMap::CSegmentInfo& seg = ref_map[i];
+        if (rmin >= seg.GetPosition() + seg.GetLength())
+            continue; // Go to the next segment
+        if (rmax < seg.GetPosition())
+            break; // No more intersecting segments
+        if (seg.GetType() == CSeqMap::eSeqRef) {
+            // Resolve the reference
+            // Adjust the interval
+            int seg_min = seg.GetPosition();
+            int seg_max = seg_min + seg.GetLength();
+            if (rmin > seg_min)
+                seg_min = rmin;
+            if (rmax < seg_max)
+                seg_max = rmax;
+            int rshift = shift + seg.GetPosition() - seg.m_RefPos;
+            x_ResolveReferences(master_idh, seg.m_RefSeq,
+                                seg_min - rshift, seg_max - rshift,
+                                rshift,
+                                resolve);
         }
     }
 }
 
 
-CAnnotObject* CAnnotTypes_CI::x_ConvertAnnotToMaster(CAnnotObject& annot_obj,
-                                                     const SAnnotSearchData& sdata) const
+CAnnotObject*
+CAnnotTypes_CI::x_ConvertAnnotToMaster(CAnnotObject& annot_obj) const
 {
     if ( m_AnnotCopy )
         // Already have converted version
@@ -367,24 +323,41 @@ CAnnotObject* CAnnotTypes_CI::x_ConvertAnnotToMaster(CAnnotObject& annot_obj,
             const CSeq_feat& fsrc = annot_obj.GetFeat();
             // Process feature location
             CRef<CSeq_feat> fcopy = new CSeq_feat;
-            SerialAssign<CSeq_feat>(*fcopy, fsrc);
-            x_ConvertLocToMaster(fcopy->SetLocation(), sdata);
+            //SerialAssign<CSeq_feat>(*fcopy, fsrc);
+            CNcbiStrstream ostr;
+            {{
+                CObjectOStream& os = *CObjectOStream::Open
+                    (eSerial_AsnText, ostr);
+                os << fsrc;
+            }}
+            {{
+                CObjectIStream& is = *CObjectIStream::Open
+                    (eSerial_AsnText, ostr);
+                is >> *fcopy;
+            }}
+            x_ConvertLocToMaster(fcopy->SetLocation());
             if ( fcopy->IsSetProduct() )
-                x_ConvertLocToMaster(fcopy->SetProduct(), sdata);
-            m_AnnotCopy.Reset(new CAnnotObject(*fcopy, annot_obj.GetSeq_annot()));
+                x_ConvertLocToMaster(fcopy->SetProduct());
+            m_AnnotCopy.Reset(new CAnnotObject
+                              (*fcopy, annot_obj.GetSeq_annot()));
             break;
         }
     case CSeq_annot::C_Data::e_Align:
         {
+            LOG_POST(Warning <<
+            "CAnnotTypes_CI -- seq-align convertions not implemented.");
             break;
         }
     case CSeq_annot::C_Data::e_Graph:
         {
+            LOG_POST(Warning <<
+            "CAnnotTypes_CI -- seq-graph convertions not implemented.");
             break;
         }
     default:
         {
-            LOG_POST(Warning << "CAnnotTypes_CI -- annotation type not implemented.");
+            LOG_POST(Warning <<
+            "CAnnotTypes_CI -- annotation type not implemented.");
             break;
         }
     }
@@ -393,47 +366,59 @@ CAnnotObject* CAnnotTypes_CI::x_ConvertAnnotToMaster(CAnnotObject& annot_obj,
 }
 
 
-void CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc,
-                                          const SAnnotSearchData& sdata) const
+void CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
 {
-    switch ( loc.Which() ) {
-    case CSeq_loc::e_not_set:
-    case CSeq_loc::e_Null:
-    case CSeq_loc::e_Empty:
-    case CSeq_loc::e_Feat:
-        {
-            // Nothing to do
-            return;
-        }
-    case CSeq_loc::e_Whole:
-        {
-            if (m_Scope->x_GetIdMapper().GetHandle(loc.GetWhole()) != sdata.m_RefId)
-                return;
-            // Convert to the allowed master seq interval
-            SerialAssign<CSeq_id>(loc.SetInt().SetId(),
-                m_Scope->x_GetIdMapper().GetSeq_id(sdata.m_MasterId));
-            loc.SetInt().SetFrom(sdata.m_RefMin);
-            loc.SetInt().SetTo(sdata.m_RefMax);
-            return;
-        }
-    case CSeq_loc::e_Int:
-        {
-            if (m_Scope->x_GetIdMapper().
-                GetHandle(loc.GetInt().GetId()) != sdata.m_RefId)
-                return;
-            // Convert to the allowed master seq interval
-            SerialAssign<CSeq_id>(loc.SetInt().SetId(),
-                m_Scope->x_GetIdMapper().GetSeq_id(sdata.m_MasterId));
-            int new_from = loc.GetInt().GetFrom() + sdata.m_RefShift;
-            int new_to = loc.GetInt().GetTo() + sdata.m_RefShift;
-            if (new_from < sdata.m_RefMin)
-                new_from = sdata.m_RefMin;
-            if (new_to < sdata.m_RefMax)
-                new_to = sdata.m_RefMax;
-            loc.SetInt().SetFrom(new_from);
-            loc.SetInt().SetTo(new_to);
-            return;
-        }
+    iterate (TConvMap, convmap_it, m_ConvMap) {
+        // Check seq_id
+        iterate (TIdConvList, conv_it, convmap_it->second) {
+            if ( !(*conv_it)->m_Location->IntersectingWithLoc(loc) )
+                 continue;
+            // Do not use master location intervals for convertions
+            if ( (*conv_it)->m_Master )
+                continue;
+            switch ( loc.Which() ) {
+            case CSeq_loc::e_not_set:
+            case CSeq_loc::e_Null:
+            case CSeq_loc::e_Empty:
+            case CSeq_loc::e_Feat:
+                {
+                    // Nothing to do, although this should never happen --
+                    // the seq_loc is intersecting with the conv. loc.
+                    continue;
+                }
+            case CSeq_loc::e_Whole:
+                {
+                    // Convert to the allowed master seq interval
+                    SerialAssign<CSeq_id>
+                        (loc.SetInt().SetId(),
+                         m_Scope->x_GetIdMapper().
+                         GetSeq_id((*conv_it)->m_MasterId));
+                    loc.SetInt().SetFrom
+                        ((*conv_it)->m_RefMin + (*conv_it)->m_RefShift);
+                    loc.SetInt().SetTo
+                        ((*conv_it)->m_RefMax + (*conv_it)->m_RefShift);
+                    continue;
+                }
+            case CSeq_loc::e_Int:
+                {
+                    // Convert to the allowed master seq interval
+                    SerialAssign<CSeq_id>
+                        (loc.SetInt().SetId(),
+                         m_Scope->x_GetIdMapper().
+                         GetSeq_id((*conv_it)->m_MasterId));
+                    int new_from = loc.GetInt().GetFrom();
+                    int new_to = loc.GetInt().GetTo();
+                    if (new_from < (*conv_it)->m_RefMin)
+                        new_from = (*conv_it)->m_RefMin;
+                    if (new_to > (*conv_it)->m_RefMax)
+                        new_to = (*conv_it)->m_RefMax;
+                    new_from += (*conv_it)->m_RefShift;
+                    new_to += (*conv_it)->m_RefShift;
+                    loc.SetInt().SetFrom(new_from);
+                    loc.SetInt().SetTo(new_to);
+                    continue;
+                }
+                /*
     case CSeq_loc::e_Pnt:
         {
             if (m_Scope->x_GetIdMapper().
@@ -448,7 +433,7 @@ void CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc,
             SerialAssign<CSeq_id>(loc.SetPnt().SetId(),
                 m_Scope->x_GetIdMapper().GetSeq_id(sdata.m_MasterId));
             loc.SetPnt().SetPoint(new_pnt);
-            return;
+            continue;
         }
     case CSeq_loc::e_Packed_int:
         {
@@ -468,7 +453,7 @@ void CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc,
                 (*ii)->SetFrom(new_from);
                 (*ii)->SetTo(new_to);
             }
-            return;
+            continue;
         }
     case CSeq_loc::e_Packed_pnt:
         {
@@ -486,22 +471,26 @@ void CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc,
                     loc.SetPacked_pnt().SetPoints().push_back(*pi);
                 }
             }
-            return;
+            continue;
         }
-    case CSeq_loc::e_Mix:
-        {
-            non_const_iterate ( CSeq_loc_mix::Tdata, li, loc.SetMix().Set() ) {
-                x_ConvertLocToMaster(**li, sdata);
-            }
-            return;
-        }
-    case CSeq_loc::e_Equiv:
-        {
-            non_const_iterate ( CSeq_loc_equiv::Tdata, li, loc.SetEquiv().Set() ) {
-                x_ConvertLocToMaster(**li, sdata);
-            }
-            return;
-        }
+                */
+            case CSeq_loc::e_Mix:
+                {
+                    non_const_iterate
+                        (CSeq_loc_mix::Tdata, li, loc.SetMix().Set()) {
+                        x_ConvertLocToMaster(**li);
+                    }
+                    continue;
+                }
+            case CSeq_loc::e_Equiv:
+                {
+                    non_const_iterate
+                        (CSeq_loc_equiv::Tdata, li, loc.SetEquiv().Set()) {
+                        x_ConvertLocToMaster(**li);
+                    }
+                    continue;
+                }
+                /*
     case CSeq_loc::e_Bond:
         {
             CSeq_id_Handle hA = m_Scope->x_GetIdMapper().
@@ -533,11 +522,15 @@ void CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc,
             }
             if ( !corrected )
                 loc.SetEmpty();
-            return;
+            continue;
         }
-    default:
-        {
-            throw runtime_error("CAnnotTypes_CI -- unsupported location type");
+    */
+            default:
+                {
+                    throw runtime_error
+                        ("CAnnotTypes_CI -- unsupported location type");
+                }
+            }
         }
     }
 }
