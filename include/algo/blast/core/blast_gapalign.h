@@ -49,14 +49,6 @@ Contents: Structures and functions prototypes used for BLAST gapped extension
 extern "C" {
 #endif
 
-/** Defines extension algorithm types */
-typedef enum {
-    EXTEND_DYN_PROG = 1,
-    EXTEND_GREEDY,
-    EXTEND_GREEDY_NO_TRACEBACK,
-    EXTEND_ALGO_MAX
-} ExtensionAlgorithmType;
-
 /** Diagonal distance cutoff when looking for HSP inclusion in Mega BLAST */ 
 #define MB_DIAG_NEAR 30 
 
