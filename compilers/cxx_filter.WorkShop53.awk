@@ -75,7 +75,7 @@ function print_if_interesting()
       m ~ /^".*\/include\/CC\/Cstd\/\.\/vector.cc", line 113: .*non-const reference/ ||
       m ~ /^".*\/include\/CC\/std\/errno\.h", line 20: .*extra text on this line/ ||
       m ~ /^".*\/include\/fox\/FX.+\.h", line [0-9]+: Warning: FX.+ hides the function FX/ ||
-      m ~ /^".*\/include\/fox\/FXObject\.h".+two consecutive underbars in _"_FXMETACLASSINITIALIZER__"\./ ||
+      m ~ /^".*\/include\/fox\/FXObject\.h".+two consecutive underbars in "__FXMETACLASSINITIALIZER__"\./ ||
       m ~ /^".*\/include\/html\/jsmenu\.hpp", line [0-9]+: Warning: ncbi::CHTMLPopupMenu::SetAttribute hides the function ncbi::CNCBINode::SetAttribute/ ||
       m ~ /^".*\/include\/internal\/idx\/idcont.hpp", line [0-9]+: Warning: ncbi::CPmDbIdContainerUid::(Unc|C)ompress hides the virtual function ncbi::CPmDbIdContainer::/ ||
       m ~ /^".*\/include\/internal\/webenv2\/[a-z]+\.hpp", line [0-9]+: Warning: ncbi::CQ[A-Za-z]+::FromAsn hides the function/ ||
