@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2004/05/03 19:31:03  gouriano
+* Made generation of DOXYGEN-style comments optional
+*
 * Revision 1.48  2004/04/29 20:11:40  gouriano
 * Generate DOXYGEN-style comments in C++ headers
 *
@@ -475,45 +478,69 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
 
     // generate choice methods
     code.ClassPublic() <<
-        "    /// Which variant is currently selected.\n"
-        "    ///\n"
-        "    /// @return\n"
-        "    ///   Choice state enumerator.\n"
+        "    /// Which variant is currently selected.\n";
+    if (CClassCode::GetDoxygenComments()) {
+        code.ClassPublic() <<
+            "    ///\n"
+            "    /// @return\n"
+            "    ///   Choice state enumerator.\n";
+    }
+    code.ClassPublic() <<
         "    "STATE_ENUM" Which(void) const;\n\n"
-        "    /// Verify selection, throw exception if it differs from the expected.\n"
-        "    ///\n"
-        "    /// @param index\n"
-        "    ///   Expected selection.\n"
+        "    /// Verify selection, throw exception if it differs from the expected.\n";
+    if (CClassCode::GetDoxygenComments()) {
+        code.ClassPublic() <<
+            "    ///\n"
+            "    /// @param index\n"
+            "    ///   Expected selection.\n";
+    }
+    code.ClassPublic() <<
         "    void CheckSelected("STATE_ENUM" index) const;\n\n"
-        "    /// Throw \'InvalidSelection\' exception.\n"
-        "    ///\n"
-        "    /// @param index\n"
-        "    ///   Expected selection.\n"
+        "    /// Throw \'InvalidSelection\' exception.\n";
+    if (CClassCode::GetDoxygenComments()) {
+        code.ClassPublic() <<
+            "    ///\n"
+            "    /// @param index\n"
+            "    ///   Expected selection.\n";
+    }
+    code.ClassPublic() <<
         "    void ThrowInvalidSelection("STATE_ENUM" index) const;\n\n"
-        "    /// Retrieve selection name (for diagnostic purposes).\n"
-        "    ///\n"
-        "    /// @param index\n"
-        "    ///   One of possible selection states.\n"
-        "    /// @return\n"
-        "    ///   Name string.\n"
+        "    /// Retrieve selection name (for diagnostic purposes).\n";
+    if (CClassCode::GetDoxygenComments()) {
+        code.ClassPublic() <<
+            "    ///\n"
+            "    /// @param index\n"
+            "    ///   One of possible selection states.\n"
+            "    /// @return\n"
+            "    ///   Name string.\n";
+    }
+    code.ClassPublic() <<
         "    static "<<stdNamespace<<"string SelectionName("STATE_ENUM" index);\n"
         "\n";
     setters <<
-        "    /// Select the requested variant if needed.\n"
-        "    ///\n"
-        "    /// @param index\n"
-        "    ///   New selection state.\n"
-        "    /// @param reset\n"
-        "    ///   Flag that defines the resetting of the variant data. The data will\n"
-        "    ///   be reset if either the current selection differs from the new one,\n"
-        "    ///   or the flag is set to eDoResetVariant.\n"
-        "    void Select("STATE_ENUM" index, "<<ncbiNamespace<<"EResetVariant reset = "<<ncbiNamespace<<"eDoResetVariant);\n";
-    if ( delayed ) {
+        "    /// Select the requested variant if needed.\n";
+    if (CClassCode::GetDoxygenComments()) {
         setters <<
-            "    /// Select the requested variant using delay buffer (for internal use).\n"
             "    ///\n"
             "    /// @param index\n"
             "    ///   New selection state.\n"
+            "    /// @param reset\n"
+            "    ///   Flag that defines the resetting of the variant data. The data will\n"
+            "    ///   be reset if either the current selection differs from the new one,\n"
+            "    ///   or the flag is set to eDoResetVariant.\n";
+    }
+    setters <<
+        "    void Select("STATE_ENUM" index, "<<ncbiNamespace<<"EResetVariant reset = "<<ncbiNamespace<<"eDoResetVariant);\n";
+    if ( delayed ) {
+        setters <<
+            "    /// Select the requested variant using delay buffer (for internal use).\n";
+        if (CClassCode::GetDoxygenComments()) {
+            setters <<
+                "    ///\n"
+                "    /// @param index\n"
+                "    ///   New selection state.\n";
+        }
+        setters <<
             "    void SelectDelayBuffer("STATE_ENUM" index);\n";
     }
     setters <<
@@ -889,101 +916,145 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             bool isNull = x_IsNullType(i);
             bool isNullWithAtt = x_IsNullWithAttlist(i);
 
-            if (i->attlist) {
-                code.ClassPublic() <<
-                    "    /// Reset the attribute list.\n"
-                    "    void Reset"<<i->cName<<"(void);\n\n";
-            } else {
-                code.ClassPublic() <<
-                    "    /// Check if variant "<<i->cName<<" is selected.\n"
-                    "    ///\n";
+            if (!CClassCode::GetDoxygenComments()) {
                 if (!isNull) {
                     code.ClassPublic()
-                        << "    /// "<<i->cName<<" type is defined as \'typedef "<< cType <<" "<<tType<<"\'.\n";
+                        << "    // typedef "<< cType <<" "<<tType<<"\n";
+                } else {
+                    code.ClassPublic() << "\n";
+                }
+            }
+            if (i->attlist) {
+                if (CClassCode::GetDoxygenComments()) {
+                    code.ClassPublic() <<
+                        "    /// Reset the attribute list.\n";
                 }
                 code.ClassPublic() <<
-                    "    /// @return\n"
-                    "    ///   - true, if the variant is selected.\n"
-                    "    ///   - false, otherwise.\n"
-                    "    bool Is"<<i->cName<<"(void) const;\n\n";
+                    "    void Reset"<<i->cName<<"(void);\n";
+            } else {
+                if (CClassCode::GetDoxygenComments()) {
+                    code.ClassPublic() <<
+                        "\n"
+                        "    /// Check if variant "<<i->cName<<" is selected.\n"
+                        "    ///\n";
+                    if (!isNull) {
+                        code.ClassPublic()
+                            << "    /// "<<i->cName<<" type is defined as \'typedef "<< cType <<" "<<tType<<"\'.\n";
+                    }
+                    code.ClassPublic() <<
+                        "    /// @return\n"
+                        "    ///   - true, if the variant is selected.\n"
+                        "    ///   - false, otherwise.\n";
+                }
+                code.ClassPublic() <<
+                    "    bool Is"<<i->cName<<"(void) const;\n";
             }
             if (i->dataType && i->dataType->IsPrimitive()) {
+                if (CClassCode::GetDoxygenComments()) {
+                    code.ClassPublic() <<
+                        "\n"
+                        "    /// Get the variant data.\n"
+                        "    ///\n"
+                        "    /// @return\n"
+                        "    ///   Copy of the variant data.\n";
+                }
                 code.ClassPublic() <<
-                    "    /// Get the variant data.\n"
-                    "    ///\n"
-                    "    /// @return\n"
-                    "    ///   Copy of the variant data.\n"
-                    "    "<<tType<<" Get"<<i->cName<<"(void) const;\n\n"
+                    "    "<<tType<<" Get"<<i->cName<<"(void) const;\n"
                     "\n";
             } else {
                 if (!isNull) {
-                    if (i->attlist) {
+                    if (CClassCode::GetDoxygenComments()) {
+                        if (i->attlist) {
+                            code.ClassPublic() <<
+                                "\n"
+                                "    /// Get the attribute list data.\n";
+                        } else {
+                            code.ClassPublic() <<
+                                "\n"
+                                "    /// Get the variant data.\n";
+                        }
                         code.ClassPublic() <<
-                            "    /// Get the attribute list data.\n";
-                    } else {
-                        code.ClassPublic() <<
-                            "    /// Get the variant data.\n";
+                            "    ///\n"
+                            "    /// @return\n"
+                            "    ///   Reference to the data.\n";
                     }
                     code.ClassPublic() <<
-                        "    ///\n"
-                        "    /// @return\n"
-                        "    ///   Reference to the data.\n"
-                        "    const "<<tType<<"& Get"<<i->cName<<"(void) const;\n\n";
+                        "    const "<<tType<<"& Get"<<i->cName<<"(void) const;\n";
                 }
             }
             if (isNull) {
-                setters <<
-                    "    /// Select the variant.\n"
-                    "    void Set"<<i->cName<<"(void);\n\n";
-            } else {
-                if (i->attlist) {
+                if (CClassCode::GetDoxygenComments()) {
                     setters <<
-                        "    /// Set the attribute list data.\n"
-                        "    ///\n"
-                        "    /// @return\n"
-                        "    ///   Reference to the data.\n";
-                } else {
-                    setters <<
-                        "    /// Select the variant.\n"
-                        "    ///\n"
-                        "    /// @return\n"
-                        "    ///   Reference to the variant data.\n";
+                        "\n"
+                        "    /// Select the variant.\n";
                 }
                 setters <<
-                    "    "<<tType<<"& Set"<<i->cName<<"(void);\n\n";
+                    "    void Set"<<i->cName<<"(void);\n";
+            } else {
+                if (CClassCode::GetDoxygenComments()) {
+                    if (i->attlist) {
+                        setters <<
+                            "\n"
+                            "    /// Set the attribute list data.\n"
+                            "    ///\n"
+                            "    /// @return\n"
+                            "    ///   Reference to the data.\n";
+                    } else {
+                        setters <<
+                            "\n"
+                            "    /// Select the variant.\n"
+                            "    ///\n"
+                            "    /// @return\n"
+                            "    ///   Reference to the variant data.\n";
+                    }
+                }
+                setters <<
+                    "    "<<tType<<"& Set"<<i->cName<<"(void);\n";
             }
             if ( i->type->CanBeCopied() ) {
                 if (i->attlist) {
-                    setters <<
-                        "    /// Set the attribute list data.\n"
-                        "    ///\n"
-                        "    /// @param value\n"
-                        "    ///   Reference to data.\n"
-                        "    void Set"<<i->cName<<"("<<tType<<"& value);\n\n";
-                } else {
-                    if (!isNull) {
+                    if (CClassCode::GetDoxygenComments()) {
                         setters <<
-                            "    /// Select the variant and set its data.\n"
+                            "\n"
+                            "    /// Set the attribute list data.\n"
                             "    ///\n"
                             "    /// @param value\n"
-                            "    ///   Reference to variant data.\n"
-                            "    void Set"<<i->cName<<"(const "<<tType<<"& value);\n\n";
+                            "    ///   Reference to data.\n";
+                    }
+                    setters <<
+                        "    void Set"<<i->cName<<"("<<tType<<"& value);\n";
+                } else {
+                    if (!isNull) {
+                        if (CClassCode::GetDoxygenComments()) {
+                            setters <<
+                                "\n"
+                                "    /// Select the variant and set its data.\n"
+                                "    ///\n"
+                                "    /// @param value\n"
+                                "    ///   Reference to variant data.\n";
+                        }
+                        setters <<
+                            "    void Set"<<i->cName<<"(const "<<tType<<"& value);\n";
                     }
                 }
             }
             if ( i->memberType == eObjectPointerMember && !isNullWithAtt) {
-                if (i->attlist) {
+                if (CClassCode::GetDoxygenComments()) {
+                    if (i->attlist) {
+                        setters <<
+                            "\n"
+                            "    /// Set the attribute list data.\n";
+                    } else {
+                        setters <<
+                            "    /// Select the variant and set its data.\n";
+                    }
                     setters <<
-                        "    /// Set the attribute list data.\n";
-                } else {
-                    setters <<
-                        "    /// Select the variant and set its data.\n";
+                        "    ///\n"
+                        "    /// @param value\n"
+                        "    ///   Reference to the data.\n";
                 }
                 setters <<
-                    "    ///\n"
-                    "    /// @param value\n"
-                    "    ///   Reference to the data.\n"
-                    "    void Set"<<i->cName<<"("<<tType<<"& value);\n\n";
+                    "    void Set"<<i->cName<<"("<<tType<<"& value);\n";
             }
             string memberRef;
             string constMemberRef;
@@ -1146,11 +1217,15 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                                     if (ir->simple) {
                                         string ircType(ir->type->GetCType(
                                             code.GetNamespace()));
+                                        if (CClassCode::GetDoxygenComments()) {
+                                            setters <<
+                                                "\n"
+                                                "    /// Select the variant and set its data.\n"
+                                                "    ///\n"
+                                                "    /// @param value\n"
+                                                "    ///   Reference to variant data.\n";
+                                        }
                                         setters <<
-                                            "    /// Select the variant and set its data.\n"
-                                            "    ///\n"
-                                            "    /// @param value\n"
-                                            "    ///   Reference to variant data.\n"
                                             "    void Set"<<i->cName<<"(const "<<
                                             ircType<<"& value);\n";
                                         methods <<

@@ -332,7 +332,7 @@ void CCodeGenerator::GenerateCode(void)
     }
 
     // generate Doxygen group description
-    if (!module_names.empty()) {
+    if (CClassCode::GetDoxygenComments() && !module_names.empty()) {
         string ingroup_name =
             m_DoxygenIngroup.empty() ? "DatatoolGeneratedClasses" : m_DoxygenIngroup;
         CDirEntry entry(GetMainModules().GetModuleSets().front()->GetSourceFileName());
@@ -795,6 +795,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2004/05/03 19:31:03  gouriano
+* Made generation of DOXYGEN-style comments optional
+*
 * Revision 1.55  2004/04/30 02:05:05  ucko
 * Make ingroup_name a full-fledged string rather than a reference,
 * since it may be initialized by a temporary and should never be big

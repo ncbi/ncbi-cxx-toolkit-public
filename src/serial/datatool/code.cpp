@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/05/03 19:31:03  gouriano
+* Made generation of DOXYGEN-style comments optional
+*
 * Revision 1.41  2004/04/29 20:11:39  gouriano
 * Generate DOXYGEN-style comments in C++ headers
 *
@@ -120,6 +123,7 @@
 BEGIN_NCBI_SCOPE
 
 string    CClassCode::sm_ExportSpecifier;
+bool      CClassCode::sm_DoxygenComments=false;
 string    CClassCode::sm_DoxygenGroup;
 string    CClassCode::sm_DocRootURL;
 
@@ -162,6 +166,15 @@ void CClassCode::SetExportSpecifier(const string& str)
 const string& CClassCode::GetExportSpecifier(void)
 {
     return sm_ExportSpecifier;
+}
+
+void CClassCode::SetDoxygenComments(bool set)
+{
+    sm_DoxygenComments = set;
+}
+bool CClassCode::GetDoxygenComments(void)
+{
+    return sm_DoxygenComments;
 }
 
 void CClassCode::SetDoxygenGroup(const string& str)
@@ -273,10 +286,13 @@ CNcbiOstream& CClassCode::WriteDestructionCode(CNcbiOstream& out) const
 CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
 {
     header <<
-        "/////////////////////////////////////////////////////////////////////////////\n"
-        "///\n"
-        "/// " << GetClassNameDT() << " --\n"
-        "///\n\n";
+        "/////////////////////////////////////////////////////////////////////////////\n";
+    if (CClassCode::GetDoxygenComments()) {
+        header <<
+            "///\n"
+            "/// " << GetClassNameDT() << " --\n"
+            "///\n\n";
+    }
     header << "class ";
     if ( !GetExportSpecifier().empty() )
         header << CClassCode::GetExportSpecifier() << " ";

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/05/03 19:31:21  gouriano
+* Made generation of DOXYGEN-style comments optional
+*
 * Revision 1.11  2004/04/29 20:09:44  gouriano
 * Generate DOXYGEN-style comments in C++ headers
 *
@@ -194,6 +197,9 @@ public:
     static void SetExportSpecifier(const string& str);
     static const string& GetExportSpecifier(void);
 
+    static void SetDoxygenComments(bool set);
+    static bool GetDoxygenComments(void);
+
     static void SetDoxygenGroup(const string& str);
     static const string& GetDoxygenGroup(void);
 
@@ -206,6 +212,7 @@ private:
     string m_ParentClassName;
     CNamespace m_ParentClassNamespace;
     static string sm_ExportSpecifier;
+    static bool   sm_DoxygenComments;
     static string sm_DoxygenGroup;
     static string sm_DocRootURL;
 

@@ -185,8 +185,10 @@ void CDataTool::Init(void)
                       "set \"-o*\" arguments for NCBI directory tree",
                       CArgDescriptions::eString);
 
+    d->AddFlag("oDc",
+               "turn on generation of DOXYGEN-style comments");
     d->AddOptionalKey("odx", "URL",
-                      "URL of documentation root folder",
+                      "URL of documentation root folder (for DOXYGEN)",
                       CArgDescriptions::eString);
     d->AddFlag("lax_syntax",
                "allow non-standard ASN.1 syntax accepted by asntool");
@@ -422,20 +424,25 @@ bool CDataTool::GenerateCode(void)
     }
     // define the Doxygen group
     {
-        if ( const CArgValue& odx = args["odx"] ) {
-            string root = odx.AsString();
-            if (root.empty()) {
-                // default
-                root = "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source";
+        if ( args["oDc"] ) {
+            CClassCode::SetDoxygenComments(true);
+            if ( const CArgValue& odx = args["odx"] ) {
+                string root = odx.AsString();
+                if (root.empty()) {
+                    // default
+                    root = "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source";
+                }
+                CClassCode::SetDocRootURL(root);
             }
-            CClassCode::SetDocRootURL(root);
+            string group = generator.GetConfig().Get("-","_addtogroup_name");
+            CClassCode::SetDoxygenGroup(group);
+            group = generator.GetConfig().Get("-","_ingroup_name");
+            generator.SetDoxygenIngroup(group);
+            group = generator.GetConfig().Get("-","_addtogroup_description");
+            generator.SetDoxygenGroupDescription(group);
+        } else {
+            CClassCode::SetDoxygenComments(false);
         }
-        string group = generator.GetConfig().Get("-","_addtogroup_name");
-        CClassCode::SetDoxygenGroup(group);
-        group = generator.GetConfig().Get("-","_ingroup_name");
-        generator.SetDoxygenIngroup(group);
-        group = generator.GetConfig().Get("-","_addtogroup_description");
-        generator.SetDoxygenGroupDescription(group);
     }
 
     // prepare generator
@@ -551,6 +558,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.70  2004/05/03 19:31:03  gouriano
+* Made generation of DOXYGEN-style comments optional
+*
 * Revision 1.69  2004/04/29 20:11:39  gouriano
 * Generate DOXYGEN-style comments in C++ headers
 *

@@ -250,23 +250,28 @@ void CAliasTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
     const CNamespace& ns = GetNamespace();
     string ref_name = m_RefType->GetCType(ns);
     string className = GetClassName();
-    out
-        << "\n"
-        << "/** @addtogroup ";
-    if (!CClassCode::GetDoxygenGroup().empty()) {
-        out << CClassCode::GetDoxygenGroup();
-    } else {
-        out << "dataspec_" << GetModuleName();
+    if (CClassCode::GetDoxygenComments()) {
+        out
+            << "\n"
+            << "/** @addtogroup ";
+        if (!CClassCode::GetDoxygenGroup().empty()) {
+            out << CClassCode::GetDoxygenGroup();
+        } else {
+            out << "dataspec_" << GetModuleName();
+        }
+        out
+            << "\n *\n"
+            << " * @{\n"
+            << " */\n\n";
     }
-    out
-        << "\n *\n"
-        << " * @{\n"
-        << " */\n\n";
     out <<
-        "/////////////////////////////////////////////////////////////////////////////\n"
-        "///\n"
-        "/// " << className << " --\n"
-        "///\n\n";
+        "/////////////////////////////////////////////////////////////////////////////\n";
+    if (CClassCode::GetDoxygenComments()) {
+        out <<
+            "///\n"
+            "/// " << className << " --\n"
+            "///\n\n";
+    }
     out << "class ";
     if ( !CClassCode::GetExportSpecifier().empty() )
         out << CClassCode::GetExportSpecifier() << " ";
@@ -292,8 +297,11 @@ void CAliasTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "    explicit " << className + "(const " + ref_name + "& data)" << "\n"
             "        : Tparent(data) {}\n\n";
     }
-    out << "};\n"
-        << "/* @} */\n\n";
+    out << "};\n";
+    if (CClassCode::GetDoxygenComments()) {
+        out << "/* @} */\n";
+    }
+    out << "\n";
 }
 
 void CAliasTypeStrings::GenerateUserCPPCode(CNcbiOstream& out) const
@@ -430,6 +438,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/03 19:31:03  gouriano
+* Made generation of DOXYGEN-style comments optional
+*
 * Revision 1.5  2004/04/29 20:11:40  gouriano
 * Generate DOXYGEN-style comments in C++ headers
 *

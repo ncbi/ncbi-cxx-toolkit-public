@@ -455,25 +455,30 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
                         "\n"
                         "// generated classes\n"
                         "\n";
-                    header
-                        << "\n"
-                        << "/** @addtogroup ";
-                    if (!CClassCode::GetDoxygenGroup().empty()) {
-                        header << CClassCode::GetDoxygenGroup();
-                    } else {
-                        header << "dataspec_" << i->code->GetModuleName();
+                    if (CClassCode::GetDoxygenComments()) {
+                        header
+                            << "\n"
+                            << "/** @addtogroup ";
+                        if (!CClassCode::GetDoxygenGroup().empty()) {
+                            header << CClassCode::GetDoxygenGroup();
+                        } else {
+                            header << "dataspec_" << i->code->GetModuleName();
+                        }
+                        header
+                            << "\n *\n"
+                            << " * @{\n"
+                            << " */\n\n";
                     }
-                    header
-                        << "\n *\n"
-                        << " * @{\n"
-                        << " */\n\n";
                     begin = true;
                 }
                 header << i->hppCode;
             }
         }
         if ( begin ) {
-            header << "\n/* @} */\n";
+            if (CClassCode::GetDoxygenComments()) {
+                header << "\n/* @} */";
+            }
+            header << "\n";
         }
     }
 
@@ -853,6 +858,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.43  2004/05/03 19:31:03  gouriano
+* Made generation of DOXYGEN-style comments optional
+*
 * Revision 1.42  2004/04/29 20:11:39  gouriano
 * Generate DOXYGEN-style comments in C++ headers
 *
