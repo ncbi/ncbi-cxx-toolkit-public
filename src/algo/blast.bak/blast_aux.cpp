@@ -30,7 +30,7 @@
 *
 */
 
-#include <BlastAux.hpp>
+#include <algo/blast/blast_aux.hpp>
 
 #include <objects/seqloc/Seq_interval.hpp>
 

@@ -34,10 +34,10 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 
-#include <BlastOption.hpp>
-#include <BlastSetup.hpp>
-#include <Bl2Seq.hpp>
-#include <BlastSeqalign.hpp>
+#include <algo/blast/blast_option.hpp>
+#include <algo/blast/blast_setup.hpp>
+#include <algo/blast/bl2seq.hpp>
+#include <algo/blast/blast_seqalign.hpp>
 
 // NewBlast includes
 #include <blast_def.h>
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/04 15:16:42  dicuccio
+* Changed C++ includes to reference files from correct directory
+*
 * Revision 1.1  2003/08/04 14:22:13  dicuccio
 * Initial import into the C++ toolkit
 *

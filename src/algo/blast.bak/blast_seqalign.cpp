@@ -32,7 +32,7 @@
 * ===========================================================================
 */
 
-#include <BlastSeqalign.hpp>
+#include <algo/blast/blast_seqalign.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/general/Object_id.hpp>
 
@@ -635,6 +635,9 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/04 15:16:42  dicuccio
+* Changed C++ includes to reference files from correct directory
+*
 * Revision 1.1  2003/08/04 14:22:14  dicuccio
 * Initial import into the C++ toolkit
 *

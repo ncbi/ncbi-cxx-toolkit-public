@@ -31,8 +31,8 @@
 * ===========================================================================
 */
 
-#include <BlastOption.hpp>
-#include <BlastSetup.hpp>
+#include <algo/blast/blast_option.hpp>
+#include <algo/blast/blast_setup.hpp>
 
 // NewBlast includes
 #include <blast_extend.h>
@@ -484,6 +484,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/04 15:16:42  dicuccio
+* Changed C++ includes to reference files from correct directory
+*
 * Revision 1.1  2003/08/04 14:22:14  dicuccio
 * Initial import into the C++ toolkit
 *
