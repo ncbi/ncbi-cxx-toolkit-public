@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.178  2003/02/02 03:47:50  thiessen
+* fix i/o bug
+*
 * Revision 1.177  2003/01/31 17:18:58  thiessen
 * many small additions and changes...
 *
@@ -2134,9 +2137,10 @@ void Cn3DMainFrame::LoadFile(const char *filename)
 
     // try to decide if what ASN type this is, and if it's binary or ascii
     CNcbiIstream *inStream = new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary);
-    if (!inStream) {
+    if (!(*inStream)) {
         ERR_POST(Error << "Cannot open file '" << filename << "' for reading");
         SetCursor(wxNullCursor);
+        delete inStream;
         return;
     }
     currentFile = wxFileNameFromPath(filename);
