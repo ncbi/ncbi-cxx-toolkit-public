@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2001/07/10 21:27:52  thiessen
+* add some specular reflection
+*
 * Revision 1.39  2001/06/29 18:13:57  thiessen
 * initial (incomplete) user annotation system
 *
@@ -202,6 +205,8 @@ static const GLfloat Color_Off[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 static const GLfloat Color_MostlyOff[4] = { 0.05f, 0.05f, 0.05f, 1.0f };
 static const GLfloat Color_MostlyOn[4] = { 0.95f, 0.95f, 0.95f, 1.0f };
 static const GLfloat Color_On[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+static const GLfloat Color_Specular[4] = { 0.5f, 0.5f, 0.5f, 1.0f };
+static const GLint Shininess = 40;
 
 // matrix conversion utility functions
 
@@ -281,18 +286,19 @@ void OpenGLRenderer::Init(void) const
 
     // set up the lighting
     // directional light (faster) when LightPosition[4] == 0.0
-    GLfloat LightPosition[4] = { 0.0, 0.0, 1.0, 0.0 };
+    GLfloat LightPosition[4] = { 0.0f, 0.0f, 1.0f, 0.0f };
     glLightfv(GL_LIGHT0, GL_POSITION, LightPosition);
     glLightfv(GL_LIGHT0, GL_AMBIENT, Color_Off);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, Color_MostlyOn);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, Color_Off);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, Color_On);
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, Color_On); // global ambience
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
-    // clear these material colors
+    // set these material colors
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, Color_Off);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Color_Off);
+    glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, Shininess);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Color_Specular);
 
     // turn on culling to speed rendering
     glEnable(GL_CULL_FACE);
