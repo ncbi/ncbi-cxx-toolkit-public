@@ -254,7 +254,6 @@ int CNcbiApplication::AppMain
                     continue;
                 }
                 // Print USAGE
-                string str;
                 LOG_POST(appname + ": " + GetVersion().Print());
                 return 0;
 
@@ -690,6 +689,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2003/02/17 06:30:05  vakatov
+ * Get rid of an unused variable
+ *
  * Revision 1.51  2002/12/26 17:13:03  ivanov
  * Added version info and Set/GetVersion functions into CNcbiApplication class
  *
