@@ -45,12 +45,12 @@ BEGIN_NCBI_SCOPE
 static CFastMutex x_BDB_BLOB_CacheMutex;
 
 
-static void s_MakeOverflowFileName(char* buf,
-                                   const char* path, 
-                                   const char* blob_key,
-                                   int         version)
+static void s_MakeOverflowFileName(string& buf,
+                                   const string& path, 
+                                   const string& blob_key,
+                                   int           version)
 {
-    sprintf(buf, "%s%s_%i.ov_", path, blob_key, version);
+    buf = path + blob_key + '_' + NStr::IntToString(version) + ".ov_";
 }
 
 
@@ -230,10 +230,10 @@ private:
     void OpenOverflowFile()
     {
         m_OverflowFile = new CNcbiOfstream();
-        char path[2048];
-        s_MakeOverflowFileName(path, m_Path, m_BlobKey.c_str(), m_Version);
+        string path;
+        s_MakeOverflowFileName(path, m_Path, m_BlobKey, m_Version);
         LOG_POST(Info << "LC: Making overflow file " << path);
-        m_OverflowFile->open(path, 
+        m_OverflowFile->open(path.c_str(), 
                              IOS_BASE::out | 
                              IOS_BASE::trunc | 
                              IOS_BASE::binary);
@@ -351,8 +351,8 @@ size_t CBDB_BLOB_Cache::GetSize(const string& key,
     int overflow = m_AttrDB.overflow;
 
     if (overflow) {
-        char path[2048];
-        s_MakeOverflowFileName(path, m_Path.c_str(), key.c_str(), version);
+        string path;
+        s_MakeOverflowFileName(path, m_Path, key, version);
         CFile entry(path);
 
         if (entry.Exists()) {
@@ -394,11 +394,11 @@ bool CBDB_BLOB_Cache::Read(const string& key,
     int overflow = m_AttrDB.overflow;
 
     if (overflow) {
-        char path[2048];
-        s_MakeOverflowFileName(path, m_Path.c_str(), key.c_str(), version);
+        string path;
+        s_MakeOverflowFileName(path, m_Path, key, version);
 
         auto_ptr<CNcbiIfstream>  overflow_file(new CNcbiIfstream());
-        overflow_file->open(path, IOS_BASE::in | IOS_BASE::binary);
+        overflow_file->open(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
         if (!overflow_file->is_open()) {
             return false;
         }
@@ -556,10 +556,10 @@ IReader* CBDB_BLOB_Cache::GetReadStream(const string& key,
     // Check if it's an overflow BLOB (external file)
 
     if (overflow) {
-        char path[2048];
-        s_MakeOverflowFileName(path, m_Path.c_str(), key.c_str(), version);
+        string path;
+        s_MakeOverflowFileName(path, m_Path, key, version);
         auto_ptr<CNcbiIfstream>  overflow_file(new CNcbiIfstream());
-        overflow_file->open(path, IOS_BASE::in | IOS_BASE::binary);
+        overflow_file->open(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
         if (!overflow_file->is_open()) {
             return 0;
         }
@@ -609,8 +609,8 @@ void CBDB_BLOB_Cache::x_DropBLOB(const char*    key,
                                  int            overflow)
 {
     if (overflow == 1) {
-        char path[2048];
-        s_MakeOverflowFileName(path, m_Path.c_str(), key, version);
+        string path;
+        s_MakeOverflowFileName(path, m_Path, key, version);
 
         CDirEntry entry(path);
         if (entry.Exists()) {
@@ -634,6 +634,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/10/16 12:08:16  ucko
+ * Address GCC 2.95 errors about missing sprintf declaration, and avoid
+ * possible buffer overflows, by rewriting s_MakeOverflowFileName to use
+ * C++ strings.
+ *
  * Revision 1.9  2003/10/16 00:30:57  ucko
  * ios_base -> IOS_BASE (should fix GCC 2.95 build)
  *
