@@ -210,14 +210,15 @@ Int4 BlastAaLookupIndexQueries(LookupTable* lookup,
  * @param matrix the substitution matrix [in]
  * @param query the array of queries to index
  * @param unmasked_regions a ListNode* which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
-i
+ * @param query_bias number added to each offset put into lookup table (only used for RPS blast database creation, otherwise 0) [in]
  * @return Zero.
  */
 
 Int4 _BlastAaLookupIndexQuery(LookupTable* lookup,
 			      Int4 ** matrix,
 			      BLAST_SequenceBlk* query,
-			      ListNode* unmasked_regions);
+			      ListNode* unmasked_regions,
+                              Int4 query_bias);
 
 /** Create a sequence containing all possible words as subsequences.
  *
@@ -242,13 +243,15 @@ Int4 MakeAllWordSequence(LookupTable* lookup);
  * @param matrix the substitution matrix [in]
  * @param query the query sequence [in]
  * @param offset the offset of the word
+ * @param query_bias number added to each offset put into lookup table (only used for RPS blast database creation, otherwise 0) [in]
  * @return Zero.
  */
 
 Int4 AddNeighboringWords(LookupTable* lookup,
 			 Int4 ** matrix,
 			 BLAST_SequenceBlk* query,
-			 Int4 offset);
+			 Int4 offset,
+                         Int4 query_bias);
 
 #define SET_HIGH_BIT(x) (x |= 0x80000000)
 #define CLEAR_HIGH_BIT(x) (x &= 0x7FFFFFFF)

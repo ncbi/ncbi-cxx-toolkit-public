@@ -37,11 +37,13 @@ static char const rcsid[] = "$Id$";
 static void AddWordHits( LookupTable *lookup,
 			 Int4** matrix,
 			 Uint1* word,
-			 Int4 offset);
+			 Int4 offset,
+                         Int4 query_bias);
 
 static void AddPSSMWordHits( LookupTable *lookup,
 			 Int4** matrix,
-			 Int4 offset);
+			 Int4 offset,
+                         Int4 query_bias);
 
 static NCBI_INLINE void  _ComputeIndex(Int4 wordsize,
 				  Int4 charsize,
@@ -568,8 +570,9 @@ Int4 BlastAaLookupIndexQueries(LookupTable* lookup,
   /* index queries */
   for(i=0;i<num_queries;i++)
     {
-      _BlastAaLookupIndexQuery(lookup, matrix, (lookup->use_pssm == TRUE) ? NULL : &(query[i]), 
-         &(locations[i]));
+      _BlastAaLookupIndexQuery(lookup, matrix, 
+                               (lookup->use_pssm == TRUE) ? NULL : &(query[i]), 
+                               &(locations[i]), 0);
     }
 
   /* free neighbor array*/
@@ -582,7 +585,8 @@ Int4 BlastAaLookupIndexQueries(LookupTable* lookup,
 Int4 _BlastAaLookupIndexQuery(LookupTable* lookup,
 			      Int4 ** matrix,
 			      BLAST_SequenceBlk* query,
-			      ListNode* location)
+			      ListNode* location,
+                              Int4 query_bias)
 {
   ListNode* loc;
   Int4 from, to;
@@ -598,7 +602,8 @@ Int4 _BlastAaLookupIndexQuery(LookupTable* lookup,
 	  AddNeighboringWords(lookup,
 			      matrix,
 			      query,
-			      w);
+			      w,
+                              query_bias);
 	}      
     }
   return 0;
@@ -633,12 +638,12 @@ Int4 MakeAllWordSequence(LookupTable* lookup)
   return 0;
 }
 
-Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk* query, Int4 offset)
+Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk* query, Int4 offset, Int4 query_bias)
 {
   
   if (lookup->use_pssm)
   {
-      AddPSSMWordHits(lookup, matrix, offset);
+      AddPSSMWordHits(lookup, matrix, offset, query_bias);
   }
   else
   {
@@ -648,19 +653,19 @@ Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk*
   
     if (lookup->threshold == 0)
     {
-      BlastAaLookupAddWordHit(lookup, w, offset);
+      BlastAaLookupAddWordHit(lookup, w, query_bias + offset);
       lookup->exact_matches++;
     }
     else
     {
-      AddWordHits(lookup, matrix, w, offset);
+      AddWordHits(lookup, matrix, w, offset, query_bias);
     }
   }
   return 0;
 }
 
 static void AddWordHits(LookupTable* lookup, Int4** matrix, 
-			Uint1* word, Int4 offset)
+			Uint1* word, Int4 offset, Int4 query_bias)
 {
   Uint1* s = lookup->neighbors;
   Uint1* s_end=s + lookup->neighbors_length - lookup->wordsize + 1;
@@ -672,6 +677,7 @@ static void AddWordHits(LookupTable* lookup, Int4** matrix,
   Int4* p0;
   Int4* p1;
   Int4* p2;
+  Int4 corrected_offset = offset + query_bias;
 
   /* For each group of 'wordsize' bytes starting at 'w', 
    * add the group to the lookup table at each offset 's' if
@@ -689,7 +695,7 @@ static void AddWordHits(LookupTable* lookup, Int4** matrix,
           {
             if ( (s[0] == w[0]) || (p0[s[0]] >= threshold) )
 	    {
-                BlastAaLookupAddWordHit(lookup,s,offset);
+                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
 		if (s[0] == w[0])
 		    lookup->exact_matches++;
 		else
@@ -711,7 +717,7 @@ static void AddWordHits(LookupTable* lookup, Int4** matrix,
   
             if ( !different || (score >= threshold) )
 	    {
-                BlastAaLookupAddWordHit(lookup,s,offset);
+                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
 		if (!different)
 		    lookup->exact_matches++;
 		else
@@ -734,7 +740,7 @@ static void AddWordHits(LookupTable* lookup, Int4** matrix,
   
             if ( !different || (score >= threshold) )
 	    {
-                BlastAaLookupAddWordHit(lookup,s,offset);
+                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
 		if (!different)
 		    lookup->exact_matches++;
 		else
@@ -758,7 +764,7 @@ static void AddWordHits(LookupTable* lookup, Int4** matrix,
   
             if ( !different || (score >= threshold) )
 	    {
-                BlastAaLookupAddWordHit(lookup,s,offset);
+                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
 		if (!different)
 		    lookup->exact_matches++;
 		else
@@ -772,7 +778,8 @@ static void AddWordHits(LookupTable* lookup, Int4** matrix,
 }
 
 
-static void AddPSSMWordHits(LookupTable* lookup, Int4** matrix, Int4 offset)
+static void AddPSSMWordHits(LookupTable* lookup, Int4** matrix, 
+                            Int4 offset, Int4 query_bias)
 {
   Uint1* s = lookup->neighbors;
   Uint1* s_end=s + lookup->neighbors_length - lookup->wordsize;
@@ -782,6 +789,7 @@ static void AddPSSMWordHits(LookupTable* lookup, Int4** matrix, Int4 offset)
   Int4* p0;
   Int4* p1;
   Int4* p2;
+  Int4 corrected_offset = offset + query_bias;
 
   /* Equivalent to AddWordHits(), except that the word score
    * is derived from a Position-Specific Scoring Matrix (PSSM) 
@@ -795,7 +803,7 @@ static void AddPSSMWordHits(LookupTable* lookup, Int4** matrix, Int4 offset)
         while (s < s_end)
           {
             if (p0[s[0]] >= threshold)
-                BlastAaLookupAddWordHit(lookup,s,offset);
+                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
             s++;
   	  }
 
@@ -810,7 +818,7 @@ static void AddPSSMWordHits(LookupTable* lookup, Int4** matrix, Int4 offset)
             score = p0[s[0]] + p1[s[1]];
   
             if (score >= threshold)
-                BlastAaLookupAddWordHit(lookup,s,offset);
+                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
             s++;
   	  }
 
@@ -826,7 +834,7 @@ static void AddPSSMWordHits(LookupTable* lookup, Int4** matrix, Int4 offset)
             score = p0[s[0]] + p1[s[1]] + p2[s[2]];
   
             if (score >= threshold)
-                BlastAaLookupAddWordHit(lookup,s,offset);
+                BlastAaLookupAddWordHit(lookup,s,corrected_offset);
             s++;
   	  }
 
