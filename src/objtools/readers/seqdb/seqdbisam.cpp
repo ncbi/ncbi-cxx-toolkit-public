@@ -1327,8 +1327,13 @@ CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
                 }
             }
             
-            result = eStringID;
-            str_id = dbt.GetTag().GetStr();
+            if (dbt.CanGetTag() && dbt.GetTag().IsStr()) {
+                result = eStringID;
+                str_id = dbt.GetTag().GetStr();
+            } else {
+                // Use the default logic.
+                matched = false;
+            }
         }
         break;
         

@@ -517,6 +517,8 @@ void CSeqDBImpl::AccessionToOids(const string & acc, vector<Uint4> & oids) const
                 oids.push_back(oid1);
             }
         }
+        
+        vol_oids.clear();
     }
 }
 
@@ -557,6 +559,8 @@ void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in, vector<Uint4> & oids) con
                 oids.push_back(oid1);
             }
         }
+        
+        vol_oids.clear();
     }
 }
 
