@@ -1,5 +1,5 @@
-#ifndef ALGO_BLAST_CORE___BLAST_LIST__H
-#define ALGO_BLAST_CORE___BLAST_LIST__H
+#ifndef ALGO_BLAST_CORE___BLAST_ENCODING__H
+#define ALGO_BLAST_CORE___BLAST_ENCODING__H
 
 /*  $Id$
  * ===========================================================================
@@ -79,10 +79,13 @@ extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/04/07 19:05:44  camacho
+ * Minor fix in #ifdef guards
+ *
  * Revision 1.1  2004/04/07 03:10:20  camacho
  * Initial revision
  *
  * ===========================================================================
  */
 
-#endif  /* ALGO_BLAST_CORE___BLAST_LIST__H */
+#endif  /* ALGO_BLAST_CORE___BLAST_ENCODING__H */
