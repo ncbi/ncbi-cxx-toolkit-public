@@ -171,11 +171,12 @@ ESerialVerifyData CObjectIStream::ms_VerifyDataDefault = eSerialVerifyData_Defau
 static CSafeStaticRef< CTls<int> > s_VerifyTLS;
 
 
-void CObjectIStream::SetVerifyData(ESerialVerifyData verify)
+void CObjectIStream::SetVerifyDataThread(ESerialVerifyData verify)
 {
     ESerialVerifyData tls_verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
     if (tls_verify != eSerialVerifyData_Never &&
-        tls_verify != eSerialVerifyData_Always) {
+        tls_verify != eSerialVerifyData_Always &&
+        tls_verify != eSerialVerifyData_DefValueAlways) {
         s_VerifyTLS->SetValue(reinterpret_cast<int*>(verify));
     }
 }
@@ -183,16 +184,18 @@ void CObjectIStream::SetVerifyData(ESerialVerifyData verify)
 void CObjectIStream::SetVerifyDataGlobal(ESerialVerifyData verify)
 {
     if (ms_VerifyDataDefault != eSerialVerifyData_Never &&
-        ms_VerifyDataDefault != eSerialVerifyData_Always) {
+        ms_VerifyDataDefault != eSerialVerifyData_Always &&
+        ms_VerifyDataDefault != eSerialVerifyData_DefValueAlways) {
         ms_VerifyDataDefault = verify;
     }
 }
 
-bool CObjectIStream::x_GetVerifyDataDefault(void)
+ESerialVerifyData CObjectIStream::x_GetVerifyDataDefault(void)
 {
     ESerialVerifyData verify;
     if (ms_VerifyDataDefault == eSerialVerifyData_Never ||
-        ms_VerifyDataDefault == eSerialVerifyData_Always) {
+        ms_VerifyDataDefault == eSerialVerifyData_Always ||
+        ms_VerifyDataDefault == eSerialVerifyData_DefValueAlways) {
         verify = ms_VerifyDataDefault;
     } else {
         verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
@@ -213,14 +216,32 @@ bool CObjectIStream::x_GetVerifyDataDefault(void)
                         ms_VerifyDataDefault = eSerialVerifyData_Never;
                     } else  if (NStr::CompareNocase(str,"ALWAYS") == 0) {
                         ms_VerifyDataDefault = eSerialVerifyData_Always;
+                    } else  if (NStr::CompareNocase(str,"DEFVALUE") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_DefValue;
+                    } else  if (NStr::CompareNocase(str,"DEFVALUE_ALWAYS") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_DefValueAlways;
                     }
                 }
             }
             verify = ms_VerifyDataDefault;
         }
     }
-    return verify == eSerialVerifyData_Yes ||
-           verify == eSerialVerifyData_Always;
+    switch (verify) {
+    default:
+    case eSerialVerifyData_Default:
+        return ms_VerifyDataDefault;
+    case eSerialVerifyData_No:
+    case eSerialVerifyData_Never:
+        return eSerialVerifyData_No;
+        break;
+    case eSerialVerifyData_Yes:
+    case eSerialVerifyData_Always:
+        return eSerialVerifyData_Yes;
+        break;
+    case eSerialVerifyData_DefValue:
+    case eSerialVerifyData_DefValueAlways:
+        return eSerialVerifyData_DefValue;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -506,7 +527,7 @@ void CObjectIStream::EndDelayBuffer(CDelayBuffer& buffer,
 
 void CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)
 {
-    if (GetVerifyData()) {
+    if (GetVerifyData() == eSerialVerifyData_Yes) {
         ThrowError(fFormatError,
                    "member "+memberInfo->GetId().ToString()+" expected");
     } else {
@@ -1311,6 +1332,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.118  2003/11/13 14:07:38  gouriano
+* Elaborated data verification on read/write/get to enable skipping mandatory class data members
+*
 * Revision 1.117  2003/10/24 15:54:28  grichenk
 * Removed or blocked exceptions in destructors
 *

@@ -113,10 +113,10 @@ public:
     // and throws CSerialException with eFormatError err.code
 
     // for this particular stream
-    void SetVerifyData(bool do_verify);
-    bool GetVerifyData(void) const;
+    void SetVerifyData(ESerialVerifyData verify);
+    ESerialVerifyData GetVerifyData(void) const;
     // for streams created by the current thread
-    static  void SetVerifyData(ESerialVerifyData verify);
+    static  void SetVerifyDataThread(ESerialVerifyData verify);
     // for streams created by the current process
     static  void SetVerifyDataGlobal(ESerialVerifyData verify);
 
@@ -561,11 +561,11 @@ private:
 
 protected:
     CIStreamBuffer m_Input;
-    bool   m_VerifyData;
+    ESerialVerifyData   m_VerifyData;
     static ESerialVerifyData ms_VerifyDataDefault;
     
 private:
-    static bool x_GetVerifyDataDefault(void);
+    static ESerialVerifyData x_GetVerifyDataDefault(void);
 
     AutoPtr<CReadObjectList> m_Objects;
 
@@ -641,6 +641,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.94  2003/11/13 14:06:45  gouriano
+* Elaborated data verification on read/write/get to enable skipping mandatory class data members
+*
 * Revision 1.93  2003/10/21 21:08:45  grichenk
 * Fixed aliases-related bug in XML stream
 *

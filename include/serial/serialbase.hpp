@@ -100,7 +100,7 @@ public:
 
     void ThrowUnassigned(TMemberIndex index) const;
     // for all GetX() methods called in the current thread
-    static  void SetVerifyData(ESerialVerifyData verify);
+    static  void SetVerifyDataThread(ESerialVerifyData verify);
     // for all GetX() methods called in the current process
     static  void SetVerifyDataGlobal(ESerialVerifyData verify);
 
@@ -116,7 +116,7 @@ public:
     void SetNamespacePrefix(const string& ns_prefix);
 
 private:
-    static bool  x_GetVerifyData(void);
+    static ESerialVerifyData x_GetVerifyData(void);
     static ESerialVerifyData ms_VerifyDataDefault;
 };
 
@@ -403,6 +403,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/11/13 14:06:44  gouriano
+* Elaborated data verification on read/write/get to enable skipping mandatory class data members
+*
 * Revision 1.24  2003/10/21 13:48:47  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit

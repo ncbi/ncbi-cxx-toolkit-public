@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2003/11/13 14:07:37  gouriano
+* Elaborated data verification on read/write/get to enable skipping mandatory class data members
+*
 * Revision 1.72  2003/10/01 14:40:12  vasilche
 * Fixed CanGet() for members wihout 'set' flag.
 *
@@ -611,11 +614,16 @@ void CClassTypeInfo::WriteImplicitMember(CObjectOStream& out,
         if (memberInfo->Optional()) {
             return;
         }
-        if (out.GetVerifyData() && (memberInfo->NonEmpty() ||
-            memberInfo->GetTypeInfo()->GetTypeFamily() != eTypeFamilyContainer)) {
-            out.ThrowError(CObjectOStream::fUnassigned,
-                string("Unassigned member: ")+classType->GetName());
-        }
+        if (memberInfo->NonEmpty() ||
+            memberInfo->GetTypeInfo()->GetTypeFamily() != eTypeFamilyContainer) {
+            ESerialVerifyData verify = out.GetVerifyData();
+            if (verify == eSerialVerifyData_Yes) {
+                out.ThrowError(CObjectOStream::fUnassigned,
+                    string("Unassigned member: ")+classType->GetName());
+            } else if (verify == eSerialVerifyData_No) {
+                return;
+            }
+        } 
     }
     out.WriteNamedType(classType,
                        memberInfo->GetTypeInfo(),

@@ -659,10 +659,35 @@ void CMemberInfoFunctions::ReadLongMember(CObjectIStream& in,
 
 void CMemberInfoFunctions::ReadMissingSimpleMember(CObjectIStream& in,
                                                    const CMemberInfo* memberInfo,
-                                                   TObjectPtr /*classPtr*/)
+                                                   TObjectPtr classPtr)
 {
     _ASSERT(!memberInfo->Optional());
     in.ExpectedMember(memberInfo);
+
+    if (memberInfo->HaveSetFlag()) {
+        memberInfo->UpdateSetFlagNo(classPtr);
+    }
+    memberInfo->GetTypeInfo()->SetDefault(memberInfo->GetItemPtr(classPtr));
+#ifdef _DEBUG
+    if (in.GetVerifyData() == eSerialVerifyData_No) {
+        if (memberInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyPrimitive) {
+            CObjectInfo objinfo(memberInfo->GetItemPtr(classPtr),
+                                memberInfo->GetTypeInfo());
+            if (objinfo.GetPrimitiveValueType() == ePrimitiveValueString) {
+                objinfo.SetPrimitiveValueString(CSerialObject::ms_UnassignedStr);
+            } else {
+                size_t size = memberInfo->GetTypeInfo()->GetSize();
+                if (size <= sizeof(long)) {
+                    char* tmp = static_cast<char*>(
+                        memberInfo->GetItemPtr(classPtr));
+                    for (; size != 0; --size, ++tmp) {
+                        *tmp = CSerialObject::ms_UnassignedByte;
+                    }
+                }
+            }
+        }
+    }
+#endif
 }
 
 void
@@ -735,9 +760,12 @@ void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
         if (memberInfo->Optional()) {
             return;
         }
-        if (out.GetVerifyData()) {
+        ESerialVerifyData verify = out.GetVerifyData();
+        if (verify == eSerialVerifyData_Yes) {
             out.ThrowError(CObjectOStream::fUnassigned,
                 string("Unassigned member: ")+memberInfo->GetId().GetName());
+        } else if (verify == eSerialVerifyData_No) {
+            return;
         }
     }
 #ifdef _DEBUG
@@ -1026,6 +1054,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.35  2003/11/13 14:07:37  gouriano
+* Elaborated data verification on read/write/get to enable skipping mandatory class data members
+*
 * Revision 1.34  2003/10/01 14:40:12  vasilche
 * Fixed CanGet() for members wihout 'set' flag.
 *

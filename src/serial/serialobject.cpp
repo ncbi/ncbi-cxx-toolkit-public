@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/11/13 14:07:38  gouriano
+* Elaborated data verification on read/write/get to enable skipping mandatory class data members
+*
 * Revision 1.16  2003/09/22 20:56:31  gouriano
 * Changed base type of AnyContent object to CSerialObject
 *
@@ -149,11 +152,12 @@ ESerialVerifyData CSerialObject::ms_VerifyDataDefault = eSerialVerifyData_Defaul
 static CSafeStaticRef< CTls<int> > s_VerifyTLS;
 
 
-void CSerialObject::SetVerifyData(ESerialVerifyData verify)
+void CSerialObject::SetVerifyDataThread(ESerialVerifyData verify)
 {
     ESerialVerifyData tls_verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
     if (tls_verify != eSerialVerifyData_Never &&
-        tls_verify != eSerialVerifyData_Always) {
+        tls_verify != eSerialVerifyData_Always &&
+        tls_verify != eSerialVerifyData_DefValueAlways) {
         s_VerifyTLS->SetValue(reinterpret_cast<int*>(verify));
     }
 }
@@ -161,16 +165,18 @@ void CSerialObject::SetVerifyData(ESerialVerifyData verify)
 void CSerialObject::SetVerifyDataGlobal(ESerialVerifyData verify)
 {
     if (ms_VerifyDataDefault != eSerialVerifyData_Never &&
-        ms_VerifyDataDefault != eSerialVerifyData_Always) {
+        ms_VerifyDataDefault != eSerialVerifyData_Always &&
+        ms_VerifyDataDefault != eSerialVerifyData_DefValueAlways) {
         ms_VerifyDataDefault = verify;
     }
 }
 
-bool CSerialObject::x_GetVerifyData(void)
+ESerialVerifyData CSerialObject::x_GetVerifyData(void)
 {
     ESerialVerifyData verify;
     if (ms_VerifyDataDefault == eSerialVerifyData_Never ||
-        ms_VerifyDataDefault == eSerialVerifyData_Always) {
+        ms_VerifyDataDefault == eSerialVerifyData_Always ||
+        ms_VerifyDataDefault == eSerialVerifyData_DefValueAlways) {
         verify = ms_VerifyDataDefault;
     } else {
         verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
@@ -191,19 +197,37 @@ bool CSerialObject::x_GetVerifyData(void)
                         ms_VerifyDataDefault = eSerialVerifyData_Never;
                     } else  if (NStr::CompareNocase(str,"ALWAYS") == 0) {
                         ms_VerifyDataDefault = eSerialVerifyData_Always;
+                    } else  if (NStr::CompareNocase(str,"DEFVALUE") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_DefValue;
+                    } else  if (NStr::CompareNocase(str,"DEFVALUE_ALWAYS") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_DefValueAlways;
                     }
                 }
             }
             verify = ms_VerifyDataDefault;
         }
     }
-    return verify == eSerialVerifyData_Yes ||
-           verify == eSerialVerifyData_Always;
+    switch (verify) {
+    default:
+    case eSerialVerifyData_Default:
+        return ms_VerifyDataDefault;
+    case eSerialVerifyData_No:
+    case eSerialVerifyData_Never:
+        return eSerialVerifyData_No;
+        break;
+    case eSerialVerifyData_Yes:
+    case eSerialVerifyData_Always:
+        return eSerialVerifyData_Yes;
+        break;
+    case eSerialVerifyData_DefValue:
+    case eSerialVerifyData_DefValueAlways:
+        return eSerialVerifyData_No;
+    }
 }
 
 void CSerialObject::ThrowUnassigned(TMemberIndex index) const
 {
-    if (x_GetVerifyData()) {
+    if (x_GetVerifyData() == eSerialVerifyData_Yes) {
         const CTypeInfo* type = GetThisTypeInfo();
         CNcbiOstrstream s;
         s << type->GetModuleName() << "::" << type->GetName() << ".";

@@ -431,13 +431,30 @@ void FixVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line)
 }
 
 inline
-void CObjectIStream::SetVerifyData(bool do_verify)
+void CObjectIStream::SetVerifyData(ESerialVerifyData verify)
 {
-    m_VerifyData = do_verify;
+    switch (verify) {
+    default:
+    case eSerialVerifyData_Default:
+        m_VerifyData = x_GetVerifyDataDefault();
+        break;
+    case eSerialVerifyData_No:
+    case eSerialVerifyData_Never:
+        m_VerifyData = eSerialVerifyData_No;
+        break;
+    case eSerialVerifyData_Yes:
+    case eSerialVerifyData_Always:
+        m_VerifyData = eSerialVerifyData_Yes;
+        break;
+    case eSerialVerifyData_DefValue:
+    case eSerialVerifyData_DefValueAlways:
+        m_VerifyData = eSerialVerifyData_DefValue;
+        break;
+    }
 }
 
 inline
-bool CObjectIStream::GetVerifyData(void) const
+ESerialVerifyData CObjectIStream::GetVerifyData(void) const
 {
     return m_VerifyData;
 }
@@ -482,6 +499,9 @@ void CStreamDelayBufferGuard::EndDelayBuffer(CDelayBuffer& buffer,
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/11/13 14:06:45  gouriano
+* Elaborated data verification on read/write/get to enable skipping mandatory class data members
+*
 * Revision 1.24  2003/09/24 20:55:13  kuznets
 * Implemented CStreamDelayBufferGuard
 *

@@ -99,10 +99,10 @@ public:
     // and throws CUnassignedMember exception
 
     // for this particular stream
-    void SetVerifyData(bool do_verify);
-    bool GetVerifyData(void) const;
+    void SetVerifyData(ESerialVerifyData verify);
+    ESerialVerifyData GetVerifyData(void) const;
     // for streams created by the current thread
-    static  void SetVerifyData(ESerialVerifyData verify);
+    static  void SetVerifyDataThread(ESerialVerifyData verify);
     // for streams created by the current process
     static  void SetVerifyDataGlobal(ESerialVerifyData verify);
 
@@ -486,11 +486,11 @@ protected:
     virtual void WriteSeparator(void);
     string m_Separator;
     bool   m_AutoSeparator;
-    bool   m_VerifyData;
+    ESerialVerifyData   m_VerifyData;
     static ESerialVerifyData ms_VerifyDataDefault;
 
 private:
-    static bool x_GetVerifyDataDefault(void);
+    static ESerialVerifyData x_GetVerifyDataDefault(void);
 
 public:
     // hook support
@@ -513,6 +513,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2003/11/13 14:06:45  gouriano
+* Elaborated data verification on read/write/get to enable skipping mandatory class data members
+*
 * Revision 1.79  2003/10/21 21:08:46  grichenk
 * Fixed aliases-related bug in XML stream
 *

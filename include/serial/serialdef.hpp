@@ -84,7 +84,9 @@ enum ESerialVerifyData {
     eSerialVerifyData_No,          // do not verify
     eSerialVerifyData_Never,       // never verify (even if set to verify later on)
     eSerialVerifyData_Yes,         // do verify
-    eSerialVerifyData_Always       // always verify (even if set not to later on)
+    eSerialVerifyData_Always,      // always verify (even if set not to later on)
+    eSerialVerifyData_DefValue,    // initialize field with default
+    eSerialVerifyData_DefValueAlways // initialize field with default
 };
 
 enum ESerialOpenFlags {
@@ -180,6 +182,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/11/13 14:06:44  gouriano
+* Elaborated data verification on read/write/get to enable skipping mandatory class data members
+*
 * Revision 1.25  2003/09/10 20:57:23  gouriano
 * added possibility to ignore missing mandatory members on reading
 *
