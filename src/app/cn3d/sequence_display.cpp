@@ -986,7 +986,8 @@ void SequenceDisplay::FloatGVToTop(void)
     if ((*viewerWindow)->viewer->alignmentManager->threader->
             GetGeometryViolations(alnRow->alignment, &violations) == 0)
         return;
-    (*viewerWindow)->Command(ViewerWindowBase::MID_SHOW_GEOM_VLTNS);
+    if (!(*viewerWindow)->menuBar->IsChecked(ViewerWindowBase::MID_SHOW_GEOM_VLTNS))
+        (*viewerWindow)->Command(ViewerWindowBase::MID_SHOW_GEOM_VLTNS);
 
     rowComparisonFunction = CompareRowsFloatGV;
     SortRows();
@@ -1271,6 +1272,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2003/11/06 19:07:19  thiessen
+* leave show gv's on if on already
+*
 * Revision 1.69  2003/10/20 13:17:15  thiessen
 * add float geometry violations sorting
 *
