@@ -64,10 +64,8 @@ extern int strcasecmp(const char* s1, const char* s2)
     do {
         c1 = *p1++;
         c2 = *p2++;
-        c1 = c1 >= ' ' && c1 <= 'Z' ? c1 :
-            (c1 >= 'a' && c1 <= 'z' ? c1 - ('a' - 'A') : toupper(c1));
-        c2 = c2 >= ' ' && c2 <= 'Z' ? c2 :
-            (c2 >= 'a' && c2 <= 'z' ? c2 - ('a' - 'A') : toupper(c2));
+        c1 = c1 >= 'A' && c1 <= 'Z' ? c1 + ('a' - 'A') : tolower(c1);
+        c2 = c2 >= 'A' && c2 <= 'Z' ? c2 + ('a' - 'A') : tolower(c2);
     } while (c1  &&  c1 == c2);
 
     return c1 - c2;
@@ -86,10 +84,8 @@ extern int strncasecmp(const char* s1, const char* s2, size_t n)
     do {
         c1 = *p1++;
         c2 = *p2++;
-        c1 = c1 >= ' ' && c1 <= 'Z' ? c1 :
-            (c1 >= 'a' && c1 <= 'z' ? c1 - ('a' - 'A') : toupper(c1));
-        c2 = c2 >= ' ' && c2 <= 'Z' ? c2 :
-            (c2 >= 'a' && c2 <= 'z' ? c2 - ('a' - 'A') : toupper(c2));
+        c1 = c1 >= 'A' && c1 <= 'Z' ? c1 + ('a' - 'A') : tolower(c1));
+        c2 = c2 >= 'A' && c2 <= 'Z' ? c2 + ('a' - 'A') : tolower(c2));
     } while (--n > 0  &&  c1  &&  c1 == c2);
 
     return c1 - c2;
@@ -132,6 +128,9 @@ extern char* strncpy0(char* s1, const char* s2, size_t n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2004/10/08 15:45:19  lavr
+ * Make lower-case comparisons in no-case functions
+ *
  * Revision 6.14  2002/10/29 22:18:29  lavr
  * Comply with man strdup(2) in the implementation of strdup() here
  *
