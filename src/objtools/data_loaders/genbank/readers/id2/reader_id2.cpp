@@ -404,7 +404,7 @@ void CId2Reader::ResolveString(CReaderRequestResult& result,
                                const string& seq_id)
 {
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( !ids ) {
+    if ( !ids.IsLoaded() ) {
         CID2_Request req;
         x_SetResolve(req.SetRequest().SetGet_blob_id(), seq_id);
         x_ProcessRequest(result, req);
@@ -416,7 +416,7 @@ void CId2Reader::ResolveSeq_id(CReaderRequestResult& result,
                                const CSeq_id_Handle& seq_id)
 {
     CLoadLockBlob_ids ids(result, seq_id);
-    if ( !ids ) {
+    if ( !ids.IsLoaded() ) {
         CID2_Request req;
         x_SetResolve(req.SetRequest().SetGet_blob_id(), *seq_id.GetSeqId());
         x_ProcessRequest(result, req);
@@ -428,7 +428,7 @@ void CId2Reader::ResolveSeq_ids(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id)
 {
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( !ids ) {
+    if ( !ids.IsLoaded() ) {
         CID2_Request req;
         CID2_Request::C_Request::TGet_seq_id& get_id =
             req.SetRequest().SetGet_seq_id();
@@ -536,7 +536,7 @@ void CId2Reader::LoadChunk(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id);
     _ASSERT(blob);
-    if ( !blob->GetSplitInfo().GetChunk(chunk_id).NotLoaded() ) {
+    if ( blob->GetSplitInfo().GetChunk(chunk_id).IsLoaded() ) {
         return;
     }
     CID2_Request req;
@@ -833,14 +833,18 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
     case CID2_Seq_id::e_String:
     {
         CLoadLockSeq_ids ids(result, request_id.GetString());
-        x_ProcessReply(result, errors, ids, reply);
+        if ( !ids.IsLoaded() ) {
+            x_ProcessReply(result, errors, ids, reply);
+        }
         break;
     }
 
     case CID2_Seq_id::e_Seq_id:
     {
         CLoadLockSeq_ids ids(result, request_id.GetSeq_id());
-        x_ProcessReply(result, errors, ids, reply);
+        if ( !ids.IsLoaded() ) {
+            x_ProcessReply(result, errors, ids, reply);
+        }
         break;
     }
 
@@ -879,7 +883,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
             mask |= fBlobHasAllLocal;
         }
         else {
-            mask |= fBlobHasExternal;
+            mask |= fBlobHasExtAnnot;
         }
         ids.AddBlob_id(blob_id, mask);
     }
