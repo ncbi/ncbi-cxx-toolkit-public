@@ -33,6 +33,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbipipe.hpp>
+#include <corelib/ncbi_system.hpp>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>
@@ -125,15 +126,9 @@ static string s_ReadStream(istream& ios)
 
 
 // Delay a some time. Needs only for more proper output.
-void Delay() 
+static void Delay() 
 {
-#if defined(NCBI_OS_MSWIN)
-    Sleep(300);
-#elif defined(NCBI_OS_UNIX)
-    usleep(300000);
-#elif defined(NCBI_OS_MAC)
-#error "Delay() undefined"
-#endif
+    SleepMilliSec(300);
 }
 
 
@@ -167,12 +162,16 @@ int CTest::Run(void)
     args.push_back("-l");
     CPipe pipe("ls", args, CPipe::eDoNotUse, CPipe::eText);
     s_ReadPipe(pipe);
+    // Wait a little bit while app closing and then will check it exit code
+    Delay();
     assert(pipe.Close() == 0);
 
     // Pipe for reading (iostream)
     pipe.Open("ls", args, CPipe::eDoNotUse, CPipe::eText);
     CPipeIOStream ios(pipe);
     s_ReadStream(ios);
+    // Wait a little bit while app closing and then will check it exit code
+    Delay();
     assert(pipe.Close() == 0);
 
 #elif defined (NCBI_OS_MSWIN)
@@ -182,13 +181,18 @@ int CTest::Run(void)
     args.push_back("dir *.*");
     CPipe pipe(cmd.c_str(), args, CPipe::eDoNotUse, CPipe::eText);
     s_ReadPipe(pipe);
+    // Wait a little bit while app closing and then will check it exit code
+    Delay();
     assert(pipe.Close() == 0);
 
     // Pipe for reading (iostream)
     pipe.Open(cmd.c_str(), args, CPipe::eDoNotUse, CPipe::eText);
     CPipeIOStream ios(pipe);
     s_ReadStream(ios);
+    // Wait a little bit while app closing and then will check it exit code
+    Delay();
     assert(pipe.Close() == 0);
+
 #else
 #error "Pipe tests configured for Windows or Unix only."
 #endif
@@ -198,12 +202,14 @@ int CTest::Run(void)
     args.push_back("one_argument");
     pipe.Open(app.c_str(), args, CPipe::eText, CPipe::eDoNotUse);
     s_WritePipe(pipe, "Child, are you ready?");
+    // Wait a little bit while app closing and then will check it exit code
     Delay();
     assert(pipe.Close() == TEST_RESULT);
 
     // Pipe for writing (iostream)
     pipe.Open(app.c_str(), args, CPipe::eText, CPipe::eDoNotUse);
     s_WritePipe(pipe, "Child, are you ready?");
+    // Wait a little bit while app closing and then will check it exit code
     Delay();
     assert(pipe.Close() == TEST_RESULT);
     
@@ -217,6 +223,8 @@ int CTest::Run(void)
     Delay();
     str = s_ReadPipe(pipe);
     assert(str == "Ok. Test 2 running.");
+    // Wait a little bit while app closing and then will check it exit code
+    Delay();
     assert(pipe.Close() == TEST_RESULT);
 
     // Bidirectional pipe (iostream)
@@ -241,6 +249,8 @@ int CTest::Run(void)
     ps >> str;
     cout << str << endl;
     assert(str == "Done");
+    // Wait a little bit while app closing and then will check it exit code
+    Delay();
     assert(pipe.Close() == TEST_RESULT);
 
     cout << endl << "TEST execution completed successfully!" << endl << endl;
@@ -297,6 +307,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.12  2003/03/07 16:24:44  ivanov
+ * Simplify Delay(). Added a delays before checking exit code of a pipe'd application.
+ *
  * Revision 6.11  2003/03/06 21:19:16  ivanov
  * Added comment for R6.10:
  * Run the "dir" command for MS Windows via default command interpreter.
