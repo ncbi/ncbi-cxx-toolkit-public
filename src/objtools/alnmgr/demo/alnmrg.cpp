@@ -296,7 +296,7 @@ void CAlnMrgApp::SetOptions(void)
     }
 
     if (args["truncateoverlaps"]  &&  args["truncateoverlaps"].AsBoolean()) {
-        m_MergeFlags |= CAlnMix::CAlnMix::fTruncateOverlaps;
+        m_MergeFlags |= CAlnMix::fTruncateOverlaps;
     }
 
     if (args["calcscore"]  &&  args["calcscore"].AsBoolean()) {
@@ -344,6 +344,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/07/24 16:26:09  ucko
+* Undouble CAlnMix:: prefix in one place.
+*
 * Revision 1.6  2003/07/23 16:14:18  todorov
 * +trunacteoverlaps
 *
