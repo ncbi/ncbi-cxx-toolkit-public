@@ -38,7 +38,8 @@ property ret : "
 global newProject
 
 (* external globals *)
-global TheNCBIPath, TheFLTKPath, TheBDBPath, TheSQLPath, ThePCREPath, TheOUTPath, libTypeDLL
+global TheNCBIPath, TheFLTKPath, TheBDBPath, TheSQLPath, ThePCREPath, TheOUTPath
+global libTypeDLL, cpuOptimization, zeroLink, fixContinue
 
 (* Hold keys and values for object dictionary of the project *)
 global objValues
@@ -56,16 +57,14 @@ property buildSettings10_2 : {|MACOSX_DEPLOYMENT_TARGET|:"10.2", |SDKROOT|:"/Dev
 
 (* Build settings for the project *)
 
-property buildSettingsCommon : {|WARNING_CFLAGS|:"-Wno-long-double", |GCC_MODEL_CPU|:"G4", |LIBRARY_SEARCH_PATHS|:"", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD", |GCC_ALTIVEC_EXTENSIONS|:"YES", |PREBINDING|:"NO", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO", |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |GCC_PREFIX_HEADER|:"", |DEAD_CODE_STRIPPING|:"YES"}
-property buildSettingsDevelopment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"NO", |DEBUGGING_SYMBOLS|:"YES", |GCC_DYNAMIC_NO_PIC|:"NO", |GCC_ENABLE_FIX_AND_CONTINUE|:"YES", |GCC_GENERATE_DEBUGGING_SYMBOLS|:"YES", |GCC_OPTIMIZATION_LEVEL|:"0", |OPTIMIZATION_CFLAGS|:"-O0"}
+property buildSettingsCommon : {|WARNING_CFLAGS|:"-Wno-long-double", |GCC_MODEL_CPU|:"None", |GCC_MODEL_TUNING|:"None", |LIBRARY_SEARCH_PATHS|:"", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD", |GCC_ALTIVEC_EXTENSIONS|:"NO", |PREBINDING|:"NO", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO", |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |GCC_PREFIX_HEADER|:"", |DEAD_CODE_STRIPPING|:"YES", |OBJROOT|:""}
+property buildSettingsDevelopment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"NO", |DEBUGGING_SYMBOLS|:"YES", |GCC_DYNAMIC_NO_PIC|:"NO", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |GCC_GENERATE_DEBUGGING_SYMBOLS|:"YES", |GCC_OPTIMIZATION_LEVEL|:"0", |OPTIMIZATION_CFLAGS|:"-O0"}
 property buildSettingsDeployment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"YES", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |DEPLOYMENT_POSTPROCESSING|:"YES"}
-property buildSettingsProfiling : buildSettingsDevelopment & {|GCC_GENERATE_PROFILING_CODE|:"YES"}
 
 (* Build styles for the project *)
 property buildStyleDevelopment : {isa:"PBXBuildStyle", |name|:"Development", |buildRules|:{}, |buildSettings|:buildSettingsDevelopment}
 property buildStyleDeployment : {isa:"PBXBuildStyle", |name|:"Deployment", |buildRules|:{}, |buildSettings|:buildSettingsDeployment}
-property buildStyleProfiling : {isa:"PBXBuildStyle", |name|:"Profiling", |buildRules|:{}, |buildSettings|:buildSettingsProfiling}
-property projectBuildStyles : {"BUILDSTYLE__Development", "BUILDSTYLE__Profiling", "BUILDSTYLE__Deployment"}
+property projectBuildStyles : {"BUILDSTYLE__Development", "BUILDSTYLE__Deployment"}
 
 
 (* Root Objects, project and main group *)
@@ -103,16 +102,53 @@ script ProjBuilder
 		
 		set |HEADER_SEARCH_PATHS| of buildSettingsDevelopment to headerPath
 		set |HEADER_SEARCH_PATHS| of buildSettingsDeployment to headerPath
-		set |HEADER_SEARCH_PATHS| of buildSettingsProfiling to headerPath
 		
 		set |LIBRARY_SEARCH_PATHS| of buildSettingsDevelopment to libraryPath
 		set |LIBRARY_SEARCH_PATHS| of buildSettingsDeployment to libraryPath
-		set |LIBRARY_SEARCH_PATHS| of buildSettingsProfiling to libraryPath
 		
 		set PCH to x_Replace(TheNCBIPath, ":", "/") & "/include/ncbi_pch.hpp"
 		set |GCC_PREFIX_HEADER| of buildSettingsDevelopment to PCH
 		set |GCC_PREFIX_HEADER| of buildSettingsDeployment to PCH
-		set |GCC_PREFIX_HEADER| of buildSettingsProfiling to PCH
+		
+		
+		(* Output directories and intermidiate files (works staring xCode 1.5) *)
+		set |OBJROOT| of buildSettingsDevelopment to TheOUTPath
+		set |OBJROOT| of buildSettingsDeployment to TheOUTPath
+		
+		(* Set other options *)
+		if zeroLink then
+			set |ZERO_LINK| of buildSettingsDevelopment to "YES"
+		end if
+		
+		if fixContinue then
+			set |GCC_ENABLE_FIX_AND_CONTINUE| of buildSettingsDevelopment to "YES"
+		end if
+		
+		if cpuOptimization then
+			log "Getting CPU type"
+			set cpuType to do shell script "/usr/sbin/ioreg | grep PowerPC | awk '{print $3}'| cut -c 9-10"
+			if cpuType contains "G5" then
+				set |GCC_MODEL_TUNING| of buildSettingsDevelopment to "G5"
+				set |GCC_MODEL_CPU| of buildSettingsDevelopment to "G5"
+				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsDevelopment to "YES"
+				set |GCC_MODEL_TUNING| of buildSettingsDeployment to "G5"
+				set |GCC_MODEL_CPU| of buildSettingsDeployment to "G5"
+				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsDeployment to "YES"
+			else if cpuType contains "G4" then
+				set |GCC_MODEL_TUNING| of buildSettingsDevelopment to "G4"
+				set |GCC_MODEL_CPU| of buildSettingsDevelopment to "G4"
+				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsDevelopment to "YES"
+				set |GCC_MODEL_TUNING| of buildSettingsDeployment to "G4"
+				set |GCC_MODEL_CPU| of buildSettingsDeployment to "G4"
+				set |GCC_ALTIVEC_EXTENSIONS| of buildSettingsDeployment to "YES"
+			else
+				set |GCC_MODEL_TUNING| of buildSettingsDevelopment to "G3"
+				set |GCC_MODEL_CPU| of buildSettingsDevelopment to "G3"
+				set |GCC_MODEL_TUNING| of buildSettingsDeployment to "G3"
+				set |GCC_MODEL_CPU| of buildSettingsDeployment to "G3"
+			end if
+			log cpuType
+		end if
 		
 		set newProject to emptyProject
 		set objValues to {}
@@ -127,7 +163,6 @@ script ProjBuilder
 		
 		addPair(mainGroup, "MAINGROUP")
 		addPair(buildStyleDevelopment, "BUILDSTYLE__Development")
-		addPair(buildStyleProfiling, "BUILDSTYLE__Profiling")
 		addPair(buildStyleDeployment, "BUILDSTYLE__Deployment")
 		log "Done initialize ProjBuilder"
 	end Initialize
@@ -302,7 +337,8 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		
 		set linkerFlags to x_CreateLinkerFlags(tool_info) -- additional liker flags (like -lxncbi)
 		
-		set buildSettings to {|PRODUCT_NAME|:fullToolName, |OTHER_LDFLAGS|:linkerFlags}
+		set symRoot to TheOUTPath & "/bin"
+		set buildSettings to {|PRODUCT_NAME|:fullToolName, |OTHER_LDFLAGS|:linkerFlags, |SYMROOT|:symRoot}
 		set toolTarget to {isa:"PBXNativeTarget", |buildPhases|:{buildPhaseName}, |buildSettings|:buildSettings, |name|:fullToolName, |productReference|:"", |productType|:"com.apple.product-type.tool", dependencies:{}}
 		
 		my MakeNewTarget(tool_info, src_files, toolTarget, toolProduct, 2) -- is a tool
@@ -318,7 +354,8 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		
 		set linkerFlags to x_CreateLinkerFlags(app_info) -- additional liker flags (like -lxncbi)
 		
-		set buildSettings to {|PRODUCT_NAME|:appName, |OTHER_LDFLAGS|:linkerFlags, |REZ_EXECUTABLE|:"YES", |INFOPLIST_FILE|:""}
+		set symRoot to TheOUTPath & "/bin"
+		set buildSettings to {|PRODUCT_NAME|:appName, |OTHER_LDFLAGS|:linkerFlags, |REZ_EXECUTABLE|:"YES", |INFOPLIST_FILE|:"", |SYMROOT|:symRoot}
 		set appTarget to {isa:"PBXNativeTarget", |buildPhases|:{buildPhaseName}, |buildSettings|:buildSettings, |name|:appName, |productReference|:"", |productType|:"com.apple.product-type.application", dependencies:{}}
 		
 		my MakeNewTarget(app_info, src_files, appTarget, appProduct, 1) -- 1 is application
@@ -531,6 +568,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/08/13 11:41:43  lebedev
+ * Changes to upgrade to xCode 1.5 and support for G5 CPU specific options
+ *
  * Revision 1.10  2004/08/10 15:22:07  lebedev
  * Simplify target dependencies for xCode 1.5
  *

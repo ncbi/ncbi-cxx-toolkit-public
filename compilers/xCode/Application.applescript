@@ -37,7 +37,7 @@ global ToolkitSource
 global ProjBuilderLib
 
 global TheNCBIPath, TheFLTKPath, TheBDBPath, TheSQLPath, ThePCREPath, TheOUTPath
-global libTypeDLL
+global libTypeDLL, cpuOptimization, zeroLink, fixContinue
 
 property allPaths : {"pathNCBI", "pathFLTK", "pathBDB", "pathSQL", "pathPCRE", "pathOUT"}
 
@@ -242,11 +242,11 @@ on CreateProject()
 	x_AddtoLog("Opening generated project: " & TheOUTPath & "/NCBI.xCode")
 	do shell script "open " & TheOUTPath & "/NCBI.xCode" -- Open Project
 	
-	tell application "Xcode"
+	(*tell application "Xcode"
 		set p to the a reference to project "NCBI"
 		set intermediates path of p to TheOUTPath
 		set product path of p to (TheOUTPath & "/bin")
-	end tell
+	end tell *)
 	x_AddtoLog("Done")
 	
 	if content of button "buildProj" of window "Main" is true then -- build the new project
@@ -404,6 +404,9 @@ on ValidatePaths()
 	end if
 	
 	set libTypeDLL to content of button "libType" of window "Main" -- DLL or Static
+	set cpuOptimization to content of button "cpuOpt" of window "Main" -- CPU specific optimization
+	set zeroLink to content of button "zeroLink" of window "Main" -- Use Zero Link
+	set fixContinue to content of button "fixCont" of window "Main" -- Use Fix & Continue
 	
 	return "" -- no errors found
 end ValidatePaths
@@ -420,6 +423,9 @@ end x_ShowAlert
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/08/13 11:41:43  lebedev
+ * Changes to upgrade to xCode 1.5 and support for G5 CPU specific options
+ *
  * Revision 1.5  2004/08/06 15:26:59  lebedev
  * Handle ncbicfg.c.in correctly
  *
