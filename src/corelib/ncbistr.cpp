@@ -1386,15 +1386,15 @@ void CStringUTF8::x_Append(const wchar_t* src)
     for (srcBuf = src; *srcBuf; ++srcBuf) {
         Uint2 ch = *srcBuf;
         if (ch < 0x80) {
-            append(1, ch);
+            append(1, Uint1(ch));
         }
         else if (ch < 0x800) {
-            append(1, Uint2((ch >> 6) | 0xC0));
-            append(1, Uint2((ch & 0x3F) | 0x80));
+            append(1, Uint1((ch >> 6) | 0xC0));
+            append(1, Uint1((ch & 0x3F) | 0x80));
         } else {
-            append(1, Uint2((ch >> 12) | 0xE0));
-            append(1, Uint2(((ch >> 6) & 0x3F) | 0x80));
-            append(1, Uint2((ch & 0x3F) | 0x80));
+            append(1, Uint1((ch >> 12) | 0xE0));
+            append(1, Uint1(((ch >> 6) & 0x3F) | 0x80));
+            append(1, Uint1((ch & 0x3F) | 0x80));
         }
     }
 }
@@ -1521,6 +1521,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.111  2004/06/30 21:58:05  vasilche
+ * Fixed wrong cast in wchar to utf8 conversion.
+ *
  * Revision 1.110  2004/06/21 12:14:50  ivanov
  * Added additional parameter for all StringToXxx() function that specify
  * an action which will be performed on conversion error: to throw an
