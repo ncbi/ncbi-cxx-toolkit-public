@@ -86,7 +86,7 @@ public:
     };
 
     typedef typename db_map_base<K, T>::File  map_file_type;
-protected:
+// protected:
 
     // Base class for all db_map iterators
     // Class opens its own copy of BerkeleyDB file and cursor on it.
@@ -603,6 +603,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/07 21:42:16  ucko
+ * Make iterator_base public because some compilers (MIPSpro at least)
+ * otherwise won't expose it to other inner classes.
+ *
  * Revision 1.12  2004/10/14 17:45:43  vasilche
  * Use IOS_BASE instead of non-portable ios_base.
  *
