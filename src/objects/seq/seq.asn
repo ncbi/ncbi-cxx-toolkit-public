@@ -1,4 +1,4 @@
---$Revision: 1.15 $
+--$Revision: 1.16 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -190,16 +190,14 @@ Seq-inst ::= SEQUENCE {            -- the sequence data itself
 
 --*** Sequence Extensions **********************************
 --*  for representing more complex types
+--*  const type uses Seq-hist.assembly
 
 Seq-ext ::= CHOICE {
     seg Seg-ext ,        -- segmented sequences
-    const Const-ext ,    -- constructed sequences
     ref Ref-ext ,        -- hot link to another sequence (a view)
     map Map-ext }        -- ordered map of markers
 
 Seg-ext ::= SEQUENCE OF Seq-loc
-
-Const-ext ::= SET OF Seq-align   -- replaced by Seq-hist.assembly
 
 Ref-ext ::= Seq-loc
 
