@@ -2454,6 +2454,7 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
    Int4 private_q_start, private_s_start;
    Uint1* query=NULL,* subject=NULL;
    Boolean switch_seq = FALSE;
+   Int4 query_length, subject_length;
     
    if (gap_align == NULL)
       return FALSE;
@@ -2464,16 +2465,22 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
       if (program == blast_type_blastx) {
          subject = subject_blk->sequence + s_length;
          query = query_blk->oof_sequence + CODON_LENGTH + q_length;
+         query_length = query_blk->length - CODON_LENGTH + 1;
+         subject_length = subject_blk->length;
          switch_seq = TRUE;
       } else if (program == blast_type_tblastn) {
          subject = subject_blk->oof_sequence + CODON_LENGTH + s_length;
          query = query_blk->sequence + q_length;
+         query_length = query_blk->length;
+         subject_length = subject_blk->length - CODON_LENGTH + 1;
       }
    } else {
       q_length = init_hsp->q_off + 1;
       s_length = init_hsp->s_off + 1;
       query = query_blk->sequence;
       subject = subject_blk->sequence;
+      query_length = query_blk->length;
+      subject_length = subject_blk->length;
    }
 
    found_start = FALSE;
@@ -2502,12 +2509,11 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
    }
 
    score_right = 0;
-   if (init_hsp->q_off < query_blk->length && 
-       init_hsp->s_off < subject_blk->length) {
+   if (q_length < query_length && s_length < subject_length) {
       found_end = TRUE;
       if(score_options->is_ooframe) {
          score_right = OOF_SEMI_G_ALIGN_EX(query-1, subject-1, 
-            query_blk->length-q_length, subject_blk->length-s_length,
+            query_length-q_length, subject_length-s_length,
             NULL, &(gap_align->query_stop), &(gap_align->subject_stop), 
             TRUE, NULL, gap_align, 
             score_options, q_length, FALSE, switch_seq);
@@ -2515,8 +2521,8 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
          gap_align->subject_stop += s_length;
       } else {
          score_right = SEMI_G_ALIGN_EX(query+init_hsp->q_off,
-            subject+init_hsp->s_off, query_blk->length-q_length, 
-            subject_blk->length-s_length, NULL, &(gap_align->query_stop), 
+            subject+init_hsp->s_off, query_length-q_length, 
+            subject_length-s_length, NULL, &(gap_align->query_stop), 
             &(gap_align->subject_stop), TRUE, NULL, gap_align, 
             score_options, init_hsp->q_off, FALSE, FALSE);
          gap_align->query_stop += init_hsp->q_off;
@@ -2715,6 +2721,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1* query,
 {
     Boolean found_start, found_end;
     Int4 score_right, score_left, private_q_length, private_s_length, tmp;
+    Int4 q_length, s_length;
     Int4 prev;
     Int4* tback,* tback1,* p = NULL,* q;
     Boolean is_ooframe = score_options->is_ooframe;
@@ -2727,14 +2734,27 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1* query,
     found_start = FALSE;
     found_end = FALSE;
     
+    q_length = query_length;
+    s_length = subject_length;
+    if (is_ooframe) {
+       /* The mixed frame sequence is shifted to the 3rd position, so its 
+          maximal available length for extension is less by 2 than its 
+          total length. */
+       switch_seq = (program == blast_type_blastx);
+       if (switch_seq) {
+          q_length -= CODON_LENGTH - 1;
+       } else {
+          s_length -= CODON_LENGTH - 1;
+       }
+    }
+
     tback = tback1 = (Int4*)
-       malloc((subject_length + query_length)*sizeof(Int4));
+       malloc((s_length + q_length)*sizeof(Int4));
 
     score_left = 0; prev = 3;
     found_start = TRUE;
         
     if(is_ooframe) {
-       switch_seq = (program == blast_type_blastx);
        /* NB: Left extension does not include starting point corresponding
           to the offset pair; the right extension does. */
        score_left =
@@ -2769,12 +2789,12 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1* query,
     
     score_right = 0;
 
-    if ((q_start < query_length) && (s_start < subject_length)) {
+    if ((q_start < q_length) && (s_start < s_length)) {
        found_end = TRUE;
        if(is_ooframe) {
           score_right = 
              OOF_SEMI_G_ALIGN_EX(query+q_start-1, subject+s_start-1, 
-                query_length-q_start, subject_length-s_start, 
+                q_length-q_start, s_length-s_start, 
                 tback1, &private_q_length, &private_s_length, FALSE,
                 &tback1, gap_align, score_options, q_start, FALSE, switch_seq);
             if (prev != 3 && p) {
@@ -2784,7 +2804,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1* query,
         } else {
             score_right = 
                SEMI_G_ALIGN_EX(query+q_start, subject+s_start, 
-                  query_length-q_start-1, subject_length-s_start-1, 
+                  q_length-q_start-1, s_length-s_start-1, 
                   tback1, &private_q_length, &private_s_length, FALSE, 
                   &tback1, gap_align, score_options, q_start, FALSE, FALSE);
         }

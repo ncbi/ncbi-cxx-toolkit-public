@@ -456,10 +456,11 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
       /* Out-of-frame gapping: need to use a mixed-frame sequence */
       if (program_number == blast_type_blastx) {
          subject = subject_start = subject_blk->sequence;
+         subject_length = subject_blk->length;
       } else {
          subject = subject_start = subject_blk->oof_sequence + CODON_LENGTH;
+         subject_length = subject_blk->length;
       }
-      subject_length = subject_blk->length;
    }
    
    for (index=0; index < hsp_list->hspcnt; index++) {
