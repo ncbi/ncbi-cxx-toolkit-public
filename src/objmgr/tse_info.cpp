@@ -112,22 +112,20 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
                 } else {
                     // CRangeMultimap
                     CDebugDumpContext ddc3(ddc2, member_name);
-                    TRangeMap::const_iterator itrm;
-                    for (itrm=(it->second).begin();
-                        itrm!=(it->second).end(); ++itrm) {
+                    iterate ( TRangeMap, itrm, it->second ) {
                         // CRange as string
                         string rg;
-                        if ((itrm->first).Regular()) {
-                            rg =    NStr::UIntToString( (itrm->first).GetFrom()) +
-                            "..." + NStr::UIntToString( (itrm->first).GetTo());
-                        } else if ((itrm->first).Empty()) {
-                            rg = "null";
-                        } else if ((itrm->first).HaveInfiniteBound()) {
-                            rg = "whole";
-                        } else if ((itrm->first).HaveEmptyBound()) {
-                            rg = "empty";
+                        if (itrm->first.Empty()) {
+                            rg += "empty";
+                        } else if (itrm->first.IsWhole()) {
+                            rg += "whole";
+                        } else if (itrm->first.IsWholeTo()) {
+                            rg += "unknown";
                         } else {
-                            rg = "unknown";
+                            rg +=
+                                NStr::UIntToString(itrm->first.GetFrom()) +
+                                "..." +
+                                NStr::UIntToString(itrm->first.GetTo());
                         }
                         string rm_name = member_name + "[ " + rg + " ]";
                         // CAnnotObject
@@ -147,6 +145,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.11  2002/12/26 20:55:18  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *

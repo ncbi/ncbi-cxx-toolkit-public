@@ -37,11 +37,62 @@
 /////////////////////////////////////////////////////////////////////
 //  CSeqMap: inline methods
 
+inline
+size_t CSeqMap::x_GetSegmentsCount(void) const
+{
+    return m_Segments.size() - 1;
+}
+
+
+inline
+const CSeqMap::CSegment& CSeqMap::x_GetSegment(size_t index) const
+{
+    if ( index > x_GetSegmentsCount() ) {
+        x_GetSegmentException(index);
+    }
+    return m_Segments[index];
+}
+
+
+inline
+TSeqPos CSeqMap::x_GetSegmentPosition(size_t index, CScope* scope) const
+{
+    if ( index <= m_Resolved )
+        return m_Segments[index].m_Position;
+    return x_ResolveSegmentPosition(index, scope);
+}
+
+
+inline
+TSeqPos CSeqMap::x_GetSegmentLength(size_t index, CScope* scope) const
+{
+    TSeqPos length = x_GetSegment(index).m_Length;
+    if ( length == kInvalidSeqPos ) {
+        length = x_ResolveSegmentLength(index, scope);
+    }
+    return length;
+}
+
+
+inline
+TSeqPos CSeqMap::GetLength(CScope* scope) const
+{
+    return x_GetSegmentPosition(x_GetSegmentsCount(), scope);
+}
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/01/22 20:11:53  vasilche
+ * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+ * CSeqMap_CI now supports resolution and iteration over sequence range.
+ * Added several caches to CScope.
+ * Optimized CSeqVector().
+ * Added serveral variants of CBioseqHandle::GetSeqVector().
+ * Tried to optimize annotations iterator (not much success).
+ * Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+ *
  * Revision 1.1  2002/12/26 16:39:22  vasilche
  * Object manager class CSeqMap rewritten.
  *

@@ -116,14 +116,14 @@ void CSeqMap_Delta_seqs::x_SetSeq_data(size_t index, CSeq_data& data)
     CFastMutexGuard guard(m_SeqMap_Mtx);
 
     // check for object
-    if ( segment.m_Object ) {
+    if ( segment.m_RefObject ) {
         THROW1_TRACE(runtime_error,
                      "CSeqMap::x_SetSeq_data: CSeq_data already set");
     }
 
     // do insertion
     // set object
-    segment.m_Object.Reset(&data);
+    segment.m_RefObject.Reset(&data);
     // update sequence
     (*x_GetSegmentList_I(index))->SetLiteral().SetSeq_data(data);
 }
@@ -143,14 +143,14 @@ void CSeqMap_Delta_seqs::x_SetSubSeqMap(size_t index,
     CFastMutexGuard guard(m_SeqMap_Mtx);
 
     // check for object
-    if ( segment.m_Object ) {
+    if ( segment.m_RefObject ) {
         THROW1_TRACE(runtime_error,
                      "CSeqMap::x_SetSubSeqMap: submap already set");
     }
 
     // do insertion
     // set object
-    segment.m_Object.Reset(subMap);
+    segment.m_RefObject.Reset(subMap);
     // set index
     x_SetSegmentList_I(segment, subMap->m_List->begin());
     // insert sequence
@@ -295,33 +295,6 @@ CSeqMap_SeqPoss::~CSeqMap_SeqPoss(void)
 }
 
 
-const CSeq_id& CSeqMap_SeqPoss::x_GetRefSeqid(const CSegment& seg) const
-{
-    if ( seg.m_SegType != eSeqRef_packed_point ) {
-        return CSeqMap::x_GetRefSeqid(seg);
-    }
-    return m_Object->GetId();
-}
-
-
-TSeqPos CSeqMap_SeqPoss::x_GetRefPosition(const CSegment& seg) const
-{
-    if ( seg.m_SegType != eSeqRef_packed_point ) {
-        return CSeqMap::x_GetRefPosition(seg);
-    }
-    return *x_GetSegmentList_I(seg);
-}
-
-
-bool CSeqMap_SeqPoss::x_GetRefMinusStrand(const CSegment& seg) const
-{
-    if ( seg.m_SegType != eSeqRef_packed_point ) {
-        return CSeqMap::x_GetRefMinusStrand(seg);
-    }
-    return m_Object->GetStrand() == eNa_strand_minus;
-}
-
-
 void CSeqMap_SeqPoss::x_IndexAll(void)
 {
     TList& seq = *m_List;
@@ -334,7 +307,8 @@ void CSeqMap_SeqPoss::x_IndexAll(void)
 
 CSeqMap::CSegment& CSeqMap_SeqPoss::x_AddPos(TSeqPos pos)
 {
-    return x_AddSegment(eSeqRef_packed_point, 1);
+    return x_AddSegment(eSeqRef, &m_Object->SetId(),
+                        pos, 1, m_Object->GetStrand());
 }
 
 
@@ -344,6 +318,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.1  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *

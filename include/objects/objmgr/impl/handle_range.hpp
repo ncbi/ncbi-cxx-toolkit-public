@@ -32,10 +32,10 @@
 *
 */
 
-#include <objects/objmgr/bioseq_handle.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <util/range.hpp>
-#include <corelib/ncbiobj.hpp>
+#include <vector>
+#include <utility>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -45,32 +45,35 @@ class CHandleRange
 {
 public:
     typedef CRange<TSeqPos> TRange;
+    typedef COpenRange<TSeqPos> TOpenRange;
     typedef pair<TRange, ENa_strand> TRangeWithStrand;
-    typedef list<TRangeWithStrand> TRanges;
+    typedef vector<TRangeWithStrand> TRanges;
+    typedef TRanges::const_iterator const_iterator;
 
-    CHandleRange(const CSeq_id_Handle& handle);
-    CHandleRange(const CHandleRange& hrange);
+    CHandleRange(void);
+    CHandleRange(const CHandleRange& hr);
     ~CHandleRange(void);
+    CHandleRange& operator=(const CHandleRange& hr);
 
-    CHandleRange& operator= (const CHandleRange& hrange);
+    bool Empty(void) const;
+    const_iterator begin(void) const;
+    const_iterator end(void) const;
 
-    // Get the list of ranges
-    const TRanges& GetRanges(void) const { return m_Ranges; }
     // Add a new range
     void AddRange(TRange range, ENa_strand strand/* = eNa_strand_unknown*/);
     // Merge a new range with the existing ranges
     void MergeRange(TRange range, ENa_strand strand);
 
+    void AddRanges(const CHandleRange& hr);
+
     // Get the range including all ranges in the list (with any strand)
     TRange GetOverlappingRange(void) const;
     // Check if the two sets of ranges do intersect
-    bool IntersectingWith(const CHandleRange& hloc) const;
+    bool IntersectingWith(const CHandleRange& hr) const;
 
 private:
-    static void x_CombineRanges(TRange& dest, const TRange& src);
     static bool x_IntersectingStrands(ENa_strand str1, ENa_strand str2);
 
-    CSeq_id_Handle m_Handle;
     TRanges        m_Ranges;
 
     friend class CDataSource;
@@ -79,82 +82,23 @@ private:
 
 
 inline
-CHandleRange::CHandleRange(const CSeq_id_Handle& handle)
-    : m_Handle(handle)
+bool CHandleRange::Empty(void) const
 {
+    return m_Ranges.empty();
 }
 
-inline
-CHandleRange::CHandleRange(const CHandleRange& hrange)
-{
-    *this = hrange;
-}
 
 inline
-CHandleRange::~CHandleRange(void)
+CHandleRange::const_iterator CHandleRange::begin(void) const
 {
+    return m_Ranges.begin();
 }
 
-inline
-CHandleRange& CHandleRange::operator= (const CHandleRange& hrange)
-{
-    m_Handle = hrange.m_Handle;
-    m_Ranges.assign(hrange.m_Ranges.begin(), hrange.m_Ranges.end());
-    return *this;
-}
 
 inline
-bool operator< (CHandleRange::TRangeWithStrand r1,
-                CHandleRange::TRangeWithStrand r2)
+CHandleRange::const_iterator CHandleRange::end(void) const
 {
-    if (r1.first < r2.first) 
-        return true;
-    else if (r1.first == r2.first)
-        return r1.second < r2.second;
-    else
-        return false;
-}
-
-inline
-void CHandleRange::AddRange(TRange range, ENa_strand strand)
-{
-    m_Ranges.push_back(TRanges::value_type(range, strand));
-    m_Ranges.sort();
-}
-
-inline
-bool CHandleRange::x_IntersectingStrands(ENa_strand str1, ENa_strand str2)
-{
-    return
-        str1 == eNa_strand_unknown // str1 includes anything
-        ||
-        str2 == eNa_strand_unknown // str2 includes anything
-        ||
-        str1 == str2;              // accept only equal strands
-    //### Not sure about "eNa_strand_both includes eNa_strand_plus" etc.
-}
-
-inline
-bool CHandleRange::IntersectingWith(const CHandleRange& hloc) const
-{
-    if ( hloc.m_Handle != m_Handle )
-        return false;
-    //### Optimize this
-    iterate ( TRanges, it1, hloc.GetRanges() ) {
-        if ( it1->first.Empty() )
-            continue;
-        iterate ( TRanges, it2, m_Ranges ) {
-            if ( it2->first.Empty() )
-                continue;
-            if ( it2->first.GetFrom() > it1->first.GetTo() )
-                break;
-            if ( x_IntersectingStrands(it1->second, it2->second)  &&
-                it1->first.IntersectingWith(it2->first)) {
-                return true;
-            }
-        }
-    }
-    return false;
+    return m_Ranges.end();
 }
 
 
@@ -164,6 +108,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.12  2002/08/07 17:51:54  grichenk
 * Removed debug message
 *

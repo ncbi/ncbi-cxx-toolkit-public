@@ -44,58 +44,108 @@ BEGIN_SCOPE(objects)
 //
 
 
+CHandleRange::CHandleRange(void)
+{
+}
+
+
+CHandleRange::CHandleRange(const CHandleRange& hr)
+{
+    *this = hr;
+}
+
+
+CHandleRange::~CHandleRange(void)
+{
+}
+
+
+CHandleRange& CHandleRange::operator=(const CHandleRange& hr)
+{
+    m_Ranges = hr.m_Ranges;
+    return *this;
+}
+
+
+void CHandleRange::AddRange(TRange range, ENa_strand strand)
+{
+    m_Ranges.push_back(TRanges::value_type(range, strand));
+    sort(m_Ranges.begin(), m_Ranges.end());
+}
+
+
+void CHandleRange::AddRanges(const CHandleRange& hr)
+{
+    iterate ( CHandleRange, it, hr ) {
+        AddRange(it->first, it->second);
+    }
+}
+
+
+bool CHandleRange::x_IntersectingStrands(ENa_strand str1, ENa_strand str2)
+{
+    return
+        str1 == eNa_strand_unknown // str1 includes anything
+        ||
+        str2 == eNa_strand_unknown // str2 includes anything
+        ||
+        str1 == str2;              // accept only equal strands
+    //### Not sure about "eNa_strand_both includes eNa_strand_plus" etc.
+}
+
+
+bool CHandleRange::IntersectingWith(const CHandleRange& hr) const
+{
+    //if ( hloc.m_Handle0 != m_Handle0 )
+    //    return false;
+    //### Optimize this
+    iterate ( TRanges, it1, hr.m_Ranges ) {
+        if ( it1->first.Empty() )
+            continue;
+        iterate ( TRanges, it2, m_Ranges ) {
+            if ( it2->first.Empty() )
+                continue;
+            if ( it2->first.GetFrom() >= it1->first.GetToOpen() )
+                break;
+            if ( x_IntersectingStrands(it1->second, it2->second)  &&
+                it1->first.IntersectingWith(it2->first)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 void CHandleRange::MergeRange(TRange range, ENa_strand /*strand*/)
 {
-    TRange mrg = range;
-    non_const_iterate ( TRanges, it, m_Ranges ) {
+    for ( TRanges::iterator it = m_Ranges.begin(); it != m_Ranges.end(); ) {
         // Find intersecting intervals, discard strand information
         // Also merge adjacent ranges, prevent merging whole-to + whole-from
-        if ( it->first.IntersectingWith(mrg)  ||
-            (it->first.GetFrom() == mrg.GetTo()+1 && !mrg.IsWholeTo()) ||
-            (it->first.GetTo()+1 == mrg.GetFrom() && !mrg.IsWholeFrom()) ) {
+        if ( !it->first.Empty() &&
+             (it->first.IntersectingWith(range) ||
+              it->first.GetFrom() == range.GetToOpen() ||
+              it->first.GetToOpen() == range.GetFrom()) ) {
             // Remove the intersecting interval, update the merged range.
             // We assume that WholeFrom is less than any non-whole value
             // and WholeTo is greater than any non-whole value.
-            mrg += it->first;
+            range += it->first;
             it = m_Ranges.erase(it);
         }
+        else {
+            ++it;
+        }
     }
-    m_Ranges.push_back(TRangeWithStrand(mrg, eNa_strand_unknown));
-    m_Ranges.sort();
+    AddRange(range, eNa_strand_unknown);
 }
 
 
 CHandleRange::TRange CHandleRange::GetOverlappingRange(void) const
 {
-    TRange range = TRange::GetEmpty();
-    iterate ( TRanges, it, m_Ranges ) {
-        x_CombineRanges(range, it->first);
-    }
-    return range;
-}
-
-
-void CHandleRange::x_CombineRanges(TRange& dest, const TRange& src)
-{
-    if ( src.Empty() ) {
-        return;
-    }
-    TSeqPos from = dest.GetFrom(), to = dest.GetTo();
-    if ( !dest.IsWholeFrom() ) {
-        if (dest.GetFrom() > src.GetFrom()  ||
-            src.IsWholeFrom()  ||
-            dest.IsEmptyFrom()) {
-            from = src.GetFrom();
-        }
-    }
-    if ( !dest.IsWholeTo() ) {
-        if (dest.GetTo() < src.GetTo()  ||
-            src.IsWholeTo()  ||
-            dest.IsEmptyTo()) {
-            to = src.GetTo();
-        }
-    }
-    dest.Set(from, to);
+    return Empty() ?
+        TOpenRange::GetEmpty() :
+        TOpenRange(m_Ranges.front().first.GetFrom(),
+                   m_Ranges.back().first.GetToOpen());
 }
 
 
@@ -105,6 +155,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.10  2002/12/19 20:18:01  grichenk
 * Fixed test case for minus strand location
 *

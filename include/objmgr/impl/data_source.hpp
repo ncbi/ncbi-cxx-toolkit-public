@@ -152,7 +152,7 @@ public:
     typedef map<CRef<CSeq_entry>, CRef<CTSE_Info> > TEntries;
     typedef CTSE_Info::TBioseqMap                   TBioseqMap;
     typedef map<CSeq_id_Handle, TTSESet>            TTSEMap;
-    typedef map<const CBioseq*, CRef<CSeqMap> >     TSeqMaps;
+    typedef map<CBioseq_Handle::TBioseqCore, CRef<CSeqMap> >     TSeqMaps;
 
     // Get TSEs containing annotations for the given location
     void PopulateTSESet(CHandleRangeMap& loc,
@@ -345,6 +345,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.33  2002/12/26 20:55:17  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *

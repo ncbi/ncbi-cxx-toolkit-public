@@ -49,11 +49,33 @@ BEGIN_SCOPE(objects)
 //
 
 
+CHandleRangeMap::CHandleRangeMap(CSeq_id_Mapper& id_mapper)
+    : m_IdMapper(&id_mapper)
+{
+}
+
+
+CHandleRangeMap::CHandleRangeMap(const CHandleRangeMap& rmap)
+{
+    *this = rmap;
+}
+
+
+CHandleRangeMap::~CHandleRangeMap(void)
+{
+}
+
+
+CHandleRangeMap& CHandleRangeMap::operator= (const CHandleRangeMap& rmap)
+{
+    m_IdMapper = rmap.m_IdMapper;
+    m_LocMap = rmap.m_LocMap;
+    return *this;
+}
+
+
 void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
 {
-    CSeq_id_Handle h;
-    TLocMap::iterator newh;
-    ENa_strand strand = eNa_strand_unknown;
     switch ( loc.Which() ) {
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Null:
@@ -63,61 +85,45 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
         }
     case CSeq_loc::e_Whole:
         {
-            h = m_IdMapper->GetHandle(loc.GetWhole());
-            newh = m_LocMap.insert
-                (TLocMap::value_type(h, CHandleRange(h))).first;
-            newh->second.AddRange(CHandleRange::TRange::GetWhole(), strand);
+            AddRange(loc.GetWhole(), CHandleRange::TRange::GetWhole());
             return;
         }
     case CSeq_loc::e_Int:
         {
-            h = m_IdMapper->GetHandle(loc.GetInt().GetId());
-            newh = m_LocMap.insert
-                (TLocMap::value_type(h, CHandleRange(h))).first;
-            if ( loc.GetInt().IsSetStrand() )
-                strand = loc.GetInt().GetStrand();
-            newh->second.AddRange(CHandleRange::TRange(
-                loc.GetInt().GetFrom(), loc.GetInt().GetTo()), strand);
+            AddRange(loc.GetInt().GetId(),
+                     loc.GetInt().GetFrom(),
+                     loc.GetInt().GetTo(),
+                     loc.GetInt().GetStrand());
             return;
         }
     case CSeq_loc::e_Pnt:
         {
-            h = m_IdMapper->GetHandle(loc.GetPnt().GetId());
-            newh = m_LocMap.insert
-                (TLocMap::value_type(h, CHandleRange(h))).first;
-            if ( loc.GetPnt().IsSetStrand() )
-                strand = loc.GetPnt().GetStrand();
-            newh->second.AddRange(CHandleRange::TRange(
-                loc.GetPnt().GetPoint(), loc.GetPnt().GetPoint()), strand);
+            AddRange(loc.GetPnt().GetId(),
+                     loc.GetPnt().GetPoint(),
+                     loc.GetPnt().GetPoint(),
+                     loc.GetPnt().GetStrand());
             return;
         }
     case CSeq_loc::e_Packed_int:
         {
             // extract each range
             iterate ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
-                h = m_IdMapper->GetHandle((*ii)->GetId());
-                newh = m_LocMap.insert
-                    (TLocMap::value_type(h, CHandleRange(h))).first;
-                if ( (*ii)->IsSetStrand() )
-                    strand = (*ii)->GetStrand();
-                else
-                    strand = eNa_strand_unknown;
-                newh->second.AddRange(CHandleRange::TRange(
-                    (*ii)->GetFrom(), (*ii)->GetTo()), strand);
+                AddRange((*ii)->GetId(),
+                         (*ii)->GetFrom(),
+                         (*ii)->GetTo(),
+                         (*ii)->GetStrand());
             }
             return;
         }
     case CSeq_loc::e_Packed_pnt:
         {
             // extract each point
-            h = m_IdMapper->GetHandle(loc.GetPacked_pnt().GetId());
-            newh = m_LocMap.insert
-                (TLocMap::value_type(h, CHandleRange(h))).first;
-            if ( loc.GetPacked_pnt().IsSetStrand() )
-                strand = loc.GetPacked_pnt().GetStrand();
+            CHandleRange& hr =
+                m_LocMap[m_IdMapper->GetHandle(loc.GetPacked_pnt().GetId())];
+            ENa_strand strand = loc.GetPacked_pnt().GetStrand();
             iterate ( CPacked_seqpnt::TPoints, pi,
                       loc.GetPacked_pnt().GetPoints() ) {
-                newh->second.AddRange(CHandleRange::TRange(*pi, *pi), strand);
+                hr.AddRange(CHandleRange::TRange(*pi, *pi), strand);
             }
             return;
         }
@@ -139,27 +145,15 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
         }
     case CSeq_loc::e_Bond:
         {
-            h = m_IdMapper->GetHandle(loc.GetBond().GetA().GetId());
-            newh = m_LocMap.insert
-                (TLocMap::value_type(h, CHandleRange(h))).first;
-            if ( loc.GetBond().GetA().IsSetStrand() )
-                strand = loc.GetBond().GetA().GetStrand();
-            newh->second.AddRange(CHandleRange::TRange(
-                loc.GetBond().GetA().GetPoint(),
-                loc.GetBond().GetA().GetPoint()),
-                strand);
+            AddRange(loc.GetBond().GetA().GetId(),
+                     loc.GetBond().GetA().GetPoint(),
+                     loc.GetBond().GetA().GetPoint(),
+                     loc.GetBond().GetA().GetStrand());
             if ( loc.GetBond().IsSetB() ) {
-                h = m_IdMapper->GetHandle(loc.GetBond().GetB().GetId());
-                newh = m_LocMap.insert
-                    (TLocMap::value_type(h, CHandleRange(h))).first;
-                if ( loc.GetBond().GetA().IsSetStrand() )
-                    strand = loc.GetBond().GetB().GetStrand();
-                else
-                    strand = eNa_strand_unknown;
-                newh->second.AddRange(CHandleRange::TRange(
-                    loc.GetBond().GetB().GetPoint(),
-                    loc.GetBond().GetB().GetPoint()),
-                    strand);
+                AddRange(loc.GetBond().GetB().GetId(),
+                         loc.GetBond().GetB().GetPoint(),
+                         loc.GetBond().GetB().GetPoint(),
+                         loc.GetBond().GetB().GetStrand());
             }
             return;
         }
@@ -172,14 +166,26 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
 }
 
 
-void CHandleRangeMap::AddRanges(const CSeq_id_Handle& h,
-                                const CHandleRange& range)
+void CHandleRangeMap::AddRange(const CSeq_id_Handle& h,
+                               CHandleRange::TRange range,
+                               ENa_strand strand)
 {
-    TLocMap::iterator hr = m_LocMap.insert
-        (TLocMap::value_type(h, CHandleRange(h))).first;
-    iterate ( CHandleRange::TRanges, it, range.GetRanges() ) {
-        hr->second.AddRange(it->first, it->second);
-    }
+    m_LocMap[h].AddRange(range, strand);
+}
+
+
+void CHandleRangeMap::AddRange(const CSeq_id& id,
+                               CHandleRange::TRange range,
+                               ENa_strand strand)
+{
+    AddRange(m_IdMapper->GetHandle(id), range, strand);
+}
+
+
+void CHandleRangeMap::AddRanges(const CSeq_id_Handle& h,
+                                const CHandleRange& hr)
+{
+    m_LocMap[h].AddRanges(hr);
 }
 
 
@@ -193,12 +199,14 @@ bool CHandleRangeMap::IntersectingWithLoc(const CSeq_loc& loc) const
 
 bool CHandleRangeMap::IntersectingWithMap(const CHandleRangeMap& rmap) const
 {
+    if ( rmap.m_LocMap.size() > m_LocMap.size() ) {
+        return rmap.IntersectingWithMap(*this);
+    }
     iterate ( TLocMap, it1, rmap.m_LocMap ) {
         TLocMap::iterator it2 = m_LocMap.find(it1->first);
-        if ( it2 == m_LocMap.end() )
-            continue;
-        if ( it1->second.IntersectingWith(it2->second) )
+        if ( it2 != m_LocMap.end() &&it1->second.IntersectingWith(it2->second) ) {
             return true;
+        }
     }
     return false;
 }
@@ -206,13 +214,16 @@ bool CHandleRangeMap::IntersectingWithMap(const CHandleRangeMap& rmap) const
 
 bool CHandleRangeMap::TotalRangeIntersectingWith(const CHandleRangeMap& rmap) const
 {
+    if ( rmap.m_LocMap.size() > m_LocMap.size() ) {
+        return rmap.TotalRangeIntersectingWith(*this);
+    }
     iterate ( TLocMap, it1, rmap.m_LocMap ) {
         TLocMap::iterator it2 = m_LocMap.find(it1->first);
-        if ( it2 == m_LocMap.end() )
-            continue;
-        if ( it1->second.GetOverlappingRange().IntersectingWith(
-            it2->second.GetOverlappingRange()) )
+        if ( it2 != m_LocMap.end() &&
+             it1->second.GetOverlappingRange()
+             .IntersectingWith(it2->second.GetOverlappingRange()) ) {
             return true;
+        }
     }
     return false;
 }
@@ -224,6 +235,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.8  2002/12/26 20:55:17  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *

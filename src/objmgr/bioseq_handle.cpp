@@ -85,20 +85,40 @@ const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 }
 
 
-CSeqVector CBioseq_Handle::GetSeqVector(bool use_iupac_coding,
-                                        bool plus_strand) const
+CSeqVector CBioseq_Handle::GetSeqVector(EVectorCoding coding,
+                                        ENa_strand strand) const
 {
-    return CSeqVector(*this,
-        use_iupac_coding ? eCoding_Iupac : eCoding_NotSet,
-        plus_strand ? eStrand_Plus : eStrand_Minus,
-        *m_Scope, CConstRef<CSeq_loc>(0));
+    return CSeqVector(GetSeqMapByStrand(strand), *m_Scope, coding);
+}
+
+
+CSeqVector CBioseq_Handle::GetSeqVector(ENa_strand strand) const
+{
+    return GetSeqVector(eCoding_Ncbi, strand);
 }
 
 
 CSeqVector CBioseq_Handle::GetSeqVector(EVectorCoding coding,
                                         EVectorStrand strand) const
 {
-    return CSeqVector(*this, coding, strand, *m_Scope, CConstRef<CSeq_loc>(0));
+    return GetSeqVector(coding,
+                        strand == eStrand_Minus?
+                        eNa_strand_minus: eNa_strand_plus);
+}
+
+
+CSeqVector CBioseq_Handle::GetSeqVector(EVectorStrand strand) const
+{
+    return GetSeqVector(strand == eStrand_Minus?
+                        eNa_strand_minus: eNa_strand_plus);
+}
+
+
+CSeqVector CBioseq_Handle::GetSeqVector(bool use_iupac_coding,
+                                        bool plus_strand) const
+{
+    return GetSeqVector(use_iupac_coding ? eCoding_Iupac : eCoding_Ncbi,
+                        plus_strand ? eNa_strand_plus : eNa_strand_minus);
 }
 
 
@@ -116,50 +136,63 @@ bool CBioseq_Handle::x_IsSynonym(const CSeq_id& id) const
 
 CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
                                            ESequenceViewMode mode,
-                                           bool use_iupac_coding,
-                                           bool plus_strand) const
+                                           EVectorCoding coding,
+                                           ENa_strand strand) const
 {
-    return GetSequenceView(location, mode,
-        use_iupac_coding ? eCoding_Iupac : eCoding_NotSet,
-        plus_strand ? eStrand_Plus : eStrand_Minus);
+    return CSeqVector(GetSeqMapByLocation(location, mode, strand),
+                      *m_Scope, coding);
 }
 
 
-CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
-                                           ESequenceViewMode mode,
-                                           EVectorCoding coding,
-                                           EVectorStrand strand) const
+CConstRef<CSeqMap>
+CBioseq_Handle::CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
+                                      ENa_strand strand) const
 {
-    // Parse the location
-    CHandleRange rlist(m_Value);      // all intervals pointing to the sequence
-    CSeq_loc_CI loc_it(location);
-    for ( ; loc_it; ++loc_it) {
-        if ( !x_IsSynonym(loc_it.GetSeq_id()) )
-            continue;
-        rlist.AddRange(loc_it.GetRange(), loc_it.GetStrand());
-    }
+    return CSeqMap::CreateSeqMapForStrand(seqMap, strand);
 
-    // Make mode-dependent parsing of the range list
-    CHandleRange mode_rlist(m_Value); // processed intervals (merged, excluded)
-    switch (mode) {
-    case eViewConstructed:
-        {
-            mode_rlist = rlist;
-            break;
+}
+
+
+CConstRef<CSeqMap> CBioseq_Handle::GetSeqMapByStrand(ENa_strand strand) const
+{
+    return CreateSeqMapForStrand(CConstRef<CSeqMap>(&GetSeqMap()), strand);
+}
+
+
+CConstRef<CSeqMap> CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
+                                                       ESequenceViewMode mode,
+                                                       ENa_strand strand) const
+{
+    CConstRef<CSeqMap> ret;
+    if ( mode == eViewConstructed ) {
+        ret = CSeqMap::CreateSeqMapForSeq_loc(loc, &x_GetDataSource());
+    }
+    else {
+        // Parse the location
+        CHandleRange rlist;      // all intervals pointing to the sequence
+        CSeq_loc_CI loc_it(loc);
+        for ( ; loc_it; ++loc_it) {
+            if ( !x_IsSynonym(loc_it.GetSeq_id()) )
+                continue;
+            rlist.AddRange(loc_it.GetRange(), loc_it.GetStrand());
         }
-    case eViewMerged:
+
+        // Make mode-dependent parsing of the range list
+        CHandleRange mode_rlist; // processed intervals (merged, excluded)
+        switch (mode) {
+        case eViewMerged:
         {
             // Merge intervals from "rlist"
-            iterate (CHandleRange::TRanges, rit, rlist.GetRanges()) {
+            iterate (CHandleRange, rit, rlist) {
                 mode_rlist.MergeRange(rit->first, rit->second);
             }
             break;
         }
-    case eViewExcluded:
+        case eViewExcluded:
         {
             // Exclude intervals from "rlist"
             TSeqPos last_from = 0;
-            iterate (CHandleRange::TRanges, rit, rlist.GetRanges()) {
+            iterate (CHandleRange, rit, rlist) {
                 if (last_from < rit->first.GetFrom()) {
                     mode_rlist.MergeRange(
                         CHandleRange::TRange(last_from, rit->first.GetFrom()-1),
@@ -180,20 +213,23 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
             }
             break;
         }
-    }
+        }
 
-    // Convert ranges to seq-loc
-    CRef<CSeq_loc> view_loc(new CSeq_loc);
-    iterate (CHandleRange::TRanges, rit, mode_rlist.GetRanges()) {
-        CRef<CSeq_loc> seg_loc(new CSeq_loc);
-        CRef<CSeq_id> id(new CSeq_id);
-        id->Assign(x_GetDataSource().GetIdMapper().GetSeq_id(m_Value));
-        seg_loc->SetInt().SetId(*id);
-        seg_loc->SetInt().SetFrom(rit->first.GetFrom());
-        seg_loc->SetInt().SetTo(rit->first.GetTo());
-        view_loc->SetMix().Set().push_back(seg_loc);
+        // Convert ranges to seq-loc
+        CRef<CSeq_loc> view_loc(new CSeq_loc);
+        iterate (CHandleRange, rit, mode_rlist) {
+            CRef<CSeq_loc> seg_loc(new CSeq_loc);
+            CRef<CSeq_id> id(new CSeq_id);
+            id->Assign(x_GetDataSource().GetIdMapper().GetSeq_id(m_Value));
+            seg_loc->SetInt().SetId(*id);
+            seg_loc->SetInt().SetFrom(rit->first.GetFrom());
+            seg_loc->SetInt().SetTo(rit->first.GetTo());
+            view_loc->SetMix().Set().push_back(seg_loc);
+        }
+        ret = CSeqMap::CreateSeqMapForSeq_loc(*view_loc, &x_GetDataSource());
+        strand = eNa_strand_unknown;
     }
-    return CSeqVector(*this, coding, strand, *m_Scope, view_loc);
+    return CreateSeqMapForStrand(ret, strand);
 }
 
 
@@ -246,6 +282,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.27  2002/12/26 20:55:17  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *

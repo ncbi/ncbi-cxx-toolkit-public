@@ -32,11 +32,9 @@
 
 #include <objects/objmgr/annot_types_ci.hpp>
 #include "annot_object.hpp"
-#include "data_source.hpp"
 #include <objects/objmgr/tse_info.hpp>
 #include "handle_range_map.hpp"
 #include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/seq_vector.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -53,10 +51,10 @@ bool CAnnotObject_Less::x_CompareAnnot(const CAnnotObject& x, const CAnnotObject
     if ( x.IsFeat()  &&  y.IsFeat() ) {
         // CSeq_feat::operator<() may report x == y while the features
         // are different. In this case compare pointers too.
-        bool lt = x.GetFeat() < y.GetFeat();
-        bool gt = y.GetFeat() < x.GetFeat();
-        if ( lt  ||  gt )
-            return lt;
+        if ( x.GetFeat() < y.GetFeat() )
+            return true;
+        if ( y.GetFeat() < x.GetFeat() )
+            return false;
     }
     // Compare pointers
     return &x < &y;
@@ -227,7 +225,7 @@ void CAnnotTypes_CI::x_Initialize(const CSeq_loc& loc)
             CBioseq_Handle h = m_Scope->GetBioseqHandle(
                 m_Scope->x_GetIdMapper().GetSeq_id(id_it->first));
             const CSeqMap& smap = h.GetSeqMap();
-            for (TSeqPos seg = 0; seg < smap.size(); seg++) {
+            for (TSeqPos seg = 0; seg < smap.size(); ++seg) {
                 has_references = has_references || (smap[seg].GetType() == CSeqMap::eSeqRef);
             }
             if ( !has_references )
@@ -235,7 +233,7 @@ void CAnnotTypes_CI::x_Initialize(const CSeq_loc& loc)
 */
 has_references = true;
             // Iterate intervals for the current id, resolve each interval
-            iterate(CHandleRange::TRanges, rit, id_it->second.GetRanges()) {
+            iterate(CHandleRange, rit, id_it->second) {
                 // Resolve the master location, check if there are annotations
                 // on referenced sequences.
                 x_ResolveReferences(id_it->first,             // master id
@@ -249,15 +247,12 @@ has_references = true;
         m_ResolveMethod = eResolve_None;
         x_SearchLocation(master_loc);
     }
-    TAnnotSet orig_annots(m_AnnotSet);
-    m_AnnotSet.clear();
-    non_const_iterate(TAnnotSet, it, orig_annots) {
-        if (m_ResolveMethod != eResolve_None) {
+    if (m_ResolveMethod != eResolve_None) {
+        TAnnotSet orig_annots;
+        swap(orig_annots, m_AnnotSet);
+        non_const_iterate(TAnnotSet, it, orig_annots) {
             m_AnnotSet.insert(CRef<CAnnotObject>
                               (x_ConvertAnnotToMaster(**it)));
-        }
-        else {
-            m_AnnotSet.insert(*it);
         }
     }
     m_CurAnnot = m_AnnotSet.begin();
@@ -273,12 +268,9 @@ void CAnnotTypes_CI::x_ResolveReferences(const CSeq_id_Handle& master_idh,
 {
     // Create a new entry in the convertions map
     CRef<SConvertionRec> rec(new SConvertionRec);
-    rec->m_Location.reset
-        (new CHandleRangeMap(m_Scope->x_GetIdMapper()));
-    CHandleRange hrg(ref_idh);
-    hrg.AddRange(CHandleRange::TRange(rmin, rmax), strand);
+    rec->m_Location.reset(new CHandleRangeMap(m_Scope->x_GetIdMapper()));
     // Create the location on the referenced sequence
-    rec->m_Location->AddRanges(ref_idh, hrg);
+    rec->m_Location->AddRange(ref_idh, CHandleRange::TRange(rmin, rmax), strand);
     rec->m_RefShift = shift;
     rec->m_RefMin = rmin; //???
     rec->m_RefMax = rmax; //???
@@ -291,17 +283,14 @@ void CAnnotTypes_CI::x_ResolveReferences(const CSeq_id_Handle& master_idh,
         return;
     // Resolve references for a segmented bioseq, get features for
     // the segments.
-    CBioseq_Handle ref_seq = m_Scope->GetBioseqHandle(
-            m_Scope->x_GetIdMapper().GetSeq_id(ref_idh));
+    CBioseq_Handle ref_seq = m_Scope->GetBioseqHandle(ref_idh);
     if ( !ref_seq ) {
         return;
     }
-    CSeqMap& ref_map = ref_seq.x_GetDataSource().x_GetSeqMap(ref_seq);
-    //ref_map.x_Resolve(rmax, *m_Scope);
+    const CSeqMap& ref_map = ref_seq.GetSeqMap();
     for (CSeqMap::const_iterator seg = ref_map.FindSegment(rmin, m_Scope);
-         seg != ref_map.End(m_Scope); seg++) {
+         seg != ref_map.End(m_Scope); ++seg) {
         // Check each map segment for intersections with the range
-        //const CSeqMap::CSegmentInfo& seg = ref_map[i];
         if (rmin >= seg.GetPosition() + seg.GetLength())
             continue; // Go to the next segment
         if (rmax < seg.GetPosition())
@@ -309,11 +298,9 @@ void CAnnotTypes_CI::x_ResolveReferences(const CSeq_id_Handle& master_idh,
         if (seg.GetType() == CSeqMap::eSeqRef) {
             // Check for valid TSE
             if (m_ResolveMethod == eResolve_TSE) {
-                CBioseq_Handle check_seq = m_Scope->GetBioseqHandle(
-                        m_Scope->x_GetIdMapper().GetSeq_id(seg.GetRefSeqid()));
+                CBioseq_Handle check_seq = m_Scope->GetBioseqHandle(seg.GetRefSeqid());
                 // The referenced sequence must be in the same TSE as the master one
-                CBioseq_Handle master_seq = m_Scope->GetBioseqHandle(
-                        m_Scope->x_GetIdMapper().GetSeq_id(master_idh));
+                CBioseq_Handle master_seq = m_Scope->GetBioseqHandle(master_idh);
                 if (!check_seq  ||  !master_seq  ||
                     (&master_seq.GetTopLevelSeqEntry() != &check_seq.GetTopLevelSeqEntry())) {
                     continue;
@@ -457,9 +444,10 @@ bool CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                         ((*conv_it)->m_RefMin + (*conv_it)->m_RefShift);
                     loc.SetInt().SetTo
                         ((*conv_it)->m_RefMax + (*conv_it)->m_RefShift);
-                    if (loc.GetInt().GetTo() - loc.GetInt().GetFrom() + 1 <
-                        m_Scope->GetBioseqHandle(loc.GetInt().
-                        GetId()).GetSeqVector().size())
+                    TSeqPos seqLen =
+                        m_Scope->GetBioseqHandle(loc.GetInt().GetId())
+                        .GetSeqMap().GetLength(m_Scope);
+                    if (loc.GetInt().GetLength() < seqLen)
                         partial = true;
                     continue;
                 }
@@ -624,6 +612,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.32  2002/12/26 20:55:17  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *

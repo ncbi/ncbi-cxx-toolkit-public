@@ -1624,7 +1624,7 @@ void CSeq_id_Mapper::ReleaseHandleReference(const CSeq_id_Handle& handle)
             it->second->DropKeysRange(seg*kKeyUsageTableSegmentSize,
                 (seg+1)*kKeyUsageTableSegmentSize-1);
         }
-        for (size_t i = 0; i < kKeyUsageTableSegmentSize; i++) {
+        for (size_t i = 0; i < kKeyUsageTableSegmentSize; ++i) {
             TKeyToIdMap::iterator ref = m_KeyMap.find
                 (i + seg*kKeyUsageTableSegmentSize);
             if (ref != m_KeyMap.end()) {
@@ -1696,6 +1696,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.25  2003/01/02 19:40:04  gouriano
 * added checking CSeq_id for validity
 *

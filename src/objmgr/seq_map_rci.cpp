@@ -55,29 +55,30 @@ CSeqMapRange_CI::CSeqMapRange_CI(void)
 }
 
 
-CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EPosition dummy, TSeqPos position,
+CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EPosition /*byPos*/, TSeqPos pos,
                                  const CSeqMap_CI& seg)
     : m_Seqid(seg.GetRefSeqid()),
       m_RangePosition(seg.GetRefPosition()),
       m_RangeEndPosition(seg.GetRefEndPosition()),
       m_MinusStrand(seg.GetRefMinusStrand())
 {
-    x_Init(dummy, position, seg.GetScope());
+    x_Init(seg.x_GetSubSeqMap(true), CSeqMap_CI::ePosition, pos, seg.GetScope());
 }
 
 
-CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EPosition dummy, TSeqPos position,
+CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EPosition /*byPos*/, TSeqPos pos,
                                  const CSeqMapRange_CI& seg)
     : m_Seqid(seg.GetRefSeqid()),
       m_RangePosition(seg.GetRefPosition()),
       m_RangeEndPosition(seg.GetRefEndPosition()),
       m_MinusStrand(seg.GetRefMinusStrand())
 {
-    x_Init(dummy, position, seg.GetScope());
+    x_Init(seg.m_Segment.x_GetSubSeqMap(true),
+           CSeqMap_CI::ePosition, pos, seg.GetScope());
 }
 
-
-CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EPosition dummy, TSeqPos position,
+#if 0
+CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EPosition /*byPos*/, TSeqPos pos,
                                  const CSeq_id_Handle& id,
                                  TSeqPos rangePosition,
                                  TSeqPos rangeEndPosition,
@@ -88,33 +89,33 @@ CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EPosition dummy, TSeqPos position,
       m_RangeEndPosition(rangeEndPosition),
       m_MinusStrand(minusStrand)
 {
-    x_Init(dummy, position, scope);
+    x_Init(seg.x_GetSubSeqMap(true), CSeqMap_CI::ePosition, pos, scope);
 }
+#endif
 
-
-CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EBegin dummy,
+CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EBegin /*toBegin*/,
                                  const CSeqMap_CI& seg)
     : m_Seqid(seg.GetRefSeqid()),
       m_RangePosition(seg.GetRefPosition()),
       m_RangeEndPosition(seg.GetRefEndPosition()),
       m_MinusStrand(seg.GetRefMinusStrand())
 {
-    x_Init(dummy, seg.GetScope());
+    x_Init(seg.x_GetSubSeqMap(true), CSeqMap_CI::eBegin, seg.GetScope());
 }
 
 
-CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EBegin dummy,
+CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EBegin /*toBegin*/,
                                  const CSeqMapRange_CI& seg)
     : m_Seqid(seg.GetRefSeqid()),
       m_RangePosition(seg.GetRefPosition()),
       m_RangeEndPosition(seg.GetRefEndPosition()),
       m_MinusStrand(seg.GetRefMinusStrand())
 {
-    x_Init(dummy, seg.GetScope());
+    x_Init(seg.m_Segment.x_GetSubSeqMap(true), CSeqMap_CI::eBegin, seg.GetScope());
 }
 
-
-CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EBegin dummy,
+#if 0
+CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EBegin /*toBegin*/,
                                  const CSeq_id_Handle& id,
                                  TSeqPos rangePosition,
                                  TSeqPos rangeEndPosition,
@@ -125,33 +126,33 @@ CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EBegin dummy,
       m_RangeEndPosition(rangeEndPosition),
       m_MinusStrand(minusStrand)
 {
-    x_Init(dummy, scope);
+    x_Init(seg.x_GetSubSeqMap(scope, true), CSeqMap_CI::eBegin, scope);
 }
+#endif
 
-
-CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EEnd dummy,
+CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EEnd /*toEnd*/,
                                  const CSeqMap_CI& seg)
     : m_Seqid(seg.GetRefSeqid()),
       m_RangePosition(seg.GetRefPosition()),
       m_RangeEndPosition(seg.GetRefEndPosition()),
       m_MinusStrand(seg.GetRefMinusStrand())
 {
-    x_Init(dummy, seg.GetScope());
+    x_Init(seg.x_GetSubSeqMap(true), CSeqMap_CI::eEnd, seg.GetScope());
 }
 
 
-CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EEnd dummy,
+CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EEnd /*toEnd*/,
                                  const CSeqMapRange_CI& seg)
     : m_Seqid(seg.GetRefSeqid()),
       m_RangePosition(seg.GetRefPosition()),
       m_RangeEndPosition(seg.GetRefEndPosition()),
       m_MinusStrand(seg.GetRefMinusStrand())
 {
-    x_Init(dummy, seg.GetScope());
+    x_Init(seg.m_Segment.x_GetSubSeqMap(true), CSeqMap_CI::eEnd, seg.GetScope());
 }
 
-
-CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EEnd dummy,
+#if 0
+CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EEnd /*toEnd*/,
                                  const CSeq_id_Handle& id,
                                  TSeqPos rangePosition,
                                  TSeqPos rangeEndPosition,
@@ -162,11 +163,11 @@ CSeqMapRange_CI::CSeqMapRange_CI(CSeqMap_CI::EEnd dummy,
       m_RangeEndPosition(rangeEndPosition),
       m_MinusStrand(minusStrand)
 {
-    x_Init(dummy, scope);
+    x_Init(seg.x_GetSubSeqMap(scope, true), CSeqMap_CI::eEnd, scope);
 }
+#endif
 
-
-CSeqMapRange_CI::CSeqMapRange_CI(EWhole /*dummy*/, const CSeqMap_CI& current)
+CSeqMapRange_CI::CSeqMapRange_CI(EWhole /*whole*/, const CSeqMap_CI& current)
     : m_Segment(current),
       m_RangePosition(0),
       m_RangeEndPosition(kInvalidSeqPos),
@@ -214,72 +215,48 @@ CSeqMapRange_CI::~CSeqMapRange_CI(void)
 }
 
 
-CBioseq_Handle CSeqMapRange_CI::x_Init(CScope* scope)
+void CSeqMapRange_CI::x_Init(CConstRef<CSeqMap> seqMap,
+                             CSeqMap_CI::EBegin /*toBegin*/, CScope* scope)
 {
-    if ( !scope ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMapRange_CI::x_Init: "
-                     "scope is null");
-    }
-
-    CBioseq_Handle bh =
-        scope->GetBioseqHandle(CSeq_id_Mapper::GetSeq_id(m_Seqid));
-    if ( !bh ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeqMapRange_CI::x_Init: "
-                     "cannot resolve reference");
-    }
-
     if ( m_RangeEndPosition == kInvalidSeqPos ) {
-        CBioseq_Handle::TBioseqCore seq = bh.GetBioseqCore();
-        if ( !seq->GetInst().IsSetLength() ) {
-            THROW1_TRACE(runtime_error,
-                         "CSeqMapRange_CI::x_Init: "
-                         "length of sequence is not set");
-        }
-        m_RangeEndPosition = seq->GetInst().GetLength() - m_RangePosition;
+        m_RangeEndPosition = seqMap->GetLength(scope);
     }
-
-    return bh;
-}
-
-
-void CSeqMapRange_CI::x_Init(CSeqMap_CI::EBegin /*dummy*/, CScope* scope)
-{
-    CBioseq_Handle bh = x_Init(scope);
-    const CSeqMap& seqMap = bh.GetSeqMap();
     if ( !m_MinusStrand ) {
-        m_Segment = seqMap.find(m_RangePosition, scope);
+        m_Segment = seqMap->find(m_RangePosition, scope);
     }
     else {
-        m_Segment = seqMap.find(m_RangeEndPosition-1, scope);
+        m_Segment = seqMap->find(m_RangeEndPosition-1, scope);
     }
 }
 
 
-void CSeqMapRange_CI::x_Init(CSeqMap_CI::EEnd /*dummy*/, CScope* scope)
+void CSeqMapRange_CI::x_Init(CConstRef<CSeqMap> seqMap,
+                             CSeqMap_CI::EEnd /*toEnd*/, CScope* scope)
 {
-    CBioseq_Handle bh = x_Init(scope);
-    const CSeqMap& seqMap = bh.GetSeqMap();
+    if ( m_RangeEndPosition == kInvalidSeqPos ) {
+        m_RangeEndPosition = seqMap->GetLength(scope);
+    }
     if ( !m_MinusStrand ) {
-        m_Segment = seqMap.find(m_RangeEndPosition-1, scope);
+        m_Segment = seqMap->find(m_RangeEndPosition-1, scope);
     }
     else {
-        m_Segment = seqMap.find(m_RangePosition, scope);
+        m_Segment = seqMap->find(m_RangePosition, scope);
     }
 }
 
 
-void CSeqMapRange_CI::x_Init(CSeqMap_CI::EPosition /*dummy*/, TSeqPos pos,
+void CSeqMapRange_CI::x_Init(CConstRef<CSeqMap> seqMap,
+                             CSeqMap_CI::EPosition /*byPos*/, TSeqPos pos,
                              CScope* scope)
 {
-    CBioseq_Handle bh = x_Init(scope);
-    const CSeqMap& seqMap = bh.GetSeqMap();
+    if ( m_RangeEndPosition == kInvalidSeqPos ) {
+        m_RangeEndPosition = seqMap->GetLength(scope);
+    }
     if ( !m_MinusStrand ) {
-        m_Segment = seqMap.find(m_RangePosition + pos, scope);
+        m_Segment = seqMap->find(m_RangePosition + pos, scope);
     }
     else {
-        m_Segment = seqMap.find(m_RangeEndPosition - 1 - pos, scope);
+        m_Segment = seqMap->find(m_RangeEndPosition - 1 - pos, scope);
     }
 }
 
@@ -399,6 +376,18 @@ bool CSeqMapRange_CI::GetRefMinusStrand(void) const
 }
 
 
+bool CSeqMapRange_CI::IsRefData(void) const
+{
+    return GetRealType() == CSeqMap::eSeqData;
+}
+
+
+const CSeq_data& CSeqMapRange_CI::GetRefData(void) const
+{
+    return m_Segment.GetData();
+}
+
+
 ////////////////////////////////////////////////////////////////////
 //  CSeqMapResolved_CI
 
@@ -409,13 +398,13 @@ CSeqMapResolved_CI::CSeqMapResolved_CI(void)
 
 CSeqMapResolved_CI::CSeqMapResolved_CI(const CSeqMap_CI& seg)
 {
-    x_Init(seg, 0);
+    x_Init(seg, seg.GetPosition());
 }
 
 
-CSeqMapResolved_CI::CSeqMapResolved_CI(const CSeqMap_CI& seg, TSeqPos offset)
+CSeqMapResolved_CI::CSeqMapResolved_CI(const CSeqMap_CI& seg, TSeqPos pos)
 {
-    x_Init(seg, offset);
+    x_Init(seg, pos);
 }
 
 
@@ -438,7 +427,9 @@ CSeq_id_Handle CSeqMapResolved_CI::GetRefSeqid(void) const
 
 void CSeqMapResolved_CI::x_Push(TSeqPos pos)
 {
-    m_Stack.push(CSeqMapRange_CI(CSeqMap_CI::ePosition, pos, m_Stack.top()));
+    m_Stack.push(CSeqMapRange_CI(CSeqMap_CI::ePosition,
+                                 pos-GetPosition(),
+                                 m_Stack.top()));
     m_Position += x_GetTopOffset();
 }
 
@@ -474,7 +465,7 @@ bool CSeqMapResolved_CI::x_TopPrev(void)
 void CSeqMapResolved_CI::x_Resolve(TSeqPos position)
 {
     while ( x_IsReference() ) {
-        x_Push(position - GetPosition());
+        x_Push(position);
     }
 }
 
@@ -483,7 +474,7 @@ void CSeqMapResolved_CI::x_Init(const CSeqMap_CI& seg, TSeqPos position)
 {
     m_Stack.push(CSeqMapRange_CI(CSeqMapRange_CI::eWhole, seg));
     m_Position = seg.GetPosition();
-    x_Resolve(GetPosition()+position);
+    x_Resolve(position);
 }
 
 
@@ -508,7 +499,6 @@ bool CSeqMapResolved_CI::Prev(void)
     return true;
 }
 
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -516,6 +506,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.2  2002/12/26 20:55:18  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *

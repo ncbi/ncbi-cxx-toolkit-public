@@ -34,11 +34,17 @@
 */
 
 #include <objects/objmgr/bioseq_handle.hpp>
+#include <objects/objmgr/seq_map.hpp>
 #include <objects/seq/Seq_data.hpp>
-#include <util/range.hpp>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CScope;
+class CSeq_loc;
+class CSeqMap;
+class CSeq_data;
 
 // Sequence data
 struct SSeqData {
@@ -48,28 +54,36 @@ struct SSeqData {
     CConstRef<CSeq_data> src_data;    /// Source sequence data
 };
 
-class CScope;
-class CSeq_loc;
-class CSeqMap;
-
 class NCBI_XOBJMGR_EXPORT CSeqVector : public CObject
 {
 public:
     typedef unsigned char         TResidue;
     typedef CSeq_data::E_Choice   TCoding;
+    typedef CBioseq_Handle::EVectorCoding EVectorCoding;
 
+    CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
+               EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi);
     CSeqVector(const CSeqVector& vec);
+
     virtual ~CSeqVector(void);
 
     CSeqVector& operator= (const CSeqVector& vec);
 
     TSeqPos size(void) const;
     // 0-based array of residues
-    TResidue operator[] (TSeqPos pos);
+    TResidue operator[] (TSeqPos pos) const;
 
     // Fill the buffer string with the sequence data for the interval
     // [start, stop).
-    void GetSeqData(TSeqPos start, TSeqPos stop, string& buffer);
+    void GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const;
+
+    enum ESequenceType {
+        eType_not_set,  // temporary before initialization
+        eType_na,
+        eType_aa,
+        eType_unknown   // cannot be determined (no data)
+    };
+    ESequenceType GetSequenceType(void) const;
 
     // Target sequence coding. CSeq_data::e_not_set -- do not
     // convert sequence (use GetCoding() to check the real coding).
@@ -77,64 +91,46 @@ public:
     void SetCoding(TCoding coding);
     // Set coding to either Iupacaa or Iupacna depending on molecule type
     void SetIupacCoding(void);
+    // Set coding to either Ncbi8aa or Ncbi8na depending on molecule type
+    void SetNcbiCoding(void);
+    // Set coding to either Iupac or Ncbi8xx
+    void SetCoding(EVectorCoding coding);
 
     // Return gap symbol corresponding to the selected coding
     TResidue GetGapChar(void) const;
 
+    void ClearCache(void);
+
 private:
     friend class CBioseq_Handle;
+    //typedef CSeqMap::resolved_const_iterator TSeqMap_CI;
+    typedef vector<char> TCacheData;
+    typedef char* TCache_I;
 
-    // Created by CBioseq_Handle only.
-    CSeqVector(const CBioseq_Handle& handle,
-        CBioseq_Handle::EVectorCoding coding,  // Set coding to IUPACna or IUPACaa?
-        CBioseq_Handle::EVectorStrand strand,  // Use plus strand coordinates?
-        CScope& scope,
-        CConstRef<CSeq_loc> view_loc);         // Restrict visible area with a seq-loc
+    // Get residue
+    TResidue x_GetResidue(TSeqPos pos) const;
+    // fill part of cache
+    void x_ResizeCache(size_t size) const;
+    void x_FillCache(TSeqPos start, TSeqPos end) const;
+    void x_ConvertCache(TCache_I pos, size_t count, TCoding from, TCoding to) const;
+    void x_ReverseCache(TCache_I pos, size_t count, TCoding coding) const;
 
-    // Process seq-loc, create visible area ranges
-    void x_SetVisibleArea(const CSeq_loc& view_loc);
-    // Calculate sequence and visible area size
-    TSeqPos x_GetTotalSize(void) const;
-    TSeqPos x_GetVisibleSize(void) const;
+    bool x_UpdateSequenceType(TCoding coding) const;
+    void x_InitSequenceType(void);
 
-    void x_UpdateVisibleRange(TSeqPos pos);
-    void x_UpdateSeqData(TSeqPos pos);
-    // Get residue assuming the data in m_CurrentData are valid
-    TResidue x_GetResidue(TSeqPos pos);
+    static const char* sx_GetConvertTable(TCoding src, TCoding dst);
+    static const char* sx_GetComplementTable(TCoding coding);
 
-    // Fill the buffer with as many characters as possible with the single
-    // data cache. Characters starting from the "start" position are added
-    // to the buffer; the last character added is at or before "stop" position;
-    // "start" is moved to the next position after the last character added.
-    void x_GetCacheForInterval(TSeqPos& start, TSeqPos stop, string& buffer);
+    CConstRef<CSeqMap>    m_SeqMap;
+    CScope*               m_Scope;
+    TCoding               m_Coding;
+    ENa_strand            m_Strand;
 
-    // Single visible interval
-    typedef CRange<TSeqPos> TRange;
-    // Interval with the plus strand flag (true = plus)
-    typedef pair<TRange, bool> TRangeWithStrand;
-    // Map visible interval end (not start!) to an interval with strand.
-    // E.g. if there is only one visible interval [20..30], it will be
-    // mapped with 10 (=30-20) key.
-    typedef map<TSeqPos, TRangeWithStrand> TRanges;
-
-    CScope*            m_Scope;
-    CBioseq_Handle     m_Handle;
-    bool               m_PlusStrand;
-    SSeqData           m_CurData;
-    CConstRef<CSeqMap> m_SeqMap;
-    mutable TSeqPos    m_Size;
-    string             m_CachedData;
-    TSeqPos            m_CachedPos;
-    TSeqPos            m_CachedLen;
-    TCoding            m_Coding;
-    mutable TRanges    m_Ranges;    // Set of visible ranges
-    mutable TSeqPos    m_RangeSize; // Visible area size
-    TRanges::const_iterator m_SelRange;  // Selected range from the visible area
-    // Current visible range limits -- for faster checks in []
-    TSeqPos            m_CurFrom;   // visible segment start
-    TSeqPos            m_CurTo;     // visible segment end
-    // End of visible segment on the original sequence
-    TSeqPos            m_OrgTo;
+    mutable ESequenceType m_SequenceType;
+    mutable TSeqPos       m_CachePos;
+    mutable TSeqPos       m_CacheLen;
+    mutable TCache_I      m_Cache;
+    mutable TCacheData    m_CacheData;
 };
 
 
@@ -146,59 +142,25 @@ private:
 
 
 inline
-TSeqPos CSeqVector::size(void) const
+void CSeqVector::ClearCache(void)
 {
-    if (m_RangeSize == kInvalidSeqPos)
-        x_GetVisibleSize();
-    return m_RangeSize;
+    // Reset cached data
+    m_CacheLen = 0;
 }
+
 
 inline
 CSeqVector::TCoding CSeqVector::GetCoding(void) const
 {
-    if (m_Coding != CSeq_data::e_not_set) {
-        return m_Coding;
-    }
-    else if ( m_CurData.src_data ) {
-        return m_CurData.src_data->Which();
-    }
-    // No coding specified
-    return CSeq_data::e_not_set;
+    return m_Coding;
 }
 
-inline
-void CSeqVector::SetCoding(TCoding coding)
-{
-    if (m_Coding == coding) return;
-    m_Coding = coding;
-    // Reset cached data
-    m_CachedLen = 0;
-    m_CachedData = "";
-}
 
 inline
-CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos)
+CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos) const
 {
-    // Force size calculation
-    TSeqPos seq_size = size();
-    // Convert position to destination strand
-    if ( !m_PlusStrand ) {
-        pos = seq_size - pos - 1;
-    }
-
-    if (pos >= m_CurTo  ||  pos < m_CurFrom) {
-        x_UpdateVisibleRange(pos);
-    }
-
-    // Recalculate position from visible area to the whole sequence
-    pos += m_OrgTo - m_CurTo;
-    // Check and update current data segment
-    if (m_CurData.dest_start > pos  ||
-        m_CurData.dest_start+m_CurData.length <= pos) {
-        x_UpdateSeqData(pos);
-    }
-    // Get the residue
-    return x_GetResidue(pos);
+    TSeqPos offset = pos - m_CachePos;
+    return offset < m_CacheLen? m_Cache[offset]: x_GetResidue(pos);
 }
 
 
@@ -208,6 +170,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/01/22 20:11:53  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.22  2003/01/03 19:45:44  dicuccio
 * Replaced kPosUnknwon with kInvalidSeqPos (non-static variable; work-around for
 * MSVC)

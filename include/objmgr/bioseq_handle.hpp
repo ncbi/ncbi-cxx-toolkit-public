@@ -34,6 +34,7 @@
 
 #include <objects/objmgr/seq_id_handle.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Na_strand.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -102,8 +103,9 @@ public:
 
     // CSeqVector constructor flags
     enum EVectorCoding {
-        eCoding_NotSet, // Do not change sequence coding
-        eCoding_Iupac   // Set coding to Iupacna or Iupacaa
+        eCoding_NotSet, // Use original coding - DANGEROUS! - may change
+        eCoding_Ncbi,   // Set coding to binary coding (Ncbi4na or Ncbistdaa)
+        eCoding_Iupac   // Set coding to printable coding (Iupacna or Iupacaa)
     };
     enum EVectorStrand {
         eStrand_Plus,   // Plus strand
@@ -111,11 +113,13 @@ public:
     };
 
     // Get sequence: Iupacna or Iupacaa if use_iupac_coding is true
-    // NOTE: this function is deprecated, use enum arguments instead.
-    virtual CSeqVector GetSeqVector(bool use_iupac_coding,
-        bool plus_strand) const;
-    virtual CSeqVector GetSeqVector(EVectorCoding coding = eCoding_NotSet,
-        EVectorStrand strand = eStrand_Plus) const;
+    CSeqVector GetSeqVector(EVectorCoding coding,
+                            ENa_strand strand = eNa_strand_plus) const;
+    CSeqVector GetSeqVector(ENa_strand strand = eNa_strand_plus) const;
+    CSeqVector GetSeqVector(EVectorCoding coding, EVectorStrand strand) const;
+    CSeqVector GetSeqVector(EVectorStrand strand) const;
+    // NOTE: the following function is deprecated, use enum arguments instead.
+    CSeqVector GetSeqVector(bool use_iupac_coding, bool plus_strand) const;
 
     // Sequence filtering: get a seq-vector for a part of the sequence.
     // The part shown depends oon the mode selected. If the location
@@ -129,16 +133,19 @@ public:
         eViewMerged,         // Merge overlapping intervals, sort by location
         eViewExcluded        // Show intervals not included in the seq-loc
     };
-    // NOTE: this function is deprecated, use enum arguments instead.
-    virtual CSeqVector GetSequenceView(const CSeq_loc& location,
-                                       ESequenceViewMode mode,
-                                       bool use_iupac_coding,
-                                       bool plus_strand) const;
-    virtual CSeqVector GetSequenceView(const CSeq_loc& location,
-                                       ESequenceViewMode mode,
-                                       EVectorCoding coding = eCoding_NotSet,
-                                       EVectorStrand strand = eStrand_Plus) const;
-   
+    CSeqVector GetSequenceView(const CSeq_loc& location,
+                               ESequenceViewMode mode,
+                               EVectorCoding coding = eCoding_Ncbi,
+                               ENa_strand strand = eNa_strand_plus) const;
+
+
+    CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
+                                             ENa_strand strand) const;
+    CConstRef<CSeqMap> GetSeqMapByStrand(ENa_strand strand) const;
+    CConstRef<CSeqMap> GetSeqMapByLocation(const CSeq_loc& location,
+                                           ESequenceViewMode mode,
+                                           ENa_strand strand) const;
+
     CScope& GetScope(void) const;
 
     // Modification functions
@@ -270,12 +277,22 @@ CScope& CBioseq_Handle::GetScope(void) const
     return *m_Scope;
 }
 
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/01/22 20:11:53  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.27  2002/12/26 20:51:35  dicuccio
 * Added Win32 export specifier
 *

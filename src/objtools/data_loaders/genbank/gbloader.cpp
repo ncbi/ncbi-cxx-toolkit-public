@@ -533,7 +533,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
       }}
       bool new_tse=false;
       
-      iterate (CHandleRange::TRanges, lrange , hrange.GetRanges())
+      iterate (CHandleRange, lrange , hrange)
         {
           //GBLOG_POST( "x_GetRecords-range_0" );
           // check Data
@@ -684,6 +684,8 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
       iterate(SSeqrefs::TSeqrefs, srp, *(sr->m_Sr))
         {
           char b[100];
+          b[0] = 0;
+          b[0] = b[0];
           GBLOG_POST( (*srp)->print(b,sizeof(b)));
         }
     }
@@ -760,7 +762,7 @@ CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_ma
       CBlobClass cl;
       int count=0;
       cl.Value() = blob_mask;
-      for(CIStream bs(srp->BlobStreamBuf(from, to, cl,m_Locks.m_Pool.Select(tse))); ! bs.Eof();count++ )
+      for(CIStream bs(srp->BlobStreamBuf(from, to, cl,m_Locks.m_Pool.Select(tse))); ! bs.Eof(); ++count)
         {
           auto_ptr<CBlob> blob(srp->RetrieveBlob(bs));
           GBLOG_POST( "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")");
@@ -824,6 +826,15 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.44  2002/12/26 20:53:02  dicuccio
 * Moved tse_info.hpp -> include/ tree.  Minor tweaks to relieve compiler
 * warnings in MSVC.

@@ -95,6 +95,7 @@ public:
     // Get bioseq handle by seq-id
     // Declared "virtual" to avoid circular dependencies with seqloc
     virtual CBioseq_Handle  GetBioseqHandle(const CSeq_id& id);
+    CBioseq_Handle  GetBioseqHandle(const CSeq_id_Handle& id);
 
     // Get bioseq handle by seqloc
     CBioseq_Handle  GetBioseqHandle(const CSeq_loc& loc);
@@ -169,13 +170,16 @@ private:
 
     TRequestHistory m_History;
 
+    typedef map<CSeq_id_Handle, CBioseq_Handle> TCache;
+    TCache m_Cache;
+
     mutable CMutex m_Scope_Mtx;
 
     friend class CObjectManager;
     friend class CSeqVector;
     friend class CDataSource;
-    friend class CAnnotTypes_CI;
     friend class CBioseq_CI;
+    friend class CAnnotTypes_CI;
 };
 
 
@@ -185,6 +189,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/01/22 20:11:53  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.27  2002/12/26 20:51:36  dicuccio
 * Added Win32 export specifier
 *

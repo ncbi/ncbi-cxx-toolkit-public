@@ -43,6 +43,45 @@ BEGIN_SCOPE(objects)
 
 class CSeqMap;
 
+class NCBI_XOBJMGR_EXPORT CSeqMap_CI_SegmentInfo
+{
+public:
+    CSeqMap_CI_SegmentInfo(void);
+    CSeqMap_CI_SegmentInfo(CConstRef<CSeqMap> seqMap, size_t index);
+
+    TSeqPos GetRefPosition(void) const;
+    bool GetRefMinusStrand(void) const;
+
+    const CSeqMap& x_GetSeqMap(void) const;
+    size_t x_GetIndex(void) const;
+    const CSeqMap::CSegment& x_GetSegment(void) const;
+    const CSeqMap::CSegment& x_GetNextSegment(void) const;
+    bool x_Move(bool minusStrand, CScope* scope);
+
+    TSeqPos x_GetLevelRealPos(void) const;
+    TSeqPos x_GetLevelRealEnd(void) const;
+    TSeqPos x_GetLevelPos(void) const;
+    TSeqPos x_GetLevelEnd(void) const;
+    TSeqPos x_GetSkipBefore(void) const;
+    TSeqPos x_GetSkipAfter(void) const;
+    TSeqPos x_CalcLength(void) const;
+    TSeqPos x_GetTopOffset(void) const;
+
+private:
+
+    // seqmap
+    CConstRef<CSeqMap> m_SeqMap;
+    // index of segment in seqmap
+    size_t             m_Index;
+    // position inside m_SeqMap
+    // m_RangeEnd >= m_RangePos
+    TSeqPos            m_LevelRangePos;
+    TSeqPos            m_LevelRangeEnd;
+    bool               m_MinusStrand;
+
+    friend class CSeqMap_CI;
+};
+
 // iterator through CSeqMap
 class NCBI_XOBJMGR_EXPORT CSeqMap_CI
 {
@@ -54,16 +93,25 @@ public:
     enum EPosition { ePosition };
 
     CSeqMap_CI(void);
-    CSeqMap_CI(const CSeqMap* seqmap, CScope* scope, EIndex dummy,
-               size_t index);
-    CSeqMap_CI(const CSeqMap* seqmap, CScope* scope, EPosition dummy,
-               TSeqPos position);
-    CSeqMap_CI(const CSeqMap* seqmap, CScope* scope, EBegin dummy);
-    CSeqMap_CI(const CSeqMap* seqmap, CScope* scope, EEnd dummy);
-    CSeqMap_CI(const CSeqMap_CI& info);
+    CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
+               EIndex byIndex, size_t index,
+               size_t maxResolveCount = 0);
+    CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
+               EPosition byPosition, TSeqPos position,
+               size_t maxResolveCount = 0);
+    CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
+               EBegin toBegin,
+               size_t maxResolveCount = 0);
+    CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
+               EEnd toEnd,
+               size_t maxResolveCount = 0);
+    CSeqMap_CI(CConstRef<CSeqMap> seqmap, CScope* scope,
+               TSeqPos start, TSeqPos length, ENa_strand strand,
+               EBegin toBegin,
+               size_t maxResolveCount = 0);
     ~CSeqMap_CI(void);
 
-    CSeqMap_CI& operator=(const CSeqMap_CI& info);
+    operator bool(void) const;
 
     bool operator==(const CSeqMap_CI& seg) const;
     bool operator!=(const CSeqMap_CI& seg) const;
@@ -90,7 +138,10 @@ public:
     TSeqPos      GetEndPosition(void) const;
 
     CSeqMap::ESegmentType GetType(void) const;
+    // will allow only regular data segments (whole, plus strand)
     const CSeq_data& GetData(void) const;
+    // will allow any data segments, user should check for position and strand
+    const CSeq_data& GetRefData(void) const;
 
     // The following function makes sense only
     // when the segment is a reference to another seq.
@@ -101,34 +152,42 @@ public:
 
     CScope* GetScope(void) const;
 
+    CConstRef<CSeqMap> x_GetSubSeqMap(bool resolveExternal) const;
+    CConstRef<CSeqMap> x_GetSubSeqMap(void) const;
+
 private:
+    typedef CSeqMap_CI_SegmentInfo TSegmentInfo;
+
+    const TSegmentInfo& x_GetSegmentInfo(void) const;
+    TSegmentInfo& x_GetSegmentInfo(void);
+
     // valid iterator
-    const CSeqMap* x_GetSeqMap(void) const;
+    const CSeqMap& x_GetSeqMap(void) const;
     size_t x_GetIndex(void) const;
-    void x_SetIndex(size_t index);
     const CSeqMap::CSegment& x_GetSegment(void) const;
-    const CSeqMap* x_GetSubSeqMap(void) const;
-    const CSeqMap* x_GetParentSeqMap(void) const;
-    size_t x_GetParentIndex(void) const;
-    TSeqPos x_GetPositionInSeqMap(void) const;
 
-    void x_Lock(void);
-    void x_Unlock(void);
-
-    bool x_Push(void);
+    TSeqPos x_GetTopOffset(void) const;
+    void x_Resolve(TSeqPos pos);
+    bool x_Push(TSeqPos offset);
+    void x_Push(CConstRef<CSeqMap> seqMap,
+                TSeqPos from, TSeqPos length, bool minusStrand, TSeqPos pos);
     bool x_Pop(void);
-    void x_LocatePosition(TSeqPos pos);
-    void x_LocateFirst(void);
-    void x_LocateLast(void);
+    bool x_TopNext(void);
+    bool x_TopPrev(void);
+    bool x_StopOnIntermediateSegments(void) const;
 
-    // current seqmap
-    const CSeqMap* m_SeqMap;
-    // index of segment in current seqmap
-    size_t         m_Index;
-    // current position of segment in whole sequence
+    typedef vector<TSegmentInfo> TStack;
+
+    // position stack
+    TStack         m_Stack;
+    // position of segment in whole sequence in residues
     TSeqPos        m_Position;
+    // length of current segment
+    TSeqPos        m_Length;
     // scope for length resolution
     CScope*        m_Scope;
+    // maximum resolution level
+    size_t         m_MaxResolveCount;
 };
 
 
@@ -140,6 +199,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/01/22 20:11:53  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.2  2002/12/26 20:51:36  dicuccio
 * Added Win32 export specifier
 *

@@ -47,6 +47,27 @@ CAnnot_CI::CAnnot_CI(void)
 }
 
 
+inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const SAnnotSelector& sel)
+{
+    return out << "{ annot="<<sel.m_AnnotChoice<<" feat="<<sel.m_FeatChoice<<" product="<<sel.m_FeatProduct<<" }";
+}
+
+
+inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const CHandleRangeMap& hrm)
+{
+    out << "{";
+    iterate ( CHandleRangeMap::TLocMap, i, hrm.GetMap() ) {
+        out << ' ' << i->first.AsString()<<':';
+        iterate ( CHandleRange, j, i->second ) {
+            out << ' ' << j->first.GetFrom()<<".."<<j->first.GetTo()<<(j->second == eNa_strand_minus?"-":"");
+        }
+    }
+    return out << " }";
+}
+
+
 CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
                      CHandleRangeMap& loc,
                      SAnnotSelector selector,
@@ -60,7 +81,7 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
     CTSE_Guard guard(tse);
     m_TSEInfo->LockCounter();
     iterate ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
-        if ( !it->second.GetRanges().empty() ) {
+        if ( !it->second.Empty() ) {
             TAnnotMap::iterator ait =
                 m_TSEInfo->m_AnnotMap.find(it->first);
             if (ait == m_TSEInfo->m_AnnotMap.end())
@@ -73,7 +94,8 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
                 break;
         }
     }
-    while ( !x_IsValid() )
+    //_TRACE("Looking for " << m_Selector << " in " << loc);
+    if ( !x_IsValid() )
         x_Walk();
 }
 
@@ -145,10 +167,12 @@ bool CAnnot_CI::x_IsValid(void) const
     if (m_Selector.m_AnnotChoice == CSeq_annot::C_Data::e_not_set)
         return true;
     const CAnnotObject& obj = *m_Current->second;
+    //_TRACE("found annot: " << obj.Which() << " at " << obj.GetRangeMap());
     if (m_Selector.m_AnnotChoice != obj.Which())
         return false;
 
     if ( obj.IsFeat() ) {
+        //_TRACE("found feat: " << obj.GetFeat().GetData().Which());
         if (m_Selector.m_FeatChoice != obj.GetFeat().GetData().Which()  &&
             m_Selector.m_FeatChoice != CSeqFeatData::e_not_set) {
             return false; // bad feature type
@@ -170,6 +194,7 @@ void CAnnot_CI::x_Walk(void)
     for (++m_Current; m_Current; ++m_Current) {
         if ( x_IsValid() ) {
             // Valid type and location or end of annotations
+            //_TRACE("+found.");
             return;
         }
     }
@@ -178,7 +203,7 @@ void CAnnot_CI::x_Walk(void)
     CHandleRangeMap::TLocMap::const_iterator h =
         m_HandleRangeMap->GetMap().find(m_CurrentHandle);
     for (++h; h != m_HandleRangeMap->GetMap().end(); ++h) {
-        if ( !h->second.GetRanges().empty() ) {
+        if ( !h->second.Empty() ) {
             TAnnotMap::iterator ait =
                 m_TSEInfo->m_AnnotMap.find(h->first);
             if (ait == m_TSEInfo->m_AnnotMap.end())
@@ -190,6 +215,7 @@ void CAnnot_CI::x_Walk(void)
             for ( ; m_Current; ++m_Current) {
                 if ( x_IsValid() ) {
                     // Valid type and location or end of annotations
+                    //_TRACE("+found.");
                     return;
                 }
             }
@@ -203,6 +229,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.12  2002/12/26 20:55:17  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *

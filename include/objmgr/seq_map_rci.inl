@@ -232,6 +232,20 @@ bool CSeqMapResolved_CI::GetRefMinusStrand(void) const
 
 
 inline
+bool CSeqMapResolved_CI::IsRefData(void) const
+{
+    return m_Stack.top().IsRefData();
+}
+
+
+inline
+const CSeq_data& CSeqMapResolved_CI::GetRefData(void) const
+{
+    return m_Stack.top().GetRefData();
+}
+
+
+inline
 TSeqPos CSeqMapResolved_CI::x_GetTopOffset(void) const
 {
     return m_Stack.top().GetPosition();
@@ -325,6 +339,15 @@ CSeqMapResolved_CI CSeqMapResolved_CI::operator--(int)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/01/22 20:11:53  vasilche
+ * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+ * CSeqMap_CI now supports resolution and iteration over sequence range.
+ * Added several caches to CScope.
+ * Optimized CSeqVector().
+ * Added serveral variants of CBioseqHandle::GetSeqVector().
+ * Tried to optimize annotations iterator (not much success).
+ * Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+ *
  * Revision 1.1  2002/12/26 16:39:22  vasilche
  * Object manager class CSeqMap rewritten.
  *

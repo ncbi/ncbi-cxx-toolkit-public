@@ -167,21 +167,29 @@ bool CScope::AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 {
+    return GetBioseqHandle(GetIdHandle(id));
+}
+
+
+CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id)
+{
     CMutexGuard guard(m_Scope_Mtx);
-    CSeqMatch_Info match = x_BestResolve(id);
-    if (!match)
-        return CBioseq_Handle();
-    x_AddToHistory(*match.m_TSE);
-    return match.m_DataSource->GetBioseqHandle(*this, match);
+    CBioseq_Handle& bh = m_Cache[id];
+    if ( !bh ) {
+        CSeqMatch_Info match = x_BestResolve(CSeq_id_Mapper::GetSeq_id(id));
+        if (match) {
+            x_AddToHistory(*match.m_TSE);
+            bh = match.m_DataSource->GetBioseqHandle(*this, match);
+        }
+    }
+    return bh;
 }
 
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
 {
     for (CSeq_loc_CI citer (loc); citer; ++citer) {
-        const CSeq_id & id = citer.GetSeq_id ();
-        CBioseq_Handle bsh = GetBioseqHandle (id);
-        return bsh;
+        return GetBioseqHandle(citer.GetSeq_id());
     }
 
     NCBI_THROW(CException, eUnknown, "GetBioseqHandle by location failed");
@@ -191,8 +199,7 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
 CBioseq_Handle CScope::GetBioseqHandle(const CBioseq& seq)
 {
     iterate (CBioseq::TId, id, seq.GetId()) {
-      CBioseq_Handle bsh = GetBioseqHandle (**id);
-      return bsh;
+        return GetBioseqHandle (**id);
     }
 
     NCBI_THROW(CException, eUnknown, "GetBioseqHandle from bioseq failed");
@@ -401,6 +408,7 @@ CScope::x_DetachFromOM(void)
 {
     CMutexGuard guard(m_Scope_Mtx);
     // Drop and release all TSEs
+    m_Cache.clear();
     if(!m_History.empty())
       {
         iterate(TRequestHistory, it, m_History) {
@@ -445,6 +453,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.38  2002/12/26 20:55:18  dicuccio
 * Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
 *

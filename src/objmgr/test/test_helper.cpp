@@ -65,7 +65,6 @@
 #include <objects/objmgr/desc_ci.hpp>
 #include <objects/objmgr/feat_ci.hpp>
 #include <objects/objmgr/align_ci.hpp>
-#include <objects/objmgr/seq_map_rci.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Date.hpp>
 // #include <objects/util/sequence.hpp>
@@ -860,7 +859,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     _TRACE("ProcessBioseq("<<id.AsFastaString()<<") seq_len="<<seq_len<<") resolved:");
     // Iterate seq-map except the last element
     len = 0;
-    for ( CSeqMap::resolved_const_iterator seg = seq_map->begin_resolved(&scope);
+    for ( CSeqMap::const_iterator seg = seq_map->begin_resolved(&scope);
           seg != seq_map->end_resolved(&scope); ++seg ) {
         switch (seg.GetType()) {
         case CSeqMap::eSeqData:
@@ -887,7 +886,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     CHECK_END("get resolved sequence map");
 
     CHECK_WRAP();
-    CSeqVector seq_vect = handle.GetSeqVector();
+    CSeqVector seq_vect = handle.GetSeqVector(CBioseq_Handle::eCoding_NotSet);
     string sout = "";
     for (TSeqPos i = 0; i < seq_vect.size(); i++) {
         sout += seq_vect[i];
@@ -898,9 +897,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     if (seq_core->GetInst().IsSetStrand() &&
         seq_core->GetInst().GetStrand() == CSeq_inst::eStrand_ds) {
         CHECK_WRAP();
-        CSeqVector seq_vect_rev =
-            handle.GetSeqVector(CBioseq_Handle::eCoding_NotSet,
-                                CBioseq_Handle::eStrand_Minus);
+        CSeqVector seq_vect_rev = handle.GetSeqVector(CBioseq_Handle::eCoding_NotSet,
+                                                      eNa_strand_minus);
         string sout_rev = "";
         for (TSeqPos i = seq_vect_rev.size(); i> 0; i--) {
             sout_rev += seq_vect_rev[i-1];
@@ -1105,6 +1103,15 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/01/22 20:11:55  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.23  2003/01/22 19:25:11  ucko
 * Avoid use of xobjutil.
 *

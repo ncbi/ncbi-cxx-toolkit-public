@@ -117,14 +117,19 @@ public:
     TSeqPos GetRefPosition(void) const;
     TSeqPos GetRefEndPosition(void) const;
     bool GetRefMinusStrand(void) const;
+    bool IsRefData(void) const;
+    const CSeq_data& GetRefData(void) const;
 
     CScope* GetScope(void) const;
 
 private:
-    CBioseq_Handle x_Init(CScope* scope);
-    void x_Init(CSeqMap_CI::EBegin /*dummy*/, CScope* scope);
-    void x_Init(CSeqMap_CI::EEnd /*dummy*/, CScope* scope);
-    void x_Init(CSeqMap_CI::EPosition /*dummy*/, TSeqPos pos, CScope* scope);
+    //CBioseq_Handle x_Init(CScope* scope);
+    void x_Init(CConstRef<CSeqMap> seqMap, 
+                CSeqMap_CI::EBegin toBegin, CScope* scope);
+    void x_Init(CConstRef<CSeqMap> seqMap, 
+                CSeqMap_CI::EEnd toEnd, CScope* scope);
+    void x_Init(CConstRef<CSeqMap> seqMap, 
+                CSeqMap_CI::EPosition byPos, TSeqPos pos, CScope* scope);
 
     TSeqPos GetSegPosition(void) const;
     TSeqPos GetSegEndPosition(void) const;
@@ -132,10 +137,8 @@ private:
     bool x_Move(bool minus);
 
     CSeqMap_CI     m_Segment;
-    CSeq_id_Handle m_Seqid;
-    TSeqPos        m_RangePosition;
-    TSeqPos        m_RangeEndPosition;
-    bool           m_MinusStrand;
+    TSeqPos        m_RangePos;
+    TSeqPos        m_RangeEnd;
 };
 
 class NCBI_XOBJMGR_EXPORT CSeqMapResolved_CI
@@ -185,6 +188,8 @@ public:
     TSeqPos GetRefPosition(void) const;
     TSeqPos GetRefEndPosition(void) const;
     bool GetRefMinusStrand(void) const;
+    bool IsRefData(void) const;
+    const CSeq_data& GetRefData(void) const;
 
 private:
     void x_Init(const CSeqMap_CI& seg, TSeqPos pos);
@@ -216,6 +221,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/01/22 20:11:53  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.2  2002/12/26 20:51:20  dicuccio
 * Added Win32 export specifier.  Commented out public copy ctor / operator= (no
 * implementation and none necessary)

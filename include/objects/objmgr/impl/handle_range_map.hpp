@@ -33,11 +33,14 @@
 */
 
 #include "handle_range.hpp"
+#include <objects/objmgr/seq_id_handle.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CSeq_loc;
 
 
 // Seq_loc substitution for internal use by iterators and data sources
@@ -54,8 +57,10 @@ public:
 
     // Add all ranges for each seq-id from a seq-loc
     void AddLocation(const CSeq_loc& loc);
-    // Add ranges from "range" substituting their handle with "h"
-    void AddRanges(const CSeq_id_Handle& h, const CHandleRange& range);
+    // Add range substituting with handle "h"
+    void AddRange(const CSeq_id_Handle& h, CHandleRange::TRange range, ENa_strand strand);
+    // Add ranges from "range" with handle "h"
+    void AddRanges(const CSeq_id_Handle& h, const CHandleRange& hr);
     // Get the ranges map
     const TLocMap& GetMap(void) const { return m_LocMap; }
 
@@ -64,6 +69,11 @@ public:
     bool TotalRangeIntersectingWith(const CHandleRangeMap& rmap) const;
 
 private:
+    void AddRange(const CSeq_id& id, TSeqPos from, TSeqPos to,
+                  ENa_strand strand = eNa_strand_unknown);
+    void AddRange(const CSeq_id& id, CHandleRange::TRange range,
+                  ENa_strand strand = eNa_strand_unknown);
+
     // Split the location and add range lists to the locmap
     void x_ProcessLocation(const CSeq_loc& loc);
 
@@ -73,31 +83,11 @@ private:
 
 
 inline
-CHandleRangeMap::CHandleRangeMap(CSeq_id_Mapper& id_mapper)
-    : m_IdMapper(&id_mapper)
+void CHandleRangeMap::AddRange(const CSeq_id& id,
+                               TSeqPos from, TSeqPos to,
+                               ENa_strand strand)
 {
-}
-
-inline
-CHandleRangeMap::CHandleRangeMap(const CHandleRangeMap& rmap)
-{
-    *this = rmap;
-}
-
-inline
-CHandleRangeMap::~CHandleRangeMap(void)
-{
-}
-
-inline
-CHandleRangeMap& CHandleRangeMap::operator= (const CHandleRangeMap& rmap)
-{
-    m_IdMapper = rmap.m_IdMapper;
-    m_LocMap.clear();
-    iterate ( TLocMap, it, rmap.m_LocMap ) {
-        m_LocMap.insert(TLocMap::value_type(it->first, it->second));
-    }
-    return *this;
+    AddRange(id, CHandleRange::TRange(from, to), strand);
 }
 
 
@@ -107,6 +97,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.7  2002/12/06 15:36:00  grichenk
 * Added overlap type for annot-iterators
 *

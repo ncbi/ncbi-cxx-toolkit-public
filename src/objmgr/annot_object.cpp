@@ -242,23 +242,21 @@ void CAnnotObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
                 CDebugDumpContext ddc4(ddc3,member_name);
                 DebugDumpValue(ddc4, "m_Ranges.type",
                     "list<pair<CRange<TSeqPos>, ENa_strand>>");
-                const CHandleRange::TRanges& rg = (it->second).GetRanges();
-                CHandleRange::TRanges::const_iterator itrg;
-                int n;
-                for (n=0, itrg=rg.begin(); itrg!=rg.end(); ++itrg, ++n) {
-                    member_name = "m_Ranges[ " + NStr::IntToString(n) + " ]";
+                int n = 0;
+                iterate (CHandleRange, itrg, it->second) {
+                    member_name = "m_Ranges[ " + NStr::IntToString(n++) + " ]";
                     string value;
-                    if ((itrg->first).Regular()) {
-                        value +=    NStr::UIntToString( (itrg->first).GetFrom()) +
-                            "..." + NStr::UIntToString( (itrg->first).GetTo());
-                    } else if ((itrg->first).Empty()) {
-                        value += "null";
-                    } else if ((itrg->first).HaveInfiniteBound()) {
-                        value += "whole";
-                    } else if ((itrg->first).HaveEmptyBound()) {
+                    if (itrg->first.Empty()) {
                         value += "empty";
-                    } else {
+                    } else if (itrg->first.IsWhole()) {
+                        value += "whole";
+                    } else if (itrg->first.IsWholeTo()) {
                         value += "unknown";
+                    } else {
+                        value +=
+                            NStr::UIntToString(itrg->first.GetFrom()) +
+                            "..." +
+                            NStr::UIntToString(itrg->first.GetTo());
                     }
                     value += ", ";
                     switch (itrg->second) {
@@ -284,6 +282,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.14  2002/09/13 15:20:30  dicuccio
 * Fix memory leak (static deleted before termination).
 *

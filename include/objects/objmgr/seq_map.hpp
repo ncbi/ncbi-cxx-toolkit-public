@@ -39,6 +39,7 @@
 */
 
 #include <objects/objmgr/seq_id_handle.hpp>
+#include <objects/seqloc/Na_strand.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <vector>
 #include <list>
@@ -71,8 +72,9 @@ typedef TSeqPos TSeqLength;
 
 class CScope;
 class CDataSource;
+class CSegmentPtr;
 class CSeqMap_CI;
-class CSeqMapResolved_CI;
+class CSeqMap_CI_SegmentInfo;
 class CSeqMap_Delta_seqs;
 
 class NCBI_XOBJMGR_EXPORT CSeqMap : public CObject
@@ -80,15 +82,17 @@ class NCBI_XOBJMGR_EXPORT CSeqMap : public CObject
 public:
     // typedefs
     enum ESegmentType {
-        eSeqData,             // real sequence data (m_Object: CSeq_data)
-        eSeqGap,              // gap                (m_Object: null)
-        eSeqSubMap,           // sub seqmap         (m_Object: CSeqMap)
-        eSeqEnd,
-        eSeqRef,              // virtual type
-        eSeqRef_id,           // real sequence ref  (m_Object: CSeq_id)
-        eSeqRef_point,        // real sequence ref  (m_Object: CSeq_point)
-        eSeqRef_interval,     // real sequence ref  (m_Object: CSeq_interval)
-        eSeqRef_packed_point  // real sequence ref  (m_Object: null)
+        eSeqGap,              // gap
+        eSeqData,             // real sequence data
+        eSeqSubMap,           // sub seqmap
+        eSeqRef,              // reference to Bioseq
+        eSeqEnd
+    };
+    enum EObjectType {
+        eNull,
+        eSeq_id,
+        eSeq_data,
+        eSeqMap
     };
 
 protected:
@@ -105,21 +109,23 @@ protected:
         CSegment(ESegmentType seg_type = eSeqEnd,
                  TSeqPos length = kInvalidSeqPos);
 
-        // Segment type
-        ESegmentType         m_SegType;
         // Relative position of the segment in seqmap
         mutable TSeqPos      m_Position;
         // Length of the segment (kInvalidSeqPos if unresolved)
         mutable TSeqPos      m_Length;
 
+        // Segment type
+        char                 m_SegType;
+
+        char                 m_RefObjectType; // eNull, eSeq_data, eSeqMap, eSeq_id
+
+        // reference info, valid for eSeqData, eSeqSubMap, eSeqRef
+        bool                 m_RefMinusStrand;
+        TSeqPos              m_RefPosition;
+        CConstRef<CObject>   m_RefObject; // CSeq_data, CSeqMap, CSeq_id
+
         typedef list<TSeqPos>::iterator TList0_I;
-        
-        struct ListIterator {
-            TList0_I m_I;
-            //char                 m_I[sizeof(TList0_I)];
-        } m_Iterator;
-        
-        CRef<CObject>        m_Object;
+        TList0_I m_Iterator;
     };
 
     class SPosLessSegment
@@ -136,10 +142,10 @@ public:
 
     typedef CSeqMap_CI const_iterator;
     typedef CSeqMap_CI TSegment_CI;
-    typedef CSeqMapResolved_CI resolved_const_iterator;
-    typedef CSeqMapResolved_CI TResolvedSegment_CI;
     
     ~CSeqMap(void);
+
+    TSeqPos GetLength(CScope* scope = 0) const;
     
     // new interface
     // STL style methods
@@ -152,14 +158,25 @@ public:
     TSegment_CI FindSegment(TSeqPos pos, CScope* scope = 0) const;
 
     // resolved iterators
-    const_iterator begin_resolved(CScope* scope) const;
-    pair<const_iterator, TSeqPos> find_resolved(TSeqPos pos,
-                                                CScope* scope) const;
-    const_iterator end_resolved(CScope* scope) const;
-    TSegment_CI BeginResolved(CScope* scope) const;
-    pair<TSegment_CI, TSeqPos> FindResolvedSegment(TSeqPos pos,
-                                                   CScope* scope) const;
-    TSegment_CI EndResolved(CScope* scope) const;
+    const_iterator begin_resolved(CScope* scope,
+                                  size_t maxResolveCount = size_t(-1)) const;
+    const_iterator find_resolved(TSeqPos pos, CScope* scope,
+                                 size_t maxResolveCount = size_t(-1)) const;
+    const_iterator end_resolved(CScope* scope,
+                                size_t maxResolveCount = size_t(-1)) const;
+
+    TSegment_CI BeginResolved(CScope* scope,
+                              size_t maxResolveCount = size_t(-1)) const;
+    TSegment_CI FindResolved(TSeqPos pos, CScope* scope,
+                             size_t maxResolveCount = size_t(-1)) const;
+    TSegment_CI EndResolved(CScope* scope,
+                            size_t maxResolveCount = size_t(-1)) const;
+    
+    TSegment_CI ResolvedRangeIterator(CScope* scope,
+                                      TSeqPos from,
+                                      TSeqPos length,
+                                      ENa_strand strand = eNa_strand_plus,
+                                      size_t maxResolveCount = size_t(-1)) const;
     
     // deprecated interface
     //size_t size(void) const;
@@ -167,8 +184,13 @@ public:
     
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
-    static CSeqMap* CreateSeqMapForBioseq(CBioseq& seq,
-                                          CDataSource* source = 0);
+    static CConstRef<CSeqMap> CreateSeqMapForBioseq(CBioseq& seq,
+                                                    CDataSource* source = 0);
+    static CConstRef<CSeqMap> CreateSeqMapForSeq_loc(const CSeq_loc& loc,
+                                                     CDataSource* source = 0);
+    static CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
+                                                    ENa_strand strand);
+
     static TSeqPos ResolveBioseqLength(const CSeq_id& id, CScope* scope);
 
 protected:
@@ -182,6 +204,9 @@ protected:
     void x_AddEnd(void);
     CSegment& x_AddSegment(ESegmentType type, TSeqPos len);
     CSegment& x_AddSegment(ESegmentType type, TSeqPos len, CObject* object);
+    CSegment& x_AddSegment(ESegmentType type, CObject* object,
+                           TSeqPos refPos, TSeqPos len,
+                           ENa_strand strand = eNa_strand_plus);
     CSegment& x_AddGap(TSeqPos len);
     CSegment& x_Add(CSeqMap* submap);
     CSegment& x_Add(CSeq_data& data, TSeqPos len);
@@ -201,7 +226,7 @@ protected:
 private:
     void ResolveAll(void) const;
     
-    void x_SetParent(CSeqMap* parent, size_t index);
+    //void x_SetParent(CSeqMap* parent, size_t index);
 
 private:
     // Prohibit copy operator and constructor
@@ -215,18 +240,21 @@ private:
     
 protected:    
     // interface for iterators
-    TSeqPos x_GetLength(CScope* scope) const;
     size_t x_GetSegmentsCount(void) const;
     const CSegment& x_GetSegment(size_t index) const;
+    void x_GetSegmentException(size_t index) const;
     CSegment& x_SetSegment(size_t index);
     size_t x_FindSegment(TSeqPos position, CScope* scope) const;
     
     TSeqPos x_GetSegmentLength(size_t index, CScope* scope) const;
     TSeqPos x_GetSegmentPosition(size_t index, CScope* scope) const;
-    TSeqPos x_ResolveSegmentLength(const CSegment& seg, CScope* scope) const;
+    TSeqPos x_ResolveSegmentLength(size_t index, CScope* scope) const;
+    TSeqPos x_ResolveSegmentPosition(size_t index, CScope* scope) const;
+    CBioseq_Handle x_GetBioseqHandle(const CSegment& seg, CScope* scope) const;
 
-    const CSeqMap* x_GetSubSeqMap(const CSegment& seg) const;
-    CSeqMap* x_GetSubSeqMap(CSegment& seg);
+    CConstRef<CSeqMap> x_GetSubSeqMap(const CSegment& seg, CScope* scope,
+                                      bool resolveExternal = false) const;
+    //CSeqMap* x_GetSubSeqMap(CSegment& seg);
     virtual const CSeq_data& x_GetSeq_data(const CSegment& seg) const;
     virtual const CSeq_id& x_GetRefSeqid(const CSegment& seg) const;
     virtual TSeqPos x_GetRefPosition(const CSegment& seg) const;
@@ -238,15 +266,15 @@ protected:
     virtual void x_SetSeq_data(size_t index, CSeq_data& data);
     virtual void x_SetSubSeqMap(size_t index, CSeqMap_Delta_seqs* subMap);
 
-    void x_Lock(void) const;
-    void x_Unlock(void) const;
+    //void x_Lock(void) const;
+    //void x_Unlock(void) const;
     
     typedef vector<CSegment> TSegments;
     
     // parent CSeqMap
-    const CSeqMap*   m_ParentSeqMap;
+    //const CSeqMap*   m_ParentSeqMap;
     // index of first segment in parent sequence
-    size_t           m_ParentIndex;
+    //size_t           m_ParentIndex;
     
     // segments in this seqmap
     vector<CSegment> m_Segments;
@@ -257,12 +285,13 @@ protected:
     CRef<CObject>    m_Delta;
     CDataSource*     m_Source;
     
-    mutable CAtomicCounter m_LockCounter; // usage lock counter
+    //mutable CAtomicCounter m_LockCounter; // usage lock counter
 
     // MT-protection
     mutable CFastMutex   m_SeqMap_Mtx;
     
     friend class CSeqMap_CI;
+    friend class CSeqMap_CI_SegmentInfo;
     friend class CDataSource;
 };
 
@@ -278,6 +307,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/01/22 20:11:53  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.29  2002/12/30 19:35:47  vasilche
 * Removed redundant friend declarations.
 *

@@ -206,9 +206,7 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
     if ( m_Loader ) {
         // Send request to the loader
         CHandleRangeMap hrm(GetIdMapper());
-        CHandleRange rg(handle.m_Value);
-        rg.AddRange(CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
-        hrm.AddRanges(handle.m_Value, rg);
+        hrm.AddRange(handle.m_Value, CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseq);
     }
     //### CMutexGuard guard(sm_DataSource_Mtx);
@@ -227,76 +225,14 @@ const CSeq_entry& CDataSource::GetTSE(const CBioseq_Handle& handle)
 }
 
 
-CBioseq_Handle::TBioseqCore CDataSource::GetBioseqCore
-    (const CBioseq_Handle& handle)
+CBioseq_Handle::TBioseqCore
+CDataSource::GetBioseqCore(const CBioseq_Handle& handle)
 {
     // Bioseq core and TSE must be loaded if there exists a handle --
     // just return the bioseq as-is.
     // the handle must be resolved to this data source
     _ASSERT(handle.m_DataSource == this);
     return CBioseq_Handle::TBioseqCore(&handle.m_Entry->GetSeq());
-/*
-    const CBioseq* seq = &GetBioseq(handle);
-
-    //### CMutexGuard guard(sm_DataSource_Mtx);
-    CBioseq* seq_core = new CBioseq();
-    // Assign seq members to seq_core:
-    CBioseq::TId& id_list = seq_core->SetId();
-    iterate ( CBioseq::TId, it, seq->GetId() ) {
-        CSeq_id* id = new CSeq_id;
-        id->Assign(**it);
-        id_list.push_back(id);
-    }
-    if ( seq->IsSetDescr() )
-        seq_core->SetDescr().Assign(seq->GetDescr());
-    const CSeq_inst& inst = seq->GetInst();
-    CSeq_inst& inst_core = seq_core->SetInst();
-    inst_core.SetRepr(inst.GetRepr());
-    inst_core.SetMol(inst.GetMol());
-    if ( inst.IsSetLength() )
-        inst_core.SetLength(inst.GetLength());
-    if ( inst.IsSetFuzz() ) {
-        CInt_fuzz* fuzz = new CInt_fuzz();
-        fuzz->Assign(inst.GetFuzz());
-        inst_core.SetFuzz(*fuzz);
-    }
-    if ( inst.IsSetTopology() )
-        inst_core.SetTopology(inst.GetTopology());
-    if ( inst.IsSetStrand() )
-        inst_core.SetStrand(inst.GetStrand());
-    if ( inst.IsSetExt() ) {
-        CSeq_ext* ext = new CSeq_ext();
-        if (inst.GetExt().Which() != CSeq_ext::e_Delta) {
-            // Copy the entire seq-ext
-            ext->Assign(inst.GetExt());
-        }
-        else {
-            // Do not copy seq-data
-            iterate (CDelta_ext::Tdata, it, inst.GetExt().GetDelta().Get()) {
-                CDelta_seq* dseq = new CDelta_seq;
-                if ( (*it)->IsLiteral() ) {
-                    dseq->SetLiteral().SetLength(
-                        (*it)->GetLiteral().GetLength());
-                    if ( (*it)->GetLiteral().IsSetFuzz() ) {
-                        dseq->SetLiteral().SetFuzz().Assign(
-                            (*it)->GetLiteral().GetFuzz());
-                    }
-                }
-                else {
-                    dseq->Assign(**it);
-                }
-            }
-        }
-        inst_core.SetExt(*ext);
-    }
-    if ( inst.IsSetHist() ) {
-        CSeq_hist* hist = new CSeq_hist();
-        hist->Assign(inst.GetHist());
-        inst_core.SetHist(*hist);
-    }
-
-    return CBioseq_Handle::TBioseqCore(seq_core);
-*/
 }
 
 
@@ -311,32 +247,28 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
 {
     _ASSERT(handle.m_DataSource == this);
     // No need to lock anything since the TSE should be locked by the handle
-    const CBioseq& seq = GetBioseq(handle);
+    CBioseq_Handle::TBioseqCore core = GetBioseqCore(handle);
     //### Lock seq-maps to prevent duplicate seq-map creation
     CMutexGuard guard(m_DataSource_Mtx);    
-    TSeqMaps::iterator found = m_SeqMaps.find(&seq);
-#if 1
+    TSeqMaps::iterator found = m_SeqMaps.find(core);
     if (found == m_SeqMaps.end()) {
         // Call loader first
         if ( m_Loader ) {
             // Send request to the loader
             CHandleRangeMap hrm(GetIdMapper());
-            CHandleRange rg(handle.m_Value);
-            rg.AddRange(CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
-            hrm.AddRanges(handle.m_Value, rg);
+            hrm.AddRange(handle.m_Value, CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
             m_Loader->GetRecords(hrm, CDataLoader::eBioseq); //### or eCore???
         }
 
         // Create sequence map
-        x_CreateSeqMap(seq, *handle.m_Scope);
-        found = m_SeqMaps.find(&seq);
+        x_CreateSeqMap(GetBioseq(handle), *handle.m_Scope);
+        found = m_SeqMaps.find(core);
         if (found == m_SeqMaps.end()) {
             THROW1_TRACE(runtime_error,
                          "CDataSource::x_GetSeqMap() -- "
                          "Sequence map not found");
         }
     }
-#endif
     _ASSERT(found != m_SeqMaps.end());
     return *found->second;
 }
@@ -542,7 +474,7 @@ bool CDataSource::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 
     CSeq_entry& entry = *found;
     _ASSERT(entry.IsSeq());
-    m_SeqMaps[&entry.GetSeq()] = &seqmap;
+    m_SeqMaps[CBioseq_Handle::TBioseqCore(&entry.GetSeq())].Reset(&seqmap);
     return true;
 }
 
@@ -1026,58 +958,10 @@ void CDataSource::x_CreateSeqMap(const CBioseq& seq, CScope& scope)
 {
     //### Make sure the bioseq is not deleted while creating the seq-map
     CConstRef<CBioseq> guard(&seq);
-
-    //const CSeq_inst& inst = seq.GetInst();
-#if 0
-    vector<CSeqMap::CSegment> block;
-    if ( inst.IsSetSeq_data() ) {
-        _ASSERT( !inst.IsSetExt() );
-        block.push_back(CSeqMap::CSegment(inst.GetSeq_data(),
-                                          inst.GetLength()));
-    }
-    else if ( inst.IsSetExt() ) {
-        const CSeq_ext& ext = inst.GetExt();
-        switch (ext.Which()) {
-        case CSeq_ext::e_Seg:
-        {
-            const CSeg_ext::Tdata& data = ext.GetSeg().Get();
-            iterate ( CSeg_ext::Tdata, it, data ) {
-                x_AppendLoc(**it, block);
-            }
-            break;
-        }
-        case CSeq_ext::e_Ref:
-            x_AppendLoc(ext.GetRef().Get(), block);
-            break;
-        case CSeq_ext::e_Map:
-            //### Not implemented
-            _ASSERT( !"CSeq_ext::e_Map -- not implemented" );
-            break;
-        case CSeq_ext::e_Delta:
-            x_AppendDelta(ext.GetDelta(), block);
-        }
-    }
-    else {
-        // Virtual sequence -- no data, no segments
-        _ASSERT(inst.GetRepr() == CSeq_inst::eRepr_virtual);
-        // The total sequence is gap
-        block.push_back(CSeqMap::CSegment(CSeqMap::eSeqGap, inst.GetLength()));
-    }
-    m_SeqMaps[&seq] = new CSeqMap(block);
-#endif
-    m_SeqMaps[&seq] =
+    CConstRef<CSeqMap> seqMap =
         CSeqMap::CreateSeqMapForBioseq(const_cast<CBioseq&>(seq), this);
-#if 0
-    string sid;
-    {{
-        iterate ( CBioseq::TId, id, seq.GetId() ) {
-            if ( !sid.empty() )
-                sid += '|';
-            sid += GetIdMapper().GetHandle(**id).AsString();
-        }
-    }}
-    PrintSeqMap(sid, *m_SeqMaps[&seq]);
-#endif
+    m_SeqMaps[CBioseq_Handle::TBioseqCore(&seq)]
+        .Reset(const_cast<CSeqMap*>(seqMap.GetPointer()));
 }
 
 #if 0
@@ -1625,11 +1509,7 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc,
                 // Create range list for each synonym of a seq_id
                 const CBioseq_Info::TSynonyms& syn = info->second->m_Synonyms;
                 iterate ( CBioseq_Info::TSynonyms, syn_it, syn ) {
-                    CHandleRange rg(*syn_it);
-                    iterate (CHandleRange::TRanges, rit, it->second.GetRanges()) {
-                        rg.AddRange(rit->first, rit->second);
-                    }
-                    tmp.AddRanges(*syn_it, rg);
+                    tmp.AddRanges(*syn_it, it->second);
                 }
             }
             tse_info->UnlockCounter();
@@ -1700,7 +1580,8 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
                 m_TSE_seq.erase(tse_set);
             }
         }
-        TSeqMaps::iterator map_it = m_SeqMaps.find(&seq);
+        TSeqMaps::iterator map_it =
+            m_SeqMaps.find(CBioseq_Handle::TBioseqCore(&seq));
         if (map_it != m_SeqMaps.end()) {
             m_SeqMaps.erase(map_it);
         }
@@ -1991,9 +1872,7 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
         //### Need a better interface to request just a set of IDs
         CSeq_id_Handle idh = GetIdMapper().GetHandle(id);
         CHandleRangeMap hrm(GetIdMapper());
-        CHandleRange rg(idh);
-        rg.AddRange(CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
-        hrm.AddRanges(idh, rg);
+        hrm.AddRange(idh, CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore, &loaded_tse_set);
     }
     CSeqMatch_Info match;
@@ -2359,7 +2238,7 @@ void CDataSource::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 
         DebugDumpValue(ddc, "m_SeqMaps.type",
             "map<const CBioseq*,CRef<CSeqMap>>");
-        DebugDumpPairsPtrCRef(ddc, "m_SeqMaps",
+        DebugDumpPairsCRefCRef(ddc, "m_SeqMaps",
             m_SeqMaps.begin(), m_SeqMaps.end(), depth);
     }
 }
@@ -2371,6 +2250,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2003/01/22 20:11:54  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.74  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *

@@ -181,10 +181,6 @@ public:
     ~CSeqMap_SeqPoss(void);
 
 protected:
-    virtual const CSeq_id& x_GetRefSeqid(const CSegment& seg) const;
-    virtual TSeqPos x_GetRefPosition(const CSegment& seg) const;
-    virtual bool x_GetRefMinusStrand(const CSegment& seg) const;
-
     void x_IndexAll(void);
 
     CSegment& x_AddPos(TSeqPos pos);
@@ -218,6 +214,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/01/22 20:11:53  vasilche
+* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
+* CSeqMap_CI now supports resolution and iteration over sequence range.
+* Added several caches to CScope.
+* Optimized CSeqVector().
+* Added serveral variants of CBioseqHandle::GetSeqVector().
+* Tried to optimize annotations iterator (not much success).
+* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
+*
 * Revision 1.2  2002/12/26 20:51:36  dicuccio
 * Added Win32 export specifier
 *
