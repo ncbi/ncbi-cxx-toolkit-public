@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/05 21:26:17  grichenk
+* Enabled iteration over annotations defined on segments of a
+* delta-sequence.
+*
 * Revision 1.5  2002/03/05 16:08:12  grichenk
 * Moved TSE-restriction to new constructors
 *
@@ -65,9 +69,11 @@ class CGraph_CI : public CAnnotTypes_CI
 public:
     CGraph_CI(void);
     // Search all TSEs in all datasources
-    CGraph_CI(CScope& scope, const CSeq_loc& loc);
+    CGraph_CI(CScope& scope, const CSeq_loc& loc,
+              EResolveMethod resolve = eResolve_None);
     // Search only in TSE, containing the bioseq
-    CGraph_CI(CBioseq_Handle& bioseq, int start, int stop);
+    CGraph_CI(CBioseq_Handle& bioseq, int start, int stop,
+              EResolveMethod resolve = eResolve_None);
     CGraph_CI(const CGraph_CI& iter);
     virtual ~CGraph_CI(void);
     CGraph_CI& operator= (const CGraph_CI& iter);

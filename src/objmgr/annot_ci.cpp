@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/05 21:26:19  grichenk
+* Enabled iteration over annotations defined on segments of a
+* delta-sequence.
+*
 * Revision 1.5  2002/02/21 19:27:04  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -142,8 +146,7 @@ CAnnot_CI& CAnnot_CI::operator++(int)
 
 CAnnot_CI::operator bool (void) const
 {
-    _ASSERT(m_TSEInfo);
-    return m_Current;
+    return bool(m_TSEInfo)  &&  bool(m_Current);
 }
 
 

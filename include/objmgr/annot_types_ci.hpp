@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/04/05 21:26:16  grichenk
+* Enabled iteration over annotations defined on segments of a
+* delta-sequence.
+*
 * Revision 1.8  2002/03/07 21:25:31  grichenk
 * +GetSeq_annot() in annotation iterators
 *
@@ -65,9 +69,10 @@
 
 #include <objects/objmgr1/bioseq_handle.hpp>
 #include <objects/objmgr1/annot_ci.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <set>
 #include <memory>
-#include <corelib/ncbiobj.hpp>
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -82,15 +87,25 @@ class CSeq_loc;
 class CAnnotTypes_CI
 {
 public:
+    // Flag to indicate references resolution method
+    enum EResolveMethod {
+        eResolve_None,
+        eResolve_All
+    };
+
     CAnnotTypes_CI(void);
-    // Search all TSEs in all datasources
+    // Search all TSEs in all datasources, by default do not get
+    // annotations defined for segmented bioseq parts.
     CAnnotTypes_CI(CScope& scope,
                    const CSeq_loc& loc,
-                   SAnnotSelector selector);
-    // Search only in TSE, containing the bioseq
+                   SAnnotSelector selector,
+                   EResolveMethod resolve);
+    // Search only in TSE, containing the bioseq, by default do not get
+    // annotations defined for segmented bioseq parts.
     CAnnotTypes_CI(CBioseq_Handle& bioseq,
                    int start, int stop,
-                   SAnnotSelector selector);
+                   SAnnotSelector selector,
+                   EResolveMethod resolve);
     CAnnotTypes_CI(const CAnnotTypes_CI& it);
     virtual ~CAnnotTypes_CI(void);
 
@@ -109,11 +124,46 @@ protected:
     CAnnotObject* Get(void) const;
 
 private:
-    TTSESet                   m_Entries;
-    TTSESet::const_iterator   m_CurrentTSE;
-    SAnnotSelector            m_Selector;
-    auto_ptr<CHandleRangeMap> m_Location;
-    CAnnot_CI                 m_CurrentAnnot;
+    struct SAnnotSearchData {
+        // TSEs to search for annotations
+        TTSESet                     m_Entries;
+        // Locations to search
+        auto_ptr<CHandleRangeMap>   m_Location;
+        // Shift to the master sequence position:
+        //   master_pos = annotation_pos + m_RefShift
+        int                         m_RefShift;
+        // Min/max position allowed for features (to fit the map segment)
+        // -1 means there is no limit
+        int                         m_RefMin;
+        int                         m_RefMax;
+        // Upper level location id: only intervals referencing this id
+        // must be converted using the shift.
+        CSeq_id_Handle              m_RefId;
+        // Convert references to this id
+        CSeq_id_Handle              m_MasterId;
+        // Master/segment flag
+        bool                        m_Master;
+    };
+
+    void x_PopTSESet(void);
+    void x_ResolveReferences(CHandleRangeMap& loc,
+                             int shift,
+                             int min, int max,
+                             CSeq_id_Handle* master_id = 0);
+    CAnnotObject* x_ConvertAnnotToMaster(CAnnotObject& annot_obj,
+        const SAnnotSearchData& sdata) const;
+    void x_ConvertLocToMaster(CSeq_loc& loc,
+        const SAnnotSearchData& sdata) const;
+
+    typedef deque< AutoPtr<SAnnotSearchData> > TAnnotSearchQueue;
+
+    TAnnotSearchQueue            m_SearchQueue;
+    TTSESet::const_iterator      m_CurrentTSE;
+    SAnnotSelector               m_Selector;
+    CAnnot_CI                    m_CurrentAnnot;
+    // Copy of the annot object (feature etc.) converted to the master seq
+    mutable CRef<CAnnotObject>   m_AnnotCopy;
+    mutable CRef<CScope>         m_Scope;
 };
 
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/05 21:26:19  grichenk
+* Enabled iteration over annotations defined on segments of a
+* delta-sequence.
+*
 * Revision 1.5  2002/03/05 16:08:13  grichenk
 * Moved TSE-restriction to new constructors
 *
@@ -67,17 +71,21 @@ CAlign_CI::CAlign_CI(void)
 
 
 CAlign_CI::CAlign_CI(CScope& scope,
-                     const CSeq_loc& loc)
+                     const CSeq_loc& loc,
+                     EResolveMethod resolve)
     : CAnnotTypes_CI(scope, loc,
-          SAnnotSelector(CSeq_annot::C_Data::e_Align))
+          SAnnotSelector(CSeq_annot::C_Data::e_Align),
+          resolve)
 {
     return;
 }
 
 
-CAlign_CI::CAlign_CI(CBioseq_Handle& bioseq, int start, int stop)
+CAlign_CI::CAlign_CI(CBioseq_Handle& bioseq, int start, int stop,
+                     EResolveMethod resolve)
     : CAnnotTypes_CI(bioseq, start, stop,
-          SAnnotSelector(CSeq_annot::C_Data::e_Align))
+          SAnnotSelector(CSeq_annot::C_Data::e_Align),
+          resolve)
 {
     return;
 }

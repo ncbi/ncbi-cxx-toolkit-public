@@ -29,6 +29,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/04/05 21:26:19  grichenk
+* Enabled iteration over annotations defined on segments of a
+* delta-sequence.
+*
 * Revision 1.4  2002/02/21 19:27:04  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -94,7 +98,7 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                         loc->GetInt().SetStrand(*it_strand);
                         ++it_strand;
                     }
-                    m_RangeMap.AddLocation(*loc);
+                    m_RangeMap->AddLocation(*loc);
                     ++it_id;
                     ++it_start;
                 }
@@ -128,7 +132,7 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                         loc->GetInt().SetStrand(*it_strand);
                         ++it_strand;
                     }
-                    m_RangeMap.AddLocation(*loc);
+                    m_RangeMap->AddLocation(*loc);
                 }
             }
             break;
@@ -141,7 +145,7 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                 //### Ignore Seq-id, assuming it is also set in Seq-loc?
                 iterate ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
                     // Create CHandleRange from an align element
-                    m_RangeMap.AddLocation(**it_loc);
+                    m_RangeMap->AddLocation(**it_loc);
                 }
             }
             break;
@@ -175,7 +179,7 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                         }
                         ++it_id;
                         ++it_start;
-                        m_RangeMap.AddLocation(*loc);
+                        m_RangeMap->AddLocation(*loc);
                     }
                 }
             }

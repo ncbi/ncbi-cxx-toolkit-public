@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/05 21:26:19  grichenk
+* Enabled iteration over annotations defined on segments of a
+* delta-sequence.
+*
 * Revision 1.5  2002/03/05 16:08:14  grichenk
 * Moved TSE-restriction to new constructors
 *
@@ -66,9 +70,11 @@ CFeat_CI::CFeat_CI(void)
 
 CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc,
-                   SAnnotSelector::TFeatChoice feat_choice)
+                   SAnnotSelector::TFeatChoice feat_choice,
+                   EResolveMethod resolve)
     : CAnnotTypes_CI(scope, loc,
-          SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice))
+          SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice),
+          resolve)
 {
     return;
 }
@@ -76,9 +82,11 @@ CFeat_CI::CFeat_CI(CScope& scope,
 
 CFeat_CI::CFeat_CI(CBioseq_Handle& bioseq,
                    int start, int stop,
-                   SAnnotSelector::TFeatChoice feat_choice)
+                   SAnnotSelector::TFeatChoice feat_choice,
+                   EResolveMethod resolve)
     : CAnnotTypes_CI(bioseq, start, stop,
-          SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice))
+          SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice),
+          resolve)
 {
     return;
 }

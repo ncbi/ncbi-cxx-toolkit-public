@@ -35,6 +35,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/04/05 21:26:17  grichenk
+* Enabled iteration over annotations defined on segments of a
+* delta-sequence.
+*
 * Revision 1.11  2002/04/02 16:40:53  grichenk
 * Fixed literal segments handling
 *
@@ -160,6 +164,7 @@ public:
         friend class CDataSource;
         friend class CSeqVector;
         friend class CSeqMap;
+        friend class CAnnotTypes_CI;
     };
 
     // 'ctors

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/05 21:26:19  grichenk
+* Enabled iteration over annotations defined on segments of a
+* delta-sequence.
+*
 * Revision 1.5  2002/03/05 16:08:14  grichenk
 * Moved TSE-restriction to new constructors
 *
@@ -65,17 +69,21 @@ CGraph_CI::CGraph_CI(void)
 
 
 CGraph_CI::CGraph_CI(CScope& scope,
-                     const CSeq_loc& loc)
+                     const CSeq_loc& loc,
+                     EResolveMethod resolve)
     : CAnnotTypes_CI(scope, loc,
-      SAnnotSelector(CSeq_annot::C_Data::e_Graph))
+      SAnnotSelector(CSeq_annot::C_Data::e_Graph),
+      resolve)
 {
     return;
 }
 
 
-CGraph_CI::CGraph_CI(CBioseq_Handle& bioseq, int start, int stop)
+CGraph_CI::CGraph_CI(CBioseq_Handle& bioseq, int start, int stop,
+                     EResolveMethod resolve)
     : CAnnotTypes_CI(bioseq, start, stop,
-          SAnnotSelector(CSeq_annot::C_Data::e_Graph))
+          SAnnotSelector(CSeq_annot::C_Data::e_Graph),
+          resolve)
 {
     return;
 }

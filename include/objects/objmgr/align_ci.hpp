@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/05 21:26:16  grichenk
+* Enabled iteration over annotations defined on segments of a
+* delta-sequence.
+*
 * Revision 1.5  2002/03/05 16:08:11  grichenk
 * Moved TSE-restriction to new constructors
 *
@@ -66,9 +70,11 @@ class CAlign_CI : public CAnnotTypes_CI
 public:
     CAlign_CI(void);
     // Search all TSEs in all datasources
-    CAlign_CI(CScope& scope, const CSeq_loc& loc);
+    CAlign_CI(CScope& scope, const CSeq_loc& loc,
+              EResolveMethod resolve = eResolve_None);
     // Search only in TSE, containing the bioseq
-    CAlign_CI(CBioseq_Handle& bioseq, int start, int stop);
+    CAlign_CI(CBioseq_Handle& bioseq, int start, int stop,
+              EResolveMethod resolve = eResolve_None);
     CAlign_CI(const CAlign_CI& iter);
     virtual ~CAlign_CI(void);
 

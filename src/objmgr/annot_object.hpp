@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/05 21:26:19  grichenk
+* Enabled iteration over annotations defined on segments of a
+* delta-sequence.
+*
 * Revision 1.5  2002/03/07 21:25:33  grichenk
 * +GetSeq_annot() in annotation iterators
 *
@@ -97,13 +101,24 @@ public:
     const CSeq_annot& GetSeq_annot(void) const;
 
 private:
+    // Constructors used by CAnnotTypes_CI only to create fake annotations
+    // for sequence segments. The annot object points to the seq-annot
+    // containing the original annotation object.
+    friend class CAnnotTypes_CI;
+    CAnnotObject(const CSeq_feat&  feat,
+                 const CSeq_annot& annot);
+    CAnnotObject(const CSeq_align& align,
+                 const CSeq_annot& annot);
+    CAnnotObject(const CSeq_graph& graph,
+                 const CSeq_annot& annot);
+
     void x_ProcessAlign(const CSeq_align& align);
 
     CDataSource*                 m_DataSource;
     SAnnotSelector::TAnnotChoice m_Choice;
     CConstRef<CObject>           m_Object;
     CConstRef<CSeq_annot>        m_Annot;
-    CHandleRangeMap              m_RangeMap;
+    auto_ptr<CHandleRangeMap>    m_RangeMap; // may be null for fake objects
 };
 
 
@@ -123,11 +138,11 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
       m_Choice(CSeq_annot::C_Data::e_Ftable),
       m_Object(dynamic_cast<const CObject*>(&feat)),
       m_Annot(&annot),
-      m_RangeMap(data_source.GetIdMapper())
+      m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper()))
 {
-    m_RangeMap.AddLocation(feat.GetLocation());
+    m_RangeMap->AddLocation(feat.GetLocation());
     if ( feat.IsSetProduct() )
-        m_RangeMap.AddLocation(feat.GetProduct());
+        m_RangeMap->AddLocation(feat.GetProduct());
     return;
 }
 
@@ -139,7 +154,7 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
       m_Choice(CSeq_annot::C_Data::e_Align),
       m_Object(dynamic_cast<const CObject*>(&align)),
       m_Annot(&annot),
-      m_RangeMap(data_source.GetIdMapper())
+      m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper()))
 {
     x_ProcessAlign(align);
     return;
@@ -153,9 +168,9 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
       m_Choice(CSeq_annot::C_Data::e_Graph),
       m_Object(dynamic_cast<const CObject*>(&graph)),
       m_Annot(&annot),
-      m_RangeMap(data_source.GetIdMapper())
+      m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper()))
 {
-    m_RangeMap.AddLocation(graph.GetLoc());
+    m_RangeMap->AddLocation(graph.GetLoc());
     return;
 }
 
@@ -210,7 +225,7 @@ const CSeq_graph& CAnnotObject::GetGraph(void) const
 inline
 const CHandleRangeMap& CAnnotObject::GetRangeMap(void) const
 {
-    return m_RangeMap;
+    return *m_RangeMap;
 }
 
 inline
@@ -218,6 +233,44 @@ const CSeq_annot& CAnnotObject::GetSeq_annot(void) const
 {
     return *m_Annot;
 }
+
+
+inline
+CAnnotObject::CAnnotObject(const CSeq_feat& feat,
+                           const CSeq_annot& annot)
+    : m_DataSource(0),
+      m_Choice(CSeq_annot::C_Data::e_Ftable),
+      m_Object(dynamic_cast<const CObject*>(&feat)),
+      m_Annot(&annot),
+      m_RangeMap(0)
+{
+    return;
+}
+
+inline
+CAnnotObject::CAnnotObject(const CSeq_align& align,
+                           const CSeq_annot& annot)
+    : m_DataSource(0),
+      m_Choice(CSeq_annot::C_Data::e_Align),
+      m_Object(dynamic_cast<const CObject*>(&align)),
+      m_Annot(&annot),
+      m_RangeMap(0)
+{
+    return;
+}
+
+inline
+CAnnotObject::CAnnotObject(const CSeq_graph& graph,
+                           const CSeq_annot& annot)
+    : m_DataSource(0),
+      m_Choice(CSeq_annot::C_Data::e_Graph),
+      m_Object(dynamic_cast<const CObject*>(&graph)),
+      m_Annot(&annot),
+      m_RangeMap(0)
+{
+    return;
+}
+
 
 
 END_SCOPE(objects)
