@@ -1008,15 +1008,20 @@ EIO_Status CPipeHandle::x_Wait(int fd, EIO_Event direction,
         fd_set rfds;
         fd_set wfds;
         fd_set efds;
-        FD_ZERO(&rfds);
-        FD_ZERO(&wfds);
-        FD_ZERO(&efds);
-
-        if (direction == eIO_Read) {
+        switch (direction) {
+        case eIO_Read:
+            FD_ZERO(&rfds);
             FD_SET(fd, &rfds);
-        } else if (direction == eIO_Write) {
+            break;
+        case eIO_Write:
+            FD_ZERO(&wfds);
             FD_SET(fd, &wfds);
+            break;
+        default:
+            assert(0);
+            return eIO_Unknown;
         }
+        FD_ZERO(&efds);
         FD_SET(fd, &efds);
 
         int n = select(fd + 1,
@@ -1026,8 +1031,22 @@ EIO_Status CPipeHandle::x_Wait(int fd, EIO_Event direction,
         if (n == 0) {
             return eIO_Timeout;
         } else if (n > 0) {
-            if ( FD_ISSET(fd, &efds) ) {
-                return FD_ISSET(fd, &rfds) ? eIO_Success : eIO_Closed;
+            switch (direction) {
+            case eIO_Read:
+                if ( !FD_ISSET(fd, &rfds) ) {
+                    assert( FD_ISSET(fd, &efds) );
+                    return eIO_Closed;
+                }
+                break;
+            case eIO_Write:
+                if ( !FD_ISSET(fd, &wfds) ) {
+                    assert( FD_ISSET(fd, &efds) );
+                    return eIO_Closed;
+                }
+                break;
+            default:
+                assert(0);
+                return eIO_Unknown;
             }
             break;
         } else if (errno != EINTR) {
@@ -1240,6 +1259,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/10/24 16:52:38  lavr
+ * Check RW bits before E bits in select()
+ *
  * Revision 1.32  2003/09/25 04:40:42  lavr
  * Fixed uninitted member in ctor; few more minor changes
  *

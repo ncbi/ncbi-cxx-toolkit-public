@@ -653,9 +653,11 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                         Close();
                         return eIO_Timeout;
                     }
-                    if (n > 0  &&  !FD_ISSET(sock, &efds)) {
-                        assert(FD_ISSET(sock, &wfds));
-                        break;
+                    if (n > 0) {
+                        if ( FD_ISSET(sock, &wfds) ) {
+                            break;
+                        }
+                        assert( FD_ISSET(sock, &efds) );
                     }
                     if (n < 0  &&  errno == EINTR) {
                         continue;
@@ -787,9 +789,10 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
             if (n == 0) {
                 return eIO_Timeout;
             }
-            if (n > 0  &&  !FD_ISSET(m_LSocket, &efds)) {
-                assert(FD_ISSET(m_LSocket, &rfds));
-                break;
+            if (n > 0) {
+                if ( FD_ISSET(m_LSocket, &rfds) )
+                    break;
+                assert( FD_ISSET(m_LSocket, &efds) );
             }
             if (n < 0  &&  errno == EINTR) {
                 continue;
@@ -1202,6 +1205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/10/24 16:52:38  lavr
+ * Check RW bits before E bits in select()
+ *
  * Revision 1.17  2003/09/25 04:41:22  lavr
  * Few minor style and performance changes
  *
