@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1998/11/19 20:02:49  vakatov
+* Logic typo:  actually, the cookie string does not contain "Cookie: "
+*
 * Revision 1.13  1998/11/19 19:50:00  vakatov
 * Implemented "CCgiCookies::"
 * Slightly changed "CCgiCookie::" API
@@ -140,14 +143,14 @@ class CCgiCookies {
 public:
     // Empty set of cookies
     CCgiCookies(void);
-    // Format of the string:  "Cookie: name1=value1; name2=value2; ..."
+    // Format of the string:  "name1=value1; name2=value2; ..."
     CCgiCookies(const string& str);
 
     // All Add() functions override the value and attributes of cookie
     // already existing in this set if the added cookie has the same name
     CCgiCookie* Add(const string& name, const string& value);
     CCgiCookie* Add(const CCgiCookie& cookie);  // add a copy of "cookie"
-    void Add(const string& str); // "Cookie: name1=value1; name2=value2; ..."
+    void Add(const string& str); // "name1=value1; name2=value2; ..."
 
     CCgiCookie* Find(const string& name) const;  // return zero if can not find
     bool RemoveCookie(const string& name);  // return "false" if can not find
@@ -236,7 +239,7 @@ public:
     CNcbiIstream& GetContent(void);
 
     // Fetch cookies from "str", add them to "cookies"
-    // Format of the string:  "Cookie: name1=value1; name2=value2; ..."
+    // Format of the string:  "name1=value1; name2=value2; ..."
     // Original cookie of the same name will be overriden by the new ones
     // Return the resultant set of cookies
     static TCgiCookies& ParseCookies(const string& str, TCgiCookies& cookies);

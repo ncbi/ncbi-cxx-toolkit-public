@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/11/19 20:02:51  vakatov
+* Logic typo:  actually, the cookie string does not contain "Cookie: "
+*
 * Revision 1.2  1998/11/19 19:50:03  vakatov
 * Implemented "CCgiCookies::"
 * Slightly changed "CCgiCookie::" API
@@ -103,7 +106,8 @@ void CCgiCookie::CopyAttributes(const CCgiCookie& cookie)
     m_Secure    = cookie.m_Secure;
 }
 
-bool CCgiCookie::GetExpDate(string* str) const {
+bool CCgiCookie::GetExpDate(string* str) const
+{
     if ( !str )
         throw invalid_argument("Null arg. in CCgiCookie::GetExpDate()");
     if ( s_ZeroTime(m_Expires) )
@@ -116,7 +120,8 @@ bool CCgiCookie::GetExpDate(string* str) const {
     return true;
 }
 
-bool CCgiCookie::GetExpDate(tm* exp_date) const {
+bool CCgiCookie::GetExpDate(tm* exp_date) const
+{
     if ( !exp_date )
         throw invalid_argument("Null cookie exp.date");
     if ( s_ZeroTime(m_Expires) )
@@ -125,7 +130,8 @@ bool CCgiCookie::GetExpDate(tm* exp_date) const {
     return true;
 }
 
-CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const {
+CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const
+{
     string str;
     str.reserve(1024);
 
@@ -148,7 +154,8 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const {
 }
 
 // Check if the cookie field is valid
-void CCgiCookie::CheckField(const string& str, const char* banned_symbols) {
+void CCgiCookie::CheckField(const string& str, const char* banned_symbols)
+{
     if (banned_symbols  &&  str.find_first_of(banned_symbols) != NPOS)
         throw invalid_argument("CCgiCookie::CheckValidCookieField() [1]");
 
@@ -164,7 +171,8 @@ void CCgiCookie::CheckField(const string& str, const char* banned_symbols) {
 // Set of CGI send-cookies
 //
 
-CCgiCookie* CCgiCookies::Add(const string& name, const string& value) {
+CCgiCookie* CCgiCookies::Add(const string& name, const string& value)
+{
     CCgiCookie* ck = Find(name);
     if ( ck ) {  // override existing CCgiCookie
         ck->Reset();
@@ -177,7 +185,8 @@ CCgiCookie* CCgiCookies::Add(const string& name, const string& value) {
 }
 
 
-CCgiCookie* CCgiCookies::Add(const CCgiCookie& cookie) {
+CCgiCookie* CCgiCookies::Add(const CCgiCookie& cookie)
+{
     CCgiCookie* ck = Find(cookie.GetName());
     if ( ck ) {  // override existing CCgiCookie
         ck->CopyAttributes(cookie);
@@ -189,15 +198,9 @@ CCgiCookie* CCgiCookies::Add(const CCgiCookie& cookie) {
 }
 
 
-void CCgiCookies::Add(const string& str) {
-    const string x_Cookie("Cookie:");
-    SIZE_TYPE pos = str.find_first_not_of(" \t\n");
-
-    if (str.compare(pos, sizeof(x_Cookie), x_Cookie) != 0)
-        throw runtime_error("No `" + x_Cookie + "' in:  `" + str + "'");
-
-    pos += sizeof(x_Cookie);
-    for (;;) {
+void CCgiCookies::Add(const string& str)
+{
+    for (SIZE_TYPE pos = str.find_first_not_of(" \t\n"); ; ){
         SIZE_TYPE pos_beg = str.find_last_not_of(' ', pos);
         if (pos_beg == NPOS)
             return; // done
@@ -221,7 +224,8 @@ void CCgiCookies::Add(const string& str) {
     throw runtime_error("Invalid cookie string: `" + str + "'");
 }
 
-CCgiCookies::TCookies::iterator CCgiCookies::x_Find(const string& name) const {
+CCgiCookies::TCookies::iterator CCgiCookies::x_Find(const string& name) const
+{
     TCookies* cookies = const_cast<TCookies*>(&m_Cookies);
     for (TCookies::iterator iter = cookies->begin();
          iter != cookies->end();  iter++) {
