@@ -32,11 +32,12 @@
  */
 
 #include <objmgr/util/sequence.hpp>
-#include <objects/seqfeat/seqfeat__.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 
+#include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/blast_option.hpp>
 #include <algo/blast/api/blast_setup.hpp>
-#include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/blast_seqalign.hpp>
 
 // NewBlast includes
@@ -52,6 +53,7 @@
 #endif
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 
 CBl2Seq::CBl2Seq(SSeqLoc& query, SSeqLoc& subject, TProgram p)
     : m_pOptions(new CBlastOption(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
@@ -596,12 +598,16 @@ CBl2Seq::x_Results2SeqAlign()
     return retval;
 }
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2003/08/18 20:58:57  camacho
+ * Added blast namespace, removed *__.hpp includes
+ *
  * Revision 1.18  2003/08/18 19:58:50  dicuccio
  * Fixed compilation errors after change from pair<> to SSeqLoc
  *

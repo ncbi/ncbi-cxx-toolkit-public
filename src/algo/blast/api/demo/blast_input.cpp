@@ -29,21 +29,25 @@
  *   Reading FASTA from an input file
  *
  */
+#include <serial/iterator.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/readers/fasta.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
+
 #include <objects/seq/Bioseq.hpp>
-#include <serial/iterator.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+
+#include <objmgr/scope.hpp>
 
 #include <algo/blast/api/blast_input.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 
 TSeqLocVector
 BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope, 
-    ENa_strand strand, int from, int to, int *counter, 
+    ENa_strand strand, TSeqPos from, TSeqPos to, int *counter, 
     BlastMask** lcase_mask)
 {
     _ASSERT(scope);
@@ -106,4 +110,5 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
     return retval;
 }
 
+END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -33,9 +33,11 @@
 #include <algo/blast/api/blast_aux.hpp>
 
 #include <objects/seqloc/Seq_interval.hpp>
+
 #include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
 
@@ -307,7 +309,6 @@ BlastMask2CSeqLoc(BlastMask* mask)
 void BlastMaskDNAToProtein(BlastMask** mask_ptr, 
          TSeqLocVector &slp)
 {
-   Int2 status = 0;
    BlastMask* last_mask = NULL,* head_mask = NULL,* mask_loc; 
    Int4 dna_length;
    BlastSeqLoc* dna_loc,* prot_loc_head,* prot_loc_last;
@@ -366,7 +367,6 @@ void BlastMaskDNAToProtein(BlastMask** mask_ptr,
 
 void BlastMaskProteinToDNA(BlastMask** mask_ptr, TSeqLocVector &slp)
 {
-   Int2 status = 0;
    BlastMask* mask_loc;
    BlastSeqLoc* loc;
    DoubleInt* dip;
@@ -400,4 +400,5 @@ void BlastMaskProteinToDNA(BlastMask** mask_ptr, TSeqLocVector &slp)
    }
 }
 
+END_SCOPE(blast)
 END_NCBI_SCOPE

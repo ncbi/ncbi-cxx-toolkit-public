@@ -33,16 +33,17 @@
 #ifndef BL2SEQ__HPP
 #define BL2SEQ__HPP
 
-#include <objects/seqloc/seqloc__.hpp>
-#include <objects/seqalign/seqalign__.hpp>
-
 #include <algo/blast/api/blast_option.hpp>
-#include <algo/blast/api/blast_aux.hpp>
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    class CSeq_loc;
+    class CSeq_align_set;
+END_SCOPE(objects)
+
+BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
-
-
 
 /// Runs the BLAST algorithm between 2 sequences.
 class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
@@ -237,12 +238,16 @@ CBl2Seq::GetFilteredQueryRegions() const
     return mi_vFilteredRegions;
 }
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/08/18 20:58:56  camacho
+* Added blast namespace, removed *__.hpp includes
+*
 * Revision 1.11  2003/08/18 17:07:41  camacho
 * Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
 * Change in function to read seqlocs from files.

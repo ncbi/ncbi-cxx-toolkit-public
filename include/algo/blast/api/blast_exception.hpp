@@ -36,6 +36,7 @@
 #include <corelib/ncbiexpt.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 
 /// Defines Blast specific exceptional error codes
 class CBlastException : public CException
@@ -68,12 +69,16 @@ public:
     NCBI_EXCEPTION_DEFAULT(CBlastException,CException);
 };
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/18 20:58:56  camacho
+* Added blast namespace, removed *__.hpp includes
+*
 * Revision 1.1  2003/07/10 18:34:19  camacho
 * Initial revision
 *

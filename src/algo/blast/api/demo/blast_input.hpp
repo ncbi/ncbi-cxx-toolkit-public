@@ -34,18 +34,23 @@
 #define BLAST_INPUT__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objmgr/scope.hpp>
-
 #include <algo/blast/api/blast_aux.hpp>
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    class CScope;
+END_SCOPE(objects)
+
+BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
 TSeqLocVector
 BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope, 
-    ENa_strand strand, int from, int to, int* counter, 
+    ENa_strand strand, TSeqPos from, TSeqPos to, int* counter, 
     BlastMask** lcase_mask = NULL);
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 #endif  /* BLAST_INPUT__HPP */

@@ -42,15 +42,13 @@
 #include <objmgr/gbloader.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <objects/seq/seq__.hpp>
-#include <objects/seqloc/seqloc__.hpp>
-#include <objects/seqset/seqset__.hpp>
-
 #include <corelib/ncbitime.hpp>
 #include <objtools/readers/fasta.hpp>
 
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/blast_input.hpp>
+
+#include <objects/seqalign/Seq_align_set.hpp>
 
 #ifdef WRITE_SEQALIGNS
 #include <ctools/asn_converter.hpp>
@@ -65,6 +63,7 @@
 #endif
 
 USING_NCBI_SCOPE;
+USING_SCOPE(blast);
 USING_SCOPE(objects);
 
 
@@ -364,6 +363,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/08/18 20:58:57  camacho
+ * Added blast namespace, removed *__.hpp includes
+ *
  * Revision 1.12  2003/08/18 17:07:42  camacho
  * Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
  * Change in function to read seqlocs from files.

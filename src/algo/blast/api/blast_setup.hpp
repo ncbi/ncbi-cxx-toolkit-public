@@ -33,10 +33,14 @@
 #ifndef BLAST_SETUP__HPP
 #define BLAST_SETUP__HPP
 
-#include <objmgr/scope.hpp>
-#include <objects/seqloc/seqloc__.hpp>
-
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    class CSeq_loc;
+    class CScope;
+END_SCOPE(objects)
+
+BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
 
@@ -78,12 +82,16 @@ unsigned char* BLASTFindGeneticCode(int genetic_code);
 
 char* BLASTGetMatrixPath(const char* matrix_name, bool is_prot);
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/08/18 20:58:56  camacho
+* Added blast namespace, removed *__.hpp includes
+*
 * Revision 1.6  2003/08/11 19:55:04  camacho
 * Early commit to support query concatenation and the use of multiple scopes.
 * Compiles, but still needs work.

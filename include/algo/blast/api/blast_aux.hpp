@@ -35,9 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ddumpable.hpp>
-
 #include <objmgr/scope.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
 
 // NewBlast includes
 #include <algo/blast/core/blast_def.h>
@@ -47,13 +45,19 @@
 #include <algo/blast/core/blast_util.h>
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    class CSeq_loc;
+END_SCOPE(objects)
+
+BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
 struct SSeqLoc {
     CConstRef<CSeq_loc>     m_Seqloc;
     mutable CRef<CScope>    m_Scope;
 
-    SSeqLoc() : m_Seqloc(NULL), m_Scope(NULL) {}
+    SSeqLoc() : m_Seqloc(), m_Scope() {}
     SSeqLoc(CConstRef<CSeq_loc> sl, CRef<CScope> s) 
         : m_Seqloc(sl), m_Scope(s) {}
 };
@@ -132,12 +136,16 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsOptions,
 DECLARE_AUTO_CLASS_WRAPPER(BlastGapAlignStruct, BLAST_GapAlignStructFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastResults, BLAST_ResultsFree);
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/08/18 20:58:56  camacho
+* Added blast namespace, removed *__.hpp includes
+*
 * Revision 1.13  2003/08/18 17:07:41  camacho
 * Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
 * Change in function to read seqlocs from files.

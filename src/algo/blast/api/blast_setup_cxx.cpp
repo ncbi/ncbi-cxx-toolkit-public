@@ -42,9 +42,11 @@
 #include <objmgr/gbloader.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <objects/seq/seq__.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/NCBIstdaa.hpp>
 
 #include <algo/blast/api/blast_setup.hpp>
 #include <algo/blast/api/blast_exception.hpp>
@@ -56,6 +58,7 @@
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 USING_SCOPE(ncbi::objects);
 
 
@@ -351,12 +354,16 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
     return retval;
 }
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/08/18 20:58:57  camacho
+* Added blast namespace, removed *__.hpp includes
+*
 * Revision 1.13  2003/08/14 13:51:24  camacho
 * Use CMetaRegistry class to load the ncbi config file
 *

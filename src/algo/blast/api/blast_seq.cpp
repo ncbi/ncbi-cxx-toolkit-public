@@ -44,10 +44,8 @@
 /* From core BLAST library: for encodings definitions */
 #include <algo/blast/core/blast_util.h>
 
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
-
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 static int
 BLAST_SetUpQueryInfo(TSeqLocVector &slp,

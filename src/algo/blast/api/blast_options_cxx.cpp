@@ -38,7 +38,10 @@
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
 
+#include <objects/seqloc/Seq_loc.hpp>
+
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 
 CBlastOption::CBlastOption(EProgram prog_name) THROWS((CBlastException))
     : m_Program(prog_name)
@@ -493,12 +496,16 @@ CBlastOption::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     m_EffLenOpts.DebugDump(ddc, depth);
 }
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/08/18 20:58:57  camacho
+* Added blast namespace, removed *__.hpp includes
+*
 * Revision 1.10  2003/08/14 19:07:32  dondosha
 * Added BLASTGetEProgram function to convert from Uint1 to enum type
 *

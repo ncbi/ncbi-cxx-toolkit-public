@@ -33,16 +33,12 @@
 #ifndef BLAST_SEQ__HPP
 #define BLAST_SEQ__HPP
 
-#include <objects/seqloc/Seq_loc.hpp>
-
 #include <algo/blast/api/blast_aux.hpp>
 // NewBlast includes
 #include <algo/blast/core/blast_options.h>
 
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
-
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 int
 BLAST_SetUpQuery(CBlastOption::EProgram program_number, 
@@ -56,6 +52,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/08/18 20:58:56  camacho
+* Added blast namespace, removed *__.hpp includes
+*
 * Revision 1.3  2003/08/14 19:08:08  dondosha
 * Use enum type for program argument to BLAST_SetUpQuery
 *

@@ -35,17 +35,19 @@
 #define BLASTSEQALIGN__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqalign/seqalign__.hpp>
-
-// Blast++ includes
-#include <algo/blast/api/blast_option.hpp>
 
 // NewBlast includes
+#include <algo/blast/api/blast_option.hpp>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/gapinfo.h>
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    class CSeq_align_set;
+END_SCOPE(objects)
+
+BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
 /** Converts BlastResults structure into CSeq_align_set class (handles 
@@ -70,12 +72,16 @@ BLAST_Results2CSeqAlign(const BlastResults* results,
                           const BlastScoreBlk* sbp, bool is_gapped);
 
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/08/18 20:58:56  camacho
+* Added blast namespace, removed *__.hpp includes
+*
 * Revision 1.12  2003/08/18 17:07:41  camacho
 * Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
 * Change in function to read seqlocs from files.

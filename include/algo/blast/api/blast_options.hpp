@@ -36,11 +36,14 @@
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 
-#include <objects/seqloc/Seq_loc.hpp>
-
 BEGIN_NCBI_SCOPE
-USING_SCOPE(ncbi::objects);
 
+BEGIN_SCOPE(objects)
+    class CSeq_loc;
+END_SCOPE(objects)
+
+BEGIN_SCOPE(blast)
+USING_SCOPE(objects);
 
 /// @todo Constants used to initialize default values (word size, evalue
 /// threshold, ...) should be defined in this module when the C NewBlast is
@@ -996,12 +999,16 @@ CBlastOption::SetDbGeneticCodeStr(const unsigned char* gc_str)
     copy(gc_str, gc_str+GENCODE_STRLEN, m_DbOpts->gen_code_string);
 }
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/08/18 20:58:56  camacho
+* Added blast namespace, removed *__.hpp includes
+*
 * Revision 1.14  2003/08/14 19:06:51  dondosha
 * Added BLASTGetEProgram function to convert from Uint1 to enum type
 *

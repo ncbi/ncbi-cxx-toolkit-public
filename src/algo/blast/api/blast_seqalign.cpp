@@ -35,7 +35,14 @@
 #include <algo/blast/api/blast_seqalign.hpp>
 #include <algo/blast/core/link_hsps.h>
 
-#include <objects/seqloc/seqloc__.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Std_seg.hpp>
+#include <objects/seqalign/Score.hpp>
+
 #include <objects/general/Object_id.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -48,6 +55,7 @@
 
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 
 
 // Converts a frame into the appropriate strand
@@ -705,12 +713,16 @@ BLAST_Results2CSeqAlign(const BlastResults* results,
 }
 
 
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/08/18 20:58:57  camacho
+* Added blast namespace, removed *__.hpp includes
+*
 * Revision 1.12  2003/08/18 17:07:41  camacho
 * Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
 * Change in function to read seqlocs from files.
