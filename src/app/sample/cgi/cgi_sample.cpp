@@ -116,7 +116,7 @@ int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
 
          ITERATE(CArgValue::TStringArray, it, values) {
              // do something with the message
-             // (void) it->c_str(); // eg get rid of compiler warning "unused 'm'"
+             // (void) it->c_str(); // eg
          } 
      } else {
          // no "message" argument is present
@@ -148,14 +148,19 @@ int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
     SetDiagNode(page.get());
     
 
-    // Register substitution for the template parameter <@MESSAGE@>
+    // Register substitution for the template parameters <@MESSAGE@> and
+    // <@SELF_URL@>
     try {
         CHTMLPlainText* text = new CHTMLPlainText(message);
         _TRACE("foo");
         SetDiagNode(text);
         _TRACE("bar");
         page->AddTagMap("MESSAGE", text);
-    } catch (exception& e) {
+
+        CHTMLPlainText* self_url = new CHTMLPlainText(ctx.GetSelfURL());
+        page->AddTagMap("SELF_URL", self_url);
+    }
+    catch (exception& e) {
         ERR_POST("Failed to populate Sample CGI HTML page: " << e.what());
         SetDiagNode(NULL);
         return 3;
@@ -194,6 +199,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/02/15 19:38:07  vakatov
+ * Use CCgiContext::GetSelfURL() for automagic back-referencing
+ *
  * Revision 1.12  2004/12/27 20:36:05  vakatov
  * Eliminate "unused var" warnings.
  * Accept GetArgs()' result by ref -- rather than by value
