@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.83 2002/06/05 22:14:03 vakatov Exp $
+#  $Id: configure.ac,v 1.84 2002/06/05 22:43:36 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -337,7 +337,7 @@ else
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.0" ;;
         *Sun*WorkShop*6*5\.1* )
-          compiler="WorkShop6"
+          compiler="WorkShop51"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.1" ;;
         *Sun*WorkShop*6*5\.2* )
@@ -631,7 +631,7 @@ if test "$with_64" = "yes" ; then
     sparc-sun-solaris*:WorkShop5 | sparc-sun-solaris*:KCC )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       ;;
-    sparc-sun-solaris*:WorkShop6 )
+    sparc-sun-solaris*:WorkShop51 )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS"
       ;;
@@ -668,7 +668,7 @@ else
       LIBS="-Bstatic -L$CXX_PATH/../SC5.0/lib -lm -Bdynamic $LIBS"
       MATH_LIBS=" "
       ;;
-    solaris*:WorkShop6 )
+    solaris*:WorkShop51 )
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -lm -Bdynamic $LIBS"
       MATH_LIBS=" "
       ;;
