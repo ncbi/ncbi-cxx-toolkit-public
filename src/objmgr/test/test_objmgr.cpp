@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/02/28 16:37:47  vasilche
+* Fixed expected feature count.
+* Added optional flags to testobjmgr to dump generated data and found features.
+*
 * Revision 1.26  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *
@@ -146,10 +150,27 @@ using namespace objects;
 class CTestApp : public CNcbiApplication
 {
 public:
+    virtual void Init(void);
     virtual int  Run (void);
 private:
     CRef<CObjectManager> m_ObjMgr;
 };
+
+
+void CTestApp::Init(void)
+{
+    // Prepare command line descriptions
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    arg_desc->AddFlag("dump_entries", "print all generated seq entries");
+    arg_desc->AddFlag("dump_features", "print all found features");
+
+    string prog_description = "testobjmgr1";
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              prog_description, false);
+
+    SetupArgDescriptions(arg_desc.release());
+}
 
 
 int CTestApp::Run(void)
@@ -158,6 +179,10 @@ int CTestApp::Run(void)
     NcbiCout << "Testing ObjectManager..." << NcbiEndl;
     CSeq_id id;
     int idx;
+
+    const CArgs& args = GetArgs();
+    CDataGenerator::sm_DumpEntries = args["dump_entries"];
+    CTestHelper::sm_DumpFeatures = args["dump_features"];
 
     m_ObjMgr = new CObjectManager;
 
@@ -263,7 +288,7 @@ int CTestApp::Run(void)
         CTestHelper::ProcessBioseq(*pScope2, id, 62,
             "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
             "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
-            1, 1, 1, 0, 0, 1, 1, 0, 0);
+            1, 9, 1, 0, 0, 1, 1, 0, 0);
 
         // 1.2.8. Test scope history
         CRef<CSeq_entry> entry1b(&CDataGenerator::CreateTestEntry1(idx));

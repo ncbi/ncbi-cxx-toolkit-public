@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/02/28 16:37:47  vasilche
+* Fixed expected feature count.
+* Added optional flags to testobjmgr to dump generated data and found features.
+*
 * Revision 1.7  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *
@@ -81,6 +85,8 @@ public:
     static CSeq_entry& CreateConstructedEntry(int idx, int index);
     // static CSeq_entry& CreateConstructedExclusionEntry(int idx, int index);
     static CSeq_annot& CreateAnnotation1(int index);
+
+    static bool sm_DumpEntries;
 };
 
 class CTestHelper
@@ -98,6 +104,8 @@ public:
                               bool have_errors = false);
 
     static void TestDataRetrieval( CScope& scope, int idx, int delta);
+
+    static bool sm_DumpFeatures;
 };
 
 END_SCOPE(objects)

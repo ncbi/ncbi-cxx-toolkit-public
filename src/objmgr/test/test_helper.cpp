@@ -75,6 +75,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+bool CDataGenerator::sm_DumpEntries = false;
 
 /************************************************************************
     1.2.1.1. Bio sequences for testing
@@ -302,6 +303,12 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
         seq_set.push_back(sub_entry);
     }}
 
+    if ( sm_DumpEntries ) {
+        NcbiCout << "-------------------- TestEntry1 --------------------\n";
+        auto_ptr<CObjectOStream>
+            out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+        *out << *entry;
+    }
     return *entry.Release();
 }
 
@@ -383,6 +390,12 @@ CSeq_entry& CDataGenerator::CreateTestEntry1a(int index)
         seq_set.push_back(sub_entry);
     }}
 
+    if ( sm_DumpEntries ) {
+        NcbiCout << "-------------------- TestEntry1a --------------------\n";
+        auto_ptr<CObjectOStream>
+            out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+        *out << *entry;
+    }
     return *entry.Release();
 }
 
@@ -635,6 +648,12 @@ CSeq_entry& CDataGenerator::CreateTestEntry2(int index)
     }}
     set_annot_list.push_back(annot);
 
+    if ( sm_DumpEntries ) {
+        NcbiCout << "-------------------- TestEntry2 --------------------\n";
+        auto_ptr<CObjectOStream>
+            out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+        *out << *entry;
+    }
     return *entry.Release();
 }
 
@@ -668,6 +687,12 @@ CSeq_entry& CDataGenerator::CreateConstructedEntry(int idx, int index)
         "constructed"+NStr::IntToString(index)));
     CRef<CSeq_entry> constr_entry(new CSeq_entry);
     constr_entry->SetSeq(*constr_seq);
+    if ( sm_DumpEntries ) {
+        NcbiCout << "-------------------- ConstructedEntry --------------------\n";
+        auto_ptr<CObjectOStream>
+            out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+        *out << *constr_entry;
+    }
     return *constr_entry.Release();
 }
 
@@ -757,6 +782,12 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
         feat->SetLocation().SetWhole().SetGi(11+index*1000);
         ftable.push_back(feat);
     }}
+    if ( sm_DumpEntries ) {
+        NcbiCout << "-------------------- Annotation1 --------------------\n";
+        auto_ptr<CObjectOStream>
+            out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+        *out << *annot;
+    }
     return *annot.Release();
 }
 
@@ -780,7 +811,7 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
     {{ \
         bool got_exception = false; \
         try {
-#define CHECK_END(MSG) \
+#define CHECK_END2(MSG, have_errors) \
         } catch (runtime_error) { \
             got_exception = true; \
             if ( !have_errors ) { \
@@ -792,13 +823,11 @@ CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
                          "Managed to " MSG " of erroneous sequence"); \
         } \
     }}
-#define CHECK_END_ALWAYS(MSG) \
-        } catch (runtime_error) { \
-            got_exception = true; \
-            LOG_POST("Can not " MSG); throw; \
-        } \
-    }}
+#define CHECK_END(MSG)         CHECK_END2(MSG, have_errors)
+#define CHECK_END_ALWAYS(MSG)  CHECK_END2(MSG, false)
 
+
+bool CTestHelper::sm_DumpFeatures = false;
 
 void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
                                 TSeqPos seq_len,
@@ -949,11 +978,24 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     count = 0;
     set<const CSeq_annot*> annot_set;
     if ( !tse_feat_test ) {
+        if ( sm_DumpFeatures ) {
+            NcbiCout << "-------------------- CFeat_CI over "<<
+                id.AsFastaString()<<" --------------------\n";
+        }
         for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
              feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
+            if ( sm_DumpFeatures ) {
+                auto_ptr<CObjectOStream>
+                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                *out << feat_it->GetMappedFeature();
+            }
             //### _ASSERT(feat_it->
+        }
+        if ( sm_DumpFeatures ) {
+            NcbiCout << "-------------------- "
+                "product CFeat_CI --------------------\n";
         }
         // Get products
         for (CFeat_CI feat_it(scope, loc,
@@ -964,7 +1006,16 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
+            if ( sm_DumpFeatures ) {
+                auto_ptr<CObjectOStream>
+                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                *out << feat_it->GetMappedFeature();
+            }
             //### _ASSERT(feat_it->
+        }
+        if ( sm_DumpFeatures ) {
+            NcbiCout << "-------------------- "
+                "end CFeat_CI --------------------\n";
         }
     }
     else {
@@ -1104,7 +1155,7 @@ void CTestHelper::TestDataRetrieval(CScope& scope, int idx,
     ProcessBioseq(scope, id, 62,
         "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
         "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-        1, 1, 1, 0, 0, 1, 1, 0, 0);
+        1, 9, 1, 0, 0, 1, 1, 0, 0);
     id.SetGi(22+idx*1000);
     ProcessBioseq(scope, id, 20, "QGCGEQTMTLLAPTLAASRY", "",
         0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -1123,6 +1174,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/02/28 16:37:47  vasilche
+* Fixed expected feature count.
+* Added optional flags to testobjmgr to dump generated data and found features.
+*
 * Revision 1.25  2003/01/24 20:13:38  vasilche
 * Added check for empty CSeqVector from CBioseq_Handle::GetSequenceView().
 *
