@@ -312,28 +312,80 @@ FillReturnXDropoffsInfo(BlastReturnStat* return_stats,
    return 0;
 }
 
+/* Computes the effective search space for the given parameters */
+static
+Int8 ComputeEffectiveSearchSpace(BLAST_KarlinBlk* kbp, /* [in] */
+                                 Uint1 program_number, /* [in] */
+                                 Int4 query_length,    /* [in] */
+                                 const BlastScoringOptions* 
+                                 scoring_options,      /* [in] */
+                                 double alpha,         /* [in] */
+                                 double beta,          /* [in] */
+                                 Int8 db_length,       /* [in] */
+                                 Int4 db_num_seqs,     /* [in] */
+                                 Int4* length_adjustment_out  /* [out] */
+                                )
+{
+    Int4 length_adjustment = 0;  /* length adjustment for current iteration. */
+    Int4 last_length_adjustment = 0;/* length adjustment in previous iteration.*/
+    Int4 min_query_length;   /* lower bound on query length. */
+    Int2 i; /* Iteration index for calculating length adjustment */
+    Int8 effective_length, effective_db_length; /* effective lengths of 
+                                                  query and database */
+    Int8 retval = 0;
+
+    ASSERT(kbp);
+
+    min_query_length = (Int4) (1/(kbp->K));
+
+    for (i=0; i<5; i++) {
+
+        if (program_number != blast_type_blastn && 
+            scoring_options->gapped_calculation) {
+
+            length_adjustment = BLAST_Nint((((kbp->logK)+log((double)(query_length-last_length_adjustment)*(double)MAX(db_num_seqs, db_length-db_num_seqs*last_length_adjustment)))*alpha/kbp->Lambda) + beta);
+
+        } else {
+
+            length_adjustment = (Int4) ((kbp->logK+log((double)(query_length-last_length_adjustment)*(double)MAX(1, db_length-db_num_seqs*last_length_adjustment)))/(kbp->H));
+        }
+
+        if (length_adjustment >= query_length-min_query_length) {
+            length_adjustment = query_length-min_query_length;
+            break;
+        }
+        
+        if (ABS(last_length_adjustment-length_adjustment) <= 1)
+            break;
+        last_length_adjustment = length_adjustment;
+    }
+    effective_length = 
+        MAX(query_length - length_adjustment, min_query_length);
+    effective_db_length = MAX(1, db_length - db_num_seqs*length_adjustment);
+     
+    retval = effective_length * effective_db_length;
+
+    if (length_adjustment_out) {
+        *length_adjustment_out = length_adjustment;
+    }
+
+    return retval;
+}
+
 Int2 BLAST_CalcEffLengths (Uint1 program_number, 
    const BlastScoringOptions* scoring_options,
    const BlastEffectiveLengthsOptions* eff_len_options, 
    const BlastScoreBlk* sbp, BlastQueryInfo* query_info)
 {
    double alpha, beta; /*alpha and beta for new scoring system */
-   Int4 min_query_length;   /* lower bound on query length. */
    Int4 length_adjustment = 0;  /* length adjustment for current iteration. */
-   Int4 last_length_adjustment;/* length adjustment in previous iteration.*/
    Int4 index;		/* loop index. */
    Int4	db_num_seqs;	/* number of sequences in database. */
    Int8	db_length;	/* total length of database. */
    BLAST_KarlinBlk* *kbp_ptr; /* Array of Karlin block pointers */
-   BLAST_KarlinBlk* kbp; /* Karlin-Blk pointer from ScoreBlk. */
    Int4 query_length;   /* length of an individual query sequence */
-   Int8 effective_length, effective_db_length; /* effective lengths of 
-                                                  query and database */
-   Int8 effective_search_space; /* Effective search space for a given 
+   Int8 effective_search_space = 0; /* Effective search space for a given 
                                    sequence/strand/frame */
-   Int2 i; /* Iteration index for calculating length adjustment */
-   Uint1 num_strands;
-   Boolean skip = FALSE;
 
    if (sbp == NULL || eff_len_options == NULL)
       return 1;
@@ -359,66 +411,31 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    else
       kbp_ptr = sbp->kbp_std; 
    
-   if (program_number == blast_type_blastn)
-      num_strands = 2;
-   else
-      num_strands = 1;
+   for (index = query_info->first_context;
+        index <= query_info->last_context;
+        index++) {
 
-   for (index = query_info->first_context; 
-        index <= query_info->last_context; index++) {
-      if ((index % num_strands) == 0) 
-         skip = FALSE;
       if (eff_len_options->searchsp_eff) {
          effective_search_space = eff_len_options->searchsp_eff;
       } else {
-         query_length = BLAST_GetQueryLength(query_info, index);
-         
-         if (query_length <= 0) {
-            /* This strand of this query is not searched */
-            query_info->eff_searchsp_array[index] = 0;
-            query_info->length_adjustments[index] = 0;
-            continue;
+         if ( (query_length = BLAST_GetQueryLength(query_info, index)) <= 0) {
+             continue;
          }
-
-         if (!skip) {
-            /* Use the correct Karlin block. For blastn, two identical Karlin
-               blocks are allocated for each sequence (one per strand), but we
-               only need one of them.
-            */
-            kbp = kbp_ptr[index];
-            length_adjustment = 0;
-            last_length_adjustment = 0;
-            min_query_length = (Int4) (1/(kbp->K));
-            
-            for (i=0; i<5; i++) {
-               if (program_number != blast_type_blastn && 
-                   scoring_options->gapped_calculation) {
-                  length_adjustment = BLAST_Nint((((kbp->logK)+log((double)(query_length-last_length_adjustment)*(double)MAX(db_num_seqs, db_length-db_num_seqs*last_length_adjustment)))*alpha/kbp->Lambda) + beta);
-               } else {
-                  length_adjustment = (Int4) ((kbp->logK+log((double)(query_length-last_length_adjustment)*(double)MAX(1, db_length-db_num_seqs*last_length_adjustment)))/(kbp->H));
-               }
-               
-               if (length_adjustment >= query_length-min_query_length) {
-                  length_adjustment = query_length-min_query_length;
-                  break;
-               }
-               
-               if (ABS(last_length_adjustment-length_adjustment) <= 1)
-                  break;
-               last_length_adjustment = length_adjustment;
-            }
-            effective_length = 
-               MAX(query_length - length_adjustment, min_query_length);
-            effective_db_length = MAX(1, db_length - db_num_seqs*length_adjustment);
-            
-            effective_search_space = effective_length * effective_db_length;
-            skip = TRUE;
-         }
+         /* Use the correct Karlin block. For blastn, two identical Karlin
+            blocks are allocated for each sequence (one per strand), but we
+            only need one of them.
+         */
+         effective_search_space = ComputeEffectiveSearchSpace(kbp_ptr[index],
+                                                              program_number,
+                                                              query_length,
+                                                              scoring_options,
+                                                              alpha, beta,
+                                                              db_length,
+                                                              db_num_seqs,
+                                                              &length_adjustment);
       }
-
       query_info->eff_searchsp_array[index] = effective_search_space;
       query_info->length_adjustments[index] = length_adjustment;
-
 
    }
 
