@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.16  2002/09/30 20:45:34  kholodov
+* Added: ForceSingle() method to enforce single connection used
+*
 * Revision 1.15  2002/09/23 18:25:10  kholodov
 * Added: GetDataSource() method.
 *
@@ -99,7 +102,7 @@ BEGIN_NCBI_SCOPE
 // Implementation
 CConnection::CConnection(CDataSource* ds)
     : m_ds(ds), m_connection(0), m_connCounter(1), m_connUsed(false),
-      m_modeMask(0)
+      m_modeMask(0), m_forceSingle(false)
 {
     _TRACE("Default connection " << (void *)this << " created...");
     SetIdent("CConnection");
@@ -107,7 +110,7 @@ CConnection::CConnection(CDataSource* ds)
 
 CConnection::CConnection(CDB_Connection *conn, CDataSource* ds)
     : m_ds(ds), m_connection(conn), m_connCounter(-1), m_connUsed(false),
-      m_modeMask(0)
+      m_modeMask(0), m_forceSingle(false)
 {
     _TRACE("Auxiliary connection " << (void *)this << " created...");
     SetIdent("CConnection");
@@ -132,6 +135,11 @@ IDataSource* CConnection::GetDataSource()
 unsigned int CConnection::GetModeMask()
 {
     return m_modeMask;
+}
+
+void CConnection::ForceSingle(bool enable)
+{
+    m_forceSingle = enable;
 }
 
 void CConnection::Connect(const string& user, 
@@ -290,9 +298,12 @@ CConnection* CConnection::GetAuxConn()
         return 0;
 
     CConnection *conn = this;
+    if( m_connUsed && m_forceSingle ) {
+        throw CDbapiException("GetAuxConn(): Extra connections not permitted");
+    }
     if( m_connUsed ) {
         conn = Clone();
-        _TRACE("GetAuxconn(): Server: " << GetCDB_Connection()->ServerName()
+        _TRACE("GetAuxConn(): Server: " << GetCDB_Connection()->ServerName()
                << ", open aux connection, total: " << m_connCounter);
     }
     else {

@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.9  2002/09/30 20:45:34  kholodov
+* Added: ForceSingle() method to enforce single connection used
+*
 * Revision 1.8  2002/09/23 18:25:10  kholodov
 * Added: GetDataSource() method.
 *
@@ -82,6 +85,8 @@ public:
     virtual void SetMode(EConnMode mode);
     virtual void ResetMode(EConnMode mode);
     virtual unsigned int GetModeMask();
+
+    virtual void ForceSingle(bool enable);
 
     virtual IDataSource* GetDataSource();
 
@@ -137,6 +142,7 @@ private:
     int m_connCounter;
     bool m_connUsed;
     unsigned int m_modeMask;
+    bool m_forceSingle;
 };
 
 //====================================================================

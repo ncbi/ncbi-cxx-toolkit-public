@@ -304,12 +304,19 @@ public:
         ePasswordEncrypted = I_DriverContext::fPasswordEncrypted 
     };
 
+    // Destructor
+    virtual ~IConnection();
+
     // Connection modes
     virtual void SetMode(EConnMode mode) = 0;
     virtual void ResetMode(EConnMode mode) = 0;
     virtual unsigned int GetModeMask() = 0;
 
-    virtual ~IConnection();
+    // Force single connection mode, default false
+    // NOTE: disable this mode before using BLOB output streams
+    // from IResultSet, because extra connection is needed 
+    // in this case
+    virtual void ForceSingle(bool enable) = 0;
 
     // Get parent datasource object
     virtual IDataSource* GetDataSource() = 0;
@@ -385,6 +392,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/09/30 20:45:38  kholodov
+ * Added: ForceSingle() method to enforce single connection used
+ *
  * Revision 1.11  2002/09/23 18:24:12  kholodov
  * Added: IDataSource: GetErrorInfo() and GetErrorAsEx() methods.
  * Added: IConnection: GetDataSource() method.
