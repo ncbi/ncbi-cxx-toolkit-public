@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/06/17 18:50:48  gouriano
+* added missing EMPTY_TEMPLATE macro in few places
+*
 * Revision 1.19  2003/06/16 14:41:05  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -150,6 +153,7 @@ void CDataValueTmpl<bool>::PrintASN(CNcbiOstream& out, int ) const
     out << (GetValue()? "TRUE": "FALSE");
 }
 
+EMPTY_TEMPLATE
 string CDataValueTmpl<bool>::GetXmlString(void) const
 {
     return (GetValue()? "true": "false");
@@ -161,6 +165,7 @@ void CDataValueTmpl<Int4>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << GetValue();
 }
+EMPTY_TEMPLATE
 string CDataValueTmpl<Int4>::GetXmlString(void) const
 {
     CNcbiOstrstream buffer;
@@ -181,6 +186,8 @@ void CDataValueTmpl<string>::PrintASN(CNcbiOstream& out, int ) const
     }
     out << '"';
 }
+
+EMPTY_TEMPLATE
 string CDataValueTmpl<string>::GetXmlString(void) const
 {
     CNcbiOstrstream buffer;
