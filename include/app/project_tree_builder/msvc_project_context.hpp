@@ -110,6 +110,8 @@ public:
     
     static bool IsRequiresOk(const CProjItem& prj);
 
+    bool IsConfigEnabled(const SConfigInfo& config) const;
+
 
     const list<SCustomBuildInfo>& GetCustomBuildInfo(void) const
     {
@@ -511,6 +513,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/02/24 20:50:03  gorelenk
+ * Added declaration of member-function IsConfigEnabled
+ * to class CMsvcPrjProjectContext.
+ *
  * Revision 1.10  2004/02/24 17:17:45  gorelenk
  * Added member m_NcbiCLibs to class CMsvcPrjProjectContext.
  *
