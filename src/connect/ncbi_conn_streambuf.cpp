@@ -36,6 +36,8 @@
 #include <memory>
 
 
+#define LOG_IF_ERROR(status, msg) x_LogIfError(__FILE__, __LINE__, status, msg)
+
 BEGIN_NCBI_SCOPE
 
 
@@ -56,7 +58,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
     m_ReadBuf = bp.get() + m_BufSize;
     setg(0, 0, 0); // we wish to have underflow() called at the first read
 
-    if (x_LogIfError(CONN_Create(connector, &m_Conn),
+    if (LOG_IF_ERROR(CONN_Create(connector, &m_Conn),
                      "CConn_Streambuf(): CONN_Create() failed") !=eIO_Success){
         return;
     }
@@ -98,7 +100,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
             return CT_NOT_EOF(CT_EOF);
         }
 
-        x_LogIfError(CONN_Write(m_Conn, m_WriteBuf,
+        LOG_IF_ERROR(CONN_Write(m_Conn, m_WriteBuf,
                                 n_write*sizeof(CT_CHAR_TYPE), &n_written),
                      "overflow(): CONN_Write() failed");
         if ( !n_written )
@@ -119,7 +121,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
     if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
         // send char
-        x_LogIfError(CONN_Write(m_Conn, &b, sizeof(b), &n_written),
+        LOG_IF_ERROR(CONN_Write(m_Conn, &b, sizeof(b), &n_written),
                      "overflow(): CONN_Write(1) failed");
         return n_written == sizeof(b) ? c : CT_EOF;
     } else if (CONN_Flush(m_Conn) != eIO_Success)
@@ -148,10 +150,12 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 
     // read from the connection
     size_t n_read;
-    if (x_LogIfError(CONN_Read(m_Conn, m_ReadBuf,
-                               m_BufSize*sizeof(CT_CHAR_TYPE),
-                               &n_read, eIO_ReadPlain),
-                     "underflow(): CONN_Read() failed") != eIO_Success) {
+    EIO_Status status = CONN_Read(m_Conn, m_ReadBuf,
+                                  m_BufSize*sizeof(CT_CHAR_TYPE),
+                                  &n_read, eIO_ReadPlain);
+    if (status != eIO_Success) {
+        if (status != eIO_Closed)
+            LOG_IF_ERROR(status,"underflow(): CONN_Read() failed");
         return CT_EOF;
     }
     _ASSERT(n_read);
@@ -266,12 +270,12 @@ streambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 }
 
 
-EIO_Status CConn_Streambuf::x_LogIfError(EIO_Status status, const string& msg)
+EIO_Status CConn_Streambuf::x_LogIfError(const char* file, int line,
+                                         EIO_Status status, const string& msg)
 {
     if (status != eIO_Success) {
-        string message("CConn_Streambuf::" + msg +
-                       " (" + IO_StatusStr(status) + ")");
-        ERR_POST(message);
+        CNcbiDiag(file, line) << "CConn_Streambuf::" << msg <<
+            " (" << IO_StatusStr(status) << ")" << Endm;
     }
     return status;
 }
@@ -283,6 +287,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2003/05/20 18:05:53  lavr
+ * x_LogIfError() to accept and print approproate file location
+ *
  * Revision 6.29  2003/05/20 16:46:29  lavr
  * Check for NULL connection in every streambuf method before proceding
  *

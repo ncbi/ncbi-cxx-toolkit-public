@@ -76,7 +76,8 @@ private:
 
     bool                m_Tie;       // always flush before reading
 
-    EIO_Status          x_LogIfError(EIO_Status status, const string& msg);
+    EIO_Status          x_LogIfError(const char* file, int line,
+                                     EIO_Status status, const string& msg);
 };
 
 
@@ -86,6 +87,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2003/05/20 18:05:53  lavr
+ * x_LogIfError() to accept and print approproate file location
+ *
  * Revision 6.19  2003/05/20 16:45:49  lavr
  * IsOkay() removed (GetCONN() should be enough)
  *
