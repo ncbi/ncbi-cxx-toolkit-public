@@ -687,7 +687,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
    db_length = BLASTSeqSrcGetTotLen(seq_src);
 
-   itr = BlastSeqSrcIteratorNew(BLAST_DB_CHUNK_SIZE);
+   itr = BlastSeqSrcIteratorNew(0);
 
    /* iterate over all subject sequences */
    while ( (seq_arg.oid = BlastSeqSrcIteratorNext(seq_src, itr)) 
