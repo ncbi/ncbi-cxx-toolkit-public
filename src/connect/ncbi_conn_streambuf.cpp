@@ -73,7 +73,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
 }
 
 
-CConn_Streambuf::~CConn_Streambuf(void)
+CConn_Streambuf::~CConn_Streambuf()
 {
     sync();
     EIO_Status status;
@@ -291,6 +291,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2003/11/12 17:45:20  lavr
+ * Minor cosmetic fix
+ *
  * Revision 6.40  2003/11/12 16:40:13  ivanov
  * Fixed initial setup of get pointers (by Anton Lavrentiev)
  *
