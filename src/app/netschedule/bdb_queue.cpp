@@ -272,6 +272,25 @@ void CQueueDataBase::MountQueue(const string& queue_name)
 void CQueueDataBase::Close()
 {
     m_QueueCollection.Close();
+    try {
+        if (m_Env) {
+            m_Env->TransactionCheckpoint();
+            if (m_Env->CheckRemove()) {
+                LOG_POST(Info    <<
+                         "JS: '" <<
+                         m_Name  << "' Unmounted. BDB ENV deleted.");
+            } else {
+                LOG_POST(Warning << "JS: '" << m_Name 
+                                 << "' environment still in use.");
+            }
+        }
+    }
+    catch (exception& ex) {
+        LOG_POST(Warning << "JS: '" << m_Name 
+                         << "' Exception in Close() " << ex.what()
+                         << " (ignored.)");
+    }
+
     delete m_Env; m_Env = 0;
 }
 
@@ -526,6 +545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/09 18:55:18  kuznets
+ * Implemented correct database shutdown
+ *
  * Revision 1.1  2005/02/08 16:42:55  kuznets
  * Initial revision
  *
