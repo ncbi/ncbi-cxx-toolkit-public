@@ -195,18 +195,12 @@ void CAlnMrgApp::LoadInputAlignments(void)
     // get the asn type of the top-level object
     string asn_type = args["b"].AsString();
     bool binary = asn_type.length();
-    if ( !binary ) {
-        // auto-detection is possible in ASN.1 text mode
-        auto_ptr<CObjectIStream> in
-            (CObjectIStream::Open(eSerial_AsnText, is));
-
-        asn_type = in->ReadFileHeader();
-        in->Close();
-        is.seekg(0);
-    }
-
     auto_ptr<CObjectIStream> in
         (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText, is));
+    if ( !binary ) {
+        // auto-detection is possible in ASN.1 text mode
+        asn_type = in->ReadFileHeader();
+    }
     
     CTypesIterator i;
     CType<CSeq_align>::AddTo(i);
@@ -217,7 +211,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
 
     if (asn_type == "Seq-entry") {
         CRef<CSeq_entry> se(new CSeq_entry);
-        *in >> *se;
+        in->Read(Begin(*se), CObjectIStream::eNoFileHeader);
         *binout << *se;
         GetScope().AddTopLevelSeqEntry(*se);
         for (i = Begin(*se); i; ++i) {
@@ -227,7 +221,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
         }
     } else if (asn_type == "Seq-submit") {
         CRef<CSeq_submit> ss(new CSeq_submit);
-        *in >> *ss;
+        in->Read(Begin(*ss), CObjectIStream::eNoFileHeader);
         *binout << *ss;
         CType<CSeq_entry>::AddTo(i);
         int tse_cnt = 0;
@@ -243,7 +237,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
         }
     } else if (asn_type == "Seq-align") {
         CRef<CSeq_align> sa(new CSeq_align);
-        *in >> *sa;
+        in->Read(Begin(*sa), CObjectIStream::eNoFileHeader);
         *binout << *sa;
        for (i = Begin(*sa); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
@@ -252,7 +246,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
         }
     } else if (asn_type == "Seq-align-set") {
         CRef<CSeq_align_set> sas(new CSeq_align_set);
-        *in >> *sas;
+        in->Read(Begin(*sas), CObjectIStream::eNoFileHeader);
         *binout << *sas;
         for (i = Begin(*sas); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
@@ -261,7 +255,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
         }
     } else if (asn_type == "Seq-annot") {
         CRef<CSeq_annot> san(new CSeq_annot);
-        *in >> *san;
+        in->Read(Begin(*san), CObjectIStream::eNoFileHeader);
         *binout << *san;
         for (i = Begin(*san); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
@@ -270,7 +264,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
         }
     } else if (asn_type == "Dense-seg") {
         CRef<CDense_seg> ds(new CDense_seg);
-        *in >> *ds;
+        in->Read(Begin(*ds), CObjectIStream::eNoFileHeader);
         *binout << *ds;
         m_Mix->Add(*ds, m_AddFlags);
     } else {
@@ -417,6 +411,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/12/22 18:33:48  ucko
+* Simplify format autodetection behavior by means of Read(..., eNoFileHeader);
+* fixes problems observed with GCC 2.95.
+*
 * Revision 1.16  2003/12/20 03:39:12  ucko
 * Reorder data members of CAlnMrgApp: m_Mix should follow m_ObjMgr so
 * it's destroyed first by default, so that the scope will no longer be
