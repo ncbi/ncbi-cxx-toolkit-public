@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2000/10/20 17:08:40  lavr
+ * All keys capitalized for registry access
+ * Search for some keywords made case insensitive
+ *
  * Revision 6.7  2000/10/11 22:29:44  lavr
  * Forgotten blank added after {GET|POST} request in URL_Connect
  *
@@ -66,43 +70,58 @@
 #include <string.h>
 #include <ctype.h>
 
-static const char *s_GetValue(const char *service, const char *key,
+
+static const char *s_GetValue(const char *service, const char *param,
                               char *value, size_t value_size,
                               const char *def_value)
 {
-  char buf[250];
+  char key[250], *sec;
   const char *val;
 
-  if (!value || !key || value_size <= 0)
+  if (!value || !param || value_size <= 0)
       return 0;
   *value = '\0';
 
   if (service && *service) {
+      /* Service-specific inquiry */
       if (strlen(service) + 1 + sizeof(DEF_CONN_REG_SECTION) +
-          strlen(key) + 1 > sizeof(buf))
+          strlen(param) + 1 > sizeof(key))
           return 0;
-      sprintf(buf, "%s_" DEF_CONN_REG_SECTION "_%s", service, key);
-      if ((val = getenv(buf)) != 0) {
+      /* First, environment search for 'service_CONN_param' */
+      sprintf(key, "%s_" DEF_CONN_REG_SECTION "_%s", service, param);
+      strupr(key);
+      if ((val = getenv(key)) != 0) {
           strncpy(value, val, value_size);
           value[value_size - 1] = '\0';
-      } else {
-          sprintf(buf, DEF_CONN_REG_SECTION "_%s", key);
-          CORE_REG_GET(service, buf, value, value_size, 0);
+          return value;
       }
+      /* Next, search for 'CONN_param' in '[service]' registry section */
+      sprintf(key, DEF_CONN_REG_SECTION "_%s", param);
+      sec = key + strlen(key) + 1;
+      strupr(key);
+      strcpy(sec, service);
+      strupr(sec);
+      CORE_REG_GET(sec, key, value, value_size, 0);
+      if (*value)
+          return value;
   } else {
-      if (sizeof(DEF_CONN_REG_SECTION) + strlen(key) + 1 > sizeof(buf))
+      /* Common case. Form 'CONN_param' */
+      if (sizeof(DEF_CONN_REG_SECTION) + strlen(param) + 1 > sizeof(key))
           return 0;
-      sprintf(buf, DEF_CONN_REG_SECTION "_%s", key);
+      sprintf(key, DEF_CONN_REG_SECTION "_%s", param);
+      strupr(key);
   }
 
-  if (!*value) {
-      if ((val = getenv(buf)) != 0) {
-          strncpy(value, val, value_size);
-          value[value_size - 1] = '\0';
-      } else
-          CORE_REG_GET(DEF_CONN_REG_SECTION, key, value, value_size,
-                       def_value);
+  /* Environment search for 'CONN_param' */
+  if ((val = getenv(key)) != 0) {
+      strncpy(value, val, value_size);
+      value[value_size - 1] = '\0';
+      return value;
   }
+  /* Last resort: Search for 'param' in default registry section */
+  strcpy(key, param);
+  strupr(key);
+  CORE_REG_GET(DEF_CONN_REG_SECTION, key, value, value_size, def_value);
 
   return value;
 }
@@ -184,8 +203,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     REG_VALUE(REG_CONN_DEBUG_PRINTOUT, str, DEF_CONN_DEBUG_PRINTOUT);
     info->debug_printout = (*str  &&
                             (strcmp(str, "1"   ) == 0  ||
-                             strcmp(str, "true") == 0  ||
-                             strcmp(str, "yes" ) == 0));
+                             strcasecmp(str, "true") == 0  ||
+                             strcasecmp(str, "yes" ) == 0));
 
     /* what is a client mode? */
     REG_VALUE(REG_CONN_CLIENT_MODE, str, DEF_CONN_CLIENT_MODE);
@@ -200,8 +219,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
     info->lb_disable = (*str  &&
                         (strcmp(str, "1"   ) == 0  ||
-                         strcmp(str, "true") == 0  ||
-                         strcmp(str, "yes" ) == 0));
+                         strcasecmp(str, "true") == 0  ||
+                         strcasecmp(str, "yes" ) == 0));
 
     /* NCBID port */
     REG_VALUE(REG_CONN_NCBID_PORT, str, 0);
@@ -333,7 +352,7 @@ extern SOCK URL_Connect
  const char*     user_header,
  int/*bool*/     encode_args)
 {
-    static const char *X_REQ_R; /* "POST"/"GET" */
+    static const char *X_REQ_R; /* "POST "/"GET " */
     static const char  X_REQ_Q[] = "?";
     static const char  X_REQ_E[] = " HTTP/1.0\r\n";
 
