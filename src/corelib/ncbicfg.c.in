@@ -33,6 +33,15 @@
 
 #include <corelib/ncbicfg.h>
 
+
+// On UNIX the string '@ncbi_runpath@' will be replaced at configure step
+// with runpath specified to configure.
+
+// On MS Windows you can set up a base directory for runpath using
+// environtment variable NCBI_INSTALL_PATH before building CONFIGURE
+// project in MSVC 7.* build tree. If this env.variable is not defined,
+// that current build path will be used as runpath.
+
 static const char s_DefaultRunpath[] = "@ncbi_runpath@";
 static const char *s_Runpath         = s_DefaultRunpath;
 
@@ -58,6 +67,9 @@ void        NCBI_SetRunpath(const char* runpath)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/10/13 16:07:34  ivanov
+ * Added comments about @ncbi_runpath@
+ *
  * Revision 1.2  2002/04/11 21:08:01  ivanov
  * CVS log moved to end of the file
  *
