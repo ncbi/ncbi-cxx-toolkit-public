@@ -2459,7 +2459,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
         return eIO_Closed;
 #ifdef NCBI_OS_UNIX
     if (peer.sa.sa_family != AF_INET  &&  peer.sa.sa_family != AF_UNIX)
-#  ifdef NCBI_OS_BSD
+#  if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_IRIX)
         if (peer.sa.sa_family != AF_UNSPEC/*0*/)
 #  endif
             return eIO_InvalidArg;
@@ -2470,7 +2470,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     
 #ifdef NCBI_OS_UNIX
     if (
-#  ifdef NCBI_OS_BSD
+#  if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_IRIX)
         peer.sa.sa_family == AF_UNSPEC/*0*/  ||
 #  endif
         peer.sa.sa_family == AF_UNIX) {
@@ -3917,8 +3917,11 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 
 
 /*
- * ---------------------------------------------------------------------------
+ * ===========================================================================
  * $Log$
+ * Revision 6.128  2003/09/05 19:29:50  ivanov
+ * SOCK_CreateOnTopEx(): Workaround for unnamed peer's UNIX sockets on IRIX
+ *
  * Revision 6.127  2003/09/02 20:59:21  lavr
  * -<connect/ncbi_buffer.h> [expilictly]
  *
