@@ -65,7 +65,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-USING_SCOPE(sequence);
+BEGIN_SCOPE(sequence)
 
 static string s_TitleFromBioSource (const CBioSource&    source,
                                     const string&        suffix = kEmptyStr);
@@ -752,12 +752,16 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
 }
 
 
+END_SCOPE(sequence)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2002/06/07 16:13:01  ucko
+* Move everything into the "sequence" namespace.
+*
 * Revision 1.2  2002/06/07 13:22:09  clausen
 * Removed commented out include for object_manager
 *

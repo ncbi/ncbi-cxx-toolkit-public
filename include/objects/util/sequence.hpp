@@ -70,8 +70,6 @@ enum ECompare {
     eOverlap        // CSeq_locs overlap
 };
 
-END_SCOPE(sequence)
-
 
 // Get sequence length if scope not null, else return max possible TSeqPos
 TSeqPos GetLength(const CSeq_id& id, CScope* scope = 0);
@@ -129,12 +127,16 @@ enum EGetTitleFlags {
 typedef int TGetTitleFlags;
 string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
 
+END_SCOPE(sequence)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2002/06/07 16:09:42  ucko
+* Move everything into the "sequence" namespace.
+*
 * Revision 1.1  2002/06/06 18:43:28  clausen
 * Initial version
 *
