@@ -481,6 +481,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_ConflictFlagSet",
     "SEQ_FEAT_LocusTagProblem",
     "SEQ_FEAT_AltStartCodon",
+    "SEQ_FEAT_GenesInconsistent",
 
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
@@ -1059,6 +1060,9 @@ be brought to the attention of the source database for possible correction.",
 //  SEQ_FEAT_AltStartCodon
 "An alternative start codon was used. This is rare, and it is expected that \
 confirmatory evidence will be cited.",
+//  SEQ_FEAT_GenesInconsistent
+"The gene on the genomic sequence of a genomic product set should be the \
+same as the gene on the cDNA product of the mRNA feature.",
 
 /* SEQ_ALIGN */
 
@@ -1158,6 +1162,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2004/03/25 18:31:41  shomrat
+* + SEQ_FEAT_GenesInconsistent
+*
 * Revision 1.42  2004/03/19 14:47:56  shomrat
 * + SEQ_FEAT_PartialsInconsistent
 *
