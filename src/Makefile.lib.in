@@ -41,9 +41,10 @@ $(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB)
 	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XLOBJ) | @TSORT@`
 	@$(RANLIB) $(XLIB)
+	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
 	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
-	@echo $(srcdir) `pwd` $(TMPL) > $(libdir)/$(XLIBDEP)
+	@$(BINCOPY) $(XLIBDEP) $(libdir)
 	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
 
 
