@@ -26,88 +26,31 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *   Seq-id mapper for Object Manager
 *
 */
 
-#include <objmgr/seq_id_handle.hpp>
-#include <objects/seqloc/Seq_id.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_limits.hpp>
-#include <map>
-#include <set>
+#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbicntr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+
+#include <objects/seqloc/Seq_id.hpp>
+
+#include <objmgr/seq_id_handle.hpp>
+
+#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
 class CSeq_id;
-
-
-////////////////////////////////////////////////////////////////////
-//
-//  CSeq_id_***_Tree::
-//
-//    Seq-id sub-type specific trees
-//
-
-
-typedef pair< CConstRef<CSeq_id>, TSeq_id_Key > TSeq_id_Info;
-
-
-// Base class for seq-id type-specific trees
-class NCBI_XOBJMGR_EXPORT CSeq_id_Which_Tree : public CObject
-{
-public:
-    // 'ctors
-    CSeq_id_Which_Tree(void) {}
-    virtual ~CSeq_id_Which_Tree(void) {}
-
-    typedef list<TSeq_id_Info> TSeq_id_MatchList;
-
-    // Find exaclty the same seq-id
-    virtual TSeq_id_Info FindEqual(const CSeq_id& id) const = 0;
-    // Get the list of matching seq-id.
-    // Not using list of handles since CSeq_id_Handle constructor
-    // is private.
-    virtual void FindMatch(const CSeq_id& id,
-                           TSeq_id_MatchList& id_list) const = 0;
-    virtual void FindMatchStr(string sid,
-                              TSeq_id_MatchList& id_list) const = 0;
-
-    // Map new seq-id
-    virtual void AddSeq_idMapping(CSeq_id_Handle& handle) = 0;
-
-    virtual bool IsBetterVersion(const CSeq_id_Handle& h1,
-                                 const CSeq_id_Handle& h2) const;
-
-    // Remove mapping for a given keys range
-    void DropKeysRange(TSeq_id_Key first, TSeq_id_Key last);
-
-    mutable CFastMutex m_TreeMutex; // Locked by CSeq_id_Mapper
-
-protected:
-    const CSeq_id& x_GetSeq_id(const CSeq_id_Handle& handle) const;
-    TSeq_id_Key    x_GetKey(const CSeq_id_Handle& handle) const;
-
-    void x_AddToKeyMap(const CSeq_id_Handle& handle);
-    void x_RemoveFromKeyMap(TSeq_id_Key key);
-    CSeq_id_Handle x_GetHandleByKey(TSeq_id_Key key) const;
-
-    // Called by DropKeysRange() for each handle to remove it from
-    // all maps. After calling x_DropHandle() the key is removed
-    // from the keys map.
-    virtual void x_DropHandle(const CSeq_id_Handle& handle) = 0;
-
-    // Map for reverse lookups
-    typedef map<TSeq_id_Key, CSeq_id_Handle> TKeyMap;
-    TKeyMap m_KeyMap;
-};
+class CSeq_id_Which_Tree;
 
 
 ////////////////////////////////////////////////////////////////////
@@ -125,56 +68,71 @@ typedef set<CSeq_id_Handle>                     TSeq_id_HandleSet;
 class NCBI_XOBJMGR_EXPORT CSeq_id_Mapper : public CObject
 {
 public:
-    static  CSeq_id_Mapper& GetSeq_id_Mapper(void);
-
+    static CSeq_id_Mapper& GetSeq_id_Mapper(void);
+    
     virtual ~CSeq_id_Mapper(void);
-
+    
     // Get seq-id handle. Create new handle if not found and
     // do_not_create is false. Get only the exactly equal seq-id handle.
     CSeq_id_Handle GetHandle(const CSeq_id& id, bool do_not_create = false);
+    
     // Get the list of matching handles, do not create new handles
-    void GetMatchingHandles(const CSeq_id& id, TSeq_id_HandleSet& h_set);
+    void GetMatchingHandles(const CSeq_id_Handle& id,
+                            TSeq_id_HandleSet& h_set);
     // Get the list of string-matching handles, do not create new handles
-    void GetMatchingHandlesStr(string sid, TSeq_id_HandleSet& h_set);
+    void GetMatchingHandlesStr(string sid,
+                               TSeq_id_HandleSet& h_set);
+    
     // Get seq-id for the given handle
     static const CSeq_id& GetSeq_id(const CSeq_id_Handle& handle);
-
+    
 private:
     CSeq_id_Mapper(void);
+    
     friend class CSafeStaticRef<CSeq_id_Mapper>;
-
+    friend class CSeq_id_Handle;
+    
     // References to each handle must be tracked to re-use their values
     // Each CSeq_id_Handle locks itself in the constructor and
     // releases in the destructor.
-    void AddHandleReference(const CSeq_id_Handle& handle);
-    void ReleaseHandleReference(const CSeq_id_Handle& handle);
-    bool IsBetter(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
-    const CSeq_id* x_GetSeq_id(TSeq_id_Key key) const;
-    friend class CSeq_id_Handle;
+    void x_RemoveLastReference(CSeq_id_Info* info);
+    //static void sx_RemoveLastReference(CSeq_id_Info* info);
+    bool x_IsBetter(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
+    //static bool sx_IsBetter(const CSeq_id_Handle& h1,
+    //const CSeq_id_Handle& h2);
+
+
+    CSeq_id_Which_Tree& x_GetTree(const CSeq_id_Handle& idh);
+    CSeq_id_Which_Tree& x_GetTree(const CSeq_id& id);
+    const CSeq_id_Which_Tree& x_GetTree(const CSeq_id_Handle& idh) const;
+    const CSeq_id_Which_Tree& x_GetTree(const CSeq_id& id) const;
 
     // Hide copy constructor and operator
     CSeq_id_Mapper(const CSeq_id_Mapper&);
     CSeq_id_Mapper& operator= (const CSeq_id_Mapper&);
 
-    // Get next available key for CSeq_id_Handle
-    TSeq_id_Key GetNextKey(void);
-
-    // Table for id reference counters. The keys are grouped by
-    // kKeyUsageTableSize elements. When a group is completely
-    // unreferenced, it may be deleted and its keys re-used.
-    typedef map<size_t, size_t> TKeyUsageTable;
-    TKeyUsageTable m_KeyUsageTable;
-
-    // Next available key value -- must be read through GetNextKey() only.
-    TSeq_id_Key m_NextKey;
-
     // Some map entries may point to the same subtree (e.g. gb, dbj, emb).
-    typedef map<CSeq_id::E_Choice, CRef<CSeq_id_Which_Tree> > TIdMap;
-    typedef map<TSeq_id_Key, CRef<CSeq_id> >                  TKeyToIdMap;
-    TIdMap      m_IdMap;
-    TKeyToIdMap m_KeyMap;
+    typedef vector<CRef<CSeq_id_Which_Tree> >                 TTrees;
+
+    TTrees          m_Trees;
     mutable CMutex  m_IdMapMutex;
+
+    static CSafeStaticRef<CSeq_id_Mapper> s_Seq_id_Mapper;
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Inline methods
+//
+/////////////////////////////////////////////////////////////////////////////
+
+
+inline
+const CSeq_id& CSeq_id_Mapper::GetSeq_id(const CSeq_id_Handle& h)
+{
+    return h.GetSeqId();
+}
 
 
 END_SCOPE(objects)
@@ -183,14 +141,8 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.17  2003/06/02 16:01:36  dicuccio
-* Rearranged include/objects/ subtree.  This includes the following shifts:
-*     - include/objects/alnmgr --> include/objtools/alnmgr
-*     - include/objects/cddalignview --> include/objtools/cddalignview
-*     - include/objects/flat --> include/objtools/flat
-*     - include/objects/objmgr/ --> include/objmgr/
-*     - include/objects/util/ --> include/objmgr/util/
-*     - include/objects/validator --> include/objtools/validator
+* Revision 1.18  2003/06/10 19:06:34  vasilche
+* Simplified CSeq_id_Mapper and CSeq_id_Handle.
 *
 * Revision 1.16  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.

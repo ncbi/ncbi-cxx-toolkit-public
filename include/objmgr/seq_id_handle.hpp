@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *   Seq-id handle for Object Manager
@@ -49,22 +49,47 @@ BEGIN_SCOPE(objects)
 //    methods of comparison: exact equality or match of seq-ids.
 //
 
-
-typedef size_t TSeq_id_Key;
-
 // forward declaration
-class CSeq_id_Mapper;
 class CSeq_id;
+class CSeq_id_Handle;
+class CSeq_id_Mapper;
+class CSeq_id_Which_Tree;
+
+
+class NCBI_XOBJMGR_EXPORT CSeq_id_Info
+{
+public:
+    const CSeq_id& GetSeq_id(void) const
+        {
+            return *m_Seq_id;
+        }
+
+protected:
+    explicit CSeq_id_Info(const CConstRef<CSeq_id>& seq_id);
+    ~CSeq_id_Info(void);
+
+    friend class CSeq_id_Handle;     // for counter
+    friend class CSeq_id_Mapper;     // for creation/deletion
+    friend class CSeq_id_Which_Tree; // for creation/deletion
+
+    CAtomicCounter     m_Counter;
+    CConstRef<CSeq_id> m_Seq_id;
+
+private:
+    CSeq_id_Info(const CSeq_id_Info&);
+    const CSeq_id_Info& operator=(const CSeq_id_Info&);
+};
+
 
 class NCBI_XOBJMGR_EXPORT CSeq_id_Handle
 {
 public:
     // 'ctors
-    CSeq_id_Handle(void); // Create an empty handle
+    CSeq_id_Handle(CSeq_id_Info* info = 0);
     CSeq_id_Handle(const CSeq_id_Handle& handle);
     ~CSeq_id_Handle(void);
 
-    CSeq_id_Handle& operator= (const CSeq_id_Handle& handle);
+    const CSeq_id_Handle& operator= (const CSeq_id_Handle& handle);
     bool operator== (const CSeq_id_Handle& handle) const;
     bool operator<  (const CSeq_id_Handle& handle) const;
 
@@ -81,11 +106,16 @@ public:
     string AsString() const;
 
     const CSeq_id& GetSeqId(void) const;
+    const CSeq_id* GetSeqIdOrNull(void) const;
+    const CSeq_id* x_GetSeqId(void) const;
 
 private:
-    // This constructor should be used by mappers only
-    CSeq_id_Handle(CSeq_id_Mapper& mapper,
-                   TSeq_id_Key key);
+
+    void x_AddReference(void);
+    void x_AddReferenceIfSet(void);
+    void x_RemoveLastReference(void);
+    void x_RemoveReference(void);
+    void x_RemoveReferenceIfSet(void);
 
     // Comparison methods
     // True if handles are strictly equal
@@ -93,17 +123,11 @@ private:
     // True if "this" may be resolved to "handle"
     bool x_Match(const CSeq_id_Handle& handle) const;
 
-    const CSeq_id* x_GetSeqId(void) const;
-
-    // Seq-id mapper (to lock/unlock the handle)
-    CSeq_id_Mapper* m_Mapper;
-    // Handle value
-    TSeq_id_Key m_Value;
+    // Seq-id info
+    CSeq_id_Info* m_Info;
 
     friend class CSeq_id_Mapper;
     friend class CSeq_id_Which_Tree;
-    friend class CBioseq_Handle;
-    friend class CDataLoader;
 };
 
 
@@ -115,34 +139,157 @@ private:
 /////////////////////////////////////////////////////////////////////
 
 
-inline
-CSeq_id_Handle::CSeq_id_Handle(void)
-    : m_Mapper(0), m_Value(0)
-{
-}
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_id_Info
+/////////////////////////////////////////////////////////////////////////////
+
 
 inline
-bool CSeq_id_Handle::operator== (const CSeq_id_Handle& handle) const
+CSeq_id_Info::CSeq_id_Info(const CConstRef<CSeq_id>& seq_id)
+    : m_Seq_id(seq_id)
 {
-    return m_Value == handle.m_Value;
+    m_Counter.Set(0);
 }
 
+
 inline
-bool CSeq_id_Handle::operator< (const CSeq_id_Handle& handle) const
+CSeq_id_Info::~CSeq_id_Info(void)
 {
-    return m_Value < handle.m_Value;
+    _ASSERT(m_Counter.Get() == 0);
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_id_Handle
+/////////////////////////////////////////////////////////////////////////////
+
 
 inline
 CSeq_id_Handle::operator bool (void) const
 {
-    return m_Value != 0;
+    return m_Info != 0;
 }
+
 
 inline
 bool CSeq_id_Handle::operator! (void) const
 {
-    return m_Value == 0;
+    return m_Info == 0;
+}
+
+
+inline
+void CSeq_id_Handle::x_AddReference(void)
+{
+    m_Info->m_Counter.Add(1);
+}
+
+
+inline
+void CSeq_id_Handle::x_RemoveReference(void)
+{
+    if ( m_Info->m_Counter.Add(-1) == 0 ) {
+        x_RemoveLastReference();
+    }
+}
+
+
+inline
+void CSeq_id_Handle::x_AddReferenceIfSet(void)
+{
+    if ( m_Info ) {
+        x_AddReference();
+    }
+}
+
+
+inline
+void CSeq_id_Handle::x_RemoveReferenceIfSet(void)
+{
+    if ( m_Info ) {
+        x_RemoveReference();
+    }
+}
+
+
+inline
+CSeq_id_Handle::CSeq_id_Handle(CSeq_id_Info* info)
+    : m_Info(info)
+{
+    x_AddReferenceIfSet();
+}
+
+
+inline
+CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Handle& h)
+    : m_Info(h.m_Info)
+{
+    x_AddReferenceIfSet();
+}
+
+
+inline
+CSeq_id_Handle::~CSeq_id_Handle(void)
+{
+    x_RemoveReferenceIfSet();
+}
+
+
+inline
+const CSeq_id_Handle& CSeq_id_Handle::operator=(const CSeq_id_Handle& h)
+{
+    if ( m_Info != h.m_Info ) {
+        x_RemoveReferenceIfSet();
+        m_Info = h.m_Info;
+        x_AddReferenceIfSet();
+    }
+    return *this;
+}
+
+
+inline
+void CSeq_id_Handle::Reset(void)
+{
+    if ( m_Info ) {
+        x_RemoveReference();
+        m_Info = 0;
+    }
+}
+
+
+inline
+bool CSeq_id_Handle::operator== (const CSeq_id_Handle& handle) const
+{
+    return m_Info == handle.m_Info;
+}
+
+
+inline
+bool CSeq_id_Handle::operator< (const CSeq_id_Handle& handle) const
+{
+    return m_Info < handle.m_Info;
+}
+
+
+inline
+const CSeq_id& CSeq_id_Handle::GetSeqId(void) const
+{
+    _ASSERT(m_Info);
+    return *m_Info->m_Seq_id;
+}
+
+
+inline
+const CSeq_id* CSeq_id_Handle::GetSeqIdOrNull(void) const
+{
+    return !m_Info? 0: m_Info->m_Seq_id.GetPointer();
+}
+
+
+inline
+const CSeq_id* CSeq_id_Handle::x_GetSeqId(void) const
+{
+    return GetSeqIdOrNull();
 }
 
 
@@ -160,6 +307,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/06/10 19:06:34  vasilche
+* Simplified CSeq_id_Mapper and CSeq_id_Handle.
+*
 * Revision 1.13  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

@@ -1036,9 +1036,8 @@ void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
     TTSE_Lock tse_info(x_FindBestTSE(main_idh));
     if ( !tse_info ) {
         // Try to find the best matching id (not exactly equal)
-        const CSeq_id& id = idh.GetSeqId();
         TSeq_id_HandleSet hset;
-        GetSeq_id_Mapper().GetMatchingHandles(id, hset);
+        GetSeq_id_Mapper().GetMatchingHandles(idh, hset);
         ITERATE(TSeq_id_HandleSet, hit, hset) {
             if ( bool(tse_info)  &&  idh.IsBetter(*hit) )
                 continue;
@@ -1300,8 +1299,7 @@ CSeqMatch_Info CDataSource::BestResolve(CSeq_id_Handle idh)
     if ( !tse ) {
         // Try to find the best matching id (not exactly equal)
         TSeq_id_HandleSet hset;
-        GetSeq_id_Mapper().GetMatchingHandles(
-            GetSeq_id_Mapper().GetSeq_id(idh), hset);
+        GetSeq_id_Mapper().GetMatchingHandles(idh, hset);
         ITERATE(TSeq_id_HandleSet, hit, hset) {
             if ( bool(tse)  &&  idh.IsBetter(*hit) )
                 continue;
@@ -1483,6 +1481,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.108  2003/06/10 19:06:35  vasilche
+* Simplified CSeq_id_Mapper and CSeq_id_Handle.
+*
 * Revision 1.107  2003/06/10 15:26:20  vasilche
 * Fixed removal of multi location annotations too.
 *

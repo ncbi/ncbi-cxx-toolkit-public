@@ -270,7 +270,7 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
     }
     CBioseq_Handle ret;
     TSeq_id_HandleSet hset;
-    x_GetIdMapper().GetMatchingHandles(id.GetSeqId(), hset);
+    x_GetIdMapper().GetMatchingHandles(id, hset);
     ITERATE ( TSeq_id_HandleSet, hit, hset ) {
         CSeqMatch_Info match(id, bh.m_Bioseq_Info->GetTSE_Info());
         if ( match.GetBioseq_Info() ) {
@@ -724,6 +724,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2003/06/10 19:06:35  vasilche
+* Simplified CSeq_id_Mapper and CSeq_id_Handle.
+*
 * Revision 1.70  2003/06/02 16:06:38  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

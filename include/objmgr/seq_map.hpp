@@ -72,6 +72,7 @@ typedef TSeqPos TSeqLength;
 
 class CScope;
 class CDataSource;
+class CBioseq_Handle;
 class CSegmentPtr;
 class CSeqMap_CI;
 class CSeqMap_CI_SegmentInfo;
@@ -339,6 +340,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/06/10 19:06:34  vasilche
+* Simplified CSeq_id_Mapper and CSeq_id_Handle.
+*
 * Revision 1.35  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko
+* Author: Aleksey Grichenko, Eugene Vasilchenko
 *
 * File Description:
 *   Seq-id handle for Object Manager
@@ -44,59 +44,9 @@ BEGIN_SCOPE(objects)
 //
 
 
-CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Handle& handle)
-    : m_Mapper(handle.m_Mapper),
-      m_Value(handle.m_Value)
+void CSeq_id_Handle::x_RemoveLastReference(void)
 {
-    if ( m_Mapper )
-        m_Mapper->AddHandleReference(*this);
-}
-
-
-CSeq_id_Handle::CSeq_id_Handle(CSeq_id_Mapper& mapper,
-                               TSeq_id_Key key)
-    : m_Mapper(&mapper),
-      m_Value(key)
-{
-    m_Mapper->AddHandleReference(*this);
-}
-
-
-CSeq_id_Handle::~CSeq_id_Handle(void)
-{
-    if ( m_Mapper )
-        m_Mapper->ReleaseHandleReference(*this);
-}
-
-
-CSeq_id_Handle& CSeq_id_Handle::operator= (const CSeq_id_Handle& handle)
-{
-    if (&handle != this) {
-        Reset();
-        m_Mapper = handle.m_Mapper;
-        m_Value = handle.m_Value;
-        if ( m_Mapper )
-            m_Mapper->AddHandleReference(*this);
-    }
-    return *this;
-}
-
-
-void CSeq_id_Handle::Reset(void)
-{
-    if ( m_Mapper ) {
-        m_Mapper->ReleaseHandleReference(*this);
-        m_Mapper = 0;
-        m_Value = 0;
-    }
-}
-
-bool CSeq_id_Handle::x_Equal(const CSeq_id_Handle& handle) const
-{
-    // Different mappers -- handle can not be equal
-    if (m_Mapper != handle.m_Mapper)
-        return false;
-    return m_Value == handle.m_Value;
+    CSeq_id_Mapper::GetSeq_id_Mapper().x_RemoveLastReference(m_Info);
 }
 
 
@@ -106,27 +56,15 @@ bool CSeq_id_Handle::x_Match(const CSeq_id_Handle& handle) const
     if ( !*this ) {
         return !handle;
     }
-    return handle && GetSeqId().Match(handle.GetSeqId());
+    if ( !handle )
+        return false;
+    return GetSeqId().Match(handle.GetSeqId());
 }
 
 
 bool CSeq_id_Handle::IsBetter(const CSeq_id_Handle& h) const
 {
-    if (m_Mapper != h.m_Mapper  ||  !m_Mapper)
-        return false;
-    return m_Mapper->IsBetter(*this, h);
-}
-
-
-const CSeq_id& CSeq_id_Handle::GetSeqId(void) const
-{
-    return *m_Mapper->x_GetSeq_id(m_Value);
-}
-
-
-const CSeq_id* CSeq_id_Handle::x_GetSeqId(void) const
-{
-    return *this? m_Mapper->x_GetSeq_id(m_Value): 0;
+    return CSeq_id_Mapper::GetSeq_id_Mapper().x_IsBetter(*this, h);
 }
 
 
@@ -148,18 +86,8 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.12  2003/06/02 16:06:38  dicuccio
-* Rearranged src/objects/ subtree.  This includes the following shifts:
-*     - src/objects/asn2asn --> arc/app/asn2asn
-*     - src/objects/testmedline --> src/objects/ncbimime/test
-*     - src/objects/objmgr --> src/objmgr
-*     - src/objects/util --> src/objmgr/util
-*     - src/objects/alnmgr --> src/objtools/alnmgr
-*     - src/objects/flat --> src/objtools/flat
-*     - src/objects/validator --> src/objtools/validator
-*     - src/objects/cddalignview --> src/objtools/cddalignview
-* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
-* replaces the three libmmdb? libs.
+* Revision 1.13  2003/06/10 19:06:35  vasilche
+* Simplified CSeq_id_Mapper and CSeq_id_Handle.
 *
 * Revision 1.11  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
