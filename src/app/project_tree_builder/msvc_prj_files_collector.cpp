@@ -37,7 +37,7 @@ BEGIN_NCBI_SCOPE
 
 static void s_CollectRelPathes(const string&        path_from,
                                const list<string>&  abs_dirs,
-                               const list<string>&  file_masks,
+                               const list<string>&  file_exts,
                                list<string>*        rel_pathes);
 
 
@@ -284,22 +284,24 @@ CMsvcPrjFilesCollector::CollectResources
 // Collect all files from specified dirs having specified exts
 static void s_CollectRelPathes(const string&        path_from,
                                const list<string>&  abs_dirs,
-                               const list<string>&  file_masks,
+                               const list<string>&  file_exts,
                                list<string>*        rel_pathes)
 {
     rel_pathes->clear();
 
     list<string> pathes;
-    ITERATE(list<string>, p, file_masks) {
+    ITERATE(list<string>, p, file_exts) {
+        const string& ext = *p;
         ITERATE(list<string>, n, abs_dirs) {
             CDir dir(*n);
             if ( !dir.Exists() )
                 continue;
-            CDir::TEntries contents = dir.GetEntries("*" + *p);
+            CDir::TEntries contents = dir.GetEntries("*" + ext);
             ITERATE(CDir::TEntries, i, contents) {
                 if ( (*i)->IsFile() ) {
                     string path  = (*i)->GetPath();
-                    pathes.push_back(path);
+                    if ( NStr::EndsWith(path, ext, NStr::eNocase) )
+                        pathes.push_back(path);
                 }
             }
         }
@@ -315,6 +317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/10 19:54:34  gorelenk
+ * Changed s_CollectRelPathes .
+ *
  * Revision 1.2  2004/03/05 20:32:48  gorelenk
  * Added implementation of CMsvcPrjFilesCollector member-functions.
  *
