@@ -56,6 +56,7 @@ BEGIN_NCBI_SCOPE
 static CMutex s_DiagMutex;
 
 #ifdef NCBI_POSIX_THREADS
+#include <unistd.h> // for pthread_atfork()
 extern "C" {
     static void s_NcbiDiagPreFork(void)  { s_DiagMutex.Lock();   }
     static void s_NcbiDiagPostFork(void) { s_DiagMutex.Unlock(); }
@@ -664,6 +665,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.52  2002/05/03 14:29:17  ucko
+ * #include <unistd.h> for pthread_atfork(); the other headers do not
+ * necessarily already include it.
+ *
  * Revision 1.51  2002/04/25 21:49:05  ucko
  * Made pthread_atfork callbacks extern "C".
  *
