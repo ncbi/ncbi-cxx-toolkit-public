@@ -57,8 +57,8 @@ void CThreadedServer::Run(void)
 
     if (m_InitThreads <= 0  ||  m_MaxThreads < m_InitThreads
         ||  m_MaxThreads > 1000  ||  m_Port > 65535) {
-        ERR_POST("CThreadedServer::Run: Bad parameters!");
-        return;
+        NCBI_THROW(CThreadedServerException, eBadParameters,
+                   "CThreadedServer::Run: Bad parameters");
     }
 
     CStdPoolOfThreads pool(m_MaxThreads, m_QueueSize, m_SpawnThreshold);
@@ -66,8 +66,9 @@ void CThreadedServer::Run(void)
 
     CListeningSocket lsock(m_Port);
     if (lsock.GetStatus() != eIO_Success) {
-        ERR_POST("CThreadedServer::Run: Unable to create listening socket");
-        return;
+        NCBI_THROW(CThreadedServerException, eCouldntListen,
+                   "CThreadedServer::Run: Unable to create listening socket: "
+                   + string(strerror(errno)));
     }
 
     for (;;) {
@@ -101,6 +102,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.10  2003/08/12 19:28:11  ucko
+* Throw CThreadedServerException for abnormal exits.
+*
 * Revision 6.9  2002/11/04 21:29:02  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
