@@ -608,7 +608,8 @@ void CObjectIStream::SkipFileHeader(TTypeInfo typeInfo)
     BEGIN_OBJECT_FRAME2(eFrameNamed, typeInfo);
     
     string name = ReadFileHeader();
-    if ( !name.empty() && name != typeInfo->GetName() ) {
+    const string& tname = typeInfo->GetName();
+    if ( !name.empty() && !tname.empty() && name != tname ) {
         ThrowError(fFormatError,
                    "incompatible type "+name+"<>"+typeInfo->GetName());
     }
@@ -1523,6 +1524,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.135  2005/02/09 14:26:00  gouriano
+* Check type name for being non-empty when skipping file header
+*
 * Revision 1.134  2005/02/01 21:47:14  grichenk
 * Fixed warnings
 *
