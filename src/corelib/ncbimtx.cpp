@@ -597,23 +597,23 @@ void CRWLock::Unlock(void)
 
     if (m_Count < 0) {
         // Check it is R-locked or W-locked by the same thread
-	    xncbi_Validate(m_Owner == self_id,
-					   "CRWLock::Unlock() - "
+        xncbi_Validate(m_Owner == self_id,
+                       "CRWLock::Unlock() - "
                        "RWLock is locked by another thread");
         if ( ++m_Count == 0 ) {
-			// Unlock the last W-lock
+            // Unlock the last W-lock
 #if defined(NCBI_WIN32_THREADS)
-			xncbi_Validate(m_RW->m_Rsema.Release() == 0,
-						   "CRWLock::Unlock() - invalid R-semaphore state");
-			xncbi_Validate(m_RW->m_Wsema.Release() == 0,
-						   "CRWLock::Unlock() - invalid R-semaphore state");
+            xncbi_Validate(m_RW->m_Rsema.Release() == 0,
+                           "CRWLock::Unlock() - invalid R-semaphore state");
+            xncbi_Validate(m_RW->m_Wsema.Release() == 0,
+                           "CRWLock::Unlock() - invalid R-semaphore state");
 #elif defined(NCBI_POSIX_THREADS)
-			xncbi_Validate(pthread_cond_broadcast(m_RW->m_Rcond) == 0,
-						   "CRWLock::Unlock() - error signalling unlock");
-			xncbi_Validate(pthread_cond_signal(m_RW->m_Wcond) == 0,
-						   "CRWLock::Unlock() - error signalling unlock");
+            xncbi_Validate(pthread_cond_broadcast(m_RW->m_Rcond) == 0,
+                           "CRWLock::Unlock() - error signalling unlock");
+            xncbi_Validate(pthread_cond_signal(m_RW->m_Wcond) == 0,
+                           "CRWLock::Unlock() - error signalling unlock");
 #endif
-		}
+        }
 #if defined(_DEBUG)
         // Check if the unlocking thread is in the owners list
         assert(find(m_Readers.begin(), m_Readers.end(), self_id)
@@ -623,25 +623,25 @@ void CRWLock::Unlock(void)
     else {
         xncbi_Validate(m_Count != 0,
                        "CRWLock::Unlock() - RWLock is not locked");
-		if ( --m_Count == 0 ) {
-			// Unlock the last R-lock
+        if ( --m_Count == 0 ) {
+            // Unlock the last R-lock
 #if defined(NCBI_WIN32_THREADS)
-			xncbi_Validate(m_RW->m_Wsema.Release() == 0,
-						   "CRWLock::Unlock() - invalid W-semaphore state");
+            xncbi_Validate(m_RW->m_Wsema.Release() == 0,
+                           "CRWLock::Unlock() - invalid W-semaphore state");
 #elif defined(NCBI_POSIX_THREADS)
-			xncbi_Validate(pthread_cond_signal(m_RW->m_Wcond) == 0,
-						   "CRWLock::Unlock() - error signaling unlock");
+            xncbi_Validate(pthread_cond_signal(m_RW->m_Wcond) == 0,
+                           "CRWLock::Unlock() - error signaling unlock");
 #endif
-		}
+        }
 #if defined(_DEBUG)
         // Check if the unlocking thread is in the owners list
         list<CThreadSystemID>::iterator found =
             find(m_Readers.begin(), m_Readers.end(), self_id);
         assert(found != m_Readers.end());
         m_Readers.erase(found);
-		if ( m_Count == 0 ) {
-			assert(m_Readers.empty());
-		}
+        if ( m_Count == 0 ) {
+            assert(m_Readers.empty());
+        }
 #endif
     }
 #endif
@@ -765,8 +765,14 @@ void CSemaphore::Wait(void)
 #endif
 }
 
+#if defined(NCBI_NO_THREADS)
+# define NCBI_THREADS_ARG(arg) 
+#else
+# define NCBI_THREADS_ARG(arg) arg
+#endif
 
-bool CSemaphore::TryWait(unsigned int timeout_sec, unsigned int timeout_nsec)
+bool CSemaphore::TryWait(unsigned int NCBI_THREADS_ARG(timeout_sec),
+                         unsigned int NCBI_THREADS_ARG(timeout_nsec))
 {
 #if defined(NCBI_POSIX_THREADS)
     xncbi_Validate(pthread_mutex_lock(&m_Sem->mutex) == 0,
@@ -778,14 +784,14 @@ bool CSemaphore::TryWait(unsigned int timeout_sec, unsigned int timeout_nsec)
         retval = true;
     }
     else if (timeout_sec > 0  ||  timeout_nsec > 0) {
-#ifdef NCBI_OS_SOLARIS
+# ifdef NCBI_OS_SOLARIS
         // arbitrary limit of 100Ms (~3.1 years) -- supposedly only for
         // native threads, but apparently also for POSIX threads :-/
         if (timeout_sec >= 100 * 1000 * 1000) {
             timeout_sec  = 100 * 1000 * 1000;
             timeout_nsec = 0;
         }
-#endif
+# endif
         static const unsigned int kBillion = 1000 * 1000 * 1000;
         struct timeval  now;
         struct timespec timeout = { 0, 0 };
@@ -925,6 +931,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/09/24 18:29:53  vasilche
+ * Removed TAB symbols. Removed unused arg warning in single thread mode.
+ *
  * Revision 1.8  2002/09/23 13:47:23  vasilche
  * Made static mutex structures POD-types on Win32
  *
