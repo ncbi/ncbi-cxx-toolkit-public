@@ -425,9 +425,6 @@ BlastMask2CSeqLoc(BlastMask* mask, TSeqLocVector &slp,
     int index, frame, num_frames;
     bool translated_query;
 
-    if (!mask)
-        return retval;
-
     translated_query = (program == eBlastx ||
                         program == eTblastx);
 
@@ -436,11 +433,15 @@ BlastMask2CSeqLoc(BlastMask* mask, TSeqLocVector &slp,
     TSeqLocInfo mask_info_list;
 
     for (index = 0; index < slp.size(); ++index) {
+        if (!mask) {
+            retval.push_back(0);
+            continue;
+        }
         for ( ; mask && mask->index < index*num_frames;
               mask = mask->next);
+        BlastSeqLoc* loc;
         CDisplaySeqalign::SeqlocInfo* seqloc_info =
             new CDisplaySeqalign::SeqlocInfo;
-        BlastSeqLoc* loc;
 
         mask_info_list.clear();
 
