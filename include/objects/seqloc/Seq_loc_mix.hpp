@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2001/08/24 13:45:01  grichenk
+ * included <memory>
+ *
  * Revision 1.5  2001/08/23 22:33:49  vakatov
  * + <memory>
  *
@@ -58,6 +61,7 @@
 #ifndef OBJECTS_SEQLOC_SEQ_LOC_MIX_HPP
 #define OBJECTS_SEQLOC_SEQ_LOC_MIX_HPP
 
+#include <memory>
 
 // generated includes
 #include <objects/seqloc/Seq_loc_mix_.hpp>
