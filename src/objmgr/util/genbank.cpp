@@ -217,9 +217,9 @@ const unsigned int CGenbankWriter::sm_FeatureNameIndent = 5;
 const unsigned int CGenbankWriter::sm_FeatureNameWidth = 16;
 
 
-bool CGenbankWriter::Write(const CSeq_entry& entry)
+bool CGenbankWriter::Write(const CSeq_entry& entry) const
 {
-    typedef bool (CGenbankWriter::*TFun)(const CBioseq_Handle&);
+    typedef bool (CGenbankWriter::*TFun)(const CBioseq_Handle&) const;
     static const TFun funlist[]
         = { &CGenbankWriter::WriteLocus,
             &CGenbankWriter::WriteDefinition,
@@ -343,7 +343,7 @@ static string s_StripDot(const string& s) {
 }
 
 
-bool CGenbankWriter::WriteLocus(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteLocus(const CBioseq_Handle& handle) const
 {
     const CBioseq& seq = handle.GetBioseq();
     const CSeq_inst& inst = seq.GetInst();
@@ -502,7 +502,7 @@ bool CGenbankWriter::WriteLocus(const CBioseq_Handle& handle)
 }
 
 
-bool CGenbankWriter::WriteDefinition(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteDefinition(const CBioseq_Handle& handle) const
 {
     string definition = sequence::GetTitle(handle);
     if (definition.empty()  ||  definition[definition.size()-1] != '.') {
@@ -513,7 +513,7 @@ bool CGenbankWriter::WriteDefinition(const CBioseq_Handle& handle)
 }
 
 
-bool CGenbankWriter::WriteAccession(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteAccession(const CBioseq_Handle& handle) const
 {
     const CBioseq& seq = handle.GetBioseq();
     string accessions;
@@ -555,7 +555,7 @@ bool CGenbankWriter::WriteAccession(const CBioseq_Handle& handle)
 }
 
 
-bool CGenbankWriter::WriteID(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteID(const CBioseq_Handle& handle) const
 {
     if (m_Format == eFormat_Genbank) {
         return true;
@@ -572,7 +572,7 @@ bool CGenbankWriter::WriteID(const CBioseq_Handle& handle)
 }
 
 
-bool CGenbankWriter::WriteVersion(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteVersion(const CBioseq_Handle& handle) const
 {
     const CBioseq& seq = handle.GetBioseq();
     string accession;
@@ -602,7 +602,7 @@ bool CGenbankWriter::WriteVersion(const CBioseq_Handle& handle)
 }
 
 
-bool CGenbankWriter::WriteDBSource(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteDBSource(const CBioseq_Handle& /* handle */) const
 {
     if (m_Format == eFormat_Genbank) {
         return true;
@@ -613,7 +613,7 @@ bool CGenbankWriter::WriteDBSource(const CBioseq_Handle& handle)
 }
 
 
-bool CGenbankWriter::WriteKeywords(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteKeywords(const CBioseq_Handle& handle) const
 {
     vector<string> keywords;
 
@@ -696,7 +696,7 @@ bool CGenbankWriter::WriteKeywords(const CBioseq_Handle& handle)
 }
 
 
-bool CGenbankWriter::WriteSegment(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteSegment(const CBioseq_Handle& handle) const
 {
     const CBioseq& seq = handle.GetBioseq();
     const CSeq_entry* parent_entry = seq.GetParentEntry()->GetParentEntry();
@@ -725,7 +725,7 @@ bool CGenbankWriter::WriteSegment(const CBioseq_Handle& handle)
 }
 
 
-bool CGenbankWriter::WriteSource(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteSource(const CBioseq_Handle& handle) const
 {
     string source, taxname, lineage;
     for (CSeqdesc_CI it(handle, CSeqdesc::e_Genbank);
@@ -1073,7 +1073,6 @@ string CReference::GetLocString(const string& length_unit) const
     switch (m_Pub->GetReftype()) {
     case CPubdesc::eReftype_sites:
         return "sites";
-        break;
 
     default:
         switch (m_Loc->Which()) {
@@ -1095,7 +1094,6 @@ string CReference::GetLocString(const string& length_unit) const
             CSeq_loc::TRange range = m_Loc->GetTotalRange();
             return (length_unit + ' ' + NStr::IntToString(range.GetFrom() + 1)
                     + " to " + NStr::IntToString(range.GetTo() + 1));
-            break;
         }
         break;
     }
@@ -1172,7 +1170,7 @@ bool CRefLess::operator()(CConstRef<CReference> ref1,
 }
 
 
-bool CGenbankWriter::WriteReference(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteReference(const CBioseq_Handle& handle) const
 {
     const CBioseq& seq = handle.GetBioseq();
     CSeq_loc everywhere;
@@ -1419,7 +1417,7 @@ bool CGenbankWriter::WriteReference(const CBioseq_Handle& handle)
 }
 
 
-bool CGenbankWriter::WriteComment(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteComment(const CBioseq_Handle& handle) const
 {
     string comments;
     for (CSeqdesc_CI it(handle, CSeqdesc::e_Comment);
@@ -1529,7 +1527,7 @@ static const char* s_ASCIIToAbbrev(char aa)
 }
 
 
-bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
 {
     const CBioseq& seq = handle.GetBioseq();
     CSeq_loc everywhere;
@@ -1964,7 +1962,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle)
                     vec.SetIupacCoding();
                     string data;
                     data.resize(vec.size());
-                    for (SIZE_TYPE n = 0; n < vec.size(); n++) {
+                    for (TSeqPos n = 0;  n < vec.size();  n++) {
                         data[n] = vec[n];
                     }
                     gbfeat.AddQual(CGBQual::eType_translation, data);
@@ -2290,7 +2288,7 @@ static TGBSQuals s_SourceQualifiers(const CBioSource& source)
 }
 
 
-bool CGenbankWriter::WriteSequence(const CBioseq_Handle& handle)
+bool CGenbankWriter::WriteSequence(const CBioseq_Handle& handle) const
 {
     CSeqVector vec = handle.GetSeqVector();
     vec.SetIupacCoding();
@@ -2331,7 +2329,7 @@ bool CGenbankWriter::WriteSequence(const CBioseq_Handle& handle)
 
 
 void CGenbankWriter::Wrap(const string& keyword, const string& contents,
-                          unsigned int indent)
+                          unsigned int indent) const
 {
     unsigned int data_width = sm_LineWidth - indent;
 
@@ -2373,7 +2371,7 @@ void CGenbankWriter::Wrap(const string& keyword, const string& contents,
 
 void CGenbankWriter::FormatIDPrefix(const CSeq_id& id,
                                     const CBioseq& default_seq,
-                                    CNcbiOstream& dest)
+                                    CNcbiOstream& dest) const
 {
     iterate (CBioseq::TId, it, default_seq.GetId()) {
         if ((*it)->Match(id)) {
@@ -2475,7 +2473,7 @@ const char* StrandSuffix(const T& location) {
 
 void CGenbankWriter::FormatFeatureInterval(const CSeq_interval& interval,
                                            const CBioseq& default_seq,
-                                           CNcbiOstream& dest)
+                                           CNcbiOstream& dest) const
 {
     dest << StrandPrefix(interval);
     FormatIDPrefix(interval.GetId(), default_seq, dest);
@@ -2497,7 +2495,7 @@ void CGenbankWriter::FormatFeatureInterval(const CSeq_interval& interval,
 
 void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
                                            const CBioseq& default_seq,
-                                           CNcbiOstream& dest)
+                                           CNcbiOstream& dest) const
 {
     // Add 1 to all numbers because genbank indexes from 1 but the raw
     // data indexes from 0
@@ -2637,7 +2635,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
 
 
 const CSeq_feat& CGenbankWriter::FindFeature(const CFeat_id& id,
-                                             const CBioseq& default_seq)
+                                             const CBioseq& default_seq) const
 {
     static CSeq_feat dummy;
     const CSeq_entry& tse =
@@ -2735,7 +2733,7 @@ const CSeq_feat& CGenbankWriter::FindFeature(const CFeat_id& id,
 
 
 void CGenbankWriter::WriteFeatureLocation(const string& name,
-                                          const string& location)
+                                          const string& location) const
 {
     static const string indent(sm_FeatureNameIndent, ' ');
     Wrap(indent + name, location, sm_FeatureNameIndent + sm_FeatureNameWidth);
@@ -2744,7 +2742,7 @@ void CGenbankWriter::WriteFeatureLocation(const string& name,
 
 void CGenbankWriter::WriteFeatureLocation(const string& name,
                                           const CSeq_loc& location,
-                                          const CBioseq& default_seq)
+                                          const CBioseq& default_seq) const
 {
     CNcbiOstrstream oss;
     FormatFeatureLocation(location, default_seq, oss);
@@ -2752,7 +2750,7 @@ void CGenbankWriter::WriteFeatureLocation(const string& name,
 }
 
 
-void CGenbankWriter::WriteFeatureQualifier(const string& qual)
+void CGenbankWriter::WriteFeatureQualifier(const string& qual) const
 {
     Wrap("", qual, sm_FeatureNameIndent + sm_FeatureNameWidth);
 }
@@ -2764,6 +2762,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.23  2002/10/10 17:57:56  ucko
+* Make most methods const (and m_Stream consequently mutable) to keep
+* WorkShop from complaining when CGenbankWriter is used as a temporary.
+* Address a couple of other warnings in the process.
+*
 * Revision 1.22  2002/09/17 22:27:32  grichenk
 * Type<> -> CType<>
 *
