@@ -165,13 +165,17 @@ void GetLabelContent(string*            label,
     // If unique paramter true, then add unique tag to end of label
     // constructed from the first character of each whitespace separated
     // word in titleunique
-    if (unique && titleunique && !titleunique->empty()) {
-        CNcbiIstrstream is(titleunique->c_str(), titleunique->size());
-        string tag, word;
-        int cnt = 0;
-        while ( (is >> word) && (cnt++ < 40) ) {
-            tag += word[0];
+    if (unique) {
+        string tag;
+        if (titleunique  &&  !titleunique->empty()) {
+            CNcbiIstrstream is(titleunique->c_str(), titleunique->size());
+            string tag, word;
+            int cnt = 0;
+            while ( (is >> word) && (cnt++ < 40) ) {
+                tag += word[0];
+            }
         }
+        // NB: add '|' even if tag is empty to maintain backward compatibility.
         *label += "|" + tag;
     }
 }
@@ -183,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2004/10/22 14:16:27  shomrat
+ * fixed generation of unique label
+ *
  * Revision 1.4  2004/09/29 14:05:34  shomrat
  * Fixes to match GetLabelContent to C version.
  *
