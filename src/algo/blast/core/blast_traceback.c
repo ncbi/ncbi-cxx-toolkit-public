@@ -942,6 +942,30 @@ static Uint1 GetTracebackEncoding(Uint1 program_number)
    return encoding;
 }
 
+/** Delete extra subject sequences hits, if after-traceback hit list size is
+ * smaller than preliminary hit list size.
+ * @param results All results after traceback, assumed already sorted by best
+ *                e-value [in] [out]
+ * @param hitlist_size Final hit list size [in]
+ */
+static void 
+BlastPruneExtraHits(BlastHSPResults* results, Int4 hitlist_size)
+{
+   Int4 query_index, subject_index;
+   BlastHitList* hit_list;
+
+   for (query_index = 0; query_index < results->num_queries; ++query_index) {
+      if (!(hit_list = results->hitlist_array[query_index]))
+         continue;
+      for (subject_index = hitlist_size;
+           subject_index < hit_list->hsplist_count; ++subject_index) {
+         hit_list->hsplist_array[subject_index] = 
+            BlastHSPListFree(hit_list->hsplist_array[subject_index]);
+      }
+      hit_list->hsplist_count = MIN(hit_list->hsplist_count, hitlist_size);
+   }
+}
+
 Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
@@ -1003,6 +1027,13 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
    /* Re-sort the hit lists according to their best e-values, because
       they could have changed */
    BLAST_SortResults(results);
+
+   /* Eliminate extra hits from results, if preliminary hit list size is larger
+      than the final hit list size */
+   if (hit_params->options->hitlist_size < 
+       hit_params->options->prelim_hitlist_size)
+      BlastPruneExtraHits(results, hit_params->options->hitlist_size);
+
    BlastSequenceBlkFree(seq_arg.seq);
 
    return status;
