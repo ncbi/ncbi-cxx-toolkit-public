@@ -30,8 +30,6 @@
  *
  */
 
-#define CONN_SUPPLY_TIMEOUTS
-
 #include "ncbi_ansi_ext.h"
 #include <connect/ncbi_core.h>
 #include <stdlib.h>
@@ -463,6 +461,9 @@ extern void REG_Set
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2003/08/28 18:47:51  ucko
+ * Revert previous hack (now handled another way)
+ *
  * Revision 6.13  2003/08/27 12:32:30  ucko
  * Yet another attempt to work around the WorkShop lossage with k*Timeout.
  *
