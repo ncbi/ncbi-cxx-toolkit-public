@@ -239,7 +239,7 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
     const bool record_coords  = scrn_width && scrn_lefts && scrn_rights;
 
     // allocate space for the row
-    char* c_buff = new char[aln_len * width + 1];
+    char* c_buff = new char[aln_len + 1];
     char* c_buff_ptr = c_buff;
     string buff;
     
@@ -391,7 +391,7 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
             }
         }
     }
-    c_buff[aln_len * width] = '\0';
+    c_buff[aln_len] = '\0';
     buffer = c_buff;
     delete [] c_buff;
     return buffer;
@@ -778,6 +778,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2003/09/26 16:58:34  todorov
+* Fixed the length of c_buff
+*
 * Revision 1.51  2003/09/23 21:29:34  todorov
 * Rearranged variables & fixed a bug
 *
