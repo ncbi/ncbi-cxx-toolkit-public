@@ -266,24 +266,34 @@ else
   new_dir=`pwd`
 fi
 
-for input in $old_dir/*; do
-  base=`basename $input | sed -e "s/${old_proj_name}/${proj_name}/g"`
-  case $base in
-    *~ | CVS | Makefile.*) continue ;; # skip
-  esac
-
-  output=$new_dir/$base
-  if test -f $output ; then
-    echo "\"$output\" already exists.  Do you want to override it?  [y/n]"
-    read answer
-    case "$answer" in
-      [Yy]*) ;;
-      *    ) exit 3 ;;
+CopySources()
+{
+  for input in $old_dir$1/*; do
+    base=`basename $input | sed -e "s/${old_proj_name}/${proj_name}/g"`
+    case $base in
+      *~ | CVS | Makefile.in | Makefile.${proj_name}.${proj_type})
+        continue ;; # skip
     esac
-  fi
-
-  sed -e "s/${old_proj_name}/${proj_name}/g" \
-      -e "s/${old_class_name}/${new_class_name}/g" < $input > $output
   
-  echo "Created a model source file \"$output\"."
-done
+    output=$new_dir$1/$base
+    if test -d $input; then
+      mkdir $output
+      CopySources $1/$base
+      continue
+    elif test -f $output ; then
+      echo "\"$output\" already exists.  Do you want to override it?  [y/n]"
+      read answer
+      case "$answer" in
+        [Yy]*) ;;
+        *    ) exit 3 ;;
+      esac
+    fi
+  
+    sed -e "s/${old_proj_name}/${proj_name}/g" \
+        -e "s/${old_class_name}/${new_class_name}/g" < $input > $output
+    
+    echo "Created a model source file \"$output\"."
+  done
+}
+
+CopySources ""
