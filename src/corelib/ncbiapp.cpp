@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/08/10 18:26:07  vakatov
+* Allow user to throw "CArgException" (and thus force USAGE printout
+* with user-provided explanation) not from any of Init(), Run() or Exit().
+*
 * Revision 1.31  2001/07/07 01:19:28  juran
 * Use "ncbi" for app name on Mac OS (if argv[0] is null).
 *
@@ -332,17 +336,53 @@ int CNcbiApplication::AppMain
         SetThrowTraceAbort(true);
     }
 
-    // Init application
+    // Call:  Init() + Run() + Exit()
     int exit_code = 1;
+
     try {
-        Init();
-    }
-    catch (CArgHelpException&) {
-        // Print USAGE
-        string str;
-        LOG_POST(string(72, '='));
-        LOG_POST(m_ArgDesc->PrintUsage(str));
-        exit_code = 0;
+        // Init application
+        try {
+            Init();
+        }
+        catch (CArgHelpException&) {
+            // Print USAGE
+            string str;
+            LOG_POST(string(72, '='));
+            LOG_POST(m_ArgDesc->PrintUsage(str));
+            exit_code = 0;
+        }
+        catch (CArgException& e) {
+            throw;
+        }
+        catch (exception& e) {
+            ERR_POST("CNcbiApplication::Init() failed: " << e.what());
+            exit_code = -2;
+        }
+
+        // Run application
+        if (exit_code == 1) {
+            try {
+                exit_code = Run();
+            }
+            catch (CArgException& e) {
+                throw;
+            }
+            catch (exception& e) {
+                ERR_POST("CNcbiApplication::Run() failed: " << e.what());
+                exit_code = -3;
+            }
+        }
+
+        // Close application
+        try {
+            Exit();
+        }
+        catch (CArgException& e) {
+            throw;
+        }
+        catch (exception& e) {
+            ERR_POST("CNcbiApplication::Exit() failed: " << e.what());
+        }
     }
     catch (CArgException& e) {
         // Print USAGE and the exception error message
@@ -353,28 +393,6 @@ int CNcbiApplication::AppMain
         }
         LOG_POST(" ERROR:  " << e.what());
         exit_code = -1;
-    }
-    catch (exception& e) {
-        ERR_POST("CNcbiApplication::Init() failed: " << e.what());
-        exit_code = -2;
-    }
-
-    // Run application
-    if (exit_code == 1) {
-        try {
-            exit_code = Run();
-        }
-        catch (exception& e) {
-            ERR_POST("CNcbiApplication::Run() failed: " << e.what());
-            exit_code = -3;
-        }
-    }
-
-    // Close application
-    try {
-        Exit();
-    } catch (exception& e) {
-        ERR_POST("CNcbiApplication::Exit() failed: " << e.what());
     }
 
     // Exit
