@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/16 14:18:44  thiessen
+* map 3-d objects to molecules
+*
 * Revision 1.8  2000/08/13 02:43:00  thiessen
 * added helix and strand objects
 *
@@ -221,7 +224,7 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
     }
     TESTMSG("drawing ChemicalGraph of object " << object->pdbID);
 
-    // put each protein or nucleotide chain in its own display list
+    // put each protein (with its 3d-objects) or nucleotide chain in its own display list
     bool continueDraw;
     AtomSetList::const_iterator a, ae=atomSetList.end();
     MoleculeMap::const_iterator m, me=molecules.end();
@@ -232,7 +235,7 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
         for (a=atomSetList.begin(); a!=ae; a++, md++) {
 
             // start new display list
-            TESTMSG("drawing molecule #" << m->second->id << " in display list " << *md
+            TESTMSG("drawing molecule #" << m->second->id << " + its objects in display list " << *md
 					<< " of " << atomSetList.size());
             parentSet->renderer->StartDisplayList(*md);
 
@@ -242,6 +245,20 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
             // draw this molecule with all alternative AtomSets (e.g., NMR's or altConfs)
             a->first->SetActiveEnsemble(a->second);
             continueDraw = m->second->DrawAll(a->first);
+
+            if (continueDraw) {
+                // find objects for this molecule;
+                // only use 3d-objects from first coordset, since they will only be
+                // present in a model with a single set of coordinates, anyway
+                CoordSet::Object3DMap::const_iterator
+                    objList = object->coordSets.front()->objectMap.find(m->second->id);
+                if (objList != object->coordSets.front()->objectMap.end()) {
+                    CoordSet::Object3DList::const_iterator o, oe=objList->second.end();
+                    for (o=objList->second.begin(); o!=oe; o++) {
+                        if (!(continueDraw = (*o)->Draw(a->first))) break;
+                    }
+                }
+            }
 
             // revert transformation matrix
             if (object->IsSlave()) parentSet->renderer->PopMatrix();
@@ -253,9 +270,9 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
         }
     }
 
-    // then put everything else (solvents, hets, intermolecule bonds, 3d-objects) in a single display list
+    // then put everything else (solvents, hets, intermolecule bonds) in a single display list
     if (displayListOtherStart == OpenGLRenderer::NO_LIST) return true;
-    TESTMSG("drawing hets/solvents/i-m bonds/objects");
+    TESTMSG("drawing hets/solvents/i-m bonds");
     int n = 0;
     for (a=atomSetList.begin(); a!=ae; a++, n++) {
     
@@ -263,25 +280,18 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
         parentSet->renderer->StartDisplayList(displayListOtherStart + n);
         if (object->IsSlave()) parentSet->renderer->PushMatrix(object->transformToMaster);
 
-        BondList::const_iterator b, be=interMoleculeBonds.end();
-        CoordSet::Object3DList::const_iterator o, oe=object->coordSets.front()->objects.end();
-
         for (m=molecules.begin(); m!=me; m++) {
             if (m->second->IsProtein() || m->second->IsNucleotide()) continue;
-            if (!(continueDraw = m->second->DrawAll(a->first))) goto skip;
+            if (!(continueDraw = m->second->DrawAll(a->first))) break;
         }
 
-        for (b=interMoleculeBonds.begin(); b!=be; b++) {
-            if (!(continueDraw = (*b)->Draw(a->first))) goto skip;
+        if (continueDraw) {
+            BondList::const_iterator b, be=interMoleculeBonds.end();
+            for (b=interMoleculeBonds.begin(); b!=be; b++) {
+                if (!(continueDraw = (*b)->Draw(a->first))) break;
+            }
         }
 
-        // only use 3d-objects from first coordset, since they will only be
-        // present in a model with a single set of coordinates, anyway
-        for (o=object->coordSets.front()->objects.begin(); o!=oe; o++) {
-            if (!(continueDraw = (*o)->Draw(a->first))) goto skip;
-        }
-
-skip:
         if (object->IsSlave()) parentSet->renderer->PopMatrix();
         parentSet->renderer->EndDisplayList();
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/16 14:18:44  thiessen
+* map 3-d objects to molecules
+*
 * Revision 1.7  2000/08/11 12:58:31  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -104,22 +107,24 @@ CoordSet::CoordSet(StructureBase *parent,
                     Helix3D *helix =
                         new Helix3D(this, coords.GetSurface().GetSurface().GetCylinder(),
                             coords.GetSurface().GetContents().GetResidues());
-                    if (helix->molecule == Object3D::NOT_SET) {
+                    if (helix->moleculeID == Object3D::NOT_SET) {
                         this->_RemoveChild(helix);
                         delete helix;
+                        TESTMSG("bad helix");
                     } else
-                        objects.push_back(helix);
+                        objectMap[helix->moleculeID].push_back(helix);
                 
                 // strand brick
                 } else if (descr == "strand" && coords.GetSurface().GetSurface().IsBrick()) {
                     Strand3D *strand =
                         new Strand3D(this, coords.GetSurface().GetSurface().GetBrick(),
                             coords.GetSurface().GetContents().GetResidues());
-                    if (strand->molecule == Object3D::NOT_SET) {
+                    if (strand->moleculeID == Object3D::NOT_SET) {
                         this->_RemoveChild(strand);
                         delete strand;
+                        TESTMSG("bad strand");
                     } else
-                        objects.push_back(strand);
+                        objectMap[strand->moleculeID].push_back(strand);
                 }                
             }
         }

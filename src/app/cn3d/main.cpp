@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/08/16 14:18:44  thiessen
+* map 3-d objects to molecules
+*
 * Revision 1.16  2000/08/13 02:43:00  thiessen
 * added helix and strand objects
 *
@@ -129,7 +132,7 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
     } else {
         if (!logFrame) {
             logFrame = new MsgFrame(NULL, -1, "Cn3D++ Message Log", 
-                wxPoint(50, 50), wxSize(400, 400), wxDEFAULT_FRAME_STYLE);
+                wxPoint(500, 0), wxSize(500, 500), wxDEFAULT_FRAME_STYLE);
             logFrame->SetSizeHints(150, 100);
             logText = new wxTextCtrl(logFrame, -1, "", 
                 wxPoint(0,0), wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
@@ -150,7 +153,7 @@ bool Cn3DApp::OnInit(void)
     SetDiagPostLevel(eDiag_Info); // report all messages
 
     // Create the main frame window
-    frame = new Cn3DMainFrame(NULL, "Cn3D++", wxPoint(450, 50), wxSize(400, 400),
+    frame = new Cn3DMainFrame(NULL, "Cn3D++", wxPoint(0,0), wxSize(500,500),
         wxDEFAULT_FRAME_STYLE);
 
     // get file name from command line for now
@@ -218,8 +221,6 @@ Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoin
         new Cn3DGLCanvas(this, -1, wxPoint(0, 0), wxSize(400, 400), 0, "Cn3DGLCanvas", gl_attrib);
     glCanvas->SetCurrent();
 
-    // center and Show the frame
-    //Centre(wxBOTH);
     Show(TRUE);
 }
 

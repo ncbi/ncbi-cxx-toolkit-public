@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/08/16 14:18:20  thiessen
+* map 3-d objects to molecules
+*
 * Revision 1.5  2000/08/11 12:59:13  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -51,9 +54,12 @@
 #ifndef CN3D_COORDSET__HPP
 #define CN3D_COORDSET__HPP
 
+#include <map>
+
 #include <objects/mmdb2/Biostruc_model.hpp>
 
 #include "cn3d/structure_base.hpp"
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -73,7 +79,8 @@ public:
     // public data
     AtomSet *atomSet;
     typedef LIST_TYPE < const Object3D * > Object3DList;
-    Object3DList objects;
+    typedef std::map < int, Object3DList > Object3DMap;
+    Object3DMap objectMap;
 
     // public methods
     bool Draw(const AtomSet *atomSet) const;

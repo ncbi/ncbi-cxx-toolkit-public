@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/08/16 14:18:46  thiessen
+* map 3-d objects to molecules
+*
 * Revision 1.15  2000/08/13 02:43:01  thiessen
 * added helix and strand objects
 *
@@ -381,7 +384,7 @@ void OpenGLRenderer::ShowNextFrame(void)
 void OpenGLRenderer::ShowPreviousFrame(void)
 {
     if (structureSet) {
-        if (currentFrame == 0)
+        if (currentFrame == 0 || currentFrame == ALL_FRAMES)
             currentFrame = structureSet->frameMap.size() - 1;
         else
             currentFrame--;

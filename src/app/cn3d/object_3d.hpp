@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/16 14:18:20  thiessen
+* map 3-d objects to molecules
+*
 * Revision 1.2  2000/08/13 02:42:13  thiessen
 * added helix and strand objects
 *
@@ -56,7 +59,7 @@ class Object3D : public StructureBase
 {
 public:
     static const int NOT_SET;
-    int molecule, fromResidue, toResidue;
+    int moleculeID, fromResidueID, toResidueID;
 
 protected:
     Object3D(StructureBase *parent,

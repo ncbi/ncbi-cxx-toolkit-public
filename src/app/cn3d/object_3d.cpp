@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/16 14:18:45  thiessen
+* map 3-d objects to molecules
+*
 * Revision 1.2  2000/08/13 02:43:01  thiessen
 * added helix and strand objects
 *
@@ -56,7 +59,8 @@ BEGIN_SCOPE(Cn3D)
 const int Object3D::NOT_SET = -1;
 
 Object3D::Object3D(StructureBase *parent, const CResidue_pntrs& residues) :
-    StructureBase(parent), molecule(NOT_SET), fromResidue(NOT_SET), toResidue(NOT_SET)
+    StructureBase(parent),
+    moleculeID(NOT_SET), fromResidueID(NOT_SET), toResidueID(NOT_SET)
 {
     if (!residues.IsInterval() || residues.GetInterval().size() != 1) {
         ERR_POST(Error << "Object3D::Object3D() - can't handle this type of Residue-pntrs (yet)!");
@@ -64,9 +68,9 @@ Object3D::Object3D(StructureBase *parent, const CResidue_pntrs& residues) :
     }
 
     const CResidue_interval_pntr& interval = residues.GetInterval().front().GetObject();
-    molecule = interval.GetMolecule_id().Get();
-    fromResidue = interval.GetFrom().Get();
-    toResidue = interval.GetTo().Get();
+    moleculeID = interval.GetMolecule_id().Get();
+    fromResidueID = interval.GetFrom().Get();
+    toResidueID = interval.GetTo().Get();
 }
 
 static inline void ModelPoint2Vector(const CModel_space_point& msp, Vector *v)
@@ -80,7 +84,7 @@ static inline void ModelPoint2Vector(const CModel_space_point& msp, Vector *v)
 Helix3D::Helix3D(StructureBase *parent, const CCylinder& cylinder, const CResidue_pntrs& residues) :
     Object3D(parent, residues)
 {
-    if (molecule == Object3D::NOT_SET) return;
+    if (moleculeID == Object3D::NOT_SET) return;
 
     ModelPoint2Vector(cylinder.GetAxis_bottom(), &Nterm);
     ModelPoint2Vector(cylinder.GetAxis_top(), &Cterm);
@@ -115,7 +119,7 @@ bool Helix3D::Draw(const AtomSet *data) const
 Strand3D::Strand3D(StructureBase *parent, const CBrick& brick, const CResidue_pntrs& residues) :
     Object3D(parent, residues)
 {
-    if (molecule == Object3D::NOT_SET) return;
+    if (moleculeID == Object3D::NOT_SET) return;
 
     Vector c1, c2;
     ModelPoint2Vector(brick.GetCorner_000(), &c1);
