@@ -51,6 +51,9 @@ public:
         m_NofDrvs= 0;
     }
 
+    FDBAPI_CreateContext GetDriver(const string& driver_name,
+                                   string* err_msg= 0);
+
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 
@@ -59,7 +62,7 @@ public:
     }
 
 protected:
-    // bool LoadDriverDll(const string& driver_name, string* err_msg);
+    bool LoadDriverDll(const string& driver_name, string* err_msg);
 
 private:
     typedef void            (*FDriverRegister) (I_DriverMgr& mgr);
@@ -76,13 +79,78 @@ private:
     CFastMutex m_Mutex2;
 };
 
-void C_xDriverMgr::RegisterDriver(const string&        /*driver_name*/,
-                                  FDBAPI_CreateContext /*driver_ctx_func*/ )
+void C_xDriverMgr::RegisterDriver(const string&        driver_name,
+                                  FDBAPI_CreateContext driver_ctx_func)
 {
-    // Kept for compatibility purposes only.
-    // Do not use it.
+    if(m_NofDrvs < m_NofRoom) {
+        CFastMutexGuard mg(m_Mutex2);
+        for(unsigned int i= m_NofDrvs; i--; ) {
+            if(m_Drivers[i].drv_name == driver_name) {
+                m_Drivers[i].drv_func= driver_ctx_func;
+                return;
+            }
+        }
+        m_Drivers[m_NofDrvs++].drv_func= driver_ctx_func;
+        m_Drivers[m_NofDrvs-1].drv_name= driver_name;
+    }
+    else {
+        throw CDB_ClientEx(eDB_Error, 101, "C_xDriverMgr::RegisterDriver",
+                           "No space left for driver registration");
+    }
 
-    _ASSERT(false);
+}
+
+FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
+                                             string* err_msg)
+{
+    CFastMutexGuard mg(m_Mutex1);
+    unsigned int i;
+
+    for(i= m_NofDrvs; i--; ) {
+        if(m_Drivers[i].drv_name == driver_name) {
+            return m_Drivers[i].drv_func;
+        }
+    }
+
+    if (!LoadDriverDll(driver_name, err_msg)) {
+        return 0;
+    }
+
+    for(i= m_NofDrvs; i--; ) {
+        if(m_Drivers[i].drv_name == driver_name) {
+            return m_Drivers[i].drv_func;
+        }
+    }
+
+    throw CDB_ClientEx(eDB_Error, 200, "C_DriverMgr::GetDriver",
+                       "internal error");
+}
+
+bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
+{
+    try {
+//        CDll drv_dll("dbapi_driver_" + driver_name);
+        CDll drv_dll("ncbi_xdbapi_" + driver_name);
+
+        FDllEntryPoint entry_point;
+        if ( !drv_dll.GetEntryPoint_Func("DBAPI_E_" + driver_name,
+                                         &entry_point) ) {
+            drv_dll.Unload();
+            return false;
+        }
+        FDriverRegister reg = entry_point();
+        if(!reg) {
+            throw CDB_ClientEx(eDB_Fatal, 300, "C_DriverMgr::LoadDriverDll",
+                               "driver reports an unrecoverable error "
+                               "(e.g. conflict in libraries)");
+        }
+        reg(*this);
+        return true;
+    }
+    catch (exception& e) {
+        if(err_msg) *err_msg= e.what();
+        return false;
+    }
 }
 
 static C_xDriverMgr* s_DrvMgr= 0;
@@ -185,6 +253,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/03/01 16:24:54  ssikorsk
+ * Restored the "GetDriver" method
+ *
  * Revision 1.17  2005/03/01 15:22:55  ssikorsk
  * Database driver manager revamp to use "core" CPluginManager
  *

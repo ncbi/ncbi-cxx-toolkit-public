@@ -50,6 +50,9 @@ class NCBI_DBAPIDRIVER_EXPORT C_DriverMgr : public I_DriverMgr
 public:
     C_DriverMgr(unsigned int nof_drivers = 16);
 
+    FDBAPI_CreateContext GetDriver(const string& driver_name,
+                                   string*       err_msg = 0);
+
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 
@@ -89,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/03/01 16:24:44  ssikorsk
+ * Restored the "GetDriver" method
+ *
  * Revision 1.13  2005/03/01 15:21:52  ssikorsk
  * Database driver manager revamp to use "core" CPluginManager
  *
