@@ -233,8 +233,13 @@ int CalculateLocalMatrix(Matrix& matrix,
 
     // find last possible block positions, based purely on block lengths
     vector < unsigned int > lastPos(blocks->nBlocks);
-    for (block=0; block<=lastBlock; block++)
+    for (block=0; block<=lastBlock; block++) {
+        if (blocks->blockSizes[block] > queryTo - queryFrom + 1) {
+            ERROR_MESSAGE("Block " << (block+1) << " too large for this query range");
+            return STRUCT_DP_PARAMETER_ERROR;
+        }
         lastPos[block] = queryTo - blocks->blockSizes[block] + 1;
+    }
 
     // first row: positive scores of first block at all possible positions
     for (residue=queryFrom; residue<=lastPos[0]; residue++) {
@@ -469,6 +474,9 @@ void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/08/19 19:26:21  thiessen
+* error if block size > query range length
+*
 * Revision 1.8  2003/07/11 15:27:48  thiessen
 * add DP_ prefix to globals
 *
