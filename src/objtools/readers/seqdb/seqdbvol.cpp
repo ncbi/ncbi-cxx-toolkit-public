@@ -427,7 +427,8 @@ s_SeqDBRebuildDNA_NA4(vector<char>       & buf4bit,
 
 static bool
 s_SeqDBRebuildDNA_NA8(vector<char>       & buf4bit,
-                      const vector<Int4> & amb_chars)
+                      const vector<Int4> & amb_chars,
+                      bool                 sentinel)
 {
     if (buf4bit.empty())
         return false;
@@ -444,6 +445,8 @@ s_SeqDBRebuildDNA_NA8(vector<char>       & buf4bit,
 	amb_num &= 0x7FFFFFFF;
     }
     
+    Int4 sentinel_adjustment = sentinel ? 1 : 0;
+    
     for(Uint4 i = 1; i < amb_num+1; i++) {
         Int4  row_len  = 0;
         Int4  position = 0;
@@ -459,7 +462,7 @@ s_SeqDBRebuildDNA_NA8(vector<char>       & buf4bit,
             position  = s_ResPosOld(amb_chars, i);
 	}
         
-        Int4 index = position;
+        Int4 index = position + sentinel_adjustment;
         
         // This could be made slightly faster for long runs.
         
@@ -1135,7 +1138,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4               oid,
             bool sentinel = (nucl_code == kSeqDBNuclBlastNA8);
             
             s_SeqDBMapNA2ToNA8(seq_buffer, buffer_na8, base_length, sentinel);
-            s_SeqDBRebuildDNA_NA8(buffer_na8, ambchars);
+            s_SeqDBRebuildDNA_NA8(buffer_na8, ambchars, sentinel);
             
             if (sentinel) {
                 // Translate bytewise, in place.
