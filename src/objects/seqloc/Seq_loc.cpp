@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/04/22 20:08:31  grichenk
+ * Redesigned GetTotalRange() using CSeq_loc_CI
+ *
  * Revision 6.8  2002/04/17 15:39:08  grichenk
  * Moved CSeq_loc_CI to the seq-loc library
  *
@@ -131,32 +134,16 @@ int CSeq_loc::GetLength(void) const
 }
 
 // returns enclosing location range
+// the total range is meaningless if there are several seq-ids
+// in the location
 CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 {
-    switch (Which()) {
-    case e_not_set:
-        // this should never be...
-        THROW1_TRACE(runtime_error,
-                     "CSeq_loc::GetTotalRange(): unset CSeq_loc");
-    case e_Pnt: {
-        int point = GetPnt().GetPoint();
-        return TRange(point, point);
+    TRange total_range(TRange::GetEmptyFrom(), TRange::GetEmptyTo());
+    CSeq_loc_CI loc_ci(*this);
+    for ( ; loc_ci; loc_ci++) {
+        total_range += loc_ci.GetRange();
     }
-    case e_Int: {
-        const CSeq_interval& interval = GetInt();
-        return TRange(interval.GetFrom(), interval.GetTo());
-    }
-    case e_Empty:
-        return TRange::GetEmpty();
-    case e_Whole:
-        return TRange::GetWhole();
-    case e_Mix:
-        return GetMix().GetTotalRange();
-    default:
-        break; // no way to calculate the length, so just leave it undefined
-    }
-    THROW1_TRACE(runtime_error,
-                 "CSeq_loc::GetTotalRange(): undefined range");
+    return total_range;
 }
 
 
