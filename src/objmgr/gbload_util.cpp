@@ -29,6 +29,8 @@
 *
 */
 
+#include <corelib/ncbistd.hpp>
+#include "handle_range.hpp"
 #include <objects/objmgr1/gbloader.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -153,6 +155,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/03/20 17:03:24  gouriano
+* minor changes to make it compilable on MS Windows
+*
 * Revision 1.1  2002/03/20 04:50:13  kimelman
 * GB loader added
 *

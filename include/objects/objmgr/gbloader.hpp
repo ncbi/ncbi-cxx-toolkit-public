@@ -34,14 +34,16 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbithr.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+
 #include <map>
 #include <sys/types.h>
 #include <time.h>
 
 #include <objects/objmgr1/data_loader.hpp>
 #include <objects/objmgr1/reader.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -124,7 +126,17 @@ public:
                   const TTSESet&        tse_set);
   
 private:
-  class  CCmpTSE;
+  class CCmpTSE
+  {
+    private:
+      CSeqref *m_sr;
+    public:
+      CCmpTSE(CSeqref *sr) : m_sr(sr) {};
+      ~CCmpTSE(void) {};
+      operator bool  (void)       const { return m_sr==0;};
+      bool operator< (CCmpTSE &b) { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)< 0;};
+      bool operator==(CCmpTSE &b) { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)==0;};
+  };
   struct STSEinfo;
   struct SSeqrefs;
   
@@ -169,16 +181,6 @@ private:
   bool            x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt blob_mask);
 };
 
-class CGBDataLoader::CCmpTSE {
-private:
-  CSeqref *m_sr;
-public:
-  CCmpTSE(CSeqref *sr) : m_sr(sr) {};
-  ~CCmpTSE(void) {};
-  operator bool  (void)       const { return m_sr==0;};
-  bool operator< (CCmpTSE &b) { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)< 0;};
-  bool operator==(CCmpTSE &b) { return m_sr->Compare(*b.m_sr,CSeqref::eTSE)==0;};
-};
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -187,6 +189,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.2  2002/03/20 17:04:25  gouriano
+ * minor changes to make it compilable on MS Windows
+ *
  * Revision 1.1  2002/03/20 04:50:35  kimelman
  * GB loader added
  *

@@ -29,14 +29,15 @@
 *
 */
 
-#include <bitset>
-#include <set>
-#include <vector>
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <objects/objmgr1/gbloader.hpp>
 #include "tse_info.hpp"
 #include "handle_range_map.hpp"
 #include "data_source.hpp"
+#include <objects/objmgr1/gbloader.hpp>
+#include <bitset>
+#include <set>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -330,7 +331,7 @@ CGBDataLoader::x_GetRecords(const TLocMap::const_iterator &hrange, EChoice choic
     {
       // skip TSE which doesn't contain requested type of info
       //cout << "x_GetRecords-Seqref_iterate_0" <<endl;
-      if( (~(*srp)->Flag()) & sr_mask == 0 ) continue;
+      if( ((~(*srp)->Flag()) & sr_mask) == 0 ) continue;
       //cout << "x_GetRecords-Seqref_iterate_1" <<endl;
       
       // find TSE info for each seqref
@@ -550,6 +551,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/03/20 17:03:24  gouriano
+* minor changes to make it compilable on MS Windows
+*
 * Revision 1.1  2002/03/20 04:50:13  kimelman
 * GB loader added
 *
