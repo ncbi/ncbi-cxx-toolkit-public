@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.241 2003/12/02 16:41:51 ucko Exp $
+#  $Id: configure.ac,v 1.242 2003/12/04 13:02:16 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1268,11 +1268,6 @@ elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
    pure_runpath=`echo ${with_runpath} | sed s/{}/$root_base/`
    runpath="${CONF_f_runpath}${pure_runpath}"
    case "$host_os:$compiler" in
-    *:GCC )
-      if `$CXX -print-prog-name=ld` --version 2>&1 | grep GNU >/dev/null; then
-         runpath="$runpath -Wl,-rpath-link,\$(libdir)"
-      fi
-      ;;
     darwin* )
       # Needed for a few gui projects, including gbench_plugin_scan;
       # harmless elsewhere, since it only affects projects that indirectly
@@ -1282,6 +1277,11 @@ elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
          ll=lib$l.dylib
          LDFLAGS="$LDFLAGS -dylib_file ${pure_runpath}/$ll:\$(libdir)/$ll"
       done
+    *:GCC )
+      if `$CXX -print-prog-name=ld` --version 2>&1 | grep GNU >/dev/null; then
+         runpath="$runpath -Wl,-rpath-link,\$(libdir)"
+      fi
+      ;;
    esac
 elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
    runpath="${CONF_f_runpath}\$(libdir)"
