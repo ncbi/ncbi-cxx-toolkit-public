@@ -169,20 +169,20 @@ static void s_AddLocusSuffix(string &basename, CBioseqContext& ctx)
 
 void CLocusItem::x_SetName(CBioseqContext& ctx)
 {
-    if (ctx.IsPart()) {
-        string basename = ctx.GetMaster().GetBaseName();
-        if (!NStr::IsBlank(basename)) {
-            m_Name = basename;
-            s_AddLocusSuffix(m_Name, ctx);
-            return;
+    try {
+        if (ctx.IsPart()) {
+            string basename = ctx.GetMaster().GetBaseName();
+            if (!NStr::IsBlank(basename)) {
+                m_Name = basename;
+                s_AddLocusSuffix(m_Name, ctx);
+                return;
+            }
         }
-    }
 
-    CBioseq_Handle::TBioseqCore seq  = ctx.GetHandle().GetBioseqCore();
-    CConstRef<CSeq_id> id = FindBestChoice(seq->GetId(), CSeq_id::Score);
+        const CSeq_id& id = GetId(ctx.GetHandle(), eGetId_Best);
 
-    CSeq_id::E_Choice choice = id->Which();
-    switch (choice) {
+        /*CSeq_id::E_Choice choice = id->Which();
+        switch (choice) {
         case CSeq_id::e_Other:
         case CSeq_id::e_Genbank:
         case CSeq_id::e_Embl:
@@ -194,41 +194,43 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
         case CSeq_id::e_Tpd:
         case CSeq_id::e_Tpe:
         case CSeq_id::e_Tpg:
-            break;
+        break;
         default:
-            id.Reset();
-            break;
-    }
-    if (!id) {
-        ITERATE (CBioseq::TId, it, seq->GetId()) {
-            if ((*it)->IsGenbank()) {
-                id = *it;
-                break;
-            }
+        id.Reset();
+        break;
         }
-    }
-    if (!id) {
+        if (!id) {
+        ITERATE (CBioseq::TId, it, seq->GetId()) {
+        if ((*it)->IsGenbank()) {
+        id = *it;
+        break;
+        }
+        }
+        }
+        if (!id) {
         return;
-    }
+        }*/
 
-    const CTextseq_id* tsip = id->GetTextseq_Id();
-    if (tsip != NULL) {
-        if (s_IsGenomeView(ctx)) {
-            if (tsip->IsSetAccession()) {
-                m_Name = tsip->GetAccession();
-            }
-        } else {
-            if (tsip->IsSetName()) {
-                m_Name = tsip->GetName();
-                if (x_NameHasBadChars(m_Name)  &&  tsip->IsSetAccession()) {
+        const CTextseq_id* tsip = id.GetTextseq_Id();
+        if (tsip != NULL) {
+            if (s_IsGenomeView(ctx)) {
+                if (tsip->IsSetAccession()) {
                     m_Name = tsip->GetAccession();
+                }
+            } else {
+                if (tsip->IsSetName()) {
+                    m_Name = tsip->GetName();
+                    if (x_NameHasBadChars(m_Name)  &&  tsip->IsSetAccession()) {
+                        m_Name = tsip->GetAccession();
+                    }
                 }
             }
         }
-    }
 
-    if (x_NameHasBadChars(m_Name)  ||  NStr::IsBlank(m_Name)) {
-        m_Name = id->GetSeqIdString();
+        if (x_NameHasBadChars(m_Name)  ||  NStr::IsBlank(m_Name)) {
+            m_Name = id.GetSeqIdString();
+        }
+    } catch (CException&) {
     }
 }
 
@@ -603,6 +605,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/02/09 14:47:53  shomrat
+* Fixed locus name
+*
 * Revision 1.14  2005/01/11 20:38:30  shomrat
 * Fixed locus name gathering
 *
