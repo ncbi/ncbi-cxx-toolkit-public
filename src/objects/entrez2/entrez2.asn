@@ -1,4 +1,4 @@
---$Revision: 1.10 $********************************************
+--$Revision: 1.11 $********************************************
 --
 --  entrez2.asn
 --   Version 1
@@ -216,7 +216,9 @@ Entrez2-field-info ::= SEQUENCE {       -- info about one field
   is-date BOOLEAN OPTIONAL ,
   is-numerical BOOLEAN OPTIONAL ,
   single-token BOOLEAN OPTIONAL ,
-  hierarchy-avail BOOLEAN OPTIONAL }
+  hierarchy-avail BOOLEAN OPTIONAL ,
+  is-rangable BOOLEAN OPTIONAL ,
+  is-truncatable BOOLEAN OPTIONAL }
 
 Entrez2-link-info ::= SEQUENCE {        -- info about one link
   link-name Entrez2-link-id ,
