@@ -90,66 +90,94 @@ struct SAnnotObject_Index
 };
 
 
-struct NCBI_XOBJMGR_EXPORT SAnnotObjects_Info
+struct NCBI_XOBJMGR_EXPORT SAnnotObjectsIndex
 {
-    SAnnotObjects_Info(void);
-    SAnnotObjects_Info(const CAnnotName& name);
-    SAnnotObjects_Info(const SAnnotObjects_Info&);
-    ~SAnnotObjects_Info(void);
+    SAnnotObjectsIndex(void);
+    SAnnotObjectsIndex(const CAnnotName& name);
+    SAnnotObjectsIndex(const SAnnotObjectsIndex&);
+    ~SAnnotObjectsIndex(void);
 
-    typedef vector<SAnnotObject_Key>           TObjectKeys;
     typedef vector<CAnnotObject_Info>          TObjectInfos;
+    typedef vector<SAnnotObject_Key>           TObjectKeys;
+    typedef vector<SAnnotObject_Index>         TObjectIndices;
 
     void SetName(const CAnnotName& name);
     const CAnnotName& GetName(void) const;
 
+    bool IsEmpty(void) const;
     // reserve space for size annot objects
     // keys will be reserved for size*keys_factor objects
     // this is done to avoid reallocation and invalidation
     // of m_Infos in AddInfo() method
-    void Reserve(size_t size, double keys_factor = 1.0);
     void Clear(void);
 
-    void AddKey(const SAnnotObject_Key& key);
-    CAnnotObject_Info* AddInfo(const CAnnotObject_Info& info);
+    void ReserveInfoSize(size_t size);
+    void AddInfo(const CAnnotObject_Info& info);
 
-    const TObjectKeys& GetKeys(void) const;
     const TObjectInfos& GetInfos(void) const;
     const CAnnotObject_Info& GetInfo(size_t index) const;
+    CAnnotObject_Info& GetInfo(size_t index);
     size_t GetIndex(const CAnnotObject_Info& info) const;
+
+    void ReserveMapSize(size_t size);
+    void AddMap(const SAnnotObject_Key& key, const SAnnotObject_Index& index);
+    void PackKeys(void);
+    void PackIndices(void);
+    void DropIndices(void);
+
+    const TObjectKeys& GetKeys(void) const;
+    const TObjectIndices& GetIndices(void) const;
 
 private:    
     CAnnotName      m_Name;
     TObjectKeys     m_Keys;
     TObjectInfos    m_Infos;
+    TObjectIndices  m_Indices;
 
-    SAnnotObjects_Info& operator=(const SAnnotObjects_Info&);
+    SAnnotObjectsIndex& operator=(const SAnnotObjectsIndex&);
 };
 
 
 inline
-const CAnnotName& SAnnotObjects_Info::GetName(void) const
+const CAnnotName& SAnnotObjectsIndex::GetName(void) const
 {
     return m_Name;
 }
 
 
 inline
-const SAnnotObjects_Info::TObjectKeys& SAnnotObjects_Info::GetKeys(void) const
+bool SAnnotObjectsIndex::IsEmpty(void) const
 {
-    return m_Keys;
+    return m_Infos.empty();
 }
 
 
 inline
-const SAnnotObjects_Info::TObjectInfos& SAnnotObjects_Info::GetInfos(void) const
+const SAnnotObjectsIndex::TObjectInfos&
+SAnnotObjectsIndex::GetInfos(void) const
 {
     return m_Infos;
 }
 
 
 inline
-const CAnnotObject_Info& SAnnotObjects_Info::GetInfo(size_t index) const
+const SAnnotObjectsIndex::TObjectKeys&
+SAnnotObjectsIndex::GetKeys(void) const
+{
+    return m_Keys;
+}
+
+
+inline
+const SAnnotObjectsIndex::TObjectIndices&
+SAnnotObjectsIndex::GetIndices(void) const
+{
+    return m_Indices;
+}
+
+
+inline
+const CAnnotObject_Info& SAnnotObjectsIndex::GetInfo(size_t index) const
 {
     _ASSERT(index < m_Infos.size());
     return m_Infos[index];
@@ -157,7 +185,15 @@ const CAnnotObject_Info& SAnnotObjects_Info::GetInfo(size_t index) const
 
 
 inline
-size_t SAnnotObjects_Info::GetIndex(const CAnnotObject_Info& info) const
+CAnnotObject_Info& SAnnotObjectsIndex::GetInfo(size_t index)
+{
+    _ASSERT(index < m_Infos.size());
+    return m_Infos[index];
+}
+
+
+inline
+size_t SAnnotObjectsIndex::GetIndex(const CAnnotObject_Info& info) const
 {
     _ASSERT(!m_Infos.empty());
     _ASSERT(&info >= &m_Infos.front() && &info <= &m_Infos.back());
@@ -171,6 +207,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/12/22 15:56:20  vasilche
+* Renamed SAnnotObjects_Info -> SAnnotObjectsIndex.
+* Allow reuse of annotation indices for several TSEs.
+*
 * Revision 1.8  2004/08/16 18:00:40  grichenk
 * Added detection of circular locations, improved annotation
 * indexing by strand.

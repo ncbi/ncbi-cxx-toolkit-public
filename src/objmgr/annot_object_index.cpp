@@ -38,61 +38,88 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-SAnnotObjects_Info::SAnnotObjects_Info(void)
+SAnnotObjectsIndex::SAnnotObjectsIndex(void)
 {
 }
 
 
-SAnnotObjects_Info::SAnnotObjects_Info(const CAnnotName& name)
+SAnnotObjectsIndex::SAnnotObjectsIndex(const CAnnotName& name)
     : m_Name(name)
 {
 }
 
 
-SAnnotObjects_Info::SAnnotObjects_Info(const SAnnotObjects_Info& info)
+SAnnotObjectsIndex::SAnnotObjectsIndex(const SAnnotObjectsIndex& info)
     : m_Name(info.m_Name)
 {
-    _ASSERT(info.m_Keys.empty() && info.m_Infos.empty());
 }
 
 
-SAnnotObjects_Info::~SAnnotObjects_Info(void)
+SAnnotObjectsIndex::~SAnnotObjectsIndex(void)
 {
 }
 
 
-void SAnnotObjects_Info::SetName(const CAnnotName& name)
+void SAnnotObjectsIndex::SetName(const CAnnotName& name)
 {
     m_Name = name;
 }
 
 
-void SAnnotObjects_Info::Reserve(size_t size, double keys_factor)
+void SAnnotObjectsIndex::Clear(void)
 {
-    _ASSERT(m_Keys.empty() && m_Infos.empty());
-    m_Keys.reserve(size_t(keys_factor*size));
-    m_Infos.reserve(size);
-}
-
-
-void SAnnotObjects_Info::Clear(void)
-{
+    m_Indices.clear();
     m_Keys.clear();
     m_Infos.clear();
 }
 
 
-void SAnnotObjects_Info::AddKey(const SAnnotObject_Key& key)
+void SAnnotObjectsIndex::ReserveInfoSize(size_t size)
 {
-    m_Keys.push_back(key);
+    _ASSERT(m_Indices.empty() && m_Keys.empty() && m_Infos.empty());
+    m_Infos.reserve(size);
 }
 
 
-CAnnotObject_Info* SAnnotObjects_Info::AddInfo(const CAnnotObject_Info& info)
+void SAnnotObjectsIndex::ReserveMapSize(size_t size)
 {
-    _ASSERT(m_Infos.capacity() > m_Infos.size());
+    _ASSERT(m_Indices.empty() && m_Keys.empty());
+    m_Keys.reserve(size);
+    m_Indices.reserve(size);
+}
+
+
+void SAnnotObjectsIndex::AddInfo(const CAnnotObject_Info& info)
+{
     m_Infos.push_back(info);
-    return &m_Infos.back();
+}
+
+
+void SAnnotObjectsIndex::AddMap(const SAnnotObject_Key& key,
+                                const SAnnotObject_Index& index)
+{
+    m_Keys.push_back(key);
+    m_Indices.push_back(index);
+}
+
+
+void SAnnotObjectsIndex::PackKeys(void)
+{
+    TObjectKeys keys(m_Keys.begin(), m_Keys.end());
+    keys.swap(m_Keys);
+}
+
+
+void SAnnotObjectsIndex::PackIndices(void)
+{
+    TObjectIndices indices(m_Indices.begin(), m_Indices.end());
+    indices.swap(m_Indices);
+}
+
+
+void SAnnotObjectsIndex::DropIndices(void)
+{
+    m_Indices.clear();
 }
 
 
@@ -102,6 +129,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/12/22 15:56:20  vasilche
+* Renamed SAnnotObjects_Info -> SAnnotObjectsIndex.
+* Allow reuse of annotation indices for several TSEs.
+*
 * Revision 1.3  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *
