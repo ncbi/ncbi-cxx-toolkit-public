@@ -1,6 +1,5 @@
 ###  PATH TO A PRE-BUILT C++ TOOLKIT
 builddir = $(NCBI)/c++/DebugMT/build
-builddir = /home/boemker/dev/internal/c++/WorkShop53-DebugMT/build
 
 
 ###  DEFAULT COMPILATION FLAGS  -- DON'T EDIT OR MOVE THESE 4 LINES !!!
