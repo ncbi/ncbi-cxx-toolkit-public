@@ -407,7 +407,6 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
                                       &hsp->num_ident, &align_length);
       } else {
          Blast_HSPGetNumIdentities(query, subject, hsp, 
-                                   score_options->gapped_calculation, 
                                    &hsp->num_ident, &align_length);
       }
    }
@@ -763,8 +762,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
             if (kGreedyTraceback) {
                /* Low level greedy algorithm ignores ambiguities, so the score
                   needs to be reevaluated. */
-               Blast_HSPReevaluateWithAmbiguities(hsp, query, adjusted_subject,
-                  hit_params, score_params, query_info, sbp);
+               Blast_HSPReevaluateWithAmbiguitiesGapped(hsp, query, 
+                  adjusted_subject, hit_params, score_params, query_info, sbp);
             }
             
             keep = HSPSetScores(query_info, query, adjusted_subject, hsp, 
