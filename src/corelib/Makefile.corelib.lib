@@ -2,8 +2,7 @@
 
 SRC = ncbithr ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbiargs \
       ncbistd ncbiobj ncbitime ncbimtx ncbi_safe_static ncbi_system ncbifile \
-      ncbidbg ncbidll ncbiexec ncbipipe ncbicfg $(ncbicntr) ddumpable version \
-      metareg
+      ncbidbg ncbidll ncbiexec ncbicfg $(ncbicntr) ddumpable version metareg
 
 LIB = xncbi
 
