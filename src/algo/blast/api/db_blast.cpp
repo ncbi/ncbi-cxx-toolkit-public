@@ -111,9 +111,6 @@ CDbBlast::x_ResetQueryDs()
     mi_pResults = BLAST_ResultsFree(mi_pResults);
     
     sfree(mi_pReturnStats);
-
-
-    // TODO: should clean filtered regions?
 }
 
 int CDbBlast::SetupSearch()
@@ -181,6 +178,84 @@ CDbBlast::Run()
     return x_Results2SeqAlign();
 }
 
+/* Comparison function for sorting HSP lists in increasing order of the 
+   number of HSPs in a hit. Needed for TrimBlastHSPResults below. */
+static int
+compare_hsplist_hspcnt(const void* v1, const void* v2)
+{
+   BlastHSPList* r1 = *((BlastHSPList**) v1);
+   BlastHSPList* r2 = *((BlastHSPList**) v2);
+
+   if (r1->hspcnt < r2->hspcnt)
+      return -1;
+   else if (r1->hspcnt > r2->hspcnt)
+      return 1;
+   else
+      return 0;
+}
+
+
+/** Removes extra results if a limit is imposed on the total number of HSPs
+ * returned. Makes sure that at least 1 HSP is still returned for each
+ * database sequence hit. 
+ * 
+ * @param results All results from a BLAST run [in] [out]
+ * @param total_hsp_limit Maximal number of HSPs to return per query 
+ *                        sequence. No bound if 0. [in]
+ * @return Has the HSP limit been exceeded? 
+ */
+bool 
+CDbBlast::TrimBlastHSPResults()
+{
+    int total_hsp_limit = m_OptsHandle->GetOptions().GetTotalHspLimit();
+
+    if (total_hsp_limit == 0)
+        return false;
+
+    Int4 total_hsps = 0;
+    Int4 allowed_hsp_num, hsplist_count;
+    bool hsp_limit_exceeded = false;
+    BlastHitList* hit_list;
+    BlastHSPList* hsp_list;
+    BlastHSPList** hsplist_array;
+    int query_index, subject_index, hsp_index;
+    
+    for (query_index = 0; query_index < mi_pResults->num_queries; 
+         ++query_index) {
+        if (!(hit_list = mi_pResults->hitlist_array[query_index]))
+            continue;
+        /* The count of HSPs is separate for each query. */
+        total_hsps = 0;
+        hsplist_count = hit_list->hsplist_count;
+        hsplist_array = (BlastHSPList**) 
+            malloc(hsplist_count*sizeof(BlastHSPList*));
+        
+        for (subject_index = 0; subject_index < hsplist_count; ++subject_index)
+            hsplist_array[subject_index] = 
+                hit_list->hsplist_array[subject_index];
+        
+        qsort((void*)hsplist_array, hsplist_count,
+              sizeof(BlastHSPList*), compare_hsplist_hspcnt);
+        
+        for (subject_index = 0; subject_index < hsplist_count; 
+             ++subject_index) {
+            allowed_hsp_num = 
+                ((subject_index+1)*total_hsp_limit)/hsplist_count - total_hsps;
+            hsp_list = hsplist_array[subject_index];
+            if (hsp_list->hspcnt > allowed_hsp_num) {
+                hsp_limit_exceeded = true;
+                /* Free the extra HSPs */
+                for (hsp_index = allowed_hsp_num; 
+                     hsp_index < hsp_list->hspcnt; ++hsp_index)
+                    BlastHSPFree(hsp_list->hsp_array[hsp_index]);
+                hsp_list->hspcnt = allowed_hsp_num;
+            }
+            total_hsps += hsp_list->hspcnt;
+        }
+        sfree(hsplist_array);
+    }
+    return hsp_limit_exceeded;
+}
 
 void 
 CDbBlast::RunSearchEngine()
@@ -203,6 +278,9 @@ CDbBlast::RunSearchEngine()
        double-integer structures */
     mi_pLookupSegments = ListNodeFreeData(mi_pLookupSegments);
 
+    /* If a limit is provided for number of HSPs to return, trim the extra
+       HSPs here */
+    TrimBlastHSPResults();
 }
 
 TSeqAlignVector
@@ -226,6 +304,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/02/18 23:49:08  dondosha
+ * Added TrimBlastHSPResults method to remove extra HSPs if limit on total number is provided
+ *
  * Revision 1.10  2004/02/13 20:47:20  madden
  * Throw exception rather than ERR_POST if setup fails
  *

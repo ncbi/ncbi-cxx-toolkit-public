@@ -75,6 +75,9 @@ public:
     // Run BLAST search without traceback
     virtual void PartialRun();
 
+    // Remove extra results if a limit is provided on total number of HSPs
+    bool TrimBlastHSPResults();
+
     /// Retrieves regions filtered on the query/queries
     //const TSeqLocVector& GetFilteredQueryRegions() const;
     const BlastMaskLoc* GetFilteredQueryRegions() const;
@@ -202,6 +205,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/02/18 23:48:45  dondosha
+* Added TrimBlastHSPResults method to remove extra HSPs if limit on total number is provided
+*
 * Revision 1.6  2003/12/15 15:52:29  dondosha
 * Added constructor with options handle argument
 *
