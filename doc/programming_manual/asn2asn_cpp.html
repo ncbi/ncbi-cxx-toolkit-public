@@ -21,7 +21,7 @@
 #include &lt;serial/choiceptr.hpp>
 #include &lt;serial/serial.hpp>
 
-<font color = "blue">BEGIN_NCBI_SCOPE
+<font color = "blue">USING_NCBI_SCOPE;
 
 using namespace objects; <font color = "black">
 
@@ -206,10 +206,7 @@ int CAsn2Asn::Run(void)
     outObject.reset(0);
     return 0;
 }
-<font color = "blue">END_NCBI_SCOPE
 
-USING_NCBI_SCOPE; 
-<font color = "black">
 int main(int argc, char** argv)
 {
     return CAsn2Asn().AppMain(argc, argv);

@@ -9,7 +9,7 @@
 Web applications involving interactions with a client via a complex HTML interface can be
 difficult to understand and maintain. The NCBI C++ Toolkit classes decouple
 the complexity of interacting with a CGI client from the complexity of generating HTML
-output by defining separate class hierarchies for these activities.  Indeed, one useful
+output by defining separate class hierarchies for these activities.  In fact, one useful
 application of the HTML classes is to generate web pages "offline". <p>
 
 The section on 
@@ -24,6 +24,7 @@ brought together in <a href=="webcgi.html"> Developing Web-based Applications</a
   <li> <a href="#node"> The CNCBINode class</a>
   <li> <a href="#text"> HTML Text nodes: CHTMLText and CHTMLPlainText</a>
   <li> <a href="#page"> The NCBI Page classes </a>
+  <li> <a href="#ncbipage"> Using the CHTMLPage class with template files </a>
   <li> <a href="#tag"> HTML Tag nodes </a>
   <li> <a href="#htmnode"> <i>CHTMLNode</i>s </a>
   <li> <a href="#compons"> Other HTML Components </a>
@@ -33,12 +34,10 @@ brought together in <a href=="webcgi.html"> Developing Web-based Applications</a
 <a name="node"> <h3> The <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNCBINode.html">
 CNCBINode</a> class </h3>
 
-All of the HTML classes are derived from the <i>CNCBINode</i> class, which
-in turn, is derived from the <a href="cref.html#object"><i>CObject</i></a> class. 
-Although many different
-classes of nodes are derived from <i>CNCBINode</i>, most of their required functionality
-is implemented by this base class.  The
-<i>CNCBINode</i> class has just three data members:
+All of the HTML classes are derived from the <i>CNCBINode</i> class, which in turn, is derived
+from the <a href="cref.html#object"><i>CObject</i></a> class.  Many different classes of nodes
+are derived from <i>CNCBINode</i>, and much of their required functionality is implemented by this
+base class.  The <i>CNCBINode</i> class has just three data members:
 <ul>
  <li> <i>m_Name</i> - a handle for the node
  <li> <i>m_Attributes</i> - a map&lt;string, string> of properties for this node
@@ -90,7 +89,7 @@ The call to <i>Print()</i> with no <i>TMode</i> argument automatically calls thi
 constructor to create a <i>TMode</i> object which will then be substituted for the formal
 parameter <i>prev</i> in tbe <i>Print()</i> method:
 
-<pre>
+<font color = "#000080"> <pre>
 CNcbiOstream& CNCBINode::Print(CNcbiOstream& os, TMode prev)
 {
     // ...
@@ -106,9 +105,9 @@ CNcbiOstream& CNCBINode::Print(CNcbiOstream& os, TMode prev)
         // ...
     }
   
-  PrintEnd(os, mode);
+    PrintEnd(os, mode);
 }
-</pre>
+</pre></font>
 In the first top-level call to <i>Print()</i>, <i>prev</i> is the default <i>TMode</i> object
 described above, with <i>NULL</i> values for <i>m_Previous</i> and <i>m_Node</i>. In the 
 body of the <i>Print()</i> method however, a new <i>TMode</i> is created for subsequent 
@@ -189,12 +188,12 @@ An unencoded CHTMLText node: <br> testing BR <br>
 
 while:
 <pre>
-      CHTMLPlainText *Text = new CHTMLText("An unencoded CHTMLText node: &lt;br> testing BR &lt;br>");
+      CHTMLPlainText *Text = new CHTMLText("An encoded CHTMLText node: &lt;br> testing BR &lt;br>");
       Text->Print(cout);
 </pre>
 will generate the output:
 <pre>
-An unencoded CHTMLText node: &lt;br> testing BR &lt;br>
+An encoded CHTMLText node: &lt;br> testing BR &lt;br>
 </pre>
 <p>
 
@@ -237,7 +236,7 @@ In the simplest case, the <i>BaseTagMapper</i> is an instance of
 <a href="cref.html#cref"><i>CRef</i></a> pointer to a
 <i>CNCBINode</i>. In this case the <i>MapTag()</i> function simply returns <i>&*m_Node</i>. <p>
 
-Several different types of tagmappers are derived from the base class in 
+Several different types of tagmappers are derived from the <i>BaseTagMapper</i> class in 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/html/nodemap.hpp">
 nodemap.hpp</a>. Each of these subclasses specializes a different type of data member, which
 may be a pointer to a free function, a pointer to a member function, or a pointer to an 
@@ -246,15 +245,49 @@ object, as in the case of the <i>ReadyTagMapper</i>. The action taken by the tag
 
 The member function <i>CHTMLBasicPage::MapTag(str)</i> provides an interface to the tagmappers
 installed in <i>m_TagMap</i>, and is used to access the node associated with a particular
-string <i>str</i>. <i>CHTMLBasicPage::MapTag()</i> in turn calls the installed tagmapper's
+string <i>str</i>. <i>CHTMLBasicPage::MapTag()</i> calls the installed tagmapper's
 <i>MapTag()</i> member function, which finally returns a pointer to the <i>CNCBINode</i>.<p>
 
 A second member function, <i>AddTagMap(str, obj)</i> provides for the insertion of new tag strings
 and their associated tagmappers to <i>m_TagMap</i>. Depending on the type of object specified
 as the second argument, the overloaded helper function 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CreateTagMapper"> 
-<i>CreateTagMapper</i></a> is used to install the appropriate type of tagmapper. 
+<i>CreateTagMapper()</i></a> is used to install the appropriate type of tagmapper. 
 
+<a name="ncbipage"> <h3> Using the CHTMLPage class with template files </h3>
+
+The <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CHTMLPage"> <i>CHTMLPage</i></a> class 
+is derived from the <i>CHTMLBasicPage</i>. In combination with the appropriate <a href="template.txt"> <i>template</i> file</a>, this
+class is used to generate the standard <a href="template.html"> NCBI web page</a>. The standard page 
+includes: 
+<ul>
+<li> the NCBI logo 
+<li> a hook for the application-specific logo
+<li> a top menubar of links to several databases served by the <i>query</i> program
+<li> a links sidebar for application-specific links to relevant sites
+<li> a <strong><i>VIEW</i> tag </strong> for the application's web interface
+<li> a bottom menubar for help links, disclaimers, etc.
+</ul>
+
+The template file is a simple HTML text file with one extension -- the use of named tags (<i><@tagname@></i>)
+which allow the insertion of new HTML blocks into a preformatted page. The standard NCBI page template file
+contains one such tag, <i>VIEW</i>. <p>
+
+The <i>CHTMLPage</i> class introduces two new data members and implements several member functions that 
+support the use of template files. m_Title is a string 
+
+     virtual void CreateSubNodes(void);
+     virtual CNCBINode* CreateTemplate(void);
+     virtual CNCBINode* CreateTitle(void);  // def for tag "@TITLE@" - <m_Title>
+     virtual CNCBINode* CreateView(void);   // def for tag "@VIEW@"  - none
+
+     void SetTitle       (const string& title);
+     void SetTemplateFile(const string& template_file);
+
+     void Init(void);
+ 
+     string ;
+     string m_TemplateFile;
 
 
 <a name="tag"> <h3>

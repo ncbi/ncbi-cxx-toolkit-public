@@ -45,20 +45,22 @@ static void FullerBrushMan (const CPerson& p) {
 int main(int argc, char** argv)
 {
 <font color = "red">    // Instantiate a few CPerson objects </font>
-    CPerson neighborhood("Moe", "", 
-                         new CPerson("Larry", "",
-                                     new CPerson("Curly", "", 0)));
-    CPerson another ("Harpo", "", 
-                     new CPerson("Chico", "", 
-                                 new CPerson("Groucho", "", 0)));
+    CPerson neighborhood("Moe", "1 Main St", 
+                         new CPerson("Larry", "2 Main St",
+                                     new CPerson("Curly", "3 Main St", 0)));
 
-<font color = "red">    // Create a CDistrict and install some CPerson objects </font>
+    CPerson another ("Harpo", "2 River Rd", 
+                     new CPerson("Chico", "4 River Rd", 
+                                 new CPerson("Groucho", "6 River Rd", 0)));
+
+ <font color = "red">   // Create a CDistrict and install some CPerson objects </font>
     CDistrict district1(1);
     district1.AddBlock(neighborhood);
     district1.AddBlock(another);
 
-<font color = "red">    // Send the FullerBrushMan to all CPersons in district1! </font>
-    for (CTypeConstIterator&lt;CPerson> house = Begin(district1); house; ++house ) {
+<font color = "red">    // Send the FullerBrushMan to all CPersons in district1 </font>
+    for (CTypeConstIterator&lt;CPerson> house = ConstBegin(district1);
+         house; ++house ) {
         FullerBrushMan(*house);
     }
 
@@ -79,6 +81,4 @@ int main(int argc, char** argv)
 </pre>
 </body>
 </html>
-
-
 

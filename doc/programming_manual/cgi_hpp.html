@@ -14,7 +14,7 @@
 #include &lt;cgi/cgiapp.hpp>
 #include &lt;cgi/ncbires.hpp>
 <font color = "blue">
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 </font></font></font>
 <font color="blue">class</font> CCgiApp : public CCgiApplication
 {
@@ -86,6 +86,5 @@ protected:
 
     virtual string GetEntry() const { return string("cmd2"); }
 };
-<font color="blue">
-END_NCBI_SCOPE <font color="green">
+<font color="green">
 #endif /* CGI_HPP */

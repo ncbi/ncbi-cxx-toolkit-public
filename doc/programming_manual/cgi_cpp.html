@@ -14,7 +14,7 @@
 #include &lt;corelib/ncbireg.hpp>
 #include &lt;memory>
 <font color = "blue">
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 </font></font>
 /////////////////////////////////////////////////////////////////////////
 // Implement the application's LoadResource() and ProcessRequest() methods
@@ -95,11 +95,7 @@ void ShowEntries (const TCgiEntries& entries)
 	  cerr << it->first << "=" << it->second << endl;
       }
 }
-<font color="blue">
-END_NCBI_SCOPE
 
-USING_NCBI_SCOPE;
-</font>
 static CCgiApp theCgiApp;
 
 int main(int argc, const char* argv[])

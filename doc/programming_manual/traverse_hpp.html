@@ -11,9 +11,12 @@
 #ifndef NCBI_TRAVERSEBS__HPP
 #define NCBI_TRAVERSEBS__HPP
 
+#include &lt;corelib/ncbistd.hpp&gt;
 #include &lt;corelib/ncbiapp.hpp&gt;
+<font color = "blue">
+USING_NCBI_SCOPE;
 
-<font color = "blue">BEGIN_NCBI_SCOPE
+using namespace objects;
 
 <font color = "red">// class CTestAsn <font color = "black">
 class CTestAsn : public CNcbiApplication {
@@ -25,14 +28,17 @@ void Visit(const CBiostruc&);
 void Visit(const CBiostruc::TId&);
 void Visit(const CBiostruc::TDescr&);
 void Visit(const CBiostruc::TChemical_graph&);
+void Visit(const CBiostruc::TFeatures&);
+void Visit(const CBiostruc::TModel&);
+
+void Visit(const CBiostruc_history&) {
+    cout << "visiting history" << endl;
+};
 
 <font color = "red">// Not implemented <font color = "black">
-void Visit(const CBiostruc::TFeatures&) {};
-void Visit(const CBiostruc::TModel&) {};
-void Visit(const CBiostruc_descr::THistory&) {};
 void Visit(const CBiostruc_descr::TAttribution&) {};
 
-<font color = "blue">END_NCBI_SCOPE
+void VisitWithIterator (const CBiostruc::TDescr& descList);
 
 <font color = "green">#endif /* NCBI_TRAVERSEBS__HPP */
 

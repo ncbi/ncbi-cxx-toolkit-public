@@ -11,7 +11,7 @@
 #include &lt;corelib/ncbiapp.hpp&gt;
 #include &lt;corelib/ncbiobj.hpp&gt;
 <font color = "blue">
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 <font color = "black">
 static void myHandler(const SDiagMessage& mess) { 
     cout << "Installed Handler " << mess << endl;
@@ -60,11 +60,7 @@ int CTestApp::Run()
 <font color = "red">   // Allow the class destructors to force flushing of remaining messages <font color = "black">
     return 0;
 }
-<font color = "blue">
-END_NCBI_SCOPE
 
-USING_NCBI_SCOPE;
-<font color = "black">
 int main(int argc, const char* argv[]) 
 {
     CTestApp theTestApp;
