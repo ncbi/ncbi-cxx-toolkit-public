@@ -46,6 +46,7 @@
 #include <corelib/ncbifile.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seq/seq__.hpp>
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -413,6 +414,9 @@ int test1(int argc, char ** argv)
             ostringstream oss_fn;
             oss_fn << "." << dbname << "." << gi;
             
+            vector<char> seqdb_data;
+            vector<char> readdb_data;
+            
             {
                 CSeqDB db(dbname, is_prot ? 'p' : 'n');
                 
@@ -428,6 +432,16 @@ int test1(int argc, char ** argv)
                     *os << *bs;
                     
                     cout << "seqdb: got bioseq." << endl;
+                    
+                    cout << "\n bs->inst->seq-data[0] = ";
+                    
+                    vector<char> byte_data = bs->GetInst().GetSeq_data().GetNcbi4na().Get();
+                    
+                    cout << "Total bytes available: " << byte_data.size() << endl;
+                    
+                    cout << int(byte_data[0]) << endl;
+                    
+                    seqdb_data = byte_data;
                 } else {
                     cout << "seqdb: could not get bioseq." << endl;
                 }
@@ -446,13 +460,57 @@ int test1(int argc, char ** argv)
                     BioseqAsnWrite(bsp, myaip, NULL);
                     AsnIoClose(myaip);
                     
-                    cout << "seqdb: got bioseq." << endl;
+                    cout << "readdb: got bioseq." << endl;
+                    
+                    cout << "\n bs->inst->seq-data[0] = ";
+                    
+                    ByteStorePtr bstorep = bsp->seq_data;
+                    
+                    Uint4 bslen = bstorep->totlen;
+                    
+                    vector<char> byte_data;
+                    byte_data.resize(bslen);
+                    
+                    cout << "Total bytes available: " << bslen << endl;
+                    
+                    // Annoyingly, this starts at the END, if you
+                    // don't seek to the beginning.
+                    
+                    Nlm_BSSeek(bstorep, 0, SEEK_SET);
+                    Uint4 i =  BSRead(bstorep, & byte_data[0], bslen);
+                    
+                    cout << "Bytes read = " << i << endl;
+                    
+                    cout << int(byte_data[0]) << endl;
+                    
+                    readdb_data = byte_data;
                 } else {
-                    cout << "seqdb: could not get bioseq." << endl;
+                    cout << "readdb: could not get bioseq." << endl;
                 }
                 
                 BioseqFree(bsp);
             }
+            
+            Uint4 num_diffs = 0;
+            
+            for(Uint4 i = 0; i<readdb_data.size(); i++) {
+                unsigned R = unsigned(readdb_data[i]) & 0xFF;
+                unsigned S = unsigned(seqdb_data[i])  & 0xFF;
+                
+                if (R != S) {
+                    cout << "At location " << dec << i << ", Readdb has: " << hex << int(R) << " whereas SeqDB has: " << hex << int(S);
+                    
+                    if (R > S) {
+                        cout << " (R += " << (R - S) << ")\n";
+                    } else {
+                        cout << " (S += " << (S - R) << ")\n";
+                    }
+                    
+                    num_diffs ++;
+                }
+            }
+            cout << "Num diffs: " << dec << num_diffs << endl;
+            
             return 0;
         } else desc += " [-bs9]";
 
