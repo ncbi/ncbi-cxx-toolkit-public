@@ -132,7 +132,7 @@ int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
 
 int main(int argc, const char* argv[])
 {
-    int result = CSampleCgiApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    int result = CSampleCgiApplication().AppMain(argc, argv, 0, eDS_Default);
     _TRACE("back to normal diags");
     return result;
 }
@@ -141,6 +141,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/04 23:03:37  vakatov
+ * Warn about the missing conf.file
+ *
  * Revision 1.2  2003/06/18 14:55:42  vakatov
  * Mention that '.cgi' extension is needed on most systems for the
  * executable to be recognized as CGI.
