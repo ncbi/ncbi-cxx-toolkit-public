@@ -67,7 +67,9 @@ public:
     }
     /// Sets TemplateLength
     /// @param length TemplateLength [in]
-    void SetTemplateLength(unsigned char length) {
+    void SetTemplateLength(unsigned char length) 
+    {
+        m_Opts->SetScanStep(4);
         m_Opts->SetMBTemplateLength(length);
     }
 
@@ -123,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/08/03 20:19:52  dondosha
+ * Set scanning stride to 4 in SetTemplateLength method
+ *
  * Revision 1.9  2004/06/08 22:41:04  camacho
  * Add missing doxygen comments
  *
