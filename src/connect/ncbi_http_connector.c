@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2002/05/06 19:13:48  lavr
+ * Output to stderr replaced with calls to logger
+ *
  * Revision 6.25  2002/04/26 16:36:56  lavr
  * Added setting of default timeout in meta-connector's setup routine
  * Remove all checks for CONN_DEFAULT_TIMEOUT: now supplied good from CONN
@@ -199,7 +202,7 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu, char** redirect)
     ConnNetInfo_AdjustForHttpProxy(uuu->net_info);
 
     if (uuu->net_info->debug_printout)
-        ConnNetInfo_Print(uuu->net_info, stderr);
+        ConnNetInfo_Log(uuu->net_info, CORE_GetLOG());
     return 1/*true*/;
 }
 
@@ -339,12 +342,12 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
             return status;
 
         size = BUF_Size(uuu->http);
-        if (!(header = malloc(size + 1)))
-            return eIO_Unknown;
-        if (BUF_Peek(uuu->http, header, size) != size) {
-            free(header);
+        if (!(header = (char*) malloc(size + 1))) {
+            CORE_LOGF(eLOG_Error, ("Cannot allocate HTTP header (%ld byte(s))",
+                                   (long) size));
             return eIO_Unknown;
         }
+        verify(BUF_Peek(uuu->http, header, size) == size);
         header[size] = '\0';
         if (strcmp(&header[size - 4], "\r\n\r\n") == 0)
             break;
@@ -361,14 +364,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
             moved = 1;
     }
 
-    if (uuu->net_info->debug_printout) {
-        fprintf(stderr, "\n\
------ [BEGIN] HTTP Header(%ld bytes followed by \\n) -----\n", (long) size);
-        fwrite(header, 1, size, stderr);
-        fprintf(stderr, "\
------ [END] HTTP Header -----\n\n");
-        fflush(stderr);
-    }
+    if (uuu->net_info->debug_printout)
+        CORE_DATA(header, size, "HTTP header");
 
     if (uuu->parse_http_hdr) {
         if (!(*uuu->parse_http_hdr)
@@ -408,20 +405,22 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
 
     /* skip & printout the content, if server error was flagged */
     if (server_error  &&  uuu->net_info->debug_printout) {
-        char data[128];
+        size_t size;
+        char*  body;
+        BUF    buf = 0;
         SOCK_SetTimeout(uuu->sock, eIO_Read, 0);
-        fprintf(stderr, "\n\
------ [BEGIN] Detected a server error -----\n");
-        for (;;) {
-            EIO_Status status =
-                SOCK_Read(uuu->sock, data, sizeof(data), &size, eIO_Plain);
-            if (status != eIO_Success)
-                break;
-            fwrite(data, 1, size, stderr);
-        }
-        fprintf(stderr, "\n\
------ [END] Detected a server error -----\n\n");
-        fflush(stderr);
+        status = SOCK_StripToPattern(uuu->sock, 0, 0, &buf, 0);
+        assert(status != eIO_Success); /* cause reading until EOF */
+        if (!(size = BUF_Size(buf)))
+            CORE_LOG(eLOG_Trace, "No HTTP body received with this error");
+        else if ((body = (char*) malloc(size + 1)) != 0) {
+            BUF_Read(buf, body, size);
+            CORE_DATA(body, size, "Server error");
+            free(body);
+        } else
+            CORE_LOGF(eLOG_Error, ("Cannot allocate HTTP body (%ld byte(s))",
+                                   (long) size));
+        BUF_Destroy(buf);
     }
 
     if (server_error)
@@ -876,7 +875,7 @@ extern CONNECTOR HTTP_CreateConnectorEx
         ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0);
     ConnNetInfo_AdjustForHttpProxy(uuu->net_info);
     if (uuu->net_info->debug_printout) {
-        ConnNetInfo_Print(uuu->net_info, stderr);
+        ConnNetInfo_Log(uuu->net_info, CORE_GetLOG());
     }
 
     uuu->flags           = flags;
