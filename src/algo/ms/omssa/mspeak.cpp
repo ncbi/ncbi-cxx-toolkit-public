@@ -276,14 +276,14 @@ int CMSPeak::CompareSorted(CLadder& Ladder, int Which, unsigned* Intensity)
     if(Ladder.size() == 0 ||  Num[Which] == 0) return 0;
 
     do {
-	if(MZI[Which][j].MZ > Ladder[i] + tol) {
-	    i++;
-	    if(i >= Ladder.size()) break;
-	    continue;
-	}
-	else if (MZI[Which][j].MZ < Ladder[i] - tol) {
+	if (MZI[Which][j].MZ < Ladder[i] - tol) {
 	    j++;
 	    if(j >= Num[Which]) break;
+	    continue;
+	}
+	else if(MZI[Which][j].MZ > Ladder[i] + tol) {
+	    i++;
+	    if(i >= Ladder.size()) break;
 	    continue;
 	}
 	else {

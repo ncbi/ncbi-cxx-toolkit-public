@@ -106,7 +106,7 @@ void COMSSA::Init()
 			   CArgDescriptions::eInteger, "0");
     argDesc->AddDefaultKey("w1", "window1", 
 			   "single charge window",
-			   CArgDescriptions::eInteger, "26");
+			   CArgDescriptions::eInteger, "20");
     argDesc->AddDefaultKey("w2", "window2", 
 			   "double charge window",
 			   CArgDescriptions::eInteger, "14");
@@ -244,6 +244,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.6  2003/11/18 18:16:04  lewisg
+  perf enhancements, ROCn adjusted params made default
+
   Revision 1.5  2003/11/13 19:07:38  lewisg
   bugs: iterate completely over nr, don't initialize blastdb by iteration
 

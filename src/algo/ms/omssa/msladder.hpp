@@ -176,6 +176,24 @@ inline int CLadder::GetCharge(void)
     return Charge;
 }
 
+// count the number of matches
+inline int CLadder::HitCount(void)
+{
+    int i, retval(0);
+    for(i = 0; i < LadderIndex; i++)
+	retval += Hit[i];
+    return retval;
+}
+
+// clear the Hitlist
+inline void CLadder::ClearHits(void)
+{
+    int i;
+    for(i = 0; i < LadderIndex; i++)
+	Hit[i] = 0;
+}
+
+
 /////////////////// end of CLadder inline methods
 
 END_SCOPE(omssa)
@@ -186,6 +204,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.4  2003/11/18 18:16:03  lewisg
+  perf enhancements, ROCn adjusted params made default
+
   Revision 1.3  2003/10/24 21:28:41  lewisg
   add omssa, xomssa, omssacl to win32 build, including dll
 

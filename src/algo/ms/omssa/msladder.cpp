@@ -165,25 +165,6 @@ void CLadder::Or(CLadder& LadderIn)
 }
 
 
-// count the number of matches
-int CLadder::HitCount(void)
-{
-    int i, retval(0);
-    for(i = 0; i < LadderIndex; i++)
-	retval += Hit[i];
-    return retval;
-}
-
-
-// clear the Hitlist
-void CLadder::ClearHits(void)
-{
-    int i;
-    for(i = 0; i < LadderIndex; i++)
-	Hit[i] = 0;
-}
-
-
 // sees if ladder contains the given mass value
 bool CLadder::Contains(int MassIndex, int Tolerance)
 {
