@@ -1731,6 +1731,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             EOverlapType overlap_type,
                                             CScope& scope)
 {
+    bool revert_locations = false;
     SAnnotSelector::EOverlapType annot_overlap_type;
     switch (overlap_type) {
     case eOverlap_Simple:
@@ -1742,6 +1743,8 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
     case eOverlap_Subset:
     case eOverlap_CheckIntervals:
     case eOverlap_Interval:
+        revert_locations = true;
+        // there's no break here - proceed to "default"
     default:
         // Require intervals overlap
         annot_overlap_type = SAnnotSelector::eOverlap_Intervals;
@@ -1757,7 +1760,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
         CFeat_CI::e_Location);
     for ( ; feat_it; ++feat_it) {
         // treat subset as a special case
-        int cur_diff = (overlap_type != eOverlap_Subset) ?
+        int cur_diff = ( !revert_locations ) ?
             TestForOverlap(loc, feat_it->GetLocation(), overlap_type) :
             TestForOverlap(feat_it->GetLocation(), loc, overlap_type);
         if (cur_diff < 0)
@@ -1776,6 +1779,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             EOverlapType overlap_type,
                                             CScope& scope)
 {
+    bool revert_locations = false;
     SAnnotSelector::EOverlapType annot_overlap_type;
     switch (overlap_type) {
     case eOverlap_Simple:
@@ -1787,6 +1791,8 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
     case eOverlap_Subset:
     case eOverlap_CheckIntervals:
     case eOverlap_Interval:
+        revert_locations = true;
+        // there's no break here - proceed to "default"
     default:
         // Require intervals overlap
         annot_overlap_type = SAnnotSelector::eOverlap_Intervals;
@@ -1802,7 +1808,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                            CFeat_CI::e_Location); feat_it; ++feat_it ) {
         if ( feat_it->GetData().GetSubtype() != feat_type )
             continue;
-        int cur_diff = (overlap_type != eOverlap_Subset) ?
+        int cur_diff = ( !revert_locations ) ?
             TestForOverlap(loc, feat_it->GetLocation(), overlap_type) :
             TestForOverlap(feat_it->GetLocation(), loc, overlap_type);
         if (cur_diff < 0)
@@ -2856,6 +2862,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.44  2003/04/03 19:03:17  grichenk
+* Two more cases to revert locations in GetBestOverlappingFeat()
+*
 * Revision 1.43  2003/04/02 16:58:59  grichenk
 * Change location and feature in GetBestOverlappingFeat()
 * for eOverlap_Subset.
