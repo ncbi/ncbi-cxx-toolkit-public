@@ -14,7 +14,7 @@ REQUIRES = bdb
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB = lds lds_admin xobjmgr xobjread bdb xutil xobjutil ncbi_xloader_lds $(OBJMGR_LIBS)
+LIB = ncbi_xloader_lds lds lds_admin xobjmgr xobjread bdb xutil xobjutil $(OBJMGR_LIBS)
 
 LIBS = $(BERKELEYDB_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
