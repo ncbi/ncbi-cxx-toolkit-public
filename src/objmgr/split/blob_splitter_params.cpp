@@ -31,8 +31,8 @@
 * ===========================================================================
 */
 
-#include "blob_splitter_params.hpp"
-#include "id2_compress.hpp"
+#include <objmgr/split/blob_splitter_params.hpp>
+#include <objmgr/split/id2_compress.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <util/compress/zlib.hpp>
@@ -149,6 +149,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/01/07 17:36:24  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.6  2003/12/30 16:06:14  vasilche
 * Compression methods moved to separate header: id2_compress.hpp.
 *

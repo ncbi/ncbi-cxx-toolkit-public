@@ -40,7 +40,7 @@
 
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/feat_ci.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
@@ -141,6 +141,10 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/01/07 17:36:33  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.5  2003/10/15 19:53:11  ucko
 * Also display the result of resolving the relative location, if non-empty.
 *

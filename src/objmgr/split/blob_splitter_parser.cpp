@@ -31,7 +31,7 @@
 * ===========================================================================
 */
 
-#include "blob_splitter_impl.hpp"
+#include <objmgr/split/blob_splitter_impl.hpp>
 
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
@@ -59,11 +59,11 @@
 #include <objects/id2/ID2S_Chunk_Id.hpp>
 #include <objects/id2/ID2S_Chunk.hpp>
 
-#include "blob_splitter.hpp"
-#include "object_splitinfo.hpp"
-#include "annot_piece.hpp"
-#include "asn_sizer.hpp"
-#include "chunk_info.hpp"
+#include <objmgr/split/blob_splitter.hpp>
+#include <objmgr/split/object_splitinfo.hpp>
+#include <objmgr/split/annot_piece.hpp>
+#include <objmgr/split/asn_sizer.hpp>
+#include <objmgr/split/chunk_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -286,6 +286,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/01/07 17:36:25  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.3  2003/12/17 15:19:37  vasilche
 * Added missing return if Seq-annot cannot be split.
 *

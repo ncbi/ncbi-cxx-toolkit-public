@@ -31,9 +31,9 @@
 * ===========================================================================
 */
 
-#include "size.hpp"
+#include <objmgr/split/size.hpp>
 
-#include "asn_sizer.hpp"
+#include <objmgr/split/asn_sizer.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -71,6 +71,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/01/07 17:36:28  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.2  2003/11/26 23:05:00  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *

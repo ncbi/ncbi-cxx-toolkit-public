@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/01/07 17:36:30  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.12  2003/11/26 17:56:03  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.
@@ -119,7 +123,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 

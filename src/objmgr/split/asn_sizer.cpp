@@ -31,11 +31,11 @@
 * ===========================================================================
 */
 
-#include "asn_sizer.hpp"
+#include <objmgr/split/asn_sizer.hpp>
 
 #include <serial/objostr.hpp>
 
-#include "id2_compress.hpp"
+#include <objmgr/split/id2_compress.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -87,6 +87,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/01/07 17:36:21  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.3  2003/12/30 16:06:13  vasilche
 * Compression methods moved to separate header: id2_compress.hpp.
 *

@@ -42,7 +42,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objistrasn.hpp>
@@ -378,6 +378,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/01/07 17:36:30  vasilche
+ * Moved id2_split headers to include/objmgr/split.
+ * Fixed include path to genbank.
+ *
  * Revision 1.2  2003/10/22 17:57:45  vasilche
  * Some code cleaning.
  * Added '-average' option.

@@ -62,7 +62,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/impl/synonyms.hpp>
@@ -715,6 +715,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2004/01/07 17:36:20  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.52  2004/01/06 16:13:03  grichenk
 * Fixed includes
 *

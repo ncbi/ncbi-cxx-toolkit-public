@@ -31,10 +31,10 @@
 * ===========================================================================
 */
 
-#include "chunk_info.hpp"
+#include <objmgr/split/chunk_info.hpp>
 
-#include "object_splitinfo.hpp"
-#include "annot_piece.hpp"
+#include <objmgr/split/object_splitinfo.hpp>
+#include <objmgr/split/annot_piece.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -104,6 +104,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/01/07 17:36:25  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.2  2003/11/26 23:04:58  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *

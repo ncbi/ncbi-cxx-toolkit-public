@@ -37,8 +37,8 @@
 
 #include <corelib/ncbistd.hpp>
 
-#include "blob_splitter_params.hpp"
-#include "split_blob.hpp"
+#include <objmgr/split/blob_splitter_params.hpp>
+#include <objmgr/split/split_blob.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -72,6 +72,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/01/07 17:36:19  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.4  2003/12/03 19:40:57  kuznets
 * Minor file rename
 *

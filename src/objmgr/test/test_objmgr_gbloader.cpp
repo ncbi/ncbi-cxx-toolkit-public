@@ -39,7 +39,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/reader.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -175,6 +175,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/01/07 17:36:31  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.30  2003/12/30 19:51:55  vasilche
 * Test CGBDataLoader::GetSatSatkey() method.
 *

@@ -29,8 +29,7 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
-#include <objmgr/reader_pubseq.hpp>
-#include <objmgr/impl/seqref_pubseq.hpp>
+#include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp>
 #include <objmgr/impl/tse_info.hpp>
 
 #include <connect/ncbi_util.h>
@@ -68,6 +67,10 @@ int main()
 
 /*
 * $Log$
+* Revision 1.11  2004/01/07 17:36:32  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.10  2003/11/26 17:56:04  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

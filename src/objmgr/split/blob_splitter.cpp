@@ -31,7 +31,7 @@
 * ===========================================================================
 */
 
-#include "blob_splitter.hpp"
+#include <objmgr/split/blob_splitter.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/id2/ID2S_Split_Info.hpp>
@@ -47,6 +47,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/01/07 17:36:23  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.2  2003/11/26 23:04:57  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *

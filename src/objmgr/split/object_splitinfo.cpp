@@ -31,7 +31,7 @@
 * ===========================================================================
 */
 
-#include "object_splitinfo.hpp"
+#include <objmgr/split/object_splitinfo.hpp>
 
 #include <serial/serial.hpp>
 
@@ -46,7 +46,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 
-#include "asn_sizer.hpp"
+#include <objmgr/split/asn_sizer.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -269,6 +269,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/01/07 17:36:27  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.3  2003/12/01 18:37:10  vasilche
 * Separate different annotation types in split info to reduce memory usage.
 *

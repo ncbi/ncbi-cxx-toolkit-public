@@ -45,8 +45,8 @@
 #include <map>
 #include <vector>
 
-#include "id_range.hpp"
-#include "size.hpp"
+#include <objmgr/split/id_range.hpp>
+#include <objmgr/split/size.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -197,6 +197,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/01/07 17:36:20  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.2  2003/11/26 23:04:59  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *

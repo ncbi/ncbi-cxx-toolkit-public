@@ -70,7 +70,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/impl/synonyms.hpp>
@@ -80,11 +80,11 @@
 #include <objmgr/reader.hpp>
 
 // cache
-#include <objmgr/reader_id1_cache.hpp>
+#include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
 #include <bdb/bdb_blobcache.hpp>
 
-#include "blob_splitter.hpp"
-#include "id2_compress.hpp"
+#include <objmgr/split/blob_splitter.hpp>
+#include <objmgr/split/id2_compress.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -668,6 +668,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/01/07 17:36:30  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.10  2003/12/30 16:06:15  vasilche
 * Compression methods moved to separate header: id2_compress.hpp.
 *

@@ -47,7 +47,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_vector_ci.hpp>
-#include <objmgr/gbloader.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <objmgr/bioseq_handle.hpp>
 
@@ -482,6 +482,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/01/07 17:36:32  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.6  2003/11/12 20:16:15  vasilche
 * Fixed error: Attempt to delete Object Manager with open scopes.
 *

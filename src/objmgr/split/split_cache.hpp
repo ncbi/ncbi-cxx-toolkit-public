@@ -44,7 +44,7 @@
 
 #include <objmgr/seq_id_handle.hpp>
 
-#include "blob_splitter_params.hpp"
+#include <objmgr/split/blob_splitter_params.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -212,6 +212,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/01/07 17:36:30  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.7  2003/12/02 23:24:33  vasilche
 * Added "-recurse" option to split all sequences referenced by SeqMap.
 *

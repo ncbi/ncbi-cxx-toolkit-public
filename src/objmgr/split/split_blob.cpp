@@ -31,7 +31,7 @@
 * ===========================================================================
 */
 
-#include "split_blob.hpp"
+#include <objmgr/split/split_blob.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 
@@ -109,6 +109,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/01/07 17:36:29  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.5  2003/12/03 19:40:57  kuznets
 * Minor file rename
 *

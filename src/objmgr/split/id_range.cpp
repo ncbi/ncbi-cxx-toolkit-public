@@ -31,7 +31,7 @@
 * ===========================================================================
 */
 
-#include "id_range.hpp"
+#include <objmgr/split/id_range.hpp>
 
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -323,6 +323,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/01/07 17:36:27  vasilche
+* Moved id2_split headers to include/objmgr/split.
+* Fixed include path to genbank.
+*
 * Revision 1.4  2003/12/01 18:37:10  vasilche
 * Separate different annotation types in split info to reduce memory usage.
 *
