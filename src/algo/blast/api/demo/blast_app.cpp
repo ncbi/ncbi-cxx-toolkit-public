@@ -506,7 +506,7 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
         int query_index;
         for (query_index = 0; query_index < seqalignv.size(); ++query_index)
         {
-            if (!seqalignv[index]->IsSet())
+            if (!seqalignv[query_index]->IsSet())
                 continue;
             *asnout << *seqalignv[query_index];
         }
