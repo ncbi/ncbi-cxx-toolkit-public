@@ -65,6 +65,12 @@ extern "C" {
 #  include <signal.h>
 #endif
 
+#if defined(NCBI_OS_MSWIN)
+#  include <crtdbg.h>
+#  include <stdlib.h>
+#  include <windows.h>
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -440,12 +446,48 @@ void SleepSec(unsigned long sec)
 }
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Suppress Diagnostic Popup Messages
+///
+
+extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
+{
+#if defined(NCBI_OS_MSWIN)
+    // System errors
+    if ( (mode & fSuppress_System) == fSuppress_System ) {
+       SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
+                    SEM_NOOPENFILEERRORBOX);
+    }
+    // Runtime library
+    if ( (mode & fSuppress_Runtime) == fSuppress_Runtime ) {
+        _set_error_mode(_OUT_TO_STDERR);
+    }
+    // Debug library
+    if ( (mode & fSuppress_Debug) == fSuppress_Debug ) {
+        _CrtSetReportFile(_CRT_WARN,   _CRTDBG_FILE_STDERR);
+        _CrtSetReportMode(_CRT_WARN,   _CRTDBG_MODE_FILE);
+        _CrtSetReportFile(_CRT_ERROR,  _CRTDBG_FILE_STDERR);
+        _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_FILE);
+        _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+        _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+    }
+#else
+    // not implemented
+#endif
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/02/23 13:45:37  ivanov
+ * + SuppressSystemMessageBox() (Windows specific)
+ *
  * Revision 1.39  2004/08/03 11:56:34  ivanov
  * + GetVirtualMemoryPageSize()
  *

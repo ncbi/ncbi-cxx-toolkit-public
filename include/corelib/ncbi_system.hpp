@@ -153,12 +153,45 @@ NCBI_XNCBI_EXPORT
 extern void SleepMicroSec(unsigned long mc_sec);
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Suppress Diagnostic Popup Messages
+///
+/// Suppress popup messages on execution errors.
+/// NOTE: Windows-specific, suppresses all error message boxes in both
+/// runtime and in debug libraries, as well as all General Protection Fault
+/// messages. Usefull to suppress messages about missing loaded DLLs,
+/// for example.
+
+/// [Windows]
+
+/// Suppress modes
+enum ESuppressSystemMessageBox {
+    fSuppress_System  = (1<<0),     ///< System errors
+    fSuppress_Runtime = (1<<1),     ///< Runtime library
+    fSuppress_Debug   = (1<<2),     ///< Debug library
+
+    fSuppress_All     = fSuppress_System | fSuppress_Runtime | fSuppress_Debug,
+    fSuppress_Default = fSuppress_System | fSuppress_Runtime
+};
+/// Binary OR of "ESuppressSystemMessageBox"
+typedef int TSuppressSystemMessageBox;  
+
+NCBI_XNCBI_EXPORT
+extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode = 
+                                     fSuppress_Default);
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/02/23 13:45:25  ivanov
+ * + SuppressSystemMessageBox() (Windows specific)
+ *
  * Revision 1.15  2004/08/03 11:56:45  ivanov
  * + GetVirtualMemoryPageSize()
  *
