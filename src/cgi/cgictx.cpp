@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/10/01 14:21:40  golikov
+* Now messages in context are html nodes
+*
 * Revision 1.12  1999/09/03 21:32:28  vakatov
 * Move #include <algorithm> after the NCBI #include's for more
 * consistency and to suppress some bulky MSVC++ warnings.
@@ -87,7 +90,7 @@ BEGIN_NCBI_SCOPE
 CCgiContext::CCgiContext( CCgiApplication& app, CNcbiEnvironment* env,
                           CNcbiIstream* in, CNcbiOstream* out,
                           int argc, char** argv )
-    : m_app(app), m_request( 0 ),  m_response(out)
+    : m_app(app), m_request( 0 ),  m_response(out), m_msg(new CNCBINode)
 {
     try {
         m_request.reset( new CCgiRequest(argc, argv, env, in) );
@@ -102,7 +105,8 @@ CCgiContext::CCgiContext( CCgiApplication& app, CNcbiEnvironment* env,
 }
 
 CCgiContext::~CCgiContext( void )
-{}
+{
+}
 
 CNcbiRegistry& CCgiContext::x_GetConfig(void) const
 {

@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/10/01 14:22:04  golikov
+* Now messages in context are html nodes
+*
 * Revision 1.8  1999/07/15 19:04:37  sandomir
 * GetSelfURL(() added in Context
 *
@@ -96,7 +99,7 @@
 #include <corelib/ncbistd.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
-#include <list>
+#include <html/html.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -117,7 +120,7 @@ public:
 // class CCgiContext
 //
 // CCgiContext is a wrapper for request, response, server context.
-// In addtion, it contains list of messages.
+// In addtion, it contains list of messages as html nodes.
 // Having non-const reference, CCgiContext's user has access to its 
 // all internal data
 // Context will try to create request from given data or default request
@@ -126,7 +129,6 @@ public:
 class CCgiContext
 {
 public:
-    typedef list<string> TMsgList;
     
     CCgiContext( CCgiApplication& app, CNcbiEnvironment* env = 0,
                  CNcbiIstream* in = 0, CNcbiOstream* out = 0,
@@ -152,11 +154,15 @@ public:
     const CCgiServerContext& GetServCtx(void) const;
     CCgiServerContext& GetServCtx(void);
 
-    const TMsgList& GetMsg(void) const;
-    TMsgList& GetMsg(void);
+    //message tree functions
+    const CNCBINode& GetMsg(void) const;
+    CNCBINode& GetMsg(void);
 
     void PutMsg(const string& msg);
-    void ClearMsgList(void);
+    void PutMsg(CNCBINode* msg);
+
+    bool EmptyMsg(void);
+    void ClearMsg(void);
 
     // request access wrappers
 
@@ -182,10 +188,11 @@ private:
     auto_ptr<CCgiRequest> m_request; // CGI request information
     CCgiResponse m_response; // CGI response information
 
+    //head of message tree
+    CNCBINode* m_msg;
+
     // server context will be obtained from CCgiApp::LoadServerContext()
     auto_ptr<CCgiServerContext> m_srvCtx; // application defined context
-    
-    TMsgList m_msg;
 
     mutable string m_selfURL;
 

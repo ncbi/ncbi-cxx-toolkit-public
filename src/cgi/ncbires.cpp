@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/10/01 14:21:41  golikov
+* Now messages in context are html nodes
+*
 * Revision 1.26  1999/08/12 14:54:43  sandomir
 * #include <algorithm> added
 *
@@ -175,7 +178,7 @@ void CNcbiResource::HandleRequest( CCgiContext& ctx )
 		
     } catch( std::exception& e ) {
 	    _TRACE( e.what() );
-		ctx.GetMsg().push_back( string( "Error handling request: " ) + e.what() );        
+		ctx.PutMsg( string("Error handling request: ") + e.what() );
 		if( !defCom ) {
 		  auto_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
 		  cmd->Execute( ctx );
