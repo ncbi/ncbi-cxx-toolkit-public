@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.11  2002/06/24 19:10:03  kholodov
+* Added more trace diagnostics
+*
 * Revision 1.10  2002/06/24 18:06:49  kholodov
 * Added more detailed diagnostics on connections
 *
@@ -158,6 +161,7 @@ CDB_Connection* CConnection::CloneCDB_Conn()
                                GetCDB_Connection()->Password(),
                                0,
                                true);
+    _TRACE("CDB_Connection cloned");
     SetDbName(m_database, temp);
     return temp;
 }

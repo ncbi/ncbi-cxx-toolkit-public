@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.8  2002/06/24 19:10:03  kholodov
+* Added more trace diagnostics
+*
 * Revision 1.7  2002/06/11 16:22:54  kholodov
 * Fixed the incorrect declaration of GetMetaData() method
 *
@@ -96,8 +99,6 @@ CResultSet::~CResultSet()
 {
     Close();
     Notify(CDbapiDeletedEvent(this));
-    delete m_istr;
-    delete m_ostr;
 }
 
 const IResultSetMetaData* CResultSet::GetMetaData() 
@@ -137,6 +138,19 @@ bool CResultSet::Next()
 
         more = true;
     }
+
+    if(! more ) {
+        if( m_ostr ) {
+            _TRACE("CResulstSet: deleting BLOB output stream...");
+                   delete m_ostr;
+                   m_ostr = 0;
+        }
+        if( m_istr ) {
+            _TRACE("CResulstSet: deleting BLOB input stream...");
+            delete m_istr;
+            m_istr = 0;
+        }
+    }
   
     return more;
 }
@@ -146,7 +160,7 @@ size_t CResultSet::Read(void* buf, size_t size)
 
     if( m_column < 0 || m_column != m_rs->CurrentItemNo() ) {
         if( m_column < 0 ) {
-            _TRACE("Column for raw Read not set, current column: "
+            _TRACE("CResulstSet: Column for raw Read not set, current column: "
                    << m_rs->CurrentItemNo());
 #ifdef _DEBUG
             _ASSERT(0);
@@ -198,7 +212,10 @@ void CResultSet::Close()
 {
     delete m_rs;
     m_rs = 0;
-    SetValid(false);
+    delete m_istr;
+    m_istr = 0;
+    delete m_ostr;
+    m_ostr = 0;
 }
   
 void CResultSet::Action(const CDbapiEvent& e) 
