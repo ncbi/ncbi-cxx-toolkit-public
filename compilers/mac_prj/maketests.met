@@ -4,7 +4,7 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: C++Tests,v 1.2 2001/10/18 19:36:23 juran Exp $
+	$Id: maketests.met,v 1.15 2001/12/21 21:53:49 juran Exp $
 	
    ================================================================================ *)
 
@@ -640,7 +640,7 @@ on AddCarbonLibs()
 			gMSLPPCLibs & "MSL_C++_PPC.Lib", ¬
 			gMSLPPCLibs & "MSL_SIOUX_Carbon.Lib", ¬
 			gMSLPPCLibs & "MSL_Extras_Carbon.Lib", ¬
-			gMWCWfolder & "MacOS Support:Libraries:Runtime:Runtime PPC:MSL_Runtime_PPC.Lib", ¬
+			gMWCWfolder & "MacOS Support:Libraries:Runtime:Libs:MSL_Runtime_PPC.Lib", ¬
 			gStubLibs & "CarbonLib"}
 		
 		Add Files libsToAdd
