@@ -1789,7 +1789,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     TSeqPos len = bsh.GetBioseq().GetInst().GetLength();
                     CSeq_loc::TRange range = fi->GetLocation().GetTotalRange();
                     
-                    if ( range.GetFrom() == 0 && range.GetTo() == len - 1 ) {
+                    if ( range.IsWhole()  ||
+                         (range.GetFrom() == 0  &&  range.GetTo() == len - 1) ) {
                         full_length_prot_ref = true;
                     }
                 }
@@ -1804,8 +1805,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                         fi->GetMappedFeature());
                 break;
 
-	    default:
-	        break;
+            default:
+                break;
             }
         } else {                            // nucleotide
             switch ( ftype ) {
@@ -1815,9 +1816,9 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     "Invalid feature for a nucleotide Bioseq.",
                         fi->GetMappedFeature());
                 break;
-
-	    default:
-	        break;
+                
+            default:
+                break;
             }
         }
         
@@ -1864,8 +1865,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                 }
                 break;
 
-	    default:
-	        break;
+            default:
+                break;
             }
         } else if ( IsPrerna(bsh) ) { // preRNA
             switch ( ftype ) {
@@ -2397,6 +2398,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/02/26 19:45:31  shomrat
+* Check for whole range
+*
 * Revision 1.19  2003/02/24 20:34:47  shomrat
 * Added default to supress warning in gcc 2.95
 *
