@@ -838,6 +838,14 @@ string NStr::Replace(const string& src,
 list<string>& NStr::Split(const string& str, const string& delim,
                           list<string>& arr, EMergeDelims merge)
 {
+    // Special cases
+    if (str.empty()) {
+        return arr;
+    } else if (delim.empty()) {
+        arr.push_back(str);
+        return arr;
+    }
+
     for (size_t pos = 0; ; ) {
         size_t prev_pos = (merge == eMergeDelims
                            ? str.find_first_not_of(delim, pos)
@@ -861,7 +869,10 @@ list<string>& NStr::Split(const string& str, const string& delim,
 vector<string>& NStr::Tokenize(const string& str, const string& delim,
                                vector<string>& arr, EMergeDelims merge)
 {
-    if (delim.empty()) {
+    // Special cases
+    if (str.empty()) {
+        return arr;
+    } else if (delim.empty()) {
         arr.push_back(str);
         return arr;
     }
@@ -1521,6 +1532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.112  2004/07/20 18:44:39  ucko
+ * Split, Tokenize: yield no elements for empty strings.
+ *
  * Revision 1.111  2004/06/30 21:58:05  vasilche
  * Fixed wrong cast in wchar to utf8 conversion.
  *
