@@ -30,33 +30,34 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/07/16 13:57:43  ivanov
+* Added test for JavaScript popup menus (CHTMLPopupMenu).
+* Chanded application skeleton, now it based on CNCBIApplication.
+*
 * Revision 1.1  2001/06/08 19:05:27  ivanov
 * Initialization. Test application for html library
 *
 * ===========================================================================
 */
 
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbienv.hpp>
 
 #include <html/html.hpp>
 #include <html/page.hpp>
+#include <html/jsmenu.hpp>
 
 
-//BEGIN_NCBI_SCOPE
 
-//END_NCBI_SCOPE;
-
-
-/////////////////////////////////////////////////////////////////////////////
-//  MAIN()
+USING_NCBI_SCOPE;
 
 
-USING_NCBI_SCOPE;  // this turns on the ncbi namespace
+/////////////////////////////////
+// SpecialChars test
+//
 
-
-int main(int argc, char *argv[])
+static void s_TEST_SpecialChars(void)
 {
-    // Tags test;
-
     CHTMLPage page("Simple test page"); 
 
     page.AppendChild(new CHTML_nbsp(2));
@@ -68,17 +69,20 @@ int main(int argc, char *argv[])
     page.AppendChild(new CHTML_reg);
     page.AppendChild(new CHTMLSpecialChar("#177","+/-"));
 
-    cout << "---------------------------------------------" << endl;
     page.Print(cout, CNCBINode::eHTML);
     cout << endl;
     page.Print(cout, CNCBINode::ePlainText);
     cout << endl;
-    cout << "---------------------------------------------" << endl;
-    cout << endl;
+
+}
 
 
-    // Page test
+/////////////////////////////////
+// Tags test
+//
 
+static void s_TEST_Tags(void)
+{
     CNodeRef html, head, body;
 
     html = new CHTML_html;
@@ -113,7 +117,119 @@ int main(int argc, char *argv[])
     cout << endl << endl;
 
     html->Print(cout,CNCBINode::ePlainText);
+    cout << endl;
+}
+
+
+/////////////////////////////////
+// JSMenu test
+//
+
+static void s_TEST_JSMenu(void)
+{
+    // Create HTML page skeleton with HEAD and BODY
+    CHTML_html* html = new CHTML_html;
+    CHTML_head* head = new CHTML_head;
+    CHTML_body* body = new CHTML_body;
+
+    // NOTE: the BODY will be added to the HTML automatically in
+    // InitPopupMenus().
+    html->AppendChild(head); 
+
+    // Create one menu
+    CHTMLPopupMenu* m1 = new CHTMLPopupMenu("Menu1");
+
+    m1->AddItem("Red"  , "document.bgColor='red'");
+    m1->AddItem("Blue" , "document.bgColor='blue'");
+    m1->AddSeparator();
+    m1->AddItem("Green", "document.bgColor='green'");
+
+    m1->SetAttribute(eHTML_PM_fontColor, "black");
+    m1->SetAttribute(eHTML_PM_fontColorHilite, "yellow");
+
+    // Create another menu
+    CHTMLPopupMenu* m2 = new CHTMLPopupMenu("Menu2");
+
+    m2->AddItem("url 1", "top.location='http://www.microsoft.com'");
+    m2->AddItem("url 2", "frame.location='http://www.netscape.com'");
+    m2->AddItem("url 3", "location='/index.html'");
+
+    m2->SetAttribute(eHTML_PM_disableHide, "true");
+
+    // Append one paragraph
+    body->AppendChild(new CHTML_p("paragraph 1"));
+
+    // Add menus to the page
+    html->InitPopupMenus(*head, *body, "menu.js");
+    html->AddPopupMenu(*m1);
+    html->AddPopupMenu(*m2);
+
+    // Append another paragraph
+    body->AppendChild(new CHTML_p("paragraph 2"));
+
+    // Add menus call
+    CHTML_a* anchor1 = new CHTML_a("javascript:" + m1->ShowMenu(), "Menu 1");
+    body->AppendChild(anchor1);
+
+    CHTML_a* anchor2 = new CHTML_a("javascript:" + m2->ShowMenu(), "Menu 2");
+    anchor2->SetEventHandler(eHTML_EH_MouseOver, m2->ShowMenu());
+    body->AppendChild(anchor2);
+    
+    // Print in HTML format
+    html->Print(cout);
     cout << endl << endl;
+}
+
+
+////////////////////////////////
+// Test application
+//
+
+class CTestApplication : public CNcbiApplication
+{
+public:
+    virtual void Init(void);
+    virtual int  Run (void);
+};
+
+
+void CTestApplication::Init(void)
+{
+    // Set error posting and tracing on maximum
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostFlag(eDPF_All);
+    SetDiagPostLevel(eDiag_Info);
+}
+
+
+int CTestApplication::Run(void)
+{
+    cout << "---------------------------------------------" << endl;
+
+    s_TEST_SpecialChars();
+
+    cout << "---------------------------------------------" << endl;
+
+    s_TEST_Tags();
+
+    cout << "---------------------------------------------" << endl;
+
+    s_TEST_JSMenu();
+
+    cout << "---------------------------------------------" << endl;
 
     return 0;
+}
+
+  
+///////////////////////////////////
+// APPLICATION OBJECT  and  MAIN
+//
+
+static CTestApplication theTestApplication;
+
+int main(int argc, const char* argv[])
+{
+    // Execute main application function
+    return theTestApplication.AppMain(argc, argv, 0, eDS_Default, 0);
 }
