@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/04/13 02:58:43  vakatov
+* Do not apply R1.16 for non-UNIX platforms where we cannot configure
+* HAVE_NCBI_C yet
+*
 * Revision 1.16  2001/04/12 22:55:09  vakatov
 * [HAVE_NCBI_C]  Handle #GetArgs to avoid name clash with the NCBI C Toolkit
 *
@@ -96,7 +100,7 @@
 #include <memory>
 
 // Avoid name clash with the NCBI C Toolkit
-#if defined(HAVE_NCBI_C)
+#if !defined(NCBI_OS_UNIX)  ||  defined(HAVE_NCBI_C)
 #  if defined(GetArgs)
 #    undef GetArgs
 #  endif
