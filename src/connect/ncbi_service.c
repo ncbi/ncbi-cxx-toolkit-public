@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2001/09/28 22:03:12  vakatov
+ * Included missing <connect/ncbi_ansi_ext.h>
+ *
  * Revision 6.28  2001/09/28 20:50:16  lavr
  * SERV_Update() modified to capture Used-Server-Info tags;
  * Update VT method changed - now called on per-line basis;
@@ -127,6 +130,7 @@
 #include "ncbi_servicep.h"
 #include "ncbi_servicep_lbsmd.h"
 #include "ncbi_servicep_dispd.h"
+#include <connect/ncbi_ansi_ext.h>
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
