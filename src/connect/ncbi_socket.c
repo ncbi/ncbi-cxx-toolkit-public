@@ -294,7 +294,7 @@ typedef unsigned   EBSockType;
 
 /* Listening socket
  */
-struct LSOCK_tag {
+typedef struct LSOCK_tag {
     TSOCK_Handle    sock;       /* OS-specific socket handle                 */
     unsigned int    id;         /* the internal ID (see also "s_ID_Counter") */
 
@@ -314,12 +314,12 @@ struct LSOCK_tag {
 #ifdef NCBI_OS_UNIX
     char            path[1];    /* must go last                              */
 #endif /*NCBI_OS_UNIX*/
-};
+} LSOCK_struct;
 
 
 /* Socket [it must be in one-2-one binary correspondence with LSOCK above]
  */
-struct SOCK_tag {
+typedef struct SOCK_tag {
     TSOCK_Handle    sock;       /* OS-specific socket handle                 */
     unsigned int    id;         /* the internal ID (see also "s_ID_Counter") */
 
@@ -360,11 +360,13 @@ struct SOCK_tag {
     size_t          n_in;       /* DSOCK: msg #; SOCK: total # of bytes read */
     size_t          n_out;      /* DSOCK: msg #; SOCK: total # of bytes sent */
 
+    unsigned short  myport;     /* this socket's port number for debugging   */
+
 #ifdef NCBI_OS_UNIX
     /* pathname for UNIX socket */
     char            path[1];    /* must go last                              */
 #endif /*NCBI_OS_UNIX*/
-};
+} SOCK_struct;
 
 
 /*
@@ -772,6 +774,14 @@ extern void SOCK_AllowSigPipeAPI(void)
 
 #if 0/*defined(_DEBUG) && !defined(NDEBUG)*/
 
+#  ifndef   SOCK_HAVE_SHOWDATALAYOUT
+#    define SOCK_HAVE_SHOWDATALAYOUT 1
+#  endif
+
+#endif /*_DEBUG && !NDEBUG*/
+
+#ifdef SOCK_HAVE_SHOWDATALAYOUT
+
 #  if !defined(__GNUC__) && !defined(offsetof)
 #    define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))
 #  endif
@@ -800,7 +810,8 @@ static void s_ShowDataLayout(void)
                           "\tn_read:    %u\n"
                           "\tn_written: %u\n"
                           "\tn_in:      %u\n"
-                          "\tn_out:     %u"
+                          "\tn_out:     %u\n"
+                          "\tmyport:    %u"
 #  ifdef NCBI_OS_UNIX
                           "\n\tpath:      %u"
 #  endif /*NCBI_OS_UNIX*/
@@ -824,14 +835,15 @@ static void s_ShowDataLayout(void)
                           (unsigned int) offsetof(SOCK_struct, n_read),
                           (unsigned int) offsetof(SOCK_struct, n_written),
                           (unsigned int) offsetof(SOCK_struct, n_in),
-                          (unsigned int) offsetof(SOCK_struct, n_out)
+                          (unsigned int) offsetof(SOCK_struct, n_out),
+                          (unsigned int) offsetof(SOCK_struct, myport)
 #  ifdef NCBI_OS_UNIX
-                          , (unsigned int) offsetoff(SOCK_struct, path)
+                          , (unsigned int) offsetof(SOCK_struct, path)
 #  endif /*NCBI_OS_UNIX*/
                           ));
 }
 
-#endif
+#endif /*SOCK_HAVE_SHOWDATALAYOUT*/
 
 
 extern EIO_Status SOCK_InitializeAPI(void)
@@ -844,9 +856,9 @@ extern EIO_Status SOCK_InitializeAPI(void)
         return eIO_Success;
     }
 
-#if 0/*defined(_DEBUG) && !defined(NDEBUG)*/
+#ifdef SOCK_HAVE_SHOWDATALAYOUT
     s_ShowDataLayout();
-#endif
+#endif /*SOCK_HAVE_SHOWDATALAYOUT*/
 
 #if defined(NCBI_OS_MSWIN)
     {{
@@ -1661,6 +1673,26 @@ static EIO_Status s_IsConnected(SOCK                  sock,
         status = eIO_Unknown;
     }
 #endif /*NCBI_OS_UNIX || NCBI_OS_MSWIN*/
+#if defined(_DEBUG) && !defined(NDEBUG)
+    if (status == eIO_Success) {
+#  ifdef NCBI_OS_UNIX
+        if (!sock->path[0])
+#  endif /*NCBI_OS_UNIX*/
+            {
+                struct sockaddr_in addr;
+                SOCK_socklen_t addrlen = sizeof(addr);
+                memset(&addr, 0, addrlen);
+#  ifdef HAVE_SIN_LEN
+                addr.sin_len = addrlen;
+#  endif /*HAVE_SIN_LEN*/
+                if (getsockname(sock->sock,
+                                (struct sockaddr*)&addr, &addrlen) == 0) {
+                    assert(addr.sin_family == AF_INET);
+                    sock->myport = ntohs(addr.sin_port);
+                }
+            }
+    }
+#endif /*_DEBUG && !_NDEBUG*/
     if (status != eIO_Success  ||  poll.revent != eIO_Write) {
         if ( !*x_errno )
             *x_errno = SOCK_ERRNO;
@@ -4379,6 +4411,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.169  2005/03/11 19:59:26  lavr
+ * Introduce SOCK::myport, solely for interactive debugging purposes
+ *
  * Revision 6.168  2005/03/08 16:46:20  lavr
  * Fix 32/64 int/ptr discrepancy
  *
