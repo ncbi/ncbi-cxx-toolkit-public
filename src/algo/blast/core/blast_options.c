@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.30  2003/06/20 21:40:21  dondosha
+ * Added parameters for linking HSPs
+ *
  * Revision 1.29  2003/06/20 15:20:21  dondosha
  * Memory leak fixes
  *
@@ -998,7 +1001,16 @@ BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options,
          (FloatHi)query_info->eff_searchsp_array[query_info->first_context], 
          FALSE);
    }
-
+   
+   if (options->program_number == blast_type_blastn || !options->is_gapped) {
+      params->gap_prob = BLAST_GAP_PROB;
+      params->gap_decay_rate = BLAST_GAP_DECAY_RATE;
+   } else {
+      params->gap_prob = BLAST_GAP_PROB_GAPPED;
+      params->gap_decay_rate = BLAST_GAP_DECAY_RATE_GAPPED;
+   }
+   params->gap_size = BLAST_GAP_SIZE;
+      
    return 0;
 }
 

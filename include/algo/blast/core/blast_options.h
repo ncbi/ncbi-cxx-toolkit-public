@@ -128,6 +128,13 @@ extern "C" {
 /** Default genetic code for query and/or database */
 #define BLAST_GENETIC_CODE 1
 
+/** Default parameters for linking HSPs */
+#define BLAST_GAP_PROB 0.5
+#define BLAST_GAP_PROB_GAPPED 1.0
+#define BLAST_GAP_DECAY_RATE 0.5 
+#define BLAST_GAP_DECAY_RATE_GAPPED 0.1
+#define BLAST_GAP_SIZE 50
+
 /** Options needed to construct a lookup table 
  * Also needed: query sequence and query length.
  */
@@ -257,6 +264,9 @@ typedef struct BlastHitSavingParameters {
    /**< Callback for formatting results on the fly for each subject sequence */
    Int4 cutoff_score; /**< Raw cutoff score corresponding to the e-value 
                          provided by the user */
+   FloatHi gap_prob;       /**< Probability of decay for linking HSPs */
+   FloatHi gap_decay_rate; /**< Decay rate for linking HSPs */
+   Int4 gap_size;          /**< Small gap size for linking HSPs */
 } BlastHitSavingParameters, *BlastHitSavingParametersPtr;
 	
 
