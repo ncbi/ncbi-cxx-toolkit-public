@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2002/05/06 19:16:16  lavr
+ * +#include <stdio.h>
+ *
  * Revision 6.37  2002/03/22 19:52:18  lavr
  * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
  *
@@ -161,6 +164,7 @@
 #include <connect/ncbi_socket.h>
 #include <ctype.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
