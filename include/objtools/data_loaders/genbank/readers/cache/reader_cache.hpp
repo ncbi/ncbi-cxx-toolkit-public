@@ -31,6 +31,7 @@
 */
 
 #include <objtools/data_loaders/genbank/reader.hpp>
+#include <corelib/ncbi_tree.hpp>
 
 #include <vector>
 
@@ -85,6 +86,8 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     };
     static string GetBlobSubkey(int chunk_id = kMain_ChunkId);
 
+    typedef CTreePairNode<string, string> TParams;
+    static ICache *CreateCache(const TParams* params, bool id_cache);
 };
 
 
@@ -93,8 +96,8 @@ class NCBI_XREADER_CACHE_EXPORT CCacheHolder
 public:
     enum EOwnership {
         fOwnNone      = 0,
-        fOwnIdCache   = 1 << 1,    // own the underlying id ICache
-        fOwnBlobCache = 1 << 2,    // own the underlying blob ICache
+        fOwnIdCache   = 1 << 0,    // own the underlying id ICache
+        fOwnBlobCache = 1 << 1,    // own the underlying blob ICache
         fOwnAll       = fOwnIdCache | fOwnBlobCache
     };
     typedef int TOwnership;     // bitwise OR of EOwnership

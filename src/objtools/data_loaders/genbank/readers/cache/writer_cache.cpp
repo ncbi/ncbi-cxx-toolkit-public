@@ -307,10 +307,7 @@ bool CCacheWriter::CanWrite(EType type) const
 END_SCOPE(objects)
 
 
-void GenBankWriters_Register_Cache(void)
-{
-    RegisterEntryPoint<objects::CWriter>(NCBI_EntryPoint_CacheWriter);
-}
+using namespace objects;
 
 
 /// Class factory for Cache writer
@@ -318,51 +315,32 @@ void GenBankWriters_Register_Cache(void)
 /// @internal
 ///
 class CCacheWriterCF :
-    public CSimpleClassFactoryImpl<objects::CWriter, objects::CCacheWriter>
+    public CSimpleClassFactoryImpl<CWriter, CCacheWriter>
 {
-public:
-    typedef objects::CCacheWriter TWriter;
-    typedef CSimpleClassFactoryImpl<objects::CWriter, TWriter> TParent;
+private:
+    typedef CSimpleClassFactoryImpl<CWriter, CCacheWriter> TParent;
 public:
     CCacheWriterCF()
         : TParent(NCBI_GBLOADER_WRITER_CACHE_DRIVER_NAME, 0) {}
     ~CCacheWriterCF() {}
 
-    ICache* CreateCache(const TPluginManagerParamTree* params,
-                        const string& section) const
-        {
-            typedef CPluginManager<ICache> TCacheManager;
-            typedef CPluginManagerGetter<ICache> TCacheManagerStore;
-            CRef<TCacheManager> CacheManager(TCacheManagerStore::Get());
-            _ASSERT(CacheManager);
-            const TPluginManagerParamTree* cache_params = params ?
-                params->FindSubNode(section) : 0;
-            return CacheManager->CreateInstanceFromKey
-                (cache_params,
-                 NCBI_GBLOADER_WRITER_CACHE_PARAM_DRIVER);
-        }
 
-    objects::CWriter* 
+    CWriter* 
     CreateInstance(const string& driver  = kEmptyStr,
-                   CVersionInfo version =
-                   NCBI_INTERFACE_VERSION(objects::CWriter),
+                   CVersionInfo version = NCBI_INTERFACE_VERSION(CWriter),
                    const TPluginManagerParamTree* params = 0) const
     {
         if ( !driver.empty()  &&  driver != m_DriverName ) 
             return 0;
         
-        if (version.Match(NCBI_INTERFACE_VERSION(objects::CWriter)) 
-                            != CVersionInfo::eNonCompatible) {
-            auto_ptr<ICache> id_cache
-                (CreateCache(params,
-                             NCBI_GBLOADER_WRITER_CACHE_PARAM_ID_SECTION));
-            auto_ptr<ICache> blob_cache
-                (CreateCache(params,
-                             NCBI_GBLOADER_WRITER_CACHE_PARAM_BLOB_SECTION));
-            if ( blob_cache.get()  ||  id_cache.get() ) 
-                return new TWriter(blob_cache.release(),
-                                   id_cache.release(),
-                                   TWriter::fOwnAll);
+        if ( !version.Match(NCBI_INTERFACE_VERSION(CWriter)) ) {
+            return 0;
+        }
+        auto_ptr<ICache> id_cache(SCacheInfo::CreateCache(params, true));
+        auto_ptr<ICache> blob_cache(SCacheInfo::CreateCache(params, false));
+        if ( blob_cache.get()  ||  id_cache.get() ) {
+            return new CCacheWriter(blob_cache.release(), id_cache.release(),
+                                    CCacheWriter::fOwnAll);
         }
         return 0;
     }
@@ -370,18 +348,25 @@ public:
 
 
 void NCBI_EntryPoint_CacheWriter(
-     CPluginManager<objects::CWriter>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CWriter>::EEntryPointRequest method)
+     CPluginManager<CWriter>::TDriverInfoList&   info_list,
+     CPluginManager<CWriter>::EEntryPointRequest method)
 {
-    CHostEntryPointImpl<CCacheWriterCF>::NCBI_EntryPointImpl(info_list, method);
+    CHostEntryPointImpl<CCacheWriterCF>::NCBI_EntryPointImpl(info_list,
+                                                             method);
 }
 
 
 void NCBI_EntryPoint_xwriter_cache(
-     CPluginManager<objects::CWriter>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CWriter>::EEntryPointRequest method)
+     CPluginManager<CWriter>::TDriverInfoList&   info_list,
+     CPluginManager<CWriter>::EEntryPointRequest method)
 {
     NCBI_EntryPoint_CacheWriter(info_list, method);
+}
+
+
+void GenBankWriters_Register_Cache(void)
+{
+    RegisterEntryPoint<CWriter>(NCBI_EntryPoint_CacheWriter);
 }
 
 
