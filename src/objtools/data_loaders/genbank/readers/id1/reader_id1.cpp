@@ -782,7 +782,7 @@ public:
     }
 };
 
-void NCBI_Id1ReaderEntryPoint(
+void NCBI_EntryPoint_Id1Reader(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method)
 {
@@ -796,6 +796,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.73  2004/02/04 17:47:41  kuznets
+ * Fixed naming of entry points
+ *
  * Revision 1.72  2004/01/28 20:53:43  vasilche
  * Added CSplitParser::Attach().
  *

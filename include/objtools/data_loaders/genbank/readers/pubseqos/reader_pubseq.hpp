@@ -101,7 +101,7 @@ extern NCBI_XREADER_PUBSEQOS_EXPORT const string kPubseqReaderDriverName;
 extern "C" 
 {
 
-void NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_Reader_Pubseqos(
+void NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_ReaderPubseqos(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method);
 
@@ -110,7 +110,7 @@ void NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_Reader_Pubseqos(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method)
 {
-    NCBI_EntryPoint_Reader_Pubseqos(info_list, method);
+    NCBI_EntryPoint_ReaderPubseqos(info_list, method);
 }
 
 inline
@@ -118,7 +118,7 @@ void NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_ncbi_xreader_pubseqos(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method)
 {
-    NCBI_EntryPoint_Reader_Pubseqos(info_list, method);
+    NCBI_EntryPoint_ReaderPubseqos(info_list, method);
 }
 
 inline void 
@@ -126,7 +126,7 @@ NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_Reader_ncbi_xreader_pubseqos(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method)
 {
-    NCBI_EntryPoint_Reader_Pubseqos(info_list, method);
+    NCBI_EntryPoint_ReaderPubseqos(info_list, method);
 }
 
 inline void 
@@ -134,7 +134,7 @@ NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_Pubseqos_ncbi_xreader_pubseqos(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method)
 {
-    NCBI_EntryPoint_Reader_Pubseqos(info_list, method);
+    NCBI_EntryPoint_ReaderPubseqos(info_list, method);
 }
 
 inline void 
@@ -142,7 +142,7 @@ NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_Reader_Pubseqos_ncbi_xreader_pubseq
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method)
 {
-    NCBI_EntryPoint_Reader_Pubseqos(info_list, method);
+    NCBI_EntryPoint_ReaderPubseqos(info_list, method);
 }
 
 } // extern C
@@ -152,6 +152,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.27  2004/02/04 17:48:24  kuznets
+* Fixed naming of entry points
+*
 * Revision 1.26  2004/02/04 17:44:26  kuznets
 * Fixed naming of DLL entry points.
 *

@@ -206,11 +206,11 @@ void CGBDataLoader::x_CreateReaderPluginManager(void)
     m_ReaderPluginManager = new TReader_PluginManager;
     m_OwnReaderPluginManager = eTakeOwnership;
 
-    TReader_PluginManager::FNCBI_EntryPoint ep1 = NCBI_Id1ReaderEntryPoint;
+    TReader_PluginManager::FNCBI_EntryPoint ep1 = NCBI_EntryPoint_Id1Reader;
     m_ReaderPluginManager->RegisterWithEntryPoint(ep1);
 
 #if defined(HAVE_PUBSEQ_OS)
-    TReader_PluginManager::FNCBI_EntryPoint ep2 = NCBI_Pubseq_ReaderEntryPoint;
+    TReader_PluginManager::FNCBI_EntryPoint ep2 = NCBI_EntryPoint_Pubseqos_Reader;
     m_ReaderPluginManager->RegisterWithEntryPoint(ep2);
 #endif
 
@@ -1160,6 +1160,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.102  2004/02/04 17:47:40  kuznets
+* Fixed naming of entry points
+*
 * Revision 1.101  2004/01/22 20:10:35  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.

@@ -515,7 +515,7 @@ public:
     }
 };
 
-void NCBI_Pubseq_ReaderEntryPoint(
+void NCBI_EntryPoint_ReaderPubseqos(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method)
 {
@@ -528,6 +528,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.50  2004/02/04 17:47:42  kuznets
+* Fixed naming of entry points
+*
 * Revision 1.49  2004/01/22 20:10:38  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.
