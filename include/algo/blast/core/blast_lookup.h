@@ -81,6 +81,15 @@ extern "C" {
 
   } LookupBackboneCell;
     
+#define RPS_HITS_PER_CELL 3
+
+  typedef struct RPSBackboneCell {
+    Int4 num_used;
+    Int4 entries[RPS_HITS_PER_CELL];
+  } RPSBackboneCell;
+
+#define RPS_MAGIC_NUM 0x1e16
+
   typedef struct LookupTable {
     Int4 threshold; /* the score threshold for neighboring words */
     Int4 neighbor_matches; /* the number of neighboring words found while indexing the queries, used for informational/debugging purposes */
@@ -97,6 +106,10 @@ extern "C" {
     Int4 longest_chain; /* length of the longest chain on the backbone */
     Int4 ** thin_backbone; /* the "thin" backbone. for each index cell, maintain a pointer to a dynamically-allocated chain of hits. */
     LookupBackboneCell * thick_backbone; /* the "thick" backbone. after queries are indexed, compact the backbone to put at most HITS_ON_BACKBONE hits on the backbone, otherwise point to some overflow storage */
+    RPSBackboneCell * rps_backbone; /* the lookup table used for RPS blast */
+    Int4 ** rps_pssm; /* Pointer to memory-mapped RPS Blast profile file */
+    Int4 * rps_seq_offsets; /* array of start offsets for each RPS DB seq. */
+    RPSAuxInfo* rps_aux_info; /* RPS Blast auxiliary information */
     Int4 * overflow; /* the overflow array for the compacted lookup table */
     Int4  overflow_size; /* Number of elements in the overflow array (above). */
     PV_ARRAY_TYPE *pv; /* presence vector. a bit vector indicating which cells are occupied */
@@ -146,6 +159,13 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap, /* in: the LUT */
                         Uint4 * NCBI_RESTRICT subject_offsets, /* out : pointer to the array where offsets will be stored */
                         Int4 array_size);
 
+Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap, /* in: the LUT */
+                        const BLAST_SequenceBlk *sequence,
+                        Int4* offset,
+		        Uint4 * table_offsets, /* out : pointer to the array where offsets will be stored */
+                        Uint4 * sequence_offsets, /* out: pointer to the array to which hits will be copied */
+		        Int4 array_size);
+
 /** Create a new protein lookup table.
   * @param opt pointer to lookup table options structure [in]
   * @param lut handle to lookup table structure [in/modified]
@@ -162,6 +182,13 @@ Int4 BlastAaLookupNew(const LookupTableOptions* opt, LookupTable* * lut);
   
 Int4 LookupTableNew(const LookupTableOptions* opt, LookupTable* * lut, 
 		    Boolean is_protein);
+
+/** Create a new RPS blast lookup table.
+  * @param opt pointer to lookup table options structure [in]
+  * @param lut handle to lookup table [in/modified]
+  */
+  
+Int4 RPSLookupTableNew(const LookupTableOptions* opt, LookupTable* * lut);
 
 /** Free the lookup table. */
 LookupTable* LookupTableDestruct(LookupTable* lookup);

@@ -81,6 +81,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
  * @param ext_params Gapped extension parameters [in]
  * @param hit_params Parameters for saving hits [in]
  * @param db_options Options containing database genetic code string [in]
+ * @param psi_options Options specific to PSI BLAST [in]
  */
 Int2 BLAST_TwoSequencesTraceback(Uint1 program_number, 
         BlastHSPResults* results, BLAST_SequenceBlk* query, 
@@ -91,8 +92,19 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
         BlastHitSavingParameters* hit_params,
         const BlastDatabaseOptions* db_options);
 
+Int2 BLAST_RPSTraceback(Uint1 program_number, 
+        BlastHSPResults* results, BLAST_SequenceBlk* concat_db, 
+        BlastQueryInfo* concat_db_info, BLAST_SequenceBlk* query, 
+        BlastQueryInfo* query_info,
+        BlastGapAlignStruct* gap_align, 
+        const BlastScoringOptions* score_options,
+        BlastExtensionParameters* ext_params,
+        BlastHitSavingParameters* hit_params,
+        const BlastDatabaseOptions* db_options,
+        const PSIBlastOptions* psi_options,
+        const double* karlin_k);
+
 #ifdef __cplusplus
 }
 #endif
 #endif /* !__BLAST_TRACEBACK__ */
-

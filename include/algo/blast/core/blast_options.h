@@ -137,6 +137,43 @@ extern "C" {
 #define BLAST_GAP_DECAY_RATE_GAPPED 0.1
 #define BLAST_GAP_SIZE 50
 
+/* Parameters needed by RPS Blast */
+
+typedef struct RPSLookupFileHeader {
+    Int4 magic_number;
+    Int4 num_lookup_tables;
+    Int4 num_hits;
+    Int4 num_filled_backbone_cells;
+    Int4 overflow_hits;
+    Int4 unused[3];
+    Int4 start_of_backbone;
+    Int4 end_of_overflow;
+} RPSLookupFileHeader;
+
+typedef struct RPSProfileHeader {
+    Int4 magic_number;
+    Int4 num_profiles;
+    Int4 start_offsets[];
+} RPSProfileHeader;
+
+typedef struct RPSAuxInfo {
+    Int1 orig_score_matrix[256];
+    Int4 gap_open_penalty;
+    Int4 gap_extend_penalty;
+    double ungapped_k;
+    double ungapped_h;
+    Int4 max_db_seq_length;
+    Int4 db_length;
+    double scale_factor;
+    double *karlin_k;
+} RPSAuxInfo;
+
+typedef struct RPSInfo {
+    RPSLookupFileHeader *lookup_header;
+    RPSProfileHeader *profile_header;
+    RPSAuxInfo aux_info;
+} RPSInfo;
+
 /** Options needed to construct a lookup table 
  * Also needed: query sequence and query length.
  */
@@ -155,6 +192,7 @@ typedef struct LookupTableOptions {
    Int4 max_num_patterns; /**< Maximal number of patterns allowed for 
                              PHI-BLAST */
    Boolean use_pssm; /**< Use a PSSM rather than a (protein) query to construct lookup table */
+   RPSInfo *rps_info; /**< Pointer to a collection of RPS Blast information */
 } LookupTableOptions;
 
 /** Options required for setting up the query sequence */
@@ -628,7 +666,7 @@ Int2
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    Uint1 program, Boolean is_megablast, Int4 threshold,
    Int2 word_size, Boolean ag_blast, Boolean variable_wordsize,
-   Boolean use_pssm);
+   Boolean use_pssm, RPSInfo *rps_info);
 
 
 /** Deallocates memory for LookupTableOptions*.

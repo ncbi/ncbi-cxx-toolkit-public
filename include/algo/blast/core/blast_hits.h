@@ -96,7 +96,7 @@ typedef struct BlastHSP {
    double evalue;        /**< This HSP's e-value */
    BlastSeg query;            /**< Query sequence info. */
    BlastSeg subject;          /**< Subject sequence info. */
-   Int2     context;          /**< Context number of query */
+   Int4     context;          /**< Context number of query */
    GapEditBlock* gap_info; /**< ALL gapped alignment is here */
    Int4 num_ref;              /**< Number of references in the linked set */
    Int4 linked_to;            /**< Where this HSP is linked to? */
@@ -286,6 +286,9 @@ BlastHSPList* BlastHSPListFree(BlastHSPList* hsp_list);
 
 /** Deallocate memory for BLAST results */
 BlastHSPResults* BLAST_ResultsFree(BlastHSPResults* results);
+
+void RPSUpdateResults(BlastHSPResults *results,
+                      BlastHSPResults *init_results);
 
 #ifdef __cplusplus
 }

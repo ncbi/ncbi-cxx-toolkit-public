@@ -114,7 +114,11 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 
    while(first_offset <= last_offset) {
       /* scan the subject sequence for hits */
-      hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset, 
+      if (lookup->rps_backbone)
+         hits = BlastRPSScanSubject(lookup_wrap, subject, &first_offset, 
+                                query_offsets, subject_offsets, array_size);
+      else
+         hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset, 
                                 query_offsets, subject_offsets, array_size);
 
       totalhits += hits;
@@ -226,7 +230,11 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
    while(first_offset <= last_offset)
    {
       /* scan the subject sequence for hits */
-      hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset,
+      if (lookup->rps_backbone)
+         hits = BlastRPSScanSubject(lookup_wrap, subject, &first_offset, 
+                                query_offsets, subject_offsets, array_size);
+      else
+         hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset,
 				query_offsets, subject_offsets, array_size);
 
       totalhits += hits;

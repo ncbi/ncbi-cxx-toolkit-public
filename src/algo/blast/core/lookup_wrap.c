@@ -53,6 +53,11 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
       (LookupTableWrap*) calloc(1, sizeof(LookupTableWrap));
    lookup_wrap->lut_type = lookup_options->lut_type;
 
+   if (lookup_options->rps_info) {
+      return RPSLookupTableNew(lookup_options, 
+         (LookupTable* *) &(lookup_wrap->lut));
+   }
+      
    switch ( lookup_options->lut_type ) {
    case AA_LOOKUP_TABLE:
       BlastAaLookupNew(lookup_options, (LookupTable* *)

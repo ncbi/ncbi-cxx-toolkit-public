@@ -302,6 +302,11 @@ arrays.
 void BLAST_GetAlphaBeta (char* matrixName, double *alpha,
 double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend);
 
+Int4 ** RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length, 
+                   Uint1 * rps_query_seq, Int4 db_seq_length, Int4 **posMatrix);
+
+void RPSFreePSSM(Int4 **posMatrix, Int4 num_rows);
+
 #ifdef __cplusplus
 }
 #endif

@@ -565,6 +565,7 @@ BLAST_GapAlignStructNew(const BlastScoringOptions* score_options,
       return -1;
 
    gap_align->positionBased = (sbp->posMatrix != NULL);
+   gap_align->rps_blast = FALSE;
 
    return status;
 }
@@ -3070,6 +3071,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    BLAST_SequenceBlk query_tmp;
    BlastInitHSP init_hsp_tmp;
    Int4 context;
+   Int4 **orig_pssm;
 
    if (!query || !subject || !gap_align || !score_options || !ext_params ||
        !hit_params || !init_hitlist || !hsp_list_ptr)
@@ -3082,6 +3084,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    cutoff_score = hit_params->cutoff_score;
 
    is_prot = (program_number != blast_type_blastn);
+   orig_pssm = gap_align->sbp->posMatrix;
 
    if (*hsp_list_ptr == NULL)
       *hsp_list_ptr = hsp_list = BlastHSPListNew();
@@ -3114,6 +3117,9 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
             done again if further processing is required */
          GetRelativeCoordinates(query, query_info, init_hsp, &query_tmp, 
                                 &init_hsp_tmp, &context);
+         if (orig_pssm)
+            gap_align->sbp->posMatrix = orig_pssm + 
+                                query_info->context_offsets[context];
          if (is_prot) {
             status =  
                BLAST_ProtGappedAlignment(program_number, &query_tmp, 
@@ -3157,9 +3163,14 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
       hsp_start_is_contained = FALSE;
       hsp_end_is_contained = FALSE;
       init_hsp = init_hsp_array[index];
+
       /* Now adjust the initial HSP's coordinates. */
       GetRelativeCoordinates(query, query_info, init_hsp, &query_tmp, 
                              NULL, &context);
+
+      if (orig_pssm)
+         gap_align->sbp->posMatrix = orig_pssm + 
+                                query_info->context_offsets[context];
 
       /* This prefetches this value for the test below. */
       next_offset = init_hsp->q_off;
@@ -3253,8 +3264,14 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    sfree(init_hsp_array);
 
    sfree(helper);
+   gap_align->sbp->posMatrix = orig_pssm;
+      
+   /* Remove any HSPs that share a starting or ending diagonal
+      with a higher-scoring HSP. Do not perform this step with RPS
+      blast, because the alignments can change during the traceback
+      and thus may not share any diagonals later */
 
-   if (is_prot) {
+   if (is_prot && !gap_align->rps_blast) {
       hsp_list->hspcnt = 
          CheckGappedAlignmentsForOverlap(hsp_list->hsp_array, 
             hsp_list->hspcnt, frame);

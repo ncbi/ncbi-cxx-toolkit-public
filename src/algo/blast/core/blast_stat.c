@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.47  2004/03/04 21:07:51  papadopo
+ * add RPS BLAST functionality
+ *
  * Revision 1.46  2004/02/19 21:16:48  dondosha
  * Use enum type for severity argument in Blast_MessageWrite
  *
@@ -3343,4 +3346,225 @@ BLAST_LargeGapSumE(BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate,
 	return sum_e;
 }
 
+/*------------------- RPS BLAST functions --------------------*/
 
+#define PRO_K_MULTIPLIER 1.2
+#define UNDETERMINED_CHAR 21
+#define MAX_SCORE_RANGE 10000
+#define RPS_SCORE_MIN -32767  /* inconsistent with BLAST_SCORE_MIN */
+
+static double
+RPSfindUngappedLambda(Char *matrixName)
+{
+    if (0 == strcmp(matrixName, "BLOSUM62"))
+        return 0.3176;
+    if (0 == strcmp(matrixName, "BLOSUM90"))
+        return 0.3346;
+    if (0 == strcmp(matrixName, "BLOSUM80"))
+        return 0.3430;
+    if (0 == strcmp(matrixName, "BLOSUM50"))
+        return 0.232;
+    if (0 == strcmp(matrixName, "BLOSUM45"))
+        return 0.2291;
+    if (0 == strcmp(matrixName, "PAM30"))
+        return 0.340;
+    if (0 == strcmp(matrixName, "PAM70"))
+        return 0.3345;
+    if (0 == strcmp(matrixName, "PAM250"))
+        return 0.229;
+    return(0);
+}
+
+/* matrix is a position-specific score matrix with matrixLength positions
+   queryProbArray is an array containing the probability of occurrence
+        of each residue in the query
+   scoreArray is an array of probabilities for each score that is
+        to be used as a field in return_sfp
+   return_sfp is a the structure to be filled in and returned
+   range is the size of scoreArray and is an upper bound on the
+        difference between maximum score and minimum score in the matrix
+   the routine fillSfp computes the probability of each score weighted
+        by the probability of each query residue and fills those probabilities
+        into scoreArray and puts scoreArray as a field in
+        that in the structure that is returned
+   for indexing convenience the field storing scoreArray points to the
+        entry for score 0, so that referring to the -k index corresponds to
+        score -k 
+*/
+
+static void
+RPSFillScores(Int4 **matrix, Int4 matrixLength, 
+              double *queryProbArray, double *scoreArray,  
+              BLAST_ScoreFreq* return_sfp, Int4 range)
+{
+    Int4 minScore, maxScore;    /*observed minimum and maximum scores */
+    Int4 i,j;                   /* indices */
+    double recipLength;        /* 1/matrix length as a double */
+
+    minScore = maxScore = 0;
+
+    for (i = 0; i < matrixLength; i++) {
+        for (j = 0 ; j < PSI_ALPHABET_SIZE; j++) {
+            if (j == UNDETERMINED_CHAR)
+                continue;
+            if ((matrix[i][j] > RPS_SCORE_MIN) && 
+                (matrix[i][j] < minScore))
+                minScore = matrix[i][j];
+            if (matrix[i][j] > maxScore)
+                maxScore = matrix[i][j];
+        }
+    }
+
+    return_sfp->obs_min = minScore;
+    return_sfp->obs_max = maxScore;
+    for (i = 0; i < range; i++)
+        scoreArray[i] = 0.0;
+
+    return_sfp->sprob = &(scoreArray[-minScore]); /*center around 0*/
+    recipLength = 1.0 / (double) matrixLength;
+    for(i = 0; i < matrixLength; i++) {
+        for (j = 0; j < PSI_ALPHABET_SIZE; j++) {
+            if (j == UNDETERMINED_CHAR)
+                continue;
+            if(matrix[i][j] >= minScore)
+                return_sfp->sprob[matrix[i][j]] += recipLength * 
+                                                queryProbArray[j];
+        }
+    }
+
+    return_sfp->score_avg = 0;
+    for(i = minScore; i <= maxScore; i++)
+        return_sfp->score_avg += i * return_sfp->sprob[i];
+}
+
+/*  Given a sequence of 'length' amino acid residues, compute the
+    probability of each residue and put that in the array resProb*/
+
+static void 
+RPSFillResidueProbability(Uint1 * sequence, Int4 length, double * resProb)
+{
+    Int4 frequency[PSI_ALPHABET_SIZE];  /*frequency of each letter*/
+    Int4 i;                             /*index*/
+    Int4 denominator;                   /*length not including X's*/
+
+    denominator = length;
+    for(i = 0; i < PSI_ALPHABET_SIZE; i++)
+        frequency[i] = 0;
+
+    for(i = 0; i < length; i++) {
+        if (sequence[i] != UNDETERMINED_CHAR)
+            frequency[sequence[i]]++;
+        else
+            denominator--;
+    }
+
+    for(i = 0; i < PSI_ALPHABET_SIZE; i++) {
+        if (frequency[i] == 0)
+            resProb[i] = 0.0;
+        else
+            resProb[i] = ((double) frequency[i]) /((double) denominator);
+    }
+}
+
+static double
+RPSKarlinLambdaNR(BLAST_ScoreFreq * sfp, double initialLambda)
+{
+    Int4 itn;
+    double *sprob = sfp->sprob;
+    Boolean foundPositive = FALSE;
+    Int4 j;
+
+    if (sfp->score_avg >= 0.)     /* Expected score must be negative */
+        return -1.0;
+
+    for(j = 1; j <= sfp->obs_max; j++) {
+        if (sprob[j] > 0.0) {
+            foundPositive = TRUE;
+            break;
+        }
+    }
+    if (!foundPositive) 
+        return(-1);
+
+    return NlmKarlinLambdaNR( sprob, 1, sfp->obs_min, sfp->obs_max,
+                             initialLambda, 
+                             BLAST_KARLIN_LAMBDA_ACCURACY_DEFAULT,
+                             20, 20 + BLAST_KARLIN_LAMBDA_ITER_DEFAULT, 
+                             &itn );
+}
+
+/* Calculate a new PSSM, using composition-based statistics, for use
+   with RPS BLAST. This function produces a PSSM for a single RPS DB
+   sequence (of size db_seq_length) and incorporates information from 
+   the RPS blast query. Each individual database sequence must call this
+   function to retrieve its own PSSM. The matrix is returned (and must
+   be freed elsewhere). posMatrix is the portion of the complete 
+   concatenated PSSM that is specific to this DB sequence */
+
+Int4 **
+RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length, 
+                   Uint1 * rps_query_seq, Int4 db_seq_length, 
+                   Int4 **posMatrix)
+{
+    double *scoreArray;         /*array of score probabilities*/
+    double *resProb;            /*array of probabilities for each residue*/
+    BLAST_ScoreFreq * return_sfp;/*score frequency pointers to compute lambda*/
+    Int4* * returnMatrix;        /*the PSSM to return */
+    double initialUngappedLambda; 
+    double scaledInitialUngappedLambda; 
+    double correctUngappedLambda;
+    double finalLambda;
+    double temp;               /*intermediate variable for adjusting matrix*/
+    Int4 index, inner_index; 
+
+    resProb = (double *)malloc(PSI_ALPHABET_SIZE * sizeof(double));
+    scoreArray = (double *)malloc(MAX_SCORE_RANGE * sizeof(double));
+    return_sfp = (BLAST_ScoreFreq *)malloc(sizeof(BLAST_ScoreFreq));
+
+    RPSFillResidueProbability(rps_query_seq, rps_query_length, resProb);
+
+    RPSFillScores(posMatrix, db_seq_length, resProb, scoreArray, 
+                 return_sfp, MAX_SCORE_RANGE);
+
+    initialUngappedLambda = RPSfindUngappedLambda("BLOSUM62");
+    scaledInitialUngappedLambda = initialUngappedLambda / scalingFactor;
+    correctUngappedLambda = RPSKarlinLambdaNR(return_sfp, 
+                                              scaledInitialUngappedLambda);
+    sfree(resProb);
+    sfree(scoreArray);
+    sfree(return_sfp);
+    if(correctUngappedLambda == -1.0)
+        return FALSE;
+
+    finalLambda = correctUngappedLambda/scaledInitialUngappedLambda;
+
+    returnMatrix = (Int4 **)malloc((db_seq_length+1) * sizeof(Int4 *));
+    for (index = 0; index < (db_seq_length+1); index++)
+        returnMatrix[index] = (Int4 *)malloc(PSI_ALPHABET_SIZE * sizeof(Int4));
+
+    for (index = 0; index < db_seq_length+1; index++) {
+        for (inner_index = 0; inner_index < PSI_ALPHABET_SIZE; inner_index++) {
+            if (posMatrix[index][inner_index] <= RPS_SCORE_MIN || 
+                inner_index == UNDETERMINED_CHAR) {
+                returnMatrix[index][inner_index] = 
+                    posMatrix[index][inner_index];
+            }
+            else {
+               temp = ((double)(posMatrix[index][inner_index])) * finalLambda;
+               returnMatrix[index][inner_index] = BLAST_Nint(temp);
+           }
+        }
+    }
+
+    return returnMatrix;
+}
+
+void
+RPSFreePSSM(Int4 **posMatrix, Int4 num_rows)
+{
+    Int4 i;
+
+    for (i = 0; i < (num_rows + 1); i++)
+        sfree(posMatrix[i]);
+    sfree(posMatrix);
+}

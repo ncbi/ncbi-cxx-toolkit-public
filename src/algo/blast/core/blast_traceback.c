@@ -618,22 +618,33 @@ static Boolean
 HSPSetScores(BlastQueryInfo* query_info, Uint1* query, 
    Uint1* subject, BlastHSP* hsp, 
    Uint1 program_number, BlastScoreBlk* sbp,
-   double scalingFactor,
+   const PSIBlastOptions* psi_options,
    const BlastScoringOptions* scoring_options,
    const BlastHitSavingOptions* hit_options)
 {
 
             Boolean keep = TRUE;
             Int4 align_length;
+            double scalingFactor;
+
+            if (psi_options == NULL)
+               scalingFactor = 1.0;
+            else
+               scalingFactor = psi_options->scalingFactor;
 
             /* Calculate alignment length and number of identical letters */
-            if (scoring_options->is_ooframe) 
+            if (scoring_options->is_ooframe) {
                BlastOOFGetNumIdentical(query, subject, hsp, program_number,
                                        &hsp->num_ident, &align_length);
-            else
-               BlastHSPGetNumIdentical(query, subject, hsp, 
-                  scoring_options->gapped_calculation, &hsp->num_ident, 
-                  &align_length);
+            }
+            else {
+               /* Do not get the number of identities for PSI blast,
+                  because the query may not be available */
+               if (psi_options == NULL)
+                  BlastHSPGetNumIdentical(query, subject, hsp, 
+                     scoring_options->gapped_calculation, &hsp->num_ident, 
+                     &align_length);
+            }
 
             if (hsp->num_ident * 100 < 
                 align_length * hit_options->percent_identity) {
@@ -856,7 +867,9 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
             BLAST_GetQueryLength(query_info, hsp->context);
       }
 
-      if (!HSPContainedInHSPCheck(hsp_array, hsp, index, k_is_ooframe)) {
+      if (gap_align->rps_blast || 
+          !HSPContainedInHSPCheck(hsp_array, hsp, index, k_is_ooframe)) {
+
          Int4 start_shift = 0;
          if (kTranslateSubject) {
             if (!k_is_ooframe && !partial_translation) {
@@ -926,7 +939,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
             }
             
             keep = HSPSetScores(query_info, query, subject, hsp, program_number, 
-                sbp, ((psi_options) ? psi_options->scalingFactor : 1.0), score_options, hit_options);
+                sbp, psi_options, score_options, hit_options);
 
             HSPAdjustSubjectOffset(hsp, subject_blk, k_is_ooframe, start_shift);
 
@@ -1173,3 +1186,162 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
 
    return status;
 }
+
+#define SWAP(a, b) {tmp = (a); (a) = (b); (b) = tmp; }
+
+static void 
+RPSUpdateTraceback(BlastHSP *hsp)
+{
+   Int4 tmp;
+   GapEditBlock *gap_info = hsp->gap_info;
+   GapEditScript *esp;
+
+   if (gap_info == NULL)
+      return;
+
+   SWAP(gap_info->start1, gap_info->start2);
+   SWAP(gap_info->length1, gap_info->length2);
+   SWAP(gap_info->original_length1, gap_info->original_length2);
+   SWAP(gap_info->frame1, gap_info->frame2);
+   SWAP(gap_info->translate1, gap_info->translate2);
+
+   esp = gap_info->esp;
+   while (esp != NULL) {
+      if (esp->op_type == GAPALIGN_INS)
+          esp->op_type = GAPALIGN_DEL;
+      else if (esp->op_type == GAPALIGN_DEL)
+          esp->op_type = GAPALIGN_INS;
+
+      esp = esp->next;
+   }
+}
+
+static void 
+RPSUpdateHSPList(BlastHSPList *hsplist)
+{
+   Int4 i;
+   BlastHSP **hsp;
+   BlastSeg tmp;
+
+   hsp = hsplist->hsp_array;
+   for (i = 0; i < hsplist->hspcnt; i++) {
+
+      /* switch query and subject offsets (which are
+         already in local coordinates) */
+
+      tmp = hsp[i]->query;
+      hsp[i]->query = hsp[i]->subject;
+      hsp[i]->subject = tmp;
+
+      /* Change the traceback information to reflect the
+         query and subject sequences getting switched */
+
+      RPSUpdateTraceback(hsp[i]);
+   }
+}
+
+#define RPS_K_MULT 1.2
+
+Int2 BLAST_RPSTraceback(Uint1 program_number, 
+        BlastHSPResults* results, 
+        BLAST_SequenceBlk* concat_db, BlastQueryInfo* concat_db_info, 
+        BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+        BlastGapAlignStruct* gap_align,
+        const BlastScoringOptions* score_options,
+        BlastExtensionParameters* ext_params,
+        BlastHitSavingParameters* hit_params,
+        const BlastDatabaseOptions* db_options,
+        const PSIBlastOptions* psi_options,
+        const double* karlin_k)
+{
+   Int2 status = 0;
+   Int4 i;
+   BlastHitList* hit_list;
+   BlastHSPList* hsp_list;
+   BlastScoreBlk* sbp;
+   Int4 **orig_pssm;
+   
+   if (!results || !concat_db_info || !concat_db) {
+      return 0;
+   }
+   
+   /* Set the raw X-dropoff value for the final gapped extension with 
+      traceback */
+   gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
+
+   sbp = gap_align->sbp;
+   orig_pssm = gap_align->sbp->posMatrix;
+
+   hit_list = results->hitlist_array[0];
+   if (!hit_list)
+      return 0;
+
+   sbp->kbp_gap[0]->Lambda /= psi_options->scalingFactor;
+
+   for (i = 0; i < hit_list->hsplist_count; i++) {
+      hsp_list = hit_list->hsplist_array[i];
+      if (!hsp_list)
+         continue;
+
+      if (!hsp_list->traceback_done) {
+
+         Int4 offsets[2];
+         BLAST_SequenceBlk one_db_seq;
+         BlastQueryInfo one_db_seq_info;
+         Int4 *db_seq_start;
+
+         /* pick out one of the sequences from the concatenated
+            DB (given by the OID of this HSPList). The sequence
+            size does not include the trailing NULL */
+
+         db_seq_start = &concat_db_info->context_offsets[hsp_list->oid];
+         memset(&one_db_seq, 0, sizeof(one_db_seq));
+         one_db_seq.sequence = NULL;
+         one_db_seq.length = db_seq_start[1] - db_seq_start[0] - 1;
+
+         /* Set up the QueryInfo structure for this sequence */
+
+         offsets[0] = 0;
+         offsets[1] = one_db_seq.length;
+
+         memset(&one_db_seq_info, 0, sizeof(one_db_seq_info));
+         one_db_seq_info.first_context = 0;
+         one_db_seq_info.last_context = 0;
+         one_db_seq_info.num_queries = 1;
+         one_db_seq_info.context_offsets = &offsets[0];
+         one_db_seq_info.eff_searchsp_array = query_info->eff_searchsp_array;
+
+         /* replace the PSSM for this DB sequence */
+
+         sbp->posMatrix = RPSCalculatePSSM(psi_options->scalingFactor,
+                  query->length, query->sequence, one_db_seq.length,
+                  orig_pssm + db_seq_start[0]);
+
+         /* Update the statistics for this database sequence */
+
+         sbp->kbp_gap[0]->K = RPS_K_MULT * karlin_k[hsp_list->oid];
+         sbp->kbp_gap[0]->logK = log(RPS_K_MULT * karlin_k[hsp_list->oid]);
+
+         /* compute the traceback information and calculate all the
+            E values */
+
+         BlastHSPListGetTraceback(program_number, hsp_list, &one_db_seq, 
+            query, &one_db_seq_info, gap_align, sbp, score_options, 
+            ext_params->options, hit_params, db_options, psi_options);
+
+         RPSFreePSSM(sbp->posMatrix, one_db_seq.length);
+      }
+
+      /* Revert query and subject to their traditional meanings. 
+         This involves switching the offsets around and reversing
+         any traceback information */
+
+      RPSUpdateHSPList(hsp_list);
+   }
+
+   /* restore input data */
+   sbp->kbp_gap[0]->Lambda *= psi_options->scalingFactor;
+   gap_align->sbp->posMatrix = orig_pssm;
+   return status;
+}
+

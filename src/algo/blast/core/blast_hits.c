@@ -1599,3 +1599,60 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
    
    return 1;
 }
+
+void RPSUpdateResults(BlastHSPResults *final_result,
+                      BlastHSPResults *init_result)
+{
+   Int4 i, j, k;
+   BlastHitList **hitlist;
+   BlastHSPList **hsplist;
+   BlastHSP **hsp;
+
+   /* Allocate the (one) hitlist of the final result,
+      if it hasn't been allocated already */
+
+   if (!final_result->hitlist_array[0])
+      final_result->hitlist_array[0] = BLAST_HitListNew(500);
+
+   /* For each DB sequence... */
+
+   hitlist = init_result->hitlist_array;
+   for (i = 0; i < init_result->num_queries; i++) {
+
+       if (hitlist[i] == NULL) 
+           continue;
+
+       /* DB sequence i has HSPLists; for each HSPList 
+          (corresponding to a distinct DB sequence)... */
+
+       hsplist = hitlist[i]->hsplist_array;
+       for (j = 0; j < hitlist[i]->hsplist_count; j++) {
+
+           /* Change the OID to make this HSPList correspond to
+              a distinct DB sequence */
+           
+           hsplist[j]->oid = i;
+
+           /* For each HSP in list j, there are no distinct 
+              contexts/frames anymore */
+
+           hsp = hsplist[j]->hsp_array;
+           for (k = 0; k < hsplist[j]->hspcnt; k++)
+               hsp[k]->context = 0;
+
+           /* Add the modified HSPList to the new set of results */
+
+           if (hsplist[j]->hspcnt)
+               BLAST_UpdateHitList(final_result->hitlist_array[0], 
+                                   hsplist[j], NULL);
+           else
+               hsplist[j] = BlastHSPListFree(hsplist[j]);
+       }
+
+       /* Remove the original hit list (all of its contents
+          have been moved) */
+
+       hitlist[i]->hsplist_count = 0;
+       init_result->hitlist_array[i] = BLAST_HitListFree(hitlist[i]);
+   }
+}

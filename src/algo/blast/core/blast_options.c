@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.85  2004/03/04 21:07:48  papadopo
+ * add RPS BLAST functionality
+ *
  * Revision 1.84  2004/02/27 15:56:33  papadopo
  * Mike Gertz' modifications to unify handling of gapped Karlin blocks for protein and nucleotide searches. Also modified BLAST_MainSetUp to allocate gapped Karlin blocks last
  *
@@ -997,7 +1000,7 @@ Int2
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    Uint1 program_number, Boolean is_megablast, Int4 threshold,
    Int2 word_size, Boolean ag_blast, Boolean variable_wordsize,
-   Boolean use_pssm)
+   Boolean use_pssm, RPSInfo *rps_info)
 {
    if (!options)
       return 1;
@@ -1027,6 +1030,8 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
       options->use_pssm = use_pssm;
    if (word_size)
       options->word_size = word_size;
+   if (rps_info)
+      options->rps_info = rps_info;
    if (program_number == blast_type_blastn) {
       if (!ag_blast) {
          options->scan_step = COMPRESSION_RATIO;

@@ -60,6 +60,79 @@ Int4 BlastAaLookupNew(const LookupTableOptions* opt,
   return LookupTableNew(opt, lut, TRUE);
 }
 
+Int4 RPSLookupTableNew(const LookupTableOptions* opt,
+		      LookupTable* * lut)
+{
+   Int4 i;
+   Int4 num_letters;
+   RPSInfo* info;
+   RPSLookupFileHeader *lookup_header;
+   RPSProfileHeader *profile_header;
+   LookupTable* lookup = *lut = 
+      (LookupTable*) calloc(1, sizeof(LookupTable));
+   Int4* pssm_start;
+   Int4 num_profiles;
+   Int4 longest_chain;
+
+   ASSERT(lookup != NULL);
+
+   info = opt->rps_info;
+
+   /* Fill in the lookup table information. */
+
+   lookup_header = info->lookup_header;
+   if (lookup_header->magic_number != RPS_MAGIC_NUM)
+      return -1;
+
+   lookup->rps_aux_info = &info->aux_info;
+   lookup->wordsize = BLAST_WORDSIZE_PROT;
+   lookup->alphabet_size = PSI_ALPHABET_SIZE;
+   lookup->charsize = ilog2(lookup->alphabet_size) + 1;
+   lookup->backbone_size = 1 << (lookup->wordsize * lookup->charsize);
+   lookup->mask = lookup->backbone_size - 1;
+   lookup->rps_backbone = (RPSBackboneCell *)((Uint1 *)lookup_header + 
+                          lookup_header->start_of_backbone);
+   lookup->overflow = (Int4 *)((Uint1 *)lookup_header + 
+   			lookup_header->start_of_backbone + 
+			(lookup->backbone_size + 1)* sizeof(RPSBackboneCell));
+   lookup->overflow_size = lookup_header->overflow_hits;
+
+   /* allocate the pv_array */
+   
+   lookup->pv = (PV_ARRAY_TYPE *)
+      calloc((lookup->backbone_size >> PV_ARRAY_BTS) , sizeof(PV_ARRAY_TYPE));
+
+   longest_chain = 0;
+   for (i = 0; i < lookup->backbone_size; i++) {
+      if (lookup->rps_backbone[i].num_used > 0) {
+	 PV_SET(lookup,i);
+      }
+      if (lookup->rps_backbone[i].num_used > longest_chain) {
+         longest_chain = lookup->rps_backbone[i].num_used;
+      }
+   }
+   lookup->longest_chain = longest_chain;
+
+   /* Fill in the PSSM information */
+
+   profile_header = info->profile_header;
+   if (profile_header->magic_number != RPS_MAGIC_NUM)
+      return -1;
+
+   lookup->rps_seq_offsets = profile_header->start_offsets;
+   num_profiles = profile_header->num_profiles;
+   num_letters = lookup->rps_seq_offsets[num_profiles];
+   lookup->rps_pssm = (Int4 **)malloc((num_letters+1) * sizeof(Int4 **));
+   pssm_start = profile_header->start_offsets + num_profiles + 1;
+
+   for (i = 0; i <= num_letters; i++) {
+      lookup->rps_pssm[i] = pssm_start;
+      pssm_start += lookup->alphabet_size;
+   }
+
+   return 0;
+}
+
 Int4 LookupTableNew(const LookupTableOptions* opt,
 		      LookupTable* * lut,
 		      Boolean is_protein)
@@ -382,6 +455,98 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
 
   /* if we get here, we fell off the end of the sequence */
   *offset = s - subject->sequence;
+
+  return totalhits;
+}
+
+Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
+                        const BLAST_SequenceBlk *sequence,
+                        Int4* offset,
+                        Uint4 * table_offsets,
+                        Uint4 * sequence_offsets,
+                        Int4 array_size
+		   )
+{
+  Int4 index=0;
+  Int4 table_correction;
+  Uint1* s=NULL;
+  Uint1* s_first=NULL;
+  Uint1* s_last=NULL;
+  Int4 numhits = 0; /* number of hits found for a given subject offset */
+  Int4 totalhits = 0; /* cumulative number of hits found */
+  LookupTable* lookup = lookup_wrap->lut;
+  RPSBackboneCell *cell;
+
+  s_first = sequence->sequence + *offset;
+  s_last  = sequence->sequence + sequence->length - lookup->wordsize; 
+
+  /* Calling code expects the returned sequence offsets to
+     refer to the *first letter* in a word. The legacy RPS blast
+     lookup table stores offsets to the *last* letter in each
+     word, and so a correction is needed */
+
+  table_correction = lookup->wordsize - 1;
+
+  _ComputeIndex(lookup->wordsize - 1, /* prime the index */
+		lookup->charsize,
+		lookup->mask,
+		s_first,
+		&index);
+
+  for(s=s_first; s <= s_last; s++)
+    {
+      /* compute the index value */
+      _ComputeIndexIncremental(lookup->wordsize,lookup->charsize,lookup->mask, s, &index);
+
+      /* if there are hits... */
+      if (PV_TEST(lookup, index))
+	{
+	  cell = &lookup->rps_backbone[index];
+	  numhits = cell->num_used;
+
+          ASSERT(numhits != 0);
+    
+	  if ( numhits <= (array_size - totalhits) )
+	    {
+	      Int4* src;
+	      Int4 i;
+	      if ( numhits <= RPS_HITS_PER_CELL ) {
+		/* hits live in thick_backbone */
+	        for(i=0;i<numhits;i++)
+		  {
+		    table_offsets[i + totalhits] = cell->entries[i] -
+                                                table_correction;
+		    sequence_offsets[i + totalhits] = s - sequence->sequence;
+		  }
+              }
+	      else {
+		/* hits (past the first) live in overflow array */
+		src = lookup->overflow + (cell->entries[1] / sizeof(Int4));
+		table_offsets[totalhits] = cell->entries[0] - table_correction;
+		sequence_offsets[totalhits] = s - sequence->sequence;
+	        for(i=0;i<(numhits-1);i++)
+		  {
+		    table_offsets[i+totalhits+1] = src[i] - table_correction;
+		    sequence_offsets[i+totalhits+1] = s - sequence->sequence;
+		  }
+	      }
+
+	      totalhits += numhits;
+	    }
+	  else
+	    /* not enough space in the destination array; return early */
+	    {
+	      break;
+	    }
+	}
+      else
+	/* no hits found */
+	{
+	}
+    }
+
+  /* if we get here, we fell off the end of the sequence */
+  *offset = s - sequence->sequence;
 
   return totalhits;
 }
@@ -920,8 +1085,16 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
 
 LookupTable* LookupTableDestruct(LookupTable* lookup)
 {
-   sfree(lookup->thick_backbone);
-   sfree(lookup->overflow);
+   if (lookup->rps_backbone == NULL) {
+      sfree(lookup->thick_backbone);
+      sfree(lookup->overflow);
+   }
+   else {
+      /* For RPS blast, the following will only free
+         memory that was allocated by RPSLookupTableNew. */
+      sfree(lookup->rps_pssm);
+   }
+
    sfree(lookup->pv);
    sfree(lookup);
    return NULL;
