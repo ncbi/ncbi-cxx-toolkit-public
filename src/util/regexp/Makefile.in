@@ -1,7 +1,7 @@
 # $Id$
 
 LIB_PROJ = regexp
-SUB_PROJ = test demo
+SUB_PROJ = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
