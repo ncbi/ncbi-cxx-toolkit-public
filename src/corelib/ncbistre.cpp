@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/30 23:15:11  vakatov
+* [NCBI_USE_NEW_IOSTREAM] NcbiGetline() -- use "smart" getline()
+*
 * Revision 1.3  1998/12/28 17:56:40  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -54,6 +57,9 @@ BEGIN_NCBI_SCOPE
 
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 {
+#if defined(NCBI_USE_NEW_IOSTREAM)
+    return getline(is, str, delim);
+#else
     int ch;
     if ( !is.ipfx(1) )
       return is;
@@ -80,8 +86,8 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 
     is.isfx();
     return is;
+#endif /* NCBI_USE_NEW_IOSTREAM */
 }
-
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
