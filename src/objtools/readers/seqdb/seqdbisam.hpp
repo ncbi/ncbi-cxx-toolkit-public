@@ -45,7 +45,11 @@ USING_SCOPE(objects);
 ///
 /// Manages one ISAM file, which will translate either PIGs, GIs, or
 /// Accessions to OIDs.  Translation in the other direction is done in
-/// the CSeqDBVol code.
+/// the CSeqDBVol code.  Files managed by this class include those
+/// with the extensions pni, pnd, ppi, ppd, psi, psd, nsi, nsd, nni,
+/// and nnd.  Each instance of this object will manage one pair of
+/// these files, including one whose name ends in 'i' and one whose
+/// name ends in 'd'.
 
 class CSeqDBIsam : public CObject {
 public:

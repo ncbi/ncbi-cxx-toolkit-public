@@ -49,7 +49,12 @@ USING_SCOPE(objects);
 
 /// CSeqDBVol class
 /// 
-/// This object defines access to one database volume.
+/// This object defines access to one database volume.  It aggregates
+/// file objects associated with the sequence and header data, and
+/// ISAM objects used for translation of GIs and PIGs for data in this
+/// volume.  The extensions managed here include those with file
+/// extensions (pin, phr, psq, nin, nhr, and nsq), plus the optional
+/// ISAM objects via the CSeqDBIsam class.
 
 class CSeqDBVol {
 public:
