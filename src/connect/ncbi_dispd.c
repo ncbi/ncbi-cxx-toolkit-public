@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/01/25 17:06:36  lavr
+ * s_FreeData now calls ConnNetInfo_Destroy() unconditionally
+ *
  * Revision 6.9  2001/01/12 23:51:40  lavr
  * Message logging modified for use LOG facility only
  *
@@ -103,8 +106,7 @@ static void s_FreeData(SDISPD_Data *data)
     if (!data)
         return;
 
-    if (data->net_info)
-        ConnNetInfo_Destroy(data->net_info);
+    ConnNetInfo_Destroy(data->net_info);
 
     if (data->s_info) {
         size_t i;
