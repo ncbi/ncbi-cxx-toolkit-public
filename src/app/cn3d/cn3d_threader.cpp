@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/05/26 21:58:46  thiessen
+* add CddDegapSeqAlign to PSSM generator
+*
 * Revision 1.28  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -216,9 +219,12 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double 
     aip = AsnIoClose(aip);
 #endif
 
+    // "spread" unaligned residues between aligned blocks, for PSSM construction
+    CddDegapSeqAlign(seqAlign);
+
     Seq_Mtf *seqMtf = CddDenDiagCposComp2(
         multiple->GetMaster()->parentSet->GetOrCreateBioseq(multiple->GetMaster()),
-        7,
+        -1, // use CddDenDiagCposComp2's empirical info-based pseudocount values
         seqAlign,
         NULL,
         NULL,
