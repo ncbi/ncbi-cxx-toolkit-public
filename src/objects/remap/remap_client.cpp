@@ -40,6 +40,11 @@
 // generated includes
 #include <objects/remap/remap_client.hpp>
 
+// additional includes
+#include <objects/remap/Remap_query.hpp>
+#include <objects/remap/Remap_result.hpp>
+
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -63,6 +68,49 @@ void CRemapClient::Ask(const TRequest& request, TReply& reply)
     http_stream >> MSerial_AsnBinary >> reply;
 }
 
+
+// Some convenience functions so callers don't need to build queries
+
+/// Remap a single Seq-loc
+CRef<CSeq_loc> CRemapClient::Remap(const CSeq_loc& loc,
+                                   const string& from_build,
+                                   const string& to_build)
+{
+    vector<CRef<CSeq_loc> > locs;
+    CRef<CSeq_loc> cref_loc(new CSeq_loc);
+    cref_loc->Assign(loc);
+    locs.push_back(cref_loc);
+    vector<CRef<CSeq_loc> > result;
+    Remap(locs, from_build, to_build, result);
+    if (result.size() != 1) {
+        throw runtime_error("Remap produced "
+                            + NStr::IntToString(result.size())
+                            + " result locations for a single query");
+    }
+    return result[0];
+}
+
+
+/// Remap multiple Seq-locs
+void CRemapClient::Remap(const vector<CRef<CSeq_loc> >& locs,
+                         const string& from_build, const string& to_build,
+                         vector<CRef<CSeq_loc> >& result)
+{
+    CRemap_query query;
+    query.SetFrom_build(from_build);
+    query.SetTo_build(to_build);
+    ITERATE (vector<CRef<CSeq_loc> >, loc, locs) {
+        query.SetLocs().push_back(*loc);
+    }
+    CRef<CRemap_result> remap_result = AskRemap(query);
+    result.clear();
+    result.reserve(locs.size());
+    ITERATE (CRemap_result::Tdata, loc, remap_result->Get()) {
+        result.push_back(*loc);
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -72,6 +120,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/07/29 19:46:59  jcherry
+* Added convenience methods for remapping
+*
 * Revision 1.1  2004/07/28 15:09:48  jcherry
 * Arranged to contact experimental server, which is not a named service
 *

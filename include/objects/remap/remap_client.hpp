@@ -43,6 +43,9 @@
 // generated includes
 #include <objects/remap/remap_client_.hpp>
 
+// additional includes
+#include <objects/seqloc/Seq_loc.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -60,6 +63,18 @@ public:
     ~CRemapClient(void);
     // we override this to use a server that's not a named service
     void Ask(const TRequest& request, TReply& reply);
+
+    // Convenience methods for querying
+
+    /// Remap a single Seq-loc
+    CRef<objects::CSeq_loc> Remap(const objects::CSeq_loc& loc,
+                                  const string& from_build,
+                                  const string& to_build);
+    /// Remap multiple Seq-locs
+    void                    Remap(const vector<CRef<objects::CSeq_loc> >& locs,
+                                  const string& from_build,
+                                  const string& to_build,
+                                  vector<CRef<objects::CSeq_loc> >& result);
 private:
     // Prohibit copy constructor and assignment operator
     CRemapClient(const CRemapClient& value);
@@ -89,6 +104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/07/29 19:46:59  jcherry
+* Added convenience methods for remapping
+*
 * Revision 1.2  2004/07/29 18:47:40  jcherry
 * In constructor, set up default request
 *
