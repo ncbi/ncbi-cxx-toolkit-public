@@ -191,6 +191,7 @@ void CVariant::VerifyType(bool e) const
 {
     if( !e ) {
 #ifdef _DEBUG
+        _TRACE("CVariant::VerifyType(): Wrong type");
         _ASSERT(0); 
 #else
         throw CVariantException("CVariant::VerifyType(): Wrong type");
@@ -203,6 +204,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.7  2002/05/16 21:59:55  kholodov
+ * Added: _TRACE() message to VerifyType()
+ *
  * Revision 1.6  2002/04/15 19:12:57  kholodov
  * Added VerifyType() method
  *
