@@ -107,7 +107,7 @@ void
 CBlastProteinOptionsHandle::SetHitSavingOptionsDefaults()
 {
     SetHitlistSize(500);
-    SetHitlistSize(550);
+    SetPrelimHitlistSize(550);
     SetEvalueThreshold(BLAST_EXPECT_VALUE);
     SetPercentIdentity(0);
     m_Opts->SetSumStatisticsMode(false);
@@ -148,6 +148,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/18 00:35:48  dondosha
+ * Typo fix in previous commit
+ *
  * Revision 1.4  2004/02/17 23:53:31  dondosha
  * Added setting of preliminary hitlist size
  *
