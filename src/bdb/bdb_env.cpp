@@ -60,7 +60,9 @@ void CBDB_Env::Open(const char* db_home, int flags)
 
 void CBDB_Env::OpenWithLocks(const char* db_home)
 {
-    Open(db_home, DB_INIT_LOCK);
+    // Here comes some magical combination of keys which makes BerkeleyDB 
+    // operational in blocking mode
+    Open(db_home, DB_CREATE|DB_RECOVER|DB_INIT_LOCK|DB_INIT_MPOOL);
 }
 
 
@@ -70,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/27 20:04:29  kuznets
+ * Set the correct combination of open flags (CBDB_Env::OpenWithLocks)
+ *
  * Revision 1.1  2003/08/27 15:04:25  kuznets
  * Initial revision
  *
