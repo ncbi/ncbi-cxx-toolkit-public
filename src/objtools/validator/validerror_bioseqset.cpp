@@ -133,10 +133,20 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
 //                                     Private
 // =============================================================================
 
-bool CValidError_bioseqset::MrnaProductInGPS(const CBioseq& seq)
+
+bool CValidError_bioseqset::IsMrnaProductInGPS(const CBioseq& seq)
 {
-    // !!!
-    return true;
+    if ( m_Imp.IsGPS() ) {
+        CFeat_CI mrna(
+            m_Scope->GetBioseqHandle(seq), 
+            0, 0,
+            CSeqFeatData::e_Rna,
+            CAnnot_CI::eOverlap_Intervals,
+            CFeat_CI::eResolve_TSE,
+            CFeat_CI::e_Product);
+        return (bool)mrna;
+    }
+    return false;
 }
 
 
@@ -157,7 +167,7 @@ void CValidError_bioseqset::ValidateNucProtSet
     iterate( list< CRef<CSeq_entry> >, se_list_it, seqset.GetSeq_set() ) {
         if ( (**se_list_it).IsSeq() ) {
             const CBioseq& seq = (**se_list_it).GetSeq();
-            if ( seq.IsNa()  && !MrnaProductInGPS(seq) ) {
+            if ( seq.IsNa()  &&  !IsMrnaProductInGPS(seq) ) {
                 PostErr(eDiag_Warning,
                     eErr_SEQ_PKG_GenomicProductPackagingProblem,
                     "Nucleotide bioseq should be product of mRNA "
@@ -341,42 +351,47 @@ void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
         return;
     }
     
-    const CBioseq& seq = (**se_list_it).GetSeq();
+    const CBioseq& seq = (*se_list_it)->GetSeq();
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
 
-    CFeat_CI feat_it(bsh, 0, 0, CSeqFeatData::e_Rna);
-    for (; feat_it; ++feat_it) {
-        if ((*feat_it).GetData().GetRna().GetType() ==
-            CRNA_ref::eType_mRNA) {
-            CBioseq_Handle cdna = 
-                m_Scope->GetBioseqHandle((*feat_it).GetProduct());
-            if ( !cdna ) {
-                try {
-                    const CSeq_id& id = GetId((*feat_it).GetProduct(),
-                        m_Scope);
-                    id_type = id.Which();
-                }
-                catch (...) {
-                    id_no_good = true;
-                }
-                
-                // okay to have far RefSeq product
-                if (id_no_good || id_type != CSeq_id::e_Other) {
-                    string loc_label;
-                    (*feat_it).GetProduct().GetLabel(&loc_label);
-                    
-                    if (loc_label.empty()) {
-                        loc_label = "?";
+    CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Rna);
+    for (; fi; ++fi) {
+        if (fi->GetData().GetSubtype() == CRNA_ref::eType_mRNA) {
+            if ( fi->IsSetProduct() ) {
+                CBioseq_Handle cdna = 
+                    m_Scope->GetBioseqHandle(fi->GetProduct());
+                if ( !cdna ) {
+                    try {
+                        const CSeq_id& id = GetId(fi->GetProduct(), m_Scope);
+                        id_type = id.Which();
+                    }
+                    catch (...) {
+                        id_no_good = true;
                     }
                     
-                    PostErr(eDiag_Error,
-                        eErr_SEQ_PKG_GenomicProductPackagingProblem,
-                        "Product of mRNA feature (" + loc_label +
-                        ") not packaged in genomic product set", seq);
-                    
-                }
-            } // if (cdna == 0)
-        } // if ((*feat_it)
+                    // okay to have far RefSeq product
+                    if ( id_no_good  ||  (id_type != CSeq_id::e_Other) ) {
+                        string loc_label;
+                        fi->GetProduct().GetLabel(&loc_label);
+                        
+                        if (loc_label.empty()) {
+                            loc_label = "?";
+                        }
+                        
+                        PostErr(eDiag_Error,
+                            eErr_SEQ_PKG_GenomicProductPackagingProblem,
+                            "Product of mRNA feature (" + loc_label +
+                            ") not packaged in genomic product set", seq);
+                        
+                    }
+                } // if (cdna == 0)
+            } else {
+                PostErr(eDiag_Error,
+                    eErr_SEQ_PKG_GenomicProductPackagingProblem,
+                    "Product of mRNA feature (?) not packaged in"
+                    "genomic product set", seq);
+            }
+        }
     } // for 
 }
 
@@ -390,6 +405,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/01/02 21:54:33  shomrat
+* Implemented IsMrnaProductInGPS
+*
 * Revision 1.2  2002/12/24 16:53:24  shomrat
 * Changes to include directives
 *
