@@ -315,7 +315,7 @@ void CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs, CDB_RPCCmd& cmd, int gi)
                     result->GetItem(&satKey);
                     _TRACE("sat_key: "<<satKey.Value());
                 }
-                else if(name == "ext_feat" || name == "extra_feat") {
+                else if(name == "extra_feat" || name == "ext_feat") {
                     result->GetItem(&extFeat);
 #ifdef _DEBUG
                     if ( extFeat.IsNULL() ) {
@@ -530,6 +530,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.48  2004/01/20 16:55:28  vasilche
+* Do more common check first.
+*
 * Revision 1.47  2004/01/13 21:54:50  vasilche
 * Requrrected new version
 *
