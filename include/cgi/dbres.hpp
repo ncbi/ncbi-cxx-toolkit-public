@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/08/11 18:33:02  sandomir
+* class CNcbiResource more logical (some functionality from CNcbiDbResource moved in CNcbiResource; CNcbiCommand get CNcbiResource in ctor
+*
 * Revision 1.8  1999/07/15 19:04:38  sandomir
 * GetSelfURL(() added in Context
 *
@@ -146,7 +149,6 @@ BEGIN_NCBI_SCOPE
 
 class CNcbiDatabase;
 class CNcbiDatabaseInfo;
-class CNcbiCommand;
 
 class CNCBINode;
 
@@ -155,7 +157,6 @@ class CNCBINode;
 //
 
 typedef list<CNcbiDatabaseInfo*> TDbInfoList;
-typedef list<CNcbiCommand*> TCmdList;
 
 class CNcbiDbResource : public CNcbiResource
 {
@@ -167,69 +168,18 @@ public:
     const TDbInfoList& GetDatabaseInfoList( void ) const
         { return m_dbInfo; }
 
-    virtual CNcbiDatabase& GetDatabase( const CNcbiDatabaseInfo& info ) = 0;
-
-    const TCmdList& GetCmdList( void ) const
-        { return m_cmd; }
-
-    virtual CNcbiCommand* GetDefaultCommand( void ) const = 0;
-
-    virtual void HandleRequest( CCgiContext& ctx );
+    virtual CNcbiDatabase& GetDatabase( const CNcbiDatabaseInfo& info ) = 0;    
 
 protected:
-
-    TDbInfoList m_dbInfo;
-    TCmdList m_cmd;
-};
-
-//
-// class CNcbiCommand
-//
-
-class CNcbiCommand
-{
-public:
-
-    CNcbiCommand( CNcbiDbResource& resource );
-    virtual ~CNcbiCommand( void );
-
-    virtual CNcbiCommand* Clone( void ) const = 0;
-
-    virtual CNCBINode* GetLogo( const CCgiContext& ) const { return 0; }
-    virtual string GetName( void ) const = 0;
-    virtual string GetLink( CCgiContext& ctx ) const = 0;
-
-    virtual void Execute( CCgiContext& ctx ) = 0;
-
-    virtual bool IsRequested( const CCgiContext& ctx ) const;
-
-protected:
-
-    virtual string GetEntry() const = 0;
-
-    CNcbiDbResource& GetResource() const
-        { return m_resource; }
+  
+    TDbInfoList m_dbInfo;   
 
 private:
 
-    CNcbiDbResource& m_resource;
+    // hide copy-ctor and operator=
+    CNcbiDbResource( const CNcbiDbResource& ); 
+    CNcbiDbResource& operator=( const CNcbiDbResource& );
 };
-
-//
-// class CNcbiRelocateCommand
-//
-
-class CNcbiRelocateCommand :  public CNcbiCommand
-{
-public:
-
-    CNcbiRelocateCommand( CNcbiDbResource& resource );
-
-    virtual ~CNcbiRelocateCommand( void );
-
-    virtual void Execute( CCgiContext& ctx );
-};
-
 
 //
 // class CNcbiDatabaseInfo

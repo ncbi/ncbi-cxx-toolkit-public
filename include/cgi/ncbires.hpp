@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  1999/08/11 18:33:03  sandomir
+* class CNcbiResource more logical (some functionality from CNcbiDbResource moved in CNcbiResource; CNcbiCommand get CNcbiResource in ctor
+*
 * Revision 1.28  1999/05/11 03:11:47  vakatov
 * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
 *
@@ -51,6 +54,7 @@
 
 BEGIN_NCBI_SCOPE
 
+class CNcbiCommand;
 class CNcbiResPresentation;
 class CNcbiRegistry;
 class CCgiContext;
@@ -61,6 +65,8 @@ class CNCBINode;
 // class CNcbiResource
 //
 
+typedef list<CNcbiCommand*> TCmdList;
+
 class CNcbiResource
 {
 public:
@@ -68,19 +74,76 @@ public:
     CNcbiResource(CNcbiRegistry& config);
     virtual ~CNcbiResource( void );
 
-    const CNcbiRegistry& GetConfig(void) const
-        { return m_config; }
-    CNcbiRegistry& GetConfig(void)
-        { return m_config; }
+    const CNcbiRegistry& GetConfig(void) const;
+    CNcbiRegistry& GetConfig(void);
 
-    virtual const CNcbiResPresentation* GetPresentation( void ) const
-        { return 0; }
+    virtual const CNcbiResPresentation* GetPresentation( void ) const;
 
-    virtual void HandleRequest( CCgiContext& ctx ) = 0;
+    const TCmdList& GetCmdList( void ) const;
+    virtual CNcbiCommand* GetDefaultCommand( void ) const = 0;
+
+    void AddCommand( CNcbiCommand* command );
+
+    virtual void HandleRequest( CCgiContext& ctx );
+
+protected:   
+
+    CNcbiRegistry& m_config;  
+    TCmdList m_cmd;
+
+private:
+
+    // hide copy-ctor and operator=
+    CNcbiResource( const CNcbiResource& ); 
+    CNcbiResource& operator=( const CNcbiResource& );
+};
+
+//
+// class CNcbiCommand
+//
+
+class CNcbiCommand
+{
+public:
+
+    CNcbiCommand( CNcbiResource& resource );
+    virtual ~CNcbiCommand( void );
+
+    virtual CNcbiCommand* Clone( void ) const = 0;
+
+    virtual CNCBINode* GetLogo( const CCgiContext& ) const { return 0; }
+    virtual string GetName( void ) const = 0;
+    virtual string GetLink( CCgiContext& ctx ) const = 0;
+
+    virtual void Execute( CCgiContext& ctx ) = 0;
+
+    virtual bool IsRequested( const CCgiContext& ctx ) const;
 
 protected:
 
-    CNcbiRegistry& m_config;  
+    virtual string GetEntry() const = 0;
+
+    CNcbiResource& GetResource() const
+        { return m_resource; }
+
+private:
+
+    CNcbiResource& m_resource;
+};
+
+//
+// class CNcbiRelocateCommand
+//
+
+class CNcbiRelocateCommand :  public CNcbiCommand
+{
+public:
+
+    CNcbiRelocateCommand( CNcbiResource& resource );
+
+    virtual ~CNcbiRelocateCommand( void );
+
+    virtual void Execute( CCgiContext& ctx );
 };
 
 //

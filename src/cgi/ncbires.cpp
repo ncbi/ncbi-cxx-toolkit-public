@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/08/11 18:33:50  sandomir
+* class CNcbiResource more logical (some functionality from CNcbiDbResource moved in CNcbiResource; CNcbiCommand get CNcbiResource in ctor
+*
 * Revision 1.24  1999/05/11 03:11:52  vakatov
 * Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
 *
@@ -106,6 +109,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
+
 #include <cgi/ncbires.hpp>
 #include <cgi/cgictx.hpp>
 
@@ -122,6 +127,122 @@ CNcbiResource::CNcbiResource( CNcbiRegistry& config )
 
 CNcbiResource::~CNcbiResource( void )
 {
+    DeleteElements( m_cmd );
+}
+
+const CNcbiRegistry& CNcbiResource:: GetConfig(void) const
+{ 
+  return m_config; 
+}
+
+CNcbiRegistry& CNcbiResource::GetConfig(void)
+{ 
+  return m_config; 
+}
+
+const CNcbiResPresentation* CNcbiResource::GetPresentation( void ) const
+{ 
+  return 0; 
+}
+
+const TCmdList& CNcbiResource::GetCmdList( void ) const
+{ 
+  return m_cmd; 
+}
+
+void CNcbiResource::AddCommand( CNcbiCommand* command )
+{ 
+  m_cmd.push_back( command ); 
+}
+
+void CNcbiResource::HandleRequest( CCgiContext& ctx )
+{
+    bool defCom = false;
+	
+	try {
+	    TCmdList::iterator it = find_if( m_cmd.begin(), m_cmd.end(), 
+										 PRequested<CNcbiCommand>( ctx ) );
+    
+		auto_ptr<CNcbiCommand> cmd( ( it == m_cmd.end() ) 
+									? ( defCom = true, GetDefaultCommand() )
+									: (*it)->Clone() );
+		cmd->Execute( ctx );
+		
+    } catch( std::exception& e ) {
+	    _TRACE( e.what() );
+		ctx.GetMsg().push_back( string( "Error handling request: " ) + e.what() );        
+		if( !defCom ) {
+		  auto_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
+		  cmd->Execute( ctx );
+		}
+    }
+}
+
+//
+// class CNcbiCommand
+//
+
+CNcbiCommand::CNcbiCommand( CNcbiResource& resource )
+    : m_resource( resource )
+{
+}
+
+CNcbiCommand::~CNcbiCommand( void )
+{
+}
+
+bool CNcbiCommand::IsRequested( const CCgiContext& ctx ) const
+{ 
+    const string value = GetName();
+  
+    TCgiEntries& entries = const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
+
+    pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
+    for ( TCgiEntriesI itEntr = p.first; itEntr != p.second; ++itEntr ) {
+        if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
+            return true;
+        } // if
+    } // for
+
+    // if there is no 'cmd' entry
+    // check the same for IMAGE value
+    p = entries.equal_range( NcbiEmptyString );
+    for ( TCgiEntriesI iti = p.first; iti != p.second; ++iti ) {
+        if( AStrEquiv( value, iti->second, PNocase() ) ) {
+            return true;
+        } // if
+    }
+    
+    return false;
+}
+
+//
+// class CNcbiRelocateCommand
+//
+
+CNcbiRelocateCommand::CNcbiRelocateCommand( CNcbiResource& resource )
+    : CNcbiCommand( resource )
+{
+}
+
+CNcbiRelocateCommand::~CNcbiRelocateCommand( void )
+{
+}
+
+void CNcbiRelocateCommand::Execute( CCgiContext& ctx )
+{
+    _TRACE("CNcbiRelocateCommand::Execute -> go");
+    try {
+        string url = GetLink(ctx);
+        _TRACE("CNcbiRelocateCommand::Execute changing location to:" << url);
+        ctx.GetResponse().SetHeaderValue("Location", url);
+        ctx.GetResponse().WriteHeader();
+    }
+    catch (exception&) {
+        ERR_POST("CNcbiRelocateCommand::Execute error getting url");
+        throw;
+    }
+    _TRACE("CNcbiRelocateCommand::Execute Finished");
 }
 
 END_NCBI_SCOPE
