@@ -60,12 +60,13 @@ class CSocket
 public:
     CSocket(void);
 
-    // Create a client-side socket connected to "host:port"
+    // Create a client-side socket connected to "host:port".
+    // NOTE: the created underlying "SOCK" will be owned by the "CSocket".
     CSocket(const string&   host,
             unsigned short  port,  // always in host byte order
-            const STimeout* timeout = 0);
+            const STimeout* timeout   = 0/*infinite*/);
 
-    // Call Close() and destruct
+    // Call Close(), then self-destruct
     ~CSocket(void);
 
     // Direction is one of
@@ -89,7 +90,7 @@ public:
 
     EIO_Status Shutdown(EIO_Event how);
 
-    // NOTE:  do not actually close the undelying SOCK if it is not owned
+    // NOTE:  closes the undelying SOCK only if it is owned by this "CSocket"!
     EIO_Status Close(void);
 
     // NOTE:  use CSocketAPI::Poll() to wait on several sockets at once
@@ -113,6 +114,11 @@ public:
     void GetPeerAddress(unsigned int* host, unsigned short* port,
                         ENH_ByteOrder byte_order) const;
 
+    // Specify if this "CSocket" is to own the underlying "SOCK".
+    // Return previous ownership mode.
+    EOwnership SetOwnership(EOwnership if_to_own);
+
+    // Access to the underlying "SOCK" and the system-specific socket handle
     SOCK       GetSOCK     (void) const;
     EIO_Status GetOSHandle (void* handle_buf, size_t handle_size) const;
 
@@ -125,8 +131,9 @@ public:
 
     bool IsServerSide(void) const;
 
-    // old SOCK (if any) will be closed; "if_to_own" passed as eTakeOwnership
-    // causes "sock" to close upon Close() call or destruction of the object.
+    // Close the current underlying "SOCK" (if any, and if owed),
+    // and from now on use "sock" as the underlying "SOCK" instead.
+    // NOTE:  "if_to_own" applies to the (new) "sock".
     void Reset(SOCK sock, EOwnership if_to_own);
 
 private:
@@ -155,6 +162,8 @@ public:
     CListeningSocket(void);
     // NOTE:  "port" ought to be in host byte order
     CListeningSocket(unsigned short port, unsigned short backlog = 5);
+
+    // Call Close(), then self-destruct
     ~CListeningSocket(void);
 
     // Return eIO_Success if CListeningSocket is opened and bound;
@@ -163,15 +172,25 @@ public:
 
     // NOTE:  "port" ought to be in host byte order
     EIO_Status Listen(unsigned short port, unsigned short backlog = 5);
+
+    // NOTE: the created "CSocket" will own its underlying "SOCK"
     EIO_Status Accept(CSocket*& sock, const STimeout* timeout = 0) const;
     EIO_Status Accept(CSocket&  sock, const STimeout* timeout = 0) const;
+
+    // NOTE:  closes the undelying SOCK only if it is owned by this "CSocket"!
     EIO_Status Close(void);
 
+    // Specify if this "CListeningSocket" is to own the underlying "LSOCK".
+    // Return previous ownership mode.
+    EOwnership SetOwnership(EOwnership if_to_own);
+
+    // Access to the underlying "LSOCK" and the system-specific socket handle
     LSOCK      GetLSOCK    (void) const;
     EIO_Status GetOSHandle (void* handle_buf, size_t handle_size) const;
 
 private:
-    LSOCK m_Socket;
+    LSOCK      m_Socket;
+    EOwnership m_IsOwned;
 
     // disable copy constructor and assignment
     CListeningSocket(const CListeningSocket&);
@@ -215,13 +234,13 @@ public:
                            size_t*         n_ready = 0);
 
     // Misc  (mostly BSD-like); "host" ought to be in network byte order
-    static string gethostname  (void);               // empty string on error
-    static string ntoa         (unsigned int host);
-    static string gethostbyaddr(unsigned int host);  // empty string on error
+    static string       gethostname  (void);                // empty str on err
+    static string       ntoa         (unsigned int  host);
+    static string       gethostbyaddr(unsigned int  host);  // empty str on err
     static unsigned int gethostbyname(const string& hostname);  // 0 on error
 
-    static unsigned int HostToNetLong(unsigned int    value);
-    static unsigned int NetToHostLong(unsigned int    value);
+    static unsigned int HostToNetLong (unsigned int   value);
+    static unsigned int NetToHostLong (unsigned int   value);
     static unsigned int HostToNetShort(unsigned short value);
     static unsigned int NetToHostShort(unsigned short value);
 };
@@ -255,6 +274,14 @@ inline EIO_Status CSocket::SetTimeout(EIO_Event event, const STimeout* timeout)
 inline const STimeout* CSocket::GetTimeout(EIO_Event event) const
 {
     return m_Socket ? SOCK_GetTimeout(m_Socket, event) : 0;
+}
+
+
+inline EOwnership CSocket::SetOwnership(EOwnership if_to_own)
+{
+    EOwnership prev_ownership = m_IsOwned;
+    m_IsOwned                 = if_to_own;
+    return prev_ownership;
 }
 
 
@@ -309,6 +336,14 @@ inline EIO_Status CListeningSocket::GetStatus(void) const
 }
 
 
+inline EOwnership CListeningSocket::SetOwnership(EOwnership if_to_own)
+{
+    EOwnership prev_ownership = m_IsOwned;
+    m_IsOwned                 = if_to_own;
+    return prev_ownership;
+}
+
+
 inline LSOCK CListeningSocket::GetLSOCK(void) const
 {
     return m_Socket;
@@ -316,7 +351,7 @@ inline LSOCK CListeningSocket::GetLSOCK(void) const
 
 
 inline EIO_Status CListeningSocket::GetOSHandle(void*  handle_buf,
-                                         size_t handle_size) const
+                                                size_t handle_size) const
 {
     return m_Socket
         ? LSOCK_GetOSHandle(m_Socket, handle_buf, handle_size) : eIO_Closed;
@@ -397,6 +432,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/09/16 22:32:47  vakatov
+ * Allow to change ownership for the underlying sockets "on-the-fly";
+ * plus some minor (mostly formal) code and comments rearrangements
+ *
  * Revision 6.7  2002/08/27 03:19:29  lavr
  * CSocketAPI:: Removed methods: htonl(), htons(), ntohl(), ntohs(). Added
  * as replacements: {Host|Net}To{Net|Host}{Long|Short}() (see ncbi_socket.h)
