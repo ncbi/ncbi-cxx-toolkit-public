@@ -1,47 +1,50 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author: Eugene Vasilchenko, Anton Golikov
-*
-* File Description: Common pager with 2 views
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Eugene Vasilchenko, Anton Golikov
+ *
+ * File Description: Common pager with 2 views
+ *
+ */
 
 #include <corelib/ncbistd.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <html/pager.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
-const string CPager::KParam_PageSize = "dispmax";
+
+const string CPager::KParam_PageSize      = "dispmax";
 const string CPager::KParam_ShownPageSize = "showndispmax";
-const string CPager::KParam_DisplayPage = "page";
-const string CPager::KParam_Page = "page ";
+const string CPager::KParam_DisplayPage   = "page";
+const string CPager::KParam_Page          = "page ";
 const string CPager::KParam_PreviousPages = "previous pages";
-const string CPager::KParam_NextPages = "next pages";
-const string CPager::KParam_InputPage = "inputpage";
+const string CPager::KParam_NextPages     = "next pages";
+const string CPager::KParam_InputPage     = "inputpage";
+
 
 CPager::CPager(const CCgiRequest& request,
                int pageBlockSize,
@@ -52,25 +55,26 @@ CPager::CPager(const CCgiRequest& request,
       m_PageChanged(false), m_view(view)
 {
     const TCgiEntries& entries = request.GetEntries();
-
-    if( IsPagerCommand(request) ) {
+    
+    if ( IsPagerCommand(request) ) {
         // look in preprocessed IMAGE values with empty string key
         TCgiEntriesCI i = entries.find(NcbiEmptyString);
-        if ( i != entries.end() ) {
+        if (i != entries.end()) {
             const string& value = i->second;
-            if ( value == KParam_PreviousPages ) {
+            if (value == KParam_PreviousPages) {
                 // previous pages
                 // round to previous page block
                 m_PageChanged = true;
                 int page = GetDisplayedPage(request);
                 m_DisplayPage = page - page % m_PageBlockSize - 1;
             }
-            else if ( value == KParam_NextPages ) {
+            else if (value == KParam_NextPages) {
                 // next pages
                 // round to next page block
                 m_PageChanged = true;
                 int page = GetDisplayedPage(request);
-                m_DisplayPage = page - page % m_PageBlockSize + m_PageBlockSize;
+                m_DisplayPage = page - page % m_PageBlockSize +
+                    m_PageBlockSize;
             }
             else if ( NStr::StartsWith(value, KParam_Page) ) {
                 // look for params like: "page 2"
@@ -85,7 +89,7 @@ CPager::CPager(const CCgiRequest& request,
             }
         }
         i = entries.find(KParam_InputPage);
-        if ( i != entries.end() ) {
+        if (i != entries.end()) {
             try {
                 m_DisplayPage = NStr::StringToInt(i->second) - 1;
                 m_DisplayPage = max(m_DisplayPage, 0);
@@ -118,19 +122,20 @@ CPager::CPager(const CCgiRequest& request,
     m_PageBlockStart = m_DisplayPage - m_DisplayPage % m_PageBlockSize;
 }
 
+
 bool CPager::IsPagerCommand(const CCgiRequest& request)
 {
     TCgiEntries& entries = const_cast<TCgiEntries&>(request.GetEntries());
 
     // look in preprocessed IMAGE values with empty string key
     TCgiEntriesI i = entries.find(NcbiEmptyString);
-    if ( i != entries.end() ) {
-        const string& value = i->second;
-        if ( value == KParam_PreviousPages ) {
+    if (i != entries.end()) {
+        const string& value = i->second.GetValue();
+        if (value == KParam_PreviousPages) {
             // previous pages
             return true;
         }
-        else if ( value == KParam_NextPages ) {
+        else if (value == KParam_NextPages) {
             // next pages
             return true;
         }
@@ -146,9 +151,9 @@ bool CPager::IsPagerCommand(const CCgiRequest& request)
         }
     }
     i = entries.find(KParam_InputPage);
-    if ( i != entries.end() ) {
+    if (i != entries.end()) {
         try {
-            NStr::StringToInt(i->second);
+            NStr::StringToInt(i->second.GetValue());
             return true;
         } catch (exception& _DEBUG_ARG(e)) {
             _TRACE( "Exception in CPager::IsPagerCommand: " << e.what() );
@@ -157,25 +162,27 @@ bool CPager::IsPagerCommand(const CCgiRequest& request)
     return false;
 }
 
+
 int CPager::GetDisplayedPage(const CCgiRequest& request)
 {
     const TCgiEntries& entries = request.GetEntries();
     TCgiEntriesCI entry = entries.find(KParam_DisplayPage);
 
-    if ( entry != entries.end() ) {
+    if (entry != entries.end()) {
         try {
             int displayPage = NStr::StringToInt(entry->second);
             if ( displayPage >= 0 )
                 return displayPage;
-            _TRACE( "Negative page start in CPager::GetDisplayedPage: " << displayPage );
+            _TRACE( "Negative page start in CPager::GetDisplayedPage: " <<
+                    displayPage );
         } catch (exception& _DEBUG_ARG(e)) {
             _TRACE( "Exception in CPager::GetDisplayedPage " << e.what() );
         }
     }
-
     // use default page start
     return 0;
 }
+
 
 int CPager::GetPageSize(const CCgiRequest& request, int defaultPageSize)
 {
@@ -187,7 +194,7 @@ int CPager::GetPageSize(const CCgiRequest& request, int defaultPageSize)
     } else {
         entry = entries.find(KParam_PageSize);
     }
-    if ( entry != entries.end() ) {
+    if (entry != entries.end()) {
         try {
             string dispMax = entry->second;
             int pageSize = NStr::StringToInt(dispMax);
@@ -198,7 +205,8 @@ int CPager::GetPageSize(const CCgiRequest& request, int defaultPageSize)
                                                        dispMax));
                 return pageSize;
             }	
-            _TRACE( "Nonpositive page size in CPager::GetPageSize: " << pageSize );
+            _TRACE( "Nonpositive page size in CPager::GetPageSize: " <<
+                    pageSize );
         } catch (exception& _DEBUG_ARG(e)) {
             _TRACE( "Exception in CPager::GetPageSize " << e.what() );
         }
@@ -207,13 +215,15 @@ int CPager::GetPageSize(const CCgiRequest& request, int defaultPageSize)
     return defaultPageSize;
 }
 
+
 void CPager::SetItemCount(int itemCount)
 {
     m_ItemCount = itemCount;
-    if ( m_DisplayPage * m_PageSize >= itemCount ) {
+    if (m_DisplayPage * m_PageSize >= itemCount) {
         m_DisplayPage = 0;
     }
 }
+
 
 pair<int, int> CPager::GetRange(void) const
 {
@@ -221,16 +231,19 @@ pair<int, int> CPager::GetRange(void) const
     return pair<int, int>(firstItem, min(firstItem + m_PageSize, m_ItemCount));
 }
 
+
 void CPager::CreateSubNodes(void)
 {
     AppendChild(new CHTML_hidden(KParam_ShownPageSize, m_PageSize));
     AppendChild(new CHTML_hidden(KParam_DisplayPage, m_DisplayPage));
 }
 
+
 CNCBINode* CPager::GetPageInfo(void) const
 {
-    if ( m_ItemCount <= m_PageSize )
+    if (m_ItemCount <= m_PageSize) {
         return 0;
+    }
     int lastPage = (m_ItemCount - 1) / m_PageSize;
     return new CHTMLPlainText(
         "Page " + NStr::IntToString(m_DisplayPage + 1) +
@@ -242,43 +255,53 @@ CNCBINode* CPager::GetItemInfo(void) const
     CHTML_div* node = new CHTML_div;
     node->SetClass("medium2");
     
-    if( m_ItemCount == 0 ) {
+    if (m_ItemCount == 0) {
         node->AppendChild(new CHTMLPlainText("0 items found"));
     } else {
         int firstItem = m_DisplayPage * m_PageSize + 1;
         int endItem = min((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
-        if(firstItem != endItem) {
-	    node->AppendChild(new CHTMLPlainText("Items " + NStr::IntToString(firstItem)
-                                                 + "-" + NStr::IntToString(endItem)));
+        if (firstItem != endItem) {
+            node->AppendChild(new CHTMLPlainText("Items " +
+                                                 NStr::IntToString(firstItem)
+                                                 + "-" +
+                                                 NStr::IntToString(endItem)));
         } else {
-	    node->AppendChild(new CHTMLPlainText("Item " + NStr::IntToString(firstItem)));
-	}
-        node->AppendChild(new CHTMLPlainText(" of " + NStr::IntToString(m_ItemCount)));
+            node->AppendChild(new CHTMLPlainText("Item " +
+                                                 NStr::IntToString(firstItem))
+                              );
+        }
+        node->AppendChild(new CHTMLPlainText(" of " +
+                                             NStr::IntToString(m_ItemCount)));
     }
     return node;
 }
 
+
 CNCBINode* CPager::GetPagerView(const string& imgDir,
                                 const int imgX, const int imgY,
-                                const string& js_suffix /* = kEmptyStr */) const
+                                const string& js_suffix /*kEmptyStr*/) const
 {
-    if ( m_ItemCount <= m_PageSize ) {
+    if (m_ItemCount <= m_PageSize) {
         return 0;
     }
-    switch(m_view) {
-        case eButtons: return new CPagerViewButtons(*this, js_suffix);
+    switch (m_view) {
+    case eButtons:
+        return new CPagerViewButtons(*this, js_suffix);
+    default:
+        break;
     }
-    // default old behavor
+    // Default old behavor
     return new CPagerView(*this, imgDir, imgX, imgY);
 }
 
-// pager view
 
 CPagerView::CPagerView(const CPager& pager, const string& imgDir,
                        const int imgX, const int imgY)
     : m_ImagesDir(imgDir), m_ImgSizeX(imgX), m_ImgSizeY(imgY), m_Pager(pager)
 {
+    return;
 }
+
 
 void CPagerView::AddImageString(CNCBINode* node, int number,
                                 const string& prefix, const string& suffix)
@@ -290,16 +313,18 @@ void CPagerView::AddImageString(CNCBINode* node, int number,
     for ( size_t i = 0; i < s.size(); ++i ) {
         img = new CHTML_image(name, m_ImagesDir + prefix + s[i] + suffix, 0);
         img->SetAttribute("Alt", name);
-        if( m_ImgSizeX )
+        if ( m_ImgSizeX )
             img->SetWidth( m_ImgSizeX );
-        if( m_ImgSizeY )
+        if ( m_ImgSizeY )
             img->SetHeight( m_ImgSizeY );
         node->AppendChild( img );
     }
 }
 
+
 void CPagerView::AddInactiveImageString(CNCBINode* node, int number,
-                                  const string& prefix, const string& suffix)
+                                        const string& prefix,
+                                        const string& suffix)
 {
     string s = NStr::IntToString(number + 1);
     CHTML_img* img;
@@ -315,32 +340,33 @@ void CPagerView::AddInactiveImageString(CNCBINode* node, int number,
     }
 }
 
+
 void CPagerView::CreateSubNodes()
 {
-    int column = 0;
-    int pageSize = m_Pager.m_PageSize;
-    int blockSize = m_Pager.m_PageBlockSize;
+    int column         = 0;
+    int pageSize       = m_Pager.m_PageSize;
+    int blockSize      = m_Pager.m_PageBlockSize;
 
-    int currentPage = m_Pager.m_DisplayPage;
-    int itemCount = m_Pager.m_ItemCount;
+    int currentPage    = m_Pager.m_DisplayPage;
+    int itemCount      = m_Pager.m_ItemCount;
 
     int firstBlockPage = currentPage - currentPage % blockSize;
-    int lastPage = max(0, (itemCount + pageSize - 1) / pageSize - 1);
-    int lastBlockPage = min(firstBlockPage + blockSize - 1, lastPage);
+    int lastPage       = max(0, (itemCount + pageSize - 1) / pageSize - 1);
+    int lastBlockPage  = min(firstBlockPage + blockSize - 1, lastPage);
 
-    if ( firstBlockPage > 0 ) {
+    if (firstBlockPage > 0) {
         CHTML_image* img = new CHTML_image(CPager::KParam_PreviousPages,
                                            m_ImagesDir + "prev.gif", 0);
         img->SetAttribute("Alt", CPager::KParam_PreviousPages);
-        if( m_ImgSizeX )
+        if ( m_ImgSizeX )
             img->SetWidth( m_ImgSizeX );
-        if( m_ImgSizeY )
+        if ( m_ImgSizeY )
             img->SetHeight( m_ImgSizeY );
         InsertAt(0, column++, img);
     }
 
-    for ( int i = firstBlockPage; i <= lastBlockPage ; ++i ) {
-        if ( i == currentPage ) {
+    for (int i = firstBlockPage; i <= lastBlockPage ; ++i) {
+        if (i == currentPage) {
             // current link
             AddImageString(Cell(0, column++), i, "black_", ".gif");
         }
@@ -350,19 +376,18 @@ void CPagerView::CreateSubNodes()
         }
     }
 
-    if ( lastPage != lastBlockPage ) {
+    if (lastPage != lastBlockPage) {
         CHTML_image* img = new CHTML_image(CPager::KParam_NextPages,
                                            m_ImagesDir + "next.gif", 0);
         img->SetAttribute("Alt", CPager::KParam_NextPages);
-        if( m_ImgSizeX )
+        if ( m_ImgSizeX )
             img->SetWidth( m_ImgSizeX );
-        if( m_ImgSizeY )
+        if ( m_ImgSizeY )
             img->SetHeight( m_ImgSizeY );
         InsertAt(0, column++, img);
     }
 }
 
-// pager view with buttons, see header for description
 
 CPagerViewButtons::CPagerViewButtons(const CPager& pager, const string& js_suffix)
     : m_Pager(pager), m_jssuffix(js_suffix)
@@ -371,19 +396,15 @@ CPagerViewButtons::CPagerViewButtons(const CPager& pager, const string& js_suffi
 
 void CPagerViewButtons::CreateSubNodes()
 {
-    int column = 0;
-    int pageSize = m_Pager.m_PageSize;
-    int blockSize = m_Pager.m_PageBlockSize;
-
+    int column      = 0;
+    int pageSize    = m_Pager.m_PageSize;
     int currentPage = m_Pager.m_DisplayPage;
-    int itemCount = m_Pager.m_ItemCount;
+    int itemCount   = m_Pager.m_ItemCount;
+    int lastPage    = max(0, (itemCount + pageSize - 1) / pageSize - 1);
 
-    int firstBlockPage = currentPage - currentPage % blockSize;
-    int lastPage = max(0, (itemCount + pageSize - 1) / pageSize - 1);
-    int lastBlockPage = min(firstBlockPage + blockSize - 1, lastPage);
-
-    if ( currentPage > 0 ) {
-        CHTML_a* prev = new CHTML_a("javascript:var frm = document.frmQueryBox; "
+    if (currentPage > 0) {
+        CHTML_a* prev = new CHTML_a("javascript:var frm = " \
+                                    "document.frmQueryBox; " \
 									"frm.inputpage.value=" +
                                     NStr::IntToString(currentPage) + 
                                     "; Go('Pager');", "Previous");
@@ -396,7 +417,8 @@ void CPagerViewButtons::CreateSubNodes()
     butt->SetClass("dblinks");
     butt->SetAttribute("value", "Page");
     butt->SetEventHandler(eHTML_EH_Click,
-                          "form.cmd.value='';form." + CPager::KParam_InputPage +
+                          "form.cmd.value='';form." +
+                          CPager::KParam_InputPage +
                           ".value=form.textpage" + m_jssuffix +
                           ".value;Go('Pager');");
     InsertAt(0, column, butt);
@@ -407,10 +429,10 @@ void CPagerViewButtons::CreateSubNodes()
     textpage->SetClass("dblinks");
     
     string suffix;
-    if( m_jssuffix.empty() ) {
+    if ( m_jssuffix.empty() ) {
        suffix = "1";
     }
-                               
+    
     textpage->SetEventHandler(eHTML_EH_Change,
 							  "if(form.textpage" + suffix + "){form.textpage"
                               + suffix +".value=" + "this.value}");
@@ -432,8 +454,9 @@ void CPagerViewButtons::CreateSubNodes()
     // place holder for page num, to explicitly tell about new page num
     InsertAt(0, column++, new CHTML_hidden(CPager::KParam_InputPage +
                                            m_jssuffix, kEmptyStr));
-    if ( currentPage < lastPage ) {
-        CHTML_a* next = new CHTML_a("javascript:var frm = document.frmQueryBox;"
+    if (currentPage < lastPage) {
+        CHTML_a* next = new CHTML_a("javascript:var frm = " \
+                                    "document.frmQueryBox;" \
 									"frm.inputpage.value=" +
                                     NStr::IntToString(currentPage + 2) + 
                                     ";Go('Pager');", "Next");
@@ -443,4 +466,15 @@ void CPagerViewButtons::CreateSubNodes()
     }
 }
 
+
 END_NCBI_SCOPE
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.37  2003/10/02 18:24:38  ivanov
+ * Get rid of compilation warnings; some formal code rearrangement
+ *
+ * ===========================================================================
+ */

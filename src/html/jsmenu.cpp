@@ -46,7 +46,7 @@ const string kJSMenuDefaultURL_Smith
 const string kJSMenuDefaultURL_Kurdin
  = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_3.js";
 
-// Sergey Kurdin's popup menu
+// Sergey Kurdin's side menu
 const string kJSMenuDefaultURL_KurdinSide
  = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/sidemenu/sidemenu1.js";
 const string kJSMenuDefaultURL_KurdinSideCSS
@@ -129,7 +129,7 @@ void CHTMLPopupMenu::AddItem(CNCBINode& node,
     CNcbiOstrstream out;
     node.Print(out, eHTML);
     string title = CNcbiOstrstreamToString(out);
-    // Shielding double quotes
+    // Shield double quotes
     title = NStr::Replace(title,"\"","'");
     // Add menu item
     AddItem(title, action, color, mouseover, mouseout);
@@ -161,15 +161,16 @@ void CHTMLPopupMenu::SetAttribute(EHTML_PM_Attribute attribute,
 string CHTMLPopupMenu::GetMenuAttributeValue(EHTML_PM_Attribute attribute) const
 {
     TAttributes::const_iterator i = m_Attrs.find(attribute);
-    if ( i != m_Attrs.end() )
+    if ( i != m_Attrs.end() ) {
         return i->second;
+    }
     return kEmptyStr;
 }
 
 
 string CHTMLPopupMenu::GetMenuAttributeName(EHTML_PM_Attribute attribute) const
 {
-    switch ( attribute ) {
+    switch (attribute) {
     case eHTML_PM_enableTracker:
         return "enableTracker"; 
     case eHTML_PM_disableHide:
@@ -241,7 +242,6 @@ string CHTMLPopupMenu::ShowMenu(void) const
     switch (m_Type) {
     case eSmith:
         return "window.showMenu(window." + m_Name + ");";
-
     case eKurdin:
         {
         string align_h      = GetMenuAttributeValue(eHTML_PM_alignH);
@@ -253,7 +253,6 @@ string CHTMLPopupMenu::ShowMenu(void) const
         return "PopUpMenu2_Set(" + m_Name + ",'" + align_h + s + align_v + s + 
                 color_border + s + color_title + s + color_back + "');";
         }
-
     case eKurdinSide:
         return "<script language=\"JavaScript1.2\">\n<!--\n" \
                "document.write(SideMenuType == \"static\" ? " \
@@ -272,7 +271,6 @@ string CHTMLPopupMenu::GetCodeMenuItems(void) const
     case eSmith: 
         {
             code = "window." + m_Name + " = new Menu();\n";
-
             // Write menu items
             ITERATE (TItems, i, m_Items) {
                 if ( (i->title).empty() ) {
@@ -319,17 +317,18 @@ string CHTMLPopupMenu::GetCodeMenuItems(void) const
             // Menu name always is "SideMenuParams"
             code = "var SideMenuParams = [\n";
             // Menu configuration
-            string is_dynamic  = GetMenuAttributeValue(eHTML_PM_disableHide);
-            if ( is_dynamic == "true" ) {
-                is_dynamic = "static";
-            } else if ( is_dynamic == "false" ) {  
-                is_dynamic = "dynamic";
+            string disable_hide = GetMenuAttributeValue(eHTML_PM_disableHide);
+            string menu_type;
+            if ( disable_hide == "true" ) {
+                menu_type = "static";
+            } else if ( disable_hide == "false" ) {  
+                menu_type = "dynamic";
+            // else menu_type have default value
             }
-            // else by default
             string width       = GetMenuAttributeValue(eHTML_PM_menuWidth);
             string peep_offset = GetMenuAttributeValue(eHTML_PM_peepOffset);
             string top_offset  = GetMenuAttributeValue(eHTML_PM_topOffset);
-            code += "[\"\",\"" + is_dynamic + "\",\"\",\"" + width + "\",\"" +
+            code += "[\"\",\"" + menu_type + "\",\"\",\"" + width + "\",\"" +
                 peep_offset + "\",\"" + top_offset + "\",\"\",\"\"]";
             // Write menu items
             ITERATE (TItems, i, m_Items) {
@@ -371,13 +370,15 @@ string CHTMLPopupMenu::GetCodeHead(EType type, const string& menu_lib_url)
         break;
 
     case eKurdinSide:
-        url  = menu_lib_url.empty() ? kJSMenuDefaultURL_KurdinSide : menu_lib_url;
+        url  = menu_lib_url.empty() ? kJSMenuDefaultURL_KurdinSide :
+            menu_lib_url;
         code = "<link rel=\"stylesheet\" type=\"text/css\" href=\"" +
             kJSMenuDefaultURL_KurdinSideCSS + "\">\n"; 
         break;
     }
     if ( !url.empty() ) {
-        code += "<script language=\"JavaScript1.2\" src=\"" + url + "\"></script>\n";
+        code += "<script language=\"JavaScript1.2\" src=\"" + url +
+            "\"></script>\n";
     }
     return code;
 }
@@ -423,8 +424,10 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- *
  * $Log$
+ * Revision 1.19  2003/10/02 18:24:38  ivanov
+ * Get rid of compilation warnings; some formal code rearrangement
+ *
  * Revision 1.18  2003/10/01 15:56:44  ivanov
  * Added support for Sergey Kurdin's side menu
  *
