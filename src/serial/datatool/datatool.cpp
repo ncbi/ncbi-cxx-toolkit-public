@@ -120,8 +120,8 @@ void CDataTool::Init(void)
     d->AddOptionalKey("px", "valueFile",
                       "write value in XML format",
                       CArgDescriptions::eOutputFile);
-    d->AddOptionalKey("px_ns", "namespaceName",
-                      "when writing value in XML format, reference schema and use this namespace name",
+    d->AddOptionalKey("xmlns", "namespaceName",
+                      "XML namespace name",
                       CArgDescriptions::eString);
     d->AddOptionalKey("e", "valueFile",
                       "write value in ASN.1 binary format",
@@ -341,7 +341,7 @@ bool CDataTool::ProcessData(void)
     else if ( const CArgValue& px = args["px"] ) {
         outFormat = eSerial_Xml;
         outFileName = px.AsString();
-        if ( const CArgValue& px_ns = args["px_ns"] ) {
+        if ( const CArgValue& px_ns = args["xmlns"] ) {
             use_nsName = true;
             nsName = px_ns.AsString();
         }
@@ -588,6 +588,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2004/07/29 15:52:55  gouriano
+* changed px_ns argument name to xmlns
+*
 * Revision 1.73  2004/07/22 17:50:40  gouriano
 * Added possibility to specify namespace name in XML output
 *
