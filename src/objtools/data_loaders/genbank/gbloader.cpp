@@ -39,6 +39,7 @@
 #include <objects/objmgr/reader_id1.hpp>
 #include <objects/objmgr/reader_pubseq.hpp>
 #include <dbapi/driver/exception.hpp>
+#include <dbapi/driver/interfaces.hpp>
 #include <objects/objmgr/gbloader.hpp>
 #include "gbload_util.hpp"
 #include <bitset>
@@ -783,6 +784,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2003/04/15 16:32:29  dicuccio
+* Added include for I_DriverContext from DBAPI library - avoids concerning
+* warning about deletion of unknwon type.
+*
 * Revision 1.57  2003/04/15 15:30:15  vasilche
 * Added include <memory> when needed.
 * Removed buggy buffer in printing methods.
