@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/04/03 18:47:30  vasilche
+* Added main include file for generated headers.
+* serialimpl.hpp is included in generated sources with GetTypeInfo methods
+*
 * Revision 1.16  2000/03/29 15:52:26  vasilche
 * Generated files names limited to 31 symbols due to limitations of Mac.
 * Removed unions with only one member.
@@ -322,7 +326,7 @@ void CFileCode::GenerateHPP(const string& path) const
         "#define " << hppDefine << "\n"
         "\n"
         "// standard includes\n"
-        "#include <corelib/ncbiobj.hpp>\n";
+        "#include <serial/serialbase.hpp>\n";
 
     if ( !m_HPPIncludes.empty() ) {
         header <<

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/04/03 18:47:29  vasilche
+* Added main include file for generated headers.
+* serialimpl.hpp is included in generated sources with GetTypeInfo methods
+*
 * Revision 1.11  2000/03/29 15:52:25  vasilche
 * Generated files names limited to 31 symbols due to limitations of Mac.
 * Removed unions with only one member.
@@ -311,9 +315,6 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    void DoAssign(const "<<codeClassName<<"& src);\n";
     }
     code.ClassPrivate() <<
-        "    static void* x_Create(void);\n"
-        "    static int x_Selected(const void*);\n"
-        "    static void x_Select(void*, int);\n"
         "\n";
 
     // generate initialization code
@@ -698,28 +699,15 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate type info
     code.Methods() <<
         "// helper methods\n"
-        "void* "<<methodPrefix<<"x_Create(void)\n"
-        "{\n"
-        "    return "<<GetClassName()<<"::New();\n"
-        "}\n"
-        "\n"
-        "int "<<methodPrefix<<"x_Selected(const void* object)\n"
-        "{\n"
-        "    return static_cast<const "<<codeClassName<<"*>(static_cast<const "<<GetClassName()<<"*>(object))->Which()-1;\n"
-        "}\n"
-        "void "<<methodPrefix<<"x_Select(void* object, int index)\n"
-        "{\n"
-        "    static_cast<"<<codeClassName<<"*>(static_cast<"<<GetClassName()<<"*>(object))->Select("<<STATE_ENUM<<"(index+1));\n"
-        "}\n"
         "\n"
         "// type info\n"
         "const NCBI_NS_NCBI::CTypeInfo* "<<methodPrefix<<"GetTypeInfo(void)\n"
         "{\n"
-        "    static NCBI_NS_NCBI::CGeneratedChoiceTypeInfo* info = 0;\n"
+        "    static NCBI_NS_NCBI::CGeneratedChoiceInfo* info = 0;\n"
         "    if ( !info ) {\n"
         "        typedef "<<codeClassName<<" CClass_Base;\n"
         "        typedef "<<GetClassName()<<" CClass;\n"
-        "        info = new NCBI_NS_NCBI::CGeneratedChoiceTypeInfo(\""<<GetExternalName()<<"\", sizeof(CClass), &x_Create, &x_Selected, &x_Select);\n";
+        "        info = NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateChoiceInfo(\""<<GetExternalName()<<"\");\n";
     {
         iterate ( TVariants, i, m_Variants ) {
             switch ( i->memberType ) {

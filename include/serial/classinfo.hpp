@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/04/03 18:47:09  vasilche
+* Added main include file for generated headers.
+* serialimpl.hpp is included in generated sources with GetTypeInfo methods
+*
 * Revision 1.27  2000/03/29 15:55:19  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -358,6 +362,36 @@ public:
         }
 
     virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
+};
+
+class CGeneratedClassInfo : public CClassInfoTmpl
+{
+    typedef CClassInfoTmpl CParent;
+public:
+    typedef TObjectPtr (*TCreateFunction)(void);
+    typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
+    typedef void (*TPostReadFunction)(TObjectPtr object);
+    typedef void (*TPreWriteFunction)(TConstObjectPtr object);
+
+    CGeneratedClassInfo(const char* name,
+                        const type_info& typeId, size_t size,
+                        TCreateFunction createFunction,
+                        TGetTypeIdFunction getTypeIdFunction);
+
+    void SetPostRead(TPostReadFunction func);
+    void SetPreWrite(TPreWriteFunction func);
+
+protected:
+    virtual TObjectPtr Create(void) const;
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+    virtual const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
+
+private:
+    TCreateFunction m_CreateFunction;
+    TGetTypeIdFunction m_GetTypeIdFunction;
+    TPostReadFunction m_PostReadFunction;
+    TPreWriteFunction m_PreWriteFunction;
 };
 
 template<class CLASS>

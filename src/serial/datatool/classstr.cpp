@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/04/03 18:47:30  vasilche
+* Added main include file for generated headers.
+* serialimpl.hpp is included in generated sources with GetTypeInfo methods
+*
 * Revision 1.12  2000/03/29 15:52:26  vasilche
 * Generated files names limited to 31 symbols due to limitations of Mac.
 * Removed unions with only one member.
@@ -689,11 +693,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     code.Methods() <<
         "const NCBI_NS_NCBI::CTypeInfo* "<<methodPrefix<<"GetTypeInfo(void)\n"
         "{\n"
-        "    static NCBI_NS_NCBI::CClassInfoTmpl* info = 0;\n"
+        "    static NCBI_NS_NCBI::CGeneratedClassInfo* info = 0;\n"
         "    if ( !info ) {\n"
         "        typedef "<<codeClassName<<" CClass_Base;\n"
         "        typedef "<<GetClassName()<<" CClass;\n"
-        "        info = new NCBI_NS_NCBI::CClassInfo<CClass>(\""<<GetExternalName()<<"\");\n";
+        "        info = NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateClassInfo(\""<<GetExternalName()<<"\");\n";
     if ( m_Members.size() == 1 && m_Members.front().cName.empty() ) {
         code.Methods() <<
             "        info->SetImplicit();\n";

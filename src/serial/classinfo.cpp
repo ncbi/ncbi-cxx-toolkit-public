@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/04/03 18:47:26  vasilche
+* Added main include file for generated headers.
+* serialimpl.hpp is included in generated sources with GetTypeInfo methods
+*
 * Revision 1.36  2000/03/29 21:54:48  vasilche
 * Fixed internal compiler error on MSVC.
 *
@@ -846,6 +850,71 @@ TObjectPtr CStructInfoTmpl::Create(void) const
         THROW_TRACE(bad_alloc, ());
     _TRACE("Create: " << GetName() << ": " << NStr::PtrToString(object));
     return object;
+}
+
+CGeneratedClassInfo::CGeneratedClassInfo(const char* name,
+                                         const type_info& typeId,
+                                         size_t size,
+                                         TCreateFunction cF,
+                                         TGetTypeIdFunction gTIF)
+    : CParent(name, typeId, size),
+      m_CreateFunction(cF), m_GetTypeIdFunction(gTIF),
+      m_PostReadFunction(0), m_PreWriteFunction(0)
+{
+}
+
+void CGeneratedClassInfo::SetPostRead(TPostReadFunction func)
+{
+    _ASSERT(m_PostReadFunction == 0);
+    _ASSERT(func != 0);
+    m_PostReadFunction = func;
+}
+
+void CGeneratedClassInfo::SetPreWrite(TPreWriteFunction func)
+{
+    _ASSERT(m_PreWriteFunction == 0);
+    _ASSERT(func != 0);
+    m_PreWriteFunction = func;
+}
+
+void DoSetPostRead(CGeneratedClassInfo* info,
+                   void (*func)(TObjectPtr object))
+{
+    info->SetPostRead(func);
+}
+
+void DoSetPreWrite(CGeneratedClassInfo* info,
+                   void (*func)(TConstObjectPtr object))
+{
+    info->SetPreWrite(func);
+}
+
+TObjectPtr CGeneratedClassInfo::Create(void) const
+{
+    if ( m_CreateFunction )
+        return m_CreateFunction();
+    return CParent::Create();
+}
+
+const type_info* CGeneratedClassInfo::GetCPlusPlusTypeInfo(TConstObjectPtr object) const
+{
+    return m_GetTypeIdFunction(object);
+}
+
+void CGeneratedClassInfo::WriteData(CObjectOStream& out,
+                                    TConstObjectPtr object) const
+{
+    if ( m_PreWriteFunction )
+        m_PreWriteFunction(object);
+    CParent::WriteData(out, object);
+}
+
+void CGeneratedClassInfo::ReadData(CObjectIStream& in,
+                                   TObjectPtr object) const
+{
+    CParent::ReadData(in, object);
+    if ( m_PostReadFunction )
+        m_PostReadFunction(object);
 }
 
 END_NCBI_SCOPE

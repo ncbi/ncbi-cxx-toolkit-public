@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/04/03 18:47:26  vasilche
+* Added main include file for generated headers.
+* serialimpl.hpp is included in generated sources with GetTypeInfo methods
+*
 * Revision 1.8  2000/03/14 14:42:29  vasilche
 * Fixed error reporting.
 *
@@ -191,43 +195,66 @@ void CChoiceTypeInfoBase::SkipData(CObjectIStream& in) const
     m.End();
 }
 
-CGeneratedChoiceTypeInfo::CGeneratedChoiceTypeInfo(const char* name,
-                                                   size_t size,
-                                                   TCreateFunction cF,
-                                                   TGetIndexFunction gIF,
-                                                   TSetIndexFunction sIF)
+CGeneratedChoiceInfo::CGeneratedChoiceInfo(const char* name,
+                                           size_t size,
+                                           TCreateFunction cF,
+                                           TGetIndexFunction gIF,
+                                           TSetIndexFunction sIF)
     : CParent(name), m_Size(size),
-      m_CreateFunction(cF), m_GetIndexFunction(gIF), m_SetIndexFunction(sIF)
+      m_CreateFunction(cF), m_GetIndexFunction(gIF), m_SetIndexFunction(sIF),
+      m_PostReadFunction(0), m_PreWriteFunction(0)
 {
 }
 
-CGeneratedChoiceTypeInfo::~CGeneratedChoiceTypeInfo(void)
+void CGeneratedChoiceInfo::SetPostRead(TPostReadFunction func)
 {
+    _ASSERT(m_PostReadFunction == 0);
+    _ASSERT(func != 0);
+    m_PostReadFunction = func;
 }
 
-size_t CGeneratedChoiceTypeInfo::GetSize(void) const
+void CGeneratedChoiceInfo::SetPreWrite(TPreWriteFunction func)
+{
+    _ASSERT(m_PreWriteFunction == 0);
+    _ASSERT(func != 0);
+    m_PreWriteFunction = func;
+}
+
+void DoSetPostRead(CGeneratedChoiceInfo* info,
+                   void (*func)(TObjectPtr object))
+{
+    info->SetPostRead(func);
+}
+
+void DoSetPreWrite(CGeneratedChoiceInfo* info, void
+                   (*func)(TConstObjectPtr object))
+{
+    info->SetPreWrite(func);
+}
+
+size_t CGeneratedChoiceInfo::GetSize(void) const
 {
     return m_Size;
 }
 
-TObjectPtr CGeneratedChoiceTypeInfo::Create(void) const
+TObjectPtr CGeneratedChoiceInfo::Create(void) const
 {
     return m_CreateFunction();
 }
 
-TMemberIndex CGeneratedChoiceTypeInfo::GetIndex(TConstObjectPtr object) const
+TMemberIndex CGeneratedChoiceInfo::GetIndex(TConstObjectPtr object) const
 {
     return m_GetIndexFunction(object);
 }
 
-void CGeneratedChoiceTypeInfo::SetIndex(TObjectPtr object,
-                                        TMemberIndex index) const
+void CGeneratedChoiceInfo::SetIndex(TObjectPtr object,
+                                    TMemberIndex index) const
 {
     m_SetIndexFunction(object, index);
 }
 
-TObjectPtr CGeneratedChoiceTypeInfo::x_GetData(TObjectPtr object,
-                                               TMemberIndex index) const
+TObjectPtr CGeneratedChoiceInfo::x_GetData(TObjectPtr object,
+                                           TMemberIndex index) const
 {
     _ASSERT(object != 0);
     const CMemberInfo* info = GetMembers().GetMemberInfo(index);
@@ -237,6 +264,22 @@ TObjectPtr CGeneratedChoiceTypeInfo::x_GetData(TObjectPtr object,
         _ASSERT(memberPtr != 0 );
     }
     return memberPtr;
+}
+
+void CGeneratedChoiceInfo::WriteData(CObjectOStream& out,
+                                     TConstObjectPtr object) const
+{
+    if ( m_PreWriteFunction )
+        m_PreWriteFunction(object);
+    CParent::WriteData(out, object);
+}
+
+void CGeneratedChoiceInfo::ReadData(CObjectIStream& in,
+                                    TObjectPtr object) const
+{
+    CParent::ReadData(in, object);
+    if ( m_PostReadFunction )
+        m_PostReadFunction(object);
 }
 
 END_NCBI_SCOPE

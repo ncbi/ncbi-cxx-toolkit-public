@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/04/03 18:47:10  vasilche
+* Added main include file for generated headers.
+* serialimpl.hpp is included in generated sources with GetTypeInfo methods
+*
 * Revision 1.4  2000/01/10 19:46:33  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -57,8 +61,8 @@
 BEGIN_NCBI_SCOPE
 
 // forward declaration of two main classes
-class CTypeInfo;
 class CTypeRef;
+class CTypeInfo;
 
 // typedef for object references (constant and nonconstant)
 typedef void* TObjectPtr;

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/04/03 18:47:09  vasilche
+* Added main include file for generated headers.
+* serialimpl.hpp is included in generated sources with GetTypeInfo methods
+*
 * Revision 1.7  2000/03/07 14:05:28  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -128,21 +132,25 @@ private:
     CMembersInfo m_Members;
 };
 
-class CGeneratedChoiceTypeInfo : public CChoiceTypeInfoBase
+class CGeneratedChoiceInfo : public CChoiceTypeInfoBase
 {
     typedef CChoiceTypeInfoBase CParent;
 public:
     typedef int TChoiceIndex;
     typedef TObjectPtr (*TCreateFunction)(void);
-    typedef TChoiceIndex (*TGetIndexFunction)(TConstObjectPtr);
-    typedef void (*TSetIndexFunction)(TObjectPtr, TChoiceIndex);
+    typedef TChoiceIndex (*TGetIndexFunction)(TConstObjectPtr object);
+    typedef void (*TSetIndexFunction)(TObjectPtr object, TChoiceIndex index);
+    typedef void (*TPostReadFunction)(TObjectPtr object);
+    typedef void (*TPreWriteFunction)(TConstObjectPtr object);
 
-    CGeneratedChoiceTypeInfo(const char* name,
-                             size_t size,
-                             TCreateFunction createFunction,
-                             TGetIndexFunction getIndexFunction,
-                             TSetIndexFunction setIndexFunction);
-    ~CGeneratedChoiceTypeInfo(void);
+    CGeneratedChoiceInfo(const char* name,
+                         size_t size,
+                         TCreateFunction createFunction,
+                         TGetIndexFunction getIndexFunction,
+                         TSetIndexFunction setIndexFunction);
+    
+    void SetPostRead(TPostReadFunction func);
+    void SetPreWrite(TPreWriteFunction func);
     
 protected:
     size_t GetSize(void) const;
@@ -152,11 +160,18 @@ protected:
     void SetIndex(TObjectPtr object, TMemberIndex index) const;
     TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
 
+protected:
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
+
 private:
     size_t m_Size;
     TCreateFunction m_CreateFunction;
     TGetIndexFunction m_GetIndexFunction;
     TSetIndexFunction m_SetIndexFunction;
+    TPostReadFunction m_PostReadFunction;
+    TPreWriteFunction m_PreWriteFunction;
 };
 
 END_NCBI_SCOPE
