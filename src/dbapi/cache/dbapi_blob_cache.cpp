@@ -362,7 +362,7 @@ public:
                 *bytes_written = count;
                 return eRW_Success;
             } else {  // Buffer overflow. Writing to tmp file.
-                _ASSERT(m_TmpFile == 0);
+                _ASSERT(m_TmpFile.get() == 0);
                  m_TmpFile.reset(
                      CFile::CreateTmpFileEx(m_TempDir, m_TempPrefix));
 
@@ -396,7 +396,7 @@ private:
     ERW_Result x_SaveBlob(ostream& out)
     {
         if (m_Buffer) {
-            _ASSERT(m_TmpFile == 0);
+            _ASSERT(m_TmpFile.get() == 0);
             out.write((char*)m_Buffer, m_BytesInBuffer);
         }
 
@@ -1127,6 +1127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/19 19:05:32  vasilche
+ * Fixed error.
+ *
  * Revision 1.3  2004/07/19 17:06:12  ucko
  * Don't assume that unsigned is the same as size_t!
  *
