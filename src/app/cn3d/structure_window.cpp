@@ -305,9 +305,9 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     menu->Append(MID_EDIT_CDD_NOTES, "Edit No&tes");
     menu->Enable(MID_EDIT_CDD_NOTES, !readOnly);
     menu->Append(MID_EDIT_CDD_REFERENCES, "Edit PubMed &References");
-    menu->Enable(MID_EDIT_CDD_REFERENCES, !readOnly);
+//    menu->Enable(MID_EDIT_CDD_REFERENCES, !readOnly);
     menu->Append(MID_EDIT_CDD_BOOK_REFERENCES, "Edit &Book References");
-    menu->Enable(MID_EDIT_CDD_BOOK_REFERENCES, !readOnly);
+//    menu->Enable(MID_EDIT_CDD_BOOK_REFERENCES, !readOnly);
     menu->Append(MID_ANNOT_CDD, "Edit &Annotations");
     menu->Enable(MID_ANNOT_CDD, !readOnly);
     menu->AppendSeparator();
@@ -1477,6 +1477,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/09/26 17:39:14  thiessen
+* fixes for button states
+*
 * Revision 1.19  2003/09/26 17:12:46  thiessen
 * add book reference dialog
 *

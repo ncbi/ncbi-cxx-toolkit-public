@@ -112,23 +112,6 @@ CDDBookRefDialog::CDDBookRefDialog(StructureSet *structureSet, CDDBookRefDialog 
     // fill in list box with available references
     SetWidgetStates();
 
-    bool readOnly;
-    RegistryGetBoolean(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, &readOnly);
-    if (readOnly) {
-        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bUp, ID_B_UP, wxButton)
-        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDown, ID_B_DOWN, wxButton)
-        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEdit, ID_B_EDIT, wxButton)
-        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bSave, ID_B_SAVE, wxButton)
-        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNew, ID_B_NEW, wxButton)
-        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelete, ID_B_DELETE, wxButton)
-        bUp->Disable();
-        bDown->Disable();
-        bEdit->Disable();
-        bSave->Disable();
-        bNew->Disable();
-        bDelete->Disable();
-    }
-
     // call sizer stuff
     topSizer->Fit(this);
     topSizer->SetSizeHints(this);
@@ -210,6 +193,7 @@ void CDDBookRefDialog::SetWidgetStates(void)
         }
     }
 
+
     // set widget states
     listbox->Enable(!editOn);
     tName->Enable(editOn);
@@ -222,12 +206,14 @@ void CDDBookRefDialog::SetWidgetStates(void)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bSave, ID_B_SAVE, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bNew, ID_B_NEW, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelete, ID_B_DELETE, wxButton)
-    bUp->Enable(!editOn && selectedItem > 0);
-    bDown->Enable(!editOn && selectedItem < listbox->GetCount() - 1);
-    bEdit->Enable(!editOn && selectedItem >= 0 && selectedItem < listbox->GetCount());
-    bSave->Enable(editOn);
-    bNew->Enable(!editOn);
-    bDelete->Enable(selectedItem >= 0 && selectedItem < listbox->GetCount());
+    bool readOnly;
+    RegistryGetBoolean(REG_ADVANCED_SECTION, REG_CDD_ANNOT_READONLY, &readOnly);
+    bUp->Enable(!readOnly && !editOn && selectedItem > 0);
+    bDown->Enable(!readOnly && !editOn && selectedItem < listbox->GetCount() - 1);
+    bEdit->Enable(!readOnly && !editOn && selectedItem >= 0 && selectedItem < listbox->GetCount());
+    bSave->Enable(!readOnly && editOn);
+    bNew->Enable(!readOnly && !editOn);
+    bDelete->Enable(!readOnly && selectedItem >= 0 && selectedItem < listbox->GetCount());
 }
 
 void CDDBookRefDialog::OnClick(wxCommandEvent& event)
@@ -271,7 +257,7 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
         long address, subaddress;
         if (!tAddress->GetValue().ToLong(&address) ||
             (tSubaddress->GetValue().size() > 0 && !tSubaddress->GetValue().ToLong(&subaddress))) {
-            ERRORMSG("Both address and sub-address values must be integers");
+            ERRORMSG("Address (required) and sub-address (optional) must be integers");
             return;
         }
         CRef < CCdd_descr > *sel = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem));
@@ -311,8 +297,8 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
                 if (&(*d) == sel) {
                     descrSet->Set().erase(d);
                     sSet->SetDataChanged(StructureSet::eCDDData);
-                    if (listbox->GetCount() == 1)
-                        selectedItem = -1;
+                    if (selectedItem == listbox->GetCount() - 1)
+                        selectedItem--;
                     break;
                 }
             }
@@ -440,6 +426,9 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/09/26 17:39:14  thiessen
+* fixes for button states
+*
 * Revision 1.1  2003/09/26 17:12:46  thiessen
 * add book reference dialog
 *
