@@ -76,10 +76,7 @@ CBlastOptions::~CBlastOptions()
 }
 
 // Note: only some of the options are supported for the remote case;
-// for now, I will throw a string exception if the option is not
-// available.
-
-int xyz_throwing = 0;
+// An exception is thrown if the option is not available.
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const EProgram & v)
 {
@@ -96,10 +93,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const EProgram & v)
     sprintf(errbuf, "tried to set option (%d) and value (%d), line (%d).",
             int(opt), v, __LINE__);
     
-    if (xyz_throwing)
-        x_Throwx(string("err:") + errbuf);
-    else
-        cout << "** WOULDA THROWN: " << errbuf << endl;
+    x_Throwx(string("err:") + errbuf);
 }
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
@@ -189,10 +183,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
     sprintf(errbuf, "tried to set option (%d) and value (%d), line (%d).",
             int(opt), v, __LINE__);
     
-    if (xyz_throwing)
-        x_Throwx(string("err:") + errbuf);
-    else
-        cout << "** WOULDA THROWN: " << errbuf << endl;
+    x_Throwx(string("err:") + errbuf);
 }
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
@@ -221,10 +212,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
     sprintf(errbuf, "tried to set option (%d) and value (%f), line (%d).",
             int(opt), v, __LINE__);
     
-    if (xyz_throwing)
-        x_Throwx(string("err:") + errbuf);
-    else
-        cout << "** WOULDA THROWN: " << errbuf << endl;
+    x_Throwx(string("err:") + errbuf);
 }
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
@@ -247,10 +235,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
     sprintf(errbuf, "tried to set option (%d) and value (%.20s), line (%d).",
             int(opt), v, __LINE__);
     
-    if (xyz_throwing)
-        x_Throwx(string("err:") + errbuf);
-    else
-        cout << "** WOULDA THROWN: " << errbuf << endl;
+    x_Throwx(string("err:") + errbuf);
 }
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const TSeqLocVector & v)
@@ -270,10 +255,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const SeedContainerType & v
     sprintf(errbuf, "tried to set option (%d) and value (%d), line (%d).",
             int(opt), v, __LINE__);
     
-    if (xyz_throwing)
-        x_Throwx(string("err:") + errbuf);
-    else
-        cout << "** WOULDA THROWN: " << errbuf << endl;
+    x_Throwx(string("err:") + errbuf);
 }
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const SeedExtensionMethod & v)
@@ -283,10 +265,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const SeedExtensionMethod &
     sprintf(errbuf, "tried to set option (%d) and value (%d), line (%d).",
             int(opt), v, __LINE__);
     
-    if (xyz_throwing)
-        x_Throwx(string("err:") + errbuf);
-    else
-        cout << "** WOULDA THROWN: " << errbuf << endl;
+    x_Throwx(string("err:") + errbuf);
 }
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
@@ -316,10 +295,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
     sprintf(errbuf, "tried to set option (%d) and value (%s), line (%d).",
             int(opt), (v ? "true" : "false"), __LINE__);
     
-    if (xyz_throwing)
-        x_Throwx(string("err:") + errbuf);
-    else
-        cout << "** WOULDA THROWN: " << errbuf << endl;
+    x_Throwx(string("err:") + errbuf);
 }
 
 void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const Int8 & v)
@@ -338,10 +314,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const Int8 & v)
     sprintf(errbuf, "tried to set option (%d) and value (%f), line (%d).",
             int(opt), double(v), __LINE__);
     
-    if (xyz_throwing)
-        x_Throwx(string("err:") + errbuf);
-    else
-        cout << "** WOULDA THROWN: " << errbuf << endl;
+    x_Throwx(string("err:") + errbuf);
 }
 
 
@@ -629,6 +602,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2004/08/26 20:54:10  dondosha
+* Removed printouts; throw exception when setting of unavailable option is attempted for remote handle
+*
 * Revision 1.50  2004/08/18 18:14:13  camacho
 * Remove GetProgramFromBlastProgramType, add ProgramNameToEnum
 *
