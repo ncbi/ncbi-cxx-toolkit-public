@@ -9,6 +9,10 @@ script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
 
+PLUGINS='doc_basic doc_table algo_basic algo_stdio view_text view_graphic view_align view_sequence view_table'
+BINS='gbench gbench_plugin_scan'
+
+
 
 Usage()
 {
@@ -35,27 +39,46 @@ EOF
 }
 
 
-ParseInstallFile()
+MakeDirs()
 {
-    sed_cmd="s/^$1[^a-zA-Z]*=//g"
-    while read line; do
-        case "$line" in 
-          ${1}* ) 
-            pl=`echo "$line" | sed "$sed_cmd"`
-            echo $pl
-            x_flag=yes
-            continue;
-            ;;
-        esac
+    mkdir -p $1
+    mkdir -p $1/bin
+    mkdir -p $1/lib
+    mkdir -p $1/etc
+    mkdir -p $1/plugins
+}
 
-        if [ -n "$x_flag" ]; then
-            if [ -z "$line" ]; then
-                break;
-            fi
-            pl=`echo "$line" | sed -e 's/\\\//g'`
-            echo $pl
+
+CopyFiles()
+{
+    for x in $BINS; do
+        echo copying: $x
+        src_file=$src_dir/bin/$x 
+        if [ -f $src_file ]; then
+            mv -f $target_dir/bin/$x $target_dir/bin/$x.old  2>/dev/null
+            rm -f $target_dir/bin/$x $target_dir/bin/$x.old
+            $BINCOPY $src_file $target_dir/bin/ \
+                || Error "Cannot copy file $x"
+        else
+            Error "File not found: $src_file"
         fi
-    done < ${source_dir}/gbench_install/Makefile.gbench_install
+    done
+
+    for x in $PLUGINS; do
+        echo copying plugin: $x
+        rm -f $target_dir/plugins/libgui_$x.so
+        $BINCOPY $src_dir/lib/libgui_$x.so $target_dir/plugins/ \
+          || echo "Cannot copy plugin $x"
+    done
+
+    for x in $src_dir/lib/libdbapi*.so; do
+        if [ -f $x ]; then
+            f=`basename $x`
+            echo copying DB interface: $f
+            rm -f $target_dir/lib/$f
+            $BINCOPY $x $target_dir/lib/ ||  Error "Cannot copy $x"
+        fi
+    done
 }
 
 
@@ -104,43 +127,9 @@ source_dir=`dirname $src_dir`
 source_dir=$source_dir/src/gui/gbench/
 
 
-PLUGIN_COPY_LIST=`ParseInstallFile PLUGINS`
-BIN_COPY_LIST=`ParseInstallFile BINS`
+MakeDirs $target_dir
 
-# ---------------------------------
-# making target directory structure
-
-mkdir -p $target_dir
-mkdir -p $target_dir/bin
-mkdir -p $target_dir/lib
-mkdir -p $target_dir/etc
-mkdir -p $target_dir/plugins
-
-
-for x in $BIN_COPY_LIST; do
-    echo copying: $x
-    mv -f $target_dir/bin/$x $target_dir/bin/$x.old  2>/dev/null
-    rm -f $target_dir/bin/$x $target_dir/bin/$x.old
-    cp -p $src_dir/bin/$x $target_dir/bin/ \
-      || Error "Cannot copy file $x"
-done
-
-for x in $PLUGIN_COPY_LIST; do
-    echo copying plugin: $x
-    rm -f $target_dir/plugins/libgui_$x.so
-    $BINCOPY $src_dir/lib/libgui_$x.so $target_dir/plugins/ \
-      || echo "Cannot copy plugin $x"
-done
-
-for x in $src_dir/lib/libdbapi*.so; do
-    if [ -f $x ]; then
-        f=`basename $x`
-        echo copying DB interface: $f
-        rm -f $target_dir/lib/$f
-        $BINCOPY $x $target_dir/lib/ \
-          ||  Error "Cannot copy $x"
-    fi
-done
+CopyFiles
 
 
 echo preparing scripts 
@@ -150,19 +139,18 @@ if [ ! -f $source_dir/gbench_install/run-gbench.sh ]; then
 fi
 
 cat ${source_dir}/gbench_install/run-gbench.sh \
- | sed "s,@install_dir@,${target_dir}/gbench,g" \
- > ${target_dir}/gbench/bin/run-gbench.sh
+ | sed "s,@install_dir@,${target_dir},g" \
+ > ${target_dir}/bin/run-gbench.sh
 
-chmod 755 ${target_dir}/gbench/bin/run-gbench.sh
+chmod 755 ${target_dir}/bin/run-gbench.sh
 
 if [ -f ${source_dir}/gbench_install/move-gbench.sh ]; then
-   cp -p ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/gbench/bin/
+   cp -p ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/bin/
 fi
-
-cp -p ${source_dir}/gbench.ini ${target_dir}/gbench/etc/  
+cp -p ${source_dir}/gbench.ini ${target_dir}/etc/  
 
 echo "Configuring plugin cache"
 . ${script_dir}/common.sh
 COMMON_AddRunpath ${target_dir}/lib
-${target_dir}/gbench/bin/gbench_plugin_scan -dir ${target_dir}/gbench/plugins \
+${target_dir}/bin/gbench_plugin_scan -dir ${target_dir}/plugins \
   || Error "Plugin scan failed"
