@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/05/11 13:58:52  grichenk
+* Removed "while" reading loop in CIStreamBuffer::FillBuffer()
+*
 * Revision 1.24  2001/04/17 21:47:29  vakatov
 * COStreamBuffer::Flush() -- try to flush the underlying output stream
 * regardless of its state (clear the state temporarily before flushing,
@@ -347,7 +350,7 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
         m_BufferSize = newSize;
     }
     size_t load = m_BufferSize - dataSize;
-    while ( load > 0 ) {
+    if ( load > 0 ) {
         size_t count = m_Input->Read(m_DataEndPos, load);
         if ( count == 0 ) {
             if ( pos < m_DataEndPos )
