@@ -222,7 +222,7 @@ or explicitly with a call to <i><b>CONN_ReInit()</b></i> provided that replacing
 <hr>
 
 
-<a name="ref_SocketConnector"></a><h3>Socket connector</h3>
+<a name="ref_SocketConnector"></a><h3>Socket Connector</h3>
 
 Constructors are defined in:
 <pre>
@@ -274,7 +274,7 @@ be used to turn debugging information on.
 <hr>
 
 
-<a name="ref_FileConnector"></a><h3>File connector</h3>
+<a name="ref_FileConnector"></a><h3>File Connector</h3>
 
 Constructors defined in:
 <pre>
@@ -292,7 +292,7 @@ but rather resembles data exchange via socket. )
 Extended variant of this connector's constructor,
 <a href="../lxr/ident?i=FILE_CreateConnectorEx"><i><b>FILE_CreateConnectorEx()</b></i></a>
 takes an additional argument, pointer to a structure of type <a href="../lxr/ident?i=SFileConnAttr"><b><i>SFileConnAttr</i></b></a>
-describing file connector attributes, like initial read position to start from in the input file, open mode for output file (append
+describing file connector attributes, like initial read position to start from in the input file, open mode for the output file (append
 <a href="../lxr/ident?i=EFileConnMode"><i><b>eFCM_Append</b></i></a>, truncate <i><b>eFCM_Truncate</b></i>, or seek <i><b>eFCM_Seek</b></i>
 to start writing at a specified file position), and the position in the output file, which is used in <i>seek</i> open mode.
 Attribute pointer passed as <tt>NULL</tt> is equivalent to a call to
@@ -303,7 +303,7 @@ beginning of the input file, and entirely overwrites the output file (if any) im
 <hr>
 
 
-<a name="ref_HTTPConnector"></a><h3>HTTP connector</h3>
+<a name="ref_HTTPConnector"></a><h3>HTTP Connector</h3>
 
 Constructors defined in:
 <pre>
@@ -538,7 +538,7 @@ is foreseen by the application, and default behavior occurs.
 <hr>
 
 
-<a name="ref_ServiceConnector"></a><h3>Service connector</h3>
+<a name="ref_ServiceConnector"></a><h3>Service Connector</h3>
 
 Constructors defined in:
 <pre>
@@ -974,7 +974,7 @@ static const SSERV_Info* s_GetNextInfo(<a href="../lxr/ident?i=SERV_ITER">SERV_I
                 free(env); /* must be freed explicitly */
         }
         if (reset)
-            break; /* coming to reset 2 times in a row means no server fits */
+            break; /* coming to reset 2 times in a row means no server fit */
         <a href="../lxr/ident?i=SERV_Reset">SERV_Reset</a>(iter);
         reset = 1;
     }
