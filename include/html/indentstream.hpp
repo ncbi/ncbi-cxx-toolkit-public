@@ -28,8 +28,6 @@
  *
  * Author:  Aaron Ucko
  *
- * File Description:  Indenting output stream support
- *
  */
 
 /// @file indentstream.hpp
@@ -65,6 +63,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/16 15:12:32  ivanov
+ * Minor cosmetic changes
+ *
  * Revision 1.4  2003/11/05 18:41:06  dicuccio
  * Added export specifiers
  *

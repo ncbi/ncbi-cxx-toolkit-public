@@ -28,7 +28,6 @@
  *
  * Author:  Vladimir Ivanov
  *
- *
  */
 
 /// @file jsmenu.hpp 
@@ -233,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/01/16 15:12:32  ivanov
+ * Minor cosmetic changes
+ *
  * Revision 1.16  2003/12/18 20:14:21  golikov
  * Added HideMenu
  *

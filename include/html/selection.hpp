@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author: Eugene Vasilchenko
+ * Author:  Eugene Vasilchenko
  *
  */
 
@@ -77,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/01/16 15:12:32  ivanov
+ * Minor cosmetic changes
+ *
  * Revision 1.7  2003/11/05 18:41:06  dicuccio
  * Added export specifiers
  *

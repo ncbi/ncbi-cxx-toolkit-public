@@ -28,8 +28,6 @@
  *
  * Author:  Lewis Geer
  *
- * File Description:  Class creation factory
- *
  */
 
 /// @file factory.hpp 
@@ -112,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/01/16 15:12:31  ivanov
+ * Minor cosmetic changes
+ *
  * Revision 1.9  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *
