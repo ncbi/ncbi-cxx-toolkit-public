@@ -71,7 +71,7 @@ public:
 
 protected:
     /// Overrides SubjectSequenceOptionsDefaults for RPS-TBLASTN options
-    void SetSubjectSequenceOptionsDefaults();
+    void SetQueryOptionDefaults();
 
 private:
     /// Disallow copy constructor
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * =======================================================================
  * $Log$
+ * Revision 1.5  2004/09/21 13:49:52  dondosha
+ * RPS tblastn now needs a special SetQueryOptionDefaults method, but can use the default SetSubjectSequenceOptionsDefaults method
+ *
  * Revision 1.4  2004/06/08 22:41:04  camacho
  * Add missing doxygen comments
  *
