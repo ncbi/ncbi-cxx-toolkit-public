@@ -614,7 +614,7 @@ void CCachedId1Reader::RetrieveSeqrefs(TSeqrefs& srs, int gi, TConn conn)
 
 void CCachedId1Reader::GetTSEChunk(const CSeqref& seqref,
                                    CTSE_Chunk_Info& chunk_info,
-                                   TConn conn)
+                                   TConn /*conn*/)
 {
     CStopWatch sw;
     if ( CollectStatistics() ) {
@@ -1304,6 +1304,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.23  2004/02/17 21:20:11  vasilche
+ * Fixed 'unused argument' warning.
+ *
  * Revision 1.22  2004/01/22 20:53:31  vasilche
  * Fixed include path.
  *
