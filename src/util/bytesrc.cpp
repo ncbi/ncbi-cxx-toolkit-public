@@ -57,25 +57,30 @@ CByteSourceReader::~CByteSourceReader(void)
 }
 
 
-CRef<CSubSourceCollector> 
-CByteSourceReader::SubSource(size_t /*prevent*/,CRef<CSubSourceCollector> parent)
+CRef<CSubSourceCollector>
+CByteSourceReader::SubSource(size_t /*prevent*/,
+                             CRef<CSubSourceCollector> parent)
 {
     return CRef<CSubSourceCollector>(new CMemorySourceCollector(parent));
 }
 
 
 CSubSourceCollector::CSubSourceCollector(CRef<CSubSourceCollector> parent)
- : m_ParentSubSource(parent)
+    : m_ParentSubSource(parent)
 {
+    return;
 }
+
 
 CSubSourceCollector::~CSubSourceCollector(void)
 {
+    return;
 }
+
 
 void CSubSourceCollector::AddChunk(const char* buffer, size_t bufferLength)
 {
-    if (!m_ParentSubSource.IsNull()) {
+    if ( !m_ParentSubSource.IsNull() ) {
         m_ParentSubSource->AddChunk(buffer,bufferLength);
     }
 }
@@ -100,7 +105,7 @@ bool CByteSourceReader::EndOfData(void) const
 CRef<CByteSourceReader> CStreamByteSource::Open(void)
 {
     return CRef<CByteSourceReader>
-      (new CStreamByteSourceReader(this, m_Stream));
+        (new CStreamByteSourceReader(this, m_Stream));
 }
 
 
@@ -120,23 +125,24 @@ size_t CIRByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
     size_t bytes_read;
     m_Reader->Read(buffer, bufferLength, &bytes_read);
-    if (bytes_read < bufferLength) {
+    if ( bytes_read < bufferLength ) {
         m_EOF = true;
     }
     return bytes_read;
 }
+
 
 bool CIRByteSourceReader::EndOfData(void) const
 {
     return m_EOF;
 }
 
+
 CFStreamByteSource::CFStreamByteSource(const string& fileName, bool binary)
     : CStreamByteSource(*new CNcbiIfstream(fileName.c_str(),
                                            IFStreamFlags(binary)))
 {
     if ( !*m_Stream ) {
-//        THROW1_TRACE(runtime_error, "file not found: " + fileName);
         NCBI_THROW(CUtilException,eNoInput,"file not found: " + fileName);
     }
 }
@@ -179,7 +185,7 @@ CSubFileByteSource::CSubFileByteSource(const CFileByteSource& file,
 CRef<CByteSourceReader> CSubFileByteSource::Open(void)
 {
     return CRef<CByteSourceReader>
-      (new CSubFileByteSourceReader(this, m_Start, m_Length));
+        (new CSubFileByteSourceReader(this, m_Start, m_Length));
 }
 
 
@@ -190,9 +196,10 @@ CFileByteSourceReader::CFileByteSourceReader(const CFileByteSource* source)
                 IFStreamFlags(source->IsBinary()))
 {
     if ( !m_FStream ) {
-//        THROW1_TRACE(runtime_error, "file not found: " +source->GetFileName());
+//        THROW1_TRACE(runtime_error, "file not found: " +
+//                     source->GetFileName());
         NCBI_THROW(CUtilException,eNoInput,
-            "file not found: " +source->GetFileName());
+                   "file not found: " +source->GetFileName());
     }
     m_Stream = &m_FStream;
 }
@@ -209,8 +216,9 @@ CSubFileByteSourceReader::CSubFileByteSourceReader(const CFileByteSource* s,
 
 size_t CSubFileByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
-    if ( TFileOff(bufferLength) > m_Length )
+    if ( TFileOff(bufferLength) > m_Length ) {
         bufferLength = size_t(m_Length);
+    }
     size_t count = CParent::Read(buffer, bufferLength);
     m_Length -= TFileOff(count);
     return count;
@@ -266,8 +274,9 @@ CMemoryChunk::CMemoryChunk(const char* data, size_t dataSize,
       m_DataSize(dataSize)
 {
     memcpy(m_Data, data, dataSize);
-    if ( prevChunk )
+    if ( prevChunk ) {
         prevChunk->m_NextChunk = this;
+    }
     prevChunk = this;
 }
 
@@ -300,7 +309,7 @@ size_t CMemoryByteSourceReader::Read(char* buffer, size_t bufferLength)
     while ( m_CurrentChunk ) {
         size_t avail = GetCurrentChunkAvailable();
         if ( avail == 0 ) {
-            // end of current chunk
+            // End of current chunk
             CConstRef<CMemoryChunk> rest = m_CurrentChunk->GetNextChunk();
             m_CurrentChunk = rest;
             m_CurrentChunkOffset = 0;
@@ -321,19 +330,22 @@ bool CMemoryByteSourceReader::EndOfData(void) const
     return !m_CurrentChunk;
 }
 
-CMemorySourceCollector::CMemorySourceCollector(CRef<CSubSourceCollector> parent)
-: CSubSourceCollector(parent)
+
+CMemorySourceCollector::CMemorySourceCollector(CRef<CSubSourceCollector>
+                                               parent)
+    : CSubSourceCollector(parent)
 {
+    return;
 }
 
 void CMemorySourceCollector::AddChunk(const char* buffer,
                                       size_t bufferLength)
 {
     CSubSourceCollector::AddChunk(buffer, bufferLength);
-
     m_LastChunk = new CMemoryChunk(buffer, bufferLength, m_LastChunk);
-    if ( !m_FirstChunk )
+    if ( !m_FirstChunk ) {
         m_FirstChunk = m_LastChunk;
+    }
 }
 
 
@@ -350,30 +362,35 @@ CWriterSourceCollector::CWriterSourceCollector(IWriter*    writer,
       m_Writer(writer),
       m_Own(own)
 {
+    return;
 }
 
 
 CWriterSourceCollector::~CWriterSourceCollector()
 {
-    if (m_Own)
+    if ( m_Own ) {
         delete m_Writer;
+    }
 }
 
 
 void CWriterSourceCollector::SetWriter(IWriter*   writer, 
                                        EOwnership own)
 {
-    if (m_Own)
+    if ( m_Own ) {
         delete m_Writer;
+    }
     m_Writer = writer;
     m_Own = own;    
 }
+
 
 void CWriterSourceCollector::AddChunk(const char* buffer, size_t bufferLength)
 {
     size_t written;
     m_Writer->Write(buffer, bufferLength, &written);
 }
+
 
 CRef<CByteSource> CWriterSourceCollector::GetSource(void)
 {
@@ -383,24 +400,25 @@ CRef<CByteSource> CWriterSourceCollector::GetSource(void)
 }
 
 
-
 CRef<CSubSourceCollector> 
-CWriterByteSourceReader::SubSource(size_t prepend, 
-                                    CRef<CSubSourceCollector> parent)
+CWriterByteSourceReader::SubSource(size_t /*prepend*/,
+                                   CRef<CSubSourceCollector> parent)
 {
     return 
-     CRef<CSubSourceCollector>(
-        new CWriterSourceCollector(m_Writer, eNoOwnership, parent));
+        CRef<CSubSourceCollector>(
+            new CWriterSourceCollector(m_Writer, eNoOwnership, parent));
 }
-
 
 
 END_NCBI_SCOPE
 
 
 /*
- * ---------------------------------------------------------------------------
+ * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/10/01 21:14:55  ivanov
+ * Formal code rearrangement
+ *
  * Revision 1.27  2003/10/01 19:27:57  kuznets
  * Fixed compilation bug with CIRByteSourceReader::m_EOF
  *
