@@ -616,7 +616,7 @@ CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
 
          CSeq_data& seq_data = inst.SetSeq_data();
          CIUPACna& na = seq_data.SetIupacna();
-         na = data;
+         na = CIUPACna(data);
 
          // once we've created the bioseq, we need to add it to the
          // scope
@@ -778,6 +778,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2003/10/21 14:41:35  grichenk
+* Fixed type convertion
+*
 * Revision 1.52  2003/09/26 16:58:34  todorov
 * Fixed the length of c_buff
 *
