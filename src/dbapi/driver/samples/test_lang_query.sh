@@ -10,8 +10,7 @@ RunTest() {
   reg_exp=$2
   tmp="/tmp/$0.$$"
   $cmd "$sql" > $tmp 2>&1
-  cat $tmp
-  grep "Can not load a driver" $tmp  ||  return
+  grep "Can not load a driver" $tmp  &&  return
   egrep "$reg_exp" $tmp
   result=$?
   rm $tmp
