@@ -261,12 +261,35 @@ CImage* CImage::GetSubImage(size_t x, size_t y, size_t w, size_t h) const
 }
 
 
+void CImage::Flip(void)
+{
+    if ( !m_Data.size() ) {
+        return;
+    }
+
+    unsigned char* from = SetData();
+    unsigned char* to   = from + (m_Height - 1) * m_Width * m_Depth;
+    size_t stride = m_Width * m_Depth;
+
+    while (to > from) {
+        for (size_t pos = 0;  pos < stride;  ++pos) {
+            std::swap(from[pos], to[pos]);
+        }
+        from += stride;
+        to   -= stride;
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/12 19:49:56  dicuccio
+ * Added Flip() to flip an image along the y-axis
+ *
  * Revision 1.2  2003/06/09 19:27:53  dicuccio
  * Added GetAspectRatio()
  *
