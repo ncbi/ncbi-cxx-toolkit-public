@@ -262,7 +262,7 @@ private:
         eNoError         =  0,   /// Lookup was successful
         eBadVersion      =  -10, /// The format version of the ISAM file is unsupported.
         eBadType         =  -11, /// The requested ISAM type did not match the file.
-        eWrongFile       =  -12, /// The file was not found, or was the wrong length.
+        eWrongFile       =  -12  /// The file was not found, or was the wrong length.
     };
     
     /// The key-value pair type for numerical indices
