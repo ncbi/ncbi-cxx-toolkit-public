@@ -1,4 +1,5 @@
 # $Id$
 
-LIBOBJ = ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbistd
+LIBOBJ = ncbidiag ncbiexpt ncbistre ncbiapp ncbireg ncbienv ncbistd ncbiobj
+
 LIB    = xncbi
