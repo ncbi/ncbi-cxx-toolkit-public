@@ -161,6 +161,7 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
             }
             *(logFrame->logText) << errMsg.c_str();
             logFrame->totalChars += errMsg.size();
+            logFrame->logText->ShowPosition(logFrame->logText->GetLastPosition());
         } else {
             // if message window doesn't exist yet, store messages until later
             backLog.push_back(errMsg.c_str());
@@ -454,6 +455,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/06/21 20:54:03  thiessen
+* explicitly show bottom of log when new text appended
+*
 * Revision 1.3  2003/05/29 14:34:19  thiessen
 * force serial object verification
 *
