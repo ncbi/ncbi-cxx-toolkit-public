@@ -106,9 +106,13 @@ typedef struct BLAST_SequenceBlk {
                                         for sequence_start */
    Uint1* oof_sequence; /**< Mixed-frame protein representation of a
                              nucleotide sequence for out-of-frame alignment */
-   BlastMaskLoc* lcase_mask; /**< Locations to be masked from operations on this 
-                           sequence: lookup table for query; scanning for
-                           subject. */
+   Boolean oof_sequence_allocated; /**< TRUE if memory has been allocated 
+                                        for oof_sequence */
+   BlastMaskLoc* lcase_mask; /**< Locations to be masked from operations on 
+                                this sequence: lookup table for query; 
+                                scanning for subject. */
+   Boolean lcase_mask_allocated; /**< TRUE if memory has been allocated for 
+                                    lcase_mask */
 } BLAST_SequenceBlk;
 
 /** The query related information 
