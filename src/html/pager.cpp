@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/01/20 21:41:36  vasilche
+* Fixed bug with lost current page.
+*
 * Revision 1.1  1999/01/19 21:17:42  vasilche
 * Added CPager class
 *
@@ -102,6 +105,21 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize)
                             << e.what() );
                     // ignore exception right now
                 }
+            }
+        }
+        if ( !m_PageChanged ) {
+            TCgiEntriesCI page = entries.find(KParam_DisplayPage);
+            if ( page != entries.end() ) {
+                try {
+                    m_DisplayPage = StringToInt(page->second);
+                } catch (exception e) {
+                    _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
+                            << e.what() );
+                    m_DisplayPage = 0;
+                }
+            }
+            else {
+                m_DisplayPage = 0;
             }
         }
     }
