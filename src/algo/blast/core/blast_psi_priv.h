@@ -257,6 +257,13 @@ _PSIPurgeAlignedRegion(PsiAlignmentData* alignment,
                        unsigned int start,
                        unsigned int stop);
 
+/** This function is called after the biased sequences and regions have
+ * been purged from PSIPurgeBiasedSegments. Its provided as public for
+ * convenience in testing.
+ */
+void
+_PSIUpdatePositionCounts(PsiAlignmentData* alignment);
+
 /** Checks for any positions in sequence seq_index still considered for PSSM 
  * construction. If none is found, the entire sequence is marked as unused.
  * @param alignment Alignment data
@@ -314,6 +321,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/07/02 17:57:57  camacho
+ * Made _PSIUpdatePositionCounts non-static
+ *
  * Revision 1.7  2004/06/21 12:52:44  camacho
  * Replace PSI_ALPHABET_SIZE for BLASTAA_SIZE
  *
