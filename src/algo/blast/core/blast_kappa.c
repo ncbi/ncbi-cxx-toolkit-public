@@ -56,11 +56,12 @@ static char const rcsid[] =
 #define scoreRange 10000
 
 
-
-
 /*positions of true characters in protein alphabet*/
 Int4 trueCharPositions[20] = {1,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,22};
 
+#define KAPPA_CMP(a,b) ((a)>(b) ? 1 : ((a)<(b) ? -1 : 0)) /**< A macro expression that returns 1, 0, -1 if a is greater than,
+                                                           *   equal to or less than b, respectively.  This macro evaluates its
+                                                           *   arguments more than once. */
 
 /** Structure used for full Smith-Waterman results. 
 */
@@ -71,7 +72,8 @@ typedef struct SWResults {
     Int4 seqEnd;               /**< end of alignment on match */
     Int4 queryStart;           /**< start of alignment on query */
     Int4 queryEnd;             /**< end of alignment on query */
-    Int4 score;                /**< score of alignment */
+    Int4 score;                /**< best score for this match record. */
+    Int4 scoreThisAlign;       /**< score of alignment */
     double eValue;             /**< best expect value for this match record */
     double eValueThisAlign;    /**< expect value of this alignment. */
     double Lambda;             /**< Karlin-Altschul parameter. */
@@ -81,6 +83,36 @@ typedef struct SWResults {
                                   ties on rare occasions */
     BlastHSP* hsp;             /**< Saves alignment informaiton for conversion to SeqAlign. */
 } SWResults;
+
+/** A comparison function used to sort SWResult objects by score in
+ *  decending order. Ties are broken first by evalue and then by position. 
+ * Called kappa_score_compare_swresults in kappa.c
+ * @param v1 first record to be compared [in]
+ * @param v2 second record to be compared [in]
+ * @return 1, 0, -1 if v1 is "greater than, equal to or less" than v2
+ */
+static int
+kappa_score_cmp_swresults(void* v1, void* v2)
+{
+  SWResults *sw1, *sw2;         /* the SWResult objects to be compared */
+  int result;                   /* the result of the comparison */
+
+  sw1 = (SWResults *) v1;
+  sw2 = (SWResults *) v2;
+
+  if(0 == (result = KAPPA_CMP(sw1->scoreThisAlign, sw2->scoreThisAlign)) &&
+     0 == (result = KAPPA_CMP(sw2->eValueThisAlign, sw1->eValueThisAlign)) &&
+     0 == (result = KAPPA_CMP(sw2->seqStart,       sw1->seqStart)) &&
+     0 == (result = KAPPA_CMP(sw1->seqEnd,         sw2->seqEnd)) &&
+     0 == (result = KAPPA_CMP(sw2->queryStart,     sw1->queryStart))) {
+    /* if all other test can't distinguish the SWResult objects, then
+       the final test is the result */
+    result = KAPPA_CMP(sw1->queryEnd, sw2->queryEnd);
+  }
+  return result;
+
+}
+
 
 /**
  * Frees the linked-list of SWResults.  Does not deallocate the BlastHSP 
@@ -119,7 +151,8 @@ static SWResults* SWResultsFree(SWResults* sw_results)
  */
 static SWResults *
 SWResultsNew(Uint1* sequence,
-             Int4 score,
+             Int4 newScore,
+             Int4 bestScore,
              double newEvalue,
              double bestEvalue,
              Boolean isFirstAlignment,
@@ -132,11 +165,12 @@ SWResultsNew(Uint1* sequence,
   newSW = (SWResults *) calloc(1, sizeof(SWResults));
   if(newSW) {
     newSW->seq     = sequence;
-    newSW->score   = score;
+    newSW->score   = bestScore;
     newSW->eValue  = bestEvalue;
     newSW->Lambda  = lambda;
     newSW->logK    = logK;
 
+    newSW->scoreThisAlign  = newScore;
     newSW->eValueThisAlign  = newEvalue;
     newSW->isFirstAlignment = isFirstAlignment;
     newSW->subject_index    = subject_index;
@@ -245,12 +279,14 @@ Kappa_MatchRecordInsertHSP(
   double localScalingFactor,
   Uint1* query_seq
 ) {
+  Int4 newScore; /* Score of the alignment to be inserted. */
   SWResults *newSW;             /* A new SWResults object that
                                    represents the alignment to be
                                    inserted */
+  newScore  = BLAST_Nint(((double) (*hsp)->score) / localScalingFactor);
 
   newSW =
-    SWResultsNew(self->sequence, self->score, 
+    SWResultsNew(self->sequence, newScore, self->score, 
                  (*hsp)->evalue, self->eValue, (Boolean) (NULL == self->alignments),
                  localScalingFactor * lambda, logK,
                  self->subject_index);
@@ -304,6 +340,9 @@ Kappa_MatchRecordInsertSwAlign(
   SWResults *newSW;             /* A new SWResults object that
                                    represents the alignment to be
                                    inserted */
+  SWResults **insert;           /* location at which newSW will be
+                                   inserted into the current list of
+                                   alignments */
   GapEditBlock* editBlock=NULL; /* Contains representation of traceback. */
 
   if(NULL == self->alignments) {
@@ -312,7 +351,7 @@ Kappa_MatchRecordInsertSwAlign(
     self->score = newScore;
   }
   newSW =
-    SWResultsNew(self->sequence, self->score, newEvalue,
+    SWResultsNew(self->sequence, newScore, self->score, newEvalue,
                  self->eValue, (Boolean) (NULL == self->alignments),
                  lambda * localScalingFactor, logK, self->subject_index);
 
@@ -332,7 +371,18 @@ Kappa_MatchRecordInsertSwAlign(
  
   SWAlignGetNumIdentical(newSW, query_seq); /* Calculate num identities, attach to HSP. */
 
-  self->alignments  = newSW;
+  /* Insert into the sorted list. The new alignment will almost always
+   * be inserted at the head of the list; the two exceptions are if
+   * the x-drop alignments computed a different score than the
+   * Smith-Waterman alignment, or if multiple distinct alignments have
+   * the same score. */
+  insert = &self->alignments;
+  while(*insert != NULL &&
+        kappa_score_cmp_swresults(newSW, *insert) > 0) {
+    insert = &(*insert)->next;
+  }
+  newSW->next = *insert;
+  *insert = newSW;
 }
 
 
@@ -1246,7 +1296,7 @@ static Int4 BLspecialSmithWatermanFindStart(Uint1 * matchSeq,
  * of HSP's. kbp stores parameters for computing the score
  * Code is adapted from procedure output_hits of pseed3.c
  * @param SWAligns List of Smith-Waterman alignments [in]
- * @param hitlist BlastHitList that is filled in [in|out]
+ * @param hitList BlastHitList that is filled in [in|out]
  */
 static Int2 newConvertSWalignsUpdateHitList(SWResults * SWAligns, BlastHitList* hitList)
 {
@@ -1819,7 +1869,7 @@ Kappa_ForbiddenRangesInitialize(
 
 
 /** Reset self to be empty 
- * @param self the object to be reset [in|out]
+ * @param self object to be reset [in|out]
  */
 static void
 Kappa_ForbiddenRangesClear(Kappa_ForbiddenRanges * self)
@@ -1899,13 +1949,16 @@ Kappa_ForbiddenRangesRelease(Kappa_ForbiddenRanges * self)
  * @param localScalingFactor the factor by which the
  *                 scoring system has been scaled in order to obtain
  *                 greater precision [in]
- * @param * queryAlignmentExtent length of the alignment in the query sequence,
+ * @param queryAlignmentExtent length of the alignment in the query sequence,
  *                          as computed by the x-drop algorithm [out]
- * @param * matchAlignmentExtent length of the alignment in the subject sequence,
+ * @param matchAlignmentExtent length of the alignment in the subject sequence,
  *                          as computed by the x-drop algorithm  [out]
- * @param ** reverseAlignScript alignment information (script) returned by 
-                            a x-drop alignment algorithm [out]
- * @param * newScore alignment score computed by the x-drop algorithm [out]
+ * @param reverseAlignScript alignment information (script) returned by 
+ *                           a x-drop alignment algorithm [out]
+ * @param kbp contains Karlin-Altschul parameters [in]
+ * @param effSearchSpace effective search space [in]
+ * @param newScore alignment score computed by the x-drop algorithm [out]
+ * @param newEvalue alignment expect value computed by the x-drop algorithm [out]
  */
 static void
 Kappa_SWFindFinalEndsUsingXdrop(
@@ -1932,8 +1985,11 @@ Kappa_SWFindFinalEndsUsingXdrop(
                            as computed by the x-drop algorithm */
   Int4 ** reverseAlignScript,   /* alignment information (script)
                                  * returned by a x-drop alignment algorithm */
-  Int4 * newScore        /* alignment score computed by the
+  Blast_KarlinBlk* kbp,       /* the Karlin-Altschul parameters */
+  Int8 effSearchSpace,   /* the effective size of the search space */
+  Int4 * newScore,       /* alignment score computed by the
                                    x-drop algorithm */
+  double * newEvalue       /* evalue of the x-drop alignment x-drop algorithm */
 ) {
   Int4 XdropAlignScore;         /* alignment score obtained using X-dropoff
                                  * method rather than Smith-Waterman */
@@ -1961,6 +2017,7 @@ Kappa_SWFindFinalEndsUsingXdrop(
   } while((XdropAlignScore < score) && (doublingCount < 3));
 
   *newScore = BLAST_Nint(((double) XdropAlignScore) / localScalingFactor);
+  *newEvalue = BLAST_KarlinStoE_simple(XdropAlignScore, kbp, effSearchSpace);
 }
 
 
@@ -2229,13 +2286,12 @@ Kappa_RescaleSearch(Kappa_SearchParameters * sp,
 }
 
 
-/*LambdaRatioLowerBound is used when the expected score is too large
- * causing impalaKarlinLambdaNR to give a Lambda estimate that
- * is too small, or to fail entirely returning -1*/
-#define LambdaRatioLowerBound 0.5
+#define LambdaRatioLowerBound 0.5 /** <LambdaRatioLowerBound is used when the expected score is too large
+                                   * causing impalaKarlinLambdaNR to give a Lambda estimate that
+                                   * is too small, or to fail entirely returning -1*/
 
 /** Adjust the search parameters
- * @param searchParams a record of the initial search parameters [in|out]
+ * @param sp a record of the initial search parameters [in|out]
  * @param queryLength length of query sequence [in]
  * @param filteredSequence a filtered subject sequence [in] 
  * @param length length of the filtered sequence  [in]
@@ -2584,6 +2640,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
             /* score computed by an x-drop alignment (usually the same
              * as aSwScore */
             Int4 newXdropScore;  
+            double newXdropEvalue;
             /* Lengths of the alignment  as recomputed by an x-drop alignment,
                in the query and the match*/
             Int4 queryAlignmentExtent, matchAlignmentExtent;
@@ -2602,10 +2659,11 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
                                             aSwScore, localScalingFactor,
                                             &queryAlignmentExtent, &matchAlignmentExtent,
                                             &reverseAlignScript,
-                                            &newXdropScore);
+                                            kbp, queryInfo->eff_searchsp_array[0],
+                                            &newXdropScore, &newXdropEvalue);
 
             Kappa_MatchRecordInsertSwAlign(&aSwMatch, newXdropScore,
-                                           newSwEvalue, kbp->Lambda,
+                                           newXdropEvalue, kbp->Lambda,
                                            kbp->logK, localScalingFactor,
                                            matchStart, matchAlignmentExtent,
                                            queryStart, queryAlignmentExtent,
