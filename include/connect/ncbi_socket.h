@@ -573,6 +573,12 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
 );
 
 
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WipeMsg
+(SOCK      sock,                        /* [in]  SOCK from DSOCK_Create[Ex]()*/
+ EIO_Event direction                    /* [in]  either of eIO_Read|eIO_Write*/
+ );
+
+
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SetBroadcast
 (SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
  int/*bool*/     broadcast              /* [in]  set(1)/unset(0) bcast capab.*/
@@ -681,6 +687,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2003/01/16 16:30:57  lavr
+ * Add prototype for DSOCK_WipeMsg()
+ *
  * Revision 6.29  2003/01/15 19:50:45  lavr
  * Datagram socket interface revised
  *
