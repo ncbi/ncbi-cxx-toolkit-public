@@ -42,7 +42,6 @@ Detailed Contents:
 #ifndef __BLASTOPTIONS__
 #define __BLASTOPTIONS__
 
-#include <ncbi.h>
 #include <blast_def.h>
 #include <blast_message.h>
 #include <objloc.h>
@@ -354,13 +353,15 @@ typedef struct BlastFormattingOptions {
 
 *********************************************************************************/
 
-/** Deallocate memory for QuerySetUpOptions. */
+/** Deallocate memory for QuerySetUpOptions. 
+ * @param options Structure to free [in]
+ */
 QuerySetUpOptionsPtr BlastQuerySetUpOptionsFree(QuerySetUpOptionsPtr options);
 
 
 /** Allocate memory for QuerySetUpOptions and fill with default values.  
  * @param options The options that have are being returned [out]
-*/
+ */
 Int2 BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options);
 
 /** Fill non-default contents of the QuerySetUpOptions.
@@ -373,7 +374,9 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
         const Uint1 program, const char *filter_string, Uint1 strand_option);
 
 
-/** Deallocate memory for BlastInitialWordOptions. */
+/** Deallocate memory for BlastInitialWordOptions.
+ * @param options Structure to free [in]
+ */
 BlastInitialWordOptionsPtr
 BlastInitialWordOptionsFree(BlastInitialWordOptionsPtr options);
 
@@ -405,11 +408,17 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptionsPtr options,
    FloatHi xdrop_ungapped);
 
 
-/** Deallocate memory for BlastInitialWordParameters. */
+/** Deallocate memory for BlastInitialWordParameters.
+ * @param parameters Structure to free [in]
+ */
 BlastInitialWordParametersPtr
 BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters);
 
 /** Allocate memory for BlastInitialWordParameters and set x_dropoff.
+ * Calling BlastInitialWordParametersNew calculates the
+ * raw x_dropoff from the bit x_dropoff and puts it into
+ * the x_dropoff field of BlastInitialWordParametersPtr.
+ *
  * @param word_options The initial word options [in]
  * @param hit_params The hit saving options (needed to calculate cutoff score 
  *                    for ungapped extensions) [in]
@@ -427,7 +436,9 @@ BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options,
    BlastEffectiveLengthsOptionsPtr eff_len_options, 
    BlastInitialWordParametersPtr *parameters);
 
-/** Deallocate memory for BlastExtensionOptions. */
+/** Deallocate memory for BlastExtensionOptions.
+ * @param options Structure to free [in]
+ */
 BlastExtensionOptionsPtr
 BlastExtensionOptionsFree(BlastExtensionOptionsPtr options);
 
@@ -473,12 +484,16 @@ Int2 BlastExtensionParametersNew(const Uint1 blast_program,
         BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info, 
         BlastExtensionParametersPtr *parameters);
 
-/** Deallocate memory for BlastExtensionParameters. */
+/** Deallocate memory for BlastExtensionParameters. 
+ * @param parameters Structure to free [in]
+ */
 BlastExtensionParametersPtr
 BlastExtensionParametersFree(BlastExtensionParametersPtr parameters);
 
 
-/**  Deallocate memory for BlastScoringOptions. */
+/**  Deallocate memory for BlastScoringOptions. 
+ * @param options Structure to free [in]
+ */
 BlastScoringOptionsPtr BlastScoringOptionsFree(BlastScoringOptionsPtr options);
 
 /** Allocate memory for BlastScoringOptions and fill with default values. 
@@ -511,7 +526,9 @@ BLAST_FillScoringOptions(BlastScoringOptionsPtr options, const Uint1 program,
 Int2
 BlastScoringOptionsValidate( BlastScoringOptionsPtr options, Blast_MessagePtr *blast_msg);
 
-/** Deallocate memory for BlastEffectiveLengthsOptionsPtr. */
+/** Deallocate memory for BlastEffectiveLengthsOptionsPtr. 
+ * @param options Structure to free [in]
+ */
 BlastEffectiveLengthsOptionsPtr 
 BlastEffectiveLengthsOptionsFree(BlastEffectiveLengthsOptionsPtr options);
 
@@ -558,9 +575,9 @@ BLAST_FillLookupTableOptions(LookupTableOptionsPtr options,
    Int2 word_size, Boolean ag_blast, Boolean variable_wordsize);
 
 
-/*******************************************************************************
-        Deallocates memory for LookupTableOptionsPtr
-*********************************************************************************/
+/** Deallocates memory for LookupTableOptionsPtr.
+ * @param options Structure to free [in]
+ */
 LookupTableOptionsPtr
 LookupTableOptionsFree(LookupTableOptionsPtr options);
 
@@ -568,11 +585,12 @@ LookupTableOptionsFree(LookupTableOptionsPtr options);
  * @param options The options that have are being returned [in]
  * @param blast_msg The options that have are being returned [out]
 */
-
 Int2
 LookupTableOptionsValidate(LookupTableOptionsPtr options,  Blast_MessagePtr *blast_msg);
 
-/** Deallocate memory for BlastHitSavingOptions. */
+/** Deallocate memory for BlastHitSavingOptions. 
+ * @param options Structure to free [in]
+ */
 BlastHitSavingOptionsPtr
 BlastHitSavingOptionsFree(BlastHitSavingOptionsPtr options);
 
@@ -586,11 +604,6 @@ Int2
 BlastHitSavingOptionsValidate(BlastHitSavingOptionsPtr options, 
    Uint1 program, Blast_MessagePtr *blast_msg);
 
-/*************************************************************************
-
-	Deallocate memory for BlastHitSavingParameterPtr.
-
-*************************************************************************/
 /** Allocate memory for BlastHitSavingOptions.
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
@@ -608,11 +621,16 @@ Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptionsPtr options, 
    Boolean is_gapped, FloatHi evalue, Int4 hitlist_size);
 
-/** Deallocate memory for BlastHitSavingOptionsPtr. */
+/** Deallocate memory for BlastHitSavingOptionsPtr. 
+ * @param parameters Structure to free [in]
+ */
 BlastHitSavingParametersPtr
 BlastHitSavingParametersFree(BlastHitSavingParametersPtr parameters);
 
 /** Allocate memory for BlastInitialWordParameters and set x_dropoff. 
+ * Calculates the (raw) score cutoff given an expect value and puts
+ * it in the "cutoff_score" field of the returned BlastHitSavingParametersPtr
+ *
  * @param options The given hit saving options [in]
  * @param handle_results Callback function for printing results on the fly [in]
  * @param sbp Scoring block, needed for calculating score cutoff from 
@@ -641,6 +659,7 @@ Int2 BlastFormattingOptionsNew(const Uint1 program, CharPtr file_out,
 
 /** Deallocate memory for formatting options. In particular,
  * close the output file.
+ * @param format_options Structure to free [in]
  */
 BlastFormattingOptionsPtr 
 BlastFormattingOptionsFree(BlastFormattingOptionsPtr format_options);
