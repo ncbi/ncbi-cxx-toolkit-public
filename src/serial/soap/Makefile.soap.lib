@@ -1,0 +1,10 @@
+# $Id$
+
+# Build library "XSOAP"
+#################################
+
+SRC = \
+	soap_body soap_envelope soap_header soap_message \
+        soap_readhook soap_writehook
+
+LIB    = xsoap
