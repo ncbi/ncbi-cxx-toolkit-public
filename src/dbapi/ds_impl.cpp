@@ -100,10 +100,19 @@ CDB_MultiEx* CDataSource::GetErrorAsEx()
 
 string CDataSource::GetErrorInfo()
 {
-    if( GetHandler() != 0 ) {
+    if( m_multiExH != 0 ) {
         CNcbiOstrstream out;
         CDB_UserHandler_Stream h(&out);
         h.HandleIt(GetHandler()->GetMultiEx());
+
+        // Install new MultiEx 
+        m_context->PopCntxMsgHandler(m_multiExH);
+        m_context->PopDefConnMsgHandler(m_multiExH);
+        delete m_multiExH;
+        m_multiExH = new CToMultiExHandler;
+        m_context->PushCntxMsgHandler(m_multiExH);
+        m_context->PushDefConnMsgHandler(m_multiExH);
+
         return CNcbiOstrstreamToString(out);
     }
     else
@@ -145,6 +154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/10/22 21:43:50  kholodov
+ * Fixed: the message stack is cleaned after GetErrorInfo() called
+ *
  * Revision 1.14  2004/07/28 18:36:13  kholodov
  * Added: setting ownership for connection objects
  *
