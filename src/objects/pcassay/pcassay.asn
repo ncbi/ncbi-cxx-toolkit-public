@@ -1,4 +1,4 @@
- -- $Id: pcassay.asn,v 1.3 2005/02/04 15:04:39 bolton Exp $
+-- $Id: pcassay.asn,v 1.4 2005/03/02 16:18:49 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -102,7 +102,8 @@ PC-AssayResults ::= SEQUENCE {
                       }                          OPTIONAL,
     rank              INTEGER                    OPTIONAL, -- Numeric Rank of Assay Outcome
                                                            --   Note: Larger numbers are more active
-    data              SEQUENCE OF PC-AssayData             -- Data Values (vector)
+    data              SEQUENCE OF PC-AssayData,            -- Data Values (vector)
+    url               VisibleString              OPTIONAL  -- Depositor provided URL for this Result 
 }
 
 
@@ -296,6 +297,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcassay.asn,v $
+-- Revision 1.4  2005/03/02 16:18:49  bolton
+-- Added optional URL for Substance Result.
+--
 -- Revision 1.3  2005/02/04 15:04:39  bolton
 -- Added assay result ranking.  Reorganized order of object definitions.
 --
@@ -361,6 +365,3 @@ END
 -- Minor changes to make "pcassay" library compile.
 --
 -- ===========================================================================
-
-
-
