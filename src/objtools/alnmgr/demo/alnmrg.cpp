@@ -90,6 +90,12 @@ void CAlnMrgApp::Init(void)
          CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
+        ("binout", "out_file_name",
+         "Binary output",
+         CArgDescriptions::eOutputFile, "/dev/null",
+         CArgDescriptions::fPreOpen);
+
+    arg_desc->AddDefaultKey
         ("b", "bin_obj_type",
          "This forced the input file to be read in binary ASN.1 mode\n"
          "and specifies the type of the top-level ASN.1 object.\n",
@@ -160,14 +166,10 @@ void CAlnMrgApp::LoadInputAlignments(void)
 
     CNcbiIstream& is = args["in"].AsInputFile();
     
-    bool binary = args["b"];
-
-    // determine the asn type of the top-level object
-    string asn_type;
-    if (binary) {
-        // should be user-specified
-        asn_type = args["b"].AsString();
-    } else {
+    // get the asn type of the top-level object
+    string asn_type = args["b"].AsString();
+    bool binary = asn_type.length();
+    if ( !binary ) {
         // auto-detection is possible in ASN.1 text mode
         auto_ptr<CObjectIStream> in
             (CObjectIStream::Open(eSerial_AsnText, is));
@@ -182,9 +184,14 @@ void CAlnMrgApp::LoadInputAlignments(void)
     CTypesIterator i;
     CType<CSeq_align>::AddTo(i);
 
+    CNcbiOstream& os = args["binout"].AsOutputFile();
+    auto_ptr<CObjectOStream> binout
+        (CObjectOStream::Open(eSerial_AsnBinary, os));
+
     if (asn_type == "Seq-entry") {
         CRef<CSeq_entry> se(new CSeq_entry);
         *in >> *se;
+        *binout << *se;
         m_Mix->GetScope().AddTopLevelSeqEntry(*se);
         for (i = Begin(*se); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
@@ -194,6 +201,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
     } else if (asn_type == "Seq-submit") {
         CRef<CSeq_submit> ss(new CSeq_submit);
         *in >> *ss;
+        *binout << *ss;
         CType<CSeq_entry>::AddTo(i);
         int tse_cnt = 0;
         for (i = Begin(*ss); i; ++i) {
@@ -209,7 +217,8 @@ void CAlnMrgApp::LoadInputAlignments(void)
     } else if (asn_type == "Seq-align") {
         CRef<CSeq_align> sa(new CSeq_align);
         *in >> *sa;
-        for (i = Begin(*sa); i; ++i) {
+        *binout << *sa;
+       for (i = Begin(*sa); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
                 m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
             }
@@ -217,6 +226,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
     } else if (asn_type == "Seq-align-set") {
         CRef<CSeq_align_set> sas(new CSeq_align_set);
         *in >> *sas;
+        *binout << *sas;
         for (i = Begin(*sas); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
                 m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
@@ -225,6 +235,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
     } else if (asn_type == "Seq-annot") {
         CRef<CSeq_annot> san(new CSeq_annot);
         *in >> *san;
+        *binout << *san;
         for (i = Begin(*san); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
                 m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
@@ -233,6 +244,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
     } else if (asn_type == "Dense-seg") {
         CRef<CDense_seg> ds(new CDense_seg);
         *in >> *ds;
+        *binout << *ds;
         m_Mix->Add(*ds, m_AddFlags);
     } else {
         cerr << "Cannot read: " << asn_type;
@@ -375,6 +387,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/09/08 20:41:42  todorov
+* binint fixed. binout added
+*
 * Revision 1.11  2003/09/08 19:33:12  todorov
 * - unused var
 *
