@@ -110,8 +110,15 @@ ncbi::CRef < ncbi::objects::CBioseq > FetchSequenceViaHTTP(const std::string& id
 // top-level window (the main structure window)
 extern wxFrame * GlobalTopWindow(void);
 
-// return BLOSUM62 score for two residues
+// gives NCBIStdaa residue number for a character (or value for 'X' if char not found)
+extern unsigned char LookupNCBIStdaaNumberFromCharacter(char r);
+extern char LookupCharacterFromNCBIStdaaNumber(unsigned char n);
+
+// return BLOSUM62 score for two residues (by character)
 extern int GetBLOSUM62Score(char a, char b);
+
+// standard probability for a residue (by character)
+extern float GetStandardProbability(char ch);
 
 // global program registry manipulation
 extern void LoadRegistry(void);
@@ -264,6 +271,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/03/08 17:22:31  thiessen
+* apparently working C++ PSSM generation
+*
 * Revision 1.36  2005/01/04 16:06:59  thiessen
 * make MultiTextDialog remember its position+size
 *

@@ -74,7 +74,6 @@ BEGIN_SCOPE(Cn3D)
 #define DEBUG_THREADER
 #endif
 
-
 // default threading options
 ThreaderOptions::ThreaderOptions(void) :
     weightPSSM(0.5),
@@ -107,6 +106,14 @@ static int LookupThreaderResidueNumberFromCharacterAbbrev(char r)
 const int Threader::SCALING_FACTOR = 1000000;
 
 const string Threader::ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
+
+// gives NCBIStdaa residue number for a threader residue number (or # for 'X' if char == -1)
+int LookupNCBIStdaaNumberFromThreaderResidueNumber(char r)
+{
+    r = toupper(r);
+    return LookupNCBIStdaaNumberFromCharacter(
+            (r >= 0 && r < Threader::ThreaderResidues.size()) ? Threader::ThreaderResidues[r] : 'X');
+}
 
 Threader::Threader(void)
 {
@@ -1245,6 +1252,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/03/08 17:22:31  thiessen
+* apparently working C++ PSSM generation
+*
 * Revision 1.45  2004/09/28 14:18:28  thiessen
 * turn on editor automatically on merge
 *

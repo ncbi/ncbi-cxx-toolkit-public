@@ -153,7 +153,7 @@ int dpScoreFunction(unsigned int block, unsigned int queryPos)
     int i, masterPos = dpBlocks->blockPositions[block], score = 0;
     for (i=0; i<dpBlocks->blockSizes[block]; ++i)
         score += dpPSSM->matrix[masterPos + i]
-            [LookupBLASTResidueNumberFromCharacter(dpQuery->sequenceString[queryPos + i])];
+            [LookupNCBIStdaaNumberFromCharacter(dpQuery->sequenceString[queryPos + i])];
 
     return score;
 }
@@ -517,6 +517,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/03/08 17:22:31  thiessen
+* apparently working C++ PSSM generation
+*
 * Revision 1.36  2004/09/28 14:18:28  thiessen
 * turn on editor automatically on merge
 *

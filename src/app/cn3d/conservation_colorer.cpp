@@ -92,14 +92,14 @@ static int GetPSSMScore(const BLAST_Matrix *pssm, char ch, int masterIndex)
     ch = ScreenResidueCharacter(ch);
     if (ch == 'B' || ch == 'Z')     // by current calculations, B and Z have "infinite" negative scores in PSSM
         ch = 'X';
-    return pssm->matrix[masterIndex][LookupBLASTResidueNumberFromCharacter(ch)];
+    return pssm->matrix[masterIndex][LookupNCBIStdaaNumberFromCharacter(ch)];
 }
-
-typedef map < char, float > CharFloatMap;
-static CharFloatMap StandardProbabilities;
 
 float GetStandardProbability(char ch)
 {
+    typedef map < char, float > CharFloatMap;
+    static CharFloatMap StandardProbabilities;
+
     if (StandardProbabilities.size() == 0) {  // initialize static stuff
 
         static const char ncbistdaa2char[26] = {
@@ -146,7 +146,7 @@ cleanup:
         if (sbp) BLAST_ScoreBlkDestruct(sbp);
     }
 
-    CharFloatMap::const_iterator f = StandardProbabilities.find(ch);
+    CharFloatMap::const_iterator f = StandardProbabilities.find(toupper(ch));
     if (f != StandardProbabilities.end())
         return f->second;
     WARNINGMSG("GetStandardProbability() - unknown residue character " << ch);
@@ -533,6 +533,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/03/08 17:22:31  thiessen
+* apparently working C++ PSSM generation
+*
 * Revision 1.37  2005/01/04 18:55:36  thiessen
 * handle B,Z better
 *

@@ -61,7 +61,6 @@
 #include "cn3d_tools.hpp"
 #include "asn_converter.hpp"
 #include "molecule_identifier.hpp"
-#include "cn3d_threader.hpp"
 
 // hack so I can catch memory leaks specific to this module, at the line where allocation occurs
 #ifdef _DEBUG
@@ -76,34 +75,6 @@ USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
-
-const string BLASTer::BLASTResidues = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
-
-// gives BLAST residue number for a character (or # for 'X' if char not found)
-int LookupBLASTResidueNumberFromCharacter(char r)
-{
-    typedef map < char, int > Char2Int;
-    static Char2Int charMap;
-
-    if (charMap.size() == 0) {
-        for (int i=0; i<BLASTer::BLASTResidues.size(); ++i)
-            charMap[BLASTer::BLASTResidues[i]] = i;
-    }
-
-    Char2Int::const_iterator n = charMap.find(toupper(r));
-    if (n != charMap.end())
-        return n->second;
-    else
-        return charMap.find('X')->second;
-}
-
-// gives BLAST residue number for a threader residue number (or # for 'X' if char == -1)
-int LookupBLASTResidueNumberFromThreaderResidueNumber(char r)
-{
-    r = toupper(r);
-    return LookupBLASTResidueNumberFromCharacter(
-            (r >= 0 && r < Threader::ThreaderResidues.size()) ? Threader::ThreaderResidues[r] : 'X');
-}
 
 #ifdef _DEBUG
 #define PRINT_PSSM // for testing/debugging
@@ -287,8 +258,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                         if (usePSSM)
                             raw_pssm += BLASTmatrix->matrix
                                 [masterStart + j]
-                                [LookupBLASTResidueNumberFromCharacter(
-                                    slaveSeq->sequenceString[slaveStart + j])];
+                                [LookupNCBIStdaaNumberFromCharacter(slaveSeq->sequenceString[slaveStart + j])];
                         raw_bl62 += GetBLOSUM62Score(
                             masterSeq->sequenceString[masterStart + j],
                             slaveSeq->sequenceString[slaveStart + j]);
@@ -513,6 +483,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2005/03/08 17:22:31  thiessen
+* apparently working C++ PSSM generation
+*
 * Revision 1.35  2004/07/27 17:38:12  thiessen
 * don't call GetPSSM() w/ no aligned blocks
 *

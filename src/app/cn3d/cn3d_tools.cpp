@@ -316,11 +316,43 @@ CRef < CBioseq > FetchSequenceViaHTTP(const string& id)
     return bioseq;
 }
 
+
+// gives NCBIStdaa residue number for a character (or value for 'X' if char not found)
+unsigned char LookupNCBIStdaaNumberFromCharacter(char r)
+{
+    typedef map < char, unsigned char > Char2UChar;
+    static Char2UChar charMap;
+
+    if (charMap.size() == 0) {
+        const string NCBIStdaaResidues("-ABCDEFGHIKLMNPQRSTVWXYZU*");
+        for (unsigned int i=0; i<NCBIStdaaResidues.size(); ++i)
+            charMap[NCBIStdaaResidues[i]] = (unsigned char) i;
+    }
+
+    Char2UChar::const_iterator n = charMap.find(toupper(r));
+    if (n != charMap.end())
+        return n->second;
+    else
+        return charMap.find('X')->second;
+}
+
+extern char LookupCharacterFromNCBIStdaaNumber(unsigned char n)
+{
+    static const string NCBIStdaaResidues("-ABCDEFGHIKLMNPQRSTVWXYZU*");
+    if (n <= 25)
+        return NCBIStdaaResidues[n];
+    ERRORMSG("LookupCharacterFromNCBIStdaaNumber() - valid values are 0 - 25");
+    return '?';
+}
+
 END_SCOPE(Cn3D)
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/03/08 17:22:31  thiessen
+* apparently working C++ PSSM generation
+*
 * Revision 1.9  2004/05/24 15:56:33  gorelenk
 * Changed position of PCH include
 *

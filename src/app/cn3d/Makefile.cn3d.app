@@ -29,6 +29,7 @@ SRC = \
 	cn3d_colors \
 	cn3d_glcanvas \
 	cn3d_png \
+	cn3d_pssm \
 	cn3d_threader \
 	cn3d_tools \
 	command_processor \
@@ -71,7 +72,7 @@ SRC = \
 LIB = \
 	cdd ncbimime cn3d mmdb scoremat seqset seq seqcode \
 	pub medline biblio general taxon1 \
-	xstruct_dp \
+	xstruct_dp xblast sequtil \
 	xser xutil xctools xconnect xncbi
 
 CPPFLAGS = \

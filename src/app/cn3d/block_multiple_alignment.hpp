@@ -39,8 +39,6 @@
 #include <objects/cdd/Update_align.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 
-#include <objalign.h>
-#include <blast.h>
 #include <blastkar.h>
 #include <thrdatd.h>
 #include <thrddecl.h>
@@ -157,6 +155,10 @@ public:
     // called when user selects some part of a row
     void SelectedRange(int row, int alnIndexFrom, int alnIndexTo,
         eUnalignedJustification justification, bool toggle) const;
+
+    // fill in a vector of Blocks
+    typedef std::vector < const Block * > ConstBlockList;
+    void GetBlocks(ConstBlockList *blocks) const;
 
     // fill in a vector of UngappedAlignedBlocks
     typedef std::vector < const UngappedAlignedBlock * > UngappedAlignedBlockList;
@@ -433,6 +435,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/03/08 17:22:31  thiessen
+* apparently working C++ PSSM generation
+*
 * Revision 1.47  2004/10/04 17:00:54  thiessen
 * add expand/restrict highlights, delete all blocks/all rows in updates
 *

@@ -52,7 +52,7 @@
 #include "cn3d_tools.hpp"
 #include "molecule_identifier.hpp"
 #include "cn3d_threader.hpp"
-#include "cn3d_blast.hpp"
+#include "cn3d_pssm.hpp"
 
 // hack so I can catch memory leaks specific to this module, at the line where allocation occurs
 #ifdef _DEBUG
@@ -125,115 +125,13 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     return copy;
 }
 
-static Int4 Round(double d)
-{
-    if (d >= 0.0)
-        return (Int4) (d + 0.5);
-    else
-        return (Int4) (d - 0.5);
-}
-
 const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
 {
-    if (pssm) return pssm;
+    if (pssm)
+        return pssm;
 
-    // for now, use threader's SeqMtf
-    BLAST_KarlinBlkPtr karlinBlock = BlastKarlinBlkCreate();
-    Seq_Mtf *seqMtf = Threader::CreateSeqMtf(this, 1.0, karlinBlock);
-    if (!seqMtf) return NULL;
+    pssm = CreateBlastMatrix(this);
 
-    pssm = (BLAST_Matrix *) MemNew(sizeof(BLAST_Matrix));
-    pssm->is_prot = TRUE;
-    pssm->name = StringSave("BLOSUM62");
-    pssm->karlinK = karlinBlock->K;
-    pssm->rows = seqMtf->n + 1;
-    pssm->columns = 26;
-
-#ifdef PRINT_PSSM
-    FILE *f = fopen("blast_matrix.txt", "w");
-#endif
-
-    int i, j;
-    pssm->matrix = (Int4 **) MemNew(pssm->rows * sizeof(Int4 *));
-    for (i=0; i<pssm->rows; ++i) {
-        pssm->matrix[i] = (Int4 *) MemNew(pssm->columns * sizeof(Int4));
-#ifdef PRINT_PSSM
-        fprintf(f, "matrix %i : ", i);
-#endif
-
-        // set scores from threader matrix
-        if (i < seqMtf->n) {
-            // initialize all rows with custom score, or BLAST_SCORE_MIN; to match what Aron's function creates
-            for (j=0; j<pssm->columns; ++j)
-                pssm->matrix[i][j] = (j == 21 ? -1 : (j == 25 ? -4 : BLAST_SCORE_MIN));
-
-            for (j=0; j<seqMtf->AlphabetSize; ++j) {
-                pssm->matrix[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
-                    Round(((double) seqMtf->ww[i][j]) / Threader::SCALING_FACTOR);
-            }
-        } else {
-            // initialize last row with BLAST_SCORE_MIN
-            for (j=0; j<pssm->columns; ++j)
-                pssm->matrix[i][j] = BLAST_SCORE_MIN;
-        }
-#ifdef PRINT_PSSM
-        for (j=0; j<pssm->columns; ++j)
-            fprintf(f, "%i ", pssm->matrix[i][j]);
-        fprintf(f, "\n");
-#endif
-    }
-
-#ifdef PRINT_PSSM
-    // for diffing with scoremat stored in ascii CD
-    fprintf(f, "{\n");
-    for (i=0; i<seqMtf->n; ++i) {
-        for (j=0; j<pssm->columns; ++j) {
-            fprintf(f, "      %i,\n", pssm->matrix[i][j]);
-        }
-    }
-    fprintf(f, "}\n");
-    // for diffing with .mtx file
-    for (i=0; i<seqMtf->n; ++i) {
-        for (j=0; j<pssm->columns; ++j) {
-            fprintf(f, "%i  ", pssm->matrix[i][j]);
-        }
-        fprintf(f, "\n");
-    }
-#endif
-
-#ifdef _DEBUG
-    pssm->posFreqs = (Nlm_FloatHi **) MemNew(pssm->rows * sizeof(Nlm_FloatHi *));
-    for (i=0; i<pssm->rows; ++i) {
-        pssm->posFreqs[i] = (Nlm_FloatHi *) MemNew(pssm->columns * sizeof(Nlm_FloatHi));
-#ifdef PRINT_PSSM
-        fprintf(f, "freqs %i : ", i);
-#endif
-        if (i < seqMtf->n) {
-            for (j=0; j<seqMtf->AlphabetSize; ++j) {
-                pssm->posFreqs[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
-                    seqMtf->freqs[i][j] / Threader::SCALING_FACTOR;
-            }
-        }
-#ifdef PRINT_PSSM
-        for (j=0; j<pssm->columns; ++j)
-            fprintf(f, "%g ", pssm->posFreqs[i][j]);
-        fprintf(f, "\n");
-#endif
-    }
-
-    // we're not actually using the frequency table; just printing it out for debugging/testing
-    for (i=0; i<pssm->rows; ++i) MemFree(pssm->posFreqs[i]);
-    MemFree(pssm->posFreqs);
-#endif // _DEBUG
-
-    pssm->posFreqs = NULL;
-
-#ifdef PRINT_PSSM
-    fclose(f);
-#endif
-
-    FreeSeqMtf(seqMtf);
-    BlastKarlinBlkDestruct(karlinBlock);
     return pssm;
 }
 
@@ -1409,6 +1307,15 @@ bool BlockMultipleAlignment::DeleteRow(int row)
     return true;
 }
 
+void BlockMultipleAlignment::GetBlocks(ConstBlockList *cbl) const
+{
+    cbl->clear();
+    cbl->reserve(blocks.size());
+    BlockList::const_iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; ++b)
+        cbl->push_back(*b);
+}
+
 void BlockMultipleAlignment::GetUngappedAlignedBlocks(UngappedAlignedBlockList *uabs) const
 {
     uabs->clear();
@@ -1966,6 +1873,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2005/03/08 17:22:31  thiessen
+* apparently working C++ PSSM generation
+*
 * Revision 1.66  2005/03/07 11:47:00  thiessen
 * fix workshop warnings
 *

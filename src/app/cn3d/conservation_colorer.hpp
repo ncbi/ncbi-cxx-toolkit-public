@@ -150,7 +150,6 @@ public:
 };
 
 extern char ScreenResidueCharacter(char original);
-extern float GetStandardProbability(char ch);
 
 END_SCOPE(Cn3D)
 
@@ -159,6 +158,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/03/08 17:22:31  thiessen
+* apparently working C++ PSSM generation
+*
 * Revision 1.16  2004/09/27 15:33:04  thiessen
 * add block info content optimization on ctrl+shift+click
 *

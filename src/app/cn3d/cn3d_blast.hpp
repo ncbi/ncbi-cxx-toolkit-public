@@ -50,8 +50,6 @@ public:
     BLASTer(void) { }
     ~BLASTer(void) { }
 
-    static const std::string BLASTResidues;
-
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
 
     // creates new pairwise alignments (as two-row BlockMultipleAlignments), each of which has
@@ -68,10 +66,6 @@ public:
     void CalculateSelfHitScores(const BlockMultipleAlignment *multiple);
 };
 
-// utility functions
-extern int LookupBLASTResidueNumberFromCharacter(char r);
-extern int LookupBLASTResidueNumberFromThreaderResidueNumber(char r);
-
 END_SCOPE(Cn3D)
 
 #endif // CN3D_BLAST__HPP
@@ -79,6 +73,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/03/08 17:22:31  thiessen
+* apparently working C++ PSSM generation
+*
 * Revision 1.9  2003/02/03 19:20:02  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
