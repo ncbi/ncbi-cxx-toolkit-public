@@ -29,56 +29,53 @@
  *
  */
 
-#include <dbapi/driver/drivermgr.hpp>
+#include <dbapi/driver/driver_mgr.hpp>
 #include <corelib/ncbidll.hpp>
 
 BEGIN_NCBI_SCOPE
 
-
-// This is actually not GCC per se, but a GCC with SUN's "ar" only -- the
-// latter apparently cannot handle too long symbol names.
-// This #ifdef should be elaborated for this particular case only, using
-// C++ Toolkit configurator -- later...
-//
-#ifdef NCBI_COMPILER_GCC
-union UFuncToVoid {
-    FDBAPI_CreateContext func_ptr;
-    void*                void_ptr;
-};
-#endif
-
-
 void C_DriverMgr::RegisterDriver(const string&        driver_name,
-                                 FDBAPI_CreateContext driver_ctx_func)
+				 FDBAPI_CreateContext driver_ctx_func)
 {
-#ifndef NCBI_COMPILER_GCC
-    m_Drivers[driver_name] = driver_ctx_func;
-#else
-    UFuncToVoid x;
-    x.func_ptr = driver_ctx_func;
-    m_Drivers[driver_name] = x.void_ptr;
-#endif
+    if(m_NofDrvs < m_NofRoom) {
+	CFastMutexGuard mg(m_Mutex2);
+	for(unsigned int i= m_NofDrvs; i--; ) {
+	    if(m_Drivers[i].drv_name == driver_name) {
+		m_Drivers[i].drv_func= driver_ctx_func;
+		return;
+	    }
+	}
+	m_Drivers[m_NofDrvs++].drv_func= driver_ctx_func;
+	m_Drivers[m_NofDrvs].drv_name= driver_name;
+    }
+    else {
+        throw CDB_ClientEx(eDB_Error, 101, "C_DriverMgr::RegisterDriver",
+                           "No space left for driver registration");
+    }
+	
 }
-
 
 FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name)
 {
-    TDrivers::iterator drv = m_Drivers.find(driver_name);
-    if (drv == m_Drivers.end()) {
-        if ( !LoadDriverDll(driver_name) ) {
+    CFastMutexGuard mg(m_Mutex1);
+    unsigned int i;
+    
+    for(i= m_NofDrvs; i--; ) {
+	if(m_Drivers[i].drv_name == driver_name) {
+	    return m_Drivers[i].drv_func;
+	}
+    }
+    
+    if (!LoadDriverDll(driver_name)) {
             return 0;
-        }
     }
 
-#ifndef NCBI_COMPILER_GCC
-    return m_Drivers[driver_name];
-#else
-    UFuncToVoid x;
-    x.void_ptr = m_Drivers[driver_name];
-    return x.func_ptr;
-#endif
+    for(i= m_NofDrvs; i--; ) {
+	if(m_Drivers[i].drv_name == driver_name) {
+	    return m_Drivers[i].drv_func;
+	}
+    }
 }
-
 
 static void DriverDllName(string& dll_name, const string& driver_name)
 {
@@ -86,9 +83,7 @@ static void DriverDllName(string& dll_name, const string& driver_name)
     dll_name+= driver_name;
 }
 
-
-static void DriverEntryPointName(string& entry_point_name,
-                                 const string& driver_name)
+static void DriverEntryPointName(string& entry_point_name, const string& driver_name)
 {
     entry_point_name= "DBAPI_E_";
     entry_point_name+= driver_name;
@@ -101,30 +96,23 @@ bool C_DriverMgr::LoadDriverDll(const string& driver_name)
     DriverDllName(dll_name, driver_name);
 
     try {
-        CDll   drvDll(dll_name);
-        string entry_point_name;
-        DriverEntryPointName(entry_point_name, driver_name);
+	CDll drvDll(dll_name);
+	string entry_point_name;
+	DriverEntryPointName(entry_point_name, driver_name);
 
-        FDllEntryPoint entry_point;
-        if ( !drvDll.GetEntryPoint(entry_point_name, &entry_point) ) {
-            drvDll.Unload();
-            return false;
-        }
-        FDriverRegister driver_register = entry_point();
-        driver_register(*this);
-        return true;
+	FDllEntryPoint entry_point;
+	if(!drvDll.GetEntryPoint(entry_point_name, &entry_point)) {
+	    drvDll.Unload();
+	    return false;
+	}
+	FDriverRegister reg= (FDriverRegister)((*entry_point)());
+	(*reg)(*this);
+	return true;
     }
     catch (exception&) {
-        return false;
+	return false;
     }
 }
-
-
-C_DriverMgr::~C_DriverMgr(void)
-{
-    return;
-}
-
 
 END_NCBI_SCOPE
 
@@ -133,6 +121,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/01/23 21:29:48  soussov
+ * replaces map with array
+ *
  * Revision 1.4  2002/01/20 07:26:58  vakatov
  * Fool-proofed to compile func_ptr/void_ptr type casts on all compilers.
  * Added virtual destructor.
