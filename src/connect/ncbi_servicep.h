@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/09/24 20:23:39  lavr
+ * Reset() method added to VT
+ *
  * Revision 6.11  2001/06/25 15:38:00  lavr
  * Heap of services is now not homogeneous, but can
  * contain entries of different types. As of now,
@@ -84,6 +87,7 @@ extern "C" {
 /* Table of iterator "virtual functions"
  */
 typedef struct {
+    void        (*Reset)(SERV_ITER iter);
     SSERV_Info* (*GetNextInfo)(SERV_ITER iter, char** env);
     int/*bool*/ (*Update)(SERV_ITER iter, const char* text);
     int/*bool*/ (*Penalize)(SERV_ITER iter, double penalty);
