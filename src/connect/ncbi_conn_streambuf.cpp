@@ -71,14 +71,19 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
 
 CConn_Streambuf::~CConn_Streambuf()
 {
-    sync();
-    EIO_Status status;
-    if (m_Conn  &&  (status = CONN_Close(m_Conn)) != eIO_Success) {
-        _TRACE("CConn_Streambuf::~CConn_Streambuf(): "
-               "CONN_Close() failed (" << IO_StatusStr(status) << ")");
+    if (m_WriteBuf  &&  pptr() > m_WriteBuf) {
+        sync();
     }
-    if (m_ReadBuf != &x_Buf)
+    if (m_Conn) {
+        EIO_Status status = CONN_Close(m_Conn);
+        if (status != eIO_Success) {
+            _TRACE("CConn_Streambuf::~CConn_Streambuf(): "
+                   "CONN_Close() failed (" << IO_StatusStr(status) << ")");
+        }
+    }
+    if (m_ReadBuf != &x_Buf) {
         delete[] m_ReadBuf;
+    }
 }
 
 
@@ -308,6 +313,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.54  2005/03/24 19:52:09  lavr
+ * CConn_Streambuf()'s dtor: flush only if data pending
+ *
  * Revision 6.53  2005/03/15 21:27:52  lavr
  * +CConn_Streambuf::Close()
  *
