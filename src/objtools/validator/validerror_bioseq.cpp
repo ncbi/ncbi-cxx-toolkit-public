@@ -43,6 +43,7 @@
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
@@ -83,14 +84,6 @@
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqblock/EMBL_block.hpp>
 
-#include <objmgr/desc_ci.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/graph_ci.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/seq_vector_ci.hpp>
-
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
@@ -99,6 +92,13 @@
 #include <objects/seqres/Int_graph.hpp>
 #include <objects/seqres/Byte_graph.hpp>
 
+#include <objmgr/desc_ci.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/graph_ci.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_vector_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature.hpp>
 
@@ -119,7 +119,8 @@ const size_t CValidError_bioseq::scm_AdjacentNsThreshold = 80;
 
 
 CValidError_bioseq::CValidError_bioseq(CValidError_imp& imp) :
-    CValidError_base(imp)
+    CValidError_base(imp),
+    m_TpaWithHistory(0), m_TpaWithoutHistory(0)
 {
 }
 
@@ -626,6 +627,8 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     CheckForMolinfoOnBioseq(seq);
 
     ValidateGraphsOnBioseq(seq);
+
+    CheckTpaHistory(seq);
 }
 
 
@@ -3313,6 +3316,39 @@ bool CValidError_bioseq::x_IsDeltaLitOnly(const CSeq_inst& inst) const
 }
 
 
+bool s_HasTpaUserObject(const CBioseq& seq, CScope& scope)
+{
+    CBioseq_Handle bsh = scope.GetBioseqHandle(seq);
+
+    for ( CSeqdesc_CI it(bsh, CSeqdesc::e_User); it; ++it ) {
+        const CUser_object& uo = it->GetUser();
+
+        if ( uo.CanGetType()  &&  uo.GetType().IsStr()  &&
+             NStr::CompareNocase(uo.GetType().GetStr(), "TpaAssembly") == 0 ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+void CValidError_bioseq::CheckTpaHistory(const CBioseq& seq)
+{
+    if ( !s_HasTpaUserObject(seq, *m_Scope) ) {
+        return;
+    }
+
+    if ( seq.CanGetInst()  &&  
+         seq.GetInst().CanGetHist()  &&
+         !seq.GetInst().GetHist().GetAssembly().empty() ) {
+        ++m_TpaWithHistory;
+    } else {
+        ++m_TpaWithoutHistory;
+    }
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -3322,6 +3358,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2003/11/14 15:57:58  shomrat
+* added check for TPA assembly problem
+*
 * Revision 1.54  2003/11/12 20:30:24  shomrat
 * added test for multiple cds on mrna
 *
