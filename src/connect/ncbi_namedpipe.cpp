@@ -652,8 +652,8 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                         Close();
                         return eIO_Timeout;
                     }
-                    if (n > 0  &&  !FD_SET(sock, &efds)) {
-                        assert(FD_SET(sock, &wfds));
+                    if (n > 0  &&  !FD_ISSET(sock, &efds)) {
+                        assert(FD_ISSET(sock, &wfds));
                         break;
                     }
                     if (n < 0  &&  errno == EINTR) {
@@ -1199,6 +1199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/09/23 21:31:10  ucko
+ * Fix typo (FD_SET for FD_ISSET in two adjacent lines)
+ *
  * Revision 1.15  2003/09/23 21:07:06  lavr
  * Slightly reworked to fit in CConn_...Streams better; Wait() methods added
  *
