@@ -60,6 +60,7 @@ extern "C" {
  *                       space. Can change if not a database search. [in]
  * @param db_options Options containing database genetic code string [in]
  * @param psi_options Options specific to PSI BLAST [in]
+ * @return nonzero indicates failure, otherwise zero
  */
 Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
@@ -71,10 +72,46 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
         const BlastDatabaseOptions* db_options,
         const PSIBlastOptions* psi_options);
 
-/** FIXME: Doxygen comments absent! */
-Int2 BLAST_RPSTraceback(Uint1 program_number, 
-        BlastHSPResults* results, BLAST_SequenceBlk* concat_db, 
-        BlastQueryInfo* concat_db_info, BLAST_SequenceBlk* query, 
+/** Compute traceback information for alignments found by an
+ *  RPS blast search. This function performs two major tasks:
+ *  - Computes a composition-specific PSSM to be used during the
+ *    traceback computation (non-translated searches only)
+ *  - After traceback is computed, switch query offsets with 
+ *    subject offsets and switch the edit blocks that describe
+ *    the alignment. This is required because the entire RPS search
+ *    was performed with these quatities reversed.
+ * This call is also the first time that enough information 
+ * exists to compute E-values for alignments that are found.
+ *
+ * @param program_number Type of the BLAST program [in]
+ * @param results Structure containing the single HSPList 
+ *                that is the result of a call to RPSUpdateResults.
+ *                Traceback information is added to HSPs in list [in] [out]
+ * @param concat_db The concatentation of all RPS DB sequences. 
+ *                  The sequence data itself is not needed, 
+ *                  only its size [in]
+ * @param concat_db_info Used for the list of context offsets 
+ *                       for concat_db [in]
+ * @param query The original query sequence [in]
+ * @param query_info Information associated with the original query. 
+ *                   Only used for the search space [in]
+ * @param gap_align The auxiliary structure for gapped alignment [in]
+ * @param score_options The scoring related options [in]
+ * @param ext_params Gapped extension parameters [in]
+ * @param hit_params Parameters for saving hits. Can change if not a 
+                     database search [in]
+ * @param db_options Options containing database genetic code string [in]
+ * @param psi_options Options specific to PSI BLAST. Only used for
+ *                    the scaling factor at present [in]
+ * @param karlin_k Array of Karlin values, one for each database 
+ *                 sequence. Used for E-value calculation [in]
+ * @return nonzero indicates failure, otherwise zero
+ */
+Int2 BLAST_RPSTraceback(Uint1 program_number,
+        BlastHSPResults* results,
+        BLAST_SequenceBlk* concat_db,
+        BlastQueryInfo* concat_db_info,
+        BLAST_SequenceBlk* query,
         BlastQueryInfo* query_info,
         BlastGapAlignStruct* gap_align, 
         const BlastScoringOptions* score_options,
