@@ -71,7 +71,7 @@ class CSeq_align_set;
 // CSeq_loc_Conversion
 /////////////////////////////////////////////////////////////////////////////
 
-class CSeq_loc_Conversion : public CObject
+class NCBI_XOBJMGR_EXPORT CSeq_loc_Conversion : public CObject
 {
 public:
     typedef CRange<TSeqPos> TRange;
@@ -259,7 +259,7 @@ private:
 };
 
 
-class CSeq_loc_Conversion_Set : public CObject
+class NCBI_XOBJMGR_EXPORT CSeq_loc_Conversion_Set : public CObject
 {
 public:
     CSeq_loc_Conversion_Set(CHeapScope& scope);
@@ -380,6 +380,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/03/28 16:57:19  jcherry
+* Added export specifiers for CSeq_loc_Conversion and CSeq_loc_Conversion_Set
+*
 * Revision 1.28  2004/10/27 19:30:25  vasilche
 * CSeq_loc_Conversion::Reset() made non-inline.
 *
