@@ -60,6 +60,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/09/26 22:01:30  lavr
+ * Registry entries changed, HTTP request method added
+ *
  * Revision 6.1  2000/03/24 22:52:48  vakatov
  * Initial revision
  *
@@ -77,14 +80,22 @@ extern "C" {
 #endif
 
 
+typedef enum {
+    eReqMethodAny = 0,
+    eReqMethodPost,
+    eReqMethodGet
+} EReqMethod;
+
+
 /* Network connection related configurable info struct
  */
 typedef struct {
     char           client_host[64];  /* effective client hostname */
-    char           host[64];         /* server: host */
-    unsigned short port;             /* server: service port */
-    char           path[1024];       /* server: path(e.g. to  a CGI script) */
-    char           args[1024];       /* server: args(e.g. for a CGI script) */
+    char           host[64];         /* host to connect to */
+    unsigned short port;             /* port to connect to */
+    char           path[1024];       /* service: path(e.g. to  a CGI script) */
+    char           args[1024];       /* service: args(e.g. for a CGI script) */
+    EReqMethod     req_method;       /* method to use in the request */
     STimeout       timeout;          /* i/o timeout  */
     unsigned int   max_try;          /* max. # of attempts to establish conn */
     char           http_proxy_host[64];  /* hostname of HTTP proxy server */
@@ -103,48 +114,51 @@ typedef struct {
 
 /* Defaults and the registry entry names for "SConnNetInfo" fields
  */
-#define DEF_CONN_REG_SECTION      "CONN_NETWORK"
+#define DEF_CONN_REG_SECTION      "CONN"
                                   
-#define REG_CONN_ENGINE_HOST      "CONN_HOST"
-#define DEF_CONN_ENGINE_HOST      "www.ncbi.nlm.nih.gov"
+#define REG_CONN_HOST             "HOST"
+#define DEF_CONN_HOST             "www.ncbi.nlm.nih.gov"
                                   
-#define REG_CONN_ENGINE_PORT      "CONN_PORT"
-#define DEF_CONN_ENGINE_PORT      80
+#define REG_CONN_PORT             "PORT"
+#define DEF_CONN_PORT             80
                                   
-#define REG_CONN_ENGINE_PATH      "CONN_PATH"
-#define DEF_CONN_ENGINE_PATH      "/Service/dispd.cgi"
+#define REG_CONN_PATH             "PATH"
+#define DEF_CONN_PATH             "/Service/dispd.cgi"
                                   
-#define REG_CONN_ENGINE_ARGS      "CONN_ARGS"
-#define DEF_CONN_ENGINE_ARGS      ""
+#define REG_CONN_ARGS             "ARGS"
+#define DEF_CONN_ARGS             ""
+
+#define REG_CONN_REQUEST_METHOD   "REQUEST_METHOD"
+#define DEF_CONN_REQUEST_METHOD   "POST"
                                   
-#define REG_CONN_TIMEOUT          "CONN_TIMEOUT"
+#define REG_CONN_TIMEOUT          "TIMEOUT"
 #define DEF_CONN_TIMEOUT          30.0
                                   
-#define REG_CONN_MAX_TRY          "CONN_MAX_TRY"
+#define REG_CONN_MAX_TRY          "MAX_TRY"
 #define DEF_CONN_MAX_TRY          3
                                   
-#define REG_CONN_PROXY_HOST       "CONN_PROXY_HOST"
+#define REG_CONN_PROXY_HOST       "PROXY_HOST"
 #define DEF_CONN_PROXY_HOST       ""
                                   
-#define REG_CONN_HTTP_PROXY_HOST  "CONN_HTTP_PROXY_HOST"
+#define REG_CONN_HTTP_PROXY_HOST  "HTTP_PROXY_HOST"
 #define DEF_CONN_HTTP_PROXY_HOST  ""
                                   
-#define REG_CONN_HTTP_PROXY_PORT  "CONN_HTTP_PROXY_PORT"
+#define REG_CONN_HTTP_PROXY_PORT  "HTTP_PROXY_PORT"
 #define DEF_CONN_HTTP_PROXY_PORT  80
                                   
-#define REG_CONN_DEBUG_PRINTOUT   "CONN_DEBUG_PRINTOUT"
+#define REG_CONN_DEBUG_PRINTOUT   "DEBUG_PRINTOUT"
 #define DEF_CONN_DEBUG_PRINTOUT   ""
                                   
-#define REG_CONN_FIREWALL         "CONN_FIREWALL"
+#define REG_CONN_FIREWALL         "FIREWALL"
 #define DEF_CONN_FIREWALL         ""
                                   
-#define REG_CONN_LB_DISABLE       "CONN_LB_DISABLE"
+#define REG_CONN_LB_DISABLE       "LB_DISABLE"
 #define DEF_CONN_LB_DISABLE       ""
 
-#define REG_CONN_NCBID_PORT       "CONN_NCBID_PORT"
+#define REG_CONN_NCBID_PORT       "NCBID_PORT"
 #define DEF_CONN_NCBID_PORT       80
-                                  
-#define REG_CONN_NCBID_PATH       "CONN_NCBID_PATH"
+
+#define REG_CONN_NCBID_PATH       "NCBID_PATH"
 #define DEF_CONN_NCBID_PATH       "/Service/ncbid.cgi"
                                   
 
@@ -212,7 +226,7 @@ extern void ConnNetInfo_Destroy
 
 
 /* Hit URL "http://host:port/path?args" with:
- *    POST <path>?<args> HTTP/1.0\r\n
+ *    {POST|GET} <path>?<args> HTTP/1.0\r\n
  *    <user_header\r\n>
  *    Content-Length: <content_length>\r\n\r\n
  * If "encode_args" is TRUE then URL-encode the "args".
@@ -236,6 +250,7 @@ extern SOCK URL_Connect
  unsigned short  port,
  const char*     path,
  const char*     args,
+ EReqMethod      req_method,
  size_t          content_length,
  const STimeout* c_timeout,       /* timeout for the CONNECT stage */
  const STimeout* rw_timeout,      /* timeout for READ and WRITE */

@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/09/26 22:01:33  lavr
+ * Registry entries changed, HTTP request method added
+ *
  * Revision 6.3  2000/04/21 19:42:35  vakatov
  * Several minor typo/bugs fixed
  *
@@ -52,6 +55,46 @@
 #include <string.h>
 #include <ctype.h>
 
+static const char *s_GetValue(const char *service, const char *key,
+                              char *value, size_t value_size,
+                              const char *def_value)
+{
+  char buf[250];
+  const char *val;
+
+  if (!value || !key || value_size <= 0)
+      return 0;
+  *value = '\0';
+
+  if (service && *service) {
+      if (strlen(service) + 1 + sizeof(DEF_CONN_REG_SECTION) +
+          strlen(key) + 1 > sizeof(buf))
+          return 0;
+      sprintf(buf, "%s_" DEF_CONN_REG_SECTION "_%s", service, key);
+      if ((val = getenv(buf)) != 0) {
+          strncpy(value, val, value_size);
+          value[value_size - 1] = '\0';
+      } else {
+          sprintf(buf, DEF_CONN_REG_SECTION "_%s", key);
+          CORE_REG_GET(service, buf, value, value_size, 0);
+      }
+  } else {
+      if (sizeof(DEF_CONN_REG_SECTION) + strlen(key) + 1 > sizeof(buf))
+          return 0;
+      sprintf(buf, DEF_CONN_REG_SECTION "_%s", key);
+  }
+
+  if (!*value) {
+      if ((val = getenv(buf)) != 0) {
+          strncpy(value, val, value_size);
+          value[value_size - 1] = '\0';
+      } else
+          CORE_REG_GET(DEF_CONN_REG_SECTION, key, value, value_size,
+                       def_value);
+  }
+
+  return value;
+}
 
 
 /***********************************************************************
@@ -59,10 +102,10 @@
  ***********************************************************************/
 
 
-extern SConnNetInfo* ConnNetInfo_Create(const char* reg_section)
+extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 {
 #define REG_VALUE(name, value, def_value) \
-    CORE_REG_GET(reg_section, name, value, sizeof(value), def_value)
+    s_GetValue(service, name, value, sizeof(value), def_value)
 
     SConnNetInfo* info = (SConnNetInfo*) malloc(sizeof(SConnNetInfo));
 
@@ -71,27 +114,31 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* reg_section)
     int    val;
     double dbl;
 
-    /* fallbacks for the section name */
-    if (!reg_section  ||  !*reg_section) {
-        reg_section = DEF_CONN_REG_SECTION;
-    }
-
     /* client host */
     SOCK_gethostname(info->client_host, sizeof(info->client_host));
 
-    /* server host name */
-    REG_VALUE(REG_CONN_ENGINE_HOST, info->host, DEF_CONN_ENGINE_HOST);
+    /* dispatcher host name */
+    REG_VALUE(REG_CONN_HOST, info->host, DEF_CONN_HOST);
 
-    /* service port */
-    REG_VALUE(REG_CONN_ENGINE_PORT, str, 0);
+    /* dispatcher port number */
+    REG_VALUE(REG_CONN_PORT, str, 0);
     val = atoi(str);
-    info->port = (unsigned short) (val > 0 ? val : DEF_CONN_ENGINE_PORT);
+    info->port = (unsigned short) (val > 0 ? val : DEF_CONN_PORT);
 
     /* service path */
-    REG_VALUE(REG_CONN_ENGINE_PATH, info->path, DEF_CONN_ENGINE_PATH);
+    REG_VALUE(REG_CONN_PATH, info->path, DEF_CONN_PATH);
 
     /* service args */
-    REG_VALUE(REG_CONN_ENGINE_ARGS, info->args, DEF_CONN_ENGINE_ARGS);
+    REG_VALUE(REG_CONN_ARGS, info->args, DEF_CONN_ARGS);
+
+    /* request method */
+    REG_VALUE(REG_CONN_REQUEST_METHOD, str, DEF_CONN_REQUEST_METHOD);
+    if (strcasecmp(str, "ANY") == 0)
+        info->req_method = eReqMethodAny;
+    else if (strcasecmp(str, "POST") == 0)
+        info->req_method = eReqMethodPost;
+    else if (strcasecmp(str, "GET") == 0)
+        info->req_method = eReqMethodGet;
 
     /* connection timeout */
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
@@ -262,15 +309,16 @@ extern SOCK URL_Connect
  unsigned short  port,
  const char*     path,
  const char*     args,
+ EReqMethod      req_method,
  size_t          content_length,
  const STimeout* c_timeout,
  const STimeout* rw_timeout,
  const char*     user_header,
  int/*bool*/     encode_args)
 {
-    static const char X_POST_1[] = "POST ";
-    static const char X_POST_Q[] = "?";
-    static const char X_POST_E[] = " HTTP/1.0\r\n";
+    static const char *X_REQ_R; /* "POST"/"GET" */
+    static const char  X_REQ_Q[] = "?";
+    static const char  X_REQ_E[] = " HTTP/1.0\r\n";
 
     SOCK  sock;
     char  buffer[128];
@@ -315,21 +363,25 @@ extern SOCK URL_Connect
         }
     }
 
+    if (req_method == eReqMethodGet)
+        X_REQ_R = "GET";
+    else
+        X_REQ_R = "POST";
     /* compose and send HTTP header */
     if (
-        /*  POST <path>?<args> HTTP/1.0\r\n */
-        SOCK_Write(sock, (const void*) X_POST_1,  strlen(X_POST_1 ), 0)
+        /* {POST|GET} <path>?<args> HTTP/1.0\r\n */
+        SOCK_Write(sock, (const void*) X_REQ_R, strlen(X_REQ_R), 0)
         != eIO_Success  ||
         SOCK_Write(sock, (const void*) path, strlen(path), 0)
         != eIO_Success  ||
         (x_args  &&
-         (SOCK_Write(sock, (const void*) X_POST_Q, strlen(X_POST_Q), 0)
+         (SOCK_Write(sock, (const void*) X_REQ_Q, strlen(X_REQ_Q), 0)
           != eIO_Success  ||
           SOCK_Write(sock, (const void*) x_args, strlen(x_args), 0)
           != eIO_Success
           )
          )  ||
-        SOCK_Write(sock, (const void*) X_POST_E,  strlen(X_POST_E ), 0)
+        SOCK_Write(sock, (const void*) X_REQ_E,  strlen(X_REQ_E ), 0)
         != eIO_Success  ||
 
         /*  <user_header> */
