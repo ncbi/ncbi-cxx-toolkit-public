@@ -35,6 +35,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/03/15 18:10:05  grichenk
+* Removed CRef<CSeq_id> from CSeq_id_Handle, added
+* key to seq-id map th CSeq_id_Mapper
+*
 * Revision 1.8  2002/03/08 21:25:30  gouriano
 * fixed errors with unresolvable references
 *
@@ -97,6 +101,9 @@ struct SSeqData {
 //  CSeqMap::
 //     Formal sequence map -- to describe sequence parts in general --
 //     location and type only, without providing real data
+
+
+class CScope;
 
 class CSeqMap : public CObject
 {

@@ -32,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/03/15 18:10:04  grichenk
+* Removed CRef<CSeq_id> from CSeq_id_Handle, added
+* key to seq-id map th CSeq_id_Mapper
+*
 * Revision 1.9  2002/03/04 15:08:43  grichenk
 * Improved CTSE_Info locks
 *
@@ -64,14 +68,9 @@
 * ===========================================================================
 */
 
-/*
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-*/
 #include <objects/objmgr1/seq_id_handle.hpp>
-
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/Bioseq.hpp>
-
 #include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/03/15 18:10:08  grichenk
+* Removed CRef<CSeq_id> from CSeq_id_Handle, added
+* key to seq-id map th CSeq_id_Mapper
+*
 * Revision 1.3  2002/02/21 19:27:06  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -60,8 +64,7 @@ BEGIN_SCOPE(objects)
 
 CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Handle& handle)
     : m_Mapper(handle.m_Mapper),
-      m_Value(handle.m_Value),
-      m_SeqId(handle.m_SeqId)
+      m_Value(handle.m_Value)
 {
     if ( m_Mapper )
         m_Mapper->AddHandleReference(*this);
@@ -69,13 +72,10 @@ CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Handle& handle)
 
 
 CSeq_id_Handle::CSeq_id_Handle(CSeq_id_Mapper& mapper,
-                               const CSeq_id& id,
                                TSeq_id_Key key)
     : m_Mapper(&mapper),
       m_Value(key)
 {
-    m_SeqId = new CSeq_id;
-    SerialAssign<CSeq_id>(*m_SeqId, id);
     m_Mapper->AddHandleReference(*this);
 }
 
@@ -91,7 +91,6 @@ CSeq_id_Handle& CSeq_id_Handle::operator= (const CSeq_id_Handle& handle)
     Reset();
     m_Mapper = handle.m_Mapper;
     m_Value = handle.m_Value;
-    m_SeqId = handle.m_SeqId;
     if ( m_Mapper )
         m_Mapper->AddHandleReference(*this);
     return *this;
@@ -104,7 +103,6 @@ void CSeq_id_Handle::Reset(void)
         m_Mapper->ReleaseHandleReference(*this);
     m_Mapper = 0;
     m_Value = 0;
-    m_SeqId.Reset();
 }
 
 bool CSeq_id_Handle::x_Equal(const CSeq_id_Handle& handle) const
@@ -112,11 +110,7 @@ bool CSeq_id_Handle::x_Equal(const CSeq_id_Handle& handle) const
     // Different mappers -- handle can not be equal
     if (m_Mapper != handle.m_Mapper)
         return false;
-    // The same seq-id object -- no need to compare
-    if (m_SeqId == handle.m_SeqId)
-        return true;
-    // Compare seq-id objects
-    return SerialEquals<CSeq_id>(*m_SeqId, *handle.m_SeqId);
+    return m_Value == handle.m_Value;
 }
 
 
@@ -125,10 +119,7 @@ bool CSeq_id_Handle::x_Match(const CSeq_id_Handle& handle) const
     // Different mappers -- handle can not be equal
     if (m_Mapper != handle.m_Mapper)
         return false;
-    // The same seq-id object -- no need to compare
-    if (m_SeqId == handle.m_SeqId)
-        return true;
-    return m_SeqId->Match(*handle.m_SeqId);
+    return x_GetSeqId()->Match(*handle.x_GetSeqId());
 }
 
 
@@ -139,6 +130,11 @@ bool CSeq_id_Handle::IsBetter(const CSeq_id_Handle& h) const
     return m_Mapper->IsBetter(*this, h);
 }
 
+
+const CSeq_id* CSeq_id_Handle::x_GetSeqId(void) const
+{
+    return m_Mapper ? m_Mapper->x_GetSeq_id(m_Value) : 0;
+};
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

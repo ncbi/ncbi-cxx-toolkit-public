@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/03/15 18:10:08  grichenk
+* Removed CRef<CSeq_id> from CSeq_id_Handle, added
+* key to seq-id map th CSeq_id_Mapper
+*
 * Revision 1.22  2002/03/11 21:10:13  grichenk
 * +CDataLoader::ResolveConflict()
 *
@@ -199,7 +203,12 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle) const
         throw runtime_error(
             "Multiple seq-id matches found -- can not resolve to a TSE");
     }
-    // Multiple live TSEs -- not allowed
+    // Multiple live TSEs -- try to resolve the conflict (the status of some
+    // TSEs may change)
+    CTSE_Info* best = m_Loader->ResolveConflict(handle, live);
+    if ( best ) {
+        return *tse_set->second.find(best);
+    }
     throw runtime_error(
         "Seq-id conflict: multiple live entries found");
 }

@@ -29,6 +29,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/03/15 18:10:07  grichenk
+* Removed CRef<CSeq_id> from CSeq_id_Handle, added
+* key to seq-id map th CSeq_id_Mapper
+*
 * Revision 1.6  2002/03/04 15:08:44  grichenk
 * Improved CTSE_Info locks
 *
@@ -99,7 +103,7 @@ CBioseq_Handle& CBioseq_Handle::operator= (const CBioseq_Handle& h)
 const CSeq_id* CBioseq_Handle::GetSeqId(void) const
 {
     if (!m_Value) return 0;
-    return m_Value.m_SeqId.GetPointer();
+    return m_Value.x_GetSeqId();
 }
 
 

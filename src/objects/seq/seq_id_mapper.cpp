@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/03/15 18:10:09  grichenk
+* Removed CRef<CSeq_id> from CSeq_id_Handle, added
+* key to seq-id map th CSeq_id_Mapper
+*
 * Revision 1.7  2002/02/25 21:05:29  grichenk
 * Removed seq-data references caching. Increased MT-safety. Fixed typos.
 *
@@ -172,7 +176,7 @@ inline
 const CSeq_id&
 CSeq_id_Which_Tree::x_GetSeq_id(const CSeq_id_Handle& handle) const
 {
-    return *handle.m_SeqId;
+    return *handle.x_GetSeqId();
 }
 
 inline
@@ -1566,11 +1570,14 @@ CSeq_id_Handle CSeq_id_Mapper::GetHandle(const CSeq_id& id,
     TSeq_id_Info info = map_it->second->FindEqual(id);
     // If found, return valid handle
     if ( !info.first.Empty() )
-        return CSeq_id_Handle(*this, *info.first, info.second);
+        return CSeq_id_Handle(*this, info.second);
     // Not found - should we create a new handle or return an empty one?
     if ( do_not_create )
         return CSeq_id_Handle();
-    CSeq_id_Handle new_handle(*this, id, GetNextKey());
+    CSeq_id_Handle new_handle(*this, GetNextKey());
+    CRef<CSeq_id> id_ref = new CSeq_id;
+    SerialAssign<CSeq_id>(*id_ref, id);
+    m_KeyMap[new_handle.m_Value] = id_ref;
     map_it->second->AddSeq_idMapping(new_handle);
     return new_handle;
 }
@@ -1585,7 +1592,7 @@ void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id& id,
     CFastMutexGuard guard(map_it->second->m_TreeMutex);
     map_it->second->FindMatch(id, m_list);
     iterate(CSeq_id_Which_Tree::TSeq_id_MatchList, it, m_list) {
-        h_set.insert(CSeq_id_Handle(*this, *it->first, it->second));
+        h_set.insert(CSeq_id_Handle(*this, it->second));
     }
 }
 
@@ -1606,14 +1613,24 @@ void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
     }
 
     iterate(CSeq_id_Which_Tree::TSeq_id_MatchList, it, m_list) {
-        h_set.insert(CSeq_id_Handle(*this, *it->first, it->second));
+        h_set.insert(CSeq_id_Handle(*this, it->second));
     }
 }
 
 
 const CSeq_id& CSeq_id_Mapper::GetSeq_id(const CSeq_id_Handle& handle)
 {
-    return *handle.m_SeqId;
+    return *handle.x_GetSeqId();
+}
+
+
+const CSeq_id* CSeq_id_Mapper::x_GetSeq_id(TSeq_id_Key key) const
+{
+    TKeyToIdMap::const_iterator ref = m_KeyMap.find(key);
+    if (ref != m_KeyMap.end()) {
+        return ref->second.GetPointer();
+    }
+    return 0;
 }
 
 
@@ -1634,6 +1651,12 @@ void CSeq_id_Mapper::ReleaseHandleReference(const CSeq_id_Handle& handle)
         non_const_iterate(TIdMap, it, m_IdMap) {
             it->second->DropKeysRange(seg*kKeyUsageTableSegmentSize,
                 (seg+1)*kKeyUsageTableSegmentSize-1);
+        }
+        for (int i = 0; i < kKeyUsageTableSegmentSize; i++) {
+            TKeyToIdMap::iterator ref = m_KeyMap.find(i);
+            if (ref != m_KeyMap.end()) {
+                m_KeyMap.erase(ref);
+            }
         }
     }
 }
@@ -1667,9 +1690,9 @@ bool CSeq_id_Mapper::IsBetter(const CSeq_id_Handle& h1,
                               const CSeq_id_Handle& h2) const
 {
     _ASSERT(h1.m_Mapper == this  &&  h2.m_Mapper == this);
-    TIdMap::const_iterator it1 = m_IdMap.find(h1.m_SeqId->Which());
+    TIdMap::const_iterator it1 = m_IdMap.find(x_GetSeq_id(h1)->Which());
     _ASSERT(it1 != m_IdMap.end()  &&  it1->second.GetPointer());
-    TIdMap::const_iterator it2 = m_IdMap.find(h2.m_SeqId->Which());
+    TIdMap::const_iterator it2 = m_IdMap.find(x_GetSeq_id(h2)->Which());
     _ASSERT(it2 != m_IdMap.end()  &&  it2->second.GetPointer());
     if (it1->second != it2->second)
         return false;

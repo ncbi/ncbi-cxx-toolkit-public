@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/15 18:10:05  grichenk
+* Removed CRef<CSeq_id> from CSeq_id_Handle, added
+* key to seq-id map th CSeq_id_Mapper
+*
 * Revision 1.4  2002/02/21 19:27:00  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -50,8 +54,6 @@
 * ===========================================================================
 */
 
-
-#include <objects/seqloc/Seq_id.hpp>
 
 #include <corelib/ncbiobj.hpp>
 
@@ -72,7 +74,7 @@ typedef size_t TSeq_id_Key;
 
 // forward declaration
 class CSeq_id_Mapper;
-
+class CSeq_id;
 
 class CSeq_id_Handle
 {
@@ -99,7 +101,6 @@ public:
 private:
     // This constructor should be used by mappers only
     CSeq_id_Handle(CSeq_id_Mapper& mapper,
-                   const CSeq_id& id,
                    TSeq_id_Key key);
 
     // Comparison methods
@@ -108,12 +109,13 @@ private:
     // True if "this" may be resolved to "handle"
     bool x_Match(const CSeq_id_Handle& handle) const;
 
+    const CSeq_id* x_GetSeqId(void) const;
     // Seq-id mapper (to lock/unlock the handle)
     CSeq_id_Mapper* m_Mapper;
     // Handle value
     TSeq_id_Key m_Value;
-    // Reference to the seq-id used by a group of equal handles
-    CRef<CSeq_id> m_SeqId;
+    //### Reference to the seq-id used by a group of equal handles
+    //### CRef<CSeq_id> m_SeqId;
 
     friend class CSeq_id_Mapper;
     friend class CSeq_id_Which_Tree;
@@ -131,7 +133,7 @@ private:
 
 inline
 CSeq_id_Handle::CSeq_id_Handle(void)
-    : m_Mapper(0), m_Value(0), m_SeqId(0)
+    : m_Mapper(0), m_Value(0) //### , m_SeqId(0)
 {
 }
 
@@ -156,13 +158,13 @@ bool CSeq_id_Handle::operator< (const CSeq_id_Handle& handle) const
 inline
 CSeq_id_Handle::operator bool (void) const
 {
-    return !m_SeqId.Empty();
+    return m_Mapper != 0; //### !m_SeqId.Empty();
 }
 
 inline
 bool CSeq_id_Handle::operator! (void) const
 {
-    return m_SeqId.Empty();
+    return m_Mapper == 0; //### m_SeqId.Empty();
 }
 
 

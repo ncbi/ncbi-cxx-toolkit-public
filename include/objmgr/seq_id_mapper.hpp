@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/15 18:10:09  grichenk
+* Removed CRef<CSeq_id> from CSeq_id_Handle, added
+* key to seq-id map th CSeq_id_Mapper
+*
 * Revision 1.4  2002/02/21 19:27:06  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -48,6 +52,7 @@
 */
 
 #include <objects/objmgr1/seq_id_handle.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <map>
 #include <set>
@@ -105,6 +110,7 @@ private:
     void AddHandleReference(const CSeq_id_Handle& handle);
     void ReleaseHandleReference(const CSeq_id_Handle& handle);
     bool IsBetter(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
+    const CSeq_id* x_GetSeq_id(TSeq_id_Key key) const;
     friend class CSeq_id_Handle;
 
     // Hide copy constructor and operator
@@ -124,8 +130,10 @@ private:
 
     // Some map entries may point to the same subtree (e.g. gb, dbj, emb).
     typedef map<CSeq_id::E_Choice, CRef<CSeq_id_Which_Tree> > TIdMap;
-    TIdMap m_IdMap;
-    CFastMutex m_IdMapMutex;
+    typedef map<TSeq_id_Key, CRef<CSeq_id> >                  TKeyToIdMap;
+    TIdMap      m_IdMap;
+    TKeyToIdMap m_KeyMap;
+    CFastMutex  m_IdMapMutex;
 };
 
 
