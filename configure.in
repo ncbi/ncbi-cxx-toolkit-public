@@ -233,6 +233,10 @@ else
           compiler="WorkShop6"
           ncbi_compiler="WORKSHOP"
           ncbi_compiler_ver="5.1" ;;
+        *Sun*WorkShop*6*5\.2*)
+          compiler="WorkShop52"
+          ncbi_compiler="WORKSHOP"
+          ncbi_compiler_ver="5.2" ;;
       esac ;;
 
     irix* )
@@ -448,6 +452,9 @@ if test "$with_64" = "yes" ; then
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -Bdynamic $LIBS"
       ;;
+    sparc-sun-solaris*:WorkShop52 )
+      ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
+      ;;
     mips-sgi-irix*:MIPSpro73 )
       ARCH_CFLAGS="-64"
       CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
@@ -470,6 +477,9 @@ else
       ;;
     solaris*:WorkShop6 )
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -lm -Bdynamic $LIBS"
+      MATH_LIBS=" "
+      ;;
+    solaris*:WorkShop52 )
       MATH_LIBS=" "
       ;;
     irix*:MIPSpro73 | irix*:KCC )
