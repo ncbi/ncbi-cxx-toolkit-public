@@ -280,8 +280,32 @@ void CId1ReaderBase::ResolveSeq_ids(CReaderRequestResult& result,
     CLoadLockSeq_ids ids(result, seq_id);
     if ( !ids.IsLoaded() ) {
         CReaderRequestConn conn(result);
-        ResolveSeq_id(ids, *seq_id.GetSeqId(), conn);
-        // ids.SetLoaded();
+        try {
+            ResolveSeq_id(ids, *seq_id.GetSeqId(), conn);
+            ids.SetLoaded();
+        }
+        catch ( CLoaderException& exc ) {
+            if ( exc.GetErrCode() == exc.ePrivateData ) {
+                ids.SetLoaded();
+            }
+            else if ( exc.GetErrCode() == exc.eNoData ) {
+                ids.SetLoaded();
+            }
+            else if ( exc.GetErrCode() == exc.eNoConnection ) {
+                throw;
+            }
+            else {
+                // any other error -> reconnect
+                LOG_POST(exc.what());
+                LOG_POST("GenBank connection failed: Reconnecting....");
+                Reconnect(conn);
+            }
+        }
+        catch ( const exception& exc ) {
+            LOG_POST(exc.what());
+            LOG_POST("GenBank connection failed: Reconnecting....");
+            Reconnect(conn);
+        }
     }
 }
 

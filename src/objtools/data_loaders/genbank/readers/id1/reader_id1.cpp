@@ -605,7 +605,6 @@ void CId1Reader::ResolveGi(CLoadLockSeq_ids& ids, int gi, TConn conn)
     ITERATE(CID1server_back::TIds, it, seq_ids) {
         ids.AddSeq_id(**it);
     }
-    ids.SetLoaded();
 }
 
 

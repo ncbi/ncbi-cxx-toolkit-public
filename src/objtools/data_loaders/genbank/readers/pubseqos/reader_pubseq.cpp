@@ -421,7 +421,6 @@ void CPubseqReader::ResolveSeq_id(CLoadLockSeq_ids& ids,
             }
         }
     }
-    ids.SetLoaded();
 }
 
 
