@@ -1,6 +1,5 @@
 
-#include "seqdb.hpp"
-#include "seqdbalias.hpp"
+#include <objtools/readers/seqdb/seqdb.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
@@ -101,33 +100,33 @@ int main(int argc, char ** argv)
             return 0;
         } else desc += " [-summary]";
         
-        if (s == "-alias") {
-            string dbname = "pdb";
+//         if (s == "-alias") {
+//             string dbname = "pdb";
             
-            if (! args.empty()) {
-                dbname = args.front();
-                args.pop_front(); 
-            }
+//             if (! args.empty()) {
+//                 dbname = args.front();
+//                 args.pop_front(); 
+//             }
 
-            string ending = "pal";
-            if (! args.empty()) {
-                ending = args.front();
-                args.pop_front(); 
-            }
+//             string ending = "pal";
+//             if (! args.empty()) {
+//                 ending = args.front();
+//                 args.pop_front(); 
+//             }
             
-            ncbi::CSeqDBAliasNode phil(dbpath, dbname, ending[0], true);
+//             ncbi::CSeqDBAliasNode phil(dbpath, dbname, ending[0], true);
             
-            vector<string> vols;
+//             vector<string> vols;
             
-            phil.GetVolumeNames(vols);
+//             phil.GetVolumeNames(vols);
             
-            for(Uint4 i = 0; i<vols.size(); i++) {
-                cout << "[" << i << "] "
-                     << vols[i] << endl;
-            }
+//             for(Uint4 i = 0; i<vols.size(); i++) {
+//                 cout << "[" << i << "] "
+//                      << vols[i] << endl;
+//             }
             
-            return 0;
-        } else desc += " [-alias]";
+//             return 0;
+//         } else desc += " [-alias]";
         
         if (s == "-len3") {
             string dbname1("nr");
