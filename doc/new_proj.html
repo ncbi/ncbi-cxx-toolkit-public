@@ -507,7 +507,7 @@ File Makefile.xmylib.lib:
 
 LIB      = xmylib
 LIBOBJ   = xmy_src1 xmy_src2
-LOBJ     = some_src1
+LOBJ     = some_obj1
 CFLAGS   = $(ORIG_CFLAGS)   -abc -DFOOBAR_NOT_CPLUSPLUS
 CXXFLAGS = $(ORIG_CXXFLAGS) -xyz
 CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)</pre>
@@ -522,12 +522,11 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)</pre>
        original C and preprocessor flags, <b>ORIG_*FLAGS</b>,
        plus some additional flags specified by user)
   <li> Using <b>AR</b> and <b>RANLIB</b>, compose
-       library <i><b>libxmylib.a</b></i> from the resultant object files
-  <li> Compile <i><b>some_src1.cpp</b></i> using C++ compiler <b>CXX</b> with
-       flags <b>CXXFLAGS CPPFLAGS</b>
-  <li> Copy <i><b>libxmylib.a</b></i> and <i><b>some_src1.o</b></i> to
+       library <i><b>libxmylib.a</b></i> from the resultant object files,
+       plus pre-compiled <i><b>some_obj1.o</b></i>.
+  <li> Copy <i><b>libxmylib.a</b></i> to the
        top-level <b><i>lib/</i></b> directory of
-       the <i>build tree</i> (for later use by other projects)
+       <i>build tree</i> (for later use by other projects)
 </ul>
 
 This <i>customized makefile</i> should be referenced as <i><b>xmylib</b></i> in the
