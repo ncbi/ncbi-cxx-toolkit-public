@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/01/25 16:57:08  lavr
+ * METACONN_Remove revoked call to free() with connector:
+ * connector's DESTROY method is now (back) resposible to call free().
+ *
  * Revision 6.2  2001/01/12 23:51:38  lavr
  * Message logging modified for use LOG facility only
  *
@@ -81,7 +85,6 @@ extern EIO_Status METACONN_Remove
         victim->next = 0;
         if (victim->destroy)
             (*victim->destroy)(victim);
-        free(victim);
         if (victim == connector)
             break;
     }
