@@ -7,6 +7,6 @@
 #################################
 APP = test_regexp
 SRC = test_regexp
-LIB = regexp xregexp xutil xncbi
+LIB = xregexp regexp xutil xncbi
 
 CHECK_CMD = test_regexp
