@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2003/02/10 17:56:14  gouriano
+* make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
+*
 * Revision 1.66  2002/11/19 19:48:29  gouriano
 * added support of XML attributes of choice variants
 *
@@ -194,6 +197,11 @@
 
 BEGIN_NCBI_SCOPE
 
+
+bool CDataType::sm_EnforcedStdXml = false;
+set<string> CDataType::sm_SavedNames;
+
+
 class CAnyTypeSource : public CTypeInfoSource
 {
 public:
@@ -252,15 +260,22 @@ void CDataType::PrintASNTypeComments(CNcbiOstream& out, int indent) const
 
 void CDataType::PrintDTD(CNcbiOstream& out) const
 {
+    if (x_IsSavedName(XmlTagName())) {
+        return;
+    }
     m_Comments.PrintDTD(out);
     PrintDTDElement(out);
     out << '\n';
     PrintDTDExtra(out);
+    x_AddSavedName(XmlTagName());
 }
 
 void CDataType::PrintDTD(CNcbiOstream& out,
                          const CComments& extra) const
 {
+    if (x_IsSavedName(XmlTagName())) {
+        return;
+    }
     m_Comments.PrintDTD(out);
     bool oneLineComment = extra.OneLine();
     if ( !oneLineComment )
@@ -272,6 +287,7 @@ void CDataType::PrintDTD(CNcbiOstream& out,
     }
     out << '\n';
     PrintDTDExtra(out);
+    x_AddSavedName(XmlTagName());
 }
 
 void CDataType::PrintDTDExtra(CNcbiOstream& /*out*/) const
@@ -374,6 +390,9 @@ string CDataType::IdName(void) const
 
 string CDataType::XmlTagName(void) const
 {
+    if (GetEnforcedStdXml()) {
+        return m_MemberName;
+    }
     const CDataType* parent = GetParentType();
     if ( !parent ) {
         // root type
@@ -613,6 +632,19 @@ string CDataType::GetDefaultString(const CDataValue& ) const
 {
     Warning("Default is not supported by this type");
     return "...";
+}
+
+bool CDataType::x_IsSavedName(const string& name)
+{
+    return sm_EnforcedStdXml &&
+        sm_SavedNames.find(name) != sm_SavedNames.end();
+}
+
+void CDataType::x_AddSavedName(const string& name)
+{
+    if (sm_EnforcedStdXml) {
+        sm_SavedNames.insert(name);
+    }
 }
 
 END_NCBI_SCOPE

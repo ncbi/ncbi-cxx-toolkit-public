@@ -191,6 +191,12 @@ void DTDParser::ParseElementContent(const string& name, bool embedded)
             return;
         }
         break;
+    case T_ENTITY:
+        PushEntityLexer(NextToken().GetText());
+        ConsumeElementContent(node);
+        PopEntityLexer();
+        Consume();
+        break;
     }
     // element description is ended
     ConsumeSymbol('>');
@@ -581,6 +587,14 @@ void DTDParser::ParseEnumeratedList(DTDAttribute& attrib)
                 return;
             }
             Consume();
+            break;
+        case T_ENTITY:
+            PushEntityLexer(NextToken().GetText());
+            break;
+        case T_EOF:
+            PopEntityLexer();
+            Consume();
+            break;
         }
     }
 }
@@ -979,6 +993,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.10  2003/02/10 17:56:15  gouriano
+ * make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
+ *
  * Revision 1.9  2003/01/21 19:34:17  gouriano
  * corrected parsing of entities
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/02/10 17:56:16  gouriano
+* make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
+*
 * Revision 1.40  2002/12/17 16:26:34  gouriano
 * added new flags to CMemberInfo in CDataContainerType::CreateClassInfo
 *
@@ -182,6 +185,8 @@
 */
 
 #include <serial/datatool/blocktype.hpp>
+#include <serial/datatool/unitype.hpp>
+#include <serial/datatool/statictype.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/classstr.hpp>
@@ -250,15 +255,34 @@ void CDataMemberContainerType::PrintASN(CNcbiOstream& out, int indent) const
 
 void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out) const
 {
-    string tag = XmlTagName();
     out <<
-        "<!ELEMENT "<<tag<<" (\n";
+        "<!ELEMENT "<<XmlTagName()<<" (\n";
     const char* separator = XmlMemberSeparator();
     iterate ( TMembers, i, m_Members ) {
         if ( i != m_Members.begin() )
             out <<separator<<'\n';
         const CDataMember& member = **i;
-        out << "               "<<tag<<'_'<<member.GetName();
+        out << "               ";
+        if (GetEnforcedStdXml()) {
+            const CUniSequenceDataType* type =
+                dynamic_cast<const CUniSequenceDataType*>(member.GetType());
+            if (type) {
+                const CStaticDataType* elemType =
+                    dynamic_cast<const CStaticDataType*>(type->GetElementType());
+                if (elemType) {
+                    out << member.GetName();
+                    if ( (*i)->Optional() ) {
+                        out << '*';
+                    } else {
+                        out << '+';
+                    }
+                    continue;
+                }
+            }
+        } else {
+            out << XmlTagName() << '_';
+        }
+        out << member.GetName();
         if ( (*i)->Optional() )
             out << '?';
     }

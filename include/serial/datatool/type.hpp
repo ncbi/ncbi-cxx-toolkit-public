@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/02/10 17:56:40  gouriano
+* make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
+*
 * Revision 1.16  2002/12/12 21:03:25  gouriano
 * changed code generation so XML attribute list became random access class
 *
@@ -127,6 +130,7 @@
 #include <serial/typeref.hpp>
 #include <serial/datatool/comments.hpp>
 #include <list>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 
@@ -313,7 +317,17 @@ public:
         return m_TypeStr;
     }
 
+    static void SetEnforcedStdXml(bool set = true) {
+        sm_EnforcedStdXml = set;
+    }
+    static bool GetEnforcedStdXml(void) {
+        return sm_EnforcedStdXml;
+    }
+
 private:
+    static bool x_IsSavedName(const string& name);
+    static void x_AddSavedName(const string& name);
+
     const CDataType* m_ParentType;       // parent type
     const CDataTypeModule* m_Module;
     string m_MemberName;
@@ -338,6 +352,8 @@ private:
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);
+    static bool sm_EnforcedStdXml;
+    static set<string> sm_SavedNames;
 };
 
 #define CheckValueType(value, type, name) do{ \

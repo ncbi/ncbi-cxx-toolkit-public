@@ -49,6 +49,7 @@
 #include <serial/datatool/type.hpp>
 #include <serial/datatool/generate.hpp>
 #include <serial/datatool/datatool.hpp>
+#include <serial/objistrxml.hpp>
 #include <serial/objostrxml.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -117,6 +118,10 @@ void CDataTool::Init(void)
     d->AddOptionalKey("e", "valueFile",
                       "write value in ASN.1 binary format",
                       CArgDescriptions::eOutputFile);
+    d->AddFlag("sxo",
+               "no scope prefixes in XML output");
+    d->AddFlag("sxi",
+               "no scope prefixes in XML input");
 
     // code generation arguments
     d->AddOptionalKey("oex", "exportSpec",
@@ -204,6 +209,10 @@ bool CDataTool::ProcessModules(void)
     LoadDefinitions(generator.GetMainModules(),
                     modulesPath, args["m"].AsString());
 
+    if ( const CArgValue& sxo = args["sxo"] ) {
+        CDataType::SetEnforcedStdXml(true);
+    }
+
     if ( const CArgValue& f = args["f"] ) {
         generator.GetMainModules().PrintASN(f.AsOutputFile());
         f.CloseFile();
@@ -236,6 +245,14 @@ bool CDataTool::ProcessModules(void)
 bool CDataTool::ProcessData(void)
 {    
     const CArgs& args = GetArgs();
+    bool stdXmlIn = false;
+    if ( const CArgValue& sxi = args["sxi"] ) {
+        stdXmlIn = true;
+    }
+    bool stdXmlOut = false;
+    if ( const CArgValue& sxo = args["sxo"] ) {
+        stdXmlOut = true;
+    }
 
     // convert data
     ESerialDataFormat inFormat;
@@ -263,6 +280,10 @@ bool CDataTool::ProcessData(void)
 
     auto_ptr<CObjectIStream>
         in(CObjectIStream::Open(inFormat, inFileName, eSerial_StdWhenAny));
+    if (stdXmlIn && inFormat == eSerial_Xml) {
+        CObjectIStreamXml *is = dynamic_cast<CObjectIStreamXml*>(in.get());
+        is->SetEnforcedStdXml(true);
+    }
 
     string typeName;
     if ( t ) {
@@ -308,10 +329,13 @@ bool CDataTool::ProcessData(void)
                 out(CObjectOStream::Open(outFormat, outFileName,
                                          eSerial_StdWhenAny));
             if ( outFormat == eSerial_Xml ) {
+                CObjectOStreamXml *os = dynamic_cast<CObjectOStreamXml*>(out.get());
+                if (stdXmlOut) {
+                    os->SetEnforcedStdXml(true);
+                }
                 // Set DTD file name (default prefix is added in any case)
                 if( const CArgValue& dn = args["dn"] ) {
-                  dynamic_cast<CObjectOStreamXml*>(out.get())->
-                      SetDTDFileName(dn.AsString());
+                  os->SetDTDFileName(dn.AsString());
                 }
             }
             out->Write(&value, typeInfo);
@@ -324,10 +348,13 @@ bool CDataTool::ProcessData(void)
                 out(CObjectOStream::Open(outFormat, outFileName,
                                          eSerial_StdWhenAny));
             if ( outFormat == eSerial_Xml ) {
+                CObjectOStreamXml *os = dynamic_cast<CObjectOStreamXml*>(out.get());
+                if (stdXmlOut) {
+                    os->SetEnforcedStdXml(true);
+                }
                 // Set DTD file name (default prefix is added in any case)
                 if( const CArgValue& dn = args["dn"] ) {
-                  dynamic_cast<CObjectOStreamXml*>(out.get())->
-                      SetDTDFileName(dn.AsString());
+                  os->SetDTDFileName(dn.AsString());
                 }
             }
             CObjectStreamCopier copier(*in, *out);
@@ -460,6 +487,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2003/02/10 17:56:15  gouriano
+* make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
+*
 * Revision 1.58  2002/12/31 20:14:24  gouriano
 * corrected usage of export specifiers when generating C++ classes
 *

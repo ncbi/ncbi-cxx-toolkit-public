@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/02/10 17:56:15  gouriano
+* make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
+*
 * Revision 1.22  2001/02/15 21:39:14  kholodov
 * Modified: pointer to parent CDataMember added to CDataType class.
 * Modified: default value for BOOLEAN type in DTD is copied from ASN.1 spec.
@@ -211,20 +214,19 @@ const char* CBoolDataType::GetXMLContents(void) const
 
 void CBoolDataType::PrintDTDExtra(CNcbiOstream& out) const
 {
-  const char *attr;
-  const CBoolDataValue *val = 
-    dynamic_cast<const CBoolDataValue*>(GetDataMember()->GetDefault());
+    const char *attr;
+    const CBoolDataValue *val = 
+        dynamic_cast<const CBoolDataValue*>(GetDataMember()->GetDefault());
 
-  if(val) {
-    attr = val->GetValue() ? "'true'" : "'false'";
-  }
-  else if( GetDataMember()->Optional() ) {
-    attr = "#IMPLIED";
-  }
-  else {
-    attr = "#REQUIRED";
-  }
-
+    if(val) {
+        attr = val->GetValue() ? "'true'" : "'false'";
+    }
+    else if( GetDataMember()->Optional() ) {
+        attr = "#IMPLIED";
+    }
+    else {
+        attr = "#REQUIRED";
+    }
 
     out <<
       "<!ATTLIST "<<XmlTagName()<<" value ( true | false ) " 

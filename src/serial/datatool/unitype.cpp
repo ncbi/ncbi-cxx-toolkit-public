@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/02/10 17:56:14  gouriano
+* make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
+*
 * Revision 1.21  2002/01/22 22:01:15  grichenk
 * Fixed generation of list<> from "SET OF"
 *
@@ -116,6 +119,7 @@
 #include <serial/autoptrinfo.hpp>
 #include <serial/datatool/unitype.hpp>
 #include <serial/datatool/blocktype.hpp>
+#include <serial/datatool/statictype.hpp>
 #include <serial/datatool/stlstr.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/reftype.hpp>
@@ -149,20 +153,36 @@ void CUniSequenceDataType::PrintASN(CNcbiOstream& out, int indent) const
 void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out) const
 {
     const CDataType* data = GetElementType();
+    const CStaticDataType* elemType = 0;
+    if (GetEnforcedStdXml()) {
+        elemType = dynamic_cast<const CStaticDataType*>(data);
+    }
     const CReferenceDataType* ref =
         dynamic_cast<const CReferenceDataType*>(data);
     out <<
-        "<!ELEMENT "<<XmlTagName()<<" ( ";
-    if ( ref )
-        out << ref->UserTypeXmlTagName();
-    else
-        out << data->XmlTagName();
-    out << "* )>";
+        "<!ELEMENT "<< XmlTagName() << ' ';
+    if ( ref ) {
+        out <<"( " << ref->UserTypeXmlTagName() << "* )";
+    } else {
+        if (elemType) {
+            out << elemType->GetXMLContents();
+        } else {
+            out <<"( " << data->XmlTagName() << "* )";
+        }
+    }
+    out << '>';
 }
 
 void CUniSequenceDataType::PrintDTDExtra(CNcbiOstream& out) const
 {
     const CDataType* data = GetElementType();
+    const CStaticDataType* elemType = 0;
+    if (GetEnforcedStdXml()) {
+        elemType = dynamic_cast<const CStaticDataType*>(data);
+        if (elemType) {
+            return;
+        }
+    }
     const CReferenceDataType* ref =
         dynamic_cast<const CReferenceDataType*>(data);
     if ( !ref ) {
