@@ -154,7 +154,8 @@ template<class CInfo> \
 inline \
 void NCBISERSetPostRead(const Class* /*object*/, CInfo* info) \
 { \
-    NCBI_NS_NCBI::SetPostRead(info, &CClassPostReadPreWrite<Class>::PostRead);\
+    NCBI_NS_NCBI::SetPostRead \
+        (info, &NCBI_NS_NCBI::CClassPostReadPreWrite<Class>::PostRead);\
 }
 
 #define NCBISER_HAVE_PRE_WRITE(Class) \
@@ -162,7 +163,8 @@ template<class CInfo> \
 inline \
 void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 { \
-    NCBI_NS_NCBI::SetPreWrite(info, &CClassPostReadPreWrite<Class>::PreWrite);\
+    NCBI_NS_NCBI::SetPreWrite \
+        (info, &NCBI_NS_NCBI::CClassPostReadPreWrite<Class>::PreWrite);\
 }
 
 #define DECLARE_INTERNAL_TYPE_INFO() \
@@ -207,6 +209,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/03/25 13:08:42  dicuccio
+* Added missing NCBI_NS_NCBI:: in PostRead()/PostWrite() macros
+*
 * Revision 1.15  2003/03/11 18:00:08  gouriano
 * reimplement CInvalidChoiceSelection exception
 *
