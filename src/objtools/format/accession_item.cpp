@@ -127,9 +127,7 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
 
     if ( !ctx.GetLocation().IsWhole() ) {
         // specific region is set
-        const CSeq_loc& loc = ctx.GetLocation();
-        m_Region.SetFrom(loc.GetStart(eExtreme_Positional) + 1);
-        m_Region.SetTo(loc.GetStop(eExtreme_Positional) + 1);
+        m_Region.Reset(&ctx.GetLocation());
         m_IsSetRegion = true;
     }
 }
@@ -143,6 +141,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/03/28 17:16:47  shomrat
+* Support for complex user location (REGION)
+*
 * Revision 1.10  2005/03/02 16:27:27  shomrat
 * Sort secondary accessions
 *

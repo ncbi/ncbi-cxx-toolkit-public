@@ -45,7 +45,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
+class CSeq_loc;
 class CBioseqContext;
 class IFormatter;
 
@@ -59,7 +59,6 @@ class CAccessionItem : public CFlatItem
 public:
     // typedef
     typedef vector<string>  TExtra_accessions;
-    typedef CRange<TSeqPos> TRegion;
 
     CAccessionItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
@@ -68,7 +67,7 @@ public:
     const string& GetWGSAccession(void) const;
     const TExtra_accessions& GetExtraAccessions(void) const;
     bool  IsSetRegion(void) const;
-    const TRegion& GetRegion(void) const;
+    const CSeq_loc& GetRegion(void) const;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 
@@ -76,7 +75,7 @@ private:
     string              m_Accession;
     string              m_WGSAccession;
     TExtra_accessions   m_ExtraAccessions;
-    TRegion             m_Region;
+    CConstRef<CSeq_loc> m_Region;
     bool                m_IsSetRegion;
 };
 
@@ -114,9 +113,10 @@ bool CAccessionItem::IsSetRegion(void) const
 
 
 inline
-const CAccessionItem::TRegion& CAccessionItem::GetRegion(void) const
+const CSeq_loc& CAccessionItem::GetRegion(void) const
 {
-    return m_Region;
+    _ASSERT(m_Region);
+    return *m_Region;
 }
 
 
@@ -128,6 +128,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/03/28 17:13:26  shomrat
+* Support for complex user location (REGION)
+*
 * Revision 1.4  2005/03/02 16:26:49  shomrat
 * Changed contaier type for secondary accessions
 *
