@@ -32,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/04/27 14:50:06  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
 * Revision 1.14  1999/02/22 21:12:38  sandomir
 * MsgRequest -> NcbiContext
 *
@@ -77,7 +81,8 @@
 * ===========================================================================
 */
 
-#include <corelib/cgiapp.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbireg.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -94,9 +99,7 @@ CNcbiApplication* CNcbiApplication::Instance( void )
     return m_Instance; 
 }
 
-CNcbiApplication::CNcbiApplication(int    argc, 
-                                   char** argv) 
-    : m_Argc(argc), m_Argv(argv)
+CNcbiApplication::CNcbiApplication(void) 
 {
     if( m_Instance ) {
         throw logic_error("CNcbiApplication::CNcbiApplication: "
@@ -123,38 +126,38 @@ void CNcbiApplication::Exit(void)
     return;
 }
 
-int CNcbiApplication::Run(void)
+int CNcbiApplication::AppMain(int argc, char** argv)
 {
-    return 0;
-}
-    
+    m_Argc = argc;
+    m_Argv = argv;
+    // init application
+    try {
+        Init();
+    }
+    catch (exception e) {
+        ERR_POST("CCgiApplication::Init() failed: " << e.what());
+        return -1;
+    }
 
-///////////////////////////////////////////////////////
-// CCgiApplication
-//
+    // run application
+    int res;
+    try {
+        res = Run();
+    }
+    catch (exception e) {
+        ERR_POST("CCgiApplication::Run() failed: " << e.what());
+        res = -1;
+    }
 
-CCgiApplication* CCgiApplication::Instance(void)
-{ 
-    return static_cast<CCgiApplication*>(CNcbiApplication::Instance()); 
-}
+    // close application
+    try {
+        Exit();
+    }
+    catch (exception e) {
+        ERR_POST("CCgiApplication::Exit() failed: " << e.what());
+    }
 
-CCgiApplication::CCgiApplication(int argc, char** argv,
-                                 CNcbiIstream* istr, bool indexes_as_entries)
-    : CNcbiApplication(argc, argv),
-      m_Istr( istr ), m_Iase( indexes_as_entries )
-{}
-
-CCgiApplication::~CCgiApplication(void)
-{}
-
-void CCgiApplication::Init(void)
-{
-  CNcbiApplication::Init();
-}
-
-void CCgiApplication::Exit(void)
-{
-  CNcbiApplication::Exit();
+    return res;
 }
 
 //

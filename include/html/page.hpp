@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/04/27 14:49:59  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
 * Revision 1.17  1999/04/26 21:59:28  vakatov
 * Cleaned and ported to build with MSVC++ 6.0 compiler
 *
@@ -85,51 +89,13 @@
 * ===========================================================================
 */
 
-#include <corelib/cgiapp.hpp>
+#include <corelib/ncbistd.hpp>
 #include <html/html.hpp>
 #include <html/nodemap.hpp>
 
 BEGIN_NCBI_SCOPE
 
-struct BaseTagMapper;
-
-inline BaseTagMapper* CreateTagMapper(CNCBINode* node) {
-    return new ReadyTagMapper(node);
-}
-
-inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(void)) {
-    return new StaticTagMapper(function);
-}
-
-inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)
-                                      (const string& name)) {
-    return new StaticTagMapperByName(function);
-}
-
-template<class C>
-BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node)) {
-    return new StaticTagMapperByNode<C>(function);
-}
-
-template<class C>
-BaseTagMapper* CreateTagMapper(CNCBINode* (*function)
-                               (C* node, const string& name)) {
-    return new StaticTagMapperByNodeAndName<C>(function);
-}
-
-template<class C>
-inline BaseTagMapper* CreateTagMapper(const C*,
-                                      CNCBINode* (C::*method)(void)) {
-    return new TagMapper<C>(method);
-}
-
-template<class C>
-inline BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)
-                                      (const string& name))
-{
-    return new TagMapperByName<C>(method);
-}
-
+class CCgiApplication;
 
 /////////////////////////////////////////////////////////////
 // CHTMLBasicPage is the virtual base class.  The main functionality is

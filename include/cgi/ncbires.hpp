@@ -34,6 +34,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/04/27 14:49:51  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
 * Revision 1.25  1999/04/26 14:17:28  sandomir
 * minor changes
 *
@@ -119,63 +123,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class CCgiServerContext
-{
-public:
-    virtual ~CCgiServerContext( void ) {}
-};
-
-//
-// class CNcbiContext
-//
-
-/* CNcbiContext is a wrapper for request, response, server context.
-In addtion, it contains list of messages.
-Having non-const reference, CNcbiContext's user has access to its all internal data
-*/
-
-class CNcbiResource;
- 
-class CNcbiContext
-{
-public:
-
-    CNcbiContext( CNcbiResource& resource,
-                  CCgiRequest& request, 
-                  CCgiResponse& response,
-                  CCgiServerContext& srvCtx );
-
-    const CNcbiResource& GetResource( void ) const THROWS_NONE;
-    CNcbiResource& GetResource( void ) THROWS_NONE;
-
-    const CCgiRequest& GetRequest( void ) const THROWS_NONE;
-    CCgiRequest& GetRequest( void ) THROWS_NONE;
-
-    const CCgiResponse& GetResponse( void ) const THROWS_NONE;
-    CCgiResponse& GetResponse( void ) THROWS_NONE;
-
-    const CCgiServerContext& GetServCtx( void ) const THROWS_NONE;
-    CCgiServerContext& GetServCtx( void ) THROWS_NONE;
-
-    typedef list<string> TMsgList;
-
-    const TMsgList& GetMsg( void ) const THROWS_NONE;
-    TMsgList& GetMsg( void ) THROWS_NONE;
-
-    void PutMsg( const string& msg );
-    void ClearMsgList( void );
-
-private:
-
-    CNcbiResource& m_resource;
-    CCgiRequest& m_request;
-    CCgiResponse& m_response;
-    CCgiServerContext& m_srvCtx;
-   
-    TMsgList m_msg;
-
-}; 
-
 //
 // class CNcbiResource
 //
@@ -186,6 +133,8 @@ class CNcbiCommand;
 
 class CNcbiResPresentation;
 class CNCBINode;
+class CNcbiRegistry;
+class CCgiContext;
 
 class CHTML_a;
 
@@ -196,31 +145,34 @@ class CNcbiResource
 {
 public:
 
-  CNcbiResource( void );
-  virtual ~CNcbiResource( void );
+    CNcbiResource(CNcbiRegistry& config);
+    virtual ~CNcbiResource( void );
 
-  virtual void Init( void ) {} // init presentation, databases, commands
-  virtual void Exit( void ) {}
+    const CNcbiRegistry& GetConfig(void) const
+        { return m_config; }
+    CNcbiRegistry& GetConfig(void)
+        { return m_config; }
 
-  virtual const CNcbiResPresentation* GetPresentation( void ) const
-    { return 0; }
+    virtual const CNcbiResPresentation* GetPresentation( void ) const
+        { return 0; }
 
-  const TDbInfoList& GetDatabaseInfoList( void ) const
-    { return m_dbInfo; }
+    const TDbInfoList& GetDatabaseInfoList( void ) const
+        { return m_dbInfo; }
 
-  virtual CNcbiDatabase& GetDatabase( const CNcbiDatabaseInfo& info ) = 0;
+    virtual CNcbiDatabase& GetDatabase( const CNcbiDatabaseInfo& info ) = 0;
 
-  const TCmdList& GetCmdList( void ) const
-    { return m_cmd; }
+    const TCmdList& GetCmdList( void ) const
+        { return m_cmd; }
 
-  virtual CNcbiCommand* GetDefaultCommand( void ) const = 0;
+    virtual CNcbiCommand* GetDefaultCommand( void ) const = 0;
 
-  virtual void HandleRequest( CNcbiContext& ctx );
+    virtual void HandleRequest( CCgiContext& ctx );
 
 protected:
 
-  TDbInfoList m_dbInfo;
-  TCmdList m_cmd;
+    CNcbiRegistry& m_config;
+    TDbInfoList m_dbInfo;
+    TCmdList m_cmd;
 };
 
 //
@@ -231,11 +183,11 @@ class CNcbiResPresentation
 {
 public:
 
-  virtual ~CNcbiResPresentation() {}
+    virtual ~CNcbiResPresentation() {}
 
-  virtual CNCBINode* GetLogo( void ) const { return 0; }
-  virtual string GetName( void ) const = 0;
-  virtual string GetLink( void ) const = 0;
+    virtual CNCBINode* GetLogo( void ) const { return 0; }
+    virtual string GetName( void ) const = 0;
+    virtual string GetLink( void ) const = 0;
 };
 
 //
@@ -246,29 +198,29 @@ class CNcbiCommand
 {
 public:
 
-  CNcbiCommand( CNcbiResource& resource );
-  virtual ~CNcbiCommand( void );
+    CNcbiCommand( CNcbiResource& resource );
+    virtual ~CNcbiCommand( void );
 
-  virtual CNcbiCommand* Clone( void ) const = 0;
+    virtual CNcbiCommand* Clone( void ) const = 0;
 
-  virtual CNCBINode* GetLogo( void ) const { return 0; }
-  virtual string GetName( void ) const = 0;
-  virtual string GetLink( CNcbiContext& ctx ) const = 0;
+    virtual CNCBINode* GetLogo( void ) const { return 0; }
+    virtual string GetName( void ) const = 0;
+    virtual string GetLink( CCgiContext& ctx ) const = 0;
 
-  virtual void Execute( CNcbiContext& ctx ) = 0;
+    virtual void Execute( CCgiContext& ctx ) = 0;
 
-  virtual bool IsRequested( const CNcbiContext& ctx ) const;
+    virtual bool IsRequested( const CCgiContext& ctx ) const;
 
 protected:
 
-  virtual string GetEntry() const = 0;
+    virtual string GetEntry() const = 0;
 
-  CNcbiResource& GetResource() const
+    CNcbiResource& GetResource() const
         { return m_resource; }
 
 private:
 
-  CNcbiResource& m_resource;
+    CNcbiResource& m_resource;
 };
 
 //
@@ -281,19 +233,19 @@ class CNcbiDatabaseInfo
 {
 public:
 
-  virtual ~CNcbiDatabaseInfo( void ) {}
+    virtual ~CNcbiDatabaseInfo( void ) {}
   
-  virtual string GetName( void ) const = 0;
+    virtual string GetName( void ) const = 0;
 
-  virtual const CNcbiDbPresentation* GetPresentation() const
-    { return 0; }
+    virtual const CNcbiDbPresentation* GetPresentation() const
+        { return 0; }
 
-  virtual bool IsRequested( const CNcbiContext& ctx ) const;
+    virtual bool IsRequested( const CCgiContext& ctx ) const;
 
 protected:
 
-  virtual bool CheckName( const string& name ) const = 0;
-  virtual string GetEntry() const = 0;
+    virtual bool CheckName( const string& name ) const = 0;
+    virtual string GetEntry() const = 0;
   
 };
                      
@@ -310,25 +262,25 @@ class CNcbiDatabase
 {
 public:
 
-  CNcbiDatabase( const CNcbiDatabaseInfo& dbinfo );
-  virtual ~CNcbiDatabase( void );
+    CNcbiDatabase( const CNcbiDatabaseInfo& dbinfo );
+    virtual ~CNcbiDatabase( void );
 
-  virtual void Connect( void ) {} 
-  virtual void Disconnect( void ) {}
+    virtual void Connect( void ) {} 
+    virtual void Disconnect( void ) {}
 
-  const CNcbiDatabaseInfo& GetDbInfo( void ) const
-    { return m_dbinfo; }
+    const CNcbiDatabaseInfo& GetDbInfo( void ) const
+        { return m_dbinfo; }
 
-  const TFilterList& GetFilterList( void ) const
-    { return m_filter; }
+    const TFilterList& GetFilterList( void ) const
+        { return m_filter; }
 
-  virtual CNcbiQueryResult* Execute( CNcbiContext& ctx ) = 0;
+    virtual CNcbiQueryResult* Execute( CCgiContext& ctx ) = 0;
 
 protected:
 
-  const CNcbiDatabaseInfo& m_dbinfo;
+    const CNcbiDatabaseInfo& m_dbinfo;
 
-  TFilterList m_filter;
+    TFilterList m_filter;
 };
 
 //
@@ -339,16 +291,16 @@ class CNcbiDatabaseFilter
 {
 public:
 
-  virtual ~CNcbiDatabaseFilter() {}
+    virtual ~CNcbiDatabaseFilter() {}
 };
 
 class CNcbiDbFilterReport
 {
 public:
 
-  virtual ~CNcbiDbFilterReport() {}
+    virtual ~CNcbiDbFilterReport() {}
 
-  virtual CNCBINode* CreateView( CNcbiContext& ctx ) const = 0;
+    virtual CNCBINode* CreateView( CCgiContext& ctx ) const = 0;
 };
 
 //
@@ -359,11 +311,11 @@ class CNcbiDbPresentation
 {
 public:
 
-  virtual ~CNcbiDbPresentation() {}
+    virtual ~CNcbiDbPresentation() {}
 
-  virtual CNCBINode* GetLogo( void ) const { return 0; }
-  virtual string GetName( void ) const = 0; // this is printable name
-  virtual string GetLink( void ) const = 0;
+    virtual CNCBINode* GetLogo( void ) const { return 0; }
+    virtual string GetName( void ) const = 0; // this is printable name
+    virtual string GetLink( void ) const = 0;
 };
 
 //
@@ -488,29 +440,30 @@ class CNcbiDataObjectReport
 {
 public:
 
-  virtual ~CNcbiDataObjectReport() {}
+    virtual ~CNcbiDataObjectReport() {}
 
-  virtual CNcbiDataObjectReport* Clone( void ) const = 0;
+    virtual CNcbiDataObjectReport* Clone( void ) const = 0;
 
-  virtual CNCBINode* GetLogo( void ) const { return 0; }
-  virtual string GetName( void ) const = 0;
+    virtual CNCBINode* GetLogo( void ) const { return 0; }
+    virtual string GetName( void ) const = 0;
 
 #if 0 // generic object makes no sense in practice
 
-  virtual string GetLink( const CNcbiDataObject& obj ) const = 0;
+    virtual string GetLink( const CNcbiDataObject& obj ) const = 0;
 
-  virtual CNCBINode* CreateView( CNcbiContext& ctx,
-                                 const CNcbiDataObject& obj
-                                 bool selected = false) const = 0;
+    virtual CNCBINode* CreateView( CCgiContext& ctx,
+                                   const CNcbiDataObject& obj
+                                   bool selected = false) const = 0;
 #endif
 
-  virtual bool IsRequested( const CNcbiContext& ctx ) const;
+    virtual bool IsRequested( const CCgiContext& ctx ) const;
 
 protected:
 
-  virtual string GetEntry() const = 0;
+    virtual string GetEntry() const = 0;
   
 };
+
 
 //
 // PRequested
@@ -519,15 +472,15 @@ protected:
 template<class T>
 class PRequested : public unary_function<T,bool>
 {  
-  const CNcbiContext& m_ctx;
+    const CCgiContext& m_ctx;
   
 public:
   
-  explicit PRequested( const CNcbiContext& ctx ) 
-    : m_ctx( ctx ) {}
+    explicit PRequested( const CCgiContext& ctx ) 
+        : m_ctx( ctx ) {}
 
-  bool operator() ( const T* t ) const 
-    { return t->IsRequested( m_ctx ); }
+    bool operator() ( const T* t ) const 
+        { return t->IsRequested( m_ctx ); }
 
 }; // class PRequested
 

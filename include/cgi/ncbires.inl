@@ -34,6 +34,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/04/27 14:49:51  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
 * Revision 1.5  1999/04/26 14:17:28  sandomir
 * minor changes
 *
@@ -51,67 +55,6 @@
 *
 * ===========================================================================
 */
-
-inline const CNcbiResource& CNcbiContext::GetResource( void ) const THROWS_NONE
-{
-    return m_resource;
-}
-
-inline CNcbiResource& CNcbiContext::GetResource( void ) THROWS_NONE
-{
-    return m_resource;
-}
-
-inline const CCgiRequest& CNcbiContext::GetRequest( void ) const THROWS_NONE
-{ 
-    return m_request;
-}
-   
-inline CCgiRequest& CNcbiContext::GetRequest( void ) THROWS_NONE
-{ 
-    return m_request;
-}
-      
-inline const CCgiResponse& CNcbiContext::GetResponse( void ) const THROWS_NONE
-{ 
-    return m_response;
-}
-     
-inline CCgiResponse& CNcbiContext::GetResponse( void ) THROWS_NONE
-{ 
-    return m_response;
-}
-
-inline const CCgiServerContext& CNcbiContext::GetServCtx( void ) const THROWS_NONE
-{ 
-    return m_srvCtx;
-}
-
-inline CCgiServerContext& CNcbiContext::GetServCtx( void ) THROWS_NONE
-{ 
-    return m_srvCtx;
-}
-
-inline const CNcbiContext::TMsgList& CNcbiContext::GetMsg( void ) const THROWS_NONE
-{ 
-    return m_msg;
-}
- 
-inline CNcbiContext::TMsgList& CNcbiContext::GetMsg( void ) THROWS_NONE
-{ 
-    return m_msg;
-}
-
-inline void CNcbiContext::PutMsg( const string& msg ) 
-{
-    m_msg.push_back( msg ); 
-}
-
-inline void CNcbiContext::ClearMsgList( void ) 
-{
-    m_msg.clear();
-}
-
 
 // CNcbiQieryResult::CIterator
 

@@ -29,10 +29,14 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*    Various tag mappers classes
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/04/27 14:49:58  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
 * Revision 1.4  1998/12/24 16:15:38  vasilche
 * Added CHTMLComment class.
 * Added TagMappers from static functions.

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  1999/04/27 14:49:57  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
 * Revision 1.31  1999/04/22 14:20:10  vasilche
 * Now CHTML_select::AppendOption and CHTML_option constructor accept option
 * name always as first argument.
@@ -898,6 +902,7 @@ public:
     CHTML_font(const string& typeface, int size, bool absolute, CNCBINode* node = 0);
     CHTML_font(const string& typeface, int size, bool absolute, const string& text);
 
+    using CParent::SetSize;
     CHTML_font* SetSize(int size, bool absolute);
     CHTML_font* SetRelativeSize(int size);
 };

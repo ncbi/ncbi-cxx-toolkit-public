@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/04/27 14:50:16  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
 * Revision 1.9  1999/03/08 22:24:42  lewisg
 * make compilable
 *
@@ -65,44 +69,25 @@
 
 #include <corelib/ncbicgi.hpp>
 #include <corelib/cgiapp.hpp>
+#include <corelib/cgictx.hpp>
 #include <html/html.hpp>
 #include <html/page.hpp>
 #include <html/factory.hpp>
 #include <html/components.hpp>
 #include <html/querypages.hpp>
+
 BEGIN_NCBI_SCOPE
 
 class CMyApp : public CCgiApplication
 {
 public:
-    CMyApp(int argc = 0, char** argv = 0)
-        : CCgiApplication(argc, argv), m_CgiRequest(argc, argv)
-        {
-        }
-
-    CCgiRequest& GetCgiRequest()
-	{
-	    return m_CgiRequest;
-	}
-
-    virtual int Run(void);
-
-private:
-    CCgiRequest m_CgiRequest;
+    virtual int ProcessRequest(CCgiContext& context);
 
 };
 
 extern "C" int main(int argc, char *argv[])
 {
-    int result;
-
-    CMyApp app( argc, argv );
-
-    app.Init(); 
-    result = app.Run();
-    app.Exit(); 
-
-    return result;
+    return CMyApp().AppMain( argc, argv );
 }
 
 SFactoryList < CHTMLBasicPage > PageList [] = {
@@ -111,15 +96,13 @@ SFactoryList < CHTMLBasicPage > PageList [] = {
 };
 
 
-int CMyApp::Run(void) 
+int CMyApp::ProcessRequest(CCgiContext& ctx) 
 {
     CFactory < CHTMLBasicPage > Factory;
 
-    NcbiCout << "Content-TYPE: text/html\n\n";  // CgiResponse
-
     try {
-        int i = Factory.CgiFactory( (TCgiEntries&)(GetCgiRequest().GetEntries()), PageList);
-        CHTMLBasicPage * Page = (PageList[i].pFactory)();
+        int i = Factory.CgiFactory( (TCgiEntries&)(ctx.GetRequest().GetEntries()), PageList);
+        auto_ptr<CHTMLBasicPage> Page((PageList[i].pFactory)());
         Page->SetApplication(this);
         Page->SetStyle(PageList[i].Style);
 /*        Page->AppendChild(new CHTML_p(new CHTML_b("bold paragraph")));
@@ -130,14 +113,14 @@ int CMyApp::Run(void)
         form->AppendChild(new CHTML_select("Select")->AppendOption("One", "ONE")->AppendOption("Two")->AppendOption("THREE", "Three"));
         Page->AppendChild(new CHTML_ol("A")->AppendItem("item 1")->AppendItem("item 2")->AppendItem("Item 3")->AppendItem("Fourth item"));
         Page->AppendChild(new CHTMLComment("this is comment"));*/
-        Page->Print(NcbiCout);  // serialize it
-        delete Page;
+        ctx.GetResponse().WriteHeader();
+        Page->Print(ctx.GetResponse().out());
+        return 0;
     }
     catch (exception exc) {
         NcbiCerr << "\n" << exc.what() << NcbiEndl;
+        return 1;
     }
-
-    return 0;  
 }
 
 

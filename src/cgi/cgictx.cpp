@@ -1,6 +1,3 @@
-#ifndef NCBIAPP__HPP
-#define NCBIAPP__HPP
-
 /*  $Id$
 * ===========================================================================
 *
@@ -26,80 +23,60 @@
 *
 * ===========================================================================
 *
-* Author: 
-*	Vsevolod Sandomirskiy
+* Author: Eugene Vasilchenko
 *
 * File Description:
-*   CNcbiApplication -- a generic NCBI application class
-*   CCgiApplication  -- a NCBI CGI-application class
+*   Definition CGI application class and its context class.
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.10  1999/04/27 14:49:50  vasilche
+* Revision 1.1  1999/04/27 14:50:04  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
-*
-* Revision 1.9  1998/12/28 17:56:25  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.8  1998/12/09 17:30:12  sandomir
-* ncbicgi.hpp deleted from ncbiapp.hpp
-*
-* Revision 1.7  1998/12/09 16:49:56  sandomir
-* CCgiApplication added
-*
-* Revision 1.6  1998/12/07 23:46:52  vakatov
-* Merged with "cgiapp.hpp";  minor fixes
-*
-* Revision 1.5  1998/12/07 22:31:12  vakatov
-* minor fixes
-*
-* Revision 1.4  1998/12/03 21:24:21  sandomir
-* NcbiApplication and CgiApplication updated
-*
-* Revision 1.3  1998/12/01 19:12:36  lewisg
-* added CCgiApplication
-*
-* Revision 1.2  1998/11/05 21:45:13  sandomir
-* std:: deleted
-*
-* Revision 1.1  1998/11/02 22:10:12  sandomir
-* CNcbiApplication added; netest sample updated
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbireg.hpp>
+#include <corelib/ncbires.hpp>
+#include <corelib/cgictx.hpp>
+#include <corelib/cgiapp.hpp>
 
 BEGIN_NCBI_SCOPE
 
-///////////////////////////////////////////////////////
-// CNcbiApplication
+//
+// class CCgiContext
 //
 
-class CNcbiApplication {
-public:
-    static CNcbiApplication* Instance(void); // Singleton method
+CCgiContext::CCgiContext(CCgiApplication& app, int argc, char** argv)
+    : m_app(app), m_request(argc, argv)
+{
+}
 
-    // (throw exception if not-only instance)
-    CNcbiApplication();
-    virtual ~CNcbiApplication(void);
+CNcbiRegistry& CCgiContext::x_GetConfig(void) const
+{
+    return m_app.x_GetConfig();
+}
 
-    virtual void Init(void); // initialization
-    virtual void Exit(void); // cleanup
+CNcbiResource& CCgiContext::x_GetResource(void) const
+{
+    return m_app.x_GetResource();
+}
 
-    virtual int AppMain(int argc, char** argv);
+CCgiServerContext& CCgiContext::x_GetServCtx( void ) const
+{ 
+    CCgiServerContext* context = m_srvCtx.get();
+    if ( !context ) {
+        context = m_app.LoadServerContext(const_cast<CCgiContext&>(*this));
+        if ( !context ) {
+            ERR_POST("CCgiContext::GetServCtx: no server context set");
+            throw runtime_error("no server context set");
+        }
+        const_cast<CCgiContext&>(*this).m_srvCtx.reset(context);
+    }
+    return *context;
+}
 
-    virtual int Run(void) = 0; // main loop
-    
-protected: 
-    static CNcbiApplication* m_Instance;
-    int    m_Argc;
-    char** m_Argv;
-};
 
 END_NCBI_SCOPE
-
-#endif // NCBIAPP__HPP
-
-

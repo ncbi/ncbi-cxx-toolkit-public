@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/04/27 14:50:00  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
 * Revision 1.8  1999/04/26 21:59:29  vakatov
 * Cleaned and ported to build with MSVC++ 6.0 compiler
 *
@@ -91,7 +95,7 @@ inline int CHTMLBasicPage::GetStyle(void) const
 
 inline void CHTMLBasicPage::AddTagMap(const string& name, CNCBINode* node)
 {
-    AddTagMap(name, new ReadyTagMapper(node));
+    AddTagMap(name, CreateTagMapper(node));
 }
 
 #endif /* def PAGE__HPP  &&  ndef PAGE__INL */

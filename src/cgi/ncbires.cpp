@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/04/27 14:50:07  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
 * Revision 1.21  1999/04/14 17:28:59  vasilche
 * Added parsing of CGI parameters from IMAGE input tag like "cmd.x=1&cmd.y=2"
 * As a result special parameter is added with empty name: "=cmd"
@@ -96,6 +100,7 @@
 */
 
 #include <corelib/ncbires.hpp>
+#include <corelib/cgictx.hpp>
 
 #include <algorithm>
 
@@ -105,43 +110,34 @@ BEGIN_NCBI_SCOPE
 // class CNcbiResource 
 //
 
-CNcbiContext::CNcbiContext( CNcbiResource& resource,
-                            CCgiRequest& request, 
-                            CCgiResponse& response,
-                            CCgiServerContext& srvCtx )
-    : m_resource( resource ), m_request( request ), m_response( response ), 
-      m_srvCtx( srvCtx )
-{}
-
-//
-// class CNcbiResource 
-//
-
-CNcbiResource::CNcbiResource( void )
-{}
+CNcbiResource::CNcbiResource( CNcbiRegistry& config )
+    : m_config(config)
+{
+}
 
 CNcbiResource::~CNcbiResource( void )
-{}
-
-void CNcbiResource::HandleRequest( CNcbiContext& ctx )
 {
-  try {
-    TCmdList::iterator it = find_if( m_cmd.begin(), m_cmd.end(), 
-                                     PRequested<CNcbiCommand>( ctx ) );
+}
+
+void CNcbiResource::HandleRequest( CCgiContext& ctx )
+{
+    try {
+        TCmdList::iterator it = find_if( m_cmd.begin(), m_cmd.end(), 
+                                         PRequested<CNcbiCommand>( ctx ) );
     
-    auto_ptr<CNcbiCommand> cmd( ( it == m_cmd.end() ) 
-                                ? GetDefaultCommand()
-                                : (*it)->Clone() );
-    cmd->Execute( ctx );
+        auto_ptr<CNcbiCommand> cmd( ( it == m_cmd.end() ) 
+                                    ? GetDefaultCommand()
+                                    : (*it)->Clone() );
+        cmd->Execute( ctx );
     
-  } catch( std::exception& e ) {
-    _TRACE( e.what() );
-    if( ctx.GetMsg().empty() ) {
-      ctx.GetMsg().push_back( "Unknown error" );
+    } catch( std::exception& e ) {
+        _TRACE( e.what() );
+        if( ctx.GetMsg().empty() ) {
+            ctx.GetMsg().push_back( "Unknown error" );
+        }
+        auto_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
+        cmd->Execute( ctx );
     }
-    auto_ptr<CNcbiCommand> cmd( GetDefaultCommand() );
-    cmd->Execute( ctx );
-  }
 }
 
 //
@@ -149,13 +145,15 @@ void CNcbiResource::HandleRequest( CNcbiContext& ctx )
 //
 
 CNcbiCommand::CNcbiCommand( CNcbiResource& resource )
-  : m_resource( resource )
-{}
+    : m_resource( resource )
+{
+}
 
 CNcbiCommand::~CNcbiCommand( void )
-{}
+{
+}
 
-bool CNcbiCommand::IsRequested( const CNcbiContext& ctx ) const
+bool CNcbiCommand::IsRequested( const CCgiContext& ctx ) const
 {
     const string value = GetName();
   
@@ -186,19 +184,19 @@ bool CNcbiCommand::IsRequested( const CNcbiContext& ctx ) const
 // class CNcbiDatabaseInfo
 //
 
-bool CNcbiDatabaseInfo::IsRequested( const CNcbiContext& ctx ) const
+bool CNcbiDatabaseInfo::IsRequested( const CCgiContext& ctx ) const
 {  
-  TCgiEntries& entries = const_cast<TCgiEntries&>(
-      ctx.GetRequest().GetEntries() );
-  pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
+    TCgiEntries& entries =
+        const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
+    pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
   
-  for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
-    if( CheckName( itEntr->second ) == true ) {
-      return true;
-    } // if
-  } // for
+    for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+        if( CheckName( itEntr->second ) == true ) {
+            return true;
+        } // if
+    } // for
 
-  return false;
+    return false;
 }
 
 //
@@ -206,31 +204,33 @@ bool CNcbiDatabaseInfo::IsRequested( const CNcbiContext& ctx ) const
 //
 
 CNcbiDatabase::CNcbiDatabase( const CNcbiDatabaseInfo& dbinfo )
-  : m_dbinfo( dbinfo )
-{}
+    : m_dbinfo( dbinfo )
+{
+}
 
 CNcbiDatabase::~CNcbiDatabase( void )
-{}
+{
+}
 
 //
 // class CNcbiDatabaseReport
 //
 
-bool CNcbiDataObjectReport::IsRequested( const CNcbiContext& ctx ) const
+bool CNcbiDataObjectReport::IsRequested( const CCgiContext& ctx ) const
 { 
-  const string value = GetName();
+    const string value = GetName();
   
-  TCgiEntries& entries = const_cast<TCgiEntries&>( 
-      ctx.GetRequest().GetEntries() );
-  pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
+    TCgiEntries& entries =
+        const_cast<TCgiEntries&>(ctx.GetRequest().GetEntries());
+    pair<TCgiEntriesI,TCgiEntriesI> p = entries.equal_range( GetEntry() );
 
-  for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
-    if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
-      return true;
-    } // if
-  } // for
+    for( TCgiEntriesI itEntr = p.first; itEntr != p.second; itEntr++ ) {
+        if( AStrEquiv( value, itEntr->second, PNocase() ) ) {
+            return true;
+        } // if
+    } // for
 
-  return false;
+    return false;
 }
 
 CNcbiQueryResult::CNcbiQueryResult(void)

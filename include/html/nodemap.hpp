@@ -29,10 +29,14 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   Various tag mappers classes
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/04/27 14:49:58  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
 * Revision 1.5  1998/12/28 20:29:13  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -54,11 +58,6 @@
 */
 
 #include <corelib/ncbistd.hpp>
-
-//  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//  !!! PUT YOUR OTHER #include's HERE !!!
-//  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 
 BEGIN_NCBI_SCOPE
 
@@ -148,6 +147,53 @@ private:
 };
 
 #include <html/nodemap.inl>
+
+inline
+BaseTagMapper* CreateTagMapper(CNCBINode* node)
+{
+    return new ReadyTagMapper(node);
+}
+
+inline
+BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(void))
+{
+    return new StaticTagMapper(function);
+}
+
+inline
+BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(const string& name))
+{
+    return new StaticTagMapperByName(function);
+}
+
+template<class C>
+inline
+BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node))
+{
+    return new StaticTagMapperByNode<C>(function);
+}
+
+template<class C>
+inline
+BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node, const string& name))
+{
+    return new StaticTagMapperByNodeAndName<C>(function);
+}
+
+template<class C>
+inline
+BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(void))
+{
+    return new TagMapper<C>(method);
+}
+
+template<class C>
+inline
+BaseTagMapper* CreateTagMapper(const C*,
+                               CNCBINode* (C::*method)(const string& name))
+{
+    return new TagMapperByName<C>(method);
+}
 
 END_NCBI_SCOPE
 

@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  1999/04/27 14:50:12  vasilche
+* Added FastCGI interface.
+* CNcbiContext renamed to CCgiContext.
+*
 * Revision 1.37  1999/04/14 20:12:52  vakatov
 * + <stdio.h>, <stdlib.h>
 *
@@ -153,7 +157,7 @@
 #define _DEBUG
 #endif
 
-#include <corelib/cgiapp.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbires.hpp>
 #include <corelib/ncbicgir.hpp>
@@ -799,11 +803,9 @@ void TestCgiResponse(int argc, char** argv)
 // Test CGI application
 //
 
-class CTestApplication : public CCgiApplication
+class CTestApplication : public CNcbiApplication
 {
 public:
-    CTestApplication(int argc = 0, char** argv = 0)
-        : CCgiApplication(argc, argv) {}
     virtual int Run(void);
 };
 
@@ -831,21 +833,8 @@ int CTestApplication::Run(void)
 // MAIN
 //
 
-extern int main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
-    int res = 1;
-    try {
-        CTestApplication app(argc, argv);  
-        app.Init();
-
-        IO_PREFIX::ofstream os( "test" );
-        os << "test";
-
-        res = app.Run();
-        app.Exit();
-    } STD_CATCH("Exception: ");
-
-    SetDiagStream(0);
-    return res;
+    return CTestApplication().AppMain(argc, argv);
 }
 

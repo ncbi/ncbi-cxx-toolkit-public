@@ -1,5 +1,5 @@
-#ifndef NCBI_CGI_APP__HPP
-#define NCBI_CGI_APP__HPP
+#ifndef NCBI_CGI_CTX__HPP
+#define NCBI_CGI_CTX__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -34,7 +34,7 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.12  1999/04/27 14:49:46  vasilche
+* Revision 1.1  1999/04/27 14:49:48  vasilche
 * Added FastCGI interface.
 * CNcbiContext renamed to CCgiContext.
 *
@@ -74,7 +74,7 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbicgi.hpp>
 #include <corelib/ncbicgir.hpp>
 #include <list>
@@ -84,19 +84,31 @@ BEGIN_NCBI_SCOPE
 class CNcbiRegistry;
 class CNcbiResource;
 class CCgiContext;
-class CCgiServerContext;
 class CCgiApplication;
 
-//
-// class CCgiApplication
-//
-
-class CCgiApplication : public CNcbiApplication
+class CCgiServerContext
 {
-    typedef CNcbiApplication CParent;
 public:
+    virtual ~CCgiServerContext( void )
+        { }
+};
 
-    static CCgiApplication* Instance(void); // Singleton method
+//
+// class CCgiContext
+//
+// CCgiContext is a wrapper for request, response, server context.
+// In addtion, it contains list of messages.
+// Having non-const reference, CCgiContext's user has access to its 
+// all internal data
+
+class CCgiContext
+{
+public:
+    typedef list<string> TMsgList;
+
+    CCgiContext(CCgiApplication& app, int argc, char** argv);
+
+    const CCgiApplication& GetApp(void) const;
 
     const CNcbiRegistry& GetConfig(void) const;
     CNcbiRegistry& GetConfig(void);
@@ -105,29 +117,42 @@ public:
     const CNcbiResource& GetResource(void) const;
     CNcbiResource& GetResource(void);
 
-    virtual void Init(void); // initialization
-    virtual void Exit(void); // cleanup
+    const CCgiRequest& GetRequest(void) const;
+    CCgiRequest& GetRequest(void);
+    
+    const CCgiResponse& GetResponse(void) const;
+    CCgiResponse& GetResponse( void );
+    
+    // these methods will throw exception if no server context set
+    const CCgiServerContext& GetServCtx(void) const;
+    CCgiServerContext& GetServCtx(void);
 
-    virtual int Run(void);
-    virtual int ProcessRequest(CCgiContext& context) = 0;
+    const TMsgList& GetMsg(void) const;
+    TMsgList& GetMsg(void);
 
-    virtual CNcbiRegistry* LoadConfig(void);
-    virtual CNcbiResource* LoadResource(void);
-    virtual CCgiServerContext* LoadServerContext(CCgiContext& context);
+    void PutMsg(const string& msg);
+    void ClearMsgList(void);
 
 private:
     CNcbiRegistry& x_GetConfig(void) const;
     CNcbiResource& x_GetResource(void) const;
+    CCgiServerContext& x_GetServCtx(void) const;
 
-    auto_ptr<CNcbiRegistry> m_config;
-    auto_ptr<CNcbiResource> m_resource;
+    CCgiApplication& m_app;
+    
+    CCgiRequest m_request; // CGI request information
+    CCgiResponse m_response; // CGI response information
 
-    friend class CCgiContext;
-};
+    // server context will be obtained from CCgiApp::LoadServerContext()
+    auto_ptr<CCgiServerContext> m_srvCtx; // application defined context
+    
+    TMsgList m_msg;
 
+    friend class CCgiApplication;
+}; 
 
-#include <corelib/cgiapp.inl>
+#include <corelib/cgictx.inl>
 
 END_NCBI_SCOPE
 
-#endif // NCBI_CGI_APP__HPP
+#endif // NCBI_CGI_CTX__HPP
