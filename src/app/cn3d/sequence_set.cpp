@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/04/20 18:03:22  thiessen
+* add ncbistdaa parsing
+*
 * Revision 1.22  2001/04/18 15:46:53  thiessen
 * show description, length, and PDB numbering in status line
 *
@@ -109,6 +112,7 @@
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/NCBIeaa.hpp>
 #include <objects/seq/IUPACaa.hpp>
+#include <objects/seq/NCBIstdaa.hpp>
 #include <objects/seq/NCBI4na.hpp>
 #include <objects/seq/NCBI8na.hpp>
 #include <objects/seq/NCBI2na.hpp>
@@ -241,6 +245,15 @@ static void StringFrom2na(const std::vector< char >& vec, std::string *str, bool
     }
 }
 
+static void StringFromStdaa(const std::vector < char >& vec, std::string *str)
+{
+    static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
+
+    str->resize(vec.size());
+    for (int i=0; i<vec.size(); i++)
+        str->at(i) = stdaaMap[vec[i]];
+}
+
 Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
     StructureBase(parent), bioseqASN(&bioseq),
     gi(VALUE_NOT_SET), pdbChain(' '), molecule(NULL), mmdbLink(VALUE_NOT_SET), isProtein(false)
@@ -312,6 +325,9 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
             isProtein = true;
         } else if (bioseq.GetInst().GetSeq_data().IsIupacaa()) {
             sequenceString = bioseq.GetInst().GetSeq_data().GetIupacaa().Get();
+            isProtein = true;
+        } else if (bioseq.GetInst().GetSeq_data().IsNcbistdaa()) {
+            StringFromStdaa(bioseq.GetInst().GetSeq_data().GetNcbistdaa().Get(), &sequenceString);
             isProtein = true;
         }
 
