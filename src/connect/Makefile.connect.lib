@@ -1,10 +1,13 @@
 # $Id$
 
 LIBOBJ = ncbi_buffer ncbi_priv ncbi_core ncbi_util ncbi_socket_ \
-         ncbi_connutil ncbi_connection \
-         ncbi_socket_connector ncbi_file_connector ncbi_http_connector \
-         ncbi_heapmgr ncbi_server_info ncbi_service ncbi_service_lbsmd \
-         ncbi_service_dispd ncbi_misc ncbi_lbsm ncbi_lbsm_ipc ncbi_ansi_ext
+      ncbi_connutil ncbi_connection \
+      ncbi_socket_connector ncbi_file_connector ncbi_http_connector \
+      ncbi_heapmgr ncbi_server_info ncbi_service \
+      ncbi_service_dispd ncbi_misc ncbi_ansi_ext
+
+UNIX_SRC = ncbi_service_lbsmd ncbi_lbsm ncbi_lbsm_ipc
+
 LIB    = xconnect
 
 DLL_LIBS = $(NETWORK_LIBS)
