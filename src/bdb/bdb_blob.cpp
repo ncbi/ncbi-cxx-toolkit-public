@@ -97,6 +97,15 @@ EBDB_ErrCode CBDB_BLobFile::Insert(const void* data, size_t size) {
     return ret;
 }
 
+EBDB_ErrCode CBDB_BLobFile::UpdateInsert(const void* data, size_t size)
+{
+    m_DBT_Data->data = const_cast<void*> (data);
+    m_DBT_Data->size = m_DBT_Data->ulen = (unsigned)size;
+
+    EBDB_ErrCode ret = CBDB_File::UpdateInsert();
+    return ret;
+}
+
 size_t CBDB_BLobFile::LobSize() const
 { 
     return m_DBT_Data->size;
@@ -388,6 +397,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/12/28 16:45:44  kuznets
+ * +CBDB_BlobFile::UpdateInsert()
+ *
  * Revision 1.20  2004/12/07 16:09:17  kuznets
  * Compatibility changes (berkelye db v4.3)
  *

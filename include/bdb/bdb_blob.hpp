@@ -66,6 +66,14 @@ public:
     /// @param size data size in bytes
     EBDB_ErrCode Insert(const void* data, size_t size);
 
+    /// Insert or update BLOB 
+    ///
+    /// Before calling this function you should assign the key fields.
+    /// @param data BLOB data
+    /// @param size data size in bytes
+    EBDB_ErrCode UpdateInsert(const void* data, size_t size);
+
+
     /// Fetche the record corresponding to the current key value.
     ///
     /// Key fields should be assigned before calling this function.
@@ -236,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/12/28 16:45:31  kuznets
+ * +CBDB_BlobFile::UpdateInsert()
+ *
  * Revision 1.15  2004/07/14 20:00:30  rotmistr
  * InsertUpdate added
  *
