@@ -140,8 +140,8 @@ void CObjectManager::RegisterDataLoader(CLoaderMaker_Base& loader_maker,
         ERR_POST(Warning <<
             "CObjectManager::RegisterDataLoader: " << e.GetMsg());
         // This can happen only if something is wrong with the new loader.
-        loader_maker.m_RegisterInfo.Set(0, false);
-        return;
+        // loader_maker.m_RegisterInfo.Set(0, false);
+        throw;
     }
     loader_maker.m_RegisterInfo.Set(loader, true);
 }
@@ -477,6 +477,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2005/01/27 17:57:29  grichenk
+* Throw exception if loader can not be created.
+*
 * Revision 1.46  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *
