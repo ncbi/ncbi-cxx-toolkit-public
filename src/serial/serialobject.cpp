@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/09/22 20:56:31  gouriano
+* Changed base type of AnyContent object to CSerialObject
+*
 * Revision 1.15  2003/09/16 14:48:36  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *
@@ -288,6 +291,11 @@ CAnyContentObject::CAnyContentObject(const CAnyContentObject& other)
 
 CAnyContentObject::~CAnyContentObject(void)
 {
+}
+
+const CTypeInfo* CAnyContentObject::GetTypeInfo(void)
+{
+    return CStdTypeInfo<ncbi::CAnyContentObject>::GetTypeInfo();
 }
 
 void CAnyContentObject::Reset(void)

@@ -137,12 +137,16 @@ private:
     string m_Value;
 };
 
-class NCBI_XSERIAL_EXPORT CAnyContentObject : public CObject
+class NCBI_XSERIAL_EXPORT CAnyContentObject : public CSerialObject
 {
 public:
     CAnyContentObject(void);
     CAnyContentObject(const CAnyContentObject& other);
     virtual ~CAnyContentObject(void);
+
+    virtual const CTypeInfo* GetThisTypeInfo(void) const
+    { return GetTypeInfo(); }
+    static const CTypeInfo* GetTypeInfo(void);
 
     void Reset(void);
     CAnyContentObject& operator= (const CAnyContentObject& other);
@@ -299,6 +303,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/09/22 20:57:07  gouriano
+* Changed base type of AnyContent object to CSerialObject
+*
 * Revision 1.22  2003/09/16 14:49:15  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *

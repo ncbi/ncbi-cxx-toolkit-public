@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/09/22 20:56:31  gouriano
+* Changed base type of AnyContent object to CSerialObject
+*
 * Revision 1.36  2003/08/13 15:47:45  gouriano
 * implemented serialization of AnyContent objects
 *
@@ -1568,6 +1571,7 @@ public:
 CPrimitiveTypeInfoAnyContent::CPrimitiveTypeInfoAnyContent(void)
     : CParent(sizeof(CAnyContentObject), ePrimitiveValueOther)
 {
+    m_IsCObject = true;
     typedef CPrimitiveTypeFunctions<ncbi::CAnyContentObject> TFunctions;
     SetMemFunctions(&CAnyContentFunctions::Create,
                     &CAnyContentFunctions::IsDefault,
