@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1998/12/07 23:48:03  vakatov
+* Changes in the usage of CCgiApplication class
+*
 * Revision 1.21  1998/12/03 21:24:23  sandomir
 * NcbiApplication and CgiApplication updated
 *
@@ -605,52 +608,54 @@ static void TestCgi(int argc, char* argv[])
     } STD_CATCH("TestCgi(CMD.-LINE ARGS)");
 }
 
-//
-// CTestApplication
+
+
+/////////////////////////////////
+// Test CGI application
 //
 
 class CTestApplication : public CNcbiApplication
 {
 public:
-  
-  CTestApplication( int argc = 0, char* argv[] = 0 )
-    : CNcbiApplication( argc, argv )
-    {}
-
-  virtual ~CTestApplication( void )
-    {}
-
-  virtual int Run( void );
-
+  CTestApplication(int argc = 0, char** argv = 0)
+      : CNcbiApplication(argc, argv) {}
+  virtual ~CTestApplication(void);
+  virtual int Run(void);
 };
 
-int CTestApplication::Run( void )
+CTestApplication::~CTestApplication(void)
+{
+  SetDiagStream(0);
+}
+
+int CTestApplication::Run(void)
 {
   TestDiag();
-  
+
   TestException();
   TestIostream();
 
-  TestCgi( m_argc, m_argv );
-
-  SetDiagStream(0);
+  TestCgi(m_Argc, m_Argv);
 
   return 0;
 }
+
+
   
 /////////////////////////////////
 // MAIN
 //
+
 extern int main(int argc, char* argv[])
 {
-  CTestApplication app( argc, argv );
+  CTestApplication app(argc, argv);
   
   int res = 1;
   try {
     app.Init();
     res = app.Run();
     app.Exit();
-  } catch( exception& e ) {
+  } catch(exception& e) {
     cout << e.what();
   }
 
