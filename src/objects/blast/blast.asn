@@ -175,7 +175,7 @@ Blast4-database-info ::= SEQUENCE {
     description             VisibleString,
     last-updated            VisibleString,
     total-length            BigInt,
-    num-sequences           INTEGER
+    num-sequences           BigInt
 }
 
 Blast4-frame-type ::= ENUMERATED {
