@@ -6,7 +6,7 @@
 #################################
 
 LIB_PROJ = html
-SUB_PROJ = test demo
+#SUB_PROJ = test demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
