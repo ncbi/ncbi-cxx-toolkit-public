@@ -29,6 +29,7 @@ static char const rcsid[] =
  */
 
 #include "blast_psi_priv.h"
+#include <algo/blast/core/blast_def.h>
 
 void**
 _PSIAllocateMatrix(unsigned int ncols, unsigned int nrows, 
@@ -68,6 +69,9 @@ _PSIDeallocateMatrix(void** matrix, unsigned int ncols)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/04/07 22:08:37  kans
+ * needed to include blast_def.h for sfree prototype
+ *
  * Revision 1.1  2004/04/07 19:11:17  camacho
  * Initial revision
  *
