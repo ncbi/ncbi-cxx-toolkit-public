@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.91  2004/03/17 15:19:10  camacho
+ * Add missing casts
+ *
  * Revision 1.90  2004/03/11 23:58:10  dondosha
  * Set cutoff_score to 0 before calling BLAST_Cutoffs, so it knows what to calculate
  *
@@ -1399,7 +1402,7 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
          However this does not apply to the ungapped search! */
       if (params->do_sum_stats && gapped_calculation) {
          params->cutoff_score = 
-            MIN(params->cutoff_score, ext_params->gap_trigger);
+            MIN(params->cutoff_score, (Int4) ext_params->gap_trigger);
       }
    } else {
       params->cutoff_score = 0;
@@ -1590,7 +1593,7 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
    }	
 
    if (psi_options) {
-      hit_params->cutoff_big_gap *= psi_options->scalingFactor;
-      hit_params->cutoff_small_gap *= psi_options->scalingFactor;
+      hit_params->cutoff_big_gap *= (Int4) psi_options->scalingFactor;
+      hit_params->cutoff_small_gap *= (Int4) psi_options->scalingFactor;
    }
 }
