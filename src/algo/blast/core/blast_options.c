@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.34  2003/07/21 20:31:47  dondosha
+ * Added BlastDatabaseParameters structure with genetic code string
+ *
  * Revision 1.33  2003/06/26 21:38:05  dondosha
  * Program number is removed from options structures, and passed explicitly as a parameter to functions that need it
  *
@@ -664,15 +667,14 @@ BlastScoringOptionsValidate(Uint1 program_number,
 		
 	}
 
-	if (program_number != blast_type_blastx)
+	if (program_number != blast_type_blastx && 
+       program_number != blast_type_tblastn && options->is_ooframe)
 	{
-		if (options->is_ooframe)
-		{
-			Int4 code=2;
-			Int4 subcode=1;
-			Blast_MessageWrite(blast_msg, 1, code, subcode, "Out-of-frame only permitted for blastx");
-			return (Int2) code;
-		}
+      Int4 code=2;
+      Int4 subcode=1;
+      Blast_MessageWrite(blast_msg, 1, code, subcode, 
+         "Out-of-frame only permitted for blastx and tblastn");
+      return (Int2) code;
 	}
 
 	return 0;
@@ -1107,6 +1109,37 @@ BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options)
    MemFree(db_options->entrez_query);
    
    return (BlastDatabaseOptionsPtr) MemFree(db_options);
+}
+
+Int2 BlastDatabaseParametersNew(Uint1 program, 
+        const BlastDatabaseOptionsPtr db_options,
+        BlastDatabaseParametersPtr PNTR db_params)
+{
+   ValNodePtr vnp;
+   GeneticCodePtr gcp;
+
+   if (!db_options) {
+      /* Probably database parameters are not needed for this case */
+      *db_params = NULL;
+      return 0;
+   }
+
+   *db_params = (BlastDatabaseParametersPtr)
+      MemNew(sizeof(BlastDatabaseParameters));
+
+   if (program == blast_type_tblastn || program == blast_type_tblastx) {
+      gcp = GeneticCodeFind(db_options->genetic_code, NULL);
+      for (vnp = (ValNodePtr)gcp->data.ptrvalue; vnp != NULL; 
+           vnp = vnp->next) {
+         if (vnp->choice == 3) {  /* ncbieaa */
+            (*db_params)->gen_code_string = (CharPtr)vnp->data.ptrvalue;
+            break;
+         }
+      }
+   }
+   (*db_params)->options = db_options;
+
+   return 0;
 }
 
 Int2 BLAST_InitDefaultOptions(Uint1 program_number,
