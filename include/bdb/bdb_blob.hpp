@@ -1,5 +1,5 @@
-#ifndef BDB_BLOB_HPP__
-#define BDB_BLOB_HPP__
+#ifndef BDB___BLOB_HPP__
+#define BDB___BLOB_HPP__
 
 /* $Id$
  * ===========================================================================
@@ -31,6 +31,7 @@
  * File Description: BDB library BLOB support.
  *
  */
+
 /// @file bdb_blob.hpp
 /// BDB library BLOB support.
 
@@ -39,9 +40,15 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup BDB_BLOB
+ *
+ * @{
+ */
+
+
 class CBDB_BLobStream;
 
-/// Berkeley DB BLob File class. 
+/// Berkeley DB BLOB File class. 
 ///
 /// The basic BLOB file. Key part of the file consists of one or more 
 /// fields. Data part is one binary object(BLOB).
@@ -101,7 +108,7 @@ public:
 
 };
 
-/// Berkeley DB BLob File stream. 
+/// Berkeley DB BLOB File stream. 
 ///
 /// Class wraps partial data read/write functionality of Berkeley DB.
 /// Both Read and Write functions of the class directly call 
@@ -182,6 +189,7 @@ private:
 };
 
 
+/* @} */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -208,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/09/26 20:54:37  kuznets
+ * Documentaion change
+ *
  * Revision 1.9  2003/09/26 18:48:05  kuznets
  * Doxigenification of comments
  *

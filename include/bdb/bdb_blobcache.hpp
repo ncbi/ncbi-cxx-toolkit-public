@@ -1,5 +1,5 @@
-#ifndef BDB__BLOBCACHE__HPP
-#define BDB__BLOBCACHE__HPP
+#ifndef BDB___BLOBCACHE__HPP
+#define BDB___BLOBCACHE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -43,6 +43,10 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup BDB_BLOB_Cache
+ *
+ * @{
+ */
 
 /// BLOB storage file structure
 
@@ -138,11 +142,18 @@ private:
     SBLOB_Cache_AccessTimeDB   m_TimeDB;
 };
 
+
+/* @} */
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/26 20:54:37  kuznets
+ * Documentaion change
+ *
  * Revision 1.1  2003/09/24 14:29:42  kuznets
  * Initial revision
  *
