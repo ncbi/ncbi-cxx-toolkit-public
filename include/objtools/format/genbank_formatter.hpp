@@ -59,7 +59,7 @@ class IFlattishFeature;
 class CContigItem;
 class CWGSItem;
 class CGenomeItem;
-class CEndSectionItem;
+//class CEndSectionItem;
 class CFlatTextOStream;
 class CDateItem;
 class CDBSourceItem;
@@ -73,25 +73,27 @@ public:
 
     virtual SIZE_TYPE GetWidth(void) const { return 79; }
 
-    virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os) const;
-    virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os) const;
-    virtual void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os) const;
-    virtual void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os) const;
-    virtual void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os) const;
-    virtual void FormatSource(const CSourceItem& source, IFlatTextOStream& text_os) const;
-    virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os) const;
-    virtual void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os) const;
-    virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os) const;
-    virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os) const;
-    virtual void FormatEndSection(const CEndSectionItem& end, IFlatTextOStream& text_os) const;
-    virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os) const;
-    virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os) const;
-    virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os) const;
-    virtual void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os) const;
-    virtual void FormatPrimary(const CPrimaryItem& prim, IFlatTextOStream& text_os) const;
-    virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os) const;
-    virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os) const;
-    virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os) const;
+    virtual void EndSection(IFlatTextOStream& text_os);
+
+    virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os);
+    virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os);
+    virtual void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os);
+    virtual void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os);
+    virtual void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os);
+    virtual void FormatSource(const CSourceItem& source, IFlatTextOStream& text_os);
+    virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os);
+    virtual void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os);
+    virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os);
+    virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);
+    //virtual void FormatEndSection(const CEndSectionItem& end, IFlatTextOStream& text_os);
+    virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os);
+    virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os);
+    virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os);
+    virtual void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os);
+    virtual void FormatPrimary(const CPrimaryItem& prim, IFlatTextOStream& text_os);
+    virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os);
+    virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os);
+    virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os);
 
 private:
     // source
@@ -118,6 +120,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/01/14 15:54:28  shomrat
+* const removed
+*
 * Revision 1.1  2003/12/17 19:53:06  shomrat
 * Initial revision (adapted from flat lib)
 *

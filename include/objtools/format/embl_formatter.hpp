@@ -49,20 +49,22 @@ public:
 
     virtual SIZE_TYPE GetWidth(void) const { return 78; }
 
-    virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os) const;
-    virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os) const;
-    virtual void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os) const;
-    virtual void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os) const;
-    virtual void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os) const;
-    virtual void FormatSource(const CSourceItem& source, IFlatTextOStream& text_os) const;
-    virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os) const;
-    virtual void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os) const;
-    virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os) const;
-    virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os) const;
-    virtual void FormatEndSection(const CEndSectionItem& end, IFlatTextOStream& text_os) const;
-    virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os) const;
-    virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os) const;
-    virtual void FormatDate(const CDateItem& date, IFlatTextOStream& text_os) const;
+    virtual void EndSection(IFlatTextOStream& text_os);
+
+    virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os);
+    virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os);
+    virtual void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os);
+    virtual void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os);
+    virtual void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os);
+    virtual void FormatSource(const CSourceItem& source, IFlatTextOStream& text_os);
+    virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os);
+    virtual void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os);
+    virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os);
+    virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);
+    //virtual void FormatEndSection(const CEndSectionItem& end, IFlatTextOStream& text_os);
+    virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os);
+    virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os);
+    virtual void FormatDate(const CDateItem& date, IFlatTextOStream& text_os);
 
 private:
     virtual string& Pad(const string& s, string& out, EPadContext where) const;
@@ -87,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/01/14 15:51:12  shomrat
+* const removed
+*
 * Revision 1.1  2003/12/17 19:51:12  shomrat
 * Initial revision (adapted from flat lib)
 *
