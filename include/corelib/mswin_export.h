@@ -126,6 +126,7 @@
 #  define NCBI_OBJPRT_EXPORTS
 #  define NCBI_TINYSEQ_EXPORTS
 #  define NCBI_ENTREZGENE_EXPORTS
+#  define NCBI_BIOTREE_EXPORTS
 #endif
 
 
@@ -385,6 +386,16 @@
 #else
 #  define NCBI_BIBLIO_EXPORT        __declspec(dllimport)
 #endif
+
+/*
+ * Export specifier for library objects_biotree
+ */
+#ifdef NCBI_BIOTREE_EXPORTS
+#  define NCBI_BIOTREE_EXPORT        __declspec(dllexport)
+#else
+#  define NCBI_BIOTREE_EXPORT        __declspec(dllimport)
+#endif
+
 
 /*
  * Export specifier for library objects_blast
@@ -1392,6 +1403,7 @@
 #  define NCBI_ACCESS_EXPORT
 #  define NCBI_BDB_EXPORT
 #  define NCBI_BIBLIO_EXPORT
+#  define NCBI_BIOTREE_EXPORT
 #  define NCBI_BLASTDB_EXPORT
 #  define NCBI_BLAST_EXPORT
 #  define NCBI_CDD_EXPORT
@@ -1522,6 +1534,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.74  2004/05/24 13:56:42  kuznets
+ * Added NCBI_BIOTREE_EXPORT
+ *
  * Revision 1.73  2004/05/14 16:15:05  dicuccio
  * Added export specifier for gui/widgets/workspace
  *
