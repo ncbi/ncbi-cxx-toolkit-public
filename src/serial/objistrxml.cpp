@@ -1007,7 +1007,7 @@ string CObjectIStreamXml::ReadOtherPointer(void)
 void CObjectIStreamXml::StartDelayBuffer(void)
 {
     BeginData();
-    return CObjectIStream::StartDelayBuffer();
+    CObjectIStream::StartDelayBuffer();
 }
 
 CRef<CByteSource> CObjectIStreamXml::EndDelayBuffer(void)
@@ -2102,6 +2102,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2004/09/09 21:02:00  ucko
+* Remove redundant "return" from StartDelayBuffer.
+*
 * Revision 1.67  2004/09/09 19:16:58  vasilche
 * StartDelayBuffer/EndDelayBuffer made virtual to update input if needed.
 *
