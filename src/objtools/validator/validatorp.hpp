@@ -355,9 +355,11 @@ public:
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq* seq,
         const string& prefix, const CSerialObject& obj);
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
-    void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj);
-    void ValidateDbxref(TDbtags xref_list, const CSerialObject& obj);
-
+    void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj,
+        bool biosource = false);
+    void ValidateDbxref(TDbtags xref_list, const CSerialObject& obj,
+        bool biosource = false);
+        
     // getters
     inline CScope* GetScope(void) { return m_Scope; }
 
@@ -870,6 +872,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/06/27 18:53:20  shomrat
+* Changed ValidateDbxref definition
+*
 * Revision 1.31  2003/06/19 15:34:09  shomrat
 * Added IsOtherDNA and IsSynthetic
 *
