@@ -17,6 +17,10 @@ NCBI C++ Toolkit -- F. A. Q.</h1>
 in something like:
 <i>SunWS_cache/CC_obj_b/bXmZkg3zX5VBJvYgjABX.o</i></a></li>
 
+<li><a href="#ref_CannotFindSer">The linker complains about undefined symbols Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and AsnIoClose in libxser.a"</a></li>
+
+<li><a href="#ref_CannotFindObjectSymbol">The linker complains about undefined symbols of the following form:ncbi::objects::*::*</a></li>
+
 <li>
 <a href="#ref_HowMakeDep">MAKE complains it does not know "<i>how to make
 target: /home/qqq/c++/WorkShop6-Debug/lib/.seqset.dep</i>"</a></li>
@@ -26,7 +30,9 @@ target: /home/qqq/c++/WorkShop6-Debug/lib/.seqset.dep</i>"</a></li>
 symbols, unfound libraries, etc., and nothing seems to help out much</a></li>
 
 <li>
-?</li>
+<a href="#ref_CannotFindGetTypeInfo">The GetTypeInfo() method is not declared or defined in any of the objects for which it is part of the interface.</a></li>
+
+<li><a href="#ref_WhichIncludeFile">Which include file should be used in *.cpp files, <i>class</i>.hpp or <i>class_</i>.hpp?</a></li>
 
 </ol>
 
@@ -38,8 +44,30 @@ symbol"</i> in something like:
 <i>SunWS_cache/CC_obj_b/bXmZkg3zX5VBJvYgjABX.o</i></h4>
 Go to the relevant build dir, clean and rebuild everything using:
 <pre>&nbsp;&nbsp; cd /home/qqq/c++/WorkShop6-Debug/build/FooBar
-&nbsp;&nbsp; make purge_r all_r</pre>
+&nbsp;&nbsp; make purge_r all_r</pre><br>
 
+<hr><h4><a NAME="ref_CannotFindSer">The linker complains about undefined symbols
+Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and  AsnIoClose in libxser.a.</h4>
+The cause of this error is that the serialization library, by default, links in some code that references the 
+C Toolkit library. You must link in the C Toolkit library by putting the following into your make file:<br>
+<pre>
+CPPFLAGS = $(ORIG_CPPFLAGS) \
+  $(NCBI_C_INCLUDE) \
+
+LIBS = \
+  $(NCBI_C_LIBPATH) -lncbi
+  $(ORIG_LIBS)
+</pre>
+If you are using the make file created by new_project.sh, then just uncomment the applicable lines.<br><br>
+
+<hr><h4><a NAME="ref_CannotFindObjectSymbol"></a>The linker complains about undefined symbols of the following form: ncbi::objects::*::*</h4>
+For example, the linker may complain about the symbol <i>ncbi::objects::CSeq_id::GetTypeInfo(void)</i> being undefined. 
+The cause of this problem is that the applicable objects library has not been linked into the application. You 
+determine the applicable objects library as follows: <br><br>1) Look for the *.hpp file that declares the applicable class
+(e.g., for CSeq_id this will be include/objects/seqloc/Seq_id.hpp). This can be done by going to the source browser and doing
+an identifier search on the class name (e.g., CSeq_id) and looking in the <b>Defined as a class</b> section for the path name. <br><br>2) Note the name of the sub directory in which the *.hpp file is located (in this case the sub directory is seqloc). <br><br>3) The name of the library to link is determined from the sub directory name. In the make file add the library name to the LIB macro (e.g., LIB = <b>seqloc</b> xncbi) or add -l<b>subdir</b> (e.g.,
+-lseqloc) to the command line of the compile command. <br><br>Note: The C++ toolkit libraries have dependencies on each other. For example, symbols defined in seqfeat (libseqfeat.a) are referenced in library mmdb1 (libmmdb1.a). In this case you most link seqfeat after mmdb1.
+ 
 <hr>
 <h4>
 <a NAME="ref_HowMakeDep"></a>MAKE complains it does not know "<i>how to
@@ -62,10 +90,18 @@ As the last resort, try to CVS update, reconfigure, clean and rebuild everything
 
 <hr>
 <h4>
-?</h4>
-.
+<a NAME="ref_CannotFindGetTypeInfo"></a>The GetTypeInfo() method is not declared or defined in any of the objects for which it is part of the interface.</h4>The macro DECLARE_INTERNAL_TYPE_INFO() is used in the *.hpp files to declare the GetTypeInfo(). There are several macros that are used to implement GetTypeInfo() methods in *.cpp files. These macros are generally named and used as follows:<br>
+<pre>
+BEGIN_*_INFO(...)
+{
+  ADD_*(...)
+  ...
+}
+</pre>
+See <b>User-defined Type Information</b> in the <i>Programming Manual</i> for more information.
 
-
+<hr>
+<h4><a NAME="ref_WhichIncludeFile"></a>Which include file should be used in *.cpp files, <i>class</i>.hpp or <i>class_</i>.hpp?</h4>Include the <i>class</i>.hpp (file without underscore). Never instantiate or use a class of the form C*_Base directly. Instead use the C* form which inherits from the C*_Base class (e.g., don't use CSeq_id_Base directly--use CSeq_id instead).
 <!-- **************************************************************** -->
 <br>
 <p>
