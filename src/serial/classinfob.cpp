@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/09/13 15:38:42  dicuccio
+* Fixed memory leak (need to clear a static prior to termination)
+*
 * Revision 1.14  2002/08/30 16:21:32  vasilche
 * Added MT lock for cache maps
 *
@@ -255,6 +258,10 @@ void CClassTypeInfoBase::Deregister(void)
     delete sm_ClassesByName;
     sm_ClassesByName = 0;
     Classes().erase(this);
+    if (Classes().size() == 0) {
+        delete sm_Classes;
+        sm_Classes = 0;
+    }
 }
 
 TTypeInfo CClassTypeInfoBase::GetClassInfoById(const type_info& id)
