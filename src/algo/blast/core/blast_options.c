@@ -1010,7 +1010,7 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
    PSIBlastOptions* options = NULL;
 
    if ( !psi_options )
-      return 0;
+      return 1;
 
    options = (PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions));
    if ( !options ) 
@@ -1162,6 +1162,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.160  2005/03/08 21:00:51  camacho
+ * PSIBlastOptionsNew returns 0 on success only, passing in NULL is an error
+ *
  * Revision 1.159  2005/03/02 13:55:26  madden
  * Rename Filtering option funcitons to standard naming convention
  *
