@@ -359,6 +359,8 @@ static void s_TestFormats(void)
         "yMD   h:ms",
         "D B Y h:m:s",
         "D b Y h:m:s",
+        "M/D/Y h:m:s z",
+        "M/D/Y Z h:m:s",
         "smhyMD",
         "y||||M++++D   h===ms",
         "   yM[][D   h:,.,.,ms  ",
@@ -760,6 +762,9 @@ int main()
     SetDiagPostFlag(eDPF_All);
     SetDiagPostLevel(eDiag_Info);
 
+    // Reinit global timezone variables
+    tzset();
+    
     // Run tests
     try {
         s_TestMisc();
@@ -778,6 +783,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.21  2004/03/25 17:35:17  ivanov
+ * Added tests for 'z' time format
+ *
  * Revision 6.20  2003/11/25 20:03:56  ivanov
  * Fixed misspelled eTZPrecisionDefault
  *
