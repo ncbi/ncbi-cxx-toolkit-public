@@ -38,6 +38,8 @@
 
 // Objects includes
 #include <objects/general/Int_fuzz.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/general/Dbtag.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -962,11 +964,13 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                 case eQual_PCR_conditions:
                 case eQual_phenotype:
                 case eQual_product:
+                case eQual_protein_id:
                 case eQual_replace:
                 case eQual_rpt_family:
                 case eQual_rpt_type:
                 case eQual_rpt_unit:
                 case eQual_standard_name:
+                case eQual_transcript_id:
                 case eQual_transposon:
                 case eQual_usedin:
                     {
@@ -1008,6 +1012,17 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                     }
                 case eQual_db_xref:
                     {
+                        string db, tag;
+                        if (NStr::SplitInTwo (val, ":", db, tag)) {
+                            CSeq_feat::TDbxref& dblist = sfp->SetDbxref ();
+                            CRef<CDbtag> dbt (new CDbtag);
+                            dbt->SetDb (db);
+                            CRef<CObject_id> oid (new CObject_id);
+                            oid->SetStr (tag);
+                            dbt->SetTag (*oid);
+                            dblist.push_back (dbt);
+                            return true;
+                        }
                         return true;
                     }
                 default:
