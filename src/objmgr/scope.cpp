@@ -385,6 +385,8 @@ void CScope::ResetHistory(void)
 {
     CMutexGuard guard(m_Scope_Mtx);
     m_History.clear();
+    m_Cache.clear();
+    m_SynCache.clear();
 }
 
 
@@ -439,8 +441,7 @@ CScope::x_DetachFromOM(void)
 {
     CMutexGuard guard(m_Scope_Mtx);
     // Drop and release all TSEs
-    m_Cache.clear();
-    m_History.clear();
+    ResetHistory();
     if(m_pObjMgr) {
         m_pObjMgr->ReleaseDataSources(m_setDataSrc);
         m_pObjMgr->RevokeScope(*this);
@@ -477,6 +478,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/03/05 20:55:29  vasilche
+* Added cache cleaning in CScope::ResetHistory().
+*
 * Revision 1.46  2003/03/03 20:32:47  vasilche
 * Removed obsolete method GetSynonyms().
 *
