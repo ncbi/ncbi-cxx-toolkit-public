@@ -1,4 +1,4 @@
---$Revision: 1.8 $
+--$Revision: 1.9 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -16,8 +16,8 @@
 NCBI-ID2Access DEFINITIONS ::=
 BEGIN
 
-IMPORTS Seq-id, Seq-loc FROM NCBI-Seqloc
-        ID2S-Chunk-Id   FROM NCBI-Seq-split;
+IMPORTS Seq-id, Seq-loc                                 FROM NCBI-Seqloc
+        ID2S-Chunk-Id, ID2S-Seq-annot-Info              FROM NCBI-Seq-split;
 
 
 ----------------------------------------------------------------------------
@@ -62,7 +62,19 @@ ID2-Request-Get-Packages ::= SEQUENCE {
 
 -- Requested sequence ID, can be any string or Seq-id.
 -- This request will be replied with one or more ID2-Reply-Get-Seq-id.
-ID2-Request-Get-Seq-id ::= CHOICE {
+ID2-Request-Get-Seq-id ::= SEQUENCE {
+        seq-id          ID2-Seq-id,
+        seq-id-type     INTEGER {
+                any     (0),    -- return any one Seq-id
+                gi      (1),    -- gi is preferred
+                text    (2),    -- text Seq-id (accession etc) is preferred
+                general (4),    -- general Seq-id is preferred
+                all     (127)   -- return all Seq-ids of the sequence
+        } DEFAULT any
+}
+
+
+ID2-Seq-id ::= CHOICE {
         string          VisibleString,
         seq-id          Seq-id
 }
@@ -145,7 +157,7 @@ ID2S-Request-Get-Chunks ::= SEQUENCE {
 -- Seq-entry level will have probably the same values as Entry-complexities.
 ID2-Get-Blob-Details ::= SEQUENCE {
         -- reference location for details - can be only part of sequence
-        location        Seq-loc,
+        location        Seq-loc OPTIONAL,
 
         -- Seq-entry level for all data except descriptors (sequnence, annots)
         seq-class-level INTEGER DEFAULT 1,
@@ -192,6 +204,7 @@ ID2-Reply ::= SEQUENCE {
         -- the reply data manually from precalculated data
         reply CHOICE {
                 init            NULL,
+                empty           NULL,
                 get-package     ID2-Reply-Get-Package,
                 get-seq-id      ID2-Reply-Get-Seq-id,
                 get-blob-id     ID2-Reply-Get-Blob-Id,
@@ -254,21 +267,25 @@ ID2-Reply-Get-Seq-id ::= SEQUENCE {
 
         -- resolved Seq-id
         -- not set if error occurred
-        seq-id          Seq-id OPTIONAL
+        seq-id          SEQUENCE OF Seq-id OPTIONAL
 }
 
 
 -- Reply to ID2-Request-Get-Blob-Id.
 ID2-Reply-Get-Blob-Id ::= SEQUENCE {
+        -- required Seq-id
+        seq-id          Seq-id,
+
+        -- result
         blob-id         ID2-Blob-Id,
 
         -- version of split data
         -- (0 for non split)
         split-version   INTEGER DEFAULT 0,
 
-        -- source name of this blob set
-        -- "" for native blob - blob with sequence
-        source          VisibleString DEFAULT ""
+        -- annotation types in this blob
+        -- annotation are unknown if this field is omitted
+        annot-info      SEQUENCE OF ID2S-Seq-annot-Info OPTIONAL
 }
 
 
@@ -340,20 +357,37 @@ ID2S-Reply-Get-Chunk ::= SEQUENCE {
 
 -- Data packing.
 ID2-Reply-Data ::= SEQUENCE {
-        data-type       INTEGER, -- index of negotiated types
+        -- index of negotiated types
         -- recommended types
         --   Seq-entry,
         --   ID2S-Split-Info,
         --   ID2S-Chunk
+        data-type       INTEGER {
+                seq-entry       (0),
+                seq-annot       (1),
+                id2s-split-info (2),
+                id2s-chunk      (3)
+        } DEFAULT seq-entry,
 
         -- serialization format (ASN.1 binary, ASN.1 text)
-        data-format             INTEGER, -- index of negotiated formats
+        -- index of negotiated formats
+        data-format     INTEGER {
+                asn-binary      (0),
+                asn-text        (1),
+                xml             (2)
+        } DEFAULT asn-binary,
 
         -- post serialization compression (plain, gzip, etc.)
-        data-compression        INTEGER, -- index of negotiated formats
+        -- index of negotiated compressions
+        data-compression INTEGER {
+                none            (0),
+                gzip            (1),
+                nlmzip          (2),
+                bzip2           (3)
+        } DEFAULT none,
 
         -- data blob
-        data                    SEQUENCE OF OCTET STRING
+        data            SEQUENCE OF OCTET STRING
 }
 
 
@@ -376,6 +410,11 @@ ID2-Blob-Seq-id ::= SEQUENCE {
 
 ID2-Blob-Id ::= SEQUENCE {
         sat             INTEGER,
+        sub-sat         INTEGER {
+                main    (0),
+                snp     (1),
+                mgc     (16)
+        } DEFAULT main,
         sat-key         INTEGER,
         -- version of blob, optional in some requests
         version         INTEGER OPTIONAL
