@@ -33,6 +33,9 @@
 * File Description: stream implementation for reading and writing BLOBs
 *
 * $Log$
+* Revision 1.3  2002/07/08 16:04:15  kholodov
+* Reformatted
+*
 * Revision 1.2  2002/05/13 19:08:44  kholodov
 * Modified: source code is included in NCBI namespace
 *
@@ -50,27 +53,32 @@ BEGIN_NCBI_SCOPE
 class CBlobIStream : public istream
 {
 public:
-
-  CBlobIStream(CDB_Result* rs, streamsize bufsize = 0);
-
-  virtual ~CBlobIStream();
+    
+    CBlobIStream(CDB_Result* rs, streamsize bufsize = 0);
+    
+    virtual ~CBlobIStream();
 };
 
 //====================================================================
 class CBlobOStream : public ostream
 {
 public:
-
-  CBlobOStream(CDB_Connection* connAux,
+    
+    CBlobOStream(CDB_Connection* connAux,
 	       I_ITDescriptor* desc,
-	       size_t datasize, 
-	       streamsize bufsize = 0);
-
-  virtual ~CBlobOStream();
-
+           size_t datasize, 
+           streamsize bufsize = 0);
+    
+    CBlobOStream(CDB_CursorCmd* curCmd,
+	       unsigned int item_num,
+           size_t datasize, 
+           streamsize bufsize = 0);
+    
+    virtual ~CBlobOStream();
+    
 private:
-  I_ITDescriptor* m_desc;
-  CDB_Connection* m_conn;
+    I_ITDescriptor* m_desc;
+    CDB_Connection* m_conn;
 };
 
 //====================================================================

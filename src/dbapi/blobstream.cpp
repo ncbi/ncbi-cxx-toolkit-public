@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/07/08 16:04:15  kholodov
+* Reformatted
+*
 * Revision 1.2  2002/05/13 19:08:44  kholodov
 * Modified: source code is included in NCBI namespace
 *
@@ -51,30 +54,39 @@
 BEGIN_NCBI_SCOPE
 
 CBlobIStream::CBlobIStream(CDB_Result* rs, streamsize bufsize)
-  : istream(new CByteStreamBuf(bufsize))
+: istream(new CByteStreamBuf(bufsize))
 {
-  ((CByteStreamBuf*)rdbuf())->SetRs(rs);
+    ((CByteStreamBuf*)rdbuf())->SetRs(rs);
 }
 
 CBlobIStream::~CBlobIStream()
 {
-  delete rdbuf();
+    delete rdbuf();
 }
 
 CBlobOStream::CBlobOStream(CDB_Connection* connAux,
-			   I_ITDescriptor* desc,
-			   size_t datasize, 
-			   streamsize bufsize)
-  : ostream(new CByteStreamBuf(bufsize)), m_desc(desc), m_conn(connAux)
+                           I_ITDescriptor* desc,
+                           size_t datasize, 
+                           streamsize bufsize)
+                           : ostream(new CByteStreamBuf(bufsize)), m_desc(desc), m_conn(connAux)
 {
-  ((CByteStreamBuf*)rdbuf())->SetCmd(m_conn->SendDataCmd(*m_desc, datasize));
+    ((CByteStreamBuf*)rdbuf())->SetCmd(m_conn->SendDataCmd(*m_desc, datasize));
+}
+
+CBlobOStream::CBlobOStream(CDB_CursorCmd* curCmd,
+                           unsigned int item_num,
+                           size_t datasize, 
+                           streamsize bufsize)
+                           : ostream(new CByteStreamBuf(bufsize)), m_desc(0), m_conn(0)
+{
+    ((CByteStreamBuf*)rdbuf())->SetCmd(curCmd->SendDataCmd(item_num, datasize));
 }
 
 CBlobOStream::~CBlobOStream()
 {
-  delete rdbuf();
-  delete m_desc;
-  delete m_conn;
+    delete rdbuf();
+    delete m_desc;
+    delete m_conn;
 }
 
 END_NCBI_SCOPE
