@@ -192,16 +192,33 @@ static string s_LegalConsSpliceStrings[] = {
 };
 
 
-static bool s_IsLocRefSeq(const CSeq_loc& loc, CScope& scope)
+static bool s_IsLocRefSeqMrna(const CSeq_loc& loc, CScope& scope)
 {
-    try {
-        CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    if ( bsh ) {
         ITERATE (CBioseq::TId, it, bsh.GetBioseq().GetId()) {
-            if ( (*it)->IsOther() ) {
+            if ( (*it)->IdentifyAccession() == CSeq_id::eAcc_refseq_mrna ) {
                 return true;
             }
         }
-    } catch (CException&) {}
+    }
+
+    return false;
+}
+
+
+static bool s_IsLocGEDL(const CSeq_loc& loc, CScope& scope)
+{
+    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    if ( bsh ) {
+        ITERATE (CBioseq::TId, it, bsh.GetBioseq().GetId()) {
+            CSeq_id::EAccessionInfo acc_info = (*it)->IdentifyAccession();
+            if ( acc_info == CSeq_id::eAcc_gb_embl_ddbj  ||
+                 acc_info == CSeq_id::eAcc_local ) {
+                return true;
+            }
+        }
+    }
 
     return false;
 }
@@ -2027,7 +2044,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             }
         }
     }
-    bool is_loc_refseq = s_IsLocRefSeq(feat.GetLocation(), *m_Scope);
+    
 
     // pseuogene
     if ( (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||
@@ -2076,16 +2093,19 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     // check alternative start codon
     if ( alt_start  &&  gc == 1 ) {
         EDiagSev sev = eDiag_Warning;
-        if ( is_loc_refseq ) {
+        if ( s_IsLocRefSeqMrna(feat.GetLocation(), *m_Scope) ) {
             sev = eDiag_Error;
+        } else if ( s_IsLocGEDL(feat.GetLocation(), *m_Scope) ) {
+            sev = eDiag_Info;
         }
-        if ( feat.CanGetExcept()  &&  feat.GetExcept()  &&
+        if ( sev != eDiag_Info  &&  
+             feat.CanGetExcept()  &&  feat.GetExcept()  &&
              feat.CanGetExcept_text()  &&  !feat.GetExcept_text().empty() ) {
             if ( feat.GetExcept_text().find("alternative start codon") != NPOS ) {
                 sev = eDiag_Info;
             }
         }
-        if ( sev > eDiag_Info ) {
+        if ( sev != eDiag_Info ) {
             PostErr(sev, eErr_SEQ_FEAT_AltStartCodon,
                 "Alternative start codon used", feat);
         }
@@ -2106,7 +2126,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     ValidateCodeBreakNotOnCodon(feat, location, cdregion);
     
     if ( cdregion.GetFrame() > CCdregion::eFrame_one ) {
-        EDiagSev sev = is_loc_refseq ? eDiag_Error : eDiag_Warning;
+        EDiagSev sev = s_IsLocRefSeqMrna(feat.GetLocation(), *m_Scope) ?
+            eDiag_Error : eDiag_Warning;
         if ( !(part_loc & eSeqlocPartial_Start) ) {
             PostErr(sev, eErr_SEQ_FEAT_PartialProblem, 
                 "Suspicious CDS location - frame > 1 but not 5' partial", feat);
@@ -2643,6 +2664,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2004/03/10 21:24:44  shomrat
+* suppress eErr_SEQ_FEAT_AltStartCodon for GenBank/EMBL/DDBJ and Local
+*
 * Revision 1.48  2004/03/01 18:44:28  shomrat
 * Check alternative start codon
 *
