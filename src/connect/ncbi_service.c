@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2001/10/01 19:52:38  lavr
+ * Call update directly; do not remove time from server specs in SERV_Print()
+ *
  * Revision 6.30  2001/09/29 19:33:04  lavr
  * BUGFIX: SERV_Update() requires VT bound (was not the case in constructor)
  *
@@ -316,19 +319,13 @@ void SERV_Close(SERV_ITER iter)
     if (iter->op && iter->op->Close)
         (*iter->op->Close)(iter);
     iter->op = 0;
-    if (iter->skip)
+    if (iter->skip) {
         free(iter->skip);
+        iter->skip = 0;
+    }
     free(iter);
 }
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-typedef int (*FUpdate)(SERV_ITER, TNCBI_Time, const char*);
-#ifdef __cplusplus
-}
-#endif
 
 int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
 {
@@ -337,7 +334,6 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
 
     if (iter && iter->op && text) {
         TNCBI_Time now = (TNCBI_Time) time(0);
-        FUpdate update = iter->op->Update;
         const char *c, *b;
         for (b = text; (c = strchr(b, '\n')) != 0; b = c + 1) {
             size_t len = (size_t)(c - b);
@@ -354,7 +350,7 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
             else
                 t[len] = 0;
             p = t;
-            if (update && (*update)(iter, now, p))
+            if (iter->op->Update && (*iter->op->Update)(iter, now, p))
                 retval = 1/*updated*/;
             if (strncasecmp(p, used_server_info,
                             sizeof(used_server_info) - 1) == 0) {
@@ -429,16 +425,8 @@ char* SERV_Print(SERV_ITER iter)
     s_SkipSkip(iter);
     /* Put all the rest into rejection list */
     for (i = 0; i < iter->n_skip; i++) {
-        char *s1, *s2;
         if (!(str = SERV_WriteInfo(iter->skip[i])))
             break;
-        /* Remove ugly " T=[0-9]*" (no harm to be there, however) */
-        if ((s1 = strstr(str, " T=")) != 0) {
-            s2 = s1 + 1;
-            while (*s2 && !isspace((unsigned char)(*s2)))
-                s2++;
-            memmove(s1, s2, strlen(s2) + 1);
-        }
         buflen = sprintf(buffer, "Skip-Info-%u: ", (unsigned) i + 1); 
         assert(buflen < sizeof(buffer)-1);
         if (!BUF_Write(&buf, buffer, buflen) ||
