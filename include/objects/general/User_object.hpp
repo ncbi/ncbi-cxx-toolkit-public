@@ -68,9 +68,9 @@ public:
 
     CUser_object& AddField(const string& label, CUser_object& value);
     CUser_object& AddField(const string& label,
-                           const list< CRef<CUser_object> >& value);
+                           const vector< CRef<CUser_object> >& value);
     CUser_object& AddField(const string& label,
-                           const list< CRef<CUser_field> >& value);
+                           const vector< CRef<CUser_field> >& value);
 
     // access a named field in this user object.  This is a little
     // sneaky in that it interprets a delimiter for recursion.
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/07/27 15:12:03  ucko
+* Use vectors for User-field.data SEQUENCE-OF choices.
+*
 * Revision 1.5  2003/09/29 15:17:14  dicuccio
 * Fleshed out CUser_object API.  Added API to retrieve fields based on a
 * delimited key.  Added ability to encode a CUser_object as one of a number of

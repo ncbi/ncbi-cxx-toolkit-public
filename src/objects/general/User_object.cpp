@@ -249,9 +249,7 @@ CUser_object& CUser_object::AddField(const string& label,
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
     field->SetNum(value.size());
-    ITERATE (vector<string>, iter, value) {
-        field->SetData().SetStrs().push_back(*iter);
-    }
+    field->SetData().SetStrs() = value;
 
     SetData().push_back(field);
     return *this;
@@ -264,9 +262,7 @@ CUser_object& CUser_object::AddField(const string& label,
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
     field->SetNum(value.size());
-    ITERATE (vector<int>, iter, value) {
-        field->SetData().SetInts().push_back(*iter);
-    }
+    field->SetData().SetInts() = value;
 
     SetData().push_back(field);
     return *this;
@@ -279,17 +275,16 @@ CUser_object& CUser_object::AddField(const string& label,
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
     field->SetNum(value.size());
-    ITERATE (vector<double>, iter, value) {
-        field->SetData().SetReals().push_back(*iter);
-    }
+    field->SetData().SetReals() = value;
 
     SetData().push_back(field);
     return *this;
 }
 
 
-CUser_object& CUser_object::AddField(const string& label,
-                                     const list< CRef<CUser_object> >& objects)
+CUser_object&
+CUser_object::AddField(const string& label,
+                       const vector< CRef<CUser_object> >& objects)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
@@ -302,7 +297,7 @@ CUser_object& CUser_object::AddField(const string& label,
 
 
 CUser_object& CUser_object::AddField(const string& label,
-                                     const list< CRef<CUser_field> >& objects)
+                                     const vector<CRef<CUser_field> >& objects)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
@@ -567,6 +562,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.8  2004/07/27 15:12:03  ucko
+* Use vectors for User-field.data SEQUENCE-OF choices.
+*
 * Revision 6.7  2004/05/19 17:21:39  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *
