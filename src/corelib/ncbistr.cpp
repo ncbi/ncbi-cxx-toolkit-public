@@ -503,7 +503,11 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
 string NStr::PtrToString(const void* value)
 {
     char buffer[64];
+#ifdef NCBI_OS_MSWIN
+    ::sprintf(buffer, "0x%p", value);
+#else
     ::sprintf(buffer, "%p", value);
+#endif
     return buffer;
 }
 
@@ -967,6 +971,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2003/02/25 15:43:40  dicuccio
+ * Added #ifdef'd hack for MSVC's non-standard sprintf() in PtrToString() - '%p'
+ * lacks a leading '0x'
+ *
  * Revision 1.77  2003/02/25 14:43:53  dicuccio
  * Added handling of special NULL pointer encoding in StringToPtr()
  *
