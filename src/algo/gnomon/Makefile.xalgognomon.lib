@@ -1,0 +1,7 @@
+# $Id$
+
+SRC = cluster gnomon models parse states
+LIB = xalgognomon
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)

@@ -1,0 +1,13 @@
+# $Id$
+
+# Meta-makefile("GNOMON" project)
+#################################
+
+LIB_PROJ = xalgognomon
+
+SUB_PROJ = demo
+
+REQUIRES = objects
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

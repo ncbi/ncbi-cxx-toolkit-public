@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("GNOMON" project)
+#################################
+
+APP_RPOJ = gnomon localfinder
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
