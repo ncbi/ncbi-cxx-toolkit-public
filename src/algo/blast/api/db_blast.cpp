@@ -270,7 +270,7 @@ CDbBlast::TrimBlastHSPResults()
 void 
 CDbBlast::RunSearchEngine()
 {
-    BLAST_DatabaseSearchEngine(m_OptsHandle->GetOptions().GetProgram(),
+    BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgram(),
          mi_clsQueries, mi_clsQueryInfo, 
          m_pSeqSrc, mi_pScoreBlock, 
          m_OptsHandle->GetOptions().GetScoringOpts(), 
@@ -300,7 +300,7 @@ CDbBlast::x_Results2SeqAlign()
 
     retval = BLAST_Results2CSeqAlign(mi_pResults, 
                  m_OptsHandle->GetOptions().GetProgram(),
-                 m_tQueries, m_pSeqSrc, 0, 
+                 m_tQueries, m_pSeqSrc, 
                  m_OptsHandle->GetOptions().GetScoringOpts(), 
                  mi_pScoreBlock);
 
@@ -314,6 +314,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2004/03/15 19:57:00  dondosha
+ * Merged TwoSequences and Database engines
+ *
  * Revision 1.16  2004/03/10 17:37:36  papadopo
  * add (unused) RPS info pointer to LookupTableWrapInit()
  *

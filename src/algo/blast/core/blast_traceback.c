@@ -1145,62 +1145,6 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
    return status;
 }
 
-Int2 BLAST_TwoSequencesTraceback(Uint1 program_number, 
-        BlastHSPResults* results, 
-        BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-        BLAST_SequenceBlk* subject, 
-        BlastGapAlignStruct* gap_align,
-        const BlastScoringOptions* score_options,
-        const BlastExtensionParameters* ext_params,
-        BlastHitSavingParameters* hit_params,
-        const BlastDatabaseOptions* db_options)
-{
-   Int2 status = 0;
-   Int4 query_index;
-   BlastHitList* hit_list;
-   BlastHSPList* hsp_list;
-   BlastScoreBlk* sbp;
-   Boolean db_is_na;
-   
-   if (!results || !query_info || !subject) {
-      return 0;
-   }
-   
-   db_is_na = (program_number != blast_type_blastp && 
-               program_number != blast_type_blastx);
-
-   /* Set the raw X-dropoff value for the final gapped extension with 
-      traceback */
-   gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
-
-   sbp = gap_align->sbp;
-
-   if (db_is_na) {
-      /* Two sequences case: free the compressed sequence */
-      sfree(subject->sequence);
-      subject->sequence = subject->sequence_start + 1;
-      subject->sequence_allocated = FALSE;
-   }
-
-   for (query_index = 0; query_index < results->num_queries; ++query_index) {
-      hit_list = results->hitlist_array[query_index];
-
-      if (!hit_list)
-         continue;
-      hsp_list = *hit_list->hsplist_array;
-      if (!hsp_list)
-         continue;
-
-      if (!hsp_list->traceback_done) {
-         BlastHSPListGetTraceback(program_number, hsp_list, query, subject, 
-            query_info, gap_align, sbp, score_options, ext_params->options, 
-            hit_params, db_options, NULL);
-      }
-   }
-
-   return status;
-}
-
 #define SWAP(a, b) {tmp = (a); (a) = (b); (b) = tmp; }
 
 static void 

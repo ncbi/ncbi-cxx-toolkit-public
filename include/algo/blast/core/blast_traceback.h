@@ -71,29 +71,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
         const BlastDatabaseOptions* db_options,
         const PSIBlastOptions* psi_options);
 
-/** Given the preliminary alignment results from a two sequences search
- * (possibly with multiple query sequences), redo the gapped alignment
- * with traceback, if it has not yet been done.
- * @param program_number Type of the BLAST program [in]
- * @param results Results of this BLAST search [in] [out]
- * @param query The query sequence [in]
- * @param query_info Information about the query [in]
- * @param subject The subject sequence [in]
- * @param gap_align The auxiliary structure for gapped alignment [in]
- * @param score_options The scoring related options [in]
- * @param ext_params Gapped extension parameters [in]
- * @param hit_params Parameters for saving hits [in]
- * @param db_options Options containing database genetic code string [in]
- */
-Int2 BLAST_TwoSequencesTraceback(Uint1 program_number, 
-        BlastHSPResults* results, BLAST_SequenceBlk* query, 
-        BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
-        BlastGapAlignStruct* gap_align, 
-        const BlastScoringOptions* score_options,
-        const BlastExtensionParameters* ext_params,
-        BlastHitSavingParameters* hit_params,
-        const BlastDatabaseOptions* db_options);
-
+/** FIXME: Doxygen comments absent! */
 Int2 BLAST_RPSTraceback(Uint1 program_number, 
         BlastHSPResults* results, BLAST_SequenceBlk* concat_db, 
         BlastQueryInfo* concat_db_info, BLAST_SequenceBlk* query, 

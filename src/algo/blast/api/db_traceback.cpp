@@ -87,7 +87,7 @@ int CDbBlastTraceback::SetupSearch()
 
         BLAST_GapAlignSetUp(x_eProgram, GetSeqSrc(), 
             GetScoringOpts(), GetEffLenOpts(), GetExtnOpts(), GetHitSaveOpts(),
-            mi_clsQueries, mi_clsQueryInfo, mi_pScoreBlock, 0,
+            mi_clsQueryInfo, mi_pScoreBlock,
             &mi_pExtParams, &mi_pHitParams, &mi_pEffLenParams, &mi_pGapAlign);
 
     }
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/03/15 19:57:00  dondosha
+ * Merged TwoSequences and Database engines
+ *
  * Revision 1.2  2004/03/09 18:54:06  dondosha
  * Setup now needs the effective lengths parameters structure
  *

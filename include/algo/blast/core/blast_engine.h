@@ -67,7 +67,7 @@ extern "C" {
  *                     different stages of the search [out]
  */
 Int4 
-BLAST_DatabaseSearchEngine(Uint1 program_number, 
+BLAST_SearchEngine(Uint1 program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
    const BlastSeqSrc* bssp, BlastScoreBlk* sbp, 
    const BlastScoringOptions* score_options, 
@@ -107,39 +107,6 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    const BlastInitialWordOptions* word_options, 
    const BlastExtensionOptions* ext_options, 
    const BlastHitSavingOptions* hit_options,
-   const BlastEffectiveLengthsOptions* eff_len_options,
-   const PSIBlastOptions* psi_options, 
-   const BlastDatabaseOptions* db_options,
-   BlastHSPResults* results, BlastReturnStat* return_stats);
-
-/** The high level function performing BLAST comparison of two sequences,
- * after all the setup has been done.
- * @param program_number Type of BLAST program [in]
- * @param query Query sequence [in]
- * @param query_info Query information structure [in]
- * @param subject Subject sequence [in]
- * @param sbp Scoring and statistical parameters [in]
- * @param score_options Hit scoring options [in]
- * @param lookup_wrap The lookup table, constructed earlier [in]
- * @param word_options Options for processing initial word hits [in]
- * @param ext_options Options and parameters for the gapped extension [in]
- * @param hit_options Options for saving the HSPs [in]
- * @param eff_len_options Options for setting effective lengths [in]
- * @param psi_options Options specific to PSI-BLAST [in]
- * @param db_options Options for handling BLAST database [in]
- * @param results Structure holding all saved results [in] [out]
- * @param return_stats Return statistics containing numbers of hits on 
- *                     different stages of the search [out]
- */
-Int4 
-BLAST_TwoSequencesEngine(Uint1 program_number, 
-   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-   BLAST_SequenceBlk* subject, 
-   BlastScoreBlk* sbp, const BlastScoringOptions* score_options, 
-   LookupTableWrap* lookup_wrap, 
-   const BlastInitialWordOptions* word_options, 
-   const BlastExtensionOptions* ext_options, 
-   const BlastHitSavingOptions* hit_options, 
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
