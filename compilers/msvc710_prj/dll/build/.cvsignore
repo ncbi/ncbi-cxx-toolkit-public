@@ -10,7 +10,7 @@ connect
 corelib
 ctools
 dbapi*
-dload_table
+dload_*
 gui_*
 hello
 html
