@@ -32,9 +32,14 @@
 */
 
 #include <ncbi_pch.hpp>
+
+#include <corelib/ncbi_safe_static.hpp>
+#include <corelib/plugin_manager_store.hpp>
+
 #include "python_ncbi_dbapi.hpp"
 #include "pythonpp/pythonpp_pdt.hpp"
 #include "pythonpp/pythonpp_date.hpp"
+#include "../../ds_impl.hpp"
 
 //////////////////////////////////////////////////////////////////////////////
 // Compatibility macros
@@ -133,6 +138,111 @@ CConnParam::~CConnParam(void)
 {
 }
 
+/* Future development
+//////////////////////////////////////////////////////////////////////////////
+struct DataSourceDeleter
+{
+    /// Default delete function.
+    static void Delete(ncbi::IDataSource* const object)
+    {
+        CDriverManager::DeleteDs( object );
+    }
+};
+
+//////////////////////////////////////////////////////////////////////////////
+class CDataSourcePool
+{
+public:
+    CDataSourcePool(void);
+    ~CDataSourcePool(void);
+
+public:
+    static CDataSourcePool& GetInstance(void);
+
+public:
+    IDataSource& GetDataSource(
+        const string& driver_name,
+        const TPluginManagerParamTree* const params = NULL);
+
+private:
+    typedef CPluginManager<I_DriverContext> TContextManager;
+    typedef CPluginManagerStore::CPMMaker<I_DriverContext> TContextManagerStore;
+    typedef map<string, AutoPtr<IDataSource, DataSourceDeleter> > TDSMap;
+
+    CRef<TContextManager>   m_ContextManager;
+    TDSMap                  m_DataSourceMap;
+};
+
+CDataSourcePool::CDataSourcePool(void)
+{
+    bool created = false;
+
+    m_ContextManager.Reset( TContextManagerStore::Get( &created ) );
+    _ASSERT( m_ContextManager );
+
+#ifdef WIN32
+    // Add an additional search path ...
+#endif
+}
+
+CDataSourcePool::~CDataSourcePool(void)
+{
+}
+
+void
+DataSourceCleanup(void* ptr)
+{
+    CDriverManager::DeleteDs( static_cast<ncbi::IDataSource *const>(ptr) );
+}
+
+CDataSourcePool&
+CDataSourcePool::GetInstance(void)
+{
+    static CSafeStaticPtr<CDataSourcePool> ds_pool;
+
+    return *ds_pool;
+}
+
+IDataSource&
+CDataSourcePool::GetDataSource(
+    const string& driver_name,
+    const TPluginManagerParamTree* const params)
+{
+    TDSMap::const_iterator citer = m_DataSourceMap.find( driver_name );
+
+    if ( citer != m_DataSourceMap.end() ) {
+        return *citer->second;
+    }
+
+    // Build a new context ...
+    I_DriverContext* drv = NULL;
+
+    try {
+        drv = m_ContextManager->CreateInstance(
+            driver_name,
+            NCBI_INTERFACE_VERSION(I_DriverContext),
+            params
+            );
+        _ASSERT( drv );
+    }
+    catch( const CPluginManagerException& e ) {
+        throw CDatabaseError( e.GetMsg() );
+    }
+    catch ( const exception& e ) {
+        throw CDatabaseError( driver_name + " is not available :: " + e.what() );
+    }
+    catch( ... ) {
+        throw CDatabaseError( driver_name + " was unable to load due an unknown error" );
+    }
+
+    // Store new value
+    IDataSource* ds = CDriverManager::CreateDs( drv );
+    m_DataSourceMap[driver_name] = ds;
+
+    return *ds;
+}
+    */
+
 //////////////////////////////////////////////////////////////////////////////
 CConnection::CConnection(
     const CConnParam& conn_param,
@@ -144,18 +254,40 @@ CConnection::CConnection(
 , m_DefTransaction( NULL )
 , m_ConnectionMode( conn_mode )
 {
+#ifdef WIN32
+    // Add an additional search path ...
+    const DWORD buff_size = 1024;
+    DWORD cur_size = 0;
+    char buff[buff_size];
+    HMODULE mh = NULL;
+    const char* module_name = NULL;
+
+#ifdef NDEBUG
+    module_name = "python_ncbi_dbapi.pyd";
+#else
+    module_name = "python_ncbi_dbapi_d.pyd";
+#endif
+
+    if ( mh = GetModuleHandle( module_name ) ) {
+        if ( cur_size = GetModuleFileName( mh, buff, buff_size ) ) {
+            if ( cur_size < buff_size ) {
+                CFile file( buff );
+
+                m_DM.AddDllSearchPath( file.GetDir().c_str() );
+            }
+        }
+    }
+
+#endif
+
     try {
-        m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName(), const_cast<CConnParam::TDatabaseParameters*>(&m_ConnParam.GetDatabaseParameters()) );
+        m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName(), &m_ConnParam.GetDatabaseParameters() );
     }
     catch(const CDB_Exception& e) {
         throw CDatabaseError(e.Message());
     }
-//    try {
-//        m_DS = CreateDs( m_ConnParam.GetDriverName(), &m_ConnParam.GetDatabaseParameters() );
-//    }
-//    catch(const CDB_Exception& e) {
-//        throw CDatabaseError(e.Message());
-//    }
+
+//    m_DS = &CDataSourcePool::GetInstance().GetDataSource( m_ConnParam.GetDriverName() );
 
     PrepareForPython(this);
 
@@ -2251,6 +2383,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/03/08 17:14:48  ssikorsk
+* Search for drivers in a module directory
+*
 * Revision 1.10  2005/03/01 15:22:58  ssikorsk
 * Database driver manager revamp to use "core" CPluginManager
 *
