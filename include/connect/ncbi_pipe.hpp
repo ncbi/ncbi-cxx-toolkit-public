@@ -41,15 +41,13 @@
 /// Implemented for: UNIX, MS-Windows
 
 
-#include <connect/ncbi_core.h>
 #include <corelib/ncbistd.hpp>
+#include <connect/ncbi_core.h>
 #include <stdio.h>
 #include <vector>
 
-#if defined(NCBI_OS_MSWIN)
-#elif defined(NCBI_OS_UNIX)
-#else
-#  error "Class CPipe is supported only on Windows and Unix"
+#if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_UNIX)
+#  error "Class CPipe is only supported on Windows and Unix"
 #endif
 
 
@@ -64,7 +62,6 @@ BEGIN_NCBI_SCOPE
 
 // Forward declaration.
 class CPipeHandle;
-class CPipeStreambuf;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -133,7 +130,8 @@ public:
     enum EChildIOHandle {
         eStdIn,
         eStdOut,
-        eStdErr
+        eStdErr,
+        eDefault
     };
 
     /// Constructor.
@@ -228,7 +226,8 @@ public:
     /// @sa
     ///   Write(), SetTimeout()
     EIO_Status Read(void* buf, size_t count, size_t* read = 0,
-        const EChildIOHandle from_handle = eStdOut);
+                    EChildIOHandle from_handle = eDefault);
+    EIO_Status SetReadHandle(EChildIOHandle from_handle);
 
     /// Write data to pipe. 
     ///
@@ -288,61 +287,26 @@ public:
     ///   SetTimeout()
     const STimeout* GetTimeout(EIO_Event event) const;
 
-private:
-    CPipeHandle*  m_PipeHandle;        ///< Internal pipe handle that handles
-                                       ///< requests forwarded by CPipe.
+protected:
+    CPipeHandle*   m_PipeHandle;        ///< Internal pipe handle that handles
+    EChildIOHandle m_ReadHandle;        ///< Default read handle
+
     // Last IO status
-    EIO_Status    m_ReadStatus;        ///< Last read status
-    EIO_Status    m_WriteStatus;       ///< Last write status
+    EIO_Status     m_ReadStatus;        ///< Last read status
+    EIO_Status     m_WriteStatus;       ///< Last write status
 
     // Timeouts
-    STimeout*     m_ReadTimeout;       ///< eIO_Read timeout
-    STimeout*     m_WriteTimeout;      ///< eIO_Write timeout
-    STimeout*     m_CloseTimeout;      ///< eIO_Close timeout
-    STimeout      m_ReadTimeoutValue;  ///< Storage for m_ReadTimeout
-    STimeout      m_WriteTimeoutValue; ///< Storage for m_WriteTimeout
-    STimeout      m_CloseTimeoutValue; ///< Storage for m_CloseTimeout
+    STimeout*      m_ReadTimeout;       ///< eIO_Read timeout
+    STimeout*      m_WriteTimeout;      ///< eIO_Write timeout
+    STimeout*      m_CloseTimeout;      ///< eIO_Close timeout
+    STimeout       m_ReadTimeoutValue;  ///< Storage for m_ReadTimeout
+    STimeout       m_WriteTimeoutValue; ///< Storage for m_WriteTimeout
+    STimeout       m_CloseTimeoutValue; ///< Storage for m_CloseTimeout
 
+private:
     /// Disable copy constructor and assignment.
     CPipe(const CPipe&);
     CPipe& operator= (const CPipe&);
-};
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CPipeIOStream --
-///
-/// Create an input and output stream for a pipe.
-///
-/// This class is  derived from "std::iostream" and performs both input and 
-/// output, using the specified pipe. 
-
-class NCBI_XCONNECT_EXPORT CPipeIOStream : public iostream
-{
-public:
-
-    /// Default I/O buffer size.
-    static const streamsize kDefaultBufferSize;
-
-    /// Constructor.
-    ///
-    /// @param pipe
-    ///   Pipe which will be used for stream input/output.
-    /// @param buf_size
-    ///   Buffer size to be used for pipe.
-    CPipeIOStream(CPipe& pipe, streamsize buf_size = kDefaultBufferSize);
-
-    /// Destructor.
-    virtual ~CPipeIOStream(void);
-
-    /// Set the read handle of the child process as specified by "handle"
-    /// (eStdOut/eStdErr).
-    void SetReadHandle(const CPipe::EChildIOHandle handle) const;
-
-private:
-    CPipeStreambuf* m_StreamBuf;    ///< Stream buffer for pipe I/O 
 };
 
 
@@ -355,6 +319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/09/23 21:03:06  lavr
+ * PipeStreambuf and special stream removed: now all in ncbi_conn_stream.hpp
+ *
  * Revision 1.16  2003/09/16 14:55:49  ivanov
  * Removed extra comma in the enum definition
  *
