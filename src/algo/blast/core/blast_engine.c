@@ -349,6 +349,10 @@ BLAST_SearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* quer
    /* Discard HSPs that don't pass the e-value test */
    status = Blast_HSPListReapByEvalue(hsp_list, hit_options);
 
+   /* If there are no HSPs left, destroy the HSP list too. */
+   if (hsp_list && hsp_list->hspcnt == 0)
+      *hsp_list_out = hsp_list = Blast_HSPListFree(hsp_list);
+
    if (gapped_stats && hsp_list && hsp_list->hspcnt > 0) {
       ++gapped_stats->num_seqs_passed;
       gapped_stats->good_extensions += hsp_list->hspcnt;
