@@ -2275,24 +2275,36 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
             break;
 
         case CSeqdesc::e_Source:
-            if ( desc.GetSource().IsSetIs_focus()  &&
-                 desc.GetSource().GetIs_focus() ) {
-                // skip proteins, segmented bioseqs, or segmented parts
-                if ( !seq.IsAa()  &&
-                     !(seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg)  &&
-                     !(m_Imp.GetAncestor(seq, CBioseq_set::eClass_parts) != 0) ) {
-                    if ( !CFeat_CI(bsh, 0, 0, CSeqFeatData::e_Biosrc) ) {
-                        PostErr(eDiag_Error,
-                            eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
-                            "BioSource descriptor has focus, "
-                            "but no BioSource feature", seq, desc);
+            {
+                const CSeqdesc::TSource& source = desc.GetSource();
+                
+                if ( source.IsSetIs_focus()  &&  source.GetIs_focus() ) {
+                    // skip proteins, segmented bioseqs, or segmented parts
+                    if ( !seq.IsAa()  &&
+                        !(seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg)  &&
+                        !(m_Imp.GetAncestor(seq, CBioseq_set::eClass_parts) != 0) ) {
+                        if ( !CFeat_CI(bsh, 0, 0, CSeqFeatData::e_Biosrc) ) {
+                            PostErr(eDiag_Error,
+                                eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
+                                "BioSource descriptor has focus, "
+                                "but no BioSource feature", seq, desc);
+                        }
                     }
                 }
+                if ( source.CanGetOrigin()  &&  
+                     source.GetOrigin() == CBioSource::eOrigin_synthetic ) {
+                    if ( !IsOtherDNA(seq) ) {
+                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
+                            "Molinfo-biomol other should be used if "
+                            "Biosource-location is synthetic", seq);
+                    }
+                }
+                if ( !org ) {
+                    org = &(desc.GetSource().GetOrg());
+                }
+                ValidateOrgContext(di, desc.GetSource().GetOrg(), 
+                    *org, seq, desc);
             }
-            if ( !org ) {
-                org = &(desc.GetSource().GetOrg());
-            }
-            ValidateOrgContext(di, desc.GetSource().GetOrg(), *org, seq, desc);
             break;
 
         case CSeqdesc::e_Molinfo:
@@ -2371,8 +2383,10 @@ void CValidError_bioseq::ValidateMolInfoContext
 
         case CMolInfo::eBiomol_other:
             if ( !m_Imp.IsXR() ) {
-                PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
-                    "Molinfo-biomol other used", seq, desc);
+                if ( !IsSynthetic(seq) ) {
+                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
+                        "Molinfo-biomol other used", seq, desc);
+                }
             }
             break;
             
@@ -2432,6 +2446,40 @@ void CValidError_bioseq::ValidateMolInfoContext
             break;
         }
     }
+}
+
+
+bool CValidError_bioseq::IsOtherDNA(const CBioseq& seq) const
+{
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( bsh ) {
+        CSeqdesc_CI sd(bsh, CSeqdesc::e_Molinfo);
+        if ( sd ) {
+            const CSeqdesc::TMolinfo& molinfo = sd->GetMolinfo();
+            if ( molinfo.CanGetBiomol()  &&
+                 molinfo.GetBiomol() == CMolInfo::eBiomol_other ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+bool CValidError_bioseq::IsSynthetic(const CBioseq& seq) const
+{
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( bsh ) {
+        CSeqdesc_CI sd(bsh, CSeqdesc::e_Source);
+        if ( sd ) {
+            const CSeqdesc::TSource& source = sd->GetSource();
+            if ( source.CanGetOrigin()  &&
+                 source.GetOrigin() == CBioSource::eOrigin_synthetic ) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 
@@ -3088,6 +3136,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2003/06/19 13:55:36  shomrat
+* synthetic biosource should have molinfo biomol other
+*
 * Revision 1.38  2003/06/18 20:50:41  shomrat
 * NT-036298 (dash instead of underscore) gives Critical level BadSeqIdFormat error
 *
