@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/12/13 15:33:37  thiessen
+* tweak to HighlightAlignedColumnsOfMasterRange
+*
 * Revision 1.41  2002/12/12 23:07:18  thiessen
 * improved handling of alignment annotation errors
 *
@@ -1532,6 +1535,9 @@ bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(int from, int 
         if (i < 0 || i >= master->Length() || !IsAligned(0, i)) {
             ERR_POST(Warning << "Can't highlight alignment at master residue " << (i+1));
             anyError = true;
+            // highlight unaligned residues, but master only
+            if (i >= 0 && i < master->Length())
+                GlobalMessenger()->AddHighlights(GetSequenceOfRow(0), i, i);
             continue;
         }
 
