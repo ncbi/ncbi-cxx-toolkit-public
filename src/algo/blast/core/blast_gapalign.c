@@ -2296,11 +2296,11 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
          }
       }
       if (!delete_hsp) {
+         Boolean good_hit = TRUE;
 
          if (gapped_stats)
             ++gapped_stats->extensions;
 
-         Boolean good_hit = TRUE;
          BLAST_GreedyGappedAlignment(query_tmp.sequence, 
             subject->sequence, query_tmp.length, subject->length, gap_align, 
             score_params, init_hsp->q_off, init_hsp->s_off, 

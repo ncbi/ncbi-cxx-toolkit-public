@@ -1605,10 +1605,10 @@ static int
 evalue_compare_hsp_lists(const void* v1, const void* v2)
 {
    BlastHSPList* h1,* h2;
+   int retval = 0;
    
    h1 = *(BlastHSPList**) v1;
    h2 = *(BlastHSPList**) v2;
-   int retval = 0;
    
    /* If any of the HSP lists is empty, it is considered "worse" than the 
       other, unless the other is also empty. */
