@@ -702,6 +702,12 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
                            "[LSOCK::Accept]  Failed accept()");
             return eIO_Unknown;
         }
+        if ( !s_SetNonBlock(x_sock, 1/*true*/) ) {
+            CORE_LOG(eLOG_Error, "[LSOCK::Accept]  "
+                     "Cannot set accepted socket to non-blocking mode");
+            SOCK_CLOSE(x_sock);
+            return eIO_Unknown;
+        }
         x_host = addr.sin_addr.s_addr;
         x_port = addr.sin_port;
     }}
@@ -729,7 +735,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
 {
     /* Set the socket back to blocking mode */
     if ( !s_SetNonblock(lsock->sock, 0/*false*/) ) {
-        CORE_LOG(eLOG_Warning,
+        CORE_LOG(eLOG_Error,
                  "[LSOCK::Close]  Cannot set socket back to blocking mode");
     }
 
@@ -1981,6 +1987,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.57  2002/08/13 19:39:04  lavr
+ * Set accepted socket in non-blocking mode after accept (not inherited)
+ *
  * Revision 6.56  2002/08/13 19:29:30  lavr
  * Implement interrupted I/O
  *
