@@ -22,14 +22,16 @@ what modifications should be made to this software system,
 The main idea here is to build one task on the top of another, in growing
 level of complexity:
 <ol>
-  <li>given accession, get sequence, print sequence title descriptor,</li>
-  <li>print sequence length and SegMap structure</li>
+  <li>having sequence id (GI), get bio-sequence(Bioseq)</li>
+  <li>print the sequence's title descriptor (Seqdesc.title),</li>
+  <li>print the sequence's length</li>
+  <li>print the sequence's SegMap structure</li>
   <li>print count of CdRegion features and their locations on the sequence</li>
-  <li>calculate percent GC of whole sequence</li>
-  <li>calculate percent GC of regions within CdRegion features</li>
-  <li>calculate percent GC of regions outside any CdRegion feature</li>
-  <li>make into a cgi</li>
-  <li>make into a fcgi</li>
+  <li>calculate percentage of 'G' and 'C' symbols in the whole sequence</li>
+  <li>calculate percentage of 'G' and 'C' symbols for regions within CdRegion features</li>
+  <li>calculate percentage of 'G' and 'C' symbols for regions outside any CdRegion feature</li>
+  <li>convert the application into a CGI one</li>
+  <li>convert the application into a FCGI one</li>
 </ol>
 </p>
 
@@ -44,14 +46,14 @@ Below is the list of example sequences to use with the C++ toolkit
 training course.
 <br>
 It starts with one Teaching Example that has one genomic nucleic acid
-sequence and one protein with a cds.
+sequence and one protein with a CdRegion.
 <br>
 Following that is the list of Test Examples. Once the code is functioning
 on the Teaching Example, we suggest running it through these. They
-include a bunch of different conditions: short sequence with one cd,
-longer with 6 cds, a protein record (this is an error, and code should recover),
+include a bunch of different conditions: short sequence with one CdRegion,
+longer with 6 CdRegions, a protein record (this is an error, and code should recover),
 segmented sequence, 8 megabase genomic contig, a popset member, and a draft
-sequence with no cds.
+sequence with no CdRegions.
 </p>
 
 
