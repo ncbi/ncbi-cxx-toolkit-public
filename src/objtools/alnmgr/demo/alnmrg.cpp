@@ -85,57 +85,62 @@ void CAlnMrgApp::Init(void)
 
     // Describe the expected command-line arguments
     arg_desc->AddDefaultKey
-        ("in", "InputFile",
+        ("in", "input_file_name",
          "Name of file to read from (standard input by default)",
          CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
-        ("log", "LogFile",
+        ("log", "log_file_name",
          "Name of log file to write to",
          CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
-        ("gen2est", "Gen2ESTMerge",
+        ("gen2est", "bool",
          "Perform Gen2EST Merge",
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
-        ("gapjoin", "GapJoin",
+        ("gapjoin", "bool",
          "Consolidate segments of equal lens with a gap on the query sequence",
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
-        ("mingap", "MinGap",
+        ("mingap", "bool",
          "Consolidate all segments with a gap on the query sequence",
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
-        ("minusstrand", "MinusStrand",
+        ("minusstrand", "bool",
          "Minus strand on the refseq when merging.",
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
-        ("fillunaln", "FillUnalignedRegions",
+        ("fillunaln", "bool",
          "Fill unaligned regions.",
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
-        ("calcscore", "CalcScore",
+        ("calcscore", "bool",
          "Calculate each aligned seq pair score and use it when merging."
          "(Don't stitch off ObjMgr for this).",
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
-        ("noobjmgr", "noobjmgr",
+        ("noobjmgr", "bool",
         // ObjMgr is used to identify sequences and obtain a bioseqhandle.
         // Also used to calc scores and determine the type of molecule
          "Skip ObjMgr in identifying sequences, calculating scores, etc.",
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
-        ("queryseqmergeonly", "QuerySeqMergeOnly",
+        ("queryseqmergeonly", "bool",
          "Merge the query seq only, keep subject seqs on separate rows "
          "(even if the same seq).",
+         CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
+        ("truncateoverlaps", "bool",
+         "Truncate overlaps",
          CArgDescriptions::eBoolean, "f");
 
     // Setup arg.descriptions for this application
@@ -290,6 +295,10 @@ void CAlnMrgApp::SetOptions(void)
         m_MergeFlags |= CAlnMix::fFillUnalignedRegions;
     }
 
+    if (args["truncateoverlaps"]  &&  args["truncateoverlaps"].AsBoolean()) {
+        m_MergeFlags |= CAlnMix::CAlnMix::fTruncateOverlaps;
+    }
+
     if (args["calcscore"]  &&  args["calcscore"].AsBoolean()) {
         m_AddFlags |= CAlnMix::fCalcScore;
     }
@@ -297,6 +306,7 @@ void CAlnMrgApp::SetOptions(void)
     if (args["noobjmgr"]  &&  args["noobjmgr"].AsBoolean()) {
         m_AddFlags |= CAlnMix::fDontUseObjMgr;
     }
+
 }
 
 void CAlnMrgApp::PrintMergedAlignment(void)
@@ -334,6 +344,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/07/23 16:14:18  todorov
+* +trunacteoverlaps
+*
 * Revision 1.5  2003/06/26 22:00:25  todorov
 * + fFillUnalignedRegions
 *
