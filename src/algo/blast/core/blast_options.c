@@ -123,7 +123,6 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
 {
    Int4 code=2;
    Int4 subcode=1;
-   Int2 status = 0;
 
    ASSERT(options && lookup_options);
    
@@ -134,7 +133,7 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
          Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
                             "Scanning stride must equal 4 if words are"
                             " extended only in one direction");
-         status = (Int2) code;
+         return (Int2) code;
       }
 
       if (options->variable_wordsize && 
@@ -142,7 +141,7 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
          Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
                             "Word size must be divisible by 4 if only full "
                             "bytes of subject sequences are matched to query");
-         status = (Int2) code;
+         return (Int2) code;
       }
       
       if (options->extension_method == eUpdateDiag &&
@@ -153,14 +152,14 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
          Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
                             "eUpdateDiag extension method works only with "
                             "megablast lookup table and scanning stride 4");
-         status = (Int2) code;
+         return (Int2) code;
       }
       if (lookup_options->mb_template_length != 0 &&
           options->extension_method != eUpdateDiag) {
          Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
                             "Discontiguous megablast requires eUpdateDiag "
                             "extension method ");
-         status = (Int2) code;
+         return (Int2) code;
       }         
 
    } else {
@@ -168,23 +167,23 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
          Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
                             "For all protein BLAST varieties initial word "
                             "extension method must be one-directional");
-         status = (Int2) code;
+         return (Int2) code;
       }
       if (options->variable_wordsize) {
          Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
                             "For all protein BLAST varieties \"variable "
                             "wordsize\" option is not applicable");
-         status = (Int2) code;
+         return (Int2) code;
       }
       if (options->container_type != eDiagArray) {
          Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
                             "For all protein BLAST varieties only diagonal "
                             "array container type is used");
-         status = (Int2) code;
+         return (Int2) code;
       }
 
    }
-   return status;
+   return 0;
 }
 
 
@@ -1510,6 +1509,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.128  2004/08/06 16:22:56  dondosha
+ * In initial word options validation, return after first encountered error
+ *
  * Revision 1.127  2004/08/05 20:41:01  dondosha
  * Implemented stacks initial word container for all blastn extension methods
  *
