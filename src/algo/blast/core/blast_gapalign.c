@@ -2603,53 +2603,51 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject,
     tback = tback1 = 
        Malloc((subject_length + query_length)*sizeof(Int4));
 
+    /* NB: The left extension includes the starting point [q_start,s_start]; 
+       the right extension does not. */
     score_left = 0; prev = 3;
-    if (q_start != 0 && s_start != 0) {
-        found_start = TRUE;
+    found_start = TRUE;
         
-        if(is_ooframe) {
-           q_left = (Uint1Ptr) MemNew((q_start+3)*sizeof(Uint1));
-           s_left = (Uint1Ptr) MemNew((s_start+5)*sizeof(Uint1));
-           
-           q_length = reverse_seq(query, query+q_start-1, q_left+1);
-           s_length = reverse_seq(subject, subject+s_start-3, s_left+3);
-           
-           score_left = OOF_SEMI_G_ALIGN(q_left, s_left+2, q_length, s_length,
-                           tback, &private_q_length, &private_s_length, FALSE,
-                           &tback1, gap_align, score_options, q_start, TRUE);
-            
-           q_left = MemFree(q_left);
-           s_left = MemFree(s_left);
-        } else {        
-           q_length = q_start + 1;
-           s_length = s_start + 1;
-        
-           score_left = 
-              SEMI_G_ALIGN_EX(query, subject, q_length, s_length, tback, 
-                 &private_q_length, &private_s_length, FALSE, &tback1, 
-                 gap_align, score_options, q_start, FALSE, TRUE);
-        }
-
-        for(p = tback, q = tback1 - 1; p < q; p++, q--)  {
-           tmp = *p;
-           *p = *q;
-           *q = tmp;
-        }
-        
-        if(is_ooframe){
-           for (prev = 3, p = tback; p < tback1; p++) {
-              if (*p == 0 || *p ==  6) continue;
-              tmp = *p; *p = prev; prev = tmp;
-           }
-        }
-        gap_align->query_start = q_length - private_q_length;
-        gap_align->subject_start = s_length - private_s_length;
-    } else {
-       q_length = q_start;
-       s_length = s_start;
+    if(is_ooframe) {
+       q_left = (Uint1Ptr) MemNew((q_start+3)*sizeof(Uint1));
+       s_left = (Uint1Ptr) MemNew((s_start+5)*sizeof(Uint1));
+       
+       q_length = reverse_seq(query, query+q_start-1, q_left+1);
+       s_length = reverse_seq(subject, subject+s_start-3, s_left+3);
+       
+       score_left = OOF_SEMI_G_ALIGN(q_left, s_left+2, q_length, s_length,
+                       tback, &private_q_length, &private_s_length, FALSE,
+                       &tback1, gap_align, score_options, q_start, TRUE);
+       
+       q_left = MemFree(q_left);
+       s_left = MemFree(s_left);
+    } else {        
+       q_length = q_start + 1;
+       s_length = s_start + 1;
+       
+       score_left = 
+          SEMI_G_ALIGN_EX(query, subject, q_length, s_length, tback, 
+             &private_q_length, &private_s_length, FALSE, &tback1, 
+             gap_align, score_options, q_start, FALSE, TRUE);
     }
     
+    for(p = tback, q = tback1 - 1; p < q; p++, q--)  {
+       tmp = *p;
+       *p = *q;
+       *q = tmp;
+    }
+        
+    if(is_ooframe){
+       for (prev = 3, p = tback; p < tback1; p++) {
+          if (*p == 0 || *p ==  6) continue;
+          tmp = *p; *p = prev; prev = tmp;
+       }
+    }
+    gap_align->query_start = q_length - private_q_length;
+    gap_align->subject_start = s_length - private_s_length;
+    
     score_right = 0;
+
     if ((q_start < query_length) && (s_start < subject_length)) {
        found_end = TRUE;
        if(is_ooframe){
