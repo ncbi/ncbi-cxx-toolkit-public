@@ -1,7 +1,0 @@
-#include "DescriptionText.hpp"
-#include "Math.hpp"
-#include "MathResponse.hpp"
-#include "Operand.hpp"
-#include "Version.hpp"
-#include "VersionResponse.hpp"
-#include "VersionStruct.hpp"
