@@ -212,7 +212,7 @@ private:
     bool x_SendData(SQLHSTMT cmd, CDB_Stream& stream, CODBC_Reporter& rep);
 
     SQLHDBC         m_Link;
-    
+
     CODBCContext*   m_Context;
     CPointerPot     m_CMDs;
     CDBHandlerStack m_MsgHandlers;
@@ -239,9 +239,14 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_LangCmd : public I_LangCmd
     friend class CODBC_Connection;
     friend class CODBC_CursorCmd;
 	friend class CODBC_CursorResult;
+
 protected:
-    CODBC_LangCmd(CODBC_Connection* conn, SQLHSTMT cmd,
-		  const string& lang_query, unsigned int nof_params);
+    CODBC_LangCmd(
+        CODBC_Connection* conn,
+        SQLHSTMT cmd,
+        const string& lang_query,
+        unsigned int nof_params
+        );
 
     virtual bool More(const string& query_text);
     virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
@@ -342,9 +347,9 @@ protected:
     virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
     virtual CDB_Result* Open();
     virtual bool Update(const string& table_name, const string& upd_query);
-    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 				 bool log_it = true);
-    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size, 
+    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
 					 bool log_it = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount() const;
@@ -419,7 +424,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_SendDataCmd : public I_SendDataCmd
 {
     friend class CODBC_Connection;
 protected:
-    CODBC_SendDataCmd(CODBC_Connection* con, SQLHSTMT cmd, CDB_ITDescriptor& descr, 
+    CODBC_SendDataCmd(CODBC_Connection* con, SQLHSTMT cmd, CDB_ITDescriptor& descr,
                       size_t nof_bytes, bool logit);
 
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
@@ -449,7 +454,12 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RowResult : public I_Result
     friend class CODBC_CursorCmd;
     friend class CODBC_Connection;
 protected:
-    CODBC_RowResult(SQLSMALLINT nof_cols, SQLHSTMT cmd, CODBC_Reporter& r);
+    CODBC_RowResult(
+        SQLSMALLINT nof_cols,
+        SQLHSTMT cmd,
+        CODBC_Reporter& r,
+        int* row_count
+        );
 
     virtual EDB_ResType     ResultType() const;
     virtual unsigned int    NofItems() const;
@@ -462,16 +472,18 @@ protected:
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
     virtual I_ITDescriptor* GetImageOrTextDescriptor();
-    CDB_ITDescriptor* GetImageOrTextDescriptor(int item_no, 
+    CDB_ITDescriptor* GetImageOrTextDescriptor(int item_no,
                                                const string& cond);
     virtual bool            SkipItem();
 
     virtual ~CODBC_RowResult();
 
-	int xGetData(SQLSMALLINT target_type, SQLPOINTER buffer, 
+	int xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
 		SQLINTEGER buffer_size);
     CDB_Object* xLoadItem(CDB_Object* item_buf);
     CDB_Object* xMakeItem();
+
+private:
     // data
     SQLHSTMT          m_Cmd;
     // CODBC_Connection* m_Connect;
@@ -486,9 +498,10 @@ protected:
         SQLSMALLINT DataType;
         SQLSMALLINT DecimalDigits;
     } SODBC_ColDescr;
-    
+
     SODBC_ColDescr* m_ColFmt;
     CODBC_Reporter& m_Reporter;
+    int* const      m_RowCountPtr;
 };
 
 
@@ -506,8 +519,13 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_StatusResult :  public CODBC_RowResult
     friend class CODBC_RPCCmd;
     friend class CODBC_Connection;
 protected:
-    CODBC_StatusResult(SQLHSTMT cmd, CODBC_Reporter& r) :
-        CODBC_RowResult(1, cmd, r){}
+    CODBC_StatusResult(
+        SQLHSTMT cmd,
+        CODBC_Reporter& r
+        )
+        : CODBC_RowResult(1, cmd, r, NULL)
+    {
+    }
     virtual EDB_ResType ResultType() const;
     virtual ~CODBC_StatusResult();
 };
@@ -517,8 +535,14 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_ParamResult :  public CODBC_RowResult
     friend class CODBC_RPCCmd;
     friend class CODBC_Connection;
 protected:
-    CODBC_ParamResult(SQLSMALLINT nof_cols, SQLHSTMT cmd, CODBC_Reporter& r) :
-        CODBC_RowResult(nof_cols, cmd, r){}
+    CODBC_ParamResult(
+        SQLSMALLINT nof_cols,
+        SQLHSTMT cmd,
+        CODBC_Reporter& r
+        )
+        : CODBC_RowResult(nof_cols, cmd, r, NULL)
+    {
+    }
     virtual EDB_ResType ResultType() const;
     virtual ~CODBC_ParamResult();
 };
@@ -560,6 +584,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/02/15 17:57:19  ssikorsk
+ * Fixed RowCountNum() with a SELECT statement
+ *
  * Revision 1.8  2004/12/21 22:16:04  soussov
  * fixes bug in SendDataCmd
  *
