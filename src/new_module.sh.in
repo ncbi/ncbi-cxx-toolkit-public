@@ -36,6 +36,6 @@ while true; do
     fi
 done
 
-DATATOOL=`ls -Ltr $p/*/bin/datatool $p/bin/datatool | tail -f`
+DATATOOL=`ls -Ltr $p/*/bin/datatool $p/bin/datatool 2>/dev/null 2>/dev/null | tail -1`
 
-make -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "top_srcdir=$p" "DATATOOL=$DATATOOL" "$@"
+gmake -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "top_srcdir=$p" "DATATOOL=$DATATOOL" "$@"
