@@ -87,7 +87,7 @@ size_t CIStream::Read(istream &is, char* buffer, size_t bufferLength)
 
 bool CIStream::Eof()
 {
-#if 0
+#if 1
     CT_INT_TYPE c = get();
 
     if (eof())
@@ -113,6 +113,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.11  2003/03/26 22:12:11  lavr
+ * Revert CIStream::Eof() to destructive test
+ *
  * Revision 1.10  2003/03/26 20:42:50  lavr
  * CIStream::Eof() made (temporarily) non-destructive w/o get()
  *
