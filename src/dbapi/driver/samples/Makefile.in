@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = lang_query
+APP_PROJ = lang_query check_dbapi_driver
 SUB_PROJ = dbapi_bcp dbapi_cursor dbapi_query dbapi_send_data
 
 srcdir = @srcdir@
