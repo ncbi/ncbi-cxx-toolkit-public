@@ -9,15 +9,16 @@
 #include <objects/seqset/Bioseq_set_Base.hpp>
 
 // generated classes
-class Bioseq_set : public Bioseq_set_Base
+class CBioseq_set : public CBioseq_set_Base
 {
+    typedef CBioseq_set_Base CBase;
 public:
-    Bioseq_set();
-    ~Bioseq_set();
+    CBioseq_set();
+    ~CBioseq_set();
 
     const TSeq_set& GetSeq_set(void) const
         {
-            return Bioseq_set_Base::GetSeq_set();
+            return CBase::GetSeq_set();
         }
 };
 
