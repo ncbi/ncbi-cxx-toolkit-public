@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.50  2004/03/11 18:52:41  camacho
+ * Remove THREADS_IMPLEMENTED
+ *
  * Revision 1.49  2004/03/10 18:00:06  camacho
  * Remove outdated references to blastkar
  *
@@ -1081,11 +1084,6 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     double	xscore;
     register int	index1, index2;
     Int2 status;
-#ifdef THREADS_IMPLEMENTED
-    static TNlmMutex read_matrix_mutex;
-    NlmMutexInit(&read_matrix_mutex);
-    NlmMutexLock(read_matrix_mutex);
-#endif
     
     matrix = sbp->matrix;	
     
@@ -1098,9 +1096,6 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
         status=BlastScoreBlkMatCreate(sbp); 
         if(status != 0)
 	{
-#ifdef THREADS_IMPLEMENTED
-        	NlmMutexUnlock(read_matrix_mutex); 
-#endif
         	return status;
 	}
     }
@@ -1109,9 +1104,6 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     while (fgets(buf, sizeof(buf), fp) != NULL) {
         ++lineno;
         if (strchr(buf, '\n') == NULL) {
-#ifdef THREADS_IMPLEMENTED
-            NlmMutexUnlock(read_matrix_mutex); 
-#endif
             return 2;
         }
 
@@ -1142,9 +1134,6 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     }
     
     if (a2cnt <= 1) { 
-#ifdef THREADS_IMPLEMENTED
-        NlmMutexUnlock(read_matrix_mutex); 
-#endif
         return 2;
     }
 
@@ -1154,9 +1143,6 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     while (fgets(buf, sizeof(buf), fp) != NULL)  {
         ++lineno;
         if ((cp = strchr(buf, '\n')) == NULL) {
-#ifdef THREADS_IMPLEMENTED
-            NlmMutexUnlock(read_matrix_mutex); 
-#endif
             return 2;
         }
         if ((cp = strchr(buf, COMMENT_CHR)) != NULL)
@@ -1166,15 +1152,9 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
         ch = *lp;
         cp = (char*) lp;
         if ((cp = strtok(NULL, TOKSTR)) == NULL) {
-#ifdef THREADS_IMPLEMENTED
-            NlmMutexUnlock(read_matrix_mutex); 
-#endif
             return 2;
         }
         if (a1cnt >= DIM(a1chars)) {
-#ifdef THREADS_IMPLEMENTED
-            NlmMutexUnlock(read_matrix_mutex); 
-#endif
             return 2;
         }
 
@@ -1190,9 +1170,6 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
         index2 = 0;
         while (cp != NULL) {
             if (index2 >= (int) a2cnt) {
-#ifdef THREADS_IMPLEMENTED
-                NlmMutexUnlock(read_matrix_mutex); 
-#endif
                 return 2;
             }
             strcpy(temp, cp);
@@ -1201,16 +1178,10 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
                 score = BLAST_SCORE_1MIN;
             } else  {
                 if (sscanf(temp, "%lg", &xscore) != 1) {
-#ifdef THREADS_IMPLEMENTED
-                    NlmMutexUnlock(read_matrix_mutex); 
-#endif
                     return 2;
                 }
 				/*xscore = MAX(xscore, BLAST_SCORE_1MIN);*/
                 if (xscore > BLAST_SCORE_1MAX || xscore < BLAST_SCORE_1MIN) {
-#ifdef THREADS_IMPLEMENTED
-                    NlmMutexUnlock(read_matrix_mutex); 
-#endif
                     return 2;
                 }
                 xscore += (xscore >= 0. ? 0.5 : -0.5);
@@ -1224,9 +1195,6 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     }
     
     if (a1cnt <= 1) {
-#ifdef THREADS_IMPLEMENTED
-        NlmMutexUnlock(read_matrix_mutex); 
-#endif
         return 2;
     }
     
@@ -1234,9 +1202,6 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
         sbp->mat_dim1 = a1cnt;
     }
     
-#ifdef THREADS_IMPLEMENTED
-    NlmMutexUnlock(read_matrix_mutex); 
-#endif
     return 0;
 }
 

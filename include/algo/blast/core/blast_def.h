@@ -40,9 +40,6 @@ Detailed Contents:
 #define __BLAST_DEF__
 
 #include <algo/blast/core/ncbi_std.h>
-#ifdef THREADS_IMPLEMENTED
-#include <algo/blast/core/ncbithr.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -145,12 +142,6 @@ typedef struct DoubleInt {
 #define BlastSeqLoc ListNode
 
 typedef struct BlastThrInfo {
-#ifdef THREADS_IMPLEMENTED
-    TNlmMutex db_mutex;  /**< Lock for access to database*/
-    TNlmMutex results_mutex; /**< Lock for storing results */
-    TNlmMutex callback_mutex;/**< Lock for issuing update ticks on the screen*/
-    TNlmMutex ambiguities_mutex;/**< Mutex for recalculation of ambiguities */
-#endif
     Int4 oid_current; /**< Current ordinal id being worked on */
     Int4 db_chunk_size; /**< Used if the db is smaller than 
                              BLAST_DB_CHUNK_SIZE */
