@@ -126,12 +126,6 @@ enum EBlastOptIdx {
 class NCBI_XBLAST_EXPORT CBlastOptionsLocal : public CObject
 {
 public:
-    enum EAPILocality {
-        eLocal,
-        eRemote,
-        eBoth
-    };
-    
     CBlastOptionsLocal();
     ~CBlastOptionsLocal();
 
@@ -2419,6 +2413,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2004/06/08 21:16:52  bealer
+* - Remote EAPILocality from CBlastOptionsLocal
+*
 * Revision 1.65  2004/06/08 17:56:14  dondosha
 * Removed neighboring mode declarations, getters and setters
 *
