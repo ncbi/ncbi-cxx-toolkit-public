@@ -33,6 +33,7 @@
  *
  */
 
+#include "ncbi_config.h"
 #include <stddef.h>
 #include <string.h>
 
@@ -42,10 +43,12 @@ extern "C" {
 #endif
 
 
-#ifdef strdup
-#  undef strdup
-#endif
-#define strdup      NCBI_strdup
+#ifndef HAVE_STRDUP
+
+#  ifdef strdup
+#    undef strdup
+#  endif
+#  define strdup      NCBI_strdup
 
 /* Create a copy of string "str".
  * Return an identical malloc'ed string, which must be explicitly freed 
@@ -53,13 +56,17 @@ extern "C" {
  */
 extern char* strdup(const char* str);
 
+#endif /*HAVE_STRDUP*/
 
-#ifdef strcasecmp
-#  undef strcasecmp
-#  undef strncasecmp
-#endif
-#define strcasecmp  NCBI_strcasecmp
-#define strncasecmp NCBI_strncasecmp
+
+#ifndef HAVE_STRCASECMP
+
+#  ifdef strcasecmp
+#    undef strcasecmp
+#    undef strncasecmp
+#  endif
+#  define strcasecmp  NCBI_strcasecmp
+#  define strncasecmp NCBI_strncasecmp
 
 /* Compare "s1" and "s2", ignoring case.
  * Return less than, equal to or greater than zero if
@@ -72,6 +79,8 @@ extern int strcasecmp(const char* s1, const char* s2);
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
 extern int strncasecmp(const char* s1, const char* s2, size_t n);
+
+#endif/*HAVE_STRCASECMP*/
 
 
 #ifdef strupr
@@ -94,6 +103,15 @@ extern char* strupr(char* s);
 extern char* strlwr(char* s);
 
 
+/* Copy not more than "n" characters from string "s2" into "s1"
+ * and return the result, which is always null-terminated.
+ * NOTE: The difference of this function from standard strncpy() is in
+ * that the result is always null-terminated and that the function
+ * does not pad "s1" with null bytes should "s2" be shorter than "n".
+ */
+extern char* strncpy0(char* s1, const char* s2, size_t n);
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
@@ -102,6 +120,9 @@ extern char* strlwr(char* s);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/10/28 15:41:25  lavr
+ * Header made private (moved from include/connect to here)
+ *
  * Revision 6.10  2002/09/24 15:01:17  lavr
  * File description indented uniformly
  *
