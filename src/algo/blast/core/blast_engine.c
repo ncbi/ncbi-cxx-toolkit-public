@@ -162,11 +162,6 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
        offset_array_size= MAX(1024, lut->longest_chain);
      wordfinder = BlastAaWordFinder;
 
-     /* allocate the diagonal array */
-     
-     DiagNew(&(ewp->diag_table),
-	     word_params->options->window_size,
-	     MAX(query->length, readdb_get_maxlen(db)));
      }
 
    query_offsets = Malloc(offset_array_size * sizeof(Uint4));

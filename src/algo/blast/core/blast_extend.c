@@ -96,6 +96,8 @@ BLAST_DiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
                 diag_table->multiple_hits = multiple_hits;
                 diag_table->offset = window_size;
                 diag_table->window = window_size;
+                /** This will probably be removed later completely */
+                diag_table->bias = qlen + window_size;
         }
         return diag_table;
 }

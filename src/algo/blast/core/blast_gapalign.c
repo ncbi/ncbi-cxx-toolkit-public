@@ -2140,18 +2140,10 @@ BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
    BlastInitHSPPtr PNTR init_hsp_array = NULL;
    BlastHSPListPtr hsp_list = NULL;
    FloatHi gap_trigger;
-   BLAST_KarlinBlkPtr kbp;
 
    if (!query || !subject || !gap_align || !score_options || !ext_params ||
        !hit_options || !init_hitlist || !hsp_list_ptr)
       return 1;
-
-   /* Calculate the raw value of the gap trigger. Use the first available 
-      Karlin block (0th might not be set if only reverse strand is searched. */
-   if (gap_align->sbp->kbp[0])
-      kbp = gap_align->sbp->kbp[0];
-   else
-      kbp = gap_align->sbp->kbp[1];
 
    gap_trigger = ext_params->gap_trigger;
 
