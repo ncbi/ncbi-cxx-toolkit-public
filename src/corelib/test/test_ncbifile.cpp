@@ -111,7 +111,6 @@ static void s_TEST_SplitPath(void)
     assert( CFile::AddTrailingPathSeparator("dir")  == "dir:");
     assert( CFile::AddTrailingPathSeparator("dir:") == "dir:");
     assert( CFile::DeleteTrailingPathSeparator("dir:path:::") == "dir:path");
-
 #endif
 
     CFile::SplitPath("name", &dir, &title, &ext);
@@ -531,8 +530,6 @@ static void s_TEST_Dir(void)
     ITERATE(vector<string>, fit, files) {
         cout << *fit << endl;
     }
-    cout << "-----" << endl;
-
 
     // Create dir structure for deletion
     assert( CDir("dir_3").Create() );
@@ -612,14 +609,17 @@ static void s_TEST_MemoryFile(void)
     static const char   s_DataTest[] = "teen data";
     static const size_t s_DataLen    = sizeof(s_Data) - 1;
 
-    // Create test file 
-    FILE* file = fopen(s_FileName, "w+");
-    assert( file );
-    fclose(file);
-    // Check if the file exists now and it size is 0
     CFile f(s_FileName);
-    assert( f.Exists() );
-    assert( f.GetLength() == 0 );
+
+    // Create test file 
+    {{
+        CNcbiOfstream fs(s_FileName, ios::out | ios::binary);
+        assert(fs.good());
+        fs.close();
+        // Check if the file exists now and it size is 0
+        assert( f.Exists() );
+        assert( f.GetLength() == 0 );
+    }}
 
     // Common file checks
     {{
@@ -637,16 +637,17 @@ static void s_TEST_MemoryFile(void)
     }}
 
     // Write something into out test file
-    file = fopen(s_FileName, "w+");
-    assert( file );
-    fputs( s_Data, file);
-    fclose(file);
-    // Check if the file exists now
-    assert( f.Exists() );
-    assert( f.GetLength() == s_DataLen );
+    {{
+        CNcbiOfstream fs(s_FileName, ios::out | ios::binary);
+        fs.write(s_Data, s_DataLen);
+        assert(fs.good());
+        fs.close();
+        // Check if the file exists now
+        assert( f.Exists() );
+        assert( f.GetLength() == s_DataLen );
+    }}
 
     // eMMP_Read [+ eMMS_Private]
-    
     {{
         // Map file into memory (for reading only by default)
         CMemoryFile m1(s_FileName);
@@ -671,7 +672,6 @@ static void s_TEST_MemoryFile(void)
     }}
 
     // eMMP_ReadWrite + eMMS_Shared
-    
     {{
         // Map file into memory
         CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite,
@@ -701,7 +701,6 @@ static void s_TEST_MemoryFile(void)
     }}
 
     // eMMP_ReadWrite + eMMS_Private
-
     {{
         // Map file into memory
         CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite,
@@ -721,7 +720,6 @@ static void s_TEST_MemoryFile(void)
     }}
 
     // Length and offset test
-
     {{
         // Map file into memory
         CMemoryFile m1(s_FileName, CMemoryFile::eMMP_ReadWrite,
@@ -750,8 +748,62 @@ static void s_TEST_MemoryFile(void)
 
     // Remove the file
     assert( f.Remove() );
-}
+  
+    // CMemoryFileMap test  
+    {{
+        static const size_t s_PartCount  = 10;
+        static const size_t s_BufLen     = s_PartCount * 1024;
 
+        // Generate random file with size s_FileLen;
+        char* buf = new char[s_BufLen];
+        assert(buf);
+
+        unsigned int seed = (unsigned int)time(0);
+        srand(seed);
+        for (size_t i=0; i<s_BufLen; i++) {
+            buf[i] = (char)((double)rand()/RAND_MAX*255);
+        }
+
+        CNcbiOfstream fs(s_FileName, ios::out | ios::binary);
+        fs.write(buf, s_BufLen);
+        assert(fs.good());
+        fs.close();
+        CFile f(s_FileName);
+        assert(f.GetLength() == s_BufLen);
+
+        // Map some segments of the file
+        CMemoryFileMap m(s_FileName, CMemoryFile::eMMP_ReadWrite,
+                         CMemoryFile::eMMS_Shared);
+    
+        char* ptr = (char*)m.Map(0,s_BufLen);
+        assert( m.GetSize(ptr) == s_BufLen );
+        char* ptrs[s_PartCount];
+
+        // Map segments
+        for (size_t i=0; i<s_PartCount; i++) {
+            char* p = (char*)m.Map(i*1024,1024);
+            assert( p );
+            assert( m.GetSize(p) == 1024 );
+            ptrs[i] = p;
+        }
+
+        // Write to mapped file by one pointer and read from another
+        for (size_t i=0; i<s_PartCount; i++) {
+            memcpy(ptr + i*1024, s_Data, s_DataLen);
+            assert( memcmp(ptrs[i], s_Data, s_DataLen) == 0 );
+        }
+
+        // Unmap all even segments (0,2,4...)
+        for (size_t i=0; i<s_PartCount; i+=2) {
+            assert( m.Flush(ptrs[i]) );
+            assert( m.Unmap(ptrs[i]) );
+        }
+        // Unmap all other segments
+        assert( m.UnmapAll() );
+    }}
+    // Remove the file
+    assert( f.Remove() );
+}
 
 
 ////////////////////////////////
@@ -813,6 +865,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/08/03 12:05:57  ivanov
+ * Added test for CMemoryFileMap.
+ *
  * Revision 1.39  2004/07/28 15:49:27  ivanov
  * Changed s_TEST_MemoryFile() accordingly last changes in the CMemoryFile,
  * added some new tests.
