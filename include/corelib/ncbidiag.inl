@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/10/16 23:44:05  vakatov
+* + SetDiagPostAllFlags()
+*
 * Revision 1.22  2001/06/14 03:37:28  vakatov
 * For the ErrCode manipulator, use CNcbiDiag:: method rather than a friend
 *
@@ -122,12 +125,14 @@
 // (can be accessed only by "CNcbiDiag" and created only by GetDiagBuffer())
 //
 
-class CDiagBuffer {
+class CDiagBuffer
+{
     CDiagBuffer(const CDiagBuffer&);
-    CDiagBuffer& operator=(const CDiagBuffer&);
+    CDiagBuffer& operator= (const CDiagBuffer&);
 
     friend CDiagBuffer& GetDiagBuffer(void);
-    friend bool IsSetDiagPostFlag(EDiagPostFlag flag, unsigned int flags);
+    friend bool IsSetDiagPostFlag(EDiagPostFlag flag, TDiagPostFlags flags);
+    friend TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags);
     friend void SetDiagPostFlag(EDiagPostFlag flag);
     friend void UnsetDiagPostFlag(EDiagPostFlag flag);
     friend void SetDiagPostPrefix(const char* prefix);
@@ -152,7 +157,7 @@ public:
 
     const CNcbiDiag* m_Diag;    // present user
     CNcbiOstream*    m_Stream;  // storage for the diagnostic message
-  
+
     // user-specified string to add to each posted message
     // (can be constructed from "m_PrefixList" after push/pop operations)
     string m_PostPrefix;
@@ -194,7 +199,7 @@ private:
     void UpdatePrefix(void);
 
     // the bitwise OR combination of "EDiagPostFlag"
-    static unsigned int sm_PostFlags;
+    static TDiagPostFlags sm_PostFlags;
 
     // NOTE:  these three dont need to be protected by mutexes because it is
     // not critical, while not having a mutex around them saves us a little
@@ -259,7 +264,7 @@ inline int CNcbiDiag::GetErrorSubCode(void) const {
     return m_ErrSubCode;
 }
 
-inline unsigned int CNcbiDiag::GetPostFlags(void) const {
+inline TDiagPostFlags CNcbiDiag::GetPostFlags(void) const {
     return m_PostFlags;
 }
 
@@ -274,7 +279,7 @@ void Put(CNcbiDiag& diag, CDiagBuffer& dbuff, const X& x) {
 
 template<class X>
 inline
-CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x) {
+CNcbiDiag& operator<< (CNcbiDiag& diag, const X& x) {
     Put(diag, diag.m_Buffer, x);
     return diag;
 }
@@ -292,7 +297,7 @@ const char* CNcbiDiag::SeverityName(EDiagSev sev) {
 class ErrCode
 {
 public:
-    ErrCode(int code, int subcode = 0) 
+    ErrCode(int code, int subcode = 0)
         : m_Code(code), m_SubCode(subcode)
     { }
     int m_Code;
@@ -393,7 +398,7 @@ bool CDiagBuffer::GetTraceEnabled(void) {
 //  EDiagPostFlag::
 
 inline
-bool IsSetDiagPostFlag(EDiagPostFlag flag, unsigned int flags) {
+bool IsSetDiagPostFlag(EDiagPostFlag flag, TDiagPostFlags flags) {
     if (flags & eDPF_Default)
         flags = CDiagBuffer::sm_PostFlags;
     return (flags & flag) != 0;
@@ -408,7 +413,7 @@ inline
 SDiagMessage::SDiagMessage(EDiagSev severity,
                            const char* buf, size_t len,
                            void* data, const char* file, size_t line,
-                           unsigned int flags, const char* prefix,
+                           TDiagPostFlags flags, const char* prefix,
                            int err_code, int err_subcode)
 {
     m_Severity   = severity;

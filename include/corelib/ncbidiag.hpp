@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/10/16 23:44:04  vakatov
+* + SetDiagPostAllFlags()
+*
 * Revision 1.30  2001/08/09 16:24:05  lavr
 * Added eDPF_OmitInfoSev to log message format flags
 *
@@ -204,6 +207,8 @@ enum EDiagPostFlag {
     eDPF_Default      = 0x8000
 };
 
+typedef int TDiagPostFlags;  // binary OR of "EDiagPostFlag"
+
 
 // Forward declaration of some classes
 class CDiagBuffer;
@@ -216,11 +221,11 @@ class ErrCode;
 class CNcbiDiag
 {
 public:
-    CNcbiDiag(EDiagSev     sev        = eDiag_Error,
-              unsigned int post_flags = eDPF_Default);
+    CNcbiDiag(EDiagSev       sev        = eDiag_Error,
+              TDiagPostFlags post_flags = eDPF_Default);
     CNcbiDiag(const char*  file, size_t line,
-              EDiagSev     sev        = eDiag_Error,
-              unsigned int post_flags = eDPF_Default);
+              EDiagSev       sev        = eDiag_Error,
+              TDiagPostFlags post_flags = eDPF_Default);
     ~CNcbiDiag(void);
 
 #if !defined(NO_INCLASS_TMPL)
@@ -262,35 +267,35 @@ public:
     CNcbiDiag& SetErrorCode(int code = 0, int subcode = 0);
 
     // get severity, file , line and error code of the current message
-    EDiagSev     GetSeverity    (void) const;
-    const char*  GetFile        (void) const;
-    size_t       GetLine        (void) const;
-    int          GetErrorCode   (void) const;
-    int          GetErrorSubCode(void) const;
-    unsigned int GetPostFlags   (void) const;
+    EDiagSev       GetSeverity    (void) const;
+    const char*    GetFile        (void) const;
+    size_t         GetLine        (void) const;
+    int            GetErrorCode   (void) const;
+    int            GetErrorSubCode(void) const;
+    TDiagPostFlags GetPostFlags   (void) const;
 
 #if !defined(NO_INCLASS_TMPL)
 private:
 #endif
 
-    EDiagSev     m_Severity;   // severity level of the current message
-    char         m_File[256];  // file name
-    size_t       m_Line;       // line #
-    int          m_ErrCode;    // error code 
-    int          m_ErrSubCode; // error subcode
-    CDiagBuffer& m_Buffer;     // this thread's error message buffer
-    unsigned int m_PostFlags;  // bitwise OR of "EDiagPostFlag"
+    EDiagSev       m_Severity;   // severity level of the current message
+    char           m_File[256];  // file name
+    size_t         m_Line;       // line #
+    int            m_ErrCode;    // error code
+    int            m_ErrSubCode; // error subcode
+    CDiagBuffer&   m_Buffer;     // this thread's error message buffer
+    TDiagPostFlags m_PostFlags;  // bitwise OR of "EDiagPostFlag"
 
     // prohibit assignment
     CNcbiDiag(const CNcbiDiag&);
-    CNcbiDiag& operator=(const CNcbiDiag&);
+    CNcbiDiag& operator= (const CNcbiDiag&);
 };
 
 #if defined(NO_INCLASS_TMPL)
 // formatted output
 template<class X>
 inline
-CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x);
+CNcbiDiag& operator<< (CNcbiDiag& diag, const X& x);
 #endif
 
 
@@ -303,8 +308,11 @@ CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x);
 // Return "true" if the specified "flag" is set in global "flags"(to be posted)
 // If eDPF_Default is set in "flags" then use the current global flags as
 // specified by SetDiagPostFlag()/UnsetDiagPostFlag()
-inline bool IsSetDiagPostFlag(EDiagPostFlag flag,
-                              unsigned int  flags = eDPF_Default);
+inline bool IsSetDiagPostFlag(EDiagPostFlag  flag,
+                              TDiagPostFlags flags = eDPF_Default);
+
+// Set all global post flags to "flags";  return previously set flags
+extern TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags);
 
 // Set/unset the specified flag (globally)
 extern void SetDiagPostFlag(EDiagPostFlag flag);
@@ -349,19 +357,19 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 struct SDiagMessage {
     SDiagMessage(EDiagSev severity, const char* buf, size_t len, void* data,
                  const char* file = 0, size_t line = 0,
-                 unsigned int flags = eDPF_Default, const char* prefix = 0,
+                 TDiagPostFlags flags = eDPF_Default, const char* prefix = 0,
                  int err_code = 0, int err_subcode = 0);
 
-    EDiagSev     m_Severity;
-    const char*  m_Buffer;  // not guaranteed to be '\0'-terminated!
-    size_t       m_BufferLen;
-    void*        m_Data;
-    const char*  m_File;
-    size_t       m_Line;
-    int          m_ErrCode;
-    int          m_ErrSubCode;
-    unsigned int m_Flags;   // bitwise OR of "EDiagPostFlag"
-    const char*  m_Prefix;
+    EDiagSev       m_Severity;
+    const char*    m_Buffer;  // not guaranteed to be '\0'-terminated!
+    size_t         m_BufferLen;
+    void*          m_Data;
+    const char*    m_File;
+    size_t         m_Line;
+    int            m_ErrCode;
+    int            m_ErrSubCode;
+    TDiagPostFlags m_Flags;   // bitwise OR of "EDiagPostFlag"
+    const char*    m_Prefix;
 
     // Compose a message string in the standard format(see also "flags"):
     //    "<file>", line <line>: <severity>: [<prefix>] <message> EOL
@@ -370,7 +378,7 @@ struct SDiagMessage {
     CNcbiOstream& Write(CNcbiOstream& os) const;
 };
 
-inline CNcbiOstream& operator<<(CNcbiOstream& os, const SDiagMessage& mess) {
+inline CNcbiOstream& operator<< (CNcbiOstream& os, const SDiagMessage& mess) {
     return mess.Write(os);
 }
 

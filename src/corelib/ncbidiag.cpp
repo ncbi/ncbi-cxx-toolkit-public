@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/10/16 23:44:07  vakatov
+* + SetDiagPostAllFlags()
+*
 * Revision 1.36  2001/08/24 13:48:01  grichenk
 * Prevented some memory leaks
 *
@@ -159,8 +162,8 @@
 #include <time.h>
 
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
+
 
 static CMutex s_DiagMutex;
 
@@ -186,7 +189,7 @@ EDiagSev     CDiagBuffer::sm_PostSeverity   = eDiag_Error;
 EDiagSev     CDiagBuffer::sm_PostSeverity   = eDiag_Warning;
 #endif /* else!NDEBUG */
 
-unsigned int CDiagBuffer::sm_PostFlags      =
+TDiagPostFlags CDiagBuffer::sm_PostFlags      =
 eDPF_Prefix | eDPF_Severity | eDPF_ErrCode | eDPF_ErrSubCode;
 
 EDiagSev     CDiagBuffer::sm_DieSeverity    = eDiag_Fatal;
@@ -196,8 +199,7 @@ bool         CDiagBuffer::sm_TraceEnabled;  // to be set on first request
 
 
 const char*  CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
-    "Info", "Warning", "Error", "Critical", "Fatal", "Trace"
-};
+    "Info", "Warning", "Error", "Critical", "Fatal", "Trace" };
 
 
 static void s_DefaultHandlerFunc(const SDiagMessage& mess) {
@@ -387,7 +389,7 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
         IsSetDiagPostFlag(eDPF_ErrCode, m_Flags)) {
         os << "(" << m_ErrCode;
         if ( IsSetDiagPostFlag(eDPF_ErrSubCode, m_Flags)) {
-            os << "." << m_ErrSubCode; 
+            os << "." << m_ErrSubCode;
         }
         os << ") ";
     }
@@ -410,6 +412,17 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os) const
 
 ///////////////////////////////////////////////////////
 //  EXTERN
+
+
+extern TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags)
+{
+    CMutexGuard LOCK(s_DiagMutex);
+
+    TDiagPostFlags prev_flags = CDiagBuffer::sm_PostFlags;
+    CDiagBuffer::sm_PostFlags = flags;
+    return prev_flags;
+}
+
 
 extern void SetDiagPostFlag(EDiagPostFlag flag)
 {
@@ -458,7 +471,7 @@ extern void PopDiagPostPrefix(void)
     CDiagBuffer& buf = GetDiagBuffer();
     if ( !buf.m_PrefixList.empty() ) {
         buf.m_PrefixList.pop_back();
-        buf.UpdatePrefix(); 
+        buf.UpdatePrefix();
     }
 }
 
@@ -624,7 +637,7 @@ extern bool IsDiagStream(const CNcbiOstream* os)
 ///////////////////////////////////////////////////////
 //  CNcbiDiag::
 
-CNcbiDiag::CNcbiDiag(EDiagSev sev, unsigned int post_flags)
+CNcbiDiag::CNcbiDiag(EDiagSev sev, TDiagPostFlags post_flags)
     : m_Severity(sev), m_Line(0),  m_ErrCode(0), m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags)
 {
@@ -633,7 +646,7 @@ CNcbiDiag::CNcbiDiag(EDiagSev sev, unsigned int post_flags)
 
 
 CNcbiDiag::CNcbiDiag(const char* file, size_t line,
-                     EDiagSev sev, unsigned int post_flags)
+                     EDiagSev sev, TDiagPostFlags post_flags)
     : m_Severity(sev), m_Line(line), m_ErrCode(0), m_ErrSubCode(0),
       m_Buffer(GetDiagBuffer()), m_PostFlags(post_flags)
 {
@@ -652,5 +665,5 @@ CNcbiDiag& CNcbiDiag::SetFile(const char* file)
     return *this;
 }
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+
 END_NCBI_SCOPE
