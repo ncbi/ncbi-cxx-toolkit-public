@@ -1345,10 +1345,10 @@ bool CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
 
 const CSeq_align_Mapper* CAnnotObject_Ref::GetMappedSeq_align(void) const
 {
-    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_align);
     if (!m_MappedObject) {
         return 0; // no mapped align, use the original one
     }
+    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_align);
     return static_cast<const CSeq_align_Mapper*>(m_MappedObject.GetPointer());
 }
 
@@ -1359,6 +1359,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.106  2004/01/26 17:50:55  vasilche
+* Do assert check only when object is non-null.
+*
 * Revision 1.105  2004/01/23 16:14:47  grichenk
 * Implemented alignment mapping
 *
