@@ -444,7 +444,8 @@ private:
     /// Sleep interval (milliseconds) between batches
     unsigned                m_BatchSleep;
     /// TRUE when Purge processing requested to stop
-    bool                    m_PurgeStop;
+    //bool                    m_PurgeStop;
+    CSemaphore              m_PurgeStopSignal;
     /// Number of bytes stored in cache since last checkpoint
     unsigned                m_BytesWritten;
     /// Clean log on Purge (factor)
@@ -541,6 +542,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/03/30 13:09:06  kuznets
+ * Use semaphor to stop purge execution
+ *
  * Revision 1.50  2005/03/23 17:22:54  kuznets
  * SetLogFileMax()
  *

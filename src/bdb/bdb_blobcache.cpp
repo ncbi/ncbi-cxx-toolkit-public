@@ -484,7 +484,8 @@ CBDB_Cache::CBDB_Cache()
   m_WSync(eWriteNoSync),
   m_PurgeBatchSize(150),
   m_BatchSleep(0),
-  m_PurgeStop(false),
+  m_PurgeStopSignal(0, 100), // purge stop semaphore max 100
+//  m_PurgeStop(false),
   m_BytesWritten(0),
   m_CleanLogOnPurge(0),
   m_PurgeCount(0),
@@ -1487,7 +1488,8 @@ unsigned CBDB_Cache::GetBatchSleep() const
 void CBDB_Cache::StopPurge()
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
-    m_PurgeStop = true;
+    m_PurgeStopSignal.Post();
+//    m_PurgeStop = true;
 }
 
 /// @internal
@@ -1590,9 +1592,9 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
             } // for i
 
-            if (m_PurgeStop) {
+            bool purge_stop = m_PurgeStopSignal.TryWait(0, 0);
+            if (purge_stop) {
                 LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
-                m_PurgeStop = false;
                 return;
             }
             bytes_written = m_BytesWritten;
@@ -1605,8 +1607,10 @@ void CBDB_Cache::Purge(time_t           access_timeout,
             m_BytesWritten = 0;
             }}
         } else {
-            if (delay) {
-                SleepMilliSec(delay);
+            bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
+            if (purge_stop) {
+                LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
+                return;
             }
         }
 
@@ -1640,9 +1644,9 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         trans.Commit();
         delay = m_BatchSleep;
 
-        if (m_PurgeStop) {
+        bool purge_stop = m_PurgeStopSignal.TryWait(0, 0);
+        if (purge_stop) {
             LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
-            m_PurgeStop = false;
             return;
         }
 
@@ -1650,7 +1654,11 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
         // temporarily unlock the mutex to let other threads go
         if (delay) {
-            SleepMilliSec(delay);
+            bool purge_stop = m_PurgeStopSignal.TryWait(0, delay);
+            if (purge_stop) {
+                LOG_POST(Warning << "BDB Cache: Stopping Purge execution.");
+                return;
+            }
         }
 
     } // for i
@@ -2309,6 +2317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.109  2005/03/30 13:09:16  kuznets
+ * Use semaphor to stop purge execution
+ *
  * Revision 1.108  2005/03/28 12:59:29  kuznets
  * Set 1M log buffer size and turned on log auto remove
  *
