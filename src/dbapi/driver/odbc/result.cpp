@@ -747,7 +747,7 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
             if(is_null) *is_null= true;
             return 0;
         default:
-			if(f >= 0) return (size_t)f;
+			   if(f >= 0) return (f <= buffer_size)? (size_t)f : buffer_size;
             m_Reporter.ReportErrors();
             return 0;
         }
@@ -1031,6 +1031,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/11/25 20:09:06  soussov
+ * fixes bug in ReadItem: it did return the text/image size instead of number of bytes in buffer in some cases
+ *
  * Revision 1.7  2003/05/08 20:30:24  soussov
  * CDB_LongChar CDB_LongBinary added
  *
