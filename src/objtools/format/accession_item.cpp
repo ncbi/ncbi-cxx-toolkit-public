@@ -43,6 +43,7 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/accession_item.hpp>
 #include <objtools/format/context.hpp>
+#include "utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -50,7 +51,7 @@ BEGIN_SCOPE(objects)
 
 
 CAccessionItem::CAccessionItem(CFFContext& ctx) :
-    CFlatItem(ctx)
+    CFlatItem(ctx), m_ExtraAccessions(0)
 {
     x_GatherInfo(ctx);
 }
@@ -59,22 +60,10 @@ CAccessionItem::CAccessionItem(CFFContext& ctx) :
 void CAccessionItem::Format
 (IFormatter& formatter,
  IFlatTextOStream& text_os) const
-
 {
     formatter.FormatAccession(*this, text_os);
 }
 
-
-const string& CAccessionItem::GetAccession(void) const
-{
-    return m_Accession;
-}
-
-
-const list<string>& CAccessionItem::GetExtraAccessions(void) const
-{
-    return m_ExtraAccessions;
-}
 
 
 /***************************************************************************/
@@ -91,16 +80,40 @@ void CAccessionItem::x_GatherInfo(CFFContext& ctx)
 
     m_Accession = ctx.GetPrimaryId()->GetSeqIdString();
 
+    if ( ctx.IsWGS()  &&
+        (ctx.GetLocation() == 0  ||  ctx.GetLocation()->IsWhole()) ) {
+        size_t acclen = m_Accession.length();
+        m_WGSAccession = m_Accession;
+        if ( acclen == 12  &&  !NStr::EndsWith(m_WGSAccession, "000000") ) {
+            m_WGSAccession.replace(acclen - 6, 6, 6, '0');
+        } else if ( acclen == 13  &&  !NStr::EndsWith(m_WGSAccession, "0000000") ) {
+            m_WGSAccession.replace(acclen - 7, 7, 7, '0');
+        } else if ( acclen == 15  &&  !NStr::EndsWith(m_WGSAccession, "00000000") ) {
+            m_WGSAccession.replace(acclen - 8, 8, 8, '0');
+        } else {
+            m_WGSAccession.erase();
+        }
+    }
+    
+    const list<string>* xtra = 0;
     CSeqdesc_CI gb_desc(ctx.GetHandle(), CSeqdesc::e_Genbank);
     if ( gb_desc ) {
         x_SetObject(*gb_desc);
-        m_ExtraAccessions = gb_desc->GetGenbank().GetExtra_accessions();
+        xtra = &gb_desc->GetGenbank().GetExtra_accessions();
     }
 
     CSeqdesc_CI embl_desc(ctx.GetHandle(), CSeqdesc::e_Embl);
     if ( embl_desc ) {
         x_SetObject(*embl_desc);
-        m_ExtraAccessions = embl_desc->GetEmbl().GetExtra_acc();
+        xtra = &embl_desc->GetEmbl().GetExtra_acc();
+    }
+
+    if ( xtra != 0 ) {
+        ITERATE (list<string>, it, *xtra) {
+            if ( ValidateAccession(*it) ) {
+                m_ExtraAccessions.push_back(*it);
+            }
+        }
     }
 }
 
@@ -113,6 +126,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/13 16:44:59  shomrat
+* Added WGS accession
+*
 * Revision 1.2  2003/12/18 17:43:31  shomrat
 * context.hpp moved
 *
