@@ -77,15 +77,15 @@ public:
         return m_an[2] <= m_an[3];
     }
 
-    bool CHit::operator < (const CHit& h) const {
+    bool operator < (const CHit& h) const {
         return m_Score < h.m_Score;
     }
 
-    bool CHit::operator > (const CHit& h) const {
+    bool operator > (const CHit& h) const {
         return m_Score > h.m_Score;
     }
     
-    bool CHit::operator == (const CHit& h) const {
+    bool operator == (const CHit& h) const {
         return m_Score == h.m_Score;
     }
 
