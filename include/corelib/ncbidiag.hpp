@@ -514,7 +514,7 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 ///          from different threads.
 /// NOTE 2:  By default, the errors will be written to standard error stream.
 
-struct SDiagMessage {
+struct NCBI_XNCBI_EXPORT SDiagMessage {
     /// Initalize SDiagMessage fields.
     SDiagMessage(EDiagSev severity, const char* buf, size_t len,
                  const char* file = 0, size_t line = 0,
@@ -869,6 +869,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.62  2003/11/07 13:04:45  ivanov
+ * Added export specifier for SDiagMessage
+ *
  * Revision 1.61  2003/11/06 21:40:34  vakatov
  * A somewhat more natural handling of the 'eDPF_Default' flag -- replace
  * it by the current global flags, then merge these with other flags (if any)
