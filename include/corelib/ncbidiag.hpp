@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/04/18 19:50:10  vakatov
+* Get rid of the old-fashioned C-like "typedef enum {...} E;"
+*
 * Revision 1.20  2000/04/04 22:31:57  vakatov
 * SetDiagTrace() -- auto-set basing on the application
 * environment and/or registry
@@ -117,14 +120,14 @@ BEGIN_NCBI_SCOPE
 class CDiagBuffer;  // (fwd-declaration of internal class)
 
 // Severity level for the posted diagnostics
-typedef enum {
+enum EDiagSev {
     eDiag_Info = 0,
     eDiag_Warning,
     eDiag_Error,
     eDiag_Critical,
     eDiag_Fatal,   // guarantees to exit(or abort)
     eDiag_Trace
-} EDiagSev;
+};
 
 // Auxiliary macros for a "standard" error posting
 #define ERR_POST(message) \
@@ -138,7 +141,7 @@ typedef enum {
 // ERR_POST(eDiag_Warning, "Take care!"):
 //   "/home/iam/myfile.cpp", line 33: Warning: [My prefix] Take care!
 // See also SDiagMessage::Compose().
-typedef enum {
+enum EDiagPostFlag {
     eDPF_File         = 0x1,  // set by default #if _DEBUG;  else -- not set
     eDPF_LongFilename = 0x2,  // set by default #if _DEBUG;  else -- not set
     eDPF_Line         = 0x4,  // set by default #if _DEBUG;  else -- not set
@@ -151,7 +154,7 @@ typedef enum {
     eDPF_Trace        = 0x1f,
     // ignore all other flags, use global flags
     eDPF_Default      = 0x8000
-} EDiagPostFlag;
+};
 
 
 
@@ -262,11 +265,11 @@ extern EDiagSev SetDiagDieLevel(EDiagSev die_sev = eDiag_Fatal);
 //   1)  environment variable $DIAG_TRACE is set (to any value), or
 //   2)  registry value of DIAG_TRACE, section DEBUG is set (to any value)
 #define DIAG_TRACE "DIAG_TRACE"
-typedef enum {
+enum EDiagTrace {
     eDT_Default = 0,  // restores the default tracing context
     eDT_Disable,      // ignore messages of severity "eDiag_Trace"
     eDT_Enable        // enable messages of severity "eDiag_Trace"
-} EDiagTrace;
+};
 extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 
 // Set new message handler("func"), data("data") and destructor("cleanup").
