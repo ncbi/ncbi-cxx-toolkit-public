@@ -116,7 +116,19 @@ void CTestID1ClientApp::RunCommand(const string& command)
     string verb = args.front();
     args.pop_front();
 
-    if (verb == "connect") {
+    if (verb == "help") {
+        *m_Out << "commands:" << endl;
+        *m_Out << "  connect" << endl;
+        *m_Out << "  disconnect" << endl;
+        *m_Out << "  quit, exit" << endl;
+        *m_Out << "  reconnect" << endl;
+        *m_Out << "  getgi <accession>" << endl;
+        *m_Out << "  getgihist <gi number>" << endl;
+        *m_Out << "  getgirev <gi number>" << endl;
+        *m_Out << "  getgistate <gi number>" << endl;
+        *m_Out << "  getsefromgi <gi number>" << endl;
+        *m_Out << "  getseqidsfromgi <gi number>" << endl;
+    } else if (verb == "connect") {
         m_Client->Connect();
     } else if (verb == "disconnect") {
         m_Client->Disconnect();
@@ -139,16 +151,22 @@ void CTestID1ClientApp::RunCommand(const string& command)
         iterate (CID1server_back::TIds, id, ids) {
             *m_Out << (*id)->DumpAsFasta() << endl;
         }
-#if 0 // lists don't work well with object streams :-/
     } else if (verb == "getgihist") {
         int gi = NStr::StringToInt(args.front());
-        *m_OutAsn << m_Client->AskGetgihist(gi);
+        typedef list< CRef<CID1Seq_hist> > THistory;
+        THistory hist = m_Client->AskGetgihist(gi);
+        iterate (THistory, iter, hist) {
+            *m_OutAsn << **iter;
+        }
         m_OutAsn->Flush();
     } else if (verb == "getgirev") {
         int gi = NStr::StringToInt(args.front());
-        *m_OutAsn << m_Client->AskGetgirev(gi);
+        typedef list< CRef<CID1Seq_hist> > THistory;
+        THistory hist = m_Client->AskGetgirev(gi);
+        iterate (THistory, iter, hist) {
+            *m_OutAsn << **iter;
+        }
         m_OutAsn->Flush();
-#endif
     } else if (verb == "getgistate") {
         int gi = NStr::StringToInt(args.front());
         *m_Out << m_Client->AskGetgistate(gi) << endl;
@@ -167,6 +185,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/12/23 15:32:08  dicuccio
+* Added 'help' command.  Implemented getgihist and getgirev commands.
+*
 * Revision 1.2  2002/11/13 21:12:52  ucko
 * Fixed code introduced without a test compile.  (Oops.)
 *
