@@ -162,23 +162,25 @@ the C Toolkit, namely:
 The <i> CNcbiArguments, CNcbiEnvironment, CNcbiRegistry</i>, and <i> CNcbiDiag</i> classes are
 included as data members in the application class.<p>
 
-<a name="CNcbiArguments">
-
-The <i><b> CNcbiArguments </i></b> class provides a data structure for holding the application's
+<a name="CNcbiArguments"> The 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbienv.hpp">
+<i> CNcbiArguments </i></a> class provides a data structure for holding the application's
 command-line arguments, along with methods for accessing and modifying these.  The data
 structure is a simple C++ vector of strings. Thus access to it is implemented by member
 functions using the built-in [] operator for arrays and vectors. Four additional class member
 functions support retrieval and modification of the program name (intitially
 <i>argv</i>[0]). <p>
 
-<a name="CNcbiEnvironment">
-Similarly, the <i><b> CNcbiEnvironment </i></b> class provides a data structure for
+<a name="CNcbiEnvironment"> Similarly, the 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbienv.hpp">
+<i> CNcbiEnvironment </i></a> class provides a data structure for
 storing, accessing, and modifying the environment variables accessed by the C library
 routine <i>getenv()</i>. In this case the data structure is an associative array - a
 C++ map container, that allows <i>[]</i> access with string rather than integer indexes. <p>
 
-<a name="CNcbiRegistry">
-The <i><b> CNcbiRegistry </i></b> class is used to store, access, and modify runtime
+<a name="CNcbiRegistry"> The
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbireg.hpp">
+<i> CNcbiRegistry </i></a> class is used to store, access, and modify runtime
 information read from a configuration file. Previously, these files were by convention named
 ".*rc" files on <i> unix </i> systems. The convention for all platforms now is to name such
 files <i>*.ini</i> (where * is by default the application name). <p>
@@ -189,8 +191,9 @@ the key-value pairs must be associated with specific sections. Accordingly, the 
 class's main data structure uses a map of maps, where the "containing" map is indexed by
 sections while the "contained" map is indexed by keywords. <p>
 
-<a name="CNcbiDiag">
-The <i><b> CNcbiDiag </i></b> class implements much of the functionality of the NCBI C Toolkit error
+<a name="CNcbiDiag"> The
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbidiag.hpp">
+<i> CNcbiDiag </i></a> class implements much of the functionality of the NCBI C Toolkit error
 processing mechanisms. Each instance of <i>CNcbiDiag</i> has a private buffer to
 handle a <i>single</i> message, along with private severity level and post flags and their
 associated get/set methods.<p>
@@ -285,7 +288,7 @@ The <i> SCOPE</i> statements are actually macros defined in <i>corelib/ncbistl.h
 </pre> <font color = black>
 
 All code occurring between the <i>BEGIN</i> and <i> END</i> statements will be added to a
-namespace called <i>NCBI_NS_NCBI</i>. The <i>USiNG</i> macro allows you to access everything
+namespace called <i>NCBI_NS_NCBI</i>. The <i>USING</i> macro allows you to access everything
 currently defined in the namespace without requiring the :: scope operator.
 
 
