@@ -5,7 +5,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.NCBI.Cn3D</string>
+	<string>gov.NCBI.Cn3D</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
@@ -17,7 +17,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
-	<string>????</string>
+	<string>Cn3D</string>
 	<key>CFBundleVersion</key>
 	<string>4.1</string>
 	<key>CFBundleShortVersionString</key>
@@ -26,6 +26,19 @@
 	<string>Cn3D version 4.1</string>
 	<key>CFBundleLongVersionString</key>
 	<string>Cn3D version 4.1</string>
+        <key>CFBundleDocumentTypes</key>
+        <array>
+            <dict>
+                <key>CFBundleTypeOSTypes</key>
+                <array>
+                    <string>****</string>
+                </array>
+                <key>CFBundleTypeIconFile</key>
+                <string>129</string>
+                <key>CFBundleTypeRole</key>
+                <string>Viewer</string>
+            </dict>
+        </array>
 	<key>NSHumanReadableCopyright</key>
 	<string>info@ncbi.nlm.nih.gov</string>
 	<key>LSRequiresCarbon</key>

@@ -13,13 +13,12 @@ macapp: cn3d
 	mkdir -p Cn3D.app/Contents/MacOS
 	cp Cn3D Cn3D.app/Contents/MacOS
 	cp $(srcdir)/Info.plist Cn3D.app/Contents
-	echo -n "APPL????" > Cn3D.app/Contents/PkgInfo
+	echo -n "APPLCn3D" > Cn3D.app/Contents/PkgInfo
 	mkdir Cn3D.app/Contents/Resources
 	cp $(top_srcdir)/../wxWindows/install/lib/libwx_mac-2.3.rsrc \
 		Cn3D.app/Contents/Resources/Cn3D.rsrc
 	cp $(top_srcdir)/../wxWindows/src/mac/wxmac.icns \
 		Cn3D.app/Contents/Resources/wxmac.icns
-	mkdir Cn3D.app/Contents/Cn3D
-	cp $(CN3D_HOME)/Cn3D_commands.htb Cn3D.app/Contents/Cn3D
-	cp -r $(CN3D_HOME)/data Cn3D.app/Contents/Cn3D
+	cp $(CN3D_HOME)/Cn3D_commands.htb Cn3D.app/Contents/Resources
+	cp -r $(CN3D_HOME)/data Cn3D.app/Contents/Resources
 
