@@ -229,7 +229,7 @@ void Cn3DApp::InitRegistry(void)
 
     // default animation controls
     RegistrySetInteger(REG_ANIMATION_SECTION, REG_SPIN_DELAY, 50);
-    RegistrySetDouble(REG_ANIMATION_SECTION, REG_SPIN_INCREMENT, 3.0),
+    RegistrySetDouble(REG_ANIMATION_SECTION, REG_SPIN_INCREMENT, 2.0),
     RegistrySetInteger(REG_ANIMATION_SECTION, REG_FRAME_DELAY, 500);
 
     // default quality settings
@@ -482,6 +482,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/12/03 15:46:36  thiessen
+* adjust so spin increment is accurate
+*
 * Revision 1.9  2003/12/03 15:07:09  thiessen
 * add more sophisticated animation controls
 *

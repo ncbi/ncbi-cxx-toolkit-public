@@ -156,6 +156,8 @@ public:
     // stereo
     void EnableStereo(bool enableStereo);
 
+    double GetRotateSpeed(void) const { return rotateSpeed; }
+
 private:
 
     StructureSet *structureSet;
@@ -227,6 +229,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/12/03 15:46:36  thiessen
+* adjust so spin increment is accurate
+*
 * Revision 1.39  2003/11/15 16:08:36  thiessen
 * add stereo
 *

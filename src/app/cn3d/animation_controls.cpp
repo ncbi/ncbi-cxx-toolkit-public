@@ -207,7 +207,7 @@ wxSizer *SetupAnimationDialog( wxWindow *parent, bool call_fit, bool set_sizer )
     item3->Add( item4, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     gfSpinIncrement = new FloatingPointSpinCtrl(parent,
-        1, 30, 0.1, 3,
+        0.01, 30, 0.1, 2,
         wxDefaultPosition, wxSize(50,SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
     item3->Add(gfSpinIncrement->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
@@ -267,6 +267,9 @@ wxSizer *SetupAnimationDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/12/03 15:46:36  thiessen
+* adjust so spin increment is accurate
+*
 * Revision 1.1  2003/12/03 15:07:08  thiessen
 * add more sophisticated animation controls
 *

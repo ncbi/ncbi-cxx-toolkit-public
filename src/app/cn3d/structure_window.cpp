@@ -606,7 +606,8 @@ void StructureWindow::OnAnimationTimer(wxTimerEvent& event)
 
     else if (animationMode == ANIM_SPIN) {
         // pretend the user dragged the mouse to the right
-        glCanvas->renderer->ChangeView(OpenGLRenderer::eXYRotateHV, spinIncrement, 0);
+        glCanvas->renderer->ChangeView(OpenGLRenderer::eXYRotateHV,
+            spinIncrement/glCanvas->renderer->GetRotateSpeed(), 0);
         glCanvas->Refresh(false);
     }
 }
@@ -1485,6 +1486,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/12/03 15:46:36  thiessen
+* adjust so spin increment is accurate
+*
 * Revision 1.22  2003/12/03 15:07:10  thiessen
 * add more sophisticated animation controls
 *
