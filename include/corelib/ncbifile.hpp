@@ -443,9 +443,9 @@ private:
 /// CDirEntry and extended for files.
 ///
 /// NOTE: Next functions are unsafe in multithreaded applications:
-///       - GetTmpName() (use GetTmpNameExt() -- it is safe);
+///       - GetTmpName() (use GetTmpNameEx() -- it is safe);
 ///       - CreateTmpFile() with empty first parameter
-///         (use CreateTmpFileExt() -- it is safe);
+///         (use CreateTmpFileEx() -- it is safe);
 
 class NCBI_XNCBI_EXPORT CFile : public CDirEntry
 {
@@ -481,13 +481,13 @@ public:
     ///   Directory in which temporary file is to be created.
     /// @param prefix
     ///   Temporary file name will be prefixed by value of this parameter;
-    ///   default of kEmptyStr means that effectively no prefix value will
+    ///   default of kEmptyStr means that, effectively, no prefix value will
     ///   be used.
     /// @return
     ///   Name of temporary file, or "kEmptyStr" if there was an error
     ///   getting temporary file name.
-    static string GetTmpNameExt(const string& dir,
-                                const string& prefix = kEmptyStr);
+    static string GetTmpNameEx(const string& dir,
+                               const string& prefix = kEmptyStr);
 
     /// What type of temporary file to create.
     enum ETextBinary {
@@ -903,6 +903,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/08/08 13:35:29  siyan
+ * Changed GetTmpNameExt to GetTmpNameEx, as this is the more appropriate name.
+ *
  * Revision 1.22  2003/08/06 13:45:35  siyan
  * Document changes.
  *
