@@ -56,67 +56,73 @@ extern "C" {
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup BDB_Types
+ *
+ * @{
+ */
+
+
 extern "C" {
 
 
-// Simple and fast comparison function for tables with 
-// non-segmented "unsigned int" keys
+/// Simple and fast comparison function for tables with 
+/// non-segmented "unsigned int" keys
 int BDB_UintCompare(DB*, const DBT* val1, const DBT* val2);
 
 
-// Simple and fast comparison function for tables with 
-// non-segmented "int" keys
+/// Simple and fast comparison function for tables with 
+/// non-segmented "int" keys
 int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2);
 
-// Simple and fast comparison function for tables with 
-// non-segmented "short int" keys
+/// Simple and fast comparison function for tables with 
+/// non-segmented "short int" keys
 int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2);
 
-// Simple and fast comparison function for tables with 
-// non-segmented "float" keys
+/// Simple and fast comparison function for tables with 
+/// non-segmented "float" keys
 int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2);
 
-// Simple and fast comparison function for tables with 
-// non-segmented "double" keys
+/// Simple and fast comparison function for tables with 
+/// non-segmented "double" keys
 int BDB_DoubleCompare(DB*, const DBT* val1, const DBT* val2);
 
-// Simple and fast comparison function for tables with 
-// non-segmented "C string" keys
+/// Simple and fast comparison function for tables with 
+/// non-segmented "C string" keys
 int BDB_StringCompare(DB*, const DBT* val1, const DBT* val2);
 
-// Simple and fast comparison function for tables with 
-// non-segmented "case insensitive C string" keys
+/// Simple and fast comparison function for tables with 
+/// non-segmented "case insensitive C string" keys
 int BDB_StringCaseCompare(DB*, const DBT* val1, const DBT* val2);
 
-// General purpose DBD comparison function
+/// General purpose DBD comparison function
 int BDB_Compare(DB* db, const DBT* val1, const DBT* val2);
 
 
 
-// Simple and fast comparison function for tables with 
-// non-segmented "unsigned int" keys.
-// Used when the data file is in a different byte order architecture.
+/// Simple and fast comparison function for tables with 
+/// non-segmented "unsigned int" keys.
+/// Used when the data file is in a different byte order architecture.
 int BDB_ByteSwap_UintCompare(DB*, const DBT* val1, const DBT* val2);
 
 
-// Simple and fast comparison function for tables with 
-// non-segmented "int" keys
-// Used when the data file is in a different byte order architecture.
+/// Simple and fast comparison function for tables with 
+/// non-segmented "int" keys
+/// Used when the data file is in a different byte order architecture.
 int BDB_ByteSwap_IntCompare(DB*, const DBT* val1, const DBT* val2);
 
-// Simple and fast comparison function for tables with 
-// non-segmented "short int" keys
-// Used when the data file is in a different byte order architecture.
+/// Simple and fast comparison function for tables with 
+/// non-segmented "short int" keys
+/// Used when the data file is in a different byte order architecture.
 int BDB_ByteSwap_Int2Compare(DB*, const DBT* val1, const DBT* val2);
 
-// Simple and fast comparison function for tables with 
-// non-segmented "float" keys
-// Used when the data file is in a different byte order architecture.
+/// Simple and fast comparison function for tables with 
+/// non-segmented "float" keys
+/// Used when the data file is in a different byte order architecture.
 int BDB_ByteSwap_FloatCompare(DB*, const DBT* val1, const DBT* val2);
 
-// Simple and fast comparison function for tables with 
-// non-segmented "double" keys
-// Used when the data file is in a different byte order architecture.
+/// Simple and fast comparison function for tables with 
+/// non-segmented "double" keys
+/// Used when the data file is in a different byte order architecture.
 int BDB_ByteSwap_DoubleCompare(DB*, const DBT* val1, const DBT* val2);
 
 
@@ -130,42 +136,38 @@ class CBDB_FileCursor;
 class CBDB_FC_Condition;
 
 
-//////////////////////////////////////////////////////////////////
-//
-// BDB Data Field interface definition.
-//
-
+/// BDB Data Field interface definition.
+///
+/// Every relational table in BDB library consists of fields, supporting
+/// basic IBDB_Field interface
 class IBDB_Field
 {
 public:
     virtual ~IBDB_Field() {}
 
-    // Comparison function. p1 and p2 are void pointers on field buffers.
-    // Positive if p1>p2, zero if p1==p2, negative if p1<p2.
-    // NOTE:  both buffers can be unaligned. 
-    // byte_swapped TRUE indicates that buffers values are in 
-    // a different byte order architecture
+    /// Comparison function. p1 and p2 are void pointers on field buffers.
+    /// Positive if p1>p2, zero if p1==p2, negative if p1<p2.
+    /// NOTE:  both buffers can be unaligned. 
+    /// byte_swapped TRUE indicates that buffers values are in 
+    /// a different byte order architecture
     virtual int         Compare(const void* p1, 
                                 const void* p2,
                                 bool byte_swapped) const = 0;
 
-    // Return current effective size of the buffer.
+    /// Return current effective size of the buffer.
     virtual size_t      GetDataLength(const void* buf) const = 0;
 
-    // Set minimal possible value for the field type
+    /// Set minimal possible value for the field type
 	virtual void        SetMinVal() = 0;
 
-    // Set maximum possible value for the field type
+    /// Set maximum possible value for the field type
 	virtual void        SetMaxVal() = 0;
 };
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// BDB Data Field conversion interface definition.
-// All interface functions by default throw "bad conversion" exception.
-//
+/// BDB Data Field conversion interface definition.
+/// All interface functions by default throw "bad conversion" exception.
 
 class IBDB_FieldConvert
 {
@@ -186,12 +188,9 @@ public:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// Interface definition class for field construction.
-// Used for interfaces' "access rights management".
-// Some interfaces are declared non-public here (IFieldConvert).
-//
+/// Interface definition class for field construction.
+/// Used for interfaces' "access rights management".
+/// Some interfaces are declared non-public here (IFieldConvert).
 
 class CBDB_FieldInterfaces : public    IBDB_Field,
                              protected IBDB_FieldConvert
@@ -201,107 +200,105 @@ class CBDB_FieldInterfaces : public    IBDB_Field,
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// Base class for constructing BDB fields. Implements field buffer pointer.
-//
-// All DBD field types do not own their buffers. 
-// It works as a pointer on external memory kept by the record manager
-// (CBDB_FieldBuf). Class cannot be used independently without record manager.
-//
+/// Base class for constructing BDB fields. Implements field buffer pointer.
+///
+/// All DBD field types do not own their buffers. 
+/// It works as a pointer on external memory kept by the record manager
+/// (CBDB_FieldBuf). Class cannot be used independently without record manager.
 
 class NCBI_BDB_EXPORT CBDB_Field : public CBDB_FieldInterfaces
 {
 public:
-    //
+    /// Length based classificator for fields (fixed-variable)
     enum ELengthType {
-        eFixedLength,    // fixed-length (like int)
-        eVariableLength  // variable-length (like string)
+        eFixedLength,    //!< fixed-length (like int)
+        eVariableLength  //!< variable-length (like string)
     };
     CBDB_Field(ELengthType length_type = eFixedLength);
     virtual ~CBDB_Field() {}
     
-    // Virtual constructor - class factory for BDB fields.
-    // Default (zero) value of 'buf-len' uses GetBufferSize().
-    // For fixed length fields this buf_size parameter has no effect
+    /// Virtual constructor - class factory for BDB fields.
+    /// Default (zero) value of 'buf-len' uses GetBufferSize().
+    /// For fixed length fields this buf_size parameter has no effect
     virtual CBDB_Field* Construct(size_t buf_size = 0) const = 0;
 
-    // Return address to the type specific comparison function
-    // By default it's universal BDB_Compare
+    /// Return address to the type specific comparison function
+    /// By default it's universal BDB_Compare
     virtual BDB_CompareFunction GetCompareFunction(bool byte_swapped) const;
 
-    // Return TRUE if field can be NULL
+    /// Return TRUE if field can be NULL
     bool IsNullable() const;
 
-    // Assign field value to NULL
+    /// Assign field value to NULL
     void SetNull();
 
-    // Return TRUE if field is NULL
+    /// Return TRUE if field is NULL
     bool IsNull() const;
 
-    // Return symbolic name for the field
+    /// Return symbolic name for the field
     const string& GetName() const;
 
 protected:
-    // Return maximum possible buffer length
+    /// Return maximum possible buffer length
     size_t GetBufferSize() const;
 
-    // Get length of the actual data
+    /// Get length of the actual data
     size_t GetLength() const;
 
-    // Field comparison function
+    /// Field comparison function
     int CompareWith(const CBDB_Field& field) const;
 
-    // Copies field value from another field.
-    // The field type MUST be the same, or an exception will be thrown.
+    /// Copies field value from another field.
+    /// The field type MUST be the same, or an exception will be thrown.
     void CopyFrom(const CBDB_Field& src);
 
     // Buffer management functions:
 
-    // Return TRUE if it is a variable length variable (like string)
+    /// Return TRUE if it is a variable length variable (like string)
     bool IsVariableLength() const;
 
-    // Return TRUE if external buffer has already been attached
+    /// Return TRUE if external buffer has already been attached
     bool IsBufferAttached() const;
 
-    // RTTI based check if fld is of the same type
+    /// RTTI based check if fld is of the same type
     bool IsSameType(const CBDB_Field& field) const;
 
-    // Return TRUE if field belongs to a file with an alternative
-    // byte order
+    /// Return TRUE if field belongs to a file with an alternative
+    /// byte order
     bool IsByteSwapped() const;
 
 
-    // Mark field as "NULL" capable.
+    /// Mark field as "NULL" capable.
     void SetNullable();
 
-    // Set "is NULL" flag to FALSE
+    /// Set "is NULL" flag to FALSE
     void SetNotNull();
 
-    // Set symbolic name for the field
+    /// Set symbolic name for the field
     void SetName(const char* name);
 
-    // Set field position in the buffer manager
+    /// Set field position in the buffer manager
     void SetBufferIdx(unsigned int idx);
 
 
 protected:
-    // Unpack the buffer which contains this field (using CBDB_BufferManager).
-    // Return new pointer to the field data -- located in the unpacked buffer.
+    /// Unpack the buffer which contains this field (using CBDB_BufferManager).
+    /// Return new pointer to the field data -- located in the unpacked buffer.
     void*  Unpack();
-    // Set external buffer pointer and length. 
-    // Zero 'buf_size' means GetBufferSize() is used to obtain the buf. size.
+    /// Set external buffer pointer and length. 
+    /// Zero 'buf_size' means GetBufferSize() is used to obtain the buf. size.
     void  SetBuffer(void* buf, size_t buf_size = 0);
-    // Set the buffer size.
+    /// Set the buffer size.
     void  SetBufferSize(size_t size);
-    // Set CBDB_BufferManager -- which works as a memory manager for BDB fields.
+    /// Set CBDB_BufferManager -- which works as a memory manager for BDB fields.
     void  SetBufferManager(CBDB_BufferManager* owner);
 
-    // Get pointer to the data. NULL if not yet attached.
+    /// Get pointer to the data. NULL if not yet attached.
     const void* GetBuffer() const;
+    /// Get pointer to the data. NULL if not yet attached.
     void*       GetBuffer();
 
-    // Copy buffer value from the external source
+    /// Copy buffer value from the external source
     void CopyFrom(const void* src_buf);
 
 private:
@@ -328,11 +325,8 @@ private:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// Template class for building simple scalar data fields. 
-// (int, float, double)
-//
+/// Template class for building simple scalar data fields. 
+/// (int, float, double)
 
 template<typename T>
 class CBDB_FieldSimple : public CBDB_Field
@@ -380,11 +374,8 @@ public:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// Template class for building simple scalar integer compatible data fields.
-// (int, short, char)
-//
+/// Template class for building simple scalar integer compatible data fields.
+/// (int, short, char)
 
 template<typename T>
 class CBDB_FieldSimpleInt : public CBDB_FieldSimple<T>
@@ -451,11 +442,9 @@ public:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// Template class for building simple scalar floating point compatible fields.
-// (float, double)
-//
+/// Template class for building simple scalar floating point compatible fields.
+/// (float, double)
+///
 
 template<typename T>
 class CBDB_FieldSimpleFloat : public CBDB_FieldSimple<T>
@@ -506,10 +495,8 @@ public:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-//  Int4 field type
-//
+///  Int4 field type
+///
 
 class NCBI_BDB_EXPORT CBDB_FieldInt4 : public CBDB_FieldSimpleInt<Int4>
 {
@@ -572,10 +559,8 @@ public:
 };
 
 
-//////////////////////////////////////////////////////////////////
-//
-//  Int2 field type
-//
+///  Int2 field type
+///
 
 class NCBI_BDB_EXPORT CBDB_FieldInt2 : public CBDB_FieldSimpleInt<Int2>
 {
@@ -639,10 +624,8 @@ public:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-//  Uint4 field type
-//
+///  Uint4 field type
+///
 
 class NCBI_BDB_EXPORT CBDB_FieldUint4 : public CBDB_FieldSimpleInt<Uint4>
 {
@@ -706,10 +689,8 @@ public:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-//  Float field type
-//
+///  Float field type
+///
 
 class NCBI_BDB_EXPORT CBDB_FieldFloat : public CBDB_FieldSimpleFloat<float>
 {
@@ -772,10 +753,8 @@ public:
 };
 
 
-//////////////////////////////////////////////////////////////////
-//
-//  Double precision floating point field type
-//
+///  Double precision floating point field type
+///
 
 class NCBI_BDB_EXPORT CBDB_FieldDouble : public CBDB_FieldSimpleFloat<double>
 {
@@ -840,10 +819,9 @@ public:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-//  String field type
-//
+///
+///  String field type
+///
 
 class NCBI_BDB_EXPORT CBDB_FieldString : public CBDB_Field
 {
@@ -895,10 +873,8 @@ public:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-//  Case-insensitive string field type 
-//
+///  Case-insensitive (but case preserving) string field type 
+///
 
 class NCBI_BDB_EXPORT CBDB_FieldStringCase : public CBDB_FieldString
 {
@@ -949,63 +925,62 @@ public:
 
 
 
-//////////////////////////////////////////////////////////////////
-// 
-// BDB Data Field Buffer manager class. 
-// For internal use in BDB library.
-//
+/// BDB Data Field Buffer manager class. 
+/// For internal use in BDB library.
+///
+/// @internal
 
 class NCBI_BDB_EXPORT CBDB_BufferManager
 {
 public:
-    // Return number of fields attached using function Bind
+    /// Return number of fields attached using function Bind
     unsigned int FieldCount() const;
 
     const CBDB_Field& GetField(unsigned int idx) const;
     CBDB_Field&       GetField(unsigned int idx);
 
-    // Return TRUE if buffer is in a non-native byte order
+    /// Return TRUE if buffer is in a non-native byte order
     bool IsByteSwapped() const { return m_ByteSwapped; }
 
 protected:
     CBDB_BufferManager();
 
-    // Create internal data buffer, assign places in this buffer to the fields
+    /// Create internal data buffer, assign places in this buffer to the fields
     void Construct();
 
-    // Set minimum possible value to buffer fields from 'idx_from' to 'idx_to'
+    /// Set minimum possible value to buffer fields from 'idx_from' to 'idx_to'
     void SetMinVal(unsigned int idx_from, unsigned int idx_to);
 
-    // Set maximum possible value to buffer fields from 'idx_from' to 'idx_to'
+    /// Set maximum possible value to buffer fields from 'idx_from' to 'idx_to'
     void SetMaxVal(unsigned int idx_from, unsigned int idx_to);
 
-    // Attach 'field' to the buffer.
-    // NOTE: buffer manager will not own the attached object, nor will it
-    //       keep ref counters or do any other automagic memory management.
+    /// Attach 'field' to the buffer.
+    /// NOTE: buffer manager will not own the attached object, nor will it
+    ///       keep ref counters or do any other automagic memory management.
     void Bind(CBDB_Field* field, ENullable is_nullable = eNotNullable);
 
-    // Duplicate (dynamic allocation is used) all fields from 'buf_mgr' and
-    // bind them to the this buffer manager. Field values are not copied.
-    // NOTE: CBDB_BufferManager does not own or deallocate fields, 
-    //       caller is responsible for deallocation.
+    /// Duplicate (dynamic allocation is used) all fields from 'buf_mgr' and
+    /// bind them to the this buffer manager. Field values are not copied.
+    /// NOTE: CBDB_BufferManager does not own or deallocate fields, 
+    ///       caller is responsible for deallocation.
     void CopyFieldsFrom(const CBDB_BufferManager& buf_mgr);
 
-    // Copy all field values from the 'buf_mgr'.
+    /// Copy all field values from the 'buf_mgr'.
     void DuplicateStructureFrom(const CBDB_BufferManager& buf_mgr);
 
-    // Compare fields of this buffer with those of 'buf_mgr' using
-    // CBDB_Field::CompareWith().
-    // Optional 'n_fields' parameter used when we want to compare only
-    // several first fields instead of all.
+    /// Compare fields of this buffer with those of 'buf_mgr' using
+    /// CBDB_Field::CompareWith().
+    /// Optional 'n_fields' parameter used when we want to compare only
+    /// several first fields instead of all.
     int Compare(const CBDB_BufferManager& buf_mgr,
                 unsigned int              n_fields = 0) const;
 
-    // Return TRUE if any field bound to this buffer manager has variable
-    // length (i.e. packable)
+    /// Return TRUE if any field bound to this buffer manager has variable
+    /// length (i.e. packable)
     bool IsPackable() const;
 
-    // Check if all NOT NULLABLE fields were assigned.
-    // Throw an exception if not.
+    /// Check if all NOT NULLABLE fields were assigned.
+    /// Throw an exception if not.
     void CheckNullConstraint() const;
 
     void ArrangePtrsUnpacked();
@@ -1014,23 +989,23 @@ protected:
     unsigned Pack();
     unsigned Unpack();
 
-    // Pack the buffer and initialize DBT structure for write operation
+    /// Pack the buffer and initialize DBT structure for write operation
     void PrepareDBT_ForWrite(DBT* dbt);
 
-    // Initialize DBT structure for read operation.
+    /// Initialize DBT structure for read operation.
     void PrepareDBT_ForRead(DBT* dbt);
 
-    // Calculate buffer size
+    /// Calculate buffer size
     size_t ComputeBufferSize() const;
 
-    // Return TRUE if buffer can carry NULL fields
+    /// Return TRUE if buffer can carry NULL fields
     bool IsNullable() const;
 
-    // Set byte swapping flag for the buffer
+    /// Set byte swapping flag for the buffer
     void SetByteSwapped(bool byte_swapped) { m_ByteSwapped = byte_swapped; }
 
-    // Mark buffer as "NULL fields ready".
-    // NOTE: Should be called before buffer construction.
+    /// Mark buffer as "NULL fields ready".
+    /// NOTE: Should be called before buffer construction.
     void SetNullable();
 
     void SetNull(unsigned int field_idx, bool value);
@@ -1041,7 +1016,7 @@ protected:
     void   SetNullBit (unsigned int idx, bool value);
     void   SetAllNull();
 
-    // Return buffer compare function
+    /// Return buffer compare function
     BDB_CompareFunction GetCompareFunction() const;
 
 private:
@@ -1050,18 +1025,18 @@ private:
 
 private:
     vector<CBDB_Field*>     m_Fields;
-    // pointers on the fields' data
+    /// Array of pointers to the fields' data
     vector<void*>           m_Ptrs;        
     auto_ptr<char>          m_Buffer;
     size_t                  m_BufferSize;
     size_t                  m_PackedSize;
     bool                    m_Packable;
-    // TRUE if buffer is in a non-native arch.
+    /// TRUE if buffer is in a non-native arch.
     bool                    m_ByteSwapped; 
 
-    // TRUE if buffer can carry NULL fields
+    /// TRUE if buffer can carry NULL fields
     bool                    m_Nullable;    
-    // size of the 'is NULL' bitset in bytes
+    /// size of the 'is NULL' bitset in bytes
     size_t                  m_NullSetSize; 
 
 private:
@@ -1072,7 +1047,7 @@ private:
     friend class CBDB_FC_Condition;
 };
 
-
+/* @} */
 
 /////////////////////////////////////////////////////////////////////////////
 //  IMPLEMENTATION of INLINE functions
@@ -1581,6 +1556,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/09/26 20:45:57  kuznets
+ * Comments cleaned up
+ *
  * Revision 1.20  2003/09/17 13:30:28  kuznets
  * Put comparison functions into ncbi namespace.
  *
