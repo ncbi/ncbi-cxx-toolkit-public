@@ -138,6 +138,7 @@ private:
     string  m_Path;                        //< Directory or file name
     bool    m_IsRecursive;                 //< Process m_Path recursively
     bool    m_IsDistribution;              //< Distribution mode
+    bool    m_CreateBackup;                //< Create backup files
 };
 
 
@@ -193,6 +194,8 @@ void CMainApplication::Init(void)
     arg_desc->AddFlag
         ("d", "Distributive mode;  remove include/library paths, " \
          "which refers to DIZZY");
+    arg_desc->AddFlag
+        ("b", "Create backup file");
 
 /*
     arg_desc->AddFlag
@@ -219,11 +222,10 @@ void CMainApplication::ParseArguments(void)
     // Path
     m_Path = args["path"].AsString();
 
-    // Recursive flag
-    m_IsRecursive = args["r"];
-
-    // Distribution mode
+    // Flags
+    m_IsRecursive    = args["r"];
     m_IsDistribution = args["d"];
+    m_CreateBackup   = args["b"];
 
     // Configurations
     string cfg = args["config_type"] ? args["config_type"].AsString() : "all";
@@ -564,11 +566,15 @@ void CMainApplication::ProcessFile(const string& file_name)
         LOG_POST(file_name << ":  " << cfgs);
 
         // Replace original project file (backup kept in .bak).
-        string file_bakup =  file_name + ".bak";
-        CFile(file_bakup).Remove();
-        if (!CFile(file_name).Rename(file_bakup) ||
-            !CFile(file_name_new).Rename(file_name) ) {
-            throw (string)"cannot rename file.";
+        string file_backup =  file_name + ".bak";
+        CFile(file_backup).Remove();
+        if ( m_CreateBackup ) {
+            CFile(file_name).Rename(file_backup);
+        } else {
+            CFile(file_name).Remove();
+        }
+        if ( !CFile(file_name_new).Rename(file_name) ) {
+            throw (string)"cannot rename file";
         }
     }
     catch (string& e) {
@@ -643,6 +649,7 @@ string CMainApplication::Configure(const string& cfg_template,
     const SReplacement ksOpt[] = {
         { "/Gm"           , ""   , 0 },
         { "/GZ"           , ""   , 0 },
+        { "/G[0-9]"       , ""   , 0 },
         { "/FR"           , ""   , 0 },
         { "/Fr"           , ""   , 0 },
         { "/c"            , " @c", 0 },
@@ -742,12 +749,13 @@ string CMainApplication::Configure(const string& cfg_template,
 
 
     // Make sure that incremental linking is on
-    // except for wxWindows DLLs (slow).
+    // except for wxWindows DLLs in the release mode (very slow).
+
     string incr_link;
 
     if ( !re.Exists("^# ADD .*LINK32 .*/dll", kML) ) {
         incr_link = (config == eDebug) ? "yes" : "no";
-    } else if ( !gui.empty()  &&  wxdll_making ) {
+    } else if ( !gui.empty()  &&  config == eRelease  &&  wxdll_making ) {
         incr_link = "no";
     }
     if ( !incr_link.empty() ) {
@@ -939,6 +947,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/11/10 17:29:05  ivanov
+ * Added option "-b" -- create backup files for projects (by default is off).
+ * wxWindows: make sure that incremental linking is on except for DLLs
+ * in the release mode (very slow).
+ *
  * Revision 1.5  2003/11/10 14:59:51  ivanov
  * Fixed array size determination after previous fix.
  * Use caseless check for include/library paths, which refer to DIZZY.
