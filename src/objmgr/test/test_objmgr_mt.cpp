@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/04/23 15:26:47  gouriano
+* use test_mt library
+*
 * Revision 1.13  2002/04/22 20:07:45  grichenk
 * Commented calls to CBioseq::ConstructExcludedSequence()
 *
@@ -93,81 +96,48 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbithr.hpp>
+#include <corelib/test_mt.hpp>
 
 #include "test_helper.hpp"
 
-#include <corelib/ncbithr.hpp>
 
 
 BEGIN_NCBI_SCOPE
 using namespace objects;
 
 
-const unsigned int   c_NumThreadsMin = 1;
-const unsigned int   c_NumThreadsMax = 500;
-const int            c_SpawnByMin    = 1;
-const int            c_SpawnByMax    = 100;
-
-unsigned int  s_NumThreads = 34;
-int           s_SpawnBy    = 6;
-unsigned int  s_NextIndex  = 0;
-CFastMutex    s_GlobalLock;
-
-
 /////////////////////////////////////////////////////////////////////////////
 //
-//  Test thread
+//  Test application
 //
 
-class CTestThread : public CThread
+class CTestObjectManager : public CThreadedApp
 {
-public:
-    CTestThread(int id, CObjectManager& objmgr, CScope& scope);
-
 protected:
-    virtual void* Main(void);
+    virtual bool Thread_Run(int idx);
+    virtual bool TestApp_Init(void);
+    virtual bool TestApp_Exit(void);
 
-private:
-
-    int m_Idx;
     CRef<CScope> m_Scope;
     CRef<CObjectManager> m_ObjMgr;
 };
 
-CRef<CTestThread> thr[c_NumThreadsMax];
 
-CTestThread::CTestThread(int id, CObjectManager& objmgr, CScope& scope)
-    : m_Idx(id+1), m_ObjMgr(&objmgr), m_Scope(&scope)
+/////////////////////////////////////////////////////////////////////////////
+
+bool CTestObjectManager::Thread_Run(int idx)
 {
-    //### Initialize the thread
-}
-
-void* CTestThread::Main(void)
-{
-    // Spawn more threads
-    for (int i = 0; i<s_SpawnBy; i++) {
-        int idx;
-        {{
-            CFastMutexGuard spawn_guard(s_GlobalLock);
-            if (s_NextIndex >= s_NumThreads) {
-                break;
-            }
-            idx = s_NextIndex;
-            s_NextIndex++;
-        }}
-        thr[idx] = new CTestThread(idx, *m_ObjMgr, *m_Scope);
-        thr[idx]->Run();
-    }
-
+    ++idx;
     // Test global scope
     // read data from a scope, which is shared by all threads
     CTestHelper::TestDataRetrieval(*m_Scope, 0, 0, false);
     // add more data to the global scope
-    CRef<CSeq_entry> entry1 = &CDataGenerator::CreateTestEntry1(m_Idx);
-    CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(m_Idx);
+    CRef<CSeq_entry> entry1 = &CDataGenerator::CreateTestEntry1(idx);
+    CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(idx);
     m_Scope->AddTopLevelSeqEntry(*entry1);
     m_Scope->AddTopLevelSeqEntry(*entry2);
-    CTestHelper::TestDataRetrieval(*m_Scope, m_Idx, 0, false);
+    CTestHelper::TestDataRetrieval(*m_Scope, idx, 0, false);
 
     // Test local scope
     // 1.2.5 add annotation to one sequence
@@ -175,19 +145,19 @@ void* CTestThread::Main(void)
     {
         CScope scope(*m_ObjMgr);
         // create new seq.entries - to be able to check unresolved lengths
-        CRef<CSeq_entry> entry1 = &CDataGenerator::CreateTestEntry1(m_Idx);
-        CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(m_Idx);
+        CRef<CSeq_entry> entry1 = &CDataGenerator::CreateTestEntry1(idx);
+        CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(idx);
         scope.AddTopLevelSeqEntry(*entry1);
         scope.AddTopLevelSeqEntry(*entry2);
-        CRef<CSeq_annot> annot = &CDataGenerator::CreateAnnotation1(m_Idx);
+        CRef<CSeq_annot> annot = &CDataGenerator::CreateAnnotation1(idx);
         scope.AttachAnnot(*entry1, *annot);
-        CTestHelper::TestDataRetrieval(scope, m_Idx, 1, true);
+        CTestHelper::TestDataRetrieval(scope, idx, 1, true);
 
         // 1.2.6. Constructed bio sequences
         CSeq_id id;
         {{
             CRef<CSeq_entry> constr_entry =
-                &CDataGenerator::CreateConstructedEntry( m_Idx, 1);
+                &CDataGenerator::CreateConstructedEntry( idx, 1);
             scope.AddTopLevelSeqEntry(*constr_entry);
             id.SetLocal().SetStr("constructed1");
             CTestHelper::ProcessBioseq(scope, id,
@@ -195,7 +165,7 @@ void* CTestThread::Main(void)
                 0, 0, 0, 0, 0, 0, 0, 0, 0);
             /*
             CRef<CSeq_entry> constr_ex_entry =
-                &CDataGenerator::CreateConstructedExclusionEntry( m_Idx, 1);
+                &CDataGenerator::CreateConstructedExclusionEntry( idx, 1);
             scope.AddTopLevelSeqEntry(*constr_ex_entry);
             // test
             id.SetLocal().SetStr("construct_exclusion1");
@@ -206,7 +176,7 @@ void* CTestThread::Main(void)
         }}
         {{
             CRef<CSeq_entry> constr_entry =
-                &CDataGenerator::CreateConstructedEntry( m_Idx, 2);
+                &CDataGenerator::CreateConstructedEntry( idx, 2);
             scope.AddTopLevelSeqEntry(*constr_entry);
             id.SetLocal().SetStr("constructed2");
             CTestHelper::ProcessBioseq(scope, id,
@@ -214,7 +184,7 @@ void* CTestThread::Main(void)
                 0, 0, 0, 0, 0, 0, 0, 0, 0);
             /*
             CRef<CSeq_entry> constr_ex_entry =
-                &CDataGenerator::CreateConstructedExclusionEntry( m_Idx, 2);
+                &CDataGenerator::CreateConstructedExclusionEntry( idx, 2);
             scope.AddTopLevelSeqEntry(*constr_ex_entry);
             // test
             id.SetLocal().SetStr("construct_exclusion2");
@@ -229,14 +199,14 @@ void* CTestThread::Main(void)
     {
         CScope Scope1(*m_ObjMgr);
         CRef<CScope> pScope2 = new CScope(*m_ObjMgr);
-        CRef<CSeq_entry> entry1 = &CDataGenerator::CreateTestEntry1(m_Idx);
-        CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(m_Idx);
+        CRef<CSeq_entry> entry1 = &CDataGenerator::CreateTestEntry1(idx);
+        CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(idx);
         Scope1.AddTopLevelSeqEntry(*entry1);
         Scope1.AddTopLevelSeqEntry(*entry2);
         pScope2->AddTopLevelSeqEntry(*entry2);
         // Test with unresolvable references
         CSeq_id id;
-        id.SetGi(21+m_Idx*1000);
+        id.SetGi(21+idx*1000);
         CTestHelper::ProcessBioseq(*pScope2, id,
             22, 22,
             "NNNNNNNNNNNNNNNNNNNNNN",
@@ -244,10 +214,10 @@ void* CTestThread::Main(void)
             1, 1, 1, 0, 0, 1, 1, 0, 0);
 
         // add more data to the scope - to make references resolvable
-        CRef<CSeq_entry> entry1a = &CDataGenerator::CreateTestEntry1a(m_Idx);
+        CRef<CSeq_entry> entry1a = &CDataGenerator::CreateTestEntry1a(idx);
         pScope2->AddTopLevelSeqEntry(*entry1a);
         // Test with resolvable references
-        id.SetGi(21+m_Idx*1000);
+        id.SetGi(21+idx*1000);
         CTestHelper::ProcessBioseq(*pScope2, id,
             22, 62,
             "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
@@ -255,9 +225,9 @@ void* CTestThread::Main(void)
             1, 1, 1, 0, 0, 1, 1, 0, 0);
 
         // 1.2.8. Test scope history
-        CRef<CSeq_entry> entry1b = &CDataGenerator::CreateTestEntry1(m_Idx);
+        CRef<CSeq_entry> entry1b = &CDataGenerator::CreateTestEntry1(idx);
         pScope2->AddTopLevelSeqEntry(*entry1b);
-        id.SetLocal().SetStr("seq"+NStr::IntToString(11+m_Idx*1000));
+        id.SetLocal().SetStr("seq"+NStr::IntToString(11+idx*1000));
         // gi|11 from entry1a must be selected
         CTestHelper::ProcessBioseq(*pScope2, id,
             40, 40,
@@ -265,113 +235,33 @@ void* CTestThread::Main(void)
             "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
             0, 4, 2, 1, 0, 2, 2, 1, 0);
     }
-    return 0;
+    return true;
 }
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  Test application
-//
-
-class CTestObjectManager : public CNcbiApplication
+bool CTestObjectManager::TestApp_Init(void)
 {
-    typedef CNcbiApplication CParent;
-private:
-    virtual void Init(void);
-    virtual int  Run (void);
-};
-
-
-void CTestObjectManager::Init(void)
-{
-    // Prepare command line descriptions
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
-    // sNumThreads
-    arg_desc->AddDefaultKey
-        ("threads", "NumThreads",
-         "Total number of threads to create and run",
-         CArgDescriptions::eInteger, NStr::IntToString(s_NumThreads));
-    arg_desc->SetConstraint
-        ("threads", new CArgAllow_Integers(c_NumThreadsMin, c_NumThreadsMax));
-
-    // sSpawnBy
-    arg_desc->AddDefaultKey
-        ("spawnby", "SpawnBy",
-         "Threads spawning factor",
-         CArgDescriptions::eInteger, NStr::IntToString(s_SpawnBy));
-    arg_desc->SetConstraint
-        ("spawnby", new CArgAllow_Integers(c_SpawnByMin, c_SpawnByMax));
-
-
-    string prog_description =
-        "MT object manager test";
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              prog_description, false);
-
-    SetupArgDescriptions(arg_desc.release());
-}
-
-
-int CTestObjectManager::Run(void)
-{
-    // Process command line
-    const CArgs& args = GetArgs();
-
-    s_NumThreads = args["threads"].AsInteger();
-    s_SpawnBy    = args["spawnby"].AsInteger();
-
     NcbiCout << "Testing ObjectManager (" << s_NumThreads << " threads)..." << NcbiEndl;
 
-    CRef<CObjectManager> objmgr = new CObjectManager;
+    m_ObjMgr = new CObjectManager;
     // Scope shared by all threads
-    CRef<CScope> scope;
-    scope = new CScope(*objmgr);
+    m_Scope = new CScope(*m_ObjMgr);
     CRef<CSeq_entry> entry1 = &CDataGenerator::CreateTestEntry1(0);
     CRef<CSeq_entry> entry2 = &CDataGenerator::CreateTestEntry2(0);
-    scope->AddTopLevelSeqEntry(*entry1);
-    scope->AddTopLevelSeqEntry(*entry2);
-
-    // Create and run threads
-    for (int i=0; i<s_SpawnBy; i++) {
-        int idx;
-        {{
-            CFastMutexGuard spawn_guard(s_GlobalLock);
-            if (s_NextIndex >= s_NumThreads) {
-                break;
-            }
-            idx = s_NextIndex;
-            s_NextIndex++;
-        }}
-
-        thr[idx] = new CTestThread(idx, *objmgr, *scope);
-        thr[idx]->Run();
-    }
-
-    // Wait for all threads
-    for (unsigned int i=0; i<s_NumThreads; i++) {
-        thr[i]->Join();
-    }
-
-    // Destroy all threads
-    for (unsigned int i=0; i<s_NumThreads; i++) {
-        thr[i].Reset();
-    }
-
-    NcbiCout << " Passed" << NcbiEndl << NcbiEndl;
-
-    return 0;
+    m_Scope->AddTopLevelSeqEntry(*entry1);
+    m_Scope->AddTopLevelSeqEntry(*entry2);
+    return true;
 }
 
-
+bool CTestObjectManager::TestApp_Exit(void)
+{
+    NcbiCout << " Passed" << NcbiEndl << NcbiEndl;
+    return true;
+}
 END_NCBI_SCOPE
-
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 USING_NCBI_SCOPE;
 
