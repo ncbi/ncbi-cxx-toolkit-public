@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/07/12 13:24:10  thiessen
+* fixes for PSSM creation to agree with cddumper/RPSBLAST
+*
 * Revision 1.13  2002/06/17 19:31:54  thiessen
 * set db_length in blast options
 *
@@ -129,15 +132,24 @@ static int LookupBLASTResidueNumberFromThreaderResidueNumber(char r)
 #define PRINT_PSSM // for testing/debugging
 #endif
 
+static Int4 Round(double d)
+{
+    if (d >= 0.0)
+        return (Int4) (d + 0.5);
+    else
+        return (Int4) (d - 0.5);
+}
+
 static BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleForPSSM)
 {
     // for now, use threader's SeqMtf
-    Seq_Mtf *seqMtf = Threader::CreateSeqMtf(multipleForPSSM, 1.0);
+    BLAST_KarlinBlkPtr karlinBlock = BlastKarlinBlkCreate();
+    Seq_Mtf *seqMtf = Threader::CreateSeqMtf(multipleForPSSM, 1.0, karlinBlock);
 
     BLAST_Matrix *matrix = (BLAST_Matrix *) MemNew(sizeof(BLAST_Matrix));
     matrix->is_prot = TRUE;
     matrix->name = StringSave("BLOSUM62");
-    matrix->karlinK = 0.0410; // default for blosum62
+    matrix->karlinK = karlinBlock->K;
     matrix->rows = seqMtf->n + 1;
     matrix->columns = 26;
 
@@ -152,23 +164,25 @@ static BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleFo
 #ifdef PRINT_PSSM
         fprintf(f, "matrix %i : ", i);
 #endif
-        // initialize all rows with BLAST_SCORE_MIN
+        // initialize all rows with custom score, or BLAST_SCORE_MIN; to match what Aron's function creates
         for (j=0; j<matrix->columns; j++)
-            matrix->matrix[i][j] = BLAST_SCORE_MIN;
+            matrix->matrix[i][j] = (j == 21 ? -1 : (j == 25 ? -4 : BLAST_SCORE_MIN));
+
         // set scores from threader matrix
         if (i < seqMtf->n) {
             for (j=0; j<seqMtf->AlphabetSize; j++) {
                 matrix->matrix[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
-                    seqMtf->ww[i][j] / Threader::SCALING_FACTOR;
+                    Round(((double) seqMtf->ww[i][j]) / Threader::SCALING_FACTOR);
             }
         }
 #ifdef PRINT_PSSM
-        for (j=0; j<seqMtf->AlphabetSize; j++)
-            fprintf(f, "%i ", matrix->matrix[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)]);
+        for (j=0; j<matrix->columns; j++)
+            fprintf(f, "%i ", matrix->matrix[i][j]);
         fprintf(f, "\n");
 #endif
     }
 
+#ifdef _DEBUG
     matrix->posFreqs = (Nlm_FloatHi **) MemNew(matrix->rows * sizeof(Nlm_FloatHi *));
     for (i=0; i<matrix->rows; i++) {
         matrix->posFreqs[i] = (Nlm_FloatHi *) MemNew(matrix->columns * sizeof(Nlm_FloatHi));
@@ -188,18 +202,30 @@ static BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleFo
 #endif
     }
 
+    // we're not actually using the frequency table; just printing it out for debugging/testing
+    for (i=0; i<matrix->rows; i++) MemFree(matrix->posFreqs[i]);
+    MemFree(matrix->posFreqs);
+#endif // _DEBUG
+
+    matrix->posFreqs = NULL;
+
 #ifdef PRINT_PSSM
     fclose(f);
 #endif
 
     FreeSeqMtf(seqMtf);
+    BlastKarlinBlkDestruct(karlinBlock);
     return matrix;
 }
 
 static BLAST_OptionsBlkPtr CreateBlastOptionsBlk(void)
 {
     BLAST_OptionsBlkPtr bob = BLASTOptionNew("blastp", true);
-    bob->db_length = 1000000;   // approx. # aligned columns in CDD database
+//    bob->db_length = 1000000;   // approx. # aligned columns in CDD database
+    bob->db_length = 923758;    // size of in-house CDD database
+//    bob->is_rps_blast = TRUE;
+//    bob->no_check_score = FALSE;
+//    bob->discontinuous = TRUE;
     return bob;
 }
 

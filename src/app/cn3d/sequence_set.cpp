@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2002/07/12 13:24:10  thiessen
+* fixes for PSSM creation to agree with cddumper/RPSBLAST
+*
 * Revision 1.45  2002/01/24 20:08:17  thiessen
 * fix local id problem
 *
@@ -506,9 +509,9 @@ void Sequence::AddCSeqId(SeqIdPtr *id, bool addAllTypes) const
         if (!addAllTypes) return;
     }
     if (identifier->accession.size() > 0) {
-        TextSeqIdPtr gbid = TextSeqIdNew();
-        gbid->accession = StrSave(identifier->accession.c_str());
-        ValNodeAddPointer(id, SEQID_GENBANK, gbid);
+        ObjectIdPtr local = ObjectIdNew();
+        local->str = StrSave(identifier->accession.c_str());
+        ValNodeAddPointer(id, SEQID_LOCAL, local);
         if (!addAllTypes) return;
     }
 }

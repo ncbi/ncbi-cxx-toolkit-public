@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.106  2002/07/12 13:24:10  thiessen
+* fixes for PSSM creation to agree with cddumper/RPSBLAST
+*
 * Revision 1.105  2002/07/03 13:39:40  thiessen
 * fix for redundant sequence removal
 *
@@ -661,7 +664,8 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
             ") disagrees with master sequence (apparently from " << master->identifier->mmdbID << ')');
         return;
     }
-    if (objects.size() == 0 && structureLimit > 0 && masterMMDBID != MoleculeIdentifier::VALUE_NOT_SET)
+    if (objects.size() == 0 && structureLimit > 0 && masterMMDBID != MoleculeIdentifier::VALUE_NOT_SET &&
+            master->identifier->accession != "consensus")   // special case for looking at "raw" CD's
         LoadMaster(masterMMDBID);
 
     // cross-match master sequence and structure

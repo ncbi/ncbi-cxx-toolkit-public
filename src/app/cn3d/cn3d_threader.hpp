@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/07/12 13:24:10  thiessen
+* fixes for PSSM creation to agree with cddumper/RPSBLAST
+*
 * Revision 1.14  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -86,6 +89,7 @@
 #include <vector>
 
 #include <thrdatd.h>
+#include <blastkar.h>
 
 #include "cn3d/vector_math.hpp"
 
@@ -175,7 +179,8 @@ private:
     Fld_Mtf * CreateFldMtf(const Sequence *masterSequence);
 public:
     // also used by blast module
-    static Seq_Mtf * CreateSeqMtf(const BlockMultipleAlignment *multiple, double weightPSSM);
+    static Seq_Mtf * CreateSeqMtf(const BlockMultipleAlignment *multiple,
+        double weightPSSM, BLAST_KarlinBlkPtr karlinBlock);
 };
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/07/12 13:24:10  thiessen
+* fixes for PSSM creation to agree with cddumper/RPSBLAST
+*
 * Revision 1.29  2002/05/26 21:58:46  thiessen
 * add CddDegapSeqAlign to PSSM generator
 *
@@ -186,7 +189,7 @@ static int LookupThreaderResidueNumberFromCharacterAbbrev(char r)
     return ((c != charMap.end()) ? c->second : -1);
 }
 
-const double Threader::SCALING_FACTOR = 100000;
+const double Threader::SCALING_FACTOR = 1000000;
 
 const std::string Threader::ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
 
@@ -200,7 +203,8 @@ Threader::~Threader(void)
     for (c=contacts.begin(); c!=ce; c++) FreeFldMtf(c->second);
 }
 
-Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double weightPSSM)
+Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
+    double weightPSSM, BLAST_KarlinBlkPtr karlinBlock)
 {
     // convert all sequences to Bioseqs
     multiple->GetMaster()->parentSet->CreateAllBioseqs(multiple);
@@ -222,7 +226,7 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double 
     // "spread" unaligned residues between aligned blocks, for PSSM construction
     CddDegapSeqAlign(seqAlign);
 
-    Seq_Mtf *seqMtf = CddDenDiagCposComp2(
+    Seq_Mtf *seqMtf = CddDenDiagCposComp2KBP(
         multiple->GetMaster()->parentSet->GetOrCreateBioseq(multiple->GetMaster()),
         -1, // use CddDenDiagCposComp2's empirical info-based pseudocount values
         seqAlign,
@@ -230,7 +234,8 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double 
         NULL,
         weightPSSM,
         SCALING_FACTOR,
-        NULL
+        NULL,
+        karlinBlock
     );
     TESTMSG("created Seq_Mtf (PSSM)");
 
@@ -951,7 +956,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
     trajectory = new float[gibScd->ntp];
 
     // create initial PSSM
-    if (!(seqMtf = CreateSeqMtf(masterMultiple, options.weightPSSM))) goto cleanup;
+    if (!(seqMtf = CreateSeqMtf(masterMultiple, options.weightPSSM, NULL))) goto cleanup;
 #ifdef DEBUG_THREADER
     pFile = fopen("Seq_Mtf.debug.txt", "w");
     PrintSeqMtf(seqMtf, pFile);
@@ -1070,7 +1075,7 @@ cleanup2:
         if (success && p != pe && options.mergeAfterEachSequence) {
             // re-create PSSM after each merge
             FreeSeqMtf(seqMtf);
-            if (!(seqMtf = CreateSeqMtf(masterMultiple, options.weightPSSM))) goto cleanup;
+            if (!(seqMtf = CreateSeqMtf(masterMultiple, options.weightPSSM, NULL))) goto cleanup;
         }
     }
 
@@ -1170,7 +1175,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
     if (weightPSSM < 1.0 && !(fldMtf = CreateFldMtf(multiple->GetMaster()))) goto cleanup;
 
     // create PSSM
-    if (weightPSSM > 0.0 && !(seqMtf = CreateSeqMtf(multiple, weightPSSM))) goto cleanup;
+    if (weightPSSM > 0.0 && !(seqMtf = CreateSeqMtf(multiple, weightPSSM, NULL))) goto cleanup;
 
     // create potential
     if (weightPSSM < 1.0 && !(rcxPtl = CreateRcxPtl(1.0 - weightPSSM))) goto cleanup;
