@@ -337,7 +337,10 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             else if (pfx == "NG_") { return eAcc_refseq_genomic;         }
             else if (pfx == "NM_") { return eAcc_refseq_mrna;            }
             else if (pfx == "NP_") { return eAcc_refseq_prot;            }
+            else if (pfx == "NR_") { return eAcc_refseq_ncrna;           }
+            else if (pfx == "NS_") { return eAcc_refseq_genome; /* ? */  }
             else if (pfx == "NT_") { return eAcc_refseq_contig;          }
+            else if (pfx == "NW_") { return eAcc_refseq_wgs_intermed;    }
             // else if (pfx == "NZ_") { return eAcc_refseq_wgs_nuc;         }
             else if (pfx == "XM_") { return eAcc_refseq_mrna_predicted;  }
             else if (pfx == "XP_") { return eAcc_refseq_prot_predicted;  }
@@ -1081,6 +1084,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.45  2003/01/07 19:52:15  ucko
+ * Add more refseq types (NR_, NS_, NW_).
+ *
  * Revision 6.44  2002/12/30 23:44:42  vakatov
  * CSeq_id::GetStringDescr() -- un-freeze "strstream" to avoid a mem.leak
  *
