@@ -34,6 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 
 USING_NCBI_SCOPE;
@@ -41,6 +42,10 @@ USING_NCBI_SCOPE;
 
 int main(int argc, char* argv[])
 {
+    // Disable system popup boxes messages
+    SuppressSystemMessageBox();
+
+    // Self-check, return magic error code
     if (argc != 2) {
         return 99;
     }
@@ -68,6 +73,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/23 13:46:55  ivanov
+ * Disable system popup messages
+ *
  * Revision 1.4  2004/05/17 21:16:37  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
