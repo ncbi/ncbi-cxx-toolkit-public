@@ -143,9 +143,20 @@ public:
         return eRW_Success;
     }
 
-    virtual ERW_Result PendingCount(size_t* /*count*/)
+    virtual ERW_Result PendingCount(size_t* count)
     {
-        return eRW_NotImplemented;
+        if ( m_Buffer ) {
+            *count = m_BufferSize;
+            return eRW_Success;
+        }
+        else if ( m_OverflowFile ) {
+            *count = m_OverflowFile->good()? 1: 0;
+            return eRW_Success;
+        }
+        else {
+            *count = 0;
+            return eRW_Error;
+        }
     }
 
 
@@ -882,6 +893,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/10/23 13:46:38  vasilche
+ * Implemented PendingCount() method.
+ *
  * Revision 1.22  2003/10/22 19:08:29  vasilche
  * Added Flush() implementation.
  *
