@@ -116,7 +116,8 @@ protected:
     friend class CTSE_Info;
     friend class CSeq_annot_Info;
     friend class CBioseq_Info;
-    
+    friend class CSeq_entry_CI;
+
     CSeq_entry_Info(void);
 
     void x_DSAttachThis(void);
@@ -245,6 +246,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/11/28 15:13:25  grichenk
+* Added CSeq_entry_Handle
+*
 * Revision 1.5  2003/09/30 16:22:01  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

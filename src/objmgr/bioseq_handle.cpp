@@ -40,9 +40,7 @@
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/handle_range.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
-#include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/synonyms.hpp>
-#include <objmgr/impl/seq_loc_cvt.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
 
 #include <objects/general/Object_id.hpp>
@@ -105,6 +103,12 @@ const CSeq_entry& CBioseq_Handle::GetTopLevelSeqEntry(void) const
     // Can not use m_TSE->m_TSE since the handle may be unresolved yet
     CConstRef<CTSE_Info> tse_info(&x_GetBioseq_Info().GetTSE_Info());
     return x_GetDataSource().GetTSE(*tse_info);
+}
+
+
+const CSeq_entry_Handle CBioseq_Handle::GetTopLevelSeqEntryHandle(void) const
+{
+    return CSeq_entry_Handle(GetScope(), x_GetBioseq_Info().GetTSE_Info());
 }
 
 
@@ -402,6 +406,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/11/28 15:13:26  grichenk
+* Added CSeq_entry_Handle
+*
 * Revision 1.48  2003/11/26 17:55:57  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

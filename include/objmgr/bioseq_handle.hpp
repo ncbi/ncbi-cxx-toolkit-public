@@ -43,6 +43,7 @@
 #include <objmgr/impl/mutex_pool.hpp>
 #include <objmgr/impl/scope_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -95,6 +96,7 @@ public:
 
     // Get top level seq-entry for a bioseq
     const CSeq_entry& GetTopLevelSeqEntry(void) const;
+    const CSeq_entry_Handle GetTopLevelSeqEntryHandle(void) const;
 
     // Go up to a certain complexity level (or the nearest level of the same
     // priority if the required class is not found):
@@ -292,6 +294,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/11/28 15:13:24  grichenk
+* Added CSeq_entry_Handle
+*
 * Revision 1.46  2003/11/17 16:03:12  grichenk
 * Throw exception in CBioseq_Handle if the parent scope has been reset
 *

@@ -331,7 +331,8 @@ public:
                                           const CBioseq_Handle& bh);
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                           const CBioseq_Handle& bh);
-
+    CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
+                                          const CSeq_entry& tse);
 
     // CScope contents modification methods
     typedef CPriorityNode::TPriority TPriority;
@@ -506,6 +507,14 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
 
 
 inline
+CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
+                                              const CSeq_entry& tse)
+{
+    return m_Impl->GetBioseqHandleFromTSE(id, tse);
+}
+
+
+inline
 void CScope::AddDefaults(TPriority priority)
 {
     m_Impl->AddDefaults(priority);
@@ -596,6 +605,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2003/11/28 15:13:24  grichenk
+* Added CSeq_entry_Handle
+*
 * Revision 1.64  2003/11/21 20:33:03  grichenk
 * Added GetBioseqHandleFromTSE(CSeq_id, CSeq_entry)
 *

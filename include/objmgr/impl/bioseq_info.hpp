@@ -101,6 +101,7 @@ public:
     CSeq_inst::TMol GetBioseqMolType(void) const;
     const CSeqMap& GetSeqMap(void) const;
 
+    const TSynonyms& GetSynonyms(void) const;
     string IdsString(void) const;
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
@@ -226,6 +227,13 @@ CSeq_inst::TMol CBioseq_Info::GetBioseqMolType(void) const
 
 
 inline
+const CBioseq_Info::TSynonyms& CBioseq_Info::GetSynonyms(void) const
+{
+    return m_Synonyms;
+}
+
+
+inline
 void CBioseq_Info::x_DSAttach(void)
 {
     x_DSAttachThis();
@@ -245,6 +253,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2003/11/28 15:13:25  grichenk
+ * Added CSeq_entry_Handle
+ *
  * Revision 1.14  2003/09/30 16:22:00  vasilche
  * Updated internal object manager classes to be able to load ID2 data.
  * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
