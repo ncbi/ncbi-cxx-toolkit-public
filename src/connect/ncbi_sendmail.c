@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/02/28 21:11:47  lavr
+ * Bugfix: buffer overrun
+ *
  * Revision 6.2  2001/02/28 17:48:53  lavr
  * Some fixes; larger intermediate buffer for message body
  *
@@ -43,6 +46,7 @@
 #include "ncbi_priv.h"
 #include <connect/ncbi_sendmail.h>
 #include <connect/ncbi_socket.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #ifdef NCBI_OS_UNIX
@@ -69,35 +73,31 @@
  * read error or protocol violations).
  * Return 0 in case of call error.
  */
-static int s_SockRead(SOCK sock, char* reply, size_t replylen)
+static int s_SockRead(SOCK sock, char* reply, size_t reply_len)
 {
     int/*bool*/ done = 0;
-    int code = 0;
     size_t n = 0;
+    int code = 0;
 
-    if (!reply || !replylen)
+    if (!reply || !reply_len)
         return 0;
 
     do {
         size_t m = 0;
         char buf[4];
-        
-        if (SOCK_Read(sock, buf, 4, &m, eIO_Plain) != eIO_Success)
+
+        if (SOCK_Read(sock, buf, 4, &m, eIO_Persist) != eIO_Success)
             return SMTP_READERR;
-        
         if (m != 4)
             return SMTP_REPLYERR;
-        
-        if (buf[3] == '-') {
-            buf[3] = '\0';
-            code = atoi(buf);
-        } else if (buf[3] == ' ') {
-            buf[3] = '\0';
-            if (!code)
-                code = atoi(buf);
-            else if (code != atoi(buf))
+
+        if (buf[3] == '-' || (done = isspace((int)buf[3]))) {
+            buf[3] = 0;
+            if (!code) {
+                if (!(code = atoi(buf)))
+                    return SMTP_NOCODE;
+            } else if (code != atoi(buf))
                 return SMTP_BADCODE;
-            done = 1/*true*/;
         } else
             return SMTP_BADREPLY;
 
@@ -105,23 +105,22 @@ static int s_SockRead(SOCK sock, char* reply, size_t replylen)
             m = 0;
             if (SOCK_Read(sock, buf, 1, &m, eIO_Plain) != eIO_Success || !m)
                 return SMTP_READERR;
-            
-            if (buf[0] != '\r' && n < replylen)
+
+            if (buf[0] != '\r' && n < reply_len)
                 reply[n++] = buf[0];
-            
         } while (buf[0] != '\n');
 
         /* At least '\n' should sit in buffer */
         assert(n);
-        
         if (done)
             reply[n - 1] = 0;
-        else
+        else if (n < reply_len)
             reply[n] = ' ';
         
     } while (!done);
-    
-    return code ? code : SMTP_NOCODE;
+
+    assert(code);
+    return code;
 }
 
 
@@ -155,8 +154,8 @@ static int/*bool*/ s_SockReadResponse(SOCK sock, int code, int alt_code,
             break;
         }
         assert(message);
-        strncpy(buffer, message, buffer_len);
-        buffer[buffer_len] = '\0';
+        strncpy(buffer, message, buffer_len - 1);
+        buffer[buffer_len - 1] = '\0';
     } else if (c == code || (alt_code && c == alt_code))
         return 1/*success*/;
     return 0/*failure*/;
@@ -176,7 +175,7 @@ static int/*bool*/ s_SockWrite(SOCK sock, const char* buf)
 
 static char* s_ComposeFrom(char* buf, size_t buf_size)
 {
-    size_t buflen, hostnamelen;
+    size_t buf_len, hostname_len;
 #ifdef NCBI_OS_UNIX
     struct passwd *pwd;
     /* Get the user login name. FIXME: not MT-safe */
@@ -194,13 +193,13 @@ static char* s_ComposeFrom(char* buf, size_t buf_size)
     /* Temporary solution for login name */
     const char* login_name = "anonymous";
 #endif
-    strncpy(buf, login_name, buf_size);
+    strncpy(buf, login_name, buf_size - 1);
     buf[buf_size - 1] = '\0';
-    buflen = strlen(buf);
-    hostnamelen = buf_size - buflen;
-    if (hostnamelen-- > 1) {
-        buf[buflen++] = '@';
-        SOCK_gethostname(&buf[buflen], hostnamelen);
+    buf_len = strlen(buf);
+    hostname_len = buf_size - buf_len;
+    if (hostname_len-- > 1) {
+        buf[buf_len++] = '@';
+        SOCK_gethostname(&buf[buf_len], hostname_len);
     }
     return buf;
 }
@@ -212,7 +211,7 @@ SSendMailInfo* SendMailInfo_Init(SSendMailInfo* info)
     info->cc = 0;
     info->bcc = 0;
     if (!s_ComposeFrom(info->from, sizeof(info->from)))
-        *info->from = 0;
+        info->from[0] = 0;
     info->header = 0;
     info->mx_host = MX_HOST;
     info->mx_port = MX_PORT;
@@ -355,36 +354,36 @@ const char* CORE_SendMailEx(const char*          to,
             SENDMAIL_RETURN("Write error in sending custom header");
     }
     
+    assert(sizeof(buffer) > sizeof(MX_CRLF) && sizeof(MX_CRLF) >= 3);
     if (body && *body) {
-        size_t n = 0, l = strlen(body);
         int/*bool*/ newline = 0/*false*/;
+        size_t n = 0, m = strlen(body);
         
         if (!s_SockWrite(sock, MX_CRLF))
             SENDMAIL_RETURN("Write error in sending text body delimiter");
-        while (n < l) {
-            char ch[(sizeof(MX_CRLF) - 1)*512];
-            size_t m = 0, k = sizeof(ch);
+        while (n < m) {
+            size_t k = 0;
             
-            assert(sizeof(MX_CRLF) >= 3);
-            while (n < l && m < k - sizeof(MX_CRLF)) {
+            while (k < sizeof(buffer) - sizeof(MX_CRLF)) {
                 if (body[n] == '\n') {
-                    strcpy(&ch[m], MX_CRLF);
-                    m += sizeof(MX_CRLF) - 1;
+                    strcpy(&buffer[k], MX_CRLF);
+                    k += sizeof(MX_CRLF) - 1;
                     newline = 1/*true*/;
                 } else {
                     if (body[n] == '.' && (newline || !n)) {
-                        ch[m]   = '.';
-                        ch[++m] = '.';
-                        ch[++m] = '\0';
+                        buffer[k]   = '.';
+                        buffer[++k] = '.';
+                        buffer[++k] = '\0';
                     } else {
-                        ch[m]   = body[n];
-                        ch[++m] = '\0';
+                        buffer[k]   = body[n];
+                        buffer[++k] = '\0';
                     }
                     newline = 0/*false*/;
                 }
-                n++;
+                if (++n >= m)
+                    break;
             }
-            if (!s_SockWrite(sock, ch))
+            if (!s_SockWrite(sock, buffer))
                 SENDMAIL_RETURN("Write error in sending text body");
         }
         if ((!newline && !s_SockWrite(sock, MX_CRLF)) ||
@@ -405,4 +404,5 @@ const char* CORE_SendMailEx(const char*          to,
 }
 
 #undef SENDMAIL_READ_RESPONSE
+#undef SENDMAIL_RETURN2
 #undef SENDMAIL_RETURN
