@@ -26,12 +26,14 @@
  * Author:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
- *   Push an arbitrary block of data back to a C++ input stream.
+ *   Stream utilities:
+ *   1. Push an arbitrary block of data back to a C++ input stream.
+ *   2. Non-blocking read.
  *
  */
 
 #include <corelib/ncbistd.hpp>
-#include <util/stream_pushback.hpp>
+#include <util/stream_utils.hpp>
 #include <string.h>
 
 
@@ -45,40 +47,40 @@ BEGIN_NCBI_SCOPE
 
 class CPushback_Streambuf : public streambuf
 {
-    friend void UTIL_StreamPushback(istream& is, CT_CHAR_TYPE* buf,
-                                    streamsize buf_size, void* del_ptr);
+    friend class CStreamUtils;
+
 public:
     CPushback_Streambuf(istream& istream, CT_CHAR_TYPE* buf,
                         streamsize buf_size, void* del_ptr);
     virtual ~CPushback_Streambuf();
 
 protected:
-    virtual CT_POS_TYPE  seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
-                                 IOS_BASE::openmode which);
-    virtual CT_POS_TYPE  seekpos(CT_POS_TYPE pos, IOS_BASE::openmode which);
+    virtual CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
+                                IOS_BASE::openmode which);
+    virtual CT_POS_TYPE seekpos(CT_POS_TYPE pos, IOS_BASE::openmode which);
 
-    virtual CT_INT_TYPE  overflow(CT_INT_TYPE c);
-    virtual streamsize   xsputn(const CT_CHAR_TYPE* buf, streamsize n);
-    virtual CT_INT_TYPE  underflow(void);
-    virtual streamsize   xsgetn(CT_CHAR_TYPE* buf, streamsize n);
-    virtual streamsize   showmanyc(void);
+    virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
+    virtual streamsize  xsputn(const CT_CHAR_TYPE* buf, streamsize n);
+    virtual CT_INT_TYPE underflow(void);
+    virtual streamsize  xsgetn(CT_CHAR_TYPE* buf, streamsize n);
+    virtual streamsize  showmanyc(void);
 
-    virtual CT_INT_TYPE  pbackfail(CT_INT_TYPE c = CT_EOF);
+    virtual CT_INT_TYPE pbackfail(CT_INT_TYPE c = CT_EOF);
 
-    virtual int          sync(void);
+    virtual int         sync(void);
 
     // declared setbuf here to only throw an exception at run-time
-    virtual streambuf*   setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
+    virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
 private:
-    void                 x_FillBuffer(void);
-    void                 x_DropBuffer(void);
+    void                x_FillBuffer(void);
+    void                x_DropBuffer(void);
 
-    istream&             m_Is;      // i/o stream this streambuf is attached to
-    streambuf*           m_Sb;      // original streambuf
-    CT_CHAR_TYPE*        m_Buf;     // == 0 when the buffer has been emptied
-    streamsize           m_BufSize;
-    void*                m_DelPtr;
+    istream&            m_Is;      // i/o stream this streambuf is attached to
+    streambuf*          m_Sb;      // original streambuf
+    CT_CHAR_TYPE*       m_Buf;     // == 0 when the buffer has been emptied
+    streamsize          m_BufSize;
+    void*               m_DelPtr;
 
     static const streamsize k_MinBufSize;
 };
@@ -283,10 +285,10 @@ void CPushback_Streambuf::x_DropBuffer()
  */
 
 
-extern void UTIL_StreamPushback(istream&      is,
-                                CT_CHAR_TYPE* buf,
-                                streamsize    buf_size,
-                                void*         del_ptr)
+void CStreamUtils::Pushback(istream&      is,
+                            CT_CHAR_TYPE* buf,
+                            streamsize    buf_size,
+                            void*         del_ptr)
 {
     CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (is.rdbuf());
     _ASSERT(del_ptr <= buf);
@@ -318,13 +320,50 @@ extern void UTIL_StreamPushback(istream&      is,
 }
 
 
-extern void UTIL_StreamPushback(istream&            is,
-                                const CT_CHAR_TYPE* buf,
-                                streamsize          buf_size)
+void CStreamUtils::Pushback(istream&            is,
+                            const CT_CHAR_TYPE* buf,
+                            streamsize          buf_size)
 {
     CT_CHAR_TYPE* buf_copy = new CT_CHAR_TYPE[buf_size];
     memcpy(buf_copy, buf, buf_size);
-    UTIL_StreamPushback(is, buf_copy, buf_size, buf_copy);
+    Pushback(is, buf_copy, buf_size, buf_copy);
+}
+
+
+streamsize CStreamUtils::Readsome(istream&      is,
+                                  CT_CHAR_TYPE* buf,
+                                  streamsize    buf_size)
+{
+#ifdef NCBI_COMPILER_GCC
+#  if NCBI_COMPILER_VERSION < 300
+#    define NCBI_NO_READSOME
+#  endif
+#endif
+
+#ifdef NCBI_NO_READSOME
+#undef NCBI_NO_READSOME
+    // Special case: GCC had no readsome() prior to ver 3.0;
+    // read() will set "eof" flag if gcount() < bufferLength
+    is.read(buf, buf_size);
+    streamsize count = is.gcount();
+    // Reset "eof" flag if some data have been read
+    if (count  &&  is.eof())
+        is.clear();
+    return count;
+#else
+    // Try to read data
+    streamsize n = is.readsome(buf, buf_size);
+    if (n != 0  ||  is.eof())
+        return n; // success
+    // No data found in the buffer, try to read from the real source
+    is.read(buf, 1);
+    if ( !is.good() )
+        return 0;
+    if (buf_size == 1)
+        return 1; // Do not need more data
+    // Read more data (up to the bufferLength)
+    return is.readsome(buf+1, buf_size-1) + 1;
+#endif
 }
 
 
@@ -334,6 +373,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2002/11/27 21:08:01  lavr
+ * Rename "stream_pushback" -> "stream_utils" and enclose utils in a class
+ * Add new utility method Readsome() for non-blocking read
+ *
  * Revision 1.11  2002/10/29 22:06:27  ucko
  * Make *buf const in the copying version of UTIL_StreamPushback.
  *
