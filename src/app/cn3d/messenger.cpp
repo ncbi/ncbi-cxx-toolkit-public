@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/07/02 16:13:49  thiessen
+* allow for NULL structureWindow
+*
 * Revision 1.28  2002/06/05 14:28:39  thiessen
 * reorganize handling of window titles
 *
@@ -214,13 +217,15 @@ void Messenger::ProcessRedraws(void)
     }
 
     if (redrawAllStructures) {
-        structureWindow->glCanvas->SetCurrent();
-		structureWindow->glCanvas->renderer->Construct();
-        structureWindow->glCanvas->renderer->NewView(0,0);
-		structureWindow->glCanvas->Refresh(false);
+        if (structureWindow) {
+            structureWindow->glCanvas->SetCurrent();
+            structureWindow->glCanvas->renderer->Construct();
+            structureWindow->glCanvas->renderer->NewView(0,0);
+            structureWindow->glCanvas->Refresh(false);
+        }
 		redrawAllStructures = false;
     }
-    else if (redrawMolecules.size() > 0 && structureWindow != NULL) {
+    else if (redrawMolecules.size() > 0) {
         std::map < const StructureObject * , bool > hetsRedrawn;
         RedrawMoleculeList::const_iterator m, me = redrawMolecules.end();
         for (m=redrawMolecules.begin(); m!=me; m++) {
@@ -234,9 +239,11 @@ void Messenger::ProcessRedraws(void)
             object->graph->RedrawMolecule(m->first->id);
             hetsRedrawn[object] = true;
         }
+        if (structureWindow) {
+            structureWindow->glCanvas->renderer->NewView(0,0);
+            structureWindow->glCanvas->Refresh(false);
+        }
         redrawMolecules.clear();
-        structureWindow->glCanvas->renderer->NewView(0,0);
-        structureWindow->glCanvas->Refresh(false);
     }
 }
 
@@ -408,9 +415,11 @@ bool Messenger::RemoveAllHighlights(bool postRedraws)
     if (postRedraws) {
         if (anyRemoved) PostRedrawAllSequenceViewers();
 
-        MoleculeHighlightMap::const_iterator h, he = highlights.end();
-        for (h=highlights.begin(); h!=he; h++)
-            RedrawMoleculesWithIdentifier(h->first, structureWindow->glCanvas->structureSet);
+        if (structureWindow) {
+            MoleculeHighlightMap::const_iterator h, he = highlights.end();
+            for (h=highlights.begin(); h!=he; h++)
+                RedrawMoleculesWithIdentifier(h->first, structureWindow->glCanvas->structureSet);
+        }
     }
 
     highlights.clear();
@@ -424,9 +433,11 @@ void Messenger::SetHighlights(const MoleculeHighlightMap& newHighlights)
     highlights = newHighlights;
 
     PostRedrawAllSequenceViewers();
-    MoleculeHighlightMap::const_iterator h, he = highlights.end();
-    for (h=highlights.begin(); h!=he; h++)
-        RedrawMoleculesWithIdentifier(h->first, structureWindow->glCanvas->structureSet);
+    if (structureWindow) {
+        MoleculeHighlightMap::const_iterator h, he = highlights.end();
+        for (h=highlights.begin(); h!=he; h++)
+            RedrawMoleculesWithIdentifier(h->first, structureWindow->glCanvas->structureSet);
+    }
 }
 
 void Messenger::SuspendHighlighting(bool suspend)
@@ -528,7 +539,7 @@ void Messenger::SetAllWindowTitles(void) const
     SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
     for (q=sequenceViewers.begin(); q!=qe; q++)
         (*q)->SetWindowTitle();
-    structureWindow->SetWindowTitle();
+    if (structureWindow) structureWindow->SetWindowTitle();
 }
 
 END_SCOPE(Cn3D)
