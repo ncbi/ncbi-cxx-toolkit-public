@@ -47,7 +47,33 @@
 
 BEGIN_NCBI_SCOPE
 
-class CNWAlignerException;
+
+// Exceptions
+//
+
+class CNWAlignerException : public CException 
+{
+public:
+    enum EErrCode {
+        eBadParameter,
+        eInvalidSequence
+    };
+    virtual const char* GetErrCodeString(void) const {
+        switch ( GetErrCode() ) {
+        case eBadParameter:
+            return "One or more parameters passed are invalid";
+        case eInvalidSequence:
+            return "Sequence contains one or more invalid characters";
+        default:
+            return CException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CNWAlignerException, CException);
+};
+
+
+// NW algorithm encapsulation
+//
 
 class CNWAligner
 {
@@ -125,36 +151,15 @@ private:
 };
 
 
-
-// Exceptions
-//
-
-class CNWAlignerException : public CException 
-{
-public:
-    enum EErrCode {
-        eBadParameter,
-        eInvalidSequence
-    };
-    virtual const char* GetErrCodeString(void) const {
-        switch ( GetErrCode() ) {
-        case eBadParameter:
-            return "One or more parameters passed are invalid";
-        case eInvalidSequence:
-            return "Sequence contains one or more invalid characters";
-        default:
-            return CException::GetErrCodeString();
-        }
-    }
-    NCBI_EXCEPTION_DEFAULT(CNWAlignerException, CException);
-};
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/12/09 15:44:40  kapustin
+ * exception forward declaration removed
+ *
  * Revision 1.1  2002/12/06 17:40:12  ivanov
  * Initial revision
  *
