@@ -65,11 +65,16 @@ public:
     enum EAddFlags {
         // ObjMgr is used to identify sequences and obtain a bioseqhandle.
         // Also used to calc scores and determine the type of molecule
-        fDontUseObjMgr            = 0x01,
+        fDontUseObjMgr        = 0x01,
 
         // Determine score of each aligned segment in the process of mixing
         // (can only be set in addition to fUseObjMgr)
-        fCalcScore            = 0x02
+        fCalcScore            = 0x02,
+
+        // Force translation of nucleotide rows
+        // This will result in an output Dense-seg that has Widths,
+        // no matter if the whole alignment consists of nucleotides only.
+        fForceTranslation     = 0x0200
     };
     typedef int TAddFlags; // binary OR of EMergeFlags
 
@@ -135,6 +140,10 @@ private:
     void x_CreateDenseg        (void);
     void x_ConsolidateGaps     (TSegmentsContainer& gapped_segs);
     void x_MinimizeGaps        (TSegmentsContainer& gapped_segs);
+    void  x_IdentifyAlnMixSeq   (CRef<CAlnMixSeq>& aln_seq, const CSeq_id& seq_id);
+
+
+    CRef<CDense_seg> x_ExtendDSWithWidths(const CDense_seg& ds);
 
 
     static bool x_CompareAlnSeqScores  (const CAlnMixSeq* aln_seq1,
@@ -196,6 +205,7 @@ public:
         : m_DS_Count(0),
           m_Score(0),
           m_Width(1),
+          m_Frame(-1),
           m_RefBy(0),
           m_ExtraRow(0),
           m_DSIndex(0)
@@ -210,6 +220,7 @@ public:
     int                   m_Score;
     bool                  m_IsAA;
     int                   m_Width;
+    int                   m_Frame;
     bool                  m_PositiveStrand;
     TStarts               m_Starts;
     CAlnMixSeq *          m_RefBy;
@@ -311,6 +322,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2003/12/08 21:28:04  todorov
+* Forced Translation of Nucleotide Sequences
+*
 * Revision 1.32  2003/11/03 14:43:52  todorov
 * Use CDense_seg::Validate()
 *

@@ -386,6 +386,9 @@ void CAlnMgrTestApp::View5()
         cout << "Row: " << row << endl;
         for (int seg=0; seg<m_AV->GetNumSegs(); seg++) {
             
+            // seg
+            cout << "\t" << seg << ": ";
+
             // aln coords
             cout << m_AV->GetAlnStart(seg) << "-"
                  << m_AV->GetAlnStop(seg) << " ";
@@ -531,6 +534,8 @@ int CAlnMgrTestApp::Run(void)
         m_AV->SetAnchor(args["a"].AsInteger());
     }
 
+    cout << m_AV->GetAlnPosFromSeqPos(46, 3841, CAlnMap::eLeft);
+
     int screen_width = args["w"].AsInteger();
     m_AV->SetGapChar('-');
     m_AV->SetEndChar('.');
@@ -563,6 +568,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/12/08 21:28:04  todorov
+* Forced Translation of Nucleotide Sequences
+*
 * Revision 1.10  2003/09/26 15:30:07  todorov
 * +Print segments
 *

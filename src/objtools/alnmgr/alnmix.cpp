@@ -177,13 +177,33 @@ void CAlnMix::Add(const CSeq_align& aln, TAddFlags flags)
 
 void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 {
-    if (m_InputDSsMap.find((void *)&ds) != m_InputDSsMap.end()) {
+    const CDense_seg* dsp = &ds;
+
+    if (m_InputDSsMap.find((void *)dsp) != m_InputDSsMap.end()) {
         return; // it has already been added
     }
     x_Reset();
 #if _DEBUG
-    ds.Validate(true);
+    dsp->Validate(true);
 #endif    
+    m_InputDSsMap[(void *)dsp] = dsp;
+
+    // translate (extend with widths) the dense-seg if necessary
+    if (flags & fForceTranslation  &&  !dsp->IsSetWidths()) {
+        if (flags & fDontUseObjMgr) {
+            string errstr = string("CAlnMix::Add(): ") 
+                + "Cannot force translation for Dense_seg "
+                + NStr::IntToString(m_InputDSs.size() + 1) + ". "
+                + "Neither CDense_seg::m_Widths are supplied, "
+                + "nor OM is used to identify molecule type.";
+            NCBI_THROW(CAlnException, eMergeFailure, errstr);
+        } else {
+            m_InputDSs.push_back(x_ExtendDSWithWidths(*dsp));
+            dsp = m_InputDSs.back();
+        }
+    } else {
+        m_InputDSs.push_back(CConstRef<CDense_seg>(dsp));
+    }
 
     if (flags & fDontUseObjMgr  &&  flags & fCalcScore) {
         NCBI_THROW(CAlnException, eMergeFailure, "CAlnMix::Add(): "
@@ -191,28 +211,26 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
     }
     m_AddFlags = flags;
 
-    m_InputDSsMap[(void *)&ds] = &ds;
-    m_InputDSs.push_back(CConstRef<CDense_seg>(&ds));
     int ds_index = m_InputDSs.size();
 
     vector<CRef<CAlnMixSeq> > ds_seq;
 
     // check the widths
-    if (ds.IsSetWidths()) {
-        if (ds.GetWidths().size() != (size_t) ds.GetDim()) {
+    if (dsp->IsSetWidths()) {
+        if (dsp->GetWidths().size() != (size_t) dsp->GetDim()) {
             string errstr = string("CAlnMix::Add(): ")
                 + "Dense-seg "
                 + NStr::IntToString(ds_index)
                 + " has incorrect widths size ("
-                + NStr::IntToString(ds.GetWidths().size())
+                + NStr::IntToString(dsp->GetWidths().size())
                 + "). Should be equal to its dim ("
-                + NStr::IntToString(ds.GetDim()) + ").";
+                + NStr::IntToString(dsp->GetDim()) + ").";
             NCBI_THROW(CAlnException, eMergeFailure, errstr);
         }
     }
 
     //store the seqs
-    for (CAlnMap::TNumrow row = 0;  row < ds.GetDim();  row++) {
+    for (CAlnMap::TNumrow row = 0;  row < dsp->GetDim();  row++) {
 
         CRef<CAlnMixSeq> aln_seq;
 
@@ -220,7 +238,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
             // identify sequences by their seq ids as provided by
             // the dense seg (not as reliable as with OM, but faster)
             CRef<CSeq_id> seq_id(new CSeq_id);
-            seq_id->Assign(*ds.GetIds()[row]);
+            seq_id->Assign(*dsp->GetIds()[row]);
 
             TSeqIdMap::iterator it = m_SeqIds.find(seq_id);
             if (it == m_SeqIds.end()) {
@@ -228,85 +246,47 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                 aln_seq = new CAlnMixSeq();
                 m_SeqIds[seq_id] = aln_seq;
                 aln_seq->m_SeqId = seq_id;
-                aln_seq->m_DS_Count = 1;
+                aln_seq->m_DS_Count = 0;
 
                 // add this sequence
                 m_Seqs.push_back(aln_seq);
             
                 // AA or NA?
-                if (ds.IsSetWidths()) {
-                    if (ds.GetWidths()[row] == 1) {
+                if (dsp->IsSetWidths()) {
+                    if (dsp->GetWidths()[row] == 1) {
                         aln_seq->m_IsAA = true;
                         m_ContainsAA = true;
                     } else {
                         m_ContainsNA = true;
                     }
                 }
-
+                 
             } else {
                 aln_seq = it->second;
-                aln_seq->m_DS_Count++;
             }
             
         } else {
             // uniquely identify the bioseq
-            CBioseq_Handle bioseq_handle = 
-                GetScope().GetBioseqHandle(*(ds.GetIds())[row]);
-
-            if ( !bioseq_handle ) {
-                string errstr = string("CAlnMix::Add(): ") 
-                    + "Seq-id cannot be resolved: "
-                    + (ds.GetIds())[row]->AsFastaString();
-                
-                NCBI_THROW(CAlnException, eInvalidSeqId, errstr);
-            }
-
-            TBioseqHandleMap::iterator it = m_BioseqHandles.find(bioseq_handle);
-            if (it == m_BioseqHandles.end()) {
-                // add this bioseq handle
-                aln_seq = new CAlnMixSeq();
-                m_BioseqHandles[bioseq_handle] = aln_seq;
-                aln_seq->m_BioseqHandle = 
-                    &m_BioseqHandles.find(bioseq_handle)->first;
-                
-                CRef<CSeq_id> seq_id(new CSeq_id);
-                seq_id->Assign(*aln_seq->m_BioseqHandle->GetSeqId());
-                aln_seq->m_SeqId = seq_id;
-                aln_seq->m_DS_Count = 1;
-
-                // add this sequence
-                m_Seqs.push_back(aln_seq);
-            
-                // AA or NA?
-                if (aln_seq->m_BioseqHandle->GetBioseqCore()
-                    ->GetInst().GetMol() == CSeq_inst::eMol_aa) {
-                    aln_seq->m_IsAA = true;
-                    m_ContainsAA = true;
-                } else {
-                    m_ContainsNA = true;
-                }
+            x_IdentifyAlnMixSeq(aln_seq, *(ds.GetIds())[row]);
 #if _DEBUG
-                // Verify the widths (if exist)
-                if (ds.IsSetWidths()) {
-                    const int& width = ds.GetWidths()[row];
-                    if (width == 1  &&  aln_seq->m_IsAA != true  ||
-                        width == 3  &&  aln_seq->m_IsAA != false) {
-                        string errstr = string("CAlnMix::Add(): ")
-                            + "Incorrect width(" 
-                            + NStr::IntToString(width) +
-                            ") or molecule type(" + 
-                            (aln_seq->m_IsAA ? "AA" : "NA") +
-                            ").";
-                        NCBI_THROW(CAlnException, eInvalidSegment,
-                                   errstr);
-                    }
+            // Verify the widths (if exist)
+            if (dsp->IsSetWidths()) {
+                const int& width = dsp->GetWidths()[row];
+                if (width == 1  &&  aln_seq->m_IsAA != true  ||
+                    width == 3  &&  aln_seq->m_IsAA != false) {
+                    string errstr = string("CAlnMix::Add(): ")
+                        + "Incorrect width(" 
+                        + NStr::IntToString(width) +
+                        ") or molecule type(" + 
+                        (aln_seq->m_IsAA ? "AA" : "NA") +
+                        ").";
+                    NCBI_THROW(CAlnException, eInvalidSegment,
+                               errstr);
                 }
-#endif
-            } else {
-                aln_seq = it->second;
-                aln_seq->m_DS_Count++;
             }
+#endif
         }
+        aln_seq->m_DS_Count++;
         ds_seq.push_back(aln_seq);
     }
 
@@ -317,21 +297,21 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
     bool             single_chunk;
     CAlnMap::TNumrow first_non_gapped_row_found;
     bool             strands_exist = 
-        ds.GetStrands().size() == (size_t)ds.GetNumseg() * ds.GetDim();
+        dsp->GetStrands().size() == (size_t)dsp->GetNumseg() * dsp->GetDim();
 
-    for (CAlnMap::TNumseg seg =0;  seg < ds.GetNumseg();  seg++) {
-        len = ds.GetLens()[seg];
+    for (CAlnMap::TNumseg seg =0;  seg < dsp->GetNumseg();  seg++) {
+        len = dsp->GetLens()[seg];
         single_chunk = true;
 
-        for (CAlnMap::TNumrow row1 = 0;  row1 < ds.GetDim();  row1++) {
-            if ((start1 = ds.GetStarts()[seg_off + row1]) >= 0) {
+        for (CAlnMap::TNumrow row1 = 0;  row1 < dsp->GetDim();  row1++) {
+            if ((start1 = dsp->GetStarts()[seg_off + row1]) >= 0) {
                 //search for a match for the piece of seq on row1
 
                 CRef<CAlnMixSeq> aln_seq1 = ds_seq[row1];
 
                 for (CAlnMap::TNumrow row2 = row1+1;
-                     row2 < ds.GetDim();  row2++) {
-                    if ((start2 = ds.GetStarts()[seg_off + row2]) >= 0) {
+                     row2 < dsp->GetDim();  row2++) {
+                    if ((start2 = dsp->GetStarts()[seg_off + row2]) >= 0) {
                         //match found
                         if (single_chunk) {
                             single_chunk = false;
@@ -362,11 +342,11 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                         ENa_strand strand1 = eNa_strand_plus;
                         ENa_strand strand2 = eNa_strand_plus;
                         if (strands_exist) {
-                            if (ds.GetStrands()[seg_off + row1] 
+                            if (dsp->GetStrands()[seg_off + row1] 
                                 == eNa_strand_minus) {
                                 strand1 = eNa_strand_minus;
                             }
-                            if (ds.GetStrands()[seg_off + row2] 
+                            if (dsp->GetStrands()[seg_off + row2] 
                                 == eNa_strand_minus) {
                                 strand2 = eNa_strand_minus;
                             }
@@ -456,7 +436,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                 }
             }
         }
-        seg_off += ds.GetDim();
+        seg_off += dsp->GetDim();
     }
 }
 
@@ -502,7 +482,8 @@ void CAlnMix::x_Merge()
     }}
 
     // Set the widths if the mix contains both AA & NA
-    if (m_ContainsNA  &&  m_ContainsAA) {
+    // or in case we force translation
+    if (m_ContainsNA  &&  m_ContainsAA  ||  m_AddFlags & fForceTranslation) {
         ITERATE (TSeqs, seq_i, m_Seqs) {
             (*seq_i)->m_Width = (*seq_i)->m_IsAA ? 1 : 3;
         }
@@ -568,7 +549,7 @@ void CAlnMix::x_Merge()
 
         curr_len = len = match->m_Len;
 
-        // is it a match_i with this refseq?
+        // is it a match with this refseq?
         if (match->m_AlnSeq1 == refseq) {
             seq1 = match->m_AlnSeq1;
             start1 = match->m_Start1;
@@ -611,6 +592,37 @@ void CAlnMix::x_Merge()
             if (seq2) {
                 width2 = seq2->m_Width;
             }
+
+            // in case of translated refseq
+            if (width1 == 3) {
+
+                // check the frame 
+                int frame = start1 % 3;
+                if (seq1->m_Starts.empty()) {
+                    seq1->m_Frame = frame;
+                } else {
+                    while (seq1->m_Frame != frame) {
+                        if (!seq1->m_ExtraRow) {
+                            // create an extra row
+                            CRef<CAlnMixSeq> row (new CAlnMixSeq);
+                            row->m_BioseqHandle = seq1->m_BioseqHandle;
+                            row->m_SeqId = seq1->m_SeqId;
+                            row->m_Width = seq1->m_Width;
+                            row->m_Frame = frame;
+                            row->m_SeqIndex = seq1->m_SeqIndex;
+                            if (m_MergeFlags & fQuerySeqMergeOnly) {
+                                row->m_DSIndex = match->m_DSIndex;
+                            }
+                            m_ExtraRows.push_back(row);
+                            seq1->m_ExtraRow = row;
+                            seq1 = match->m_AlnSeq1 = seq1->m_ExtraRow;
+                            break;
+                        }
+                        seq1 = match->m_AlnSeq1 = seq1->m_ExtraRow;
+                    }
+                }
+            }
+
 
             // this match is used erase from seq1 list
             if ( !first_refseq ) {
@@ -1764,7 +1776,7 @@ void CAlnMix::x_CreateDenseg()
     }
 
     // widths
-    if (m_ContainsNA  &&  m_ContainsAA) {
+    if (m_ContainsNA  &&  m_ContainsAA  ||  m_AddFlags & fForceTranslation) {
         CDense_seg::TWidths&  widths  = m_DS->SetWidths();
         widths.resize(numrows);
         for (numrow = 0;  numrow < numrows;  numrow++) {
@@ -1777,6 +1789,106 @@ void CAlnMix::x_CreateDenseg()
 }
 
 
+CRef<CDense_seg> CAlnMix::x_ExtendDSWithWidths(const CDense_seg& ds)
+{
+    if (ds.IsSetWidths()) {
+        NCBI_THROW(CAlnException, eMergeFailure,
+                   "CAlnMix::x_ExtendDSWithWidths(): "
+                   "Widths already exist for the input alignment");
+    }
+
+    bool contains_AA = false, contains_NA = false;
+    CRef<CAlnMixSeq> aln_seq;
+    for (size_t numrow = 0;  numrow < ds.GetDim();  numrow++) {
+        x_IdentifyAlnMixSeq(aln_seq, *ds.GetIds()[numrow]);
+        if (aln_seq->m_IsAA) {
+            contains_AA = true;
+        } else {
+            contains_NA = true;
+        }
+    }
+    if (contains_AA  &&  contains_NA) {
+        NCBI_THROW(CAlnException, eMergeFailure,
+                   "CAlnMix::x_ExtendDSWithWidths(): "
+                   "Incorrect input Dense-seg: Contains both AAs and NAs but "
+                   "widths do not exist!");
+    }        
+
+    CRef<CDense_seg> new_ds(new CDense_seg());
+
+    // copy from the original
+    new_ds->Assign(ds);
+
+    if (contains_NA) {
+        // fix the lengths
+        const CDense_seg::TLens& lens     = ds.GetLens();
+        CDense_seg::TLens&       new_lens = new_ds->SetLens();
+        for (size_t numseg = 0; numseg < ds.GetNumseg(); numseg++) {
+            if (lens[numseg] % 3) {
+                string errstr =
+                    string("CAlnMix::x_ExtendDSWithWidths(): ") +
+                    "Length of segment " + NStr::IntToString(numseg) +
+                    " is not divisible by 3.";
+                NCBI_THROW(CAlnException, eMergeFailure, errstr);
+            } else {
+                new_lens[numseg] = lens[numseg] / 3;
+            }
+        }
+    }
+
+    // add the widths
+    CDense_seg::TWidths&  new_widths  = new_ds->SetWidths();
+    new_widths.resize(ds.GetDim(), contains_NA ? 3 : 1);
+#if _DEBUG
+    new_ds->Validate(true);
+#endif
+    return new_ds;
+}
+
+
+void CAlnMix::x_IdentifyAlnMixSeq(CRef<CAlnMixSeq>& aln_seq, const CSeq_id& seq_id)
+{
+    CBioseq_Handle bioseq_handle = 
+        GetScope().GetBioseqHandle(seq_id);
+
+    if ( !bioseq_handle ) {
+        string errstr = string("CAlnMix::IdentifyAlnMixSeq(): ") 
+            + "Seq-id cannot be resolved: "
+            + (seq_id.AsFastaString());
+        
+        NCBI_THROW(CAlnException, eInvalidSeqId, errstr);
+    }
+
+    TBioseqHandleMap::iterator it = m_BioseqHandles.find(bioseq_handle);
+    if (it == m_BioseqHandles.end()) {
+        // add this bioseq handle
+        aln_seq = new CAlnMixSeq();
+        m_BioseqHandles[bioseq_handle] = aln_seq;
+        aln_seq->m_BioseqHandle = 
+            &m_BioseqHandles.find(bioseq_handle)->first;
+        
+        CRef<CSeq_id> seq_id(new CSeq_id);
+        seq_id->Assign(*aln_seq->m_BioseqHandle->GetSeqId());
+        aln_seq->m_SeqId = seq_id;
+        aln_seq->m_DS_Count = 0;
+
+        // add this sequence
+        m_Seqs.push_back(aln_seq);
+            
+        // AA or NA?
+        if (aln_seq->m_BioseqHandle->GetBioseqCore()
+            ->GetInst().GetMol() == CSeq_inst::eMol_aa) {
+            aln_seq->m_IsAA = true;
+            m_ContainsAA = true;
+        } else {
+            m_ContainsNA = true;
+        }
+    } else {
+        aln_seq = it->second;
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -1784,6 +1896,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.80  2003/12/08 21:28:03  todorov
+* Forced Translation of Nucleotide Sequences
+*
 * Revision 1.79  2003/11/24 17:11:32  todorov
 * SetWidths only if necessary
 *

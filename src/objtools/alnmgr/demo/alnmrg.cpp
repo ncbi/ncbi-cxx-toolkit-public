@@ -155,6 +155,11 @@ void CAlnMrgApp::Init(void)
          "Truncate overlaps",
          CArgDescriptions::eBoolean, "f");
 
+    arg_desc->AddDefaultKey
+        ("forcetranslation", "bool",
+         "Force translation of nucleotides",
+         CArgDescriptions::eBoolean, "f");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -293,6 +298,10 @@ void CAlnMrgApp::SetOptions(void)
         m_MergeFlags |= CAlnMix::fTruncateOverlaps;
     }
 
+    if (args["forcetranslation"]  &&  args["forcetranslation"].AsBoolean()) {
+        m_AddFlags |= CAlnMix::fForceTranslation;
+    }
+
     if (args["calcscore"]  &&  args["calcscore"].AsBoolean()) {
         m_AddFlags |= CAlnMix::fCalcScore;
     }
@@ -300,7 +309,6 @@ void CAlnMrgApp::SetOptions(void)
     if (args["noobjmgr"]  &&  args["noobjmgr"].AsBoolean()) {
         m_AddFlags |= CAlnMix::fDontUseObjMgr;
     }
-
 }
 
 void CAlnMrgApp::PrintMergedAlignment(void)
@@ -388,6 +396,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/12/08 21:28:04  todorov
+* Forced Translation of Nucleotide Sequences
+*
 * Revision 1.13  2003/11/20 23:58:07  todorov
 * Added CObjectIStream::Close before IStream::seekg
 *
