@@ -162,8 +162,9 @@ public:
                              const string& comment);
 
 private:
-    void x_IndentLine(unsigned int level, char c =' ', int len =2);
-    void x_InsertPageBreak(const string& title ="", char c= '=', int len=78);
+    void x_IndentLine(unsigned int level, char c = ' ', unsigned int len = 2);
+    void x_InsertPageBreak(const string& title = kEmptyStr,
+                           char c = '=', unsigned int len = 78);
 
     ostream& m_Out;
 };
@@ -331,6 +332,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/19 21:05:39  vakatov
+ * x_InsertPageBreak() --  title: "" -> kEmptyStr,  len:  int -> unsigned int.
+ * Fixed code indentation and simplified some code.
+ *
  * Revision 1.4  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp

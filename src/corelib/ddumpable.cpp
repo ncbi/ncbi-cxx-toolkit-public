@@ -1,4 +1,3 @@
-
 /*  $Id$
  * ===========================================================================
  *
@@ -46,27 +45,33 @@ CDebugDumpable::~CDebugDumpable(void)
     return;
 }
 
-void CDebugDumpable::EnableDebugDump( bool on)
+
+void CDebugDumpable::EnableDebugDump(bool on)
 {
     sm_DumpEnabled = on;
 }
 
 
-void CDebugDumpable::DebugDumpText(ostream& out,
-     const string& bundle, unsigned int depth) const
+void CDebugDumpable::DebugDumpText(ostream&      out,
+                                   const string& bundle,
+                                   unsigned int  depth)
+    const
 {
-    if (sm_DumpEnabled) {
+    if ( sm_DumpEnabled ) {
         CDebugDumpFormatterText ddf(out);
-        DebugDumpFormat( ddf, bundle, depth);
+        DebugDumpFormat(ddf, bundle, depth);
     }
 }
 
+
 void CDebugDumpable::DebugDumpFormat(CDebugDumpFormatter& ddf,
-     const string& bundle, unsigned int depth) const
+                                     const string&        bundle,
+                                     unsigned int         depth)
+    const
 {
-    if (sm_DumpEnabled) {
+    if ( sm_DumpEnabled ) {
         CDebugDumpContext ddc(ddf, bundle);
-        DebugDump( ddc, depth);
+        DebugDump(ddc, depth);
     }
 }
 
@@ -74,39 +79,47 @@ void CDebugDumpable::DebugDumpFormat(CDebugDumpFormatter& ddf,
 //---------------------------------------------------------------------------
 //  CDebugDumpContext provides client interface in the form [name=value]
 
-CDebugDumpContext::CDebugDumpContext(
-    CDebugDumpFormatter& formatter, const string& bundle)
-    : m_Parent(*this), m_Formatter(formatter), m_Title(bundle)
+CDebugDumpContext::CDebugDumpContext(CDebugDumpFormatter& formatter,
+                                     const string&        bundle)
+    : m_Parent(*this),
+      m_Formatter(formatter),
+      m_Title(bundle)
 {
-    m_Level = 0;
+    m_Level        = 0;
     m_Start_Bundle = true;
-    m_Started = false;
+    m_Started      = false;
 }
+
 
 CDebugDumpContext::CDebugDumpContext(CDebugDumpContext& ddc)
-    : m_Parent(ddc), m_Formatter(ddc.m_Formatter)
+    : m_Parent(ddc),
+      m_Formatter(ddc.m_Formatter)
 {
     m_Parent.x_VerifyFrameStarted();
-    m_Level = m_Parent.m_Level+1;
+    m_Level        = m_Parent.m_Level + 1;
     m_Start_Bundle = false;
-    m_Started = false;
+    m_Started      = false;
 }
 
+
 CDebugDumpContext::CDebugDumpContext(CDebugDumpContext& ddc,
-    const string& bundle)
-    : m_Parent(ddc), m_Formatter(ddc.m_Formatter), m_Title(bundle)
+                                     const string&      bundle)
+    : m_Parent(ddc),
+      m_Formatter(ddc.m_Formatter),
+      m_Title(bundle)
 {
     m_Parent.x_VerifyFrameStarted();
-    m_Level = m_Parent.m_Level+1;
+    m_Level        = m_Parent.m_Level + 1;
     m_Start_Bundle = true;
-    m_Started = false;
+    m_Started      = false;
 }
+
 
 CDebugDumpContext::~CDebugDumpContext(void)
 {
-    if (&m_Parent == this) {
+    if (&m_Parent == this)
         return;
-    }
+
     x_VerifyFrameStarted();
     x_VerifyFrameEnded();
     if (m_Level == 1) {
@@ -117,90 +130,96 @@ CDebugDumpContext::~CDebugDumpContext(void)
 
 void CDebugDumpContext::SetFrame(const string& frame)
 {
-    if (m_Started) {
+    if ( m_Started )
         return;
-    }
+
     if (m_Start_Bundle) {
-        m_Started = m_Formatter.StartBundle( m_Level, m_Title);
+        m_Started = m_Formatter.StartBundle(m_Level, m_Title);
     } else {
-        m_Title = frame;
-        m_Started = m_Formatter.StartFrame( m_Level, m_Title);
+        m_Title   = frame;
+        m_Started = m_Formatter.StartFrame(m_Level, m_Title);
     }
 }
 
 
-void CDebugDumpContext::Log(const string& name, const string& value,
-    CDebugDumpFormatter::EValueType type, const string& comment)
+void CDebugDumpContext::Log(const string&                   name,
+                            const string&                   value,
+                            CDebugDumpFormatter::EValueType type,
+                            const string&                   comment)
 {
     x_VerifyFrameStarted();
-    if (m_Started) {
+    if ( m_Started ) {
         m_Formatter.PutValue(m_Level, name, value, type, comment);
     }
 }
 
 
 void CDebugDumpContext::Log(const string& name, bool value,
-    const string& comment)
+                            const string& comment)
 {
-    Log(name,NStr::BoolToString(value),CDebugDumpFormatter::eValue,comment);
+    Log(name, NStr::BoolToString(value), CDebugDumpFormatter::eValue, comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, long value,
-    const string& comment)
+                            const string& comment)
 {
-    Log(name,NStr::IntToString(value),CDebugDumpFormatter::eValue,comment);
+    Log(name, NStr::IntToString(value), CDebugDumpFormatter::eValue, comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, unsigned long value,
-    const string& comment)
+                            const string& comment)
 {
-    Log(name,NStr::UIntToString(value),CDebugDumpFormatter::eValue,comment);
+    Log(name, NStr::UIntToString(value), CDebugDumpFormatter::eValue, comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, double value,
-    const string& comment)
+                            const string& comment)
 {
-    Log(name,NStr::DoubleToString(value),CDebugDumpFormatter::eValue,comment);
+    Log(name, NStr::DoubleToString(value), CDebugDumpFormatter::eValue,
+        comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, const void* value,
-    const string& comment)
+                            const string& comment)
 {
-    Log(name,NStr::PtrToString(value),CDebugDumpFormatter::eValue,comment);
+    Log(name, NStr::PtrToString(value), CDebugDumpFormatter::eValue, comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, const CDebugDumpable* value,
-    unsigned int depth)
+                            unsigned int depth)
 {
-    if ((depth != 0) && value) {
-        CDebugDumpContext ddc(*this,name);
-        value->DebugDump(ddc, depth-1);
+    if (depth != 0  &&  value) {
+        CDebugDumpContext ddc(*this, name);
+        value->DebugDump(ddc, depth - 1);
     } else {
-        Log(name,NStr::PtrToString(static_cast<const void*>(value)),
+        Log(name, NStr::PtrToString(static_cast<const void*> (value)),
             CDebugDumpFormatter::ePointer);
     }
 }
+
 
 void CDebugDumpContext::x_VerifyFrameStarted(void)
 {
     SetFrame(m_Title);
 }
 
+
 void CDebugDumpContext::x_VerifyFrameEnded(void)
 {
-    if (!m_Started) {
+    if ( !m_Started )
         return;
-    }
+
     if (m_Start_Bundle) {
         m_Formatter.EndBundle(m_Level, m_Title);
     } else {
         m_Formatter.EndFrame(m_Level, m_Title);
     }
+
     m_Started = false;
 }
 
@@ -217,8 +236,8 @@ CDebugDumpFormatterText::~CDebugDumpFormatterText(void)
 {
 }
 
-bool CDebugDumpFormatterText::StartBundle(unsigned int level,
-    const string& bundle)
+bool CDebugDumpFormatterText::StartBundle(unsigned int  level,
+                                          const string& bundle)
 {
     if (level == 0) {
         x_InsertPageBreak(bundle);
@@ -231,8 +250,8 @@ bool CDebugDumpFormatterText::StartBundle(unsigned int level,
 }
 
 
-void CDebugDumpFormatterText::EndBundle(  unsigned int level,
-    const string& /*bundle*/)
+void CDebugDumpFormatterText::EndBundle(unsigned int  level,
+                                        const string& /*bundle*/)
 {
     if (level == 0) {
         x_InsertPageBreak();
@@ -245,8 +264,8 @@ void CDebugDumpFormatterText::EndBundle(  unsigned int level,
 }
 
 
-bool CDebugDumpFormatterText::StartFrame(unsigned int level,
-    const string& frame)
+bool CDebugDumpFormatterText::StartFrame(unsigned int  level,
+                                         const string& frame)
 {
     m_Out << endl;
     x_IndentLine(level);
@@ -255,68 +274,62 @@ bool CDebugDumpFormatterText::StartFrame(unsigned int level,
 }
 
 
-void CDebugDumpFormatterText::EndFrame( unsigned int level,
-    const string& /*frame*/)
+void CDebugDumpFormatterText::EndFrame(unsigned int  /*level*/,
+                                       const string& /*frame*/)
 {
     m_Out << " }";
 }
 
 
 void CDebugDumpFormatterText::PutValue(unsigned int level,
-    const string& name, const string& value,
-    EValueType type, const string& comment)
+                                       const string& name, const string& value,
+                                       EValueType type, const string& comment)
 {
     m_Out << endl;
-    x_IndentLine(level+1);
-    string tb,te;
-    switch (type) {
-    default:
-    case eValue:   break;
-    case eString:  tb = te = "\""; break;
-    case ePointer: break;
+    x_IndentLine(level + 1);
+
+    m_Out << name << " = " ;
+    if (type == eString) {
+        m_Out << '"' << value << '"';
+    } else {
+        m_Out << value;
     }
-    m_Out << name << " = " << tb << value << te;
-    if (!comment.empty()) {
+
+    if ( !comment.empty() ) {
         m_Out << " (" << comment << ")";
     }
 }
 
 
-
-void CDebugDumpFormatterText::x_IndentLine(
-    unsigned int level, char c, int len)
+void CDebugDumpFormatterText::x_IndentLine(unsigned int level, char c,
+                                           unsigned int len)
 {
-    string tmp;
-    for (unsigned int i=1; i<level; ++i) {
-        for (int l=0; l<len; ++l) {
-            tmp+=c;
-        }
-    }
-    m_Out << tmp;
+    m_Out << string(level * len, c);
 }
 
-void CDebugDumpFormatterText::x_InsertPageBreak(
-    const string& title, char c, int len)
+
+void CDebugDumpFormatterText::x_InsertPageBreak(const string& title, char c,
+                                                unsigned int len)
 {
     m_Out << endl;
+
     string tmp;
-    if (!title.empty()) {
-        int i1 = (int) (len - title.length() - 2) / 2;
-        int l;
-        for (l=0; l<i1; ++l) {
-            tmp+=c;
-        }
-        tmp += " " + title + " ";
-        for (l=0; l<i1; ++l) {
-            tmp+=c;
+    if ( !title.empty() ) {
+        if (len < title.length() + 2) {
+            tmp = title;
+        } else {
+            size_t i1 = (len - title.length() - 2) / 2;
+            tmp.append(i1, c);
+            tmp += " " + title + " ";
+            tmp.append(i1, c);
         }
     } else {
-        for (int l=0; l<len; ++l) {
-            tmp+=c;
-        }
+        tmp.append(len, c);
     }
+
     m_Out << tmp;
 }
+
 
 END_NCBI_SCOPE
 
@@ -324,6 +337,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/19 21:05:41  vakatov
+ * x_InsertPageBreak() --  title: "" -> kEmptyStr,  len:  int -> unsigned int.
+ * Fixed code indentation and simplified some code.
+ *
  * Revision 1.4  2003/02/21 21:07:46  vakatov
  * Minor cast to get rid of 64-bit compilation warning
  *
@@ -336,8 +353,5 @@ END_NCBI_SCOPE
  *
  * Revision 1.1  2002/05/17 14:27:11  gouriano
  * added DebugDump base class and function to CObject
- *
- *
- *
  * ===========================================================================
  */
