@@ -81,6 +81,7 @@ public:
         eDbtagType_GeneID,
         eDbtagType_H_InvDB,
         eDbtagType_IFO,
+        eDbtagType_IMGT_GENEDB,
         eDbtagType_IMGT_HLA,
         eDbtagType_IMGT_LIGM,
         eDbtagType_ISFinder,
@@ -128,8 +129,7 @@ public:
         eDbtagType_EMBL,
         eDbtagType_DDBJ,
         eDbtagType_REBASE,
-        eDbtagType_CloneID,
-        eDbtagType_IMGT_GENEDB
+        eDbtagType_CloneID
     };
 
     // constructor
@@ -195,6 +195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/02/10 20:19:38  shomrat
+ * IMGT/GENE-DB now legal not just for RefSeq
+ *
  * Revision 1.12  2005/02/07 19:26:59  shomrat
  * Added GetUrl()
  *

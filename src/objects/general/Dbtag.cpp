@@ -77,6 +77,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("GeneID", CDbtag::eDbtagType_GeneID),
     TDbxrefPair("H-InvDB", CDbtag::eDbtagType_H_InvDB),
     TDbxrefPair("IFO", CDbtag::eDbtagType_IFO),
+    TDbxrefPair("IMGT/GENE-DB", CDbtag::eDbtagType_IMGT_GENEDB),
     TDbxrefPair("IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA),
     TDbxrefPair("IMGT/LIGM", CDbtag::eDbtagType_IMGT_LIGM),
     TDbxrefPair("ISFinder", CDbtag::eDbtagType_ISFinder),
@@ -125,7 +126,6 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     TDbxrefPair("DDBJ", CDbtag::eDbtagType_DDBJ),
     TDbxrefPair("EMBL", CDbtag::eDbtagType_EMBL),
     TDbxrefPair("GenBank", CDbtag::eDbtagType_GenBank),
-    TDbxrefPair("IMGT/GENE-DB", CDbtag::eDbtagType_IMGT_GENEDB),
     TDbxrefPair("REBASE", CDbtag::eDbtagType_REBASE)
 };
 
@@ -276,6 +276,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=retrieve&dopt=graphics&list_uids="),
     TDbtUrl(CDbtag::eDbtagType_H_InvDB, "http://www.h-invitational.jp"),
     TDbtUrl(CDbtag::eDbtagType_IFO, "http://www.ifo.or.jp/index_e.html"),
+    TDbtUrl(CDbtag::eDbtagType_IMGT_GENEDB, "http://imgt.cines.fr/cgi-bin/GENElect.jv?species=Homo+sapiens&query=2+"),
     TDbtUrl(CDbtag::eDbtagType_IMGT_LIGM, "http://imgt.cines.fr:8104/cgi-bin/IMGTlect.jv?query=202+"),
     TDbtUrl(CDbtag::eDbtagType_ISFinder, "http://www-is.biotoul.fr/scripts/is/is_spec.idc?name="),
     TDbtUrl(CDbtag::eDbtagType_InterimID, "http://www.ncbi.nlm.nih.gov/LocusLink/LocRpt.cgi?l="),
@@ -308,8 +309,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_dictyBase, "http://dictybase.org/db/cgi-bin/gene_page.pl?dictybaseid="),
     TDbtUrl(CDbtag::eDbtagType_niaEST, "http://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1="),
     TDbtUrl(CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?"),
-    TDbtUrl(CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/"),
-    TDbtUrl(CDbtag::eDbtagType_IMGT_GENEDB, "http://imgt.cines.fr/cgi-bin/GENElect.jv?species=Homo+sapiens&query=2+")
+    TDbtUrl(CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/")
 };
 typedef CStaticArrayMap<CDbtag::EDbtagType, string> TUrlPrefixMap;
 static const TUrlPrefixMap sc_UrlMap(sc_url_prefix, sizeof(sc_url_prefix));
@@ -415,6 +415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.21  2005/02/10 20:19:56  shomrat
+ * IMGT/GENE-DB now legal not just for RefSeq
+ *
  * Revision 6.20  2005/02/07 19:27:13  shomrat
  * Added GetUrl()
  *
