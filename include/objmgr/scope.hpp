@@ -85,6 +85,18 @@ struct CDataSource_ScopeInfo;
 struct SAnnotTypeSelector;
 struct SAnnotSelector;
 
+
+// Base class for CBioseq_CI to make enums visible in CScope
+class CBioseq_CI_Base {
+public:
+    enum EBioseqLevelFlag {
+        eLevel_All,
+        eLevel_Mains,
+        eLevel_Parts
+    };
+};
+
+
 class NCBI_XOBJMGR_EXPORT CScope : public CObject
 {
 public:
@@ -100,7 +112,6 @@ public:
     typedef CRef<CBioseq_ScopeInfo>                  TBioseqMapValue;
     typedef map<const CBioseq*, TBioseqMapValue>     TBioseqMap;
     typedef SSeq_id_ScopeInfo::TAnnotRefSet          TAnnotRefSet;
-
 
     // Add default data loaders from object manager
     void AddDefaults(CPriorityNode::TPriority priority = kPriority_NotSet);
@@ -212,9 +223,11 @@ private:
     CConstRef<CSeq_entry_Info> x_GetSeq_entry_Info(const CSeq_entry& entry);
 
     // Get bioseq handles for sequences from the given TSE using the filter
+    typedef vector<CBioseq_Handle> TBioseq_HandleSet;
     void x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
-                                    set<CBioseq_Handle>& handles,
-                                    CSeq_inst::EMol filter);
+                                    TBioseq_HandleSet& handles,
+                                    CSeq_inst::EMol filter,
+                                    CBioseq_CI_Base::EBioseqLevelFlag level);
 
     CConstRef<CSynonymsSet> x_GetSynonyms(CRef<CBioseq_ScopeInfo> info);
 
@@ -282,6 +295,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2003/09/03 19:59:59  grichenk
+* Added sequence filtering by level (mains/parts/all)
+*
 * Revision 1.58  2003/08/12 18:25:39  grichenk
 * Fixed default priorities
 *

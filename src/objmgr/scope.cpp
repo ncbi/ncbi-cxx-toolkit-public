@@ -686,20 +686,22 @@ void CScope::x_ResetHistory(void)
 
 
 void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
-                                        set<CBioseq_Handle>& handles,
-                                        CSeq_inst::EMol filter)
+                                        TBioseq_HandleSet& handles,
+                                        CSeq_inst::EMol filter,
+                                        CBioseq_CI_Base::EBioseqLevelFlag level)
 {
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
     TTSE_Lock tse_lock(0);
-    set< CConstRef<CBioseq_Info> > info_set;
+    CDataSource::TBioseq_InfoSet info_set;
     for (CPriority_I it(m_setDataSrc); it; ++it) {
-        tse_lock = it->GetDataSource().GetTSEHandles(tse, info_set, filter);
+        tse_lock = it->GetDataSource().GetTSEHandles(
+            tse, info_set, filter, level);
         if (tse_lock) {
             // Convert each bioseq info into bioseq handle
-            ITERATE (set< CConstRef<CBioseq_Info> >, iit, info_set) {
+            ITERATE (CDataSource::TBioseq_InfoSet, iit, info_set) {
                 CBioseq_Handle bh = GetBioseqHandle((*iit)->GetBioseq());
                 if ( bh ) {
-                    handles.insert(bh);
+                    handles.push_back(bh);
                 }
             }
             break;
@@ -800,6 +802,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2003/09/03 20:00:02  grichenk
+* Added sequence filtering by level (mains/parts/all)
+*
 * Revision 1.78  2003/08/04 17:03:01  grichenk
 * Added constructors to iterate all annotations from a
 * seq-entry or seq-annot.

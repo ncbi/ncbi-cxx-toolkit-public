@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class NCBI_XOBJMGR_EXPORT CBioseq_CI
+class NCBI_XOBJMGR_EXPORT CBioseq_CI : public CBioseq_CI_Base
 {
 public:
     // 'ctors
@@ -49,7 +49,8 @@ public:
     // Iterate over bioseqs from the entry taken from the scope. Use optional
     // filter to iterate over selected bioseq types only.
     CBioseq_CI(CScope& scope, const CSeq_entry& entry,
-        CSeq_inst::EMol filter = CSeq_inst::eMol_not_set);
+        CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
+        EBioseqLevelFlag level = eLevel_All);
     CBioseq_CI(const CBioseq_CI& bioseq_ci);
     ~CBioseq_CI(void);
 
@@ -61,12 +62,12 @@ public:
     const CBioseq_Handle* operator-> (void) const;
 
 private:
-    typedef set<CBioseq_Handle>              TBioseqHandleSet;
-    typedef TBioseqHandleSet::const_iterator THandleIterator;
+    typedef CScope::TBioseq_HandleSet         TBioseq_HandleSet;
+    typedef TBioseq_HandleSet::const_iterator THandleIterator;
 
-    CScope*          m_Scope;
-    TBioseqHandleSet m_Handles;
-    THandleIterator  m_Current;
+    CScope*           m_Scope;
+    TBioseq_HandleSet m_Handles;
+    THandleIterator   m_Current;
 };
 
 
@@ -78,10 +79,13 @@ CBioseq_CI::CBioseq_CI(void)
 }
 
 inline
-CBioseq_CI::CBioseq_CI(CScope& scope, const CSeq_entry& entry, CSeq_inst::EMol filter)
+CBioseq_CI::CBioseq_CI(CScope& scope,
+                       const CSeq_entry& entry,
+                       CSeq_inst::EMol filter,
+                       EBioseqLevelFlag level)
     : m_Scope(&scope)
 {
-    m_Scope->x_PopulateBioseq_HandleSet(entry, m_Handles, filter);
+    m_Scope->x_PopulateBioseq_HandleSet(entry, m_Handles, filter, level);
     m_Current = m_Handles.begin();
 }
 
@@ -101,11 +105,11 @@ CBioseq_CI& CBioseq_CI::operator= (const CBioseq_CI& bioseq_ci)
 {
     if (this != &bioseq_ci) {
         m_Scope = bioseq_ci.m_Scope;
-        ITERATE (TBioseqHandleSet, it, bioseq_ci.m_Handles) {
-            m_Handles.insert(*it);
-        }
+        m_Handles = bioseq_ci.m_Handles;
         if (bioseq_ci) {
-            m_Current = m_Handles.find(*bioseq_ci.m_Current);
+            THandleIterator it = bioseq_ci.m_Handles.begin();
+            m_Current = m_Handles.begin();
+            for ( ; it != bioseq_ci.m_Current; ++it, ++m_Current) {}
         }
         else {
             m_Current = m_Handles.end();
@@ -149,6 +153,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/09/03 19:59:59  grichenk
+* Added sequence filtering by level (mains/parts/all)
+*
 * Revision 1.9  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

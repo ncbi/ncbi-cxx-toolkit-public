@@ -297,10 +297,13 @@ public:
     // Fill the set with bioseq handles for all sequences from a given TSE.
     // Return empty tse lock if the entry was not found or is not a TSE.
     // "filter" may be used to select a particular sequence type.
+    // "level" may be used to select bioseqs from given levels only.
     // Used to initialize bioseq iterators.
+    typedef list< CConstRef<CBioseq_Info> > TBioseq_InfoSet;
     TTSE_Lock GetTSEHandles(const CSeq_entry& entry,
-                            set< CConstRef<CBioseq_Info> >& bioseqs,
-                            CSeq_inst::EMol filter);
+                            TBioseq_InfoSet& bioseqs,
+                            CSeq_inst::EMol filter,
+                            CBioseq_CI_Base::EBioseqLevelFlag level);
 
     CSeqMatch_Info BestResolve(CSeq_id_Handle idh);
 
@@ -434,6 +437,11 @@ private:
     // Change live/dead status of a TSE
     void x_UpdateTSEStatus(CSeq_entry& tse, bool dead);
 
+    void x_CollectBioseqs(CSeq_entry_Info& info,
+                          TBioseq_InfoSet& bioseqs,
+                          CSeq_inst::EMol filter,
+                          CBioseq_CI_Base::EBioseqLevelFlag level);
+
 #if 0
     typedef CRWLock TRWLock;
     typedef TRWLock::TReadLockGuard TReadLockGuard;
@@ -520,6 +528,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2003/09/03 20:00:00  grichenk
+* Added sequence filtering by level (mains/parts/all)
+*
 * Revision 1.64  2003/08/15 19:19:15  vasilche
 * Fixed memory leak in string packing hooks.
 * Fixed processing of 'partial' flag of features.

@@ -1324,8 +1324,9 @@ bool CDataSource::IsSynonym(const CSeq_id_Handle& h1,
 #endif
 
 TTSE_Lock CDataSource::GetTSEHandles(const CSeq_entry& entry,
-                                     set< CConstRef<CBioseq_Info> >& bioseqs,
-                                     CSeq_inst::EMol filter)
+                                     TBioseq_InfoSet& bioseqs,
+                                     CSeq_inst::EMol filter,
+                                     CBioseq_CI_Base::EBioseqLevelFlag level)
 {
     // Find TSE_Info
     CRef<CTSE_Info> tse_info;
@@ -1334,18 +1335,47 @@ TTSE_Lock CDataSource::GetTSEHandles(const CSeq_entry& entry,
         tse_info = x_FindTSE_Info(entry);
     }}
     if ( tse_info ) {
-        // Populate the map
-        ITERATE( CTSE_Info::TBioseqs, it, tse_info->m_Bioseqs ) {
-            if ( filter != CSeq_inst::eMol_not_set ) {
-                // Filter sequences
-                if (it->second->GetBioseq().GetInst().GetMol() != filter) {
-                    continue;
-                }
-            }
-            bioseqs.insert(it->second);
-        }
+        x_CollectBioseqs(*tse_info, bioseqs, filter, level);
     }
     return tse_info;
+}
+
+
+void CDataSource::x_CollectBioseqs(CSeq_entry_Info& info,
+                                   TBioseq_InfoSet& bioseqs,
+                                   CSeq_inst::EMol filter,
+                                   CBioseq_CI_Base::EBioseqLevelFlag level)
+{
+    // parts should be changed to all before adding bioseqs to the list
+    if (level != CBioseq_CI_Base::eLevel_Parts  &&
+        info.GetSeq_entry().IsSeq()) {
+        if (filter == CSeq_inst::eMol_not_set  ||
+            info.GetBioseq_Info().GetBioseq().GetInst().GetMol() == filter) {
+            bioseqs.push_back(CConstRef<CBioseq_Info>(&info.GetBioseq_Info()));
+        }
+        return;
+    }
+    NON_CONST_ITERATE(CSeq_entry_Info::TChildren, it, info.m_Children) {
+        const CSeq_entry& entry = (*it)->GetSeq_entry();
+        CBioseq_CI_Base::EBioseqLevelFlag local_level = level;
+        if (entry.IsSet()  &&
+            entry.GetSet().GetClass() == CBioseq_set::eClass_parts) {
+            switch (level) {
+            case CBioseq_CI_Base::eLevel_Mains:
+                {
+                    // Skip parts
+                    continue;
+                }
+            case CBioseq_CI_Base::eLevel_Parts:
+                {
+                    // Allow adding bioseqs from lower levels
+                    local_level = CBioseq_CI_Base::eLevel_All;
+                    break;
+                }
+            }
+        }
+        x_CollectBioseqs(**it, bioseqs, filter, local_level);
+    }
 }
 
 
@@ -1424,6 +1454,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.118  2003/09/03 20:00:02  grichenk
+* Added sequence filtering by level (mains/parts/all)
+*
 * Revision 1.117  2003/08/14 20:05:19  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.
