@@ -31,7 +31,7 @@ old_srcdir='@top_srcdir@'
 build_dir=`(cd "${script_dir}/.." ; pwd)`
 install_dir="$1"
 
-relocate_flags=""
+relocate_flags="--copy-times"
 
 #####  USAGE
 
@@ -209,6 +209,10 @@ if test "$with_object_files" = "yes"; then
    (cd $build_dir/build && find . -name "*@obj_ext@" -print |\
     cpio -pd $install_builddir)
 fi
+
+# Preserve top-level timestamps
+touch -r $build_dir/build $install_builddir
+touch -r $build_dir       $install_dir
 
 #####  MOVE mode (remove the original build dir)
 
