@@ -939,6 +939,7 @@ const string CCountries::sm_Countries[] = {
   "Sao Tome and Principe",
   "Saudi Arabia",
   "Senegal",
+  "Serbia and Montenegro",
   "Seychelles",
   "Sierra Leone",
   "Singapore",
@@ -1106,6 +1107,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/05/02 21:10:16  shomrat
+* Serbia and Montenegro restored to list of countries, but Yugoslavia also remains
+*
 * Revision 1.11  2003/04/24 16:16:00  vasilche
 * Added missing includes and forward class declarations.
 *
