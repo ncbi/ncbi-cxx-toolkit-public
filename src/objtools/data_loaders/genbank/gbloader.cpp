@@ -1139,7 +1139,8 @@ const CSeqref& CGBDataLoader::GetSeqref(const CTSE_Info& tse_info)
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "not mine TSE");
     }
-    return *GetTSEinfo(tse_info)->seqref;
+    CRef<CGBDataLoader::STSEinfo> info(GetTSEinfo(tse_info));
+    return *info->seqref;
 }
 
 
@@ -1160,6 +1161,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.104  2004/02/17 21:17:53  vasilche
+* Fixed 'non-const reference to temporary' warning.
+*
 * Revision 1.103  2004/02/04 20:59:46  ucko
 * Fix the PubSeq entry point name to something that actually exists....
 *
