@@ -245,7 +245,7 @@ CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>& filter,
         AddCustomBuildFileToFilter(filter, m_Configs, build_info);
 
     } else {
-        LOG_POST("||||||||| No project with id : " + project_id);
+        LOG_POST(Error << "No project with id : " + project_id);
     }
 }
 
@@ -267,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/04 23:59:52  gorelenk
+ * Changed log messages generation.
+ *
  * Revision 1.6  2004/02/03 17:21:59  gorelenk
  * Changed implementation of class CMsvcMasterProjectGenerator constructor.
  *

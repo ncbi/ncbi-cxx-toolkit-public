@@ -107,7 +107,7 @@ void CProjBulderApp::Init(void)
 
 int CProjBulderApp::Run(void)
 {
-    LOG_POST("Started.");
+    LOG_POST(Info << "Started.");
     // Get and check arguments
     ParseArguments();
 
@@ -153,7 +153,7 @@ int CProjBulderApp::Run(void)
     sln_gen.SaveSolution(m_Solution);
 
     //
-    LOG_POST("Finished.");
+    LOG_POST(Info << "Finished.");
     return 0;
 }
 
@@ -422,6 +422,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/02/04 23:59:52  gorelenk
+ * Changed log messages generation.
+ *
  * Revision 1.10  2004/02/03 17:14:24  gorelenk
  * Changed implementation of class CProjBulderApp member functions.
  *

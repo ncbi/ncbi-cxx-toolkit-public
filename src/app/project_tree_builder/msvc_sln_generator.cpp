@@ -226,7 +226,7 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
                 << prj_i.m_GUID << endl;
         } else {
 
-            LOG_POST("&&&&&&& Project: " + 
+            LOG_POST(Warning << "Project: " + 
                       project.m_ProjectName + " is dependend of " + id + 
                       ". But no such project");
         }
@@ -320,6 +320,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/05 00:00:48  gorelenk
+ * Changed log messages generation.
+ *
  * Revision 1.6  2004/01/28 17:55:49  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
