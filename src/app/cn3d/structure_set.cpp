@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.105  2002/07/03 13:39:40  thiessen
+* fix for redundant sequence removal
+*
 * Revision 1.104  2002/07/01 15:30:21  thiessen
 * fix for container type switch in Dense-seg
 *
@@ -1012,7 +1015,7 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
 {
     // force a save of any edits to alignment and updates first (it's okay if this has already been done)
     GlobalMessenger()->SequenceWindowsSave();
-    if (dataManager->HasDataChanged()) RemoveUnusedSequences();
+    /*if (dataManager->HasDataChanged())*/ RemoveUnusedSequences();
 
     // create and temporarily attach a style dictionary, and annotation set + camera info
     // to the data (and then remove it again, so it's never out of date)

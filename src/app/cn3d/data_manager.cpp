@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/07/03 13:39:39  thiessen
+* fix for redundant sequence removal
+*
 * Revision 1.10  2002/06/05 17:50:08  thiessen
 * title tweaks
 *
@@ -524,16 +527,16 @@ void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
 
     // update the asn sequences, keeping only those used in the multiple alignment and updates
     seqEntryList->clear();
-    std::map < const CBioseq *, bool > usedSeqs;
+    std::map < const MoleculeIdentifier *, bool > usedSeqs;
     int nStructuredSlaves = 0;
 
 // macro to add the sequence to the list if not already present
 #define CONDITIONAL_ADD_SEQENTRY(seq) do { \
-    if (usedSeqs.find((seq)->bioseqASN.GetPointer()) == usedSeqs.end()) { \
+    if (usedSeqs.find((seq)->identifier) == usedSeqs.end()) { \
         seqEntryList->resize(seqEntryList->size() + 1); \
         seqEntryList->back().Reset(new CSeq_entry); \
         seqEntryList->back().GetObject().SetSeq((seq)->bioseqASN.GetObject()); \
-        usedSeqs[(seq)->bioseqASN.GetPointer()] = true; \
+        usedSeqs[(seq)->identifier] = true; \
     } } while (0)
 
     // always add master first

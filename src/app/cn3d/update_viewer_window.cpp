@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2002/07/03 13:39:40  thiessen
+* fix for redundant sequence removal
+*
 * Revision 1.43  2002/06/05 17:25:47  thiessen
 * change 'update' to 'import' in GUI
 *
@@ -209,7 +212,7 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     editMenu->AppendSeparator();
     wxMenu *subMenu = new wxMenu;
     subMenu->Append(MID_SORT_UPDATES_IDENTIFIER, "By &Identifier");
-    editMenu->Append(MID_SORT_UPDATES, "Sort &Updates...", subMenu);
+    editMenu->Append(MID_SORT_UPDATES, "So&rt Imports...", subMenu);
     editMenu->AppendSeparator();
     editMenu->Append(MID_IMPORT_SEQUENCES, "&Import Sequences");
     editMenu->Append(MID_IMPORT_STRUCTURE, "Import S&tructure");
