@@ -41,7 +41,6 @@
 #include <objects/objmgr/scope.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
-#include <objects/id1/client.hpp>
 
 #include <vector>
 #include <algorithm>
@@ -1078,14 +1077,16 @@ bool IsBlankStringList(const list< string >& str_list)
 
 int GetGIForSeqId(const CSeq_id& id)
 {
-    return CID1Client().AskGetgi(id);
+    return 0;
+    //return CID1Client().AskGetgi(id);
 }
 
 
 
 list< CRef< CSeq_id > > GetSeqIdsForGI(int gi)
 {
-    return CID1Client().AskGetseqidsfromgi(gi);
+    return list< CRef< CSeq_id > >();
+    //return CID1Client().AskGetseqidsfromgi(gi);
 }
 
 
@@ -1098,6 +1099,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/03/24 14:41:39  shomrat
+* Removed direct calls to ID1, temporary implementation for GetGIForSeqId and getSeqIdsForGI
+*
 * Revision 1.7  2003/03/21 16:19:21  shomrat
 * Added GetGiForSeqId and GetSeqIdsForGI
 *
