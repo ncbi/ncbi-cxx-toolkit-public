@@ -3,7 +3,7 @@
 # Meta-makefile
 #################################
 
-SUB_PROJ = basic cgi dbapi objects objmgr alnmgr soap
+SUB_PROJ = basic cgi dbapi objects objmgr alnmgr soap lds
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
