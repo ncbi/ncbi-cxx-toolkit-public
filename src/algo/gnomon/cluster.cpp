@@ -316,8 +316,8 @@ void CClusterSet::InsertAlignment(const AlignVec& a)
 
 void CClusterSet::InsertCluster(CCluster clust)
 {
-    pair<ConstIt,ConstIt> lim = equal_range(clust);
-    for (ConstIt it = lim.first;  it != lim.second;  ) {
+    pair<It,It> lim = equal_range(clust);
+    for (It it = lim.first;  it != lim.second;  ) {
         clust.Insert(*it);
         erase(it++);
     }
@@ -363,7 +363,7 @@ ostream& operator<<(ostream& s, const CClusterSet& cls)
     if (num) {
         s << "Contig " << cls.Contig() << ' ' << num << endl;
     }
-    for (CClusterSet::It it = cls.begin();  it != cls.end();  ++it) {
+    ITERATE (CClusterSet, it, cls) {
         s << *it;
     }
 
@@ -377,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/06 02:47:22  ucko
+ * Fix usage of iterators -- be consistent about constness.
+ *
  * Revision 1.1  2003/10/24 15:07:25  dicuccio
  * Initial revision
  *
