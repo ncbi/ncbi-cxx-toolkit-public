@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/08/25 14:22:00  thiessen
+* minor tweaks
+*
 * Revision 1.20  2000/08/24 23:40:19  thiessen
 * add 'atomic ion' labels
 *
@@ -186,13 +189,9 @@ bool Cn3DApp::OnInit(void)
 BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU(MID_OPEN,      Cn3DMainFrame::OnOpen)
     EVT_MENU(MID_EXIT,      Cn3DMainFrame::OnExit)
-    EVT_MENU(MID_CENTER,    Cn3DMainFrame::OnSetNewCenter)
-    EVT_MENU(MID_TRANSLATE, Cn3DMainFrame::OnTranslate)
-    EVT_MENU(MID_ZOOM_IN,   Cn3DMainFrame::OnZoomIn)
-    EVT_MENU(MID_ZOOM_OUT,  Cn3DMainFrame::OnZoomOut)
-    EVT_MENU(MID_RESET,     Cn3DMainFrame::OnReset)
-    EVT_MENU(MID_SECSTRUC,  Cn3DMainFrame::OnSetSecStruc)
-    EVT_MENU(MID_WIREFRAME, Cn3DMainFrame::OnSetWireframe)
+    EVT_MENU_RANGE(MID_CENTER,      MID_RESET,      Cn3DMainFrame::OnAdjustView)
+    EVT_MENU_RANGE(MID_SECSTRUC,    MID_WIREFRAME,  Cn3DMainFrame::OnSetStyle)
+    EVT_MENU_RANGE(MID_QLOW,        MID_QHIGH,      Cn3DMainFrame::OnSetQuality)
 END_EVENT_TABLE()
 
 Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoint& pos,
@@ -223,6 +222,13 @@ Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoin
     menu->Append(MID_SECSTRUC, "&Secondary Structure");
     menu->Append(MID_WIREFRAME, "&Wireframe");
     menuBar->Append(menu, "&Style");
+
+    // Quality menu
+    menu = new wxMenu;
+    menu->Append(MID_QLOW, "&Low");
+    menu->Append(MID_QMED, "&Medium");
+    menu->Append(MID_QHIGH, "&High");
+    menuBar->Append(menu, "&Quality");
 
     SetMenuBar(menuBar);
 
@@ -258,56 +264,43 @@ void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 	Destroy();
 }
 
-void Cn3DMainFrame::OnSetNewCenter(wxCommandEvent& event)
+void Cn3DMainFrame::OnAdjustView(wxCommandEvent& event)
 {
     glCanvas->SetCurrent();
-    glCanvas->structureSet->rotationCenter = Vector(19.791, 50.519, 58.057);
-    glCanvas->Refresh(FALSE);
-}
-
-void Cn3DMainFrame::OnTranslate(wxCommandEvent& event)
-{
-    glCanvas->SetCurrent();
-    glCanvas->renderer.ChangeView(OpenGLRenderer::eXYTranslateHV, 25, 25);
-    glCanvas->Refresh(FALSE);
-}
-
-void Cn3DMainFrame::OnZoomIn(wxCommandEvent& event)
-{
-    glCanvas->SetCurrent();
-    glCanvas->renderer.ChangeView(OpenGLRenderer::eZoomIn);
-    glCanvas->Refresh(FALSE);
-}
-
-void Cn3DMainFrame::OnZoomOut(wxCommandEvent& event)
-{
-    glCanvas->SetCurrent();
-    glCanvas->renderer.ChangeView(OpenGLRenderer::eZoomOut);
-    glCanvas->Refresh(FALSE);
-}
-
-void Cn3DMainFrame::OnReset(wxCommandEvent& event)
-{
-    glCanvas->SetCurrent();
-    glCanvas->renderer.ResetCamera();
-    glCanvas->Refresh(FALSE);
-}
-
-void Cn3DMainFrame::OnSetSecStruc(wxCommandEvent& event)
-{
-    if (glCanvas->structureSet) {
-        glCanvas->SetCurrent();
-        glCanvas->structureSet->styleManager->SetToSecondaryStructure();
-        glCanvas->renderer.Construct();
-        glCanvas->Refresh(FALSE);
+    switch (event.GetId()) {
+        case MID_CENTER:
+            glCanvas->structureSet->rotationCenter = Vector(19.791, 50.519, 58.057);
+            break;
+        case MID_TRANSLATE:
+            glCanvas->renderer.ChangeView(OpenGLRenderer::eXYTranslateHV, 25, 25);
+            break;
+        case MID_ZOOM_IN:
+            glCanvas->renderer.ChangeView(OpenGLRenderer::eZoomIn);
+            break;
+        case MID_ZOOM_OUT:
+            glCanvas->renderer.ChangeView(OpenGLRenderer::eZoomOut);
+            break;
+        case MID_RESET:
+            glCanvas->renderer.ResetCamera();
+            break;
+        default: ;
     }
+    glCanvas->Refresh(FALSE);
 }
 
-void Cn3DMainFrame::OnSetWireframe(wxCommandEvent& event)
+void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
 {
     if (glCanvas->structureSet) {
         glCanvas->SetCurrent();
-        glCanvas->structureSet->styleManager->SetToWireframe();
+        switch (event.GetId()) {
+            case MID_SECSTRUC:
+                glCanvas->structureSet->styleManager->SetToSecondaryStructure();
+                break;
+            case MID_WIREFRAME:
+                glCanvas->structureSet->styleManager->SetToWireframe();
+                break;
+            default: ;
+        }
         glCanvas->renderer.Construct();
         glCanvas->Refresh(FALSE);
     }
@@ -322,7 +315,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         delete glCanvas->structureSet;
         glCanvas->structureSet = NULL;
         glCanvas->renderer.AttachStructureSet(NULL);
-        glCanvas->Refresh();
+        glCanvas->Refresh(FALSE);
     }
 
     // initialize the binary input stream 
@@ -360,7 +353,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     // Create StructureSet from mime data
     glCanvas->structureSet = new StructureSet(mime);
     glCanvas->renderer.AttachStructureSet(glCanvas->structureSet);
-    glCanvas->Refresh();
+    glCanvas->Refresh(FALSE);
 }
 
 void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
@@ -368,6 +361,18 @@ void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
     const wxString& filestr = wxFileSelector("Choose a binary ASN1 file to open");
     if (filestr.IsEmpty()) return;
     LoadFile(filestr.c_str());
+}
+
+void Cn3DMainFrame::OnSetQuality(wxCommandEvent& event)
+{
+    switch (event.GetId()) {
+        case MID_QLOW: glCanvas->renderer.SetLowQuality(); break;
+        case MID_QMED: glCanvas->renderer.SetMediumQuality(); break;
+        case MID_QHIGH: glCanvas->renderer.SetHighQuality(); break;
+        default: ;
+    }
+    glCanvas->renderer.Construct();
+    glCanvas->Refresh(FALSE);
 }
 
 

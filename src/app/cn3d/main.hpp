@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/25 14:21:32  thiessen
+* minor tweaks
+*
 * Revision 1.9  2000/08/24 23:39:54  thiessen
 * add 'atomic ion' labels
 *
@@ -123,28 +126,28 @@ public:
 
     // menu-associated methods
     enum {
-        MENU1_FILE,
+        // File menu
             MID_OPEN,
             MID_EXIT,
-        MENU2_VIEW,
+        // View menu
             MID_CENTER,
             MID_TRANSLATE,
             MID_ZOOM_IN,
             MID_ZOOM_OUT,
             MID_RESET,
-        MENU3_STYLE,
+        // Style menu
             MID_SECSTRUC,
-            MID_WIREFRAME
+            MID_WIREFRAME,
+        // Quality menu
+            MID_QLOW,
+            MID_QMED,
+            MID_QHIGH
     };
     void OnOpen(wxCommandEvent& event);
     void OnExit(wxCommandEvent& event);
-    void OnSetNewCenter(wxCommandEvent& event);
-    void OnTranslate(wxCommandEvent& event);
-    void OnZoomIn(wxCommandEvent& event);
-    void OnZoomOut(wxCommandEvent& event);
-    void OnReset(wxCommandEvent& event);
-    void OnSetSecStruc(wxCommandEvent& event);
-    void OnSetWireframe(wxCommandEvent& event);
+    void OnAdjustView(wxCommandEvent& event);
+    void OnSetStyle(wxCommandEvent& event);
+    void OnSetQuality(wxCommandEvent& event);
 
 DECLARE_EVENT_TABLE()
 };

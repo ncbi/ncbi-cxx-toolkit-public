@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/08/25 14:22:00  thiessen
+* minor tweaks
+*
 * Revision 1.12  2000/08/24 18:43:52  thiessen
 * tweaks for transparent sphere display
 *
@@ -145,15 +148,15 @@ bool Bond::Draw(const AtomSet *atomSet) const
         return false;
     }
 
-    // get Atom* for appropriate altConf
+    // get AtomCoord* for appropriate altConf
     if (!atomSet) {
         ERR_POST(Error << "Bond::Draw(data) - NULL AtomSet*");
         return false;
     }
     bool overlayEnsembles = parentSet->showHideManager->OverlayConfEnsembles();
-    const Atom *a1 = atomSet->GetAtom(atom1, overlayEnsembles);
+    const AtomCoord *a1 = atomSet->GetAtom(atom1, overlayEnsembles);
     if (!a1) return true;
-    const Atom *a2 = atomSet->GetAtom(atom2, overlayEnsembles);
+    const AtomCoord *a2 = atomSet->GetAtom(atom2, overlayEnsembles);
     if (!a2) return true;
 
     // get Style
@@ -174,13 +177,13 @@ bool Bond::Draw(const AtomSet *atomSet) const
         bondStyle.end2.style == StyleManager::eThickWormBond) {
 
         if (previousVirtual) {
-            const Atom *a0 = atomSet->GetAtom(previousVirtual->atom1, overlayEnsembles);
+            const AtomCoord *a0 = atomSet->GetAtom(previousVirtual->atom1, overlayEnsembles);
             if (a0) site0 = &(a0->site);
         }
         if (!site0) site0 = &(a1->site);
 
         if (nextVirtual) {
-            const Atom *a3 = atomSet->GetAtom(nextVirtual->atom2, overlayEnsembles);
+            const AtomCoord *a3 = atomSet->GetAtom(nextVirtual->atom2, overlayEnsembles);
             if (a3) site3 = &(a3->site);
         }
         if (!site3) site3 = &(a2->site);

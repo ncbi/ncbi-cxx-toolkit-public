@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/08/25 14:21:32  thiessen
+* minor tweaks
+*
 * Revision 1.18  2000/08/24 23:39:54  thiessen
 * add 'atomic ion' labels
 *
@@ -183,17 +186,24 @@ public:
         const Vector& unitNormal, const StrandStyle& strandStyle);
 
     // font methods (some platform-specific, until glCanvas can do fonts...)
-    bool MeasureText(const std::string& text, int *width, int *height);
     void Label(const std::string& text, const Vector& center, const Vector& color);
+
+    // quality settings
+    void SetLowQuality(void);
+    void SetMediumQuality(void);
+    void SetHighQuality(void);
 
 #ifdef __WXMSW__
     // must be same as return type (WXHFONT) of wxFont::GetHFONT()
     bool SetFont_Windows(unsigned long newFontHandle);
-private:
-    unsigned long fontHandle;
 #endif
 
 private:
+#ifdef __WXMSW__
+    unsigned long fontHandle;
+#endif
+    bool MeasureText(const std::string& text, int *width, int *height);
+
     StructureSet *structureSet;
     void SetColor(int type, double red = 0.0, double green = 0.0, double blue = 0.0, double alpha = 1.0);
     void ConstructLogo(void);

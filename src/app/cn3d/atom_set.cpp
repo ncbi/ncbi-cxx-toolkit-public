@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/25 14:22:00  thiessen
+* minor tweaks
+*
 * Revision 1.9  2000/08/03 15:12:22  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -165,7 +168,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
 
     // actually do the work of unpacking serial atom data into Atom objects
     for (int i=0; i<nAtoms; i++) {
-        Atom *atom = new Atom(this);
+        AtomCoord *atom = new AtomCoord(this);
 
         atom->site.x = (static_cast<double>(*(i_X++)))/siteScale;
         atom->site.y = (static_cast<double>(*(i_Y++)))/siteScale;
@@ -238,9 +241,9 @@ AtomSet::~AtomSet(void)
         delete const_cast<std::string *>(*i);
 }
 
-const double Atom::NO_TEMPERATURE = -1.0;
-const double Atom::NO_OCCUPANCY = -1.0;
-const double Atom::NO_ALTCONFID = '-';
+const double AtomCoord::NO_TEMPERATURE = -1.0;
+const double AtomCoord::NO_OCCUPANCY = -1.0;
+const double AtomCoord::NO_ALTCONFID = '-';
 
 bool AtomSet::SetActiveEnsemble(const std::string *ensemble)
 {
@@ -259,7 +262,7 @@ bool AtomSet::SetActiveEnsemble(const std::string *ensemble)
     return true;
 }
 
-const Atom* AtomSet::GetAtom(const AtomPntr& ap, 
+const AtomCoord* AtomSet::GetAtom(const AtomPntr& ap, 
     bool getAny, bool suppressWarning) const
 {
     AtomMap::const_iterator atomConfs = atomMap.find(MakeKey(ap));
@@ -287,7 +290,7 @@ const Atom* AtomSet::GetAtom(const AtomPntr& ap,
     return NULL;
 }
 
-Atom::Atom(StructureBase *parent) : 
+AtomCoord::AtomCoord(StructureBase *parent) : 
 	StructureBase(parent),
     averageTemperature(NO_TEMPERATURE),
     occupancy(NO_OCCUPANCY),

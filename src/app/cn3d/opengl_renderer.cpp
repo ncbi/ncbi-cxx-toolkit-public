@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/08/25 14:22:00  thiessen
+* minor tweaks
+*
 * Revision 1.23  2000/08/24 23:40:19  thiessen
 * add 'atomic ion' labels
 *
@@ -189,15 +192,39 @@ OpenGLRenderer::OpenGLRenderer(void) :
         gluQuadricOrientation(qobj, GLU_OUTSIDE);
     }
    
-    // will eventually load these from registry...
-    atomSlices = 7;
+    SetMediumQuality();
+    AttachStructureSet(NULL);
+}
+
+// will eventually load these from registry...
+void OpenGLRenderer::SetLowQuality(void)
+{
+    atomSlices = 6;
     atomStacks = 4;
     bondSides = 6;
     wormSides = 6;
-    wormSegments = 3;
+    wormSegments = 4;
     helixSides = 12;
+}
 
-    AttachStructureSet(NULL);
+void OpenGLRenderer::SetMediumQuality(void)
+{
+    atomSlices = 10;
+    atomStacks = 8;
+    bondSides = 6;
+    wormSides = 6;
+    wormSegments = 6;
+    helixSides = 12;
+}
+
+void OpenGLRenderer::SetHighQuality(void)
+{
+    atomSlices = 16;
+    atomStacks = 10;
+    bondSides = 16;
+    wormSides = 20;
+    wormSegments = 10;
+    helixSides = 30;
 }
 
 void OpenGLRenderer::Init(void) const
@@ -559,6 +586,7 @@ void OpenGLRenderer::Construct(void)
     if (structureSet) {
         structureSet->DrawAll();
     } else {
+        SetColor(GL_NONE);
         ConstructLogo();
     }
 }
@@ -1337,6 +1365,7 @@ bool OpenGLRenderer::SetFont_Windows(unsigned long newFontHandle)
         ERR_POST(Error << "OpenGLRenderer::SetFont_Windows() - wglUseFontBitmaps() failed");
         return false;
     }
+    Construct(); // text position dependent on font details
 	return true;
 }
 
@@ -1348,7 +1377,7 @@ bool OpenGLRenderer::MeasureText(const std::string& text, int *width, int *heigh
     BOOL okay = GetTextExtentPoint32(hdc, text.data(), text.size(), &textSize);
     SelectObject(hdc, currentFont);
     *width = textSize.cx;
-    *height = 0.65 * textSize.cy; // windows' text heights seem a little off...
+    *height = 0.6 * textSize.cy; // windows' text heights seem a little off..
     return (okay != 0);
 }
 #endif
@@ -1359,7 +1388,7 @@ void OpenGLRenderer::Label(const std::string& text, const Vector& center, const 
 
     if (text.empty() || !MeasureText(text, &width, &height)) return;
 
-    SetColor(GL_AMBIENT, color[0], color[1], color[2]); // all center labels white
+    SetColor(GL_AMBIENT, color[0], color[1], color[2]);
     glListBase(FONT_BASE);
     glRasterPos3d(center.x, center.y, center.z);
     glBitmap(0, 0, 0.0, 0.0, -0.5 * width, -0.5 * height, NULL);

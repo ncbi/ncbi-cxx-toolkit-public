@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/08/25 14:22:00  thiessen
+* minor tweaks
+*
 * Revision 1.14  2000/08/19 02:59:05  thiessen
 * fix tranparent sphere bug
 *
@@ -322,7 +325,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
 
     bool overlayEnsembles = parentSet->showHideManager->OverlayConfEnsembles();
     AtomStyle atomStyle;
-    const Atom *atom;
+    const AtomCoord *atom;
     double alpha;
 
     // iterate atoms; key is atomID
@@ -335,7 +338,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
         if (!parentSet->styleManager->GetAtomStyle(this, ap, &atomStyle))
             return false;
 
-        // get Atom* for appropriate altConf and draw the atom
+        // get AtomCoord* for appropriate altConf and draw the atom
         if (atomStyle.style != StyleManager::eNotDisplayed &&
             atomStyle.radius > 0.0 &&
             (atom = atomSet->GetAtom(ap, overlayEnsembles)) != NULL) {

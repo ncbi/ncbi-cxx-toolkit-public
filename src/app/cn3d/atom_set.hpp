@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/25 14:21:32  thiessen
+* minor tweaks
+*
 * Revision 1.10  2000/08/03 15:12:29  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -83,11 +86,10 @@ class Vector;
 // conformer ID. An Atom contains the spatial coordinates and any temperature,
 // occupancy, and alternate conformer data present for an atom.
 
-class Atom : public StructureBase
+class AtomCoord : public StructureBase
 {
 public:
-    Atom(StructureBase *parent);
-    //~Atom(void);
+    AtomCoord(StructureBase *parent);
 
     // public data
     Vector site;
@@ -125,7 +127,7 @@ public:
     bool SetActiveEnsemble(const std::string *ensemble);
     // get Atom based on Atom-pntr. If 'getAny' is true, then will return arbitrary
     // altConf; if false, will only return one from active ensemble
-    const Atom* GetAtom(const AtomPntr& atom, 
+    const AtomCoord* GetAtom(const AtomPntr& atom, 
         bool getAny = false, bool suppressWarning = false) const;
 
 private:
@@ -135,7 +137,7 @@ private:
     {
         return std::make_pair(ap.mID, std::make_pair(ap.rID, ap.aID)); 
     }
-    typedef LIST_TYPE < const Atom * > AtomAltList;
+    typedef LIST_TYPE < const AtomCoord * > AtomAltList;
     typedef std::map < AtomPntrKey, AtomAltList > AtomMap;
     AtomMap atomMap;
     const std::string *activeEnsemble;
