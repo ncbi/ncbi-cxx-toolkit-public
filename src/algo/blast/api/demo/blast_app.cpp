@@ -44,7 +44,6 @@ Contents: C++ driver for running BLAST
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objmgr/object_manager.hpp>
-#include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -56,12 +55,17 @@ Contents: C++ driver for running BLAST
 #include <algo/blast/api/hspstream_queue.hpp>
 
 #ifndef USE_READDB
+
 #include <algo/blast/api/seqsrc_seqdb.hpp>
+
 #else
+
+#include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #ifndef NCBI_C_TOOLKIT
 #define NCBI_C_TOOLKIT
 #endif
 #include <algo/blast/api/seqsrc_readdb.h>
+
 #endif
 
 #include "blast_input.hpp" // From working directory
@@ -164,6 +168,10 @@ void CBlastApplication::Init(void)
         CArgDescriptions::eInteger, "0");
     arg_desc->SetConstraint("scantype", new CArgAllow_Integers(0,3));
 
+    arg_desc->AddDefaultKey("stack", "stack",
+        "Use stacks instead of diagonal array for initial hits information",
+        CArgDescriptions::eBoolean, "F");
+
     arg_desc->AddDefaultKey("varword", "varword", 
         "Should variable word size be used, i.e. no partial byte extensions"
         "when checking initial word length?",
@@ -177,7 +185,8 @@ void CBlastApplication::Init(void)
         "Perform only an ungapped alignment search?",
         CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("greedy", "greedy", 
-        "Use greedy algorithm for gapped extensions: 0 no, 1 one-step, 2 two-step, 3 two-step with ungapped",
+        "Use greedy algorithm for gapped extensions:\n"
+        "0 default, -1 no, 1 one-step, 2 two-step, 3 two-step with ungapped",
         CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("gopen", "gapopen", "Penalty for opening a gap",
                             CArgDescriptions::eInteger, "0");
@@ -277,6 +286,7 @@ CBlastApplication::InitScope(void)
     }
 }
 
+#ifdef USE_READDB
 void 
 CBlastApplication::RegisterBlastDbLoader(char *dbname, bool db_is_na)
 {
@@ -288,6 +298,7 @@ CBlastApplication::RegisterBlastDbLoader(char *dbname, bool db_is_na)
                    CBlastDbDataLoader::eProtein,
         CObjectManager::eDefault);
 }
+#endif
 
 void
 CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle, 
@@ -328,10 +339,10 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
         if (args["matrix"]) {
             opt.SetMatrixName(args["matrix"].AsString().c_str());
         }
-        if (args["gopen"].AsInteger() || args["greedy"].AsInteger()) {
+        if (args["gopen"].AsInteger() || args["greedy"].AsInteger() > 0) {
             opt.SetGapOpeningCost(args["gopen"].AsInteger());
         }
-        if (args["gext"].AsInteger() || args["greedy"].AsInteger()) {
+        if (args["gext"].AsInteger() || args["greedy"].AsInteger() > 0) {
             opt.SetGapExtensionCost(args["gext"].AsInteger());
         }
     }
@@ -388,20 +399,21 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
         switch(args["scantype"].AsInteger()) {
         case 1:
             nucl_handle->SetSeedExtensionMethod(eRightAndLeft);
-            nucl_handle->SetSeedContainerType(eLastHitArray);
             break;
         case 2:
             nucl_handle->SetSeedExtensionMethod(eRight);
-            nucl_handle->SetSeedContainerType(eLastHitArray);
             break;
         case 3:
             nucl_handle->SetSeedExtensionMethod(eUpdateDiag);
-            nucl_handle->SetSeedContainerType(eDiagArray);
             break;
         default:
             break;
         }
+        nucl_handle->SetSeedContainerType(eDiagArray);
         
+        if (args["stack"].AsBoolean())
+            nucl_handle->SetSeedContainerType(eWordStacks);
+
         opt.SetVariableWordSize(args["varword"].AsBoolean());
 
         // Override the scan step value if it is set by user
@@ -432,6 +444,11 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
     case 3: /* Two-step greedy extension after ungapped extension*/
         opt.SetGapExtnAlgorithm(eGreedyExt);
         opt.SetGapTracebackAlgorithm(eGreedyTbck);
+        opt.SetUngappedExtension(true);
+        break;
+    case -1: /* Force non-greedy extension */
+        opt.SetGapExtnAlgorithm(eDynProgExt);
+        opt.SetGapTracebackAlgorithm(eDynProgTbck);
         opt.SetUngappedExtension(true);
         break;
     default: break;
@@ -597,9 +614,11 @@ void CBlastApplication::FormatResults(const CDbBlast* blaster,
     if (args["out"]) {
         EProgram program = blaster->GetOptions().GetProgram();
 
+#ifdef USE_READDB
         char* dbname = const_cast<char*>(args["db"].AsString().c_str());
         bool db_is_na = (program == eBlastn || program == eTblastn || 
                          program == eTblastx);
+#endif
 
         /* Revert RPS program names to their conventional
            counterparts, to avoid confusing the C toolkit
@@ -625,7 +644,9 @@ void CBlastApplication::FormatResults(const CDbBlast* blaster,
         }
 #endif
         
+#ifdef USE_READDB
         RegisterBlastDbLoader(dbname, db_is_na);
+#endif
         /* Format the results */
         TSeqLocInfoVector maskv =
             BlastMaskLoc2CSeqLoc(blaster->GetFilteredQueryRegions(), 
@@ -651,8 +672,10 @@ static Int2 x_FillRPSInfo( RPSInfo **ppinfo, CMemoryFile **rps_mmap,
                            CMemoryFile **rps_pssm_mmap, string dbname )
 {
    RPSInfo *info = new RPSInfo;
-   if (info == NULL)
-      NCBI_THROW(CBlastException, eOutOfMemory, "RPSInfo");
+   if (info == NULL) {
+      ERR_POST_EX(CBlastException::eOutOfMemory, 2, 
+                  "RPSInfo allocation failed");
+   }
 
    /* construct the full path to the DB file. Look in
       the local directory, then .ncbirc */
@@ -669,21 +692,24 @@ static Int2 x_FillRPSInfo( RPSInfo **ppinfo, CMemoryFile **rps_mmap,
    }
 
    CMemoryFile *lut_mmap = new CMemoryFile(dbname + ".loo");
-   if (lut_mmap == NULL)
-      NCBI_THROW(CBlastException, eBadParameter,
-                        "Cannot map RPS BLAST lookup file");
+   if (lut_mmap == NULL) {
+       ERR_POST_EX(CBlastException::eBadParameter, 2,
+                   "Cannot map RPS BLAST lookup file");
+   }
    info->lookup_header = (RPSLookupFileHeader *)lut_mmap->GetPtr();
 
    CMemoryFile *pssm_mmap = new CMemoryFile(dbname + ".rps");
-   if (pssm_mmap == NULL)
-      NCBI_THROW(CBlastException, eBadParameter,
-                        "Cannot map RPS BLAST profile file");
+   if (pssm_mmap == NULL) {
+       ERR_POST_EX(CBlastException::eBadParameter, 2,
+                   "Cannot map RPS BLAST profile file");
+   }
    info->profile_header = (RPSProfileHeader *)pssm_mmap->GetPtr();
 
    CNcbiIfstream auxfile( (dbname + ".aux").c_str() );
-   if (auxfile.bad() || auxfile.fail())
-      NCBI_THROW(CBlastException, eBadParameter,
-                        "Cannot open RPS BLAST parameters file");
+   if (auxfile.bad() || auxfile.fail()) {
+       ERR_POST_EX(CBlastException::eBadParameter, 2, 
+                   "Cannot open RPS BLAST parameters file");
+   }
 
    string matrix;
    auxfile >> matrix;
@@ -699,8 +725,10 @@ static Int2 x_FillRPSInfo( RPSInfo **ppinfo, CMemoryFile **rps_mmap,
 
    int num_db_seqs = info->profile_header->num_profiles;
    info->aux_info.karlin_k = new double[num_db_seqs];
-   if (info->aux_info.karlin_k == NULL)
-      NCBI_THROW(CBlastException, eOutOfMemory, "karlin_k");
+   if (info->aux_info.karlin_k == NULL) {
+      ERR_POST_EX(CBlastException::eOutOfMemory, 2, 
+                  "karlin_k array allocation failed");
+   }
    int i;
 
    for (i = 0; i < num_db_seqs && !auxfile.eof(); i++) {
@@ -709,9 +737,11 @@ static Int2 x_FillRPSInfo( RPSInfo **ppinfo, CMemoryFile **rps_mmap,
       auxfile >> info->aux_info.karlin_k[i];
    }
 
-   if (i < num_db_seqs)
-      NCBI_THROW(CBlastException, eBadParameter,
-                        "Missing Karlin parameters");
+   if (i < num_db_seqs) {
+       ERR_POST_EX(CBlastException::eBadParameter, 2,
+                   "Aux file missing Karlin parameters");
+       exit(CBlastException::eBadParameter);
+   }
 
    *ppinfo = info;
    *rps_mmap = lut_mmap;
@@ -833,20 +863,21 @@ int CBlastApplication::Run(void)
 
        if (!tabular_output) {
 	  CRef<CDbBlast> blaster(new CDbBlast(query_loc, seq_src, *opts, 
-				       rps_info, hsp_stream, num_threads));
+				       rps_info, hsp_stream, (num_threads>1)));
 	  seqalignv = blaster->Run();
 	  FormatResults(blaster, seqalignv);
        } else {
 	  hsp_stream = Blast_HSPListCQueueInit();
 	  
 	  CRef<CDbBlast> blaster(new CDbBlast(query_loc, seq_src, *opts, 
-                                       rps_info, hsp_stream, num_threads));
+                                       rps_info, hsp_stream, (num_threads>1)));
 	  blaster->SetupSearch();
 	  
 	  // Start the on-the-fly formatting thread
-	  CBlastTabularFormatThread* tab_thread =  
-	     new CBlastTabularFormatThread(blaster, query_loc, 
-					   args["out"].AsOutputFile());
+     CBlastTabularFormatThread* tab_thread =  
+         new CBlastTabularFormatThread(blaster, query_loc, 
+                 args["out"] ? args["out"].AsOutputFile() : cout);
+
 	  tab_thread->Run();
 	  
 	  blaster->RunPreliminarySearch();
