@@ -1700,17 +1700,18 @@ static bool s_IsDifferentDbxref(const CSeq_feat& f1, const CSeq_feat& f2)
         return false;
     }
 
-    const list< CRef<CDbtag> >& lst1 = f1.GetDbxref();
-    const list< CRef<CDbtag> >& lst2 = f2.GetDbxref();
-    if (lst1.empty()  ||  lst2.empty()) {
+    const list< CRef<CDbtag> >& list1 = f1.GetDbxref();
+    const list< CRef<CDbtag> >& list2 = f2.GetDbxref();
+   
+    if (list1.empty()  ||  list2.empty()) {
         return false;
-    } else if (lst1.size() != lst2.size()) {
+    } else if (list1.size() != list2.size()) {
         return true;
     }
 
-    list< CRef<CDbtag> >::const_iterator it1 = lst1.begin();
-    list< CRef<CDbtag> >::const_iterator it2 = lst2.begin();
-    for (; it1 != lst1.end(); ++it1, ++it2) {
+    list< CRef<CDbtag> >::const_iterator it1 = list1.begin();
+    list< CRef<CDbtag> >::const_iterator it2 = list2.begin();
+    for (; it1 != list1.end(); ++it1, ++it2) {
         if ((**it1).GetDb() != (**it2).GetDb()) {
             return true;
         }
@@ -1869,7 +1870,7 @@ CScope*           scope)
                 best_diff = diff;
                 best = &(*fi);
             }
-        } catch(const CNoLength& e) {}
+        } catch(const CNoLength&) {}
     }
     return best;
 }
@@ -2729,7 +2730,7 @@ void CValidError_impl::ValidateSeqIds
                         }
                     }
                 }
-            } catch (const runtime_error& e) {}
+            } catch (const runtime_error&) {}
             // Fall thru
         case CSeq_id::e_Other:
             try{
@@ -2742,7 +2743,7 @@ void CValidError_impl::ValidateSeqIds
                         break;
                     }
                 }
-            } catch (const runtime_error& e) {}
+            } catch (const runtime_error&) {}
             // Fall thru
         case CSeq_id::e_Pir:
         case CSeq_id::e_Swissprot:
@@ -2825,7 +2826,7 @@ void CValidError_impl::ValidateSeqDescr(const CBioseq& seq, bool isTpa)
                    << " should not have TpaAssembly object";
                 ValidErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                     string(os.str()), seq);
-            } catch (const runtime_error& e) {
+            } catch (const runtime_error&) {
                 return;
             }
         }
@@ -2912,7 +2913,7 @@ void CValidError_impl::ValidateSeqFeat(const CSeq_feat& feat)
 }
 
 
-void CValidError_impl::ValidateSeqSetDescr(const CBioseq_set& set)
+void CValidError_impl::ValidateSeqSetDescr(const CBioseq_set& seqset)
 {
 
 }
@@ -3386,7 +3387,7 @@ void CValidError_impl::ValidateSeqParts(const CBioseq& seq)
                         "Segmented bioseq seq_ext does not correspond to parts"
                         "packaging order", seq);
                 }
-            } catch (const CNotUnique& nu) {
+            } catch (const CNotUnique&) {
                 ERR_POST("Seq-loc not for unique sequence" << eDiag_Error);
                 return;
             } catch (...) {
@@ -3548,7 +3549,7 @@ void CValidError_impl::ValidateCollidingGeneNames(const CBioseq& seq)
     string label;
     for (CTypeConstIterator<CSeq_feat> ft(ConstBegin(seq)); ft; ++ft) {
         label.erase();
-        GetLabel(*ft, &label, feature::eContent, m_Scope.GetPointer());
+        feature::GetLabel(*ft, &label, feature::eContent, m_Scope.GetPointer());
         label_map.insert(make_pair(label, &*ft));
     }
 
@@ -3802,7 +3803,7 @@ void CValidError_impl::ValidateSegRef(const CBioseq& seq)
                 "] than given length [" + NStr::IntToString(seqlen) + "]",
                 seq);
         }
-    } catch (const CNoLength& e) {
+    } catch (const CNoLength&) {
         ERR_POST("Unable to calculate length: " << eDiag_Critical);
     }
 
@@ -3902,7 +3903,7 @@ void CValidError_impl::ValidateDelta(const CBioseq& seq, bool isNTorNC)
         case CDelta_seq::e_Loc:
             try {
                 len += GetLength((**sg).GetLoc(), m_Scope);
-            } catch (const CNoLength& e) {
+            } catch (const CNoLength&) {
                 ValidErr(eDiag_Error, eErr_SEQ_INST_SeqDataLenWrong,
                     "No length for Seq-loc of delta seq-ext", seq);
             }
@@ -4097,6 +4098,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2002/10/04 14:27:37  ivanov
+* Fixed s_IsDifferentDbxref() -- MSVC don't like identifier names lst1
+* and lst2 in this function (weird compiler :).
+* Fixed some warnings.
+*
 * Revision 1.2  2002/10/03 18:40:12  clausen
 * Removed extra whitespace
 *
