@@ -37,7 +37,6 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/annot_object.hpp>
-#include <objmgr/impl/snp_annot_info.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <set>
 #include <vector>
@@ -85,9 +84,10 @@ public:
 
     TSeqPos GetFrom(void) const;
     TSeqPos GetToOpen(void) const;
-    TRange GetTotalRange(void) const;
+    const TRange& GetTotalRange(void) const;
 
     bool IsPartial(void) const;
+    bool MinusStrand(void) const;
     int GetMappedIndex(void) const;
 
     const CSeq_annot& GetSeq_annot(void) const;
@@ -103,24 +103,30 @@ public:
     TSeqPos GetSNP_Index(void) const;
 
     void SetAnnotObjectRange(const TRange& range);
-    void SetAnnotObjectRange(const TRange& range, const CRef<CSeq_loc>& loc);
-    void SetSNP_Point(TSeqPos pos);
-    void SetSNP_Point(CSeq_loc_Conversion& cvt, const SSNP_Info& snp);
+    void SetAnnotObjectRange(const TRange& range,
+                             bool partial, const CRef<CSeq_loc>& loc);
+    void SetSNP_Point(const SSNP_Info& snp, CSeq_loc_Conversion* cvt);
 
     void SetPartial(bool value);
+    void SetMinusStrand(bool value);
     void SetMappedIndex(int index);
 
 private:
     CConstRef<CObject>      m_Object;
     CRef<CSeq_loc>          m_MappedLocation; // master sequence coordinates
+    TRange                  m_TotalRange;
     Int2                    m_MappedIndex;
     Int1                    m_ObjectType; // EObjectType
-    Int1                    m_Partial;    // Partial flag (same as in features)
-    TSeqPos                 m_StartPos;
-    union {
-        TSeqPos             m_EndPos;     // for eType_AnnotObject_Info
-        TSeqPos             m_SNP_Index;  // for eType_Seq_annot_SNP_Info
+    // Partial flag for mapped feature (same as in features)
+    // if object type is eType_Seq_annot_SNP_Info and m_MappedLocation is null
+    // m_Partual contains 'minus_strand' flag
+    enum FFlags {
+        fPartial     = (1<<0),
+        fMinusStrand = (1<<1)
     };
+    typedef Int1 TFlags;
+    TFlags                  m_Flags;
+    TSeqPos                 m_SNP_Index;  // for eType_Seq_annot_SNP_Info
 };
 
 
@@ -242,24 +248,6 @@ CAnnotObject_Ref::CAnnotObject_Ref(void)
 
 
 inline
-CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
-    : m_Object(&object),
-      m_ObjectType(eType_AnnotObject_Info)
-{
-}
-
-
-inline
-CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
-                                   TSeqPos index)
-    : m_Object(&snp_annot),
-      m_ObjectType(eType_Seq_annot_SNP_Info)
-{
-    m_SNP_Index = index;
-}
-
-
-inline
 CAnnotObject_Ref::~CAnnotObject_Ref(void)
 {
 }
@@ -284,28 +272,28 @@ inline
 const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
 {
     _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
-    return static_cast<const CSeq_annot_SNP_Info&>(*m_Object);
+    return *reinterpret_cast<const CSeq_annot_SNP_Info*>(m_Object.GetPointer());
 }
 
 
 inline
 TSeqPos CAnnotObject_Ref::GetFrom(void) const
 {
-    return m_StartPos;
+    return m_TotalRange.GetFrom();
 }
 
 
 inline
 TSeqPos CAnnotObject_Ref::GetToOpen(void) const
 {
-    return m_ObjectType == eType_Seq_annot_SNP_Info? m_StartPos+1: m_EndPos;
+    return m_TotalRange.GetToOpen();
 }
 
 
 inline
-CAnnotObject_Ref::TRange CAnnotObject_Ref::GetTotalRange(void) const
+const CAnnotObject_Ref::TRange& CAnnotObject_Ref::GetTotalRange(void) const
 {
-    return TRange(GetFrom(), GetToOpen());
+    return m_TotalRange;
 }
 
 
@@ -320,14 +308,14 @@ TSeqPos CAnnotObject_Ref::GetSNP_Index(void) const
 inline
 bool CAnnotObject_Ref::IsPartial(void) const
 {
-    return m_Partial != 0;
+    return (m_Flags & fPartial) != 0;
 }
 
 
 inline
-void CAnnotObject_Ref::SetPartial(bool value)
+bool CAnnotObject_Ref::MinusStrand(void) const
 {
-    m_Partial = value;
+    return (m_Flags & fMinusStrand) != 0;
 }
 
 
@@ -342,18 +330,6 @@ inline
 int CAnnotObject_Ref::GetMappedIndex(void) const
 {
     return m_MappedIndex;
-}
-
-
-inline
-const CSeq_annot& CAnnotObject_Ref::GetSeq_annot(void) const
-{
-    if ( m_ObjectType == eType_Seq_annot_SNP_Info ) {
-        return GetSeq_annot_SNP_Info().GetSeq_annot();
-    }
-    else {
-        return GetAnnotObject_Info().GetSeq_annot();
-    }
 }
 
 
@@ -420,29 +396,20 @@ void CAnnotObject_Ref::SetMappedIndex(int index)
 inline
 void CAnnotObject_Ref::SetAnnotObjectRange(const TRange& range)
 {
-    _ASSERT(m_ObjectType == eType_AnnotObject_Info);
-    m_StartPos = range.GetFrom();
-    m_EndPos = range.GetToOpen();
+    m_TotalRange = range;
+    m_Flags = 0;
+    m_MappedLocation.Reset();
 }
 
 
 inline
 void CAnnotObject_Ref::SetAnnotObjectRange(const TRange& range,
+                                           bool partial,
                                            const CRef<CSeq_loc>& loc)
 {
-    _ASSERT(m_ObjectType == eType_AnnotObject_Info);
-    m_StartPos = range.GetFrom();
-    m_EndPos = range.GetToOpen();
+    m_TotalRange = range;
+    m_Flags = partial? fPartial: 0;
     m_MappedLocation = loc;
-}
-
-
-inline
-void CAnnotObject_Ref::SetSNP_Point(TSeqPos pos)
-{
-    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
-    m_StartPos = pos;
-    m_Partial = false;
 }
 
 
@@ -507,6 +474,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/08/15 19:19:15  vasilche
+* Fixed memory leak in string packing hooks.
+* Fixed processing of 'partial' flag of features.
+* Allow table packing of non-point SNP.
+* Allow table packing of SNP with long alleles.
+*
 * Revision 1.45  2003/08/14 20:05:18  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

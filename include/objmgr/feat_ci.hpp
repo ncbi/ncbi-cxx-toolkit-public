@@ -45,32 +45,6 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJMGR_EXPORT CMappedFeat
 {
 public:
-    CMappedFeat(void)
-        : m_Feat(0),
-          m_MappedFeat(0),
-          m_Partial(false),
-          m_MappedLoc(0),
-          m_MappedProd(0)
-        { return; }
-    CMappedFeat(const CMappedFeat& feat)
-        : m_Feat(feat.m_Feat),
-          m_MappedFeat(feat.m_MappedFeat),
-          m_Partial(feat.m_Partial),
-          m_MappedLoc(feat.m_MappedLoc),
-          m_MappedProd(feat.m_MappedProd)
-        { return; }
-    CMappedFeat& operator= (const CMappedFeat& feat)
-        {
-            if (this != &feat) {
-                m_Feat = feat.m_Feat;
-                m_MappedFeat = feat.m_MappedFeat;
-                m_Partial = feat.m_Partial;
-                m_MappedLoc = feat.m_MappedLoc;
-                m_MappedProd = feat.m_MappedProd;
-            }
-            return *this;
-        }
-
     // Original feature with unmapped location/product
     const CSeq_feat& GetOriginalFeature(void) const
         {
@@ -89,9 +63,9 @@ public:
         { return m_Feat->GetData(); }
 
     bool IsSetPartial(void) const
-        { return m_Feat->IsSetPartial()  ||  m_Partial; }
+        { return m_Partial; }
     bool GetPartial(void) const
-        { return m_Feat->GetPartial()  ||  m_Partial; }
+        { return m_Partial; }
 
     bool IsSetExcept(void) const
         { return m_Feat->IsSetExcept(); }
@@ -106,7 +80,6 @@ public:
     bool IsSetProduct(void) const
         { return m_Feat->IsSetProduct(); }
     const CSeq_loc& GetProduct(void) const
-        //### Check mapped location
         { return m_MappedProd ? *m_MappedProd : m_Feat->GetProduct(); }
 
     const CSeq_loc& GetLocation(void) const
@@ -170,10 +143,11 @@ private:
     const CSeq_feat& x_MakeMappedFeature(void) const;
 
     CConstRef<CSeq_feat>         m_Feat;
+    CRef<CSeq_feat>              m_SNPFeat;
     mutable CConstRef<CSeq_feat> m_MappedFeat;
+    mutable CRef<CSeq_loc>       m_MappedLoc;
+    mutable CRef<CSeq_loc>       m_MappedProd;
     bool                         m_Partial;
-    CConstRef<CSeq_loc>          m_MappedLoc;
-    CConstRef<CSeq_loc>          m_MappedProd;
 };
 
 
@@ -444,6 +418,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/08/15 19:19:15  vasilche
+* Fixed memory leak in string packing hooks.
+* Fixed processing of 'partial' flag of features.
+* Allow table packing of non-point SNP.
+* Allow table packing of SNP with long alleles.
+*
 * Revision 1.31  2003/08/15 15:22:41  grichenk
 * +CAnnot_CI
 *

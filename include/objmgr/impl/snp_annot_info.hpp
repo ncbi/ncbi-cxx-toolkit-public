@@ -34,8 +34,12 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_limits.hpp>
+
+#include <util/range.hpp>
 
 #include <vector>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
@@ -50,27 +54,17 @@ class CSeq_annot_SNP_Info;
 struct NCBI_XOBJMGR_EXPORT SSNP_Info
 {
 public:
+    typedef CRange<TSeqPos> TRange;
+
     TSeqPos GetPosition(void) const;
+    TSeqPos GetEndPosition(void) const;
     bool MinusStrand(void) const;
 
-    bool operator<(const SSNP_Info& snp) const
-        {
-            return
-                m_DoublePosition < snp.m_DoublePosition ||
-                (m_DoublePosition == snp.m_DoublePosition &&
-                 m_SNP_Id < snp.m_SNP_Id);
-        }
-    bool operator==(const SSNP_Info& snp) const
-        {
-            return
-                m_DoublePosition == snp.m_DoublePosition &&
-                m_SNP_Id == snp.m_SNP_Id;
-        }
+    bool operator<(const SSNP_Info& snp) const;
+    bool operator<(TSeqPos end_position) const;
 
-    bool operator<(TSeqPos double_pos) const
-        {
-            return m_DoublePosition < double_pos;
-        }
+    bool NoMore(const TRange& range) const;
+    bool NotThis(const TRange& range) const;
 
     // type of SNP feature returned by parsing method
     enum ESNP_Type {
@@ -86,7 +80,7 @@ public:
         eSNP_Complex_IdCountIsNotOne,
         eSNP_Complex_AlleleLengthBad,
         eSNP_Complex_AlleleCountTooLarge,
-        eSNP_Complex_AlleleCountIsNotTwo,
+        eSNP_Complex_AlleleCountIsNonStandard,
         eSNP_Complex_WeightBadValue,
         eSNP_Complex_WeightCountIsNotOne,
         eSNP_Type_last
@@ -108,16 +102,49 @@ public:
                           const CSeq_annot_SNP_Info& annot_info) const;
 
     enum {
-        kMax_AllelesCount = 2
+        kMax_AllelesCount = 4
     };
 
-    // CSeq_annot_SNP_Info*    m_Seq_annot_SNP_Info;
-    // for minus strands: m_DoublePosition is odd
-    TSeqPos     m_DoublePosition;
+    TSeqPos     m_EndPosition;
     int         m_SNP_Id;
+    bool        m_MinusStrand;
+    Int1        m_PositionDelta;
     Int1        m_CommentIndex;
     Uint1       m_Weight;
-    char        m_Alleles[kMax_AllelesCount];
+    Int1        m_AllelesIndices[kMax_AllelesCount];
+};
+
+
+class CIndexedStrings
+{
+public:
+    void ClearIndices(void)
+        {
+            m_Indices.clear();
+        }
+    void Clear(void)
+        {
+            ClearIndices();
+            m_Strings.clear();
+        }
+    bool IsEmpty(void) const
+        {
+            return m_Indices.empty();
+        }
+
+    int GetIndex(const string& s, int max_index);
+
+    const string& GetString(int index) const
+        {
+            return m_Strings[index];
+        }
+
+private:
+    typedef vector<string> TStrings;
+    typedef map<string, int> TIndices;
+
+    TStrings m_Strings;
+    TIndices m_Indices;
 };
 
 
@@ -131,31 +158,24 @@ public:
 
     typedef vector<SSNP_Info> TSNP_Set;
     typedef TSNP_Set::const_iterator const_iterator;
+    typedef CRange<TSeqPos> TRange;
 
-    bool empty(void) const
-        {
-            return m_SNP_Set.empty();
-        }
-    const_iterator LowerBoundByPosition(TSeqPos pos) const;
+    bool empty(void) const;
     const_iterator begin(void) const;
     const_iterator end(void) const;
+    const_iterator LowerBound(const TRange& range) const;
 
-    int GetGi(void) const
-        {
-            return m_SNP_Gi;
-        }
+    int GetGi(void) const;
 
-    const CSeq_annot& GetSeq_annot(void) const
-        {
-            return *m_Seq_annot;
-        }
+    const CSeq_annot& GetSeq_annot(void) const;
 
 protected:
-    typedef vector<string> TSNP_Comments;
-
-    Int1 x_GetSNP_CommentIndex(const string& comment);
+    Int1 x_GetCommentIndex(const string& comment);
     const string& x_GetComment(Int1 index) const;
-    bool x_SetSNP_Gi(int gi);
+    Int1 x_GetAlleleIndex(const string& allele);
+    const string& x_GetAllele(Int1 index) const;
+
+    bool x_SetGi(int gi);
     void x_AddSNP(const SSNP_Info& snp_info);
 
 private:
@@ -165,9 +185,10 @@ private:
     friend class CSNP_Seq_feat_hook;
     friend struct SSNP_Info;
 
-    int                         m_SNP_Gi;
+    int                         m_Gi;
     TSNP_Set                    m_SNP_Set;
-    TSNP_Comments               m_SNP_Comments;
+    CIndexedStrings             m_Comments;
+    CIndexedStrings             m_Alleles;
     CRef<CSeq_annot>            m_Seq_annot;
 };
 
@@ -179,14 +200,50 @@ private:
 inline
 TSeqPos SSNP_Info::GetPosition(void) const
 {
-    return m_DoublePosition >> 1;
+    return m_EndPosition - m_PositionDelta;
+}
+
+
+inline
+TSeqPos SSNP_Info::GetEndPosition(void) const
+{
+    return m_EndPosition;
 }
 
 
 inline
 bool SSNP_Info::MinusStrand(void) const
 {
-    return m_DoublePosition & 1;
+    return m_MinusStrand;
+}
+
+
+inline
+bool SSNP_Info::operator<(const SSNP_Info& snp) const
+{
+    return m_EndPosition < snp.m_EndPosition;
+}
+
+
+inline
+bool SSNP_Info::operator<(TSeqPos end_position) const
+{
+    return m_EndPosition < end_position;
+}
+
+
+inline
+bool SSNP_Info::NoMore(const TRange& range) const
+{
+    return GetEndPosition() >=
+        min(kInvalidSeqPos-kMax_I1, range.GetToOpen()) + kMax_I1;
+}
+
+
+inline
+bool SSNP_Info::NotThis(const TRange& range) const
+{
+    return GetPosition() >= range.GetToOpen();
 }
 
 
@@ -195,13 +252,51 @@ bool SSNP_Info::MinusStrand(void) const
 /////////////////////////////////////////////////////////////////////////////
 
 inline
-bool CSeq_annot_SNP_Info::x_SetSNP_Gi(int gi)
+bool CSeq_annot_SNP_Info::empty(void) const
 {
-    if ( gi == m_SNP_Gi ) {
+    return m_SNP_Set.empty();
+}
+
+
+inline
+CSeq_annot_SNP_Info::const_iterator
+CSeq_annot_SNP_Info::begin(void) const
+{
+    return m_SNP_Set.begin();
+}
+
+
+inline
+CSeq_annot_SNP_Info::const_iterator
+CSeq_annot_SNP_Info::end(void) const
+{
+    return m_SNP_Set.end();
+}
+
+
+inline
+CSeq_annot_SNP_Info::const_iterator
+CSeq_annot_SNP_Info::LowerBound(const CRange<TSeqPos>& range) const
+{
+    return lower_bound(m_SNP_Set.begin(), m_SNP_Set.end(), range.GetFrom());
+}
+
+
+inline
+int CSeq_annot_SNP_Info::GetGi(void) const
+{
+    return m_Gi;
+}
+
+
+inline
+bool CSeq_annot_SNP_Info::x_SetGi(int gi)
+{
+    if ( gi == m_Gi ) {
         return true;
     }
-    if ( m_SNP_Gi < 0 ) {
-        m_SNP_Gi = gi;
+    if ( m_Gi < 0 ) {
+        m_Gi = gi;
         return true;
     }
     return false;
@@ -209,12 +304,38 @@ bool CSeq_annot_SNP_Info::x_SetSNP_Gi(int gi)
 
 
 inline
-const string& CSeq_annot_SNP_Info::x_GetComment(Int1 index) const
+const CSeq_annot& CSeq_annot_SNP_Info::GetSeq_annot(void) const
 {
-    _ASSERT(size_t(index) < m_SNP_Comments.size());
-    return m_SNP_Comments[index];
+    return *m_Seq_annot;
 }
 
+
+inline
+Int1 CSeq_annot_SNP_Info::x_GetCommentIndex(const string& comment)
+{
+    return m_Comments.GetIndex(comment, kMax_I1);
+}
+
+
+inline
+const string& CSeq_annot_SNP_Info::x_GetComment(Int1 index) const
+{
+    return m_Comments.GetString(index);
+}
+
+
+inline
+const string& CSeq_annot_SNP_Info::x_GetAllele(Int1 index) const
+{
+    return m_Alleles.GetString(index);
+}
+
+
+inline
+void CSeq_annot_SNP_Info::x_AddSNP(const SSNP_Info& snp_info)
+{
+    m_SNP_Set.push_back(snp_info);
+}
 
 
 END_SCOPE(objects)
@@ -223,6 +344,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/08/15 19:19:15  vasilche
+* Fixed memory leak in string packing hooks.
+* Fixed processing of 'partial' flag of features.
+* Allow table packing of non-point SNP.
+* Allow table packing of SNP with long alleles.
+*
 * Revision 1.2  2003/08/14 21:26:04  kans
 * fixed inconsistent line endings that stopped Mac compiler
 *

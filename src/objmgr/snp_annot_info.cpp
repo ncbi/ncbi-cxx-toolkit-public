@@ -32,14 +32,17 @@
 
 #include <objmgr/reader.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
+#include <objmgr/impl/pack_string.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Dbtag.hpp>
 
+#include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -65,6 +68,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+#undef EXACT_ALLELE_COUNT
+
 
 /////////////////////////////////////////////////////////////////////////////
 // SSNP_Info
@@ -83,23 +88,23 @@ const char* const SSNP_Info::s_SNP_Type_Label[eSNP_Type_last] = {
     "complex - id count is not one",
     "complex - allele length is bad",
     "complex - allele count is too large",
-    "complex - allele count is not two",
+    "complex - allele count is non standard",
     "complex - weight has bad value",
     "complex - weight count is not one"
 };
+
+
+static const string kId_variation        ("variation");
+static const string kId_allele           ("allele");
+static const string kId_dbSnpSynonymyData("dbSnpSynonymyData");
+static const string kId_weight           ("weight");
+static const string kId_dbSNP            ("dbSNP");
 
 
 SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                                               CSeq_annot_SNP_Info& annot_info)
 {
     const CSeq_loc& loc = feat.GetLocation();
-    if ( loc.Which() != CSeq_loc::e_Pnt ) {
-        return eSNP_Complex_LocationIsNotPoint;
-    }
-
-    const CSeq_point& point = loc.GetPnt();
-    const CSeq_id& id = point.GetId();
-
     const CSeqFeatData& data = feat.GetData();
     if ( data.Which() != CSeqFeatData::e_Imp ||
          !feat.IsSetQual() || !feat.IsSetExt() || !feat.IsSetDbxref() ) {
@@ -113,26 +118,29 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
 
     size_t alleles_count = 0;
     ITERATE ( CSeq_feat::TQual, it, qual ) {
-        const CGb_qual& gb_qual = **it;
-        const string& val = gb_qual.GetVal();
-        if ( val.size() != 1 ) {
-            return eSNP_Complex_AlleleLengthBad;
-        }
         if ( alleles_count >= kMax_AllelesCount ) {
             return eSNP_Complex_AlleleCountTooLarge;
         }
-        if ( (m_Alleles[alleles_count++] = val[0]) == 0 ) {
+        const CGb_qual& gb_qual = **it;
+        if ( gb_qual.GetQual() != kId_allele ) {
+            return eSNP_Bad_WrongTextId;
+        }
+        Int1 allele_index = annot_info.x_GetAlleleIndex(gb_qual.GetVal());
+        if ( allele_index < 0 ) {
+            //NcbiCout << "Bad allele: \"" << gb_qual.GetVal() << "\"\n";
             return eSNP_Complex_AlleleLengthBad;
         }
+        m_AllelesIndices[alleles_count++] = allele_index;
     }
+#ifdef EXACT_ALLELE_COUNT
     if ( alleles_count != kMax_AllelesCount ) {
-        return eSNP_Complex_AlleleCountIsNotTwo;
+        return eSNP_Complex_AlleleCountIsNonStandard;
     }
-    /*
+#else
     while ( alleles_count < kMax_AllelesCount ) {
-        m_Alleles[alleles_count++] = 0;
+        m_AllelesIndices[alleles_count++] = -1;
     }
-    */
+#endif
 
     bool have_snp_id = false;
     ITERATE ( CSeq_feat::TDbxref, it, dbxref ) {
@@ -140,7 +148,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
             return eSNP_Complex_IdCountTooLarge;
         }
         const CDbtag& dbtag = **it;
-        if ( dbtag.GetDb() != "dbSNP" ) {
+        if ( dbtag.GetDb() != kId_dbSNP ) {
             return eSNP_Bad_WrongTextId;
         }
         const CObject_id& tag = dbtag.GetTag();
@@ -158,19 +166,18 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
          feat.IsSetProduct() || feat.IsSetTitle() ||
          feat.IsSetCit() || feat.IsSetExp_ev() || feat.IsSetXref() ||
          feat.IsSetPseudo() || feat.IsSetExcept_text() ||
-         imp_feat.IsSetLoc() || imp_feat.IsSetDescr() ||
-         point.IsSetFuzz() || !point.IsSetStrand() ) {
+         imp_feat.IsSetLoc() || imp_feat.IsSetDescr() ) {
         return eSNP_Bad_WrongMemberSet;
     }
 
-    if ( imp_feat.GetKey() != "variation" ) {
+    if ( imp_feat.GetKey() != kId_variation ) {
         return eSNP_Bad_WrongTextId;
     }
 
     {{
         const CObject_id& id = ext.GetType();
         if ( id.Which() != CObject_id::e_Str ||
-             id.GetStr() != "dbSnpSynonymyData" ) {
+             id.GetStr() != kId_dbSnpSynonymyData ) {
             return eSNP_Bad_WrongTextId;
         }
     }}
@@ -183,7 +190,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         {{
             const CObject_id& id = field.GetLabel();
             if ( id.Which() != CObject_id::e_Str ||
-                 id.GetStr() != "weight" ) {
+                 id.GetStr() != kId_weight ) {
                 return eSNP_Bad_WrongTextId;
             }
         }}
@@ -205,19 +212,55 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         return eSNP_Complex_WeightCountIsNotOne;
     }
 
-    m_DoublePosition = point.GetPoint() << 1;
-    switch ( point.GetStrand() ) {
+    const CSeq_id* id;
+    ENa_strand strand;
+    switch ( loc.Which() ) {
+    case CSeq_loc::e_Pnt:
+    {
+        const CSeq_point& point = loc.GetPnt();
+        if ( point.IsSetFuzz() || !point.IsSetStrand() ) {
+            return eSNP_Bad_WrongMemberSet;
+        }
+        id = &point.GetId();
+        strand = point.GetStrand();
+        m_EndPosition = point.GetPoint();
+        m_PositionDelta = 0;
+        break;
+    }
+    case CSeq_loc::e_Int:
+    {
+        const CSeq_interval& interval = loc.GetInt();
+        if ( interval.IsSetFuzz_from() || interval.IsSetFuzz_to() ||
+             !interval.IsSetStrand() ) {
+            return eSNP_Bad_WrongMemberSet;
+        }
+        id = &interval.GetId();
+        strand = interval.GetStrand();
+        m_EndPosition = interval.GetTo();
+        int delta = m_EndPosition - interval.GetFrom();
+        if ( delta <= 0 || delta > kMax_I1 ) {
+            return eSNP_Complex_LocationIsNotPoint;
+        }
+        m_PositionDelta = Int1(delta);
+        break;
+    }
+    default:
+        return eSNP_Complex_LocationIsNotPoint;
+    }
+
+    switch ( strand ) {
     case eNa_strand_plus:
+        m_MinusStrand = false;
         break;
     case eNa_strand_minus:
-        m_DoublePosition |= 1;
+        m_MinusStrand = true;
         break;
     default:
         return eSNP_Complex_LocationStrandIsBad;
     }
 
     if ( feat.IsSetComment() ) {
-        m_CommentIndex = annot_info.x_GetSNP_CommentIndex(feat.GetComment());
+        m_CommentIndex = annot_info.x_GetCommentIndex(feat.GetComment());
         if ( m_CommentIndex < 0 ) {
             return eSNP_Complex_HasComment;
         }
@@ -226,10 +269,10 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         m_CommentIndex = -1;
     }
 
-    if ( id.Which() != CSeq_id::e_Gi ) {
+    if ( id->Which() != CSeq_id::e_Gi ) {
         return eSNP_Complex_LocationIsNotGi;
     }
-    if ( !annot_info.x_SetSNP_Gi(id.GetGi()) ) {
+    if ( !annot_info.x_SetGi(id->GetGi()) ) {
         return eSNP_Complex_LocationGiIsBad;
     }
 
@@ -243,33 +286,27 @@ CRef<CSeq_feat> SSNP_Info::x_CreateSeq_feat(void) const
     {
         CSeq_feat& feat = *feat_ref;
         { // data
-            feat.SetData().SetImp().SetKey("variation");
-        }
-        { // allele
-            CSeq_feat::TQual& qual = feat.SetQual();
-            qual.resize(kMax_AllelesCount);
-            for ( int i = 0; i < kMax_AllelesCount; ++i ) {
-                qual[i].Reset(new CGb_qual);
-                CGb_qual& gb_qual = *qual[i];
-                gb_qual.SetQual("allele");
-                gb_qual.SetVal(" ");
-            }
+            CPackString::Assign(feat.SetData().SetImp().SetKey(),
+                                kId_variation);
         }
         { // weight
             CSeq_feat::TExt& ext = feat.SetExt();
-            ext.SetType().SetStr("dbSnpSynonymyData");
+            CPackString::Assign(ext.SetType().SetStr(),
+                                kId_dbSnpSynonymyData);
             CSeq_feat::TExt::TData& data = ext.SetData();
             data.resize(1);
             data[0].Reset(new CUser_field);
             CUser_field& user_field = *data[0];
-            user_field.SetLabel().SetStr("weight");
+            CPackString::Assign(user_field.SetLabel().SetStr(),
+                                kId_weight);
         }
         { // snpid
             CSeq_feat::TDbxref& dbxref = feat.SetDbxref();
             dbxref.resize(1);
             dbxref[0].Reset(new CDbtag);
             CDbtag& dbtag = *dbxref[0];
-            dbtag.SetDb("dbSNP");
+            CPackString::Assign(dbtag.SetDb(),
+                                kId_dbSNP);
         }
     }
     return feat_ref;
@@ -282,28 +319,54 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
     { // comment
         if ( m_CommentIndex < 0 ) {
             feat.ResetComment();
-            _ASSERT(!feat.IsSetComment());
         }
         else {
-            feat.SetComment(annot_info.x_GetComment(m_CommentIndex));
-            _ASSERT(feat.IsSetComment());
-            _ASSERT(feat.GetComment().size() > 0);
+            CPackString::Assign(feat.SetComment(),
+                                annot_info.x_GetComment(m_CommentIndex));
         }
     }
     { // location
-        CSeq_point& point = feat.SetLocation().SetPnt();
-        point.SetPoint(GetPosition());
-        point.SetStrand(MinusStrand()? eNa_strand_minus: eNa_strand_plus);
-        point.SetId().SetGi(annot_info.GetGi());
+        TSeqPos end_position = m_EndPosition;
+        Int1 position_delta = m_PositionDelta;
+        int gi = annot_info.GetGi();
+        ENa_strand strand = MinusStrand()? eNa_strand_minus: eNa_strand_plus;
+        if ( position_delta == 0 ) {
+            // point
+            CSeq_point& point = feat.SetLocation().SetPnt();
+            point.SetPoint(end_position);
+            point.SetStrand(strand);
+            point.SetId().SetGi(gi);
+        }
+        else {
+            // interval
+            CSeq_interval& interval = feat.SetLocation().SetInt();
+            interval.SetFrom(end_position-position_delta);
+            interval.SetTo(end_position);
+            interval.SetStrand(strand);
+            interval.SetId().SetGi(gi);
+        }
     }
     { // allele
         CSeq_feat::TQual& qual = feat.SetQual();
-        _ASSERT(qual.size() == kMax_AllelesCount);
-        for ( int i = 0; i < kMax_AllelesCount; ++i ) {
-            CGb_qual& gb_qual = *qual[i];
-            _ASSERT(gb_qual.SetVal().size() == 1);
-            gb_qual.SetVal()[0] = m_Alleles[i];
+        size_t i;
+        for ( i = 0; i < kMax_AllelesCount; ++i ) {
+            Int1 allele_index = m_AllelesIndices[i];
+            if ( allele_index < 0 ) {
+                break;
+            }
+            CGb_qual* gb_qual;
+            if ( i < qual.size() ) {
+                gb_qual = qual[i].GetPointer();
+            }
+            else {
+                qual.push_back(CRef<CGb_qual>(gb_qual = new CGb_qual));
+                CPackString::Assign(gb_qual->SetQual(),
+                                    kId_allele);
+            }
+            CPackString::Assign(gb_qual->SetVal(),
+                                annot_info.x_GetAllele(allele_index));
         }
+        qual.resize(i);
     }
     { // weight
         CSeq_feat::TExt::TData& data = feat.SetExt().SetData();
@@ -344,6 +407,12 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.2  2003/08/15 19:19:16  vasilche
+ * Fixed memory leak in string packing hooks.
+ * Fixed processing of 'partial' flag of features.
+ * Allow table packing of non-point SNP.
+ * Allow table packing of SNP with long alleles.
+ *
  * Revision 1.1  2003/08/14 20:05:19  vasilche
  * Simple SNP features are stored as table internally.
  * They are recreated when needed using CFeat_CI.

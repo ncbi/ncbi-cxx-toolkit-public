@@ -67,13 +67,94 @@ BEGIN_SCOPE(objects)
 
 
 inline
-void CAnnotObject_Ref::SetSNP_Point(CSeq_loc_Conversion& cvt,
-                                    const SSNP_Info& snp)
+CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
+    : m_Object(&object),
+      m_ObjectType(eType_AnnotObject_Info)
+{
+}
+
+
+inline
+CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
+                                   TSeqPos index)
+    : m_Object(&snp_annot),
+      m_ObjectType(eType_Seq_annot_SNP_Info)
+{
+    m_SNP_Index = index;
+}
+
+
+const CSeq_annot& CAnnotObject_Ref::GetSeq_annot(void) const
+{
+    if ( m_ObjectType == eType_Seq_annot_SNP_Info ) {
+        return GetSeq_annot_SNP_Info().GetSeq_annot();
+    }
+    else {
+        return GetAnnotObject_Info().GetSeq_annot();
+    }
+}
+
+
+inline
+void CAnnotObject_Ref::SetPartial(bool value)
+{
+    if ( value )
+        m_Flags |= fPartial;
+    else
+        m_Flags &= ~fPartial;
+}
+
+
+inline
+void CAnnotObject_Ref::SetMinusStrand(bool value)
+{
+    if ( value )
+        m_Flags |= fMinusStrand;
+    else
+        m_Flags &= ~fMinusStrand;
+}
+
+
+inline
+const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
 {
     _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
-    m_StartPos = cvt.ConvertPos(snp.GetPosition());
-    m_Partial = cvt.MinusStrand()^snp.MinusStrand();
-    m_MappedLocation.Reset(cvt.GetDstLocWhole());
+    return *(static_cast<const CSeq_annot_SNP_Info&>(*m_Object).begin() +
+             m_SNP_Index);
+}
+
+
+inline
+void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
+                                    CSeq_loc_Conversion* cvt)
+{
+    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
+    if ( !cvt ) {
+        m_TotalRange.SetFrom(snp.GetPosition()).SetTo(snp.GetEndPosition());
+        m_Flags = snp.MinusStrand()? fMinusStrand: 0;
+        m_MappedLocation.Reset();
+        return;
+    }
+
+    TSeqPos src_from = snp.GetPosition();
+    TSeqPos src_to = snp.GetEndPosition();
+    if ( src_from == src_to ) {
+        // point
+        TSeqPos dst_pos = cvt->ConvertPos(src_from);
+        _ASSERT(dst_pos != kInvalidSeqPos);
+        m_TotalRange.SetFrom(dst_pos).SetTo(dst_pos);
+        m_Flags = 0;
+    }
+    else {
+        // interval
+        cvt->Reset();
+        m_TotalRange.SetFrom(src_from).SetTo(src_to);
+        _VERIFY(cvt->ConvertRange(m_TotalRange));
+        m_Flags = cvt->IsPartial()? fPartial: 0;
+    }
+    if ( cvt->MinusStrand()^snp.MinusStrand() )
+        m_Flags |= fMinusStrand;
+    m_MappedLocation.Reset(cvt->GetDstLocWhole());
 }
 
 
@@ -623,23 +704,24 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
             ITERATE ( CTSE_Info::TSNPSet, snp_annot_it, objs->m_SNPSet ) {
                 const CSeq_annot_SNP_Info& snp_annot = **snp_annot_it;
                 CSeq_annot_SNP_Info::const_iterator snp_it =
-                    snp_annot.LowerBoundByPosition(range.GetFrom());
+                    snp_annot.LowerBound(range);
                 if ( snp_it != snp_annot.end() ) {
                     m_TSE_LockSet.insert(*tse_it);
                     TSeqPos index = snp_it - snp_annot.begin();
                     do {
                         const SSNP_Info& snp = *snp_it;
+                        if ( snp.NoMore(range) ) {
+                            break;
+                        }
+                        if ( snp.NotThis(range) ) {
+                            continue;
+                        }
                         TSeqPos snp_pos = snp.GetPosition();
                         if ( snp_pos >= range.GetToOpen() ) {
                             break;
                         }
                         CAnnotObject_Ref annot_ref(snp_annot, index);
-                        if ( cvt ) {
-                            annot_ref.SetSNP_Point(*cvt, snp);
-                        }
-                        else {
-                            annot_ref.SetSNP_Point(snp_pos);
-                        }
+                        annot_ref.SetSNP_Point(snp, cvt);
                         annot_ref.SetMappedIndex(0);
                         m_AnnotSet.push_back(annot_ref);
                         ++index;
@@ -676,7 +758,6 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                 annot_ref.SetMappedIndex(m_FeatProduct);
                 if ( cvt ) {
                     cvt->Convert(annot_ref, m_FeatProduct);
-                    annot_ref.SetAnnotObjectRange(cvt->GetTotalRange());
                 }
                 else {
                     annot_ref.SetAnnotObjectRange(aoit->first);
@@ -949,6 +1030,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2003/08/15 19:19:16  vasilche
+* Fixed memory leak in string packing hooks.
+* Fixed processing of 'partial' flag of features.
+* Allow table packing of non-point SNP.
+* Allow table packing of SNP with long alleles.
+*
 * Revision 1.80  2003/08/14 20:05:19  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

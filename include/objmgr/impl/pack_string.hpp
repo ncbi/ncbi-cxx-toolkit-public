@@ -37,17 +37,19 @@
 
 BEGIN_NCBI_SCOPE
 
-class NCBI_XOBJMGR_EXPORT CPackStringHook
+class NCBI_XOBJMGR_EXPORT CPackString
 {
 public:
-    CPackStringHook(size_t length_limit = 32, size_t count_limit = 256);
-    ~CPackStringHook(void);
+    CPackString(size_t length_limit = 32, size_t count_limit = 256);
+    ~CPackString(void);
 
     void ReadString(CObjectIStream& in, string& s);
 
+    static void Assign(string& s, const string& src);
+
 private:
-    void x_RefCounterError(void);
-    void x_Assign(string& s, const string& src);
+    static void x_RefCounterError(void);
+    static void x_Assign(string& s, const string& src);
 
     size_t m_LengthLimit;
     size_t m_CountLimit;
@@ -58,8 +60,7 @@ private:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CPackStringClassHook : public CPackStringHook,
-                                                 public CReadClassMemberHook
+class NCBI_XOBJMGR_EXPORT CPackStringClassHook : public CReadClassMemberHook
 {
 public:
     CPackStringClassHook(size_t length_limit = 32, size_t count_limit = 256);
@@ -67,11 +68,13 @@ public:
     
     void ReadClassMember(CObjectIStream& in,
                          const CObjectInfo::CMemberIterator& member);
+
+private:
+    CPackString m_PackString;
 };
 
 
-class NCBI_XOBJMGR_EXPORT CPackStringChoiceHook : public CPackStringHook,
-                                                  public CReadChoiceVariantHook
+class NCBI_XOBJMGR_EXPORT CPackStringChoiceHook : public CReadChoiceVariantHook
 {
 public:
     CPackStringChoiceHook(size_t length_limit = 32, size_t count_limit = 256);
@@ -79,13 +82,32 @@ public:
 
     void ReadChoiceVariant(CObjectIStream& in,
                            const CObjectInfo::CChoiceVariant& variant);
+
+private:
+    CPackString m_PackString;
 };
+
+
+inline
+void CPackString::Assign(string& s, const string& src)
+{
+    s = src;
+    if ( s.c_str() != src.c_str() ) {
+        x_Assign(s, src);
+    }
+}
 
 
 END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.4  2003/08/15 19:19:15  vasilche
+ * Fixed memory leak in string packing hooks.
+ * Fixed processing of 'partial' flag of features.
+ * Allow table packing of non-point SNP.
+ * Allow table packing of SNP with long alleles.
+ *
  * Revision 1.3  2003/08/14 20:05:18  vasilche
  * Simple SNP features are stored as table internally.
  * They are recreated when needed using CFeat_CI.

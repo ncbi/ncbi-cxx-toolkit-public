@@ -106,7 +106,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(void)
-    : m_SNP_Gi(-1)
+    : m_Gi(-1)
 {
 }
 
@@ -116,40 +116,40 @@ CSeq_annot_SNP_Info::~CSeq_annot_SNP_Info(void)
 }
 
 
-Int1 CSeq_annot_SNP_Info::x_GetSNP_CommentIndex(const string& comment)
+int CIndexedStrings::GetIndex(const string& s, int max_index)
 {
-    _ASSERT(comment.size() > 0);
-    ITERATE ( TSNP_Comments, i, m_SNP_Comments ) {
-        if ( *i == comment )
-            return Int1(i - m_SNP_Comments.begin());
+    TIndices::iterator it = m_Indices.lower_bound(s);
+    if ( it != m_Indices.end() && it->first == s ) {
+        return it->second;
     }
-    size_t index = m_SNP_Comments.size();
-    enum {
-        kMaxCommentCount = 8
-    };
-    if ( index >= kMaxCommentCount /*size_t(kMax_I1)*/ )
+    int index = m_Strings.size();
+    if ( index >= max_index ) {
         return -1;
-    m_SNP_Comments.push_back(comment);
-    return Int1(index);
+    }
+    //NcbiCout << "string["<<index<<"] = \"" << s << "\"\n";
+    m_Strings.push_back(s);
+    m_Indices.insert(it, TIndices::value_type(s, index));
+    return index;
 }
 
 
-CSeq_annot_SNP_Info::const_iterator CSeq_annot_SNP_Info::begin(void) const
+Int1 CSeq_annot_SNP_Info::x_GetAlleleIndex(const string& allele)
 {
-    return m_SNP_Set.begin();
-}
-
-
-CSeq_annot_SNP_Info::const_iterator CSeq_annot_SNP_Info::end(void) const
-{
-    return m_SNP_Set.end();
-}
-
-
-CSeq_annot_SNP_Info::const_iterator
-CSeq_annot_SNP_Info::LowerBoundByPosition(TSeqPos position) const
-{
-    return lower_bound(m_SNP_Set.begin(), m_SNP_Set.end(), position<<1);
+    if ( allele.size() > 5 )
+        return -1;
+    if ( m_Alleles.IsEmpty() ) {
+        // prefill by small alleles
+        for ( const char* c = "-NACGT"; *c; ++c ) {
+            m_Alleles.GetIndex(string(1, *c), kMax_I1);
+        }
+        for ( const char* c1 = "ACGT"; *c1; ++c1 ) {
+            string s(1, *c1);
+            for ( const char* c2 = "ACGT"; *c2; ++c2 ) {
+                m_Alleles.GetIndex(s+*c2, kMax_I1);
+            }
+        }
+    }
+    return Int1(m_Alleles.GetIndex(allele, kMax_I1));
 }
 
 
@@ -170,17 +170,13 @@ CRef<CSeq_entry> CSeq_annot_SNP_Info::Read(CObjectIStream& in)
     
     in >> *m_Seq_annot;
 
+    // we don't need index maps anymore
+    m_Comments.ClearIndices();
+    m_Alleles.ClearIndices();
+
     sort(m_SNP_Set.begin(), m_SNP_Set.end());
     
     return entry;
-}
-
-
-inline
-void CSeq_annot_SNP_Info::x_AddSNP(const SSNP_Info& snp_info)
-{
-    //_ASSERT(snp_info.m_Seq_annot_SNP_Info == this);
-    m_SNP_Set.push_back(snp_info);
 }
 
 
@@ -225,7 +221,7 @@ CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
 
         total =
             accumulate(s_TotalCount, s_TotalCount+SSNP_Info::eSNP_Type_last,0);
-        NcbiCout << "accumulative CSeq_annot_SNP_Info statistic:\n";
+        NcbiCout << "cumulative CSeq_annot_SNP_Info statistic:\n";
         for ( size_t i = 0; i < SSNP_Info::eSNP_Type_last; ++i ) {
             NcbiCout <<
                 setw(40) << SSNP_Info::s_SNP_Type_Label[i] << ": " <<
@@ -263,6 +259,12 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.2  2003/08/15 19:19:16  vasilche
+ * Fixed memory leak in string packing hooks.
+ * Fixed processing of 'partial' flag of features.
+ * Allow table packing of non-point SNP.
+ * Allow table packing of SNP with long alleles.
+ *
  * Revision 1.1  2003/08/14 20:05:19  vasilche
  * Simple SNP features are stored as table internally.
  * They are recreated when needed using CFeat_CI.

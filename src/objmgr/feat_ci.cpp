@@ -32,11 +32,15 @@
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/snp_annot_info.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -47,24 +51,22 @@ const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
     if (!m_MappedFeat) {
         if ( bool(m_MappedLoc)  ||  bool(m_MappedProd) ) {
             CSeq_feat& dst = *new CSeq_feat;
-            m_MappedFeat = &dst;
+            m_MappedFeat.Reset(&dst);
             CSeq_feat& src = const_cast<CSeq_feat&>(*m_Feat);
             if ( src.IsSetId() )
                 dst.SetId(src.SetId());
             dst.SetData(src.SetData());
-            if ( src.IsSetPartial() )
-                dst.SetPartial(src.GetPartial());
+            if ( m_Partial )
+                dst.SetPartial(true);
+            else
+                dst.ResetPartial();
             if ( src.IsSetExcept() )
                 dst.SetExcept(src.GetExcept());
             if ( src.IsSetComment() )
                 dst.SetComment(src.GetComment());
-            if ( src.IsSetProduct() )
-                dst.SetProduct(m_MappedProd?
-                               const_cast<CSeq_loc&>(*m_MappedProd):
-                               src.SetProduct());
-            dst.SetLocation(m_MappedLoc?
-                            const_cast<CSeq_loc&>(*m_MappedLoc):
-                            src.SetLocation());
+            if ( bool(m_MappedProd) || src.IsSetProduct() )
+                dst.SetProduct(m_MappedProd? *m_MappedProd: src.SetProduct());
+            dst.SetLocation(m_MappedLoc? *m_MappedLoc: src.SetLocation());
             if ( src.IsSetQual() )
                 dst.SetQual() = src.SetQual();
             if ( src.IsSetTitle() )
@@ -108,39 +110,62 @@ CMappedFeat& CMappedFeat::Set(const CAnnotObject_Ref& annot)
     if ( annot.IsSNPFeat() ) {
         const CSeq_annot_SNP_Info& snp_annot = annot.GetSeq_annot_SNP_Info();
         const SSNP_Info& snp_info = *(snp_annot.begin()+annot.GetSNP_Index());
-        m_Feat.Reset(snp_info.CreateSeq_feat(snp_annot));
-        _ASSERT(!m_Feat->IsSetComment() || m_Feat->GetComment().size() != 0);
+        m_Feat.Reset();
+        snp_info.UpdateSeq_feat(m_SNPFeat, snp_annot);
+        m_Feat = m_SNPFeat;
         m_MappedFeat.Reset();
-        m_Partial = false;
-        m_MappedLoc.Reset(annot.GetMappedLocation());
+        m_MappedProd.Reset();
         const CSeq_loc* mapped_loc = annot.GetMappedLocation();
         if ( mapped_loc ) {
             CSeq_loc* loc;
+            CSeq_id& id = const_cast<CSeq_id&>(mapped_loc->GetWhole());
             m_MappedLoc.Reset(loc = new CSeq_loc);
-            CSeq_point& point = loc->SetPnt();
-            point.SetId(const_cast<CSeq_id&>(mapped_loc->GetWhole()));
-            point.SetPoint(annot.GetFrom());
-            point.SetStrand(annot.IsPartial()?
-                            eNa_strand_minus: eNa_strand_plus);
-            m_MappedProd.Reset();
+            TSeqPos from = annot.GetFrom();
+            TSeqPos to = annot.GetToOpen()-1;
+            ENa_strand strand =
+                annot.MinusStrand()? eNa_strand_minus: eNa_strand_plus;
+            if ( to == from ) {
+                CSeq_point& point = loc->SetPnt();
+                point.SetId(id);
+                point.SetPoint(from);
+                point.SetStrand(strand);
+            }
+            else {
+                CSeq_interval& interval = loc->SetInt();
+                interval.SetId(id);
+                interval.SetFrom(from);
+                interval.SetTo(to);
+                interval.SetStrand(strand);
+            }
             m_MappedFeat = m_Feat;
-            const_cast<CSeq_feat&>(*m_MappedFeat).SetLocation(*loc);
+            CSeq_feat& feat = const_cast<CSeq_feat&>(*m_MappedFeat);
+            feat.SetLocation(*loc);
+            m_Partial = annot.IsPartial();
+            if ( m_Partial )
+                feat.SetPartial(true);
+            else
+                feat.ResetPartial();
         }
         else {
+            m_Partial = false;
+            m_MappedLoc.Reset();
             m_MappedFeat = m_Feat;
+            CSeq_feat& feat = const_cast<CSeq_feat&>(*m_MappedFeat);
+            feat.ResetPartial();
         }
     }
     else {
         m_Feat.Reset(&annot.GetFeat());
         m_MappedFeat.Reset();
-        m_Partial = annot.IsPartial();
+        m_Partial = annot.IsPartial() ||
+            m_Feat->IsSetPartial() && m_Feat->GetPartial();
         if ( annot.GetMappedIndex() == 0 ) {
-            m_MappedLoc.Reset(annot.GetMappedLocation());
+            m_MappedLoc.Reset(const_cast<CSeq_loc*>(annot.GetMappedLocation()));
             m_MappedProd.Reset();
         }
         else {
             m_MappedLoc.Reset();
-            m_MappedProd.Reset(annot.GetMappedLocation());
+            m_MappedProd.Reset(const_cast<CSeq_loc*>(annot.GetMappedLocation()));
         }
     }
     return *this;
@@ -153,6 +178,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/08/15 19:19:16  vasilche
+* Fixed memory leak in string packing hooks.
+* Fixed processing of 'partial' flag of features.
+* Allow table packing of non-point SNP.
+* Allow table packing of SNP with long alleles.
+*
 * Revision 1.19  2003/08/14 20:05:19  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

@@ -83,6 +83,35 @@ void CSeq_loc_Conversion::SetConversion(const CSeqMap_CI& seg)
 }
 
 
+bool CSeq_loc_Conversion::ConvertRange(TRange& range)
+{
+    TSeqPos src_from = range.GetFrom();
+    if ( src_from < m_Src_from ) {
+        m_Partial = true;
+        src_from = m_Src_from;
+    }
+    TSeqPos src_to = range.GetTo();
+    if ( src_to > m_Src_to ) {
+        m_Partial = true;
+        src_to = m_Src_to;
+    }
+    if ( src_from > src_to ) {
+        return false;
+    }
+    TSeqPos dst_from, dst_to;
+    if ( !m_Reverse ) {
+        dst_from = m_Shift + src_from;
+        dst_to = m_Shift + src_to;
+    }
+    else {
+        dst_from = m_Shift - src_to;
+        dst_to = m_Shift - src_from;
+    }
+    range.SetFrom(dst_from).SetTo(dst_to);
+    return true;
+}
+
+
 bool CSeq_loc_Conversion::ConvertPoint(TSeqPos src_pos)
 {
     if ( src_pos < m_Src_from || src_pos > m_Src_to ) {
@@ -325,8 +354,7 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, int index)
         break;
     }
     }
-    ref.SetAnnotObjectRange(m_TotalRange, loc);
-    ref.SetPartial(IsPartial());
+    ref.SetAnnotObjectRange(m_TotalRange, IsPartial(), loc);
 }
 
 
@@ -346,6 +374,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/08/15 19:19:16  vasilche
+* Fixed memory leak in string packing hooks.
+* Fixed processing of 'partial' flag of features.
+* Allow table packing of non-point SNP.
+* Allow table packing of SNP with long alleles.
+*
 * Revision 1.1  2003/08/14 20:05:19  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

@@ -29,23 +29,25 @@
 */
 
 #include <objmgr/impl/pack_string.hpp>
+#include <objmgr/reader.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objectiter.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
-CPackStringHook::CPackStringHook(size_t length_limit, size_t count_limit)
+CPackString::CPackString(size_t length_limit, size_t count_limit)
     : m_LengthLimit(length_limit), m_CountLimit(count_limit),
       m_Skipped(0), m_CompressedIn(0), m_CompressedOut(0)
 {
 }
 
 
-CPackStringHook::~CPackStringHook(void)
+CPackString::~CPackString(void)
 {
 /*
-    NcbiCout << "CPackStringHook: skipped: " << m_Skipped<<" compressed "<<m_CompressedIn<<" string into "<<m_CompressedOut<<" :";
+    NcbiCout << "CPackString: skipped: " << m_Skipped<<
+        " compressed "<<m_CompressedIn<<" string into "<<m_CompressedOut<<" :";
     ITERATE ( set<string>, it, m_Strings ) {
         NcbiCout << " \"" << *it<<"\"";
     }
@@ -54,18 +56,16 @@ CPackStringHook::~CPackStringHook(void)
 }
 
 
-void CPackStringHook::x_RefCounterError(void)
+void CPackString::x_RefCounterError(void)
 {
     THROW1_TRACE(runtime_error,
-                 "CPackStringHook: bad ref counting");
+                 "CPackString: bad ref counting");
 }
 
 
-inline
-void CPackStringHook::x_Assign(string& s, const string& src)
+void CPackString::x_Assign(string& s, const string& src)
 {
-    s = src;
-    if ( s.c_str() != src.c_str() ) {
+    if ( objects::CReader::TryStringPack() ) {
         const_cast<string&>(src) = s;
         s = src;
         if ( s.c_str() != src.c_str() ) {
@@ -75,7 +75,7 @@ void CPackStringHook::x_Assign(string& s, const string& src)
 }
 
 
-void CPackStringHook::ReadString(CObjectIStream& in, string& s)
+void CPackString::ReadString(CObjectIStream& in, string& s)
 {
     in.ReadString(s);
     if ( s.size() > m_LengthLimit ) {
@@ -88,7 +88,7 @@ void CPackStringHook::ReadString(CObjectIStream& in, string& s)
             ++m_CompressedOut;
             ins.first->c_str();
         }
-        x_Assign(s, *ins.first);
+        Assign(s, *ins.first);
         ++m_CompressedIn;
     }
     else {
@@ -97,7 +97,7 @@ void CPackStringHook::ReadString(CObjectIStream& in, string& s)
             ++m_Skipped;
             return;
         }
-        x_Assign(s, *it);
+        Assign(s, *it);
         ++m_CompressedIn;
     }
 }
@@ -105,7 +105,7 @@ void CPackStringHook::ReadString(CObjectIStream& in, string& s)
 
 CPackStringClassHook::CPackStringClassHook(size_t length_limit,
                                            size_t count_limit)
-    : CPackStringHook(length_limit, count_limit)
+    : m_PackString(length_limit, count_limit)
 {
 }
 
@@ -116,15 +116,15 @@ CPackStringClassHook::~CPackStringClassHook(void)
 
 
 void CPackStringClassHook::ReadClassMember(CObjectIStream& in,
-                                           const CObjectInfo::CMemberIterator& member)
+                                           const CObjectInfoMI& member)
 {
-    ReadString(in, *CType<string>::GetUnchecked(*member));
+    m_PackString.ReadString(in, *CType<string>::GetUnchecked(*member));
 }
 
 
 CPackStringChoiceHook::CPackStringChoiceHook(size_t length_limit,
                                              size_t count_limit)
-    : CPackStringHook(length_limit, count_limit)
+    : m_PackString(length_limit, count_limit)
 {
 }
 
@@ -135,9 +135,9 @@ CPackStringChoiceHook::~CPackStringChoiceHook(void)
 
 
 void CPackStringChoiceHook::ReadChoiceVariant(CObjectIStream& in,
-                                              const CObjectInfo::CChoiceVariant& variant)
+                                              const CObjectInfoCV& variant)
 {
-    ReadString(in, *CType<string>::GetUnchecked(*variant));
+    m_PackString.ReadString(in, *CType<string>::GetUnchecked(*variant));
 }
 
 

@@ -63,6 +63,8 @@ class CSeq_point;
 class CSeq_loc_Conversion
 {
 public:
+    typedef CRange<TSeqPos> TRange;
+
     CSeq_loc_Conversion(const CSeq_id& master_id,
                         const CSeqMap_CI& seg,
                         const CSeq_id_Handle& src_id,
@@ -70,6 +72,7 @@ public:
     ~CSeq_loc_Conversion(void);
 
     TSeqPos ConvertPos(TSeqPos src_pos);
+    bool ConvertRange(TRange& range);
 
     bool GoodSrcId(const CSeq_id& id);
     bool MinusStrand(void) const
@@ -107,7 +110,6 @@ public:
         }
     void SetConversion(const CSeqMap_CI& seg);
 
-    typedef CRange<TSeqPos> TRange;
     const TRange& GetTotalRange(void) const
         {
             return m_TotalRange;
@@ -225,6 +227,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/08/15 19:19:15  vasilche
+* Fixed memory leak in string packing hooks.
+* Fixed processing of 'partial' flag of features.
+* Allow table packing of non-point SNP.
+* Allow table packing of SNP with long alleles.
+*
 * Revision 1.1  2003/08/14 20:05:18  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

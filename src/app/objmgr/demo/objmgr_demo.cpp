@@ -810,9 +810,15 @@ int CDemoApp::Run(void)
                 count++;
                 // Get seq-annot containing the feature
                 if ( print_features ) {
+                    NcbiCout << "Feature:";
+                    if ( it->IsSetPartial() ) {
+                        NcbiCout << " partial = " << it->GetPartial();
+                    }
+                    NcbiCout << "\n";
                     auto_ptr<CObjectOStream>
                         out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
                     *out << it->GetMappedFeature();
+                    NcbiCout << "Location:\n";
                     *out << it->GetLocation();
                 }
                 CConstRef<CSeq_annot> annot(&it.GetSeq_annot());
@@ -946,6 +952,12 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/08/15 19:19:16  vasilche
+* Fixed memory leak in string packing hooks.
+* Fixed processing of 'partial' flag of features.
+* Allow table packing of non-point SNP.
+* Allow table packing of SNP with long alleles.
+*
 * Revision 1.35  2003/08/14 20:05:20  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.
