@@ -148,7 +148,7 @@ test "$install_dir" = "$build_dir"  &&  \
    Usage "Cannot install to itself"
 
 # Directories to install
-install_dirs="lib status"
+install_dirs="lib status inc"
 all_install_dirs="$install_dirs bin build"
 test "$with_bin" != "no"  &&  install_dirs="bin $install_dirs"
 
@@ -191,14 +191,6 @@ if test -d "$install_dir/bin/.gbench/bin"; then
      rm -f $install_dir/bin/gbench  &&  \
      ln -s .gbench/bin/run-gbench.sh $install_dir/bin/gbench
 fi
-
-# Copy the configuration file -- only if it differs from the existing one
-test -d "$install_dir/inc"  ||  mkdir "$install_dir/inc"  ||  \
-   Usage "Failed to create $install_dir/inc"
-i_cfg="$install_dir/inc/ncbiconf.h"
-b_cfg="$build_dir/inc/ncbiconf.h"
-diff "$b_cfg" "$i_cfg" 2>/dev/null  ||  \
-   cp -p "$b_cfg" "$i_cfg"  ||  Usage "Failed copy to:  $i_cfg"
 
 # Remove various unneeded files
 files="\
