@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/03/05 22:14:18  vakatov
+* Added "operator<" for CRef:: and CConstRef:: to make them useable
+* as keys in the stnadard C++ associative containers (set, map, ...)
+*
 * Revision 1.19  2001/02/21 21:16:08  grichenk
 * CRef:: Release, Reset -- reset m_Ptr BEFORE removing the reference
 *
@@ -547,6 +551,22 @@ public:
 private:
     TObjectType* m_Ptr;
 };
+
+
+
+template<class T>
+bool operator< (const CRef<T>& r1, const CRef<T>& r2)
+{
+    return r1.GetPointer() < r2.GetPointer();
+}
+
+template<class T>
+bool operator< (const CConstRef<T>& r1, const CConstRef<T>& r2)
+{
+    return r1.GetPointer() < r2.GetPointer();
+}
+
+
 
 template<typename T>
 class CObjectFor : public CObject
