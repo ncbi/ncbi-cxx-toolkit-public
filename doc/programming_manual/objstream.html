@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+    <title>CObject[IO]Streams</title>
+  </head>
+  <body bgcolor = white>
+    <h1><i> CObject[IO]Streams</i></h1>
+
+  	      <ul>
+	        <li><a href="#introduction"> Introduction</a> 
+	        <li>The <a href="#cobjostr"> <i>CObjectIStream</i></a> class
+	        <li>The <a href="#cobjistr"> <i>CObjectOStream</i></a> classes
+	        <li> <a href="#readhooks"> The <i>read</i> hook classes </a>
+	        <li> <a href="#writehooks"> The <i>write</i> hook classes </a>
+	      </ul>
+
+<a name ="introduction"> <h3>Introduction</h3>
+
+<a name="objstrs"> <h3> The 
+<a href="../docxx/CObjectIStream"> <i>CObjectIStream</i></a> and
+<a href="../docxx/CObjectOStream"> <i>CObjectOStream</i></a> classes</h3>
+
+The reading and writing of serializable data objects is also discussed in the chapter on <a
+href="asn.html#example1"> <i>Processing serial data</i></a>, where the program <a
+href="xml2asn_cpp.html"><i>xml2asn.cpp</i></a> demonstrates the usage of both <i>CObjectIStream</i>
+and <i>CObjectOStream</i>. Here, we review these objects briefly with respect to how type
+information can be used in combination with I/O streams to handle serialized data.<p>
+
+Each of the <i>Open()</i> statements in <a href="xml2asn_cpp.html"><i>xml2asn.cpp</i></a> specifies a filename and an 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ESerialDataFormat">
+<i>ESerialDataFormat</i></a>, e.g.:
+
+<font color = "#000080"><pre>
+  auto_ptr&lt;CObjectIStream> xml_in(CObjectIStream::Open("1001.xml", eSerial_Xml));
+</pre></font>
+
+This statement causes a <a href="../docxx/CObjectIStreamXml.html"> <i>CObjectIStreamXml</i></a>
+object (a subclass of <i>CObjectIStream</i>) to be opened on the file named "1001.xml". No
+information is yet provided as to what <i>type</i> of object(s) may be encoded in the file - only
+the format of the data is currently specified. Similarly, the two statements in <a
+href="xml2asn_cpp.html"><i>xml2asn.cpp</i></a> that create output streams specify only that the
+output formats will be ASN.1 text and ASN.1 binary. <p>
+
+It is not until the input and output operators are applied to these streams, in conjunction with the 
+<i>CBiostruc bs</i>, that the object-specific type information comes into play. The statement
+<i>*xml_in >> bs </i> indirectly invokes the <i>Read()</i> template function, which is defined as:
+<font color = "#000080"><pre>
+template&lt;typename T> CObjectIStream& Read(CObjectIStream& in, T& object)
+{
+    Read(in, &object, GetTypeRef(&object));
+    return in;
+}
+</pre></font>
+This, in turn, accesses the class type information associated with the object, <i>bs</i>. Here,
+<i>GetTypeRef()</i> is ensured to return the correct type information. Similarly, the output
+operators, when applied to the <i>CObjectOstream</i> object in conjunction with the <i>CBiostruc
+bs</i>, will invoke the <i>Write()</i> template function:
+
+<font color = "#000080"><pre>
+template&lt;typename T> CObjectOStream& Write(CObjectOStream& out, T& object)
+{
+    Write(out, &object, GetTypeRef(&object));
+    return out;
+}
+</pre></font>
+
+The type information defines what tag names and value types should be encountered on the stream,
+while the <i>CObject[IO]Stream</i> subclasses specialize the data serialization format.<p>
+
+<p>
+
+   </body>
+<a href="iterators.html"> <i> previous</i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="../index.html"> <i> up </i> </a>
+&nbsp;&nbsp;&nbsp;
+<!--a href=".html"> <i> next</i> </a-->
+</html>
+
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+		  <!-- <td align=center><i>$Revision$</i></td> -->
+		  <td align=right><i>$Date$</i></td>
+	 </table>
