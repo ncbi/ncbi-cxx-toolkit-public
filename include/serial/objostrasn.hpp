@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2002/03/07 22:02:00  grichenk
+* Added "Separator" modifier for CObjectOStream
+*
 * Revision 1.39  2001/10/17 20:41:20  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -300,6 +303,9 @@ protected:
 	virtual void WriteChars(const CharBlock& block,
                             const char* chars, size_t length);
 	virtual void EndChars(const CharBlock& block);
+
+    // Write current separator to the stream
+    virtual void WriteSeparator(void);
 
 private:
     void WriteString(const char* str, size_t length);

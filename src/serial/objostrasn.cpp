@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2002/03/07 22:02:02  grichenk
+* Added "Separator" modifier for CObjectOStream
+*
 * Revision 1.67  2001/10/17 20:41:25  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -998,5 +1001,12 @@ void CObjectOStreamAsn::AsnWrite(AsnIo& asn, const char* data, size_t length)
     m_Output.PutString(data, length);
 }
 #endif
+
+
+void CObjectOStreamAsn::WriteSeparator(void)
+{
+    m_Output.PutString(GetSeparator());
+}
+
 
 END_NCBI_SCOPE

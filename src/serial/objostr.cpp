@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2002/03/07 22:02:01  grichenk
+* Added "Separator" modifier for CObjectOStream
+*
 * Revision 1.62  2001/10/17 20:41:25  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -1028,5 +1031,13 @@ void CObjectOStream::AsnWrite(AsnIo& , const char* , size_t )
     ThrowError(eIllegalCall, "illegal call");
 }
 #endif
+
+
+void CObjectOStream::WriteSeparator(void)
+{
+    // do nothing by default
+    return;
+}
+
 
 END_NCBI_SCOPE

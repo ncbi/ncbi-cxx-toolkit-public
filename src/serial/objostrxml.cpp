@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/03/07 22:02:02  grichenk
+* Added "Separator" modifier for CObjectOStream
+*
 * Revision 1.29  2001/11/09 19:07:58  grichenk
 * Fixed DTDFilePrefix functions
 *
@@ -859,5 +862,12 @@ void CObjectOStreamXml::WriteChars(const CharBlock& ,
         WriteEscapedChar(c);
 	}
 }
+
+
+void CObjectOStreamXml::WriteSeparator(void)
+{
+    m_Output.PutString(GetSeparator());
+}
+
 
 END_NCBI_SCOPE

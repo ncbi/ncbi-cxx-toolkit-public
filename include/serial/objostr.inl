@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/03/07 22:01:59  grichenk
+* Added "Separator" modifier for CObjectOStream
+*
 * Revision 1.13  2002/02/13 22:39:15  ucko
 * Support AIX.
 *
@@ -393,5 +396,33 @@ void CObjectOStream::AsnIo::Write(const char* data, size_t length)
 }
 
 #endif
+
+
+inline
+CObjectOStream& Separator(CObjectOStream& os)
+{
+    os.WriteSeparator();
+    return os;
+}
+
+inline
+CObjectOStream& CObjectOStream::operator<<
+    (CObjectOStream& (*mod)(CObjectOStream& os))
+{
+    return mod(*this);
+}
+
+inline
+string CObjectOStream::GetSeparator(void) const
+{
+    return m_Separator;
+}
+
+inline
+void CObjectOStream::SetSeparator(const string sep)
+{
+    m_Separator = sep;
+}
+
 
 #endif /* def OBJOSTR__HPP  &&  ndef OBJOSTR__INL */

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/03/07 22:02:00  grichenk
+* Added "Separator" modifier for CObjectOStream
+*
 * Revision 1.19  2001/11/09 19:07:22  grichenk
 * Fixed DTDFilePrefix functions
 *
@@ -248,6 +251,9 @@ protected:
                             const char* bytes, size_t length);
 	virtual void WriteChars(const CharBlock& block,
                             const char* chars, size_t length);
+
+    // Write current separator to the stream
+    virtual void WriteSeparator(void);
 
 private:
     void WriteString(const char* str, size_t length);

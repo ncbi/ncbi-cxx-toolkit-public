@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2002/03/07 22:01:59  grichenk
+* Added "Separator" modifier for CObjectOStream
+*
 * Revision 1.60  2002/02/13 22:39:14  ucko
 * Support AIX.
 *
@@ -357,6 +360,13 @@ public:
 	// member interface
 	void WriteClassMember(const CConstObjectInfoMI& member);
 
+    // Separator management
+    string GetSeparator(void) const;
+    void SetSeparator(const string sep);
+
+    CObjectOStream& operator<< (CObjectOStream& (*mod)(CObjectOStream& os));
+    friend CObjectOStream& Separator(CObjectOStream& os);
+
     // END OF USER INTERFACE
 
     // low level writers
@@ -679,6 +689,10 @@ protected:
     unsigned m_Flags;
 
     AutoPtr<CWriteObjectList> m_Objects;
+
+    // Write current separator to the stream
+    virtual void WriteSeparator(void);
+    string m_Separator;
 
 public:
     // hook support
