@@ -105,13 +105,6 @@ typedef struct BlastHSPResults {
 } BlastHSPResults;
 
 
-/** An auxiliary structure used for merging HSPs */
-typedef struct BLASTHSPSegment {
-   Int4 q_start, q_end;
-   Int4 s_start, s_end;
-   struct BLASTHSPSegment* next;
-} BLASTHSPSegment;
-
 /* By how much should the chunks of a subject sequence overlap if it is 
    too long and has to be split */
 #define DBSEQ_CHUNK_OVERLAP 100
