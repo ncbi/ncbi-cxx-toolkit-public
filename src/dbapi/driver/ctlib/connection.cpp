@@ -525,6 +525,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
                 break;
             }
             }
+	    continue;
         }
         case CS_END_RESULTS: {
             return nof_bytes;
@@ -579,6 +580,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/25 15:05:43  soussov
+ * fixed typo in CTL_SendDataCmd::SendChunk
+ *
  * Revision 1.1  2001/09/21 23:40:02  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
