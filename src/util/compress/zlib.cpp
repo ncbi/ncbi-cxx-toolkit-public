@@ -37,6 +37,8 @@
 
 #include <util/compress/zlib.hpp>
 
+#include <stdio.h>
+
 // Identify as Unix by default.
 #ifndef OS_CODE
 #define OS_CODE 0x03
@@ -880,6 +882,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/10 19:25:09  ucko
+ * +<stdio.h> for sprintf()
+ *
  * Revision 1.11  2004/05/10 13:06:45  ucko
  * Default OS_CODE to the Unix value (0x03).
  *
