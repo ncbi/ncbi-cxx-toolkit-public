@@ -44,6 +44,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+class CDbtag;
+class CBioseq;
 class CSeqdesc;
 class CSeq_feat;
 class CFFContext;
@@ -180,6 +182,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/18 15:26:19  shomrat
+* Added missing forward declerations
+*
 * Revision 1.2  2004/03/05 18:48:13  shomrat
 * fixed RefTrack comments
 *
