@@ -46,7 +46,7 @@ extern "C" {
 #define STRUCT_DP_OKAY             5  /* generic ok status */
 
 /* lowest possible score */
-extern const int NEGATIVE_INFINITY;
+extern const int DP_NEGATIVE_INFINITY;
 
 
 /*
@@ -54,7 +54,7 @@ extern const int NEGATIVE_INFINITY;
  */
 
 /* use for block that is not frozen */
-extern const unsigned int UNFROZEN_BLOCK;
+extern const unsigned int DP_UNFROZEN_BLOCK;
 
 /* info on block structure */
 typedef struct {
@@ -63,7 +63,7 @@ typedef struct {
     unsigned int *blockSizes;       /* length of each block */
     unsigned int *maxLoops;         /* nBlocks-1 max loop sizes */
     unsigned int *freezeBlocks;     /* first residue of each block on query (zero-numbered) if frozen;
-                                        UNFROZEN_BLOCK otherwise (default); global alignment only! */
+                                        DP_UNFROZEN_BLOCK otherwise (default); global alignment only! */
 } DP_BlockInfo;
 
 /* convenience functions for allocating/destroying BlockInfo structures;
@@ -72,7 +72,7 @@ extern DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks);
 extern void DP_DestroyBlockInfo(DP_BlockInfo *blocks);
 
 /* callback function to get the score for a block at a specified position; should
-   return NEGATIVE_INFINITY if the block can't be aligned at this position. For
+   return DP_NEGATIVE_INFINITY if the block can't be aligned at this position. For
    local alignments, the average expected score for a random match must be <= zero. */
 typedef int (*DP_BlockScoreFunction)(unsigned int block, unsigned int queryPos);
 
@@ -116,6 +116,9 @@ DP_LocalBlockAlign(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/07/11 15:27:48  thiessen
+* add DP_ prefix to globals
+*
 * Revision 1.6  2003/06/22 12:11:37  thiessen
 * add local alignment
 *

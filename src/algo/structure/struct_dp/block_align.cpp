@@ -42,8 +42,8 @@
 USING_NCBI_SCOPE;
 
 
-const int NEGATIVE_INFINITY = kMin_Int;
-const unsigned int UNFROZEN_BLOCK = kMax_UInt;
+const int DP_NEGATIVE_INFINITY = kMin_Int;
+const unsigned int DP_UNFROZEN_BLOCK = kMax_UInt;
 
 BEGIN_SCOPE(struct_dp)
 
@@ -58,7 +58,7 @@ class Cell
 public:
     int score;
     unsigned int tracebackResidue;
-    Cell(void) : score(NEGATIVE_INFINITY), tracebackResidue(NO_TRACEBACK) { }
+    Cell(void) : score(DP_NEGATIVE_INFINITY), tracebackResidue(NO_TRACEBACK) { }
 };
 
 class Matrix
@@ -90,7 +90,7 @@ int ValidateFrozenBlockPositions(const DP_BlockInfo *blocks, unsigned int queryF
             maxGapsLength += blocks->maxLoops[block - 1];
 
         /* to allow room for unfrozen blocks between frozen ones */
-        if (blocks->freezeBlocks[block] == UNFROZEN_BLOCK) {
+        if (blocks->freezeBlocks[block] == DP_UNFROZEN_BLOCK) {
             unfrozenBlocksLength += blocks->blockSizes[block];
             continue;
         }
@@ -164,7 +164,7 @@ int CalculateGlobalMatrix(Matrix& matrix,
 
     // further restrict the search if blocks are frozen
     for (block=0; block<=lastBlock; block++) {
-        if (blocks->freezeBlocks[block] != UNFROZEN_BLOCK) {
+        if (blocks->freezeBlocks[block] != DP_UNFROZEN_BLOCK) {
             if (blocks->freezeBlocks[block] < firstPos[block] ||
                 blocks->freezeBlocks[block] > lastPos[block])
             {
@@ -194,18 +194,18 @@ int CalculateGlobalMatrix(Matrix& matrix,
 
                 // cut off at max loop length from previous block, but not if both blocks are frozen
                 if (residue > prevResidue + blocks->blockSizes[block - 1] + blocks->maxLoops[block - 1] &&
-                        (blocks->freezeBlocks[block] == UNFROZEN_BLOCK ||
-                         blocks->freezeBlocks[block - 1] == UNFROZEN_BLOCK))
+                        (blocks->freezeBlocks[block] == DP_UNFROZEN_BLOCK ||
+                         blocks->freezeBlocks[block - 1] == DP_UNFROZEN_BLOCK))
                     continue;
 
                 // make sure previous block is at an allowed position
-                if (matrix[block - 1][prevResidue - queryFrom].score == NEGATIVE_INFINITY)
+                if (matrix[block - 1][prevResidue - queryFrom].score == DP_NEGATIVE_INFINITY)
                     continue;
 
                 // get score at this position
                 if (!blockScoreCalculated) {
                     score = BlockScore(block, residue);
-                    if (score == NEGATIVE_INFINITY)
+                    if (score == DP_NEGATIVE_INFINITY)
                         break;
                     blockScoreCalculated = true;
                 }
@@ -254,11 +254,11 @@ int CalculateLocalMatrix(Matrix& matrix,
 
             // get score at this position
             score = BlockScore(block, residue);
-            if (score == NEGATIVE_INFINITY)
+            if (score == DP_NEGATIVE_INFINITY)
                 continue;
 
             // find max score of any allowed previous block
-            bestPrevScore = NEGATIVE_INFINITY;
+            bestPrevScore = DP_NEGATIVE_INFINITY;
             for (prevResidue=queryFrom+1; prevResidue<=lastPos[block - 1]; prevResidue++) {
 
                 // current block must come after the previous block
@@ -320,7 +320,7 @@ int TracebackGlobalAlignment(const Matrix& matrix,
     DP_AlignmentResult **alignment)
 {
     // find max score (e.g., best-scoring position of last block)
-    int score = NEGATIVE_INFINITY;
+    int score = DP_NEGATIVE_INFINITY;
     unsigned int residue, lastBlockPos;
     for (residue=queryFrom; residue<=queryTo; residue++) {
         if (matrix[blocks->nBlocks - 1][residue - queryFrom].score > score) {
@@ -329,7 +329,7 @@ int TracebackGlobalAlignment(const Matrix& matrix,
         }
     }
 
-    if (score == NEGATIVE_INFINITY) {
+    if (score == DP_NEGATIVE_INFINITY) {
         ERROR_MESSAGE("TracebackGlobalAlignment() - somehow failed to find any allowed global alignment");
         return STRUCT_DP_ALGORITHM_ERROR;
     }
@@ -343,7 +343,7 @@ int TracebackLocalAlignment(const Matrix& matrix,
     DP_AlignmentResult **alignment)
 {
     // find max score (e.g., best-scoring position of any block)
-    int score = NEGATIVE_INFINITY;
+    int score = DP_NEGATIVE_INFINITY;
     unsigned int block, residue, lastBlock, lastBlockPos;
     for (block=0; block<blocks->nBlocks; block++) {
         for (residue=queryFrom; residue<=queryTo; residue++) {
@@ -417,7 +417,7 @@ int DP_LocalBlockAlign(
         return STRUCT_DP_PARAMETER_ERROR;
     }
     for (unsigned int block=0; block<blocks->nBlocks; block++) {
-        if (blocks->freezeBlocks[block] != UNFROZEN_BLOCK) {
+        if (blocks->freezeBlocks[block] != DP_UNFROZEN_BLOCK) {
             WARNING_MESSAGE("DP_LocalBlockAlign() - frozen block specifications are ignored...");
             break;
         }
@@ -443,7 +443,7 @@ DP_BlockInfo * DP_CreateBlockInfo(unsigned int nBlocks)
     blocks->maxLoops = new unsigned int[nBlocks - 1];
     blocks->freezeBlocks = new unsigned int[nBlocks];
     for (unsigned int i=0; i<nBlocks; i++)
-        blocks->freezeBlocks[i] = UNFROZEN_BLOCK;
+        blocks->freezeBlocks[i] = DP_UNFROZEN_BLOCK;
     return blocks;
 }
 
@@ -469,6 +469,9 @@ void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/07/11 15:27:48  thiessen
+* add DP_ prefix to globals
+*
 * Revision 1.7  2003/06/22 12:18:16  thiessen
 * fixes for unsigned/signed comparison
 *

@@ -126,7 +126,7 @@ int ScoreByBlosum62(unsigned int block, unsigned int queryPos)
         queryPos + blocks->blockSizes[block] > query.size())
     {
         ERROR_MESSAGE("ScoreByBlosum62() - invalid parameters");
-        return NEGATIVE_INFINITY;
+        return DP_NEGATIVE_INFINITY;
     }
 
     int score = 0;
@@ -233,6 +233,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/07/11 15:27:48  thiessen
+* add DP_ prefix to globals
+*
 * Revision 1.7  2003/06/22 12:11:38  thiessen
 * add local alignment
 *
