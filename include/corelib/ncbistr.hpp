@@ -39,6 +39,9 @@
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbistl.hpp>
 #include <string.h>
+#ifdef NCBI_OS_OSF1
+#  include <strings.h>
+#endif
 #include <ctype.h>
 #include <time.h>
 #include <stdarg.h>
@@ -2373,6 +2376,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.60  2004/09/07 21:25:03  ucko
+ * +<strings.h> on OSF/1, as it may be needed for str(n)casecmp's declaration.
+ *
  * Revision 1.59  2004/08/19 13:02:17  dicuccio
  * Dropped unnecessary export specifier on exceptions
  *
