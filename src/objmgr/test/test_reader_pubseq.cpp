@@ -29,8 +29,8 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
-#include <objects/objmgr/reader_pubseq.hpp>
-#include <objects/objmgr/impl/seqref_pubseq.hpp>
+#include <objmgr/reader_pubseq.hpp>
+#include <objmgr/impl/seqref_pubseq.hpp>
 
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_core_cxx.hpp>
@@ -84,6 +84,19 @@ int main()
 
 /*
 * $Log$
+* Revision 1.6  2003/06/02 16:06:39  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.5  2003/04/15 14:23:11  vasilche
 * Added missing includes.
 *

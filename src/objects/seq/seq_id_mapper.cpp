@@ -30,7 +30,7 @@
 *
 */
 
-#include <objects/objmgr/seq_id_mapper.hpp>
+#include <objmgr/seq_id_mapper.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
 #include <objects/biblio/Id_pat.hpp>
@@ -1820,6 +1820,19 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/06/02 16:06:38  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.35  2003/05/20 15:44:38  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.
@@ -1897,7 +1910,7 @@ END_NCBI_SCOPE
 * OM_THROW_TRACE -> THROW1_TRACE
 *
 * Revision 1.13  2002/05/03 03:15:24  vakatov
-* Temp. fix for the missing header <objects/objmgr1/om_defs.hpp>
+* Temp. fix for the missing header <objmgr1/om_defs.hpp>
 *
 * Revision 1.12  2002/05/02 20:42:37  grichenk
 * throw -> THROW1_TRACE

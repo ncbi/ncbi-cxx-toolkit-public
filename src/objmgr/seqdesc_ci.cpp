@@ -30,9 +30,9 @@
 *
 */
 
-#include <objects/objmgr/seqdesc_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objects/seq/Seq_descr.hpp>
-#include <objects/objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/annot_object.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -142,6 +142,19 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/06/02 16:06:38  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.8  2003/03/14 19:10:41  grichenk
 * + SAnnotSelector::EIdResolving; fixed operator=() for several classes
 *

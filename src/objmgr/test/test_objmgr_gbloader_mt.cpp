@@ -36,10 +36,10 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
-#include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/bioseq_handle.hpp>
-#include <objects/objmgr/gbloader.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/gbloader.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>
@@ -262,6 +262,19 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/06/02 16:06:39  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.23  2003/05/08 20:50:14  grichenk
 * Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
 *

@@ -31,12 +31,11 @@
 
 #include <serial/iterator.hpp>
 
-#include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/seq_vector.hpp>
-#include <objects/objmgr/seq_vector_ci.hpp>
-#include <objects/objmgr/seqdesc_ci.hpp>
-#include <objects/objmgr/feat_ci.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/feat_ci.hpp>
 
 #include <objects/general/Int_fuzz.hpp>
 
@@ -66,7 +65,7 @@
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
-#include <objects/util/sequence.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <util/strsearch.hpp>
 
 #include <algorithm>
@@ -2353,11 +2352,28 @@ void CCdregion_translate::ReadSequenceByLocation (string& seq,
                                                   const CSeq_loc& loc)
 
 {
+    // clear contents of result string
+    seq.erase();
+
     // get vector of sequence under location
     CSeqVector seqv = bsh.GetSequenceView (loc,
                                            CBioseq_Handle::eViewConstructed,
                                            CBioseq_Handle::eCoding_Iupac);
-    seqv.GetSeqData(0, seqv.size() - 1, seq);
+
+    // number of real sequence letters to take
+    int len = seqv.size ();
+    if (len < 1) return;
+
+    // resize string to appropriate length
+    seq.resize (len);
+
+    // copy characters from sequence vector
+    for (int i = 0; i < len; i++) {
+        seq [i] = seqv [i];
+    }
+
+    // this currently has a bug that does not skip past introns
+    // seqv.GetSeqData (0, len - 1, seq);
 }
 
 void CCdregion_translate::TranslateCdregion (string& prot,
@@ -2907,8 +2923,18 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
-* Revision 1.52  2003/05/27 19:44:10  grichenk
-* Added CSeqVector_CI class
+* Revision 1.53  2003/06/02 16:06:39  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
 *
 * Revision 1.51  2003/05/15 19:27:02  shomrat
 * Compare handle only if both valid; Check IsLim before GetLim

@@ -50,10 +50,10 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/submit/Seq_submit.hpp>
 
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/seq_vector.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
 
-#include <objects/alnmgr/alnmix.hpp>
+#include <objtools/alnmgr/alnmix.hpp>
 
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
@@ -312,6 +312,19 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/06/02 16:06:41  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.2  2003/05/15 19:09:18  todorov
 * Optional mixing of the query sequence only
 *

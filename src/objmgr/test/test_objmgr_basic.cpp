@@ -31,6 +31,19 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/06/02 16:06:39  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.15  2003/05/21 16:03:08  vasilche
 * Fixed access to uninitialized optional members.
 * Added initialization of mandatory members.
@@ -88,8 +101,8 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
 
-#include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/scope.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
 using namespace objects;

@@ -37,16 +37,16 @@
 *
 */
 
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/impl/data_source.hpp>
-#include <objects/objmgr/impl/tse_info.hpp>
-#include <objects/objmgr/impl/bioseq_info.hpp>
-#include <objects/objmgr/impl/seq_annot_info.hpp>
-#include <objects/objmgr/impl/priority.hpp>
-#include <objects/objmgr/seqmatch_info.hpp>
-#include <objects/objmgr/bioseq_handle.hpp>
-#include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/impl/synonyms.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/impl/data_source.hpp>
+#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/bioseq_info.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/priority.hpp>
+#include <objmgr/seqmatch_info.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/impl/synonyms.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
@@ -724,6 +724,19 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2003/06/02 16:06:38  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.69  2003/05/27 19:44:06  grichenk
 * Added CSeqVector_CI class
 *

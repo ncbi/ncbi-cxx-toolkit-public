@@ -30,15 +30,15 @@
 *
 */
 
-#include <objects/objmgr/annot_types_ci.hpp>
-#include <objects/objmgr/impl/annot_object.hpp>
+#include <objmgr/annot_types_ci.hpp>
+#include <objmgr/impl/annot_object.hpp>
 #include <serial/typeinfo.hpp>
-#include <objects/objmgr/impl/tse_info.hpp>
-#include <objects/objmgr/impl/handle_range_map.hpp>
-#include <objects/objmgr/impl/synonyms.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/bioseq_handle.hpp>
-#include <objects/objmgr/seq_map.hpp>
+#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/impl/synonyms.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_map.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -1023,6 +1023,19 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2003/06/02 16:06:37  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.67  2003/05/12 19:18:29  vasilche
 * Fixed locking of object manager classes in multi-threaded application.
 *

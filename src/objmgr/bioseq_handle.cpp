@@ -29,13 +29,13 @@
 *
 */
 
-#include <objects/objmgr/bioseq_handle.hpp>
-#include <objects/objmgr/impl/data_source.hpp>
-#include <objects/objmgr/impl/tse_info.hpp>
-#include <objects/objmgr/impl/handle_range.hpp>
-#include <objects/objmgr/seq_vector.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/seqmatch_info.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/impl/data_source.hpp>
+#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/handle_range.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seqmatch_info.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -43,10 +43,10 @@
 #include <objects/general/Object_id.hpp>
 #include <serial/typeinfo.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objects/objmgr/impl/bioseq_info.hpp>
-#include <objects/objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/bioseq_info.hpp>
+#include <objmgr/impl/tse_info.hpp>
 #include <objects/seq/Bioseq.hpp>
-#include <objects/objmgr/impl/synonyms.hpp>
+#include <objmgr/impl/synonyms.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -339,6 +339,19 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/06/02 16:06:37  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.38  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.

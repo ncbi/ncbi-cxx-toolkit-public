@@ -3,11 +3,11 @@
 # Author:  Eugene Vasilchenko (vasilche@ncbi.nlm.nih.gov)
 #################################
 
-# Build test application "testmedline"
+# Build test application "test_ncbimime"
 #################################
 
-APP = testmedline
-SRC = testmedline
-LIB = ncbimime cdd cn3d mmdb1 mmdb2 mmdb3 seqset $(SEQ_LIBS) \
+APP = test_ncbimime
+SRC = test_ncbimime
+LIB = ncbimime cdd cn3d mmdb seqset $(SEQ_LIBS) \
 	pub medline medlars biblio general \
 	xser xutil xncbi

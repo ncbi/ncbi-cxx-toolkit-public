@@ -36,9 +36,9 @@
 #include <serial/enumvalues.hpp>
 
 
-#include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/seq_vector.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
@@ -74,8 +74,8 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_set.hpp>
 
-#include <objects/util/feature.hpp>
-#include <objects/util/sequence.hpp>
+#include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -600,6 +600,19 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2003/06/02 16:06:39  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.8  2003/03/11 16:00:58  kuznets
 * iterate -> ITERATE
 *

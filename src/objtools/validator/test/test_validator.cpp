@@ -51,19 +51,19 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Seq_entry.hpp>
-#include <objects/validator/validator.hpp>
+#include <objtools/validator/validator.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
 
 // Object Manager includes
-#include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/seq_vector.hpp>
-#include <objects/objmgr/desc_ci.hpp>
-#include <objects/objmgr/feat_ci.hpp>
-#include <objects/objmgr/align_ci.hpp>
-#include <objects/objmgr/graph_ci.hpp>
-#include <objects/objmgr/gbloader.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/desc_ci.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/align_ci.hpp>
+#include <objmgr/graph_ci.hpp>
+#include <objmgr/gbloader.hpp>
 
 
 using namespace ncbi;
@@ -488,6 +488,19 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2003/06/02 16:06:43  dicuccio
+ * Rearranged src/objects/ subtree.  This includes the following shifts:
+ *     - src/objects/asn2asn --> arc/app/asn2asn
+ *     - src/objects/testmedline --> src/objects/ncbimime/test
+ *     - src/objects/objmgr --> src/objmgr
+ *     - src/objects/util --> src/objmgr/util
+ *     - src/objects/alnmgr --> src/objtools/alnmgr
+ *     - src/objects/flat --> src/objtools/flat
+ *     - src/objects/validator --> src/objtools/validator
+ *     - src/objects/cddalignview --> src/objtools/cddalignview
+ * In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+ * replaces the three libmmdb? libs.
+ *
  * Revision 1.22  2003/05/28 16:39:19  shomrat
  * Indentation corrections
  *

@@ -32,16 +32,16 @@
 * ===========================================================================
 */
 
-#include <objects/flat/flat_quals.hpp>
-#include <objects/flat/flat_gbseq_formatter.hpp>
+#include <objtools/flat/flat_quals.hpp>
+#include <objtools/flat/flat_gbseq_formatter.hpp>
 
 #include <serial/iterator.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 
-#include <objects/objmgr/scope.hpp>
-#include <objects/util/sequence.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <algorithm>
 
@@ -755,6 +755,19 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/06/02 16:06:42  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.5  2003/04/24 16:15:58  vasilche
 * Added missing includes and forward class declarations.
 *

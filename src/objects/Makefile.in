@@ -5,12 +5,11 @@
 
 USR_PROJ = sources
 
-SUB_PROJ = tinyseq general seqcode biblio medline pub pubmed seqloc seqalign seqblock seqfeat seqres seqset featdef seq id1 gbseq entrez2 objmgr util submit alnmgr flat validator asn2asn medlars mla proj mmdb1 mmdb2 mmdb3 cdd cn3d ncbimime cddalignview access objprt docsum taxon1 mim entrezgene scoremat blast
+SUB_PROJ = tinyseq general biblio medline pub pubmed \
+		   featdef seqcode seqset seq \
+		   id1 gbseq entrez2 submit medlars mla proj mmdb \
+		   cdd cn3d ncbimime access objprt docsum taxon1 mim \
+		   entrezgene scoremat blast
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
-
-asn2asn: seqset $(SEQ_LIBS) pub medline biblio general
-objmgr: id1 seqset $(SEQ_LIBS) pub medline biblio general
-util: objmgr
-validator flat alnmgr: util submit

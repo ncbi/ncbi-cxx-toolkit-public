@@ -29,7 +29,7 @@
 *
 */
 
-#include <objects/objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/annot_object.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
@@ -37,9 +37,9 @@
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Packed_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
-#include <objects/objmgr/impl/handle_range_map.hpp>
-#include <objects/objmgr/impl/seq_entry_info.hpp>
-#include <objects/objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -453,6 +453,19 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/06/02 16:06:37  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.20  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

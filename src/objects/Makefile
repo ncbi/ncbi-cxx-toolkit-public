@@ -1,4 +1,8 @@
-MODULES = tinyseq gbseq docsum taxon1 mim entrez2 general biblio medline medlars pub pubmed mla seqloc seqalign seqblock seqfeat seqres seqset seq submit proj mmdb1 mmdb2 mmdb3 cdd cn3d ncbimime access featdef objprt seqcode id1 entrezgene blast scoremat
+MODULES = access biblio blast cdd cn3d docsum entrez2 entrezgene \
+		  featdef gbseq general id1 medlars medline mim mla mmdb1 mmdb2 mmdb3 \
+		  ncbimime objprt proj pub pubmed scoremat seq seqalign \
+		  seqblock seqcode seqfeat seqloc seqres seqset submit \
+		  taxon1 tinyseq
 
 new_module = $(builddir)/new_module.sh
 

@@ -63,11 +63,11 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/seqdesc_ci.hpp>
-#include <objects/objmgr/feat_ci.hpp>
-#include <objects/util/feature.hpp>
-#include <objects/util/sequence.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -837,6 +837,19 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.23  2003/06/02 16:06:39  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.22  2003/05/23 14:16:00  ucko
 * Adjust s_TitleFromProtein's orgname-extraction code to match the C
 * version: only look at source descriptors directly on the protein, and

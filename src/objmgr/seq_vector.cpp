@@ -31,10 +31,10 @@
 */
 
 
-#include <objects/objmgr/seq_vector.hpp>
-#include <objects/objmgr/seq_vector_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_vector_ci.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <objects/objmgr/impl/data_source.hpp>
+#include <objmgr/impl/data_source.hpp>
 //#include <objects/seq/NCBI8aa.hpp>
 //#include <objects/seq/NCBIpaa.hpp>
 //#include <objects/seq/NCBIstdaa.hpp>
@@ -48,7 +48,7 @@
 //#include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
-#include <objects/objmgr/seq_map.hpp>
+#include <objmgr/seq_map.hpp>
 #include <algorithm>
 #include <map>
 
@@ -414,6 +414,19 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2003/06/02 16:06:38  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.50  2003/05/27 19:44:06  grichenk
 * Added CSeqVector_CI class
 *

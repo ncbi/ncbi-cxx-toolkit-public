@@ -82,12 +82,12 @@
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqblock/EMBL_block.hpp>
 
-#include <objects/objmgr/desc_ci.hpp>
-#include <objects/objmgr/feat_ci.hpp>
-#include <objects/objmgr/graph_ci.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/seqdesc_ci.hpp>
-#include <objects/objmgr/seq_vector.hpp>
+#include <objmgr/desc_ci.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/graph_ci.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -97,8 +97,8 @@
 #include <objects/seqres/Int_graph.hpp>
 #include <objects/seqres/Byte_graph.hpp>
 
-#include <objects/util/sequence.hpp>
-#include <objects/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -3069,6 +3069,19 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2003/06/02 16:06:43  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.35  2003/05/28 16:25:22  shomrat
 * Error messages contain original feature (not mapped).
 *

@@ -31,8 +31,8 @@
  */
 #include <corelib/ncbistd.hpp>
 #include <serial/serialbase.hpp>
-#include <objects/objmgr/object_manager.hpp>
-#include <objects/validator/validator.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objtools/validator/validator.hpp>
 
 #include "validatorp.hpp"
 
@@ -1112,6 +1112,19 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/06/02 16:06:43  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.24  2003/05/28 16:22:13  shomrat
 * Added MissingCDSProduct error.
 *

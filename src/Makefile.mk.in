@@ -318,4 +318,4 @@ XPM_LIBS      = @XPM_LIBS@
 #################################
 # Useful sets of object libraries
 # Interdependent sequence libraries + seqcode.  Does not include seqset.
-SEQ_LIBS = seqfeat seq seqalign seqblock seqfeat seq seqloc seqres seqcode
+SEQ_LIBS = seq seqcode

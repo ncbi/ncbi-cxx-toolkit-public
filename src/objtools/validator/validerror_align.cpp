@@ -38,7 +38,7 @@
 #include <objects/seqalign/Packed_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Std_seg.hpp>
-#include <objects/util/sequence.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <map>
 #include <vector>
@@ -1068,6 +1068,19 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/06/02 16:06:43  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.5  2003/05/28 16:24:40  shomrat
 * Report a single FastaLike error from each alignment
 *

@@ -55,15 +55,15 @@
 #include <objects/seqfeat/seqfeat__.hpp>
 
 // Object manager includes
-#include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/seq_vector.hpp>
-#include <objects/objmgr/desc_ci.hpp>
-#include <objects/objmgr/feat_ci.hpp>
-#include <objects/objmgr/graph_ci.hpp>
-#include <objects/objmgr/align_ci.hpp>
-#include <objects/objmgr/gbloader.hpp>
-#include <objects/objmgr/bioseq_ci.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/desc_ci.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/graph_ci.hpp>
+#include <objmgr/align_ci.hpp>
+#include <objmgr/gbloader.hpp>
+#include <objmgr/bioseq_ci.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -860,6 +860,19 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/06/02 16:06:38  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.26  2003/05/27 20:54:52  grichenk
 * Fixed CRef<> to bool convertion
 *

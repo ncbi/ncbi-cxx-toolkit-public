@@ -31,16 +31,16 @@
 */
 
 
-#include <objects/objmgr/impl/data_source.hpp>
-#include <objects/objmgr/impl/annot_object.hpp>
-#include <objects/objmgr/impl/handle_range_map.hpp>
-#include <objects/objmgr/impl/seq_entry_info.hpp>
-#include <objects/objmgr/impl/seq_annot_info.hpp>
-#include <objects/objmgr/impl/bioseq_info.hpp>
-#include <objects/objmgr/impl/tse_info.hpp>
-#include <objects/objmgr/seqmatch_info.hpp>
-#include <objects/objmgr/data_loader.hpp>
-#include <objects/objmgr/seq_vector.hpp>
+#include <objmgr/impl/data_source.hpp>
+#include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/bioseq_info.hpp>
+#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/seqmatch_info.hpp>
+#include <objmgr/data_loader.hpp>
+#include <objmgr/seq_vector.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
@@ -1481,6 +1481,19 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.105  2003/06/02 16:06:37  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.104  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.
 * Fixed some warnings on WorkShop.

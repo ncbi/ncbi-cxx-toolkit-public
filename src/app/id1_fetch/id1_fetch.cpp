@@ -58,11 +58,11 @@
 #include <objects/id1/ID1server_maxcomplex.hpp>
 #include <objects/id1/id1_client.hpp>
 
-#include <objects/objmgr/graph_ci.hpp>
-#include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/seq_vector.hpp>
-#include <objects/objmgr/gbloader.hpp>
+#include <objmgr/graph_ci.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/gbloader.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_descr.hpp>
@@ -75,11 +75,11 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #if 1
-#include <objects/flat/flat_ncbi_formatter.hpp>
+#include <objtools/flat/flat_ncbi_formatter.hpp>
 #else
-#include <objects/util/genbank.hpp>
+#include <objmgr/util/genbank.hpp>
 #endif
-#include <objects/util/sequence.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <memory>
 #include <algorithm>
@@ -744,6 +744,19 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/06/02 16:06:16  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.44  2003/05/13 17:14:17  ucko
 * Direct flat output to *m_OutputFile rather than hard-coding cout.
 *

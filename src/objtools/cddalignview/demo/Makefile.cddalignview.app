@@ -14,9 +14,7 @@ LIB = \
 	ncbimime \
 	cdd \
 	cn3d \
-	mmdb1 \
-	mmdb2 \
-	mmdb3 \
+	mmdb \
 	seqset $(SEQ_LIBS) \
 	pub \
 	medline \

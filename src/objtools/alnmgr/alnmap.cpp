@@ -32,7 +32,7 @@
 */
 
 
-#include <objects/alnmgr/alnmap.hpp>
+#include <objtools/alnmgr/alnmap.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -867,6 +867,19 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/06/02 16:06:40  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.28  2003/05/23 18:10:47  todorov
 * +fChunkSameAsSeg
 *

@@ -37,11 +37,11 @@
 
 #include <serial/serialbase.hpp>
 
-#include <objects/objmgr/bioseq_handle.hpp>
-#include <objects/objmgr/feat_ci.hpp>
-#include <objects/objmgr/seqdesc_ci.hpp>
-#include <objects/objmgr/seq_vector.hpp>
-#include <objects/objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/scope.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -71,7 +71,7 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_set.hpp>
 
-#include <objects/util/sequence.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <algorithm>
 #include <string>
@@ -2251,6 +2251,19 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/06/02 16:06:43  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.30  2003/05/28 16:25:42  shomrat
 * Minor corrections.
 *

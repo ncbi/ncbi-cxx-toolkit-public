@@ -1,4 +1,4 @@
 # $Id$
 
-LIB = $(TMPL)
-SRC = $(LIB)__ $(LIB)___ gencode seqport_util
+LIB = seq
+SRC = seqall seqall_ gencode seqport_util

@@ -29,7 +29,7 @@
 *   
 */
 
-#include <objects/util/obj_sniff.hpp>
+#include <objmgr/util/obj_sniff.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/serial.hpp>
@@ -68,7 +68,7 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
     const CTypeInfo *type_info = object.GetTypeInfo();
     const string& class_name = type_info->GetName();
 
-    m_Sniffer->OnObjectFoundPre(object, in.GetStreamOffset());
+    m_Sniffer->OnObjectFoundPre(object, m_Sniffer->GetStreamOffset());
      
     DefaultRead(in, object);
 
@@ -201,8 +201,18 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
-* Revision 1.5  2003/05/29 20:41:37  kuznets
-* Fixed an offset bug in COffsetReadHook::ReadObject
+* Revision 1.6  2003/06/02 16:06:39  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
 *
 * Revision 1.4  2003/05/22 16:47:22  kuznets
 * ObjectFound methods renamed to OnObjectFound.

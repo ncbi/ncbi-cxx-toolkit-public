@@ -29,18 +29,18 @@
 *
 */
 
-#include <objects/objmgr/gbloader.hpp>
+#include <objmgr/gbloader.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <objects/objmgr/impl/tse_info.hpp>
-#include <objects/objmgr/impl/handle_range_map.hpp>
-#include <objects/objmgr/impl/data_source.hpp>
-#include <objects/objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/impl/data_source.hpp>
+#include <objmgr/impl/annot_object.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
-#include <objects/objmgr/reader_id1.hpp>
-#include <objects/objmgr/reader_pubseq.hpp>
+#include <objmgr/reader_id1.hpp>
+#include <objmgr/reader_pubseq.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/interfaces.hpp>
 #include "gbload_util.hpp"
@@ -922,6 +922,19 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2003/06/02 16:06:37  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.72  2003/05/20 21:13:02  vasilche
 * Fixed ambiguity on MSVC.
 *

@@ -31,7 +31,7 @@
 * ===========================================================================
 */
 
-#include <objects/flat/flat_items.hpp>
+#include <objtools/flat/flat_items.hpp>
 
 #include <serial/iterator.hpp>
 
@@ -53,10 +53,10 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/TaxElement.hpp>
 
-#include <objects/alnmgr/alnmap.hpp>
-#include <objects/objmgr/bioseq_handle.hpp>
-#include <objects/objmgr/seqdesc_ci.hpp>
-#include <objects/objmgr/seq_vector.hpp>
+#include <objtools/alnmgr/alnmap.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -328,6 +328,19 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/06/02 16:06:42  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.4  2003/03/21 18:49:17  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.

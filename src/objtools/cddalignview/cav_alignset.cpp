@@ -42,9 +42,9 @@
 
 #include <map>
 
-#include "objects/cddalignview/cav_alignset.hpp"
-#include "objects/cddalignview/cav_seqset.hpp"
-#include "objects/cddalignview/cddalignview.h"
+#include <objtools/cddalignview/cav_alignset.hpp>
+#include <objtools/cddalignview/cav_seqset.hpp>
+#include <objtools/cddalignview/cddalignview.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -334,6 +334,19 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/06/02 16:06:41  dicuccio
+* Rearranged src/objects/ subtree.  This includes the following shifts:
+*     - src/objects/asn2asn --> arc/app/asn2asn
+*     - src/objects/testmedline --> src/objects/ncbimime/test
+*     - src/objects/objmgr --> src/objmgr
+*     - src/objects/util --> src/objmgr/util
+*     - src/objects/alnmgr --> src/objtools/alnmgr
+*     - src/objects/flat --> src/objtools/flat
+*     - src/objects/validator --> src/objtools/validator
+*     - src/objects/cddalignview --> src/objtools/cddalignview
+* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
+* replaces the three libmmdb? libs.
+*
 * Revision 1.1  2003/03/19 19:04:12  thiessen
 * move again
 *

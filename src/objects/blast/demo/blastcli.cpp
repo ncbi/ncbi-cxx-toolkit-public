@@ -44,10 +44,10 @@
 #include <objects/seqset/seqset__.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
-#include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/gbloader.hpp>
-#include <objects/objmgr/bioseq_handle.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/gbloader.hpp>
+#include <objmgr/bioseq_handle.hpp>
 
 using namespace ncbi;
 using namespace objects;
