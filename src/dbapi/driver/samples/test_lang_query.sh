@@ -2,8 +2,8 @@
 # $Id$
 
 driver_list="ctlib dblib ftds"
-server_list="MS_DEV1 STRAUSS MOZART"
-server_mssql="MS_DEV1"
+server_list="MS_DEV2 STRAUSS MOZART"
+server_mssql="MS_DEV2"
 
 res_file="/tmp/$0.$$"
 trap 'rm -f $res_file' 1 2 15

@@ -41,7 +41,7 @@ int main()
     try {
         CTDSContext my_context;
 
-        CDB_Connection* con = my_context.Connect("MS_DEV1", "anyone", "allowed", 0);
+        CDB_Connection* con = my_context.Connect("MS_DEV2", "anyone", "allowed", 0);
 
         CDB_RPCCmd* rcmd = con->RPC("sp_who", 0);
         rcmd->Send();
@@ -90,6 +90,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/10/10 14:03:59  ucko
+ * Switch MSSQL server to ms_dev2, since dev1 seems to be down.
+ *
  * Revision 1.2  2003/08/05 19:23:45  vakatov
  * MSSQL2 --> MS_DEV1
  *
