@@ -1,4 +1,4 @@
---$Revision: 3.4 $
+--$Revision: 3.5 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -305,6 +305,7 @@ Org-ref ::= SEQUENCE {
     db SET OF Dbtag OPTIONAL ,         -- ids in taxonomic or culture dbases
     syn SET OF VisibleString OPTIONAL ,  -- synonyms for taxname or common
     orgname OrgName OPTIONAL }
+    
 
 OrgName ::= SEQUENCE {
     name CHOICE {
@@ -314,7 +315,11 @@ OrgName ::= SEQUENCE {
         namedhybrid BinomialOrgName ,      -- some hybrids have genus x species name
         partial PartialOrgName } OPTIONAL , -- when genus not known
     attrib VisibleString OPTIONAL ,        -- attribution of name
-    mod SEQUENCE OF OrgMod OPTIONAL }
+    mod SEQUENCE OF OrgMod OPTIONAL ,
+    lineage VisibleString OPTIONAL ,       -- lineage with semicolon separators
+    gcode INTEGER OPTIONAL ,               -- genetic code (see CdRegion)
+    mgcode INTEGER OPTIONAL }              -- mitochondrial genetic code
+    
 
 OrgMod ::= SEQUENCE {
     subtype INTEGER {
