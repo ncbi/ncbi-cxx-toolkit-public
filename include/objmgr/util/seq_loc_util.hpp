@@ -264,50 +264,6 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope);
 /* @} */
 
 
-/** @name SeqLocMerge
- * Old merging functions
- * @{
- */
-
-enum ESeqLocFlags
-{
-    fMergeIntervals  = 1<<0,    ///< merge overlapping intervals
-    fFuseAbutting    = 1<<1,    ///< fuse together abutting intervals
-    fSingleInterval  = 1<<2,    ///< create a single interval
-    fAddNulls        = 1<<3     ///< will add a null Seq-loc between intervals 
-};
-typedef unsigned int TSeqLocFlags;  // logical OR of ESeqLocFlags
-
-/// Merge two Seq-locs returning the merged location.
-NCBI_XOBJUTIL_EXPORT
-CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
-                      const CSeq_loc&       loc1,
-                      const CSeq_loc&       loc2,
-                      TSeqLocFlags          flags = 0);
-
-/// Merge a single Seq-loc
-NCBI_XOBJUTIL_EXPORT
-CSeq_loc* SeqLocMergeOne(const CBioseq_Handle& target,
-                        const CSeq_loc&        loc,
-                        TSeqLocFlags           flags = 0);
-
-/// Merge a set of locations, returning the result.
-template<typename LocContainer>
-CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
-                      LocContainer&         locs,
-                      TSeqLocFlags          flags = 0)
-{
-    // create a single Seq-loc holding all the locations
-    CSeq_loc temp;
-    ITERATE( typename LocContainer, it, locs ) {
-        temp.Add(**it);
-    }
-    return SeqLocMergeOne(target, temp, flags);
-}
-
-/* @} */
-
-
 /// Get reverse complement of the seq-loc (?)
 NCBI_XOBJUTIL_EXPORT
 CSeq_loc* SeqLocRevCmp(const CSeq_loc& loc, CScope* scope);
@@ -326,6 +282,20 @@ NCBI_XOBJUTIL_EXPORT
 CRef<CSeq_loc> Seq_loc_Merge(const CSeq_loc&    loc,
                              CSeq_loc::TOpFlags flags,
                              CScope*            scope);
+
+/// Merge multiple locations
+template<typename TSeq_loc_Set>
+CSeq_loc* Seq_locs_Merge(TSeq_loc_Set&      locs,
+                         CSeq_loc::TOpFlags flags,
+                         CScope*            scope)
+{
+    // create a single Seq-loc holding all the locations
+    CSeq_loc temp;
+    ITERATE(typename TSeq_loc_Set, it, locs) {
+        temp.Add(**it);
+    }
+    return Seq_loc_Merge(temp, flags, scope);
+}
 
 /// Add two seq-locs
 NCBI_XOBJUTIL_EXPORT
@@ -351,6 +321,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2004/12/01 14:29:52  grichenk
+* Removed old SeqLocMerge
+*
 * Revision 1.5  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.
 *
