@@ -1,4 +1,4 @@
---$Revision: 1.4 $
+--$Revision: 1.5 $
 --********************************************************************
 --
 --  Direct Submission of Sequence Data
@@ -6,38 +6,33 @@
 --
 --  This is a trial specification for direct submission of sequence
 --    data worked out between NCBI and EMBL
+--  Later revised to reflect work with GenBank and Integrated database
 --
 --********************************************************************
 
 NCBI-Submit DEFINITIONS ::=
 BEGIN
 
-EXPORTS Seq-submission, Feat-submission;
+EXPORTS Seq-submit;
 
 IMPORTS Cit-sub FROM NCBI-Biblio
-		Date FROM NCBI-General
+        Date, Object-id FROM NCBI-General
         Seq-annot FROM NCBI-Seq
+		Seq-id FROM NCBI-Seqloc
         Seq-entry FROM NCBI-Seqset;
 
-Seq-submission ::= SEQUENCE {
-	sub Submission-block ,
-    data Seq-entry }
+Seq-submit ::= SEQUENCE {
+	sub Submit-block ,
+    data CHOICE {
+		entrys	SET OF Seq-entry ,  -- sequence(s)
+		annots	SET OF Seq-annot ,  -- annotation(s)
+		delete	SET OF Seq-id } } -- deletions of entries
 
-Feat-submission ::= SEQUENCE {
-	sub Submission-block ,
-    data Seq-annot }
-
-Submission-block ::= SEQUENCE {
-    type ENUMERATED {
-        not-set (0) ,
-        new (1) ,
-        update-by-author (2) ,
-        update-by-other (3) ,
-        other (255) } ,
-    cit Cit-sub ,                 -- citation for this submission
+Submit-block ::= SEQUENCE {
     contact Contact-info ,        -- who to contact
-    hold-until-publish BOOLEAN DEFAULT FALSE ,
-	release-date Date OPTIONAL }
+    cit Cit-sub ,                 -- citation for this submission
+    hup BOOLEAN DEFAULT FALSE ,   -- hold until publish
+	reldate Date OPTIONAL }       -- release by date
 
 Contact-info ::= SEQUENCE {      -- who to contact to discuss the submission
     name VisibleString ,
@@ -45,7 +40,9 @@ Contact-info ::= SEQUENCE {      -- who to contact to discuss the submission
     phone VisibleString OPTIONAL ,
     fax VisibleString OPTIONAL ,
     email VisibleString OPTIONAL ,
-    telex VisibleString OPTIONAL }
+    telex VisibleString OPTIONAL ,
+	owner-id Object-id OPTIONAL ,         -- for owner accounts
+	password OCTET STRING OPTIONAL }
 
 END
 
