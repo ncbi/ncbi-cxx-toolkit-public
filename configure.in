@@ -377,15 +377,23 @@ LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
    case "$host:$compiler" in
     *-linux*:GCC | mips-sgi-irix6\.*:GCC | *:WorkShop* | *:MIPSpro73 )
-      LIB_OR_DLL="dll"
-      FORCE_STATIC_LIB=
       ;;
     * )
-      AC_MSG_WARN(["DLLs may not be buildable by $CXX $compiler_ver on $host"])
-      AC_MSG_WARN(["All DLLs will be built as static libraries!"])
-      FORCE_STATIC_LIB="LIB_OR_DLL = lib"
+      echo
+      echo "DLLs may not be buildable by $CXX $compiler_ver on $host!"
+changequote(, )dnl
+      echo "Do you still want to try build DLLs (at your own risk)? [y/n]"
+changequote([, ])dnl
+      read answer
+      case "$answer" in
+         y | Y | yes | YES ) ;;
+         * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit ;;
+      esac
+      echo
       ;;
    esac
+   LIB_OR_DLL="dll"
+   FORCE_STATIC_LIB=
 elif test "$with_dll" = "no" ; then
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
 fi
@@ -398,7 +406,7 @@ case "$compiler" in
    LINK_DLL="$CXX $WS64_CFLAGS -G -h \$@ -o"
    ;;
  * )
-   if test "$with_dll" = "yes"  &&  test -z "$LINKDLL" ; then
+   if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
       AC_MSG_ERROR(["Dont know how to build DLLs with compiler $CXX $compiler_ver"])
    fi
    ;;
@@ -544,7 +552,9 @@ mkdir -p "$builddir" "$exec_prefix/lib" "$exec_prefix/bin"
 if test -f "${ncbiconf}" ; then
    echo
    echo "There is already a built \"${ncbiconf}\"!"
+changequote(, )dnl
    echo "Do you want to re-configure in \"${builddir}\"? [y/n]"
+changequote([, ])dnl
    read answer
    case "$answer" in
       y | Y | yes | YES ) ;;
@@ -899,6 +909,8 @@ if test "$with_sybase" = "no" ; then
    SYBASE_PATH="No_Sybase"
    SYBASE_INCLUDE=
    SYBASE_LIBS=
+else
+   Packages="$Packages Sybase"
 fi
 AC_MSG_RESULT([$SYBASE_PATH])
 
@@ -932,6 +944,7 @@ if test "$with_ncbi_c" = "no" ; then
    NCBI_C_LIBPATH=
    NCBI_C_ncbi=
 else
+   Packages="$Packages C-Toolkit"
    NCBI_C_ncbi=${NCBI_C_ncbi:="-lncbi"}
 fi
 AC_MSG_RESULT([$NCBI_C_PATH])
@@ -962,6 +975,8 @@ if test "$with_fastcgi" = "no" ; then
    FASTCGI_INCLUDE=
    FASTCGI_LIBS=
    FASTCGI_OBJS=
+else
+   Packages="$Packages Fast-CGI"
 fi
 AC_MSG_RESULT([$FASTCGI_PATH])
 
@@ -1031,6 +1046,10 @@ if test "$with_sssutils" != "no" ; then
 fi
 AC_MSG_RESULT([$with_sssutils])
 
+if test "$with_sssdb" != "no"  ||  test "$with_sssutils" != "no" ; then
+   Packages="$Packages SSS"
+fi
+
 
 ## NCBI PubMed
 AC_MSG_CHECKING(if NCBI PubMed libraries are available)
@@ -1049,6 +1068,8 @@ elif test "$with_pubmed" != "no" ; then
 fi
 if test "$with_pubmed" = "no" ; then
    NCBI_PM_PATH="No_NCBI_PubMed"
+else
+   Packages="$Packages PubMed"
 fi
 AC_MSG_RESULT([$NCBI_PM_PATH])
 
@@ -1250,6 +1271,8 @@ CFLAGS="$SAVE_CFLAGS"
 CXXFLAGS="$SAVE_CXXFLAGS"
 CPPFLAGS="$SAVE_CPPFLAGS"
 LDFLAGS="$SAVE_LDFLAGS"
+with_dll="$SAVE_with_dll"
+Packages="$SAVE_Packages"
 with_extra_action="$SAVE_with_extra_action"
 
 dnl adjust "/$builddir" to "/src"
@@ -1283,6 +1306,14 @@ if test -n "$with_extra_action" ; then
 fi
 
 dnl printout additional configuration options
+if test "$with_dll" = "yes" ; then
+   DLL_USAGE="Build libraries as dynamic by default"
+elif test "$with_dll" = "no" ; then
+   DLL_USAGE="Build libraries as static only"
+else
+   DLL_USAGE="Build libraries as static by default"
+fi
+
 cat << EOCONF
 ===============================================================================
 Overall NCBI C++ Toolkit documentation:     ./doc/index.html 
@@ -1294,6 +1325,9 @@ CFLAGS   = $CFLAGS
 CXXFLAGS = $CXXFLAGS
 CPPFLAGS = $CPPFLAGS
 LDFLAGS  = $LDFLAGS
+
+* $DLL_USAGE
+* Packages detected:  $Packages
 
 Tools / flags / paths:  $builddir/Makefile.mk
 Configuration  header:  $ncbiconf
@@ -1314,5 +1348,7 @@ SAVE_CFLAGS="$CFLAGS"
 SAVE_CXXFLAGS="$CXXFLAGS"
 SAVE_CPPFLAGS="$CPPFLAGS"
 SAVE_LDFLAGS="$LDFLAGS"
+SAVE_with_dll="$with_dll"
+SAVE_Packages="$Packages"
 SAVE_with_extra_action="$with_extra_action"
 )
