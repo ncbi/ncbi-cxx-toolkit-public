@@ -114,6 +114,18 @@ public:
     ///    it  subnode iterator
     void RemoveNode(TNodeList_I it);
 
+    enum EDeletePolicy
+    {
+        eDelete,
+        eNoDelete
+    };
+
+    /// Remove all immediate subnodes
+    ///
+    /// @param del
+    ///    Subnode delete policy
+    void RemoveAllSubNodes(EDeletePolicy del = eDelete);
+
     /// Remove the subtree from the tree without freeing it
     ///
     /// If subnode is not connected directly with the current node
@@ -512,6 +524,17 @@ void CTreeNode<TValue>::InsertNode(TNodeList_I it,
     subnode->SetParent(this);
 }
 
+template<class TValue>
+void CTreeNode<TValue>::RemoveAllSubNodes(EDeletePolicy del)
+{
+    if (del == eDelete) {
+        NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
+            CTreeNode* node = *it;
+            delete node;
+        }
+    }
+    m_Nodes.clear();
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -521,8 +544,7 @@ void CTreeNode<TValue>::InsertNode(TNodeList_I it,
 
 template<class TId, class TValue>
 CTreePairNode<TId, TValue>::CTreePairNode(const TId& id, const TValue& value)
-: //CTreePairNode<TId, TValue>::TParent(TTreePair(id, value))
-  TParent(TTreePair(id, value))
+ : TParent(TTreePair(id, value))
 {}
 
 
@@ -622,6 +644,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/01/14 16:24:17  kuznets
+ * + CTreeNode::RemoveAllSubNodes
+ *
  * Revision 1.16  2004/01/14 15:25:38  kuznets
  * Fixed bug in PairTreeTraceNode algorithm
  *
