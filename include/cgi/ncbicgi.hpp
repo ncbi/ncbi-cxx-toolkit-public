@@ -33,11 +33,8 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1998/09/15 17:04:56  vakatov
+* Revision 1.5  1998/09/15 20:21:10  vakatov
 * <just a save>
-*
-* Revision 1.3  1998/09/14 22:36:55  vakatov
-* <a go-home save>
 *
 * ==========================================================================
 */
@@ -105,7 +102,10 @@ namespace ncbi_cgi {
 
         /* Set of entries(decoded) as received from the client
          */
-        const multimap<string, string>& m_Entries(void);
+        const multimap<string, string>& m_Entries(void) {
+            return m_ContentFetched ?
+                m_Entries : g_ParseContent(m_Content(), m_Entries);
+        }
 
         /* DANGER!!!  Direct access to the data received from client
          * NOTE 1: m_Entries() would not work(return an empty set) if
@@ -136,13 +136,24 @@ namespace ncbi_cgi {
         map<string, string> m_Properties;
 
         // set of the request entries(already retrieved; cached)
-        map<string, string> m_Entries;
+        multimap<string, string> m_Entries;
     };  // CRequest
 
 
-    // Stream filter/conversion
-    bool g_Filter(istream& from, ostream& to);
+
+    ///////////////////////////////////////////////////////
+    // EXTERN Functions
+
+    // Parse the URL-encoded stream into a set of entries(<name, value>)
+    extern multimap<string, string>&
+        g_ParseContent(istream& istr, multimap<string, string>& entries);
+
+
+
     
+    ///////////////////////////////////////////////////////
+    // The bulky inline function implementations are here
+#include <ncbicgi.inl>
 
 };  // namespace ncbi_cgi
 
