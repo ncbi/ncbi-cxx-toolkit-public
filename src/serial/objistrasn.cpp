@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2001/12/09 07:42:25  vakatov
+* Fixed a warning
+*
 * Revision 1.73  2001/10/17 20:41:23  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -1422,9 +1425,9 @@ size_t CObjectIStreamAsn::ReadChars(CharBlock& block,
                 else {
                     // end of string
                     // Check the string for non-printable characters
-                    for (int i = 0; i < count; i++) {
+                    for (size_t i = 0;  i < count;  i++) {
                         CheckVisibleChar(dst[i], m_FixMethod,
-                            m_Input.GetLine());
+                                         m_Input.GetLine());
                     }
                     block.EndOfBlock();
                     return count;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2001/12/09 07:45:08  vakatov
+* Fixed a warning
+*
 * Revision 1.61  2001/10/17 20:41:25  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -1311,13 +1314,14 @@ void CObjectOStreamAsnBinary::BeginChars(const CharBlock& block)
 	WriteLength(block.GetLength());
 }
 
+
 void CObjectOStreamAsnBinary::WriteChars(const CharBlock& ,
                                          const char* chars, size_t length)
 {
     char* strcopy = new char[length+1];
     try {
         // Check the string for non-printable characters
-        for (int i = 0; i < length; i++) {
+        for (size_t i = 0;  i < length;  i++) {
             strcopy[i] = chars[i];
             CheckVisibleChar(strcopy[i], m_FixMethod);
         }
@@ -1330,6 +1334,7 @@ void CObjectOStreamAsnBinary::WriteChars(const CharBlock& ,
     }
     delete[] strcopy;
 }
+
 
 #if HAVE_NCBI_C
 unsigned CObjectOStreamAsnBinary::GetAsnFlags(void)
