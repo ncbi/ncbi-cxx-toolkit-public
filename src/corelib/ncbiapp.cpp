@@ -701,7 +701,8 @@ void CNcbiApplication::x_SetupStdio(void)
 #if defined(NCBI_COMPILER_GCC)
 #  if NCBI_COMPILER_VERSION >= 300
         _ASSERT(!m_CinBuffer);
-        const size_t kCinBufSize = 4096;
+        // Ugly work around for G++/Solaris C RTL interaction
+        const size_t kCinBufSize = 5120;
         m_CinBuffer = new char[kCinBufSize];
         cin.rdbuf()->pubsetbuf(m_CinBuffer, kCinBufSize);
 #  endif
@@ -891,6 +892,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2003/10/10 19:37:13  lavr
+ * Ugly workaround for G++/Solaris C RTL (FILE*) interactions that affect
+ * stdio constructed on pipes (sockets).  To be fully investigated later...
+ *
  * Revision 1.75  2003/10/01 14:32:09  ucko
  * +EFollowLinks
  *
