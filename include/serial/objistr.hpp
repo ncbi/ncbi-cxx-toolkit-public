@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/17 20:42:00  vasilche
+* Fixed storing/loading of pointers.
+*
 * Revision 1.6  1999/06/16 20:35:21  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -98,7 +101,7 @@ public:
     typedef unsigned TIndex;
 
     // root reader
-    void Read(TObjectPtr object, TTypeInfo typeInfo);
+    virtual void Read(TObjectPtr object, TTypeInfo typeInfo);
 
     // std C types readers
     virtual void ReadStd(char& data) = 0;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/17 20:42:06  vasilche
+* Fixed storing/loading of pointers.
+*
 * Revision 1.6  1999/06/16 20:35:33  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -145,7 +148,7 @@ void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
                    << realTypeInfo->GetName());
             WriteOtherTypeReference(realTypeInfo);
         }
-        Write(info.GetRootObject(), realTypeInfo);
+        WriteExternalObject(info.GetRootObject(), realTypeInfo);
     }
 
     if ( info.IsMember() ) {

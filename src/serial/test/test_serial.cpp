@@ -19,13 +19,21 @@ int CTestSerial::Run(void)
     SetDiagStream(&diag);
     try {
         CSerialObject write;
+        CSerialObject write1;
 
         write.m_Name = "name";
-        write.m_NamePtr = &write.m_Name;
+        write.m_NamePtr = &write1.m_Name;
         write.m_Size = -1;
         write.m_Attributes.push_back("m_Attributes");
         write.m_Attributes.push_back("m_Size");
         write.m_Attributes.push_back("m_");
+        write.m_Next = &write1;
+
+        write1.m_Name = "write1";
+        write1.m_NamePtr = new string("test");
+        write1.m_Size = 0x7fffffff;
+        write1.m_Attributes.push_back("write1");
+        write1.m_Next = &write1;
 
         {
             {

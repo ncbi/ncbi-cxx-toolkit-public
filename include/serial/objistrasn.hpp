@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/17 20:42:01  vasilche
+* Fixed storing/loading of pointers.
+*
 * Revision 1.1  1999/06/16 20:35:22  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -64,6 +67,8 @@ public:
     typedef unsigned char TByte;
 
     CObjectIStreamAsn(CNcbiIstream& in);
+
+    virtual void Read(TObjectPtr object, TTypeInfo typeInfo);
 
     virtual void ReadStd(char& data);
     virtual void ReadStd(unsigned char& data);
@@ -100,11 +105,12 @@ private:
     void SkipBlock(void);
 
     // low level methods
-    char GetChar(void);
-    bool GetChar(char c);
+    char GetChar(bool skipWhiteSpace = false);
+    bool GetChar(char c, bool skipWhiteSpace = false);
     void UngetChar(char c);
-    void Expect(char c);
-    bool Expect(char charTrue, char charFalse);
+    void Expect(char c, bool skipWhiteSpace = false);
+    bool Expect(char charTrue, char charFalse, bool skipWhiteSpace = false);
+    void ExpectString(const string& s, bool skipWhiteSpace = false);
     bool ReadEscapedChar(char& out, char terminator);
 
     void SkipWhiteSpace(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/17 20:42:07  vasilche
+* Fixed storing/loading of pointers.
+*
 * Revision 1.2  1999/06/16 20:35:34  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -69,20 +72,31 @@ CObjectOStreamAsn::~CObjectOStreamAsn(void)
 {
 }
 
+void CObjectOStreamAsn::Write(TConstObjectPtr object, TTypeInfo typeInfo)
+{
+    if ( m_Ident == 0 ) {
+        WriteOtherTypeReference(typeInfo);
+    }
+    CObjectOStream::Write(object, typeInfo);
+}
+
 void CObjectOStreamAsn::WriteStd(const char& data)
 {
     m_Output << '\'';
-    WriteChar(data);
+    WriteEscapedChar(data);
     m_Output << '\'';
 }
 
-void CObjectOStreamAsn::WriteChar(char c)
+void CObjectOStreamAsn::WriteEscapedChar(char c)
 {
     switch ( c ) {
     case '\'':
     case '\"':
     case '\\':
         m_Output << '\\' << c;
+        break;
+    case '\t':
+        m_Output << "\\t";
         break;
     case '\r':
         m_Output << "\\r";
@@ -190,16 +204,11 @@ void CObjectOStreamAsn::WriteIndex(TIndex index)
     m_Output << index;
 }
 
-void CObjectOStreamAsn::WriteSize(unsigned size)
-{
-    m_Output << size;
-}
-
 void CObjectOStreamAsn::WriteString(const string& str)
 {
     m_Output << '\"';
     for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
-        WriteChar(*i);
+        WriteEscapedChar(*i);
     }
     m_Output << '\"';
 }
@@ -237,7 +246,7 @@ void CObjectOStreamAsn::WriteObjectReference(TIndex index)
 void CObjectOStreamAsn::WriteOtherTypeReference(TTypeInfo typeInfo)
 {
     WriteId(typeInfo->GetName());
-    m_Output << "::=";
+    m_Output << " ::= ";
 }
 
 void CObjectOStreamAsn::WriteNewLine(void)

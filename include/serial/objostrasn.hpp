@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/17 20:42:02  vasilche
+* Fixed storing/loading of pointers.
+*
 * Revision 1.2  1999/06/16 20:35:24  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -63,6 +66,8 @@ public:
     CObjectOStreamAsn(CNcbiOstream& out);
     virtual ~CObjectOStreamAsn(void);
 
+    virtual void Write(TConstObjectPtr object, TTypeInfo typeInfo);
+
     virtual void WriteStd(const char& data);
     virtual void WriteStd(const unsigned char& data);
     virtual void WriteStd(const signed char& data);
@@ -78,13 +83,7 @@ public:
     virtual void WriteStd(char* const& data);
     virtual void WriteStd(const char* const& data);
 
-    void WriteNull(void);
-    void WriteIndex(TIndex index);
-    void WriteSize(unsigned size);
-    void WriteString(const string& str);
-    void WriteChar(char c);
-    void WriteId(const string& str);
-    void WriteMemberName(const string& str);
+    virtual void WriteMemberName(const string& str);
 
 protected:
 
@@ -92,6 +91,12 @@ protected:
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TIndex index);
     virtual void WriteOtherTypeReference(TTypeInfo typeInfo);
+    virtual void WriteString(const string& str);
+    virtual void WriteId(const string& str);
+
+    void WriteNull(void);
+    void WriteIndex(TIndex index);
+    void WriteEscapedChar(char c);
 
     virtual void VBegin(Block& block);
     virtual void VNext(const Block& block);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/17 20:42:05  vasilche
+* Fixed storing/loading of pointers.
+*
 * Revision 1.2  1999/06/16 20:58:04  vasilche
 * Added GetPtrTypeRef to avoid conflict in MSVS.
 *
@@ -85,8 +88,11 @@ CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in)
 {
 }
 
-char CObjectIStreamAsn::GetChar(void)
+inline char CObjectIStreamAsn::GetChar(bool skipWhiteSpace)
 {
+    if ( skipWhiteSpace )
+        SkipWhiteSpace();
+
     char c;
     if ( !m_Input.get(c) ) {
         THROW1_TRACE(runtime_error, "unexpected EOF");
@@ -101,9 +107,9 @@ void CObjectIStreamAsn::UngetChar(char )
     }
 }
 
-bool CObjectIStreamAsn::GetChar(char expect)
+bool CObjectIStreamAsn::GetChar(char expect, bool skipWhiteSpace)
 {
-    char c = GetChar();
+    char c = GetChar(skipWhiteSpace);
     if ( c != expect ) {
         UngetChar(c);
         return false;
@@ -111,16 +117,17 @@ bool CObjectIStreamAsn::GetChar(char expect)
     return true;
 }
 
-void CObjectIStreamAsn::Expect(char expect)
+inline void CObjectIStreamAsn::Expect(char expect, bool skipWhiteSpace)
 {
-    if ( !GetChar(expect) ) {
+    if ( !GetChar(expect, skipWhiteSpace) ) {
         THROW1_TRACE(runtime_error, string("'") + expect + "' expected");
     }
 }
 
-bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse)
+bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
+                                      bool skipWhiteSpace)
 {
-    char c = GetChar();
+    char c = GetChar(skipWhiteSpace);
     if ( c == choiceTrue )
         return true;
     else if ( c == choiceFalse )
@@ -128,6 +135,15 @@ bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse)
     else {
         UngetChar(c);
         THROW1_TRACE(runtime_error, string("'") + choiceTrue + "' or '" + choiceFalse + "' expected");
+    }
+}
+
+void CObjectIStreamAsn::ExpectString(const string& s, bool skipWhiteSpace)
+{
+    if ( skipWhiteSpace )
+        SkipWhiteSpace();
+    for ( string::const_iterator i = s.begin(); i != s.end(); ++i ) {
+        Expect(*i);
     }
 }
 
@@ -194,13 +210,26 @@ bool CObjectIStreamAsn::ReadEscapedChar(char& out, char terminator)
     }
 }
 
+void CObjectIStreamAsn::Read(TObjectPtr object, TTypeInfo typeInfo)
+{
+    char start = typeInfo->GetName()[0];
+    if ( GetChar(start, true) ) {
+        UngetChar(start);
+        string id = ReadId();
+        if ( id != typeInfo->GetName() ) {
+            THROW1_TRACE(runtime_error, "invalid object type: " + id +
+                         ", expected: " + typeInfo->GetName());
+        }
+        ExpectString("::=", true);
+    }
+    CObjectIStream::Read(object, typeInfo);
+}
+
 void CObjectIStreamAsn::ReadStd(char& data)
 {
-    SkipWhiteSpace();
-    Expect('\'');
+    Expect('\'', true);
     if ( !ReadEscapedChar(data, '\'') )
         THROW1_TRACE(runtime_error, "empty char");
-    Expect('\'');
 }
 
 void CObjectIStreamAsn::ReadStd(signed char& data)
@@ -305,8 +334,7 @@ CObjectIStreamAsn::TIndex CObjectIStreamAsn::ReadIndex(void)
 
 string CObjectIStreamAsn::ReadString(void)
 {
-    SkipWhiteSpace();
-    Expect('\"');
+    Expect('\"', true);
     string s;
     char c;
     while ( ReadEscapedChar(c, '\"') ) {
@@ -317,8 +345,7 @@ string CObjectIStreamAsn::ReadString(void)
 
 string CObjectIStreamAsn::ReadId(void)
 {
-    SkipWhiteSpace();
-    char c = GetChar();
+    char c = GetChar(true);
     if ( !IsAlpha(c) ) {
         UngetChar(c);
         THROW1_TRACE(runtime_error, "unexpected char in id");
@@ -334,26 +361,23 @@ string CObjectIStreamAsn::ReadId(void)
 
 void CObjectIStreamAsn::VBegin(Block& )
 {
-    SkipWhiteSpace();
-    Expect('{');
+    Expect('{', true);
 }
 
 bool CObjectIStreamAsn::VNext(const Block& block)
 {
-    SkipWhiteSpace();
     if ( block.GetNextIndex() == 0 ) {
-        return !GetChar('}');
+        return !GetChar('}', true);
     }
     else {
-        return Expect(',', '}');
+        return Expect(',', '}', true);
     }
 }
 
 CTypeInfo::TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStreamAsn::ReadPointer(" << declaredType->GetName() << ")");
-    SkipWhiteSpace();
-    char c = GetChar();
+    char c = GetChar(true);
     CIObjectInfo info;
     switch ( c ) {
     case '0':
@@ -363,8 +387,7 @@ CTypeInfo::TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)
         {
             _TRACE("CObjectIStreamAsn::ReadPointer: new");
             TObjectPtr object = declaredType->Create();
-            RegisterObject(object, declaredType);
-            Read(object, declaredType);
+            ReadExternalObject(object, declaredType);
             return object;
         }
     case '@':
@@ -378,19 +401,22 @@ CTypeInfo::TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)
         UngetChar(c);
         if ( IsAlpha(c) ) {
             string className = ReadId();
+            ExpectString("::=", true);
             _TRACE("CObjectIStreamAsn::ReadPointer: new " << className);
             TTypeInfo typeInfo = CTypeInfo::GetTypeInfoByName(className);
             TObjectPtr object = typeInfo->Create();
-            RegisterObject(object, typeInfo);
-            Read(object, typeInfo);
+            ReadExternalObject(object, typeInfo);
             info = CIObjectInfo(object, typeInfo);
             break;
         }
         else {
-            THROW1_TRACE(runtime_error, "invalid object start");
+            _TRACE("CObjectIStreamAsn::ReadPointer: default new");
+            TObjectPtr object = declaredType->Create();
+            ReadExternalObject(object, declaredType);
+            return object;
         }
     }
-    while ( (c = GetChar()) == '.' ) {
+    while ( GetChar('.', true) ) {
         string memberName = ReadId();
         _TRACE("CObjectIStreamAsn::ReadObjectPointer: member " << memberName);
         const CMemberInfo* memberInfo =

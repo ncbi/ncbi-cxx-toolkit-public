@@ -12,12 +12,13 @@ const CTypeInfo* CSerialObject::GetTypeInfo(void)
         info->ADD_PTR_CLASS_MEMBER(m_NamePtr);
         info->ADD_CLASS_MEMBER(m_Size);
         info->ADD_STL_CLASS_MEMBER(m_Attributes);
+        info->ADD_PTR_CLASS_MEMBER(m_Next);
     }
     return info;
 }
 
 CSerialObject::CSerialObject(void)
-    : m_NamePtr(0), m_Size(0)
+    : m_NamePtr(0), m_Size(0), m_Next(0)
 {
 }
 
@@ -44,5 +45,11 @@ void CSerialObject::Dump(ostream& out) const
           ++i ) {
         out << "    \"" << *i << '"' << endl;
     }
+    out << "m_Next: ";
+    if ( m_Next )
+        out << Ptr(m_Next);
+    else
+        out << "null";
+    out << endl;
     out << '}' << endl;
 }

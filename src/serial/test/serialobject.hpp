@@ -26,6 +26,8 @@ public:
     const string* m_NamePtr;
     int m_Size;
     list<string> m_Attributes;
+    
+    CSerialObject* m_Next;
 };
 
 #endif
