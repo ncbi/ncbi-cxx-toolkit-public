@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/12/06 15:06:04  ucko
+* Remove name of unused argument to CAsBodyDiagFactory::New.
+*
 * Revision 1.30  2001/11/19 15:20:17  ucko
 * Switch CGI stuff to new diagnostics interface.
 *
@@ -249,7 +252,7 @@ class CAsBodyDiagFactory : public CDiagFactory
 {
 public:
     CAsBodyDiagFactory(CCgiApplication* app) : m_App(app) {}
-    virtual CDiagHandler* New(const string& s) {
+    virtual CDiagHandler* New(const string&) {
         CCgiResponse& response = m_App->GetContext().GetResponse();
         CDiagHandler* result   = new CStreamDiagHandler(&response.out());
         response.SetContentType("text/plain");
