@@ -75,6 +75,7 @@ void CSeqMap_Delta_seqs::x_Index(TList& seq)
 
 void CSeqMap_Delta_seqs::x_IndexAll(TList& seq)
 {
+    x_AddEnd();
     x_Index(seq);
     x_AddEnd();
 }
@@ -210,6 +211,7 @@ CSeqMap_Seq_locs::~CSeqMap_Seq_locs(void)
 
 void CSeqMap_Seq_locs::x_IndexAll(void)
 {
+    x_AddEnd();
     TList& seq = *m_List;
     non_const_iterate ( TList, iter, seq ) {
         x_SetSegmentList_I(x_Add(**iter), iter);
@@ -254,6 +256,7 @@ CSeqMap_Seq_intervals::~CSeqMap_Seq_intervals(void)
 
 void CSeqMap_Seq_intervals::x_IndexAll(void)
 {
+    x_AddEnd();
     TList& seq = *m_List;
     non_const_iterate ( TList, iter, seq ) {
         x_SetSegmentList_I(x_Add(**iter), iter);
@@ -297,6 +300,7 @@ CSeqMap_SeqPoss::~CSeqMap_SeqPoss(void)
 
 void CSeqMap_SeqPoss::x_IndexAll(void)
 {
+    x_AddEnd();
     TList& seq = *m_List;
     non_const_iterate ( TList, iter, seq ) {
         x_SetSegmentList_I(x_AddPos(*iter), iter);
@@ -318,6 +322,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/02/05 20:59:12  vasilche
+* Added eSeqEnd segment at the beginning of seq map.
+* Added flags to CSeqMap_CI to stop on data, gap, or references.
+*
 * Revision 1.2  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.
