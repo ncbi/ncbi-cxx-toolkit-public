@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.82 2002/06/04 16:42:34 kimelman Exp $
+#  $Id: configure.ac,v 1.83 2002/06/05 22:14:03 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -135,6 +135,8 @@ AC_ARG_WITH(sybase-new,
    [ --with-sybase-new       use newer SYBASE install (12.5 rather than 12.0)])
 AC_ARG_WITH(ftds,
    [ --without-ftds          do not use FreeTDS libraries])
+AC_ARG_WITH(ftds2,
+   [ --with-ftds=DIR         use FreeTDS installation in DIR])
 AC_ARG_WITH(wxwin,
    [ --without-wxwin         do not use wxWindows])
 AC_ARG_WITH(wxwin2,
@@ -1577,7 +1579,7 @@ AC_MSG_CHECKING(if SYBASE libraries are available)
 
 test_new_syb() {
   if test -d $1 ; then
-    test "x$3" = x || sybase_lib=$3
+    test -z "$3"  ||  sybase_lib="$3"
     SYBASE_PATH="$1"
     if test -d $2 ; then
       SYBASE_LCL_PATH="$2"
@@ -1592,10 +1594,8 @@ if test "$with_sybase" != "no" ; then
    # deduce the path to Sybase package
    : ${with_sybase_local:="no"}
    : ${with_sybase_new:="no"}
-   sybase_r="no"
-   test $with_mt != "yes" || sybase_r="yes"
    
-   sybase_lib=lib$bit64_sfx
+   sybase_lib="lib$bit64_sfx"
    if test "$with_sybase_local" != "no" ; then
       if test "$with_sybase_local" = "yes" ; then
          : ${SYBASE_PATH:="/export/home/sybase/clients/current"}
@@ -1614,14 +1614,14 @@ if test "$with_sybase" != "no" ; then
        linux* )
          test_new_syb /netopt/Sybase/clients/12.5.0.1 /export/home/sybase/clients/12.5.0.1 lib
           ;;
-       solaris*)
+       solaris* )
          if test -n "$bit64_sfx" ; then
             test_new_syb /netopt/Sybase/clients/12.5.64-EBF9728 /export/home/sybase/clients/12.5.64 lib
          else
             test_new_syb /netopt/Sybase/clients/12.5-EBF9723 /export/home/sybase/clients/12.5 lib
          fi
          ;;
-       *)
+       * )
          with_sybase_new="no"
          extra_sybase_warning="$extra_sybase_warning New Sybase client not found - using regular one"
          ;;
@@ -1631,8 +1631,6 @@ if test "$with_sybase" != "no" ; then
        : ${SYBASE_PATH:="/netopt/Sybase/clients/current"}
        : ${SYBASE_LCL_PATH:="/export/home/sybase/clients/current"}
      fi
-#   else
-#     SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
    fi
 
    # compose a list of commonly used Sybase libraries
@@ -1640,8 +1638,6 @@ if test "$with_sybase" != "no" ; then
      linux* )
        SYBASE_LIBLIST="-lblk -lct -lcs -lsybtcl -lcomn -lintl"
        SYBASE_DLLLIST=""
-       # NOTE:  this is a very ad hoc, quick-and-dirty adjustment
-       test "$with_sybase_new" = "yes"  ||  sybase_r="no"
        ;;
      solaris* | * )
        SYBASE_LIBLIST="-lblk -lct -lcs -ltcl -lcomn -lintl"
@@ -1653,13 +1649,11 @@ if test "$with_sybase" != "no" ; then
    # multi-threading and 64-bit specific adjustments
    SYBASE_LIBPATH="$SYBASE_PATH/${sybase_lib}"
    changequote(<<, >>)dnl
-   if test "$sybase_r" = "yes"; then
-      if test -d ${SYBASE_LIBPATH} -a -f ${SYBASE_LIBPATH}/libct_r.a ; then
+   sybase_r="no"
+   if test "$with_mt" = "yes"  -a  -f ${SYBASE_LIBPATH}/libct_r.a ; then
         SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
         SYBASE_DLLLIST=`echo $SYBASE_DLLLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
-      else
-        sybase_r=no
-      fi
+        sybase_r="yes"
    fi
    if test -n "$bit64_sfx" ; then
       SYBASE_INCLUDE="-DSYB_LP64"
@@ -1682,7 +1676,7 @@ if test "$with_sybase" != "no" ; then
    SYBASE_LIBS="$SYBASE_LPATH $SYBASE_LIBLIST"
    SYBASE_DBLIBS="$SYBASE_LPATH $SYBASE_DBLIBS"
    SYBASE_DLLS="$SYBASE_DLLLIST"
-   
+
    # test it
    CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
    LIBS="$SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
@@ -1762,29 +1756,42 @@ fi
 
 ## FreeTDS libraries
 AC_MSG_CHECKING(if FreeTDS libraries are available)
+freetds=
 if test "$with_ftds" != "no" ; then
-   FTDS_PATH=${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
-   FTDS_LIBS=${FTDS_LIBS:="-lsybdb -ltds"}
-   FTDS_LIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_LIBS"
-   FTDS_INCLUDE="-I$FTDS_PATH/include"
+   if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
+      FTDS_LOCAL_PATH="dbapi/driver/ftds/freetds"
+      if test -f ${srcdir}/src/$FTDS_LOCAL_PATH/Makefile.in ; then
+         FTDS_LIBS="-lsybdb_ftds -ltds_ftds" 
+         FTDS_PATH="<$FTDS_LOCAL_PATH>"
+         FTDS_INCLUDE="-I\$(includedir)/$FTDS_LOCAL_PATH -I\$(includedir0)/$FTDS_LOCAL_PATH"
+         freetds="freetds"
+      fi
+   else
+      FTDS_PATH="$with_ftds"
+   fi
+   if test -z "$freetds" ; then
+      FTDS_PATH=${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
+      FTDS_LIBS=${FTDS_LIBS:="-lsybdb -ltds"}
+      FTDS_LIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_LIBS"
+      FTDS_INCLUDE="-I$FTDS_PATH/include"
 
-   CPPFLAGS="$FTDS_INCLUDE $orig_CPPFLAGS"
-   LIBS="$FTDS_LIBS $NETWORK_LIBS $orig_LIBS"
-   AC_TRY_LINK(
-      [
-       #include <sybdb.h>
-       #include <tds.h>
-      ],
-      [
-       LOGINREC*  x_login     = 0;
-       DBPROCESS* x_dbproc    = dbopen(x_login, (char*) "SRV_NAME");
-       TDSLOGIN*  x_tds_login = 0;
-       TDSSOCKET* x_sock      = tds_connect(x_tds_login);
-      ],
-      [AC_DEFINE(HAVE_LIBFTDS, 1,
-                 [Define to 1 if FreeTDS libraries are available.])],
-      [with_ftds="no"]
-   )
+      CPPFLAGS="$FTDS_INCLUDE $orig_CPPFLAGS"
+      LIBS="$FTDS_LIBS $NETWORK_LIBS $orig_LIBS"
+      AC_TRY_LINK(
+        [
+         #include <sybdb.h>
+         #include <tds.h>
+        ],
+        [
+         LOGINREC*  x_login     = 0;
+         DBPROCESS* x_dbproc    = dbopen(x_login, (char*) "SRV_NAME");
+         TDSLOGIN*  x_tds_login = 0;
+         TDSSOCKET* x_sock      = tds_connect(x_tds_login);
+        ],
+        ,
+        [with_ftds="no"]
+      )
+   fi
 fi
 if test "$with_ftds" = "no" ; then
    FTDS_PATH=
@@ -1793,9 +1800,14 @@ if test "$with_ftds" = "no" ; then
    WithoutPackages="$WithoutPackages FreeTDS"
    AC_MSG_RESULT([no])
 else
+   AC_DEFINE(HAVE_LIBFTDS, 1,
+             [Define to 1 if FreeTDS libraries are available.])
    WithPackages="$WithPackages FreeTDS"
    AC_MSG_RESULT([$FTDS_PATH])
 fi
+AC_SUBST(FTDS_INCLUDE)
+AC_SUBST(FTDS_LIBS)
+AC_SUBST(freetds)
 
 
 ## NCBI C Toolkit
@@ -2631,8 +2643,6 @@ AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)
 AC_SUBST(SYBASE_DLLS)
 AC_SUBST(SYBASE_DBLIBS)
-AC_SUBST(FTDS_INCLUDE)
-AC_SUBST(FTDS_LIBS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(WXWIN_INCLUDE)
