@@ -137,6 +137,8 @@ public:
     void InitializeMappedSeq_feat(const CSeq_feat& src, CSeq_feat& dst) const;
 
     void SetAnnotObjectRange(const TRange& range, bool product);
+    
+    void Swap(CAnnotMapping_Info& info);
 
 private:
     CRef<CObject>           m_MappedObject; // master sequence coordinates
@@ -190,6 +192,8 @@ public:
     bool operator==(const CAnnotObject_Ref& ref) const; // sort by object
     bool operator!=(const CAnnotObject_Ref& ref) const; // sort by object
 
+    void Swap(CAnnotObject_Ref& ref);
+
 private:
     CConstRef<CObject>         m_Object;
     unsigned int               m_AnnotObject_Index;
@@ -237,6 +241,7 @@ class CAnnot_Collector : public CObject
 {
 public:
     typedef SAnnotSelector::TAnnotType TAnnotType;
+    typedef vector<CAnnotObject_Ref>   TAnnotSet;
 
     CAnnot_Collector(TAnnotType& type,
                      CScope&     scope);
@@ -248,7 +253,6 @@ private:
     CAnnot_Collector(const CAnnot_Collector&);
     CAnnot_Collector& operator= (const CAnnot_Collector&);
 
-    typedef vector<CAnnotObject_Ref>                    TAnnotSet;
 
     const TAnnotSet& GetAnnotSet(void) const;
     CScope& GetScope(void) const;
@@ -599,6 +603,17 @@ void CAnnotMapping_Info::SetAnnotObjectRange(const TRange& range, bool product)
 }
 
 
+inline
+void CAnnotMapping_Info::Swap(CAnnotMapping_Info& info)
+{
+    m_MappedObject.Swap(info.m_MappedObject);
+    swap(m_TotalRange, info.m_TotalRange);
+    swap(m_MappedFlags, info.m_MappedFlags);
+    swap(m_MappedObjectType, info.m_MappedObjectType);
+    swap(m_MappedStrand, info.m_MappedStrand);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CAnnotObject_Ref
 /////////////////////////////////////////////////////////////////////////////
@@ -729,12 +744,44 @@ CScope::EGetBioseqFlag CAnnot_Collector::GetGetFlag(void) const
 }
 
 
+inline
+void CAnnotObject_Ref::Swap(CAnnotObject_Ref& ref)
+{
+    m_Object.Swap(ref.m_Object);
+    swap(m_AnnotObject_Index, ref.m_AnnotObject_Index);
+    swap(m_ObjectType, ref.m_ObjectType);
+    m_MappingInfo.Swap(ref.m_MappingInfo);
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+
+BEGIN_STD_SCOPE
+inline
+void swap(NCBI_NS_NCBI::objects::CAnnotMapping_Info& info1,
+		  NCBI_NS_NCBI::objects::CAnnotMapping_Info& info2)
+{
+    info1.Swap(info2);
+}
+
+
+inline
+void swap(NCBI_NS_NCBI::objects::CAnnotObject_Ref& ref1,
+		  NCBI_NS_NCBI::objects::CAnnotObject_Ref& ref2)
+{
+    ref1.Swap(ref2);
+}
+
+END_STD_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/03/03 18:49:12  didenko
+* Added Swap methods and std::swap functions for
+* CAnnotMapping_Info and CAnnotObject_Ref classes
+*
 * Revision 1.24  2005/02/24 19:13:34  grichenk
 * Redesigned CMappedFeat not to hold the whole annot collector.
 *
