@@ -92,6 +92,7 @@ public:
     // command functions
     DECLARE_COMMAND_FUNCTION(Highlight);
     DECLARE_COMMAND_FUNCTION(LoadFile);
+    DECLARE_COMMAND_FUNCTION(Exit);
 };
 
 END_SCOPE(Cn3D)
@@ -101,6 +102,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/09/02 19:34:52  thiessen
+* implement Exit message
+*
 * Revision 1.3  2003/07/10 13:47:22  thiessen
 * add LoadFile command
 *

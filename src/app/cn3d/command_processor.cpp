@@ -42,6 +42,9 @@
 *       LoadFile:
 *           data is the name of the file to load
 *
+*       Exit:
+*           quit the program, same behaviour as hitting File:Exit or 'X' icon
+*
 * ===========================================================================
 */
 
@@ -102,6 +105,7 @@ void CommandProcessor::ProcessCommand(DECLARE_PARAMS)
     // process known commands
     PROCESS_IF_COMMAND_IS(Highlight);
     PROCESS_IF_COMMAND_IS(LoadFile);
+    PROCESS_IF_COMMAND_IS(Exit);
 
     // will only get here if command isn't recognized
     ADD_REPLY_ERROR("Unrecognized command");
@@ -232,11 +236,23 @@ IMPLEMENT_COMMAND_FUNCTION(LoadFile)
         ADD_REPLY_ERROR(string("Error loading file '") + stripped.c_str() + "'");
 }
 
+IMPLEMENT_COMMAND_FUNCTION(Exit)
+{
+    // default response
+    *status = MessageResponder::REPLY_OKAY;
+    dataOut->erase();
+
+    structureWindow->Command(StructureWindow::MID_EXIT);
+}
+
 END_SCOPE(Cn3D)
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/09/02 19:34:52  thiessen
+* implement Exit message
+*
 * Revision 1.5  2003/07/10 18:47:29  thiessen
 * add CDTree->Select command
 *
