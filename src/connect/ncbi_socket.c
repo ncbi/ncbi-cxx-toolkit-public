@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2002/05/13 19:49:22  ucko
+ * Indent with spaces rather than tabs.
+ *
  * Revision 6.46  2002/05/13 19:08:11  ucko
  * Use get{addr,name}info in favor of gethostby{name,addr}(_r) when available.
  *
@@ -601,7 +604,7 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
                   fcntl(sock, F_GETFL, 0) | O_NONBLOCK :
                   fcntl(sock, F_GETFL, 0) & (int) ~O_NONBLOCK) != -1);
 #else
-#	error "Unsupported platform"
+#   error "Unsupported platform"
 #endif
 }
 
@@ -1873,19 +1876,19 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
     host = inet_addr(hostname);
     if (host == htonl(INADDR_NONE)) {
 #if defined(HAVE_GETADDRINFO)
-	struct addrinfo hints, *out = NULL;
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = PF_INET; /* We only handle IPv4. */
-	if (getaddrinfo(hostname, NULL, &hints, &out) == 0  &&  out) {
-	    struct sockaddr_in* addr = (struct sockaddr_in *) out->ai_addr;
-	    assert(addr->sin_family == AF_INET);
-	    host = addr->sin_addr.s_addr;
-	} else {
-	    host = 0;
-	}
-	if (out) {
-	    freeaddrinfo(out);
-	}
+        struct addrinfo hints, *out = NULL;
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = PF_INET; /* We only handle IPv4. */
+        if (getaddrinfo(hostname, NULL, &hints, &out) == 0  &&  out) {
+            struct sockaddr_in* addr = (struct sockaddr_in *) out->ai_addr;
+            assert(addr->sin_family == AF_INET);
+            host = addr->sin_addr.s_addr;
+        } else {
+            host = 0;
+        }
+        if (out) {
+            freeaddrinfo(out);
+        }
 #else /* Use some variant of gethostbyname */
         struct hostent* he;
 # if defined(HAVE_GETHOSTBYNAME_R)
@@ -1932,15 +1935,15 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 
     if (host  &&  name  &&  namelen) {
 #if defined(HAVE_GETNAMEINFO)
-	struct sockaddr_in addr;
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = host;
-	if (getnameinfo((struct sockaddr *) &addr, sizeof(addr), name, namelen,
-			0, 0, NI_NAMEREQD) == 0) {
-	    return name;
-	} else {
-	    return 0;
-	}
+        struct sockaddr_in addr;
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = host;
+        if (getnameinfo((struct sockaddr *) &addr, sizeof(addr), name, namelen,
+                        0, 0, NI_NAMEREQD) == 0) {
+            return name;
+        } else {
+            return 0;
+        }
 #else
         struct hostent* he;
 # if defined(HAVE_GETHOSTBYADDR_R)
