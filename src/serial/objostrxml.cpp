@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2002/11/26 22:10:31  gouriano
+* added unnamed lists of sequences (choices) as container elements
+*
 * Revision 1.38  2002/11/20 21:22:51  gouriano
 * corrected processing of unnamed sequences as choice variants
 *
@@ -836,18 +839,15 @@ void CObjectOStreamXml::WriteClass(const CClassTypeInfo* classType,
     if ( !classType->GetName().empty() ) {
         BEGIN_OBJECT_FRAME2(eFrameClass, classType);
         const TFrame& frame1 = FetchFrameFromTop(1);
-        if (frame1.GetSkipTag()) {
-            ETypeFamily type = classType->GetTypeFamily();
-            if (type == eTypeFamilyClass) {
-                if (frame1.GetFrameType() !=
-                    CObjectStackFrame::eFrameChoiceVariant) {
-                    OpenTag(classType);
-                    tagIsOpen = true;
-                }
+
+        if (!frame1.GetSkipTag() || (frame1.GetSkipTag() &&
+            classType->GetTypeFamily()==eTypeFamilyClass)) {
+            TMemberIndex first = classType->GetMembers().FirstIndex();
+            if (!classType->GetMemberInfo(first)->GetId().HaveNoPrefix() ||
+                frame1.GetFrameType() != CObjectStackFrame::eFrameChoiceVariant) {
+                OpenTag(classType);
+                tagIsOpen = true;
             }
-        } else {
-            OpenTag(classType);
-            tagIsOpen = true;
         }
         
         for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
@@ -882,6 +882,11 @@ void CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
             OpenTagEndBack();
         }
         ETypeFamily type = memberType->GetTypeFamily();
+        if (type == eTypeFamilyContainer) {
+            if (FetchFrameFromTop(1).GetSkipTag()) {
+                TopFrame().SetSkipTag();
+            }
+        }
         if ((type != eTypeFamilyPrimitive) && (type != eTypeFamilyContainer)) {
             TopFrame().SetSkipTag();
         }
