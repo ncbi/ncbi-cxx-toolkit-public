@@ -436,8 +436,8 @@ CBl2Seq::x_Results2SeqAlign()
 
         CConstRef<CSeq_id> subj_id(&sequence::GetId(*m_Subjects[i]));
         CRef<CSeq_align_set> seqalign = BLAST_Results2CppSeqAlign(
-                mi_vResults[i], m_Program, query_vector, NULL, subj_id, 
-                m_Options->GetScoringOpts(), mi_Sbp);
+                mi_vResults[i], m_Program, query_vector,
+                subj_id, m_Options->GetScoringOpts(), mi_Sbp);
         if (seqalign)
             retval->Set().merge(seqalign->Set());
     }
@@ -458,6 +458,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/07/28 22:20:17  camacho
+* Removed unused argument
+*
 * Revision 1.4  2003/07/23 21:30:40  camacho
 * Calls to options member functions
 *
