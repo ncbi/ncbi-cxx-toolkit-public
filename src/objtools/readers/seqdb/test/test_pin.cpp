@@ -389,7 +389,7 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-alphabeta]";
         
-        if (s == "-gi2bs") {
+        if ((s == "-gi2bs") || (s == "-gi2bs-target")) {
             CSeqDB db(dbname, seqtype);
             
             if (args.empty() || (! isdigit(args.begin()->c_str()[0]))) {
@@ -400,6 +400,8 @@ int test1(int argc, char ** argv)
             Uint4 gi = atoi(args.begin()->c_str());
             args.pop_front();
             
+            Uint4 target_gi = (s == "-gi2bs-target") ? gi : 0;
+            
             if (gi < 1) {
                 cout << "The GI " << gi << " is not valid." << endl;
                 return 1;
@@ -407,12 +409,12 @@ int test1(int argc, char ** argv)
             
             Uint4 oid(0);
             
-            if (! db.GiToOid(gi,oid)) {
+            if (! db.GiToOid(gi, oid)) {
                 cout << "The GI " << gi << " was not found." << endl;
                 return 0;
             }
             
-            CRef<CBioseq> bs = db.GetBioseq(oid);
+            CRef<CBioseq> bs = db.GetBioseq(oid, target_gi);
             
             cout << "--- gi " << gi << " ---" << endl;
             
@@ -422,7 +424,7 @@ int test1(int argc, char ** argv)
             *outpstr << *bs;
             
             return 0;
-        } else desc += " [-gi2bs]";
+        } else desc += " [-gi2bs] [-gi2bs-target]";
         
         if (s == "-here") {
             CSeqDB nr("tenth", 'p');
@@ -446,10 +448,10 @@ int test1(int argc, char ** argv)
             (s == "-bs10")) {
             // These require: -lncbitool -lz -lncbiobj -lncbi
             
-            const char * dbname1 = "nt";
+            const char * dbname1 = "nr";
             
-            bool is_prot = false;
-            Uint4 gi = 12831944;
+            bool is_prot = true;
+            Uint4 gi = 8;
             
             if (s == "-bs10") {
                 is_prot = true;
@@ -509,6 +511,8 @@ int test1(int argc, char ** argv)
                                                     NULL);
                 
                 Uint4 oid = readdb_gi2seq(rdfp, gi, 0);
+                
+                rdfp->gi_target = gi;
                 
                 BioseqPtr bsp = readdb_get_bioseq(rdfp, oid);
                 

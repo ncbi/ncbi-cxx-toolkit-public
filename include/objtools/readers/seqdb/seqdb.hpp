@@ -211,11 +211,11 @@ public:
     CRef<CBlast_def_line_set> GetHdr(TOID oid) const;
     
     /// Get a CBioseq of the sequence.
-    CRef<CBioseq> GetBioseq(TOID                oid,
-                            bool use_objmgr   = true,
-                            bool insert_ctrlA = false) const;
+    CRef<CBioseq> GetBioseq(TOID oid) const;
     
-
+    /// Get a CBioseq but restrict deflines to a particular gi.
+    CRef<CBioseq> GetBioseq(TOID oid, TGI target_gi) const;
+    
     /// Get a pointer to raw sequence data.
     ///
     /// Get the raw sequence (strand data).  When done, resources
