@@ -498,7 +498,7 @@ string CDirEntry::ConcatPathEx(const string& first, const string& second)
 }
 
 
-string CDirEntry::NormalizePath(const string& path, bool follow_links)
+string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 {
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
     static const char kSeps[] = { DIR_SEPARATOR,
@@ -595,7 +595,7 @@ string CDirEntry::NormalizePath(const string& path, bool follow_links)
                     ERR_POST(Warning << "CDirEntry::NormalizePath: "
                              "Reached symlink depth limit " << link_depth
                              << " when resolving " << path);
-                    follow_links = false;
+                    follow_links = eIgnoreLinks;
                 }
                 continue;
             }
@@ -1668,6 +1668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2003/10/01 14:32:09  ucko
+ * +EFollowLinks
+ *
  * Revision 1.57  2003/09/30 15:08:51  ucko
  * Reworked CDirEntry::NormalizePath, which now handles .. correctly in
  * all cases and optionally resolves symlinks (on Unix).

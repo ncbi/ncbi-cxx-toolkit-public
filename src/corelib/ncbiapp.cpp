@@ -612,8 +612,8 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
                                   const string*         conf,
                                   CNcbiRegistry::TFlags reg_flags)
 {
-    string basename(m_Arguments->GetProgramBasename());
-    string basename2(m_Arguments->GetProgramBasename(true));
+    string basename (m_Arguments->GetProgramBasename(eIgnoreLinks));
+    string basename2(m_Arguments->GetProgramBasename(eFollowLinks));
     CMetaRegistry::SEntry entry;
 
     if ( !conf ) {
@@ -891,6 +891,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2003/10/01 14:32:09  ucko
+ * +EFollowLinks
+ *
  * Revision 1.74  2003/09/30 21:12:30  ucko
  * CNcbiApplication::LoadConfig: if run through a symlink and there's no
  * configuration file for the link's source, try its (ultimate) target.

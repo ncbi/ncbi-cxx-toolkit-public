@@ -191,8 +191,9 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
     {{
         CNcbiApplication* the_app = CNcbiApplication::Instance();
         if ( the_app ) {
-            string dir  = the_app->GetArguments().GetProgramDirname();
-            string dir2 = the_app->GetArguments().GetProgramDirname(true);
+            const CNcbiArguments& args = the_app->GetArguments();
+            string                dir  = args.GetProgramDirname(eIgnoreLinks);
+            string                dir2 = args.GetProgramDirname(eFollowLinks);
             if (dir.size()) {
                 path.push_back(dir);
             }
@@ -242,6 +243,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2003/10/01 14:32:09  ucko
+ * +EFollowLinks
+ *
  * Revision 1.9  2003/10/01 01:02:49  ucko
  * Fix (syntactically) broken assertion.
  *

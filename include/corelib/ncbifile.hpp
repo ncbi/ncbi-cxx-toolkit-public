@@ -89,6 +89,12 @@ public:
 };
 
 
+/// Whether to follow symbolic links (aka shortcuts or aliases)
+enum EFollowLinks {
+    eIgnoreLinks,
+    eFollowLinks
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -243,7 +249,8 @@ public:
     /// Note that the "path" must be for current OS. 
     /// @param follow_links
     ///    Whether to follow symlinks (shortcuts, aliases)
-    static string NormalizePath(const string& path, bool follow_links = false);
+    static string NormalizePath(const string& path,
+                                EFollowLinks follow_links = eIgnoreLinks);
 
 
     //
@@ -905,6 +912,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/10/01 14:32:09  ucko
+ * +EFollowLinks
+ *
  * Revision 1.26  2003/09/30 15:08:28  ucko
  * Reworked CDirEntry::NormalizePath, which now handles .. correctly in
  * all cases and optionally resolves symlinks (on Unix).

@@ -179,17 +179,17 @@ void CNcbiArguments::Reset(int argc, const char* const* argv,
 }
 
 
-const string& CNcbiArguments::GetProgramName(bool follow_links) const
+const string& CNcbiArguments::GetProgramName(EFollowLinks follow_links) const
 {
     if (follow_links) {
         CFastMutexGuard LOCK(m_ResolvedNameMutex);
         if ( !m_ResolvedName.size() ) {
 #ifdef NCBI_OS_LINUX
             string proc_link = "/proc/" + NStr::IntToString(getpid()) + "/exe";
-            m_ResolvedName = CDirEntry::NormalizePath(proc_link, true);
+            m_ResolvedName = CDirEntry::NormalizePath(proc_link, follow_links);
 #else
-            m_ResolvedName = CDirEntry::NormalizePath(GetProgramName(false),
-                                                      true);
+            m_ResolvedName = CDirEntry::NormalizePath
+                (GetProgramName(eIgnoreLinks), follow_links);
 #endif
         }
         return m_ResolvedName;
@@ -204,7 +204,7 @@ const string& CNcbiArguments::GetProgramName(bool follow_links) const
 }
 
 
-string CNcbiArguments::GetProgramBasename(bool follow_links) const
+string CNcbiArguments::GetProgramBasename(EFollowLinks follow_links) const
 {
     const string& name = GetProgramName(follow_links);
     SIZE_TYPE base_pos = name.find_last_of("/\\:");
@@ -214,7 +214,7 @@ string CNcbiArguments::GetProgramBasename(bool follow_links) const
 }
 
 
-string CNcbiArguments::GetProgramDirname(bool follow_links) const
+string CNcbiArguments::GetProgramDirname(EFollowLinks follow_links) const
 {
     const string& name = GetProgramName(follow_links);
     SIZE_TYPE base_pos = name.find_last_of("/\\:");
@@ -244,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/10/01 14:32:09  ucko
+ * +EFollowLinks
+ *
  * Revision 1.7  2003/09/30 15:10:11  ucko
  * CNcbiArguments::GetProgram{Name,Basename,Dirname}: optionally resolve symlinks.
  *

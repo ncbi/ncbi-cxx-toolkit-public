@@ -37,7 +37,7 @@
 /// - Command-line args  -- CNcbiArguments
 
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <map>
 #include <deque>
@@ -191,15 +191,16 @@ public:
     void Add(const string& arg);
 
     /// Get program name.
-    const string& GetProgramName(bool follow_links = false) const;
+    const string& GetProgramName(EFollowLinks follow_links = eIgnoreLinks)
+        const;
 
     /// Get program base name.
-    string GetProgramBasename(bool follow_links = false) const;
+    string GetProgramBasename(EFollowLinks follow_links = eIgnoreLinks) const;
 
     /// Get program directory name.
     ///
     /// Program name includes the last '/'.
-    string GetProgramDirname (bool follow_links = false) const;
+    string GetProgramDirname (EFollowLinks follow_links = eIgnoreLinks) const;
 
     /// Set program name.
     void SetProgramName(const string& program_name);
@@ -223,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/10/01 14:32:09  ucko
+ * +EFollowLinks
+ *
  * Revision 1.12  2003/09/30 15:09:44  ucko
  * CNcbiArguments::GetProgram{Name,Basename,Dirname}: optionally resolve symlinks.
  *
