@@ -95,7 +95,6 @@ void CSeq_entry::ParentizeOneLevel(void)
 
 void CSeq_entry::UserOp_Assign(const CSerialUserOp& source)
 {
-    const CSeq_entry& src = dynamic_cast<const CSeq_entry&>(source);
     m_ParentEntry = 0;
     ParentizeOneLevel();
 }
@@ -154,6 +153,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.30  2004/11/22 16:05:07  grichenk
+ * Removed unused variable
+ *
  * Revision 6.29  2004/09/09 19:49:44  vasilche
  * Fixed compiler warning.
  *
