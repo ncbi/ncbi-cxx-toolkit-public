@@ -2318,21 +2318,6 @@ s_OutOfFrameGappedAlign(Uint1* A, Uint1* B, Int4 M, Int4 N,
     return best_score;
 }
 
-/** Callback function for a sorting of initial HSPs by diagonal */
-static int
-s_DiagCompareMatch(const void* v1, const void* v2)
-{
-   BlastInitHSP* h1,* h2;
-
-   h1 = *((BlastInitHSP**) v1);
-   h2 = *((BlastInitHSP**) v2);
-   
-   if (!h1 || !h2)
-      return 0;
-
-   return (h1->q_off - h1->s_off) - (h2->q_off - h2->s_off);
-}
-
 /** Find the HSP offsets relative to the individual query sequence instead of
  * the concatenated sequence.
  * @param query Query sequence block [in]
