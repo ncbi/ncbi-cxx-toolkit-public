@@ -176,7 +176,6 @@ int CTestNetScheduleClient::Run(void)
                 if (status == CNetScheduleClient::eJobNotFound) {
                     NcbiCerr << "Job lost:" << jk << NcbiEndl;
                 }
-cerr << jk << endl;
                 jobs.erase(it);
                 ++cnt;
                 break;                
@@ -229,6 +228,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/10 14:20:59  kuznets
+ * Cosmetics
+ *
  * Revision 1.5  2005/02/28 12:22:58  kuznets
  * Cosmetics
  *
