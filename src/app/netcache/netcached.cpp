@@ -101,7 +101,8 @@ public:
         ePut,
         eGet,
         eShutdown,
-        eVersion
+        eVersion,
+        eRemove
     } ERequestType;
 
 private:
@@ -125,6 +126,9 @@ private:
     /// Process "VERSION" request
     void ProcessVersion(CSocket& sock, const Request& req);
 
+    /// Process "REMOVE" request
+    void ProcessRemove(CSocket& sock, const Request& req);
+
     /// Returns FALSE when socket is closed or cannot be read
     bool ReadStr(CSocket& sock, string* str);
 
@@ -143,7 +147,10 @@ private:
                            unsigned int*  transaction_id);
 
     void WaitForId(unsigned int id);
-
+private:
+    bool x_CheckBlobId(CSocket&       sock,
+                       CNetCache_Key* blob_id, 
+                       const string&  blob_key);
 private:
     /// Host name where server runs
     string          m_Host;
@@ -277,6 +284,9 @@ void CNetCacheServer::Process(SOCK sock)
                 case eVersion:
                     ProcessVersion(socket, req);
                     break;
+                case eRemove:
+                    ProcessRemove(socket, req);
+                    break;
                 case eError:
                     WriteMsg(socket, "ERR:", req.err_msg);
                     break;
@@ -328,6 +338,23 @@ void CNetCacheServer::ProcessVersion(CSocket& sock, const Request& req)
     WriteMsg(sock, "OK:", "NCBI NetCache server version=1.1");
 }
 
+void CNetCacheServer::ProcessRemove(CSocket& sock, const Request& req)
+{
+    const string& req_id = req.req_id;
+
+    if (req_id.empty()) {
+        WriteMsg(sock, "ERR:", "BLOB id is empty.");
+        return;
+    }
+
+    CNetCache_Key blob_id;
+    if (!x_CheckBlobId(sock, &blob_id, req_id))
+        return;
+
+    WaitForId(blob_id.id);
+    m_Cache->Remove(req_id);
+}
+
 void CNetCacheServer::ProcessGet(CSocket& sock, const Request& req)
 {
     const string& req_id = req.req_id;
@@ -338,21 +365,8 @@ void CNetCacheServer::ProcessGet(CSocket& sock, const Request& req)
     }
 
     CNetCache_Key blob_id;
-    try {
-        CNetCache_ParseBlobKey(&blob_id, req_id);
-        if (blob_id.version != 1     ||
-            blob_id.hostname.empty() ||
-            blob_id.id == 0          ||
-            blob_id.port == 0) 
-        {
-            NCBI_THROW(CNetCacheException, eKeyFormatError, kEmptyStr);
-        }
-    } 
-    catch (CNetCacheException& )
-    {
-        WriteMsg(sock, "ERR:", "BLOB id format error.");
+    if (!x_CheckBlobId(sock, &blob_id, req_id))
         return;
-    }
 
     WaitForId(blob_id.id);
 
@@ -484,7 +498,6 @@ void CNetCacheServer::ParseRequest(const string& reqstr, Request* req)
     const char* s = reqstr.c_str();
 
     if (strncmp(s, "PUT", 3) == 0) {
-
         req->req_type = ePut;
         req->timeout = 0;
 
@@ -502,28 +515,31 @@ void CNetCacheServer::ParseRequest(const string& reqstr, Request* req)
     } // PUT
 
     if (strncmp(s, "GET", 3) == 0) {
-
         req->req_type = eGet;
-
         s += 3;
+parse_blob_id:
         while (*s && isspace(*s)) {
             ++s;
         }
-        if (*s) {  // requested id
-            req->req_id = s;
-        }
+        req->req_id = s;
         return;
-    } // PUT
+    } // GET
+
+    if (strncmp(s, "REMOVE", 3) == 0) {
+        req->req_type = eRemove;
+        s += 6;
+        goto parse_blob_id;
+    } // REMOVE
 
     if (strncmp(s, "SHUTDOWN", 7) == 0) {
         req->req_type = eShutdown;
         return;
-    } // PUT
+    } // SHUTDOWN
 
     if (strncmp(s, "VERSION", 7) == 0) {
         req->req_type = eVersion;
         return;
-    } // PUT
+    } // VERSION
 
 
     req->req_type = eError;
@@ -633,6 +649,29 @@ void CNetCacheServer::GenerateRequestId(const Request& req,
     *id_str += "_";
     *id_str += tmp;
 }
+
+bool CNetCacheServer::x_CheckBlobId(CSocket&       sock,
+                                    CNetCache_Key* blob_id, 
+                                    const string&  blob_key)
+{
+    try {
+        CNetCache_ParseBlobKey(blob_id, blob_key);
+        if (blob_id->version != 1     ||
+            blob_id->hostname.empty() ||
+            blob_id->id == 0          ||
+            blob_id->port == 0) 
+        {
+            NCBI_THROW(CNetCacheException, eKeyFormatError, kEmptyStr);
+        }
+    } 
+    catch (CNetCacheException& )
+    {
+        WriteMsg(sock, "ERR:", "BLOB id format error.");
+        return false;
+    }
+    return true;
+}
+
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -809,6 +848,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/10/28 16:14:42  kuznets
+ * Implemented REMOVE
+ *
  * Revision 1.20  2004/10/27 17:08:57  kuznets
  * Purge thread has been delegated to CBDB_Cache
  *
