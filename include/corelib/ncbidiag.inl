@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/30 21:52:17  vakatov
+* Fixed for the new SunPro 5.0 beta compiler that does not allow friend
+* templates and member(in-class) templates
+*
 * Revision 1.7  1998/11/05 00:00:42  vakatov
 * Fix in CDiagBuffer::Reset() to avoid "!=" ambiguity when using
 * new(templated) streams
@@ -74,15 +78,20 @@
 //
 
 class CDiagBuffer {
+    friend CDiagBuffer& GetDiagBuffer(void);
+#if !defined(NO_INCLASS_TMPL)
     friend class CNcbiDiag;
     friend CNcbiDiag& Reset(CNcbiDiag& diag);
     friend CNcbiDiag& Endm(CNcbiDiag& diag);
-    friend CDiagBuffer& GetDiagBuffer(void);
     friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
     friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
     friend void SetDiagHandler(FDiagHandler func, void* data,
                                FDiagCleanup cleanup);
 private:
+#else
+public:
+#endif
+
     const CNcbiDiag* m_Diag;    // present user
     CNcbiOstrstream  m_Stream;  // storage for the diagnostic message
 
@@ -92,12 +101,15 @@ private:
     //### static instance of "CDiagBuffer" defined in GetDiagBuffer()
 public:
     ~CDiagBuffer(void);
+
+#if !defined(NO_INCLASS_TMPL)
 private:
+#endif
     //###
 
-    template<class X>  // formatted output
-#ifndef NO_INCLASS_TMPL
-    void Put(const CNcbiDiag& diag, const X& x) {
+#if !defined(NO_INCLASS_TMPL)
+    // formatted output
+    template<class X> void Put(const CNcbiDiag& diag, const X& x) {
         if (diag.GetSeverity() < sm_PostSeverity)
             return;
         if (m_Diag != &diag) {
@@ -107,10 +119,7 @@ private:
         }
         m_Stream << x;
     }
-#else  /* NO_INCLASS_TMPL */
-    friend void Put(CNcbiDiag& diag, CDiagBuffer& dbuff, const X& x);
-#endif /* NO_INCLASS_TMPL */
-
+#endif  /* !NO_INCLASS_TMPL */
 
     void Flush  (void);
     void Reset  (const CNcbiDiag& diag);  // reset content of the diag. message
@@ -141,7 +150,6 @@ private:
 
 
 
-
 ///////////////////////////////////////////////////////
 //  CNcbiDiag::
 
@@ -163,7 +171,7 @@ inline EDiagSev CNcbiDiag::GetSeverity(void) const {
     return m_Severity;
 }
 
-#ifdef NO_INCLASS_TMPL
+#if defined(NO_INCLASS_TMPL)
 template<class X> void Put(CNcbiDiag& diag, CDiagBuffer& dbuff, const X& x) {
     if (diag.GetSeverity() < dbuff.sm_PostSeverity)
         return;

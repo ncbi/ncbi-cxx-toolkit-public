@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/30 21:52:16  vakatov
+* Fixed for the new SunPro 5.0 beta compiler that does not allow friend
+* templates and member(in-class) templates
+*
 * Revision 1.7  1998/12/28 17:56:27  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -93,15 +97,13 @@ public:
 
     EDiagSev GetSeverity(void) const;                     // current severity
 
-    template<class X>  // formatted output
-#ifndef NO_INCLASS_TMPL
-    CNcbiDiag& operator <<(const X& x) {
+#if !defined(NO_INCLASS_TMPL)
+    // formatted output
+    template<class X> CNcbiDiag& operator <<(const X& x) {
         m_Buffer.Put(*this, x);
         return *this;
     }
-#else  /* NO_INCLASS_TMPL */
-    friend CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x);
-#endif /* NO_INCLASS_TMPL */
+#endif
 
     CNcbiDiag& operator <<(CNcbiDiag& (*f)(CNcbiDiag&)) { // manipulators
         return f(*this);
@@ -120,13 +122,20 @@ public:
     // a common symbolic name for the severity levels
     static const char* SeverityName(EDiagSev sev);
 
+#if !defined(NO_INCLASS_TMPL)
 private:
+#endif
+
     EDiagSev     m_Severity;  // severity level for the current message
     CDiagBuffer& m_Buffer;    // this thread's error message buffer
     // prohibit assignment
     CNcbiDiag& operator =(const CNcbiDiag&) { return *this; }
 };
 
+#if defined(NO_INCLASS_TMPL)
+// formatted output
+template<class X> CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x);
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
