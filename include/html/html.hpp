@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  1999/04/15 22:05:16  vakatov
+* Include NCBI C++ headers before the standard ones
+*
 * Revision 1.29  1999/04/15 19:48:16  vasilche
 * Fixed several warnings detected by GCC
 *
@@ -127,22 +130,13 @@
 *
 * Revision 1.4  1998/12/01 19:09:05  lewisg
 * uses CCgiApplication and new page factory
-*
-* Revision 1.3  1998/11/23 23:47:49  lewisg
-* *** empty log message ***
-*
-* Revision 1.2  1998/10/29 16:15:52  lewisg
-* version 2
-*
-* Revision 1.1  1998/10/06 20:34:30  lewisg
-* html library includes
-*
 * ===========================================================================
 */
 
+#include <html/node.hpp>
 #include <map>
 #include <vector>
-#include <html/node.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
