@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/09/29 17:11:01  butanaev
+ * Got rid of IsDefaultValue(), added IsProvided().
+ *
  * Revision 6.4  2000/09/28 21:00:21  butanaev
  * fPreOpen with opposite meaning took over fDelayOpen.
  * IsDefaultValue() added which returns true if no
@@ -66,10 +69,13 @@ void Example8(CArgDescriptions& m, int argc, const char* argv[])
 
   CArgs* a = m.CreateArgs(argc, argv);
 
+  if(a->IsProvided("k"))
+    cout << "argument value was provided" << endl;
+  else
+    cout << "default argument value used" << endl;
+
   cout << "k=" << (*a)["k"].AsString()  << endl;
 
-  if((*a)["k"].IsDefaultValue())
-    cout << "default value was printed" << endl;
 }
 
 

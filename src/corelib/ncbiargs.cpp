@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2000/09/29 17:10:54  butanaev
+ * Got rid of IsDefaultValue(), added IsProvided().
+ *
  * Revision 1.9  2000/09/28 21:00:14  butanaev
  * fPreOpen with opposite meaning took over fDelayOpen.
  * IsDefaultValue() added which returns true if no
@@ -129,11 +132,6 @@ CNcbiIstream &CArgValue::AsInputFile(EFlags) const
 CNcbiOstream &CArgValue::AsOutputFile(EFlags) const
 {
     ARG_THROW("Not implemented", AsString());
-}
-
-bool CArgValue::IsDefaultValue(void) const
-{
-  return m_IsDefaultValue;
 }
 
 ///////////////////////////////////////////////////////
@@ -772,6 +770,10 @@ bool CArgs::Exist(const string& name) const
     return (m_Args.find(name) != m_Args.end());
 }
 
+bool CArgs::IsProvided(const string& name) const
+{
+  return Exist(name) && ! (*this)[name].m_IsDefaultValue;
+}
 
 const CArgValue& CArgs::operator [](const string& name) const
 {

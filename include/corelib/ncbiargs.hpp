@@ -36,6 +36,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2000/09/29 17:11:22  butanaev
+ * Got rid of IsDefaultValue(), added IsProvided().
+ *
  * Revision 1.6  2000/09/28 21:01:58  butanaev
  * fPreOpen with opposite meaning took over fDelayOpen.
  * IsDefaultValue() added which returns true if no
@@ -124,6 +127,7 @@ public:
 
 class CArgValue : public CObject
 {
+  friend class CArgs;
 public:
     // Get the argument's value
     const string&  AsString(void) const { return m_String; }
@@ -133,8 +137,6 @@ public:
     virtual long            AsInteger     (void) const;
     virtual double          AsDouble      (void) const;
     virtual bool            AsBoolean     (void) const;
-
-    bool IsDefaultValue(void) const;
 
     enum EFlags {
         // for "AsInputFile" and "AsOutputFile"
@@ -183,6 +185,8 @@ public:
 
     // Return TRUE if there is argument with name "name"
     bool Exist(const string& name) const;
+    // Return TRUE if argument with name "name" was provided in command line
+    bool IsProvided(const string& name) const;
 
     // Get value of any argument by its name
     // Throw an exception if such argument does not exist
