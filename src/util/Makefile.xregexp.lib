@@ -1,0 +1,5 @@
+# $Id$
+
+SRC = regexp
+
+LIB = xregexp
