@@ -128,6 +128,7 @@ public:
     bool                JustUids     (void) const { return m_JustUids;   }
 
     static string GetAuthString(const CAuth_list* alp);
+    static void GetAuthNames(list<string>& authors, const CAuth_list* alp);
     static void FormatAffil(const CAffil& affil, string& result);
 
 private:
@@ -209,6 +210,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/04/13 16:42:53  shomrat
+* + GetAuthNames()
+*
 * Revision 1.4  2004/03/18 15:28:01  shomrat
 * + GetBook
 *
