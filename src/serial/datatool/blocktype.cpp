@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/04/12 15:36:48  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.13  2000/04/07 19:26:23  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -192,10 +196,14 @@ AutoPtr<CTypeStrings> CDataContainerType::GenerateCode(void) const
 
 AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
 {
+    bool isRootClass = GetParentType() == 0;
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(IdName(),
-                                                          ClassName(),
-                                                          Namespace()));
-    bool haveUserClass = GetParentType() == 0;
+                                                          ClassName()));
+    const CNamespace& ns = Namespace();
+    if ( isRootClass )
+        code->SetClassNamespace(ns);
+
+    bool haveUserClass = isRootClass;
     bool isObject;
     if ( haveUserClass ) {
         isObject = true;
@@ -214,7 +222,9 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
             _ASSERT(!defaultCode.empty());
         }
 
-        code->AddMember((*i)->GetName(), (*i)->GetType()->GetFullCType(),
+        AutoPtr<CTypeStrings> memberType = (*i)->GetType()->GetFullCType();
+        memberType->SetContextNamespace(ns);
+        code->AddMember((*i)->GetName(), memberType,
                         (*i)->GetType()->GetVar("Pointer"),
                         optional, defaultCode);
     }

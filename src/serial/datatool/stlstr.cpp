@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/04/12 15:36:52  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.6  2000/04/07 19:26:34  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -114,7 +118,7 @@ CTemplate1TypeStrings::~CTemplate1TypeStrings(void)
 
 string CTemplate1TypeStrings::GetCType(void) const
 {
-    return GetTemplateNamespace().ToString()+GetTemplateName()+"< "+GetArg1Type()->GetCType()+" >";
+    return GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "+GetArg1Type()->GetCType()+" >";
 }
 
 string CTemplate1TypeStrings::GetRef(void) const
@@ -161,14 +165,11 @@ void CTemplate1TypeStrings::AddTemplateInclude(TIncludes& hpp) const
     hpp.insert(header);
 }
 
-static CNamespace KNCBINamespace("NCBI_NS_NCBI");
-static CNamespace KSTDNamespace("NCBI_NS_STD");
-
 const CNamespace& CTemplate1TypeStrings::GetTemplateNamespace(void) const
 {
     if ( GetTemplateName() == "AutoPtr" )
-        return KNCBINamespace;
-    return KSTDNamespace;
+        return CNamespace::KNCBINamespace;
+    return CNamespace::KSTDNamespace;
 }
 
 void CTemplate1TypeStrings::GenerateTypeCode(CClassContext& ctx) const
@@ -190,8 +191,7 @@ CTemplate2TypeStrings::~CTemplate2TypeStrings(void)
 
 string CTemplate2TypeStrings::GetCType(void) const
 {
-    return GetTemplateName()+"< "+GetArg1Type()->GetCType()+
-        ", "+GetArg2Type()->GetCType()+" >";
+    return GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "+GetArg1Type()->GetCType()+", "+GetArg2Type()->GetCType()+" >";
 }
 
 string CTemplate2TypeStrings::GetRef(void) const
@@ -357,7 +357,7 @@ void CVectorTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 
 string CVectorTypeStrings::GetCType(void) const
 {
-    return "NCBI_NS_STD::vector< " + m_CharType + " >";
+    return GetNamespaceRef(CNamespace::KSTDNamespace)+"vector< " + m_CharType + " >";
 }
 
 string CVectorTypeStrings::GetRef(void) const

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/04/12 15:36:52  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.2  2000/04/07 19:26:33  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -131,7 +135,7 @@ CRefTypeStrings::~CRefTypeStrings(void)
 
 string CRefTypeStrings::GetCType(void) const
 {
-    return "NCBI_NS_NCBI::CRef< "+GetDataType()->GetCType()+" >";
+    return GetNamespaceRef(CNamespace::KNCBINamespace)+"CRef< "+GetDataType()->GetCType()+" >";
 }
 
 string CRefTypeStrings::GetRef(void) const

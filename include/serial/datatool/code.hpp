@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/04/12 15:36:40  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.5  2000/04/07 19:26:08  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -88,8 +92,9 @@ class CFileCode;
 class CClassCode : public CClassContext
 {
 public:
-    CClassCode(CClassContext& ownerClass,
-               const string& className, const CNamespace& ns);
+    CClassCode(CClassContext& ownerClass, const string& className);
+    CClassCode(CClassContext& ownerClass, const string& className,
+               const CNamespace& ns);
     virtual ~CClassCode(void);
 
     const CNamespace& GetNamespace(void) const

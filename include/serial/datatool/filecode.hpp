@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/04/12 15:36:41  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.6  2000/04/07 19:26:09  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -82,6 +86,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/tool/classctx.hpp>
 #include <serial/tool/namespace.hpp>
+#include <serial/tool/typestr.hpp>
 #include <map>
 #include <set>
 
@@ -96,9 +101,15 @@ public:
     typedef map<string, CNamespace> TForwards;
     typedef set<string> TAddedClasses;
     struct SClassInfo {
+        SClassInfo(const CNamespace& classNamespace,
+                   AutoPtr<CTypeStrings> classCode)
+            : ns(classNamespace), code(classCode)
+            {
+            }
+
         CNamespace ns;
         AutoPtr<CTypeStrings> code;
-        SClassInfo(const CNamespace& ns, AutoPtr<CTypeStrings> code);
+        string hppCode, inlCode, cppCode;
     };
     typedef list< SClassInfo > TClasses;
 
@@ -153,13 +164,7 @@ private:
     TIncludes m_HPPIncludes;
     TIncludes m_CPPIncludes;
     TForwards m_ForwardDeclarations;
-    CNamespace m_CurrentNamespace;
-    CNcbiOstrstream m_HPPCode, m_INLCode, m_CPPCode;
-    CNamespace m_HPPNamespace, m_INLNamespace, m_CPPNamespace;
-
-    void UpdateNamespace(CNcbiOstream& out, CNamespace& ns);
-    void AddCode(CNcbiOstream& out, CNamespace& ns,
-                 const CNcbiOstrstream& code);
+    SClassInfo* m_CurrentClass;
 
     set<string> m_SourceFiles;
     // classes code

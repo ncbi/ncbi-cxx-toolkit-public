@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/04/12 15:36:41  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.3  2000/04/07 19:26:12  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -91,6 +95,7 @@ public:
 
 private:
     string m_CType;
+    CNamespace m_Namespace;
 };
 
 class CNullTypeStrings : public CTypeStrings

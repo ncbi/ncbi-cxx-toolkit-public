@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/04/12 15:36:52  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.44  2000/04/07 19:26:35  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -416,9 +420,13 @@ TTypeInfo CDataType::GetTypeInfo(void)
 AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
 {
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(IdName(),
-                                                          ClassName(),
-                                                          Namespace()));
-    code->AddMember(NcbiEmptyString, GetFullCType(), NcbiEmptyString,
+                                                          ClassName()));
+    const CNamespace& ns = Namespace();
+    if ( GetParentType() == 0 )
+        code->SetClassNamespace(ns);
+    AutoPtr<CTypeStrings> dType = GetFullCType();
+    dType->SetContextNamespace(ns);
+    code->AddMember(NcbiEmptyString, dType, NcbiEmptyString,
                     false, NcbiEmptyString);
     SetParentClassTo(*code);
     return AutoPtr<CTypeStrings>(code.release());

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/12 15:36:41  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.1  2000/04/07 19:26:10  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -82,6 +86,59 @@ public:
             string s;
             ToStringTo(s);
             return s;
+        }
+
+    bool operator==(const CNamespace& ns) const
+        {
+            size_t myLevel = GetNamespaceLevel();
+            return ns.GetNamespaceLevel() == myLevel &&
+                EqualLevels(ns) == myLevel;
+        }
+
+    static const CNamespace KEmptyNamespace;
+    static const CNamespace KNCBINamespace;
+    static const CNamespace KSTDNamespace;
+    static const string KNCBINamespaceName;
+    static const string KSTDNamespaceName;
+    static const string KNCBINamespaceDefine;
+    static const string KSTDNamespaceDefine;
+
+    bool IsEmpty(void) const
+        {
+            return m_Namespaces.empty();
+        }
+    bool InNCBI(void) const
+        {
+            return m_Namespaces.size() > 0 &&
+                m_Namespaces[0] == KNCBINamespaceName;
+        }
+    bool InSTD(void) const
+        {
+            return m_Namespaces.size() > 0 &&
+                m_Namespaces[0] == KSTDNamespaceName;
+        }
+    bool IsNCBI(void) const
+        {
+            return m_Namespaces.size() == 1 &&
+                m_Namespaces[0] == KNCBINamespaceName;
+        }
+    bool IsSTD(void) const
+        {
+            return m_Namespaces.size() == 1 &&
+                m_Namespaces[0] == KSTDNamespaceName;
+        }
+
+    operator bool(void) const
+        {
+            return !IsEmpty();
+        }
+    operator bool(void)
+        {
+            return !IsEmpty();
+        }
+    bool operator!(void) const
+        {
+            return IsEmpty();
         }
 
 protected:

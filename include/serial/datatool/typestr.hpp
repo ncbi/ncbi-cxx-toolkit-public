@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/04/12 15:36:41  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.4  2000/04/07 19:26:14  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -74,6 +78,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/tool/namespace.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -83,7 +88,19 @@ class CClassContext;
 class CTypeStrings {
 public:
     typedef set< string > TIncludes;
+    CTypeStrings(void);
+    CTypeStrings(const CNamespace& ns);
     virtual ~CTypeStrings(void);
+
+    const CNamespace& GetContextNamespace(void) const
+        {
+            return m_ContextNamespace;
+        }
+    void SetContextNamespace(const CNamespace& ns);
+    string GetNamespaceRef(const CNamespace& ns) const
+        {
+            return m_ContextNamespace.GetNamespaceRef(ns);
+        }
 
     virtual string GetCType(void) const = 0;
     virtual string GetRef(void) const = 0;
@@ -111,6 +128,9 @@ public:
 
     virtual string GetTypeInfoCode(const string& externalName,
                                    const string& memberName) const;
+
+private:
+    CNamespace m_ContextNamespace;
 };
 
 END_NCBI_SCOPE

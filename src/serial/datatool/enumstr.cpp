@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/04/12 15:36:51  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.3  2000/04/07 19:26:25  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -95,9 +99,15 @@ CEnumTypeStrings::CEnumTypeStrings(const string& enumName,
                                    bool isInteger,
                                    const TValues& values,
                                    const string& valuePrefix)
-    : m_EnumName(enumName), m_CType(cType), m_IsInteger(isInteger),
+    : m_EnumName(enumName), m_CType(cType),
+      m_IsInteger(isInteger),
       m_Values(values), m_ValuesPrefix(valuePrefix)
 {
+}
+
+void CEnumTypeStrings::SetEnumNamespace(const CNamespace& ns)
+{
+    SetContextNamespace(ns);
 }
 
 string CEnumTypeStrings::GetCType(void) const
@@ -107,7 +117,7 @@ string CEnumTypeStrings::GetCType(void) const
 
 string CEnumTypeStrings::GetRef(void) const
 {
-    return "NCBI_NS_NCBI::CreateEnumeratedTypeInfo("+m_CType+"(0), GetEnumInfo_"+m_EnumName+"())";
+    return "NCBI_NS_NCBI::CreateEnumeratedTypeInfo("+GetCType()+"(0), GetEnumInfo_"+m_EnumName+"())";
 }
 
 string CEnumTypeStrings::GetInitializer(void) const
@@ -173,12 +183,12 @@ string CEnumRefTypeStrings::GetCType(void) const
     if ( !m_CType.empty() && m_CType != m_EnumName )
         return m_CType;
 
-    return m_Namespace.ToString()+m_EnumName;
+    return GetNamespaceRef(m_Namespace)+m_EnumName;
 }
 
 string CEnumRefTypeStrings::GetRef(void) const
 {
-    return "NCBI_NS_NCBI::CreateEnumeratedTypeInfo("+m_CType+"(0), "+m_Namespace.ToString()+"GetEnumInfo_"+m_EnumName+"())";
+    return "NCBI_NS_NCBI::CreateEnumeratedTypeInfo("+GetCType()+"(0), "+GetNamespaceRef(m_Namespace)+"GetEnumInfo_"+m_EnumName+"())";
 }
 
 string CEnumRefTypeStrings::GetInitializer(void) const
@@ -196,8 +206,8 @@ string CEnumRefTypeStrings::GetTypeInfoCode(const string& externalName,
 {
     return "info->GetMembers().AddMember("
         "\""+externalName+"\", "
-        "NCBI_NS_NCBI::EnumMember(MEMBER_PTR("+memberName+"), "+
-        m_Namespace.ToString()+"GetEnumInfo_"+m_EnumName+"()))";
+        "NCBI_NS_NCBI::EnumMember(MEMBER_PTR("+memberName+"), "
+        +GetNamespaceRef(m_Namespace)+"GetEnumInfo_"+m_EnumName+"()))";
 }
 
 END_NCBI_SCOPE

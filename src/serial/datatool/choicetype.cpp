@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/04/12 15:36:49  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.8  2000/04/07 19:26:24  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -177,14 +181,19 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetRefCType(void) const
 
 AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
 {
+    bool rootClass = GetParentType() == 0;
     AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(IdName(),
-                                                            ClassName(),
-                                                            Namespace()));
-    bool haveUserClass = GetParentType() == 0;
+                                                            ClassName()));
+    const CNamespace& ns = Namespace();
+    if ( rootClass )
+        code->SetClassNamespace(ns);
+    bool haveUserClass = rootClass;
     code->SetHaveUserClass(haveUserClass);
     code->SetObject(true);
     iterate ( TMembers, i, GetMembers() ) {
-        code->AddVariant((*i)->GetName(), (*i)->GetType()->GetFullCType());
+        AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
+        varType->SetContextNamespace(ns);
+        code->AddVariant((*i)->GetName(), varType);
     }
     SetParentClassTo(*code);
     return AutoPtr<CTypeStrings>(code.release());

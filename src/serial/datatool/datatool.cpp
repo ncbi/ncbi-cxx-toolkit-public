@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/04/12 15:36:51  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.28  2000/04/07 19:26:28  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -133,6 +137,7 @@ static void GenerateHelp(void)
         "  -ox <types>  exclude listed types from generation\n"
         "  -oX          turn off recursive type generation\n"
         "  -od <file>   C++ code definition file\n"
+        "  -on <ns>     Put generated classes in namespace <ns>\n"
         "  -of <file>   write list of generated C++ files\n"
         "  -opm <dir>   directory for searching source modules\n"
         "  -oph <dir>   directory for generated *.hpp files\n"
@@ -303,6 +308,9 @@ int main(int argc, const char*argv[])
                     break;
                 case 'd':
                     generator.LoadConfig(FileInArgument(argv[++i]));
+                    break;
+                case 'n':
+                    generator.SetDefaultNamespace(StringArgument(argv[++i]));
                     break;
                 case 'D':
                     additionalDefinitions.push_back(StringArgument(argv[++i]));

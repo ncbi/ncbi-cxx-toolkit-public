@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/12 15:36:52  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.1  2000/04/07 19:26:30  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -44,6 +48,15 @@
 #include <serial/tool/namespace.hpp>
 
 BEGIN_NCBI_SCOPE
+
+const string CNamespace::KNCBINamespaceName("ncbi");
+const string CNamespace::KNCBINamespaceDefine("NCBI_NS_NCBI");
+const string CNamespace::KSTDNamespaceName("std");
+const string CNamespace::KSTDNamespaceDefine("NCBI_NS_STD");
+
+const CNamespace CNamespace::KEmptyNamespace;
+const CNamespace CNamespace::KNCBINamespace(KNCBINamespaceName);
+const CNamespace CNamespace::KSTDNamespace(KSTDNamespaceName);
 
 CNamespace::CNamespace(void)
 {
@@ -62,6 +75,10 @@ CNamespace::CNamespace(const string& ns)
         end = ns.find("::", pos);
     }
     m_Namespaces.push_back(ns.substr(pos));
+    if ( m_Namespaces[0] == KNCBINamespaceDefine )
+        m_Namespaces[0] = KNCBINamespaceName;
+    else if ( m_Namespaces[0] == KSTDNamespaceDefine )
+        m_Namespaces[0] = KSTDNamespaceName;
 }
 
 size_t CNamespace::EqualLevels(const CNamespace& ns) const
@@ -91,8 +108,26 @@ string CNamespace::GetNamespaceRef(const CNamespace& ns) const
     }
     else {
         // reference from root
-        s = "::";
         equal = 0;
+        if ( ns.InNCBI() ) {
+            s = KNCBINamespaceDefine;
+            equal = 1;
+        }
+        else if ( ns.InSTD() ) {
+            s = KSTDNamespaceDefine;
+            equal = 1;
+        }
+        if ( equal == 1 ) {
+            // std or ncbi
+            if ( InNCBI() )
+                s.erase();
+            else
+                s += "::";
+        }
+        else {
+            // from root
+            s = "::";
+        }
     }
     for ( size_t i = equal, end = ns.GetNamespaceLevel(); i < end; ++i ) {
         s += ns.GetNamespaces()[i];
@@ -104,7 +139,7 @@ string CNamespace::GetNamespaceRef(const CNamespace& ns) const
 void CNamespace::Open(const string& s, CNcbiOstream& out)
 {
     m_Namespaces.push_back(s);
-    if ( GetNamespaceLevel() == 1 && s == "NCBI_NS_NCBI" ) {
+    if ( IsNCBI() ) {
         out <<
             "BEGIN_NCBI_SCOPE\n"
             "\n";
@@ -119,7 +154,7 @@ void CNamespace::Open(const string& s, CNcbiOstream& out)
 void CNamespace::Close(CNcbiOstream& out)
 {
     _ASSERT(!m_Namespaces.empty());
-    if ( GetNamespaceLevel() == 1 && m_Namespaces.front() == "NCBI_NS_NCBI" ) {
+    if ( IsNCBI() ) {
         out <<
             "END_NCBI_SCOPE\n"
             "\n";
@@ -141,7 +176,7 @@ void CNamespace::CloseAllAbove(size_t level, CNcbiOstream& out)
 CNcbiOstream& CNamespace::PrintFullName(CNcbiOstream& out) const
 {
     iterate ( TNamespaces, i, GetNamespaces() )
-        out << "::" << *i;
+        out << *i << "::";
     return out;
 }
 

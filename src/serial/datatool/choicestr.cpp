@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/04/12 15:36:48  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.14  2000/04/07 19:26:23  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -129,17 +133,18 @@ BEGIN_NCBI_SCOPE
 
 #define STATE_ENUM "E_Choice"
 #define STATE_MEMBER "m_choice"
-#define STRING_TYPE "NCBI_NS_STD::string"
+#define STRING_TYPE_FULL "NCBI_NS_STD::string"
+#define STRING_TYPE "string"
 #define STRING_MEMBER "m_string"
-#define OBJECT_TYPE "NCBI_NS_NCBI::CObject"
+#define OBJECT_TYPE_FULL "NCBI_NS_NCBI::CObject"
+#define OBJECT_TYPE "CObject"
 #define OBJECT_MEMBER "m_object"
 #define STATE_PREFIX "e_"
 #define STATE_NOT_SET "e_not_set"
 
 CChoiceTypeStrings::CChoiceTypeStrings(const string& externalName,
-                                       const string& className,
-                                       const CNamespace& ns)
-    : CParent(externalName, className, ns),
+                                       const string& className)
+    : CParent(externalName, className),
       m_HaveAssignment(false)
 {
 }
@@ -151,6 +156,7 @@ CChoiceTypeStrings::~CChoiceTypeStrings(void)
 void CChoiceTypeStrings::AddVariant(const string& name,
                                     AutoPtr<CTypeStrings> type)
 {
+    _ASSERT(type->GetContextNamespace() == GetContextNamespace());
     m_Variants.push_back(SVariantInfo(name, type));
 }
 
@@ -159,7 +165,8 @@ CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
     : externalName(name), cName(Identifier(name)),
       type(t), cType(type->GetCType())
 {
-    if ( cType == STRING_TYPE ) {
+    if ( cType == STRING_TYPE || cType == STRING_TYPE_FULL ||
+         cType == "::"STRING_TYPE_FULL ) {
         memberType = eStringMember;
     }
     else if ( type->CanBeKey() ) {
@@ -260,16 +267,16 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     code.ClassPublic() <<
         "    // choice state\n"
         "    "STATE_ENUM" Which(void) const;\n"
-        "    // throw exception if current variant is not as requested\n"
+        "    // throw exception if current selection is not as requested\n"
         "    void CheckSelected("STATE_ENUM" index) const;\n"
         "    // throw exception about wrong selection\n"
-        "    void InvalidSelection("STATE_ENUM" index) const;\n"
+        "    void ThrowInvalidSelection("STATE_ENUM" index) const;\n"
         "    // return selection name (for diagnostic purposes)\n"
-        "    static NCBI_NS_STD::string SelectionName("STATE_ENUM" index);\n"
+        "    static "<<GetNamespaceRef(CNamespace::KSTDNamespace)<<"string SelectionName("STATE_ENUM" index);\n"
         "\n";
     setters <<
         "    // select requested variant if needed\n"
-        "    void Select("STATE_ENUM" index, NCBI_NS_NCBI::EResetVariant reset = NCBI_NS_NCBI::eDoResetVariant);\n"
+        "    void Select("STATE_ENUM" index, "<<GetNamespaceRef(CNamespace::KNCBINamespace)<<"EResetVariant reset = "<<GetNamespaceRef(CNamespace::KNCBINamespace)<<"eDoResetVariant);\n"
         "\n";
 
     code.InlineMethods() <<
@@ -283,7 +290,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "void "<<methodPrefix<<"CheckSelected("STATE_ENUM" index) const\n"
         "{\n"
         "    if ( "STATE_MEMBER" != index )\n"
-        "        InvalidSelection(index);\n"
+        "        ThrowInvalidSelection(index);\n"
         "}\n"
         "\n"
         "inline\n"
@@ -447,7 +454,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             else {
                 code.Methods() <<
-                    "        "STRING_MEMBER" = new string(*src."STRING_MEMBER");\n";
+                    "        "STRING_MEMBER" = new "STRING_TYPE_FULL"(*src."STRING_MEMBER");\n";
             }
             code.Methods() <<
                 "        break;\n";
@@ -518,7 +525,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     }
                 }
                 code.Methods() <<
-                    "        "STRING_MEMBER" = new "STRING_TYPE";\n"
+                    "        "STRING_MEMBER" = new "STRING_TYPE_FULL";\n"
                     "        break;\n";
             }
             code.Methods() <<
@@ -553,7 +560,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    return sm_SelectionNames[index];\n"
             "}\n"
             "\n"
-            "void "<<methodPrefix<<"InvalidSelection("STATE_ENUM" index) const\n"
+            "void "<<methodPrefix<<"ThrowInvalidSelection("STATE_ENUM" index) const\n"
             "{\n"
             "    throw NCBI_NS_STD::runtime_error(\""<<GetExternalName()<<": invalid selection \"+SelectionName("STATE_MEMBER")+\". Expected: \"+SelectionName(index));\n"
             "}\n"
@@ -581,14 +588,14 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         iterate ( TVariants, i, m_Variants ) {
             code.ClassPublic() <<
                 "    bool Is"<<i->cName<<"(void) const;\n"
-                "    const T"<<i->cName<<"& Get"<<i->cName<<"(void) const;\n"
+                "    const "<<i->cType<<"& Get"<<i->cName<<"(void) const;\n"
                 "\n";
             setters <<
-                "    T"<<i->cName<<"& Get"<<i->cName<<"(void);\n"
-                "    T"<<i->cName<<"& Set"<<i->cName<<"(void);\n";
+                "    "<<i->cType<<"& Get"<<i->cName<<"(void);\n"
+                "    "<<i->cType<<"& Set"<<i->cName<<"(void);\n";
             if ( i->memberType == eObjectPointerMember ) {
                 setters <<
-                    "    void Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef<T"<<i->cName<<">& ref);\n";
+                    "    void Set"<<i->cName<<"(const "<<GetNamespaceRef(CNamespace::KNCBINamespace)<<"CRef<"<<i->cType<<">& ref);\n";
             }
             string memberRef;
             string constMemberRef;
@@ -645,7 +652,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             if ( i->memberType == eSimpleMember ||
                  i->memberType == eStringMember ) {
                 setters <<
-                    "    void Set"<<i->cName<<"(const T"<<i->cName<<"& value);\n";
+                    "    void Set"<<i->cName<<"(const "<<i->cType<<"& value);\n";
                 code.InlineMethods() <<
                     "inline\n"
                     "void "<<methodPrefix<<"Set"<<i->cName<<"(const T"<<i->cName<<"& value)\n"
@@ -691,22 +698,22 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if ( haveString ) {
                 code.ClassPrivate() <<
-                    "        "STRING_TYPE" *"STRING_MEMBER";\n";
+                    "        "STRING_TYPE_FULL" *"STRING_MEMBER";\n";
             }
             if ( haveObjectPointer ) {
                 code.ClassPrivate() <<
-                    "        "OBJECT_TYPE" *"OBJECT_MEMBER";\n";
+                    "        "OBJECT_TYPE_FULL" *"OBJECT_MEMBER";\n";
             }
             code.ClassPrivate() <<
                 "    };\n";
         }
         else if ( haveString ) {
             code.ClassPrivate() <<
-                "    "STRING_TYPE" "STRING_MEMBER";\n";
+                "    "STRING_TYPE_FULL" "STRING_MEMBER";\n";
         }
         else if ( haveObjectPointer ) {
             code.ClassPrivate() <<
-                "    "OBJECT_TYPE" *"OBJECT_MEMBER";\n";
+                "    "OBJECT_TYPE_FULL" *"OBJECT_MEMBER";\n";
         }
     }
 

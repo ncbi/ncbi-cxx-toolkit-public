@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/04/12 15:36:40  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.6  2000/04/07 19:26:07  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -101,6 +105,7 @@ public:
         string mName; // member name
         string tName; // typedef name
         AutoPtr<CTypeStrings> type; // value type
+        string cType;   // type->GetCType()
         string ptrType; // "*" or "NCBI_NS_NCBI::CRef"
         string valueName; // value name (mName or '*'+mName)
         bool optional;  // have OPTIONAL or DEFAULT attribute
@@ -114,9 +119,10 @@ public:
     };
     typedef list<SMemberInfo> TMembers;
 
-    CClassTypeStrings(const string& externalName,
-                      const string& className, const CNamespace& ns);
+    CClassTypeStrings(const string& externalName, const string& className);
     ~CClassTypeStrings(void);
+
+    void SetClassNamespace(const CNamespace& ns);
 
     const string& GetExternalName(void) const
         {
@@ -174,7 +180,6 @@ private:
     bool m_HaveUserClass;
     string m_ExternalName;
     string m_ClassName;
-    CNamespace m_Namespace;
     string m_ParentClassName;
     CNamespace m_ParentClassNamespace;
     string m_ParentClassFileName;

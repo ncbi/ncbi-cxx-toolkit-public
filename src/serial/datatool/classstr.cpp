@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/04/12 15:36:49  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.15  2000/04/07 19:26:24  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -131,15 +135,19 @@
 BEGIN_NCBI_SCOPE
 
 CClassTypeStrings::CClassTypeStrings(const string& externalName,
-                                     const string& className,
-                                     const CNamespace& ns)
+                                     const string& className)
     : m_IsObject(true), m_HaveUserClass(true),
-      m_ExternalName(externalName), m_ClassName(className), m_Namespace(ns)
+      m_ExternalName(externalName), m_ClassName(className)
 {
 }
 
 CClassTypeStrings::~CClassTypeStrings(void)
 {
+}
+
+void CClassTypeStrings::SetClassNamespace(const CNamespace& ns)
+{
+    SetContextNamespace(ns);
 }
 
 void CClassTypeStrings::AddMember(const string& name,
@@ -148,6 +156,7 @@ void CClassTypeStrings::AddMember(const string& name,
                                   bool optional,
                                   const string& defaultValue)
 {
+    _ASSERT(type->GetContextNamespace() == GetContextNamespace());
     m_Members.push_back(SMemberInfo(name, type,
                                     pointerType,
                                     optional, defaultValue));
@@ -198,6 +207,7 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
         haveFlag = true;
     
     canBeNull = ref && optional && !haveFlag;
+    cType = type->GetCType();
 }
 
 string CClassTypeStrings::GetCType(void) const
@@ -258,7 +268,7 @@ CNcbiOstream& DeclareHeapConstructor(CNcbiOstream& out, const string className)
 {
     return out <<
         "    // hidden constructor for dynamic objects\n"
-        "    "<<className<<"(NCBI_NS_NCBI::CObject::ECanDelete);\n"
+        "    "<<className<<"(ECanDelete);\n"
         "\n";
 }
 
@@ -282,12 +292,10 @@ CNcbiOstream& GenerateNewMethod(CNcbiOstream& out, const string& className)
         "    // create dynamically allocated object\n"
         "    static "<<className<<"* New(void)\n"
         "        {\n"
-        "            return new "<<className<<"(NCBI_NS_NCBI::CObject::eCanDelete);\n"
+        "            return new "<<className<<"(eCanDelete);\n"
         "        }\n"
         "\n";
 }
-
-static CNamespace KNCBINamespace("NCBI_NS_NCBI");
 
 void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
@@ -295,9 +303,9 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     string codeClassName = GetClassName();
     if ( haveUserClass )
         codeClassName += "_Base";
-    CClassCode code(ctx, codeClassName, m_Namespace);
+    CClassCode code(ctx, codeClassName, GetContextNamespace());
     if ( m_ParentClassName.empty() ) {
-        code.SetParentClass("CObject", KNCBINamespace);
+        code.SetParentClass("CObject", CNamespace::KNCBINamespace);
     }
     else {
         code.SetParentClass(m_ParentClassName, m_ParentClassNamespace);
@@ -314,7 +322,7 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 
     code.ClassPublic() <<
         "    // type info\n"
-        "    static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void);\n"
+        "    static const "<<GetNamespaceRef(CNamespace::KNCBINamespace)<<"CTypeInfo* GetTypeInfo(void);\n"
         "\n";
 
     GenerateClassCode(code,
@@ -499,7 +507,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 
             // generate getter
             code.ClassPublic() <<
-                "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const;\n";
+                "    const "<<i->cType<<"& Get"<<i->cName<<"(void) const;\n";
             code.MethodStart(!i->ref) <<
                 "const "<<methodPrefix<<i->tName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
                 "{\n"
@@ -511,7 +519,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if ( i->ref ) {
                 // generate reference setter
                 setters <<
-                    "    void Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value);\n";
+                    "    void Set"<<i->cName<<"(const "<<GetNamespaceRef(CNamespace::KNCBINamespace)<<"CRef< "<<i->cType<<" >& value);\n";
                 code.Methods() <<
                     "void "<<methodPrefix<<"Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value)\n"
                     "{\n";
@@ -531,7 +539,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "}\n"
                     "\n";
                 setters <<
-                    "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
+                    "    "<<i->cType<<"& Set"<<i->cName<<"(void);\n";
                 if ( i->canBeNull ) {
                     // we have to init ref before returning
                     _ASSERT(!i->haveFlag);
@@ -563,7 +571,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             else {
                 if ( i->type->CanBeInSTL() ) {
                     setters <<
-                        "    void Set"<<i->cName<<"(const "<<i->tName<<"& value);\n";
+                        "    void Set"<<i->cName<<"(const "<<i->cType<<"& value);\n";
                     code.InlineMethods() <<
                         "inline\n"
                         "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<i->tName<<"& value)\n"
@@ -578,7 +586,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "\n";
                 }
                 setters <<
-                    "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
+                    "    "<<i->cType<<"& Set"<<i->cName<<"(void);\n";
                 code.InlineMethods() <<
                     "inline\n"<<
                     methodPrefix<<i->tName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
@@ -600,8 +608,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     THROW1_TRACE(runtime_error, "the only member of adaptor class is optional");
                 }
                 code.ClassPublic() <<
-                    "    operator const "<<i->tName<<"& (void) const;\n"
-                    "    operator "<<i->tName<<"& (void);\n";
+                    "    operator const "<<i->cType<<"& (void) const;\n"
+                    "    operator "<<i->cType<<"& (void);\n";
                 code.InlineMethods() <<
                     "inline\n"<<
                     methodPrefix<<"operator const "<<methodPrefix<<i->tName<<"& (void) const\n"
@@ -638,7 +646,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 			iterate ( TMembers, i, m_Members ) {
                 if ( i->ref ) {
                     code.ClassPrivate() <<
-                        "    NCBI_NS_NCBI::CRef< "<<i->tName<<" > "<<i->mName<<";\n";
+                        "    "<<GetNamespaceRef(CNamespace::KNCBINamespace)<<"CRef< "<<i->tName<<" > "<<i->mName<<";\n";
                 }
                 else {
                     code.ClassPrivate() <<
@@ -797,8 +805,8 @@ void CClassTypeStrings::GenerateUserCPPCode(CNcbiOstream& out) const
         "}\n"
         "\n"
         "// constructor for dynamic objects\n"<<
-        GetClassName()<<"::"<<GetClassName()<<"(NCBI_NS_NCBI::CObject::ECanDelete)\n"
-        "    : Tparent(NCBI_NS_NCBI::CObject::eCanDelete)\n"
+        GetClassName()<<"::"<<GetClassName()<<"(ECanDelete)\n"
+        "    : Tparent(eCanDelete)\n"
         "{\n"
         "}\n"
         "\n"
@@ -831,7 +839,7 @@ void CClassRefTypeStrings::GeneratePointerTypeCode(CClassContext& ctx) const
 
 string CClassRefTypeStrings::GetCType(void) const
 {
-    return m_Namespace.ToString() + m_ClassName;
+    return GetNamespaceRef(m_Namespace)+m_ClassName;
 }
 
 string CClassRefTypeStrings::GetRef(void) const

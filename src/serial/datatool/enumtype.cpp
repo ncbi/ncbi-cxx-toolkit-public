@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/04/12 15:36:51  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.8  2000/04/07 19:26:25  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -223,11 +227,14 @@ AutoPtr<CTypeStrings> CEnumDataType::GetRefCType(void) const
 AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
 {
     SEnumCInfo enumInfo = GetEnumCInfo();
-    return AutoPtr<CTypeStrings>(new CEnumTypeStrings(enumInfo.enumName,
-                                                      enumInfo.cType,
-                                                      IsInteger(),
-                                                      m_Values,
-                                                      enumInfo.valuePrefix));
+    AutoPtr<CEnumTypeStrings> e(new CEnumTypeStrings(enumInfo.enumName,
+                                                     enumInfo.cType,
+                                                     IsInteger(),
+                                                     m_Values,
+                                                     enumInfo.valuePrefix));
+    if ( GetParentType() == 0 )
+        e->SetEnumNamespace(Namespace());
+    return AutoPtr<CTypeStrings>(e.release());
 }
 
 AutoPtr<CTypeStrings> CEnumDataType::GenerateCode(void) const

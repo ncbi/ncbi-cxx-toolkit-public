@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/04/12 15:36:39  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.5  2000/04/07 19:26:07  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -104,8 +108,7 @@ public:
     };
     typedef list<SVariantInfo> TVariants;
 
-    CChoiceTypeStrings(const string& externalName,
-                       const string& className, const CNamespace& ns);
+    CChoiceTypeStrings(const string& externalName, const string& className);
     ~CChoiceTypeStrings(void);
 
     bool HaveAssignment(void) const

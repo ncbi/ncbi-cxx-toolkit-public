@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/04/12 15:36:52  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.3  2000/04/07 19:26:34  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -92,16 +96,27 @@ BEGIN_NCBI_SCOPE
 CStdTypeStrings::CStdTypeStrings(const string& type)
     : m_CType(type)
 {
+    SIZE_TYPE colon = type.rfind("::");
+    if ( colon != NPOS ) {
+        m_CType = type.substr(colon + 2);
+        m_Namespace = type.substr(0, colon);
+    }
 }
 
 string CStdTypeStrings::GetCType(void) const
 {
-    return m_CType;
+    if ( m_Namespace )
+        return GetNamespaceRef(m_Namespace)+m_CType;
+    else
+        return m_CType;
 }
 
 string CStdTypeStrings::GetRef(void) const
 {
-    return "&NCBI_NS_NCBI::CStdTypeInfo< "+m_CType+" >::GetTypeInfo";
+    if ( m_Namespace )
+        return "&NCBI_NS_NCBI::CStdTypeInfo< "+m_Namespace.ToString()+m_CType+" >::GetTypeInfo";
+    else
+        return "&NCBI_NS_NCBI::CStdTypeInfo< "+m_CType+" >::GetTypeInfo";
 }
 
 string CStdTypeStrings::GetInitializer(void) const
@@ -132,11 +147,7 @@ string CNullTypeStrings::GetRef(void) const
 string CNullTypeStrings::GetTypeInfoCode(const string& externalName,
                                          const string& memberName) const
 {
-    return "NCBI_NS_NCBI::AddMember("
-        "info->GetMembers(), "
-        "\""+externalName+"\", "
-        "MEMBER_PTR("+memberName+"), "
-        +GetRef()+")";
+    return "NCBI_NS_NCBI::AddMember(info->GetMembers(), \""+externalName+"\", MEMBER_PTR("+memberName+"), "+GetRef()+")";
 }
 
 string CNullTypeStrings::GetInitializer(void) const
@@ -177,11 +188,7 @@ string CStringStoreTypeStrings::GetRef(void) const
 string CStringStoreTypeStrings::GetTypeInfoCode(const string& externalName,
                                                 const string& memberName) const
 {
-    return "NCBI_NS_NCBI::AddMember("
-        "info->GetMembers(), "
-        "\""+externalName+"\", "
-        "MEMBER_PTR("+memberName+"), "
-        +GetRef()+")";
+    return "NCBI_NS_NCBI::AddMember(info->GetMembers(), \""+externalName+"\", MEMBER_PTR("+memberName+"), "+GetRef()+")";
 }
 
 END_NCBI_SCOPE

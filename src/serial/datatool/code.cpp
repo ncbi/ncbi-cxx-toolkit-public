@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/04/12 15:36:50  vasilche
+* Added -on <namespace> argument to datatool.
+* Removed unnecessary namespace specifications in generated files.
+*
 * Revision 1.29  2000/04/07 19:26:25  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -78,6 +82,13 @@
 BEGIN_NCBI_SCOPE
 
 CClassContext::~CClassContext(void)
+{
+}
+
+CClassCode::CClassCode(CClassContext& owner, const string& className)
+    : m_Code(owner),
+      m_ClassName(className),
+      m_VirtualDestructor(false)
 {
 }
 
