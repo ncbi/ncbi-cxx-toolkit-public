@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2004/01/22 20:48:38  gouriano
+* corrected writing of namespace prefixes
+*
 * Revision 1.68  2004/01/08 17:42:00  gouriano
 * Added encoding Windows-1252.
 * Made it possible to omit document type declaration
@@ -1041,11 +1044,14 @@ void CObjectOStreamXml::PrintTagName(size_t level)
     case TFrame::eFrameClassMember:
     case TFrame::eFrameChoiceVariant:
         {
+            bool attlist = m_Attlist;
             if (!x_IsStdXml()) {
                 PrintTagName(level + 1);
                 m_Output.PutChar('_');
+                m_Attlist = true;
             }
             WriteTag(frame.GetMemberId().GetName());
+            m_Attlist = attlist;
 #if defined(NCBI_SERIAL_IO_TRACE)
     TraceTag(frame.GetMemberId().GetName());
 #endif
