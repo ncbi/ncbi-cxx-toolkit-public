@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.30 2002/03/15 16:39:58 sherry Exp $
+-- $Id: docsum.asn,v 1.31 2002/04/11 20:40:41 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.31  2002/04/11 20:40:41  sherry
+-- added NSE-ss linkout-url, validation status; NSE-rs create-date, update-date; NSE-popinfo pop-class, and new section NSE-rsStruct with 3D structure data
+--
 -- Revision 1.30  2002/03/15 16:39:58  sherry
 -- added subsnp method-class and dbSNP-build-id
 --
@@ -270,6 +273,8 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 		ambiguousloc  (6),		-- variation has excessive number of potional locations in genome
 		lowmapquality (7)		-- evidence for calling variation deemed insufficient
 				},
+	create-date NSE-date,       -- date the refsnp cluster was instantiated
+	update-date NSE-date OPTIONAL, -- most recent date the cluster was updated (member added or deleted)
 	observed VisibleString,			-- list of all alleles observed in ss-list members, correcting for reverse
 						-- complementation of memebers reported in reverse orientation
 	seq-5 SEQUENCE OF VisibleString,	-- 5' sequence that flanks the variation
@@ -312,9 +317,12 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, wh
 	ucsc-mapset SET OF NSE-rsContigHit OPTIONAL, -- list of hits to genome in golden path contig coordinates 
 						-- data from SNPGoldenPathContigLoc and GoldenPathContigInfo
 	sequence-mapset SET OF  NSE-rsSeqHit OPTIONAL, -- list of hits to genome in sequence component coordinates from MapLink and MapLinkArchive
-	gene-info SET OF NSE-rsLocusID OPTIONAL	-- set of gene information inferred by blast similarity of variation and GenBank sequences.
+	gene-info SET OF NSE-rsLocusID OPTIONAL, -- set of gene information inferred by blast similarity of variation and GenBank sequences.
 						-- analysis is independent of annotation of genome sequence (contig-mapset, above) and
 						-- includes variations mapped to mRNAs or genomic sequences that do not yet have a reference contig.
+ 	structure-data SET OF NSE-rsStruct OPTIONAL -- set of snp to protein structure data based on map coordinates 
+                                                -- and protein structure neighbors
+
 }
 
 
@@ -359,6 +367,15 @@ NSE-ss ::= SEQUENCE {				-- data for an individual submission to dbSNP. All subm
 		unknown		 (7), 		-- unknown method used to detect variation (not reported)
 		rflp		 (8),		-- variation in enzyme restriction site used to detect variation
 		sequence	 (9)} OPTIONAL,	-- samples were sequenced and resulting alignment used to define variation
+    validated ENUMERATED {
+        by-submitter (1),       -- subsnp has been experimentally validated by submitter
+        by-frequency (2),       -- subsnp has frequency data submitted
+        by-cluster   (3),       -- has 2+ submissions, with 1+ submission assayed with a non-computational method.
+        no-info      (4)        -- subsnp is not validated
+                } OPTIONAL,
+		linkout-url VisibleString OPTIONAL, -- append loc-snp-id to this base URL to construct a pointer to submitter data.
+
+
 
 				
 
@@ -495,6 +512,19 @@ NSE-rsLocusID ::= SEQUENCE {
 	} OPTIONAL
 }
 
+NSE-rsStruct ::= SEQUENCE {
+	prot-acc VisibleString,             -- accession of the protein with variation (SNP3D.protein_acc)
+	prot-gi INTEGER,                    -- GI of the protein with variation (SNP3D.master_gi)
+    prot-loc INTEGER,                   -- position of the residue for the protein GI (SNP3D.aa_position)
+    prot-res VisibleString,             -- residue specified for protein at prot-loc location (SNP3D.contig_res)
+    rs-res VisibleString,               -- alternative residue specified by variation sequence (SNP3D.var_res)
+	struct-gi INTEGER,                  -- GI of the structure neighbor (SNP3D.neighbor_gi)
+	struct-loc INTEGER,                 -- position of the residue for the structure GI (SNP3D.neighbor_pos)
+	struct-res VisibleString            -- residue specified for protein at struct-loc location (SNP3D.neighbor_res)
+}
+	
+    
+
 
 
 NSE-ss-popinfo ::= SEQUENCE {
@@ -502,6 +532,7 @@ NSE-ss-popinfo ::= SEQUENCE {
 	batch-id INTEGER,
 	pop-name VisibleString,			-- submitter population ID		SubPop.loc_pop_id
 	pop-id INTEGER,				-- dbSNP population ID			SubPop.pop_id
+	pop-class VisibleString OPTIONAL,  --dbSNP population class
 	samplesize INTEGER OPTIONAL,		-- sample size				SubPop.samplesize                    
  	sub-het REAL OPTIONAL,			-- submitted heterozygosity		SubPop.sub_heterozygosity
 	est-het REAL OPTIONAL,			-- estimated heterogygosity		SubPop.est_heterozygosity
