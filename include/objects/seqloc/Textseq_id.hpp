@@ -35,6 +35,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2003/02/06 22:23:29  vasilche
+ * Added CSeq_id::Assign(), CSeq_loc::Assign().
+ * Added int CSeq_id::Compare() (not safe).
+ * Added caching of CSeq_loc::GetTotalRange().
+ *
  * Revision 1.7  2002/12/26 12:43:42  dicuccio
  * Added Win32 export specifiers
  *
@@ -95,6 +100,8 @@ public:
 
     // Comparison function
     bool Match(const CTextseq_id& tsip2) const;
+    int Compare(const CTextseq_id& tsip2) const;
+    bool operator<(const CTextseq_id& tsip2) const;
 
     // Format the contents FASTA string style
     ostream& AsFastaString(ostream& s) const;
@@ -119,6 +126,13 @@ private:
 inline
 CTextseq_id::CTextseq_id(void)
 {
+}
+
+
+inline
+bool CTextseq_id::operator<(const CTextseq_id& tsip2) const
+{
+    return Compare(tsip2) < 0;
 }
 
 

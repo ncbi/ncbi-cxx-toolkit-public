@@ -53,10 +53,209 @@ CSeq_loc::~CSeq_loc(void)
 }
 
 
+inline
+void x_Assign(CInt_fuzz& dst, const CInt_fuzz& src)
+{
+    switch ( src.Which() ) {
+    case CInt_fuzz::e_not_set:
+        dst.Reset();
+        break;
+    case CInt_fuzz::e_P_m:
+        dst.SetP_m(src.GetP_m());
+        break;
+    case CInt_fuzz::e_Range:
+        dst.SetRange().SetMin(src.GetRange().GetMin());
+        dst.SetRange().SetMax(src.GetRange().GetMax());
+        break;
+    case CInt_fuzz::e_Pct:
+        dst.SetPct(src.GetPct());
+        break;
+    case CInt_fuzz::e_Lim:
+        dst.SetLim(src.GetLim());
+        break;
+    case CInt_fuzz::e_Alt:
+        dst.SetAlt() = src.GetAlt();
+        break;
+    default:
+        THROW1_TRACE(runtime_error, "Invalid Int-fuzz variant");
+    }
+}
+
+
+inline
+void x_Assign(CSeq_interval& dst, const CSeq_interval& src)
+{
+    dst.SetFrom(src.GetFrom());
+    dst.SetTo(src.GetTo());
+    if ( src.IsSetStrand() ) {
+        dst.SetStrand(src.GetStrand());
+    }
+    else {
+        dst.ResetStrand();
+    }
+    dst.SetId().Assign(src.GetId());
+    if ( src.IsSetFuzz_from() ) {
+        x_Assign(dst.SetFuzz_from(), src.GetFuzz_from());
+    }
+    else {
+        dst.ResetFuzz_from();
+    }
+    if ( src.IsSetFuzz_to() ) {
+        x_Assign(dst.SetFuzz_to(), src.GetFuzz_to());
+    }
+    else {
+        dst.ResetFuzz_to();
+    }
+}
+
+
+inline
+void x_Assign(CSeq_point& dst, const CSeq_point& src)
+{
+    dst.SetPoint(src.GetPoint());
+    if ( src.IsSetStrand() ) {
+        dst.SetStrand(src.GetStrand());
+    }
+    else {
+        dst.ResetStrand();
+    }
+    dst.SetId().Assign(src.GetId());
+    if ( src.IsSetFuzz() ) {
+        x_Assign(dst.SetFuzz(), src.GetFuzz());
+    }
+    else {
+        dst.ResetFuzz();
+    }
+}
+
+
+inline
+void x_Assign(CPacked_seqint& dst, const CPacked_seqint& src)
+{
+    CPacked_seqint::Tdata& data = dst.Set();
+    iterate ( CPacked_seqint::Tdata, i, src.Get() ) {
+        data.push_back(CRef<CSeq_interval>(new CSeq_interval));
+        x_Assign(*data.back(), **i);
+    }
+}
+
+
+inline
+void x_Assign(CPacked_seqpnt& dst, const CPacked_seqpnt& src)
+{
+    if ( src.IsSetStrand() ) {
+        dst.SetStrand(src.GetStrand());
+    }
+    else {
+        dst.ResetStrand();
+    }
+    dst.SetId().Assign(src.GetId());
+    if ( src.IsSetFuzz() ) {
+        x_Assign(dst.SetFuzz(), src.GetFuzz());
+    }
+    else {
+        dst.ResetFuzz();
+    }
+    dst.SetPoints() = src.GetPoints();
+}
+
+
+inline
+void x_Assign(CSeq_bond& dst, const CSeq_bond& src)
+{
+    x_Assign(dst.SetA(), src.GetA());
+    if ( src.IsSetB() ) {
+        x_Assign(dst.SetB(), src.GetB());
+    }
+    else {
+        dst.ResetB();
+    }
+}
+
+
+inline
+void x_Assign(CSeq_loc_mix& dst, const CSeq_loc_mix& src)
+{
+    CSeq_loc_mix::Tdata& data = dst.Set();
+    iterate ( CSeq_loc_mix::Tdata, i, src.Get() ) {
+        data.push_back(CRef<CSeq_loc>(new CSeq_loc));
+        data.back()->Assign(**i);
+    }
+}
+
+
+inline
+void x_Assign(CSeq_loc_equiv& dst, const CSeq_loc_equiv& src)
+{
+    CSeq_loc_equiv::Tdata& data = dst.Set();
+    iterate ( CSeq_loc_equiv::Tdata, i, src.Get() ) {
+        data.push_back(CRef<CSeq_loc>(new CSeq_loc));
+        data.back()->Assign(**i);
+    }
+}
+
+
+void CSeq_loc::Assign(const CSerialObject& obj)
+{
+    if ( GetTypeInfo() == obj.GetThisTypeInfo() ) {
+        const CSeq_loc& loc = static_cast<const CSeq_loc&>(obj);
+        switch ( loc.Which() ) {
+        case CSeq_loc::e_not_set:
+            Reset();
+            return;
+        case CSeq_loc::e_Null:
+            SetNull();
+            return;
+        case CSeq_loc::e_Empty:
+            SetEmpty().Assign(loc.GetEmpty());
+            return;
+        case CSeq_loc::e_Whole:
+            SetWhole().Assign(loc.GetWhole());
+            return;
+        case CSeq_loc::e_Int:
+            x_Assign(SetInt(), loc.GetInt());
+            return;
+        case CSeq_loc::e_Pnt:
+            x_Assign(SetPnt(), loc.GetPnt());
+            return;
+        case CSeq_loc::e_Packed_int:
+            x_Assign(SetPacked_int(), loc.GetPacked_int());
+            return;
+        case CSeq_loc::e_Packed_pnt:
+            x_Assign(SetPacked_pnt(), loc.GetPacked_pnt());
+            return;
+        case CSeq_loc::e_Mix:
+            x_Assign(SetMix(), loc.GetMix());
+            return;
+        case CSeq_loc::e_Equiv:
+            x_Assign(SetEquiv(), loc.GetEquiv());
+            return;
+        case CSeq_loc::e_Bond:
+            x_Assign(SetBond(), loc.GetBond());
+            return;
+        case CSeq_loc::e_Feat:
+            SetFeat().Assign(loc.GetFeat());
+            return;
+        }
+    }
+    CSerialObject::Assign(obj);
+}
+
+
+CSeq_loc::TRange CSeq_loc::x_UpdateTotalRange(void) const
+{
+    TRange range = m_TotalRangeCache;
+    if ( range.GetFrom() == TSeqPos(kDirtyCache) &&
+         range.GetToOpen() == TSeqPos(kDirtyCache) ) {
+        range = m_TotalRangeCache = CalculateTotalRange();
+    }
+    return range;
+}
+
 // returns enclosing location range
 // the total range is meaningless if there are several seq-ids
 // in the location
-CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
+CSeq_loc::TRange CSeq_loc::CalculateTotalRange(void) const
 {
     TRange total_range;
 
@@ -66,6 +265,7 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
     case CSeq_loc::e_Empty:
         {
             // Ignore empty locations
+            total_range = TRange::GetEmpty();
             break;
         }
     case CSeq_loc::e_Whole:
@@ -87,6 +287,7 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
         }
     case CSeq_loc::e_Packed_int:
         {
+            total_range = TRange::GetEmpty();
             iterate ( CPacked_seqint::Tdata, ii, GetPacked_int().Get() ) {
                 const CSeq_interval& loc = **ii;
                 total_range += TRange(loc.GetFrom(), loc.GetTo());
@@ -95,7 +296,8 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
         }
     case CSeq_loc::e_Packed_pnt:
         {
-            iterate ( CPacked_seqpnt::TPoints, pi, GetPacked_pnt().GetPoints() ) {
+            total_range = TRange::GetEmpty();
+            iterate( CPacked_seqpnt::TPoints, pi, GetPacked_pnt().GetPoints() ) {
                 TSeqPos pos = *pi;
                 total_range += TRange(pos, pos);
             }
@@ -103,6 +305,7 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
         }
     case CSeq_loc::e_Mix:
         {
+            total_range = TRange::GetEmpty();
             iterate(CSeq_loc_mix::Tdata, li, GetMix().Get()) {
                 total_range += (*li)->GetTotalRange();
             }
@@ -110,6 +313,7 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
         }
     case CSeq_loc::e_Equiv:
         {
+            total_range = TRange::GetEmpty();
             iterate(CSeq_loc_equiv::Tdata, li, GetEquiv().Get()) {
                 total_range += (*li)->GetTotalRange();
             }
@@ -122,7 +326,7 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
             total_range = TRange(pos, pos);
             if ( loc.IsSetB() ) {
                 pos = loc.GetB().GetPoint();
-                total_range = TRange(pos, pos);
+                total_range += TRange(pos, pos);
             }
             break;
         }
@@ -562,201 +766,6 @@ void CSeq_loc::GetLabel(string* label) const
 }
 
 
-void CSeq_loc::x_AssignFuzz(const CInt_fuzz& src, CInt_fuzz& dest)
-{
-    switch (src.Which()) {
-    case CInt_fuzz::e_not_set:
-        break;
-    case CInt_fuzz::e_P_m:
-        dest.SetP_m(src.GetP_m());
-        break;
-    case CInt_fuzz::e_Range:
-        dest.SetRange().SetMin(src.GetRange().GetMin());
-        dest.SetRange().SetMax(src.GetRange().GetMax());
-        break;
-    case CInt_fuzz::e_Pct:
-        dest.SetPct(src.GetPct());
-        break;
-    case CInt_fuzz::e_Lim:
-        dest.SetLim(src.GetLim());
-        break;
-    case CInt_fuzz::e_Alt:
-        // Ok to use merge, since elements are simple (TSeqPos)
-        dest.SetAlt().assign(src.GetAlt().begin(), src.GetAlt().end());
-        break;
-    default:
-        dest.Assign(src);
-    }
-}
-
-
-void CSeq_loc::x_AssignSeq_int(const CSeq_interval& src,
-                                      CSeq_interval& dest)
-{
-    dest.SetId().Assign(src.GetId());
-    dest.SetFrom(src.GetFrom());
-    dest.SetTo(src.GetTo());
-    if (src.IsSetStrand())
-        dest.SetStrand(src.GetStrand());
-    if (src.IsSetFuzz_from())
-        x_AssignFuzz(src.GetFuzz_from(), dest.SetFuzz_from());
-    if (src.IsSetFuzz_to())
-        x_AssignFuzz(src.GetFuzz_to(), dest.SetFuzz_to());
-}
-
-
-void CSeq_loc::x_AssignSeq_pnt(const CSeq_point& src,
-                                      CSeq_point& dest)
-{
-    dest.SetPoint(src.GetPoint());
-    dest.SetId().Assign(src.GetId());
-    if (src.IsSetStrand())
-        dest.SetStrand(src.GetStrand());
-    if (src.IsSetFuzz())
-        x_AssignFuzz(src.GetFuzz(), dest.SetFuzz());
-}
-
-
-void CSeq_loc::Assign(const CSerialObject& source)
-{
-    if ( typeid(source) != typeid(*this) ) {
-        ERR_POST(Fatal <<
-            "CSeq_loc::Assign() -- Assignment of incompatible types: " <<
-            typeid(*this).name() << " = " << typeid(source).name());
-    }
-    Reset();
-    const CSeq_loc& src_loc = static_cast<const CSeq_loc&>(source);
-    switch (src_loc.Which()) {
-    case e_Null:
-        SetNull(src_loc.GetNull());
-        break;
-    case e_Empty:
-        SetEmpty().Assign(src_loc.GetEmpty());
-        break;
-    case e_Whole:
-        SetWhole().Assign(src_loc.GetWhole());
-        break;
-    case e_Int:
-        x_AssignSeq_int(src_loc.GetInt(), SetInt());
-        break;
-    case e_Packed_int:
-        {
-            CRef<CSeq_interval> sint;
-            // Can not use merge(), need to copy elements
-            CPacked_seqint::Tdata& data_copy = SetPacked_int().Set();
-            iterate (CPacked_seqint::Tdata, it, src_loc.GetPacked_int().Get()) {
-                sint.Reset(new CSeq_interval);
-                x_AssignSeq_int(**it, *sint);
-                data_copy.push_back(sint);
-            }
-            break;
-        }
-    case e_Pnt:
-        {
-            x_AssignSeq_pnt(src_loc.GetPnt(), SetPnt());
-            break;
-        }
-    case e_Packed_pnt:
-        {
-            const CPacked_seqpnt& sp = src_loc.GetPacked_pnt();
-            CPacked_seqpnt& dp = SetPacked_pnt();
-            dp.SetId().Assign(sp.GetId());
-            if (sp.IsSetStrand())
-                dp.SetStrand(sp.GetStrand());
-            if (sp.IsSetFuzz())
-                x_AssignFuzz(sp.GetFuzz(), dp.SetFuzz());
-            dp.SetPoints().assign(sp.GetPoints().begin(), sp.GetPoints().end());
-            break;
-        }
-    case e_Mix:
-        {
-            CRef<CSeq_loc> tmp;
-            const CSeq_loc_mix::Tdata& smix = src_loc.GetMix().Get();
-            CSeq_loc_mix::Tdata& dmix = SetMix().Set();
-            iterate (CSeq_loc_mix::Tdata, it, smix) {
-                tmp.Reset(new CSeq_loc);
-                tmp->Assign(**it);
-                dmix.push_back(tmp);
-            }
-            break;
-        }
-    case e_Equiv:
-        {
-            CRef<CSeq_loc> tmp;
-            const CSeq_loc_equiv::Tdata& sequ = src_loc.GetMix().Get();
-            CSeq_loc_equiv::Tdata& dequ = SetMix().Set();
-            iterate (CSeq_loc_equiv::Tdata, it, sequ) {
-                tmp.Reset(new CSeq_loc);
-                tmp->Assign(**it);
-                dequ.push_back(tmp);
-            }
-            break;
-        }
-    case e_Bond:
-        x_AssignSeq_pnt(src_loc.GetBond().GetA(), SetBond().SetA());
-        if (src_loc.GetBond().IsSetB())
-            x_AssignSeq_pnt(src_loc.GetBond().GetB(), SetBond().SetB());
-        break;
-    case e_Feat:
-        {
-            switch (src_loc.GetFeat().Which()) {
-            case CFeat_id::e_not_set:
-                SetFeat();
-                break;
-            case CFeat_id::e_Gibb:
-                SetFeat().SetGibb(src_loc.GetFeat().GetGibb());
-                break;
-            case CFeat_id::e_Giim:
-                {
-                    const CGiimport_id& sid = src_loc.GetFeat().GetGiim();
-                    CGiimport_id& did = SetFeat().SetGiim();
-                    did.SetId(sid.GetId());
-                    if (sid.IsSetDb())
-                        did.SetDb(sid.GetDb());
-                    if (sid.IsSetRelease())
-                        did.SetRelease(sid.GetRelease());
-                    break;
-                }
-            case CFeat_id::e_Local:
-                switch (src_loc.GetFeat().GetLocal().Which()) {
-                case CObject_id::e_Id:
-                    SetFeat().SetLocal().SetId(src_loc.GetFeat().GetLocal().GetId());
-                    break;
-                case CObject_id::e_Str:
-                    SetFeat().SetLocal().SetStr(src_loc.GetFeat().GetLocal().GetStr());
-                    break;
-                default:
-                    SetFeat().SetLocal().Assign(src_loc.GetFeat().GetLocal());
-                }
-                break;
-            case CFeat_id::e_General:
-                {
-                    const CDbtag& stag = src_loc.GetFeat().GetGeneral();
-                    CDbtag& dtag = SetFeat().SetGeneral();
-                    dtag.SetDb(stag.GetDb());
-                    switch (stag.GetTag().Which()) {
-                    case CObject_id::e_Id:
-                        dtag.SetTag().SetId(stag.GetTag().GetId());
-                        break;
-                    case CObject_id::e_Str:
-                        dtag.SetTag().SetStr(stag.GetTag().GetStr());
-                        break;
-                    default:
-                        dtag.SetTag().Assign(stag.GetTag());
-                    }
-                    break;
-                }
-            default:
-                SetFeat().Assign(src_loc.GetFeat());
-            }
-            break;
-        }
-    default:
-        Assign(source);
-    }
-}
-
-
 bool CSeq_loc::Equals(const CSerialObject& object) const
 {
     if ( typeid(object) != typeid(*this) ) {
@@ -775,6 +784,11 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.25  2003/02/06 22:23:29  vasilche
+ * Added CSeq_id::Assign(), CSeq_loc::Assign().
+ * Added int CSeq_id::Compare() (not safe).
+ * Added caching of CSeq_loc::GetTotalRange().
+ *
  * Revision 6.24  2003/02/04 15:15:15  grichenk
  * Overrided Assign() for CSeq_loc and CSeq_id
  *

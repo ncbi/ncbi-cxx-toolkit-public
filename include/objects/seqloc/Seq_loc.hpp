@@ -79,6 +79,9 @@ public:
     typedef CRange<TSeqPos> TRange;
 
     TRange GetTotalRange(void) const;
+    TRange CalculateTotalRange(void) const;
+    void InvalidateTotalRangeCache(void);
+    void InvalidateTotalRangeCacheAll(void);
 
     // Appends a label suitable for display (e.g., error messages)
     // label must point to an existing string object
@@ -98,9 +101,14 @@ private:
     CSeq_loc(const CSeq_loc&);
     CSeq_loc& operator= (const CSeq_loc&);
 
-    static void x_AssignSeq_int(const CSeq_interval& src, CSeq_interval& dest);
-    static void x_AssignSeq_pnt(const CSeq_point& src, CSeq_point& dest);
-    static void x_AssignFuzz(const CInt_fuzz& src, CInt_fuzz& dest);
+    TRange x_UpdateTotalRange(void) const;
+
+    enum {
+        kDirtyCache = -2,
+        kSeveralIds = -3
+    };
+
+    mutable TRange m_TotalRangeCache;
 };
 
 
@@ -175,10 +183,30 @@ private:
 
 /////////////////// CSeq_loc inline methods
 
+inline
+void CSeq_loc::InvalidateTotalRangeCache(void)
+{
+    m_TotalRangeCache
+        .SetFrom(TSeqPos(kDirtyCache))
+        .SetToOpen(TSeqPos(kDirtyCache));
+}
+
+
 // constructor
 inline
 CSeq_loc::CSeq_loc(void)
 {
+    InvalidateTotalRangeCache();
+}
+
+
+inline
+CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
+{
+    TRange range = m_TotalRangeCache;
+    if ( range.GetFrom() == TSeqPos(kDirtyCache) )
+        range = x_UpdateTotalRange();
+    return range;
 }
 
 
@@ -304,6 +332,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/02/06 22:23:29  vasilche
+ * Added CSeq_id::Assign(), CSeq_loc::Assign().
+ * Added int CSeq_id::Compare() (not safe).
+ * Added caching of CSeq_loc::GetTotalRange().
+ *
  * Revision 1.21  2003/02/04 16:04:12  dicuccio
  * Changed postfix to prefix operator in op++() - marginally faster
  *

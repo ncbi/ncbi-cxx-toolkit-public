@@ -35,6 +35,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2003/02/06 22:23:29  vasilche
+ * Added CSeq_id::Assign(), CSeq_loc::Assign().
+ * Added int CSeq_id::Compare() (not safe).
+ * Added caching of CSeq_loc::GetTotalRange().
+ *
  * Revision 1.6  2002/12/26 12:43:42  dicuccio
  * Added Win32 export specifiers
  *
@@ -81,6 +86,7 @@ public:
 
     // comparison function
     bool Match(const CPatent_seq_id& psip2) const;
+    int Compare(const CPatent_seq_id& psip2) const;
 
     // format a FASTA style string
     ostream& AsFastaString(ostream& s) const;

@@ -48,6 +48,8 @@
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
 
+#include <objects/general/Date.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -93,6 +95,184 @@ const CTextseq_id* CSeq_id::GetTextseq_Id(void) const
     default:
         return 0;
     }
+}
+
+
+inline
+void x_Assign(CObject_id& dst, const CObject_id& src)
+{
+    switch ( src.Which() ) {
+    case CObject_id::e_not_set:
+        dst.Reset();
+        return;
+    case CObject_id::e_Id:
+        dst.SetId(src.GetId());
+        return;
+    case CObject_id::e_Str:
+        dst.SetStr(src.GetStr());
+        return;
+    default:
+        THROW1_TRACE(runtime_error, "invalid Object-id variant");
+    }
+}
+
+
+inline
+void x_Assign(CGiimport_id& dst, const CGiimport_id& src)
+{
+    dst.SetId(src.GetId());
+    if ( src.IsSetDb() ) {
+        dst.SetDb(src.GetDb());
+    }
+    else {
+        dst.ResetDb();
+    }
+    if ( src.IsSetRelease() ) {
+        dst.SetRelease(src.GetRelease());
+    }
+    else {
+        dst.ResetRelease();
+    }
+}
+
+
+inline
+void x_Assign(CTextseq_id& dst, const CTextseq_id& src)
+{
+    if ( src.IsSetName() ) {
+        dst.SetName(src.GetName());
+    }
+    else {
+        dst.ResetName();
+    }
+    if ( src.IsSetAccession() ) {
+        dst.SetAccession(src.GetAccession());
+    }
+    else {
+        dst.ResetAccession();
+    }
+    if ( src.IsSetRelease() ) {
+        dst.SetRelease(src.GetRelease());
+    }
+    else {
+        dst.ResetRelease();
+    }
+    if ( src.IsSetVersion() ) {
+        dst.SetVersion(src.GetVersion());
+    }
+    else {
+        dst.ResetVersion();
+    }
+}
+
+
+inline
+void x_Assign(CDbtag& dst, const CDbtag& src)
+{
+    dst.SetDb(src.GetDb());
+    x_Assign(dst.SetTag(), src.GetTag());
+}
+
+
+inline
+void x_Assign(CPatent_seq_id& dst, const CPatent_seq_id& src)
+{
+    dst.SetSeqid(src.GetSeqid());
+    dst.SetCit().Assign(src.GetCit());
+}
+
+
+inline
+void x_Assign(CDate& dst, const CDate& src)
+{
+    dst.Assign(src);
+}
+
+
+inline
+void x_Assign(CPDB_seq_id& dst, const CPDB_seq_id& src)
+{
+    dst.SetMol().Set(src.GetMol());
+    if ( src.IsSetChain() ) {
+        dst.SetChain(src.GetChain());
+    }
+    else {
+        dst.ResetChain();
+    }
+    if ( src.IsSetRel() ) {
+        dst.SetRel().Assign(src.GetRel());
+    }
+    else {
+        dst.ResetRel();
+    }
+}
+
+
+void CSeq_id::Assign(const CSerialObject& obj)
+{
+    if ( GetTypeInfo() == obj.GetThisTypeInfo() ) {
+        const CSeq_id& id = static_cast<const CSeq_id&>(obj);
+        switch ( id.Which() ) {
+        case e_not_set:
+            Reset();
+            return;
+        case e_Local:
+            x_Assign(SetLocal(), id.GetLocal());
+            return;
+        case e_Gibbsq:
+            SetGibbsq(id.GetGibbsq());
+            return;
+        case e_Gibbmt:
+            SetGibbmt(id.GetGibbmt());
+            return;
+        case e_Giim:
+            x_Assign(SetGiim(), id.GetGiim());
+            return;
+        case e_Pir:
+            x_Assign(SetPir(), id.GetPir());
+            return;
+        case e_Swissprot:
+            x_Assign(SetSwissprot(), id.GetSwissprot());
+            return;
+        case e_Patent:
+            x_Assign(SetPatent(), id.GetPatent());
+            return;
+        case e_Other:
+            x_Assign(SetOther(), id.GetOther());
+            return;
+        case e_General:
+            x_Assign(SetGeneral(), id.GetGeneral());
+            return;
+        case e_Gi:
+            SetGi(id.GetGi());
+            return;
+        case e_Prf:
+            x_Assign(SetPrf(), id.GetPrf());
+            return;
+        case e_Pdb:
+            x_Assign(SetPdb(), id.GetPdb());
+            return;
+        case e_Genbank:
+            x_Assign(SetGenbank(), id.GetGenbank());
+            return;
+        case e_Embl:
+            x_Assign(SetEmbl(), id.GetEmbl());
+            return;
+        case e_Ddbj:
+            x_Assign(SetDdbj(), id.GetDdbj());
+            return;
+        case e_Tpg:
+            x_Assign(SetTpg(), id.GetTpg());
+            return;
+        case e_Tpe:
+            x_Assign(SetTpe(), id.GetTpe());
+            return;
+        case e_Tpd:
+            x_Assign(SetTpd(), id.GetTpd());
+            return;
+        }
+    }
+    CSerialObject::Assign(obj);
 }
 
 
@@ -153,6 +333,39 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
         return GetTpd().Match(sid2.GetTpd()) ? e_YES : e_NO;
     default:
         return e_error;
+    }
+}
+
+
+int CSeq_id::CompareOrdered(const CSeq_id& sid2) const
+{
+    const CTextseq_id *tsip1 = GetTextseq_Id();
+    const CTextseq_id *tsip2 = sid2.GetTextseq_Id();
+    if ( tsip1 && tsip2 )
+        return tsip1->Compare(*tsip2);
+    int ret = Which() - sid2.Which();
+    if ( ret != 0 ) {
+        return ret;
+    }
+    switch ( Which() ) { // Now we only need to know one
+    case e_Local:
+        return GetLocal().Compare(sid2.GetLocal());
+    case e_Gibbsq:
+        return GetGibbsq() - sid2.GetGibbsq();
+    case e_Gibbmt:
+        return GetGibbmt() - sid2.GetGibbmt();
+    case e_Giim:
+        return GetGiim().GetId() - sid2.GetGiim().GetId();
+    case e_Patent:
+        return GetPatent().Compare(sid2.GetPatent());
+    case e_General:
+        return 0;
+    case e_Gi:
+        return GetGi() - sid2.GetGi();
+    case e_Pdb:
+        return 0;
+    default:
+        return this == &sid2? 0: this < &sid2? -1: 1;
     }
 }
 
@@ -1108,163 +1321,6 @@ CSeq_id::x_Init
 }
 
 
-void CSeq_id::x_AssignTextseq_id(const CTextseq_id& src,
-                                        CTextseq_id& dest)
-{
-    if (src.IsSetName())
-        dest.SetName(src.GetName());
-    if (src.IsSetAccession())
-        dest.SetAccession(src.GetAccession());
-    if (src.IsSetRelease())
-        dest.SetRelease(src.GetRelease());
-    if (src.IsSetVersion())
-        dest.SetVersion(src.GetVersion());
-}
-
-
-void CSeq_id::Assign(const CSerialObject& source)
-{
-    if ( typeid(source) != typeid(*this) ) {
-        ERR_POST(Fatal <<
-            "CSeq_id::Assign() -- Assignment of incompatible types: " <<
-            typeid(*this).name() << " = " << typeid(source).name());
-    }
-    Reset();
-    const CSeq_id& src_id = static_cast<const CSeq_id&>(source);
-    switch (src_id.Which()) {
-    case e_not_set:
-        // do not go to default to avoid CSerialObject::Assign() overhead
-        break;
-    case e_Local:
-        switch (src_id.GetLocal().Which()) {
-        case CObject_id::e_Id:
-            SetLocal().SetId(src_id.GetLocal().GetId());
-            break;
-        case CObject_id::e_Str:
-            SetLocal().SetStr(src_id.GetLocal().GetStr());
-            break;
-        default:
-            SetLocal().Assign(src_id.GetLocal());
-        }
-        break;
-    case e_Gibbsq:
-        SetGibbsq(src_id.GetGibbsq());
-        break;
-    case e_Gibbmt:
-        SetGibbmt(src_id.GetGibbmt());
-        break;
-    case e_Giim:
-        SetGiim().SetId(src_id.GetGiim().GetId());
-        if (src_id.GetGiim().IsSetDb())
-            SetGiim().SetDb(src_id.GetGiim().GetDb());
-        if (src_id.GetGiim().IsSetRelease())
-            SetGiim().SetRelease(src_id.GetGiim().GetRelease());
-        break;
-    case e_Genbank:
-        x_AssignTextseq_id(src_id.GetGenbank(), SetGenbank());
-        break;
-    case e_Embl:
-        x_AssignTextseq_id(src_id.GetEmbl(), SetEmbl());
-        break;
-    case e_Pir:
-        x_AssignTextseq_id(src_id.GetPir(), SetPir());
-        break;
-    case e_Swissprot:
-        x_AssignTextseq_id(src_id.GetSwissprot(), SetSwissprot());
-        break;
-    case e_Patent:
-        {
-            const CId_pat& spat = src_id.GetPatent().GetCit();
-            CId_pat& dpat = SetPatent().SetCit();
-            SetPatent().SetSeqid(src_id.GetPatent().GetSeqid());
-            switch (spat.GetId().Which()) {
-            case CId_pat::C_Id::e_Number:
-                dpat.SetId().SetNumber(
-                    spat.GetId().GetNumber());
-                break;
-            case CId_pat::C_Id::e_App_number:
-                dpat.SetId().SetApp_number(
-                    spat.GetId().GetApp_number());
-                break;
-            default:
-                dpat.SetId().Assign(spat.GetId());
-            }
-            dpat.SetCountry(spat.GetCountry());
-            if (spat.IsSetDoc_type())
-                dpat.SetDoc_type(spat.GetDoc_type());
-            break;
-        }
-    case e_Other:
-        x_AssignTextseq_id(src_id.GetOther(), SetOther());
-        break;
-    case e_General:
-        SetGeneral().SetDb(src_id.GetGeneral().GetDb());
-        switch (src_id.GetGeneral().GetTag().Which()) {
-        case CObject_id::e_Id:
-            SetGeneral().SetTag().SetId(src_id.GetGeneral().GetTag().GetId());
-            break;
-        case CObject_id::e_Str:
-            SetGeneral().SetTag().SetStr(src_id.GetGeneral().GetTag().GetStr());
-            break;
-        default:
-            SetGeneral().SetTag().Assign(src_id.GetGeneral().GetTag());
-        }
-        break;
-    case e_Gi:
-        SetGi(src_id.GetGi());
-        break;
-    case e_Ddbj:
-        x_AssignTextseq_id(src_id.GetDdbj(), SetDdbj());
-        break;
-    case e_Prf:
-        x_AssignTextseq_id(src_id.GetPrf(), SetPrf());
-        break;
-    case e_Pdb:
-        {
-            const CPDB_seq_id& sid = src_id.GetPdb();
-            CPDB_seq_id& did = SetPdb();
-            did.SetMol().Set(sid.GetMol().Get());
-            if (sid.IsSetChain())
-                did.SetChain(sid.GetChain());
-            if (sid.IsSetRel()) {
-                switch (sid.GetRel().Which()) {
-                case CDate::e_Str:
-                    did.SetRel().SetStr(sid.GetRel().GetStr());
-                    break;
-                case CDate::e_Std:
-                    {
-                        const CDate_std& sd = sid.GetRel().GetStd();
-                        CDate_std& dd = did.SetRel().SetStd();
-                        dd.SetYear(sd.GetYear());
-                        if (sd.IsSetMonth()) dd.SetMonth(sd.GetMonth());
-                        if (sd.IsSetDay()) dd.SetDay(sd.GetDay());
-                        if (sd.IsSetSeason()) dd.SetSeason(sd.GetSeason());
-                        if (sd.IsSetHour()) dd.SetHour(sd.GetHour());
-                        if (sd.IsSetMinute()) dd.SetMinute(sd.GetMinute());
-                        if (sd.IsSetSecond()) dd.SetSecond(sd.GetSecond());
-                        break;
-                    }
-                default:
-                    did.SetRel().Assign(sid.GetRel());
-                }
-            }
-            break;
-        }
-    case e_Tpg:
-        x_AssignTextseq_id(src_id.GetTpg(), SetTpg());
-        break;
-    case e_Tpe:
-        x_AssignTextseq_id(src_id.GetTpe(), SetTpe());
-        break;
-    case e_Tpd:
-        x_AssignTextseq_id(src_id.GetTpd(), SetTpd());
-        break;
-    default:
-        CSerialObject::Assign(source);
-    }
-}
-
-
 bool CSeq_id::Equals(const CSerialObject& object) const
 {
     if ( typeid(object) != typeid(*this) ) {
@@ -1283,6 +1339,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.51  2003/02/06 22:23:29  vasilche
+ * Added CSeq_id::Assign(), CSeq_loc::Assign().
+ * Added int CSeq_id::Compare() (not safe).
+ * Added caching of CSeq_loc::GetTotalRange().
+ *
  * Revision 6.50  2003/02/04 15:15:12  grichenk
  * Overrided Assign() for CSeq_loc and CSeq_id
  *

@@ -248,6 +248,11 @@ public:
 
     // Compare() - more general
     E_SIC Compare(const CSeq_id& sid2) const;
+    int CompareOrdered(const CSeq_id& sid2) const;
+    bool operator<(const CSeq_id& sid2) const
+        {
+            return CompareOrdered(sid2) < 0;
+        }
 
     // Return compatible CTextseq_id
     const CTextseq_id* GetTextseq_Id(void) const;
@@ -294,8 +299,6 @@ private:
 
     //CRef<CAbstractObjectManager> m_ObjectManager;
 
-    static void x_AssignTextseq_id(const CTextseq_id& src,
-                                   CTextseq_id& dest);
 };
 
 
@@ -372,6 +375,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2003/02/06 22:23:29  vasilche
+ * Added CSeq_id::Assign(), CSeq_loc::Assign().
+ * Added int CSeq_id::Compare() (not safe).
+ * Added caching of CSeq_loc::GetTotalRange().
+ *
  * Revision 1.33  2003/02/04 15:15:11  grichenk
  * Overrided Assign() for CSeq_loc and CSeq_id
  *

@@ -35,6 +35,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2003/02/06 22:23:29  vasilche
+ * Added CSeq_id::Assign(), CSeq_loc::Assign().
+ * Added int CSeq_id::Compare() (not safe).
+ * Added caching of CSeq_loc::GetTotalRange().
+ *
  * Revision 6.7  2001/08/31 16:03:58  clausen
  * Removed upper casing.
  *
@@ -78,6 +83,16 @@ CPatent_seq_id::~CPatent_seq_id(void)
 bool CPatent_seq_id::Match(const CPatent_seq_id& psip2) const
 {
     return GetSeqid() == psip2.GetSeqid()  &&  GetCit().Match(psip2.GetCit());
+}
+
+
+int CPatent_seq_id::Compare(const CPatent_seq_id& psip2) const
+{
+    int ret = GetSeqid() - psip2.GetSeqid();
+    if ( ret == 0 ) {
+        ret = GetCit().Match(psip2.GetCit())? 0: this < &psip2? -1: 1;
+    }
+    return ret;
 }
 
 

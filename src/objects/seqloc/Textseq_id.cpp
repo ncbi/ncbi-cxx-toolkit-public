@@ -35,6 +35,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2003/02/06 22:23:29  vasilche
+ * Added CSeq_id::Assign(), CSeq_loc::Assign().
+ * Added int CSeq_id::Compare() (not safe).
+ * Added caching of CSeq_loc::GetTotalRange().
+ *
  * Revision 6.6  2001/08/31 20:05:45  ucko
  * Fix ICC build.
  *
@@ -234,6 +239,40 @@ bool CTextseq_id::Match(const CTextseq_id& tsip2) const
 
     //nothing to compare
     return false;
+}
+
+
+// comparison function
+int CTextseq_id::Compare(const CTextseq_id& tsip2) const
+{
+    // Check Accessions first
+    if (IsSetAccession()  &&  tsip2.IsSetAccession()) {
+        int ret = PNocase().Compare(GetAccession(), tsip2.GetAccession());
+        if ( ret == 0 && IsSetVersion()  &&  tsip2.IsSetVersion() ) {
+            ret = GetVersion() - tsip2.GetVersion();
+        }
+        return ret;
+    }
+
+    // then try name
+    if (IsSetName()  &&  tsip2.IsSetName()) {
+        int ret = PNocase().Compare(GetName(), tsip2.GetName());
+        if ( ret == 0 && IsSetVersion()  &&  tsip2.IsSetVersion() ) {
+            ret = GetVersion() - tsip2.GetVersion();
+        }
+        return ret;
+    }
+
+    int ret = IsSetAccession() - tsip2.IsSetAccession();
+    if ( ret == 0 ) {
+        ret = IsSetName() - tsip2.IsSetName();
+        if ( ret == 0 ) {
+            ret = IsSetVersion() - tsip2.IsSetVersion();
+            if ( ret == 0 )
+                ret = this == &tsip2? 0: this < &tsip2? -1: 1;
+        }
+    }
+    return ret;
 }
 
 
