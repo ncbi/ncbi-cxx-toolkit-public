@@ -2,7 +2,7 @@
 # $Id$
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 
-def_builddir="$NCBI/ver0.0/c++/Debug/build"
+def_builddir="$NCBI/c++/Debug/build"
 
 script=`basename $0`
 
@@ -41,10 +41,10 @@ CreateMakefile_Lib()
 
 ###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
 builddir = $builddir
-# builddir = $(NCBI)/ver0.0/c++/Release/build
+# builddir = $(NCBI)/c++/Release/build
 
 
-###  DEFAULT COMPILATION FLAGS -- DON'T EDIT OR MOVE THESE 3 LINES !!!  ###
+###  DEFAULT COMPILATION FLAGS -- DON'T EDIT OR MOVE THESE 4 LINES !!!  ###
 include $(builddir)/Makefile.mk
 srcdir = .
 BINCOPY = @:
@@ -88,10 +88,10 @@ CreateMakefile_App()
 
 ###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
 builddir = $builddir
-# builddir = $(NCBI)/ver0.0/c++/Release/build
+# builddir = $(NCBI)/c++/Release/build
 
 
-###  DEFAULT COMPILATION FLAGS  -- DON'T EDIT OR MOVE THESE 3 LINES !!!  ###
+###  DEFAULT COMPILATION FLAGS  -- DON'T EDIT OR MOVE THESE 4 LINES !!!  ###
 include $(builddir)/Makefile.mk
 srcdir = .
 BINCOPY = @:

@@ -2,7 +2,7 @@ This is a DEMO of script "SRC/NEW_PROJECT.SH"
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-/tmp> $NCBI/ver0.0/c++/src/new_project.sh
+/tmp> $NCBI/c++/src/new_project.sh
 USAGE:  new_project.sh <name> <type> [builddir]
 SYNOPSIS:
    Create a model makefile "Makefile.<name>_<type>" to build
@@ -11,14 +11,14 @@ ARGUMENTS:
    <name>      -- name of the project (will be subst. to the makefile name)
    <type>      -- one of {lib, app} (whether to build library or application)
    [builddir]  -- path to the pre-built NCBI C++ toolkit
-                  (default = /netopt/ncbi_tools/ver0.0/c++/Debug/build)
+                  (default = /netopt/ncbi_tools/c++/Debug/build)
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-/tmp> $NCBI/ver0.0/c++/src/new_project.sh foo app
+/tmp> $NCBI/c++/src/new_project.sh foo app
 Created a model makefile "/tmp/foo/Makefile.foo_app".
 
 
@@ -33,8 +33,8 @@ Created a model makefile "/tmp/foo/Makefile.foo_app".
 # This file was originally generated from by shell script "new_project.sh"
 
 ###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
-builddir = /netopt/ncbi_tools/ver0.0/c++/Debug/build
-# builddir = $(NCBI)/ver0.0/c++/Release/build
+builddir = /netopt/ncbi_tools/c++/Debug/build
+# builddir = $(NCBI)/c++/Release/build
 
 
 ###  DEFAULT COMPILATION FLAGS  -- DON'T EDIT OR MOVE THESE 3 LINES !!!  ###

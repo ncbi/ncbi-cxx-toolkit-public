@@ -3,7 +3,7 @@ This is a DEMO of script "SRC/IMPORT_PROJECT.SH"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-/tmp> $NCBI/ver0.0/c++/src/import_project.sh
+/tmp> $NCBI/c++/src/import_project.sh
 
 USAGE:  import_project.sh <cvs_tree_path> [builddir]
 -- retrieve a project (and all its sub-projects) located in directories
@@ -13,22 +13,24 @@ of the NCBI C++ CVS tree, and convert all "Makefile.*.{lib,app}" and
 (the customized makefile inserts) into the real makefiles
 "Makefile.*_{lib,app}" to allow one to build these libs/apps
 using pre-built NCBI C++ toolkit deployed in [builddir].
-Note:  by default, [builddir] will be:  /netopt/ncbi_tools/ver0.0/c++/Debug/build.
+Note:  by default, [builddir] will be:  /netopt/ncbi_tools/c++/Debug/build.
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-/tmp> $NCBI/ver0.0/c++/src/import_project.sh hello
+/tmp> $NCBI/c++/src/import_project.sh hello
 
 cvs checkout: Updating internal/c++/include/hello
 U internal/c++/include/hello/hellocmd.hpp
 U internal/c++/include/hello/hellores.hpp
 cvs checkout: Updating internal/c++/src/hello
+U internal/c++/src/hello/Makefile.fasthello.app
 U internal/c++/src/hello/Makefile.hello.app
 U internal/c++/src/hello/Makefile.in
 U internal/c++/src/hello/README
+U internal/c++/src/hello/hello.cgi.ini
 U internal/c++/src/hello/helloapp.cpp
 U internal/c++/src/hello/helloapp.hpp
 U internal/c++/src/hello/hellocmd.cpp
@@ -36,7 +38,8 @@ U internal/c++/src/hello/hellores.cpp
 cvs checkout: Updating internal/c++/src/hello/html
 U internal/c++/src/hello/html/nosidebar.html
 U internal/c++/src/hello/html/template.html
-Scanning and creating makefiles under /tmp/internal/c++/src/...
+Scanning and creating makefiles under /home/vakatov/tmp/internal/c++/src/...
+Creating "hello/Makefile.fasthello_app"  (from "hello/Makefile.fasthello.app")
 Creating "hello/Makefile.hello_app"  (from "hello/Makefile.hello.app")
 DONE
 
@@ -48,7 +51,6 @@ DONE
 /tmp> cd internal/c++/src/hello/
 /tmp/internal/c++/src/hello> cat Makefile.hello_app 
 
-
 # Makefile:  hello/Makefile.hello_app
 #
 # This file is generated from "hello/Makefile.hello.app"
@@ -56,35 +58,30 @@ DONE
 
 
 ###  PATH TO A PRE-BUILT C++ TOOLKIT  ###
-builddir = /netopt/ncbi_tools/ver0.0/c++/Debug/build
-# builddir = $(NCBI)/ver0.0/c++/Release/build
+builddir = /netopt/ncbi_tools/c++/Debug/build
+# builddir = $(NCBI)/c++/Release/build
 
 
-###  DEFAULT COMPILATION FLAGS  -- DON'T EDIT OR MOVE THESE 3 LINES !!!  ###
+###  DEFAULT COMPILATION FLAGS  -- DON'T EDIT OR MOVE THESE 4 LINES !!!  ###
 include $(builddir)/Makefile.mk
-BINCOPY = :
-LOCAL_CPPFLAGS =  -I../../../include -I../../../include/internal
+srcdir = .
+BINCOPY = @:
+LOCAL_CPPFLAGS =  -I../../include
 
 
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
 
-#################################
-# $Id: new_project.import.session,v 1.2 1999/12/28 19:37:19 vakatov Exp $
+# $Id: new_project.import.session,v 1.3 1999/12/29 21:02:34 vakatov Exp $
 # Author:  Lewis Geer
+
+# Build CGI application "HELLO"
+# NOTE:  see in "Makefile.fasthello.app" for how to build it as Fast-CGI
 #################################
 
-# Build program "hello.cgi"
-#################################
-
-APP = hello.cgi
+APP = hello
 OBJ = helloapp hellores hellocmd
 LIB = xhtml xcgi xncbi
-
-LIBS = \
-  $(FASTCGI_LIBS) \
-  $(NETWORK_LIBS) \
-  $(ORIG_LIBS)
 
 # PRE_LIBS = 
 # LIBS     = $(ORIG_LIBS)
@@ -109,20 +106,26 @@ include $(builddir)/Makefile.app
 
 /tmp/internal/c++/src/hello> make -f Makefile.hello_app
 
+/netopt/SUNWspro6/bin/CC -c  -mt +w +w2 -KPIC -g -I../../include -D_DEBUG  -I/netopt/ncbi_tools/c++/Debug/inc -I/netopt/ncbi_tools/c++/include -I/netopt/ncbi_tools/c++/include/internal helloapp.cpp -o helloapp.o 2>&1 | /netopt/ncbi_tools/c++/compilers/cxx_filter.WorkShop5.sh
 
-/netopt/SUNWspro6/bin/CC -c  -mt +w +w2 -g -I../../../include -I../../../include/internal -D_DEBUG  -I/netopt/ncbi_tools.master/ver0.0/c++/Debug/inc -I/netopt/ncbi_tools.master/ver0.0/c++/include -I/netopt/ncbi_tools.master/ver0.0/c++/include/internal helloapp.cpp -o helloapp.o
+/netopt/SUNWspro6/bin/CC -c  -mt +w +w2 -KPIC -g -I../../include -D_DEBUG  -I/netopt/ncbi_tools/c++/Debug/inc -I/netopt/ncbi_tools/c++/include -I/netopt/ncbi_tools/c++/include/internal hellores.cpp -o hellores.o 2>&1 | /netopt/ncbi_tools/c++/compilers/cxx_filter.WorkShop5.sh
 
-/netopt/SUNWspro6/bin/CC -c  -mt +w +w2 -g -I../../../include -I../../../include/internal -D_DEBUG  -I/netopt/ncbi_tools.master/ver0.0/c++/Debug/inc -I/netopt/ncbi_tools.master/ver0.0/c++/include -I/netopt/ncbi_tools.master/ver0.0/c++/include/internal hellores.cpp -o hellores.o
+/netopt/SUNWspro6/bin/CC -c  -mt +w +w2 -KPIC -g -I../../include -D_DEBUG  -I/netopt/ncbi_tools/c++/Debug/inc -I/netopt/ncbi_tools/c++/include -I/netopt/ncbi_tools/c++/include/internal hellocmd.cpp -o hellocmd.o 2>&1 | /netopt/ncbi_tools/c++/compilers/cxx_filter.WorkShop5.sh
 
-/netopt/SUNWspro6/bin/CC -c  -mt +w +w2 -g -I../../../include -I../../../include/internal -D_DEBUG  -I/netopt/ncbi_tools.master/ver0.0/c++/Debug/inc -I/netopt/ncbi_tools.master/ver0.0/c++/include -I/netopt/ncbi_tools.master/ver0.0/c++/include/internal hellocmd.cpp -o hellocmd.o
+/netopt/SUNWspro6/bin/CC -xildoff -g helloapp.o hellores.o hellocmd.o  -L/netopt/ncbi_tools/c++/Debug/lib -lxhtml -lxcgi -lxncbi -Bstatic -L/netopt/SUNWspro6/bin/../SC5.0/lib -lm -Bdynamic -o hello
 
-/netopt/SUNWspro6/bin/CC -xildoff -g helloapp.o hellores.o hellocmd.o  -L/netopt/ncbi_tools.master/ver0.0/c++/Debug/lib -lxhtml -lxcgi -lxncbi -L/netopt/ncbi_tools/altlib -lfcgi  -lsocket -lnsl  -Bstatic -L/netopt/SUNWspro6/bin/../SC5.0/lib -lm -Bdynamic -o hello.cgi
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-/tmp/internal/c++/src/hello> hello.cgi
+/tmp/internal/c++/src/hello> mv hello hello.cgi
+/tmp/internal/c++/src/hello> hello.cgi > hello.html
 
-Content-Type: text/html
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NOTE:  we had to rename "hello" to "hello.cgi" to make it automagically use
+       its config. file "hello.cgi.ini".

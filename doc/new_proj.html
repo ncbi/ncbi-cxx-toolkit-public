@@ -739,7 +739,7 @@ entirely up to the <a href="#ref_MakeMeta"><i>meta-makefiles</i></a>.
 <h2>Developing a project(lib, application) outside of the NCBI C++ tree</h2>
 
 NOTE:  in NCBI, you can use scripts located in the pre-built NCBI C++
-toolkit directory <b><i>$NCBI/ver0.0/c++/scripts/.</i></b>
+toolkit directory <b><i>$NCBI/c++/scripts/.</i></b>
 
 <p>
 <br>
@@ -809,8 +809,8 @@ EXAMPLE</a>:
 <br>
 will create a model makefile <b><i>Makefile.foo_lib</i></b> to build
 a library using tools and flags hard-coded in
-<b><i>$NCBI/ver0.0/c++/Debug/build/Makefile.mk</i></b>,
-and headers from <b><i>$NCBI/ver0.0/c++/include/</i></b>.
+<b><i>$NCBI/c++/Debug/build/Makefile.mk</i></b>,
+and headers from <b><i>$NCBI/c++/include/</i></b>.
 Now, after specifying the library name, list of source files, etc.,
 you can just go to the created working directory
 <b><i>foo/</i></b> and build your library using:
@@ -824,7 +824,7 @@ You can easily change the active version of NCBI C++ toolkit
 by manually setting variable <b>$(builddir)</b> in
 <b><i>Makefile.foo_lib</i></b> to the desired toolkit path, e.g.:
 <br> &nbsp;&nbsp;&nbsp;
-<b><i>builddir = $(NCBI)/ver0.0/c++/GCC-Release/build</i></b>
+<b><i>builddir = $(NCBI)/c++/GCC-Release/build</i></b>
 
 
 <p>
