@@ -448,7 +448,7 @@ int CBlast2seqApplication::Run(void)
         }
 
     } catch (const CException& e) {
-        e.ReportExtra(cerr);
+        cerr << e.what() << endl;
     }
 
     return 0;
@@ -469,6 +469,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/03/26 18:50:32  camacho
+ * Use CException::what() in catch block
+ *
  * Revision 1.39  2004/03/17 20:09:08  dondosha
  * Use CBlastNucleotideOptionsHandle method to set both extension method and scan step, instead of directly calling CalculateBestStride
  *
