@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/03/21 14:51:41  vasilche
+* Added debug printing of features collected.
+*
 * Revision 1.17  2003/03/18 21:48:31  grichenk
 * Removed obsolete class CAnnot_CI
 *
@@ -280,6 +283,7 @@ int CDemoApp::Run(void)
                 auto_ptr<CObjectOStream>
                     out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
                 *out << feat_it->GetMappedFeature();
+                *out << feat_it->GetLocation();
             }
             CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
         }
@@ -345,6 +349,12 @@ int CDemoApp::Run(void)
                               SAnnotSelector::eOverlap_Intervals, resolve);
              feat_it;  ++feat_it) {
             count++;
+            if ( print_features ) {
+                auto_ptr<CObjectOStream>
+                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                *out << feat_it->GetMappedFeature();
+                *out << feat_it->GetLocation();
+            }
         }
         NcbiCout << "Feat count (TSE only, 0..9):   " << count << NcbiEndl;
 
