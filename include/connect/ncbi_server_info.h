@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2001/03/01 18:47:45  lavr
+ * Verbal representation of server info is wordly documented
+ *
  * Revision 6.13  2000/12/29 17:39:42  lavr
  * Pretty printed
  *
@@ -199,6 +202,68 @@ SSERV_Info* SERV_CreateHttpInfo
  * (neither it will be if the server info has the host address as 0).
  */
 char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host);
+
+
+/* Server specification consists of the following:
+ * TYPE [server-specific_parameters] [tags]
+ *
+ * TYPE := { STANDALONE | NCBID | HTTP | HTTP_GET | HTTP_POST }
+ *
+ * Server-specific parameters:
+ *
+ *    Standalone servers: None
+ *                        Servers of this type do not take any arguments.
+ *
+ *    NCBID servers: Arguments to CGI in addition to specified by application.
+ *                   Empty additional arguments denoted as '' (double quotes).
+ *                   Note that arguments must not contain space characters.
+ *
+ *    HTTP* servers: Path (required) and args in the form path[?args].
+ *                   Note that no spaces allowed withing this parameter.
+ *
+ * Tags may follow in no specifis order but no more than one instance
+ * of each flag is allowed:
+ *
+ *    Load average calculation for the server:
+ *       Regular (default)
+ *       Blast
+ *
+ *    Validity period:
+ *       T=integer    [0 = default]
+ *           specifies the time in seconds this server entry is valid
+ *           without update. (If equal to 0 then defaulted by
+ *           the LBSM Daemon to some reasonable value.)
+ *
+ *    Reachability coefficient:
+ *       R=double     [0 = default]
+ *           specifies availability ratio for the server, expressed as
+ *           a floating point number with 0.0 meaning the server is down
+ *           (unavailable) and 1000.0 meaning the server is up and running.
+ *           Intermediate values can be used to make the server less or more
+ *           favorable for choosing by LBSM Daemon, as this coefficient is
+ *           directly used as a multiplier in the load-average calculation
+ *           for the entire family of servers for the same service.
+ *           (If equal to 0 then defaulted by the LBSM Daemon to 1000.0
+ *           if the server is running and to 0, if not.)
+ *
+ * Note that optional arguments can be omitted along with all preceding
+ * optional arguments, that is the following 2 server specicifations are
+ * both valid:
+ *
+ * NCBID ''
+ * and
+ * NCBID
+ *
+ * but they are not equal to the following specification:
+ *
+ * NCBID Regular
+ *
+ * because here 'Regular' is treated as an argument, not as a tag.
+ * To make the preceding specification equivalent to those two, one has
+ * to use the following form:
+ *
+ * NCBID '' Regular
+ */
 
 
 /* Read full server info (including type) from string "str"
