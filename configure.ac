@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.166 2003/02/19 16:21:22 ucko Exp $
+#  $Id: configure.ac,v 1.167 2003/02/20 19:26:48 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -845,9 +845,9 @@ case "$compiler:$compiler_version" in
     done
     if test "$found" = "true"; then
         case "$host_os" in
-           osf*)     LDFLAGS="-Wl,-rpath,$dir $LDFLAGS" ;;
+           solaris*) LDFLAGS="-Wl,-R$dir $LDFLAGS" ;;
            darwin*)  ;;
-           *)        LDFLAGS="-Wl,-R$dir $LDFLAGS" ;;
+           *)        LDFLAGS="-Wl,-rpath,$dir $LDFLAGS" ;;
         esac
     fi
     ;;
@@ -866,7 +866,7 @@ if test -z "$CONF_f_runpath" ; then
     solaris*:GCC )
       CONF_f_runpath="-Wl,-R"
       ;;
-    linux*:GCC )
+    linux*:GCC | *bsd*:GCC | cygwin*:GCC )
       # osf*:GCC could go here as well, but then the linker's
       # unwillingness to merge -rpath options bites us if we use GCC 3. :-/
       CONF_f_runpath="-Wl,-rpath,"
@@ -884,7 +884,7 @@ if test -z "$CONF_f_runpath" ; then
    esac
 fi
 
-if   test -z "$CONF_f_runpath"  -o  "$with_runpath" = "no" ; then
+if   test "$with_runpath" = "no" ; then
    runpath=
    pure_runpath=
 elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
@@ -896,6 +896,11 @@ elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
 else
    runpath=
    pure_runpath=
+fi
+if test -z "$CONF_f_runpath" ; then
+   # Drop the linker flag (since passing directory names doesn't work
+   # so well), but keep pure_runpath for other uses.
+   runpath=
 fi
 
 # DLLs and profiling don't mix on all platforms
