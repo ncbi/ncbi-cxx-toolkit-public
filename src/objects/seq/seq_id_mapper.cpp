@@ -1373,7 +1373,9 @@ protected:
     virtual void x_DropHandle(const CSeq_id_Handle& handle);
 
 private:
-    // No index by chain or date - too complicated
+    string x_IdToStrKey(const CPDB_seq_id& id) const;
+
+    // Index by mol+chain, no date - too complicated
     typedef list<CSeq_id_Handle>  TSubMolList;
     typedef map<string, TSubMolList, seqid_string_less> TMolMap;
 
@@ -1381,11 +1383,24 @@ private:
 };
 
 
+inline string CSeq_id_PDB_Tree::x_IdToStrKey(const CPDB_seq_id& id) const
+{
+// this is an attempt to follow the undocumented rules of PDB
+// ("documented" as code written elsewhere)
+    string skey = id.GetMol().Get();
+    switch (char chain = (char)id.GetChain()) {
+    case '\0': skey += " ";   break;
+    case '|':  skey += "VB";  break;
+    default:   skey += chain; break;
+    }
+    return skey;
+}
+
 TSeq_id_Info CSeq_id_PDB_Tree::FindEqual(const CSeq_id& id) const
 {
     _ASSERT( id.IsPdb() );
     const CPDB_seq_id& pid = id.GetPdb();
-    TMolMap::const_iterator mol_it = m_MolMap.find(pid.GetMol().Get());
+    TMolMap::const_iterator mol_it = m_MolMap.find(x_IdToStrKey(pid));
     if (mol_it == m_MolMap.end())
         return TSeq_id_Info(0, 0);
     iterate(TSubMolList, it, mol_it->second) {
@@ -1402,16 +1417,12 @@ void CSeq_id_PDB_Tree::FindMatch(const CSeq_id& id,
 {
     _ASSERT( id.IsPdb() );
     const CPDB_seq_id& pid = id.GetPdb();
-    TMolMap::const_iterator mol_it = m_MolMap.find(pid.GetMol().Get());
+    TMolMap::const_iterator mol_it = m_MolMap.find(x_IdToStrKey(pid));
     if (mol_it == m_MolMap.end())
         return;
     iterate(TSubMolList, it, mol_it->second) {
         const CPDB_seq_id& pid2 = x_GetSeq_id(*it).GetPdb();
-        // Ignore date and chain if not set in id
-        if ( pid.IsSetChain() ) {
-            if ( !pid2.IsSetChain()  ||  pid.GetChain() != pid2.GetChain())
-                continue;
-        }
+        // Ignore date if not set in id
         if ( pid.IsSetRel() ) {
             if ( !pid2.IsSetRel()  ||
                 !pid.GetRel().Equals(pid2.GetRel()) )
@@ -1439,15 +1450,7 @@ void CSeq_id_PDB_Tree::AddSeq_idMapping(CSeq_id_Handle& handle)
 {
     const CSeq_id& id = x_GetSeq_id(handle);
     _ASSERT( id.IsPdb() );
-// this is an attempt to follow the undocumented rules of PDB
-// ("documented" as code written elsewhere)
-    string skey = id.GetPdb().GetMol().Get();
-    switch (char chain = (char)id.GetPdb().GetChain()) {
-    case '\0': skey += " ";   break;
-    case '|':  skey += "VB";  break;
-    default:   skey += chain; break;
-    }
-    TSubMolList& sub = m_MolMap[skey];
+    TSubMolList& sub = m_MolMap[x_IdToStrKey(id.GetPdb())];
     iterate(TSubMolList, sub_it, sub) {
         _ASSERT(!x_GetSeq_id(handle).GetPdb().Equals(
             x_GetSeq_id(*sub_it).GetPdb()));
@@ -1462,8 +1465,8 @@ void CSeq_id_PDB_Tree::x_DropHandle(const CSeq_id_Handle& handle)
     const CSeq_id& id = x_GetSeq_id(handle);
     _ASSERT( id.IsPdb() );
     const CPDB_seq_id& pid = id.GetPdb();
-    TMolMap::iterator mol_it = m_MolMap.find(pid.GetMol().Get());
-    _ASSERT(mol_it == m_MolMap.end());
+    TMolMap::iterator mol_it = m_MolMap.find(x_IdToStrKey(pid));
+    _ASSERT(mol_it != m_MolMap.end());
     non_const_iterate(TSubMolList, it, mol_it->second) {
         if (*it == handle) {
             _ASSERT(pid.Equals(x_GetSeq_id(*it).GetPdb()));
@@ -1722,6 +1725,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/08/20 14:27:22  grichenk
+* Fixed the problem with PDB ids
+*
 * Revision 1.18  2002/07/15 20:33:49  ucko
 * CExceptString is now CStringException.
 *
