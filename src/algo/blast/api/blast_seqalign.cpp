@@ -908,26 +908,6 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp,
     // Add the scores for this HSP
     CSeq_align::TScore& score_list = seqalign->SetScore();
     x_BuildScoreList(hsp, sbp, score_options, score_list, program);
-
-    // Add scores for special cases: stdseg and disc alignments
-#if 0 /* We need to add scores to individual segs only in case
-         of ungapped alignment; but this case is handled separately. */
-    if (seqalign->GetSegs().IsStd()) {
-        CSeq_align::C_Segs::TStd& stdseg_list = seqalign->SetSegs().SetStd();
-
-        NON_CONST_ITERATE(CSeq_align::C_Segs::TStd, itr, stdseg_list) {
-            CStd_seg::TScores& scores = (**itr).SetScores();
-            x_BuildScoreList(hsp, sbp, score_options, scores, program);
-        }
-    } else if (seqalign->GetSegs().IsDisc()) {
-        CSeq_align_set& seqalign_set = seqalign->SetSegs().SetDisc();
-
-        NON_CONST_ITERATE(list< CRef<CSeq_align> >, itr, seqalign_set.Set()) {
-            CSeq_align::TScore& score = (**itr).SetScore();
-            x_BuildScoreList(hsp, sbp, score_options, score, program);
-        }
-    }
-#endif
 }
 
 
@@ -1371,6 +1351,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2004/03/16 22:03:38  camacho
+* Remove dead code
+*
 * Revision 1.30  2004/03/15 19:58:55  dondosha
 * Added BLAST_OneSubjectResults2CSeqalign function to retrieve single subject results from BlastHSPResults
 *
