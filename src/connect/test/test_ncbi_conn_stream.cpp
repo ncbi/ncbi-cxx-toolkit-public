@@ -132,7 +132,7 @@ int main(void)
     }
     if (i < kBufferSize)
         ERR_POST("Not entirely bounced, mismatch position: " << i + 1);
-    else if (buflen > kBufferSize)
+    else if ((size_t) buflen > kBufferSize)
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
     else
         LOG_POST(Info << "Test 1 passed");
@@ -180,7 +180,7 @@ int main(void)
     }
     if (i < kBufferSize)
         ERR_POST("Not entirely bounced, mismatch position: " << i + 1);
-    else if (buflen > kBufferSize)
+    else if ((size_t) buflen > kBufferSize)
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
     else
         LOG_POST(Info << "Test 2 passed");
@@ -217,7 +217,7 @@ int main(void)
     }
     if (i < kBufferSize)
         ERR_POST("Not entirely bounced, mismatch position: " << i + 1);
-    else if (buflen > kBufferSize)
+    else if ((size_t) buflen > kBufferSize)
         ERR_POST("Sent: " << kBufferSize << ", bounced: " << buflen);
     else
         LOG_POST(Info << "Test 3 passed");
@@ -235,6 +235,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2003/11/04 03:28:23  lavr
+ * Use explicit streamsize->size_t casts in comparisons
+ *
  * Revision 6.28  2003/11/04 03:10:24  lavr
  * Remove special s_Read(); use standard istream::read() instead
  *
