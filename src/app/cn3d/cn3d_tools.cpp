@@ -101,6 +101,13 @@ bool RegistryIsValidInteger(const string& section, const string& name)
     return (regStr.size() > 0 && regStr.ToLong(&value));
 }
 
+bool RegistryIsValidDouble(const string& section, const string& name)
+{
+    double value;
+    wxString regStr = registry.Get(section, name).c_str();
+    return (regStr.size() > 0 && regStr.ToDouble(&value));
+}
+
 bool RegistryIsValidBoolean(const string& section, const string& name)
 {
     string regStr = registry.Get(section, name);
@@ -124,6 +131,16 @@ bool RegistryGetInteger(const string& section, const string& name, int *value)
         return false;
     }
     *value = (int) l;
+    return true;
+}
+
+bool RegistryGetDouble(const string& section, const string& name, double *value)
+{
+    wxString regStr = registry.Get(section, name).c_str();
+    if (regStr.size() == 0 || !regStr.ToDouble(value)) {
+        WARNINGMSG("Can't get double from registry: " << section << ", " << name);
+        return false;
+    }
     return true;
 }
 
@@ -155,6 +172,18 @@ bool RegistrySetInteger(const string& section, const string& name, int value)
 {
     wxString regStr;
     regStr.Printf("%i", value);
+    bool okay = registry.Set(section, name, regStr.c_str(), CNcbiRegistry::ePersistent);
+    if (!okay)
+        ERRORMSG("registry Set(" << section << ", " << name << ") failed");
+    else
+        registryChanged = true;
+    return okay;
+}
+
+bool RegistrySetDouble(const string& section, const string& name, double value)
+{
+    wxString regStr;
+    regStr.Printf("%g", value);
     bool okay = registry.Set(section, name, regStr.c_str(), CNcbiRegistry::ePersistent);
     if (!okay)
         ERRORMSG("registry Set(" << section << ", " << name << ") failed");
@@ -257,6 +286,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/11/15 16:08:35  thiessen
+* add stereo
+*
 * Revision 1.3  2003/03/19 14:44:56  thiessen
 * remove header dependency
 *

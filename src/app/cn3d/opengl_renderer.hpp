@@ -78,7 +78,7 @@ public:
 
     // tells the renderer that new camera settings need to be applied - should also
     // be called after window resize
-    void NewView(int selectX = -1, int selectY = -1) const;
+    void NewView(double eyeTranslateToAngleDegrees = 0.0) const;
 
     // get the name
     bool GetSelected(int x, int y, unsigned int *name);
@@ -153,6 +153,9 @@ public:
     bool SetGLFont(int firstChar, int nChars, int fontBase);
     const wxFont& GetGLFont(void) const;
 
+    // stereo
+    void EnableStereo(bool enableStereo);
+
 private:
 
     StructureSet *structureSet;
@@ -173,10 +176,14 @@ private:
 
     // misc rendering stuff
     bool selectMode;
+    int selectX, selectY;
     unsigned int currentFrame;
     std::vector < bool > displayListEmpty;
     bool IsFrameEmpty(unsigned int frame) const;
     unsigned int currentDisplayList;
+
+    // controls for stereo
+    bool stereoOn;
 
     // stuff for rendering transparent spheres (done during Display())
 public:
@@ -220,6 +227,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/11/15 16:08:36  thiessen
+* add stereo
+*
 * Revision 1.38  2003/02/03 19:20:04  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

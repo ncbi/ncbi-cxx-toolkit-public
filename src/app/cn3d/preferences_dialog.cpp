@@ -86,6 +86,8 @@ wxSizer *SetupCachePage( wxWindow *parent, bool call_fit = TRUE, bool set_sizer 
 #define ID_T_LAUNCH 10019
 #define ID_T_NSTRUCT 10020
 #define ID_T_FOOT 10021
+#define ID_T_SEPARATION 10022
+#define ID_C_PROXIMAL 10023
 wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -98,6 +100,7 @@ BEGIN_SCOPE(Cn3D)
 static IntegerSpinCtrl
     *giWormSegments, *giWormSides, *giBondSides, *giHelixSides, *giAtomSlices, *giAtomStacks,
     *giCacheSize, *giMaxStructs, *giFootRes;
+static FloatingPointSpinCtrl *gfSeparation;
 
 #define DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(var, id, type) \
     type *var; \
@@ -117,6 +120,13 @@ END_EVENT_TABLE()
     do { \
         int value; \
         if (!RegistryGetInteger((section), (name), &value) || !((iSpinCtrl)->SetInteger(value))) \
+            WARNINGMSG("PreferencesDialog::PreferencesDialog() - error with " << (name)); \
+    } while (0)
+
+#define SET_FSPINCTRL_FROM_REGISTRY_VALUE(section, name, fSpinCtrl) \
+    do { \
+        double value; \
+        if (!RegistryGetDouble((section), (name), &value) || !((fSpinCtrl)->SetDouble(value))) \
             WARNINGMSG("PreferencesDialog::PreferencesDialog() - error with " << (name)); \
     } while (0)
 
@@ -158,7 +168,7 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     // construct the panel
     wxSizer *topSizer = SetupPreferencesNotebook(this, false);
 
-    // get IntegerSpinCtrl pointers
+    // get SpinCtrl pointers
     iWormSegments = giWormSegments;
     iWormSides = giWormSides;
     iBondSides = giBondSides;
@@ -168,6 +178,7 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     iCacheSize = giCacheSize;
     iMaxStructs = giMaxStructs;
     iFootRes = giFootRes;
+    fSeparation = gfSeparation;
 
     // set initial values
     SET_ISPINCTRL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, iAtomSlices);
@@ -193,6 +204,9 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     SET_ISPINCTRL_FROM_REGISTRY_VALUE(REG_ADVANCED_SECTION, REG_MAX_N_STRUCTS, iMaxStructs);
     SET_ISPINCTRL_FROM_REGISTRY_VALUE(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, iFootRes);
 
+    SET_FSPINCTRL_FROM_REGISTRY_VALUE(REG_ADVANCED_SECTION, REG_STEREO_SEPARATION, fSeparation);
+    SET_CHECKBOX_FROM_REGISTRY_VALUE(REG_ADVANCED_SECTION, REG_PROXIMAL_STEREO, ID_C_PROXIMAL);
+
     // call sizer stuff
     topSizer->Fit(this);
     topSizer->SetSizeHints(this);
@@ -209,6 +223,7 @@ PreferencesDialog::~PreferencesDialog(void)
     delete iCacheSize;
     delete iMaxStructs;
     delete iFootRes;
+    delete fSeparation;
 }
 
 #define SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(section, name, iSpinCtrl, changedPtr) \
@@ -218,6 +233,18 @@ PreferencesDialog::~PreferencesDialog(void)
         if (!((iSpinCtrl)->GetInteger(&newValue))) throw "GetInteger() failed"; \
         if (newValue != oldValue) { \
             if (!RegistrySetInteger((section), (name), newValue)) \
+                throw "RegistrySetInteger() failed"; \
+            if (changedPtr) *((bool*) changedPtr) = true; \
+        } \
+    } while (0)
+
+#define SET_DOUBLE_REGISTRY_VALUE_IF_DIFFERENT(section, name, fSpinCtrl, changedPtr) \
+    do { \
+        double oldValue, newValue; \
+        if (!RegistryGetDouble((section), (name), &oldValue)) throw "RegistryGetInteger() failed"; \
+        if (!((fSpinCtrl)->GetDouble(&newValue))) throw "GetInteger() failed"; \
+        if (newValue != oldValue) { \
+            if (!RegistrySetDouble((section), (name), newValue)) \
                 throw "RegistrySetInteger() failed"; \
             if (changedPtr) *((bool*) changedPtr) = true; \
         } \
@@ -298,6 +325,9 @@ void PreferencesDialog::OnCloseWindow(wxCloseEvent& event)
 #endif
         SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_ADVANCED_SECTION, REG_MAX_N_STRUCTS, iMaxStructs, NULL);
         SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, iFootRes, NULL);
+
+        SET_DOUBLE_REGISTRY_VALUE_IF_DIFFERENT(REG_ADVANCED_SECTION, REG_STEREO_SEPARATION, fSeparation, NULL);
+        SET_BOOL_REGISTRY_VALUE_IF_DIFFERENT(REG_ADVANCED_SECTION, REG_PROXIMAL_STEREO, ID_C_PROXIMAL, NULL);
 
         // Limit cache size to current value now
         int size;
@@ -480,10 +510,10 @@ wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit, bool set_sizer )
 #endif
 
     wxFlexGridSizer *item7 = new wxFlexGridSizer( 2, 0, 0, 0 );
-    item7->AddGrowableCol( 3 );
+    item7->AddGrowableCol( 0 );
 
     wxStaticText *item8 = new wxStaticText( parent, ID_TEXT, "Max structures to load:", wxDefaultPosition, wxDefaultSize, 0 );
-    item7->Add( item8, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    item7->Add( item8, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     giMaxStructs = new IntegerSpinCtrl(parent,
         0, 100, 1, 10,
         wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
@@ -491,10 +521,8 @@ wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit, bool set_sizer )
     item7->Add(giMaxStructs->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item7->Add(giMaxStructs->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    item7->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
-
     wxStaticText *item11 = new wxStaticText( parent, ID_TEXT, "Footprint excess residues:", wxDefaultPosition, wxDefaultSize, 0 );
-    item7->Add( item11, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    item7->Add( item11, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     giFootRes = new IntegerSpinCtrl(parent,
         0, 1000, 5, 15,
         wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
@@ -502,11 +530,36 @@ wxSizer *SetupAdvancedPage( wxWindow *parent, bool call_fit, bool set_sizer )
     item7->Add(giFootRes->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item7->Add(giFootRes->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    item7->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
-
     item1->Add( item7, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxStaticBox *item15 = new wxStaticBox( parent, -1, wxT("Stereo Settings") );
+    wxStaticBoxSizer *item14 = new wxStaticBoxSizer( item15, wxVERTICAL );
+
+    wxFlexGridSizer *item16 = new wxFlexGridSizer( 3, 0, 0 );
+    item16->AddGrowableCol( 0 );
+
+    wxStaticText *item17 = new wxStaticText( parent, ID_TEXT, wxT("Eye separation (degrees):"), wxDefaultPosition, wxDefaultSize, 0 );
+    item16->Add( item17, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    gfSeparation = new FloatingPointSpinCtrl(parent,
+        0.0, 15.0, 0.1, 5.0,
+        wxDefaultPosition, wxSize(80,SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
+    item16->Add(gfSeparation->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item16->Add(gfSeparation->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    wxStaticText *item20 = new wxStaticText( parent, ID_TEXT, wxT("Proximal (cross-eyed):"), wxDefaultPosition, wxDefaultSize, 0 );
+    item16->Add( item20, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxCheckBox *item21 = new wxCheckBox( parent, ID_C_PROXIMAL, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    item16->Add( item21, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item16->Add( 5, 5, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item14->Add( item16, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    item0->Add( item14, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     if (set_sizer)
     {
@@ -721,6 +774,9 @@ wxSizer *SetupCachePage( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/11/15 16:08:36  thiessen
+* add stereo
+*
 * Revision 1.17  2003/02/03 19:20:04  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

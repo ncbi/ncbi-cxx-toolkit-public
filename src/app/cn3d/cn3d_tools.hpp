@@ -109,12 +109,15 @@ extern int GetBLOSUM62Score(char a, char b);
 extern void LoadRegistry(void);
 extern void SaveRegistry(void);
 extern bool RegistryIsValidInteger(const std::string& section, const std::string& name);
+extern bool RegistryIsValidDouble(const std::string& section, const std::string& name);
 extern bool RegistryIsValidBoolean(const std::string& section, const std::string& name);
 extern bool RegistryIsValidString(const std::string& section, const std::string& name);
 extern bool RegistryGetInteger(const std::string& section, const std::string& name, int *value);
+extern bool RegistryGetDouble(const std::string& section, const std::string& name, double *value);
 extern bool RegistryGetBoolean(const std::string& section, const std::string& name, bool *value);
 extern bool RegistryGetString(const std::string& section, const std::string& name, std::string *value);
 extern bool RegistrySetInteger(const std::string& section, const std::string& name, int value);
+extern bool RegistrySetDouble(const std::string& section, const std::string& name, double value);
 extern bool RegistrySetBoolean(const std::string& section, const std::string& name, bool value,
     bool useYesOrNo = false);
 extern bool RegistrySetString(const std::string& section, const std::string& name,
@@ -154,7 +157,9 @@ static const std::string
     REG_BROWSER_LAUNCH = "BrowserLaunchCommand",
 #endif
     REG_MAX_N_STRUCTS = "MaxNumStructures",
-    REG_FOOTPRINT_RES = "FootprintExcessResidues";
+    REG_FOOTPRINT_RES = "FootprintExcessResidues",
+    REG_STEREO_SEPARATION = "StereoSeparationDegrees",
+    REG_PROXIMAL_STEREO = "ProxmimalStereo";
 
 
 // utility function to remove some elements from a vector
@@ -203,6 +208,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/11/15 16:08:35  thiessen
+* add stereo
+*
 * Revision 1.28  2003/03/13 16:57:14  thiessen
 * fix favorites load/save problem
 *

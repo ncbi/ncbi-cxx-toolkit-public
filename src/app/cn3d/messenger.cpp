@@ -134,7 +134,7 @@ void Messenger::ProcessRedraws(void)
         if (structureWindow) {
             structureWindow->glCanvas->SetCurrent();
             structureWindow->glCanvas->renderer->Construct();
-            structureWindow->glCanvas->renderer->NewView(0,0);
+            structureWindow->glCanvas->renderer->NewView();
             structureWindow->glCanvas->Refresh(false);
         }
 		redrawAllStructures = false;
@@ -154,7 +154,7 @@ void Messenger::ProcessRedraws(void)
             hetsRedrawn[object] = true;
         }
         if (structureWindow) {
-            structureWindow->glCanvas->renderer->NewView(0,0);
+            structureWindow->glCanvas->renderer->NewView();
             structureWindow->glCanvas->Refresh(false);
         }
         redrawMolecules.clear();
@@ -544,6 +544,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/11/15 16:08:36  thiessen
+* add stereo
+*
 * Revision 1.37  2003/07/10 18:47:29  thiessen
 * add CDTree->Select command
 *

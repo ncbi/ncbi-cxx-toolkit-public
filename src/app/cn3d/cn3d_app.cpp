@@ -208,6 +208,8 @@ Cn3DApp::Cn3DApp() : wxGLApp()
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info);   // report all messages
     SetDiagTrace(eDT_Default);      // trace messages only when DIAG_TRACE env. var. is set
+    UnsetDiagTraceFlag(eDPF_File);
+    UnsetDiagTraceFlag(eDPF_Line);
     SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
 
     // C++ object verification
@@ -290,6 +292,10 @@ void Cn3DApp::InitRegistry(void)
 #endif
     RegistrySetInteger(REG_ADVANCED_SECTION, REG_MAX_N_STRUCTS, 10);
     RegistrySetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, 15);
+
+    // default stereo options
+    RegistrySetDouble(REG_ADVANCED_SECTION, REG_STEREO_SEPARATION, 5.0);
+    RegistrySetBoolean(REG_ADVANCED_SECTION, REG_PROXIMAL_STEREO, true);
 
     // load program registry - overriding defaults if present
     LoadRegistry();
@@ -472,6 +478,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/11/15 16:08:35  thiessen
+* add stereo
+*
 * Revision 1.7  2003/10/13 14:16:31  thiessen
 * add -n option to not show alignment window
 *

@@ -46,6 +46,7 @@
 BEGIN_SCOPE(Cn3D)
 
 class IntegerSpinCtrl;
+class FloatingPointSpinCtrl;
 
 class PreferencesDialog : public wxDialog
 {
@@ -65,6 +66,7 @@ private:
     IntegerSpinCtrl
         *iWormSegments, *iWormSides, *iBondSides, *iHelixSides, *iAtomSlices, *iAtomStacks,
         *iCacheSize, *iMaxStructs, *iFootRes;
+    FloatingPointSpinCtrl *fSeparation;
 
     DECLARE_EVENT_TABLE()
 };
@@ -76,6 +78,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/11/15 16:08:36  thiessen
+* add stereo
+*
 * Revision 1.6  2003/02/03 19:20:04  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

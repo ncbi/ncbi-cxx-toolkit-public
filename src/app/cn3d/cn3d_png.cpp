@@ -643,7 +643,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         // set up camera so that it's the same view as it is in the window
         glCanvas->renderer->Init();
         glViewport(0, 0, outputWidth, outputHeight);
-        glCanvas->renderer->NewView(0, 0);
+        glCanvas->renderer->NewView();
 
         // Redraw the model into the new off-screen context, then use glReadPixels
         // to retrieve pixel data. It's much easier to use glReadPixels rather than
@@ -774,6 +774,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         if (shareDisplayLists)
             GlobalMessenger()->PostRedrawAllStructures();
     }
+    glCanvas->Refresh(false);
 
     return success;
 }
@@ -877,6 +878,9 @@ wxSizer *SetupPNGOptionsDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/11/15 16:08:35  thiessen
+* add stereo
+*
 * Revision 1.16  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *

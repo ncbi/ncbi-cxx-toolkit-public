@@ -130,7 +130,8 @@ static void GL2Matrix(GLdouble *g, Matrix *m)
 
 OpenGLRenderer::OpenGLRenderer(Cn3DGLCanvas *parentGLCanvas) :
     structureSet(NULL), glCanvas(parentGLCanvas),
-    selectMode(false), currentDisplayList(NO_LIST), cameraAngleRad(0.0), rotateSpeed(0.5)
+    selectMode(false), currentDisplayList(NO_LIST), cameraAngleRad(0.0), rotateSpeed(0.5),
+    stereoOn(false)
 {
     // make sure a name will fit in a GLuint
     if (sizeof(GLuint) < sizeof(unsigned int))
@@ -166,12 +167,13 @@ void OpenGLRenderer::Init(void) const
     glShadeModel(GL_SMOOTH);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_NORMALIZE);
+    glDisable(GL_SCISSOR_TEST);
 }
 
 
 // methods dealing with the view
 
-void OpenGLRenderer::NewView(int selectX, int selectY) const
+void OpenGLRenderer::NewView(double eyeTranslateToAngleDegrees) const
 {
     if (cameraAngleRad <= 0.0) return;
 
@@ -207,14 +209,112 @@ void OpenGLRenderer::NewView(int selectX, int selectY) const
                 cameraClipFar);     // far clipping plane
     }
 
+    Vector cameraLoc(0.0, 0.0, cameraDistance);
+
+    if (stereoOn && eyeTranslateToAngleDegrees != 0.0) {
+        Vector view(cameraLookAtX, cameraLookAtY, -cameraDistance);
+        Vector translate = vector_cross(view, Vector(0.0, 1.0, 0.0));
+        translate.normalize();
+        translate *= view.length() * tan(DegreesToRad(eyeTranslateToAngleDegrees));
+        cameraLoc += translate;
+    }
+
     // set camera position and direction
-    gluLookAt(0.0,0.0,cameraDistance,               // the camera position
-              cameraLookAtX,                        // the "look-at" point
-              cameraLookAtY,
-              0.0,
-              0.0,1.0,0.0);                         // the up direction
+    gluLookAt(cameraLoc.x, cameraLoc.y, cameraLoc.z,    // the camera position
+              cameraLookAtX, cameraLookAtY, 0.0,        // the "look-at" point
+              0.0, 1.0, 0.0);                           // the up direction
 
     glMatrixMode(GL_MODELVIEW);
+}
+
+void OpenGLRenderer::Display(void)
+{
+    if (structureSet) {
+        const Vector& background = structureSet->styleManager->GetBackgroundColor();
+        glClearColor(background[0], background[1], background[2], 1.0);
+    } else
+        glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    if (selectMode) {
+        glInitNames();
+        glPushName(0);
+    }
+
+    GLint viewport[4] = {0, 0, 0, 0};
+    double eyeSeparationDegrees = 0.0;
+    if (stereoOn) {
+        bool proximalStereo;
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        if (!RegistryGetDouble(REG_ADVANCED_SECTION, REG_STEREO_SEPARATION, &eyeSeparationDegrees) ||
+            !RegistryGetBoolean(REG_ADVANCED_SECTION, REG_PROXIMAL_STEREO, &proximalStereo))
+        {
+            ERRORMSG("OpenGLRenderer::Display() - error getting stereo settings from registry");
+            return;
+        }
+        if (!proximalStereo)
+            eyeSeparationDegrees = -eyeSeparationDegrees;
+    }
+
+    int first = 1, last = stereoOn ? 2 : 1;
+    for (int e=first; e<=last; e++) {
+
+        glLoadMatrixd(viewMatrix);
+
+        // adjust viewport & camera angle for stereo
+        if (stereoOn) {
+            if (e == first) {
+                // left side
+                glViewport(0, viewport[1], viewport[2] / 2, viewport[3]);
+                NewView(eyeSeparationDegrees / 2);
+            } else {
+                // right side
+                glViewport(viewport[2] / 2, viewport[1], viewport[2] - viewport[2] / 2, viewport[3]);
+                NewView(-eyeSeparationDegrees / 2);
+            }
+        }
+
+        if (structureSet) {
+            if (currentFrame == ALL_FRAMES) {
+                for (unsigned int i=FIRST_LIST; i<=structureSet->lastDisplayList; i++) {
+                    PushMatrix(*(structureSet->transformMap[i]));
+                    glCallList(i);
+                    PopMatrix();
+                    AddTransparentSpheresForList(i);
+                }
+            } else {
+                StructureSet::DisplayLists::const_iterator
+                    l, le=structureSet->frameMap[currentFrame].end();
+                for (l=structureSet->frameMap[currentFrame].begin(); l!=le; l++) {
+                    PushMatrix(*(structureSet->transformMap[*l]));
+                    glCallList(*l);
+                    PopMatrix();
+                    AddTransparentSpheresForList(*l);
+                }
+            }
+
+            // draw transparent spheres, which are already stored in view-transformed coordinates
+            glLoadIdentity();
+            RenderTransparentSpheres();
+        }
+
+        // draw logo if no structure
+        else {
+            glCallList(FIRST_LIST);
+        }
+    }
+
+    glFlush();
+
+    // restore full viewport
+    if (stereoOn)
+        glViewport(0, viewport[1], viewport[2], viewport[3]);
+}
+
+void OpenGLRenderer::EnableStereo(bool enableStereo)
+{
+    TRACEMSG("turning " << (enableStereo ? "on" : "off" ) << " stereo");
+    stereoOn = enableStereo;
 }
 
 void OpenGLRenderer::ResetCamera(void)
@@ -461,57 +561,6 @@ void OpenGLRenderer::ShowFrameNumber(int frame)
         currentFrame = ALL_FRAMES;
 }
 
-
-// methods dealing with structure data and drawing
-
-void OpenGLRenderer::Display(void)
-{
-    if (structureSet) {
-        const Vector& background = structureSet->styleManager->GetBackgroundColor();
-        glClearColor(background[0], background[1], background[2], 1.0);
-    } else
-        glClearColor(0.0, 0.0, 0.0, 1.0);
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadMatrixd(viewMatrix);
-
-    if (selectMode) {
-        glInitNames();
-        glPushName(0);
-    }
-
-    if (structureSet) {
-        if (currentFrame == ALL_FRAMES) {
-            for (unsigned int i=FIRST_LIST; i<=structureSet->lastDisplayList; i++) {
-                PushMatrix(*(structureSet->transformMap[i]));
-                glCallList(i);
-                PopMatrix();
-                AddTransparentSpheresForList(i);
-            }
-        } else {
-            StructureSet::DisplayLists::const_iterator
-                l, le=structureSet->frameMap[currentFrame].end();
-            for (l=structureSet->frameMap[currentFrame].begin(); l!=le; l++) {
-                PushMatrix(*(structureSet->transformMap[*l]));
-                glCallList(*l);
-                PopMatrix();
-                AddTransparentSpheresForList(*l);
-            }
-        }
-
-        // draw transparent spheres, which are already stored in view-transformed coordinates
-        glLoadIdentity();
-        RenderTransparentSpheres();
-    }
-
-    // draw logo if no structure
-    else {
-        glCallList(FIRST_LIST);
-    }
-
-    glFlush();
-}
-
 // process selection; return gl-name of result
 bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name)
 {
@@ -519,7 +568,9 @@ bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name)
     glSelectBuffer(pickBufSize, selectBuf);
     glRenderMode(GL_SELECT);
     selectMode = true;
-    NewView(x, y);
+    selectX = x;
+    selectY = y;
+    NewView();
     Display();
     GLint hits = glRenderMode(GL_RENDER);
     selectMode = false;
@@ -1550,6 +1601,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2003/11/15 16:08:36  thiessen
+* add stereo
+*
 * Revision 1.71  2003/10/06 22:05:52  thiessen
 * fix max camera angle to < PI
 *

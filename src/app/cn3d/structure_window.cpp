@@ -127,7 +127,7 @@ BEGIN_EVENT_TABLE(StructureWindow, wxFrame)
     EVT_MENU      (MID_OPEN,                                StructureWindow::OnOpen)
     EVT_MENU_RANGE(MID_SAVE_SAME, MID_SAVE_AS,              StructureWindow::OnSave)
     EVT_MENU      (MID_PNG,                                 StructureWindow::OnPNG)
-    EVT_MENU_RANGE(MID_ZOOM_IN,  MID_ALL_FRAMES,            StructureWindow::OnAdjustView)
+    EVT_MENU_RANGE(MID_ZOOM_IN,  MID_STEREO,                StructureWindow::OnAdjustView)
     EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED_DOMAINS,           StructureWindow::OnShowHide)
     EVT_MENU_RANGE(MID_DIST_SELECT_RESIDUES, MID_DIST_SELECT_OTHER_ALL, StructureWindow::OnDistanceSelect)
     EVT_MENU      (MID_REFIT_ALL,                           StructureWindow::OnAlignStructures)
@@ -208,6 +208,8 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     subMenu->Check(MID_STOP, true);
     subMenu->Append(MID_SET_DELAY, "Set &Delay");
     menu->Append(MID_ANIMATE, "Ani&mation", subMenu);
+    menu->AppendSeparator();
+    menu->Append(MID_STEREO, "St&ereo", "", true);
     menuBar->Append(menu, "&View");
 
     // Show-Hide menu
@@ -340,8 +342,10 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     wxAcceleratorTable accel(12, entries);
     SetAcceleratorTable(accel);
 
+    // set menu bar and initial states
     SetMenuBar(menuBar);
     menuBar->EnableTop(menuBar->FindMenu("CDD"), false);
+    menuBar->Check(MID_STEREO, false);
 
     // Make a GLCanvas
 #if defined(__WXMSW__)
@@ -874,6 +878,7 @@ void StructureWindow::OnPreferences(wxCommandEvent& event)
 {
     PreferencesDialog dialog(this);
     int result = dialog.ShowModal();
+    glCanvas->Refresh(true); // in case stereo options changed
 }
 
 bool StructureWindow::SaveDialog(bool prompt, bool canCancel)
@@ -1085,6 +1090,7 @@ void StructureWindow::OnAdjustView(wxCommandEvent& event)
         case MID_NEXT_FRAME:    glCanvas->renderer->ShowNextFrame(); break;
         case MID_PREV_FRAME:    glCanvas->renderer->ShowPreviousFrame(); break;
         case MID_ALL_FRAMES:    glCanvas->renderer->ShowAllFrames(); break;
+        case MID_STEREO:        glCanvas->renderer->EnableStereo(menuBar->IsChecked(MID_STEREO)); break;
         default:
             break;
     }
@@ -1368,6 +1374,7 @@ bool StructureWindow::LoadFile(const char *filename, bool force)
     if (!glCanvas->renderer->HasASNViewSettings())
         glCanvas->structureSet->CenterViewOnAlignedResidues();
     glCanvas->Refresh(false);
+    glCanvas->structureSet->alignmentManager->ShowSequenceViewer();
     SetCursor(wxNullCursor);
 
     return true;
@@ -1477,6 +1484,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/11/15 16:08:36  thiessen
+* add stereo
+*
 * Revision 1.20  2003/09/26 17:39:14  thiessen
 * fixes for button states
 *

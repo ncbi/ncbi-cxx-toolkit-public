@@ -107,6 +107,7 @@ public:
             MID_FIRST_FRAME,
             MID_LAST_FRAME,
             MID_ALL_FRAMES,
+            MID_STEREO,
             MID_ANIMATE,
                 MID_PLAY,
                 MID_SPIN,
@@ -260,6 +261,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/11/15 16:08:37  thiessen
+* add stereo
+*
 * Revision 1.6  2003/09/26 17:12:46  thiessen
 * add book reference dialog
 *
