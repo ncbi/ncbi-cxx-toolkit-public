@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1998/12/10 18:05:40  vakatov
+* CNcbiReg::  Just passed a draft test.
+*
 * Revision 1.24  1998/12/10 17:36:56  sandomir
 * ncbires.cpp added
 *
@@ -115,7 +118,6 @@
 #include <cgiapp.hpp>
 #include <ncbireg.hpp>
 #include <ncbires.hpp>
-
 #include <time.h>
 
 
@@ -190,10 +192,26 @@ static void TestRegistry(void)
     _ASSERT( reg.Set("Section2", "Name21", "Val21", false, false) );
     _ASSERT( reg.Set("Section2", "Name21", "Val21_t") );
     _ASSERT( !reg.Empty() );
-    _ASSERT( reg.Get("Section1", "Name11") == "Val1_t" );
+    _ASSERT( reg.Get("Section1", "Name11") == "Val11_t" );
     _ASSERT( reg.Get("Section2", "Name21", false) == "Val21" );
     _ASSERT( reg.Get("Section2", "Name21") == "Val21_t" );
     _ASSERT( reg.Get("SectionX", "Name21").empty() );
+
+    CNcbiOstrstream os;
+    _ASSERT ( reg.Write(os) );
+    os << '\0';
+    const char* os_str = os.str();  os.rdbuf()->freeze(false);
+    NcbiCerr << "\nRegistry:\n" << os_str << NcbiEndl;
+
+    CNcbiIstrstream is1(os_str);
+    CNcbiRegistry  reg1(is1);
+    _ASSERT( reg1.Get("Section2", "Name21", false) == "Val21" );
+    _ASSERT( reg1.Get("Section2", "Name21") == "Val21" );
+
+    CNcbiIstrstream is2(os_str);
+    CNcbiRegistry  reg2(is2, true);
+    _ASSERT( reg2.Get("Section2", "Name21", false).empty() );
+    _ASSERT( reg2.Get("Section2", "Name21") == "Val21" );
 
     reg.Clear();
     _ASSERT( reg.Empty() );
@@ -665,14 +683,9 @@ class CTestApplication : public CCgiApplication
 public:
     CTestApplication(int argc = 0, char** argv = 0)
         : CCgiApplication(argc, argv) {}
-    virtual ~CTestApplication(void);
     virtual int Run(void);
 };
 
-CTestApplication::~CTestApplication(void)
-{
-    SetDiagStream(0);
-}
 
 int CTestApplication::Run(void)
 {
@@ -680,7 +693,7 @@ int CTestApplication::Run(void)
 
     TestException();
     TestIostream();
-    //TestRegistry();
+    TestRegistry();
 
     TestCgi(m_Argc, m_Argv);
 
@@ -703,6 +716,7 @@ extern int main(int argc, char* argv[])
         app.Exit();
     } STD_CATCH("Exception: ");
 
+    SetDiagStream(0);
     return res;
 }
 

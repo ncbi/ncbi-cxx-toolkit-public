@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/10 18:05:37  vakatov
+* CNcbiReg::  Just passed a draft test.
+*
 * Revision 1.3  1998/12/08 23:39:32  vakatov
 * Comment starts from ';'(rather than '#')
 *
@@ -106,7 +109,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, bool override, bool transient)
         }
 
         default:  { // regular entry
-            if (!isalnum(str[0]  ||  str.find_first_of('=') == NPOS) )
+            if (!isalnum(str[0])  ||  str.find_first_of('=') == NPOS)
                 throw CParseException("Invalid registry entry format: '" +
                                       str + "'", line);
             // name
@@ -121,7 +124,7 @@ void CNcbiRegistry::Read(CNcbiIstream& is, bool override, bool transient)
                  throw CParseException("Invalid registry entry name: '" +
                                       str + "'", line);
             SIZE_TYPE len = str.length();
-            for (mid++;  mid < len  ||  isspace(str[mid]);  mid++);
+            for (mid++;  mid < len  &&  isspace(str[mid]);  mid++);
             _ASSERT( mid <= len );
 
             // value

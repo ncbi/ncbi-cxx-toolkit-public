@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/10 18:05:35  vakatov
+* CNcbiReg::  Just passed a draft test.
+*
 * Revision 1.3  1998/12/08 23:39:29  vakatov
 * Comment starts from ';'(rather than '#')
 *
@@ -101,12 +104,12 @@ public:
     //   if "override==false"  then do not override old value, return "false"
     // If "transient==true" then store the entry as transient
     bool Set(const string& section, const string& name, const string& value,
-             bool override=true, bool transient=false);
+             bool override=true, bool transient=true);
 
     // These functions first erase the passed list, then fill it out by:
     //    name of sections that comprise the whole registry
     void EnumerateSections(list<string>* sections) const;
-    //    name of entries that belong to the specified "section"
+    //    name of entries(all) that belong to the specified "section"
     void EnumerateEntries(const string& section, list<string>* entries) const;
 
 private:
