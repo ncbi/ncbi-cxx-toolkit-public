@@ -194,6 +194,13 @@ static Int2 SeqDbGetSequence(void* seqdb_handle, void* args)
     if (buffer_allocated && !has_sentinel_byte)
        seqdb_args->seq->sequence = seqdb_args->seq->sequence_start;
 
+    /* For preliminary stage, even though sequence buffer points to a memory
+       mapped location, we still need to call RetSequence. This can only be
+       guaranteed by making the engine believe tat sequence is allocated.
+    */
+    if (!buffer_allocated)
+        seqdb_args->seq->sequence_allocated = TRUE;
+
     seqdb_args->seq->oid = oid;
 
     return BLAST_SEQSRC_SUCCESS;
@@ -219,6 +226,12 @@ static Int2 SeqDbRetSequence(void* seqdb_handle, void* args)
         seqdb_args->seq->sequence_start_allocated = FALSE;
         seqdb_args->seq->sequence_start = NULL;
     }
+    if (seqdb_args->seq->sequence_allocated) {
+        (*seqdb)->RetSequence((const char**)&seqdb_args->seq->sequence);
+        seqdb_args->seq->sequence_allocated = FALSE;
+        seqdb_args->seq->sequence = NULL;
+    }
+
     return 0;
 }
 
@@ -480,6 +493,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2004/06/23 14:07:01  dondosha
+ * Call RetSequence for memory-mapped buffer
+ *
  * Revision 1.13  2004/06/15 16:24:01  dondosha
  * Use CRef to handle pointers to CSeqDb instance properly; added SeqDbSrcCopy function
  *
