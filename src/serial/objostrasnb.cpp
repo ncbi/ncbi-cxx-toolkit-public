@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/22 19:40:59  vasilche
+* Fixed bug with complex object graphs (pointers to members of other objects).
+*
 * Revision 1.11  1999/07/22 17:33:57  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -391,7 +394,6 @@ void CObjectOStreamAsnBinary::WriteOther(TConstObjectPtr object,
 {
     WriteClassTag(typeInfo);
     WriteIndefiniteLength();
-    WriteString(typeInfo->GetName());
     WriteExternalObject(object, typeInfo);
     WriteEndOfContent();
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/07/22 19:40:57  vasilche
+* Fixed bug with complex object graphs (pointers to members of other objects).
+*
 * Revision 1.18  1999/07/22 17:33:56  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -280,8 +283,9 @@ void CObjectOStreamAsn::WriteObjectReference(TIndex index)
 
 void CObjectOStreamAsn::WriteOther(TConstObjectPtr object, TTypeInfo typeInfo)
 {
-    m_Output << " : ";
+    m_Output << ": ";
     WriteId(typeInfo->GetName());
+    m_Output << ' ';
     WriteExternalObject(object, typeInfo);
 }
 
@@ -362,6 +366,16 @@ void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
 
 void CObjectOStreamAsn::AsnWrite(AsnIo& , const char* data, size_t length)
 {
+    // dirty hack to skip structure name with '::='
+    if ( length > 3 ) {
+        const char* p = (const char*)memchr(data, ':', length - 3);
+        if ( p && p[1] == ':' && p[2] == '=' ) {
+            size_t skip = p + 3 - data;
+            _TRACE(Warning << "AsnWrite: skipping \"" << string(data, skip) << "\"");
+            data += skip;
+            length -= skip;
+        }
+    }
     if ( !m_Output.write(data, length) )
         THROW1_TRACE(runtime_error, "write fault");
 }

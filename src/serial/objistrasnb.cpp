@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/22 19:40:56  vasilche
+* Fixed bug with complex object graphs (pointers to members of other objects).
+*
 * Revision 1.6  1999/07/22 17:33:52  vasilche
 * Unified reading/writing of objects in all three formats.
 *
@@ -93,7 +96,7 @@ void CObjectIStreamAsnBinary::ReadBytes(char* bytes, size_t length)
 void CObjectIStreamAsnBinary::ExpectByte(TByte byte)
 {
     if ( ReadByte() != byte )
-        THROW1_TRACE(runtime_error, "expected");
+        THROW1_TRACE(runtime_error, "expected " + NStr::IntToString(byte));
 }
 
 ETag CObjectIStreamAsnBinary::ReadSysTag(void)
@@ -200,7 +203,7 @@ string CObjectIStreamAsnBinary::ReadClassTag(void)
     _ASSERT(LastTagWas(eApplication, true, eLongTag));
     string name;
     TByte c;
-    while ( (c = ReadByte()) & 0x80 == 0 ) {
+    while ( ((c = ReadByte()) & 0x80) == 0 ) {
         name += char(c);
     }
     return name + char(c & 0x7f);

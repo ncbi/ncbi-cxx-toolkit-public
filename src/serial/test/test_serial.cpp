@@ -56,7 +56,7 @@ int CTestSerial::Run(void)
         _TRACE("CSerialObject(object2): " << long(static_cast<CSerialObject*>(&write1)));
 
         write.m_Name = "name";
-        //write.m_NamePtr = &write1.m_Name;
+        write.m_NamePtr = &write1.m_Name;
         write.m_Size = -1;
         write.m_Attributes.push_back("m_Attributes");
         write.m_Attributes.push_back("m_Size");

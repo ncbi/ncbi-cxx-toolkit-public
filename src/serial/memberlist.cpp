@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/07/22 19:40:55  vasilche
+* Fixed bug with complex object graphs (pointers to members of other objects).
+*
 * Revision 1.4  1999/07/14 18:58:08  vasilche
 * Fixed ASN.1 types/field naming.
 *
@@ -91,11 +94,10 @@ const CMembers::TMembersByName& CMembers::GetMembersByName(void) const
         m_MembersByName.reset(members = new TMembersByName);
         for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
             const string& name = m_Members[i].GetName();
-            if ( name.empty() )
-                continue;
             if ( !members->insert(TMembersByName::
                       value_type(name, i)).second ) {
-                THROW1_TRACE(runtime_error, "duplicated member name: " + name);
+                if ( !name.empty() )
+                    THROW1_TRACE(runtime_error, "duplicated member name: " + name);
             }
         }
     }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/22 19:40:54  vasilche
+* Fixed bug with complex object graphs (pointers to members of other objects).
+*
 * Revision 1.2  1999/07/02 21:31:54  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -77,10 +80,12 @@ bool CMemberId::operator==(const CMemberId& id) const
 
 string CMemberId::ToString(void) const
 {
-    if ( m_Name.empty() )
+    if ( !m_Name.empty() )
+        return m_Name;
+    else if ( m_Tag <= 0 )
         return '[' + NStr::IntToString(m_Tag) + ']';
     else
-        return m_Name;
+        return "";
 }
 
 END_NCBI_SCOPE
