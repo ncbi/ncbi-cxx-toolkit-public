@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.10  2003/04/24 14:27:35  dondosha
+ * Correction for latest changes
+ *
  * Revision 1.9  2003/04/23 20:04:49  dondosha
  * Added a function BLAST_InitAllDefaultOptions to initialize all various options structures with only default values
  *
@@ -1077,30 +1080,30 @@ Int2 BLAST_InitAllDefaultOptions(CharPtr blast_program, CharPtr database,
       return status;
 
    if ((status=BlastQuerySetUpOptionsNew(blast_program, NULL, 0,
-                                         &query_setup_options)))
+                                         query_setup_options)))
       return status;
 
    if ((status=BlastInitialWordOptionsNew(blast_program, FALSE, 0, FALSE, 
-                                          TRUE, FALSE, 0, &word_options)))
+                                          TRUE, FALSE, 0, word_options)))
       return status;
 
    if ((status = BlastExtensionOptionsNew(blast_program, FALSE, 0, 0, 
-                                          &ext_options)))
+                                          ext_options)))
       return status;
 
-   if ((status=BlastHitSavingOptionsNew(blast_program, TRUE, 0, 0. 
-                                        &hit_options)))
+   if ((status=BlastHitSavingOptionsNew(blast_program, TRUE, 0, 0, 
+                                        hit_options)))
       return status;
 
    if ((status=BlastScoringOptionsNew(blast_program, FALSE, 0, 0, NULL, 0, 0, 
-                                      &score_options)))
+                                      score_options)))
       return status;
 
    is_protein = (!StrCmp(blast_program, "blastp") || 
                  !StrCmp(blast_program, "blastx"));
 
    if ((status=BlastEffectiveLengthsOptionsNew(database, is_protein, 0, 0,
-                                               0, &effective_length_options)))
+                                               0, effective_length_options)))
       return status;
    
    return 0;
