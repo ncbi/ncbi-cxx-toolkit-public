@@ -635,6 +635,7 @@ void CValidError_feat::ValidateCdregion (
     ValidateBadGeneOverlap(feat);
     ValidateBadMRNAOverlap(feat);
     ValidateCommonCDSProduct(feat);
+    ValidateCDSPartial(feat);
 }
 
 
@@ -716,7 +717,6 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
     const CSeq_id* last_id = 0;
     CBioseq_Handle bsh;
     size_t seq_len = 0;
-    ENa_strand last_strand = eNa_strand_unknown;
     CSeqVector seq_vec;
     string label;
 
@@ -766,48 +766,46 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
         // check donor on all but last exon and on sequence
         if ( ((check_all && !partial_last)  ||  counter < num_of_parts)  &&
              (stop < seq_len - 2) ) {
-            CSeqVector::TResidue res1, res2;
             try {
-                res1 = seq_vec[stop + 1];    
-                res2 = seq_vec[stop + 2];
+                CSeqVector::TResidue res1 = seq_vec[stop + 1];    
+                CSeqVector::TResidue res2 = seq_vec[stop + 2];
+
+                if ( IsResidue(res1)  &&  IsResidue(res2) ) {
+                    if ( (res1 != 'G')  || (res2 != 'T' ) ) {
+                        string msg;
+                        if ( (res1 == 'G')  && (res2 == 'C' ) ) { // GC minor splice site
+                            sev = eDiag_Info;
+                            msg = "Rare splice donor consensus (GC) found instead of "
+                                "(GT) after exon ending at position " +
+                                NStr::IntToString(donor + 1) + " of " + label;
+                        } else {
+                            msg = "Splice donor consensus (GT) not found after exon"
+                                " ending at position " + 
+                                NStr::IntToString(donor + 1) + " of " + label;
+                        }
+                        PostErr(sev, eErr_SEQ_FEAT_NotSpliceConsensus, msg, feat);
+                    }
+                }
             } catch ( exception& ) {
                 break;
-            }
-
-            if ( IsResidue(res1)  &&  IsResidue(res2) ) {
-                if ( (res1 != 'G')  || (res2 != 'T' ) ) {
-                    string msg;
-                    if ( (res1 == 'G')  && (res2 == 'C' ) ) { // GC minor splice site
-                        sev = eDiag_Info;
-                        msg = "Rare splice donor consensus (GC) found instead of "
-                              "(GT) after exon ending at position " +
-                              NStr::IntToString(donor + 1) + " of " + label;
-                    } else {
-                        msg = "Splice donor consensus (GT) not found after exon"
-                            " ending at position " + 
-                            NStr::IntToString(donor + 1) + " of " + label;
-                    }
-                    PostErr(sev, eErr_SEQ_FEAT_NotSpliceConsensus, msg, feat);
-                }
             }
         }
 
         if ( ((check_all && !partial_first)  ||  counter != 1)  &&
              (start > 1) ) {
-            CSeqVector::TResidue res1, res2;
             try {
-                res1 = seq_vec[start - 2];
-                res2 = seq_vec[start - 1];
-            } catch ( exception& ) {
-            }
-
-            if ( IsResidue(res1)  &&  IsResidue(res2) ) {
-                if ( (res1 != 'A')  ||  (res2 != 'G') ) {
-                    PostErr(sev, eErr_SEQ_FEAT_NotSpliceConsensus,
-                        "Splice acceptor consensus (AG) not found before "
-                        "exon starting at position " + 
-                        NStr::IntToString(acceptor + 1) + " of " + label, feat);
+                CSeqVector::TResidue res1 = seq_vec[start - 2];
+                CSeqVector::TResidue res2 = seq_vec[start - 1];
+                
+                if ( IsResidue(res1)  &&  IsResidue(res2) ) {
+                    if ( (res1 != 'A')  ||  (res2 != 'G') ) {
+                        PostErr(sev, eErr_SEQ_FEAT_NotSpliceConsensus,
+                            "Splice acceptor consensus (AG) not found before "
+                            "exon starting at position " + 
+                            NStr::IntToString(acceptor + 1) + " of " + label, feat);
+                    }
                 }
+            } catch ( exception& ) {
             }
         }
     } // end of for loop
@@ -1486,6 +1484,94 @@ void CValidError_feat::ValidateCommonCDSProduct
 }
 
 
+void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
+{
+    if ( !feat.IsSetProduct()  ||  !feat.IsSetLocation() ) {
+        return;
+    }
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
+    if ( !bsh ) {
+        return;
+    }
+
+    CSeqdesc_CI sd(bsh, CSeqdesc::e_Molinfo);
+    if ( !sd ) {
+        return;
+    }
+    const CMolInfo& molinfo = sd->GetMolinfo();
+
+    const CSeq_loc& loc = feat.GetLocation();
+    bool partial5 = loc.IsPartialLeft();
+    bool partial3 = loc.IsPartialRight();
+
+    if ( molinfo.IsSetCompleteness() ) {
+        switch ( molinfo.GetCompleteness() ) {
+        case CMolInfo::eCompleteness_unknown:
+            break;
+
+        case CMolInfo::eCompleteness_complete:
+            if ( partial5 || partial3 ) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is partial but protein is complete", feat);
+            }
+            break;
+
+        case CMolInfo::eCompleteness_partial:
+            break;
+
+        case CMolInfo::eCompleteness_no_left:
+            if ( !partial5 ) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is 5' complete but protein is NH2 partial", feat);
+            }
+            if ( partial3 ) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is 3' partial but protein is NH2 partial", feat);
+            }
+            break;
+
+        case CMolInfo::eCompleteness_no_right:
+            if (! partial3) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is 3' complete but protein is CO2 partial", feat);
+            }
+            if (partial5) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is 5' partial but protein is CO2 partial", feat);
+            }
+            break;
+
+        case CMolInfo::eCompleteness_no_ends:
+            if ( partial5 && partial3 ) {
+            } else if ( partial5 ) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is 5' partial but protein has neither end", feat);
+            } else if ( partial3 ) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is 3' partial but protein has neither end", feat);
+            } else {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                    "CDS is complete but protein has neither end", feat);
+            }
+            break;
+
+        case CMolInfo::eCompleteness_has_left:
+            break;
+
+        case CMolInfo::eCompleteness_has_right:
+            break;
+
+        case CMolInfo::eCompleteness_other:
+            break;
+
+        default:
+            break;
+        }
+    }
+}
+
+
 void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
 {
     const CSeq_loc& loc = feat.GetLocation();
@@ -2110,33 +2196,33 @@ bool CValidError_feat::IsPartialAtSpliceSite
 
     bool result = false;
 
-    CSeqVector::TResidue res1, res2;
+    
     if ( (tag == eSeqlocPartial_Nostop)  &&  (stop < len - 2) ) {
         try {
-            res1 = vec[stop + 1];    
-            res2 = vec[stop + 2];
+            CSeqVector::TResidue res1 = vec[stop + 1];
+            CSeqVector::TResidue res2 = vec[stop + 2];
+
+            if ( IsResidue(res1)  &&  IsResidue(res2) ) {
+                if ( (res1 == 'G'  &&  res2 == 'T')  || 
+                    (res1 == 'G'  &&  res2 == 'C') ) {
+                    result = true;
+                }
+            }
         } catch ( exception& ) {
             return false;
-        }
-
-        if ( IsResidue(res1)  &&  IsResidue(res2) ) {
-            if ( (res1 == 'G'  &&  res2 == 'T')  || 
-                 (res1 == 'G'  &&  res2 == 'C') ) {
-                result = true;
-            }
         }
     } else if ( (tag == eSeqlocPartial_Nostart)  &&  (start > 1) ) {
         try {
-            res1 = vec[start - 2];    
-            res2 = vec[start - 1];
+            CSeqVector::TResidue res1 = vec[start - 2];    
+            CSeqVector::TResidue res2 = vec[start - 1];
+        
+            if ( IsResidue(res1)  &&  IsResidue(res2) ) {
+                if ( (res1 == 'A')  &&  (res2 == 'G') ) { 
+                    result = true;
+                }
+            }
         } catch ( exception& ) {
             return false;
-        }
-
-        if ( IsResidue(res1)  &&  IsResidue(res2) ) {
-            if ( (res1 == 'A')  &&  (res2 == 'G') ) { 
-                result = true;
-            }
         }
     }
 
@@ -2268,6 +2354,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2003/07/02 21:04:48  shomrat
+* added CheckCDSPartial to check cds->location partials against product molinfo
+*
 * Revision 1.32  2003/06/17 13:40:48  shomrat
 * Use SeqVector_CI to improve performance
 *
