@@ -158,12 +158,19 @@ class NCBI_BDB_EXPORT CBDB_LobFile : public CBDB_RawFile
 public:
     CBDB_LobFile();
 
-    /// Insert BLOB data into the database
+    /// Insert BLOB data into the database, does nothing if key exists
     ///
     /// @param lob_id insertion key
     /// @param data buffer pointer
     /// @param size data size in bytes
     EBDB_ErrCode Insert(unsigned int lob_id, const void* data, size_t size);
+
+    /// Insert or Update BLOB data into the database
+    ///
+    /// @param lob_id insertion key
+    /// @param data buffer pointer
+    /// @param size data size in bytes
+    EBDB_ErrCode InsertUpdate(unsigned int lob_id, const void* data, size_t size);
 
     /// Fetch LOB record. On success, LOB size becomes available
     /// (see LobSize()), and the value can be obtained using GetData().
@@ -196,6 +203,8 @@ public:
     virtual void SetCmp(DB*);
 
 private:
+    EBDB_ErrCode x_Put(unsigned int lob_id, const void* data, size_t size, bool can_update);
+
     unsigned int  m_LobKey;  
 };
 
@@ -227,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/07/14 20:00:30  rotmistr
+ * InsertUpdate added
+ *
  * Revision 1.14  2003/12/29 17:06:04  kuznets
  * +CBDB_BlobStream::SetTransaction()
  *

@@ -204,9 +204,10 @@ CBDB_LobFile::CBDB_LobFile()
 }
 
 
-EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
-                                  const void*  data,
-                                  size_t       size)
+EBDB_ErrCode CBDB_LobFile::x_Put(unsigned int lob_id,
+                                 const void*  data,
+                                 size_t       size,
+				 bool can_update)
 {
     _ASSERT(lob_id);
     _ASSERT(size);
@@ -229,7 +230,7 @@ EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
                         0,     // DB_TXN*
                         m_DBT_Key,
                         m_DBT_Data,
-                        DB_NOOVERWRITE /*| DB_NODUPDATA*/
+                        can_update?0:DB_NOOVERWRITE /*| DB_NODUPDATA*/
                         );
     if (ret == DB_KEYEXIST)
         return eBDB_KeyDup;
@@ -238,6 +239,19 @@ EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
 }
 
 
+EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
+                                  const void*  data,
+                                  size_t       size) 
+{
+	return x_Put(lob_id, data, size, false);
+}
+
+EBDB_ErrCode CBDB_LobFile::InsertUpdate(unsigned int lob_id,
+                                        const void*  data,
+                                        size_t       size) 
+{
+	return x_Put(lob_id, data, size, true);
+}
 
 EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id,
                                  void**       buf,
@@ -358,6 +372,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/07/14 20:00:30  rotmistr
+ * InsertUpdate added
+ *
  * Revision 1.18  2004/06/04 16:10:32  kuznets
  * Fixed bug with byteswapping when writin/reading LOBs
  *
