@@ -500,6 +500,7 @@ BEGIN_TEST_FUNCTION(UnsignedInt)
     if (!WriteASNToFile(*seqloc, false, &err))
         ADD_ERR_RETURN("output of seqloc with '-1' failed: " << err);
 
+    // load latest test output file
     CNcbiOstrstream oss;
     oss << "test_" << filesCreated.size() << ".txt";
     string filename = CNcbiOstrstreamToString(oss);
@@ -507,15 +508,21 @@ BEGIN_TEST_FUNCTION(UnsignedInt)
     CRef < CSeq_loc > seqloc2(new CSeq_loc());
     if (!ReadASNFromFile(filename.c_str(), seqloc2.GetPointer(), false, &err))
         ADD_ERR_RETURN("input of seqloc with '-1' failed: " << err);
-
     if (!seqloc2->Equals(*seqloc))
         ADD_ERR("seqloc with '-1' Equals test failed");
-    if (seqloc2->GetInt().GetFrom() != ((unsigned int) 4294967295))
-        ADD_ERR("seqloc value test failed");
 
     CRef < CSeq_loc > seqloc3(new CSeq_loc());
-    if (!ReadASNFromFile("seqLocTest.txt", seqloc3.GetPointer(), false, &err))
-        ADD_ERR("reading seqLocTest.txt failed: " << err);
+    seqloc3->Assign(*seqloc);
+    if (!WriteASNToFile(*seqloc3, false, &err))
+        ADD_ERR("output of Assign'ed seqloc with '-1' failed: " << err);
+    if (((int) seqloc3->GetInt().GetFrom()) != -1)
+        ADD_ERR("seqloc post-Assign value test failed");
+
+    CRef < CSeq_loc > seqloc4(new CSeq_loc());
+    if (!ReadASNFromFile("seqLocTest.txt", seqloc4.GetPointer(), false, &err))
+        ADD_ERR_RETURN("reading seqLocTest.txt failed: " << err);
+    if (seqloc4->GetInt().GetFrom() != ((unsigned int) 4294967295))
+        ADD_ERR("seqloc unsigned int value test failed");
 
 END_TEST_FUNCTION
 
@@ -601,6 +608,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/02/12 18:33:29  thiessen
+* add Assign test to UnsignedInt test
+*
 * Revision 1.12  2004/02/12 17:59:58  thiessen
 * remove one gcc warning
 *
