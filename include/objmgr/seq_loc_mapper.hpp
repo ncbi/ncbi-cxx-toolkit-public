@@ -40,6 +40,7 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objmgr/seq_id_handle.hpp>
+#include <objects/general/Int_fuzz.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -69,7 +70,9 @@ public:
     bool GoodSrcId(const CSeq_id& id) const;
     CSeq_id& GetDstId(void);
 
-    typedef CRange<TSeqPos> TRange;
+    typedef CRange<TSeqPos>    TRange;
+    typedef CRef<CInt_fuzz>    TFuzz;
+    typedef pair<TFuzz, TFuzz> TRangeFuzz;
 
     bool CanMap(TSeqPos from,
                 TSeqPos to,
@@ -78,8 +81,11 @@ public:
     TSeqPos Map_Pos(TSeqPos pos) const;
     TRange Map_Range(TSeqPos from, TSeqPos to) const;
     bool Map_Strand(bool is_set_strand, ENa_strand src, ENa_strand* dst) const;
+    TRangeFuzz Map_Fuzz(TRangeFuzz& fuzz) const;
 
 private:
+    CInt_fuzz::ELim x_ReverseFuzzLim(CInt_fuzz::ELim lim) const;
+
     CSeq_id_Handle      m_Src_id_Handle;
     TSeqPos             m_Src_from;
     TSeqPos             m_Src_to;
@@ -91,6 +97,7 @@ private:
 
     friend class CSeq_loc_Mapper;
     friend class CSeq_align_Mapper;
+    friend struct CMappingRangeRef_Less;
 };
 
 
@@ -204,13 +211,9 @@ private:
     typedef vector<TDstIdMap>               TDstStrandMap;
 
     // Destination locations arranged by ID/range
-    enum EPartialFlags {
-        fPartialLeft  = 1,
-        fPartialRight = 2,
-        fPartialBoth  = fPartialLeft | fPartialRight
-    };
-    typedef int TPartialFlags;
-    typedef pair<TRange, TPartialFlags>          TRangeWithFuzz;
+    typedef CRef<CInt_fuzz>                      TFuzz;
+    typedef pair<TFuzz, TFuzz>                   TRangeFuzz;
+    typedef pair<TRange, TRangeFuzz>             TRangeWithFuzz;
     typedef list<TRangeWithFuzz>                 TMappedRanges;
     // 0 = not set, any other index = na_strand + 1
     typedef vector<TMappedRanges>                TRangesByStrand;
@@ -269,7 +272,8 @@ private:
     bool x_MapInterval(const CSeq_id&   src_id,
                        TRange           src_rg,
                        bool             is_set_strand,
-                       ENa_strand       src_strand);
+                       ENa_strand       src_strand,
+                       TRangeFuzz       orig_fuzz);
 
     void x_PushLocToDstMix(CRef<CSeq_loc> loc);
 
@@ -287,7 +291,7 @@ private:
                                     TSeqPos               from,
                                     TSeqPos               to,
                                     int                   strand_idx,
-                                    TPartialFlags         fuzz_flag);
+                                    TRangeFuzz            rg_fuzz);
 
     // Check location type, optimize if possible (empty mix to NULL,
     // mix with a single element to this element etc.).
@@ -395,6 +399,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/05/07 13:53:18  grichenk
+* Preserve fuzz from original location.
+* Better detection of partial locations.
+*
 * Revision 1.11  2004/05/05 14:04:22  grichenk
 * Use fuzz to indicate truncated intervals. Added KeepNonmapping flag.
 *

@@ -43,7 +43,6 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
-#include <objects/general/Int_fuzz.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <algorithm>
 
@@ -126,6 +125,60 @@ bool CMappingRange::Map_Strand(bool is_set_strand,
         return true;
     }
     return false;
+}
+
+
+const CMappingRange::TFuzz kEmptyFuzz(0);
+
+CInt_fuzz::ELim CMappingRange::x_ReverseFuzzLim(CInt_fuzz::ELim lim) const
+{
+    switch ( lim ) {
+    case CInt_fuzz::eLim_gt:
+        return CInt_fuzz::eLim_lt;
+    case CInt_fuzz::eLim_lt:
+        return CInt_fuzz::eLim_gt;
+    case CInt_fuzz::eLim_tr:
+        return CInt_fuzz::eLim_tl;
+    case CInt_fuzz::eLim_tl:
+        return CInt_fuzz::eLim_tr;
+    default:
+        return lim;
+    }
+}
+
+
+CMappingRange::TRangeFuzz CMappingRange::Map_Fuzz(TRangeFuzz& fuzz) const
+{
+    // Maps some fuzz types to reverse strand
+    if ( !m_Reverse ) {
+        return fuzz;
+    }
+    TRangeFuzz res(fuzz.second, fuzz.first);
+    if ( res.first ) {
+        switch ( res.first->Which() ) {
+        case CInt_fuzz::e_Lim:
+            {
+                res.first->SetLim(x_ReverseFuzzLim(res.first->GetLim()));
+                break;
+            }
+        default:
+            // Other types are not converted
+            break;
+        }
+    }
+    if ( fuzz.second ) {
+        switch ( res.second->Which() ) {
+        case CInt_fuzz::e_Lim:
+            {
+                res.second->SetLim(x_ReverseFuzzLim(res.second->GetLim()));
+                break;
+            }
+        default:
+            // Other types are not converted
+            break;
+        }
+    }
+    return res;
 }
 
 
@@ -1141,10 +1194,33 @@ CSeq_loc_Mapper::x_BeginMappingRanges(CSeq_id_Handle id,
 }
 
 
+struct CMappingRangeRef_Less
+{
+    bool operator()(const CRef<CMappingRange>& x,
+                    const CRef<CMappingRange>& y) const;
+};
+
+
+bool CMappingRangeRef_Less::operator()(const CRef<CMappingRange>& x,
+                                       const CRef<CMappingRange>& y) const
+{
+    if (x->m_Src_id_Handle != y->m_Src_id_Handle) {
+        return x->m_Src_id_Handle < y->m_Src_id_Handle;
+    }
+    // Leftmost first
+    if (x->m_Src_from != y->m_Src_from) {
+        return x->m_Src_from < y->m_Src_from;
+    }
+    // Longest first
+    return x->m_Src_to > y->m_Src_to;
+}
+
+
 bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
                                     TRange           src_rg,
                                     bool             is_set_strand,
-                                    ENa_strand       src_strand)
+                                    ENa_strand       src_strand,
+                                    TRangeFuzz       orig_fuzz)
 {
     bool res = false;
     if (m_UseWidth  &&
@@ -1153,26 +1229,65 @@ bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
     }
 
     CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(src_id);
-    TRangeIterator mit = x_BeginMappingRanges(
+
+    // Sorted mapping ranges
+    typedef vector< CRef<CMappingRange> > TSortedMappings;
+    TSortedMappings mappings;
+    TRangeIterator rg_it = x_BeginMappingRanges(
         src_idh, src_rg.GetFrom(), src_rg.GetTo());
-    for ( ; mit; ++mit) {
-        CMappingRange& cvt = *mit->second;
+    for ( ; rg_it; ++rg_it) {
+        mappings.push_back(rg_it->second);
+    }
+    sort(mappings.begin(), mappings.end(), CMappingRangeRef_Less());
+    TSeqPos last_src_to = 0;
+    for (size_t idx = 0; idx < mappings.size(); ++idx) {
+        const CMappingRange& cvt = *mappings[idx];
         if ( !cvt.CanMap(src_rg.GetFrom(), src_rg.GetTo(),
             is_set_strand, src_strand) ) {
             continue;
         }
         TSeqPos from = src_rg.GetFrom();
         TSeqPos to = src_rg.GetTo();
-        TPartialFlags fuzz = 0;
+        TRangeFuzz fuzz = cvt.Map_Fuzz(orig_fuzz);
         if (from < cvt.m_Src_from) {
             from = cvt.m_Src_from;
-            fuzz |= cvt.m_Reverse ? fPartialRight : fPartialLeft;
-            m_Partial = true;
+            // Set partial only if a non-empty range is to be skipped
+            if (cvt.m_Src_from > last_src_to + 1) {
+                if ( cvt.m_Reverse ) {
+                    if (!fuzz.second) {
+                        fuzz.second.Reset(new CInt_fuzz);
+                    }
+                    fuzz.second->SetLim(CInt_fuzz::eLim_gt);
+                }
+                else {
+                    if (!fuzz.first) {
+                        fuzz.first.Reset(new CInt_fuzz);
+                    }
+                    fuzz.first->SetLim(CInt_fuzz::eLim_lt);
+                }
+                m_Partial = true;
+            }
         }
+        last_src_to = cvt.m_Src_to;
         if ( to > cvt.m_Src_to ) {
             to = cvt.m_Src_to;
-            fuzz |= cvt.m_Reverse ? fPartialLeft : fPartialRight;
-            m_Partial = true;
+            // Set partial only if a non-empty range is to be skipped
+            if (idx == mappings.size() - 1 ||
+                mappings[idx+1]->m_Src_from > last_src_to + 1) {
+                if ( cvt.m_Reverse ) {
+                    if (!fuzz.first) {
+                        fuzz.first.Reset(new CInt_fuzz);
+                    }
+                    fuzz.first->SetLim(CInt_fuzz::eLim_lt);
+                }
+                else {
+                    if (!fuzz.second) {
+                        fuzz.second.Reset(new CInt_fuzz);
+                    }
+                    fuzz.second->SetLim(CInt_fuzz::eLim_gt);
+                }
+                m_Partial = true;
+            }
         }
         if ( from > to ) {
             continue;
@@ -1263,7 +1378,8 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
             if ( cvt.GoodSrcId(src_loc.GetEmpty()) ) {
                 x_GetMappedRanges(
                     CSeq_id_Handle::GetHandle(src_loc.GetEmpty()), 0)
-                    .push_back(TRangeWithFuzz(TRange::GetEmpty(), 0));
+                    .push_back(TRangeWithFuzz(TRange::GetEmpty(),
+                    TRangeFuzz(kEmptyFuzz, kEmptyFuzz)));
                 res = true;
                 break;
             }
@@ -1291,7 +1407,8 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
             src_to = bh ? bh.GetBioseqLength() : kInvalidSeqPos;
         }
         bool res = x_MapInterval(src_id, TRange(0, src_to),
-            false, eNa_strand_unknown);
+            false, eNa_strand_unknown,
+            TRangeFuzz(kEmptyFuzz, kEmptyFuzz));
         if ( !res ) {
             if ( m_KeepNonmapping ) {
                 x_PushRangesToDstMix();
@@ -1308,10 +1425,20 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
     case CSeq_loc::e_Int:
     {
         const CSeq_interval& src_int = src_loc.GetInt();
+        TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
+        if ( src_int.IsSetFuzz_from() ) {
+            fuzz.first.Reset(new CInt_fuzz);
+            fuzz.first->Assign(src_int.GetFuzz_from());
+        }
+        if ( src_int.IsSetFuzz_to() ) {
+            fuzz.second.Reset(new CInt_fuzz);
+            fuzz.second->Assign(src_int.GetFuzz_to());
+        }
         bool res = x_MapInterval(src_int.GetId(),
             TRange(src_int.GetFrom(), src_int.GetTo()),
             src_int.IsSetStrand(),
-            src_int.IsSetStrand() ? src_int.GetStrand() : eNa_strand_unknown);
+            src_int.IsSetStrand() ? src_int.GetStrand() : eNa_strand_unknown,
+            fuzz);
         if ( !res ) {
             if ( m_KeepNonmapping ) {
                 x_PushRangesToDstMix();
@@ -1328,10 +1455,16 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
     case CSeq_loc::e_Pnt:
     {
         const CSeq_point& pnt = src_loc.GetPnt();
+        TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
+        if ( pnt.IsSetFuzz() ) {
+            fuzz.first.Reset(new CInt_fuzz);
+            fuzz.first->Assign(pnt.GetFuzz());
+        }
         bool res = x_MapInterval(pnt.GetId(),
             TRange(pnt.GetPoint(), pnt.GetPoint()),
             pnt.IsSetStrand(),
-            pnt.IsSetStrand() ? pnt.GetStrand() : eNa_strand_unknown);
+            pnt.IsSetStrand() ? pnt.GetStrand() : eNa_strand_unknown,
+            fuzz);
         if ( !res ) {
             if ( m_KeepNonmapping ) {
                 x_PushRangesToDstMix();
@@ -1350,17 +1483,27 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         const CPacked_seqint::Tdata& src_ints = src_loc.GetPacked_int().Get();
         ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
             const CSeq_interval& si = **i;
+            TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
+            if ( si.IsSetFuzz_from() ) {
+                fuzz.first.Reset(new CInt_fuzz);
+                fuzz.first->Assign(si.GetFuzz_from());
+            }
+            if ( si.IsSetFuzz_to() ) {
+                fuzz.second.Reset(new CInt_fuzz);
+                fuzz.second->Assign(si.GetFuzz_to());
+            }
             bool res = x_MapInterval(si.GetId(),
                 TRange(si.GetFrom(), si.GetTo()),
                 si.IsSetStrand(),
-                si.IsSetStrand() ? si.GetStrand() : eNa_strand_unknown);
+                si.IsSetStrand() ? si.GetStrand() : eNa_strand_unknown,
+                fuzz);
             if ( !res ) {
                 if ( m_KeepNonmapping ) {
                     x_PushRangesToDstMix();
                     x_GetMappedRanges(CSeq_id_Handle::GetHandle(si.GetId()),
                         si.IsSetStrand() ? int(si.GetStrand()) + 1 : 0)
                         .push_back(TRangeWithFuzz(
-                        TRange(si.GetFrom(), si.GetTo()), 0));
+                        TRange(si.GetFrom(), si.GetTo()), fuzz));
                 }
                 else {
                     m_Partial = true;
@@ -1374,11 +1517,17 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         const CPacked_seqpnt& src_pack_pnts = src_loc.GetPacked_pnt();
         const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
         ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
+            TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
+            if ( src_pack_pnts.IsSetFuzz() ) {
+                fuzz.first.Reset(new CInt_fuzz);
+                fuzz.first->Assign(src_pack_pnts.GetFuzz());
+            }
             bool res = x_MapInterval(
                 src_pack_pnts.GetId(),
                 TRange(*i, *i), src_pack_pnts.IsSetStrand(),
                 src_pack_pnts.IsSetStrand() ?
-                src_pack_pnts.GetStrand() : eNa_strand_unknown);
+                src_pack_pnts.GetStrand() : eNa_strand_unknown,
+                fuzz);
             if ( !res ) {
                 if ( m_KeepNonmapping ) {
                     x_PushRangesToDstMix();
@@ -1386,7 +1535,7 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
                         CSeq_id_Handle::GetHandle(src_pack_pnts.GetId()),
                         src_pack_pnts.IsSetStrand() ?
                         int(src_pack_pnts.GetStrand()) + 1 : 0)
-                        .push_back(TRangeWithFuzz(TRange(*i, *i), 0));
+                        .push_back(TRangeWithFuzz(TRange(*i, *i), fuzz));
                 }
                 else {
                     m_Partial = true;
@@ -1440,11 +1589,17 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         dst_loc->SetBond();
         CRef<CSeq_loc> pntA;
         CRef<CSeq_loc> pntB;
+        TRangeFuzz fuzzA(kEmptyFuzz, kEmptyFuzz);
+        if ( src_bond.GetA().IsSetFuzz() ) {
+            fuzzA.first.Reset(new CInt_fuzz);
+            fuzzA.first->Assign(src_bond.GetA().GetFuzz());
+        }
         bool resA = x_MapInterval(src_bond.GetA().GetId(),
             TRange(src_bond.GetA().GetPoint(), src_bond.GetA().GetPoint()),
             src_bond.GetA().IsSetStrand(),
             src_bond.GetA().IsSetStrand() ?
-            src_bond.GetA().GetStrand() : eNa_strand_unknown);
+            src_bond.GetA().GetStrand() : eNa_strand_unknown,
+            fuzzA);
         if ( resA ) {
             pntA = x_GetMappedSeq_loc();
             _ASSERT(pntA);
@@ -1459,11 +1614,17 @@ void CSeq_loc_Mapper::x_MapSeq_loc(const CSeq_loc& src_loc)
         }
         bool resB = false;
         if ( src_bond.IsSetB() ) {
+            TRangeFuzz fuzzB(kEmptyFuzz, kEmptyFuzz);
+            if ( src_bond.GetB().IsSetFuzz() ) {
+                fuzzB.first.Reset(new CInt_fuzz);
+                fuzzB.first->Assign(src_bond.GetB().GetFuzz());
+            }
             resB = x_MapInterval(src_bond.GetB().GetId(),
                 TRange(src_bond.GetB().GetPoint(), src_bond.GetB().GetPoint()),
                 src_bond.GetB().IsSetStrand(),
                 src_bond.GetB().IsSetStrand() ?
-                src_bond.GetB().GetStrand() : eNa_strand_unknown);
+                src_bond.GetB().GetStrand() : eNa_strand_unknown,
+                fuzzB);
         }
         if ( resB ) {
             pntB = x_GetMappedSeq_loc();
@@ -1500,7 +1661,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc(const CSeq_id_Handle& idh,
                                                  TSeqPos from,
                                                  TSeqPos to,
                                                  int strand_idx,
-                                                 TPartialFlags fuzz_flag)
+                                                 TRangeFuzz rg_fuzz)
 {
     if (m_UseWidth  &&  (m_Widths[idh] & fWidthNucToProt)) {
         from = from/3;
@@ -1508,18 +1669,19 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc(const CSeq_id_Handle& idh,
     }
 
     CRef<CSeq_loc> loc(new CSeq_loc);
-    if (from == to  &&  fuzz_flag != fPartialBoth) {
+    // If both fuzzes are set, create interval, not point.
+    if (from == to  &&  (!rg_fuzz.first  ||  !rg_fuzz.second)) {
         // point
         loc->SetPnt().SetId().Assign(*idh.GetSeqId());
         loc->SetPnt().SetPoint(from);
         if (strand_idx > 0) {
             loc->SetPnt().SetStrand(ENa_strand(strand_idx - 1));
         }
-        if (fuzz_flag & fPartialLeft) {
-            loc->SetPnt().SetFuzz().SetLim(CInt_fuzz::eLim_lt);
+        if ( rg_fuzz.first ) {
+            loc->SetPnt().SetFuzz(*rg_fuzz.first);
         }
-        else if (fuzz_flag & fPartialRight) {
-            loc->SetPnt().SetFuzz().SetLim(CInt_fuzz::eLim_gt);
+        else if ( rg_fuzz.second ) {
+            loc->SetPnt().SetFuzz(*rg_fuzz.second);
         }
     }
     else {
@@ -1530,11 +1692,11 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_RangeToSeq_loc(const CSeq_id_Handle& idh,
         if (strand_idx > 0) {
             loc->SetInt().SetStrand(ENa_strand(strand_idx - 1));
         }
-        if (fuzz_flag & fPartialLeft) {
-            loc->SetInt().SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+        if ( rg_fuzz.first ) {
+            loc->SetInt().SetFuzz_from(*rg_fuzz.first);
         }
-        if (fuzz_flag & fPartialRight) {
-            loc->SetInt().SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+        if ( rg_fuzz.second ) {
+            loc->SetInt().SetFuzz_to(*rg_fuzz.second);
         }
     }
     return loc;
@@ -1604,8 +1766,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
             }
             TSeqPos from = kInvalidSeqPos;
             TSeqPos to = kInvalidSeqPos;
-            TPartialFlags fuzz_from = 0;
-            TPartialFlags fuzz_to = 0;
+            TRangeFuzz fuzz(kEmptyFuzz, kEmptyFuzz);
             id_it->second[str].sort();
             NON_CONST_ITERATE(TMappedRanges, rg_it, id_it->second[str]) {
                 if ( rg_it->first.Empty() ) {
@@ -1618,35 +1779,33 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
                 if (to == kInvalidSeqPos) {
                     from = rg_it->first.GetFrom();
                     to = rg_it->first.GetTo();
-                    fuzz_from = rg_it->second & fPartialLeft;
-                    fuzz_to = rg_it->second & fPartialRight;
+                    fuzz = rg_it->second;
                     continue;
                 }
                 if (m_MergeFlag == eMergeAbutting) {
                     if (rg_it->first.GetFrom() == to + 1) {
                         to = rg_it->first.GetTo();
-                        fuzz_to = rg_it->second & fPartialRight;
+                        fuzz.second = rg_it->second.second;
                         continue;
                     }
                 }
                 if (m_MergeFlag == eMergeAll) {
                     if (rg_it->first.GetFrom() <= to + 1) {
                         to = rg_it->first.GetTo();
-                        fuzz_to = rg_it->second & fPartialRight;
+                        fuzz.second = rg_it->second.second;
                         continue;
                     }
                 }
                 // Add new interval or point
                 dst_mix.push_back(x_RangeToSeq_loc(id_it->first, from, to,
-                    str, fuzz_from | fuzz_to));
+                    str, fuzz));
                 from = rg_it->first.GetFrom();
                 to = rg_it->first.GetTo();
-                fuzz_from = rg_it->second & fPartialLeft;
-                fuzz_to = rg_it->second & fPartialRight;
+                fuzz = rg_it->second;
             }
             // last interval or point
             dst_mix.push_back(x_RangeToSeq_loc(id_it->first, from, to,
-                str, fuzz_from | fuzz_to));
+                str, fuzz));
         }
     }
     m_MappedLocs.clear();
@@ -1674,6 +1833,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/05/07 13:53:18  grichenk
+* Preserve fuzz from original location.
+* Better detection of partial locations.
+*
 * Revision 1.15  2004/05/05 14:04:22  grichenk
 * Use fuzz to indicate truncated intervals. Added KeepNonmapping flag.
 *
