@@ -65,7 +65,8 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_cxx2c
  );
 
 
-extern NCBI_XCONNECT_EXPORT void CONNECT_Init(CNcbiRegistry* reg = 0);
+extern NCBI_XCONNECT_EXPORT void CONNECT_Init(CNcbiRegistry* reg = 0,
+                                              CRWLock*      lock = 0);
 
 
 END_NCBI_SCOPE
@@ -77,6 +78,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2004/07/08 14:27:39  lavr
+ * Additional parameter lock=0 for CONNET_Init()
+ *
  * Revision 6.11  2003/04/09 17:58:49  siyan
  * Added doxygen support
  *
