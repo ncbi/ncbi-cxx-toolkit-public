@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CMetaRegistry
+class NCBI_XNCBI_EXPORT CMetaRegistry
 {
 public:
     /// Relevant types
@@ -204,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/08/15 03:44:57  ucko
+* Add export specifier.
+*
 * Revision 1.4  2003/08/14 17:37:26  ucko
 * +eName_RcOrIni (for .ncbirc / ncbi.ini)
 *
