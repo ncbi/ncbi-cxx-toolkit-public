@@ -11,6 +11,7 @@
 # APP = my_app
 # OBJ = my_main my_obj1 my_obj2
 # LIB = foo bar
+# DLL = foo1 bar1
 # .....
 # CXXFLAGS = -g $(ORIG_CXXFLAGS) -D_DEBUG -DXYZ_MY_APP
 # .....
@@ -18,24 +19,19 @@
 #################################
 
 
-### C/C++ source file compilation rules
+### C/C++ source file compilation (and maybe auto-dependencies) build rules
 
-CXXFLAGS_ALL = $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-%@obj_ext@: ./%.cpp
-	$(CXX) @f_compile@ $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
-%@obj_ext@: $(srcdir)/%.cpp
-	$(CXX) @f_compile@ $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
-
-CFLAGS_ALL = $(CFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
-%@obj_ext@: ./%.c
-	$(CC) @f_compile@ $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
-%@obj_ext@: $(srcdir)/%.c
-	$(CC) @f_compile@ $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
+CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
+CFLAGS_ALL   = @f_compile@ $(CFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
+SOURCES      = $(OBJ)
+include @builddir@/Makefile.$(Rules)
 
 
 ### Library dependencies
 
-%.dep: $(libdir)/@lib_pre@%@lib_ext@
+%.lib_dep: $(libdir)/@lib_pre@%@lib_ext@
+	@touch $@
+%.dll_dep: $(libdir)/@lib_pre@%@dll_ext@
 	@touch $@
 
 
@@ -43,8 +39,10 @@ CFLAGS_ALL = $(CFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 
 XAPP = $(APP)@exe_ext@
 XOBJ = $(OBJ:=@obj_ext@)
-XLIB = @f_libpath@$(libdir) $(LIB:%=@lib_l_pre@%@lib_l_ext@)
-XLIBDEP = $(LIB:=.dep)
+XLIB = @f_libpath@$(libdir) \
+   $(LIB:%=@lib_l_pre@%@lib_l_ext@) \
+   $(DLL:%=@lib_l_pre@%@dll_l_ext@)
+XLIBDEP = $(LIB:=.lib_dep) $(DLL:=.dll_dep)
 
 $(XAPP): $(XOBJ) $(XLIBDEP)
 	$(LINK) $(LDFLAGS) $(XOBJ) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP)
