@@ -221,6 +221,11 @@ static Int2 SeqDbRetSequence(void* seqdb_handle, void* args)
     if (!seqdb || !seqdb_args)
         return BLAST_SEQSRC_ERROR;
 
+    if (!seqdb_args->seq) {
+        // Nothing to return, just return successful status
+        return BLAST_SEQSRC_SUCCESS;
+    }
+
     if (seqdb_args->seq->sequence_start_allocated) {
         (*seqdb)->RetSequence((const char**)&seqdb_args->seq->sequence_start);
         seqdb_args->seq->sequence_start_allocated = FALSE;
@@ -232,7 +237,7 @@ static Int2 SeqDbRetSequence(void* seqdb_handle, void* args)
         seqdb_args->seq->sequence = NULL;
     }
 
-    return 0;
+    return BLAST_SEQSRC_SUCCESS;
 }
 
 /** Retrieves the sequence identifier meeting the criteria defined by its 
@@ -500,6 +505,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2004/07/13 17:31:04  dondosha
+ * Test sequence block pointer for null in SeqDbRetSequence
+ *
  * Revision 1.15  2004/07/06 15:50:33  dondosha
  * Use GetNextOIDChunk function from CSeqDb for iteration
  *
