@@ -102,20 +102,6 @@ typedef struct patternSearchItems {
   Int4   wildcardProduct; /**< Product of wildcard lengths*/
 } patternSearchItems;
 
-typedef struct seedSearchItems {
-    double  charMultiple[ALPHABET_SIZE];
-    double  paramC; /*used in e-value computation*/
-    double  paramLambda; /*used in e-value computation*/
-    double  paramK; /*used in the bit score computation*/
-    Int4         cutoffScore; /*lower bound for what is a hit*/
-    double  standardProb[ALPHABET_SIZE]; /*probability of each letter*/
-    char         order[ASCII_SIZE];
-    char         pchars[ALPHABET_SIZE+1];
-    char         name_space[BUF_SIZE];  /*name of a pattern*/
-    char         pat_space[PATTERN_SPACE_SIZE];  /*string description
-                                                   of pattern*/
-} seedSearchItems;
-
 /** Find the places where the pattern matches seq;
  * 3 different methods are used depending on the length of the pattern.
  * @param hitArray Stores the results as pairs of positions in consecutive

@@ -143,6 +143,11 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
         const BlastDatabaseOptions* db_options,
         const double* karlin_k);
 
+/** Get the subject sequence encoding type for the traceback,
+ * given a program number.
+ */
+Uint1 Blast_TracebackGetEncoding(Uint1 program_number);
+
 #ifdef __cplusplus
 }
 #endif

@@ -40,15 +40,23 @@ extern "C" {
 #endif
 #include <algo/blast/core/blast_def.h>
 
-#define GAPALIGN_SUB ((Uint1)0)  /*op types within the edit script*/
-#define GAPALIGN_INS ((Uint1)1)
-#define GAPALIGN_DEL ((Uint1)2)
-#define GAPALIGN_DECLINE ((Uint1)3)
+/** Operation types within the edit script*/
+typedef enum EGapAlignOpType { 
+   eGapAlignDel = 0, /**< Deletion: a gap in query */
+   eGapAlignDel2 = 1,/**< Frame shift deletion of two nucleotides */
+   eGapAlignDel1 = 2,/**< Frame shift deletion of one nucleotide */
+   eGapAlignSub = 3, /**< Substitution */
+   eGapAlignIns1 = 4,/**< Frame shift insertion of one nucleotide */
+   eGapAlignIns2 = 5,/**< Frame shift insertion of two nucleotides */
+   eGapAlignIns = 6, /**< Insertion: a gap in subject */
+   eGapAlignDecline = 7 /**< Non-aligned region */
+} EGapAlignOpType;
 
+/** Edit script: linked list of correspondencies between two sequences */
 typedef struct GapEditScript {
-        Uint1 op_type;  /* GAPALIGN_SUB, GAPALIGN_INS, or GAPALIGN_DEL */
-        Int4 num;       /* Number of operations */
-        struct GapEditScript* next;
+   EGapAlignOpType op_type;    /**< Type of operation */
+   Int4 num;                   /**< Number of operations */
+   struct GapEditScript* next; /**< Pointer to next link */
 } GapEditScript;
 
 typedef struct GapEditBlock {
