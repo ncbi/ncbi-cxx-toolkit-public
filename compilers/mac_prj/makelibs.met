@@ -4,7 +4,7 @@
 	An AppleScript to compile the NCBI C++ Toolkit base libraries with
 	Metrowerks CodeWarrior.
 
-	$Id: makelibs.met,v 1.16 2001/07/11 21:37:35 juran Exp $
+	$Id: makelibs.met,v 1.17 2001/08/28 18:05:18 thiessen Exp $
 	
 	Revision History:
 	----------------
@@ -51,6 +51,9 @@ global gMWCWfolder
 
 global NCBICPP
 
+global NCBICTOOLKIT
+global DOLIBCTOOLS
+
 global SOURCEFILES
 global INCLUDEFILES
 global LIBRARIES
@@ -84,6 +87,21 @@ on DoSetGlobals()
 			tell me to set IntCpp to ResolveAlias(Internal & "c++")
 			set NCBICPP to IntCpp
 		end try
+		
+		set NCBICTOOLKIT to gMW6root & "ncbi:"
+		try
+			tell me to set Dev to ResolveAlias(gStartupDisk & "Development")
+			tell me to set Trees to ResolveAlias(Dev & "Trees")
+			tell me to set NCBIgroup to ResolveAlias(Trees & "NCBI")
+			tell me to set Vault to ResolveAlias(NCBIgroup & "ncbi.vault")
+			tell me to set Distrib to ResolveAlias(Vault & "distrib")
+			set NCBICTOOLKIT to Distrib
+		end try
+		if exists folder NCBICTOOLKIT then
+			set DOLIBCTOOLS to true
+		else
+			set DOLIBCTOOLS to false
+		end if
 		
 		set SOURCEFILES to NCBICPP & "src:" as string
 		set INCLUDEFILES to NCBICPP & "include:" as string
@@ -406,6 +424,10 @@ on SetupTarget(projName, projFiles, prefixFile, flags)
 			my SetDebugSettings(false)
 		end if
 		
+		if DOLIBCTOOLS and projName is "ctools" then
+			Set Preferences of panel "Access Paths" to {System Paths:{{name:NCBICTOOLKIT, recursive:true, origin:absolute}}}
+		end if
+		
 		Reset File Paths
 		
 	end tell
@@ -606,6 +628,11 @@ on CreateAllProjects()
 		
 	end if
 	
+	if DOLIBCTOOLS then
+		my CreateSimpleProject("ctools", "ctools:", Â
+			{"ctools"})
+	end if
+	
 end CreateAllProjects
 
 on BuildLibraries(myLibs)
@@ -653,6 +680,11 @@ on BuildAllLibraries()
 			"object_seqalign", "object_seqblock", "object_seqcode", "object_seqfeat", "object_seqloc", Â
 			"object_seqres", "object_seqset", "object_submit", "objmgr", Â
 			"object_id1", "object_cn3d", "object_entrez2", "object_mim"}
+		BuildLibraries(myLibs)
+	end if
+	
+	if DOLIBCTOOLS then
+		set myLibs to {"ctools"}
 		BuildLibraries(myLibs)
 	end if
 	
