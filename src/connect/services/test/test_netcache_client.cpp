@@ -75,14 +75,23 @@ struct STransactionInfo
 
 /// @internal
 static 
-bool s_CheckExists(const string& host, unsigned short port, const string& key)
+bool s_CheckExists(const string&  host, 
+                   unsigned short port, 
+                   const string&  key,
+                   unsigned char* buf = 0,
+                   size_t         buf_size = 0)
 {
     CSocket sock(host, port);
     CNetCacheClient nc_client(&sock);
 
     unsigned char dataBuf[1024] = {0,};
-    CNetCacheClient::EReadResult rres = 
-        nc_client.GetData(key, dataBuf, sizeof(dataBuf));
+
+    if (buf == 0 || buf_size == 0) {
+        buf = dataBuf;
+        buf_size = sizeof(dataBuf);
+    }
+
+    CNetCacheClient::EReadResult rres = nc_client.GetData(key, buf, buf_size);
 
     if (rres == CNetCacheClient::eNotFound)
         return false;
@@ -92,7 +101,7 @@ bool s_CheckExists(const string& host, unsigned short port, const string& key)
 
 /// @internal
 static
-void s_PutBlob(const string&             host,
+string s_PutBlob(const string&             host,
                unsigned short            port,
                const void*               buf, 
                size_t                    size, 
@@ -110,6 +119,7 @@ void s_PutBlob(const string&             host,
     info.transaction_time = sw.Elapsed();
 
     log->push_back(info);
+    return info.key;
 }
 
 /// @internal
@@ -150,13 +160,63 @@ void s_StressTest(const string&             host,
          << " Repeats = " << repeats
          << ". Please wait... " << endl;
 
-    AutoPtr<char, ArrayDeleter<char> > buf = new char[size];
-    memset(buf.get(), 0, size);
+    AutoPtr<char, ArrayDeleter<char> > buf  = new char[size];
+    AutoPtr<char, ArrayDeleter<char> > buf2 = new char[size];
+    memset(buf.get(),  0, size);
+    memset(buf2.get(), 0, size);
 
-    for (unsigned i = 0; i < repeats; ++i) {
-        s_PutBlob(host, port, buf.get(), size, log);
+    string key;
+    for (unsigned i = 0; i < repeats; ) {
+        
+        vector<string> keys;
+        vector<unsigned> idx0;
+        vector<unsigned> idx1;
 
-        if (i % 1000 == 0) cout << "." << flush;
+        unsigned j;
+        for (j = 0; j < 100 && i < repeats; ++j, ++i) {
+            unsigned i0, i1;
+            i0 = rand() % (size-1);
+            i1 = rand() % (size-1);
+
+            char* ch = buf.get();
+            ch[i0] = 10;
+            ch[i1] = 127;
+
+            key = s_PutBlob(host, port, buf.get(), size, log);
+
+            keys.push_back(key);
+            idx0.push_back(i0);
+            idx1.push_back(i1);
+
+            ch[i0] = ch[i1] = 0;
+
+            if (i % 1000 == 0) cout << "." << flush;
+        }
+
+        for (unsigned k = 0; k < j; ++k) {
+            key = keys[k];
+
+            unsigned i0, i1;
+            i0 = idx0[k];
+            i1 = idx1[k];
+
+            char* ch = buf.get();
+            ch[i0] = 10;
+            ch[i1] = 127;
+
+            bool exists = 
+                s_CheckExists(host, port, key, (unsigned char*)buf2.get(), size);
+            assert(exists);
+
+            int cmp = memcmp(buf.get(), buf2.get(), size);
+            assert(cmp == 0);
+            ch[i0] = ch[i1] = 0;
+        }
+
+        keys.resize(0);
+        idx0.resize(0);
+        idx1.resize(0);
+
     }
     cout << endl;
 }
@@ -296,6 +356,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/10/25 15:16:20  kuznets
+ * Added more tests
+ *
  * Revision 1.6  2004/10/20 20:53:36  ucko
  * s_ReportStatistics: GCC 2.95 lacks "fixed" as a manipulator.
  *
