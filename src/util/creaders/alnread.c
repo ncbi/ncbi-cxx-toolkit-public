@@ -2856,9 +2856,9 @@ s_ReadAlignFileRaw
                 len = strcspn (tmp, " \t\r");
                 if (len > 0) {
                     cp = tmp + len;
-                    len = strspn (tmp, " \t\r");
+                    len = strspn (cp, " \t\r");
                     if (len > 0) {
-                        cp = tmp + len;
+                        cp = cp + len;
                     }
                     if (*cp == 0) {
                         this_pattern = s_GetBlockPattern (tmp);
@@ -3855,7 +3855,10 @@ s_AugmentOffsetList
     line_counter = 0;
     sip = list;
     while (sip != NULL) {
-        if (next_offset != NULL  &&  line_counter == next_offset->ival) {
+        /* if we are somehow out of synch, don't get caught in infinite loop */
+        if (next_offset != NULL  &&  line_counter > next_offset->ival) {
+            next_offset = next_offset->next;
+        } else if (next_offset != NULL  &&  line_counter == next_offset->ival) {
             skipped_previous = eFalse;
             prev_offset = next_offset;
             next_offset = next_offset->next;
@@ -4959,6 +4962,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/04 19:49:11  bollin
+ * fixed infinite loop condition in s_AugmentOffsetList, properly skip over first non-space column when looking for interleaved block patterns in s_ReadAlignFileRaw
+ *
  * Revision 1.1  2004/02/03 16:47:02  ucko
  * Add Colleen Bollin's Toolkit-independent alignment reader.
  *
