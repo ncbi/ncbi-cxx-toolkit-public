@@ -33,13 +33,14 @@
  *
  */
 
+#include <connect/connect_export.h>
 #include <corelib/ncbiexpt.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XNCBI_EXPORT CConnException : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_XCONNECT_EXPORT CConnException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -62,6 +63,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2003/01/17 18:53:16  lavr
+ * Explicitly include <connect/connect_export.h>
+ *
  * Revision 6.4  2002/12/19 17:23:11  lavr
  * Replace CConn_Exception with CConnException derived from CException
  *

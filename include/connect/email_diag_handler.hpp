@@ -33,6 +33,7 @@
  *
  */
 
+#include <connect/connect_export.h>
 #include <corelib/ncbistd.hpp>
 
 
@@ -71,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2003/01/17 18:53:16  lavr
+ * Explicitly include <connect/connect_export.h>
+ *
  * Revision 6.3  2002/12/19 14:51:48  dicuccio
  * Added export specifier for Win32 DLL builds.
  *
