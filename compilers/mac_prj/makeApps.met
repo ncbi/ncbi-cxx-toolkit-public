@@ -26,6 +26,9 @@ property pCreateProfiledTargets : false
 -- Whether to compile anything.
 property pShouldBuild : true
 
+-- do test/demo applications
+property pBuildDemos :	false
+
 property pStationeryName : "ApplicationStationery"
 
 property pTargetKeyWords : "MSL BSD Debug Final"
@@ -225,11 +228,11 @@ on SetProjectData()
 		set commonObjLibs to {Â
 			"xncbi", "xser", "xutil", Â
 			"seqset", "seq", "seqres", "seqloc", Â
-			"seqcode", "seqalign", "seqfeat", "seqblock", Â
+			"seqcode", "seqalign", "seqfeat", "seqblock", "sequtil", Â
 			"pub", "medline", "biblio", "general", "submit"}
 		
 		set objMgrLibs to {Â
-			"seq", "seqcode", "cdd", "seqset", Â
+			"seq", "seqcode", "cdd", "seqset","sequtil",  Â
 			"pub", "biblio", "pubmed", "medline", Â
 			"general", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "z", "bz2", "xcompress"}
 		
@@ -245,12 +248,13 @@ on SetProjectData()
 		
 	end tell
 	
-	-- fluid
+		-- fluid
 	set saveCppExt to pCPlusPlusExt
 	set pCPlusPlusExt to ".cxx"
 	set fluidFileData to mkFileData(gFLTKRootFolder & "fluid")
 	AddProject(DataPlusLibs(ProjectData("fluid", {"fltklib"}, {fluidFileData}), {"fltk"}, {}))
 	set pCPlusPlusExt to saveCppExt
+	
 	
 	---------- GENOME WORK BENCH ----------
 	AddAppProject("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", Â
@@ -267,8 +271,17 @@ on SetProjectData()
 		objMgrLibs & {"xvalidate"}, {}))
 	AddProject(DataPlusLibs(SimpleProjectData("id1_fetch_simple", "app:id1_fetch", {"C++", "sockets"}), Â
 		commonObjLibs & {"id1", "xconnect"}, {}))
+
+	if pBuildDemos then
+	---- DEMO ---
+	AddAppProject("demo_seqgraphic", {"fltk"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "xalnmgr"}, {"gui_core"})
+
+	AddAppProject("demo_regedit", {"fltk"}, "gui:dialogs:registry:demo", Â
+		{"gui_dlg_registry", "gui_utils", "w_flek", "w_fltable", "xncbi", "fltk"}, {})
 	
-	
+	AddAppProject("test_toggletree", {"fltk"}, "gui:widgets:Flek:demo", Â
+		{"w_flek", "xncbi", "fltk"}, {})
+	end if
 end SetProjectData
 
 
