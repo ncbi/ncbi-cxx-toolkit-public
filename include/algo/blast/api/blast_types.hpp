@@ -45,17 +45,17 @@ BEGIN_SCOPE(blast)
 
 /// Enumeration analogous to blast_type_* defines from blast_def.h
 enum EProgram {
-    eBlastn = 0,        //< Nucl-Nucl (traditional blastn)
-    eBlastp,            //< Protein-Protein
-    eBlastx,            //< Translated nucl-Protein
-    eTblastn,           //< Protein-Translated nucl
-    eTblastx,           //< Translated nucl-Translated nucl
-    eRPSBlast,          //< protein-pssm (reverse-position-specific BLAST)
-    eRPSTblastn,        //< nucleotide-pssm (RPS blast with translated query)
-    eMegablast,         //< Nucl-Nucl (traditional megablast)
-    eDiscMegablast,	//< Nucl-Nucl using discontiguous megablast
-    ePSIBlast,          //< PSI Blast
-    eBlastProgramMax    //< Undefined program
+    eBlastn = 0,        ///< Nucl-Nucl (traditional blastn)
+    eBlastp,            ///< Protein-Protein
+    eBlastx,            ///< Translated nucl-Protein
+    eTblastn,           ///< Protein-Translated nucl
+    eTblastx,           ///< Translated nucl-Translated nucl
+    eRPSBlast,          ///< protein-pssm (reverse-position-specific BLAST)
+    eRPSTblastn,        ///< nucleotide-pssm (RPS blast with translated query)
+    eMegablast,         ///< Nucl-Nucl (traditional megablast)
+    eDiscMegablast,	   ///< Nucl-Nucl using discontiguous megablast
+    ePSIBlast,          ///< PSI Blast
+    eBlastProgramMax    ///< Undefined program
 };
 
 struct SSeqLoc {
@@ -86,6 +86,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/06/14 15:41:44  dondosha
+* "Doxygenized" some comments.
+*
 * Revision 1.12  2004/05/19 14:52:00  camacho
 * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
 * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i

@@ -126,9 +126,9 @@ protected:
 
 private:
     // Data members received from client code
-    TSeqLocVector        m_tQueries;         //< query sequence(s)
-    TSeqLocVector        m_tSubjects;        //< sequence(s) to BLAST against
-    CRef<CBlastOptionsHandle>  m_OptsHandle;         //< Blast options
+    TSeqLocVector        m_tQueries;         ///< query sequence(s)
+    TSeqLocVector        m_tSubjects;        ///< sequence(s) to BLAST against
+    CRef<CBlastOptionsHandle>  m_OptsHandle; ///< Blast options
 
     ///< Common initialization code for all c-tors
     void x_InitSeqs(const TSeqLocVector& queries, const TSeqLocVector& subjs);
@@ -269,6 +269,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2004/06/14 15:41:44  dondosha
+* "Doxygenized" some comments.
+*
 * Revision 1.33  2004/05/14 17:15:59  dondosha
 * BlastReturnStat structure changed to BlastDiagnostics and refactored
 *
