@@ -75,7 +75,7 @@ class CSeqMap_CI;
 class CSeqMapResolved_CI;
 class CSeqMap_Delta_seqs;
 
-class CSeqMap : public CObject
+class NCBI_XOBJMGR_EXPORT CSeqMap : public CObject
 {
 public:
     // typedefs
@@ -92,10 +92,9 @@ public:
     };
 
 protected:
-    class CSegment;
-    class SPosLessSegment;
     friend class CSegment;
     friend class SPosLessSegment;
+    friend class CSeqMap_SeqPoss;
 
     class CSegment
     {
@@ -206,8 +205,8 @@ private:
 
 private:
     // Prohibit copy operator and constructor
-    CSeqMap(const CSeqMap&);
-    CSeqMap& operator= (const CSeqMap&);
+    CSeqMap(const CSeqMap&) { THROW1_TRACE(runtime_error, "unimplemented"); }
+    CSeqMap& operator= (const CSeqMap&) { THROW1_TRACE(runtime_error, "unimplemented"); }
     
 protected:    
     // interface for iterators
@@ -274,6 +273,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/12/26 20:48:22  dicuccio
+* Added Win32 export specifier.  Added obtuse work-around for unimplemented copy
+* ctor / assignment operator.
+*
 * Revision 1.22  2002/12/26 16:39:21  vasilche
 * Object manager class CSeqMap rewritten.
 *
