@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.276 2004/03/12 15:20:40 ucko Exp $
+#  $Id: configure.ac,v 1.277 2004/03/12 18:51:41 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3246,7 +3246,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(sqlite,
 NCBI_CHECK_THIRD_PARTY_LIB(oechem,
  AC_LANG_PROGRAM([#include <oechem.h>],
     [OEChem::OEMol mol; OEChem::OEConfBase* c = mol.GetActive();]),
- -loesystem -loeplatform -lz)
+ -loesystem -loeplatform -lz $NETWORK_LIBS)
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
