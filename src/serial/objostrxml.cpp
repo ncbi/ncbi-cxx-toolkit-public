@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/01/22 20:53:09  gouriano
+* more control on how a float value is to be written
+*
 * Revision 1.46  2003/01/21 19:32:26  gouriano
 * corrected reading containers of primitive types
 *
@@ -245,7 +248,8 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
       m_LastTagAction(eTagClose), m_EndTag(true),
       m_UseDefaultDTDFilePrefix(true),
       m_UsePublicId(true),
-      m_Attlist(false), m_StdXml(false)
+      m_Attlist(false), m_StdXml(false),
+      m_RealFmt(eRealScientificFormat)
 {
     m_Output.SetBackLimit(1);
 }
@@ -258,6 +262,18 @@ ESerialDataFormat CObjectOStreamXml::GetDataFormat(void) const
 {
     return eSerial_Xml;
 }
+
+CObjectOStreamXml::ERealValueFormat
+    CObjectOStreamXml::GetRealValueFormat(void) const
+{
+    return m_RealFmt;
+}
+void CObjectOStreamXml::SetRealValueFormat(
+    CObjectOStreamXml::ERealValueFormat fmt)
+{
+    m_RealFmt = fmt;
+}
+
 
 string CObjectOStreamXml::GetPosition(void) const
 {
@@ -457,29 +473,20 @@ void CObjectOStreamXml::WriteUint8(Uint8 data)
 
 void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
 {
-    int shift = int(ceil(log10(fabs(data))));
-    int precision = int(digits - shift);
-    if ( precision < 0 )
-        precision = 0;
-    if ( precision > 64 ) // limit precision of data
-        precision = 64;
-
-    char buffer[128];
-    // ensure buffer is large enough to fit result
-    // (additional bytes are for sign, dot and exponent)
-    _ASSERT(sizeof(buffer) > size_t(precision + 16));
-    int width = sprintf(buffer, "%.*f", precision, data);
-    if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
-        ThrowError(fOverflow, "buffer overflow");
-    _ASSERT(int(strlen(buffer)) == width);
-    if ( precision != 0 ) { // skip trailing zeroes
-        while ( buffer[width - 1] == '0' ) {
-            --width;
-        }
-        if ( buffer[width - 1] == '.' )
-            --width;
+    char buffer[512];
+    SIZE_TYPE width;
+    if (m_RealFmt == eRealFixedFormat) {
+        int shift = int(ceil(log10(fabs(data))));
+        int precision = int(digits - shift);
+        if ( precision < 0 )
+            precision = 0;
+        if ( precision > 64 ) // limit precision of data
+            precision = 64;
+        width = NStr::DoubleToString(data, (unsigned int)precision,
+                                    buffer, sizeof(buffer));
+    } else {
+        width = sprintf(buffer, "%.*g", digits, data);
     }
-
     m_Output.PutString(buffer, width);
 }
 

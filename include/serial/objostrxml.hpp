@@ -85,6 +85,13 @@ public:
     void SetDTDPublicId(const string& publicId);
     string GetDTDPublicId(void) const;
 
+    enum ERealValueFormat {
+        eRealFixedFormat,
+        eRealScientificFormat
+    };
+    ERealValueFormat GetRealValueFormat(void) const;
+    void SetRealValueFormat(ERealValueFormat fmt);
+
 protected:
     virtual void WriteBool(bool data);
     virtual void WriteChar(char data);
@@ -230,6 +237,7 @@ private:
     static string sm_DefaultDTDFilePrefix;
     bool m_Attlist;
     bool m_StdXml;
+    ERealValueFormat m_RealFmt;
 };
 
 #include <serial/objostrxml.inl>
@@ -242,6 +250,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/01/22 20:51:10  gouriano
+* more control on how a float value is to be written
+*
 * Revision 1.26  2003/01/10 16:53:36  gouriano
 * fixed a bug with optional class members
 *
