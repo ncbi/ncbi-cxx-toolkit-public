@@ -4,9 +4,6 @@
 # Build library "xstruct_dp"
 #################################
 
-SRC = \
-	block_align
+SRC = block_align
 
 LIB = xstruct_dp
-
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/..
