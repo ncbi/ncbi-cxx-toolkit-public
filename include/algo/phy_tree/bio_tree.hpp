@@ -197,6 +197,12 @@ public:
     /// Feature ids are auto incremented variable managed by the class.
     TBioTreeFeatureId Register(const string& feature_name);
 
+	/// Register new feature.
+	/// @note
+	/// Feature counter remains unchanged.
+	/// Please do not mix auto counted Regsiter and this method.
+	void Register(TBioTreeFeatureId id, const string& feature_name);
+
     /// If feature is already registered returns its id by name.
     /// If feature does not exist returns 0.
     TBioTreeFeatureId GetId(const string& feature_name) const;
@@ -265,6 +271,7 @@ public:
         return func.GetNode();
     }
 
+
     /// Add feature to the tree node
     /// Function controls that the feature is registered in the 
     /// feature dictionary of this tree.
@@ -330,15 +337,18 @@ public:
     const TBioTreeNode* GetTreeNode() const { return m_TreeNode.get(); }
 
     /// Add node to the tree (node location is defined by the parent id
-    void AddNode(const TBioNodeType& node_value, 
-                 TBioTreeNodeId      parent_id)
+    TBioTreeNode* AddNode(const TBioNodeType& node_value, 
+                          TBioTreeNodeId      parent_id)
     {
+		TBioTreeNode* ret = 0;
         const TBioTreeNode* pnode = FindNode(parent_id);
         if (pnode) {
             TBioTreeNode* parent_node = const_cast<TBioTreeNode*>(pnode);
-            pnode->AddNode(node_value);
+            ret = parent_node->AddNode(node_value);
         }
+		return ret;
     }
+	
 
     /// Clear the bio tree
     void Clear()
@@ -368,7 +378,7 @@ protected:
         ETreeTraverseCode operator()(TBioTreeNode& tree_node, int delta)
         {
             if (delta == 0 || delta == 1) {
-                if (tree_node.uid == m_Uid) {
+                if (tree_node.GetValue().GetId() == m_Uid) {
                     m_Node = &tree_node;
                     return eTreeTraverseStop;
                 }
@@ -402,6 +412,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/06/01 15:20:04  kuznets
+ * Minor modifications
+ *
  * Revision 1.9  2004/05/26 15:29:10  kuznets
  * Removed dead code
  *
