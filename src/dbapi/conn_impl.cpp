@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.9  2002/06/21 14:42:31  kholodov
+* Added: reporting connection deletions in debug mode
+*
 * Revision 1.8  2002/05/16 22:11:11  kholodov
 * Improved: using minimum connections possible
 *
@@ -104,6 +107,9 @@ void CConnection::Connect(const string& user,
 
 CConnection::~CConnection()
 {
+    if( IsAux() ) {
+        _TRACE("Auxiliary connection is being deleted...");
+    }
     Close();
     Notify(CDbapiDeletedEvent(this));
 }
