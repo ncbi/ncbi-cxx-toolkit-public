@@ -139,7 +139,6 @@ static SERV_ITER s_Open(const char* service, TSERV_Type type,
     iter->external       = external;
 
     if (n_skip) {
-        TNCBI_Time t = (TNCBI_Time) time(0);
         size_t i;
         for (i = 0; i < n_skip; i++) {
             size_t   skipinfolen = SERV_SizeOfInfo(skip[i]);
@@ -149,7 +148,7 @@ static SERV_ITER s_Open(const char* service, TSERV_Type type,
                 return 0;
             }
             memcpy(skipinfo, skip[i], skipinfolen);
-            skipinfo->time = t + 3600/*hour*/*24/*day*/*365/*year :-) */;
+            skipinfo->time = (TNCBI_Time)(-1);
             if (!s_AddSkipInfo(iter, skipinfo)) {
                 free(skipinfo);
                 SERV_Close(iter);
@@ -474,6 +473,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.52  2004/05/17 18:19:43  lavr
+ * Mark skip infos with maximal time instead of calculating 1 year from now
+ *
  * Revision 6.51  2004/03/23 02:28:21  lavr
  * Limit service name resolution recursion by 8
  *
