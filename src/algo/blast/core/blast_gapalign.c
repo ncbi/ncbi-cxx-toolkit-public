@@ -44,11 +44,12 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/greedy_align.h>
 
-static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlk* query, 
-   BLAST_SequenceBlk* subject, BlastGapAlignStruct* gap_align,
+static Int2 BLAST_GreedyNtGappedAlignment(Uint1* query, Uint1* subject,
+   Int4 query_length, Int4 subject_length,
+   BlastGapAlignStruct* gap_align,
    const BlastScoringOptions* score_options, 
    const BlastExtensionOptions* ext_options,
-   BlastInitHSP* init_hsp);
+   Int4 q_off, Int4 s_off, Boolean compressed_subject);
 static Int2 BLAST_DynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk, 
    BLAST_SequenceBlk* subject_blk, BlastGapAlignStruct* gap_align, 
    const BlastScoringOptions* score_options, BlastInitHSP* init_hsp);
@@ -555,6 +556,8 @@ BLAST_GapAlignStructNew(const BlastScoringOptions* score_options,
       if (!gap_align->greedy_align_mem)
          gap_align = BLAST_GapAlignStructFree(gap_align);
    }
+
+   gap_align->positionBased = (sbp->posMatrix != NULL);
 
    return status;
 }
@@ -1522,8 +1525,10 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
       if (!delete_hsp) {
          Boolean good_hit = TRUE;
             
-         BLAST_GreedyNtGappedAlignment(query, subject, gap_align, 
-            score_options, ext_options, init_hsp);
+         BLAST_GreedyNtGappedAlignment(query->sequence, subject->sequence,
+            query->length, subject->length, gap_align, 
+            score_options, ext_options, init_hsp->q_off, init_hsp->s_off, 
+            TRUE);
          /* For neighboring we have a stricter criterion to keep an HSP */
          if (hit_options->is_neighboring) {
             Int4 hsp_length;
@@ -1590,21 +1595,26 @@ MBToGapEditScript (MBGapEditScript* ed_script)
  * performed, gap information.
  * @param query The query sequence [in]
  * @param subject The subject sequence [in]
+ * @param query_length The query sequence length [in]
+ * @param subject The subject sequence length [in]
  * @param gap_align The structure holding various information and memory 
  *        needed for gapped alignment [in] [out]
  * @param score_options Options related to scoring alignments [in]
  * @param ext_options Options related to alignment extension [in]
- * @param init_hsp The initial HSP information [in]
+ * @param q_off Starting offset in query [in]
+ * @param s_off Starting offset in subject [in]
+ * @param compressed_subject Is subject sequence compressed? [in]
  */
-static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlk* query, 
-   BLAST_SequenceBlk* subject, BlastGapAlignStruct* gap_align,
+static Int2 
+BLAST_GreedyNtGappedAlignment(Uint1* query, Uint1* subject, 
+   Int4 query_length, Int4 subject_length, BlastGapAlignStruct* gap_align,
    const BlastScoringOptions* score_options, 
    const BlastExtensionOptions* ext_options,
-   BlastInitHSP* init_hsp)
+   Int4 q_off, Int4 s_off, Boolean compressed_subject)
 {
    Uint1* q;
+   Uint1* s;
    Int4 score;
-   Uint1* s,* subject0;
    Int4 X;
    Int4 q_avail, s_avail;
    /* Variables for the call to MegaBlastGreedyAlign */
@@ -1612,17 +1622,25 @@ static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlk* query,
    MBGapEditScript *ed_script_fwd=NULL, *ed_script_rev=NULL;
    Uint1 rem;
    GapEditScript* esp = NULL;
-   Boolean do_traceback = 
-      (ext_options->algorithm_type != EXTEND_GREEDY_NO_TRACEBACK);
+   /* Traceback is needed either when greedy extension does traceback
+      immediately from the initial word hits, or if this is a 
+      final alignment. */
+   Boolean do_traceback = (!compressed_subject ||
+      (ext_options->algorithm_type == EXTEND_GREEDY) );
    
-   subject0 = subject->sequence;
-   q_avail = query->length - init_hsp->q_off;
-   s_avail = subject->length - init_hsp->s_off;
+   q_avail = query_length - q_off;
+   s_avail = subject_length - s_off;
    
-   q = query->sequence + init_hsp->q_off;
-   s = subject0 + init_hsp->s_off/4;
-   rem = init_hsp->s_off % 4;
-   
+   q = query + q_off;
+   if (!compressed_subject) {
+      s = subject + s_off;
+      rem = 4; /* Special value to indicate that sequence is already
+                  uncompressed */
+   } else {
+      s = subject + s_off/4;
+      rem = s_off % 4;
+   }
+
    /* Find where positive scoring starts & ends within the word hit */
    score = 0;
    
@@ -1640,10 +1658,12 @@ static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlk* query,
               &s_ext_r, &q_ext_r, gap_align->greedy_align_mem, 
               ed_script_fwd, rem);
 
-   rem = 0;
+   if (compressed_subject)
+      rem = 0;
+
    /* extend to the left */
-   score += BLAST_AffineGreedyAlign(subject0, init_hsp->s_off, 
-               query->sequence, init_hsp->q_off, TRUE, X, 
+   score += BLAST_AffineGreedyAlign(subject, s_off, 
+               query, q_off, TRUE, X, 
                score_options->reward, -score_options->penalty, 
                score_options->gap_open, score_options->gap_extend, 
                &s_ext_l, &q_ext_l, gap_align->greedy_align_mem, 
@@ -1671,9 +1691,9 @@ static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlk* query,
    MBGapEditScriptFree(ed_script_fwd);
    MBGapEditScriptFree(ed_script_rev);
    
-   BLAST_GapAlignStructFill(gap_align, init_hsp->q_off-q_ext_l, 
-      init_hsp->s_off-s_ext_l, init_hsp->q_off+q_ext_r, 
-      init_hsp->s_off+s_ext_r, score, esp);
+   BLAST_GapAlignStructFill(gap_align, q_off-q_ext_l, 
+      s_off-s_ext_l, q_off+q_ext_r, 
+      s_off+s_ext_r, score, esp);
    return 0;
 }
 
@@ -2731,6 +2751,7 @@ BLAST_OOFTracebackToGapEditBlock(Int4* S, Int4 q_length,
 Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1* query, 
         Uint1* subject, BlastGapAlignStruct* gap_align, 
         const BlastScoringOptions* score_options,
+        const BlastExtensionOptions* ext_options,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length)
 {
     Boolean found_start, found_end;
@@ -2744,6 +2765,14 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1* query,
     if (gap_align == NULL)
         return -1;
     
+    /* If greedy extension was performed without traceback for preliminary
+       gapped alignment, use greedy algorithm for final alignment as well. */
+    if (ext_options->algorithm_type == EXTEND_GREEDY_NO_TRACEBACK) {
+       return BLAST_GreedyNtGappedAlignment(query, subject, 
+                 query_length, subject_length, gap_align, 
+                 score_options, ext_options, q_start, s_start, FALSE);
+    }
+
     found_start = FALSE;
     found_end = FALSE;
     

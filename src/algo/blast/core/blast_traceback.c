@@ -403,6 +403,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    BlastQueryInfo* query_info,
    BlastGapAlignStruct* gap_align, BlastScoreBlk* sbp, 
    const BlastScoringOptions* score_options,
+   const BlastExtensionOptions* ext_options,
    BlastHitSavingParameters* hit_params,
    const BlastDatabaseOptions* db_options)
 {
@@ -573,8 +574,8 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
                subject_length);
          } else {
             BLAST_GappedAlignmentWithTraceback(program_number, query, subject, 
-               gap_align, score_options, q_start, s_start, query_length, 
-               subject_length);
+               gap_align, score_options, ext_options, q_start, s_start, 
+               query_length, subject_length);
          }
 
          if (gap_align->score >= min_score_to_keep) {
@@ -826,7 +827,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results,
 
             BlastHSPListGetTraceback(program_number, hsp_list, query, 
                seq_arg.seq, query_info, gap_align, sbp, score_options, 
-               hit_params, db_options);
+               ext_params, hit_params, db_options);
          }
       }
    }
@@ -893,8 +894,8 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
 
       if (!hsp_list->traceback_done) {
          BlastHSPListGetTraceback(program_number, hsp_list, query, subject, 
-            query_info, gap_align, sbp, score_options, hit_params, db_options);
-
+            query_info, gap_align, sbp, score_options, ext_params->options, 
+            hit_params, db_options);
       }
    }
 

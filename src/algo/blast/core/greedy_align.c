@@ -697,6 +697,8 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* s1, Int4 len1,
     flast_d = gamp->flast_d_affine;
     if (S==NULL) {
         space = 0;
+    } else if (!space) {
+       gamp->space = space = MBSpaceNew();
     } else { 
         refresh_mb_space(space);
     }
