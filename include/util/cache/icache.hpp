@@ -111,6 +111,10 @@ public:
     /// @sa GetExpirationPolicy(), SetExpirationPolicy()
     virtual int GetTimeout() const = 0;
 
+    /// @return
+    ///    TRUE if cache is open and operational
+    virtual bool IsOpen() const = 0;
+
 
     /// If to keep already cached versions of the BLOB when storing
     /// another version of it (not necessarily a newer one)
@@ -294,6 +298,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/07/27 14:04:00  kuznets
+ * +IsOpen
+ *
  * Revision 1.6  2004/07/19 16:10:47  kuznets
  * + Remove for key,version,subkey
  *

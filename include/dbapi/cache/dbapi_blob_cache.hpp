@@ -138,6 +138,7 @@ public:
     // ICache interface 
 
     virtual void SetTimeStampPolicy(TTimeStampFlags policy, int timeout);
+    virtual bool IsOpen() const { return m_Conn != 0; }
     virtual TTimeStampFlags GetTimeStampPolicy() const;
     virtual int GetTimeout() const;
     virtual void SetVersionRetention(EKeepVersions policy);
@@ -288,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/27 14:04:30  kuznets
+ * +IsOpen
+ *
  * Revision 1.5  2004/07/26 17:04:21  kuznets
  * + plugin manager entry points
  *

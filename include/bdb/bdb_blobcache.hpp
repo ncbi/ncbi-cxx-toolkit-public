@@ -138,6 +138,7 @@ public:
     // ICache interface 
 
     virtual void SetTimeStampPolicy(TTimeStampFlags policy, int timeout);
+    virtual bool IsOpen() const { return m_CacheDB != 0; }
 
     virtual TTimeStampFlags GetTimeStampPolicy() const;
     virtual int GetTimeout() const;
@@ -298,6 +299,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/07/27 14:04:58  kuznets
+ * +IsOpen
+ *
  * Revision 1.23  2004/07/27 13:37:23  kuznets
  * + ICache_bdbcache entry point
  *
