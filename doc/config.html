@@ -43,16 +43,16 @@ from a distribution archive. In either case, the root directory will
 contain:
 <ul>
   <li> Set of files needed for the platform-specific
-       <a href="#ref_Autoconf">configuration and installation</a>
-        with the
+		 <a href="#ref_Running">configuration and installation</a>
+		 with the
        <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">
        autoconf</a> utility.
-       It includes pre-built multiplatform <i>"configure"</i> script and
-       its <a href="#ref_Wrappers">platform-specific "wrappers"</a>
+       It includes pre-built multiplatform <i>"configure"</i> script and its
+       <a href="#ref_Wrappers">platform-specific "wrappers"</a>
        in the <i><b>"compilers/"</b></i> directory.
        Here is also a template for the configuration header file
        <i>"config.h.in"</i> and
-       <a href="#ref_PreGen">pre-built configuration headers</a>
+       <a href="#ref_PreBuiltHeaders">pre-built configuration headers</a>
        (<i>"ncbiconf.*"</i>) for some platforms.
 
   <li> <i><b>"doc/"</b></i> directory. -- 
@@ -61,17 +61,15 @@ contain:
        <b>everybody</b> writing on C++ in NCBI SWG.
 
   <li> <i><b>"src/"</b> and <b>"include/"</b></i> directories. --
-       These two contain hierarchical directory tree of NCBI C++
-       projects, so that each project has its source and header directories
+       These two contain a hierarchical directory tree of
+       <a href="new_proj.html">NCBI C++ projects</a>
+       , so that each project has its source and header directories
        mirrored (e.g. <i>"src/corelib/" correstonds to "include/corelib/"</i>).
        The <i><b>"src/"</b></i> directory also contains generic makefile
        templates (<i>"src/Makefile.*.in</i>") and configurable makefiles for
        each project or sub-project
        (like e.g. <i>"src/corelib/Makefile.*.in"</i>
        and <i>"src/corelib/test/Makefile.*.in"</i>).
-       For a more detailed information on the project directory structure, etc.
-       see in
-       <a href="new_proj.html">Starting new C++ project</a>.
 </ul>
 
 
@@ -173,6 +171,9 @@ However, one can alternate its location by specifying optional
 parameter <i>"--exec_prefix"</i> to the <b><i>configure</i></b>
 script. For example, <i>"configure --exec_prefix=my_foo_dir"</i> would deploy
 the build tree into directory <i>"my_foo_dir"</i>.
+There is a "special case"(<i>"configure --exec_prefix=."</i>) -- for the people
+who usually do not need different builds, and who prefer to have object
+files, libraries and executables where the sources are located.
 
 <p>
 User can specify C and C++ compilers to use by setting environment variables
@@ -233,6 +234,7 @@ The produced makefiles can be processed by the GNU <b><i>make</i></b>
 utility for NT.
 
 <p>
+<a name="ref_PreBuiltHeaders"></a>
 However, most NT users have neither <b><i>sh</b></i>-like interpreter nor
 GNU <b><i>make</i></b> installed on their PCs. -- They can use pre-built
 <i>"ncbiconf.ms6"</i> configuration header (also located in the
@@ -254,11 +256,13 @@ SunPro 5.0 compilers using CVS repository and relevant <i>wrapper script</i>
 cvs checkout -d cpp_foo internal/c++
 
 # Configure (see in "sunpro50.sh" for the compiler and linker flags and tools)
+# Note:  the build tree will be deployed into the source tree -- as
+#        "sunpro50.sh" calls "configure" with "--exec_prefix=."
 cd cpp_foo
 sh compilers/sunpro50.sh
 
-# Build recursively (in the default build directory located in "cpp_foo/exec")
-cd cpp_foo/exec/build
+# Perform a recursive build
+cd cpp_foo/src
 make all_r
 </pre>
 
