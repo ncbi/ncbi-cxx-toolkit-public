@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/iterator.hpp>
+#include <util/static_map.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -2173,70 +2174,141 @@ CRef<CSeq_loc> SRelLoc::Resolve(const CSeq_loc& new_parent, CScope* scope,
 // =======
 
 // Constructors and Destructors:
-CSeqSearch::CSeqSearch(IClient *client, bool allow_mismatch) :
-    m_AllowOneMismatch(allow_mismatch),
-    m_MaxPatLen(0),
-    m_Client(client)
+CSeqSearch::CSeqSearch(IClient *client, TSearchFlags flags) :
+    m_Client(client), m_Flags(flags), m_LongestPattern(0), m_Fsa(true)
 {
-    InitializeMaps();
 }
 
 
-CSeqSearch::~CSeqSearch(void) {}
+CSeqSearch::~CSeqSearch(void)
+{
+}
 
 
-// Add nucleotide pattern or restriction site to sequence search.
-// Uses ambiguity codes, e.g., R = A and G, H = A, C and T
+typedef pair<Char, Char> TCharPair;
+static const TCharPair sc_comp_tbl[32] = {
+    // uppercase
+    TCharPair('A', 'T'),
+    TCharPair('B', 'V'),
+    TCharPair('C', 'G'),
+    TCharPair('D', 'H'),
+    TCharPair('G', 'C'),
+    TCharPair('H', 'D'),
+    TCharPair('K', 'M'),
+    TCharPair('M', 'K'),
+    TCharPair('N', 'N'),
+    TCharPair('R', 'Y'),
+    TCharPair('S', 'S'),
+    TCharPair('T', 'A'),
+    TCharPair('U', 'A'),
+    TCharPair('V', 'B'),
+    TCharPair('W', 'W'),
+    TCharPair('Y', 'R'),
+    // lowercase
+    TCharPair('a', 'T'),
+    TCharPair('b', 'V'),
+    TCharPair('c', 'G'),
+    TCharPair('d', 'H'),
+    TCharPair('g', 'C'),
+    TCharPair('h', 'D'),
+    TCharPair('k', 'M'),
+    TCharPair('m', 'K'),
+    TCharPair('n', 'N'),
+    TCharPair('r', 'Y'),
+    TCharPair('s', 'S'),
+    TCharPair('t', 'A'),
+    TCharPair('u', 'A'),
+    TCharPair('v', 'B'),
+    TCharPair('w', 'W'),
+    TCharPair('y', 'R'),
+};
+typedef CStaticArrayMap<Char, Char> TComplement;
+static const TComplement sc_Complement(sc_comp_tbl, sizeof(sc_comp_tbl));
+static const TComplement::const_iterator comp_end = sc_Complement.end();
+
+
+inline
+static char s_GetComplement(char c)
+{
+    TComplement::const_iterator comp_it = sc_Complement.find(c);
+    return (comp_it != comp_end) ? comp_it->second : '\0';
+}
+
+
+static string s_GetReverseComplement(const string& sequence)
+{
+    string revcomp;
+    revcomp.reserve(sequence.length());
+    string::const_reverse_iterator rend = sequence.rend();
+
+    for (string::const_reverse_iterator rit = sequence.rbegin(); rit != rend; ++rit) {
+        revcomp += s_GetComplement(*rit);
+    }
+
+    return revcomp;
+}
+
+
 void CSeqSearch::AddNucleotidePattern
 (const string& name,
-const string& pat, 
-int cut_site,
-int overhang)
+ const string& sequence,
+ Int2          cut_site,
+ TSearchFlags  flags)
 {
-    string pattern = pat;
+    if (NStr::IsBlank(name)  ||  NStr::IsBlank(sequence)) {
+        NCBI_THROW(CUtilException, eNoInput, "Empty input value");
+    }
+
+    // cleanup pattern
+    string pattern = sequence;
     NStr::TruncateSpaces(pattern);
     NStr::ToUpper(pattern);
 
-    // reverse complement pattern to see if it is symetrical
-    string rcomp = ReverseComplement(pattern);
-
-    bool symmetric = (pattern == rcomp);
-
+    string revcomp = s_GetReverseComplement(pattern);
+    bool symmetric = (pattern == revcomp);
     ENa_strand strand = symmetric ? eNa_strand_both : eNa_strand_plus;
 
-    AddNucleotidePattern(name, pat, cut_site, overhang, strand);
-    if ( !symmetric ) {
-        AddNucleotidePattern(name, rcomp, pat.length() - cut_site, 
-                             overhang, eNa_strand_minus);
+    // record expansion of entered pattern
+    x_AddNucleotidePattern(name, pattern, cut_site, strand, flags);
+
+    // record expansion of reverse complement of asymmetric pattern
+    if (!symmetric  &&  (!x_IsJustTopStrand(flags))) {
+        size_t revcomp_cut_site = pattern.length() - cut_site;
+        x_AddNucleotidePattern(name, revcomp, revcomp_cut_site,
+            eNa_strand_minus, flags);
     }
 }
 
 
 // Program passes each character in turn to finite state machine.
 int CSeqSearch::Search
-(int current_state,
+(int  current_state,
  char ch,
- int position,
- int length)
+ int  position,
+ int  length)
 {
-    if ( !m_Client ) return 0;
+    if (m_Client == NULL) {
+        return 0;
+    }
 
     // on first character, populate state transition table
-    if ( !m_Fsa.IsPrimed() ) {
+    if (!m_Fsa.IsPrimed()) {
         m_Fsa.Prime();
     }
     
     int next_state = m_Fsa.GetNextState(current_state, ch);
     
-    // report any matches at current state to the client object
-    if ( m_Fsa.IsMatchFound(next_state) ) {
-        ITERATE( vector<CMatchInfo>, it, m_Fsa.GetMatches(next_state) ) {
-            //const CMatchInfo& match = *it;
-            int start = position - it->GetPattern().length() + 1;    
+    // report matches (if any)
+    if (m_Fsa.IsMatchFound(next_state)) {
+        ITERATE(vector<TPatternInfo>, it, m_Fsa.GetMatches(next_state)) {
+            int start = position - it->GetSequence().length() + 1;
 
             // prevent multiple reports of patterns for circular sequences.
-            if ( start < length ) {
-                m_Client->MatchFound(*it, start);
+            if (start < length) {
+                bool keep_going = m_Client->OnPatternFound(*it, start);
+                if (!keep_going) {
+                    break;
+                }
             }
         }
     }
@@ -2245,24 +2317,26 @@ int CSeqSearch::Search
 }
 
 
-// Search an entire bioseq.
+// Search entire bioseq.
 void CSeqSearch::Search(const CBioseq_Handle& bsh)
 {
-    if ( !bsh ) return;
-    if ( !m_Client ) return;  // no one to report to, so why search at all.
+    if (!bsh  ||  m_Client == NULL) {
+        return;
+    }
 
     CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     size_t seq_len = seq_vec.size();
     size_t search_len = seq_len;
 
+    // handle circular bioseqs
     CSeq_inst::ETopology topology = bsh.GetInst_Topology();
-    if ( topology == CSeq_inst::eTopology_circular ) {
-        search_len += m_MaxPatLen - 1;
+    if (topology == CSeq_inst::eTopology_circular) {
+        search_len += m_LongestPattern - 1;
     }
     
     int state = m_Fsa.GetInitialState();
 
-    for ( size_t i = 0; i < search_len; ++i ) {
+    for (size_t i = 0; i < search_len; ++i) {
         state = Search(state, seq_vec[i % seq_len], i, seq_len);
     }
 }
@@ -2271,159 +2345,178 @@ void CSeqSearch::Search(const CBioseq_Handle& bsh)
 // Private:
 // ========
 
-// translation finite state machine base codes - ncbi4na
+/// translation finite state machine base codes - ncbi4na
 enum EBaseCode {
-    eBase_gap = 0,
-        eBase_A,      /* A    */
-        eBase_C,      /* C    */
-        eBase_M,      /* AC   */
-        eBase_G,      /* G    */
-        eBase_R,      /* AG   */
-        eBase_S,      /* CG   */
-        eBase_V,      /* ACG  */
-        eBase_T,      /* T    */
-        eBase_W,      /* AT   */
-        eBase_Y,      /* CT   */
-        eBase_H,      /* ACT  */
-        eBase_K,      /* GT   */
-        eBase_D,      /* AGT  */
-        eBase_B,      /* CGT  */
-        eBase_N       /* ACGT */
+    eBase_A = 1,  ///< A
+    eBase_C,      ///< C
+    eBase_M,      ///< AC
+    eBase_G,      ///< G
+    eBase_R,      ///< AG
+    eBase_S,      ///< CG
+    eBase_V,      ///< ACG
+    eBase_T,      ///< T
+    eBase_W,      ///< AT
+    eBase_Y,      ///< CT
+    eBase_H,      ///< ACT
+    eBase_K,      ///< GT
+    eBase_D,      ///< AGT
+    eBase_B,      ///< CGT
+    eBase_N       ///< ACGT
+};
+
+/// conversion table from Ncbi4na / Iupacna to EBaseCode
+static const EBaseCode sc_CharToEnum[256] = {
+    // Ncbi4na
+    eBase_N, eBase_A, eBase_C, eBase_M,
+    eBase_G, eBase_R, eBase_S, eBase_V,
+    eBase_T, eBase_W, eBase_Y, eBase_H,
+    eBase_K, eBase_D, eBase_B, eBase_N,
+
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    // Iupacna (uppercase)
+    eBase_N, eBase_A, eBase_B, eBase_C,
+    eBase_D, eBase_N, eBase_N, eBase_G,
+    eBase_H, eBase_N, eBase_N, eBase_K,
+    eBase_N, eBase_M, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_R, eBase_S,
+    eBase_T, eBase_T, eBase_V, eBase_W,
+    eBase_N, eBase_Y, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    // Iupacna (lowercase)
+    eBase_N, eBase_A, eBase_B, eBase_C,
+    eBase_D, eBase_N, eBase_N, eBase_G,
+    eBase_H, eBase_N, eBase_N, eBase_K,
+    eBase_N, eBase_M, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_R, eBase_S,
+    eBase_T, eBase_T, eBase_V, eBase_W,
+    eBase_N, eBase_Y, eBase_N, eBase_N,
+
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N,
+    eBase_N, eBase_N, eBase_N, eBase_N
+};
+
+static const char sc_EnumToChar[16] = {
+    '\0', 'A', 'C', 'M', 'G', 'R', 'S', 'V', 'T', 'W', 'Y', 'H', 'K', 'D', 'B', 'N'
 };
 
 
-map<unsigned char, int> CSeqSearch::sm_CharToEnum;
-map<int, unsigned char> CSeqSearch::sm_EnumToChar;
-map<char, char>         CSeqSearch::sm_Complement;
-
-
-void CSeqSearch::InitializeMaps(void)
+void CSeqSearch::x_AddNucleotidePattern
+(const string& name,
+ string& pattern,
+ Int2 cut_site,
+ ENa_strand strand,
+ TSearchFlags flags)
 {
-    int c, i;
-    static const string iupacna_alphabet      = "-ACMGRSVTWYHKDBN";
-    static const string comp_iupacna_alphabet = "-TGKCYSBAWRDMHVN";
-
-    if ( sm_CharToEnum.empty() ) {
-        // illegal characters map to eBase_gap (0)
-        for ( c = 0; c < 256; ++c ) {
-            sm_CharToEnum[c] = eBase_gap;
-        }
-        
-        // map iupacna alphabet to EBaseCode
-        for (i = eBase_gap; i <= eBase_N; ++i) {
-            c = iupacna_alphabet[i];
-            sm_CharToEnum[c] = (EBaseCode)i;
-            c = tolower(c);
-            sm_CharToEnum[c] = (EBaseCode)i;
-        }
-        sm_CharToEnum ['U'] = eBase_T;
-        sm_CharToEnum ['u'] = eBase_T;
-        sm_CharToEnum ['X'] = eBase_N;
-        sm_CharToEnum ['x'] = eBase_N;
-        
-        // also map ncbi4na alphabet to EBaseCode
-        for (c = eBase_gap; c <= eBase_N; ++c) {
-            sm_CharToEnum[c] = (EBaseCode)c;
-        }
+    if (pattern.length() > m_LongestPattern) {
+        m_LongestPattern = pattern.length();
     }
     
-    // map EBaseCode to iupacna alphabet
-    if ( sm_EnumToChar.empty() ) { 
-        for (i = eBase_gap; i <= eBase_N; ++i) {
-            sm_EnumToChar[i] = iupacna_alphabet[i];
-        }
-    }
+    TPatternInfo pat_info(name, kEmptyStr, cut_site);
+    pat_info.m_Strand = strand;
 
-    // initialize table to convert character to complement character
-    if ( sm_Complement.empty() ) {
-        int len = iupacna_alphabet.length();
-        for ( i = 0; i < len; ++i ) {
-            sm_Complement.insert(make_pair(iupacna_alphabet[i], comp_iupacna_alphabet[i]));
-        }
+    if (!x_IsExpandPattern(flags)) {
+        pat_info.m_Sequence = pattern;
+        x_AddPattern(pat_info, pattern, flags);
+    } else {
+        string buffer;
+        buffer.reserve(pattern.length());
+
+        x_ExpandPattern(pattern, buffer, 0, pat_info, flags);
     }
 }
 
 
-string CSeqSearch::ReverseComplement(const string& pattern) const
+void CSeqSearch::x_ExpandPattern
+(string& sequence,
+ string& buf,
+ size_t pos,
+ TPatternInfo& pat_info,
+ TSearchFlags flags)
 {
-    size_t len = pattern.length();
-    string rcomp = pattern;
-    rcomp.resize(len);
+    static EBaseCode expansion[] = { eBase_A, eBase_C, eBase_G, eBase_T };
 
-    // calculate the complement
-    for ( size_t i = 0; i < len; ++i ) {
-        rcomp[i] = sm_Complement[pattern[i]];
-    }
+    if (pos < sequence.length()) {
+        Uint4 code = static_cast<Uint4>(sc_CharToEnum[sequence[pos]]);
 
-    // reverse the complement
-    reverse(rcomp.begin(), rcomp.end());
-
-    return rcomp;
-}
-
-
-void CSeqSearch::AddNucleotidePattern
-(const string& name,
-const string& pattern, 
-int cut_site,
-int overhang,
-ENa_strand strand)
-{
-    size_t pat_len = pattern.length();
-    string temp;
-    temp.resize(pat_len);
-    CMatchInfo info(name,
-                    CNcbiEmptyString::Get(), 
-                    cut_site, 
-                    overhang, 
-                    strand);
-
-    if ( pat_len > m_MaxPatLen ) {
-        m_MaxPatLen = pat_len;
-    }
-
-    ExpandPattern(pattern, temp, 0, pat_len, info);
-}
-
-
-void CSeqSearch::ExpandPattern
-(const string& pattern,
-string& temp,
-int position,
-int pat_len,
-CMatchInfo& info)
-{
-    static EBaseCode expension[] = { eBase_A, eBase_C, eBase_G, eBase_T };
-
-    if ( position < pat_len ) {
-        int code = sm_CharToEnum[(int)pattern[position]];
-        
-        for ( int i = 0; i < 4; ++i ) {
-            if ( code & expension[i] ) {
-                temp[position] = sm_EnumToChar[expension[i]];
-                ExpandPattern(pattern, temp, position + 1, pat_len, info);
+        for (int i = 0; i < 4; ++i) {
+            if ((code & expansion[i]) != 0) {
+                buf += sc_EnumToChar[expansion[i]];
+                x_ExpandPattern(sequence, buf, pos + 1, pat_info, flags);
+                buf.erase(pos);
             }
         }
-    } else { // recursion base
+    } else {
         // when position reaches pattern length, store one expanded string.
-        info.m_Pattern = temp;
-        m_Fsa.AddWord(info.m_Pattern, info);
+        x_AddPattern(pat_info, buf, flags);
+    }
+}
 
-        if ( m_AllowOneMismatch ) {
-            char ch;
-            // put 'N' at every position if a single mismatch is allowed.
-            for ( int i = 0; i < pat_len; ++i ) {
-                ch = temp[i];
-                temp[i] = 'N';
 
-                info.m_Pattern = temp;
-                m_Fsa.AddWord(pattern, info);
+void CSeqSearch::x_AddPattern(TPatternInfo& pat_info, string& sequence, TSearchFlags flags)
+{
+    x_StorePattern(pat_info, sequence);
 
-                // restore proper character, go on to put N in next position.
-                temp[i] = ch;
-            }
+    if (x_IsAllowMismatch(flags)) {
+        // put 'N' at every position if a single mismatch is allowed.
+        char ch = 'N';
+        NON_CONST_ITERATE (string, it, sequence) {
+            swap(*it, ch);
+        
+            x_StorePattern(pat_info, sequence);
+
+            // restore proper character, go on to put N in next position.
+            swap(*it, ch);
         }
     }
+}
+
+
+void CSeqSearch::x_StorePattern(TPatternInfo& pat_info, string& sequence)
+{
+    pat_info.m_Sequence = sequence;
+    m_Fsa.AddWord(sequence, pat_info);
 }
 
 
@@ -2433,6 +2526,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.109  2004/12/09 18:09:55  shomrat
+* Changes to CSeqSearch (use static tables, added search flags
+*
 * Revision 1.108  2004/12/06 17:54:10  grichenk
 * Replaced calls to deprecated methods
 *
