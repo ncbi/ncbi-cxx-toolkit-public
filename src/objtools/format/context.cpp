@@ -38,7 +38,6 @@
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
-#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/general/Dbtag.hpp>
@@ -49,6 +48,7 @@
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
 
 #include <objtools/format/context.hpp>
 
@@ -60,319 +60,137 @@ USING_SCOPE(sequence);
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// CFFContext
-
-
-CFFContext::CFFContext
-(CScope& scope,
- TFormat format,
- TMode mode,
- TStyle style,
- TView view,
- TFlatFileFlags flags) :
-    m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
-    m_Flags(mode, flags),
-    m_Scope(&scope), m_SeqSub(0),
-    m_Master(0), m_Bioseq(0)
-{
-}
-
-
-CFFContext::~CFFContext(void)
-{
-}
-
-
-void CFFContext::SetMasterBioseq(const CBioseq_Handle& h)
-{
-    m_Master.Reset(new CMasterContext(h, *this));
-}
-
-
-void CFFContext::SetActiveBioseq(const CBioseq_Handle& seq)
-{
-    m_Bioseq.Reset(new CBioseqContext(seq, *this));
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// CMasterContext
-
-
-CMasterContext::CMasterContext(const CBioseq_Handle& h, CFFContext& ctx) :
-    m_Handle(h), m_Ctx(&ctx)
-{
-    _ASSERT(h);
-
-    x_SetBaseName();
-}
-
-
-CMasterContext::~CMasterContext(void)
-{
-}
-
-
-SIZE_TYPE CMasterContext::GetPartNumber(const CBioseq_Handle& h) const
-{
-    if ( !h ) {
-        return 0;
-    }
-
-    CScope& scope = m_Handle.GetScope();
-
-    SIZE_TYPE serial = 1;
-    ITERATE (CSeg_ext::Tdata, it, m_Handle.GetBioseqCore()->GetInst().GetExt().GetSeg().Get()) {
-        if ( (*it)->IsNull() ) {
-            continue;
-        }
-
-        CBioseq_Handle bsh = scope.GetBioseqHandle(**it);
-        if ( bsh   &&  bsh == h ) {
-            return serial;
-        }
-        ++serial;
-    }
-
-    return 0;
-}
-
-
-SIZE_TYPE CMasterContext::GetNumSegments(void) const
-{
-    SIZE_TYPE count = 0;
-    ITERATE (CSeg_ext::Tdata, it, m_Handle.GetBioseqCore()->GetInst().GetExt().GetSeg().Get()) {
-        if ( (*it)->IsNull() ) {
-            continue;
-        }
-        ++count;
-    }
-
-    return count;
-}
-
-
-void CMasterContext::x_SetBaseName(void)
-{
-    // !!!
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
 // CBioseqContext
 
-CBioseqContext::CBioseqContext(const CBioseq_Handle& seq, CFFContext& ctx) :
+// constructor
+CBioseqContext::CBioseqContext
+(const CBioseq_Handle& seq,
+ CFlatFileContext& ffctx,
+ CMasterContext* mctx) :
+    m_Handle(seq),
     m_Repr(CSeq_inst::eRepr_not_set),
     m_Mol(CSeq_inst::eMol_not_set),
-    m_Accession(kEmptyStr),
-    m_PrimaryId(0),
-    m_WGSMasterAccn(kEmptyStr),
-    m_WGSMasterName(kEmptyStr),
-    m_SegsCount(0),
+    m_HasParts(false),
     m_IsPart(false),
     m_PartNumber(0),
-    m_HasParts(false),
     m_IsDeltaLitOnly(false),
     m_IsProt(false),
-    m_IsGPS(false),
+    m_IsInGPS(false),
     m_IsGED(false),
     m_IsPDB(false),
     m_IsSP(false),
     m_IsTPA(false),
     m_IsRefSeq(false),
     m_RefseqInfo(0),
-    m_IsGbGenomeProject(false),       // GenBank Genome project data (AE)
-    m_IsNcbiCONDiv(false),            // NCBI CON division (CH)
+    m_IsGbGenomeProject(false),  // GenBank Genome project data (AE)
+    m_IsNcbiCONDiv(false),       // NCBI CON division (CH)
     m_IsPatent(false),
     m_IsGI(false),
     m_IsWGS(false),
     m_IsWGSMaster(false),
     m_IsHup(false),
-    m_GI(0),
+    m_Gi(0),
     m_ShowGBBSource(false),
-    m_Location(0),
-    m_Ctx(&ctx),
-    m_Master(ctx.Master())
+    m_FFCtx(ffctx),
+    m_Master(mctx)
 {
-    if ( !seq  ||  !seq.GetBioseqCore()->CanGetInst() ) {
-        return;
-        //NCBI_THROW(...) !!!
+    x_Init(seq, m_FFCtx.GetLocation());
+}
+
+
+// destructor
+CBioseqContext::~CBioseqContext(void)
+{
+}
+
+
+const CSeq_id& CBioseqContext::GetPreferredSynonym(const CSeq_id& id) const
+{
+    if ( id.IsGi()  &&  id.GetGi() == m_Gi ) {
+        return *m_PrimaryId;
     }
 
-    m_Handle = seq;
+    CBioseq_Handle h = m_Handle.GetScope().GetBioseqHandleFromTSE(id, m_Handle);
+    if ( h ) {
+        if ( h == m_Handle ) {
+            return *m_PrimaryId;
+        } else if ( h.GetSeqId().NotEmpty() ) {
+            return *FindBestChoice(h.GetBioseqCore()->GetId(), CSeq_id::Score);
+        }
+    }
+
+    return id;
+}
+
+
+
+// initialization
+void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
+{
+    _ASSERT(seq);
+    _ASSERT(seq.IsSetInst());
 
     // NB: order of execution is important
-    m_Repr = x_GetRepr(seq);
-    m_Molinfo.Reset(x_GetMolinfo());
-    m_Mol  = seq.GetBioseqMolType();
+    x_SetId();
+    m_Repr = x_GetRepr();
+    m_Mol  = seq.GetInst_Mol();
+    m_Molinfo.Reset(x_GetMolInfo());
+
     if ( IsSegmented() ) {
         m_HasParts = x_HasParts();
+    }
+    m_IsPart = x_IsPart();
+    if ( m_IsPart ) {
+        _ASSERT(m_Master);
+        m_PartNumber = x_GetPartNumber();
     }
     if ( IsDelta() ) {
         m_IsDeltaLitOnly = x_IsDeltaLitOnly();
     }
 
-    m_IsPart = x_IsPart();
-    if ( IsPart() ) {
-        if ( !m_Master ) {
-            m_Ctx->SetMasterBioseq(x_GetMasterForPart());
-            m_Master = m_Ctx->Master();
-        }
-        m_PartNumber = x_GetPartNumber(m_Handle);
-    }
+    m_IsProt = CSeq_inst::IsAa(seq.GetInst_Mol());
 
-    m_IsProt = CSeq_inst::IsAa(seq.GetBioseqMolType());
+    m_IsInGPS = x_IsInGPS();
 
-    x_SetId();
-
-    m_IsGPS = x_IsGPS();
+    x_SetLocation(user_loc);
     
-    CRef<CSeq_loc> loc(new CSeq_loc);
-    loc->SetWhole(*m_PrimaryId);
-    m_Location.Reset(loc);
 }
 
 
-bool CBioseqContext::x_IsGPS(void) const
+void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
 {
-    CSeq_entry_Handle e = 
-        GetHandle().GetComplexityLevel(CBioseq_set::eClass_gen_prod_set);
-    return e  &&  e.IsSet()  &&  e.GetSet().IsSetClass()  &&
-        e.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set;
-}
-
-
-bool CBioseqContext::DoContigStyle(void) const
-{
-    if ( m_Ctx->IsStyleContig() ) {
-        return true;
-    } else if ( m_Ctx->IsStyleNormal() ) {
-        if ( (IsSegmented()  &&  !HasParts())  ||
-             (IsDelta()  &&  !IsDeltaLitOnly()) ) {
-            return true;
+    CRef<CSeq_loc> loc;
+    if ( user_loc != 0 ) {
+        // map the location to the current bioseq
+        CSeq_loc_Mapper mapper(m_Handle);
+        loc.Reset(mapper.Map(*user_loc));
+        
+        if ( loc->IsWhole()  ||
+             loc->GetStart(kInvalidSeqPos) == 0  &&
+             loc->GetEnd(kInvalidSeqPos) == m_Handle.GetInst_Length() - 1) {
+            loc.Reset();
+        }
+        if ( loc ) {
+            CScope& scope = GetScope();
+            CSeq_loc dummy;
+            CSeq_interval& ival = dummy.SetInt();
+            ival.SetFrom(0);
+            ival.SetTo(GetLength(*loc, &scope));
+            dummy.SetId(*(new CSeq_id("lcl|dummy")));
+            m_Mapper.Reset(new CSeq_loc_Mapper(*loc, dummy, &scope));
         }
     }
-
-    return false;
-}
-
-/*
-// count the number of non-virtual parts
-SIZE_TYPE CBioseqContext::x_CountSegs(const CBioseq& seq) const
-{
-    const CSeq_inst& inst = seq.GetInst();
-    CScope& scope = m_Ctx->GetScope();
-
-    if ( !inst.CanGetExt()  ||  !inst.GetExt().IsSeg() ) {
-        return 0;
+    // if no location is specified do the entire sequence
+    if ( !loc ) {
+        loc.Reset(new CSeq_loc);
+        loc->SetWhole(*m_PrimaryId);
     }
-
-    SIZE_TYPE num_parts = 0;
-    ITERATE(CSeg_ext::Tdata, loc, inst.GetExt().GetSeg().Get()) {
-        try {
-            const CSeq_id& id = GetId(**loc, &scope);
-            if ( id.IsGi() ) {
-                CBioseq_Handle bsh = scope.GetBioseqHandle(id);
-                if ( !bsh ) {
-                    continue;
-                }
-                const CBioseq& part = bsh.GetBioseq();
-                CSeq_inst::TRepr part_repr = x_GetRepr(part);
-                
-                ITERATE(CBioseq::TId, part_id, part.GetId()) {
-                    if ( (*part_id)->IsGibbsq()  ||
-                         (*part_id)->IsGibbmt()  ||
-                         (*part_id)->IsGiim() ) {
-                        if ( part_repr == CSeq_inst::eRepr_virtual ) {
-                            continue;
-                        }
-                    }
-                }
-            }
-            ++num_parts;
-        } catch ( CException& ) {
-            // just continue to the next segment
-        }
-    }
-    return num_parts;
-}
-*/
-
-CSeq_inst::TRepr CBioseqContext::x_GetRepr(const CBioseq_Handle& seq) const
-{
-    try
-    {
-        return seq.GetBioseqCore()->GetInst().GetRepr();
-    } catch ( CException& ) {
-        return CSeq_inst::eRepr_not_set;
-    }
-}
-
-
-const CMolInfo* CBioseqContext::x_GetMolinfo(void) 
-{
-    CSeqdesc_CI mi(GetHandle(), CSeqdesc::e_Molinfo);
-    return mi ? &(mi->GetMolinfo()) : 0;
-}
-
-
-bool CBioseqContext::x_IsPart() const
-{
-    if ( m_Repr == CSeq_inst::eRepr_raw    ||
-         m_Repr == CSeq_inst::eRepr_const  ||
-         m_Repr == CSeq_inst::eRepr_delta  ||
-         m_Repr == CSeq_inst::eRepr_virtual ) {
-        CSeq_entry_Handle eh = m_Handle.GetParentEntry();
-        _ASSERT(eh  &&  eh.IsSeq());
-
-        eh = eh.GetParentEntry();
-        if ( eh  &&  eh.IsSet() ) {
-            CBioseq_set_Handle bsst = eh.GetSet();
-            if ( bsst.IsSetClass()  &&  
-                 bsst.GetClass() == CBioseq_set::eClass_parts ) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-
-SIZE_TYPE CBioseqContext::x_GetPartNumber(const CBioseq_Handle& h) const
-{
-    return m_Master->GetPartNumber(h);
-}
-
-
-CBioseq_Handle CBioseqContext::x_GetMasterForPart(void) const
-{
-    CBioseq_Handle null;
-    if ( !IsPart() ) {
-        return null;
-    }
-
-    CSeq_entry_Handle eh =
-        m_Handle.GetComplexityLevel(CBioseq_set::eClass_segset);
-    if ( !eh  ||  !eh.IsSet()  ||  !eh.GetSet().IsSetClass()  ||
-        eh.GetSet().GetClass() != CBioseq_set::eClass_segset) {
-        return null;
-    }
-
-    for ( CSeq_entry_CI it(eh); it; ++it ) {
-        if ( it->IsSeq() ) {
-            return it->GetSeq();
-        }
-    }
-
-    return null;
+    m_Location = loc;
 }
 
 
 void CBioseqContext::x_SetId(void)
 {
-    //m_PrimaryId.Reset(FindBestChoice(seq.GetId(), CSeq_id::Score));
     m_PrimaryId.Reset(new CSeq_id);
     m_PrimaryId->Assign(GetId(m_Handle, eGetId_Best));
     m_Accession = m_PrimaryId->GetSeqIdString(true);
@@ -410,7 +228,7 @@ void CBioseqContext::x_SetId(void)
         // Gi
         case CSeq_id::e_Gi:
             m_IsGI = true;
-            m_GI = id.GetGi();
+            m_Gi = id.GetGi();
             break;
         // PDB
         case CSeq_id::e_Pdb:
@@ -461,42 +279,56 @@ void CBioseqContext::x_SetId(void)
         // GBB source
         m_ShowGBBSource = m_ShowGBBSource  ||  
                           ((acc_type & CSeq_id::eAcc_gsdb_dirsub) != 0);
-
     }
 }
 
 
-const CSeq_id& CBioseqContext::GetPreferredSynonym(const CSeq_id& id) const
+CSeq_inst::TRepr CBioseqContext::x_GetRepr(void) const
 {
-    if ( id.IsGi()  &&  id.GetGi() == m_GI ) {
-        return *m_PrimaryId;
-    }
+    return m_Handle.IsSetInst_Repr() ?
+        m_Handle.GetInst_Repr() : CSeq_inst::eRepr_not_set;
+}
 
-    CBioseq_Handle h = m_Handle.GetScope().GetBioseqHandleFromTSE(id, m_Handle);
-    if ( h ) {
-        if ( h == m_Handle ) {
-            return *m_PrimaryId;
-        } else if ( h.GetSeqId().NotEmpty() ) {
-            return *FindBestChoice(h.GetBioseqCore()->GetId(), CSeq_id::Score);
+
+const CMolInfo* CBioseqContext::x_GetMolInfo(void) const
+{
+    CSeqdesc_CI desc(m_Handle, CSeqdesc::e_Molinfo);
+    return desc ? &desc->GetMolinfo() : 0;
+}
+
+
+bool CBioseqContext::x_IsPart() const
+{
+    if ( m_Repr == CSeq_inst::eRepr_raw    ||
+         m_Repr == CSeq_inst::eRepr_const  ||
+         m_Repr == CSeq_inst::eRepr_delta  ||
+         m_Repr == CSeq_inst::eRepr_virtual ) {
+        CSeq_entry_Handle eh = m_Handle.GetParentEntry();
+        _ASSERT(eh  &&  eh.IsSeq());
+
+        eh = eh.GetParentEntry();
+        if ( eh  &&  eh.IsSet() ) {
+            CBioseq_set_Handle bsst = eh.GetSet();
+            if ( bsst.IsSetClass()  &&  
+                 bsst.GetClass() == CBioseq_set::eClass_parts ) {
+                return true;
+            }
         }
     }
-
-    return id;
+    return false;
 }
 
 
 bool CBioseqContext::x_HasParts(void) const
 {
-    _ASSERT(m_Ctx);
     _ASSERT(IsSegmented());
 
     CSeq_entry_Handle h =
-        m_Handle.GetComplexityLevel(CBioseq_set::eClass_segset);
-    if ( !h  ||  !h.IsSet()   ||  !h.GetSet().IsSetClass()  ||
-         h.GetSet().GetClass() != CBioseq_set::eClass_segset ) {
+        m_Handle.GetExactComplexityLevel(CBioseq_set::eClass_segset);
+    if ( !h ) {
         return false;
     }
-
+    
     // make sure the segmented set contains our bioseq
     {{
         bool has_seq = false;
@@ -543,174 +375,98 @@ bool CBioseqContext::x_IsDeltaLitOnly(void) const
 }
 
 
+SIZE_TYPE CBioseqContext::x_GetPartNumber(void)
+{
+    return m_Master ? m_Master->GetPartNumber(m_Handle) : 0;
+}
+
+
+bool CBioseqContext::x_IsInGPS(void) const
+{
+    CSeq_entry_Handle e = 
+        m_Handle.GetExactComplexityLevel(CBioseq_set::eClass_gen_prod_set);
+    return e;
+}
+
+
+bool CBioseqContext::DoContigStyle(void) const
+{
+    const CFlatFileConfig& cfg = Config();
+    if ( cfg.IsStyleContig() ) {
+        return true;
+    } else if ( cfg.IsStyleNormal() ) {
+        if ( (IsSegmented()  &&  !HasParts())  ||
+             (IsDelta()  &&  !IsDeltaLitOnly()) ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Flags
-CFFContext::CFlags::CFlags(TMode mode, TFlatFileFlags flags) :
-    m_HideImpFeats((flags & fHideImportedFeatures) != 0),
-    m_HideSnpFeats((flags & fHideSNPFeatures) != 0),
-    m_HideExonFeats((flags & fHideExonFeatures) != 0),
-    m_HideIntronFeats((flags & fHideIntronFeatures) != 0),
-    m_HideRemImpFeats((flags & fHideRemoteImpFeats) != 0),
-    m_HideGeneRIFs((flags & fHideGeneRIFs) != 0),
-    m_OnlyGeneRIFs((flags & fOnlyGeneRIFs) != 0),
-    m_HideCDSProdFeats((flags & fHideCDSProdFeatures) != 0),
-    m_HideCDDFeats((flags & fHideCDDFeats) != 0),
-    m_LatestGeneRIFs((flags & fLatestGeneRIFs) != 0),
-    m_ShowContigFeatures((flags & fShowContigFeatures) != 0),
-    m_ShowContigSources((flags & fShowContigSources) != 0),
-    m_ShowContigAndSeq((flags & fShowContigAndSeq) != 0),
-    m_CopyGeneToCDNA((flags & fCopyGeneToCDNA) != 0),
-    m_CopyCDSFromCDNA((flags & fCopyCDSFromCDNA) != 0),
-    m_HideSourceFeats((flags & fHideSourceFeats) != 0),
-    m_AlwaysTranslateCDS((flags & fAlwaysTranslateCDS) != 0),
-    m_ShowFarTranslations((flags & fShowFarTranslations) != 0),
-    m_TranslateIfNoProd((flags & fTranslateIfNoProduct) != 0),
-    m_ShowTranscript((flags & fShowTranscriptions) != 0),
-    m_ShowPeptides((flags & fShowPeptides) != 0),
-    m_ShowFtableRefs((flags & fShowFtableRefs) != 0),
-    m_OldFeatsOrder((flags & fOldFeatsOrder) != 0),
-    m_DoHtml((flags & fProduceHTML) != 0)
+// CMasterContext
+
+
+CMasterContext::CMasterContext(const CBioseq_Handle& seq) :
+    m_Handle(seq)
 {
-    switch ( mode ) {
-    case eMode_Release:
-        x_SetReleaseFlags();
-        break;
-    case eMode_Entrez:
-        x_SetEntrezFlags();
-        break;
-    case eMode_GBench:
-        x_SetGBenchFlags();
-        break;
-    case eMode_Dump:
-        x_SetDumpFlags();
-        break;
+    _ASSERT(seq);
+    _ASSERT(seq.GetInst_Ext().IsSeg());
+
+    x_SetNumParts();
+    x_SetBaseName();
+}
+
+
+CMasterContext::~CMasterContext(void)
+{
+}
+
+
+SIZE_TYPE CMasterContext::GetPartNumber(const CBioseq_Handle& part)
+{
+    if ( !part ) {
+        return 0;
     }
+    CScope& scope = m_Handle.GetScope();
+
+    SIZE_TYPE serial = 1;
+    ITERATE (CSeg_ext::Tdata, it, m_Handle.GetInst_Ext().GetSeg().Get()) {
+        if ( (*it)->IsNull() ) {
+            continue;
+        }
+        const CSeq_id& id = GetId(**it);
+        CBioseq_Handle bsh = scope.GetBioseqHandleFromTSE(id, m_Handle);
+        if ( bsh   &&  bsh == part ) {
+            return serial;
+        }
+        ++serial;
+    }
+
+    return 0;
 }
 
 
-void CFFContext::CFlags::x_SetReleaseFlags(void)
+void CMasterContext::x_SetNumParts(void)
 {
-    m_SuppressLocalId      = true;
-    m_ValidateFeats        = true;
-    m_IgnorePatPubs        = true;
-    m_DropShortAA          = true;
-    m_AvoidLocusColl       = true;
-    m_IupacaaOnly          = true;
-    m_DropBadCitGens       = true;
-    m_NoAffilOnUnpub       = true;
-    m_DropIllegalQuals     = true;
-    m_CheckQualSyntax      = true;
-    m_NeedRequiredQuals    = true;
-    m_NeedOrganismQual     = true;
-    m_NeedAtLeastOneRef    = true;
-    m_CitArtIsoJta         = true;
-    m_DropBadDbxref        = true;
-    m_UseEmblMolType       = true;
-    m_HideBankItComment    = true;
-    m_CheckCDSProductId    = true;
-    m_SuppressSegLoc       = true;
-    m_SrcQualsToNote       = true;
-    m_HideEmptySource      = true;
-    m_GoQualsToNote        = true;
-    m_GeneSynsToNote       = true;
-    m_SelenocysteineToNote = true;
-    m_ForGBRelease         = true;
-    m_HideUnclassPartial   = true;
+    SIZE_TYPE count = 0;
+    // count only non-gap parts
+    ITERATE (CSeg_ext::Tdata, it, m_Handle.GetInst_Ext().GetSeg().Get()) {
+        if ( (*it)->IsNull() ) {
+            continue;
+        }
+        ++count;
+    }
+    m_NumParts = count;
 }
 
 
-void CFFContext::CFlags::x_SetEntrezFlags(void)
+void CMasterContext::x_SetBaseName(void)
 {
-    m_SuppressLocalId      = false;
-    m_ValidateFeats        = true;
-    m_IgnorePatPubs        = true;
-    m_DropShortAA          = true;
-    m_AvoidLocusColl       = true;
-    m_IupacaaOnly          = false;
-    m_DropBadCitGens       = true;
-    m_NoAffilOnUnpub       = true;
-    m_DropIllegalQuals     = true;
-    m_CheckQualSyntax      = true;
-    m_NeedRequiredQuals    = true;
-    m_NeedOrganismQual     = true;
-    m_NeedAtLeastOneRef    = false;
-    m_CitArtIsoJta         = true;
-    m_DropBadDbxref        = true;
-    m_UseEmblMolType       = true;
-    m_HideBankItComment    = true;
-    m_CheckCDSProductId    = false;
-    m_SuppressSegLoc       = false;
-    m_SrcQualsToNote       = true;
-    m_HideEmptySource      = true;
-    m_GoQualsToNote        = true;
-    m_GeneSynsToNote       = true;
-    m_SelenocysteineToNote = true;
-    m_ForGBRelease         = false;
-    m_HideUnclassPartial   = true;
-}
-
-
-void CFFContext::CFlags::x_SetGBenchFlags(void)
-{
-    m_SuppressLocalId      = false;
-    m_ValidateFeats        = false;
-    m_IgnorePatPubs        = false;
-    m_DropShortAA          = false;
-    m_AvoidLocusColl       = false;
-    m_IupacaaOnly          = false;
-    m_DropBadCitGens       = false;
-    m_NoAffilOnUnpub       = true;
-    m_DropIllegalQuals     = false;
-    m_CheckQualSyntax      = false;
-    m_NeedRequiredQuals    = false;
-    m_NeedOrganismQual     = false;
-    m_NeedAtLeastOneRef    = false;
-    m_CitArtIsoJta         = false;
-    m_DropBadDbxref        = false;
-    m_UseEmblMolType       = false;
-    m_HideBankItComment    = false;
-    m_CheckCDSProductId    = false;
-    m_SuppressSegLoc       = false;
-    m_SrcQualsToNote       = false;
-    m_HideEmptySource      = false;
-    m_GoQualsToNote        = false;
-    m_GeneSynsToNote       = false;
-    m_SelenocysteineToNote = false;
-    m_ForGBRelease         = false;
-    m_HideUnclassPartial   = false;
-}
-
-
-void CFFContext::CFlags::x_SetDumpFlags(void)
-{
-    m_SuppressLocalId      = false;
-    m_ValidateFeats        = false;
-    m_IgnorePatPubs        = false;
-    m_DropShortAA          = false;
-    m_AvoidLocusColl       = false;
-    m_IupacaaOnly          = false;
-    m_DropBadCitGens       = false;
-    m_NoAffilOnUnpub       = false;
-    m_DropIllegalQuals     = false;
-    m_CheckQualSyntax      = false;
-    m_NeedRequiredQuals    = false;
-    m_NeedOrganismQual     = false;
-    m_NeedAtLeastOneRef    = false;
-    m_CitArtIsoJta         = false;
-    m_DropBadDbxref        = false;
-    m_UseEmblMolType       = false;
-    m_HideBankItComment    = false;
-    m_CheckCDSProductId    = false;
-    m_SuppressSegLoc       = false;
-    m_SrcQualsToNote       = false;
-    m_HideEmptySource      = false;
-    m_GoQualsToNote        = false;
-    m_GeneSynsToNote       = false;
-    m_SelenocysteineToNote = false;
-    m_ForGBRelease         = false;
-    m_HideUnclassPartial   = false;
+    // !!!
 }
 
 
@@ -721,6 +477,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/04/22 15:52:00  shomrat
+* Refactring of context
+*
 * Revision 1.13  2004/03/31 17:15:09  shomrat
 * name changes
 *
