@@ -1,0 +1,4 @@
+*.files
+[A-Z]*.cpp
+scoremat__.cpp
+scoremat___.cpp
