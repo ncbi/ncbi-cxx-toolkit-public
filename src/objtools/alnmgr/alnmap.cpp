@@ -37,6 +37,14 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+
+void CAlnMap::x_Init(void)
+{
+    m_SeqStartSegs.resize(GetNumRows(), -1);
+    m_SeqStopSegs.resize(GetNumRows(), -1);
+}
+
+
 void CAlnMap::x_CreateAlnStarts(void)
 {
     m_AlnStarts.clear();
@@ -487,22 +495,32 @@ TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
 
 TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
 {
-    TNumseg seg;
-    TSignedSeqPos start;
-    
     if (IsPositiveStrand(row)) {
-        seg = -1;
-        while (++seg < m_NumSegs) {
-            if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
-                return start;
+        TNumseg& seg = m_SeqStartSegs[row];
+        if (seg < 0) {
+            TSignedSeqPos start;
+            while (++seg < m_NumSegs) {
+                if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
+                    return start;
+                }
             }
+            seg = -1; // not found; reset
+        } else {
+            return m_Starts[seg * m_NumRows + row];
         }
     } else {
-        seg = m_NumSegs;
-        while (seg--) {
-            if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
-                return start;
+        TNumseg& seg = m_SeqStopSegs[row];
+        if (seg < 0) {
+            TSignedSeqPos start;
+            seg = m_NumSegs;
+            while (seg--) {
+                if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
+                    return start;
+                }
             }
+            seg = -1; // not found; reset
+        } else {
+            return m_Starts[seg * m_NumRows + row];
         }
     }
     return -1;
@@ -511,22 +529,33 @@ TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
 
 TSignedSeqPos CAlnMap::GetSeqStop(TNumrow row) const
 {
-    TNumseg seg;
-    TSignedSeqPos start;
-
     if (IsPositiveStrand(row)) {
-        seg = m_NumSegs;
-        while (seg--) {
-            if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
-                return start + m_Lens[seg] - 1;
+        TNumseg& seg = m_SeqStopSegs[row];
+        if (seg < 0) {
+            TSignedSeqPos start;
+            seg = m_NumSegs;
+            while (seg--) {
+                if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
+                    return start + m_Lens[seg] - 1;
+                }
             }
+            seg = -1; // not found; reset
+        } else {
+            return m_Starts[seg * m_NumRows + row] + m_Lens[seg] - 1;
         }
     } else {
-        seg = -1;
-        while (++seg < m_NumSegs) {
-            if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
-                return start + m_Lens[seg] - 1;
+        TNumseg& seg = m_SeqStartSegs[row];
+        if (seg < 0) {
+            TSignedSeqPos start;
+            seg = -1;
+            while (++seg < m_NumSegs) {
+                if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
+                    return start + m_Lens[seg] - 1;
+                }
             }
+            seg = -1; // not found; reset
+        } else {
+            return m_Starts[seg * m_NumRows + row] + m_Lens[seg] - 1;
         }
     }
     return -1;
@@ -869,6 +898,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2003/07/08 20:26:34  todorov
+* Created seq end segments cache
+*
 * Revision 1.33  2003/06/09 17:47:26  todorov
 * local var start type fixed in GetSeqStart,GetSeqStop
 *

@@ -295,6 +295,7 @@ protected:
     friend CConstRef<CAlnChunk> CAlnChunkVec::operator[](TNumchunk i) const;
 
     // internal functions for handling alignment segments
+    void              x_Init            (void);
     void              x_CreateAlnStarts (void);
     TSegTypeFlags     x_GetRawSegType   (TNumrow row, TNumseg seg) const;
     TSegTypeFlags     x_SetRawSegType   (TNumrow row, TNumseg seg) const;
@@ -321,6 +322,8 @@ protected:
     const CDense_seg::TScores&      m_Scores;
     TNumrow                         m_Anchor;
     vector<TNumseg>                 m_AlnSegIdx;
+    mutable vector<TNumseg>         m_SeqStartSegs;
+    mutable vector<TNumseg>         m_SeqStopSegs;
     CDense_seg::TStarts             m_AlnStarts;
     vector<CNumSegWithOffset>       m_NumSegWithOffsets;
     mutable vector<TSegTypeFlags> * m_RawSegTypes;
@@ -345,6 +348,7 @@ CAlnMap::CAlnMap(const CDense_seg& ds)
       m_Anchor(-1),
       m_RawSegTypes(0)
 {
+    x_Init();
     x_CreateAlnStarts();
 }
 
@@ -362,6 +366,7 @@ CAlnMap::CAlnMap(const CDense_seg& ds, TNumrow anchor)
       m_Anchor(-1),
       m_RawSegTypes(0)
 {
+    x_Init();
     SetAnchor(anchor);
 }
 
@@ -603,6 +608,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/07/08 20:26:28  todorov
+* Created seq end segments cache
+*
 * Revision 1.22  2003/06/05 19:03:29  todorov
 * Added const refs to Dense-seg members as a speed optimization
 *
