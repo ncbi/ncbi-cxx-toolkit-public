@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/08/20 21:59:05  lavr
+ * New macro: DISPATCHER_CFGFILE
+ *
  * Revision 6.3  2001/05/11 15:28:46  lavr
  * Protocol change: REQUEST_FAILED -> DISP_FAILURES
  *
@@ -49,6 +52,7 @@
 #define NCBID_NAME              "/Service/ncbid.cgi"
 #define HTTP_CONNECTION_INFO    "Connection-Info:"
 #define HTTP_DISP_FAILURES      "Dispatcher-Failures:"
+#define DISPATCHER_CFGFILE      "servrc.cfg"
 
 typedef unsigned int ticket_t;
 
