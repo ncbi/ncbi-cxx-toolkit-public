@@ -145,7 +145,7 @@ char* SERV_WriteInfo(const SSERV_Info* info)
     /* write server-specific info */
     if ((str = attr->vtable.Write(reserve, &info->u)) != 0) {
         char* s = str;
-        int n;
+        size_t n;
 
         memcpy(s, attr->tag, attr->tag_len);
         s += attr->tag_len;
@@ -153,7 +153,7 @@ char* SERV_WriteInfo(const SSERV_Info* info)
         s += HostPortToString(info->host, info->port, s, reserve);
         if ((n = strlen(str + reserve)) != 0) {
             *s++ = ' ';
-            memmove(s, str + reserve, n+1);
+            memmove(s, str + reserve, n + 1);
             s = str + strlen(str);
         }
 
@@ -190,7 +190,6 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
     unsigned short port;                /* host (native) byte order */
     unsigned int host;                  /* network byte order       */
     SSERV_Info *info;
-    int n;
 
     if (!str || (*str && !isspace((unsigned char)(*str))))
         return 0;
@@ -212,6 +211,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
         str++;
     while (*str) {
         if (*(str + 1) == '=') {
+            int            n;
             double         d;
             unsigned short h;
             unsigned long  t;
@@ -327,7 +327,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str)
                 break;
             }
         } else {
-            size_t i;
+            size_t i, n;
             for (i = 0; i < sizeof(k_FlagTag)/sizeof(k_FlagTag[0]); i++) {
                 n = strlen(k_FlagTag[i]);
                 if (strncasecmp(str, k_FlagTag[i], n) == 0)
@@ -833,6 +833,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2003/02/28 14:48:38  lavr
+ * String type match for size_t and int in few expressions
+ *
  * Revision 6.45  2002/11/01 20:15:36  lavr
  * Do not allow FIREWALL server specs to have Q flag
  *
