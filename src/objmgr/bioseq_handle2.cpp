@@ -31,6 +31,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/04/10 20:59:41  gouriano
+* moved construction of iterators out of "for" loop initialization:
+* Sun Workshop compiler does not call destructors of such objects
+* in case we use break to exit the loop
+*
 * Revision 1.7  2002/03/21 22:22:46  ucko
 * Adjust today's fixes for new objmgr API
 *
@@ -162,16 +167,19 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
             break;
         }
     }
-
-    for (CSeqdesc_CI it(*this, CSeqdesc::e_Source);  it;  ++it) {
-        source = &it->GetSource();
-        BREAK(it);
+    
+    {
+        CSeqdesc_CI it(*this, CSeqdesc::e_Source);
+        if (it) {
+            source = &it->GetSource();
+        }
     }
-
-    for (CSeqdesc_CI it(*this, CSeqdesc::e_Molinfo);  it;  ++it) {
-        mol_info = &it->GetMolinfo();
-        tech = mol_info->GetTech();
-        BREAK(it);
+    {
+        CSeqdesc_CI it(*this, CSeqdesc::e_Molinfo);
+        if (it) {
+            mol_info = &it->GetMolinfo();
+            tech = mol_info->GetTech();
+        }
     }
     switch (tech) {
     case CMolInfo::eTech_htgs_0:
@@ -196,17 +204,20 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
         // Ignore parents' titles for non-PDB proteins.
         if (core->GetInst().GetMol() == CSeq_inst::eMol_aa
             &&  pdb_id.IsNull()) {
-            for (CTypeConstIterator<CSeqdesc> it = ConstBegin(*core);
-                 it;  ++it) {
+            // Sun Workshop compiler does not call destructors of objects
+            // created in for-loop initializers in case we use break to exit the loop
+            // (08-apr-2002)
+            CTypeConstIterator<CSeqdesc> it = ConstBegin(*core);
+            for (; it;  ++it) {
                 if (it->IsTitle()) {
                     title = it->GetTitle();
                     BREAK(it);
                 }
             }
         } else {
-            for (CSeqdesc_CI it(*this, CSeqdesc::e_Title);  it;  ++it) {
+            {
+                CSeqdesc_CI it(*this, CSeqdesc::e_Title);
                 title = it->GetTitle();
-                BREAK(it);
             }
         }
     }
@@ -229,7 +240,8 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
     }
 
     if (title.empty()  &&  pdb_id.NotEmpty()) {
-        for (CSeqdesc_CI it(*this, CSeqdesc::e_Pdb);  it;  ++it) {
+        CSeqdesc_CI it(*this, CSeqdesc::e_Pdb);
+        for (;  it;  ++it) {
             if ( !it->GetPdb().GetCompound().empty() ) {
                 if (isprint(pdb_id->GetChain())) {
                     title = string("Chain ") + (char)pdb_id->GetChain() + ", ";
@@ -289,7 +301,8 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
     case CMolInfo::eTech_htgs_2:
     {
         bool is_draft = false;
-        for (CSeqdesc_CI gb(*this, CSeqdesc::e_Genbank);  gb;  ++gb) {
+        CSeqdesc_CI gb(*this, CSeqdesc::e_Genbank);
+        for (;  gb;  ++gb) {
             iterate (CGB_block::TKeywords, it,
                      gb->GetGenbank().GetKeywords()) {
                 if (NStr::Compare(*it, "HTGS_DRAFT", NStr::eNocase) == 0) {
@@ -366,7 +379,8 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
         if (source) {
             org = &source->GetOrg();
         } else {
-            for (CSeqdesc_CI it(*this, CSeqdesc::e_Org);  it;  ++it) {
+            CSeqdesc_CI it(*this, CSeqdesc::e_Org);
+            for (;  it;  ++it) {
                 org = &it->GetOrg();
                 BREAK(it);
             }
@@ -565,7 +579,8 @@ static CConstRef<CSeq_feat> s_FindLongestFeature(const CSeq_loc& location,
 {
     CConstRef<CSeq_feat> result;
     int best_length = 0;
-    for (CFeat_CI it(scope, location, type);  it;  ++it) {
+    CFeat_CI it(scope, location, type);
+    for (;  it;  ++it) {
         if (it->GetLocation().IsWhole()) {
             // kludge; length only works on a Seq-loc of type "whole"
             // if its Seq-id points to an object manager, which may not
@@ -649,9 +664,11 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
     // Find organism name
     if (cds_loc) {
         CConstRef<COrg_ref> org;
-        for (CTypeConstIterator<CSeq_id> id = ConstBegin(*cds_loc); id; ++id) {
+        CTypeConstIterator<CSeq_id> id = ConstBegin(*cds_loc);
+        for (; id; ++id) {
             CBioseq_Handle na_handle = scope.GetBioseqHandle(*id);
-            for (CSeqdesc_CI it(na_handle, CSeqdesc::e_Source);  it;  ++it) {
+            CSeqdesc_CI it(na_handle, CSeqdesc::e_Source);
+            for (;  it;  ++it) {
                 org = &it->GetSource().GetOrg();
                 BREAK(it);
             }
@@ -675,10 +692,13 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
     CSeq_loc everywhere;
     everywhere.SetMix().Set() = core->GetInst().GetExt().GetSeg();
 
-    for (CSeqdesc_CI it(handle, CSeqdesc::e_Source);  it;  ++it) {
-        if (it->GetSource().GetOrg().IsSetTaxname()) {
-            organism = it->GetSource().GetOrg().GetTaxname();
-            BREAK(it);
+    {
+        CSeqdesc_CI it(handle, CSeqdesc::e_Source);
+        for (;  it;  ++it) {
+            if (it->GetSource().GetOrg().IsSetTaxname()) {
+                organism = it->GetSource().GetOrg().GetTaxname();
+                BREAK(it);
+            }
         }
     }
 
@@ -686,8 +706,8 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
         organism = "Unknown";
     }
 
-    for (CFeat_CI it(scope, everywhere, CSeqFeatData::e_Cdregion);
-         it;  ++it) {
+    CFeat_CI it(scope, everywhere, CSeqFeatData::e_Cdregion);
+    for (; it;  ++it) {
         if ( !it->IsSetProduct() ) {
             continue;
         }
