@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/01/28 20:19:11  lavr
+ * Clean destruction of streambuf sub-object; no exception throw in GetCONN()
+ *
  * Revision 6.8  2001/12/10 19:41:18  vakatov
  * + CConn_SocketStream::CConn_SocketStream(SOCK sock, ....)
  *
@@ -69,27 +72,28 @@ BEGIN_NCBI_SCOPE
 
 
 CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
-                               streamsize buf_size, bool do_tie)
-    : iostream(new CConn_Streambuf(connector, timeout, buf_size, do_tie))
+                               streamsize buf_size, bool do_tie) :
+    m_CSb(0)
 {
-    return;
+    auto_ptr<CConn_Streambuf>
+        csb(new CConn_Streambuf(connector, timeout, buf_size, do_tie));
+    init(csb.get());
+    m_CSb = csb.release();
 }
 
 
 CONN CConn_IOStream::GetCONN() const
 {
-    CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
-    if ( !sb ) {
-        THROW1_TRACE(runtime_error, "CConn_IOStream::GetCONN(): "
-                     "Stream buffer is not of type CConn_Streambuf");
-    }
-    return sb->GetCONN();
+    return m_CSb->GetCONN();
 }
 
 
 CConn_IOStream::~CConn_IOStream(void)
 {
-    delete rdbuf();
+    streambuf* sb = rdbuf();
+    delete sb;
+    if (sb != m_CSb)
+        delete m_CSb;
 }
 
 
