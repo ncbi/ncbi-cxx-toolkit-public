@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/04/15 15:34:55  thiessen
+* remove BLAST/PSSM for now
+*
 * Revision 1.34  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -194,7 +197,7 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     menu->Append(MID_THREAD_ALL, "Thread &All");
     menu->AppendSeparator();
     menu->Append(MID_BLAST_ONE, "&BLAST Single", "", true);
-    menu->Append(MID_BLAST_PSSM_ONE, "&BLAST/PSSM Single", "", true);
+//    menu->Append(MID_BLAST_PSSM_ONE, "&BLAST/PSSM Single", "", true);
     menuBar->Append(menu, "Al&gorithms");
 
     // Alignments menu
