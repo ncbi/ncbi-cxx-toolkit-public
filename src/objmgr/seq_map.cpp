@@ -58,6 +58,8 @@
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Packed_seqpnt.hpp>
 
+#include <algorithm>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -719,6 +721,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/12/26 20:35:14  ucko
+* #include <algorithm> for upper_bound<>
+*
 * Revision 1.25  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *
