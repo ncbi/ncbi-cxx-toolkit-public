@@ -83,7 +83,7 @@ public:
 // NW algorithm encapsulation
 //
 
-class CNWAligner
+class NCBI_XALGO_EXPORT CNWAligner
 {
 public:
     typedef int TScore;
@@ -201,6 +201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/02/21 16:41:11  dicuccio
+ * Added Win32 export specifier
+ *
  * Revision 1.9  2003/02/11 16:06:13  kapustin
  * Add end-space free alignment support
  *

@@ -53,7 +53,7 @@ struct SCoordRect; // auxiliary structure, see below
 // Myers-Miller algorithm encapsulation
 //
 
-class CMMAligner: public CNWAligner
+class NCBI_XALGO_EXPORT CMMAligner: public CNWAligner
 {
 public:
 
@@ -116,7 +116,7 @@ protected:
 
 // auxiliary structure
     
-struct SCoordRect {
+struct NCBI_XALGO_EXPORT SCoordRect {
     size_t i1, j1, i2, j2;
     SCoordRect() {};
     SCoordRect(size_t l, size_t t, size_t r, size_t b):
@@ -133,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/02/21 16:41:11  dicuccio
+ * Added Win32 export specifier
+ *
  * Revision 1.4  2003/01/28 12:34:53  kapustin
  * Move m_score to the base class
  *

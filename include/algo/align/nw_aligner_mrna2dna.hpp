@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CNWAlignerMrna2Dna: public CNWAligner
+class NCBI_XALGO_EXPORT CNWAlignerMrna2Dna: public CNWAligner
 {
 public:
 
@@ -77,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/02/21 16:41:11  dicuccio
+ * Added Win32 export specifier
+ *
  * Revision 1.2  2002/12/17 21:49:40  kapustin
  * Remove unnecesary seq type parameter from the constructor
  *
