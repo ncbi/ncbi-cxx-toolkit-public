@@ -56,6 +56,7 @@ public:
     {}
 
     void ShutdownServer() { CNetCacheClient::ShutdownServer(); }
+    void Logging(bool on_off) { CNetCacheClient::Logging(on_off); }
 };
 ///////////////////////////////////////////////////////////////////////
 
@@ -92,6 +93,11 @@ void CNetCacheControl::Init(void)
     arg_desc->AddFlag("s", "Shutdown server");
     arg_desc->AddFlag("v", "Server version");
 
+    arg_desc->AddOptionalKey("log",
+                             "server_logging",
+                             "Switch server side logging",
+                             CArgDescriptions::eBoolean);
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -105,12 +111,18 @@ int CNetCacheControl::Run(void)
 
     CNetCacheClient_Control nc_client(host, port);
 
+    if (args["log"]) {  // logging control
+        bool on_off = args["log"].AsBoolean();
+        nc_client.Logging(on_off);
+        NcbiCout << "Logging turned " 
+                 << (on_off ? "ON" : "OFF") << " on the server" << NcbiEndl;
+    }
+
     if (args["s"]) {  // shutdown
         nc_client.ShutdownServer();
         NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
         return 0;
     }
-
 
     string version = nc_client.ServerVersion();
     if (version.empty()) {
@@ -132,6 +144,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/12/27 16:32:36  kuznets
+ * + logging control
+ *
  * Revision 1.2  2004/12/20 13:29:53  kuznets
  * Worked around protected NetCacheClient::ShutdownServer()
  *
