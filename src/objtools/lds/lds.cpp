@@ -40,18 +40,38 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+CLDS_Database::CLDS_Database(const string& db_dir_name, const string& db_name)
+: m_LDS_DirName(db_dir_name),
+  m_LDS_DbName(db_name)
+{}
+
+CLDS_Database::CLDS_Database(const string& db_dir_name)
+: m_LDS_DirName(db_dir_name)
+{
+    m_LDS_DbName = "lds.db";
+}
+
+
+CLDS_Database::~CLDS_Database()
+{
+    LOG_POST(Info << "Closing LDS database: " << m_LDS_DbName);
+}
+
 void CLDS_Database::Create()
 {
+    string fname;
     LOG_POST(Info << "Creating LDS database: " << m_LDS_DbName);
     LOG_POST(Info << "Creating LDS table: " << "file");
 
-    m_db.file_db.Open(m_LDS_DbName.c_str(),
+    fname = m_LDS_DirName + "//lds_file.db"; 
+    m_db.file_db.Open(fname.c_str(),
                       "file",
                       CBDB_RawFile::eCreate);
 
     LOG_POST(Info << "Creating LDS table: " << "objecttype");
 
-    m_db.object_type_db.Open(m_LDS_DbName.c_str(),
+    fname = m_LDS_DirName + "//lds_objecttype.db"; 
+    m_db.object_type_db.Open(fname.c_str(),
                              "objecttype",
                              CBDB_RawFile::eCreate);
 
@@ -88,27 +108,33 @@ void CLDS_Database::Create()
     }
 
     LOG_POST(Info << "Creating LDS table: " << "object");
-    m_db.object_db.Open(m_LDS_DbName.c_str(),
+
+    fname = m_LDS_DirName + "//lds_object.db"; 
+    m_db.object_db.Open(fname.c_str(),
                     "object",
                     CBDB_RawFile::eCreate);
 
     LOG_POST(Info << "Creating LDS table: " << "objectattr");
-    m_db.object_attr_db.Open(m_LDS_DbName.c_str(),
+    fname = m_LDS_DirName + "//lds_objectattr.db"; 
+    m_db.object_attr_db.Open(fname.c_str(),
                              "objectattr",
                              CBDB_RawFile::eCreate);
 
     LOG_POST(Info << "Creating LDS table: " << "annotation");
-    m_db.annot_db.Open(m_LDS_DbName.c_str(),
+    fname = m_LDS_DirName + "//lds_annotation.db"; 
+    m_db.annot_db.Open(fname.c_str(),
                        "annotation",
                        CBDB_RawFile::eCreate);
 
     LOG_POST(Info << "Creating LDS table: " << "annot2obj");
-    m_db.annot2obj_db.Open(m_LDS_DbName.c_str(),
+    fname = m_LDS_DirName + "//lds_annot2obj.db"; 
+    m_db.annot2obj_db.Open(fname.c_str(),
                            "annot2obj",
                            CBDB_RawFile::eCreate);
 
     LOG_POST(Info << "Creating LDS table: " << "seq_id_list");
-    m_db.seq_id_list.Open(m_LDS_DbName.c_str(),
+    fname = m_LDS_DirName + "//lds_seq_id_list.db"; 
+    m_db.seq_id_list.Open(fname.c_str(),
                           "seq_id_list",
                           CBDB_RawFile::eCreate);
 }
@@ -116,32 +142,41 @@ void CLDS_Database::Create()
 
 void CLDS_Database::Open()
 {
-    m_db.file_db.Open(m_LDS_DbName.c_str(),
+    string fname;
+
+    fname = m_LDS_DirName + "//lds_file.db"; 
+    m_db.file_db.Open(fname.c_str(),
                       "file",
                       CBDB_RawFile::eReadWrite);
 
-    m_db.object_type_db.Open(m_LDS_DbName.c_str(),
+    fname = m_LDS_DirName + "//lds_objecttype.db"; 
+    m_db.object_type_db.Open(fname.c_str(),
                              "objecttype",
                              CBDB_RawFile::eReadWrite);
     x_LoadTypeMap();
 
-    m_db.object_db.Open(m_LDS_DbName.c_str(),
+    fname = m_LDS_DirName + "//lds_object.db"; 
+    m_db.object_db.Open(fname.c_str(),
                         "object",
                         CBDB_RawFile::eReadWrite);
 
-    m_db.object_attr_db.Open(m_LDS_DbName.c_str(),
+    fname = m_LDS_DirName + "//lds_objectattr.db"; 
+    m_db.object_attr_db.Open(fname.c_str(),
                             "objectattr",
                             CBDB_RawFile::eReadWrite);
 
-    m_db.annot_db.Open(m_LDS_DbName.c_str(),
+    fname = m_LDS_DirName + "//lds_annotation.db"; 
+    m_db.annot_db.Open(fname.c_str(),
                        "annotation",
                        CBDB_RawFile::eReadWrite);
 
-    m_db.annot2obj_db.Open(m_LDS_DbName.c_str(),
+    fname = m_LDS_DirName + "//lds_annot2obj.db"; 
+    m_db.annot2obj_db.Open(fname.c_str(),
                            "annot2obj",
                            CBDB_RawFile::eReadWrite);
 
-    m_db.seq_id_list.Open(m_LDS_DbName.c_str(),
+    fname = m_LDS_DirName + "//lds_seq_id_list.db"; 
+    m_db.seq_id_list.Open(fname.c_str(),
                           "seq_id_list",
                            CBDB_RawFile::eReadWrite);
 }
@@ -163,6 +198,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/08/11 20:01:00  kuznets
+ * Reworked lds database and file open procedure.
+ * Now all db tables are created in separate OS files, not colocate in one
+ * lds.db (looks like BerkeleyDB is not really supporting multiple tables in one file)
+ *
  * Revision 1.7  2003/08/05 14:32:01  kuznets
  * Reflecting changes in obj_sniff.hpp
  *
