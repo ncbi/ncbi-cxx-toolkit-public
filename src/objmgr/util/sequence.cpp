@@ -62,6 +62,8 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
@@ -77,6 +79,39 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(sequence)
+
+
+const COrg_ref& GetOrg_ref(const CBioseq_Handle& handle)
+{
+    {{
+        CSeqdesc_CI desc(handle, CSeqdesc::e_Source);
+        if (desc) {
+            return desc->GetSource().GetOrg();
+        }
+    }}
+
+    {{
+        CSeqdesc_CI desc(handle, CSeqdesc::e_Org);
+        if (desc) {
+            return desc->GetOrg();
+        }
+    }}
+
+    NCBI_THROW(CException, eUnknown, "No organism set");
+}
+
+
+int GetTaxId(const CBioseq_Handle& handle)
+{
+    try {
+        return GetOrg_ref(handle).GetTaxId();
+    }
+    catch (...) {
+        return 0;
+    }
+}
+
+
 
 TSeqPos GetLength(const CSeq_id& id, CScope* scope)
 {
@@ -4080,6 +4115,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.78  2004/04/06 14:03:15  dicuccio
+* Added API to extract the single Org-ref from a bioseq handle.  Added API to
+* retrieve a single tax-id from a bioseq handle
+*
 * Revision 1.77  2004/04/05 15:56:14  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

@@ -378,6 +378,17 @@ NCBI_XOBJUTIL_EXPORT
 CBioseq_Handle GetNucleotideParent(const CBioseq_Handle& product);
 
 
+// return the org-ref associated with a given sequence.  This will throw
+// a CException if there is no org-ref associated with the sequence
+NCBI_XOBJUTIL_EXPORT
+const COrg_ref& GetOrg_ref(const CBioseq_Handle& handle);
+
+// return the tax-id associated with a given sequence.  This will return 0
+// if no tax-id can be found.
+NCBI_XOBJUTIL_EXPORT
+int GetTaxId(const CBioseq_Handle& handle);
+
+
 END_SCOPE(sequence)
 
 // FASTA-format output; see also ReadFasta in <objtools/readers/fasta.hpp>
@@ -650,6 +661,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.41  2004/04/06 14:03:15  dicuccio
+* Added API to extract the single Org-ref from a bioseq handle.  Added API to
+* retrieve a single tax-id from a bioseq handle
+*
 * Revision 1.40  2004/03/25 20:02:30  vasilche
 * Added several method variants with CBioseq_Handle as argument.
 *
