@@ -61,20 +61,20 @@ int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     if ( !*pattern ) {
         return 1;
     }
-    
+
     if (n == NPOS  ||  n > str.length() - pos) {
         n = str.length() - pos;
     }
-    
+
     const char* s = str.data() + pos;
     while (n  &&  *pattern  &&  *s == *pattern) {
         s++;  pattern++;  n--;
     }
 
     if (n == 0) {
-        return *pattern ? -1 : 0; 
+        return *pattern ? -1 : 0;
     }
-    
+
     return *s - *pattern;
 }
 
@@ -99,9 +99,9 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     }
 
     if (n == 0) {
-        return *pattern ? -1 : 0; 
+        return *pattern ? -1 : 0;
     }
-    
+
     return toupper(*s) - toupper(*pattern);
 }
 
@@ -135,7 +135,7 @@ int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
             return 0;
         return n > pattern.length() ? 1 : -1;
     }
-    
+
     return *s - *p;
 }
 
@@ -169,7 +169,7 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
             return 0;
         return n > pattern.length() ? 1 : -1;
     }
-    
+
     return toupper(*s) - toupper(*p);
 }
 
@@ -235,7 +235,7 @@ int NStr::StringToNumeric(const string& str)
     }
 
 
-int NStr::StringToInt(const string& str, int base /* = 10 */, 
+int NStr::StringToInt(const string& str, int base /* = 10 */,
                       ECheckEndPtr check_endptr   /* = eCheck_Need */ )
 {
     errno = 0;
@@ -249,7 +249,7 @@ int NStr::StringToInt(const string& str, int base /* = 10 */,
 }
 
 
-unsigned int NStr::StringToUInt(const string& str, int base /* =10 */, 
+unsigned int NStr::StringToUInt(const string& str, int base /* =10 */,
                                 ECheckEndPtr check_endptr   /* =eCheck_Need */)
 {
     errno = 0;
@@ -276,7 +276,7 @@ long NStr::StringToLong(const string& str, int base /* = 10 */,
 }
 
 
-unsigned long NStr::StringToULong(const string& str, int base /*=10 */, 
+unsigned long NStr::StringToULong(const string& str, int base /*=10 */,
                                   ECheckEndPtr check_endptr   /*=eCheck_Need*/)
 {
     errno = 0;
@@ -325,7 +325,7 @@ string NStr::Int8ToString(Int8 value, bool sign /* = false */ )
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 3 + 2;
     char buffer[kBufSize];
     char* pos = buffer + kBufSize;
-    
+
     if (value == 0) {
         *--pos = '0';
     }
@@ -333,12 +333,12 @@ string NStr::Int8ToString(Int8 value, bool sign /* = false */ )
         bool is_negative = value < 0;
         if ( is_negative )
             value = -value;
-        
+
         do {
             *--pos = char('0' + (value % 10));
             value /= 10;
         } while ( value );
-        
+
         if ( is_negative )
             *--pos = '-';
         else if ( sign )
@@ -350,38 +350,38 @@ string NStr::Int8ToString(Int8 value, bool sign /* = false */ )
 
 Int8 NStr::StringToInt8(const string& str)
 {
-    bool sign = false;    
+    bool sign = false;
     const char* pc = str.c_str();
-        
+
     switch (*pc) {
-    case '-': 
+    case '-':
         sign = true;
     case '+':
         ++pc;
         break;
     }
-    
+
     if (!isdigit(*pc))
         NCBI_THROW(CStringException,eConvert,"String cannot be converted");
 
-    Int8 n = 0; 
+    Int8 n = 0;
     Int8 limdiv = kMax_I8 / 10;
-    Int8 limoff = kMax_I8 % 10;  
-     
+    Int8 limoff = kMax_I8 % 10;
+
     while (*pc) {
         if (!isdigit(*pc))
             NCBI_THROW(CStringException,eConvert,"String cannot be converted");
-        int delta = *pc++ - '0';                    
+        int delta = *pc++ - '0';
         n *= 10;
-        
+
         // Overflow checking
         if (n > limdiv || (n == limdiv && delta > limoff)) {
-            NCBI_THROW(CStringException,eConvert,"String cannot be converted");        
+            NCBI_THROW(CStringException,eConvert,"String cannot be converted");
         }
-        
+
         n += delta;
     }
-    
+
     return sign ? -n : n;
 }
 
@@ -391,29 +391,29 @@ Uint8 NStr::StringToUInt8(const string& str)
     const char* pc = str.c_str();
 
     if (*pc == '+')
-        ++pc;        
-    
+        ++pc;
+
     if (!isdigit(*pc))
         NCBI_THROW(CStringException,eConvert,"String cannot be converted");
 
-    Uint8 n = 0;  
+    Uint8 n = 0;
     Uint8 limdiv = kMax_UI8 / 10;
-    Uint8 limoff = kMax_UI8 % 10;  
-    
+    Uint8 limoff = kMax_UI8 % 10;
+
     while (*pc) {
         if (!isdigit(*pc))
             NCBI_THROW(CStringException,eConvert,"String cannot be converted");
-        int delta = *pc++ - '0';        
+        int delta = *pc++ - '0';
         n *= 10;
-        
+
         // Overflow checking
         if (n > limdiv || (n == limdiv && delta > limoff)) {
-            NCBI_THROW(CStringException,eConvert,"String cannot be converted");        
+            NCBI_THROW(CStringException,eConvert,"String cannot be converted");
         }
-        
+
         n += delta;
     }
-    
+
     return n;
 }
 
@@ -448,9 +448,9 @@ string NStr::DoubleToString(double value)
 
 // A maximal double precision used in the double to string conversion
 #if defined(NCBI_OS_MSWIN)
-    const SIZE_TYPE kMaxDoublePrecision = 200;
+const SIZE_TYPE kMaxDoublePrecision = 200;
 #else
-    const SIZE_TYPE kMaxDoublePrecision = 308;
+const SIZE_TYPE kMaxDoublePrecision = 308;
 #endif
 // A maximal size of a double value in a string form.
 // Exponent size + sign + dot + ending '\0' + max.precision
@@ -582,14 +582,14 @@ list<string>& NStr::Split(const string& str, const string& delim,
     return arr;
 }
 
-vector<string> NStr::Tokenize(const string& str, const string& delim,
-                              vector<string>& arr)
+vector<string>& NStr::Tokenize(const string& str, const string& delim,
+                               vector<string>& arr)
 {
     if (delim.empty()) {
         arr.push_back(str);
         return arr;
     }
-    
+
     size_t pos, prev_pos, len;
 
     // Count number of tokens to determine the array size
@@ -608,15 +608,15 @@ vector<string> NStr::Tokenize(const string& str, const string& delim,
         char c = str[pos];
         size_t dpos = delim.find(c);
         if (dpos == string::npos) continue;
-        
+
         len = pos - prev_pos;
-        arr.push_back(len ? str.substr(prev_pos, len) : "");
+        arr.push_back(len ? str.substr(prev_pos, len) : kEmptyStr);
 
         prev_pos = pos + 1;
     }
-    
+
     len = pos - prev_pos;
-    arr.push_back(len ? str.substr(prev_pos, len) : "");
+    arr.push_back(len ? str.substr(prev_pos, len) : kEmptyStr);
 
     return arr;
 }
@@ -780,7 +780,7 @@ list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
     };
 
     while (pos < len) {
-        SIZE_TYPE column     = s_VisibleWidth(*pfx, 
+        SIZE_TYPE column     = s_VisibleWidth(*pfx,
                                               (flags & fWrap_HTMLPre)!=0);
         // the next line will start at best_pos
         SIZE_TYPE best_pos   = NPOS;
@@ -851,13 +851,13 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 {
     const string* pfx      = prefix1 ? prefix1 : prefix;
     string        s        = *pfx;
-    SIZE_TYPE     column   = s_VisibleWidth(s,     
+    SIZE_TYPE     column   = s_VisibleWidth(s,
                                             (flags & fWrap_HTMLPre)!=0);
-    SIZE_TYPE     delwidth = s_VisibleWidth(delim, 
+    SIZE_TYPE     delwidth = s_VisibleWidth(delim,
                                             (flags & fWrap_HTMLPre)!=0);
     bool          at_start = true;
     iterate (list<string>, it, l) {
-        SIZE_TYPE term_width = s_VisibleWidth(*it, 
+        SIZE_TYPE term_width = s_VisibleWidth(*it,
                                               (flags & fWrap_HTMLPre)!=0);
         if (at_start) {
             if (column + term_width <= width) {
@@ -912,6 +912,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2003/01/21 23:22:22  vakatov
+ * NStr::Tokenize() to return reference, and not a new "vector<>".
+ *
  * Revision 1.66  2003/01/21 20:08:01  ivanov
  * Added function NStr::DoubleToString(value, precision, buf, buf_size)
  *
@@ -1042,7 +1045,7 @@ END_NCBI_SCOPE
  * ToUpper/ToLower(string&) -- fixed
  *
  * Revision 1.30  2000/06/01 19:05:40  vasilche
- * NStr::StringToInt now reports errors for tailing symbols in release version 
+ * NStr::StringToInt now reports errors for tailing symbols in release version
  * too
  *
  * Revision 1.29  2000/05/01 19:02:25  vasilche
@@ -1134,7 +1137,7 @@ END_NCBI_SCOPE
  * VC++ fixes in ncbistd; minor fixes in Resource
  *
  * Revision 1.3  1998/12/17 21:50:45  sandomir
- * CNCBINode fixed in Resource; case insensitive string comparison predicate 
+ * CNCBINode fixed in Resource; case insensitive string comparison predicate
  * added
  *
  * Revision 1.2  1998/12/15 17:36:33  vasilche

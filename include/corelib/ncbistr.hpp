@@ -27,7 +27,7 @@
  * ===========================================================================
  *
  * Authors:  Eugene Vasilchenko, Denis Vakatov
- * 
+ *
  * File Description:
  *   The NCBI C++ standard methods for dealing with std::string
  *
@@ -106,16 +106,18 @@ public:
     /// if it represents a number that does not fit into "int".
     static int StringToNumeric(const string& str);
 
-    /// Using of check end ptr in the String-to-X conversion functions
+    /// Whether to prohibit trailing symbols (any symbol but '\0')
+    /// in the StringToXxx() conversion functions below
     enum ECheckEndPtr {
         eCheck_Need,   /// Check is necessary
         eCheck_Skip    /// Skip this check
     };
 
-    /// String-to-X conversion functions (throw exception if conversion error)
-    /// If "check" is eCheck_Skip that "str" can contain any symbols 
-    /// after number. Otherwise throw exception in this case.
-    static int           StringToInt    (const string& str, int base = 10, 
+    /// String-to-X conversion functions (throw exception on conversion error).
+    /// If "check" is eCheck_Skip then "str" can have trailing symbols
+    /// after the number;  otherwise exception will be thrown if there
+    /// are trailing symbols present after the converted number.
+    static int           StringToInt    (const string& str, int base = 10,
                                          ECheckEndPtr check = eCheck_Need);
     static unsigned int  StringToUInt   (const string& str, int base = 10,
                                          ECheckEndPtr check = eCheck_Need);
@@ -205,10 +207,10 @@ public:
     static int strcasecmp  (const char* s1, const char* s2);
     static int strncasecmp (const char* s1, const char* s2, size_t n);
 
-    // Wrapper for the function strftime() that correct handling %D and %T 
+    // Wrapper for the function strftime() that correct handling %D and %T
     // time formats on MS Windows
-    static size_t strftime (char *s, size_t maxsize, const char *format, 
-                            const struct tm *timeptr);
+    static size_t strftime (char* s, size_t maxsize, const char* format,
+                            const struct tm* timeptr);
 
     /// The following 4 methods change the passed string, then return it
     static string& ToLower(string& str);
@@ -268,18 +270,20 @@ public:
                           const string& replace,
                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
 
-    /// Split string "str" using symbols from "delim" as delimiters
+    /// Split string "str" using symbols from "delim" as delimiters.
+    /// Delimiters which immediately follow each other are treated as one
+    /// delimiter (unlike that in Tokenize()).
     /// Add the resultant tokens to the list "arr". Return "arr".
     static list<string>& Split(const string& str,
                                const string& delim,
                                list<string>& arr);
-                               
-    /// Tokenize string "str" using symbols from "delim" as delimeters
-    /// Add the resultant tokens to the vector "arr". Return reference on "arr".
-    /// When delimiter is empty the input string appended to "arr" as is
-    static vector<string> Tokenize(const string& str,
-                                   const string& delim,
-                                   vector<string>& arr);
+
+    /// Tokenize string "str" using symbols from "delim" as delimeters.
+    /// Add the resultant tokens to the vector "arr". Return ref. to "arr".
+    /// If delimiter is empty, then input string is appended to "arr" as is.
+    static vector<string>& Tokenize(const string&   str,
+                                    const string&   delim,
+                                    vector<string>& arr);
 
     /// Join the strings in "arr" into a single string, separating
     /// each pair with "delim".
@@ -487,8 +491,8 @@ int NStr::strncasecmp(const char* s1, const char* s2, size_t n)
 }
 
 inline
-size_t NStr::strftime (char *s, size_t maxsize, const char *format, 
-                       const struct tm *timeptr)
+size_t NStr::strftime(char* s, size_t maxsize, const char* format,
+                      const struct tm* timeptr)
 {
 #if defined(NCBI_COMPILER_MSVC)
     string x_format;
@@ -580,7 +584,7 @@ bool NStr::EndsWith(const string& str, const string& end, ECase use_case)
 
 
 inline
-SIZE_TYPE NStr::Find(const string& str, const string& pattern, 
+SIZE_TYPE NStr::Find(const string& str, const string& pattern,
                      SIZE_TYPE start, SIZE_TYPE end, EOccurrence where,
                      ECase use_case)
 {
@@ -716,6 +720,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2003/01/21 23:22:06  vakatov
+ * NStr::Tokenize() to return reference, and not a new "vector<>".
+ *
  * Revision 1.33  2003/01/21 20:08:28  ivanov
  * Added function NStr::DoubleToString(value, precision, buf, buf_size)
  *
