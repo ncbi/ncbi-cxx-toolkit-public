@@ -452,9 +452,7 @@ CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds,
     CBioseq_Handle bh;
     try {
         bh = scope.GetBioseqHandle(seqloc);
-        CSeqVector sv = bh.GetSequenceView(seqloc,
-                                           CBioseq_Handle::eViewConstructed,
-                                           CBioseq_Handle::eCoding_Ncbi);
+        CSeqVector sv(seqloc, scope);
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
         retval = s_ExtractSequenceFromSeqVector(sv);
     } catch (const CException&) {
@@ -523,6 +521,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/12/06 17:54:09  grichenk
+ * Replaced calls to deprecated methods
+ *
  * Revision 1.9  2004/11/02 20:37:34  camacho
  * Doxygen fixes
  *

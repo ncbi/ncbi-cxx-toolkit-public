@@ -88,8 +88,7 @@ void CSequenceItem::x_GatherInfo(CBioseqContext& ctx)
     ival.SetFrom(start);
     ival.SetTo(end);
     
-    m_Sequence = 
-        ctx.GetHandle().GetSequenceView(region, CBioseq_Handle::eViewConstructed);
+    m_Sequence = CSeqVector(region, ctx.GetHandle().GetScope());
 
     CSeqVector::TCoding code = CSeq_data::e_Iupacna;
     if ( ctx.IsProt() ) {
@@ -108,6 +107,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.10  2004/11/24 16:52:11  shomrat
 * Inilined methods
 *

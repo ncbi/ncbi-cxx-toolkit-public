@@ -349,9 +349,8 @@ void CFlatTextFormatter::FormatData(const CFlatData& data)
     static const TSeqPos kChunkSize = 1200; // 20 lines
 
     string     buf;
-    CSeqVector v = m_Context->GetHandle().GetSequenceView
-        (data.GetLoc(), CBioseq_Handle::eViewConstructed,
-         CBioseq_Handle::eCoding_Iupac);
+    CSeqVector v(data.GetLoc(), m_Context->GetHandle().GetScope(),
+                 CBioseq_Handle::eCoding_Iupac);
     for (TSeqPos pos = 0;  pos < v.size();  pos += kChunkSize) {
         list<string>    lines;
         CNcbiOstrstream oss;
@@ -442,6 +441,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.6  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *

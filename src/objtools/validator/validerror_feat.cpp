@@ -1734,12 +1734,10 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
         }
         _ASSERT(nuc  &&  rna);
     
-        CSeqVector nuc_vec = nuc.GetSequenceView(feat.GetLocation(),
-            CBioseq_Handle::eViewConstructed,
-            CBioseq_Handle::eCoding_Iupac);
-        CSeqVector rna_vec = rna.GetSequenceView(feat.GetProduct(),
-            CBioseq_Handle::eViewConstructed,
-            CBioseq_Handle::eCoding_Iupac);
+        CSeqVector nuc_vec(feat.GetLocation(), *m_Scope,
+                           CBioseq_Handle::eCoding_Iupac);
+        CSeqVector rna_vec(feat.GetProduct(), *m_Scope,
+                           CBioseq_Handle::eCoding_Iupac);
 
         size_t nuc_len = nuc_vec.size();
         size_t rna_len = rna_vec.size();
@@ -3041,6 +3039,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.72  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.
 *

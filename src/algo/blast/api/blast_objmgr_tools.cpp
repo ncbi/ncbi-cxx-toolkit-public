@@ -551,9 +551,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
     CBioseq_Handle handle = scope->GetBioseqHandle(sl); // might throw exception
 
     // Retrieves the correct strand (plus or minus), but not both
-    CSeqVector sv =
-        handle.GetSequenceView(sl, CBioseq_Handle::eViewConstructed,
-                               CBioseq_Handle::eCoding_Ncbi);
+    CSeqVector sv(sl, *scope);
 
     switch (encoding) {
     // Protein sequences (query & subject) always have sentinels around sequence
@@ -592,9 +590,9 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
 
         if (strand == eNa_strand_both) {
             // Get the minus strand if both strands are required
-            sv = handle.GetSequenceView(sl, CBioseq_Handle::eViewConstructed,
-                                        CBioseq_Handle::eCoding_Ncbi, 
-                                        eNa_strand_minus);
+            sv = CSeqVector(sl, *scope,
+                            CBioseq_Handle::eCoding_Ncbi, 
+                            eNa_strand_minus);
             sv.SetCoding(CSeq_data::e_Ncbi4na);
             if (encoding == BLASTNA_ENCODING) {
                 for (i = 0; i < sv.size(); i++) {
@@ -1002,6 +1000,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2004/12/06 17:54:09  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.26  2004/12/02 16:01:24  bealer
 * - Change multiple-arrays to array-of-struct in BlastQueryInfo
 *

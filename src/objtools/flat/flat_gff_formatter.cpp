@@ -173,9 +173,9 @@ void CFlatGFFFormatter::FormatFeature(const IFlattishFeature& f)
             }}
 
             string s;
-            m_Context->GetHandle().GetSequenceView
-                (*tentative_start, CBioseq_Handle::eViewConstructed)
-                .GetSeqData(0, 3, s);
+            CSeqVector vect(*tentative_start,
+                            m_Context->GetHandle().GetScope());
+            vect.GetSeqData(0, 3, s);
             const CTrans_table* tt;
             if (cds.IsSetCode()) {
                 tt = &CGen_code_table::GetTransTable(cds.GetCode());
@@ -238,9 +238,8 @@ void CFlatGFFFormatter::FormatData(const CFlatData& data)
         return;
 
     list<string> l;
-    CSeqVector v = m_Context->GetHandle().GetSequenceView
-        (data.GetLoc(), CBioseq_Handle::eViewConstructed,
-         CBioseq_Handle::eCoding_Iupac);
+    CSeqVector v(data.GetLoc(), m_Context->GetHandle().GetScope(),
+                 CBioseq_Handle::eCoding_Iupac);
     CSeqVector_CI vi(v);
     while (vi) {
         string s;
@@ -396,6 +395,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.6  2004/05/21 21:42:53  gorelenk
 * Added PCH ncbi_pch.hpp
 *

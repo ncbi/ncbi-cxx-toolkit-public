@@ -1456,11 +1456,18 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
         return;
     }
 
-    CSeqVector v = (location
-                    ? handle.GetSequenceView(*location,
-                                             CBioseq_Handle::eViewMerged,
-                                             CBioseq_Handle::eCoding_Iupac)
-                    : handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
+    CSeqVector v;
+    if ( location ) {
+        CRef<CSeq_loc> merged = sequence::Seq_loc_Merge(*location,
+                                                        CSeq_loc::fMerge_All,
+                                                        &handle.GetScope());
+        v = CSeqVector(*merged,
+                       handle.GetScope(),
+                       CBioseq_Handle::eCoding_Iupac);
+    }
+    else {
+        v = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    }
     bool is_na = inst.GetMol() != CSeq_inst::eMol_aa;
     // autodetection is sometimes broken (!)
     v.SetCoding(is_na ? CSeq_data::e_Iupacna : CSeq_data::e_Iupacaa);
@@ -1611,9 +1618,7 @@ void CSeqTranslator::Translate(const CSeq_loc& loc,
                                bool include_stop,
                                bool remove_trailing_X)
 {
-    CSeqVector seq =
-        handle.GetSequenceView(loc, CBioseq_Handle::eViewConstructed,
-                               CBioseq_Handle::eCoding_Iupac);
+    CSeqVector seq(loc, handle.GetScope(), CBioseq_Handle::eCoding_Iupac);
     x_Translate(seq, prot, code);
 }
 
@@ -1626,9 +1631,7 @@ void CCdregion_translate::ReadSequenceByLocation (string& seq,
 
 {
     // get vector of sequence under location
-    CSeqVector seqv = bsh.GetSequenceView (loc,
-                                           CBioseq_Handle::eViewConstructed,
-                                           CBioseq_Handle::eCoding_Iupac);
+    CSeqVector seqv(loc, bsh.GetScope(), CBioseq_Handle::eCoding_Iupac);
     seqv.GetSeqData(0, seqv.size(), seq);
 }
 
@@ -2430,6 +2433,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.108  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.107  2004/12/06 15:05:11  shomrat
 * Added GetParentForPart and GetBioseqFromSeqLoc
 *

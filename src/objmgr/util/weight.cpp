@@ -74,8 +74,7 @@ static const size_t kMaxRes = sizeof(kNumC) / sizeof(*kNumC) - 1;
 double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
 {
     CSeqVector v = (location
-                    ? handle.GetSequenceView(*location,
-                                             CBioseq_Handle::eViewConstructed)
+                    ? CSeqVector(*location, handle.GetScope())
                     : handle.GetSeqVector());
     v.SetCoding(CSeq_data::e_Ncbistdaa);
 
@@ -198,6 +197,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.34  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.33  2004/11/22 21:40:01  grichenk
 * Doxygenized comments, replaced exception with CObjmgrUtilException.
 *

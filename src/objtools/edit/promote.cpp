@@ -371,8 +371,7 @@ void CPromote::x_PromoteRna(CSeq_feat& feat) const
     }
     
     // get the actual mRNA sequence
-    CSeqVector rnaseq = 
-        m_Seq.GetSequenceView(feat.GetLocation(), CBioseq_Handle::eViewConstructed);
+    CSeqVector rnaseq(feat.GetLocation(), m_Seq.GetScope());
     string data;
     rnaseq.GetSeqData(0, rnaseq.size(), data);
 
@@ -669,6 +668,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.2  2004/11/01 19:33:09  grichenk
 * Removed deprecated methods
 *

@@ -832,9 +832,9 @@ int CDemoApp::Run(void)
                 count++;
                 // Get seq vector filtered with the current feature location.
                 // e_ViewMerged flag forces each residue to be shown only once.
-                CSeqVector cds_vect = handle.GetSequenceView
+                CSeqVector cds_vect
                     (by_product? it->GetProduct(): it->GetLocation(),
-                     CBioseq_Handle::eViewMerged,
+                     scope,
                      CBioseq_Handle::eCoding_Iupac);
                 // Print first 10 characters of each cd-region
                 if ( print_cds ) {
@@ -848,10 +848,9 @@ int CDemoApp::Run(void)
                         it->GetMappedFeature().GetLocation();
                     NcbiCout << "Zero size to: " << MSerial_AsnText <<
                         it->GetLocation();
-                    
-                    CSeqVector v2 = handle.GetSequenceView
-                        (it->GetLocation(), CBioseq_Handle::eViewMerged,
-                         CBioseq_Handle::eCoding_Iupac);
+
+                    CSeqVector v2(it->GetLocation(), scope,
+                                  CBioseq_Handle::eCoding_Iupac);
                     NcbiCout << v2.size() << NcbiEndl;
                     
                     const CSeq_id* mapped_id = 0;
@@ -1028,6 +1027,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2004/12/06 17:54:09  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.91  2004/11/16 21:41:11  grichenk
 * Removed default value for CScope* argument in CSeqMap methods
 *

@@ -267,9 +267,8 @@ void CFlatSeqDataQV::Format(TFlatQuals& q, const string& name,
                             CFlatContext& ctx, IFlatQV::TFlags) const
 {
     string s;
-    CSeqVector v = ctx.GetHandle().GetScope().GetBioseqHandle(*m_Value)
-        .GetSequenceView(*m_Value, CBioseq_Handle::eViewConstructed,
-                         CBioseq_Handle::eCoding_Iupac);
+    CSeqVector v(*m_Value, ctx.GetHandle().GetScope(),
+                 CBioseq_Handle::eCoding_Iupac);
     v.GetSeqData(0, v.size(), s);
     x_AddFQ(q, name, s);
 }
@@ -332,6 +331,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.5  2004/05/21 21:42:53  gorelenk
 * Added PCH ncbi_pch.hpp
 *

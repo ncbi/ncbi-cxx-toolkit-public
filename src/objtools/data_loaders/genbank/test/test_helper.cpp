@@ -1100,7 +1100,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     interval.SetTo(seq_str.size()-1);
     CSeq_loc loc;
     loc.SetInt(interval);
-    seq_vect = handle.GetSequenceView(loc, CBioseq_Handle::eViewConstructed);
+    seq_vect = CSeqVector(loc, scope);
     string sout = "";
     for (TSeqPos i = 0; i < seq_vect.size(); i++) {
         sout += seq_vect[i];
@@ -1403,6 +1403,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.4  2004/05/21 21:42:52  gorelenk
 * Added PCH ncbi_pch.hpp
 *

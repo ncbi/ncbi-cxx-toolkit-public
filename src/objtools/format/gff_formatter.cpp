@@ -246,9 +246,10 @@ void CGFFFormatter::FormatFeature
             }}
 
             string s;
-            ctx.GetHandle().GetSequenceView
-                (*tentative_start, CBioseq_Handle::eViewConstructed)
-                .GetSeqData(0, 3, s);
+            {{
+                CSeqVector vect(*tentative_start, ctx.GetHandle().GetScope());
+                vect.GetSeqData(0, 3, s);
+            }}
             const CTrans_table* tt;
             if (cds.IsSetCode()) {
                 tt = &CGen_code_table::GetTransTable(cds.GetCode());
@@ -613,6 +614,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.11  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.
 *

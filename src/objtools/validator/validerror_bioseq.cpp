@@ -3533,11 +3533,9 @@ void CValidError_bioseq::ValidateGraphValues
     int max = bg.GetMax();
 
     const CSeq_loc& gloc = graph.GetLoc();
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(gloc);
-    CSeqVector vec = bsh.GetSequenceView(gloc, 
-                                         CBioseq_Handle::eViewConstructed,
-                                         CBioseq_Handle::eCoding_Ncbi,
-                                         GetStrand(gloc, m_Scope));
+    CSeqVector vec(gloc, *m_Scope,
+                   CBioseq_Handle::eCoding_Ncbi,
+                   GetStrand(gloc, m_Scope));
     vec.SetCoding(CSeq_data::e_Ncbi4na);
 
     CSeqVector::const_iterator seq_begin = vec.begin();
@@ -3901,6 +3899,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.92  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.91  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.
 *

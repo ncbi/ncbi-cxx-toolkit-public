@@ -222,8 +222,7 @@ void CFlatDataHeader::GetCounts(TSeqPos& a, TSeqPos& c, TSeqPos& g, TSeqPos& t,
 {
     if ( !m_IsProt
         &&  !m_As  &&  !m_Cs  &&  !m_Gs  &&  !m_Ts  &&  !m_Others ) {
-        CSeqVector v = m_Handle.GetSequenceView
-            (*m_Loc, CBioseq_Handle::eViewConstructed);
+        CSeqVector v(*m_Loc, m_Handle.GetScope());
         // TSeqPos counts[numeric_limits<CSeqVector::TResidue>::max() + 1];
         TSeqPos counts[256];
         memset(counts, 0, sizeof(counts));
@@ -329,6 +328,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.6  2004/05/21 21:42:53  gorelenk
 * Added PCH ncbi_pch.hpp
 *

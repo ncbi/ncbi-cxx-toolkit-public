@@ -74,10 +74,8 @@ void CBaseCountItem::x_GatherInfo(CBioseqContext& ctx)
         return;
     }
     
-    CSeqVector v = ctx.GetHandle().GetSequenceView(
-            ctx.GetLocation(),
-            CBioseq_Handle::eViewConstructed,
-            CBioseq_Handle::eCoding_Iupac);
+    CSeqVector v(ctx.GetLocation(), ctx.GetHandle().GetScope(),
+                 CBioseq_Handle::eCoding_Iupac);
 
     ITERATE (CSeqVector, it, v) {
         CSeqVector_CI::TResidue res = toupper(*it);
@@ -110,6 +108,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/12/06 17:54:10  grichenk
+* Replaced calls to deprecated methods
+*
 * Revision 1.5  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
