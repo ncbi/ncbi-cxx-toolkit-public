@@ -414,7 +414,7 @@ CObjectIStream* CTest_validatorApplication::OpenFile
 }
 
 
-unsigned int CTest_validatorApplication::PrintValidError
+SIZE_TYPE CTest_validatorApplication::PrintValidError
 (CConstRef<CValidError> errors, 
  const CArgs& args)
 {
@@ -429,8 +429,8 @@ unsigned int CTest_validatorApplication::PrintValidError
 	return 0;
     }
 
-    unsigned int result = 0;
-    unsigned int reported = 0;
+    SIZE_TYPE result = 0;
+    SIZE_TYPE reported = 0;
 
     for ( CValidError_CI vit(*errors); vit; ++vit) {
         if ( vit->GetSeverity() >= count ) {
@@ -492,6 +492,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2003/05/15 02:10:05  ucko
+ * Be consistent about SIZE_TYPE vs. unsigned int in PrintValidError.
+ *
  * Revision 1.20  2003/05/14 21:16:48  shomrat
  * Using CRef instead of auto_ptr; changed to output format
  *
