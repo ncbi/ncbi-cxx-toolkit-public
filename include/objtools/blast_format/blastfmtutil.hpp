@@ -48,7 +48,6 @@ USING_SCOPE (objects);
 /** This class contains misc functions for displaying BLAST results. */
  
 ///blast related url
-/* url */
 const string kEntrezUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entre\
 z/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>";
 
@@ -76,6 +75,14 @@ query.fcgi?db=geo&term=%d[gi]\"><img border=0 height=16 width=16 src=\"/blast\
 const string kGeneUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/\
 query.fcgi?db=gene&cmd=search&term=%d[%s]\"><img border=0 height=16 width=16 \
 src=\"/blast/images/G.gif\" alt=\"Gene info\"></a>";
+
+const string kEntrezSubseqUrl = "<a href=\"http://www.ncbi.nlm.nih.\
+gov/entrez/viewer.fcgi?val=%d&db=%s&from=%d&to=%d&view=gbwithparts\">";
+
+const string kBl2seqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/\
+blast/bl2seq/wblast2.cgi?PROGRAM=tblastx&WORD=3&RID=%s&ONE=%s&TWO=%s\">Get \
+TBLASTX alignments</a>";
+
 
 class CBlastFormatUtil 
 {
@@ -205,6 +212,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.7  2005/02/14 17:42:36  jianye
+Added more url
+
 Revision 1.6  2005/02/09 17:35:30  jianye
 add common url
 
