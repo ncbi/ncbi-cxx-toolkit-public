@@ -13,7 +13,7 @@ set -a
 
 CC="cc"
 CXX="CC"
-CXXCPP="$(CXX) -E -LANG:std"
+CXXCPP="$CXX -E -LANG:std"
 
 
 ## Configure
