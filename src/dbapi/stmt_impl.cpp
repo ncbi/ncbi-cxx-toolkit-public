@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.9  2002/12/06 23:00:21  kholodov
+* Memory leak fix rolled back
+*
 * Revision 1.8  2002/12/05 17:37:23  kholodov
 * Fixed: potential memory leak in CStatement::HasMoreResults() method
 * Modified: getter and setter name for the internal CDB_Result pointer.
@@ -110,7 +113,7 @@ bool CStatement::HasMoreResults()
             SetFailed(true);
             return false;
         }
-        SetCDB_Result(GetBaseCmd()->Result()); 
+        m_rs = GetBaseCmd()->Result(); 
         if( m_rs == 0 )
             m_rowCount = GetBaseCmd()->RowCount();
     }
