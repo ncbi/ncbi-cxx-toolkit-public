@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.102  2002/06/05 17:50:08  thiessen
+* title tweaks
+*
 * Revision 1.101  2002/04/27 16:32:14  thiessen
 * fix small leaks/bugs found by BoundsChecker
 *
@@ -1210,6 +1213,7 @@ bool StructureSet::IsMultiStructure(void) const { return !dataManager->IsSingleS
 bool StructureSet::HasDataChanged(void) const { return dataManager->HasDataChanged(); }
 void StructureSet::SetDataChanged(eDataChanged what) const { dataManager->SetDataChanged(what); }
 bool StructureSet::IsCDD(void) const { return dataManager->IsCDD(); }
+bool StructureSet::IsCDDInMime(void) const { return dataManager->IsCDDInMime(); }
 const std::string& StructureSet::GetCDDName(void) const { return dataManager->GetCDDName(); }
 bool StructureSet::SetCDDName(const std::string& name) { return dataManager->SetCDDName(name); }
 const std::string& StructureSet::GetCDDDescription(void) const { return dataManager->GetCDDDescription(); }

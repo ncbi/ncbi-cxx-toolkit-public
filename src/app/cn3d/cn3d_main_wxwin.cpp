@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.144  2002/06/05 17:50:07  thiessen
+* title tweaks
+*
 * Revision 1.143  2002/06/05 15:15:37  thiessen
 * make log window float on parent
 *
@@ -629,8 +632,10 @@ static std::string workingTitle;
 const std::string& GetWorkingTitle(void) { return workingTitle; }
 static void SetWorkingTitle(StructureSet *sSet)
 {
-    if (sSet->IsCDD() && sSet->GetCDDName().size() > 0)
-        workingTitle = sSet->GetCDDName();
+    if (sSet->IsCDDInMime() && sSet->GetCDDName().size() > 0)
+        workingTitle = sSet->GetCDDName();      // for CDD's sent by server
+    else if (sSet->IsCDD())
+        workingTitle = GetWorkingFilename();    // for CDD's edited by curators
     else if (sSet->objects.size() > 0) {
         workingTitle = sSet->objects.front()->pdbID;
         if (sSet->objects.size() > 1)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2002/06/05 17:50:09  thiessen
+* title tweaks
+*
 * Revision 1.65  2002/04/10 13:16:29  thiessen
 * new selection by distance algorithm
 *
@@ -414,6 +417,7 @@ public:
 
     // CDD-specific data accessors
     bool IsCDD(void) const;
+    bool IsCDDInMime(void) const;
     const std::string& GetCDDName(void) const;
     bool SetCDDName(const std::string& name);
     const std::string& GetCDDDescription(void) const;

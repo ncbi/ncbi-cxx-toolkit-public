@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/06/05 17:50:08  thiessen
+* title tweaks
+*
 * Revision 1.7  2002/02/27 16:29:41  thiessen
 * add model type flag to general mime type
 *
@@ -169,6 +172,7 @@ public:
 
     // CDD-specific data accessors
     bool IsCDD(void) const;
+    bool IsCDDInMime(void) const;
     const std::string& GetCDDName(void) const;
     bool SetCDDName(const std::string& name);
     const std::string& GetCDDDescription(void) const;

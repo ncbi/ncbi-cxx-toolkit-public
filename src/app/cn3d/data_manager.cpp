@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/06/05 17:50:08  thiessen
+* title tweaks
+*
 * Revision 1.9  2002/03/19 18:47:58  thiessen
 * small bug fixes; remember PSSM weight
 *
@@ -579,6 +582,11 @@ ncbi::objects::CCdd * ASNDataManager::GetInternalCDDData(void) const
 bool ASNDataManager::IsCDD(void) const
 {
     return (GetInternalCDDData() != NULL);
+}
+
+bool ASNDataManager::IsCDDInMime(void) const
+{
+    return (GetInternalCDDData() != NULL && mimeData.NotEmpty());
 }
 
 const std::string& ASNDataManager::GetCDDName(void) const
