@@ -71,14 +71,13 @@ static void Client(STimeout timeout)
              NStr::DoubleToString(timeout.sec + timeout.usec / 1000000, 6) +
              "sec.\n");
 
-    connector = NAMEDPIPE_CreateConnector(kPipeName,
-                                          CNamedPipe::kDefaultBufferSize);
+    connector = NAMEDPIPE_CreateConnector(kPipeName);
     CONN_TestConnector(connector, &timeout, log_file, fTC_SingleBouncePrint);
 
-    connector = NAMEDPIPE_CreateConnector(kPipeName, 0);
+    connector = NAMEDPIPE_CreateConnectorEx(kPipeName, 0);
     CONN_TestConnector(connector, &timeout, log_file, fTC_SingleBounceCheck);
 
-    connector = NAMEDPIPE_CreateConnector(kPipeName, kBufferSize);
+    connector = NAMEDPIPE_CreateConnectorEx(kPipeName, kBufferSize);
     CONN_TestConnector(connector, &timeout, log_file, fTC_Everything);
 
     // Cleanup
@@ -256,6 +255,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/21 20:09:46  ivanov
+ * Adding test for NAMEDPIPE_CreateConnectorEx()
+ *
  * Revision 1.3  2003/08/20 14:24:06  ivanov
  * Replaced _TRACE with LOG_POST
  *
