@@ -78,12 +78,14 @@ else
     datatool=datatool
 fi
 
-# detect make command
-case "`uname`" in
-    SunOS) make=make;;
-    *) make=gmake;;
-esac
+# guess the make command, if it is not specified in the $MAKE env. variable
+if test -z "$MAKE" ; then
+    case "`uname`" in
+      SunOS) MAKE=make;;
+      *) MAKE=gmake;;
+    esac
+fi
 
 # run command
-echo $make -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "top_srcdir=$p" "DATATOOL=$datatool" "$@"
-$make -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "top_srcdir=$p" "DATATOOL=$datatool" "$@"
+echo $MAKE -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "top_srcdir=$p" "DATATOOL=$datatool" "$@"
+$MAKE -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "top_srcdir=$p" "DATATOOL=$datatool" "$@"
