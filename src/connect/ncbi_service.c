@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/10/20 17:19:04  lavr
+ * SConnNetInfo made 'const' as a parameter to 'SERV_Open*'
+ * 'SERV_Update' added as a private interface
+ *
  * Revision 6.5  2000/10/05 22:36:21  lavr
  * Additional parameters in call to DISPD mapper
  *
@@ -64,7 +68,7 @@ SERV_ITER SERV_OpenSimple(const char* service)
 
 
 SERV_ITER SERV_Open(const char* service, TSERV_Type type,
-                    unsigned int preferred_host, SConnNetInfo *info)
+                    unsigned int preferred_host, const SConnNetInfo *info)
 {
     return SERV_OpenEx(service, type, preferred_host, info, 0, 0);
 }
@@ -93,7 +97,7 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info *info)
 
 
 SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
-                      unsigned int preferred_host, SConnNetInfo *info,
+                      unsigned int preferred_host, const SConnNetInfo *info,
                       const SSERV_Info **skip, size_t n_skip)
 {
     size_t i;
@@ -104,7 +108,7 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
         return 0;
 
     iter->service = (char *)iter + sizeof(*iter);
-    strcpy(iter->service, service);
+    strcpy((char *)iter->service, service);
     iter->type = type;
     iter->preferred_host = preferred_host;
     iter->skip = 0;
@@ -172,4 +176,14 @@ void SERV_Close(SERV_ITER iter)
     if (iter->skip)
         free(iter->skip);
     free(iter);
+}
+
+
+int/*bool*/ SERV_Update(SERV_ITER iter, const char *text)
+{
+    if (!iter || !iter->op)
+        return 0/*not a valid call, failed*/;
+    if (!iter->op->Update)
+        return 1/*no update provision, success*/;
+    return (*iter->op->Update)(iter, text);
 }
