@@ -53,6 +53,8 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+
 CBlastOptions::CBlastOptions(EAPILocality locality)
     : m_Local (0),
       m_Remote(0)
@@ -593,6 +595,8 @@ CBlastOptions::operator!=(const CBlastOptions& rhs) const
     return !(*this == rhs);
 }
 
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -602,6 +606,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2004/09/08 18:32:31  camacho
+* Doxygen fixes
+*
 * Revision 1.52  2004/08/30 16:53:43  dondosha
 * Added E in front of enum names ESeedExtensionMethod and ESeedContainerType
 *

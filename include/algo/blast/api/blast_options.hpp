@@ -55,19 +55,20 @@ class CBlastRedoAlignmentTest;
 
 class CBlastTabularFormatThread;
 
-
-/** @addtogroup AlgoBlast
- *
- * @{
- */
-
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
     class CSeq_loc;
 END_SCOPE(objects)
 
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
+
 BEGIN_SCOPE(blast)
+
+#ifndef SKIP_DOXYGEN_PROCESSING
 
 /// Index of remote BLAST options.
 enum EBlastOptIdx {
@@ -2422,6 +2423,8 @@ CBlastOptionsLocal::SetPHIPattern(const char* pattern, bool is_dna)
     m_HitSaveOpts->phi_align = TRUE;
 }
 
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -2431,6 +2434,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.75  2004/09/08 18:32:23  camacho
+* Doxygen fixes
+*
 * Revision 1.74  2004/09/07 17:59:12  dondosha
 * CDbBlast class changed to support multi-threaded search
 *
