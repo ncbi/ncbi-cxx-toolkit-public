@@ -106,17 +106,6 @@ NCBI_XBLAST_EXPORT
 TAutoUint1ArrayPtr
 FindGeneticCode(int genetic_code);
 
-/** Initializes a special extra structure for RPS BLAST database, needed
- * for the RPS BLAST search.
- * @param ppinfo Structure to be returned [out]
- * @param rps_mmap Memory mapped file structure for the RPS BLAST database [out]
- * @param rps_pssm_mmap Memory mapped file structure for the RPS BLAST PSSM. [out]
- * @param dbname Name of the RPS BLAST database [in]
- */
-Int2 Blast_FillRPSInfo( BlastRPSInfo **ppinfo, CMemoryFile **rps_mmap,
-                        CMemoryFile **rps_pssm_mmap, string dbname );
-
-
 /** Declares class to handle deallocating of the structure using the appropriate
  * function
  */
@@ -203,6 +192,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2005/01/19 15:46:50  papadopo
+* remove obsolete prototype
+*
 * Revision 1.53  2005/01/10 18:34:40  dondosha
 * BlastMaskLocDNAToProtein and BlastMaskLocProteinToDNA moved to core with changed signatures
 *
