@@ -128,6 +128,9 @@ public:
     ELibChoice GetChoiceForLib      (const string& lib) const;
     ELibChoice GetChoiceFor3PartyLib(const string& lib_3party) const;
 
+    void GetLibChoiceIncludes (const string& cpp_flags_define, 
+                               list<string>* abs_includes) const;
+
 
 private:
     const CNcbiRegistry& m_Registry;
@@ -147,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/13 14:54:01  gorelenk
+ * Added GetLibChoiceIncludes to class CMsvcSite.
+ *
  * Revision 1.11  2004/04/19 15:37:43  gorelenk
  * Added lib choice related members : enum ELibChoice, struct SLibChoice,
  * functions IsLibWithChoice, Is3PartyLibWithChoice,
