@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/02/22 00:30:06  thiessen
+* make directories global ; allow only one Sequence per StructureObject
+*
 * Revision 1.24  2001/02/13 20:33:49  thiessen
 * add information content coloring
 *
@@ -174,10 +177,10 @@
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/cdd/Cdd.hpp>
 
-// For now, this module will contain a simple wxWindows + wxGLCanvas interface
+#include "cn3d/structure_set.hpp"
+#include "cn3d/opengl_renderer.hpp"
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
-#include "cn3d/structure_set.hpp"
 #include "cn3d/style_manager.hpp"
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/messenger.hpp"
@@ -191,6 +194,14 @@ USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
+
+// global strings for various directories
+std::string
+    workingDir,     // current working directory
+    userDir,        // directory of latest user-selected file
+    programDir,     // directory where Cn3D executable lives
+    dataDir;        // 'data' directory with external data files
+
 
 // Set the NCBI diagnostic streams to go to this method, which then pastes them
 // into a wxWindow. This log window can be closed anytime, but will be hidden,
@@ -268,19 +279,18 @@ bool Cn3DApp::OnInit(void)
     messenger->AddStructureWindow(structureWindow);
 
     // set up working directories
-    structureWindow->workingDir = structureWindow->dataDir = wxGetCwd();
+    workingDir = userDir = wxGetCwd().c_str();
     if (wxIsAbsolutePath(argv[0]))
-        structureWindow->programDir = wxPathOnly(argv[0]);
+        programDir = wxPathOnly(argv[0]).c_str();
     else if (wxPathOnly(argv[0]) == "")
-        structureWindow->programDir = structureWindow->workingDir;
+        programDir = workingDir;
     else
-        structureWindow->programDir =
-            structureWindow->workingDir + wxFILE_SEP_PATH + structureWindow->programDir;
-    TESTMSG("working dir: " << structureWindow->workingDir.c_str());
-    TESTMSG("program dir: " << structureWindow->programDir.c_str());
+        programDir = workingDir + wxFILE_SEP_PATH + programDir;
+    TESTMSG("working dir: " << workingDir.c_str());
+    TESTMSG("program dir: " << programDir.c_str());
 
     // read dictionary
-    wxString dictFile = structureWindow->programDir + wxFILE_SEP_PATH + "bstdt.val";
+    wxString dictFile = wxString(programDir.c_str()) + wxFILE_SEP_PATH + "bstdt.val";
     LoadStandardDictionary(dictFile.c_str());
 
     // get file name from command line, if present
@@ -453,16 +463,16 @@ void Cn3DMainFrame::OnAdjustView(wxCommandEvent& event)
     glCanvas->SetCurrent();
     switch (event.GetId()) {
         case MID_TRANSLATE:
-            glCanvas->renderer.ChangeView(OpenGLRenderer::eXYTranslateHV, 25, 25);
+            glCanvas->renderer->ChangeView(OpenGLRenderer::eXYTranslateHV, 25, 25);
             break;
         case MID_ZOOM_IN:
-            glCanvas->renderer.ChangeView(OpenGLRenderer::eZoomIn);
+            glCanvas->renderer->ChangeView(OpenGLRenderer::eZoomIn);
             break;
         case MID_ZOOM_OUT:
-            glCanvas->renderer.ChangeView(OpenGLRenderer::eZoomOut);
+            glCanvas->renderer->ChangeView(OpenGLRenderer::eZoomOut);
             break;
         case MID_RESET:
-            glCanvas->renderer.ResetCamera();
+            glCanvas->renderer->ResetCamera();
             break;
         default: ;
     }
@@ -567,17 +577,17 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         GlobalMessenger()->RemoveAllHighlights(false);
         delete glCanvas->structureSet;
         glCanvas->structureSet = NULL;
-        glCanvas->renderer.AttachStructureSet(NULL);
+        glCanvas->renderer->AttachStructureSet(NULL);
         glCanvas->Refresh(false);
     }
 
     if (wxIsAbsolutePath(filename))
-        dataDir = wxPathOnly(filename);
+        userDir = wxPathOnly(filename).c_str();
     else if (wxPathOnly(filename) == "")
-        dataDir = workingDir;
+        userDir = workingDir;
     else
-        dataDir = workingDir + wxFILE_SEP_PATH + wxPathOnly(filename);
-    TESTMSG("data dir: " << dataDir.c_str());
+        userDir = workingDir + wxFILE_SEP_PATH + wxPathOnly(filename).c_str();
+    TESTMSG("user dir: " << userDir.c_str());
 
     // try to decide if what ASN type this is, and if it's binary or ascii
     CNcbiIstream *inStream = new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary);
@@ -628,7 +638,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         readOK = ReadASNFromFile(filename, *cdd, isBinary, err);
         SetDiagPostLevel(eDiag_Info);
         if (readOK) {
-            wxString cddDir = dataDir + wxFILE_SEP_PATH;
+            wxString cddDir = userDir.c_str() + wxFILE_SEP_PATH;
             glCanvas->structureSet = new StructureSet(cdd, cddDir.c_str());
         } else {
             ERR_POST(Warning << "error: " << err);
@@ -640,13 +650,13 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         return;
     }
 
-    glCanvas->renderer.AttachStructureSet(glCanvas->structureSet);
+    glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);
     glCanvas->Refresh(false);
 }
 
 void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
 {
-    const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open", dataDir);
+    const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open", userDir.c_str());
     if (!filestr.IsEmpty())
         LoadFile(filestr.c_str());
 }
@@ -656,7 +666,7 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
     if (!glCanvas->structureSet) return;
 
     wxString outputFilename = wxFileSelector(
-        "Choose a filename for output", dataDir, "",
+        "Choose a filename for output", userDir.c_str(), "",
         ".val", "ASCII ASN (*.prt)|*.prt|Binary ASN (*.val)|*.val",
         wxSAVE | wxOVERWRITE_PROMPT);
     TESTMSG("save file: '" << outputFilename.c_str() << "'");
@@ -667,9 +677,9 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 void Cn3DMainFrame::OnSetQuality(wxCommandEvent& event)
 {
     switch (event.GetId()) {
-        case MID_QLOW: glCanvas->renderer.SetLowQuality(); break;
-        case MID_QMED: glCanvas->renderer.SetMediumQuality(); break;
-        case MID_QHIGH: glCanvas->renderer.SetHighQuality(); break;
+        case MID_QLOW: glCanvas->renderer->SetLowQuality(); break;
+        case MID_QMED: glCanvas->renderer->SetMediumQuality(); break;
+        case MID_QHIGH: glCanvas->renderer->SetHighQuality(); break;
         default: ;
     }
     GlobalMessenger()->PostRedrawAllStructures();
@@ -692,11 +702,12 @@ Cn3DGLCanvas::Cn3DGLCanvas(
     wxGLCanvas(parent, id, pos, size, style, name, gl_attrib),
     structureSet(NULL)
 {
+    renderer = new OpenGLRenderer;
     SetCurrent();
     font = new wxFont(12, wxSWISS, wxNORMAL, wxBOLD);
 
 #ifdef __WXMSW__
-    renderer.SetFont_Windows(font->GetHFONT());
+    renderer->SetFont_Windows(font->GetHFONT());
 #endif
 }
 
@@ -704,6 +715,7 @@ Cn3DGLCanvas::~Cn3DGLCanvas(void)
 {
     if (structureSet) delete structureSet;
     if (font) delete font;
+    delete renderer;
 }
 
 void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
@@ -717,7 +729,7 @@ void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
 #endif
 
     SetCurrent();
-    renderer.Display();
+    renderer->Display();
     SwapBuffers();
 }
 
@@ -730,7 +742,7 @@ void Cn3DGLCanvas::OnSize(wxSizeEvent& event)
     SetCurrent();
     int width, height;
     GetClientSize(&width, &height);
-    renderer.SetSize(width, height);
+    renderer->SetSize(width, height);
 }
 
 void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
@@ -751,7 +763,7 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
         if (!dragging) {
             dragging = true;
         } else {
-            renderer.ChangeView(OpenGLRenderer::eXYRotateHV,
+            renderer->ChangeView(OpenGLRenderer::eXYRotateHV,
                 event.GetX()-last_x, event.GetY()-last_y);
             Refresh(false);
         }
@@ -763,7 +775,7 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
 
     if (event.RightDown()) {
         unsigned int name;
-        if (structureSet && renderer.GetSelected(event.GetX(), event.GetY(), &name))
+        if (structureSet && renderer->GetSelected(event.GetX(), event.GetY(), &name))
             structureSet->SelectedAtom(name);
     }
 }
@@ -776,11 +788,11 @@ void Cn3DGLCanvas::OnChar(wxKeyEvent& event)
     SetCurrent();
 
     switch (event.KeyCode()) {
-        case 'a': case 'A': renderer.ShowAllFrames(); Refresh(false); break;
-        case WXK_DOWN: renderer.ShowFirstFrame(); Refresh(false); break;
-        case WXK_UP: renderer.ShowLastFrame(); Refresh(false); break;
-        case WXK_RIGHT: renderer.ShowNextFrame(); Refresh(false); break;
-        case WXK_LEFT: renderer.ShowPreviousFrame(); Refresh(false); break;
+        case 'a': case 'A': renderer->ShowAllFrames(); Refresh(false); break;
+        case WXK_DOWN: renderer->ShowFirstFrame(); Refresh(false); break;
+        case WXK_UP: renderer->ShowLastFrame(); Refresh(false); break;
+        case WXK_RIGHT: renderer->ShowNextFrame(); Refresh(false); break;
+        case WXK_LEFT: renderer->ShowPreviousFrame(); Refresh(false); break;
         default: event.Skip();
     }
 }

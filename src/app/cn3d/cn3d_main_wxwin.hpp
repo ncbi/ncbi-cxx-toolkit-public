@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/02/22 00:29:48  thiessen
+* make directories global ; allow only one Sequence per StructureObject
+*
 * Revision 1.18  2001/02/13 20:31:45  thiessen
 * add information content coloring
 *
@@ -125,14 +128,14 @@
 #endif
 #include <wx/glcanvas.h>
 
-#include "cn3d/opengl_renderer.hpp"
-
 
 BEGIN_SCOPE(Cn3D)
 
 class Cn3DMainFrame;
 class SequenceViewer;
 class Messenger;
+class OpenGLRenderer;
+class StructureSet;
 
 // Define a new application type
 class Cn3DApp: public wxApp
@@ -150,6 +153,7 @@ public:
     // for now, there is only one sequence viewer
     SequenceViewer *sequenceViewer;
 
+private:
     DECLARE_EVENT_TABLE()
 };
 
@@ -157,8 +161,6 @@ class Cn3DGLCanvas;
 
 class Cn3DMainFrame: public wxFrame
 {
-    friend class Cn3DApp;
-
 public:
     Cn3DMainFrame(
         wxFrame *parent, const wxString& title,
@@ -222,10 +224,8 @@ public:
     void OnSetStyle(wxCommandEvent& event);
     void OnSetQuality(wxCommandEvent& event);
 
-    DECLARE_EVENT_TABLE()
-
 private:
-    wxString workingDir, programDir, dataDir;
+    DECLARE_EVENT_TABLE()
 };
 
 class Cn3DGLCanvas: public wxGLCanvas
@@ -239,7 +239,7 @@ public:
 
     // public data
     StructureSet *structureSet;
-    OpenGLRenderer renderer;
+    OpenGLRenderer *renderer;
     wxFont *font;
 
     // public methods

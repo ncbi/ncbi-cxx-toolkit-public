@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/02/22 00:30:07  thiessen
+* make directories global ; allow only one Sequence per StructureObject
+*
 * Revision 1.50  2001/02/16 00:40:01  thiessen
 * remove unused sequences from asn data
 *
@@ -302,6 +305,9 @@ void StructureSet::MatchSequencesToMolecules(void)
                         }
                     }
                 }
+
+                // allow only one Sequence per StructureObject if there are multiple objects
+                if (nSequenceMatches == 1 && objects.size() > 1) break;
             }
 
             // sanity check

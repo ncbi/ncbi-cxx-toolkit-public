@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/02/22 00:30:06  thiessen
+* make directories global ; allow only one Sequence per StructureObject
+*
 * Revision 1.11  2000/12/15 15:51:47  thiessen
 * show/hide system installed
 *
@@ -123,7 +126,7 @@ void Messenger::ProcessRedraws(void)
     if (redrawAllStructures) {
         StructureWindowList::const_iterator t, te = structureWindows.end();
         for (t=structureWindows.begin(); t!=te; t++) {
-            (*t)->glCanvas->renderer.Construct();
+            (*t)->glCanvas->renderer->Construct();
             (*t)->glCanvas->Refresh(false);
         }
         redrawAllStructures = false;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/02/22 00:29:48  thiessen
+* make directories global ; allow only one Sequence per StructureObject
+*
 * Revision 1.16  2000/11/11 21:12:08  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -97,6 +100,14 @@
 
 
 BEGIN_SCOPE(Cn3D)
+
+// global strings for various directories (actual objects live in cn3d_main_wxwin.cpp)
+extern std::string
+    workingDir,     // current working directory
+    userDir,        // directory of latest user-selected file
+    programDir,     // directory where Cn3D executable lives
+    dataDir;        // 'data' directory with external data files
+
 
 class StructureSet;
 class AtomSet;
@@ -168,7 +179,7 @@ public:
 
     AtomPntr(int m = NO_ID, int r = NO_ID, int a = NO_ID) : mID(m), rID(r), aID(a) { }
     AtomPntr& operator = (const AtomPntr& a)
-        { mID = a.mID; rID = a.rID; aID = a.aID; return *this; }     
+        { mID = a.mID; rID = a.rID; aID = a.aID; return *this; }
 };
 
 

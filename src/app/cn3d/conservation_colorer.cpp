@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/02/22 00:30:06  thiessen
+* make directories global ; allow only one Sequence per StructureObject
+*
 * Revision 1.7  2001/02/15 00:03:54  thiessen
 * print out total information content
 *
@@ -55,6 +58,7 @@
 */
 
 #include <corelib/ncbistd.hpp>  // must come before C-toolkit stuff
+#include <ctools/ctools.h>
 #include <blastkar.h>           // for BLAST standard probability routines
 #include <objseq.h>
 #include <math.h>
@@ -118,12 +122,14 @@ ConservationColorer::ConservationColorer(void) : nColumns(0)
                     Blosum62Matrix[row][column];
         }
 
-        // calculate expected residue frequencies (standard probabilities)
-        // (code borrowed from SeqAlignInform() in cddutil.c)
         static const char ncbistdaa2char[26] = {
             'X', 'A', 'X', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M',
             'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'X', 'X', 'X'
         };
+        SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
+
+        // calculate expected residue frequencies (standard probabilities)
+        // (code borrowed from SeqAlignInform() in cddutil.c)
         BLAST_ScoreBlkPtr sbp = BLAST_ScoreBlkNew(Seq_code_ncbistdaa, 1);
         BLAST_ResFreqPtr stdrfp = NULL;
         int a;
