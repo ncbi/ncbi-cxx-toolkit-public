@@ -33,7 +33,6 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
-#include <objects/seq/seq_id_mapper.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -134,8 +133,7 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
     {
         // extract each point
         const CPacked_seqpnt& pp = loc.GetPacked_pnt();
-        CSeq_id_Handle idh =
-            CSeq_id_Mapper::GetInstance()->GetHandle(pp.GetId());
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(pp.GetId());
         CHandleRange& hr = m_LocMap[idh];
         ENa_strand strand = pp.IsSetStrand()? pp.GetStrand(): eNa_strand_unknown;
         ITERATE ( CPacked_seqpnt::TPoints, pi, pp.GetPoints() ) {
@@ -197,7 +195,7 @@ void CHandleRangeMap::AddRange(const CSeq_id& id,
                                CHandleRange::TRange range,
                                ENa_strand strand)
 {
-    AddRange(CSeq_id_Mapper::GetInstance()->GetHandle(id), range, strand);
+    AddRange(CSeq_id_Handle::GetHandle(id), range, strand);
 }
 
 
@@ -259,6 +257,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/12/22 15:56:23  vasilche
+* Avoid explicit call to CSeq_id_Mapper::GetInstance().
+*
 * Revision 1.22  2004/09/27 19:01:38  grichenk
 * Allow adding empty seq-locs
 *
