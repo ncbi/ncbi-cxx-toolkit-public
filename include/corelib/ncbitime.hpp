@@ -393,18 +393,23 @@ public:
     ///   String of letters describing the time format. The letters having
     ///   the following meanings:
     ///   - Y = year with century
-    ///   - y = year without century (00-99)
-    ///   - M = month as decimal number (01-12)
-    ///   - B = full month name
-    ///   - b = abbeviated month name
-    ///   - D = day as decimal number (01-31)
-    ///   - h = hour in 24-hour format (00-23)
-    ///   - m = minute as decimal number (00-59)
-    ///   - s = second as decimal number (00-59)
-    ///   - S = nanosecond as decimal number (000000000-999999999)
-    ///   - Z = timezone format (GMT or none) 
-    ///   - W = full day of week name
-    ///   - w = abbreviated day of week name
+    ///   - y = year without century           (00-99)
+    ///   - M = month as decimal number        (01-12)
+    ///   - B = full month name                (January-December)  
+    ///   - b = abbeviated month name          (Jan-Dec)
+    ///   - D = day as decimal number          (01-31)
+    ///   - h = hour in 24-hour format         (00-23)
+    ///   - H = hour in 12-hour format         (00-12)
+    ///   - m = minute as decimal number       (00-59)
+    ///   - s = second as decimal number       (00-59)
+    ///   - l = milliseconds as decimal number (000-999)
+    ///   - r = microseconds as decimal number (000000-999999)
+    ///   - S = nanosecond as decimal number   (000000000-999999999)
+    ///   - P = am/pm                          (AM/PM) 
+    ///   - p = am/pm                          (am/pm) 
+    ///   - Z = timezone format                (GMT or none) 
+    ///   - W = full day of week name          (Sunday-Saturday)
+    ///   - w = abbreviated day of week name   (Sun-Sat)
     /// @sa
     ///   GetFormat
     static void SetFormat(const string& fmt);
@@ -523,9 +528,9 @@ public:
     /// AsString() format symbol "s".
     int Second(void) const;
 
-    /// Get nano seconds.
+    /// Get nano-seconds.
     ///
-    /// Nanoseconds after the second = 0..999999999
+    /// Nano-seconds after the second = 0..999999999
     /// AsString() format symbol "S".
     long NanoSecond(void) const;
 
@@ -573,7 +578,7 @@ public:
 
     /// Set hour.
     ///
-    /// @param day
+    /// @param hour
     ///   Hours since midnight = 0..23.
     /// @sa
     ///   Hour
@@ -589,16 +594,16 @@ public:
 
     /// Set second.
     ///
-    /// @param day
+    /// @param second
     ///   Seconds after the minute = 0..59.
     /// @sa
     ///   Second
     void SetSecond(int second);
 
-    /// Set nano seconds.
+    /// Set nano-seconds.
     ///
-    /// @param day
-    ///   Nanoseconds after the second = 0..999999999.
+    /// @param nanosecond
+    ///   Nano-seconds after the second = 0..999999999.
     /// @sa
     ///   NanoSecond
     void SetNanoSecond(long nanosecond);
@@ -1865,6 +1870,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/09/20 16:27:08  ivanov
+ * CTime:: Added milliseconds, microseconds and AM/PM to string time format.
+ *
  * Revision 1.39  2004/09/08 18:06:04  ivanov
  * Removed redundant #include <math.h>
  *

@@ -386,54 +386,68 @@ static void s_TestMisc(void)
 
 static void s_TestFormats(void)
 {
-    static const char* s_Fmt[] = {
-        "w, D b Y h:m:s Z",
-        "M/D/Y h:m:s",
-        "M/D/Y h:m:s.S",
-        "M/D/y h:m:s",
-        "M/DY  h:m:s",
-        "M/Dy  h:m:s",
-        "M/D/Y hm:s",
-        "M/D/Y h:ms",
-        "M/D/Y hms",
-        "MD/y  h:m:s",
-        "MD/Y  h:m:s",
-        "MYD   m:h:s",
-        "M/D/Y smh",
-        "YMD   h:sm",
-        "yDM   h:ms",
-        "yMD   h:ms",
-        "D B Y h:m:s",
-        "B d, Y h:m:s",
-        "D b Y h:m:s",
-        "M/D/Y h:m:s z",
-        "M/D/Y Z h:m:s",
-        "smhyMD",
-        "y||||M++++D   h===ms",
-        "   yM[][D   h:,.,.,ms  ",
-        "\tkkkMy++D   h:ms\n",
-        0
+    struct SFormatTest {
+        const char* format;
+        int         truncated; 
+    };
+
+    static const SFormatTest s_Fmt[] = {
+        {"b D Y h:m:s:r",           1},
+        {"b D Y h:m:s:lp",          1},
+        {"b D Y H:m:s P",           1},
+        {"M/D/Y h:m:s",             1},
+        {"M/D/Y h:m:s.S",           0},
+        {"M/D/y h:m:s",             1},
+        {"M/DY  h:m:s",             1},
+        {"M/Dy  h:m:s",             1},
+        {"M/D/Y hm:s",              1},
+        {"M/D/Y h:ms",              1},
+        {"M/D/Y hms",               1},
+        {"MD/y  h:m:s",             1},
+        {"MD/Y  h:m:s",             1},
+        {"MYD   m:h:s",             1},
+        {"M/D/Y smh",               1},
+        {"YMD   h:sm",              1},
+        {"yDM   h:ms",              1},
+        {"yMD   h:ms",              1},
+        {"D B Y h:m:s",             1},
+        {"B d, Y h:m:s",            1},
+        {"D b Y h:m:s",             1},
+        {"M/D/Y h:m:s z",           1},
+        {"M/D/Y Z h:m:s",           1},
+        {"smhyMD",                  1},
+        {"y||||M++++D   h===ms",    1},
+        {"   yM[][D   h:,.,.,ms  ", 1},
+        {"\tkkkMy++D   h:ms\n",     1},
+        {0,0}
     };
 
     cout << "---------------------------" << endl;
     cout << "Test Formats" << endl;
     cout << "---------------------------" << endl << endl;
 
-    for (const char** fmt = s_Fmt;  *fmt;  fmt++) {
-        CTime t1(2001, 4, 2, 3, 4, 5, 0,
-                 strchr(*fmt, 'Z') ? CTime::eGmt : CTime::eLocal);
+    for (int i = 0;  s_Fmt[i].format;  i++) {
+        const char* fmt = s_Fmt[i].format;
 
-        CTime::SetFormat(*fmt);
+        CTime t1(2001, 4, 2, 13, 4, 5, 88888888,
+                 strchr(fmt, 'Z') ? CTime::eGmt : CTime::eLocal);
+
+        CTime::SetFormat(fmt);
         string t1_str = t1.AsString();
         cout << "[" << t1_str << "]";
 
         CTime::SetFormat("MDY__s");
 
-        CTime t2(t1_str, *fmt);
+        CTime t2(t1_str, fmt);
         cout << " --> [" << t1_str << "]" << endl;
-        assert(t1 == t2);
+        if ( s_Fmt[i].truncated ) {
+            string test_str = t2.AsString("M/D/Y h:m:s");
+            assert(test_str == "04/02/2001 13:04:05");
+        } else {
+            assert(t1 == t2);
+        }
 
-        CTime::SetFormat(*fmt);
+        CTime::SetFormat(fmt);
         string t2_str = t2;
         assert(t1_str.compare(t2_str) == 0);
     }
@@ -998,6 +1012,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.25  2004/09/20 16:27:26  ivanov
+ * CTime:: Added milliseconds, microseconds and AM/PM to string time format.
+ *
  * Revision 6.24  2004/09/07 18:48:06  ivanov
  * CTimeSpan:: renamed GetTotal*() -> GetComplete*()
  *

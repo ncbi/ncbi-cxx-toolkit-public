@@ -134,7 +134,7 @@ static const char* kDefaultFormatStopWatch = "-S.n";
 // Set of the checked format symbols.
 // For CStopWatch class the format symbols are equal
 // to kFormatSymbolsSpan also.
-static const char* kFormatSymbolsTime = "yYMbBDdhmsSzZwW";
+static const char* kFormatSymbolsTime = "yYMbBDdhHmsSzZwWlrpP";
 static const char* kFormatSymbolsSpan = "-dhHmMsSnN";
 
 // Error messages
@@ -253,12 +253,24 @@ void CTime::x_Init(const string& str, const string& fmt)
     long  adjust_tz     = 0;
 #endif
 
+    enum EHourFormat{
+        e24, eAM, ePM
+    };
+    EHourFormat hourformat = e24;
+    bool is_12hour = false;
+
     int weekday = -1;
     for (fff = fmt.c_str();  *fff != '\0';  fff++) {
 
+        // Skip space symbols in format string
+        if ( isspace(*fff) ) {
+            continue;
+        }
+        // Skip space symbols in time string
+        while ( isspace(*sss) ) sss++; 
+
         // Non-format symbols
         if (strchr(kFormatSymbolsTime, *fff) == 0) {
-
             if (*fff == *sss) {
                 sss++;
                 continue;  // skip matching non-format symbols
@@ -276,7 +288,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             }
             for (unsigned char i = 0;  i < 12;  i++) {
                 size_t namelen = strlen(*name);
-                if (strncmp(sss, *name, namelen) == 0) {
+                if (NStr::strncasecmp(sss, *name, namelen) == 0) {
                     sss += namelen;
                     m_Month = i + 1;
                     break;
@@ -291,7 +303,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             const char** day = (*fff == 'w') ? kWeekdayAbbr : kWeekdayFull;
             for (unsigned char i = 0;  i < 7;  i++) {
                 size_t len = strlen(*day);
-                if (strncmp(sss, *day, len) == 0) {
+                if (NStr::strncasecmp(sss, *day, len) == 0) {
                     sss += len;
                     weekday = i;
                     break;
@@ -303,12 +315,11 @@ void CTime::x_Init(const string& str, const string& fmt)
 
         // Timezone (GMT time) 
         if (*fff == 'Z') {
-            if (strncmp(sss, "GMT", 3) == 0) {
+            if (NStr::strncasecmp(sss, "GMT", 3) == 0) {
                 m_Tz = eGmt;
                 sss += 3;
             } else {
                 m_Tz = eLocal;
-                if (fff[1] == ' ') fff++;
             }
             continue;
         }
@@ -319,7 +330,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             ERR_POST("Format symbol 'z' is unsupported on this platform");
 #else
             m_Tz = eLocal;
-            if (strncmp(sss, "GMT", 3) == 0) {
+            if (NStr::strncasecmp(sss, "GMT", 3) == 0) {
                 sss += 3;
             }
             while ( isspace(*sss) ) {
@@ -366,17 +377,35 @@ void CTime::x_Init(const string& str, const string& fmt)
             continue;
         }
 
+        // Timezone (local time in format GMT+HHMM)
+        if (*fff == 'p'  ||  *fff == 'P') {
+            if (NStr::strncasecmp(sss, "AM", 2) == 0) {
+                hourformat = eAM;
+                sss += 2;
+            } else if (NStr::strncasecmp(sss, "PM", 2) == 0) {
+                hourformat = ePM;
+                sss += 2;
+            }
+            continue;
+        }
+
         // Other format symbols -- read the next data ingredient
         char value_str[10];
         char* s = value_str;
-        for (size_t len = (*fff == 'Y') ? 4 : ((*fff == 'S') ? 9 : 2);
-             len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
+        size_t len = 2;
+        switch (*fff) {
+            case 'Y': len = 4; break;
+            case 'S': len = 9; break;
+            case 'l': len = 3; break;
+            case 'r': len = 6; break;
+        } 
+        for ( ; len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
             *s++ = *sss++; 
         }
         *s = '\0';
-
         long value = NStr::StringToLong(value_str);
 
+        // Set time part
         switch ( *fff ) {
         case 'Y':
             m_Year = (int) value;
@@ -399,11 +428,21 @@ void CTime::x_Init(const string& str, const string& fmt)
         case 'h':
             m_Hour = (unsigned char) value;
             break;
+        case 'H':
+            m_Hour = (unsigned char) value;
+            is_12hour = true;
+            break;
         case 'm':
             m_Minute = (unsigned char) value;
             break;
         case 's':
             m_Second = (unsigned char) value;
+            break;
+        case 'l':
+            m_NanoSecond = value * 1000000;
+            break;
+        case 'r':
+            m_NanoSecond = value * 1000;
             break;
         case 'S':
             m_NanoSecond = value;
@@ -413,11 +452,17 @@ void CTime::x_Init(const string& str, const string& fmt)
         }
     }
 
+    // Correct 12-hour time if needed
+    if (is_12hour  &&  hourformat == ePM) {
+        m_Hour += 12;
+    }
+
     // Check on errors
     if (weekday != -1  &&  weekday != DayOfWeek()) {
         NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid day of week");
     }
 
+    while ( isspace(*sss) ) sss++; 
     if (*fff != '\0'  ||  *sss != '\0') {
         NCBI_THROW(CTimeException, eFormat, "CTime:  format is incorrect");
     }
@@ -770,9 +815,16 @@ string CTime::AsString(const string& fmt, long out_tz) const
         case 'D': s_AddZeroPadInt(str, t->Day());           break;
         case 'd': s_AddZeroPadInt(str, t->Day(),1);         break;
         case 'h': s_AddZeroPadInt(str, t->Hour());          break;
+        case 'H': s_AddZeroPadInt(str, t->Hour() % 12);     break;
         case 'm': s_AddZeroPadInt(str, t->Minute());        break;
         case 's': s_AddZeroPadInt(str, t->Second());        break;
+        case 'l': s_AddZeroPadInt(str, t->NanoSecond() / 1000000, 3); 
+                  break;
+        case 'r': s_AddZeroPadInt(str, t->NanoSecond() / 1000, 6); 
+                  break;
         case 'S': s_AddZeroPadInt(str, t->NanoSecond(), 9); break;
+        case 'p': str += ( t->Hour() <= 12) ? "am" : "pm" ; break;
+        case 'P': str += ( t->Hour() <= 12) ? "AM" : "PM" ; break;
         case 'z': {
 #if defined(TIMEZONE_IS_UNDEFINED)
 		              ERR_POST("Format symbol 'z' is unsupported on this platform");
@@ -1729,6 +1781,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2004/09/20 16:27:26  ivanov
+ * CTime:: Added milliseconds, microseconds and AM/PM to string time format.
+ *
  * Revision 1.52  2004/09/07 18:47:49  ivanov
  * CTimeSpan:: renamed GetTotal*() -> GetComplete*()
  *
