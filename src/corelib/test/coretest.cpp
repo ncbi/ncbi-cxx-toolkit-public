@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  1999/11/29 17:49:12  golikov
+* NStr::Replace tests modified obedience to Denis :)
+*
 * Revision 1.54  1999/11/26 18:45:30  golikov
 * NStr::Replace tests added
 *
@@ -717,49 +720,42 @@ static void TestUtilities(void)
         STD_CATCH("TestUtilities");
     }
 
+    NcbiCout << NcbiEndl << "NStr::Replace() tests...";
+
     string src("aaabbbaaccczzcccXX");
     string dst;
+
     string search("ccc");
     string replace("RrR");
-
-    NcbiCout << NcbiEndl << "src: \"" << src << "\"" << NcbiEndl << NcbiEndl;
-
     NStr::Replace(src, search, replace, dst);
-    NcbiCout << "Replace \"" << search << "\" on \"" << replace << "\"" << NcbiEndl
-             << "dst: \"" << dst << "\"" << NcbiEndl << NcbiEndl;
+    _ASSERT(dst == "aaabbbaaRrRzzRrRXX");
 
     search = "a";
     replace = "W";
     NStr::Replace(src, search, replace, dst, 6, 1);
-    NcbiCout << "Replace \"" << search << "\" on \"" << replace
-             << "\" once from 6 position" << NcbiEndl
-             << "dst: \"" << dst << "\"" << NcbiEndl << NcbiEndl;
-
+    _ASSERT(dst == "aaabbbWaccczzcccXX");
+    
     search = "bbb";
     replace = "BBB";
     NStr::Replace(src, search, replace, dst, 50);
-    NcbiCout << "Replace \"" << search << "\" on \"" << replace
-             << "\" from 50 position" << NcbiEndl
-             << "dst: \"" << dst << "\"" << NcbiEndl << NcbiEndl;
+    _ASSERT(dst == "aaabbbaaccczzcccXX");
 
     search = "ggg";
     replace = "no";
     dst = NStr::Replace(src, search, replace);
-    NcbiCout << "Replace \"" << search << "\" on \"" << replace << "\"" << NcbiEndl
-             << "dst: \"" << dst << "\"" << NcbiEndl << NcbiEndl;
+    _ASSERT(dst == "aaabbbaaccczzcccXX");
 
     search = "a";
     replace = "A";
     dst = NStr::Replace(src, search, replace);
-    NcbiCout << "Replace \"" << search << "\" on \"" << replace << "\"" << NcbiEndl
-             << "dst: \"" << dst << "\"" << NcbiEndl << NcbiEndl;
+    _ASSERT(dst == "AAAbbbAAccczzcccXX");
 
     search = "X";
     replace = "x";
     dst = NStr::Replace(src, search, replace, src.size() - 1);
-    NcbiCout << "Replace \"" << search << "\" on \"" << replace
-             << "\" the last one only" << NcbiEndl
-             << "dst: \"" << dst << "\"" << NcbiEndl << NcbiEndl;
+    _ASSERT(dst == "aaabbbaaccczzcccXx");
+
+    NcbiCout << " completed successfully!" << NcbiEndl << NcbiEndl;
 
     NcbiCout << "TestUtilities finished" << NcbiEndl;
 }
