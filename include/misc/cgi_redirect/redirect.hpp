@@ -1,5 +1,5 @@
-#ifndef CGI___CGI_REDIRECT__HPP
-#define CGI___CGI_REDIRECT__HPP
+#ifndef MISC___CGI_REDIRECT__REDIRECT__HPP
+#define MISC___CGI_REDIRECT__REDIRECT__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 /// CCgiRedirectApplication inherits its basic functionality from
 /// CCgiApplication and defines additional method for remapping CGI entries.
 
-class NCBI_XCGI_EXPORT CCgiRedirectApplication: public CCgiApplication
+class NCBI_XCGI_REDIRECT_EXPORT CCgiRedirectApplication:public CCgiApplication
 {
     typedef CCgiApplication CParent;
 public:
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/09 19:37:45  ivanov
+ * Moved from "cgi/redirect" to "misc/cgi_redirect" directory
+ *
  * Revision 1.2  2004/02/09 17:58:13  ivanov
  * Added and changed comments (by Denis Vakatov)
  *
@@ -111,4 +114,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // CGI___CGI_REDIRECT__HPP
+#endif // MISC___CGI_REDIRECT__REDIRECT__HPP
