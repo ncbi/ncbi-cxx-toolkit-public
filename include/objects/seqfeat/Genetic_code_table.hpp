@@ -107,9 +107,6 @@ public:
     bool IsAltStart   (int state) const;
 
 private:
-    // ATG initiation codon state constant
-    static const int k_ATG_state = 389;
-
     // translation tables common to all genetic codes (single copy)
     static int  sm_NextState  [4097];
     static int  sm_RvCmpState [4097];
@@ -214,12 +211,14 @@ bool CTrans_table::IsOrfStop (int state) const
 inline
 bool CTrans_table::IsATGStart (int state) const
 {
+    static const int k_ATG_state = 389; // ATG initiation codon state
     return (IsOrfStart (state) && state == k_ATG_state);
 }
 
 inline
 bool CTrans_table::IsAltStart (int state) const
 {
+    static const int k_ATG_state = 389; // ATG initiation codon state
     return (IsOrfStart (state) && state != k_ATG_state);
 }
 
@@ -236,6 +235,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/09/10 21:30:09  kans
+* k_ATG_state into two inline functions because MSVC compiler will not allow constant inside a class
+*
 * Revision 1.2  2002/09/10 15:18:08  kans
 * added GetCodeTable method
 *
