@@ -134,7 +134,6 @@ protected:
     virtual void Release();
 
     void DropCmd(CDB_BaseEnt& cmd);
-
 private:
     friend class CMySQL_LangCmd;
     friend class CMySQL_RowResult;
@@ -178,6 +177,8 @@ protected:
     virtual void        Release();
     int                 LastInsertId() const;
 
+public:
+    string EscapeString(const char* str, unsigned long len);
 
 private:
     CMySQL_Connection* m_Connect;
@@ -248,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/03/24 19:48:27  vysokolo
+ * Addaed support of blob
+ *
  * Revision 1.10  2003/07/17 20:42:26  soussov
  * connections pool improvements
  *
