@@ -52,7 +52,7 @@ clean:
 	-$(RMDIR) SunWS_cache
 	-$(RM) .make.state
 	-$(RM) *@obj_ext@
-	-$(RM) $(APP:=@exe_ext@)
+	-$(RM) $(XAPP)
 	-$(RM) *~
 	-$(RM) *.dep
 
