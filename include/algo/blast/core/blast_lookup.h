@@ -142,9 +142,9 @@ Int4 _BlastAaLookupFinalize(LookupTable* lookup);
 Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap, /* in: the LUT */
                         const BLAST_SequenceBlk *subject,
                         Int4* offset,
-                        Uint4 * query_offsets, /* out: pointer to the array to which hits will be copied */
-		        Uint4 * subject_offsets, /* out : pointer to the array where offsets will be stored */
-		        Int4 array_size);
+                        Uint4 * NCBI_RESTRICT query_offsets, /* out: pointer to the array to which hits will be copied */
+                        Uint4 * NCBI_RESTRICT subject_offsets, /* out : pointer to the array where offsets will be stored */
+                        Int4 array_size);
 
 /** Create a new protein lookup table.
   * @param opt pointer to lookup table options structure [in]
@@ -253,9 +253,12 @@ Int4 AddNeighboringWords(LookupTable* lookup,
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
 Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
-       const BLAST_SequenceBlk* subject, Int4 start_offset,
-       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits, 
-       Int4* end_offset);
+                        const BLAST_SequenceBlk* subject,
+                        Int4 start_offset,
+                        Uint4* NCBI_RESTRICT q_offsets,
+                        Uint4* NCBI_RESTRICT s_offsets,
+                        Int4 max_hits, 
+                        Int4* end_offset);
 
 /** Scan the compressed subject sequence, returning all word hits, using the 
  *  arbitrary stride. Lookup table is presumed to have a traditional BLASTn 
@@ -270,9 +273,12 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
 Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
-       const BLAST_SequenceBlk* subject, Int4 start_offset,
-       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits, 
-       Int4* end_offset);
+                        const BLAST_SequenceBlk* subject,
+                        Int4 start_offset,
+                        Uint4* NCBI_RESTRICT q_offsets,
+                        Uint4* NCBI_RESTRICT s_offsets,
+                        Int4 max_hits, 
+                        Int4* end_offset);
 
 /** Fill the lookup table for a given query sequence or partial sequence.
  * @param lookup Pointer to the lookup table structure [in] [out]

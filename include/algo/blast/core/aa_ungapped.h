@@ -57,8 +57,8 @@ Int4 BlastAaWordFinder(BLAST_SequenceBlk* subject,
 		       Int4** matrix,
 		       BlastInitialWordParameters* word_params,
 		       BLAST_ExtendWord* ewp,
-		       Uint4* query_offsets,
-		       Uint4* subject_offsets,
+		       Uint4* NCBI_RESTRICT query_offsets,
+		       Uint4* NCBI_RESTRICT subject_offsets,
 		       Int4 offset_array_size,
 		       BlastInitHitList* init_hitlist);
 
@@ -85,8 +85,8 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 			      Int4 ** matrix,
 			      Int4 cutoff,
 			      Int4 dropoff,
-			      Uint4 * query_offsets,
-			      Uint4 * subject_offsets,
+			      Uint4 * NCBI_RESTRICT query_offsets,
+			      Uint4 * NCBI_RESTRICT subject_offsets,
 			      Int4 array_size,
                               BlastInitHitList* ungapped_hsps);
 
@@ -113,8 +113,8 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 			      Int4 ** matrix,
 			      Int4 cutoff,
 			      Int4 dropoff,
-			      Uint4 * query_offsets,
-			      Uint4 * subject_offsets,
+			      Uint4 * NCBI_RESTRICT query_offsets,
+			      Uint4 * NCBI_RESTRICT subject_offsets,
 			      Int4 array_size,
                               BlastInitHitList* ungapped_hsps);
 

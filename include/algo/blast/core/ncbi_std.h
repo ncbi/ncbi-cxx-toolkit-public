@@ -57,6 +57,12 @@ Detailed Contents:
 extern "C" {
 #endif
 
+#if __STDC_VERSION__ >= 199901
+#define NCBI_RESTRICT restrict
+#else
+#define NCBI_RESTRICT
+#endif
+
 /* inlining support -- compiler dependent */
 #if defined(__cplusplus)  ||  __STDC_VERSION__ >= 199901
 /* C++ and C99 both guarantee "inline" */

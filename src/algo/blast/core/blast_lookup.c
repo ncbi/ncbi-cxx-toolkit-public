@@ -312,8 +312,8 @@ static NCBI_INLINE void  _ComputeIndexIncremental(Int4 wordsize,
 Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk *subject,
                         Int4* offset,
-                        Uint4 * query_offsets,
-                        Uint4 * subject_offsets,
+                        Uint4 * NCBI_RESTRICT query_offsets,
+                        Uint4 * NCBI_RESTRICT subject_offsets,
                         Int4 array_size
 		   )
 {
@@ -743,8 +743,11 @@ static NCBI_INLINE Int4 BlastNaLookupAdjustIndex(Uint1* s, Int4 index,
 
 /* Description in na_lookup.h */
 Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
-       const BLAST_SequenceBlk* subject, Int4 start_offset,
-       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,  
+			   const BLAST_SequenceBlk* subject,
+			   Int4 start_offset,
+			   Uint4* NCBI_RESTRICT q_offsets,
+			   Uint4* NCBI_RESTRICT s_offsets,
+			   Int4 max_hits,  
        Int4* end_offset)
 {
    LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
