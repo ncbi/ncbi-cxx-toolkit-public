@@ -1374,6 +1374,8 @@ bool BlockMultipleAlignment::ExtractRows(
     // remove sequences
     TRACEMSG("deleting sequences");
     VectorRemoveElements(*(const_cast<SequenceList*>(sequences)), removeRows, slavesToRemove.size());
+    VectorRemoveElements(rowDoubles, removeRows, slavesToRemove.size());
+    VectorRemoveElements(rowStrings, removeRows, slavesToRemove.size());
 
     // delete row from all blocks, removing any zero-width blocks
     TRACEMSG("deleting alignment rows from blocks");
@@ -1816,6 +1818,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2004/05/26 14:18:29  thiessen
+* remove status stuff in ExtractRows
+*
 * Revision 1.56  2004/05/21 21:41:38  gorelenk
 * Added PCH ncbi_pch.hpp
 *
