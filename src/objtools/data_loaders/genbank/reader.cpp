@@ -161,14 +161,14 @@ void CReader::SetSeqEntryReadHooks(CObjectIStream& in)
 
 bool CReader::IsSNPSeqref(const CSeqref& seqref)
 {
-    return seqref.GetSat() == kSNP_Sat;
+    return seqref.GetSat() == eSatellite_SNP;
 }
 
 
 void CReader::AddSNPSeqref(TSeqrefs& srs, int gi, CSeqref::TFlags flags)
 {
     flags |= CSeqref::fHasExternal;
-    CRef<CSeqref> sr(new CSeqref(gi, kSNP_Sat, gi));
+    CRef<CSeqref> sr(new CSeqref(gi, eSatellite_SNP, gi));
     sr->SetFlags(flags);
     srs.push_back(sr);
 }
@@ -278,6 +278,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.31  2004/02/18 14:01:25  dicuccio
+ * Added new satellites for TRACE_ASSM, TR_ASSM_CH.  Added support for overloading
+ * the ID1 named service
+ *
  * Revision 1.30  2004/02/17 21:18:53  vasilche
  * Fixed 'unused argument' warnings.
  *

@@ -28,6 +28,9 @@
  *
  */
 
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbienv.hpp>
+
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
@@ -61,6 +64,7 @@
 
 #include <util/compress/reader_zlib.hpp>
 #include <util/stream_utils.hpp>
+#include <util/static_map.hpp>
 
 #include <memory>
 #include <iomanip>
@@ -341,11 +345,20 @@ CConn_ServiceStream* CId1Reader::x_NewConnection(void)
     for ( int i = 0; !m_NoMoreConnections && i < 3; ++i ) {
         try {
             _TRACE("CId1Reader(" << this << ")->x_NewConnection()");
+
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            _ASSERT(app);
+            const CNcbiEnvironment& env = app->GetEnvironment();
+            string id1_svc = env.Get("NCBI_SERVICE_NAME_ID1");
+            if ( id1_svc.empty() ) {
+                id1_svc = "ID1";
+            }
+
             STimeout tmout;
             tmout.sec = 20;
             tmout.usec = 0;
             auto_ptr<CConn_ServiceStream> stream
-                (new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout));
+                (new CConn_ServiceStream(id1_svc, fSERV_Any, 0, 0, &tmout));
             if ( !stream->bad() ) {
                 return stream.release();
             }
@@ -373,16 +386,40 @@ int CId1Reader::ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn)
 }
 
 
+typedef pair<const char*, CReader::ESatellite> TSatPair;
+static const TSatPair sc_SatArray[] = {
+    TSatPair("SNP",        CReader::eSatellite_SNP),
+    TSatPair("ti",         CReader::eSatellite_TRACE),
+    TSatPair("TR_ASSM_CH", CReader::eSatellite_TR_ASSM_CH),
+    TSatPair("TRACE_ASSM", CReader::eSatellite_TRACE_ASSM)
+};
+typedef CStaticArrayMap<const char*, CReader::ESatellite, PNocase> TSatMap;
+static const TSatMap sc_SatMap(sc_SatArray, sizeof (sc_SatArray));
+
+
 void CId1Reader::ResolveSeq_id(TSeqrefs& srs, const CSeq_id& id, TConn conn)
 {
-    if ( id.IsGeneral() ) {
+    if ( id.IsGeneral()  &&  id.GetGeneral().GetTag().IsId() ) {
         const CDbtag& dbtag = id.GetGeneral();
         const CObject_id& objid = dbtag.GetTag();
-        if ( dbtag.GetDb() == "ti" && objid.IsId() ) {
-            int num_id = objid.GetId();
-            if ( num_id > 0 ) {
-                // "TRACE"
-                srs.push_back(Ref(new CSeqref(0, kTRACE_Sat, objid.GetId())));
+
+        int sat = 0;
+        int sat_key = objid.GetId();
+        if (sat_key != 0) {
+            TSatMap::const_iterator iter =
+                sc_SatMap.find(dbtag.GetDb().c_str());
+            if (iter != sc_SatMap.end()) {
+                sat = iter->second;
+            } else {
+                try {
+                    sat = NStr::StringToInt(dbtag.GetDb());
+                }
+                catch (...) {
+                }
+            }
+
+            if (sat != 0) {
+                srs.push_back(Ref(new CSeqref(0, sat_key, sat)));
                 return;
             }
         }
@@ -531,8 +568,9 @@ CRef<CTSE_Info> CId1Reader::GetTSEBlob(const CSeqref& seqref,
     case CID1server_back::e_Error:
         switch ( id1_reply.GetError() ) {
         case 1:
+            NCBI_THROW(CLoaderException, ePrivateData, "id is withdrawn");
         case 2:
-            NCBI_THROW(CLoaderException, ePrivateData, "gi is private");
+            NCBI_THROW(CLoaderException, ePrivateData, "id is private");
         case 10:
             NCBI_THROW(CLoaderException, eNoData, "invalid args");
         }
@@ -796,6 +834,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.74  2004/02/18 14:01:25  dicuccio
+ * Added new satellites for TRACE_ASSM, TR_ASSM_CH.  Added support for overloading
+ * the ID1 named service
+ *
  * Revision 1.73  2004/02/04 17:47:41  kuznets
  * Fixed naming of entry points
  *
