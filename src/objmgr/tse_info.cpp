@@ -191,7 +191,19 @@ void CTSE_Info::SetSeq_entry(CSeq_entry& entry)
 void CTSE_Info::SetSeq_entry(CSeq_entry& entry, const TSNP_InfoMap& snps)
 {
     m_SNP_InfoMap = snps;
-    SetSeq_entry(entry);
+    if ( HasDataSource() ) {
+        {{
+            CDataSource::TMainLock::TWriteLockGuard guard
+                (GetDataSource().m_DSMainLock);
+            SetSeq_entry(entry);
+        }}
+        CDataSource::TAnnotLock::TWriteLockGuard guard2
+            (GetDataSource().m_DSAnnotLock);
+        UpdateAnnotIndex(*this);
+    }
+    else {
+        SetSeq_entry(entry);
+    }
     if ( !m_SNP_InfoMap.empty() ) {
         NCBI_THROW(CObjMgrException, eAddDataError,
                    "Unknown SNP annots");
@@ -468,6 +480,21 @@ CTSE_Chunk_Info& CTSE_Info::GetChunk(TChunkId chunk_id)
                    "invalid chunk id: "+NStr::IntToString(chunk_id));
     }
     return *iter->second;
+}
+
+
+CTSE_Chunk_Info& CTSE_Info::GetSkeletonChunk(void)
+{
+    TChunks::iterator iter = m_Chunks.find(0);
+    if ( iter != m_Chunks.end() ) {
+        return *iter->second;
+    }
+    
+    CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(0));
+    chunk->x_TSEAttach(*this);
+    
+    _ASSERT((iter = m_Chunks.find(0))!=m_Chunks.end() && iter->second==chunk);
+    return *chunk;
 }
 
 
