@@ -1,4 +1,4 @@
---$Revision: 1.12 $
+--$Revision: 1.13 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -110,7 +110,18 @@ Cdd-descr ::= CHOICE {
                                               -- those won't make it into public
                                               -- distributions
   source-id     Cdd-id-set,                   -- for linking back to source db
-  repeats       Cdd-repeat                    -- to record repeat counts
+  repeats       Cdd-repeat,                   -- to record repeat counts
+  old-root      Cdd-id-set,                   -- to record short-term history
+  curation-status INTEGER { unassigned(0),
+                            prein (1),
+			    ofc (2),
+			    iac (3),
+			    ofv1 (4),
+			    iav1 (5),
+			    ofv2 (6),
+			    iav2 (7),
+			    postin (8),
+                            other (255) }
 }
 
 Cdd-descr-set ::= SET OF Cdd-descr
