@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2002/09/30 17:13:02  thiessen
+* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
+*
 * Revision 1.47  2002/09/26 18:31:24  thiessen
 * allow simultaneous import of multiple chains from single PDB
 *
@@ -450,14 +453,10 @@ const Sequence * UpdateViewer::GetMasterSequence(void) const
     return master;
 }
 
-void UpdateViewer::FetchSequenceViaHTTP(int gi, SequenceList *newSequences, StructureSet *sSet) const
+void UpdateViewer::FetchSequenceViaHTTP(SequenceList *newSequences, StructureSet *sSet) const
 {
-    wxString id;
-
-    if (gi <= 0)
-        id = wxGetTextFromUser("Enter a protein GI or Accession:", "Input Identifier", "", *viewerWindow);
-    else
-        id.Printf("%i", gi);
+    wxString id =
+        wxGetTextFromUser("Enter a protein GI or Accession:", "Input Identifier", "", *viewerWindow);
 
     if (id.size() > 0) {
         CSeq_entry seqEntry;
@@ -488,8 +487,7 @@ void UpdateViewer::FetchSequenceViaHTTP(int gi, SequenceList *newSequences, Stru
     }
 }
 
-void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences,
-    StructureSet *sSet, int specificGI) const
+void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSet *sSet) const
 {
     newSequences->clear();
 
@@ -508,29 +506,14 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences,
                     ERR_POST(Error << "UpdateViewer::ImportSequence() - error converting to C++ object: "
                         << err);
                 } else {
-                    // create Sequence - just one for now
+                    // create Sequence - just one from each Seq-entry for now
                     if (se.IsSeq()) {
-                        bool makeSequence = true;
-
-                        // if specificGI is positive, then only create a new sequence for that gi
-                        if (specificGI > 0) {
-                            makeSequence = false;
-                            CBioseq::TId::const_iterator i, ie = se.GetSeq().GetId().end();
-                            for (i=se.GetSeq().GetId().begin(); i!=ie; i++) {
-                                if ((*i)->IsGi() && (*i)->GetGi() == specificGI) {
-                                    makeSequence = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (makeSequence)
-                            newSequences->push_back(sSet->CreateNewSequence(se.SetSeq()));
-                    } else
+                        newSequences->push_back(sSet->CreateNewSequence(se.SetSeq()));
+                    } else {
                         ERR_POST(Error << "FastaToSeqEntry() returned Bioseq-set in Seq-entry");
+                    }
                 }
                 SeqEntryFree(sep);
-                if (specificGI > 0 && newSequences->size() == 1) break;
             }
             FileClose(fp);
         } else
@@ -558,27 +541,22 @@ void UpdateViewer::MakeNewAlignments(const SequenceList& newSequences,
     }
 }
 
-void UpdateViewer::FetchSequences(StructureSet *sSet, SequenceList *newSequences, int specificGI) const
+void UpdateViewer::FetchSequences(StructureSet *sSet, SequenceList *newSequences) const
 {
     // choose import type
-    static const wxString choiceStrings[] = { "From a FASTA File", "Network via GI/Accession" };
-    enum choiceValues { FROM_FASTA=0, FROM_GI, N_CHOICES };
-    wxString message;
-    if (specificGI > 0)
-        message.Printf("From what source would you like to import gi %i?", specificGI);
-    else
-        message = "From what source would you like to import sequences?";
-    int importFrom = wxGetSingleChoiceIndex(message,
+    static const wxString choiceStrings[] = { "Network via GI/Accession", "From a FASTA File" };
+    enum choiceValues { FROM_GI=0, FROM_FASTA, N_CHOICES };
+    int importFrom = wxGetSingleChoiceIndex("From what source would you like to import sequences?",
         "Select Import Source", N_CHOICES, choiceStrings, *viewerWindow);
     if (importFrom < 0) return;     // cancelled
 
     // network import
     if (importFrom == FROM_GI)
-        FetchSequenceViaHTTP(specificGI, newSequences, sSet);
+        FetchSequenceViaHTTP(newSequences, sSet);
 
     // FASTA import
     else if (importFrom == FROM_FASTA)
-        ReadSequencesFromFile(newSequences, sSet, specificGI);
+        ReadSequencesFromFile(newSequences, sSet);
 }
 
 void UpdateViewer::ImportSequences(void)
@@ -621,8 +599,8 @@ void UpdateViewer::ImportStructure(void)
     }
 
     // choose import type for structure
-    static const wxString choiceStrings[] = { "From a File", "Via Network" };
-    enum choiceValues { FROM_FILE=0, FROM_NETWORK, N_CHOICES };
+    static const wxString choiceStrings[] = { "Via Network", "From a File" };
+    enum choiceValues { FROM_NETWORK=0, FROM_FILE, N_CHOICES };
     int importFrom = wxGetSingleChoiceIndex(
         "From what source would you like to import the structure?", "Select Import Source",
         N_CHOICES, choiceStrings, *viewerWindow);
@@ -630,6 +608,7 @@ void UpdateViewer::ImportStructure(void)
 
     int mmdbID;
     CRef < CBiostruc > biostruc;
+    BioseqRefList bioseqs;
 
     if (importFrom == FROM_NETWORK) {
         wxString id = wxGetTextFromUser("Enter an MMDB ID:", "Input Identifier", "", *viewerWindow);
@@ -637,9 +616,9 @@ void UpdateViewer::ImportStructure(void)
         if (id.size() == 0 || !id.ToULong(&idL)) return;
         mmdbID = (int) idL;
         biostruc.Reset(new CBiostruc());
-        if (!LoadBiostrucViaCache(mmdbID,
+        if (!LoadStructureViaCache(mmdbID,
                 (master->parentSet->isAlphaOnly ? eModel_type_ncbi_backbone : eModel_type_ncbi_all_atom),
-                biostruc.GetPointer())) {
+                biostruc, &bioseqs)) {
             ERR_POST(Error << "Failed to load MMDB #" << mmdbID);
             return;
         }
@@ -670,12 +649,8 @@ void UpdateViewer::ImportStructure(void)
             return;
         }
 
-        // extract Biostruc from mime, and get mmdb id
-        if (!mime->IsStrucseq()) {
-            ERR_POST(Error << "Must be single structure datafile (Ncbi-mime-asn1:strucseq)!");
-            return;
-        }
-        biostruc.Reset(&(mime->SetStrucseq().SetStructure()));
+        ExtractBiostrucAndBioseqs(*mime, biostruc, &bioseqs);
+
         if (biostruc->GetId().size() == 0 || !biostruc->GetId().front()->IsMmdb_id()) {
             ERR_POST(Error << "Can't get MMDB ID from loaded structure");
             return;
@@ -756,10 +731,11 @@ void UpdateViewer::ImportStructure(void)
             gis.push_back(chains[selections[choice]].first);
     }
 
-    // first check to see if this sequence is already present
     SequenceList newSequences;
     SequenceSet::SequenceList::const_iterator s, se = master->parentSet->sequenceSet->sequences.end();
     for (int j=0; j<gis.size(); j++) {
+
+        // first check to see if this sequence is already present
         for (s=master->parentSet->sequenceSet->sequences.begin(); s!=se; s++) {
             if ((*s)->identifier->gi == gis[j]) {
                 newSequences.push_back(*s);
@@ -767,15 +743,26 @@ void UpdateViewer::ImportStructure(void)
                 break;
             }
         }
+
         if (s == se) {
-            // if not, import the new sequence
-            SequenceList newSequence;
-            FetchSequences(master->parentSet, &newSequence, gis[j]);
-            if (newSequence.size() != 1) {
-                ERR_POST(Error << "Failed to import matching sequence!");
-                return;
+            // if not, find the sequence in the list from the structure file
+            BioseqRefList::const_iterator b, be = bioseqs.end();
+            for (b=bioseqs.begin(); b!=be; b++) {
+                CBioseq::TId::const_iterator i, ie = (*b)->GetId().end();
+                for (i=(*b)->GetId().begin(); i!=ie; i++) {
+                    if ((*i)->IsGi() && (*i)->GetGi() == gis[j])
+                        break;
+                }
+                if (i != ie) {
+                    TESTMSG("found Bioseq for gi " << gis[j]);
+                    newSequences.push_back(master->parentSet->CreateNewSequence(**b));
+                    break;
+                }
             }
-            newSequences.push_back(newSequence.front());
+            if (b == be) {
+                ERR_POST(Error << "ImportStructure() - can't find gi " << gis[j] << " in bioseq list!");
+//                return;
+            }
         }
     }
 

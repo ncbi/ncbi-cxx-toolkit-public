@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.116  2002/09/30 17:13:02  thiessen
+* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
+*
 * Revision 1.115  2002/09/26 18:30:58  thiessen
 * fix RMS bug when coords missing
 *
@@ -520,9 +523,10 @@ bool StructureSet::LoadMaster(int masterMMDBID)
         }
     }
     if (masterMMDBID != MoleculeIdentifier::VALUE_NOT_SET && objects.size() == 0) {
-        CBiostruc biostruc;
-        if (LoadBiostrucViaCache(masterMMDBID, dataManager->GetBiostrucModelType(), &biostruc))
-            objects.push_back(new StructureObject(this, biostruc, true));
+        CRef < CBiostruc > biostruc;
+        if (LoadStructureViaCache(masterMMDBID,
+                dataManager->GetBiostrucModelType(), biostruc, NULL))
+            objects.push_back(new StructureObject(this, *biostruc, true));
     }
     return (objects.size() > 0);
 }
@@ -813,9 +817,8 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
 
                     // if not in list, load Biostruc via HTTP/cache
                     if (biostruc.Empty()) {
-                        biostruc.Reset(new CBiostruc());
-                        if (!LoadBiostrucViaCache((*l)->slave->identifier->mmdbID,
-                                dataManager->GetBiostrucModelType(), biostruc.GetPointer())) {
+                        if (!LoadStructureViaCache((*l)->slave->identifier->mmdbID,
+                                dataManager->GetBiostrucModelType(), biostruc, NULL)) {
                             ERR_POST(Error << "Failed to load MMDB #" << (*l)->slave->identifier->mmdbID);
                             continue;
                         }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/09/30 17:13:02  thiessen
+* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
+*
 * Revision 1.17  2002/09/23 19:12:32  thiessen
 * add option to allow long gaps between frozen blocks
 *
@@ -159,7 +162,7 @@ public:
 private:
     IntegerSpinCtrl *iSingle, *iMultiple, *iExtend, *iSize;
     FloatingPointSpinCtrl *fpPercent, *fpLambda, *fpK;
-    wxCheckBox *cGlobal, *cMerge, *cAlignAll, *cLongGaps;
+    wxCheckBox *cGlobal, *cMerge, *cKeepBlocks, *cLongGaps;
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
@@ -178,7 +181,7 @@ BlockAligner::BlockAligner(void)
     currentOptions.searchSpaceSize = 0;
     currentOptions.globalAlignment = true;
     currentOptions.mergeAfterEachSequence = false;
-    currentOptions.alignAllBlocks = true;
+    currentOptions.keepExistingBlocks = true;
     currentOptions.allowLongGaps = true;
 }
 
@@ -317,7 +320,8 @@ static void FreezeBlocks(const BlockMultipleAlignment *multiple,
 }
 
 bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlignment *multiple,
-    const AlignmentList& toRealign, AlignmentList *newAlignments, int *nRowsAddedToMultiple)
+    const AlignmentList& toRealign, AlignmentList *newAlignments, int *nRowsAddedToMultiple,
+    bool canMerge)
 {
     // parameters passed to Alejandro's functions
     Int4 numBlocks;
@@ -336,7 +340,11 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     SeqAlignPtr listOfSeqAligns = NULL;
 
     // show options dialog each time block aligner is run
-    SetOptions(NULL);
+    if (!SetOptions(NULL)) return false;
+    if (currentOptions.mergeAfterEachSequence && !canMerge) {
+        ERR_POST(Error << "Can only merge when editing is enabled in the sequence window");
+        return false;
+    }
 
     // the following would be command-line arguments to Alejandro's standalone program
     Boolean localAlignment = currentOptions.globalAlignment ? FALSE : TRUE;
@@ -420,7 +428,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         for (i=0; i<numBlocks-1; i++)
             currentAllowedGaps[i] = allowedGaps[i];
         Boolean validFrozenBlocks = TRUE;
-        if (currentOptions.alignAllBlocks) {
+        if (!currentOptions.keepExistingBlocks) {
             for (i=0; i<numBlocks; i++) frozenBlocks[i] = -1;
         } else {
             FreezeBlocks(multiple, *s, frozenBlocks);
@@ -536,12 +544,13 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     return true;
 }
 
-void BlockAligner::SetOptions(wxWindow* parent)
+bool BlockAligner::SetOptions(wxWindow* parent)
 {
     BlockAlignerOptionsDialog dialog(parent, currentOptions);
-    if (dialog.ShowModal() == wxOK)
-        if (!dialog.GetValues(&currentOptions))
-            ERR_POST(Error << "Error getting options from dialog!");
+    bool ok = (dialog.ShowModal() == wxOK);
+    if (ok && !dialog.GetValues(&currentOptions))
+        ERR_POST(Error << "Error getting options from dialog!");
+    return ok;
 }
 
 
@@ -567,7 +576,7 @@ void BlockAligner::SetOptions(wxWindow* parent)
 #define ID_S_SIZE 10014
 #define ID_C_GLOBAL 10015
 #define ID_C_MERGE 10016
-#define ID_C_ALIGN_ALL 10017
+#define ID_C_KEEP_BLOCKS 10017
 #define ID_C_GAPS 10018
 #define ID_B_OK 10019
 #define ID_B_CANCEL 10020
@@ -674,11 +683,11 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     item3->Add( cMerge, 0, wxALIGN_CENTRE|wxALL, 5 );
     item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
 
-    wxStaticText *item24 = new wxStaticText( panel, ID_TEXT, "Realign all blocks:", wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText *item24 = new wxStaticText( panel, ID_TEXT, "Keep existing blocks:", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item24, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    cAlignAll = new wxCheckBox( panel, ID_C_ALIGN_ALL, "", wxDefaultPosition, wxDefaultSize, 0 );
-    cAlignAll->SetValue(init.alignAllBlocks);
-    item3->Add( cAlignAll, 0, wxALIGN_CENTRE|wxALL, 5 );
+    cKeepBlocks = new wxCheckBox( panel, ID_C_KEEP_BLOCKS, "", wxDefaultPosition, wxDefaultSize, 0 );
+    cKeepBlocks->SetValue(init.keepExistingBlocks);
+    item3->Add( cKeepBlocks, 0, wxALIGN_CENTRE|wxALL, 5 );
     item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
 
     wxStaticText *item31 = new wxStaticText( panel, ID_TEXT, "Allow long gaps between frozen blocks:", wxDefaultPosition, wxDefaultSize, 0 );
@@ -726,7 +735,7 @@ bool BlockAlignerOptionsDialog::GetValues(BlockAligner::BlockAlignerOptions *opt
 {
     options->globalAlignment = cGlobal->IsChecked();
     options->mergeAfterEachSequence = cMerge->IsChecked();
-    options->alignAllBlocks = cAlignAll->IsChecked();
+    options->keepExistingBlocks = cKeepBlocks->IsChecked();
     options->allowLongGaps = cLongGaps->IsChecked();
     return (
         iSingle->GetInteger(&(options->singleBlockThreshold)) &&

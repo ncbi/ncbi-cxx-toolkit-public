@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2002/09/30 17:13:02  thiessen
+* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
+*
 * Revision 1.75  2002/09/19 12:51:08  thiessen
 * fix block aligner / update bug; add distance select for other molecules only
 *
@@ -1013,18 +1016,13 @@ void AlignmentManager::BlockAlignAllUpdates(void)
     if (!currentUpdates || currentUpdates->size() == 0)
         return;
 
-    // make sure the editor is on in the sequenceViewer
-    if (!sequenceViewer->EditorIsOn() && blockAligner->IsSetToMergeAfterEachSequence()) {
-        ERR_POST(Error << "Can only merge updates when editing is enabled in the sequence window");
-        return;
-    }
-
     // run the block aligner on update pairwise alignments
     BlockAligner::AlignmentList newAlignmentsList;
     int nRowsAddedToMultiple;
 
     if (blockAligner->CreateNewPairwiseAlignmentsByBlockAlignment(currentMultiple,
-            *currentUpdates, &newAlignmentsList, &nRowsAddedToMultiple)) {
+            *currentUpdates, &newAlignmentsList, &nRowsAddedToMultiple,
+            sequenceViewer->EditorIsOn())) {
 
         // replace update alignments with new ones (or leftovers where threader/merge failed)
         updateViewer->ReplaceAlignments(newAlignmentsList);
@@ -1041,12 +1039,6 @@ void AlignmentManager::BlockAlignUpdate(BlockMultipleAlignment *single)
         sequenceViewer->GetCurrentAlignments() ? sequenceViewer->GetCurrentAlignments()->front() : NULL;
     if (!currentMultiple) return;
 
-    // make sure the editor is on in the sequenceViewer if merge is selected
-    if (!sequenceViewer->EditorIsOn() && blockAligner->IsSetToMergeAfterEachSequence()) {
-        ERR_POST(Error << "Can only merge updates when editing is enabled in the sequence window");
-        return;
-    }
-
     // run the threader on the given alignment
     UpdateViewer::AlignmentList singleList, replacedList;
     BlockAligner::AlignmentList newAlignments;
@@ -1055,7 +1047,8 @@ void AlignmentManager::BlockAlignUpdate(BlockMultipleAlignment *single)
 
     singleList.push_back(single);
     if (blockAligner->CreateNewPairwiseAlignmentsByBlockAlignment(
-            currentMultiple, singleList, &newAlignments, &nRowsAddedToMultiple)) {
+            currentMultiple, singleList, &newAlignments, &nRowsAddedToMultiple,
+            sequenceViewer->EditorIsOn())) {
 
         // replace threaded alignment with new one(s) (or leftover where threader/merge failed)
         UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments()->end();

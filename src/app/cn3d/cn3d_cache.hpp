@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/09/30 17:13:02  thiessen
+* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
+*
 * Revision 1.2  2002/02/27 16:29:41  thiessen
 * add model type flag to general mime type
 *
@@ -44,8 +47,12 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <list>
+
+#include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/mmdb1/Biostruc.hpp>
 #include <objects/mmdb2/Model_type.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 
 BEGIN_SCOPE(Cn3D)
@@ -58,10 +65,17 @@ BEGIN_SCOPE(Cn3D)
 //   eModel_type_ncbi_backbone (alpha only),
 //   eModel_type_ncbi_all_atom (one coordinate per atom),
 //   eModel_type_ncbi_pdb_model (all models from PDB, including alternate conformer ensembles)
+// If sequences is not NULL, the list will be filled with Bioseqs for all biopolymer chains
+// in the structure.
 
-bool LoadBiostrucViaCache(int mmdbID, ncbi::objects::EModel_type modelType,
-    ncbi::objects::CBiostruc *biostruc);
+typedef std::list < ncbi::CRef < ncbi::objects::CBioseq > > BioseqRefList;
 
+bool LoadStructureViaCache(int mmdbID, ncbi::objects::EModel_type modelType,
+    ncbi::CRef < ncbi::objects::CBiostruc >& biostruc, BioseqRefList *sequences);
+
+// utility function for mimes
+bool ExtractBiostrucAndBioseqs(ncbi::objects::CNcbi_mime_asn1& mime,
+    ncbi::CRef < ncbi::objects::CBiostruc >& biostruc, BioseqRefList *sequences);
 
 // Remove older entries until the cache is <= the given size (in MB).
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/09/30 17:13:02  thiessen
+* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
+*
 * Revision 1.18  2002/09/16 21:24:58  thiessen
 * add block freezing to block aligner
 *
@@ -155,9 +158,9 @@ private:
 
     const Sequence * GetMasterSequence(void) const;
     typedef std::list < const Sequence * > SequenceList;
-    void FetchSequenceViaHTTP(int gi, SequenceList *newSequences, StructureSet *sSet) const;
-    void ReadSequencesFromFile(SequenceList *newSequences, StructureSet *sSet, int specificGI = -1) const;
-    void FetchSequences(StructureSet *sSet, SequenceList *newSequences, int specificGI = -1) const;
+    void FetchSequenceViaHTTP(SequenceList *newSequences, StructureSet *sSet) const;
+    void ReadSequencesFromFile(SequenceList *newSequences, StructureSet *sSet) const;
+    void FetchSequences(StructureSet *sSet, SequenceList *newSequences) const;
     void MakeNewAlignments(const SequenceList& newSequences,
         const Sequence *master, AlignmentList *newAlignments) const;
 

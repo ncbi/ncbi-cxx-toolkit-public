@@ -26,10 +26,13 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      implements a basic cache for Biostrucs
+*      implements a basic cache for structures
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/09/30 17:13:02  thiessen
+* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
+*
 * Revision 1.8  2002/09/11 01:39:35  thiessen
 * fix cache file touch
 *
@@ -59,6 +62,11 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <objects/ncbimime/Ncbi_mime_asn1.hpp>
+#include <objects/ncbimime/Biostruc_seq.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+
 // for file/directory manipulation stuff
 #ifdef __WXMSW__
 #include <windows.h>
@@ -72,6 +80,7 @@
 #include "cn3d/cn3d_cache.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/asn_reader.hpp"
+#include "cn3d/asn_converter.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -101,12 +110,48 @@ static bool CreateCacheFolder(void)
     return okay;
 }
 
-static bool GetBiostrucFromCacheFolder(int mmdbID, EModel_type modelType, CBiostruc *biostruc)
+static void ExtractBioseqs(std::list < CRef < CSeq_entry > >& seqEntries, BioseqRefList *sequences)
+{
+    std::list < CRef < CSeq_entry > >::iterator e, ee = seqEntries.end();
+    for (e=seqEntries.begin(); e!=ee; e++) {
+        if ((*e)->IsSeq())
+            sequences->push_back(CRef<CBioseq>(&((*e)->SetSeq())));
+        else
+            ExtractBioseqs((*e)->SetSet().SetSeq_set(), sequences);
+    }
+}
+
+bool ExtractBiostrucAndBioseqs(CNcbi_mime_asn1& mime,
+    CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
+{
+    if (!mime.IsStrucseq()) {
+        ERR_POST(Error << "ExtractBiostrucAndBioseqs() - expecting strucseq mime");
+        return false;
+    }
+
+    // copy mime's biostruc into existing object
+    biostruc.Reset(&(mime.SetStrucseq().SetStructure()));
+
+    // extract Bioseqs
+    if (sequences) {
+        sequences->clear();
+        ExtractBioseqs(mime.SetStrucseq().SetSequences(), sequences);
+    }
+
+    return true;
+}
+
+static bool GetStructureFromCacheFolder(int mmdbID, EModel_type modelType,
+    CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
 {
     // try to load from cache
     TESTMSG("looking for " << mmdbID << " (model type " << (int) modelType << ") in cache:");
     std::string err, cacheFile = GetCacheFilePath(mmdbID, modelType);
-    if (!ReadASNFromFile(cacheFile.c_str(), biostruc, true, &err)) {
+    CNcbi_mime_asn1 mime;
+    SetDiagPostLevel(eDiag_Fatal); // ignore all but Fatal errors while reading data
+    bool gotFile = ReadASNFromFile(cacheFile.c_str(), &mime, true, &err);
+    SetDiagPostLevel(eDiag_Info);
+    if (!gotFile || !ExtractBiostrucAndBioseqs(mime, biostruc, sequences)) {
         ERR_POST(Warning << "failed to load " << mmdbID
             << " (model type " << (int) modelType << ") from cache: " << err);
         return false;
@@ -121,14 +166,15 @@ static bool GetBiostrucFromCacheFolder(int mmdbID, EModel_type modelType, CBiost
     return true;
 }
 
-static bool GetBiostrucViaHTTPAndAddToCache(int mmdbID, EModel_type modelType, CBiostruc *biostruc)
+static bool GetStructureViaHTTPAndAddToCache(int mmdbID, EModel_type modelType,
+    CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
 {
-    bool gotBiostruc = false;
+    bool gotStructure = false;
 
     // construct URL
     static const wxString host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
     wxString args;
-    args.Printf("uid=%i&form=6&db=t&save=Save&dopt=i&Complexity=", mmdbID);
+    args.Printf("uid=%i&form=6&db=t&save=Save&dopt=j&Complexity=", mmdbID);
     switch (modelType) {
         case eModel_type_ncbi_all_atom: args += "Cn3D%20Subset"; break;
         case eModel_type_pdb_model: args += "All%20Models"; break;
@@ -138,54 +184,50 @@ static bool GetBiostrucViaHTTPAndAddToCache(int mmdbID, EModel_type modelType, C
     }
 
     // load from network
-    TESTMSG("Trying to load Biostruc data from " << host.c_str() << path.c_str() << '?' << args.c_str());
+    TESTMSG("Trying to load structure data from " << host.c_str() << path.c_str() << '?' << args.c_str());
     std::string err;
-    gotBiostruc = GetAsnDataViaHTTP(host.c_str(), path.c_str(), args.c_str(), biostruc, &err);
-    if (!gotBiostruc)
-        ERR_POST(Warning << "Failed to read Biostruc from network\nreason: " << err);
+    CNcbi_mime_asn1 mime;
+    gotStructure = (GetAsnDataViaHTTP(host.c_str(), path.c_str(), args.c_str(), &mime, &err) &&
+        ExtractBiostrucAndBioseqs(mime, biostruc, sequences));
+    if (!gotStructure)
+        ERR_POST(Warning << "Failed to read structure from network\nreason: " << err);
 
-    if (gotBiostruc) {
+    if (gotStructure) {
         bool cacheEnabled;
         if (RegistryGetBoolean(REG_CACHE_SECTION, REG_CACHE_ENABLED, &cacheEnabled) && cacheEnabled) {
             // add to cache
             if (CreateCacheFolder() &&
-                WriteASNToFile(GetCacheFilePath(mmdbID, modelType).c_str(), *biostruc, true, &err)) {
+                WriteASNToFile(GetCacheFilePath(mmdbID, modelType).c_str(), mime, true, &err)) {
                 TESTMSG("stored " << mmdbID << " (model type " << (int) modelType << ") in cache");
                 // trim cache to appropriate size if we've added a new file
                 int size;
                 if (RegistryGetInteger(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, &size))
                     TruncateCache(size);
             } else {
-                ERR_POST(Warning << "Failed to write Biostruc to cache folder");
+                ERR_POST(Warning << "Failed to write structure to cache folder");
                 if (err.size() > 0) ERR_POST(Warning << "reason: " << err);
             }
         }
     }
 
-    return gotBiostruc;
+    return gotStructure;
 }
 
-bool LoadBiostrucViaCache(int mmdbID, EModel_type modelType, ncbi::objects::CBiostruc *biostruc)
+bool LoadStructureViaCache(int mmdbID, ncbi::objects::EModel_type modelType,
+    CRef < CBiostruc >& biostruc, BioseqRefList *sequences)
 {
-    bool gotBiostruc = false;
-
-    // clear existing data (probably done by object loader anyway, but just in case...)
-    biostruc->ResetId();
-    biostruc->ResetDescr();
-    biostruc->ResetChemical_graph();
-    biostruc->ResetFeatures();
-    biostruc->ResetModel();
+    bool gotStructure = false;
 
     // try loading from local cache folder first, if cache enabled in registry
     bool cacheEnabled;
     if (RegistryGetBoolean(REG_CACHE_SECTION, REG_CACHE_ENABLED, &cacheEnabled) && cacheEnabled)
-        gotBiostruc = GetBiostrucFromCacheFolder(mmdbID, modelType, biostruc);
+        gotStructure = GetStructureFromCacheFolder(mmdbID, modelType, biostruc, sequences);
 
     // otherwise, load via HTTP (and save in cache folder)
-    if (!gotBiostruc)
-        gotBiostruc = GetBiostrucViaHTTPAndAddToCache(mmdbID, modelType, biostruc);
+    if (!gotStructure)
+        gotStructure = GetStructureViaHTTPAndAddToCache(mmdbID, modelType, biostruc, sequences);
 
-    return gotBiostruc;
+    return gotStructure;
 }
 
 void TruncateCache(int maxSize)

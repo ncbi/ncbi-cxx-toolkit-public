@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/09/30 17:13:02  thiessen
+* change structure import to do sequences as well; change cache to hold mimes; change block aligner vocabulary; fix block aligner dialog bugs
+*
 * Revision 1.6  2002/09/23 19:12:32  thiessen
 * add option to allow long gaps between frozen blocks
 *
@@ -77,10 +80,11 @@ public:
     // the given master and one of the given sequences. If the alignment algorithm fails to
     // align the new sequence, it will include a null-alignment for that sequence.
     bool CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlignment *multiple,
-        const AlignmentList& toRealign, AlignmentList *newAlignments, int *nRowsAddedToMultiple);
+        const AlignmentList& toRealign, AlignmentList *newAlignments, int *nRowsAddedToMultiple,
+        bool canMerge);
 
-    // brings up a dialog that lets the user set block aligner options
-    void SetOptions(wxWindow* parent);
+    // brings up a dialog that lets the user set block aligner ; returns false if cancelled
+    bool SetOptions(wxWindow* parent);
 
     typedef struct {
         int singleBlockThreshold;
@@ -92,15 +96,12 @@ public:
         int searchSpaceSize;
         bool globalAlignment;
         bool mergeAfterEachSequence;
-        bool alignAllBlocks;
+        bool keepExistingBlocks;
         bool allowLongGaps;
     } BlockAlignerOptions;
 
 private:
     BlockAlignerOptions currentOptions;
-
-public:
-    bool IsSetToMergeAfterEachSequence(void) const { return currentOptions.mergeAfterEachSequence; }
 };
 
 END_SCOPE(Cn3D)
