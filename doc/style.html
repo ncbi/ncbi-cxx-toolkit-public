@@ -19,8 +19,9 @@
 	 <ul>
 		<li> <a href="#ref_Naming">Naming conventions</a>
 	 <ul>
-		<li> <a href="#ref_NamingCPP">Preprocessor Define/Macro</a>
 		<li> <a href="#ref_NamingTypes">Type Names</a>
+		<li> <a href="#ref_NamingCPP">Preprocessor Define/Macro</a>
+		<li> <a href="#ref_NamingFuncArg">Function arguments</a>
 		<li> <a href="#ref_NamingConst">Constants</a>
 		<li> <a href="#ref_NamingCVar">Class member variables</a>
 		<li> <a href="#ref_NamingCFunc">Class member functions</a>
@@ -45,85 +46,94 @@
 
       <tr><th>Synopsis</th><th>Example</th></tr>
 
-		<a name="ref_NamingCPP">
-      <tr><th colspan=2 align=left>
-				&nbsp;&nbsp;&nbsp;Preprocessor Define/Macro</th></tr>
-      <tr><td><i>MACRO_NAME</i></td><td>#define MY_DEFINE 12345</td></tr>
-      <tr><td><i>macro_arg_name</i></td><td>#define MY_MACRO(x, y) (((x) + 1) < (y))</td></tr>
-
 		<a name="ref_NamingTypes">
       <tr><th colspan=2 align=left>
 				&nbsp;&nbsp;&nbsp;Type Names</th></tr>
-      <tr><td><i><b>C</b>ClassTypeName</i></td><td>
-				class CMyClass { ..... };</td></tr>
-      <tr><td><i><b>I</b>InterfaceName</i></td><td>
-				class IMyInterface { ..... };</td></tr>
-      <tr><td><i><b>S</b>StructTypeName</i></td><td>
-				struct SMyStruct { ..... };</td></tr>
-      <tr><td><i><b>U</b>UnionTypeName</i></td><td>
-				union UMyUnion { ..... };</td></tr>
-      <tr><td><i><b>E</b>EnumTypeName</i></td><td>
-				enum EMyEnum { ..... };</td></tr>
-      <tr><td><i><b>F</b>FunctionTypeName</i></td><td>
-				typedef int (*FMyFunc)(void);</td></tr>
-      <tr><td><i><b>P</b>PredicateName</i></td><td>
-				struct PMyPred { bool operator() (..... , .....); };</td></tr>
+      <tr><td><i><b>C</b>ClassTypeName</i></td><td><tt>
+				class CMyClass { ..... };</tt></td></tr>
+      <tr><td><i><b>I</b>InterfaceName</i></td><td><tt>
+				class IMyInterface { ..... };</tt></td></tr>
+      <tr><td><i><b>S</b>StructTypeName</i></td><td><tt>
+				struct SMyStruct { ..... };</tt></td></tr>
+      <tr><td><i><b>U</b>UnionTypeName</i></td><td><tt>
+				union UMyUnion { ..... };</tt></td></tr>
+      <tr><td><i><b>E</b>EnumTypeName</i></td><td><tt>
+				enum EMyEnum { ..... };</tt></td></tr>
+      <tr><td><i><b>F</b>FunctionTypeName</i></td><td><tt>
+				typedef int (*FMyFunc)(void);</tt></td></tr>
+      <tr><td><i><b>P</b>PredicateName</i></td><td><tt>
+				struct PMyPred { bool operator() (..... , .....); };</tt></td></tr>
       <tr><td><i><b>T</b>AuxiliaryTypedef <a href="#ref_AuxType">(see also)</a></i></td>
-			 <td>typedef map&lt;int,string&gt; TMapIntStr;</td></tr>
+			 <td><tt>typedef map&lt;int,string&gt; TMapIntStr;</tt></td></tr>
       <tr><td><i><b>T</b>Iterator<b>I</b></i></td>
-			 <td>typedef list&lt;int&gt;::iterator TListI;</td></tr>
+			 <td><tt>typedef list&lt;int&gt;::iterator TListI;</tt></td></tr>
       <tr><td><i><b>T</b>ConstIterator<b>CI</b></i></td>
-			 <td>typedef set&lt;string&gt;::const_iterator TSetCI;</td></tr>
-      <tr><td><i><b>N</b>Namespace <a href="#ref_Prefix">(see also)</a></i></td><td>
-				namespace NMyNamespace { ..... } </td></tr>
+			 <td><tt>typedef set&lt;string&gt;::const_iterator TSetCI;</tt></td></tr>
+      <tr><td><i><b>N</b>Namespace <a href="#ref_Prefix">(see also)</a></i></td><td><tt>
+				namespace NMyNamespace { ..... } </tt></td></tr>
+
+		<a name="ref_NamingCPP">
+      <tr><th colspan=2 align=left>
+				&nbsp;&nbsp;&nbsp;Preprocessor Define/Macro</th></tr>
+      <tr><td><i>MACRO_NAME</i></td><td><tt>#define MY_DEFINE 12345</td></tr>
+      <tr><td><i>macro_arg_name</i></td><td><tt>#define MY_MACRO(x, y) (((x) + 1) < (y))</td></tr>
+
+		<a name="ref_NamingFuncArg">
+      <tr><th colspan=2 align=left>
+				&nbsp;&nbsp;&nbsp;Function arguments and local variables</th></tr>
+      <tr><td><i>func_local_name</i></td><td><tt>void MyFunc(int foo_bar, CMyClass& some_class) <br>
+{ <br>
+&nbsp;&nbsp;&nbsp;&nbsp; size_t&nbsp;foo_size; <br>
+&nbsp;&nbsp;&nbsp;&nbsp; long&nbsp;&nbsp;&nbsp;bar_offset;
+      </tt></td></tr>
 
 		<a name="ref_NamingConst">
       <tr><th colspan=2 align=left>
 				&nbsp;&nbsp;&nbsp;Constants</th></tr>
       <tr><td><i><b>k</b>ConstantName</i></td><td>
-				const int kMyConst = 123;</td></tr>
+				<tt>const int kMyConst = 123;</tt></td></tr>
       <tr><td><i><b>e</b>EnumConstantName</i></td>
-			 <td>enum EMyEnum { <br>
+			 <td><tt>enum EMyEnum { <br>
 				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum_1 = 11, <br>
 				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum_2 = 22, <br>
 				&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum_3 = 33 <br>
-				};</td></tr>
+				};</tt></td></tr>
 
       <tr><td><i><b>f</b>FlagConstantName</i></td>
-			 <td>enum EMyFlags { <br>
+			 <td><tt>enum EMyFlags { <br>
 				&nbsp;&nbsp;&nbsp;&nbsp; fMyFlag_1 = 0x1, <br>
 				&nbsp;&nbsp;&nbsp;&nbsp; fMyFlag_2 = 0x2 <br>
 				}; <br>
 				typedef int TMyFlags;  // holds a binary OR of "EMyFlags"
-			 </td></tr>
+			 </tt></td></tr>
 
 		<a name="ref_NamingCVar">
       <tr><th colspan=2 align=left>
 				&nbsp;&nbsp;&nbsp;Class member variables</th></tr>
-      <tr><td><i><b>m_</b>ClassMemberName</i></td><td>
-				class C { short m_MyClassData; }</td></tr>
-      <tr><td><i><b>sm_</b>ClassStaticMemberName</i></td><td>
-				class C { static double sm_MyClassStaticData; }</td></tr>
+      <tr><td><i><b>m_</b>ClassMemberName</i></td><td><tt>
+				class C { short m_MyClassData; }</tt></td></tr>
+      <tr><td><i><b>sm_</b>ClassStaticMemberName</i></td><td><tt>
+				class C { static double sm_MyClassStaticData; }</tt></td></tr>
 
 		<a name="ref_NamingCFunc">
       <tr><th colspan=2 align=left>
 				&nbsp;&nbsp;&nbsp;Class member functions</th></tr>
-      <tr><td><i>Func</i></td><td>bool MyFunc(void);</td></tr>
+      <tr><td><i>Func</i></td><td><tt>bool MyFunc(void);</tt></td></tr>
 
 		<a name="ref_NamingStatic">
       <tr><th colspan=2 align=left>
 				&nbsp;&nbsp;&nbsp;Module static functions and data</th></tr>
-      <tr><td><i><b>s_</b>StaticFunc</b></td><td>
-				static char s_MyStaticFunc(void);</td></tr>
-      <tr><td><i><b>s_</b>StaticVar</b></td><td>
-				static int s_MyStaticVar;</td></tr>
+      <tr><td><i><b>s_</b>StaticFunc</b></td><td><tt>
+				static char s_MyStaticFunc(void);</tt></td></tr>
+      <tr><td><i><b>s_</b>StaticVar</b></td><td><tt>
+				static int s_MyStaticVar;</tt></td></tr>
 
 		<a name="ref_NamingGlobal">
       <tr><th colspan=2 align=left>
 				&nbsp;&nbsp;&nbsp;Global (<i>"extern"</i>) functions and data
 			 </th></tr>
-      <tr><td><i>GlobalFunc</i></td><td>double MyGlobalFunc(void);</td></tr>
-      <tr><td><i><b>g_</b>GlobalVar</i></td><td>short g_MyGlobalVar;</td></tr>
+      <tr><td><i>GlobalFunc</i></td><td><tt>double MyGlobalFunc(void);</tt></td></tr>
+      <tr><td><i><b>g_</b>GlobalVar</i></td><td><tt>short g_MyGlobalVar;</tt></td></tr>
 
 	 </table>
 
@@ -215,9 +225,11 @@
     <pre>
 if (...) {
     .....;
-} else if (...) {
+}
+else if (...) {
     .....;
-} else {
+}
+else {
     .....;
 }
 
@@ -236,13 +248,19 @@ case ...: {
 }
 } // switch
 
-class|struct|union <[C|S|U]TypeName> {
+struct|union|enum <[S|U|E]TypeName> {
+    .....;
+};
+
+class <CTypeName>
+{
     .....;
 };
 
 try {
     .....;
-} catch (exception& e) {
+}
+catch (exception& e) {
     .....;
 }
     </pre>
@@ -253,17 +271,18 @@ try {
     <h2>Class declaration</h2>
 
 	 <pre>
-class CFooClass {
+class CFooClass
+{
 public:
     // Constructors and Destructor (they are usually public)
-    CFooClass(bool init_bool=true);
+    CFooClass(bool init_bool = true);
     CFooClass(int  init_int);
     ~CFooClass(void);
 
     // Members and Methods
+    float PublicFunc(void);
     // (NOTE:  the use of public data members is strictly discouraged!)
     int   m_PublicData;
-    float PublicFunc(void);
 
 protected:
     double m_ProtectedData;
@@ -271,16 +290,17 @@ protected:
 
 private:
     int    m_PrivateData;
-    double PrivateFunc(int some_int=123);
+    double PrivateFunc(int some_int = 123);
 
     // Friends
     friend bool  SomeFriendFunc(void);
     friend class CSomeFriendClass;
 private:
     // Prohibit default initialization and assignment -- e.g. when the
-    // member-by-member copying is dangerous
-    CFooClass(const CFooClass&) { _TROUBLE; }
-    CFooClass& operator=(const CFooClass&) { _TROUBLE;  return *this; }
+    // member-by-member copying is dangerous.
+    // (These two methods are not even implemented.)
+    CFooClass(const CFooClass&);
+    CFooClass& operator= (const CFooClass&);
 };
 	 </pre>
 
