@@ -49,26 +49,29 @@ Contents: C++ driver for running BLAST
 
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
+#include <algo/blast/api/disc_nucl_options.hpp>
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/hspstream_queue.hpp>
-#include "blast_input.hpp"
-#include <algo/blast/api/seqsrc_seqdb.hpp>
-#include <objtools/alnmgr/util/blast_format.hpp>
 
+#ifndef USE_READDB
+#include <algo/blast/api/seqsrc_seqdb.hpp>
+#else
 #ifndef NCBI_C_TOOLKIT
 #define NCBI_C_TOOLKIT
 #endif
+#include <algo/blast/api/seqsrc_readdb.h>
+#endif
+
+#include "blast_input.hpp" // From working directory
+#include <objtools/alnmgr/util/blast_format.hpp>
 
 // C include files
+
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_engine.h>
-
-// For writing out seqalign only
-#include <ctools/asn_converter.hpp>
-#include <objalign.h>
 
 // For on-the-fly tabular output
 #include "blast_tabular.hpp"
@@ -90,7 +93,7 @@ private:
     void InitOptions(void);
     void SetOptions(const CArgs& args);
     void ProcessCommandLineArgs(CBlastOptionsHandle* opt, 
-                                BlastSeqSrc* bssp, RPSInfo *rps_info);
+                                BlastSeqSrc* seq_src, RPSInfo *rps_info);
     int BlastSearch(void);
     void RegisterBlastDbLoader(char* dbname, bool is_na);
     void FormatResults(const CDbBlast* blaster, TSeqAlignVector& seqalignv);
@@ -152,12 +155,17 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("window","window", "Window size for two-hit extension",
                             CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("scantype", "scantype", 
-        "Method for scanning the database: 0 traditional, 1 AG",
-        CArgDescriptions::eInteger, "1");
-    arg_desc->SetConstraint("scantype", new CArgAllow_Integers(0,1));
+        "Method for checking initial words length:\n"
+        "0 default depending on other options values,\n"
+        "1 AG - extension in both directions,\n"
+        "2 traditional - extension to the right,\n"
+        "3 Update of word length on diagonal entries.",
+        CArgDescriptions::eInteger, "0");
+    arg_desc->SetConstraint("scantype", new CArgAllow_Integers(0,3));
 
     arg_desc->AddDefaultKey("varword", "varword", 
-        "Should variable word size be used?",
+        "Should variable word size be used, i.e. no partial byte extensions"
+        "when checking initial word length?",
         CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("stride","stride", "Database scanning stride",
                             CArgDescriptions::eInteger, "0");
@@ -257,6 +265,9 @@ CBlastApplication::InitScope(void)
 {
     if (m_Scope.Empty()) {
         m_ObjMgr = CObjectManager::GetInstance();
+        if (!m_ObjMgr) {
+            throw std::runtime_error("Could not initialize object manager");
+        }
         CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 
         m_Scope.Reset(new CScope(*m_ObjMgr));
@@ -279,7 +290,7 @@ CBlastApplication::RegisterBlastDbLoader(char *dbname, bool db_is_na)
 
 void
 CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle, 
-                                          BlastSeqSrc* bssp, RPSInfo *rps_info)
+                                          BlastSeqSrc* seq_src, RPSInfo *rps_info)
 {
     CArgs args = GetArgs();
     CBlastOptions& opt = opts_handle->SetOptions();
@@ -330,15 +341,6 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
     if (args["match"].AsInteger()) {
         opt.SetMatchReward(args["match"].AsInteger());
     }
-    if (args["word"].AsInteger()) {
-        opt.SetWordSize(args["word"].AsInteger());
-    }
-    if (args["templen"].AsInteger()) {
-        opt.SetMBTemplateLength(args["templen"].AsInteger());
-    }
-    if (args["templtype"].AsInteger()) {
-        opt.SetMBTemplateType(args["templtype"].AsInteger());
-    }
     if (args["thresh"].AsInteger()) {
         opt.SetWordThreshold(args["thresh"].AsInteger());
     }
@@ -348,27 +350,59 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
 
     // The next 3 apply to nucleotide searches only
     string program = args["program"].AsString();
+    if (args["word"].AsInteger()) {
+        if (program == "blastn") {
+            // Setting word size for blastn involves changing the scanning 
+            // stride as well, which is handled in the derived 
+            // CBlastNucleotideOptionsHandle class, but not in the base
+            // CBlastOptionsHandle class.
+            CBlastNucleotideOptionsHandle* nucl_handle = 
+                dynamic_cast<CBlastNucleotideOptionsHandle*>(opts_handle);
+            nucl_handle->SetWordSize(args["word"].AsInteger());
+        } else {
+            opt.SetWordSize(args["word"].AsInteger());
+        }
+    }
+
     if (program == "blastn") {
+        if (args["templen"].AsInteger()) {
+            // Setting template length involves changing the scanning 
+            // stride as well, which is handled in the derived 
+            // CDiscNucleotideOptionsHandle class, but not in the base
+            // CBlastOptionsHandle class.
+            CDiscNucleotideOptionsHandle* disc_nucl_handle = 
+                dynamic_cast<CDiscNucleotideOptionsHandle*>(opts_handle);
+        
+            disc_nucl_handle->SetTemplateLength(args["templen"].AsInteger());
+        }
+        if (args["templtype"].AsInteger()) {
+            opt.SetMBTemplateType(args["templtype"].AsInteger());
+        }
         // Setting seed extension method involves changing the scanning 
         // stride as well, which is handled in the derived 
         // CBlastNucleotideOptionsHandle class, but not in the base
         // CBlastOptionsHandle class.
         CBlastNucleotideOptionsHandle* nucl_handle = 
             dynamic_cast<CBlastNucleotideOptionsHandle*>(opts_handle);
-        if (!args["templen"].AsInteger()) {
-            opt.SetVariableWordSize(args["varword"].AsBoolean());
-            switch(args["scantype"].AsInteger()) {
-            case 1:
-                nucl_handle->SetSeedExtensionMethod(eRightAndLeft);
-                break;
-            default:
-                nucl_handle->SetSeedExtensionMethod(eRight);
-                break;
-            }
-        } else {
-            // Discontiguous Mega BLAST: only one extension method.
-            nucl_handle->SetSeedExtensionMethod(eRight); 
+        switch(args["scantype"].AsInteger()) {
+        case 0:
+            nucl_handle->SetSeedExtensionMethod(eRight);
+            nucl_handle->SetSeedContainerType(eLastHitArray);
+            break;
+        case 1:
+            nucl_handle->SetSeedExtensionMethod(eRightAndLeft);
+            nucl_handle->SetSeedContainerType(eLastHitArray);
+            break;
+        case 2:
+            nucl_handle->SetSeedExtensionMethod(eUpdateDiag);
+            nucl_handle->SetSeedContainerType(eDiagArray);
+            break;
+        default:
+            break;
         }
+        
+        opt.SetVariableWordSize(args["varword"].AsBoolean());
+
         // Override the scan step value if it is set by user
         if (args["stride"].AsInteger()) {
             opt.SetScanStep(args["stride"].AsInteger());
@@ -416,9 +450,9 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
 
     if (args["searchsp"].AsDouble()) {
         opt.SetEffectiveSearchSpace((Int8) args["searchsp"].AsDouble());
-    } else if (bssp) {
-        opt.SetDbLength(BLASTSeqSrcGetTotLen(bssp));
-        opt.SetDbSeqNum(BLASTSeqSrcGetNumSeqs(bssp));
+    } else if (seq_src) {
+        opt.SetDbLength(BLASTSeqSrcGetTotLen(seq_src));
+        opt.SetDbSeqNum(BLASTSeqSrcGetNumSeqs(seq_src));
     }
 
     if (args["hitlist"].AsInteger()) {
@@ -598,8 +632,9 @@ void CBlastApplication::FormatResults(const CDbBlast* blaster,
         
         if (BLAST_FormatResults(seqalignv, program, blaster->GetQueries(), 
                 maskv, format_options, blaster->GetOptions().GetOutOfFrameMode())) {
-            NCBI_THROW(CBlastException, eInternal, 
+            ERR_POST_EX(CBlastException::eInternal, 2,
                        "Error in formatting results");
+            exit(CBlastException::eInternal);
         }
         
 #ifdef C_FORMATTING
@@ -626,8 +661,11 @@ static Int2 BLAST_FillRPSInfo( RPSInfo **ppinfo, Nlm_MemMap **rps_mmap,
    char buffer[PATH_MAX];
 
    info = (RPSInfo *)malloc(sizeof(RPSInfo));
-   if (info == NULL)
-      ErrPostEx(SEV_FATAL, 1, 0, "Memory allocation failed");
+   if (info == NULL) {
+       ERR_POST_EX(CBlastException::eOutOfMemory, 2,
+                  "Failed to allocate RPS information structure");
+       exit(CBlastException::eOutOfMemory);
+   }
 
    /* construct the full path to the DB file. Look in
       the local directory, then BLASTDB environment 
@@ -652,22 +690,31 @@ static Int2 BLAST_FillRPSInfo( RPSInfo **ppinfo, Nlm_MemMap **rps_mmap,
 
    sprintf(filename, "%s.loo", pathname);
    lut_mmap = Nlm_MemMapInit(filename);
-   if (lut_mmap == NULL)
-      ErrPostEx(SEV_FATAL, 1, 0, "Cannot map RPS BLAST lookup file");
+   if (lut_mmap == NULL) {
+       ERR_POST_EX(CBlastException::eOutOfMemory, 2,
+                  "Cannot map RPS BLAST lookup file");
+       exit(CBlastException::eOutOfMemory);
+   }
    info->lookup_header = (RPSLookupFileHeader *)lut_mmap->mmp_begin;
 
    sprintf(filename, "%s.rps", pathname);
    pssm_mmap = Nlm_MemMapInit(filename);
-   if (pssm_mmap == NULL)
-      ErrPostEx(SEV_FATAL, 1, 0, "Cannot map RPS BLAST profile file");
+   if (pssm_mmap == NULL) {
+       ERR_POST_EX(CBlastException::eOutOfMemory, 2,
+                  "Cannot map RPS BLAST profile file");
+       exit(CBlastException::eOutOfMemory);
+   }
    info->profile_header = (RPSProfileHeader *)pssm_mmap->mmp_begin;
 
    num_db_seqs = info->profile_header->num_profiles;
 
    sprintf(filename, "%s.aux", pathname);
    auxfile = FileOpen(filename, "r");
-   if (auxfile == NULL)
-      ErrPostEx(SEV_FATAL, 1, 0,"Cannot open RPS BLAST parameters file");
+   if (auxfile == NULL) {
+       ERR_POST_EX(CBlastException::eBadParameter, 2,
+                  "Cannot open RPS BLAST parameters file");
+       exit(CBlastException::eBadParameter);
+   }
 
    fscanf(auxfile, "%s", buffer);
    info->aux_info.orig_score_matrix = strdup(buffer);
@@ -685,9 +732,11 @@ static Int2 BLAST_FillRPSInfo( RPSInfo **ppinfo, Nlm_MemMap **rps_mmap,
       fscanf(auxfile, "%le", &info->aux_info.karlin_k[i]);
    }
 
-   if (i < num_db_seqs)
-      ErrPostEx(SEV_FATAL, 1, 0, "Missing Karlin parameters");
-
+   if (i < num_db_seqs) {
+       ERR_POST_EX(CBlastException::eBadParameter, 2,
+                  "Aux file missing Karlin parameters");
+       exit(CBlastException::eBadParameter);
+   }
    FileClose(auxfile);
    *ppinfo = info;
    *rps_mmap = lut_mmap;
@@ -748,9 +797,28 @@ int CBlastApplication::Run(void)
     bool db_is_na = (program == eBlastn || program == eTblastn || 
                      program == eTblastx);
 
+#ifndef USE_READDB
     BlastSeqSrc* seq_src = 
         SeqDbSrcInit(args["db"].AsString().c_str(), !db_is_na,
                      first_oid, last_oid, NULL);
+#else
+    BlastSeqSrc* seq_src =
+        ReaddbBlastSeqSrcInit(args["db"].AsString().c_str(), !db_is_na,
+                     first_oid, last_oid, NULL);
+#endif
+
+    /* If megablast lookup table is used, change default program to 
+       eMegablast, facilitating use of megablast defaults. */
+    if (args["lookup"].AsInteger() == 1) {
+        program = eMegablast;
+        if (args["templen"].AsInteger() > 0) 
+            program = eDiscMegablast;
+    }
+    if (args["lookup"].AsInteger() != 1 && args["templen"].AsInteger() > 0) {
+        ERR_POST_EX(CBlastException::eBadParameter, 2, 
+        "\"-lookup 1\" option must be used if \"-templen\" option is not 0");
+        exit(CBlastException::eBadParameter);
+    }
 
     CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(program);
 
@@ -762,59 +830,67 @@ int CBlastApplication::Run(void)
         if (BLAST_FillRPSInfo(&rps_info, &rps_mmap,
             &rps_pssm_mmap, args["db"].AsString().c_str()) != 0) 
         {
-            NCBI_THROW(CBlastException, eBadParameter, 
+            ERR_POST_EX(CBlastException::eBadParameter, 2, 
                        "Cannot initialize RPS BLAST database");
+            exit(CBlastException::eBadParameter);
         }        
     }
     
     ProcessCommandLineArgs(opts, seq_src, rps_info);
 
     // Perform repeats filtering if required
-   char* repeat_filter_string = 
-       GetRepeatsFilterOption(opts->GetOptions().GetFilterString());
-   if (repeat_filter_string) {
-       FindRepeatFilterLoc(query_loc, repeat_filter_string);
-       sfree(repeat_filter_string);
-   }
-
+    char* repeat_filter_string = 
+        GetRepeatsFilterOption(opts->GetOptions().GetFilterString());
+    if (repeat_filter_string) {
+        FindRepeatFilterLoc(query_loc, repeat_filter_string);
+        sfree(repeat_filter_string);
+    }
 
     BlastHSPStream* hsp_stream = NULL;
     bool tabular_output = args["tabular"].AsBoolean();
 
-    if (tabular_output) {
-        hsp_stream = Blast_HSPListCQueueInit();
-    }
-
     int num_threads = args["threads"].AsInteger();
-    CRef<CDbBlast> blaster;
-    if (num_threads <= 1) {
-        blaster.Reset(new CDbBlast(query_loc, seq_src, *opts, rps_info, 
-                                   hsp_stream));
-    } else {
-        blaster.Reset(new CDbBlast(query_loc, seq_src, *opts, rps_info, 
-                                   hsp_stream, true));
-    }
+
     TSeqAlignVector seqalignv;
 
-    if (tabular_output) {
-        blaster->SetupSearch();
-        // Start the on-the-fly formatting thread
-        CBlastTabularFormatThread* tab_thread = 
-            new CBlastTabularFormatThread(blaster, query_loc, 
-                                          args["out"].AsOutputFile());
-        tab_thread->Run();
-        blaster->RunSearchEngine();
-        // Join the on-the-fly formatting thead
-        void *exit_data;
-        tab_thread->Join(&exit_data);
+    try {
 
-        hsp_stream = BlastHSPStreamFree(hsp_stream);
-    } else {
-        // Run the BLAST engine
-        seqalignv = blaster->Run();
+       if (!tabular_output) {
+	  CRef<CDbBlast> blaster(new CDbBlast(query_loc, seq_src, *opts, 
+				       rps_info, hsp_stream, num_threads));
+	  seqalignv = blaster->Run();
+	  FormatResults(blaster, seqalignv);
+       } else {
+	  hsp_stream = Blast_HSPListCQueueInit();
+	  
+	  CRef<CDbBlast> blaster(new CDbBlast(query_loc, seq_src, *opts, 
+                                       rps_info, hsp_stream, num_threads));
+	  blaster->SetupSearch();
+	  
+	  // Start the on-the-fly formatting thread
+	  CBlastTabularFormatThread* tab_thread =  
+	     new CBlastTabularFormatThread(blaster, query_loc, 
+					   args["out"].AsOutputFile());
+	  tab_thread->Run();
+	  
+	  blaster->RunPreliminarySearch();
+	  // Close the HSP stream for writing, allowing the formatting thread
+	  // to exit.
+	  BlastHSPStreamClose(hsp_stream);
+	  // Join the on-the-fly formatting thead
+	  void *exit_data;
+	  tab_thread->Join(&exit_data);
+	  hsp_stream = BlastHSPStreamFree(hsp_stream);
+       }
+
+    } catch (const CBlastException& exptn) {
+       cerr << exptn.GetErrCodeString() << endl;
+       exptn.ReportAll();
+       status = exptn.GetErrCode();
     }
 
     BlastSeqSrcFree(seq_src);
+
     if (rps_info) {
         Nlm_MemMapFini(rps_mmap);
         Nlm_MemMapFini(rps_pssm_mmap);
@@ -822,8 +898,6 @@ int CBlastApplication::Run(void)
         sfree(rps_info->aux_info.orig_score_matrix);
         sfree(rps_info);
     }
-
-    FormatResults(blaster, seqalignv);
 
     return status;
 }
