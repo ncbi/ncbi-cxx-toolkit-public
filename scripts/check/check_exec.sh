@@ -55,7 +55,7 @@ if [ $status != 0  -a  `uname -s` = "Darwin" -a -d "/cores" ]; then
       fi
    done
 fi
-rm timestamp_file > /dev/null 2&>1
+rm timestamp_file > /dev/null 2>&1
 
 # Return test exit code
 exit $status
