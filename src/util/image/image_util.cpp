@@ -158,8 +158,6 @@ void CImageUtil::FlipX(CImage& image)
     const size_t scanline_size = image.GetWidth() * image.GetDepth();
     const size_t depth         = image.GetDepth();
     for (size_t i = 0;  i < image.GetHeight();  ++i) {
-        size_t start = 0;
-        size_t end   = scanline_size;
         unsigned char* start_ptr = image.SetData() + scanline_size * i;
         unsigned char* end_ptr   = image.SetData() + scanline_size * (i + 1);
         end_ptr -= depth;
@@ -212,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/08/11 15:23:33  vakatov
+ * Compilation warning fix (unused local vars)
+ *
  * Revision 1.4  2004/05/17 21:07:58  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
