@@ -76,6 +76,7 @@ BlockMultipleAlignment::BlockMultipleAlignment(SequenceList *sequenceList, Align
     InitCache();
     rowDoubles.resize(sequenceList->size(), 0.0);
     rowStrings.resize(sequenceList->size());
+    geometryViolations.resize(sequenceList->size());
 
     // create conservation colorer
     conservationColorer = new ConservationColorer(this);
@@ -1258,9 +1259,12 @@ bool BlockMultipleAlignment::DeleteRow(int row)
     }
 
     // remove sequence from list
-    SequenceList::iterator s = (const_cast<SequenceList*>(sequences))->begin();
-    for (int i=0; i<row; ++i) ++s;
-    (const_cast<SequenceList*>(sequences))->erase(s);
+    vector < bool > removeRows(NRows(), false);
+    removeRows[row] = true;
+    VectorRemoveElements(*sequences, removeRows, 1);
+    VectorRemoveElements(rowDoubles, removeRows, 1);
+    VectorRemoveElements(rowStrings, removeRows, 1);
+    VectorRemoveElements(geometryViolations, removeRows, 1);
 
     // delete row from all blocks, removing any zero-width blocks
     BlockList::iterator b = blocks.begin(), br, be = blocks.end();
@@ -1373,9 +1377,10 @@ bool BlockMultipleAlignment::ExtractRows(
 
     // remove sequences
     TRACEMSG("deleting sequences");
-    VectorRemoveElements(*(const_cast<SequenceList*>(sequences)), removeRows, slavesToRemove.size());
+    VectorRemoveElements(*sequences, removeRows, slavesToRemove.size());
     VectorRemoveElements(rowDoubles, removeRows, slavesToRemove.size());
     VectorRemoveElements(rowStrings, removeRows, slavesToRemove.size());
+    VectorRemoveElements(geometryViolations, removeRows, slavesToRemove.size());
 
     // delete row from all blocks, removing any zero-width blocks
     TRACEMSG("deleting alignment rows from blocks");
@@ -1427,16 +1432,18 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
         if (nb == nbe) return false;    // no corresponding block found
     }
 
-    // add slave sequences from new alignment; also copy scores/status
-    SequenceList *modSequences = const_cast<SequenceList*>(sequences);
+    // add slave sequences from new alignment; also copy other row-associated info
     int i, nNewRows = newAlignment->sequences->size() - 1;
-    modSequences->resize(modSequences->size() + nNewRows);
+    sequences->resize(sequences->size() + nNewRows);
     rowDoubles.resize(rowDoubles.size() + nNewRows);
     rowStrings.resize(rowStrings.size() + nNewRows);
+    geometryViolations.resize(geometryViolations.size() + nNewRows);
     for (i=0; i<nNewRows; ++i) {
-        (*modSequences)[modSequences->size() + i - nNewRows] = (*(newAlignment->sequences))[i + 1];
-        SetRowDouble(NRows() + i - nNewRows, newAlignment->GetRowDouble(i + 1));
-        SetRowStatusLine(NRows() + i - nNewRows, newAlignment->GetRowStatusLine(i + 1));
+        int j = NRows() + i - nNewRows;
+        (*sequences)[j] = (*(newAlignment->sequences))[i + 1];
+        SetRowDouble(j, newAlignment->GetRowDouble(i + 1));
+        SetRowStatusLine(j, newAlignment->GetRowStatusLine(i + 1));
+        geometryViolations[j] = newAlignment->geometryViolations[i + 1];
     }
 
     // now that we know blocks are compatible, add new rows at end of this alignment, containing
@@ -1486,6 +1493,7 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
 int BlockMultipleAlignment::ShowGeometryViolations(bool showGV)
 {
     geometryViolations.clear();
+    geometryViolations.resize(NRows());
 
     if (!showGV || !GetMaster()->molecule || GetMaster()->molecule->parentSet->isAlphaOnly) {
         showGeometryViolations = false;
@@ -1500,7 +1508,6 @@ int BlockMultipleAlignment::ShowGeometryViolations(bool showGV)
         return 0;
     }
 
-    geometryViolations.resize(NRows());
     for (int row=0; row<NRows(); ++row) {
         geometryViolations[row].resize(GetSequenceOfRow(row)->Length(), false);
         Threader::IntervalList::const_iterator i, ie = violations[row].end();
@@ -1709,7 +1716,7 @@ SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
 
 char UngappedAlignedBlock::GetCharacterAt(int blockColumn, int row) const
 {
-    return (*(parentAlignment->sequences))[row]->sequenceString[GetIndexAt(blockColumn, row)];
+    return (*(parentAlignment->GetSequences()))[row]->sequenceString[GetIndexAt(blockColumn, row)];
 }
 
 Block * UngappedAlignedBlock::Clone(const BlockMultipleAlignment *newMultiple) const
@@ -1818,6 +1825,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2004/06/23 00:15:47  thiessen
+* fix row addition/deletion problem with vector synchronization
+*
 * Revision 1.57  2004/05/26 14:18:29  thiessen
 * remove status stuff in ExtractRows
 *

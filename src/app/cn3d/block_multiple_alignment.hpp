@@ -73,7 +73,7 @@ public:
 
     ~BlockMultipleAlignment(void);
 
-    const SequenceList *sequences;
+    const SequenceList * GetSequences(void) const { return sequences; }
     AlignmentManager *alignmentManager;
 
     // create a C-object SeqAlign from this alignment (actually a linked list of pairwise
@@ -232,6 +232,7 @@ public:
     int ShowGeometryViolations(bool showGeometryViolations);
 
 private:
+    SequenceList *sequences;
     ConservationColorer *conservationColorer;
     mutable BLAST_Matrix *pssm;
 
@@ -420,6 +421,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/06/23 00:15:47  thiessen
+* fix row addition/deletion problem with vector synchronization
+*
 * Revision 1.40  2004/03/15 17:17:56  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

@@ -551,8 +551,8 @@ bool AlignmentManager::IsInAlignment(const Sequence *sequence) const
     if (!sequence) return false;
     const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
     if (currentAlignment) {
-        for (int i=0; i<currentAlignment->sequences->size(); ++i) {
-            if ((*(currentAlignment->sequences))[i] == sequence)
+        for (int i=0; i<currentAlignment->GetSequences()->size(); ++i) {
+            if ((*(currentAlignment->GetSequences()))[i] == sequence)
                 return true;
         }
     }
@@ -956,6 +956,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2004/06/23 00:15:47  thiessen
+* fix row addition/deletion problem with vector synchronization
+*
 * Revision 1.94  2004/05/21 21:41:38  gorelenk
 * Added PCH ncbi_pch.hpp
 *
