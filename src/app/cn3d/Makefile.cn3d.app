@@ -64,21 +64,22 @@ LIB = \
 	xctools \
 	xconnect
 
+WX_CONFIG = $(HOME)/Programs/wxGTK-2.2.7/install/bin/wxgtk-config
+WX_CPPFLAGS = $(shell $(WX_CONFIG) --cppflags)
+WX_LIBS = $(shell $(WX_CONFIG) --libs)
+
+GTK_CONFIG = $(HOME)/Programs/GTK-1.2/install/bin/gtk-config
+GTK_CFLAGS = $(shell $(GTK_CONFIG) --cflags)
+GTK_LIBS = $(shell $(GTK_CONFIG) --libs)
+
 CPPFLAGS = $(ORIG_CPPFLAGS) \
 	-I$(includedir)/gui_ctools \
-	$(NCBI_C_INCLUDE) \
-	-D__WXGTK__ -DGTK_NO_CHECK_CASTS -D_REENTRANT \
-	-I$(HOME)/Programs/wxGTK-2.2.7/install/include \
-	-I$(HOME)/Programs/GTK-1.2/install/include/gtk-1.2 \
-	-I$(HOME)/Programs/GTK-1.2/install/include/glib-1.2 \
-	-I$(HOME)/Programs/GTK-1.2/install/lib/glib/include
+	$(WX_CPPFLAGS) \
+	$(GTK_CFLAGS) \
+	$(NCBI_C_INCLUDE)
 
 LIBS = $(ORIG_LIBS) \
-	-L$(HOME)/Programs/wxGTK-2.2.7/install/lib \
-	-lwx_gtk -lwx_gtk_gl -lGL -lGLU \
-	-L$(HOME)/Programs/GTK-1.2/install/lib \
-	-L/usr/openwin/lib -R/usr/openwin/lib \
-	-lgtk -lgdk -lgmodule -lglib -ldl -lXext \
-	-lX11 -lsocket -lnsl -lm -lposix4 \
+	$(WX_LIBS) \
+	$(GTK_LIBS) \
 	$(NCBI_C_LIBPATH) \
 	-lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi
