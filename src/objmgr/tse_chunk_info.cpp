@@ -26,7 +26,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Splitted TSE chunk info
+*   Split TSE chunk info
 *
 */
 
@@ -97,8 +97,8 @@ void CTSE_Chunk_Info::x_SplitAttach(CTSE_Split_Info& split_info)
     TChunkId chunk_id = GetChunkId();
 
     // register descrs places
-    ITERATE ( TDescPlaces, it, m_DescrPlaces ) {
-        split_info.x_AddDescrPlace(*it, chunk_id);
+    ITERATE ( TDescInfos, it, m_DescInfos ) {
+        split_info.x_AddDescInfo(*it, chunk_id);
     }
 
     // register annots places
@@ -143,8 +143,8 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
     TChunkId chunk_id = GetChunkId();
 
     // register descrs places
-    ITERATE ( TDescPlaces, it, m_DescrPlaces ) {
-        m_SplitInfo->x_AddDescrPlace(tse_info, *it, chunk_id);
+    ITERATE ( TDescInfos, it, m_DescInfos ) {
+        m_SplitInfo->x_AddDescInfo(tse_info, *it, chunk_id);
     }
 
     // register annots places
@@ -209,20 +209,43 @@ void CTSE_Chunk_Info::SetLoaded(CObject* obj)
 
 /////////////////////////////////////////////////////////////////////////////
 // chunk content description
-void CTSE_Chunk_Info::x_AddDescrPlace(TDescTypes types,
-                                      EPlaceType place_type, TPlaceId place_id)
+void CTSE_Chunk_Info::x_AddDescInfo(TDescTypeMask type_mask,
+                                    const TBioseqId& id)
 {
-    TDescPlace place(types, TPlace(place_type, place_id));
-    m_DescrPlaces.push_back(place);
+    x_AddDescInfo(TDescInfo(type_mask, TPlace(id, 0)));
+}
+
+
+void CTSE_Chunk_Info::x_AddDescInfo(TDescTypeMask type_mask,
+                                    TBioseq_setId id)
+{
+    x_AddDescInfo(TDescInfo(type_mask, TPlace(CSeq_id_Handle(), id)));
+}
+
+
+void CTSE_Chunk_Info::x_AddDescInfo(const TDescInfo& info)
+{
+    m_DescInfos.push_back(info);
     if ( m_SplitInfo ) {
-        m_SplitInfo->x_AddDescrPlace(place, GetChunkId());
+        m_SplitInfo->x_AddDescInfo(info, GetChunkId());
     }
 }
 
 
-void CTSE_Chunk_Info::x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id)
+void CTSE_Chunk_Info::x_AddAnnotPlace(const TBioseqId& id)
 {
-    TPlace place(place_type, place_id);
+    x_AddAnnotPlace(TPlace(id, 0));
+}
+
+
+void CTSE_Chunk_Info::x_AddAnnotPlace(TBioseq_setId id)
+{
+    x_AddAnnotPlace(TPlace(CSeq_id_Handle(), id));
+}
+
+
+void CTSE_Chunk_Info::x_AddAnnotPlace(const TPlace& place)
+{
     m_AnnotPlaces.push_back(place);
     if ( m_SplitInfo ) {
         m_SplitInfo->x_AddAnnotPlace(place, GetChunkId());
@@ -230,12 +253,19 @@ void CTSE_Chunk_Info::x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id)
 }
 
 
-void CTSE_Chunk_Info::x_AddBioseqPlace(TPlaceId place_id)
+void CTSE_Chunk_Info::x_AddBioseqPlace(TBioseq_setId id)
 {
-    m_BioseqPlaces.push_back(place_id);
+    m_BioseqPlaces.push_back(id);
     if ( m_SplitInfo ) {
-        m_SplitInfo->x_AddBioseqPlace(place_id, GetChunkId());
+        m_SplitInfo->x_AddBioseqPlace(id, GetChunkId());
     }
+}
+
+
+void CTSE_Chunk_Info::x_AddBioseqId(const TBioseqId& id)
+{
+    _ASSERT(!x_Attached());
+    m_BioseqIds.push_back(id);
 }
 
 
@@ -245,13 +275,6 @@ void CTSE_Chunk_Info::x_AddSeq_data(const TLocationSet& location)
     if ( m_SplitInfo ) {
         m_SplitInfo->x_AddSeq_data(location, *this);
     }
-}
-
-
-void CTSE_Chunk_Info::x_AddBioseqId(const CSeq_id_Handle& id)
-{
-    _ASSERT(!x_Attached());
-    m_BioseqIds.push_back(id);
 }
 
 
@@ -397,12 +420,24 @@ void CTSE_Chunk_Info::x_LoadSequence(const TPlace& place, TSeqPos pos,
 }
 
 
+void CTSE_Chunk_Info::x_LoadAssembly(const TPlace& place,
+                                     const TAssembly& assembly)
+{
+    _ASSERT(x_Attached());
+    m_SplitInfo->x_LoadAssembly(place, assembly);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/10/18 13:59:22  vasilche
+* Added support for split history assembly.
+* Added support for split non-gi sequences.
+*
 * Revision 1.18  2004/10/12 14:31:48  vasilche
 * Fixed assertion expression - blob can be loaded already.
 *

@@ -29,7 +29,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Splitted TSE chunk info
+*   Split TSE chunk info
 *
 */
 
@@ -73,18 +73,15 @@ public:
     typedef int TChunkId;
 
     // contents place identification
-    enum EPlaceType {
-        eBioseq,
-        eBioseq_set
-    };
-    typedef int TPlaceId;
-    typedef pair<EPlaceType, TPlaceId> TPlace;
-    typedef unsigned TDescTypes;
-    typedef pair<TDescTypes, TPlace> TDescPlace;
+    typedef int TBioseq_setId;
+    typedef CSeq_id_Handle TBioseqId;
+    typedef pair<TBioseqId, TBioseq_setId> TPlace;
+    typedef unsigned TDescTypeMask;
+    typedef pair<TDescTypeMask, TPlace> TDescInfo;
     typedef vector<TPlace> TPlaces;
-    typedef vector<TDescPlace> TDescPlaces;
-    typedef vector<TPlaceId> TBioseqPlaces;
-    typedef vector<CSeq_id_Handle> TBioseqIds;
+    typedef vector<TDescInfo> TDescInfos;
+    typedef vector<TBioseq_setId> TBioseqPlaces;
+    typedef vector<TBioseqId> TBioseqIds;
 
     // annot contents identification
     typedef CSeq_id_Handle TLocationId;
@@ -98,8 +95,9 @@ public:
     typedef SAnnotObjects_Info TObjectInfos;
     typedef list<TObjectInfos> TObjectInfosList;
 
-    // sequence data
+    // attached data types
     typedef list< CRef<CSeq_literal> > TSequence;
+    typedef list< CRef<CSeq_align> > TAssembly;
 
     //////////////////////////////////////////////////////////////////
     // constructor & destructor
@@ -125,11 +123,17 @@ public:
     // chunk content identification
     // should be set before attaching to CTSE_Info
     //////////////////////////////////////////////////////////////////
-    void x_AddDescrPlace(TDescTypes types,
-                         EPlaceType place_type, TPlaceId place_id);
-    void x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id);
-    void x_AddBioseqPlace(TPlaceId place_id);
-    void x_AddBioseqId(const CSeq_id_Handle& id);
+    void x_AddDescInfo(TDescTypeMask type_mask, const TBioseqId& id);
+    void x_AddDescInfo(TDescTypeMask type_mask, TBioseq_setId id);
+    void x_AddDescInfo(const TDescInfo& info);
+
+    void x_AddAnnotPlace(const TBioseqId& id);
+    void x_AddAnnotPlace(TBioseq_setId id);
+    void x_AddAnnotPlace(const TPlace& place);
+
+    void x_AddBioseqPlace(TBioseq_setId id);
+    void x_AddBioseqId(const TBioseqId& id);
+
     void x_AddAnnotType(const CAnnotName& annot_name,
                         const SAnnotTypeSelector& annot_type,
                         const TLocationId& location_id);
@@ -160,6 +164,7 @@ public:
     void x_LoadBioseq(const TPlace& place, const CBioseq& bioseq);
     void x_LoadSequence(const TPlace& place, TSeqPos pos,
                         const TSequence& seq);
+    void x_LoadAssembly(const TPlace& place, const TAssembly& assembly);
 
 protected:
     //////////////////////////////////////////////////////////////////
@@ -194,7 +199,7 @@ private:
 
     bool            m_AnnotIndexEnabled;
 
-    TDescPlaces     m_DescrPlaces;
+    TDescInfos      m_DescInfos;
     TPlaces         m_AnnotPlaces;
     TBioseqPlaces   m_BioseqPlaces;
     TBioseqIds      m_BioseqIds;
@@ -234,6 +239,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/10/18 13:59:22  vasilche
+* Added support for split history assembly.
+* Added support for split non-gi sequences.
+*
 * Revision 1.12  2004/10/07 14:03:32  vasilche
 * Use shared among TSEs CTSE_Split_Info.
 * Use typedefs and methods for TSE and DataSource locking.

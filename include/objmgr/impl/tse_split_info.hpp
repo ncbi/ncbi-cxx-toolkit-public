@@ -29,7 +29,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Splitted TSE chunk info
+*   Split TSE info
 *
 */
 
@@ -64,10 +64,12 @@ public:
     typedef vector<CTSE_Info*>                      TTSE_Set;
     typedef vector<pair<CSeq_id_Handle, TChunkId> > TSeqIdToChunks;
     typedef map<TChunkId, CRef<CTSE_Chunk_Info> >   TChunks;
-    typedef CTSE_Chunk_Info::TPlaceId               TPlaceId;
+    typedef CTSE_Chunk_Info::TBioseqId              TBioseqId;
+    typedef CTSE_Chunk_Info::TBioseq_setId          TBioseq_setId;
     typedef CTSE_Chunk_Info::TPlace                 TPlace;
-    typedef CTSE_Chunk_Info::TDescPlace             TDescPlace;
+    typedef CTSE_Chunk_Info::TDescInfo              TDescInfo;
     typedef CTSE_Chunk_Info::TSequence              TSequence;
+    typedef CTSE_Chunk_Info::TAssembly              TAssembly;
     typedef CTSE_Chunk_Info::TLocationSet           TLocationSet;
 
     CTSE_Split_Info(void);
@@ -92,28 +94,28 @@ public:
     CBioseq_Base_Info& x_GetBase(CTSE_Info& tse, const TPlace& place);
     CBioseq_Info& x_GetBioseq(CTSE_Info& tse, const TPlace& place);
     CBioseq_set_Info& x_GetBioseq_set(CTSE_Info& tse, const TPlace& place);
-    CBioseq_Info& x_GetBioseq(CTSE_Info& tse, const CSeq_id_Handle& place_id);
-    CBioseq_set_Info& x_GetBioseq_set(CTSE_Info& tse, TPlaceId place_id);
+    CBioseq_Info& x_GetBioseq(CTSE_Info& tse, const TBioseqId& id);
+    CBioseq_set_Info& x_GetBioseq_set(CTSE_Info& tse, TBioseq_setId id);
 
     // split information
-    void x_AddDescrPlace(const TDescPlace& place, TChunkId chunk_id);
+    void x_AddDescInfo(const TDescInfo& info, TChunkId chunk_id);
     void x_AddAnnotPlace(const TPlace& place, TChunkId chunk_id);
-    void x_AddBioseqPlace(TPlaceId place_id, TChunkId chunk_id);
+    void x_AddBioseqPlace(TBioseq_setId place_id, TChunkId chunk_id);
     void x_AddSeq_data(const TLocationSet& location, CTSE_Chunk_Info& chunk);
 
-    void x_AddDescrPlace(CTSE_Info& tse_info,
-                         const TDescPlace& place, TChunkId chunk_id);
+    void x_AddDescInfo(CTSE_Info& tse_info,
+                       const TDescInfo& info, TChunkId chunk_id);
     void x_AddAnnotPlace(CTSE_Info& tse_info,
                          const TPlace& place, TChunkId chunk_id);
     void x_AddBioseqPlace(CTSE_Info& tse_info,
-                          TPlaceId place_id, TChunkId chunk_id);
+                          TBioseq_setId place_id, TChunkId chunk_id);
     void x_AddSeq_data(CTSE_Info& tse_info,
                        const TLocationSet& location, CTSE_Chunk_Info& chunk);
 
     // id indexing
     void x_UpdateCore(void);
     void x_SetBioseqChunkId(TChunkId chunk_id);
-    void x_SetContainedId(const CSeq_id_Handle& id, TChunkId chunk_id);
+    void x_SetContainedId(const TBioseqId& id, TChunkId chunk_id);
 
     void x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk);
 
@@ -128,6 +130,8 @@ public:
     void x_LoadBioseq(const TPlace& place, const CBioseq& bioseq);
     void x_LoadSequence(const TPlace& place, TSeqPos pos,
                         const TSequence& sequence);
+    void x_LoadAssembly(const TPlace& place,
+                        const TAssembly& assembly);
     void x_LoadDescr(CTSE_Info& tse_info,
                      const TPlace& place, const CSeq_descr& descr);
     void x_LoadAnnot(CTSE_Info& tse_info,
@@ -137,6 +141,9 @@ public:
     void x_LoadSequence(CTSE_Info& tse_info,
                         const TPlace& place, TSeqPos pos,
                         const TSequence& sequence);
+    void x_LoadAssembly(CTSE_Info& tse_info,
+                        const TPlace& place,
+                        const TAssembly& assembly);
 
 private:
     // identification of the blob

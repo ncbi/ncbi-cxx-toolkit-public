@@ -26,7 +26,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Splitted TSE chunk info
+*   Split TSE info
 *
 */
 
@@ -154,20 +154,19 @@ CTSE_Chunk_Info& CTSE_Split_Info::GetSkeletonChunk(void)
 
 
 // split info
-void CTSE_Split_Info::x_AddDescrPlace(const TDescPlace& place,
-                                      TChunkId chunk_id)
+void CTSE_Split_Info::x_AddDescInfo(const TDescInfo& info, TChunkId chunk_id)
 {
     ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-        x_AddDescrPlace(**it, place, chunk_id);
+        x_AddDescInfo(**it, info, chunk_id);
     }
 }
 
 
-void CTSE_Split_Info::x_AddDescrPlace(CTSE_Info& tse_info,
-                                      const TDescPlace& place,
-                                      TChunkId chunk_id)
+void CTSE_Split_Info::x_AddDescInfo(CTSE_Info& tse_info,
+                                    const TDescInfo& info,
+                                    TChunkId chunk_id)
 {
-    x_GetBase(tse_info, place.second).x_AddDescrChunkId(place.first, chunk_id);
+    x_GetBase(tse_info, info.second).x_AddDescrChunkId(info.first, chunk_id);
 }
 
 
@@ -186,7 +185,8 @@ void CTSE_Split_Info::x_AddAnnotPlace(CTSE_Info& tse_info,
 }
 
 
-void CTSE_Split_Info::x_AddBioseqPlace(TPlaceId place_id, TChunkId chunk_id)
+void CTSE_Split_Info::x_AddBioseqPlace(TBioseq_setId place_id,
+                                       TChunkId chunk_id)
 {
     if ( place_id == 0 ) {
         _ASSERT(m_BioseqChunkId < 0);
@@ -200,7 +200,8 @@ void CTSE_Split_Info::x_AddBioseqPlace(TPlaceId place_id, TChunkId chunk_id)
 
 
 void CTSE_Split_Info::x_AddBioseqPlace(CTSE_Info& tse_info,
-                                       TPlaceId place_id, TChunkId chunk_id)
+                                       TBioseq_setId place_id,
+                                       TChunkId chunk_id)
 {
     if ( place_id == 0 ) {
         tse_info.x_SetNeedUpdate(CTSE_Info::fNeedUpdate_core);
@@ -236,7 +237,7 @@ void CTSE_Split_Info::x_AddSeq_data(CTSE_Info& tse_info,
 }
 
 
-void CTSE_Split_Info::x_SetContainedId(const CSeq_id_Handle& id,
+void CTSE_Split_Info::x_SetContainedId(const TBioseqId& id,
                                        TChunkId chunk_id)
 {
     _ASSERT(!m_SeqIdToChunksSorted);
@@ -402,17 +403,34 @@ void CTSE_Split_Info::x_LoadSequence(CTSE_Info& tse_info,
 }
 
 
+void CTSE_Split_Info::x_LoadAssembly(const TPlace& place,
+                                     const TAssembly& assembly)
+{
+    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        x_LoadAssembly(**it, place, assembly);
+    }
+}
+
+
+void CTSE_Split_Info::x_LoadAssembly(CTSE_Info& tse_info,
+                                     const TPlace& place,
+                                     const TAssembly& assembly)
+{
+    x_GetBioseq(tse_info, place).SetInst_Hist_Assembly(assembly);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // get attach points
 CBioseq_Info& CTSE_Split_Info::x_GetBioseq(CTSE_Info& tse_info,
-                                           const CSeq_id_Handle& place_id)
+                                           const TBioseqId& place_id)
 {
     return tse_info.x_GetBioseq(place_id);
 }
 
 
 CBioseq_set_Info& CTSE_Split_Info::x_GetBioseq_set(CTSE_Info& tse_info,
-                                                   TPlaceId place_id)
+                                                   TBioseq_setId place_id)
 {
     return tse_info.x_GetBioseq_set(place_id);
 }
@@ -421,9 +439,8 @@ CBioseq_set_Info& CTSE_Split_Info::x_GetBioseq_set(CTSE_Info& tse_info,
 CBioseq_Base_Info& CTSE_Split_Info::x_GetBase(CTSE_Info& tse_info,
                                               const TPlace& place)
 {
-    if ( place.first == CTSE_Chunk_Info::eBioseq ) {
-        return x_GetBioseq(tse_info,
-                           CSeq_id_Handle::GetGiHandle(place.second));
+    if ( place.first ) {
+        return x_GetBioseq(tse_info, place.first);
     }
     else {
         return x_GetBioseq_set(tse_info, place.second);
@@ -434,9 +451,8 @@ CBioseq_Base_Info& CTSE_Split_Info::x_GetBase(CTSE_Info& tse_info,
 CBioseq_Info& CTSE_Split_Info::x_GetBioseq(CTSE_Info& tse_info,
                                            const TPlace& place)
 {
-    if ( place.first == CTSE_Chunk_Info::eBioseq ) {
-        return x_GetBioseq(tse_info,
-                           CSeq_id_Handle::GetGiHandle(place.second));
+    if ( place.first ) {
+        return x_GetBioseq(tse_info, place.first);
     }
     else {
         NCBI_THROW(CObjMgrException, eOtherError,
@@ -448,12 +464,12 @@ CBioseq_Info& CTSE_Split_Info::x_GetBioseq(CTSE_Info& tse_info,
 CBioseq_set_Info& CTSE_Split_Info::x_GetBioseq_set(CTSE_Info& tse_info,
                                                    const TPlace& place)
 {
-    if ( place.first == CTSE_Chunk_Info::eBioseq_set ) {
-        return x_GetBioseq_set(tse_info, place.second);
-    }
-    else {
+    if ( place.first ) {
         NCBI_THROW(CObjMgrException, eOtherError,
                    "Gi where Bioseq-set id is expected");
+    }
+    else {
+        return x_GetBioseq_set(tse_info, place.second);
     }
 }
 
