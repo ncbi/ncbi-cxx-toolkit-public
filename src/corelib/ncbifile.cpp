@@ -413,14 +413,14 @@ string CDirEntry::ConvertToOSPath(const string& path)
     }
 #if defined(NCBI_OS_MAC)
     // Fix current and parent refs in the path for MAC
-    string search= "..:";
+    string xsearch= "..:";
     size_t pos = 0;
-    while ((pos = xpath.find(search)) != NPOS) {
-        xpath.replace(pos, search.length(), ":");
+    while ((pos = xpath.find(xsearch)) != NPOS) {
+        xpath.replace(pos, xsearch.length(), ":");
         if ( xpath.substr(pos + 1, 2) == ".:" )  {
             xpath.erase(pos + 1, 2);
         } else {
-            if ( xpath.substr(pos + 1, search.length()) != search )  {
+            if ( xpath.substr(pos + 1, xsearch.length()) != xsearch )  {
                 xpath.insert(pos,":");
             }
         }
@@ -434,11 +434,11 @@ string CDirEntry::ConvertToOSPath(const string& path)
     // Fix current and parent refs in the path after conversion from MAC path
     // Replace all "::" to "/../"
 #  if defined(DIR_PARENT)
-    string search  = string(2,DIR_SEPARATOR);
-    string replace = string(1,DIR_SEPARATOR) + DIR_PARENT + DIR_SEPARATOR;
+    string xsearch  = string(2,DIR_SEPARATOR);
+    string xreplace = string(1,DIR_SEPARATOR) + DIR_PARENT + DIR_SEPARATOR;
     size_t pos = 0;
-    while ((pos = xpath.find(search, pos)) != NPOS ) {
-        xpath.replace(pos, search.length(), replace);
+    while ((pos = xpath.find(xsearch, pos)) != NPOS ) {
+        xpath.replace(pos, xsearch.length(), xreplace);
     }
     // Replace something like "../aaa/../bbb/ccc" with "../bbb/ccc"
     xpath = NormalizePath(xpath);
@@ -503,10 +503,8 @@ string CDirEntry::ConcatPathEx(const string& first, const string& second)
 
 string CDirEntry::NormalizePath(const string& path)
 {
-#if defined(NCBI_OS_MAC)
-    // On MAC path is always normalized
-    return path;
-#else
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+
 #  if defined(DIR_SEPARATOR_ALT)
     // Convert all alternative separators to primary separator type
     string xpath = NStr::Replace(path, string(1,DIR_SEPARATOR_ALT),
@@ -514,7 +512,7 @@ string CDirEntry::NormalizePath(const string& path)
 #  else
     string xpath = path;
 #  endif
-    // Remove trailing "/." and "/.."
+    // Remove trailing "/." or "/.."
     string str = string(1,DIR_SEPARATOR) + DIR_CURRENT;
     if ( NStr::EndsWith(xpath, str) ) {
         xpath.erase(xpath.length() - str.length() + 1);
@@ -524,9 +522,27 @@ string CDirEntry::NormalizePath(const string& path)
             xpath.erase(xpath.length() - str.length() + 1);
         }
     }
+    // Replace all "//" with "/"
+    string xsearch  = string(2,DIR_SEPARATOR);
+    string xreplace = string(1,DIR_SEPARATOR);
+#  if defined(NCBI_OS_MSWIN)
+    // Ignore leading "//" -- name of the machine
+    size_t pos = 1;
+#  else
+    size_t pos = 0;
+#  endif
+    while ((pos = xpath.find(xsearch, pos)) != NPOS ) {
+        xpath.replace(pos, xsearch.length(), xreplace);
+    }
+    // Replace all like "/./" with "/"
+    xsearch  = string(1,DIR_SEPARATOR) + DIR_CURRENT + DIR_SEPARATOR;
+    xreplace = string(1,DIR_SEPARATOR);
+    pos = 0;
+    while ((pos = xpath.find(xsearch, pos)) != NPOS ) {
+        xpath.replace(pos, xsearch.length(), xreplace);
+    }
     // Replace something like "../aaa/../bbb" with "../bbb"
     str = string(1,DIR_SEPARATOR) + DIR_PARENT + DIR_SEPARATOR;
-    size_t pos;
     size_t start = 0;
     while ((pos = xpath.find(str, start)) > 0  &&  pos != NPOS) {
         start = xpath.rfind(DIR_SEPARATOR, pos - 1);
@@ -536,14 +552,11 @@ string CDirEntry::NormalizePath(const string& path)
             break;
         }
     }
-    // Remove all like "/./"
-    string search  = string(1,DIR_SEPARATOR) + DIR_CURRENT + DIR_SEPARATOR;
-    string replace = string(1,DIR_SEPARATOR);
-    pos = 0;
-    while ((pos = xpath.find(search, pos)) != NPOS ) {
-        xpath.replace(pos, search.length(), replace);
-    }
     return xpath;
+
+#else
+    // NOT implemented!
+    return path;
 #endif
 }
 
@@ -1604,8 +1617,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2003/09/16 18:54:26  ivanov
+ * NormalizePath(): added replacing double dir separators with single one
+ *
  * Revision 1.54  2003/09/16 16:03:00  ivanov
- * MakePath():  don't add separator to directory name if it is empty string
+ * MakePath():  don't add separator to directory name if it is an empty string
  *
  * Revision 1.53  2003/09/16 15:17:16  ivanov
  * + CDirEntry::NormalizePath()
@@ -1621,7 +1637,8 @@ END_NCBI_SCOPE
  * appropriate name.
  *
  * Revision 1.49  2003/06/18 18:57:43  rsmith
- * alternate implementation of GetTmpNameExt replacing tempnam with mktemp for library missing tempnam
+ * alternate implementation of GetTmpNameExt replacing tempnam with mktemp for
+ * library missing tempnam.
  *
  * Revision 1.48  2003/05/29 17:21:04  gouriano
  * added CreatePath() which creates directories recursively
