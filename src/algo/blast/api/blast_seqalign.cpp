@@ -856,7 +856,7 @@ x_BuildScoreList(const BlastHSP* hsp, const BlastScoreBlk* sbp, const
         EProgram program)
 {
     string score_type;
-    BLAST_KarlinBlk* kbp = NULL;
+    Blast_KarlinBlk* kbp = NULL;
 
     if (!hsp)
         return;
@@ -1361,6 +1361,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2004/04/19 12:59:12  madden
+* Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure
+*
 * Revision 1.37  2004/04/16 14:28:19  papadopo
 * add use of eRPSBlast program
 *
