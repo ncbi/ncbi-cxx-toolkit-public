@@ -28,8 +28,30 @@
  * File Description:
  *   Dummy LBSMD mapper for non-UNIX platforms.
  *
+ */
+
+#include "ncbi_servicep_lbsmd.h"
+
+
+const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
+                                    SSERV_Info** info, char** env)
+{
+    return 0;
+}
+
+
+char* SERV_LBSMD_GetConfig(void)
+{
+    return 0;
+}
+
+
+/*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/10/11 19:52:57  lavr
+ * +SERV_LBSMD_GetConfig()
+ *
  * Revision 6.3  2002/04/13 06:40:44  lavr
  * Few tweaks to reduce the number of syscalls made
  *
@@ -41,12 +63,3 @@
  *
  * ==========================================================================
  */
-
-#include "ncbi_servicep_lbsmd.h"
-
-
-const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
-                                    SSERV_Info** info, char** env)
-{
-    return 0;
-}

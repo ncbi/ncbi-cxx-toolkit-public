@@ -46,6 +46,9 @@ const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
                                     SSERV_Info** info, char** env);
 
 
+char* SERV_LBSMD_GetConfig(void);
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
@@ -54,6 +57,9 @@ const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/10/11 19:52:45  lavr
+ * +SERV_LBSMD_GetConfig()
+ *
  * Revision 6.6  2002/09/19 18:09:02  lavr
  * Header file guard macro changed; log moved to end
  *
