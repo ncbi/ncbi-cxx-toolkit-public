@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/05/14 19:51:48  kholodov
+* Fixed: incorrect column no handling for detecting end of column
+*
 * Revision 1.2  2002/05/13 19:11:53  kholodov
 * Modified: added proper handling of EOFs while reading column data using CDB_Result::CurrentItemNo().
 *
@@ -54,31 +57,32 @@ BEGIN_NCBI_SCOPE
 class CByteStreamBuf : public streambuf
 {
 public:
-  CByteStreamBuf(streamsize bufsize);
-  virtual ~CByteStreamBuf();
+    CByteStreamBuf(streamsize bufsize);
+    virtual ~CByteStreamBuf();
 
-  void SetCmd(CDB_SendDataCmd* cmd);
-  void SetRs(CDB_Result* rs);
+    void SetCmd(CDB_SendDataCmd* cmd);
+    void SetRs(CDB_Result* rs);
 
 protected:
-  virtual streambuf* setbuf(CT_CHAR_TYPE* p, streamsize n);
-  virtual CT_INT_TYPE underflow();
-  virtual streamsize showmanyc();
+    virtual streambuf* setbuf(CT_CHAR_TYPE* p, streamsize n);
+    virtual CT_INT_TYPE underflow();
+    virtual streamsize showmanyc();
 
-  virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
-  virtual int sync();
+    virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
+    virtual int sync();
   
 
 private:
 
-  CT_CHAR_TYPE* getGBuf();
-  CT_CHAR_TYPE* getPBuf();
+    CT_CHAR_TYPE* getGBuf();
+    CT_CHAR_TYPE* getPBuf();
 
-  CT_CHAR_TYPE* m_buf;
-  streamsize m_size;
-  streamsize m_len;
-  class CDB_Result* m_rs;
-  class CDB_SendDataCmd* m_cmd;
+    CT_CHAR_TYPE* m_buf;
+    streamsize m_size;
+    streamsize m_len;
+    class CDB_Result* m_rs;
+    class CDB_SendDataCmd* m_cmd;
+    int m_column;
 
 };
 

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/05/14 19:51:47  kholodov
+* Fixed: incorrect column no handling for detecting end of column
+*
 * Revision 1.4  2002/05/13 19:11:53  kholodov
 * Modified: added proper handling of EOFs while reading column data using CDB_Result::CurrentItemNo().
 *
@@ -62,7 +65,7 @@ static const streamsize DEF_BUFSIZE = 2048;
 CByteStreamBuf::CByteStreamBuf(streamsize bufsize)
     : m_buf(0), 
     m_size(bufsize > 0 ? bufsize : DEF_BUFSIZE), 
-    m_len(0), m_rs(0), m_cmd(0)
+    m_len(0), m_rs(0), m_cmd(0), m_column(-1)
 { 
     m_buf = new CT_CHAR_TYPE[m_size * 2]; // read and write buffer in one
     setg(0, 0, 0); // call underflow on the first read
@@ -100,6 +103,7 @@ void CByteStreamBuf::SetCmd(CDB_SendDataCmd* cmd) {
 void CByteStreamBuf::SetRs(CDB_Result* rs) {
     delete m_rs;
     m_rs = rs;
+    m_column = m_rs->CurrentItemNo();
 }
 
 CT_INT_TYPE CByteStreamBuf::underflow()
@@ -108,17 +112,16 @@ CT_INT_TYPE CByteStreamBuf::underflow()
         throw runtime_error("CByteStreamBuf::underflow(): CDB_Result* is null");
   
     static size_t total = 0;
-    static int column = m_rs->CurrentItemNo();
 
-    if( column != m_rs->CurrentItemNo() ) {
+    if( m_column < 0 || m_column != m_rs->CurrentItemNo() ) {
         _TRACE("Total read from ReadItem: " << total);
         total = 0;
-        column = m_rs->CurrentItemNo();
+        m_column = m_rs->CurrentItemNo();
         return CT_EOF;
     }
     else {
         m_len = m_rs->ReadItem(getGBuf(), m_size);
-        _TRACE("Column: " << column << ", Bytes read to buffer: " << m_len);
+        _TRACE("Column: " << m_column << ", Bytes read to buffer: " << m_len);
         total += m_len;
         setg(getGBuf(), getGBuf(), getGBuf() + m_len);
         return CT_TO_INT_TYPE(*getGBuf());
