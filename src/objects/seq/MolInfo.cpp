@@ -62,13 +62,13 @@ void CMolInfo::GetLabel(string* label) const
     const CEnumeratedTypeValues* tv;
     string sep = label->empty() ? "" : ",";
     if (IsSetBiomol()) {
-        EBiomol biomol = static_cast<EBiomol>(GetBiomol());
+        TBiomol biomol = GetBiomol();
         tv = GetTypeInfo_enum_EBiomol();
         (*label) += sep + tv->FindName(biomol, true);
         sep = ",";
     }
     if (IsSetTech()) {
-        ETech tech = static_cast<ETech>(GetTech());
+        TTech tech = GetTech();
         tv = GetTypeInfo_enum_ETech();
         (*label) += sep + tv->FindName(tech, true);
         sep = ",";
@@ -78,7 +78,7 @@ void CMolInfo::GetLabel(string* label) const
         sep = ",";
     }
     if (IsSetCompleteness()) {
-        ECompleteness comp = static_cast<ECompleteness>(GetCompleteness());
+        TCompleteness comp = GetCompleteness();
         tv = GetTypeInfo_enum_ECompleteness();
         (*label) += sep + tv->FindName(comp, true);
     }
@@ -93,6 +93,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.3  2003/01/29 16:57:45  ucko
+* Store enums as TFoo (with no cast) rather than EFoo, in preparation
+* for introducing CIntEnum<>.
+*
 * Revision 6.2  2002/10/03 19:08:36  clausen
 * Removed extra whitespace
 *
