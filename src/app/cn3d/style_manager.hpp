@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/03/29 15:32:21  thiessen
+* change disulfide, connection colors to not-yellow
+*
 * Revision 1.21  2001/03/23 04:18:21  thiessen
 * parse and display disulfides
 *
@@ -180,12 +183,12 @@ public:
         connections,
         helixObjects, strandObjects;
 
-    bool hydrogensOn;
+    bool virtualDisulfidesOn, hydrogensOn;
+
+    Vector disulfideColor, backgroundColor;
 
     double ballRadius, stickRadius, tubeRadius, tubeWormRadius,
         helixRadius, strandWidth, strandThickness;
-
-    Vector disulfideColor, backgroundColor;
 
     // methods to set to predetermined states
     void SetToSecondaryStructure(void);

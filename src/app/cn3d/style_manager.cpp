@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/03/29 15:32:42  thiessen
+* change disulfide, connection colors to not-yellow
+*
 * Revision 1.29  2001/03/23 23:31:56  thiessen
 * keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
 *
@@ -163,9 +166,10 @@ void StyleSettings::SetToSecondaryStructure(void)
     connections.isOn = true;
     connections.style = eTubes;
     connections.colorScheme = eUserSelect;
-    connections.userColor.Set(1,1,0); // yellow
+    connections.userColor.Set(0.9,0.9,1);
 
-    disulfideColor.Set(1,1,0);
+    virtualDisulfidesOn = true;
+    disulfideColor.Set(0.93,0.55,0.05);
 
     helixObjects.isOn = strandObjects.isOn = true;
     helixObjects.style = strandObjects.style = eWithArrows;
@@ -210,9 +214,10 @@ void StyleSettings::SetToWireframe(void)
     connections.isOn = true;
     connections.style = eWire;
     connections.colorScheme = eUserSelect;
-    connections.userColor.Set(1,1,0); // yellow
+    connections.userColor.Set(0.9,0.9,1);
 
-    disulfideColor.Set(1,1,0);
+    virtualDisulfidesOn = false;
+    disulfideColor.Set(0.93,0.55,0.05);
 
     helixObjects.isOn = strandObjects.isOn = false;
     helixObjects.style = strandObjects.style = eWithArrows;
@@ -258,9 +263,10 @@ void StyleSettings::SetToAlignment(StyleSettings::eColorScheme protBBType)
     connections.isOn = true;
     connections.style = eTubes;
     connections.colorScheme = eUserSelect;
-    connections.userColor.Set(1,1,0); // yellow
+    connections.userColor.Set(0.9,0.9,1);
 
-    disulfideColor.Set(1,1,0);
+    virtualDisulfidesOn = true;
+    disulfideColor.Set(0.93,0.55,0.05);
 
     helixObjects.isOn = strandObjects.isOn = false;
     helixObjects.style = strandObjects.style = eWithArrows;
@@ -627,6 +633,9 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         if ((bond->order == Bond::eVirtual || bond->order == Bond::eVirtualDisulfide) &&
             (backboneStyle1->type != StyleSettings::eTrace ||
              backboneStyle2->type != StyleSettings::eTrace))
+            BOND_NOT_DISPLAYED;
+
+        if (bond->order == Bond::eVirtualDisulfide && !globalStyle.virtualDisulfidesOn)
             BOND_NOT_DISPLAYED;
 
         if (bond->order == Bond::eRealDisulfide || bond->order == Bond::eVirtualDisulfide) {
