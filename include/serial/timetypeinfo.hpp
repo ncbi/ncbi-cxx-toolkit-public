@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 
 const string kSerialTimeFormat = "M/D/Y h:m:s.S Z";
 
-class NCBI_XSERIAL_EXPORT CTimeFunctions
+class CTimeFunctions
 {
 public:
     static CTime& Get(TObjectPtr object)
@@ -128,7 +128,7 @@ public:
 };
 
 
-class NCBI_XSERIAL_EXPORT CTimeTypeInfo : public CPrimitiveTypeInfoString
+class CTimeTypeInfo : public CPrimitiveTypeInfoString
 {
 public:
     CTimeTypeInfo(void);
@@ -176,7 +176,7 @@ void CTimeTypeInfo::SetValueString(TObjectPtr object,
 
 
 EMPTY_TEMPLATE
-class NCBI_XSERIAL_EXPORT CStdTypeInfo<CTime>
+class CStdTypeInfo<CTime>
 {
 public:
     static TTypeInfo GetTypeInfo(void);
@@ -217,6 +217,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/08/17 14:39:40  dicuccio
+* Dropped unnecessary export specifiers
+*
 * Revision 1.5  2004/03/25 15:57:55  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *
