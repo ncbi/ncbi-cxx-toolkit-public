@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/02/15 19:25:33  vakatov
+* CCgiRequest::ParseEntries() -- fixed UMR
+*
 * Revision 1.38  2000/02/01 22:19:57  vakatov
 * CCgiRequest::GetRandomProperty() -- allow to retrieve value of
 * properties whose names are not prefixed by "HTTP_" (optional).
@@ -983,7 +986,8 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
     for (SIZE_TYPE beg = 0;  beg < len;  ) {
         // parse and URL-decode name
         SIZE_TYPE mid = str.find_first_of("=&", beg);
-        if (mid == beg  ||  (str[mid] == '&'  &&  mid == len-1))
+        if (mid == beg  ||
+            (mid != NPOS  &&  str[mid] == '&'  &&  mid == len-1))
             return mid + 1;  // error
         if (mid == NPOS)
             mid = len;
