@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/03/29 18:02:40  vasilche
+* Workaroung of bug in MSVC: abstract member in template.
+*
 * Revision 1.1  2000/03/29 15:55:27  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -133,6 +136,12 @@ void CTreeIteratorBase<Iterator>::Next(void)
             return;
         }
     }
+}
+
+template<class Iterator>
+bool CTreeIteratorBase<Iterator>::CanSelect(TTypeInfo /*info*/) const
+{
+	return false;
 }
 
 template<class Iterator>

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/03/29 18:02:39  vasilche
+* Workaroung of bug in MSVC: abstract member in template.
+*
 * Revision 1.2  2000/03/29 17:22:34  vasilche
 * Fixed ambiguity in Begin() template function.
 *
@@ -251,7 +254,7 @@ public:
 protected:
     // post condition: Valid() || End()
     void x_Begin(const TObjectInfo& object);
-    virtual bool CanSelect(TTypeInfo type) const = 0;
+    virtual bool CanSelect(TTypeInfo type) const;
     virtual bool CanEnter(TTypeInfo type) const;
 
 private:
