@@ -44,9 +44,6 @@ static char const rcsid[] = "$Id$";
 #include <blast_gapalign.h>
 #include <blast_traceback.h>
 
-extern Uint1Ptr
-GetPrivatTranslationTable PROTO((CharPtr genetic_code,
-                                 Boolean reverse_complement));
 extern OIDListPtr LIBCALL 
 BlastGetVirtualOIDList PROTO((ReadDBFILEPtr rdfp_chain));
 
@@ -55,9 +52,6 @@ static BlastCoreAuxStructPtr
 BlastCoreAuxStructFree(BlastCoreAuxStructPtr aux_struct)
 {
    BlastExtendWordFree(aux_struct->ewp);
-   MemFree(aux_struct->translation_buffer);
-   MemFree(aux_struct->translation_table);
-   MemFree(aux_struct->translation_table_rc);
    BLAST_InitHitListDestruct(aux_struct->init_hitlist);
    BlastHSPListFree(aux_struct->hsp_list);
    MemFree(aux_struct->query_offsets);
@@ -66,8 +60,18 @@ BlastCoreAuxStructFree(BlastCoreAuxStructPtr aux_struct)
    return (BlastCoreAuxStructPtr) MemFree(aux_struct);
 }
 
-void TranslateHSPsToDNAPCoord(BlastInitHitListPtr init_hitlist, 
-        BlastQueryInfoPtr query_info)
+/** Adjust HSP coordinates for out-of-frame gapped extension.
+ * @param program One of blastx or tblastn [in]
+ * @param init_hitlist List of hits after ungapped extension [in]
+ * @param query_info Query information containing context offsets;
+ *                   needed for blastx only [in]
+ * @param subject_frame Frame of the subject sequence; tblastn only [in]
+ * @param subject_length Length of the original nucleotide subject sequence;
+ *                       tblastn only [in]
+ */
+void TranslateHSPsToDNAPCoord(Uint1 program, 
+        BlastInitHitListPtr init_hitlist, BlastQueryInfoPtr query_info,
+        Int2 subject_frame, Int4 subject_length)
 {
    BlastInitHSPPtr init_hsp;
    Int4 index, context, frame;
@@ -76,17 +80,33 @@ void TranslateHSPsToDNAPCoord(BlastInitHitListPtr init_hitlist,
    for (index = 0; index < init_hitlist->total; ++index) {
       init_hsp = &init_hitlist->init_hsp_array[index];
 
-      context = 
-         BinarySearchInt4(init_hsp->q_off, context_offsets,
-                          query_info->last_context+1);
-      frame = context % 3;
+      if (program == blast_type_blastx) {
+         context = 
+            BinarySearchInt4(init_hsp->q_off, context_offsets,
+                             query_info->last_context+1);
+         frame = context % 3;
       
-      init_hsp->q_off = 
-         (init_hsp->q_off - context_offsets[context]) * CODON_LENGTH + 
-         context_offsets[context-frame] + frame;
-      init_hsp->ungapped_data->q_start = 
-         (init_hsp->ungapped_data->q_start - context_offsets[context]) 
-         * CODON_LENGTH + context_offsets[context-frame] + frame;
+         init_hsp->q_off = 
+            (init_hsp->q_off - context_offsets[context]) * CODON_LENGTH + 
+            context_offsets[context-frame] + frame;
+         init_hsp->ungapped_data->q_start = 
+            (init_hsp->ungapped_data->q_start - context_offsets[context]) 
+            * CODON_LENGTH + context_offsets[context-frame] + frame;
+      } else {
+         if (subject_frame > 0) {
+            init_hsp->s_off = 
+               (init_hsp->s_off * CODON_LENGTH) + subject_frame - 1;
+            init_hsp->ungapped_data->s_start = 
+               (init_hsp->ungapped_data->s_start * CODON_LENGTH) + 
+               subject_frame - 1;
+         } else {
+            init_hsp->s_off = (init_hsp->s_off * CODON_LENGTH) + 
+               subject_length - subject_frame - 1;
+            init_hsp->ungapped_data->s_start = 
+               (init_hsp->ungapped_data->s_start * CODON_LENGTH) + 
+               subject_length - subject_frame - 1;
+         }
+      }
    }
    return;
 }
@@ -105,7 +125,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query,
    BlastExtensionParametersPtr ext_params, 
    BlastHitSavingParametersPtr hit_params, 
    const PSIBlastOptionsPtr psi_options, 
-   const BlastDatabaseOptionsPtr db_options,
+   const BlastDatabaseParametersPtr db_params,
    BlastReturnStatPtr return_stats,
    BlastCoreAuxStructPtr aux_struct,
    BlastHSPListPtr PNTR hsp_list_out)
@@ -115,16 +135,15 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query,
    BLAST_ExtendWordPtr ewp = aux_struct->ewp;
    Uint4Ptr query_offsets = aux_struct->query_offsets;
    Uint4Ptr subject_offsets = aux_struct->subject_offsets;
-   Uint1Ptr translation_buffer = aux_struct->translation_buffer;
-   Uint1Ptr translation_table = aux_struct->translation_table;
-   Uint1Ptr translation_table_rc = aux_struct->translation_table_rc;
+   Uint1Ptr translation_buffer;
+   Int4Ptr frame_offsets;
    Int4 num_chunks, chunk, total_subject_length, offset;
    BlastHitSavingOptionsPtr hit_options = hit_params->options;
    BlastHSPListPtr combined_hsp_list;
    Int2 status = 0;
    Boolean translated_subject;
-   Int2 frame, frame_min, frame_max;
-   Int4 orig_length = subject->length;
+   Int2 context, first_context, last_context;
+   Int4 orig_length = subject->length, prot_length = 0;
    Uint1Ptr orig_sequence = subject->sequence;
 
    translated_subject = (program_number == blast_type_tblastn
@@ -132,35 +151,37 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query,
                          || program_number == blast_type_psitblastn);
 
    if (translated_subject) {
-      frame_min = -3;
-      frame_max = 3;
-      subject->sequence = translation_buffer;
+      first_context = 0;
+      last_context = 5;
+      if (score_options->is_ooframe) {
+         BLAST_GetAllTranslations(orig_sequence, NCBI2NA_ENCODING,
+            orig_length, db_params->gen_code_string, &translation_buffer,
+            &frame_offsets, &subject->oof_sequence);
+      } else {
+         BLAST_GetAllTranslations(orig_sequence, NCBI2NA_ENCODING,
+            orig_length, db_params->gen_code_string, &translation_buffer,
+            &frame_offsets, NULL);
+      }
    } else if (program_number == blast_type_blastn) {
-      frame_min = 1;
-      frame_max = 1;
+      first_context = 1;
+      last_context = 1;
    } else {
-      frame_min = 0;
-      frame_max = 0;
+      first_context = 0;
+      last_context = 0;
    }
 
    *hsp_list_out = NULL;
 
    /* Loop over frames of the subject sequence */
-   for (frame=frame_min; frame<=frame_max; frame++) {
-      subject->frame = frame;
+   for (context=first_context; context<=last_context; context++) {
       if (translated_subject) {
-         if (frame == 0) {
-            continue;
-         } else if (frame > 0) {
-            subject->length = 
-               BLAST_TranslateCompressedSequence(translation_table,
-                  orig_length, orig_sequence, frame, translation_buffer);
-         } else {
-            subject->length = 
-               BLAST_TranslateCompressedSequence(translation_table_rc,
-                  orig_length, orig_sequence, frame, translation_buffer);
-         }
-         subject->sequence = translation_buffer + 1;
+         subject->frame = BLAST_ContextToFrame(blast_type_blastx, context);
+         subject->sequence = 
+            translation_buffer + frame_offsets[context] + 1;
+         subject->length = 
+           frame_offsets[context+1] - frame_offsets[context] - 1;
+      } else {
+         subject->frame = context;
       }
      
       /* Split subject sequence into chunks if it is too long */
@@ -190,12 +211,19 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlkPtr query,
             if (score_options->is_ooframe) {
                /* Convert query offsets in all HSPs into the mixed-frame  
                   coordinates */
-               TranslateHSPsToDNAPCoord(init_hitlist, query_info);
+               TranslateHSPsToDNAPCoord(program_number, init_hitlist, 
+                  query_info, subject->frame, orig_length);
+               if (translated_subject) {
+                  prot_length = subject->length;
+                  subject->length = 2*orig_length + 1;
+               }
             }
 
             aux_struct->GetGappedScore(program_number, query, subject, 
                gap_align, score_options, ext_params, hit_params, 
                init_hitlist, &hsp_list);
+            if (score_options->is_ooframe && translated_subject)
+               subject->length = prot_length;
          } else {
             BLAST_GetUngappedHSPList(init_hitlist, subject,
                                      hit_params->options, &hsp_list);
@@ -386,6 +414,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
  * @param word_params Parameters for initial word processing [out]
  * @param ext_params Parameters for gapped extension [out]
  * @param hit_params Parameters for saving hits [out]
+ * @param db_params Database parameters (db_options + genetic code string)[in]
  * @param aux_struct_ptr Placeholder joining various auxiliary memory 
  *                       structures [out]
  */
@@ -404,6 +433,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    BlastInitialWordParametersPtr PNTR word_params,
    BlastExtensionParametersPtr PNTR ext_params,
    BlastHitSavingParametersPtr PNTR hit_params,
+   BlastDatabaseParametersPtr PNTR db_params,                         
    BlastCoreAuxStructPtr PNTR aux_struct_ptr)
 {
    Int2 status = 0;
@@ -415,7 +445,6 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    Boolean translated_subject;
    BLAST_ExtendWordPtr ewp;
    BlastCoreAuxStructPtr aux_struct;
-
 
    if ((status = 
       BLAST_ExtendWordInit(query, word_options, eff_len_options->db_length, 
@@ -434,6 +463,8 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
 
    BlastInitialWordParametersNew(program_number, word_options, *hit_params, 
       *ext_params, sbp, query_info, eff_len_options, word_params);
+
+   BlastDatabaseParametersNew(program_number, db_options, db_params);
 
    if ((status = BLAST_GapAlignStructNew(scoring_options, *ext_params, 1, 
                     max_subject_length, query->length, program_number, sbp,
@@ -475,33 +506,6 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    aux_struct->init_hitlist = BLAST_InitHitListNew();
    aux_struct->hsp_list = BlastHSPListNew();
 
-   translated_subject = (program_number == blast_type_tblastn
-                         || program_number == blast_type_tblastx
-                         || program_number == blast_type_psitblastn);
-
-   if (translated_subject) {
-      CharPtr genetic_code=NULL;
-      ValNodePtr vnp;
-      GeneticCodePtr gcp;
-
-      aux_struct->translation_buffer = 
-         (Uint1Ptr) Malloc(3 + max_subject_length/CODON_LENGTH);
-
-      gcp = GeneticCodeFind(db_options->genetic_code, NULL);
-      for (vnp = (ValNodePtr)gcp->data.ptrvalue; vnp != NULL; 
-           vnp = vnp->next) {
-         if (vnp->choice == 3) {  /* ncbieaa */
-            genetic_code = (CharPtr)vnp->data.ptrvalue;
-            break;
-         }
-      }
-
-      aux_struct->translation_table = 
-         GetPrivatTranslationTable(genetic_code, FALSE);
-      aux_struct->translation_table_rc = 
-         GetPrivatTranslationTable(genetic_code, TRUE);
-   }
-
    return status;
 }
 
@@ -532,6 +536,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    BlastInitialWordParametersPtr word_params;
    BlastExtensionParametersPtr ext_params;
    BlastHitSavingParametersPtr hit_params;
+   BlastDatabaseParametersPtr db_params;
    BlastGapAlignStructPtr gap_align;
    Int2 status = 0;
    
@@ -548,7 +553,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
           eff_len_options, lookup_wrap, word_options, ext_options, 
           hit_options, db_options, query, query_info, sbp, 
           max_subject_length, &gap_align, &word_params, &ext_params, 
-          &hit_params, &aux_struct)) != 0)
+          &hit_params, &db_params, &aux_struct)) != 0)
       return status;
 
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
@@ -576,7 +581,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
 
          BLAST_SearchEngineCore(program_number, query, query_info,
             subject, lookup_wrap, gap_align, score_options, word_params, 
-            ext_params, hit_params, psi_options, db_options,
+            ext_params, hit_params, psi_options, db_params,
             return_stats, aux_struct, &hsp_list);
 
          if (hsp_list && hsp_list->hspcnt > 0) {
@@ -599,7 +604,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    if (hit_options->is_gapped) {
       status = 
          BLAST_ComputeTraceback(program_number, results, query, query_info,
-            rdfp, gap_align, score_options, ext_params, hit_params);
+            rdfp, gap_align, score_options, ext_params, hit_params, db_params);
    }
 
    /* Do not destruct score block here */
@@ -632,6 +637,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    BlastHitSavingParametersPtr hit_params; 
    BlastInitialWordParametersPtr word_params; 
    BlastExtensionParametersPtr ext_params;
+   BlastDatabaseParametersPtr db_params;
    BlastGapAlignStructPtr gap_align;
    Int2 status = 0;
 
@@ -643,14 +649,14 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
            eff_len_options, lookup_wrap, word_options, ext_options, 
            hit_options, db_options, query, query_info, 
            sbp, subject->length, &gap_align, &word_params, &ext_params, 
-           &hit_params, &aux_struct)) != 0)
+           &hit_params, &db_params, &aux_struct)) != 0)
       return status;
 
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
 
    BLAST_SearchEngineCore(program_number, query, query_info, subject, 
       lookup_wrap, gap_align, score_options, word_params, ext_params, 
-      hit_params, psi_options, db_options, return_stats, aux_struct, 
+      hit_params, psi_options, db_params, return_stats, aux_struct, 
       &hsp_list);
 
    if (hsp_list && hsp_list->hspcnt > 0) {
@@ -667,7 +673,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
       status = 
          BLAST_TwoSequencesTraceback(program_number, results, query, 
             query_info, subject, gap_align, score_options, ext_params, 
-            hit_params);
+            hit_params, db_params);
    }
 
    /* Do not destruct score block here */
@@ -676,7 +682,9 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
 
    ext_params = (BlastExtensionParametersPtr) MemFree(ext_params);
    hit_params = (BlastHitSavingParametersPtr) MemFree(hit_params);
-
+   /* db_params do not own any of its contents! */
+   db_params = (BlastDatabaseParametersPtr) MemFree(db_params);
+   
    return status;
 }
 

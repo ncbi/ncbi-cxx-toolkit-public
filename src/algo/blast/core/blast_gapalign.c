@@ -60,8 +60,9 @@ static Int2
 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align, BlastInitHSPPtr init_hsp, 
    BlastHSPListPtr hsp_list, BlastHitSavingOptionsPtr hit_options, Int2 frame);
 
-static Int2 BLAST_ProtGappedAlignment(BLAST_SequenceBlkPtr query_in,
-   BLAST_SequenceBlkPtr subject_in, BlastGapAlignStructPtr gap_align,
+static Int2 BLAST_ProtGappedAlignment(Uint1 program, 
+   BLAST_SequenceBlkPtr query_in, BLAST_SequenceBlkPtr subject_in,
+   BlastGapAlignStructPtr gap_align,
    BlastScoringOptionsPtr score_options, BlastInitHSPPtr init_hsp);
 
 typedef struct GapXData {
@@ -1052,10 +1053,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
     stp = state[j_r];
     tt_start = tt; 
     if (!(gap_align->positionBased)) {
-      if(reversed)
-         wa = matrix[A[M-j_r]]; 
-      else
-         wa = matrix[A[j_r]]; 
+       wa = matrix[A[factor*j_r]]; 
     } else {
       if(reversed)
         wa = gap_align->sbp->posMatrix[M - j_r];
@@ -1308,10 +1306,7 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   for (j_r = 1; j_r <= M; j_r++) {
     count += j - tt; CD[2].CC = CD[2].DD= MININT;
     if (!(gap_align->positionBased)) {
-       if(reversed)
-          wa = matrix[A[M-j_r]];
-       else
-          wa = matrix[A[j_r]];
+       wa = matrix[A[factor*j_r]];
     } else {
       if(reversed)
         wa = gap_align->sbp->posMatrix[M-j_r];
@@ -2227,8 +2222,8 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
              init_hsp->ungapped_data->score < gap_trigger)
             break;
          if (is_prot) {
-            status =  BLAST_ProtGappedAlignment(query, subject, gap_align,
-                         score_options, init_hsp);
+            status =  BLAST_ProtGappedAlignment(program_number, query, 
+                         subject, gap_align, score_options, init_hsp);
          } else {
             status = BLAST_DynProgNtGappedAlignment(query, subject, gap_align,
                          score_options, init_hsp);
@@ -2331,8 +2326,8 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
          }
 
          if (is_prot) {
-            status =  BLAST_ProtGappedAlignment(query, subject, gap_align,
-                         score_options, init_hsp);
+            status =  BLAST_ProtGappedAlignment(program_number, query, 
+                         subject, gap_align, score_options, init_hsp);
          } else {
             status = BLAST_DynProgNtGappedAlignment(query, subject, gap_align,
                          score_options, init_hsp);
@@ -2404,17 +2399,55 @@ static Int4 reverse_seq(Uint1 *seq, Uint1 *pos, Uint1 *target)
     return numCopied;
 }
 
+/** Out-of-frame gapped alignment.
+ * @param query Query sequence [in]
+ * @param subject Subject sequence [in]
+ * @param q_off Offset in query [in]
+ * @param s_off Offset in subject [in]
+ * @param S Start of the traceback buffer [in]
+ * @param private_q_start Extent of alignment in query [out]
+ * @param private_s_start Extent of alignment in subject [out]
+ * @param score_only Return score only, without traceback [in]
+ * @param sapp End of the traceback buffer [out]
+ * @param gap_align Gapped alignment information and preallocated 
+ *                  memory [in] [out]
+ * @param score_options Scoring options [in]
+ * @param psi_offset Starting position in PSI-BLAST matrix [in]
+ * @param reversed Direction of the extension [in]
+ * @param switch_seq Sequences need to be switched for blastx, 
+ *                   but not for tblastn [in]
+ */
+static Int4 
+OOF_SEMI_G_ALIGN_EX(Uint1Ptr query, Uint1Ptr subject, Int4 q_off, 
+   Int4 s_off, Int4Ptr S, Int4Ptr private_q_start, Int4Ptr private_s_start, 
+   Boolean score_only, Int4Ptr PNTR sapp, BlastGapAlignStructPtr gap_align, 
+   BlastScoringOptionsPtr score_options, Int4 psi_offset, 
+   Boolean reversed, Boolean switch_seq)
+{
+   if (switch_seq) {
+      return OOF_SEMI_G_ALIGN(subject, query, s_off, q_off, S, 
+                private_s_start, private_q_start, score_only, sapp, 
+                gap_align, score_options, psi_offset, reversed);
+   } else {
+      return OOF_SEMI_G_ALIGN(query, subject, q_off, s_off, S,
+                private_q_start, private_s_start, score_only, sapp, 
+                gap_align, score_options, psi_offset, reversed);
+   }
+}
+
 /** Performs gapped extension for protein sequences, given two
  * sequence blocks, scoring and extension options, and an initial HSP 
  * with information from the previously performed ungapped extension
+ * @param program BLAST program [in]
  * @param query_blk The query sequence block [in]
  * @param subject_blk The subject sequence block [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_options Options related to scoring [in]
  * @param init_hsp The initial HSP information [in]
  */
-static Int2 BLAST_ProtGappedAlignment(BLAST_SequenceBlkPtr query_blk,
-   BLAST_SequenceBlkPtr subject_blk, BlastGapAlignStructPtr gap_align,
+static Int2 BLAST_ProtGappedAlignment(Uint1 program, 
+   BLAST_SequenceBlkPtr query_blk, BLAST_SequenceBlkPtr subject_blk, 
+   BlastGapAlignStructPtr gap_align,
    BlastScoringOptionsPtr score_options, BlastInitHSPPtr init_hsp)
 {
    Int4 tmpval;
@@ -2423,6 +2456,7 @@ static Int2 BLAST_ProtGappedAlignment(BLAST_SequenceBlkPtr query_blk,
    Int4 private_q_start, private_s_start;
    Uint1Ptr q_left=NULL, s_left=NULL;
    Uint1Ptr query, subject;
+   Boolean switch_seq = FALSE;
     
    if (gap_align == NULL)
       return FALSE;
@@ -2430,8 +2464,14 @@ static Int2 BLAST_ProtGappedAlignment(BLAST_SequenceBlkPtr query_blk,
    if (score_options->is_ooframe) {
       q_length = init_hsp->ungapped_data->q_start;
       s_length = init_hsp->ungapped_data->s_start;
-      subject = subject_blk->sequence;
-      query = query_blk->oof_sequence + CODON_LENGTH + q_length;
+      if (program == blast_type_blastx) {
+         subject = subject_blk->sequence + s_length;
+         query = query_blk->oof_sequence + CODON_LENGTH + q_length;
+         switch_seq = TRUE;
+      } else if (program == blast_type_tblastn) {
+         subject = subject_blk->oof_sequence + CODON_LENGTH + s_length;
+         query = query_blk->sequence + q_length;
+      }
    } else {
       q_length = init_hsp->q_off + 1;
       s_length = init_hsp->s_off + 1;
@@ -2447,9 +2487,9 @@ static Int2 BLAST_ProtGappedAlignment(BLAST_SequenceBlkPtr query_blk,
    if (q_length != 0 && s_length != 0) {
       found_start = TRUE;
       if(score_options->is_ooframe) {
-         score_left = OOF_SEMI_G_ALIGN(subject, query, s_length, q_length,
-            NULL, &private_s_start, &private_q_start, TRUE, NULL, gap_align, 
-            score_options, s_length, TRUE);
+         score_left = OOF_SEMI_G_ALIGN_EX(query, subject, q_length, s_length,
+               NULL, &private_q_start, &private_s_start, TRUE, NULL, 
+               gap_align, score_options, q_length, TRUE, switch_seq);
       } else {
          score_left = SEMI_G_ALIGN_EX(query, subject, q_length, s_length, NULL,
             &private_q_start, &private_s_start, TRUE, NULL, gap_align, 
@@ -2469,11 +2509,11 @@ static Int2 BLAST_ProtGappedAlignment(BLAST_SequenceBlkPtr query_blk,
        init_hsp->s_off < subject_blk->length) {
       found_end = TRUE;
       if(score_options->is_ooframe) {
-         score_right = OOF_SEMI_G_ALIGN(subject+s_length-1, 
-            query-1, subject_blk->length-s_length,
-            query_blk->length-q_length, NULL, &(gap_align->subject_stop), 
-            &(gap_align->query_stop), TRUE, NULL, gap_align, 
-            score_options, q_length, FALSE);
+         score_right = OOF_SEMI_G_ALIGN_EX(query-1, subject-1, 
+            query_blk->length-q_length, subject_blk->length-s_length,
+            NULL, &(gap_align->query_stop), &(gap_align->subject_stop), 
+            TRUE, NULL, gap_align, 
+            score_options, q_length, FALSE, switch_seq);
          gap_align->query_stop += q_length;
          gap_align->subject_stop += s_length;
       } else {
@@ -2589,16 +2629,100 @@ BLAST_TracebackToGapXEditBlock(Int4Ptr S, Int4 M, Int4 N, Int4 start1,
   return 0;
 }
 
-Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject, 
-        BlastGapAlignStructPtr gap_align, BlastScoringOptionsPtr score_options,
+/** Converts a OOF traceback from the gapped alignment to a GapXEditBlock.
+ * This function is for out-of-frame gapping:
+ * index1 is for the protein, index2 is for the nucleotides.
+ * 0: deletion of a dna codon, i.e dash aligned with a protein letter.
+ * 1: one nucleotide vs a protein, deletion of 2 nuc.
+ * 2: 2 nucleotides aligned with a protein, i.e deletion of one nuc.
+ * 3: substitution, 3 nucleotides vs an amino acid.
+ * 4: 4 nuc vs an amino acid.
+ * 5: 5 nuc vs an amino acid.
+ * 6: a codon aligned with a dash. opposite of 0.
+ */
+
+static Int2
+BLAST_OOFTracebackToGapXEditBlock(Int4Ptr S, Int4 q_length, 
+   Int4 s_length, Int4 q_start, Int4 s_start, Uint1 program, 
+   GapXEditBlockPtr PNTR edit_block_ptr)
+{
+    register Int4 current_val, last_val, number, index1, index2;
+    Int4 M, N;
+    GapXEditScriptPtr e_script;
+    GapXEditBlockPtr edit_block;
+    
+    if (S == NULL)
+        return NULL;
+    
+    number = 0;
+    index1 = 0;
+    index2 = 0;
+    
+    *edit_block_ptr = edit_block = GapXEditBlockNew(q_start, s_start);
+    edit_block->is_ooframe = TRUE;
+    if (program == blast_type_blastx) {
+        M = s_length;
+        N = q_length;
+    } else {
+        M = q_length;
+        N = s_length;
+    }
+
+    edit_block->esp = e_script = GapXEditScriptNew(NULL);
+    
+    last_val = *S;
+    
+    /* index1, M - index and length of protein, 
+       index2, N - length of the nucleotide */
+    
+    for(index1 = 0, index2 = 0; index1 < M && index2 < N; S++, number++) {
+        
+        current_val = *S;
+        /* New script element will be created for any new frameshift
+           region  0,3,6 will be collected in a single segment */
+        if (current_val != last_val || (current_val%3 != 0 && 
+                                        edit_block->esp != e_script)) {
+            e_script->num = number;
+            e_script = GapXEditScriptNew(e_script);
+            
+            /* if(last_val%3 != 0 && current_val%3 == 0) */
+            if(last_val%3 != 0 && current_val == 3) 
+                /* 1, 2, 4, 5 vs. 0, 3, 6*/                
+                number = 1;
+            else
+                number = 0;
+        }
+        
+        last_val = current_val;
+        
+        /* for out_of_frame == TRUE - we have op_type == S parameter */
+        e_script->op_type = current_val;
+        
+        if(current_val != 6) {
+            index1++;
+            index2 += current_val;
+        } else {
+            index2 += 3;
+        }
+    }
+    /* Get the last one. */    
+    e_script->num = number;
+
+    return 0;
+}
+
+Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1Ptr query, 
+        Uint1Ptr subject, BlastGapAlignStructPtr gap_align, 
+        BlastScoringOptionsPtr score_options,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length)
 {
     Boolean found_start, found_end;
-    Int4 q_length=0, s_length=0, score_right, score_left, private_q_length, private_s_length, tmp;
+    Int4 score_right, score_left, private_q_length, private_s_length, tmp;
     Int4 prev;
     Int4Ptr tback, tback1, p = NULL, q;
     Boolean is_ooframe = score_options->is_ooframe;
     Int2 status = 0;
+    Boolean switch_seq = FALSE;
     
     if (gap_align == NULL)
         return -1;
@@ -2609,29 +2733,31 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject,
     tback = tback1 = 
        Malloc((subject_length + query_length)*sizeof(Int4));
 
-    /* NB: The left extension includes the starting point [q_start,s_start]; 
-       the right extension does not. */
     score_left = 0; prev = 3;
     found_start = TRUE;
         
     if(is_ooframe) {
-       q_length = q_start;
-       s_length = s_start;
+       switch_seq = (program == blast_type_blastx);
+       /* NB: Left extension does not include starting point corresponding
+          to the offset pair; the right extension does. */
        score_left =
-          OOF_SEMI_G_ALIGN(subject, query+q_start, s_length, q_length,
-             tback, &private_s_length, &private_q_length, FALSE,
-             &tback1, gap_align, score_options, s_start, TRUE);
+          OOF_SEMI_G_ALIGN_EX(query+q_start, subject+s_start, q_start, 
+             s_start, tback, &private_q_length, &private_s_length, FALSE,
+             &tback1, gap_align, score_options, q_start, TRUE, switch_seq);
+       gap_align->query_start = q_start - private_q_length;
+       gap_align->subject_start = s_start - private_s_length;
     } else {        
-       q_length = q_start + 1;
-       s_length = s_start + 1;
-       
+       /* NB: The left extension includes the starting point 
+          [q_start,s_start]; the right extension does not. */
        score_left = 
-          SEMI_G_ALIGN_EX(query, subject, q_length, s_length, tback, 
+          SEMI_G_ALIGN_EX(query, subject, q_start+1, s_start+1, tback, 
              &private_q_length, &private_s_length, FALSE, &tback1, 
              gap_align, score_options, q_start, FALSE, TRUE);
+       gap_align->query_start = q_start - private_q_length + 1;
+       gap_align->subject_start = s_start - private_s_length + 1;
     }
     
-    for(p = tback, q = tback1 - 1; p < q; p++, q--)  {
+    for(p = tback, q = tback1-1; p < q; p++, q--)  {
        tmp = *p;
        *p = *q;
        *q = tmp;
@@ -2643,18 +2769,17 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject,
           tmp = *p; *p = prev; prev = tmp;
        }
     }
-    gap_align->query_start = q_length - private_q_length;
-    gap_align->subject_start = s_length - private_s_length;
     
     score_right = 0;
 
     if ((q_start < query_length) && (s_start < subject_length)) {
        found_end = TRUE;
-       if(is_ooframe){
-          score_right = OOF_SEMI_G_ALIGN(subject+s_start-1, query+q_start-1, 
-                           subject_length-s_length, query_length-q_length,
-                           tback1, &private_s_length, &private_q_length, FALSE,
-                           &tback1, gap_align, score_options, s_start, FALSE);
+       if(is_ooframe) {
+          score_right = 
+             OOF_SEMI_G_ALIGN_EX(query+q_start-1, subject+s_start-1, 
+                query_length-q_start, subject_length-s_start, 
+                tback1, &private_q_length, &private_s_length, FALSE,
+                &tback1, gap_align, score_options, q_start, FALSE, switch_seq);
             if (prev != 3 && p) {
                 while (*p == 0 || *p == 6) p++;
                 *p = prev+*p-3;
@@ -2662,13 +2787,13 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject,
         } else {
             score_right = 
                SEMI_G_ALIGN_EX(query+q_start, subject+s_start, 
-                  query_length-q_length, subject_length-s_length, 
+                  query_length-q_start-1, subject_length-s_start-1, 
                   tback1, &private_q_length, &private_s_length, FALSE, 
                   &tback1, gap_align, score_options, q_start, FALSE, FALSE);
         }
 
-        gap_align->query_stop = q_start + private_q_length;
-        gap_align->subject_stop = s_start + private_s_length;
+        gap_align->query_stop = q_start + private_q_length + 1;
+        gap_align->subject_stop = s_start + private_s_length + 1;
     }
     
     if (found_start == FALSE) {	/* Start never found */
@@ -2682,14 +2807,15 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1Ptr query, Uint1Ptr subject,
     }
 
     if(is_ooframe) {
-	gap_align->edit_block = OOFTracebackToGapXEditBlock(
-           gap_align->subject_stop-gap_align->subject_start+1, 
-           gap_align->query_stop-gap_align->query_start+1, tback, 
-           gap_align->subject_start, gap_align->query_start);
+        status = BLAST_OOFTracebackToGapXEditBlock(tback, 
+           gap_align->query_stop-gap_align->query_start, 
+           gap_align->subject_stop-gap_align->subject_start, 
+           gap_align->query_start, gap_align->subject_start, 
+           program, &gap_align->edit_block);
     } else {
         status = BLAST_TracebackToGapXEditBlock(tback, 
-           gap_align->query_stop-gap_align->query_start+1, 
-           gap_align->subject_stop-gap_align->subject_start+1, 
+           gap_align->query_stop-gap_align->query_start, 
+           gap_align->subject_stop-gap_align->subject_start, 
            gap_align->query_start, gap_align->subject_start,
            &gap_align->edit_block);
     }
