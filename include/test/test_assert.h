@@ -34,6 +34,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2002/05/01 18:54:37  ucko
+ * Deal with possible prior inclusion of <assert.h> on OSF/1 (as can
+ * happen with GCC 3 at least).
+ *
  * Revision 1.9  2002/04/23 16:23:47  lavr
  * Yet another tweak for Windows :-(
  *
@@ -152,6 +156,13 @@ static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #ifdef   NCBI_COMPILER_MIPSPRO
 #  ifdef   __ASSERT_H__
 #    undef __ASSERT_H__
+#  endif
+#endif
+
+/* Likewise on OSF/1 (at least with GCC 3, but this never hurts) */
+#ifdef NCBI_OS_OSF1
+#  ifdef   _ASSERT_H_
+#    undef _ASSERT_H_
 #  endif
 #endif
 
