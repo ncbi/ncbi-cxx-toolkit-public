@@ -364,16 +364,21 @@ Int8 NStr::StringToInt8(const string& str)
     if (!isdigit(*pc))
         NCBI_THROW(CStringException,eConvert,"String cannot be converted");
 
-    Int8 n = 0;    
+    Int8 n = 0; 
+    Int8 limdiv = kMax_I8 / 10;
+    Int8 limoff = kMax_I8 % 10;  
+     
     while (*pc) {
         if (!isdigit(*pc))
             NCBI_THROW(CStringException,eConvert,"String cannot be converted");
         int delta = *pc++ - '0';                    
-        n = n * 10;
+        n *= 10;
+        
         // Overflow checking
-        if (n + delta < n) {
+        if (n > limdiv || (n == limdiv && delta > limoff)) {
             NCBI_THROW(CStringException,eConvert,"String cannot be converted");        
         }
+        
         n += delta;
     }
     
@@ -391,16 +396,21 @@ Uint8 NStr::StringToUInt8(const string& str)
     if (!isdigit(*pc))
         NCBI_THROW(CStringException,eConvert,"String cannot be converted");
 
-    Int8 n = 0;  
+    Uint8 n = 0;  
+    Uint8 limdiv = kMax_UI8 / 10;
+    Uint8 limoff = kMax_UI8 % 10;  
+    
     while (*pc) {
         if (!isdigit(*pc))
             NCBI_THROW(CStringException,eConvert,"String cannot be converted");
         int delta = *pc++ - '0';        
-        n = n * 10;
+        n *= 10;
+        
         // Overflow checking
-        if (n + delta < n) {
+        if (n > limdiv || (n == limdiv && delta > limoff)) {
             NCBI_THROW(CStringException,eConvert,"String cannot be converted");        
         }
+        
         n += delta;
     }
     
@@ -882,6 +892,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2003/01/14 22:13:56  kuznets
+ * Overflow check reimplemented for NStr::StringToInt
+ *
  * Revision 1.64  2003/01/14 21:16:46  kuznets
  * +Nstr::Tokenize
  *
