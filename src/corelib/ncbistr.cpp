@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/06/15 20:50:05  vakatov
+* NStr::  +BoolToString, +StringToBool
+*
 * Revision 1.14  1999/05/27 15:21:40  vakatov
 * Fixed all StringToXXX() functions
 *
@@ -145,6 +148,25 @@ string NStr::DoubleToString(double value)
     ::sprintf(buffer, "%g", value);
     return buffer;
 }
+
+
+static const string kTrueString  = "true";
+static const string kFalseString = "false";
+
+string NStr::BoolToString(bool value)
+{
+    return value ? kTrueString : kFalseString;
+}
+
+bool NStr::StringToBool(const string& str)
+{
+    if ( AStrEquiv(str, kTrueString,  PNocase()) )
+        return true;
+    if ( AStrEquiv(str, kFalseString, PNocase()) )
+        return false;
+    throw runtime_error("NStr::StringToBool(): cannot convert");
+}
+
 
 // predicates
 

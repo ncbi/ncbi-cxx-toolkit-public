@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/06/15 20:50:03  vakatov
+* NStr::  +BoolToString, +StringToBool
+*
 * Revision 1.21  1999/05/28 20:12:29  vakatov
 * [HAVE_NO_AUTO_PTR]  Prohibit "operator=" in the home-made "auto_ptr::"
 *
@@ -107,6 +110,8 @@ struct NStr {
     static string IntToString(int value, bool sign);
     static string UIntToString(unsigned int value);
     static string DoubleToString(double value);
+    static string BoolToString(bool value);
+    static bool   StringToBool(const string& str);
 
     /*  str[pos:pos+n) == pattern  --> return 0
      *  str[pos:pos+n) <  pattern  --> return negative mismatch position
