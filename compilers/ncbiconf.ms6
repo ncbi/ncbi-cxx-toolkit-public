@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.ms6,v 1.24 2003/08/26 12:19:56 dicuccio Exp $
+/* $Id: ncbiconf.ms6,v 1.25 2003/09/22 20:16:52 lavr Exp $
  * By Denis Vakatov, NCBI (vakatov@ncbi.nlm.nih.gov)
  *
  * Win32, MSVC++ 6.0
@@ -69,3 +69,5 @@
 #define HAVE_LIBTIFF     1
 #define HAVE_LIBPNG      1
 #define HAVE_LIBGIF      1
+
+typedef long ssize_t;
