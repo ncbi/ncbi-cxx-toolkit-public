@@ -1,5 +1,5 @@
-#ifndef CONNECT___CONN_STREAM__HPP
-#define CONNECT___CONN_STREAM__HPP
+#ifndef CONNECT___NCBI_CONN_STREAM__HPP
+#define CONNECT___NCBI_CONN_STREAM__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -61,6 +61,7 @@
 
 
 BEGIN_NCBI_SCOPE
+
 
 // Forward declaration
 class CConn_Streambuf;
@@ -225,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/06/12 19:19:25  lavr
+ * Guard macro name standardized
+ *
  * Revision 6.13  2002/06/06 19:01:31  lavr
  * Take advantage of CConn_Exception class
  * Some housekeeping: guard macro name changed, log moved to the end
@@ -268,4 +272,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* CONNECT___CONN_STREAM__HPP */
+#endif  /* CONNECT___NCBI_CONN_STREAM__HPP */

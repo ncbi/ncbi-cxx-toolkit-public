@@ -1,5 +1,5 @@
-#ifndef CONNECT___CONN_STREAMBUF__HPP
-#define CONNECT___CONN_STREAMBUF__HPP
+#ifndef CONNECT___NCBI_CONN_STREAMBUF__HPP
+#define CONNECT___NCBI_CONN_STREAMBUF__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -84,6 +84,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2002/06/12 19:20:50  lavr
+ * Guard macro name standardized
+ *
  * Revision 6.12  2002/06/06 19:02:01  lavr
  * Take advantage of CConn_Exception class
  * Some housekeeping: guard macro name changed, log moved to the end
@@ -125,4 +128,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* CONNECT___CONN_STREAMBUF__HPP */
+#endif  /* CONNECT___NCBI_CONN_STREAMBUF__HPP */

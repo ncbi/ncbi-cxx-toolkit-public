@@ -1,5 +1,5 @@
-#ifndef NCBI_CONFIG__H
-#define NCBI_CONFIG__H
+#ifndef CONNECT___NCBI_CONFIG__H
+#define CONNECT___NCBI_CONFIG__H
 
 /*  $Id$
  * ===========================================================================
@@ -34,9 +34,8 @@
  * ===========================================================================
  */
 
-
 /* Real configuration
  */
 #include <ncbiconf.h>
 
-#endif /* NCBI_CONFIG__H */
+#endif /* CONNECT___NCBI_CONFIG__H */

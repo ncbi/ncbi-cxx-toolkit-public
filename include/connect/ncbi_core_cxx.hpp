@@ -1,5 +1,5 @@
-#ifndef NCBI_CORE_CXX__H
-#define NCBI_CORE_CXX__H
+#ifndef CONNECT___NCBI_CORE_CXX__H
+#define CONNECT___NCBI_CORE_CXX__H
 
 /*  $Id$
  * ===========================================================================
@@ -40,6 +40,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbithr.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
 
@@ -56,6 +57,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/06/12 19:19:37  lavr
+ * Guard macro name standardized
+ *
  * Revision 6.7  2002/06/10 19:49:32  lavr
  * +CONNECT_Init()
  *
@@ -80,4 +84,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* NCBI_CORE_CXX__HPP */
+#endif  /* CONNECT___NCBI_CORE_CXX__HPP */

@@ -1,5 +1,5 @@
-#ifndef CONNECT___CONN_EXCEPTION__HPP
-#define CONNECT___CONN_EXCEPTION__HPP
+#ifndef CONNECT___NCBI_CONN_EXCEPTION__HPP
+#define CONNECT___NCBI_CONN_EXCEPTION__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -52,10 +52,13 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/06/12 19:19:12  lavr
+ * Guard macro name standardized
+ *
  * Revision 6.1  2002/06/06 18:59:45  lavr
  * Initial revision
  *
  * ===========================================================================
  */
 
-#endif  /* CONNECT___CONN_EXCEPTION__HPP */
+#endif  /* CONNECT___NCBI_CONN_EXCEPTION__HPP */
