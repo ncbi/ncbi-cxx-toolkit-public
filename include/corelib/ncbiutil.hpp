@@ -53,7 +53,7 @@ BEGIN_NCBI_SCOPE
 //-------------------------------------------
 // Utilities
 
-/// Check for equality of objects pointed by pointer.
+/// Check for equality of objects pointed to by pointer.
 template <class T>
 struct p_equal_to : public binary_function
 <const T*, const T*, bool>
@@ -70,7 +70,20 @@ struct p_equal_to : public binary_function
     { return *x == *y; }
 };
 
-/// Check for equality of objects pointed by pointer.
+/// Compare objects pointed to by (smart) pointer.
+template <class T>
+struct PPtrLess : public binary_function<T, T, bool>
+{
+#if defined(NCBI_COMPILER_MIPSPRO) || defined(NCBI_COMPILER_METROWERKS) || defined(NCBI_COMPILER_VISUALAGE)
+    // fails to define these
+    typedef T first_argument_type;
+    typedef T second_argument_type;
+#endif
+    bool operator() (const T& x, const T& y) const
+    { return *x < *y; }
+};
+
+/// Check whether a pair's second element matches a given value.
 template <class Pair>
 struct pair_equal_to : public binary_function
 <Pair, typename Pair::second_type, bool>
@@ -267,6 +280,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2003/12/03 20:54:49  ucko
+ * +PPtrLess, for using (smart) pointers as keys.
+ *
  * Revision 1.33  2003/11/18 11:58:41  siyan
  * Changed so @addtogroup does not cross namespace boundary
  *
