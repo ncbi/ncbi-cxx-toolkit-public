@@ -375,7 +375,7 @@ CDbapiTestSpeedApp::RunSample(void)
 
             for ( i = 0; i < row_count; ++i ) {
                 int_val  = i;
-                fl_val   = i + 0.999;
+                fl_val   = static_cast<float>(i + 0.999);
                 if ( !fileParam.empty() ) {
                     CDirEntry fileEntry(fileParam);
                     CTime fileTime;
@@ -521,7 +521,7 @@ void
 CDbapiTestSpeedApp::FetchResults (const string& table_name, bool readItems)
 {
     // char* txt_buf = NULL ; // Temporary disabled ...
-    long len_txt = 0;
+    // long len_txt = 0;
 
 
     string query = "select int_val,fl_val,date_val,str_val,txt_val from ";
@@ -629,6 +629,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/01/14 20:15:52  ssikorsk
+ * Fixed a couple of "unused variable" warnings
+ *
  * Revision 1.17  2004/12/29 19:58:03  ssikorsk
  * Fixed memory ABW bug in dbapi/driver/samples/dbapi_testspeed
  *

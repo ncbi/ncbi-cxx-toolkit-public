@@ -605,7 +605,6 @@ end";
 
         // Write BLOB several times
         const int COUNT = 5;
-        int cnt = 0;
 
         // Create alternate blob storage
         char *buf = new char[blob.size()];
@@ -775,6 +774,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/01/14 20:15:16  ssikorsk
+* Fixed a couple of "unused variable" warnings
+*
 * Revision 1.14  2004/07/21 18:35:44  kholodov
 * Fixed: now works with ctlib driver
 *
