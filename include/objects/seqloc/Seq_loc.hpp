@@ -109,6 +109,8 @@ private:
     };
 
     mutable TRange m_TotalRangeCache;
+    // Seq-id for the whole seq-loc or null if multiple IDs were found
+    mutable CConstRef<CSeq_id> m_IdCache;
 };
 
 
@@ -195,6 +197,7 @@ void CSeq_loc::InvalidateTotalRangeCache(void)
     m_TotalRangeCache
         .SetFrom(TSeqPos(kDirtyCache))
         .SetToOpen(TSeqPos(kDirtyCache));
+    m_IdCache.Reset();
 }
 
 
@@ -317,6 +320,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/06/13 17:21:18  grichenk
+ * Added seq-id caching for single-id seq-locs
+ *
  * Revision 1.23  2003/04/02 15:17:45  grichenk
  * Added flag for CSeq_loc_CI to skip/include empty locations.
  *
