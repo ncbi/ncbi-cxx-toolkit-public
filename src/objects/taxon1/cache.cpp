@@ -64,7 +64,7 @@ COrgRefCache::Init()
     } else {
 	return false;
     }
-    CTaxon1_name* pNode( new CTaxon1_name );
+    CTaxon1_name* pNode = ( new CTaxon1_name );
     pNode->SetTaxid( 1 );
     pNode->SetOname().assign("root");
     pNode->SetCde( 0x40000000 ); // Gene bank hidden
@@ -77,7 +77,7 @@ COrgRefCache::LookupAndAdd( int tax_id, CTaxon1Node** ppData )
 {
     *ppData = NULL;
     if( (unsigned)tax_id < m_nMaxTaxId ) {
-	CTaxon1Node* pNode( m_ppEntries[tax_id] );
+	CTaxon1Node* pNode = ( m_ppEntries[tax_id] );
 	if( pNode ) {
 	    *ppData = pNode;
 	    return true;
@@ -91,8 +91,8 @@ COrgRefCache::LookupAndAdd( int tax_id, CTaxon1Node** ppData )
 		if( resp.IsTaxalineage() ) {
 		    // Correct response, return object
 		    list< CRef< CTaxon1_name > >&
-			lLin( resp.GetTaxalineage() );
-		    CTaxon1Node* pParent( NULL );
+			lLin = ( resp.GetTaxalineage() );
+		    CTaxon1Node* pParent = ( NULL );
 		    CTaxon1Node* pNode;
 		    list< CRef< CTaxon1_name > >::reverse_iterator i;
 		    // Fill in storage
@@ -105,7 +105,7 @@ COrgRefCache::LookupAndAdd( int tax_id, CTaxon1Node** ppData )
 			}
 		    }
 		    // Create tree iterator
-		    CTreeIterator* pIt( m_tPartTree.GetIterator() );
+		    CTreeIterator* pIt = ( m_tPartTree.GetIterator() );
 		    if( !pParent ) {
 			pParent = static_cast<CTaxon1Node*>(pIt->GetNode());
 		    }
@@ -132,11 +132,11 @@ COrgRefCache::LookupAndAdd( int tax_id, CTaxon1Node** ppData )
 bool
 COrgRefCache::LookupAndInsert( int tax_id, CTaxon1_data** ppData )
 {
-    CTaxon1Node* pNode( NULL );
+    CTaxon1Node* pNode = ( NULL );
     *ppData = NULL;
 
     if( LookupAndAdd( tax_id, &pNode ) && pNode ) {
-	SCacheEntry* pEntry( pNode->GetEntry() );
+	SCacheEntry* pEntry = ( pNode->GetEntry() );
 	if( !pEntry ) {
 	    if( !Insert1( *pNode ) )
 		return false;
@@ -154,11 +154,11 @@ COrgRefCache::LookupAndInsert( int tax_id, CTaxon1_data** ppData )
 bool
 COrgRefCache::LookupAndInsert( int tax_id, CTaxon2_data** ppData )
 {
-    CTaxon1Node* pNode( NULL );
+    CTaxon1Node* pNode = ( NULL );
     *ppData = NULL;
 
     if( LookupAndAdd( tax_id, &pNode ) && pNode ) {
-	SCacheEntry* pEntry( pNode->GetEntry() );
+	SCacheEntry* pEntry = ( pNode->GetEntry() );
 	if( !pEntry ) {
 	    if( !Insert2( *pNode ) )
 		return false;
@@ -177,7 +177,7 @@ bool
 COrgRefCache::Lookup( int tax_id, CTaxon1_data** ppData )
 {
     if( (unsigned)tax_id < m_nMaxTaxId ) {
-	CTaxon1Node* pNode( m_ppEntries[tax_id] );
+	CTaxon1Node* pNode = ( m_ppEntries[tax_id] );
 	SCacheEntry* pEntry;
 	if( pNode && (pEntry=pNode->GetEntry()) ) {
 	    // Move in the list
@@ -195,7 +195,7 @@ bool
 COrgRefCache::Lookup( int tax_id, CTaxon2_data** ppData )
 {
     if( (unsigned)tax_id < m_nMaxTaxId ) {
-	CTaxon1Node* pNode( m_ppEntries[tax_id] );
+	CTaxon1Node* pNode = ( m_ppEntries[tax_id] );
 	SCacheEntry* pEntry;
 	if( pNode && (pEntry=pNode->GetEntry()) ) {
 	    // Move in the list
@@ -293,11 +293,11 @@ COrgRefCache::BuildOrgModifier( CTaxon1Node* pNode,
 bool
 COrgRefCache::SetBinomialName( CTaxon1Node& node, COrgName& on )
 {
-    CTaxon1Node* pSpec( NULL );
-    CTaxon1Node* pSubspec( NULL );
-    CTaxon1Node* pGenus( NULL );
-    CTaxon1Node* pSubgen( NULL );
-    CTaxon1Node* pNode( &node );
+    CTaxon1Node* pSpec = ( NULL );
+    CTaxon1Node* pSubspec = ( NULL );
+    CTaxon1Node* pGenus = ( NULL );
+    CTaxon1Node* pSubgen = ( NULL );
+    CTaxon1Node* pNode = ( &node );
     std::string::size_type pos(0);
     do {
 	int rank( pNode->GetRank() );
@@ -321,7 +321,7 @@ COrgRefCache::SetBinomialName( CTaxon1Node& node, COrgName& on )
 	else
 	    pGenus = pSubgen;
     }
-    CBinomialOrgName& bon( on.SetName().SetBinomial() );
+    CBinomialOrgName& bon = ( on.SetName().SetBinomial() );
 
     bon.SetGenus( pGenus->GetName() );
 
@@ -362,10 +362,10 @@ COrgRefCache::SetBinomialName( CTaxon1Node& node, COrgName& on )
 bool
 COrgRefCache::SetPartialName( CTaxon1Node& node, COrgName& on )
 {
-    CTaxElement* pTaxElem( new CTaxElement );
+    CTaxElement* pTaxElem = ( new CTaxElement );
     int rank_id= node.GetRank();
     
-    CPartialOrgName& pon( on.SetName().SetPartial() );
+    CPartialOrgName& pon = ( on.SetName().SetPartial() );
     pon.Set().push_back( pTaxElem );
 
     if( rank_id == GetFamilyRank()) {
@@ -401,7 +401,7 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
 	if( resp.IsGetorgnames() ) {
 	    // Correct response, return object
 	    list< CRef< CTaxon1_name > >&
-		lLin( resp.GetGetorgnames() );
+		lLin = ( resp.GetGetorgnames() );
 	    // Save taxname
 	    org.SetTaxname().swap( lLin.front()->SetOname() );
 	    lLin.pop_front();
@@ -427,7 +427,7 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
 	    // Set taxid as db tag
 	    org.SetTaxId( node.GetTaxId() );
 
-	    COrgName& on( org.SetOrgname() );
+	    COrgName& on = ( org.SetOrgname() );
 
 	    short div_id( node.GetDivision() );
 	    if( GetDivisionCode( div_id ) ) {
@@ -475,8 +475,8 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
 			/* we are below species */
 			/* first try to find species or min rank which
 			   below species but above us */
-			CTaxon1Node* pNode( NULL );
-			CTaxon1Node* pTmp( node.GetParent() );
+			CTaxon1Node* pNode = ( NULL );
+			CTaxon1Node* pTmp = ( node.GetParent() );
 			
 			while( pTmp && !pTmp->IsRoot() ) {
 			    int rank(pTmp->GetRank());
@@ -515,12 +515,12 @@ bool
 COrgRefCache::Insert1( CTaxon1Node& node )
 {
     bool is_species( false );
-    struct SCacheEntry* pEntry( new SCacheEntry );
+    struct SCacheEntry* pEntry = ( new SCacheEntry );
     pEntry->m_pTax1 = new CTaxon1_data;
     pEntry->m_pTax2 = NULL;
     pEntry->m_pTreeNode = &node;
 
-    COrg_ref& org( pEntry->m_pTax1->SetOrg() );
+    COrg_ref& org = ( pEntry->m_pTax1->SetOrg() );
 
     if( !BuildOrgRef( node, org, is_species ) ) {
 	delete pEntry;
@@ -534,7 +534,7 @@ COrgRefCache::Insert1( CTaxon1Node& node )
     pEntry->m_pTax1->SetIs_species_level( is_species );
     // Remove last element from list
     if( m_lCache.size() >= m_nCacheCapacity ) {
-	CTaxon1Node* pNode( m_lCache.back()->m_pTreeNode );
+	CTaxon1Node* pNode = ( m_lCache.back()->m_pTreeNode );
 	pNode->m_cacheEntry = NULL;
 	delete m_lCache.back();
 	m_lCache.pop_back();
@@ -550,21 +550,21 @@ bool
 COrgRefCache::Insert2( CTaxon1Node& node )
 {
     bool is_species( false );
-    struct SCacheEntry* pEntry( new SCacheEntry );
+    struct SCacheEntry* pEntry = ( new SCacheEntry );
     pEntry->m_pTax1 = NULL;
     pEntry->m_pTax2 = new CTaxon2_data;
     pEntry->m_pTreeNode = &node;
 
     pEntry->m_pTax2->SetIs_uncultured( node.IsUncultured() );
 
-    COrg_ref& org( pEntry->m_pTax2->SetOrg() );
+    COrg_ref& org = ( pEntry->m_pTax2->SetOrg() );
 
     if( !BuildOrgRef( node, org, is_species ) ) {
 	delete pEntry;
 	return false;
     }
     // Set blast names
-    CTaxon1Node* pNode( &node );
+    CTaxon1Node* pNode = ( &node );
     while( !pNode->IsRoot() ) {
 	if( !pNode->GetBlastName().empty() ) {
 	    pEntry->m_pTax2->SetBlast_name()
@@ -611,7 +611,7 @@ COrgRefCache::SCacheEntry::GetData2()
 	m_pTax2 = new CTaxon2_data;
 	if( m_pTax1->IsSetOrg() )
 	    m_pTax2->SetOrg( m_pTax1->SetOrg() );
-	CTaxon1Node* pNode( m_pTreeNode );
+	CTaxon1Node* pNode = ( m_pTreeNode );
 	while( !pNode->IsRoot() ) {
 	    if( !pNode->GetBlastName().empty() ) {
 		m_pTax2->SetBlast_name().push_back( pNode->GetBlastName() );
@@ -660,7 +660,7 @@ COrgRefCache::InitRanks()
 	    if( resp.IsGetranks() ) {
 		// Correct response, return object
 		const list< CRef< CTaxon1_info > >&
-		    lRanks( resp.GetGetranks() );
+		    lRanks = ( resp.GetGetranks() );
 		// Fill in storage
 		for( list< CRef< CTaxon1_info > >::const_iterator
 			 i = lRanks.begin();
@@ -758,7 +758,7 @@ COrgRefCache::InitNameClasses()
 	    if( resp.IsGetcde() ) {
 		// Correct response, return object
 		const list< CRef< CTaxon1_info > >&
-		    l( resp.GetGetcde() );
+		    l = ( resp.GetGetcde() );
 		// Fill in storage
 		for( list< CRef< CTaxon1_info > >::const_iterator
 			 i = l.begin();
@@ -797,7 +797,7 @@ COrgRefCache::FindDivisionByCode( const char* pchCode ) const
     for( TDivisionMapCI ci = m_divStorage.begin();
 	 ci != m_divStorage.end();
 	 ++ci ) {
-	const char* cp( ci->second.m_sCode.c_str() );
+	const char* cp = ( ci->second.m_sCode.c_str() );
 	if( strcmp( cp, pchCode ) == 0 )
 	    return ci->first;
     }
@@ -829,12 +829,12 @@ COrgRefCache::InitDivisions()
 	    if( resp.IsGetdivs() ) {
 		// Correct response, return object
 		const list< CRef< CTaxon1_info > >&
-		    l( resp.GetGetdivs() );
+		    l = ( resp.GetGetdivs() );
 		// Fill in storage
 		for( list< CRef< CTaxon1_info > >::const_iterator
 			 i = l.begin();
 		     i != l.end(); ++i ) {
-		    SDivision& div( m_divStorage[(*i)->GetIval1()] );
+		    SDivision& div = ( m_divStorage[(*i)->GetIval1()] );
 		    div.m_sName.assign( (*i)->GetSval() );
 		    int code = (*i)->GetIval2();
 		    for(int k= 0; k < 3; k++) {
@@ -871,6 +871,9 @@ END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 /*
  * $Log$
+ * Revision 6.4  2002/01/30 16:13:37  domrach
+ * Changes made to pass through MSVC compiler. Some src files renamed
+ *
  * Revision 6.3  2002/01/29 17:17:45  domrach
  * Confusion with list/set resolved
  *

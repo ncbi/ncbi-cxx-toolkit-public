@@ -69,7 +69,7 @@ CTaxon1::Reset()
 }
 
 bool
-CTaxon1::Init( std::time_t timeout, unsigned reconnect_attempts )
+CTaxon1::Init( time_t timeout, unsigned reconnect_attempts )
 {
     SetLastError(NULL);
     if( m_pServer ) { // Already inited
@@ -159,9 +159,9 @@ CTaxon1::GetById(int tax_id)
     SetLastError(NULL);
     if( tax_id > 0 ) {
 	// Check if this taxon is in cache
-	CTaxon2_data* pData( NULL );
+	CTaxon2_data* pData = ( NULL );
 	if( m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
-	    CTaxon2_data* pNewData( new CTaxon2_data() );
+	    CTaxon2_data* pNewData = ( new CTaxon2_data() );
 
 	    SerialAssign<CTaxon2_data>( *pNewData, *pData );
 
@@ -178,14 +178,14 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
 {
     SetLastError(NULL);
     // Check if this taxon is in cache
-    CTaxon2_data* pData( NULL );
+    CTaxon2_data* pData = ( NULL );
 
     int tax_id = GetTaxIdByOrgRef( inp_orgRef );
 
     if( tax_id > 0
 	&& m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
 
-	CTaxon2_data* pNewData( new CTaxon2_data() );
+	CTaxon2_data* pNewData = ( new CTaxon2_data() );
 
 	SerialAssign<CTaxon2_data>( *pNewData, *pData  );
 
@@ -197,7 +197,7 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
 CConstRef< CTaxon2_data >
 CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
 {
-    CTaxon2_data* pData( NULL );
+    CTaxon2_data* pData = ( NULL );
 
     SetLastError(NULL);
     int tax_id = GetTaxIdByOrgRef( inp_orgRef );
@@ -205,7 +205,7 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
     if( tax_id > 0
 	&& m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
 
-	const COrg_ref& src( pData->GetOrg() );
+	const COrg_ref& src = ( pData->GetOrg() );
 
 	inp_orgRef.SetTaxname( src.GetTaxname() );
 	if( src.IsSetCommon() ) {
@@ -227,13 +227,13 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
   
 	if( !inp_orgRef.GetOrgname().IsSetMod() ) {
 	    inp_orgRef.SetOrgname().ResetMod();
-	    const COrgName::TMod& mods( src.GetOrgname().GetMod() );
-	    COrgName::TMod& modd( inp_orgRef.SetOrgname().SetMod() );
+	    const COrgName::TMod& mods = ( src.GetOrgname().GetMod() );
+	    COrgName::TMod& modd = ( inp_orgRef.SetOrgname().SetMod() );
 	    // Copy with object copy as well
 	    for( COrgName::TMod::const_iterator ci = mods.begin();
 		 ci != mods.end();
 		 ++ci ) {
-		COrgMod* pMod( new COrgMod );
+		COrgMod* pMod = ( new COrgMod );
 		SerialAssign<COrgMod>( *pMod, ci->GetObject() );
 		modd.push_back( pMod );
 	    }
@@ -335,7 +335,7 @@ CTaxon1::GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds)
     if( SendRequest( req, resp ) ) {
 	if( resp.IsFindname() ) {
 	    // Correct response, return object
-	    const list< CRef< CTaxon1_name > >& lNm( resp.GetFindname() );
+	    const list< CRef< CTaxon1_name > >& lNm = ( resp.GetFindname() );
 	    // Fill in the list
 	    for( list< CRef< CTaxon1_name > >::const_iterator
 		     i = lNm.begin();
@@ -357,7 +357,7 @@ CTaxon1::GetOrgRef(int tax_id,
 {
     SetLastError(NULL);
     if( tax_id > 1 ) {
-	CTaxon2_data* pData(NULL);
+	CTaxon2_data* pData = (NULL);
 	if( m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
 	    is_species = pData->GetIs_species_level();
 	    is_uncultured = pData->GetIs_uncultured();
@@ -382,7 +382,7 @@ CTaxon1::SetSynonyms(bool on_off)
 int
 CTaxon1::GetParent(int id_tax)
 {
-    CTaxon1Node* pNode(NULL);
+    CTaxon1Node* pNode = (NULL);
     SetLastError(NULL);
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
 	&& pNode && pNode->GetParent() ) {
@@ -394,7 +394,7 @@ CTaxon1::GetParent(int id_tax)
 int
 CTaxon1::GetGenus(int id_tax)
 {
-    CTaxon1Node* pNode(NULL);
+    CTaxon1Node* pNode = (NULL);
     SetLastError(NULL);
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
 	&& pNode ) {
@@ -415,7 +415,7 @@ int
 CTaxon1::GetChildren(int id_tax, TTaxIdList& children_ids)
 {
     int count(0);
-    CTaxon1Node* pNode(NULL);
+    CTaxon1Node* pNode = (NULL);
     SetLastError(NULL);
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
 	&& pNode ) {
@@ -429,16 +429,16 @@ CTaxon1::GetChildren(int id_tax, TTaxIdList& children_ids)
 	    if( resp.IsTaxachildren() ) {
 		// Correct response, return object
 		list< CRef< CTaxon1_name > >&
-		    lNm( resp.GetTaxachildren() );
+		    lNm = ( resp.GetTaxachildren() );
 		// Fill in the list
-		CTreeIterator* pIt( m_plCache->GetTree().GetIterator() );
+		CTreeIterator* pIt = ( m_plCache->GetTree().GetIterator() );
 		pIt->GoNode( pNode );
 		for( list< CRef< CTaxon1_name > >::const_iterator
 			 i = lNm.begin();
 		     i != lNm.end(); ++i, ++count ) {
 		    children_ids.push_back( (*i)->GetTaxid() );
 		    // Add node to the partial tree
-		    CTaxon1Node* pNewNode( new CTaxon1Node(*i) );
+		    CTaxon1Node* pNewNode = ( new CTaxon1Node(*i) );
 		    m_plCache->SetIndexEntry(pNewNode->GetTaxId(), pNewNode);
 		    pIt->AddChild( pNewNode );
 		}
@@ -464,7 +464,7 @@ CTaxon1::GetGCName(short gc_id, std::string& gc_name_out )
 	if( SendRequest( req, resp ) ) {
 	    if( resp.IsGetgcs() ) {
 		// Correct response, return object
-		const list< CRef< CTaxon1_info > >& lGc( resp.GetGetgcs() );
+		const list< CRef< CTaxon1_info > >& lGc = ( resp.GetGetgcs() );
 		// Fill in storage
 		for( list< CRef< CTaxon1_info > >::const_iterator
 			 i = lGc.begin();
@@ -495,7 +495,7 @@ CTaxon1::Join(int taxid1, int taxid2)
     SetLastError(NULL);
     if( m_plCache->LookupAndAdd( taxid1, &pNode1 ) && pNode1
 	&& m_plCache->LookupAndAdd( taxid2, &pNode2 ) && pNode2 ) {
-	CTreeConstIterator* pIt( m_plCache->GetTree().GetConstIterator() );
+	CTreeConstIterator* pIt = ( m_plCache->GetTree().GetConstIterator() );
 	pIt->GoNode( pNode1 );
 	pIt->GoAncestor( pNode2 );
 	tax_id = static_cast<const CTaxon1Node*>(pIt->GetNode())->GetTaxId();
@@ -516,7 +516,7 @@ CTaxon1::GetAllNames(int tax_id, TNameList& lNames, bool unique)
     if( SendRequest( req, resp ) ) {
 	if( resp.IsGetorgnames() ) {
 	    // Correct response, return object
-	    const list< CRef< CTaxon1_name > >& lNm( resp.GetGetorgnames() );
+	    const list< CRef< CTaxon1_name > >& lNm = ( resp.GetGetorgnames() );
 	    // Fill in the list
 	    for( list< CRef< CTaxon1_name > >::const_iterator
 		     i = lNm.begin();
@@ -586,7 +586,7 @@ CTaxon1::GetTaxId4GI(int gi, int& tax_id_out )
 bool
 CTaxon1::GetBlastName(int tax_id, std::string& blast_name_out )
 {
-    CTaxon1Node* pNode(NULL);
+    CTaxon1Node* pNode = (NULL);
     SetLastError(NULL);
     if( m_plCache->LookupAndAdd( tax_id, &pNode ) && pNode ) {
 	while( !pNode->IsRoot() ) {
@@ -608,6 +608,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.2  2002/01/30 16:13:38  domrach
+ * Changes made to pass through MSVC compiler. Some src files renamed
+ *
  * Revision 6.1  2002/01/28 19:56:10  domrach
  * Initial checkin of the library implementation files
  *

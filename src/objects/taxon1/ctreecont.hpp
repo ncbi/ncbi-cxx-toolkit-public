@@ -189,10 +189,10 @@ public:
     // two functions are called only when node has children.
     class C4Each {
     public:
-	virtual EAction LevelBegin(CTreeContNodeBase*/*pParent*/)
+	virtual EAction LevelBegin(CTreeContNodeBase* /*pParent*/)
 	{ return eCont; }
 	virtual EAction Execute(CTreeContNodeBase* pNode)= 0;
-	virtual EAction LevelEnd(CTreeContNodeBase*/*pParent*/)
+	virtual EAction LevelEnd(CTreeContNodeBase* /*pParent*/)
 	{ return eCont; }
     };
     // iterator through subtree.
@@ -324,10 +324,10 @@ public:
     // two functions are called only when node has children.
     class C4Each {
     public:
-	virtual EAction LevelBegin(const CTreeContNodeBase*/*pParent*/)
+	virtual EAction LevelBegin(const CTreeContNodeBase* /*pParent*/)
 	{ return eCont; }
 	virtual EAction Execute(const CTreeContNodeBase* pNode)= 0;
-	virtual EAction LevelEnd(const CTreeContNodeBase*/*pParent*/)
+	virtual EAction LevelEnd(const CTreeContNodeBase* /*pParent*/)
 	{ return eCont; }
     };
     // iterator through subtree.
@@ -381,6 +381,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.1  2002/01/30 16:13:37  domrach
+ * Changes made to pass through MSVC compiler. Some src files renamed
+ *
  * Revision 6.1  2002/01/28 19:56:11  domrach
  * Initial checkin of the library implementation files
  *

@@ -743,7 +743,7 @@ public:
 	: m_pred(pred), m_tree(tree) {}
     virtual CTreeIterator::EAction Execute(CTreeContNodeBase* pNode) {
 	CTreeIterator::EAction retc = CTreeIterator::eCont;
-	CTreeIterator* it( m_tree->GetIterator() );
+	CTreeIterator* it = m_tree->GetIterator();
 	if( it->GoNode( pNode ) ) {
 	    it->SortChildren( m_pred );
 	} else {
@@ -934,6 +934,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.1  2002/01/30 16:13:37  domrach
+ * Changes made to pass through MSVC compiler. Some src files renamed
+ *
  * Revision 6.1  2002/01/28 19:56:11  domrach
  * Initial checkin of the library implementation files
  *
