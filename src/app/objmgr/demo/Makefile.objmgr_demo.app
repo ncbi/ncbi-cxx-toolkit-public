@@ -6,7 +6,7 @@
 # Build object manager demo application "objmgr_demo"
 #################################
 
-REQUIRES = bdb objects
+REQUIRES = bdb objects BerkeleyDB
 
 APP = objmgr_demo
 SRC = objmgr_demo
