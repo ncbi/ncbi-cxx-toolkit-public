@@ -65,12 +65,12 @@ struct BlastSeqSrc {
    /* Functions to iterate over sequences in the database */
     GetNextChunkFnPtr GetNextChunk;   /**< Get next chunk of seq indices */
     AdvanceIteratorFnPtr IterNext;    /**< Gets next oid from the iterator */
-    GetErrorFnPtr       GetError;       /**< Gets a saved error message, if
-                                         supported. */
     GetSeqBlkFnPtr    RetSequence;    /**< Deallocate individual sequence 
                                          buffer if necessary. */
    
     void*             DataStructure;  /**< ADT holding the sequence data */
+
+    char*             InitErrorStr;   /**< initialization error string */
 };
 
 BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info)
@@ -78,18 +78,18 @@ BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info)
     BlastSeqSrc* retval = NULL;
 
     if (!bssn_info) {
-        return NULL;
+        return (BlastSeqSrc*) NULL;
     }
 
     if ( !(retval = (BlastSeqSrc*) calloc(1, sizeof(BlastSeqSrc)))) {
-        return NULL;
+        return (BlastSeqSrc*) NULL;
     }
 
     /* Save the constructor and invoke it */
     if ((retval->NewFnPtr = bssn_info->constructor)) {
         retval = (*retval->NewFnPtr)(retval, bssn_info->ctor_argument);
     } else {
-      sfree(retval);
+        sfree(retval);
     }
 
     return retval;
@@ -103,11 +103,15 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* seq_src)
         return (BlastSeqSrc*) NULL;
     }
 
+    if (seq_src->InitErrorStr) {
+        sfree(seq_src->InitErrorStr);
+    }
+
     /* This could leave a memory leak if destructor function pointer is not
      * initialized! It is the implementation's resposibility to provide this */
     if ( !(destructor_fnptr = (*seq_src->DeleteFnPtr))) {
         sfree(seq_src);
-        return NULL;
+        return (BlastSeqSrc*) NULL;
     }
 
     return (BlastSeqSrc*) (*destructor_fnptr)(seq_src);
@@ -116,14 +120,14 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* seq_src)
 BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* seq_src)
 {
     BlastSeqSrcCopier copy_fnptr = NULL;
-    BlastSeqSrc* retval;
+    BlastSeqSrc* retval = NULL;
 
     if (!seq_src) {
-        return NULL;
+        return (BlastSeqSrc*) NULL;
     }
 
     if ( !(retval = (BlastSeqSrc*) BlastMemDup(seq_src, sizeof(BlastSeqSrc)))) {
-        return NULL;
+        return (BlastSeqSrc*) NULL;
     }
 
     /* If copy function is not provided, just return a copy of the structure */
@@ -132,6 +136,15 @@ BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* seq_src)
     }
 
     return (BlastSeqSrc*) (*copy_fnptr)(retval);
+}
+
+char* BlastSeqSrcGetInitError(const BlastSeqSrc* seq_src)
+{
+    if ( !seq_src || !seq_src->InitErrorStr ) {
+        return NULL;
+    }
+
+    return strdup(seq_src->InitErrorStr);
 }
 
 /** How many database sequences to process in one database chunk. */
@@ -227,5 +240,7 @@ DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetErrorFnPtr, GetError, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, RetSequence, BlastSeqSrc*)
+
+DEFINE_ACCESSOR(char*, InitErrorStr, BlastSeqSrc*)
+DEFINE_MUTATOR(char*, InitErrorStr, BlastSeqSrc*)

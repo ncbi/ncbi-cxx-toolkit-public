@@ -54,14 +54,31 @@ extern "C" {
  *    BlastSeqSrcIterator abstraction
  *  .
  *  Implementations of this interface should provide functions for all
- *  the functions listed above.
+ *  the functions listed above as well as life-cycle functions (constructor,
+ *  destructor, and copy function). Furthermore, all these functions must have 
+ *  C linkage.
+ *
+ *  Currently available client implementations of the BlastSeqSrc API include:
+ *  @sa ReaddbBlastSeqSrcInit (C toolkit)
+ *  @sa SeqDbBlastSeqSrcInit (C++ toolkit)
+ *  @sa MultiSeqBlastSeqSrcInit (C/C++ toolkit)
+ *
+ *  For ease of maintenance, please follow the following conventions:
+ *  - Client implementations' initialization function should be called 
+ *    XBlastSeqSrcInit, where X is the name of the implementation
+ *  - Client implementations should reside in a file named seqsrc_X.[hc] or
+ *    seqsrc_X.[ch]pp, where X is the name of the implementation.
  */
 typedef struct BlastSeqSrc BlastSeqSrc;
 
 /** Function pointer typedef to create a new BlastSeqSrc structure.
  * First argument is a pointer to the structure to be populated (allocated for
  * client implementations), second argument should be typecast'd to the 
- * correct type by user-defined constructor function */
+ * correct type by user-defined constructor function. Client implementations
+ * MUST return a non-NULL BlastSeqSrc even if initialization of the BlastSeqSrc
+ * implementation failed, case in which only the functionality to retrieve an
+ * initialization error message and to deallocate the BlastSeqSrc structure 
+ * must be defined. */
 typedef BlastSeqSrc* (*BlastSeqSrcConstructor) (BlastSeqSrc*, void*);
 
 /** Function pointer typedef to deallocate a BlastSeqSrc structure.
@@ -93,14 +110,6 @@ typedef const char* (*GetStrFnPtr) (void*, void*);
  * First argument is the BlastSeqSrc structure used, second
  * argument is passed to user-defined implementation. */
 typedef Boolean (*GetBoolFnPtr) (void*, void*);
-
-/** Function pointer typedef to return error messages. This may be needed
- * when it is necessary to catch exceptions in a C++ implementation, pass them 
- * through the C code and throw them again.
- * First argument is the BlastSeqSrc structure used, second argument is 
- * passed to user-defined implementation. 
- */
-typedef Blast_Message* (*GetErrorFnPtr) (void*, void*);
 
 /** Function pointer typedef to retrieve sequences from data structure embedded
  * in the BlastSeqSrc structure.
@@ -207,9 +216,11 @@ typedef struct BlastSeqSrcNewInfo {
 /** Allocates memory for a BlastSeqSrc structure and then invokes the
  * constructor function defined in its first argument, passing the 
  * ctor_argument member of that same structure. If the constructor function
- * pointer is not set, NULL is returned.
+ * pointer is not set or there is a memory allocation failure, NULL is
+ * returned.
  * @param bssn_info Structure defining constructor and its argument to be
  *        invoked from this function [in]
+ * @return a properly initialized BlastSeqSrc structure or NULL.
  */
 BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info);
 
@@ -223,10 +234,24 @@ BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info);
 NCBI_XBLAST_EXPORT
 BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* seq_src);
 
-/** Copy function: needed to guarantee thread safety. 
+/** Copy function: needed to guarantee thread safety.
+ * @param seq_src BlastSeqSrc to copy [in]
+ * @return a copy of the structure passed in or NULL.
  */
 NCBI_XBLAST_EXPORT
 BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* seq_src);
+
+/** Function to retrieve NULL terminated string containing the description 
+ * of an initialization error or NULL. This function MUST ALWAYS be called 
+ * after calling one of the client implementation's Init functions. If the
+ * return value is not NULL, invoking any other functionality from the
+ * BlastSeqSrc will result in undefined behavior. Caller is responsible for 
+ * deallocating the return value. 
+ * @param seq_src BlastSeqSrc from which to get an error [in]
+ * @return error message or NULL
+ */
+NCBI_XBLAST_EXPORT
+char* BlastSeqSrcGetInitError(const BlastSeqSrc* seq_src);
 
 /** Convenience macros call function pointers (TODO: needs to be more robust)
  * Currently, this defines the API */
@@ -248,12 +273,11 @@ BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* seq_src);
     (*GetGetSeqLen(seq_src))(GetDataStructure(seq_src), arg)
 #define BLASTSeqSrcGetNextChunk(seq_src, iterator) \
     (*GetGetNextChunk(seq_src))(GetDataStructure(seq_src), iterator)
-#define BLASTSeqSrcGetError(seq_src) \
-    (*GetGetError(seq_src))(GetDataStructure(seq_src), NULL)
 #define BLASTSeqSrcRetSequence(seq_src, arg) \
     (*GetRetSequence(seq_src))(GetDataStructure(seq_src), arg)
 
 #ifndef SKIP_DOXYGEN_PROCESSING
+
 #define DECLARE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
 DECLARE_ACCESSOR(member_type, member, data_structure_type); \
 DECLARE_MUTATOR(member_type, member, data_structure_type)
@@ -282,7 +306,10 @@ DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, RetSequence, BlastSeqSrc*);
-DECLARE_MEMBER_FUNCTIONS(GetErrorFnPtr, GetError, BlastSeqSrc*);
+
+/* Not really a member function, but a field */
+DECLARE_ACCESSOR(char*, InitErrorStr, BlastSeqSrc*);
+DECLARE_MUTATOR(char*, InitErrorStr, BlastSeqSrc*);
 #endif
 
 /*!\fn BLASTSeqSrcGetMaxSeqLen(seq_src)
@@ -319,10 +346,6 @@ DECLARE_MEMBER_FUNCTIONS(GetErrorFnPtr, GetError, BlastSeqSrc*);
 
 /*!\fn BLASTSeqSrcRetSequence(seq_src,arg)
    \brief Deallocate individual sequence buffer if necessary.
-*/
-
-/*!\fn BLASTSeqSrcGetError(seq_src)
-   \brief Retrieves error message, if defined.
 */
 
 #ifdef __cplusplus
