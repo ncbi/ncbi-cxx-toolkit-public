@@ -119,6 +119,60 @@
  */
 
 
+/* ========================================================================= */
+
+
+/** @defgroup CONNECT
+ *  Connect Library members
+ */
+
+/** @defgroup BuffServices Buffering Services
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup ConnExcep Connection Exceptions
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup ConnStreams Connection Streams
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup Connectors
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup EmailDiag Email Diagnostic Handler
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup Sendmail
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup ServiceSupport Service Support
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup Sockets Socket Services
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup ThreadedServer Threaded Server
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup UtilityFunc Utility Functions
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup WinDLL Windows DLL Support
+ *  @ingroup CONNECT
+ */
+
+
+/* ========================================================================= */
+
 
 /**
  *  @defgroup CGI 
