@@ -107,8 +107,7 @@ Int4 CSeqDBVol::GetSeqLengthProt(Uint4 oid) const
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
     
-    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
-        return -1;
+    m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
     _ASSERT(kSeqTypeProt == m_Idx.GetSeqType());
 
@@ -124,8 +123,7 @@ Int4 CSeqDBVol::GetSeqLengthExact(Uint4 oid) const
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
     
-    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
-        return -1;
+    m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
     _ASSERT(m_Idx.GetSeqType() == kSeqTypeNucl);
     
@@ -149,8 +147,7 @@ Int4 CSeqDBVol::GetSeqLengthApprox(Uint4 oid) const
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
     
-    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
-        return -1;
+    m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
     _ASSERT(m_Idx.GetSeqType() == kSeqTypeNucl);
     
@@ -1176,8 +1173,7 @@ Int4 CSeqDBVol::x_GetSequence(Int4             oid,
     
     Int4 length = -1;
     
-    if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset))
-        return -1;
+    m_Idx.GetSeqStartEnd(oid, start_offset, end_offset);
     
     char seqtype = m_Idx.GetSeqType();
     
@@ -1307,9 +1303,7 @@ CSeqDBVol::x_GetHdrAsn1(Uint4 oid, CSeqDBLockHold & locked) const
     TIndx hdr_start = 0;
     TIndx hdr_end   = 0;
     
-    if (! m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end)) {
-        return nullret;
-    }
+    m_Idx.GetHdrStartEnd(oid, hdr_start, hdr_end);
     
     const char * asn_region = m_Hdr.GetRegion(hdr_start, hdr_end, locked);
     
@@ -1697,12 +1691,7 @@ Uint4 CSeqDBVol::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
 Uint8 CSeqDBVol::x_GetSeqResidueOffset(Uint4 oid) const
 {
     TIndx start_offset = 0;
-    
-    if (! m_Idx.GetSeqStart(oid, start_offset)) {
-        NCBI_THROW(CSeqDBException, eFileErr,
-                   "Error: could not get sequence start/end.");
-    }
-    
+    m_Idx.GetSeqStart(oid, start_offset);
     return start_offset;
 }
 

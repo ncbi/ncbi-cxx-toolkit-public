@@ -66,6 +66,14 @@ public:
     /// Type which spans possible file offsets.
     typedef CSeqDBAtlas::TIndx TIndx;
     
+    /// Constructor
+    ///
+    /// Builds a "raw" file object, which is the lowest level of the
+    /// SeqDB file objects.  It provides byte swapping and reading
+    /// methods, which are implemented via the atlas layer.
+    ///
+    /// @param atlas
+    ///     The memory management layer object.
     CSeqDBRawFile(CSeqDBAtlas & atlas)
         : m_Atlas(atlas)
 
@@ -73,6 +81,14 @@ public:
     }
     
     /// MMap or Open a file.
+    ///
+    /// This serves to verify the existence of, open, and cache the
+    /// length of a file.
+    ///
+    /// @param name
+    ///     The filename to open.
+    /// @return
+    ///     true if the file was opened successfully.
     bool Open(const string & name)
     {
         bool success = m_Atlas.GetFileSize(name, m_Length);
@@ -84,7 +100,26 @@ public:
         return success;
     }
     
-    const char * GetRegion(CSeqDBMemLease & lease, TIndx start, TIndx end, CSeqDBLockHold & locked) const
+    /// Get a pointer to a section of the file.
+    ///
+    /// This method insures that the memory lease has a hold that
+    /// includes the requested section of the file, and returns a
+    /// pointer to the start offset.
+    ///
+    /// @param lease
+    ///     The memory lease object for this file.
+    /// @param start
+    ///     The starting offset for the first byte of the region.
+    /// @param end
+    ///     The offset for the first byte after the region.
+    /// @param locked
+    ///     The lock holder object for this thread.
+    /// @return
+    ///     A pointer to the file data at the start offset.
+    const char * GetRegion(CSeqDBMemLease & lease,
+                           TIndx            start,
+                           TIndx            end,
+                           CSeqDBLockHold & locked) const
     {
         _ASSERT(! m_FileName.empty());
         _ASSERT(start    <  end);
@@ -99,7 +134,23 @@ public:
         return lease.GetPtr(start);
     }
     
-    const char * GetRegion(TIndx start, TIndx end, CSeqDBLockHold & locked) const
+    /// Get a pointer to a section of the file.
+    ///
+    /// This method asks the atlas for a hold on the memory region
+    /// that includes the requested section of the file, and returns a
+    /// pointer to the start offset in that memory area.
+    ///
+    /// @param start
+    ///     The starting offset for the first byte of the region.
+    /// @param end
+    ///     The offset for the first byte after the region.
+    /// @param locked
+    ///     The lock holder object for this thread.
+    /// @return
+    ///     A pointer to the file data.
+    const char * GetRegion(TIndx            start,
+                           TIndx            end,
+                           CSeqDBLockHold & locked) const
     {
         _ASSERT(! m_FileName.empty());
         _ASSERT(start    <  end);
@@ -108,26 +159,114 @@ public:
         return m_Atlas.GetRegion(m_FileName, start, end, locked);
     }
     
-    TIndx GetFileLength(void) const
+    /// Get the length of the file.
+    ///
+    /// The file length is returned as a four byte integer, which is
+    /// the current maximum size for the blastdb component files.
+    ///
+    /// @return
+    ///     The length of the file.
+    TIndx GetFileLength() const
     {
         return m_Length;
     }
     
-    TIndx ReadSwapped(CSeqDBMemLease & lease, TIndx offset, Uint4  * z, CSeqDBLockHold & locked) const;
-    TIndx ReadSwapped(CSeqDBMemLease & lease, TIndx offset, Uint8  * z, CSeqDBLockHold & locked) const;
-    TIndx ReadSwapped(CSeqDBMemLease & lease, TIndx offset, string * z, CSeqDBLockHold & locked) const;
-    
-    // Assumes locked.
-    
-    inline bool ReadBytes(CSeqDBMemLease & lease,
+    /// Read a four byte numerical object from the file
+    ///
+    /// Given a pointer to an object in memory, this reads a numerical
+    /// value for it from the file.  The data in the file is assumed
+    /// to be in network byte order, and the user version in the local
+    /// default byte order (host order).  The size of the object is
+    /// taken as sizeof(Uint4).
+    ///
+    /// @param lease
+    ///     A memory lease object to use for the read.
+    /// @param offset
+    ///     The starting offset of the value in the file.
+    /// @param value
+    ///     A pointer to the object.
+    /// @param locked
+    ///     The lock holder object for this thread.
+    /// @return
+    ///     The offset of the first byte after the object.
+    TIndx ReadSwapped(CSeqDBMemLease & lease,
+                      TIndx            offset,
+                      Uint4          * value,
+                      CSeqDBLockHold & locked) const;
+
+    /// Read an eight byte numerical object from the file
+    ///
+    /// Given a pointer to an object in memory, this reads a numerical
+    /// value for it from the file.  The data in the file is assumed
+    /// to be in network byte order, and the user version in the local
+    /// default byte order (host order).  The size of the object is
+    /// taken as sizeof(Uint8).
+    ///
+    /// @param lease
+    ///     A memory lease object to use for the read.
+    /// @param offset
+    ///     The starting offset of the value in the file.
+    /// @param value
+    ///     A pointer to the object.
+    /// @param locked
+    ///     The lock holder object for this thread.
+    /// @return
+    ///     The offset of the first byte after the object.
+    TIndx ReadSwapped(CSeqDBMemLease & lease,
+                      TIndx            offset,
+                      Uint8          * z,
+                      CSeqDBLockHold & locked) const;
+
+    /// Read a string object from the file
+    ///
+    /// Given a pointer to a string object, this reads a string value
+    /// for it from the file.  The data in the file is assumed to be a
+    /// four byte length in network byte order, followed by the bytes
+    /// of the string.  The amount of data is this length + 4.
+    ///
+    /// @param lease
+    ///     A memory lease object to use for the read.
+    /// @param offset
+    ///     The starting offset of the string length in the file.
+    /// @param value
+    ///     A pointer to the returned string.
+    /// @param locked
+    ///     The lock holder object for this thread.
+    /// @return
+    ///     The offset of the first byte after the string.
+    TIndx ReadSwapped(CSeqDBMemLease & lease,
+                      TIndx            offset,
+                      string         * value,
+                      CSeqDBLockHold & locked) const;
+
+    /// Read part of the file into a buffer
+    ///
+    /// Copy the file data from offsets start to end into the array at
+    /// buf, which is assumed to already have been allocated.  This
+    /// method assumes the atlas lock is held.
+    ///
+    /// @param lease
+    ///     A memory lease object to use for the read.
+    /// @param buf
+    ///     The destination for the data to be read.
+    /// @param start
+    ///     The starting offset for the first byte to read.
+    /// @param end
+    ///     The offset for the first byte after the area to read.
+    inline void ReadBytes(CSeqDBMemLease & lease,
                           char           * buf,
                           TIndx            start,
                           TIndx            end) const;
     
 private:
-    CSeqDBAtlas    & m_Atlas;
-    string           m_FileName;
-    TIndx            m_Length;
+    /// The memory management layer object.
+    CSeqDBAtlas & m_Atlas;
+    
+    /// The name of this file.
+    string m_FileName;
+    
+    /// The length of this file.
+    TIndx m_Length;
 };
 
 
@@ -162,7 +301,7 @@ public:
     /// @param dbfilename
     ///   The name of the managed file.
     /// @param prot_nucl
-    ///   The sequence type.
+    ///   The sequence data type.
     CSeqDBExtFile(CSeqDBAtlas   & atlas,
                   const string  & dbfilename,
                   char            prot_nucl);
@@ -207,8 +346,18 @@ protected:
         return m_Lease.GetPtr(start);
     }
     
-    // Assumes locked.
-    
+    /// Read part of the file into a buffer
+    ///
+    /// Copy the file data from offsets start to end into the array at
+    /// buf, which is assumed to already have been allocated.  This
+    /// method assumes the atlas lock is held.
+    ///
+    /// @param buf
+    ///     The destination for the data to be read.
+    /// @param start
+    ///     The starting offset for the first byte to read.
+    /// @param end
+    ///     The offset for the first byte after the area to read.
     void x_ReadBytes(char  * buf,
                      Uint4   start,
                      Uint4   end) const
@@ -216,26 +365,72 @@ protected:
         m_File.ReadBytes(m_Lease, buf, start, end);
     }
     
+    /// Read a numerical object from the file
+    ///
+    /// Given a pointer to an object in memory, this reads a numerical
+    /// value for it from the file.  The data in the file is assumed
+    /// to be in network byte order, and the user version in the local
+    /// default byte order (host order).  The offset of the data is
+    /// provided, and the size of the object is taken as sizeof(T).
+    ///
+    /// @param lease
+    ///     A memory lease object to use for the read.
+    /// @param offset
+    ///     The starting offset of the object in the file.
+    /// @param value
+    ///     A pointer to the object.
+    /// @param locked
+    ///     The lock holder object for this thread.
+    /// @return
+    ///     The offset of the first byte after the object.
     template<class T>
-    TIndx x_ReadSwapped(CSeqDBMemLease & lease, TIndx offset, T * value, CSeqDBLockHold & locked)
+    TIndx x_ReadSwapped(CSeqDBMemLease & lease,
+                        TIndx            offset,
+                        T              * value,
+                        CSeqDBLockHold & locked)
     {
         return m_File.ReadSwapped(lease, offset, value, locked);
     }
     
-    char x_GetSeqType(void) const
+    /// Get the volume's sequence data type.
+    ///
+    /// This object knows which type of sequence data it deals with -
+    /// this method returns that information.
+    ///
+    /// @return
+    ///     The type of sequence data in use.
+    char x_GetSeqType() const
     {
         return m_ProtNucl;
     }
     
+    /// Sets the sequence data type.
+    ///
+    /// The sequence data will be set as protein or nucleotide.  An
+    /// exception is thrown if an invalid type is provided.  The first
+    /// character of the file extension will be modified to reflect
+    /// the sequence data type.
+    ///
+    /// @param prot_nucl
+    ///     Either 'p' or 'n' for protein or nucleotide.
     void x_SetFileType(char prot_nucl);
     
     // Data
     
-    CSeqDBAtlas            & m_Atlas;
-    mutable CSeqDBMemLease   m_Lease;
-    string                   m_FileName;
-    char                     m_ProtNucl;
-    CSeqDBRawFile            m_File;
+    /// The memory layer management object.
+    CSeqDBAtlas & m_Atlas;
+    
+    /// A memory lease used by this file.
+    mutable CSeqDBMemLease m_Lease;
+
+    /// The name of this file.
+    string m_FileName;
+    
+    /// Either 'p' for protein or 'n' for nucleotide.
+    char m_ProtNucl;
+    
+    /// The raw file object.
+    CSeqDBRawFile m_File;
 };
 
 void inline CSeqDBExtFile::x_SetFileType(char prot_nucl)
@@ -243,8 +438,7 @@ void inline CSeqDBExtFile::x_SetFileType(char prot_nucl)
     m_ProtNucl = prot_nucl;
     
     if ((m_ProtNucl != kSeqTypeProt) &&
-        (m_ProtNucl != kSeqTypeNucl) &&
-        (m_ProtNucl != kSeqTypeUnkn)) {
+        (m_ProtNucl != kSeqTypeNucl)) {
         
         NCBI_THROW(CSeqDBException, eArgErr,
                    "Invalid argument: seq type must be 'p' or 'n'.");
@@ -264,10 +458,26 @@ void inline CSeqDBExtFile::x_SetFileType(char prot_nucl)
 
 class CSeqDBIdxFile : public CSeqDBExtFile {
 public:
+    /// Constructor
+    ///
+    /// This builds an object which provides access to the index file
+    /// for a volume.  The index file contains metadata about the
+    /// volume, such as the title and construction date.  The index
+    /// file also contains indexes into the header and sequence data
+    /// files.  Because these offsets are four byte integers, all
+    /// volumes have a size of no more than 2^32 bytes, but in
+    /// practice, they are usually kept under 2^30 bytes.
+    /// @param atlas
+    ///   The memory management layer object.
+    /// @param dbname
+    ///   The name of the database volume.
+    /// @param prot_nucl
+    ///   The sequence data type.
     CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                   const string   & dbname,
                   char             prot_nucl);
     
+    /// Destructor
     virtual ~CSeqDBIdxFile()
     {
         CSeqDBLockHold locked(m_Atlas);
@@ -283,55 +493,126 @@ public:
         }
     }
     
+    /// Get the location of a sequence's ambiguity data
+    ///
+    /// This method returns the offsets of the start and end of the
+    /// ambiguity data for a specific nucleotide sequence.  If this
+    /// range is non-empty, then this sequence has ambiguous regions,
+    /// which are encoded as a series of instructions for modifying
+    /// the compressed 4 base/byte nucleotide data.  The ambiguity
+    /// data is encoded as randomized noise, with the intention of
+    /// minimizing accidental matches.
+    ///
+    /// @param oid
+    ///   The sequence to get data for.
+    /// @param start
+    ///   The returned start offset of the sequence.
+    /// @param end
+    ///   The returned end offset of the sequence.
+    /// @return
+    ///   true if the sequence has ambiguity data.
     inline bool
     GetAmbStartEnd(Uint4   oid,
                    Uint4 & start,
                    Uint4 & end) const;
     
-    inline bool
+    /// Get the location of a sequence's header data
+    ///
+    /// This method returns the offsets of the start and end of the
+    /// header data for a specific database sequence.  The header data
+    /// is a Blast-def-line-set in binary ASN.1.  This data includes
+    /// associated taxonomy data, Seq-ids, and membership bits.
+    ///
+    /// @param oid
+    ///   The sequence to get data for.
+    /// @param start
+    ///   The returned start offset of the sequence.
+    /// @param end
+    ///   The returned end offset of the sequence.
+    inline void
     GetHdrStartEnd(Uint4   oid,
                    Uint4 & start,
                    Uint4 & end) const;
     
-    inline bool
+    /// Get the location of a sequence's packed sequence data
+    ///
+    /// This method returns the offsets of the start and end of the
+    /// packed sequence data for a specific database sequence.  For
+    /// protein data, the packed version is the only supported
+    /// encoding, and is stored at one base per byte.  The header data
+    /// is encoded as a Blast-def-line-set in binary ASN.1.  This data
+    /// includes taxonomy information, Seq-ids for this sequence, and
+    /// membership bits.
+    ///
+    /// @param oid
+    ///   The sequence to get data for.
+    /// @param start
+    ///   The returned start offset of the sequence.
+    /// @param end
+    ///   The returned end offset of the sequence.
+    inline void
     GetSeqStartEnd(Uint4   oid,
                    Uint4 & start,
                    Uint4 & end) const;
     
-    inline bool
+    /// Get the location of a sequence's packed sequence data
+    ///
+    /// This method returns the offsets of the start and end of the
+    /// packed sequence data for a specific database sequence.  For
+    /// protein data, the packed version is the only supported
+    /// encoding, and is stored at one base per byte.  The header data
+    /// is encoded as a Blast-def-line-set in binary ASN.1.  This data
+    /// includes taxonomy information, Seq-ids for this sequence, and
+    /// membership bits.
+    ///
+    /// @param oid
+    ///   The sequence to get data for.
+    /// @param start
+    ///   The returned start offset of the sequence.
+    inline void
     GetSeqStart(Uint4   oid,
                 Uint4 & start) const;
     
-    char GetSeqType(void) const
+    /// Get the sequence data type.
+    char GetSeqType() const
     {
         return x_GetSeqType();
     }
     
-    string GetTitle(void) const
+    /// Get the volume title.
+    string GetTitle() const
     {
         return m_Title;
     }
     
-    string GetDate(void) const
+    /// Get the construction date of the volume.
+    string GetDate() const
     {
         return m_Date;
     }
     
-    Uint4 GetNumOIDs(void) const
+    /// Get the number of oids in this volume.
+    Uint4 GetNumOIDs() const
     {
         return m_NumOIDs;
     }
     
-    Uint8 GetVolumeLength(void) const
+    /// Get the length of the volume (in bases).
+    Uint8 GetVolumeLength() const
     {
         return m_VolLen;
     }
     
-    Uint4 GetMaxLength(void) const
+    /// Get the length of the longest sequence in this volume.
+    Uint4 GetMaxLength() const
     {
         return m_MaxLen;
     }
     
+    /// Release any memory leases temporarily held here.
+    ///
+    /// This is a placeholder - the current design does not use a
+    /// memory lease for this particular file.
     void UnLease()
     {
     }
@@ -339,11 +620,20 @@ public:
 private:
     // Swapped data from .[pn]in file
     
+    /// The volume title.
     string m_Title;
+    
+    /// The construction date of the volume.
     string m_Date;
-    Uint4  m_NumOIDs;
-    Uint8  m_VolLen;
-    Uint4  m_MaxLen;
+    
+    /// The number of oids in this volume.
+    Uint4 m_NumOIDs;
+    
+    /// The length of the volume (in bases).
+    Uint8 m_VolLen;
+    
+    /// The length of the longest sequence in this volume.
+    Uint4 m_MaxLen;
     
     // Other pointers and indices
     
@@ -351,8 +641,14 @@ private:
     // 1. Do not constitute true object state.
     // 2. Are modified only under lock (CSeqDBRawFile::m_Atlas.m_Lock).
     
+    /// Pointer to the array of header file offsets.
     Uint4 * m_HdrRegion;
+    
+    /// Pointer to the array of sequence file offsets.
     Uint4 * m_SeqRegion;
+    
+    /// Pointer to the array of offsets of the ambiguity data (for
+    /// nucleotide volumes only).
     Uint4 * m_AmbRegion;
 };
 
@@ -369,16 +665,14 @@ CSeqDBIdxFile::GetAmbStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
     return false;
 }
 
-bool
+void
 CSeqDBIdxFile::GetHdrStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
 {
     start = SeqDB_GetStdOrd(& m_HdrRegion[oid]);
     end   = SeqDB_GetStdOrd(& m_HdrRegion[oid+1]);
-    
-    return true;
 }
 
-bool
+void
 CSeqDBIdxFile::GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
 {
     start = SeqDB_GetStdOrd(& m_SeqRegion[oid]);
@@ -388,16 +682,12 @@ CSeqDBIdxFile::GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
     } else {
         end = SeqDB_GetStdOrd(& m_AmbRegion[oid]);
     }
-    
-    return true;
 }
 
-bool
+void
 CSeqDBIdxFile::GetSeqStart(Uint4 oid, Uint4 & start) const
 {
     start = SeqDB_GetStdOrd(& m_SeqRegion[oid]);
-    
-    return true;
 }
 
 
@@ -418,6 +708,22 @@ public:
     /// Type which spans possible file offsets.
     typedef CSeqDBAtlas::TIndx TIndx;
     
+    /// Constructor
+    ///
+    /// This builds an object which provides access to the sequence
+    /// data file for a volume.  This file is simply a concatenation
+    /// of all the sequence data for the database sequences.  In a
+    /// protein file, these are just the database sequences seperated
+    /// by NUL bytes.  In a nucleotide volume, the packed data for
+    /// each sequence is followed by ambiguity data for that sequence
+    /// (if any such data exists).
+    ///
+    /// @param atlas
+    ///   The memory management layer object.
+    /// @param dbname
+    ///   The name of the database volume.
+    /// @param prot_nucl
+    ///   The sequence data type.
     CSeqDBSeqFile(CSeqDBAtlas   & atlas,
                   const string  & dbname,
                   char            prot_nucl)
@@ -425,10 +731,23 @@ public:
     {
     }
     
+    /// Destructor
     virtual ~CSeqDBSeqFile()
     {
     }
     
+    /// Read part of the file into a buffer
+    ///
+    /// Copy the sequence data from offsets start to end into the
+    /// array at buf, which is assumed to already have been allocated.
+    /// This method assumes the atlas lock is held.
+    ///
+    /// @param buf
+    ///     The destination for the data to be read.
+    /// @param start
+    ///     The starting offset for the first byte to read.
+    /// @param end
+    ///     The offset for the first byte after the area to read.
     void ReadBytes(char  * buf,
                    TIndx   start,
                    TIndx   end) const
@@ -436,7 +755,28 @@ public:
         x_ReadBytes(buf, start, end);
     }
     
-    const char * GetRegion(TIndx start, TIndx end, bool keep, CSeqDBLockHold & locked) const
+    /// Get a pointer into the file contents.
+    ///
+    /// Copy the sequence data from offsets start to end into the
+    /// array at buf, which is assumed to already have been allocated.
+    /// This method assumes the atlas lock is held.  If the user will
+    /// take ownership of the memory region hold, the keep argument
+    /// should be specified as true.
+    ///
+    /// @param start
+    ///     The starting offset for the first byte to read.
+    /// @param end
+    ///     The offset for the first byte after the area to read.
+    /// @param keep
+    ///     True if an extra hold should be acquired on the data.
+    /// @param locked
+    ///     The lock holder object for this thread.
+    /// @return
+    ///     A pointer into the file data.
+    const char * GetRegion(TIndx            start,
+                           TIndx            end,
+                           bool             keep,
+                           CSeqDBLockHold & locked) const
     {
         return x_GetRegion(start, end, keep, locked);
     }
@@ -455,6 +795,19 @@ public:
     /// Type which spans possible file offsets.
     typedef CSeqDBAtlas::TIndx TIndx;
     
+    /// Constructor
+    ///
+    /// This builds an object which provides access to the header data
+    /// file for a volume.  This file is simply a concatenation of the
+    /// header data for each object, stored as a Blast-def-line-set
+    /// objects in binary ASN.1.
+    ///
+    /// @param atlas
+    ///   The memory management layer object.
+    /// @param dbname
+    ///   The name of the database volume.
+    /// @param prot_nucl
+    ///   The sequence data type.
     CSeqDBHdrFile(CSeqDBAtlas   & atlas,
                   const string  & dbname,
                   char            prot_nucl)
@@ -462,10 +815,25 @@ public:
     {
     }
     
+    /// Destructor
     virtual ~CSeqDBHdrFile()
     {
     }
     
+    /// Read part of the file into a buffer
+    ///
+    /// Copy the sequence data from offsets start to end into the
+    /// array at buf, which is assumed to already have been allocated.
+    /// This method assumes the atlas lock is held.  If the user will
+    /// take ownership of the memory region hold, the keep argument
+    /// should be specified as true.
+    ///
+    /// @param buf
+    ///     The buffer to receive the data.
+    /// @param start
+    ///     The starting offset for the first byte to read.
+    /// @param end
+    ///     The offset for the first byte after the area to read.
     void ReadBytes(char  * buf,
                    TIndx   start,
                    TIndx   end) const
@@ -473,7 +841,25 @@ public:
         x_ReadBytes(buf, start, end);
     }
     
-    const char * GetRegion(TIndx start, TIndx end, CSeqDBLockHold & locked) const
+    /// Read part of the file into a buffer
+    ///
+    /// Copy the sequence data from offsets start to end into the
+    /// array at buf, which is assumed to already have been allocated.
+    /// This method assumes the atlas lock is held.  If the user will
+    /// take ownership of the memory region hold, the keep argument
+    /// should be specified as true.
+    ///
+    /// @param start
+    ///     The starting offset for the first byte to read.
+    /// @param end
+    ///     The offset for the first byte after the area to read.
+    /// @param locked
+    ///     The lock holder object for this thread.
+    /// @return
+    ///     A pointer into the file data.
+    const char * GetRegion(TIndx            start,
+                           TIndx            end,
+                           CSeqDBLockHold & locked) const
     {
         return x_GetRegion(start, end, false, locked);
     }
@@ -484,7 +870,7 @@ public:
 
 // Assumes locked.
 
-bool CSeqDBRawFile::ReadBytes(CSeqDBMemLease & lease,
+void CSeqDBRawFile::ReadBytes(CSeqDBMemLease & lease,
                               char           * buf,
                               TIndx            start,
                               TIndx            end) const
@@ -494,8 +880,6 @@ bool CSeqDBRawFile::ReadBytes(CSeqDBMemLease & lease,
     }
     
     memcpy(buf, lease.GetPtr(start), end-start);
-    
-    return true;
 }
 
 END_NCBI_SCOPE
