@@ -43,6 +43,7 @@
  *       ConnNetInfo_AppendUserHeader()
  *       ConnNetInfo_DeleteUserHeader()
  *       ConnNetInfo_OverrideUserHeader()
+ *       ConnNetInfo_ExtendUserHeader()
  *       ConnNetInfo_AppendArg()
  *       ConnNetInfo_PrependArg()
  *       ConnNetInfo_DeleteArg()
@@ -274,16 +275,28 @@ extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
                                                 const char*   header);
 
 
-/* Override user header (same as ConnNetInfo_AppendUserHeader() if
- * no header was previously set).
+/* Override user header.
  * Tags replaced (case-insensitively), and tags with empty values effectively
  * delete existing tags from the old user header, e.g. "My-Tag:\r\n" deletes
- * any appearence of "My-Tag: [<value>]" from the user header. Unmatched
- * tags simply added to the existing user header (as with "Append" above).
+ * any appearence (if any) of "My-Tag: [<value>]" from the user header.
+ * Unmatched tags with non-empty values are simply added to the existing user
+ * header (as with "Append" above).
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
 extern int/*bool*/ ConnNetInfo_OverrideUserHeader(SConnNetInfo* info,
                                                   const char*   header);
+
+
+/* Extend user header.
+ * Existings tags matching (case-insensitively) those from "header" are
+ * appended with new value (separated by a comma and a space) if the added
+ * value is non-empty, otherwise, the tags are left untouched. All new
+ * unmatched tags from "header" with non-empty values get added to the end
+ * of the user header.
+ * Return non-zero if successful, otherwise return 0 to indicate an error.
+ */
+extern int/*bool*/ ConnNetInfo_ExtendUserHeader(SConnNetInfo* info,
+                                                const char*   header);
 
 
 /* Delete entries from current user header, if their tags match of those
@@ -579,6 +592,9 @@ extern size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2002/11/19 19:19:24  lavr
+ * +ConnNetInfo_ExtendUserHeader()
+ *
  * Revision 6.25  2002/11/12 05:49:47  lavr
  * Expand host names to hold 256 chars (instead of 64)
  *

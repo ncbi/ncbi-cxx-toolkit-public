@@ -368,9 +368,16 @@ extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
 }
 
 
-static int/*bool*/ s_OverrideOrDeleteUserHeader(SConnNetInfo* info,
-                                                const char*   user_header,
-                                                int/*bool*/   do_delete)
+typedef enum {
+    eUserHeaderOp_Override,
+    eUserHeaderOp_Extend,
+    eUserHeaderOp_Delete
+} EUserHeaderOp;
+
+
+static int/*bool*/ s_ModifyUserHeader(SConnNetInfo* info,
+                                      const char*   user_header,
+                                      EUserHeaderOp op)
 {
     int/*bool*/ retval;
     char*  new_header;
@@ -380,17 +387,20 @@ static int/*bool*/ s_OverrideOrDeleteUserHeader(SConnNetInfo* info,
     size_t hdrlen;
     char*  hdr;
 
-    if (!(hdr = (char*) info->http_user_header) || !(hdrlen = strlen(hdr))) {
-        if (do_delete)
-            return 1/*success*/;
-        ConnNetInfo_SetUserHeader(info, user_header);
-        return !!info->http_user_header == !!user_header ? 1/*ok*/ : 0/*fail*/;
-    }
-
     if (!user_header || !(newhdrlen = strlen(user_header)))
         return 1/*success*/;
 
-    if (!do_delete) {
+    if (!(hdr = (char*) info->http_user_header) || !(hdrlen = strlen(hdr))) {
+        if (op == eUserHeaderOp_Delete)
+            return 1/*success*/;
+        if (!hdr) {
+            if (!(hdr = strdup("")))
+                return 0/*failure*/;
+            hdrlen = 0;
+        }
+    }
+
+    if (op != eUserHeaderOp_Delete) {
         if (!(new_header = (char*) malloc(newhdrlen + 1)))
             return 0/*failure*/;
         memcpy(new_header, user_header, newhdrlen + 1);
@@ -401,29 +411,43 @@ static int/*bool*/ s_OverrideOrDeleteUserHeader(SConnNetInfo* info,
     for (newline = new_header; *newline; newline += newlinelen) {
         char*  eol = strchr(newline, '\n');
         char*  eot = strchr(newline,  ':');
-        int/*bool*/ replaced = 0;
+        int/*bool*/ used = 0;
         size_t newtaglen;
+        char*  newtagval;
         size_t linelen;
         char*  line;
         size_t len;
+        size_t l;
 
         newlinelen = (size_t)
             (eol ? eol - newline + 1 : new_header + newhdrlen - newline);
-        if (!eot || eot > newline + newlinelen ||
+        if (!eot || eot >= newline + newlinelen ||
             !(newtaglen = (size_t)(eot - newline)))
             continue;
 
-        if (!do_delete) {
-            char* newtagval = newline + newtaglen + 1;
-            while (newtagval < newline + newlinelen) {
-                if (isspace((unsigned char)(*newtagval)))
-                    newtagval++;
-                else
-                    break;
-            }
+        newtagval = newline + newtaglen + 1;
+        while (newtagval < newline + newlinelen) {
+            if (isspace((unsigned char)(*newtagval)))
+                newtagval++;
+            else
+                break;
+        }
+        switch (op) {
+        case eUserHeaderOp_Override:
             len = newtagval < newline + newlinelen ? newlinelen : 0;
-        } else
+            break;
+        case eUserHeaderOp_Extend:
+            len = newlinelen - (size_t)(newtagval - newline);
+            break;
+        case eUserHeaderOp_Delete:
             len = 0;
+            break;
+        default:
+            assert(0);
+            retval = 0/*failure*/;
+            len = 0;
+            break;
+        }
 
         for (line = hdr; *line; line += linelen) {
             size_t taglen;
@@ -432,40 +456,51 @@ static int/*bool*/ s_OverrideOrDeleteUserHeader(SConnNetInfo* info,
             eot = strchr(line,  ':');
 
             linelen = (size_t)(eol ? eol - line + 1 : hdr + hdrlen - line);
-            if (!eot || eot > line + linelen)
+            if (!eot || eot >= line + linelen)
                 continue;
 
             taglen = (size_t)(eot - line);
             if (newtaglen != taglen || strncasecmp(newline, line, taglen) != 0)
                 continue;
 
-            if (len != linelen) {
-                if (len > linelen) {
-                    char*  temp   = (char*) realloc(hdr, hdrlen+len-linelen+1);
-                    size_t offset = (size_t)(line - hdr);
+            l = op == eUserHeaderOp_Extend ? linelen + len : len;
+            if (l != linelen) {
+                if (l > linelen) {
+                    char*  temp = (char*)realloc(hdr, hdrlen + l - linelen +1);
+                    size_t off  = (size_t)(line - hdr);
                     if (!temp) {
                         retval = 0/*failure*/;
                         continue;
                     }
                     hdr  = temp;
-                    line = temp + offset;
+                    line = temp + off;
                 }
-                memmove(line + len, line + linelen,
+                memmove(line + l, line + linelen,
                         hdrlen - (size_t)(line - hdr) - linelen + 1);
                 hdrlen -= linelen;
-                hdrlen += len;
+                hdrlen += l;
             }
 
-            if (len)
-                memcpy(line, newline, len);
-            linelen = len;
-            replaced = 1;
+            if (len) {
+                if (op == eUserHeaderOp_Extend) {
+                    char* s = &line[linelen - 1];
+                    if (linelen > 1 && *(s - 1) == '\r')
+                        *(s - 1) = ',';
+                    *s++ = ' ';
+                    memcpy(s, newtagval, len);
+                    linelen += len;
+                } else {
+                    memcpy(line, newline, len);
+                    linelen  = len;
+                }
+                used = 1;
+            }
         }
 
-        if (do_delete)
+        if (op == eUserHeaderOp_Delete)
             continue;
 
-        if (replaced || !len) {
+        if (used || !len) {
             memmove(newline, newline + newlinelen,
                     newhdrlen - (size_t)(newline-new_header) - newlinelen + 1);
             newhdrlen -= newlinelen;
@@ -474,7 +509,7 @@ static int/*bool*/ s_OverrideOrDeleteUserHeader(SConnNetInfo* info,
     }
 
     info->http_user_header = hdr;
-    if (!do_delete) {
+    if (op != eUserHeaderOp_Delete) {
         if (!ConnNetInfo_AppendUserHeader(info, new_header))
             retval = 0/*failure*/;
         free(new_header);
@@ -486,14 +521,21 @@ static int/*bool*/ s_OverrideOrDeleteUserHeader(SConnNetInfo* info,
 extern int/*bool*/ ConnNetInfo_OverrideUserHeader(SConnNetInfo* info,
                                                   const char*   header)
 {
-    return s_OverrideOrDeleteUserHeader(info, header, 0/*do not delete only*/);
+    return s_ModifyUserHeader(info, header, eUserHeaderOp_Override);
 }
 
 
 extern void ConnNetInfo_DeleteUserHeader(SConnNetInfo* info,
                                          const char*   header)
 {
-    verify(s_OverrideOrDeleteUserHeader(info, header, 1/*do delete only*/));
+    verify(s_ModifyUserHeader(info, header, eUserHeaderOp_Delete));
+}
+
+
+extern int/*bool*/ ConnNetInfo_ExtendUserHeader(SConnNetInfo* info,
+                                                const char*   header)
+{
+    return s_ModifyUserHeader(info, header, eUserHeaderOp_Extend);
 }
 
 
@@ -1416,6 +1458,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2002/11/19 19:19:57  lavr
+ * +ConnNetInfo_ExtendUserHeader()
+ *
  * Revision 6.43  2002/11/13 19:54:13  lavr
  * ConnNetInfo_DeleteArg(): fix initial argument calculation size
  *
