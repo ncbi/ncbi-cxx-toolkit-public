@@ -1,0 +1,7 @@
+# $Id$
+
+# Build library "XSER"
+#################################
+
+LIBOBJ = serial
+LIB    = xser
