@@ -71,7 +71,7 @@ void LogTime(const string& s)
         prev_t=t;
     }
     
-    cout << s << " " << (int)(t-prev_t) << endl;
+    NcbiCout << s << " " << (int)(t-prev_t) << endl;
 }
 
 class CAlnVwrApp : public CNcbiApplication
@@ -260,27 +260,27 @@ void CAlnVwrApp::View7()
     m_AV->SetEndChar('.');
     for (seg=0; seg<m_AV->GetNumSegs(); seg++) {
         for (row=0; row<m_AV->GetNumRows(); row++) {
-            cout << "row " << row << ", seg " << seg << " ";
+            NcbiCout << "row " << row << ", seg " << seg << " ";
             // if (m_AV->GetSegType(row, seg) & CAlnMap::fSeq) {
-                cout << "["
+                NcbiCout << "["
                     << m_AV->GetStart(row, seg)
                     << "-"
                     << m_AV->GetStop(row, seg) 
                     << "]"
                     << NcbiEndl;
                 for(int i=0; i<m_AV->GetLen(seg); i++) {
-                    cout << m_AV->GetResidue(row, m_AV->GetAlnStart(seg)+i);
+                    NcbiCout << m_AV->GetResidue(row, m_AV->GetAlnStart(seg)+i);
                 }
-                cout << NcbiEndl;
-                cout << m_AV->GetSeqString(buff, row,
+                NcbiCout << NcbiEndl;
+                NcbiCout << m_AV->GetSeqString(buff, row,
                                            m_AV->GetStart(row, seg),
                                            m_AV->GetStop(row, seg)) << NcbiEndl;
-                cout << m_AV->GetSegSeqString(buff, row, seg) 
+                NcbiCout << m_AV->GetSegSeqString(buff, row, seg) 
                     << NcbiEndl;
                 //            } else {
-                //                cout << "-" << NcbiEndl;
+                //                NcbiCout << "-" << NcbiEndl;
                 //            }
-            cout << NcbiEndl;
+            NcbiCout << NcbiEndl;
         }
     }
 }
@@ -297,18 +297,18 @@ void CAlnVwrApp::View8(int aln_pos)
     
     // obtain all individual residues
     for (CAlnMap::TNumrow row=0; row<m_AV->GetNumRows(); row++) {
-        cout << m_AV->GetAlnSeqString(buffer, row, rng);
+        NcbiCout << m_AV->GetAlnSeqString(buffer, row, rng);
     }
-    cout << NcbiEndl;
+    NcbiCout << NcbiEndl;
     
     // get the column at once
     string column;
     column.resize(m_AV->GetNumRows());
     
-    cout << m_AV->GetColumnVector(column, aln_pos) << NcbiEndl;
+    NcbiCout << m_AV->GetColumnVector(column, aln_pos) << NcbiEndl;
     
     // %ID
-    cout << m_AV->CalculatePercentIdentity(aln_pos) << NcbiEndl;
+    NcbiCout << m_AV->CalculatePercentIdentity(aln_pos) << NcbiEndl;
 }
 
 
@@ -320,12 +320,12 @@ void CAlnVwrApp::View9(int row0, int row1)
     m_AV->GetResidueIndexMap(row0, row1, aln_rng, result, rng0, rng1);
 
     size_t size = result.size();
-    cout << "(" << rng0.GetFrom() << "-" << rng0.GetTo() << ")" << endl;
-    cout << "(" << rng1.GetFrom() << "-" << rng1.GetTo() << ")" << endl;
+    NcbiCout << "(" << rng0.GetFrom() << "-" << rng0.GetTo() << ")" << endl;
+    NcbiCout << "(" << rng1.GetFrom() << "-" << rng1.GetTo() << ")" << endl;
     for (size_t i = 0; i < size; i++) {
-        cout << result[i] << " ";
+        NcbiCout << result[i] << " ";
     }
-    cout << endl;
+    NcbiCout << endl;
 }
 
 
@@ -333,7 +333,7 @@ void CAlnVwrApp::View9(int row0, int row1)
 // GetSeqPosFromAlnPos
 void CAlnVwrApp::GetSeqPosFromAlnPosDemo()
 {
-    cout << "["
+    NcbiCout << "["
         << m_AV->GetSeqPosFromAlnPos(2, 1390, CAlnMap::eForward, false)
         << "-" 
         << m_AV->GetSeqPosFromAlnPos(2, 1390, (CAlnMap::ESearchDirection)7, false)
@@ -352,7 +352,7 @@ int CAlnVwrApp::Run(void)
 
     LoadDenseg();
 
-    cout << "-----" << endl;
+    NcbiCout << "-----" << endl;
 
     if (args["a"]) {
         m_AV->SetAnchor(args["a"].AsInteger());
@@ -366,15 +366,36 @@ int CAlnVwrApp::Run(void)
     m_AV->SetEndChar('.');
     if (args["v"]) {
         switch (args["v"].AsInteger()) {
-        case 1: CAlnVwr::CsvTable(*m_AV); break;
-        case 2: CAlnVwr::PopsetStyle(*m_AV, screen_width, CAlnVwr::eUseChunks); break;
-        case 3: CAlnVwr::PopsetStyle(*m_AV, screen_width, CAlnVwr::eUseSegments); break;
-        case 4: CAlnVwr::PopsetStyle(*m_AV, screen_width, CAlnVwr::eSpeedOptimized); break;
-        case 5: CAlnVwr::Segments(*m_AV); break;
-        case 6: CAlnVwr::Chunks(*m_AV, args["cf"].AsInteger()); break;
-        case 7: View7(); break;
-        case 8: View8(number); break;
-        case 9: View9(row0, row1); break;
+        case 1: 
+            CAlnVwr::CsvTable(*m_AV, NcbiCout);
+            break;
+        case 2:
+            CAlnVwr::PopsetStyle(*m_AV, NcbiCout, screen_width,
+                                 CAlnVwr::eUseChunks);
+            break;
+        case 3: 
+            CAlnVwr::PopsetStyle(*m_AV, NcbiCout, screen_width,
+                                 CAlnVwr::eUseSegments);
+            break;
+        case 4:
+            CAlnVwr::PopsetStyle(*m_AV, NcbiCout, screen_width,
+                                 CAlnVwr::eUseWholeAlnSeqVector);
+            break;
+        case 5:
+            CAlnVwr::Segments(*m_AV, NcbiCout);
+            break;
+        case 6:
+            CAlnVwr::Chunks(*m_AV, NcbiCout, args["cf"].AsInteger());
+            break;
+        case 7:
+            View7();
+            break;
+        case 8:
+            View8(number);
+            break;
+        case 9:
+            View9(row0, row1);
+            break;
         }
     }
     return 0;
@@ -395,6 +416,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/08/30 12:32:42  todorov
+* Made CNcbiOstream& a required param for the methods in CAlnVwr class. Changed the order of their params.
+*
 * Revision 1.1  2004/08/27 20:58:30  todorov
 * alnvwrapp.cpp
 *
