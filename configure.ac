@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.269 2004/02/06 19:48:20 ucko Exp $
+#  $Id: configure.ac,v 1.270 2004/02/09 16:36:45 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3256,14 +3256,6 @@ else
 fi
 
 
-## many daemons under 'connect' require <poll.h>
-if test $ac_cv_header_poll_h = yes; then
-   daemons=daemons
-else
-   daemons=
-fi
-
-
 ## `serial' projects
 
 if test "$with_serial" = "no" ; then
@@ -3673,7 +3665,6 @@ AC_SUBST(CXXFLAGS_DLL)
 
 AC_SUBST(OPT_GROUPS)
 AC_SUBST(local_lbsm)
-AC_SUBST(daemons)
 AC_SUBST(serial)
 AC_SUBST(bdb)
 AC_SUBST(dbapi)
