@@ -472,6 +472,33 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-gi2bs] [-gi2bs-target]";
         
+        if (s == "-taxid") {
+            Uint4 oid = 12;
+            
+            if (args.size() == 1) {
+                oid = atoi((*args.begin()).c_str());
+                args.pop_front();
+            }
+            
+            cout << "Using oid: " << oid << endl;
+            
+            CSeqDB nr(dbname, seqtype);
+            
+            CRef<CBlast_def_line_set> bdls = nr.GetHdr(oid);
+            
+            vector<Uint4> taxids;
+            
+            ITERATE(list< CRef<CBlast_def_line> >, iter, bdls->Get()) {
+                taxids.push_back((**iter).GetTaxid());
+            }
+            
+            ITERATE(vector<Uint4>, it, taxids) {
+                cout << "taxid: " << (*it) << endl;
+            }
+            
+            return 0;
+        } else desc += " [-gi2bs] [-gi2bs-target]";
+        
         if ((s == "-paths") ||
             (s == "-paths-static") ||
             (s == "-paths-three")) {
@@ -528,6 +555,19 @@ int test1(int argc, char ** argv)
             
             ITERATE(vector<string>, iter, paths2) {
                 cout << "    " << (*iter) << endl;
+            }
+            
+            double ee2,ee3;
+            
+            for(Uint4 i = 0; i<10; i++) {
+                ee2 = sw.Elapsed();
+                
+                CSeqDB::FindVolumePaths(dbname, seqtype, paths2);
+                
+                ee3 = sw.Elapsed();
+                
+                cout << "\n-- static method loop: "
+                     << (ee3-ee2) << " to get paths." << endl;
             }
             
             return 0;
