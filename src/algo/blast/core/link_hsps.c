@@ -40,32 +40,33 @@ Detailed Contents:
 
 static char const rcsid[] = "$Id$";
 
-/** BLAST_NUMBER_OF_ORDERING_METHODS tells how many methods are used
- * to "order" the HSP's.
-*/
+/** Methods used to "order" the HSP's. */
 #define BLAST_NUMBER_OF_ORDERING_METHODS 2
+
+typedef enum LinkOrderingMethod {
+   BLAST_SMALL_GAPS = 0,
+   BLAST_LARGE_GAPS
+} LinkOrderingMethod;
 
 /* Forward declaration */
 struct LinkHSPStruct;
 
 /** The following structure is used in "link_hsps" to decide between
  * two different "gapping" models.  Here link is used to hook up
- * a chain of HSP's (this is a void* as _blast_hsp is not yet
- * defined), num is the number of links, and sum is the sum score.
+ * a chain of HSP's, num is the number of links, and sum is the sum score.
  * Once the best gapping model has been found, this information is
- * transferred up to the BlastHSP.  This structure should not be
+ * transferred up to the LinkHSPStruct.  This structure should not be
  * used outside of the function link_hsps.
 */
 typedef struct BlastHSPLink {
-   struct LinkHSPStruct* link[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Used to order the HSPs
-                                           (i.e., hook-up w/o overlapping). */
+   struct LinkHSPStruct* link[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Best 
+                                               choice of HSP to link with */
    Int2 num[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< number of HSP in the
                                                   ordering. */
    Int4 sum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP. */
    double xsum[BLAST_NUMBER_OF_ORDERING_METHODS]; /**< Sum-Score of HSP,
                                      multiplied by the appropriate Lambda. */
-   Int4 changed; /**< Has the link (best choice of HSP to link with) been
-                    changed since previous access? */
+   Int4 changed; /**< Has the link been changed since previous access? */
 } BlastHSPLink;
 
 /** Structure containing all information internal to the process of linking
@@ -82,6 +83,8 @@ typedef struct LinkHSPStruct {
                               "link" pointer. */
    Int4 linked_to;         /**< Where this HSP is linked to? */
    Int4 sumscore;          /**< Sumscore of a set of "linked" HSP's. */
+   Int2 ordering_method;   /**< Which method (max or no max for gaps) was 
+                              used for linking HSPs? */
    Int4 q_offset_trim;     /**< Start of trimmed hsp in query */
    Int4 q_end_trim;        /**< End of trimmed HSP in query */
    Int4 s_offset_trim;     /**< Start of trimmed hsp in subject */
@@ -466,6 +469,26 @@ typedef struct LinkHelpStruct {
   Int4 next_larger;
 } LinkHelpStruct;
 
+static LinkHSPStruct* LinkHSPStructReset(LinkHSPStruct* lhsp)
+{
+   BlastHSP* hsp;
+
+   if (!lhsp) {
+      lhsp = (LinkHSPStruct*) calloc(1, sizeof(LinkHSPStruct));
+      lhsp->hsp = (BlastHSP*) calloc(1, sizeof(BlastHSP));
+   } else {
+      if (!lhsp->hsp) {
+         hsp = (BlastHSP*) calloc(1, sizeof(BlastHSP));
+      } else {
+         hsp = lhsp->hsp;
+         memset(hsp, 0, sizeof(BlastHSP));
+      }
+      memset(lhsp, 0, sizeof(LinkHSPStruct));
+      lhsp->hsp = hsp;
+   }
+   return lhsp;
+}
+
 static Int2
 link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
@@ -473,14 +496,15 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    Boolean gapped_calculation)
 {
 	LinkHSPStruct* H,* H2,* best[2],* first_hsp,* last_hsp,** hp_frame_start;
-	LinkHSPStruct hp_start;
+	LinkHSPStruct* hp_start = NULL;
    BlastHSP* hsp;
    BlastHSP** hsp_array;
 	BLAST_KarlinBlk** kbp;
 	Int4 maxscore, cutoff[2];
 	Boolean linked_set, ignore_small_gaps;
 	double gap_decay_rate, gap_prob, prob[2];
-	Int4 index, index1, ordering_method, num_links, frame_index;
+	Int4 index, index1, num_links, frame_index;
+   LinkOrderingMethod ordering_method;
    Int4 num_query_frames, num_subject_frames;
 	Int4 *hp_frame_number;
 	Int4 gap_size, number_of_hsps, total_number_of_hsps;
@@ -599,12 +623,11 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 
 	for (frame_index=0; frame_index<num_query_frames; frame_index++)
 	{
-      memset(&hp_start, 0, sizeof(hp_start));
-      hp_start.hsp = (BlastHSP*) calloc(1, sizeof(BlastHSP));
-      hp_start.next = hp_frame_start[frame_index];
-      hp_frame_start[frame_index]->prev = &hp_start;
+      hp_start = LinkHSPStructReset(hp_start);
+      hp_start->next = hp_frame_start[frame_index];
+      hp_frame_start[frame_index]->prev = hp_start;
       number_of_hsps = hp_frame_number[frame_index];
-      query_context = hp_start.next->hsp->context;
+      query_context = hp_start->next->hsp->context;
       length_adjustment = query_info->length_adjustments[query_context];
       query_length = BLAST_GetQueryLength(query_info, query_context);
       query_length = MAX(query_length - length_adjustment, 1);
@@ -615,7 +638,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
          length_adjustment /= CODON_LENGTH;
       subject_length = MAX(subject->length - length_adjustment, 1);
 
-      lh_helper[0].ptr = &hp_start;
+      lh_helper[0].ptr = hp_start;
       lh_helper[0].q_off_trim = 0;
       lh_helper[0].s_off_trim = 0;
       lh_helper[0].maxsum1  = -10000;
@@ -628,7 +651,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
        */
       first_pass=1;    /* do full search */
       path_changed=1;
-      for (H=hp_start.next; H!=NULL; H=H->next) 
+      for (H=hp_start->next; H!=NULL; H=H->next) 
          H->hsp_link.changed=1;
 
       while (number_of_hsps > 0)
@@ -652,7 +675,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
             if(!ignore_small_gaps){
                max0 = -cutoff[0];
                max1 = -cutoff[1];
-               for (H=hp_start.next; H!=NULL; H=H->next) {
+               for (H=hp_start->next; H!=NULL; H=H->next) {
                   Int4 sum0=H->hsp_link.sum[0];
                   Int4 sum1=H->hsp_link.sum[1];
                   if(sum0>=max0)
@@ -668,7 +691,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                }
             } else {
                maxscore = -cutoff[1];
-               for (H=hp_start.next; H!=NULL; H=H->next) {
+               for (H=hp_start->next; H!=NULL; H=H->next) {
                   Int4  sum=H->hsp_link.sum[1];
                   if(sum>=maxscore)
                   {
@@ -702,7 +725,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
           * and in this loop we access these arrays instead of the actual list 
           */
          if(!use_current_max){
-            for (H=&hp_start,H_index=1; H!=NULL; H=H->next,H_index++) {
+            for (H=hp_start,H_index=1; H!=NULL; H=H->next,H_index++) {
                Int4 s_frame = H->hsp->subject.frame;
                Int4 s_off_t = H->s_offset_trim;
                Int4 q_off_t = H->q_offset_trim;
@@ -738,7 +761,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                index=0;
                maxscore = -cutoff[index];
                H_index = 2;
-               for (H=hp_start.next; H!=NULL; H=H->next,H_index++) 
+               for (H=hp_start->next; H!=NULL; H=H->next,H_index++) 
                {
                   Int4 H_hsp_num=0;
                   Int4 H_hsp_sum=0;
@@ -814,7 +837,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
             index=1;
             maxscore = -cutoff[index];
             H_index = 2;
-            for (H=hp_start.next; H!=NULL; H=H->next,H_index++) 
+            for (H=hp_start->next; H!=NULL; H=H->next,H_index++) 
             {
                Int4 H_hsp_num=0;
                Int4 H_hsp_sum=0;
@@ -854,8 +877,8 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                   
                   if(!first_pass&&H2&&H2->linked_to>=0){
                      if(1){
-                        /* We set this to less than the real value to keep the original ordering
-                         * in case of ties. */
+                        /* We set this to less than the real value to keep the
+                           original ordering in case of ties. */
                         H_hsp_sum=H2->hsp_link.sum[index]-1;
                      }else{
                         H_hsp_num=H2->hsp_link.num[index];
@@ -958,7 +981,8 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                          best[1]->hsp_link.xsum[1], 
                          query_length, subject_length);
 
-            ordering_method = prob[0]<=prob[1] ? 0:1;
+            ordering_method = 
+               prob[0]<=prob[1] ? BLAST_SMALL_GAPS : BLAST_LARGE_GAPS;
          }
          else
          {
@@ -972,7 +996,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                          best[1]->hsp_link.xsum[1], 
                          query_length, subject_length);
 
-            ordering_method = 1;
+            ordering_method = BLAST_LARGE_GAPS;
          }
 
          best[ordering_method]->start_of_chain = TRUE;
@@ -999,10 +1023,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
             H->hsp_link.changed=1;
             /* record whether this is part of a linked set. */
             H->linked_set = linked_set;
-            if (ordering_method == 0)
-               H->hsp->ordering_method = BLAST_SMALL_GAPS;
-            else
-               H->hsp->ordering_method = BLAST_LARGE_GAPS;
+            H->ordering_method = ordering_method;
             H->hsp->evalue = prob[ordering_method];
             if (H->next)
                (H->next)->prev=H->prev;
@@ -1016,6 +1037,8 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 
    sfree(hp_frame_start);
    sfree(hp_frame_number);
+   sfree(hp_start->hsp);
+   sfree(hp_start);
 
    if (translated_query) {
       qsort(link_hsp_array,total_number_of_hsps,sizeof(LinkHSPStruct*), 
@@ -1054,7 +1077,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 		if (last_hsp == NULL)
 			first_hsp = H;
 		H->prev = last_hsp;
-		ordering_method = H->hsp->ordering_method;
+		ordering_method = H->ordering_method;
 		if (H->hsp_link.link[ordering_method] == NULL)
 		{
          /* Grab the next HSP that is not part of a chain or the start of a chain */
@@ -1145,7 +1168,7 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
       link_hsp_array[index]->hsp = hsp_array[index];
       link_hsp_array[index]->linked_set = FALSE;
       hsp_array[index]->num = 1;
-      hsp_array[index]->ordering_method = 3;
+      hsp_array[index]->splice_junction = FALSE;
    }
 
    score_hsp_array = (LinkHSPStruct**) malloc(hspcnt*sizeof(LinkHSPStruct*));
@@ -1291,11 +1314,11 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
             if (FindSpliceJunction(subject_seq, hsp->hsp, hsp->next->hsp)) {
                /* Kludge: ordering_method here would indicate existence of
                   splice junctions(s) */
-               hsp->hsp->ordering_method++;
-               hsp->next->hsp->ordering_method++;
+               hsp->hsp->splice_junction++;
+               hsp->next->hsp->splice_junction++;
             } else {
-               hsp->hsp->ordering_method--;
-               hsp->next->hsp->ordering_method--;
+               hsp->hsp->splice_junction--;
+               hsp->next->hsp->splice_junction--;
             }
          }
       } 
