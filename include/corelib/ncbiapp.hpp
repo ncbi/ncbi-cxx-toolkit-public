@@ -190,8 +190,9 @@ protected:
         fDefault_CinBufferSize  = 0x02
     };
     typedef int TStdioSetupFlags;  // binary OR of "EStdioSetup"
+    // Note from implementation: do not call this function more than once
+    // and from places other than App's constructor
     void SetStdioFlags(TStdioSetupFlags stdio_flags);
-
 
     // Set program version (call it from constructor)
     // Default:  0.0.0 (unknown)
@@ -294,6 +295,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/06/05 18:14:34  lavr
+ * SetStdioFlags(): comment from impl not to call twice or not from ctor
+ *
  * Revision 1.30  2003/03/31 13:26:00  siyan
  * Added doxygen support
  *
