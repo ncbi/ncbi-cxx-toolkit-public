@@ -521,10 +521,35 @@ void CAlnMix::x_Merge()
             }
             
             if (m_MergeFlags & fTruncateOverlaps) {
-                // check if this seg is marked for truncation or deletion
+                CAlnMix::TTruncateDSIndexMap::iterator ds_i;
 
-                CAlnMix::TTruncateDSIndexMap::iterator ds_i =
-                    m_TruncateMap.find(match->m_DSIndex);
+                // check if this seg is marked for deletion
+                ds_i = m_DeleteMap.find(match->m_DSIndex);
+                if (ds_i != m_DeleteMap.end()) {
+                    CAlnMix::TTruncateSeqPosMap::iterator pos_i =
+                        ds_i->second.find(start1);
+                    if (pos_i != ds_i->second.end()) {
+#if OBJECTS_ALNMGR___ALNMIX__DBG
+                        CAlnMixMatch * deleted_match = pos_i->second;
+                        if (deleted_match->m_AlnSeq1 !=
+                            match->m_AlnSeq1) {
+                            NCBI_THROW(CAlnException, eMergeFailure,
+                                       "CAlnMix::x_Merge(): "
+                                       "Deleted refseq not consistent");
+                        }
+                        if (deleted_match->m_Len >= match->m_Len) {
+                            NCBI_THROW(CAlnException, eMergeFailure,
+                                       "CAlnMix::x_Merge(): "
+                                       "deleted_match->m_Len >= match->m_Len");
+                        }                            
+#endif
+                        // skip this match
+                        continue;
+                    }
+                }
+                
+                // check if this seg is marked for truncation
+                ds_i = m_TruncateMap.find(match->m_DSIndex);
                 if (ds_i != m_TruncateMap.end()) {
                     CAlnMix::TTruncateSeqPosMap::iterator pos_i =
                         ds_i->second.find(start1);
@@ -556,7 +581,6 @@ void CAlnMix::x_Merge()
                             right_diff : left_diff;
                     }
                 }
-                
             }
 
             CAlnMixSeq::TStarts& starts = seq1->m_Starts;
@@ -618,7 +642,7 @@ void CAlnMix::x_Merge()
                       match->m_DSIndex == lo_start_i->second->m_DSIndex)) {
 
                     TSignedSeqPos left_diff = 0;
-                    if (start1 >= start_i->first) {
+                    if (start1 >= lo_start_i->first) {
                         left_diff = lo_start_i->first + 
                             lo_start_i->second->m_Len -
                             start1;
@@ -636,7 +660,7 @@ void CAlnMix::x_Merge()
                     TSeqPos diff = left_diff + right_diff;
                     
                     if (diff) {
-                        if (len - diff > 0) {
+                        if (len > diff) {
                             // Truncation
                             // x----)  x---.. becomes  x----x---x---..
                             //   x-------)
@@ -1597,6 +1621,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2003/07/31 18:50:29  todorov
+* Fixed a couple of truncation problems; Added a match deletion
+*
 * Revision 1.63  2003/07/15 20:54:01  todorov
 * exception type fixed
 *
