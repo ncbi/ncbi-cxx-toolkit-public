@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/01/22 17:46:48  vasilche
+* Fixed/cleaned encoding/decoding.
+* Encoded string now shorter.
+*
 * Revision 1.2  1999/01/15 19:46:18  vasilche
 * Added CIDs class to hold sorted list of IDs.
 *
@@ -64,19 +68,32 @@ public:
 
     ~CIDs(void);
 
+    // return true if 'id' is in list
     bool HaveID(int id) const;
 
+    // if 'id' is not in list, return false
+    // if 'id' in list - return true and remove 'id' from list
     bool ExtractID(int id);
 
+    // add 'id' to list
     void AddID(int id);
 
+    // remove 'id' from list
     void RemoveID(int id);
 
+    // return number of ids in list
     int CountIDs(void) const;
 
+    // decode id list from text representation
     void Decode(const string& str);
 
+    // encode id list to text representation
     string Encode(void) const;
+
+private:
+    // decoder helpers
+    int GetNumber(const string& str);
+    int AddID(char cmd, int id, int number);
 };
 
 class CHTMLHelper

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/01/22 17:46:50  vasilche
+* Fixed/cleaned encoding/decoding.
+* Encoded string now shorter.
+*
 * Revision 1.4  1999/01/21 16:18:06  sandomir
 * minor changes due to NStr namespace to contain string utility functions
 *
@@ -60,33 +64,49 @@ BEGIN_NCBI_SCOPE
 
 void CIDs::Decode(const string& str)
 {
-    _TRACE( " decode: \"" << str << "\"" );
     if ( str.empty() )
         return;
 
-    if ( str[0] == '+' ) {
-        int id = 0;
-        SIZE_TYPE pos = 1;
-        SIZE_TYPE nextPos = str.find('+', pos);
-        while ( nextPos != NPOS ) {
-            _TRACE( " next id: \"" << str.substr(pos, nextPos - pos) << "\"" );
-            AddID(id += NStr::StringToInt(str.substr(pos, nextPos - pos)));
-            pos = nextPos + 1;
-            nextPos = str.find('+', pos);
-        }
-        _TRACE( " next id: \"" << str.substr(pos) << "\"" );
-        AddID(id += NStr::StringToInt(str.substr(pos)));
+    int id = 0; // previous ID
+    SIZE_TYPE pos; // current position
+    char cmd = str[0]; // command
+    if ( cmd >= '0' && cmd <= '9' ) { // if string begins with digit
+        cmd = ','; // default command: direct ID
+        pos = 0; // start of number
     }
     else {
-        SIZE_TYPE pos = 0;
-        SIZE_TYPE nextPos = str.find(',', pos);
-        while ( nextPos != NPOS ) {
-            AddID(NStr::StringToInt(str.substr(pos, nextPos - pos)));
-            pos = nextPos + 1;
-            nextPos = str.find(',', pos);
-        }
-        AddID(NStr::StringToInt(str.substr(pos)));
+        pos = 1; // start of number
     }
+
+    SIZE_TYPE end; // end of number
+    while ( (end = str.find_first_of(" +_,", pos)) != NPOS ) {
+        id = AddID(cmd, id, GetNumber(str.substr(pos, end - pos)));
+        cmd = str[end];
+        pos = end + 1;
+    }
+    id = AddID(cmd, id, GetNumber(str.substr(pos)));
+}
+
+int CIDs::GetNumber(const string& str)
+{
+    return NStr::StringToInt(str);
+}
+
+int CIDs::AddID(char cmd, int id, int number)
+{
+    switch ( cmd ) {
+    case ' ':
+    case '+':
+    case '_':
+        // incremental ID
+        id += number;
+        break;
+    default:
+        id = number;
+        break;
+    }
+    AddID(id);
+    return id;
 }
 
 string CIDs::Encode(void) const
@@ -95,7 +115,9 @@ string CIDs::Encode(void) const
     int idPrev = 0;
     for ( const_iterator i = begin(); i != end(); ++i ) {
         int id = i->first;
-        out += NStr::IntToString(id - idPrev, true);
+        if ( !out.empty() )
+            out += ' ';
+        out += NStr::IntToString(id - idPrev);
         idPrev = id;
     }
     return out;
