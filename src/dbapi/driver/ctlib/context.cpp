@@ -33,6 +33,7 @@
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
+#include <unistd.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -837,6 +838,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/03/17 19:37:31  ucko
+ * #include <unistd.h> for gethostname()
+ *
  * Revision 1.17  2003/03/17 15:29:02  soussov
  * sets the default host name using gethostname()
  *
