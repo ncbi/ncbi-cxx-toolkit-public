@@ -39,6 +39,11 @@
 #include <connect/ncbi_host_info.h>
 
 
+/* Revision 6.100 */
+#define SERV_CLIENT_REVISION_MAJOR  6
+#define SERV_CLIENT_REVISION_MINOR  100
+
+
 /** @addtogroup ServiceSupport
  *
  * @{
@@ -194,6 +199,9 @@ extern NCBI_XCONNECT_EXPORT void DISP_SetMessageHook(FDISP_MessageHook);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2004/01/30 14:37:33  lavr
+ * Client revision made independent of CVS revisions
+ *
  * Revision 6.31  2003/08/11 19:05:54  lavr
  * +DISP_SetMessageHook()
  *

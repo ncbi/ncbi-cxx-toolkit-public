@@ -368,31 +368,18 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
 
 char* SERV_Print(SERV_ITER iter)
 {
+    static const char client_revision[] = "Client-Revision: %hu.%hu\r\n";
     static const char accepted_types[] = "Accepted-Server-Types:";
-    static const char client_revision[] = "Client-Revision:";
-    static const char revision[] = "$Revision$";
     char buffer[128], *str;
     TSERV_Type type, t;
     size_t buflen, i;
     BUF buf = 0;
 
     /* Put client version number */
-    buflen = sizeof(client_revision) - 1;
-    memcpy(buffer, client_revision, buflen);
-    for (i = 0; revision[i]; i++)
-        if (isspace((unsigned char) revision[i]))
-            break;
-    while (revision[i] && buflen + 2 < sizeof(buffer)) {
-        if (revision[i] == '$') {
-            if (isspace((unsigned char) revision[i - 1]))
-                --buflen;
-            break;
-        } else
-            buffer[buflen++] = revision[i++];
-    }
-    strcpy(&buffer[buflen], "\r\n");
-    assert(strlen(buffer) == buflen + 2  &&  buflen + 2 < sizeof(buffer));
-    if (!BUF_Write(&buf, buffer, buflen + 2)) {
+    buflen = sprintf(buffer, client_revision,
+                     SERV_CLIENT_REVISION_MAJOR, SERV_CLIENT_REVISION_MINOR);
+    assert(buflen < sizeof(buffer));
+    if (!BUF_Write(&buf, buffer, buflen)) {
         BUF_Destroy(buf);
         return 0;
     }
@@ -481,6 +468,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.50  2004/01/30 14:37:26  lavr
+ * Client revision made independent of CVS revisions
+ *
  * Revision 6.49  2003/09/02 21:17:15  lavr
  * Clean up included headers
  *
