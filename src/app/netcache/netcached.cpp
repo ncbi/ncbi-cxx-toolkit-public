@@ -553,7 +553,6 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
     str->erase();
     char ch;
     EIO_Status io_st;
-    unsigned loop_cnt = 0;
 
     char szBuf[1024] = {0,};
     unsigned str_len = 0;
@@ -771,6 +770,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/10/21 15:51:21  kuznets
+ * removed unused variable
+ *
  * Revision 1.13  2004/10/21 15:06:10  kuznets
  * New parameter run_purge_thread
  *

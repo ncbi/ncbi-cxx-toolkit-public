@@ -257,7 +257,6 @@ bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
     str->erase();
     char ch;
     EIO_Status io_st;
-    unsigned loop_cnt = 0;
 
     char szBuf[1024] = {0,};
     unsigned str_len = 0;
@@ -307,6 +306,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/10/21 15:52:56  kuznets
+ * removed unused variable
+ *
  * Revision 1.9  2004/10/20 14:51:05  kuznets
  * Optimization in networking
  *
