@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/02/11 17:09:30  vasilche
+* Removed unneeded flags.
+*
 * Revision 1.4  2000/02/03 21:58:30  vasilche
 * Fixed tipo leading to memory leak in generated files.
 *
@@ -93,8 +96,7 @@
 
 CChoiceTypeStrings::CChoiceTypeStrings(const string& externalName,
                                        const string& className)
-    : CParent(externalName, className),
-      m_HaveString(false), m_UnionVariants(0)
+    : CParent(externalName, className)
 {
 }
 
@@ -106,12 +108,6 @@ void CChoiceTypeStrings::AddVariant(const string& name,
                                     AutoPtr<CTypeStrings> type)
 {
     m_Variants.push_back(SVariantInfo(name, type));
-    if ( m_Variants.back().memberType == eStringMember ) {
-        m_HaveString = true;
-    }
-    else {
-        ++m_UnionVariants;
-    }
 }
 
 CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
@@ -139,6 +135,8 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                                            const string& codeClassName) const
 {
     bool havePointers = false;
+    bool haveSimple = false;
+    bool haveString = false;
     // generate variants code
     {
         iterate ( TVariants, i, m_Variants ) {
@@ -148,9 +146,14 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             else {
                 i->type->GenerateTypeCode(code);
+                if ( i->memberType == eStringMember )
+                    haveString = true;
+                else
+                    haveSimple = true;
             }
         }
     }
+    bool haveUnion = havePointers || haveSimple;
 
     // generated choice enum
     {
@@ -211,7 +214,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         code.Methods() <<
             "void "<<methodPrefix<<"Reset(void)\n"
             "{\n";
-        if ( havePointers || m_HaveString ) {
+        if ( havePointers || haveString ) {
             code.Methods() <<
                 "    switch ( "<<STATE_MEMBER<<" ) {\n";
             // generate destruction code for pointers
@@ -227,7 +230,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                         "        break;\n";
                 }
             }
-            if ( m_HaveString ) {
+            if ( haveString ) {
                 // generate destruction code for string
                 iterate ( TVariants, i, m_Variants ) {
                     if ( i->memberType == eStringMember ) {
@@ -258,7 +261,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    if ( "<<STATE_MEMBER<<" == index )\n"
             "        return;\n"
             "    Reset();\n";
-        if ( m_UnionVariants != 0 ) {
+        if ( haveUnion ) {
             code.Methods() <<
                 "    switch ( index ) {\n";
             iterate ( TVariants, i, m_Variants ) {
@@ -369,7 +372,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     {
         code.ClassPrivate() <<
             "    // variants data\n";
-        if ( m_UnionVariants != 0 ) {
+        if ( haveUnion ) {
             code.ClassPrivate() << "    union {\n";
             iterate ( TVariants, i, m_Variants ) {
                 if ( i->memberType != eStringMember ) {
@@ -380,7 +383,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             code.ClassPrivate() <<
                 "    };\n";
         }
-        if ( m_HaveString ) {
+        if ( haveString ) {
             code.ClassPrivate() <<
                 "    "<<STRING_TYPE<<' '<<STRING_MEMBER<<";\n";
         }

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/02/11 17:09:26  vasilche
+* Removed unneeded flags.
+*
 * Revision 1.1  2000/02/01 21:46:14  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -99,8 +102,6 @@ protected:
 
 private:
     TVariants m_Variants;
-    bool m_HaveString;
-    size_t m_UnionVariants;
 };
 
 class CChoiceRefTypeStrings : public CClassRefTypeStrings
