@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/05/12 21:42:59  lavr
+ * Cleaned up for the C++ compilation, etc.
+ *
  * Revision 6.1  2000/05/12 18:36:26  lavr
  * First working revision
  *
@@ -158,13 +161,11 @@ static int s_Write_HostPort(char *str, unsigned int host, unsigned short port)
                    ntohs(port));
 }
 
-
-static const char *k_FlagTag[] = {
-    "Regular",          /* fSERV_Regular */
-    "Blast"             /* fSERV_Blast   */
+#define N_FLAG_TAGS 2
+static const char *k_FlagTag[N_FLAG_TAGS] = {
+    "Regular",  /* fSERV_Regular */
+    "Blast"     /* fSERV_Blast   */
 };
-
-#define N_FLAG_TAGS     (sizeof(k_FlagTag)/sizeof(k_FlagTag[0]))
 
 
 
@@ -195,7 +196,8 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
         s = str + strlen(str);
         n = sprintf(s, "%s%lu", n ? " " : "", info->time);
         s += n;
-        if (info->flag < N_FLAG_TAGS && k_FlagTag[info->flag])
+        assert(info->flag < N_FLAG_TAGS);
+        if (k_FlagTag[info->flag])
             sprintf(s, " %s", k_FlagTag[info->flag]);
     }
     return str;
@@ -270,15 +272,17 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
                     if (*s) {
                         unsigned short i;
                         
-                        for (i = 0; i < N_FLAG_TAGS; i++)
+                        for (i = 0; i < N_FLAG_TAGS; i++) {
                             if (strcasecmp(s, k_FlagTag[i]) == 0)
                                 break;
+                        }
                         if (i == N_FLAG_TAGS) {
                             /* Flag tag not found - error */
                             free(info);
                             info = 0;
-                        } else
-                            info->flag = i;
+                        } else {
+                            info->flag = (ESERV_Flags)i;
+                        }
                     }
                 }
                 free((char *)str);

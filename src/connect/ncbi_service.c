@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/05/12 21:42:59  lavr
+ * Cleaned up for the C++ compilation, etc.
+ *
  * Revision 6.1  2000/05/12 18:50:20  lavr
  * First working revision
  *
@@ -60,13 +63,13 @@ SERV_ITER SERV_Open(const char* service, TSERV_Type type,
 static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info *info)
 {
     if (iter->n_skip == iter->n_max_skip) {
-        SSERV_Info **temp;
+        SSERV_Info** temp;
         size_t n = iter->n_max_skip + 10;
 
         if (iter->skip)
-            temp = realloc(iter->skip, sizeof(*temp)*n);
+            temp = (SSERV_Info**) realloc(iter->skip, sizeof(*temp) * n);
         else
-            temp = malloc(sizeof(*temp)*n);
+            temp = (SSERV_Info**) malloc(sizeof(*temp) * n);
         if (!temp)
             return 0;
 
@@ -99,7 +102,7 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
 
     for (i = 0; i < n_skip; i++) {
         size_t infolen = SERV_SizeOfInfo(skip[i]);
-        SSERV_Info *info = malloc(infolen);
+        SSERV_Info* info = (SSERV_Info*) malloc(infolen);
 
         if (!info) {
             SERV_Close(iter);
