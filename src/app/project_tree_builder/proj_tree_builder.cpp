@@ -443,6 +443,8 @@ void SMakeProjectT::ConvertLibDependsMacro(const list<string>& depends,
         string lib = GetApp().GetSite().ProcessMacros(id);
         if (!lib.empty()) {
             depends_libs.push_back(lib);
+        } else {
+            depends_libs.push_back(id);
         }
     }
 }
@@ -1496,6 +1498,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/12/20 16:51:09  gouriano
+ * Fixed processing of macros
+ *
  * Revision 1.21  2004/12/20 15:28:07  gouriano
  * Changed diagnostic output. Added processing of macros in dependencies
  *
