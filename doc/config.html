@@ -1238,16 +1238,26 @@ flag <i><b>--with-projects=FILE</b></i>, where <b>FILE</b> contains a
 list of
 <a href="http://www.ciser.cornell.edu/info/regex.html"><i>extended
 regular expressions</i></a> indicating which directories to build in.
+With this option, the <tt>make</tt> target <tt>all_p</tt> will build
+all selected projects under the current directory.  If there is a
+project you want to keep track of but not automatically build, you can
+follow its name with "&nbsp;update-only".  To <b>exclude</b> projects
+that would otherwise match, list them explicitly with an initial
+hyphen.  (Exclusions can also be regular expressions rather than simple
+project names.)
+<p>
 For instance, a file containing the lines <pre>
 corelib$
 util
+serial
+-serial/test
+test update-only
 </pre>
-would request a non-recursive build in corelib and a recursive build
-in util.  With this option, the <tt>make</tt> target <tt>all_p</tt>
-will build all selected projects under the current directory.  If
-there is a project you want to keep track of but not automatically
-build, you can follow its name with "&nbsp;update-only".
-
+would request a non-recursive build in <tt>corelib</tt> and a recursive build
+in <tt>util</tt>, and a recursive build in <tt>serial</tt> that
+skipped <tt>serial/test</tt>.  It would also request keeping the
+<tt>test</tt> project up-to-date (for the benefit of the programs in
+<tt>util/test</tt>).
 <p>
 <b>NOTE:</b> The flags listed <a href="#ref_Optional">above</a> still
 apply; for instance, you still need <i><b>--with-internal</b></i> to
