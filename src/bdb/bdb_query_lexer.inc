@@ -120,7 +120,7 @@ int yylex(YYSTYPE *lvalp, void* param)
     }
 
     // Process name-like tokens
-    if (isalpha(c)) {
+    if (isalnum(c)) {
         const char* tok_start = env->GetBufPtr() - 1;
         do {
             c = env->GetChar();            
@@ -131,21 +131,16 @@ int yylex(YYSTYPE *lvalp, void* param)
         token.append(tok_start, tok_end - tok_start);
 
         *lvalp = LexerMakeTokenNode(env, token);
+
+        // check if token is all digits
+        string::size_type pos = 
+            token.find_first_not_of("0123456789", 0, token.length());
+        return pos = string::npos ? NUM : NAME;
+
         return NAME;
     }
 
 
-    // process numbers   
-    while (isdigit(c)) {
-        token.append(1, c);
-        c = env->GetChar();
-    }
-    if (!token.empty()) {
-        env->UnGetChar();
-        *lvalp = LexerMakeTokenNode(env, token);
-
-        return NUM;
-    }
     /* return end-of-file  */
     if (c == EOF || c == 0)
         return 0;
@@ -157,6 +152,9 @@ int yylex(YYSTYPE *lvalp, void* param)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/18 13:39:31  kuznets
+ * Changed algorithm of identification of numbers in the query
+ *
  * Revision 1.3  2004/02/25 13:42:24  kuznets
  * Improved lexer to recognize AND OR as string tokens,
  * not just '&' '|' characters
