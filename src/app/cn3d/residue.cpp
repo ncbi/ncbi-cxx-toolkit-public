@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/17 11:59:16  thiessen
+* fix nucleotide virtual bonds
+*
 * Revision 1.3  2000/07/17 04:20:50  thiessen
 * now does correct structure alignment transformation
 *
@@ -71,7 +74,7 @@ Residue::Residue(StructureBase *parent,
     const CResidue& residue, int moleculeID,
     const ResidueGraphList& standardDictionary,
     const ResidueGraphList& localDictionary) :
-    StructureBase(parent), code(NO_CODE), alphaID(NO_ALPHA_ID)
+    StructureBase(parent), code(NO_CODE), alphaID(NO_ALPHA_ID), type(eOther)
 {
     // get ID
     id = residue.GetId().Get();
@@ -128,14 +131,15 @@ Residue::Residue(StructureBase *parent,
         return;
     }
 
-    // name of alpha atom to store ID of
+    // set residue type and name of alpha atom to store ID of
     const char *alphaName = NULL;
     if (residueGraph->IsSetResidue_type()) {
-        if (residueGraph->GetResidue_type() == CResidue_graph::eResidue_type_amino_acid)
+        type = static_cast<eType>(residueGraph->GetResidue_type());
+        if (IsAminoAcid()) {
             alphaName = " CA ";
-        else if (residueGraph->GetResidue_type() == CResidue_graph::eResidue_type_amino_acid ||
-                 residueGraph->GetResidue_type() == CResidue_graph::eResidue_type_amino_acid)
+        } else if (IsNucleotide()) {
             alphaName = " P  ";
+        }
     }
 
     // get atom info

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/17 11:58:58  thiessen
+* fix nucleotide virtual bonds
+*
 * Revision 1.3  2000/07/17 04:21:10  thiessen
 * now does correct structure alignment transformation
 *
@@ -83,6 +86,14 @@ public:
     static const int NO_ALPHA_ID;
     int alphaID; // ID of "alpha" atom (C-alpha or P)
 
+    enum eType {
+        eDNA = CResidue_graph::eResidue_type_deoxyribonucleotide,
+        eRNA = CResidue_graph::eResidue_type_ribonucleotide,
+        eAminoAcid = CResidue_graph::eResidue_type_amino_acid,
+        eOther = CResidue_graph::eResidue_type_other
+    };
+    eType type;
+
     typedef struct {
         std::string name, code;
         int atomicNumber;
@@ -95,6 +106,8 @@ public:
     // public methods
     bool HasCode(void) const { return (code != NO_CODE); }
     bool HasName(void) const { return (!name.empty()); }
+    bool IsNucleotide(void) const { return (type == eDNA || type == eRNA); }
+    bool IsAminoAcid(void) const { return (type == eAminoAcid); }
     bool Draw(const StructureBase *data) const;
 
 private:
