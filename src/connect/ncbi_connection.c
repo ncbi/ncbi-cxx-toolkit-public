@@ -90,14 +90,14 @@ typedef struct SConnectionTag {
 
     /* "[c|r|w|l]_timeout" is either 0 (means infinite), CONN_DEFAULT_TIMEOUT
        (to use connector-specific one), or points to "[cc|rr|ww|ll]_timeout" */
-    const STimeout*        c_timeout;  /* timeout on connect                 */
+    const STimeout*        o_timeout;  /* timeout on connect                 */
     const STimeout*        r_timeout;  /* timeout on reading                 */
     const STimeout*        w_timeout;  /* timeout on writing                 */
-    const STimeout*        l_timeout;  /* timeout on close                   */
-    STimeout               cc_timeout; /* storage for "c_timeout"            */
+    const STimeout*        c_timeout;  /* timeout on close                   */
+    STimeout               oo_timeout; /* storage for "o_timeout"            */
     STimeout               rr_timeout; /* storage for "r_timeout"            */
     STimeout               ww_timeout; /* storage for "w_timeout"            */
-    STimeout               ll_timeout; /* storage for "l_timeout"            */
+    STimeout               cc_timeout; /* storage for "c_timeout"            */
 
     SCONN_Callback         callback[CONN_N_CALLBACKS];
 } SConnection;
@@ -117,10 +117,10 @@ extern EIO_Status CONN_Create
 
     if ( conn ) {
         conn->state     = eCONN_Unusable;
-        conn->c_timeout = CONN_DEFAULT_TIMEOUT;
+        conn->o_timeout = CONN_DEFAULT_TIMEOUT;
         conn->r_timeout = CONN_DEFAULT_TIMEOUT;
         conn->w_timeout = CONN_DEFAULT_TIMEOUT;
-        conn->l_timeout = CONN_DEFAULT_TIMEOUT;
+        conn->c_timeout = CONN_DEFAULT_TIMEOUT;
         if ((status = CONN_ReInit(conn, connector)) != eIO_Success) {
             free(conn);
             conn = 0;
@@ -165,10 +165,10 @@ extern EIO_Status CONN_ReInit
             CONN_Flush(conn);
             if ( conn->meta.close ) {
                 status = conn->meta.close(conn->meta.c_close,
-                                          conn->l_timeout ==
+                                          conn->c_timeout ==
                                           CONN_DEFAULT_TIMEOUT
                                           ? conn->meta.default_timeout
-                                          : conn->l_timeout);
+                                          : conn->c_timeout);
                 if (status != eIO_Success) {
                     CONN_LOG(connector ? eLOG_Error : eLOG_Warning,
                              "[CONN_ReInit]  Cannot close current connection");
@@ -223,8 +223,8 @@ static EIO_Status s_Open
     /* call current connector's "OPEN" method */
     status = conn->meta.open
         ? conn->meta.open(conn->meta.c_open,
-                          conn->c_timeout == CONN_DEFAULT_TIMEOUT ?
-                          conn->meta.default_timeout : conn->c_timeout)
+                          conn->o_timeout == CONN_DEFAULT_TIMEOUT ?
+                          conn->meta.default_timeout : conn->o_timeout)
         : eIO_NotSupported;
 
     if (status != eIO_Success) {
@@ -249,18 +249,18 @@ extern EIO_Status CONN_SetTimeout
 
     if (event == eIO_Open) {
         if (new_timeout  &&  new_timeout != CONN_DEFAULT_TIMEOUT) {
-            conn->cc_timeout = *new_timeout;
-            conn->c_timeout  = &conn->cc_timeout;
+            conn->oo_timeout = *new_timeout;
+            conn->o_timeout  = &conn->oo_timeout;
         } else {
-            conn->c_timeout  = new_timeout;
+            conn->o_timeout  = new_timeout;
         }
     }
     else if (event == eIO_Close) {
         if (new_timeout  &&  new_timeout != CONN_DEFAULT_TIMEOUT) {
-            conn->ll_timeout = *new_timeout;
-            conn->l_timeout  = &conn->ll_timeout;
+            conn->cc_timeout = *new_timeout;
+            conn->c_timeout  = &conn->cc_timeout;
         } else {
-            conn->l_timeout  = new_timeout;
+            conn->c_timeout  = new_timeout;
         }
     }
     else if (event == eIO_ReadWrite  ||  event == eIO_Read) {
@@ -297,7 +297,7 @@ extern const STimeout* CONN_GetTimeout
 
     switch (event) {
     case eIO_Open:
-        return conn->c_timeout;
+        return conn->o_timeout;
     case eIO_ReadWrite:
         CONN_LOG_EX(eLOG_Warning,
                     "[CONN_GetTimeout]  ReadWrite timeout requested",
@@ -308,7 +308,7 @@ extern const STimeout* CONN_GetTimeout
     case eIO_Write:
         return conn->w_timeout;
     case eIO_Close:
-        return conn->l_timeout;
+        return conn->c_timeout;
     }
 
     CONN_LOG_EX(eLOG_Error,
@@ -696,6 +696,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2003/05/12 18:33:21  lavr
+ * Names of timeout variables uniformed
+ *
  * Revision 6.30  2003/01/28 15:16:37  lavr
  * Fix "NULL" message not to contain double quotes in call names
  *
