@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/01/15 20:22:32  volodya
+* syntax fix
+*
 * Revision 1.14  1999/01/14 21:25:16  vasilche
 * Changed CPageList to work via form image input elements.
 *
@@ -149,9 +152,10 @@ class CButtonList: public CNCBINode
 public:
     CButtonList(void);
 
-    string m_Name;
-    string m_Select;  // select tag name
+    string m_SubmitName;
+    string m_SelectName;  // select tag name
     map<string, string> m_List;
+    string m_Selected;
 
     virtual void CreateSubNodes(void);
 
