@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2001/07/16 19:45:22  ivanov
+* Changed default value for JS menu lib path in CHTML_html::InitPopupMenus().
+*
 * Revision 1.52  2001/07/16 13:54:42  ivanov
 * Added support JavaScript popups menu (jsmenu.[ch]pp)
 *
@@ -727,7 +730,7 @@ class CHTML_html : public CHTMLElement
     // the passed "head" and "body";  otherwise, an exception will be thrown.
     void InitPopupMenus(CHTML_head&    head, 
                         CHTML_body&    body,
-                        const string&  menu_lib_url = kEmptyStr);
+                        const string&  menu_lib_url = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/menu.js");
 
     // Add popup menu
     // NOTE:  InitPopupMenus() must be called
