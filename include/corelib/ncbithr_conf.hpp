@@ -35,23 +35,11 @@
 
 #include <corelib/ncbistd.hpp>
 
-#undef NCBI_NO_THREADS
-#undef NCBI_POSIX_THREADS
-#undef NCBI_WIN32_THREADS
-
-#if defined(_MT)  &&  !defined(NCBI_WITHOUT_MT)
-#  if defined(NCBI_OS_MSWIN)
-#    define NCBI_WIN32_THREADS
-#    include <corelib/ncbi_os_mswin.hpp>
-#  elif defined(NCBI_OS_UNIX)
-#    define NCBI_POSIX_THREADS
+#if defined(NCBI_WIN32_THREADS)
+#  include <corelib/ncbi_os_mswin.hpp>
+#elif defined(NCBI_POSIX_THREADS)
 #    include <pthread.h>
 #    include <sys/errno.h>
-#  else
-#    define NCBI_NO_THREADS
-#  endif
-#else
-#  define NCBI_NO_THREADS
 #endif
 
 BEGIN_NCBI_SCOPE
@@ -103,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/09/20 14:14:05  vasilche
+ * Fixed inconsistency of NCBI_*_THREADS macros
+ *
  * Revision 1.1  2002/09/19 20:05:41  vasilche
  * Safe initialization of static mutexes
  *

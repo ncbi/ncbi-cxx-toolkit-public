@@ -42,6 +42,23 @@
 
 #include <ncbiconf.h>
 
+// threads configuration
+#undef NCBI_NO_THREADS
+#undef NCBI_POSIX_THREADS
+#undef NCBI_WIN32_THREADS
+
+#if defined(_MT)  &&  !defined(NCBI_WITHOUT_MT)
+#  if defined(NCBI_OS_MSWIN)
+#    define NCBI_WIN32_THREADS
+#  elif defined(NCBI_OS_UNIX)
+#    define NCBI_POSIX_THREADS
+#  else
+#    define NCBI_NO_THREADS
+#  endif
+#else
+#  define NCBI_NO_THREADS
+#endif
+
 
 /* Char, Uchar, Int[1,2,4], Uint[1,2,4]
  */
@@ -124,6 +141,9 @@ typedef BIG_TYPE Ncbi_BigScalar;
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/09/20 14:13:51  vasilche
+ * Fixed inconsistency of NCBI_*_THREADS macros
+ *
  * Revision 1.9  2002/04/11 20:39:20  ivanov
  * CVS log moved to end of the file
  *
