@@ -284,7 +284,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
             total_hits += num_hits;
             num_init_hsps += init_hitlist->total;
             
-            if (score_options->gapped_calculation)
+            if (score_options->gapped_calculation) {
                GetGappedScore(query,
                               subject,
                               gap_align,
@@ -293,7 +293,11 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
                               hit_params,
                               init_hitlist,
                               &hsp_list);
-            
+            } else {
+               BLAST_GetUngappedHSPList(init_hitlist, subject,
+                                        hit_params->options, &hsp_list);
+            }
+
             if (hsp_list->hspcnt == 0)
                continue;
             
@@ -456,8 +460,7 @@ static Int2 BLAST_CalcEffLengths (const Uint1 program_number,
       if (eff_len_options->searchsp_eff) {
          effective_search_space = eff_len_options->searchsp_eff;
       } else {
-         query_length = query_info->context_offsets[index+1] - 
-            query_info->context_offsets[index] - 1;
+         query_length = BLAST_GetQueryLength(query_info, index);
          /* Use the correct Karlin block. For blastn, two identical Karlin
             blocks are allocated for each sequence (one per strand), but we
             only need one of them.

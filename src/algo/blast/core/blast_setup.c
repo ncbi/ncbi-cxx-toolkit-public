@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.24  2003/06/06 17:12:09  dondosha
+* Use BLAST_GetQueryLength function to calculate length of one query within a concatenated set
+*
 * Revision 1.23  2003/06/05 18:33:16  dondosha
 * Compiler warning fixes
 *
@@ -1008,8 +1011,7 @@ Int2 BLAST_MainSetUp(const Uint1 program_number,
         context <= query_info->last_context; ++context) {
       context_offset = query_info->context_offsets[context];
       buffer = &query_blk->sequence[context_offset];
-      query_length = query_info->context_offsets[context+1] 
-         - context_offset - 1;
+      query_length = BLAST_GetQueryLength(query_info, context);
 
       reverse = (is_na && ((context & 1) != 0));
 

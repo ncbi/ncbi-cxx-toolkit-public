@@ -400,8 +400,7 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
       hsp = hsp_array[index];
       context_offset = query_info->context_offsets[hsp->context];
       query = &(query_blk->sequence[context_offset]);
-      query_length =
-         query_info->context_offsets[hsp->context+1] - context_offset - 1;
+      query_length = BLAST_GetQueryLength(query_info, hsp->context);
       
       for (index1=0; index1<index; index1++) {
          hsp_start_is_contained = FALSE;
