@@ -37,8 +37,9 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbithr.hpp>
 #include <objmgr/data_loader.hpp>
+#include <util/thread_pool.hpp>
 #include <vector>
-#include <list>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -48,6 +49,7 @@ class CSeq_id;
 class CSeq_id_Handle;
 class CBioseq_Handle;
 class CPrefetchThread;
+class CDataSource;
 
 class CPrefetchToken_Impl : public CObject
 {
@@ -61,9 +63,9 @@ private:
     friend class CPrefetchToken;
     friend class CPrefetchThread;
 
-    CPrefetchToken_Impl(CScope& scope, const CSeq_id& id);
-    CPrefetchToken_Impl(CScope& scope, const CSeq_id_Handle& id);
-    CPrefetchToken_Impl(CScope& scope, const TIds& ids);
+    CPrefetchToken_Impl(const CSeq_id& id);
+    CPrefetchToken_Impl(const CSeq_id_Handle& id);
+    CPrefetchToken_Impl(const TIds& ids, unsigned int depth);
 
     void x_InitPrefetch(CScope& scope);
 
@@ -80,12 +82,19 @@ private:
     // Called by fetching function when id is loaded
     void AddResolvedId(size_t id_idx, TTSE_Lock tse);
 
-    typedef vector<TTSE_Lock> TFetchedTSEs;
+    // Checked by CPrefetchThread before processing next id
+    bool IsEmpty(void) const;
 
-    int            m_TokenCount;  // Number of tokens referencing this impl
-    TIds           m_Ids;         // requested ids in the original order
-    size_t         m_CurrentId;   // next id to return
-    TFetchedTSEs   m_TSEs;        // loaded TSEs
+    typedef vector<TTSE_Lock>   TFetchedTSEs;
+    typedef map<TTSE_Lock, int> TTSE_Map;
+
+    int            m_TokenCount;    // Number of tokens referencing this impl
+    TIds           m_Ids;           // requested ids in the original order
+    size_t         m_CurrentId;     // next id to return
+    TFetchedTSEs   m_TSEs;          // loaded TSEs
+    TTSE_Map       m_TSEMap;        // Map TSE to number of related IDs
+    int            m_PrefetchDepth; // Max. number of TSEs to prefetch
+    CSemaphore     m_TSESemaphore;  // Signal to fetch next TSE
     mutable CFastMutex m_Lock;
 };
 
@@ -109,12 +118,11 @@ protected:
 
 private:
     // Using list to be able to delete elements
-    typedef list<CRef<CPrefetchToken_Impl> > TPrefetchQueue;
+    typedef CBlockingQueue<CRef<CPrefetchToken_Impl> > TPrefetchQueue;
 
     CDataSource&   m_DataSource;
     TPrefetchQueue m_Queue;
     CFastMutex     m_Lock;
-    CSemaphore     m_Semaphore; // Queue signal
     bool           m_Stop;      // used to stop the thread
 };
 
@@ -125,6 +133,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/04/19 14:52:29  grichenk
+* Added prefetch depth limit, redesigned prefetch queue.
+*
 * Revision 1.1  2004/04/16 13:30:34  grichenk
 * Initial revision
 *

@@ -51,9 +51,13 @@ public:
     typedef CPrefetchToken_Impl::TIds TIds;
 
     CPrefetchToken(void);
+    // Find the first loader in the scope, request prefetching from
+    // this loader. Scope may be destroyed after creating token, but
+    // the scope used in NextBioseqHandle() should contain the same
+    // loader. Depth limits number of TSEs to be prefetched.
     CPrefetchToken(CScope& scope, const CSeq_id& id);
     CPrefetchToken(CScope& scope, const CSeq_id_Handle& id);
-    CPrefetchToken(CScope& scope, const TIds& ids);
+    CPrefetchToken(CScope& scope, const TIds& ids, unsigned int depth = 2);
     ~CPrefetchToken(void);
 
     CPrefetchToken(const CPrefetchToken& token);
@@ -87,27 +91,32 @@ CPrefetchToken::~CPrefetchToken(void)
 
 inline
 CPrefetchToken::CPrefetchToken(CScope& scope, const CSeq_id& id)
-    : m_Impl(new CPrefetchToken_Impl(scope, id))
+    : m_Impl(new CPrefetchToken_Impl(id))
 {
     m_Impl->AddTokenReference();
+    m_Impl->x_InitPrefetch(scope);
     return;
 }
 
 
 inline
 CPrefetchToken::CPrefetchToken(CScope& scope, const CSeq_id_Handle& id)
-    : m_Impl(new CPrefetchToken_Impl(scope, id))
+    : m_Impl(new CPrefetchToken_Impl(id))
 {
     m_Impl->AddTokenReference();
+    m_Impl->x_InitPrefetch(scope);
     return;
 }
 
 
 inline
-CPrefetchToken::CPrefetchToken(CScope& scope, const TIds& ids)
-    : m_Impl(new CPrefetchToken_Impl(scope, ids))
+CPrefetchToken::CPrefetchToken(CScope& scope,
+                               const TIds& ids,
+                               unsigned int depth)
+    : m_Impl(new CPrefetchToken_Impl(ids, depth))
 {
     m_Impl->AddTokenReference();
+    m_Impl->x_InitPrefetch(scope);
     return;
 }
 
@@ -156,6 +165,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/04/19 14:52:29  grichenk
+* Added prefetch depth limit, redesigned prefetch queue.
+*
 * Revision 1.1  2004/04/16 13:30:34  grichenk
 * Initial revision
 *

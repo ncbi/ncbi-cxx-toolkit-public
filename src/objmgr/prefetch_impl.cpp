@@ -42,27 +42,30 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CPrefetchToken_Impl::CPrefetchToken_Impl(CScope& scope, const CSeq_id& id)
-    : m_TokenCount(0)
+// NOTE: Max. value for semaphore must be prefetch depth + 1, because
+// one extra-Post will be called when the token impl. is released.
+
+CPrefetchToken_Impl::CPrefetchToken_Impl(const CSeq_id& id)
+    : m_TokenCount(0),
+      m_TSESemaphore(1, 2)
 {
     m_Ids.push_back(CSeq_id_Handle::GetHandle(id));
-    x_InitPrefetch(scope);
 }
 
 
-CPrefetchToken_Impl::CPrefetchToken_Impl(CScope& scope, const CSeq_id_Handle& id)
-    : m_TokenCount(0)
+CPrefetchToken_Impl::CPrefetchToken_Impl(const CSeq_id_Handle& id)
+    : m_TokenCount(0),
+      m_TSESemaphore(1, 2)
 {
     m_Ids.push_back(id);
-    x_InitPrefetch(scope);
 }
 
 
-CPrefetchToken_Impl::CPrefetchToken_Impl(CScope& scope, const TIds& ids)
-    : m_TokenCount(0)
+CPrefetchToken_Impl::CPrefetchToken_Impl(const TIds& ids, unsigned int depth)
+    : m_TokenCount(0),
+      m_TSESemaphore(depth, max(depth+1, depth))
 {
     m_Ids = ids;
-    x_InitPrefetch(scope);
 }
 
 
@@ -87,11 +90,23 @@ void CPrefetchToken_Impl::x_InitPrefetch(CScope& scope)
 void CPrefetchToken_Impl::AddResolvedId(size_t id_idx, TTSE_Lock tse)
 {
     CFastMutexGuard guard(m_Lock);
-    if (m_Ids.size() == 0  ||  id_idx < m_CurrentId) {
+    if (m_Ids.empty()  ||  id_idx < m_CurrentId) {
         // Token has been cleaned or id already passed, do not lock the TSE
         return;
     }
     m_TSEs[id_idx] = tse;
+    int count = ++m_TSEMap[tse];
+    if (count > 1) {
+        // One more ID found in a prefetched TSE
+        m_TSESemaphore.Post();
+    }
+}
+
+
+bool CPrefetchToken_Impl::IsEmpty(void) const
+{
+    CFastMutexGuard guard(m_Lock);
+    return m_Ids.empty();
 }
 
 
@@ -115,6 +130,14 @@ CBioseq_Handle CPrefetchToken_Impl::NextBioseqHandle(CScope& scope)
         tse = m_TSEs[m_CurrentId];
         m_TSEs[m_CurrentId].Reset();
         ++m_CurrentId;
+        if ( tse ) {
+            TTSE_Map::iterator it = m_TSEMap.find(tse);
+            if ( --(it->second) < 1 ) {
+                m_TSEMap.erase(it);
+                // Signal that next TSE or next token may be prefetched
+                m_TSESemaphore.Post();
+            }
+        }
     }}
     return scope.GetBioseqHandle(id);
 }
@@ -134,13 +157,14 @@ void CPrefetchToken_Impl::RemoveTokenReference(void)
         m_Ids.clear();
         m_TSEs.clear();
         m_CurrentId = 0;
+        // Allow the thread to process next token
+        m_TSESemaphore.Post();
     }
 }
 
 
 CPrefetchThread::CPrefetchThread(CDataSource& data_source)
     : m_DataSource(data_source),
-      m_Semaphore(0, 100),
       m_Stop(false)
 {
     return;
@@ -157,9 +181,8 @@ void CPrefetchThread::AddRequest(CPrefetchToken_Impl& token)
 {
     {{
         CFastMutexGuard guard(m_Lock);
-        m_Queue.push_back(Ref(&token));
+        m_Queue.Put(Ref(&token));
     }}
-    m_Semaphore.Post();
 }
 
 
@@ -167,29 +190,29 @@ void CPrefetchThread::Terminate(void)
 {
     {{
         CFastMutexGuard guard(m_Lock);
-        m_Queue.clear();
         m_Stop = true;
     }}
-    m_Semaphore.Post();
+    // Unlock the thread
+    m_Queue.Put(CRef<CPrefetchToken_Impl>(0));
 }
 
 
 void* CPrefetchThread::Main(void)
 {
     do {
-        CRef<CPrefetchToken_Impl> token;
-        m_Semaphore.Wait();
+        CRef<CPrefetchToken_Impl> token = m_Queue.Get();
         {{
             CFastMutexGuard guard(m_Lock);
             if (m_Stop) {
                 return 0;
             }
-            if ( m_Queue.empty() ) {
+            _ASSERT( token );
+            if ( token->IsEmpty() ) {
+                // Token may have been canceled
                 continue;
             }
-            token = *m_Queue.begin();
-            m_Queue.erase(m_Queue.begin());
         }}
+        bool release_token = false;
         for (size_t i = 0; ; ++i) {
             {{
                 CFastMutexGuard guard(m_Lock);
@@ -198,13 +221,17 @@ void* CPrefetchThread::Main(void)
                 }
             }}
             CSeq_id_Handle id;
+            token->m_TSESemaphore.Wait();
             {{
                 // m_Ids may be cleaned up by the token, check size
                 // on every iteration.
                 CFastMutexGuard guard(token->m_Lock);
                 if (i >= token->m_Ids.size()) {
+                    // Can not release token now - mutex is still locked
+                    release_token = true;
                     break;
                 }
+                i = max(i, token->m_CurrentId);
                 id = token->m_Ids[i];
             }}
             CSeqMatch_Info info = m_DataSource.BestResolve(id);
@@ -214,6 +241,9 @@ void* CPrefetchThread::Main(void)
                     token->AddResolvedId(i, tse);
                 }
             }
+        }
+        if (release_token) {
+            token.Reset();
         }
     } while (true);
     return 0;
@@ -226,6 +256,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/04/19 14:52:29  grichenk
+* Added prefetch depth limit, redesigned prefetch queue.
+*
 * Revision 1.1  2004/04/16 13:30:34  grichenk
 * Initial revision
 *
