@@ -301,7 +301,7 @@ string CNetCacheClient::ServerVersion()
         !m_ClientName.empty() ? m_ClientName.c_str() : "noname";
 
     request = client;
-    request.append("\r\nVERSION");    
+    request.append("\r\nVERSION");
 
     WriteStr(request.c_str(), request.length() + 1);
     s_WaitForServer(*m_Sock);
@@ -360,6 +360,8 @@ void CNetCacheClient::Remove(const string& key)
     request.append("\r\nREMOVE ");    
     request += key;
     WriteStr(request.c_str(), request.length() + 1);
+
+    m_Sock->Close();
 }
 
 
@@ -416,35 +418,47 @@ CNetCacheClient::GetData(const string&  key,
 {
     _ASSERT(buf && buf_size);
 
+    size_t x_blob_size = 0;
+    size_t x_read = 0;
+
     try {
-    auto_ptr<IReader> reader(GetData(key, blob_size));
-    if (reader.get() == 0)
-        return CNetCacheClient::eNotFound;
 
-    size_t buf_avail = buf_size;
-    unsigned char* buf_ptr = (unsigned char*) buf;
+        auto_ptr<IReader> reader(GetData(key, &x_blob_size));
+        if (blob_size)
+            *blob_size = x_blob_size;
 
-    if (n_read)
-        *n_read = 0;
-
-    while (buf_avail) {
-        size_t bytes_read;
-        ERW_Result rw_res = reader->Read(buf_ptr, buf_avail, &bytes_read);
-        switch (rw_res) {
-        case eRW_Success:
-            if (n_read)
-                *n_read += bytes_read;
-            buf_avail -= bytes_read;
-            buf_ptr   += bytes_read;
-            break;
-        case eRW_Eof:
-            return CNetCacheClient::eReadComplete;
-        case eRW_Timeout:
-            break;
-        default:
+        if (reader.get() == 0)
             return CNetCacheClient::eNotFound;
-        } // switch
-    } // while
+
+        size_t buf_avail = buf_size;
+        unsigned char* buf_ptr = (unsigned char*) buf;
+
+        if (n_read)
+            *n_read = 0;
+
+        while (buf_avail) {
+            size_t bytes_read;
+            ERW_Result rw_res = reader->Read(buf_ptr, buf_avail, &bytes_read);
+            switch (rw_res) {
+            case eRW_Success:
+                x_read += bytes_read;
+                if (n_read)
+                    *n_read += bytes_read;
+                buf_avail -= bytes_read;
+                buf_ptr   += bytes_read;
+                break;
+            case eRW_Eof:
+                if (x_read == 0)
+                    CNetCacheClient::eNotFound;
+                if (n_read)
+                    *n_read = x_read;
+                return CNetCacheClient::eReadComplete;
+            case eRW_Timeout:
+                break;
+            default:
+                return CNetCacheClient::eNotFound;
+            } // switch
+        } // while
 
     } 
     catch (CNetCacheException& ex)
@@ -454,6 +468,12 @@ CNetCacheClient::GetData(const string&  key,
             return CNetCacheClient::eNotFound;
         }
         throw;
+    }
+
+    m_Sock->Close();
+
+    if (x_read == x_blob_size) {
+        return CNetCacheClient::eReadComplete;
     }
 
     return CNetCacheClient::eReadPart;
@@ -533,6 +553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/11/09 20:04:47  kuznets
+ * Fixed logical errors in GetData
+ *
  * Revision 1.19  2004/11/09 19:07:30  kuznets
  * Return not found code in GetData instead of exception
  *
