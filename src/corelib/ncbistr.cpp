@@ -536,29 +536,6 @@ const void* NStr::StringToPtr(const string& str)
     void *ptr = NULL;
     ::sscanf(str.c_str(), "%p", &ptr);
     return ptr;
-
-#if 0
-    // special case: 'PtrToString() encodes '0' as '(nil)'
-    if (str == "(nil)") {
-        return reinterpret_cast<const void*> (NULL);
-    }
-    // look for an address marker
-    if (str.find("0x") != 0) {
-        NCBI_THROW2(CStringException, eConvert,
-                    "String cannot be converted", 0);
-    }
-    string s = str.substr(2, str.length()-2);
-
-    // Added check for size of pointer 
-#if SIZEOF_VOIDP == 4
-    return reinterpret_cast<const void*> (NStr::StringToULong(s, 16));
-#elif SIZEOF_VOIDP == 8
-    return reinterpret_cast<const void*> (NStr::StringToUInt8(s, 16));
-#else
-# error "NStr::StringToPtr():  SIZEOF_VOIDP is neither 4 nor 8"
-   _ASSERT(0); 
-#endif
-#endif
 }
 
 
@@ -1037,6 +1014,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2003/03/20 13:27:52  dicuccio
+ * Oops.  Removed old code wrapped in #if 0...#endif.
+ *
  * Revision 1.88  2003/03/20 13:27:11  dicuccio
  * Changed NStr::StringToPtr() - now symmetric with NSrt::PtrToString (there were
  * too many special cases).
