@@ -50,20 +50,21 @@ a set of post flags</li>
 </ul>
 Limiting each instance of <i>CNcbiDiag</i> to the storage and handling
 of a single message ensures that multiple threads writing to the same stream
-will not have interleaving message texts.&nbsp;<a NAME="severity"></a>
-<h3>
-Severity levels</h3>
+will not have interleaving message texts.
+
+<a NAME="severity"></a>
+<h3>Severity levels</h3>
 Each <i>CNcbiDiag</i> instance has its own (<i><a href="../lxr/ident?i=EDiagSev">EDiagSev</a></i>)
 severity level, which is compared to a global severity threshold to determine
 whether or not its message should be posted. Six levels of severity are
 defined by the <i>EDiagSev</i> enumeration:
 <pre>enum EDiagSev {
-&nbsp;&nbsp;&nbsp; eDiag_Info = 0,
-&nbsp;&nbsp;&nbsp; eDiag_Warning,
-&nbsp;&nbsp;&nbsp; eDiag_Error,
-&nbsp;&nbsp;&nbsp; eDiag_Critical,
-&nbsp;&nbsp;&nbsp; eDiag_Fatal,&nbsp;&nbsp; // guarantees to exit(or abort)
-&nbsp;&nbsp;&nbsp; eDiag_Trace
+    eDiag_Info = 0,
+    eDiag_Warning,
+    eDiag_Error,
+    eDiag_Critical,
+    eDiag_Fatal,   // guarantees to exit(or abort)
+    eDiag_Trace
 };</pre>
 The default is to post only those messages whose severity level exceeds
 the
@@ -84,14 +85,15 @@ file.
 <p><a NAME="sevman"></a>The <i>CNcbiDiag</i> class also has class-specific
 <i>manipulators</i> to control the message severity level. These can be
 invoked as in the following examples on diagnostic stream <i>diag</i>:
-<pre>&nbsp;&nbsp;&nbsp; diag &lt;&lt; Info;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // set severity level to eDiag_Info
-&nbsp;&nbsp;&nbsp; diag &lt;&lt; Warning;&nbsp;&nbsp;&nbsp; // set severity level to <i>eDiag_Warning
-</i>&nbsp;&nbsp;&nbsp; diag &lt;&lt; Error;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // set severity level to <i>eDiag_Error</i> [default]
-&nbsp;&nbsp;&nbsp; diag &lt;&lt; Fatal;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // set severity level to <i>eDiag_Fatal
-</i>&nbsp;&nbsp;&nbsp; diag &lt;&lt; Trace;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // set severity level to <i>eDiag_Trace</i></pre>
+<pre>
+    diag &lt;&lt; Info;       // set severity level to <i>eDiag_Info</i>
+    diag &lt;&lt; Warning;    // set severity level to <i>eDiag_Warning</i>
+    diag &lt;&lt; Error;      // set severity level to <i>eDiag_Error</i> [default]
+    diag &lt;&lt; Fatal;      // set severity level to <i>eDiag_Fatal</i>
+    diag &lt;&lt; Trace;      // set severity level to <i>eDiag_Trace</i></pre>
+
 <a NAME="PostFlags"></a>
-<h3>
-Post Flags</h3>
+<h3>Post Flags</h3>
 The post flags define additional information that will appear along with
 the message body. The standard format of a message is:
 <center><pre>&nbsp;
@@ -101,27 +103,34 @@ where the <i>file, line, severity</i> and <i>prefix</i> fields are displayed
 <a href="../lxr/ident?i=EDiagPostFlag">EDiagPostFlag
 </a>associated with the <i>CNcbiDiag</i>:
 <pre>enum EDiagPostFlag {
-&nbsp;&nbsp;&nbsp; eDPF_File&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x1,&nbsp; // set by default #if _DEBUG;&nbsp; else -- not set
-&nbsp;&nbsp;&nbsp; eDPF_LongFilename = 0x2,&nbsp; // set by default #if _DEBUG;&nbsp; else -- not set
-&nbsp;&nbsp;&nbsp; eDPF_Line&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x4,&nbsp; // set by default #if _DEBUG;&nbsp; else -- not set
-&nbsp;&nbsp;&nbsp; eDPF_Prefix&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x8,&nbsp; // set by default (always)
-&nbsp;&nbsp;&nbsp; eDPF_Severity&nbsp;&nbsp;&nbsp;&nbsp; = 0x10, // set by default (always)
+    eDPF_File         = 0x1,  // set by default #if _DEBUG;  else -- not set
+    eDPF_LongFilename = 0x2,  // set by default #if _DEBUG;  else -- not set
+    eDPF_Line         = 0x4,  // set by default #if _DEBUG;  else -- not set
+    eDPF_Prefix       = 0x8,  // set by default (always)
+    eDPF_Severity     = 0x10, // set by default (always)
+    eDPF_ErrCode      = 0x20, // set by default (always)
+    eDPF_ErrSubCode   = 0x40, // set by default (always)
+    eDPF_DateTime     = 0x80,
+    eDPF_OmitInfoSev  = 0x4000,// no severity indication if eDiag_Info is sev.
 
-&nbsp;&nbsp;&nbsp; // set all flags
-&nbsp;&nbsp;&nbsp; eDPF_All&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x7FFF,
-&nbsp;&nbsp;&nbsp; // set all flags for using with __FILE__ and __LINE__
-&nbsp;&nbsp;&nbsp; eDPF_Trace&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x1f,
-&nbsp;&nbsp;&nbsp; // ignore all other flags, use global flags
-&nbsp;&nbsp;&nbsp; eDPF_Default&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = 0x8000
+    // set all flags
+    eDPF_All          = 0x3FFF,
+    // set all flags for using with __FILE__ and __LINE__
+    eDPF_Trace        = 0x1F,
+    // print the posted message only;  without severity, location, prefix, etc.
+    eDPF_Log          = 0x0,
+    // ignore all other flags, use global flags
+    eDPF_Default      = 0x8000
 };</pre>
 The default message format displays only the severity level and the message
 body. This can be overridden inside the constructor for a specific instance
 of <i>CNcbiDiag</i>, or globally, using <i><a href="../lxr/ident?i=SetDiagPostFlag">SetDiagPostFlag</a>(EDiagPostFlag
-flag)</i> on a selected flag.&nbsp;<a NAME="setStream"></a>
-<h3>
-Defining the output stream</h3>
+flag)</i> on a selected flag.
+
+<a NAME="setStream"></a>
+<h3>Defining the output stream</h3>
 All <i>CNcbiDiag</i> objects are associated with a single globally defined
-callback, which often writes the messages to an output stream. The default
+object, which often writes the messages to an output stream. The default
 is to post messages to <i>cerr</i>, but the stream destination can be reset
 at any time using:
 <center>
@@ -139,12 +148,15 @@ actually completes.
 <p>And, of course, you can
 <a href="#callback">provide</a> (using
 <a href="../lxr/ident?i=SetDiagHandler">SetDiagHandler</a>)
-your own message posting callback
-<a href="../lxr/ident?i=FDiagHandler">FDiagHandler</a>,
+your own message posting handler
+<a href="../lxr/ident?i=CDiagHandler">CDiagHandler</a>,
 which does not necessarily write the messages to a standard C++ output
-stream.&nbsp;<a NAME="buffering"></a>
-<h3>
-The message buffer</h3>
+stream.  (To preserve compatibility with old code, SetDiagHandler also
+continues to accept raw callback functions of type
+<a href="../lxr/ident?i=FDiagHandler">FDiagHandler</a>.)
+
+<a NAME="buffering"></a>
+<h3>The message buffer</h3>
 The <i>CNcbiDiag</i> message buffer is initialized when the class is first
 instantiated. Additional information can then be appended to the message
 using the overloaded stream operator
@@ -170,22 +182,31 @@ and passes the message (along with its severity level) as the function
 arguments. The default callback function posts errors to the currently
 designated output stream, with the action (continue or abort) determined
 by the severity level of the message.
-<p><a NAME="callback"></a>
-<h3>
-FDiagHandler functions</h3>
-The user can install his own callback function (of type <i>FDiagHandler</i>)
-using
+<p>
+
+<a NAME="callback"></a>
+<h3>Custom handlers: CDiagHandler</h3>
+The user can install his own handler (of type
+<i><a href="../lxr/ident?i=CDiagHandler">CDiagHandler</a></i>,) using
 <i><a href="../lxr/ident?i=SetDiagHandler">SetDiagHandler()</a></i>.
-The signature of the callback function is given by the typedef:
-<center><pre>typedef void (*FDiagHandler)(const SDiagMessage&amp; mess);</pre></center>
+CDiagHandler is a simple abstract class:
+<pre>
+class CDiagHandler
+{
+public:
+    virtual ~CDiagHandler(void) {}
+    virtual void Post(const SDiagMessage&amp; mess) = 0;
+};
+</pre>
 where <i><a href="../lxr/ident?i=SDiagMessage">SDiagMessage</a></i>
 is a simple struct defined in <i>ncbidiag.hpp</i> whose data members' values
 are obtained from the <i>CNcbiDiag</i> object. The transfer of data values
-occurs at the time that the callback is invoked. See also the discussion
-in the Reference Manual on <i><a href="../libs/err_msg.html#ref_Message">Message
-posting</a></i> for a more technical discussion.&nbsp;<a NAME="errpost"></a>
-<h3>
-The ERR_POST macro</h3>
+occurs at the time that <i>Post</i> is invoked. See also the section of
+the Reference Manual on <i><a href="../libs/err_msg.html#ref_Message">Message
+posting</a></i> for a more technical discussion.
+
+<a NAME="errpost"></a>
+<h3>The ERR_POST macro</h3>
 An <i>ERR_POST(message)</i> macro is also available for routine error posting.
 This macro implicitly creates a temporary <i>CNcbiDiag</i> object and puts
 the passed "message" into it with a default severity of <i>eDiag_Error</i>.
@@ -194,15 +215,15 @@ to modify the message's severity level. For example:
 <pre>long lll = 345;
 ERR_POST("My ERR_POST message, print long: " &lt;&lt; lll);</pre>
 would write to the diagnostic stream something like:
-<pre>"somefile.cpp", line 111: Error:&nbsp; My ERR_POST message, print long: 345</pre>
+<pre>"somefile.cpp", line 111: Error:  My ERR_POST message, print long: 345</pre>
 while:
 <pre>double ddd = 123.345;
 ERR_POST(Warning &lt;&lt; "...print double: " &lt;&lt; ddd);</pre>
 would write to the diagnostic stream something like:
-<pre>"somefile.cpp", line 222: Warning:&nbsp; ...print double: 123.345</pre>
+<pre>"somefile.cpp", line 222: Warning:  ...print double: 123.345</pre>
+
 <a NAME="trace"></a>
-<h3>
-The _TRACE macro</h3>
+<h3>The _TRACE macro</h3>
 The <i>_TRACE(message)</i> macro is a debugging tool that allows the user
 to insert trace statements that will only be posted if the code was <a href="../libs/err_msg.html#ref_Assert">compiled
 in <i>debug mode</i> </a>, and provided that the tracing has been turned
@@ -212,22 +233,23 @@ the initial state of tracing is <b><i>on</i></b>. By default, if no such
 variable or registry entry is defined, tracing is
 <b><i>off</i></b>. <i><a href="../lxr/ident?i=SetDiagTrace">SetDiagTrace</a>
 (EDiagTrace enable, EDiagTrace default)</i> is used to turn tracing on/off.
-<p>&nbsp;Just like <i>ERR_POST</i>, the <i>_TRACE</i> macro takes a message,
+<p> Just like <i>ERR_POST</i>, the <i>_TRACE</i> macro takes a message,
 and the message will be posted only if tracing has been enabled. For example:
-<pre>&nbsp;&nbsp;&nbsp; SetDiagTrace(eDT_Disable);
-&nbsp;&nbsp;&nbsp; _TRACE("Testing the _TRACE macro");
-&nbsp;&nbsp;&nbsp; SetDiagTrace(eDT_Enable);
-&nbsp;&nbsp;&nbsp; _TRACE("Testing the _TRACE macro AGAIN");</pre>
+<pre>
+    SetDiagTrace(eDT_Disable);
+    _TRACE("Testing the _TRACE macro");
+    SetDiagTrace(eDT_Enable);
+    _TRACE("Testing the _TRACE macro AGAIN");</pre>
 Here, only the second trace message will be posted, as tracing is disabled
-when the first <i>_TRACE()</i> macro call is executed.&nbsp;<a NAME="example"></a>
-<h4>
-Example usage of the <i>CNcbiDiag</i> class</h4>
+when the first <i>_TRACE()</i> macro call is executed. <a NAME="example"></a>
+<h4>Example usage of the <i>CNcbiDiag</i> class</h4>
 <i><b>NOTE:</b> Normally, one should use ERR_POST() and _TRACE() macro
 to post messages, and regulate the severity level by using
 <a href="#sevman">severity
 level manipulators</a>, like:</i>
-<pre><i>&nbsp;&nbsp; ERR_POST(Info &lt;&lt; "A notice" &lt;&lt; "Fooo");
-&nbsp;&nbsp; ERR_POST(Critical &lt;&lt; "Some critical error");</i></pre>
+<pre><i>
+   ERR_POST(Info &lt;&lt; "A notice" &lt;&lt; "Fooo");
+   ERR_POST(Critical &lt;&lt; "Some critical error");</i></pre>
 Examples in <i><a href="diag_cpp.html">diag.cpp</a></i> demonstrate the
 features described above. <i>CTestApp::Run()</i> begins by testing the
 <i>ERR_POST</i> and <i>_TRACE</i> macros. Initially, tracing is enabled
@@ -257,10 +279,9 @@ exits.
 "diag.cpp", line 42: Warning: This is a test message
 "diag.cpp", line 43: Error: This is a test message
 Installed Handler "diag.cpp", line 45: Critical: This is a test message</pre>
-<a href="registry.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp; 
-<i><a href="../index.html">up&nbsp;</a></i>&nbsp;&nbsp;
-
-<i><a href="exceptions.html">next&nbsp;</a></i>
+<i><a href="registry.html">previous</a></i>
+<i><a href="../index.html">up</a></i>  
+<i><a href="exceptions.html">next</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
 <tr>

@@ -287,54 +287,96 @@ int  f3(long)  throw(e1,e2); </pre>
 	 needed. The trick is that each instance of the <b><i>CNcbiDiag</i></b> class
 	 actually stores (and allows to append to) only one message at a
 	 time. When the message controlled by an instance of <b><i>CNcbiDiag</i></b>
-	 is complete, <b><i>CNcbiDiag</i></b> calls a global callback function
-	 (of type <b><i>FDiagHandler</i></b>) and pass the message (along with its
-	 severity level) as the function arguments.
+	 is complete, <b><i>CNcbiDiag</i></b> invokes the
+	 <b><i>Post()</i></b> method of a global handler object
+	 (of type <b><i>CDiagHandler</i></b>) and pass the message (along with its
+	 severity level) as the method's argument.
 
 	 <p>
-	 Usually, this global callback would merely dump the message to
+	 Usually, this global object would merely dump the message to
 	 a diagnostic stream, and there is an auxiliary function
 	 <b><i>SetDiagStream()</i></b> to specify output stream for the diagnostics
 	 (one can call <b><i>SetDiagStream(&amp;NcbiCerr)</i></b> to dump the diagnostics
     to the standard error output stream):
 	 <pre>
-extern void SetDiagStream(CNcbiOstream* os, bool quick_flush=true); </pre>
+extern void SetDiagStream
+(CNcbiOstream* os,
+ bool          quick_flush  = true,// do stream flush after every message
+ FDiagCleanup  cleanup      = 0,   // call "cleanup(cleanup_data)" if diag.
+ void*         cleanup_data = 0    // stream is changed (see SetDiagHandler)
+ );
+</pre>
 
-	 Using <b><i>SetDiagHandler()</i></b>, one can install his own callback function
-	 of type <b><i>FDiagHandler</i></b> to process messages posted via
-	 <b><i>CNcbiDiag</i></b>.
-	 The implementation of the <b><i>SetDiagStream()</i></b> in <i>"ncbidiag.cpp"</i>
+	 Using <b><i>SetDiagHandler()</i></b>, one can install his own
+	 handler object of type <b><i>CDiagHandler</i></b> to process
+	 messages posted via <b><i>CNcbiDiag</i></b>.
+	 The implementation of the <b><i>CStreamDiagHandler</i></b> in <i>"ncbidiag.cpp"</i>
 	 is a good example of how to do this.
 	 <pre>
+class CDiagHandler
+{
+public:
+    virtual ~CDiagHandler(void) {}
+    virtual void Post(const SDiagMessage& mess) = 0;
+};
+
+extern void          SetDiagHandler(CDiagHandler* handler,
+                                    bool can_delete = true);
+extern CDiagHandler* GetDiagHandler(bool take_ownership = false);
+</pre>
+
+	 where:
+	 <pre>
+struct SDiagMessage {
+    SDiagMessage(EDiagSev severity, const char* buf, size_t len,
+                 const char* file = 0, size_t line = 0,
+                 TDiagPostFlags flags = eDPF_Default, const char* prefix = 0,
+                 int err_code = 0, int err_subcode = 0);
+
+    EDiagSev       m_Severity;
+    const char*    m_Buffer;  // not guaranteed to be '\0'-terminated!
+    size_t         m_BufferLen;
+    const char*    m_File;
+    size_t         m_Line;
+    int            m_ErrCode;
+    int            m_ErrSubCode;
+    TDiagPostFlags m_Flags;   // bitwise OR of "EDiagPostFlag"
+    const char*    m_Prefix;
+};
+	 </pre>
+
+	 Installing a new handler typically destroys the previous handler,
+	 which can be a problem if you need to keep the old handler around
+	 for some reason.  There are two ways to address this issue:
+     <ul>
+	   <li> Declare an object of class <b><i>CDiagRestorer</i></b> at
+	   the top of the block of code in which you will be using your
+	   new handler.  This will protect the old handler from
+	   destruction, and automatically restore it -- along with any
+	   other diagnostic settings -- when the block exits in any
+	   fashion.  As such, you can safely use the result of calling
+	   <b><i>GetDiagHandler()</i></b> at the beginning of the block
+	   even if you have changed the handler within the block.</li>
+
+	   <li> Call <b><i>GetDiagHandler(true)</i></b> and then destroy
+	   the old handler yourself when done with it.  This works in some
+	   circumstances in which <b><i>CDiagRestorer</i></b> is
+	   unsuitable, but places much more responsibility on your code.</li>
+     </ul>
+	 
+	 <p>
+     For compatibility with older code, the diagnostic system also
+     supports specifying simple callbacks:
+<pre>
 typedef void (*FDiagHandler)(const SDiagMessage& mess);
 
 typedef void (*FDiagCleanup)(void* data);
 
 extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
-                           FDiagCleanup cleanup); </pre>
-
-	 where:
-	 <pre>
-struct SDiagMessage {
-    SDiagMessage(EDiagSev severity, const char* buf, size_t len, void* data,
-                 const char* file = 0, size_t line = 0,
-                 unsigned int flags = eDPF_Default, const char* prefix = 0);
-    EDiagSev     m_Severity;
-    const char*  m_Buffer;  // not guaranteed to be '\0'-terminated!
-    size_t       m_BufferLen;
-    void*        m_Data;
-    const char*  m_File;
-    size_t       m_Line;
-    unsigned int m_Flags;   // bitwise OR of "EDiagPostFlag"
-    const char*  m_Prefix;
-
-    // allocate("new") and compose a message string in the "standard" format:
-    //    "<file>", line <line>: <severity>: [<prefix>] <message>
-    // NOTE:  it is user's responsibility to "delete" the returned string
-    char* Compose(void) const;
-};
-	 </pre>
+                           FDiagCleanup cleanup);
+</pre>
+     However, it is better to use the object-based interface for new code.
 
 	 <p></p>
 	 <a name="ref_Manipulators"><h4>Formatting and manipulators</h4></a>
