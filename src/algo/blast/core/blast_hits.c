@@ -317,21 +317,40 @@ BlastHSPGetNumIdentical(Uint1* query, Uint1* subject,
 
 /** Comparison callback function for sorting HSPs by e-value */
 static int
-evalue_compare_hsps(const void* v1, const void* v2)
+score_compare_hsps(const void* v1, const void* v2)
 {
    BlastHSP* h1,* h2;
    
    h1 = *((BlastHSP**) v1);
    h2 = *((BlastHSP**) v2);
 
-   if (h1->evalue < h2->evalue)
-      return -1;
-   else if (h1->evalue > h2->evalue)
-      return 1;
+   /* No need to check e-values, because for the same subject sequence e-value
+      is always inverse proportional to score. However e-values are less 
+      sensitive, since they both can be 0, when scores are large but 
+      different. */
    if (h1->score > h2->score)
       return -1;
    else if (h1->score < h2->score)
       return 1;
+   /* Tie-breakers: decreasing subject offsets; decreasing subject ends, 
+      decreasing query offsets, decreasing query ends */
+   else if (h1->subject.offset > h2->subject.offset)
+      return -1;
+   else if (h1->subject.offset < h2->subject.offset)
+      return 1;
+   else if (h1->subject.end > h2->subject.end)
+      return -1;
+   else if (h1->subject.end < h2->subject.end)
+      return 1;
+   else if (h1->query.offset > h2->query.offset)
+      return -1;
+   else if (h1->query.offset < h2->query.offset)
+      return 1;
+   else if (h1->query.end > h2->query.end)
+      return -1;
+   else if (h1->query.end < h2->query.end)
+      return 1;
+
    return 0;
 }
 
@@ -1013,7 +1032,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
    /* Sort the HSPs by e-value */
    if (hsp_list->hspcnt > 1) {
       qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
-               evalue_compare_hsps);
+               score_compare_hsps);
    }
 
    /* *******************************************************************
