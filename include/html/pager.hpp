@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/25 20:02:58  golikov
+* "Show:" trasfered to pager
+*
 * Revision 1.4  1999/04/14 17:28:54  vasilche
 * Added parsing of CGI parameters from IMAGE input tag like "cmd.x=1&cmd.y=2"
 * As a result special parameter is added with empty name: "=cmd"
@@ -87,8 +90,10 @@ public:
     static int GetPageSize(CCgiRequest& request, int defaultPageSize = 10);
     static int GetDisplayPage(CCgiRequest& request);
 
-    // name of hidden value holding page size
+    // name of hidden value holding selected page size
     static const string KParam_PageSize;
+    // name of hidden value holding shown page size
+    static const string KParam_ShownPageSize;
     // name of hidden value holding current page number
     static const string KParam_DisplayPage;
     // name of image button for previous block of pages

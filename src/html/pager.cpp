@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/06/25 20:02:38  golikov
+* "Show:" trasfered to pager
+*
 * Revision 1.16  1999/06/11 20:30:30  vasilche
 * We should catch exception by reference, because catching by value
 * doesn't preserve comment string.
@@ -93,6 +96,7 @@
 BEGIN_NCBI_SCOPE
 
 const string CPager::KParam_PageSize = "dispmax";
+const string CPager::KParam_ShownPageSize = "showndispmax";
 const string CPager::KParam_DisplayPage = "page";
 const string CPager::KParam_Page = "page ";
 const string CPager::KParam_PreviousPages = "previous pages";
@@ -105,63 +109,59 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
       m_PageBlockSize(max(1, pageBlockSize)),
       m_PageChanged(false)
 {
-    TCgiEntries& entries = const_cast<TCgiEntries&>(request.GetEntries());
+    const TCgiEntries& entries = request.GetEntries();
 
-    // look in preprocessed IMAGE values with empty string key
-    TCgiEntriesI i = entries.find(NcbiEmptyString);
-    if ( i != entries.end() ) {
-        if ( i->second == KParam_PreviousPages ) {
-            // previous pages
-            // round to previous page block
-            m_PageChanged = true;
-            int page = GetDisplayPage(request);
-            m_DisplayPage = page - page % m_PageBlockSize - 1;
-        }
-        else if ( i->second == KParam_NextPages ) {
-            // next pages
-            // round to next page block
-            m_PageChanged = true;
-            int page = GetDisplayPage(request);
-            m_DisplayPage = page - page % m_PageBlockSize + m_PageBlockSize;
-        }
-        else if ( NStr::StartsWith(i->second, KParam_Page) ) {
-            // look for params like: "page 2"
-            string page = i->second.substr(KParam_Page.size());
-            try {
-                m_DisplayPage = NStr::StringToInt(page) - 1;
+    if( IsPagerCommand(request) ) {
+        // look in preprocessed IMAGE values with empty string key
+        TCgiEntriesCI i = entries.find(NcbiEmptyString);
+        if ( i != entries.end() ) {
+            if ( i->second == KParam_PreviousPages ) {
+                // previous pages
+                // round to previous page block
                 m_PageChanged = true;
-            } catch (exception& e) {
-                _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
-                        << e.what() );
-                // ignore exception right now
-                m_PageChanged = false;
+                int page = GetDisplayPage(request);
+                m_DisplayPage = page - page % m_PageBlockSize - 1;
+            }
+            else if ( i->second == KParam_NextPages ) {
+                // next pages
+                // round to next page block
+                m_PageChanged = true;
+                int page = GetDisplayPage(request);
+                m_DisplayPage = page - page % m_PageBlockSize + m_PageBlockSize;
+            }
+            else if ( NStr::StartsWith(i->second, KParam_Page) ) {
+                // look for params like: "page 2"
+                string page = i->second.substr(KParam_Page.size());
+                try {
+                    m_DisplayPage = NStr::StringToInt(page) - 1;
+                    m_PageChanged = true;
+                } catch (exception& e) {
+                    _TRACE( "Exception in CPager::CPager: " << e.what() );
+                    // ignore exception right now
+                    m_PageChanged = false;
+                }
             }
         }
-        else {
+    }
+    else {
+        try {
+            m_PageChanged = true;
+            int page = GetDisplayPage(request);
+            TCgiEntriesCI oldPageSize = entries.find(KParam_ShownPageSize);
+            if( !page || oldPageSize == entries.end() )
+                throw runtime_error("Error getting page params");
+            //number of the first element in old pagination
+            int oldFirstItem = page * NStr::StringToInt( oldPageSize->second );
+            m_DisplayPage = oldFirstItem / m_PageSize;
+        } catch(exception& e) {
+            _TRACE( "Exception in CPager::CPager: " << e.what() );
+            m_DisplayPage = 0;
             m_PageChanged = false;
         }
+         
     }
-    if ( !m_PageChanged ) {
-        TCgiEntriesI page = entries.find(KParam_DisplayPage);
-        if ( page != entries.end() ) {
-            try {
-                m_DisplayPage = NStr::StringToInt(page->second);
-            } catch (exception& e) {
-                _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
-                        << e.what() );
-                m_DisplayPage = 0;
-            }
-        }
-        else {
-            m_DisplayPage = 0;
-        }
-    }
-
-    if ( m_DisplayPage < 0 ) {
-        _TRACE( "Negative page start in CQSearchCommand::GetDisplayRange: "
-                << m_DisplayPage );
-        m_DisplayPage = 0;
-    }
+    if( !m_PageChanged )
+            m_DisplayPage = GetDisplayPage(request);
 
     m_PageBlockStart = m_DisplayPage - m_DisplayPage % m_PageBlockSize;
 }
@@ -188,7 +188,7 @@ bool CPager::IsPagerCommand(const CCgiRequest& request)
                 NStr::StringToInt(page);
                 return true;
             } catch (exception& e) {
-                _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
+                _TRACE( "Exception in CPager::IsPagerCommand: "
                         << e.what() );
                 // ignore exception right now
             }
@@ -208,10 +208,9 @@ int CPager::GetDisplayPage(CCgiRequest& request)
             int displayPage = NStr::StringToInt(entry->second);
             if ( displayPage >= 0 )
                 return displayPage;
-
-            _TRACE( "Negative page start in CQSearchCommand::GetDisplayRange: " << displayPage );
+            _TRACE( "Negative page start in CPager::GetDisplayPage: " << displayPage );
         } catch (exception& e) {
-            _TRACE( "Exception in CQSearchCommand::GetPageSize " << e.what() );
+            _TRACE( "Exception in CPager::GetDisplayPage " << e.what() );
         }
     }
 
@@ -221,16 +220,26 @@ int CPager::GetDisplayPage(CCgiRequest& request)
 
 int CPager::GetPageSize(CCgiRequest& request, int defaultPageSize)
 {
-    const TCgiEntries& entries = request.GetEntries();
-    TCgiEntriesCI entry = entries.find(KParam_PageSize);
+    TCgiEntries& entries = const_cast<TCgiEntries&>(request.GetEntries());
+    TCgiEntriesCI entry;
+    
+    if( IsPagerCommand(request) ) {
+        entry = entries.find(KParam_ShownPageSize);
+    } else {
+        entry = entries.find(KParam_PageSize);
+    }
     if ( entry != entries.end() ) {
         try {
             int pageSize = NStr::StringToInt(entry->second);
-            if ( pageSize > 0 )
+            if( pageSize > 0 ) {
+                //replace dispmax for current page size
+                TCgiEntriesI x = entries.find(KParam_PageSize);
+                x->second = entry->second;
                 return pageSize;
-            _TRACE( "Nonpositive page size in CQSearchCommand::GetDisplayRange: " << pageSize );
+            }	
+            _TRACE( "Nonpositive page size in CPager::GetPageSize: " << pageSize );
         } catch (exception& e) {
-            _TRACE( "Exception in CQSearchCommand::GetPageSize " << e.what() );
+            _TRACE( "Exception in CPager::GetPageSize " << e.what() );
         }
     }
     // use default page size
@@ -253,7 +262,7 @@ pair<int, int> CPager::GetRange(void) const
 
 void CPager::CreateSubNodes(void)
 {
-    AppendChild(new CHTML_hidden(KParam_PageSize, m_PageSize));
+    AppendChild(new CHTML_hidden(KParam_ShownPageSize, m_PageSize));
     AppendChild(new CHTML_hidden(KParam_DisplayPage, m_DisplayPage));
 }
 
