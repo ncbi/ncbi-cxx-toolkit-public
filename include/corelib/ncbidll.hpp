@@ -312,9 +312,16 @@ public:
     template<class TClass>
     void Try(const TClass& candidates)
     {
+        typename TClass::const_iterator it = candidates.begin();
+        typename TClass::const_iterator it_end = candidates.end();
+        for (; it != it_end; ++it) {
+            TryCandidate(*it);
+        }
+/*        
         ITERATE(TClass, it, candidates) {
             TryCandidate(*it);
         }
+*/        
     }
 
     /// Try to resolve all files matching the specified masks in the
@@ -365,6 +372,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/11/06 13:22:36  kuznets
+ * Fixed minor compilation bug
+ *
  * Revision 1.12  2003/11/06 12:59:15  kuznets
  * Added new class CDllResolver
  * (searches for DLLs with the specified entry point)
