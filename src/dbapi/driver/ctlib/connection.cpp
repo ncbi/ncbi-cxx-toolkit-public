@@ -427,6 +427,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
                     continue;
                 }
                 if (ret_code != CS_END_DATA) {
+		    ct_cmd_drop(cmd);
                     throw CDB_ClientEx(eDB_Fatal, 110036,
                                        "CTL_Connection::SendData",
                                        "ct_fetch failed");
@@ -434,6 +435,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
                 break;
             }
             case CS_CMD_FAIL:
+		ct_cmd_drop(cmd);
                 throw CDB_ClientEx(eDB_Error, 110037,
                                    "CTL_Connection::SendData",
                                    "command failed");
@@ -443,6 +445,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
             continue;
         }
         case CS_END_RESULTS: {
+	    ct_cmd_drop(cmd);
             return true;
         }
         default: {
@@ -591,6 +594,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/02/01 21:49:37  soussov
+ * ct_cmd_drop for the CTL_Connection::SendData added
+ *
  * Revision 1.6  2001/11/06 17:59:55  lavr
  * Formatted uniformly as the rest of the library
  *
