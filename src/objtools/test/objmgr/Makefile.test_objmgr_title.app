@@ -12,5 +12,5 @@ APP = test_objmgr_title
 SRC = test_objmgr_title
 LIB = $(OBJMGR_LIBS)
 
-LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

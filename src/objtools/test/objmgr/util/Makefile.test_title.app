@@ -12,5 +12,5 @@ APP = test_title
 SRC = test_title
 LIB = xobjutil $(OBJMGR_LIBS)
 
-LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

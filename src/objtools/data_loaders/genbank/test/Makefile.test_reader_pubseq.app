@@ -13,4 +13,4 @@ SRC = test_reader_pubseq
 
 LIB = $(GENBANK_READER_PUBSEQOS_LIBS)
 
-LIBS = $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)

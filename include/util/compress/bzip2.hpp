@@ -35,7 +35,7 @@
  */
 
 #include <util/compress/stream.hpp>
-#include <util/compress/bzip2/bzlib.h>
+#include <bzlib.h>
 
 
 /** @addtogroup Compression
@@ -324,6 +324,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/04/05 15:54:12  ucko
+ * Default to using external versions of zlib, bzlib, and libpcre if available.
+ *
  * Revision 1.5  2003/07/15 15:45:45  ivanov
  * Improved error diagnostics
  *

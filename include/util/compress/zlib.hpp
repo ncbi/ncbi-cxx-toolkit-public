@@ -35,8 +35,18 @@
  */
 
 #include <util/compress/stream.hpp>
-#include <util/compress/zlib/zlib.h>
-#include <util/compress/zlib/zutil.h>
+#include <zlib.h>
+#ifdef USE_LOCAL_ZLIB
+#  include <util/compress/zlib/zutil.h>
+#endif
+
+#ifndef DEF_MEM_LEVEL
+#  if MAX_MEM_LEVEL >= 8
+#    define DEF_MEM_LEVEL 8
+#  else
+#    define DEF_MEM_LEVEL  MAX_MEM_LEVEL
+#  endif
+#endif
 
 
 /** @addtogroup Compression
@@ -321,6 +331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/04/05 15:54:12  ucko
+ * Default to using external versions of zlib, bzlib, and libpcre if available.
+ *
  * Revision 1.5  2003/07/15 15:45:45  ivanov
  * Improved error diagnostics
  *

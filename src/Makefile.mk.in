@@ -234,6 +234,27 @@ RESOLVER_LIBS = @RESOLVER_LIBS@
 # --with-local-lbsm:  --->  src/connect/Makefile.[x]connect.lib
 LOCAL_LBSM = @local_lbsm@
 
+# Compression libraries; the LIBS version goes in LIBS, and the LIB
+# version goes in LIB.
+Z_INCLUDE   = @Z_INCLUDE@
+Z_LIBS      = @Z_LIBS@
+Z_LIB       = @Z_LIB@
+BZ2_INCLUDE = @BZ2_INCLUDE@
+BZ2_LIBS    = @BZ2_LIBS@
+BZ2_LIB     = @BZ2_LIB@
+
+CMPRS_INCLUDE = $(Z_INCLUDE) $(BZ2_INCLUDE)
+CMPRS_LIBS    = $(Z_LIBS) $(BZ2_LIBS)
+CMPRS_LIB     = $(Z_LIB) $(BZ2_LIB)
+
+# Perl-Compatible Regular Expressions
+# For historical reasons, the bundled (LIB) version contains the POSIX
+# wrapper and goes by the name "regexp".
+PCRE_INCLUDE   = @PCRE_INCLUDE@
+PCRE_LIBS      = @PCRE_LIBS@
+PCREPOSIX_LIBS = @PCREPOSIX_LIBS@
+PCRE_LIB       = @PCRE_LIB@
+
 # Sybase:  headers and libs
 SYBASE_INCLUDE = @SYBASE_INCLUDE@
 SYBASE_LIBS    = @SYBASE_LIBS@
@@ -355,7 +376,7 @@ IMAGE_LIBS    = $(JPEG_LIBS) $(PNG_LIBS) $(TIFF_LIBS) $(GIF_LIBS) $(XPM_LIBS)
 #################################
 # Useful sets of object libraries
 # Interdependent sequence libraries + seqcode.  Does not include seqset.
-COMPRESS_LDEP = z bz2
+COMPRESS_LDEP = $(CMPRS_LIB)
 COMPRESS_LIBS = xcompress $(COMPRESS_LDEP)
 
 GENBANK_LDEP = \

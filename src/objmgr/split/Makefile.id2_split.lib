@@ -14,4 +14,6 @@ SRC = 	blob_splitter blob_splitter_params split_blob \
 	id_range object_splitinfo asn_sizer annot_piece chunk_info size
 LIB = id2_split
 
+CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE)
+
 DLL_LIB = $(SOBJMGR_LIBS)

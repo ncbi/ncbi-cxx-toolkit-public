@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL AMQ CXXCPP EGREP FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL AMQ CXXCPP EGREP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -891,6 +891,12 @@ Optional Packages:
  --with-included-sss     use the in-tree copy of SSS (experimental)
  --without-geo           do not use NCBI GEO libraries
  --without-pubmed        do not use NCBI PubMed libraries
+ --with-z=DIR            use zlib installation in DIR
+ --without-z             use internal copy of zlib
+ --with-bz2=DIR          use bzlib installation in DIR
+ --without-bz2           use internal copy of bzlib
+ --with-pcre=DIR         use PCRE installation in DIR
+ --without-pcre          use internal copy of PCRE
  --without-sybase        do not use SYBASE libraries
  --with-sybase-local=DIR use local SYBASE install (DIR is optional)
  --with-sybase-new       use newer SYBASE install (12.5 rather than 12.0)
@@ -1634,6 +1640,42 @@ fi;
 
 ## Third-party and system packages
 
+# Check whether --with-z or --without-z was given.
+if test "${with_z+set}" = set; then
+  withval="$with_z"
+
+fi;
+
+# Check whether --with-z2 or --without-z2 was given.
+if test "${with_z2+set}" = set; then
+  withval="$with_z2"
+
+fi;
+
+# Check whether --with-bz2 or --without-bz2 was given.
+if test "${with_bz2+set}" = set; then
+  withval="$with_bz2"
+
+fi;
+
+# Check whether --with-bz2b or --without-bz2b was given.
+if test "${with_bz2b+set}" = set; then
+  withval="$with_bz2b"
+
+fi;
+
+# Check whether --with-pcre or --without-pcre was given.
+if test "${with_pcre+set}" = set; then
+  withval="$with_pcre"
+
+fi;
+
+# Check whether --with-pcre2 or --without-pcre2 was given.
+if test "${with_pcre2+set}" = set; then
+  withval="$with_pcre2"
+
+fi;
+
 # Check whether --with-sybase or --without-sybase was given.
 if test "${with_sybase+set}" = set; then
   withval="$with_sybase"
@@ -1981,7 +2023,7 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe strip version lfs \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo sp pubmed \
-sybase sybase-local sybase-new ftds mysql orbacus \
+z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
 fltk opengl mesa glut bdb odbc sqlite \
 expat sablot oechem gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
@@ -2018,6 +2060,7 @@ echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* \
       | [A-Z]*=* \
+      | --with-z=* | --with-bz2=* | --with-pcre=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite=* | --with-expat=* | --with-sablot=* | --with-oechem=* \
@@ -14480,6 +14523,312 @@ fi
 
 
 
+### Third-party libraries
+if test "$with_z" != "no"; then
+    case "$with_z" in
+       yes | "" ) ;;
+       *        ) Z_PATH=$with_z ;;
+    esac
+    if test -d "$Z_PATH"; then
+       in_path=" in $Z_PATH"
+       test -d "$Z_PATH/include" && Z_INCLUDE="-I$Z_PATH/include"
+       if test -d "$Z_PATH/lib${bit64_sfx}"; then
+          Z_LIBPATH="-L$Z_PATH/lib${bit64_sfx} ${CONF_f_runpath}$Z_PATH/lib${bit64_sfx}"
+       fi
+       Z_LIBS="$Z_LIBPATH -lz "
+    else
+       Z_INCLUDE=""
+       Z_LIBS="-lz "
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libz$in_path" >&5
+echo $ECHO_N "checking for libz$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_z+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$Z_INCLUDE $orig_CPPFLAGS"
+       LIBS="$Z_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <zlib.h>
+int
+main ()
+{
+gzFile fp; char buf[1024]; int n = gzread(fp, buf, sizeof(buf))
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_z=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_z=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_z" >&5
+echo "${ECHO_T}$ncbi_cv_lib_z" >&6
+    if test "$ncbi_cv_lib_z" = "no"; then
+       with_z="no"
+    fi
+ fi
+ if test "$with_z" = "no"; then
+    Z_PATH="No_Z"
+    Z_INCLUDE=
+    Z_LIBS=
+    WithoutPackages="$WithoutPackages Z"
+ else
+    WithPackages="$WithPackages Z"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBZ 1
+_ACEOF
+
+ fi
+
+
+
+if test -z "$Z_LIBS"; then
+   zlocal=util/compress/zlib
+   { echo "$as_me:$LINENO: using local copy in $zlocal" >&5
+echo "$as_me: using local copy in $zlocal" >&6;}
+   Z_PATH="<$zlocal>"
+   Z_INCLUDE="-I\$(includedir)/$zlocal -I\$(includedir0)/$zlocal"
+   # Z_LIBS="-lz"
+   Z_LIB="z"
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_LOCAL_ZLIB 1
+_ACEOF
+
+   WithPackages="$WithPackages Z LocalZ"
+fi
+
+if test "$with_bz2" != "no"; then
+    case "$with_bz2" in
+       yes | "" ) ;;
+       *        ) BZ2_PATH=$with_bz2 ;;
+    esac
+    if test -d "$BZ2_PATH"; then
+       in_path=" in $BZ2_PATH"
+       test -d "$BZ2_PATH/include" && BZ2_INCLUDE="-I$BZ2_PATH/include"
+       if test -d "$BZ2_PATH/lib${bit64_sfx}"; then
+          BZ2_LIBPATH="-L$BZ2_PATH/lib${bit64_sfx} ${CONF_f_runpath}$BZ2_PATH/lib${bit64_sfx}"
+       fi
+       BZ2_LIBS="$BZ2_LIBPATH -lbz2 "
+    else
+       BZ2_INCLUDE=""
+       BZ2_LIBS="-lbz2 "
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libbz2$in_path" >&5
+echo $ECHO_N "checking for libbz2$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_bz2+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$BZ2_INCLUDE $orig_CPPFLAGS"
+       LIBS="$BZ2_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <bzlib.h>
+int
+main ()
+{
+BZFILE* fp; char buf[1024]; int err;
+        int n = BZ2_bzRead(&err, fp, buf, sizeof(buf))
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_bz2=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_bz2=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_bz2" >&5
+echo "${ECHO_T}$ncbi_cv_lib_bz2" >&6
+    if test "$ncbi_cv_lib_bz2" = "no"; then
+       with_bz2="no"
+    fi
+ fi
+ if test "$with_bz2" = "no"; then
+    BZ2_PATH="No_BZ2"
+    BZ2_INCLUDE=
+    BZ2_LIBS=
+    WithoutPackages="$WithoutPackages BZ2"
+ else
+    WithPackages="$WithPackages BZ2"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBBZ2 1
+_ACEOF
+
+ fi
+
+
+
+if test -z "$BZ2_LIBS"; then
+   bzlocal=util/compress/bzlib
+   { echo "$as_me:$LINENO: using local copy in $bzlocal" >&5
+echo "$as_me: using local copy in $bzlocal" >&6;}
+   BZ2_PATH="<$bzlocal>"
+   BZ2_INCLUDE="-I\$(includedir)/$bzlocal -I\$(includedir0)/$bzlocal"
+   # BZ2_LIBS="-lbz2"
+   BZ2_LIB="bz"
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_LOCAL_BZLIB 1
+_ACEOF
+
+   WithPackages="$WithPackages BZ2 LocalBZ2"
+fi
+
+if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
+    p=`pcre-config --prefix`
+    test "x$p" = "x/usr"  ||  PCRE_PATH=$p
+fi
+if test "$with_pcre" != "no"; then
+    case "$with_pcre" in
+       yes | "" ) ;;
+       *        ) PCRE_PATH=$with_pcre ;;
+    esac
+    if test -d "$PCRE_PATH"; then
+       in_path=" in $PCRE_PATH"
+       test -d "$PCRE_PATH/include" && PCRE_INCLUDE="-I$PCRE_PATH/include"
+       if test -d "$PCRE_PATH/lib${bit64_sfx}"; then
+          PCRE_LIBPATH="-L$PCRE_PATH/lib${bit64_sfx} ${CONF_f_runpath}$PCRE_PATH/lib${bit64_sfx}"
+       fi
+       PCRE_LIBS="$PCRE_LIBPATH -lpcre "
+    else
+       PCRE_INCLUDE=""
+       PCRE_LIBS="-lpcre "
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libpcre$in_path" >&5
+echo $ECHO_N "checking for libpcre$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_pcre+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$PCRE_INCLUDE $orig_CPPFLAGS"
+       LIBS="$PCRE_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <pcre.h>
+int
+main ()
+{
+const char*s[]={"x"}; pcre* p; pcre_extra* x = pcre_study(p, 1, s);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_pcre=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_pcre=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_pcre" >&5
+echo "${ECHO_T}$ncbi_cv_lib_pcre" >&6
+    if test "$ncbi_cv_lib_pcre" = "no"; then
+       with_pcre="no"
+    fi
+ fi
+ if test "$with_pcre" = "no"; then
+    PCRE_PATH="No_PCRE"
+    PCRE_INCLUDE=
+    PCRE_LIBS=
+    WithoutPackages="$WithoutPackages PCRE"
+ else
+    WithPackages="$WithPackages PCRE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBPCRE 1
+_ACEOF
+
+ fi
+
+
+
+if test -z "$PCRE_LIBS"; then
+   pcrelocal=util/regexp
+   { echo "$as_me:$LINENO: using local copy in $pcrelocal" >&5
+echo "$as_me: using local copy in $pcrelocal" >&6;}
+   PCRE_PATH="<$pcrelocal>"
+   PCRE_INCLUDE="-I\$(includedir)/$pcrelocal -I\$(includedir0)/$pcrelocal"
+   # PCRE_LIBS="-lregexp"
+   # PCREPOSIX_LIBS="-lregexp"
+   PCRE_LIB="regexp"
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_LOCAL_PCRE 1
+_ACEOF
+
+   WithPackages="$WithPackages PCRE LocalPCRE"
+else
+   PCREPOSIX_LIBS=`echo "$PCRE_LIBS" | sed -e 's/-lpcre/-lpcreposix -lpcre/'`
+fi
+
 ## SYBASE libraries
 
 NETWORK_PURE_LIBS="$NETWORK_LIBS"
@@ -18422,10 +18771,10 @@ if test "$with_png" != "no"; then
        if test -d "$PNG_PATH/lib${bit64_sfx}"; then
           PNG_LIBPATH="-L$PNG_PATH/lib${bit64_sfx} ${CONF_f_runpath}$PNG_PATH/lib${bit64_sfx}"
        fi
-       PNG_LIBS="$PNG_LIBPATH -lpng -lz"
+       PNG_LIBS="$PNG_LIBPATH -lpng $Z_LIBS"
     else
        PNG_INCLUDE=""
-       PNG_LIBS="-lpng -lz"
+       PNG_LIBS="-lpng $Z_LIBS"
        in_path=
     fi
     echo "$as_me:$LINENO: checking for libpng$in_path" >&5
@@ -18509,10 +18858,10 @@ if test "$with_tiff" != "no"; then
        if test -d "$TIFF_PATH/lib${bit64_sfx}"; then
           TIFF_LIBPATH="-L$TIFF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$TIFF_PATH/lib${bit64_sfx}"
        fi
-       TIFF_LIBS="$TIFF_LIBPATH -ltiff -lz"
+       TIFF_LIBS="$TIFF_LIBPATH -ltiff $Z_LIBS"
     else
        TIFF_INCLUDE=""
-       TIFF_LIBS="-ltiff -lz"
+       TIFF_LIBS="-ltiff $Z_LIBS"
        in_path=
     fi
     echo "$as_me:$LINENO: checking for libtiff$in_path" >&5
@@ -19452,6 +19801,10 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
+
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -20157,6 +20510,12 @@ s,@TAIL@,$TAIL,;t t
 s,@AMQ@,$AMQ,;t t
 s,@CXXCPP@,$CXXCPP,;t t
 s,@EGREP@,$EGREP,;t t
+s,@Z_INCLUDE@,$Z_INCLUDE,;t t
+s,@Z_LIBS@,$Z_LIBS,;t t
+s,@BZ2_INCLUDE@,$BZ2_INCLUDE,;t t
+s,@BZ2_LIBS@,$BZ2_LIBS,;t t
+s,@PCRE_INCLUDE@,$PCRE_INCLUDE,;t t
+s,@PCRE_LIBS@,$PCRE_LIBS,;t t
 s,@FTDS8_INCLUDE@,$FTDS8_INCLUDE,;t t
 s,@FTDS8_LIBS@,$FTDS8_LIBS,;t t
 s,@FTDS8_LIB@,$FTDS8_LIB,;t t
@@ -20256,6 +20615,10 @@ s,@CRYPT_LIBS@,$CRYPT_LIBS,;t t
 s,@DL_LIBS@,$DL_LIBS,;t t
 s,@RT_LIBS@,$RT_LIBS,;t t
 s,@ICONV_LIBS@,$ICONV_LIBS,;t t
+s,@Z_LIB@,$Z_LIB,;t t
+s,@BZ2_LIB@,$BZ2_LIB,;t t
+s,@PCREPOSIX_LIBS@,$PCREPOSIX_LIBS,;t t
+s,@PCRE_LIB@,$PCRE_LIB,;t t
 s,@SYBASE_PATH@,$SYBASE_PATH,;t t
 s,@SYBASE_INCLUDE@,$SYBASE_INCLUDE,;t t
 s,@SYBASE_LIBS@,$SYBASE_LIBS,;t t
@@ -20859,6 +21222,11 @@ rm -f "$status_dir"/*.enabled
 for p in $WithPackages $WithProjects $WithFeatures ; do
    touch "$status_dir"/$p.enabled
 done
+
+# test -f "$status_dir"/LocalZ.enabled  ||  \
+#    touch -t 197001010000 $status_dir/.z.dep
+# test -f "$status_dir"/LocalBZ2.enabled  ||  \
+#    touch -t 197001010000 $status_dir/.bz2.dep
 
 ncbicfg="$builddir/corelib/ncbicfg.c"
 if test -f "$ncbicfg.last" && cmp -s "$ncbicfg.last" "$ncbicfg"; then

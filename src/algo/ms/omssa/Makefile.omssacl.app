@@ -6,7 +6,7 @@
 
 NCBI_C_LIBS =  -lncbitool -lncbiobj -lncbi
 
-LIBS =  $(ORIG_LIBS) $(NCBI_C_LIBPATH) $(NCBI_C_LIBS)
+LIBS = $(PCRE_LIBS) $(NCBI_C_LIBPATH) $(NCBI_C_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 
@@ -14,7 +14,7 @@ APP = omssacl
 
 SRC = omssacl
 
-LIB = xomssa omssa xser xutil xncbi xregexp regexp
+LIB = xomssa omssa xser xregexp $(PCRE_LIB) xutil xncbi
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)

@@ -39,7 +39,7 @@
 /// For more details see PCRE documentation: http://www.pcre.org/pcre.txt
 
 #include <corelib/ncbistd.hpp>
-#include <util/regexp/pcre.h>
+#include <pcre.h>
 
 
 /** @addtogroup Regexp
@@ -564,6 +564,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/04/05 15:54:12  ucko
+ * Default to using external versions of zlib, bzlib, and libpcre if available.
+ *
  * Revision 1.8  2004/03/12 13:57:13  dicuccio
  * Renamed NCBI_REGEXP_EXPORT -> NXBI_XREGEXP_EXPORT to match library name
  *

@@ -12,4 +12,4 @@ APP = test_relloc
 SRC = test_relloc
 LIB = xobjutil $(OBJMGR_LIBS)
 
-LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

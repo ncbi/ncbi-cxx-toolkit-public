@@ -8,7 +8,7 @@ ASN_DEP     = omssa
 
 NCBI_C_LIBS =  -lncbitool -lncbiobj -lncbi -lncbimmdb
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(PCRE_INCLUDE) $(NCBI_C_INCLUDE)
 
 SRC = SpectrumSet msladder msms mspeak nrutil omssa Mod
 

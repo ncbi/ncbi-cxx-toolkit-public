@@ -3,3 +3,5 @@
 SRC = regexp
 
 LIB = xregexp
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(PCRE_INCLUDE)

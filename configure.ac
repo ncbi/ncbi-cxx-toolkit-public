@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.283 2004/04/01 21:34:27 ucko Exp $
+#  $Id: configure.ac,v 1.284 2004/04/05 15:54:12 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -146,6 +146,18 @@ AC_ARG_WITH(pubmed,
    [ --without-pubmed        do not use NCBI PubMed libraries])
 
 ## Third-party and system packages
+AC_ARG_WITH(z,
+   [ --with-z=DIR            use zlib installation in DIR])
+AC_ARG_WITH(z2,
+   [ --without-z             use internal copy of zlib])
+AC_ARG_WITH(bz2,
+   [ --with-bz2=DIR          use bzlib installation in DIR])
+AC_ARG_WITH(bz2b,
+   [ --without-bz2           use internal copy of bzlib])
+AC_ARG_WITH(pcre,
+   [ --with-pcre=DIR         use PCRE installation in DIR])
+AC_ARG_WITH(pcre2,
+   [ --without-pcre          use internal copy of PCRE])
 AC_ARG_WITH(sybase,
    [ --without-sybase        do not use SYBASE libraries])
 AC_ARG_WITH(sybase-local,
@@ -270,7 +282,7 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe strip version lfs \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo sp pubmed \
-sybase sybase-local sybase-new ftds mysql orbacus \
+z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
 fltk opengl mesa glut bdb odbc sqlite \
 expat sablot oechem gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
@@ -307,6 +319,7 @@ for x_arg in "$@" ; do
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* \
       | [[A-Z]*=*] \
+      | --with-z=* | --with-bz2=* | --with-pcre=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite=* | --with-expat=* | --with-sablot=* | --with-oechem=* \
@@ -2180,6 +2193,57 @@ NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
 NCBI_CHECK_LIBS(ICONV, iconv, iconv)
 
 
+### Third-party libraries
+NCBI_CHECK_THIRD_PARTY_LIB(z,
+ [[AC_LANG_PROGRAM([#include <zlib.h>],
+      [[gzFile fp; char buf[1024]; int n = gzread(fp, buf, sizeof(buf))]])]])
+if test -z "$Z_LIBS"; then
+   zlocal=util/compress/zlib
+   AC_MSG_NOTICE([using local copy in $zlocal])
+   Z_PATH="<$zlocal>"
+   Z_INCLUDE="-I\$(includedir)/$zlocal -I\$(includedir0)/$zlocal"
+   # Z_LIBS="-lz"
+   Z_LIB="z"
+   AC_DEFINE(USE_LOCAL_ZLIB, 1, [Define to 1 if using a local copy of zlib.])
+   WithPackages="$WithPackages Z LocalZ"
+fi
+
+NCBI_CHECK_THIRD_PARTY_LIB(bz2,
+ [[AC_LANG_PROGRAM([#include <bzlib.h>],
+      [[BZFILE* fp; char buf[1024]; int err;
+        int n = BZ2_bzRead(&err, fp, buf, sizeof(buf))]])]])
+if test -z "$BZ2_LIBS"; then
+   bzlocal=util/compress/bzlib
+   AC_MSG_NOTICE([using local copy in $bzlocal])
+   BZ2_PATH="<$bzlocal>"
+   BZ2_INCLUDE="-I\$(includedir)/$bzlocal -I\$(includedir0)/$bzlocal"
+   # BZ2_LIBS="-lbz2"
+   BZ2_LIB="bz"
+   AC_DEFINE(USE_LOCAL_BZLIB, 1, [Define to 1 if using a local copy of bzlib.])
+   WithPackages="$WithPackages BZ2 LocalBZ2"
+fi
+
+if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
+    p=`pcre-config --prefix`
+    test "x$p" = "x/usr"  ||  PCRE_PATH=$p
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(pcre,
+ [[AC_LANG_PROGRAM([#include <pcre.h>],
+   [[const char*s[]={"x"}; pcre* p; pcre_extra* x = pcre_study(p, 1, s);]])]])
+if test -z "$PCRE_LIBS"; then
+   pcrelocal=util/regexp
+   AC_MSG_NOTICE([using local copy in $pcrelocal])
+   PCRE_PATH="<$pcrelocal>"
+   PCRE_INCLUDE="-I\$(includedir)/$pcrelocal -I\$(includedir0)/$pcrelocal"
+   # PCRE_LIBS="-lregexp"
+   # PCREPOSIX_LIBS="-lregexp"
+   PCRE_LIB="regexp"
+   AC_DEFINE(USE_LOCAL_PCRE, 1, [Define to 1 if using a local copy of PCRE.])
+   WithPackages="$WithPackages PCRE LocalPCRE"
+else
+   PCREPOSIX_LIBS=`echo "$PCRE_LIBS" | sed -e 's/-lpcre/-lpcreposix -lpcre/'`
+fi
+
 ## SYBASE libraries
 
 NETWORK_PURE_LIBS="$NETWORK_LIBS"
@@ -3277,12 +3341,12 @@ NCBI_CHECK_THIRD_PARTY_LIB(png,
  AC_LANG_PROGRAM([#include <png.h>],
     [png_structp png_ptr
       = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
- ]), -lz)
+ ]), $Z_LIBS)
 
 : ${TIFF_PATH=/usr/sfw}
 NCBI_CHECK_THIRD_PARTY_LIB(tiff,
  AC_LANG_PROGRAM([#include <tiffio.h>],
-    [TIFF* tiff = TIFFOpen("foo", "r");]), -lz)
+    [TIFF* tiff = TIFFOpen("foo", "r");]), $Z_LIBS)
 ## etc.
 
 # Paths?
@@ -3795,6 +3859,10 @@ AC_SUBST(CRYPT_LIBS)
 AC_SUBST(DL_LIBS)
 AC_SUBST(RT_LIBS)
 AC_SUBST(ICONV_LIBS)
+AC_SUBST(Z_LIB)
+AC_SUBST(BZ2_LIB)
+AC_SUBST(PCREPOSIX_LIBS)
+AC_SUBST(PCRE_LIB)
 AC_SUBST(SYBASE_PATH)
 AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)
@@ -3916,6 +3984,13 @@ rm -f "$status_dir"/*.enabled
 for p in $WithPackages $WithProjects $WithFeatures ; do
    touch "$status_dir"/$p.enabled
 done
+
+dnl Create dummy .dep files for system installations of (b)zlib.
+dnl This is a stopgap measure, and fails for installations in non-system dirs.
+# test -f "$status_dir"/LocalZ.enabled  ||  \
+#    touch -t 197001010000 $status_dir/.z.dep
+# test -f "$status_dir"/LocalBZ2.enabled  ||  \
+#    touch -t 197001010000 $status_dir/.bz2.dep
 
 dnl Avoid gratuitous relinking
 ncbicfg="$builddir/corelib/ncbicfg.c"

@@ -75,6 +75,9 @@
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #undef HAVE_IOS_REGISTER_CALLBACK
 
+/* Define to 1 if libbz2 is available. */
+#undef HAVE_LIBBZ2
+
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBCRYPT
@@ -117,6 +120,9 @@
 
 /* Define to 1 if you have libOSMesa. */
 #undef HAVE_LIBOSMESA
+
+/* Define to 1 if libpcre is available. */
+#undef HAVE_LIBPCRE
 
 /* Define to 1 if libpng is available. */
 #undef HAVE_LIBPNG
@@ -161,6 +167,9 @@
 
 /* Define to 1 if libXpm is available. */
 #undef HAVE_LIBXPM
+
+/* Define to 1 if libz is available. */
+#undef HAVE_LIBZ
 
 /* Define to 1 if you have the <limits> header file. */
 #undef HAVE_LIMITS
@@ -465,6 +474,15 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* Define to 1 if using a local copy of bzlib. */
+#undef USE_LOCAL_BZLIB
+
+/* Define to 1 if using a local copy of PCRE. */
+#undef USE_LOCAL_PCRE
+
+/* Define to 1 if using a local copy of zlib. */
+#undef USE_LOCAL_ZLIB
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
