@@ -63,14 +63,12 @@ BEGIN_SCOPE(objects)
 CMutexPool_Base<CDataSource::TTSESet> CDataSource::sm_TSESet_MP;
 CMutexPool_Base<CDataSource> CDataSource::sm_DataSource_MP;
 #ifdef NCBI_COMPILER_MIPSPRO
-template <> // theoretically needed, but only MIPSpro actually wants it...
-#endif
+#pragma instantiate CMutex CMutexPool_Base<CDataSource::TTSESet>::sm_Pool[kMutexPoolSize]
+#pragma instantiate CMutex CMutexPool_Base<CDataSource>::sm_Pool[kMutexPoolSize]
+#else
 CMutex CMutexPool_Base<CDataSource::TTSESet>::sm_Pool[kMutexPoolSize];
-#ifdef NCBI_COMPILER_MIPSPRO
-template <>
-#endif
 CMutex CMutexPool_Base<CDataSource>::sm_Pool[kMutexPoolSize];
-
+#endif
 
 CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
                                       const CScope::TRequestHistory& history) const
@@ -1959,6 +1957,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2002/10/16 20:44:16  ucko
+* MIPSpro: use #pragma instantiate rather than template<>, as the latter
+* ended up giving rld errors for CMutexPool_Base<*>::sm_Pool.  (Sigh.)
+*
 * Revision 1.65  2002/10/02 17:58:23  grichenk
 * Added sequence type filter to CBioseq_CI
 *
