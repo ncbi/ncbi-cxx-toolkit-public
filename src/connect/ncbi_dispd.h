@@ -34,6 +34,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/12/29 18:18:22  lavr
+ * RATIO added to update pool if it exhausted due to expiration times of
+ * untaken services.
+ *
  * Revision 6.4  2000/10/20 17:24:08  lavr
  * 'SConnNetInfo' now passed as 'const' to 'SERV_DISPD_Open'
  *
@@ -52,6 +56,9 @@
 
 #include <connect/ncbi_connutil.h>
 #include "ncbi_servicep.h"
+
+/* Lower bound of up-to-date/out-of-date ratio */
+#define SERV_DISPD_STALE_RATIO_OK 0.8
 
 #ifdef __cplusplus
 extern "C" {
