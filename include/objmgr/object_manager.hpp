@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/12/26 20:51:35  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.8  2002/08/28 17:05:13  vasilche
 * Remove virtual inheritance
 *
@@ -87,7 +90,7 @@ class CSeq_id_Mapper;
 /////////////////////////////////////////////////////////////////////////////
 // CObjectManager
 
-class CObjectManager : public CObject
+class NCBI_XOBJMGR_EXPORT CObjectManager : public CObject
 {
 public:
     CObjectManager(void);

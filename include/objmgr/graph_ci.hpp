@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CGraph_CI : public CAnnotTypes_CI
+class NCBI_XOBJMGR_EXPORT CGraph_CI : public CAnnotTypes_CI
 {
 public:
     CGraph_CI(void);
@@ -107,6 +107,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/12/26 20:51:35  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.14  2002/12/24 15:42:44  grichenk
 * CBioseqHandle argument to annotation iterators made const
 *

@@ -58,7 +58,7 @@ class CDataSource;
 class CTSE_Info;
 struct SSeqData;
 
-class CScope : public CObject
+class NCBI_XOBJMGR_EXPORT CScope : public CObject
 {
 public:
     CScope(CObjectManager& objmgr);
@@ -185,6 +185,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/12/26 20:51:36  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.26  2002/12/26 16:39:21  vasilche
 * Object manager class CSeqMap rewritten.
 *

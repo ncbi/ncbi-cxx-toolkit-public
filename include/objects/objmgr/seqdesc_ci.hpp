@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CSeqdesc_CI
+class NCBI_XOBJMGR_EXPORT CSeqdesc_CI
 {
 public:
     CSeqdesc_CI(void);
@@ -77,6 +77,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/12/26 20:51:36  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.5  2002/12/05 19:28:30  grichenk
 * Prohibited postfix operator ++()
 *

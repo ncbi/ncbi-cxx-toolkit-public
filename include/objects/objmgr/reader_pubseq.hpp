@@ -47,7 +47,7 @@ class CPubseqReader;
 class CPubseqBlob;
 
 
-class CPubseqSeqref : public CSeqref
+class NCBI_XOBJMGR_EXPORT CPubseqSeqref : public CSeqref
 {
 public:
   virtual void Save(ostream &os) const;
@@ -78,7 +78,7 @@ private:
 
 
 
-class CPubseqReader : public CReader
+class NCBI_XOBJMGR_EXPORT CPubseqReader : public CReader
 {
 public:
   CPubseqReader(unsigned = 2,const string& server = "PUBSEQ_OS",const string& user="anyone",const string& pswd = "allowed");
@@ -104,7 +104,7 @@ private:
 
 
 
-class CPubseqBlob : public CBlob
+class NCBI_XOBJMGR_EXPORT CPubseqBlob : public CBlob
 {
 public:
   CSeq_entry *Seq_entry();
@@ -127,6 +127,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.10  2002/12/26 20:51:35  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.9  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

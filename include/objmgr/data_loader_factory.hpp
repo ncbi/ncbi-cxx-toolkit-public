@@ -44,7 +44,7 @@ class CDataLoader;
 
 /////////////////////////////////////////////////////////////////////////////
 
-class CDataLoaderFactory : public CObject
+class NCBI_XOBJMGR_EXPORT CDataLoaderFactory : public CObject
 {
 public:
     CDataLoaderFactory(const string& name)
@@ -61,7 +61,7 @@ private:
 
 
 template  <class TDataLoader>
-class CSimpleDataLoaderFactory : public CDataLoaderFactory
+class NCBI_XOBJMGR_EXPORT CSimpleDataLoaderFactory : public CDataLoaderFactory
 {
 public:
     CSimpleDataLoaderFactory(const string& name)
@@ -97,6 +97,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/12/26 20:51:35  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.2  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

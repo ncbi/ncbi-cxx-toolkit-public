@@ -50,7 +50,7 @@ class CSeq_loc;
 class CAnnotObject;
 
 
-class CAnnotObject_Less
+class NCBI_XOBJMGR_EXPORT CAnnotObject_Less
 {
 public:
     // Compare CRef-s: if at least one is NULL, compare as pointers,
@@ -63,7 +63,7 @@ private:
 
 
 // Base class for specific annotation iterators
-class CAnnotTypes_CI
+class NCBI_XOBJMGR_EXPORT CAnnotTypes_CI
 {
 public:
     // Flag to indicate references resolution method
@@ -192,6 +192,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/12/26 20:51:35  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.24  2002/12/26 16:39:21  vasilche
 * Object manager class CSeqMap rewritten.
 *

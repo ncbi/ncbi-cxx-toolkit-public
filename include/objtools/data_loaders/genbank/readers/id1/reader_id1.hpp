@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CId1Reader;
-class CId1Seqref : public CSeqref
+class NCBI_XOBJMGR_EXPORT CId1Seqref : public CSeqref
 {
 public:
   virtual void Save(ostream &os) const;
@@ -79,7 +79,7 @@ private:
   CId1Reader *m_Reader;
 };
 
-class CId1Blob : public CBlob
+class NCBI_XOBJMGR_EXPORT CId1Blob : public CBlob
 {
 public:
 
@@ -95,7 +95,7 @@ private:
   CRef<CSeq_entry> m_Seq_entry;
 };
 
-class CId1Reader : public CReader
+class NCBI_XOBJMGR_EXPORT CId1Reader : public CReader
 {
 public:
   CId1Reader(unsigned noConn = 5);
@@ -122,6 +122,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.10  2002/12/26 20:51:35  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.9  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

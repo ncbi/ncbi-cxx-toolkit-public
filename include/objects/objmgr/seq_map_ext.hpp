@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects)
 class CDelta_ext;
 class CSeg_ext;
 
-class CSeqMap_Delta_seqs : public CSeqMap
+class NCBI_XOBJMGR_EXPORT CSeqMap_Delta_seqs : public CSeqMap
 {
 public:
     typedef CDelta_ext TObject;
@@ -89,7 +89,7 @@ private:
 };
 
 
-class CSeqMap_Seq_locs : public CSeqMap
+class NCBI_XOBJMGR_EXPORT CSeqMap_Seq_locs : public CSeqMap
 {
 public:
     typedef CObject TObject;
@@ -129,7 +129,7 @@ private:
 };
 
 
-class CSeqMap_Seq_intervals : public CSeqMap
+class NCBI_XOBJMGR_EXPORT CSeqMap_Seq_intervals : public CSeqMap
 {
 public:
     typedef CPacked_seqint TObject;
@@ -168,7 +168,7 @@ private:
 };
 
 
-class CSeqMap_SeqPoss : public CSeqMap
+class NCBI_XOBJMGR_EXPORT CSeqMap_SeqPoss : public CSeqMap
 {
 public:
     typedef CPacked_seqpnt TObject;
@@ -218,6 +218,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/12/26 20:51:36  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.1  2002/12/26 16:39:22  vasilche
 * Object manager class CSeqMap rewritten.
 *

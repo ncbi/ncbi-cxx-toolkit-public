@@ -48,7 +48,7 @@ class CScope;
 
 
 // Bioseq handle -- must be a copy-safe const type.
-class CBioseq_Handle
+class NCBI_XOBJMGR_EXPORT CBioseq_Handle
 {
 public:
     // Destructor
@@ -276,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/12/26 20:51:35  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.26  2002/12/26 16:39:21  vasilche
 * Object manager class CSeqMap rewritten.
 *

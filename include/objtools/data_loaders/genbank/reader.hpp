@@ -33,7 +33,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CStreamable
+class NCBI_XOBJMGR_EXPORT CStreamable
 {
 public:
   virtual ~CStreamable() {}
@@ -44,7 +44,7 @@ public:
 ostream & operator << (ostream &os, const CStreamable &obj);
 istream & operator >> (istream &is, CStreamable &obj);
 
-class CIntStreamable : public CStreamable
+class NCBI_XOBJMGR_EXPORT CIntStreamable : public CStreamable
 {
 public:
   typedef unsigned long TInt;
@@ -59,7 +59,7 @@ private:
   TInt m_Value;
 };
 
-class CStringStreamable : public CStreamable
+class NCBI_XOBJMGR_EXPORT CStringStreamable : public CStreamable
 {
 public:
   CStringStreamable(const string &value = "") : m_Value(value) {}
@@ -72,7 +72,7 @@ private:
   string m_Value;
 };
 
-class CIStream : public istream
+class NCBI_XOBJMGR_EXPORT CIStream : public istream
 {
 public:
   CIStream(streambuf *sb) : istream(sb), m_sb(sb) { unsetf(IOS_BASE::skipws); }
@@ -84,16 +84,16 @@ public:
   streambuf *m_sb;
 };
 
-class CBlobDescr : public CStringStreamable
+class NCBI_XOBJMGR_EXPORT CBlobDescr : public CStringStreamable
 {};
 
-class CBlobClass : public CIntStreamable
+class NCBI_XOBJMGR_EXPORT CBlobClass : public CIntStreamable
 {};
 
-class CSeqrefFlag : public CIntStreamable
+class NCBI_XOBJMGR_EXPORT CSeqrefFlag : public CIntStreamable
 {};
 
-class CBlob : public CStreamable
+class NCBI_XOBJMGR_EXPORT CBlob : public CStreamable
 {
 public:
   virtual void Save(ostream &) const;
@@ -110,7 +110,7 @@ private:
   CBlobDescr m_Descr;
 };
 
-class CSeqref : public CStreamable
+class NCBI_XOBJMGR_EXPORT CSeqref : public CStreamable
 {
 public:
   
@@ -133,7 +133,7 @@ public:
   CSeqrefFlag m_Flag;
 };
 
-class CReader
+class NCBI_XOBJMGR_EXPORT CReader
 {
 public:
   
@@ -160,6 +160,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.17  2002/12/26 20:51:35  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.16  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

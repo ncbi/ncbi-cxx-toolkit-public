@@ -44,7 +44,7 @@ BEGIN_SCOPE(objects)
 class CSeqMap;
 
 // iterator through CSeqMap
-class CSeqMap_CI
+class NCBI_XOBJMGR_EXPORT CSeqMap_CI
 {
 public:
     // selector enums for CSeqMap_CI constructors
@@ -140,6 +140,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/12/26 20:51:36  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.1  2002/12/26 16:39:22  vasilche
 * Object manager class CSeqMap rewritten.
 *

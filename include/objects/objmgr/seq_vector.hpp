@@ -52,7 +52,7 @@ class CScope;
 class CSeq_loc;
 class CSeqMap;
 
-class CSeqVector : public CObject
+class NCBI_XOBJMGR_EXPORT CSeqVector : public CObject
 {
 public:
     typedef unsigned char         TResidue;
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/12/26 20:51:36  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.20  2002/12/26 16:39:22  vasilche
 * Object manager class CSeqMap rewritten.
 *

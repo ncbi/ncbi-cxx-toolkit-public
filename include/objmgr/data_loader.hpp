@@ -56,7 +56,7 @@ class CTSE_Info;
 //
 
 
-class CDataLoader : public CDebugDumpable
+class NCBI_XOBJMGR_EXPORT CDataLoader : public CDebugDumpable
 {
 protected:
     CDataLoader(void);
@@ -139,6 +139,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/12/26 20:51:35  dicuccio
+* Added Win32 export specifier
+*
 * Revision 1.12  2002/08/28 17:05:13  vasilche
 * Remove virtual inheritance
 *

@@ -73,7 +73,7 @@ BEGIN_SCOPE(objects)
 
 class CHandleRange;
 
-class CTimer
+class NCBI_XOBJMGR_EXPORT CTimer
 {
 public:
   CTimer();
@@ -95,7 +95,7 @@ private:
 };
 
 //========================================================================
-class CRefresher
+class NCBI_XOBJMGR_EXPORT CRefresher
 {
 public:
   CRefresher() : m_RefreshTime(0) { };
@@ -105,7 +105,7 @@ private:
   time_t m_RefreshTime;
 };
 
-class CMutexPool
+class NCBI_XOBJMGR_EXPORT CMutexPool
 {
   int         m_size;
   CMutex     *m_Locks;
@@ -119,7 +119,7 @@ public:
 };
 
 
-class CTSEUpload {
+class NCBI_XOBJMGR_EXPORT CTSEUpload {
 public:
   enum EChoice { eNone,eDone,ePartial };
   CTSEUpload() : m_mode(eNone), m_tse(0) {};
@@ -127,7 +127,7 @@ public:
   CSeq_entry                   *m_tse;
 };
 
-class CGBDataLoader : public CDataLoader
+class NCBI_XOBJMGR_EXPORT CGBDataLoader : public CDataLoader
 {
 public:
   struct SLeveledMutex
@@ -220,6 +220,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.27  2002/12/26 20:51:35  dicuccio
+ * Added Win32 export specifier
+ *
  * Revision 1.26  2002/07/23 15:31:18  kimelman
  * fill statistics for MutexPool
  *
