@@ -272,11 +272,11 @@ int CBlast2seqApplication::Run(void)
     BlastMask* lcase_mask;
 
     // Retrieve input sequences
-    vector< CConstRef<CSeq_loc> > query_loc =
+    CBl2Seq::TSeqLocVector query_loc = 
         BLASTGetSeqLocFromStream(args["query"].AsInputFile(), m_Scope,
           eNa_strand_unknown, 0, 0, &counter, &lcase_mask);
 
-    vector< CConstRef<CSeq_loc> > subject_loc =
+    CBl2Seq::TSeqLocVector subject_loc = 
         BLASTGetSeqLocFromStream(args["subject"].AsInputFile(), m_Scope,
           eNa_strand_unknown, 0, 0, &counter, &lcase_mask);
 
@@ -285,7 +285,7 @@ int CBlast2seqApplication::Run(void)
         GetBlastProgramNum(args["program"].AsString());
 
     sw.Start();
-    CBl2Seq blaster(query_loc.front(), subject_loc, prog, &*m_Scope);
+    CBl2Seq blaster(query_loc, subject_loc, prog);
     CRef<CSeq_align_set> seqalign = blaster.Run();
     double t = sw.Elapsed();
     cerr << "CBl2seq run took " << t << " seconds" << endl;
@@ -364,6 +364,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/08/11 20:16:43  camacho
+ * Change return type of BLASTGetSeqLocFromStream and fix namespaces
+ *
  * Revision 1.9  2003/08/11 15:26:30  dondosha
  * BLASTGetSeqLocFromStream function moved to blast_input.cpp
  *

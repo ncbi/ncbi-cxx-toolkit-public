@@ -35,16 +35,13 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/scope.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <serial/iterator.hpp>
-#include <algo/blast/core/blast_def.h>
 
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
+#include <algo/blast/api/bl2seq.hpp>
+
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
-vector< CConstRef<CSeq_loc> >
+CBl2Seq::TSeqLocVector
 BLASTGetSeqLocFromStream(CNcbiIstream& in, CRef<CScope>& scope, 
     ENa_strand strand, int from, int to, int* counter, 
     BlastMask** lcase_mask = NULL);

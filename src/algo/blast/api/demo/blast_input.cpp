@@ -33,16 +33,19 @@
 #include <algo/blast/api/blast_input.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 
-USING_NCBI_SCOPE;
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <serial/iterator.hpp>
+
 BEGIN_NCBI_SCOPE
 
-vector< CConstRef<CSeq_loc> >
+CBl2Seq::TSeqLocVector
 BLASTGetSeqLocFromStream(CNcbiIstream& in, CRef<CScope>& scope, 
     ENa_strand strand, int from, int to, int *counter, 
     BlastMask** lcase_mask)
 {
     _ASSERT(scope);
-    vector< CConstRef<CSeq_loc> > retval;
+    CBl2Seq::TSeqLocVector retval;
     CRef<CSeq_entry> seq_entry;
     vector <CConstRef<CSeq_loc> > mask_loc;
     BlastMask* last_mask, *new_mask;
@@ -57,12 +60,16 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CRef<CScope>& scope,
     }
 
     for (CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry)); itr; ++itr) {
-        CSeq_loc* sl = new CSeq_loc();
-        sl->SetWhole(*(const_cast<CSeq_id*>(&*itr->GetId().front())));
-        CConstRef<CSeq_loc> seqlocref(sl);
-        retval.push_back(seqlocref);
+
+        CSeq_loc* seqloc = new CSeq_loc();
+        seqloc->SetWhole(*(const_cast<CSeq_id*>(&*itr->GetId().front())));
+        retval.push_back(make_pair(seqloc, &*scope));
         ++num_queries;
-        scope->AddTopLevelSeqEntry(*seq_entry);
+
+        // Check if this seqentry has been added to the scope already
+        CBioseq_Handle bh = scope->GetBioseqHandle(*seqloc);
+        if (!bh)
+            scope->AddTopLevelSeqEntry(*seq_entry);
     }
 
     if (lcase_mask) {
