@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef OBJECTS_SEQFEAT___READFEAT__HPP
-#define OBJECTS_SEQFEAT___READFEAT__HPP
+#ifndef OBJTOOLS_READERS___READFEAT__HPP
+#define OBJTOOLS_READERS___READFEAT__HPP
 
 #include <corelib/ncbistd.hpp>
 
@@ -49,7 +49,7 @@ class CFeature_table_reader_imp;
 
 // public interface for (single instance) feature table reader
 
-class NCBI_SEQFEAT_EXPORT CFeature_table_reader
+class NCBI_XOBJREAD_EXPORT CFeature_table_reader
 {
 public:
     // read 5-column feature table and return Seq-annot
@@ -80,4 +80,4 @@ CFeature_table_reader_imp& CFeature_table_reader::x_GetImplementation(void)
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif // OBJECTS_SEQFEAT___READFEAT__HPP
+#endif // OBJTOOLS_READERS___READFEAT__HPP
