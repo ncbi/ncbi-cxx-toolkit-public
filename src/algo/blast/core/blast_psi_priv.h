@@ -305,8 +305,8 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights);
  * @param identity_threshold percent identity threshold after which sequences
  * similar to the query and each other are purged from the multiple sequence
  * alignment [in]
- * @return PSIERR_BADPARAM if alignment is NULL
- *         PSI_SUCCESS otherwise
+ * @return PSIERR_BADPARAM if alignment is NULL or if identity_threshold is
+ *         less than or equal to 0; PSI_SUCCESS otherwise
  */
 int 
 _PSIPurgeBiasedSegments(_PSIMsa* msa, double identity_threshold);
@@ -525,6 +525,11 @@ _PSICalculateInformationContentFromFreqRatios(
     Uint4 query_length,
     Uint4 alphabet_sz);
 
+#ifdef _DEBUG
+void
+__printMsa(const char* filename, const _PSIMsa* msa);
+#endif /* _DEBUG */
+
 #ifdef __cplusplus
 }
 #endif
@@ -534,6 +539,9 @@ _PSICalculateInformationContentFromFreqRatios(
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2004/12/07 22:07:34  camacho
+ * Add sanity checks for purge identity threshold
+ *
  * Revision 1.18  2004/11/26 14:22:54  camacho
  * doxygen fixes
  *

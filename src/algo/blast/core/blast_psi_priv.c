@@ -443,7 +443,7 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights)
     return NULL;
 }
 
-#ifdef DEBUG
+#ifdef _DEBUG
 static char getRes(char input)
 {
     switch (input) {
@@ -477,8 +477,8 @@ static char getRes(char input)
     }
 }
 
-static void
-_DEBUG_printMsa(const char* filename, const _PSIMsa* msa)
+void
+__printMsa(const char* filename, const _PSIMsa* msa)
 {
     Uint4 i, j;
     FILE* fp = NULL;
@@ -501,7 +501,7 @@ _DEBUG_printMsa(const char* filename, const _PSIMsa* msa)
     }
     fclose(fp);
 }
-#endif
+#endif /* _DEBUG */
 
 /************** Validation routines *****************************************/
 
@@ -721,7 +721,7 @@ s_PSIPurgeSimilarAlignments(_PSIMsa* msa,
 int
 _PSIPurgeBiasedSegments(_PSIMsa* msa, double identity_threshold)
 {
-    if ( !msa ) {
+    if ( !msa || identity_threshold <= 0.0 ) {
         return PSIERR_BADPARAM;
     }
 
@@ -2357,6 +2357,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/12/07 22:07:34  camacho
+ * Add sanity checks for purge identity threshold
+ *
  * Revision 1.38  2004/11/29 13:53:23  camacho
  * Renamed Blast_ScoreFreq structure free function
  *
