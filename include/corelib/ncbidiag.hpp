@@ -161,10 +161,10 @@ enum EDiagPostFlag {
     eDPF_ErrCodeUseSeverity = 0x400, ///< Set by default (always)
     eDPF_DateTime           = 0x80,  ///< Include date and time
 
-    /// Set all flags.
+    /// All flags (except for the "unusual" ones!)
     eDPF_All                = 0x3FFF,
 
-    // "Unusual" flags -- not included in eDPF_All
+    // "Unusual" flags -- not included in "eDPF_All"
     eDPF_OmitInfoSev        = 0x4000, ///< No sev. indication if eDiag_Info 
     eDPF_PreMergeLines      = 0x10000,///< Remove EOLs before calling handler
     eDPF_MergeLines         = 0x20000,///< Ask diag.handlers to remove EOLs
@@ -928,6 +928,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.75  2004/09/07 18:10:49  vakatov
+ * Comment fix
+ *
  * Revision 1.74  2004/08/17 14:34:08  dicuccio
  * Export StrToSeverityLevel
  *
