@@ -35,6 +35,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CBlob::CBlob(void)
+    : m_Class(0)
 {
 }
 
@@ -55,6 +56,7 @@ CBlobSource::~CBlobSource(void)
 
 
 CSeqref::CSeqref(void)
+    : m_Flag(0)
 {
 }
 
@@ -86,6 +88,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.14  2003/04/15 16:25:39  vasilche
+ * Added initialization of int members.
+ *
  * Revision 1.13  2003/04/15 14:24:08  vasilche
  * Changed CReader interface to not to use fake streams.
  *
