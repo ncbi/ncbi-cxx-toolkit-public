@@ -31,6 +31,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2002/04/22 19:30:01  lavr
+ * Do not put trace message on polling wait (tmo={0,0})
+ * More effective CONN_Read w/o repeatitive checkings for eIO_ReadPersist
+ *
  * Revision 6.21  2002/03/22 22:17:01  lavr
  * Better check when formally timed out but technically polled in CONN_Wait()
  *
@@ -424,14 +428,11 @@ extern EIO_Status CONN_Wait
         eIO_NotSupported;
 
     if (status != eIO_Success) {
-        if (status == eIO_Timeout) {
-            ELOG_Level level = (timeout  &&  timeout != CONN_DEFAULT_TIMEOUT
-                                &&  timeout->sec == 0  &&  timeout->usec == 0)
-                ? eLOG_Trace : eLOG_Warning;
-            CONN_LOG(level, "[CONN_Wait]  I/O timed out");
-        } else {
+        if (status != eIO_Timeout)
             CONN_LOG(eLOG_Error, "[CONN_Wait]  Error waiting on I/O");
-        }
+        else if (timeout == CONN_DEFAULT_TIMEOUT ||
+                 (timeout  &&  timeout->sec + timeout->usec != 0))
+            CONN_LOG(eLOG_Warning, "[CONN_Wait]  I/O timed out");
     }
 
     return status;
@@ -506,17 +507,8 @@ static EIO_Status s_CONN_Read
  int/*bool*/ peek)
 {
     EIO_Status status;
+
     assert(*n_read == 0);
-
-    if (conn->state == eCONN_Unusable)
-        return eIO_InvalidArg;
-
-    /* perform open, if not yet */
-    if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
-        return status;
-
-    /* flush the unwritten output data, if any */
-    CONN_Flush(conn);
 
     /* check if the read method is specified at all */
     if ( !conn->meta.read ) {
@@ -569,18 +561,22 @@ static EIO_Status s_CONN_ReadPersist
  size_t  size,
  size_t* n_read)
 {
+    EIO_Status status;
+
     assert(*n_read == 0);
 
-    do {
-        size_t x_read;
-        EIO_Status status = CONN_Read(conn, (char*) buf + *n_read,
-                                      size - *n_read, &x_read, eIO_Plain);
+    for (;;) {
+        size_t x_read = 0;
+        status = s_CONN_Read(conn, (char*) buf + *n_read,
+                             size - *n_read, &x_read, 0/*no peek*/);
         *n_read += x_read;
-        if (status != eIO_Success)
-            return status;
-    } while (*n_read != size);
+        if (*n_read == size  ||  status != eIO_Success)
+            break;
+        /* flush the unwritten output data, if any */
+        CONN_Flush(conn);
+    }
 
-    return eIO_Success;
+    return status;
 }
 
 
@@ -591,14 +587,26 @@ extern EIO_Status CONN_Read
  size_t*        n_read,
  EIO_ReadMethod how)
 {
+    EIO_Status status;
+
     CONN_NOT_NULL("Read");
+
+    if (conn->state == eCONN_Unusable)
+        return eIO_InvalidArg;
+
+    /* perform open, if not yet */
+    if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
+        return status;
+
+    /* flush the unwritten output data, if any */
+    CONN_Flush(conn);
 
     *n_read = 0;
     switch (how) {
     case eIO_Plain:
-        return s_CONN_Read(conn, buf, size, n_read, 0/*false*/);
+        return s_CONN_Read(conn, buf, size, n_read, 0/*no peek*/);
     case eIO_Peek:
-        return s_CONN_Read(conn, buf, size, n_read, 1/*true*/);
+        return s_CONN_Read(conn, buf, size, n_read, 1/*peek*/);
     case eIO_Persist:
         return s_CONN_ReadPersist(conn, buf, size, n_read);
     }
