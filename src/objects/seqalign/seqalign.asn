@@ -1,4 +1,4 @@
---$Revision: 3.0 $
+--$Revision: 3.1 $
 --**********************************************************************
 --
 --  NCBI Sequence Alignment elements
@@ -9,7 +9,7 @@
 NCBI-Seqalign DEFINITIONS ::=
 BEGIN
 
-EXPORTS Seq-align, Score;
+EXPORTS Seq-align, Score, Score-set;
 
 IMPORTS Seq-id, Seq-loc , Na-strand FROM NCBI-Seqloc
         Object-id FROM NCBI-General;
@@ -68,11 +68,15 @@ Std-seg ::= SEQUENCE {
     loc SEQUENCE OF Seq-loc ,
     scores SET OF Score OPTIONAL }
 
+-- use of Score is discouraged for external ASN.1 specifications
 Score ::= SEQUENCE {
     id Object-id OPTIONAL ,
     value CHOICE {
         real REAL ,
         int INTEGER  } }
+
+-- use of Score-set is encouraged for external ASN.1 specifications
+Score-set ::= SET OF Score
 
 END 
 
