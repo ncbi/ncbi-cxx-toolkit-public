@@ -60,8 +60,9 @@ static Int2 BlastLinkHsps(BlastHSPListPtr hsp_list)
 /** Given a BlastHSP structure, create a score set to be inserted into the 
  *  SeqAlign.
  */
-static ScorePtr GetScoreSetFromBlastHsp(BlastHSPPtr hsp,  
-                   BLAST_ScoreBlkPtr sbp)
+static ScorePtr 
+GetScoreSetFromBlastHsp(Uint1 program, BlastHSPPtr hsp,  
+   BLAST_ScoreBlkPtr sbp, BlastHitSavingOptionsPtr hit_options)
 {
    ScorePtr	score_set=NULL;
    Nlm_FloatHi	prob;
@@ -91,7 +92,12 @@ static ScorePtr GetScoreSetFromBlastHsp(BlastHSPPtr hsp,
       MakeBlastScore(&score_set, scoretype, prob, 0);
    }
 
-   kbp = sbp->kbp[hsp->context];
+   if (program == blast_type_blastn || !hit_options->is_gapped) {
+      kbp = sbp->kbp[hsp->context];
+   } else {
+      kbp = sbp->kbp_gap[hsp->context];
+   }
+
    /* Calculate bit score from the raw score */
    prob = ((hsp->score*kbp->Lambda) - kbp->logK)/NCBIMATH_LN2;
    if (prob >= 0.)
@@ -123,8 +129,9 @@ static Int2 AddGiListToScoreSet(ScorePtr score_set, ValNodePtr gi_list)
 }
 
 static Int2 
-BLAST_GapInfoToSeqAlign(BlastHSPListPtr hsp_list, SeqIdPtr query_id, 
-   SeqIdPtr subject_id, BLAST_ScoreBlkPtr sbp, SeqAlignPtr PNTR seqalign)
+BLAST_GapInfoToSeqAlign(Uint1 program, BlastHSPListPtr hsp_list, 
+   SeqIdPtr query_id, SeqIdPtr subject_id, BLAST_ScoreBlkPtr sbp, 
+   BlastHitSavingOptionsPtr hit_options, SeqAlignPtr PNTR seqalign)
 {
    Int2 status = 0;
    BlastHSPPtr PNTR hsp_array;
@@ -145,18 +152,22 @@ BLAST_GapInfoToSeqAlign(BlastHSPListPtr hsp_list, SeqIdPtr query_id,
          
 	 seqalign_var = seqalign_var->next;
       }
-      seqalign_var->score = GetScoreSetFromBlastHsp(hsp_array[index], sbp);
+      seqalign_var->score = 
+         GetScoreSetFromBlastHsp(program, hsp_array[index], sbp, 
+                                 hit_options);
       /* The following can only happen for translated BLAST */
       if (seqalign_var->segtype == 3) {
 	 StdSegPtr ssp = seqalign_var->segs;
 	 while (ssp) {
-	    ssp->scores = GetScoreSetFromBlastHsp(hsp_array[index], sbp);
+	    ssp->scores = GetScoreSetFromBlastHsp(program, hsp_array[index],
+                             sbp, hit_options);
 	    ssp = ssp->next;
 	 }
       } else if (seqalign_var->segtype == 5) { /* Discontinuous */
 	 SeqAlignPtr sap = (SeqAlignPtr) seqalign_var->segs;
 	 for(;sap != NULL; sap = sap->next) {
-	    sap->score = GetScoreSetFromBlastHsp(hsp_array[index], sbp);
+	    sap->score = GetScoreSetFromBlastHsp(program, hsp_array[index],
+                            sbp, hit_options);
 	 }
       }
    }
@@ -578,12 +589,18 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
             hsp->gap_info = gap_align->edit_block;
             gap_align->edit_block = NULL;
             
-            if (is_ooframe) {
-               hsp->gap_info->frame2 = hsp->query.frame;
-               hsp->gap_info->frame1 = hsp->subject.frame;
-            } else {
-               hsp->gap_info->frame1 = hsp->query.frame;
-               hsp->gap_info->frame2 = hsp->subject.frame;
+            if (hsp->gap_info) {
+               if (is_ooframe) {
+                  hsp->gap_info->frame2 = hsp->query.frame;
+                  hsp->gap_info->frame1 = hsp->subject.frame;
+               } else {
+                  hsp->gap_info->frame1 = hsp->query.frame;
+                  hsp->gap_info->frame2 = hsp->subject.frame;
+               }
+               if (program == blast_type_blastx)
+                  hsp->gap_info->translate1 = TRUE;
+               if (program == blast_type_tblastn)
+                  hsp->gap_info->translate2 = TRUE;
             }
 
             keep = TRUE;
@@ -707,7 +724,8 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
                                      query_blk->seqid); 
        }
                 
-       seqalign->score = GetScoreSetFromBlastHsp(hsp, sbp);
+       seqalign->score = GetScoreSetFromBlastHsp(program, hsp, sbp, 
+                                                 hit_options);
                 
        if (seqalign_array[index] == NULL)
           seqalign_array[index] = seqalign;
@@ -794,8 +812,8 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
             if (rdfp) {
                readdb_get_descriptor(rdfp, hsp_list->oid, &subject_id, NULL); 
             }
-            BLAST_GapInfoToSeqAlign(hsp_list, query_id, subject_id, 
-                                    sbp, &seqalign);
+            BLAST_GapInfoToSeqAlign(gap_align->program, hsp_list, query_id,
+               subject_id, sbp, hit_params->options, &seqalign);
          } else {
             if (rdfp) {
                MakeBlastSequenceBlk(rdfp, &subject, hsp_list->oid, 
