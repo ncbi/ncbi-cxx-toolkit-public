@@ -75,6 +75,7 @@
 #include <objtools/format/genbank_gather.hpp>
 #include <objtools/format/embl_gather.hpp>
 #include <objtools/format/gff_gather.hpp>
+//#include <objtools/format/ftable_gather.hpp>
 #include <objtools/format/context.hpp>
 #include "utils.hpp"
 
@@ -102,10 +103,12 @@ CFlatGatherer* CFlatGatherer::New(TFormat format)
 
     case eFormat_GFF:
         return new CGFFGatherer;
-        
+    
+    case eFormat_FTable:
+        //return new CFtbaleGatherer;
+
     case eFormat_DDBJ:
     case eFormat_GBSeq:
-    case eFormat_FTable:
     default:
         NCBI_THROW(CFlatException, eNotSupported, 
             "This format is currently not supported");
@@ -179,7 +182,12 @@ bool CFlatGatherer::x_DisplayBioseq
 {
     CFFContext& ctx = Context();
 
-    // always display if an entry consisting of a single bioseq.
+    const CSeq_id* id = FindBestChoice(seq.GetId(), CSeq_id::Score);
+    if ( id == 0  ||  (id->IsLocal()  &&  ctx.SuppressLocalId()) ) {
+        return false;
+    }
+
+    // display if an entry consisting of a single bioseq.
     if ( entry.IsSeq()  &&  &entry.GetSeq() == &seq ) {
         return true;
     }
@@ -545,7 +553,7 @@ void CFlatGatherer::x_HistoryComments(CFFContext& ctx) const
         }
     }
 
-    if ( hist.IsSetReplaces()  &&  ctx.IsModeGBench() ) {
+    if ( hist.IsSetReplaces()  &&  !ctx.IsModeGBench() ) {
         const CSeq_hist::TReplaces& r = hist.GetReplaces();
         if ( r.CanGetDate()  &&  !r.GetIds().empty() ) {
             x_AddComment(new CHistComment(CHistComment::eReplaces,
@@ -1107,6 +1115,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/03/18 15:39:40  shomrat
+* + Filtering of displayed records
+*
 * Revision 1.9  2004/03/12 16:57:54  shomrat
 * Filter viewable bioseqs; Use new location mapping
 *
