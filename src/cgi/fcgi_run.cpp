@@ -37,9 +37,9 @@
 
 BEGIN_NCBI_SCOPE
 
-bool CCgiApplication::RunFastCGI(int* /*result*/, unsigned /*def_iter*/)
+bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 {
-    _TRACE("CCgiApplication::RunFastCGI:  return (FastCGI is not supported)");
+    _TRACE("CCgiApplication::x_RunFastCGI:  return (FastCGI is not supported)");
     return false;
 }
 
@@ -131,7 +131,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
     // Is it run as a Fast-CGI or as a plain CGI?
     if ( FCGX_IsCGI() ) {
-        _TRACE("CCgiApplication::RunFastCGI:  return (run as a plain CGI)");
+        _TRACE("CCgiApplication::x_RunFastCGI:  return (run as a plain CGI)");
         return false;
     }
 
@@ -148,7 +148,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         if (x_iterations > 0) {
             iterations = (unsigned int) x_iterations;
         } else {
-            ERR_POST("CCgiApplication::RunFastCGI:  invalid "
+            ERR_POST("CCgiApplication::x_RunFastCGI:  invalid "
                      "[FastCGI].Iterations config.parameter value: "
                      << x_iterations);
             _ASSERT(def_iter);
@@ -189,7 +189,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         FCGX_Stream *pfin, *pfout, *pferr;
         FCGX_ParamArray penv;
         if ( FCGX_Accept(&pfin, &pfout, &pferr, &penv) != 0 ) {
-            _TRACE("CCgiApplication::RunFastCGI: no more requests");
+            _TRACE("CCgiApplication::x_RunFastCGI: no more requests");
             break;
         }
 
@@ -202,7 +202,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             // Initialize CGI context with the new request data
             CNcbiEnvironment  env(penv);
             if (logopt == eLog) {
-                x_LogPost("CCgiApplication::RunFastCGI ",
+                x_LogPost("CCgiApplication::x_RunFastCGI ",
                           iteration, start_time, &env, fBegin);
             }
 
@@ -224,7 +224,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     "Content-Type: text/html" HTTP_EOL
                     HTTP_EOL
                     "Done";
-                _TRACE("CCgiApplication::RunFastCGI: aborting by request");
+                _TRACE("CCgiApplication::x_RunFastCGI: aborting by request");
                 FCGX_Finish();
                 if (iteration == 0) {
                     *result = 0;
@@ -268,19 +268,19 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                                               false, CNcbiRegistry::eErrPost);
             if ( is_stop_onfail ) {     // configured to stop on error
                 // close current request
-                _TRACE("CCgiApplication::RunFastCGI: FINISHING (forced)");
+                _TRACE("CCgiApplication::x_RunFastCGI: FINISHING (forced)");
                 FCGX_Finish();
                 break;
             }
         }
 
         // Close current request
-        _TRACE("CCgiApplication::RunFastCGI: FINISHING");
+        _TRACE("CCgiApplication::x_RunFastCGI: FINISHING");
         FCGX_Finish();
 
         // Logging
         if (logopt == eLog) {
-            x_LogPost("CCgiApplication::RunFastCGI ",
+            x_LogPost("CCgiApplication::x_RunFastCGI ",
                       iteration, start_time, 0, fEnd);
         }
 
@@ -288,7 +288,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         time_t mtimeNew =
             s_GetModTime( GetArguments().GetProgramName().c_str() );
         if (mtimeNew != mtime) {
-            _TRACE("CCgiApplication::RunFastCGI: "
+            _TRACE("CCgiApplication::x_RunFastCGI: "
                    "the program modification date has changed");
             break;
         }
@@ -296,13 +296,13 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         // check if the file we're watching (if any) has changed
         // (based on contents, not timestamp!)
         if (watcher.get()  &&  watcher->HasChanged()) {
-            _TRACE("CCgiApplication::RunFastCGI: the watch file has changed");
+            _TRACE("CCgiApplication::x_RunFastCGI: the watch file has changed");
             break;
         }
     } // Main Fast-CGI loop
 
     // done
-    _TRACE("CCgiApplication::RunFastCGI:  return (FastCGI loop finished)");
+    _TRACE("CCgiApplication::x_RunFastCGI:  return (FastCGI loop finished)");
     return true;
 }
 
@@ -316,6 +316,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.19  2003/01/24 01:07:04  ucko
+ * Also rename stub RunFastCGI to x_RunFastCGI, and fix name in messages.
+ *
  * Revision 1.18  2003/01/23 19:59:02  kuznets
  * CGI logging improvements
  *
