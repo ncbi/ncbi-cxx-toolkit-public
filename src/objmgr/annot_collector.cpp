@@ -1689,10 +1689,22 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     // no sequence tse
                     continue;
                 }
-                CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(bh);
-                ITERATE(CSynonymsSet, syn_it, *syns) {
-                    found |= x_SearchTSE(tse, syns->GetSeq_id_Handle(syn_it),
-                                         idit->second, cvt);
+                if ( tse.x_GetTSE_Info().HasMatchingAnnotIds() ) {
+                    CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(bh);
+                    ITERATE(CSynonymsSet, syn_it, *syns) {
+                        found |= x_SearchTSE(tse, syns->GetSeq_id_Handle(syn_it),
+                                             idit->second, cvt);
+                    }
+                }
+                else {
+                    const CBioseq_Handle::TId& syns = bh.GetId();
+                    bool only_gi = tse.x_GetTSE_Info().OnlyGiAnnotIds();
+                    ITERATE ( CBioseq_Handle::TId, syn_it, syns ) {
+                        if ( !only_gi || syn_it->IsGi() ) {
+                            found |= x_SearchTSE(tse, *syn_it,
+                                                 idit->second, cvt);
+                        }
+                    }
                 }
             }
             else {
@@ -1711,19 +1723,37 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
         }
         else {
             // Search in the limit objects
-            CConstRef<CSynonymsSet> syns =
-                m_Scope->GetSynonyms(idit->first, GetGetFlag());
-            CScope_Impl::TSeq_idSet idh_set;
+            CConstRef<CSynonymsSet> syns;
+            bool syns_initialized = false;
             ITERATE ( TTSE_LockMap, tse_it, m_TSE_LockMap ) {
-                if ( !syns ) {
-                    found |= x_SearchTSE(tse_it->second, idit->first,
-                                         idit->second, cvt);
+                const CTSE_Info& tse_info = *tse_it->first;
+                if ( tse_info.HasMatchingAnnotIds() ) {
+                    if ( !syns_initialized ) {
+                        syns = m_Scope->GetSynonyms(idit->first,
+                                                    GetGetFlag());
+                        syns_initialized = true;
+                    }
+                    if ( !syns ) {
+                        found |= x_SearchTSE(tse_it->second, idit->first,
+                                             idit->second, cvt);
+                    }
+                    else {
+                        ITERATE(CSynonymsSet, syn_it, *syns) {
+                            found |= x_SearchTSE(tse_it->second,
+                                                 syns->GetSeq_id_Handle(syn_it),
+                                                 idit->second, cvt);
+                        }
+                    }
                 }
                 else {
-                    ITERATE(CSynonymsSet, syn_it, *syns) {
-                        found |= x_SearchTSE(tse_it->second,
-                                             syns->GetSeq_id_Handle(syn_it),
-                                             idit->second, cvt);
+                    const CBioseq_Handle::TId& syns =
+                        m_Scope->GetIds(idit->first);
+                    bool only_gi = tse_info.OnlyGiAnnotIds();
+                    ITERATE ( CBioseq_Handle::TId, syn_it, syns ) {
+                        if ( !only_gi || syn_it->IsGi() ) {
+                            found |= x_SearchTSE(tse_it->second, *syn_it,
+                                                 idit->second, cvt);
+                        }
                     }
                 }
             }
@@ -1880,6 +1910,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2005/03/31 21:20:16  vasilche
+* Optimize GetTSESetWithAnnots to avoid lookup by matching ids.
+*
 * Revision 1.54  2005/03/31 18:06:19  grichenk
 * Fixed filtering of duplicate annotations
 *
