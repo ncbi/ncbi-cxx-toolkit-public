@@ -327,7 +327,11 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
 
 
     if(!m_UseDSN) {
-        string connect_str("DRIVER={SQL Server};SERVER=");
+#ifdef NCBI_OS_MSWIN
+      string connect_str("DRIVER={SQL Server};SERVER=");
+#else
+      string connect_str("DSN=");
+#endif
         connect_str+= srv_name;
         connect_str+= ";UID=";
         connect_str+= user_name;
@@ -423,6 +427,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/05/08 20:48:33  soussov
+ * adding datadirect-odbc type of connecting string. Rememner that you need ODBCINI environment variable to make it works
+ *
  * Revision 1.5  2003/05/05 20:48:29  ucko
  * Check HAVE_ODBCSS_H; fix some typos in an error message.
  *
