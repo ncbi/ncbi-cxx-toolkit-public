@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/05/24 20:01:07  vasilche
+* Added _DEBUG_ARG macro for arguments used only in debug mode.
+*
 * Revision 1.19  2000/03/10 14:17:40  vasilche
 * Added missing namespace specifier to macro.
 *
@@ -118,12 +121,15 @@ BEGIN_NCBI_SCOPE
 
 #  define _VERIFY(expr) _ASSERT(expr)
 
+#  define _DEBUG_ARG(arg) arg
+
 #else  /* _DEBUG */
 
 #  define _TRACE(message)  ((void)0)
 #  define _TROUBLE
 #  define _ASSERT(expr) ((void)0)
 #  define _VERIFY(expr) ((void)(expr))
+#  define _DEBUG_ARG(arg)
 
 #endif  /* else!_DEBUG */
 
