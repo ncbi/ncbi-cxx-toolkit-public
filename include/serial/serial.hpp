@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2002/08/23 16:50:39  grichenk
+* Write separator after every object
+*
 * Revision 1.42  2001/05/17 14:59:47  lavr
 * Typos corrected
 *
@@ -237,7 +240,7 @@ template<typename T>
 inline
 CObjectOStream& operator<<(CObjectOStream& out, const T& object)
 {
-    return Write(out, object);
+    return Separator(Write(out, object));
 }
 
 template<typename T>
