@@ -32,6 +32,12 @@
 
 #include <corelib/ncbifile.hpp>
 
+#ifdef __CYGWIN__
+// Unix is a more accurate description here.
+#undef NCBI_OS_MSWIN
+#define NCBI_OS_UNIX 1
+#endif
+
 #if !defined(NCBI_OS_MAC)
 #  include <sys/types.h>
 #  include <sys/stat.h>
@@ -1176,6 +1182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2002/03/22 20:00:01  ucko
+ * Tweak to work on Cygwin.  (Use Unix rather than MSWIN code).
+ *
  * Revision 1.17  2002/02/07 21:05:47  kans
  * implemented GetHome (FindFolder kPreferencesFolderType) for Mac
  *
