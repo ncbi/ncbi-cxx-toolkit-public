@@ -86,7 +86,7 @@ assume that <i>what()</i> has been defined for this object, and a default messag
 
 <center> <tt> Error: [</tt><i>catch-msg</i><tt>] Exception: Unknown exception </tt></center><p>
 
-<a name="errno"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CErrnoException.html">
+<a name="errno"> <a href="../docxx/CErrnoException.html">
 <h3> The CErrnoException Class </h3></a>
 The <i>CErrnoException</i> class is derived from <i>std::runtime_error</i>, and in addition to the
 <i>desc</i> string, has an <i>int</i> data member called <i>m_Errno</i>.  Like its parent class, 
@@ -101,7 +101,7 @@ CErrnoException::CErrnoException(const string& what) THROWS_NONE
 }
 </pre>
 
-<a name="parse"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CParseException.html">
+<a name="parse"> <a href="../docxx/CParseException.html">
 <h3> The CParseException Class </h3></a>
 Similar to <i>CErrnoException</i>, the <i>CParseException</i> class is derived from 
 <i>std::runtime_error</i>, and includes an additional <i>int</i> data member, in this
@@ -168,4 +168,3 @@ discussion of <a href="../libs/err_msg.html#ref_Exception">Exception handling</a
 		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
-	 </table>

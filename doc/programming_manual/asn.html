@@ -77,10 +77,10 @@ in the ASN.1 specification files. The resulting object definitions however, are 
 way dependent on ASN.1 format, as they simply specify the in-memory representation of the defined
 data types. Accordingly, the objects themselves can be used to read, interpret, and write any
 type of serialized data. Format specializations on the input stream are implemented via 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIStream.html">
+<a href="../docxx/CObjectIStream.html">
 <i>CObjectIStream</i></a> objects, which extract the required tags and values from the input data
 according to the format specified. Similarly, Format specializations on an output stream are implemented via 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectOStream.html">
+<a href="../docxx/CObjectOStream.html">
 <i>CObjectOStream</i></a> objects.
 
 <a name="example1">
@@ -116,24 +116,24 @@ enum ESerialDataFormat {
 <i> CObjectIStream</i> and <i>CObjectOStream</i> are base classes which provide generic
 interfaces between the specific type information of a serializable object and an I/O
 stream. The object stream classes that will actually be instantiated by this application,
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIStreamXml.html">
+<a href="../docxx/CObjectIStreamXml.html">
 <i>CObjectIStreamXml</i></a>, 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectOStreamAsn.html">
+<a href="../docxx/CObjectOStreamAsn.html">
 <i>CObjectOStreamAsn</i></a>, and
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectOStreamAsnBinary.html">
+<a href="../docxx/CObjectOStreamAsnBinary.html">
 <i>CObjectOStreamAsnBinary</i></a>,
 are descendants of these base classes.
 <p>
 
 Finally, a variable for the object type that will be generated from the input stream (in this
-case a <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CBiostruc.html">
+case a <a href="../docxx/CBiostruc.html">
 <i> CBiostruc</i></a>) is defined, and the <i>CObject[I/O]Stream</i> operators "<<" and
 ">>" are used to read and write the serialized data to and from the object. (Note that it is
 <i> not </i> possible to simply "pass the data through", from the input stream to the output
 stream, using a construct like:<i> *inObject >> *outObject</i>). The <i>CObject[I/O]Stream</i>s
 know nothing about the structure of the specific object - they have knowledge only of the
 serialization format (text ASN, binary ASN, XML, etc.). In contrast, the 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CBiostruc.html">
+<a href="../docxx/CBiostruc.html">
 <i>CBiostruc</i></a> knows
 nothing about I/O and serialization formats, but it contains explicit type information about
 itself.  Thus, the <i>CObject[I/O]Stream</i>s can apply their specialized serialization methods to
@@ -151,7 +151,7 @@ mechanisms. Finally, we need to include the header file for the object type we w
 
 There are two source browsers that can be used to locate the appropriate header file for a
 particular object type. All class names in the NCBI C++ Toolkit begin with the letter
-"C". Using the <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/HIER.html"> class
+"C". Using the <a href="../docxx/HIER.html"> class
 hierarchy browser</a>, we find <i>CBiostruc</i>, derived from <i>CBiostruc_Base</i>, which is
 in turn derived from <i>CObject</i>. Following the <i>CBiostruc</i> link, we can then use the
 <i>locate</i> button to move to the <i>LXR</i> source code navigator, and there, find the name
@@ -190,12 +190,12 @@ well as to the serial library,
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/libs.html#ref_TableXSERIAL">
 <i>xser</i></a>. In addition, we will need to link to whatever object libraries are
 entailed by using a 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CBiostruc.html">
+<a href="../docxx/CBiostruc.html">
 <i>CBiostruc.</i></a> object. Minimally, one would
 expect to link to the <i>mmdb</i> libraries. This in itself is insufficient however,
 as the <i>CBiostruc</i> class embeds other types of objects, including PubMed citations,
 features, and sequences, which in turn embed additional objects such as 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CDate.html">
+<a href="../docxx/CDate.html">
 <i>Date</i></a>.
 The makefile for <i>xml2asn.cpp</i>, <a href="make_xml2asn.html"> <i>Makefile.xml2asn.app</i></a> lists 
 the libraries required for linking in the make variable <i>LIB</i>.

@@ -50,9 +50,9 @@ processing serialized data structures, and the NCBI C++ Toolkit provides
 additional types of iterators for just this purpose.
 
 <a NAME="typeIt"></a>
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypeIterator.html">
+<a href="../docxx/CTypeIterator.html">
 <h3><i>CTypeIterator</i></a> and
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypeConstIterator.html">
+<a href="../docxx/CTypeConstIterator.html">
 <i>CTypeConstIterator</i></h3></a>
 
 The <i>CTypeIterator</i> and <i>CTypeConstIterator</i> can be used to traverse a structured
@@ -141,7 +141,7 @@ How are generic iterators such as these implemented? The
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=Begin">
 <i>Begin()</i></a> expression returns an object containing a pointer to the input object
 <i>ObjectName</i>, as well as a pointer to a
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypeInfo.html"><i>CTypeInfo</i></a>
+<a href="../docxx/CTypeInfo.html"><i>CTypeInfo</i></a>
 object containing <a href="typeinfo.html">type information</a> about that object.  
 On each iteration, the <i>++</i> operator examines the current type information to find the
 next data member which is of type <i>T</i>. The current object, its type information, and the
@@ -197,9 +197,9 @@ by the <a href="#typesIt"><i>CTypesIterator</i></a> described later.
 <p>
 
 <a NAME="cobjType"></a>
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIterator.html">
+<a href="../docxx/CObjectIterator.html">
 <h3><i>CObjectIterator</i></a> and 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectConstIterator.html">
+<a href="../docxx/CObjectConstIterator.html">
 <i>CObjectConstIterator</i></h3></a>
 
 Because the <i>CObject</i> class is so central to the Toolkit,
@@ -224,9 +224,9 @@ generated serializable objects in <i>include/objects</i> <b>do</b> have a define
 
 
 <a NAME="stdType"></a>
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CStdTypeIterator.html">
+<a href="../docxx/CStdTypeIterator.html">
 <h3><i>CStdTypeIterator</i></a> and 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CStdTypeConstIterator.html">
+<a href="../docxx/CStdTypeConstIterator.html">
 <i>CStdTypeConstIterator</i></h3></a>
 
 All of the type iterators described thus far require that
@@ -250,7 +250,7 @@ Code examples using the <i>CTypeIterator</i> and <i>CStdTypeIterator</i> are giv
 href="ctypeiter_cpp.html"><i>ctypeiter.cpp</i></a>.
 
 <a NAME="typesIt"></a>
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypesIterator.html">
+<a href="../docxx/CTypesIterator.html">
 <h3><i>CTypesIterator</i></h3></a>
 
 Sometimes it is necessary to iterate over a <i>set</i> of types contained inside an
@@ -278,7 +278,7 @@ organism citations:
          }
      }
 </pre> </font>
-Here, <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/Type.html">
+Here, <a href="../docxx/Type.html">
 <i>Type</i></a> is a helper template class that simplifies the syntax required
 to use the multiple types iterator:
 <ul>

@@ -33,7 +33,7 @@ libraries at NCBI:
 
 <a name="CNcbiApplication">
 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNcbiApplication.html">
+<a href="../docxx/CNcbiApplication.html">
 <i>CNcbiApplication </i></a> is an abstract class used to define the basic functionality and
 behavior of an NCBI application. Because this application class effectively supercedes the
 C-style <i>main()</i> function, minimally, it must provide the same functionality, i.e.
@@ -59,7 +59,7 @@ after it has initialized its
 <i> CNcbiArguments, CNcbiEnvironment, CNcbiRegistry</i>, and <i> CNcbiDiag</i> data members.<p>
 
 <a name="CNcbiArguments"> The 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNcbiArguments.html">
+<a href="../docxx/CNcbiArguments.html">
 <i> CNcbiArguments </i></a> class provides a data structure for holding the application's
 command-line arguments, along with methods for accessing and modifying these.  The data
 structure is a simple C++ vector of strings. Thus access to it is implemented by member
@@ -68,14 +68,14 @@ functions support retrieval and modification of the program name (intitially
 <i>argv</i>[0]). <p>
 
 <a name="CNcbiEnvironment"> Similarly, the 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNcbiEnvironment.html">
+<a href="../docxx/CNcbiEnvironment.html">
 <i> CNcbiEnvironment </i></a> class provides a data structure for
 storing, accessing, and modifying the environment variables accessed by the C library
 routine <i>getenv()</i>. In this case the data structure is an associative array - a
 C++ map container, that allows <i>[]</i> access with string rather than integer indexes. <p>
 
 <a name="CNcbiRegistry"> The
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNcbiRegistry.html">
+<a href="../docxx/CNcbiRegistry.html">
 <i> CNcbiRegistry </i></a> class is used to store, access, and modify runtime
 information read from a configuration file. Previously, these files were by convention named
 ".*rc" files on <i> unix </i> systems. The convention for all platforms now is to name such
@@ -88,7 +88,7 @@ class's main data structure uses a map of maps, where the "containing" map is in
 sections while the "contained" map is indexed by keywords. <p>
 
 <a name="CNcbiDiag"> The
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNcbiDiag.html">
+<a href="../docxx/CNcbiDiag.html">
 <i> CNcbiDiag </i></a> class implements much of the functionality of the NCBI C Toolkit error
 processing mechanisms. Each instance of <i>CNcbiDiag</i> has a private buffer to
 handle a <i>single</i> message, along with private severity level and post flags and their

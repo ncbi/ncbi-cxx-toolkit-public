@@ -115,9 +115,9 @@ _TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
 	 <a name="ref_ExceptionStd">
 		  <h4>Standard C++ exception classes, and two useful NCBI exception
 			 classes (
-		<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CErrnoException.html"> CErrnoException </a>
+		<a href="../docxx/CErrnoException.html"> CErrnoException </a>
 		,
-		<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CParseException.html"> CParseException </a>
+		<a href="../docxx/CParseException.html"> CParseException </a>
 		)
 	 </h4>
 	 </a>
@@ -127,11 +127,11 @@ _TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
 	 as much as possible. There is also a couple of auxiliary exception
 	 classes derived from <i>std::runtime_error</i>:
 	 <ul>
-		<li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CErrnoException.html"> CErrnoException </a>
+		<li> <a href="../docxx/CErrnoException.html"> CErrnoException </a>
 		  -- to report failure in a standard C library
 		  function; it automatically appends to the user message a
 		  system-spefific description reported by <b>errno</b>
-		<li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CParseException.html"> CParseException </a>
+		<li> <a href="../docxx/CParseException.html"> CParseException </a>
 		  -- to report an erroneous position (passed in
 		  the additional constructor parameter) along with the user message
 	 </ul>
@@ -239,7 +239,7 @@ THROW1_TRACE(CErrnoException, "Failed strtod('1e-999999', 0)");
 		  to an arbitrary non-empty value.
 
 		  You also can turn it on and off in your program code, calling
-		  function <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/General.html#SetThrowTraceAbort">SetThrowTraceAbort()</a>.
+		  function <a href="../docxx/General.html#SetThrowTraceAbort">SetThrowTraceAbort()</a>.
 	 </ul>
 
 	 NOTE: if the source was not compiled in the debug mode, then the 
@@ -422,7 +422,7 @@ ERR_POST(Warning << "...print double: " << ddd); </pre>
     to be a special, debug-oriented feature, and therefore it is not
     affected by <i>SetDiagPostLevel()</i> and <i>SetDiagDieLevel()</i>.
 	 To turn the tracing on or off in your code you can use function
-    <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/General.html#SetDiagTrace">SetDiagTrace()</a>.
+    <a href="../docxx/General.html#SetDiagTrace">SetDiagTrace()</a>.
 
 	 <p>
 	 By default, the tracing is off -- unless you assign environment

@@ -51,7 +51,7 @@ as well as C style <i>struct</i> and <i>choice</i> elements defined in legacy li
 are also defined in the section on preprocessor macros. 
 
 <a name="ctypeinfo"> <h3> The
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CTypeInfo.html"> <i>CTypeInfo</i></a> class </h3>
+<a href="../docxx/CTypeInfo.html"> <i>CTypeInfo</i></a> class </h3>
 This is the base class for all type information storage and mechanisms. The class contains a
 single data member, <i>m_Name</i>, which stores the class name for the object. A large number
 of member functions - many of which are pure virtual functions at this level - provide
@@ -62,10 +62,10 @@ terminates. This is used by the object <a href="iterators.html"> type iterators<
 their termination conditions. <p>
 
 The subclasses derived from this base class include 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CPrimitiveTypeInfo.html"> <i>CPrimitiveTypeInfo</i></a>, 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CPointerTypeInfo.html"> <i>CPointerTypeInfo</i></a>,
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CContainerTypeInfo.html"> <i>CContainerTypeInfo</i></a>, and
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CClassTypeInfoBase.html"> <i>CClassTypeInfoBase</i></a>.
+<a href="../docxx/CPrimitiveTypeInfo.html"> <i>CPrimitiveTypeInfo</i></a>, 
+<a href="../docxx/CPointerTypeInfo.html"> <i>CPointerTypeInfo</i></a>,
+<a href="../docxx/CContainerTypeInfo.html"> <i>CContainerTypeInfo</i></a>, and
+<a href="../docxx/CClassTypeInfoBase.html"> <i>CClassTypeInfoBase</i></a>.
 These subclasses contain additional data members and member functions, such as
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddMember"> <i>AddMember()</i></a> and
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddSubClass"> <i>AddSubClass()</i></a>,
@@ -83,7 +83,7 @@ reasons, the <i>CTypeInfo</i> class is intended for internal usage only, and it 
 type information.
 
 <a name="cobjinfo"> <h3> The 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectInfo.html"> <i>CObjectInfo</i></a> class </h3>
+<a href="../docxx/CObjectInfo.html"> <i>CObjectInfo</i></a> class </h3>
 
 Let us suppose that we would like to have a generic function which can populate an object 
 using data read from a flat file. For example, we might like to have:
@@ -136,11 +136,11 @@ The <i>GetClassMember()</i> method also returns a <i>CObjectInfo</i> object, in 
 Accordingly, we use <i>CObjectInfo</i>'s class interface to set the value of this member.
 
 <a name="objstrs"> <h3> The 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIStream"> <i>CObjectIStream</i></a> and
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectOStream"> <i>CObjectOStream</i></a> classes</h3>
+<a href="../docxx/CObjectIStream"> <i>CObjectIStream</i></a> and
+<a href="../docxx/CObjectOStream"> <i>CObjectOStream</i></a> classes</h3>
 
 Both of these classes are derived from the <a
-href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectStack"> <i>CObjectStack</i></a>
+href="../docxx/CObjectStack"> <i>CObjectStack</i></a>
 class. As implied by this class name, the object stream classes use a stack data structure
 to support the parsing of serialized objects. Reading and writing serial data objects is
 described in the section on <a href="asn.html#example1"> Processing serial data</a>, where the
@@ -157,7 +157,7 @@ Each of the <i>open</i> statements in <a href="xml2asn_cpp.html"><i>xml2asn.cpp<
 </pre></font>
 
 This statement causes a 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIStreamXml.html"> 
+<a href="../docxx/CObjectIStreamXml.html"> 
 <i>CObjectIStreamXml</i></a> object to be opened on the file named "1001.xml". No information 
 is yet provided as to what <i>type</i> of object(s) may be encoded in the file - only the
 syntax used in the encoding is currently known. Similarly, the two statements which

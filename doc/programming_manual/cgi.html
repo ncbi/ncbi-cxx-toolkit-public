@@ -92,7 +92,7 @@ that have no meaning outside of a web application are also omitted. For complete
 definitions, refer to the header files via the source browsers.
 
 <a name="ccgiapp"> 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiApplication.html">
+<a href="../docxx/CCgiApplication.html">
 <h3> The CCgiApplication class </h3></a>
 As mentioned, the <i>CCgiApplication </i> class implements its own version of 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=Init">
@@ -150,9 +150,9 @@ RunFastCGI()</i>, and if that returns <i>false</i>, the application is run as a 
 program.
 
 <a name="cncbires">
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNcbiResource.html">
+<a href="../docxx/CNcbiResource.html">
 <h3> The CNcbiResource</a> and 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNcbiCommand.html">
+<a href="../docxx/CNcbiCommand.html">
 CNcbiCommand</a> classes </h3>
 
 The resource class is at the heart of the application, and it is here that the program's
@@ -196,7 +196,7 @@ an entry in the request is then executed (see
 below), and the request is considered "handled". If desired, a default command can
 be installed which will execute when no matching command is found. The default
 command is defined by implementing the pure virtual function <i>GetDefaultCommand()</i>.
-The <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNcbiResPresentation.html">
+The <a href="../docxx/CNcbiResPresentation.html">
 <i>CNcbiResPresentation</i></a> class is an abstract base class, and the member function,
 <i>GetPresentation()</i>, returns 0. It is provided as a hook for implementing interfaces
 between information resources (e.g. databases) and CGI applications.
@@ -241,7 +241,7 @@ and the cloned command is then <i>executed</i>.  Both the <i>Execute()</i> and <
 methods are pure virtual functions which must be implemented by the user.
 
 <a name="ccgireq"> 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiRequest.html">
+<a href="../docxx/CCgiRequest.html">
 <h3> The CCgiRequest class </h3></a>
 
 <i>The CCgiRequest</i> class serves as an interface between the user's query and the CGI
@@ -265,7 +265,7 @@ information as "gettable" properties. Cached properties include:
   <li> standard HTTP properties (from the HTTP header) 
 </ul>
 These properties are keyed to an enumeration named 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/ECgiProp.html">
+<a href="../docxx/ECgiProp.html">
 <i>ECgiProp</i></a>, and can be retrieved using the request object's <i>GetProperty()</i>
 member function.  For example, <i>GetProperty(eCgi_HttpCookie)</i> is used to access
 cookies from the HTTP Header, and <i> GetProperty(eCgi_RequestMethod)</i> is used to
@@ -324,7 +324,7 @@ href="#cookies"> below</a>) contains an STL set of <a
 href="#ccgicoo"><i>CCgiCookie</i></a>, and implements an interface to this set.<p>
 
 <a name="ccgires"> 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiResponse.html">
+<a href="../docxx/CCgiResponse.html">
 <h3> The CCgiResponse class </h3></a>
 
 The <i>CCgiResponse</i> class provides an interface to the program's output
@@ -409,7 +409,7 @@ protected:
 </font></pre>
 
 <a name="ccgicoo"> 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiCookie.html">
+<a href="../docxx/CCgiCookie.html">
 <h3> The CCgiCookie class </h3></a>
 
 The traditional means of maintaining state information when servicing a multi-step request
@@ -499,7 +499,7 @@ returns <i>false</i> if no expiration date was previously set. Otherwise, <i>tm<
 reset to <i>m_Expire</i>, and <i>true</i> is returned.
 
 <a name="cookies"> 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiCookies.html">
+<a href="../docxx/CCgiCookies.html">
 <h3> The CCgiCookies class </h3></a>
 
 The <i>CCgiCookies</i> class provides an interface to an STL set of <i>CCgiCookie</i>s
@@ -557,7 +557,7 @@ private:
 </font></pre>
 
 <a name="ccgictx">
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CCgiContext.html">
+<a href="../docxx/CCgiContext.html">
 <h3> The CCgiContext class </h3></a> As depicted in <a href="#overview"> Figure 1</a>, a
 <i>CCgiContext</i> object contains an application object, a request object, and a response
 object, corresponding to its data members <i>m_app, m_request</i>, and

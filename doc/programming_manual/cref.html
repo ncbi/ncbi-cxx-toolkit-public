@@ -15,7 +15,7 @@
   <li> <a href="#usage"> When to use <i>CRef</i>s and <i>auto_ptr</i>s</a>
 </ul>
 
-<a name="autoptr"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/auto_ptr.html">
+<a name="autoptr"> <a href="../docxx/auto_ptr.html">
  <h3> <i>STL auto_ptrs</i> </h3> </a>
 C programmers are well-acquainted with the advantages and pitfalls of using pointers. As is often 
 the case, the good news is also the bad news: 
@@ -35,7 +35,7 @@ pointer.  The wrapper class's constructors and destructors can then handle memor
 the object goes in and out of scope. The problem with this solution is that it does not handle
 multiple pointers to the same resource properly, and it raises the issue of ownership. This is
 essentially what the 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/auto_ptr.html">
+<a href="../docxx/auto_ptr.html">
 <i>auto_ptr</i></a> offers, but this strategy is only safe to use when the
 resource maps to a single pointer variable.<p>
 
@@ -59,15 +59,15 @@ defined - the second problem occurs when we try to dereference <i>ip</i>. The
 <i>delete</i> operation occurring as the block exits has now reset <i>*ip</i> to <i>0</i>, 
 so an attempt to divide by zero occurs. 
 
-<a name="cref"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CRef.html">
+<a name="cref"> <a href="../docxx/CRef.html">
 <h3>The <i>CRef</i> Class </h3></a>
 
 These issues are addressed in the NCBI C++ Toolkit by using <i>reference-counted</i> smart
 pointers: a resource cannot be deallocated until <i>all</i> references to it have ceased to
 exist. The implementation of a smart pointer in the NCBI C++ Toolkit is actually divided
 between two classes:
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CRef.html"> <i>CRef</i></a> and 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObject.html">
+<a href="../docxx/CRef.html"> <i>CRef</i></a> and 
+<a href="../docxx/CObject.html">
 <i>CObject</i></a>. <p>
 
 The <i>CRef</i> class essentially provides a pointer interface to a <i>CObject</i>, while the
@@ -111,7 +111,7 @@ has no other references and was dynamically allocated, deletes the <i>CObject</i
 <p>
 Each member function of the <i>CRef</i> class also has a <i>const</i> implementation that is
 invoked when the pointer is to a <i>const</i> object. In addition, there is also a
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CConstRef.html">
+<a href="../docxx/CConstRef.html">
 <i>CConstRef</i></a> class that parallels the <i>CRef</i> class.
 
 Both <i>CRef</i> and <i>CConstRef</i> are implemented as template classes, where the template
@@ -124,18 +124,18 @@ href="traverse.html#accessMember"> Traversing an ASN.1 Data Structure</a> we exa
 </pre>
 
 As described there, this <i>typedef</i> defines <i>TId</i> to be a list of pointers to
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CBiostruc_id.html">
+<a href="../docxx/CBiostruc_id.html">
 <i>CBiostruc_id</i></a> objects. And as you might expect, <i>CBiostruc_id</i> is a 
 specialized subclass of  <i>CObject</i>. 
 <p>
 
-<a name="cobject"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObject.html">
+<a name="cobject"> <a href="../docxx/CObject.html">
  <h3> The CObject Class </h3></a>
 The <i>CObject</i> class serves as a base class for all objects requiring a reference
 count. There is little overhead entailed by deriving a new class from this base
 class, and most objects in the NCBI C++ Toolkit are derived from the <i>CObject</i> class.
 For example, 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNCBINode.html">
+<a href="../docxx/CNCBINode.html">
 <i>CNCBINode</i></a> is a direct descendant of <i>CObject</i>, and all of the other
 <i>HTML</i> classes descend either directly or indirectly from <i>CNCBINode</i>. Similarly, all 
 of the ASN.1 classes defined in the 
@@ -158,7 +158,7 @@ designed for this purpose.
 <p>
 <a name="exmpl"> <h3>
 The 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectFor.html">
+<a href="../docxx/CObjectFor.html">
 <i>CObjectFor</i> class</a>: Using smart pointers for standard types</h3>
 
 The <i>CObjectFor</i> class is derived directly from <i>CObject</i>, and is implemented as a
@@ -167,8 +167,8 @@ the reference counter inherited from its parent class, <i>CObjectFor</i> has a p
 data member of the parameterized type, and a member function <i>GetData()</i> to access it.<p>
 
 An example program, <a href="smart_cpp.html"> <i>smart.cpp</i></a>, uses the 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CRef.html">
-<i>CRef</i></a> and <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectFor.html">
+<a href="../docxx/CRef.html">
+<i>CRef</i></a> and <a href="../docxx/CObjectFor.html">
 <i>CObjectFor</i></a> classes, and demonstrates the differences in memory management that arise
 using <i>auto_ptr</i> and <i>CRef</i>.
 
