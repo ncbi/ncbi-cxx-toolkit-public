@@ -35,9 +35,6 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_tree.hpp>
-#include <util/bitset/bitset_debug.hpp>
-#include <algo/tree/tree_algo.hpp>
-#include <util/bitset/ncbi_bitset.hpp>
 #include <algorithm>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -91,66 +88,7 @@ static string s_IntToStr(int i)
     return NStr::IntToString(i);
 }
 
-static void s_TEST_TreeOperations()
-{
-  
-  typedef CTreeNode<int> TTree;
-  
-  TTree* orig = new TTree(0);
-  TTree* orig10 = orig->AddNode(10);
-  TTree* orig11 = orig->AddNode(11);
-  orig10->AddNode(20);
-  orig10->AddNode(21);
-  orig11->AddNode(22);
-  orig11->AddNode(23);
-  
-  TTree* corr = new TTree(11);
-  corr->AddNode(22);
-  corr->AddNode(23);
-  TTree* corr0 = corr->AddNode(0);
-  TTree* corr10 = corr0->AddNode(10);
-  corr10->AddNode(20);
-  corr10->AddNode(21);
 
-  TreeReRoot(*orig10);
-
-  cout << "After rerooting original tree by node 10, " << endl;
-  cout << "the original tree and correct tree are now ";
-  if(TreeCompare(*orig10, *corr, TestFunctor3)) {
-    cout << "the same." << endl;
-  }
-  else {
-    cout << "different." << endl;
-  }
-  cout << endl;
-
-  TreePrint(cout, *orig10, s_IntToStr, false);
-  TreePrint(cout, *corr, s_IntToStr, false);
-  cout << endl;
-  /*
-  TTree* corr2 = new TTree(11);
-  corr2->AddNode(22);
-  corr2->AddNode(23);
-  corr2->AddNode(0);
- 
-  TTree* t = orig->DetachNode(orig10);
-
-  cout << "After removing node 10 from this tree, " << endl;
-  cout << "the original tree and correct tree are now ";
-  if(TreeCompare(*orig11, *corr2, TestFunctor3)) {
-    cout << "the same." << endl;
-  }
-  else {
-    cout << "different." << endl;
-  }
-  cout << endl;
-   
-  TreePrint(cout, *orig11, s_IntToStr, false);
-  TreePrint(cout, *t, s_IntToStr, false);
-  TreePrint(cout, *corr2, s_IntToStr, false);
-  cout << endl;
-  */
-}
 
 static void s_TEST_Tree()
 {
@@ -183,24 +121,6 @@ static void s_TEST_Tree()
 
     cout << "Testing Depth First Traversal" << endl;
     TreeDepthFirstTraverse(*tr, TestFunctor1);
-    cout << endl;
-
-    cout << "Testing Tree Comparison" << endl;
-    cout << "tr and tr10 are ";
-    if(!TreeCompare(*tr, *tr10, TestFunctor3)) cout << "not ";
-    cout << "the same." << endl;
-    cout << "tr and tr are ";
-    if(!TreeCompare(*tr, *tr, TestFunctor3)) cout << "not ";
-    cout << "the same." << endl;
-    cout << "tr and sr are ";
-    if(!TreeCompare(*tr, *sr, TestFunctor3)) cout << "not ";
-    cout << "the same." << endl;
-    cout << "tr and ur are ";
-    if(!TreeCompare(*tr, *ur, TestFunctor3)) cout << "not ";
-    cout << "the same." << endl;
-    cout << "sr and ur are ";
-    if(!TreeCompare(*sr, *ur, TestFunctor3)) cout << "not ";
-    cout << "the same." << endl;
     cout << endl;
 
     {{
@@ -285,49 +205,6 @@ static void s_TEST_Tree()
     TreeDepthFirstTraverse(*str, TestFunctor1);
     cout << endl;
 
-    vector<const TTree*> trace_vec;
-    TreeTraceToRoot(*tr6, trace_vec);
-
-    assert(trace_vec.size() == 3);
-
-    {{
-    cout << "Trace to root: ";
-
-    ITERATE(vector<const TTree*>, it, trace_vec) {
-        cout << (*it)->GetValue() << "; ";
-    }
-
-    cout << endl;
-
-    }}
-
-    const TTree* parent_node = TreeFindCommonParent(*tr4, *tr6);
-
-    assert(tr4->IsParent(*parent_node));
-    assert(tr6->IsParent(*parent_node));
-    assert(!tr4->IsParent(*tr6));
-
-
-    assert(parent_node);
-
-    cout << "parent: " << parent_node->GetValue() << endl;
-
-    assert(parent_node->GetValue() == 0);
-
-    parent_node = TreeFindCommonParent(*tr5, *tr6);
-    assert(parent_node);
-    assert(parent_node->GetValue() == 3);
-
-
-    TreePrint(cout, *str, s_IntToStr);
-    cout << endl;
-
-    TreeReRoot(*tr5);
-    TreePrint(cout, *tr5, s_IntToStr);
-
-    tr5->MoveSubnodes(str);
-    TreePrint(cout, *tr5, s_IntToStr);
-
     delete tr5;
 }
 
@@ -345,202 +222,6 @@ struct IdValue
 static string s_IdValueToStr(const IdValue& idv)
 {
     return NStr::IntToString(idv.id);
-}
-
-static void s_TEST_IdTreeOperations()
-{
-    cout << "--------------------- s_TEST_IdTreeOperations " << endl;
-
-    typedef CTreeNode<IdValue> TTree;
-
-    TTree* tr = new TTree(0);
-
-    TTree* tr10 = tr->AddNode(10);
-    TTree* tr11 = tr->AddNode(11);
-    TTree* tr110 = tr10->AddNode(110);
-    TTree* tr1100 = tr110->AddNode(1100);
-
-    TreePrint(cout, *tr, s_IdValueToStr);
-
-    bm::bvector<> bv;
-    TreeMakeSubNodesSet(*tr, bv.inserter());
-    assert(bv.count() == 2);
-    assert(bv[10]);
-    assert(bv[11]);
-
-    typedef vector<TTree*> TNodeList;
-    TNodeList node_list;
-    node_list.push_back(tr10);
-    node_list.push_back(tr11);
-    node_list.push_back(tr110);
-    node_list.push_back(tr1100);
-
-    TNodeList res_node_list;
-
-    CTreeNonRedundantSet<TTree, bm::bvector<>, TNodeList> nr_func;
-    nr_func(node_list, res_node_list);
-
-    cout << "Non-redundant set:" << endl;
-    ITERATE(TNodeList, it, res_node_list) {
-        cout << (*it)->GetValue().GetId() << "; ";
-    }
-    cout << endl;
-    assert(res_node_list.size() == 2);
-
-
-    res_node_list.clear();
-    node_list.clear();
-
-    node_list.push_back(tr110);
-    node_list.push_back(tr1100);
-
-    CTreeMinimalSet<TTree, bm::bvector<>, TNodeList> min_func;
-    min_func(node_list, res_node_list);
-
-    
-    cout << "Minimal set:" << endl;
-    ITERATE(TNodeList, it, res_node_list) {
-        cout << (*it)->GetValue().GetId() << "; ";
-    }
-    cout << endl;
-    cout << "-----" << endl;
-    assert(res_node_list.size() == 1);
-
-
-    res_node_list.clear();
-    node_list.clear();
-
-
-    node_list.push_back(tr110);
-    node_list.push_back(tr1100);
-    node_list.push_back(tr11);
-
-    min_func(node_list, res_node_list);
-
-    
-    cout << "Minimal set:" << endl;
-    ITERATE(TNodeList, it, res_node_list) {
-        cout << (*it)->GetValue().GetId() << "; ";
-    }
-    cout << endl;
-    cout << "-----" << endl;
-    assert(res_node_list.size() == 1);
-
-
-    res_node_list.clear();
-    node_list.clear();
-
-
-    
-    TNodeList node_list_a;
-    TNodeList node_list_b;
-    TNodeList node_list_c;
-
-    node_list_a.push_back(tr10);
-    node_list_a.push_back(tr11);
-    node_list_a.push_back(tr110);
-    node_list_a.push_back(tr1100);
-    
-    node_list_b.push_back(tr10);
-    node_list_b.push_back(tr11);
-    node_list_b.push_back(tr110);
-
-    CTreeNodesAnd<TTree, bm::bvector<>, TNodeList> and_func;
-    and_func(node_list_a, node_list_b, node_list_c);
-
-    ITERATE(TNodeList, it, node_list_c) {
-        cout << (*it)->GetValue().GetId() << "; ";
-    }
-    cout << endl;
-    assert(node_list_c.size() == 3);
-
-
-    node_list_c.clear();
-
-    CTreeNodesOr<TTree, bm::bvector<>, TNodeList> or_func;
-    or_func(node_list_a, node_list_b, node_list_c);
-
-    ITERATE(TNodeList, it, node_list_c) {
-        cout << (*it)->GetValue().GetId() << "; ";
-    }
-    cout << endl;
-    assert(node_list_c.size() == 4);
-
-
-    delete tr;
-
-    cout << "--------------------- s_TEST_IdTreeOperations ok" << endl;
-}
-
-static void s_TEST_IdTree()
-{
-    typedef CTreePairNode<int, int> TTree;
-
-    TTree* tr = new TTree(0, 0);
-    
-    tr->AddNode(1, 10);
-    tr->AddNode(100, 110);
-    TTree* tr2 = tr->AddNode(2, 20);
-    tr2->AddNode(20, 21);    
-    TTree* tr3 =tr2->AddNode(22, 22);
-    tr3->AddNode(222, 222);
-
-    {{
-    list<int> npath;
-    npath.push_back(2);
-    npath.push_back(22);
-
-    TTree::TConstPairTreeNodeList res;
-    tr->FindNodes(npath, &res);
-    assert(!res.empty());
-    TTree::TConstPairTreeNodeList::const_iterator it = res.begin();
-    const TTree* ftr = *it;
-
-    assert(ftr->GetValue() == 22);
-    }}
-
-    {{
-    list<int> npath;
-    npath.push_back(2);
-    npath.push_back(32);
-
-    TTree::TConstPairTreeNodeList res;
-    tr->FindNodes(npath, &res);
-    assert(res.empty());
-    }}
-
-    {{
-    list<int> npath;
-    npath.push_back(2);
-    npath.push_back(22);
-    npath.push_back(222);
-    npath.push_back(100);
-
-    const TTree* node = PairTreeTraceNode(*tr, npath);
-    assert(node);
-    cout << node->GetId() << " " << node->GetValue() << endl;
-    assert(node->GetValue() == 110);
-
-
-    node = PairTreeBackTraceNode(*tr3, 1);
-    assert(node);
-    cout << node->GetId() << " " << node->GetValue() << endl;
-    assert(node->GetValue() == 10);
-    }}
-
-    {{
-    list<int> npath;
-    npath.push_back(2);
-    npath.push_back(22);
-    npath.push_back(222);
-
-    const TTree* node = PairTreeTraceNode(*tr, npath);
-    assert(node);
-    cout << node->GetId() << " " << node->GetValue() << endl;
-    assert(node->GetValue() == 222);
-    }}
-
-    delete tr;
 }
 
 
@@ -570,12 +251,6 @@ int CTestApplication::Run(void)
     
     s_TEST_Tree();
 
-    s_TEST_TreeOperations();
-
-    s_TEST_IdTree();
-
-    s_TEST_IdTreeOperations();
-
     return 0;
 }
 
@@ -594,6 +269,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.19  2004/07/21 18:19:09  kuznets
+ * Removed util dependent test cases
+ *
  * Revision 1.18  2004/06/21 16:49:38  ckenny
  * fixed warnings in compilation
  *
