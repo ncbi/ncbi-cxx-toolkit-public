@@ -599,7 +599,9 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq,
         ret.Reset(new CSeqMap(TSeqPos(0)));
     }
     const_cast<CSeqMap&>(*ret).m_Mol = inst.GetMol();
-    const_cast<CSeqMap&>(*ret).m_SeqLength = inst.GetLength();
+    if ( inst.GetLength() ) {
+        const_cast<CSeqMap&>(*ret).m_SeqLength = inst.GetLength();
+    }
     return ret;
 }
 
@@ -835,6 +837,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/06/27 19:09:02  grichenk
+* Fixed problem with unset sequence length.
+*
 * Revision 1.41  2003/06/26 19:47:27  grichenk
 * Added sequence length cache
 *
