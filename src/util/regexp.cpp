@@ -35,7 +35,7 @@
 #include <util/regexp.hpp>
 #include <memory>
 #include <stdlib.h>
-
+#include <corelib/ncbistl.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -243,7 +243,7 @@ size_t CRegexpUtil::Replace(
         result = re.GetResults(0);
         m_Content.replace(result[0], result[1] - result[0], x_replace);
         n_replace++;
-        start_pos = result[0] + x_replace.length();
+        start_pos = result[0] + max(x_replace.length(), (size_t) 1);
     }
     return n_replace;
 }
@@ -353,6 +353,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/07/20 12:18:01  jcherry
+ * Guard against endless loop in Replace() when regular expression
+ * can match the empty string.
+ *
  * Revision 1.7  2004/05/17 21:06:02  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
