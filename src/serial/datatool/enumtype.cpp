@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/07/22 17:49:23  gouriano
+* Corrected XML schema generation for named integers
+*
 * Revision 1.26  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -260,6 +263,7 @@ void CEnumDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
         if(IsInteger()) {
             out << "    <xs:simpleContent>\n"
                 << "      <xs:extension base=\"xs:integer\">\n";
+            use = "optional";
         }
     }
     out << "        <xs:attribute name=\"" << value << "\" use=\"" << use << "\">\n";
