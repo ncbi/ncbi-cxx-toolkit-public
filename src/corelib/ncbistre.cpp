@@ -115,11 +115,7 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 #else
     char buf[1024];
     str.erase();
-    if ( !is.good() ) {
-        is.clear(is.rdstate() | NcbiFailbit);
-        return is;
-    }
-    do {
+    while (is.good()) {
         CT_INT_TYPE nextc = is.get();
         if (CT_EQ_INT_TYPE(nextc, CT_EOF) 
             ||  CT_EQ_INT_TYPE(nextc, CT_TO_INT_TYPE(delim))) {
@@ -128,7 +124,10 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
         is.putback(nextc);
         is.get(buf, sizeof(buf), delim);
         str.append(buf, is.gcount());
-    } while (is.good());
+    }
+    if ( str.empty() ) {
+        is.setstate(NcbiFailbit);
+    }
     return is;
 #endif
 }
@@ -373,6 +372,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/09/05 15:56:00  ivanov
+ * Fix for R2.8 -- only set FAILBIT if no symbols have been read
+ *
  * Revision 1.28  2003/09/05 15:22:26  ivanov
  * Fixed NcbiGetline() to correct handle last line in the input stream
  *
