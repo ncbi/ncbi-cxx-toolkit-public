@@ -133,12 +133,11 @@ static int s_SpawnUnix(ESpawnFunc func, CExec::EMode mode,
 #endif
 
 
-// On 64-bit platforms, check argument, passed into function with variable number of arguments,
-// on possible using 0 instead NULL as last argument.
+// On 64-bit platforms, check argument, passed into function with variable
+// number of arguments, on possible using 0 instead NULL as last argument.
 // Of course, the argument 'arg' can be aligned on segment boundary,
 // when 4 low-order bytes are 0, but chance of this is very low.
 // The function prints out a warning only in Debug mode.
-
 #if defined(_DEBUG)
 static void s_CheckExecArg(const char* arg)
 {
@@ -352,6 +351,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/08/19 12:20:11  ivanov
+ * Lines wrapped at 79th column.
+ *
  * Revision 1.19  2004/08/19 12:18:02  ivanov
  * Added s_CheckExecArg() to check argument, passed into function with
  * variable number of arguments, on possible using 0 instead NULL as last
