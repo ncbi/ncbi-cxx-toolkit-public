@@ -274,6 +274,7 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
                 // CAGCAGC:
                 // 11[0], 12[9]
                 CRef<CSeq_align> align(new CSeq_align);
+                align->SetType(CSeq_align::eType_not_set);
                 // alignment data
                 CSeq_align::C_Segs& segs = align->SetSegs();
                 // for (multiway) diagonals
@@ -1225,6 +1226,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2003/05/12 19:17:42  vasilche
+* Added initialization of mandatory field.
+*
 * Revision 1.33  2003/05/09 20:34:23  grichenk
 * Reverted to 1.31
 *
