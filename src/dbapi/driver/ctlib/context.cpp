@@ -442,7 +442,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
 	  if((ct_con_props(con, CS_GET, CS_LOGIN_STATUS, (CS_VOID*)&status, CS_UNUSED, NULL) != CS_SUCCEED) ||
 	   (!status)) return false;
 	
-	  ct_cancel(con, (CS_COMMAND*)0, CS_CANCEL_ATTN);
+	  if(ct_cancel(con, (CS_COMMAND*)0, CS_CANCEL_ATTN) != CS_SUCCEED) return false;
 	}
 	else return false;
 	break;
@@ -880,6 +880,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/10/29 21:45:54  soussov
+ * adds code which prevents repeated timeouts if server is hanging
+ *
  * Revision 1.27  2003/10/27 17:00:20  soussov
  * adds code to prevent the return of broken connection from the pool
  *
