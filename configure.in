@@ -42,6 +42,62 @@ AC_INIT(include/corelib/ncbitype.h)
 
 #############################################################################
 
+#### Describe all "--with-*" arguments -- for the usage printout on "--help"
+
+## Title
+AC_ARG_WITH(title0,
+   [===============================================================================])
+AC_ARG_WITH(title1,
+   [=============== NCBI C++ Toolkit specific configuration flags =================])
+AC_ARG_WITH(title2,
+   [===============================================================================])
+
+## Code generation
+AC_ARG_WITH(debug,
+   [ --without-debug         build non-debug versions of libs and apps])
+AC_ARG_WITH(optimization,
+   [ --without-optimization  turn off optimization flags in non-debug mode])
+AC_ARG_WITH(dll,
+   [ --with-dll              build all libraries as DLLs])
+AC_ARG_WITH(mt,
+   [ --with-mt               compile in a MultiThread-safe manner])
+
+## Scripts, make features, and directory naming
+AC_ARG_WITH(extra-action,
+   [ --with-extra-action=    script to call after the configuration is complete])
+AC_ARG_WITH(autodep,
+   [ --with-autodep          automatic generation of dependencies (GNU make)])
+AC_ARG_WITH(foobar,
+   [ --exec-prefix=          specify a non-default build directory name])
+AC_ARG_WITH(suffix,
+   [ --without-suffix        no Release/Debug and MT suffixes in the build dir name])
+AC_ARG_WITH(hostspec,
+   [ --with-hostspec         add full host specs to the build dir name])
+
+## Third-party and system packages
+AC_ARG_WITH(ncbi-c,
+   [ --without-ncbi-c        do not use NCBI C Toolkit])
+AC_ARG_WITH(fastcgi,
+   [ --without-fastcgi       do not use Fast-CGI library])
+AC_ARG_WITH(sss,
+   [ --without-sss           do not use NCBI SSS libraries])
+AC_ARG_WITH(sssdb,
+   [ --without-sssdb         do not use NCBI SSS DB library])
+AC_ARG_WITH(sssutils,
+   [ --without-utils         do not use NCBI SSS UTIL library])
+AC_ARG_WITH(pubmed,
+   [ --without-pubmed        do not use NCBI PubMed libraries])
+AC_ARG_WITH(sybase,
+   [ --without-sybase        do not use SYBASE libraries])
+
+## Optional projects
+AC_ARG_WITH(serial,
+   [ --without-serial        do not build the serialization library and tools])
+AC_ARG_WITH(objects,
+   [ --with-objects          do not generate/build serializeable objects from ASNs])
+AC_ARG_WITH(internal,
+   [ --with-internal         build all projects including the internal ones])
+
 
 #### Check for special options
 if test "$with_extra_action" = "yes" ; then
@@ -1179,30 +1235,23 @@ fi
 
 dnl printout additional configuration options
 cat << EOCONF
-Configuration completed.
+===============================================================================
+Overall NCBI C++ Toolkit documentation:    doc/index.html 
 
-Optional configure flags:
- --without-debug         build non-debug versions of libs and apps
- --without-optimization  turn off optimization flags (default if without-debug)
- --with-dll              build all libraries as DLLs
- --with-mt               compile in a MultiThread-safe manner
- --with-internal         build all projects including the internal ones
- --without-sybase        do not use SYBASE libraries
- --without-ncbi-c        do not use NCBI C Toolkit
- --without-fastcgi       do not use Fast-CGI library
- --without-sssdb/utils   do not use NCBI SSS library(es)
- --without-pubmed        do not use NCBI PubMed libraries
- --exec-prefix=          specify a non-default build directory name
- --with-autodep          automatic generation of dependencies (for GNU make)
+For the available optional configuration flags
+run "./configure --help" or consult documentation:  doc/config.html#ref_Running
 
 CFLAGS   = $CFLAGS
 CXXFLAGS = $CXXFLAGS
 CPPFLAGS = $CPPFLAGS
 LDFLAGS  = $LDFLAGS
+
 Tools / flags / paths:  $builddir/Makefile.mk
 Configuration  header:  $ncbiconf
 
 To build everything:  cd $builddir && make all_r
+
+CONFIGURATION SUCCESFULLY COMPLETED.
 EOCONF
 ,
 
