@@ -106,7 +106,8 @@ enum EBlastOptIdx {
     eBlastOpt_EffectiveSearchSpace,
     eBlastOpt_UseRealDbSize,
     eBlastOpt_DbGeneticCode,
-    eBlastOpt_PHIPattern
+    eBlastOpt_PHIPattern,
+    eBlastOpt_SkipTraceback
 };
 
 
@@ -199,7 +200,7 @@ public:
     int GetGapExtnAlgorithm() const;
     void SetGapExtnAlgorithm(int a);
 
-    void SetSkipTraceback();
+    void SetSkipTraceback(bool skip);
 
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
@@ -1026,7 +1027,15 @@ public:
         }
     }
 
-    void SetSkipTraceback();
+    void SetSkipTraceback(bool skip = true)
+    {
+        if (m_Local) {
+            m_Local->SetSkipTraceback(skip);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_SkipTraceback, skip);
+        }
+    }
 
     /******************* Hit saving options *************************/
     int GetHitlistSize() const
@@ -2020,10 +2029,10 @@ CBlastOptionsLocal::SetGapExtnAlgorithm(int a)
     m_ExtnOpts->algorithm_type = a;
 }
 
-inline void 
-CBlastOptionsLocal::SetSkipTraceback()
+inline void
+CBlastOptionsLocal::SetSkipTraceback(bool skip)
 {
-    m_ExtnOpts->skip_traceback = TRUE;
+    m_ExtnOpts->skip_traceback = skip;
 }
 
 /******************* Hit saving options *************************/
@@ -2390,6 +2399,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2004/01/20 17:54:50  bealer
+* - Add SkipTraceback option.
+*
 * Revision 1.44  2004/01/20 17:06:39  camacho
 * Made operator== a member function
 *

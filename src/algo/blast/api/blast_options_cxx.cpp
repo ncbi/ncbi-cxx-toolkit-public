@@ -282,6 +282,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
     case eBlastOpt_UseRealDbSize:
         x_SetParam("UseRealDbSize", v);
         return;
+        
+    case eBlastOpt_SkipTraceback:
+        x_SetParam("SkipTraceback", v);
+        return;
     }
     
     char errbuf[1024];
@@ -557,6 +561,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2004/01/20 17:53:01  bealer
+* - Add SkipTraceback option.
+*
 * Revision 1.36  2004/01/20 17:06:50  camacho
 * Made operator== a member function
 *
