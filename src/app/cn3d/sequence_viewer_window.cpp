@@ -39,6 +39,7 @@
 #endif
 #include <wx/wx.h>
 
+#include "cn3d/taxonomy_tree.hpp"
 #include "cn3d/sequence_viewer_window.hpp"
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/alignment_manager.hpp"
@@ -50,7 +51,6 @@
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/cn3d_blast.hpp"
-#include "cn3d/taxonomy_tree.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -466,6 +466,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/03/06 19:23:56  thiessen
+* fix for compilation problem (seqfeat macros)
+*
 * Revision 1.48  2003/02/03 19:20:06  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
