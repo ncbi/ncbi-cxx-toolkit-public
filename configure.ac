@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.54 2002/04/05 22:16:03 ucko Exp $
+#  $Id: configure.ac,v 1.55 2002/04/09 20:21:07 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -598,7 +598,7 @@ if test "$with_64" = "yes" ; then
       ;;
     sparc-sun-solaris*:WorkShop6 )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
-      LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -Bdynamic $LIBS"
+      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS"
       ;;
 changequote(, )dnl
     sparc-sun-solaris*:WorkShop5[23] )
@@ -626,7 +626,7 @@ else
       MATH_LIBS=" "
       ;;
     solaris*:WorkShop6 )
-      LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -lm -Bdynamic $LIBS"
+      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -lm -Bdynamic $LIBS"
       MATH_LIBS=" "
       ;;
 changequote(, )dnl

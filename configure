@@ -3238,7 +3238,7 @@ if test "$with_64" = "yes" ; then
       ;;
     sparc-sun-solaris*:WorkShop6 )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
-      LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -Bdynamic $LIBS"
+      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS"
       ;;
     sparc-sun-solaris*:WorkShop5[23] )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
@@ -3266,7 +3266,7 @@ else
       MATH_LIBS=" "
       ;;
     solaris*:WorkShop6 )
-      LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -lm -Bdynamic $LIBS"
+      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -lm -Bdynamic $LIBS"
       MATH_LIBS=" "
       ;;
     solaris*:WorkShop5[23] )
