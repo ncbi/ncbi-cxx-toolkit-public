@@ -68,7 +68,8 @@ void CNWFormatter::SetSeqIds(CConstRef<CSeq_id> id1, CConstRef<CSeq_id> id2)
 
 CRef<CSeq_align> CNWFormatter::AsSeqAlign(
     TSeqPos query_start, ENa_strand query_strand,
-    TSeqPos subj_start,  ENa_strand subj_strand) const
+    TSeqPos subj_start,  ENa_strand subj_strand,
+    ESeqAlignFormatFlags flags) const
 {
 
 #ifdef USE_RAW_TRANSCRIPT
@@ -93,35 +94,37 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
     CSeq_align::TScore& scorelist = seqalign->SetScore();
 
     // add dynprog score
-    {{
-    CRef<CScore> score (new CScore);
-    CRef<CObject_id> id (new CObject_id);
-    id->SetStr("global_score");
-    score->SetId(*id);
-    CRef< CScore::C_Value > val (new CScore::C_Value);
-    val->SetInt(m_aligner->GetScore());
-    score->SetValue(*val);
-    scorelist.push_back(score);
-    }}
+    if(flags & eSAFF_DynProgScore) {
+        CRef<CScore> score (new CScore);
+        CRef<CObject_id> id (new CObject_id);
+        id->SetStr("global_score");
+        score->SetId(*id);
+        CRef< CScore::C_Value > val (new CScore::C_Value);
+        val->SetInt(m_aligner->GetScore());
+        score->SetValue(*val);
+        scorelist.push_back(score);
+    }
 
     // add identity score
-    {{
-    TSeqPos matches = 0;
-    ITERATE(string, ii, transcript) { 
-        if(*ii == 'M') {
-            ++matches;  // std::count() not supported by some compilers
+    if(flags & eSAFF_Identity) {
+
+        TSeqPos matches = 0;
+        ITERATE(string, ii, transcript) { 
+            if(*ii == 'M') {
+                ++matches;  // std::count() not supported by some compilers
+            }
         }
+
+        const double idty = double(matches) / transcript.size();
+        CRef<CScore> score (new CScore);
+        CRef<CObject_id> id (new CObject_id);
+        id->SetStr("identity");
+        score->SetId(*id);
+        CRef< CScore::C_Value > val (new CScore::C_Value);
+        val->SetReal(idty);
+        score->SetValue(*val);
+        scorelist.push_back(score);
     }
-    const double idty = double(matches) / transcript.size();
-    CRef<CScore> score (new CScore);
-    CRef<CObject_id> id (new CObject_id);
-    id->SetStr("identity");
-    score->SetId(*id);
-    CRef< CScore::C_Value > val (new CScore::C_Value);
-    val->SetReal(idty);
-    score->SetValue(*val);
-    scorelist.push_back(score);
-    }}
 
     // create segments and add them to this seq-align
     CRef< CSeq_align::C_Segs > segs (new CSeq_align::C_Segs);
@@ -528,6 +531,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/04/04 16:32:33  kapustin
+ * Specify which score to include when formatting as seq-align
+ *
  * Revision 1.16  2005/03/23 20:33:53  kapustin
  * Change printed name for the scores
  *

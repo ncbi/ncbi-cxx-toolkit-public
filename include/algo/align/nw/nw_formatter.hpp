@@ -74,9 +74,16 @@ public:
     void AsText(string* output, ETextFormatType type,
                 size_t line_width = 100) const;
 
+    enum ESeqAlignFormatFlags {
+        eSAFF_None = 0,
+        eSAFF_DynProgScore = 1,
+        eSAFF_Identity = 2
+    };
+
     CRef<objects::CSeq_align> AsSeqAlign (
         TSeqPos query_start, objects::ENa_strand query_strand,
-        TSeqPos subj_start,  objects::ENa_strand subj_strand ) const;
+        TSeqPos subj_start,  objects::ENa_strand subj_strand,
+        ESeqAlignFormatFlags flags = eSAFF_None) const;
 
 private:
 
@@ -96,6 +103,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/04 16:30:55  kapustin
+ * Specify which score to include when formatting as seq-align
+ *
  * Revision 1.6  2005/02/23 16:58:45  kapustin
  * Use CSeq_id's instead of strings. Modify AsSeqAlign to allow specification of alignment's starts and strands.
  *
