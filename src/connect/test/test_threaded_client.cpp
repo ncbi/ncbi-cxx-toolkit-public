@@ -28,45 +28,15 @@
 * File Description:
 *   sample client using a thread pool; designed to connect to
 *   test_threaded_server
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 6.5  2002/11/04 21:29:03  grichenk
-* Fixed usage of const CRef<> and CRef<> constructor
-*
-* Revision 6.4  2002/09/19 20:05:42  vasilche
-* Safe initialization of static mutexes
-*
-* Revision 6.3  2002/01/15 22:24:42  ucko
-* Take advantage of MT_LOCK_cxx2c
-*
-* Revision 6.2  2002/01/07 17:08:44  ucko
-* Display progress.
-*
-* Revision 6.1  2001/12/11 19:55:24  ucko
-* Introduce thread-pool-based servers.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbienv.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 #include <util/random_gen.hpp>
 #include <util/thread_pool.hpp>
-
-#if defined(NCBI_OS_UNIX)
-#  include <unistd.h>
-#  define X_SLEEP(x) ((void) sleep(x))
-#elif defined(NCBI_OS_MSWIN)
-#  include <windows.h>
-#  define X_SLEEP(x) ((void) Sleep(1000 * x))
-#else
-#  define X_SLEEP(x) ((void) 0)
-#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -78,7 +48,7 @@ class CConnectionRequest : public CStdRequest
 {
 public:
     CConnectionRequest(const string& host, unsigned int port,
-                       unsigned int delay) // in seconds
+                       unsigned int delay) // in milliseconds
         : m_Host(host), m_Port(port), m_Delay(delay) {}
 
 protected:
@@ -94,7 +64,7 @@ private:
 void CConnectionRequest::Process(void)
 {
     CConn_SocketStream stream(m_Host, m_Port);
-    X_SLEEP(m_Delay);
+    SleepMilliSec(m_Delay);
     string junk;
 
     stream >> junk;
@@ -163,12 +133,12 @@ int CThreadedClientApp::Run(void)
     pool.Spawn(args["threads"].AsInteger());
 
     for (unsigned int i = 0;  i < s_Requests;  ++i) {
-        X_SLEEP(rng.GetRand(0, 9));
+        SleepMilliSec(rng.GetRand(0, 999));
         pool.AcceptRequest
             (CRef<ncbi::CStdRequest>
              (new CConnectionRequest(args["host"].AsString(),
                                      args["port"].AsInteger(),
-                                     rng.GetRand(0, 9))));
+                                     rng.GetRand(0, 999))));
     }
 
     pool.KillAllThreads(true);
@@ -182,3 +152,29 @@ USING_NCBI_SCOPE;
 int main(int argc, const char* argv[]) {
     return CThreadedClientApp().AppMain(argc, argv);
 }
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 6.6  2004/05/17 16:01:55  ucko
+* Use SleepMilliSec to sleep only a fraction of a second at a time.
+* Move CVS log to end.
+*
+* Revision 6.5  2002/11/04 21:29:03  grichenk
+* Fixed usage of const CRef<> and CRef<> constructor
+*
+* Revision 6.4  2002/09/19 20:05:42  vasilche
+* Safe initialization of static mutexes
+*
+* Revision 6.3  2002/01/15 22:24:42  ucko
+* Take advantage of MT_LOCK_cxx2c
+*
+* Revision 6.2  2002/01/07 17:08:44  ucko
+* Display progress.
+*
+* Revision 6.1  2001/12/11 19:55:24  ucko
+* Introduce thread-pool-based servers.
+*
+* ===========================================================================
+*/
