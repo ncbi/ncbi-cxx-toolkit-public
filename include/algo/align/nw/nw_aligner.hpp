@@ -97,9 +97,10 @@ public:
     void SetWms (TScore value)  { m_Wms = value; }   // mismatch (na)
     void SetWg  (TScore value)  { m_Wg  = value; }   // gap opening
     void SetWs  (TScore value)  { m_Ws  = value; }   // gap extension
+    void SetSeqIds(const string& id1, const string& id2);  // set seq ids
 
-    void SetSeqIds(const string& id1, const string& id2);
-    void SetEndSpaceFree(bool free = true);
+    // specify whether end gaps should be penalized
+    void SetEndSpaceFree(bool L1, bool R1, bool L2, bool R2);
 
     // progress reporting
     struct SProgressInfo
@@ -136,7 +137,8 @@ protected:
     TScore   m_Wg;   // gap opening penalty
     TScore   m_Ws;   // gap extension penalty
 
-    bool     m_end_space_free;  // if true then end gaps are not penalized
+    // end-space free indicators
+    bool     m_esf_L1, m_esf_R1, m_esf_L2, m_esf_R2;
 
     // Pairwise scoring matrix
     EScoringMatrixType    m_MatrixType;
@@ -156,6 +158,7 @@ protected:
     const char*           m_Seq2;
     size_t                m_SeqLen2;
     size_t x_CheckSequence(const char* seq, size_t len) const;
+    virtual bool x_CheckMemoryLimit();
 
     // Transcript and score
     vector<ETranscriptSymbol> m_Transcript;
@@ -174,6 +177,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/03/18 15:12:29  kapustin
+ * Declare virtual mem limit checking function. Allow separate specification of free end gaps
+ *
  * Revision 1.13  2003/03/12 21:11:03  kapustin
  * Add text buffer to progress callback info structure
  *
