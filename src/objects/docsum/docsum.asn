@@ -1,7 +1,10 @@
--- $Id: docsum.asn,v 1.28 2002/01/22 01:42:43 vakatov Exp $
+-- $Id: docsum.asn,v 1.29 2002/01/22 16:27:16 kholodov Exp $
 -- $Log: docsum.asn,v $
--- Revision 1.28  2002/01/22 01:42:43  vakatov
--- Rollback to R1.26, as R1.27 has a syntax bug
+-- Revision 1.29  2002/01/22 16:27:16  kholodov
+-- Fixed syntax bug
+--
+-- Revision 1.27  2002/01/18 19:20:29  sherry
+-- added dense option to hit-quality for SNPs mapped to dense regions like HLA
 --
 -- Revision 1.26  2001/11/28 21:41:42  sherry
 -- correction to golden path (UCSC) contig hits
@@ -390,8 +393,10 @@ NSE-rsMaploc ::= SEQUENCE {		-- Position of a single hit of a variation on a con
 		exact (2),			-- asn-from = asn-to write as "asn-from"
 		between (3) },			-- asn-to = asn-from+1 write as "asn-from^asn-to"		
 	hit-quality ENUMERATED {
-		high (1),			-- if SNPContigLoc.proc_status = 0
-		loose (2) } OPTIONAL,		-- if SNPContigLoc.proc_status = 1
+		high (1),			-- if SNPContigLoc.proc_status = 0 (high quality hit)
+		loose (2), 			-- if SNPContigLoc.proc_status = 1 (lower quality hit admits dirty flanks)
+		dense (3) } OPTIONAL, 		-- if SNPContigLoc.proc_status = 8 (region of high SNP density like HLA)
+
 	orient ENUMERATED {			-- orientation of refSNP sequence to contig sequence
 		forward (1),			-- if SNPContigLoc.orientation = 0
 		reverse (2) } OPTIONAL,		-- if SNPContigLoc.orientation = 1
