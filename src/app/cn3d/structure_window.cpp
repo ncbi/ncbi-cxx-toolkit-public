@@ -407,13 +407,17 @@ void StructureWindow::ReceivedCommand(const std::string& fromApp, unsigned long 
 
     // default reply - should be changed by CommandProcessor
     MessageResponder::ReplyStatus replyStatus = MessageResponder::REPLY_ERROR;
-    string replyData = "failed to process";
+    string replyData = "failed to process\n";
 
     // actually perform the command functions
     commandProcessor->ProcessCommand(command, data, &replyStatus, &replyData);
 
     // reply
-    TRACEMSG("reply data: " << replyData);
+    INFOMSG("reply: " << ((replyStatus == MessageResponder::REPLY_OKAY) ? "OKAY" : "ERROR"));
+    if (replyData.size() > 0)
+        TRACEMSG("data:\n" << replyData.substr(0, replyData.size() - 1));
+    else
+        TRACEMSG("data: (none)");
     fileMessenger->SendReply(fromApp, id, replyStatus, replyData);
 }
 
@@ -1405,6 +1409,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/03/20 20:33:51  thiessen
+* implement Highlight command
+*
 * Revision 1.6  2003/03/14 19:22:59  thiessen
 * add CommandProcessor to handle file-message commands; fixes for GCC 2.9
 *

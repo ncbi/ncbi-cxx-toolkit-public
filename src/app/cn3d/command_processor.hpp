@@ -43,7 +43,7 @@
 
 BEGIN_SCOPE(Cn3D)
 
-// macros for setting up command processing functions
+// utility macros for setting up command processing functions
 
 // data in and out
 #define DECLARE_PARAMS \
@@ -65,6 +65,13 @@ BEGIN_SCOPE(Cn3D)
             DoCommand_##name ( PASS_PARAMS ); \
             return; \
         } \
+    } while (0)
+
+#define ADD_REPLY_ERROR(msg) \
+    do { \
+        *status = MessageResponder::REPLY_ERROR; \
+        *dataOut += msg; \
+        *dataOut += '\n'; \
     } while (0)
 
 
@@ -93,6 +100,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/03/20 20:33:51  thiessen
+* implement Highlight command
+*
 * Revision 1.1  2003/03/14 19:23:06  thiessen
 * add CommandProcessor to handle file-message commands; fixes for GCC 2.9
 *

@@ -33,34 +33,166 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <list>
+
 #include "cn3d/command_processor.hpp"
 #include "cn3d/structure_window.hpp"
 #include "cn3d/cn3d_glcanvas.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/sequence_set.hpp"
+#include "cn3d/molecule_identifier.hpp"
+
+#include <wx/tokenzr.h>
 
 USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
 
+// splits single string into multiple; assumes '\n'-terminated lines
+static void SplitString(const string& inStr, list<string> *outList)
+{
+    outList->clear();
+
+    int firstPos = 0, size = 0;
+    for (int i=0; i<inStr.size(); i++) {
+        if (inStr[i] == '\n') {
+            outList->resize(outList->size() + 1);
+            outList->back() = inStr.substr(firstPos, size);
+            firstPos = i + 1;
+            size = 0;
+//            TRACEMSG("outList: '" << outList->back() << "'");
+        } else if (i == inStr.size() - 1) {
+            ERRORMSG("SplitString() - input multi-line string doesn't end with \n!");
+        } else {
+            size++;
+        }
+    }
+}
+
+#define SPLIT_DATAIN_INTO_LINES \
+    list<string> lines; \
+    SplitString(dataIn, &lines); \
+    list<string>::const_iterator l, le = lines.end()
+
 void CommandProcessor::ProcessCommand(DECLARE_PARAMS)
 {
-    TRACEMSG("processing " << command << ", data:\n" << dataIn);
+    TRACEMSG("processing " << command);
+    if (dataIn.size() > 0)
+        TRACEMSG("data:\n" << dataIn.substr(0, dataIn.size() - 1));
+    else
+        TRACEMSG("data: (none)");
 
     // process known commands
     PROCESS_IF_COMMAND_IS(Highlight);
 
     // will only get here if command isn't recognized
-    *status = MessageResponder::REPLY_ERROR;
-    *dataOut = "Unrecognized command";
+    ADD_REPLY_ERROR("Unrecognized command");
 }
 
 IMPLEMENT_COMMAND_FUNCTION(Highlight)
 {
+    if (dataIn.size() == 0) {
+        ADD_REPLY_ERROR("no identifiers given");
+        return;
+    }
+
+    // default response
     *status = MessageResponder::REPLY_OKAY;
-    *dataOut = "did Highlight";
+    dataOut->erase();
+
+    GlobalMessenger()->RemoveAllHighlights(true);
+
+    SPLIT_DATAIN_INTO_LINES;
+    for (l=lines.begin(); l!=le; l++) {
+
+        wxStringTokenizer tkz(l->c_str(), ":, \t", wxTOKEN_STRTOK);
+        if (tkz.CountTokens() < 3) {
+            ADD_REPLY_ERROR(string("incomplete line: ") + *l);
+            continue;
+        }
+
+		SequenceSet::SequenceList::const_iterator
+            s = structureWindow->glCanvas->structureSet->sequenceSet->sequences.begin(),
+            se = structureWindow->glCanvas->structureSet->sequenceSet->sequences.end();
+
+        // get identifier
+        wxString
+            idType = tkz.GetNextToken(),
+            id = tkz.GetNextToken();
+
+        // parse gi
+        if (idType == "gi") {
+            unsigned long gi;
+            if (!id.ToULong(&gi)) {
+                ADD_REPLY_ERROR(string("bad gi: ") + id.c_str());
+                continue;
+            }
+            for (; s!=se; s++)
+                if ((*s)->identifier->gi == (int) gi)
+                    break;
+        }
+
+        // parse pdb
+        else if (idType == "pdb") {
+            if (id.size() == 4 || (id.size() == 6 && id[4] == '_')) {
+                string pdbID = id.substr(0, 4).c_str();
+                int pdbChain = ((id.size() == 6) ? id[5] : ' ');
+                for (; s!=se; s++)
+                    if ((*s)->identifier->pdbID == pdbID && (*s)->identifier->pdbChain == pdbChain)
+                        break;
+            } else {
+                ADD_REPLY_ERROR(string("bad pdb id: ") + id.c_str());
+                continue;
+            }
+        }
+
+        // parse accession
+        else if (idType == "acc") {
+            for (; s!=se; s++)
+                if ((*s)->identifier->accession == id.c_str())
+                    break;
+        }
+
+        else {
+            ADD_REPLY_ERROR(string("unrecognized id type: ") + idType.c_str());
+            continue;
+        }
+
+        if (s == se) {
+            ADD_REPLY_ERROR(string("sequence not found: ") + idType.c_str() + ' ' + id.c_str());
+            continue;
+        }
+
+        // now parse ranges and highlight
+        while (tkz.HasMoreTokens()) {
+            wxString range = tkz.GetNextToken();
+            wxStringTokenizer rangeToks(range, "-", wxTOKEN_RET_EMPTY);
+            if (rangeToks.CountTokens() < 1 || rangeToks.CountTokens() > 2) {
+                ADD_REPLY_ERROR(string("bad range: ") + range.c_str());
+                continue;
+            }
+            unsigned long from, to;
+            bool okay;
+            if (rangeToks.CountTokens() == 1) {
+                okay = rangeToks.GetNextToken().ToULong(&from);
+                to = from;
+            } else {
+                okay = (rangeToks.GetNextToken().ToULong(&from) &&
+                            rangeToks.GetNextToken().ToULong(&to));
+            }
+            if (!okay ||
+                    from < 0 || from >= (*s)->Length() || to < 0 || to >= (*s)->Length() || from > to) {
+                ADD_REPLY_ERROR(string("bad range value(s): ") + range.c_str());
+                continue;
+            }
+
+            // actually do the highlighting, finally!
+            GlobalMessenger()->AddHighlights(*s, from, to);
+        }
+    }
 }
 
 END_SCOPE(Cn3D)
@@ -68,6 +200,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/03/20 20:33:51  thiessen
+* implement Highlight command
+*
 * Revision 1.1  2003/03/14 19:23:06  thiessen
 * add CommandProcessor to handle file-message commands; fixes for GCC 2.9
 *
