@@ -78,8 +78,9 @@ CDataLoader* CDataLoaderFactory::CreateInstance(
 CObjectManager* CDataLoaderFactory::x_GetObjectManager(
     const TPluginManagerParamTree* params) const
 {
-    const string& om_str =
-        GetParam(m_DriverName, params, kCFParam_ObjectManagerPtr, false, "0");
+    const string& om_str = params ?
+        GetParam(m_DriverName, params, kCFParam_ObjectManagerPtr, false, "0") :
+        kEmptyStr;
     CObjectManager* om = static_cast<CObjectManager*>(
         const_cast<void*>(NStr::StringToPtr(om_str)));
     return om ? om : &*CObjectManager::GetInstance();
@@ -132,6 +133,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/08/02 21:08:31  grichenk
+* Check params before calling GetParam().
+*
 * Revision 1.1  2004/08/02 17:17:41  grichenk
 * Initial revision
 *
