@@ -92,10 +92,10 @@ enum EValidateAction {
 };
 
 /// Set the action to be performed.
-extern void xncbi_SetValidateAction(EValidateAction action);
+extern NCBI_XNCBI_EXPORT void xncbi_SetValidateAction(EValidateAction action);
 
 /// Get the action to be performed.
-extern EValidateAction xncbi_GetValidateAction(void);
+extern NCBI_XNCBI_EXPORT EValidateAction xncbi_GetValidateAction(void);
 
 
 END_NCBI_SCOPE
@@ -107,6 +107,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.32  2004/03/10 19:52:42  gorelenk
+ * Added NCBI_XNCBI_EXPORT for functions xncbi_SetValidateAction and
+ * xncbi_GetValidateAction.
+ *
  * Revision 1.31  2003/07/11 12:47:09  siyan
  * Documentation changes.
  *
