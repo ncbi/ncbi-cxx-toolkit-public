@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/05/11 15:38:01  lavr
+ * Print connector type along with read data
+ *
  * Revision 6.9  2001/04/24 21:42:43  lavr
  * Burshed code to use CORE_LOG facility only.
  *
@@ -126,7 +129,8 @@ int main(int argc, const char* argv[])
     }
     
     CORE_LOGF(eLOG_Note,
-              ("%d bytes read from service:\n%.*s", (int)n, (int)n, ibuf));
+              ("%d bytes read from service (%s):\n%.*s",
+               (int)n, CONN_GetType(conn), (int)n, ibuf));
     CONN_Close(conn);
 
     return 0/*okay*/;
