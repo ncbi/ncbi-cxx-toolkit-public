@@ -1035,6 +1035,10 @@ Int2 BLAST_ResultsInit(Int4 num_queries, BlastResults** results_ptr)
 BlastResults* BLAST_ResultsFree(BlastResults* results)
 {
    Int4 index;
+
+   if (!results)
+       return NULL;
+
    for (index = 0; index < results->num_queries; ++index)
       BLAST_HitListFree(results->hitlist_array[index]);
    sfree(results->hitlist_array);
