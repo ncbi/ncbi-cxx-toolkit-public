@@ -5518,7 +5518,7 @@ echo "${ECHO_T}$WXWIN_LIBPATH" >&6
 echo "$as_me:5518: checking if Fast-CGI library is available" >&5
 echo $ECHO_N "checking if Fast-CGI library is available... $ECHO_C" >&6
 if test "$with_fastcgi" != "no" ; then
-   FASTCGI_PATH=${FASTCGI_PATH:="$NCBI"}
+   FASTCGI_PATH=${FASTCGI_PATH:="$NCBI/fcgi-current"}
    FASTCGI_INCLUDE="-I$FASTCGI_PATH/include${bit64_sfx}"
    if test "$with_debug" = "no" ; then
       FASTCGI_LIBS="-L$FASTCGI_PATH/lib${bit64_sfx} -lfcgi $NETWORK_LIBS"

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.5 2001/09/24 15:50:33 ucko Exp $
+#  $Id: configure.ac,v 1.6 2001/10/04 18:16:17 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1565,7 +1565,7 @@ AC_MSG_RESULT([$WXWIN_LIBPATH])
 ## In-house Fast-CGI library
 AC_MSG_CHECKING(if Fast-CGI library is available)
 if test "$with_fastcgi" != "no" ; then
-   FASTCGI_PATH=${FASTCGI_PATH:="$NCBI"}
+   FASTCGI_PATH=${FASTCGI_PATH:="$NCBI/fcgi-current"}
    FASTCGI_INCLUDE="-I$FASTCGI_PATH/include${bit64_sfx}"
    if test "$with_debug" = "no" ; then
       FASTCGI_LIBS="-L$FASTCGI_PATH/lib${bit64_sfx} -lfcgi $NETWORK_LIBS"
