@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 CNetScheduler_JobStatusTracker::CNetScheduler_JobStatusTracker()
 {
     for (int i = 0; i < CNetScheduleClient::eLastStatus; ++i) {
-        bm::bvector<>* bv = new bm::bvector<>(bm::BM_GAP);
+        bm::bvector<>* bv = new bm::bvector<>();
         m_StatusStor.push_back(bv);
     }
 }
@@ -218,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/02/22 16:13:00  kuznets
+ * Performance optimization
+ *
  * Revision 1.3  2005/02/14 17:57:41  kuznets
  * Fixed a bug in queue procesing
  *

@@ -98,6 +98,18 @@ private:
     unsigned int     m_Id;
 };
 
+/// @internal
+class CCursorGuard
+{
+public:
+    CCursorGuard(CBDB_FileCursor& cur) : m_Cur(cur) {}
+    ~CCursorGuard() { m_Cur.Close(); }
+private:
+    CCursorGuard(CCursorGuard&);
+    CCursorGuard& operator=(const CCursorGuard&);
+private:
+    CBDB_FileCursor& m_Cur;
+};
 
 
 
@@ -215,7 +227,7 @@ void CQueueDataBase::Open(const string& path, unsigned cache_ram_size)
         catch (CBDB_Exception&)
         {
             m_Env->OpenWithTrans(path.c_str(), 
-                                CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
+                                 CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
         }
 
     } // if else
@@ -326,16 +338,17 @@ unsigned int CQueueDataBase::CQueue::Submit(const string& input)
 {
     unsigned int job_id = m_Db.GetNextId();
 
-    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
+//    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
 
     CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
                                    CNetScheduleClient::ePending);
-    {{
     SQueueDB& db = m_LQueue.db;
+    CBDB_Transaction trans(*db.GetEnv(), CBDB_Transaction::eTransASync);
+
+    {{
     CFastMutexGuard guard(m_LQueue.lock);
 
-    CBDB_Transaction trans(*db.GetEnv(), CBDB_Transaction::eTransASync);
 	db.SetTransaction(&trans);
 
     db.id = job_id;
@@ -363,9 +376,10 @@ unsigned int CQueueDataBase::CQueue::Submit(const string& input)
     db.cerr = "";
 
     db.Insert();
+    }}
+
     trans.Commit();
 
-    }}
     js_guard.Release();
 
     return job_id;
@@ -373,7 +387,7 @@ unsigned int CQueueDataBase::CQueue::Submit(const string& input)
 
 void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
 {
-    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
+//    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
 
     CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
@@ -381,6 +395,8 @@ void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
 
     {{
     SQueueDB& db = m_LQueue.db;
+    CBDB_Transaction trans(*db.GetEnv(), CBDB_Transaction::eTransASync);
+
     CFastMutexGuard guard(m_LQueue.lock);
 
     db.id = job_id;
@@ -390,11 +406,8 @@ void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
             db.status = (int) CNetScheduleClient::eCanceled;
             db.time_done = time(0);
             
-            CBDB_Transaction trans(*db.GetEnv(), CBDB_Transaction::eTransASync);
 	        db.SetTransaction(&trans);
-
             db.UpdateInsert();
-
             trans.Commit();
         }
     } else {
@@ -407,38 +420,39 @@ void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
 
 void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
                                        int           ret_code,
-                                       const string& output)
+                                       const char*   output)
 {
-    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
+//    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
 
     CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
                                    CNetScheduleClient::eDone);
 
-    {{
     SQueueDB& db = m_LQueue.db;
+    CBDB_Transaction trans(*db.GetEnv(), CBDB_Transaction::eTransASync);
+    {{
     CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(&trans);
 
-    db.id = job_id;
-    if (db.Fetch() == eBDB_Ok) {
-        int status = db.status;
-        if (status != (int)CNetScheduleClient::eCanceled) {
-            
-            CBDB_Transaction trans(*db.GetEnv(), CBDB_Transaction::eTransASync);
-            db.SetTransaction(&trans);
+    CBDB_FileCursor& cur = *GetCursor(trans);
+    CCursorGuard cg(cur);    
 
-            db.status = (int) CNetScheduleClient::eDone;
-            db.ret_code = ret_code;
-            db.output = output;
-            db.time_done = time(0);
-            db.UpdateInsert();
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+    cur.From << job_id;
 
-            trans.Commit();
-        }            
-    } else {
+    if (cur.Fetch() != eBDB_Ok) {
         // TODO: Integrity error or job just expired?
-    }    
+    }
+    db.status = (int) CNetScheduleClient::eDone;
+    db.ret_code = ret_code;
+    db.output = output;
+    db.time_done = time(0);
+
+    cur.Update();
+
     }}
+
+    trans.Commit();
     js_guard.Release();
 }
 
@@ -446,12 +460,13 @@ void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
 {
     _ASSERT(job_id);
 
-    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
+//    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
     CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
                                    CNetScheduleClient::ePending);
     {{
     SQueueDB& db = m_LQueue.db;
+
     CFastMutexGuard guard(m_LQueue.lock);
 
     db.id = job_id;
@@ -474,67 +489,93 @@ void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
 
 void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
                                     unsigned int*  job_id, 
-                                    string*        input)
+                                    char*          input)
 {
     _ASSERT(worker_node && input);
+
+get_job_id:
 
     *job_id = m_LQueue.status_tracker.GetPendingJob();
     if (!*job_id) {
         return;
     }
-    CIdBusyGuard id_guard(&m_Db.m_UsedIds, *job_id, 3);
+//    CIdBusyGuard id_guard(&m_Db.m_UsedIds, *job_id, 3);
 
     try {
         SQueueDB& db = m_LQueue.db;
+        CBDB_Transaction trans(*db.GetEnv(), 
+                                CBDB_Transaction::eTransASync);
+
+
+        {{
         CFastMutexGuard guard(m_LQueue.lock);
 
-        db.id = *job_id;
-        if (db.Fetch() == eBDB_Ok) {
-            int status = db.status;
-            db.input.ToString(*input);
-            unsigned run_counter = db.run_counter;
+        db.SetTransaction(&trans);
+        CBDB_FileCursor& cur = *GetCursor(trans);
+        CCursorGuard cg(cur);    
 
-            if (status != (int)CNetScheduleClient::ePending) {
-                LOG_POST(Error << "Status integrity violation " 
-                                << " job = " << *job_id 
-                                << " status = " << status
-                                << " expected status = " 
-                                << (int)CNetScheduleClient::ePending);
-                *job_id = 0;
-            } else {
-                CBDB_Transaction trans(*db.GetEnv(), 
-                                        CBDB_Transaction::eTransASync);
-                db.SetTransaction(&trans);
-
-                db.status = (int) CNetScheduleClient::ePending;
-                db.time_run = time(0);
-                db.run_counter = ++run_counter;
-
-                switch (run_counter) {
-                case 1:
-                    db.worker_node1 = worker_node;
-                    break;
-                case 2:
-                    db.worker_node2 = worker_node;
-                    break;
-                case 3:
-                    db.worker_node3 = worker_node;
-                    break;
-                case 4:
-                    db.worker_node4 = worker_node;
-                    break;
-                case 5:
-                    db.worker_node1 = worker_node;
-                    break;
-                default:
-                    LOG_POST(Error << "Too many run attempts..");
-                    break;
-                } // switch
-
-                db.UpdateInsert();
-                trans.Commit();                    
-            }
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+        cur.From << *job_id;
+        if (cur.Fetch() != eBDB_Ok) {
+            m_LQueue.status_tracker.ChangeStatus(*job_id, 
+                                         CNetScheduleClient::ePending);
+            *job_id = 0; 
+            return;
         }
+        int status = db.status;
+
+        // internal integrity check
+        if (status != (int)CNetScheduleClient::ePending) {
+            if (status == (int)CNetScheduleClient::eCanceled) {
+                // this job has been canceled while i'm fetching
+                goto get_job_id;
+            }
+            LOG_POST(Error << "Status integrity violation " 
+                            << " job = " << *job_id 
+                            << " status = " << status
+                            << " expected status = " 
+                            << (int)CNetScheduleClient::ePending);
+            *job_id = 0;
+            return;
+        }
+
+        const char* fld_str = db.input;
+        ::strcpy(input, fld_str);
+        unsigned run_counter = db.run_counter;
+
+        db.status = (int) CNetScheduleClient::ePending;
+        db.time_run = time(0);
+        db.run_counter = ++run_counter;
+
+        switch (run_counter) {
+        case 1:
+            db.worker_node1 = worker_node;
+            break;
+        case 2:
+            db.worker_node2 = worker_node;
+            break;
+        case 3:
+            db.worker_node3 = worker_node;
+            break;
+        case 4:
+            db.worker_node4 = worker_node;
+            break;
+        case 5:
+            db.worker_node1 = worker_node;
+            break;
+        default:
+            m_LQueue.status_tracker.ChangeStatus(*job_id, 
+                                         CNetScheduleClient::eFailed);
+            LOG_POST(Error << "Too many run attempts. job=" << *job_id);
+            *job_id = 0; 
+            return;
+        } // switch
+
+        cur.Update();
+
+        }}
+        trans.Commit();
+
     } 
     catch (exception&)
     {
@@ -548,12 +589,12 @@ void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
 
 bool CQueueDataBase::CQueue::GetOutput(unsigned int job_id,
                                        int*         ret_code,
-                                       string*      output)
+                                       char*        output)
 {
     _ASSERT(ret_code);
     _ASSERT(output);
 
-    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
+//    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
 
     SQueueDB& db = m_LQueue.db;
     CFastMutexGuard guard(m_LQueue.lock);
@@ -561,7 +602,8 @@ bool CQueueDataBase::CQueue::GetOutput(unsigned int job_id,
     db.id = job_id;
     if (db.Fetch() == eBDB_Ok) {
         *ret_code = db.ret_code;
-        db.output.ToString(*output);
+        const char* out_str = db.output;
+        ::strcpy(output, out_str);
         return true;
     }
 
@@ -572,10 +614,24 @@ bool CQueueDataBase::CQueue::GetOutput(unsigned int job_id,
 CNetScheduleClient::EJobStatus 
 CQueueDataBase::CQueue::GetStatus(unsigned int job_id) const
 {
-    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
+//    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
     return m_LQueue.status_tracker.GetStatus(job_id);
 }
 
+CBDB_FileCursor* CQueueDataBase::CQueue::GetCursor(CBDB_Transaction& trans)
+{
+    CBDB_FileCursor* cur = m_LQueue.cur.get();
+    if (cur) { 
+        cur->ReOpen(&trans);
+        return cur;
+    }
+    cur = new CBDB_FileCursor(m_LQueue.db, 
+                              trans,
+                              CBDB_FileCursor::eReadModifyUpdate);
+    m_LQueue.cur.reset(cur);
+    return cur;
+    
+}
 
 
 END_NCBI_SCOPE
@@ -583,6 +639,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/22 16:13:00  kuznets
+ * Performance optimization
+ *
  * Revision 1.4  2005/02/14 17:57:41  kuznets
  * Fixed a bug in queue procesing
  *

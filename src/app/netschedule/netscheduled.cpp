@@ -95,8 +95,8 @@ typedef enum {
 struct SJS_Request
 {
     EJS_RequestType    req_type;
-    string             input;
-    string             output;
+    char               input[kNetScheduleMaxDataSize];
+    char               output[kNetScheduleMaxDataSize];
     string             job_key_str;
     unsigned int       jcount;
     unsigned int       job_id;
@@ -106,11 +106,14 @@ struct SJS_Request
 
     void Init()
     {
-        input.erase(); output.erase(); job_key_str.erase(); err_msg.erase();
+        input[0] = output[0] = 0;
+        job_key_str.erase(); err_msg.erase();
         jcount = job_id = job_return_code = 0;
     }
 };
 
+
+const unsigned kMaxMessageSize = 2048;
 
 /// Thread specific data for threaded server
 ///
@@ -122,6 +125,8 @@ struct SThreadData
     string      auth;
     string      queue;
     string      answer;
+
+    char        msg_buf[kMaxMessageSize];
 
     SJS_Request req;
 };
@@ -176,8 +181,8 @@ public:
 protected:
     virtual void ProcessOverflow(SOCK sock) 
     { 
-        ERR_POST("ProcessOverflow!");
         SOCK_Close(sock); 
+        ERR_POST("ProcessOverflow!");
     }
 private:
 
@@ -189,12 +194,10 @@ private:
 
     void ParseRequest(const string& reqstr, SJS_Request* req);
 
-    /// Reply to the client
     void WriteMsg(CSocket&      sock, 
-                  const string& prefix, 
-                  const string& msg,
+                  const char*   prefix, 
+                  const char*   msg,
                   bool          comm_control = false);
-
 
 
 private:
@@ -316,7 +319,7 @@ void CNetScheduleServer::Process(SOCK sock)
                 tdata->req.err_msg = "Queue ";
                 tdata->req.err_msg.append(tdata->queue);
                 tdata->req.err_msg.append(" not found.");
-                WriteMsg(socket, "ERR:", tdata->req.err_msg);
+                WriteMsg(socket, "ERR:", tdata->req.err_msg.c_str());
                 return;
             }
 
@@ -359,7 +362,7 @@ void CNetScheduleServer::Process(SOCK sock)
                 WriteMsg(socket, "ERR:", "Not implemented.");
                 break;
             case eError:
-                WriteMsg(socket, "ERR:", tdata->req.err_msg);
+                WriteMsg(socket, "ERR:", tdata->req.err_msg.c_str());
                 break;
             default:
                 _ASSERT(0);
@@ -400,9 +403,11 @@ void CNetScheduleServer::ProcessSubmit(CSocket& sock, SThreadData& tdata)
     CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
     unsigned job_id = queue.Submit(req.input);
 
-    CNetSchedule_GenerateJobKey(&req.job_key_str, job_id, m_Host, GetPort());
+    char buf[1024];
+    sprintf(buf, NETSCHEDULE_JOBMASK, 
+                 job_id, m_Host.c_str(), unsigned(GetPort()));
 
-    WriteMsg(sock, "OK:", req.job_key_str);
+    WriteMsg(sock, "OK:", buf);
 }
 
 void CNetScheduleServer::ProcessCancel(CSocket& sock, SThreadData& tdata)
@@ -412,7 +417,7 @@ void CNetScheduleServer::ProcessCancel(CSocket& sock, SThreadData& tdata)
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
     CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
     queue.Cancel(job_id);
-    WriteMsg(sock, "OK:", kEmptyStr);
+    WriteMsg(sock, "OK:", "");
 }
 
 void CNetScheduleServer::ProcessStatus(CSocket& sock, SThreadData& tdata)
@@ -427,15 +432,14 @@ void CNetScheduleServer::ProcessStatus(CSocket& sock, SThreadData& tdata)
     int st = (int) status;
 
     if (status == CNetScheduleClient::eDone) {
-        CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
         int ret_code;
-        bool b = queue.GetOutput(job_id, &ret_code, &tdata.req.output);
+        bool b = queue.GetOutput(job_id, &ret_code, tdata.req.output);
 
         if (b) {
-            char szBuf[kNetScheduleMaxDataSize * 2];
             sprintf(szBuf, 
-                    "%i %i \"%s\"", st, ret_code, tdata.req.output.c_str());
+                    "%i %i \"%s\"", st, ret_code, tdata.req.output);
             WriteMsg(sock, "OK:", szBuf);
+            return;
         } else {
             st = (int)CNetScheduleClient::eJobNotFound;
         }
@@ -452,16 +456,19 @@ void CNetScheduleServer::ProcessGet(CSocket& sock, SThreadData& tdata)
     unsigned job_id;
     unsigned client_address;
     sock.GetPeerAddress(&client_address, 0, eNH_HostByteOrder);
-    queue.GetJob(client_address, &job_id, &req.input);
+    queue.GetJob(client_address, &job_id, req.input);
     if (job_id) {
-        CNetSchedule_GenerateJobKey(&req.job_key_str, job_id, m_Host, GetPort());
-        tdata.answer = req.job_key_str;
+        char key_buf[1024];
+        sprintf(key_buf, NETSCHEDULE_JOBMASK, 
+                job_id, m_Host.c_str(), unsigned(GetPort()));
+
+        tdata.answer = key_buf;
         tdata.answer.append(" \"");
         tdata.answer.append(req.input);
         tdata.answer.append("\"");
-        WriteMsg(sock, "OK:", tdata.answer);
+        WriteMsg(sock, "OK:", tdata.answer.c_str());
     } else {
-        WriteMsg(sock, "OK:", kEmptyStr);
+        WriteMsg(sock, "OK:", kEmptyStr.c_str());
     }
 }
 
@@ -472,7 +479,7 @@ void CNetScheduleServer::ProcessPut(CSocket& sock, SThreadData& tdata)
 
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
     queue.PutResult(job_id, req.job_return_code, req.output);
-    WriteMsg(sock, "OK:", kEmptyStr);
+    WriteMsg(sock, "OK:", kEmptyStr.c_str());
 }
 
 
@@ -536,10 +543,12 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         if (*s !='"') {
             NS_RETURN_ERROR("Misformed SUBMIT request")
         }
+        char *ptr = req->input;
         for (++s; *s != '"'; ++s) {
             NS_CHECKEND(s, "Misformed SUBMIT request")
-            req->input += *s;
+            *ptr++ = *s;
         }
+        *ptr = 0;
         return;
     }
     if (strncmp(s, "CANCEL", 6) == 0) {
@@ -606,10 +615,12 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         if (*s !='"') {
             NS_RETURN_ERROR("Misformed PUT request")
         }
+        char *ptr = req->output;
         for (++s; *s != '"'; ++s) {
             NS_CHECKEND(s, "Misformed PUT request")
-            req->output.push_back(*s);
+            *ptr++ = *s;            
         }
+        *ptr = 0;
 
         return;
     }
@@ -689,22 +700,46 @@ bool CNetScheduleServer::ReadBuffer(CSocket& sock,
 }
 
 void CNetScheduleServer::WriteMsg(CSocket&       sock, 
-                                  const string&  prefix, 
-                                  const string&  msg,
+                                  const char*    prefix, 
+                                  const char*    msg,
                                   bool           comm_control)
 {
-    string err_msg(prefix);
-    err_msg.append(msg);
-    err_msg.append("\r\n");
+    SThreadData*   tdata = x_GetThreadData();
+    if (tdata == 0) {
+        LOG_POST(Error << "Cannot deliver message (no TLS buffer):"
+                       << prefix << msg);
+        return;
+    }
+    size_t msg_length = 0;
+    char* ptr = tdata->msg_buf;
+
+    for (; *prefix; ++prefix) {
+        *ptr++ = *prefix;
+        ++msg_length;
+    }
+    for (; *msg; ++msg) {
+        *ptr++ = *msg;
+        ++msg_length;
+        if (msg_length >= kMaxMessageSize) {
+            LOG_POST(Error << "Message too large:" << msg);
+            _ASSERT(0);
+            return;
+        }
+    }
+    *ptr++ = '\r';
+    *ptr++ = '\n';
+    msg_length = ptr - tdata->msg_buf;
 
     size_t n_written;
     EIO_Status io_st = 
-        sock.Write(err_msg.c_str(), err_msg.length(), &n_written);
+        sock.Write(tdata->msg_buf, msg_length, &n_written);
     if (comm_control && io_st) {
         NCBI_THROW(CNetServiceException, 
                    eCommunicationError, "Socket write error.");
     }
+
 }
+
 
 bool CNetScheduleServer::x_CheckJobId(CSocket&          sock,
                                       CNetSchedule_Key* job_id, 
@@ -725,7 +760,7 @@ bool CNetScheduleServer::x_CheckJobId(CSocket&          sock,
         string err = "JOB id format error. (";
         err += job_key;
         err += ")";
-        WriteMsg(sock, "ERR:", err);
+        WriteMsg(sock, "ERR:", err.c_str());
         return false;
     }
     return true;
@@ -920,6 +955,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/02/22 16:13:00  kuznets
+ * Performance optimization
+ *
  * Revision 1.5  2005/02/14 17:57:41  kuznets
  * Fixed a bug in queue procesing
  *

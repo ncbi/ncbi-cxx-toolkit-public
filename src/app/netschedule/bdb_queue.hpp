@@ -116,6 +116,7 @@ struct SQueueDB : public CBDB_File
 struct SLockedQueue
 {
     SQueueDB                        db;
+    auto_ptr<CBDB_FileCursor>       cur;
     CFastMutex                      lock;
     CNetScheduler_JobStatusTracker  status_tracker;
 };
@@ -180,20 +181,21 @@ public:
         void Cancel(unsigned int job_id);
         void PutResult(unsigned int  job_id,
                        int           ret_code,
-                       const string& output);
+                       const char*   output);
         void GetJob(unsigned int   worker_node,
                     unsigned int*  job_id, 
-                    string*        input);
+                    char*          input);
         void ReturnJob(unsigned int job_id);
 
         // Get output info for compeleted job
         bool GetOutput(unsigned int job_id,
                        int*         ret_code,
-                       string*      output);
+                       char*        output);
 
         CNetScheduleClient::EJobStatus 
         GetStatus(unsigned int job_id) const;
-
+    private:
+        CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
     private:
         CQueue(const CQueue&);
         CQueue& operator=(const CQueue&);
@@ -227,6 +229,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/22 16:13:00  kuznets
+ * Performance optimization
+ *
  * Revision 1.4  2005/02/14 17:57:41  kuznets
  * Fixed a bug in queue procesing
  *
