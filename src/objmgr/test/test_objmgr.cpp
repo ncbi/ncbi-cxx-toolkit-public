@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/01/30 22:09:28  gouriano
+* changed CSeqMap interface
+*
 * Revision 1.7  2002/01/29 17:47:33  grichenk
 * Removed commented part
 *
@@ -599,15 +602,15 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
         // Iterate seq-map except the last element
         int len = 0;
         for (size_t i = 0; i < seq_map.size(); i++) {
-            switch (seq_map[i].second.GetType()) {
+            switch (seq_map[i].GetType()) {
             case CSeqMap::eSeqData:
-                len += seq_map[i+1].first - seq_map[i].first;
+                len += seq_map[i].GetLength();
                 break;
             case CSeqMap::eSeqRef:
-                len += seq_map[i+1].first - seq_map[i].first;
+                len += seq_map[i].GetLength();
                 break;
             case CSeqMap::eSeqGap:
-                len += seq_map[i+1].first - seq_map[i].first;
+                len += seq_map[i].GetLength();
                 break;
             case CSeqMap::eSeqEnd:
                 break;
@@ -615,7 +618,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
                 break;
             }
         }
-        _ASSERT(seq_map[seq_map.size()-1].second.GetType() ==
+        _ASSERT(seq_map[seq_map.size()-1].GetType() ==
                 CSeqMap::eSeqEnd);
         _ASSERT(len == seq_len_unresolved);
     }}
@@ -647,15 +650,15 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
         // Iterate seq-map except the last element
         int len = 0;
         for (size_t i = 0; i < seq_map.size(); i++) {
-            switch (seq_map[i].second.GetType()) {
+            switch (seq_map[i].GetType()) {
             case CSeqMap::eSeqData:
-                len += seq_map[i+1].first - seq_map[i].first;
+                len += seq_map[i].GetLength();
                 break;
             case CSeqMap::eSeqRef:
-                len += seq_map[i+1].first - seq_map[i].first;
+                len += seq_map[i].GetLength();
                 break;
             case CSeqMap::eSeqGap:
-                len += seq_map[i+1].first - seq_map[i].first;
+                len += seq_map[i].GetLength();
                 break;
             case CSeqMap::eSeqEnd:
                 break;
@@ -663,7 +666,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
                 break;
             }
         }
-        _ASSERT(seq_map[seq_map.size()-1].second.GetType() ==
+        _ASSERT(seq_map[seq_map.size()-1].GetType() ==
                 CSeqMap::eSeqEnd);
         _ASSERT(len == seq_len_resolved);
     }}

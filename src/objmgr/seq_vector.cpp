@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/30 22:09:28  gouriano
+* changed CSeqMap interface
+*
 * Revision 1.3  2002/01/23 21:59:32  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -128,12 +131,12 @@ size_t CSeqVector::size(void)
         // Calculate sequence size only once
         m_Size = 0;
         for (size_t i = 0; i < m_SeqMap->size(); i++) {
-            if ((*m_SeqMap)[i].second.m_RefLen > 0) {
+            if ((*m_SeqMap)[i].m_RefLen > 0) {
                 // Use explicit segment size
-                m_Size += (*m_SeqMap)[i].second.m_RefLen;
+                m_Size += (*m_SeqMap)[i].m_RefLen;
             }
             else {
-                switch ((*m_SeqMap)[i].second.m_SegType) {
+                switch ((*m_SeqMap)[i].m_SegType) {
                 case CSeqMap::eSeqData:
                     {
                         break;
@@ -143,7 +146,7 @@ size_t CSeqVector::size(void)
                         // Zero length stands for "whole" reference
                         const CSeq_id* id =
                             &CSeq_id_Mapper::GetSeq_id(
-                            (*m_SeqMap)[i].second.m_RefSeq);
+                            (*m_SeqMap)[i].m_RefSeq);
                         CBioseq_Handle::TBioseqCore ref_seq =
                             (m_Scope->GetBioseqHandle(*id)).GetBioseqCore();
                         if (ref_seq.GetPointer()  &&

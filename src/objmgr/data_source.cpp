@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/01/30 22:09:28  gouriano
+* changed CSeqMap interface
+*
 * Revision 1.6  2002/01/29 17:45:00  grichenk
 * Added seq-id handles locking
 *
@@ -330,6 +333,7 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
         }
         found = m_SeqMaps.find(&seq);
     }
+    (*found->second).x_CalculateSegmentLengths();
     return *found->second;
 }
 
@@ -368,26 +372,26 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
         // Seq-ext: check the extension type, prepare the data
         CSeqMap& seqmap = x_GetSeqMap(handle);
         // Omit the last element - it is always eSeqEnd
-        CSeqMap::TSeqSegment& seg = seqmap.x_Resolve(point, scope);
-        switch (seg.second.m_SegType) {
+        CSeqMap::CSegmentInfo& seg = seqmap.x_Resolve(point, scope);
+        switch (seg.m_SegType) {
         case CSeqMap::eSeqData:
             {
-                _ASSERT(seg.second.m_RefData);
-                seq_piece->dest_start = seg.second.m_RefPos;
+                _ASSERT(seg.m_RefData);
+                seq_piece->dest_start = seg.m_RefPos;
                 seq_piece->src_start = 0;
-                seq_piece->length = seg.second.m_RefLen;
-                seq_piece->src_data = seg.second.m_RefData;
+                seq_piece->length = seg.m_RefLen;
+                seq_piece->src_data = seg.m_RefData;
                 return true;
             }
         case CSeqMap::eSeqRef:
             {
-                int shift = seg.second.m_RefPos - seg.first;
-                if ( scope.x_GetSequence(seg.second.m_RefSeq,
+                int shift = seg.m_RefPos - seg.m_position;
+                if ( scope.x_GetSequence(seg.m_RefSeq,
                     point + shift, seq_piece) ) {
-                    int xL = seg.second.m_RefLen;
-                    int delta = seg.second.m_RefPos -
+                    int xL = seg.m_RefLen;
+                    int delta = seg.m_RefPos -
                         seq_piece->dest_start;
-                    seq_piece->dest_start = seg.first;
+                    seq_piece->dest_start = seg.m_position;
                     if (delta < 0) {
                         // Got less then requested (delta is negative: -=)
                         seq_piece->dest_start -= delta;
@@ -400,7 +404,7 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
                     }
                     if (seq_piece->length > xL)
                         seq_piece->length = xL;
-                    if ( seg.second.m_MinusStrand ) {
+                    if ( seg.m_MinusStrand ) {
                         // Convert data, update location
                         CSeq_data* tmp = new CSeq_data;
                         CSeqportUtil::ReverseComplement(
@@ -700,7 +704,8 @@ void CDataSource::x_CreateSeqMap(const CBioseq& seq)
                             }
                             else {
                                 // No data exist - treat it like a gap
-                                seqmap->Add(pos, CSeqMap::eSeqGap); //???
+                                seqmap->Add(CSeqMap::eSeqGap, pos,
+                                            (*it)->GetLiteral().GetLength()); //???
                                 pos += (*it)->GetLiteral().GetLength();
                             }
                             break;
@@ -711,10 +716,10 @@ void CDataSource::x_CreateSeqMap(const CBioseq& seq)
             }
         }
     }
-    seqmap->Add(pos, CSeqMap::eSeqEnd);
+    seqmap->Add(CSeqMap::eSeqEnd, pos, 0);
     for (int i = 0; i < seqmap->size(); i++) {
         // Lock seq-id handles
-        const CSeqMap::CSegmentInfo& info = (*seqmap)[i].second;
+        const CSeqMap::CSegmentInfo& info = (*seqmap)[i];
         if (info.m_SegType == CSeqMap::eSeqRef) {
             GetIdMapper().AddHandleReference(info.m_RefSeq);
         }
@@ -733,31 +738,32 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
     case CSeq_loc::e_Empty:
         {
             // Add gap
-            seqmap.Add(pos, CSeqMap::eSeqGap); //???
+            seqmap.Add(CSeqMap::eSeqGap, pos, 0); //???
             return;
         }
     case CSeq_loc::e_Whole:
         {
             // Reference to the whole sequence - do not check its
             // length, use 0 instead.
-            CSeqMap::TSeqSegment seg(pos,
-                CSeqMap::CSegmentInfo(CSeqMap::eSeqRef, false)); //???
-            seg.second.m_RefPos = 0;
-            seg.second.m_RefSeq = GetIdMapper().GetHandle(loc.GetWhole());
-            seqmap.Add(seg);
+            CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
+                CSeqMap::eSeqRef, pos, 0, false);
+            seg->m_RefPos = 0;
+            seg->m_RefSeq = GetIdMapper().GetHandle(loc.GetWhole());
+            seqmap.Add(*seg);
             return;
         }
     case CSeq_loc::e_Int:
         {
             bool minus_strand = loc.GetInt().IsSetStrand()  &&
                 loc.GetInt().GetStrand() == eNa_strand_minus; //???
-            CSeqMap::TSeqSegment seg(pos,
-                CSeqMap::CSegmentInfo(CSeqMap::eSeqRef, minus_strand)); //???
-            seg.second.m_RefSeq =
+            CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
+                CSeqMap::eSeqRef, pos, loc.GetInt().GetLength(),
+                minus_strand);
+            seg->m_RefSeq =
                 GetIdMapper().GetHandle(loc.GetInt().GetId());
-            seg.second.m_RefPos = loc.GetInt().GetFrom();
-            seg.second.m_RefLen = loc.GetInt().GetLength();
-            seqmap.Add(seg);
+            seg->m_RefPos = loc.GetInt().GetFrom();
+            seg->m_RefLen = loc.GetInt().GetLength();
+            seqmap.Add(*seg);
             pos += loc.GetInt().GetLength();
             return;
         }
@@ -765,13 +771,13 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
         {
             bool minus_strand = loc.GetPnt().IsSetStrand()  &&
                 loc.GetPnt().GetStrand() == eNa_strand_minus; //???
-            CSeqMap::TSeqSegment seg(pos,
-                CSeqMap::CSegmentInfo(CSeqMap::eSeqRef, minus_strand)); //???
-            seg.second.m_RefSeq =
+            CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
+                CSeqMap::eSeqRef, pos, 1, minus_strand);
+            seg->m_RefSeq =
                 GetIdMapper().GetHandle(loc.GetPnt().GetId());
-            seg.second.m_RefPos = loc.GetPnt().GetPoint();
-            seg.second.m_RefLen = 1;
-            seqmap.Add(seg);
+            seg->m_RefPos = loc.GetPnt().GetPoint();
+            seg->m_RefLen = 1;
+            seqmap.Add(*seg);
             pos++;
             return;
         }
@@ -780,13 +786,13 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
             iterate ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
                 bool minus_strand = (*ii)->IsSetStrand()  &&
                     (*ii)->GetStrand() == eNa_strand_minus; //???
-                CSeqMap::TSeqSegment seg(pos,
-                    CSeqMap::CSegmentInfo(CSeqMap::eSeqRef, minus_strand)); //???
-                seg.second.m_RefSeq =
+                CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
+                    CSeqMap::eSeqRef, pos, (*ii)->GetLength(), minus_strand);
+                seg->m_RefSeq =
                     GetIdMapper().GetHandle((*ii)->GetId());
-                seg.second.m_RefPos = (*ii)->GetFrom();
-                seg.second.m_RefLen = (*ii)->GetLength();
-                seqmap.Add(seg);
+                seg->m_RefPos = (*ii)->GetFrom();
+                seg->m_RefLen = (*ii)->GetLength();
+                seqmap.Add(*seg);
                 pos += (*ii)->GetLength();
             }
             return;
@@ -797,13 +803,13 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
                 loc.GetPacked_pnt().GetStrand() == eNa_strand_minus; //???
             iterate ( CPacked_seqpnt::TPoints, pi,
                 loc.GetPacked_pnt().GetPoints() ) {
-                CSeqMap::TSeqSegment seg(pos,
-                    CSeqMap::CSegmentInfo(CSeqMap::eSeqRef, minus_strand)); //???
-                seg.second.m_RefSeq =
+                CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
+                    CSeqMap::eSeqRef, pos, 1, minus_strand);
+                seg->m_RefSeq =
                     GetIdMapper().GetHandle(loc.GetPacked_pnt().GetId());
-                seg.second.m_RefPos = *pi;
-                seg.second.m_RefLen = 1;
-                seqmap.Add(seg);
+                seg->m_RefPos = *pi;
+                seg->m_RefLen = 1;
+                seqmap.Add(*seg);
                 pos++;
             }
             return;
@@ -839,13 +845,13 @@ void CDataSource::x_DataToSeqMap(const CSeq_data& data,
                                  int& pos, int len,
                                  CSeqMap& seqmap)
 {
-    //### Search for gaps in the data???
-    CSeqMap::TSeqSegment seg(pos,
-        CSeqMap::CSegmentInfo(CSeqMap::eSeqData, false)); //???
-    seg.second.m_RefData.Reset(&data);
-    seg.second.m_RefPos = pos;
-    seg.second.m_RefLen = len;
-    seqmap.Add(seg);
+    //### Search for gaps in the data
+    CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
+        CSeqMap::eSeqData, pos, len, false);
+    seg->m_RefData.Reset(&data);
+    seg->m_RefPos = pos;
+    seg->m_RefLen = len;
+    seqmap.Add(*seg);
     pos += len;
 }
 
@@ -963,7 +969,7 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
         if (map_it != m_SeqMaps.end()) {
             for (int i = 0; i < map_it->second->size(); i++) {
                 // Lock seq-id handles
-                const CSeqMap::CSegmentInfo& info = (*(map_it->second))[i].second;
+                const CSeqMap::CSegmentInfo& info = (*(map_it->second))[i];
                 if (info.m_SegType == CSeqMap::eSeqRef) {
                     GetIdMapper().ReleaseHandleReference(info.m_RefSeq);
                 }

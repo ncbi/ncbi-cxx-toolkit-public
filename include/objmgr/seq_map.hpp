@@ -26,12 +26,18 @@
 *
 * ===========================================================================
 *
-* Author: Aleksey Grichenko, Michael Kimelman
+* Authors:
+*           Aleksey Grichenko
+*           Michael Kimelman
+*           Andrei Gourianov
 *
 * File Description:
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/01/30 22:08:47  gouriano
+* changed CSeqMap interface
+*
 * Revision 1.3  2002/01/23 21:59:29  grichenk
 * Redesigned seq-id handles and mapper
 *
@@ -79,11 +85,9 @@ struct SSeqData {
 
 
 ////////////////////////////////////////////////////////////////////
-//
 //  CSeqMap::
 //     Formal sequence map -- to describe sequence parts in general --
 //     location and type only, without providing real data
-//
 
 class CSeqMap : public CObject
 {
@@ -97,23 +101,27 @@ public:
         eSeqEnd    // last element in every map (pos = sequence length)
     };
 
-    class CSegmentInfo
+    class CSegmentInfo : public CObject
     {
     public:
-        CSegmentInfo(void);
-        CSegmentInfo(ESegmentType seg_type, bool minus_strand /*= false*/);
+        CSegmentInfo(ESegmentType seg_type,
+            TSeqPosition position, TSeqLength length,
+            bool minus_strand /*= false*/);
         CSegmentInfo(const CSegmentInfo& seg);
+        ~CSegmentInfo(void);
 
         CSegmentInfo& operator= (const CSegmentInfo& seg);
-
         bool operator== (const CSegmentInfo& seg) const;
         bool operator<  (const CSegmentInfo& seg) const;
 
         ESegmentType GetType(void) const;
+        TSeqPosition GetPosition(void) const;
+        TSeqLength   GetLength(void) const;
 
     private:
-
         ESegmentType         m_SegType; // Type of map segment
+        TSeqPosition         m_position;
+        TSeqLength           m_length;
         // Referenced bioseq information
         CSeq_id_Handle       m_RefSeq;
         // Seq-data (m_RefPos and m_RefLen must be also set)
@@ -128,72 +136,61 @@ public:
         friend class CSeqVector;
         friend class CSeqMap;
     };
-    typedef pair<TSeqPosition, CSegmentInfo> TSeqSegment;
 
     // 'ctors
     CSeqMap(void);
+    CSeqMap(const CSeqMap& another);
     ~CSeqMap(void);
 
+    const size_t size(void) const;
+    CSeqMap& operator=(const CSeqMap& another);
     // Get all intervals
-    const TSeqSegment& operator[](int seg_idx) const
-        { return m_SeqMap[seg_idx]; }
-    const size_t size(void) const { return m_SeqMap.size(); }
+    const CSegmentInfo& operator[](int seg_idx) const;
 
+private:
     // Add interval to the map.
     // Throw an exception if there is an "equal" interval.
-    void Add(const TSeqSegment& interval);
-    void Add(TSeqPosition pos,
-        ESegmentType seg_type,
+    void Add(CSegmentInfo& interval);
+    void Add(ESegmentType seg_type,
+        TSeqPosition position, TSeqLength length,
         bool minus_strand = false);
 
 private:
-    // This should be vector to allow random access
-    typedef vector<TSeqSegment> TSeqMap;
-
     // Get the segment containing point "pos"
-    TSeqSegment& x_FindSegment(int pos);
+    CSegmentInfo& x_FindSegment(int pos);
     // Try to resolve segment lengths up to the "pos". Return index of the
     // segment containing "pos".
-    TSeqSegment& x_Resolve(int pos, CScope& scope);
+    CSegmentInfo& x_Resolve(int pos, CScope& scope);
+    void x_CalculateSegmentLengths(void);
 
-    TSeqMap m_SeqMap;
+    vector< CRef<CSegmentInfo> > m_Data;
     // Segment lengths are resolved up to this position (not index)
     int m_FirstUnresolvedPos;
 
     friend class CDataSource;
 };
 
+/////////////////////////////////////////////////////////////////////
+//  Inline methods
+
 
 inline
-bool operator< (const CSeqMap::TSeqSegment& int1,
-                const CSeqMap::TSeqSegment& int2)
+bool operator< (const CSeqMap::CSegmentInfo& int1,
+                const CSeqMap::CSegmentInfo& int2)
 {
     // Ignore type, only position is important
-    return int1.first < int2.first;
+    return int1.GetPosition() < int2.GetPosition();
 }
 
-
 /////////////////////////////////////////////////////////////////////
-//
-//  Inline methods
-//
-/////////////////////////////////////////////////////////////////////
-
+//  CSeqMap::CSegmentInfo: inline methods
 
 inline
-CSeqMap::CSegmentInfo::CSegmentInfo(void)
-    : m_SegType(eSeqGap),
-      m_RefData(0),
-      m_RefPos(0),
-      m_RefLen(0),
-      m_MinusStrand(false),
-      m_Resolved(false)
-{
-}
-
-inline
-CSeqMap::CSegmentInfo::CSegmentInfo(ESegmentType seg_type, bool minus_strand)
+CSeqMap::CSegmentInfo::CSegmentInfo(ESegmentType seg_type,
+    TSeqPosition position, TSeqLength length, bool minus_strand)
     : m_SegType(seg_type),
+      m_position(position),
+      m_length(length),
       m_RefData(0),
       m_RefPos(0),
       m_RefLen(0),
@@ -205,6 +202,8 @@ CSeqMap::CSegmentInfo::CSegmentInfo(ESegmentType seg_type, bool minus_strand)
 inline
 CSeqMap::CSegmentInfo::CSegmentInfo(const CSegmentInfo& seg)
     : m_SegType(seg.m_SegType),
+      m_position(seg.m_position),
+      m_length(seg.m_length),
       m_RefSeq(seg.m_RefSeq),
       m_RefData(seg.m_RefData),
       m_RefPos(seg.m_RefPos),
@@ -215,16 +214,23 @@ CSeqMap::CSegmentInfo::CSegmentInfo(const CSegmentInfo& seg)
 }
 
 inline
+CSeqMap::CSegmentInfo::~CSegmentInfo(void)
+{
+}
+
+inline
 CSeqMap::CSegmentInfo&
 CSeqMap::CSegmentInfo::operator= (const CSegmentInfo& seg)
 {
-    m_SegType = seg.m_SegType;
-    m_RefSeq = seg.m_RefSeq;
-    m_RefData = seg.m_RefData;
-    m_RefPos = seg.m_RefPos;
-    m_RefLen = seg.m_RefLen;
-    m_MinusStrand = seg.m_MinusStrand;
+    m_SegType  = seg.m_SegType;
+    m_position = seg.m_position;
+    m_length   = seg.m_length;
+    m_RefSeq   = seg.m_RefSeq;
+    m_RefData  = seg.m_RefData;
+    m_RefPos   = seg.m_RefPos;
+    m_RefLen   = seg.m_RefLen;
     m_Resolved = seg.m_Resolved;
+    m_MinusStrand = seg.m_MinusStrand;
     return *this;
 }
 
@@ -276,10 +282,31 @@ CSeqMap::ESegmentType CSeqMap::CSegmentInfo::GetType(void) const
 }
 
 inline
+TSeqPosition CSeqMap::CSegmentInfo::GetPosition(void) const
+{
+    return m_position;
+}
+
+inline
+TSeqLength   CSeqMap::CSegmentInfo::GetLength(void) const
+{
+    return m_length;
+}
+
+/////////////////////////////////////////////////////////////////////
+//  CSeqMap: inline methods
+
+inline
 CSeqMap::CSeqMap(void)
     : m_FirstUnresolvedPos(0)
 {
     return;
+}
+
+inline
+CSeqMap::CSeqMap(const CSeqMap& another)
+{
+    *this = another;
 }
 
 inline
@@ -289,11 +316,40 @@ CSeqMap::~CSeqMap(void)
 }
 
 inline
-void CSeqMap::Add(TSeqPosition pos,
-                  ESegmentType seg_type,
+const size_t CSeqMap::size(void) const
+{
+    return m_Data.size();
+}
+
+inline
+CSeqMap& CSeqMap::operator=(const CSeqMap& another)
+{
+    if (this != &another)
+    {
+        m_Data.clear();
+        vector< CRef< CSegmentInfo> >::const_iterator it;
+        for (it = another.m_Data.begin(); it != another.m_Data.end(); ++it)
+        {
+            m_Data.push_back( *it);
+        }
+    }
+    m_FirstUnresolvedPos = another.m_FirstUnresolvedPos;
+    return *this;
+}
+
+inline
+const CSeqMap::CSegmentInfo& CSeqMap::operator[](int seg_idx) const
+{
+    return *m_Data[seg_idx];
+}
+
+
+inline
+void CSeqMap::Add(ESegmentType seg_type,
+                  TSeqPosition position, TSeqLength length,
                   bool minus_strand)
 {
-    Add(TSeqSegment(pos, CSegmentInfo(seg_type, minus_strand)));
+    Add(*(new CSegmentInfo(seg_type, position, length, minus_strand)));
 }
 
 END_SCOPE(objects)
