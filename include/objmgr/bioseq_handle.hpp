@@ -44,6 +44,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+/** @addtogroup ObjectManagerHandles
+ *
+ * @{
+ */
+
+
 class CDataSource;
 class CSeqMap;
 class CSeqVector;
@@ -68,6 +75,14 @@ class CBioseq_set_EditHandle;
 class CSeq_annot_EditHandle;
 class CSeq_entry_EditHandle;
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CBioseq_Handle --
+///
+///  Proxy to access the bioseq data
+///
+
 // Bioseq handle -- must be a copy-safe const type.
 class NCBI_XOBJMGR_EXPORT CBioseq_Handle
 {
@@ -78,35 +93,49 @@ public:
     // Assignment
     CBioseq_Handle& operator=(const CBioseq_Handle& bh);
 
-    // Reset
+    // Reset handle and make it not to point to any bioseq
     void Reset(void);
 
-    // Get scope this handle belongs to
+    /// Get scope this handle belongs to
     CScope& GetScope(void) const;
 
-    // Get id used to obtain this bioseq handle
+    /// Get id used to obtain this bioseq handle
     CConstRef<CSeq_id> GetSeqId(void) const;
+
+    /// Get handle of id used to obtain this bioseq handle
     const CSeq_id_Handle& GetSeq_id_Handle(void) const;
 
-    // Check if this id can be used to obtain this bioseq handle
+    /// Check if this id can be used to obtain this bioseq handle
     bool IsSynonym(const CSeq_id& id) const;
+
+    /// Check if this id can be used to obtain this bioseq handle
     CConstRef<CSynonymsSet> GetSynonyms(void) const;
 
-    // Get parent Seq-entry handle
+    /// Get parent Seq-entry handle
+    ///
+    /// @sa 
+    ///     GetSeq_entry_Handle()
     CSeq_entry_Handle GetParentEntry(void) const;
+
+    /// Get parent Seq-entry handle
+    ///
+    /// @sa 
+    ///     GetParentEntry()
     CSeq_entry_Handle GetSeq_entry_Handle(void) const;
 
-    // Get top level Seq-entry handle
+    /// Get top level Seq-entry handle
     CSeq_entry_Handle GetTopLevelEntry(void) const;
 
-    // Get 'edit' version of handle
+    /// Get 'edit' version of handle
     CBioseq_EditHandle GetEditHandle(void) const;
 
-    // Bioseq core -- using partially populated CBioseq
+    /// Bioseq core -- using partially populated CBioseq
     typedef CConstRef<CBioseq> TBioseqCore;
-    // Get bioseq core structure
+    
+    /// Get bioseq core structure
     TBioseqCore GetBioseqCore(void) const;
-    // Get the complete bioseq
+    
+    /// Get the complete bioseq
     CConstRef<CBioseq> GetCompleteBioseq(void) const;
 
     // Deprecated interface.
@@ -182,89 +211,120 @@ public:
     //////////////////////////////////////////////////////////////////
     // Old interface:
 
-    // Go up to a certain complexity level (or the nearest level of the same
-    // priority if the required class is not found):
-    // level   class
-    // 0       not-set (0) ,
-    // 3       nuc-prot (1) ,       -- nuc acid and coded proteins
-    // 2       segset (2) ,         -- segmented sequence + parts
-    // 2       conset (3) ,         -- constructed sequence + parts
-    // 1       parts (4) ,          -- parts for 2 or 3
-    // 1       gibb (5) ,           -- geninfo backbone
-    // 1       gi (6) ,             -- geninfo
-    // 5       genbank (7) ,        -- converted genbank
-    // 3       pir (8) ,            -- converted pir
-    // 4       pub-set (9) ,        -- all the seqs from a single publication
-    // 4       equiv (10) ,         -- a set of equivalent maps or seqs
-    // 3       swissprot (11) ,     -- converted SWISSPROT
-    // 3       pdb-entry (12) ,     -- a complete PDB entry
-    // 4       mut-set (13) ,       -- set of mutations
-    // 4       pop-set (14) ,       -- population study
-    // 4       phy-set (15) ,       -- phylogenetic study
-    // 4       eco-set (16) ,       -- ecological sample study
-    // 4       gen-prod-set (17) ,  -- genomic products, chrom+mRNa+protein
-    // 4       wgs-set (18) ,       -- whole genome shotgun project
-    // 0       other (255)
+    /// Go up to a certain complexity level (or the nearest level of the same
+    /// priority if the required class is not found):
+    /// level   class
+    /// 0       not-set (0) ,
+    /// 3       nuc-prot (1) ,       -- nuc acid and coded proteins
+    /// 2       segset (2) ,         -- segmented sequence + parts
+    /// 2       conset (3) ,         -- constructed sequence + parts
+    /// 1       parts (4) ,          -- parts for 2 or 3
+    /// 1       gibb (5) ,           -- geninfo backbone
+    /// 1       gi (6) ,             -- geninfo
+    /// 5       genbank (7) ,        -- converted genbank
+    /// 3       pir (8) ,            -- converted pir
+    /// 4       pub-set (9) ,        -- all the seqs from a single publication
+    /// 4       equiv (10) ,         -- a set of equivalent maps or seqs
+    /// 3       swissprot (11) ,     -- converted SWISSPROT
+    /// 3       pdb-entry (12) ,     -- a complete PDB entry
+    /// 4       mut-set (13) ,       -- set of mutations
+    /// 4       pop-set (14) ,       -- population study
+    /// 4       phy-set (15) ,       -- phylogenetic study
+    /// 4       eco-set (16) ,       -- ecological sample study
+    /// 4       gen-prod-set (17) ,  -- genomic products, chrom+mRNa+protein
+    /// 4       wgs-set (18) ,       -- whole genome shotgun project
+    /// 0       other (255)
     CSeq_entry_Handle GetComplexityLevel(CBioseq_set::EClass cls) const;
-    // Return level with exact complexity, or empty handle if not found.
+    
+    /// Return level with exact complexity, or empty handle if not found.
     CSeq_entry_Handle GetExactComplexityLevel(CBioseq_set::EClass cls) const;
 
-    // Get some values from core:
+    /// Get some values from core:
     CSeq_inst::TMol GetBioseqMolType(void) const;
 
-    // Get sequence map.
+    /// Get sequence map.
     const CSeqMap& GetSeqMap(void) const;
 
-    // CSeqVector constructor flags
+    /// CSeqVector constructor flags
     enum EVectorCoding {
-        eCoding_NotSet, // Use original coding - DANGEROUS! - may change
-        eCoding_Ncbi,   // Set coding to binary coding (Ncbi4na or Ncbistdaa)
-        eCoding_Iupac   // Set coding to printable coding (Iupacna or Iupacaa)
+        eCoding_NotSet, //< Use original coding - DANGEROUS! - may change
+        eCoding_Ncbi,   //< Set coding to binary coding (Ncbi4na or Ncbistdaa)
+        eCoding_Iupac   //< Set coding to printable coding (Iupacna or Iupacaa)
     };
     enum EVectorStrand {
-        eStrand_Plus,   // Plus strand
-        eStrand_Minus   // Minus strand
+        eStrand_Plus,   //< Plus strand
+        eStrand_Minus   //< Minus strand
     };
 
-    // Get sequence: Iupacna or Iupacaa if use_iupac_coding is true
+    /// Get sequence: Iupacna or Iupacaa if use_iupac_coding is true
     CSeqVector GetSeqVector(EVectorCoding coding,
                             ENa_strand strand = eNa_strand_plus) const;
+    /// Get sequence
     CSeqVector GetSeqVector(ENa_strand strand = eNa_strand_plus) const;
+    /// Get sequence: Iupacna or Iupacaa if use_iupac_coding is true
     CSeqVector GetSeqVector(EVectorCoding coding, EVectorStrand strand) const;
+    /// Get sequence
     CSeqVector GetSeqVector(EVectorStrand strand) const;
 
-    // Sequence filtering: get a seq-vector for a part of the sequence.
-    // The part shown depends oon the mode selected. If the location
-    // contains references to other sequences they are ignored (unlike
-    // CBioseq constructor, which constructs a bioseq using all references
-    // from a location). Strand information from "location" is ingored
-    // when creating merged or excluded views. If "minus_strand" is true,
-    // the result is reverse-complement.
+    /// Sequence filtering: get a seq-vector for a part of the sequence.
+    /// The part shown depends on the mode selected. If the location
+    /// contains references to other sequences they are ignored (unlike
+    /// CBioseq constructor, which constructs a bioseq using all references
+    /// from a location). Strand information from "location" is ingored
+    /// when creating merged or excluded views. If "minus_strand" is true,
+    /// the result is reverse-complement.
     enum ESequenceViewMode {
-        eViewConstructed,    // Do not merge or reorder intervals
-        eViewMerged,         // Merge overlapping intervals, sort by location
-        eViewExcluded        // Show intervals not included in the seq-loc
+        eViewConstructed,    //< Do not merge or reorder intervals
+        eViewMerged,         //< Merge overlapping intervals, sort by location
+        eViewExcluded        //< Show intervals not included in the seq-loc
     };
+
+    /// Create a seq-vector for a part of the bioseq
+    ///
+    /// @sa
+    ///     GetSeqMapByLocation()
     CSeqVector GetSequenceView(const CSeq_loc& location,
                                ESequenceViewMode mode,
                                EVectorCoding coding = eCoding_Ncbi,
                                ENa_strand strand = eNa_strand_plus) const;
 
-
+    /// Return seq-map constructed from a seq-loc
+    ///
+    /// @sa
+    ///     GetSequenceView()
     CConstRef<CSeqMap> GetSeqMapByLocation(const CSeq_loc& location,
                                            ESequenceViewMode mode) const;
 
+    /// Map a seq-loc from the bioseq's segment to the bioseq
     CRef<CSeq_loc> MapLocation(const CSeq_loc& loc) const;
 
     // Utility methods/operators
 
-    // Comparison
+    /// Check if handles point to the same bioseq
+    ///
+    /// @sa
+    ///     operator!=()
     bool operator== (const CBioseq_Handle& h) const;
+
+    // Check if handles point to different bioseqs
+    ///
+    /// @sa
+    ///     operator==()
     bool operator!= (const CBioseq_Handle& h) const;
+
+    /// For usage in containers
     bool operator<  (const CBioseq_Handle& h) const;
 
-    // Check
+    /// Check if handle points to a bioseq
+    ///
+    /// @sa
+    ///    operator !()
     operator bool(void)  const;
+
+    // Check if handle does not point to a bioseq
+    ///
+    /// @sa
+    ///    operator bool()
     bool operator!(void) const;
 
     // these methods are for cross scope move only.
@@ -290,6 +350,13 @@ public: // non-public section
     const CBioseq_Info& x_GetInfo(void) const;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CBioseq_EditHandle --
+///
+///  Proxy to access and edit the bioseq data
+///
 
 class NCBI_XOBJMGR_EXPORT CBioseq_EditHandle : public CBioseq_Handle
 {
@@ -418,12 +485,18 @@ bool CBioseq_Handle::operator!= (const CBioseq_Handle& h) const
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2004/09/27 20:14:21  kononenk
+* Added doxygen formatting
+*
 * Revision 1.59  2004/08/05 18:28:17  vasilche
 * Fixed order of CRef<> release in destruction and assignment of handles.
 *
