@@ -36,11 +36,11 @@ Contents: High level BLAST functions
 static char const rcsid[] = "$Id$";
 
 #include <algo/blast/core/blast_engine.h>
+#include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/aa_ungapped.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_traceback.h>
-#include <algo/blast/core/phi_lookup.h>
 #include <algo/blast/core/phi_extend.h>
 
 #if 0
@@ -498,22 +498,18 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    else
      aux_struct->GetGappedScore = BLAST_MbGetGappedScore;
 
+   offset_array_size = GetOffsetArraySize(lookup_wrap);
+
    if (mb_lookup) {
       aux_struct->WordFinder = MB_WordFinder;
-      offset_array_size = OFFSET_ARRAY_SIZE + 
-         ((MBLookupTable*)lookup_wrap->lut)->longest_chain;
+   } else if (phi_lookup) {
+      aux_struct->WordFinder = PHIBlastWordFinder;
+   } else if (blastp) {
+      aux_struct->WordFinder = BlastAaWordFinder;
+   } else if (ag_blast) {
+      aux_struct->WordFinder = BlastNaWordFinder_AG;
    } else {
-      if (blastp) {
-         aux_struct->WordFinder = BlastAaWordFinder;
-      } else if (phi_lookup) {
-         aux_struct->WordFinder = PHIBlastWordFinder;
-      } else if (ag_blast) {
-         aux_struct->WordFinder = BlastNaWordFinder_AG;
-      } else {
-         aux_struct->WordFinder = BlastNaWordFinder;
-      }
-      offset_array_size = OFFSET_ARRAY_SIZE + 
-         ((LookupTable*)lookup_wrap->lut)->longest_chain;
+      aux_struct->WordFinder = BlastNaWordFinder;
    }
 
    aux_struct->query_offsets = 
@@ -838,55 +834,4 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    sfree(hit_params);
 
    return status;
-}
-
-Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
-        const LookupTableOptions* lookup_options,	
-        ListNode* lookup_segments, BlastScoreBlk* sbp, 
-        LookupTableWrap** lookup_wrap_ptr)
-{
-   LookupTableWrap* lookup_wrap;
-   Boolean is_na;
-
-   /* Construct the lookup table. */
-   *lookup_wrap_ptr = lookup_wrap = 
-      (LookupTableWrap*) calloc(1, sizeof(LookupTableWrap));
-   lookup_wrap->lut_type = lookup_options->lut_type;
-
-   switch ( lookup_options->lut_type ) {
-   case AA_LOOKUP_TABLE:
-      BlastAaLookupNew(lookup_options, (LookupTable* *)
-                       &lookup_wrap->lut);
-      BlastAaLookupIndexQueries( (LookupTable*) lookup_wrap->lut,
-                                 (lookup_options->use_pssm == TRUE) ? sbp->posMatrix : sbp->matrix, 
-                                query, lookup_segments, 1);
-      _BlastAaLookupFinalize((LookupTable*) lookup_wrap->lut);
-      break;
-   case MB_LOOKUP_TABLE:
-      MB_LookupTableNew(query, lookup_segments, 
-         (MBLookupTable* *) &(lookup_wrap->lut), lookup_options);
-      break;
-   case NA_LOOKUP_TABLE:
-      LookupTableNew(lookup_options, 
-         (LookupTable* *) &(lookup_wrap->lut), FALSE);
-	    
-      BlastNaLookupIndexQuery((LookupTable*) lookup_wrap->lut, query,
-                              lookup_segments);
-      _BlastAaLookupFinalize((LookupTable*) lookup_wrap->lut);
-      break;
-   case PHI_AA_LOOKUP: case PHI_NA_LOOKUP:
-      is_na = (lookup_options->lut_type == PHI_NA_LOOKUP);
-      PHILookupTableNew(lookup_options, 
-                        (PHILookupTable* *) &(lookup_wrap->lut), is_na, sbp);
-      
-      PHIBlastIndexQuery((PHILookupTable*) lookup_wrap->lut, query,
-                         lookup_segments, is_na);
-   default:
-      {
-         /* FIXME - emit error condition here */
-          abort();
-      }
-   } /* end switch */
-
-   return 0;
 }
