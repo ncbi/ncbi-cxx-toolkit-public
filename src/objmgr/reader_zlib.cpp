@@ -69,6 +69,9 @@ public:
     };
 
 private:
+    CResultZBtSrcX(const CResultZBtSrcX&);
+    const CResultZBtSrcX& operator=(const CResultZBtSrcX&);
+
     CRef<CByteSourceReader> m_Src;
     vector<char>      m_Buffer;
     size_t            m_BufferPos;
@@ -239,6 +242,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2003/07/24 20:35:42  vasilche
+* Added private constructor to make MSVC-DLL happy.
+*
 * Revision 1.1  2003/07/24 19:28:09  vasilche
 * Implemented SNP split for ID1 loader.
 *
