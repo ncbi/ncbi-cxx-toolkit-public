@@ -373,7 +373,7 @@ public:
     db_map_base(CBDB_File::EDuplicateKeys dup_keys) : m_Dbf(dup_keys) {}
 
     void open(const char* fname, 
-              ios_base::openmode mode=ios_base::in|ios_base::out,
+              IOS_BASE::openmode mode=IOS_BASE::in|IOS_BASE::out,
               unsigned int cache_size=0);
     void open(const char* fname, 
               CBDB_RawFile::EOpenMode db_mode,
@@ -466,20 +466,20 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 
 inline 
-CBDB_RawFile::EOpenMode iosbase2BDB(ios_base::openmode mode)
+CBDB_RawFile::EOpenMode iosbase2BDB(IOS_BASE::openmode mode)
 {
     CBDB_RawFile::EOpenMode db_mode = CBDB_RawFile::eReadWriteCreate;
 
     // Mapping iostream based open mode into BDB open mode
     //
-    if (mode & ios_base::in) {
+    if (mode & IOS_BASE::in) {
         db_mode = 
-          (mode & ios_base::out) 
+          (mode & IOS_BASE::out) 
             ? CBDB_RawFile::eReadWriteCreate : CBDB_RawFile::eReadOnly;
     } else {
-        if (mode & ios_base::out) {
+        if (mode & IOS_BASE::out) {
             db_mode = CBDB_RawFile::eReadWriteCreate;
-            if (mode & ios_base::trunc) {
+            if (mode & IOS_BASE::trunc) {
                 db_mode = CBDB_RawFile::eCreate;
             }
         }
@@ -495,7 +495,7 @@ CBDB_RawFile::EOpenMode iosbase2BDB(ios_base::openmode mode)
 
 template<class K, class T>
 void db_map_base<K, T>::open(const char* fname,
-                             ios_base::openmode mode,
+                             IOS_BASE::openmode mode,
                              unsigned int cache_size)
 {
     CBDB_RawFile::EOpenMode db_mode = iosbase2BDB(mode);
@@ -603,6 +603,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/10/14 17:45:43  vasilche
+ * Use IOS_BASE instead of non-portable ios_base.
+ *
  * Revision 1.11  2004/04/26 16:43:59  ucko
  * Qualify inherited dependent names with this-> where needed by GCC 3.4.
  *

@@ -1685,7 +1685,7 @@ static void s_TEST_db_map(void)
 
     db_map<int, string>  i2s;
 
-    i2s.open(s_db_map1, ios_base::out|ios_base::trunc);
+    i2s.open(s_db_map1, IOS_BASE::out|IOS_BASE::trunc);
 
     i2s.insert(pair<const int, string>(1, "Data1"));
     i2s.insert(pair<const int, string>(2, "Data2"));
@@ -1723,7 +1723,7 @@ static void s_TEST_db_map(void)
 
     db_map<string, int>  s2i;
 
-    s2i.open("s2i.db", ios_base::out|ios_base::trunc);
+    s2i.open("s2i.db", IOS_BASE::out|IOS_BASE::trunc);
 
     s2i.insert(pair<const string, int>("Data1", 1));
     s2i.insert(pair<const string, int>("Data2", 2));
@@ -1744,7 +1744,7 @@ static void s_TEST_db_multimap(void)
 
     db_multimap<int, string>  ii2s;
 
-    ii2s.open(s_db_map2, ios_base::out|ios_base::trunc);
+    ii2s.open(s_db_map2, IOS_BASE::out|IOS_BASE::trunc);
 
     ii2s.insert(pair<const int, string>(1, "Data1"));
     ii2s.insert(pair<const int, string>(2, "Data2"));
@@ -1951,6 +1951,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2004/10/14 17:45:50  vasilche
+ * Use IOS_BASE instead of non-portable ios_base.
+ *
  * Revision 1.52  2004/08/24 14:20:14  kuznets
  * Fixed opening a read-only cache(wrong path)
  *
