@@ -34,7 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-
+#include <util/static_map.hpp>
 #include <serial/iterator.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -48,9 +48,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <objtools/flat/flat_gbseq_formatter.hpp>
-#include <objtools/flat/flat_gff_formatter.hpp>
-#include <objtools/flat/flat_table_formatter.hpp>
+#include <objtools/format/flat_file_generator.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/gff_reader.hpp>
 #include <objtools/readers/readfeat.hpp>
@@ -72,8 +70,8 @@ public:
     int  Run (void);
 
 private:
-    static IFlatFormatter::EDatabase GetFlatFormat  (const string& name);
-    static ESerialDataFormat         GetSerialFormat(const string& name);
+    static int               GetFlatFormat  (const string& name);
+    static ESerialDataFormat GetSerialFormat(const string& name);
 
     CConstRef<CSeq_entry> Read (const CArgs& args);
     void                  Write(const CSeq_entry& entry, const CArgs& args);
@@ -110,7 +108,7 @@ void CConversionApp::Init(void)
     arg_desc->SetConstraint
         ("outfmt", &(*new CArgAllow_Strings,
                      "asn", "asnb", "xml", "ddbj", "embl", "genbank", "fasta",
-                     "gff", "tbl", "gbseq/xml", "gbseq/asn", "gbseq/asnb"));
+                     "gff", "gff3", "tbl", "gbseq/xml"));
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -129,7 +127,9 @@ int CConversionApp::Run(void)
 
     CConstRef<CSeq_entry> entry = Read(args);
     if (args["infmt"].AsString() != "ID") {
-        m_Scope->AddTopLevelSeqEntry(const_cast<CSeq_entry&>(*entry));
+        try {
+            m_Scope->AddTopLevelSeqEntry(const_cast<CSeq_entry&>(*entry));
+        } STD_CATCH_ALL("loading into OM")
     }
     Write(*entry, args);
     return 0;
@@ -150,14 +150,27 @@ ESerialDataFormat CConversionApp::GetSerialFormat(const string& name)
 }
 
 
-IFlatFormatter::EDatabase CConversionApp::GetFlatFormat(const string& name)
+typedef CFlatFileConfig::TFormat TFFFormat;
+typedef pair<const char*, TFFFormat> TFormatElem;
+static const TFormatElem sc_FormatArray[] = {
+    TFormatElem("ddbj",      CFlatFileConfig::eFormat_DDBJ),
+    TFormatElem("embl",      CFlatFileConfig::eFormat_EMBL),
+    TFormatElem("gbseq/xml", CFlatFileConfig::eFormat_GBSeq),
+    TFormatElem("genbank",   CFlatFileConfig::eFormat_GenBank),
+    TFormatElem("gff",       CFlatFileConfig::eFormat_GFF),
+    TFormatElem("gff3",      CFlatFileConfig::eFormat_GFF3),
+    TFormatElem("tbl",       CFlatFileConfig::eFormat_FTable)
+};
+typedef CStaticArrayMap<const char*, TFFFormat, PNocase> TFormatMap;
+static const TFormatMap sc_FormatMap(sc_FormatArray, sizeof(sc_FormatArray));
+
+int CConversionApp::GetFlatFormat(const string& name)
 {
-    if (name == "ddbj") {
-        return IFlatFormatter::eDB_DDBJ;
-    } else if (name == "embl") {
-        return IFlatFormatter::eDB_EMBL;
+    TFormatMap::const_iterator it = sc_FormatMap.find(name.c_str());
+    if (it == sc_FormatMap.end()) {
+        return -1;
     } else {
-        return IFlatFormatter::eDB_NCBI;
+        return it->second;
     }
 }
 
@@ -224,36 +237,26 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
 {
     const string& outfmt = args["outfmt"].AsString();
     const string& type   = args["type"  ].AsString();
-    if (outfmt == "genbank"  ||  outfmt == "embl"  ||  outfmt == "ddbj") {
-        CFlatTextOStream ftos(args["out"].AsOutputFile());
-        auto_ptr<IFlatFormatter> ff
-            (CFlatTextFormatter::New(ftos, *m_Scope,
-                                     IFlatFormatter::eMode_Entrez,
-                                     GetFlatFormat(outfmt)));
-        ff->Format(entry, *ff);
+    int           ff_fmt = GetFlatFormat(outfmt);
+    if (ff_fmt >= 0) {
+        CNcbiOstream& out = args["out"].AsOutputFile();
+        CFlatFileGenerator ff(static_cast<CFlatFileConfig::TFormat>(ff_fmt),
+                              CFlatFileConfig::eMode_Entrez,
+                              CFlatFileConfig::eStyle_Normal, 0,
+                              CFlatFileConfig::fViewAll);
+        ff.Generate(m_Scope->GetSeq_entryHandle(entry), out);
+        if (outfmt == "gff3") {
+            out << "##FASTA" << endl;
+            CFastaOstream fasta_out(out);
+            for (CTypeConstIterator<CBioseq> it(entry);  it;  ++it) {
+                fasta_out.Write(m_Scope->GetBioseqHandle(*it));
+            }
+        }
     } else if (outfmt == "fasta") {
         CFastaOstream out(args["out"].AsOutputFile());
         for (CTypeConstIterator<CBioseq> it(entry);  it;  ++it) {
             out.Write(m_Scope->GetBioseqHandle(*it));
         }
-    } else if (outfmt == "gff") {
-        CFlatTextOStream ftos(args["out"].AsOutputFile());
-        CFlatGFFFormatter ff(ftos, *m_Scope, IFlatFormatter::eMode_Dump,
-                             CFlatGFFFormatter::fGTFCompat
-                             | CFlatGFFFormatter::fShowSeq);
-        ff.Format(entry, ff);
-    } else if (outfmt == "tbl") {
-        CFlatTextOStream ftos(args["out"].AsOutputFile());
-        CFlatTableFormatter ff(ftos, *m_Scope);
-        ff.Format(entry, ff);
-    } else if (NStr::StartsWith(outfmt, "gbseq/")) {
-        CFlatGBSeqFormatter ff(*m_Scope, IFlatFormatter::eMode_Entrez);
-        ff.Format(entry, ff);
-        auto_ptr<CObjectOStream> out
-            (CObjectOStream::Open(GetSerialFormat(outfmt.substr(6)),
-                                  args["out"].AsString(),
-                                  eSerial_StdWhenDash));
-        *out << ff.GetGBSet();
     } else {
         auto_ptr<CObjectOStream> out
             (CObjectOStream::Open(GetSerialFormat(outfmt),
@@ -263,7 +266,8 @@ void CConversionApp::Write(const CSeq_entry& entry, const CArgs& args)
             if (entry.IsSet()) {
                 ERR_POST(Warning
                          << "Possible truncation in conversion to Bioseq");
-                *out << *entry.GetSet().GetSeq_set().front();
+                CTypeConstIterator<CBioseq> it(entry);
+                *out << *it;
             } else {
                 *out << entry.GetSeq();
             }
@@ -294,6 +298,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/06/22 15:33:04  ucko
+* Migrate to new flat-file generation library.
+*
 * Revision 1.5  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *
