@@ -717,16 +717,19 @@ bool CAnnotTypes_CI::x_MatchType(const CAnnotObject_Info& annot_info) const
 {
     if ( m_AnnotChoice != CSeq_annot::C_Data::e_not_set ) {
         if ( m_AnnotChoice != annot_info.GetAnnotType() ) {
+LOG_POST("invalid annot-choice: " << annot_info.GetAnnotType() << " != " << m_AnnotChoice);
             return false;
         }
         if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
             if ( m_FeatSubtype != CSeqFeatData::eSubtype_any ) {
                 if ( m_FeatSubtype != annot_info.GetFeatSubtype() ) {
+LOG_POST("invalid feat-subtype: " << annot_info.GetFeatSubtype() << " != " << m_FeatSubtype);
                     return false;
                 }
             }
             else if ( m_FeatChoice != CSeqFeatData::e_not_set ) {
                 if ( m_FeatChoice != annot_info.GetFeatType() ) {
+LOG_POST("invalid feat-choice: " << annot_info.GetFeatType() << " != " << m_FeatChoice);
                     return false;
                 }
             }
@@ -860,7 +863,9 @@ bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
         }
 
         pair<size_t, size_t> idxs =
-            CTSE_Info::x_GetIndexRange(GetAnnotChoice(), GetFeatChoice());
+            CTSE_Info::x_GetIndexRange(GetAnnotChoice(),
+                                       GetFeatChoice(),
+                                       GetFeatSubtype());
         idxs.second = min(idxs.second, objs->m_AnnotSet.size());
         if ( idxs.first < idxs.second ) {
             m_TSE_LockSet.insert(*tse_it);
@@ -887,9 +892,7 @@ bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
                     continue;
                 }
                 
-                if ( !x_MatchType(annot_info) ) {
-                    continue;
-                }
+                _ASSERT(x_MatchType(annot_info));
 
                 CAnnotObject_Ref annot_ref(annot_info);
                 if ( cvt ) {
@@ -1093,6 +1096,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2003/09/16 14:21:47  grichenk
+* Added feature indexing and searching by subtype.
+*
 * Revision 1.90  2003/09/12 17:43:15  dicuccio
 * Replace _ASSERT() with handled check in x_Search() (again...)
 *

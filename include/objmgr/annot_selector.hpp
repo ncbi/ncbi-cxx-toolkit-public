@@ -183,17 +183,31 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& SetAnnotChoice(TAnnotChoice choice)
         {
             m_AnnotChoice = choice;
+            // Reset feature type/subtype
+            if (m_AnnotChoice != CSeq_annot::C_Data::e_Ftable) {
+                m_FeatChoice = CSeqFeatData::e_not_set;
+                m_FeatSubtype = CSeqFeatData::eSubtype_any;
+            }
             return *this;
         }
     SAnnotSelector& SetFeatChoice(TFeatChoice choice)
         {
             m_FeatChoice = choice;
+            // Adjust annot type and feature subtype
+            m_AnnotChoice = CSeq_annot::C_Data::e_Ftable;
+            m_FeatSubtype = CSeqFeatData::eSubtype_any;
             return *this;
         }
 
     SAnnotSelector& SetFeatSubtype(TFeatSubtype subtype)
         {
             m_FeatSubtype = subtype;
+            // Adjust annot type and feature type
+            m_AnnotChoice = CSeq_annot::C_Data::e_Ftable;
+            if (m_FeatSubtype != CSeqFeatData::eSubtype_any) {
+                m_FeatChoice =
+                    CSeqFeatData::GetTypeFromSubtype(m_FeatSubtype);
+            }
             return *this;
         }
     TFeatSubtype GetFeatSubtype(void) const
@@ -363,6 +377,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/09/16 14:21:46  grichenk
+* Added feature indexing and searching by subtype.
+*
 * Revision 1.16  2003/09/11 17:45:06  grichenk
 * Added adaptive-depth option to annot-iterators.
 *

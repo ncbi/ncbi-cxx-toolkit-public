@@ -138,6 +138,8 @@ public:
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
+    typedef pair<size_t, size_t> TIndexRange;
+
 private:
     friend class CTSE_Guard;
     friend class CDataSource;
@@ -146,9 +148,14 @@ private:
     friend class CAnnotTypes_CI;
     friend class CSeq_annot_Info;
 
-    static pair<size_t, size_t> x_GetIndexRange(int annot_type,
-                                                           int feat_type);
-    static size_t x_GetTypeIndex(int annot_type, int feat_type);
+    static void x_InitIndexTables(void);
+
+    static TIndexRange x_GetIndexRange(int annot_type,
+                                       int feat_type,
+                                       int feat_subtype);
+    static size_t x_GetTypeIndex(int annot_type,
+                                 int feat_type,
+                                 int feat_subtype);
     static size_t x_GetTypeIndex(const SAnnotObject_Key& key);
 
     // index access methods
@@ -161,7 +168,8 @@ private:
                                    size_t index) const;
     const TRangeMap* x_GetRangeMap(const CSeq_id_Handle& id,
                                    int annot_type,
-                                   int feat_type) const;
+                                   int feat_type,
+                                   int feat_subtype) const;
 
     void x_MapAnnotObject(TRangeMap& rangeMap,
                           const SAnnotObject_Key& key,
@@ -176,7 +184,6 @@ private:
     void x_MapAnnotObject(const SAnnotObject_Key& key,
                           const SAnnotObject_Index& annotRef);
     void x_DropAnnotObject(const SAnnotObject_Key& key);
-
 
     // Parent data-source
     CDataSource* m_DataSource;
@@ -289,9 +296,12 @@ CTSE_Info::x_GetRangeMap(const SIdAnnotObjs& objs, size_t index) const
 inline
 const CTSE_Info::TRangeMap*
 CTSE_Info::x_GetRangeMap(const CSeq_id_Handle& id,
-                         int annot_type, int feat_type) const
+                         int annot_type,
+                         int feat_type,
+                         int feat_subtype) const
 {
-    return x_GetRangeMap(id, x_GetTypeIndex(annot_type, feat_type));
+    return x_GetRangeMap(id, x_GetTypeIndex(
+        annot_type, feat_type, feat_subtype));
 }
 
 
@@ -309,6 +319,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/09/16 14:21:46  grichenk
+* Added feature indexing and searching by subtype.
+*
 * Revision 1.37  2003/08/14 20:05:19  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

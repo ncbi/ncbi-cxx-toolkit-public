@@ -114,6 +114,7 @@ CTSE_Info::CTSE_Info(CDataSource* source,
 {
     m_Parent = this;
     m_TSE_Info = this;
+    x_InitIndexTables();
 }
 
 CTSE_Info::~CTSE_Info(void)
@@ -125,6 +126,7 @@ CTSE_Info::~CTSE_Info(void)
 // align -> 0
 // graph -> 1
 // feat -> 2...
+/*
 inline
 size_t CTSE_Info::x_GetTypeIndex(int annot_type, int feat_type)
 {
@@ -148,34 +150,115 @@ size_t CTSE_Info::x_GetTypeIndex(int annot_type, int feat_type)
         feat_type + kShiftFtableUp:
         annot_type - kShiftNonFtableDown;
 }
+*/
+
+// All ranges are in format [x, y)
+
+const size_t kAnnotTypeMax = CSeq_annot::C_Data::e_Graph;
+const size_t kFeatTypeMax = CSeqFeatData::e_Biosrc;
+const size_t kFeatSubtypeMax = CSeqFeatData::eSubtype_max;
+
+// Table: annot type -> index
+// (for Ftable it's just the first feature type index)
+vector<size_t> s_AnnotTypeIndex;
+
+// Table: feat type -> index range, [)
+vector<CTSE_Info::TIndexRange> s_FeatTypeIndexRange;
+
+// Table feat subtype -> index
+vector<size_t> s_FeatSubtypeIndex;
+
+// Initialization flag
+bool s_TablesInitialized = false;
+
+
+void CTSE_Info::x_InitIndexTables(void)
+{
+    // Check flag, lock tables
+    if (!s_TablesInitialized) {
+        s_AnnotTypeIndex.resize(kAnnotTypeMax + 1);
+        s_AnnotTypeIndex[CSeq_annot::C_Data::e_Align] = 0;
+        s_AnnotTypeIndex[CSeq_annot::C_Data::e_Graph] = 1;
+        s_AnnotTypeIndex[CSeq_annot::C_Data::e_Ftable] = 2;
+
+        size_t feat_shift = s_AnnotTypeIndex[CSeq_annot::C_Data::e_Ftable];
+        size_t last_type = 0;
+        size_t last_idx = feat_shift;
+        s_FeatTypeIndexRange.resize(kFeatTypeMax + 1);
+        s_FeatSubtypeIndex.resize(kFeatSubtypeMax + 1);
+        for (size_t i = 0; i <= kFeatSubtypeMax; ++i) {
+            size_t idx = feat_shift + i;
+            s_FeatSubtypeIndex[i] = idx;
+            size_t ftype = CSeqFeatData::GetTypeFromSubtype(
+                CSeqFeatData::ESubtype(i));
+            if (ftype != last_type) {
+                s_FeatTypeIndexRange[last_type] = TIndexRange(last_idx, idx);
+                last_idx = idx;
+                last_type = ftype;
+            }
+        }
+        s_TablesInitialized = true;
+    }
+}
+
+
+inline
+size_t CTSE_Info::x_GetTypeIndex(int annot_type,
+                                 int feat_type,
+                                 int feat_subtype)
+{
+    if (annot_type == CSeq_annot::C_Data::e_Ftable) {
+        _ASSERT(feat_subtype == CSeqFeatData::eSubtype_any  ||
+            feat_type == CSeqFeatData::GetTypeFromSubtype(
+            CSeqFeatData::ESubtype(feat_subtype)));
+        return s_FeatSubtypeIndex[feat_subtype];
+    }
+    else {
+        _ASSERT(annot_type >= 0  &&  annot_type < s_AnnotTypeIndex.size());
+        return s_AnnotTypeIndex[annot_type];
+    }
+}
 
 
 inline
 size_t CTSE_Info::x_GetTypeIndex(const SAnnotObject_Key& key)
 {
     return x_GetTypeIndex(key.m_AnnotObject_Info->GetAnnotType(),
-                          key.m_AnnotObject_Info->GetFeatType());
+                          key.m_AnnotObject_Info->GetFeatType(),
+                          key.m_AnnotObject_Info->GetFeatSubtype());
 }
 
 
-pair<size_t, size_t> CTSE_Info::x_GetIndexRange(int annot_type,
-                                                int feat_type)
+CTSE_Info::TIndexRange CTSE_Info::x_GetIndexRange(int annot_type,
+                                                  int feat_type,
+                                                  int feat_subtype)
 {
-    if ( annot_type == CSeq_annot::C_Data::e_not_set ) {
-        size_t last = x_GetTypeIndex(CSeq_annot::C_Data::e_Ftable,
-                                     CSeqFeatData::e_Biosrc);
-        return pair<size_t, size_t>(0, last+1);
+    if (annot_type == CSeq_annot::C_Data::e_not_set) {
+        return TIndexRange(0,
+            s_FeatSubtypeIndex[CSeqFeatData::eSubtype_max]+1);
     }
-    if ( annot_type == CSeq_annot::C_Data::e_Ftable &&
-         feat_type == CSeqFeatData::e_not_set ) {
-        size_t first = x_GetTypeIndex(CSeq_annot::C_Data::e_Ftable,
-                                      CSeqFeatData::e_not_set); // first
-        size_t last = x_GetTypeIndex(CSeq_annot::C_Data::e_Ftable,
-                                     CSeqFeatData::e_Biosrc);
-        return pair<size_t, size_t>(first, last+1);
+    if (annot_type == CSeq_annot::C_Data::e_Ftable) {
+        if (feat_type == CSeqFeatData::e_not_set) {
+            // Any feature type - return the whole range
+            size_t first = s_FeatTypeIndexRange[0].first;
+            size_t last = s_FeatTypeIndexRange[kFeatTypeMax].second;
+            return TIndexRange(first, last);
+        }
+        else {
+            // Specific type - check subtype
+            if (feat_subtype == CSeqFeatData::eSubtype_any) {
+                return s_FeatTypeIndexRange[feat_type];
+            }
+            else {
+                // Check type validity and go to normal return
+                _ASSERT(feat_type ==
+                    CSeqFeatData::GetTypeFromSubtype(
+                    CSeqFeatData::ESubtype(feat_subtype)));
+            }
+        }
     }
-    size_t index = x_GetTypeIndex(annot_type, feat_type);
-    return pair<size_t, size_t>(index, index+1);
+    size_t index = x_GetTypeIndex(annot_type, feat_type, feat_subtype);
+    return TIndexRange(index, index+1);
 }
 
 
@@ -364,6 +447,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/09/16 14:21:48  grichenk
+* Added feature indexing and searching by subtype.
+*
 * Revision 1.29  2003/08/14 20:05:19  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.
