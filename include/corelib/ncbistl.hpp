@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/11/13 00:13:51  vakatov
+* Decide whether it NCBI_OS_UNIX or NCBI_OS_MSWIN
+*
 * Revision 1.6  1998/11/10 01:13:40  vakatov
 * Moved "NCBI_USING_NAMESPACE_STD:" to the first(fake) definition of
 * namespace "ncbi" -- no need to "using ..." it in every new "ncbi"
@@ -60,6 +63,15 @@
 
 #include <ncbiconf.h>
 
+// Deduce the generic platform
+// (this header is not right place for it; to be moved somewhere else later...)
+#if defined(HAVE_UNISTD_H)
+#  define NCBI_OS_UNIX
+#elif defined(HAVE_WINDOWS_H)
+#  define NCBI_OS_MSWIN
+#else
+#  error "Unknown platform(must be one of:  UNIX, MS-Windows)!"
+#endif
 
 // Use of the STLport package("http://corp.metabyte.com/~fbp/stl/effort.html")
 #if defined(NCBI_SGI_STL_PORT)
