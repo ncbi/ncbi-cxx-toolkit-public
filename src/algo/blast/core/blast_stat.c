@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.30  2003/08/25 18:05:41  dondosha
+ * Moved assert statement after variables declarations
+ *
  * Revision 1.29  2003/08/25 16:23:33  camacho
  * +Loading protein scoring matrices from utils/tables
  *
@@ -1221,11 +1224,12 @@ gaps), then use other scores. */
 Int2
 BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
 {
-    ASSERT(sbp);
     Int2 status = 0;
     SNCBIPackedScoreMatrix* psm;
     Int4** matrix = sbp->matrix;
     int i, j;   /* loop indices */
+
+    ASSERT(sbp);
 
     if (strcasecmp(sbp->name, "BLOSUM62") == 0) {
         psm = (SNCBIPackedScoreMatrix*) &NCBISM_Blosum62;
