@@ -124,6 +124,7 @@ void CDemoApp::Init(void)
     arg_desc->AddDefaultKey("depth", "depth",
                             "Max depth of segments to iterate",
                             CArgDescriptions::eInteger, "100");
+    arg_desc->AddFlag("nosnp", "exclude snp features");
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -625,6 +626,7 @@ int CDemoApp::Run(void)
         order = SAnnotSelector::eSortOrder_None;
     int max_feat = args["max_feat"].AsInteger();
     int depth = args["depth"].AsInteger();
+    bool nosnp = args["nosnp"];
 
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
@@ -733,12 +735,15 @@ int CDemoApp::Run(void)
         // Create CFeat_CI using the current scope and location.
         // No feature type restrictions.
         {{
-            CFeat_CI feat_it(scope, loc,
-                             SAnnotSelector()
-                             .SetResolveMethod(resolve)
-                             .SetSortOrder(order)
-                             .SetMaxSize(max_feat)
-                             .SetResolveDepth(depth));
+            SAnnotSelector sel;
+            sel.SetResolveMethod(resolve)
+                .SetSortOrder(order)
+                .SetMaxSize(max_feat)
+                .SetResolveDepth(depth);
+            if ( nosnp ) {
+                sel.SetDataSource("");
+            }
+            CFeat_CI feat_it(scope, loc, sel);
             for ( ; feat_it;  ++feat_it) {
                 count++;
                 // Get seq-annot containing the feature
@@ -751,7 +756,7 @@ int CDemoApp::Run(void)
                 CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
             }
             NcbiCout << "Feat count (whole, any):       " << count << NcbiEndl;
-            _ASSERT(count == feat_it.GetSize());
+            _ASSERT(count == (int)feat_it.GetSize());
         }}
 
         if ( only_features )
@@ -880,6 +885,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/07/17 20:06:18  vasilche
+* Added OBJMGR_LIBS definition.
+*
 * Revision 1.30  2003/07/17 19:10:30  grichenk
 * Added methods for seq-map and seq-vector validation,
 * updated demo.

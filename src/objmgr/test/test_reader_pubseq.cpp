@@ -54,7 +54,7 @@ int main()
             const CPubseqSeqref& seqRef =
                 dynamic_cast<const CPubseqSeqref&>(**i);
 
-            cout << "gi: " << seqId.GetGi() << " SatKey=" << seqRef.SatKey() << " Flag=" << seqRef.Flag() << endl;
+            cout << "gi: " << seqId.GetGi() << " SatKey=" << seqRef.SatKey() << " Flags=" << seqRef.GetFlags() << endl;
       
             CPubseqSeqref::TBlobClass cl = 0;
             int count = 0;
@@ -84,6 +84,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.7  2003/07/17 20:06:02  vasilche
+* Added OBJMGR_LIBS definition.
+*
 * Revision 1.6  2003/06/02 16:06:39  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
