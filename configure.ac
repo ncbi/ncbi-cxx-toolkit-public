@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.194 2003/06/05 19:08:19 ucko Exp $
+#  $Id: configure.ac,v 1.195 2003/06/10 15:39:08 dicuccio Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2406,7 +2406,7 @@ if test "$with_opengl" != "no"; then
          fi
 	 LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_INCLUDE="$X_CFLAGS"
-         OPENGL_LIBS="$X_LIBS -lGL $X_ALL_LIBS"
+         OPENGL_LIBS="$X_LIBS -LGLU -lGL $X_ALL_LIBS"
          ;;
    esac
    AC_CACHE_CHECK([for OpenGL], ncbi_cv_lib_opengl,
@@ -2435,7 +2435,7 @@ else
    AC_DEFINE(HAVE_OPENGL, 1, [Define to 1 if you have OpenGL (-lGL).])
    AC_CHECK_LIB(OSMesa, OSMesaCreateContext,
       [WithPackages="$WithPackages MESA";
-       OSMESA_LIBS="$X_LIBS -lOSMesa -lGL $X_ALL_LIBS"
+       OSMESA_LIBS="$X_LIBS -lOSMesa -lGLU -lGL $X_ALL_LIBS"
        AC_DEFINE(HAVE_LIBOSMESA, 1, [Define to 1 if you have libOSMesa.])],
       [WithoutPackages="$WithoutPackages MESA"; OSMESA_LIBS=],
       $OPENGL_LIBS)
