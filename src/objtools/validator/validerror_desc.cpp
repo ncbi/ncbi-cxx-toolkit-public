@@ -38,6 +38,8 @@
 #include <objects/general/Object_id.hpp>
 
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/MolInfo.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -55,25 +57,48 @@ CValidError_desc::~CValidError_desc(void)
 }
 
 
+/**
+ * Validate descriptors as stand alone objects (no context)
+ **/
 void CValidError_desc::ValidateSeqDesc(const CSeqdesc& desc)
 {
-    // switch on type, e.g., call ValidateBioSource or ValidatePubdesc
-    switch (desc.Which ()) {
-        case CSeqdesc::e_not_set:
-            break;
+    // switch on type, e.g., call ValidateBioSource, ValidatePubdesc, ...
+    switch ( desc.Which() ) {
+
         case CSeqdesc::e_Mol_type:
-            break;
         case CSeqdesc::e_Modif:
-            break;
         case CSeqdesc::e_Method:
+            PostErr(eDiag_Info, eErr_SEQ_DESCR_Obsolete,
+                desc.SelectionName(desc.Which()) + " is obsolete", desc);
+            break;
+
+        case CSeqdesc::e_Comment:
+            ValidateComment(desc.GetComment(), desc);
+            break;
+
+        case CSeqdesc::e_Pub:
+            m_Imp.ValidatePubdesc(desc.GetPub(), desc);
+            break;
+
+        case CSeqdesc::e_User:
+            ValidateUser(desc.GetUser(), desc);
+            break;
+
+        case CSeqdesc::e_Source:
+            m_Imp.ValidateBioSource (desc.GetSource(), desc);
+            break;
+        
+        case CSeqdesc::e_Molinfo:
+            ValidateMolInfo(desc.GetMolinfo(), desc);
+            break;
+
+        case CSeqdesc::e_not_set:
             break;
         case CSeqdesc::e_Name:
             break;
         case CSeqdesc::e_Title:
             break;
         case CSeqdesc::e_Org:
-            break;
-        case CSeqdesc::e_Comment:
             break;
         case CSeqdesc::e_Num:
             break;
@@ -83,29 +108,8 @@ void CValidError_desc::ValidateSeqDesc(const CSeqdesc& desc)
             break;
         case CSeqdesc::e_Genbank:
             break;
-        case CSeqdesc::e_Pub:
-        {
-            const CPubdesc& pub = desc.GetPub ();
-            m_Imp.ValidatePubdesc (pub, desc);
-            break;
-        }
         case CSeqdesc::e_Region:
             break;
-        case CSeqdesc::e_User:
-        {
-            const CUser_object& usr = desc.GetUser();
-            const CObject_id& oi = usr.GetType();
-            if ( !oi.IsStr() ) {
-                break;
-            }
-            if ( !NStr::CompareNocase(oi.GetStr(), "TpaAssembly") ) {
-                if ( !m_Imp.IsTPA() ) {
-                    PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
-                        "Non-TPA record should not have TpaAssembly object", desc);
-                }
-            }
-            break;
-        }
         case CSeqdesc::e_Sp:
             break;
         case CSeqdesc::e_Dbxref:
@@ -122,18 +126,70 @@ void CValidError_desc::ValidateSeqDesc(const CSeqdesc& desc)
             break;
         case CSeqdesc::e_Het:
             break;
-        case CSeqdesc::e_Source:
-        {
-            const CBioSource& src = desc.GetSource ();
-            m_Imp.ValidateBioSource (src, desc);
-            break;
-        }
-        case CSeqdesc::e_Molinfo:
-            break;
         default:
             break;
     }
 }
+
+
+void CValidError_desc::ValidateComment
+(const string& comment,
+ const CSeqdesc& desc)
+{
+    if ( m_Imp.IsSerialNumberInComment(desc.GetComment()) ) {
+        PostErr(eDiag_Info, eErr_SEQ_DESCR_SerialInComment,
+            "Comment may refer to reference by serial number - "
+            "attach reference specific comments to the reference "
+            "REMARK instead.", desc);
+    }
+}
+
+
+void CValidError_desc::ValidateUser
+(const CUser_object& usr,
+ const CSeqdesc& desc)
+{
+    const CObject_id& oi = usr.GetType();
+    if ( !oi.IsStr() ) {
+        return;
+    }
+    if ( !NStr::CompareNocase(oi.GetStr(), "TpaAssembly") ) {
+        if ( !m_Imp.IsTPA() ) {
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                "Non-TPA record should not have TpaAssembly object", desc);
+        }
+    }
+}
+
+
+void CValidError_desc::ValidateMolInfo
+(const CMolInfo& minfo,
+ const CSeqdesc& desc)
+{
+    if ( !minfo.IsSetBiomol() ) {
+        return;
+    }
+
+    int biomol = minfo.GetBiomol();
+
+    switch ( biomol ) {
+    case CMolInfo::eBiomol_unknown:
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+            "Molinfo-biomol unknown used", desc);
+        break;
+
+    case CMolInfo::eBiomol_other:
+        if ( !m_Imp.IsXR() ) {
+            PostErr(eDiag_Warning, eErr_SEQ_DESCR_InvalidForType,
+                "Molinfo-biomol other used", desc);
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)
@@ -144,6 +200,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/02/12 17:55:39  shomrat
+* Implemented checks for obsolete, comment and molinfo descriptors
+*
 * Revision 1.3  2003/02/07 21:17:21  shomrat
 * Added check IsTPA
 *
