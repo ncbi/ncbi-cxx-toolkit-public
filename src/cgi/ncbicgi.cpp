@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/03/01 21:02:22  vasilche
+* Added parsing of 'form-data' requests.
+*
 * Revision 1.20  1999/01/07 22:03:42  vakatov
 * s_URL_Decode():  typo fixed
 *
@@ -499,6 +502,109 @@ static void s_ParseQuery(const string& str,
     }
 }
 
+static void s_ParseMultipartEntries(const string& boundary,
+                                    const string& str,
+                                    TCgiEntries& entries)
+{
+    // some constants in string
+    const string NameStart("Content-Disposition: form-data; name=\"");
+    const string Eol("\r\n");
+
+    SIZE_TYPE pos = 0;
+    SIZE_TYPE partStart = 0;
+    string name;
+    for ( ;; ) {
+        SIZE_TYPE eol = str.find(Eol, pos);
+        if ( eol == NPOS )
+            throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
+                                  boundary + "\"): unexpected eof: " + 
+                                  str.substr(pos), 0);
+        
+        if ( eol == pos + boundary.size() &&
+             str.compare(pos, boundary.size(), boundary) == 0 ) {
+            // boundary
+            if ( partStart == NPOS ) // in header
+                throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
+                                      boundary + "\"): boundary in header: " + 
+                                      str.substr(pos), 0);
+
+            if ( partStart != 0 ) {
+                SIZE_TYPE partEnd = pos - Eol.size();
+                entries.insert(TCgiEntries::value_type(name,
+                    str.substr(partStart, partEnd - partStart)));
+            }
+
+            partStart = NPOS;
+            name = NcbiEmptyString;
+        }
+        else if ( eol == pos + boundary.size() + 2 &&
+                  str.compare(pos, boundary.size(), boundary) == 0 &&
+                  str[eol-1] == '-' && str[eol-2] == '-') {
+            // last boundary
+            if ( partStart == NPOS ) // in header
+                throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
+                                      boundary + "\"): boundary in header: " + 
+                                      str.substr(pos), 0);
+
+            if ( partStart != 0 ) {
+                SIZE_TYPE partEnd = pos - Eol.size();
+                entries.insert(TCgiEntries::value_type(name,
+                    str.substr(partStart, partEnd - partStart)));
+            }
+
+            return;
+        }
+        else {
+            if ( partStart == NPOS ) {
+               // in header
+                if ( pos + NameStart.size() <= eol &&
+                     str.compare(pos, NameStart.size(), NameStart) == 0 ) {
+                    SIZE_TYPE nameStart = pos + NameStart.size();
+                    SIZE_TYPE nameEnd = str.find('\"', nameStart);
+                    if ( nameEnd == NPOS )
+                        throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
+                                              boundary + "\"): bad name header " + 
+                                              str.substr(pos), 0);
+
+                    // new name
+                    name = str.substr(nameStart, nameEnd - nameStart);
+                }
+                else if ( eol == pos ) {
+                    // end of header
+                    partStart = eol + Eol.size();
+                }
+                else {
+                    _TRACE("unknown header: \"" << str.substr(pos, eol - pos) << '"' );
+                }
+            }
+        }
+        pos = eol + Eol.size();
+    }
+}
+
+static void s_ParsePostQuery(const string& contentType, const string& str,
+                         TCgiEntries&  entries)
+{
+    if ( contentType == "application/x-www-form-urlencoded" ) {
+        SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
+        if ( err_pos != 0 )
+            throw CParseException("Init CCgiRequest::ParseFORM(\"" +
+                                  str + "\")", err_pos);
+    }
+    else if ( NStr::StartsWith(contentType, "multipart/form-data") ) {
+        string start = "boundary=";
+        SIZE_TYPE pos = contentType.find(start);
+        if ( pos == NPOS )
+            throw CParseException("CCgiRequest::ParsePostQuery(\"" +
+                                  contentType + "\"): no boundary field", 0);
+        s_ParseMultipartEntries("--" + contentType.substr(pos + start.size()),
+                              str, entries);
+    }
+    else {
+        throw CParseException("CCgiRequest::ParsePostQuery(\"" +
+                              contentType + "\"): invalid content type", 0);
+    }
+}
 
 void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv,
                          bool indexes_as_entries)
@@ -523,11 +629,8 @@ void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv,
     else // regular case -- read from "$QUERY_STRING"
         query_string = &GetProperty(eCgi_QueryString);
 
-    // parse "$QUERY_STRING"(or cmd.-line arg)
-    s_ParseQuery(*query_string, m_Entries, m_Indexes, indexes_as_entries);
-
     // POST method?
-    if (GetProperty(eCgi_RequestMethod).compare("POST") == 0) {
+    if ( AStrEquiv(GetProperty(eCgi_RequestMethod), "POST", PNocase())) {
         if ( !istr )
             istr = &NcbiCin;  // default input stream
         size_t len = GetContentLength();
@@ -538,7 +641,11 @@ void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv,
                                   "in reading POST content", istr->gcount());
 
         // parse query from the POST content
-        s_ParseQuery(str, m_Entries, m_Indexes, indexes_as_entries);
+        s_ParsePostQuery(GetProperty(eCgi_ContentType), str, m_Entries);
+    }
+    else {
+        // parse "$QUERY_STRING"(or cmd.-line arg)
+        s_ParseQuery(*query_string, m_Entries, m_Indexes, indexes_as_entries);
     }
 }
 
