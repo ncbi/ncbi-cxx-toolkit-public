@@ -1,8 +1,7 @@
 # $Id$
 
 LIB_PROJ = dbapi_cache
-#APP_PROJ = dbapi_cache_test
-SUB_PROJ = admintool
+SUB_PROJ = test admintool
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
