@@ -29,7 +29,6 @@
 
 #include <corelib/ncbipipe.hpp>
 #include <corelib/ncbiexec.hpp>
-#include <util/stream_utils.hpp>
 #include <memory>
 
 
@@ -653,14 +652,7 @@ size_t CPipe::Write(const void* buffer, const size_t count) const
 // CPipeStrembuf
 //
 
-#ifdef NCBI_COMPILER_MIPSPRO
-#  define CPipeStreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
-#else
-#  define CPipeStreambufBase streambuf
-#endif/*NCBI_COMPILER_MIPSPRO*/
-
-
-class CPipeStreambuf : public CPipeStreambufBase
+class CPipeStreambuf : public streambuf
 {
 public:
     CPipeStreambuf(const CPipe& pipe, streamsize buf_size);
@@ -758,12 +750,6 @@ CT_INT_TYPE CPipeStreambuf::underflow(void)
 {
     _ASSERT(!gptr() || gptr() >= egptr());
 
-#ifdef NCBI_COMPILER_MIPSPRO
-    if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
-        return CT_EOF;
-    m_MIPSPRO_ReadsomeGptr = 0;
-#endif
-
     // Read from the pipe
     size_t n_read = m_Pipe->Read(m_ReadBuf, m_BufSize * sizeof(CT_CHAR_TYPE),
                                  m_ReadHandle);
@@ -839,6 +825,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/05/08 20:13:35  ivanov
+ * Cleanup #include <util/...>
+ *
  * Revision 1.18  2003/04/23 20:49:21  ivanov
  * Entirely rewritten the Unix version of the CPipeHandle.
  * Added CPipe/CPipeHandle::CloseHandle().
