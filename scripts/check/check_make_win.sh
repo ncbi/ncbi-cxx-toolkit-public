@@ -118,6 +118,8 @@ res_list="\$res_script.list"
 res_concat="\$res_script.out"
 res_concat_err="\$res_script.out_err"
 
+cfgs='Debug DebugDLL DebugMT Release ReleaseDLL ReleaseMT'
+
 
 ##  Printout USAGE info and exit
 
@@ -132,6 +134,8 @@ USAGE:  $x_script_name {run | clean | concat | concat_err}
              itself.
  concat      Concatenate all files created during the last "run" into one big 
              file "\$res_log".
+ concat_cfg  Like previous. But instead of using single big file some files
+             with names "\$res_concat.<tree>_<cfg>" will be created.
  concat_err  Like previous. But into the file "\$res_concat_err" 
              will be added outputs of failed tests only.
 
@@ -163,7 +167,7 @@ case "\$method" in
       for build_tree in \$build_trees; do
           rm -rf \$build_dir/\$build_tree/check > /dev/null 2>&1
       done
-      rm -f \$res_journal \$res_log \$res_list \$res_concat \$res_concat_err > /dev/null 2>&1
+      rm -f \$res_journal \$res_log \$res_list \$res_concat \$res_concat.* \$res_concat_err > /dev/null 2>&1
       rm -f \$res_script > /dev/null 2>&1
       exit 0
       ;;
@@ -180,6 +184,28 @@ case "\$method" in
          cat \$x_file
       done
       ) >> \$res_concat
+      exit 0
+      ;;
+#----------------------------------------------------------
+   concat_cfg )
+      rm -f \$res_script.*.out
+      for dir in \$build_trees; do
+         for cfg in \$cfgs; do
+            x_tests=\`grep "\[\$dir/\$cfg/" \$res_log\`
+            if [ -n "\$x_tests" ]; then  
+           ( 
+           grep "\[\$dir/\$cfg/" \$res_log
+           x_files=\`grep "/\$dir/check/\$cfg/" \$res_journal | sed -e 's/ /%gj_s4%/g'\`
+           for x_file in \$x_files; do
+              x_file=\`echo "\$x_file" | sed -e 's/%gj_s4%/ /g'\`
+              echo 
+              echo 
+              cat \$x_file
+           done
+           ) >> \$res_script.\${dir}_\${cfg}.out
+            fi
+         done
+      done
       exit 0
       ;;
 #----------------------------------------------------------
