@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/10/28 16:53:53  vasilche
+* Fixed bug with error message node.
+*
 * Revision 1.10  1999/10/28 13:37:49  vasilche
 * Fixed small memory leak.
 *
@@ -192,7 +195,7 @@ private:
     CCgiResponse m_response; // CGI response information
 
     //head of message tree
-    auto_ptr<CNCBINode> m_msg;
+    CNodeRef m_msg;
 
     // server context will be obtained from CCgiApp::LoadServerContext()
     auto_ptr<CCgiServerContext> m_srvCtx; // application defined context
