@@ -44,6 +44,10 @@ if test ! -f "$x_srcdir/Makefile.$x_test.app";  then
    exit 0
 fi
 
+# Get app name
+x_app=`grep '^ *APP' "$x_srcdir/Makefile.$x_test.app"`
+x_app=`echo "$x_app" | sed -e 's/^.*=//' -e 's/^ *//'`
+
 x_tpath=`echo "$x_srcdir/$x_test" | sed 's%^.*/src/%%'`
 if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then 
    # Check ignore list
@@ -52,7 +56,7 @@ if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then
       x_signature=`echo $x_signature | sed 's/-[a-z.]*$//'`
       root_dir=`echo "$x_srcdir" | sed 's%/src/.*$%%'`
       ignore_list="$root_dir/src/check/ignore.lst"
-      if grep "^ *$x_srcdir_rel/$x_test *$x_signature" $ignore_list > /dev/null 2>&1; then
+      if grep "^ *$x_srcdir_rel/$x_app *$x_signature" $ignore_list > /dev/null 2>&1; then
          echo "SKIP -- $x_tpath"
          exit 0
       fi
@@ -63,9 +67,8 @@ else
    exit 0
 fi
 
-# Get app name
-x_app=`grep '^ *APP' "$x_srcdir/Makefile.$x_test.app"`
-x_app=`echo "$x_app" | sed -e 's/^.*=//' -e 's/^ *//'`$x_exeext
+# Add exe extension if necessry
+x_app=$x_app$x_exeext
 
 # Get cmd-lines to run test
 x_run=`grep '^ *CHECK_CMD' "$x_srcdir/Makefile.$x_test.app" | sed 's/^[^=]*=//'`
