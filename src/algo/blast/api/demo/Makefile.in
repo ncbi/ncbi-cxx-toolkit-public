@@ -4,9 +4,7 @@
 #################################
 
 APP_PROJ = blast2seq
-EXPENDABLE_APP_PROJ = blast
-EXPENDABLE_APP_PROJ = remote_blast
-EXPENDABLE_APP_PROJ = dust
+EXPENDABLE_APP_PROJ = blast remote_blast dust
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
