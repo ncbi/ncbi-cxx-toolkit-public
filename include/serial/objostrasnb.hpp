@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/21 14:20:00  vasilche
+* Added serialization of bool.
+*
 * Revision 1.7  1999/07/19 15:50:19  vasilche
 * Added interface to old ASN.1 routines.
 * Added naming of key/value in STL map.
@@ -65,10 +68,14 @@
 
 BEGIN_NCBI_SCOPE
 
-class CObjectOStreamAsnBinary : public CObjectOStream,
-                                public CObjectStreamAsnBinaryDefs
+class CObjectOStreamAsnBinary : public CObjectOStream
 {
 public:
+    typedef CObjectStreamAsnBinaryDefs::TByte TByte;
+    typedef CObjectStreamAsnBinaryDefs::TTag TTag;
+    typedef CObjectStreamAsnBinaryDefs::ETag ETag;
+    typedef CObjectStreamAsnBinaryDefs::EClass EClass;
+
     CObjectOStreamAsnBinary(CNcbiOstream& out);
     virtual ~CObjectOStreamAsnBinary(void);
 

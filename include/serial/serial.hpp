@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/07/21 14:20:01  vasilche
+* Added serialization of bool.
+*
 * Revision 1.22  1999/07/20 18:22:56  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -126,6 +129,7 @@ class CMemberInfo;
 template<typename T>
 inline CTypeRef GetStdTypeRef(const T* object);
 inline CTypeRef GetTypeRef(const void* object);
+inline CTypeRef GetTypeRef(const bool* object);
 inline CTypeRef GetTypeRef(const char* object);
 inline CTypeRef GetTypeRef(const unsigned char* object);
 inline CTypeRef GetTypeRef(const signed char* object);
@@ -252,6 +256,12 @@ CTypeRef GetOldAsnTypeRef(T* (*newProc)(void), T* (*freeProc)(T*),
 }
 
 //
+inline
+CTypeRef GetTypeRef(const bool* object)
+{
+    return GetStdTypeRef(object);
+}
+
 inline
 CTypeRef GetTypeRef(const char* object)
 {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/21 14:20:09  vasilche
+* Added serialization of bool.
+*
 * Revision 1.13  1999/07/09 20:27:09  vasilche
 * Fixed some bugs
 *
@@ -182,12 +185,17 @@ void WriteNumber(CObjectOStreamBinary* out, TYPE data)
     }
 }
 
+void CObjectOStreamBinary::WriteStd(const bool& data)
+{
+    WriteByte(data? eStd_true: eStd_false);
+}
+
 void CObjectOStreamBinary::WriteStd(const char& data)
 {
     if ( data == '\0' )
         WriteNull();
     else {
-        WriteByte(CObjectStreamBinaryDefs::eStd_char);
+        WriteByte(eStd_char);
         WriteByte(data);
     }
 }
@@ -198,15 +206,11 @@ void WriteStdOrdinal(CObjectOStreamBinary* out, const TYPE& data)
     if ( data == 0 )
         out->WriteNull();
     else if ( sizeof(TYPE) == 1 ) {
-        out->WriteByte((TYPE(-1) < TYPE(0))?
-                       CObjectStreamBinaryDefs::eStd_sbyte:
-                       CObjectStreamBinaryDefs::eStd_ubyte);
+        out->WriteByte((TYPE(-1) < TYPE(0))? eStd_sbyte: eStd_ubyte);
         out->WriteByte(data);
     }
     else {
-        out->WriteByte((TYPE(-1) < TYPE(0))?
-                       CObjectStreamBinaryDefs::eStd_sordinal:
-                       CObjectStreamBinaryDefs::eStd_uordinal);
+        out->WriteByte((TYPE(-1) < TYPE(0))? eStd_sordinal: eStd_uordinal);
         WriteNumber(out, data);
     }
 }
@@ -217,7 +221,7 @@ void WriteStdFloat(CObjectOStreamBinary* out, const TYPE& data)
     if ( data == 0 )
         out->WriteNull();
     else {
-        out->WriteByte(CObjectStreamBinaryDefs::eStd_float);
+        out->WriteByte(eStd_float);
     }
 }
 
@@ -277,7 +281,7 @@ void CObjectOStreamBinary::WriteString(const string& str)
         WriteNull();
     }
     else {
-        WriteByte(CObjectStreamBinaryDefs::eStd_string);
+        WriteByte(eStd_string);
         WriteStringValue(str);
     }
 }
@@ -288,7 +292,7 @@ void CObjectOStreamBinary::WriteCString(const char* str)
         WriteNull();
     }
     else {
-        WriteByte(CObjectStreamBinaryDefs::eStd_string);
+        WriteByte(eStd_string);
         WriteStringValue(str);
     }
 }
@@ -322,7 +326,7 @@ void CObjectOStreamBinary::WriteStringValue(const string& str)
 void CObjectOStreamBinary::WriteMemberPrefix(COObjectInfo& info)
 {
     while ( info.IsMember() ) {
-        WriteByte(CObjectStreamBinaryDefs::eMemberReference);
+        WriteByte(eMemberReference);
         WriteStringValue(info.GetMemberId().GetName());
         info.ToContainerObject();
     }
@@ -335,35 +339,35 @@ void CObjectOStreamBinary::WriteNullPointer(void)
 
 void CObjectOStreamBinary::WriteObjectReference(TIndex index)
 {
-    WriteByte(CObjectStreamBinaryDefs::eObjectReference);
+    WriteByte(eObjectReference);
     WriteIndex(index);
 }
 
 void CObjectOStreamBinary::WriteThisTypeReference(TTypeInfo )
 {
-    WriteByte(CObjectStreamBinaryDefs::eThisClass);
+    WriteByte(eThisClass);
 }
 
 void CObjectOStreamBinary::WriteOtherTypeReference(TTypeInfo typeInfo)
 {
-    WriteByte(CObjectStreamBinaryDefs::eOtherClass);
+    WriteByte(eOtherClass);
     WriteStringValue(typeInfo->GetName());
 }
 
 void CObjectOStreamBinary::FBegin(Block& block)
 {
-    WriteByte(CObjectStreamBinaryDefs::eBlock);
+    WriteByte(eBlock);
     WriteSize(block.GetSize());
 }
 
 void CObjectOStreamBinary::VNext(const Block& )
 {
-    WriteByte(CObjectStreamBinaryDefs::eElement);
+    WriteByte(eElement);
 }
 
 void CObjectOStreamBinary::VEnd(const Block& )
 {
-    WriteByte(CObjectStreamBinaryDefs::eEndOfElements);
+    WriteByte(eEndOfElements);
 }
 
 void CObjectOStreamBinary::StartMember(Member& , const CMemberId& id)

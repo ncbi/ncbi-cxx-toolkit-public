@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/07/21 14:20:01  vasilche
+* Added serialization of bool.
+*
 * Revision 1.1  1999/07/02 21:31:49  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -43,9 +46,8 @@
 
 BEGIN_NCBI_SCOPE
 
-class CObjectStreamAsnBinaryDefs
+namespace CObjectStreamAsnBinaryDefs
 {
-public:
     typedef unsigned char TByte;
     typedef int TTag;
 
@@ -94,7 +96,7 @@ public:
     enum ERealRadix {
         eDecimal = 0
     };
-};
+}
 
 END_NCBI_SCOPE
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/21 14:20:01  vasilche
+* Added serialization of bool.
+*
 * Revision 1.6  1999/07/09 20:27:02  vasilche
 * Fixed some bugs
 *
@@ -70,6 +73,8 @@ namespace CObjectStreamBinaryDefs
         eStd_sordinal,    // any signed
         eStd_string,      // string
         eStd_float,       // float, double, long double
+        eStd_false,
+        eStd_true,
 
         eBlock = 0xE0,
         eObjectReference,

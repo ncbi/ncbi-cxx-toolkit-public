@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/07/21 14:20:05  vasilche
+* Added serialization of bool.
+*
 * Revision 1.3  1999/07/09 16:32:54  vasilche
 * Added OCTET STRING write/read.
 *
@@ -46,6 +49,8 @@
 #include <serial/objistrasnb.hpp>
 
 BEGIN_NCBI_SCOPE
+
+using namespace CObjectStreamAsnBinaryDefs;
 
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in)
     : m_Input(in), m_LastTagState(eNoTagRead)
@@ -80,8 +85,7 @@ void CObjectIStreamAsnBinary::ExpectByte(TByte byte)
         THROW1_TRACE(runtime_error, "expected");
 }
 
-CObjectIStreamAsnBinary::ETag
-CObjectIStreamAsnBinary::ReadSysTag(bool allowLong)
+ETag CObjectIStreamAsnBinary::ReadSysTag(bool allowLong)
 {
     _TRACE("ReadSysTag...");
     switch ( m_LastTagState ) {
@@ -156,7 +160,7 @@ void CObjectIStreamAsnBinary::FlushSysTag(bool constructed)
     m_LastTagState = eNoTagRead;
 }
 
-CObjectIStreamAsnBinary::TTag CObjectIStreamAsnBinary::ReadTag(void)
+TTag CObjectIStreamAsnBinary::ReadTag(void)
 {
     ETag sysTag = ReadSysTag(true);
     if ( sysTag != eLongTag )
@@ -179,8 +183,7 @@ bool CObjectIStreamAsnBinary::LastTagWas(EClass c, bool constructed)
 }
 
 inline
-CObjectIStreamAsnBinary::ETag
-CObjectIStreamAsnBinary::ReadSysTag(EClass c, bool constructed)
+ETag CObjectIStreamAsnBinary::ReadSysTag(EClass c, bool constructed)
 {
     ETag tag = ReadSysTag();
     if ( !LastTagWas(c, constructed) )
@@ -191,8 +194,7 @@ CObjectIStreamAsnBinary::ReadSysTag(EClass c, bool constructed)
 }
 
 inline
-CObjectIStreamAsnBinary::TTag
-CObjectIStreamAsnBinary::ReadTag(EClass c, bool constructed)
+TTag CObjectIStreamAsnBinary::ReadTag(EClass c, bool constructed)
 {
     TTag tag = ReadTag();
     if ( !LastTagWas(c, constructed) )
@@ -276,7 +278,7 @@ void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 template<typename T>
 void ReadStdSigned(CObjectIStreamAsnBinary& in, T& data)
 {
-    in.ExpectSysTag(CObjectStreamAsnBinaryDefs::eInteger);
+    in.ExpectSysTag(eInteger);
     size_t length = in.ReadShortLength();
     if ( length == 0 )
         THROW1_TRACE(runtime_error, "zero length of number");
@@ -307,7 +309,7 @@ void ReadStdSigned(CObjectIStreamAsnBinary& in, T& data)
 template<typename T>
 void ReadStdUnsigned(CObjectIStreamAsnBinary& in, T& data)
 {
-    in.ExpectSysTag(CObjectStreamAsnBinaryDefs::eInteger);
+    in.ExpectSysTag(eInteger);
     size_t length = in.ReadShortLength();
     if ( length == 0 )
         THROW1_TRACE(runtime_error, "zero length of number");
@@ -344,6 +346,13 @@ void ReadStdNumber(CObjectIStreamAsnBinary& in, T& data)
         ReadStdSigned(in, data);
     else
         ReadStdUnsigned(in, data);
+}
+
+void CObjectIStreamAsnBinary::ReadStd(bool& data)
+{
+    ExpectSysTag(eBoolean);
+    ExpectShortLength(1);
+    data = ReadByte() != 0;
 }
 
 void CObjectIStreamAsnBinary::ReadStd(char& data)

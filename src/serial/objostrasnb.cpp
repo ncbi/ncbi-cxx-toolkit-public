@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/07/21 14:20:08  vasilche
+* Added serialization of bool.
+*
 * Revision 1.8  1999/07/19 15:50:38  vasilche
 * Added interface to old ASN.1 routines.
 * Added naming of key/value in STL map.
@@ -65,6 +68,8 @@
 
 BEGIN_NCBI_SCOPE
 
+using namespace CObjectStreamAsnBinaryDefs;
+
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out)
     : m_Output(out)
 {
@@ -97,7 +102,8 @@ void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value)
 }
 
 inline
-void CObjectOStreamAsnBinary::WriteShortTag(EClass c, bool constructed, TTag tag)
+void CObjectOStreamAsnBinary::WriteShortTag(EClass c, bool constructed,
+                                            TTag tag)
 {
     WriteByte((c << 6) | (constructed << 5) | tag);
 }
@@ -219,7 +225,7 @@ template<typename T>
 static inline
 void WriteStdNumber(CObjectOStreamAsnBinary& out, const T& data)
 {
-    out.WriteSysTag(CObjectOStreamAsnBinary::eInteger);
+    out.WriteSysTag(eInteger);
     if ( data >= -0x80 && data < 0x80 ) {
         // one byte
         out.WriteShortLength(1);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/07/21 14:19:57  vasilche
+* Added serialization of bool.
+*
 * Revision 1.3  1999/07/09 16:32:53  vasilche
 * Added OCTET STRING write/read.
 *
@@ -51,12 +54,17 @@
 
 BEGIN_NCBI_SCOPE
 
-class CObjectIStreamAsnBinary : public CObjectIStream,
-                                public CObjectStreamAsnBinaryDefs
+class CObjectIStreamAsnBinary : public CObjectIStream
 {
 public:
+    typedef CObjectStreamAsnBinaryDefs::TByte TByte;
+    typedef CObjectStreamAsnBinaryDefs::TTag TTag;
+    typedef CObjectStreamAsnBinaryDefs::ETag ETag;
+    typedef CObjectStreamAsnBinaryDefs::EClass EClass;
+
     CObjectIStreamAsnBinary(CNcbiIstream& in);
 
+    virtual void ReadStd(bool& data);
     virtual void ReadStd(char& data);
     virtual void ReadStd(unsigned char& data);
     virtual void ReadStd(signed char& data);

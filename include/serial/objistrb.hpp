@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/21 14:19:58  vasilche
+* Added serialization of bool.
+*
 * Revision 1.9  1999/07/09 16:32:53  vasilche
 * Added OCTET STRING write/read.
 *
@@ -78,6 +81,7 @@ public:
 
     CObjectIStreamBinary(CNcbiIstream& in);
 
+    virtual void ReadStd(bool& data);
     virtual void ReadStd(char& data);
     virtual void ReadStd(unsigned char& data);
     virtual void ReadStd(signed char& data);

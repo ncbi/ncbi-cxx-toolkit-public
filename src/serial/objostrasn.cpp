@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/07/21 14:20:07  vasilche
+* Added serialization of bool.
+*
 * Revision 1.16  1999/07/20 18:23:12  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -122,6 +125,11 @@ void CObjectOStreamAsn::Write(TConstObjectPtr object, TTypeInfo typeInfo)
         WriteOtherTypeReference(typeInfo);
     }
     CObjectOStream::Write(object, typeInfo);
+}
+
+void CObjectOStreamAsn::WriteStd(const bool& data)
+{
+    m_Output << (data? "TRUE": "FALSE");
 }
 
 void CObjectOStreamAsn::WriteStd(const char& data)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/07/21 14:20:04  vasilche
+* Added serialization of bool.
+*
 * Revision 1.17  1999/07/20 18:23:10  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -376,6 +379,17 @@ void CObjectIStreamAsn::Read(TObjectPtr object, TTypeInfo typeInfo)
         ExpectString("::=", true);
     }
     CObjectIStream::Read(object, typeInfo);
+}
+
+void CObjectIStreamAsn::ReadStd(bool& data)
+{
+    string s = ReadId();
+    if ( s == "FALSE" )
+        data = false;
+    else if ( s == "TRUE" )
+        data = true;
+    else
+        THROW1_TRACE(runtime_error, "TRUE or FALSE expected");
 }
 
 void CObjectIStreamAsn::ReadStd(char& data)

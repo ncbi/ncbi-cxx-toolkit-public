@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/07/21 14:19:58  vasilche
+* Added serialization of bool.
+*
 * Revision 1.15  1999/07/19 15:50:17  vasilche
 * Added interface to old ASN.1 routines.
 * Added naming of key/value in STL map.
@@ -106,6 +109,7 @@ public:
     virtual void Write(TConstObjectPtr object, TTypeInfo typeInfo);
 
     // std C types readers
+    virtual void WriteStd(const bool& data) = 0;
     virtual void WriteStd(const char& data) = 0;
     virtual void WriteStd(const unsigned char& data) = 0;
     virtual void WriteStd(const signed char& data) = 0;

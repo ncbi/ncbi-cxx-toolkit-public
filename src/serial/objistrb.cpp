@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/07/21 14:20:06  vasilche
+* Added serialization of bool.
+*
 * Revision 1.19  1999/07/14 20:18:58  vasilche
 * Fixed lost reference to vector element bug.
 *
@@ -461,6 +464,22 @@ void ReadStdNumber(CObjectIStreamBinary& in, T& data)
         ReadStdSigned(in, data);
     else
         ReadStdUnsigned(in, data);
+}
+
+void CObjectIStreamBinary::ReadStd(bool& data)
+{
+    CObjectIStreamBinary::TByte code = ReadByte();
+    switch ( code ) {
+    case CObjectStreamBinaryDefs::eStd_false:
+        data = false;
+        return;
+    case CObjectStreamBinaryDefs::eStd_true:
+        data = true;
+        return;
+    default:
+        THROW1_TRACE(runtime_error,
+                     "bad number code: " + NStr::UIntToString(code));
+    }
 }
 
 void CObjectIStreamBinary::ReadStd(char& data)
