@@ -38,7 +38,9 @@
 #include <corelib/ncbistd.hpp>
 
 #if defined(HAVE_SCHED_YIELD) && !defined(NCBI_NO_THREADS)
+extern "C" {
 #  include <sched.h>
+}
 #endif
 
 #ifdef NCBI_COMPILER_GCC
@@ -304,6 +306,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/06/03 18:24:28  rsmith
+* wrap includes of sched.h (explicit and implicit) in extern "c" blocks, since Apples headers do not do it themselves.
+*
 * Revision 1.15  2003/06/03 15:35:07  rsmith
 * OS_DARWIN's AddAtomic returns the previous value, not the incremented value as we require.
 *

@@ -38,7 +38,9 @@
 #if defined(NCBI_WIN32_THREADS)
 #  include <corelib/ncbi_os_mswin.hpp>
 #elif defined(NCBI_POSIX_THREADS)
+extern "C" {
 #    include <pthread.h>
+}
 #    include <sys/errno.h>
 #endif
 
@@ -102,6 +104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/03 18:24:28  rsmith
+ * wrap includes of sched.h (explicit and implicit) in extern "c" blocks, since Apples headers do not do it themselves.
+ *
  * Revision 1.4  2003/03/31 13:30:52  siyan
  * Minor changes to doxygen support
  *
