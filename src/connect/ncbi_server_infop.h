@@ -33,6 +33,9 @@
  *
  */
 
+#include "ncbi_host_infop.h"
+#include <connect/ncbi_server_info.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +53,9 @@ int/*bool*/ SERV_SetLocalServerDefault(int/*bool*/ onoff);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/10/28 20:15:21  lavr
+ * +<connect/ncbi_server_info.h>
+ *
  * Revision 6.3  2002/09/19 18:08:38  lavr
  * Header file guard macro changed; log moved to end
  *
