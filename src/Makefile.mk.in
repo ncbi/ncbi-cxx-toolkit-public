@@ -235,6 +235,9 @@ RESOLVER_LIBS = @RESOLVER_LIBS@
 # --with-local-lbsm:  --->  src/connect/Makefile.[x]connect.lib
 LOCAL_LBSM = @local_lbsm@
 
+# NCBI C++ API for BerkeleyDB
+BDB_LIB = @BDB_LIB@
+
 # Compression libraries; the LIBS version goes in LIBS, and the LIB
 # version goes in LIB.
 Z_INCLUDE   = @Z_INCLUDE@

@@ -12,6 +12,9 @@
 /* Define to 1 if you have the `atoll' function. */
 #undef HAVE_ATOLL
 
+/* Define to 1 if NCBI C++ API for BerkeleyDB is available. */
+#undef HAVE_BDB
+
 /* Define to 1 if Berkeley DB libraries are available. */
 #undef HAVE_BERKELEY_DB
 
