@@ -311,8 +311,8 @@ private:
 template<class Position>
 class CRange : public COpenRange<Position>
 {
-    typedef COpenRange<Position> TParent;
 public:
+    typedef COpenRange<Position> TParent;
     typedef typename TParent::position_type position_type;
     typedef CRange<Position> TThisType;
 
@@ -354,6 +354,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/04/20 19:13:33  jcherry
+* Made TParent typedef public
+*
 * Revision 1.16  2004/01/16 17:21:44  vasilche
 * Added & to return value of IntersectWith().
 *
