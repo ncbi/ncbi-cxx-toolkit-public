@@ -49,6 +49,7 @@
  * 6) Convert residue frequencies to PSSM
  * 7) Scale the resulting PSSM
  * </pre>
+ * @todo FIXME so that matrix dimensions are no longer querySize+1
  */
 
 #include <algo/blast/core/blast_psi.h>
@@ -183,14 +184,17 @@ _PSISequenceWeightsFree(PsiSequenceWeights* seq_weights);
 /** Main function for keeping only those selected sequences for PSSM
  * construction (stage 2)
  * FIXME: add boolean flag for custom selection of sequences?
- * @retval  PSIERR_BADPARAM if alignment is NULL
- *          PSI_SUCCESS otherwise
+ * @return PSIERR_BADPARAM if alignment is NULL
+ *         PSI_SUCCESS otherwise
  */
 int 
 PSIPurgeBiasedSegments(PsiAlignmentData* alignment);
 
 /** Main function to compute aligned blocks for each position within multiple 
- * alignment (stage 3) */
+ * alignment (stage 3) 
+ * @return PSIERR_BADPARAM if arguments are NULL
+ *         PSI_SUCCESS otherwise
+ */
 int
 PSIComputeAlignmentBlocks(const PsiAlignmentData* alignment,    /* [in] */
                           PsiAlignedBlock* aligned_block);      /* [out] */
@@ -267,7 +271,7 @@ _PSIDiscardIfUnused(PsiAlignmentData* alignment, unsigned int seq_index);
  * used in kappa.c?
  * Caller is responsible for deallocating return value via sfree().
  * @param sbp Score block structure [in]
- * @retval NULL if there is not enough memory otherwise an array of lenght
+ * @return NULL if there is not enough memory otherwise an array of lenght
  *         sbp->alphabet_size with the standard background probabilities for 
  *         the scoring system requested.
  */
@@ -278,7 +282,7 @@ _PSIGetStandardProbabilities(const BlastScoreBlk* sbp);
  * used in kappa.c
  * @param seq sequence to examine [in]
  * @param length length of the sequence above [in]
- * @retval number of non-X residues in the sequence
+ * @return number of non-X residues in the sequence
  */
 Uint4
 _PSISequenceLengthWithoutX(const Uint1* seq, Uint4 length);
@@ -310,6 +314,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/06/17 20:46:59  camacho
+ * doxygen fixes
+ *
  * Revision 1.5  2004/06/09 14:20:30  camacho
  * Updated comments
  *
