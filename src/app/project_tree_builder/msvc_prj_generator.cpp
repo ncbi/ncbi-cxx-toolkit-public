@@ -5,16 +5,12 @@
 
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
+#include <app/project_tree_builder/msvc_prj_files_collector.hpp>
 
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
-
-static void s_CollectRelPathes(const string&       path_from,
-                               const list<string>& abs_dirs,
-                               const list<string>& file_masks,
-                               list<string>*       rel_pathes);
 
 static 
 void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
@@ -393,6 +389,9 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         xmlprj.SetReferences("");
     }}
 
+    // Collect all source, header, inline, resource files
+    CMsvcPrjFilesCollector collector(project_context, prj);
+
     {{
         //Files - source files
         CRef<CFilter> filter(new CFilter());
@@ -400,9 +399,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         filter->SetAttlist().SetFilter
             ("cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx");
 
-        list<string> rel_pathes;
-        CollectSources(prj, project_context, &rel_pathes); 
-        ITERATE(list<string>, p, rel_pathes) {
+        ITERATE(list<string>, p, collector.SourceFiles()) {
             //Include collected source files
             CRef< CFFile > file(new CFFile());
             file->SetAttlist().SetRelativePath(*p);
@@ -419,9 +416,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         filter->SetAttlist().SetName("Header Files");
         filter->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
 
-        list<string> rel_pathes;
-        CollectHeaders(prj, project_context, &rel_pathes);
-        ITERATE(list<string>, p, rel_pathes) {
+        ITERATE(list<string>, p, collector.HeaderFiles()) {
             //Include collected header files
             CRef<CFFile> file(new CFFile());
             file->SetAttlist().SetRelativePath(*p);
@@ -438,9 +433,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         filter->SetAttlist().SetName("Inline Files");
         filter->SetAttlist().SetFilter("inl");
 
-        list<string> rel_pathes;
-        CollectInlines(prj, project_context, &rel_pathes);
-        ITERATE(list<string>, p, rel_pathes) {
+        ITERATE(list<string>, p, collector.InlineFiles()) {
             //Include collected inline files
             CRef< CFFile > file(new CFFile());
             file->SetAttlist().SetRelativePath(*p);
@@ -457,9 +450,8 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
         filter->SetAttlist().SetName("Resource Files");
         filter->SetAttlist().SetFilter
             ("rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx");
-        list<string> rel_pathes;
-        CollectResources(prj, project_context, &rel_pathes);
-        ITERATE(list<string>, p, rel_pathes) {
+
+        ITERATE(list<string>, p, collector.ResourceFiles()) {
             //Include collected header files
             CRef<CFFile> file(new CFFile());
             file->SetAttlist().SetRelativePath(*p);
@@ -606,235 +598,15 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
 }
 
 
-struct PSourcesExclude
-{
-    PSourcesExclude(const list<string>& excluded_sources)
-    {
-        copy(excluded_sources.begin(), excluded_sources.end(), 
-             inserter(m_ExcludedSources, m_ExcludedSources.end()) );
-    }
-
-    bool operator() (const string& src) const
-    {
-        string src_base;
-        CDirEntry::SplitPath(src, NULL, &src_base);
-        return m_ExcludedSources.find(src_base) != m_ExcludedSources.end();
-    }
-
-private:
-    set<string> m_ExcludedSources;
-};
-
-
-static bool s_IsProducedByDatatool(const string&    src_path_abs,
-                                   const CProjItem& project)
-{
-    if ( project.m_DatatoolSources.empty() )
-        return false;
-
-    string src_base;
-    CDirEntry::SplitPath(src_path_abs, NULL, &src_base);
-
-    // guess name.asn file name from name__ or name___
-    string asn_base;
-    if ( NStr::EndsWith(src_base, "___") ) {
-        asn_base = src_base.substr(0, src_base.length() -3);
-    } else if ( NStr::EndsWith(src_base, "__") ) {
-        asn_base = src_base.substr(0, src_base.length() -2);
-    } else {
-        return false;
-    }
-    string asn_name = asn_base + ".asn";
-
-    //try to find this name in datatool generated sources container
-    ITERATE(list<CDataToolGeneratedSrc>, p, project.m_DatatoolSources) {
-        const CDataToolGeneratedSrc& asn = *p;
-        if (asn.m_SourceFile == asn_name)
-            return true;
-    }
-    return false;
-}
-
-static bool s_IsInsideDatatoolSourceDir(const string& src_path_abs)
-{
-    string dir_name;
-    CDirEntry::SplitPath(src_path_abs, &dir_name);
-
-    //This files must be inside datatool src dir
-    CDir dir(dir_name);
-    if ( dir.GetEntries("*.module").empty() ) 
-        return false;
-    if ( dir.GetEntries("*.asn").empty() &&
-         dir.GetEntries("*.dtd").empty()  ) 
-        return false;
-
-    return true;
-}
-
-
-void 
-CMsvcProjectGenerator::CollectSources (const CProjItem&              project,
-                                       const CMsvcPrjProjectContext& context,
-                                       list<string>*                 rel_pathes)
-{
-    rel_pathes->clear();
-
-    list<string> sources;
-    ITERATE(list<string>, p, project.m_Sources) {
-
-        const string& src_rel = *p;
-        string src_path = 
-            CDirEntry::ConcatPath(project.m_SourcesBaseDir, src_rel);
-        src_path = CDirEntry::NormalizePath(src_path);
-
-        sources.push_back(src_path);
-    }
-
-    list<string> included_sources;
-    context.GetMsvcProjectMakefile().GetAdditionalSourceFiles //TODO
-                                            (SConfigInfo(),&included_sources);
-
-    ITERATE(list<string>, p, included_sources) {
-        sources.push_back(CDirEntry::NormalizePath
-                                        (CDirEntry::ConcatPath
-                                              (project.m_SourcesBaseDir, *p)));
-    }
-
-    list<string> excluded_sources;
-    context.GetMsvcProjectMakefile().GetExcludedSourceFiles //TODO
-                                            (SConfigInfo(), &excluded_sources);
-    PSourcesExclude pred(excluded_sources);
-    EraseIf(sources, pred);
-
-    ITERATE(list<string>, p, sources) {
-
-        const string& abs_path = *p; // whithout ext.
-
-        string ext = SourceFileExt(abs_path);
-        if ( !ext.empty() ) {
-            // add ext to file
-            string source_file_abs_path = abs_path + ext;
-            rel_pathes->push_back(
-                CDirEntry::CreateRelativePath(context.ProjectDir(), 
-                                              source_file_abs_path));
-        } 
-        else if ( s_IsProducedByDatatool(abs_path, project) ||
-                  s_IsInsideDatatoolSourceDir(abs_path) ) {
-            // .cpp file extension
-            rel_pathes->push_back(
-                CDirEntry::CreateRelativePath(context.ProjectDir(), 
-                                              abs_path + ".cpp"));
-        } else {
-            LOG_POST(Warning <<"Can not resolve/find source file : " + abs_path);
-        }
-    }
-}
-
-
-
-void 
-CMsvcProjectGenerator::CollectHeaders(const CProjItem&              project,
-                                      const CMsvcPrjProjectContext& context,
-                                      list<string>*                 rel_pathes)
-{
-    rel_pathes->clear();
-
-    // .h and .hpp files may be in include or source dirs:
-    list<string> abs_dirs(context.IncludeDirsAbs());
-    copy(context.SourcesDirsAbs().begin(), 
-         context.SourcesDirsAbs().end(), 
-         back_inserter(abs_dirs));
-
-    //collect *.h and *.hpp files
-    list<string> exts;
-    exts.push_back(".h");
-    exts.push_back(".hpp");
-    s_CollectRelPathes(context.ProjectDir(), abs_dirs, exts, rel_pathes);
-}
-
-
-void 
-CMsvcProjectGenerator::CollectInlines(const CProjItem&              project,
-                                      const CMsvcPrjProjectContext& context,
-                                      list<string>*                 rel_pathes)
-{
-    rel_pathes->clear();
-
-    // .inl files may be in include or source dirs:
-    list<string> abs_dirs(context.IncludeDirsAbs());
-    copy(context.SourcesDirsAbs().begin(), 
-         context.SourcesDirsAbs().end(), 
-         back_inserter(abs_dirs));
-
-    //collect *.inl files
-    list<string> exts(1, ".inl");
-    s_CollectRelPathes(context.ProjectDir(), abs_dirs, exts, rel_pathes);
-}
-
-
-void 
-CMsvcProjectGenerator::CollectResources
-    (const CProjItem&              project,
-     const CMsvcPrjProjectContext& context,
-     list<string>*                 rel_pathes)
-{
-    rel_pathes->clear();
-
-    list<string> included_sources;
-    context.GetMsvcProjectMakefile().GetResourceFiles
-                                            (SConfigInfo(),&included_sources);
-    list<string> sources;
-    ITERATE(list<string>, p, included_sources) {
-        sources.push_back(CDirEntry::NormalizePath
-                                        (CDirEntry::ConcatPath
-                                              (project.m_SourcesBaseDir, *p)));
-    }
-
-    ITERATE(list<string>, p, sources) {
-
-        const string& abs_path = *p; // whith ext.
-        rel_pathes->push_back(
-            CDirEntry::CreateRelativePath(context.ProjectDir(), 
-                                          abs_path));
-    }
-}
-
-
-//-----------------------------------------------------------------------------
-// Collect all files from specified dirs having specified exts
-static void s_CollectRelPathes(const string&        path_from,
-                               const list<string>&  abs_dirs,
-                               const list<string>&  file_masks,
-                               list<string>*        rel_pathes)
-{
-    rel_pathes->clear();
-
-    list<string> pathes;
-    ITERATE(list<string>, p, file_masks) {
-        ITERATE(list<string>, n, abs_dirs) {
-            CDir dir(*n);
-            if ( !dir.Exists() )
-                continue;
-            CDir::TEntries contents = dir.GetEntries("*" + *p);
-            ITERATE(CDir::TEntries, i, contents) {
-                if ( (*i)->IsFile() ) {
-                    string path  = (*i)->GetPath();
-                    pathes.push_back(path);
-                }
-            }
-        }
-    }
-
-    ITERATE(list<string>, p, pathes)
-        rel_pathes->push_back(CDirEntry::CreateRelativePath(path_from, *p));
-}
-
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/03/05 20:31:54  gorelenk
+ * Files collecting functionality was moved to separate class :
+ * CMsvcPrjFilesCollector.
+ *
  * Revision 1.23  2004/03/05 18:07:22  gorelenk
  * Changed implementation of s_CreateDatatoolCustomBuildInfo .
  *
