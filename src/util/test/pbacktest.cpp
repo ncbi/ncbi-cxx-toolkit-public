@@ -111,6 +111,9 @@ extern int TEST_StreamPushback(iostream&    ios,
         if (buflen + i > kBufferSize + 1)
             i = kBufferSize + 1 - buflen;
         LOG_POST(Info << "Reading " << i << " byte" << (i == 1 ? "" : "s"));
+        // Force at least minimal blocking, since Readsome might not
+        // block at all and accepting 0-byte reads could lead to spinning.
+        ios.peek();
         j = CStreamUtils::Readsome(ios, &buf2[buflen], i);
         if (!ios.good()) {
             ERR_POST("Error receiving data");
@@ -232,6 +235,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/12/18 03:42:14  ucko
+ * Call peek() to force at least minimal blocking, since Readsome might
+ * not block at all and accepting 0-byte reads could lead to spinning.
+ *
  * Revision 1.11  2003/11/21 19:59:55  lavr
  * Buffer size decreased to 1/2 Meg, post-pushback seekg() test added
  *
