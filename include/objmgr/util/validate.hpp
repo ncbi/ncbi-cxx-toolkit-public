@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  .Jonathan Kans, Clifford Clausen, Aaron Ucko......
+ * Author:  Jonathan Kans, Clifford Clausen, Aaron Ucko......
  *
  * File Description:
     Validates CSeq_entries and CSeq_submits
@@ -76,6 +76,11 @@ private:
     string           m_Message;    // specific error message
     CConstObjectInfo m_Object;     // type plus offending object
 
+    // internal string arrays
+    static const string sm_Terse [];
+    static const string sm_Verbose [];
+
+    friend class CValidError_CI;
 };
 
 typedef vector < CRef < CValidErrItem > > TErrs;
@@ -85,13 +90,14 @@ class CValidError
 public:
 
     enum EValidOptions {
-        eVal_non_ascii   =  1,
-        eVal_splice_err  =  2,
-        eVal_val_align   =  4,
-        eVal_no_context  =  8,
-        eVal_val_exons   = 16,
-        eVal_need_taxid  = 32,
-        eVal_need_isojta = 64        
+        eVal_non_ascii   =   1,
+        eVal_no_context  =   2,
+        eVal_val_align   =   4,
+        eVal_val_exons   =   8,
+        eVal_splice_err  =  16,
+        eVal_ovl_pep_err =  32,
+        eVal_need_taxid  =  64,
+        eVal_need_isojta = 128        
     };
 
     // constructors
@@ -153,6 +159,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2002/10/14 19:54:21  kans
+* added more flags, put internal strings as private members
+*
 * Revision 1.4  2002/10/11 13:54:49  clausen
 * QA changes
 *
