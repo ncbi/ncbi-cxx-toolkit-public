@@ -37,6 +37,12 @@
 #include <connect/ncbi_types.h>
 
 
+/** @addtogroup Sendmail
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -119,9 +125,15 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMailEx
 #endif
 
 
+/* @} */
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2003/04/09 19:05:47  siyan
+ * Added doxygen support
+ *
  * Revision 6.12  2003/01/21 20:02:54  lavr
  * Added missing <connect/connect_export.h>
  *

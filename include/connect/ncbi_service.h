@@ -39,6 +39,12 @@
 #include <connect/ncbi_host_info.h>
 
 
+/** @addtogroup ServiceSupport
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -167,9 +173,15 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 #endif
 
 
+/* @} */
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2003/04/09 19:05:50  siyan
+ * Added doxygen support
+ *
  * Revision 6.28  2003/01/08 01:59:33  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *

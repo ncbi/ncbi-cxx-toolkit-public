@@ -42,6 +42,12 @@
 #include <connect/connect_export.h>
 
 
+/** @addtogroup ServiceSupport
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -111,9 +117,15 @@ extern NCBI_XCONNECT_EXPORT const char* HINFO_Environment(HOST_INFO host_info);
 #endif
 
 
+/* @} */
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2003/04/09 19:05:42  siyan
+ * Added doxygen support
+ *
  * Revision 6.4  2003/02/08 21:03:51  lavr
  * Unimportant change in comments
  *

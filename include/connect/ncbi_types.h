@@ -50,6 +50,12 @@
 #include <stddef.h>
 
 
+/** @addtogroup UtilityFunc
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -83,9 +89,15 @@ typedef unsigned int TNCBI_Time;
 #endif
 
 
+/* @} */
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2003/04/09 19:05:58  siyan
+ * Added doxygen support
+ *
  * Revision 6.2  2002/09/19 18:05:41  lavr
  * Header file guard macro changed; log moved to end
  *

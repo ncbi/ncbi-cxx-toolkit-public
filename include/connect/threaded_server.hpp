@@ -37,6 +37,12 @@
 #include <connect/ncbi_socket.h>
 
 
+/** @addtogroup ThreadedServer
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -90,9 +96,15 @@ private:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2003/04/09 19:06:05  siyan
+ * Added doxygen support
+ *
  * Revision 6.6  2002/12/19 14:51:48  dicuccio
  * Added export specifier for Win32 DLL builds.
  *

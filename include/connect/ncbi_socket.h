@@ -98,6 +98,12 @@
 #include <connect/ncbi_core.h>
 
 
+/** @addtogroup Sockets
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -715,9 +721,15 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 #endif
 
 
+/* @} */
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2003/04/09 19:05:54  siyan
+ * Added doxygen support
+ *
  * Revision 6.32  2003/04/04 21:00:09  lavr
  * +SOCK_CreateOnTop()
  *

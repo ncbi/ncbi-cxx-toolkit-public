@@ -47,6 +47,12 @@
 #include <stdio.h>
 
 
+/** @addtogroup UtilityFunc
+ *
+ * @{
+ */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -231,9 +237,15 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 #endif
 
 
+/* @} */
+
+
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/04/09 19:06:01  siyan
+ * Added doxygen support
+ *
  * Revision 6.17  2003/01/17 01:33:41  lavr
  * Specify fLOG_None more precisely
  *

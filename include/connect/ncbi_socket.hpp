@@ -43,6 +43,12 @@
 #include <vector>
 
 
+/** @addtogroup Sockets
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -328,6 +334,9 @@ public:
 };
 
 
+/* @} */
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -561,6 +570,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2003/04/09 19:05:55  siyan
+ * Added doxygen support
+ *
  * Revision 6.20  2003/02/20 17:55:09  lavr
  * Inlining CSocket::Shutdown() and CSocket::Wait()
  *
