@@ -93,7 +93,7 @@ private:
 };
 
 
-CNetblastSearchOpts::CNetblastSearchOpts(const ncbi::CArgs & a)
+CNetblastSearchOpts::CNetblastSearchOpts(const CArgs & a)
 {
     COptionReader optrd(a);
     Apply(optrd);
@@ -198,30 +198,30 @@ void COptionWalker::AddOpt(CArgDescriptions & ui,
 
 // ReadOpt
 
-void COptionWalker::ReadOpt(const ncbi::CArgs & args,
-                            TOptDouble        & field,
-                            const char        * key)
+void COptionWalker::ReadOpt(const CArgs & args,
+                            TOptDouble  & field,
+                            const char  * key)
 {
     field = CheckArgsDouble(args[key]);
 }
 
-void COptionWalker::ReadOpt(const ncbi::CArgs & args,
-                            TOptBool          & field,
-                            const char        * key)
+void COptionWalker::ReadOpt(const CArgs & args,
+                            TOptBool    & field,
+                            const char  * key)
 {
     field = CheckArgsBool(args[key]);
 }
 
-void COptionWalker::ReadOpt(const ncbi::CArgs & args,
-                            TOptInteger       & field,
-                            const char        * key)
+void COptionWalker::ReadOpt(const CArgs & args,
+                            TOptInteger & field,
+                            const char  * key)
 {
     field = CheckArgsInteger(args[key]);
 }
 
-void COptionWalker::ReadOpt(const ncbi::CArgs & args,
-                            TOptString        & field,
-                            const char        * key)
+void COptionWalker::ReadOpt(const CArgs & args,
+                            TOptString  & field,
+                            const char  * key)
 {
     field = CheckArgsString(args[key]);
 }
@@ -232,6 +232,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/06/21 16:36:31  bealer
+ * - Adjust scope usage for doxygen's sake.
+ *
  * Revision 1.6  2004/05/21 21:41:03  gorelenk
  * Added PCH ncbi_pch.hpp
  *
