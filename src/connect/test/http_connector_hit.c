@@ -130,8 +130,8 @@ int main(int argc, const char* argv[])
     if (argc < 4) {
         fprintf(stderr,
                 "Usage:   %s host port path [args] [inp_file] [user_header]\n"
-                "Example: %s graceland.ncbi.nlm.nih.gov 6224 "
-                "/ieb/ToolBox/NETWORK/con_url.cgi 'arg1+arg2+arg3'\n",
+                "Example: %s www.ncbi.nlm.nih.gov 80 "
+                "/Service/bounce.cgi 'arg1+arg2+arg3'\n",
                 argv[0], argv[0]);
         fprintf(stderr, "Too few arguments.\n");
         return 1;
@@ -199,6 +199,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2004/11/23 15:04:26  lavr
+ * Use public bounce.cgi from "www"
+ *
  * Revision 6.14  2004/11/22 20:24:53  lavr
  * "yar" replaced with "graceland"
  *
