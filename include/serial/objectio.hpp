@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/01/22 23:23:57  vakatov
+* Added   CIStreamClassMemberIterator
+* Renamed CIStreamContainer --> CIStreamContainerIterator
+*
 * Revision 1.2  2000/10/20 19:29:15  vasilche
 * Adapted for MSVC which doesn't like explicit operator templates.
 *
@@ -91,6 +95,7 @@ private:
     //void operator delete[](void* ptr);
 };
 
+
 /*************************
 //class for writing class members
 //   suggested use:
@@ -112,25 +117,75 @@ public:
     ~COStreamClassMember(void);
 };
 
+
 /*************************
-//class for reading containers (SET OF, SEQUENCE OF).
+// class for reading (iterating through)
+// members of the class (SET, SEQUENCE)
+//   suggested use:
+
+   CObjectIStream& in;
+   CObjectTypeInfo classMemberType;
+
+   for ( CIStreamClassMemberIterator i(in, classMemberType); i; ++i ) {
+       CElementClass element;
+       i >> element;
+   }
+**************************/
+class CIStreamClassMemberIterator : public CIStreamFrame
+{
+    typedef CIStreamFrame CParent;
+public:
+    CIStreamClassMemberIterator(CObjectIStream& in,
+                                const CObjectTypeInfo& classMemberType);
+    ~CIStreamClassMemberIterator(void);
+
+    bool HaveMore(void) const;
+    operator bool(void) const;
+
+    void NextClassMember(void);
+    CIStreamClassMemberIterator& operator++(void);
+
+    void ReadClassMember(const CObjectInfo& classMember);
+    void SkipClassMember(const CObjectTypeInfo& classMemberType);
+    void SkipClassMember(void);
+
+    CObjectTypeInfoMI operator*(void) const;
+
+private:
+    void BeginClassMember(void);
+
+    void IllegalCall(const char* message) const;
+    void BadState(void) const;
+
+    void CheckState(void);
+
+    const CMemberInfo* GetMemberInfo(void) const;
+
+    CObjectTypeInfo m_ClassType;
+    TMemberIndex m_MemberIndex;
+};
+
+
+/*************************
+// class for reading (iterating through)
+// elements of containers (SET OF, SEQUENCE OF).
 //   suggested use:
 
    CObjectIStream& in;
    CObjectTypeInfo containerType;
 
-   for ( CIStreamContainer i(in, containerType); i; ++i ) {
+   for ( CIStreamContainerIterator i(in, containerType); i; ++i ) {
        CElementClass element;
        i >> element;
    }
 **************************/
-class CIStreamContainer : public CIStreamFrame
+class CIStreamContainerIterator : public CIStreamFrame
 {
     typedef CIStreamFrame CParent;
 public:
-    CIStreamContainer(CObjectIStream& in,
-                      const CObjectTypeInfo& containerType);
-    ~CIStreamContainer(void);
+    CIStreamContainerIterator(CObjectIStream& in,
+                              const CObjectTypeInfo& containerType);
+    ~CIStreamContainerIterator(void);
 
     const CObjectTypeInfo& GetContainerType(void) const;
 
@@ -138,7 +193,7 @@ public:
     operator bool(void) const;
 
     void NextElement(void);
-    CIStreamContainer& operator++(void);
+    CIStreamContainerIterator& operator++(void);
 
     void ReadElement(const CObjectInfo& element);
     void SkipElement(const CObjectTypeInfo& elementType);
@@ -170,7 +225,7 @@ private:
 
 template<typename T>
 inline
-void operator>>(CIStreamContainer& i, T& element)
+void operator>>(CIStreamContainerIterator& i, T& element)
 {
     i.ReadElement(ObjectInfo(element));
 }

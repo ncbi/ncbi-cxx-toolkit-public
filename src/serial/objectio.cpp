@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/01/22 23:23:58  vakatov
+* Added   CIStreamClassMemberIterator
+* Renamed CIStreamContainer --> CIStreamContainerIterator
+*
 * Revision 1.2  2000/10/20 19:29:36  vasilche
 * Adapted for MSVC which doesn't like explicit operator templates.
 *
@@ -109,6 +113,103 @@ COStreamFrame::~COStreamFrame(void)
         GetStream().PopErrorFrame();
 }
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+// read/write classMember
+
+inline
+const CMemberInfo* CIStreamClassMemberIterator::GetMemberInfo(void) const
+{
+    return m_ClassType.GetClassTypeInfo()->GetMemberInfo(m_MemberIndex);
+}
+
+inline
+void CIStreamClassMemberIterator::BeginClassMember(void)
+{
+    if ( m_ClassType.GetClassTypeInfo()->RandomOrder() ) {
+        m_MemberIndex =
+            GetStream().BeginClassMember(m_ClassType.GetClassTypeInfo());
+    } else {
+        m_MemberIndex =
+            GetStream().BeginClassMember(m_ClassType.GetClassTypeInfo(),
+                                         m_MemberIndex + 1);
+    }
+
+    if ( *this )
+        GetStream().SetTopMemberId(GetMemberInfo()->GetId());
+}
+
+inline
+void CIStreamClassMemberIterator::IllegalCall(const char* message) const
+{
+    GetStream().ThrowError(CObjectIStream::eIllegalCall, message);
+}
+
+inline
+void CIStreamClassMemberIterator::BadState(void) const
+{
+    IllegalCall("bad CIStreamClassMemberIterator state");
+}
+
+CIStreamClassMemberIterator::CIStreamClassMemberIterator(CObjectIStream& in,
+                                     const CObjectTypeInfo& classType)
+    : CParent(in), m_ClassType(classType)
+{
+    const CClassTypeInfo* classTypeInfo = classType.GetClassTypeInfo();
+    in.PushFrame(CObjectStackFrame::eFrameClass, classTypeInfo);
+    in.BeginClass(classTypeInfo);
+    
+    in.PushFrame(CObjectStackFrame::eFrameClassMember);
+    m_MemberIndex = kFirstMemberIndex - 1;
+    BeginClassMember();
+}
+
+CIStreamClassMemberIterator::~CIStreamClassMemberIterator(void)
+{
+    if ( Good() ) {
+        if ( *this )
+            GetStream().EndClassMember();
+        GetStream().PopFrame();
+        GetStream().EndClass();
+        GetStream().PopFrame();
+    }
+}
+
+inline
+void CIStreamClassMemberIterator::CheckState(void)
+{
+    if ( m_MemberIndex == kInvalidMember )
+        BadState();
+}
+
+void CIStreamClassMemberIterator::NextClassMember(void)
+{
+    CheckState();
+    GetStream().EndClassMember();
+    BeginClassMember();
+}
+
+void CIStreamClassMemberIterator::ReadClassMember(const CObjectInfo& member)
+{
+    CheckState();
+    GetStream().ReadSeparateObject(member);
+}
+
+void CIStreamClassMemberIterator::SkipClassMember(const CObjectTypeInfo& member)
+{
+    CheckState();
+    GetStream().SkipObject(member.GetTypeInfo());
+}
+
+void CIStreamClassMemberIterator::SkipClassMember(void)
+{
+    CheckState();
+    GetStream().SkipObject(GetMemberInfo()->GetTypeInfo());
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 // read/write class member
 
 COStreamClassMember::COStreamClassMember(CObjectOStream& out,
@@ -130,7 +231,7 @@ COStreamClassMember::~COStreamClassMember(void)
 
 // read/write container
 inline
-void CIStreamContainer::BeginElement(void)
+void CIStreamContainerIterator::BeginElement(void)
 {
     _ASSERT(m_State == eError);
     if ( GetStream().BeginContainerElement(m_ElementTypeInfo) )
@@ -140,18 +241,18 @@ void CIStreamContainer::BeginElement(void)
 }
 
 inline
-void CIStreamContainer::IllegalCall(const char* message) const
+void CIStreamContainerIterator::IllegalCall(const char* message) const
 {
     GetStream().ThrowError(CObjectIStream::eIllegalCall, message);
 }
 
 inline
-void CIStreamContainer::BadState(void) const
+void CIStreamContainerIterator::BadState(void) const
 {
-    IllegalCall("bad CIStreamContainer state");
+    IllegalCall("bad CIStreamContainerIterator state");
 }
 
-CIStreamContainer::CIStreamContainer(CObjectIStream& in,
+CIStreamContainerIterator::CIStreamContainerIterator(CObjectIStream& in,
                                      const CObjectTypeInfo& containerType)
     : CParent(in), m_ContainerType(containerType), m_State(eError)
 {
@@ -166,7 +267,7 @@ CIStreamContainer::CIStreamContainer(CObjectIStream& in,
     BeginElement();
 }
 
-CIStreamContainer::~CIStreamContainer(void)
+CIStreamContainerIterator::~CIStreamContainerIterator(void)
 {
     if ( Good() ) {
         switch ( m_State ) {
@@ -193,7 +294,7 @@ CIStreamContainer::~CIStreamContainer(void)
 }
 
 inline
-void CIStreamContainer::CheckState(EState state)
+void CIStreamContainerIterator::CheckState(EState state)
 {
     bool ok = (m_State == state);
     m_State = eError;
@@ -201,7 +302,7 @@ void CIStreamContainer::CheckState(EState state)
         BadState();
 }
 
-void CIStreamContainer::NextElement(void)
+void CIStreamContainerIterator::NextElement(void)
 {
     CheckState(eElementEnd);
     GetStream().EndContainerElement();
@@ -209,34 +310,34 @@ void CIStreamContainer::NextElement(void)
 }
 
 inline
-void CIStreamContainer::BeginElementData(void)
+void CIStreamContainerIterator::BeginElementData(void)
 {
     CheckState(eElementBegin);
 }
 
 inline
-void CIStreamContainer::BeginElementData(const CObjectTypeInfo& )
+void CIStreamContainerIterator::BeginElementData(const CObjectTypeInfo& )
 {
     //if ( elementType.GetTypeInfo() != GetElementTypeInfo() )
     //    IllegalCall("wrong element type");
     BeginElementData();
 }
 
-void CIStreamContainer::ReadElement(const CObjectInfo& element)
+void CIStreamContainerIterator::ReadElement(const CObjectInfo& element)
 {
     BeginElementData(element);
     GetStream().ReadSeparateObject(element);
     m_State = eElementEnd;
 }
 
-void CIStreamContainer::SkipElement(const CObjectTypeInfo& elementType)
+void CIStreamContainerIterator::SkipElement(const CObjectTypeInfo& elementType)
 {
     BeginElementData(elementType);
     GetStream().SkipObject(elementType.GetTypeInfo());
     m_State = eElementEnd;
 }
 
-void CIStreamContainer::SkipElement(void)
+void CIStreamContainerIterator::SkipElement(void)
 {
     BeginElementData();
     GetStream().SkipObject(m_ElementTypeInfo);

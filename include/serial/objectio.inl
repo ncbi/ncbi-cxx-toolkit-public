@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/01/22 23:23:57  vakatov
+* Added   CIStreamClassMemberIterator
+* Renamed CIStreamContainer --> CIStreamContainerIterator
+*
 * Revision 1.1  2000/10/20 15:51:25  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -58,7 +62,7 @@ CObjectIStream& CIStreamFrame::GetStream(void) const
 }
 
 inline
-const CObjectTypeInfo& CIStreamContainer::GetContainerType(void) const
+const CObjectTypeInfo& CIStreamContainerIterator::GetContainerType(void) const
 {
     return m_ContainerType;
 }
@@ -70,19 +74,44 @@ const CObjectTypeInfo& COStreamContainer::GetContainerType(void) const
 }
 
 inline
-bool CIStreamContainer::HaveMore(void) const
+bool CIStreamClassMemberIterator::HaveMore(void) const
 {
-    return m_State == eElementBegin;
+    return m_MemberIndex != kInvalidMember;
 }
 
 inline
-CIStreamContainer::operator bool(void) const
+CIStreamClassMemberIterator::operator bool(void) const
 {
     return HaveMore();
 }
 
 inline
-CIStreamContainer& CIStreamContainer::operator++(void)
+CIStreamClassMemberIterator& CIStreamClassMemberIterator::operator++(void)
+{
+    NextClassMember();
+    return *this;
+}
+
+inline
+CObjectTypeInfoMI CIStreamClassMemberIterator::operator*(void) const
+{
+    return CObjectTypeInfoMI(m_ClassType, m_MemberIndex);
+}
+
+inline
+bool CIStreamContainerIterator::HaveMore(void) const
+{
+    return m_State == eElementBegin;
+}
+
+inline
+CIStreamContainerIterator::operator bool(void) const
+{
+    return HaveMore();
+}
+
+inline
+CIStreamContainerIterator& CIStreamContainerIterator::operator++(void)
 {
     NextElement();
     return *this;
