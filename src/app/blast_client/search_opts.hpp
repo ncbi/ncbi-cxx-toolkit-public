@@ -311,6 +311,12 @@ public:
                  CArgKey ("FilterString"),
                  COptDesc("Specifies the types of filtering to do."));
         
+        op.Same (m_EntrezQuery,
+                 CUserOpt("entrez_query"),
+                 CNetName("entrez-query"),
+                 CArgKey ("EntrezQuery"),
+                 COptDesc("Search only in entries matching this Entrez query."));
+        
         // Computations & Remote values
         
         if (op.NeedRemote()) {
@@ -366,7 +372,8 @@ private:
     TOptDouble  m_Searchspc;
     TOptString  m_PhiQuery;
     TOptString  m_FilterString;
-    
+    TOptString  m_EntrezQuery;
+        
     /// Internal method used by CreateInterface.
     void x_CreateInterface2(CArgDescriptions & ui);
 };
@@ -375,6 +382,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2003/11/21 20:42:13  bealer
+ * - Add entrez_query option to blast_client
+ *
  * Revision 1.3  2003/11/13 22:59:18  bealer
  * - Remove 'default' handling from filter string option - convert into a
  *   type 'Same' parameter.
