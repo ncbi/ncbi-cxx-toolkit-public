@@ -224,9 +224,8 @@ recognized:
      <li><font color="#CC33CC"><tt>S={yes|no}</tt></font> sets (if <tt>yes</tt>) that the server can only accept dedicated connections,
      and is not capable of doing <i>stateless</i> (HTTP-like) data exchange. Such a server can only be
      accessed by creating a stream connection to it, and the entire data transfer is to happen
-     while the connection is alive. Default is <tt>no</tt>.<br>
-     <u>Note</u>: Due to mutual incompatibility, Web-browsers <i>cannot</i> directly
-     connect to <i>stateful</i> servers.
+     while the connection is alive. Default is <tt>no</tt>. This flag <i>cannot</i> be specified for <tt>HTTP*</tt> servers.<br>
+     <u>Note</u>: Due to mutual incompatibility, Web-browsers <i>cannot</i> directly connect to <i>stateful</i> servers.
   </ul>
   <li><a name="ref_ContentType">content type specifier</a>:
   <ul type=bullet>
