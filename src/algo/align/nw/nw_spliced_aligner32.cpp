@@ -189,7 +189,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
     k = 0;
 
     size_t i, j = 0, k0;
-    char ci;
+    unsigned char ci;
     for(i = 0;  i < N1;  ++i, j = 0) {
 
         V = i > 0? (V0 += wsleft2) : 0;
@@ -211,7 +211,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
             
         // detect donor candidate
         if(N2 > 2) {
-            char c1 = seq2[1], c2 = seq2[2];
+            unsigned char c1 = seq2[1], c2 = seq2[2];
             Uint1 dnr_type = 0xF0 & dnr_acc_matrix[(size_t(c1)<<8)|c2];
 
             for(Uint1 st = 0; st < splice_type_count_32; ++st ) {
@@ -289,7 +289,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
                 
             // check splice signal
             size_t dnr_pos = 0;
-            char c1 = seq2[j-1], c2 = seq2[j];
+            unsigned char c1 = seq2[j-1], c2 = seq2[j];
             Uint1 acc_mask = 0x0F & dnr_acc_matrix[(size_t(c1)<<8)|c2];
             for(Uint1 st = 0; st < splice_type_count_32; ++st ) {
                 if(acc_mask & (0x01 << st)) {
@@ -319,7 +319,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
 
             // detect donor candidates
             if(j < N2 - 2) {
-                char c1 = seq2[j+1], c2 = seq2[j+2];
+                unsigned char c1 = seq2[j+1], c2 = seq2[j+2];
                 Uint1 dnr_mask = 0xF0 & dnr_acc_matrix[(size_t(c1)<<8)|c2];
                 for(Uint1 st = 0; st < splice_type_count_32; ++st ) {
                     if( dnr_mask & (0x10 << st) ) {
@@ -455,8 +455,8 @@ CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
 
     for(int i = dim - 1; i >= 0; --i) {
 
-        char c1 = m_Seq1? *p1: 0;
-        char c2 = m_Seq2? *p2: 0;
+        unsigned char c1 = m_Seq1? *p1: 0;
+        unsigned char c2 = m_Seq2? *p2: 0;
         switch(m_Transcript[i]) {
 
         case eTS_Match: {
@@ -557,6 +557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/10 20:25:21  kapustin
+ * Use unsigned char for score matrix index
+ *
  * Revision 1.3  2003/09/10 19:13:10  kapustin
  * Change backtrace type constants to allow larger jump values
  *
