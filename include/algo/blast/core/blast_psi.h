@@ -145,6 +145,20 @@ typedef struct PSIDiagnosticsResponse {
     Uint4 alphabet_size;                   /**< Specifies length of alphabet */
 } PSIDiagnosticsResponse;
 
+/** Allocates a PSIDiagnosticsRequest structure, setting all fields to false
+ * @return newly allocated structure or NULL in case of memory allocation
+ * failure 
+ */
+PSIDiagnosticsRequest* 
+PSIDiagnosticsRequestNew();
+
+/** Deallocates the PSIDiagnosticsRequest structure passed in
+ * @param diags_request structure to deallocate [in]
+ * @return NULL
+ */
+PSIDiagnosticsRequest* 
+PSIDiagnosticsRequestFree(PSIDiagnosticsRequest* diags_request);
+
 /** Allocates a new PSI-BLAST diagnostics structure based on which fields of
  * the PSIDiagnosticsRequest structure are TRUE. Note: this is declared
  * here for consistency - this does not need to be called by client code of

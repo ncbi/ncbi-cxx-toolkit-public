@@ -349,6 +349,19 @@ PSIMatrixFree(PSIMatrix* matrix)
     return NULL;
 }
 
+PSIDiagnosticsRequest* 
+PSIDiagnosticsRequestNew()
+{
+    return calloc(1, sizeof(PSIDiagnosticsRequest));
+}
+
+PSIDiagnosticsRequest* 
+PSIDiagnosticsRequestFree(PSIDiagnosticsRequest* diags_request)
+{
+    sfree(diags_request);
+    return NULL;
+}
+
 PSIDiagnosticsResponse*
 PSIDiagnosticsResponseNew(Uint4 query_length, Uint4 alphabet_size,
                           const PSIDiagnosticsRequest* wants)
