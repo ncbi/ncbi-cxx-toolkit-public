@@ -96,10 +96,12 @@ typedef enum {
 } BlastSeqSrcDataType;
 
 /** Function pointer typedef to return pointer to some generic data. 
- * Any returned data pointer is cast to a void pointer; the caller would have
- * to know what data it expects to receive.
- * First argument is the BlastSeqSrc structure used, second
- * argument is passed to user-defined implementation. */
+ * The data is wrapped in a ListNode structure, whose 'choice' field is set 
+ * to one of the BlastSeqSrcDataType values defined above, and indicates what 
+ * data is being returned.
+ * First argument is the BlastSeqSrc structure used, second argument is 
+ * passed to user-defined implementation. 
+ */
 typedef ListNode* (*GetGenDataFnPtr) (void*, void*);
 
 /** Function pointer typedef to retrieve sequences from data structure embedded
