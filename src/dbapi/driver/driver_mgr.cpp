@@ -53,7 +53,7 @@ FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name)
     }
 
     m_Mutex.Unlock();
-    return m_Drivers[driver_name];
+    return (FDBAPI_CreateContext)(m_Drivers[driver_name]);
 }
 
 static void DriverDllName(string& dll_name, const string& driver_name)
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/01/17 23:19:13  soussov
+ * makes gcc happy
+ *
  * Revision 1.1  2002/01/17 22:17:25  soussov
  * adds driver manager
  *

@@ -51,7 +51,11 @@ protected:
 private:
     typedef void* (*FDllEntryPoint)(void);
     typedef void (*FDriverRegister)(I_DriverMgr& mgr);
+#ifndef NCBI_COMPILER_GCC
     typedef map<string, FDBAPI_CreateContext> TDrivers;
+#else
+    typedef map<string, void*> TDrivers;
+#endif
 
     CFastMutex m_Mutex;
 
@@ -65,6 +69,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/01/17 23:18:58  soussov
+ * makes gcc happy
+ *
  * Revision 1.1  2002/01/17 22:05:56  soussov
  * adds driver manager
  *
