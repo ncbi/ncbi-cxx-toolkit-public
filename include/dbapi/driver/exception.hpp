@@ -66,7 +66,7 @@ public:
     };
 
     // exception::what()
-    virtual const char* what() const;
+    virtual const char* what() const throw();
 
     // access
     EType          Type()            const  { return m_Type;           }
@@ -79,7 +79,7 @@ public:
     virtual CDB_Exception* Clone() const;
 
     // destructor
-    virtual ~CDB_Exception();
+    virtual ~CDB_Exception() throw();
 
 protected:
     // constructor
@@ -201,7 +201,7 @@ public:
     unsigned int NofExceptions() const { return m_Bag->NofExceptions(); }
     unsigned int Capacity()      const { return m_Bag->Capacity();      }
 
-    virtual ~CDB_MultiEx();
+    virtual ~CDB_MultiEx() throw();
 
 private:
     class CDB_MultiExStorage
@@ -258,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2001/09/28 16:37:32  vakatov
+ * Added missing "throw()" to exception classes derived from "std::exception"
+ *
  * Revision 1.4  2001/09/27 20:08:29  vakatov
  * Added "DB_" (or "I_") prefix where it was missing
  *

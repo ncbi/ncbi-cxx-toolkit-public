@@ -52,13 +52,13 @@ CDB_Exception::CDB_Exception(EType type, EDB_Severity severity, int err_code,
 }
 
 
-CDB_Exception::~CDB_Exception()
+CDB_Exception::~CDB_Exception() throw()
 {
     return;
 }
 
 
-const char* CDB_Exception::what() const
+const char* CDB_Exception::what() const throw()
 {
     return Message().c_str();
 }
@@ -180,7 +180,7 @@ CDB_MultiEx::CDB_MultiEx(const CDB_MultiEx& mex) :
     m_Bag->AddRef();
 }
 
-CDB_MultiEx::~CDB_MultiEx()
+CDB_MultiEx::~CDB_MultiEx() throw()
 {
     m_Bag->DelRef();
 }
@@ -190,7 +190,7 @@ CDB_MultiEx::CDB_MultiExStorage::CDB_MultiExStorage(unsigned int capacity)
     m_NofRooms = capacity;
     m_NofExs   = 0;
     m_RefCnt   = 0;
-    m_Ex       = new CDB_Exception*[m_NofRooms];
+    m_Ex       = new CDB_Exception* [m_NofRooms];
 }
 
 bool CDB_MultiEx::CDB_MultiExStorage::Push(const CDB_Exception* ex)
@@ -269,6 +269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/09/28 16:37:34  vakatov
+ * Added missing "throw()" to exception classes derived from "std::exception"
+ *
  * Revision 1.3  2001/09/27 20:08:32  vakatov
  * Added "DB_" (or "I_") prefix where it was missing
  *
