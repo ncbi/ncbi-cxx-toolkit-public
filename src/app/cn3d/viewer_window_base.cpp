@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/07/26 13:41:53  thiessen
+* add pattern memory, make period optional
+*
 * Revision 1.19  2001/07/24 15:02:59  thiessen
 * use ProSite syntax for pattern searches
 *
@@ -368,9 +371,16 @@ void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
 
 void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
 {
+    // remember previous pattern
+    static wxString previousPattern;
+
     // get pattern from user
-    wxString pattern = wxGetTextFromUser("Enter a valid ProSite pattern:", "Input pattern", "", this);
+    wxString pattern = wxGetTextFromUser("Enter a valid ProSite pattern:",
+        "Input pattern", previousPattern, this);
     if (pattern.size() == 0) return;
+    // add trailing period if not present (convenience for the user)
+    if (pattern[pattern.size() - 1] != '.') pattern += '.';
+    previousPattern = pattern;
 
     GlobalMessenger()->RemoveAllHighlights(true);
 
