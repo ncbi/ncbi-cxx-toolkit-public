@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/06/28 12:44:56  grichenk
+* Added some comments
+*
 * Revision 1.12  2001/01/29 15:18:39  vasilche
 * Cleaned CRangeMap and CIntervalTree classes.
 *
@@ -225,7 +228,7 @@ public:
         {
         }
 
-    // get parameters
+    // get range to search
     const range_type& GetRange(void) const
         {
             return m_Range;
@@ -288,21 +291,27 @@ public:
         }
 
 private:
+    // Move level iterator to the first entry following or equal to
+    // the levelIter and intersecting with the range to search
     bool SetLevelIter(TLevelIter levelIter)
         {
             TLevelIter levelIterEnd = GetLevelIterEnd();
             while ( levelIter != levelIterEnd ) {
+                // find an entry intersecting with the range
                 if ( levelIter->first.GetTo() >= m_Range.GetFrom() ) {
                     if ( levelIter->first.GetFrom() <= m_Range.GetTo() ) {
-                        m_LevelIter = levelIter;
-                        return true;
+                        m_LevelIter = levelIter; // set the iterator
+                        return true; // found
                     }
-                    return false;
+                    return false; // no such entry
                 }
-                ++levelIter;
+                ++levelIter; // check next entry
             }
-            return false;
+            return false; // entry not found
         }
+
+    // Find the first level entry, which can (but not always does)
+    // intersect with the range to search.
     TLevelIter FirstLevelIter(void)
         {
             position_type from = m_Range.GetFrom();
@@ -313,15 +322,21 @@ private:
             else {
                 // get maximum length of ranges in the level
                 position_type maxLength = m_SelectIter->first;
-                return m_SelectIter->second.lower_bound(range_type(from - maxLength + 1, from));
+                // Skip all ranges, which can NOT intersect with the
+                // range to search, return the first one that CAN
+                // (but not always does).
+                return m_SelectIter->second.lower_bound
+                    (range_type(from - maxLength + 1, from));
             }
         }
 
+    // Go to the last element, reset range to empty
     void SetEnd(TSelectMapRef selectMap)
         {
             m_Range = range_type::GetEmpty();
             m_SelectIter = m_SelectIterEnd = selectMap.end();
         }
+    // Go to the very first element, reset range to whole
     void SetBegin(TSelectMapRef selectMap)
         {
             m_Range = range_type::GetWhole();
@@ -331,16 +346,20 @@ private:
                 m_LevelIter = selectIter->second.begin();
             }
         }
+    // Set range, find the first element possibly intersecting the range
     void SetBegin(range_type range, TSelectMapRef selectMap)
         {
             m_Range = range;
             TSelectIter selectIter = m_SelectIter = selectMap.begin();
             TSelectIter selectIterEnd = m_SelectIterEnd = selectMap.end();
+            // Go through all select map elements, search for a "good"
+            // level entry
             while ( selectIter != selectIterEnd &&
                     !SetLevelIter(FirstLevelIter()) ) {
                 m_SelectIter = ++selectIter;
             }
         }
+    // Find an entry specified by the key in the 2-level map
     void Find(range_type key, TSelectMapRef selectMap);
 
 public:
@@ -376,6 +395,7 @@ void CRangeMapIterator<Traits>::Find(range_type key, TSelectMapRef selectMap)
         if ( selectIter != selectIterEnd ) {
             TLevelIter levelIter = selectIter->second.find(key);
             if ( levelIter != selectIter->second.end() ) {
+                // found the key
                 m_Range = range_type::GetWhole();
                 m_SelectIter = selectIter;
                 m_SelectIterEnd = selectIterEnd;
@@ -554,7 +574,7 @@ public:
 	typedef typename TParent::key_type key_type;
 
 	typedef typename TParent::iterator iterator;
-	typedef typename TParent::iterator const_iterator;
+	typedef typename TParent::const_iterator const_iterator;
 
     // constructor
     explicit CRangeMap(void)
@@ -613,7 +633,7 @@ public:
 	typedef typename TParent::key_type key_type;
 
 	typedef typename TParent::iterator iterator;
-	typedef typename TParent::iterator const_iterator;
+	typedef typename TParent::const_iterator const_iterator;
 
     // constructor
     explicit CRangeMultimap(void)
