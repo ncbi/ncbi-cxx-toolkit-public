@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-const double CCoiledCoil::sm_Propensities[26][7] = 
+const double sm_Propensities[26][7] = 
     {
         {0,     0,     0,     0,     0,     0,     0    },
         {1.297, 1.551, 1.084, 2.612, 0.377, 1.248, 0.877}, // A
@@ -86,20 +86,17 @@ static void x_ComputeScores(const Seq& seq, vector<double>& scores,
     for (unsigned int frame = 0;  frame < 7;  frame++) {
         for (TSeqPos start = 0;  start < seq.size() - win_len + 1;  start++) {
             double prod;
-            if (start > 0 && CCoiledCoil::
+            if (start > 0  &&
                 sm_Propensities[seq[start - 1]][(start - 1 + frame) % 7] != 0) {
                 // compute product using last result, avoiding repeating mults
-                prod /= CCoiledCoil
-                    ::sm_Propensities[seq[start - 1]][(start - 1 + frame) % 7];
-                prod *= CCoiledCoil
-                    ::sm_Propensities[seq[start + win_len - 1]]
+                prod /= sm_Propensities[seq[start - 1]][(start - 1 + frame) % 7];
+                prod *= sm_Propensities[seq[start + win_len - 1]]
                     [(start + win_len - 1 + frame) % 7];
             } else {
                 // compute product from scratch
                 prod = 1;
                 for (TSeqPos i = start;  i < start + win_len;  i++) {
-                    prod *= CCoiledCoil
-                        ::sm_Propensities[seq[i]][(i + frame) % 7];
+                    prod *= sm_Propensities[seq[i]][(i + frame) % 7];
                 }
             }
             prelim_scores[frame][start] = pow(prod, 1.0 / win_len);
@@ -210,15 +207,15 @@ void CCoiledCoil::ScoreToProb(const vector<double>& scores,
 
 
 // find runs where ScoreToProb(score) >= 0.5
-void CCoiledCoil::PredictRegions(const vector<double>& scores,
-                                 vector<CRef<CSeq_loc> >& regions,
-                                 vector<double>& max_scores)
+static void x_PredictRegions(const vector<double>& scores,
+                             vector<CRef<CSeq_loc> >& regions,
+                             vector<double>& max_scores)
 {
     bool in_a_run = 0;
     TSeqPos begin, end;
     double max_score;  // max score for the run
     for (unsigned int i = 0;  i < scores.size();  i++) {
-        if (ScoreToProb(scores[i]) >= 0.5) {
+        if (CCoiledCoil::ScoreToProb(scores[i]) >= 0.5) {
             if (!in_a_run) {
                 in_a_run = true;
                 begin = i;
@@ -252,12 +249,58 @@ void CCoiledCoil::PredictRegions(const vector<double>& scores,
 }
 
 
+template<class Seq>
+static double PredictRegionsImpl(const Seq& seq,
+                             vector<CRef<objects::CSeq_loc> >& regions,
+                             vector<double>& max_scores,
+                             TSeqPos win_len)
+{
+    vector<double> scores;
+    vector<unsigned int> frames;
+    CCoiledCoil::ComputeScores(seq, scores, frames, win_len);
+    x_PredictRegions(scores, regions, max_scores);
+    return *max_element(scores.begin(), scores.end());
+}
+
+
+double CCoiledCoil::PredictRegions(const string& seq,
+                                   vector<CRef<objects::CSeq_loc> >& regions,
+                                   vector<double>& max_scores,
+                                   TSeqPos win_len)
+{
+    return PredictRegionsImpl(seq, regions, max_scores, win_len);
+}
+
+
+double CCoiledCoil::PredictRegions(const vector<char>& seq,
+                                   vector<CRef<objects::CSeq_loc> >& regions,
+                                   vector<double>& max_scores,
+                                   TSeqPos win_len)
+{
+    return PredictRegionsImpl(seq, regions, max_scores, win_len);
+}
+
+
+double CCoiledCoil::PredictRegions(const objects::CSeqVector& seq,
+                                   vector<CRef<objects::CSeq_loc> >& regions,
+                                   vector<double>& max_scores,
+                                   TSeqPos win_len)
+{
+    return PredictRegionsImpl(seq, regions, max_scores, win_len);
+}
+
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/09 16:10:20  dicuccio
+ * Fxes for MSVC.  Moved templated functions into implementation file to avoid
+ * naming / export conflicts.  Moved lookup table to implementation file.
+ *
  * Revision 1.1  2003/09/08 16:15:12  jcherry
  * Initial version
  *
