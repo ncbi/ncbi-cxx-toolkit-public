@@ -29,6 +29,8 @@
 #    - If first two parameters are skipped that this script consider what 
 #      files <in_test_list> and <out_check_script> must be standing in the 
 #      root of the MSVC build tree.
+#    - Use ${BUILDTREE} env.variable to determine bin and lib directories.
+#      Accepted values: "", "static/", "dll/".
 #
 ###########################################################################
 
@@ -86,6 +88,7 @@ tmp="$x_tmp/check_make_win.$$"
 for d in $script_dirs; do
     script_list=`find $x_root_dir/$d -name '*.sh'`
     for s in $script_list; do
+        echo $s | grep 'check_make_win.sh' > /dev/null 2>&1  &&  continue
         grep '^#! */bin/sh' $s > /dev/null 2>&1
         if test $? -eq 0; then
            cp -fp $s $tmp
@@ -96,7 +99,6 @@ for d in $script_dirs; do
         fi
     done
 done
-
 
 
 #//////////////////////////////////////////////////////////////////////////
@@ -211,6 +213,9 @@ esac
 # Export some global vars
 top_srcdir="\$root_dir"
 export top_srcdir
+bin="static/bin"
+lib="static/lib"
+
 
 # Add current, build and scripts directories to PATH
 PATH=".:\${build_dir}:\${root_dir}/scripts:\${PATH}"
@@ -271,7 +276,7 @@ RunTest() {
       fi
    fi
    # Determine test application name
-   x_path_run="\$build_dir/bin/\$x_conf"
+   x_path_run="\$build_dir/\${BUILDTREE}bin/\$x_conf"
    if test \$result -eq 1; then
       x_path_app="\$x_path_run/\$x_app"
       if test ! -f "\$x_path_app"; then
@@ -346,11 +351,11 @@ saved_path="\$PATH"
 for x_conf in \$configurations; do
 
 # Add current configuration's build and dll build directories to PATH
-PATH=".:\${build_dir}/bin/\${x_conf}:\${build_dir}/lib/\${x_conf}:\${build_dir}/dll/bin/\${x_conf}:\${saved_path}"
+PATH=".:\${build_dir}/\${BUILDTREE}bin/\${x_conf}:\${build_dir}/\${BUILDTREE}lib/\${x_conf}:\${build_dir}/dll/bin/\${x_conf}:\${saved_path}"
 export PATH
 
 # Create directory for tests output
-mkdir -p "\$build_dir/bin/\$x_conf/check" > /dev/null 2>&1
+mkdir -p "\$build_dir/\${BUILDTREE}bin/\$x_conf/check" > /dev/null 2>&1
 
 EOF
 
