@@ -29,6 +29,7 @@
  *
  */
 
+#include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
@@ -68,6 +69,9 @@ extern "C" {
 
 CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
 {
+    static CFastMutex xMutex;
+    CFastMutexGuard mg(xMutex);
+
     m_Context         = 0;
     m_AppName         = "CTLibDriver";
     m_LoginRetryCount = 0;
@@ -824,6 +828,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/04/12 18:50:25  soussov
+ * static mutex in context constructor added
+ *
  * Revision 1.11  2002/03/26 15:34:38  soussov
  * new image/text operations added
  *
