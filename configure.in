@@ -62,6 +62,8 @@ AC_ARG_WITH(dll,
    [ --with-dll              build all libraries as DLLs])
 AC_ARG_WITH(mt,
    [ --with-mt               compile in a MultiThread-safe manner])
+AC_ARG_WITH(exe,
+   [ --without-exe           do not build executables])
 
 ## Scripts, make features, and directory naming
 AC_ARG_WITH(extra-action,
@@ -99,14 +101,18 @@ AC_ARG_WITH(objects,
 AC_ARG_WITH(internal,
    [ --with-internal         build all projects including the internal ones])
 
+## Manuals
+AC_ARG_WITH(manuals,
+   [***** See also HTML documentation in ./doc/index.html *****])
+
 
 #### Check the passed arguments against the list of available ones
 x_with_list="\
-debug optimization dll mt autodep suffix hostspec \
+debug optimization dll mt exe autodep suffix hostspec \
 ncbi-c fastcgi sss sssdb sssutils pubmed sybase serial objects internal"
 
 changequote(, )dnl
-x_with_list=`echo "$x_with_list" | sed 's/\([^ ]*\)/--with-\1 --without-\1/g'`
+x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
 changequote([, ])dnl
 
 
