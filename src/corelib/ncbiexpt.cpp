@@ -32,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/04/04 22:30:26  vakatov
+* SetThrowTraceAbort() -- auto-set basing on the application
+* environment and/or registry
+*
 * Revision 1.14  1999/12/29 13:58:39  vasilche
 * Added THROWS_NONE.
 *
@@ -101,7 +105,9 @@ extern void SetThrowTraceAbort(bool abort_on_throw_trace)
 extern void DoThrowTraceAbort(void)
 {
     if ( !s_DTTA_Initialized ) {
-        s_DoThrowTraceAbort = ::getenv("ABORT_ON_THROW") ? true : false;
+        const char* str = ::getenv(ABORT_ON_THROW);
+        if (str  &&  *str)
+            s_DoThrowTraceAbort = true;
         s_DTTA_Initialized  = true;
     }
 

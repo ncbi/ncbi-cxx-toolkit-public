@@ -35,6 +35,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/04/04 22:30:25  vakatov
+* SetThrowTraceAbort() -- auto-set basing on the application
+* environment and/or registry
+*
 * Revision 1.20  1999/12/29 13:58:37  vasilche
 * Added THROWS_NONE.
 *
@@ -149,10 +153,11 @@ BEGIN_NCBI_SCOPE
 //   THROW1np_TRACE
 //   THROWnp_TRACE
 
-// Specify if to call "abort()" inside the DoThrowTraceAbort()
-// NOTE:  if SetThrowTraceAbort() is not called then the program
-//        checks if the env. variable $ABORT_ON_THROW is set
-//        (if it is set then call "abort()" on throw, else -- dont call) 
+// Specify if to call "abort()" inside the DoThrowTraceAbort().
+// By default, this feature is not activated unless
+//   1)  environment variable $ABORT_ON_THROW is set (to any value), or
+//   2)  registry value of ABORT_ON_THROW, section DEBUG is set (to any value)
+#define ABORT_ON_THROW "ABORT_ON_THROW"
 extern void SetThrowTraceAbort(bool abort_on_throw_trace);
 
 // "abort()" the program if set by SetThrowTraceAbort() or $ABORT_ON_THROW
