@@ -1,4 +1,4 @@
---$Id: scoremat.asn,v 1.6 2003/08/25 19:03:28 bauer Exp $
+--$Id: scoremat.asn,v 1.7 2004/02/23 15:42:24 camacho Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -30,6 +30,10 @@
 --
 -- ===========================================================================
 -- $Log: scoremat.asn,v $
+-- Revision 1.7  2004/02/23 15:42:24  camacho
+-- 1. Gave default value to Score-matrix::byrow field
+-- 2. Updated documentation
+--
 -- Revision 1.6  2003/08/25 19:03:28  bauer
 -- added raw frequencies and weights as optional score-matrix components
 --
@@ -88,49 +92,87 @@ CoreDef ::= SEQUENCE {
 }
 
 -- Scoring matrix that allows to store symmetric and non-symmetric matrices
--- (PSSMs). The non-symmetric matrices are stored in column major form (ie:
--- in groups of nrows values).
+-- (PSSMs).
+--
+-- Column indices on the PSSM refer to the positions corresponding to the
+-- query/master sequence, i.e. the number of columns (N) is the same
+-- as the length of the query/master sequence. 
+-- Row indices refer to individual amino acid types, i.e. the number of 
+-- rows (M) is the same as the number of different residues in the 
+-- alphabet we use. Consequently, row labels are amino acid identifiers.
+--
+-- PSSMs are stored as linear arrays of integers. By default, we store
+-- them column-by-column, M values for the first column followed by M
+-- values for the second column, and so on. In order to provide
+-- flexibility for external applications, the boolean field "byrow" is 
+-- provided to specify the storage order.
 
 Score-matrix ::= SEQUENCE {
     is-protein   BOOLEAN,	-- Is the matrix for proteins
     identifier   Object-id,	-- name of matrix (e.g., "blosum62") or number
     comments     SEQUENCE OF VisibleString OPTIONAL, -- comments on matrix.
+
     -- The dimensions of the matrix are returned so the client can
     -- verify that all data was received.  Both dimensions are returned for
     -- non-symmetric matrices (psi-blast uses these).
     nrows        INTEGER,	-- number of rows
     ncolumns     INTEGER,	-- number of columns
+
     -- row-labels is given to note the order of residue types so that it can
     -- be cross-checked between applications.
-    row-labels   SEQUENCE OF VisibleString OPTIONAL,
-    -- If the above field is not given, the matrix values are presented in 
+    -- If this field is not given, the matrix values are presented in 
     -- order of the alphabet ncbistdaa is used for protein, ncbi4na for nucl.
     -- for proteins the values returned correspond to 
     -- (-,-), (-,A), (-,B), (-,C) ... (A,-), (A,A), (A,B), (A,C) ...
-    scores       SEQUENCE OF INTEGER OPTIONAL, -- values of scoring matrix 
-    score-scale-factor INTEGER OPTIONAL,       -- scaling factor for the scores
-    posFreqs     SEQUENCE OF INTEGER OPTIONAL, -- residue frequencies
-    posFreqs-scale-factor INTEGER OPTIONAL,    -- scaling factor for the frequencies
-    pseudocounts INTEGER OPTIONAL,             -- pseudocount constant used for PSSM
+    row-labels   SEQUENCE OF VisibleString OPTIONAL,
+
+    -- values of scoring matrix. Non-symmetric matrices are stored as described
+    -- by the byrow field
+    scores       SEQUENCE OF INTEGER OPTIONAL, 
+    -- are matrices stored row by row?
+    byrow        BOOLEAN DEFAULT FALSE, 
+
+    -- pseudocount constant used for PSSM
+    pseudocounts INTEGER OPTIONAL,             
+
+    -- PSSM representative sequence (master) 
+    query        Seq-entry OPTIONAL,           
+
+    -- frequencies observed in alignment
+    rawFreqs     SEQUENCE OF INTEGER OPTIONAL, 
+
+    -- residue frequencies
+    posFreqs     SEQUENCE OF INTEGER OPTIONAL, 
+
+    -- sequence weights for individual cells
+    weights      SEQUENCE OF INTEGER OPTIONAL, 
+
+    -- frequencies used in pseudocount method
     freq-Ratios  INTEGER { unassigned  (0),
                            blosum62    (1),
-			   blosum45    (2),
-			   blosum80    (3),
-			   blosum50    (4),
-			   blosum90    (5),
-			   pam30       (6),
-			   pam70       (7),
-			   pam250      (8),
-			   other     (255)
-                         } OPTIONAL,           -- frequencies used in pseudocount method
-    gapOpen      INTEGER OPTIONAL,             -- scaled by score-scale-factor (above)
-    gapExtend    INTEGER OPTIONAL,             -- scaled by score-scale-factor (above)
-    query        Seq-entry OPTIONAL,           -- PSSM representative sequence 
-    rawFreqs     SEQUENCE OF INTEGER OPTIONAL, -- frequencies observed in alignment
-    rawFreqs-scale-factor INTEGER OPTIONAL,    -- scaling factor for frequencies
-    weights      SEQUENCE OF INTEGER OPTIONAL, -- sequence weights for individual cells
-    weights-scale-factor INTEGER OPTIONAL,     -- and their scaling factor
-    byrow        BOOLEAN OPTIONAL              -- are matrices stored row by row?
+                           blosum45    (2),
+                           blosum80    (3),
+                           blosum50    (4),
+                           blosum90    (5),
+                           pam30       (6),
+                           pam70       (7),
+                           pam250      (8),
+                           other     (255)
+                         } OPTIONAL,           
+
+    -- scaling factor for the scores
+    score-scale-factor INTEGER OPTIONAL,       
+    -- scaling factor for the frequencies
+    posFreqs-scale-factor INTEGER OPTIONAL,    
+    -- scaling factor for frequencies
+    rawFreqs-scale-factor INTEGER OPTIONAL,    
+    -- and their scaling factor
+    weights-scale-factor INTEGER OPTIONAL,     
+
+    -- scaled by score-scale-factor (above)
+    gapOpen      INTEGER OPTIONAL,             
+    -- scaled by score-scale-factor (above)
+    gapExtend    INTEGER OPTIONAL
 }
 
 -- Envelope containing matrix or pssm, Karlin-Altschul parameters, and block constraints.
