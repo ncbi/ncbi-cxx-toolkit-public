@@ -2970,7 +2970,7 @@ CRef<CSeq_loc> SRelLoc::Resolve(const CSeq_loc& new_parent, CScope* scope,
                 }
                 if (from == to
                     &&  (fuzz_from == fuzz_to
-                         ||  (fuzz_from  &&  fuzz_to
+                         ||  (fuzz_from.GetPointer()  &&  fuzz_to.GetPointer()
                               &&  fuzz_from->Equals(*fuzz_to)))) {
                     // just a point
                     CRef<CSeq_loc> loc(new CSeq_loc);
@@ -3311,6 +3311,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.63  2003/10/16 11:55:19  dicuccio
+* Fix for brain-dead MSVC and ambiguous operator&&
+*
 * Revision 1.62  2003/10/15 19:52:18  ucko
 * More adjustments to SRelLoc: support fuzz, opposite-strand children,
 * and resolving against an alternate parent.
