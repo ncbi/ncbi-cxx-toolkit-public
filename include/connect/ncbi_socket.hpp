@@ -132,7 +132,9 @@ public:
     EIO_Status Wait(EIO_Event event, const STimeout* timeout);
 
     // NOTE 1:  by default, initially all timeouts are infinite;
-    // NOTE 2:  SetTimeout(..., kDefaultTimeout) has no effect.
+    // NOTE 2:  SetTimeout(..., kDefaultTimeout) has no effect;
+    // Note 3:  GetTimeout(eIO_ReadWrite) returns the least
+    //          of eIO_Read and eIO_Write ones.
     EIO_Status      SetTimeout(EIO_Event event, const STimeout* timeout);
     const STimeout* GetTimeout(EIO_Event event) const;
 
@@ -604,6 +606,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2003/10/24 16:51:11  lavr
+ * GetTimeout(eIO_ReadWrite): return the lesser of eIO_Read and eIO_Write
+ *
  * Revision 6.31  2003/10/23 12:14:52  lavr
  * Socket feature setters made returning old feature values
  *

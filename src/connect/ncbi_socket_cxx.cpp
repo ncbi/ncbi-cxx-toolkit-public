@@ -229,6 +229,14 @@ const STimeout* CSocket::GetTimeout(EIO_Event event) const
         return r_timeout;
     case eIO_Write:
         return w_timeout;
+    case eIO_ReadWrite:
+        if ( !r_timeout )
+            return w_timeout;
+        if ( !w_timeout )
+            return r_timeout;
+        return ((unsigned long) r_timeout->sec*1000000 + r_timeout->usec >
+                (unsigned long) w_timeout->sec*1000000 + w_timeout->usec)
+            ? w_timeout : r_timeout;
     case eIO_Close:
         return c_timeout;
     default:
@@ -517,6 +525,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2003/10/24 16:51:36  lavr
+ * GetTimeout(eIO_ReadWrite): return the lesser of eIO_Read and eIO_Write
+ *
  * Revision 6.20  2003/08/25 14:42:42  lavr
  * Employ new k..Timeout constants;  reimplement more generic form of Poll()
  *

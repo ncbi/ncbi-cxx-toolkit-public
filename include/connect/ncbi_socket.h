@@ -534,9 +534,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetTimeout
 
 
 /* Get the connection's i/o timeout (or NULL, if the timeout is infinite).
- * NOTE:  the returned timeout is guaranteed to be pointing to a valid
- *        (and correct) structure in memory at least until the SOCK is closed
- *        or SOCK_SetTimeout is called for this "sock".
+ * NOTE1:  the returned timeout is guaranteed to be pointing to a valid
+ *         (and correct) structure in memory at least until the SOCK is closed
+ *         or SOCK_SetTimeout is called for this "sock".
+ * NOTE2:  eIO_ReadWrite timeout is the least of eIO_Read and eIO_Write ones.
  */
 extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
 (SOCK      sock,
@@ -936,6 +937,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2003/10/24 16:51:11  lavr
+ * GetTimeout(eIO_ReadWrite): return the lesser of eIO_Read and eIO_Write
+ *
  * Revision 6.43  2003/10/23 12:14:33  lavr
  * Socket feature setters made returning old feature values
  *
