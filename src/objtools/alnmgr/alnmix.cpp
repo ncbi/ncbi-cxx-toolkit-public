@@ -52,17 +52,20 @@ CAlnMix::CAlnMix(void)
     : m_MergeFlags(0),
       m_SingleRefseq(false),
       m_ContainsAA(false),
-      m_ContainsNA(false)
+      m_ContainsNA(false),
+      x_CalculateScore(0)
 {
 }
 
 
-CAlnMix::CAlnMix(CScope& scope)
+CAlnMix::CAlnMix(CScope& scope,
+                 TCalcScoreMethod calc_score)
     : m_Scope(&scope),
       m_MergeFlags(0),
       m_SingleRefseq(false),
       m_ContainsAA(false),
-      m_ContainsNA(false)
+      m_ContainsNA(false),
+      x_CalculateScore(calc_score)
 {
 }
 
@@ -194,9 +197,15 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
         m_InputDSs.push_back(CConstRef<CDense_seg>(dsp));
     }
 
-    if ( !m_Scope  &&  flags & fCalcScore) {
+    if (flags & fCalcScore) {
+        if ( !x_CalculateScore ) {
+            // provide the default calc method
+            x_CalculateScore = CAlnVec::CalculateScore;
+        }
+    }
+    if ( !m_Scope  &&  x_CalculateScore) {
         NCBI_THROW(CAlnException, eMergeFailure, "CAlnMix::Add(): "
-                   "fCalcScore cannot be used without providing "
+                   "Score calculation requested without providing "
                    "a scope in the CAlnMix constructor.");
     }
     m_AddFlags = flags;
@@ -277,6 +286,11 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
             }
 #endif
         }
+        // Set the width
+        if (dsp->IsSetWidths()) {
+            aln_seq->m_Width = dsp->GetWidths()[row];
+        }
+
 
         // Preserve the row of the the original sequences if requested.
         // This is mostly used to allow a sequence to itself.
@@ -388,9 +402,11 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 
 
                         //Determine the score
-                        if (m_AddFlags & fCalcScore) {
+                        if (x_CalculateScore) {
                             // calc the score by seq comp
                             string s1, s2;
+                            TSeqPos len1 = len * aln_seq1->m_Width;
+                            TSeqPos len2 = len * aln_seq2->m_Width;
 
                             if (strand1 == eNa_strand_minus) {
                                 CSeqVector seq_vec = 
@@ -398,14 +414,17 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                                     (CBioseq_Handle::eCoding_Iupac,
                                      CBioseq_Handle::eStrand_Minus);
                                 TSeqPos size = seq_vec.size();
-                                seq_vec.GetSeqData(size - (start1 + len),
-                                                   size - start1, 
-                                                   s1);
+                                seq_vec.GetSeqData
+                                    (size - (start1 + len1),
+                                     size - start1, 
+                                     s1);
                             } else {
                                 aln_seq1->m_BioseqHandle->GetSeqVector
                                     (CBioseq_Handle::eCoding_Iupac,
                                      CBioseq_Handle::eStrand_Plus).
-                                    GetSeqData(start1, start1 + len, s1);
+                                    GetSeqData(start1, 
+                                               start1 + len1,
+                                               s1);
                             }                                
                             if (strand2 ==  eNa_strand_minus) {
                                 CSeqVector seq_vec = 
@@ -413,18 +432,21 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                                     (CBioseq_Handle::eCoding_Iupac,
                                      CBioseq_Handle::eStrand_Minus);
                                 TSeqPos size = seq_vec.size();
-                                seq_vec.GetSeqData(size - (start2 + len),
-                                                   size - start2, 
-                                                   s2);
+                                seq_vec.GetSeqData
+                                    (size - (start2 + len2),
+                                     size - start2, 
+                                     s2);
                             } else {
                                 aln_seq2->m_BioseqHandle->GetSeqVector
                                     (CBioseq_Handle::eCoding_Iupac,
                                      CBioseq_Handle::eStrand_Plus).
-                                    GetSeqData(start2, start2 + len, s2);
+                                    GetSeqData(start2,
+                                               start2 + len2,
+                                               s2);
                             }
 
                             //verify that we were able to load all data
-                            if (s1.length() != len || s2.length() != len) {
+                            if (s1.length() != len1 || s2.length() != len2) {
 
                                 string symptoms  = "Input Dense-seg " +
                                     NStr::IntToString(m_InputDSs.size()) + ":" +
@@ -439,7 +461,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                                     "\" start=" + NStr::IntToString(start2) + ").";
                                 
                                 string diagnosis = "Looks like the sequence coords for row " +
-                                    NStr::IntToString(s1.length() < + len ? row1 : row2) +
+                                    NStr::IntToString(s1.length() < len1 ? row1 : row2) +
                                     " are out of range.";
 
                                 string errstr = string("CAlnMix::Add(): ") +
@@ -448,9 +470,10 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
                                            errstr);
                             }
 
-                            match->m_Score = 
-                                CAlnVec::CalculateScore
-                                (s1, s2, aln_seq1->m_IsAA, aln_seq2->m_IsAA);
+                            match->m_Score = x_CalculateScore(s1,
+                                                              s2,
+                                                              aln_seq1->m_IsAA,
+                                                              aln_seq2->m_IsAA);
                         } else {
                             match->m_Score = len;
                         }
@@ -1117,7 +1140,7 @@ void CAlnMix::x_Merge()
 void
 CAlnMix::x_SetSeqFrame(CAlnMixMatch* match, CAlnMixSeq*& seq)
 {
-    int frame;
+    unsigned frame;
     if (seq == match->m_AlnSeq1) {
         frame = match->m_Start1 % 3;
     } else {
@@ -1782,7 +1805,7 @@ void CAlnMix::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
             }
 
             // check if score is sufficient
-            if (possible  &&  m_AddFlags & fCalcScore) {
+            if (possible  &&  x_CalculateScore) {
                 if (!cache) {
 
                     seq1 = seg1->m_StartIts.begin()->first;
@@ -1807,10 +1830,10 @@ void CAlnMix::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
                                            s1);
                     }                                
 
-                    score1 = 
-                        CAlnVec::CalculateScore(s1, s1,
-                                                seq1->m_IsAA,
-                                                seq1->m_IsAA);
+                    score1 = x_CalculateScore(s1,
+                                              s1,
+                                              seq1->m_IsAA,
+                                              seq1->m_IsAA);
                     cache = true;
                 }
                 
@@ -1837,7 +1860,7 @@ void CAlnMix::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
                 }                                
 
                 int score2 = 
-                    CAlnVec::CalculateScore(s1, s2, seq1->m_IsAA, seq2->m_IsAA);
+                    x_CalculateScore(s1, s2, seq1->m_IsAA, seq2->m_IsAA);
 
                 if (score2 < 75 * score1 / 100) {
                     possible = false;
@@ -2061,7 +2084,7 @@ CRef<CDense_seg> CAlnMix::x_ExtendDSWithWidths(const CDense_seg& ds)
 
     bool contains_AA = false, contains_NA = false;
     CRef<CAlnMixSeq> aln_seq;
-    for (size_t numrow = 0;  numrow < ds.GetDim();  numrow++) {
+    for (CDense_seg::TDim numrow = 0;  numrow < ds.GetDim();  numrow++) {
         x_IdentifyAlnMixSeq(aln_seq, *ds.GetIds()[numrow]);
         if (aln_seq->m_IsAA) {
             contains_AA = true;
@@ -2085,7 +2108,7 @@ CRef<CDense_seg> CAlnMix::x_ExtendDSWithWidths(const CDense_seg& ds)
         // fix the lengths
         const CDense_seg::TLens& lens     = ds.GetLens();
         CDense_seg::TLens&       new_lens = new_ds->SetLens();
-        for (size_t numseg = 0; numseg < ds.GetNumseg(); numseg++) {
+        for (CDense_seg::TNumseg numseg = 0; numseg < ds.GetNumseg(); numseg++) {
             if (lens[numseg] % 3) {
                 string errstr =
                     string("CAlnMix::x_ExtendDSWithWidths(): ") +
@@ -2221,6 +2244,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.118  2005/02/16 21:27:16  todorov
+* Abstracted the CalculateScore method so that it could be delegated to
+* the caller.
+* Fixed a bug related to widths not been provided when creating seq
+* vectors.
+* Fixed a few signed/unsigned comparison warnings.
+*
 * Revision 1.117  2005/02/10 21:29:26  todorov
 * Throwing exeption for proper row not found in case of
 * fQuerySeqMergeOnly only if !fTruncateOverlaps, since full truncation
