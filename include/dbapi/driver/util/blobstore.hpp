@@ -255,6 +255,9 @@ public:
     void setCM(ECompressMethod cm) { m_Cm = cm; }
 
     const string& getTableName() const { return m_Table; }
+    const string& getKeyColName() const { return m_KeyColName; }
+    const string& getNumColName() const { return m_NumColName; }
+
 
     virtual ~CBlobStoreBase();
 
@@ -372,6 +375,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/10/21 18:33:18  ivanovsk
+ * Add methods to take blob key column name and
+ * num column name.
+ *
  * Revision 1.4  2004/10/20 18:21:28  ivanov
  * Added export specifier to all class declaratons
  *
