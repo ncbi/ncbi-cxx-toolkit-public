@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.160 2003/01/23 21:37:59 ucko Exp $
+#  $Id: configure.ac,v 1.161 2003/01/23 23:55:24 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3008,9 +3008,9 @@ case "$AR"     in compilers/*)     AR="\$(top_srcdir)/$AR"     ;; esac
 ### Get Insure++ to honor the top-level .psrc file
 case "$CC" in
    */insure*)
-      CC="$CC -Zop \$(top_srcdir)/.psrc"
-      CXX="$CXX -Zop \$(top_srcdir)/.psrc"
-      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/.psrc"
+      CC="$CC -Zop \$(top_srcdir)/.psrc -D__INSURE__"
+      CXX="$CXX -Zop \$(top_srcdir)/.psrc -D__INSURE__"
+      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/.psrc -D__INSURE__"
       LINK_DLL=`echo "$LINK_DLL" | sed -e 's:insure:& -Zop \$(top_srcdir)/.psrc:'`
    ;;
 esac

@@ -16488,9 +16488,9 @@ case "$AR"     in compilers/*)     AR="\$(top_srcdir)/$AR"     ;; esac
 ### Get Insure++ to honor the top-level .psrc file
 case "$CC" in
    */insure*)
-      CC="$CC -Zop \$(top_srcdir)/.psrc"
-      CXX="$CXX -Zop \$(top_srcdir)/.psrc"
-      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/.psrc"
+      CC="$CC -Zop \$(top_srcdir)/.psrc -D__INSURE__"
+      CXX="$CXX -Zop \$(top_srcdir)/.psrc -D__INSURE__"
+      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/.psrc -D__INSURE__"
       LINK_DLL=`echo "$LINK_DLL" | sed -e 's:insure:& -Zop \$(top_srcdir)/.psrc:'`
    ;;
 esac
