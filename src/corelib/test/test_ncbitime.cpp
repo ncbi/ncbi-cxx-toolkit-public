@@ -210,6 +210,7 @@ static void s_TestMisc(void)
 static void s_TestFormats(void)
 {
     static const char* s_Fmt[] = {
+        "w, D b Y h:m:s Z",
         "M/D/Y h:m:s",
         "M/D/Y h:m:s.S",
         "M/D/y h:m:s",
@@ -239,15 +240,17 @@ static void s_TestFormats(void)
     cout << "---------------------------" << endl << endl;
 
     for (const char** fmt = s_Fmt;  *fmt;  fmt++) {
-        CTime t1(2001, 4, 2, 3, 4, 0);
+        CTime t1(2001, 4, 2, 3, 4, 5, 0,
+                 strchr(*fmt, 'Z') ? CTime::eGmt : CTime::eLocal);
 
         CTime::SetFormat(*fmt);
         string t1_str = t1.AsString();
-        cout << "[" << t1_str << "]" << endl;
+        cout << "[" << t1_str << "]";
 
         CTime::SetFormat("MDY__s");
 
         CTime t2(t1_str, *fmt);
+        cout << " --> [" << t1_str << "]" << endl;
         assert(t1 == t2);
 
         CTime::SetFormat(*fmt);
@@ -643,6 +646,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.17  2003/07/15 19:37:50  vakatov
+ * Added test with weekday and timezone
+ *
  * Revision 6.16  2003/04/16 20:29:26  ivanov
  * Using class CStopWatch instead clock()
  *
