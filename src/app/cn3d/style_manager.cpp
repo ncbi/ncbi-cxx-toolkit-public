@@ -997,8 +997,8 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             bondStyle->end1.radius != bondStyle->end2.radius)
             bondStyle->midCap = true;
 
-        // atomCaps needed at ends of thick worms when at end of chain, or if
-        // internal residues are hidden or of a different style
+        // atomCaps needed at ends of thick worms when at end of chain, or if internal residues
+        // are hidden or of a different style, or when missing coords of prev/next bond
         if (bondStyle->end1.style == StyleManager::eThickWormBond ||
             bondStyle->end2.style == StyleManager::eThickWormBond) {
 
@@ -1006,6 +1006,10 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             AtomStyle atomStyleV;
             const StyleSettings::BackboneStyle *backboneStyleV;
             const StyleSettings::GeneralStyle *generalStyleV;
+            const AtomSet *atomSet;
+            if (!coord1->GetParentOfType(&atomSet))
+                return false;
+            bool overlayConfs = atomSet->parentSet->showHideManager->OverlayConfEnsembles();
 
             if (bondStyle->end1.style == StyleManager::eThickWormBond &&
                     (!bond->previousVirtual ||
@@ -1013,8 +1017,11 @@ bool StyleManager::GetBondStyle(const Bond *bond,
                     !GetAtomStyle(infoV->residue, bond->previousVirtual->atom1, NULL,
                         &atomStyleV, &backboneStyleV, &generalStyleV) ||
                     atomStyleV.style == StyleManager::eNotDisplayed ||
-                    backboneStyleV->style != style1))
+                    backboneStyleV->style != style1 ||
+                    !atomSet->GetAtom(bond->previousVirtual->atom1, overlayConfs, true)))
                 bondStyle->end1.atomCap = true;
+//            if (bondStyle->end1.atomCap)
+//                TRACEMSG("bondStyle->end1.atomCap true at rID " << atom1.rID);
 
             if (bondStyle->end2.style == StyleManager::eThickWormBond &&
                     (!bond->nextVirtual ||
@@ -1022,8 +1029,11 @@ bool StyleManager::GetBondStyle(const Bond *bond,
                     !GetAtomStyle(infoV->residue, bond->nextVirtual->atom2, NULL,
                         &atomStyleV, &backboneStyleV, &generalStyleV) ||
                     atomStyleV.style == StyleManager::eNotDisplayed ||
-                    backboneStyleV->style != style2))
+                    backboneStyleV->style != style2 ||
+                    !atomSet->GetAtom(bond->nextVirtual->atom2, overlayConfs, true)))
                 bondStyle->end2.atomCap = true;
+//            if (bondStyle->end2.atomCap)
+//                TRACEMSG("bondStyle->end2.atomCap true at rID " << atom2.rID);
         }
 
         // set worm tension, tighter for smaller protein alpha-helix
@@ -1595,6 +1605,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2004/01/19 16:17:37  thiessen
+* fix worm display problem when coords of prev/next alpha are missing
+*
 * Revision 1.76  2003/07/22 18:54:42  thiessen
 * fix object access bug
 *
