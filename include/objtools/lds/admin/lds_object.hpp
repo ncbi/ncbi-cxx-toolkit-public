@@ -37,7 +37,7 @@
 #include <objtools/lds/lds_db.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_expt.hpp>
-#include <objtools/lds/lds_coreobjreader.hpp>
+#include <objtools/lds/admin/lds_coreobjreader.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -123,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/06/16 16:24:16  kuznets
+ * Fixed #include paths (lds <-> lds_admin separation)
+ *
  * Revision 1.6  2003/06/04 16:34:42  kuznets
  * Added forward declaration of "ObjectManager & Co".
  *

@@ -29,7 +29,7 @@
  *
  */
 
-#include <objtools/lds/lds_coreobjreader.hpp>
+#include <objtools/lds/admin/lds_coreobjreader.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -142,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/16 16:24:43  kuznets
+ * Fixed #include paths (lds <-> lds_admin separation)
+ *
  * Revision 1.1  2003/06/03 14:13:25  kuznets
  * Initial revision
  *

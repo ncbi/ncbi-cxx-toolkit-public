@@ -32,7 +32,7 @@
  */
 
 #include <objtools/lds/lds.hpp>
-#include <objtools/lds/lds_object.hpp>
+#include <objtools/lds/admin/lds_object.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/16 16:24:16  kuznets
+ * Fixed #include paths (lds <-> lds_admin separation)
+ *
  * Revision 1.1  2003/06/16 14:54:08  kuznets
  * lds splitted into "lds" and "lds_admin"
  *

@@ -37,7 +37,7 @@
 
 #include <bdb/bdb_cursor.hpp>
 
-#include <objtools/lds/lds_files.hpp>
+#include <objtools/lds/admin/lds_files.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_util.hpp>
 #include <objtools/lds/lds_query.hpp>
@@ -202,6 +202,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/16 16:24:43  kuznets
+ * Fixed #include paths (lds <-> lds_admin separation)
+ *
  * Revision 1.2  2003/06/16 14:55:00  kuznets
  * lds splitted into "lds" and "lds_admin"
  *

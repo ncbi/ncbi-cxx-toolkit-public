@@ -39,7 +39,7 @@
 #include <bdb/bdb_cursor.hpp>
 
 #include <objtools/readers/fasta.hpp>
-#include <objtools/lds/lds_object.hpp>
+#include <objtools/lds/admin/lds_object.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_util.hpp>
 
@@ -471,6 +471,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/06/16 16:24:43  kuznets
+ * Fixed #include paths (lds <-> lds_admin separation)
+ *
  * Revision 1.6  2003/06/16 15:40:21  kuznets
  * Fixed a bug with collecting all seq_ids from a bioseq
  *

@@ -32,9 +32,9 @@
 #include <bdb/bdb_cursor.hpp>
 
 #include <objtools/lds/lds.hpp>
-#include <objtools/lds/lds_coreobjreader.hpp>
-#include <objtools/lds/lds_object.hpp>
-#include <objtools/lds/lds_files.hpp>
+#include <objtools/lds/admin/lds_coreobjreader.hpp>
+#include <objtools/lds/admin/lds_object.hpp>
+#include <objtools/lds/admin/lds_files.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -154,6 +154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/16 16:24:43  kuznets
+ * Fixed #include paths (lds <-> lds_admin separation)
+ *
  * Revision 1.3  2003/06/16 15:39:18  kuznets
  * Removing dead code
  *
