@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/07 14:12:48  thiessen
+* added animation frames
+*
 * Revision 1.9  2000/08/07 00:20:18  thiessen
 * add display list mechanism
 *
@@ -133,6 +136,13 @@ public:
     void StartDisplayList(unsigned int list);
     void EndDisplayList(void);
 
+    // frame management
+    void ShowAllFrames(void);
+    void ShowFirstFrame(void);
+    void ShowLastFrame(void);
+    void ShowNextFrame(void);
+    void ShowPreviousFrame(void);
+
     // drawing methods
     void DrawAtom(const Vector& site, const AtomStyle& atomStyle);
     void DrawBond(const Vector& site1, const Vector& site2, const BondStyle& style);
@@ -156,6 +166,7 @@ private:
 
     // misc rendering stuff
     bool selectMode;
+    unsigned int currentFrame;
 };
 
 END_SCOPE(Cn3D)

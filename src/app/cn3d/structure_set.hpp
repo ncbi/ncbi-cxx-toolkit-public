@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/08/07 14:12:48  thiessen
+* added animation frames
+*
 * Revision 1.16  2000/08/07 00:20:18  thiessen
 * add display list mechanism
 *
@@ -86,6 +89,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/mmdb1/Biostruc.hpp>
@@ -140,10 +144,14 @@ public:
     // called when an atom is selected in the GL window
     void SelectedAtom(unsigned int name);
 
-    // for assigning display lists
+    // for assigning display lists and frames
     unsigned int lastDisplayList;
+    typedef LIST_TYPE < unsigned int > DisplayLists;
+    typedef std::vector < DisplayLists > FrameMap;
+    FrameMap frameMap;
 
 private:
+    void VerifyFrameMap(void) const;
     typedef std::pair < const Residue*, int > NamePair;
     typedef std::map < unsigned int, NamePair > NameMap;
     NameMap nameMap;

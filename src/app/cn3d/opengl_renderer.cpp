@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/08/07 14:13:15  thiessen
+* added animation frames
+*
 * Revision 1.12  2000/08/07 00:21:17  thiessen
 * add display list mechanism
 *
@@ -98,6 +101,8 @@ static inline double RadToDegrees(double rad) { return rad*180.0/PI; }
 
 const unsigned int OpenGLRenderer::NO_LIST = 0;
 const unsigned int OpenGLRenderer::FIRST_LIST = 1;
+
+static const unsigned int ALL_FRAMES = 4294967295;
 
 // it's easier to keep one global qobj for now
 static GLUquadricObj *qobj = NULL;
@@ -322,6 +327,44 @@ void OpenGLRenderer::EndDisplayList(void)
 }
 
 
+// frame management methods
+
+void OpenGLRenderer::ShowAllFrames(void)
+{
+    if (structureSet) currentFrame = ALL_FRAMES;
+}
+
+void OpenGLRenderer::ShowFirstFrame(void)
+{
+    if (structureSet) currentFrame = 0;
+}
+
+void OpenGLRenderer::ShowLastFrame(void)
+{
+    if (structureSet) currentFrame = structureSet->frameMap.size() - 1;
+}
+
+void OpenGLRenderer::ShowNextFrame(void)
+{
+    if (structureSet) {
+        if (currentFrame >= structureSet->frameMap.size() - 1)
+            currentFrame = 0;
+        else
+            currentFrame++;
+    }
+}
+
+void OpenGLRenderer::ShowPreviousFrame(void)
+{
+    if (structureSet) {
+        if (currentFrame == 0)
+            currentFrame = structureSet->frameMap.size() - 1;
+        else
+            currentFrame--;
+    }
+}
+
+
 // methods dealing with structure data and drawing
 
 void OpenGLRenderer::Display(void) const
@@ -339,8 +382,15 @@ void OpenGLRenderer::Display(void) const
     }
     
     if (structureSet) {
-        for (unsigned int i=FIRST_LIST; i<=structureSet->lastDisplayList; i++)
-            glCallList(i);
+        if (currentFrame == ALL_FRAMES) {
+            for (unsigned int i=FIRST_LIST; i<=structureSet->lastDisplayList; i++)
+                glCallList(i);
+        } else {
+            StructureSet::DisplayLists::const_iterator
+                l, le=structureSet->frameMap[currentFrame].end();
+            for (l=structureSet->frameMap[currentFrame].begin(); l!=le; l++)
+                glCallList(*l);
+        }
     } else {
         glCallList(FIRST_LIST); // draw logo
     }
@@ -404,6 +454,7 @@ void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
     Init();
     ResetCamera();
     Construct();
+    currentFrame = ALL_FRAMES;
 }
 
 void OpenGLRenderer::Construct(void)
@@ -412,9 +463,7 @@ void OpenGLRenderer::Construct(void)
     glLoadIdentity();
 
     if (structureSet) {
-        glNewList(FIRST_LIST, GL_COMPILE);
         structureSet->DrawAll();
-        glEndList();
     } else {
         ConstructLogo();
     }

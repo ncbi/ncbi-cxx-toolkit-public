@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/08/07 14:13:15  thiessen
+* added animation frames
+*
 * Revision 1.14  2000/08/04 22:49:03  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -319,7 +322,7 @@ void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
 BEGIN_EVENT_TABLE(Cn3DGLCanvas, wxGLCanvas)
     EVT_SIZE                (Cn3DGLCanvas::OnSize)
     EVT_PAINT               (Cn3DGLCanvas::OnPaint)
-    //EVT_CHAR(Cn3DGLCanvas::OnChar)
+    EVT_CHAR                (Cn3DGLCanvas::OnChar)
     EVT_MOUSE_EVENTS        (Cn3DGLCanvas::OnMouseEvent)
     EVT_ERASE_BACKGROUND    (Cn3DGLCanvas::OnEraseBackground)
 END_EVENT_TABLE()
@@ -391,6 +394,23 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
         unsigned int name;
         if (structureSet && renderer.GetSelected(event.GetX(), event.GetY(), &name))
             structureSet->SelectedAtom(name);
+    }
+}
+
+void Cn3DGLCanvas::OnChar(wxKeyEvent& event)
+{
+#ifndef __WXMOTIF__
+    if (!GetContext()) return;
+#endif
+    SetCurrent();
+
+    switch (event.KeyCode()) {
+        case 'a': case 'A': renderer.ShowAllFrames(); Refresh(FALSE); break;
+        case WXK_DOWN: renderer.ShowFirstFrame(); Refresh(FALSE); break;
+        case WXK_UP: renderer.ShowLastFrame(); Refresh(FALSE); break;
+        case WXK_RIGHT: renderer.ShowNextFrame(); Refresh(FALSE); break;
+        case WXK_LEFT: renderer.ShowPreviousFrame(); Refresh(FALSE); break;
+        default: event.Skip();
     }
 }
 

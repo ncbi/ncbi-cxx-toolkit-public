@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/07 14:13:15  thiessen
+* added animation frames
+*
 * Revision 1.6  2000/08/07 00:21:17  thiessen
 * add display list mechanism
 *
@@ -122,7 +125,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
         }
 
     // otherwise, use all CoordSets using default altConf ensemble for single
-    // structure; for multiple structure, use only first CoordSet
+    // structure; for multiple structure StructureSet, use only first CoordSet
     } else {
         StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
         for (c=object->coordSets.begin(); c!=ce; c++) {
@@ -138,6 +141,9 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
         return;
     }
 
+    unsigned int firstNewFrame = parentSet->frameMap.size();
+    parentSet->frameMap.resize(firstNewFrame + nAlts);
+
     // load molecules from SEQUENCE OF Molecule-graph
     CBiostruc_graph::TMolecule_graphs::const_iterator i, ie=graph.GetMolecule_graphs().end();
     for (i=graph.GetMolecule_graphs().begin(); i!=ie; i++) {
@@ -146,30 +152,29 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
             standardDictionary->GetResidue_graphs(),
             graph.GetResidue_graphs());
 
+        if (molecules.find(molecule->id) != molecules.end())
+            ERR_POST(Error << "confused by repeated Molecule-graph ID's");
+        molecules[molecule->id] = molecule;
+
         // set molecules' display list(s); each protein or nucleotide molecule
         // gets its own display list(s) (one display list for each molecule for
         // each set of coordinates), while everything else - hets, solvents,
         // inter-molecule bonds - goes in a single list(s).
-        if (molecule->IsProtein() || molecule->IsNucleotide()) {
-            for (int n=0; n<nAlts; n++) {
+        for (unsigned int n=0; n<nAlts; n++) {
+
+            if (molecule->IsProtein() || molecule->IsNucleotide()) {
                 molecule->displayLists.push_back(++(parentSet->lastDisplayList));
-            }
-        } else {
-            if (displayListOtherStart == OpenGLRenderer::NO_LIST) {
-                displayListOtherStart = parentSet->lastDisplayList + 1;
-                for (int n=0; n<nAlts; n++) {
-                    molecule->displayLists.push_back(++(parentSet->lastDisplayList));
+                // add molecule's display list to frame
+                parentSet->frameMap[firstNewFrame + n].push_back(parentSet->lastDisplayList);
+
+            } else { // het/solvent
+                if (displayListOtherStart == OpenGLRenderer::NO_LIST) {
+                    displayListOtherStart = parentSet->lastDisplayList + 1;
+                    parentSet->lastDisplayList += nAlts;
                 }
-            } else {
-                for (int n=0; n<nAlts; n++) {
-                    molecule->displayLists.push_back(displayListOtherStart + n);
-                }
+                molecule->displayLists.push_back(displayListOtherStart + n);
             }
         }
-
-        if (molecules.find(molecule->id) != molecules.end())
-            ERR_POST(Fatal << "confused by repeated Molecule-graph ID's");
-        molecules[molecule->id] = molecule;
     }
 
     // load connections from SEQUENCE OF Inter-residue-bond OPTIONAL
@@ -183,14 +188,22 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
                 j->GetObject().GetAtom_id_2(),
                 order);
 
+            if (!bond) continue; // can happen bond if bond is to atom not present
+
+            interMoleculeBonds.push_back(bond);
+
             // set inter-molecule bonds' display list(s)
             if (displayListOtherStart == OpenGLRenderer::NO_LIST) {
                 displayListOtherStart = parentSet->lastDisplayList + 1;
                 parentSet->lastDisplayList += nAlts;
             }
-
-            if (bond) interMoleculeBonds.push_back(bond);
         }
+    }
+
+    // if hets/solvent/i-m bonds present, add display lists to frames
+    if (displayListOtherStart != OpenGLRenderer::NO_LIST) {
+        for (unsigned int n=0; n<nAlts; n++)
+            parentSet->frameMap[firstNewFrame + n].push_back(displayListOtherStart + n);
     }
 }
 

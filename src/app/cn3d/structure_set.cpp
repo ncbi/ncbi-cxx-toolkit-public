@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/08/07 14:13:16  thiessen
+* added animation frames
+*
 * Revision 1.16  2000/08/07 00:21:18  thiessen
 * add display list mechanism
 *
@@ -156,12 +159,49 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     } else {
         ERR_POST(Fatal << "Can't (yet) handle that Ncbi-mime-asn1 type");
     }
+
+    VerifyFrameMap();
 }
 
 StructureSet::~StructureSet(void)
 {
     if (showHideManager) delete showHideManager;
     if (styleManager) delete styleManager;
+}
+
+// because the frame map (for each frame, a list of diplay lists) is complicated
+// to create, this just verifies that all display lists occur exactly once
+// in the map. Also, make sure that total # display lists in all frames adds up.
+void StructureSet::VerifyFrameMap(void) const
+{
+    for (unsigned int l=OpenGLRenderer::FIRST_LIST; l<=lastDisplayList; l++) {
+        bool found = false;
+        for (unsigned int f=0; f<frameMap.size(); f++) {
+            DisplayLists::const_iterator d, de=frameMap[f].end();
+            for (d=frameMap[f].begin(); d!=de; d++) {
+                if (*d == l) {
+                    if (!found)
+                        found = true;
+                    else
+                        ERR_POST(Fatal << "frameMap: repeated display list " << l);
+                }
+            }
+        }
+        if (!found)
+            ERR_POST(Fatal << "display list " << l << " not in frameMap");
+    }
+
+    unsigned int nLists = 0;
+    for (unsigned int f=0; f<frameMap.size(); f++) {
+        DisplayLists::const_iterator d, de=frameMap[f].end();
+        TESTMSG("frame " << f << ':');
+        for (d=frameMap[f].begin(); d!=de; d++) {
+            nLists++;
+            TESTMSG("display list " << *d);
+        }
+    }
+    if (nLists != lastDisplayList)
+        ERR_POST(Fatal << "frameMap has too many display lists");
 }
 
 void StructureSet::SetCenter(const Vector *given)

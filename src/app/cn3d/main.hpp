@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/07 14:12:47  thiessen
+* added animation frames
+*
 * Revision 1.6  2000/07/27 13:30:10  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -92,7 +95,7 @@ public:
     void OnPaint(wxPaintEvent& event);
     void OnSize(wxSizeEvent& event);
     void OnEraseBackground(wxEraseEvent& event);
-    //void OnChar(wxKeyEvent& event);
+    void OnChar(wxKeyEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
 
 DECLARE_EVENT_TABLE()
