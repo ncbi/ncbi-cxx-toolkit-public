@@ -329,6 +329,15 @@ CREnzResult::CREnzResult(const string& enzyme_name,
 }
 
 
+struct SCompareLocation
+{
+    bool operator() (const CRSite& lhs, const CRSite& rhs) const
+    {
+        return lhs.GetStart() < rhs.GetStart();
+    }
+};
+
+
 /// this class contains the static member function Find,
 /// which finds restriction sites in a sequence
 class CFindRSites
@@ -339,128 +348,66 @@ public:
     /// Templatized so that both string and vector<char>
     /// will work for seq.
     template<class T>
-    static void Find(const T& seq, const vector<CREnzyme> enzymes,
-                     list<CREnzResult>& results);
+    static void Find(const T& seq,
+                     const vector<CREnzyme>& enzymes,
+                     vector<CREnzResult>& results)
+    {
+        // iterate over enzymes
+        ITERATE (vector<CREnzyme>, enzyme, enzymes) {
+            vector<CRSite> definite_sites;
+            vector<CRSite> possible_sites;
+            const vector<CRSpec>& specs = enzyme->GetSpecs();
+            // iterate over specificities for this enzyme
+            ITERATE (vector<CRSpec>, spec, specs) {
+                // do a search
+                Find(seq, *spec, definite_sites, possible_sites);
+            }
+
+            // In the rare case that there's more than one
+            // spec, the sites will be out of order.
+            // Do a sort to fix this (an inplace_merge
+            // after each iteration would probably be
+            // more efficient)
+            if (specs.size() > 1) {
+                sort(definite_sites.begin(),
+                     definite_sites.end(),
+                     SCompareLocation());
+                sort(possible_sites.begin(),
+                     possible_sites.end(),
+                     SCompareLocation());
+            }
+
+            // store the results for this enzyme
+            results.push_back(CREnzResult(enzyme->GetName(),
+                                          definite_sites,
+                                          possible_sites));
+        }
+    }
+
     /// Find definite and possible sites for a single specificity
     template<class T>
     static void Find(const T& seq8na,
                      const CRSpec& spec,
                      vector<CRSite>& definite_sites,
-                     vector<CRSite>& possible_sites);
-
-};
-
-
-static bool CompareLocation(const CRSite& lhs, const CRSite& rhs);
-
-
-template<class T>
-inline void CFindRSites::Find(const T& seq8na, const vector<CREnzyme> enzymes,
-                              list<CREnzResult>& results)
-{
-    // iterate over enzymes
-    ITERATE (vector<CREnzyme>, enzyme, enzymes) {
-        vector<CRSite> definite_sites, possible_sites;
-        const vector<CRSpec>& specs = enzyme->GetSpecs();
-        // iterate over specificities for this enzyme
-        ITERATE (vector<CRSpec>, spec, specs) {
-            // do a search
-            Find(seq8na, *spec, definite_sites, possible_sites);
-        }
-
-        // In the rare case that there's more than one
-        // spec, the sites will be out of order.
-        // Do a sort to fix this (an inplace_merge
-        // after each iteration would probably be
-        // more efficient)
-        if (specs.size() > 1) {
-            sort(definite_sites.begin(),
-                 definite_sites.end(),
-                 CompareLocation);
-            sort(possible_sites.begin(),
-                 possible_sites.end(),
-                 CompareLocation);
-        }
-
-        // store the results for this enzyme
-        results.push_back(CREnzResult(enzyme->GetName(),
-                                      definite_sites,
-                                      possible_sites));
-        
-    }
-}
-
-
-template<class T>
-void CFindRSites::Find(const T& seq8na,
-                             const CRSpec& spec,
-                             vector<CRSite>& definite_sites,
-                             vector<CRSite>& possible_sites)
-{
-    string pattern;
-    CSeqMatch::IupacToNcbi8na(spec.GetSeq(), pattern);
-    vector<TSeqPos> definite_matches;
-    vector<TSeqPos> possible_matches;
-    CSeqMatch::FindMatchesNcbi8na(seq8na, pattern,
-                           definite_matches, possible_matches);
-    ITERATE (vector<TSeqPos>, match, definite_matches) {
-        CRSite site(*match, *match + pattern.size() - 1);
-
-        // figure out cleavage locations
-        const vector<int>& plus_cuts = spec.GetPlusCuts();
-        ITERATE (vector<int>, cut, plus_cuts) {
-            site.SetPlusCuts().push_back(*match + *cut);
-        }
-        const vector<int>& minus_cuts = spec.GetMinusCuts();
-        ITERATE (vector<int>, cut, minus_cuts) {
-            site.SetMinusCuts().push_back(*match + *cut);
-        }
-
-        definite_sites.push_back(site);
-    }
-    ITERATE (vector<TSeqPos>, match, possible_matches) {
-        CRSite site(*match, *match + pattern.size() - 1);
-
-        // figure out cleavage locations
-        const vector<int>& plus_cuts = spec.GetPlusCuts();
-        ITERATE (vector<int>, cut, plus_cuts) {
-            site.SetPlusCuts().push_back(*match + *cut);
-        }
-        const vector<int>& minus_cuts = spec.GetMinusCuts();
-        ITERATE (vector<int>, cut, minus_cuts) {
-            site.SetMinusCuts().push_back(*match + *cut);
-        }
-
-        possible_sites.push_back(site);
-    }
-    
-
-    // if the pattern is not pallindromic,
-    // do a search with its complement
-    // FIX CUT SITE CALCULATION
-    string comp = pattern;
-    CSeqMatch::CompNcbi8na(comp);
-    if (comp != pattern) {
-        definite_matches.clear();
-        possible_matches.clear();
-
-        // for reordering later
-        int ds_pos = definite_sites.size();
-        int ps_pos = possible_sites.size();
-
-        CSeqMatch::FindMatchesNcbi8na(seq8na, comp,
-                                      definite_matches, possible_matches);
+                     vector<CRSite>& possible_sites)
+    {
+        string pattern;
+        CSeqMatch::IupacToNcbi8na(spec.GetSeq(), pattern);
+        vector<TSeqPos> definite_matches;
+        vector<TSeqPos> possible_matches;
+        CSeqMatch::FindMatchesNcbi8na(seq8na, pattern,
+                               definite_matches, possible_matches);
         ITERATE (vector<TSeqPos>, match, definite_matches) {
             CRSite site(*match, *match + pattern.size() - 1);
 
             // figure out cleavage locations
             const vector<int>& plus_cuts = spec.GetPlusCuts();
             ITERATE (vector<int>, cut, plus_cuts) {
-                site.SetPlusCuts().push_back(*match + comp.length() - *cut);
+                site.SetPlusCuts().push_back(*match + *cut);
             }
             const vector<int>& minus_cuts = spec.GetMinusCuts();
             ITERATE (vector<int>, cut, minus_cuts) {
-                site.SetMinusCuts().push_back(*match + comp.length() - *cut);
+                site.SetMinusCuts().push_back(*match + *cut);
             }
 
             definite_sites.push_back(site);
@@ -471,39 +418,82 @@ void CFindRSites::Find(const T& seq8na,
             // figure out cleavage locations
             const vector<int>& plus_cuts = spec.GetPlusCuts();
             ITERATE (vector<int>, cut, plus_cuts) {
-                site.SetPlusCuts().push_back(*match + comp.length() - *cut);
+                site.SetPlusCuts().push_back(*match + *cut);
             }
             const vector<int>& minus_cuts = spec.GetMinusCuts();
             ITERATE (vector<int>, cut, minus_cuts) {
-                site.SetMinusCuts().push_back(*match + comp.length() - *cut);
+                site.SetMinusCuts().push_back(*match + *cut);
             }
 
             possible_sites.push_back(site);
         }
+    
 
-        // definite_sites and possible_sites are not correctly
-        // ordered: all complementary matches come after all
-        // 'forward' matches.  Do an in-place merge to
-        // fix this
+        // if the pattern is not pallindromic,
+        // do a search with its complement
+        // FIX CUT SITE CALCULATION
+        string comp = pattern;
+        CSeqMatch::CompNcbi8na(comp);
+        if (comp != pattern) {
+            definite_matches.clear();
+            possible_matches.clear();
 
-        inplace_merge(definite_sites.begin(),
-                      definite_sites.begin() + ds_pos,
-                      definite_sites.end(),
-                      CompareLocation);
+            // for reordering later
+            int ds_pos = definite_sites.size();
+            int ps_pos = possible_sites.size();
 
-        inplace_merge(possible_sites.begin(),
-                      possible_sites.begin() + ps_pos,
-                      possible_sites.end(),
-                      CompareLocation);
+            CSeqMatch::FindMatchesNcbi8na(seq8na, comp,
+                                          definite_matches, possible_matches);
+            ITERATE (vector<TSeqPos>, match, definite_matches) {
+                CRSite site(*match, *match + pattern.size() - 1);
+
+                // figure out cleavage locations
+                const vector<int>& plus_cuts = spec.GetPlusCuts();
+                ITERATE (vector<int>, cut, plus_cuts) {
+                    site.SetPlusCuts().push_back(*match + comp.length() - *cut);
+                }
+                const vector<int>& minus_cuts = spec.GetMinusCuts();
+                ITERATE (vector<int>, cut, minus_cuts) {
+                    site.SetMinusCuts().push_back(*match + comp.length() - *cut);
+                }
+
+                definite_sites.push_back(site);
+            }
+            ITERATE (vector<TSeqPos>, match, possible_matches) {
+                CRSite site(*match, *match + pattern.size() - 1);
+
+                // figure out cleavage locations
+                const vector<int>& plus_cuts = spec.GetPlusCuts();
+                ITERATE (vector<int>, cut, plus_cuts) {
+                    site.SetPlusCuts().push_back(*match + comp.length() - *cut);
+                }
+                const vector<int>& minus_cuts = spec.GetMinusCuts();
+                ITERATE (vector<int>, cut, minus_cuts) {
+                    site.SetMinusCuts().push_back(*match + comp.length() - *cut);
+                }
+
+                possible_sites.push_back(site);
+            }
+
+            // definite_sites and possible_sites are not correctly
+            // ordered: all complementary matches come after all
+            // 'forward' matches.  Do an in-place merge to
+            // fix this
+
+            inplace_merge(definite_sites.begin(),
+                          definite_sites.begin() + ds_pos,
+                          definite_sites.end(),
+                          CompareLocation);
+
+            inplace_merge(possible_sites.begin(),
+                          possible_sites.begin() + ps_pos,
+                          possible_sites.end(),
+                          CompareLocation);
+        }
     }
-}
+};
 
 
-// sort criterion
-static bool CompareLocation(const CRSite& lhs, const CRSite& rhs)
-{
-    return lhs.GetStart() < rhs.GetStart();
-}
 
 END_NCBI_SCOPE
 
@@ -513,6 +503,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/13 12:37:58  dicuccio
+ * Partial compilation fixes for Windows
+ *
  * Revision 1.1  2003/08/12 18:52:58  jcherry
  * Initial version
  *
