@@ -108,7 +108,7 @@ public:
 
     virtual ~CNetScheduleClient();
 
-    /// Enable or disable rerust rate control (on by default)
+    /// Enable or disable request rate control (on by default)
     ///
     /// On some systems if we start sending too many requests at a time
     /// we will be running out of TCP/IP ports. Request control rate
@@ -368,6 +368,12 @@ protected:
                              unsigned short udp_port,
                              unsigned       job_id);
 
+    /// Get job with wait notification (no immediate wait)
+    bool GetJobWaitNotify(string*    job_key, 
+                          string*    input, 
+                          unsigned   wait_time,
+                          unsigned short udp_port);
+
 private:
     CNetScheduleClient(const CNetScheduleClient&);
     CNetScheduleClient& operator=(const CNetScheduleClient&);
@@ -388,7 +394,7 @@ private:
 /// Client API for NetSchedule server.
 ///
 /// The same API as provided by CNetScheduleClient, 
-/// only integrated with NCBI load balancer
+/// only integrated with NCBI load balancer.
 ///
 /// Rebalancing is based on a combination of rebalance parameters.
 /// When rebalance parameter is not zero and parameter criteria has been 
@@ -410,7 +416,7 @@ public:
 
     /// Construct the client without linking it to any particular
     /// server. Actual server (host and port) will be extracted from the
-    /// job key 
+    /// job key or received from NCBI load balancing service.
     ///
     /// @param client_name
     ///    Name of the client program(project)
@@ -424,40 +430,40 @@ public:
     /// @param rebalance_requests
     ///    Number of requests before rebalancing. 
     ///    0 value means this criteria will not be evaluated.
-
+    ///
     CNetScheduleClient_LB(const string& client_name,
                           const string& lb_service_name,
                           const string& queue_name,
                           unsigned int  rebalance_time     = 10,
                           unsigned int  rebalance_requests = 0);
-/*
+
+    /// Add service address. This function turns off load balancing 
+    /// service discovery. 
+    /// Services list should be supplied by AddServiceAddress
+    ///
+    void AddServiceAddress(const string&  hostname,
+                           unsigned short port);
+
+
     virtual
     string SubmitJob(const string& input);
+
+
     virtual
-    void CancelJob(const string& job_key);
-    virtual
-    bool GetJob(string* job_key, 
-                string* input, 
+    bool GetJob(string*        job_key, 
+                string*        input, 
                 unsigned short udp_port = 0);
-    virtual
+
     bool WaitJob(string*        job_key, 
                  string*        input, 
                  unsigned       wait_time,
                  unsigned short udp_port);
-    virtual
-    void PutResult(const string& job_key, 
-                   int           ret_code, 
-                   const string& output);
-    virtual
-    EJobStatus GetStatus(const string& job_key, 
-                         int*          ret_code,
-                         string*       output);
-    virtual
-    void ReturnJob(const string& job_key);
-*/
+
 protected:
     virtual 
     void CheckConnect(const string& key);
+
+    bool NeedRebalance(time_t curr) const;
 
 protected:
 
@@ -478,6 +484,18 @@ private:
 
     void x_GetServerList(const string& service_name);
 
+    bool x_TryGetJob(const SServiceAddress& sa,
+                     string* job_key, 
+                     string* input, 
+                     unsigned short udp_port);
+    bool x_GetJobWaitNotify(const SServiceAddress& sa,
+                            string*    job_key, 
+                            string*    input, 
+                            unsigned   wait_time,
+                            unsigned short udp_port);
+private:
+    CNetScheduleClient_LB(const CNetScheduleClient_LB&);
+    CNetScheduleClient_LB& operator=(const CNetScheduleClient_LB&);
 private:
     string        m_LB_ServiceName;
 
@@ -487,6 +505,7 @@ private:
     time_t        m_LastRebalanceTime;
     unsigned int  m_Requests;
     bool          m_StickToHost;
+    bool          m_LB_ServiceDiscovery;
 
     TServiceList  m_ServList;
 };
@@ -563,6 +582,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/03/17 17:18:00  kuznets
+ * Implemented load-balanced client
+ *
  * Revision 1.11  2005/03/15 20:12:58  kuznets
  * +SubmitJobAndWait()
  *
