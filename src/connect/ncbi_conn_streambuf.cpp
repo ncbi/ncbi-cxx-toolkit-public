@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/01/28 20:20:18  lavr
+ * Use auto_ptr only in constructor; satisfy "usual backup cond" in xsgetn()
+ *
  * Revision 6.11  2001/12/07 22:58:44  lavr
  * More comments added
  *
@@ -77,18 +80,18 @@ BEGIN_NCBI_SCOPE
 
 CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                                  streamsize buf_size, bool tie)
-    : m_BufSize(buf_size ? buf_size : 1), m_Tie(tie)
+    : m_Buf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie)
 {
     if ( !connector ) {
         x_CheckThrow(eIO_Unknown, "CConn_Streambuf(): NULL connector");
     }
 
-    m_Buf.reset(new CT_CHAR_TYPE[2 * m_BufSize]);
+    auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[2 * m_BufSize]);
 
-    m_WriteBuf = m_Buf.get();
+    m_WriteBuf = bp.get();
     setp(m_WriteBuf, m_WriteBuf + m_BufSize);
 
-    m_ReadBuf = m_Buf.get() + m_BufSize;
+    m_ReadBuf = bp.get() + m_BufSize;
     setg(0, 0, 0); // we wish to have underflow() called at the first read
 
     x_CheckThrow(CONN_Create(connector, &m_Conn),
@@ -98,6 +101,8 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
     CONN_SetTimeout(m_Conn, eIO_Read,  timeout);
     CONN_SetTimeout(m_Conn, eIO_Write, timeout);
     CONN_SetTimeout(m_Conn, eIO_Close, timeout);
+
+    m_Buf = bp.release();
 }
 
 
@@ -107,6 +112,7 @@ CConn_Streambuf::~CConn_Streambuf(void)
     if (CONN_Close(m_Conn) != eIO_Success) {
         _TRACE("CConn_Streambuf::~CConn_Streambuf(): CONN_Close() failed");
     }
+    delete[] m_Buf;
 }
 
 
@@ -175,7 +181,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 }
 
 
-#if defined(NCBI_COMPILER_GCC)
+#ifdef NCBI_COMPILER_GCC
 streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     static const STimeout s_ZeroTimeout = {0, 0};
@@ -215,6 +221,11 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     // read directly from the connection
     size_t x_read;
     CONN_Read(m_Conn, buf, n - n_read, &x_read, eIO_Plain);
+    if (x_read) {
+        // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
+        *m_ReadBuf = buf[x_read - 1];
+        setg(m_ReadBuf, m_ReadBuf + 1, m_ReadBuf + 1);
+    }
 
     return (streamsize) (n_read + x_read);
 }
