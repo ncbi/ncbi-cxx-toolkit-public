@@ -145,17 +145,18 @@ public:
     // NOTE: do nothing for eKurdin menu type
     void AddSeparator(void); 
 
-    // Get/set menu attribute
-    void   SetAttribute(EHTML_PM_Attribute attribute, const string& value);
-    string GetAttribute(EHTML_PM_Attribute attribute) const;
+    // Set menu attribute
+    void SetAttribute(EHTML_PM_Attribute attribute, const string& value);
 
     // Get JavaScript code for menu call
     string ShowMenu(void) const;
 
     // Get HTML code for insert into the end of the HEAD and BODY blocks.
     // If "menu_lib_url" is not defined, then using default URL.
-    static string GetCodeHead(EType type = eSmith, const string& menu_lib_url = kEmptyStr);
-    static string GetCodeBody(EType type = eSmith, bool use_dynamic_menu = false);
+    static string GetCodeHead(EType type = eSmith,
+                              const string& menu_lib_url = kEmptyStr);
+    static string GetCodeBody(EType type = eSmith,
+                              bool use_dynamic_menu = false);
     // Get HTML code for insert into the end of the <BODY ...> tag.
     static string GetCodeBodyTagHandler(EType type);
     static string GetCodeBodyTagAction(EType type);
@@ -184,7 +185,8 @@ private:
 
     // Menu attribute type
     typedef map<EHTML_PM_Attribute, string> TAttributes;
-    string GetAttributeName(EHTML_PM_Attribute attribute) const;
+    string GetMenuAttributeValue(EHTML_PM_Attribute attribute) const;
+    string GetMenuAttributeName(EHTML_PM_Attribute attribute) const;
 
     string       m_Name;   // menu name
     EType        m_Type;   // menu type
@@ -199,6 +201,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2002/12/12 17:20:21  ivanov
+ * Renamed GetAttribute() -> GetMenuAttributeValue,
+ *         GetAttributeName() -> GetMenuAttributeName().
+ *
  * Revision 1.8  2002/12/09 22:12:45  ivanov
  * Added support for Sergey Kurdin's popup menu.
  *

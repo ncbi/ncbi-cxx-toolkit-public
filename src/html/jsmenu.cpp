@@ -138,7 +138,23 @@ void CHTMLPopupMenu::AddSeparator(void)
 } 
 
 
-string CHTMLPopupMenu::GetAttributeName(EHTML_PM_Attribute attribute) const
+void CHTMLPopupMenu::SetAttribute(EHTML_PM_Attribute attribute,
+                                  const string&      value)
+{
+    m_Attrs[attribute] = value;
+}
+
+
+string CHTMLPopupMenu::GetMenuAttributeValue(EHTML_PM_Attribute attribute) const
+{
+    TAttributes::const_iterator i = m_Attrs.find(attribute);
+    if ( i != m_Attrs.end() )
+        return i->second;
+    return kEmptyStr;
+}
+
+
+string CHTMLPopupMenu::GetMenuAttributeName(EHTML_PM_Attribute attribute) const
 {
     switch ( attribute ) {
     case eHTML_PM_enableTracker:
@@ -189,22 +205,6 @@ string CHTMLPopupMenu::GetAttributeName(EHTML_PM_Attribute attribute) const
 }
 
 
-void CHTMLPopupMenu::SetAttribute(EHTML_PM_Attribute attribute,
-                                  const string&      value)
-{
-    m_Attrs[attribute] = value;
-}
-
-
-string CHTMLPopupMenu::GetAttribute(EHTML_PM_Attribute attribute) const
-{
-    TAttributes::const_iterator i = m_Attrs.find(attribute);
-    if ( i != m_Attrs.end() )
-        return i->second;
-    return kEmptyStr;
-}
-
-
 string CHTMLPopupMenu::GetName(void) const
 {
     return m_Name;
@@ -223,11 +223,11 @@ string CHTMLPopupMenu::ShowMenu(void) const
     case eSmith:
         return "window.showMenu(window." + m_Name + ");";
     case eKurdin:
-        string align_h      = GetAttribute(eHTML_PM_alignH);
-        string align_v      = GetAttribute(eHTML_PM_alignV);
-        string color_border = GetAttribute(eHTML_PM_borderColor);
-        string color_title  = GetAttribute(eHTML_PM_titleColor);
-        string color_back   = GetAttribute(eHTML_PM_bgColor);
+        string align_h      = GetMenuAttributeValue(eHTML_PM_alignH);
+        string align_v      = GetMenuAttributeValue(eHTML_PM_alignV);
+        string color_border = GetMenuAttributeValue(eHTML_PM_borderColor);
+        string color_title  = GetMenuAttributeValue(eHTML_PM_titleColor);
+        string color_back   = GetMenuAttributeValue(eHTML_PM_bgColor);
         string s = "','"; 
         return "PopUpMenu2_Set(" + m_Name + ",'" + align_h + s + align_v + s + 
                 color_border + s + color_title + s + color_back + "');";
@@ -261,7 +261,7 @@ string CHTMLPopupMenu::GetCodeMenuItems(void) const
             }
             // Write properties
             iterate (TAttributes, i, m_Attrs) {
-                string name  = GetAttributeName(i->first);
+                string name  = GetMenuAttributeName(i->first);
                 string value = i->second;
                 code += m_Name + "." + name + " = \"" + value + "\";\n";
             }
@@ -371,6 +371,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2002/12/12 17:20:46  ivanov
+ * Renamed GetAttribute() -> GetMenuAttributeValue,
+ *         GetAttributeName() -> GetMenuAttributeName().
+ *
  * Revision 1.8  2002/12/09 22:11:59  ivanov
  * Added support for Sergey Kurdin's popup menu
  *
