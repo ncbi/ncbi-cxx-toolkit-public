@@ -190,7 +190,7 @@ int CNWAlignerMrna2Dna::Run()
                 }
             }
 
-            if(seq2[j-1] == 'a' && seq2[j] == 'g' // acceptor
+            if(seq2[j-1] == 'A' && seq2[j] == 'G' // acceptor
                && i < N1 - 1 && vBestDonor > kInfMinus) {
                 TScore vAcc = vBestDonor + m_Wi;
                 if(vAcc > V) {
@@ -203,7 +203,7 @@ int CNWAlignerMrna2Dna::Run()
             
             // detect donor candidate
             if( j < N2 - 2 && i < N1 - 1 &&
-                seq2[j+1] == 'g' && seq2[j+2] == 't' )  {
+                seq2[j+1] == 'G' && seq2[j+2] == 'T' )  {
 
                 jAllDonors[jTail] = j;
                 vAllDonors[jTail++] = V;
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/03/17 13:42:24  kapustin
+ * Make donor/acceptor characters uppercase
+ *
  * Revision 1.7  2003/02/11 16:06:54  kapustin
  * Add end-space free alignment support
  *
