@@ -87,6 +87,8 @@ public:
     typedef CSeq_inst::TMol TMol;
 
     TMol GetSequenceType(void) const;
+    bool IsProtein(void) const;
+    bool IsNucleotide(void) const;
 
     // Target sequence coding. CSeq_data::e_not_set -- do not
     // convert sequence (use GetCoding() to check the real coding).
@@ -193,6 +195,20 @@ CSeqVector::TMol CSeqVector::GetSequenceType(void) const
 
 
 inline
+bool CSeqVector::IsProtein(void) const
+{
+    return m_Mol == CSeq_inst::eMol_aa;
+}
+
+
+inline
+bool CSeqVector::IsNucleotide(void) const
+{
+    return m_Mol != CSeq_inst::eMol_aa;
+}
+
+
+inline
 void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
 {
     x_GetIterator().GetSeqData(start, stop, buffer);
@@ -213,6 +229,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/08/21 18:43:29  vasilche
+* Added CSeqVector::IsProtein() and CSeqVector::IsNucleotide() methods.
+*
 * Revision 1.41  2003/08/21 13:32:04  vasilche
 * Optimized CSeqVector iteration.
 * Set some CSeqVector values (mol type, coding) in constructor instead of detecting them while iteration.

@@ -249,37 +249,13 @@ void CSeqVector::SetCoding(TCoding coding)
 
 void CSeqVector::SetIupacCoding(void)
 {
-    switch ( GetSequenceType() ) {
-    case CSeq_inst::eMol_aa:
-        SetCoding(CSeq_data::e_Iupacaa);
-        break;
-    case CSeq_inst::eMol_dna:
-    case CSeq_inst::eMol_rna:
-    case CSeq_inst::eMol_na:
-        SetCoding(CSeq_data::e_Iupacna);
-        break;
-    default:
-        SetCoding(CSeq_data::e_Iupacna);
-        break;
-    }
+    SetCoding(IsProtein()? CSeq_data::e_Iupacaa: CSeq_data::e_Iupacna);
 }
 
 
 void CSeqVector::SetNcbiCoding(void)
 {
-    switch ( GetSequenceType() ) {
-    case CSeq_inst::eMol_aa:
-        SetCoding(CSeq_data::e_Ncbistdaa);
-        break;
-    case CSeq_inst::eMol_dna:
-    case CSeq_inst::eMol_rna:
-    case CSeq_inst::eMol_na:
-        SetCoding(CSeq_data::e_Ncbi4na);
-        break;
-    default:
-        SetCoding(CSeq_data::e_Ncbi4na);
-        break;
-    }
+    SetCoding(IsProtein()? CSeq_data::e_Ncbistdaa: CSeq_data::e_Ncbi4na);
 }
 
 
@@ -305,6 +281,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2003/08/21 18:43:29  vasilche
+* Added CSeqVector::IsProtein() and CSeqVector::IsNucleotide() methods.
+*
 * Revision 1.59  2003/08/21 17:04:10  vasilche
 * Fixed bug in making conversion tables.
 *
