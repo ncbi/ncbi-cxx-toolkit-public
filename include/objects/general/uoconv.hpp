@@ -34,10 +34,11 @@
 /// Converts between User-objects and arbitrary other serializable objects.
 
 #include <serial/objectinfo.hpp>
-#include <objects/general/User_object.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CUser_object;
 
 NCBI_GENERAL_EXPORT
 CRef<CUser_object> PackAsUserObject(CConstObjectInfo obj);
@@ -55,6 +56,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/21 13:08:54  dicuccio
+* Favor predeclaration to include
+*
 * Revision 1.1  2004/07/27 15:13:18  ucko
 * Add a somewhat rough implementation of User-object <-> ObjectInfo conversion.
 *
