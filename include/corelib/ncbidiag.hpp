@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/07/26 21:28:49  lavr
+* Remove printing DateTime stamp by default
+*
 * Revision 1.28  2001/07/25 19:12:41  lavr
 * Added date/time stamp for message logging
 *
@@ -185,12 +188,12 @@ enum EDiagPostFlag {
     eDPF_Severity     = 0x10, // set by default (always)
     eDPF_ErrCode      = 0x20, // set by default (always)
     eDPF_ErrSubCode   = 0x40, // set by default (always)
-    eDPF_DateTime     = 0x80, // set by default (always)
+    eDPF_DateTime     = 0x80,
 
     // set all flags
     eDPF_All          = 0x7FFF,
     // set all flags for using with __FILE__ and __LINE__
-    eDPF_Trace        = 0x9f,
+    eDPF_Trace        = 0x1F,
     // print the posted message only;  without severity, location, prefix, etc.
     eDPF_Log          = 0x0,
     // ignore all other flags, use global flags

@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/07/26 21:29:00  lavr
+* Remove printing DateTime stamp by default
+*
 * Revision 1.32  2001/07/25 19:13:55  lavr
 * Added date/time stamp for message logging
 *
@@ -163,7 +166,7 @@ EDiagSev     CDiagBuffer::sm_PostSeverity   = eDiag_Warning;
 #endif /* else!NDEBUG */
 
 unsigned int CDiagBuffer::sm_PostFlags      =
-eDPF_Prefix | eDPF_Severity | eDPF_ErrCode | eDPF_ErrSubCode | eDPF_DateTime;
+eDPF_Prefix | eDPF_Severity | eDPF_ErrCode | eDPF_ErrSubCode;
 
 EDiagSev     CDiagBuffer::sm_DieSeverity    = eDiag_Fatal;
 
