@@ -147,8 +147,14 @@ int s_convert_ai_errno(int ai_errno)
 {
 	switch (ai_errno) {
 	case EAI_NONAME:      return HOST_NOT_FOUND;
+#ifdef EAI_FAMILY
+	case EAI_FAMILY:      return NO_ADDRESS;
+#else
 	case EAI_ADDRFAMILY:  return NO_ADDRESS;
+#endif
+#if defined(EAI_NODATA)  &&  EAI_NODATA != EAI_NONAME
 	case EAI_NODATA:      return NO_DATA;
+#endif
 	case EAI_FAIL:        return NO_RECOVERY;
 	case EAI_AGAIN:       return TRY_AGAIN;
 	default:              return TRY_AGAIN;
