@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/10 15:14:13  sandomir
+* minor updates
+*
 * Revision 1.2  1998/12/09 21:04:26  sandomir
 * CNcbiResource - initial draft; in no means is a final header
 *
@@ -53,6 +56,7 @@ BEGIN_NCBI_SCOPE
 //
 
 class CNcbiDatabase;
+class CNcbiDatabaseInfo;
 class CNcbiCommand;
 
 class CNcbiResPresentation;
@@ -76,10 +80,10 @@ public:
   virtual const CNcbiResPresentation* GetPresentation( void ) const
     { return 0; }
 
-  const TDbList& GetDatabaseInfoList( void ) const
+  const TDbInfoList& GetDatabaseInfoList( void ) const
     { return m_dbInfo; }
 
-  virtual CNcbiDatabase& GetDatabase( const CNcbiDatabaseInfo& info );
+  virtual CNcbiDatabase& GetDatabase( const CNcbiDatabaseInfo& info ) = 0;
 
   const TCmdList& GetCmdList( void ) const
     { return m_cmd; }
@@ -127,7 +131,7 @@ public:
 
   virtual void Execute( const CCgiRequest& request ) = 0;
 
-  virtual bool IsRequested( const CCgiRequest& request ) = 0;
+  virtual bool IsRequested( const CCgiRequest& request ) const = 0;
 
   // inner class CFind to be used to find command(s) corresponding to the request
   // TCmdList l; 
@@ -152,6 +156,8 @@ protected:
 // class CNcbiDatabaseInfo
 //
 
+class CNcbiDbPresentation;
+
 class CNcbiDatabaseInfo
 {
 public:
@@ -159,7 +165,7 @@ public:
   virtual const CNcbiDbPresentation* GetPresentation() const
     { return 0; }
 
-  virtual bool CheckName( const string& name ) = 0;
+  virtual bool CheckName( const string& name ) const = 0;
 
   // inner class CFind to be used to find db(s) corresponding to the request
   // TDbInfoList l; 
@@ -180,8 +186,10 @@ public:
 // class CNcbiDatabase
 //
 
-class CNcbiDbPresentation;
+class CNcbiDatabaseFilter;
 typedef map< string, CNcbiDatabaseFilter* > TFilterList;
+
+class CNcbiQueryResult;
 
 class CNcbiDatabase
 {
@@ -242,8 +250,6 @@ class CNcbiDataObject
 {
 public:
 
-  typedef CNcbiDataObject* iterator;
-
   virtual int GetID( void ) const = 0;
   virtual string GetType( void ) const = 0;
 
@@ -258,9 +264,6 @@ class CNcbiQueryResult
 {
 public:
 
-  virtual CNcbiDataObject::iterator begin() = 0;
-  virtual CNcbiDataObject::iterator end() = 0;
-  virtual int size() = 0;
 };
 
 //
@@ -271,8 +274,8 @@ class CNcbiDataObjectReport
 {
 public:
 
-  CNcbiDatabaseReport( const CNcbiDataObject& db );
-  virtual ~CNcbiDatabaseReport( void );
+  CNcbiDataObjectReport( const CNcbiDataObject& db );
+  virtual ~CNcbiDataObjectReport( void );
 
   virtual CNcbiDataObjectReport* Clone( void ) const = 0;
 
@@ -282,16 +285,16 @@ public:
 
   virtual CNcbiNode* CreateView( const CCgiRequest& request ) const = 0;
 
-  virtual bool IsRequested( const CCgiRequest& request ) = 0;
+  virtual bool IsRequested( const CCgiRequest& request ) const = 0;
 
-  class CFind : public unary_function<CNcbiDatabaseReport,bool>
+  class CFind : public unary_function<CNcbiDataObjectReport,bool>
   {
     const CCgiRequest& m_request;
 
   public:
 
     explicit CFind( const CCgiRequest& request ) : m_request( request ) {}
-    bool operator() ( const CNcbiDatabaseReport& rpt ) const
+    bool operator() ( const CNcbiDataObjectReport& rpt ) const
       { return rpt.IsRequested( m_request ); }
   }; // class CFind
 
