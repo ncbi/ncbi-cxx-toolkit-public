@@ -159,6 +159,8 @@ public:
 
     static void DumpRegister(const char* msg);
 
+    void Swap(CSeq_id_Handle& idh);
+
 private:
     void x_Register(void);
     void x_Deregister(void);
@@ -169,7 +171,6 @@ private:
     CConstRef<CSeq_id_Info>    m_Info;
     int                        m_Gi;
 };
-
 
 /// Get CConstRef<CSeq_id> from a seq-id handle (for container
 /// searching template functions)
@@ -357,17 +358,34 @@ CSeq_id_Mapper& CSeq_id_Handle::GetMapper(void) const
     return m_Info->GetMapper();
 }
 
+inline 
+void CSeq_id_Handle::Swap(CSeq_id_Handle& idh)
+{
+    m_Info.Swap(idh.m_Info);
+    swap(m_Gi,idh.m_Gi);
 
+}
 /* @} */
 
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
+BEGIN_STD_SCOPE
+inline 
+void swap(NCBI_NS_NCBI::objects::CSeq_id_Handle& idh1,
+          NCBI_NS_NCBI::objects::CSeq_id_Handle& idh2)
+{
+    idh1.Swap(idh2);
+}
+END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2005/03/03 18:46:44  didenko
+* Added Swap method and std::swap funtion
+* for CSeq_id_Handle class
+*
 * Revision 1.34  2005/02/15 17:45:54  grichenk
 * Added possibility to use GetSeq_idByType() with containers of CSeq_id_Handle.
 *
